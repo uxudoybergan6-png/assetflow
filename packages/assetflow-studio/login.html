@@ -145,10 +145,7 @@
     }
     if (r.session.role === "admin") {
       AssetFlowLog.init({ source: "admin" });
-      location.href =
-        ASSETFLOW_STUDIO.isAdminHost
-          ? ASSETFLOW_STUDIO.adminUrl
-          : "http://localhost:3001/";
+      location.href = ASSETFLOW_STUDIO.adminUrl;
       return null;
     }
     AssetFlowLog.init({ source: "contributor" });
