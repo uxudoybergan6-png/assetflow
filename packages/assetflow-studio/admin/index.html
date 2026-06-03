@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="assetflow-api" content="https://assetflow-rqbq.onrender.com">
 <title>AssetFlow — Admin Dashboard</title>
 <script>
 (function () {
-  var base = location.port === "3001" ? "/" : "/studio/";
+  var p = location.pathname;
+  var base = p.indexOf("/admin") === 0 ? "/admin/" : (location.port === "3001" ? "/" : "/studio/");
   var b = document.createElement("base");
   b.href = base;
   document.head.appendChild(b);
