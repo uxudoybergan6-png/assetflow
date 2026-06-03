@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow — Bosh sahifa</title>
+<script>
+(function () {
+  var b = document.createElement("base");
+  b.href = location.pathname.includes("/studio/") ? "/studio/" : "/";
+  document.head.appendChild(b);
+})();
+</script>
+<link rel="stylesheet" href="styles/app.css">
+<style>
+  .hub-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px; background: var(--bg-0); }
+  .hub-wrap { max-width: 720px; width: 100%; text-align: center; }
+  .hub-brand { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .hub-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .hub-sub { color: var(--tx-2); margin-bottom: 36px; font-size: 15px; }
+  .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; }
+  @media (max-width: 640px) { .hub-grid { grid-template-columns: 1fr; } }
+  .hub-card {
+    display: block; text-decoration: none; color: inherit;
+    border: 1px solid var(--line); border-radius: var(--r-lg);
+    padding: 28px 24px; background: var(--bg-2);
+    transition: border-color .15s, transform .15s, box-shadow .15s;
+  }
+  .hub-card:hover { border-color: var(--violet-line); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .hub-card.admin:hover { border-color: var(--green); }
+  .hub-ico { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 22px; }
+  .hub-card.contrib .hub-ico { background: var(--violet-dim); color: var(--violet-bright); }
+  .hub-card.admin .hub-ico { background: var(--green-dim); color: var(--green); }
+  .hub-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .hub-card p { font-size: 13px; color: var(--tx-2); line-height: 1.5; margin-bottom: 14px; }
+  .hub-url { font-size: 11px; color: var(--tx-3); font-family: ui-monospace, monospace; word-break: break-all; }
+  .hub-foot { margin-top: 28px; font-size: 12px; color: var(--tx-3); }
+  .hub-status { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px; }
+  .hub-pill { font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); }
+  .hub-pill.ok { border-color: var(--green); color: var(--green); }
+  .hub-pill.bad { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body class="hub-page">
+<div class="hub-wrap">
+  <div class="hub-brand">
+    <div class="brand-mark" style="width:40px;height:40px;border-radius:10px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+    </div>
+    <span class="brand-name" style="font-size:22px">AssetFlow</span>
+  </div>
+  <h1 class="hub-title">Qaysi panel?</h1>
+  <p class="hub-sub">Contributor va Admin alohida — chalkashmaslik uchun shu sahifani xatcho‘p qiling</p>
+  <div class="hub-status" id="hubStatus"></div>
+  <div class="hub-grid">
+    <a class="hub-card contrib" href="http://localhost:3000/studio/login.html" id="linkContrib">
+      <div class="hub-ico">↑</div>
+      <h2>Contributor Studio</h2>
+      <p>Shablon yuklash, holatni ko‘rish, moderatsiyaga yuborish</p>
+      <span class="hub-url">localhost:3000</span>
+    </a>
+    <a class="hub-card admin" href="http://localhost:3001/login.html" id="linkAdmin">
+      <div class="hub-ico">✓</div>
+      <h2>Admin Console</h2>
+      <p>Yuborilgan shablonlarni tasdiqlash, rad etish, AE katalog</p>
+      <span class="hub-url">localhost:3001</span>
+    </a>
+  </div>
+  <p class="hub-foot">Bitta terminal: <code>npm run studio</code> · Bookmark: <code>localhost:3000/studio/hub.html</code></p>
+</div>
+<script>
+(async function () {
+  const el = document.getElementById("hubStatus");
+  async function ping(url, label) {
+    try {
+      const r = await fetch(url, { mode: "cors" });
+      return r.ok ? label + " ✓" : label + " ✗";
+    } catch {
+      return label + " ✗";
+    }
+  }
+  const [api, web, admin] = await Promise.all([
+    ping("http://localhost:4000/health", "API"),
+    ping("http://localhost:3000/studio/hub.html", "Web"),
+    fetch("http://localhost:3001/login.html", { mode: "no-cors" }).then(() => "Admin ✓").catch(() => "Admin ✗"),
+  ]);
+  el.innerHTML = [api, web, admin].map((t) => {
+    const ok = t.includes("✓");
+    return `<span class="hub-pill ${ok ? "ok" : "bad"}">${t}</span>`;
+  }).join("");
+})();
+</script>
+</body>
+</html>

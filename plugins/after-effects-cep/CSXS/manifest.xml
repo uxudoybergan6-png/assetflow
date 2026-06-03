@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="7.0"
+  ExtensionBundleId="com.assetflow.demo"
+  ExtensionBundleVersion="1.0.8"
+  ExtensionBundleName="AssetFlow">
+  <ExtensionList>
+    <Extension Id="com.assetflow.demo.panel" Version="1.0.8"/>
+    <Extension Id="com.assetflow.demo.admin" Version="1.0.8"/>
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="AEFT" Version="[18.0,99.9]"/>
+    </HostList>
+    <LocaleList>
+      <Locale Code="All"/>
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="11.0"/>
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.assetflow.demo.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./AssetFlow_Plugin.html</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--allow-file-access</Parameter>
+            <Parameter>--persist-session-cookies</Parameter>
+            <Parameter>--mixed-context</Parameter>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>AssetFlow</Menu>
+          <Geometry>
+            <Size><Height>720</Height><Width>380</Width></Size>
+            <MinSize><Height>400</Height><Width>320</Width></MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+    <Extension Id="com.assetflow.demo.admin">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./AssetFlow_Admin.html</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--allow-file-access</Parameter>
+            <Parameter>--persist-session-cookies</Parameter>
+            <Parameter>--mixed-context</Parameter>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>false</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>AssetFlow Admin</Menu>
+          <Geometry>
+            <Size><Height>760</Height><Width>420</Width></Size>
+            <MinSize><Height>500</Height><Width>360</Width></MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: assetflow-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npx prisma generate -w @creative-tools/database && npm run build -w apps/api
+    startCommand: node apps/api/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false          # Neon.tech dan olinadi
+      - key: JWT_SECRET
+        generateValue: true
+      - key: API_PORT
+        value: 10000         # Render default port
+      - key: CORS_ORIGIN
+        sync: false          # Frontend URL
+      - key: ADMIN_URL
+        sync: false          # Admin URL
+      # Cloudflare R2
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_REGION
+        value: auto
+      - key: S3_ENDPOINT
+        sync: false          # https://<account_id>.r2.cloudflarestorage.com
+      - key: CDN_BASE_URL
+        sync: false          # https://pub-xxx.r2.dev (R2 public URL)
+      - key: PLUGIN_ALLOW_PRO_WITHOUT_STRIPE
+        value: "true"        # Test uchun

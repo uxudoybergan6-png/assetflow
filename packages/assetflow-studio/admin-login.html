@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow — Admin kirish</title>
+<script>
+(function () {
+  var base = location.port === "3001" ? "/" : "/studio/";
+  var b = document.createElement("base");
+  b.href = base;
+  document.head.appendChild(b);
+})();
+</script>
+<link rel="stylesheet" href="styles/app.css">
+<script src="js/studio-config.js"></script>
+<script src="js/theme.js"></script>
+</head>
+<body class="auth-page">
+<div class="auth-shell">
+  <aside class="auth-side">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+      </div>
+      <div class="col" style="gap:2px">
+        <span class="brand-name">AssetFlow</span>
+        <span class="brand-sub">Admin Console</span>
+      </div>
+    </div>
+    <h2 class="h2 auth-side-title">Moderatsiya va<br>tasdiqlash markazi</h2>
+    <p class="body auth-side-desc">Faqat <b>ADMIN</b> roli bilan kirish. Contributor yuklash boshqa manzilda.</p>
+    <p class="auth-side-foot small">
+      <a href="http://localhost:3000/studio/login.html" style="color:var(--violet-bright)">Contributor Studio →</a>
+    </p>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-main-top">
+      <button type="button" class="icon-btn" data-theme-toggle title="Mavzu"><span data-theme-icon></span></button>
+    </div>
+    <div class="auth-card">
+      <h1 class="h1" style="margin-bottom:6px">Admin kirish</h1>
+      <p class="body" style="margin-bottom:22px">Shablonlarni tasdiqlash va boshqarish</p>
+      <form id="loginForm" class="col gap-14">
+        <div class="field">
+          <label>Email</label>
+          <input class="input" type="email" name="email" required autocomplete="username"
+            placeholder="admin@assetflow.uz" value="admin@assetflow.uz">
+          <p class="small" style="margin-top:6px;color:var(--tx-2)">
+            <b>ADMIN</b> emas — ro'yxatdan o'tgan to'liq email (masalan <code>admin@assetflow.uz</code>).
+          </p>
+        </div>
+        <div class="field">
+          <label>Parol</label>
+          <input class="input" type="password" name="password" required>
+        </div>
+        <p class="auth-error hidden" id="loginError" role="alert"></p>
+        <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Admin sifatida kirish</button>
+      </form>
+      <p class="small" style="margin-top:16px;color:var(--tx-2)">
+        Birinchi marta: avval <a href="http://localhost:3000/studio/login.html">Contributor</a> da ro'yxatdan o'ting,
+        keyin DB da <code>role = ADMIN</code>.
+      </p>
+    </div>
+  </main>
+</div>
+
+<script src="js/ui.js"></script>
+<script src="js/studio-api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(async function () {
+  const card = document.querySelector(".auth-card");
+  if (typeof StudioApi !== "undefined") {
+    let ok = await StudioApi.healthCheck();
+    if (!ok) {
+      try {
+        const r = await fetch("http://localhost:4000/health");
+        ok = r.ok;
+      } catch {
+        ok = false;
+      }
+    }
+    if (!ok && card) {
+      const p = document.createElement("p");
+      p.className = "auth-error";
+      p.textContent =
+        "API ulanmadi. npm run studio yoki alohida: npm run dev:api (:4000)";
+      card.prepend(p);
+    }
+  }
+
+  const s = AssetFlowAuth.getSession();
+  if (s?.apiToken && s.role === "admin") {
+    location.href = ASSETFLOW_STUDIO.adminUrl;
+    return;
+  }
+  if (s?.apiToken && s.role !== "admin") {
+    AssetFlowAuth.clearSession();
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("loginError");
+    const fd = new FormData(e.target);
+    const email = String(fd.get("email") || "").trim();
+    if (!email.includes("@")) {
+      err.textContent =
+        "Email kiriting (masalan admin@assetflow.uz). \"ADMIN\" — bu rol, login emas.";
+      err.classList.remove("hidden");
+      return;
+    }
+    const r = await AssetFlowAuth.login(email, fd.get("password"));
+    if (!r.ok) {
+      err.textContent = r.error;
+      err.classList.remove("hidden");
+      return;
+    }
+    if (r.session.role !== "admin") {
+      err.textContent =
+        "Bu hisob Admin emas (role: " + r.session.role + "). PostgreSQL da ADMIN qiling.";
+      err.classList.remove("hidden");
+      AssetFlowAuth.logout(false);
+      return;
+    }
+    location.href = ASSETFLOW_STUDIO.adminUrl;
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  CONTRIBUTOR
+}
+
+enum TemplateReviewStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INCOMPLETE
+}
+
+enum AssetType {
+  MOTION_TEMPLATE
+  TRANSITION
+  VFX_OVERLAY
+  TEXTURE
+  LUT
+  PRESET
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String?
+  passwordHash     String?
+  role             UserRole  @default(USER)
+  stripeCustomerId String?   @unique
+  emailVerified    DateTime?
+  image            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  subscription  Subscription?
+  downloads     Download[]
+  pluginTokens          PluginToken[]
+  pluginProfile         PluginProfile?
+  contributorTemplates  ContributorTemplate[] @relation("ContributorTemplates")
+  reviewedTemplates     ContributorTemplate[] @relation("ReviewedTemplates")
+}
+
+enum PluginPlanTier {
+  FREE
+  PRO
+}
+
+enum PluginAccountStatus {
+  ACTIVE
+  BLOCKED
+  REMOVED
+}
+
+model PluginProfile {
+  userId         String               @id
+  plan           PluginPlanTier       @default(FREE)
+  status         PluginAccountStatus  @default(ACTIVE)
+  downloadsTotal Int                  @default(0)
+  downloadsMonth Int                  @default(0)
+  importsTotal   Int                  @default(0)
+  monthResetAt   DateTime             @default(now())
+  lastSeenAt     DateTime?
+  deviceLabel    String?
+  aeVersion      String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([plan])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  status               SubscriptionStatus @default(INCOMPLETE)
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Asset {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  description String?
+  type        AssetType
+  category    String
+  tags        String[]
+  fileKey     String
+  thumbnailKey String?
+  fileSize    Int
+  duration    Float?
+  width       Int?
+  height      Int?
+  published   Boolean   @default(false)
+  downloadCount Int     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  downloads Download[]
+
+  @@index([type, category])
+  @@index([published])
+}
+
+model Download {
+  id        String   @id @default(cuid())
+  userId    String
+  assetId   String
+  source    String   @default("web")
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([assetId])
+}
+
+model PluginToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
+
+model ContributorPlatformSettings {
+  id                      String   @id @default("platform")
+  apiBaseUrl              String?
+  requireApproval         Boolean  @default(true)
+  defaultNav              String   @default("video")
+  defaultRes              String   @default("4k")
+  defaultOrient           String   @default("horizontal")
+  categoriesJson          Json     @default("[]")
+  contributorInstructions String?  @db.Text
+  updatedAt               DateTime @updatedAt
+}
+
+model ContributorTemplate {
+  id            String               @id @default(cuid())
+  contributorId String
+  externalId    String?
+  name          String
+  description   String               @default("")
+  nav           String               @default("video")
+  cat           String
+  catLabel      String
+  orient        String               @default("horizontal")
+  res           String               @default("4k")
+  tags          String[]
+  icon          String               @default("✦")
+  bg            String               @default("")
+  templateApp   String               @default("ae")
+  metaJson      Json                 @default("{}")
+  fileName      String?
+  fileSize      Int?
+  reviewStatus  TemplateReviewStatus @default(DRAFT)
+  reviewNote    String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  published     Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  contributor User  @relation("ContributorTemplates", fields: [contributorId], references: [id], onDelete: Cascade)
+  reviewer    User? @relation("ReviewedTemplates", fields: [reviewedById], references: [id])
+
+  @@unique([contributorId, externalId])
+  @@index([contributorId])
+  @@index([reviewStatus])
+  @@index([published])
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@creative-tools/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "generate": "prisma generate",
+    "push": "prisma db push",
+    "migrate": "prisma migrate dev",
+    "seed": "tsx prisma/seed.ts",
+    "seed:assetflow": "tsx prisma/seed-assetflow.ts",
+    "studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.8.2"
+  },
+  "devDependencies": {
+    "bcryptjs": "^3.0.2",
+    "prisma": "^6.8.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

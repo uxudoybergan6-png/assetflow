@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow — Admin Dashboard</title>
+<script>
+(function () {
+  var base = location.port === "3001" ? "/" : "/studio/";
+  var b = document.createElement("base");
+  b.href = base;
+  document.head.appendChild(b);
+})();
+</script>
+<link rel="stylesheet" href="styles/app.css">
+<script src="js/studio-config.js"></script>
+<script src="js/theme.js"></script>
+</head>
+<body>
+<div class="app" data-screen-label="Admin Dashboard">
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+      </div>
+      <div class="col" style="gap:0">
+        <span class="brand-name">AssetFlow</span>
+        <span class="brand-sub">Admin Console</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav"></nav>
+
+    <div class="sidebar-foot">
+      <div class="role-switch" style="width:100%;margin-bottom:10px">
+        <a class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/></svg>Admin</a>
+      </div>
+      <div class="user-chip">
+        <div class="avatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</div>
+        <div class="col" style="gap:1px;min-width:0">
+          <span style="font-size:12.5px;font-weight:600;white-space:nowrap">Admin Nazarov</span>
+          <span style="font-size:11px;color:var(--tx-2)">Super Admin</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="icon-btn nav-toggle" data-nav-toggle aria-label="Menyu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="topbar-title">
+        <div class="crumb" id="crumb"></div>
+        <h1 id="pageTitle">Overview</h1>
+      </div>
+      <div style="flex:1"></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="Shablon, contributor, ID qidirish&#8230;">
+        <kbd>&#8984;K</kbd>
+      </div>
+      <button class="icon-btn" onclick="route('moderation')" title="Moderatsiya navbati"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+      <div class="topbar-actions">
+        <button type="button" class="icon-btn" id="themeBtn" data-theme-toggle title="Mavzu">
+          <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        </button>
+        <button type="button" class="icon-btn" onclick="AssetFlowAuth.logout()" title="Chiqish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<script src="js/ui.js"></script>
+<script src="js/assetflow-log.js"></script>
+<script src="js/studio-api.js"></script>
+<script src="js/studio-media.js"></script>
+<script src="js/studio-templates.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/admin-views.js"></script>
+<script src="js/admin-views2.js"></script>
+<script src="js/admin-subscribers.js"></script>
+<script src="js/admin-plans.js"></script>
+<script src="js/admin-logs.js"></script>
+<script>
+const AF_ADMIN = AssetFlowAuth.requireAuth(["admin"]);
+if (!AF_ADMIN) { /* /login.html */ }
+if (AF_ADMIN && AF_ADMIN.role !== "admin") {
+  location.href = ASSETFLOW_STUDIO.contributorLoginUrl;
+}
+AssetFlowLog.init({ source: "admin" });
+
+const NAV = [
+  {grp:'Workspace'},
+  {id:'overview',     label:'Overview',          icon:'grid'},
+  {id:'moderation',   label:'Moderatsiya navbati', icon:'shield', badge:'5', badgeCls:'warn'},
+  {id:'templates',    label:'Barcha shablonlar',  icon:'layers'},
+  {grp:'Boshqaruv'},
+  {id:'contributors', label:'Contributorlar',     icon:'users'},
+  {id:'subscribers',  label:'AE Plugin obunachilari', icon:'plugin'},
+  {id:'plans',        label:'Tariflar (Free / Pro)', icon:'dollar'},
+  {id:'messaging',    label:'Xabarlar',           icon:'inbox', badge:'3', badgeCls:'brand'},
+  {id:'analytics',    label:'Analitika',          icon:'chart'},
+  {grp:'Tizim'},
+  {id:'settings',     label:'Sozlamalar',         icon:'gear'},
+  {id:'logs',         label:'Tizim loglari',      icon:'scroll'},
+  {id:'audit',        label:'Audit log',          icon:'scroll'},
+];
+
+const TITLES = {
+  overview:['Overview','Boshqaruv paneli'],
+  moderation:['Moderatsiya navbati','Yangi shablonlarni ko\u2018rib chiqish'],
+  templates:['Barcha shablonlar','Global katalog'],
+  contributors:['Contributorlar','Foydalanuvchilar boshqaruvi'],
+  'contributor-detail':['Contributor profili','Contributorlar'],
+  subscribers:['AE Plugin obunachilari','Haqiqiy Browse foydalanuvchilari'],
+  'subscriber-detail':['Obunachi profili','AE Plugin obunachilari'],
+  plans:['Tariflar','Free va Pro — narx va limitlar'],
+  messaging:['Xabarlar','Aloqa markazi'],
+  analytics:['Analitika','Chuqur tahlil'],
+  settings:['Sozlamalar','Marketplace konfiguratsiyasi'],
+  logs:['Tizim loglari','Admin · Contributor · AE Plugin'],
+  audit:['Audit log','Compliance jurnali'],
+};
+
+let CURRENT = 'overview';
+
+function navBadge(n){
+  if(n.id==='moderation') return {badge:String(tByStatus('pending').length), badgeCls:'warn'};
+  if(n.id==='subscribers') return {badge:String(subscriberCounts().active), badgeCls:'brand'};
+  if(n.id==='messaging') return {badge:'3', badgeCls:'brand'};
+  if(n.id==='logs') {
+    const err = AssetFlowLog.readLocal().filter((r) => r.level === "error").length;
+    if (err) return { badge: String(err), badgeCls: "warn" };
+  }
+  return {badge:n.badge, badgeCls:n.badgeCls};
+}
+function renderNav(){
+  document.getElementById('nav').innerHTML = NAV.map(n=>{
+    if(n.grp) return `<div class="nav-group-label">${n.grp}</div>`;
+    const b = navBadge(n);
+    return `<button class="nav-item ${n.id===CURRENT?'active':''}" onclick="route('${n.id}')">
+      ${ic(n.icon)}<span>${n.label}</span>
+      ${b.badge?`<span class="nav-badge ${b.badgeCls||''}">${b.badge}</span>`:''}
+    </button>`;
+  }).join('');
+}
+
+function route(view, arg){
+  CURRENT = view;
+  const t = TITLES[view] || [view,''];
+  document.getElementById('pageTitle').textContent = t[0];
+  document.getElementById('crumb').innerHTML = `<span>AssetFlow</span>${ic('chevR','')} <span>${t[1]}</span>`;
+  document.getElementById('crumb').querySelector('svg').style.width='12px';
+  renderNav();
+  const fn = VIEWS[view];
+  try {
+    document.getElementById('view').innerHTML = fn ? fn(arg) : '<div class="empty"><h3>Tez orada</h3></div>';
+    if (window.afterRender && window.afterRender[view]) {
+      const ar = window.afterRender[view](arg);
+      if (ar && typeof ar.then === "function") ar.catch((e) => console.error(e));
+    }
+    AssetFlowLog.info(`Admin: ${t[0]}`, { action: "navigate", detail: view });
+  } catch (e) {
+    console.error(e);
+    AssetFlowLog.error(e.message, { action: "view_error", detail: view });
+    document.getElementById('view').innerHTML = `<div class="empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+  }
+  document.getElementById('view').scrollTop = 0;
+}
+
+(async function bootAdmin() {
+  await StudioTemplates.init("admin");
+  renderNav();
+  route("overview");
+})();
+</script>
+</body>
+</html>

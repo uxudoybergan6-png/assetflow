@@ -1,0 +1,41 @@
+{
+  "name": "creative-tools-saas",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "plugins/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:web": "npm run dev -w @creative-tools/web",
+    "dev:api": "npm run dev -w @creative-tools/api",
+    "dev:studio-admin": "npm run dev -w @creative-tools/assetflow-studio",
+    "studio": "node scripts/start-studio.mjs",
+    "api:only": "node scripts/run-api-only.mjs",
+    "studio:ui": "node scripts/start-studio-ui.mjs",
+    "verify:pipeline": "node scripts/verify-pipeline.mjs",
+    "check:stack": "node scripts/check-stack.mjs",
+    "studio:open": "open http://localhost:3000/studio/hub.html",
+    "build": "npm run build --workspaces --if-present",
+    "db:generate": "npm run generate -w @creative-tools/database",
+    "db:push": "npm run push -w @creative-tools/database",
+    "db:seed": "npm run seed -w @creative-tools/database",
+    "db:seed:assetflow": "npm run seed:assetflow -w @creative-tools/database",
+    "studio:sync": "npm run sync:web -w @creative-tools/assetflow-studio",
+    "demo:clear": "node scripts/clear-assetflow-demo.mjs",
+    "pm2:start": "node scripts/pm2-start.mjs",
+    "pm2:stop": "node scripts/pm2-stop.mjs",
+    "pm2:reset": "node scripts/pm2-reset.mjs",
+    "pm2:restart": "npm run pm2:stop && npm run pm2:start",
+    "pm2:status": "pm2 status",
+    "pm2:logs": "pm2 logs",
+    "pm2:monit": "pm2 monit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "pm2": "^6.0.13"
+  }
+}

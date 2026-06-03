@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>AssetFlow Admin</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--surface3:#2a2a2a;
+  --border:rgba(255,255,255,.08);--text:#e8e8e8;--muted:#888;--muted2:#555;
+  --green:#82c341;--green-dim:rgba(130,195,65,.15);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,.12);
+  --blue:#6366f1;--blue-dim:rgba(99,102,241,.15);
+  --r:8px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:12px;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:rgba(130,195,65,.5);box-shadow:0 0 0 2px rgba(130,195,65,.12)}
+select option{background:#222}
+
+/* ── Login ── */
+#loginView{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:320px}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.login-leaf{width:22px;height:22px;border-radius:4px 12px 4px 12px;background:linear-gradient(135deg,#82c341,#5a9a24);flex-shrink:0}
+.login-title{font-size:16px;font-weight:700}
+.login-sub{font-size:11px;color:var(--muted);margin-bottom:20px}
+.login-field{margin-bottom:10px}
+.login-field label{display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.btn-primary{width:100%;height:38px;border-radius:8px;background:var(--green);color:#111;font-size:12px;font-weight:700;margin-top:6px;transition:opacity .15s}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.login-err{font-size:11px;color:var(--red);margin-top:8px;text-align:center}
+
+/* ── Shell ── */
+#shell{display:none;flex-direction:column;height:100vh}
+.topbar{height:44px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0}
+.topbar-logo{display:flex;align-items:center;gap:7px}
+.topbar-leaf{width:16px;height:16px;border-radius:3px 9px 3px 9px;background:linear-gradient(135deg,#82c341,#5a9a24);flex-shrink:0}
+.topbar-name{font-size:13px;font-weight:700}
+.topbar-badge{font-size:10px;background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:99px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.topbar-user{font-size:11px;color:var(--muted)}
+.btn-ghost{padding:5px 10px;border-radius:6px;font-size:11px;color:var(--muted);border:1px solid var(--border);background:var(--surface2)}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+
+.tabs{display:flex;gap:2px;padding:10px 12px 0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.tab{padding:8px 14px;font-size:11px;font-weight:600;color:var(--muted);border-radius:8px 8px 0 0;transition:all .15s;position:relative;border:1px solid transparent;border-bottom:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);background:var(--surface);border-color:var(--border)}
+.tab-badge{display:inline-block;margin-left:5px;font-size:9px;font-weight:700;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,.3);padding:1px 5px;border-radius:99px}
+
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── Search / filter bar ── */
+.toolbar{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0}
+.search-wrap{flex:1;position:relative}
+.search-wrap input{padding-left:30px}
+.search-wrap::before{content:"⌕";position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.filter-select{width:auto;min-width:110px}
+.btn-refresh{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-refresh:hover{color:var(--text)}
+
+/* ── List ── */
+.list-area{flex:1;overflow-y:auto;padding:10px 12px}
+.list-area::-webkit-scrollbar{width:4px}
+.list-area::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+
+.tpl-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .15s}
+.tpl-card:hover{border-color:rgba(255,255,255,.15)}
+.tpl-row{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.tpl-thumb{width:64px;height:40px;border-radius:6px;object-fit:cover;background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
+.tpl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.tpl-info{flex:1;min-width:0}
+.tpl-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.tpl-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.status-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px}
+.s-PENDING_REVIEW,.s-pending_review{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.s-APPROVED,.s-approved{background:var(--green-dim);color:var(--green);border:1px solid rgba(130,195,65,.3)}
+.s-REJECTED,.s-rejected{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.s-DRAFT,.s-draft{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
+.tpl-chevron{font-size:10px;color:var(--muted2)}
+
+/* ── Detail panel ── */
+.tpl-detail{display:none;border-top:1px solid var(--border);padding:12px}
+.tpl-detail.open{display:block}
+
+.detail-section{margin-bottom:14px}
+.detail-section>label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:7px}
+
+.scenes-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.scene-thumb-item{width:calc(50% - 4px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.scene-thumb-img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#111;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
+.scene-thumb-img img{width:100%;height:100%;object-fit:cover;display:block}
+.scene-thumb-name{font-size:10px;font-weight:600;padding:4px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scene-thumb-meta{font-size:9px;color:var(--muted);padding:0 7px 5px}
+
+.action-row{display:flex;gap:7px;flex-wrap:wrap}
+.btn-approve{flex:1;min-width:100px;height:36px;border-radius:8px;background:var(--green);color:#111;font-size:11px;font-weight:700}
+.btn-approve:hover{opacity:.9}
+.btn-reject{flex:1;min-width:100px;height:36px;border-radius:8px;background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.35);font-size:11px;font-weight:600}
+.btn-reject:hover{background:rgba(239,68,68,.2)}
+.btn-action{height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:500}
+.btn-action:hover{border-color:rgba(255,255,255,.2)}
+.btn-action.blue{border-color:rgba(99,102,241,.4);color:#a5b4fc;background:var(--blue-dim)}
+.btn-action.amber{border-color:rgba(245,158,11,.4);color:var(--amber);background:var(--amber-dim)}
+
+.note-area{margin-top:8px}
+.note-area textarea{height:56px;resize:vertical}
+.status-msg{font-size:11px;color:var(--muted);margin-top:6px;min-height:16px}
+.status-msg.ok{color:var(--green)}
+.status-msg.err{color:var(--red)}
+
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.edit-grid .full{grid-column:1/-1}
+.edit-label{font-size:10px;color:var(--muted);margin-bottom:4px;display:block}
+
+/* ── Subscribers ── */
+.sub-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border)}
+.sub-avatar{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--green),#5a9a24);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#111;flex-shrink:0}
+.sub-info{flex:1;min-width:0}
+.sub-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-email{font-size:10px;color:var(--muted)}
+.sub-right{text-align:right;flex-shrink:0}
+.sub-plan{font-size:10px;font-weight:700}
+.sub-plan.pro{color:var(--green)}
+.sub-plan.free{color:var(--muted)}
+.sub-seen{font-size:9px;color:var(--muted2)}
+
+/* ── Overview stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.stat-num{font-size:20px;font-weight:800;margin-bottom:2px;color:var(--text)}
+#st0{color:var(--amber)}
+#st1{color:var(--green)}
+#st2{color:var(--red)}
+.stat-lbl{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── Pack workflow ── */
+.pack-workflow{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.pack-step-row{display:flex;align-items:center;gap:10px;padding:11px 12px}
+.pack-step-num{width:22px;height:22px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0}
+.pack-step-body{flex:1;min-width:0}
+.pack-step-title{font-size:12px;font-weight:600}
+.pack-step-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
+.pack-step-divider{height:1px;background:var(--border);margin:0 12px}
+.pack-log{margin-top:8px;padding:0 2px;display:flex;flex-direction:column;gap:3px}
+.log-row{display:flex;align-items:baseline;gap:6px;font-size:11px}
+.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:1px}
+.log-dot.wait{background:var(--muted2)}
+.log-dot.run{background:var(--amber);animation:pulse-dot .8s ease-in-out infinite}
+.log-dot.ok{background:var(--green)}
+.log-dot.err{background:var(--red)}
+.log-text{color:var(--muted);flex:1}
+.log-text.run{color:var(--text)}
+.log-text.ok{color:var(--green)}
+.log-text.err{color:var(--red)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Scene upload list ── */
+.scenes-upload-list{display:flex;flex-direction:column;gap:6px}
+.scene-upload-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;transition:border-color .15s}
+.scene-upload-row:hover{border-color:rgba(255,255,255,.18)}
+.scene-upload-preview{width:80px;height:50px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#0a0a0b;display:flex;align-items:center;justify-content:center}
+.scene-upload-info{flex:1;min-width:0}
+.scene-upload-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scene-upload-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.scene-upload-btn{flex-shrink:0;height:30px;padding:0 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface3);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;white-space:nowrap;transition:all .15s}
+.scene-upload-btn:hover{border-color:rgba(130,195,65,.5);color:var(--green)}
+.scene-upload-row.uploading .scene-upload-btn{opacity:.5;pointer-events:none}
+.scene-upload-row.done{border-color:rgba(130,195,65,.35)}
+
+/* ── Empty / loader ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:8px;color:var(--muted)}
+.empty-ico{font-size:28px;opacity:.4}
+.empty-txt{font-size:12px;text-align:center;line-height:1.5}
+
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);color:var(--text);padding:10px 18px;border-radius:10px;font-size:12px;font-weight:500;border:1px solid rgba(130,195,65,.4);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:9999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginView">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-leaf"></div>
+      <div class="login-title">AssetFlow Admin</div>
+    </div>
+    <div class="login-sub">Faqat ADMIN hisobi uchun</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@assetflow.uz" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Parol</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Kirish</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- Shell -->
+<div id="shell">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-leaf"></div>
+      <div class="topbar-name">AssetFlow</div>
+      <div class="topbar-badge">ADMIN</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topUser"></span>
+      <button class="btn-ghost" onclick="doLogout()">Chiqish</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="moderation" onclick="switchTab(this,'moderation')">
+      Kutilmoqda <span class="tab-badge" id="pendingBadge">0</span>
+    </button>
+    <button class="tab" data-tab="all" onclick="switchTab(this,'all')">Barchasi</button>
+    <button class="tab" data-tab="subscribers" onclick="switchTab(this,'subscribers')">Obunachilar</button>
+  </div>
+
+  <div class="main" id="main">
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-box"><div class="stat-num" id="st0">—</div><div class="stat-lbl">Kutilmoqda</div></div>
+      <div class="stat-box"><div class="stat-num" id="st1">—</div><div class="stat-lbl">Tasdiqlangan</div></div>
+      <div class="stat-box"><div class="stat-num" id="st2">—</div><div class="stat-lbl">Rad etilgan</div></div>
+      <div class="stat-box"><div class="stat-num" id="st3">—</div><div class="stat-lbl">Obunachi</div></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar" id="toolbar">
+      <div class="search-wrap"><input type="text" id="searchInput" placeholder="Qidirish…" oninput="applySearch()"></div>
+      <select class="filter-select" id="statusFilter" onchange="loadTemplates()">
+        <option value="">Barchasi</option>
+        <option value="PENDING_REVIEW">Kutilmoqda</option>
+        <option value="APPROVED">Tasdiqlangan</option>
+        <option value="REJECTED">Rad etilgan</option>
+        <option value="DRAFT">Draft</option>
+      </select>
+      <button class="btn-refresh" onclick="loadTemplates()" title="Yangilash">↻</button>
+    </div>
+
+    <div class="list-area" id="listArea">
+      <div class="empty-state"><div class="spinner"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/CSInterface.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const IS_CEP = typeof window.__adobe_cep__ !== 'undefined';
+let csInterface = null;
+if (IS_CEP) { try { csInterface = new CSInterface(); } catch(e) {} }
+
+const API_KEY = 'af_admin_api';
+const TOKEN_KEY = 'af_admin_token';
+const USER_KEY = 'af_admin_user';
+let allTemplates = [];
+let currentTab = 'moderation';
+
+function apiBase() {
+  return (localStorage.getItem(API_KEY) || 'http://localhost:4000').replace(/\/$/, '');
+}
+function token() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function saveSession(t, u) {
+  localStorage.setItem(TOKEN_KEY, t);
+  localStorage.setItem(USER_KEY, JSON.stringify(u));
+}
+function clearSession() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+function getUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch(e) { return null; }
+}
+
+// ── HTTP ───────────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  if (token()) headers['Authorization'] = 'Bearer ' + token();
+  const res = await fetch(apiBase() + path, {
+    ...opts,
+    headers,
+    body: opts.body && !(opts.body instanceof FormData)
+      ? JSON.stringify(opts.body) : opts.body
+  });
+  if (opts.body instanceof FormData) delete headers['Content-Type'];
+  const text = await res.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
+  if (!res.ok) throw Object.assign(new Error(data?.error || 'HTTP ' + res.status), { status: res.status, data });
+  return data;
+}
+
+async function apiForm(path, formData) {
+  const res = await fetch(apiBase() + path, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token() },
+    body: formData
+  });
+  const text = await res.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
+  if (!res.ok) throw new Error(data?.error || 'HTTP ' + res.status);
+  return data;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, err = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = err ? 'rgba(239,68,68,.4)' : 'rgba(130,195,65,.4)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  if (!email || !pass) { err.textContent = 'Email va parol kiriting'; return; }
+  err.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Kirmoqda…';
+  try {
+    const data = await fetch(apiBase() + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    }).then(r => r.json());
+    if (!data.token) throw new Error(data.error || 'Token kelmadi');
+    if (data.user?.role !== 'ADMIN') throw new Error('Bu hisob ADMIN emas');
+    saveSession(data.token, data.user);
+    bootShell();
+  } catch(e) {
+    err.textContent = e.message || 'Kirish xato';
+    btn.disabled = false;
+    btn.textContent = 'Kirish';
+  }
+}
+
+function doLogout() {
+  clearSession();
+  document.getElementById('shell').style.display = 'none';
+  document.getElementById('loginView').style.display = 'flex';
+}
+
+document.getElementById('loginEmail').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+function bootShell() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('shell').style.display = 'flex';
+  const u = getUser();
+  document.getElementById('topUser').textContent = u?.email || '';
+  loadStats();
+  switchTab(document.querySelector('.tab[data-tab="moderation"]'), 'moderation');
+}
+
+async function loadStats() {
+  try {
+    const [overview, subs] = await Promise.all([
+      api('/api/contributor/admin/overview'),
+      api('/api/admin/plugin-subscribers')
+    ]);
+    const s = overview.stats || {};
+    document.getElementById('st0').textContent = s.pending || 0;
+    document.getElementById('st1').textContent = s.approved || 0;
+    document.getElementById('st2').textContent = s.rejected || 0;
+    document.getElementById('st3').textContent = subs.stats?.total || 0;
+    document.getElementById('statsRow').style.display = 'grid';
+    const pending = s.pending || 0;
+    document.getElementById('pendingBadge').textContent = pending;
+    document.getElementById('pendingBadge').style.display = pending > 0 ? '' : 'none';
+  } catch(e) { console.warn('stats', e); }
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(el, tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  currentTab = tab;
+  document.getElementById('toolbar').style.display = tab === 'subscribers' ? 'none' : 'flex';
+  if (tab === 'subscribers') {
+    loadSubscribers();
+  } else {
+    document.getElementById('statusFilter').value = tab === 'moderation' ? 'PENDING_REVIEW' : '';
+    loadTemplates();
+  }
+}
+
+// ── Templates ──────────────────────────────────────────────────────────────
+async function loadTemplates() {
+  const el = document.getElementById('listArea');
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+  try {
+    const status = document.getElementById('statusFilter')?.value || '';
+    const params = new URLSearchParams({ scope: 'all' });
+    if (status) params.set('status', status);
+    const data = await api('/api/contributor/templates?' + params);
+    allTemplates = data.items || [];
+    applySearch();
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">⚠</div><div class="empty-txt">' + (e.message || 'Yuklash xato') + '</div></div>';
+  }
+}
+
+function applySearch() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const list = q ? allTemplates.filter(t =>
+    t.name.toLowerCase().includes(q) ||
+    (t.contributor?.email || '').toLowerCase().includes(q)
+  ) : allTemplates;
+  renderList(list);
+}
+
+function renderList(items) {
+  const el = document.getElementById('listArea');
+  if (!items.length) {
+    const isPending = currentTab === 'moderation';
+    el.innerHTML = isPending
+      ? `<div class="empty-state">
+           <div class="empty-ico">✅</div>
+           <div class="empty-txt">Kutilayotgan shablon yo'q<br>Hammasi ko'rib chiqilgan</div>
+           <button class="btn-ghost" style="margin-top:12px" onclick="switchTab(document.querySelector('.tab[data-tab=all]'),'all')">Barcha shablonlarni ko'rish →</button>
+         </div>`
+      : `<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">Shablon topilmadi</div></div>`;
+    return;
+  }
+  el.innerHTML = items.map(t => renderCard(t)).join('');
+}
+
+function statusLabel(s) {
+  const map = { PENDING_REVIEW: 'Kutilmoqda', APPROVED: 'Tasdiqlangan', REJECTED: 'Rad etilgan', DRAFT: 'Draft' };
+  return map[s] || s;
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), now = Date.now(), diff = now - d;
+  if (diff < 60000) return 'Hozir';
+  if (diff < 3600000) return Math.floor(diff/60000) + ' daq oldin';
+  if (diff < 86400000) return Math.floor(diff/3600000) + ' soat oldin';
+  return Math.floor(diff/86400000) + ' kun oldin';
+}
+
+function renderCard(t) {
+  const thumb = t.assets?.thumb
+    ? `<img src="${apiBase()}/api/plugin/assets/${t.id}/thumb" alt="" onerror="this.style.display='none'">`
+    : t.icon || '✦';
+  const meta = [
+    t.contributor?.email || t.contributor?.name || '',
+    t.catLabel || '',
+    (t.res || '').toUpperCase(),
+    timeAgo(t.updatedAt)
+  ].filter(Boolean).join(' · ');
+  const scenes = (() => {
+    const raw = t.metaJson || {};
+    const sc = Array.isArray(raw.scenes) ? raw.scenes : [];
+    return sc.length ? sc.length + ' ta sahna' : (t.assets?.pack ? '.aep bor' : 'sahna yo\'q');
+  })();
+  return `<div class="tpl-card" id="card-${t.id}">
+    <div class="tpl-row" onclick="toggleDetail('${t.id}')">
+      <div class="tpl-thumb">${typeof thumb === 'string' && thumb.startsWith('<img') ? thumb : '<span>' + thumb + '</span>'}</div>
+      <div class="tpl-info">
+        <div class="tpl-name">${t.name}</div>
+        <div class="tpl-meta">${meta}</div>
+        <div class="tpl-meta" style="margin-top:2px">${scenes}</div>
+      </div>
+      <div class="tpl-right">
+        <span class="status-badge s-${t.reviewStatus}">${statusLabel(t.reviewStatus)}</span>
+        <span class="tpl-chevron" id="chev-${t.id}">›</span>
+      </div>
+    </div>
+    <div class="tpl-detail" id="detail-${t.id}"></div>
+  </div>`;
+}
+
+function toggleDetail(id) {
+  const d = document.getElementById('detail-' + id);
+  const chev = document.getElementById('chev-' + id);
+  if (d.classList.contains('open')) {
+    d.classList.remove('open');
+    chev.textContent = '›';
+  } else {
+    const t = allTemplates.find(x => x.id === id);
+    if (t) {
+      d.innerHTML = renderDetail(t);
+      d.classList.add('open');
+      chev.textContent = '⌄';
+    }
+  }
+}
+
+function scenePreviewUrl(templateId, s) {
+  // s.preview — catalog enrichScenes tomonidan qo'shilgan (plugin/catalog endpoint)
+  if (s.preview) return s.preview;
+  // s.previewKey — manifest'da saqlangan key (contributor/templates endpoint)
+  const key = s.previewKey || adminSceneKey(s.aeComp || s.n || '');
+  if (key) return apiBase() + '/api/plugin/assets/' + templateId + '/scene/' + key;
+  return '';
+}
+
+function renderDetail(t) {
+  const scenes = Array.isArray(t.metaJson?.scenes) ? t.metaJson.scenes : [];
+  const scenesHtml = scenes.length ? `
+    <div class="detail-section">
+      <label>Sahnalar (${scenes.length}) <span style="font-size:9px;color:var(--muted);font-weight:400">— har sahna uchun video yukla</span></label>
+      <div class="scenes-upload-list" id="sul-${t.id}">
+        ${scenes.map((s, idx) => {
+          const key = s.previewKey || adminSceneKey(s.aeComp || s.n || '');
+          const url = scenePreviewUrl(t.id, s);
+          const hasVideo = !!url;
+          return `<div class="scene-upload-row" id="sur-${t.id}-${idx}">
+            <div class="scene-upload-preview" id="sup-${t.id}-${idx}">
+              ${hasVideo
+                ? `<video src="${url}?t=${Date.now()}" muted playsinline preload="metadata"
+                    onloadedmetadata="this.currentTime=this.duration*0.1||0.3"
+                    onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover"></video>`
+                : `<span style="font-size:16px;color:#444">✦</span>`}
+            </div>
+            <div class="scene-upload-info">
+              <div class="scene-upload-name">${s.n || s.aeComp || 'Sahna ' + (idx+1)}</div>
+              <div class="scene-upload-meta">${s.meta || ''}</div>
+              <div class="scene-upload-status" id="sus-${t.id}-${idx}" style="font-size:10px;color:${hasVideo?'var(--green)':'var(--muted)'}">
+                ${hasVideo ? '✓ Video bor' : 'Video yo\'q'}
+              </div>
+            </div>
+            <label class="scene-upload-btn" title="Video yuklash">
+              ↑ Video
+              <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+                style="display:none"
+                onchange="uploadSceneVideo(this,'${t.id}','${key}','${t.id}-${idx}')">
+            </label>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : `<div class="detail-section"><div style="font-size:11px;color:var(--muted)">Sahna ma'lumoti yo'q (eski format)</div></div>`;
+
+  const approveActive = t.reviewStatus !== 'APPROVED';
+  const rejectActive = t.reviewStatus !== 'REJECTED';
+
+  return `
+    ${scenesHtml}
+
+    <!-- Approve / Reject -->
+    <div class="detail-section">
+      <label>Moderatsiya</label>
+      <div class="action-row">
+        ${approveActive ? `<button class="btn-approve" onclick="reviewTemplate('${t.id}','approve')">✓ Tasdiqlash</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✓ Allaqachon tasdiqlangan</button>`}
+        ${rejectActive ? `<button class="btn-reject" onclick="reviewTemplate('${t.id}','reject')">✗ Rad etish</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✗ Rad etilgan</button>`}
+      </div>
+      <div class="note-area">
+        <textarea id="note-${t.id}" placeholder="Izoh (ixtiyoriy)…"></textarea>
+      </div>
+      <div class="status-msg" id="msg-${t.id}"></div>
+    </div>
+
+    <!-- Pack workflow -->
+    <div class="detail-section">
+      <label>Pack bilan ishlash</label>
+      <div class="pack-workflow">
+        <div class="pack-step-row">
+          <div class="pack-step-num">1</div>
+          <div class="pack-step-body">
+            <div class="pack-step-title">AE da ochish</div>
+            <div class="pack-step-desc">Packni yuklab AE da oching, xatolarni tuzating, saqlang (⌘S)</div>
+          </div>
+          ${t.assets?.pack
+            ? `<button class="btn-action blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ Ochish</button>`
+            : `<span style="font-size:10px;color:var(--red)">Pack yo'q</span>`}
+        </div>
+        <div class="pack-step-divider"></div>
+        <div class="pack-step-row">
+          <div class="pack-step-num">2</div>
+          <div class="pack-step-body">
+            <div class="pack-step-title">Skanlash va Yuklash</div>
+            <div class="pack-step-desc">02.Scene ni skanlab sahnalarni aniqlaydi, har sahna rasmi, pack zip yuklaydi</div>
+          </div>
+          ${IS_CEP
+            ? `<button class="btn-action amber" id="btn-scan-${t.id}" onclick="scanAndReupload('${t.id}')">↑ Yuklash</button>`
+            : `<span style="font-size:10px;color:var(--muted)">Faqat AE</span>`}
+        </div>
+      </div>
+      <div class="pack-log" id="pack-log-${t.id}"></div>
+    </div>
+
+    <!-- Metadata edit -->
+    <div class="detail-section">
+      <label>Ma'lumotlarni tahrirlash</label>
+      <div class="edit-grid">
+        <div class="full">
+          <span class="edit-label">Nom</span>
+          <input type="text" id="e-name-${t.id}" value="${(t.name||'').replace(/"/g,'&quot;')}">
+        </div>
+        <div>
+          <span class="edit-label">Kategoriya</span>
+          <input type="text" id="e-cat-${t.id}" value="${(t.catLabel||'').replace(/"/g,'&quot;')}">
+        </div>
+        <div>
+          <span class="edit-label">Ruxsat</span>
+          <select id="e-res-${t.id}">
+            ${['4k','2k','1080p','5k'].map(r => `<option value="${r}" ${t.res===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <span class="edit-label">Format</span>
+          <select id="e-orient-${t.id}">
+            <option value="horizontal" ${t.orient==='horizontal'?'selected':''}>16:9</option>
+            <option value="vertical" ${t.orient==='vertical'?'selected':''}>9:16</option>
+            <option value="square" ${t.orient==='square'?'selected':''}>1:1</option>
+          </select>
+        </div>
+        <div>
+          <span class="edit-label">Nav</span>
+          <select id="e-nav-${t.id}">
+            ${['video','motion','graphics','luts'].map(n => `<option value="${n}" ${t.nav===n?'selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <span class="edit-label">Teglar (vergul bilan)</span>
+          <input type="text" id="e-tags-${t.id}" value="${(t.tags||[]).join(', ')}">
+        </div>
+        <div class="full">
+          <span class="edit-label">Tavsif</span>
+          <textarea id="e-desc-${t.id}" style="height:52px;resize:vertical">${(t.description||'').replace(/</g,'&lt;')}</textarea>
+        </div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn-action" style="flex:1" onclick="saveMetadata('${t.id}')">💾 Saqlash</button>
+        <button class="btn-action" onclick="deleteTemplate('${t.id}','${t.name.replace(/'/g,"\\'")}')">🗑 O'chirish</button>
+      </div>
+      <div class="status-msg" id="edit-msg-${t.id}"></div>
+    </div>`;
+}
+
+// ── Review ─────────────────────────────────────────────────────────────────
+async function reviewTemplate(id, action) {
+  const note = (document.getElementById('note-' + id)?.value || '').trim();
+  const msg = document.getElementById('msg-' + id);
+  msg.textContent = 'Yuborilmoqda…';
+  msg.className = 'status-msg';
+  try {
+    await api('/api/contributor/templates/' + id + '/review', {
+      method: 'POST',
+      body: { action, note: note || undefined, published: action === 'approve' }
+    });
+    msg.textContent = action === 'approve' ? '✓ Tasdiqlandi' : '✓ Rad etildi';
+    msg.className = 'status-msg ok';
+    toast(action === 'approve' ? '✓ Tasdiqlandi' : '✓ Rad etildi');
+    await loadTemplates();
+    loadStats();
+  } catch(e) {
+    msg.textContent = e.message;
+    msg.className = 'status-msg err';
+  }
+}
+
+// ── Metadata save ──────────────────────────────────────────────────────────
+async function saveMetadata(id) {
+  const msg = document.getElementById('edit-msg-' + id);
+  const name = document.getElementById('e-name-' + id)?.value.trim();
+  const catLabel = document.getElementById('e-cat-' + id)?.value.trim();
+  const res = document.getElementById('e-res-' + id)?.value;
+  const orient = document.getElementById('e-orient-' + id)?.value;
+  const nav = document.getElementById('e-nav-' + id)?.value;
+  const tags = (document.getElementById('e-tags-' + id)?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const description = document.getElementById('e-desc-' + id)?.value.trim();
+  const cat = (catLabel || '').toLowerCase().replace(/[^a-z0-9]+/g,'') || 'all';
+  msg.textContent = 'Saqlanmoqda…';
+  msg.className = 'status-msg';
+  try {
+    await api('/api/contributor/templates/' + id, {
+      method: 'PATCH',
+      body: { name, catLabel, cat, res, orient, nav, tags, description }
+    });
+    msg.textContent = '✓ Saqlandi';
+    msg.className = 'status-msg ok';
+    toast('✓ Ma\'lumotlar saqlandi');
+    const t = allTemplates.find(x => x.id === id);
+    if (t) Object.assign(t, { name, catLabel, cat, res, orient, nav, tags, description });
+  } catch(e) {
+    msg.textContent = e.message;
+    msg.className = 'status-msg err';
+  }
+}
+
+// ── Delete ─────────────────────────────────────────────────────────────────
+async function deleteTemplate(id, name) {
+  if (!confirm('"' + name + '" ni o\'chirmoqchimisiz? Bu amalni qaytarib bo\'lmaydi.')) return;
+  try {
+    await api('/api/contributor/templates/' + id, { method: 'DELETE' });
+    toast('✓ O\'chirildi');
+    allTemplates = allTemplates.filter(t => t.id !== id);
+    applySearch();
+    loadStats();
+  } catch(e) {
+    toast(e.message, true);
+  }
+}
+
+// ── Scene video qo'lda yuklash ─────────────────────────────────────────────
+async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const row = document.getElementById('sur-' + rowId);
+  const status = document.getElementById('sus-' + rowId);
+  const preview = document.getElementById('sup-' + rowId);
+
+  row?.classList.add('uploading');
+  if (status) { status.textContent = 'Yuklanmoqda… 0%'; status.style.color = 'var(--amber)'; }
+
+  try {
+    const fd = new FormData();
+    fd.append(sceneKey, file, sceneKey + '.' + (file.name.split('.').pop() || 'mp4'));
+
+    // Progress ko'rsatish uchun XMLHttpRequest ishlatamiz
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', apiBase() + '/api/contributor/templates/' + templateId + '/scene-previews');
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token());
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable && status) {
+          status.textContent = 'Yuklanmoqda… ' + Math.round(e.loaded / e.total * 100) + '%';
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+        else reject(new Error('HTTP ' + xhr.status));
+      };
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(fd);
+    });
+
+    // Preview'ni yangilash
+    if (preview) {
+      const url = apiBase() + '/api/plugin/assets/' + templateId + '/scene/' + sceneKey + '?t=' + Date.now();
+      preview.innerHTML = `<video src="${url}" muted playsinline preload="metadata"
+        onloadedmetadata="this.currentTime=this.duration*0.1||0.3"
+        style="width:100%;height:100%;object-fit:cover"></video>`;
+    }
+    if (status) { status.textContent = '✓ Yuklandi'; status.style.color = 'var(--green)'; }
+    row?.classList.remove('uploading');
+    row?.classList.add('done');
+    toast('✓ ' + file.name + ' yuklandi');
+    input.value = '';
+  } catch(e) {
+    if (status) { status.textContent = '✗ ' + e.message; status.style.color = 'var(--red)'; }
+    row?.classList.remove('uploading');
+    toast(e.message, true);
+    input.value = '';
+  }
+}
+window.uploadSceneVideo = uploadSceneVideo;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function evalP(script) {
+  return new Promise(resolve => {
+    if (!csInterface) { resolve(''); return; }
+    csInterface.evalScript(script, r => resolve(r || ''));
+  });
+}
+
+function adminSceneKey(name) {
+  return (String(name || '').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)) || 'scene';
+}
+
+function adminPickScenesFolder(folders, tree) {
+  if (!folders || !folders.length) return '';
+  const compCount = {};
+  (tree || []).forEach(n => {
+    if (n && n.type === 'comp' && n.folder) compCount[n.folder] = (compCount[n.folder] || 0) + 1;
+  });
+  function coreName(name) {
+    return String(name || '').toLowerCase().replace(/^[\s\d._\-]+/, '').replace(/[\s._\-]+$/, '');
+  }
+  let best = null, bestScore = -1e9;
+  for (const f of folders) {
+    const core = coreName(f.name);
+    let score = 0;
+    if (core === 'scene' || core === 'scenes') score += 100;
+    else if (core.indexOf('scene') >= 0) score += 25;
+    else score -= 50;
+    if (/scene[\s_\-]*\d+$/i.test(String(f.name || ''))) score -= 200;
+    const depth = (String(f.path || '').match(/\//g) || []).length;
+    score -= depth * 15;
+    score += (compCount[f.path] || 0) * 8;
+    if (score > bestScore) { bestScore = score; best = f; }
+  }
+  return (best && bestScore > 0) ? best.path : '';
+}
+
+// Log helper — progress steps ko'rsatish
+function packLog(id, steps) {
+  const el = document.getElementById('pack-log-' + id);
+  if (!el) return;
+  el.innerHTML = steps.map(s =>
+    `<div class="log-row">
+       <div class="log-dot ${s.state}"></div>
+       <div class="log-text ${s.state}">${s.text}</div>
+     </div>`
+  ).join('');
+}
+
+// ── Pack: 1-qadam — AE da ochish ───────────────────────────────────────────
+async function importPackToAE(id) {
+  if (!IS_CEP || !csInterface) { toast('Faqat After Effects ichida ishlaydi', true); return; }
+  const btn = document.getElementById('btn-import-' + id);
+  if (btn) btn.disabled = true;
+
+  const steps = [
+    { state: 'run',  text: 'Pack serverdan yuklanmoqda…' },
+    { state: 'wait', text: 'Unzip…' },
+    { state: 'wait', text: 'AE da ochilmoqda…' },
+    { state: 'wait', text: 'Loyiha tekshirilmoqda…' },
+  ];
+  const log = () => packLog(id, steps);
+  log();
+
+  try {
+    // 0 — Yuklab olish
+    const url = apiBase() + '/api/plugin/assets/' + id + '/pack';
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token() } });
+    if (!res.ok) throw new Error('Pack HTTP ' + res.status);
+    const buf = Buffer.from(await res.arrayBuffer());
+
+    const fs = require('fs'), path = require('path'),
+          os = require('os'), child = require('child_process');
+    const tmpDir = path.join(os.tmpdir(), 'af_admin_' + id);
+    fs.mkdirSync(tmpDir, { recursive: true });
+    const zipPath = path.join(tmpDir, 'pack.zip');
+    fs.writeFileSync(zipPath, buf);
+    steps[0] = { state: 'ok', text: '✓ Pack yuklandi (' + (buf.length / 1048576).toFixed(1) + ' MB)' };
+    steps[1] = { state: 'run', text: 'Unzip qilinmoqda…' };
+    log();
+
+    // 1 — Unzip
+    try { child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', tmpDir], { timeout: 120000 }); } catch(e) {}
+    let aepPath = '';
+    const walkDir = dir => {
+      for (const f of fs.readdirSync(dir)) {
+        const p = path.join(dir, f);
+        try {
+          if (fs.statSync(p).isDirectory()) walkDir(p);
+          else if (f.toLowerCase().endsWith('.aep') && !aepPath) aepPath = p;
+        } catch(e) {}
+      }
+    };
+    walkDir(tmpDir);
+    if (!aepPath) throw new Error('.aep topilmadi — zip ichida .aep fayl bolishi kerak');
+    steps[1] = { state: 'ok', text: '✓ Unzip: ' + path.basename(aepPath) };
+    steps[2] = { state: 'run', text: 'AE da ochilmoqda: ' + path.basename(aepPath) };
+    log();
+
+    // 2 — AE da ochish: avval joriy loyihani yopamiz (dialog oldini olish),
+    //     keyin plugin ichidagi AE versiyasida ochamiz (default emas)
+    await evalP('try{ if(app.project) app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); }catch(e){}');
+
+    // ExtendScript orqali AE versiyasini olamiz (app.version = "25.0.0x31" → 2025)
+    const verRaw = await evalP('app.version');
+    const majorVer = parseInt(String(verRaw || '25'), 10);
+    const appYear = (majorVer >= 10 && majorVer < 100) ? (majorVer + 2000) : 2025;
+    const aeAppName = 'Adobe After Effects ' + appYear;
+    steps[2].text = 'AE da ochilmoqda (' + aeAppName + ')…';
+    log();
+    await new Promise(resolve => {
+      child.exec('open -a ' + JSON.stringify(aeAppName) + ' ' + JSON.stringify(aepPath), () => resolve());
+    });
+    steps[2] = { state: 'ok', text: '✓ Open buyruq yuborildi' };
+    steps[3] = { state: 'run', text: 'AE loyihani yuklamoqda… (15s gacha kutiladi)' };
+    log();
+
+    // 3 — AE yuklaganini tekshirish (max 15 son, 1.5s interval)
+    let panel = null;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 1500));
+      const raw = await evalP('refreshProjectPanel()');
+      try { panel = JSON.parse(raw); } catch(e2) { panel = null; }
+      if (panel && panel.ok && panel.saved) break;
+    }
+
+    if (panel && panel.ok && panel.saved) {
+      steps[3] = { state: 'ok', text: '✓ Ochildi: ' + panel.projectName + ' — tuzating, keyin CMD+S saqlang' };
+    } else {
+      steps[3] = { state: 'ok', text: '✓ Fayl: ' + path.basename(aepPath) + ' — AEda yuklanishini kuting, tuzating, CMD+S saqlang' };
+    }
+    log();
+    toast('✓ AE da ochilyapti — tuzatib CMD+S saqlang, keyin "Yuklash" bosing');
+
+    window._adminPackTmp = window._adminPackTmp || {};
+    window._adminPackTmp[id] = { dir: tmpDir, aep: aepPath };
+    if (btn) { btn.disabled = false; btn.textContent = '↓ Qayta ochish'; }
+
+  } catch(e) {
+    const ri = steps.findIndex(s => s.state === 'run');
+    if (ri >= 0) steps[ri] = { state: 'err', text: 'X ' + e.message };
+    packLog(id, steps);
+    toast(e.message, true);
+    if (btn) btn.disabled = false;
+  }
+}
+// ── Pack: 2-qadam — Render + Yuklash ────────────────────────────────────────
+async function scanAndReupload(id) {
+  if (!IS_CEP || !csInterface) { toast('Faqat AE ichida ishlaydi', true); return; }
+  const btn = document.getElementById('btn-scan-' + id);
+  if (btn) btn.disabled = true;
+
+  const steps = [
+    { state: 'run',  text: 'AE loyihasi tekshirilmoqda...' },
+    { state: 'wait', text: '02.Scene aniqlanmoqda...' },
+    { state: 'wait', text: 'Sahna preview render (PNG + video)...' },
+    { state: 'wait', text: 'MOV -> MP4 konvertatsiya...' },
+    { state: 'wait', text: 'Pack ziplanmoqda...' },
+    { state: 'wait', text: 'Pack yuklanmoqda...' },
+    { state: 'wait', text: 'Preview fayllar yuklanmoqda...' },
+    { state: 'wait', text: 'Manifest saqlanmoqda...' },
+  ];
+  const log = () => packLog(id, steps);
+  const step = (i, state, text) => { steps[i] = { state, text }; log(); };
+
+  try {
+    // 0 — AE loyiha
+    const panelRaw = await evalP('refreshProjectPanel()');
+    let panel; try { panel = JSON.parse(panelRaw); } catch(e) { panel = null; }
+    if (!panel?.ok || !panel.saved)
+      throw new Error('AE da saqlangan loyiha yoq -- avval CMD+S bilan saqlang');
+    step(0, 'ok', 'Loyiha: ' + panel.projectName);
+
+    // 1 — 02.Scene papkasi
+    step(1, 'run', '02.Scene aniqlanmoqda...');
+    const scenesFolder = adminPickScenesFolder(panel.folders || [], panel.tree || []);
+    if (!scenesFolder) throw new Error('02.Scene papkasi topilmadi');
+    step(1, 'ok', 'Sahna papkasi: ' + scenesFolder);
+
+    // 2 — Sahna thumbnail + video render (adminRenderScenePreviews - render queue)
+    step(2, 'run', 'Sahna render qilinmoqda (PNG thumbnail + ProRes video)...');
+    const pathM = require('path'), fsM = require('fs'), osM = require('os'), childM = require('child_process');
+    const renderDir = pathM.join(osM.tmpdir(), 'af_admin_render_' + id + '_' + Date.now());
+    const renderCfg = JSON.stringify({ scenesFolder, exportRoot: renderDir, previewDuration: 6 });
+    const renderRaw = await evalP('adminRenderScenePreviews(' + JSON.stringify(renderCfg) + ')');
+    let renderResult; try { renderResult = JSON.parse(renderRaw); } catch(e) { renderResult = null; }
+    if (!renderResult?.ok) throw new Error(renderResult?.message || 'Sahna render bolmadi');
+    const results = renderResult.results || [];
+    const thumbOkCount = results.filter(r => r.thumbOk).length;
+    const videoOkCount = results.filter(r => r.videoOk).length;
+    step(2, 'ok', results.length + ' sahna: ' + thumbOkCount + ' thumb, ' + videoOkCount + ' video ok');
+
+    // 3 — MOV -> MP4 konvertatsiya (avconvert)
+    step(3, 'run', 'MOV -> MP4 konvertatsiya qilinmoqda...');
+    const convertedVideos = [];
+    for (const r of results) {
+      if (!r.videoOk || !r.videoPath) { convertedVideos.push(null); continue; }
+      const mp4Path = r.videoPath.replace(/\.mov$/i, '.mp4');
+      let converted = false;
+      try {
+        childM.execFileSync('avconvert', [
+          '--preset', 'Preset1280x720',
+          '--source', r.videoPath,
+          '--output', mp4Path
+        ], { timeout: 120000 });
+        if (fsM.existsSync(mp4Path)) {
+          converted = true;
+        }
+      } catch(eConv) {
+        // avconvert bajarilmadi — MOV ni to'g'ridan ishlatamiz
+      }
+      convertedVideos.push(converted ? mp4Path : r.videoPath);
+    }
+    const mp4Count = convertedVideos.filter(v => v && v.endsWith('.mp4')).length;
+    step(3, 'ok', mp4Count + ' ta MP4, ' + (videoOkCount - mp4Count) + ' ta MOV');
+
+    // 4 — Pack zip
+    step(4, 'run', 'Pack ziplanmoqda...');
+    const aepPath = panel.projectFile;
+    const aepDir = pathM.dirname(aepPath);
+    const aepFile = pathM.basename(aepPath);
+    const tmpZip = pathM.join(osM.tmpdir(), 'af_admin_reup_' + Date.now() + '.zip');
+    const entries = [aepFile];
+    ['(Footage)', 'Footage', '(footage)', 'footage'].forEach(f => {
+      try { if (fsM.existsSync(pathM.join(aepDir, f))) entries.push(f); } catch(e) {}
+    });
+    childM.execFileSync('zip', ['-r', '-q', tmpZip].concat(entries), { cwd: aepDir, timeout: 180000 });
+    step(4, 'ok', 'Zip: ' + (fsM.statSync(tmpZip).size / 1048576).toFixed(1) + ' MB');
+
+    // 5 — Pack + thumb upload
+    step(5, 'run', 'Pack yuklanmoqda...');
+    const zipBuf = fsM.readFileSync(tmpZip);
+    const fd = new FormData();
+    fd.append('pack', new Blob([zipBuf], { type: 'application/zip' }), aepFile.replace('.aep', '.zip'));
+    // Birinchi scene thumbini umumiy thumb sifatida
+    const firstThumb = results.find(r => r.thumbOk && r.thumbPath);
+    if (firstThumb) {
+      const tbuf = fsM.readFileSync(firstThumb.thumbPath);
+      fd.append('thumb', new Blob([tbuf], { type: 'image/png' }), 'thumb.png');
+    }
+    await apiForm('/api/contributor/templates/' + id + '/assets', fd);
+    try { fsM.unlinkSync(tmpZip); } catch(e) {}
+    step(5, 'ok', 'Pack yuklandi');
+
+    // 6 — Per-scene preview fayllar upload (thumbnail PNG + video MP4/MOV)
+    step(6, 'run', 'Preview fayllar yuklanmoqda...');
+    const sf = new FormData();
+    let uploadCount = 0;
+    results.forEach((r, idx) => {
+      const key = adminSceneKey(r.aeComp || r.name);
+      // Thumbnail PNG
+      if (r.thumbOk && r.thumbPath) {
+        const tbuf = fsM.readFileSync(r.thumbPath);
+        sf.append(key + '_thumb', new Blob([tbuf], { type: 'image/png' }), key + '_thumb.png');
+        uploadCount++;
+      }
+      // Video (MP4 yoki MOV)
+      const vidPath = convertedVideos[idx];
+      if (vidPath && fsM.existsSync(vidPath)) {
+        const vbuf = fsM.readFileSync(vidPath);
+        const isM4 = vidPath.endsWith('.mp4');
+        const mime = isM4 ? 'video/mp4' : 'video/quicktime';
+        const ext = isM4 ? '.mp4' : '.mov';
+        sf.append(key, new Blob([vbuf], { type: mime }), key + ext);
+        uploadCount++;
+      }
+    });
+    if (uploadCount > 0) {
+      await apiForm('/api/contributor/templates/' + id + '/scene-previews', sf);
+    }
+    step(6, 'ok', uploadCount + ' ta fayl yuklandi (thumb + video)');
+
+    // 7 — Manifest
+    step(7, 'run', 'Manifest saqlanmoqda...');
+    const scenes = results.map((s, idx) => ({
+      n: s.name,
+      aeComp: s.aeComp || s.name,
+      previewKey: adminSceneKey(s.aeComp || s.name),
+      meta: (s.width && s.height ? s.width + 'x' + s.height : '') + (s.fps ? ' · ' + s.fps + 'fps' : ''),
+      width: s.width, height: s.height, fps: s.fps, durationSec: s.durationSec,
+      previewDur: s.previewDur
+    }));
+    await api('/api/contributor/templates/' + id, {
+      method: 'PATCH',
+      body: { scenes, metaJson: { aeScenesFolder: scenesFolder } }
+    });
+    step(7, 'ok', scenes.length + ' ta sahna manifest saqlandi');
+
+    toast(scenes.length + ' sahna, pack yangilandi!');
+    const fresh = await api('/api/contributor/templates?scope=all');
+    allTemplates = fresh.items || allTemplates;
+    if (btn) { btn.disabled = false; btn.textContent = 'Qayta yuklash'; }
+
+  } catch(e) {
+    const ri = steps.findIndex(s => s.state === 'run');
+    if (ri >= 0) step(ri, 'err', 'X ' + e.message);
+    else packLog(id, [{ state: 'err', text: 'X ' + e.message }]);
+    toast(e.message, true);
+    if (btn) btn.disabled = false;
+  }
+}
+// ── Subscribers ────────────────────────────────────────────────────────────
+async function loadSubscribers() {
+  const el = document.getElementById('listArea');
+  el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+  try {
+    const data = await api('/api/admin/plugin-subscribers');
+    const items = data.items || [];
+    if (!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-ico">👤</div><div class="empty-txt">Obunachi yo\'q</div></div>';
+      return;
+    }
+    el.innerHTML = items.map(s => `
+      <div class="sub-row">
+        <div class="sub-avatar">${(s.name || s.email || 'U').charAt(0).toUpperCase()}</div>
+        <div class="sub-info">
+          <div class="sub-name">${s.name || s.email.split('@')[0]}</div>
+          <div class="sub-email">${s.email}</div>
+        </div>
+        <div class="sub-right">
+          <div class="sub-plan ${(s.plan||'').toLowerCase()}">${s.plan || 'Free'}</div>
+          <div class="sub-seen">${s.lastSeen || '—'} · ${s.downloads || 0} dl</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">⚠</div><div class="empty-txt">' + e.message + '</div></div>';
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+(function init() {
+  if (token() && getUser()?.role === 'ADMIN') {
+    bootShell();
+  }
+})();
+</script>
+</body>
+</html>

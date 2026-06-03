@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>CreativeTools AE</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/CSInterface.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>CreativeTools</h1>
+      <span id="sub-badge" class="badge warn">—</span>
+    </header>
+
+    <div id="auth-view">
+      <p class="hint">Paste plugin token from web dashboard</p>
+      <input type="password" id="token-input" placeholder="Plugin token" />
+      <button id="connect-btn">Connect</button>
+    </div>
+
+    <div id="main-view" class="hidden">
+      <input type="search" id="search" placeholder="Search assets..." />
+      <input type="text" id="category" placeholder="Category" />
+      <button id="refresh-btn">Refresh</button>
+      <p id="error" class="error hidden"></p>
+      <div id="asset-grid"></div>
+      <footer id="footer" class="hidden">
+        <p id="selected-title"></p>
+        <button id="download-btn">Download Asset</button>
+      </footer>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
