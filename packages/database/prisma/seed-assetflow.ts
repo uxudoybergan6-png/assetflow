@@ -5,10 +5,17 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { PluginPlanTier, PrismaClient, UserRole } from "@prisma/client";
+import {
+  PluginPlanTier,
+  PrismaClient,
+  TemplateReviewStatus,
+  UserRole,
+} from "@prisma/client";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-dotenv.config({ path: path.join(root, ".env") });
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.join(root, ".env") });
+}
 
 const prisma = new PrismaClient();
 
@@ -94,7 +101,64 @@ async function main() {
     },
   });
 
-  console.log("AssetFlow demo users ready.");
+  const contributor = await prisma.user.findUnique({
+    where: { email: "dilnoza.k@gmail.com" },
+  });
+  if (contributor) {
+    const demos = [
+      {
+        externalId: "demo-kinetic-titles",
+        name: "Kinetic Typography Pack (Demo)",
+        description: "Onlayn katalog testi — pack yuklanguncha hasPack:false.",
+        nav: "video",
+        cat: "titleintro",
+        catLabel: "Title / Intro",
+        tags: ["demo", "kinetic", "4k"],
+      },
+      {
+        externalId: "demo-logo-reveal",
+        name: "Logo Reveal Pro (Demo)",
+        description: "Browse panelda ko‘rinish uchun tasdiqlangan demo shablon.",
+        nav: "video",
+        cat: "logos",
+        catLabel: "Logo Reveal",
+        tags: ["demo", "logo"],
+      },
+    ];
+    for (const d of demos) {
+      await prisma.contributorTemplate.upsert({
+        where: {
+          contributorId_externalId: {
+            contributorId: contributor.id,
+            externalId: d.externalId,
+          },
+        },
+        update: {
+          name: d.name,
+          description: d.description,
+          reviewStatus: TemplateReviewStatus.APPROVED,
+          published: true,
+        },
+        create: {
+          contributorId: contributor.id,
+          externalId: d.externalId,
+          name: d.name,
+          description: d.description,
+          nav: d.nav,
+          cat: d.cat,
+          catLabel: d.catLabel,
+          orient: "horizontal",
+          res: "4k",
+          tags: d.tags,
+          reviewStatus: TemplateReviewStatus.APPROVED,
+          published: true,
+        },
+      });
+      console.log(`✓ template ${d.externalId}`);
+    }
+  }
+
+  console.log("AssetFlow demo users + catalog templates ready.");
 }
 
 main()

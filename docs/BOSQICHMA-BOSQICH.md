@@ -65,12 +65,23 @@ API_PUBLIC_URL = https://assetflow-api-xxxx.onrender.com
 
 ### QADAM 3 — Demo ma’lumot (5 daqiqa)
 
-Mac Terminal:
+**Eng oson: Render Shell** (Neon allaqachon ulangan)
+
+1. Render → servis **assetflow** → **Shell** (yoki Logs yonidagi Shell)
+2. Buyruq:
+
+```bash
+cd /opt/render/project/src && npm run db:seed:assetflow
+```
+
+Mac’dan (faqat Neon string **to‘liq** nusxa bo‘lsa):
 
 ```bash
 cd /Users/usmonov/Projects/creative-tools-saas
-DATABASE_URL="NEON_STRING" npm run db:seed:assetflow -w @creative-tools/database
+DATABASE_URL='postgresql://...' npm run db:seed:assetflow
 ```
+
+`items:[]` bo‘lsa — seed ishlamagan; yuqoridagi Shell ishlating.
 
 Loginlar:
 
