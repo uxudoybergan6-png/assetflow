@@ -20,7 +20,7 @@ import { contributorRouter } from "./routes/contributor.js";
 import { logsRouter } from "./routes/logs.js";
 
 const app = express();
-const PORT = process.env.API_PORT ?? 4000;
+const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 
 const defaultOrigins = [
   "http://localhost:3000",

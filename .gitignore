@@ -12,3 +12,6 @@ coverage
 *.tsbuildinfo
 plugins/premiere-uxp/dist
 plugins/after-effects-cep/*.zxp
+
+# GitHub Desktop ba'zan yaratadigan ichki bo'sh repo — loyiha emas
+/assetflow/
