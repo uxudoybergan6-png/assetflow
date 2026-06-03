@@ -8,6 +8,7 @@
     "generate": "prisma generate",
     "push": "prisma db push",
     "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
     "seed:assetflow": "tsx prisma/seed-assetflow.ts",
     "studio": "prisma studio"
