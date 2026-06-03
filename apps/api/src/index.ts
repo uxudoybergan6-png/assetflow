@@ -62,7 +62,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/contributor", contributorRouter);
 app.use("/api/logs", logsRouter);
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   const stripe = process.env.STRIPE_SECRET_KEY?.trim();
   const stripeNote = stripe?.startsWith("sk_")
     ? "Stripe: enabled"

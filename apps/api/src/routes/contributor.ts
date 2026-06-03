@@ -4,9 +4,14 @@ import path from "path";
 import { z } from "zod";
 import {
   prisma,
+  Prisma,
   TemplateReviewStatus,
   UserRole,
 } from "@creative-tools/database";
+
+function asMetaJson(meta: Record<string, unknown>): Prisma.InputJsonValue {
+  return meta as Prisma.InputJsonValue;
+}
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { requireContributorOrAdmin } from "../middleware/contributor.js";
 import {
@@ -410,7 +415,7 @@ contributorRouter.post(
         icon: d.icon ?? "✦",
         bg: d.bg ?? "",
         templateApp: d.templateApp ?? "ae",
-        metaJson: meta,
+        metaJson: asMetaJson(meta),
         fileName: d.fileName ?? null,
         fileSize: d.fileSize ?? null,
         reviewStatus: initialStatus,
@@ -466,7 +471,7 @@ contributorRouter.patch(
       where: { id },
       data: {
         ...directFields,
-        ...(meta !== undefined ? { metaJson: meta as object } : {}),
+        ...(meta !== undefined ? { metaJson: asMetaJson(meta as Record<string, unknown>) } : {}),
         externalId: d.externalId === undefined ? undefined : d.externalId,
       },
     });
@@ -619,7 +624,7 @@ contributorRouter.post(
             orient: d.orient ?? settings.defaultOrient,
             res: d.res ?? settings.defaultRes,
             tags: d.tags ?? [],
-            metaJson: meta,
+            metaJson: asMetaJson(meta),
             fileName: d.fileName ?? null,
             fileSize: d.fileSize ?? null,
           },
@@ -641,7 +646,7 @@ contributorRouter.post(
             icon: d.icon ?? "✦",
             bg: d.bg ?? "",
             templateApp: d.templateApp ?? "ae",
-            metaJson: meta,
+            metaJson: asMetaJson(meta),
             fileName: d.fileName ?? null,
             fileSize: d.fileSize ?? null,
             reviewStatus: TemplateReviewStatus.DRAFT,
