@@ -1,15 +1,13 @@
 {
-  "buildCommand": "",
+  "buildCommand": "node scripts/prepare-vercel.mjs",
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/studio/login.html", "destination": "/login.html" },
-    { "source": "/studio/hub.html", "destination": "/hub.html" },
-    { "source": "/studio/contributor/:path*", "destination": "/contributor/:path*" },
-    { "source": "/studio/js/:path*", "destination": "/js/:path*" },
-    { "source": "/studio/styles/:path*", "destination": "/styles/:path*" },
+    { "source": "/studio/login.html", "destination": "/studio/login.html" },
+    { "source": "/studio/contributor", "destination": "/studio/contributor/index.html" },
+    { "source": "/studio/contributor/", "destination": "/studio/contributor/index.html" },
+    { "source": "/contributor", "destination": "/studio/contributor/index.html" },
+    { "source": "/contributor/", "destination": "/studio/contributor/index.html" },
     { "source": "/admin/login.html", "destination": "/admin-login.html" },
-    { "source": "/admin/js/:path*", "destination": "/js/:path*" },
-    { "source": "/admin/styles/:path*", "destination": "/styles/:path*" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/admin/", "destination": "/admin/index.html" },
     { "source": "/", "destination": "/hub.html" }

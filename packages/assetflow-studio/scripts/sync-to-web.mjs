@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -19,4 +20,6 @@ fs.rmSync(dest, { recursive: true, force: true });
 copyDir(root, dest);
 fs.rmSync(path.join(dest, "scripts"), { recursive: true, force: true });
 fs.rmSync(path.join(dest, "package.json"), { force: true });
+execSync("node scripts/prepare-vercel.mjs", { cwd: root, stdio: "inherit" });
+copyDir(path.join(root, "studio"), path.join(dest, "studio"));
 console.log(`Synced assetflow-studio → ${dest}`);

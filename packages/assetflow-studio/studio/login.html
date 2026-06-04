@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="assetflow-api" content="https://assetflow-rqbq.onrender.com">
+<title>AssetFlow — Kirish</title>
+<link rel="stylesheet" href="/studio/styles/app.css">
+<script src="/studio/js/studio-config.js"></script>
+<script src="/studio/js/theme.js"></script>
+</head>
+<body class="auth-page">
+<div class="auth-shell">
+  <aside class="auth-side">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+      </div>
+      <div class="col" style="gap:2px">
+        <span class="brand-name">AssetFlow</span>
+        <span class="brand-sub">Motion marketplace</span>
+      </div>
+    </div>
+    <h2 class="h2 auth-side-title">Contributor yuklaydi.<br>Admin tasdiqlaydi.<br>AE da chiqadi.</h2>
+    <p class="body auth-side-desc">Haqiqiy hisob yarating — shablonlaringiz API va bazada saqlanadi.</p>
+    <ul class="auth-features">
+      <li>Ro'yxatdan o'tish — Contributor roli</li>
+      <li>Admin — PostgreSQL da role ADMIN</li>
+      <li>API: onlayn (Render)</li>
+    </ul>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-main-top">
+      <button type="button" class="icon-btn" data-theme-toggle title="Mavzu">
+        <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+      </button>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab active" data-tab="login">Kirish</button>
+        <button type="button" class="auth-tab" data-tab="register">Ro'yxatdan o'tish</button>
+      </div>
+
+      <div id="panelLogin">
+        <h1 class="h1" style="margin-bottom:6px">Xush kelibsiz</h1>
+        <p class="body" style="margin-bottom:22px">Hisobingiz bilan kiring</p>
+        <form id="loginForm" class="col gap-14">
+          <div class="field">
+            <label>Email</label>
+            <input class="input" type="email" name="email" autocomplete="username" placeholder="siz@email.com" required>
+          </div>
+          <div class="field">
+            <label>Parol</label>
+            <input class="input" type="password" name="password" autocomplete="current-password" placeholder="Kamida 8 belgi" required>
+          </div>
+          <p class="auth-error hidden" id="loginError" role="alert"></p>
+          <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Kirish</button>
+        </form>
+      </div>
+
+      <div id="panelRegister" class="hidden">
+        <h1 class="h1" style="margin-bottom:6px">Contributor bo'ling</h1>
+        <p class="body" style="margin-bottom:22px">Hisob yaratiladi — darhol Studio ochiladi</p>
+        <form id="registerForm" class="col gap-14">
+          <div class="field">
+            <label>Ism va familiya</label>
+            <input class="input" name="name" placeholder="Ismingiz" required>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input class="input" type="email" name="email" placeholder="email@example.com" required>
+          </div>
+          <div class="field">
+            <label>Parol</label>
+            <input class="input" type="password" name="password" minlength="8" placeholder="Kamida 8 belgi" required>
+          </div>
+          <div class="field">
+            <label>Parolni tasdiqlang</label>
+            <input class="input" type="password" name="password2" minlength="8" required>
+          </div>
+          <label class="row center gap-8" style="cursor:pointer;font-size:13px;color:var(--tx-1)">
+            <div class="checkbox" id="termsChk" tabindex="0" role="checkbox"></div>
+            Platforma qoidalariga roziman
+          </label>
+          <p class="auth-error hidden" id="registerError" role="alert"></p>
+          <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Ro'yxatdan o'tish</button>
+        </form>
+      </div>
+    </div>
+
+    <p class="auth-foot small">
+      Admin uchun: SQL da <code style="font-size:11px">UPDATE "User" SET role='ADMIN'</code>
+    </p>
+  </main>
+</div>
+
+<script src="/studio/js/ui.js"></script>
+<script src="/studio/js/assetflow-log.js"></script>
+<script src="/studio/js/studio-api.js"></script>
+<script src="/studio/js/auth.js"></script>
+<script>
+(async function () {
+  const apiBanner = document.createElement("p");
+  apiBanner.className = "auth-error";
+  apiBanner.style.marginBottom = "12px";
+  const card = document.querySelector(".auth-card");
+  if (card && typeof StudioApi !== "undefined") {
+    const ok = await StudioApi.healthCheck();
+    if (!ok) {
+      apiBanner.textContent =
+        "API ulanmadi. Alohida terminalda: npm run dev:api";
+      card.prepend(apiBanner);
+    }
+  }
+
+  const existing = AssetFlowAuth.getSession();
+  if (existing?.apiToken) {
+    location.href =
+      existing.role === "admin"
+        ? ASSETFLOW_STUDIO.adminUrl
+        : ASSETFLOW_STUDIO.contributorUrl;
+    return;
+  }
+
+  document.querySelectorAll(".auth-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      const login = tab.dataset.tab === "login";
+      document.getElementById("panelLogin").classList.toggle("hidden", !login);
+      document.getElementById("panelRegister").classList.toggle("hidden", login);
+    });
+  });
+
+  document.getElementById("termsChk").addEventListener("click", function () {
+    this.classList.toggle("on");
+    this.setAttribute("aria-checked", this.classList.contains("on"));
+  });
+
+  function afterAuth(r) {
+    if (r.session.role === "user") {
+      return "Bu hisob faqat obunachi (USER). Contributor uchun ro'yxatdan o'ting.";
+    }
+    if (r.session.role === "admin") {
+      AssetFlowLog.init({ source: "admin" });
+      location.href = ASSETFLOW_STUDIO.adminUrl;
+      return null;
+    }
+    AssetFlowLog.init({ source: "contributor" });
+    location.href = ASSETFLOW_STUDIO.contributorUrl;
+    return null;
+  }
+
+  async function doLogin(email, password) {
+    const err = document.getElementById("loginError");
+    const r = await AssetFlowAuth.login(email, password);
+    if (!r.ok) {
+      err.textContent = r.error;
+      err.classList.remove("hidden");
+      return;
+    }
+    const block = afterAuth(r);
+    if (block) {
+      err.textContent = block;
+      err.classList.remove("hidden");
+      AssetFlowAuth.logout(false);
+    } else err.classList.add("hidden");
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    doLogin(fd.get("email"), fd.get("password"));
+  });
+
+  document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("registerError");
+    const fd = new FormData(e.target);
+    const terms = document.getElementById("termsChk");
+    if (!terms.classList.contains("on")) {
+      toast("Qoidalar", "Platforma qoidalariga rozilik belgilang", "warn");
+      return;
+    }
+    if (fd.get("password") !== fd.get("password2")) {
+      err.textContent = "Parollar mos kelmaydi";
+      err.classList.remove("hidden");
+      return;
+    }
+    const r = await AssetFlowAuth.register({
+      email: fd.get("email"),
+      password: fd.get("password"),
+      name: fd.get("name"),
+    });
+    if (!r.ok) {
+      err.textContent = r.error;
+      err.classList.remove("hidden");
+      return;
+    }
+    err.classList.add("hidden");
+    toast("Tayyor", "Contributor hisobi yaratildi", "success");
+    const block = afterAuth(r);
+    if (block) {
+      err.textContent = block;
+      err.classList.remove("hidden");
+      AssetFlowAuth.logout(false);
+    }
+  });
+})();
+</script>
+</body>
+</html>

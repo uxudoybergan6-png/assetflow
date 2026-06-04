@@ -61,7 +61,7 @@
       <div style="flex:1"></div>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input placeholder="Shablon, contributor, ID qidirish&#8230;">
+        <input id="adminGlobalSearch" placeholder="Shablon, contributor, ID qidirish&#8230;" oninput="adminGlobalSearch(this.value)">
         <kbd>&#8984;K</kbd>
       </div>
       <button class="icon-btn" onclick="route('moderation')" title="Moderatsiya navbati"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
@@ -86,6 +86,7 @@
 <script src="js/studio-templates.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/data.js"></script>
+<script src="js/studio-stats.js"></script>
 <script src="js/admin-views.js"></script>
 <script src="js/admin-views2.js"></script>
 <script src="js/admin-subscribers.js"></script>
@@ -108,7 +109,7 @@ const NAV = [
   {id:'contributors', label:'Contributorlar',     icon:'users'},
   {id:'subscribers',  label:'AE Plugin obunachilari', icon:'plugin'},
   {id:'plans',        label:'Tariflar (Free / Pro)', icon:'dollar'},
-  {id:'messaging',    label:'Xabarlar',           icon:'inbox', badge:'3', badgeCls:'brand'},
+  {id:'messaging',    label:'Xabarlar',           icon:'inbox'},
   {id:'analytics',    label:'Analitika',          icon:'chart'},
   {grp:'Tizim'},
   {id:'settings',     label:'Sozlamalar',         icon:'gear'},
@@ -133,11 +134,22 @@ const TITLES = {
 };
 
 let CURRENT = 'overview';
+let ADMIN_GLOBAL_SEARCH = '';
+
+function adminGlobalSearch(q) {
+  ADMIN_GLOBAL_SEARCH = (q || "").trim().toLowerCase();
+  if (typeof T_SEARCH !== "undefined") T_SEARCH = ADMIN_GLOBAL_SEARCH;
+  if (CURRENT === "templates" && typeof renderTemplates === "function") renderTemplates();
+  else if (CURRENT === "contributors") route("contributors");
+}
 
 function navBadge(n){
   if(n.id==='moderation') return {badge:String(tByStatus('pending').length), badgeCls:'warn'};
   if(n.id==='subscribers') return {badge:String(subscriberCounts().active), badgeCls:'brand'};
-  if(n.id==='messaging') return {badge:'3', badgeCls:'brand'};
+  if(n.id==='messaging') {
+    const nMsg = window._STUDIO_MSG_UNREAD || 0;
+    if (nMsg) return {badge:String(nMsg), badgeCls:'brand'};
+  }
   if(n.id==='logs') {
     const err = AssetFlowLog.readLocal().filter((r) => r.level === "error").length;
     if (err) return { badge: String(err), badgeCls: "warn" };
@@ -180,6 +192,12 @@ function route(view, arg){
 
 (async function bootAdmin() {
   await StudioTemplates.init("admin");
+  try {
+    if (StudioApi.token()) {
+      const { items } = await StudioApi.listMessageThreads();
+      window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
+    }
+  } catch (_) {}
   renderNav();
   route("overview");
 })();
