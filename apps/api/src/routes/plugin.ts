@@ -8,7 +8,8 @@ import { z } from "zod";
 import { PluginAccountStatus, PluginPlanTier, prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { isS3Configured, getPublicUrl } from "../lib/s3.js";
+import { isS3Configured, getPublicUrl, s3ObjectExists } from "../lib/s3.js";
+import { getAdminUrl, getPublicApiUrl } from "../lib/app-urls.js";
 import {
   ensurePluginProfile,
   recordPluginDownload,
@@ -42,10 +43,7 @@ const usageLimiter = rateLimit({
 });
 
 function apiPublicBase(req: { protocol: string; get: (h: string) => string | undefined }) {
-  const env = process.env.API_PUBLIC_URL?.replace(/\/$/, "");
-  if (env) return env;
-  const host = req.get("host");
-  return `${req.protocol}://${host}`;
+  return getPublicApiUrl(req);
 }
 
 const CATALOG_SELECT = {
@@ -76,7 +74,9 @@ pluginRouter.get("/catalog", async (req, res) => {
     orderBy: { updatedAt: "desc" },
     select: CATALOG_SELECT,
   });
-  res.json({ items: items.map((t) => mapCatalogItem(t, base)) });
+  res.json({
+    items: await Promise.all(items.map((t) => mapCatalogItem(t, base))),
+  });
 });
 
 /** Browse notice-bar — eng yangi tasdiqlangan shablonlar */
@@ -89,23 +89,35 @@ pluginRouter.get("/featured", async (req, res) => {
     take: limit,
     select: CATALOG_SELECT,
   });
-  res.json({ items: items.map((t) => mapCatalogItem(t, base)) });
+  res.json({
+    items: await Promise.all(items.map((t) => mapCatalogItem(t, base))),
+  });
 });
 
 /** Per-scene preview — rasm (PNG/JPG) yoki video (MP4/MOV), Range qo'llab-quvvatlanadi */
-pluginRouter.get("/assets/:templateId/scene/:key", (req, res) => {
-  // S3/R2 sozlangan bo'lsa — to'g'ridan redirect
+pluginRouter.get("/assets/:templateId/scene/:key", async (req, res) => {
+  const templateId = String(req.params.templateId);
+  const key = String(req.params.key);
+
   if (isS3Configured()) {
-    const s3Key = `templates/${req.params.templateId}/scenes/${req.params.key}`;
-    const url = getPublicUrl(s3Key);
-    res.redirect(302, url);
-    return;
+    const candidates = [
+      `templates/${templateId}/scenes/${key}`,
+      `templates/${templateId}/scenes/${key}.mp4`,
+      `templates/${templateId}/scenes/${key}.mov`,
+      `templates/${templateId}/scenes/${key}.png`,
+      `templates/${templateId}/scenes/${key}.jpg`,
+      `templates/${templateId}/scenes/${key}.jpeg`,
+      `templates/${templateId}/scenes/${key}.webp`,
+    ];
+    for (const s3Key of candidates) {
+      if (await s3ObjectExists(s3Key)) {
+        res.redirect(302, getPublicUrl(s3Key));
+        return;
+      }
+    }
   }
 
-  const filePath = findScenePreview(
-    String(req.params.templateId),
-    String(req.params.key)
-  );
+  const filePath = findScenePreview(templateId, key);
   if (!filePath) {
     res.status(404).json({ error: "Sahna preview topilmadi" });
     return;
@@ -155,13 +167,13 @@ pluginRouter.get("/assets/:templateId/scene/:key", (req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
-pluginRouter.get("/assets/:templateId/:kind", (req, res) => {
+pluginRouter.get("/assets/:templateId/:kind", async (req, res) => {
   const kind = req.params.kind as TemplateAssetKind;
   if (!["thumb", "preview", "pack"].includes(kind)) {
     res.status(400).json({ error: "Noto'g'ri tur" });
     return;
   }
-  serveTemplateAsset(req, res, String(req.params.templateId), kind);
+  await serveTemplateAsset(req, res, String(req.params.templateId), kind);
 });
 
 function cepPrefsPath() {
@@ -207,9 +219,7 @@ pluginRouter.post("/token", requireAuth, async (req, res) => {
 /** Dashboard → AE: prefs.json ga cloud ulanishni yozish (plugin formasiz) */
 pluginRouter.post("/apply-ae-prefs", requireAuth, async (req, res) => {
   const apiBaseUrl = (
-    (req.body?.apiBaseUrl as string) ||
-    process.env.WEB_URL?.replace(":3000", ":4000") ||
-    "http://localhost:4000"
+    (req.body?.apiBaseUrl as string) || getPublicApiUrl(req)
   ).replace(/\/$/, "");
 
   const pluginToken =
@@ -298,7 +308,8 @@ pluginRouter.post("/login", loginLimiter, async (req, res) => {
   res.json({
     token,
     user: serializePluginUser(profile),
-    adminUrl: process.env.ADMIN_URL || "http://localhost:3001/",
+    apiBaseUrl: getPublicApiUrl(req),
+    adminUrl: getAdminUrl(),
   });
 });
 
@@ -311,7 +322,8 @@ pluginRouter.get("/me", requireAuth, async (req, res) => {
   }
   res.json({
     user: serializePluginUser(profile),
-    adminUrl: process.env.ADMIN_URL || "http://localhost:3001/",
+    apiBaseUrl: getPublicApiUrl(req),
+    adminUrl: getAdminUrl(),
   });
 });
 

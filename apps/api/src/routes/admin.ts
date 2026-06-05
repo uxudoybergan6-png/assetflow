@@ -210,6 +210,32 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
     statusCounts[g.status.toLowerCase()] = g._count._all;
   });
 
+  const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const auditRows = await prisma.studioAuditLog.findMany({
+    where: { createdAt: { gte: since30 } },
+    select: { createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const activityByDay = Array.from({ length: 30 }, () => 0);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  for (const row of auditRows) {
+    const d = new Date(row.createdAt);
+    d.setHours(0, 0, 0, 0);
+    const idx = Math.round((todayStart.getTime() - d.getTime()) / dayMs);
+    if (idx >= 0 && idx < 30) activityByDay[29 - idx]++;
+  }
+
+  const reviewed = await prisma.contributorTemplate.groupBy({
+    by: ["reviewStatus"],
+    _count: { _all: true },
+  });
+  const approved = reviewed.find((r) => r.reviewStatus === "APPROVED")?._count._all ?? 0;
+  const rejected = reviewed.find((r) => r.reviewStatus === "REJECTED")?._count._all ?? 0;
+  const decided = approved + rejected;
+  const approvalRatePct = decided ? Math.round((approved / decided) * 100) : null;
+
   res.json({
     subscribers: {
       total,
@@ -223,6 +249,8 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
       downloadsThisMonth: agg._sum.downloadsMonth ?? 0,
       importsTotal: agg._sum.importsTotal ?? 0,
     },
+    activityByDay,
+    approvalRatePct,
   });
 });
 

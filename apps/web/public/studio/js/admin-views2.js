@@ -47,7 +47,7 @@ function renderTemplates(){
           <tbody>
           ${rows.map(t=>{ const con=cById(t.cid); return `<tr>
             <td><div class="checkbox" onclick="this.classList.toggle('on')">${ic('check')}</div></td>
-            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${t.name}</span><span class="sub">${t.cat} \u00b7 ${t.res}</span></div></div></td>
+            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${typeof StudioMedia!=='undefined'?StudioMedia.escapeHtml(t.name):t.name}</span><span class="sub">${t.cat} \u00b7 ${t.res}</span></div></div></td>
             <td class="cell-muted mono">${t.id}</td>
             <td><div class="row center gap-8">${avatar(con.name,24)}<span class="cell-muted" style="white-space:nowrap">${con.email.split('@')[0]}</span></div></td>
             <td>${badge(t.status)}</td>
@@ -74,8 +74,13 @@ function renderTemplates(){
 /* ============================================================
    CONTRIBUTORS — list
    ============================================================ */
+let C_LIST_SEARCH = "";
 VIEWS.contributors = function(){
-  const rows = CONTRIBUTORS.map(c=>{
+  const q = (C_LIST_SEARCH || (typeof ADMIN_GLOBAL_SEARCH !== "undefined" ? ADMIN_GLOBAL_SEARCH : "")).toLowerCase();
+  const list = q
+    ? CONTRIBUTORS.filter((c) => (c.name + " " + c.email).toLowerCase().includes(q))
+    : CONTRIBUTORS;
+  const rows = list.map(c=>{
     const ts=tByContributor(c.id);
     return {c, total:ts.length, ap:ts.filter(t=>t.status==='approved').length, pe:ts.filter(t=>t.status==='pending').length, re:ts.filter(t=>['soft','hard'].includes(t.status)).length};
   });
@@ -84,10 +89,19 @@ VIEWS.contributors = function(){
       ${kpiCard({label:'Jami contributorlar',val:CONTRIBUTORS.length,ic:'users',c:'violet',foot:'ro\u2018yxatdan o\u2018tgan'})}
       ${kpiCard({label:'Faol',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'checkCircle',c:'green',foot:'kontent yuklamoqda'})}
       ${kpiCard({label:'Bloklangan',val:CONTRIBUTORS.filter(c=>c.status==='blocked').length,ic:'ban',c:'red',foot:'kirish cheklangan'})}
-      ${kpiCard({label:'O\u2018rtacha approval',val:'78%',ic:'star',c:'yellow',trend:3,foot:'platforma bo\u2018ylab'})}
+      ${(() => {
+        const p = typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null;
+        return kpiCard({
+          label: "Approval rate",
+          val: p != null ? `${p}%` : "—",
+          ic: "star",
+          c: "yellow",
+          foot: p != null ? "tasdiq / rad" : "qaror yo\u2018q",
+        });
+      })()}
     </div>
     <div class="toolbar between">
-      <div class="search" style="width:280px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Contributor yoki email\u2026"></div>
+      <div class="search" style="width:280px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Contributor yoki email\u2026" value="${C_LIST_SEARCH}" oninput="C_LIST_SEARCH=this.value;route('contributors')"></div>
       <div class="toolbar"><select class="select"><option>Barcha holat</option><option>Faol</option><option>Bloklangan</option></select><button class="btn btn-ghost btn-sm" onclick="toast('Eksport','CSV yuklab olinmoqda','info')">${ic('download')} CSV</button></div>
     </div>
     <div class="card"><div class="table-wrap"><table class="data" style="min-width:1020px">
@@ -170,18 +184,69 @@ VIEWS['contributor-detail'] = function(id){
 /* ============================================================
    MESSAGING
    ============================================================ */
-const THREADS = [
-  {cid:'c1', sub:'Neon Glitch Logo Reveal — moderatsiya', last:'Rahmat! Bitrate\u2018ni oshirdim, qayta yubordim.', t:'18 daq', unread:true, tid:'AF-2041'},
-  {cid:'c1', sub:'Wedding Photo Gallery — soft reject', last:'Tushundim, preview sifatini yaxshilayman.', t:'1 soat', unread:true, tid:'AF-2029'},
-  {cid:'c2', sub:'Umumiy savol', last:'Yangi kategoriya qo\u2018shsangiz bo\u2018ladimi?', t:'3 soat', unread:false},
-  {cid:'c7', sub:'Tech Product Showcase', last:'Metadata tuzatdim.', t:'1 kun', unread:false, tid:'AF-2028'},
-];
+let ADMIN_THREADS = [];
 let MSG_SEL = 0;
-VIEWS.messaging = function(){ return `<div id="msgRoot"></div>`; };
-window.afterRender.messaging = function(){ renderMessaging(); };
+let ADMIN_THREAD_MESSAGES = [];
 
-function renderMessaging(){
-  const th = THREADS[MSG_SEL]; const c = cById(th.cid);
+function adminMsgUnread() {
+  return ADMIN_THREADS.reduce((a, t) => a + (t.unread ? 1 : 0), 0);
+}
+
+async function loadAdminThreads() {
+  if (!StudioApi.token()) return [];
+  const { items } = await StudioApi.listMessageThreads();
+  return items.map((t) => ({
+    id: t.id,
+    cid: t.contributorId,
+    sub: t.subject,
+    last: t.lastMessage,
+    t: String(t.lastMessageAt || "").slice(0, 10),
+    unread: t.unreadCount > 0,
+    tid: t.templateId,
+    isBroadcast: t.isBroadcast,
+    contributorName: t.contributor?.name || t.contributor?.email,
+  }));
+}
+
+VIEWS.messaging = function(){ return `<div id="msgRoot"></div>`; };
+window.afterRender.messaging = async function(){
+  const root = document.getElementById("msgRoot");
+  root.innerHTML = `<div class="card card-pad empty"><p class="small">Yuklanmoqda…</p></div>`;
+  try {
+    ADMIN_THREADS = await loadAdminThreads();
+    window._STUDIO_MSG_UNREAD = ADMIN_THREADS.reduce((a, t) => a + (t.unread ? 1 : 0), 0);
+    if (typeof renderNav === "function") renderNav();
+    MSG_SEL = 0;
+    await renderMessaging();
+  } catch (e) {
+    root.innerHTML = `<div class="card card-pad empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+  }
+};
+
+async function selectAdminThread(i) {
+  MSG_SEL = i;
+  await renderMessaging();
+}
+
+async function renderMessaging(){
+  if (!ADMIN_THREADS.length) {
+    document.getElementById("msgRoot").innerHTML = `<div class="card card-pad empty"><div class="ico">${ic("inbox")}</div><h3>Suhbat yo\u2018q</h3><p class="body">Contributorlarga xabar yuboring yoki moderatsiya qiling.</p></div>`;
+    return;
+  }
+  if (MSG_SEL >= ADMIN_THREADS.length) MSG_SEL = 0;
+  const th = ADMIN_THREADS[MSG_SEL];
+  const c = cById(th.cid);
+  ADMIN_THREAD_MESSAGES = [];
+  try {
+    const data = await StudioApi.getMessageThread(th.id);
+    ADMIN_THREAD_MESSAGES = data.messages || [];
+    await StudioApi.markMessageThreadRead(th.id);
+    th.unread = false;
+    window._STUDIO_MSG_UNREAD = adminMsgUnread();
+    if (typeof renderNav === "function") renderNav();
+  } catch (e) {
+    toast("Xato", e.message || "Xabarlar yuklanmadi", "danger");
+  }
   document.getElementById('msgRoot').innerHTML = `
   <div class="row between center mb-16">
     <div></div>
@@ -190,10 +255,10 @@ function renderMessaging(){
   <div class="card" style="overflow:hidden">
    <div style="display:grid;grid-template-columns:320px 1fr;height:640px">
     <div class="col" style="border-right:1px solid var(--line)">
-      <div class="card-head"><h3>Suhbatlar</h3><span class="nav-badge brand">${THREADS.filter(t=>t.unread).length}</span></div>
+      <div class="card-head"><h3>Suhbatlar</h3><span class="nav-badge brand">${adminMsgUnread()}</span></div>
       <div class="col" style="overflow-y:auto">
-        ${THREADS.map((t,i)=>{const cc=cById(t.cid); return `<div class="mod-item ${i===MSG_SEL?'sel':''}" onclick="MSG_SEL=${i};renderMessaging()">
-          ${avatar(cc.name,38)}
+        ${ADMIN_THREADS.map((t,i)=>{const cc=cById(t.cid); const nm = t.contributorName || cc.name; return `<div class="mod-item ${i===MSG_SEL?'sel':''}" onclick="selectAdminThread(${i})">
+          ${avatar(nm,38)}
           <div class="col grow" style="gap:2px;min-width:0">
             <div class="row between center"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cc.name}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${t.t}</span></div>
             <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${t.sub}</span>
@@ -209,12 +274,16 @@ function renderMessaging(){
       </div>
       <div class="col grow" style="overflow-y:auto;padding:18px;background:var(--bg-0)">
         ${th.tid?`<div class="text-c mb-16"><span class="pill">${ic('link')} ${th.tid} ga bog\u2018langan</span></div>`:''}
-        <div class="msg"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,${avColor(c.name).join(',')})">${initials(c.name)}</div><div class="msg-body"><div class="msg-name" style="color:var(--violet-bright)">${c.name}</div><div class="msg-text">${th.last}</div><div class="msg-time">${th.t} oldin</div></div></div>
-        <div class="msg me"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</div><div class="msg-body"><div class="msg-name">Admin</div><div class="msg-text">Salom! Preview sifatini tekshirdim \u2014 endi standartga javob beradi. Tasdiqlash uchun navbatga oldim.</div><div class="msg-time">12 daq oldin</div></div></div>
+        ${ADMIN_THREAD_MESSAGES.map((m) => {
+          const isMe = m.sender?.isMe;
+          const nm = m.sender?.name || c.name;
+          const col = avColor(nm);
+          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,${isMe ? "#7b5cff,#4a2fb0" : col.join(",")})">${isMe ? "AD" : initials(nm)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "Admin" : nm}</div><div class="msg-text">${m.body}</div><div class="msg-time">${String(m.createdAt || "").slice(0, 16).replace("T", " ")}</div></div></div>`;
+        }).join("")}
       </div>
       <div class="row gap-8 center" style="padding:14px;border-top:1px solid var(--line)">
-        <input class="input" placeholder="Xabar yozing\u2026" style="height:40px">
-        <button class="btn btn-primary" style="height:40px" onclick="toast('Yuborildi','Xabar '+'${c.name}'+' ga yetkazildi','success')">${ic('send')} Yuborish</button>
+        <input id="adminReplyInput" class="input" placeholder="Xabar yozing\u2026" style="height:40px">
+        <button class="btn btn-primary" style="height:40px" onclick="sendAdminReply()">${ic('send')} Yuborish</button>
       </div>
     </div>
    </div>
@@ -225,13 +294,30 @@ function renderMessaging(){
    ANALYTICS (deep)
    ============================================================ */
 VIEWS.analytics = function(){
+  const usage = typeof window !== "undefined" ? window._ASSETFLOW_PLUGIN_ANALYTICS?.usage : null;
+  const totalDl = usage?.downloadsTotal ?? counts().totalDl;
+  const appr =
+    window._ASSETFLOW_PLUGIN_ANALYTICS?.approvalRatePct ??
+    (typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null);
+  const avgDl = typeof avgDownloadsPerApproved === "function" ? avgDownloadsPerApproved() : 0;
   const contribRank = CONTRIBUTORS.map(c=>{const ts=tByContributor(c.id);const dl=ts.reduce((a,t)=>a+t.dl,0);const ap=ts.filter(t=>t.status==='approved').length;return {c,dl,ap,total:ts.length,rate:ts.length?Math.round(ap/ts.length*100):0};}).sort((a,b)=>b.dl-a.dl);
+  const rejectBlock =
+    REJECT_REASONS.length > 0
+      ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard;const mx=Math.max(...REJECT_REASONS.map(x=>x.soft+x.hard),1);return `<div class="col gap-6">
+            <div class="row between center"><span class="body" style="color:var(--tx-1)">${r.nm}</span><span class="small">${tot}</span></div>
+            <div class="row gap-2" style="height:8px;border-radius:999px;overflow:hidden;background:var(--bg-4)">
+              <div style="width:${(r.soft/mx)*100}%;background:var(--orange)"></div>
+              <div style="width:${(r.hard/mx)*100}%;background:var(--red)"></div>
+            </div>
+          </div>`;}).join('')
+      : '<div class="empty" style="padding:20px"><p class="small">Rad etilgan shablonlar sababi hali yo\u2018q</p></div>';
+  const barMax = typeof chartMax === "function" ? chartMax(DL_30) : Math.max(...DL_30, 1);
   return `<div class="col gap-20">
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      ${kpiCard({label:'Jami yuklab olishlar',val:(counts().totalDl/1000).toFixed(1)+'K',ic:'download',c:'green',trend:14,foot:'30 kun'})}
-      ${kpiCard({label:'O\u2018rtacha / shablon',val:Math.round(counts().totalDl/counts().approved),ic:'chart',c:'violet',trend:6})}
-      ${kpiCard({label:'Approval rate',val:'78%',ic:'checkCircle',c:'blue',trend:3,foot:'soft+hard hisobga olib'})}
-      ${kpiCard({label:'O\u2018rtacha moderatsiya',val:'4.2 soat',ic:'clock',c:'yellow',trend:-12,foot:'yuborish \u2192 qaror'})}
+      ${kpiCard({label:'Jami yuklab olishlar',val:totalDl >= 1000 ? (totalDl/1000).toFixed(1)+'K' : String(totalDl),ic:'download',c:'green',foot:'plugin hisobi'})}
+      ${kpiCard({label:'O\u2018rtacha / tasdiqlangan',val:counts().approved ? String(avgDl) : '—',ic:'chart',c:'violet',foot:'yuklab olish / shablon'})}
+      ${kpiCard({label:'Approval rate',val:appr != null ? appr+'%' : '—',ic:'checkCircle',c:'blue',foot:'DB bo\u2018yicha'})}
+      ${kpiCard({label:'Audit (30 kun)',val:DL_30.reduce((a,b)=>a+b,0),ic:'clock',c:'yellow',foot:'moderatsiya va tizim'})}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
@@ -250,23 +336,16 @@ VIEWS.analytics = function(){
       <div class="card">
         <div class="card-head"><h3>Rad sabablari</h3><span class="label">Soft vs Hard</span></div>
         <div class="card-pad col gap-12">
-          ${REJECT_REASONS.map(r=>{const tot=r.soft+r.hard;const mx=Math.max(...REJECT_REASONS.map(x=>x.soft+x.hard));return `<div class="col gap-6">
-            <div class="row between center"><span class="body" style="color:var(--tx-1)">${r.nm}</span><span class="small">${tot}</span></div>
-            <div class="row gap-2" style="height:8px;border-radius:999px;overflow:hidden;background:var(--bg-4)">
-              <div style="width:${r.soft/mx*100}%;background:var(--orange)"></div>
-              <div style="width:${r.hard/mx*100}%;background:var(--red)"></div>
-            </div>
-          </div>`;}).join('')}
+          ${rejectBlock}
           <div class="row gap-16 mt-8"><span class="leg-item"><span class="sw" style="background:var(--orange)"></span>Soft reject</span><span class="leg-item"><span class="sw" style="background:var(--red)"></span>Hard reject</span></div>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-head"><div><h3>Oylik trend</h3><span class="small">Yuklash, tasdiq va rad dinamikasi</span></div>
-      <div class="segmented"><button class="active">Downloads</button><button>Yangi yuklash</button><button>Approval</button></div></div>
-      <div class="card-pad"><div class="bars">${DL_30.map((v,i)=>`<div class="bar ${i%5===4?'alt':''}" style="height:${v/910*100}%" title="${v}"></div>`).join('')}</div>
-      <div class="row between mt-12 small"><span>1-may</span><span>15-may</span><span>30-may</span></div></div>
+      <div class="card-head"><div><h3>Audit trend</h3><span class="small">So\u2018nggi 30 kun · har kun voqealar</span></div></div>
+      <div class="card-pad"><div class="bars">${DL_30.map((v,i)=>`<div class="bar ${i%5===4?'alt':''}" style="height:${(v/barMax)*100}%" title="${v} voqea"></div>`).join('')}</div>
+      <div class="row between mt-12 small"><span>-30 kun</span><span>bugun</span></div></div>
     </div>
   </div>`;
 };
@@ -300,25 +379,70 @@ VIEWS.settings = function(){
 /* ============================================================
    AUDIT LOG
    ============================================================ */
-VIEWS.audit = function(){
-  return `<div class="col gap-16">
-    ${infoBanner('Audit jurnali barcha moderatsiya va boshqaruv harakatlarini compliance uchun yozib boradi. O\u2018zgartirib bo\u2018lmaydi.')}
+let AUDIT_FILTER = "all";
+
+VIEWS.audit = function () {
+  return `<div id="auditRoot"></div>`;
+};
+
+window.afterRender.audit = async function () {
+  const root = document.getElementById("auditRoot");
+  root.innerHTML = `<div class="card card-pad empty"><p class="small">Yuklanmoqda…</p></div>`;
+  try {
+    await StudioTemplates.loadAuditLogs();
+    renderAuditTable();
+  } catch (e) {
+    root.innerHTML = `<div class="empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+  }
+};
+
+function renderAuditTable() {
+  const list =
+    AUDIT_FILTER === "all"
+      ? AUDIT
+      : AUDIT.filter((a) => a.action.includes(AUDIT_FILTER));
+  document.getElementById("auditRoot").innerHTML = `<div class="col gap-16">
+    ${infoBanner("Audit jurnali — moderatsiya va boshqaruv harakatlari (API).")}
     <div class="toolbar between">
-      <div class="chips"><button class="chip active">Barchasi<span class="cnt">${AUDIT.length}</span></button><button class="chip">Approve</button><button class="chip">Reject</button><button class="chip">Block</button></div>
-      <button class="btn btn-ghost btn-sm" onclick="toast('Eksport','Audit log CSV ga eksport qilindi','info')">${ic('download')} Eksport</button>
+      <div class="chips">
+        ${[
+          ["all", "Barchasi", AUDIT.length],
+          ["approve", "Approve", AUDIT.filter((a) => a.action === "approve").length],
+          ["reject", "Reject", AUDIT.filter((a) => a.action.includes("reject")).length],
+          ["block", "Block", AUDIT.filter((a) => a.action === "block").length],
+        ]
+          .map(
+            ([k, l, n]) =>
+              `<button class="chip ${AUDIT_FILTER === k ? "active" : ""}" onclick="AUDIT_FILTER='${k}';renderAuditTable()">${l}<span class="cnt">${n}</span></button>`
+          )
+          .join("")}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="StudioTemplates.loadAuditLogs().then(renderAuditTable)">${ic("refresh")} Yangilash</button>
     </div>
     <div class="card"><div class="table-wrap"><table class="data" style="min-width:880px">
-      <thead><tr><th>Vaqt</th><th>Aktor</th><th>Amal</th><th>Nishon</th><th>IP</th></tr></thead>
-      <tbody>${AUDIT.map(a=>{const m=AUDIT_META[a.action];return `<tr>
+      <thead><tr><th>Vaqt</th><th>Aktor</th><th>Amal</th><th>Nishon</th></tr></thead>
+      <tbody>${
+        list.length
+          ? list
+              .map((a) => {
+                const m = AUDIT_META[a.action] || {
+                  cls: "gray",
+                  ic: "clock",
+                  label: a.action,
+                };
+                return `<tr>
         <td class="cell-muted mono" style="white-space:nowrap">${a.t}</td>
-        <td><div class="row center gap-8">${avatar(a.actor.replace(' (siz)',''),24)}<span class="cell-strong">${a.actor}</span></div></td>
-        <td><span class="badge" style="background:var(--${m.cls}-dim);color:var(--${m.cls});border-color:var(--${m.cls}-line,var(--line))">${ic(m.ic)}${m.label}</span></td>
+        <td><div class="row center gap-8">${avatar(a.actor.replace(" (siz)", ""), 24)}<span class="cell-strong">${a.actor}</span></div></td>
+        <td><span class="badge" style="background:var(--${m.cls}-dim);color:var(--${m.cls})">${ic(m.ic)} ${m.label}</span></td>
         <td class="cell-muted">${a.target}</td>
-        <td class="cell-muted mono">${a.ip}</td>
-      </tr>`;}).join('')}</tbody>
+      </tr>`;
+              })
+              .join("")
+          : `<tr><td colspan="4" class="cell-muted">Hali yozuv yo'q</td></tr>`
+      }</tbody>
     </table></div></div>
   </div>`;
-};
+}
 
 /* ============================================================
    DRAWER — template quick view
@@ -385,7 +509,7 @@ function modSoftReject(id){
     <div class="modal-head"><div class="modal-ico" style="background:var(--orange-dim);color:var(--orange)">${ic('reply')}</div>
       <div><h3>Soft reject</h3><p>Contributor sababni ko\u2018radi va tuzatib qayta yuborishi mumkin.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="field"><label>Rad sababi <span class="req">*</span></label><textarea class="textarea" placeholder="Aniq, foydali izoh yozing \u2014 contributor nimani tuzatishini bilsin\u2026">Preview sifati past. Iltimos kamida 15 Mbps bitrate bilan qayta eksport qiling.</textarea></div>
+      <div class="field"><label>Rad sababi <span class="req">*</span></label><textarea class="textarea" id="softRejectReason" placeholder="Aniq, foydali izoh yozing \u2014 contributor nimani tuzatishini bilsin\u2026"></textarea></div>
       <div class="field"><label>Kategoriya</label><select class="select" style="height:38px;width:100%"><option>Sifat / kompressiya</option><option>Noto\u2018g\u2018ri metadata</option><option>Texnik nosozlik</option><option>Boshqa</option></select></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
@@ -410,7 +534,7 @@ async function modRejectConfirm(id, hard) {
     await StudioTemplates.refreshAfterReview();
     toast(
       hard ? "Hard reject" : "Soft reject",
-      "Contributorga xabar yuborildi (demo)",
+      "Reject izohi saqlandi — contributor Xabarlar bo'limida ko'radi",
       hard ? "danger" : "warn"
     );
     MOD_SELECTED = null;
@@ -521,21 +645,67 @@ function openBlock(id){
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
       <button class="btn btn-danger" onclick="doBlock('${id}')">${ic('ban')} Bloklash</button></div>`);
 }
-function doBlock(id){ const c=cById(id); c.status='blocked'; closeModal(); toast('Bloklandi',`${c.name} bloklandi`,'danger'); if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor bloklandi',{action:'block',detail:c.email}); route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id); }
-function unblock(id){ const c=cById(id); c.status='active'; toast('Blokdan chiqarildi',`${c.name} qayta faollashtirildi`,'success'); route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id); }
+async function doBlock(id){
+  const c=cById(id);
+  try {
+    await StudioApi.patchContributorStatus(id, true);
+    c.status='blocked';
+    closeModal();
+    toast('Bloklandi',`${c.name} bloklandi`,'danger');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor bloklandi',{action:'block',detail:c.email});
+    await StudioTemplates.loadAdminContributors();
+    route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
+  } catch (e) {
+    toast('Xato', e.message || 'Bloklash muvaffaqiyatsiz', 'danger');
+  }
+}
+async function unblock(id){
+  const c=cById(id);
+  try {
+    await StudioApi.patchContributorStatus(id, false);
+    c.status='active';
+    toast('Blokdan chiqarildi',`${c.name} qayta faollashtirildi`,'success');
+    await StudioTemplates.loadAdminContributors();
+    route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
+  } catch (e) {
+    toast('Xato', e.message || 'Blokdan chiqarish muvaffaqiyatsiz', 'danger');
+  }
+}
 
 function openMessage(cid, tid){
   const c=cById(cid);
+  const subj = tid ? (tName(tid) + " \u2014 moderatsiya") : "AssetFlow xabar";
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic('message')}</div>
       <div><h3>Xabar yozish</h3><p>${c.name} ga${tid?' \u00b7 '+tid:''}</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="segmented" style="width:100%"><button class="active grow">${ic('message')} In-app</button><button class="grow">${ic('mail')} Email preview</button></div>
-      <div class="field"><label>Mavzu</label><input class="input" value="${tid?tName(tid)+' \u2014 moderatsiya':'AssetFlow xabar'}"></div>
-      <div class="field"><label>Xabar</label><textarea class="textarea" placeholder="Xabaringiz\u2026"></textarea></div>
+      <div class="field"><label>Mavzu</label><input id="dmSubject" class="input" value="${subj}"></div>
+      <div class="field"><label>Xabar</label><textarea id="dmBody" class="textarea" placeholder="Xabaringiz\u2026"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-primary" onclick="closeModal();toast('Yuborildi','Xabar '+'${c.name}'+' ga yetkazildi','success')">${ic('send')} Yuborish</button></div>`);
+      <button class="btn btn-primary" onclick="submitDirectMessage('${cid}','${tid||""}')">${ic('send')} Yuborish</button></div>`);
+}
+
+async function submitDirectMessage(cid, tid) {
+  const subject = document.getElementById("dmSubject")?.value?.trim();
+  const body = document.getElementById("dmBody")?.value?.trim();
+  if (!subject || !body) {
+    toast("Maydonlar", "Mavzu va xabar to'ldiring", "warn");
+    return;
+  }
+  try {
+    await StudioApi.createMessageThread({
+      contributorId: cid,
+      templateId: tid || null,
+      subject,
+      body,
+    });
+    closeModal();
+    toast("Yuborildi", "Xabar yetkazildi", "success");
+    if (CURRENT === "messaging") window.afterRender.messaging();
+  } catch (e) {
+    toast("Xato", e.message || "Yuborish muvaffaqiyatsiz", "danger");
+  }
 }
 
 function openBroadcast(){
@@ -544,9 +714,44 @@ function openBroadcast(){
       <div><h3>Broadcast e\u2018lon</h3><p>Barcha faol contributorlarga yuboriladi.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner warn">${ic('alert')}<span>Bu xabar <b>${CONTRIBUTORS.filter(c=>c.status==='active').length} ta</b> contributorga bir vaqtda boradi. Ehtiyot bo\u2018ling.</span></div>
-      <div class="field"><label>Sarlavha</label><input class="input" placeholder="Masalan: Yangi kategoriya ochildi"></div>
-      <div class="field"><label>Xabar</label><textarea class="textarea"></textarea></div>
+      <div class="field"><label>Sarlavha</label><input id="bcSubject" class="input" placeholder="Masalan: Yangi kategoriya ochildi"></div>
+      <div class="field"><label>Xabar</label><textarea id="bcBody" class="textarea"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-warn" onclick="closeModal();toast('Broadcast yuborildi','Barcha faol contributorlarga e\u2018lon yetkazildi','success')">${ic('megaphone')} Yuborish</button></div>`);
+      <button class="btn btn-warn" onclick="submitBroadcast()">${ic('megaphone')} Yuborish</button></div>`);
+}
+
+async function submitBroadcast() {
+  const subject = document.getElementById("bcSubject")?.value?.trim();
+  const body = document.getElementById("bcBody")?.value?.trim();
+  if (!subject || !body) {
+    toast("Maydonlar", "Sarlavha va xabar to'ldiring", "warn");
+    return;
+  }
+  try {
+    const res = await StudioApi.broadcastMessage(subject, body);
+    closeModal();
+    toast("Broadcast", `${res.sent} ta contributorga yuborildi`, "success");
+    if (CURRENT === "messaging") window.afterRender.messaging();
+  } catch (e) {
+    toast("Xato", e.message || "Broadcast muvaffaqiyatsiz", "danger");
+  }
+}
+
+async function sendAdminReply() {
+  const th = ADMIN_THREADS[MSG_SEL];
+  const input = document.getElementById("adminReplyInput");
+  const body = input?.value?.trim();
+  if (!th || !body) return;
+  try {
+    await StudioApi.replyMessageThread(th.id, body);
+    input.value = "";
+    const data = await StudioApi.getMessageThread(th.id);
+    ADMIN_THREAD_MESSAGES = data.messages || [];
+    th.last = body;
+    await renderMessaging();
+    toast("Yuborildi", "Xabar yuborildi", "success");
+  } catch (e) {
+    toast("Xato", e.message || "Yuborish muvaffaqiyatsiz", "danger");
+  }
 }

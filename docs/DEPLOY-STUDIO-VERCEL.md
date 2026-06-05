@@ -26,11 +26,11 @@ Yangi o'zgarishlar (`vercel.json`, `studio-config.js`) push qiling.
 
 1. https://vercel.com → **Add New → Project**
 2. GitHub → repo **assetflow**
-3. **Root Directory:** `packages/assetflow-studio`
+3. **Root Directory:** `packages/assetflow-studio` (**muhim** — boshqa papka bo‘lsa 404)
 4. Framework: **Other** (static)
-5. Build Command: **bo'sh**
+5. Build Command: `node scripts/prepare-vercel.mjs` (yoki bo‘sh — `vercel.json` dan olinadi)
 6. Output Directory: **`.`** (nuqta)
-7. **Deploy**
+7. **Deploy** — Build logda `Vercel paths: studio/...` ko‘rinishi kerak
 
 ---
 

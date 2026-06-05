@@ -3,7 +3,10 @@
  */
 const AssetFlow = (() => {
   const Local = () => window.AssetFlowStore;
-  const DEFAULT_API = "http://localhost:4000";
+  const DEFAULT_API =
+    typeof ASSETFLOW_ENV !== "undefined"
+      ? ASSETFLOW_ENV.defaultApi()
+      : "https://assetflow-rqbq.onrender.com";
 
   let apiBaseUrl = DEFAULT_API;
   let token = "";

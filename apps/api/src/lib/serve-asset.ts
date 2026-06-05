@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { Request, Response } from "express";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
-import { isS3Configured, getPublicUrl } from "./s3.js";
+import { getPublicUrl, resolveS3AssetKey } from "./s3.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
   thumb: "image/jpeg",
@@ -11,17 +11,15 @@ const MIME: Record<TemplateAssetKind, string> = {
 };
 
 /** Brauzer video uchun Range (206) va CORS expose */
-export function serveTemplateAsset(
+export async function serveTemplateAsset(
   req: Request,
   res: Response,
   templateId: string,
   kind: TemplateAssetKind
 ) {
-  // S3/R2 sozlangan bo'lsa — to'g'ridan redirect (CDN tezligi, API bandwidth tejaladi)
-  if (isS3Configured()) {
-    const s3Key = `templates/${templateId}/${kind}`;
-    const url = getPublicUrl(s3Key);
-    res.redirect(302, url);
+  const s3Key = await resolveS3AssetKey(templateId, kind);
+  if (s3Key) {
+    res.redirect(302, getPublicUrl(s3Key));
     return;
   }
 

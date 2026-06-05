@@ -1,11 +1,16 @@
 import { Router } from "express";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma, UserRole } from "@creative-tools/database";
 import { signToken, requireAuth } from "../middleware/auth.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
+import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
+import { getWebUrl } from "../lib/app-urls.js";
 
 export const authRouter = Router();
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 soat
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -55,7 +60,13 @@ authRouter.post("/register", async (req, res) => {
 
   res.status(201).json({
     token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      contributorBlocked: false,
+    },
   });
 });
 
@@ -88,6 +99,14 @@ authRouter.post("/login", async (req, res) => {
     role: user.role,
   });
 
+  if (user.role === UserRole.CONTRIBUTOR && user.contributorBlockedAt) {
+    res.status(403).json({
+      error: "Contributor hisobi bloklangan",
+      code: "CONTRIBUTOR_BLOCKED",
+    });
+    return;
+  }
+
   res.json({
     token,
     user: {
@@ -96,8 +115,89 @@ authRouter.post("/login", async (req, res) => {
       name: user.name,
       role: user.role,
       subscription: user.subscription,
+      contributorBlocked: false,
     },
   });
+});
+
+// ── Parol tiklash ────────────────────────────────────────────────────────────
+const forgotSchema = z.object({ email: z.string().email() });
+const resetSchema = z.object({
+  token: z.string().min(10),
+  password: z.string().min(8),
+});
+
+/** Tiklash havolasini so'rash — email enumeratsiyaga yo'l qo'ymaslik uchun doim 200 */
+authRouter.post("/forgot-password", async (req, res) => {
+  const parsed = forgotSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const { email } = parsed.data;
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  // Foydalanuvchi bor bo'lsagina token yaratamiz, lekin javob har doim bir xil
+  if (user?.passwordHash) {
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+    // Eski tokenlarni tozalab, yangisini yozamiz
+    await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+    await prisma.verificationToken.create({
+      data: { identifier: email, token, expires },
+    });
+    const resetUrl = `${getWebUrl()}/studio/reset-password.html?token=${token}`;
+    await sendEmail({
+      to: email,
+      subject: "AssetFlow — parolni tiklash",
+      html: renderEmailLayout(
+        "Parolni tiklash",
+        `<p style="font-size:13px;line-height:1.6">Parolingizni tiklash uchun quyidagi tugmani bosing. Havola 1 soat amal qiladi.</p>
+         <a href="${resetUrl}" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Parolni tiklash</a>
+         <p style="font-size:11px;color:#888;margin-top:16px;word-break:break-all">${resetUrl}</p>`
+      ),
+      text: `Parolni tiklash: ${resetUrl}`,
+    });
+    if (!isEmailConfigured()) {
+      console.log(`[auth] Parol tiklash havolasi (${email}): ${resetUrl}`);
+    }
+  }
+
+  res.json({
+    ok: true,
+    message: "Agar bu email ro'yxatdan o'tgan bo'lsa, tiklash havolasi yuborildi",
+  });
+});
+
+/** Token bilan yangi parol o'rnatish */
+authRouter.post("/reset-password", async (req, res) => {
+  const parsed = resetSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const { token, password } = parsed.data;
+  const record = await prisma.verificationToken.findUnique({ where: { token } });
+  if (!record || record.expires < new Date()) {
+    res.status(400).json({ error: "Havola yaroqsiz yoki muddati tugagan" });
+    return;
+  }
+  const user = await prisma.user.findUnique({
+    where: { email: record.identifier },
+  });
+  if (!user) {
+    res.status(400).json({ error: "Foydalanuvchi topilmadi" });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: record.identifier },
+  });
+  res.json({ ok: true, message: "Parol yangilandi — endi kirishingiz mumkin" });
 });
 
 authRouter.get("/me", requireAuth, async (req, res) => {
@@ -115,6 +215,37 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     name: user.name,
     role: user.role,
     subscription: user.subscription,
+    contributorBlocked: !!user.contributorBlockedAt,
+  });
+});
+
+const profilePatchSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+});
+
+authRouter.patch("/me", requireAuth, async (req, res) => {
+  const parsed = profilePatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const user = await prisma.user.update({
+    where: { id: req.user!.userId },
+    data: { name: parsed.data.name },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      contributorBlockedAt: true,
+    },
+  });
+  res.json({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    contributorBlocked: !!user.contributorBlockedAt,
   });
 });
 
@@ -164,8 +295,8 @@ authRouter.post("/checkout", requireAuth, async (req, res) => {
     customer: user.stripeCustomerId!,
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.WEB_URL}/dashboard?checkout=success`,
-    cancel_url: `${process.env.WEB_URL}/pricing?checkout=canceled`,
+    success_url: `${getWebUrl()}/studio/contributor/?checkout=success`,
+    cancel_url: `${getWebUrl()}/studio/contributor/?checkout=canceled`,
     metadata: { userId: user.id },
   });
 
@@ -193,7 +324,7 @@ authRouter.post("/portal", requireAuth, async (req, res) => {
 
   const portal = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${process.env.WEB_URL}/dashboard`,
+    return_url: `${getWebUrl()}/studio/contributor/`,
   });
 
   res.json({ url: portal.url });

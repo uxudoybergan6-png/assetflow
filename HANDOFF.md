@@ -191,6 +191,50 @@ bash plugins/after-effects-cep/scripts/install-cep.sh
 4. Plugin o‘zgarishlaridan keyin **doim** `install-cep.sh` (yoki fayllarni `com.assetflow.demo` ga nusxalash).
 5. Cursor bilan parallel ishlaganda bir xil branch/commit; conflict ehtiyotkorlik bilan.
 
+## Production deploy (2026-06-04)
+
+| Xizmat | URL |
+|--------|-----|
+| API (Render) | https://assetflow-rqbq.onrender.com |
+| Studio (Vercel) | https://assetflow-studio-one.vercel.app |
+| Contributor | …/studio/login.html → …/studio/contributor/ |
+| Admin | …/studio/admin-login.html → …/studio/admin/ |
+
+**Vercel Root Directory:** `packages/assetflow-studio`
+
+**Render env:** `API_PUBLIC_URL`, `ADMIN_URL`, `CORS_ORIGIN`, R2 (`AWS_*`, `S3_ENDPOINT`, `CDN_BASE_URL`).
+
+### Claude Code sessiyasida qilingan (2026-06-04)
+
+- **`catalog-map.ts`** — `templateAssetFlags()`: disk + R2 tekshiradi (Render ephemeral disk muammosi hal).
+- **`s3.ts`** — `resolveS3AssetKey`, pack/preview kengaytma qidiruvi.
+- **`serve-asset.ts`** — faqat mavjud R2 kalitga redirect.
+- **`app-urls.ts`** — production fallback URL yordamchi moduli.
+- **Plugin login** — javobida `apiBaseUrl` + `adminUrl` qaytadi.
+- **`assetflow-env.js`** — default API Render (localhost emas); login dan keyin `apiBaseUrl` prefs ga yoziladi.
+- **`AssetFlow_Admin.html`** — API maydoni login, `localhost→Render` auto-fix, `openWebAdmin()`.
+- **Contributor `/studio/contributor/`** — Vercel 404 tuzatildi (`vercel.json` rewrite).
+- **Demo statistika/soxta xabarlar** — olib tashlandi; haqiqiy API ulandi.
+- **`studio-stats.js`, `studio-config.js`** — production API default.
+- **Messaging + Audit log** — modellari, API yo'llari (`/api/studio/messages/*`, `/api/studio/audit`) va UI ulandi.
+- **`seed-assetflow.ts`** — demo shablonlar `published: false`; migration `unpublish_demo_templates`.
+
+### Tekshirilgan (production)
+
+```bash
+GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
+# → cmpzpnnyq0001oc1gzla3mzi5 "Football Championship..." hasPack:true, hasPreview:true
+```
+
+## Ochiq / ehtiyot bo'lish kerak
+
+1. **Render deploy** — API o'zgarishlari push qilinmagan bo'lishi mumkin; `npm run build -w apps/api` keyin deploy.
+2. **AE Admin CEP** — brauzer Admin (Vercel) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
+3. **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
+4. **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
+5. **Tez orada** (hali to'liq emas): Stripe tariflar, email bildirishnomalar, contributor payout.
+6. `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
+
 ---
 
-*Yangilangan: 2026-06-02 — Cursor sessiyasidagi holat.*
+*Yangilangan: 2026-06-04 — Claude Code sessiyasidagi holat (production Vercel + Render).*

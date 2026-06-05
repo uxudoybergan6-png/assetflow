@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="assetflow-api" content="https://assetflow-rqbq.onrender.com">
 <title>AssetFlow — Admin kirish</title>
 <script>
 (function () {
-  var base = location.port === "3001" ? "/" : "/studio/";
+  var p = location.pathname;
+  var base = p.indexOf("/admin") === 0 ? "/admin/" : (location.port === "3001" ? "/" : "/studio/");
   var b = document.createElement("base");
   b.href = base;
   document.head.appendChild(b);
@@ -31,7 +33,7 @@
     <h2 class="h2 auth-side-title">Moderatsiya va<br>tasdiqlash markazi</h2>
     <p class="body auth-side-desc">Faqat <b>ADMIN</b> roli bilan kirish. Contributor yuklash boshqa manzilda.</p>
     <p class="auth-side-foot small">
-      <a href="http://localhost:3000/studio/login.html" style="color:var(--violet-bright)">Contributor Studio →</a>
+      <a href="/studio/login.html" id="linkContribSide" style="color:var(--violet-bright)">Contributor Studio →</a>
     </p>
   </aside>
 
@@ -46,7 +48,7 @@
         <div class="field">
           <label>Email</label>
           <input class="input" type="email" name="email" required autocomplete="username"
-            placeholder="admin@assetflow.uz" value="admin@assetflow.uz">
+            placeholder="admin@email.com" autocomplete="username">
           <p class="small" style="margin-top:6px;color:var(--tx-2)">
             <b>ADMIN</b> emas — ro'yxatdan o'tgan to'liq email (masalan <code>admin@assetflow.uz</code>).
           </p>

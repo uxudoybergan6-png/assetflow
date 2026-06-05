@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Response as ExpressResponse } from "express";
 import multer from "multer";
 import path from "path";
 import { z } from "zod";
@@ -20,17 +20,59 @@ import {
   findAssetPath,
   sceneKey,
 } from "../lib/template-files.js";
-import { isS3Configured, uploadFileToS3 } from "../lib/s3.js";
+import {
+  isS3Configured,
+  uploadFileToS3,
+  templateAssetFlags,
+  s3UploadKeyForFile,
+} from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
+import { postTemplateModerationMessage } from "../lib/studio-messages.js";
+import { writeAuditLog } from "../lib/audit-log.js";
+import { sendEmail, renderEmailLayout } from "../lib/email.js";
+import { getWebUrl } from "../lib/app-urls.js";
 
-function withAssetFlags<T extends { id: string }>(row: T) {
+/** Moderatsiya natijasini contributor'ga email qiladi (xato bo'lsa jim o'tadi) */
+async function notifyContributorReview(
+  contributorId: string,
+  templateName: string,
+  approved: boolean,
+  note: string
+) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: contributorId },
+      select: { email: true, name: true },
+    });
+    if (!user?.email) return;
+    const studioUrl = `${getWebUrl()}/studio/contributor/`;
+    const title = approved
+      ? "Shabloningiz tasdiqlandi ✓"
+      : "Shabloningiz qayta ko'rib chiqishni talab qiladi";
+    const body = approved
+      ? `<p style="font-size:13px;line-height:1.6"><b>${templateName}</b> tasdiqlandi va endi AE Browse katalogida ko'rinadi.</p>`
+      : `<p style="font-size:13px;line-height:1.6"><b>${templateName}</b> hozircha tasdiqlanmadi.</p>${
+          note
+            ? `<p style="font-size:12px;color:#bbb;background:#222;border-radius:8px;padding:10px;margin-top:8px">Izoh: ${note.replace(/</g, "&lt;")}</p>`
+            : ""
+        }`;
+    await sendEmail({
+      to: user.email,
+      subject: `AssetFlow — ${title}`,
+      html: renderEmailLayout(
+        title,
+        `${body}<a href="${studioUrl}" style="display:inline-block;margin-top:14px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Studio'ni ochish</a>`
+      ),
+    });
+  } catch (e) {
+    console.warn("[contributor] review email xato:", e);
+  }
+}
+
+async function withAssetFlags<T extends { id: string }>(row: T) {
   return {
     ...row,
-    assets: {
-      thumb: !!findAssetPath(row.id, "thumb"),
-      preview: !!findAssetPath(row.id, "preview"),
-      pack: !!findAssetPath(row.id, "pack"),
-    },
+    assets: await templateAssetFlags(row.id),
   };
 }
 
@@ -92,6 +134,8 @@ const templateBodySchema = z.object({
   fileName: z.string().optional().nullable(),
   fileSize: z.number().int().optional().nullable(),
   scenes: z.array(z.unknown()).optional(),
+  // Faqat ADMIN o'zgartira oladi (handler'da himoyalangan)
+  published: z.boolean().optional(),
 });
 
 const reviewSchema = z.object({
@@ -147,6 +191,7 @@ contributorRouter.get("/admin/overview", requireAuth, requireAdmin, async (_req,
         name: true,
         role: true,
         createdAt: true,
+        contributorBlockedAt: true,
         _count: { select: { contributorTemplates: true } },
       },
       orderBy: { email: "asc" },
@@ -179,6 +224,7 @@ contributorRouter.get("/admin/overview", requireAuth, requireAdmin, async (_req,
       role: u.role,
       createdAt: u.createdAt,
       templateCount: u._count.contributorTemplates,
+      status: u.contributorBlockedAt ? "blocked" : "active",
     })),
     stats: {
       totalTemplates: Object.values(statusCounts).reduce((a, b) => a + b, 0),
@@ -187,7 +233,7 @@ contributorRouter.get("/admin/overview", requireAuth, requireAdmin, async (_req,
       rejected: statusCounts.REJECTED ?? 0,
       draft: statusCounts.DRAFT ?? 0,
     },
-    recent: recent.map(withAssetFlags),
+    recent: await Promise.all(recent.map(withAssetFlags)),
   });
 });
 
@@ -225,7 +271,7 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
     },
   });
 
-  res.json({ items: items.map(withAssetFlags) });
+  res.json({ items: await Promise.all(items.map(withAssetFlags)) });
 });
 
 const uploadAssets = multer({
@@ -254,6 +300,12 @@ contributorRouter.post(
   ]),
   async (req, res) => {
     const id = String(req.params.id);
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
     const existing = await prisma.contributorTemplate.findUnique({
       where: { id },
     });
@@ -296,7 +348,11 @@ contributorRouter.post(
       for (const [kind, file] of [["thumb", thumb], ["preview", preview], ["pack", pack]] as const) {
         if (file?.path) {
           try {
-            await uploadFileToS3(file.path, `templates/${id}/${kind}`, mimeMap[kind]);
+            await uploadFileToS3(
+              file.path,
+              s3UploadKeyForFile(id, kind, file.path),
+              mimeMap[kind]
+            );
           } catch (s3Err) {
             console.error(`S3 upload error (${kind}):`, s3Err);
           }
@@ -384,6 +440,12 @@ contributorRouter.post(
   requireAuth,
   requireContributorOrAdmin,
   async (req, res) => {
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
     const parsed = templateBodySchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.flatten() });
@@ -433,6 +495,12 @@ contributorRouter.patch(
   requireContributorOrAdmin,
   async (req, res) => {
     const id = String(req.params.id);
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
     const existing = await prisma.contributorTemplate.findUnique({
       where: { id },
     });
@@ -457,6 +525,10 @@ contributorRouter.patch(
     // scenes va metaJson Prisma modelida to'g'ridan field emas —
     // ularni ...d spread'dan ajratib, metaJson ichiga yig'amiz
     const { scenes: _scenes, metaJson: _metaJson, ...directFields } = d;
+    // `published` faqat ADMIN uchun — contributor o'zgartira olmaydi
+    if (req.user!.role !== "ADMIN") {
+      delete (directFields as Record<string, unknown>).published;
+    }
 
     const meta =
       d.metaJson || d.scenes
@@ -485,6 +557,12 @@ contributorRouter.post(
   requireContributorOrAdmin,
   async (req, res) => {
     const id = String(req.params.id);
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
     const existing = await prisma.contributorTemplate.findUnique({
       where: { id },
     });
@@ -540,6 +618,55 @@ contributorRouter.post(
             action === "approve" ? (published ?? true) : false,
         },
       });
+
+      const noteText = (note ?? "").trim();
+      if (action === "reject" && noteText) {
+        const hard =
+          noteText.toLowerCase().includes("[hard]") ||
+          noteText.toLowerCase().includes("hard reject");
+        await postTemplateModerationMessage({
+          contributorId: template.contributorId,
+          templateId: template.id,
+          templateName: template.name,
+          senderId: req.user!.userId,
+          body: noteText,
+          subjectPrefix: hard ? "Hard reject" : "Soft reject",
+        });
+      } else if (action === "approve") {
+        await postTemplateModerationMessage({
+          contributorId: template.contributorId,
+          templateId: template.id,
+          templateName: template.name,
+          senderId: req.user!.userId,
+          body: noteText || "Shablon tasdiqlandi — AE Browse katalogida ko'rinadi.",
+          subjectPrefix: "Tasdiqlandi",
+        });
+      }
+
+      const hard =
+        noteText.toLowerCase().includes("[hard]") ||
+        noteText.toLowerCase().includes("hard reject");
+      await writeAuditLog({
+        actorId: req.user!.userId,
+        action:
+          action === "approve"
+            ? "approve"
+            : hard
+              ? "hard_reject"
+              : "soft_reject",
+        targetType: "template",
+        targetId: template.id,
+        detail: `${template.name}${noteText ? ": " + noteText : ""}`,
+      });
+
+      // Contributor'ga email bildirishnoma (bloklamasdan)
+      void notifyContributorReview(
+        template.contributorId,
+        template.name,
+        action === "approve",
+        noteText
+      );
+
       res.json(template);
     } catch (e: any) {
       // Most common: stale JWT userId after demo clear → FK violation.
@@ -667,7 +794,15 @@ contributorRouter.delete(
   requireAdmin,
   async (req, res) => {
     const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     await prisma.contributorTemplate.delete({ where: { id } });
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "template_delete",
+      targetType: "template",
+      targetId: id,
+      detail: existing?.name ?? id,
+    });
     res.status(204).send();
   }
 );
@@ -690,3 +825,54 @@ contributorRouter.patch(
     res.json(user);
   }
 );
+
+contributorRouter.patch(
+  "/users/:userId/status",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const blocked = z.boolean().safeParse(req.body?.blocked);
+    if (!blocked.success) {
+      res.status(400).json({ error: "blocked (boolean) kerak" });
+      return;
+    }
+    const user = await prisma.user.update({
+      where: { id: String(req.params.userId) },
+      data: { contributorBlockedAt: blocked.data ? new Date() : null },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        contributorBlockedAt: true,
+      },
+    });
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: blocked.data ? "block" : "unblock",
+      targetType: "contributor",
+      targetId: user.id,
+      detail: user.email,
+    });
+
+    res.json({
+      ...user,
+      status: user.contributorBlockedAt ? "blocked" : "active",
+    });
+  }
+);
+
+async function assertContributorNotBlocked(userId: string, res: ExpressResponse) {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { contributorBlockedAt: true, role: true },
+  });
+  if (u?.contributorBlockedAt && u.role === UserRole.CONTRIBUTOR) {
+    res.status(403).json({
+      error: "Contributor hisobi bloklangan",
+      code: "CONTRIBUTOR_BLOCKED",
+    });
+    return false;
+  }
+  return true;
+}

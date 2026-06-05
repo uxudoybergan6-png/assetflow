@@ -2,8 +2,9 @@
  * AssetFlow — foydalanuvchi / tarif / admin (API)
  */
 const AssetFlowAccount = (() => {
-  const DEFAULT_API = "http://localhost:4000";
-  const DEFAULT_ADMIN = "http://localhost:3001/";
+  const env = typeof ASSETFLOW_ENV !== "undefined" ? ASSETFLOW_ENV : null;
+  const DEFAULT_API = env ? env.defaultApi() : "https://assetflow-rqbq.onrender.com";
+  const DEFAULT_ADMIN = env ? env.defaultAdmin() : "https://assetflow-studio-one.vercel.app/admin/";
 
   let cachedUser = null;
   let adminUrl = DEFAULT_ADMIN;
@@ -76,12 +77,26 @@ const AssetFlowAccount = (() => {
     return !!token();
   }
 
+  function persistClient(partial) {
+    const prefs =
+      typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
+    prefs.client = {
+      ...(prefs.client || {}),
+      apiBaseUrl: partial.apiBaseUrl || apiBase(),
+      token: partial.token !== undefined ? partial.token : token(),
+    };
+    if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
+  }
+
   async function login(email, password) {
     const data = await request("/api/plugin/login", {
       method: "POST",
       body: { email, password },
     });
-    saveToken(data.token);
+    persistClient({
+      apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
+      token: data.token,
+    });
     cachedUser = data.user;
     if (data.adminUrl) adminUrl = data.adminUrl;
     return data;
@@ -96,6 +111,12 @@ const AssetFlowAccount = (() => {
     try {
       const data = await request("/api/plugin/me");
       cachedUser = data.user;
+      if (data.apiBaseUrl || data.adminUrl) {
+        persistClient({
+          apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
+          token: token(),
+        });
+      }
       if (data.adminUrl) adminUrl = data.adminUrl;
       return cachedUser;
     } catch (e) {
@@ -111,6 +132,35 @@ const AssetFlowAccount = (() => {
     });
     cachedUser = data.user;
     return cachedUser;
+  }
+
+  /** Stripe checkout sahifasi URL'ini oladi (plugin token bilan) */
+  async function requestCheckout(billing = "monthly") {
+    const data = await request("/api/auth/checkout", {
+      method: "POST",
+      body: { plan: billing === "yearly" ? "yearly" : "monthly" },
+    });
+    return data?.url || "";
+  }
+
+  /** Stripe billing portal URL'i (obunani boshqarish/bekor qilish) */
+  async function requestBillingPortal() {
+    const data = await request("/api/auth/portal", { method: "POST" });
+    return data?.url || "";
+  }
+
+  /** URL'ni tashqi brauzerda ochadi (CEP yoki oddiy) */
+  function openExternal(url) {
+    if (!url) return;
+    if (typeof window.__adobe_cep__ !== "undefined" && window.CSInterface) {
+      try {
+        new CSInterface().openURLInDefaultBrowser(url);
+        return;
+      } catch {
+        /* fallback */
+      }
+    }
+    window.open(url, "_blank");
   }
 
   async function heartbeat(meta = {}) {
@@ -176,6 +226,9 @@ const AssetFlowAccount = (() => {
     logout,
     fetchMe,
     setPlan,
+    requestCheckout,
+    requestBillingPortal,
+    openExternal,
     heartbeat,
     recordDownload,
     recordImport,

@@ -1,4 +1,7 @@
-const API_URL = "http://localhost:4000";
+const API_URL =
+  typeof ASSETFLOW_ENV !== "undefined"
+    ? ASSETFLOW_ENV.defaultApi()
+    : "https://assetflow-rqbq.onrender.com";
 
 async function apiRequest(path, token, options = {}) {
   const res = await fetch(API_URL + path, {

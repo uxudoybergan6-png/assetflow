@@ -27,6 +27,10 @@ const StudioMedia = (() => {
       .replace(/</g, "&lt;");
   }
 
+  function escapeHtml(s) {
+    return escapeAttr(s).replace(/>/g, "&gt;");
+  }
+
   /** Katta preview (moderatsiya / drawer) */
   function renderPreview(t, opts = {}) {
     const h = opts.height || "auto";
@@ -90,6 +94,8 @@ const StudioMedia = (() => {
     apiBase,
     assetUrl,
     hasAsset,
+    escapeHtml,
+    escapeAttr,
     renderPreview,
     renderThumb,
     filePills,

@@ -140,22 +140,55 @@ select option{background:#222}
 .stat-lbl{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 
 /* ── Pack workflow ── */
-.pack-workflow{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.pack-step-row{display:flex;align-items:center;gap:10px;padding:11px 12px}
-.pack-step-num{width:22px;height:22px;border-radius:50%;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0}
-.pack-step-body{flex:1;min-width:0}
-.pack-step-title{font-size:12px;font-weight:600}
-.pack-step-desc{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
-.pack-step-divider{height:1px;background:var(--border);margin:0 12px}
-.pack-log{margin-top:8px;padding:0 2px;display:flex;flex-direction:column;gap:3px}
-.log-row{display:flex;align-items:baseline;gap:6px;font-size:11px}
-.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:1px}
+/* ── Pack workflow (yangi) ── */
+.wf-box{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface2)}
+.wf-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.wf-title{font-size:12px;font-weight:700;flex:1}
+.wf-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+.wf-badge.no-pack{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.wf-badge.has-pack{background:rgba(130,195,65,.12);color:var(--green);border:1px solid rgba(130,195,65,.25)}
+.wf-steps{display:flex;flex-direction:column}
+.wf-step{display:flex;align-items:stretch;gap:0;padding:0}
+.wf-step-line{width:44px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:14px 0 0}
+.wf-step-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid var(--border);background:var(--surface3);color:var(--muted);position:relative;z-index:1}
+.wf-step-icon.active{border-color:var(--blue);background:var(--blue-dim);color:#a5b4fc}
+.wf-step-icon.done{border-color:var(--green);background:rgba(130,195,65,.15);color:var(--green)}
+.wf-step-icon.warn{border-color:var(--amber);background:var(--amber-dim);color:var(--amber)}
+.wf-step-bar{width:2px;background:var(--border);flex:1;margin:4px auto 0;min-height:16px}
+.wf-step:last-child .wf-step-bar{display:none}
+.wf-step-content{flex:1;padding:10px 14px 14px 6px}
+.wf-step-label{font-size:12px;font-weight:700;margin-bottom:2px}
+.wf-step-desc{font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.wf-step-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.wf-btn{height:32px;padding:0 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s,transform .1s;white-space:nowrap}
+.wf-btn:hover{opacity:.88;transform:translateY(-1px)}
+.wf-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.wf-btn.primary{background:var(--green);color:#111}
+.wf-btn.secondary{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
+.wf-btn.amber{background:var(--amber);color:#111}
+.wf-btn.blue{background:#6366f1;color:#fff}
+.wf-progress{margin-top:10px;display:flex;align-items:center;gap:8px}
+.wf-progress-track{flex:1;height:8px;border-radius:6px;background:var(--surface3);overflow:hidden;border:1px solid var(--border)}
+.wf-progress-bar{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#6366f1,#82c341);transition:width .25s ease}
+.wf-progress-pct{font-size:11px;font-weight:700;color:var(--text);min-width:38px;text-align:right}
+.scan-folder-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.scan-folder-select{flex:1;min-width:140px;height:30px;border-radius:7px;background:var(--surface3);color:var(--text);border:1px solid var(--border);padding:0 8px;font-size:11px}
+.scan-card-actions{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.scan-mini-btn{height:26px;padding:0 9px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface3);color:var(--text);white-space:nowrap}
+.scan-mini-btn.blue{background:#6366f1;color:#fff;border-color:#6366f1}
+.scan-mini-btn:hover{opacity:.88}
+.wf-hint{font-size:10px;color:var(--muted);line-height:1.4}
+/* Log */
+.pack-log{margin-top:10px;display:flex;flex-direction:column;gap:3px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.pack-log:empty{display:none}
+.log-row{display:flex;align-items:center;gap:7px;font-size:11px}
+.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .log-dot.wait{background:var(--muted2)}
 .log-dot.run{background:var(--amber);animation:pulse-dot .8s ease-in-out infinite}
 .log-dot.ok{background:var(--green)}
 .log-dot.err{background:var(--red)}
-.log-text{color:var(--muted);flex:1}
-.log-text.run{color:var(--text)}
+.log-text{flex:1;color:var(--muted)}
+.log-text.run{color:var(--text);font-weight:500}
 .log-text.ok{color:var(--green)}
 .log-text.err{color:var(--red)}
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
@@ -173,6 +206,52 @@ select option{background:#222}
 .scene-upload-row.uploading .scene-upload-btn{opacity:.5;pointer-events:none}
 .scene-upload-row.done{border-color:rgba(130,195,65,.35)}
 
+/* ── Scan/Review modal ── */
+.scan-overlay{position:fixed;inset:0;z-index:8600;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:20px}
+.scan-overlay.open{display:flex}
+.scan-modal{width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.scan-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+.scan-head span{font-size:14px;font-weight:700}
+.scan-head button{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-size:16px}
+.scan-btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.scan-btn:disabled{opacity:.4;cursor:not-allowed}
+.scan-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.scan-card{display:flex;gap:10px;align-items:center;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px}
+.scan-card.rendered{border-color:rgba(130,195,65,.35)}
+.scan-card.rendering{border-color:rgba(245,158,11,.4)}
+.scan-card-check{width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:var(--green)}
+.scan-card-preview{width:96px;height:54px;border-radius:6px;overflow:hidden;background:#0a0a0b;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative}
+.scan-card-preview video,.scan-card-preview img{width:100%;height:100%;object-fit:cover}
+.scan-card-preview .ph{font-size:18px;color:#444}
+.scan-card-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);color:#fff;font-size:14px;cursor:pointer;border:none}
+.scan-card-info{flex:1;min-width:0}
+.scan-card-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scan-card-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.scan-card-status{font-size:10px;margin-top:3px;color:var(--muted)}
+.scan-card-status.ok{color:var(--green)}
+.scan-card-status.run{color:var(--amber)}
+.scan-card-status.err{color:var(--red)}
+.scan-foot{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface)}
+.scan-foot-msg{flex:1;font-size:11px;color:var(--muted);min-width:0}
+.scan-upload-btn{height:38px;padding:0 18px;border-radius:8px;border:none;background:var(--green);color:#111;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.scan-upload-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── Downloaded list ── */
+.dl-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .15s}
+.dl-item:hover{border-color:rgba(255,255,255,.15)}
+.dl-item-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.dl-item-thumb{width:64px;height:40px;border-radius:6px;object-fit:cover;background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
+.dl-item-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dl-item-info{flex:1;min-width:0}
+.dl-item-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-item-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.dl-item-path{font-size:9px;color:var(--muted2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-item-actions{display:flex;gap:6px;flex-shrink:0}
+.dl-btn-open{height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.dl-btn-open:hover{border-color:rgba(130,195,65,.5);color:var(--green)}
+.dl-btn-del{height:30px;padding:0 10px;border-radius:6px;border:1px solid rgba(239,68,68,.3);background:var(--red-dim);color:var(--red);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.dl-btn-del:hover{background:rgba(239,68,68,.2)}
+
 /* ── Empty / loader ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:8px;color:var(--muted)}
 .empty-ico{font-size:28px;opacity:.4}
@@ -184,6 +263,115 @@ select option{background:#222}
 /* ── Toast ── */
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);color:var(--text);padding:10px 18px;border-radius:10px;font-size:12px;font-weight:500;border:1px solid rgba(130,195,65,.4);box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:9999;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── Admin Account Avatar ── */
+.admin-avatar{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,#82c341,#5a9a24);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#111;
+  cursor:pointer;flex-shrink:0;border:2px solid transparent;
+  transition:border-color .2s,transform .15s;
+}
+.admin-avatar:hover{border-color:rgba(130,195,65,.5);transform:scale(1.06)}
+
+/* ── Admin Account Sheet ── */
+.admin-sheet-overlay{
+  position:fixed;inset:0;z-index:8000;
+  background:rgba(0,0,0,.6);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.admin-sheet-overlay.open{display:flex}
+.admin-sheet{
+  width:100%;max-width:480px;max-height:90vh;
+  overflow-y:auto;
+  background:var(--surface3);
+  border:1px solid var(--border);
+  border-radius:16px 16px 0 0;
+  padding:16px 16px 24px;
+  box-shadow:0 -16px 48px rgba(0,0,0,.5);
+}
+.admin-sheet-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.admin-sheet-head h3{font-size:14px;font-weight:700;margin:0}
+.admin-sheet-close{
+  width:28px;height:28px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--muted);cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s;
+}
+.admin-sheet-close:hover{background:var(--surface);color:var(--text)}
+.admin-section{margin-bottom:16px}
+.admin-section-label{
+  display:block;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);margin-bottom:8px;
+}
+.admin-profile-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px;
+}
+.admin-profile-av{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,#82c341,#5a9a24);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#111;flex-shrink:0;
+}
+.admin-profile-info{flex:1;min-width:0}
+.admin-profile-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-profile-email{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-profile-badge{
+  font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;
+  background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3);
+  flex-shrink:0;
+}
+
+/* Folder setting */
+.admin-folder-box{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:12px;
+}
+.admin-folder-path{
+  font-size:11px;color:var(--text);word-break:break-all;
+  background:var(--surface3);border:1px solid var(--border);
+  border-radius:7px;padding:8px 10px;
+  margin-bottom:10px;line-height:1.5;min-height:36px;
+  display:flex;align-items:center;
+}
+.admin-folder-path.empty{color:var(--muted)}
+.admin-folder-hint{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.4}
+.admin-folder-actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
+.admin-folder-save{
+  display:none;width:100%;margin-top:8px;
+  height:36px;border-radius:8px;background:var(--green);
+  color:#111;font-size:12px;font-weight:700;border:none;cursor:pointer;
+  transition:opacity .15s;
+}
+.admin-folder-save:hover{opacity:.9}
+.admin-folder-save.visible{display:block}
+
+/* API settings */
+.admin-api-row{display:flex;gap:7px;align-items:center}
+.admin-api-row input{flex:1;height:34px;border-radius:7px;font-size:11px}
+.admin-api-row button{height:34px;padding:0 12px;border-radius:7px;
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--text);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+.admin-api-row button:hover{border-color:rgba(255,255,255,.2)}
+
+.admin-actions-row{display:flex;gap:8px;margin-top:4px}
+.admin-btn{
+  flex:1;height:36px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--text);font-size:11px;font-weight:600;cursor:pointer;
+  transition:all .15s;
+}
+.admin-btn:hover{border-color:rgba(255,255,255,.2)}
+.admin-btn.danger{color:#fca5a5;border-color:rgba(248,113,113,.35)}
+.admin-btn.danger:hover{background:rgba(248,113,113,.1)}
 </style>
 </head>
 <body>
@@ -195,7 +383,11 @@ select option{background:#222}
       <div class="login-leaf"></div>
       <div class="login-title">AssetFlow Admin</div>
     </div>
-    <div class="login-sub">Faqat ADMIN hisobi uchun</div>
+    <div class="login-sub">Faqat ADMIN hisobi uchun · API: Render</div>
+    <div class="login-field">
+      <label>API (Render)</label>
+      <input type="url" id="loginApi" value="https://assetflow-rqbq.onrender.com" autocomplete="off" spellcheck="false">
+    </div>
     <div class="login-field">
       <label>Email</label>
       <input type="email" id="loginEmail" placeholder="admin@assetflow.uz" autocomplete="username">
@@ -205,7 +397,9 @@ select option{background:#222}
       <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-primary" id="loginBtn" onclick="doLogin()">Kirish</button>
+    <button type="button" class="btn-ghost" style="width:100%;margin-top:8px;font-size:11px" onclick="openWebAdmin()">Brauzerda Admin (Vercel) ochish</button>
     <div class="login-err" id="loginErr"></div>
+    <p class="login-sub" style="margin-top:10px;font-size:10px;line-height:1.4">«Failed to fetch» — extension yangilang: <code style="color:var(--green)">install-cep.sh</code></p>
   </div>
 </div>
 
@@ -218,7 +412,8 @@ select option{background:#222}
       <div class="topbar-badge">ADMIN</div>
     </div>
     <div class="topbar-right">
-      <span class="topbar-user" id="topUser"></span>
+      <span class="topbar-user" id="topApi" title="API manzili" style="font-size:10px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis"></span>
+      <div class="admin-avatar" id="adminAvatar" onclick="openAdminAccount()" title="Hisob sozlamalari">A</div>
       <button class="btn-ghost" onclick="doLogout()">Chiqish</button>
     </div>
   </div>
@@ -229,6 +424,7 @@ select option{background:#222}
     </button>
     <button class="tab" data-tab="all" onclick="switchTab(this,'all')">Barchasi</button>
     <button class="tab" data-tab="subscribers" onclick="switchTab(this,'subscribers')">Obunachilar</button>
+    <button class="tab" data-tab="downloaded" onclick="switchTab(this,'downloaded')">Yuklangan <span class="tab-badge" id="dlBadge" style="display:none">0</span></button>
   </div>
 
   <div class="main" id="main">
@@ -263,21 +459,178 @@ select option{background:#222}
 
 <div class="toast" id="toast"></div>
 
+<!-- Admin Account Sheet -->
+<div class="admin-sheet-overlay" id="adminSheetOverlay" onclick="if(event.target===this)closeAdminAccount()">
+  <div class="admin-sheet" onclick="event.stopPropagation()">
+
+    <div class="admin-sheet-head">
+      <h3>Admin hisob</h3>
+      <button class="admin-sheet-close" onclick="closeAdminAccount()">×</button>
+    </div>
+
+    <!-- Profil -->
+    <div class="admin-section">
+      <span class="admin-section-label">Profil</span>
+      <div class="admin-profile-row">
+        <div class="admin-profile-av" id="sheetAv">A</div>
+        <div class="admin-profile-info">
+          <div class="admin-profile-name" id="sheetName">—</div>
+          <div class="admin-profile-email" id="sheetEmail">—</div>
+        </div>
+        <span class="admin-profile-badge">ADMIN</span>
+      </div>
+    </div>
+
+    <!-- Yuklab olish papkasi -->
+    <div class="admin-section" id="adminFolderSection" style="display:none">
+      <span class="admin-section-label">Shablon yuklab olish papkasi</span>
+      <div class="admin-folder-box">
+        <div class="admin-folder-path empty" id="adminFolderPath">Standart (vaqtinchalik papka)</div>
+        <div class="admin-folder-actions">
+          <button class="btn-ghost" onclick="adminChooseFolder()">📁 Papka tanlash</button>
+          <button class="btn-ghost" onclick="adminResetFolder()">Standart</button>
+        </div>
+        <button class="admin-folder-save" id="adminFolderSave" onclick="adminSaveFolder()">💾 Saqlash</button>
+        <div class="admin-folder-hint">AE Admin plagindan yuklangan pack (.aep + footage) va kesh shu papkada saqlanadi.</div>
+        <div class="admin-folder-actions" style="margin-top:8px">
+          <button class="btn-ghost" onclick="adminClearCache()">🧹 Keshni tozalash</button>
+        </div>
+        <div class="admin-folder-hint">Vaqtinchalik render/zip keshini va ro'yxatda yo'q packlarni o'chiradi (yuklab olingan shablonlar saqlanadi).</div>
+      </div>
+    </div>
+
+    <!-- API manzili -->
+    <div class="admin-section">
+      <span class="admin-section-label">API manzili</span>
+      <div class="admin-api-row">
+        <input type="url" id="sheetApiUrl" placeholder="https://assetflow-rqbq.onrender.com" spellcheck="false">
+        <button onclick="adminSaveApi()">Saqlash</button>
+        <button onclick="adminResetApi()">Asl</button>
+      </div>
+    </div>
+
+    <!-- Amallar -->
+    <div class="admin-actions-row">
+      <button class="admin-btn" onclick="openWebAdmin();closeAdminAccount()">🌐 Brauzer Admin</button>
+      <button class="admin-btn danger" onclick="doLogout();closeAdminAccount()">⎋ Chiqish</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Sahnalarni topish modal -->
+<div class="scan-overlay" id="scanOverlay" onclick="if(event.target===this)closeScanModal()">
+  <div class="scan-modal">
+    <div class="scan-head">
+      <span id="scanTitle">Sahnalarni topish</span>
+      <button onclick="closeScanModal()">×</button>
+    </div>
+    <div class="scan-folder-bar" id="scanFolderBar" style="display:none">
+      <label style="font-size:11px;color:var(--muted);white-space:nowrap">Scene papkasi:</label>
+      <select id="scanFolder" class="scan-folder-select"></select>
+      <button class="scan-btn" id="scanDetectBtn" onclick="detectScenesInFolder()">🔎 Aniqlash</button>
+      <button class="scan-btn" id="scanRenderAllBtn" onclick="renderAllScenes()" style="background:#6366f1;color:#fff" title="Admin Preview preset bilan barcha sahnalar">🎬 All render</button>
+    </div>
+    <div class="scan-list" id="scanList"></div>
+    <div class="scan-foot">
+      <span class="scan-foot-msg" id="scanFootMsg"></span>
+      <button class="scan-upload-btn" id="scanDoneBtn" onclick="finishScenePrep()" disabled>✓ Tayyor</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/CSInterface.js"></script>
+<script src="assetflow-env.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 const IS_CEP = typeof window.__adobe_cep__ !== 'undefined';
 let csInterface = null;
 if (IS_CEP) { try { csInterface = new CSInterface(); } catch(e) {} }
 
+// Platforma (macOS/Windows) — pack workflow CLI buyruqlari uchun
+const PLATFORM = (typeof process !== 'undefined' && process.platform) ? process.platform : 'darwin';
+const IS_WIN = PLATFORM === 'win32';
+
+/** Cross-platform unzip */
+function unzipTo(child, zipPath, destDir) {
+  if (IS_WIN) {
+    child.execFileSync('powershell', ['-NoProfile', '-Command',
+      `Expand-Archive -LiteralPath '${zipPath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`
+    ], { timeout: 120000 });
+  } else {
+    child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', destDir], { timeout: 120000 });
+  }
+}
+
+/** Cross-platform zip (entries — cwd ichidagi nisbiy yo'llar) */
+function zipEntries(child, outZip, cwd, entries) {
+  if (IS_WIN) {
+    const items = entries.map(e => `'${e.replace(/'/g, "''")}'`).join(',');
+    child.execFileSync('powershell', ['-NoProfile', '-Command',
+      `Compress-Archive -LiteralPath ${items} -DestinationPath '${outZip.replace(/'/g, "''")}' -Force`
+    ], { cwd, timeout: 180000 });
+  } else {
+    child.execFileSync('zip', ['-r', '-q', outZip].concat(entries), { cwd, timeout: 180000 });
+  }
+}
+
+/** Faylni AE da ochish (platforma bo'yicha) */
+function openFileInAE(child, aepPath, aeAppName) {
+  if (IS_WIN) {
+    // Windows: standart dastur bilan ochish (AE .aep ga bog'langan bo'lishi kerak)
+    child.exec('start "" ' + JSON.stringify(aepPath));
+  } else {
+    child.exec('open -a ' + JSON.stringify(aeAppName) + ' ' + JSON.stringify(aepPath));
+  }
+}
+
 const API_KEY = 'af_admin_api';
 const TOKEN_KEY = 'af_admin_token';
 const USER_KEY = 'af_admin_user';
+const PROD_API = 'https://assetflow-rqbq.onrender.com';
 let allTemplates = [];
+let allSubscribers = [];
 let currentTab = 'moderation';
 
+function defaultApiUrl() {
+  return typeof ASSETFLOW_ENV !== 'undefined' ? ASSETFLOW_ENV.defaultApi() : PROD_API;
+}
+
 function apiBase() {
-  return (localStorage.getItem(API_KEY) || 'http://localhost:4000').replace(/\/$/, '');
+  let url = (localStorage.getItem(API_KEY) || defaultApiUrl()).replace(/\/$/, '');
+  if (IS_CEP && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url)) {
+    url = PROD_API;
+    localStorage.setItem(API_KEY, url);
+  }
+  return url;
+}
+
+function formatFetchError(e) {
+  const base = apiBase();
+  const msg = (e && e.message) || String(e);
+  if (msg === 'Failed to fetch' || msg.includes('NetworkError')) {
+    return 'API ga ulanib bo‘lmadi: ' + base + ' — internet yoki API URL ni tekshiring (localhost AE ichida ishlamaydi).';
+  }
+  return msg;
+}
+
+async function pingApi() {
+  try {
+    const r = await fetch(apiBase() + '/health', { cache: 'no-store' });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Render uxlab qolgan bo'lsa (cold start) bir necha marta urinadi, holatni ko'rsatadi */
+async function waitForApi(onStatus, tries = 6, delayMs = 5000) {
+  for (let i = 0; i < tries; i++) {
+    if (await pingApi()) return true;
+    if (onStatus) onStatus(i + 1, tries);
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return await pingApi();
 }
 function token() { return localStorage.getItem(TOKEN_KEY) || ''; }
 function saveSession(t, u) {
@@ -294,15 +647,14 @@ function getUser() {
 
 // ── HTTP ───────────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  const isFormData = opts.body instanceof FormData;
+  const headers = { ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...opts.headers };
   if (token()) headers['Authorization'] = 'Bearer ' + token();
   const res = await fetch(apiBase() + path, {
     ...opts,
     headers,
-    body: opts.body && !(opts.body instanceof FormData)
-      ? JSON.stringify(opts.body) : opts.body
+    body: opts.body && !isFormData ? JSON.stringify(opts.body) : opts.body
   });
-  if (opts.body instanceof FormData) delete headers['Content-Type'];
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
@@ -319,7 +671,11 @@ async function apiForm(path, formData) {
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
-  if (!res.ok) throw new Error(data?.error || 'HTTP ' + res.status);
+  if (!res.ok) {
+    const err = Object.assign(new Error(data?.error || 'HTTP ' + res.status), { status: res.status, data });
+    handleAuthError(err);
+    throw err;
+  }
   return data;
 }
 
@@ -335,6 +691,17 @@ function toast(msg, err = false) {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
+function handleAuthError(e) {
+  if (e && (e.status === 401 || e.status === 403)) {
+    clearSession();
+    document.getElementById('shell').style.display = 'none';
+    document.getElementById('loginView').style.display = 'flex';
+    document.getElementById('loginErr').textContent = 'Sessiya tugadi — qayta kiring';
+    return true;
+  }
+  return false;
+}
+
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
@@ -344,20 +711,44 @@ async function doLogin() {
   err.textContent = '';
   btn.disabled = true;
   btn.textContent = 'Kirmoqda…';
+  const apiIn = document.getElementById('loginApi').value.trim();
+  if (apiIn) localStorage.setItem(API_KEY, apiIn.replace(/\/$/, ''));
   try {
-    const data = await fetch(apiBase() + '/api/auth/login', {
+    if (!(await pingApi())) {
+      btn.textContent = 'Server uyg‘onmoqda…';
+      err.textContent = 'Server uyqudan turmoqda (Render cold start) — biroz kuting…';
+      const ok = await waitForApi((i, n) => {
+        err.textContent = `Server uyg‘onmoqda… (${i}/${n}) — 50 soniyagacha`;
+      });
+      if (!ok) throw new Error('API javob bermadi: ' + apiBase() + '/health');
+      err.textContent = '';
+      btn.textContent = 'Kirmoqda…';
+    }
+    const data = await api('/api/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
-    }).then(r => r.json());
+      body: { email, password: pass }
+    });
     if (!data.token) throw new Error(data.error || 'Token kelmadi');
     if (data.user?.role !== 'ADMIN') throw new Error('Bu hisob ADMIN emas');
     saveSession(data.token, data.user);
     bootShell();
   } catch(e) {
-    err.textContent = e.message || 'Kirish xato';
+    err.textContent = formatFetchError(e);
     btn.disabled = false;
     btn.textContent = 'Kirish';
+  }
+}
+
+function openWebAdmin() {
+  const url = 'https://assetflow-studio-one.vercel.app/studio/admin-login.html';
+  try {
+    if (csInterface && csInterface.openURLInDefaultBrowser) {
+      csInterface.openURLInDefaultBrowser(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  } catch {
+    toast('Oching: ' + url, true);
   }
 }
 
@@ -371,11 +762,22 @@ document.getElementById('loginEmail').addEventListener('keydown', e => { if (e.k
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 // ── Boot ───────────────────────────────────────────────────────────────────
-function bootShell() {
+async function bootShell() {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('shell').style.display = 'flex';
+  // host.jsx ni yangi versiyaga majburan yuklaymiz (AE restartisiz)
+  if (IS_CEP) ensureHostBridge();
   const u = getUser();
-  document.getElementById('topUser').textContent = u?.email || '';
+  // Avatar — email'ning birinchi harfi
+  const initial = (u?.name || u?.email || 'A').charAt(0).toUpperCase();
+  const av = document.getElementById('adminAvatar');
+  if (av) av.textContent = initial;
+  document.getElementById('topUser') && (document.getElementById('topUser').textContent = '');
+  document.getElementById('topApi').textContent = apiBase().replace(/^https?:\/\//, '');
+  const ok = await pingApi();
+  if (!ok) toast('API ulanmagan: ' + apiBase(), true);
+  loadAdminDownloaded();
+  updateDlBadge();
   loadStats();
   switchTab(document.querySelector('.tab[data-tab="moderation"]'), 'moderation');
 }
@@ -395,7 +797,7 @@ async function loadStats() {
     const pending = s.pending || 0;
     document.getElementById('pendingBadge').textContent = pending;
     document.getElementById('pendingBadge').style.display = pending > 0 ? '' : 'none';
-  } catch(e) { console.warn('stats', e); }
+  } catch(e) { if (!handleAuthError(e)) console.warn('stats', e); }
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
@@ -403,9 +805,24 @@ function switchTab(el, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   currentTab = tab;
-  document.getElementById('toolbar').style.display = tab === 'subscribers' ? 'none' : 'flex';
-  if (tab === 'subscribers') {
+  const isSubs = tab === 'subscribers';
+  document.getElementById('toolbar').style.display = 'flex';
+  document.getElementById('statusFilter').style.display = isSubs ? 'none' : '';
+  const isDl = tab === 'downloaded';
+  const refreshBtn = document.querySelector('.btn-refresh');
+  if (refreshBtn) refreshBtn.onclick = isSubs ? loadSubscribers : isDl ? renderDownloadedTab : loadTemplates;
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.placeholder = isSubs ? 'Email yoki ism…' : isDl ? 'Shablon nomi…' : 'Qidirish…';
+    searchInput.oninput = isSubs ? applySubscriberSearch : isDl ? applyDlSearch : applySearch;
+    searchInput.value = '';
+  }
+  document.getElementById('toolbar').style.display = isDl ? 'flex' : 'flex';
+  document.getElementById('statusFilter').style.display = (isSubs || isDl) ? 'none' : '';
+  if (isSubs) {
     loadSubscribers();
+  } else if (isDl) {
+    renderDownloadedTab();
   } else {
     document.getElementById('statusFilter').value = tab === 'moderation' ? 'PENDING_REVIEW' : '';
     loadTemplates();
@@ -424,9 +841,15 @@ async function loadTemplates() {
     allTemplates = data.items || [];
     applySearch();
   } catch(e) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-ico">⚠</div><div class="empty-txt">' + (e.message || 'Yuklash xato') + '</div></div>';
+    if (handleAuthError(e)) return;
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">⚠</div><div class="empty-txt">' + formatFetchError(e) + '</div></div>';
+    toast(formatFetchError(e), true);
   }
 }
+
+const PAGE_SIZE = 30;
+let renderLimit = PAGE_SIZE;
+let lastRenderedList = [];
 
 function applySearch() {
   const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
@@ -434,11 +857,13 @@ function applySearch() {
     t.name.toLowerCase().includes(q) ||
     (t.contributor?.email || '').toLowerCase().includes(q)
   ) : allTemplates;
+  renderLimit = PAGE_SIZE; // qidiruv/filtr o'zgarganda boshidan
   renderList(list);
 }
 
 function renderList(items) {
   const el = document.getElementById('listArea');
+  lastRenderedList = items;
   if (!items.length) {
     const isPending = currentTab === 'moderation';
     el.innerHTML = isPending
@@ -450,8 +875,22 @@ function renderList(items) {
       : `<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">Shablon topilmadi</div></div>`;
     return;
   }
-  el.innerHTML = items.map(t => renderCard(t)).join('');
+  const shown = items.slice(0, renderLimit);
+  let html = shown.map(t => renderCard(t)).join('');
+  if (items.length > renderLimit) {
+    const remaining = items.length - renderLimit;
+    html += `<div style="text-align:center;padding:12px">
+      <button class="btn-ghost" onclick="showMoreTemplates()">Yana ${Math.min(PAGE_SIZE, remaining)} ta ko'rsatish (${remaining} qoldi)</button>
+    </div>`;
+  }
+  el.innerHTML = html;
 }
+
+function showMoreTemplates() {
+  renderLimit += PAGE_SIZE;
+  renderList(lastRenderedList);
+}
+window.showMoreTemplates = showMoreTemplates;
 
 function statusLabel(s) {
   const map = { PENDING_REVIEW: 'Kutilmoqda', APPROVED: 'Tasdiqlangan', REJECTED: 'Rad etilgan', DRAFT: 'Draft' };
@@ -515,31 +954,34 @@ function toggleDetail(id) {
   }
 }
 
-function scenePreviewUrl(templateId, s) {
+function scenePreviewUrl(templateId, s, cacheBust) {
+  const cb = cacheBust ? ((s.preview && s.preview.indexOf('?') >= 0 ? '&' : '?') + 'v=' + cacheBust) : '';
   // s.preview — catalog enrichScenes tomonidan qo'shilgan (plugin/catalog endpoint)
-  if (s.preview) return s.preview;
+  if (s.preview) return s.preview + cb;
   // s.previewKey — manifest'da saqlangan key (contributor/templates endpoint)
   const key = s.previewKey || adminSceneKey(s.aeComp || s.n || '');
-  if (key) return apiBase() + '/api/plugin/assets/' + templateId + '/scene/' + key;
+  if (key) return apiBase() + '/api/plugin/assets/' + templateId + '/scene/' + key + (cacheBust ? '?v=' + cacheBust : '');
   return '';
 }
 
 function renderDetail(t) {
   const scenes = Array.isArray(t.metaJson?.scenes) ? t.metaJson.scenes : [];
+  const cacheBust = t.updatedAt ? Date.parse(t.updatedAt) || Date.now() : Date.now();
   const scenesHtml = scenes.length ? `
     <div class="detail-section">
       <label>Sahnalar (${scenes.length}) <span style="font-size:9px;color:var(--muted);font-weight:400">— har sahna uchun video yukla</span></label>
       <div class="scenes-upload-list" id="sul-${t.id}">
         ${scenes.map((s, idx) => {
           const key = s.previewKey || adminSceneKey(s.aeComp || s.n || '');
-          const url = scenePreviewUrl(t.id, s);
+          const url = scenePreviewUrl(t.id, s, cacheBust);
           const hasVideo = !!url;
           return `<div class="scene-upload-row" id="sur-${t.id}-${idx}">
             <div class="scene-upload-preview" id="sup-${t.id}-${idx}">
               ${hasVideo
-                ? `<video src="${url}?t=${Date.now()}" muted playsinline preload="metadata"
+                ? `<video src="${url}" muted playsinline preload="metadata"
                     onloadedmetadata="this.currentTime=this.duration*0.1||0.3"
-                    onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover"></video>`
+                    onerror="this.style.display='none';var st=document.getElementById('sus-${t.id}-${idx}');if(st){st.textContent='Video yo\\'q';st.style.color='var(--muted)';}"
+                    style="width:100%;height:100%;object-fit:cover"></video>`
                 : `<span style="font-size:16px;color:#444">✦</span>`}
             </div>
             <div class="scene-upload-info">
@@ -562,6 +1004,8 @@ function renderDetail(t) {
 
   const approveActive = t.reviewStatus !== 'APPROVED';
   const rejectActive = t.reviewStatus !== 'REJECTED';
+  const isApproved = t.reviewStatus === 'APPROVED';
+  const isPublished = t.published !== false;
 
   return `
     ${scenesHtml}
@@ -573,36 +1017,107 @@ function renderDetail(t) {
         ${approveActive ? `<button class="btn-approve" onclick="reviewTemplate('${t.id}','approve')">✓ Tasdiqlash</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✓ Allaqachon tasdiqlangan</button>`}
         ${rejectActive ? `<button class="btn-reject" onclick="reviewTemplate('${t.id}','reject')">✗ Rad etish</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✗ Rad etilgan</button>`}
       </div>
+      ${isApproved ? `
+      <div class="action-row" style="margin-top:7px">
+        ${isPublished
+          ? `<button class="btn-action amber" style="flex:1" onclick="togglePublish('${t.id}',false)">🔕 Katalogdan yashirish</button>`
+          : `<button class="btn-action blue" style="flex:1" onclick="togglePublish('${t.id}',true)">📢 Katalogga chiqarish</button>`}
+        <span style="font-size:10px;color:${isPublished?'var(--green)':'var(--muted)'};align-self:center;white-space:nowrap">
+          ${isPublished ? '● Katalogda' : '○ Yashirin'}
+        </span>
+      </div>` : ''}
       <div class="note-area">
         <textarea id="note-${t.id}" placeholder="Izoh (ixtiyoriy)…"></textarea>
       </div>
       <div class="status-msg" id="msg-${t.id}"></div>
     </div>
 
-    <!-- Pack workflow -->
+    <!-- Pack workflow (yangi) -->
     <div class="detail-section">
-      <label>Pack bilan ishlash</label>
-      <div class="pack-workflow">
-        <div class="pack-step-row">
-          <div class="pack-step-num">1</div>
-          <div class="pack-step-body">
-            <div class="pack-step-title">AE da ochish</div>
-            <div class="pack-step-desc">Packni yuklab AE da oching, xatolarni tuzating, saqlang (⌘S)</div>
-          </div>
+      <div class="wf-box">
+        <div class="wf-header">
+          <span class="wf-title">Shablon tekshirish va yuklash</span>
           ${t.assets?.pack
-            ? `<button class="btn-action blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ Ochish</button>`
-            : `<span style="font-size:10px;color:var(--red)">Pack yo'q</span>`}
+            ? `<span class="wf-badge has-pack">✓ Pack bor</span>`
+            : `<span class="wf-badge no-pack">Pack yo'q</span>`}
         </div>
-        <div class="pack-step-divider"></div>
-        <div class="pack-step-row">
-          <div class="pack-step-num">2</div>
-          <div class="pack-step-body">
-            <div class="pack-step-title">Skanlash va Yuklash</div>
-            <div class="pack-step-desc">02.Scene ni skanlab sahnalarni aniqlaydi, har sahna rasmi, pack zip yuklaydi</div>
+        <div class="wf-steps">
+
+          <!-- Qadam 1: Kompga yuklab ochish -->
+          <div class="wf-step">
+            <div class="wf-step-line">
+              <div class="wf-step-icon ${t.assets?.pack ? 'active' : 'warn'}">↓</div>
+              <div class="wf-step-bar"></div>
+            </div>
+            <div class="wf-step-content">
+              <div class="wf-step-label">1 · Kompga yuklab, AE da tekshiring</div>
+              <div class="wf-step-desc">Pack serverdan kompingizga yuklanib, After Effects da ochiladi. Xatolarni tuzating va ⌘S bilan saqlang.</div>
+              <div class="wf-step-actions">
+                ${t.assets?.pack
+                  ? `<button class="wf-btn blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ AE da ochish</button>`
+                  : `<span class="wf-hint">⚠ Contributor hali pack yuklagan emas</span>`}
+              </div>
+            </div>
           </div>
-          ${IS_CEP
-            ? `<button class="btn-action amber" id="btn-scan-${t.id}" onclick="scanAndReupload('${t.id}')">↑ Yuklash</button>`
-            : `<span style="font-size:10px;color:var(--muted)">Faqat AE</span>`}
+
+          <!-- Qadam 2: Sahnalarni topish (qo'lda papka + preview video import) -->
+          <div class="wf-step">
+            <div class="wf-step-line">
+              <div class="wf-step-icon ${IS_CEP ? 'active' : ''}">🔎</div>
+              <div class="wf-step-bar"></div>
+            </div>
+            <div class="wf-step-content">
+              <div class="wf-step-label">2 · Sahnalarni topish</div>
+              <div class="wf-step-desc">Scene papkasini qo'lda tanlang. Plagin o'sha papkadagi sahnalarni aniqlaydi va AE project panelda ochadi. Har sahna uchun preview video import qiling.</div>
+              <div class="wf-step-actions">
+                ${IS_CEP
+                  ? `<button class="wf-btn blue" id="btn-scan-${t.id}" onclick="openScenePrep('${t.id}')">🔎 Sahnalarni topish</button>
+                     <span class="wf-hint" id="prep-hint-${t.id}">AE da loyiha ochiq bo'lishi kerak</span>`
+                  : `<span class="wf-hint">Faqat After Effects ichida ishlaydi</span>`}
+              </div>
+            </div>
+          </div>
+
+          <!-- Qadam 3: Serverga yuklash (faqat yuklash + progress) -->
+          <div class="wf-step">
+            <div class="wf-step-line">
+              <div class="wf-step-icon ${IS_CEP ? 'active' : ''}">↑</div>
+              <div class="wf-step-bar"></div>
+            </div>
+            <div class="wf-step-content">
+              <div class="wf-step-label">3 · Serverga yuklash</div>
+              <div class="wf-step-desc">O'zgartirishlardan keyin shablon (pack) va preview videolar serverga yuklanadi.</div>
+              <div class="wf-step-actions">
+                ${IS_CEP
+                  ? `<button class="wf-btn amber" id="btn-upload-${t.id}" onclick="uploadTemplateToServer('${t.id}')" disabled>↑ Serverga yuklash</button>
+                     <span class="wf-hint" id="upload-hint-${t.id}">Avval "Sahnalarni topish"</span>`
+                  : `<span class="wf-hint">Faqat After Effects ichida ishlaydi</span>`}
+              </div>
+              <div class="wf-progress" id="upwrap-${t.id}" style="display:none">
+                <div class="wf-progress-track"><div class="wf-progress-bar" id="upbar-${t.id}"></div></div>
+                <div class="wf-progress-pct" id="uppct-${t.id}">0%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Qadam 4: Tasdiqlash -->
+          <div class="wf-step">
+            <div class="wf-step-line">
+              <div class="wf-step-icon ${isApproved ? 'done' : ''}">✓</div>
+            </div>
+            <div class="wf-step-content">
+              <div class="wf-step-label">4 · Tasdiqlang va katalogga chiqaring</div>
+              <div class="wf-step-desc">Yuqoridagi "Moderatsiya" bo'limida tasdiqlang — shablon plugin katalogida foydalanuvchilarga ko'rinadi.</div>
+              <div class="wf-step-actions">
+                <span class="wf-hint" style="color:${isApproved ? 'var(--green)' : 'var(--muted)'}">
+                  ${isApproved
+                    ? (isPublished ? '● Tasdiqlangan va katalogda' : '● Tasdiqlangan — lekin yashirin')
+                    : '○ Hali tasdiqlanmagan'}
+                </span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
       <div class="pack-log" id="pack-log-${t.id}"></div>
@@ -674,10 +1189,34 @@ async function reviewTemplate(id, action) {
     await loadTemplates();
     loadStats();
   } catch(e) {
+    if (handleAuthError(e)) return;
     msg.textContent = e.message;
     msg.className = 'status-msg err';
   }
 }
+
+// ── Publish / Unpublish (katalogda ko'rsatish/yashirish) ─────────────────────
+async function togglePublish(id, publish) {
+  const msg = document.getElementById('msg-' + id);
+  if (msg) { msg.textContent = publish ? 'Katalogga chiqarilmoqda…' : 'Yashirilmoqda…'; msg.className = 'status-msg'; }
+  try {
+    await api('/api/contributor/templates/' + id, {
+      method: 'PATCH',
+      body: { published: publish }
+    });
+    toast(publish ? '📢 Katalogga chiqarildi' : '🔕 Katalogdan yashirildi');
+    const t = allTemplates.find(x => x.id === id);
+    if (t) t.published = publish;
+    // Detail panelni yangilab qaytarish
+    const d = document.getElementById('detail-' + id);
+    if (d && t) d.innerHTML = renderDetail(t);
+  } catch(e) {
+    if (handleAuthError(e)) return;
+    if (msg) { msg.textContent = e.message; msg.className = 'status-msg err'; }
+    toast(e.message, true);
+  }
+}
+window.togglePublish = togglePublish;
 
 // ── Metadata save ──────────────────────────────────────────────────────────
 async function saveMetadata(id) {
@@ -750,7 +1289,7 @@ async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
       };
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
-        else reject(new Error('HTTP ' + xhr.status));
+        else reject(Object.assign(new Error('HTTP ' + xhr.status), { status: xhr.status }));
       };
       xhr.onerror = () => reject(new Error('Network error'));
       xhr.send(fd);
@@ -769,6 +1308,7 @@ async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
     toast('✓ ' + file.name + ' yuklandi');
     input.value = '';
   } catch(e) {
+    if (handleAuthError(e)) { row?.classList.remove('uploading'); return; }
     if (status) { status.textContent = '✗ ' + e.message; status.style.color = 'var(--red)'; }
     row?.classList.remove('uploading');
     toast(e.message, true);
@@ -781,8 +1321,151 @@ window.uploadSceneVideo = uploadSceneVideo;
 function evalP(script) {
   return new Promise(resolve => {
     if (!csInterface) { resolve(''); return; }
-    csInterface.evalScript(script, r => resolve(r || ''));
+    csInterface.evalScript(script, r => resolve(r == null || r === undefined ? '' : String(r)));
   });
+}
+
+function hostCfg(obj) {
+  return JSON.stringify(JSON.stringify(obj || {}));
+}
+
+async function evalHostRetry(scriptFn, opts) {
+  const tries = (opts && opts.tries) || 6;
+  const delayMs = (opts && opts.delayMs) || 700;
+  let last = '';
+  for (let i = 0; i < tries; i++) {
+    last = await evalP(scriptFn());
+    if (last && last !== 'EvalScript error.' && last !== 'undefined') return last;
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return last;
+}
+
+async function callHostJson(fnName, cfg) {
+  const arg = hostCfg(cfg);
+  return evalHostRetry(() => fnName + '(' + arg + ')');
+}
+
+async function callHostSimple(expr) {
+  return evalHostRetry(() => expr);
+}
+
+function normFsPath(p) {
+  if (!p) return '';
+  try {
+    const path = require('path');
+    return path.normalize(String(p)).replace(/\\/g, '/').toLowerCase();
+  } catch (e) {
+    return String(p).replace(/\\/g, '/').toLowerCase();
+  }
+}
+
+async function waitForProjectFile(aepPath, maxSec) {
+  const want = normFsPath(aepPath);
+  const deadline = Date.now() + (maxSec || 90) * 1000;
+  while (Date.now() < deadline) {
+    const raw = await evalP('refreshProjectPanel()');
+    if (raw && raw !== 'EvalScript error.') {
+      try {
+        const panel = JSON.parse(raw);
+        if (panel.ok && panel.projectFile && normFsPath(panel.projectFile) === want) {
+          return panel;
+        }
+      } catch (e) {}
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return null;
+}
+
+async function ensureHostBridge() {
+  const ping = await evalP('typeof afQueueOpen==="function"&&typeof afEnsureSaved==="function"?"ok":"missing"');
+  if (ping === 'ok') return 'ok';
+  const r = await reloadHostScript(true);
+  if (r !== 'ok') return r;
+  const ping2 = await evalP('typeof afQueueOpen==="function"?"ok":"missing"');
+  return ping2 === 'ok' ? 'ok' : 'missing-afQueueOpen';
+}
+
+async function openAepInHost(aepPath) {
+  const bridge = await ensureHostBridge();
+  if (bridge !== 'ok') throw new Error('host.jsx: ' + bridge);
+
+  let panel = await waitForProjectFile(aepPath, 2);
+  if (panel) {
+    return { ok: true, alreadyOpen: true, projectName: panel.projectName, projectFile: panel.projectFile };
+  }
+
+  // afQueueOpen TO'G'RIDAN ochadi — javob bo'sh bo'lsa ham (app.open bloklagan) poll qilamiz
+  const pathLit = JSON.stringify(String(aepPath || ''));
+  let queueRaw = await evalP('afQueueOpen(' + pathLit + ',true)');
+  let queueRes = null;
+  try { queueRes = queueRaw ? JSON.parse(queueRaw) : null; } catch (e) { queueRes = null; }
+
+  if (queueRes && queueRes.ok && (queueRes.alreadyOpen || queueRes.opened)) {
+    return {
+      ok: true,
+      alreadyOpen: !!queueRes.alreadyOpen,
+      projectName: queueRes.projectName,
+      projectFile: queueRes.projectFile
+    };
+  }
+
+  // Javob aniq xato (fayl yo'q / funksiya yo'q) bo'lsa — to'xtaymiz
+  if (queueRes && queueRes.ok === false && queueRes.message) {
+    throw new Error(queueRes.message);
+  }
+
+  // Bo'sh javob — open bloklab turgan bo'lishi mumkin, ochilganini kuzatamiz
+  panel = await waitForProjectFile(aepPath, 90);
+  if (panel) {
+    return { ok: true, projectName: panel.projectName, projectFile: panel.projectFile };
+  }
+
+  // Hali ham ochilmadi — ehtimol Save changes? dialogi turibdi
+  const miss = await evalP('typeof afQueueOpen');
+  throw new Error(
+    'AE loyiha ochilmadi (90s). AE oynasiga o\'ting va ochiq dialog (Save changes?) bo\'lsa yoping. ' +
+    'afQueueOpen=' + miss + (queueRaw ? ' · javob=' + queueRaw : '')
+  );
+}
+
+/** host.jsx ni majburan qayta yuklaydi — AE restartisiz yangi funksiyalar uchun.
+ *  Butun faylni evalScript ichiga qo‘ymaymiz (55KB+ limitdan oshadi) — $.evalFile ishlatamiz. */
+let _lastHostReloadResult = '';
+async function hostScriptReady() {
+  const ping = await evalP('typeof afEnsureSaved==="function"&&typeof refreshProjectPanel==="function"?"ok":"missing"');
+  return ping === 'ok';
+}
+async function reloadHostScript(force) {
+  if (!csInterface) return 'err:no-cep';
+  if (!force && await hostScriptReady()) return 'ok';
+  try {
+    let extPath = '';
+    try { extPath = csInterface.getSystemPath(SystemPath.EXTENSION); } catch (e) {}
+    if (!extPath) {
+      try {
+        const fs = require('fs'), path = require('path');
+        extPath = path.dirname(decodeURIComponent(window.location.pathname));
+      } catch (e) {}
+    }
+    const jsxPath = (extPath + '/jsx/host.jsx').replace(/\\/g, '/');
+    const fs = require('fs'), path = require('path');
+    const jsxFile = path.join(extPath, 'jsx', 'host.jsx');
+    if (!fs.existsSync(jsxFile)) {
+      _lastHostReloadResult = 'err:not-found:' + jsxFile;
+      return _lastHostReloadResult;
+    }
+    const raw = await evalP(
+      'try{$.evalFile(' + JSON.stringify(jsxPath) + ');"AF_HOST_OK"}catch(e){"AF_HOST_ERR:"+e.toString()}'
+    );
+    _lastHostReloadResult = String(raw || '');
+    if (_lastHostReloadResult.indexOf('AF_HOST_OK') >= 0 && await hostScriptReady()) return 'ok';
+    return _lastHostReloadResult || 'err:eval-failed';
+  } catch (e) {
+    _lastHostReloadResult = 'err:' + e.message;
+    return _lastHostReloadResult;
+  }
 }
 
 function adminSceneKey(name) {
@@ -847,11 +1530,14 @@ async function importPackToAE(id) {
     const url = apiBase() + '/api/plugin/assets/' + id + '/pack';
     const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token() } });
     if (!res.ok) throw new Error('Pack HTTP ' + res.status);
-    const buf = Buffer.from(await res.arrayBuffer());
+    const { Buffer: NodeBuffer } = require('buffer');
+    const buf = NodeBuffer.from(await res.arrayBuffer());
 
     const fs = require('fs'), path = require('path'),
           os = require('os'), child = require('child_process');
-    const tmpDir = path.join(os.tmpdir(), 'af_admin_' + id);
+    // Yuklab olish papkasi: Admin sozlamasidagi papka (yoki tmpdir)
+    const baseDir = adminBaseDir();
+    const tmpDir = path.join(baseDir, 'af_admin_' + id);
     fs.mkdirSync(tmpDir, { recursive: true });
     const zipPath = path.join(tmpDir, 'pack.zip');
     fs.writeFileSync(zipPath, buf);
@@ -859,8 +1545,8 @@ async function importPackToAE(id) {
     steps[1] = { state: 'run', text: 'Unzip qilinmoqda…' };
     log();
 
-    // 1 — Unzip
-    try { child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', tmpDir], { timeout: 120000 }); } catch(e) {}
+    // 1 — Unzip (cross-platform)
+    try { unzipTo(child, zipPath, tmpDir); } catch(e) {}
     let aepPath = '';
     const walkDir = dir => {
       for (const f of fs.readdirSync(dir)) {
@@ -877,43 +1563,31 @@ async function importPackToAE(id) {
     steps[2] = { state: 'run', text: 'AE da ochilmoqda: ' + path.basename(aepPath) };
     log();
 
-    // 2 — AE da ochish: avval joriy loyihani yopamiz (dialog oldini olish),
-    //     keyin plugin ichidagi AE versiyasida ochamiz (default emas)
-    await evalP('try{ if(app.project) app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); }catch(e){}');
-
-    // ExtendScript orqali AE versiyasini olamiz (app.version = "25.0.0x31" → 2025)
-    const verRaw = await evalP('app.version');
-    const majorVer = parseInt(String(verRaw || '25'), 10);
-    const appYear = (majorVer >= 10 && majorVer < 100) ? (majorVer + 2000) : 2025;
-    const aeAppName = 'Adobe After Effects ' + appYear;
-    steps[2].text = 'AE da ochilmoqda (' + aeAppName + ')…';
+    // 2 — AE da ochish (queue — app.open uzoq, evalScript timeout bo'lmasin)
+    steps[2].text = 'AE da ochilmoqda (kutish 90s gacha)…';
     log();
-    await new Promise(resolve => {
-      child.exec('open -a ' + JSON.stringify(aeAppName) + ' ' + JSON.stringify(aepPath), () => resolve());
-    });
-    steps[2] = { state: 'ok', text: '✓ Open buyruq yuborildi' };
-    steps[3] = { state: 'run', text: 'AE loyihani yuklamoqda… (15s gacha kutiladi)' };
+    const openRes = await openAepInHost(aepPath);
+    steps[2] = { state: 'ok', text: '✓ Ochildi: ' + (openRes.projectName || path.basename(aepPath)) };
+    steps[3] = { state: 'run', text: 'Loyiha saqlanmoqda…' };
     log();
 
-    // 3 — AE yuklaganini tekshirish (max 15 son, 1.5s interval)
-    let panel = null;
-    for (let i = 0; i < 10; i++) {
-      await new Promise(r => setTimeout(r, 1500));
-      const raw = await evalP('refreshProjectPanel()');
-      try { panel = JSON.parse(raw); } catch(e2) { panel = null; }
-      if (panel && panel.ok && panel.saved) break;
-    }
-
-    if (panel && panel.ok && panel.saved) {
-      steps[3] = { state: 'ok', text: '✓ Ochildi: ' + panel.projectName + ' — tuzating, keyin CMD+S saqlang' };
+    const saveRaw = await evalP('afEnsureSaved(' + JSON.stringify(aepPath) + ')');
+    let saveRes;
+    try { saveRes = JSON.parse(saveRaw); } catch (e) { saveRes = null; }
+    if (saveRes && saveRes.ok) {
+      steps[3] = { state: 'ok', text: '✓ Saqlandi: ' + path.basename(saveRes.projectFile || aepPath) };
     } else {
-      steps[3] = { state: 'ok', text: '✓ Fayl: ' + path.basename(aepPath) + ' — AEda yuklanishini kuting, tuzating, CMD+S saqlang' };
+      steps[3] = { state: 'ok', text: '✓ Ochildi — kerak bo\'lsa CMD+S bilan saqlang' };
     }
     log();
-    toast('✓ AE da ochilyapti — tuzatib CMD+S saqlang, keyin "Yuklash" bosing');
+    toast('✓ AE da ochildi — tuzatib saqlang, keyin "Serverga yuklash" bosing');
 
     window._adminPackTmp = window._adminPackTmp || {};
     window._adminPackTmp[id] = { dir: tmpDir, aep: aepPath };
+    // Downloaded ro'yxatga qo'shish
+    const tplMeta = allTemplates.find(x => x.id === id);
+    const thumbUrl = tplMeta ? apiBase() + '/api/plugin/assets/' + id + '/thumb' : '';
+    registerAdminDownload(id, tplMeta?.name || id, thumbUrl, aepPath, tmpDir);
     if (btn) { btn.disabled = false; btn.textContent = '↓ Qayta ochish'; }
 
   } catch(e) {
@@ -924,191 +1598,893 @@ async function importPackToAE(id) {
     if (btn) btn.disabled = false;
   }
 }
-// ── Pack: 2-qadam — Render + Yuklash ────────────────────────────────────────
-async function scanAndReupload(id) {
+// ── Pack: 2-qadam — Interaktiv sahna tayyorlash + review ────────────────────
+let scanState = { templateId: null, exportRoot: '', scenes: [], tree: [], folders: [], scenesFolder: '', projectFile: '', projectName: '' };
+window._adminPreparedScenes = window._adminPreparedScenes || {};
+
+function scanShowMessage(html) {
+  const list = document.getElementById('scanList');
+  if (list) list.innerHTML = '<div class="empty-state" style="padding:32px 20px">' + html + '</div>';
+}
+
+function closeScanModal() {
+  document.getElementById('scanOverlay').classList.remove('open');
+}
+
+/** Qadam 2 — "Sahnalarni topish": modalni ochadi, AE loyihasini tekshiradi, papka tanlatadi */
+async function openScenePrep(id) {
   if (!IS_CEP || !csInterface) { toast('Faqat AE ichida ishlaydi', true); return; }
   const btn = document.getElementById('btn-scan-' + id);
   if (btn) btn.disabled = true;
 
-  const steps = [
-    { state: 'run',  text: 'AE loyihasi tekshirilmoqda...' },
-    { state: 'wait', text: '02.Scene aniqlanmoqda...' },
-    { state: 'wait', text: 'Sahna preview render (PNG + video)...' },
-    { state: 'wait', text: 'MOV -> MP4 konvertatsiya...' },
-    { state: 'wait', text: 'Pack ziplanmoqda...' },
-    { state: 'wait', text: 'Pack yuklanmoqda...' },
-    { state: 'wait', text: 'Preview fayllar yuklanmoqda...' },
-    { state: 'wait', text: 'Manifest saqlanmoqda...' },
-  ];
-  const log = () => packLog(id, steps);
-  const step = (i, state, text) => { steps[i] = { state, text }; log(); };
+  document.getElementById('scanTitle').textContent = 'Loyiha tekshirilmoqda…';
+  document.getElementById('scanFolderBar').style.display = 'none';
+  document.getElementById('scanDoneBtn').disabled = true;
+  document.getElementById('scanFootMsg').textContent = '';
+  document.getElementById('scanOverlay').classList.add('open');
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">AE loyihasi tekshirilmoqda…</div>');
 
   try {
-    // 0 — AE loyiha
-    const panelRaw = await evalP('refreshProjectPanel()');
-    let panel; try { panel = JSON.parse(panelRaw); } catch(e) { panel = null; }
-    if (!panel?.ok || !panel.saved)
-      throw new Error('AE da saqlangan loyiha yoq -- avval CMD+S bilan saqlang');
-    step(0, 'ok', 'Loyiha: ' + panel.projectName);
-
-    // 1 — 02.Scene papkasi
-    step(1, 'run', '02.Scene aniqlanmoqda...');
-    const scenesFolder = adminPickScenesFolder(panel.folders || [], panel.tree || []);
-    if (!scenesFolder) throw new Error('02.Scene papkasi topilmadi');
-    step(1, 'ok', 'Sahna papkasi: ' + scenesFolder);
-
-    // 2 — Sahna thumbnail + video render (adminRenderScenePreviews - render queue)
-    step(2, 'run', 'Sahna render qilinmoqda (PNG thumbnail + ProRes video)...');
-    const pathM = require('path'), fsM = require('fs'), osM = require('os'), childM = require('child_process');
-    const renderDir = pathM.join(osM.tmpdir(), 'af_admin_render_' + id + '_' + Date.now());
-    const renderCfg = JSON.stringify({ scenesFolder, exportRoot: renderDir, previewDuration: 6 });
-    const renderRaw = await evalP('adminRenderScenePreviews(' + JSON.stringify(renderCfg) + ')');
-    let renderResult; try { renderResult = JSON.parse(renderRaw); } catch(e) { renderResult = null; }
-    if (!renderResult?.ok) throw new Error(renderResult?.message || 'Sahna render bolmadi');
-    const results = renderResult.results || [];
-    const thumbOkCount = results.filter(r => r.thumbOk).length;
-    const videoOkCount = results.filter(r => r.videoOk).length;
-    step(2, 'ok', results.length + ' sahna: ' + thumbOkCount + ' thumb, ' + videoOkCount + ' video ok');
-
-    // 3 — MOV -> MP4 konvertatsiya (avconvert)
-    step(3, 'run', 'MOV -> MP4 konvertatsiya qilinmoqda...');
-    const convertedVideos = [];
-    for (const r of results) {
-      if (!r.videoOk || !r.videoPath) { convertedVideos.push(null); continue; }
-      const mp4Path = r.videoPath.replace(/\.mov$/i, '.mp4');
-      let converted = false;
-      try {
-        childM.execFileSync('avconvert', [
-          '--preset', 'Preset1280x720',
-          '--source', r.videoPath,
-          '--output', mp4Path
-        ], { timeout: 120000 });
-        if (fsM.existsSync(mp4Path)) {
-          converted = true;
-        }
-      } catch(eConv) {
-        // avconvert bajarilmadi — MOV ni to'g'ridan ishlatamiz
+    if (!(await hostScriptReady())) {
+      const reload = await reloadHostScript(true);
+      if (reload !== 'ok') {
+        scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">host.jsx yuklanmadi:<br><span style="font-size:10px;color:var(--muted);word-break:break-all">' + reload + '</span><br><br>After Effects ni qayta ishga tushiring.</div>');
+        return;
       }
-      convertedVideos.push(converted ? mp4Path : r.videoPath);
     }
-    const mp4Count = convertedVideos.filter(v => v && v.endsWith('.mp4')).length;
-    step(3, 'ok', mp4Count + ' ta MP4, ' + (videoOkCount - mp4Count) + ' ta MOV');
 
-    // 4 — Pack zip
-    step(4, 'run', 'Pack ziplanmoqda...');
-    const aepPath = panel.projectFile;
-    const aepDir = pathM.dirname(aepPath);
-    const aepFile = pathM.basename(aepPath);
-    const tmpZip = pathM.join(osM.tmpdir(), 'af_admin_reup_' + Date.now() + '.zip');
-    const entries = [aepFile];
-    ['(Footage)', 'Footage', '(footage)', 'footage'].forEach(f => {
-      try { if (fsM.existsSync(pathM.join(aepDir, f))) entries.push(f); } catch(e) {}
-    });
-    childM.execFileSync('zip', ['-r', '-q', tmpZip].concat(entries), { cwd: aepDir, timeout: 180000 });
-    step(4, 'ok', 'Zip: ' + (fsM.statSync(tmpZip).size / 1048576).toFixed(1) + ' MB');
+    const knownAep = (window._adminPackTmp && window._adminPackTmp[id] && window._adminPackTmp[id].aep)
+      || (adminDownloaded[id] && adminDownloaded[id].aepPath) || '';
 
-    // 5 — Pack + thumb upload
-    step(5, 'run', 'Pack yuklanmoqda...');
-    const zipBuf = fsM.readFileSync(tmpZip);
-    const fd = new FormData();
-    fd.append('pack', new Blob([zipBuf], { type: 'application/zip' }), aepFile.replace('.aep', '.zip'));
-    // Birinchi scene thumbini umumiy thumb sifatida
-    const firstThumb = results.find(r => r.thumbOk && r.thumbPath);
-    if (firstThumb) {
-      const tbuf = fsM.readFileSync(firstThumb.thumbPath);
-      fd.append('thumb', new Blob([tbuf], { type: 'image/png' }), 'thumb.png');
+    let panelRaw = await callHostSimple('refreshProjectPanel()');
+    let panel;
+    try { panel = JSON.parse(panelRaw); } catch (e) { panel = null; }
+    if (!panel || !panel.ok) {
+      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">AE loyihasi ochiq emas.<br><br>Avval <b>"1 · AE da ochish"</b> bosing.</div>');
+      return;
     }
-    await apiForm('/api/contributor/templates/' + id + '/assets', fd);
-    try { fsM.unlinkSync(tmpZip); } catch(e) {}
-    step(5, 'ok', 'Pack yuklandi');
 
-    // 6 — Per-scene preview fayllar upload (thumbnail PNG + video MP4/MOV)
-    step(6, 'run', 'Preview fayllar yuklanmoqda...');
-    const sf = new FormData();
-    let uploadCount = 0;
-    results.forEach((r, idx) => {
-      const key = adminSceneKey(r.aeComp || r.name);
-      // Thumbnail PNG
-      if (r.thumbOk && r.thumbPath) {
-        const tbuf = fsM.readFileSync(r.thumbPath);
-        sf.append(key + '_thumb', new Blob([tbuf], { type: 'image/png' }), key + '_thumb.png');
-        uploadCount++;
+    if (!panel.saved) {
+      const saveRaw = knownAep
+        ? await evalP('afEnsureSaved(' + JSON.stringify(knownAep) + ')')
+        : await callHostJson('ensureProjectSaved', { path: knownAep });
+      let saveRes; try { saveRes = JSON.parse(saveRaw); } catch (e) { saveRes = null; }
+      if (saveRes && saveRes.ok) {
+        panelRaw = await callHostSimple('refreshProjectPanel()');
+        try { panel = JSON.parse(panelRaw); } catch (e) {}
       }
-      // Video (MP4 yoki MOV)
-      const vidPath = convertedVideos[idx];
-      if (vidPath && fsM.existsSync(vidPath)) {
-        const vbuf = fsM.readFileSync(vidPath);
-        const isM4 = vidPath.endsWith('.mp4');
-        const mime = isM4 ? 'video/mp4' : 'video/quicktime';
-        const ext = isM4 ? '.mp4' : '.mov';
-        sf.append(key, new Blob([vbuf], { type: mime }), key + ext);
-        uploadCount++;
-      }
-    });
-    if (uploadCount > 0) {
-      await apiForm('/api/contributor/templates/' + id + '/scene-previews', sf);
     }
-    step(6, 'ok', uploadCount + ' ta fayl yuklandi (thumb + video)');
+    if (!panel || !panel.ok) {
+      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">Loyiha topilmadi. Avval <b>"AE da ochish"</b>.</div>');
+      return;
+    }
 
-    // 7 — Manifest
-    step(7, 'run', 'Manifest saqlanmoqda...');
-    const scenes = results.map((s, idx) => ({
-      n: s.name,
-      aeComp: s.aeComp || s.name,
-      previewKey: adminSceneKey(s.aeComp || s.name),
-      meta: (s.width && s.height ? s.width + 'x' + s.height : '') + (s.fps ? ' · ' + s.fps + 'fps' : ''),
-      width: s.width, height: s.height, fps: s.fps, durationSec: s.durationSec,
-      previewDur: s.previewDur
-    }));
-    await api('/api/contributor/templates/' + id, {
-      method: 'PATCH',
-      body: { scenes, metaJson: { aeScenesFolder: scenesFolder } }
-    });
-    step(7, 'ok', scenes.length + ' ta sahna manifest saqlandi');
+    const os = require('os'), path = require('path'), fs = require('fs');
+    const previewDir = path.join(adminBaseDir(), 'af_admin_' + id, 'previews');
+    try { fs.mkdirSync(previewDir, { recursive: true }); } catch (e) {}
+    scanState = {
+      templateId: id,
+      exportRoot: previewDir,
+      scenes: [],
+      tree: panel.tree || [],
+      folders: panel.folders || [],
+      scenesFolder: '',
+      projectFile: panel.projectFile || knownAep || '',
+      knownAep: knownAep || '',
+      projectName: panel.projectName
+    };
+    document.getElementById('scanTitle').textContent = panel.projectName || 'Sahnalarni topish';
 
-    toast(scenes.length + ' sahna, pack yangilandi!');
-    const fresh = await api('/api/contributor/templates?scope=all');
-    allTemplates = fresh.items || allTemplates;
-    if (btn) { btn.disabled = false; btn.textContent = 'Qayta yuklash'; }
+    // Papka ro'yxati — qo'lda tanlash uchun
+    const sel = document.getElementById('scanFolder');
+    const folders = panel.folders || [];
+    const guess = adminPickScenesFolder(folders, panel.tree || []);
+    sel.innerHTML = '<option value="">— Butun loyiha —</option>' +
+      folders.map(f => `<option value="${String(f.path).replace(/"/g,'&quot;')}" ${f.path===guess?'selected':''}>${f.name} (${(panel.tree||[]).filter(n=>n.type==='comp'&&n.folder===f.path).length} comp)</option>`).join('');
+    scanState.scenesFolder = guess || '';
+    document.getElementById('scanFolderBar').style.display = 'flex';
 
+    // Avtomatik birinchi aniqlash
+    await detectScenesInFolder();
   } catch(e) {
-    const ri = steps.findIndex(s => s.state === 'run');
-    if (ri >= 0) step(ri, 'err', 'X ' + e.message);
-    else packLog(id, [{ state: 'err', text: 'X ' + e.message }]);
-    toast(e.message, true);
+    scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">Xato: ' + e.message + '</div>');
+  } finally {
     if (btn) btn.disabled = false;
   }
 }
+
+/** Tanlangan papkadagi sahnalarni aniqlaydi va AE project panelda ochadi */
+async function detectScenesInFolder() {
+  const sel = document.getElementById('scanFolder');
+  scanState.scenesFolder = sel ? sel.value : '';
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Sahnalar aniqlanmoqda…</div>');
+
+  let comps = [];
+  try {
+    const raw = await evalP('adminListScenesInFolder(' + JSON.stringify(JSON.stringify({ folder: scanState.scenesFolder })) + ')');
+    const r = JSON.parse(raw);
+    if (r && r.ok) comps = r.scenes || [];
+  } catch (e) {
+    // zaxira: panel tree dan
+    comps = (scanState.tree || []).filter(n => n.type === 'comp' && (!scanState.scenesFolder || n.folder === scanState.scenesFolder));
+  }
+  comps.sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+
+  scanState.scenes = comps.map(c => ({
+    compName: c.name, name: c.name, aeComp: c.name,
+    width: c.width, height: c.height, fps: c.fps, durationSec: c.durationSec,
+    videoLocal: '', videoExt: 'mp4', thumbLocal: '', previewDur: 6,
+    status: '', statusType: ''
+  }));
+  renderScanList();
+  updateScanFoot();
+
+  if (!scanState.scenes.length) {
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Bu papkada sahna (comp) topilmadi.<br>Boshqa papkani tanlang.</div>');
+  }
+}
+
+function renderScanList() {
+  const el = document.getElementById('scanList');
+  if (!scanState.scenes.length) return;
+  el.innerHTML = scanState.scenes.map((s, i) => {
+    const meta = (s.width && s.height ? s.width + '×' + s.height : '') + (s.fps ? ' · ' + s.fps + 'fps' : '');
+    let preview = '<span class="ph">✦</span>';
+    if (s.videoLocal) {
+      const url = 'file://' + encodeURI(s.videoLocal);
+      preview = `<video src="${url}" muted playsinline preload="metadata" onloadedmetadata="this.currentTime=0.3"></video>
+        <button class="scan-card-play" onclick="scanPlayVideo(${i},this)">▶</button>`;
+    }
+    const st = s.status ? `<div class="scan-card-status ${s.statusType||''}">${s.status}</div>` : '';
+    return `<div class="scan-card ${s.videoLocal?'rendered':''}" data-idx="${i}">
+      <div class="scan-card-preview">${preview}</div>
+      <div class="scan-card-info">
+        <div class="scan-card-name">${s.name}</div>
+        <div class="scan-card-meta">${meta}</div>
+        ${st}
+        <div class="scan-card-actions">
+          <label class="scan-mini-btn blue" title="Preview video import">
+            ↑ Video import
+            <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" style="display:none" onchange="pickSceneVideo(this,${i})">
+          </label>
+          <button class="scan-mini-btn" onclick="renderSceneFromAE(${i})" title="AE dan preview render">🎬 AE dan render</button>
+          <button class="scan-mini-btn" onclick="openSceneInAE(${i})" title="AE da ochish">↗ AE</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function scanPlayVideo(i, btn) {
+  const card = document.querySelector('.scan-card[data-idx="'+i+'"]');
+  const v = card?.querySelector('video');
+  if (!v) return;
+  if (v.paused) { v.currentTime = 0; v.play(); btn.textContent = '⏸'; }
+  else { v.pause(); btn.textContent = '▶'; }
+}
+
+/** Sahna comp'ni AE project panelda ochadi */
+async function openSceneInAE(i) {
+  const s = scanState.scenes[i];
+  if (!s) return;
+  try { await evalP('adminOpenSceneComp(' + JSON.stringify(s.compName) + ')'); } catch(e) {}
+}
+
+/** Diskdan preview video tanlash (qo'lda import) */
+function pickSceneVideo(input, i) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const s = scanState.scenes[i];
+  if (!s) return;
+  const localPath = file.path || (file.webkitRelativePath || '');
+  if (!localPath) { toast('Fayl yo\'li aniqlanmadi', true); return; }
+  s.videoLocal = localPath;
+  s.videoExt = (file.name.split('.').pop() || 'mp4').toLowerCase();
+  s.status = '✓ Video tanlandi'; s.statusType = 'ok';
+  input.value = '';
+  renderScanList();
+  updateScanFoot();
+}
+
+/** AE render natijasini sahnaga yozadi — preview fayl yuklab olish papkasida qoladi */
+function applySceneRenderResult(s, r) {
+  const fsM = require('fs');
+  if (!r || !r.ok) throw new Error((r && r.message) || 'render xato');
+  s.thumbLocal = r.thumbPath || '';
+  s.width = r.width; s.height = r.height; s.fps = r.fps;
+  s.durationSec = r.durationSec; s.previewDur = r.previewDur;
+  if (r.videoPath && fsM.existsSync(r.videoPath)) {
+    s.videoLocal = r.videoPath;
+    const ext = String(r.videoPath).split('.').pop().toLowerCase();
+    s.videoExt = (ext === 'mov' || ext === 'webm') ? ext : 'mp4';
+    // Admin Preview odatda mp4 — faqat .mov bo'lsa konvert
+    if (ext === 'mov' && !IS_WIN) {
+      try {
+        const childM = require('child_process');
+        const mp4 = r.videoPath.replace(/\.mov$/i, '.mp4');
+        childM.execFileSync('avconvert', ['--preset', 'Preset1280x720', '--source', r.videoPath, '--output', mp4], { timeout: 120000 });
+        if (fsM.existsSync(mp4)) { s.videoLocal = mp4; s.videoExt = 'mp4'; }
+      } catch (eConv) {}
+    }
+  } else {
+    throw new Error('Preview video fayli topilmadi');
+  }
+  s.status = r.usedTemplate === 'Admin Preview' ? '✓ Admin Preview' : '✓ Render tayyor';
+  s.statusType = 'ok';
+}
+
+/** Sahnani AE dan render qilib preview oladi (Admin Preview preset) */
+async function renderSceneFromAE(i) {
+  const s = scanState.scenes[i];
+  if (!s) return;
+  s.status = '⏳ Render…'; s.statusType = 'run'; renderScanList();
+  try {
+    const cfg = JSON.stringify({ compName: s.compName, exportRoot: scanState.exportRoot, previewDuration: 6 });
+    const raw = await evalP('adminRenderOneScene(' + JSON.stringify(cfg) + ')');
+    let r; try { r = JSON.parse(raw); } catch (e) { r = null; }
+    applySceneRenderResult(s, r);
+  } catch (e) {
+    s.status = '✗ ' + e.message; s.statusType = 'err';
+  } finally {
+    renderScanList(); updateScanFoot();
+  }
+}
+
+let _renderAllBusy = false;
+
+/** Barcha sahnalarni ketma-ket Admin Preview bilan render qiladi */
+async function renderAllScenes() {
+  if (_renderAllBusy) return;
+  if (!scanState.scenes.length) { toast('Avval sahnalarni aniqlang', true); return; }
+  _renderAllBusy = true;
+  const allBtn = document.getElementById('scanRenderAllBtn');
+  const detectBtn = document.getElementById('scanDetectBtn');
+  const doneBtn = document.getElementById('scanDoneBtn');
+  if (allBtn) allBtn.disabled = true;
+  if (detectBtn) detectBtn.disabled = true;
+  if (doneBtn) doneBtn.disabled = true;
+
+  const fsM = require('fs');
+  try { fsM.mkdirSync(scanState.exportRoot, { recursive: true }); } catch (e) {}
+
+  const total = scanState.scenes.length;
+  let ok = 0, fail = 0;
+  const foot = document.getElementById('scanFootMsg');
+
+  for (let i = 0; i < total; i++) {
+    const s = scanState.scenes[i];
+    s.status = '⏳ ' + (i + 1) + '/' + total + '…'; s.statusType = 'run';
+    if (foot) foot.textContent = 'All render: ' + (i + 1) + '/' + total + ' — Admin Preview…';
+    renderScanList();
+
+    try {
+      const cfg = JSON.stringify({ compName: s.compName, exportRoot: scanState.exportRoot, previewDuration: 6 });
+      const raw = await evalP('adminRenderOneScene(' + JSON.stringify(cfg) + ')');
+      let r; try { r = JSON.parse(raw); } catch (e) { r = null; }
+      applySceneRenderResult(s, r);
+      ok++;
+    } catch (e) {
+      s.status = '✗ ' + e.message; s.statusType = 'err';
+      fail++;
+    }
+    renderScanList(); updateScanFoot();
+  }
+
+  _renderAllBusy = false;
+  if (allBtn) allBtn.disabled = false;
+  if (detectBtn) detectBtn.disabled = false;
+  if (foot) foot.textContent = ok + '/' + total + ' preview tayyor' + (fail ? ' · ' + fail + ' xato' : '');
+  toast(fail ? ok + ' tayyor, ' + fail + ' xato' : '✓ ' + ok + ' sahna render (Admin Preview)');
+}
+
+function updateScanFoot() {
+  const total = scanState.scenes.length;
+  const withVid = scanState.scenes.filter(s => s.videoLocal).length;
+  const msg = document.getElementById('scanFootMsg');
+  const doneBtn = document.getElementById('scanDoneBtn');
+  if (msg) msg.textContent = total
+    ? `${total} sahna · ${withVid} ta preview video tanlangan`
+    : '';
+  // "Tayyor" — kamida bitta sahna bo'lsa yetarli (preview ixtiyoriy)
+  if (doneBtn) doneBtn.disabled = total === 0;
+}
+
+/** Tayyorlangan sahnalarni saqlaydi va 3-qadam (yuklash) ni yoqadi */
+function finishScenePrep() {
+  const id = scanState.templateId;
+  if (!id || !scanState.scenes.length) { toast('Sahna topilmadi', true); return; }
+  window._adminPreparedScenes[id] = {
+    projectFile: scanState.projectFile || scanState.knownAep || '',
+    knownAep: scanState.knownAep || '',
+    scenesFolder: scanState.scenesFolder || '',
+    scenes: scanState.scenes.map(s => ({
+      name: s.name, aeComp: s.aeComp || s.compName || s.name,
+      width: s.width, height: s.height, fps: s.fps, durationSec: s.durationSec,
+      previewDur: s.previewDur, videoLocal: s.videoLocal || '', videoExt: s.videoExt || 'mp4',
+      thumbLocal: s.thumbLocal || ''
+    }))
+  };
+  const withVid = scanState.scenes.filter(s => s.videoLocal).length;
+  closeScanModal();
+  // 3-qadam tugmasini yoqamiz
+  const upBtn = document.getElementById('btn-upload-' + id);
+  if (upBtn) upBtn.disabled = false;
+  const hint = document.getElementById('upload-hint-' + id);
+  if (hint) hint.textContent = `${scanState.scenes.length} sahna tayyor — yuklashga tayyor`;
+  const prepHint = document.getElementById('prep-hint-' + id);
+  if (prepHint) prepHint.textContent = `✓ ${scanState.scenes.length} sahna (${withVid} video)`;
+  toast(`✓ ${scanState.scenes.length} sahna tayyorlandi — endi "Serverga yuklash"`);
+}
+
+window.openScenePrep = openScenePrep;
+window.detectScenesInFolder = detectScenesInFolder;
+window.pickSceneVideo = pickSceneVideo;
+window.renderSceneFromAE = renderSceneFromAE;
+window.renderAllScenes = renderAllScenes;
+window.openSceneInAE = openSceneInAE;
+window.finishScenePrep = finishScenePrep;
+window.scanPlayVideo = scanPlayVideo;
+window.closeScanModal = closeScanModal;
+
+// ── Qadam 3: Serverga yuklash (FAQAT yuklash, 0-100% progress) ───────────────
+function xhrUpload(path, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', apiBase() + path);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + token());
+    xhr.upload.onprogress = e => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total); };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        let data = null; try { data = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch(e) {}
+        resolve(data);
+      } else {
+        reject(Object.assign(new Error('HTTP ' + xhr.status), { status: xhr.status }));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Tarmoq xatosi'));
+    xhr.send(formData);
+  });
+}
+
+function setUploadProgress(id, pct, label) {
+  const wrap = document.getElementById('upwrap-' + id);
+  const bar = document.getElementById('upbar-' + id);
+  const txt = document.getElementById('uppct-' + id);
+  if (wrap) wrap.style.display = 'flex';
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  if (bar) bar.style.width = p + '%';
+  if (txt) txt.textContent = label != null ? label : (p + '%');
+}
+
+async function uploadTemplateToServer(id) {
+  if (!IS_CEP) { toast('Faqat AE ichida ishlaydi', true); return; }
+  const prep = window._adminPreparedScenes[id];
+  if (!prep || !prep.scenes || !prep.scenes.length) {
+    toast('Avval "Sahnalarni topish" bosing', true); return;
+  }
+  const upBtn = document.getElementById('btn-upload-' + id);
+  if (upBtn) upBtn.disabled = true;
+
+  const fsM = require('fs'), pathM = require('path');
+  try {
+    setUploadProgress(id, 2, 'Loyiha saqlanmoqda…');
+    // .aep yo'li: tayyorlangan / yuklab olingan / hozir AE da ochiq
+    let aepPath = prep.projectFile || prep.knownAep
+      || (window._adminPackTmp && window._adminPackTmp[id] && window._adminPackTmp[id].aep)
+      || (adminDownloaded[id] && adminDownloaded[id].aepPath) || '';
+    // AE da loyihani shu yo'lga saqlaymiz (o'zgartirishlar flush bo'lsin) + fayl yo'lini olamiz
+    try {
+      const saveRaw = await evalP('afEnsureSaved(' + JSON.stringify(aepPath) + ')');
+      const saveRes = JSON.parse(saveRaw);
+      if (saveRes && saveRes.ok && saveRes.projectFile) aepPath = saveRes.projectFile;
+    } catch (eSave) {}
+    if (!aepPath || !fsM.existsSync(aepPath)) {
+      throw new Error('AEP fayl topilmadi — "1 · AE da ochish" bilan qayta oching va CMD+S');
+    }
+    setUploadProgress(id, 4, 'Pack ziplanmoqda…');
+    const aepDir = pathM.dirname(aepPath);
+    const aepFile = pathM.basename(aepPath);
+    const tmpZip = pathM.join(adminCacheDir(), 'up_' + id + '_' + Date.now() + '.zip');
+    const entries = [aepFile];
+    ['(Footage)','Footage','(footage)','footage'].forEach(f => {
+      try { if (fsM.existsSync(pathM.join(aepDir, f))) entries.push(f); } catch(e) {}
+    });
+    zipEntries(require('child_process'), tmpZip, aepDir, entries);
+
+    // 1) Pack yuklash (5% → 60%)
+    const zipBuf = fsM.readFileSync(tmpZip);
+    const fd = new FormData();
+    fd.append('pack', new Blob([zipBuf], { type:'application/zip' }), aepFile.replace(/\.aep$/i,'.zip'));
+    const firstThumb = prep.scenes.find(s => s.thumbLocal && fsM.existsSync(s.thumbLocal));
+    if (firstThumb) fd.append('thumb', new Blob([fsM.readFileSync(firstThumb.thumbLocal)], { type:'image/png' }), 'thumb.png');
+    // Template-darajadagi preview (plagin Browse kartasi uchun) — birinchi sahna videosi
+    const firstVid = prep.scenes.find(s => s.videoLocal && fsM.existsSync(s.videoLocal));
+    if (firstVid) {
+      const pe = (firstVid.videoExt || 'mp4');
+      const pmime = pe === 'mov' ? 'video/quicktime' : (pe === 'webm' ? 'video/webm' : 'video/mp4');
+      fd.append('preview', new Blob([fsM.readFileSync(firstVid.videoLocal)], { type:pmime }), 'preview.' + pe);
+    }
+    await xhrUpload('/api/contributor/templates/' + id + '/assets', fd,
+      frac => setUploadProgress(id, 5 + frac * 55));
+    try { fsM.unlinkSync(tmpZip); } catch(e) {}
+    setUploadProgress(id, 60, 'Preview yuklanmoqda…');
+
+    // 2) Preview videolar (60% → 92%) — HAR SAHNA ALOHIDA so'rov bilan
+    //    (4K MP4 katta bo'ladi; bitta katta so'rov server limitida uziladi —
+    //     shuning uchun har bir sahnani ketma-ket, ishonchli yuklaymiz)
+    const withFiles = prep.scenes.filter(s =>
+      (s.videoLocal && fsM.existsSync(s.videoLocal)) ||
+      (s.thumbLocal && fsM.existsSync(s.thumbLocal)));
+    const total = withFiles.length || 1;
+    let okCount = 0;
+    for (let i = 0; i < withFiles.length; i++) {
+      const s = withFiles[i];
+      const key = adminSceneKey(s.aeComp || s.name);
+      const sf = new FormData();
+      if (s.thumbLocal && fsM.existsSync(s.thumbLocal)) {
+        sf.append(key + '_thumb', new Blob([fsM.readFileSync(s.thumbLocal)], { type:'image/png' }), key + '_thumb.png');
+      }
+      if (s.videoLocal && fsM.existsSync(s.videoLocal)) {
+        const ext = (s.videoExt || 'mp4');
+        const mime = ext === 'mov' ? 'video/quicktime' : (ext === 'webm' ? 'video/webm' : 'video/mp4');
+        sf.append(key, new Blob([fsM.readFileSync(s.videoLocal)], { type:mime }), key + '.' + ext);
+      }
+      const base = 60 + (i / total) * 32;
+      await xhrUpload('/api/contributor/templates/' + id + '/scene-previews', sf,
+        frac => setUploadProgress(id, base + frac * (32 / total),
+          'Preview ' + (i + 1) + '/' + total + '…'));
+      okCount++;
+    }
+    setUploadProgress(id, 92, 'Manifest saqlanmoqda…');
+
+    // 3) Manifest (92% → 100%)
+    const scenes = prep.scenes.map(s => ({
+      n: s.name, aeComp: s.aeComp || s.name,
+      previewKey: adminSceneKey(s.aeComp || s.name),
+      meta: (s.width && s.height ? s.width + 'x' + s.height : '') + (s.fps ? ' · ' + s.fps + 'fps' : ''),
+      width: s.width, height: s.height, fps: s.fps, durationSec: s.durationSec, previewDur: s.previewDur
+    }));
+    await api('/api/contributor/templates/' + id, {
+      method: 'PATCH',
+      body: { scenes, metaJson: { scenes, aeScenesFolder: prep.scenesFolder || '' } }
+    });
+    setUploadProgress(id, 100, '✓ 100%');
+
+    toast('✓ Shablon va ' + scenes.length + ' sahna serverga yuklandi!');
+    delete window._adminPreparedScenes[id];
+    const fresh = await api('/api/contributor/templates?scope=all');
+    allTemplates = fresh.items || allTemplates;
+    setTimeout(() => applySearch(), 600);
+  } catch(e) {
+    if (handleAuthError(e)) { if (upBtn) upBtn.disabled = false; return; }
+    setUploadProgress(id, 0, '✗ Xato');
+    toast(e.message, true);
+    if (upBtn) upBtn.disabled = false;
+  }
+}
+window.uploadTemplateToServer = uploadTemplateToServer;
 // ── Subscribers ────────────────────────────────────────────────────────────
 async function loadSubscribers() {
   const el = document.getElementById('listArea');
   el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
   try {
     const data = await api('/api/admin/plugin-subscribers');
-    const items = data.items || [];
-    if (!items.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-ico">👤</div><div class="empty-txt">Obunachi yo\'q</div></div>';
-      return;
-    }
-    el.innerHTML = items.map(s => `
-      <div class="sub-row">
-        <div class="sub-avatar">${(s.name || s.email || 'U').charAt(0).toUpperCase()}</div>
-        <div class="sub-info">
-          <div class="sub-name">${s.name || s.email.split('@')[0]}</div>
-          <div class="sub-email">${s.email}</div>
-        </div>
-        <div class="sub-right">
-          <div class="sub-plan ${(s.plan||'').toLowerCase()}">${s.plan || 'Free'}</div>
-          <div class="sub-seen">${s.lastSeen || '—'} · ${s.downloads || 0} dl</div>
-        </div>
-      </div>`).join('');
+    allSubscribers = data.items || [];
+    applySubscriberSearch();
   } catch(e) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-ico">⚠</div><div class="empty-txt">' + e.message + '</div></div>';
+    if (handleAuthError(e)) return;
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">⚠</div><div class="empty-txt">' + formatFetchError(e) + '</div></div>';
   }
 }
 
+function applySubscriberSearch() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const list = q
+    ? allSubscribers.filter(s =>
+        (s.email || '').toLowerCase().includes(q) ||
+        (s.name || '').toLowerCase().includes(q)
+      )
+    : allSubscribers;
+  renderSubscribers(list);
+}
+
+function renderSubscribers(items) {
+  const el = document.getElementById('listArea');
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">👤</div><div class="empty-txt">Obunachi yo\'q</div></div>';
+    return;
+  }
+  el.innerHTML = items.map(s => `
+    <div class="sub-row">
+      <div class="sub-avatar">${(s.name || s.email || 'U').charAt(0).toUpperCase()}</div>
+      <div class="sub-info">
+        <div class="sub-name">${s.name || s.email.split('@')[0]}</div>
+        <div class="sub-email">${s.email}</div>
+      </div>
+      <div class="sub-right">
+        <div class="sub-plan ${(s.plan||'').toLowerCase()}">${s.plan || 'Free'}</div>
+        <div class="sub-seen">${s.lastSeen || '—'} · ${s.downloads || 0} dl</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Downloaded tab ─────────────────────────────────────────────────────────
+// adminDownloaded[id] = { id, name, thumb, dir, folders:[], comps:[], downloadedAt }
+let adminDownloaded = {};
+
+function adminDlKey() { return 'af_admin_downloaded'; }
+
+function loadAdminDownloaded() {
+  try { adminDownloaded = JSON.parse(localStorage.getItem(adminDlKey()) || '{}'); }
+  catch { adminDownloaded = {}; }
+}
+
+function saveAdminDownloaded() {
+  localStorage.setItem(adminDlKey(), JSON.stringify(adminDownloaded));
+  updateDlBadge();
+}
+
+function updateDlBadge() {
+  const count = Object.keys(adminDownloaded).length;
+  const b = document.getElementById('dlBadge');
+  if (b) { b.textContent = count; b.style.display = count > 0 ? '' : 'none'; }
+}
+
+function registerAdminDownload(id, name, thumbUrl, aepPath, folder) {
+  adminDownloaded[id] = {
+    id, name, thumbUrl: thumbUrl || '',
+    aepPath: aepPath || '',
+    dir: folder || '',
+    folders: folder ? [folder] : [],
+    comps: [],
+    downloadedAt: new Date().toISOString()
+  };
+  saveAdminDownloaded();
+}
+
+function registerAdminImportMeta(id, data) {
+  if (!adminDownloaded[id]) return;
+  if (data?.folder) adminDownloaded[id].folders = [data.folder];
+  if (data?.comp) adminDownloaded[id].comps = [data.comp];
+  saveAdminDownloaded();
+}
+
+let allAdminDl = [];
+
+function renderDownloadedTab() {
+  loadAdminDownloaded();
+  allAdminDl = Object.values(adminDownloaded).sort((a, b) =>
+    (b.downloadedAt || '').localeCompare(a.downloadedAt || ''));
+  applyDlSearch();
+}
+
+function applyDlSearch() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const list = q ? allAdminDl.filter(d => (d.name || '').toLowerCase().includes(q)) : allAdminDl;
+  const el = document.getElementById('listArea');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">Hali hech narsa yuklab olinmagan<br>Pack bilan ishlash → AE da ochish</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(d => {
+    const thumb = d.thumbUrl
+      ? `<img src="${d.thumbUrl}" alt="" onerror="this.style.display='none'">`
+      : '📦';
+    const date = d.downloadedAt ? new Date(d.downloadedAt).toLocaleDateString('uz-UZ') : '';
+    const pathShort = d.dir ? d.dir.replace(/.*[/\\]([^/\\]+)[/\\][^/\\]+$/, '…/$1/…') : 'tmpdir';
+    return `<div class="dl-item">
+      <div class="dl-item-row">
+        <div class="dl-item-thumb">${thumb}</div>
+        <div class="dl-item-info">
+          <div class="dl-item-name">${d.name || d.id}</div>
+          <div class="dl-item-meta">${date}</div>
+          <div class="dl-item-path" title="${d.aepPath || d.dir}">${pathShort}</div>
+        </div>
+        <div class="dl-item-actions">
+          ${d.aepPath && IS_CEP ? `<button class="dl-btn-open" onclick="adminOpenInAE('${d.id}')">▶ AE</button>` : ''}
+          <button class="dl-btn-del" onclick="adminDeleteDownloaded('${d.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/** Saqlab olingan .aep faylni AE da qayta ochish */
+async function adminOpenInAE(id) {
+  const d = adminDownloaded[id];
+  if (!d?.aepPath || !IS_CEP) return;
+  try {
+    const openRes = await openAepInHost(d.aepPath);
+    toast('✓ AE da ochildi: ' + (openRes.projectName || d.name));
+  } catch(e) { toast(e.message, true); }
+}
+
+/** Yuklab olingan shablonni o'chirish — AE loyihasidan ham */
+async function adminDeleteDownloaded(id) {
+  const d = adminDownloaded[id];
+  if (!d) return;
+  if (!confirm('"' + (d.name || id) + '" ni ro\'yxatdan va AE loyihasidan o\'chirmoqchimisiz?')) return;
+
+  // 1) AE loyihasidan olib tashlash
+  if (IS_CEP && csInterface) {
+    const folders = Array.isArray(d.folders) ? d.folders : [];
+    const comps   = Array.isArray(d.comps)   ? d.comps   : [];
+    if (folders.length || comps.length) {
+      try {
+        const cfg = JSON.stringify({ folders, comps });
+        const raw = await evalP('removeImportedTemplate(' + JSON.stringify(cfg) + ')');
+        let res; try { res = JSON.parse(raw); } catch { res = null; }
+        if (res?.ok) toast('✓ AE dan olib tashlandi (' + (res.removed || 0) + ' element)');
+        else toast('AE dan o\'chirishda muammo: ' + (res?.message || '?'), true);
+      } catch(e) { console.warn('adminDeleteDownloaded AE', e); }
+    }
+    // 2) Lokal disk fayllarini tozalash (af_admin_<id> papkasi)
+    try {
+      const fs = require('fs'), path = require('path');
+      // Ro'yxatdagi pack papkasi
+      let target = d.dir || '';
+      // Zaxira: aepPath ning af_admin_<id> ildizi
+      if ((!target || !fs.existsSync(target)) && d.aepPath) {
+        let cur = path.dirname(d.aepPath);
+        for (let i = 0; i < 6; i++) {
+          if (/af_admin_/.test(path.basename(cur))) { target = cur; break; }
+          const up = path.dirname(cur);
+          if (up === cur) break;
+          cur = up;
+        }
+        if (!target) target = path.dirname(d.aepPath);
+      }
+      if (target && fs.existsSync(target)) {
+        fs.rmSync(target, { recursive: true, force: true });
+        toast('✓ Lokal fayllar o\'chirildi');
+      }
+    } catch(e) { console.warn('adminDeleteDownloaded disk', e); }
+  }
+
+  // 3) Ro'yxatdan o'chirish
+  delete adminDownloaded[id];
+  saveAdminDownloaded();
+  renderDownloadedTab();
+}
+window.adminOpenInAE = adminOpenInAE;
+window.adminDeleteDownloaded = adminDeleteDownloaded;
+
+// ── Panel close ────────────────────────────────────────────────────────────
+// MUHIM: yuklab olish papkasidagi pack/preview fayllar o'chirilMAYDI.
+// (Avval bu yerda af_admin_<id> papkasi o'chirilardi — preview/pack yo'qolardi.)
+// Kesh faqat "Admin hisob → Keshni tozalash" yoki "Yuklangan" tab orqali o'chadi.
+window.addEventListener('unload', () => {
+  // ataylab bo'sh — auto o'chirish yo'q
+});
+
+// ── Admin Account Sheet ────────────────────────────────────────────────────
+
+/** Barqaror sozlamalar fayli: ~/Library/Application Support/AssetFlow/admin-settings.json */
+function adminSettingsPath() {
+  if (!IS_CEP) return '';
+  try {
+    const path = require('path'), os = require('os'), fs = require('fs');
+    const dir = path.join(os.homedir(), 'Library', 'Application Support', 'AssetFlow');
+    fs.mkdirSync(dir, { recursive: true });
+    return path.join(dir, 'admin-settings.json');
+  } catch { return ''; }
+}
+
+function adminReadSettings() {
+  const p = adminSettingsPath();
+  if (!p) return {};
+  try { const fs = require('fs'); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {}; }
+  catch { return {}; }
+}
+
+function adminWriteSettings(patch) {
+  const p = adminSettingsPath();
+  if (!p) return;
+  try {
+    const fs = require('fs');
+    const cur = adminReadSettings();
+    fs.writeFileSync(p, JSON.stringify({ ...cur, ...patch }, null, 2), 'utf8');
+  } catch(e) { console.warn('adminWriteSettings', e); }
+}
+
+function getAdminDownloadDir() {
+  const s = adminReadSettings();
+  return s.downloadDir || '';
+}
+
+/** Barcha yuklab olish/kesh shu papkada saqlanadi (sozlangan papka yoki tmpdir) */
+function adminBaseDir() {
+  try {
+    const fs = require('fs');
+    const dir = getAdminDownloadDir();
+    if (dir && fs.existsSync(dir)) return dir;
+  } catch (e) {}
+  try { return require('os').tmpdir(); } catch (e) { return ''; }
+}
+
+/** Vaqtinchalik render/zip kesh papkasi (yuklab olish papkasi ichida) */
+function adminCacheDir() {
+  const path = require('path'), fs = require('fs');
+  const d = path.join(adminBaseDir(), '_af_cache');
+  try { fs.mkdirSync(d, { recursive: true }); } catch (e) {}
+  return d;
+}
+
+function dirSizeBytes(fs, path, dir) {
+  let total = 0;
+  try {
+    for (const name of fs.readdirSync(dir)) {
+      const p = path.join(dir, name);
+      try {
+        const st = fs.statSync(p);
+        if (st.isDirectory()) total += dirSizeBytes(fs, path, p);
+        else total += st.size;
+      } catch (e) {}
+    }
+  } catch (e) {}
+  return total;
+}
+
+/** Keshni tozalash: _af_cache + ro'yxatda yo'q (orphan) af_admin_* packlar */
+async function adminClearCache() {
+  if (!IS_CEP) { toast('Faqat AE ichida', true); return; }
+  const fs = require('fs'), path = require('path');
+  const base = adminBaseDir();
+  if (!base) { toast('Papka topilmadi', true); return; }
+
+  const registeredDirs = new Set(
+    Object.values(adminDownloaded).map(d => d && d.dir).filter(Boolean)
+  );
+  const registeredIds = new Set(Object.keys(adminDownloaded));
+
+  let freed = 0, removed = 0;
+  const targets = [];
+
+  // 1) _af_cache to'liq
+  const cacheDir = path.join(base, '_af_cache');
+  if (fs.existsSync(cacheDir)) targets.push(cacheDir);
+
+  // 2) Ro'yxatda yo'q af_admin_* pack papkalari (orphan)
+  try {
+    for (const name of fs.readdirSync(base)) {
+      if (!/^af_admin_/.test(name)) continue;
+      const full = path.join(base, name);
+      if (registeredDirs.has(full)) continue;
+      const id = name.replace(/^af_admin_/, '');
+      if (registeredIds.has(id)) continue;
+      try { if (fs.statSync(full).isDirectory()) targets.push(full); } catch (e) {}
+    }
+  } catch (e) {}
+
+  if (!targets.length) { toast('✓ Kesh allaqachon toza'); return; }
+  if (!confirm(targets.length + ' ta kesh papkasi o\'chiriladi. Davom etamizmi?\n(Ro\'yxatdagi yuklab olingan shablonlar saqlanadi)')) return;
+
+  for (const t of targets) {
+    try {
+      freed += dirSizeBytes(fs, path, t);
+      fs.rmSync(t, { recursive: true, force: true });
+      removed++;
+    } catch (e) {}
+  }
+  toast('✓ Kesh tozalandi — ' + removed + ' papka, ' + (freed / 1048576).toFixed(1) + ' MB bo\'shatildi');
+}
+window.adminClearCache = adminClearCache;
+
+let pendingAdminDir = undefined;
+
+function renderAdminFolderUi(dir, staged) {
+  const el = document.getElementById('adminFolderPath');
+  const saveBtn = document.getElementById('adminFolderSave');
+  if (el) {
+    el.textContent = dir || 'Standart (vaqtinchalik papka)';
+    el.className = 'admin-folder-path' + (dir ? '' : ' empty');
+  }
+  if (saveBtn) saveBtn.classList.toggle('visible', !!staged);
+}
+
+function openAdminAccount() {
+  const u = getUser();
+  if (!u) return;
+  // Profil
+  const initial = (u.name || u.email || 'A').charAt(0).toUpperCase();
+  const av = document.getElementById('sheetAv');
+  const nm = document.getElementById('sheetName');
+  const em = document.getElementById('sheetEmail');
+  const topAv = document.getElementById('adminAvatar');
+  if (av) av.textContent = initial;
+  if (nm) nm.textContent = u.name || u.email;
+  if (em) em.textContent = u.email;
+  if (topAv) topAv.textContent = initial;
+  // API
+  const apiEl = document.getElementById('sheetApiUrl');
+  if (apiEl) apiEl.value = apiBase();
+  // Yuklab olish papkasi (faqat CEP)
+  const folderSec = document.getElementById('adminFolderSection');
+  if (folderSec) folderSec.style.display = IS_CEP ? 'block' : 'none';
+  pendingAdminDir = undefined;
+  renderAdminFolderUi(getAdminDownloadDir(), false);
+  // Ochish
+  document.getElementById('adminSheetOverlay').classList.add('open');
+}
+
+function closeAdminAccount() {
+  document.getElementById('adminSheetOverlay').classList.remove('open');
+}
+
+/** CEP native folder picker (ExtendScript'siz, ishonchli).
+ *  Qaytaradi: yo'l (tanlandi) | '' (bekor) | null (CEP fs yo'q) */
+function cepPickFolder() {
+  try {
+    if (window.cep && window.cep.fs && typeof window.cep.fs.showOpenDialog === 'function') {
+      const r = window.cep.fs.showOpenDialog(false, true, 'Yuklab olish papkasini tanlang', '');
+      if (r && r.err === 0 && r.data && r.data.length) {
+        return decodeURI(String(r.data[0]).replace(/^file:\/\//, ''));
+      }
+      return '';
+    }
+  } catch(e) { console.warn('cepPickFolder', e); }
+  return null;
+}
+
+async function adminChooseFolder() {
+  if (!IS_CEP) { toast('Faqat AE ichida'); return; }
+  // 1) Avval CEP native picker
+  let path = cepPickFolder();
+  // 2) CEP fs yo'q bo'lsa — ExtendScript fallback
+  if (path === null && csInterface) {
+    try {
+      const raw = await new Promise(r => csInterface.evalScript('pickDownloadFolder()', res => r(res || '')));
+      try { const d = JSON.parse(raw); path = (d && d.ok && d.path) ? d.path : ''; }
+      catch { path = ''; }
+    } catch(e) { toast('Xato: ' + e.message, true); return; }
+  }
+  if (path === null) { toast('Papka tanlash imkoni yo\'q', true); return; }
+  if (!path) return; // bekor qilindi
+  pendingAdminDir = path;
+  renderAdminFolderUi(path, true);
+  toast('Papka tanlandi — Saqlash bosing');
+}
+
+function adminResetFolder() {
+  pendingAdminDir = '';
+  renderAdminFolderUi('', true);
+  toast('Standart tanlandi — Saqlash bosing');
+}
+
+function adminSaveFolder() {
+  const dir = pendingAdminDir !== undefined ? pendingAdminDir : getAdminDownloadDir();
+  adminWriteSettings({ downloadDir: dir });
+  pendingAdminDir = undefined;
+  renderAdminFolderUi(dir, false);
+  toast('✓ Saqlandi');
+}
+
+function adminSaveApi() {
+  const val = (document.getElementById('sheetApiUrl')?.value || '').trim().replace(/\/$/, '');
+  if (!val) { toast('URL kiriting', true); return; }
+  localStorage.setItem(API_KEY, val);
+  toast('✓ API saqlandi — qayta kirish kerak');
+}
+
+function adminResetApi() {
+  localStorage.setItem(API_KEY, defaultApiUrl());
+  const el = document.getElementById('sheetApiUrl');
+  if (el) el.value = defaultApiUrl();
+  toast('✓ Asl API tiklandi');
+}
+
+window.openAdminAccount = openAdminAccount;
+window.closeAdminAccount = closeAdminAccount;
+window.adminChooseFolder = adminChooseFolder;
+window.adminResetFolder = adminResetFolder;
+window.adminSaveFolder = adminSaveFolder;
+window.adminSaveApi = adminSaveApi;
+window.adminResetApi = adminResetApi;
+
 // ── Init ───────────────────────────────────────────────────────────────────
 (function init() {
+  const apiEl = document.getElementById('loginApi');
+  if (apiEl) apiEl.value = apiBase();
   if (token() && getUser()?.role === 'ADMIN') {
     bootShell();
   }

@@ -14,7 +14,9 @@ const AssetFlowLog = (() => {
   let source = "ae_plugin";
   let apiBase =
     (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) ||
-    "http://localhost:4000";
+    (typeof ASSETFLOW_ENV !== "undefined"
+      ? ASSETFLOW_ENV.defaultApi()
+      : "https://assetflow-rqbq.onrender.com");
   let syncEnabled = true;
 
   function readPrefsApi() {

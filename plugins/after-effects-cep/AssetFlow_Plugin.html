@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AssetFlow — After Effects Plugin Demo</title>
+<title>AssetFlow — After Effects</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -780,6 +780,15 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
   cursor:pointer;font-size:11px;opacity:0;transition:opacity .2s;
 }
 .fav-btn.faved{opacity:1!important;color:var(--amber)}
+.del-btn{
+  position:absolute;top:6px;right:34px;z-index:5;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  border:1px solid rgba(248,113,113,.3);border-radius:50%;
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:10px;opacity:0;transition:opacity .2s;
+}
+.card:hover .del-btn{opacity:1}
+.del-btn:hover{background:rgba(248,113,113,.25);border-color:rgba(248,113,113,.6)}
 
 .cinfo{padding:10px 4px 2px}
 .aname{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
@@ -820,61 +829,115 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
 .user{display:flex;align-items:center;gap:10px;min-width:0;flex:1;cursor:pointer;border-radius:10px;padding:4px 6px;margin:-4px -6px;transition:background .15s}
 .user:hover{background:rgba(255,255,255,.06)}
 .user .av{flex-shrink:0}
+/* ── Account sheet ── */
 .account-sheet{
   position:fixed;inset:0;z-index:8000;display:none;align-items:flex-end;justify-content:center;
-  background:rgba(0,0,0,.55);
+  background:rgba(0,0,0,.6);
 }
 .account-sheet.open{display:flex}
 .account-panel{
-  width:100%;max-width:420px;max-height:88vh;overflow-y:auto;
+  width:100%;max-width:440px;max-height:92vh;overflow-y:auto;
   background:var(--surface-3);border:1px solid var(--border);
-  border-radius:16px 16px 0 0;padding:16px 16px 20px;
-  box-shadow:0 -12px 40px rgba(0,0,0,.45);
+  border-radius:16px 16px 0 0;padding:16px 16px 28px;
+  box-shadow:0 -16px 48px rgba(0,0,0,.5);
 }
-.account-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.account-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .account-head h3{margin:0;font-size:14px;font-weight:700}
 .account-close{
   width:28px;height:28px;border-radius:8px;border:1px solid var(--border);
-  background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:14px;
+  background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
 }
-.account-section{margin-bottom:14px}
-.account-section label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.account-close:hover{background:var(--surface);color:var(--text)}
+/* Section */
+.account-section{margin-bottom:16px}
+.account-section label{
+  display:block;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);margin-bottom:8px;
+}
+/* Profile row */
+.acc-profile-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;padding:12px;
+}
+.acc-av{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),#6bc934);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#111;
+}
+.acc-info{flex:1;min-width:0}
+.acc-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-email{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge-plan{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;flex-shrink:0}
+.badge-plan.pro{background:rgba(130,195,65,.2);color:#bbf7d0;border:1px solid rgba(130,195,65,.3)}
+.badge-plan.free{background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border)}
+/* Stats */
+.account-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.account-stat{padding:10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)}
+.account-stat b{display:block;font-size:16px;font-weight:800;margin-bottom:2px}
+.account-stat small{font-size:10px;color:var(--muted)}
+/* Login form */
 .account-input{
-  width:100%;box-sizing:border-box;height:36px;border-radius:8px;border:1px solid var(--border);
-  background:var(--surface-2);color:#fff;padding:0 10px;font-size:12px;font-family:inherit;
+  width:100%;box-sizing:border-box;height:38px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface-2);
+  color:#fff;padding:0 12px;font-size:12px;font-family:inherit;outline:none;
+  transition:border-color .15s;
 }
-.account-row{display:flex;gap:8px;margin-top:8px}
-.account-btn{
-  flex:1;height:36px;border-radius:8px;border:1px solid var(--border);
-  background:var(--surface-2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;
+.account-input:focus{border-color:rgba(130,195,65,.5);box-shadow:0 0 0 2px rgba(130,195,65,.12)}
+/* Folder box */
+.acc-folder-box{
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;padding:12px;
 }
-.account-btn.primary{background:var(--env-green);color:#111;border-color:transparent}
-.account-btn.danger{color:#fca5a5;border-color:rgba(248,113,113,.35)}
+.acc-folder-path{
+  font-size:11px;color:var(--text);word-break:break-all;
+  margin-bottom:10px;line-height:1.5;min-height:16px;
+}
+.acc-folder-path.empty{color:var(--muted)}
+/* Plan pick */
 .plan-pick{display:flex;gap:8px}
 .plan-opt{
   flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);
-  background:var(--surface-2);cursor:pointer;text-align:left;font-family:inherit;color:var(--text);
+  background:var(--surface-2);cursor:pointer;text-align:left;
+  font-family:inherit;color:var(--text);transition:border-color .2s,background .2s;
 }
+.plan-opt:hover{border-color:rgba(255,255,255,.2)}
 .plan-opt.active{border-color:rgba(130,195,65,.55);background:rgba(130,195,65,.1)}
 .plan-opt:disabled{opacity:.5;cursor:wait}
 .plan-opt strong{display:block;font-size:12px;margin-bottom:4px;pointer-events:none}
 .plan-opt span{font-size:10px;color:var(--muted);line-height:1.35;pointer-events:none}
-.account-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.account-stat{padding:10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)}
-.account-stat b{display:block;font-size:16px;margin-bottom:2px}
-.account-stat small{font-size:10px;color:var(--muted)}
+/* Buttons */
+.acc-btn-row{display:flex;gap:8px;margin-top:8px}
+.acc-btn{
+  flex:1;height:36px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface-2);color:#fff;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.acc-btn:hover{border-color:rgba(255,255,255,.2)}
+.acc-btn.primary{background:var(--env-green);color:#111;border-color:transparent}
+.acc-btn.primary:hover{opacity:.9}
+.acc-btn.danger{color:#fca5a5;border-color:rgba(248,113,113,.35)}
+.acc-btn.danger:hover{background:rgba(248,113,113,.1)}
+.acc-save-btn{
+  display:none;width:100%;margin-top:8px;height:36px;
+  border-radius:8px;background:var(--env-green);color:#111;
+  font-size:12px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;transition:opacity .15s;
+}
+.acc-save-btn:hover{opacity:.9}
+.acc-save-btn.visible{display:block}
 .account-hint{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
-.badge-plan{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
-.badge-plan.pro{background:rgba(130,195,65,.2);color:#bbf7d0}
-.badge-plan.free{background:rgba(255,255,255,.08);color:var(--muted)}
+/* Keep old refs working */
+.account-row{display:flex;gap:8px;margin-top:8px}
+.account-btn{flex:1;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.account-btn.primary{background:var(--env-green);color:#111;border-color:transparent}
+.account-btn.danger{color:#fca5a5;border-color:rgba(248,113,113,.35)}
 .uname{font-size:11px;font-weight:600}
 .uplan{font-size:9px;color:var(--muted)}
-.set-btn{
-  width:28px;height:28px;border-radius:8px;
-  border:1px solid var(--border);background:var(--surface-2);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s;
-}
+.set-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s}
 .set-btn:hover{border-color:var(--border-accent);color:var(--text)}
 
 /* PUBLISH SHEET (contributor) */
@@ -1093,6 +1156,26 @@ html.cep-mode .pack-dropbar{display:flex}
 }
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
+/* Import/Download progress bar */
+.af-progress{
+  position:fixed;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);
+  width:min(360px,86%);z-index:9997;
+  background:var(--surface-3);border:1px solid var(--border-accent);
+  border-radius:12px;padding:12px 14px;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+}
+.af-progress.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.af-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.af-progress-text{font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-progress-pct{font-size:11px;color:var(--accent-2);font-weight:700;margin-left:8px}
+.af-progress-track{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.af-progress-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .2s ease}
+.af-progress.indeterminate .af-progress-fill{
+  width:40%!important;animation:afIndet 1.1s ease-in-out infinite;
+}
+@keyframes afIndet{0%{margin-left:-40%}100%{margin-left:100%}}
+
 .drag-ghost{
   position:fixed;pointer-events:none;z-index:9998;
   background:var(--surface-3);border:1px solid var(--accent);
@@ -1211,7 +1294,7 @@ html.cep-mode .panel-body{border-radius:0!important}
       <div class="panel" id="panel">
         <div class="ptitlebar" id="titlebar">
           <div class="pdots">
-            <div class="pdot pdot-r" onclick="showToast('Panel closed (demo)')"></div>
+            <div class="pdot pdot-r" onclick="showToast('Panel yopildi')"></div>
             <div class="pdot pdot-y" onclick="toggleCollapse()"></div>
             <div class="pdot pdot-g" onclick="toggleExpand()"></div>
           </div>
@@ -1370,33 +1453,58 @@ html.cep-mode .panel-body{border-radius:0!important}
 <div class="drag-ghost" id="dragGhost">⚡ <span id="ghostName"></span></div>
 <div class="toast" id="toast"></div>
 
+<div class="af-progress" id="afProgress">
+  <div class="af-progress-row">
+    <span class="af-progress-text" id="afProgressText">Yuklanmoqda…</span>
+    <span class="af-progress-pct" id="afProgressPct">0%</span>
+  </div>
+  <div class="af-progress-track"><div class="af-progress-fill" id="afProgressFill"></div></div>
+</div>
+
 <div class="account-sheet" id="accountSheet" onclick="if(event.target===this)closeAccountSheet()">
   <div class="account-panel" onclick="event.stopPropagation()">
+
     <div class="account-head">
-      <h3>Foydalanuvchi</h3>
+      <h3>Hisob</h3>
       <button type="button" class="account-close" onclick="closeAccountSheet()">×</button>
     </div>
+
+    <!-- LOGIN (kirish) -->
     <div id="accountLoginBlock" class="account-section">
       <label>Hisobga kirish</label>
-      <input class="account-input" type="email" id="accEmail" placeholder="email@assetflow.uz" autocomplete="username">
-      <input class="account-input" type="password" id="accPass" placeholder="Parol" style="margin-top:8px" autocomplete="current-password">
-      <div class="account-row">
-        <button type="button" class="account-btn primary" onclick="accountLogin()">Kirish</button>
+      <input class="account-input" type="email" id="accEmail"
+        placeholder="email@assetflow.uz" autocomplete="username">
+      <input class="account-input" type="password" id="accPass"
+        placeholder="Parol" style="margin-top:8px" autocomplete="current-password">
+      <div class="acc-btn-row">
+        <button type="button" class="acc-btn primary" onclick="accountLogin()">Kirish</button>
       </div>
-      <p class="account-hint">Demo: <b>user@assetflow.uz</b> / user123 · Admin panelga faqat ADMIN hisobi.</p>
+      <p class="account-hint">Cloud hisob bilan kiring. Admin panel — faqat ADMIN roli.</p>
     </div>
+
+    <!-- PROFIL -->
     <div id="accountProfileBlock" class="account-section" style="display:none">
       <label>Profil</label>
-      <div style="font-size:12px;font-weight:600" id="accProfileName">—</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px" id="accProfileEmail">—</div>
-      <div style="margin-top:8px"><span class="badge-plan free" id="accPlanBadge">Free</span></div>
-      <div class="account-stats" style="margin-top:12px">
+      <div class="acc-profile-row">
+        <div class="acc-av" id="accAvatar">?</div>
+        <div class="acc-info">
+          <div class="acc-name" id="accProfileName">—</div>
+          <div class="acc-email" id="accProfileEmail">—</div>
+        </div>
+        <span class="badge-plan free" id="accPlanBadge">Free</span>
+      </div>
+      <div class="account-stats">
         <div class="account-stat"><b id="accDlTotal">0</b><small>Jami yuklab olish</small></div>
         <div class="account-stat"><b id="accDlMonth">0</b><small>Bu oy</small></div>
         <div class="account-stat"><b id="accImports">0</b><small>AE import</small></div>
         <div class="account-stat"><b id="accLimit">—</b><small>Limit</small></div>
       </div>
+      <div class="acc-btn-row">
+        <button type="button" class="acc-btn" onclick="refreshAccountAndUi()">↻ Yangilash</button>
+      </div>
     </div>
+
+    <!-- TARIF -->
     <div id="accountPlanBlock" class="account-section" style="display:none">
       <label>Tarif</label>
       <div class="plan-pick">
@@ -1408,20 +1516,48 @@ html.cep-mode .panel-body{border-radius:0!important}
         </button>
       </div>
       <p class="account-hint" id="accPlanHint"></p>
+      <div class="acc-btn-row" id="accBillingRow" style="display:none">
+        <button type="button" class="acc-btn" onclick="manageBilling()">💳 Obunani boshqarish</button>
+      </div>
     </div>
+
+    <!-- YUKLAB OLISH PAPKASI -->
+    <div id="accountDownloadBlock" class="account-section" style="display:none">
+      <label>Yuklab olish papkasi</label>
+      <div class="acc-folder-box">
+        <div class="acc-folder-path empty" id="accDownloadPath">Standart (vaqtinchalik papka)</div>
+        <div class="acc-btn-row">
+          <button type="button" class="acc-btn" onclick="chooseDownloadFolder()">📁 Papka tanlash</button>
+          <button type="button" class="acc-btn" onclick="resetDownloadFolder()">Standart</button>
+        </div>
+        <button type="button" class="acc-save-btn" id="dlSaveBtn" onclick="saveDownloadFolderSettings()">💾 Saqlash</button>
+        <p class="account-hint" id="dlSaveHint">Shablon fayllari (.aep + footage) shu papkada saqlanadi.</p>
+      </div>
+    </div>
+
+    <!-- CONTRIBUTOR -->
     <div id="accountPublishBlock" class="account-section" style="display:none">
       <label>Contributor</label>
-      <button type="button" class="account-btn primary" onclick="openPublish()">＋ Shablon Publish qilish</button>
+      <div class="acc-btn-row">
+        <button type="button" class="acc-btn primary" onclick="openPublish()">＋ Shablon Publish qilish</button>
+      </div>
       <p class="account-hint">Ochiq AE loyihasidan sahnalarni aniqlab, preview bilan marketplace'ga yuklang.</p>
     </div>
+
+    <!-- ADMIN -->
     <div id="accountAdminBlock" class="account-section" style="display:none">
       <label>Admin</label>
-      <button type="button" class="account-btn" onclick="AssetFlowAccount.openAdminPanel()">Admin panelni ochish</button>
-      <p class="account-hint">Obunachilar, tariflar va yuklab olish statistikasi admin panelda.</p>
+      <div class="acc-btn-row">
+        <button type="button" class="acc-btn" onclick="AssetFlowAccount.openAdminPanel()">🛠 Admin panelni ochish</button>
+      </div>
+      <p class="account-hint">Obunachilar, tariflar va yuklab olish statistikasi.</p>
     </div>
-    <div id="accountActionsBlock" class="account-row" style="display:none">
-      <button type="button" class="account-btn danger" onclick="accountLogout()">Chiqish</button>
+
+    <!-- CHIQISH -->
+    <div id="accountActionsBlock" class="acc-btn-row" style="display:none">
+      <button type="button" class="acc-btn danger" onclick="accountLogout()">⎋ Chiqish</button>
     </div>
+
   </div>
 </div>
 
@@ -1486,6 +1622,7 @@ html.cep-mode .panel-body{border-radius:0!important}
 </div>
 
 <script src="js/CSInterface.js"></script>
+<script src="assetflow-env.js"></script>
 <script src="assetflow-log.js"></script>
 <script src="assetflow-local-store.js"></script>
 <script src="assetflow-client.js"></script>
@@ -1618,38 +1755,83 @@ async function refreshLocalAssets(){
   return count;
 }
 
+if(!(window.importedScenes instanceof Set)) window.importedScenes=new Set();
+// downloadedMeta[templateKey] = { folders:[...AE papka nomi], comps:[...comp nomi], displayName }
+if(!window.downloadedMeta||typeof window.downloadedMeta!=='object') window.downloadedMeta={};
+
 function loadUserPrefs(){
   if(typeof AssetFlowStore==='undefined')return;
   const prefs=AssetFlowStore.loadPrefs();
   window.favorites.clear();
   (prefs.favorites||[]).forEach((x)=>window.favorites.add(x));
+  // downloaded — TEMPLATE kalitlari (a.n / packKey), Downloaded tab uchun
   window.downloaded.clear();
   (prefs.downloaded||[]).forEach((x)=>window.downloaded.add(x));
+  // importedScenes — sahna nomlari, sahna kartasi "imported" belgisi uchun
+  window.importedScenes.clear();
+  (prefs.importedScenes||[]).forEach((x)=>window.importedScenes.add(x));
+  // downloadedMeta — AE da import qilingan papka/comp nomlari (o'chirish uchun)
+  window.downloadedMeta=(prefs.downloadedMeta&&typeof prefs.downloadedMeta==='object')?prefs.downloadedMeta:{};
 }
 
 function persistUserPrefs(){
   if(typeof AssetFlowStore==='undefined')return;
   AssetFlowStore.savePrefs({
     favorites:[...window.favorites],
-    downloaded:[...window.downloaded]
+    downloaded:[...window.downloaded],
+    importedScenes:[...window.importedScenes],
+    downloadedMeta:window.downloadedMeta
   });
 }
 
+/** Import natijasidagi papka/comp nomlarini template uchun saqlaydi */
+function recordImportedMeta(templateKey,sceneName,data){
+  if(!templateKey)return;
+  const m=window.downloadedMeta[templateKey]||{folders:[],comps:[],displayName:''};
+  const pack=packs[templateKey];
+  if(pack&&pack.displayName) m.displayName=pack.displayName;
+  if(data&&data.folder&&m.folders.indexOf(data.folder)<0) m.folders.push(data.folder);
+  if(data&&data.comp&&m.comps.indexOf(data.comp)<0) m.comps.push(data.comp);
+  // Demo (CEP emas) holatda data bo'lmaydi — sahna nomini comp sifatida saqlaymiz
+  if(!data&&sceneName&&m.comps.indexOf(sceneName)<0) m.comps.push(sceneName);
+  window.downloadedMeta[templateKey]=m;
+}
+
+function packDownloadOpts(pack){
+  return{
+    packUrl:pack?.serverPackUrl,
+    fileSize:pack?.fileSize||0,
+    onProgress(done,total){
+      const pct=total>0?Math.min(100,Math.floor((done/total)*100)):0;
+      const mb=total>0
+        ?(' · '+(done/1048576).toFixed(1)+'/'+(total/1048576).toFixed(1)+' MB')
+        :(' · '+(done/1048576).toFixed(1)+' MB');
+      // total noma'lum bo'lsa indeterminate, aks holda foiz
+      if(total>0) showProgress(pct,'Pack yuklanmoqda'+mb);
+      else showProgress(0,'Pack yuklanmoqda'+mb,true);
+    }
+  };
+}
 async function importPackFileToAE(pack){
   if(!IS_CEP||!csInterface)return '';
   let importPath='';
   if(pack?.serverTemplateId&&typeof AssetFlowCatalog!=='undefined'){
     try{
-      importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep');
+      showProgress(0,'Tayyorlanmoqda…');
+      importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
     }catch(e){
+      hideProgress();
       showToast(e.message||'Server pack yuklanmadi');
       return '';
     }
   }else if(pack?.fileBlobId){
+    showProgress(0,'Tayyorlanmoqda…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
+  showProgress(100,'AE\'ga import qilinmoqda…',true);
   return new Promise((resolve)=>{
     csInterface.evalScript(`importAssetToProject(${JSON.stringify(importPath)})`,(result)=>{
+      hideProgress();
       resolve(result||'');
     });
   });
@@ -1660,14 +1842,19 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   let importPath='';
   if(pack?.serverTemplateId&&typeof AssetFlowCatalog!=='undefined'){
     try{
-      importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep');
+      showProgress(0,'Tayyorlanmoqda…');
+      importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
     }catch(e){
+      hideProgress();
       showToast(e.message||'Server pack yuklanmadi');
       return '';
     }
   }else if(pack?.fileBlobId){
+    showProgress(0,'Tayyorlanmoqda…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
+  // Yuklab olindi — endi AE import fazasi (sinxron, vaqt olishi mumkin)
+  showProgress(100,'AE\'ga import qilinmoqda…',true);
   const compName=(scene?.aeComp||'').trim()||(scene?.n||'').trim();
   const altNames=[];
   const pushAlt=(v)=>{const t=String(v||'').trim();if(t&&altNames.indexOf(t)<0)altNames.push(t);};
@@ -1708,7 +1895,7 @@ function renderThumbMedia(a){
   let html = '';
   if(a.thumb) html += `<img class="thumb-poster" src="${a.thumb}" alt="${a.n}" loading="lazy">`;
   if(a.preview){
-    html += `<video class="thumb-media" src="${a.preview}" muted loop playsinline preload="metadata"></video>`;
+    html += `<video class="thumb-media" data-src="${a.preview}" muted loop playsinline></video>`;
     html += `<span class="thumb-play">▶</span>`;
   }
   return html;
@@ -1752,8 +1939,9 @@ function renderCard(a,i,showDl){
       <div class="overlay"><button class="dl-btn">Ko‘rish</button></div>
     </div>
     <button class="fav-btn${faved?' faved':''}" onclick="event.stopPropagation();toggleFav('${safeName}')">★</button>
+    ${showDl?`<button class="del-btn" title="Loyihadan o‘chirish" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`:''}
     <div class="cinfo">
-      <div class="aname">${a.n}</div>
+      <div class="aname">${a.displayName||a.n}</div>
       ${metaLine?`<div class="card-meta-line">${metaLine}</div>`:''}
       ${chips?`<div class="card-chips">${chips}</div>`:''}
     </div>
@@ -1763,6 +1951,11 @@ function renderCard(a,i,showDl){
 function playCardPreview(card){
   const v=card.querySelector('.thumb-media');
   if(!v)return;
+  const src=v.dataset.src;
+  if(src&&!v.src){
+    v.src=src;
+    v.preload='metadata';
+  }
   v.currentTime=0;
   v.play().catch(()=>{});
 }
@@ -1925,7 +2118,7 @@ function getFiltered(){
     if(currentNav!=='luts'&&currentOrient!=='all'&&a.orient!==currentOrient)return false;
     if(currentNav!=='luts'&&currentRes!=='all'&&!resMatchesAsset(a.res,currentRes))return false;
     if(currentSearch){
-      const hay=[a.n,a.t,a.catLabel||'',...(a.tags||[])].join(' ').toLowerCase();
+      const hay=[a.displayName||a.n,a.t,a.catLabel||'',...(a.tags||[])].join(' ').toLowerCase();
       if(!hay.includes(currentSearch))return false;
     }
     return true;
@@ -1935,7 +2128,7 @@ function getFiltered(){
 function sortAssetList(list){
   const out=[...list];
   if(currentSort==='name'){
-    out.sort((a,b)=>String(a.n).localeCompare(String(b.n),undefined,{sensitivity:'base'}));
+    out.sort((a,b)=>String(a.displayName||a.n).localeCompare(String(b.displayName||b.n),undefined,{sensitivity:'base'}));
     return out;
   }
   if(currentSort==='newest'){
@@ -2174,7 +2367,7 @@ function renderPackSummary(name,pack,asset){
 }
 
 function renderSceneCard(s,i,asset,slotW){
-  const imported=window.downloaded.has(s.n)?' imported':'';
+  const imported=window.importedScenes.has(s.n)?' imported':'';
   const pack=packs[currentPackName];
   const previewSrc=s.preview||pack?.preview||'';
   const fitCls=asset?.orient==='vertical'?' fit-contain':'';
@@ -2253,17 +2446,24 @@ async function importSceneWithMode(pack,scene,packName,mode){
     showToast('Sahna comp nomi yo‘q');
     return;
   }
-  window.downloaded.add(scene.n);
-  persistUserPrefs();
+  // Muvaffaqiyatda template'ni Downloaded'ga, sahnani importedScenes'ga belgilaymiz
+  const markDownloaded=(data)=>{
+    window.downloaded.add(packName);
+    window.importedScenes.add(scene.n);
+    recordImportedMeta(packName,scene.n,data||null);
+    persistUserPrefs();
+  };
 
   if(IS_CEP&&packCanAeImport(pack)){
     try{
       const label=mode==='project'?'Project panelga qo‘shilmoqda…':'Timeline ga qo‘shilmoqda…';
       showToast(label);
       const raw=await importSingleSceneToAE(pack,scene,packName,mode);
+      hideProgress();
       let data;
       try{ data=JSON.parse(raw); }catch{ data=null; }
       if(data?.ok){
+        markDownloaded(data);
         if(pack.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
           try{
             await AssetFlowAccount.recordImport(pack.serverTemplateId);
@@ -2291,20 +2491,22 @@ async function importSceneWithMode(pack,scene,packName,mode){
         }
       }
     }catch(err){
+      hideProgress();
       console.error(err);
       showToast('Import xato: '+err.message);
     }
   }else{
+    markDownloaded();
     addLayer(scene.n,scene.ico,false);
     showMonitorPreview(getScenePreviewMedia(scene,pack));
-    showToast('✓ "'+scene.n+'" timeline ga qo‘shildi (demo)');
+    showToast('✓ "'+scene.n+'" timeline ga qo‘shildi');
   }
 
   render();renderDl();
   if(currentPackName){
     document.querySelectorAll('.scene-card').forEach((el,i)=>{
       const sn=packs[currentPackName].scenes[i].n;
-      el.classList.toggle('imported',window.downloaded.has(sn));
+      el.classList.toggle('imported',window.importedScenes.has(sn));
     });
   }
 }
@@ -2416,20 +2618,25 @@ function initSceneDrag(){
 async function downloadAll(n){
   const p=packs[n];
   if(!p)return;
-  p.scenes.forEach(s=>window.downloaded.add(s.n));
-  persistUserPrefs();
+  // Template'ni Downloaded'ga, barcha sahnalarni importedScenes'ga
+  const markPackDownloaded=()=>{
+    window.downloaded.add(n);
+    p.scenes.forEach(s=>window.importedScenes.add(s.n));
+    persistUserPrefs();
+  };
 
   if(IS_CEP&&packCanAeImport(p)){
     try{
       showToast('AE ga import qilinmoqda…');
       const result=await importPackFileToAE(p);
-      if(result.indexOf('ok:')===0) showToast('✓ "'+n+'" AE projectga import qilindi');
+      if(result.indexOf('ok:')===0){ markPackDownloaded(); showToast('✓ "'+n+'" AE projectga import qilindi'); }
       else showToast('Import xato: '+(result||'noma\'lum'));
     }catch(err){
       console.error(err);
       showToast('Import xato: '+err.message);
     }
   }else if(p.local&&p.fileBlobId&&typeof AssetFlowStore!=='undefined'){
+    markPackDownloaded();
     const blob=await AssetFlowStore.getBlob(p.fileBlobId);
     if(blob){
       const a=document.createElement('a');
@@ -2441,10 +2648,83 @@ async function downloadAll(n){
     p.scenes.forEach(s=>addLayer(s.n,s.ico));
     showToast('✓ Pack yuklab olindi');
   }else{
+    markPackDownloaded();
     p.scenes.forEach(s=>addLayer(s.n,s.ico));
     showToast('✓ All '+p.scenes.length+' scenes imported');
   }
   render();renderDl();closePack();
+}
+
+/** Yuklab olingan shablonni loyihadan (va keshdan) o'chiradi */
+async function deleteDownloadedTemplate(key){
+  const pack=packs[key];
+  const meta=window.downloadedMeta[key]||{folders:[],comps:[]};
+  const name=(pack&&pack.displayName)||meta.displayName||key;
+  if(!confirm('"'+name+'" loyihangizdan o‘chirilsinmi?\nAE Project paneldagi import qilingan papka/comp va comp ichidagi layerlar ham olib tashlanadi.'))return;
+
+  // 1) AE loyihasidan olib tashlash (CEP)
+  if(IS_CEP&&csInterface){
+    const folders=Array.isArray(meta.folders)?meta.folders:[];
+    const comps=Array.isArray(meta.comps)?meta.comps:[];
+    if(folders.length||comps.length){
+      try{
+        const cfg=JSON.stringify({folders,comps});
+        const raw=await new Promise(res=>csInterface.evalScript('removeImportedTemplate('+JSON.stringify(cfg)+')',r=>res(r||'')));
+        let data;try{data=JSON.parse(raw);}catch{data=null;}
+        if(data&&data.ok) showToast('✓ Loyihadan olib tashlandi ('+(data.removed||0)+' element)');
+        else showToast('Loyihadan o‘chirishda muammo: '+((data&&data.message)||'noma\'lum'));
+      }catch(e){
+        console.error('removeImportedTemplate',e);
+        showToast('AE dan o‘chirishda xato: '+e.message);
+      }
+    }
+    // 2) Keshlangan pack fayllarini tozalash
+    if(pack&&pack.serverTemplateId){
+      try{
+        const fs=require('fs'),path=require('path'),os=require('os');
+        const tid=pack.serverTemplateId;
+        const base=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir&&AssetFlowCatalog.downloadDir())||os.tmpdir();
+        ['','.zip','.aep'].forEach(ext=>{
+          const f=path.join(base,'assetflow_'+tid+ext);
+          try{ if(fs.existsSync(f)) fs.rmSync(f,{force:true}); }catch(e){}
+        });
+        const dir=path.join(base,'assetflow_'+tid+'_unzipped');
+        try{ if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true}); }catch(e){}
+      }catch(e){}
+    }
+  }else{
+    showToast('"'+name+'" ro‘yxatdan olib tashlandi');
+  }
+
+  // 3) Lokal holatni tozalash
+  window.downloaded.delete(key);
+  if(pack&&Array.isArray(pack.scenes)) pack.scenes.forEach(s=>window.importedScenes.delete(s.n));
+  delete window.downloadedMeta[key];
+  persistUserPrefs();
+  render();renderDl();
+}
+window.deleteDownloadedTemplate=deleteDownloadedTemplate;
+
+/** Eski format migratsiyasi: downloaded'da sahna nomlari bo'lsa → template kalitiga ko'chiramiz.
+ *  Katalog yuklangandan keyin chaqiriladi (assets/packs tayyor bo'lishi kerak). */
+function reconcileDownloadedFromScenes(){
+  if(!Array.isArray(assets)||!assets.length)return;
+  const validKeys=new Set(assets.map(a=>a.n));
+  let changed=false;
+  for(const entry of [...window.downloaded]){
+    if(validKeys.has(entry))continue; // allaqachon template kaliti
+    // Sahna nomi bo'lishi mumkin — qaysi pack'ga tegishliligini topamiz
+    let matchedKey=null;
+    for(const a of assets){
+      const pk=packs[a.n];
+      if(pk&&Array.isArray(pk.scenes)&&pk.scenes.some(s=>s.n===entry)){matchedKey=a.n;break;}
+    }
+    window.downloaded.delete(entry);
+    if(matchedKey)window.downloaded.add(matchedKey);
+    window.importedScenes.add(entry);
+    changed=true;
+  }
+  if(changed){persistUserPrefs();renderDl();}
 }
 
 function getFeaturedAssets(){
@@ -2650,6 +2930,7 @@ async function syncServerCatalog(){
   }
   try{
     const n=await AssetFlowCatalog.refreshBrowse();
+    reconcileDownloadedFromScenes();
     const base=AssetFlowCatalog.apiBase();
   if(n>0){
       const where=AssetFlowCatalog.primaryServerNav();
@@ -2846,6 +3127,32 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2600);
 }
 
+/* ===== Import/Download progress bar ===== */
+function showProgress(pct,text,indeterminate){
+  const box=document.getElementById('afProgress');
+  if(!box)return;
+  const fill=document.getElementById('afProgressFill');
+  const pctEl=document.getElementById('afProgressPct');
+  const txtEl=document.getElementById('afProgressText');
+  box.classList.add('show');
+  box.classList.toggle('indeterminate',!!indeterminate);
+  if(txtEl&&text!=null) txtEl.textContent=text;
+  if(indeterminate){
+    if(pctEl) pctEl.textContent='';
+  }else{
+    const p=Math.max(0,Math.min(100,Math.round(pct||0)));
+    if(fill) fill.style.width=p+'%';
+    if(pctEl) pctEl.textContent=p+'%';
+  }
+}
+function hideProgress(){
+  const box=document.getElementById('afProgress');
+  if(!box)return;
+  box.classList.remove('show','indeterminate');
+  const fill=document.getElementById('afProgressFill');
+  if(fill) fill.style.width='0';
+}
+
 function setupCepMetaListener(){
   if(!csInterface||window.__afCepMetaListener)return;
   csInterface.addEventListener(AssetFlowStore?.CEP_EVENT||'com.assetflow.demo.metaUpdated',()=>{
@@ -2874,11 +3181,23 @@ function refreshAccountUi(){
   const pubBlock=document.getElementById('accountPublishBlock');
   if(pubBlock) pubBlock.style.display=canPublish?'block':'none';
   document.getElementById('accountActionsBlock').style.display=logged?'flex':'none';
+  // Yuklab olish papkasi — lokal sozlama, login shart emas (faqat AE/CEP ichida)
+  const dlBlock=document.getElementById('accountDownloadBlock');
+  if(dlBlock){
+    dlBlock.style.display=IS_CEP?'block':'none';
+    // Saqlangan qiymatni ko'rsatamiz, staging'ni tozalaymiz
+    pendingDownloadDir=undefined;
+    renderDownloadPath(getDownloadDir());
+  }
   if(!logged){
     updateFootUser(null);
     return;
   }
   if(!u)return;
+  // Sheet avatar — birinchi harf
+  const initial=(u.name||u.email||'U').trim().charAt(0).toUpperCase();
+  const avEl=document.getElementById('accAvatar');
+  if(avEl)avEl.textContent=initial;
   document.getElementById('accProfileName').textContent=u.name||u.email;
   document.getElementById('accProfileEmail').textContent=u.email;
   const badge=document.getElementById('accPlanBadge');
@@ -2896,13 +3215,113 @@ function refreshAccountUi(){
     if(u.plan==='pro'){
       hint.textContent='Pro faol — cheksiz yuklab olish va 4K packlar.';
     }else if(u.stripeSubscriptionActive){
-      hint.textContent='To‘lov (Stripe) faol. Pro rejimini yoqish uchun o‘ngdagi «Pro» tugmasini bosing.';
+      hint.textContent='To‘lov (Stripe) faol. Pro rejimini yoqish uchun «Pro» tugmasini bosing.';
     }else{
-      hint.textContent='Hozir Free rejimidasiz. Pro uchun obuna kerak.';
+      hint.textContent='«Pro» tugmasi to‘lov sahifasini ochadi. To‘lovdan keyin «Yangilash» bosing.';
     }
   }
+  // Billing portal — faqat Stripe obunasi bo'lganlarga
+  const billingRow=document.getElementById('accBillingRow');
+  if(billingRow) billingRow.style.display=(u.plan==='pro'||u.stripeSubscriptionActive)?'flex':'none';
   updateFootUser(u);
 }
+
+function getDownloadDir(){
+  // Barqaror settings fayldan (CEP) — restartda saqlanadi
+  if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.configuredDownloadDir){
+    return AssetFlowCatalog.configuredDownloadDir()||'';
+  }
+  if(typeof AssetFlowStore==='undefined')return '';
+  return (AssetFlowStore.loadPrefs().client||{}).downloadDir||'';
+}
+
+// Hali saqlanmagan tanlov (undefined = staging yo'q, saqlangan qiymat ko'rsatiladi)
+let pendingDownloadDir=undefined;
+
+/** Papka yo'lini UI'da ko'rsatadi va "Saqlash" tugmasi holatini yangilaydi */
+function renderDownloadPath(dir,staged){
+  const pathEl=document.getElementById('accDownloadPath');
+  if(pathEl){
+    pathEl.textContent=dir||'Standart (vaqtinchalik papka)';
+    pathEl.className='acc-folder-path'+(dir?'':' empty');
+  }
+  const hint=document.getElementById('dlSaveHint');
+  const btn=document.getElementById('dlSaveBtn');
+  if(staged){
+    if(hint) hint.textContent='⚠ Saqlanmagan — «Saqlash» tugmasini bosing.';
+    if(btn) btn.classList.add('visible');
+  }else{
+    if(hint) hint.textContent='Shablon fayllari (.aep + footage) shu papkada saqlanadi.';
+    if(btn) btn.classList.remove('visible');
+  }
+}
+
+function persistDownloadDir(dir){
+  // Barqaror settings faylga (CEP) — restartdan keyin ham saqlanadi
+  if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.saveDownloadDir){
+    AssetFlowCatalog.saveDownloadDir(dir||'');
+  }
+  // Eski joyga ham (backwards-compat)
+  if(typeof AssetFlowStore!=='undefined'){
+    try{
+      const prefs=AssetFlowStore.loadPrefs();
+      prefs.client={...(prefs.client||{}),downloadDir:dir||''};
+      AssetFlowStore.savePrefs(prefs);
+    }catch(e){}
+  }
+}
+
+/** CEP native folder picker (ExtendScript'siz, ishonchli).
+ *  Qaytaradi: yo'l (tanlandi) | '' (bekor) | null (CEP fs yo'q) */
+function cepPickFolder(){
+  try{
+    if(window.cep&&window.cep.fs&&typeof window.cep.fs.showOpenDialog==='function'){
+      const r=window.cep.fs.showOpenDialog(false,true,'Yuklab olish papkasini tanlang','');
+      if(r&&r.err===0&&r.data&&r.data.length){
+        return decodeURI(String(r.data[0]).replace(/^file:\/\//,''));
+      }
+      return '';
+    }
+  }catch(e){ console.warn('cepPickFolder',e); }
+  return null;
+}
+
+async function chooseDownloadFolder(){
+  if(!IS_CEP){ showToast('Faqat After Effects ichida'); return; }
+  // 1) CEP native picker
+  let path=cepPickFolder();
+  // 2) Fallback — ExtendScript
+  if(path===null&&csInterface){
+    try{
+      const raw=await new Promise(res=>csInterface.evalScript('pickDownloadFolder()',r=>res(r||'')));
+      try{ const d=JSON.parse(raw); path=(d&&d.ok&&d.path)?d.path:''; }catch{ path=''; }
+    }catch(e){ showToast('Papka tanlashda xato: '+e.message); return; }
+  }
+  if(path===null){ showToast('Papka tanlash imkoni yo\'q'); return; }
+  if(!path) return; // bekor qilindi
+  pendingDownloadDir=path;
+  renderDownloadPath(path,true);
+  showToast('Papka tanlandi — saqlash uchun «Saqlash» bosing');
+}
+
+function resetDownloadFolder(){
+  pendingDownloadDir='';
+  renderDownloadPath('',true);
+  showToast('Standart tanlandi — «Saqlash» bosing');
+}
+
+/** «Saqlash» — tanlangan papkani prefs'ga yozadi */
+function saveDownloadFolderSettings(){
+  const dir=(pendingDownloadDir!==undefined)?pendingDownloadDir:getDownloadDir();
+  persistDownloadDir(dir);
+  pendingDownloadDir=undefined;
+  renderDownloadPath(dir,false);
+  showToast('✓ Saqlandi');
+}
+
+window.chooseDownloadFolder=chooseDownloadFolder;
+window.resetDownloadFolder=resetDownloadFolder;
+window.saveDownloadFolderSettings=saveDownloadFolderSettings;
 
 function setPlanButtonsBusy(busy){
   const free=document.getElementById('planOptFree');
@@ -2992,6 +3411,11 @@ async function accountPickPlan(plan){
     showToast('Allaqachon '+((plan==='pro')?'Pro':'Free'));
     return;
   }
+  // Pro tanlandi, lekin faol Stripe obunasi yo'q → checkout sahifasiga yuboramiz
+  if(plan==='pro' && u && !u.stripeSubscriptionActive){
+    await startProCheckout();
+    return;
+  }
   setPlanButtonsBusy(true);
   try{
     const next=await AssetFlowAccount.setPlan(plan);
@@ -2999,13 +3423,61 @@ async function accountPickPlan(plan){
     showToast('✓ '+(next?.planLabel||(plan==='pro'?'Pro':'Free'))+' faol');
   }catch(e){
     console.error('accountPickPlan',e);
-    showToast(e.message||'Tarif o‘zgarmadi');
+    // Backend "Stripe obunasi kerak" desa — checkout'ga o'tamiz
+    if(plan==='pro' && (e.status===403 || /stripe|obuna/i.test(e.message||''))){
+      await startProCheckout();
+    }else{
+      showToast(e.message||'Tarif o‘zgarmadi');
+    }
   }finally{
     setPlanButtonsBusy(false);
   }
 }
 
+async function startProCheckout(){
+  setPlanButtonsBusy(true);
+  try{
+    showToast('To‘lov sahifasi ochilmoqda…');
+    const url=await AssetFlowAccount.requestCheckout('monthly');
+    if(!url) throw new Error('Checkout URL kelmadi');
+    AssetFlowAccount.openExternal(url);
+    showToast('Brauzerda to‘lovni yakunlang, keyin «Yangilash» bosing');
+  }catch(e){
+    console.error('startProCheckout',e);
+    if(e.code==='STRIPE_NOT_CONFIGURED' || e.data?.code==='STRIPE_NOT_CONFIGURED'){
+      showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning');
+    }else{
+      showToast(e.message||'To‘lov sahifasi ochilmadi');
+    }
+  }finally{
+    setPlanButtonsBusy(false);
+  }
+}
+
+async function manageBilling(){
+  try{
+    const url=await AssetFlowAccount.requestBillingPortal();
+    if(url) AssetFlowAccount.openExternal(url);
+    else showToast('Billing hisobi yo‘q');
+  }catch(e){
+    showToast(e.message||'Billing ochilmadi');
+  }
+}
+
+async function refreshAccountAndUi(){
+  try{
+    await AssetFlowAccount.fetchMe();
+    refreshAccountUi();
+    showToast('✓ Yangilandi');
+  }catch(e){
+    showToast(e.message||'Yangilanmadi');
+  }
+}
+
 window.accountPickPlan=accountPickPlan;
+window.startProCheckout=startProCheckout;
+window.manageBilling=manageBilling;
+window.refreshAccountAndUi=refreshAccountAndUi;
 window.openAccountSheet=openAccountSheet;
 window.closeAccountSheet=closeAccountSheet;
 window.accountLogin=accountLogin;
@@ -3061,7 +3533,8 @@ function pubAuthHeaders(){
   return (typeof AssetFlowAccount!=='undefined')?AssetFlowAccount.authHeaders():{};
 }
 function pubApiBase(){
-  return (typeof AssetFlowAccount!=='undefined')?AssetFlowAccount.apiBase():'http://localhost:4000';
+  if(typeof AssetFlowAccount!=='undefined') return AssetFlowAccount.apiBase();
+  return (typeof ASSETFLOW_ENV!=='undefined')?ASSETFLOW_ENV.defaultApi():'https://assetflow-rqbq.onrender.com';
 }
 
 async function pubJson(path,body,method){
@@ -3281,6 +3754,17 @@ window.publishScan=publishScan;
 window.publishDetectScenes=publishDetectScenes;
 window.publishGo=publishGo;
 
+/** host.jsx ni majburan qayta yuklaydi — AE restartisiz yangi funksiyalar uchun */
+async function reloadHostScript(){
+  if(!IS_CEP||!csInterface)return false;
+  try{
+    const ext=csInterface.getSystemPath(SystemPath.EXTENSION);
+    const jsxPath=(ext+'/jsx/host.jsx').replace(/\\/g,'/');
+    const raw=await new Promise(res=>csInterface.evalScript('try{$.evalFile('+JSON.stringify(jsxPath)+');"ok"}catch(e){"err"}',r=>res(r||'')));
+    return raw==='ok';
+  }catch(e){ return false; }
+}
+
 async function bootPlugin(){
   initEnvFilterUi();
   initAccountUi();
@@ -3289,6 +3773,7 @@ async function bootPlugin(){
     const c=document.getElementById('container');
     if(c){c.style.width='100%';c.style.height='100vh';}
     setupCepMetaListener();
+    reloadHostScript();
   }
   try{
     if(typeof AssetFlow!=='undefined') await AssetFlow.init();
@@ -3305,6 +3790,7 @@ async function bootPlugin(){
           console.warn('Server katalog',catErr);
         }
       }
+      reconcileDownloadedFromScenes();
       applyNavSwitch('video');
       const total=localN+serverN;
       if(!total){

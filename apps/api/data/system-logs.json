@@ -1,5 +1,93 @@
 [
   {
+    "id": "log_1780509771591_q8h43o",
+    "ts": "2026-06-03T18:02:51.591Z",
+    "level": "info",
+    "source": "admin",
+    "sourceLabel": "Admin Console",
+    "message": "Admin: Overview",
+    "action": "navigate",
+    "detail": "overview",
+    "meta": null
+  },
+  {
+    "id": "log_1780509771589_f4sznn",
+    "ts": "2026-06-03T18:02:51.589Z",
+    "level": "info",
+    "source": "admin",
+    "sourceLabel": "Admin Console",
+    "message": "Admin Console ishga tushdi",
+    "action": "init",
+    "detail": "/",
+    "meta": null
+  },
+  {
+    "id": "log_1780481630777_e8osso",
+    "ts": "2026-06-03T10:13:50.777Z",
+    "level": "info",
+    "source": "ae_plugin",
+    "sourceLabel": "AE Plugin (Browse)",
+    "message": "Katalog yuklandi",
+    "action": "catalog_ready",
+    "detail": "4 shablon",
+    "meta": null
+  },
+  {
+    "id": "log_1780481630251_e67km7",
+    "ts": "2026-06-03T10:13:50.251Z",
+    "level": "info",
+    "source": "ae_plugin",
+    "sourceLabel": "AE Plugin (Browse)",
+    "message": "AE Browse panel yuklandi",
+    "action": "init",
+    "detail": "CEP",
+    "meta": null
+  },
+  {
+    "id": "log_1780480091500_r5347o",
+    "ts": "2026-06-03T09:48:11.500Z",
+    "level": "info",
+    "source": "admin",
+    "sourceLabel": "Admin Console",
+    "message": "Admin: Overview",
+    "action": "navigate",
+    "detail": "overview",
+    "meta": null
+  },
+  {
+    "id": "log_1780480091474_hi5s48",
+    "ts": "2026-06-03T09:48:11.474Z",
+    "level": "info",
+    "source": "admin",
+    "sourceLabel": "Admin Console",
+    "message": "Admin Console ishga tushdi",
+    "action": "init",
+    "detail": "/",
+    "meta": null
+  },
+  {
+    "id": "log_1780480077879_ximt1o",
+    "ts": "2026-06-03T09:47:57.879Z",
+    "level": "info",
+    "source": "admin",
+    "sourceLabel": "Admin Console",
+    "message": "Admin: Overview",
+    "action": "navigate",
+    "detail": "overview",
+    "meta": null
+  },
+  {
+    "id": "log_1780480077877_3omf7m",
+    "ts": "2026-06-03T09:47:57.877Z",
+    "level": "info",
+    "source": "admin",
+    "sourceLabel": "Admin Console",
+    "message": "Admin Console ishga tushdi",
+    "action": "init",
+    "detail": "/",
+    "meta": null
+  },
+  {
     "id": "log_1780467183375_qdjuth",
     "ts": "2026-06-03T06:13:03.375Z",
     "level": "info",
@@ -5403,94 +5491,6 @@
   {
     "id": "log_1780422991586_1u4bev",
     "ts": "2026-06-02T17:56:31.586Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991579_c1uvc5",
-    "ts": "2026-06-02T17:56:31.579Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991573_hquq1i",
-    "ts": "2026-06-02T17:56:31.573Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991566_dos43d",
-    "ts": "2026-06-02T17:56:31.566Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991560_unfpm5",
-    "ts": "2026-06-02T17:56:31.560Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991554_dhuzxd",
-    "ts": "2026-06-02T17:56:31.554Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991547_2eo2di",
-    "ts": "2026-06-02T17:56:31.547Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991541_19byag",
-    "ts": "2026-06-02T17:56:31.541Z",
-    "level": "info",
-    "source": "admin",
-    "sourceLabel": "Admin Console",
-    "message": "Admin: AE Plugin obunachilari",
-    "action": "navigate",
-    "detail": "subscribers",
-    "meta": null
-  },
-  {
-    "id": "log_1780422991535_pc217a",
-    "ts": "2026-06-02T17:56:31.535Z",
     "level": "info",
     "source": "admin",
     "sourceLabel": "Admin Console",

@@ -1281,6 +1281,95 @@ function importSingleSceneFromAep(jsonStr) {
   }
 }
 
+/** Loyihadan yuqori darajadagi papkani nomi bo'yicha o'chiradi (ichidagi comp/footage bilan) */
+function removeProjectFolderByName(name) {
+  for (var i = app.project.numItems; i >= 1; i--) {
+    var item = app.project.item(i);
+    if (item instanceof FolderItem && item.name === name) {
+      item.remove();
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Comp'ni aniq nomi bo'yicha o'chiradi — layer nusxalari boshqa comp'lardan avtomatik o'chadi */
+function removeCompByExactName(name) {
+  var removed = 0;
+  for (var i = app.project.numItems; i >= 1; i--) {
+    var item = app.project.item(i);
+    if (item instanceof CompItem && item.name === name) {
+      item.remove();
+      removed++;
+    }
+  }
+  return removed;
+}
+
+/**
+ * Yuklab olingan shablonni loyihadan olib tashlaydi.
+ * cfg = { folders: [...nom], comps: [...nom] }
+ * Avval papkalar (ichidagi hamma narsa bilan), keyin qolgan comp'lar nomi bo'yicha.
+ * Comp o'chirilganda uning layer nusxalari foydalanuvchi comp'idan ham yo'qoladi.
+ */
+function removeImportedTemplate(jsonStr) {
+  try {
+    var cfg = JSON.parse(jsonStr || "{}");
+    var folders = cfg.folders || [];
+    var comps = cfg.comps || [];
+    app.beginUndoGroup("AssetFlow Remove Template");
+    var removed = 0;
+    var i;
+    for (i = 0; i < folders.length; i++) {
+      if (folders[i] && removeProjectFolderByName(String(folders[i]))) removed++;
+    }
+    for (i = 0; i < comps.length; i++) {
+      if (comps[i]) removed += removeCompByExactName(String(comps[i]));
+    }
+    app.endUndoGroup();
+    return JSON.stringify({ ok: true, removed: removed });
+  } catch (e) {
+    try { app.endUndoGroup(); } catch (ignoreRm) {}
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+/** Foydalanuvchidan yuklab olish papkasini so'raydi */
+function pickDownloadFolder() {
+  try {
+    var f = Folder.selectDialog("AssetFlow — yuklab olingan shablonlar saqlanadigan papka");
+    if (f) return JSON.stringify({ ok: true, path: f.fsName });
+    return JSON.stringify({ ok: false, canceled: true });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+/**
+ * Loyihani avtomatik saqlaydi (CMD+S shart bo'lmasin).
+ * cfg = { path } — loyiha fayli yo'q bo'lsa shu yo'lga saqlaydi.
+ */
+function ensureProjectSaved(jsonStr) {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha ochiq emas" });
+    var cfg = {};
+    try { cfg = JSON.parse(jsonStr || "{}"); } catch (e) {}
+    if (app.project.file) {
+      // Mavjud faylga saqlaymiz (o'zgarishlarni flush qiladi)
+      app.project.save();
+      return JSON.stringify({ ok: true, saved: true, projectFile: app.project.file.fsName });
+    }
+    if (cfg.path) {
+      var nf = new File(cfg.path);
+      app.project.save(nf);
+      return JSON.stringify({ ok: true, saved: true, projectFile: app.project.file.fsName });
+    }
+    return JSON.stringify({ ok: false, message: "Loyiha fayli yo'q — qo'lda CMD+S bosing" });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
 function midFrameTime(comp) {
   var t = comp.duration * 0.5;
   var maxT = Math.max(0, comp.duration - comp.frameDuration);
@@ -1521,6 +1610,104 @@ function adminRenderScenePreviews(jsonStr) {
   }
 }
 
+/**
+ * Bitta sahnani render qiladi (thumbnail PNG + ProRes video).
+ * cfg = { compName, exportRoot, previewDuration }
+ */
+function adminRenderOneScene(jsonStr) {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    var cfg = JSON.parse(jsonStr);
+    var exportRoot = cfg.exportRoot;
+    var compName = cfg.compName;
+    if (!exportRoot || !compName) return JSON.stringify({ ok: false, message: "compName/exportRoot kerak" });
+    var previewDur = (typeof cfg.previewDuration === "number") ? cfg.previewDuration : 6;
+
+    var folder = new Folder(exportRoot);
+    if (!folder.exists) folder.create();
+
+    var comp = findCompByName(compName);
+    if (!comp) return JSON.stringify({ ok: false, message: "Comp topilmadi: " + compName });
+
+    var baseName = sanitizeFileName(comp.name);
+    var rq = app.project.renderQueue;
+    var imgTemplates = ["PNG Sequence", "TIFF Sequence", "Photoshop Sequence", "IFF Sequence"];
+    var pending = [];
+    var pi;
+
+    /* Thumbnail — o'rta kadr */
+    try {
+      var rqT = rq.items.add(comp);
+      rqT.timeSpanStart = midFrameTime(comp);
+      rqT.timeSpanDuration = comp.frameDuration;
+      var omT = rqT.outputModule(1);
+      var ti, imgOk = false;
+      for (ti = 0; ti < imgTemplates.length && !imgOk; ti++) {
+        try { omT.applyTemplate(imgTemplates[ti]); imgOk = true; } catch(e1) {}
+      }
+      omT.file = new File(exportRoot + "/" + baseName + "_thumb_[####].png");
+      pending.push(rqT);
+    } catch(eT) {}
+
+    /* Video — birinchi previewDur soniya. Faqat "Admin Preview" preset. */
+    var usedTemplate = "";
+    try {
+      var rqV = rq.items.add(comp);
+      rqV.timeSpanStart = 0;
+      rqV.timeSpanDuration = Math.min(comp.duration, previewDur);
+      var omV = rqV.outputModule(1);
+      var vidOk = false;
+      try { omV.applyTemplate("Admin Preview"); vidOk = true; usedTemplate = "Admin Preview"; } catch(eAP) {}
+      if (!vidOk) {
+        for (pi = pending.length - 1; pi >= 0; pi--) { try { pending[pi].remove(); } catch(eRm) {} }
+        return JSON.stringify({
+          ok: false,
+          message: "Admin Preview preset topilmadi. AE: Edit → Templates → Output Module → Admin Preview yarating."
+        });
+      }
+      omV.file = new File(exportRoot + "/" + baseName + "_preview.mp4");
+      pending.push(rqV);
+    } catch(eV) {
+      return JSON.stringify({ ok: false, message: "Video render navbati: " + eV.toString() });
+    }
+
+    try { rq.render(); } catch(eR) {}
+    for (pi = pending.length - 1; pi >= 0; pi--) {
+      try { pending[pi].remove(); } catch(e) {}
+    }
+
+    /* Natija */
+    var tDir = new Folder(exportRoot);
+    var tFiles = tDir.getFiles(baseName + "_thumb_*.png");
+    var thumbPath = (tFiles && tFiles.length) ? tFiles[0].fsName : "";
+    // Preview faylni kengaytmadan qat'i nazar topamiz (mp4/mov/...)
+    var vPattern = baseName + "_preview";
+    var vMatches = tDir.getFiles(function (f) {
+      return (f instanceof File) && f.name.indexOf(vPattern) === 0;
+    });
+    var videoPath = (vMatches && vMatches.length) ? vMatches[0].fsName : "";
+    var vf = videoPath ? new File(videoPath) : null;
+
+    return JSON.stringify({
+      ok: true,
+      name: comp.name,
+      aeComp: comp.name,
+      thumbPath: thumbPath,
+      thumbOk: !!thumbPath,
+      videoPath: (vf && vf.exists) ? videoPath : "",
+      videoOk: !!(vf && vf.exists),
+      usedTemplate: usedTemplate,
+      width: comp.width,
+      height: comp.height,
+      fps: Math.round(comp.frameRate * 100) / 100,
+      durationSec: Math.round(comp.duration * 100) / 100,
+      previewDur: Math.min(comp.duration, previewDur)
+    });
+  } catch(e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
 function importAssetToProject(filePath) {
   if (!filePath) return "error: no path";
   var file = new File(filePath);
@@ -1626,5 +1813,150 @@ function openProjectFile(jsonStr) {
     });
   } catch (e) {
     return JSON.stringify({ ok: false, error: "exception", message: e.toString() });
+  }
+}
+
+/** CEP evalScript timeout — app.open() uzoq bloklaydi; navbat orqali ochamiz */
+var __afOpenQueue = null;
+
+function runQueuedOpenProject() {
+  var cfg = __afOpenQueue;
+  __afOpenQueue = null;
+  if (!cfg || !cfg.filePath) return;
+  try {
+    var f = new File(cfg.filePath);
+    if (!f.exists) return;
+    var target = f.fsName;
+    if (app.project && app.project.file && app.project.file.fsName === target) return;
+    if (cfg.forceOpen && app.project) {
+      try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (ignoreClose) {}
+    }
+    app.beginSuppressDialogs();
+    try {
+      app.open(f);
+    } finally {
+      app.endSuppressDialogs(false);
+    }
+    try { app.activate(); } catch (ignoreActivate) {}
+  } catch (ignoreOpen) {}
+}
+
+function queueOpenProjectFile(jsonStr) {
+  try {
+    var cfg = JSON.parse(jsonStr || "{}");
+    var filePath = cfg.filePath;
+    if (!filePath) {
+      return JSON.stringify({ ok: false, message: "Project yo‘li kerak" });
+    }
+    var f = new File(filePath);
+    if (!f.exists) {
+      return JSON.stringify({
+        ok: false,
+        message: "Fayl topilmadi: " + filePath
+      });
+    }
+    var target = f.fsName;
+    if (app.project && app.project.file && app.project.file.fsName === target) {
+      return JSON.stringify({
+        ok: true,
+        alreadyOpen: true,
+        projectFile: target,
+        projectName: app.project.file.displayName.replace(/\.aep$/i, "")
+      });
+    }
+    __afOpenQueue = cfg;
+    app.scheduleTask("runQueuedOpenProject()", 100, false);
+    return JSON.stringify({ ok: true, queued: true, filePath: target });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: "exception", message: e.toString() });
+  }
+}
+
+/** CEP panel — bitta string argument; TO'G'RIDAN ochadi (scheduleTask emas).
+ *  app.open bloklasa ham, dialoglar suppress qilinadi va natija qaytadi. */
+function afQueueOpen(pathStr, forceOpen) {
+  try {
+    var p = String(pathStr || "");
+    if (!p) return JSON.stringify({ ok: false, message: "Project yo‘li kerak" });
+    var f = new File(p);
+    if (!f.exists) return JSON.stringify({ ok: false, message: "Fayl topilmadi: " + p });
+    var target = f.fsName;
+    if (app.project && app.project.file && app.project.file.fsName === target) {
+      return JSON.stringify({
+        ok: true,
+        alreadyOpen: true,
+        projectFile: target,
+        projectName: app.project.file.displayName.replace(/\.aep$/i, "")
+      });
+    }
+    var force = (forceOpen === true || forceOpen === "true");
+    if (force && app.project) {
+      try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (ignoreClose) {}
+    }
+    try { app.beginSuppressDialogs(); } catch (ignoreBegin) {}
+    try {
+      app.open(f);
+    } finally {
+      try { app.endSuppressDialogs(false); } catch (ignoreEnd) {}
+    }
+    try { app.activate(); } catch (ignoreActivate) {}
+    if (app.project && app.project.file) {
+      return JSON.stringify({
+        ok: true,
+        opened: true,
+        projectFile: app.project.file.fsName,
+        projectName: app.project.file.displayName.replace(/\.aep$/i, "")
+      });
+    }
+    // Ochildi, lekin file hali settle bo'lmagan — panel poll bilan tasdiqlaydi
+    return JSON.stringify({ ok: true, opened: true, settling: true, projectFile: target });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: "exception", message: e.toString() });
+  }
+}
+
+function afEnsureSaved(pathStr) {
+  return ensureProjectSaved(JSON.stringify({ path: String(pathStr || "") }));
+}
+
+/** AE project panelda sahna comp'ni ochib/tanlab ko'rsatadi (Admin "Sahnalarni topish") */
+function adminOpenSceneComp(compName) {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    var comp = findCompByName(String(compName || ""));
+    if (!comp) return JSON.stringify({ ok: false, message: "Comp topilmadi: " + compName });
+    try { comp.selected = true; } catch (eSel) {}
+    try { comp.openInViewer(); } catch (eOpen) {}
+    try { app.activate(); } catch (eAct) {}
+    return JSON.stringify({ ok: true, name: comp.name });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+/** Berilgan papkadagi sahna comp'larini sanab beradi (qo'lda tanlangan Scene folder) */
+function adminListScenesInFolder(jsonStr) {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    var cfg = {};
+    try { cfg = JSON.parse(jsonStr || "{}"); } catch (e) {}
+    var wantFolder = String(cfg.folder || "");
+    var tree = collectProjectTree(app.project, "", 0);
+    var out = [];
+    var i;
+    for (i = 0; i < tree.length; i++) {
+      var n = tree[i];
+      if (n.type !== "comp") continue;
+      if (wantFolder && n.folder !== wantFolder) continue;
+      out.push(n);
+    }
+    // Birinchi comp'ni AE da ochib ko'rsatamiz
+    if (out.length) {
+      var first = findCompByName(out[0].name);
+      if (first) { try { first.openInViewer(); } catch (eO) {} }
+    }
+    return JSON.stringify({ ok: true, scenes: out, count: out.length });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
   }
 }

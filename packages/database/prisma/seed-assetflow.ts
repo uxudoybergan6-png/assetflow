@@ -137,7 +137,7 @@ async function main() {
           name: d.name,
           description: d.description,
           reviewStatus: TemplateReviewStatus.APPROVED,
-          published: true,
+          published: false,
         },
         create: {
           contributorId: contributor.id,
@@ -151,7 +151,7 @@ async function main() {
           res: "4k",
           tags: d.tags,
           reviewStatus: TemplateReviewStatus.APPROVED,
-          published: true,
+          published: false,
         },
       });
       console.log(`✓ template ${d.externalId}`);

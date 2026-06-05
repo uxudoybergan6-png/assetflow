@@ -1,50 +1,67 @@
 import { TemplateReviewStatus } from "@creative-tools/database";
 import {
-  findAssetPath,
   publicAssetUrl,
   findScenePreview,
   findSceneVideo,
   publicSceneUrl,
   sceneFileIsVideo,
 } from "./template-files.js";
+import {
+  isS3Configured,
+  s3ObjectExists,
+  templateAssetFlags,
+  resolveS3AssetKey,
+  getPublicUrl,
+} from "./s3.js";
 
-/**
- * metaJson.scenes ichidagi har sahnani per-scene preview URL bilan boyitadi.
- * Manifest'da `previewKey` bo'lsa va PNG fayl mavjud bo'lsa — `preview` URL va
- * `previewKind:"image"` qo'shiladi (subscriber panelda <img> sifatida ko'rinadi).
- */
-function enrichScenes(meta: Record<string, unknown>, templateId: string, apiBase: string) {
+/** R2/S3: sahna preview URL — disk + object storage */
+async function enrichScenesAsync(
+  meta: Record<string, unknown>,
+  templateId: string,
+  apiBase: string
+) {
   const scenes = meta.scenes;
   if (!Array.isArray(scenes)) return meta;
-  const mapped = scenes.map((raw) => {
-    if (!raw || typeof raw !== "object") return raw;
-    const s = { ...(raw as Record<string, unknown>) };
-    const key =
-      (typeof s.previewKey === "string" && s.previewKey) ||
-      (typeof s.aeComp === "string" && s.aeComp) ||
-      (typeof s.n === "string" && s.n) ||
-      "";
-    if (key) {
-      // Video preview ustuvorlik: video bo'lsa shu ko'rsatiladi, yo'q bo'lsa thumbnail rasm
+  const mapped = await Promise.all(
+    scenes.map(async (raw) => {
+      if (!raw || typeof raw !== "object") return raw;
+      const s = { ...(raw as Record<string, unknown>) };
+      const key =
+        (typeof s.previewKey === "string" && s.previewKey) ||
+        (typeof s.aeComp === "string" && s.aeComp) ||
+        (typeof s.n === "string" && s.n) ||
+        "";
+      if (!key) return s;
+
       const videoFile = findSceneVideo(templateId, key);
-      if (videoFile) {
-        // Preview video sifatida (previewKind yo'q → plugin <video> ishlatadi)
+      let hasVideo = !!videoFile;
+      if (!hasVideo && isS3Configured()) {
+        hasVideo = await s3ObjectExists(
+          `templates/${templateId}/scenes/${key}.mp4`
+        );
+      }
+      if (hasVideo) {
         s.preview = publicSceneUrl(apiBase, templateId, key);
-        // Thumbnail ham bo'lsa thumbnail sifatida saqlash
         const imgFile = findScenePreview(templateId, key);
         if (imgFile && !sceneFileIsVideo(imgFile)) {
           s.thumb = publicSceneUrl(apiBase, templateId, key + "_thumb");
         }
       } else {
         const previewFile = findScenePreview(templateId, key);
-        if (previewFile) {
+        let hasImg = !!previewFile;
+        if (!hasImg && isS3Configured()) {
+          hasImg = await s3ObjectExists(
+            `templates/${templateId}/scenes/${key}.png`
+          );
+        }
+        if (hasImg) {
           s.preview = publicSceneUrl(apiBase, templateId, key);
           s.previewKind = "image";
         }
       }
-    }
-    return s;
-  });
+      return s;
+    })
+  );
   return { ...meta, scenes: mapped };
 }
 
@@ -68,12 +85,25 @@ type TemplateRow = {
   updatedAt: Date;
 };
 
-export function mapCatalogItem(t: TemplateRow, apiBase: string) {
+export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const rawMeta = (t.metaJson ?? {}) as Record<string, unknown>;
-  const meta = enrichScenes(rawMeta, t.id, apiBase);
-  const hasThumb = !!findAssetPath(t.id, "thumb");
-  const hasPreview = !!findAssetPath(t.id, "preview");
-  const hasPack = !!findAssetPath(t.id, "pack");
+  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase);
+  const assets = await templateAssetFlags(t.id);
+  const hasThumb = assets.thumb;
+  const hasPreview = assets.preview;
+  const hasPack = assets.pack;
+
+  // Pack uchun to'g'ridan R2/CDN URL (Render'ni chetlab o'tadi, cold start yo'q).
+  // CDN ochiq bo'lmasa yoki kalit topilmasa — API endpoint'ga qaytamiz.
+  let packUrl: string | null = hasPack ? publicAssetUrl(apiBase, t.id, "pack") : null;
+  if (hasPack && isS3Configured()) {
+    const packKey = await resolveS3AssetKey(t.id, "pack");
+    if (packKey) {
+      const direct = getPublicUrl(packKey);
+      if (/^https?:\/\//.test(direct)) packUrl = direct;
+    }
+  }
+
   return {
     id: t.id,
     externalId: t.externalId,
@@ -95,7 +125,7 @@ export function mapCatalogItem(t: TemplateRow, apiBase: string) {
     hasPack,
     thumbUrl: hasThumb ? publicAssetUrl(apiBase, t.id, "thumb") : null,
     previewUrl: hasPreview ? publicAssetUrl(apiBase, t.id, "preview") : null,
-    packUrl: hasPack ? publicAssetUrl(apiBase, t.id, "pack") : null,
+    packUrl,
     metaJson: meta,
     updatedAt: t.updatedAt.toISOString(),
   };

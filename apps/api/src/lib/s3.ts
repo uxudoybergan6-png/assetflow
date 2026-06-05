@@ -1,9 +1,12 @@
 import fs from "fs";
+import path from "path";
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
+import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const region = process.env.AWS_REGION ?? "auto";
@@ -57,6 +60,76 @@ export async function getSignedUploadUrl(
 
 export function isS3Configured(): boolean {
   return Boolean(bucket && process.env.AWS_ACCESS_KEY_ID);
+}
+
+export async function s3ObjectExists(key: string): Promise<boolean> {
+  if (!isS3Configured()) return false;
+  try {
+    await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** R2 da pack/preview/thumb turli kengaytma bilan saqlanishi mumkin */
+export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): string[] {
+  const base = `templates/${templateId}/${kind}`;
+  if (kind === "pack") {
+    return [base, `${base}.zip`, `${base}.aep`];
+  }
+  if (kind === "preview") {
+    return [base, `${base}.mp4`, `${base}.mov`, `${base}.webm`];
+  }
+  return [base, `${base}.jpg`, `${base}.jpeg`, `${base}.png`, `${base}.webp`];
+}
+
+export async function resolveS3AssetKey(
+  templateId: string,
+  kind: TemplateAssetKind
+): Promise<string | null> {
+  if (!isS3Configured()) return null;
+  for (const key of s3KeysForAsset(templateId, kind)) {
+    if (await s3ObjectExists(key)) return key;
+  }
+  return null;
+}
+
+/** Lokal disk + R2/S3 — preview/thumb/pack mavjudligi */
+export async function templateAssetFlags(templateId: string) {
+  const kinds: TemplateAssetKind[] = ["thumb", "preview", "pack"];
+  const assets: Record<TemplateAssetKind, boolean> = {
+    thumb: !!findAssetPath(templateId, "thumb"),
+    preview: !!findAssetPath(templateId, "preview"),
+    pack: !!findAssetPath(templateId, "pack"),
+  };
+  if (isS3Configured()) {
+    await Promise.all(
+      kinds.map(async (kind) => {
+        if (!assets[kind]) {
+          if (await resolveS3AssetKey(templateId, kind)) assets[kind] = true;
+        }
+      })
+    );
+  }
+  return assets;
+}
+
+/** Yuklashda R2 kalit — kengaytma saqlanadi (pack.zip / preview.mp4) */
+export function s3UploadKeyForFile(
+  templateId: string,
+  kind: TemplateAssetKind,
+  localPath: string
+): string {
+  const ext = path.extname(localPath).toLowerCase();
+  const allowed =
+    kind === "pack"
+      ? [".zip", ".aep"]
+      : kind === "preview"
+        ? [".mp4", ".mov", ".webm"]
+        : [".jpg", ".jpeg", ".png", ".webp"];
+  const useExt = allowed.includes(ext) ? ext : "";
+  return `templates/${templateId}/${kind}${useExt}`;
 }
 
 /** Lokal faylni S3/R2 ga yuklash */

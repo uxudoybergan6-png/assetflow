@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ExtensionManifest Version="7.0"
   ExtensionBundleId="com.assetflow.demo"
-  ExtensionBundleVersion="1.0.8"
+  ExtensionBundleVersion="1.1.0"
   ExtensionBundleName="AssetFlow">
   <ExtensionList>
-    <Extension Id="com.assetflow.demo.panel" Version="1.0.8"/>
-    <Extension Id="com.assetflow.demo.admin" Version="1.0.8"/>
+    <Extension Id="com.assetflow.demo.panel" Version="1.1.0"/>
+    <Extension Id="com.assetflow.demo.admin" Version="1.1.0"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -56,6 +56,7 @@
             <Parameter>--persist-session-cookies</Parameter>
             <Parameter>--mixed-context</Parameter>
             <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--disable-web-security</Parameter>
           </CEFCommandLine>
         </Resources>
         <Lifecycle>

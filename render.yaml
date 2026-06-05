@@ -16,11 +16,11 @@ services:
       - key: API_PORT
         value: 10000         # Render PORT bilan bir xil bo'lishi kerak
       - key: API_PUBLIC_URL
-        sync: false          # https://assetflow-api.onrender.com (deploy URL)
+        value: https://assetflow-rqbq.onrender.com
       - key: CORS_ORIGIN
-        sync: false          # Frontend URL
+        value: https://assetflow-studio-one.vercel.app
       - key: ADMIN_URL
-        sync: false          # Admin URL
+        value: https://assetflow-studio-one.vercel.app/admin/
       # Cloudflare R2
       - key: AWS_ACCESS_KEY_ID
         sync: false

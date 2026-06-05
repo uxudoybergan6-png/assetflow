@@ -34,6 +34,13 @@ async function rmDir(dir) {
 async function main() {
   const delUsers = process.argv.includes("--all-users");
 
+  const messages = await prisma.studioMessage.deleteMany({});
+  const threads = await prisma.studioMessageThread.deleteMany({});
+  console.log(`✓ Studio xabarlar: ${messages.count} xabar, ${threads.count} thread`);
+
+  const audit = await prisma.studioAuditLog.deleteMany({});
+  console.log(`✓ Audit log: ${audit.count}`);
+
   const templates = await prisma.contributorTemplate.deleteMany({});
   console.log(`✓ Shablonlar o'chirildi: ${templates.count}`);
 

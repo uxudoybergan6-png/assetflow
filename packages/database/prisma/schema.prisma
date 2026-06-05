@@ -42,8 +42,9 @@ model User {
   email            String    @unique
   name             String?
   passwordHash     String?
-  role             UserRole  @default(USER)
-  stripeCustomerId String?   @unique
+  role                 UserRole  @default(USER)
+  contributorBlockedAt DateTime?
+  stripeCustomerId     String?   @unique
   emailVerified    DateTime?
   image            String?
   createdAt        DateTime  @default(now())
@@ -57,6 +58,9 @@ model User {
   pluginProfile         PluginProfile?
   contributorTemplates  ContributorTemplate[] @relation("ContributorTemplates")
   reviewedTemplates     ContributorTemplate[] @relation("ReviewedTemplates")
+  studioThreads         StudioMessageThread[] @relation("ContributorThreads")
+  studioMessagesSent    StudioMessage[]       @relation("StudioMessagesSent")
+  studioAuditLogs       StudioAuditLog[]      @relation("StudioAuditActor")
 }
 
 enum PluginPlanTier {
@@ -230,9 +234,61 @@ model ContributorTemplate {
 
   contributor User  @relation("ContributorTemplates", fields: [contributorId], references: [id], onDelete: Cascade)
   reviewer    User? @relation("ReviewedTemplates", fields: [reviewedById], references: [id])
+  messageThreads StudioMessageThread[]
 
   @@unique([contributorId, externalId])
   @@index([contributorId])
   @@index([reviewStatus])
   @@index([published])
+}
+
+model StudioMessageThread {
+  id            String   @id @default(cuid())
+  contributorId String
+  templateId    String?
+  subject       String
+  isBroadcast   Boolean  @default(false)
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  contributor User                 @relation("ContributorThreads", fields: [contributorId], references: [id], onDelete: Cascade)
+  template    ContributorTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  messages    StudioMessage[]
+
+  @@index([contributorId])
+  @@index([lastMessageAt])
+  @@index([templateId])
+}
+
+model StudioMessage {
+  id        String    @id @default(cuid())
+  threadId  String
+  senderId  String
+  body      String    @db.Text
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  thread StudioMessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User                @relation("StudioMessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([senderId])
+}
+
+model StudioAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  detail     String?  @db.Text
+  metaJson   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("StudioAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([actorId])
 }
