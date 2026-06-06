@@ -527,9 +527,9 @@ select option{background:#222}
     </div>
     <div class="scan-folder-bar" id="scanFolderBar" style="display:none">
       <label style="font-size:11px;color:var(--muted);white-space:nowrap">Scene papkasi:</label>
-      <select id="scanFolder" class="scan-folder-select"></select>
-      <button class="scan-btn" id="scanDetectBtn" onclick="detectScenesInFolder()">🔎 Aniqlash</button>
-      <button class="scan-btn" id="scanRenderAllBtn" onclick="renderAllScenes()" style="background:#6366f1;color:#fff" title="Admin Preview preset bilan barcha sahnalar">🎬 All render</button>
+      <select id="scanFolder" class="scan-folder-select" onchange="onScanFolderChange()"></select>
+      <span class="scan-comp-count" id="scanCompCount" style="font-size:11px;color:var(--green);min-width:72px"></span>
+      <button class="scan-btn" id="scanRenderAllBtn" onclick="renderAllScenes()" style="background:#6366f1;color:#fff;margin-left:auto" title="Admin Preview preset bilan barcha sahnalar">🎬 All render</button>
     </div>
     <div class="scan-list" id="scanList"></div>
     <div class="scan-foot">
@@ -558,7 +558,8 @@ function unzipTo(child, zipPath, destDir) {
       `Expand-Archive -LiteralPath '${zipPath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`
     ], { timeout: 120000 });
   } else {
-    child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', destDir], { timeout: 120000 });
+    // macOS AppleDouble (._*) va __MACOSX papkasini chiqarmaymiz — AE ularni o'qiy olmaydi
+    child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', destDir, '-x', '__MACOSX/*', '._*', '*/._*'], { timeout: 120000 });
   }
 }
 
@@ -1050,11 +1051,11 @@ function renderDetail(t) {
               <div class="wf-step-bar"></div>
             </div>
             <div class="wf-step-content">
-              <div class="wf-step-label">1 · Kompga yuklab, AE da tekshiring</div>
-              <div class="wf-step-desc">Pack serverdan kompingizga yuklanib, After Effects da ochiladi. Xatolarni tuzating va ⌘S bilan saqlang.</div>
+              <div class="wf-step-label">1 · Pack yuklab olish</div>
+              <div class="wf-step-desc">Pack serverdan yuklanadi va After Effects da ochiladi.</div>
               <div class="wf-step-actions">
                 ${t.assets?.pack
-                  ? `<button class="wf-btn blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ AE da ochish</button>`
+                  ? `<button class="wf-btn blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ Pack yuklab olish</button>`
                   : `<span class="wf-hint">⚠ Contributor hali pack yuklagan emas</span>`}
               </div>
             </div>
@@ -1067,12 +1068,12 @@ function renderDetail(t) {
               <div class="wf-step-bar"></div>
             </div>
             <div class="wf-step-content">
-              <div class="wf-step-label">2 · Sahnalarni topish</div>
-              <div class="wf-step-desc">Scene papkasini qo'lda tanlang. Plagin o'sha papkadagi sahnalarni aniqlaydi va AE project panelda ochadi. Har sahna uchun preview video import qiling.</div>
+              <div class="wf-step-label">2 · Sahnalarni render qilish</div>
+              <div class="wf-step-desc"><b>Scene papkasini</b> qo'lda tanlang — plagin comp'larni topadi. Keyin <b>All render</b> (Admin Preview).</div>
               <div class="wf-step-actions">
                 ${IS_CEP
-                  ? `<button class="wf-btn blue" id="btn-scan-${t.id}" onclick="openScenePrep('${t.id}')">🔎 Sahnalarni topish</button>
-                     <span class="wf-hint" id="prep-hint-${t.id}">AE da loyiha ochiq bo'lishi kerak</span>`
+                  ? `<button class="wf-btn blue" id="btn-scan-${t.id}" onclick="openScenePrep('${t.id}')">🎬 Sahnalarni render</button>
+                     <span class="wf-hint" id="prep-hint-${t.id}">Avval pack yuklab oling</span>`
                   : `<span class="wf-hint">Faqat After Effects ichida ishlaydi</span>`}
               </div>
             </div>
@@ -1090,7 +1091,7 @@ function renderDetail(t) {
               <div class="wf-step-actions">
                 ${IS_CEP
                   ? `<button class="wf-btn amber" id="btn-upload-${t.id}" onclick="uploadTemplateToServer('${t.id}')" disabled>↑ Serverga yuklash</button>
-                     <span class="wf-hint" id="upload-hint-${t.id}">Avval "Sahnalarni topish"</span>`
+                     <span class="wf-hint" id="upload-hint-${t.id}">Avval "Sahnalarni render"</span>`
                   : `<span class="wf-hint">Faqat After Effects ichida ishlaydi</span>`}
               </div>
               <div class="wf-progress" id="upwrap-${t.id}" style="display:none">
@@ -1360,73 +1361,157 @@ function normFsPath(p) {
   }
 }
 
-async function waitForProjectFile(aepPath, maxSec) {
-  const want = normFsPath(aepPath);
+/** AE project panel javobidan loyiha ochilganini aniqlash (yo'l farqi / saved kech bo'lishi mumkin) */
+function panelProjectReady(panel, aepPath, beforeCompCount, openTriggered) {
+  if (!panel || !panel.ok) return false;
+  let wantBase = '';
+  try { wantBase = require('path').basename(aepPath || '').toLowerCase(); } catch (e) {}
+  const wantStem = wantBase.replace(/\.aep$/i, '');
+  const comps = panel.compCount || 0;
+  const folders = panel.folderCount || 0;
+  const treeLen = (panel.tree && panel.tree.length) || 0;
+
+  if (panel.projectFile && aepPath) {
+    const gotBase = String(panel.projectFile).split(/[\\/]/).pop().toLowerCase();
+    if (wantBase && gotBase === wantBase) return true;
+    if (normFsPath(panel.projectFile) === normFsPath(aepPath)) return true;
+  }
+
+  const pn = String(panel.projectName || '').toLowerCase();
+  if (wantStem && pn && (pn === wantStem || pn.indexOf(wantStem) >= 0 || wantStem.indexOf(pn) >= 0)) {
+    if (comps > 0 || folders > 0) return true;
+  }
+
+  if (typeof beforeCompCount === 'number' && comps > beforeCompCount && comps > 0) return true;
+
+  // Ochish buyrug'idan keyin — eski loyiha yopilgan, shuning uchun AE da
+  // KO'RINGAN istalgan loyiha fayli (yoki comp) — bu bizniki.
+  if (openTriggered) {
+    if (panel.projectFile) return true;        // fayl yo'li bor — ochilgan
+    if (panel.saved) return true;              // saqlangan loyiha bor
+    if (comps > 0) return true;                // kamida bitta comp yuklangan
+    if (folders >= 1 || treeLen >= 2) return true;
+  }
+
+  return false;
+}
+
+async function waitForProjectFile(aepPath, maxSec, beforeCompCount) {
   const deadline = Date.now() + (maxSec || 90) * 1000;
   while (Date.now() < deadline) {
     const raw = await evalP('refreshProjectPanel()');
     if (raw && raw !== 'EvalScript error.') {
       try {
         const panel = JSON.parse(raw);
-        if (panel.ok && panel.projectFile && normFsPath(panel.projectFile) === want) {
-          return panel;
-        }
+        if (panelProjectReady(panel, aepPath, beforeCompCount, true)) return panel;
       } catch (e) {}
     }
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 500));
   }
   return null;
 }
 
 async function ensureHostBridge() {
-  const ping = await evalP('typeof afQueueOpen==="function"&&typeof afEnsureSaved==="function"?"ok":"missing"');
+  const ping = await evalP('typeof queueOpenProjectFile==="function"&&typeof refreshProjectPanel==="function"&&typeof afEnsureSaved==="function"?"ok":"missing"');
   if (ping === 'ok') return 'ok';
   const r = await reloadHostScript(true);
   if (r !== 'ok') return r;
-  const ping2 = await evalP('typeof afQueueOpen==="function"?"ok":"missing"');
-  return ping2 === 'ok' ? 'ok' : 'missing-afQueueOpen';
+  const ping2 = await evalP('typeof queueOpenProjectFile==="function"?"ok":"missing"');
+  return ping2 === 'ok' ? 'ok' : 'missing-queueOpenProjectFile';
 }
 
-async function openAepInHost(aepPath) {
+// Panel ishlab turgan AE'ning bajariluvchi fayl yo'li (HOST_APPLICATION)
+function hostAppExePath() {
+  try {
+    if (!csInterface) return '';
+    return csInterface.getSystemPath(SystemPath.HOST_APPLICATION) || '';
+  } catch (e) { return ''; }
+}
+// Bajariluvchi yo'ldan .app bundle yo'lini ajratadi (mac)
+function hostAppBundlePath(exe) {
+  try {
+    const p = String(exe || '');
+    const idx = p.indexOf('.app/');
+    if (idx >= 0) return p.slice(0, idx + 4); // ".app" bilan birga
+    if (/\.app$/.test(p)) return p;
+    return '';
+  } catch (e) { return ''; }
+}
+
+/** Faylni AYNAN panel turgan AE instansiyasida ochadi (OS orqali — scheduleTask ishlamasa ham) */
+function launchAepInHostApp(aepPath) {
+  try {
+    const child = require('child_process'), fs = require('fs');
+    if (!fs.existsSync(aepPath)) return false;
+    const exe = hostAppExePath();
+    const bundle = hostAppBundlePath(exe);
+    if (IS_WIN && exe) {
+      child.spawn(exe, [aepPath], { detached: true, stdio: 'ignore' }).unref();
+      return true;
+    }
+    if (bundle) {
+      child.spawn('open', ['-a', bundle, aepPath], { detached: true, stdio: 'ignore' }).unref();
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function openAepInHost(aepPath, onTick) {
   const bridge = await ensureHostBridge();
-  if (bridge !== 'ok') throw new Error('host.jsx: ' + bridge);
+  if (bridge !== 'ok') throw new Error('host.jsx bridge: ' + bridge);
 
-  let panel = await waitForProjectFile(aepPath, 2);
-  if (panel) {
-    return { ok: true, alreadyOpen: true, projectName: panel.projectName, projectFile: panel.projectFile };
+  const fs = require('fs');
+  if (!fs.existsSync(aepPath)) throw new Error('AEP fayl topilmadi: ' + aepPath);
+
+  // Hozirgi holat
+  let beforeComps = 0;
+  const beforeRaw = await evalP('refreshProjectPanel()');
+  let beforePanel = null;
+  try { beforePanel = beforeRaw ? JSON.parse(beforeRaw) : null; } catch (e) {}
+  if (beforePanel && beforePanel.ok) beforeComps = beforePanel.compCount || 0;
+
+  if (panelProjectReady(beforePanel, aepPath, beforeComps, false)) {
+    return { ok: true, alreadyOpen: true, projectName: beforePanel.projectName, projectFile: beforePanel.projectFile || aepPath };
   }
 
-  // afQueueOpen TO'G'RIDAN ochadi — javob bo'sh bo'lsa ham (app.open bloklagan) poll qilamiz
-  const pathLit = JSON.stringify(String(aepPath || ''));
-  let queueRaw = await evalP('afQueueOpen(' + pathLit + ',true)');
+  // Joriy loyihani yopamiz — "Save changes?" dialogini oldini oladi
+  try { await evalP('afCloseCurrent()'); } catch (e) {}
+  await new Promise(r => setTimeout(r, 200));
+
+  // 1) ExtendScript navbat (scheduleTask)
+  const cfg = hostCfg({ filePath: aepPath, forceOpen: true });
+  const queueRaw = await evalP('queueOpenProjectFile(' + cfg + ')');
   let queueRes = null;
-  try { queueRes = queueRaw ? JSON.parse(queueRaw) : null; } catch (e) { queueRes = null; }
-
-  if (queueRes && queueRes.ok && (queueRes.alreadyOpen || queueRes.opened)) {
-    return {
-      ok: true,
-      alreadyOpen: !!queueRes.alreadyOpen,
-      projectName: queueRes.projectName,
-      projectFile: queueRes.projectFile
-    };
-  }
-
-  // Javob aniq xato (fayl yo'q / funksiya yo'q) bo'lsa — to'xtaymiz
+  try { queueRes = queueRaw ? JSON.parse(queueRaw) : null; } catch (e) {}
   if (queueRes && queueRes.ok === false && queueRes.message) {
     throw new Error(queueRes.message);
   }
-
-  // Bo'sh javob — open bloklab turgan bo'lishi mumkin, ochilganini kuzatamiz
-  panel = await waitForProjectFile(aepPath, 90);
-  if (panel) {
-    return { ok: true, projectName: panel.projectName, projectFile: panel.projectFile };
+  if (queueRes && queueRes.alreadyOpen) {
+    return { ok: true, alreadyOpen: true, projectName: queueRes.projectName, projectFile: queueRes.projectFile };
   }
 
-  // Hali ham ochilmadi — ehtimol Save changes? dialogi turibdi
-  const miss = await evalP('typeof afQueueOpen');
+  // 2) OS orqali shu AE instansiyasida ochish (scheduleTask ishlamasa ham fayl ochiladi)
+  launchAepInHostApp(aepPath);
+
+  // Poll — loyiha yuklangan zahoti tasdiqlaymiz
+  const deadline = Date.now() + 90 * 1000;
+  let lastPanel = '';
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 400));
+    const pRaw = await evalP('refreshProjectPanel()');
+    lastPanel = pRaw || lastPanel;
+    let pj = null;
+    try { pj = pRaw ? JSON.parse(pRaw) : null; } catch (e) {}
+    if (onTick && pj) onTick(pj);
+    if (panelProjectReady(pj, aepPath, beforeComps, true)) {
+      return { ok: true, projectName: pj.projectName, projectFile: pj.projectFile || aepPath };
+    }
+  }
+
   throw new Error(
-    'AE loyiha ochilmadi (90s). AE oynasiga o\'ting va ochiq dialog (Save changes?) bo\'lsa yoping. ' +
-    'afQueueOpen=' + miss + (queueRaw ? ' · javob=' + queueRaw : '')
+    'AE loyiha ochilmadi (90s). AE oynasiga o\'ting — dialog (Save changes? / missing footage) ' +
+    'bo\'lsa yoping. ' + (lastPanel ? '[panel:' + String(lastPanel).slice(0, 160) + ']' : '')
   );
 }
 
@@ -1434,7 +1519,8 @@ async function openAepInHost(aepPath) {
  *  Butun faylni evalScript ichiga qo‘ymaymiz (55KB+ limitdan oshadi) — $.evalFile ishlatamiz. */
 let _lastHostReloadResult = '';
 async function hostScriptReady() {
-  const ping = await evalP('typeof afEnsureSaved==="function"&&typeof refreshProjectPanel==="function"?"ok":"missing"');
+  // Eng YANGI funksiyalarni tekshiramiz — eski host.jsx bo'lsa reload majburlanadi
+  const ping = await evalP('typeof afListFolders==="function"&&typeof afCompsInFolder==="function"&&typeof afEnsureSaved==="function"?"ok":"missing"');
   return ping === 'ok';
 }
 async function reloadHostScript(force) {
@@ -1520,28 +1606,58 @@ async function importPackToAE(id) {
     { state: 'run',  text: 'Pack serverdan yuklanmoqda…' },
     { state: 'wait', text: 'Unzip…' },
     { state: 'wait', text: 'AE da ochilmoqda…' },
-    { state: 'wait', text: 'Loyiha tekshirilmoqda…' },
   ];
   const log = () => packLog(id, steps);
   log();
 
   try {
-    // 0 — Yuklab olish
-    const url = apiBase() + '/api/plugin/assets/' + id + '/pack';
-    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token() } });
-    if (!res.ok) throw new Error('Pack HTTP ' + res.status);
-    const { Buffer: NodeBuffer } = require('buffer');
-    const buf = NodeBuffer.from(await res.arrayBuffer());
-
+    // 0 — Yuklab olish (Node oqim bilan — real progress)
     const fs = require('fs'), path = require('path'),
           os = require('os'), child = require('child_process');
-    // Yuklab olish papkasi: Admin sozlamasidagi papka (yoki tmpdir)
     const baseDir = adminBaseDir();
     const tmpDir = path.join(baseDir, 'af_admin_' + id);
     fs.mkdirSync(tmpDir, { recursive: true });
     const zipPath = path.join(tmpDir, 'pack.zip');
-    fs.writeFileSync(zipPath, buf);
-    steps[0] = { state: 'ok', text: '✓ Pack yuklandi (' + (buf.length / 1048576).toFixed(1) + ' MB)' };
+
+    const packUrl = apiBase() + '/api/plugin/assets/' + id + '/pack';
+    let totalBytes = 0, doneBytes = 0;
+    await new Promise((resolve, reject) => {
+      const https = packUrl.startsWith('https') ? require('https') : require('http');
+      const doGet = (url, redirects) => {
+        if (redirects <= 0) { reject(new Error('Redirect limit')); return; }
+        const req = https.get(url, { headers: { 'Authorization': 'Bearer ' + token() } }, res => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            res.resume();
+            doGet(res.headers.location, redirects - 1);
+            return;
+          }
+          if (res.statusCode !== 200) { res.resume(); reject(new Error('Pack HTTP ' + res.statusCode)); return; }
+          totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+          const ws = fs.createWriteStream(zipPath);
+          let lastPct = -1;
+          res.on('data', chunk => {
+            doneBytes += chunk.length;
+            if (totalBytes > 0) {
+              const pct = Math.min(100, Math.floor(doneBytes / totalBytes * 100));
+              if (pct !== lastPct && (pct % 2 === 0 || pct === 100)) {
+                lastPct = pct;
+                const mb = (doneBytes / 1048576).toFixed(1) + '/' + (totalBytes / 1048576).toFixed(1) + ' MB';
+                steps[0] = { state: 'run', text: 'Pack yuklanmoqda… ' + pct + '% · ' + mb };
+                packLog(id, steps);
+              }
+            }
+          });
+          res.pipe(ws);
+          ws.on('finish', resolve);
+          ws.on('error', reject);
+          res.on('error', reject);
+        });
+        req.on('error', reject);
+      };
+      doGet(packUrl, 8);
+    });
+    const fileSize = fs.statSync(zipPath).size;
+    steps[0] = { state: 'ok', text: '✓ Pack yuklandi (' + (fileSize / 1048576).toFixed(1) + ' MB)' };
     steps[1] = { state: 'run', text: 'Unzip qilinmoqda…' };
     log();
 
@@ -1550,6 +1666,8 @@ async function importPackToAE(id) {
     let aepPath = '';
     const walkDir = dir => {
       for (const f of fs.readdirSync(dir)) {
+        // macOS AppleDouble (._foo) va yashirin/__MACOSX fayllarni o'tkazamiz
+        if (f.indexOf('._') === 0 || f === '.DS_Store' || f === '__MACOSX') continue;
         const p = path.join(dir, f);
         try {
           if (fs.statSync(p).isDirectory()) walkDir(p);
@@ -1560,35 +1678,49 @@ async function importPackToAE(id) {
     walkDir(tmpDir);
     if (!aepPath) throw new Error('.aep topilmadi — zip ichida .aep fayl bolishi kerak');
     steps[1] = { state: 'ok', text: '✓ Unzip: ' + path.basename(aepPath) };
-    steps[2] = { state: 'run', text: 'AE da ochilmoqda: ' + path.basename(aepPath) };
+    steps[2] = { state: 'run', text: 'AE da loyiha ochilmoqda…' };
     log();
-
-    // 2 — AE da ochish (queue — app.open uzoq, evalScript timeout bo'lmasin)
-    steps[2].text = 'AE da ochilmoqda (kutish 90s gacha)…';
-    log();
-    const openRes = await openAepInHost(aepPath);
-    steps[2] = { state: 'ok', text: '✓ Ochildi: ' + (openRes.projectName || path.basename(aepPath)) };
-    steps[3] = { state: 'run', text: 'Loyiha saqlanmoqda…' };
-    log();
-
-    const saveRaw = await evalP('afEnsureSaved(' + JSON.stringify(aepPath) + ')');
-    let saveRes;
-    try { saveRes = JSON.parse(saveRaw); } catch (e) { saveRes = null; }
-    if (saveRes && saveRes.ok) {
-      steps[3] = { state: 'ok', text: '✓ Saqlandi: ' + path.basename(saveRes.projectFile || aepPath) };
-    } else {
-      steps[3] = { state: 'ok', text: '✓ Ochildi — kerak bo\'lsa CMD+S bilan saqlang' };
-    }
-    log();
-    toast('✓ AE da ochildi — tuzatib saqlang, keyin "Serverga yuklash" bosing');
 
     window._adminPackTmp = window._adminPackTmp || {};
     window._adminPackTmp[id] = { dir: tmpDir, aep: aepPath };
-    // Downloaded ro'yxatga qo'shish
+
+    // ── AE da ochish — SODDA: ochib qo'yamiz, uzoq "tasdiqlash" YO'Q ──
+    try { await ensureHostBridge(); } catch(e) {}
+    // 1) ExtendScript: joriy loyihani yopib, yangisini ochishga buyruq
+    try { await evalP('afCloseCurrent()'); } catch(e) {}
+    try { await evalP('queueOpenProjectFile(' + hostCfg({ filePath: aepPath, forceOpen: true }) + ')'); } catch(e) {}
+    // 2) OS orqali ham ochamiz (kafolat)
+    try { launchAepInHostApp(aepPath); } catch(e) {}
+
+    // Qisqa kutish (max 8s) — faqat chiroyli xabar uchun; XATO bermaydi
+    let projName = path.basename(aepPath).replace(/\.aep$/i, '');
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      try {
+        const raw = await evalP('refreshProjectPanel()');
+        const p = (raw && raw !== 'EvalScript error.') ? JSON.parse(raw) : null;
+        if (p && p.ok && p.projectFile) {
+          projName = p.projectName || projName;
+          try { await evalP('afEnsureSaved(' + JSON.stringify(aepPath) + ')'); } catch(e) {}
+          try { await evalP('afShowMainComp()'); } catch(e) {}
+          break;
+        }
+      } catch(e) {}
+    }
+    if (!IS_WIN) {
+      try { child.exec('osascript -e \'tell application id "com.adobe.AfterEffects" to activate\''); } catch(e) {}
+    }
+    steps[2] = { state: 'ok', text: '✓ AE da ochildi: ' + projName };
+    log();
+
     const tplMeta = allTemplates.find(x => x.id === id);
     const thumbUrl = tplMeta ? apiBase() + '/api/plugin/assets/' + id + '/thumb' : '';
     registerAdminDownload(id, tplMeta?.name || id, thumbUrl, aepPath, tmpDir);
-    if (btn) { btn.disabled = false; btn.textContent = '↓ Qayta ochish'; }
+    if (btn) { btn.disabled = false; btn.textContent = '↓ Qayta yuklab olish'; }
+
+    const prepHint = document.getElementById('prep-hint-' + id);
+    if (prepHint) prepHint.textContent = '✓ AE da tekshiring — keyin Scene papkasini tanlang';
+    toast('✓ AE da ochildi — tekshiring, keyin "Sahnalarni render"');
 
   } catch(e) {
     const ri = steps.findIndex(s => s.state === 'run');
@@ -1611,93 +1743,243 @@ function closeScanModal() {
   document.getElementById('scanOverlay').classList.remove('open');
 }
 
-/** Qadam 2 — "Sahnalarni topish": modalni ochadi, AE loyihasini tekshiradi, papka tanlatadi */
+function aepBaseName(aepPath) {
+  try { return require('path').basename(String(aepPath || '')).toLowerCase(); } catch (e) { return ''; }
+}
+
+/** AE da ochiq loyiha kerakli .aep ekanini aniqlash (yo'l farqi mumkin) */
+function panelMatchesAep(panel, aepPath) {
+  if (!panel || !aepPath) return false;
+  const want = aepBaseName(aepPath);
+  const stem = want.replace(/\.aep$/i, '');
+  if (panel.projectFile) {
+    const got = String(panel.projectFile).split(/[\\/]/).pop().toLowerCase();
+    if (got === want) return true;
+    if (normFsPath(panel.projectFile) === normFsPath(aepPath)) return true;
+  }
+  const pn = String(panel.projectName || '').toLowerCase();
+  if (stem && pn && (pn === stem || pn.indexOf(stem) >= 0 || stem.indexOf(pn) >= 0)) return true;
+  return false;
+}
+
+/** AE project panelida loyiha ma'lumoti bormi */
+function panelHasProjectData(panel) {
+  if (!panel || !panel.ok) return false;
+  if (panel.saved) return true;
+  if ((panel.compCount || 0) > 0) return true;
+  if ((panel.folderCount || 0) > 0) return true;
+  if (panel.folders && panel.folders.length > 0) return true;
+  if (panel.tree && panel.tree.length > 0) return true;
+  return false;
+}
+
+/** 1-qadam tugadi deb hisoblash — loyiha ochiq (comp/papka yoki saved) */
+function panelReady(panel, aepPath) {
+  if (!panel || !panel.ok) return false;
+  if (aepPath && !panelMatchesAep(panel, aepPath)) return false;
+  return panelHasProjectData(panel);
+}
+
+async function readProjectPanel() {
+  const raw = await evalP('refreshProjectPanel()');
+  try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+
+/** Loyihani ochish buyrug'i — allaqachon to'g'ri loyiha ochiq bo'lsa YOPMAYDI */
+async function triggerProjectOpen(aepPath, opts) {
+  const forceClose = !opts || opts.forceClose !== false;
+  try { await ensureHostBridge(); } catch (e) {}
+  const cur = await readProjectPanel();
+  if (cur && cur.ok && panelMatchesAep(cur, aepPath)) return; // allaqachon ochiq
+  if (forceClose) {
+    try { await evalP('afCloseCurrent()'); } catch (e) {}
+    await new Promise(r => setTimeout(r, 150));
+  }
+  const cfg = hostCfg({ filePath: aepPath, forceOpen: true });
+  try { await evalP('queueOpenProjectFile(' + cfg + ')'); } catch (e) {}
+  launchAepInHostApp(aepPath);
+}
+
+/** Loyiha ochilganini kutadi — ochiq loyihani yopmaydi, faqat poll qiladi */
+async function waitForProjectPanel(aepPath, maxSec, onProgress) {
+  const deadline = Date.now() + (maxSec || 60) * 1000;
+  let tick = 0;
+  let openTriggered = false;
+
+  while (Date.now() < deadline) {
+    const panel = await readProjectPanel();
+
+    if (panelReady(panel, aepPath)) return panel;
+
+    // To'g'ri loyiha ochilmoqda — yopmasdan kutamiz (comp/papka yuklanishi)
+    if (panel && panel.ok && panelMatchesAep(panel, aepPath)) {
+      tick++;
+      if (onProgress) onProgress('Loyiha yuklanmoqda… (' + Math.round(tick * 0.4) + 's)');
+      await new Promise(r => setTimeout(r, 400));
+      continue;
+    }
+
+    // Boshqa loyiha yoki hech narsa ochiq emas — bir marta ochish
+    if (!openTriggered && aepPath) {
+      openTriggered = true;
+      if (onProgress) onProgress('AE da loyiha ochilmoqda…');
+      const needClose = !!(panel && panel.ok && !panelMatchesAep(panel, aepPath));
+      await triggerProjectOpen(aepPath, { forceClose: needClose });
+      await new Promise(r => setTimeout(r, 500));
+      tick++;
+      continue;
+    }
+
+    tick++;
+    const c = (panel && panel.compCount) || 0;
+    if (onProgress) {
+      onProgress(c > 0
+        ? 'Loyiha yuklanmoqda… ' + c + ' comp'
+        : 'AE da loyiha ochilmoqda… (' + Math.round(tick * 0.4) + 's)');
+    }
+    await new Promise(r => setTimeout(r, 400));
+  }
+  return await readProjectPanel();
+}
+
+
+/** Qadam 2 — FAQAT papka tanlash + render (loyiha 1-qadamda ochilgan bo'lishi kerak) */
 async function openScenePrep(id) {
   if (!IS_CEP || !csInterface) { toast('Faqat AE ichida ishlaydi', true); return; }
   const btn = document.getElementById('btn-scan-' + id);
   if (btn) btn.disabled = true;
 
-  document.getElementById('scanTitle').textContent = 'Loyiha tekshirilmoqda…';
+  const knownAep = (window._adminPackTmp && window._adminPackTmp[id] && window._adminPackTmp[id].aep)
+    || (adminDownloaded[id] && adminDownloaded[id].aepPath) || '';
+  if (!knownAep) {
+    toast('Avval "Pack yuklab olish" bosing', true);
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  document.getElementById('scanTitle').textContent = 'Sahnalarni render qilish';
   document.getElementById('scanFolderBar').style.display = 'none';
+  document.getElementById('scanCompCount').textContent = '';
   document.getElementById('scanDoneBtn').disabled = true;
   document.getElementById('scanFootMsg').textContent = '';
   document.getElementById('scanOverlay').classList.add('open');
-  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">AE loyihasi tekshirilmoqda…</div>');
+
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Folderlar yuklanmoqda…</div>');
 
   try {
-    if (!(await hostScriptReady())) {
-      const reload = await reloadHostScript(true);
-      if (reload !== 'ok') {
-        scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">host.jsx yuklanmadi:<br><span style="font-size:10px;color:var(--muted);word-break:break-all">' + reload + '</span><br><br>After Effects ni qayta ishga tushiring.</div>');
-        return;
+    if (!(await hostScriptReady())) { try { await reloadHostScript(true); } catch(e) {} }
+
+    // YENGIL: faqat folderlar (og'ir tree emas) — bir necha urinish
+    let res = null;
+    for (let i = 0; i < 6; i++) {
+      const raw = await evalP('afListFolders()');
+      if (raw && raw !== 'EvalScript error.') {
+        try { res = JSON.parse(raw); } catch(e) { res = null; }
+        if (res && res.ok) break;
       }
+      await new Promise(r => setTimeout(r, 700));
     }
 
-    const knownAep = (window._adminPackTmp && window._adminPackTmp[id] && window._adminPackTmp[id].aep)
-      || (adminDownloaded[id] && adminDownloaded[id].aepPath) || '';
-
-    let panelRaw = await callHostSimple('refreshProjectPanel()');
-    let panel;
-    try { panel = JSON.parse(panelRaw); } catch (e) { panel = null; }
-    if (!panel || !panel.ok) {
-      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">AE loyihasi ochiq emas.<br><br>Avval <b>"1 · AE da ochish"</b> bosing.</div>');
+    if (!res || !res.ok) {
+      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">AE javob bermadi.<br>AE oynasiga o\'ting — ochiq dialog (missing footage / alert) bo\'lsa yoping, keyin qayta urining.</div>');
+      return;
+    }
+    if (!res.folders || !res.folders.length) {
+      scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Loyihada folder topilmadi.<br>Sahnalar folder ichida bo\'lishi kerak.</div>');
       return;
     }
 
-    if (!panel.saved) {
-      const saveRaw = knownAep
-        ? await evalP('afEnsureSaved(' + JSON.stringify(knownAep) + ')')
-        : await callHostJson('ensureProjectSaved', { path: knownAep });
-      let saveRes; try { saveRes = JSON.parse(saveRaw); } catch (e) { saveRes = null; }
-      if (saveRes && saveRes.ok) {
-        panelRaw = await callHostSimple('refreshProjectPanel()');
-        try { panel = JSON.parse(panelRaw); } catch (e) {}
-      }
-    }
-    if (!panel || !panel.ok) {
-      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">Loyiha topilmadi. Avval <b>"AE da ochish"</b>.</div>');
-      return;
-    }
-
-    const os = require('os'), path = require('path'), fs = require('fs');
-    const previewDir = path.join(adminBaseDir(), 'af_admin_' + id, 'previews');
-    try { fs.mkdirSync(previewDir, { recursive: true }); } catch (e) {}
-    scanState = {
-      templateId: id,
-      exportRoot: previewDir,
-      scenes: [],
-      tree: panel.tree || [],
-      folders: panel.folders || [],
-      scenesFolder: '',
-      projectFile: panel.projectFile || knownAep || '',
-      knownAep: knownAep || '',
-      projectName: panel.projectName
-    };
-    document.getElementById('scanTitle').textContent = panel.projectName || 'Sahnalarni topish';
-
-    // Papka ro'yxati — qo'lda tanlash uchun
-    const sel = document.getElementById('scanFolder');
-    const folders = panel.folders || [];
-    const guess = adminPickScenesFolder(folders, panel.tree || []);
-    sel.innerHTML = '<option value="">— Butun loyiha —</option>' +
-      folders.map(f => `<option value="${String(f.path).replace(/"/g,'&quot;')}" ${f.path===guess?'selected':''}>${f.name} (${(panel.tree||[]).filter(n=>n.type==='comp'&&n.folder===f.path).length} comp)</option>`).join('');
-    scanState.scenesFolder = guess || '';
-    document.getElementById('scanFolderBar').style.display = 'flex';
-
-    // Avtomatik birinchi aniqlash
-    await detectScenesInFolder();
+    setupFolderPicker(id, res, knownAep);
   } catch(e) {
-    scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">Xato: ' + e.message + '</div>');
+    scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">' + e.message + '</div>');
   } finally {
     if (btn) btn.disabled = false;
   }
 }
 
-/** Tanlangan papkadagi sahnalarni aniqlaydi va AE project panelda ochadi */
+/** Folder dropdown'ni to'ldiradi — admin bittasini tanlaydi */
+function setupFolderPicker(id, res, knownAep) {
+  const path = require('path'), fs = require('fs');
+  const previewDir = path.join(adminBaseDir(), 'af_admin_' + id, 'previews');
+  try { fs.mkdirSync(previewDir, { recursive: true }); } catch (e) {}
+
+  scanState = {
+    templateId: id, exportRoot: previewDir, scenes: [],
+    folders: res.folders, scenesFolder: '', scenesFolderId: '',
+    projectFile: knownAep, knownAep: knownAep, projectName: res.projectName || ''
+  };
+  document.getElementById('scanTitle').textContent = res.projectName || 'Sahnalarni render';
+
+  const sel = document.getElementById('scanFolder');
+  sel.innerHTML = '<option value="">— Folderni tanlang —</option>' +
+    res.folders.map(f => `<option value="${f.id}">${String(f.name).replace(/</g,'&lt;')} (${f.comps} comp)</option>`).join('');
+  document.getElementById('scanFolderBar').style.display = 'flex';
+  document.getElementById('scanCompCount').textContent = '';
+
+  scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Yuqoridan <b>Folderni tanlang</b> — plagin o\'sha folderdagi comp\'larni ko\'rsatadi.</div>');
+}
+
+/** Folder tanlanganda — o'sha folderdagi comp'larni yuklaydi */
+async function onScanFolderChange() {
+  const sel = document.getElementById('scanFolder');
+  const fid = sel ? sel.value : '';
+  const countEl = document.getElementById('scanCompCount');
+  if (!fid) {
+    scanState.scenes = [];
+    if (countEl) countEl.textContent = '';
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Folderni tanlang.</div>');
+    updateScanFoot();
+    return;
+  }
+  scanState.scenesFolderId = fid;
+  scanState.scenesFolder = sel.options[sel.selectedIndex].text;
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Comp\'lar yuklanmoqda…</div>');
+
+  let res = null;
+  for (let i = 0; i < 5; i++) {
+    const raw = await evalP('afCompsInFolder(' + JSON.stringify(String(fid)) + ')');
+    if (raw && raw !== 'EvalScript error.') {
+      try { res = JSON.parse(raw); } catch(e) { res = null; }
+      if (res && res.ok) break;
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  if (!res || !res.ok || !res.comps || !res.comps.length) {
+    scanState.scenes = [];
+    if (countEl) countEl.textContent = '0 comp';
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Bu folderda comp yo\'q.</div>');
+    updateScanFoot();
+    return;
+  }
+  res.comps.sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
+  scanState.scenes = res.comps.map(c => ({
+    compName: c.name, name: c.name, aeComp: c.name,
+    width: c.width, height: c.height, fps: c.fps, durationSec: c.durationSec,
+    videoLocal: '', videoExt: 'mp4', thumbLocal: '', previewDur: 6,
+    status: '', statusType: ''
+  }));
+  if (countEl) countEl.textContent = res.comps.length + ' comp';
+  renderScanList();
+  updateScanFoot();
+  const foot = document.getElementById('scanFootMsg');
+  if (foot) foot.textContent = res.comps.length + ' ta comp — 🎬 All render bosing';
+}
+
+/** Tanlangan papkadagi comp'larni sanaydi va ro'yxatga chiqaradi */
 async function detectScenesInFolder() {
   const sel = document.getElementById('scanFolder');
   scanState.scenesFolder = sel ? sel.value : '';
-  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Sahnalar aniqlanmoqda…</div>');
+  const countEl = document.getElementById('scanCompCount');
+
+  if (!scanState.scenesFolder) {
+    scanState.scenes = [];
+    if (countEl) countEl.textContent = '';
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Scene papkasini tanlang.</div>');
+    updateScanFoot();
+    return;
+  }
+
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Comp\'lar sanalmoqda…</div>');
 
   let comps = [];
   try {
@@ -1705,8 +1987,7 @@ async function detectScenesInFolder() {
     const r = JSON.parse(raw);
     if (r && r.ok) comps = r.scenes || [];
   } catch (e) {
-    // zaxira: panel tree dan
-    comps = (scanState.tree || []).filter(n => n.type === 'comp' && (!scanState.scenesFolder || n.folder === scanState.scenesFolder));
+    comps = (scanState.tree || []).filter(n => n.type === 'comp' && n.folder === scanState.scenesFolder);
   }
   comps.sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true }));
 
@@ -1716,12 +1997,19 @@ async function detectScenesInFolder() {
     videoLocal: '', videoExt: 'mp4', thumbLocal: '', previewDur: 6,
     status: '', statusType: ''
   }));
-  renderScanList();
-  updateScanFoot();
+
+  if (countEl) countEl.textContent = comps.length ? comps.length + ' comp' : '0 comp';
 
   if (!scanState.scenes.length) {
-    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Bu papkada sahna (comp) topilmadi.<br>Boshqa papkani tanlang.</div>');
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Bu papkada comp yo\'q.<br>Boshqa papkani tanlang.</div>');
+    updateScanFoot();
+    return;
   }
+
+  renderScanList();
+  updateScanFoot();
+  const foot = document.getElementById('scanFootMsg');
+  if (foot) foot.textContent = comps.length + ' ta comp — All render bosing (Admin Preview)';
 }
 
 function renderScanList() {
@@ -1835,13 +2123,11 @@ let _renderAllBusy = false;
 /** Barcha sahnalarni ketma-ket Admin Preview bilan render qiladi */
 async function renderAllScenes() {
   if (_renderAllBusy) return;
-  if (!scanState.scenes.length) { toast('Avval sahnalarni aniqlang', true); return; }
+  if (!scanState.scenes.length) { toast('Avval Scene papkasini tanlang', true); return; }
   _renderAllBusy = true;
   const allBtn = document.getElementById('scanRenderAllBtn');
-  const detectBtn = document.getElementById('scanDetectBtn');
   const doneBtn = document.getElementById('scanDoneBtn');
   if (allBtn) allBtn.disabled = true;
-  if (detectBtn) detectBtn.disabled = true;
   if (doneBtn) doneBtn.disabled = true;
 
   const fsM = require('fs');
@@ -1872,9 +2158,16 @@ async function renderAllScenes() {
 
   _renderAllBusy = false;
   if (allBtn) allBtn.disabled = false;
-  if (detectBtn) detectBtn.disabled = false;
   if (foot) foot.textContent = ok + '/' + total + ' preview tayyor' + (fail ? ' · ' + fail + ' xato' : '');
   toast(fail ? ok + ' tayyor, ' + fail + ' xato' : '✓ ' + ok + ' sahna render (Admin Preview)');
+
+  renderScanList();
+  if (ok > 0 && fail === 0) {
+    if (doneBtn) doneBtn.disabled = false;
+    setTimeout(() => { if (!_renderAllBusy) finishScenePrep(); }, 600);
+  } else if (doneBtn) {
+    doneBtn.disabled = !scanState.scenes.some(s => s.videoLocal);
+  }
 }
 
 function updateScanFoot() {
@@ -1883,10 +2176,9 @@ function updateScanFoot() {
   const msg = document.getElementById('scanFootMsg');
   const doneBtn = document.getElementById('scanDoneBtn');
   if (msg) msg.textContent = total
-    ? `${total} sahna · ${withVid} ta preview video tanlangan`
+    ? `${total} comp · ${withVid} ta preview` + (withVid === total && total > 0 ? ' ✓' : '')
     : '';
-  // "Tayyor" — kamida bitta sahna bo'lsa yetarli (preview ixtiyoriy)
-  if (doneBtn) doneBtn.disabled = total === 0;
+  if (doneBtn) doneBtn.disabled = total === 0 || withVid === 0;
 }
 
 /** Tayyorlangan sahnalarni saqlaydi va 3-qadam (yuklash) ni yoqadi */
@@ -1917,6 +2209,7 @@ function finishScenePrep() {
 }
 
 window.openScenePrep = openScenePrep;
+window.onScanFolderChange = onScanFolderChange;
 window.detectScenesInFolder = detectScenesInFolder;
 window.pickSceneVideo = pickSceneVideo;
 window.renderSceneFromAE = renderSceneFromAE;

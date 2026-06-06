@@ -1827,10 +1827,14 @@ function runQueuedOpenProject() {
     var f = new File(cfg.filePath);
     if (!f.exists) return;
     var target = f.fsName;
-    if (app.project && app.project.file && app.project.file.fsName === target) return;
+    if (app.project && app.project.file && app.project.file.fsName === target) {
+      __afOpenState = { state: "done", path: target, file: target, name: app.project.file.displayName.replace(/\.aep$/i, ""), err: "" };
+      return;
+    }
     if (cfg.forceOpen && app.project) {
       try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (ignoreClose) {}
     }
+    __afOpenState = { state: "pending", path: target, file: "", name: "", err: "" };
     app.beginSuppressDialogs();
     try {
       app.open(f);
@@ -1838,7 +1842,14 @@ function runQueuedOpenProject() {
       app.endSuppressDialogs(false);
     }
     try { app.activate(); } catch (ignoreActivate) {}
-  } catch (ignoreOpen) {}
+    if (app.project && app.project.file) {
+      __afOpenState = { state: "done", path: target, file: app.project.file.fsName, name: app.project.file.displayName.replace(/\.aep$/i, ""), err: "" };
+    } else {
+      __afOpenState = { state: "done", path: target, file: target, name: f.displayName.replace(/\.aep$/i, ""), err: "" };
+    }
+  } catch (e) {
+    __afOpenState = { state: "error", path: (cfg && cfg.filePath) || "", file: "", name: "", err: e.toString() };
+  }
 }
 
 function queueOpenProjectFile(jsonStr) {
@@ -1865,7 +1876,21 @@ function queueOpenProjectFile(jsonStr) {
       });
     }
     __afOpenQueue = cfg;
-    app.scheduleTask("runQueuedOpenProject()", 100, false);
+    var scheduled = false;
+    try {
+      app.scheduleTask("runQueuedOpenProject()", 100, false);
+      scheduled = true;
+    } catch (ignoreSched) {}
+    if (!scheduled) {
+      runQueuedOpenProject();
+      return JSON.stringify({
+        ok: true,
+        openedSync: true,
+        filePath: target,
+        projectFile: __afOpenState.file || target,
+        projectName: __afOpenState.name || f.displayName.replace(/\.aep$/i, "")
+      });
+    }
     return JSON.stringify({ ok: true, queued: true, filePath: target });
   } catch (e) {
     return JSON.stringify({ ok: false, error: "exception", message: e.toString() });
@@ -1874,49 +1899,165 @@ function queueOpenProjectFile(jsonStr) {
 
 /** CEP panel — bitta string argument; TO'G'RIDAN ochadi (scheduleTask emas).
  *  app.open bloklasa ham, dialoglar suppress qilinadi va natija qaytadi. */
-function afQueueOpen(pathStr, forceOpen) {
+// Loyiha ochish holati — nobloklash (deferred) open uchun
+var __afOpenState = { state: "idle", path: "", file: "", name: "", err: "" };
+
+// Haqiqiy ochish — app.scheduleTask orqali idle tick'da chaqiriladi.
+// Shu tufayli evalScript darhol qaytadi va panel muzlamaydi.
+function __afOpenRun() {
   try {
-    var p = String(pathStr || "");
-    if (!p) return JSON.stringify({ ok: false, message: "Project yo‘li kerak" });
+    var p = __afOpenState.path;
+    if (!p) { __afOpenState.state = "error"; __afOpenState.err = "Yo‘l yo‘q"; return; }
     var f = new File(p);
-    if (!f.exists) return JSON.stringify({ ok: false, message: "Fayl topilmadi: " + p });
-    var target = f.fsName;
-    if (app.project && app.project.file && app.project.file.fsName === target) {
-      return JSON.stringify({
-        ok: true,
-        alreadyOpen: true,
-        projectFile: target,
-        projectName: app.project.file.displayName.replace(/\.aep$/i, "")
-      });
+    if (!f.exists) { __afOpenState.state = "error"; __afOpenState.err = "Fayl topilmadi"; return; }
+    if (app.project && app.project.file && app.project.file.fsName === f.fsName) {
+      __afOpenState.state = "done";
+      __afOpenState.file = app.project.file.fsName;
+      __afOpenState.name = app.project.file.displayName.replace(/\.aep$/i, "");
+      return;
     }
-    var force = (forceOpen === true || forceOpen === "true");
-    if (force && app.project) {
-      try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (ignoreClose) {}
-    }
-    try { app.beginSuppressDialogs(); } catch (ignoreBegin) {}
-    try {
-      app.open(f);
-    } finally {
-      try { app.endSuppressDialogs(false); } catch (ignoreEnd) {}
-    }
-    try { app.activate(); } catch (ignoreActivate) {}
+    // Joriy loyihani saqlamasdan yopamiz — "Save changes?" dialogini oldini oladi
+    try { if (app.project) app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (e1) {}
+    try { app.beginSuppressDialogs(); } catch (e2) {}
+    try { app.open(f); } finally { try { app.endSuppressDialogs(false); } catch (e3) {} }
+    try { app.activate(); } catch (e4) {}
     if (app.project && app.project.file) {
-      return JSON.stringify({
-        ok: true,
-        opened: true,
-        projectFile: app.project.file.fsName,
-        projectName: app.project.file.displayName.replace(/\.aep$/i, "")
-      });
+      __afOpenState.state = "done";
+      __afOpenState.file = app.project.file.fsName;
+      __afOpenState.name = app.project.file.displayName.replace(/\.aep$/i, "");
+    } else {
+      __afOpenState.state = "done";
+      __afOpenState.file = f.fsName;
+      __afOpenState.name = f.displayName.replace(/\.aep$/i, "");
     }
-    // Ochildi, lekin file hali settle bo'lmagan — panel poll bilan tasdiqlaydi
-    return JSON.stringify({ ok: true, opened: true, settling: true, projectFile: target });
   } catch (e) {
-    return JSON.stringify({ ok: false, error: "exception", message: e.toString() });
+    __afOpenState.state = "error";
+    __afOpenState.err = e.toString();
   }
+}
+
+function afQueueOpen(pathStr, forceOpen) {
+  // Eski API — ichida ishonchli queueOpenProjectFile ishlatiladi
+  return queueOpenProjectFile(JSON.stringify({
+    filePath: String(pathStr || ""),
+    forceOpen: (forceOpen === true || forceOpen === "true")
+  }));
+}
+
+// Joriy loyihani saqlamasdan yopadi — yangi loyiha ochishdan oldin "Save changes?" ni oldini oladi
+function afCloseCurrent() {
+  try {
+    if (app.project) {
+      try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (e1) {}
+    }
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+// scheduleTask ishlamasa — sinxron zaxira (dialoglar suppress qilinadi, tez bajariladi)
+function afOpenNow() {
+  __afOpenRun();
+  return afOpenStatus();
+}
+
+// Deferred open holatini qaytaradi (panel poll qiladi)
+function afOpenStatus() {
+  return JSON.stringify({
+    ok: true,
+    state: __afOpenState.state,
+    projectFile: __afOpenState.file,
+    projectName: __afOpenState.name,
+    message: __afOpenState.err || undefined
+  });
 }
 
 function afEnsureSaved(pathStr) {
   return ensureProjectSaved(JSON.stringify({ path: String(pathStr || "") }));
+}
+
+/** YENGIL: faqat folderlar ro'yxati (og'ir tree YO'Q — evalScript bo'sh qaytarmaydi).
+ *  Har folder uchun id, nom va comp soni. */
+function afListFolders() {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    var out = [];
+    var i, item, j, cc;
+    for (i = 1; i <= app.project.numItems; i++) {
+      item = app.project.item(i);
+      if (item instanceof FolderItem) {
+        cc = 0;
+        for (j = 1; j <= item.numItems; j++) {
+          if (item.item(j) instanceof CompItem) cc++;
+        }
+        out.push({ id: item.id, name: item.name, comps: cc });
+      }
+    }
+    var pn = "Untitled";
+    try { if (app.project.file) pn = app.project.file.displayName.replace(/\.aep$/i, ""); } catch (e) {}
+    return JSON.stringify({ ok: true, folders: out, projectName: pn });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+/** Berilgan folder ID dagi comp'lar (id orqali — nom takrorlanishidan himoya) */
+function afCompsInFolder(folderId) {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    var fid = parseInt(folderId, 10);
+    var folder = null, i, it;
+    for (i = 1; i <= app.project.numItems; i++) {
+      it = app.project.item(i);
+      if (it instanceof FolderItem && it.id === fid) { folder = it; break; }
+    }
+    if (!folder) return JSON.stringify({ ok: false, message: "Folder topilmadi" });
+    var comps = [], j, c;
+    for (j = 1; j <= folder.numItems; j++) {
+      c = folder.item(j);
+      if (c instanceof CompItem) {
+        comps.push({
+          name: c.name,
+          width: c.width, height: c.height,
+          fps: Math.round(c.frameRate * 100) / 100,
+          durationSec: Math.round(c.duration * 100) / 100
+        });
+      }
+    }
+    return JSON.stringify({ ok: true, comps: comps });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+/** Loyiha ochilgach asosiy compni viewer'da ochadi — admin AE da ko'rishi uchun.
+ *  app.open() faqat loyihani yuklaydi, comp viewerda ko'rinmaydi; shuni tuzatadi. */
+function afShowMainComp() {
+  try {
+    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    var i, item, target = null;
+    // 1) "RENDER" / "FINAL RENDER" nomli comp (eng asosiy)
+    for (i = 1; i <= app.project.numItems; i++) {
+      item = app.project.item(i);
+      if (item instanceof CompItem && isFinalRenderName(item.name)) { target = item; break; }
+    }
+    // 2) Bo'lmasa — eng uzun (asosiy) comp
+    if (!target) {
+      var maxDur = -1;
+      for (i = 1; i <= app.project.numItems; i++) {
+        item = app.project.item(i);
+        if (item instanceof CompItem && item.duration > maxDur) { maxDur = item.duration; target = item; }
+      }
+    }
+    if (!target) return JSON.stringify({ ok: false, message: "Comp topilmadi" });
+    try { target.selected = true; } catch (eSel) {}
+    try { target.openInViewer(); } catch (eOpen) {}
+    try { app.activate(); } catch (eAct) {}
+    return JSON.stringify({ ok: true, comp: target.name });
+  } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
 }
 
 /** AE project panelda sahna comp'ni ochib/tanlab ko'rsatadi (Admin "Sahnalarni topish") */
