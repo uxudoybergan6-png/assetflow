@@ -243,17 +243,24 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 - **Boot'dagi fetchMe retry** — `refreshAccountFromApi` endi 4 urinish (0/2/5/10s backoff, Render cold start uchun), token bor paytda footer "Ulanmoqda…" ko'rsatadi, xato yutilmaydi; boot'da `await`siz (katalogni bloklamaydi). 401/403 da token tozalanib mehmon holatiga qaytadi.
 - **Usage hisoblash ulandi** — `recordDownload` endi `downloadPackToTemp` ichida haqiqiy (keshsiz) yuklab olishda chaqiriladi; `recordImport` to'liq-pack yo'lida (`downloadAll`) ham qo'shildi. Server endpointlar curl bilan tekshirilgan (ishladi); `user@assetflow.uz` hisobida test izlari bor (bir nechta download/import, `deviceLabel:"curl-test"`).
 
+### Hal bo'ldi (2026-06-11, testdan o'tdi)
+
+| Joy | Muammo | Commit |
+|-----|--------|--------|
+| `AssetFlow_Plugin.html` Search tugmasi | Faqat `focus()` qilardi — endi qidiruvni ishga tushiradi (`runSearch()`) | `8e34bea` |
+| `AssetFlow_Plugin.html` footer Download | Doim `'project'` mode edi — endi `selectedDropMode` (drop zone tanlovi) bilan ishlaydi, timeline ham | `b30b780` |
+| `jsx/host.jsx` root papka tekshiruvi | `app.project.rootFolder` identity-taqqoslash o'rniga `parentFolder == null` | `b099a5e` |
+| `assetflow-catalog.js` redirect | http/https moduli har redirect URL'iga qarab qayta tanlanadi; nisbiy `Location` yechiladi | `effbdc1` |
+| Import papka nomi | `__srv_<id>` o'rniga shablon title'i (`pack.displayName`); nom band bo'lsa " (2)" suffiks (`uniqueRootFolderLabel`), ichki packKey mantig'i o'zgarmagan | `bddf185` |
+
 ### Ma'lum xatolar (tekshirilgan, hali tuzatilmagan)
 
 | Joy | Muammo |
 |-----|--------|
-| `jsx/host.jsx:1053` | `app.project.rootFolder` — AE API da bunday property yo'q, folder nomi noto'g'ri aniqlanishi mumkin |
-| `AssetFlow_Plugin.html:1332` | Search (🔍) tugmasi faqat `focus()` qiladi, qidiruvni triggerlamaydi |
-| `AssetFlow_Plugin.html:2439` | `importSelectedScene()` doim `'project'` mode — footer Download tugmasi Timeline'ga import qilmaydi |
-| `assetflow-catalog.js:358` | HTTP redirect protokolni o'zgartirsa (`https↔http`) `lib` moduli yangilanmaydi — yuklash buziladi |
-| `assetflow-account.js:138` | `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` ni chaqiradi — Studio JWT talab qilinishi mumkin |
-| `AssetFlow_Admin.html:2092` | `.mov→.mp4` konversiya `avconvert` bilan — yangi macOS da yo'q/deprecated |
+| `assetflow-account.js:138` | `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` ni chaqiradi — Studio JWT talab qilinishi mumkin (Stripe ishlari bilan birga hal qilinadi) |
+| `AssetFlow_Admin.html:2092` | `.mov→.mp4` konversiya `avconvert` bilan — yangi macOS da yo'q/deprecated (alohida vazifa) |
+| Toast xabarlari | Ba'zi toast'larda `packName` sifatida `__srv_<id>` ko'rinadi (masalan to'liq-pack import, `downloadAll`) — past ustuvorlik |
 
 ---
 
-*Yangilangan: 2026-06-11 — plugin katalog tuzatildi; token yo'qolish bug'i (persistUserPrefs), fetchMe retry, usage recording hal qilindi.*
+*Yangilangan: 2026-06-11 — Search tugma, footer timeline mode, rootFolder tekshiruvi, redirect protokoli va import papka nomi tuzatildi (testdan o'tdi); avvalroq: plugin katalog, token yo'qolish bug'i (persistUserPrefs), fetchMe retry, usage recording.*
