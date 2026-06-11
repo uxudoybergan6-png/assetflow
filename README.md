@@ -1,86 +1,103 @@
-# CreativeTools SaaS
+# AssetFlow (Creative Tools SaaS)
 
-Adobe Plugin + Asset Marketplace platform (Pixflow.net model).
+Adobe **After Effects** uchun shablon marketplace (Pixflow / Envato uslubida).
+
+Zanjir: **Contributor yuklaydi → Admin moderatsiya qiladi → AE plugin katalogida chiqadi → obunachi import qiladi (Free / Pro).**
+
+> Joriy holat va keyingi vazifalar uchun: **`CLAUDE.md`**, **`HANDOFF.md`**, **`docs/LAUNCH-PLAN.md`**.
+
+## Holat (2026-06-05)
+
+| Qism | Holat |
+|------|-------|
+| API (Render) | ✅ Live — https://assetflow-rqbq.onrender.com |
+| Studio + Admin (Vercel) | ✅ Live — https://assetflow-studio-one.vercel.app |
+| DB (Neon PostgreSQL) | ✅ Ulangan |
+| Fayl saqlash (Cloudflare R2) | ✅ Ishlaydi |
+| AE CEP plugin | 🟠 Ishlaydi, lekin faqat DEV o'rnatish (ZXP yo'q) |
+| Stripe to'lov | 🔴 Kod tayyor, hali ulanmagan |
+
+Loyiha mantig'i ishlaydi (upload → moderate → import). Tarqatish (ZXP), to'lov,
+huquqiy va infra qismlari to'liq emas — `docs/LAUNCH-PLAN.md` ga qarang.
 
 ## Stack
 
-| Component | Technology |
-|-----------|------------|
-| Web | Next.js 15 + Tailwind + NextAuth |
+| Qism | Texnologiya |
+|------|-------------|
 | API | Node.js + Express + Prisma |
-| DB | PostgreSQL |
-| Payments | Stripe ($4.99/mo, $39.99/yr) |
-| Storage | AWS S3 + Cloudflare CDN |
-| Premiere Plugin | UXP + React |
-| After Effects Plugin | CEP |
+| DB | PostgreSQL (Neon) |
+| Studio + Admin | Static HTML/JS (`packages/assetflow-studio`) |
+| After Effects plugin | CEP (HTML/JS + ExtendScript `host.jsx`) |
+| Fayl saqlash | Cloudflare R2 (S3-mos) + CDN |
+| To'lov | Stripe (hali to'liq ulanmagan) |
 
-## Quick Start
+## Production URL'lar
+
+| Xizmat | URL |
+|--------|-----|
+| API | https://assetflow-rqbq.onrender.com |
+| Studio (Vercel) | https://assetflow-studio-one.vercel.app |
+| Contributor login | …/studio/login.html → …/studio/contributor/ |
+| Admin login | …/studio/admin-login.html → …/studio/admin/ |
+
+**Vercel Root Directory:** `packages/assetflow-studio` (boshqa papka bo'lsa 404).
+
+## Lokal ishga tushirish
 
 ```bash
-# 1. Install dependencies
+cd /Users/usmonov/Projects/creative-tools-saas
 npm install
+cp .env.example .env          # DATABASE_URL va boshqalar
 
-# 2. Copy env and configure
-cp .env.example .env
-cp apps/web/.env.example apps/web/.env.local
-
-# 3. Start PostgreSQL, then push schema
 npm run db:push
-npm run db:seed
+npm run db:seed:assetflow -w @creative-tools/database
 
-# 4. Run dev servers (two terminals)
-npm run dev:api   # http://localhost:4000
-npm run dev:web   # http://localhost:3000
+npm run pm2:start             # API :4000, Studio :3000, Admin :3001
+npm run check:stack
 ```
 
-## Admin User
+| URL | Vazifa |
+|-----|--------|
+| http://localhost:3000/studio/ | Contributor |
+| http://localhost:3001/ | Admin |
+| http://localhost:4000/health | API |
 
-After seed, promote your user to admin in PostgreSQL:
-
-```sql
-UPDATE "User" SET role = 'ADMIN' WHERE email = 'your@email.com';
-```
-
-## AssetFlow Studio (Admin + Contributor + AE)
-
-Desktop prototiplar monorepoga ko‘chirildi:
+## AE plugin (DEV o'rnatish)
 
 ```bash
-npm run studio:sync   # → apps/web/public/studio/
-npm run dev:api
-npm run dev:web
-# http://localhost:3000/studio/login.html
+bash plugins/after-effects-cep/scripts/install-cep.sh
+# After Effects → Window → Extensions → AssetFlow
 ```
 
-- **Static dashboards:** `packages/assetflow-studio/README.md`
-- **AE Browse plugin:** `plugins/after-effects-cep/README.md` — `./plugins/after-effects-cep/scripts/install-cep.sh`
+> ⚠️ Hozir plugin faqat `PlayerDebugMode` + `install-cep.sh` bilan ishlaydi (DEV).
+> Oddiy foydalanuvchi uchun ZXP paketlash kerak — `docs/LAUNCH-PLAN.md` 1-bo'lim.
 
-## Plugin Development
+## Demo hisoblar (seed)
 
-- **Premiere Pro UXP:** `plugins/premiere-uxp/README.md`
-- **After Effects CEP:** `plugins/after-effects-cep/README.md`
+| Rol | Email | Parol |
+|-----|-------|-------|
+| Admin | admin@assetflow.uz | admin123 |
+| Contributor | dilnoza.k@gmail.com | contrib123 |
+| AE obunachi (plugin) | user@assetflow.uz | user123 |
 
-## MVP Scope
-
-See [SCOPE.md](./SCOPE.md) — Phase 1: Premiere + Web + Stripe + S3. AE plugin includes full AssetFlow Browse UI (CEP).
-
-## Stripe Webhook (local)
-
-```bash
-stripe listen --forward-to localhost:4000/api/stripe/webhook
-```
-
-## Project Structure
+## Papka tuzilishi
 
 ```
 apps/
-  api/          Express REST API
-  web/          Next.js frontend + admin
+  api/                       Express REST API, routes/, lib/
+  web/                       Next.js (studio sync shu yerda ham)
 packages/
-  database/     Prisma schema
-  shared/       Shared types
-  assetflow-studio/  Admin + Contributor HTML dashboards
+  database/                  Prisma schema + migrations + seed-assetflow.ts
+  assetflow-studio/          Admin + Contributor UI (manba)
 plugins/
-  premiere-uxp/ Premiere Pro panel
-  after-effects-cep/ After Effects panel
+  after-effects-cep/         AE Browse + Admin CEP panel (asosiy plugin)
+docs/                        Deploy yo'riqnomalari + LAUNCH-PLAN
 ```
+
+## Hujjatlar
+
+- **`CLAUDE.md`** — Claude Code uchun kontekst (joriy)
+- **`HANDOFF.md`** — to'liq topshirish hujjati
+- **`docs/LAUNCH-PLAN.md`** — bozorga chiqish rejasi (~60% tayyor)
+- **`docs/DEPLOY-STUDIO-VERCEL.md`** — Studio/Admin Vercel deploy
+- **`SCOPE.md`** — loyiha doirasi
