@@ -356,12 +356,13 @@ const AssetFlowCatalog = (() => {
   function downloadUrlToFile(url, destPath, onProgress) {
     return new Promise((resolve, reject) => {
       const fs = require("fs");
-      const lib = url.startsWith("https") ? require("https") : require("http");
       const go = (u, redirectsLeft) => {
         if (redirectsLeft <= 0) {
           reject(new Error("Redirect limit"));
           return;
         }
+        // Redirect protokolni almashtirishi mumkin (http↔https) — modulni URL'ga qarab tanlaymiz
+        const lib = u.startsWith("https") ? require("https") : require("http");
         lib
           .get(u, (res) => {
             if (
@@ -370,7 +371,11 @@ const AssetFlowCatalog = (() => {
               res.headers.location
             ) {
               res.resume();
-              go(res.headers.location, redirectsLeft - 1);
+              let next = res.headers.location;
+              try {
+                next = new URL(next, u).toString();
+              } catch (ignore) {}
+              go(next, redirectsLeft - 1);
               return;
             }
             if (res.statusCode !== 200) {
