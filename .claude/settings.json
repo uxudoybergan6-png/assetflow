@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check *)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(bash plugins/after-effects-cep/scripts/install-cep.sh)"
+    ]
+  }
+}
