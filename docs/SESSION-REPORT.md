@@ -1,14 +1,17 @@
-# Sessiya hisoboti — 2026-06-11 (2-to'lqin)
+# SESSION-REPORT — R2 tozalash: PRODUCTION'DA TASDIQLANDI (2026-06-11)
 
-**Nima qilindi** — har biri alohida commit (push yo'q):
-- `8e34bea` — Search (⌕) tugmasi qidiruvni ishga tushiradi (`runSearch()`).
-- `b30b780` — `selectedDropMode`: drop zone tanlovi footer Download'ga ham ta'sir qiladi (default `project`).
-- `b099a5e` — `host.jsx`: root papka `parentFolder == null` orqali aniqlanadi (`app.project.rootFolder` identity o'rniga).
-- `effbdc1` — `assetflow-catalog.js` redirect: http/https moduli har URL'da qayta tanlanadi, nisbiy `Location` yechiladi.
-- `bddf185` — Import papkasi endi shablon title'i (`pack.displayName`), `__srv_<id>` displeyga chiqmaydi; AE'da nom band bo'lsa " (2)" suffiks (`uniqueRootFolderLabel`). Ichki packKey mantig'iga tegilmadi — `data.folder` orqali `downloadedMeta`/o'chirish mosligi saqlangan.
+**Natija: PRODUCTION TEST O'TDI ✓** (qayta deploy'dan keyin)
 
-**Topildi:** `packLabel` chaqiruvchilardan packs kaliti (`__srv_<id>`) bo'lib kelardi; `pack.name` fallback server pack'larda yo'q. Toast'larda ham `packName` (`__srv_…`) ko'rinadi — hali tuzatilmagan (kichik, keyinga).
+**Tuzatish:** `deleteTemplateAssets()` (s3.ts, prefiks aniq `templates/{id}/`, ListObjectsV2+DeleteObjects pagination bilan) + delete handler (contributor.ts): R2 tozalash → disk rm → DB delete → audit. Fail-closed (R2 xatosida 502 + DB saqlanadi). Commit `4220031`.
 
-**Tegilmagan:** `assetflow-account.js` checkout, Admin `.mov→.mp4` `avconvert`.
+**Test (prod API `assetflow-rqbq.onrender.com`, prod DB + prod R2):**
+- DELETE-TEST-PROD yaratildi → upload → R2 `templates/{id}/`: `thumb.jpg`, `pack.zip` paydo bo'ldi ✓
+- `DELETE /api/contributor/templates/{id}` (admin) → 204.
+- AFTER: test prefiksi **bo'sh** (0 obyekt) ✓; DB yozuvi o'chgan (katalogda yo'q) ✓
+- 3 real shablon JOYIDA: `cmpzpnnyq…`, `cmq0y77y2…`, `cmq18p0lc…` — `cmpzpnnyq…` baytma-bayt o'zgarmagan (jumladan `scenes/`). Prefiks izolyatsiyasi ishlaydi ✓
 
-**Test:** foydalanuvchi AE'da tekshirdi — papka nomi, " (2)" suffiks, search, timeline mode, yuklab olish, login hammasi ishladi. HANDOFF.md yangilandi (hal bo'lganlar + 3 ochiq band). Push foydalanuvchi tomonidan.
+**Eslatma:** birinchi prod urinishda eski kod ishlardi (204 + fayllar qoldi); Render qayta deploy'dan keyin yangi kod faollashdi va test o'tdi.
+
+**Hujjat:** HANDOFF.md yangilandi (hal bo'ldi jadvali + ochiq bandlar: orphan threadlar MED, plugin stale `downloaded[]` LOW).
+
+**Ochiq (keyinga):** orphan `StudioMessageThread` (templateId→NULL), plugin `prefs.json downloaded[]` stale.

@@ -234,6 +234,8 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 4. **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
 5. **Tez orada** (hali to'liq emas): Stripe tariflar, email bildirishnomalar, contributor payout.
 6. `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
+7. **Orphan message threadlar (MED)** — shablon o'chirilganda `StudioMessageThread.templateId → NULL` (SetNull), thread + xabarlar qoladi. Tozalash yoki arxivlash hali yo'q.
+8. **Plugin stale `downloaded[]` (LOW)** — shablon serverda o'chsa ham plugin `prefs.json` dagi `downloaded[]` va lokal `.aep`/unzip cache foydalanuvchi diskida qoladi; Sync bilan sinxronlanmaydi.
 
 ### Claude Code sessiyasida qilingan (2026-06-11)
 
@@ -252,6 +254,7 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 | `jsx/host.jsx` root papka tekshiruvi | `app.project.rootFolder` identity-taqqoslash o'rniga `parentFolder == null` | `b099a5e` |
 | `assetflow-catalog.js` redirect | http/https moduli har redirect URL'iga qarab qayta tanlanadi; nisbiy `Location` yechiladi | `effbdc1` |
 | Import papka nomi | `__srv_<id>` o'rniga shablon title'i (`pack.displayName`); nom band bo'lsa " (2)" suffiks (`uniqueRootFolderLabel`), ichki packKey mantig'i o'zgarmagan | `bddf185` |
+| Shablon o'chirish (`contributor.ts` DELETE) | Shablon o'chirish endi R2 + disk fayllarini ham tozalaydi (`deleteTemplateAssets`, prefiks aniq `templates/{id}/`), fail-closed (R2 xatosida 502 + DB saqlanadi). **2026-06-11, production'da tasdiqlandi.** | `4220031` |
 
 ### Ma'lum xatolar (tekshirilgan, hali tuzatilmagan)
 
@@ -263,4 +266,4 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ---
 
-*Yangilangan: 2026-06-11 — Search tugma, footer timeline mode, rootFolder tekshiruvi, redirect protokoli va import papka nomi tuzatildi (testdan o'tdi); avvalroq: plugin katalog, token yo'qolish bug'i (persistUserPrefs), fetchMe retry, usage recording.*
+*Yangilangan: 2026-06-11 — Shablon o'chirishda R2 + disk tozalash (fail-closed, production'da tasdiqlandi); Search tugma, footer timeline mode, rootFolder tekshiruvi, redirect protokoli va import papka nomi tuzatildi (testdan o'tdi); avvalroq: plugin katalog, token yo'qolish bug'i (persistUserPrefs), fetchMe retry, usage recording.*
