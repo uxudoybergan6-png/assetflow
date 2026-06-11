@@ -1328,7 +1328,7 @@ html.cep-mode .panel-body{border-radius:0!important}
                   </select>
                   <div class="env-search-field">
                     <input type="text" placeholder="Search…" id="searchInput">
-                    <button type="button" class="env-search-go" aria-label="Qidirish" onclick="document.getElementById('searchInput').focus()">⌕</button>
+                    <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
                   </div>
                 </div>
               </div>
@@ -2980,6 +2980,14 @@ function switchNav(el,tab){
 }
 
 document.getElementById('searchInput').addEventListener('input',function(){currentSearch=this.value.toLowerCase();render();});
+
+function runSearch(){
+  const si=document.getElementById('searchInput');
+  if(!si)return;
+  currentSearch=si.value.toLowerCase();
+  si.focus();
+  render();
+}
 
 function closeAllDropdowns(){
   document.querySelectorAll('.env-filter-bar .dd-menu').forEach(x=>x.classList.remove('open'));
