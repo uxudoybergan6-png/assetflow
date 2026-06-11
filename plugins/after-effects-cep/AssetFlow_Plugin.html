@@ -1860,11 +1860,17 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   // Yuklab olindi — endi AE import fazasi (sinxron, vaqt olishi mumkin)
   showProgress(100,'AE\'ga import qilinmoqda…',true);
   const compName=(scene?.aeComp||'').trim()||(scene?.n||'').trim();
+  // AE'da ko'rinadigan nom — shablon title'i; __srv_<id> ichki kalit displeyga chiqmasin
+  const isInternalKey=/^__srv_/.test(String(packLabel||''));
+  const displayLabel=String(pack?.displayName||'').trim()
+    ||(!isInternalKey?String(packLabel||'').trim():'')
+    ||String(pack?.name||'').trim()
+    ||'AssetFlow';
   const altNames=[];
   const pushAlt=(v)=>{const t=String(v||'').trim();if(t&&altNames.indexOf(t)<0)altNames.push(t);};
   pushAlt(scene?.aeComp);
   pushAlt(scene?.n);
-  pushAlt(packLabel);
+  pushAlt(displayLabel);
   pushAlt(pack?.name);
   // Haqiqiy comp nomi (manifest aeComp) bo'lsa — faqat o'sha sahna + dependency import qilamiz.
   const pruneToScene=!!(scene&&scene.aeComp&&String(scene.aeComp).trim());
@@ -1873,7 +1879,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     compName,
     sceneLabel:scene?.n||'',
     altCompNames:altNames,
-    packLabel:packLabel||pack.name||'AssetFlow',
+    packLabel:displayLabel,
     scenesFolder:pack.aeScenesFolder||'Scenes',
     importMode:importMode||'timeline',
     pruneToScene

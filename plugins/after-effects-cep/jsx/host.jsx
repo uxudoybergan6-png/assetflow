@@ -1046,6 +1046,36 @@ function findCompInContainer(container, compName, matches) {
   findCompsWithPath(container, compName, container && container.name ? container.name : "", matches);
 }
 
+function rootFolderNameExists(name, excludeId) {
+  try {
+    var items = app.project.items;
+    for (var i = 1; i <= items.length; i++) {
+      var it = items[i];
+      if (
+        it instanceof FolderItem &&
+        it.id !== excludeId &&
+        it.name === name &&
+        it.parentFolder &&
+        !it.parentFolder.parentFolder
+      ) {
+        return true;
+      }
+    }
+  } catch (ignore) {}
+  return false;
+}
+
+// Shu nomli root papka allaqachon bo'lsa " (2)", " (3)"… suffiks qo'shamiz
+function uniqueRootFolderLabel(label, excludeId) {
+  var name = label;
+  var n = 2;
+  while (rootFolderNameExists(name, excludeId) && n < 100) {
+    name = label + " (" + n + ")";
+    n++;
+  }
+  return name;
+}
+
 function renameImportRootForComp(comp, folderLabel) {
   if (!comp) return folderLabel;
   try {
@@ -1055,7 +1085,7 @@ function renameImportRootForComp(comp, folderLabel) {
       folder = folder.parentFolder;
     }
     if (folder && folder instanceof FolderItem) {
-      folder.name = folderLabel;
+      folder.name = uniqueRootFolderLabel(folderLabel, folder.id);
       return folder.name;
     }
   } catch (ignore) {}
@@ -1069,7 +1099,7 @@ function renameNewImportRootFolder(existingIds, folderLabel) {
     root = roots[i];
     if (root instanceof FolderItem) {
       try {
-        root.name = folderLabel;
+        root.name = uniqueRootFolderLabel(folderLabel, root.id);
         return root.name;
       } catch (ignore) {}
     }
