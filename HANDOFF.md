@@ -238,12 +238,15 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 ### Claude Code sessiyasida qilingan (2026-06-11)
 
 - **Plugin katalog muammosi hal** — AE plugin "Hali shablon yo'q" sababi: o'rnatilgan nusxa prefs'ida (`assetflow-data/prefs.json`) `client.apiBaseUrl` eski `http://localhost:4000` bo'lib qolgan edi → Render URL'ga almashtirildi. `AssetFlow_Plugin.html` dagi dublikat `assetflow-catalog.js` script tegi olib tashlandi (asl tegi fayl oxirida bor edi). Plugin `install-cep.sh` bilan qayta o'rnatildi.
+- **host.jsx loop hal** — `applyBestVideoTemplate` loop `i=1` dan boshlanardi (`om.templates` 0-indexed JS massiv) → birinchi H.264 template o'tkazib yuborilardi. `i=0; i<length` ga tuzatildi (commit `7b5f9f7`).
+- **"Mehmon" / token yo'qolish bug'i hal (asl ildiz)** — `persistUserPrefs()` prefs.json'ni `client`siz to'liq ustidan yozardi: har yuklab olish/import/favorite'dan keyin token, apiBaseUrl, downloadDir o'chib ketardi (shu sabab restart'da "Mehmon" va `recordImport` ham jim o'tkazilardi). Endi `loadPrefs()` bilan merge qilib, faqat o'z maydonlarini (favorites, downloaded, importedScenes, downloadedMeta) yangilaydi. Tekshirildi: login restart'dan keyin saqlanadi.
+- **Boot'dagi fetchMe retry** — `refreshAccountFromApi` endi 4 urinish (0/2/5/10s backoff, Render cold start uchun), token bor paytda footer "Ulanmoqda…" ko'rsatadi, xato yutilmaydi; boot'da `await`siz (katalogni bloklamaydi). 401/403 da token tozalanib mehmon holatiga qaytadi.
+- **Usage hisoblash ulandi** — `recordDownload` endi `downloadPackToTemp` ichida haqiqiy (keshsiz) yuklab olishda chaqiriladi; `recordImport` to'liq-pack yo'lida (`downloadAll`) ham qo'shildi. Server endpointlar curl bilan tekshirilgan (ishladi); `user@assetflow.uz` hisobida test izlari bor (bir nechta download/import, `deviceLabel:"curl-test"`).
 
 ### Ma'lum xatolar (tekshirilgan, hali tuzatilmagan)
 
 | Joy | Muammo |
 |-----|--------|
-| `jsx/host.jsx:478` | `applyBestVideoTemplate` loop `i=1` dan boshlanadi — birinchi template o'tkazib yuboriladi |
 | `jsx/host.jsx:1053` | `app.project.rootFolder` — AE API da bunday property yo'q, folder nomi noto'g'ri aniqlanishi mumkin |
 | `AssetFlow_Plugin.html:1332` | Search (🔍) tugmasi faqat `focus()` qiladi, qidiruvni triggerlamaydi |
 | `AssetFlow_Plugin.html:2439` | `importSelectedScene()` doim `'project'` mode — footer Download tugmasi Timeline'ga import qilmaydi |
@@ -253,4 +256,4 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ---
 
-*Yangilangan: 2026-06-11 — plugin katalog tuzatildi; ma'lum xatolar ro'yxati qo'shildi.*
+*Yangilangan: 2026-06-11 — plugin katalog tuzatildi; token yo'qolish bug'i (persistUserPrefs), fetchMe retry, usage recording hal qilindi.*

@@ -1776,12 +1776,13 @@ function loadUserPrefs(){
 
 function persistUserPrefs(){
   if(typeof AssetFlowStore==='undefined')return;
-  AssetFlowStore.savePrefs({
-    favorites:[...window.favorites],
-    downloaded:[...window.downloaded],
-    importedScenes:[...window.importedScenes],
-    downloadedMeta:window.downloadedMeta
-  });
+  // Mavjud prefs bilan merge — client (token, apiBaseUrl, downloadDir) saqlanib qolsin
+  const prefs=AssetFlowStore.loadPrefs();
+  prefs.favorites=[...window.favorites];
+  prefs.downloaded=[...window.downloaded];
+  prefs.importedScenes=[...window.importedScenes];
+  prefs.downloadedMeta=window.downloadedMeta;
+  AssetFlowStore.savePrefs(prefs);
 }
 
 /** Import natijasidagi papka/comp nomlarini template uchun saqlaydi */
@@ -2629,7 +2630,18 @@ async function downloadAll(n){
     try{
       showToast('AE ga import qilinmoqda…');
       const result=await importPackFileToAE(p);
-      if(result.indexOf('ok:')===0){ markPackDownloaded(); showToast('✓ "'+n+'" AE projectga import qilindi'); }
+      if(result.indexOf('ok:')===0){
+        markPackDownloaded();
+        showToast('✓ "'+n+'" AE projectga import qilindi');
+        if(p.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
+          try{
+            await AssetFlowAccount.recordImport(p.serverTemplateId);
+            refreshAccountUi();
+          }catch(usageErr){
+            showToast(usageErr.message||'Import limit');
+          }
+        }
+      }
       else showToast('Import xato: '+(result||'noma\'lum'));
     }catch(err){
       console.error(err);
@@ -3362,18 +3374,35 @@ function updateFootUser(u){
   }
 }
 
+function setFootConnecting(sub){
+  const name=document.getElementById('footName');
+  const subEl=document.getElementById('footSub');
+  if(name)name.textContent='Ulanmoqda…';
+  if(subEl)subEl.textContent=sub||'Hisob tekshirilmoqda';
+}
+
 async function refreshAccountFromApi(){
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
-  try{
-    await AssetFlowAccount.fetchMe();
-    await AssetFlowAccount.heartbeat({
-      deviceLabel:navigator.platform||'Mac',
-      aeVersion:'After Effects',
-    });
-    refreshAccountUi();
-  }catch(e){
-    console.warn('account',e);
+  // Render cold start ~50s bo'lishi mumkin — backoff bilan qayta urinamiz
+  const delays=[0,2000,5000,10000];
+  setFootConnecting();
+  for(let i=0;i<delays.length;i++){
+    if(delays[i])await new Promise(r=>setTimeout(r,delays[i]));
+    try{
+      await AssetFlowAccount.fetchMe();
+      await AssetFlowAccount.heartbeat({
+        deviceLabel:navigator.platform||'Mac',
+        aeVersion:'After Effects',
+      });
+      refreshAccountUi();
+      return;
+    }catch(e){
+      console.warn('account ('+(i+1)+'/'+delays.length+')',e);
+      // 401/403 da fetchMe tokenni tozalaydi — mehmon holatiga qaytamiz
+      if(!AssetFlowAccount.isLoggedIn()){refreshAccountUi();return;}
+    }
   }
+  setFootConnecting('Server javob bermadi — «Yangilash» bosing');
 }
 
 async function accountLogin(){
@@ -3778,7 +3807,8 @@ async function bootPlugin(){
   try{
     if(typeof AssetFlow!=='undefined') await AssetFlow.init();
     loadUserPrefs();
-    await refreshAccountFromApi();
+    // Retry'lar katalog yuklanishini bloklamasin — parallel ishlaydi
+    refreshAccountFromApi();
     if(typeof AssetFlowStore!=='undefined'){
       await AssetFlowStore.hydrateBlobUrls(AssetFlowStore.listMeta());
       const localN=mergeLocalUploads();

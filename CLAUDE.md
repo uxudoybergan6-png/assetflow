@@ -116,6 +116,7 @@ npm run demo:clear   # demo shablonlar + xabarlar tozalash
 - Commit faqat foydalanuvchi so'rasa.
 - O'zbekcha UI matnlari.
 - Production URL: `assetflow-rqbq.onrender.com`, Studio: `assetflow-studio-one.vercel.app`.
+- Har diagnostika/tuzatish tugaganda qisqa natijani `docs/SESSION-REPORT.md` ga yoz (almashtirib): nima qilindi, nima topildi, nima kutilmoqda. Maks 15 qator.
 
 ## Keyingi ustuvor vazifalar
 

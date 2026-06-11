@@ -461,6 +461,15 @@ const AssetFlowCatalog = (() => {
       if (!cachedFileOk(fs, out, 0)) {
         throw new Error("Pack yuklanmadi yoki fayl bo'sh");
       }
+      // Usage hisobi — faqat haqiqiy (keshsiz) yuklab olishda
+      if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
+        try {
+          await AssetFlowAccount.recordDownload(templateId);
+          if (typeof refreshAccountUi === "function") refreshAccountUi();
+        } catch (e) {
+          console.warn("usage/download", e);
+        }
+      }
     }
 
     // AE can't import .zip directly. If pack is a zip, extract and return first .aep inside.
