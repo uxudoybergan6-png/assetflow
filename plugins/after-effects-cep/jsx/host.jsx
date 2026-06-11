@@ -474,7 +474,7 @@ function applyBestVideoTemplate(om) {
   try {
     var templates = om.templates;
     var i, t, fallback = "";
-    for (i = 1; i <= templates.length; i++) {
+    for (i = 0; i < templates.length; i++) {
       t = templates[i];
       if (t.indexOf("H.264") >= 0) {
         om.applyTemplate(t);
