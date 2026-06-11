@@ -5,6 +5,8 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -113,6 +115,50 @@ export async function templateAssetFlags(templateId: string) {
     );
   }
   return assets;
+}
+
+/**
+ * Shablonning R2/S3 dagi BARCHA fayllarini o'chiradi (thumb/preview/pack/scenes).
+ * Prefiks ANIQ "templates/{id}/" — oxiridagi "/" tufayli boshqa shablon ID
+ * prefikslariga (masalan "templates/{id}-2/") mos kelmaydi, shu bois faqat
+ * shu shablonning fayllari o'chadi. ListObjectsV2 pagination bilan, 1000 dan
+ * ortiq obyekt bo'lsa ham to'liq aylanadi. O'chirilgan obyektlar sonini qaytaradi.
+ */
+export async function deleteTemplateAssets(templateId: string): Promise<number> {
+  if (!isS3Configured()) return 0;
+  const id = String(templateId).trim();
+  if (!id) return 0;
+  const prefix = `templates/${id}/`;
+  let deleted = 0;
+  let continuationToken: string | undefined;
+  do {
+    const listed = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      })
+    );
+    // Himoya: prefiks aniq mosligini qayta tekshiramiz (boshqa kalitlarga tegmaslik).
+    const keys = (listed.Contents ?? [])
+      .map((o) => o.Key)
+      .filter((k): k is string => typeof k === "string" && k.startsWith(prefix));
+    if (keys.length) {
+      // ListObjectsV2 sahifada maks 1000 obyekt qaytaradi — DeleteObjects ham
+      // maks 1000 kalit oladi, shu bois har sahifa bitta batch.
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+        })
+      );
+      deleted += keys.length;
+    }
+    continuationToken = listed.IsTruncated
+      ? listed.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+  return deleted;
 }
 
 /** Yuklashda R2 kalit — kengaytma saqlanadi (pack.zip / preview.mp4) */

@@ -1,5 +1,6 @@
 import { Router, type Response as ExpressResponse } from "express";
 import multer from "multer";
+import fs from "fs";
 import path from "path";
 import { z } from "zod";
 import {
@@ -19,12 +20,14 @@ import {
   ensureScenesDir,
   findAssetPath,
   sceneKey,
+  templateDir,
 } from "../lib/template-files.js";
 import {
   isS3Configured,
   uploadFileToS3,
   templateAssetFlags,
   s3UploadKeyForFile,
+  deleteTemplateAssets,
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
@@ -795,6 +798,32 @@ contributorRouter.delete(
   async (req, res) => {
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+
+    // 1) R2/S3 fayllarini avval tozalaymiz. Bu tashqi bog'liqlik va yagona xato
+    //    nuqtasi. Agar bu yerda xato bo'lsa, DB delete'ni DAVOM ETTIRMAYMIZ:
+    //    DB yozuvi o'chsa, templateId yo'qoladi va orphan fayllarni keyin
+    //    tozalashning iloji qolmaydi (publik CDN'da abadiy "leak"). Shu sabab
+    //    "fail-closed" — 502 qaytaramiz, admin qayta urinishi mumkin, shablon
+    //    DB'da saqlanib qoladi (tiklanadigan holatda).
+    try {
+      await deleteTemplateAssets(id);
+    } catch (err) {
+      console.error(`[template_delete] R2 tozalash xatosi (id=${id}):`, err);
+      return res.status(502).json({
+        error: "R2 fayllarini o'chirishda xato. Shablon o'chirilmadi — qayta urinib ko'ring.",
+      });
+    }
+
+    // 2) Lokal disk — best-effort. Render'da disk ephemeral, xato bo'lsa ham
+    //    shablonni o'chirishni bloklamaymiz (faqat log).
+    try {
+      const dir = templateDir(id);
+      if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+    } catch (err) {
+      console.error(`[template_delete] Lokal disk tozalash xatosi (id=${id}):`, err);
+    }
+
+    // 3) DB yozuvi.
     await prisma.contributorTemplate.delete({ where: { id } });
     await writeAuditLog({
       actorId: req.user!.userId,
