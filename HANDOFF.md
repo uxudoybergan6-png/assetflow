@@ -235,6 +235,22 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 5. **Tez orada** (hali to'liq emas): Stripe tariflar, email bildirishnomalar, contributor payout.
 6. `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
 
+### Claude Code sessiyasida qilingan (2026-06-11)
+
+- **Plugin katalog muammosi hal** — AE plugin "Hali shablon yo'q" sababi: o'rnatilgan nusxa prefs'ida (`assetflow-data/prefs.json`) `client.apiBaseUrl` eski `http://localhost:4000` bo'lib qolgan edi → Render URL'ga almashtirildi. `AssetFlow_Plugin.html` dagi dublikat `assetflow-catalog.js` script tegi olib tashlandi (asl tegi fayl oxirida bor edi). Plugin `install-cep.sh` bilan qayta o'rnatildi.
+
+### Ma'lum xatolar (tekshirilgan, hali tuzatilmagan)
+
+| Joy | Muammo |
+|-----|--------|
+| `jsx/host.jsx:478` | `applyBestVideoTemplate` loop `i=1` dan boshlanadi — birinchi template o'tkazib yuboriladi |
+| `jsx/host.jsx:1053` | `app.project.rootFolder` — AE API da bunday property yo'q, folder nomi noto'g'ri aniqlanishi mumkin |
+| `AssetFlow_Plugin.html:1332` | Search (🔍) tugmasi faqat `focus()` qiladi, qidiruvni triggerlamaydi |
+| `AssetFlow_Plugin.html:2439` | `importSelectedScene()` doim `'project'` mode — footer Download tugmasi Timeline'ga import qilmaydi |
+| `assetflow-catalog.js:358` | HTTP redirect protokolni o'zgartirsa (`https↔http`) `lib` moduli yangilanmaydi — yuklash buziladi |
+| `assetflow-account.js:138` | `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` ni chaqiradi — Studio JWT talab qilinishi mumkin |
+| `AssetFlow_Admin.html:2092` | `.mov→.mp4` konversiya `avconvert` bilan — yangi macOS da yo'q/deprecated |
+
 ---
 
-*Yangilangan: 2026-06-04 — Claude Code sessiyasidagi holat (production Vercel + Render).*
+*Yangilangan: 2026-06-11 — plugin katalog tuzatildi; ma'lum xatolar ro'yxati qo'shildi.*
