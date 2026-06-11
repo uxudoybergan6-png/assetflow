@@ -1050,7 +1050,8 @@ function renameImportRootForComp(comp, folderLabel) {
   if (!comp) return folderLabel;
   try {
     var folder = comp.parentFolder;
-    while (folder && folder.parentFolder && folder.parentFolder !== app.project.rootFolder) {
+    // Root papkaning parentFolder'i null — shu orqali rootgacha ko'tarilamiz
+    while (folder && folder.parentFolder && folder.parentFolder.parentFolder) {
       folder = folder.parentFolder;
     }
     if (folder && folder instanceof FolderItem) {
