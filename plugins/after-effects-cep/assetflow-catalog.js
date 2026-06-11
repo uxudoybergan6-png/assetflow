@@ -319,7 +319,7 @@ const AssetFlowCatalog = (() => {
     return { url: null, fileSize: 0 };
   }
 
-  function findAepInDir(fs, path, rootDir) {
+  function findFileByExtInDir(fs, path, rootDir, exts) {
     const stack = [rootDir];
     while (stack.length) {
       const cur = stack.pop();
@@ -328,7 +328,10 @@ const AssetFlowCatalog = (() => {
           const p = path.join(cur, name);
           try {
             if (fs.statSync(p).isDirectory()) stack.push(p);
-            else if (name.toLowerCase().endsWith(".aep")) return p;
+            else {
+              const lower = name.toLowerCase();
+              if (exts.some((e) => lower.endsWith(e))) return p;
+            }
           } catch {
             continue;
           }
@@ -338,6 +341,34 @@ const AssetFlowCatalog = (() => {
       }
     }
     return null;
+  }
+
+  function findAepInDir(fs, path, rootDir) {
+    return findFileByExtInDir(fs, path, rootDir, [".aep"]);
+  }
+
+  /** .mogrt extract'dan keyin definition.json'dagi master comp nomi (aep yo'li bo'yicha) */
+  const mogrtComps = {};
+
+  function rememberMogrtCompName(dir, aepPath) {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const def = JSON.parse(
+        fs.readFileSync(path.join(dir, "definition.json"), "utf8")
+      );
+      const locales = def.sourceInfoLocalized || {};
+      const loc = locales.en_US || locales[Object.keys(locales)[0]] || {};
+      const name = String(loc.name || def.capsuleName || "").trim();
+      if (name) mogrtComps[aepPath] = name;
+    } catch {
+      /* definition.json yo'q yoki buzilgan — hint'siz davom etamiz */
+    }
+  }
+
+  /** Import cfg uchun: .mogrt'dan chiqqan .aep'ning master comp nomi ("" = noma'lum) */
+  function mogrtCompName(aepPath) {
+    return mogrtComps[aepPath] || "";
   }
 
   function cachedFileOk(fs, filePath, expectedSize) {
@@ -433,7 +464,8 @@ const AssetFlowCatalog = (() => {
         const cached = findAepInDir(fs, path, cacheDir);
         if (cached) return cached;
       }
-    } else if (cachedFileOk(fs, out, expectedSize)) {
+    } else if (ext.toLowerCase() !== ".mogrt" && cachedFileOk(fs, out, expectedSize)) {
+      // .mogrt bu yerdan o'tmaydi — kesh bo'lsa ham har import yangi extract oladi
       return out;
     }
 
@@ -500,6 +532,56 @@ const AssetFlowCatalog = (() => {
       throw new Error("ZIP ichida .aep topilmadi. Pack fayl noto‘g‘ri.");
     }
 
+    // .mogrt — ZIP konteyner: ichida project.aegraphic (loyiha qismi).
+    // AE .mogrt ni to'g'ridan import qilolmaydi (faqat dialog bilan ochadi),
+    // shu bois o'zimiz ochamiz. Har import uchun UNIKAL papka — oldingi
+    // importlarning footage yo'llari buzilmasligi uchun (.mogrt fayl kesh
+    // bo'lib qoladi, qayta yuklab olinmaydi).
+    if (ext.toLowerCase() === ".mogrt") {
+      const dir = path.join(
+        baseDir,
+        `assetflow_mogrt_${templateId}_${Date.now()}`
+      );
+      fs.mkdirSync(dir, { recursive: true });
+      try {
+        child.execFileSync("unzip", ["-o", out, "-d", dir], {
+          timeout: 120_000,
+        });
+      } catch (e) {
+        throw new Error("MOGRT ochilmadi — fayl buzilgan bo'lishi mumkin.");
+      }
+      let aep = null;
+      const graphic = findFileByExtInDir(fs, path, dir, [".aegraphic"]);
+      if (graphic) {
+        // Yangi AE'larda .aegraphic O'ZI ham ZIP (ichida asl .aep + report),
+        // eskilarida to'g'ridan RIFX .aep — ikkalasini ham qo'llaymiz.
+        const head = NodeBuffer.alloc(2);
+        const fd = fs.openSync(graphic, "r");
+        fs.readSync(fd, head, 0, 2, 0);
+        fs.closeSync(fd);
+        if (head[0] === 0x50 && head[1] === 0x4b) {
+          try {
+            child.execFileSync("unzip", ["-o", graphic, "-d", dir], {
+              timeout: 120_000,
+            });
+          } catch (e) {
+            throw new Error("MOGRT loyiha qismi (aegraphic) ochilmadi.");
+          }
+          aep = findAepInDir(fs, path, dir);
+        } else {
+          aep = path.join(path.dirname(graphic), "mogrt_TEMP.aep");
+          fs.renameSync(graphic, aep);
+        }
+      } else {
+        aep = findAepInDir(fs, path, dir);
+      }
+      if (!aep) {
+        throw new Error("MOGRT ichida .aep loyiha topilmadi.");
+      }
+      rememberMogrtCompName(dir, aep);
+      return aep;
+    }
+
     return out;
   }
 
@@ -511,6 +593,7 @@ const AssetFlowCatalog = (() => {
     refreshBrowse,
     mergeIntoBrowse,
     downloadPackToTemp,
+    mogrtCompName,
     downloadDir,
     configuredDownloadDir,
     saveDownloadDir,

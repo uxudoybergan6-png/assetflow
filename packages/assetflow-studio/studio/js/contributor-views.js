@@ -262,14 +262,14 @@ function validateUploadPackFile() {
   if (!pack) {
     toast(
       "Loyiha fayli",
-      "After Effects import uchun .aep yoki .zip pack yuklang",
+      "After Effects import uchun .mogrt fayl yuklang",
       "warn"
     );
     return false;
   }
   const name = (pack.name || "").toLowerCase();
-  if (!/\.(aep|zip)$/i.test(name)) {
-    toast("Loyiha fayli", "Faqat .aep yoki .zip qabul qilinadi", "warn");
+  if (!/\.mogrt$/i.test(name)) {
+    toast("Loyiha fayli", "Faqat .mogrt qabul qilinadi", "warn");
     return false;
   }
   return true;
@@ -325,9 +325,9 @@ function renderUpload(){
           <input type="file" id="upThumb" accept="image/*" class="input" style="padding:8px">
           <span class="small">JPG / PNG</span></div>
       </div>
-      <div class="field"><label>Loyiha fayli (.aep / pack)</label>
-        <input type="file" id="upPack" accept=".aep,.zip,application/zip" class="input" style="padding:8px">
-        <span class="small">Maksimal hajm: <b>500 MB</b></span></div>
+      <div class="field"><label>Loyiha fayli (.mogrt)</label>
+        <input type="file" id="upPack" accept=".mogrt" class="input" style="padding:8px">
+        <span class="small">Motion Graphics Template (.mogrt) · Maksimal hajm: <b>500 MB</b></span></div>
     </div>`:''}
 
     ${UP_STEP===3?`<div class="card card-pad col gap-16">
@@ -340,7 +340,7 @@ function renderUpload(){
           <div class="row gap-8 wrap" style="min-width:0">
             ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${UP_DRAFT.files.preview.name}">${ic('film')} ${UP_DRAFT.files.preview.name}</span>`:''}
             ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${UP_DRAFT.files.thumb.name}">${ic('image')} ${UP_DRAFT.files.thumb.name}</span>`:''}
-            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name}</span>`:'<span class="small" style="color:var(--orange)">Pack (.aep) majburiy — AE import uchun</span>'}
+            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt) majburiy — AE import uchun</span>'}
           </div>
         </div>
       </div>

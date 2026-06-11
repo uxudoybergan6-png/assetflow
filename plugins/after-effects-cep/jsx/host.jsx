@@ -1228,6 +1228,14 @@ function importSingleSceneFromAep(jsonStr) {
       return JSON.stringify({ ok: false, message: "Fayl topilmadi" });
     }
 
+    // .mogrt panel (CEP) tomonda .aep ga ochilgan bo'lishi kerak — bu yerga yetib kelsa eski plugin
+    if (/\.mogrt$/i.test(filePath)) {
+      return JSON.stringify({
+        ok: false,
+        message: ".mogrt extract qilinmagan — plugin'ni yangilang (install-cep.sh)"
+      });
+    }
+
     app.beginUndoGroup("AssetFlow Import Scene");
     var importMode = cfg.importMode || "timeline";
     var destCompId = null;
@@ -1746,6 +1754,10 @@ function importAssetToProject(filePath) {
   try {
     app.beginUndoGroup("AssetFlow Import");
     var ext = file.name.replace(/^.*\./, "").toLowerCase();
+    if (ext === "mogrt") {
+      app.endUndoGroup();
+      return "error: .mogrt extract qilinmagan — plugin'ni yangilang (install-cep.sh)";
+    }
     if (ext === "aep") {
       var projectImport = new ImportOptions(file);
       projectImport.importAs = ImportAsType.PROJECT;

@@ -410,13 +410,23 @@ async function restoreSub(id) {
 }
 
 window.afterRender = window.afterRender || {};
+// MUHIM: bu yerda route() ni QAYTA chaqirmaymiz — route() afterRender'ni
+// qayta ishga tushiradi va cheksiz sikl (auto kirib-chiqish) hosil bo'ladi.
+// Faqat ko'rinish tanasini yangi ma'lumot bilan qayta chizamiz.
 window.afterRender.subscribers = async function () {
   const ok = await refreshSubscribersFromApi();
-  if (ok) route("subscribers");
+  if (ok && CURRENT === "subscribers") {
+    const host = document.getElementById("view");
+    if (host) host.innerHTML = VIEWS.subscribers();
+  }
 };
 window.afterRender["subscriber-detail"] = async function (id) {
+  if (id) SUB_DETAIL_ID = id;
   await refreshSubscribersFromApi();
-  if (id) route("subscriber-detail", id);
+  if (CURRENT === "subscriber-detail") {
+    const host = document.getElementById("view");
+    if (host) host.innerHTML = VIEWS["subscriber-detail"](SUB_DETAIL_ID || id);
+  }
 };
 
 function openMessageSub(id) {

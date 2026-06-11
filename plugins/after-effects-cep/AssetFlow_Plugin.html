@@ -1872,6 +1872,8 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   pushAlt(scene?.n);
   pushAlt(displayLabel);
   pushAlt(pack?.name);
+  // .mogrt'dan chiqqan .aep bo'lsa — definition.json'dagi master comp nomi (eng aniq moslik)
+  if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.mogrtCompName)pushAlt(AssetFlowCatalog.mogrtCompName(importPath));
   // Haqiqiy comp nomi (manifest aeComp) bo'lsa — faqat o'sha sahna + dependency import qilamiz.
   const pruneToScene=!!(scene&&scene.aeComp&&String(scene.aeComp).trim());
   const cfg=JSON.stringify({
@@ -2715,12 +2717,20 @@ async function deleteDownloadedTemplate(key){
         const fs=require('fs'),path=require('path'),os=require('os');
         const tid=pack.serverTemplateId;
         const base=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir&&AssetFlowCatalog.downloadDir())||os.tmpdir();
-        ['','.zip','.aep'].forEach(ext=>{
+        ['','.zip','.aep','.mogrt'].forEach(ext=>{
           const f=path.join(base,'assetflow_'+tid+ext);
           try{ if(fs.existsSync(f)) fs.rmSync(f,{force:true}); }catch(e){}
         });
         const dir=path.join(base,'assetflow_'+tid+'_unzipped');
         try{ if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true}); }catch(e){}
+        // .mogrt extract papkalari (har importda unikal nom — prefiks bo'yicha topamiz)
+        try{
+          fs.readdirSync(base).forEach(name=>{
+            if(name.indexOf('assetflow_mogrt_'+tid+'_')===0){
+              try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){}
+            }
+          });
+        }catch(e){}
       }catch(e){}
     }
   }else{

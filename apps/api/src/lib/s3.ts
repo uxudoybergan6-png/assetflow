@@ -78,7 +78,7 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
 export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): string[] {
   const base = `templates/${templateId}/${kind}`;
   if (kind === "pack") {
-    return [base, `${base}.zip`, `${base}.aep`];
+    return [base, `${base}.mogrt`, `${base}.zip`, `${base}.aep`];
   }
   if (kind === "preview") {
     return [base, `${base}.mp4`, `${base}.mov`, `${base}.webm`];
@@ -170,7 +170,7 @@ export function s3UploadKeyForFile(
   const ext = path.extname(localPath).toLowerCase();
   const allowed =
     kind === "pack"
-      ? [".zip", ".aep"]
+      ? [".zip", ".aep", ".mogrt"]
       : kind === "preview"
         ? [".mp4", ".mov", ".webm"]
         : [".jpg", ".jpeg", ".png", ".webp"];

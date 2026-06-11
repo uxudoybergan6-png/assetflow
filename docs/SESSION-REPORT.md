@@ -1,17 +1,14 @@
-# SESSION-REPORT — R2 tozalash: PRODUCTION'DA TASDIQLANDI (2026-06-11)
+# SESSION-REPORT — 2026-06-11 (.mogrt support qo'shildi)
 
-**Natija: PRODUCTION TEST O'TDI ✓** (qayta deploy'dan keyin)
+**Topilma:** .mogrt = ZIP (project.aegraphic + definition.json + thumb). Yangi AE'larda `project.aegraphic` O'ZI ham ZIP (ichida asl RIFX .aep) — ikkala holat qo'llanadi. AE'da dialogsiz mogrt-import API yo'q → extract CEP tomonda (Node unzip, .zip precedenti), host.jsx mavjud .aep yo'li o'zgarmagan.
 
-**Tuzatish:** `deleteTemplateAssets()` (s3.ts, prefiks aniq `templates/{id}/`, ListObjectsV2+DeleteObjects pagination bilan) + delete handler (contributor.ts): R2 tozalash → disk rm → DB delete → audit. Fail-closed (R2 xatosida 502 + DB saqlanadi). Commit `4220031`.
+**O'zgarishlar:**
+- `assetflow-catalog.js` — `downloadPackToTemp` mogrt branch: unikal papka `assetflow_mogrt_{id}_{ts}` (har importda yangi — eski importlar footage yo'llari buziladi), nested-zip detect (PK signature), `definition.json` → master comp nomi (`sourceInfoLocalized.en_US.name` || `capsuleName`), `mogrtCompName()` export.
+- `AssetFlow_Plugin.html` — import cfg'ga mogrt comp hint (`pushAlt`); `deleteDownloadedTemplate` keshda `.mogrt` + mogrt papkalar tozalanadi.
+- `host.jsx` — 2 himoya guard (.mogrt yetib kelsa aniq xabar; import mantig'i tegmagan).
+- `template-files.ts`, `s3.ts` — pack kengaytmalariga `.mogrt` (eski .aep/.zip saqlanadi).
+- `contributor-views.js` (3 nusxa, MD5 teng) — upload faqat `.mogrt` (accept, validatsiya, matnlar).
 
-**Test (prod API `assetflow-rqbq.onrender.com`, prod DB + prod R2):**
-- DELETE-TEST-PROD yaratildi → upload → R2 `templates/{id}/`: `thumb.jpg`, `pack.zip` paydo bo'ldi ✓
-- `DELETE /api/contributor/templates/{id}` (admin) → 204.
-- AFTER: test prefiksi **bo'sh** (0 obyekt) ✓; DB yozuvi o'chgan (katalogda yo'q) ✓
-- 3 real shablon JOYIDA: `cmpzpnnyq…`, `cmq0y77y2…`, `cmq18p0lc…` — `cmpzpnnyq…` baytma-bayt o'zgarmagan (jumladan `scenes/`). Prefiks izolyatsiyasi ishlaydi ✓
+**Tekshirildi:** `tsc` toza; `node --check` toza; 2 haqiqiy .mogrt bilan e2e extract testi o'tdi (RIFX .aep + to'g'ri comp nomi chiqdi); studio:sync + install-cep.sh bajarildi.
 
-**Eslatma:** birinchi prod urinishda eski kod ishlardi (204 + fayllar qoldi); Render qayta deploy'dan keyin yangi kod faollashdi va test o'tdi.
-
-**Hujjat:** HANDOFF.md yangilandi (hal bo'ldi jadvali + ochiq bandlar: orphan threadlar MED, plugin stale `downloaded[]` LOW).
-
-**Ochiq (keyinga):** orphan `StudioMessageThread` (templateId→NULL), plugin `prefs.json downloaded[]` stale.
+**Kutilmoqda:** AE ichida jonli import testi (Browse → Sync → mogrt shablonni import); Render deploy (API push qilinmagan); commit yo'q (so'ralmagan).

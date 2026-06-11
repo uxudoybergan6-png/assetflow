@@ -47,7 +47,7 @@ function renderTemplates(){
           <tbody>
           ${rows.map(t=>{ const con=cById(t.cid); return `<tr>
             <td><div class="checkbox" onclick="this.classList.toggle('on')">${ic('check')}</div></td>
-            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${t.name}</span><span class="sub">${t.cat} \u00b7 ${t.res}</span></div></div></td>
+            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${typeof StudioMedia!=='undefined'?StudioMedia.escapeHtml(t.name):t.name}</span><span class="sub">${t.cat} \u00b7 ${t.res}</span></div></div></td>
             <td class="cell-muted mono">${t.id}</td>
             <td><div class="row center gap-8">${avatar(con.name,24)}<span class="cell-muted" style="white-space:nowrap">${con.email.split('@')[0]}</span></div></td>
             <td>${badge(t.status)}</td>
