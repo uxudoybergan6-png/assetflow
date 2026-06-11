@@ -1064,6 +1064,9 @@ html.cep-mode .pack-dropbar{display:flex}
 }
 .pack-drop-zone.timeline.dragover{border-color:var(--accent);background:rgba(135,230,75,.1)}
 .pack-drop-zone.project.dragover{border-color:var(--amber);background:rgba(255,193,7,.08)}
+.pack-drop-zone.selected{border-style:solid;color:var(--text)}
+.pack-drop-zone.timeline.selected{border-color:var(--accent);background:rgba(135,230,75,.08)}
+.pack-drop-zone.project.selected{border-color:var(--amber);background:rgba(255,193,7,.06)}
 .pack-footer{
   padding:12px 16px;border-top:1px solid var(--border);
   background:var(--surface);display:flex;align-items:center;
@@ -1884,7 +1887,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
 let featuredDismissedByNav={};
 let currentNav='video', currentPage='assets', currentSub='all', currentOrient='all', currentRes='all', currentSearch='', currentSort='relevant';
 window.currentNav=currentNav;
-let currentPackName='', selectedSceneIdx=-1;
+let currentPackName='', selectedSceneIdx=-1, selectedDropMode='project';
 
 function getAnim(i){
   if(i%2===0)return'<div class="preview-anim"><div class="anim-wave"><div class="anim-bar"></div><div class="anim-bar"></div><div class="anim-bar"></div><div class="anim-bar"></div></div></div>';
@@ -2433,11 +2436,19 @@ function importSceneByIdx(idx){
   importSelectedScene();
 }
 
+function setDropMode(mode){
+  selectedDropMode=mode==='timeline'?'timeline':'project';
+  document.querySelectorAll('.pack-drop-zone').forEach(z=>{
+    z.classList.toggle('selected',z.dataset.drop===selectedDropMode);
+  });
+}
+
 async function importSelectedScene(){
   if(selectedSceneIdx<0||!currentPackName)return;
   const pack=packs[currentPackName];
   const scene=pack.scenes[selectedSceneIdx];
-  await importSceneWithMode(pack,scene,currentPackName,'project');
+  await importSceneWithMode(pack,scene,currentPackName,selectedDropMode);
+  if(selectedDropMode==='timeline') closePack();
 }
 
 async function importSceneWithMode(pack,scene,packName,mode){
@@ -2581,8 +2592,9 @@ function initSceneDrag(){
       zone.classList.add('dragover');
     };
     zone.ondragleave=()=>zone.classList.remove('dragover');
-    zone.ondrop=e=>handlePackSceneDrop(e,mode);
+    zone.ondrop=e=>{setDropMode(mode);handlePackSceneDrop(e,mode);};
     zone.onclick=async()=>{
+      setDropMode(mode);
       if(selectedSceneIdx<0||!currentPackName)return;
       const pack=packs[currentPackName];
       const scene=pack?.scenes[selectedSceneIdx];
@@ -2590,6 +2602,7 @@ function initSceneDrag(){
       await importSceneWithMode(pack,scene,currentPackName,mode);
       if(mode==='timeline') closePack();
     };
+    zone.classList.toggle('selected',mode===selectedDropMode);
   });
 
   if(!IS_CEP){
