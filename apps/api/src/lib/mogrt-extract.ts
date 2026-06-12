@@ -2,21 +2,30 @@ import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { sceneKey } from "./template-files.js";
 
 export interface MogrtScene {
   n: string;
   slug: string;
   aeComp: string;
+  previewKey: string;
 }
 
-function mogrtSlug(name: string): string {
-  return (
-    String(name || "")
-      .replace(/[^a-z0-9]+/gi, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 40) || "item"
-  );
+export interface MogrtSceneThumb {
+  previewKey: string;
+  path: string;
+  ext: ".mp4" | ".png";
+  contentType: string;
 }
+
+export interface MogrtExtractResult {
+  scenes: MogrtScene[];
+  /** R2/disk uchun lokal thumb fayllar — ishlatib bo'lgach cleanup() chaqiring */
+  thumbs: MogrtSceneThumb[];
+  cleanup: () => void;
+}
+
+const EMPTY: MogrtExtractResult = { scenes: [], thumbs: [], cleanup: () => {} };
 
 /** ZIP ichidagi .mogrt entry yo'llarini qaytaradi (macOS axlati filtrlanadi) */
 function listMogrtsInZip(zipPath: string): string[] {
@@ -55,48 +64,73 @@ function readDefinitionName(defDir: string): string {
 }
 
 /**
- * ZIP pack ichidagi .mogrt fayllar ro'yxatini qaytaradi.
- * Har bir .mogrt uchun definition.json dan nom o'qiladi.
- * unzip yo'q yoki xato bo'lsa [] qaytarib jim o'tadi (upload bloklanmaydi).
+ * ZIP pack ichidagi .mogrt fayllardan sahna ro'yxati + thumb preview'lar.
+ * Slug sceneKey formatida (dash, lowercase) — scene serve route va admin
+ * adminSceneKey bilan bir xil normalizatsiya. thumbs lokal tmp'da qoladi,
+ * chaqiruvchi yuklab bo'lgach cleanup() chaqiradi.
+ * unzip yo'q yoki xato bo'lsa bo'sh natija (upload bloklanmaydi).
  */
-export async function extractMogrtsFromZip(zipPath: string): Promise<MogrtScene[]> {
+export async function extractMogrtsFromZip(
+  zipPath: string
+): Promise<MogrtExtractResult> {
   const entries = listMogrtsInZip(zipPath);
-  if (!entries.length) return [];
+  if (!entries.length) return EMPTY;
+
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_mogrt_"));
+  const cleanup = () => {
+    try {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    } catch {}
+  };
 
   const scenes: MogrtScene[] = [];
+  const thumbs: MogrtSceneThumb[] = [];
+  const usedSlugs = new Set<string>();
 
-  for (const entry of entries) {
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
     const base = path.basename(entry, ".mogrt");
-    const slug = mogrtSlug(base);
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_mogrt_"));
+    let slug = sceneKey(base);
+    for (let n = 2; usedSlugs.has(slug); n++) slug = `${sceneKey(base)}-${n}`;
+    usedSlugs.add(slug);
+
+    const itemDir = path.join(rootDir, `m${i}`);
+    fs.mkdirSync(itemDir, { recursive: true });
     try {
-      // Tashqi ZIP dan .mogrt entry ni tmp ga chiqar (to'liq yo'l bilan)
-      execFileSync("unzip", ["-o", zipPath, entry, "-d", tmpDir], {
-        timeout: 30_000,
+      // Tashqi ZIP dan .mogrt entry ni chiqar (to'liq yo'l bilan)
+      execFileSync("unzip", ["-o", zipPath, entry, "-d", itemDir], {
+        timeout: 60_000,
       });
-      const mogrtPath = path.join(tmpDir, entry);
-      // .mogrt ichidan faqat definition.json ni chiqar (-j: yo'lsiz tekis)
-      const defDir = path.join(tmpDir, "def");
+      const mogrtPath = path.join(itemDir, entry);
+      const defDir = path.join(itemDir, "def");
       fs.mkdirSync(defDir);
       try {
+        // definition.json + thumb'lar bitta chaqiriqda (-j: yo'lsiz tekis);
+        // yo'q a'zo bo'lsa unzip exit!=0 — mavjudlari baribir chiqqan bo'ladi
         execFileSync(
           "unzip",
-          ["-o", "-j", mogrtPath, "definition.json", "-d", defDir],
-          { timeout: 15_000 }
+          ["-o", "-j", mogrtPath, "definition.json", "thumb.png", "thumb.mp4", "-d", defDir],
+          { timeout: 30_000 }
         );
       } catch {
-        // definition.json yo'q — fayl nomidan foydalanamiz
+        /* qisman chiqqan — davom etamiz */
       }
       const name = readDefinitionName(defDir) || base;
-      scenes.push({ n: name, slug, aeComp: name });
-    } catch {
-      scenes.push({ n: base, slug, aeComp: base });
-    } finally {
+      scenes.push({ n: name, slug, aeComp: name, previewKey: slug });
+      const mp4 = path.join(defDir, "thumb.mp4");
+      const png = path.join(defDir, "thumb.png");
+      if (fs.existsSync(mp4))
+        thumbs.push({ previewKey: slug, path: mp4, ext: ".mp4", contentType: "video/mp4" });
+      if (fs.existsSync(png))
+        thumbs.push({ previewKey: slug, path: png, ext: ".png", contentType: "image/png" });
+      // .mogrt'ning o'zi endi kerak emas — thumb'lar defDir'da
       try {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
+        fs.rmSync(mogrtPath, { force: true });
       } catch {}
+    } catch {
+      scenes.push({ n: base, slug, aeComp: base, previewKey: slug });
     }
   }
 
-  return scenes;
+  return { scenes, thumbs, cleanup };
 }

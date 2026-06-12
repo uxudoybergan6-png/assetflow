@@ -2429,11 +2429,41 @@ function mogrtScenesFromItems(pack,items){
   }));
 }
 
+/** Server scene slug formati (API sceneKey bilan bir xil: dash, lowercase) */
+function sceneSlugOf(name){
+  return (String(name||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80))||'scene';
+}
+
+/** Keshdagi .mogrt elementlarni server sahnalariga slug bo'yicha biriktiradi.
+    Server ro'yxati (nom, preview, tartib) SAQLANADI — keshdan faqat mogrtPath
+    (va server preview bo'sh bo'lsa lokal thumb) keladi. Shu bois importedScenes
+    Set (s.n bilan) barqaror ishlaydi: nomlar almashinmaydi.
+    Server scenes bo'lmasa (eski format) — avvalgi xulq: to'liq ro'yxat keshdan. */
+function mergeMogrtItems(pack,items){
+  const fresh=mogrtScenesFromItems(pack,items);
+  const existing=Array.isArray(pack.scenes)?pack.scenes:[];
+  const hasServerScenes=existing.length&&existing.some(s=>s.slug);
+  if(!hasServerScenes)return fresh;
+  const bySlug={};
+  fresh.forEach(f=>{bySlug[sceneSlugOf(f.n)]=f;});
+  let matched=0;
+  existing.forEach(s=>{
+    const m=bySlug[s.slug||sceneSlugOf(s.aeComp||s.n)];
+    if(m){
+      s.mogrtPath=m.mogrtPath;
+      if(!s.preview&&m.preview){s.preview=m.preview;s.previewKind=m.previewKind;}
+      matched++;
+    }
+  });
+  // Hech biri mos kelmasa (fayl nomlari boshqa manbadan) — kesh ro'yxati ishonchliroq
+  return matched?existing:fresh;
+}
+
 /** Zip ichidan topilgan .mogrt'larni pack sahnalariga yozib, detalni yangilaydi */
 function applyMogrtItems(packKey,items){
   const pack=packs[packKey];
   if(!pack||!items||!items.length)return;
-  pack.scenes=mogrtScenesFromItems(pack,items);
+  pack.scenes=mergeMogrtItems(pack,items);
   pack.mogrtScenesLoaded=true;
   if(currentPackName===packKey)openPack(packKey);
   showToast('Pack ichida '+items.length+' ta MOGRT bor — sahnani tanlab import qiling');
@@ -2445,11 +2475,11 @@ function openPack(name){
   if(pack.server&&!packCanAeImport(pack)){
     showToast('Pack (.aep) yo\'q — Studio\'da contributor loyiha faylini yuklashi kerak');
   }
-  // MOGRT-pack keshi ochilgan bo'lsa — sahnalar o'rniga .mogrt elementlar (sync, yuklamaydi)
+  // MOGRT-pack keshi ochilgan bo'lsa — keshdagi mogrtPath'larni sahnalarga biriktirish (sync, yuklamaydi)
   if(IS_CEP&&pack.server&&pack.serverTemplateId&&!pack.mogrtScenesLoaded&&typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.cachedMogrtItems){
     try{
       const items=AssetFlowCatalog.cachedMogrtItems(pack.serverTemplateId);
-      if(items.length){pack.scenes=mogrtScenesFromItems(pack,items);pack.mogrtScenesLoaded=true;}
+      if(items.length){pack.scenes=mergeMogrtItems(pack,items);pack.mogrtScenesLoaded=true;}
     }catch(e){console.warn('mogrt cache',e);}
   }
   const asset=assets.find(x=>x.n===name);

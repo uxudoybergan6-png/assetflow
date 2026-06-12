@@ -364,16 +364,40 @@ contributorRouter.post(
       }
     }
 
-    // ZIP pack bo'lsa — .mogrt sahna nomlari ni metaJson.scenes ga yoz
+    // ZIP pack bo'lsa — .mogrt sahna nomlari + thumb preview'lar (disk + R2)
     if (pack?.path && path.extname(pack.path).toLowerCase() === ".zip") {
       try {
-        const scenes = await extractMogrtsFromZip(pack.path);
-        if (scenes.length > 0) {
-          const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
-          await prisma.contributorTemplate.update({
-            where: { id },
-            data: { metaJson: asMetaJson({ ...existingMeta, scenes }) },
-          });
+        const { scenes, thumbs, cleanup } = await extractMogrtsFromZip(pack.path);
+        try {
+          if (scenes.length > 0) {
+            const scenesDirPath = ensureScenesDir(id);
+            for (const th of thumbs) {
+              const fileName = `${th.previewKey}${th.ext}`;
+              try {
+                fs.copyFileSync(th.path, path.join(scenesDirPath, fileName));
+              } catch (e) {
+                console.warn(`[mogrt-extract] thumb disk copy xato (${fileName}):`, e);
+              }
+              if (isS3Configured()) {
+                try {
+                  await uploadFileToS3(
+                    th.path,
+                    `templates/${id}/scenes/${fileName}`,
+                    th.contentType
+                  );
+                } catch (e) {
+                  console.error(`[mogrt-extract] thumb R2 upload xato (${fileName}):`, e);
+                }
+              }
+            }
+            const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
+            await prisma.contributorTemplate.update({
+              where: { id },
+              data: { metaJson: asMetaJson({ ...existingMeta, scenes }) },
+            });
+          }
+        } finally {
+          cleanup();
         }
       } catch (mogrtErr) {
         console.warn("[mogrt-extract] xato:", mogrtErr);

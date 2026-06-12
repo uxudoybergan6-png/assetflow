@@ -123,7 +123,7 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req, res) => {
     return;
   }
 
-  const ext = require("path").extname(filePath).toLowerCase();
+  const ext = path.extname(filePath).toLowerCase();
   const mimeMap: Record<string, string> = {
     ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
     ".webp": "image/webp", ".mp4": "video/mp4",

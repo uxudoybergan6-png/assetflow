@@ -196,6 +196,7 @@ const AssetFlowCatalog = (() => {
         ? metaScenes.map((s) => ({
             n: s.n || s.name || u.name,
             aeComp: s.aeComp || s.compName || s.name || s.n || "",
+            slug: s.slug || s.previewKey || undefined,
             meta: s.meta || resLabel,
             ico: s.ico || u.icon || "✦",
             bg: s.bg || u.bg,

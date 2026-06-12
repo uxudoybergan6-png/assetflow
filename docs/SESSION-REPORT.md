@@ -1,17 +1,15 @@
-# Session Report — 2026-06-12 (R2 upload diagnostika + stream fix)
+# Session Report — 2026-06-12 (M1 + M3 tuzatildi, commit YO'Q)
 
-## Muammo
-Production'da ba'zi yangi yuklangan shablonlar R2'ga yetib bormagan (orphan).
+**M1 — server-side sahna preview:**
+- `mogrt-extract.ts` — har .mogrt'dan `thumb.mp4`/`thumb.png` ham chiqadi; slug endi `sceneKey` formatida (dash-lowercase, `template-files.js` dan import) — scene route/admin bilan mos; scene'ga `previewKey` yoziladi; `{scenes, thumbs, cleanup}` qaytaradi.
+- `contributor.ts` — thumb'lar disk `scenes/` ga copy (lokal dev) + R2 `templates/{id}/scenes/{key}.ext` ga upload (har biri alohida try/catch, upload bloklanmaydi); `finally cleanup()`.
+- `catalog-map.ts` — o'zgarish KERAK BO'LMADI: enrich allaqachon `previewKey`ni birinchi tekshiradi, kalitlar mos.
+- **Bonus fix:** `plugin.ts:126` oldindan mavjud bug — ESM'da `require("path")` → scene route diskdan berishda doim 500 edi; `path.extname`ga tuzatildi.
 
-## Diagnostika (chuqur tekshiruv)
-- **isS3Configured() = TRUE (production):** orphan pack → prod **302 → r2.dev CDN**. R2 o'qish ishlaydi, env kalitlar Render'da sozlangan.
-- **R2 yozish ISHLAYDI:** yangi `cmqapfzto000blx211mod9hg1` (215MB pack.zip + 114MB preview.mp4 + thumb.jpg) R2'da to'liq bor → token yozish huquqiga ega. (Avvalgi "token read-only" xulosasi NOTO'G'RI edi.)
-- **Sabab — intermittent (katta fayl):** `uploadFileToS3` faylni `fs.readFileSync` bilan butunlay xotiraga o'qirdi va R2 sync upload so'rovi ichida ketma-ket (~330MB) bajarilardi. So'rov timeout / Render bepul-tarif spin-down sync tugashidan oldin → R2 bo'sh, ephemeral disk keyin o'chadi → orphan. Xato `contributor.ts:360` `catch` da yutilardi.
+**M3 — merge (almashtirish o'rniga):**
+- `assetflow-catalog.js` `mergeIntoBrowse` — scene'ga `slug` o'tkaziladi.
+- `AssetFlow_Plugin.html` — `sceneSlugOf` + `mergeMogrtItems`: server ro'yxati (nom/preview/tartib) saqlanadi, keshdan faqat `mogrtPath` biriktiriladi; mos kelmasa eski xulq (kesh ro'yxati). `importedScenes` (s.n) endi barqaror — nomlar almashinmaydi. `applyMogrtItems` + `openPack` ikkala joy yangilandi.
 
-## Tuzatish (commit qilindi)
-- **`s3.ts` `uploadFileToS3`** — `fs.readFileSync` o'rniga `fs.createReadStream` + `ContentLength` (stat'dan). Fayl xotiraga to'liq yuklanmaydi (OOM xavfi kamayadi). Xato endi aniq log (`[s3] uploadFileToS3 muvaffaqiyatsiz — key/size/src`) + `throw` (yutilmaydi). Commit `3193352`. Boshqa funksiyalar o'zgarmagan.
+**Test (lokal):** 2-mogrtli ZIP (v1: mp4+png, v2: faqat png) → scenes `previewKey` to'g'ri, disk `scenes/version-01.mp4|png`, scene route 200, katalog enrich `s.preview` URL + `previewKind:image` (v2). Test shablonlar o'chirildi (3×204). Lokal R2 o'chiq (root `.env` da `AWS_ACCESS_KEY_ID=""` bo'sh — apps/api/.env'ni soya qiladi, oldindan mavjud) — R2 thumb branch productionda pack sync bilan bir xil helper.
 
-## Ochiq / keyingi
-- Push qilinmagan: `3193352` (s3 stream fix) + `47efa23` (mogrt-extract) — foydalanuvchi o'zi push qiladi → Render auto-deploy.
-- Caveat: PutObject + stream'da SDK retry stream qayta o'qiy olmaydi. To'liq retry-bardosh kerak bo'lsa `@aws-sdk/lib-storage` `Upload` (yangi dep).
-- Tavsiya: R2 sync'ni so'rovdan ajratish (background) yoki DB'da `r2Synced` flag + retry.
+**Kutilmoqda:** build ✓, JS sintaksis ✓, install-cep ✓ → foydalanuvchi AE'da test qiladi; keyin commit + push + Render deploy; M2 (faqat tanlangan .mogrt yuklash) alohida.
