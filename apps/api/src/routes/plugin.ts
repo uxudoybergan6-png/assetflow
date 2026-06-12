@@ -21,6 +21,8 @@ import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
 import {
   type TemplateAssetKind,
   findScenePreview,
+  findMogrtFile,
+  sceneKey,
   sceneFileIsVideo,
 } from "../lib/template-files.js";
 import { serveTemplateAsset } from "../lib/serve-asset.js";
@@ -164,6 +166,30 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req, res) => {
     res.setHeader("Content-Length", String(fileSize));
   }
 
+  fs.createReadStream(filePath).pipe(res);
+});
+
+/** M2: tanlangan sahnaning yakka .mogrt fayli — butun ZIP'siz yuklab olish */
+pluginRouter.get("/assets/:templateId/mogrt/:slug", async (req, res) => {
+  const templateId = String(req.params.templateId);
+  const slug = sceneKey(String(req.params.slug));
+
+  if (isS3Configured()) {
+    const s3Key = `templates/${templateId}/mogrt/${slug}.mogrt`;
+    if (await s3ObjectExists(s3Key)) {
+      res.redirect(302, getPublicUrl(s3Key));
+      return;
+    }
+  }
+
+  const filePath = findMogrtFile(templateId, slug);
+  if (!filePath) {
+    res.status(404).json({ error: "MOGRT fayl topilmadi" });
+    return;
+  }
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename="${slug}.mogrt"`);
+  res.setHeader("Content-Length", String(fs.statSync(filePath).size));
   fs.createReadStream(filePath).pipe(res);
 });
 
@@ -375,30 +401,43 @@ const usageSchema = z.object({
   templateId: z.string().optional(),
 });
 
+/** Per-shablon hisoblagich — contributor dashboard statistikasi uchun.
+    Shablon topilmasa (o'chirilgan/noto'g'ri id) jim o'tadi. */
+async function bumpTemplateCounter(
+  templateId: string | undefined,
+  field: "downloadsCount" | "importsCount"
+) {
+  if (!templateId) return;
+  try {
+    await prisma.contributorTemplate.update({
+      where: { id: templateId },
+      data: { [field]: { increment: 1 } },
+    });
+  } catch {}
+}
+
 pluginRouter.post("/usage/download", usageLimiter, requireAuth, async (req, res) => {
   const parsed = usageSchema.safeParse(req.body);
-  const result = await recordPluginDownload(
-    req.user!.userId,
-    parsed.success ? parsed.data.templateId : undefined
-  );
+  const templateId = parsed.success ? parsed.data.templateId : undefined;
+  const result = await recordPluginDownload(req.user!.userId, templateId);
   if (!result.ok) {
     res.status(403).json({ error: result.error });
     return;
   }
+  await bumpTemplateCounter(templateId, "downloadsCount");
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });
 
 pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req, res) => {
   const parsed = usageSchema.safeParse(req.body);
-  const result = await recordPluginImport(
-    req.user!.userId,
-    parsed.success ? parsed.data.templateId : undefined
-  );
+  const templateId = parsed.success ? parsed.data.templateId : undefined;
+  const result = await recordPluginImport(req.user!.userId, templateId);
   if (!result.ok) {
     res.status(403).json({ error: result.error });
     return;
   }
+  await bumpTemplateCounter(templateId, "importsCount");
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });

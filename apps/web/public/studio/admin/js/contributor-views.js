@@ -257,6 +257,26 @@ function validateUploadStep1() {
   return true;
 }
 
+const MAX_UPLOAD_MB = 500;
+
+function fmtMB(bytes) {
+  return (bytes / 1048576).toFixed(1) + " MB";
+}
+
+/** Hajm/format tekshiruvi — xato bo'lsa toast bilan sababi, true/false qaytaradi */
+function checkUploadFile(file, label) {
+  if (!file) return true;
+  if (file.size > MAX_UPLOAD_MB * 1048576) {
+    toast(
+      label,
+      `Fayl ${fmtMB(file.size)} — maksimal ${MAX_UPLOAD_MB} MB. Hajmini kichraytirib qayta tanlang`,
+      "danger"
+    );
+    return false;
+  }
+  return true;
+}
+
 function validateUploadPackFile() {
   const pack = UP_DRAFT.files?.pack;
   if (!pack) {
@@ -276,6 +296,8 @@ function validateUploadPackFile() {
     );
     return false;
   }
+  if (!checkUploadFile(pack, "Loyiha fayli")) return false;
+  if (!checkUploadFile(UP_DRAFT.files?.preview, "Preview video")) return false;
   return true;
 }
 
@@ -290,8 +312,26 @@ function bindUploadFileInputs() {
   const preview = document.getElementById("upPreview");
   const pack = document.getElementById("upPack");
   if (thumb) thumb.onchange = () => { UP_DRAFT.files.thumb = thumb.files?.[0] || null; };
-  if (preview) preview.onchange = () => { UP_DRAFT.files.preview = preview.files?.[0] || null; };
-  if (pack) pack.onchange = () => { UP_DRAFT.files.pack = pack.files?.[0] || null; };
+  if (preview) preview.onchange = () => {
+    const f = preview.files?.[0] || null;
+    // Hajm darhol tekshiriladi — submit'gacha kutilmaydi
+    if (f && !checkUploadFile(f, "Preview video")) {
+      preview.value = "";
+      UP_DRAFT.files.preview = null;
+      return;
+    }
+    UP_DRAFT.files.preview = f;
+  };
+  if (pack) pack.onchange = () => {
+    const f = pack.files?.[0] || null;
+    if (f && !checkUploadFile(f, "Loyiha fayli")) {
+      pack.value = "";
+      UP_DRAFT.files.pack = null;
+      return;
+    }
+    UP_DRAFT.files.pack = f;
+    if (f) toast("Loyiha fayli", `${f.name} (${fmtMB(f.size)}) tanlandi`, "info");
+  };
 }
 
 VIEWS.upload = function(){ return `<div id="upRoot"></div>`; };
@@ -342,9 +382,9 @@ function renderUpload(){
           <div class="row gap-6 wrap"><span class="pill">${UP_DRAFT.catLabel||'—'}</span><span class="pill">${(UP_DRAFT.res||'4k').toUpperCase()}</span><span class="pill">${UP_DRAFT.orient==='vertical'?'Portrait':UP_DRAFT.orient==='square'?'Square':'Landscape'}</span></div>
           <p class="body" style="max-width:100%;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden">${UP_DRAFT.desc||''}</p>
           <div class="row gap-8 wrap" style="min-width:0">
-            ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${UP_DRAFT.files.preview.name}">${ic('film')} ${UP_DRAFT.files.preview.name}</span>`:''}
+            ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${UP_DRAFT.files.preview.name}">${ic('film')} ${UP_DRAFT.files.preview.name} · ${fmtMB(UP_DRAFT.files.preview.size)}</span>`:''}
             ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${UP_DRAFT.files.thumb.name}">${ic('image')} ${UP_DRAFT.files.thumb.name}</span>`:''}
-            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) majburiy — AE import uchun</span>'}
+            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) majburiy — AE import uchun</span>'}
           </div>
         </div>
       </div>
@@ -376,12 +416,14 @@ async function saveDraftOnly() {
   try {
     const created = await createUploadTemplateRecord();
     const tid = UP_EDIT_ID || created.id;
+    // Retry'da yangi dublikat yozuv yaratilmasligi uchun darhol bog'laymiz
+    UP_EDIT_ID = tid;
     try {
       if (UP_DRAFT.files.thumb || UP_DRAFT.files.preview || UP_DRAFT.files.pack) {
         await StudioApi.uploadAssets(tid, UP_DRAFT.files);
       }
     } catch (e) {
-      toast("Ogohlantirish", "Fayllar saqlanmadi: " + (e.message || ""), "warn");
+      toast("Ogohlantirish", "Fayllar saqlanmadi: " + (e.message || "") + ". Qayta saqlashda shu qoralamaga yuklanadi", "warn");
     }
     UP_EDIT_ID = null;
     await StudioTemplates.refreshAfterUpload();
@@ -427,16 +469,24 @@ async function submitUpload(){
     return;
   }
   const btn = document.getElementById('upSubmitBtn');
+  const btnHtml = btn ? btn.innerHTML : '';
   if (btn) btn.disabled = true;
   try {
     const created = await createUploadTemplateRecord();
     const tid = UP_EDIT_ID || created.id;
+    // Yuklash xato bo'lsa, qayta urinish YANGI shablon yaratmasin —
+    // shu yozuvga bog'lab qo'yamiz (dublikat qoralama bug'i tuzatildi)
+    UP_EDIT_ID = tid;
     try {
       if (UP_DRAFT.files.thumb || UP_DRAFT.files.preview || UP_DRAFT.files.pack) {
-        await StudioApi.uploadAssets(tid, UP_DRAFT.files);
+        await StudioApi.uploadAssets(tid, UP_DRAFT.files, (done, total) => {
+          if (!btn) return;
+          const pct = total > 0 ? Math.floor((done / total) * 100) : 0;
+          btn.innerHTML = `Yuklanmoqda… ${pct}% (${fmtMB(done)} / ${fmtMB(total)})`;
+        });
       }
     } catch (e) {
-      toast("Xato", "Fayllar yuklanmadi: " + (e.message || ""), "danger");
+      toast("Xato", "Fayllar yuklanmadi: " + (e.message || "") + ". «Moderatsiyaga yuborish»ni qayta bossangiz, shu shablonga qayta yuklanadi", "danger");
       return;
     }
     await StudioApi.submitTemplate(tid);
@@ -457,7 +507,10 @@ async function submitUpload(){
   } catch (e) {
     toast('Xato', e.message || 'Yuklash muvaffaqiyatsiz', 'danger');
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = btnHtml;
+    }
   }
 }
 

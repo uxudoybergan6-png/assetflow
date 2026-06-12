@@ -1240,6 +1240,17 @@ function importSingleSceneFromAep(jsonStr) {
     var importMode = cfg.importMode || "timeline";
     var destCompId = null;
     var activeBefore = app.project.activeItem;
+    if (!(activeBefore instanceof CompItem)) {
+      // Project panel (yoki boshqa panel) fokusda bo'lsa activeItem null/folder
+      // qaytadi — comp Timeline'da ochiq bo'lsa ham. Ochiq comp viewer'ini
+      // aktiv qilib qayta o'qiymiz.
+      try {
+        if (app.activeViewer && app.activeViewer.type === ViewerType.VIEWER_COMPOSITION) {
+          app.activeViewer.setActive();
+          activeBefore = app.project.activeItem;
+        }
+      } catch (ignoreViewer) {}
+    }
     if (activeBefore instanceof CompItem) {
       destCompId = activeBefore.id;
     }

@@ -226,20 +226,55 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 # → cmpzpnnyq0001oc1gzla3mzi5 "Football Championship..." hasPack:true, hasPreview:true
 ```
 
-## Ochiq / ehtiyot bo'lish kerak
+## Ochiq muammolar va keyingi vazifalar
 
-1. **Render deploy** — API o'zgarishlari push qilinmagan bo'lishi mumkin; `npm run build -w apps/api` keyin deploy.
-2. **AE Admin CEP** — brauzer Admin (Vercel) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
-3. **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
-4. **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
-5. **Tez orada** (hali to'liq emas): Stripe tariflar, email bildirishnomalar, contributor payout.
-6. `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
-7. **Orphan message threadlar (MED)** — shablon o'chirilganda `StudioMessageThread.templateId → NULL` (SetNull), thread + xabarlar qoladi. Tozalash yoki arxivlash hali yo'q.
-8. **Plugin stale `downloaded[]` (LOW)** — shablon serverda o'chsa ham plugin `prefs.json` dagi `downloaded[]` va lokal `.aep`/unzip cache foydalanuvchi diskida qoladi; Sync bilan sinxronlanmaydi.
+### 🔴 HIGH — tez hal qilish kerak
+
+1. **Push + Render deploy** — `main` `origin/main`dan 4 commit oldinda (`3193352`, `3361478`, `43a1528`, `42c3f5b`). Foydalanuvchi `git push origin main` qiladi → Render auto-deploy → M1/M3/R2-stream productionga chiqadi. TOKEN placeholder remote URL bo'lgani uchun dastur push qila olmaydi.
+
+2. **M2 ✅ — Faqat tanlangan `.mogrt` yuklab olish**: Yangi uploadlarda har `.mogrt` alohida R2 `templates/{id}/mogrt/{slug}.mogrt` ga yuklandi; `mogrtKey` + `mogrtUrl` catalog'da chiqadi; plugin `downloadSceneMogrt()` faqat tanlangan sahnani yuklab oladi (ZIP fallback backward-compat). **Deploy kerak** (commit shu sessiyada, push kutilmoqda).
+
+3. **Stripe Pro tarif (HIGH, alohida vazifa)**: `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true` dev bypass bor. Productionda haqiqiy Stripe checkout + webhook + `subscription.status=ACTIVE` kerak. `assetflow-account.js:138` `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` chaqiradi — Studio JWT kerak bo'lishi mumkin (Stripe bilan birga hal qilinadi).
+
+### 🟡 MEDIUM — muhim, lekin bloklanmaydi
+
+4. **"Re-extract scenes" endpoint (HIGH)**: "Cosmic Light Transitions" (351MB) — M1 thumb'lar R2'da bor (`scenes/*.png|mp4` 200), lekin `metaJson.scenes` DB'da bo'sh (`{dur,grad}` faqat). Sabab: 8 daqiqalik request oxirida DB connection timeout, outer `catch` xatoni yutgan. Yechim: `POST /api/contributor/admin/templates/:id/re-extract` endpoint — R2'dagi pack'dan tmpdir'ga yuklab olib, M2 pipeline'ni (mogrtKey + previewKey yozish) qayta ishga tushiradi. Bu HANDOFF-dagi "M1 retroaktiv" (item 4 eski) muammosini ham hal qiladi.
+
+5. **Email bildirishnomalar** (MED): Approve/reject, yangi xabar, yangi obunachi uchun email yo'q. Nodemailer yoki Resend bilan ulash kerak (`/api/studio/messages/*` webhook hookiga qo'shish qulay).
+
+6. **Orphan message threadlar** (MED): Shablon o'chirilganda `StudioMessageThread.templateId → NULL` (SetNull), thread + xabarlar qoladi. Tozalash yoki arxivlash logikasi yo'q.
+
+7. **`avconvert` `.mov→.mp4`** (MED): `AssetFlow_Admin.html:2092` — yangi macOS da `avconvert` deprecated/yo'q. `ffmpeg` bilan almashtirish kerak (yoki bu funksiya olib tashlash).
+
+### 🟢 LOW — kechiktirish mumkin
+
+8. **ZXP packaging**: CEP extension faqat lokal `install-cep.sh` bilan o'rnatiladi. Tarqatish uchun ZXP + Adobe Exchange tayyorlash kerak.
+
+9. **Contributor payout**: Hech qanday payout tracking yo'q. Kelajakda: `earningsTotal`, Stripe Connect yoki to'lov so'rovi UI.
+
+10. **Plugin stale `downloaded[]`** (LOW): Shablon serverda o'chsa ham `prefs.json` `downloaded[]` va lokal cache qoladi. Sync bilan sinxronlanmaydi.
+
+11. **Root `.env` `AWS_ACCESS_KEY_ID=""`** (LOW, lokal): Root `.env` bo'sh qiymat `apps/api/.env`ni soya qiladi — R2 yuklab olish lokal testda ishlamaydi (production'da muammo yo'q).
+
+12. **Toast `__srv_<id>`** (LOW): Ba'zi toast'larda `packName` sifatida `__srv_<id>` ko'rinadi (to'liq-pack import, `downloadAll`) — past ustuvorlik.
+
+### Doimiy ehtiyot bo'lish kerak
+
+- **AE Admin CEP** — brauzer Admin (Vercel) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
+- **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
+- **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
+- `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
 
 ### Claude Code sessiyasida qilingan (2026-06-12)
 
 - **.mogrt pack support** — ZIP ichidan papka nomidan qat'iy nazar `.mogrt` topish (`unzip -Z1` + kengaytma filter), har `.mogrt` ichidan video preview (`thumb.mp4`) va thumbnail (`thumb.png`) extraction, bir nechta `.mogrt` bo'lsa tanlab import (sahna kartalari UI). Contributor upload `.zip` ham qabul qiladi. Admin pack tekshiruvi `.aep` va `.mogrt` ni qo'llab-quvvatlaydi. **2026-06-12, testdan o'tdi.**
+- **M1 ✅ — Server-side sahna preview** (`mogrt-extract.ts`, `contributor.ts`): ZIP upload paytida har `.mogrt`dan `thumb.mp4`/`thumb.png` chiqariladi; slug `sceneKey()` formatida (dash-lowercase, `template-files.js`); `previewKey` DB `metaJson.scenes[].previewKey`ga yoziladi; thumblar diskka (`scenes/`) + R2 (`templates/{id}/scenes/{key}.ext`) yuboriladi. `catalog-map.ts` `enrichScenesAsync` allaqachon `previewKey` ni URL ga aylantiradi — o'zgartirish shart emas edi. Bonus: `plugin.ts:126` ESM `require("path")` → `path.extname` (scene route oldin disk fallbackda 500 qaytarardi). Commit `43a1528`.
+- **M3 ✅ — Plugin merge logikasi** (`assetflow-catalog.js`, `AssetFlow_Plugin.html`): `mergeMogrtItems` — server sahna ro'yxati (nom/preview/tartib) saqlanadi, keshdan faqat `mogrtPath` biriktiriladi; mos kelmasa eski xulq (kesh ro'yxati). `sceneSlugOf` qo'shildi. `applyMogrtItems` + `openPack` ikkala joy yangilandi. `importedScenes` (s.n) endi barqaror. Commit `43a1528`.
+- **R2 stream upload** (`s3.ts`): `readFileSync` → `createReadStream` + `ContentLength`; xato aniq log + rethrow. Commit `3193352`.
+- **M2 ✅ — Selective `.mogrt` download** (`mogrt-extract.ts`, `contributor.ts`, `catalog-map.ts`, `plugin.ts`, `assetflow-catalog.js`, `AssetFlow_Plugin.html`): upload paytida har `.mogrt` R2 `templates/{id}/mogrt/{slug}.mogrt` ga yuklanadi; `mogrtKey` + `mogrtUrl` catalog'da chiqadi; plugin `downloadSceneMogrt()` faqat tanlangan sahnani (MB) yuklab oladi, ZIP fallback backward-compat. `host.jsx` Timeline comp check bug ham tuzatildi (`app.activeViewer` fallback). Deploy kerak.
+- **SSE upload progress ✅** (`upload-progress.ts` yangi, `contributor.ts`): `receive→sync(82)→db(88)→extract(90-97)→db(98)→done(100)` real vaqtda; barcha xato yo'llari (413/400/500) bosqich bilan SSE'ga chiqadi. Studio XHR 0-80%, server 80-100%.
+- **Contributor dashboard professional ✅** (`studio-templates.js`, `contributor-views.js`, `app.css`): haqiqiy `downloadsCount`/`importsCount` (yangi migration `template_usage_counters`, Prisma); KPI overview; jadvalda importlar; admin xabarlar paneli; mobile responsive.
+- **Migration** `20260612180000_template_usage_counters`: `downloadsCount`/`importsCount` ustunlari `ContributorTemplate`'da. Production deploy'da `npm run migrate:deploy -w @creative-tools/database` kerak.
 
 ### Claude Code sessiyasida qilingan (2026-06-11)
 
@@ -270,4 +305,4 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ---
 
-*Yangilangan: 2026-06-12 — .mogrt pack support: ZIP ichidan papka nomidan qat'iy nazar topish, video preview, tanlab import (testdan o'tdi); avvalroq (2026-06-11): shablon o'chirishda R2 + disk tozalash, Search, footer timeline mode, rootFolder, redirect, import papka nomi.*
+*Yangilangan: 2026-06-12 (kech) — M2 ✅ selective .mogrt download; SSE upload progress ✅; Contributor dashboard professional ✅; host.jsx Timeline comp check fix ✅; migration template_usage_counters. Production deploy kerak (migrate:deploy + Render). Keyingi: Re-extract endpoint (Cosmic fix), Stripe, email.*

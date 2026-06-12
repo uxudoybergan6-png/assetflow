@@ -18,14 +18,26 @@ export interface MogrtSceneThumb {
   contentType: string;
 }
 
+export interface MogrtFile {
+  slug: string;
+  path: string;
+}
+
 export interface MogrtExtractResult {
   scenes: MogrtScene[];
   /** R2/disk uchun lokal thumb fayllar — ishlatib bo'lgach cleanup() chaqiring */
   thumbs: MogrtSceneThumb[];
+  /** Ajratilgan .mogrt fayllar (selective download uchun R2/diskka saqlanadi) */
+  mogrts: MogrtFile[];
   cleanup: () => void;
 }
 
-const EMPTY: MogrtExtractResult = { scenes: [], thumbs: [], cleanup: () => {} };
+const EMPTY: MogrtExtractResult = {
+  scenes: [],
+  thumbs: [],
+  mogrts: [],
+  cleanup: () => {},
+};
 
 /** ZIP ichidagi .mogrt entry yo'llarini qaytaradi (macOS axlati filtrlanadi) */
 function listMogrtsInZip(zipPath: string): string[] {
@@ -85,6 +97,7 @@ export async function extractMogrtsFromZip(
 
   const scenes: MogrtScene[] = [];
   const thumbs: MogrtSceneThumb[] = [];
+  const mogrts: MogrtFile[] = [];
   const usedSlugs = new Set<string>();
 
   for (let i = 0; i < entries.length; i++) {
@@ -123,14 +136,12 @@ export async function extractMogrtsFromZip(
         thumbs.push({ previewKey: slug, path: mp4, ext: ".mp4", contentType: "video/mp4" });
       if (fs.existsSync(png))
         thumbs.push({ previewKey: slug, path: png, ext: ".png", contentType: "image/png" });
-      // .mogrt'ning o'zi endi kerak emas — thumb'lar defDir'da
-      try {
-        fs.rmSync(mogrtPath, { force: true });
-      } catch {}
+      // .mogrt'ning o'zi selective download uchun saqlanadi — cleanup() o'chiradi
+      mogrts.push({ slug, path: mogrtPath });
     } catch {
       scenes.push({ n: base, slug, aeComp: base, previewKey: slug });
     }
   }
 
-  return { scenes, thumbs, cleanup };
+  return { scenes, thumbs, mogrts, cleanup };
 }

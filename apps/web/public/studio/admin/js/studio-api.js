@@ -35,8 +35,11 @@ const StudioApi = (() => {
             : undefined,
       });
     } catch (e) {
+      const isLocal = /localhost|127\.0\.0\.1/.test(baseUrl());
       throw new Error(
-        "API ishlamayapti. Terminalda: npm run dev:api (port 4000)"
+        isLocal
+          ? "API ishlamayapti. Terminalda: npm run dev:api (port 4000)"
+          : "Server bilan aloqa uzildi — internetni tekshirib qayta urinib ko'ring"
       );
     }
 
@@ -98,14 +101,55 @@ const StudioApi = (() => {
     return request(`/api/contributor/templates/${id}/submit`, { method: "POST" });
   }
 
-  async function uploadAssets(id, files) {
+  /**
+   * Fayllarni XHR bilan yuklaydi — fetch'dan farqli, upload progress beradi.
+   * onProgress(yuklangan, jami) baytlarda chaqiriladi.
+   */
+  function uploadAssets(id, files, onProgress) {
     const fd = new FormData();
     if (files.thumb) fd.append("thumb", files.thumb);
     if (files.preview) fd.append("preview", files.preview);
     if (files.pack) fd.append("pack", files.pack);
-    return request(`/api/contributor/templates/${id}/assets`, {
-      method: "POST",
-      body: fd,
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${baseUrl()}/api/contributor/templates/${id}/assets`);
+      const t = token();
+      if (t) xhr.setRequestHeader("Authorization", `Bearer ${t}`);
+      xhr.upload.onprogress = (ev) => {
+        if (onProgress && ev.lengthComputable) onProgress(ev.loaded, ev.total);
+      };
+      xhr.onload = () => {
+        let data = null;
+        try {
+          data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+        } catch {
+          data = null;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(data);
+          return;
+        }
+        // Server JSON xato bersa o'shani, bo'lmasa statusga qarab tushunarli xabar
+        const friendly =
+          xhr.status === 413
+            ? "Fayl juda katta — maksimal 500 MB"
+            : xhr.status === 401
+              ? "Sessiya tugagan — qayta tizimga kiring"
+              : xhr.status === 502 || xhr.status === 503 || xhr.status === 504
+                ? "Server javob bermadi — bir ozdan so'ng qayta urinib ko'ring"
+                : `Yuklash xatosi (HTTP ${xhr.status})`;
+        const err = new Error(
+          (data && (data.error || data.message)) || friendly
+        );
+        err.status = xhr.status;
+        err.data = data;
+        reject(err);
+      };
+      xhr.onerror = () =>
+        reject(
+          new Error("Yuklash uzilib qoldi — internetni tekshirib qayta urinib ko'ring")
+        );
+      xhr.send(fd);
     });
   }
 

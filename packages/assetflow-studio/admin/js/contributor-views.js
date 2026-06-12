@@ -27,7 +27,8 @@ VIEWS.overview = function(){
   const ts = tByContributor(contributorId());
   const ap=ts.filter(t=>t.status==='approved').length, pe=ts.filter(t=>t.status==='pending').length,
         sr=ts.filter(t=>t.status==='soft').length, hr=ts.filter(t=>t.status==='hard').length;
-  const dl=ts.reduce((a,t)=>a+t.dl,0);
+  const dl=ts.reduce((a,t)=>a+(t.dl||0),0);
+  const im=ts.reduce((a,t)=>a+(t.imports||0),0);
   const needsAction = ts.filter(t=>t.status==='soft' || t.status==='draft');
   const sc = subscriberCounts();
   const freeP = planById('free');
@@ -47,9 +48,9 @@ VIEWS.overview = function(){
         <span class="small">${planPriceLabel(proP)} · ${formatPlanLimit(proP)}</span>
       </div>
       <div class="plan-mini">
-        <span class="label">Sizning shablon yuklab olishlari</span>
-        <span class="num" style="font-size:22px;font-weight:700">${dl.toLocaleString()}</span>
-        <span class="small">tasdiqlangan ${ap} ta shablon</span>
+        <span class="label">Yuklab olishlar / importlar</span>
+        <span class="num" style="font-size:22px;font-weight:700">${dl.toLocaleString()} <span style="font-size:13px;font-weight:500;color:var(--text-dim)">/ ${im.toLocaleString()} import</span></span>
+        <span class="small">tasdiqlangan ${ap} ta shablon bo'yicha</span>
       </div>
     </div>
 
@@ -60,7 +61,7 @@ VIEWS.overview = function(){
       ${kpiCard({label:'Rad etilgan',val:sr+hr,ic:'xCircle',c:'orange',foot:`${sr} soft \u00b7 ${hr} hard`})}
     </div>
 
-    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start">
+    <div class="ov-grid">
       <!-- next step + needs action -->
       <div class="col gap-16">
         <div class="card" style="background:linear-gradient(120deg,var(--violet-dim),transparent);border-color:var(--violet-line)">
@@ -93,12 +94,32 @@ VIEWS.overview = function(){
       <!-- recent admin messages -->
       <div class="card">
         <div class="card-head"><div><h3>Admin xabarlari</h3><span class="small">So\u2018nggi</span></div><button class="btn btn-subtle btn-sm" onclick="route('messages')">Barchasi ${ic('chevR')}</button></div>
-        <div class="col">
+        <div class="col" id="ovMsgs">
           <div class="empty" style="padding:34px"><div class="ico">${ic('message')}</div><h3>Xabar yo\u2018q</h3><p class="small">Admin javobi shu yerda chiqadi</p></div>
         </div>
       </div>
     </div>
   </div>`;
+};
+
+/** Overview ochilganda admin xabarlarini API dan yuklab panelni to'ldiradi */
+window.afterRender.overview = async function(){
+  if (!StudioApi.token()) return;
+  try {
+    const data = await StudioApi.listMessageThreads();
+    const threads = (data.items || data.threads || []).slice(0, 4);
+    const box = document.getElementById('ovMsgs');
+    if (!box || !threads.length) return;
+    box.innerHTML = threads.map(th => `<div class="row center gap-12" style="padding:12px 18px;border-bottom:1px solid var(--line-soft);cursor:pointer" onclick="route('messages')">
+      <div class="col grow" style="gap:2px;min-width:0">
+        <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${th.subject || 'Xabar'}</span>
+        <span class="small">${(th.lastMessageAt || '').slice(0, 10)}</span>
+      </div>
+      ${th.unreadCount ? `<span class="badge badge-pending"><span class="dot"></span>${th.unreadCount} yangi</span>` : ''}
+    </div>`).join('');
+  } catch (e) {
+    /* xabarlar paneli ixtiyoriy \u2014 overview bloklanmaydi */
+  }
 };
 
 /* ============================================================
@@ -131,12 +152,12 @@ function renderMy(){
 }
 function myTable(ts){
   return `<div class="card"><div class="table-wrap"><table class="data" style="min-width:820px">
-    <thead><tr><th>Shablon</th><th>Holat</th><th>Yaratilgan</th><th class="th-num">Downloads</th><th>Admin izohi</th><th style="width:130px"></th></tr></thead>
+    <thead><tr><th>Shablon</th><th>Holat</th><th>Yaratilgan</th><th class="th-num">Yuklab olish / import</th><th>Admin izohi</th><th style="width:130px"></th></tr></thead>
     <tbody>${ts.map(t=>`<tr style="cursor:pointer" onclick="openTplDrawer('${t.id}')">
       <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'',true)}</div><div class="tmpl-meta"><span class="nm">${t.name}</span><span class="sub">${t.cat}</span></div></div></td>
       <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">AE\u2018da live</div>':''}</td>
       <td class="cell-muted mono">${t.created}</td>
-      <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
+      <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}${t.imports?`<div class="small" style="font-size:10.5px;font-weight:400">${t.imports.toLocaleString()} import</div>`:''}</td>
       <td class="cell-muted" style="max-width:200px">${t.reason?`<span style="color:var(--orange)">${t.reason.slice(0,46)}\u2026</span>`:'\u2014'}</td>
       <td onclick="event.stopPropagation()"><div class="row-actions">
         ${(t.status==='draft'||t.status==='soft')?`<button class="act" title="Tahrir" onclick="event.stopPropagation();openEditTemplate('${t.id}')">${ic('edit')}</button>`:''}
@@ -257,6 +278,26 @@ function validateUploadStep1() {
   return true;
 }
 
+const MAX_UPLOAD_MB = 500;
+
+function fmtMB(bytes) {
+  return (bytes / 1048576).toFixed(1) + " MB";
+}
+
+/** Hajm/format tekshiruvi — xato bo'lsa toast bilan sababi, true/false qaytaradi */
+function checkUploadFile(file, label) {
+  if (!file) return true;
+  if (file.size > MAX_UPLOAD_MB * 1048576) {
+    toast(
+      label,
+      `Fayl ${fmtMB(file.size)} — maksimal ${MAX_UPLOAD_MB} MB. Hajmini kichraytirib qayta tanlang`,
+      "danger"
+    );
+    return false;
+  }
+  return true;
+}
+
 function validateUploadPackFile() {
   const pack = UP_DRAFT.files?.pack;
   if (!pack) {
@@ -276,6 +317,8 @@ function validateUploadPackFile() {
     );
     return false;
   }
+  if (!checkUploadFile(pack, "Loyiha fayli")) return false;
+  if (!checkUploadFile(UP_DRAFT.files?.preview, "Preview video")) return false;
   return true;
 }
 
@@ -290,8 +333,26 @@ function bindUploadFileInputs() {
   const preview = document.getElementById("upPreview");
   const pack = document.getElementById("upPack");
   if (thumb) thumb.onchange = () => { UP_DRAFT.files.thumb = thumb.files?.[0] || null; };
-  if (preview) preview.onchange = () => { UP_DRAFT.files.preview = preview.files?.[0] || null; };
-  if (pack) pack.onchange = () => { UP_DRAFT.files.pack = pack.files?.[0] || null; };
+  if (preview) preview.onchange = () => {
+    const f = preview.files?.[0] || null;
+    // Hajm darhol tekshiriladi — submit'gacha kutilmaydi
+    if (f && !checkUploadFile(f, "Preview video")) {
+      preview.value = "";
+      UP_DRAFT.files.preview = null;
+      return;
+    }
+    UP_DRAFT.files.preview = f;
+  };
+  if (pack) pack.onchange = () => {
+    const f = pack.files?.[0] || null;
+    if (f && !checkUploadFile(f, "Loyiha fayli")) {
+      pack.value = "";
+      UP_DRAFT.files.pack = null;
+      return;
+    }
+    UP_DRAFT.files.pack = f;
+    if (f) toast("Loyiha fayli", `${f.name} (${fmtMB(f.size)}) tanlandi`, "info");
+  };
 }
 
 VIEWS.upload = function(){ return `<div id="upRoot"></div>`; };
@@ -342,9 +403,9 @@ function renderUpload(){
           <div class="row gap-6 wrap"><span class="pill">${UP_DRAFT.catLabel||'—'}</span><span class="pill">${(UP_DRAFT.res||'4k').toUpperCase()}</span><span class="pill">${UP_DRAFT.orient==='vertical'?'Portrait':UP_DRAFT.orient==='square'?'Square':'Landscape'}</span></div>
           <p class="body" style="max-width:100%;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden">${UP_DRAFT.desc||''}</p>
           <div class="row gap-8 wrap" style="min-width:0">
-            ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${UP_DRAFT.files.preview.name}">${ic('film')} ${UP_DRAFT.files.preview.name}</span>`:''}
+            ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${UP_DRAFT.files.preview.name}">${ic('film')} ${UP_DRAFT.files.preview.name} · ${fmtMB(UP_DRAFT.files.preview.size)}</span>`:''}
             ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${UP_DRAFT.files.thumb.name}">${ic('image')} ${UP_DRAFT.files.thumb.name}</span>`:''}
-            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) majburiy — AE import uchun</span>'}
+            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) majburiy — AE import uchun</span>'}
           </div>
         </div>
       </div>
@@ -376,12 +437,14 @@ async function saveDraftOnly() {
   try {
     const created = await createUploadTemplateRecord();
     const tid = UP_EDIT_ID || created.id;
+    // Retry'da yangi dublikat yozuv yaratilmasligi uchun darhol bog'laymiz
+    UP_EDIT_ID = tid;
     try {
       if (UP_DRAFT.files.thumb || UP_DRAFT.files.preview || UP_DRAFT.files.pack) {
         await StudioApi.uploadAssets(tid, UP_DRAFT.files);
       }
     } catch (e) {
-      toast("Ogohlantirish", "Fayllar saqlanmadi: " + (e.message || ""), "warn");
+      toast("Ogohlantirish", "Fayllar saqlanmadi: " + (e.message || "") + ". Qayta saqlashda shu qoralamaga yuklanadi", "warn");
     }
     UP_EDIT_ID = null;
     await StudioTemplates.refreshAfterUpload();
@@ -411,6 +474,40 @@ async function createUploadTemplateRecord() {
   return StudioApi.createTemplate(body);
 }
 
+/** Server bosqichlari (80-100%) — SSE orqali real vaqtda */
+const UPLOAD_STAGE_LABELS = {
+  receive: "Fayl qabul qilish",
+  sync: "Bulutga saqlash",
+  extract: "Sahnalarni tayyorlash",
+  db: "Bazaga yozish",
+};
+
+function listenUploadProgress(tid, onUpdate) {
+  const handle = { stage: "", close() {} };
+  if (typeof EventSource === "undefined") return handle;
+  let es = null;
+  try {
+    es = new EventSource(
+      `${StudioApi.baseUrl()}/api/contributor/templates/${tid}/upload-progress`
+    );
+  } catch {
+    return handle;
+  }
+  let live = false;
+  es.onmessage = (ev) => {
+    let p = null;
+    try { p = JSON.parse(ev.data); } catch { return; }
+    if (p.stage === "receive" && !p.error) { live = true; return; }
+    // ES ulanishidan oldingi eski (tugagan) yozuvni e'tiborsiz qoldiramiz
+    if (!live && p.done && !p.error) return;
+    handle.stage = p.stage;
+    onUpdate(p);
+  };
+  es.onerror = () => {}; // SSE uzilsa XHR progress fallback bo'lib qoladi
+  handle.close = () => { try { es.close(); } catch {} };
+  return handle;
+}
+
 async function submitUpload(){
   if (!StudioApi.token()) {
     toast('API', 'Avval tizimga kiring', 'warn');
@@ -427,17 +524,43 @@ async function submitUpload(){
     return;
   }
   const btn = document.getElementById('upSubmitBtn');
+  const btnHtml = btn ? btn.innerHTML : '';
   if (btn) btn.disabled = true;
   try {
     const created = await createUploadTemplateRecord();
     const tid = UP_EDIT_ID || created.id;
+    // Yuklash xato bo'lsa, qayta urinish YANGI shablon yaratmasin —
+    // shu yozuvga bog'lab qo'yamiz (dublikat qoralama bug'i tuzatildi)
+    UP_EDIT_ID = tid;
+    let prog = null;
     try {
       if (UP_DRAFT.files.thumb || UP_DRAFT.files.preview || UP_DRAFT.files.pack) {
-        await StudioApi.uploadAssets(tid, UP_DRAFT.files);
+        // Server bosqichlari (80-100%): R2 saqlash, sahna extract, DB yozish
+        prog = listenUploadProgress(tid, (p) => {
+          if (!btn || p.error) return;
+          btn.innerHTML = `${p.message || "Qayta ishlanmoqda…"} ${Math.round(p.pct)}%`;
+        });
+        // Fayl baytlari serverga ketishi — umumiy jarayonning 0-80% qismi
+        await StudioApi.uploadAssets(tid, UP_DRAFT.files, (done, total) => {
+          if (!btn) return;
+          if (total > 0 && done >= total) {
+            btn.innerHTML = "Server qayta ishlamoqda… 80%";
+            return;
+          }
+          const pct = total > 0 ? Math.floor((done / total) * 80) : 0;
+          btn.innerHTML = `Yuklanmoqda… ${pct}% (${fmtMB(done)} / ${fmtMB(total)})`;
+        });
       }
     } catch (e) {
-      toast("Xato", "Fayllar yuklanmadi: " + (e.message || ""), "danger");
+      const stageLabel = prog && prog.stage ? UPLOAD_STAGE_LABELS[prog.stage] : "";
+      toast(
+        "Xato" + (stageLabel ? ` — ${stageLabel} bosqichida` : ""),
+        (e.message || "Fayllar yuklanmadi") + ". «Moderatsiyaga yuborish»ni qayta bossangiz, shu shablonga qayta yuklanadi",
+        "danger"
+      );
       return;
+    } finally {
+      if (prog) prog.close();
     }
     await StudioApi.submitTemplate(tid);
     await StudioTemplates.refreshAfterUpload();
@@ -457,7 +580,10 @@ async function submitUpload(){
   } catch (e) {
     toast('Xato', e.message || 'Yuklash muvaffaqiyatsiz', 'danger');
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = btnHtml;
+    }
   }
 }
 

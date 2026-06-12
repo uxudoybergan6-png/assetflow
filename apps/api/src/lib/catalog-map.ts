@@ -4,6 +4,7 @@ import {
   findScenePreview,
   findSceneVideo,
   publicSceneUrl,
+  publicMogrtUrl,
   sceneFileIsVideo,
 } from "./template-files.js";
 import {
@@ -26,6 +27,10 @@ async function enrichScenesAsync(
     scenes.map(async (raw) => {
       if (!raw || typeof raw !== "object") return raw;
       const s = { ...(raw as Record<string, unknown>) };
+      // M2: mogrtKey bo'lsa — sahnani yakka .mogrt sifatida yuklab olish URL'i
+      if (typeof s.mogrtKey === "string" && s.mogrtKey) {
+        s.mogrtUrl = publicMogrtUrl(apiBase, templateId, s.mogrtKey);
+      }
       const key =
         (typeof s.previewKey === "string" && s.previewKey) ||
         (typeof s.aeComp === "string" && s.aeComp) ||

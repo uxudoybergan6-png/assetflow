@@ -73,6 +73,30 @@ export function ensureScenesDir(templateId: string) {
   return dir;
 }
 
+/** Pack ichidan ajratilgan yakka .mogrt fayllar papkasi (selective download) */
+export function mogrtDir(templateId: string) {
+  return path.join(templateDir(templateId), "mogrt");
+}
+
+export function ensureMogrtDir(templateId: string) {
+  const dir = mogrtDir(templateId);
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+export function findMogrtFile(templateId: string, slug: string): string | null {
+  const p = path.join(mogrtDir(templateId), `${sceneKey(slug)}.mogrt`);
+  return fs.existsSync(p) ? p : null;
+}
+
+export function publicMogrtUrl(
+  apiBase: string,
+  templateId: string,
+  slug: string
+) {
+  return `${apiBase.replace(/\/$/, "")}/api/plugin/assets/${templateId}/mogrt/${sceneKey(slug)}`;
+}
+
 const SCENE_IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".webp"];
 const SCENE_VIDEO_EXTS = [".mp4", ".mov", ".webm"];
 

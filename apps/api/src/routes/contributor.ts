@@ -1,4 +1,9 @@
-import { Router, type Response as ExpressResponse } from "express";
+import {
+  Router,
+  type Request as ExpressRequest,
+  type Response as ExpressResponse,
+  type NextFunction,
+} from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -18,6 +23,7 @@ import { requireContributorOrAdmin } from "../middleware/contributor.js";
 import {
   ensureTemplateDir,
   ensureScenesDir,
+  ensureMogrtDir,
   findAssetPath,
   sceneKey,
   templateDir,
@@ -31,6 +37,11 @@ import {
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
 import { extractMogrtsFromZip } from "../lib/mogrt-extract.js";
+import {
+  setUploadProgress,
+  getUploadProgress,
+  subscribeUploadProgress,
+} from "../lib/upload-progress.js";
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
@@ -278,6 +289,13 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
   res.json({ items: await Promise.all(items.map(withAssetFlags)) });
 });
 
+/** Har maydon uchun ruxsat etilgan kengaytmalar (server-side validatsiya) */
+const ASSET_UPLOAD_EXTS: Record<string, string[]> = {
+  thumb: [".jpg", ".jpeg", ".png", ".webp"],
+  preview: [".mp4", ".mov", ".webm"],
+  pack: [".aep", ".zip", ".mogrt"],
+};
+
 const uploadAssets = multer({
   storage: multer.diskStorage({
     destination: (req, _file, cb) => {
@@ -290,19 +308,134 @@ const uploadAssets = multer({
       cb(null, `${kind}${ext}`);
     },
   }),
+  // UI limiti 500 MB + texnik zaxira
   limits: { fileSize: 520 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ASSET_UPLOAD_EXTS[file.fieldname];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed && allowed.includes(ext)) cb(null, true);
+    else cb(new Error(`ASSET_TYPE:${file.fieldname}:${ext || "kengaytmasiz"}`));
+  },
 });
+
+const uploadAssetsFields = uploadAssets.fields([
+  { name: "thumb", maxCount: 1 },
+  { name: "preview", maxCount: 1 },
+  { name: "pack", maxCount: 1 },
+]);
+
+/**
+ * Multer xatolarini tushunarli JSON ga aylantiradi va xato maydonning chala
+ * yozilgan faylini o'chiradi — aks holda truncated pack diskda qolib,
+ * katalogda hasPack:true bo'lib AE importni buzadi (production'da kuzatilgan).
+ */
+/**
+ * SSE — upload bosqichlari real vaqtda (Studio progress bar).
+ * Auth: templateId cuid'ning o'zi capability (EventSource header yubora olmaydi);
+ * faqat bosqich/foiz/xabar uzatiladi, fayl ma'lumoti emas.
+ */
+contributorRouter.get("/templates/:id/upload-progress", (req, res) => {
+  const id = String(req.params.id);
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders?.();
+
+  const send = (p: ReturnType<typeof getUploadProgress>) => {
+    if (!p) return;
+    res.write(
+      `data: ${JSON.stringify({
+        stage: p.stage,
+        pct: p.pct,
+        message: p.message,
+        error: p.error,
+        done: p.done,
+      })}\n\n`
+    );
+  };
+
+  send(getUploadProgress(id));
+  const unsub = subscribeUploadProgress(id, send);
+  const ping = setInterval(() => res.write(": ping\n\n"), 25_000);
+  req.on("close", () => {
+    clearInterval(ping);
+    unsub();
+  });
+});
+
+function handleAssetsUpload(
+  req: ExpressRequest,
+  res: ExpressResponse,
+  next: NextFunction
+) {
+  setUploadProgress(String(req.params.id), {
+    stage: "receive",
+    pct: 0,
+    message: "Fayl qabul qilinmoqda…",
+  });
+  uploadAssetsFields(req, res, (err: unknown) => {
+    if (!err) {
+      next();
+      return;
+    }
+    const e = err as { code?: string; field?: string; message?: string };
+    const msg = String(e.message || "");
+    const field =
+      e.field || (msg.startsWith("ASSET_TYPE:") ? msg.split(":")[1] : "");
+    if (field) {
+      try {
+        const dir = templateDir(String(req.params.id));
+        if (fs.existsSync(dir)) {
+          for (const name of fs.readdirSync(dir)) {
+            if (name.startsWith(`${field}.`)) {
+              try {
+                fs.rmSync(path.join(dir, name), { force: true });
+              } catch {}
+            }
+          }
+        }
+      } catch {}
+    }
+    const fail = (status: number, errorText: string) => {
+      setUploadProgress(String(req.params.id), {
+        stage: "receive",
+        pct: 0,
+        message: "",
+        error: errorText,
+        done: true,
+      });
+      res.status(status).json({ error: errorText });
+    };
+    if (e.code === "LIMIT_FILE_SIZE") {
+      fail(
+        413,
+        `Fayl juda katta — maksimal 500 MB${field ? ` (${field})` : ""}. Pack hajmini kichraytirib qayta yuklang.`
+      );
+      return;
+    }
+    if (msg.startsWith("ASSET_TYPE:")) {
+      const parts = msg.split(":");
+      const f = parts[1];
+      const ext = parts[2];
+      const list = (ASSET_UPLOAD_EXTS[f] || []).join(", ");
+      fail(
+        400,
+        `"${f}" uchun ${ext} fayl qabul qilinmaydi — ruxsat etilgan: ${list}`
+      );
+      return;
+    }
+    console.error("[upload-assets] multer xato:", err);
+    fail(400, "Fayl yuklashda xato — qayta urinib ko'ring");
+  });
+}
 
 contributorRouter.post(
   "/templates/:id/assets",
   requireAuth,
   requireContributorOrAdmin,
-  uploadAssets.fields([
-    { name: "thumb", maxCount: 1 },
-    { name: "preview", maxCount: 1 },
-    { name: "pack", maxCount: 1 },
-  ]),
+  handleAssetsUpload,
   async (req, res) => {
+    try {
     const id = String(req.params.id);
     if (
       req.user!.role === UserRole.CONTRIBUTOR &&
@@ -333,6 +466,56 @@ contributorRouter.post(
       await optimizePreviewForStreaming(preview.path);
     }
 
+    // S3/R2 ga sync (cloud deployment). Pack — fail-closed: bulutga yozilmasa
+    // diskdagi nusxa o'chiriladi va aniq xato qaytadi (Render diski vaqtinchalik,
+    // jim o'tilsa pack keyinroq g'oyib bo'ladi).
+    if (isS3Configured()) {
+      setUploadProgress(id, {
+        stage: "sync",
+        pct: 82,
+        message: "Bulut xotirasiga saqlanmoqda…",
+      });
+      const mimeMap: Record<string, string> = {
+        thumb: "image/jpeg",
+        preview: "video/mp4",
+        pack: "application/octet-stream",
+      };
+      for (const [kind, file] of [["thumb", thumb], ["preview", preview], ["pack", pack]] as const) {
+        if (!file?.path) continue;
+        try {
+          await uploadFileToS3(
+            file.path,
+            s3UploadKeyForFile(id, kind, file.path),
+            mimeMap[kind]
+          );
+        } catch (s3Err) {
+          console.error(`S3 upload error (${kind}):`, s3Err);
+          if (kind === "pack") {
+            try {
+              fs.rmSync(file.path, { force: true });
+            } catch {}
+            const errText =
+              "Pack faylni bulut xotirasiga yozib bo'lmadi — bir ozdan so'ng qayta urinib ko'ring";
+            setUploadProgress(id, {
+              stage: "sync",
+              pct: 84,
+              message: "",
+              error: errText,
+              done: true,
+            });
+            res.status(502).json({ error: errText });
+            return;
+          }
+        }
+      }
+    }
+
+    // Pack muvaffaqiyatli saqlangandan keyingina DB ga nom/hajm yoziladi
+    setUploadProgress(id, {
+      stage: "db",
+      pct: 88,
+      message: "Ma'lumotlar bazasiga yozilmoqda…",
+    });
     const update: { fileName?: string; fileSize?: number } = {};
     if (pack) {
       update.fileName = pack.originalname;
@@ -342,32 +525,15 @@ contributorRouter.post(
       await prisma.contributorTemplate.update({ where: { id }, data: update });
     }
 
-    // S3/R2 ga sync qilish (cloud deployment)
-    if (isS3Configured()) {
-      const mimeMap: Record<string, string> = {
-        thumb: "image/jpeg",
-        preview: "video/mp4",
-        pack: "application/octet-stream",
-      };
-      for (const [kind, file] of [["thumb", thumb], ["preview", preview], ["pack", pack]] as const) {
-        if (file?.path) {
-          try {
-            await uploadFileToS3(
-              file.path,
-              s3UploadKeyForFile(id, kind, file.path),
-              mimeMap[kind]
-            );
-          } catch (s3Err) {
-            console.error(`S3 upload error (${kind}):`, s3Err);
-          }
-        }
-      }
-    }
-
     // ZIP pack bo'lsa — .mogrt sahna nomlari + thumb preview'lar (disk + R2)
     if (pack?.path && path.extname(pack.path).toLowerCase() === ".zip") {
+      setUploadProgress(id, {
+        stage: "extract",
+        pct: 90,
+        message: "ZIP ochilmoqda, sahnalar tayyorlanmoqda…",
+      });
       try {
-        const { scenes, thumbs, cleanup } = await extractMogrtsFromZip(pack.path);
+        const { scenes, thumbs, mogrts, cleanup } = await extractMogrtsFromZip(pack.path);
         try {
           if (scenes.length > 0) {
             const scenesDirPath = ensureScenesDir(id);
@@ -390,10 +556,50 @@ contributorRouter.post(
                 }
               }
             }
+            // Har .mogrt alohida saqlanadi (disk + R2) — sahna tanlanganda
+            // butun ZIP o'rniga faqat shu fayl yuklab olinadi (M2)
+            const savedMogrtSlugs = new Set<string>();
+            for (let mi = 0; mi < mogrts.length; mi++) {
+              const m = mogrts[mi];
+              setUploadProgress(id, {
+                stage: "extract",
+                pct: 91 + Math.floor(((mi + 1) / mogrts.length) * 6),
+                message: `Sahna ${mi + 1}/${mogrts.length} tayyorlanmoqda…`,
+              });
+              const fileName = `${m.slug}.mogrt`;
+              let saved = false;
+              try {
+                fs.copyFileSync(m.path, path.join(ensureMogrtDir(id), fileName));
+                saved = true;
+              } catch (e) {
+                console.warn(`[mogrt-extract] mogrt disk copy xato (${fileName}):`, e);
+              }
+              if (isS3Configured()) {
+                try {
+                  await uploadFileToS3(
+                    m.path,
+                    `templates/${id}/mogrt/${fileName}`,
+                    "application/octet-stream"
+                  );
+                  saved = true;
+                } catch (e) {
+                  console.error(`[mogrt-extract] mogrt R2 upload xato (${fileName}):`, e);
+                }
+              }
+              if (saved) savedMogrtSlugs.add(m.slug);
+            }
+            const scenesOut = scenes.map((s) =>
+              savedMogrtSlugs.has(s.slug) ? { ...s, mogrtKey: s.slug } : s
+            );
+            setUploadProgress(id, {
+              stage: "db",
+              pct: 98,
+              message: "Sahnalar bazaga yozilmoqda…",
+            });
             const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
             await prisma.contributorTemplate.update({
               where: { id },
-              data: { metaJson: asMetaJson({ ...existingMeta, scenes }) },
+              data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
             });
           }
         } finally {
@@ -404,6 +610,12 @@ contributorRouter.post(
       }
     }
 
+    setUploadProgress(id, {
+      stage: "done",
+      pct: 100,
+      message: "Tayyor!",
+      done: true,
+    });
     res.json({
       ok: true,
       uploaded: {
@@ -412,6 +624,20 @@ contributorRouter.post(
         pack: !!pack,
       },
     });
+    } catch (e) {
+      console.error("[upload-assets] kutilmagan xato:", e);
+      const errText = "Yuklashda kutilmagan xato — qayta urinib ko'ring";
+      setUploadProgress(String(req.params.id), {
+        stage: "error",
+        pct: 0,
+        message: "",
+        error: errText,
+        done: true,
+      });
+      if (!res.headersSent) {
+        res.status(500).json({ error: errText });
+      }
+    }
   }
 );
 

@@ -1816,6 +1816,18 @@ function packDownloadOpts(pack){
     }
   };
 }
+function sceneDownloadOpts(){
+  return{
+    onProgress(done,total){
+      const pct=total>0?Math.min(100,Math.floor((done/total)*100)):0;
+      const mb=total>0
+        ?(' · '+(done/1048576).toFixed(1)+'/'+(total/1048576).toFixed(1)+' MB')
+        :(' · '+(done/1048576).toFixed(1)+' MB');
+      if(total>0) showProgress(pct,'Sahna yuklanmoqda'+mb);
+      else showProgress(0,'Sahna yuklanmoqda'+mb,true);
+    }
+  };
+}
 async function importPackFileToAE(pack){
   if(!IS_CEP||!csInterface)return '';
   let importPath='';
@@ -1855,6 +1867,15 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
       if(scene?.mogrtPath&&AssetFlowCatalog.extractMogrtItem){
         // MOGRT-pack elementi — zip keshidan tanlangan .mogrt'ni extract qilamiz
         importPath=await AssetFlowCatalog.extractMogrtItem(pack.serverTemplateId,scene.mogrtPath);
+      }else if(scene?.mogrtUrl&&AssetFlowCatalog.downloadSceneMogrt){
+        // M2: faqat tanlangan sahna .mogrt'i yuklab olinadi — butun ZIP emas
+        try{
+          importPath=await AssetFlowCatalog.downloadSceneMogrt(pack.serverTemplateId,scene,sceneDownloadOpts());
+        }catch(mogrtErr){
+          // Server'da yakka .mogrt yo'q/xato — eski yo'l: butun pack
+          console.warn('mogrt url yuklash xato, zip fallback',mogrtErr);
+          importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
+        }
       }else{
         importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
       }

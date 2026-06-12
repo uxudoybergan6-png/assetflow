@@ -39,7 +39,9 @@ const StudioTemplates = (() => {
       status: mapStatus(t),
       created,
       dur: meta.dur || "—",
-      dl: meta.dl || 0,
+      // Haqiqiy hisoblagichlar (AE plugin usage) — eski meta.dl faqat fallback
+      dl: typeof t.downloadsCount === "number" ? t.downloadsCount : meta.dl || 0,
+      imports: typeof t.importsCount === "number" ? t.importsCount : 0,
       res: (t.res || "4k").toUpperCase().replace("4K", "4K"),
       orient:
         t.orient === "vertical"

@@ -1,17 +1,20 @@
-# Session Report — 2026-06-12 (M1 + M3 tuzatildi, commit YO'Q)
+# Session Report — 2026-06-12 (M2 + SSE + Dashboard — COMMITTED & PUSHED)
 
-**M1 — server-side sahna preview:**
-- `mogrt-extract.ts` — har .mogrt'dan `thumb.mp4`/`thumb.png` ham chiqadi; slug endi `sceneKey` formatida (dash-lowercase, `template-files.js` dan import) — scene route/admin bilan mos; scene'ga `previewKey` yoziladi; `{scenes, thumbs, cleanup}` qaytaradi.
-- `contributor.ts` — thumb'lar disk `scenes/` ga copy (lokal dev) + R2 `templates/{id}/scenes/{key}.ext` ga upload (har biri alohida try/catch, upload bloklanmaydi); `finally cleanup()`.
-- `catalog-map.ts` — o'zgarish KERAK BO'LMADI: enrich allaqachon `previewKey`ni birinchi tekshiradi, kalitlar mos.
-- **Bonus fix:** `plugin.ts:126` oldindan mavjud bug — ESM'da `require("path")` → scene route diskdan berishda doim 500 edi; `path.extname`ga tuzatildi.
+**M2 ✅ Selective .mogrt download:**
+- `mogrt-extract.ts`: `.mogrt` fayllari tmp'dan o'chirilmaydi (cleanup() ga qoldiridi); `mogrts[]` return'da.
+- `contributor.ts`: upload paytida har `.mogrt` disk + R2 `templates/{id}/mogrt/{slug}.mogrt` ga; `mogrtKey` DB `metaJson.scenes[].mogrtKey`ga; SSE bosqichlari real vaqtda.
+- `catalog-map.ts`: `mogrtKey` → `mogrtUrl` (`/api/plugin/assets/{id}/mogrt/{slug}`).
+- `plugin.ts`: `GET /assets/:id/mogrt/:slug` — R2 redirect yoki disk fallback (ZIP route'dan OLDIN).
+- `assetflow-catalog.js`: `downloadSceneMogrt()` — `mogrtUrl` bo'lsa faqat shu faylni yuklaydi, kesh bilan.
+- `AssetFlow_Plugin.html`: `mogrtUrl` → `downloadSceneMogrt` → ZIP fallback zanjiri.
+- `host.jsx`: `app.activeViewer` fallback — Timeline comp ochiq bo'lsa ham `no_dest_comp` xatosi tuzatildi.
 
-**M3 — merge (almashtirish o'rniga):**
-- `assetflow-catalog.js` `mergeIntoBrowse` — scene'ga `slug` o'tkaziladi.
-- `AssetFlow_Plugin.html` — `sceneSlugOf` + `mergeMogrtItems`: server ro'yxati (nom/preview/tartib) saqlanadi, keshdan faqat `mogrtPath` biriktiriladi; mos kelmasa eski xulq (kesh ro'yxati). `importedScenes` (s.n) endi barqaror — nomlar almashinmaydi. `applyMogrtItems` + `openPack` ikkala joy yangilandi.
+**SSE upload progress ✅** — `upload-progress.ts` (in-memory pub/sub, 10min TTL, unref); `GET /api/contributor/templates/:id/upload-progress` (auth: cuid capability); receive→sync(82)→db(88)→extract(90-97)→db(98)→done(100); 413/400/500 xatolar bosqich bilan. Studio: XHR 0-80%, server 80-100%, xato toast'da bosqich nomi.
 
-**Test (lokal):** 2-mogrtli ZIP (v1: mp4+png, v2: faqat png) → scenes `previewKey` to'g'ri, disk `scenes/version-01.mp4|png`, scene route 200, katalog enrich `s.preview` URL + `previewKind:image` (v2). Test shablonlar o'chirildi (3×204). Lokal R2 o'chiq (root `.env` da `AWS_ACCESS_KEY_ID=""` bo'sh — apps/api/.env'ni soya qiladi, oldindan mavjud) — R2 thumb branch productionda pack sync bilan bir xil helper.
+**Dashboard professional ✅** — migration `template_usage_counters` (downloadsCount, importsCount); bumpTemplateCounter usage route'larida; studio haqiqiy hisoblagichlar; KPI overview, importlar jadvali, admin xabarlar paneli, mobile responsive.
 
-**Kutilmoqda:** build ✓, JS sintaksis ✓, install-cep ✓ → foydalanuvchi AE'da test qiladi; keyin commit + push + Render deploy; M2 (faqat tanlangan .mogrt yuklash) alohida.
+**Cosmic Light Transitions diagnostikasi:** M2 yo'q edi prod'da (push bo'lmagan). R2'da thumb'lar bor (`scenes/*.png|mp4`), lekin `metaJson.scenes` bo'sh — upload timeout (8 min, outer catch yutgan). Tuzatish: deploy + Re-extract endpoint (ayrí vazifa).
 
-**Status:** COMMIT QILINDI — M1 ✅ M3 ✅
+**Build/test:** `npm run build -w apps/api` ✓; `node --check` barcha JS ✓; `npm run studio:sync` ✓; migration deploy lokal ✓.
+
+**Keyin:** Re-extract endpoint (Cosmic + M1 retroaktiv), Render deploy + migrate, Stripe, email.

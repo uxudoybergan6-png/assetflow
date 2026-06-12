@@ -197,6 +197,7 @@ const AssetFlowCatalog = (() => {
             n: s.n || s.name || u.name,
             aeComp: s.aeComp || s.compName || s.name || s.n || "",
             slug: s.slug || s.previewKey || undefined,
+            mogrtUrl: s.mogrtUrl || undefined,
             meta: s.meta || resLabel,
             ico: s.ico || u.icon || "✦",
             bg: s.bg || u.bg,
@@ -633,6 +634,55 @@ const AssetFlowCatalog = (() => {
     });
   }
 
+  /**
+   * M2: faqat tanlangan sahnaning .mogrt faylini yuklab olib .aep ga
+   * tayyorlaydi — butun ZIP (200MB+) yuklanmaydi. Fayl
+   * assetflow_<id>_mogrts/<slug>.mogrt da keshlanadi.
+   */
+  async function downloadSceneMogrt(templateId, scene, opts) {
+    if (typeof window.__adobe_cep__ === "undefined") {
+      throw new Error("Faqat After Effects ichida import");
+    }
+    if (!scene || !scene.mogrtUrl) {
+      throw new Error("Sahnada MOGRT URL yo'q");
+    }
+    const fs = require("fs");
+    const path = require("path");
+    const os = require("os");
+    const child = require("child_process");
+    const { Buffer: NodeBuffer } = require("buffer");
+    const slug = mogrtSlug(scene.slug || scene.aeComp || scene.n);
+    const baseDir = downloadDir() || os.tmpdir();
+    const dir = path.join(baseDir, `assetflow_${templateId}_mogrts`);
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+    } catch {}
+    const out = path.join(dir, `${slug}.mogrt`);
+    if (!cachedFileOk(fs, out, 0)) {
+      if (typeof showToast === "function") showToast("Sahna yuklanmoqda…");
+      const onProgress = opts && opts.onProgress;
+      await downloadUrlToFile(scene.mogrtUrl, out, onProgress);
+      if (!cachedFileOk(fs, out, 0)) {
+        try {
+          fs.rmSync(out, { force: true });
+        } catch {}
+        throw new Error("MOGRT yuklanmadi yoki fayl bo'sh");
+      }
+      // Usage hisobi — faqat haqiqiy (keshsiz) yuklab olishda
+      if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
+        try {
+          await AssetFlowAccount.recordDownload(templateId);
+          if (typeof refreshAccountUi === "function") refreshAccountUi();
+        } catch (e) {
+          console.warn("usage/download", e);
+        }
+      }
+    }
+    return extractMogrtFileToAep(
+      fs, path, child, NodeBuffer, baseDir, templateId, out
+    );
+  }
+
   async function downloadPackToTemp(templateId, fileName, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
       throw new Error("Faqat After Effects ichida import");
@@ -764,6 +814,7 @@ const AssetFlowCatalog = (() => {
     refreshBrowse,
     mergeIntoBrowse,
     downloadPackToTemp,
+    downloadSceneMogrt,
     mogrtCompName,
     cachedMogrtItems,
     extractMogrtItem,
