@@ -30,6 +30,7 @@ import {
   deleteTemplateAssets,
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
+import { extractMogrtsFromZip } from "../lib/mogrt-extract.js";
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
@@ -360,6 +361,22 @@ contributorRouter.post(
             console.error(`S3 upload error (${kind}):`, s3Err);
           }
         }
+      }
+    }
+
+    // ZIP pack bo'lsa — .mogrt sahna nomlari ni metaJson.scenes ga yoz
+    if (pack?.path && path.extname(pack.path).toLowerCase() === ".zip") {
+      try {
+        const scenes = await extractMogrtsFromZip(pack.path);
+        if (scenes.length > 0) {
+          const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
+          await prisma.contributorTemplate.update({
+            where: { id },
+            data: { metaJson: asMetaJson({ ...existingMeta, scenes }) },
+          });
+        }
+      } catch (mogrtErr) {
+        console.warn("[mogrt-extract] xato:", mogrtErr);
       }
     }
 
