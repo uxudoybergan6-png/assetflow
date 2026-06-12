@@ -13,3 +13,5 @@
 **Test (lokal):** 2-mogrtli ZIP (v1: mp4+png, v2: faqat png) → scenes `previewKey` to'g'ri, disk `scenes/version-01.mp4|png`, scene route 200, katalog enrich `s.preview` URL + `previewKind:image` (v2). Test shablonlar o'chirildi (3×204). Lokal R2 o'chiq (root `.env` da `AWS_ACCESS_KEY_ID=""` bo'sh — apps/api/.env'ni soya qiladi, oldindan mavjud) — R2 thumb branch productionda pack sync bilan bir xil helper.
 
 **Kutilmoqda:** build ✓, JS sintaksis ✓, install-cep ✓ → foydalanuvchi AE'da test qiladi; keyin commit + push + Render deploy; M2 (faqat tanlangan .mogrt yuklash) alohida.
+
+**Status:** COMMIT QILINDI — M1 ✅ M3 ✅
