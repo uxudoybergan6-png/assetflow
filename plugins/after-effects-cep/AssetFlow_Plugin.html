@@ -1825,6 +1825,11 @@ async function importPackFileToAE(pack){
       importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
     }catch(e){
       hideProgress();
+      if(e&&e.mogrtItems){
+        // Zip ichida bir nechta .mogrt — butun packni emas, tanlab import qilinadi
+        applyMogrtItems('__srv_'+pack.serverTemplateId,e.mogrtItems);
+        return 'mogrt:picker';
+      }
       showToast(e.message||'Server pack yuklanmadi');
       return '';
     }
@@ -1847,9 +1852,19 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   if(pack?.serverTemplateId&&typeof AssetFlowCatalog!=='undefined'){
     try{
       showProgress(0,'Tayyorlanmoqda…');
-      importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
+      if(scene?.mogrtPath&&AssetFlowCatalog.extractMogrtItem){
+        // MOGRT-pack elementi — zip keshidan tanlangan .mogrt'ni extract qilamiz
+        importPath=await AssetFlowCatalog.extractMogrtItem(pack.serverTemplateId,scene.mogrtPath);
+      }else{
+        importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
+      }
     }catch(e){
       hideProgress();
+      if(e&&e.mogrtItems){
+        // Zip ichida bir nechta .mogrt — sahnalar ro'yxatiga aylantirib tanlatamiz
+        applyMogrtItems(packLabel,e.mogrtItems);
+        return JSON.stringify({ok:false,mogrtPicker:true});
+      }
       showToast(e.message||'Server pack yuklanmadi');
       return '';
     }
@@ -2400,11 +2415,42 @@ function renderSceneCard(s,i,asset,slotW){
   </div>`;
 }
 
+/** MOGRT-pack elementlari → sahna kartalari (thumb.png/thumb.mp4 .mogrt ichidan) */
+function mogrtScenesFromItems(pack,items){
+  return items.map(it=>({
+    n:it.name,
+    aeComp:'',
+    meta:'MOGRT',
+    ico:pack.ico||'✦',
+    bg:pack.bg,
+    preview:it.thumbMp4||it.thumbPng||undefined,
+    previewKind:(!it.thumbMp4&&it.thumbPng)?'image':undefined,
+    mogrtPath:it.path
+  }));
+}
+
+/** Zip ichidan topilgan .mogrt'larni pack sahnalariga yozib, detalni yangilaydi */
+function applyMogrtItems(packKey,items){
+  const pack=packs[packKey];
+  if(!pack||!items||!items.length)return;
+  pack.scenes=mogrtScenesFromItems(pack,items);
+  pack.mogrtScenesLoaded=true;
+  if(currentPackName===packKey)openPack(packKey);
+  showToast('Pack ichida '+items.length+' ta MOGRT bor — sahnani tanlab import qiling');
+}
+
 function openPack(name){
   const pack=packs[name];
   if(!pack){showToast('Pack not found');return;}
   if(pack.server&&!packCanAeImport(pack)){
     showToast('Pack (.aep) yo\'q — Studio\'da contributor loyiha faylini yuklashi kerak');
+  }
+  // MOGRT-pack keshi ochilgan bo'lsa — sahnalar o'rniga .mogrt elementlar (sync, yuklamaydi)
+  if(IS_CEP&&pack.server&&pack.serverTemplateId&&!pack.mogrtScenesLoaded&&typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.cachedMogrtItems){
+    try{
+      const items=AssetFlowCatalog.cachedMogrtItems(pack.serverTemplateId);
+      if(items.length){pack.scenes=mogrtScenesFromItems(pack,items);pack.mogrtScenesLoaded=true;}
+    }catch(e){console.warn('mogrt cache',e);}
   }
   const asset=assets.find(x=>x.n===name);
   currentPackName=name;
@@ -2455,8 +2501,8 @@ async function importSelectedScene(){
   if(selectedSceneIdx<0||!currentPackName)return;
   const pack=packs[currentPackName];
   const scene=pack.scenes[selectedSceneIdx];
-  await importSceneWithMode(pack,scene,currentPackName,selectedDropMode);
-  if(selectedDropMode==='timeline') closePack();
+  const res=await importSceneWithMode(pack,scene,currentPackName,selectedDropMode);
+  if(selectedDropMode==='timeline'&&res!=='mogrt-picker') closePack();
 }
 
 async function importSceneWithMode(pack,scene,packName,mode){
@@ -2502,6 +2548,9 @@ async function importSceneWithMode(pack,scene,packName,mode){
         }else{
           showToast('✓ Pack import qilindi'+(data.timelineReason?': '+data.timelineReason:''));
         }
+      }else if(data?.mogrtPicker){
+        // MOGRT-pack aniqlandi — sahna ro'yxati yangilandi, foydalanuvchi tanlaydi
+        return 'mogrt-picker';
       }else{
         const msg=data?.message||raw||'noma\'lum';
         if(String(msg).indexOf('Comp topilmadi')===0){
@@ -2535,8 +2584,8 @@ async function downloadScene(name,ico,mode='timeline'){
   const pack=packs[currentPackName];
   const scene=pack?.scenes.find(s=>s.n===name)||pack?.scenes[selectedSceneIdx];
   if(!scene)return;
-  await importSceneWithMode(pack,scene,currentPackName,mode);
-  if(mode==='timeline') closePack();
+  const res=await importSceneWithMode(pack,scene,currentPackName,mode);
+  if(mode==='timeline'&&res!=='mogrt-picker') closePack();
 }
 
 function parseSceneDragData(e){
@@ -2651,6 +2700,10 @@ async function downloadAll(n){
     try{
       showToast('AE ga import qilinmoqda…');
       const result=await importPackFileToAE(p);
+      if(result==='mogrt:picker'){
+        // MOGRT tanlash ro'yxati ochildi — detal ochiq qoladi
+        return;
+      }
       if(result.indexOf('ok:')===0){
         markPackDownloaded();
         showToast('✓ "'+n+'" AE projectga import qilindi');

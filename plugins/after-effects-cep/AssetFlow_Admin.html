@@ -491,7 +491,7 @@ select option{background:#222}
           <button class="btn-ghost" onclick="adminResetFolder()">Standart</button>
         </div>
         <button class="admin-folder-save" id="adminFolderSave" onclick="adminSaveFolder()">💾 Saqlash</button>
-        <div class="admin-folder-hint">AE Admin plagindan yuklangan pack (.aep + footage) va kesh shu papkada saqlanadi.</div>
+        <div class="admin-folder-hint">AE Admin plagindan yuklangan pack (.aep/.mogrt + footage) va kesh shu papkada saqlanadi.</div>
         <div class="admin-folder-actions" style="margin-top:8px">
           <button class="btn-ghost" onclick="adminClearCache()">🧹 Keshni tozalash</button>
         </div>
@@ -561,6 +561,60 @@ function unzipTo(child, zipPath, destDir) {
     // macOS AppleDouble (._*) va __MACOSX papkasini chiqarmaymiz — AE ularni o'qiy olmaydi
     child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', destDir, '-x', '__MACOSX/*', '._*', '*/._*'], { timeout: 120000 });
   }
+}
+
+/** Papkada (rekursiv) kengaytma bo'yicha birinchi fayl ('' = topilmadi) */
+function findByExtIn(fs, path, dir, ext) {
+  let entries;
+  try { entries = fs.readdirSync(dir); } catch (e) { return ''; }
+  for (const f of entries) {
+    if (f.indexOf('._') === 0 || f === '__MACOSX' || f === '.DS_Store') continue;
+    const p = path.join(dir, f);
+    try {
+      if (fs.statSync(p).isDirectory()) {
+        const r = findByExtIn(fs, path, p, ext);
+        if (r) return r;
+      } else if (f.toLowerCase().endsWith(ext)) return p;
+    } catch (e) {}
+  }
+  return '';
+}
+
+/** ZIP bo'lmagan kengaytmali arxivni ochish (Expand-Archive .zip talab qiladi) */
+function unzipAnyTo(fs, child, srcPath, destDir) {
+  if (IS_WIN && !/\.zip$/i.test(srcPath)) {
+    const tmpZip = srcPath + '.afz.zip';
+    fs.copyFileSync(srcPath, tmpZip);
+    try { unzipTo(child, tmpZip, destDir); }
+    finally { try { fs.rmSync(tmpZip, { force: true }); } catch (e) {} }
+  } else {
+    unzipTo(child, srcPath, destDir);
+  }
+}
+
+/** project.aegraphic → .aep: PK (zip) bo'lsa ichidan .aep, aks holda RIFX — rename */
+function aegraphicToAepIn(fs, path, child, dir, aegraphicPath) {
+  const g = aegraphicPath || findByExtIn(fs, path, dir, '.aegraphic');
+  if (!g) return '';
+  const { Buffer: NodeBuffer } = require('buffer');
+  const head = NodeBuffer.alloc(2);
+  const fd = fs.openSync(g, 'r');
+  fs.readSync(fd, head, 0, 2, 0);
+  fs.closeSync(fd);
+  if (head[0] === 0x50 && head[1] === 0x4b) {
+    unzipAnyTo(fs, child, g, dir);
+    return findByExtIn(fs, path, dir, '.aep');
+  }
+  const aep = path.join(path.dirname(g), 'mogrt_TEMP.aep');
+  fs.renameSync(g, aep);
+  return aep;
+}
+
+/** .mogrt → .aep (ikki bosqich: mogrt zip → project.aegraphic → .aep) */
+function mogrtToAepIn(fs, path, child, mogrtPath, destDir) {
+  fs.mkdirSync(destDir, { recursive: true });
+  unzipAnyTo(fs, child, mogrtPath, destDir);
+  return aegraphicToAepIn(fs, path, child, destDir, '');
 }
 
 /** Cross-platform zip (entries — cwd ichidagi nisbiy yo'llar) */
@@ -920,7 +974,7 @@ function renderCard(t) {
   const scenes = (() => {
     const raw = t.metaJson || {};
     const sc = Array.isArray(raw.scenes) ? raw.scenes : [];
-    return sc.length ? sc.length + ' ta sahna' : (t.assets?.pack ? '.aep bor' : 'sahna yo\'q');
+    return sc.length ? sc.length + ' ta sahna' : (t.assets?.pack ? '.aep/.mogrt bor' : 'sahna yo\'q');
   })();
   return `<div class="tpl-card" id="card-${t.id}">
     <div class="tpl-row" onclick="toggleDetail('${t.id}')">
@@ -1664,6 +1718,8 @@ async function importPackToAE(id) {
     // 1 — Unzip (cross-platform)
     try { unzipTo(child, zipPath, tmpDir); } catch(e) {}
     let aepPath = '';
+    const mogrtPaths = [];
+    let aegraphicPath = '';
     const walkDir = dir => {
       for (const f of fs.readdirSync(dir)) {
         // macOS AppleDouble (._foo) va yashirin/__MACOSX fayllarni o'tkazamiz
@@ -1671,13 +1727,33 @@ async function importPackToAE(id) {
         const p = path.join(dir, f);
         try {
           if (fs.statSync(p).isDirectory()) walkDir(p);
-          else if (f.toLowerCase().endsWith('.aep') && !aepPath) aepPath = p;
+          else {
+            const lf = f.toLowerCase();
+            if (lf.endsWith('.aep') && !aepPath) aepPath = p;
+            else if (lf.endsWith('.mogrt')) mogrtPaths.push(p);
+            else if (lf.endsWith('.aegraphic') && !aegraphicPath) aegraphicPath = p;
+          }
         } catch(e) {}
       }
     };
     walkDir(tmpDir);
-    if (!aepPath) throw new Error('.aep topilmadi — zip ichida .aep fayl bolishi kerak');
-    steps[1] = { state: 'ok', text: '✓ Unzip: ' + path.basename(aepPath) };
+    let mogrtNote = '';
+    if (!aepPath && (mogrtPaths.length || aegraphicPath)) {
+      // MOGRT pack: birinchi .mogrt'ni .aep ga ochamiz (pack o'zi yakka .mogrt
+      // bo'lsa, u allaqachon ochilgan — ichidan .aegraphic chiqqan)
+      mogrtPaths.sort();
+      steps[1] = { state: 'run', text: 'MOGRT → .aep ochilmoqda…' };
+      log();
+      if (mogrtPaths.length) {
+        aepPath = mogrtToAepIn(fs, path, child, mogrtPaths[0], path.join(tmpDir, 'af_mogrt_0'));
+        mogrtNote = ' · MOGRT pack (' + mogrtPaths.length + ' ta)';
+      } else {
+        aepPath = aegraphicToAepIn(fs, path, child, tmpDir, aegraphicPath);
+        mogrtNote = ' · MOGRT';
+      }
+    }
+    if (!aepPath) throw new Error('.aep yoki .mogrt topilmadi — zip ichida .aep yoki .mogrt bo\'lishi kerak');
+    steps[1] = { state: 'ok', text: '✓ Unzip: ' + path.basename(aepPath) + mogrtNote };
     steps[2] = { state: 'run', text: 'AE da loyiha ochilmoqda…' };
     log();
 

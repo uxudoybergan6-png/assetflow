@@ -1,14 +1,14 @@
-# SESSION-REPORT — 2026-06-11 (.mogrt support qo'shildi)
+# SESSION-REPORT — 2026-06-12 (.mogrt pack support, testdan o'tdi)
 
-**Topilma:** .mogrt = ZIP (project.aegraphic + definition.json + thumb). Yangi AE'larda `project.aegraphic` O'ZI ham ZIP (ichida asl RIFX .aep) — ikkala holat qo'llanadi. AE'da dialogsiz mogrt-import API yo'q → extract CEP tomonda (Node unzip, .zip precedenti), host.jsx mavjud .aep yo'li o'zgarmagan.
+**Natija:** ZIP ichida papka nomi ixtiyoriy bo'lgan .mogrt pack to'liq ishlaydi. AE'da 6 ta sahna kartasi video preview bilan chiqdi, tanlangan element import qilindi — test o'tdi.
 
 **O'zgarishlar:**
-- `assetflow-catalog.js` — `downloadPackToTemp` mogrt branch: unikal papka `assetflow_mogrt_{id}_{ts}` (har importda yangi — eski importlar footage yo'llari buziladi), nested-zip detect (PK signature), `definition.json` → master comp nomi (`sourceInfoLocalized.en_US.name` || `capsuleName`), `mogrtCompName()` export.
-- `AssetFlow_Plugin.html` — import cfg'ga mogrt comp hint (`pushAlt`); `deleteDownloadedTemplate` keshda `.mogrt` + mogrt papkalar tozalanadi.
-- `host.jsx` — 2 himoya guard (.mogrt yetib kelsa aniq xabar; import mantig'i tegmagan).
-- `template-files.ts`, `s3.ts` — pack kengaytmalariga `.mogrt` (eski .aep/.zip saqlanadi).
-- `contributor-views.js` (3 nusxa, MD5 teng) — upload faqat `.mogrt` (accept, validatsiya, matnlar).
+- `assetflow-catalog.js` — `listEntriesInZip(child, zipPath, ext)`: `unzip -Z1` bilan ZIP entry yo'llari kengaytma bo'yicha filterlanadi (papka nomi muhim emas; `__MACOSX/` va `._*` chiqariladi). ZIP ochilishdan OLDIN entry ro'yxati olinadi, keyin `path.join(dir, entry)` bilan disk yo'liga aylantiriladi. `findAllFilesByExtInDir` fallback sifatida qoladi. `mogrtItemsFromDir`: har `.mogrt` ichidan `thumb.png`/`thumb.mp4` `__af_thumbs/<slug>/` ga bir marta chiqaradi. `extractMogrtFileToAep`: slug+ts unikal papka, `aegraphic` nested-ZIP yoki RIFX ikkala holat.
+- `AssetFlow_Plugin.html` — `mogrtScenesFromItems`: har element sahna kartasiga `thumb.mp4` (video) yoki `thumb.png` (image) preview bilan; `applyMogrtItems`; `openPack` keshdan sync yuklaydi. `scene.mogrtPath` → `extractMogrtItem` → import. Picker ochilganda detal yopilmaydi.
+- `AssetFlow_Admin.html` — `mogrtToAepIn`/`aegraphicToAepIn` helperlar; pack ochilganda `.mogrt` topilsa `.aep` ga o'girib AE'da ko'rsatadi.
+- `contributor-views.js` (3 nusxa) — upload `.mogrt` YOKI `.zip` (ichida `.mogrt`).
+- `s3.ts`, `template-files.ts` — pack kengaytmalariga `.mogrt`.
 
-**Tekshirildi:** `tsc` toza; `node --check` toza; 2 haqiqiy .mogrt bilan e2e extract testi o'tdi (RIFX .aep + to'g'ri comp nomi chiqdi); studio:sync + install-cep.sh bajarildi.
+**Tekshirildi:** `node --check` + inline-script parse toza; real kesh (6 mogrt, `cmq9sowil...`) bilan integratsion test — 6/6 element video preview bilan, ZIP-branch throw to'g'ri, extract RIFX `.aep` + comp nomi; AE'da jonli import muvaffaqiyatli; studio:sync + install-cep.sh bajarildi.
 
-**Kutilmoqda:** AE ichida jonli import testi (Browse → Sync → mogrt shablonni import); Render deploy (API push qilinmagan); commit yo'q (so'ralmagan).
+**Kutilmoqda:** Render/Vercel deploy (push qilingan); 3b server-side scene extract API'da (R2 ga thumb.mp4 — alohida vazifa).

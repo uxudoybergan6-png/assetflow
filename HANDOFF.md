@@ -237,6 +237,10 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 7. **Orphan message threadlar (MED)** — shablon o'chirilganda `StudioMessageThread.templateId → NULL` (SetNull), thread + xabarlar qoladi. Tozalash yoki arxivlash hali yo'q.
 8. **Plugin stale `downloaded[]` (LOW)** — shablon serverda o'chsa ham plugin `prefs.json` dagi `downloaded[]` va lokal `.aep`/unzip cache foydalanuvchi diskida qoladi; Sync bilan sinxronlanmaydi.
 
+### Claude Code sessiyasida qilingan (2026-06-12)
+
+- **.mogrt pack support** — ZIP ichidan papka nomidan qat'iy nazar `.mogrt` topish (`unzip -Z1` + kengaytma filter), har `.mogrt` ichidan video preview (`thumb.mp4`) va thumbnail (`thumb.png`) extraction, bir nechta `.mogrt` bo'lsa tanlab import (sahna kartalari UI). Contributor upload `.zip` ham qabul qiladi. Admin pack tekshiruvi `.aep` va `.mogrt` ni qo'llab-quvvatlaydi. **2026-06-12, testdan o'tdi.**
+
 ### Claude Code sessiyasida qilingan (2026-06-11)
 
 - **Plugin katalog muammosi hal** — AE plugin "Hali shablon yo'q" sababi: o'rnatilgan nusxa prefs'ida (`assetflow-data/prefs.json`) `client.apiBaseUrl` eski `http://localhost:4000` bo'lib qolgan edi → Render URL'ga almashtirildi. `AssetFlow_Plugin.html` dagi dublikat `assetflow-catalog.js` script tegi olib tashlandi (asl tegi fayl oxirida bor edi). Plugin `install-cep.sh` bilan qayta o'rnatildi.
@@ -266,4 +270,4 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ---
 
-*Yangilangan: 2026-06-11 — Shablon o'chirishda R2 + disk tozalash (fail-closed, production'da tasdiqlandi); Search tugma, footer timeline mode, rootFolder tekshiruvi, redirect protokoli va import papka nomi tuzatildi (testdan o'tdi); avvalroq: plugin katalog, token yo'qolish bug'i (persistUserPrefs), fetchMe retry, usage recording.*
+*Yangilangan: 2026-06-12 — .mogrt pack support: ZIP ichidan papka nomidan qat'iy nazar topish, video preview, tanlab import (testdan o'tdi); avvalroq (2026-06-11): shablon o'chirishda R2 + disk tozalash, Search, footer timeline mode, rootFolder, redirect, import papka nomi.*
