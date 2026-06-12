@@ -178,21 +178,37 @@ export function s3UploadKeyForFile(
   return `templates/${templateId}/${kind}${useExt}`;
 }
 
-/** Lokal faylni S3/R2 ga yuklash */
+/**
+ * Lokal faylni S3/R2 ga STREAM orqali yuklash — faylni xotiraga to'liq
+ * o'qimasdan (katta packlar uchun OOM xavfini kamaytiradi). ContentLength
+ * stat'dan beriladi, shunda stream body uchun ham Content-Length sarlavhasi
+ * to'g'ri qo'yiladi. Xato bo'lsa aniq log chiqarib, qayta otadi (yutmaydi).
+ */
 export async function uploadFileToS3(
   localPath: string,
   s3Key: string,
   contentType: string
 ): Promise<string> {
-  const body = fs.readFileSync(localPath);
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: s3Key,
-      Body: body,
-      ContentType: contentType,
-    })
-  );
+  const contentLength = fs.statSync(localPath).size;
+  const body = fs.createReadStream(localPath);
+  try {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: s3Key,
+        Body: body,
+        ContentType: contentType,
+        ContentLength: contentLength,
+      })
+    );
+  } catch (err) {
+    console.error(
+      `[s3] uploadFileToS3 muvaffaqiyatsiz — key=${s3Key} size=${contentLength}B src=${localPath}:`,
+      err
+    );
+    body.destroy();
+    throw err;
+  }
   return getPublicUrl(s3Key);
 }
 
