@@ -391,7 +391,7 @@ pluginRouter.post("/login", loginLimiter, async (req, res) => {
 });
 
 /** Joriy foydalanuvchi + tarif + limitlar */
-pluginRouter.get("/me", requireAuth, async (req, res) => {
+pluginRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
   const profile = await ensurePluginProfile(req.user!.userId);
   if (profile.status === PluginAccountStatus.BLOCKED) {
     res.status(403).json({ error: "Hisob bloklangan", code: "ACCOUNT_BLOCKED" });
@@ -409,7 +409,7 @@ const heartbeatSchema = z.object({
   aeVersion: z.string().optional(),
 });
 
-pluginRouter.post("/heartbeat", usageLimiter, requireAuth, async (req, res) => {
+pluginRouter.post("/heartbeat", usageLimiter, requireAuth, async (req: Request, res: Response) => {
   const body = heartbeatSchema.safeParse(req.body);
   const profile = await ensurePluginProfile(req.user!.userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {

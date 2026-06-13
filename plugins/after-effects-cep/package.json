@@ -4,6 +4,6 @@
   "private": true,
   "description": "After Effects CEP extension — asset marketplace panel",
   "scripts": {
-    "build": "node scripts/build.js"
+    "build": "echo \"CEP plugin: statik fayllar — scripts/install-cep.sh bilan o'rnatiladi, build kerak emas\""
   }
 }

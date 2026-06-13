@@ -1,10 +1,11 @@
 import { Router } from "express";
+import type { Request, Response } from "express";
 import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 
 export const usersRouter = Router();
 
-usersRouter.get("/downloads", requireAuth, async (req, res) => {
+usersRouter.get("/downloads", requireAuth, async (req: Request, res: Response) => {
   const downloads = await prisma.download.findMany({
     where: { userId: req.user!.userId },
     include: { asset: true },

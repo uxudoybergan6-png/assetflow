@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import Stripe from "stripe";
 import { prisma, SubscriptionStatus } from "@creative-tools/database";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
