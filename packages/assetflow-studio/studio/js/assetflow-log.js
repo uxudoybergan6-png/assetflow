@@ -66,9 +66,11 @@ const AssetFlowLog = (() => {
   }
 
   async function pushServer(entry) {
+    const auth = authHeader();
+    if (!auth.Authorization) return; // token yo'q — server push'ni o'tkazib yubor
     const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeader() },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify(entry),
     });
     if (!res.ok) throw new Error("log push failed");

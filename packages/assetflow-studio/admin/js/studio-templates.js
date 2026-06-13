@@ -237,7 +237,6 @@ const StudioTemplates = (() => {
         if (typeof syncRejectReasons === "function") syncRejectReasons();
       } else {
         await loadForContributor();
-        await loadPluginAnalytics();
       }
       return true;
     } catch (e) {
