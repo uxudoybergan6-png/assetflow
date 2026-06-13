@@ -1,17 +1,20 @@
-# SESSION REPORT — 2026-06-13 (kech) — Production deploy debugging ✅
+# SESSION REPORT — 2026-06-13 (kech-7) — LOW bug fixes ✅
 
 ## Nima qilindi
-Push qilingach Render/Vercel'da chiqqan real production xatolar ketma-ket hal qilindi (har biri commit + push, deploy tasdiqlangan):
+8 ta LOW muammo tuzatildi (commit `6a7057a`). `npm run build -w apps/api` toza, migration lokal DB ga qo'llanildi, CEP qayta o'rnatildi.
 
-- **Render build "status 2"** (`7940766`,`a4fe937`): TS `req`/`res` aniq tip + asl sabab `@types/*`+`typescript` `devDependencies`→`dependencies` (Render prod install devDeps'ni o'tkazib yuborardi). `render.yaml --include=dev`, no-op build skriptlar.
-- **CORS wildcard** (`b9f3ec3`): `CORS_ORIGIN=*` ishlamasdi → `index.ts` callback `*`/bo'sh→hammaga, URL→aniq, vergulli→ro'yxat.
-- **Studio `localhost:4000` fallback** (`70a2a27`): 5 fayl last-resort fallback → production API URL.
-- **Logs 401 + analytics 403** (`66b8bdd`): `pushServer` token yo'q bo'lsa skip; contributor `init` else'dan admin-only `loadPluginAnalytics()` olib tashlandi.
-- **Render OOM 512MB** (`74509a8`): AWS SDK v3 checksum stream'ni xotiraga yig'ardi → S3Client `WHEN_REQUIRED` + `uploadFileToS3`→`@aws-sdk/lib-storage` multipart `Upload` (~32MB cho'qqi).
-- **Vercel "Blocked"** (`21f63b6`): commit'dagi `Co-Authored-By: Claude` Hobby team uchun begona muallif → bloklar edi. Bo'sh trigger commit + repo public → ishladi.
+- **Toast `__srv_<id>`** — `p.displayName || n` (toast), `asset.displayName || asset.n` (drop-zone).
+- **Stale `downloaded[]` prune** — `refreshBrowse` dan keyin server'dan o'chirilgan `__srv_*` kalitlar `downloaded`+`importedScenes`dan tozalanadi + `savePrefs()`.
+- **DB perf indices** — `User.role`, `PluginProfile.lastSeenAt`, `ContributorTemplate(reviewStatus,published,updatedAt)`. Migration `20260613120000_add_perf_indices` lokal DB ga qo'llanildi.
+- **Dead code** — `switchNav()`, `trendSearch()` `AssetFlow_Plugin.html`dan o'chirildi.
+- **O'zbekcha UI** — "Drop assets here ↓", "Drop asset here", "Video Templates" → O'zbekcha.
+- **ZXP script** — `plugins/after-effects-cep/scripts/build-zxp.sh` yaratildi.
+- **`recordDownload` kvota** — ZIP/mogrt ochilgandan KEYIN hisoblanadi (avval false count bo'lardi).
+- **Kesh size tekshiruvi** — `st.size !== expectedSize` → `st.size < expectedSize * 0.95`.
 
 ## Holat
-Render API current (`74509a8`), Vercel Studio deploy ishlayapti, konsol 401/403/CORS xatolar ketdi. **Bundan keyin commit'ga `Co-Authored-By` yozilmaydi.**
+Commit `6a7057a` — push kutilmoqda. HANDOFF.md yangilandi (LOW items ✅).
 
-## Ochiq (MED/LOW)
-Stripe Pro tarif, upload DB retry, email bildirishnoma, orphan threadlar, `execFileSync` event-loop bloklash (async'ga), ZXP, payout, stale `downloaded[]`.
+## Ochiq
+- MED: Stripe Pro (production), upload DB retry, email, orphan threadlar, `execFileSync` async.
+- LOW: Contributor payout, Root `.env` AWS bo'sh (faqat lokal).

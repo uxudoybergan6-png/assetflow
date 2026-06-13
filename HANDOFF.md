@@ -251,15 +251,15 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ### 🟢 LOW — kechiktirish mumkin
 
-8. **ZXP packaging**: CEP extension faqat lokal `install-cep.sh` bilan o'rnatiladi. Tarqatish uchun ZXP + Adobe Exchange tayyorlash kerak.
+8. ✅ **ZXP packaging** (HAL QILINDI 2026-06-13): `plugins/after-effects-cep/scripts/build-zxp.sh` — `ZXPSignCmd` auto-detect, self-signed sertifikat yaratish, stage + imzolash. Commit `6a7057a`.
 
 9. **Contributor payout**: Hech qanday payout tracking yo'q. Kelajakda: `earningsTotal`, Stripe Connect yoki to'lov so'rovi UI.
 
-10. **Plugin stale `downloaded[]`** (LOW): Shablon serverda o'chsa ham `prefs.json` `downloaded[]` va lokal cache qoladi. Sync bilan sinxronlanmaydi.
+10. ✅ **Plugin stale `downloaded[]`** (HAL QILINDI 2026-06-13): `refreshBrowse` dan keyin server'dan o'chirilgan `__srv_*` kalitlari `downloaded` va `importedScenes` dan tozalanadi. `assetflow-catalog.js`. Commit `6a7057a`.
 
 11. **Root `.env` `AWS_ACCESS_KEY_ID=""`** (LOW, lokal): Root `.env` bo'sh qiymat `apps/api/.env`ni soya qiladi — R2 yuklab olish lokal testda ishlamaydi (production'da muammo yo'q).
 
-12. **Toast `__srv_<id>`** (LOW): Ba'zi toast'larda `packName` sifatida `__srv_<id>` ko'rinadi (to'liq-pack import, `downloadAll`) — past ustuvorlik. (Featured strip endi `displayName` ko'rsatadi — `renderNoticeItem` tuzatildi.)
+12. ✅ **Toast `__srv_<id>`** (HAL QILINDI 2026-06-13): `AssetFlow_Plugin.html` — toast `p.displayName || n`, drop-zone label `asset.displayName || asset.n`. Commit `6a7057a`.
 
 ### Doimiy ehtiyot bo'lish kerak
 
@@ -381,4 +381,20 @@ Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, pus
 
 ---
 
-*Yangilangan: 2026-06-13 (kech-6) — Production deploy debugging ✅: Render build fix (@types→dependencies), CORS wildcard, Studio localhost fallback, logs 401 + analytics 403, **Render OOM fix (multipart S3 Upload)**, Vercel Co-Authored-By bloklash hal. Render API current (`74509a8`), Vercel Studio deploy ishlayapti, push bajarildi. **Bundan keyin commit'ga `Co-Authored-By` yozilmaydi.** Ochiq (MED/LOW): Stripe Pro tarif, upload DB retry, email bildirishnoma, orphan threadlar, `execFileSync` event-loop bloklash (async'ga o'tkazish), ZXP, payout, stale `downloaded[]`.*
+### Claude Code sessiyasida qilingan (2026-06-13, kech-7) — LOW bug fixes ✅
+
+8 ta LOW muammo tuzatildi (commit `6a7057a`):
+
+- ✅ **Toast `__srv_<id>`** — `p.displayName || n`; drop-zone label ham `asset.displayName || asset.n`.
+- ✅ **Stale `downloaded[]` prune** — `refreshBrowse` dan keyin server'dan o'chirilgan kalitlar `downloaded`+`importedScenes`dan tozalanadi.
+- ✅ **DB perf indices** — `User.role`, `PluginProfile.lastSeenAt`, `ContributorTemplate(reviewStatus,published,updatedAt)` (migration `20260613120000_add_perf_indices`, lokal DB ga qo'llanildi).
+- ✅ **Dead code** — `switchNav()`, `trendSearch()` o'chirildi (`AssetFlow_Plugin.html`).
+- ✅ **O'zbekcha UI** — "Drop assets here ↓"→"Fayllarni bu yerga tashlang ↓", "Drop asset here"→"Faylni bu yerga tashlang", "Video Templates"→"Shablonlar".
+- ✅ **ZXP script** — `plugins/after-effects-cep/scripts/build-zxp.sh` (ZXPSignCmd, self-signed cert, imzolash).
+- ✅ **`recordDownload` kvota** — ZIP/mogrt ochilgandan KEYIN hisoblanadi (`downloadSceneMogrt` + `downloadPackToTemp`).
+- ✅ **Kesh `size` tekshiruvi** — `st.size !== expectedSize` → `st.size < expectedSize * 0.95` (95% chegara).
+
+**Ochiq LOW:** Contributor payout, Root `.env` AWS bo'sh (lokal).
+**Ochiq MED:** Stripe Pro tarif (production), upload DB retry, email, orphan threadlar, `execFileSync` async.
+
+*Yangilangan: 2026-06-13 (kech-7) — LOW fixes ✅ (commit `6a7057a`). Push kutilmoqda. Ochiq: Stripe, payout, email.*
