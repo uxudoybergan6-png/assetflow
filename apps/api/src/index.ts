@@ -45,11 +45,12 @@ app.use(
       if (!origin || origin === "null" || origin.startsWith("file://")) {
         return callback(null, true);
       }
-      const allowed = process.env.CORS_ORIGIN
-        ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean)
-        : defaultOrigins;
-      // Ruxsat etilmagan origin — CORS sarlavhasi qo'yilmaydi (brauzer bloklaydi),
-      // lekin so'rovni throw qilmaymiz (500 spam bo'lmasin).
+      const raw = process.env.CORS_ORIGIN?.trim();
+      // CORS_ORIGIN=* → hammaga ruxsat (test/staging muhiti)
+      if (!raw || raw === "*") {
+        return callback(null, true);
+      }
+      const allowed = raw.split(",").map((s) => s.trim()).filter(Boolean);
       callback(null, allowed.includes(origin));
     },
     credentials: true,
@@ -134,7 +135,9 @@ function validateEnv() {
   if (!process.env.STRIPE_SECRET_KEY?.trim())
     warnings.push("STRIPE_SECRET_KEY yo'q — to'lov o'chirilgan");
   if (isProd && !process.env.CORS_ORIGIN?.trim())
-    warnings.push("CORS_ORIGIN yo'q — barcha originlarga ruxsat berilmoqda");
+    warnings.push("CORS_ORIGIN yo'q — barcha originlarga ruxsat berilmoqda (production uchun URL ro'yxati tavsiya)");
+  else if (isProd && process.env.CORS_ORIGIN?.trim() === "*")
+    warnings.push("CORS_ORIGIN=* — barcha originlarga ruxsat (faqat test uchun, productga URL ro'yxati tavsiya)");
 
   if (warnings.length) {
     console.warn("[env] Ogohlantirishlar:\n  - " + warnings.join("\n  - "));
