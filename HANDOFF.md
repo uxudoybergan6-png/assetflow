@@ -196,11 +196,12 @@ bash plugins/after-effects-cep/scripts/install-cep.sh
 | Xizmat | URL |
 |--------|-----|
 | API (Render) | https://assetflow-rqbq.onrender.com |
-| Studio (Vercel) | https://assetflow-studio-one.vercel.app |
+| Studio (CF Pages) | https://assetflow-20j.pages.dev |
 | Contributor | …/studio/login.html → …/studio/contributor/ |
 | Admin | …/studio/admin-login.html → …/studio/admin/ |
 
-**Vercel Root Directory:** `packages/assetflow-studio`
+**CF Pages Build command:** `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`
+**CF Pages Output dir:** `packages/assetflow-studio/dist`
 
 **Render env:** `API_PUBLIC_URL`, `ADMIN_URL`, `CORS_ORIGIN`, R2 (`AWS_*`, `S3_ENDPOINT`, `CDN_BASE_URL`).
 

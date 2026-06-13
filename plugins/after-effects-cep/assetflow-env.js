@@ -3,7 +3,7 @@
  */
 window.ASSETFLOW_ENV = (function () {
   const PROD_API = "https://assetflow-rqbq.onrender.com";
-  const PROD_ADMIN = "https://assetflow-studio-one.vercel.app/admin/";
+  const PROD_ADMIN = "https://assetflow-20j.pages.dev/admin/";
   const LOCAL_API = "http://localhost:4000";
   const LOCAL_ADMIN = "http://localhost:3001/";
 

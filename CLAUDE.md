@@ -14,12 +14,13 @@ Sen `/Users/usmonov/Projects/creative-tools-saas` monorepo ustida ishlayapsan. B
 | Xizmat | URL |
 |--------|-----|
 | API (Render) | https://assetflow-rqbq.onrender.com |
-| Studio (Vercel) | https://assetflow-studio-one.vercel.app |
+| Studio (CF Pages) | https://assetflow-20j.pages.dev |
 | Contributor login | …/studio/login.html yoki …/studio/contributor/ |
 | Admin login (brauzer) | …/studio/admin-login.html |
 | Admin panel | …/studio/admin/ |
 
-**Vercel Root Directory:** `packages/assetflow-studio` (boshqa papka bo'lsa 404).
+**CF Pages Build command:** `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`
+**CF Pages Output dir:** `packages/assetflow-studio/dist`
 
 **Render env:** `API_PUBLIC_URL`, `ADMIN_URL`, `CORS_ORIGIN`, R2 (`AWS_*`, `S3_ENDPOINT`, `CDN_BASE_URL`).
 
@@ -115,7 +116,7 @@ npm run demo:clear   # demo shablonlar + xabarlar tozalash
 - Minimal diff, mavjud konventsiyaga mos.
 - Commit faqat foydalanuvchi so'rasa.
 - O'zbekcha UI matnlari.
-- Production URL: `assetflow-rqbq.onrender.com`, Studio: `assetflow-studio-one.vercel.app`.
+- Production URL: `assetflow-rqbq.onrender.com`, Studio: `assetflow-20j.pages.dev`.
 - Har diagnostika/tuzatish tugaganda qisqa natijani `docs/SESSION-REPORT.md` ga yoz (almashtirib): nima qilindi, nima topildi, nima kutilmoqda. Maks 15 qator.
 
 ## Keyingi ustuvor vazifalar

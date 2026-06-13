@@ -11,7 +11,7 @@ Zanjir: **Contributor yuklaydi → Admin moderatsiya qiladi → AE plugin katalo
 | Qism | Holat |
 |------|-------|
 | API (Render) | ✅ Live — https://assetflow-rqbq.onrender.com |
-| Studio + Admin (Vercel) | ✅ Live — https://assetflow-studio-one.vercel.app |
+| Studio + Admin (CF Pages) | ✅ Live — https://assetflow-20j.pages.dev |
 | DB (Neon PostgreSQL) | ✅ Ulangan |
 | Fayl saqlash (Cloudflare R2) | ✅ Ishlaydi |
 | AE CEP plugin | 🟠 Ishlaydi, lekin faqat DEV o'rnatish (ZXP yo'q) |
@@ -36,11 +36,12 @@ huquqiy va infra qismlari to'liq emas — `docs/LAUNCH-PLAN.md` ga qarang.
 | Xizmat | URL |
 |--------|-----|
 | API | https://assetflow-rqbq.onrender.com |
-| Studio (Vercel) | https://assetflow-studio-one.vercel.app |
+| Studio (CF Pages) | https://assetflow-20j.pages.dev |
 | Contributor login | …/studio/login.html → …/studio/contributor/ |
 | Admin login | …/studio/admin-login.html → …/studio/admin/ |
 
-**Vercel Root Directory:** `packages/assetflow-studio` (boshqa papka bo'lsa 404).
+**CF Pages Build command:** `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`
+**CF Pages Output dir:** `packages/assetflow-studio/dist`
 
 ## Lokal ishga tushirish
 

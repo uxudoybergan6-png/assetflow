@@ -1,7 +1,7 @@
 /** Production fallback URL'lar (Render/Vercel env bo'lmasa) */
 export const DEFAULT_API_PUBLIC_URL = "https://assetflow-rqbq.onrender.com";
-export const DEFAULT_ADMIN_URL = "https://assetflow-studio-one.vercel.app/admin/";
-export const DEFAULT_WEB_URL = "https://assetflow-studio-one.vercel.app";
+export const DEFAULT_ADMIN_URL = "https://assetflow-20j.pages.dev/admin/";
+export const DEFAULT_WEB_URL = "https://assetflow-20j.pages.dev";
 
 /** Foydalanuvchi web ilovasi (parol tiklash, checkout return va h.k.) */
 export function getWebUrl(): string {
