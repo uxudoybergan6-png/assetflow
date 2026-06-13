@@ -21,7 +21,7 @@ const StudioTemplates = (() => {
     return (
       (typeof window !== "undefined" &&
         (window.ASSETFLOW_STUDIO?.mediaUrl || window.ASSETFLOW_STUDIO?.apiUrl)) ||
-      "http://localhost:4000"
+      "https://assetflow-rqbq.onrender.com"
     ).replace(/\/$/, "");
   }
 

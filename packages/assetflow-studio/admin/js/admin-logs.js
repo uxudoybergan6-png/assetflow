@@ -107,7 +107,7 @@ async function refreshLogs(showToast) {
 
   let serverOk = false;
   try {
-    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "http://localhost:4000");
+    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "https://assetflow-rqbq.onrender.com");
     const h = await fetch(`${apiBase}/health`);
     serverOk = h.ok;
     if (status) status.textContent = serverOk ? `${apiBase} ulangan` : "server javob bermadi";
@@ -170,7 +170,7 @@ function clearLogs() {
 async function doClearLogs() {
   AssetFlowLog.clear();
   try {
-    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "http://localhost:4000");
+    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "https://assetflow-rqbq.onrender.com");
     await fetch(`${apiBase}/api/logs`, { method: "DELETE" });
   } catch {
     /* */
