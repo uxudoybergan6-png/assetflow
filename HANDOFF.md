@@ -267,6 +267,21 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 - **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
 - `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
 
+### Claude Code sessiyasida qilingan (2026-06-13) — AE Plugin HIGH fixes ✅
+
+- **Plugin sessiya interceptor ✅** (`assetflow-account.js`, `assetflow-catalog.js`): `handleAuthFailure()` — 401/403 da token tozalash + `assetflow:session-expired` CustomEvent → plugin "Sessiya tugadi — qayta kiring" toast + login oynasi avtomatik ochiladi. `fetchCatalog()` ham katalog 401 da event yuboradi.
+- **Boot skeleton + Retry ✅** (`AssetFlow_Plugin.html`): `catalogLoadState` (idle/loading/error/ready); yuklanishda skeleton kartalar + "Server uyg'onmoqda (~60s)" xabari; xatoda ko'zga tashlanadigan **↻ Qayta urinish** tugmasi; filtr nol natija bersa "Filtrlarni tozalash"; shablon haqiqatan yo'q bo'lganda alohida empty state.
+- **Toast navbat + ranglar ✅** (`AssetFlow_Plugin.html`): `showToast(msg,type)` — success/error/warning/info rang (yashil/qizil/sariq/ko'k border-left); navbat tizimi (xabarlar bir-birini bosmaydi). `friendlyError()` — `Failed to fetch`→O'zbekcha, `EvalScript error`→"AE skripti javob bermadi", `HTTP 5xx`→"Server javob bermayapti", 401/403→"Sessiya tugadi".
+- **Download bekor qilish ✅** (`assetflow-catalog.js`, `AssetFlow_Plugin.html`): `cancelDownload()` — Node.js `http.get` stream'ni `req.destroy()` + `ws.destroy()`, qisman faylni o'chiradi; progress'da **Bekor qilish** tugmasi; `beforeunload`'da ham avtomatik bekor qilinadi.
+- **Footer "Import qilish" ✅** (`AssetFlow_Plugin.html`): footer tugmasi "Download" → "Import qilish" (ikkala joy bir xil); hero tugmasi "↓ Hammasini import".
+- **`importedScenes` kalit to'qnashuvi ✅** (`AssetFlow_Plugin.html`): `sceneStateKey(packKey, scene)` → `packKey::slug` kompozit kalit; ikki turli pack'da bir xil sahna nomi bo'lsa ham to'qnashuvdan xoli.
+- **Featured strip `hasPack:false` filtri ✅** (`AssetFlow_Plugin.html`): `getFeaturedAssets` `hasPack:false` shablonlarni ko'rsatmaydi.
+- **Admin "Admin Preview" preset auto-yaratish ✅** (`jsx/host.jsx`, `AssetFlow_Admin.html`): `afEnsureAdminPreviewPreset()` boot'da tekshiradi; yo'q bo'lsa H.264→.mp4 presetdan avto-yaratadi (loyiha `dirty` holatini tiklaydi); yaratib bo'lmasa aniq yo'riqnoma ko'rsatadi.
+- **Admin data-loss himoya ✅** (`jsx/host.jsx`, `AssetFlow_Admin.html`): `afCloseCurrent(force)` `app.project.dirty` tekshiradi + JSON javob; `afCloseCurrentGuarded()` — saqlanmagan ish bor bo'lsa tasdiq dialogi (3 chaqiruv joyi; bekor qilsa import to'xtaydi).
+- **Admin auth markazlashtirildi ✅** (`AssetFlow_Admin.html`): `api()` funktsiyasi login yo'lidan tashqari har 401/403 da `handleAuthError()` chaqiradi — `saveMetadata`, `deleteTemplate` va kelajakdagi barcha yo'llar himoyalangan.
+
+**Commit:** `1e4d0d4` — 6 fayl, +493/-104 qator. Testdan o'tdi.
+
 ### Claude Code sessiyasida qilingan (2026-06-12)
 
 - **.mogrt pack support** — ZIP ichidan papka nomidan qat'iy nazar `.mogrt` topish (`unzip -Z1` + kengaytma filter), har `.mogrt` ichidan video preview (`thumb.mp4`) va thumbnail (`thumb.png`) extraction, bir nechta `.mogrt` bo'lsa tanlab import (sahna kartalari UI). Contributor upload `.zip` ham qabul qiladi. Admin pack tekshiruvi `.aep` va `.mogrt` ni qo'llab-quvvatlaydi. **2026-06-12, testdan o'tdi.**
@@ -307,4 +322,4 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ---
 
-*Yangilangan: 2026-06-12 (kech) — M2 ✅ selective .mogrt download; SSE upload progress ✅; Contributor dashboard professional ✅; host.jsx Timeline comp check fix ✅; migration template_usage_counters. Production deploy kerak (migrate:deploy + Render). Keyingi: Re-extract endpoint (Cosmic fix), Stripe, email.*
+*Yangilangan: 2026-06-13 — Plugin+Admin HIGH fixes ✅ (sessiya interceptor, boot skeleton, toast navbat, download cancel, import label, scene key, featured filter, admin preset auto-create, data-loss guard, admin auth). Commit `1e4d0d4`. Production deploy kerak (push → Render). Keyingi: Stripe Pro tarif, email bildirishnomalar, re-extract endpoint test.*
