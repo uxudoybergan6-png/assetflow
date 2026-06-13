@@ -1,18 +1,23 @@
-# SESSION REPORT — 2026-06-13 (kech-4) — Build fix #2 (commit qilinmagan, test kutilmoqda)
+# SESSION REPORT — 2026-06-13 (kech-5) — Render OOM (512MB) fix
 
 ## Nima qilindi
-`7940766` deploy yana fail bo'ldi — log aniq ko'rsatdi: **`@types/express` production node_modules'da umuman yo'q** (`Could not find declaration file for module 'express'`). `tsc` hech bir handler'da `req`/`res` tipini topa olmadi → barcha TS7006 + TS7016. `render.yaml --include=dev` Render'ning cache'langan production install'i tufayli e'tiborga olinmadi.
+Render'da katta pack yuklashda `Ran out of memory (used over 512MB)` → instance qayta ishga tushardi. Pipeline auditi: multer=diskStorage, unzip=tashqi jarayon, ffmpeg=tashqi — hammasi disk/stream. **Asl sabab: AWS SDK v3 checksum.**
 
-## Asl yechim
-- **`apps/api/package.json`**: barcha `@types/*` (express, node, cors, jsonwebtoken, multer, bcryptjs) + `typescript` → `devDependencies`'dan `dependencies`'ga ko'chirildi. `tsx` devDeps'da qoldi (runtime kerak emas). Endi Render devDeps'ni o'tkazib yuborsa ham, build-critical paketlar doim o'rnatiladi.
-- **`plugin.ts`**: 14 ta handler'ning hammasiga `async (req: Request, res: Response)` aniq tip qo'shildi (defense-in-depth).
-- **`stripe.ts`, `users.ts`**: `import type { Request, Response }` ajratildi (oldingi commit'da), handler tiplangan.
+## Asl sabab
+AWS SDK v3 (`@aws-sdk/client-s3` 3.1057.0) default `requestChecksumCalculation="when_supported"` — `PutObjectCommand` stream body ustidan CRC32 ni OLDINDAN hisoblaydi. Cloudflare R2 stream-trailer checksumni ishonchli qo'llamagani uchun SDK **butun faylni xotiraga yig'adi** → 300MB+ pack 512MB ni yorib o'tadi.
+
+## Yechim — apps/api/src/lib/s3.ts
+- **S3Client**: `requestChecksumCalculation: "WHEN_REQUIRED"` + `responseChecksumValidation: "WHEN_REQUIRED"` (proaktiv checksum buffering o'chadi; R2 uchun Cloudflare tavsiyasi).
+- **uploadFileToS3**: `PutObjectCommand` → `@aws-sdk/lib-storage` `Upload` (multipart). `partSize=8MB`, `queueSize=4` → cho'qqi xotira ≈ 32MB (fayl 3GB bo'lsa ham). `leavePartsOnError:false`.
+- **package.json**: `@aws-sdk/lib-storage ^3.1068.0` qo'shildi.
 
 ## Tekshirildi
-- `npm run build -w apps/api` → EXIT 0.
-- `npm ls @types/express --omit=dev` → `@creative-tools/api` prod-dep sifatida resolve qiladi (production install simulyatsiyasi). `typescript` ham xuddi shunday.
+- `npm run build -w apps/api` → EXIT 0 (Upload tiplari + checksum config OK).
 
-## Deploy DIQQAT
-- Bu o'zgarish **commit qilinmagan** — foydalanuvchi test qiladi.
-- Render: `CORS_ORIGIN` Vercel URL; `NODE_ENV=production` + kuchli `JWT_SECRET`.
-- Render build cache eski bo'lsa "Clear build cache & deploy" kerak bo'lishi mumkin.
+## OOM sabab EMAS (latent)
+- `mogrt-extract.ts` `execFileSync` — sinxron `unzip` event-loop'ni 60s gacha bloklaydi → `/health` javob bermaydi (Render unhealthy deb restart qilishi mumkin). Xotira emas; keyinroq async `execFile` ga o'tkazish tavsiya.
+
+## DIQQAT
+- Commit qilingan, **push KUTILMOQDA** (foydalanuvchi qiladi).
+- Render Metrics: katta pack yuklab, xotira 512MB ostida qolishini kuzating.
+- 3GB fayl + sekin uplink → proxy timeout bo'lishi mumkin (OOM emas, alohida masala).

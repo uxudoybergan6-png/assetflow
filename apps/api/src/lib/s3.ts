@@ -10,6 +10,7 @@ import {
   ListObjectsV2Command,
   DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -22,6 +23,12 @@ const endpoint = process.env.S3_ENDPOINT ?? undefined;
 export const s3 = new S3Client({
   region,
   ...(endpoint ? { endpoint, forcePathStyle: false } : {}),
+  // AWS SDK v3 (2025+) default `when_supported` checksumi stream body ustidan
+  // CRC32 ni OLDINDAN hisoblaydi — Cloudflare R2 stream-trailer checksumni
+  // ishonchli qo'llamagani uchun SDK butun faylni XOTIRAGA yig'adi (512MB OOM).
+  // `WHEN_REQUIRED` — faqat zarur bo'lsa; stream chinakam stream bo'lib qoladi.
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
   credentials: process.env.AWS_ACCESS_KEY_ID
     ? {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -181,10 +188,11 @@ export function s3UploadKeyForFile(
 }
 
 /**
- * Lokal faylni S3/R2 ga STREAM orqali yuklash — faylni xotiraga to'liq
- * o'qimasdan (katta packlar uchun OOM xavfini kamaytiradi). ContentLength
- * stat'dan beriladi, shunda stream body uchun ham Content-Length sarlavhasi
- * to'g'ri qo'yiladi. Xato bo'lsa aniq log chiqarib, qayta otadi (yutmaydi).
+ * Lokal faylni S3/R2 ga MULTIPART STREAM orqali yuklash — faylni xotiraga
+ * to'liq o'qimasdan. lib-storage `Upload` 8MB bo'laklarga bo'lib, bir vaqtda
+ * eng ko'pi 4 bo'lakni yuboradi → cho'qqi xotira ≈ 8MB×4 = 32MB, fayl
+ * hajmidan (3GB gacha) qat'i nazar. Bu Render 512MB limitidagi OOM ni
+ * oldini oladi. Xato bo'lsa aniq log chiqarib, stream'ni yopib, qayta otadi.
  */
 export async function uploadFileToS3(
   localPath: string,
@@ -194,15 +202,19 @@ export async function uploadFileToS3(
   const contentLength = fs.statSync(localPath).size;
   const body = fs.createReadStream(localPath);
   try {
-    await s3.send(
-      new PutObjectCommand({
+    const upload = new Upload({
+      client: s3,
+      params: {
         Bucket: bucket,
         Key: s3Key,
         Body: body,
         ContentType: contentType,
-        ContentLength: contentLength,
-      })
-    );
+      },
+      partSize: 8 * 1024 * 1024, // 8MB bo'laklar
+      queueSize: 4, // bir vaqtda 4 bo'lak → ~32MB cho'qqi
+      leavePartsOnError: false, // xatoda yarim bo'laklar tozalanadi
+    });
+    await upload.done();
   } catch (err) {
     console.error(
       `[s3] uploadFileToS3 muvaffaqiyatsiz — key=${s3Key} size=${contentLength}B src=${localPath}:`,
