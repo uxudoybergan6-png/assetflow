@@ -1,18 +1,25 @@
-# Session Report — 2026-06-13 (Re-extract endpoint — NOT committed, test kutilmoqda)
+# SESSION REPORT — 2026-06-13 (AE plugin HIGH fixes — NOT committed, test kutilmoqda)
 
-## Nima qilindi
-- **Re-extract endpoint** (HANDOFF item 4, HIGH): `POST /api/contributor/admin/templates/:id/re-extract` — faqat admin (`requireAuth + requireAdmin`).
-  - Pack ZIP'ni disk yoki R2'dan tmpdir'ga yuklaydi (`downloadS3ToFile` — yangi, stream, `lib/s3.ts`).
-  - `.mogrt` sahnalarni qayta ajratib `scenes/{slug}.mp4|png` (previewKey) + `mogrt/{slug}.mogrt` (mogrtKey) R2'ga yozadi, `metaJson.scenes` yangilaydi.
-  - Progress: mavjud `GET .../templates/:id/upload-progress` SSE (per-`.mogrt`); `download` bosqichi qo'shildi.
-  - Xatoda `{error, stage}` JSON + SSE `[stage]` prefiks (req 7).
-  - Upload route bilan baham `storeMogrtScenesFromZip()` helper (kod duplikatsiyasi yo'q).
-  - Fayllar: `routes/contributor.ts`, `lib/s3.ts`, `lib/upload-progress.ts`. Build ✅.
+## Nima qilindi: Ikkala AE plugin'dagi BARCHA HIGH muammolar tuzatildi
 
-## Nima topildi
-- Lokal DB ↔ R2 ↔ production katalog ID'lari MOS EMAS: lokal `APPROVED` (cmpw*/cmpx*) R2'da yo'q; productionda boshqa 4 ta (cmqb7kifm, cmqb0pkuq, cmqasb661, cmqb5ng0v).
-- `cmqb7kifm` (Cosmic): R2'da 23 scene fayli bor, `metaJson.scenes` bo'sh. `cmqasb661` (Liquid): scenes bor, previewKey yo'q. `cmqb5ng0v`: R2'da fayl yo'q.
-- Root `.env` AWS kalitlari bo'sh edi → lokal `isS3Configured()` false (item 11). R2 kalitlari root `.env`ga yozildi.
+### ASOSIY PLUGIN (AssetFlow_Plugin.html + catalog.js + account.js)
+1. **Sessiya interceptor** — `account.js` `request()` + `catalog.js` `fetchCatalog()` 401/403 da token tozalaydi va `assetflow:session-expired` event → toast + login oynasi (`handleAuthFailure`).
+2. **Boot spinner + Retry** — `catalogLoadState`; skeleton + "Server uyg'onmoqda (~60s)"; xatoda **Qayta urinish**; "Hali shablon yo'q" faqat haqiqatan bo'sh; filtr 0 bersa "Filtrlarni tozalash".
+3. **Toast tizimi** — `showToast(msg,type)` success/error/warning/info rang + navbat; `friendlyError()` xom xatolarni (Failed to fetch/EvalScript/HTTP) tushunarli qiladi.
+4. **Download Cancel** — `catalog.js` `cancelDownload()`; progress'da **Bekor qilish**; `beforeunload`'da ham uzadi.
+5. **Footer "Download" → "Import qilish"** (bir xil nom); hero "↓ Hammasini import".
+6. **`importedScenes` ID kalit** — `sceneStateKey(packKey,scene)`: bir xil sahna nomi to'qnashmaydi.
+7. **Featured strip** `hasPack:false` itemlarni yashiradi.
 
-## Nima kutilmoqda
-- Test (API restart kerak — env): `cmqb7kifm000tp3209ljb1r1h` + `cmqasb661000xlx217qfuj6z5`. Commit qilinmagan.
+### ADMIN PLUGIN (AssetFlow_Admin.html + host.jsx)
+1. **"Admin Preview" preset auto** — `afEnsureAdminPreviewPreset()` boot'da tekshiradi/yaratadi (H.264→.mp4), dirty tiklash; yo'q bo'lsa aniq yo'riqnoma.
+2. **`afCloseCurrent` data-loss himoya** — `app.project.dirty` + `afCloseCurrentGuarded()` tasdiq (3 chaqiruv joyi).
+3. **Auth markazlashtirildi** — `api()` 401/403 (login mustasno) avto `handleAuthError` → saveMetadata/deleteTemplate himoyalandi. (account.js fizik yuklanmadi — admin localStorage token; *handling* markazlashtirildi.)
+
+## Tekshirildi
+- `node --check` (account/catalog/host.jsx) + ikkala HTML inline (`vm.Script`) — hammasi OK.
+- Fayllar `com.assetflow.demo` ga o'rnatildi (install-cep copy qismi; AE majburan yopilmadi).
+- ensureHostBridge ping yangilandi → eski host.jsx keshi avto qayta yuklanadi.
+
+## Kutilmoqda
+- Foydalanuvchi AE-ichi testi: panelni qayta oching yoki AE restart. Commit qilinmadi (5 fayl `M`).

@@ -37,6 +37,27 @@ const AssetFlowAccount = (() => {
     cachedUser = null;
   }
 
+  /**
+   * Markaziy 401/403 ushlagich: token eskirgan bo'lsa tozalaydi va UI'ga
+   * "sessiya tugadi" signalini yuboradi (bir marta). Faqat token YUBORILGAN
+   * so'rovlarda ishlaydi — login (token'siz) 401'i hisobga olinmaydi.
+   * catalog.js ham shu funksiyani chaqiradi (yagona xulq).
+   */
+  function handleAuthFailure(status, hadToken) {
+    if ((status === 401 || status === 403) && hadToken) {
+      clearToken();
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+        try {
+          window.dispatchEvent(new CustomEvent("assetflow:session-expired"));
+        } catch (e) {
+          /* CustomEvent qo'llab-quvvatlanmasa — e'tiborsiz */
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
   async function request(path, options = {}) {
     const headers = { ...(options.headers || {}) };
     if (options.body && !(options.body instanceof FormData)) {
@@ -68,6 +89,8 @@ const AssetFlowAccount = (() => {
       const err = new Error(data?.error || `HTTP ${res.status}`);
       err.status = res.status;
       err.data = data;
+      // Token yuborilgan bo'lsa va 401/403 — sessiyani tozalab signal beramiz
+      handleAuthFailure(res.status, !!t);
       throw err;
     }
     return data;
@@ -237,6 +260,7 @@ const AssetFlowAccount = (() => {
     openAdminPanel,
     authHeaders,
     saveToken,
+    handleAuthFailure,
   };
 })();
 

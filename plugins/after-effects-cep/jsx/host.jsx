@@ -1998,14 +1998,86 @@ function afQueueOpen(pathStr, forceOpen) {
   }));
 }
 
-// Joriy loyihani saqlamasdan yopadi — yangi loyiha ochishdan oldin "Save changes?" ni oldini oladi
-function afCloseCurrent() {
+// Joriy loyihani saqlamasdan yopadi — yangi loyiha ochishdan oldin "Save changes?" ni oldini oladi.
+// force=false bo'lsa va loyihada saqlanmagan o'zgarish bo'lsa — YOPMAYDI, {dirty:true} qaytaradi
+// (panel JS tomonda tasdiq so'raydi, keyin afCloseCurrent(true) bilan majburlaydi).
+function afCloseCurrent(force) {
   try {
     if (app.project) {
+      var isDirty = false;
+      try { isDirty = !!app.project.dirty; } catch (eD) {}
+      if (!force && isDirty) {
+        return JSON.stringify({ ok: false, dirty: true, message: "Saqlanmagan o'zgarishlar bor" });
+      }
       try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (e1) {}
     }
     return JSON.stringify({ ok: true });
   } catch (e) {
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
+/**
+ * "Admin Preview" Output Module preseti bor-yo'qligini tekshiradi; yo'q bo'lsa
+ * H.264/.mp4 bazaviy presetdan nusxa olib "Admin Preview" nomi bilan saqlaydi.
+ * Vaqtinchalik comp + RQ element yaratib o'chiradi (loyiha tarkibiga tegmaydi).
+ * Natija: {ok, existed, created} yoki {ok:false, message}.
+ */
+function afEnsureAdminPreviewPreset() {
+  var tmpComp = null, rqi = null;
+  try {
+    if (!app.project) app.newProject();
+    // Probe loyihani "dirty" qilmasin — oldingi holatni eslab, oxirida tiklaymiz
+    // (shunda afCloseCurrent yolg'on "saqlanmagan o'zgarish" deb ogohlantirmaydi).
+    var wasDirty = false;
+    try { wasDirty = !!app.project.dirty; } catch (eWD) {}
+    var rq = app.project.renderQueue;
+    tmpComp = app.project.items.addComp("AF_PresetProbe", 1280, 720, 1, 1, 30);
+    rqi = rq.items.add(tmpComp);
+    var om = rqi.outputModule(1);
+
+    // Mavjud preset nomlari ro'yxatida "Admin Preview" bormi?
+    var exists = false;
+    try {
+      var tpls = om.templates; // nomlar massivi
+      for (var i = 0; i < tpls.length; i++) {
+        if (String(tpls[i]) === "Admin Preview") { exists = true; break; }
+      }
+    } catch (eTpl) {}
+
+    var created = false;
+    if (!exists) {
+      // .mp4 (H.264) chiqaradigan bazaviy presetni qo'llaymiz (mavjud bo'lganini)
+      var bases = [
+        "H.264 - Match Render Settings - 15 Mbps",
+        "H.264 - Match Render Settings - 40 Mbps",
+        "H.264",
+        "High Quality"
+      ];
+      for (var b = 0; b < bases.length; b++) {
+        try { om.applyTemplate(bases[b]); break; } catch (eB) {}
+      }
+      try {
+        om.saveAsTemplate("Admin Preview");
+        created = true;
+      } catch (eSave) {
+        try { if (rqi) rqi.remove(); } catch (e1) {}
+        try { if (tmpComp) tmpComp.remove(); } catch (e2) {}
+        return JSON.stringify({
+          ok: false,
+          message: "Admin Preview presetini avtomatik yaratib bo'lmadi: " + eSave.toString()
+        });
+      }
+    }
+
+    try { if (rqi) rqi.remove(); } catch (e3) {}
+    try { if (tmpComp) tmpComp.remove(); } catch (e4) {}
+    // Loyiha probe'dan oldin toza bo'lsa — dirty bayrog'ini tiklashga harakat qilamiz
+    if (!wasDirty) { try { app.project.dirty = false; } catch (eR) {} }
+    return JSON.stringify({ ok: true, existed: exists, created: created });
+  } catch (e) {
+    try { if (rqi) rqi.remove(); } catch (e5) {}
+    try { if (tmpComp) tmpComp.remove(); } catch (e6) {}
     return JSON.stringify({ ok: false, message: e.toString() });
   }
 }

@@ -105,7 +105,15 @@ const AssetFlowCatalog = (() => {
     const res = await fetch(`${apiBase()}/api/plugin/catalog`, {
       headers: catalogHeaders(),
     });
-    if (!res.ok) throw new Error(`Katalog HTTP ${res.status}`);
+    if (!res.ok) {
+      // 401/403 — token eskirgan bo'lsa markaziy ushlagichga beramiz
+      if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.handleAuthFailure) {
+        AssetFlowAccount.handleAuthFailure(res.status, !!AssetFlowAccount.token());
+      }
+      const err = new Error(`Katalog HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
     return res.json();
   }
 
@@ -287,12 +295,12 @@ const AssetFlowCatalog = (() => {
     try {
       data = await fetchCatalog();
     } catch (e) {
-      const msg = (e && e.message) || String(e);
       if (typeof showToast === "function") {
-        showToast(
-          "Server katalog xato: " + msg + " · API: " + apiBase(),
-          "danger"
-        );
+        const friendly =
+          typeof friendlyError === "function"
+            ? friendlyError(e)
+            : ((e && e.message) || String(e)) + " · API: " + apiBase();
+        showToast(friendly, "error");
       }
       throw e;
     }
@@ -576,59 +584,100 @@ const AssetFlowCatalog = (() => {
     }
   }
 
+  // Faol (bekor qilinishi mumkin) yuklab olishlar — Bekor tugmasi/panel yopilishi uchun
+  const __activeDownloads = new Set();
+
+  /** Barcha faol yuklab olishlarni uzadi: oqimni to'xtatadi, qisman faylni o'chiradi */
+  function cancelDownload() {
+    const holders = Array.from(__activeDownloads);
+    __activeDownloads.clear();
+    holders.forEach((h) => {
+      h.cancelled = true;
+      try { if (h.req) h.req.destroy(); } catch (e) {}
+      try { if (h.ws) h.ws.destroy(); } catch (e) {}
+      try {
+        const fs = require("fs");
+        if (h.dest && fs.existsSync(h.dest)) fs.rmSync(h.dest, { force: true });
+      } catch (e) {}
+      try { if (h.fail) h.fail(); } catch (e) {}
+    });
+  }
+
+  function hasActiveDownload() {
+    return __activeDownloads.size > 0;
+  }
+
   /** Katta packlar uchun diskka oqim bilan yuklash (xotiraga 200MB yig'masdan) */
   function downloadUrlToFile(url, destPath, onProgress) {
     return new Promise((resolve, reject) => {
       const fs = require("fs");
+      const holder = { req: null, ws: null, dest: destPath, cancelled: false, fail: null };
+      __activeDownloads.add(holder);
+      const cleanup = () => __activeDownloads.delete(holder);
+      const failCancelled = () => {
+        cleanup();
+        const err = new Error("Yuklab olish bekor qilindi");
+        err.cancelled = true;
+        reject(err);
+      };
+      holder.fail = failCancelled;
       const go = (u, redirectsLeft) => {
+        if (holder.cancelled) { failCancelled(); return; }
         if (redirectsLeft <= 0) {
+          cleanup();
           reject(new Error("Redirect limit"));
           return;
         }
         // Redirect protokolni almashtirishi mumkin (http↔https) — modulni URL'ga qarab tanlaymiz
         const lib = u.startsWith("https") ? require("https") : require("http");
-        lib
-          .get(u, (res) => {
-            if (
-              res.statusCode >= 300 &&
-              res.statusCode < 400 &&
-              res.headers.location
-            ) {
-              res.resume();
-              let next = res.headers.location;
-              try {
-                next = new URL(next, u).toString();
-              } catch (ignore) {}
-              go(next, redirectsLeft - 1);
-              return;
-            }
-            if (res.statusCode !== 200) {
-              res.resume();
-              reject(new Error(`Pack HTTP ${res.statusCode}`));
-              return;
-            }
-            const total = parseInt(res.headers["content-length"], 10) || 0;
-            let done = 0;
-            let lastTime = 0;
-            const ws = fs.createWriteStream(destPath);
-            // Birinchi baytda darhol ko'rsatamiz, keyin har ~250ms (MB hisoblagich jonli bo'lsin)
-            if (onProgress) onProgress(0, total);
-            res.on("data", (chunk) => {
-              done += chunk.length;
-              if (onProgress) {
-                const now = Date.now();
-                if (now - lastTime > 250 || done === total) {
-                  lastTime = now;
-                  onProgress(done, total);
-                }
+        const req = lib.get(u, (res) => {
+          if (
+            res.statusCode >= 300 &&
+            res.statusCode < 400 &&
+            res.headers.location
+          ) {
+            res.resume();
+            let next = res.headers.location;
+            try {
+              next = new URL(next, u).toString();
+            } catch (ignore) {}
+            go(next, redirectsLeft - 1);
+            return;
+          }
+          if (res.statusCode !== 200) {
+            res.resume();
+            cleanup();
+            reject(new Error(`Pack HTTP ${res.statusCode}`));
+            return;
+          }
+          const total = parseInt(res.headers["content-length"], 10) || 0;
+          let done = 0;
+          let lastTime = 0;
+          const ws = fs.createWriteStream(destPath);
+          holder.ws = ws;
+          // Birinchi baytda darhol ko'rsatamiz, keyin har ~250ms (MB hisoblagich jonli bo'lsin)
+          if (onProgress) onProgress(0, total);
+          res.on("data", (chunk) => {
+            if (holder.cancelled) return;
+            done += chunk.length;
+            if (onProgress) {
+              const now = Date.now();
+              if (now - lastTime > 250 || done === total) {
+                lastTime = now;
+                onProgress(done, total);
               }
-            });
-            res.pipe(ws);
-            ws.on("finish", () => resolve(destPath));
-            ws.on("error", reject);
-            res.on("error", reject);
-          })
-          .on("error", reject);
+            }
+          });
+          res.pipe(ws);
+          ws.on("finish", () => { cleanup(); resolve(destPath); });
+          ws.on("error", (e) => { cleanup(); holder.cancelled ? failCancelled() : reject(e); });
+          res.on("error", (e) => { cleanup(); holder.cancelled ? failCancelled() : reject(e); });
+        });
+        holder.req = req;
+        req.on("error", (e) => {
+          cleanup();
+          if (holder.cancelled) failCancelled(); else reject(e);
+        });
       };
       go(url, 8);
     });
@@ -815,6 +864,8 @@ const AssetFlowCatalog = (() => {
     mergeIntoBrowse,
     downloadPackToTemp,
     downloadSceneMogrt,
+    cancelDownload,
+    hasActiveDownload,
     mogrtCompName,
     cachedMogrtItems,
     extractMogrtItem,

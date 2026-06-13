@@ -713,7 +713,13 @@ async function api(path, opts = {}) {
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
-  if (!res.ok) throw Object.assign(new Error(data?.error || 'HTTP ' + res.status), { status: res.status, data });
+  if (!res.ok) {
+    const err = Object.assign(new Error(data?.error || 'HTTP ' + res.status), { status: res.status, data });
+    // Markaziy 401/403 ushlagich — BARCHA yo'llar (saveMetadata, deleteTemplate, ...) avto-himoyalanadi.
+    // Login bundan mustasno: noto'g'ri parol o'zini "sessiya tugadi" deb ko'rsatmasin.
+    if (path !== '/api/auth/login') handleAuthError(err);
+    throw err;
+  }
   return data;
 }
 
@@ -820,8 +826,10 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if (e.ke
 async function bootShell() {
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('shell').style.display = 'flex';
-  // host.jsx ni yangi versiyaga majburan yuklaymiz (AE restartisiz)
-  if (IS_CEP) ensureHostBridge();
+  // host.jsx ni yangi versiyaga majburan yuklaymiz (AE restartisiz), so'ng render presetini tekshiramiz
+  if (IS_CEP) {
+    try { await ensureHostBridge(); await ensureAdminPreviewPreset(); } catch (e) { console.warn('host boot', e); }
+  }
   const u = getUser();
   // Avatar — email'ning birinchi harfi
   const initial = (u?.name || u?.email || 'A').charAt(0).toUpperCase();
@@ -1380,6 +1388,24 @@ function evalP(script) {
   });
 }
 
+/** Joriy AE loyihasini yopadi, AMMO saqlanmagan o'zgarish bo'lsa tasdiq so'raydi.
+ *  Foydalanuvchi bekor qilsa — afAbort bayrog'i bilan xato tashlaydi (import to'xtaydi).
+ *  Bridge yo'q bo'lsa — eski (jim) xulq. */
+async function afCloseCurrentGuarded() {
+  let raw = '';
+  try { raw = await evalP('afCloseCurrent()'); } catch (e) { return; }
+  let d = null;
+  try { d = raw ? JSON.parse(raw) : null; } catch (e) {}
+  if (d && d.dirty) {
+    const go = confirm(
+      'Joriy AE loyihangizda saqlanmagan o‘zgarishlar bor.\n' +
+      'Davom etsangiz ular YO‘QOLADI (loyiha saqlanmaydi).\n\nDavom etilsinmi?'
+    );
+    if (!go) { const err = new Error('AF_USER_ABORT'); err.afAbort = true; throw err; }
+    try { await evalP('afCloseCurrent(true)'); } catch (e) {}
+  }
+}
+
 function hostCfg(obj) {
   return JSON.stringify(JSON.stringify(obj || {}));
 }
@@ -1466,12 +1492,32 @@ async function waitForProjectFile(aepPath, maxSec, beforeCompCount) {
 }
 
 async function ensureHostBridge() {
-  const ping = await evalP('typeof queueOpenProjectFile==="function"&&typeof refreshProjectPanel==="function"&&typeof afEnsureSaved==="function"?"ok":"missing"');
+  // afEnsureAdminPreviewPreset — YANGI funksiya: yo'q bo'lsa eski host.jsx keshi qayta yuklanadi
+  const ping = await evalP('typeof queueOpenProjectFile==="function"&&typeof refreshProjectPanel==="function"&&typeof afEnsureSaved==="function"&&typeof afEnsureAdminPreviewPreset==="function"?"ok":"missing"');
   if (ping === 'ok') return 'ok';
   const r = await reloadHostScript(true);
   if (r !== 'ok') return r;
   const ping2 = await evalP('typeof queueOpenProjectFile==="function"?"ok":"missing"');
   return ping2 === 'ok' ? 'ok' : 'missing-queueOpenProjectFile';
+}
+
+/** Boot'da "Admin Preview" render presetini tekshiradi; yo'q bo'lsa avtomatik yaratadi,
+ *  bo'lmasa aniq yo'riqnoma ko'rsatadi. Sahna render qadami shu presetga bog'liq. */
+async function ensureAdminPreviewPreset() {
+  try {
+    const raw = await evalHostRetry(() => 'afEnsureAdminPreviewPreset()', { tries: 3, delayMs: 500 });
+    let d = null;
+    try { d = raw ? JSON.parse(raw) : null; } catch (e) {}
+    if (d && d.ok) {
+      if (d.created) toast('✓ "Admin Preview" render preseti yaratildi');
+      // existed → jim (hammasi joyida)
+    } else {
+      const msg = (d && d.message) || 'Admin Preview preseti topilmadi';
+      toast('⚠ ' + msg + ' — AE: Edit → Templates → Output Module → "Admin Preview" (.mp4/H.264) yarating', true);
+    }
+  } catch (e) {
+    console.warn('ensureAdminPreviewPreset', e);
+  }
 }
 
 // Panel ishlab turgan AE'ning bajariluvchi fayl yo'li (HOST_APPLICATION)
@@ -1529,8 +1575,9 @@ async function openAepInHost(aepPath, onTick) {
     return { ok: true, alreadyOpen: true, projectName: beforePanel.projectName, projectFile: beforePanel.projectFile || aepPath };
   }
 
-  // Joriy loyihani yopamiz — "Save changes?" dialogini oldini oladi
-  try { await evalP('afCloseCurrent()'); } catch (e) {}
+  // Joriy loyihani yopamiz — saqlanmagan ish bo'lsa tasdiq so'raydi
+  try { await afCloseCurrentGuarded(); }
+  catch (e) { if (e && e.afAbort) throw new Error('Bekor qilindi — joriy loyiha saqlanmagan'); }
   await new Promise(r => setTimeout(r, 200));
 
   // 1) ExtendScript navbat (scheduleTask)
@@ -1762,8 +1809,16 @@ async function importPackToAE(id) {
 
     // ── AE da ochish — SODDA: ochib qo'yamiz, uzoq "tasdiqlash" YO'Q ──
     try { await ensureHostBridge(); } catch(e) {}
-    // 1) ExtendScript: joriy loyihani yopib, yangisini ochishga buyruq
-    try { await evalP('afCloseCurrent()'); } catch(e) {}
+    // 1) ExtendScript: joriy loyihani yopib, yangisini ochishga buyruq (saqlanmagan ish bo'lsa tasdiq)
+    try { await afCloseCurrentGuarded(); }
+    catch (e) {
+      if (e && e.afAbort) {
+        steps[2] = { state: 'err', text: 'Bekor qilindi — joriy loyiha saqlanmagan' };
+        log();
+        toast('Bekor qilindi — joriy loyiha saqlanmagan', true);
+        return;
+      }
+    }
     try { await evalP('queueOpenProjectFile(' + hostCfg({ filePath: aepPath, forceOpen: true }) + ')'); } catch(e) {}
     // 2) OS orqali ham ochamiz (kafolat)
     try { launchAepInHostApp(aepPath); } catch(e) {}
@@ -1868,7 +1923,8 @@ async function triggerProjectOpen(aepPath, opts) {
   const cur = await readProjectPanel();
   if (cur && cur.ok && panelMatchesAep(cur, aepPath)) return; // allaqachon ochiq
   if (forceClose) {
-    try { await evalP('afCloseCurrent()'); } catch (e) {}
+    try { await afCloseCurrentGuarded(); }
+    catch (e) { if (e && e.afAbort) { toast('Bekor qilindi — joriy loyiha saqlanmagan', true); return; } }
     await new Promise(r => setTimeout(r, 150));
   }
   const cfg = hostCfg({ filePath: aepPath, forceOpen: true });
