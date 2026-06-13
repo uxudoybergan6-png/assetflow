@@ -230,11 +230,9 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ### 🔴 HIGH — tez hal qilish kerak
 
-1. **Push + Render deploy** — `main` `origin/main`dan 4 commit oldinda (`3193352`, `3361478`, `43a1528`, `42c3f5b`). Foydalanuvchi `git push origin main` qiladi → Render auto-deploy → M1/M3/R2-stream productionga chiqadi. TOKEN placeholder remote URL bo'lgani uchun dastur push qila olmaydi.
+1. ✅ **Push + production deploy (2026-06-13 kech, HAL QILINDI)** — barcha fix'lar `origin/main`ga push qilindi (GitHub Desktop orqali). **Render** har push'da auto-deploy qiladi (✅ ishlaydi). **Vercel** dastlab "Blocked" edi — sabab: commit message'lardagi `Co-Authored-By: Claude` Vercel Hobby team uchun "boshqa muallif" deb ko'rinardi. Bo'sh trigger commit (`21f63b6`, Co-Authored-By'siz) + repo public → Vercel deploy ishladi. **Bundan keyin commit message'ga `Co-Authored-By` yozilmaydi.**
 
-2. **M2 ✅ — Faqat tanlangan `.mogrt` yuklab olish**: Yangi uploadlarda har `.mogrt` alohida R2 `templates/{id}/mogrt/{slug}.mogrt` ga yuklandi; `mogrtKey` + `mogrtUrl` catalog'da chiqadi; plugin `downloadSceneMogrt()` faqat tanlangan sahnani yuklab oladi (ZIP fallback backward-compat). **Deploy kerak** (commit shu sessiyada, push kutilmoqda).
-
-3. **Stripe Pro tarif (HIGH, alohida vazifa)**: `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true` dev bypass bor. Productionda haqiqiy Stripe checkout + webhook + `subscription.status=ACTIVE` kerak. `assetflow-account.js:138` `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` chaqiradi — Studio JWT kerak bo'lishi mumkin (Stripe bilan birga hal qilinadi).
+2. **Stripe Pro tarif (HIGH, alohida vazifa)**: `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true` dev bypass bor. Productionda haqiqiy Stripe checkout + webhook + `subscription.status=ACTIVE` kerak. `assetflow-account.js:138` `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` chaqiradi — Studio JWT kerak bo'lishi mumkin (Stripe bilan birga hal qilinadi).
 
 ### 🟡 MEDIUM — muhim, lekin bloklanmaydi
 
@@ -245,6 +243,8 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 5. **Email bildirishnomalar** (MED): Approve/reject, yangi xabar, yangi obunachi uchun email yo'q. Nodemailer yoki Resend bilan ulash kerak (`/api/studio/messages/*` webhook hookiga qo'shish qulay).
 
 6. **Orphan message threadlar** (MED): Shablon o'chirilganda `StudioMessageThread.templateId → NULL` (SetNull), thread + xabarlar qoladi. Tozalash yoki arxivlash logikasi yo'q.
+
+13. **`mogrt-extract.ts` `execFileSync` event-loop bloklaydi** (MED): `unzip` sinxron chaqiriladi — katta pack ekstrakti davomida (60s gacha) Node event-loop'i bloklanadi, server `/health` ga javob bera olmaydi → Render uni "unhealthy" deb restart qilishi mumkin. **Xotira muammosi EMAS** (tashqi jarayon, diskka yozadi). Yechim: async `execFile` (promisify) ga o'tkazish.
 
 7. ✅ **`avconvert` → `ffmpeg`** (MED, HAL QILINDI 2026-06-13): `findFfmpeg()` keng yo'llarni qidiradi (CEP'da PATH minimal); `.mov→.mp4` `ffmpeg -c:v libx264`; ffmpeg topilmasa aniq toast. `AssetFlow_Admin.html`.
 
@@ -266,6 +266,19 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 - **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
 - **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
 - `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
+
+### Claude Code sessiyasida qilingan (2026-06-13, kech-3..6) — Production deploy debugging ✅
+
+Push qilingach Render/Vercel'da chiqqan real production xatolar ketma-ket hal qilindi (har biri commit + push, deploy tasdiqlangan):
+
+- ✅ **Render build "Exited with status 2"** (`7940766`, `a4fe937`): (1) TS `req`/`res` implicit `any` + `express` tip topilmadi → `plugin.ts`/`stripe.ts`/`users.ts` aniq tip; (2) asl sabab — Render `NODE_ENV=production` `npm install` devDeps'ni o'tkazib yuborardi → **`@types/*` + `typescript`** `devDependencies`→`dependencies` (apps/api). `render.yaml` `npm install --include=dev`. No-op build skriptlar (`shared`, `after-effects-cep`).
+- ✅ **CORS wildcard** (`b9f3ec3`): `CORS_ORIGIN=*` ishlamasdi (`["*"].includes(url)`=false). `index.ts` callback: `*`/bo'sh→hammaga ruxsat, URL→aniq, vergulli→ro'yxat.
+- ✅ **Studio `localhost:4000` fallback** (`70a2a27`): 5 fayl (studio-api, assetflow-log, studio-templates, studio-media, admin-logs) last-resort fallback → `https://assetflow-rqbq.onrender.com`. `studio-config.js:39` lokal-dev tarmog'i ataylab o'zgartirilmadi.
+- ✅ **Logs 401 + analytics 403** (`66b8bdd`): `assetflow-log.js pushServer` token yo'q bo'lsa server'ga so'rov yubormaydi (login'gacha 401 spam yo'q); `studio-templates.js` contributor `init` else tarmog'idan admin-only `loadPluginAnalytics()` olib tashlandi (403 yo'q).
+- ✅ **Render OOM (512MB)** (`74509a8`): katta pack yuklashda OOM. Asl sabab — AWS SDK v3 default `requestChecksumCalculation="when_supported"` `PutObjectCommand` stream body ustidan CRC32 ni oldindan hisoblaydi; R2 trailer checksum'ni qo'llamagani uchun SDK **butun faylni xotiraga yig'adi**. Yechim: S3Client `requestChecksumCalculation/responseChecksumValidation: WHEN_REQUIRED` + `uploadFileToS3` → `@aws-sdk/lib-storage` `Upload` (multipart, partSize 8MB×queueSize 4 ≈ 32MB cho'qqi, 3GB bo'lsa ham).
+- ✅ **Vercel "Blocked" deploy** (`21f63b6`): commit message'lardagi `Co-Authored-By: Claude` Vercel Hobby team uchun begona muallif → bloklar edi. Bo'sh trigger commit + repo public → ishladi. **Bundan keyin `Co-Authored-By` yozilmaydi** (qoida xotiraga ham yozildi).
+
+**Deploy holati (2026-06-13 kech):** Render API current (`74509a8`), Vercel Studio deploy ishlayapti. Konsoldagi 401/403/CORS xatolar ketdi.
 
 ### Claude Code sessiyasida qilingan (2026-06-13, kech-2) — Audit: 13 HIGH security/UX + upload progress + 3 GB ✅
 
@@ -367,4 +380,4 @@ Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, pus
 
 ---
 
-*Yangilangan: 2026-06-13 (kech-2) — Audit: 13 HIGH security/UX ✅ (XSS escape, pack auth+published+limit gate, CORS allow-list, login rate-limit, JWT guard, trust proxy, global error handler, /api/logs auth, downloadAll fix, analytics ReferenceError, data-loss guard, avconvert→ffmpeg, tariff gate) + Studio per-fayl upload progress + pack limiti 3 GB. 30 fayl o'zgardi, commit qilindi (push KUTILMOQDA — foydalanuvchi o'zi). Build/tsc toza, install-cep + prepare-vercel bajarildi. **Deploy DIQQAT:** Render'da `CORS_ORIGIN` Vercel URL'ini o'z ichiga olsin, `NODE_ENV=production` + kuchli `JWT_SECRET` bo'lsin; 3 GB upload proxy/disk cheklovlariga bog'liq. Keyingi: Stripe Pro tarif, email bildirishnomalar, kunlik limit (migration), re-extract test.*
+*Yangilangan: 2026-06-13 (kech-6) — Production deploy debugging ✅: Render build fix (@types→dependencies), CORS wildcard, Studio localhost fallback, logs 401 + analytics 403, **Render OOM fix (multipart S3 Upload)**, Vercel Co-Authored-By bloklash hal. Render API current (`74509a8`), Vercel Studio deploy ishlayapti, push bajarildi. **Bundan keyin commit'ga `Co-Authored-By` yozilmaydi.** Ochiq (MED/LOW): Stripe Pro tarif, upload DB retry, email bildirishnoma, orphan threadlar, `execFileSync` event-loop bloklash (async'ga o'tkazish), ZXP, payout, stale `downloaded[]`.*
