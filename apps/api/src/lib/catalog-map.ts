@@ -87,6 +87,7 @@ type TemplateRow = {
   metaJson: unknown;
   fileName: string | null;
   fileSize: number | null;
+  createdAt: Date;
   updatedAt: Date;
 };
 
@@ -132,6 +133,7 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     previewUrl: hasPreview ? publicAssetUrl(apiBase, t.id, "preview") : null,
     packUrl,
     metaJson: meta,
+    createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };
 }

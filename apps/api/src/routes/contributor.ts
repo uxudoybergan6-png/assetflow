@@ -162,6 +162,44 @@ const reviewSchema = z.object({
   published: z.boolean().optional(),
 });
 
+/** PATCH'da scenes massivi yangilanganda — server boyitgan per-scene kalitlar
+ *  (previewKey, mogrtKey, preview, previewKind, thumb) yangi manifestda
+ *  bo'lmasa eski qiymatdan saqlanadi. Kalit: previewKey | aeComp | n. */
+const SCENE_SERVER_KEYS = [
+  "previewKey",
+  "mogrtKey",
+  "preview",
+  "previewKind",
+  "thumb",
+] as const;
+
+function sceneIdent(s: Record<string, unknown>): string {
+  return String(s.previewKey || s.aeComp || s.n || "").toLowerCase();
+}
+
+function mergeSceneMeta(existingScenes: unknown[], incomingScenes: unknown[]): unknown[] {
+  const byKey = new Map<string, Record<string, unknown>>();
+  for (const e of existingScenes) {
+    if (e && typeof e === "object") {
+      const k = sceneIdent(e as Record<string, unknown>);
+      if (k) byKey.set(k, e as Record<string, unknown>);
+    }
+  }
+  return incomingScenes.map((raw) => {
+    if (!raw || typeof raw !== "object") return raw;
+    const s = { ...(raw as Record<string, unknown>) };
+    const prev = byKey.get(sceneIdent(s));
+    if (!prev) return s;
+    for (const key of SCENE_SERVER_KEYS) {
+      const cur = s[key];
+      if ((cur === undefined || cur === null || cur === "") && prev[key] != null) {
+        s[key] = prev[key];
+      }
+    }
+    return s;
+  });
+}
+
 contributorRouter.get("/settings", requireAuth, async (_req, res) => {
   const settings = await getOrCreateSettings();
   res.json({
@@ -981,12 +1019,21 @@ contributorRouter.patch(
       delete (directFields as Record<string, unknown>).published;
     }
 
+    const existingMetaObj = (existing.metaJson ?? {}) as Record<string, unknown>;
+    const mergedScenes = d.scenes
+      ? mergeSceneMeta(
+          Array.isArray(existingMetaObj.scenes)
+            ? (existingMetaObj.scenes as unknown[])
+            : [],
+          d.scenes as unknown[]
+        )
+      : undefined;
     const meta =
       d.metaJson || d.scenes
         ? {
-            ...(existing.metaJson as object),
+            ...existingMetaObj,
             ...(d.metaJson ?? {}),
-            ...(d.scenes ? { scenes: d.scenes } : {}),
+            ...(mergedScenes ? { scenes: mergedScenes } : {}),
           }
         : undefined;
 

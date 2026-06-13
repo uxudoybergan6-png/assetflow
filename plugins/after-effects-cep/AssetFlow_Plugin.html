@@ -397,6 +397,9 @@ body{
 .env-pill:hover{border-color:rgba(255,255,255,.18);background:#242424}
 .env-pill.open{border-color:rgba(130,195,65,.45);background:rgba(130,195,65,.08)}
 .env-pill-chevron{opacity:.45;font-size:9px;line-height:1}
+.af-clear-pill{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.10);color:#fca5a5}
+.af-clear-pill:hover{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.18)}
+.af-clear-count{opacity:.85;font-weight:700}
 .env-view-btn{
   width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
   background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:12px;
@@ -1353,43 +1356,43 @@ html.cep-mode .panel-body{border-radius:0!important}
               <div class="env-top">
                 <div class="env-search">
                   <select class="env-scope" id="envScope" onchange="onEnvScopeChange(this)">
-                    <option value="video">Video Templates</option>
-                    <option value="motion">Motion Videos</option>
-                    <option value="graphics">Graphics</option>
-                    <option value="luts">LUTs</option>
+                    <option value="video">Video shablonlar</option>
+                    <option value="motion">Motion videolar</option>
+                    <option value="graphics">Grafika</option>
+                    <option value="luts">LUTlar</option>
                   </select>
                   <div class="env-search-field">
-                    <input type="text" placeholder="Search…" id="searchInput">
+                    <input type="text" placeholder="Qidirish…" id="searchInput">
                     <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
                   </div>
                 </div>
               </div>
 
               <div class="env-subnav page-tabs">
-                <div class="ptab active" onclick="switchPage(this,'assets')">Assets <span class="ptab-count" id="assetCount">0</span></div>
-                <div class="ptab" onclick="switchPage(this,'favorites')">Favorites <span class="ptab-count" id="favCount">0</span></div>
-                <div class="ptab" onclick="switchPage(this,'downloaded')">Downloaded <span class="ptab-count" id="dlCount">0</span></div>
+                <div class="ptab active" onclick="switchPage(this,'assets')">Shablonlar <span class="ptab-count" id="assetCount">0</span></div>
+                <div class="ptab" onclick="switchPage(this,'favorites')">Sevimlilar <span class="ptab-count" id="favCount">0</span></div>
+                <div class="ptab" onclick="switchPage(this,'downloaded')">Yuklab olingan <span class="ptab-count" id="dlCount">0</span></div>
               </div>
 
               <div class="env-filter-bar">
                 <div class="env-filter-pills">
                   <div class="dropdown" id="catDrop">
-                    <button type="button" class="env-pill"><span id="catPillLabel">Category</span> <span class="env-pill-chevron">⌄</span></button>
+                    <button type="button" class="env-pill"><span id="catPillLabel">Kategoriya</span> <span class="env-pill-chevron">⌄</span></button>
                     <div class="dd-menu dd-menu--tall" id="catMenu"></div>
                   </div>
                   <div class="dropdown" id="orientDrop">
                     <button type="button" class="env-pill"><span id="orientPillLabel">Format</span> <span class="env-pill-chevron">⌄</span></button>
                     <div class="dd-menu" id="orientMenu">
-                      <div class="dd-item selected" data-filter="all">All <span class="dd-check">✓</span></div>
+                      <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
                       <div class="dd-item" data-filter="horizontal">16:9</div>
                       <div class="dd-item" data-filter="vertical">9:16</div>
                       <div class="dd-item" data-filter="square">1:1</div>
                     </div>
                   </div>
                   <div class="dropdown" id="resDrop">
-                    <button type="button" class="env-pill"><span id="resPillLabel">Resolution</span> <span class="env-pill-chevron">⌄</span></button>
+                    <button type="button" class="env-pill"><span id="resPillLabel">Sifat</span> <span class="env-pill-chevron">⌄</span></button>
                     <div class="dd-menu" id="resMenu">
-                      <div class="dd-item selected" data-filter="all">All <span class="dd-check">✓</span></div>
+                      <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
                       <div class="dd-item" data-filter="2k">2K</div>
                       <div class="dd-item" data-filter="4k">4K</div>
                       <div class="dd-item" data-filter="5k">5K+</div>
@@ -1397,37 +1400,38 @@ html.cep-mode .panel-body{border-radius:0!important}
                   </div>
                 </div>
                 <div class="env-filter-actions">
+                  <button type="button" class="env-pill af-clear-pill" id="clearFiltersPill" onclick="clearAllFilters()" style="display:none" title="Barcha filtrlarni tozalash">✕ Tozalash <span id="clearFiltersCount" class="af-clear-count"></span></button>
                   <div class="dropdown" id="sortDrop">
-                    <button type="button" class="env-pill" id="sortBtn"><span id="sortLabel">Sort</span> <span class="env-pill-chevron">⌄</span></button>
+                    <button type="button" class="env-pill" id="sortBtn"><span id="sortLabel">Saralash</span> <span class="env-pill-chevron">⌄</span></button>
                     <div class="dd-menu" id="sortMenu">
-                      <div class="dd-item selected" data-sort="relevant">Relevant <span class="dd-check">✓</span></div>
-                      <div class="dd-item" data-sort="newest">Newest</div>
-                      <div class="dd-item" data-sort="name">Name A–Z</div>
+                      <div class="dd-item selected" data-sort="relevant">Mos <span class="dd-check">✓</span></div>
+                      <div class="dd-item" data-sort="newest">Yangi</div>
+                      <div class="dd-item" data-sort="name">Nom A–Z</div>
                     </div>
                   </div>
-                  <button type="button" class="env-view-btn" title="Grid view">▦</button>
+                  <button type="button" class="env-view-btn" title="Katak ko'rinishi">▦</button>
                 </div>
               </div>
 
               <div class="scroll-area">
                 <div id="assetsPage">
-                  <div class="sec-lbl" id="gridLabel">All templates</div>
+                  <div class="sec-lbl" id="gridLabel">Barcha shablonlar</div>
                   <div class="grid" id="grid"></div>
                 </div>
                 <div id="favPage" style="display:none">
-                  <div class="sec-lbl">Saved favorites</div>
+                  <div class="sec-lbl">Sevimlilar</div>
                   <div class="grid" id="favGrid"></div>
                   <div class="empty" id="favEmpty">
                     <div class="empty-ico">★</div>
-                    <div class="empty-txt">Star any asset to save it here for quick access.</div>
+                    <div class="empty-txt">Tez kirish uchun istalgan shablonni ★ bilan belgilang.</div>
                   </div>
                 </div>
                 <div id="dlPage" style="display:none">
-                  <div class="sec-lbl">Downloaded</div>
+                  <div class="sec-lbl">Yuklab olingan</div>
                   <div class="grid" id="dlGrid"></div>
                   <div class="empty" id="dlEmpty">
                     <div class="empty-ico">↓</div>
-                    <div class="empty-txt">Imported assets appear here after you add them to the composition.</div>
+                    <div class="empty-txt">Kompozitsiyaga qo‘shilgan shablonlar shu yerda ko‘rinadi.</div>
                   </div>
                 </div>
               </div>
@@ -1678,7 +1682,7 @@ const navSubs={
   luts:['All','Creative','Cinematic','Retro']
 };
 
-const NAV_LABELS={video:'Templates',motion:'Motion Graphic Videos',graphics:'Graphics',luts:'LUTs'};
+const NAV_LABELS={video:'Shablonlar',motion:'Motion videolar',graphics:'Grafika',luts:'LUTlar'};
 
 const CAT_LABELS={
   all:'All', logos:'Logos', typographytitles:'Typography & Titles',
@@ -1964,6 +1968,8 @@ let featuredDismissedByNav={};
 let currentNav='video', currentPage='assets', currentSub='all', currentOrient='all', currentRes='all', currentSearch='', currentSort='relevant';
 window.currentNav=currentNav;
 let currentPackName='', selectedSceneIdx=-1, selectedDropMode='project';
+// Bir vaqtda bitta import/yuklab olish — qo'sh bosish va drag to'qnashuvini bloklaydi
+let __afOpBusy=false;
 
 function getAnim(i){
   if(i%2===0)return'<div class="preview-anim"><div class="anim-wave"><div class="anim-bar"></div><div class="anim-bar"></div><div class="anim-bar"></div><div class="anim-bar"></div></div></div>';
@@ -2104,8 +2110,8 @@ function countForSub(nav,slug){
   return n;
 }
 
-const ORIENT_LABELS={all:'All',horizontal:'16:9',vertical:'9:16',square:'1:1'};
-const RES_LABELS={all:'All','2k':'2K','4k':'4K','5k':'5K+'};
+const ORIENT_LABELS={all:'Barchasi',horizontal:'16:9',vertical:'9:16',square:'1:1'};
+const RES_LABELS={all:'Barchasi','2k':'2K','4k':'4K','5k':'5K+'};
 
 function buildCategoryMenu(nav){
   const menu=document.getElementById('catMenu');
@@ -2125,7 +2131,7 @@ function buildCategoryMenu(nav){
 function updateCategoryPillLabel(){
   const el=document.getElementById('catPillLabel');
   if(!el)return;
-  if(currentSub==='all'){ el.textContent='Category'; return; }
+  if(currentSub==='all'){ el.textContent='Kategoriya'; return; }
   el.textContent=CAT_LABELS[currentSub]||currentSub;
 }
 
@@ -2149,7 +2155,7 @@ function updateOrientResPillLabels(){
   const o=document.getElementById('orientPillLabel');
   const r=document.getElementById('resPillLabel');
   if(o)o.textContent=currentOrient==='all'?'Format':(ORIENT_LABELS[currentOrient]||'Format');
-  if(r)r.textContent=currentRes==='all'?'Resolution':(RES_LABELS[currentRes]||'Resolution');
+  if(r)r.textContent=currentRes==='all'?'Sifat':(RES_LABELS[currentRes]||'Sifat');
 }
 
 function selectCategory(el,slug){
@@ -2164,7 +2170,7 @@ function selectOrientFilter(el,value,label){
   currentOrient=value||'all';
   syncFilterDropMenu('orientMenu',currentOrient);
   const pill=document.getElementById('orientPillLabel');
-  if(pill)pill.textContent=value==='all'?'Format':label;
+  if(pill)pill.textContent=value==='all'?'Format':(label||ORIENT_LABELS[value]||'Format');
   closeAllDropdowns();
   closePack();
   render();
@@ -2174,7 +2180,7 @@ function selectResFilter(el,value,label){
   currentRes=value||'all';
   syncFilterDropMenu('resMenu',currentRes);
   const pill=document.getElementById('resPillLabel');
-  if(pill)pill.textContent=value==='all'?'Resolution':label;
+  if(pill)pill.textContent=value==='all'?'Sifat':(label||RES_LABELS[value]||'Sifat');
   closeAllDropdowns();
   closePack();
   render();
@@ -2205,6 +2211,26 @@ function getFiltered(){
   });
 }
 
+/** Asset yaratilgan vaqti (ms) — server createdAt; lokalda 0 (oxiriga tushadi) */
+function assetTime(a){
+  const t=Date.parse((a&&a.createdAt)||'');
+  return isNaN(t)?0:t;
+}
+/** Qidiruv so'ziga moslik bali (yuqori = mosroq). Bo'sh so'rovda 0. */
+function relevanceScore(a,q){
+  if(!q)return 0;
+  const name=String(a.displayName||a.n||'').toLowerCase();
+  const cat=String(a.catLabel||a.t||'').toLowerCase();
+  const tags=(a.tags||[]).map(t=>String(t).toLowerCase());
+  let s=0;
+  if(name===q)s+=100;
+  else if(name.indexOf(q)===0)s+=60;
+  else if(name.indexOf(q)>=0)s+=35;
+  if(tags.some(t=>t===q))s+=25;
+  else if(tags.some(t=>t.indexOf(q)>=0))s+=12;
+  if(cat.indexOf(q)>=0)s+=10;
+  return s;
+}
 function sortAssetList(list){
   const out=[...list];
   if(currentSort==='name'){
@@ -2212,12 +2238,24 @@ function sortAssetList(list){
     return out;
   }
   if(currentSort==='newest'){
+    // Haqiqiy sana bo'yicha (yangi→eski); sana teng bo'lsa server avval
     out.sort((a,b)=>{
+      const ta=assetTime(a), tb=assetTime(b);
+      if(tb!==ta)return tb-ta;
       const sa=a.server?1:0, sb=b.server?1:0;
       if(sb!==sa)return sb-sa;
       return String(b.n).localeCompare(String(a.n));
     });
     return out;
+  }
+  // 'relevant' — qidiruv bo'lsa moslik bo'yicha, aks holda server tartibi (API yangi→eski)
+  const q=currentSearch;
+  if(q){
+    out.sort((a,b)=>{
+      const d=relevanceScore(b,q)-relevanceScore(a,q);
+      if(d!==0)return d;
+      return assetTime(b)-assetTime(a);
+    });
   }
   return out;
 }
@@ -2226,7 +2264,7 @@ function updateGridLabel(){
   const nav=NAV_LABELS[currentNav]||'Assets';
   const sub=CAT_LABELS[currentSub];
   document.getElementById('gridLabel').textContent=
-    currentSub==='all' ? ('All '+nav) : (sub||currentSub);
+    currentSub==='all' ? ('Barcha '+nav) : (sub||currentSub);
 }
 
 function updatePackFooter(){
@@ -2533,7 +2571,7 @@ function applyMogrtItems(packKey,items){
 
 function openPack(name){
   const pack=packs[name];
-  if(!pack){showToast('Pack not found');return;}
+  if(!pack){showToast('Pack topilmadi');return;}
   if(pack.server&&!packCanAeImport(pack)){
     showToast('Pack (.aep) yo\'q — Studio\'da contributor loyiha faylini yuklashi kerak');
   }
@@ -2599,6 +2637,15 @@ async function importSelectedScene(){
 
 async function importSceneWithMode(pack,scene,packName,mode){
   if(!pack||!scene)return;
+  if(__afOpBusy){ showToast('Avvalgi amal tugashini kuting…','warning'); return; }
+  __afOpBusy=true;
+  try{
+    return await __importSceneWithModeImpl(pack,scene,packName,mode);
+  }finally{
+    __afOpBusy=false;
+  }
+}
+async function __importSceneWithModeImpl(pack,scene,packName,mode){
   const compName=(scene.aeComp||scene.n||'').trim();
   if(!compName&&!packCanAeImport(pack)){
     showToast('Sahna comp nomi yo‘q');
@@ -2779,6 +2826,16 @@ function initSceneDrag(){
 }
 
 async function downloadAll(n){
+  if(!packs[n])return;
+  if(__afOpBusy){ showToast('Avvalgi amal tugashini kuting…','warning'); return; }
+  __afOpBusy=true;
+  try{
+    return await __downloadAllImpl(n);
+  }finally{
+    __afOpBusy=false;
+  }
+}
+async function __downloadAllImpl(n){
   const p=packs[n];
   if(!p)return;
   // Template'ni Downloaded'ga, barcha sahnalarni importedScenes'ga
@@ -2856,27 +2913,29 @@ async function deleteDownloadedTemplate(key){
         showToast('AE dan o‘chirishda xato: '+e.message);
       }
     }
-    // 2) Keshlangan pack fayllarini tozalash
+    // 2) Keshlangan pack fayllarini tozalash — qisman muvaffaqiyatda ham aniq xabar
     if(pack&&pack.serverTemplateId){
+      let cacheFails=0;
       try{
         const fs=require('fs'),path=require('path'),os=require('os');
         const tid=pack.serverTemplateId;
         const base=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir&&AssetFlowCatalog.downloadDir())||os.tmpdir();
         ['','.zip','.aep','.mogrt'].forEach(ext=>{
           const f=path.join(base,'assetflow_'+tid+ext);
-          try{ if(fs.existsSync(f)) fs.rmSync(f,{force:true}); }catch(e){}
+          try{ if(fs.existsSync(f)) fs.rmSync(f,{force:true}); }catch(e){ cacheFails++; }
         });
         const dir=path.join(base,'assetflow_'+tid+'_unzipped');
-        try{ if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true}); }catch(e){}
+        try{ if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true}); }catch(e){ cacheFails++; }
         // .mogrt extract papkalari (har importda unikal nom — prefiks bo'yicha topamiz)
         try{
           fs.readdirSync(base).forEach(name=>{
             if(name.indexOf('assetflow_mogrt_'+tid+'_')===0){
-              try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){}
+              try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){ cacheFails++; }
             }
           });
-        }catch(e){}
-      }catch(e){}
+        }catch(e){ cacheFails++; }
+      }catch(e){ cacheFails++; }
+      if(cacheFails>0) showToast('Ba‘zi kesh fayllar o‘chmadi ('+cacheFails+') — keyinroq qayta urinib ko‘ring','warning');
     }
   }else{
     showToast('"'+name+'" ro‘yxatdan olib tashlandi');
@@ -2989,6 +3048,28 @@ function hasAnyAssets(){
 function filtersActive(){
   return !!(currentSearch||currentSub!=='all'||currentOrient!=='all'||currentRes!=='all');
 }
+/** Faol filtrlar soni (qidiruv + bo'lim + format + sifat) */
+function activeFilterCount(){
+  let n=0;
+  if(currentSearch)n++;
+  if(currentSub!=='all')n++;
+  if(currentOrient!=='all')n++;
+  if(currentRes!=='all')n++;
+  return n;
+}
+/** Filtr bar'da «Tozalash (N)» tugmasini ko'rsatadi/yashiradi */
+function updateFilterIndicator(){
+  const pill=document.getElementById('clearFiltersPill');
+  if(!pill)return;
+  const n=activeFilterCount();
+  if(n>0){
+    pill.style.display='';
+    const c=document.getElementById('clearFiltersCount');
+    if(c)c.textContent='('+n+')';
+  }else{
+    pill.style.display='none';
+  }
+}
 
 /** Grid bo'sh bo'lganda holatga qarab tegishli xabar/skeleton/retry chiqaradi */
 function catalogEmptyStateHtml(){
@@ -3004,8 +3085,9 @@ function catalogEmptyStateHtml(){
   }
   // Katalog tayyor, lekin filtr natija bermadi
   if(catalogLoadState==='ready'&&hasAnyAssets()&&filtersActive()){
+    const n=activeFilterCount();
     return '<div class="empty" style="grid-column:1/-1"><div class="empty-ico">◌</div>'+
-      '<div class="empty-txt">Bu filtr bo‘yicha natija yo‘q.</div>'+
+      '<div class="empty-txt">'+n+' ta filtr natijani yashiryapti.</div>'+
       '<button type="button" class="empty-retry ghost" onclick="clearAllFilters()">Filtrlarni tozalash</button></div>';
   }
   // Haqiqatan bo'sh
@@ -3053,6 +3135,7 @@ function render(){
   }
   document.getElementById('assetCount').textContent=list.length;
   updateGridLabel();
+  updateFilterIndicator();
 }
 function renderFav(){
   const list=assets.filter(a=>window.favorites.has(a.n));
@@ -3072,7 +3155,7 @@ function renderDl(){
 function toggleFav(n){
   window.favorites.has(n)?window.favorites.delete(n):window.favorites.add(n);
   persistUserPrefs();
-  showToast(window.favorites.has(n)?'★ Saved to favorites':'Removed from favorites');
+  showToast(window.favorites.has(n)?'★ Sevimlilarga qo‘shildi':'Sevimlilardan olib tashlandi');
   render();renderFav();
 }
 
@@ -3216,11 +3299,18 @@ function switchNav(el,tab){
   switchNavFromSidebar(document.querySelector(`.env-side-link[data-nav="${tab}"]`),tab);
 }
 
-document.getElementById('searchInput').addEventListener('input',function(){currentSearch=this.value.toLowerCase();render();});
+// Qidiruv — har klaviatura bosilishida emas, 300ms jim turgach render qilinadi
+let __searchDebounce=null;
+document.getElementById('searchInput').addEventListener('input',function(){
+  const val=this.value.toLowerCase();
+  if(__searchDebounce)clearTimeout(__searchDebounce);
+  __searchDebounce=setTimeout(function(){currentSearch=val;render();},300);
+});
 
 function runSearch(){
   const si=document.getElementById('searchInput');
   if(!si)return;
+  if(__searchDebounce){clearTimeout(__searchDebounce);__searchDebounce=null;}
   currentSearch=si.value.toLowerCase();
   si.focus();
   render();
@@ -3301,7 +3391,7 @@ window.toggleDrop=toggleDrop;
 window.closeAllDropdowns=closeAllDropdowns;
 function selectSort(el,key,label){
   currentSort=key||'relevant';
-  document.getElementById('sortLabel').textContent=label||'Sort';
+  document.getElementById('sortLabel').textContent=label||'Saralash';
   document.querySelectorAll('#sortMenu .dd-item').forEach(item=>{
     item.classList.toggle('selected',item===el);
   });
@@ -3561,9 +3651,10 @@ function renderDownloadPath(dir,staged){
 }
 
 function persistDownloadDir(dir){
+  let ok=true;
   // Barqaror settings faylga (CEP) — restartdan keyin ham saqlanadi
   if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.saveDownloadDir){
-    AssetFlowCatalog.saveDownloadDir(dir||'');
+    if(AssetFlowCatalog.saveDownloadDir(dir||'')===false) ok=false;
   }
   // Eski joyga ham (backwards-compat)
   if(typeof AssetFlowStore!=='undefined'){
@@ -3571,8 +3662,9 @@ function persistDownloadDir(dir){
       const prefs=AssetFlowStore.loadPrefs();
       prefs.client={...(prefs.client||{}),downloadDir:dir||''};
       AssetFlowStore.savePrefs(prefs);
-    }catch(e){}
+    }catch(e){ ok=false; }
   }
+  return ok;
 }
 
 /** CEP native folder picker (ExtendScript'siz, ishonchli).
@@ -3614,13 +3706,29 @@ function resetDownloadFolder(){
   showToast('Standart tanlandi — «Saqlash» bosing');
 }
 
-/** «Saqlash» — tanlangan papkani prefs'ga yozadi */
+/** «Saqlash» — tanlangan papkani prefs'ga yozadi (yozib bo'lishini avval sinaydi) */
 function saveDownloadFolderSettings(){
   const dir=(pendingDownloadDir!==undefined)?pendingDownloadDir:getDownloadDir();
-  persistDownloadDir(dir);
+  // CEP'da tanlangan papka haqiqatan yozib bo'ladimi — sinab ko'ramiz
+  if(dir&&IS_CEP){
+    try{
+      const fs=require('fs'),path=require('path');
+      if(!fs.existsSync(dir)) fs.mkdirSync(dir,{recursive:true});
+      const probe=path.join(dir,'.afwrite_'+Date.now());
+      fs.writeFileSync(probe,'ok');
+      fs.rmSync(probe,{force:true});
+    }catch(e){
+      showToast('Bu papkaga yozib bo‘lmadi — boshqa papka tanlang','error');
+      return;
+    }
+  }
+  if(!persistDownloadDir(dir)){
+    showToast('Sozlama saqlanmadi — disk yoki ruxsatni tekshiring','error');
+    return;
+  }
   pendingDownloadDir=undefined;
   renderDownloadPath(dir,false);
-  showToast('✓ Saqlandi');
+  showToast('✓ Saqlandi','success');
 }
 
 window.chooseDownloadFolder=chooseDownloadFolder;
@@ -3866,8 +3974,19 @@ function pubApiBase(){
   return (typeof ASSETFLOW_ENV!=='undefined')?ASSETFLOW_ENV.defaultApi():'https://assetflow-rqbq.onrender.com';
 }
 
+/** 30s timeout bilan fetch — publish so'rovlari cheksiz osilib qolmasin */
+function pubFetch(path,opts,ms){
+  opts=opts||{};
+  if(typeof AbortController==='undefined') return fetch(pubApiBase()+path,opts);
+  const ctrl=new AbortController();
+  const timer=setTimeout(function(){ctrl.abort();},ms||30000);
+  return fetch(pubApiBase()+path,Object.assign({},opts,{signal:ctrl.signal}))
+    .catch(function(e){ if(e&&e.name==='AbortError'){throw new Error('Server javob bermadi (vaqt tugadi)');} throw e; })
+    .finally(function(){ clearTimeout(timer); });
+}
+
 async function pubJson(path,body,method){
-  const res=await fetch(pubApiBase()+path,{
+  const res=await pubFetch(path,{
     method:method||'POST',
     headers:Object.assign({'Content-Type':'application/json'},pubAuthHeaders()),
     body:JSON.stringify(body||{})
@@ -3880,7 +3999,7 @@ async function pubJson(path,body,method){
 /** Shu contributor'ning bir xil externalId yoki nomli shablonini topadi (dublikat oldini olish) */
 async function pubFindExisting(externalId,name){
   try{
-    const res=await fetch(pubApiBase()+'/api/contributor/templates?mine=1',{headers:pubAuthHeaders()});
+    const res=await pubFetch('/api/contributor/templates?mine=1',{headers:pubAuthHeaders()});
     if(!res.ok) return null;
     const data=await res.json();
     const items=data.items||[];
@@ -3891,11 +4010,26 @@ async function pubFindExisting(externalId,name){
   }catch(e){ return null; }
 }
 
-async function pubUpload(path,formData){
-  const res=await fetch(pubApiBase()+path,{method:'POST',headers:pubAuthHeaders(),body:formData});
-  const txt=await res.text();let data;try{data=txt?JSON.parse(txt):null;}catch(e){data={raw:txt};}
-  if(!res.ok) throw new Error((data&&data.error)||('HTTP '+res.status));
-  return data;
+/** Fayl yuklash — XHR orqali (upload progress bilan). onProgress(loaded,total) ixtiyoriy. */
+function pubUpload(path,formData,onProgress){
+  return new Promise(function(resolve,reject){
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',pubApiBase()+path);
+    const h=pubAuthHeaders();
+    Object.keys(h).forEach(function(k){ try{ xhr.setRequestHeader(k,h[k]); }catch(e){} });
+    if(onProgress&&xhr.upload){
+      xhr.upload.onprogress=function(e){ if(e.lengthComputable) onProgress(e.loaded,e.total); };
+    }
+    xhr.onload=function(){
+      let data;try{data=xhr.responseText?JSON.parse(xhr.responseText):null;}catch(e){data={raw:xhr.responseText};}
+      if(xhr.status>=200&&xhr.status<300) resolve(data);
+      else reject(new Error((data&&data.error)||('HTTP '+xhr.status)));
+    };
+    xhr.onerror=function(){ reject(new Error('Tarmoq xatosi — internet yoki API URL ni tekshiring')); };
+    xhr.ontimeout=function(){ reject(new Error('Yuklash vaqti tugadi (5 daq)')); };
+    xhr.timeout=300000;
+    xhr.send(formData);
+  });
 }
 
 function fileToBlob(p,type){
@@ -4012,8 +4146,11 @@ async function publishGo(){
   const externalId='ae-'+pubSceneKey(name);
 
   btn.disabled=true;
+  // Joriy bosqich — xato bo'lsa qaysi qadamda ekani aniq ko'rinadi
+  let stage='1/6 Pack ziplanmoqda';
+  const setStage=function(s){ stage=s; status.textContent=s+'…'; };
   try{
-    status.textContent='Pack ziplanmoqda…';
+    setStage('1/6 Pack ziplanmoqda');
     const zip=buildPackZip(proj.file);
 
     const body={
@@ -4023,55 +4160,64 @@ async function publishGo(){
       metaJson:{ aeScenesFolder:folder }, scenes:manifestScenes
     };
 
-    status.textContent='Tekshirilmoqda…';
+    setStage('2/6 Tekshirilmoqda');
     const existing=await pubFindExisting(externalId,name);
     let id;
     if(existing){
-      status.textContent='Mavjud shablon yangilanmoqda…';
+      setStage('3/6 Mavjud shablon yangilanmoqda');
       await pubJson('/api/contributor/templates/'+existing.id, body, 'PATCH');
       id=existing.id;
     }else{
-      status.textContent='Shablon yaratilmoqda…';
+      setStage('3/6 Shablon yaratilmoqda');
       const tpl=await pubJson('/api/contributor/templates', body);
       id=tpl.id;
     }
 
-    status.textContent='Pack yuklanmoqda… ('+(zip.size/1048576).toFixed(1)+' MB)';
+    const zipMb=(zip.size/1048576).toFixed(1);
+    setStage('4/6 Pack yuklanmoqda ('+zipMb+' MB)');
     const fd=new FormData();
     fd.append('pack', fileToBlob(zip.path,'application/zip'), path.basename(zip.path));
     const firstOk=scenes.filter(function(s){return s.ok&&s.path;})[0];
     if(firstOk) fd.append('thumb', fileToBlob(firstOk.path,'image/png'), 'thumb.png');
-    await pubUpload('/api/contributor/templates/'+id+'/assets', fd);
+    await pubUpload('/api/contributor/templates/'+id+'/assets', fd, function(loaded,total){
+      const pct=total?Math.round(loaded/total*100):0;
+      const mb=total?(' · '+(loaded/1048576).toFixed(1)+'/'+(total/1048576).toFixed(1)+' MB'):'';
+      status.textContent='4/6 Pack yuklanmoqda… '+pct+'%'+mb;
+    });
 
     const okScenes=scenes.filter(function(s){return s.ok&&s.path;});
     if(okScenes.length){
-      status.textContent='Sahna preview yuklanmoqda… ('+okScenes.length+')';
+      setStage('5/6 Sahna preview yuklanmoqda ('+okScenes.length+')');
       const sf=new FormData();
       okScenes.forEach(function(s){
         const key=pubSceneKey(s.aeComp||s.name);
         sf.append(key, fileToBlob(s.path,'image/png'), key+'.png');
       });
-      await pubUpload('/api/contributor/templates/'+id+'/scene-previews', sf);
+      await pubUpload('/api/contributor/templates/'+id+'/scene-previews', sf, function(loaded,total){
+        const pct=total?Math.round(loaded/total*100):0;
+        status.textContent='5/6 Sahna preview yuklanmoqda… '+pct+'%';
+      });
     }
 
     const cu=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
     const isAdmin=cu&&cu.role==='ADMIN';
     if(isAdmin){
-      status.textContent='Tasdiqlanmoqda…';
+      setStage('6/6 Tasdiqlanmoqda');
       await pubJson('/api/contributor/templates/'+id+'/review', {action:'approve',published:true});
     }else{
-      status.textContent='Moderatsiyaga yuborilmoqda…';
+      setStage('6/6 Moderatsiyaga yuborilmoqda');
       await pubJson('/api/contributor/templates/'+id+'/submit', {});
     }
 
-    showToast('✓ "'+name+'" '+(existing?'yangilandi':'publish qilindi')+(isAdmin?' va tasdiqlandi':' — admin tasdiqlashini kuting'));
+    showToast('✓ "'+name+'" '+(existing?'yangilandi':'publish qilindi')+(isAdmin?' va tasdiqlandi':' — admin tasdiqlashini kuting'),'success');
     closePublish();
     if(isAdmin&&typeof AssetFlowCatalog!=='undefined'){
       try{ await AssetFlowCatalog.refreshBrowse(); }catch(e){}
     }
   }catch(e){
     console.error('publishGo',e);
-    status.textContent='Xato: '+(e.message||'noma\'lum');
+    const friendly=(typeof friendlyError==='function')?friendlyError(e):(e.message||'noma\'lum');
+    status.textContent='Xato ['+stage+']: '+friendly;
   }finally{
     btn.disabled=false;
   }

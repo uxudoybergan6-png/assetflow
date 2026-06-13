@@ -206,6 +206,7 @@ export function mapSubscriberRow(
     imports: profile.importsTotal,
     tokenOk,
     lastSeen: formatLastSeen(profile.lastSeenAt),
+    lastSeenAt: profile.lastSeenAt ? new Date(profile.lastSeenAt).toISOString() : null,
     device: profile.deviceLabel || "—",
     ae: profile.aeVersion || "—",
     downloadLimit: limits.downloadLimit,

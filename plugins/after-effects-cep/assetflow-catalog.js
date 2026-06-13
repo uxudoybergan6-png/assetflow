@@ -27,6 +27,27 @@ const AssetFlowCatalog = (() => {
     return h;
   }
 
+  /** 30s timeout bilan fetch — Render cold start cheksiz osilib qolmasin */
+  function fetchWithTimeout(url, options, ms) {
+    options = options || {};
+    const timeout = ms || 30000;
+    if (typeof AbortController === "undefined") {
+      return fetch(url, options);
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    return fetch(url, { ...options, signal: ctrl.signal })
+      .catch((e) => {
+        if (e && (e.name === "AbortError" || e.code === 20)) {
+          const te = new Error("Server javob bermadi (vaqt tugadi)");
+          te.timeout = true;
+          throw te;
+        }
+        throw e;
+      })
+      .finally(() => clearTimeout(timer));
+  }
+
   /** Barqaror sozlamalar fayli yo'li (~/Library/Application Support/AssetFlow/settings.json) */
   function settingsFilePath() {
     if (typeof window.__adobe_cep__ === "undefined") return "";
@@ -96,13 +117,13 @@ const AssetFlowCatalog = (() => {
     return os.tmpdir();
   }
 
-  /** Yuklab olish papkasini barqaror faylga saqlaydi */
+  /** Yuklab olish papkasini barqaror faylga saqlaydi. Muvaffaqiyatda true. */
   function saveDownloadDir(dir) {
-    writeSettings({ downloadDir: dir || "" });
+    return writeSettings({ downloadDir: dir || "" });
   }
 
   async function fetchCatalog() {
-    const res = await fetch(`${apiBase()}/api/plugin/catalog`, {
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog`, {
       headers: catalogHeaders(),
     });
     if (!res.ok) {
@@ -118,7 +139,7 @@ const AssetFlowCatalog = (() => {
   }
 
   async function fetchFeatured(limit = 6) {
-    const res = await fetch(`${apiBase()}/api/plugin/featured?limit=${limit}`, {
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/featured?limit=${limit}`, {
       headers: catalogHeaders(),
     });
     if (!res.ok) throw new Error(`Featured HTTP ${res.status}`);
@@ -261,6 +282,8 @@ const AssetFlowCatalog = (() => {
         serverTemplateId: u.id,
         nw: 0,
         templateApp: u.templateApp || "ae",
+        // Saralash uchun haqiqiy sana (createdAt afzal, bo'lmasa updatedAt)
+        createdAt: u.createdAt || u.updatedAt || "",
       });
     });
     return items.length;

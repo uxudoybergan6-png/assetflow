@@ -58,6 +58,27 @@ const AssetFlowAccount = (() => {
     return false;
   }
 
+  /** 30s timeout bilan fetch — so'rov cheksiz osilib qolmasin (Render cold start) */
+  function fetchWithTimeout(url, options, ms) {
+    options = options || {};
+    const timeout = ms || 30000;
+    if (typeof AbortController === "undefined") {
+      return fetch(url, options);
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    return fetch(url, { ...options, signal: ctrl.signal })
+      .catch((e) => {
+        if (e && (e.name === "AbortError" || e.code === 20)) {
+          const te = new Error("Server javob bermadi (vaqt tugadi)");
+          te.timeout = true;
+          throw te;
+        }
+        throw e;
+      })
+      .finally(() => clearTimeout(timer));
+  }
+
   async function request(path, options = {}) {
     const headers = { ...(options.headers || {}) };
     if (options.body && !(options.body instanceof FormData)) {
@@ -66,7 +87,9 @@ const AssetFlowAccount = (() => {
     const t = token();
     if (t) headers.Authorization = `Bearer ${t}`;
 
-    const res = await fetch(`${apiBase()}${path}`, {
+    // Fayl yuklash (FormData) uzoq davom etishi mumkin — timeout'ni uzaytiramiz
+    const timeoutMs = options.body instanceof FormData ? 180000 : 30000;
+    const res = await fetchWithTimeout(`${apiBase()}${path}`, {
       ...options,
       headers,
       body:
@@ -75,7 +98,7 @@ const AssetFlowAccount = (() => {
           : options.body
             ? JSON.stringify(options.body)
             : undefined,
-    });
+    }, timeoutMs);
 
     const text = await res.text();
     let data = null;

@@ -65,6 +65,7 @@ const CATALOG_SELECT = {
   metaJson: true,
   fileName: true,
   fileSize: true,
+  createdAt: true,
   updatedAt: true,
 } as const;
 

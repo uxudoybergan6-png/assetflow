@@ -129,6 +129,8 @@ select option{background:#222}
 .sub-plan.pro{color:var(--green)}
 .sub-plan.free{color:var(--muted)}
 .sub-seen{font-size:9px;color:var(--muted2)}
+.sub-msg-btn{margin-left:8px;flex-shrink:0;height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit}
+.sub-msg-btn:hover{border-color:var(--green);color:var(--green)}
 
 /* ── Overview stats ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -187,10 +189,12 @@ select option{background:#222}
 .log-dot.run{background:var(--amber);animation:pulse-dot .8s ease-in-out infinite}
 .log-dot.ok{background:var(--green)}
 .log-dot.err{background:var(--red)}
+.log-dot.warn{background:var(--amber)}
 .log-text{flex:1;color:var(--muted)}
 .log-text.run{color:var(--text);font-weight:500}
 .log-text.ok{color:var(--green)}
 .log-text.err{color:var(--red)}
+.log-text.warn{color:var(--amber)}
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* ── Scene upload list ── */
@@ -701,15 +705,27 @@ function getUser() {
 }
 
 // ── HTTP ───────────────────────────────────────────────────────────────────
-async function api(path, opts = {}) {
+async function api(path, opts = {}, _retried = false) {
   const isFormData = opts.body instanceof FormData;
   const headers = { ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...opts.headers };
   if (token()) headers['Authorization'] = 'Bearer ' + token();
-  const res = await fetch(apiBase() + path, {
-    ...opts,
-    headers,
-    body: opts.body && !isFormData ? JSON.stringify(opts.body) : opts.body
-  });
+  let res;
+  try {
+    res = await fetch(apiBase() + path, {
+      ...opts,
+      headers,
+      body: opts.body && !isFormData ? JSON.stringify(opts.body) : opts.body
+    });
+  } catch (netErr) {
+    // Tarmoq xatosi — seans o'rtasida Render uxlab qolgan bo'lishi mumkin (cold start).
+    // Bir marta uyg'otib qayta urinamiz; uyg'onmasa tushunarli xato qaytaramiz.
+    if (!_retried) {
+      toast('Server uyg‘onmoqda… qayta urinilmoqda', false);
+      const ok = await waitForApi(null, 5, 4000);
+      if (ok) return api(path, opts, true);
+    }
+    throw new Error(formatFetchError(netErr));
+  }
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
@@ -749,6 +765,27 @@ function toast(msg, err = false) {
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/** Tugmani amal davomida bloklaydi (qo'sh bosish/ikki marta so'rovni oldini oladi).
+ *  Qardosh tugmalar ham bloklanadi; tiklashda faqat biz bloklaganlar qaytariladi. */
+function setBtnBusy(btn, busy, busyText) {
+  if (!btn) return;
+  const row = btn.closest('.action-row,.edit-actions') || btn.parentElement;
+  if (busy) {
+    if (btn.dataset._txt === undefined) btn.dataset._txt = btn.innerHTML;
+    btn.disabled = true;
+    if (busyText) btn.innerHTML = busyText;
+    if (row) row.querySelectorAll('button').forEach(b => {
+      if (b !== btn && !b.disabled) { b.disabled = true; b.dataset._afLocked = '1'; }
+    });
+  } else {
+    btn.disabled = false;
+    if (btn.dataset._txt !== undefined) { btn.innerHTML = btn.dataset._txt; delete btn.dataset._txt; }
+    if (row) row.querySelectorAll('button').forEach(b => {
+      if (b.dataset._afLocked) { b.disabled = false; delete b.dataset._afLocked; }
+    });
+  }
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
@@ -828,7 +865,12 @@ async function bootShell() {
   document.getElementById('shell').style.display = 'flex';
   // host.jsx ni yangi versiyaga majburan yuklaymiz (AE restartisiz), so'ng render presetini tekshiramiz
   if (IS_CEP) {
-    try { await ensureHostBridge(); await ensureAdminPreviewPreset(); } catch (e) { console.warn('host boot', e); }
+    try { await ensureHostBridge(); await ensureAdminPreviewPreset(); }
+    catch (e) {
+      console.warn('host boot', e);
+      // Jim o'tkazmaymiz — import/render ishlamasligi mumkinligini bildiramiz
+      toast('AE bog‘lanishi tayyor emas — import/render uchun AE’ni qayta oching', true);
+    }
   }
   const u = getUser();
   // Avatar — email'ning birinchi harfi
@@ -1077,14 +1119,14 @@ function renderDetail(t) {
     <div class="detail-section">
       <label>Moderatsiya</label>
       <div class="action-row">
-        ${approveActive ? `<button class="btn-approve" onclick="reviewTemplate('${t.id}','approve')">✓ Tasdiqlash</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✓ Allaqachon tasdiqlangan</button>`}
-        ${rejectActive ? `<button class="btn-reject" onclick="reviewTemplate('${t.id}','reject')">✗ Rad etish</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✗ Rad etilgan</button>`}
+        ${approveActive ? `<button class="btn-approve" onclick="reviewTemplate('${t.id}','approve',this)">✓ Tasdiqlash</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✓ Allaqachon tasdiqlangan</button>`}
+        ${rejectActive ? `<button class="btn-reject" onclick="reviewTemplate('${t.id}','reject',this)">✗ Rad etish</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✗ Rad etilgan</button>`}
       </div>
       ${isApproved ? `
       <div class="action-row" style="margin-top:7px">
         ${isPublished
-          ? `<button class="btn-action amber" style="flex:1" onclick="togglePublish('${t.id}',false)">🔕 Katalogdan yashirish</button>`
-          : `<button class="btn-action blue" style="flex:1" onclick="togglePublish('${t.id}',true)">📢 Katalogga chiqarish</button>`}
+          ? `<button class="btn-action amber" style="flex:1" onclick="togglePublish('${t.id}',false,this)">🔕 Katalogdan yashirish</button>`
+          : `<button class="btn-action blue" style="flex:1" onclick="togglePublish('${t.id}',true,this)">📢 Katalogga chiqarish</button>`}
         <span style="font-size:10px;color:${isPublished?'var(--green)':'var(--muted)'};align-self:center;white-space:nowrap">
           ${isPublished ? '● Katalogda' : '○ Yashirin'}
         </span>
@@ -1227,20 +1269,21 @@ function renderDetail(t) {
           <textarea id="e-desc-${t.id}" style="height:52px;resize:vertical">${(t.description||'').replace(/</g,'&lt;')}</textarea>
         </div>
       </div>
-      <div style="margin-top:8px;display:flex;gap:8px">
-        <button class="btn-action" style="flex:1" onclick="saveMetadata('${t.id}')">💾 Saqlash</button>
-        <button class="btn-action" onclick="deleteTemplate('${t.id}','${t.name.replace(/'/g,"\\'")}')">🗑 O'chirish</button>
+      <div class="edit-actions" style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn-action" style="flex:1" onclick="saveMetadata('${t.id}',this)">💾 Saqlash</button>
+        <button class="btn-action" onclick="deleteTemplate('${t.id}','${t.name.replace(/'/g,"\\'")}',this)">🗑 O'chirish</button>
       </div>
       <div class="status-msg" id="edit-msg-${t.id}"></div>
     </div>`;
 }
 
 // ── Review ─────────────────────────────────────────────────────────────────
-async function reviewTemplate(id, action) {
+async function reviewTemplate(id, action, btn) {
   const note = (document.getElementById('note-' + id)?.value || '').trim();
   const msg = document.getElementById('msg-' + id);
   msg.textContent = 'Yuborilmoqda…';
   msg.className = 'status-msg';
+  setBtnBusy(btn, true, action === 'approve' ? '⏳ Tasdiqlanmoqda…' : '⏳ Rad etilmoqda…');
   try {
     await api('/api/contributor/templates/' + id + '/review', {
       method: 'POST',
@@ -1252,6 +1295,7 @@ async function reviewTemplate(id, action) {
     await loadTemplates();
     loadStats();
   } catch(e) {
+    setBtnBusy(btn, false);
     if (handleAuthError(e)) return;
     msg.textContent = e.message;
     msg.className = 'status-msg err';
@@ -1259,9 +1303,10 @@ async function reviewTemplate(id, action) {
 }
 
 // ── Publish / Unpublish (katalogda ko'rsatish/yashirish) ─────────────────────
-async function togglePublish(id, publish) {
+async function togglePublish(id, publish, btn) {
   const msg = document.getElementById('msg-' + id);
   if (msg) { msg.textContent = publish ? 'Katalogga chiqarilmoqda…' : 'Yashirilmoqda…'; msg.className = 'status-msg'; }
+  setBtnBusy(btn, true, publish ? '⏳ Chiqarilmoqda…' : '⏳ Yashirilmoqda…');
   try {
     await api('/api/contributor/templates/' + id, {
       method: 'PATCH',
@@ -1270,10 +1315,12 @@ async function togglePublish(id, publish) {
     toast(publish ? '📢 Katalogga chiqarildi' : '🔕 Katalogdan yashirildi');
     const t = allTemplates.find(x => x.id === id);
     if (t) t.published = publish;
-    // Detail panelni yangilab qaytarish
+    // Detail panelni yangilab qaytarish (yangi tugma holati bilan)
     const d = document.getElementById('detail-' + id);
     if (d && t) d.innerHTML = renderDetail(t);
+    else setBtnBusy(btn, false);
   } catch(e) {
+    setBtnBusy(btn, false);
     if (handleAuthError(e)) return;
     if (msg) { msg.textContent = e.message; msg.className = 'status-msg err'; }
     toast(e.message, true);
@@ -1282,7 +1329,7 @@ async function togglePublish(id, publish) {
 window.togglePublish = togglePublish;
 
 // ── Metadata save ──────────────────────────────────────────────────────────
-async function saveMetadata(id) {
+async function saveMetadata(id, btn) {
   const msg = document.getElementById('edit-msg-' + id);
   const name = document.getElementById('e-name-' + id)?.value.trim();
   const catLabel = document.getElementById('e-cat-' + id)?.value.trim();
@@ -1294,6 +1341,7 @@ async function saveMetadata(id) {
   const cat = (catLabel || '').toLowerCase().replace(/[^a-z0-9]+/g,'') || 'all';
   msg.textContent = 'Saqlanmoqda…';
   msg.className = 'status-msg';
+  setBtnBusy(btn, true, '⏳ Saqlanmoqda…');
   try {
     await api('/api/contributor/templates/' + id, {
       method: 'PATCH',
@@ -1307,12 +1355,15 @@ async function saveMetadata(id) {
   } catch(e) {
     msg.textContent = e.message;
     msg.className = 'status-msg err';
+  } finally {
+    setBtnBusy(btn, false);
   }
 }
 
 // ── Delete ─────────────────────────────────────────────────────────────────
-async function deleteTemplate(id, name) {
+async function deleteTemplate(id, name, btn) {
   if (!confirm('"' + name + '" ni o\'chirmoqchimisiz? Bu amalni qaytarib bo\'lmaydi.')) return;
+  setBtnBusy(btn, true, '⏳ O\'chirilmoqda…');
   try {
     await api('/api/contributor/templates/' + id, { method: 'DELETE' });
     toast('✓ O\'chirildi');
@@ -1320,6 +1371,7 @@ async function deleteTemplate(id, name) {
     applySearch();
     loadStats();
   } catch(e) {
+    setBtnBusy(btn, false);
     toast(e.message, true);
   }
 }
@@ -1762,8 +1814,9 @@ async function importPackToAE(id) {
     steps[1] = { state: 'run', text: 'Unzip qilinmoqda…' };
     log();
 
-    // 1 — Unzip (cross-platform)
-    try { unzipTo(child, zipPath, tmpDir); } catch(e) {}
+    // 1 — Unzip (cross-platform). Xato bo'lsa saqlaymiz — hech narsa chiqmasa ko'rsatamiz
+    let unzipErr = null;
+    try { unzipTo(child, zipPath, tmpDir); } catch(e) { unzipErr = e; }
     let aepPath = '';
     const mogrtPaths = [];
     let aegraphicPath = '';
@@ -1799,7 +1852,9 @@ async function importPackToAE(id) {
         mogrtNote = ' · MOGRT';
       }
     }
-    if (!aepPath) throw new Error('.aep yoki .mogrt topilmadi — zip ichida .aep yoki .mogrt bo\'lishi kerak');
+    if (!aepPath) throw new Error(unzipErr
+      ? ('ZIP ochilmadi: ' + (unzipErr.message || unzipErr))
+      : '.aep yoki .mogrt topilmadi — zip ichida .aep yoki .mogrt bo\'lishi kerak');
     steps[1] = { state: 'ok', text: '✓ Unzip: ' + path.basename(aepPath) + mogrtNote };
     steps[2] = { state: 'run', text: 'AE da loyiha ochilmoqda…' };
     log();
@@ -1823,8 +1878,9 @@ async function importPackToAE(id) {
     // 2) OS orqali ham ochamiz (kafolat)
     try { launchAepInHostApp(aepPath); } catch(e) {}
 
-    // Qisqa kutish (max 8s) — faqat chiroyli xabar uchun; XATO bermaydi
+    // Qisqa kutish (max 8s) — AE haqiqatan ochdimi tasdiqlaymiz (soxta "✓" bo'lmasin)
     let projName = path.basename(aepPath).replace(/\.aep$/i, '');
+    let opened = false;
     for (let i = 0; i < 8; i++) {
       await new Promise(r => setTimeout(r, 1000));
       try {
@@ -1832,6 +1888,7 @@ async function importPackToAE(id) {
         const p = (raw && raw !== 'EvalScript error.') ? JSON.parse(raw) : null;
         if (p && p.ok && p.projectFile) {
           projName = p.projectName || projName;
+          opened = true;
           try { await evalP('afEnsureSaved(' + JSON.stringify(aepPath) + ')'); } catch(e) {}
           try { await evalP('afShowMainComp()'); } catch(e) {}
           break;
@@ -1841,7 +1898,10 @@ async function importPackToAE(id) {
     if (!IS_WIN) {
       try { child.exec('osascript -e \'tell application id "com.adobe.AfterEffects" to activate\''); } catch(e) {}
     }
-    steps[2] = { state: 'ok', text: '✓ AE da ochildi: ' + projName };
+    // AE tasdiqlamasa — soxta muvaffaqiyat ko'rsatmaymiz, ogohlantiramiz
+    steps[2] = opened
+      ? { state: 'ok', text: '✓ AE da ochildi: ' + projName }
+      : { state: 'warn', text: '⚠ Yuklab olindi, lekin AE javob bermadi — AE oynasini qo\'lda tekshiring' };
     log();
 
     const tplMeta = allTemplates.find(x => x.id === id);
@@ -1850,8 +1910,12 @@ async function importPackToAE(id) {
     if (btn) { btn.disabled = false; btn.textContent = '↓ Qayta yuklab olish'; }
 
     const prepHint = document.getElementById('prep-hint-' + id);
-    if (prepHint) prepHint.textContent = '✓ AE da tekshiring — keyin Scene papkasini tanlang';
-    toast('✓ AE da ochildi — tekshiring, keyin "Sahnalarni render"');
+    if (prepHint) prepHint.textContent = opened
+      ? '✓ AE da tekshiring — keyin Scene papkasini tanlang'
+      : '⚠ AE javob bermadi — oynani tekshiring, keyin Scene papkasini tanlang';
+    toast(opened
+      ? '✓ AE da ochildi — tekshiring, keyin "Sahnalarni render"'
+      : '⚠ Pack tayyor, lekin AE javob bermadi — AE oynasini tekshiring', !opened);
 
   } catch(e) {
     const ri = steps.findIndex(s => s.state === 'run');
@@ -2519,7 +2583,11 @@ function renderSubscribers(items) {
     el.innerHTML = '<div class="empty-state"><div class="empty-ico">👤</div><div class="empty-txt">Obunachi yo\'q</div></div>';
     return;
   }
-  el.innerHTML = items.map(s => `
+  el.innerHTML = items.map(s => {
+    // Server tayyor `lastSeen` matnini ko'rsatadi; ISO bo'lsa jonli (relativ) timeAgo
+    const seen = s.lastSeenAt ? timeAgo(s.lastSeenAt) : (s.lastSeen || '—');
+    const email = String(s.email || '').replace(/'/g, "\\'");
+    return `
     <div class="sub-row">
       <div class="sub-avatar">${(s.name || s.email || 'U').charAt(0).toUpperCase()}</div>
       <div class="sub-info">
@@ -2528,10 +2596,49 @@ function renderSubscribers(items) {
       </div>
       <div class="sub-right">
         <div class="sub-plan ${(s.plan||'').toLowerCase()}">${s.plan || 'Free'}</div>
-        <div class="sub-seen">${s.lastSeen || '—'} · ${s.downloads || 0} dl</div>
+        <div class="sub-seen">${seen} · ${s.downloads || 0} dl</div>
       </div>
-    </div>`).join('');
+      ${email ? `<button class="sub-msg-btn" title="Email manzilini nusxalash" onclick="messageSubscriber('${email}')">⧉ Nusxalash</button>` : ''}
+    </div>`;
+  }).join('');
 }
+
+/** Matnni clipboard'ga ko'chiradi (CEF execCommand → navigator.clipboard fallback). */
+function copyToClipboard(text) {
+  // 1) Yashirin textarea + execCommand — CEF (AE) ichida ishonchli ishlaydi
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    if (ok) return true;
+  } catch (e) {}
+  // 2) Modern API (mavjud bo'lsa)
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+/** Obunachi email'ini clipboard'ga ko'chiradi (mailto/brauzer/Mail ochilmaydi). */
+function messageSubscriber(email) {
+  if (!email) { toast('Email yo\'q', true); return; }
+  if (copyToClipboard(email)) toast('Email nusxalandi: ' + email);
+  else toast('Email: ' + email, false);
+}
+window.copyToClipboard = copyToClipboard;
+window.messageSubscriber = messageSubscriber;
 
 // ── Downloaded tab ─────────────────────────────────────────────────────────
 // adminDownloaded[id] = { id, name, thumb, dir, folders:[], comps:[], downloadedAt }

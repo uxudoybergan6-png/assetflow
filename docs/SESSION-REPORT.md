@@ -1,25 +1,27 @@
-# SESSION REPORT — 2026-06-13 (AE plugin HIGH fixes — NOT committed, test kutilmoqda)
+# SESSION REPORT — 2026-06-13 (AE plugin + Admin MEDIUM fixes — NOT committed, test kutilmoqda)
 
-## Nima qilindi: Ikkala AE plugin'dagi BARCHA HIGH muammolar tuzatildi
+## Nima qilindi: Ikkala AE plugin'dagi BARCHA MEDIUM muammolar (+ API)
 
 ### ASOSIY PLUGIN (AssetFlow_Plugin.html + catalog.js + account.js)
-1. **Sessiya interceptor** — `account.js` `request()` + `catalog.js` `fetchCatalog()` 401/403 da token tozalaydi va `assetflow:session-expired` event → toast + login oynasi (`handleAuthFailure`).
-2. **Boot spinner + Retry** — `catalogLoadState`; skeleton + "Server uyg'onmoqda (~60s)"; xatoda **Qayta urinish**; "Hali shablon yo'q" faqat haqiqatan bo'sh; filtr 0 bersa "Filtrlarni tozalash".
-3. **Toast tizimi** — `showToast(msg,type)` success/error/warning/info rang + navbat; `friendlyError()` xom xatolarni (Failed to fetch/EvalScript/HTTP) tushunarli qiladi.
-4. **Download Cancel** — `catalog.js` `cancelDownload()`; progress'da **Bekor qilish**; `beforeunload`'da ham uzadi.
-5. **Footer "Download" → "Import qilish"** (bir xil nom); hero "↓ Hammasini import".
-6. **`importedScenes` ID kalit** — `sceneStateKey(packKey,scene)`: bir xil sahna nomi to'qnashmaydi.
-7. **Featured strip** `hasPack:false` itemlarni yashiradi.
+1. **Saralash haqiqiy** — API `createdAt` qaytaradi (plugin.ts/catalog-map.ts); "Yangi" sana bo'yicha, "Mos" qidiruv moslik bali (`relevanceScore`) bo'yicha.
+2. **Search debounce 300ms** — har bosishda emas, jim turgach render (`__searchDebounce`); ⌕ tugmasi darhol.
+3. **Jim catch tuzatildi** — papka saqlanmasa yozish sinovi + aniq xato; kesh o'chirishda qisman muvaffaqiyat hisoblanadi (`cacheFails`).
+4. **Fetch 30s timeout** — `fetchWithTimeout` (catalog.js, account.js) + `pubFetch` (publish) AbortController bilan.
+5. **Filtr ko'rsatkichi** — «✕ Tozalash (N)» pill; 0 natijada "N ta filtr natijani yashiryapti".
+6. **Til o'zbekcha** — Qidirish/Saralash/Mos/Yangi/Kategoriya/Sifat/Sevimlilar/Shablonlar va h.k. (AE-mockup chrome ataylab inglizcha qoldi).
+7. **Publish progress** — 1/6…6/6 bosqich; pack/preview XHR upload `%`; xatoda `Xato [bosqich]:`.
+8. **Poyga qulfi** — `__afOpBusy`: import/downloadAll bir vaqtda bittasi (qo'sh bosish/drag bloklanadi).
 
-### ADMIN PLUGIN (AssetFlow_Admin.html + host.jsx)
-1. **"Admin Preview" preset auto** — `afEnsureAdminPreviewPreset()` boot'da tekshiradi/yaratadi (H.264→.mp4), dirty tiklash; yo'q bo'lsa aniq yo'riqnoma.
-2. **`afCloseCurrent` data-loss himoya** — `app.project.dirty` + `afCloseCurrentGuarded()` tasdiq (3 chaqiruv joyi).
-3. **Auth markazlashtirildi** — `api()` 401/403 (login mustasno) avto `handleAuthError` → saveMetadata/deleteTemplate himoyalandi. (account.js fizik yuklanmadi — admin localStorage token; *handling* markazlashtirildi.)
+### ADMIN PLUGIN (AssetFlow_Admin.html)
+9. **Cold-start retry** — `api()` tarmoq xatosida `waitForApi` bilan bir marta uyg'otib qayta urinadi ("Server uyg'onmoqda").
+10. **Jim catch** — unzip xatosi endi ko'rinadi; AE ochilishi tasdiqlanmasa soxta "✓" emas, ⚠ ogohlantirish; host-boot xatosi toast.
+11. **Tugma disable** — review/publish/save/delete amal davomida bloklanadi + "⏳" (`setBtnBusy`).
+12. **Obunachilar** — `lastSeenAt` ISO (mapSubscriberRow) → jonli `timeAgo`; «⧉ Nusxalash» tugmasi email'ni clipboard'ga ko'chiradi (`copyToClipboard`, toast "Email nusxalandi: …"). mailto/OS-open olib tashlandi (CEP'da ishlamasdi).
+13. **Manifest PATCH merge** — contributor.ts allaqachon metaJson spread; qo'shimcha per-scene server kalitlar (previewKey/mogrtKey) saqlanadi (`mergeSceneMeta`).
 
 ## Tekshirildi
-- `node --check` (account/catalog/host.jsx) + ikkala HTML inline (`vm.Script`) — hammasi OK.
-- Fayllar `com.assetflow.demo` ga o'rnatildi (install-cep copy qismi; AE majburan yopilmadi).
-- ensureHostBridge ping yangilandi → eski host.jsx keshi avto qayta yuklanadi.
+- `tsc --noEmit` + `npm run build -w apps/api` — OK. Inline script parse (vm.Script) + `node --check` (catalog/account) — OK.
+- `install-cep.sh` ishga tushdi: fayllar `com.assetflow.demo` ga o'rnatildi (14:57), AE qayta ochilmoqda.
 
 ## Kutilmoqda
-- Foydalanuvchi AE-ichi testi: panelni qayta oching yoki AE restart. Commit qilinmadi (5 fayl `M`).
+- AE-ichi test (commit qilinmadi). API o'zgarishlari (createdAt, lastSeenAt, scene merge) Render deploy talab qiladi (push).
