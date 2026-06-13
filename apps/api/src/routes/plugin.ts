@@ -77,7 +77,7 @@ const CATALOG_SELECT = {
 } as const;
 
 /** Browse panel — tasdiqlangan shablonlar (server) */
-pluginRouter.get("/catalog", async (req, res) => {
+pluginRouter.get("/catalog", async (req: Request, res: Response) => {
   const base = apiPublicBase(req);
   const items = await prisma.contributorTemplate.findMany({
     where: approvedCatalogWhere,
@@ -90,7 +90,7 @@ pluginRouter.get("/catalog", async (req, res) => {
 });
 
 /** Browse notice-bar — eng yangi tasdiqlangan shablonlar */
-pluginRouter.get("/featured", async (req, res) => {
+pluginRouter.get("/featured", async (req: Request, res: Response) => {
   const base = apiPublicBase(req);
   const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 12);
   const items = await prisma.contributorTemplate.findMany({
@@ -105,7 +105,7 @@ pluginRouter.get("/featured", async (req, res) => {
 });
 
 /** Per-scene preview — rasm (PNG/JPG) yoki video (MP4/MOV), Range qo'llab-quvvatlanadi */
-pluginRouter.get("/assets/:templateId/scene/:key", async (req, res) => {
+pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   const key = String(req.params.key);
 
@@ -210,7 +210,7 @@ async function guardDownloadable(
 }
 
 /** M2: tanlangan sahnaning yakka .mogrt fayli — butun ZIP'siz yuklab olish */
-pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req, res) => {
+pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   if (!(await guardDownloadable(req, res, templateId))) return;
   const slug = sceneKey(String(req.params.slug));
@@ -236,7 +236,7 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req, res
 
 /** Pack yuklab olish — auth + published + Free/Pro limit gate (generic
     route'dan OLDIN ro'yxatdan o'tadi, shu sabab "pack" shu yerga tushadi). */
-pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req, res) => {
+pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   if (!(await guardDownloadable(req, res, templateId))) return;
   await serveTemplateAsset(req, res, templateId, "pack");
@@ -244,7 +244,7 @@ pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req, res) => {
 
 /** Thumb/preview — ochiq (katalog ko'rinishi uchun, img/video src auth yubora
     olmaydi). Pack bu yerga tushmaydi (yuqorida gate'langan). */
-pluginRouter.get("/assets/:templateId/:kind", async (req, res) => {
+pluginRouter.get("/assets/:templateId/:kind", async (req: Request, res: Response) => {
   const kind = req.params.kind as TemplateAssetKind;
   if (!["thumb", "preview"].includes(kind)) {
     res.status(400).json({ error: "Noto'g'ri tur" });
@@ -276,7 +276,7 @@ async function ensurePluginToken(userId: string, reuseExisting = true) {
 }
 
 /** CEP panel token tekshiruvi */
-pluginRouter.get("/validate", requireAuth, async (req, res) => {
+pluginRouter.get("/validate", requireAuth, async (req: Request, res: Response) => {
   res.json({
     ok: true,
     userId: req.user!.userId,
@@ -285,7 +285,7 @@ pluginRouter.get("/validate", requireAuth, async (req, res) => {
   });
 });
 
-pluginRouter.post("/token", requireAuth, async (req, res) => {
+pluginRouter.post("/token", requireAuth, async (req: Request, res: Response) => {
   const token = await ensurePluginToken(req.user!.userId, false);
   const row = await prisma.pluginToken.findFirst({
     where: { userId: req.user!.userId, token },
@@ -294,7 +294,7 @@ pluginRouter.post("/token", requireAuth, async (req, res) => {
 });
 
 /** Dashboard → AE: prefs.json ga cloud ulanishni yozish (plugin formasiz) */
-pluginRouter.post("/apply-ae-prefs", requireAuth, async (req, res) => {
+pluginRouter.post("/apply-ae-prefs", requireAuth, async (req: Request, res: Response) => {
   const apiBaseUrl = (
     (req.body?.apiBaseUrl as string) || getPublicApiUrl(req)
   ).replace(/\/$/, "");
@@ -331,7 +331,7 @@ pluginRouter.post("/apply-ae-prefs", requireAuth, async (req, res) => {
   });
 });
 
-pluginRouter.get("/subscription", requireAuth, async (req, res) => {
+pluginRouter.get("/subscription", requireAuth, async (req: Request, res: Response) => {
   const sub = await prisma.subscription.findUnique({
     where: { userId: req.user!.userId },
   });
@@ -351,7 +351,7 @@ const loginSchema = z.object({
 });
 
 /** AE panel — email/parol → plugin token */
-pluginRouter.post("/login", loginLimiter, async (req, res) => {
+pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Email va parol kerak" });
@@ -431,7 +431,7 @@ const planSchema = z.object({
   plan: z.enum(["free", "pro"]),
 });
 
-pluginRouter.patch("/plan", requireAuth, async (req, res) => {
+pluginRouter.patch("/plan", requireAuth, async (req: Request, res: Response) => {
   const parsed = planSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "plan: free yoki pro" });
@@ -467,7 +467,7 @@ async function bumpTemplateCounter(
   } catch {}
 }
 
-pluginRouter.post("/usage/download", usageLimiter, requireAuth, async (req, res) => {
+pluginRouter.post("/usage/download", usageLimiter, requireAuth, async (req: Request, res: Response) => {
   const parsed = usageSchema.safeParse(req.body);
   const templateId = parsed.success ? parsed.data.templateId : undefined;
   const result = await recordPluginDownload(req.user!.userId, templateId);
@@ -480,7 +480,7 @@ pluginRouter.post("/usage/download", usageLimiter, requireAuth, async (req, res)
   res.json({ user: serializePluginUser(profile) });
 });
 
-pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req, res) => {
+pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Request, res: Response) => {
   const parsed = usageSchema.safeParse(req.body);
   const templateId = parsed.success ? parsed.data.templateId : undefined;
   const result = await recordPluginImport(req.user!.userId, templateId);
