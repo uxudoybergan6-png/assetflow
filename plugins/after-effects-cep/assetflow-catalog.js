@@ -337,6 +337,24 @@ const AssetFlowCatalog = (() => {
       throw e;
     }
     const n = mergeIntoBrowse(data.items || []);
+    // Server'dan o'chirilgan shablonlarni downloaded/importedScenes dan tozalash
+    const serverIds = new Set((data.items || []).map((i) => i.id));
+    if (typeof window !== "undefined" && window.downloaded instanceof Set) {
+      for (const key of [...window.downloaded]) {
+        if (!key.startsWith("__srv_")) continue;
+        const id = key.slice(6);
+        if (!serverIds.has(id)) {
+          window.downloaded.delete(key);
+          if (window.importedScenes instanceof Set) {
+            const prefix = key + "::";
+            for (const sk of [...window.importedScenes]) {
+              if (sk === key || sk.startsWith(prefix)) window.importedScenes.delete(sk);
+            }
+          }
+        }
+      }
+      if (typeof savePrefs === "function") savePrefs();
+    }
     if (n > 0) await refreshFeatured();
     if (n > 0 && typeof window !== "undefined") {
       if (typeof buildCategoryMenu === "function") buildCategoryMenu(window.currentNav || "video");
@@ -609,7 +627,7 @@ const AssetFlowCatalog = (() => {
       if (!fs.existsSync(filePath)) return false;
       const st = fs.statSync(filePath);
       if (st.size < 1024) return false;
-      if (expectedSize > 0 && st.size !== expectedSize) return false;
+      if (expectedSize > 0 && st.size < expectedSize * 0.95) return false;
       return true;
     } catch {
       return false;
@@ -766,6 +784,7 @@ const AssetFlowCatalog = (() => {
       fs.mkdirSync(dir, { recursive: true });
     } catch {}
     const out = path.join(dir, `${slug}.mogrt`);
+    let _freshDownload = false;
     if (!cachedFileOk(fs, out, 0)) {
       if (typeof showToast === "function") showToast("Sahna yuklanmoqda…");
       const onProgress = opts && opts.onProgress;
@@ -776,19 +795,21 @@ const AssetFlowCatalog = (() => {
         } catch {}
         throw new Error("MOGRT yuklanmadi yoki fayl bo'sh");
       }
-      // Usage hisobi — faqat haqiqiy (keshsiz) yuklab olishda
-      if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
-        try {
-          await AssetFlowAccount.recordDownload(templateId);
-          if (typeof refreshAccountUi === "function") refreshAccountUi();
-        } catch (e) {
-          console.warn("usage/download", e);
-        }
-      }
+      _freshDownload = true;
     }
-    return extractMogrtFileToAep(
+    const result = await extractMogrtFileToAep(
       fs, path, child, NodeBuffer, baseDir, templateId, out
     );
+    // Usage hisobi — faqat muvaffaqiyatli import qilingandan keyin
+    if (_freshDownload && typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
+      try {
+        await AssetFlowAccount.recordDownload(templateId);
+        if (typeof refreshAccountUi === "function") refreshAccountUi();
+      } catch (e) {
+        console.warn("usage/download", e);
+      }
+    }
+    return result;
   }
 
   async function downloadPackToTemp(templateId, fileName, opts) {
@@ -834,6 +855,7 @@ const AssetFlowCatalog = (() => {
         ? !cachedFileOk(fs, out, expectedSize)
         : !cachedFileOk(fs, out, expectedSize);
 
+    let _needRecord = false;
     if (needDownload) {
       const directUrl = (opts && opts.packUrl) || meta.url;
       const url =
@@ -858,10 +880,13 @@ const AssetFlowCatalog = (() => {
         }
       }
       if (!cachedFileOk(fs, out, 0)) {
-        throw new Error("Pack yuklanmadi yoki fayl bo'sh");
+        throw new Error("Pack yuklanmadi yoki fayl bo’sh");
       }
-      // Usage hisobi — faqat haqiqiy (keshsiz) yuklab olishda
-      if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
+      _needRecord = true;
+    }
+
+    const _record = async () => {
+      if (_needRecord && typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
         try {
           await AssetFlowAccount.recordDownload(templateId);
           if (typeof refreshAccountUi === "function") refreshAccountUi();
@@ -869,7 +894,7 @@ const AssetFlowCatalog = (() => {
           console.warn("usage/download", e);
         }
       }
-    }
+    };
 
     // AE can’t import .zip directly. If pack is a zip, extract and return first .aep inside.
     if (ext.toLowerCase() === ".zip") {
@@ -890,14 +915,16 @@ const AssetFlowCatalog = (() => {
         fs.rmSync(out, { force: true });
       } catch {}
       const aep = findAepInDir(fs, path, dir);
-      if (aep) return aep;
+      if (aep) { await _record(); return aep; }
       // .aep yo’q — unzip -Z1 dan olingan entry yo’llari bo’yicha .mogrt’larni topamiz
       const mogrts = zipMogrts.map(e => path.join(dir, e)).filter(p => fs.existsSync(p));
       if (!mogrts.length) mogrts.push(...findAllFilesByExtInDir(fs, path, dir, [".mogrt"]));
       if (mogrts.length === 1) {
-        return extractMogrtFileToAep(
+        const r = await extractMogrtFileToAep(
           fs, path, child, NodeBuffer, baseDir, templateId, mogrts[0]
         );
+        await _record();
+        return r;
       }
       if (mogrts.length > 1) {
         throw mogrtPackError(mogrtItemsFromDir(fs, path, child, dir));
@@ -905,14 +932,17 @@ const AssetFlowCatalog = (() => {
       throw new Error("ZIP ichida .aep yoki .mogrt topilmadi. Pack fayl noto’g’ri.");
     }
 
-    // .mogrt — to'g'ridan yuklangan yakka fayl: extract (unikal papka,
-    // .mogrt'ning o'zi kesh bo'lib qoladi, qayta yuklab olinmaydi).
+    // .mogrt — to’g’ridan yuklangan yakka fayl: extract (unikal papka,
+    // .mogrt’ning o’zi kesh bo’lib qoladi, qayta yuklab olinmaydi).
     if (ext.toLowerCase() === ".mogrt") {
-      return extractMogrtFileToAep(
+      const r = await extractMogrtFileToAep(
         fs, path, child, NodeBuffer, baseDir, templateId, out
       );
+      await _record();
+      return r;
     }
 
+    await _record();
     return out;
   }
 

@@ -1294,7 +1294,7 @@ html.cep-mode .panel-body{border-radius:0!important}
       <div class="ae-panel timeline-panel">
         <div class="timeline-toolbar">
           <span class="active-tab">Timeline</span><span>|</span><span>Main Comp</span>
-          <span style="margin-left:auto;color:#6eb5ff;font-size:9px">Drop assets here ↓</span>
+          <span style="margin-left:auto;color:#6eb5ff;font-size:9px">Fayllarni bu yerga tashlang ↓</span>
         </div>
         <div class="drop-zone" id="dropZone">
           <div class="timeline-grid">
@@ -1344,7 +1344,7 @@ html.cep-mode .panel-body{border-radius:0!important}
                 <span class="env-leaf" aria-hidden="true"></span>
                 <span class="env-brand-text">AssetFlow</span>
               </div>
-              <button type="button" class="env-side-link active" data-nav="video" onclick="switchNavFromSidebar(this,'video')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></span>Video Templates</button>
+              <button type="button" class="env-side-link active" data-nav="video" onclick="switchNavFromSidebar(this,'video')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></span>Shablonlar</button>
               <button type="button" class="env-side-link" data-nav="motion" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span>Motion Videos</button>
               <button type="button" class="env-side-link" data-nav="graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span>Graphics</button>
               <button type="button" class="env-side-link" data-nav="luts" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span>LUTs</button>
@@ -1627,7 +1627,7 @@ html.cep-mode .panel-body{border-radius:0!important}
       <input class="account-input" id="pubName" placeholder="Shablon nomi">
       <div class="account-row">
         <select class="account-input" id="pubNav">
-          <option value="video">Video Templates</option>
+          <option value="video">Shablonlar</option>
           <option value="motion">Motion Videos</option>
           <option value="graphics">Graphics</option>
           <option value="luts">LUTs</option>
@@ -2102,7 +2102,7 @@ function showMonitorPreview(asset){
   }
   img.style.display='none';
   body.classList.remove('has-poster');
-  label.textContent=asset?asset.n:'Drop asset here';
+  label.textContent=asset?(asset.displayName||asset.n):'Faylni bu yerga tashlang';
   label.classList.toggle('active',!!asset);
 }
 
@@ -2881,7 +2881,7 @@ async function __downloadAllImpl(n){
       }
       if(ok){
         markPackDownloaded();
-        showToast('✓ "'+n+'" AE projectga import qilindi','success');
+        showToast('✓ "'+(p.displayName||n)+'" AE projectga import qilindi','success');
         if(p.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
           try{
             await AssetFlowAccount.recordImport(p.serverTemplateId);
@@ -3322,10 +3322,6 @@ function onEnvScopeChange(sel){
   applyNavSwitch(tab);
 }
 
-function switchNav(el,tab){
-  switchNavFromSidebar(document.querySelector(`.env-side-link[data-nav="${tab}"]`),tab);
-}
-
 // Qidiruv — har klaviatura bosilishida emas, 300ms jim turgach render qilinadi
 let __searchDebounce=null;
 document.getElementById('searchInput').addEventListener('input',function(){
@@ -3425,13 +3421,6 @@ function selectSort(el,key,label){
   closeAllDropdowns();
   render();
 }
-function trendSearch(q){
-  const si=document.getElementById('searchInput');
-  if(si)si.value=q;
-  currentSearch=String(q||'').toLowerCase();
-  render();
-}
-
 function initDrag(){
   document.querySelectorAll('.card[draggable]').forEach(card=>{
     card.ondragstart=e=>{card.classList.add('dragging');document.getElementById('ghostName').textContent=card.dataset.name;

@@ -61,6 +61,8 @@ model User {
   studioThreads         StudioMessageThread[] @relation("ContributorThreads")
   studioMessagesSent    StudioMessage[]       @relation("StudioMessagesSent")
   studioAuditLogs       StudioAuditLog[]      @relation("StudioAuditActor")
+
+  @@index([role])
 }
 
 enum PluginPlanTier {
@@ -92,6 +94,7 @@ model PluginProfile {
 
   @@index([status])
   @@index([plan])
+  @@index([lastSeenAt])
 }
 
 model Account {
@@ -242,6 +245,7 @@ model ContributorTemplate {
   @@index([contributorId])
   @@index([reviewStatus])
   @@index([published])
+  @@index([reviewStatus, published, updatedAt])
 }
 
 model StudioMessageThread {
