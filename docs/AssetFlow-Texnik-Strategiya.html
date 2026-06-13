@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>AssetFlow — Texnik Strategiya: Tizimlar Tahlili</title>
+<style>
+  @page { size: A4; margin: 15mm 13mm 16mm 13mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html { font-size: 10.5px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: #1a1a1a; line-height: 1.5; margin: 0; background: #fff; }
+  h1,h2,h3,h4 { line-height: 1.2; margin: 0 0 .4em; font-weight: 700; }
+  h2 { font-size: 18px; color: #14210a; border-bottom: 3px solid #82c341; padding-bottom: 6px; margin-top: 4px; }
+  h3 { font-size: 13.5px; color: #2a3b14; margin-top: 16px; }
+  h4 { font-size: 11.5px; color: #3a4a22; margin-top: 12px; }
+  p { margin: 0 0 7px; }
+  ul, ol { margin: 0 0 9px; padding-left: 17px; }
+  li { margin-bottom: 3px; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; background: #eef3e6; color: #355016; padding: 1px 4px; border-radius: 3px; font-size: 9.3px; }
+  a { color: #4a7d1c; text-decoration: none; }
+  small { color: #666; font-size: 9px; }
+  b.q { color:#14210a; }
+
+  .page-break { page-break-before: always; }
+  .keep { page-break-inside: avoid; }
+
+  /* Cover */
+  .cover { page-break-after: always; background: linear-gradient(155deg,#080a05 0%,#0e150a 50%,#1a2610 100%); color:#fff; padding:64px 44px; min-height:252mm; position:relative; margin:-15mm -13mm 0; }
+  .cover .leaf { width:52px;height:52px;border-radius:13px;background:#82c341;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 38px rgba(130,195,65,.5); }
+  .cover h1 { font-size:40px; margin:30px 0 8px; letter-spacing:-1px; background:linear-gradient(90deg,#a3e635,#82c341);-webkit-background-clip:text;background-clip:text;color:transparent; }
+  .cover .sub { font-size:16px; color:#c9d6b8; max-width:480px; line-height:1.45; }
+  .cover .meta { position:absolute; bottom:54px; left:44px; font-size:11px; color:#8ba36a; line-height:1.7; }
+  .cover .tags { margin-top:30px; display:flex; gap:7px; flex-wrap:wrap; }
+  .cover .tag { font-size:10.5px; background:rgba(130,195,65,.13); border:1px solid rgba(130,195,65,.4); color:#b6e07e; padding:5px 11px; border-radius:999px; }
+
+  .box { border-radius:8px; padding:11px 13px; margin:11px 0; font-size:10px; }
+  .box-rec { background:#f0f7e6; border-left:4px solid #82c341; }
+  .box-warn { background:#fff4e0; border-left:4px solid #e8920a; }
+  .box-bad { background:#fdeaea; border-left:4px solid #d83a3a; }
+  .box-info { background:#e9f1fb; border-left:4px solid #3b7ad8; }
+  .box-key { background:#14210a; color:#dcefc4; border-left:4px solid #a3e635; }
+  .box-key code { background:#26331a; color:#cfe9a8; }
+  .box b { display:block; margin-bottom:3px; }
+
+  table { width:100%; border-collapse:collapse; margin:9px 0; font-size:9.3px; page-break-inside:avoid; }
+  th,td { border:1px solid #dce3d2; padding:5px 7px; text-align:left; vertical-align:top; }
+  th { background:#14210a; color:#d9ecbf; font-weight:600; }
+  tr:nth-child(even) td { background:#f6f9f1; }
+  .tick { color:#4a9e1e; font-weight:700; }
+  .cross { color:#cc3333; font-weight:700; }
+  .warn { color:#d18b0a; font-weight:700; }
+
+  pre { background:#14180e; color:#d6e4c2; border-radius:8px; padding:11px 13px; overflow-x:auto; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.6px; line-height:1.5; margin:9px 0; page-break-inside:avoid; white-space:pre-wrap; }
+  pre .c { color:#6e8a4d; }
+  pre .k { color:#9fd9ef; }
+  pre .s { color:#c9e89a; }
+  pre .r { color:#f0a0a0; }
+
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; }
+  .pcard { border:1px solid #dce3d2; border-radius:8px; padding:11px; page-break-inside:avoid; }
+  .pcard h4 { margin-top:0; }
+  .pcard.hf { border-top:4px solid #d1fe17; } .pcard.mf { border-top:4px solid #91D010; } .pcard.af { border-top:4px solid #82c341; }
+  .tag-app { font-size:8.5px; color:#888; display:block; margin-bottom:5px; }
+
+  /* system block */
+  .sys { border:1px solid #e0e6d6; border-radius:8px; margin:11px 0; page-break-inside:avoid; overflow:hidden; }
+  .sys .head { background:#1e2a12; color:#fff; padding:7px 11px; font-weight:700; font-size:12px; display:flex; justify-content:space-between; align-items:center; }
+  .sys .head .verdict { font-size:9px; font-weight:600; padding:2px 8px; border-radius:999px; }
+  .v-comp { background:#b54343; color:#fff; }      /* competitor stronger */
+  .v-af { background:#82c341; color:#0a0a0a; }      /* assetflow stronger */
+  .v-even { background:#888; color:#fff; }
+  .sys .body { padding:9px 12px; }
+  .sys .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:7px; }
+  .sys .mini { font-size:9px; }
+  .sys .mini b { display:block; font-size:9.5px; margin-bottom:2px; }
+  .sys .mini.hf b { color:#8a9e0a; } .sys .mini.mf b { color:#6b8a0a; } .sys .mini.af b { color:#4a7d1c; }
+  .sys .rec { background:#f0f7e6; border-radius:6px; padding:7px 9px; font-size:9.3px; }
+  .sys .rec b { color:#2a3b14; }
+
+  .num { display:inline-flex; width:17px; height:17px; border-radius:50%; background:#82c341; color:#fff; font-size:9.5px; font-weight:700; align-items:center; justify-content:center; margin-right:5px; }
+  .footer-note { font-size:8.5px; color:#999; text-align:center; margin-top:24px; border-top:1px solid #eee; padding-top:7px; }
+  .lead { font-size:12px; color:#333; }
+  .why { background:#fffbe8; border:1px dashed #d6b34a; border-radius:6px; padding:5px 9px; font-size:9.3px; margin:5px 0; }
+  .why b { color:#8a6d12; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="leaf">🍃</div>
+  <h1>AssetFlow<br>Texnik Strategiya</h1>
+  <div class="sub">Higgsfield va Motion Factory plaginlarining tizim-bo'yicha 100% texnik tahlili. Qaysi tizim nega kuchli, qaysi texnologiyada qurilgan, va AssetFlow'ga nima qo'shish kerak — ipidan ignasigacha.</div>
+  <div class="tags">
+    <span class="tag">Tech-stack tahlili</span><span class="tag">14 ta tizim</span>
+    <span class="tag">Arxitektura metodologiyasi</span><span class="tag">Nima qo'shish + nega</span>
+    <span class="tag">Maqsad arxitektura</span>
+  </div>
+  <div class="meta">
+    Tayyorlandi: 2026-yil 13-iyun · Loyiha: creative-tools-saas (AssetFlow)<br>
+    Manbalar: Higgsfield v1.0.14 (Bolt CEP) · Motion Factory v4.9.5 (66 Web Component) · AssetFlow v1.1.1 (monorepo)<br>
+    Barcha kod, endpoint va fayl havolalari haqiqiy manba tahlilidan olingan.
+  </div>
+</div>
+
+<!-- 1. EXECUTIVE -->
+<section>
+  <h2>1. Boshqaruv xulosasi (texnik)</h2>
+  <p class="lead">Savolingiz: <i>"Texnik jihatdan ikkala raqibdan nimani olishim kerak, qaysi tizimlari menikidan kuchli va nega, qaysi bo'limlarni qo'shish kerak — to'liq strategiya."</i> Quyida har bir tizim alohida tahlil qilingan.</p>
+
+  <div class="box box-key">
+    <b>⚡ ENG MUHIM STRATEGIK XULOSA — bitta harakat 3 muammoni hal qiladi</b>
+    AssetFlow plaginini <b>Bolt CEP</b> (Higgsfield ishlatadigan framework) ga ko'chirish bir vaqtning o'zida: <b>(1)</b> ZXP paketlash+imzolashni beradi (<code>vite-cep-plugin</code> ichida ZXP build bor — bu sizning №1 blokeringiz), <b>(2)</b> typed <code>evalTS</code> ko'prigini beradi (injection xavfini tugatadi), <b>(3)</b> zamonaviy komponentli UI beradi. Uchta eng katta texnik qarzni bitta migratsiya yopadi.
+  </div>
+
+  <h3>Umumiy hukm</h3>
+  <table>
+    <tr><th style="width:24%">Soha</th><th>Kim kuchli</th><th>Sabab (qisqa)</th></tr>
+    <tr><td>Backend & ma'lumotlar bazasi</td><td class="tick">AssetFlow</td><td>Express+Prisma+PostgreSQL — MF'da WordPress, HF'da yopiq SaaS</td></tr>
+    <tr><td>Auth xavfsizligi</td><td class="tick">AssetFlow</td><td>PluginToken (32-bayt, DB, server-validatsiya) ≫ MF date-token; HF darajasiga yaqin</td></tr>
+    <tr><td>Contributor/moderatsiya</td><td class="tick">AssetFlow</td><td>Ikkala raqibda umuman yo'q</td></tr>
+    <tr><td>Plan gating (server-side)</td><td class="tick">AssetFlow</td><td>localStorage'dan chetlab bo'lmaydi; MF gating'ni localStorage'da saqlaydi</td></tr>
+    <tr><td>CEP↔ExtendScript ko'prigi</td><td class="cross">Higgsfield</td><td>typed <code>evalTS</code> vs sizning xom string <code>evalScript</code> (injection)</td></tr>
+    <tr><td>Xato monitoringi</td><td class="cross">Higgsfield</td><td>Sentry vs sizda <b>hech narsa yo'q</b> (faqat console)</td></tr>
+    <tr><td>Qidiruv</td><td class="cross">Motion Factory</td><td>Algolia (typo-tolerant, tez) vs sizning <code>findMany</code>+client filter</td></tr>
+    <tr><td>Auto-update</td><td class="cross">Motion Factory</td><td>To'liq avtomatik (download+extract+self-replace) vs sizda yo'q</td></tr>
+    <tr><td>Build/paketlash</td><td class="cross">Ikkalasi</td><td>Bolt CEP / npm — sizda plagin build yo'q, ZXP yo'q</td></tr>
+    <tr><td>AI funksiyalar</td><td class="cross">Ikkalasi</td><td>HF: 36 model; MF: ovoz+SFX — sizda yo'q</td></tr>
+    <tr><td>Xavfsizlik (umumiy)</td><td class="tick">AssetFlow</td><td>MF: 7 jiddiy zaiflik; siz allaqachon to'g'ri yo'ldasiz</td></tr>
+  </table>
+  <p><b>Bir jumlada:</b> Sizning <b>poydevoringiz (backend, auth, biznes-mantiq)</b> ikkala raqibdan kuchli. Ortda qolgan joy — <b>plagin qatlamining yetukligi</b>: build/paketlash, ko'prik xavfsizligi, monitoring, qidiruv, auto-update va AI. Bularning hech biri qayta yozishni talab qilmaydi — faqat ustiga qurish.</p>
+</section>
+
+<!-- 2. TECH STACK -->
+<section class="page-break">
+  <h2>2. Tech-stack va arxitektura metodologiyasi</h2>
+  <p>Har bir plagin tubdan boshqa metodologiyada qurilgan. Buni tushunish — nima ko'chirib bo'lishini aniqlaydi.</p>
+  <div class="grid3">
+    <div class="pcard hf">
+      <h4>Higgsfield</h4>
+      <span class="tag-app">Bolt CEP · Vite + React 19 + TS + Tailwind v4</span>
+      <p><b>Metodologiya:</b> Yagona kompilyatsiya qilingan SPA. Vite bitta <code>main-*.cjs</code> (71k qator, minified) + <code>init-cep-*.cjs</code> ga to'playdi, source-map bilan.</p>
+      <p><b>ExtendScript:</b> bitta <code>jsx/index.js</code> (2750 qator), <code>ppro</code> + <code>aeft</code> namespace.</p>
+      <p><b>Modul:</b> <code>index.html</code>'da maxsus AMD/require shim.</p>
+      <p><b>State:</b> TanStack React Query (server-state), <code>evalTS</code> bridge.</p>
+    </div>
+    <div class="pcard mf">
+      <h4>Motion Factory</h4>
+      <span class="tag-app">Vanilla JS · 66 ta pixflow-* Web Component npm paket</span>
+      <p><b>Metodologiya:</b> Mikro-modulli. Har funksiya alohida npm paket → <code>customElements.define()</code> bilan Web Component.</p>
+      <p><b>Kompozitsiya:</b> <code>main.js</code> paketlarni <code>require()</code> qiladi; <code>&lt;mf-templates&gt;</code>, <code>&lt;mf-voiceover&gt;</code> kabi teglar.</p>
+      <p><b>Aloqa (3 kanal):</b> CustomEvent + umumiy <code>localStorage["init-data"]</code> + window event-bus (<code>enable-toolbar</code>...).</p>
+      <p><b>Build:</b> faqat SASS kompilyatsiya; JS xom.</p>
+    </div>
+    <div class="pcard af">
+      <h4>AssetFlow (sizniki)</h4>
+      <span class="tag-app">Monorepo · Express 5 + Prisma + Next + statik</span>
+      <p><b>Metodologiya:</b> npm workspaces. <code>apps/api</code> (Express+TS), <code>apps/web</code> (Next 15), <code>packages/database</code> (Prisma 6.8), <code>packages/assetflow-studio</code> (statik HTML).</p>
+      <p><b>Plagin:</b> <code>plugins/after-effects-cep</code> — <b>build yo'q</b>, xom HTML/JS/JSX. <code>host.jsx</code> 2229 qator, ~110 funksiya.</p>
+      <p><b>Deploy:</b> API→Render, Studio→Vercel, lokal→PM2.</p>
+    </div>
+  </div>
+
+  <div class="box box-info">
+    <b>Ko'chirilishi bo'yicha xulosa</b>
+    <b>Higgsfield'dan</b> framework darajasidagi narsalarni olish mumkin (Bolt CEP, typed bridge, Query-cache, Sentry). <b>Motion Factory'dan</b> alohida tizimlarni olish mumkin (Algolia, auto-update, AI-proxy formulasi) — lekin <b>uning xavfsizlik anti-naqshlarini emas</b>. AssetFlow'ning monorepo backend'i ikkalasidan ustun — uni saqlang.
+  </div>
+</section>
+
+<!-- 3. SYSTEM BY SYSTEM -->
+<section class="page-break">
+  <h2>3. Tizim-bo'yicha chuqur taqqoslash</h2>
+  <p>14 ta tizim. Har biri: HF qanday qiladi · MF qanday qiladi · siz qanday qilasiz · <b>hukm + tavsiya</b>.</p>
+
+  <!-- S1 BUILD -->
+  <div class="sys">
+    <div class="head"><span>① Build &amp; paketlash</span><span class="verdict v-comp">Raqiblar kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>Bolt CEP = Vite. ZXP imzolangan paket. Source-map shipped. Hot-reload dev.</div>
+        <div class="mini mf"><b>Motion Factory</b>npm + SASS build. ZXP imzolangan. 66 paket versiyalanadi.</div>
+        <div class="mini af"><b>AssetFlow</b><span class="cross">Build yo'q.</span> Xom fayllar. <span class="cross">ZXP yo'q</span> — faqat <code>install-cep.sh</code> (imzosiz, dev-only).</div>
+      </div>
+      <div class="rec"><b>Tavsiya:</b> <span class="cross">№1 blocker.</span> Bolt CEP'ga ko'ching (<code>vite-cep-plugin</code> ZXP imzolashni o'z ichiga oladi) <b>YOKI</b> minimal yo'l: <code>ZXPSignCmd</code> + self-signed <code>.p12</code> + <code>scripts/build-zxp.sh</code>. Bunsiz oxirgi foydalanuvchi o'rnata olmaydi.</div>
+    </div>
+  </div>
+
+  <!-- S2 BRIDGE -->
+  <div class="sys">
+    <div class="head"><span>② CEP ↔ ExtendScript ko'prigi</span><span class="verdict v-comp">Higgsfield kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>Typed <code>evalTS/listenTS/dispatchTS</code>. Argumentlar JSON.stringify → try/catch ExtendScript → Promise. Namespace <code>host["ai.higgsfield.cep"].fn()</code>.</div>
+        <div class="mini mf"><b>Motion Factory</b>Xom <code>evalScript</code>, qo'lda string concat. <span class="cross">Fayl yo'llari to'g'ridan-to'g'ri interpolyatsiya</span> → injection.</div>
+        <div class="mini af"><b>AssetFlow</b>Xom string: <code>evalScript('importSingleSceneFromAep('+JSON.stringify(cfg)+')')</code>. Typed wrapper yo'q. <code>host.jsx</code> evalScript limitidan oshib <code>$.evalFile</code> fallback ishlatadi.</div>
+      </div>
+      <div class="why"><b>Nega muhim:</b> Xom string ko'prik = ① injection xavfi (zararli nom/yo'l ExtendScript bajaradi), ② type xavfsizligi yo'q, ③ har chaqiruvni qo'lda yozish — xatoga moyil. Higgsfield naqshi sanoat standarti.</div>
+      <div class="rec"><b>Tavsiya:</b> <code>evalJSX(fn, ...args)</code> typed wrapper qo'shing (Bolt CEP'ga ko'chsangiz tekin keladi). Argumentlarni faqat JSON sifatida uzating, ExtendScript ichida <code>JSON.parse</code> qiling — string concat qilmang.</div>
+    </div>
+  </div>
+
+  <!-- S3 AUTH -->
+  <div class="sys">
+    <div class="head"><span>③ Auth &amp; sessiya</span><span class="verdict v-af">AssetFlow kuchli (1 kamchilik bilan)</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>OAuth 2.0 + PKCE (S256) + Clerk. <code>refresh_token</code> bor. Token <code>~/.higgsfield-auth-*.json</code> (fs). <code>Bearer id_token</code>.</div>
+        <div class="mini mf"><b>Motion Factory</b><span class="cross">date-token <code>ddmmyy</code></span> (taxmin qilinadi). WebSocket login. localStorage'da token+email. Hardcoded <code>pxAPIKey</code>.</div>
+        <div class="mini af"><b>AssetFlow</b>JWT (HS256, 7d) + PluginToken (32-bayt random, 30d, DB, server-validatsiya). prefs.json (disk). <span class="cross">Refresh yo'q.</span></div>
+      </div>
+      <div class="rec"><b>Olish (HF'dan):</b> <code>refresh_token</code> flow — 30 kun tugaganda majburiy qayta-login o'rniga jim yangilash. <b>Tuzatish:</b> <code>apply-ae-prefs</code> hardcoded fayl yo'liga bog'liqligi (server+plagin bir mashinada deb faraz qiladi — faqat dev'da ishlaydi). <b>OLMANG (MF'dan):</b> date-token, localStorage auth, hardcoded key.</div>
+    </div>
+  </div>
+
+  <!-- S4 API -->
+  <div class="sys">
+    <div class="head"><span>④ API dizayni &amp; klient</span><span class="verdict v-even">Aralash</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b><code>fetch</code> + TanStack Query (cache, polling <code>refetchInterval</code>, retry-lanes, abort-signal). Base <code>fnf.higgsfield.ai</code>.</div>
+        <div class="mini mf"><b>Motion Factory</b>Xom <code>XMLHttpRequest</code>, WordPress REST (23+ endpoint), <code>wp-json/pixflow/*</code>.</div>
+        <div class="mini af"><b>AssetFlow</b>Express 5, RESTful, Zod validatsiya, Prisma xato-mapping (P2025→404, P2002→409). Klient: xom fetch, har filtr/qidiruvda <code>innerHTML</code> qayta-chizish.</div>
+      </div>
+      <div class="rec"><b>Server:</b> sizniki kuchli (Zod + tipli xato-handling). <b>Klient'da olish (HF'dan):</b> cache + polling abstraktsiyasi (job-status uchun) va innerHTML teardown o'rniga incremental DOM yangilash. Vanilla'da ham kichik query-cache yozish mumkin.</div>
+    </div>
+  </div>
+
+  <!-- S5 SEARCH -->
+  <div class="sys">
+    <div class="head"><span>⑤ Qidiruv</span><span class="verdict v-comp">Motion Factory kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>Server-side (galereya AI generatsiyaga qaratilgan, katalog qidiruv kam).</div>
+        <div class="mini mf"><b>Motion Factory</b>Algolia (appId <code>WS11ARDO5G</code>). Indekslar <code>pixflow_elements</code>+<code>_trending</code>. Typo-tolerant, optionalFilters, kategoriya-query AND-birikma. Klient-side, bir zumda.</div>
+        <div class="mini af"><b>AssetFlow</b><span class="cross"><code>findMany</code> + klient-side <code>nav/cat</code> filter.</span> Relevance scoring qo'lda. Typo-tolerance yo'q, scale bo'lmaydi.</div>
+      </div>
+      <div class="why"><b>Nega muhim:</b> Katalog o'sgani sayin <code>findMany</code>+JS-filter sekinlashadi, relevance/typo-tolerance bermaydi. MF 10k+ shablonni bir zumda qidiradi.</div>
+      <div class="rec"><b>Tavsiya (bosqichma-bosqich):</b> arzon → PostgreSQL <code>tsvector</code>/<code>pg_trgm</code> (sizda allaqachon Postgres bor). Keyin → Meilisearch/Typesense (self-host, arzon) yoki Algolia (bepul 10k so'rov/oy). <b>Diqqat:</b> MF'dek search-key'ni klientga hardcode qilmang — faqat search-only key, indeks faqat published yozuvlar.</div>
+    </div>
+  </div>
+
+  <!-- S6 DOWNLOAD -->
+  <div class="sys">
+    <div class="head"><span>⑥ Yuklab olish (download) quvuri</span><span class="verdict v-af">AssetFlow kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b><code>fetch</code> → fs.write → cache. os.tmpdir.</div>
+        <div class="mini mf"><b>Motion Factory</b>POST signed-url → <code>https.get</code> stream → progress (content-length) → <code>AdmZip.extractAllTo</code> → library API.</div>
+        <div class="mini af"><b>AssetFlow</b><code>https.get</code> qo'lda redirect (8 limit) → <span class="tick">cross-origin'da Auth header'ni olib tashlaydi</span> (token leak'dan saqlaydi) → shell <code>unzip -o</code> → .aep/.mogrt ajratish → selective scene download.</div>
+      </div>
+      <div class="rec"><b>Sizniki eng xavfsiz</b> — redirect'da Auth-header strip'i MF'da yo'q. <b>Kichik yaxshilash:</b> shell <code>unzip</code> o'rniga <code>adm-zip</code> (MF kabi) — system <code>unzip</code> mavjudligiga bog'liqlikni yo'qotadi (Windows'da yo'q).</div>
+    </div>
+  </div>
+
+  <!-- S7 IMPORT -->
+  <div class="sys">
+    <div class="head"><span>⑦ Adobe'ga import</span><span class="verdict v-even">Aralash</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b><code>evalTS("importMediaFromPath", ...)</code>. Track Matte / nested sequence avtomatlashtirish.</div>
+        <div class="mini mf"><b>Motion Factory</b>5 app: PPRO <code>importMGT</code>/<code>importFiles</code>, AEFT <code>ImportOptions</code>, LUT <code>ADBE Apply Color LUT2</code>, PHXS/ILST <code>open(File)</code>.</div>
+        <div class="mini af"><b>AssetFlow</b><code>host.jsx</code> 110 funksiya — eng katta native sirt. Async open-project navbati (<code>app.open()</code> bloklanishini chetlab o'tadi), undo-group, item-ID diff bilan yangi comp topish.</div>
+      </div>
+      <div class="rec"><b>Sizning <code>host.jsx</code> chuqurligi raqiblardan ustun</b> (async navbat — aqlli yechim). <b>Olish (MF'dan):</b> ko'p-app host-detection naqshi (<code>getHostEnvironment().appName</code> switch) — kelajakda PPRO/PS qo'shsangiz. <b>Tuzatish:</b> evalScript limitini typed bridge + <code>$.evalFile</code> bilan to'g'ri boshqaring.</div>
+    </div>
+  </div>
+
+  <!-- S8 STORAGE -->
+  <div class="sys">
+    <div class="head"><span>⑧ Fayl saqlash (storage)</span><span class="verdict v-af">AssetFlow kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>S3 pre-signed URL, 2-bosqichli upload (confirm).</div>
+        <div class="mini mf"><b>Motion Factory</b>CDN to'g'ridan-to'g'ri (link share qilinishi mumkin).</div>
+        <div class="mini af"><b>AssetFlow</b>Cloudflare R2 (AWS SDK v3). <code>lib-storage</code> stream-upload (partSize 8MB, peak ~32MB — 3GB faylda ham). Signed URL TTL 1h. Pack API orqali gated → 302 R2.</div>
+      </div>
+      <div class="rec"><b>Sizniki production-darajasi</b> (OOM-fix, stream-upload). <b>Bitta tuzatish:</b> thumb/preview public R2 URL (URL bilan hammaga ochiq). Agar muhim bo'lsa — preview'ni ham signed qiling yoki ochiqligini ataylab qabul qiling.</div>
+    </div>
+  </div>
+
+  <!-- S9 SUBSCRIPTION -->
+  <div class="sys">
+    <div class="head"><span>⑨ Subscription / billing / kreditlar</span><span class="verdict v-af">AssetFlow kuchli (1 bug bilan)</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>Kredit tizimi + <code>/balance</code> API. Generatsiya kredit yechadi.</div>
+        <div class="mini mf"><b>Motion Factory</b>localStorage'da <code>subscription_data</code> (<span class="cross">klientda — chetlab bo'ladi</span>). <code>ai_token_count/limit</code>.</div>
+        <div class="mini af"><b>AssetFlow</b>FREE (15 dl/oy + 10 import umrbod) / PRO. <span class="tick">Server-side gate</span> (<code>checkDownloadAllowed</code>) — localStorage'dan chetlab bo'lmaydi. Stripe webhook (raw body).</div>
+      </div>
+      <div class="rec"><b>Sizning server-side gating'ingiz MF'dan tubdan xavfsiz.</b> <span class="cross">KRITIK BUG:</span> <code>PLUGIN_ALLOW_PRO_WITHOUT_STRIPE="true"</code> production'da o'rnatilgan → hozir har kim <code>PATCH /plan</code> bilan bepul PRO oladi. Buni <code>false</code> qiling. <b>Quirk:</b> download oylik, import umrbod — assimetrik, hujjatlashtirib qo'ying.</div>
+    </div>
+  </div>
+
+  <!-- S10 MONITORING -->
+  <div class="sys">
+    <div class="head"><span>⑩ Analytics &amp; xato monitoringi</span><span class="verdict v-comp">Higgsfield kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>Sentry (66 ref, captureException, breadcrumb, <span class="tick">sensitive-data filter regex</span>), Amplitude (309 ref, batch 10s), GrowthBook.</div>
+        <div class="mini mf"><b>Motion Factory</b>GA4 (<code>px-client</code>). <span class="cross">Discord webhook</span> orqali xato hisoboti (leaked credential).</div>
+        <div class="mini af"><b>AssetFlow</b><span class="cross">Sentry yo'q. Amplitude yo'q.</span> Faqat <code>console.*</code> + 500-yozuvli file-log + DB-aggregate analytics.</div>
+      </div>
+      <div class="why"><b>Nega muhim:</b> Hozir production'da nima sinishini bilmaysiz — foydalanuvchi panel qotib qolsa, sizga signal kelmaydi. HF har xatoni stack-trace + breadcrumb bilan ko'radi.</div>
+      <div class="rec"><b>Olish (HF'dan):</b> ① Sentry (bepul 5k event/oy) — panel + API. ② Sentry'dan oldin sensitive-data filter regex (<code>/(authorization|token|secret|password|api[_-]?key)/i</code>) — token leak'dan saqlaydi. ③ Product analytics — Amplitude yoki PostHog (self-host).</div>
+    </div>
+  </div>
+
+  <!-- S11 FLAGS -->
+  <div class="sys">
+    <div class="head"><span>⑪ Feature flags</span><span class="verdict v-comp">Higgsfield kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>GrowthBook (39 ref) — runtime'da feature toggle, A/B test, sekin rollout.</div>
+        <div class="mini mf"><b>Motion Factory</b>Yo'q (init-data'dagi flag'lar).</div>
+        <div class="mini af"><b>AssetFlow</b><span class="cross">Yo'q.</span> Faqat xom env var (<code>PLUGIN_ALLOW_PRO_WITHOUT_STRIPE</code>) — deploy talab qiladi.</div>
+      </div>
+      <div class="rec"><b>Olish (HF'dan):</b> GrowthBook (bepul, self-host mumkin) yoki PostHog flags. <b>Nega:</b> AI funksiyalarni xavfsiz, foydalanuvchi-guruhiga rollout qilish; env-var o'rniga deploy'siz toggle.</div>
+    </div>
+  </div>
+
+  <!-- S12 UPDATE -->
+  <div class="sys">
+    <div class="head"><span>⑫ Auto-update</span><span class="verdict v-comp">Motion Factory kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b><code>manifest.json</code> polling → versiya solishtirish → brauzerda download link ochish.</div>
+        <div class="mini mf"><b>Motion Factory</b><span class="tick">To'liq avtomatik:</span> GET <code>get-plugin-latest-version-tag</code> → download zip → <code>rmdir</code> + <code>AdmZip.extractAllTo</code> → o'zini almashtirish.</div>
+        <div class="mini af"><b>AssetFlow</b><span class="cross">Yo'q.</span> Manifest versiyasi <code>1.1.1</code> statik. Yangilash = <code>install-cep.sh</code> qayta ishga tushirish.</div>
+      </div>
+      <div class="why"><b>Nega muhim:</b> Hozir tuzatish yoki yangi funksiyani foydalanuvchiga yetkaza olmaysiz — ular o'rnatilgan versiyada qotib qoladi.</div>
+      <div class="rec"><b>Olish (MF'dan):</b> versiya-tekshiruv endpoint (<code>GET /api/plugin/version</code>) + panel ochilishida solishtirish + notification (yoki MF'dek to'liq avtomatik download+extract). <b>Tuzatish (MF bug'i):</b> <code>res.tag_name > current</code> string solishtiruvi noto'g'ri (<code>"1.10" &lt; "1.9"</code>) — <b>semver</b> ishlating.</div>
+    </div>
+  </div>
+
+  <!-- S13 STATE -->
+  <div class="sys">
+    <div class="head"><span>⑬ State boshqaruvi / realtime</span><span class="verdict v-even">Aralash</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>TanStack Query cache + <code>invalidateQueries</code>. State sync <code>dispatchTS</code> event bilan. fs'da view-state.</div>
+        <div class="mini mf"><b>Motion Factory</b>3 kanal: CustomEvent + localStorage init-data + window-bus.</div>
+        <div class="mini af"><b>AssetFlow</b>SSE upload-progress (<span class="warn">in-memory Map</span>, 25s ping). Rate-limit, SSE, file-log — <span class="cross">hammasi single-process</span>.</div>
+      </div>
+      <div class="rec"><b>Sizning SSE'ingiz raqiblardan yaxshi</b> (ularda realtime yo'q). <span class="warn">Diqqat:</span> in-memory state Render restart'da yo'qoladi va horizontal-scale'da sinadi. <b>Tavsiya:</b> ko'p instansiyaga o'tganda Redis (rate-limit + SSE pub/sub + cache).</div>
+    </div>
+  </div>
+
+  <!-- S14 SECURITY -->
+  <div class="sys">
+    <div class="head"><span>⑭ Xavfsizlik holati</span><span class="verdict v-af">AssetFlow kuchli</span></div>
+    <div class="body">
+      <div class="row3">
+        <div class="mini hf"><b>Higgsfield</b>PKCE, sensitive-data filter, faqat <code>--enable-nodejs --mixed-context</code>. Yaxshi.</div>
+        <div class="mini mf"><b>Motion Factory</b><span class="cross">7 jiddiy zaiflik:</span> <code>--disable-web-security</code>, hardcoded pxAPIKey, date-token, <code>exec(curl)</code> injection, localStorage auth, Discord webhook, evalScript path-injection.</div>
+        <div class="mini af"><b>AssetFlow</b>Server-side gate, redirect'da Auth-strip, JWT_SECRET prod-tekshiruv. <code>--disable-web-security</code> faqat Admin panelda.</div>
+      </div>
+      <div class="rec"><b>Siz MF'dan tubdan xavfsiz.</b> <b>Olib tashlash kerak:</b> Admin paneldagi <code>--disable-web-security</code> (kerak emas bo'lsa). <b>Olmang (MF):</b> barcha 7 anti-naqsh. <b>Tuzatish:</b> evalScript injection (typed bridge bilan), Stripe-bypass flag, preview public-URL.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. WHERE COMPETITORS STRONGER -->
+<section class="page-break">
+  <h2>4. Qaysi tizimlar mendan kuchli — va NEGA</h2>
+  <p>To'g'ridan-to'g'ri savolingizga javob. Har biri texnik sabab bilan.</p>
+
+  <h3>Higgsfield'da kuchli (4 ta)</h3>
+  <table>
+    <tr><th style="width:22%">Tizim</th><th>Nega kuchli (texnik)</th><th>Sizga ta'siri</th></tr>
+    <tr><td><b>Typed bridge (evalTS)</b></td><td>JSON.stringify serializatsiya + try/catch + Promise. Injection yo'q, type-safe, qayta ishlatiluvchi.</td><td>Sizning xom string evalScript — injection xavfi + qo'lda yozish</td></tr>
+    <tr><td><b>Sentry monitoring</b></td><td>Har xato stack-trace + breadcrumb + sensitive-data filter bilan markazda.</td><td>Sizda 0 ko'rinish — production'da nima sinishini bilmaysiz</td></tr>
+    <tr><td><b>TanStack Query</b></td><td>Avtomatik cache, polling, retry-lane, abort-signal, invalidation.</td><td>Sizda innerHTML teardown har keystroke'da — jank</td></tr>
+    <tr><td><b>GrowthBook flags</b></td><td>Runtime feature-toggle, A/B, sekin rollout — deploy'siz.</td><td>Sizda faqat env-var — har o'zgarish deploy talab qiladi</td></tr>
+  </table>
+
+  <h3>Motion Factory'da kuchli (2 ta)</h3>
+  <table>
+    <tr><th style="width:22%">Tizim</th><th>Nega kuchli (texnik)</th><th>Sizga ta'siri</th></tr>
+    <tr><td><b>Algolia qidiruv</b></td><td>Typo-tolerant, optionalFilters, bir zumda klient-side, 10k+ yozuvda tez.</td><td>Sizning findMany+JS-filter scale bo'lmaydi, typo-tolerance yo'q</td></tr>
+    <tr><td><b>Avtomatik auto-update</b></td><td>Versiya-tekshiruv → zip download → o'zini almashtirish. Foydalanuvchi hech narsa qilmaydi.</td><td>Sizda yo'q — tuzatishni yetkaza olmaysiz</td></tr>
+  </table>
+
+  <h3>Ikkalasida ham bor, sizda yo'q (2 ta)</h3>
+  <table>
+    <tr><th style="width:22%">Tizim</th><th>Nega muhim</th><th>Manba</th></tr>
+    <tr><td><b>Build + ZXP paketlash</b></td><td>Imzolangan ZXP'siz oxirgi foydalanuvchi o'rnata olmaydi — bu sizning №1 blokeringiz.</td><td>HF (Bolt CEP), MF (npm)</td></tr>
+    <tr><td><b>AI funksiyalar</b></td><td>"creative-tools" pozitsiyasi uchun zarur; yangi daromad (kreditlar); raqobat pariteti.</td><td>HF (36 model), MF (ovoz+SFX)</td></tr>
+  </table>
+</section>
+
+<!-- 5. WHERE AF STRONGER -->
+<section>
+  <h2>5. Qaysi tizimlar menda kuchli (saqlang!)</h2>
+  <p>Bularni qayta yozmang — bu sizning raqobat ustunligingiz. Ikkala raqibda ham yo'q yoki zaifroq.</p>
+  <table>
+    <tr><th style="width:26%">Tizim</th><th>Sizdagi ustunlik</th><th>Raqiblar</th></tr>
+    <tr><td>To'liq backend + DB</td><td>Express + Prisma + PostgreSQL + 7 migratsiya, tipli sxema</td><td>MF: WordPress · HF: yopiq SaaS</td></tr>
+    <tr><td>Auth xavfsizligi</td><td>PluginToken 32-bayt random, 30d, DB-saqlash, server-validatsiya</td><td>MF: date-token <code>ddmmyy</code> ❌</td></tr>
+    <tr><td>Plan gating</td><td>Server-side <code>checkDownloadAllowed</code> — chetlab bo'lmaydi</td><td>MF: localStorage ❌</td></tr>
+    <tr><td>Contributor workflow</td><td>DRAFT→upload→mogrt-extract→PENDING→review→APPROVED</td><td>Ikkalasida ham yo'q</td></tr>
+    <tr><td>Moderatsiya + audit</td><td>approve/hard-reject/soft-reject + StudioAuditLog + Resend email + thread</td><td>Ikkalasida ham yo'q</td></tr>
+    <tr><td>SSE realtime</td><td>Upload-progress stream (receive→sync→db→extract→done)</td><td>Ikkalasida ham yo'q</td></tr>
+    <tr><td>Storage yetukligi</td><td>R2 stream-upload, OOM-fix, 3GB fayl ~32MB peak</td><td>MF: CDN to'g'ridan-to'g'ri</td></tr>
+    <tr><td>Redirect xavfsizligi</td><td>Cross-origin'da Auth-header strip (token leak yo'q)</td><td>MF: yo'q ❌</td></tr>
+    <tr><td>Ikki panel</td><td>Browse + Admin alohida</td><td>Ikkalasida ham bitta</td></tr>
+    <tr><td>TypeScript monorepo</td><td>npm workspaces, tipli, shared paketlar</td><td>Ikkalasi ham vanilla JS</td></tr>
+  </table>
+</section>
+
+<!-- 6. WHAT TO ADD -->
+<section class="page-break">
+  <h2>6. Nima qo'shish kerak va NEGA — modullar</h2>
+  <p>Ustuvorlik tartibida. Har biri: <b>nega</b> (texnik sabab) + <b>qaysi tech</b> + <b>qanday</b>.</p>
+
+  <div class="box box-bad">
+    <b><span class="num">1</span> ZXP build + imzolash quvuri <span style="float:right">🔴 BLOCKER</span></b>
+    <div class="why"><b>Nega:</b> Imzolangan ZXP'siz oxirgi foydalanuvchi plaginni o'rnata olmaydi. Hozir faqat <code>install-cep.sh</code> (dev-only). Bu boshqa hamma narsadan oldin.</div>
+    <b>Qaysi tech:</b> Bolt CEP (<code>vite-cep-plugin</code> ZXP o'z ichida) YOKI <code>ZXPSignCmd</code> + self-signed <code>.p12</code>.<br>
+    <b>Qanday:</b> <code>scripts/build-zxp.sh</code> → sertifikat yaratish → <code>ZXPSignCmd -sign ./dist app.zxp cert.p12 pass</code> → tarqatish (yoki ZXP-installer).
+  </div>
+
+  <div class="box box-warn">
+    <b><span class="num">2</span> Typed bridge (evalJSX) + ③ Sentry + ④ Refresh token</b>
+    <div class="why"><b>Nega:</b> evalJSX — injection xavfini tugatadi va type-safety beradi. Sentry — production ko'rinishi (hozir 0). Refresh — 30 kun tugaganda majburiy login'ni yo'qotadi.</div>
+    <b>Qaysi tech:</b> Bolt CEP evalTS (yoki qo'lda wrapper) · <code>@sentry/browser</code> + <code>@sentry/node</code> · JWT refresh endpoint.<br>
+    <b>Qanday:</b> <code>evalJSX(fn,...args)</code> JSON-only · Sentry init + sensitive-filter regex · <code>POST /api/plugin/refresh</code>.
+  </div>
+
+  <div class="box box-info">
+    <b><span class="num">3</span> Qidiruv mexanizmi</b>
+    <div class="why"><b>Nega:</b> <code>findMany</code>+JS-filter scale bo'lmaydi, typo-tolerance/relevance yo'q. Katalog o'sganda sekinlashadi.</div>
+    <b>Qaysi tech (bosqichma):</b> ① PostgreSQL <code>tsvector</code>/<code>pg_trgm</code> (sizda Postgres bor — tekin) → ② Meilisearch/Typesense (self-host) → ③ Algolia (bepul 10k/oy).<br>
+    <b>Qanday:</b> ContributorTemplate'ga <code>searchVector</code> ustun + GIN index + <code>websearch_to_tsquery</code>. Faqat APPROVED+published indekslanadi.
+  </div>
+
+  <div class="box box-rec">
+    <b><span class="num">4</span> AI Tools bo'limi (yangi modul + daromad)</b>
+    <div class="why"><b>Nega:</b> Mahsulot pozitsiyasi ("creative-tools"), raqobat pariteti, yangi daromad (kredit). Mavjud auth+subscription ustiga proxy sifatida o'rnatiladi.</div>
+    <b>Qaysi tech:</b> ElevenLabs (ovoz/SFX) · fal.ai/Replicate (rasm) · OpenAI embeddings (semantik qidiruv) — <b>hammasi server-side proxy</b>.<br>
+    <b>Qanday:</b> <code>apps/api/src/routes/ai.ts</code> → auth → kredit-gate → provider-proxy (kalit serverda) → R2 → signed URL. Prisma: <code>AiGeneration</code> + <code>aiCredits</code>. <span class="cross">MF kabi kalitni klientga qo'ymang, exec(curl) ishlatmang.</span>
+  </div>
+
+  <div class="box box-info">
+    <b><span class="num">5</span> Auto-update · ⑥ Feature flags · ⑦ Product analytics</b>
+    <div class="why"><b>Nega:</b> Update — tuzatishni yetkazish. Flags — AI'ni xavfsiz rollout. Analytics — data-asosli qaror.</div>
+    <b>Qaysi tech:</b> <code>GET /api/plugin/version</code> + semver · GrowthBook/PostHog flags · Amplitude/PostHog analytics.
+  </div>
+
+  <div class="box box-warn">
+    <b><span class="num">8</span> Infratuzilma tuzatishlari</b>
+    <ul style="margin:4px 0 0">
+      <li><b>Stripe-bypass:</b> <code>PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false</code> (hozir PRO bepul!).</li>
+      <li><b>Distributed state:</b> ko'p-instansiyaga o'tганда Redis (rate-limit + SSE + cache) — hozir in-memory.</li>
+      <li><b>Dual asset model:</b> <code>Asset/Download</code> (legacy) vs <code>ContributorTemplate</code> birlashtirish — maintenance qarzi.</li>
+      <li><b>Preview URL:</b> public R2 — signed qilish yoki ataylab ochiq qabul qilish.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7. TARGET ARCHITECTURE -->
+<section class="page-break">
+  <h2>7. To'liq strategiya — maqsad arxitektura</h2>
+  <p>Hozirgi kuchli poydevor + raqiblardan olingan eng yaxshi tizimlar = maqsad holat.</p>
+  <pre><span class="c">┌─────────────────── PLAGIN (Bolt CEP — yangi) ───────────────────┐</span>
+│  Vite + React/TS UI    ⟵ HF'dan: framework, komponentlar         │
+│  evalTS typed bridge   ⟵ HF'dan: injection-siz ko'prik           │
+│  Sentry (panel)        ⟵ HF'dan: xato monitoring                 │
+│  Auto-update client    ⟵ MF'dan: versiya-tekshiruv + self-replace│
+│  AI Tools tab          ⟵ HF+MF: model selector, prompt, ovoz/SFX │
+│  host.jsx (110 fn)     ⟵ SIZNIKI: async navbat, scene-extract    │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ PluginToken (SIZNIKI) + refresh (HF'dan)
+<span class="c">┌──────────────────────────────▼─── API (Express — SIZNIKI) ──────┐</span>
+│  /plugin  /contributor  /admin  /ai(yangi)  /auth  /studio       │
+│  Zod validatsiya · Prisma xato-map        ⟵ SIZNIKI (kuchli)     │
+│  Server-side plan-gate                    ⟵ SIZNIKI (xavfsiz)    │
+│  AI proxy (ElevenLabs/fal.ai/OpenAI)      ⟵ yangi, kalit serverda│
+│  Sentry (server) · feature flags          ⟵ HF'dan               │
+│  Redis (rate-limit/SSE/cache)             ⟵ scale uchun          │
+└────────┬──────────────┬───────────────┬──────────────┬───────────┘
+         │              │               │              │
+   PostgreSQL      Cloudflare R2    Search engine    Stripe
+   (Prisma)        (stream-upload)  (pg_trgm→Algolia) (enforce!)
+   SIZNIKI          SIZNIKI          MF'dan ilhom      tuzatish</pre>
+
+  <h3>Qaror matritsasi — qaysi tizim qayerdan</h3>
+  <table>
+    <tr><th>Maqsad tizim</th><th>Manba</th><th>Harakat</th></tr>
+    <tr><td>Build + ZXP</td><td>HF (Bolt CEP)</td><td>Ko'chish — 3 muammoni hal qiladi</td></tr>
+    <tr><td>Typed bridge</td><td>HF</td><td>evalTS qabul qilish</td></tr>
+    <tr><td>Monitoring</td><td>HF</td><td>Sentry + filter regex</td></tr>
+    <tr><td>Feature flags</td><td>HF</td><td>GrowthBook/PostHog</td></tr>
+    <tr><td>Cache/polling</td><td>HF</td><td>Query-cache abstraktsiya</td></tr>
+    <tr><td>Qidiruv</td><td>MF</td><td>pg_trgm → keyin Algolia</td></tr>
+    <tr><td>Auto-update</td><td>MF</td><td>Versiya endpoint + semver</td></tr>
+    <tr><td>AI ovoz/SFX</td><td>MF formula</td><td>Server-proxy (xavfsiz)</td></tr>
+    <tr><td>Multi-app detection</td><td>MF</td><td>getHostEnvironment switch</td></tr>
+    <tr><td>Backend/DB/auth</td><td class="tick">SIZNIKI</td><td>Saqlash + sayqal</td></tr>
+    <tr><td>Contributor/moderatsiya</td><td class="tick">SIZNIKI</td><td>Saqlash (unikal ustunlik)</td></tr>
+    <tr><td>SSE/storage/gating</td><td class="tick">SIZNIKI</td><td>Saqlash + Redis (scale)</td></tr>
+  </table>
+
+  <h3>Yo'l xaritasi (texnik bosqichlar)</h3>
+  <table>
+    <tr><th style="width:13%">Bosqich</th><th>Tizimlar</th><th style="width:14%">Natija</th></tr>
+    <tr><td><b>0 (kritik)</b></td><td>ZXP build+sign · Stripe-bypass tuzatish</td><td class="cross">O'rnatish + daromad</td></tr>
+    <tr><td><b>1 (1-3 hafta)</b></td><td>Bolt CEP migratsiya → evalTS + ZXP + UI birga · Sentry</td><td class="warn">Poydevor</td></tr>
+    <tr><td><b>2 (3-5 hafta)</b></td><td>Refresh token · pg_trgm qidiruv · auto-update endpoint</td><td class="warn">Yetuklik</td></tr>
+    <tr><td><b>3 (1-2 oy)</b></td><td>AI Tools (semantik qidiruv → ovoz/SFX) · feature flags · analytics</td><td class="tick">Kengayish</td></tr>
+    <tr><td><b>4 (scale)</b></td><td>Redis · Algolia · multi-app (PPRO) · dual-model birlashtirish</td><td>Korxona</td></tr>
+  </table>
+
+  <div class="box box-key">
+    <b>Yakuniy strategik xulosa</b>
+    AssetFlow noyob holatda: <b>biznes-mantiq va backend raqiblardan kuchli</b>, lekin <b>plagin qatlami yetuk emas</b>. Strategiya — raqiblardan <b>biznes-modelini emas, balki texnik yetuklikni</b> olish: Higgsfield'dan framework+ko'prik+monitoring, Motion Factory'dan qidiruv+update+AI-formula, va o'zingizning kuchli poydevoringizni saqlash. <b>Eng yuqori richag — Bolt CEP migratsiyasi</b>, chunki u ZXP + typed bridge + zamonaviy UI'ni bitta harakatda beradi. Hech narsani qayta yozish kerak emas — faqat ustiga qurish.
+  </div>
+
+  <div class="footer-note">
+    AssetFlow Texnik Strategiya · 2026-06-13 · Higgsfield v1.0.14, Motion Factory v4.9.5, AssetFlow v1.1.1 tizim-bo'yicha tahlili<br>
+    Barcha kod, endpoint, fayl havolasi va versiya raqamlari haqiqiy manba kodidan olingan.
+  </div>
+</section>
+
+</body>
+</html>

@@ -106,8 +106,39 @@ export async function resolveS3AssetKey(
   return null;
 }
 
-/** Lokal disk + R2/S3 — preview/thumb/pack mavjudligi */
-export async function templateAssetFlags(templateId: string) {
+/**
+ * Bir template uchun barcha S3 kalitlarini bitta ListObjectsV2 da olish.
+ * N+1 HeadObject muammosini bartaraf etadi — catalog so'rovida har shablon
+ * uchun alohida HeadObject o'rniga bitta List chaqiruvi ishlatiladi.
+ */
+export async function listTemplateS3Keys(templateId: string): Promise<Set<string>> {
+  if (!isS3Configured()) return new Set();
+  const prefix = `templates/${templateId}/`;
+  const set = new Set<string>();
+  let token: string | undefined;
+  do {
+    const res = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: token,
+        MaxKeys: 1000,
+      })
+    );
+    for (const obj of res.Contents ?? []) {
+      if (obj.Key) set.add(obj.Key);
+    }
+    token = res.NextContinuationToken;
+  } while (token);
+  return set;
+}
+
+/** Lokal disk + R2/S3 — preview/thumb/pack mavjudligi.
+ *  knownS3Keys berilsa HeadObject chaqirilmaydi (N+1 oldini olish). */
+export async function templateAssetFlags(
+  templateId: string,
+  knownS3Keys?: Set<string>
+) {
   const kinds: TemplateAssetKind[] = ["thumb", "preview", "pack"];
   const assets: Record<TemplateAssetKind, boolean> = {
     thumb: !!findAssetPath(templateId, "thumb"),
@@ -115,13 +146,23 @@ export async function templateAssetFlags(templateId: string) {
     pack: !!findAssetPath(templateId, "pack"),
   };
   if (isS3Configured()) {
-    await Promise.all(
-      kinds.map(async (kind) => {
+    if (knownS3Keys) {
+      for (const kind of kinds) {
         if (!assets[kind]) {
-          if (await resolveS3AssetKey(templateId, kind)) assets[kind] = true;
+          assets[kind] = s3KeysForAsset(templateId, kind).some((k) =>
+            knownS3Keys.has(k)
+          );
         }
-      })
-    );
+      }
+    } else {
+      await Promise.all(
+        kinds.map(async (kind) => {
+          if (!assets[kind]) {
+            if (await resolveS3AssetKey(templateId, kind)) assets[kind] = true;
+          }
+        })
+      );
+    }
   }
   return assets;
 }

@@ -132,21 +132,36 @@ function collectFolders(parent, folderPath) {
 function findFolderByPath(pathStr) {
   if (!pathStr) return null;
   var parts = String(pathStr).split("/");
-  var current = app.project;
-  var i, j, item, part;
+  var current = null; // null = project root level
+  var i, j, item, part, candidate;
   for (i = 0; i < parts.length; i++) {
     part = parts[i];
     item = null;
-    for (j = 1; j <= current.numItems; j++) {
-      if (isProjectFolder(current.item(j)) && current.item(j).name === part) {
-        item = current.item(j);
-        break;
+    if (current === null) {
+      // Root level: app.project.item() iterates ALL project items (not root-only),
+      // so we must filter by parentFolder == null to avoid matching nested folders
+      // with the same name as a root-level folder.
+      for (j = 1; j <= app.project.numItems; j++) {
+        candidate = app.project.item(j);
+        if (isProjectFolder(candidate) && candidate.name === part && candidate.parentFolder == null) {
+          item = candidate;
+          break;
+        }
+      }
+    } else {
+      // Nested level: FolderItem.item() returns direct children only
+      for (j = 1; j <= current.numItems; j++) {
+        candidate = current.item(j);
+        if (isProjectFolder(candidate) && candidate.name === part) {
+          item = candidate;
+          break;
+        }
       }
     }
     if (!item) return null;
     current = item;
   }
-  return isProjectFolder(current) ? current : null;
+  return current && isProjectFolder(current) ? current : null;
 }
 
 function pickFinalRenderFromFolder(folder) {
@@ -552,22 +567,22 @@ function readPreviewMarkerSegments(comp, sceneNames) {
   for (i = 0; i < sceneNames.length; i++) {
     num = i + 1;
     startMarker = null;
+    var startIdx = -1;
     for (j = 0; j < markers.length; j++) {
       if (markers[j].num === num) {
         startMarker = markers[j];
+        startIdx = j;
         break;
       }
     }
     if (!startMarker) continue;
 
     start = startMarker.time;
-    end = comp.duration;
-    for (j = 0; j < markers.length; j++) {
-      if (markers[j].time > start + 0.001) {
-        end = markers[j].time;
-        break;
-      }
-    }
+    // End = next marker's start time in sorted order, not first marker after start.
+    // Avoids floating-point threshold errors and wrong matches across out-of-order scenes.
+    end = (startIdx >= 0 && startIdx + 1 < markers.length)
+      ? markers[startIdx + 1].time
+      : comp.duration;
 
     segments.push({
       name: sceneNames[i],
@@ -599,21 +614,47 @@ function createPreviewSceneMarkers(jsonStr) {
 
     var count = sceneNames.length;
     var dur = comp.duration;
-    var step = dur / count;
     var i, t, mv;
 
+    // Build per-scene durations from matching comp items if available,
+    // falling back to equal spacing. This prevents markers from landing at
+    // wrong boundaries when scenes have unequal durations.
+    var sceneDurations = [];
+    var totalFound = 0;
+    var scenesFolder = cfg.scenesFolder ? findFolderByPath(cfg.scenesFolder) : null;
     for (i = 0; i < count; i++) {
-      t = i * step;
+      var matchComp = null;
+      if (scenesFolder) {
+        var k;
+        for (k = 1; k <= scenesFolder.numItems; k++) {
+          var candidate2 = scenesFolder.item(k);
+          if (candidate2 instanceof CompItem && candidate2.name === sceneNames[i]) {
+            matchComp = candidate2;
+            break;
+          }
+        }
+      }
+      var d = matchComp ? matchComp.duration : 0;
+      sceneDurations.push(d);
+      totalFound += d;
+    }
+
+    // If all durations found and they fit within comp, use them; else equal spacing
+    var useActual = totalFound > 0 && totalFound <= dur + 0.01;
+    t = 0;
+    for (i = 0; i < count; i++) {
       mv = new MarkerValue("Scene_" + padSceneNum(i + 1));
       mv.label = (i % 16) + 1;
-      comp.markerProperty.setValueAtTime(t, mv);
+      comp.markerProperty.setValueAtTime(roundSec(t), mv);
+      t += useActual ? sceneDurations[i] : (dur / count);
     }
 
     return JSON.stringify({
       ok: true,
       previewComp: comp.name,
       markerCount: count,
-      durationSec: roundSec(dur)
+      durationSec: roundSec(dur),
+      usedActualDurations: useActual
     });
   } catch (e) {
     return JSON.stringify({ ok: false, error: "exception", message: e.toString() });

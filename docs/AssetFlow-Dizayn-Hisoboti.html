@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>AssetFlow — Dizayn va AI Tools Hisoboti</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html { font-size: 11px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    color: #1a1a1a; line-height: 1.5; margin: 0; background: #fff;
+  }
+  h1,h2,h3,h4 { line-height: 1.2; margin: 0 0 .4em; font-weight: 700; }
+  h2 { font-size: 19px; color: #14210a; border-bottom: 3px solid #82c341; padding-bottom: 6px; margin-top: 6px; }
+  h3 { font-size: 14.5px; color: #2a3b14; margin-top: 18px; }
+  h4 { font-size: 12px; color: #3a4a22; margin-top: 14px; }
+  p { margin: 0 0 8px; }
+  ul, ol { margin: 0 0 10px; padding-left: 18px; }
+  li { margin-bottom: 4px; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; background: #eef3e6; color: #355016; padding: 1px 4px; border-radius: 3px; font-size: 10px; }
+  a { color: #4a7d1c; text-decoration: none; }
+  small { color: #666; }
+
+  /* ---- Section wrapper / page breaks ---- */
+  .page-break { page-break-before: always; }
+  section { page-break-inside: auto; }
+  .keep { page-break-inside: avoid; }
+
+  /* ---- Cover ---- */
+  .cover {
+    page-break-after: always;
+    background: linear-gradient(160deg,#0b0f06 0%,#10180a 55%,#1a2610 100%);
+    color: #fff; padding: 70px 46px; min-height: 250mm; position: relative;
+    margin: -16mm -14mm 0;
+  }
+  .cover .leaf { width: 54px; height: 54px; border-radius: 14px; background: #82c341; display: flex; align-items:center; justify-content:center; font-size: 30px; box-shadow: 0 0 40px rgba(130,195,65,.5); }
+  .cover h1 { font-size: 44px; margin: 34px 0 10px; letter-spacing: -1px; background: linear-gradient(90deg,#a3e635,#82c341); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cover .sub { font-size: 17px; color: #c9d6b8; max-width: 460px; line-height: 1.45; }
+  .cover .meta { position: absolute; bottom: 60px; left: 46px; font-size: 12px; color: #8ba36a; }
+  .cover .tags { margin-top: 36px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .cover .tag { font-size: 11px; background: rgba(130,195,65,.14); border: 1px solid rgba(130,195,65,.4); color: #b6e07e; padding: 6px 12px; border-radius: 999px; }
+
+  /* ---- Callouts ---- */
+  .box { border-radius: 8px; padding: 12px 14px; margin: 12px 0; font-size: 10.5px; }
+  .box-rec { background: #f0f7e6; border-left: 4px solid #82c341; }
+  .box-warn { background: #fff4e0; border-left: 4px solid #e8920a; }
+  .box-bad { background: #fdeaea; border-left: 4px solid #d83a3a; }
+  .box-info { background: #e9f1fb; border-left: 4px solid #3b7ad8; }
+  .box b { display:block; margin-bottom: 3px; }
+
+  /* ---- Tables ---- */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; page-break-inside: avoid; }
+  th, td { border: 1px solid #dce3d2; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #14210a; color: #d9ecbf; font-weight: 600; }
+  tr:nth-child(even) td { background: #f6f9f1; }
+  .tick { color: #4a9e1e; font-weight: 700; }
+  .cross { color: #cc3333; font-weight: 700; }
+  .warn { color: #d18b0a; font-weight: 700; }
+
+  /* ---- Swatches ---- */
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .sw { width: 90px; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; font-size: 8.5px; }
+  .sw .chip { height: 38px; }
+  .sw .lbl { padding: 4px 5px; background: #fafafa; }
+  .sw .lbl b { display:block; font-size: 9px; }
+
+  /* ---- Code blocks ---- */
+  pre { background: #14180e; color: #d6e4c2; border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 9px; line-height: 1.55; margin: 10px 0; page-break-inside: avoid; }
+  pre .c { color: #6e8a4d; } /* comment */
+  pre .k { color: #9fd9ef; } /* keyword */
+  pre .s { color: #c9e89a; } /* string */
+
+  /* ---- Cards / columns ---- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .pcard { border: 1px solid #dce3d2; border-radius: 8px; padding: 12px; page-break-inside: avoid; }
+  .pcard h4 { margin-top: 0; }
+  .pcard.hf { border-top: 4px solid #d1fe17; }
+  .pcard.mf { border-top: 4px solid #91D010; }
+  .pcard.af { border-top: 4px solid #82c341; }
+  .pcard .tag-app { font-size: 9px; color: #888; }
+
+  .num { display:inline-flex; width: 18px; height: 18px; border-radius: 50%; background: #82c341; color:#fff; font-size: 10px; font-weight: 700; align-items:center; justify-content:center; margin-right: 6px; }
+
+  .kv { font-size: 10px; }
+  .kv td:first-child { width: 38%; color: #555; font-weight: 600; }
+
+  /* mock wireframe */
+  .mock { border: 1.5px solid #2a3b14; border-radius: 8px; background: #0d0d0d; color:#ddd; display:flex; overflow:hidden; margin: 10px 0; font-size: 8.5px; height: 240px; }
+  .mock .side { width: 64px; background:#000; border-right:1px solid #222; padding: 8px 4px; display:flex; flex-direction:column; gap:10px; align-items:center; }
+  .mock .side .ic { width: 30px; height: 30px; border-radius: 8px; background:#1a1a1a; display:flex;align-items:center;justify-content:center; font-size:13px; }
+  .mock .side .ic.on { background:#82c341; color:#000; }
+  .mock .body { flex:1; padding: 10px; display:flex; flex-direction:column; }
+  .mock .bar { height: 22px; background:#1a1a1a; border-radius: 6px; margin-bottom: 8px; display:flex; align-items:center; padding: 0 8px; color:#888; }
+  .mock .row { display:flex; gap:8px; flex:1; }
+  .mock .col { flex:1; background:#141414; border:1px solid #222; border-radius:6px; padding:8px; }
+  .mock .thumb { background:#1c1c1e; border-radius:5px; height: 46px; margin-bottom:6px; }
+  .mock .pill { display:inline-block; background:#82c341; color:#000; border-radius:999px; padding:3px 10px; font-weight:700; font-size:8px; }
+  .mock .label { color:#82c341; font-weight:700; font-size:9px; margin-bottom:5px; }
+
+  .footer-note { font-size: 9px; color: #999; text-align: center; margin-top: 28px; border-top: 1px solid #eee; padding-top: 8px; }
+  .toc { font-size: 11.5px; }
+  .toc li { margin-bottom: 6px; }
+  .lead { font-size: 12.5px; color: #333; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="leaf">🍃</div>
+  <h1>AssetFlow<br>Dizayn &amp; AI Tools<br>Hisoboti</h1>
+  <div class="sub">Higgsfield va Motion Factory CEP plaginlarining UI/UX tahlili asosida — birlashtirilgan dizayn tizimi va AI Tools bo'limini joriy etish bo'yicha to'liq texnik reja.</div>
+  <div class="tags">
+    <span class="tag">UI/UX Tahlil</span>
+    <span class="tag">Dizayn tizimi</span>
+    <span class="tag">AI Tools arxitekturasi</span>
+    <span class="tag">Yo'l xaritasi</span>
+  </div>
+  <div class="meta">
+    Tayyorlandi: 2026-yil 13-iyun &nbsp;·&nbsp; Loyiha: creative-tools-saas (AssetFlow)<br>
+    Taqqoslangan: Higgsfield v1.0.14 &nbsp;·&nbsp; Motion Factory v4.9.5 &nbsp;·&nbsp; AssetFlow v1.1.1
+  </div>
+</div>
+
+<!-- ============ TOC ============ -->
+<section>
+  <h2>Mundarija</h2>
+  <ol class="toc">
+    <li><b>Boshqaruv xulosasi</b> — asosiy xulosa va tavsiya</li>
+    <li><b>Uch plaginning UI/UX tahlili</b> — Higgsfield, Motion Factory, AssetFlow dizayn tili</li>
+    <li><b>Dizayn tokenlari taqqoslash jadvali</b> — rang, shrift, masofa, radius</li>
+    <li><b>AssetFlow UI/UX kamchiliklari</b> — 19 ta aniq muammo, ustuvorlik bo'yicha</li>
+    <li><b>Birlashtirilgan dizayn tizimi</b> — ikkala dizaynni AssetFlow'ga qo'llash mumkinmi?</li>
+    <li><b>AI Tools bo'limini qo'shish</b> — to'liq arxitektura, UI, backend, kod</li>
+    <li><b>Yo'l xaritasi</b> — ustuvorlik tartibida harakatlar rejasi</li>
+  </ol>
+
+  <div class="box box-rec">
+    <b>Bir jumlada xulosa</b>
+    AssetFlow'ning <b>backend va biznes-mantiqi</b> ikkala referensdan ham kuchli; lekin <b>UI/UX va dizayn izchilligi</b> ortda. Yaxshi xabar — uchala plagin ham <b>bir xil lime-yashil aksent</b> oilasidan foydalanadi, shuning uchun ikkala dizaynni birlashtirib AssetFlow'ga qo'llash nafaqat mumkin, balki tabiiy. AI Tools esa mavjud auth + subscription tizimingiz ustiga proxy-route'lar orqali oson o'rnatiladi.
+  </div>
+</section>
+
+<!-- ============ 1. EXECUTIVE ============ -->
+<section class="page-break">
+  <h2>1. Boshqaruv xulosasi</h2>
+  <p class="lead">Uchala plagin bitta janr — Adobe ichidagi kreativ kontent paneli. Ammo har biri boshqacha kuchli tomonga ega:</p>
+
+  <div class="grid3">
+    <div class="pcard hf">
+      <h4>Higgsfield</h4>
+      <div class="tag-app">React + Vite + Tailwind v4</div>
+      <p><b>Kuchli:</b> Zamonaviy AI-tool UX. Model tanlash, prompt composer, parametr slayderlari, generatsiya progress effektlari — sanoat darajasida sayqallangan.</p>
+      <p><b>Dizayn tili:</b> Qora fon + neon lime <code>#d1fe17</code>. Minimalist, ko'p bo'sh joy, yumaloq burchaklar, backdrop-blur.</p>
+    </div>
+    <div class="pcard mf">
+      <h4>Motion Factory</h4>
+      <div class="tag-app">Vanilla JS + Web Components</div>
+      <p><b>Kuchli:</b> Yig'iladigan yon-panel navigatsiyasi, Algolia qidiruv, hover-video kartalar, AI ovoz/SFX generatsiyasi to'liq integratsiya qilingan.</p>
+      <p><b>Dizayn tili:</b> Charcoal <code>#161515</code> + lime <code>#91D010</code> + ko'k tanlash <code>#327BFA</code>. Inter shrifti, 200ms o'tishlar.</p>
+    </div>
+    <div class="pcard af">
+      <h4>AssetFlow (sizniki)</h4>
+      <div class="tag-app">Vanilla HTML/JS/CSS</div>
+      <p><b>Kuchli:</b> To'liq SaaS backend, JWT+PluginToken auth, contributor workflow, moderatsiya, subscription, audit log, SSE.</p>
+      <p><b>Zaif:</b> Dizayn izchilligi, juda mayda shriftlar, ikki xil aksent rang, hover-only tugmalar, AI bo'limi yo'q.</p>
+    </div>
+  </div>
+
+  <h3>Asosiy xulosalar</h3>
+  <ul>
+    <li><span class="tick">✓</span> <b>Arxitektura ustunligi sizda</b> — to'liq backend, contributor workflow va moderatsiya ikkala referensda ham yo'q.</li>
+    <li><span class="warn">▲</span> <b>Dizayn qarzi (design debt)</b> — AssetFlow'da ikki avlod UI aralashgan: yashil brend bilan eski indigo <code>#6366f1</code> qoldiqlari to'qnashadi; shriftlar 5–9px gacha tushib ketadi.</li>
+    <li><span class="tick">✓</span> <b>Ranglar allaqachon mos</b> — Higgsfield <code>#d1fe17</code>, Motion Factory <code>#91D010</code>, AssetFlow <code>#82c341</code> — uchchalasi bir oilada. Birlashtirish uchun rang almashtirish shart emas, faqat <b>izchillashtirish</b> kerak.</li>
+    <li><span class="cross">✕</span> <b>AI Tools yo'q</b> — "creative-tools-saas" pozitsiyasiga ega mahsulot uchun bu eng katta funksional bo'shliq.</li>
+  </ul>
+</section>
+
+<!-- ============ 2. UI/UX ANALYSIS ============ -->
+<section class="page-break">
+  <h2>2. Uch plaginning UI/UX tahlili</h2>
+
+  <h3>2.1 Higgsfield — AI-birinchi minimalizm</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#d1fe17"></div><div class="lbl"><b>#d1fe17</b>Neon lime (CTA)</div></div>
+    <div class="sw"><div class="chip" style="background:#0a0a0a"></div><div class="lbl"><b>#0a0a0a</b>Asosiy fon</div></div>
+    <div class="sw"><div class="chip" style="background:#1c1e20"></div><div class="lbl"><b>#1c1e20</b>Surface</div></div>
+    <div class="sw"><div class="chip" style="background:#9ea2ad"></div><div class="lbl"><b>#9ea2ad</b>Muted matn</div></div>
+    <div class="sw"><div class="chip" style="background:#f7f7f8"></div><div class="lbl"><b>#f7f7f8</b>Matn</div></div>
+  </div>
+  <table class="kv">
+    <tr><td>Shrift</td><td>system-ui sans-serif; o'lchamlar 10–18px, og'irlik 400–700</td></tr>
+    <tr><td>Radius shkalasi</td><td>4 → 6 → 8 → 12 → 16px (izchil progressiya), pill = 999px</td></tr>
+    <tr><td>Masofa</td><td>4px asosiy birlik (Tailwind), tugma balandligi 40/44/56px</td></tr>
+    <tr><td>O'tishlar</td><td>0.15s cubic-bezier(.4,0,.2,1); active holatda <code>scale(0.98)</code></td></tr>
+    <tr><td>Effektlar</td><td>backdrop-blur 24–40px, inset shadow, lime glow <code>0 0 8px rgba(209,254,23,.25)</code></td></tr>
+  </table>
+  <p><b>AI tool UX (bizga eng muhimi):</b> Model selektori 56px balandlikdagi dropdown (ikona + nom + tavsif). Prompt maydoni <code>bg-white/[.04]</code>, focus'da lime-ring. Parametrlar slayderlar (lime trek + 18px lime thumb). Generatsiya jarayonida <b>radial lime glow animatsiyasi</b> (2.2s). Natijalar 2–3 ustunli <code>aspect-square</code> grid. 23 ta image + 13 ta video modeli toifalarga bo'lingan.</p>
+
+  <h3>2.2 Motion Factory — yig'iladigan yon-panel</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#91D010"></div><div class="lbl"><b>#91D010</b>Lime aksent</div></div>
+    <div class="sw"><div class="chip" style="background:#B0FF0F"></div><div class="lbl"><b>#B0FF0F</b>Generate CTA</div></div>
+    <div class="sw"><div class="chip" style="background:#161515"></div><div class="lbl"><b>#161515</b>Asosiy fon</div></div>
+    <div class="sw"><div class="chip" style="background:#2A2A2A"></div><div class="lbl"><b>#2A2A2A</b>Surface/input</div></div>
+    <div class="sw"><div class="chip" style="background:#327BFA"></div><div class="lbl"><b>#327BFA</b>Tanlash (ko'k)</div></div>
+    <div class="sw"><div class="chip" style="background:#B9B9B9"></div><div class="lbl"><b>#B9B9B9</b>Ikkilamchi matn</div></div>
+  </div>
+  <table class="kv">
+    <tr><td>Shrift</td><td>Inter (400–800), titul 22px; Afacad — AI ovoz sahifa tituli uchun</td></tr>
+    <tr><td>Navigatsiya</td><td>Chap yon-panel: 65px (yig'ilgan, faqat ikona) ⇄ 235px (yoyilgan, label bilan). Bo'limlar: <i>Tool Box</i> (Voiceover, SFX), <i>My Hub</i> (Library, Bookmark)</td></tr>
+    <tr><td>Kontent</td><td>Web Component'lar <code>[active]</code> atributi bilan almashinadi; 200ms slide (left:100% → 0)</td></tr>
+    <tr><td>Kartalar</td><td>2 ustun (<code>calc(50% - 10px)</code>), hover'da video autoplay + pastki gradient overlay'da nom + tugmalar; tanlanganda <code>#327BFA</code> ramka</td></tr>
+    <tr><td>Qidiruv</td><td>Algolia; autocomplete popup, kategoriya keyword chip'lar</td></tr>
+  </table>
+  <p><b>AI tool UX:</b> AI ovoz — ovoz tanlash gridi (har ovozda noyob gradient), keyin generate sahifasi: prompt editor + 2 slayder (Emotion&amp;Speed, Similarity) + oq generate tugma + wavesurfer.js audio pleyer + kredit hisoblagich ("1000 belgi ≈ 28 kredit"). AI SFX — prompt + "Prompt Influence" slayderi + generate + generatsiya tarixi ro'yxati.</p>
+
+  <h3>2.3 AssetFlow — joriy holat</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#82c341"></div><div class="lbl"><b>#82c341</b>Brend yashil</div></div>
+    <div class="sw"><div class="chip" style="background:#9fd356"></div><div class="lbl"><b>#9fd356</b>Highlight</div></div>
+    <div class="sw"><div class="chip" style="background:#0d0d0d"></div><div class="lbl"><b>#0d0d0d</b>Asosiy fon</div></div>
+    <div class="sw"><div class="chip" style="background:#141414"></div><div class="lbl"><b>#141414</b>Surface</div></div>
+    <div class="sw"><div class="chip" style="background:#6366f1"></div><div class="lbl"><b>#6366f1</b>⚠ Qoldiq indigo</div></div>
+    <div class="sw"><div class="chip" style="background:#a855f7"></div><div class="lbl"><b>#a855f7</b>⚠ Qoldiq binafsha</div></div>
+  </div>
+  <table class="kv">
+    <tr><td>Panel</td><td>Browse 380×720, Admin 420×760 — alohida CSS token to'plamlari (umumiy emas)</td></tr>
+    <tr><td>Navigatsiya</td><td>Chap ikona-rail (CEP'da 52px), 4 link: Video Templates / Motion Videos / Graphics / LUTs + pastki account-sheet modali</td></tr>
+    <tr><td>Shrift muammosi</td><td>chip 7px, featured strip 5–6px, meta 8–9px — <b>o'qib bo'lmaydigan darajada mayda</b></td></tr>
+    <tr><td>Kartalar</td><td>shaffof fon, hover'da video; ★/🗑 tugmalar <code>opacity:0</code> (faqat hover'da ko'rinadi)</td></tr>
+    <tr><td>Til</td><td>Aralash: nav inglizcha, qolgani o'zbekcha — i18n qatlami yo'q</td></tr>
+  </table>
+</section>
+
+<!-- ============ 3. TOKENS TABLE ============ -->
+<section class="page-break">
+  <h2>3. Dizayn tokenlari taqqoslash jadvali</h2>
+  <table>
+    <tr><th style="width:20%">Token</th><th>Higgsfield</th><th>Motion Factory</th><th>AssetFlow</th></tr>
+    <tr><td><b>Aksent</b></td><td>#d1fe17 (neon)</td><td>#91D010 / #B0FF0F</td><td>#82c341 / #9fd356</td></tr>
+    <tr><td><b>Fon</b></td><td>#0a0a0a</td><td>#161515</td><td>#0d0d0d</td></tr>
+    <tr><td><b>Surface</b></td><td>#1c1e20</td><td>#2A2A2A</td><td>#141414 / #1a1a1a</td></tr>
+    <tr><td><b>Muted matn</b></td><td>#9ea2ad</td><td>#B9B9B9</td><td>rgba(255,255,255,.55)</td></tr>
+    <tr><td><b>Shrift</b></td><td>system-ui</td><td class="tick">Inter</td><td>system-ui</td></tr>
+    <tr><td><b>Min shrift</b></td><td>10px</td><td>~8px</td><td class="cross">5–7px</td></tr>
+    <tr><td><b>Radius</b></td><td class="tick">izchil 4→16</td><td>10.5/13.2px</td><td class="warn">aralash 8/12/14/999</td></tr>
+    <tr><td><b>Navigatsiya</b></td><td>tab'lar</td><td class="tick">yig'iladigan sidebar</td><td>ikona-rail (tooltipsiz)</td></tr>
+    <tr><td><b>Tanlash rangi</b></td><td>lime ring</td><td>#327BFA ko'k</td><td>—</td></tr>
+    <tr><td><b>Hover preview</b></td><td>—</td><td class="tick">video autoplay</td><td class="tick">video autoplay</td></tr>
+    <tr><td><b>AI tool UI</b></td><td class="tick">to'liq (36 model)</td><td class="tick">ovoz + SFX</td><td class="cross">yo'q</td></tr>
+    <tr><td><b>Slayder/parametr</b></td><td class="tick">lime slider</td><td class="tick">custom slider</td><td class="cross">yo'q</td></tr>
+    <tr><td><b>Progress effekt</b></td><td class="tick">radial glow</td><td>spinner</td><td>linear bar</td></tr>
+    <tr><td><b>Skeleton loader</b></td><td class="tick">bor</td><td>spinner</td><td class="tick">bor (cold-start)</td></tr>
+    <tr><td><b>Dizayn izchilligi</b></td><td class="tick">yuqori</td><td class="tick">yuqori</td><td class="cross">past (2 avlod)</td></tr>
+    <tr><td><b>A11y</b></td><td class="tick">focus-ring, role</td><td class="warn">o'rta</td><td class="cross">deyarli yo'q</td></tr>
+  </table>
+
+  <div class="box box-info">
+    <b>Asosiy kuzatuv</b>
+    Uchchala plagin <b>bir xil "qora fon + lime yashil"</b> dizayn arxetipidan foydalanadi. Demak AssetFlow'ni qayta brendlash kerak emas — faqat <b>(1)</b> indigo qoldiqlarni olib tashlash, <b>(2)</b> shriftlarni o'qiladigan qilish, <b>(3)</b> Motion Factory'ning navigatsiyasi + Higgsfield'ning AI-tool naqshini qo'shish kerak.
+  </div>
+</section>
+
+<!-- ============ 4. SHORTCOMINGS ============ -->
+<section class="page-break">
+  <h2>4. AssetFlow UI/UX kamchiliklari</h2>
+  <p>Quyidagilar haqiqiy kod tahlilidan aniqlangan — ustuvorlik bo'yicha guruhlangan.</p>
+
+  <h3>🔴 Yuqori ustuvorlik (foydalanuvchini to'g'ridan-to'g'ri xafa qiladi)</h3>
+  <div class="box box-bad">
+    <ol>
+      <li><b>O'qib bo'lmaydigan shriftlar.</b> Chip 7px, featured strip 5–6px, meta 8–9px — HiDPI ekran va 380px panelda ko'rib bo'lmaydi. <i>Yechim: minimum 11px, meta 10px, chip 9px.</i></li>
+      <li><b>Ikki to'qnashuvchi aksent tizimi.</b> Yashil <code>#82c341</code> bilan eski indigo <code>#6366f1</code>/binafsha <code>#a855f7</code> (featured banner, skeleton tugma, dropdown hover) aralashgan. <i>Yechim: barcha indigo'ni o'chirish.</i></li>
+      <li><b>Hover-only tugmalar.</b> ★ sevimli, 🗑 o'chirish, overlay tugma — barchasi <code>opacity:0</code>, faqat hover'da ko'rinadi. Sichqonchasiz/birinchi qarashda topib bo'lmaydi. <i>Yechim: doimo ko'rinadigan, kontrastli ikonalar.</i></li>
+      <li><b>Yig'ilgan sidebar tooltipsiz.</b> 380px'da nav 52px ikona-railga aylanadi, <code>font-size:0</code> label, tooltip yo'q — 4 ikona noaniq. <i>Yechim: hover-tooltip yoki Motion Factory uslubidagi yoyiluvchi sidebar.</i></li>
+    </ol>
+  </div>
+
+  <h3>🟡 O'rta ustuvorlik (izchillik va sayqal)</h3>
+  <div class="box box-warn">
+    <ol start="5">
+      <li><b>Mos kelmaydigan radius va thumb nisbati.</b> Karta 8px vs skeleton 12px; bitta elementda <code>aspect-ratio:16/9</code> va <code>16/10</code> ikki marta — yuklanishda layout sakraydi.</li>
+      <li><b>Browse va Admin umumiy dizayn tizimiga ega emas</b> — turli CSS o'zgaruvchi nomlari, ikki xil mahsulotday ko'rinadi.</li>
+      <li><b>Ortiqcha navigatsiya nazorati</b> — scope <code>&lt;select&gt;</code> va sidebar nav bir xil holatni boshqaradi (chalkash).</li>
+      <li><b>Soxta grid-view tugmasi</b> <code>▦</code> — handler yo'q, mavjud bo'lmagan list-view'ni va'da qiladi.</li>
+      <li><b>Profil bitta modalda ko'milgan</b> — login, plan, download papka, contributor, admin — hammasi pastki account-sheet'da; alohida profil tab yoki sozlamalar ikonasi yo'q.</li>
+      <li><b>Pagination / lazy scroll yo'q</b> — har filtr/qidiruvda butun grid <code>innerHTML</code> orqali qayta chiziladi; katalog o'sgani sayin sekinlashadi.</li>
+    </ol>
+  </div>
+
+  <h3>🟢 Past ustuvorlik (yetuklik / a11y)</h3>
+  <div class="box box-rec">
+    <ol start="11">
+      <li><b>A11y deyarli yo'q</b> — custom dropdown'lar oddiy <code>&lt;div&gt;</code>, <code>role</code>/<code>aria-expanded</code> yo'q, klaviatura qo'llab-quvvatlash yo'q, Esc-yopish yo'q, focus-trap yo'q, toast uchun live-region yo'q.</li>
+      <li><b>Light theme / theme toggle yo'q</b> — <code>prefers-color-scheme</code> hisobga olinmaydi (AE'ning yorug' rejimida panel mos kelmaydi).</li>
+      <li><b>Aralash til, i18n qatlami yo'q</b> — nav inglizcha, qolgani o'zbekcha.</li>
+      <li><b>Onboarding yo'q</b> — yangi/login qilmagan foydalanuvchi bo'sh grid ko'radi, "ulanish" chaqiruvi yo'q.</li>
+      <li><b>Katta preview / lightbox yo'q</b> — faqat inline autoplay; pack ochmasdan kattaroq ko'rib bo'lmaydi.</li>
+      <li><b>AI Tools / generatsiya bo'limi umuman yo'q</b> (6-bo'limda hal qilamiz).</li>
+      <li><b>Kolleksiya/papka, "yaqinda ko'rilgan", bulk amallar yo'q</b> — faqat tekis Favorites + Downloaded.</li>
+      <li><b>Per-karta yuklab olish indikatorlari yo'q</b> — faqat bitta global progress bar.</li>
+      <li><b>Server cold-start UI'da ko'rinadi</b> ("server uyg'onmoqda ~60s") — UX hidi.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ 5. UNIFIED DESIGN ============ -->
+<section class="page-break">
+  <h2>5. Birlashtirilgan dizayn tizimi</h2>
+  <p class="lead"><b>Savol:</b> "Ikkala plaginning dizayni va UI/UX'ini birlashtirib mening plaginimga joriy qilsa bo'ladimi?"</p>
+  <div class="box box-rec">
+    <b>Javob: Ha — va bu tavsiya etiladi.</b>
+    Ular bir xil dizayn oilasidan (qora + lime). To'g'ri strategiya — <b>"eng yaxshisini ol"</b> gibrid: <b>Motion Factory'dan tuzilma/navigatsiya</b>, <b>Higgsfield'dan komponent sayqali va AI-tool naqshi</b>, va <b>AssetFlow'ning o'z brend yashili</b>. Quyida tayyor token to'plami.
+  </div>
+
+  <h3>5.1 Yagona dizayn tokenlari (<code>:root</code>)</h3>
+  <pre><span class="c">/* AssetFlow Unified Design System — har ikki panelda bir xil ishlatiladi */</span>
+<span class="k">:root</span> {
+  <span class="c">/* Ranglar — bitta yashil oilasi, indigo butunlay olib tashlanadi */</span>
+  --bg:           <span class="s">#0c0d0a</span>;   <span class="c">/* MF charcoal + sizning qora aralashmasi */</span>
+  --surface:      <span class="s">#161812</span>;
+  --surface-2:    <span class="s">#1e211a</span>;
+  --border:       <span class="s">rgba(255,255,255,.08)</span>;
+  --border-hi:    <span class="s">rgba(159,211,86,.40)</span>;
+  --accent:       <span class="s">#82c341</span>;   <span class="c">/* brend */</span>
+  --accent-hi:    <span class="s">#9fd356</span>;   <span class="c">/* hover/highlight */</span>
+  --accent-cta:   <span class="s">#a3e635</span>;   <span class="c">/* eng yorqin — Generate tugmalari (HF naqshi) */</span>
+  --accent-glow:  <span class="s">rgba(130,195,65,.28)</span>;
+  --select:       <span class="s">#327BFA</span>;   <span class="c">/* MF: tanlangan element ko'k ramka */</span>
+  --text:         <span class="s">#f5f7f0</span>;
+  --muted:        <span class="s">rgba(255,255,255,.60)</span>;  <span class="c">/* >= WCAG AA */</span>
+  --muted-2:      <span class="s">rgba(255,255,255,.42)</span>;
+  --danger:       <span class="s">#ef4444</span>;  --warn:<span class="s">#f59e0b</span>;  --ok:<span class="s">#3fb950</span>;
+
+  <span class="c">/* Shrift — Inter (MF'dan), o'qiladigan minimal o'lchamlar */</span>
+  --font: <span class="s">"Inter"</span>, -apple-system, system-ui, sans-serif;
+  --fs-xs:11px; --fs-sm:12px; --fs-md:13px; --fs-lg:15px; --fs-xl:19px; --fs-title:22px;
+
+  <span class="c">/* Radius — bitta izchil shkala (HF naqshi) */</span>
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+
+  <span class="c">/* Masofa — 4px bazaviy birlik */</span>
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px;
+
+  <span class="c">/* Harakat */</span>
+  --ease: cubic-bezier(.4,0,.2,1); --dur:.18s;
+}</pre>
+
+  <h3>5.2 Tavsiya etilgan panel tuzilmasi</h3>
+  <p>Motion Factory'ning yig'iladigan sidebar'i + Higgsfield'ning toza kontent maydoni. Yangi <b>"AI Tools"</b> bo'limi navigatsiyaga qo'shiladi:</p>
+  <div class="mock">
+    <div class="side">
+      <div class="ic">🍃</div>
+      <div class="ic on">▦</div>
+      <div class="ic">✨</div>
+      <div class="ic">★</div>
+      <div class="ic">⬇</div>
+      <div style="flex:1"></div>
+      <div class="ic">👤</div>
+    </div>
+    <div class="body">
+      <div class="bar">⌕ &nbsp; Shablonlarni qidirish…</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <span class="pill">Shablonlar</span>
+        <span style="background:#1a1a1a;color:#888;border-radius:999px;padding:3px 10px;font-size:8px">Sevimli</span>
+        <span style="background:#1a1a1a;color:#888;border-radius:999px;padding:3px 10px;font-size:8px">Yuklangan</span>
+      </div>
+      <div class="row">
+        <div class="col"><div class="thumb"></div><div style="color:#ddd">Cinematic Intro</div><div style="color:#82c341;font-size:8px">4 sahna · 4K</div></div>
+        <div class="col"><div class="thumb"></div><div style="color:#ddd">Logo Reveal</div><div style="color:#82c341;font-size:8px">2 sahna · 1080p</div></div>
+      </div>
+    </div>
+  </div>
+  <small>Sidebar ikonalari: 🍃 Brend · ▦ Shablonlar · ✨ AI Tools · ★ Sevimlilar · ⬇ Yuklab olingan · 👤 Profil. Yig'ilgan (64px) ⇄ yoyilgan (220px), hover'da tooltip.</small>
+
+  <h3>5.3 Komponent kutubxonasi (qaysi naqsh qayerdan)</h3>
+  <table>
+    <tr><th>Komponent</th><th>Manba naqsh</th><th>AssetFlow'ga qo'llanishi</th></tr>
+    <tr><td>Yig'iladigan sidebar</td><td>Motion Factory</td><td>Bosh navigatsiya, tooltip bilan, 64⇄220px</td></tr>
+    <tr><td>Hover-video karta</td><td>MF + AF (bor)</td><td>Doimo ko'rinadigan ★/⬇, pastki gradient overlay'da nom</td></tr>
+    <tr><td>Tanlangan element ramkasi</td><td>Motion Factory</td><td><code>#327BFA</code> 2px ramka (import uchun tanlangan sahna)</td></tr>
+    <tr><td>Model selector dropdown</td><td>Higgsfield</td><td>AI Tools: ikona + nom + tavsif, 56px</td></tr>
+    <tr><td>Prompt composer</td><td>Higgsfield</td><td>AI Tools matn maydoni, lime focus-ring</td></tr>
+    <tr><td>Parametr slayderi</td><td>HF + MF</td><td>lime trek + thumb, min/max label</td></tr>
+    <tr><td>Generatsiya glow</td><td>Higgsfield</td><td>radial lime glow (2.2s) — generatsiya kutilayotganda</td></tr>
+    <tr><td>Audio pleyer</td><td>Motion Factory</td><td>AI ovoz natijasi (wavesurfer.js)</td></tr>
+    <tr><td>Bottom-sheet modal</td><td>AssetFlow (bor)</td><td>Profil/plan — saqlanadi, sayqallanadi</td></tr>
+    <tr><td>Toast + skeleton</td><td>AssetFlow (bor)</td><td>Saqlanadi; faqat live-region a11y qo'shiladi</td></tr>
+  </table>
+
+  <div class="box box-info">
+    <b>Migratsiya strategiyasi (kichik qadamlar)</b>
+    Hammasini bir vaqtda qayta yozmang. <b>(1)</b> token <code>:root</code>'ni yangilang (1 fayl) → indigo yo'qoladi, shriftlar kattalashadi. <b>(2)</b> sidebar'ni tooltip + yoyilish bilan yangilang. <b>(3)</b> karta tugmalarini doimo-ko'rinadigan qiling. <b>(4)</b> AI Tools tab'ini qo'shing. Har qadam alohida deploy qilinadi.
+  </div>
+</section>
+
+<!-- ============ 6. AI TOOLS ============ -->
+<section class="page-break">
+  <h2>6. AI Tools bo'limini qo'shish</h2>
+  <p class="lead"><b>Savol:</b> "AI tools bo'limi qo'shish uchun nimalar qilish kerak?"</p>
+  <p>AssetFlow'da allaqachon kuchli poydevor bor — auth (PluginToken), subscription (FREE/PRO), R2 storage, SSE. AI Tools shu poydevor ustiga <b>proxy-route</b> sifatida o'rnatiladi: API kalitlar serverda qoladi, kreditlar subscription orqali nazoratlanadi.</p>
+
+  <h3>6.1 Qaysi AI tool'lar (ustuvorlik bo'yicha)</h3>
+  <table>
+    <tr><th>Tool</th><th>Provayder</th><th>Foyda</th><th>Murakkablik</th></tr>
+    <tr><td><b>AI semantik qidiruv</b></td><td>OpenAI embeddings + pgvector</td><td>"kosmik intro kerak" → mos shablonlar</td><td class="tick">Past</td></tr>
+    <tr><td><b>AI ovoz (voiceover)</b></td><td>ElevenLabs</td><td>Shablonga ovoz qo'shish, MF'dagidek</td><td class="warn">O'rta</td></tr>
+    <tr><td><b>AI SFX generatsiyasi</b></td><td>ElevenLabs SFX / fal.ai</td><td>Prompt'dan ovoz effekti</td><td class="warn">O'rta</td></tr>
+    <tr><td><b>AI rasm generatsiyasi</b></td><td>fal.ai (Flux) / Replicate</td><td>Placeholder/thumbnail, mood-board</td><td class="warn">O'rta</td></tr>
+    <tr><td><b>AI auto-tagging</b></td><td>Vision model (server)</td><td>Contributor yuklaganda avtomatik teg</td><td class="tick">Past</td></tr>
+    <tr><td><b>AI video generatsiyasi</b></td><td>fal.ai / Veo / Kling</td><td>Higgsfield darajasi (qimmat)</td><td class="cross">Yuqori</td></tr>
+  </table>
+  <div class="box box-rec"><b>Tavsiya:</b> <code>AI semantik qidiruv</code> + <code>AI auto-tagging</code> bilan boshlang (arzon, backend-only, darhol qiymat beradi), keyin <code>AI ovoz</code> + <code>AI SFX</code> (MF formulasi isbotlangan). Video generatsiyani oxiriga qoldiring.</p></div>
+
+  <h3>6.2 Arxitektura</h3>
+  <pre><span class="c">CEP Panel (AI Tools tab)</span>
+   │  prompt + params
+   ▼
+<span class="k">POST</span> /api/plugin/ai/voiceover   <span class="c">(Authorization: PluginToken)</span>
+   │  ① auth middleware (mavjud) → userId
+   │  ② subscription/credit gate (mavjud plugin-profile.ts kengaytiriladi)
+   │  ③ provider proxy (ElevenLabs API key — faqat serverda)
+   │  ④ natijani R2'ga yuklash → signed URL (mavjud pattern)
+   │  ⑤ AiGeneration yozuvi (Prisma) + kredit yechish
+   ▼
+   { url, creditsLeft }  →  panel  →  evalScript(import audio to AE)</pre>
+
+  <h3>6.3 Backend: yangi route (<code>apps/api/src/routes/ai.ts</code>)</h3>
+  <pre><span class="k">import</span> { Router } <span class="k">from</span> <span class="s">"express"</span>;
+<span class="k">import</span> { requirePluginAuth } <span class="k">from</span> <span class="s">"../middleware/auth"</span>;
+<span class="k">import</span> { consumeAiCredits } <span class="k">from</span> <span class="s">"../lib/plugin-profile"</span>;
+<span class="k">import</span> { uploadToR2, signUrl } <span class="k">from</span> <span class="s">"../lib/storage"</span>;
+
+<span class="k">const</span> router = Router();
+
+router.post(<span class="s">"/voiceover"</span>, requirePluginAuth, <span class="k">async</span> (req, res) => {
+  <span class="k">const</span> { text, voiceId, stability = 0.4 } = req.body;
+  <span class="c">// ① kredit tekshirish (1000 belgi ≈ 28 kredit — MF formulasi)</span>
+  <span class="k">const</span> cost = Math.ceil(text.length / 1000 * 28);
+  <span class="k">const</span> gate = <span class="k">await</span> consumeAiCredits(req.user.id, cost);
+  <span class="k">if</span> (!gate.ok) <span class="k">return</span> res.status(402).json({ error: <span class="s">"INSUFFICIENT_CREDITS"</span> });
+
+  <span class="c">// ② provayderga proxy (kalit faqat serverda)</span>
+  <span class="k">const</span> audio = <span class="k">await</span> fetch(<span class="s">`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`</span>, {
+    method: <span class="s">"POST"</span>,
+    headers: { <span class="s">"xi-api-key"</span>: process.env.ELEVENLABS_KEY, <span class="s">"Content-Type"</span>: <span class="s">"application/json"</span> },
+    body: JSON.stringify({ text, voice_settings: { stability } }),
+  }).then(r => r.arrayBuffer());
+
+  <span class="c">// ③ R2'ga saqlash + signed URL (mavjud pattern)</span>
+  <span class="k">const</span> key = <span class="s">`ai/voice/${req.user.id}/${Date.now()}.mp3`</span>;
+  <span class="k">await</span> uploadToR2(key, Buffer.from(audio), <span class="s">"audio/mpeg"</span>);
+  res.json({ url: <span class="k">await</span> signUrl(key, 3600), creditsLeft: gate.remaining });
+});
+
+<span class="k">export default</span> router;</pre>
+
+  <h3>6.4 Prisma sxema qo'shimchasi</h3>
+  <pre><span class="k">model</span> AiGeneration {
+  id        String   <span class="k">@id</span> @default(cuid())
+  userId    String
+  type      AiToolType   <span class="c">// VOICEOVER | SFX | IMAGE | SEARCH</span>
+  prompt    String
+  resultKey String?      <span class="c">// R2 key</span>
+  credits   Int
+  createdAt DateTime <span class="k">@default</span>(now())
+  user      User     <span class="k">@relation</span>(fields: [userId], references: [id])
+}
+<span class="k">enum</span> AiToolType { VOICEOVER  SFX  IMAGE  SEARCH }
+
+<span class="c">// PluginProfile'ga qo'shing:</span>
+<span class="c">//   aiCredits      Int @default(50)   // FREE: oyiga 50, PRO: 1000</span>
+<span class="c">//   aiCreditsReset DateTime</span></pre>
+
+  <h3>6.5 Frontend: AI Tools tab UI (Higgsfield naqshi)</h3>
+  <div class="mock">
+    <div class="side">
+      <div class="ic">🍃</div><div class="ic">▦</div><div class="ic on">✨</div>
+      <div class="ic">★</div><div class="ic">⬇</div><div style="flex:1"></div><div class="ic">👤</div>
+    </div>
+    <div class="body">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <span class="pill">AI Ovoz</span>
+        <span style="background:#1a1a1a;color:#888;border-radius:999px;padding:3px 10px;font-size:8px">AI SFX</span>
+        <span style="background:#1a1a1a;color:#888;border-radius:999px;padding:3px 10px;font-size:8px">AI Qidiruv</span>
+        <span style="margin-left:auto;border:1px solid #82c341;color:#82c341;border-radius:999px;padding:3px 10px;font-size:8px">⚡ 42 kredit</span>
+      </div>
+      <div class="bar" style="height:40px;align-items:flex-start;padding-top:6px">Matn kiriting: "Mahsulotimizni taqdim etamiz…"</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1;background:#141414;border:1px solid #222;border-radius:6px;padding:6px;color:#888;font-size:8px">🎙 Ovoz: Jessi ▾</div>
+        <div style="flex:1;background:#141414;border:1px solid #222;border-radius:6px;padding:6px;color:#888;font-size:8px">Emotsiya ▬▬●▬▬</div>
+      </div>
+      <div style="background:#a3e635;color:#000;text-align:center;border-radius:8px;padding:8px;font-weight:700">✨ Generatsiya qilish</div>
+    </div>
+  </div>
+  <pre><span class="c">&lt;!-- AssetFlow_Plugin.html — yangi AI Tools paneli --&gt;</span>
+<span class="k">&lt;div</span> id=<span class="s">"ai-tools"</span> class=<span class="s">"page"</span> hidden<span class="k">&gt;</span>
+  <span class="k">&lt;div</span> class=<span class="s">"ai-subtabs"</span><span class="k">&gt;</span>
+    <span class="k">&lt;button</span> class=<span class="s">"subtab active"</span> data-tool=<span class="s">"voiceover"</span><span class="k">&gt;</span>AI Ovoz<span class="k">&lt;/button&gt;</span>
+    <span class="k">&lt;button</span> class=<span class="s">"subtab"</span> data-tool=<span class="s">"sfx"</span><span class="k">&gt;</span>AI SFX<span class="k">&lt;/button&gt;</span>
+    <span class="k">&lt;button</span> class=<span class="s">"subtab"</span> data-tool=<span class="s">"search"</span><span class="k">&gt;</span>AI Qidiruv<span class="k">&lt;/button&gt;</span>
+    <span class="k">&lt;span</span> class=<span class="s">"credit-pill"</span><span class="k">&gt;</span>⚡ <span class="k">&lt;span</span> id=<span class="s">"ai-credits"</span><span class="k">&gt;</span>42<span class="k">&lt;/span&gt;</span> kredit<span class="k">&lt;/span&gt;</span>
+  <span class="k">&lt;/div&gt;</span>
+  <span class="k">&lt;textarea</span> id=<span class="s">"ai-prompt"</span> class=<span class="s">"ai-prompt"</span> placeholder=<span class="s">"Matn kiriting…"</span><span class="k">&gt;&lt;/textarea&gt;</span>
+  <span class="k">&lt;select</span> id=<span class="s">"ai-voice"</span> class=<span class="s">"ai-select"</span><span class="k">&gt;</span>…<span class="k">&lt;/select&gt;</span>
+  <span class="k">&lt;input</span> type=<span class="s">"range"</span> id=<span class="s">"ai-stability"</span> class=<span class="s">"ai-slider"</span><span class="k">&gt;</span>
+  <span class="k">&lt;button</span> id=<span class="s">"ai-generate"</span> class=<span class="s">"btn-cta"</span><span class="k">&gt;</span>✨ Generatsiya qilish<span class="k">&lt;/button&gt;</span>
+  <span class="k">&lt;div</span> id=<span class="s">"ai-result"</span><span class="k">&gt;&lt;/div&gt;</span>  <span class="c">&lt;!-- audio pleyer + "AE'ga import" tugma --&gt;</span>
+<span class="k">&lt;/div&gt;</span></pre>
+
+  <h3>6.6 Natijani Adobe'ga import qilish</h3>
+  <pre><span class="c">// Generatsiya tugagach: faylni yuklab, AE'ga import qilish</span>
+<span class="k">async function</span> importAiResult(signedUrl, fileName) {
+  <span class="k">const</span> tmpPath = <span class="k">await</span> downloadToTemp(signedUrl, fileName);  <span class="c">// mavjud https.get pattern</span>
+  <span class="c">// mavjud host.jsx import funksiyasidan foydalanish</span>
+  evalJSX(<span class="s">"importMediaFromPath"</span>, tmpPath);  <span class="c">// §5.2 typed wrapper</span>
+  showToast(<span class="s">"AI natija AE'ga import qilindi ✓"</span>, <span class="s">"success"</span>);
+}</pre>
+
+  <div class="box box-warn">
+    <b>Muhim qoidalar</b>
+    <ul style="margin:4px 0 0">
+      <li><b>API kalitlar hech qachon panelda bo'lmasin</b> — faqat serverda (Motion Factory'ning hardcoded kaliti — aks misol).</li>
+      <li><b>Kredit gate'ni serverda tekshiring</b> — frontend'da emas (chetlab o'tilishi mumkin).</li>
+      <li><b>AI = PRO funksiya yoki kredit-asosli</b> — mavjud subscription tizimingizga ulang.</li>
+      <li><b>Rate limiting</b> — qimmat provayderlar uchun har foydalanuvchiga limit qo'ying.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 7. ROADMAP ============ -->
+<section class="page-break">
+  <h2>7. Yo'l xaritasi</h2>
+  <table>
+    <tr><th style="width:8%">Bosqich</th><th style="width:30%">Vazifa</th><th>Tafsilot</th><th style="width:12%">Sa'y</th></tr>
+    <tr><td><b>0 — Blocker</b></td><td>ZXP paketlash &amp; imzolash</td><td>ZXPSignCmd bilan; bunsiz foydalanuvchi o'rnata olmaydi</td><td class="cross">Kritik</td></tr>
+    <tr><td rowspan="3"><b>1 — Dizayn (1-2 hafta)</b></td><td>Yagona token <code>:root</code></td><td>Indigo o'chirish, shrift ≥11px, Inter shrifti — bitta fayl o'zgartirish</td><td class="tick">Past</td></tr>
+    <tr><td>Sidebar + tooltip</td><td>Yig'iladigan navigatsiya (MF naqshi), 64⇄220px</td><td class="warn">O'rta</td></tr>
+    <tr><td>Karta tugmalari</td><td>★/⬇ doimo ko'rinadigan, kontrast oshirish</td><td class="tick">Past</td></tr>
+    <tr><td rowspan="2"><b>2 — Funksiya (2-4 hafta)</b></td><td>evalJSX typed wrapper</td><td>Injection xavfini tugatish, host.jsx uchun</td><td class="tick">Past</td></tr>
+    <tr><td>Sentry + version check</td><td>Xato monitoring + update notification</td><td class="tick">Past</td></tr>
+    <tr><td rowspan="3"><b>3 — AI Tools (1-2 oy)</b></td><td>AI semantik qidiruv + auto-tagging</td><td>Arzon, backend-only, darhol qiymat</td><td class="warn">O'rta</td></tr>
+    <tr><td>AI Ovoz + AI SFX</td><td>ElevenLabs proxy, kredit gate, audio pleyer, AE import</td><td class="warn">O'rta</td></tr>
+    <tr><td>AI Tools tab UI</td><td>Higgsfield naqshi: model selector, prompt, slayder, glow</td><td class="warn">O'rta</td></tr>
+    <tr><td><b>4 — Kengaytma</b></td><td>Premiere Pro, Algolia, AI rasm/video</td><td>Multi-app, professional qidiruv, qimmat generatsiya</td><td class="cross">Yuqori</td></tr>
+  </table>
+
+  <div class="box box-rec">
+    <b>Yakuniy xulosa</b>
+    AssetFlow allaqachon <b>to'g'ri arxitektura</b>da — to'liq SaaS backend, contributor workflow, moderatsiya. Ikkala referensdan o'rganish kerak bo'lgan narsa — bu <b>biznes-mantiq emas, balki sayqal</b>: izchil dizayn tizimi (Higgsfield), navigatsiya tuzilmasi (Motion Factory) va AI-tool integratsiyasi (ikkalasi ham). Bularning hammasi sizning kuchli poydevoringiz ustiga qurilishi mumkin — qayta yozish kerak emas, faqat ustiga qurish kerak.
+  </div>
+
+  <div class="footer-note">
+    AssetFlow Dizayn &amp; AI Tools Hisoboti · 2026-06-13 · Higgsfield v1.0.14, Motion Factory v4.9.5, AssetFlow v1.1.1 taqqoslamasi asosida<br>
+    Barcha rang, shrift va o'lcham qiymatlari haqiqiy manba kodidan olingan.
+  </div>
+</section>
+
+</body>
+</html>

@@ -11,13 +11,16 @@ import {
   isS3Configured,
   s3ObjectExists,
   templateAssetFlags,
+  listTemplateS3Keys,
 } from "./s3.js";
 
-/** R2/S3: sahna preview URL — disk + object storage */
+/** R2/S3: sahna preview URL — disk + object storage.
+ *  knownS3Keys berilsa HeadObject chaqirilmaydi (N+1 oldini olish). */
 async function enrichScenesAsync(
   meta: Record<string, unknown>,
   templateId: string,
-  apiBase: string
+  apiBase: string,
+  knownS3Keys?: Set<string>
 ) {
   const scenes = meta.scenes;
   if (!Array.isArray(scenes)) return meta;
@@ -39,9 +42,10 @@ async function enrichScenesAsync(
       const videoFile = findSceneVideo(templateId, key);
       let hasVideo = !!videoFile;
       if (!hasVideo && isS3Configured()) {
-        hasVideo = await s3ObjectExists(
-          `templates/${templateId}/scenes/${key}.mp4`
-        );
+        const s3Key = `templates/${templateId}/scenes/${key}.mp4`;
+        hasVideo = knownS3Keys
+          ? knownS3Keys.has(s3Key)
+          : await s3ObjectExists(s3Key);
       }
       if (hasVideo) {
         s.preview = publicSceneUrl(apiBase, templateId, key);
@@ -53,9 +57,10 @@ async function enrichScenesAsync(
         const previewFile = findScenePreview(templateId, key);
         let hasImg = !!previewFile;
         if (!hasImg && isS3Configured()) {
-          hasImg = await s3ObjectExists(
-            `templates/${templateId}/scenes/${key}.png`
-          );
+          const s3Key = `templates/${templateId}/scenes/${key}.png`;
+          hasImg = knownS3Keys
+            ? knownS3Keys.has(s3Key)
+            : await s3ObjectExists(s3Key);
         }
         if (hasImg) {
           s.preview = publicSceneUrl(apiBase, templateId, key);
@@ -91,8 +96,11 @@ type TemplateRow = {
 
 export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const rawMeta = (t.metaJson ?? {}) as Record<string, unknown>;
-  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase);
-  const assets = await templateAssetFlags(t.id);
+  // Bitta ListObjectsV2 bilan barcha S3 kalitlarini olish —
+  // N×M HeadObject o'rniga 1 ta List chaqiruvi (N+1 muammo hal).
+  const s3Keys = await listTemplateS3Keys(t.id);
+  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, s3Keys);
+  const assets = await templateAssetFlags(t.id, s3Keys);
   const hasThumb = assets.thumb;
   const hasPreview = assets.preview;
   const hasPack = assets.pack;

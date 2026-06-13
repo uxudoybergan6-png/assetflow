@@ -215,7 +215,7 @@ contributorRouter.patch(
   async (req, res) => {
     const parsed = settingsPatchSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
       return;
     }
     const data = parsed.data;
@@ -937,7 +937,7 @@ contributorRouter.post(
     }
     const parsed = templateBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
       return;
     }
     const d = parsed.data;
@@ -1007,7 +1007,7 @@ contributorRouter.patch(
 
     const parsed = templateBodySchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
       return;
     }
     const d = parsed.data;
@@ -1095,7 +1095,7 @@ contributorRouter.post(
   async (req, res) => {
     const parsed = reviewSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.flatten() });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
       return;
     }
     const id = String(req.params.id);

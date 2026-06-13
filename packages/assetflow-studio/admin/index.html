@@ -39,9 +39,9 @@
         <a class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/></svg>Admin</a>
       </div>
       <div class="user-chip">
-        <div class="avatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</div>
+        <div class="avatar" id="userAvatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</div>
         <div class="col" style="gap:1px;min-width:0">
-          <span style="font-size:12.5px;font-weight:600;white-space:nowrap">Admin Nazarov</span>
+          <span id="userName" style="font-size:12.5px;font-weight:600;white-space:nowrap">Admin</span>
           <span style="font-size:11px;color:var(--tx-2)">Super Admin</span>
         </div>
       </div>
@@ -99,6 +99,12 @@ if (AF_ADMIN && AF_ADMIN.role !== "admin") {
   location.href = ASSETFLOW_STUDIO.contributorLoginUrl;
 }
 AssetFlowLog.init({ source: "admin" });
+if (AF_ADMIN) {
+  const _name = AF_ADMIN.name || AF_ADMIN.email || "Admin";
+  const _ini = _name.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || "AD";
+  const _el = document.getElementById("userName"); if(_el) _el.textContent = _name;
+  const _av = document.getElementById("userAvatar"); if(_av) _av.textContent = _ini;
+}
 
 const NAV = [
   {grp:'Workspace'},

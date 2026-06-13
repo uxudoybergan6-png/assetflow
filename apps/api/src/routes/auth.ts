@@ -44,7 +44,7 @@ const loginSchema = z.object({
 authRouter.post("/register", authLimiter, async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
 
@@ -90,7 +90,7 @@ authRouter.post("/register", authLimiter, async (req, res) => {
 authRouter.post("/login", authLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
 
@@ -148,7 +148,7 @@ const resetSchema = z.object({
 authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
   const parsed = forgotSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
   const { email } = parsed.data;
@@ -190,7 +190,7 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
 authRouter.post("/reset-password", async (req, res) => {
   const parsed = resetSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
   const { token, password } = parsed.data;
@@ -243,7 +243,7 @@ const profilePatchSchema = z.object({
 authRouter.patch("/me", requireAuth, async (req, res) => {
   const parsed = profilePatchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
   const user = await prisma.user.update({

@@ -1959,7 +1959,16 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     pruneToScene
   });
   return new Promise((resolve)=>{
+    let settled=false;
+    const tid=setTimeout(()=>{
+      if(settled)return;
+      settled=true;
+      resolve(JSON.stringify({ok:false,error:'timeout',message:'AE skripti 30s ichida javob bermadi — AE oynasini yoping va qayta urinib ko\'ring'}));
+    },30000);
     csInterface.evalScript(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,(raw)=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(tid);
       resolve(raw||'');
     });
   });

@@ -1,8 +1,11 @@
-import { execFileSync } from "child_process";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import fs from "fs";
 import path from "path";
 import os from "os";
 import { sceneKey } from "./template-files.js";
+
+const execFileAsync = promisify(execFile);
 
 export interface MogrtScene {
   n: string;
@@ -40,13 +43,13 @@ const EMPTY: MogrtExtractResult = {
 };
 
 /** ZIP ichidagi .mogrt entry yo'llarini qaytaradi (macOS axlati filtrlanadi) */
-function listMogrtsInZip(zipPath: string): string[] {
+async function listMogrtsInZip(zipPath: string): Promise<string[]> {
   try {
-    const out = execFileSync("unzip", ["-Z1", zipPath], {
+    const { stdout } = await execFileAsync("unzip", ["-Z1", zipPath], {
       encoding: "utf8",
       timeout: 15_000,
     });
-    return out
+    return stdout
       .split("\n")
       .map((e) => e.trim())
       .filter(
@@ -85,7 +88,7 @@ function readDefinitionName(defDir: string): string {
 export async function extractMogrtsFromZip(
   zipPath: string
 ): Promise<MogrtExtractResult> {
-  const entries = listMogrtsInZip(zipPath);
+  const entries = await listMogrtsInZip(zipPath);
   if (!entries.length) return EMPTY;
 
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_mogrt_"));
@@ -111,7 +114,7 @@ export async function extractMogrtsFromZip(
     fs.mkdirSync(itemDir, { recursive: true });
     try {
       // Tashqi ZIP dan .mogrt entry ni chiqar (to'liq yo'l bilan)
-      execFileSync("unzip", ["-o", zipPath, entry, "-d", itemDir], {
+      await execFileAsync("unzip", ["-o", zipPath, entry, "-d", itemDir], {
         timeout: 60_000,
       });
       const mogrtPath = path.join(itemDir, entry);
@@ -120,7 +123,7 @@ export async function extractMogrtsFromZip(
       try {
         // definition.json + thumb'lar bitta chaqiriqda (-j: yo'lsiz tekis);
         // yo'q a'zo bo'lsa unzip exit!=0 — mavjudlari baribir chiqqan bo'ladi
-        execFileSync(
+        await execFileAsync(
           "unzip",
           ["-o", "-j", mogrtPath, "definition.json", "thumb.png", "thumb.mp4", "-d", defDir],
           { timeout: 30_000 }

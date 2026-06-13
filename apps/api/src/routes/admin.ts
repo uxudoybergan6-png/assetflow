@@ -51,7 +51,7 @@ adminRouter.get("/assets", async (req, res) => {
 adminRouter.post("/assets", async (req, res) => {
   const parsed = assetSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
   const asset = await prisma.asset.create({ data: parsed.data });
@@ -61,7 +61,7 @@ adminRouter.post("/assets", async (req, res) => {
 adminRouter.patch("/assets/:id", async (req, res) => {
   const parsed = assetSchema.partial().safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
   const asset = await prisma.asset.update({
@@ -263,7 +263,7 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   const userId = String(req.params.userId);
   const parsed = subPatchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
 
