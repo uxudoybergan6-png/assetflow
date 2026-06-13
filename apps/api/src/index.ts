@@ -9,6 +9,7 @@ const monorepoRoot = path.resolve(
 dotenv.config({ path: path.join(monorepoRoot, ".env") });
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 import express from "express";
+import type { ErrorRequestHandler } from "express";
 import cors from "cors";
 import { assetsRouter } from "./routes/assets.js";
 import { authRouter } from "./routes/auth.js";
@@ -24,22 +25,32 @@ import { auditRouter } from "./routes/audit.js";
 const app = express();
 const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 
+// Render/Vercel kabi reverse-proxy ortida req.ip = X-Forwarded-For (rate-limit
+// to'g'ri ishlashi uchun). Bitta proxy hop.
+app.set("trust proxy", 1);
+
+// Env validatsiyasi — JWT_SECRET kabi xavfsizlik blokerlarini server
+// ishga tushishidan OLDIN tekshiramiz (productionda default = process.exit).
+validateEnv();
+
 const defaultOrigins = [
   "http://localhost:3000",
   "https://localhost:3000",
-  "null",
 ];
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      const allowed = process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()) ?? defaultOrigins;
-      if (allowed.includes(origin) || origin.startsWith("file://")) {
-        callback(null, true);
-        return;
+      // Origin yo'q (server-to-server, curl) yoki CEP plugin (file:// / "null") — ruxsat
+      if (!origin || origin === "null" || origin.startsWith("file://")) {
+        return callback(null, true);
       }
-      callback(null, true);
+      const allowed = process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean)
+        : defaultOrigins;
+      // Ruxsat etilmagan origin — CORS sarlavhasi qo'yilmaydi (brauzer bloklaydi),
+      // lekin so'rovni throw qilmaymiz (500 spam bo'lmasin).
+      callback(null, allowed.includes(origin));
     },
     credentials: true,
   })
@@ -76,6 +87,29 @@ app.use("/api/logs", logsRouter);
 app.use("/api/studio/messages", messagesRouter);
 app.use("/api/studio/audit", auditRouter);
 
+// Topilmagan yo'llar — JSON 404 (hang emas)
+app.use((_req, res) => {
+  res.status(404).json({ error: "Topilmadi" });
+});
+
+// Global xato ishlovchi — async handler throw qilsa yoki Prisma xato bersa
+// so'rov osilib qolmasin. Express 5 async rejection'ni shu yerga uzatadi.
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (res.headersSent) return;
+  const code = (err as { code?: string })?.code;
+  if (code === "P2025") {
+    res.status(404).json({ error: "Yozuv topilmadi" });
+    return;
+  }
+  if (code === "P2002") {
+    res.status(409).json({ error: "Bunday yozuv allaqachon mavjud" });
+    return;
+  }
+  console.error("[api] Kutilmagan xato:", err);
+  res.status(500).json({ error: "Server xatosi" });
+};
+app.use(errorHandler);
+
 /** Production env validatsiyasi — xavfsizlik blokerlari */
 function validateEnv() {
   const isProd = process.env.NODE_ENV === "production";
@@ -106,8 +140,6 @@ function validateEnv() {
     console.warn("[env] Ogohlantirishlar:\n  - " + warnings.join("\n  - "));
   }
 }
-
-validateEnv();
 
 app.listen(PORT, "0.0.0.0", () => {
   const stripe = process.env.STRIPE_SECRET_KEY?.trim();

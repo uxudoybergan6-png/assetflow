@@ -214,7 +214,7 @@ const StudioTemplates = (() => {
           blocked: data?.subscribers?.byStatus?.blocked ?? 0,
           removed: data?.subscribers?.byStatus?.removed ?? 0,
           online: data?.subscribers?.activeLast24h ?? 0,
-          totalDownloads: total,
+          totalDownloads: data?.usage?.downloadsTotal ?? 0,
           free: data?.subscribers?.byPlan?.free ?? 0,
           pro: data?.subscribers?.byPlan?.pro ?? 0,
         };

@@ -5,7 +5,13 @@ import path from "path";
 import os from "os";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { PluginAccountStatus, PluginPlanTier, prisma } from "@creative-tools/database";
+import {
+  PluginAccountStatus,
+  PluginPlanTier,
+  TemplateReviewStatus,
+  prisma,
+} from "@creative-tools/database";
+import type { Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { isS3Configured, getPublicUrl, s3ObjectExists } from "../lib/s3.js";
@@ -16,6 +22,7 @@ import {
   recordPluginImport,
   serializePluginUser,
   setPluginPlan,
+  checkDownloadAllowed,
 } from "../lib/plugin-profile.js";
 import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
 import {
@@ -170,9 +177,42 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
+/** Pack/MOGRT yuklab olishdan oldin: published + Free/Pro limit gate.
+    Admin nashr etilmagan packni ham (review uchun) yuklay oladi va limitsiz. */
+async function guardDownloadable(
+  req: Request,
+  res: Response,
+  templateId: string
+): Promise<boolean> {
+  if (!/^[a-z0-9]+$/i.test(templateId)) {
+    res.status(400).json({ error: "Noto'g'ri shablon ID" });
+    return false;
+  }
+  if (req.user?.role === "ADMIN") return true;
+  const tpl = await prisma.contributorTemplate.findUnique({
+    where: { id: templateId },
+    select: { reviewStatus: true, published: true },
+  });
+  if (
+    !tpl ||
+    tpl.reviewStatus !== TemplateReviewStatus.APPROVED ||
+    !tpl.published
+  ) {
+    res.status(404).json({ error: "Pack topilmadi yoki nashr etilmagan" });
+    return false;
+  }
+  const gate = await checkDownloadAllowed(req.user!.userId);
+  if (!gate.ok) {
+    res.status(403).json({ error: gate.error, code: gate.code });
+    return false;
+  }
+  return true;
+}
+
 /** M2: tanlangan sahnaning yakka .mogrt fayli — butun ZIP'siz yuklab olish */
-pluginRouter.get("/assets/:templateId/mogrt/:slug", async (req, res) => {
+pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req, res) => {
   const templateId = String(req.params.templateId);
+  if (!(await guardDownloadable(req, res, templateId))) return;
   const slug = sceneKey(String(req.params.slug));
 
   if (isS3Configured()) {
@@ -194,9 +234,19 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", async (req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
+/** Pack yuklab olish — auth + published + Free/Pro limit gate (generic
+    route'dan OLDIN ro'yxatdan o'tadi, shu sabab "pack" shu yerga tushadi). */
+pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req, res) => {
+  const templateId = String(req.params.templateId);
+  if (!(await guardDownloadable(req, res, templateId))) return;
+  await serveTemplateAsset(req, res, templateId, "pack");
+});
+
+/** Thumb/preview — ochiq (katalog ko'rinishi uchun, img/video src auth yubora
+    olmaydi). Pack bu yerga tushmaydi (yuqorida gate'langan). */
 pluginRouter.get("/assets/:templateId/:kind", async (req, res) => {
   const kind = req.params.kind as TemplateAssetKind;
-  if (!["thumb", "preview", "pack"].includes(kind)) {
+  if (!["thumb", "preview"].includes(kind)) {
     res.status(400).json({ error: "Noto'g'ri tur" });
     return;
   }

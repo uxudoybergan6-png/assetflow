@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { Request, Response } from "express";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
-import { getPublicUrl, resolveS3AssetKey } from "./s3.js";
+import { getPublicUrl, getSignedDownloadUrl, resolveS3AssetKey } from "./s3.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
   thumb: "image/jpeg",
@@ -19,7 +19,13 @@ export async function serveTemplateAsset(
 ) {
   const s3Key = await resolveS3AssetKey(templateId, kind);
   if (s3Key) {
-    res.redirect(302, getPublicUrl(s3Key));
+    // Pack — qimmatli (pullik) asset: qisqa muddatli signed URL (5 daqiqa),
+    // shunda redirect URL'i ulashib bo'lmaydi. Thumb/preview — ochiq public URL.
+    const url =
+      kind === "pack"
+        ? await getSignedDownloadUrl(s3Key, 300)
+        : getPublicUrl(s3Key);
+    res.redirect(302, url);
     return;
   }
 

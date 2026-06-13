@@ -11,8 +11,6 @@ import {
   isS3Configured,
   s3ObjectExists,
   templateAssetFlags,
-  resolveS3AssetKey,
-  getPublicUrl,
 } from "./s3.js";
 
 /** R2/S3: sahna preview URL — disk + object storage */
@@ -99,16 +97,12 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const hasPreview = assets.preview;
   const hasPack = assets.pack;
 
-  // Pack uchun to'g'ridan R2/CDN URL (Render'ni chetlab o'tadi, cold start yo'q).
-  // CDN ochiq bo'lmasa yoki kalit topilmasa — API endpoint'ga qaytamiz.
-  let packUrl: string | null = hasPack ? publicAssetUrl(apiBase, t.id, "pack") : null;
-  if (hasPack && isS3Configured()) {
-    const packKey = await resolveS3AssetKey(t.id, "pack");
-    if (packKey) {
-      const direct = getPublicUrl(packKey);
-      if (/^https?:\/\//.test(direct)) packUrl = direct;
-    }
-  }
+  // Pack URL — DOIM API endpoint orqali (to'g'ridan R2 public URL EMAS).
+  // Shu sabab pack yuklab olish auth + published + Free/Pro limit gate'idan
+  // o'tadi; route esa qisqa muddatli signed R2 URL'ga redirect qiladi.
+  const packUrl: string | null = hasPack
+    ? publicAssetUrl(apiBase, t.id, "pack")
+    : null;
 
   return {
     id: t.id,

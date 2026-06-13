@@ -86,8 +86,10 @@ function toast(title, msg, kind){
   const map={success:['green','checkCircle'],danger:['red','xCircle'],warn:['orange','alert'],info:['violet','bell']};
   const [c,i]=map[kind||'success'];
   const el=document.createElement('div'); el.className='toast';
+  // title/msg ko'pincha server matni (xato, contributor nomi) — XSS oldini olish uchun escape
+  const esc=(s)=>(window.StudioMedia&&StudioMedia.escapeHtml?StudioMedia.escapeHtml(s):String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));
   el.innerHTML=`<div class="t-ico" style="background:var(--${c}-dim);color:var(--${c})">${ic(i)}</div>
-    <div class="t-body"><div class="t-title">${title}</div>${msg?`<div class="t-msg">${msg}</div>`:''}</div>`;
+    <div class="t-body"><div class="t-title">${esc(title)}</div>${msg?`<div class="t-msg">${esc(msg)}</div>`:''}</div>`;
   wrap.appendChild(el);
   setTimeout(()=>{ el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); }, 3200);
 }

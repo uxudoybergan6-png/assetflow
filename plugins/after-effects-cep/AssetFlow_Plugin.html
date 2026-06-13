@@ -1976,12 +1976,19 @@ function getAnim(i){
   return'<div class="preview-anim"><div class="anim-pulse"></div></div>';
 }
 
+/** Server matnini HTML'ga xavfsiz qo'yish (XSS himoyasi — katalog ishonchsiz manba) */
+function escHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
 function renderThumbMedia(a){
-  if(!a.thumb && !a.preview) return `<span class="ico">${a.i}</span>${getAnim(0)}`;
+  if(!a.thumb && !a.preview) return `<span class="ico">${escHtml(a.i)}</span>${getAnim(0)}`;
   let html = '';
-  if(a.thumb) html += `<img class="thumb-poster" src="${a.thumb}" alt="${a.n}" loading="lazy">`;
+  if(a.thumb) html += `<img class="thumb-poster" src="${escHtml(a.thumb)}" alt="${escHtml(a.n)}" loading="lazy">`;
   if(a.preview){
-    html += `<video class="thumb-media" data-src="${a.preview}" muted loop playsinline></video>`;
+    html += `<video class="thumb-media" data-src="${escHtml(a.preview)}" muted loop playsinline></video>`;
     html += `<span class="thumb-play">▶</span>`;
   }
   return html;
@@ -1996,38 +2003,39 @@ function orientLabel(o){
 
 function renderCard(a,i,showDl){
   const faved=window.favorites.has(a.n), dled=window.downloaded.has(a.n);
-  const res=a.res?a.res.toUpperCase():'';
+  const res=a.res?escHtml(String(a.res).toUpperCase()):'';
   const ratio=orientLabel(a.orient);
   const resLine=[res,ratio].filter(Boolean).join(' · ');
   const hasPreview=a.thumb||a.preview;
   const pack=packs[a.n];
   const sceneCount=pack?pack.scenes.length:0;
   const noPack=!!(pack&&pack.server&&pack.hasPack===false);
-  const safeName=a.n.replace(/'/g,"\\'");
+  // a.n — ichki pack kaliti (__srv_<id> / lokal kalit), JS-string sifatida ishlatiladi
+  const safeName=String(a.n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   const tagList=(a.tags||[]).slice(0,2);
   const metaBits=[];
   if(sceneCount) metaBits.push(sceneCount+' ta sahna');
   if(resLine) metaBits.push(resLine);
   const metaLine=metaBits.join(' · ');
   const chips=[
-    a.t?`<span class="chip cat">${a.t}</span>`:'',
-    ...tagList.map(t=>`<span class="chip tag">${t}</span>`)
+    a.t?`<span class="chip cat">${escHtml(a.t)}</span>`:'',
+    ...tagList.map(t=>`<span class="chip tag">${escHtml(t)}</span>`)
   ].filter(Boolean).join('');
-  return`<div class="card${noPack?' no-pack':''}" draggable="true" data-name="${a.n}" data-ico="${a.i}" data-preview="${a.preview||''}"
+  return`<div class="card${noPack?' no-pack':''}" draggable="true" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
-    <div class="thumb${hasPreview?' has-preview':''}" style="background:${a.bg}">
+    <div class="thumb${hasPreview?' has-preview':''}" style="background:${escHtml(a.bg)}">
       ${noPack?'<span class="nopack-b" title="Loyiha (.aep) fayli hali yuklanmagan">⏳ Pack tayyorlanmoqda</span>':(a.nw&&!showDl?'<span class="new-b">YANGI</span>':'')}
       ${dled&&showDl?'<span class="dl-b">✓</span>':''}
       ${sceneCount?`<span class="pack-badge">${sceneCount} sahna</span>`:''}
       ${resLine?`<span class="res-tag">${resLine}</span>`:''}
-      ${hasPreview?renderThumbMedia(a):`<span class="ico">${a.i}</span>${getAnim(i)}`}
+      ${hasPreview?renderThumbMedia(a):`<span class="ico">${escHtml(a.i)}</span>${getAnim(i)}`}
       <div class="overlay"><button class="dl-btn">Ko‘rish</button></div>
     </div>
     <button class="fav-btn${faved?' faved':''}" onclick="event.stopPropagation();toggleFav('${safeName}')">★</button>
     ${showDl?`<button class="del-btn" title="Loyihadan o‘chirish" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`:''}
     <div class="cinfo">
-      <div class="aname">${a.displayName||a.n}</div>
+      <div class="aname">${escHtml(a.displayName||a.n)}</div>
       ${metaLine?`<div class="card-meta-line">${metaLine}</div>`:''}
       ${chips?`<div class="card-chips">${chips}</div>`:''}
     </div>
@@ -2457,24 +2465,24 @@ function renderPackSummary(name,pack,asset){
   const heroVid=pack.preview||asset?.preview||'';
   let preview;
   if(heroVid){
-    const poster=asset?.thumb?`<img class="pack-sum-poster" src="${asset.thumb}" alt="${name}">`:`<span class="pack-sum-fallback pack-sum-poster" style="display:grid;place-items:center">${pack.ico}</span>`;
-    preview=`${poster}<video class="pack-sum-vid" src="${heroVid}" muted loop playsinline preload="metadata"></video><button type="button" class="pack-sum-play" aria-label="Preview" onclick="event.stopPropagation();togglePackHeroPlay(this)">▶</button>`;
+    const poster=asset?.thumb?`<img class="pack-sum-poster" src="${escHtml(asset.thumb)}" alt="${escHtml(name)}">`:`<span class="pack-sum-fallback pack-sum-poster" style="display:grid;place-items:center">${escHtml(pack.ico)}</span>`;
+    preview=`${poster}<video class="pack-sum-vid" src="${escHtml(heroVid)}" muted loop playsinline preload="metadata"></video><button type="button" class="pack-sum-play" aria-label="Preview" onclick="event.stopPropagation();togglePackHeroPlay(this)">▶</button>`;
   }else if(asset?.thumb){
-    preview=`<img src="${asset.thumb}" alt="${name}">`;
+    preview=`<img src="${escHtml(asset.thumb)}" alt="${escHtml(name)}">`;
   }else{
-    preview=`<span class="pack-sum-fallback">${pack.ico}</span>`;
+    preview=`<span class="pack-sum-fallback">${escHtml(pack.ico)}</span>`;
   }
   const noPack=!!(pack.server&&pack.hasPack===false);
-  const fileLine=(pack.fileName&&!noPack)?`<div class="pack-sum-file">${pack.fileName}</div>`:'';
+  const fileLine=(pack.fileName&&!noPack)?`<div class="pack-sum-file">${escHtml(pack.fileName)}</div>`:'';
   const noPackLine=noPack?`<div class="pack-sum-nopack">⏳ Loyiha (.aep) fayli hali yuklanmagan — import qilib bo‘lmaydi. Contributor Studio orqali pack faylini yuklashi kerak.</div>`:'';
-  const descLine=pack.description?`<div class="pack-sum-desc">${pack.description.replace(/</g,'&lt;')}</div>`:'';
+  const descLine=pack.description?`<div class="pack-sum-desc">${escHtml(pack.description)}</div>`:'';
   const fr=pack.aeFinalRender;
-  const frLine=fr?`<div class="pack-sum-desc">Final Render: <strong>${fr.name}</strong>${fr.width?' · '+fr.width+'×'+fr.height:''}${fr.fps?' · '+fr.fps+'fps':''}</div>`:'';
+  const frLine=fr?`<div class="pack-sum-desc">Final Render: <strong>${escHtml(fr.name)}</strong>${fr.width?' · '+fr.width+'×'+fr.height:''}${fr.fps?' · '+fr.fps+'fps':''}</div>`:'';
   return `<div class="pack-summary">
     <div class="pack-sum-preview">${preview}</div>
     <div class="pack-sum-body">
-      <div class="pack-sum-title">${name}</div>
-      <div class="pack-sum-meta">${summary}</div>
+      <div class="pack-sum-title">${escHtml(name)}</div>
+      <div class="pack-sum-meta">${escHtml(summary)}</div>
       ${frLine}
       ${descLine}
       ${fileLine}
@@ -2493,16 +2501,16 @@ function renderSceneCard(s,i,asset,slotW){
   const num=`<span class="scene-num">${String(i+1).padStart(2,'0')}</span>`;
   const h=Math.max(72,Math.round((slotW||155)*scenePreviewHeightRatio(asset)));
   const slotStyle=`height:${h}px;min-height:${h}px;max-height:${h}px`;
-  let mediaHtml=`<span class="ico">${s.ico||'✦'}</span>`;
+  let mediaHtml=`<span class="ico">${escHtml(s.ico||'✦')}</span>`;
   if(previewSrc&&s.previewKind==='image'){
-    mediaHtml=`<img class="scene-img" src="${previewSrc}" alt="">`;
+    mediaHtml=`<img class="scene-img" src="${escHtml(previewSrc)}" alt="">`;
   }else if(previewSrc){
-    mediaHtml=`<video class="scene-vid" src="${previewSrc}" muted loop playsinline preload="metadata"></video>
+    mediaHtml=`<video class="scene-vid" src="${escHtml(previewSrc)}" muted loop playsinline preload="metadata"></video>
       <button type="button" class="scene-play-btn" aria-label="Play" onclick="toggleScenePlay(event,${i})">▶</button>`;
   }
   return `<div class="scene-card${imported}" draggable="true" data-idx="${i}" onclick="selectScene(${i})">
     <div class="scene-media-slot${fitCls}" style="${slotStyle}">${num}${mediaHtml}${dragHint}</div>
-    <div class="scene-info"><div class="scene-name">${s.n}</div><div class="scene-meta">${s.meta}</div></div>
+    <div class="scene-info"><div class="scene-name">${escHtml(s.n)}</div><div class="scene-meta">${escHtml(s.meta)}</div></div>
   </div>`;
 }
 
@@ -2853,19 +2861,28 @@ async function __downloadAllImpl(n){
         // MOGRT tanlash ro'yxati ochildi — detal ochiq qoladi
         return;
       }
-      if(result.indexOf('ok:')===0){
+      // Bo'sh natija — bekor qilingan yoki CEP emas: jim chiqamiz
+      // (bekor qilish toast'i onAfCancel'da ko'rsatiladi).
+      if(!result){ render();renderDl(); return; }
+      // Host "ok:aep" / "ok:<name>" qaytaradi; ehtiyot uchun JSON {ok:true} ham qabul
+      let ok=false;
+      if(typeof result==='string'){
+        if(result.indexOf('ok:')===0) ok=true;
+        else { try{ const d=JSON.parse(result); if(d&&d.ok) ok=true; }catch(e){} }
+      }
+      if(ok){
         markPackDownloaded();
-        showToast('✓ "'+n+'" AE projectga import qilindi');
+        showToast('✓ "'+n+'" AE projectga import qilindi','success');
         if(p.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
           try{
             await AssetFlowAccount.recordImport(p.serverTemplateId);
             refreshAccountUi();
           }catch(usageErr){
-            showToast(usageErr.message||'Import limit');
+            showToast(usageErr.message||'Import limit','warning');
           }
         }
       }
-      else showToast('Import xato: '+(result||'noma\'lum'));
+      else showToast('Import xato: '+(result||'noma\'lum'),'error');
     }catch(err){
       console.error(err);
       showToast('Import xato: '+err.message);
@@ -2991,12 +3008,13 @@ function shouldShowFeatured(){
 }
 
 function renderNoticeItem(a){
-  const safe=a.n.replace(/'/g,"\\'");
-  const thumb=a.thumb?`<img src="${a.thumb}" alt="${a.n}" loading="lazy">`:'';
+  const safe=String(a.n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  const label=a.displayName||a.n;
+  const thumb=a.thumb?`<img src="${escHtml(a.thumb)}" alt="${escHtml(label)}" loading="lazy">`:'';
   const nw=a.nw?'<span class="notice-item-new">NEW</span>':'';
-  return`<div class="notice-item" onclick="openPack('${safe}')" title="${a.n}">
-    <div class="notice-item-thumb" style="background:${a.bg}">${nw}${thumb}</div>
-    <div class="notice-item-name">${a.n}</div>
+  return`<div class="notice-item" onclick="openPack('${safe}')" title="${escHtml(label)}">
+    <div class="notice-item-thumb" style="background:${escHtml(a.bg)}">${nw}${thumb}</div>
+    <div class="notice-item-name">${escHtml(label)}</div>
   </div>`;
 }
 

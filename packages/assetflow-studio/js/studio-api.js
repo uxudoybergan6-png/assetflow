@@ -132,7 +132,7 @@ const StudioApi = (() => {
         // Server JSON xato bersa o'shani, bo'lmasa statusga qarab tushunarli xabar
         const friendly =
           xhr.status === 413
-            ? "Fayl juda katta — maksimal 500 MB"
+            ? "Fayl juda katta — maksimal 3 GB"
             : xhr.status === 401
               ? "Sessiya tugagan — qayta tizimga kiring"
               : xhr.status === 502 || xhr.status === 503 || xhr.status === 504

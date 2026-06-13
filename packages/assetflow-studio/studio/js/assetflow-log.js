@@ -51,10 +51,24 @@ const AssetFlowLog = (() => {
     return entry;
   }
 
+  /** Studio sessiya tokeni — /api/logs endi admin-only, shu sabab Authorization kerak */
+  function authHeader() {
+    try {
+      const raw =
+        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("af_session")) ||
+        (typeof localStorage !== "undefined" && localStorage.getItem("af_session"));
+      const s = raw ? JSON.parse(raw) : null;
+      const tok = s && (s.apiToken || s.token);
+      return tok ? { Authorization: "Bearer " + tok } : {};
+    } catch {
+      return {};
+    }
+  }
+
   async function pushServer(entry) {
     const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeader() },
       body: JSON.stringify(entry),
     });
     if (!res.ok) throw new Error("log push failed");
@@ -62,7 +76,9 @@ const AssetFlowLog = (() => {
 
   async function pullServer() {
     try {
-      const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs?limit=300`);
+      const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs?limit=300`, {
+        headers: authHeader(),
+      });
       if (!res.ok) return [];
       const data = await res.json();
       return Array.isArray(data.items) ? data.items : [];

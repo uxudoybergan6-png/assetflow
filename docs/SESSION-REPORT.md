@@ -1,27 +1,21 @@
-# SESSION REPORT — 2026-06-13 (AE plugin + Admin MEDIUM fixes — NOT committed, test kutilmoqda)
+# SESSION REPORT — 2026-06-13 (kech-2) — Audit fixes COMMIT (push KUTILMOQDA)
 
-## Nima qilindi: Ikkala AE plugin'dagi BARCHA MEDIUM muammolar (+ API)
+## Nima qilindi
+To'liq kodbaza auditi → **13 HIGH security/UX fix + 2 vazifa**, 30 fayl, bitta commit (`fix(security+ux)...`). **Push qilinmadi — foydalanuvchi o'zi qiladi.**
 
-### ASOSIY PLUGIN (AssetFlow_Plugin.html + catalog.js + account.js)
-1. **Saralash haqiqiy** — API `createdAt` qaytaradi (plugin.ts/catalog-map.ts); "Yangi" sana bo'yicha, "Mos" qidiruv moslik bali (`relevanceScore`) bo'yicha.
-2. **Search debounce 300ms** — har bosishda emas, jim turgach render (`__searchDebounce`); ⌕ tugmasi darhol.
-3. **Jim catch tuzatildi** — papka saqlanmasa yozish sinovi + aniq xato; kesh o'chirishda qisman muvaffaqiyat hisoblanadi (`cacheFails`).
-4. **Fetch 30s timeout** — `fetchWithTimeout` (catalog.js, account.js) + `pubFetch` (publish) AbortController bilan.
-5. **Filtr ko'rsatkichi** — «✕ Tozalash (N)» pill; 0 natijada "N ta filtr natijani yashiryapti".
-6. **Til o'zbekcha** — Qidirish/Saralash/Mos/Yangi/Kategoriya/Sifat/Sevimlilar/Shablonlar va h.k. (AE-mockup chrome ataylab inglizcha qoldi).
-7. **Publish progress** — 1/6…6/6 bosqich; pack/preview XHR upload `%`; xatoda `Xato [bosqich]:`.
-8. **Poyga qulfi** — `__afOpBusy`: import/downloadAll bir vaqtda bittasi (qo'sh bosish/drag bloklanadi).
+### Xavfsizlik
+- **XSS→RCE escape** — markaziy `escHtml`/`escAttrJs` (Plugin.html, Admin.html, admin-views2.js, contributor-views.js) + markaziy `ui.js toast()`.
+- **Pack auth + published + Free/Pro gate** — `/assets/:id/pack`+`/mogrt/:slug` `requireAuth`+`guardDownloadable`; catalog pack URL→API endpoint; serve-asset pack→signed R2 URL; client auth header + redirect'da cross-origin'ga tushmaydi; `checkDownloadAllowed`.
+- **/api/logs** `requireAuth+requireAdmin` (+ client auth header). **CORS** haqiqiy allow-list. **Login rate-limit** (login/register/forgot). **JWT** prod'da default/bo'sh → exit. **trust proxy**. **Global error handler** (P2025→404, P2002→409).
 
-### ADMIN PLUGIN (AssetFlow_Admin.html)
-9. **Cold-start retry** — `api()` tarmoq xatosida `waitForApi` bilan bir marta uyg'otib qayta urinadi ("Server uyg'onmoqda").
-10. **Jim catch** — unzip xatosi endi ko'rinadi; AE ochilishi tasdiqlanmasa soxta "✓" emas, ⚠ ogohlantirish; host-boot xatosi toast.
-11. **Tugma disable** — review/publish/save/delete amal davomida bloklanadi + "⏳" (`setBtnBusy`).
-12. **Obunachilar** — `lastSeenAt` ISO (mapSubscriberRow) → jonli `timeAgo`; «⧉ Nusxalash» tugmasi email'ni clipboard'ga ko'chiradi (`copyToClipboard`, toast "Email nusxalandi: …"). mailto/OS-open olib tashlandi (CEP'da ishlamasdi).
-13. **Manifest PATCH merge** — contributor.ts allaqachon metaJson spread; qo'shimcha per-scene server kalitlar (previewKey/mogrtKey) saqlanadi (`mergeSceneMeta`).
+### Funksional/UX
+- **downloadAll** bekorda soxta xato yo'q + ok/JSON qabul. **analytics** ReferenceError (`data.usage.downloadsTotal`). **Admin data-loss guard** (noaniqda `afAbort`, forceOpen to'xtaydi). **avconvert→ffmpeg** (`findFfmpeg`). **Tariff gate** server'da (Pro=Stripe; limit oylik — kunlik uchun migration kerak).
+- **Studio per-fayl upload progress** — "Media fayllar" «Davom etish»da yuklaydi; bar 0-100% + «… 42% (210MB/500MB)» + «✓ Yuklandi»; SSE server bosqichi.
+- **Pack limiti 500 MB → 3 GB** — multer + barcha UI/xato matnlari.
 
 ## Tekshirildi
-- `tsc --noEmit` + `npm run build -w apps/api` — OK. Inline script parse (vm.Script) + `node --check` (catalog/account) — OK.
-- `install-cep.sh` ishga tushdi: fayllar `com.assetflow.demo` ga o'rnatildi (14:57), AE qayta ochilmoqda.
+- `npm run build -w apps/api` (tsc EXIT 0) · `node --check` (studio JS) · HTML inline-JS parse · `install-cep.sh` · `prepare-vercel.mjs` (studio/js + admin/js sinxron).
 
-## Kutilmoqda
-- AE-ichi test (commit qilinmadi). API o'zgarishlari (createdAt, lastSeenAt, scene merge) Render deploy talab qiladi (push).
+## Deploy DIQQAT (push + Render/Vercel)
+- Render: `CORS_ORIGIN` Vercel studio URL'ini O'Z ICHIGA OLSIN; `NODE_ENV=production` + kuchli `JWT_SECRET`; 3 GB upload proxy timeout/ephemeral disk'ga bog'liq.
+- AE-ichi + Studio end-to-end test hali qilinmagan.

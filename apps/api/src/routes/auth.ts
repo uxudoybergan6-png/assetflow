@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma, UserRole } from "@creative-tools/database";
 import { signToken, requireAuth } from "../middleware/auth.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
 import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
@@ -11,6 +12,22 @@ import { getWebUrl } from "../lib/app-urls.js";
 export const authRouter = Router();
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 soat
+
+/** Brute-force'dan himoya: Studio/admin login + register */
+const authLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  keyPrefix: "auth-login",
+  message: "Juda ko'p urinish — 1 daqiqadan keyin qayta urinib ko'ring",
+});
+
+/** Parol tiklash — email-bombing oldini olish uchun qattiqroq limit */
+const forgotLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 5,
+  keyPrefix: "auth-forgot",
+  message: "Juda ko'p so'rov — birozdan keyin urinib ko'ring",
+});
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -24,7 +41,7 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
-authRouter.post("/register", async (req, res) => {
+authRouter.post("/register", authLimiter, async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -70,7 +87,7 @@ authRouter.post("/register", async (req, res) => {
   });
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", authLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -128,7 +145,7 @@ const resetSchema = z.object({
 });
 
 /** Tiklash havolasini so'rash — email enumeratsiyaga yo'l qo'ymaslik uchun doim 200 */
-authRouter.post("/forgot-password", async (req, res) => {
+authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
   const parsed = forgotSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });

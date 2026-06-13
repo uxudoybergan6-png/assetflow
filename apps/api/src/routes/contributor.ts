@@ -349,8 +349,8 @@ const uploadAssets = multer({
       cb(null, `${kind}${ext}`);
     },
   }),
-  // UI limiti 500 MB + texnik zaxira
-  limits: { fileSize: 520 * 1024 * 1024 },
+  // UI limiti 3 GB + texnik zaxira (multipart overhead)
+  limits: { fileSize: 3300 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ASSET_UPLOAD_EXTS[file.fieldname];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -677,7 +677,7 @@ function handleAssetsUpload(
     if (e.code === "LIMIT_FILE_SIZE") {
       fail(
         413,
-        `Fayl juda katta — maksimal 500 MB${field ? ` (${field})` : ""}. Pack hajmini kichraytirib qayta yuklang.`
+        `Fayl juda katta — maksimal 3 GB${field ? ` (${field})` : ""}. Pack hajmini kichraytirib qayta yuklang.`
       );
       return;
     }

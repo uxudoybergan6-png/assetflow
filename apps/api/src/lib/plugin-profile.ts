@@ -135,6 +135,31 @@ export function serializePluginUser(
   };
 }
 
+/**
+ * Yuklab olishdan OLDIN limit tekshiruvi (increment QILMAYDI — haqiqiy
+ * hisoblash /usage/download orqali bo'ladi). Pack/MOGRT download route'i
+ * shu gate orqali Free/Pro limitni server tomonda majburlaydi —
+ * localStorage'dagi tarif bilan chetlab o'tib bo'lmaydi.
+ */
+export async function checkDownloadAllowed(userId: string) {
+  const profile = await ensurePluginProfile(userId);
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
+    return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
+  }
+  const limits = planLimits(profile.plan);
+  if (
+    !limits.unlimitedDownloads &&
+    profile.downloadsMonth >= (limits.downloadLimit ?? 0)
+  ) {
+    return {
+      ok: false as const,
+      error: "Oylik yuklab olish limiti tugadi — Pro tarifga o'ting",
+      code: "LIMIT_REACHED",
+    };
+  }
+  return { ok: true as const };
+}
+
 export async function recordPluginDownload(userId: string, templateId?: string) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {

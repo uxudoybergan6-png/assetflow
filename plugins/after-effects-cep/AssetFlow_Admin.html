@@ -767,6 +767,25 @@ function toast(msg, err = false) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
+/** ffmpeg ikkilik faylini topadi — CEP (AE) ostida PATH minimal bo'lishi mumkin,
+    shu sabab keng tarqalgan o'rnatish yo'llarini ham sinab ko'ramiz. Topilmasa ''. */
+let __ffmpegPathCache;
+function findFfmpeg(childM) {
+  if (__ffmpegPathCache !== undefined) return __ffmpegPathCache;
+  const candidates = IS_WIN
+    ? ['ffmpeg', 'ffmpeg.exe', 'C:/ffmpeg/bin/ffmpeg.exe']
+    : ['ffmpeg', '/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg'];
+  for (const c of candidates) {
+    try {
+      childM.execFileSync(c, ['-version'], { timeout: 5000, stdio: 'ignore' });
+      __ffmpegPathCache = c;
+      return c;
+    } catch (e) { /* keyingisini sinaymiz */ }
+  }
+  __ffmpegPathCache = '';
+  return '';
+}
+
 /** Tugmani amal davomida bloklaydi (qo'sh bosish/ikki marta so'rovni oldini oladi).
  *  Qardosh tugmalar ham bloklanadi; tiklashda faqat biz bloklaganlar qaytariladi. */
 function setBtnBusy(btn, busy, busyText) {
@@ -1011,10 +1030,22 @@ function timeAgo(iso) {
   return Math.floor(diff/86400000) + ' kun oldin';
 }
 
+/** Server matnini HTML'ga xavfsiz qo'yish (XSS himoyasi — contributor matni ishonchsiz).
+    CEP sahifasi Node ruxsatiga ega, shu sabab escape majburiy. */
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+/** Inline onclick="fn('...')" JS-string + HTML-attribut konteksti uchun xavfsiz */
+function escAttrJs(s) {
+  return escHtml(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+}
+
 function renderCard(t) {
   const thumb = t.assets?.thumb
     ? `<img src="${apiBase()}/api/plugin/assets/${t.id}/thumb" alt="" onerror="this.style.display='none'">`
-    : t.icon || '✦';
+    : escHtml(t.icon || '✦');
   const meta = [
     t.contributor?.email || t.contributor?.name || '',
     t.catLabel || '',
@@ -1030,9 +1061,9 @@ function renderCard(t) {
     <div class="tpl-row" onclick="toggleDetail('${t.id}')">
       <div class="tpl-thumb">${typeof thumb === 'string' && thumb.startsWith('<img') ? thumb : '<span>' + thumb + '</span>'}</div>
       <div class="tpl-info">
-        <div class="tpl-name">${t.name}</div>
-        <div class="tpl-meta">${meta}</div>
-        <div class="tpl-meta" style="margin-top:2px">${scenes}</div>
+        <div class="tpl-name">${escHtml(t.name)}</div>
+        <div class="tpl-meta">${escHtml(meta)}</div>
+        <div class="tpl-meta" style="margin-top:2px">${escHtml(scenes)}</div>
       </div>
       <div class="tpl-right">
         <span class="status-badge s-${t.reviewStatus}">${statusLabel(t.reviewStatus)}</span>
@@ -1083,15 +1114,15 @@ function renderDetail(t) {
           return `<div class="scene-upload-row" id="sur-${t.id}-${idx}">
             <div class="scene-upload-preview" id="sup-${t.id}-${idx}">
               ${hasVideo
-                ? `<video src="${url}" muted playsinline preload="metadata"
+                ? `<video src="${escHtml(url)}" muted playsinline preload="metadata"
                     onloadedmetadata="this.currentTime=this.duration*0.1||0.3"
                     onerror="this.style.display='none';var st=document.getElementById('sus-${t.id}-${idx}');if(st){st.textContent='Video yo\\'q';st.style.color='var(--muted)';}"
                     style="width:100%;height:100%;object-fit:cover"></video>`
                 : `<span style="font-size:16px;color:#444">✦</span>`}
             </div>
             <div class="scene-upload-info">
-              <div class="scene-upload-name">${s.n || s.aeComp || 'Sahna ' + (idx+1)}</div>
-              <div class="scene-upload-meta">${s.meta || ''}</div>
+              <div class="scene-upload-name">${escHtml(s.n || s.aeComp || 'Sahna ' + (idx+1))}</div>
+              <div class="scene-upload-meta">${escHtml(s.meta || '')}</div>
               <div class="scene-upload-status" id="sus-${t.id}-${idx}" style="font-size:10px;color:${hasVideo?'var(--green)':'var(--muted)'}">
                 ${hasVideo ? '✓ Video bor' : 'Video yo\'q'}
               </div>
@@ -1100,7 +1131,7 @@ function renderDetail(t) {
               ↑ Video
               <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                 style="display:none"
-                onchange="uploadSceneVideo(this,'${t.id}','${key}','${t.id}-${idx}')">
+                onchange="uploadSceneVideo(this,'${t.id}','${escAttrJs(key)}','${t.id}-${idx}')">
             </label>
           </div>`;
         }).join('')}
@@ -1234,11 +1265,11 @@ function renderDetail(t) {
       <div class="edit-grid">
         <div class="full">
           <span class="edit-label">Nom</span>
-          <input type="text" id="e-name-${t.id}" value="${(t.name||'').replace(/"/g,'&quot;')}">
+          <input type="text" id="e-name-${t.id}" value="${escHtml(t.name||'')}">
         </div>
         <div>
           <span class="edit-label">Kategoriya</span>
-          <input type="text" id="e-cat-${t.id}" value="${(t.catLabel||'').replace(/"/g,'&quot;')}">
+          <input type="text" id="e-cat-${t.id}" value="${escHtml(t.catLabel||'')}">
         </div>
         <div>
           <span class="edit-label">Ruxsat</span>
@@ -1262,16 +1293,16 @@ function renderDetail(t) {
         </div>
         <div>
           <span class="edit-label">Teglar (vergul bilan)</span>
-          <input type="text" id="e-tags-${t.id}" value="${(t.tags||[]).join(', ')}">
+          <input type="text" id="e-tags-${t.id}" value="${escHtml((t.tags||[]).join(', '))}">
         </div>
         <div class="full">
           <span class="edit-label">Tavsif</span>
-          <textarea id="e-desc-${t.id}" style="height:52px;resize:vertical">${(t.description||'').replace(/</g,'&lt;')}</textarea>
+          <textarea id="e-desc-${t.id}" style="height:52px;resize:vertical">${escHtml(t.description||'')}</textarea>
         </div>
       </div>
       <div class="edit-actions" style="margin-top:8px;display:flex;gap:8px">
         <button class="btn-action" style="flex:1" onclick="saveMetadata('${t.id}',this)">💾 Saqlash</button>
-        <button class="btn-action" onclick="deleteTemplate('${t.id}','${t.name.replace(/'/g,"\\'")}',this)">🗑 O'chirish</button>
+        <button class="btn-action" onclick="deleteTemplate('${t.id}','${escAttrJs(t.name)}',this)">🗑 O'chirish</button>
       </div>
       <div class="status-msg" id="edit-msg-${t.id}"></div>
     </div>`;
@@ -1443,18 +1474,36 @@ function evalP(script) {
 /** Joriy AE loyihasini yopadi, AMMO saqlanmagan o'zgarish bo'lsa tasdiq so'raydi.
  *  Foydalanuvchi bekor qilsa — afAbort bayrog'i bilan xato tashlaydi (import to'xtaydi).
  *  Bridge yo'q bo'lsa — eski (jim) xulq. */
+/** Data-loss himoyasi: joriy loyihani yopishdan oldin saqlanmagan ishni tekshiradi.
+    MUHIM — holatni ANIQLAB bo'lmasa (bridge xatosi / noaniq javob), xavfsiz tomon:
+    `afAbort` bilan throw qilamiz. Hech qachon jim `return` qilmaymiz, aks holda
+    chaqiruvchi forceOpen bilan saqlanmagan ishni o'chirib yuboradi. */
 async function afCloseCurrentGuarded() {
+  const abort = (msg) => { const e = new Error(msg); e.afAbort = true; return e; };
   let raw = '';
-  try { raw = await evalP('afCloseCurrent()'); } catch (e) { return; }
+  // Retry bilan — cold bridge transient xatosi soxta abort bermasin
+  try { raw = await callHostSimple('afCloseCurrent()'); }
+  catch (e) { throw abort('AE bilan aloqa yo‘q — saqlanmagan ish xavf ostida. Qayta urinib ko‘ring.'); }
+  if (!raw || raw === 'EvalScript error.' || raw === 'undefined') {
+    throw abort('AE javobi noaniq — joriy loyiha holati tekshirilmadi. Qayta urinib ko‘ring.');
+  }
   let d = null;
-  try { d = raw ? JSON.parse(raw) : null; } catch (e) {}
+  try { d = JSON.parse(raw); } catch (e) {
+    throw abort('AE javobi o‘qilmadi — qayta urinib ko‘ring.');
+  }
   if (d && d.dirty) {
     const go = confirm(
       'Joriy AE loyihangizda saqlanmagan o‘zgarishlar bor.\n' +
       'Davom etsangiz ular YO‘QOLADI (loyiha saqlanmaydi).\n\nDavom etilsinmi?'
     );
-    if (!go) { const err = new Error('AF_USER_ABORT'); err.afAbort = true; throw err; }
-    try { await evalP('afCloseCurrent(true)'); } catch (e) {}
+    if (!go) throw abort('AF_USER_ABORT');
+    let forced = '';
+    try { forced = await callHostSimple('afCloseCurrent(true)'); }
+    catch (e) { throw abort('Loyiha yopilmadi — qayta urinib ko‘ring.'); }
+    // Yopish tasdiqlanmasa ham davom etmaymiz (forceOpen ishlamasligi uchun)
+    let fd = null;
+    try { fd = forced ? JSON.parse(forced) : null; } catch (e) {}
+    if (!fd || fd.ok !== true) throw abort('Loyiha yopilmadi — qayta urinib ko‘ring.');
   }
 }
 
@@ -1627,9 +1676,9 @@ async function openAepInHost(aepPath, onTick) {
     return { ok: true, alreadyOpen: true, projectName: beforePanel.projectName, projectFile: beforePanel.projectFile || aepPath };
   }
 
-  // Joriy loyihani yopamiz — saqlanmagan ish bo'lsa tasdiq so'raydi
-  try { await afCloseCurrentGuarded(); }
-  catch (e) { if (e && e.afAbort) throw new Error('Bekor qilindi — joriy loyiha saqlanmagan'); }
+  // Joriy loyihani yopamiz — saqlanmagan ish bo'lsa tasdiq so'raydi.
+  // Guard throw qilsa (abort/noaniq) — ochishni TO'XTATAMIZ (forceOpen ishlamaydi).
+  await afCloseCurrentGuarded();
   await new Promise(r => setTimeout(r, 200));
 
   // 1) ExtendScript navbat (scheduleTask)
@@ -1773,15 +1822,23 @@ async function importPackToAE(id) {
     const zipPath = path.join(tmpDir, 'pack.zip');
 
     const packUrl = apiBase() + '/api/plugin/assets/' + id + '/pack';
+    const originOf = (u) => { try { return new URL(u).origin; } catch (e) { return ''; } };
+    const packOrigin = originOf(packUrl);
     let totalBytes = 0, doneBytes = 0;
     await new Promise((resolve, reject) => {
-      const https = packUrl.startsWith('https') ? require('https') : require('http');
+      // Authorization faqat o'z API origin'iga; signed R2 URL'ga redirect bo'lsa
+      // token yuborilmaydi (cross-origin leak oldini olish).
       const doGet = (url, redirects) => {
         if (redirects <= 0) { reject(new Error('Redirect limit')); return; }
-        const req = https.get(url, { headers: { 'Authorization': 'Bearer ' + token() } }, res => {
+        const lib = url.startsWith('https') ? require('https') : require('http');
+        const sameOrigin = originOf(url) === packOrigin && packOrigin !== '';
+        const opts = sameOrigin ? { headers: { 'Authorization': 'Bearer ' + token() } } : {};
+        const req = lib.get(url, opts, res => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             res.resume();
-            doGet(res.headers.location, redirects - 1);
+            let next = res.headers.location;
+            try { next = new URL(next, url).toString(); } catch (e) {}
+            doGet(next, redirects - 1);
             return;
           }
           if (res.statusCode !== 200) { res.resume(); reject(new Error('Pack HTTP ' + res.statusCode)); return; }
@@ -1867,12 +1924,12 @@ async function importPackToAE(id) {
     // 1) ExtendScript: joriy loyihani yopib, yangisini ochishga buyruq (saqlanmagan ish bo'lsa tasdiq)
     try { await afCloseCurrentGuarded(); }
     catch (e) {
-      if (e && e.afAbort) {
-        steps[2] = { state: 'err', text: 'Bekor qilindi — joriy loyiha saqlanmagan' };
-        log();
-        toast('Bekor qilindi — joriy loyiha saqlanmagan', true);
-        return;
-      }
+      // Guard abort/noaniq holat — ochishni to'xtatamiz (data-loss bo'lmasin)
+      const m = (e && e.message) || 'Bekor qilindi — joriy loyiha saqlanmagan';
+      steps[2] = { state: 'err', text: m };
+      log();
+      toast(m, true);
+      return;
     }
     try { await evalP('queueOpenProjectFile(' + hostCfg({ filePath: aepPath, forceOpen: true }) + ')'); } catch(e) {}
     // 2) OS orqali ham ochamiz (kafolat)
@@ -1988,7 +2045,11 @@ async function triggerProjectOpen(aepPath, opts) {
   if (cur && cur.ok && panelMatchesAep(cur, aepPath)) return; // allaqachon ochiq
   if (forceClose) {
     try { await afCloseCurrentGuarded(); }
-    catch (e) { if (e && e.afAbort) { toast('Bekor qilindi — joriy loyiha saqlanmagan', true); return; } }
+    catch (e) {
+      // Guard abort/noaniq — ochishni to'xtatamiz (saqlanmagan ish o'chmasin)
+      toast((e && e.message) || 'Bekor qilindi — joriy loyiha saqlanmagan', true);
+      return;
+    }
     await new Promise(r => setTimeout(r, 150));
   }
   const cfg = hostCfg({ filePath: aepPath, forceOpen: true });
@@ -2108,7 +2169,7 @@ function setupFolderPicker(id, res, knownAep) {
 
   const sel = document.getElementById('scanFolder');
   sel.innerHTML = '<option value="">— Folderni tanlang —</option>' +
-    res.folders.map(f => `<option value="${f.id}">${String(f.name).replace(/</g,'&lt;')} (${f.comps} comp)</option>`).join('');
+    res.folders.map(f => `<option value="${escHtml(f.id)}">${escHtml(f.name)} (${f.comps} comp)</option>`).join('');
   document.getElementById('scanFolderBar').style.display = 'flex';
   document.getElementById('scanCompCount').textContent = '';
 
@@ -2281,14 +2342,29 @@ function applySceneRenderResult(s, r) {
     s.videoLocal = r.videoPath;
     const ext = String(r.videoPath).split('.').pop().toLowerCase();
     s.videoExt = (ext === 'mov' || ext === 'webm') ? ext : 'mp4';
-    // Admin Preview odatda mp4 — faqat .mov bo'lsa konvert
-    if (ext === 'mov' && !IS_WIN) {
-      try {
-        const childM = require('child_process');
-        const mp4 = r.videoPath.replace(/\.mov$/i, '.mp4');
-        childM.execFileSync('avconvert', ['--preset', 'Preset1280x720', '--source', r.videoPath, '--output', mp4], { timeout: 120000 });
-        if (fsM.existsSync(mp4)) { s.videoLocal = mp4; s.videoExt = 'mp4'; }
-      } catch (eConv) {}
+    // Admin Preview odatda mp4 — faqat .mov bo'lsa ffmpeg bilan konvert qilamiz
+    // (avconvert yangi macOS'da yo'q/deprecated). ffmpeg topilmasa .mov yuklanadi.
+    if (ext === 'mov') {
+      const childM = require('child_process');
+      const mp4 = r.videoPath.replace(/\.mov$/i, '.mp4');
+      const ff = findFfmpeg(childM);
+      if (!ff) {
+        s.videoExt = 'mov';
+        toast("ffmpeg topilmadi — .mov yuklanadi. .mp4 uchun: brew install ffmpeg", true);
+      } else {
+        try {
+          childM.execFileSync(
+            ff,
+            ['-y', '-i', r.videoPath, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4],
+            { timeout: 120000, stdio: 'ignore' }
+          );
+          if (fsM.existsSync(mp4)) { s.videoLocal = mp4; s.videoExt = 'mp4'; }
+          else { s.videoExt = 'mov'; toast("Konvert amalga oshmadi — .mov yuklanadi", true); }
+        } catch (eConv) {
+          s.videoExt = 'mov';
+          toast("ffmpeg konvert xatosi — .mov yuklanadi", true);
+        }
+      }
     }
   } else {
     throw new Error('Preview video fayli topilmadi');
@@ -2586,17 +2662,17 @@ function renderSubscribers(items) {
   el.innerHTML = items.map(s => {
     // Server tayyor `lastSeen` matnini ko'rsatadi; ISO bo'lsa jonli (relativ) timeAgo
     const seen = s.lastSeenAt ? timeAgo(s.lastSeenAt) : (s.lastSeen || '—');
-    const email = String(s.email || '').replace(/'/g, "\\'");
+    const email = escAttrJs(s.email || '');
     return `
     <div class="sub-row">
-      <div class="sub-avatar">${(s.name || s.email || 'U').charAt(0).toUpperCase()}</div>
+      <div class="sub-avatar">${escHtml((s.name || s.email || 'U').charAt(0).toUpperCase())}</div>
       <div class="sub-info">
-        <div class="sub-name">${s.name || s.email.split('@')[0]}</div>
-        <div class="sub-email">${s.email}</div>
+        <div class="sub-name">${escHtml(s.name || s.email.split('@')[0])}</div>
+        <div class="sub-email">${escHtml(s.email)}</div>
       </div>
       <div class="sub-right">
-        <div class="sub-plan ${(s.plan||'').toLowerCase()}">${s.plan || 'Free'}</div>
-        <div class="sub-seen">${seen} · ${s.downloads || 0} dl</div>
+        <div class="sub-plan ${(s.plan||'').toLowerCase()}">${escHtml(s.plan || 'Free')}</div>
+        <div class="sub-seen">${escHtml(seen)} · ${s.downloads || 0} dl</div>
       </div>
       ${email ? `<button class="sub-msg-btn" title="Email manzilini nusxalash" onclick="messageSubscriber('${email}')">⧉ Nusxalash</button>` : ''}
     </div>`;

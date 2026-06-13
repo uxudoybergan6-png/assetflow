@@ -246,7 +246,7 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 6. **Orphan message threadlar** (MED): Shablon o'chirilganda `StudioMessageThread.templateId → NULL` (SetNull), thread + xabarlar qoladi. Tozalash yoki arxivlash logikasi yo'q.
 
-7. **`avconvert` `.mov→.mp4`** (MED): `AssetFlow_Admin.html:2092` — yangi macOS da `avconvert` deprecated/yo'q. `ffmpeg` bilan almashtirish kerak (yoki bu funksiya olib tashlash).
+7. ✅ **`avconvert` → `ffmpeg`** (MED, HAL QILINDI 2026-06-13): `findFfmpeg()` keng yo'llarni qidiradi (CEP'da PATH minimal); `.mov→.mp4` `ffmpeg -c:v libx264`; ffmpeg topilmasa aniq toast. `AssetFlow_Admin.html`.
 
 ### 🟢 LOW — kechiktirish mumkin
 
@@ -258,7 +258,7 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 11. **Root `.env` `AWS_ACCESS_KEY_ID=""`** (LOW, lokal): Root `.env` bo'sh qiymat `apps/api/.env`ni soya qiladi — R2 yuklab olish lokal testda ishlamaydi (production'da muammo yo'q).
 
-12. **Toast `__srv_<id>`** (LOW): Ba'zi toast'larda `packName` sifatida `__srv_<id>` ko'rinadi (to'liq-pack import, `downloadAll`) — past ustuvorlik.
+12. **Toast `__srv_<id>`** (LOW): Ba'zi toast'larda `packName` sifatida `__srv_<id>` ko'rinadi (to'liq-pack import, `downloadAll`) — past ustuvorlik. (Featured strip endi `displayName` ko'rsatadi — `renderNoticeItem` tuzatildi.)
 
 ### Doimiy ehtiyot bo'lish kerak
 
@@ -266,6 +266,29 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 - **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
 - **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
 - `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
+
+### Claude Code sessiyasida qilingan (2026-06-13, kech-2) — Audit: 13 HIGH security/UX + upload progress + 3 GB ✅
+
+To'liq kodbaza auditi o'tkazildi (backend route'lar/lib, AE Plugin+Admin, Studio, Prisma). Topilgan **13 ta HIGH/kritik muammo tuzatildi** (commit `fix(security+ux)...`, push kutilmoqda). Build/`tsc` toza, `node --check` + HTML inline-JS parse OK, `install-cep.sh` o'rnatildi, `prepare-vercel.mjs` bilan `studio/js`+`admin/js` sinxron.
+
+**Xavfsizlik (backend `apps/api`):**
+- ✅ **XSS→RCE** — markaziy `escHtml`/`escAttrJs`; server matnlari (nom/tag/sahna/desc/email/xabar) escape: `AssetFlow_Plugin.html`, `AssetFlow_Admin.html`, `admin-views2.js`, `contributor-views.js` + markaziy `ui.js toast()`. CEP Node ruxsatiga ega — ilgari ixtiyoriy kod ishga tushishi mumkin edi.
+- ✅ **Pack auth + published + Free/Pro gate** — `/assets/:id/pack` + `/mogrt/:slug` `requireAuth`+`guardDownloadable` (admin nashr etilmaganni ham yuklaydi); `catalog-map` pack URL→API endpoint (to'g'ridan R2 emas); `serve-asset` pack→5-daq signed R2 URL; client (`catalog.js`, Admin) auth header yuboradi, redirect'da cross-origin'ga tushirmaydi. `plugin-profile.checkDownloadAllowed`.
+- ✅ **`/api/logs`** — `requireAuth+requireAdmin`; `assetflow-log.js` auth header yuboradi (jim yutadi).
+- ✅ **CORS** — haqiqiy `CORS_ORIGIN` allow-list (CEP `file://`/`null` ruxsat). **DIQQAT: Render'da `CORS_ORIGIN` Vercel studio URL'ini o'z ichiga olishi SHART.**
+- ✅ **Login rate-limit** — `/auth/login`,`/register`,`/forgot-password`.
+- ✅ **JWT env** — `validateEnv()` listen'dan oldin; prod'da default/bo'sh secret → `process.exit(1)`. **DIQQAT: Render'da `NODE_ENV=production` + kuchli `JWT_SECRET` shart.**
+- ✅ **trust proxy** — `app.set('trust proxy',1)` (Render `req.ip`).
+- ✅ **Global error handler** — 404 JSON + P2025→404, P2002→409, qolgan→500 (Express 5 async throw'ni ushlaydi).
+
+**Funksional/UX:**
+- ✅ **downloadAll** — bekor qilinganda soxta "Import xato" yo'q; `ok:`/JSON ikkalasi qabul; `markPackDownloaded` to'g'ri (`AssetFlow_Plugin.html`).
+- ✅ **`loadPluginAnalytics` ReferenceError** — `totalDownloads: total` → `data.usage.downloadsTotal` (`studio-templates.js`).
+- ✅ **Admin data-loss guard** — `afCloseCurrentGuarded` bridge xatosi/noaniqda jim `return` o'rniga `afAbort` throw; uchala open oqimi to'xtaydi (forceOpen ishlamaydi) (`AssetFlow_Admin.html`).
+- ✅ **avconvert→ffmpeg** (yuqorida #7).
+- ✅ **Tariflar server'da** — `checkDownloadAllowed` gate; Pro = Stripe `subscription.status` (mavjud `setPluginPlan`). (Eslatma: limit hozircha **oylik** 15dl/10import; "kunlik" yangi DB ustun + migration talab qiladi — qo'shilmadi.)
+- ✅ **Studio upload progress (per-fayl)** — "Media fayllar" bosqichida «Davom etish» endi fayllarni darhol yuklaydi; har fayl uchun progress bar (0-100%) + «Yuklanmoqda… 42% (210MB / 500MB)» + «✓ Yuklandi»; server bosqichi SSE; `UP_UPLOADED_SIG` submit'da qayta yuklamaydi (`contributor-views.js`).
+- ✅ **Pack limiti 500 MB → 3 GB** — `contributor.ts` multer `3300*1024*1024`; 413 matn, `studio-api.js`, `contributor-views.js` (`MAX_UPLOAD_MB=3072`), admin settings input. **DIQQAT: 3 GB yuklash Render proxy timeout/ephemeral disk'ga bog'liq.**
 
 ### Claude Code sessiyasida qilingan (2026-06-13) — Plugin+Admin MEDIUM fixes ✅
 
@@ -339,9 +362,9 @@ Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, pus
 | Joy | Muammo |
 |-----|--------|
 | `assetflow-account.js:138` | `requestCheckout`/`requestBillingPortal` plugin token bilan `/api/auth/*` ni chaqiradi — Studio JWT talab qilinishi mumkin (Stripe ishlari bilan birga hal qilinadi) |
-| `AssetFlow_Admin.html:2092` | `.mov→.mp4` konversiya `avconvert` bilan — yangi macOS da yo'q/deprecated (alohida vazifa) |
+| `AssetFlow_Admin.html` `.mov→.mp4` | ✅ HAL QILINDI (2026-06-13) — `avconvert` → `ffmpeg` (`findFfmpeg`), yo'q bo'lsa aniq toast |
 | Toast xabarlari | Ba'zi toast'larda `packName` sifatida `__srv_<id>` ko'rinadi (masalan to'liq-pack import, `downloadAll`) — past ustuvorlik |
 
 ---
 
-*Yangilangan: 2026-06-13 (kech) — Plugin+Admin MEDIUM fixes ✅ (real sort+createdAt, search debounce, filtr indikatori, fetch timeout, o'zbekcha UI, publish progress, op-lock, cold-start retry, tugma disable, obunachi clipboard nusxa, scene-merge). Commit `c7a7940`. Avvalgi HIGH fixes commit `1e4d0d4`. Production deploy kerak (push → Render; API: createdAt/lastSeenAt/scene-merge). Keyingi: Stripe Pro tarif, email bildirishnomalar, avconvert→ffmpeg, re-extract endpoint test.*
+*Yangilangan: 2026-06-13 (kech-2) — Audit: 13 HIGH security/UX ✅ (XSS escape, pack auth+published+limit gate, CORS allow-list, login rate-limit, JWT guard, trust proxy, global error handler, /api/logs auth, downloadAll fix, analytics ReferenceError, data-loss guard, avconvert→ffmpeg, tariff gate) + Studio per-fayl upload progress + pack limiti 3 GB. 30 fayl o'zgardi, commit qilindi (push KUTILMOQDA — foydalanuvchi o'zi). Build/tsc toza, install-cep + prepare-vercel bajarildi. **Deploy DIQQAT:** Render'da `CORS_ORIGIN` Vercel URL'ini o'z ichiga olsin, `NODE_ENV=production` + kuchli `JWT_SECRET` bo'lsin; 3 GB upload proxy/disk cheklovlariga bog'liq. Keyingi: Stripe Pro tarif, email bildirishnomalar, kunlik limit (migration), re-extract test.*

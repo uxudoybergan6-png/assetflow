@@ -3,6 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logsPath = path.join(__dirname, "../../data/system-logs.json");
@@ -41,6 +42,9 @@ type LogEntry = {
 };
 
 export const logsRouter = Router();
+
+// Tizim loglari — faqat admin o'qiy/yoza/o'chira oladi
+logsRouter.use(requireAuth, requireAdmin);
 
 logsRouter.get("/", (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 200, MAX_LOGS);

@@ -27,6 +27,15 @@ const AssetFlowCatalog = (() => {
     return h;
   }
 
+  /** Pack/MOGRT yuklab olish uchun Authorization header (gate'langan route) */
+  function downloadHeaders() {
+    if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.authHeaders) {
+      const h = AssetFlowAccount.authHeaders();
+      if (h && h.Authorization) return h;
+    }
+    return null;
+  }
+
   /** 30s timeout bilan fetch — Render cold start cheksiz osilib qolmasin */
   function fetchWithTimeout(url, options, ms) {
     options = options || {};
@@ -630,10 +639,20 @@ const AssetFlowCatalog = (() => {
     return __activeDownloads.size > 0;
   }
 
-  /** Katta packlar uchun diskka oqim bilan yuklash (xotiraga 200MB yig'masdan) */
-  function downloadUrlToFile(url, destPath, onProgress) {
+  /** URL origin'ini olish (header'ni faqat o'z API origin'iga yuborish uchun) */
+  function urlOrigin(u) {
+    try { return new URL(u).origin; } catch { return ""; }
+  }
+
+  /**
+   * Katta packlar uchun diskka oqim bilan yuklash (xotiraga 200MB yig'masdan).
+   * `headers` — faqat BIRINCHI (o'z API) so'roviga qo'shiladi; redirect boshqa
+   * origin'ga (R2/CDN) ketsa Authorization TASHLANADI (token sizib chiqmasin).
+   */
+  function downloadUrlToFile(url, destPath, onProgress, headers) {
     return new Promise((resolve, reject) => {
       const fs = require("fs");
+      const startOrigin = urlOrigin(url);
       const holder = { req: null, ws: null, dest: destPath, cancelled: false, fail: null };
       __activeDownloads.add(holder);
       const cleanup = () => __activeDownloads.delete(holder);
@@ -644,7 +663,7 @@ const AssetFlowCatalog = (() => {
         reject(err);
       };
       holder.fail = failCancelled;
-      const go = (u, redirectsLeft) => {
+      const go = (u, redirectsLeft, hdrs) => {
         if (holder.cancelled) { failCancelled(); return; }
         if (redirectsLeft <= 0) {
           cleanup();
@@ -653,7 +672,10 @@ const AssetFlowCatalog = (() => {
         }
         // Redirect protokolni almashtirishi mumkin (http↔https) — modulni URL'ga qarab tanlaymiz
         const lib = u.startsWith("https") ? require("https") : require("http");
-        const req = lib.get(u, (res) => {
+        // Authorization faqat boshlang'ich API origin'iga; redirect boshqa
+        // hostga ketsa header'ni tushiramiz (token leak oldini olish).
+        const sameOrigin = !!hdrs && urlOrigin(u) === startOrigin && startOrigin !== "";
+        const reqCb = (res) => {
           if (
             res.statusCode >= 300 &&
             res.statusCode < 400 &&
@@ -664,13 +686,26 @@ const AssetFlowCatalog = (() => {
             try {
               next = new URL(next, u).toString();
             } catch (ignore) {}
-            go(next, redirectsLeft - 1);
+            go(next, redirectsLeft - 1, hdrs);
             return;
           }
           if (res.statusCode !== 200) {
-            res.resume();
-            cleanup();
-            reject(new Error(`Pack HTTP ${res.statusCode}`));
+            // Kichik JSON xato tanasini o'qib, foydalanuvchiga aniq xabar beramiz
+            // (masalan 403 = limit tugadi yoki nashr etilmagan).
+            let body = "";
+            res.on("data", (c) => { if (body.length < 2048) body += c; });
+            res.on("end", () => {
+              cleanup();
+              let msg = `Pack HTTP ${res.statusCode}`;
+              try {
+                const j = JSON.parse(body);
+                if (j && j.error) msg = j.error;
+              } catch (ignore) {}
+              const err = new Error(msg);
+              err.status = res.statusCode;
+              reject(err);
+            });
+            res.on("error", () => { cleanup(); reject(new Error(`Pack HTTP ${res.statusCode}`)); });
             return;
           }
           const total = parseInt(res.headers["content-length"], 10) || 0;
@@ -695,14 +730,15 @@ const AssetFlowCatalog = (() => {
           ws.on("finish", () => { cleanup(); resolve(destPath); });
           ws.on("error", (e) => { cleanup(); holder.cancelled ? failCancelled() : reject(e); });
           res.on("error", (e) => { cleanup(); holder.cancelled ? failCancelled() : reject(e); });
-        });
+        };
+        const req = sameOrigin ? lib.get(u, { headers: hdrs }, reqCb) : lib.get(u, reqCb);
         holder.req = req;
         req.on("error", (e) => {
           cleanup();
           if (holder.cancelled) failCancelled(); else reject(e);
         });
       };
-      go(url, 8);
+      go(url, 8, headers || null);
     });
   }
 
@@ -733,7 +769,7 @@ const AssetFlowCatalog = (() => {
     if (!cachedFileOk(fs, out, 0)) {
       if (typeof showToast === "function") showToast("Sahna yuklanmoqda…");
       const onProgress = opts && opts.onProgress;
-      await downloadUrlToFile(scene.mogrtUrl, out, onProgress);
+      await downloadUrlToFile(scene.mogrtUrl, out, onProgress, downloadHeaders());
       if (!cachedFileOk(fs, out, 0)) {
         try {
           fs.rmSync(out, { force: true });
@@ -810,11 +846,13 @@ const AssetFlowCatalog = (() => {
         showToast(`Pack yuklanmoqda (~${mb} MB)…`);
       }
       try {
-        await downloadUrlToFile(url, out, onProgress);
+        await downloadUrlToFile(url, out, onProgress, downloadHeaders());
       } catch (e) {
+        // Limit/nashr/sessiya xatosi (403/401) — fallback bilan yashirmaymiz
+        if (e && (e.status === 401 || e.status === 403)) throw e;
         if (directUrl && url === directUrl) {
           const fallback = `${apiBase()}/api/plugin/assets/${templateId}/pack`;
-          await downloadUrlToFile(fallback, out, onProgress);
+          await downloadUrlToFile(fallback, out, onProgress, downloadHeaders());
         } else {
           throw e;
         }
