@@ -238,7 +238,9 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ### 🟡 MEDIUM — muhim, lekin bloklanmaydi
 
-4. **"Re-extract scenes" endpoint (HIGH)**: "Cosmic Light Transitions" (351MB) — M1 thumb'lar R2'da bor (`scenes/*.png|mp4` 200), lekin `metaJson.scenes` DB'da bo'sh (`{dur,grad}` faqat). Sabab: 8 daqiqalik request oxirida DB connection timeout, outer `catch` xatoni yutgan. Yechim: `POST /api/contributor/admin/templates/:id/re-extract` endpoint — R2'dagi pack'dan tmpdir'ga yuklab olib, M2 pipeline'ni (mogrtKey + previewKey yozish) qayta ishga tushiradi. Bu HANDOFF-dagi "M1 retroaktiv" (item 4 eski) muammosini ham hal qiladi.
+4. ✅ **"Re-extract scenes" endpoint (HIGH)** — KODI YOZILDI (test kutilmoqda): `POST /api/contributor/admin/templates/:id/re-extract` (faqat admin). Pack ZIP'ni disk yoki R2'dan tmpdir'ga yuklab oladi (`downloadS3ToFile`), `.mogrt` sahnalarni qayta ajratadi va `scenes/{slug}.mp4|png` (previewKey) + `mogrt/{slug}.mogrt` (mogrtKey) R2'ga yozadi, `metaJson.scenes` ni yangilaydi. Progress mavjud `GET .../templates/:id/upload-progress` SSE orqali (per-`.mogrt`). Xatoda `{error, stage}` + SSE `[stage]` prefiks. Upload route bilan baham `storeMogrtScenesFromZip()` helper (duplikatsiya yo'q). Lokal test uchun root `.env`ga R2 kalitlari yozildi (oldin bo'sh edi → `isS3Configured()` false bo'lib, item 11 ni ham hal qildi). Fayllar: `apps/api/src/routes/contributor.ts`, `apps/api/src/lib/s3.ts`, `apps/api/src/lib/upload-progress.ts`.
+
+5. **Upload DB retry (MED)**: `contributor.ts` upload handler'dagi yakuniy `prisma.contributorTemplate.update({metaJson})` — katta ZIP'lar (350MB+) uchun ~8 daqiqalik request oxirida DB connection timeout bo'lishi mumkin; hozirgi `catch` xatoni `console.warn` bilan yutadi, `metaJson.scenes` bo'sh qoladi, 200 qaytaradi. Yechim: retry (2–3 urinish, eksponensial backoff) yoki `prisma.$connect()` qayta ochish + alohida `finally` bloki; SSE'ga `error` yuborish lozim.
 
 5. **Email bildirishnomalar** (MED): Approve/reject, yangi xabar, yangi obunachi uchun email yo'q. Nodemailer yoki Resend bilan ulash kerak (`/api/studio/messages/*` webhook hookiga qo'shish qulay).
 

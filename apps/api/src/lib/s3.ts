@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import { pipeline } from "stream/promises";
+import { Readable } from "stream";
 import {
   S3Client,
   PutObjectCommand,
@@ -210,6 +212,20 @@ export async function uploadFileToS3(
     throw err;
   }
   return getPublicUrl(s3Key);
+}
+
+/**
+ * R2/S3 obyektni lokal faylga STREAM orqali yuklab oladi (xotiraga to'liq
+ * o'qimasdan — katta packlar uchun). destPath papkasi mavjud bo'lishi kerak.
+ * Obyekt yo'q yoki body bo'sh bo'lsa aniq xato otadi (yutmaydi).
+ */
+export async function downloadS3ToFile(
+  key: string,
+  destPath: string
+): Promise<void> {
+  const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  if (!res.Body) throw new Error(`R2 obyekt bo'sh yoki topilmadi: ${key}`);
+  await pipeline(res.Body as Readable, fs.createWriteStream(destPath));
 }
 
 /** Buffer'ni S3/R2 ga yuklash */

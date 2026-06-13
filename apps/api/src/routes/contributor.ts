@@ -7,6 +7,7 @@ import {
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { z } from "zod";
 import {
   prisma,
@@ -34,9 +35,11 @@ import {
   templateAssetFlags,
   s3UploadKeyForFile,
   deleteTemplateAssets,
+  resolveS3AssetKey,
+  downloadS3ToFile,
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
-import { extractMogrtsFromZip } from "../lib/mogrt-extract.js";
+import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
 import {
   setUploadProgress,
   getUploadProgress,
@@ -363,6 +366,233 @@ contributorRouter.get("/templates/:id/upload-progress", (req, res) => {
   });
 });
 
+/**
+ * Re-extract — eski shablonni QAYTA UPLOAD qilmasdan tuzatish (faqat admin).
+ * Pack ZIP'ni disk yoki R2'dan oladi, .mogrt sahnalarni qayta ajratadi, scene
+ * preview (mp4/png) + yakka .mogrt fayllarni R2 ga yozadi va metaJson.scenes
+ * (slug, previewKey, mogrtKey) ni yangilaydi. Progress mavjud upload-progress
+ * SSE (GET .../templates/:id/upload-progress) orqali oqadi. Xatoda qaysi
+ * bosqichda ekani (stage) JSON'da ham, SSE error xabarida ham qaytadi.
+ */
+contributorRouter.post(
+  "/admin/templates/:id/re-extract",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    let stage = "init";
+    let tmpDir: string | null = null;
+    const fail = (status: number, errText: string) => {
+      setUploadProgress(id, {
+        stage: "error",
+        pct: 0,
+        message: "",
+        error: `[${stage}] ${errText}`,
+        done: true,
+      });
+      if (!res.headersSent) res.status(status).json({ error: errText, stage });
+    };
+    try {
+      stage = "lookup";
+      const existing = await prisma.contributorTemplate.findUnique({
+        where: { id },
+      });
+      if (!existing) {
+        res.status(404).json({ error: "Shablon topilmadi", stage });
+        return;
+      }
+
+      // 1) Pack ZIP manbasi: avval disk, bo'lmasa R2'dan tmp'ga yuklab ol
+      stage = "locate-pack";
+      setUploadProgress(id, {
+        stage: "download",
+        pct: 5,
+        message: "Pack joylashuvi aniqlanmoqda…",
+      });
+      let zipPath: string | null = null;
+      const diskPack = findAssetPath(id, "pack");
+      if (diskPack && path.extname(diskPack).toLowerCase() === ".zip") {
+        zipPath = diskPack;
+      } else if (isS3Configured()) {
+        const packKey = await resolveS3AssetKey(id, "pack");
+        if (!packKey) {
+          fail(404, "Pack fayli R2 yoki diskda topilmadi");
+          return;
+        }
+        // .aep/.mogrt yakka fayldan sahna ajratib bo'lmaydi — faqat ZIP
+        if (/\.(aep|mogrt)$/i.test(packKey)) {
+          fail(
+            400,
+            `Pack ZIP emas (${packKey.split("/").pop()}) — re-extract faqat .zip pack uchun`
+          );
+          return;
+        }
+        stage = "download";
+        setUploadProgress(id, {
+          stage: "download",
+          pct: 15,
+          message: "Pack R2'dan yuklab olinmoqda…",
+        });
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_reextract_"));
+        zipPath = path.join(tmpDir, "pack.zip");
+        await downloadS3ToFile(packKey, zipPath);
+      }
+      if (!zipPath) {
+        fail(404, "Pack fayli topilmadi (disk/R2)");
+        return;
+      }
+
+      // 2) ZIP'dan .mogrt sahnalarni ajratib R2 ga yoz (per-scene progress)
+      stage = "extract";
+      setUploadProgress(id, {
+        stage: "extract",
+        pct: 40,
+        message: "ZIP ochilmoqda, sahnalar tayyorlanmoqda…",
+      });
+      const scenesOut = await storeMogrtScenesFromZip(
+        id,
+        zipPath,
+        (done, total) => {
+          setUploadProgress(id, {
+            stage: "extract",
+            pct: 40 + Math.floor((done / total) * 50),
+            message: `Sahna ${done}/${total} tayyorlanmoqda…`,
+          });
+        }
+      );
+
+      if (scenesOut.length === 0) {
+        // Xato emas — pack ichida .mogrt bo'lmasligi mumkin (.aep pack)
+        setUploadProgress(id, {
+          stage: "done",
+          pct: 100,
+          message: "Pack ichida .mogrt sahna topilmadi",
+          done: true,
+        });
+        res.json({
+          ok: true,
+          scenes: 0,
+          message: "Pack ichida .mogrt sahna topilmadi",
+        });
+        return;
+      }
+
+      // 3) metaJson.scenes ni yangilash
+      stage = "db";
+      setUploadProgress(id, {
+        stage: "db",
+        pct: 95,
+        message: "Sahnalar bazaga yozilmoqda…",
+      });
+      const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
+      await prisma.contributorTemplate.update({
+        where: { id },
+        data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
+      });
+
+      const withMogrt = scenesOut.filter(
+        (s) => (s as { mogrtKey?: string }).mogrtKey
+      ).length;
+      setUploadProgress(id, {
+        stage: "done",
+        pct: 100,
+        message: `Tayyor — ${scenesOut.length} sahna (${withMogrt} ta .mogrt)`,
+        done: true,
+      });
+      res.json({
+        ok: true,
+        scenes: scenesOut.length,
+        withMogrt,
+        sceneList: scenesOut.map((s) => ({
+          slug: s.slug,
+          previewKey: s.previewKey,
+          mogrtKey: (s as { mogrtKey?: string }).mogrtKey ?? null,
+        })),
+      });
+    } catch (e) {
+      console.error(`[re-extract] xato (stage=${stage}):`, e);
+      fail(500, e instanceof Error ? e.message : "Kutilmagan xato");
+    } finally {
+      if (tmpDir) {
+        try {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+        } catch {}
+      }
+    }
+  }
+);
+
+/**
+ * Pack ZIP'dan .mogrt sahnalarni ajratib, har sahnaning thumb preview'i va
+ * yakka .mogrt faylini disk + R2 ga saqlaydi. Yangilangan sahna ro'yxatini
+ * (saqlangan .mogrt'lar uchun mogrtKey bilan) qaytaradi — metaJson'ni
+ * chaqiruvchi yozadi. Upload va re-extract route'lari baham ko'radi.
+ * onScene har .mogrt yuklashda chaqiriladi (progress uchun).
+ */
+async function storeMogrtScenesFromZip(
+  id: string,
+  zipPath: string,
+  onScene?: (done: number, total: number) => void
+): Promise<Array<MogrtScene & { mogrtKey?: string }>> {
+  const { scenes, thumbs, mogrts, cleanup } = await extractMogrtsFromZip(zipPath);
+  try {
+    if (scenes.length === 0) return [];
+    const scenesDirPath = ensureScenesDir(id);
+    for (const th of thumbs) {
+      const fileName = `${th.previewKey}${th.ext}`;
+      try {
+        fs.copyFileSync(th.path, path.join(scenesDirPath, fileName));
+      } catch (e) {
+        console.warn(`[mogrt-extract] thumb disk copy xato (${fileName}):`, e);
+      }
+      if (isS3Configured()) {
+        try {
+          await uploadFileToS3(
+            th.path,
+            `templates/${id}/scenes/${fileName}`,
+            th.contentType
+          );
+        } catch (e) {
+          console.error(`[mogrt-extract] thumb R2 upload xato (${fileName}):`, e);
+        }
+      }
+    }
+    // Har .mogrt alohida saqlanadi (disk + R2) — sahna tanlanganda
+    // butun ZIP o'rniga faqat shu fayl yuklab olinadi (M2)
+    const savedMogrtSlugs = new Set<string>();
+    for (let mi = 0; mi < mogrts.length; mi++) {
+      const m = mogrts[mi];
+      onScene?.(mi + 1, mogrts.length);
+      const fileName = `${m.slug}.mogrt`;
+      let saved = false;
+      try {
+        fs.copyFileSync(m.path, path.join(ensureMogrtDir(id), fileName));
+        saved = true;
+      } catch (e) {
+        console.warn(`[mogrt-extract] mogrt disk copy xato (${fileName}):`, e);
+      }
+      if (isS3Configured()) {
+        try {
+          await uploadFileToS3(
+            m.path,
+            `templates/${id}/mogrt/${fileName}`,
+            "application/octet-stream"
+          );
+          saved = true;
+        } catch (e) {
+          console.error(`[mogrt-extract] mogrt R2 upload xato (${fileName}):`, e);
+        }
+      }
+      if (saved) savedMogrtSlugs.add(m.slug);
+    }
+    return scenes.map((s) =>
+      savedMogrtSlugs.has(s.slug) ? { ...s, mogrtKey: s.slug } : s
+    );
+  } finally {
+    cleanup();
+  }
+}
+
 function handleAssetsUpload(
   req: ExpressRequest,
   res: ExpressResponse,
@@ -533,77 +763,28 @@ contributorRouter.post(
         message: "ZIP ochilmoqda, sahnalar tayyorlanmoqda…",
       });
       try {
-        const { scenes, thumbs, mogrts, cleanup } = await extractMogrtsFromZip(pack.path);
-        try {
-          if (scenes.length > 0) {
-            const scenesDirPath = ensureScenesDir(id);
-            for (const th of thumbs) {
-              const fileName = `${th.previewKey}${th.ext}`;
-              try {
-                fs.copyFileSync(th.path, path.join(scenesDirPath, fileName));
-              } catch (e) {
-                console.warn(`[mogrt-extract] thumb disk copy xato (${fileName}):`, e);
-              }
-              if (isS3Configured()) {
-                try {
-                  await uploadFileToS3(
-                    th.path,
-                    `templates/${id}/scenes/${fileName}`,
-                    th.contentType
-                  );
-                } catch (e) {
-                  console.error(`[mogrt-extract] thumb R2 upload xato (${fileName}):`, e);
-                }
-              }
-            }
-            // Har .mogrt alohida saqlanadi (disk + R2) — sahna tanlanganda
-            // butun ZIP o'rniga faqat shu fayl yuklab olinadi (M2)
-            const savedMogrtSlugs = new Set<string>();
-            for (let mi = 0; mi < mogrts.length; mi++) {
-              const m = mogrts[mi];
-              setUploadProgress(id, {
-                stage: "extract",
-                pct: 91 + Math.floor(((mi + 1) / mogrts.length) * 6),
-                message: `Sahna ${mi + 1}/${mogrts.length} tayyorlanmoqda…`,
-              });
-              const fileName = `${m.slug}.mogrt`;
-              let saved = false;
-              try {
-                fs.copyFileSync(m.path, path.join(ensureMogrtDir(id), fileName));
-                saved = true;
-              } catch (e) {
-                console.warn(`[mogrt-extract] mogrt disk copy xato (${fileName}):`, e);
-              }
-              if (isS3Configured()) {
-                try {
-                  await uploadFileToS3(
-                    m.path,
-                    `templates/${id}/mogrt/${fileName}`,
-                    "application/octet-stream"
-                  );
-                  saved = true;
-                } catch (e) {
-                  console.error(`[mogrt-extract] mogrt R2 upload xato (${fileName}):`, e);
-                }
-              }
-              if (saved) savedMogrtSlugs.add(m.slug);
-            }
-            const scenesOut = scenes.map((s) =>
-              savedMogrtSlugs.has(s.slug) ? { ...s, mogrtKey: s.slug } : s
-            );
+        const scenesOut = await storeMogrtScenesFromZip(
+          id,
+          pack.path,
+          (done, total) => {
             setUploadProgress(id, {
-              stage: "db",
-              pct: 98,
-              message: "Sahnalar bazaga yozilmoqda…",
-            });
-            const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
-            await prisma.contributorTemplate.update({
-              where: { id },
-              data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
+              stage: "extract",
+              pct: 91 + Math.floor((done / total) * 6),
+              message: `Sahna ${done}/${total} tayyorlanmoqda…`,
             });
           }
-        } finally {
-          cleanup();
+        );
+        if (scenesOut.length > 0) {
+          setUploadProgress(id, {
+            stage: "db",
+            pct: 98,
+            message: "Sahnalar bazaga yozilmoqda…",
+          });
+          const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
+          await prisma.contributorTemplate.update({
+            where: { id },
+            data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
+          });
         }
       } catch (mogrtErr) {
         console.warn("[mogrt-extract] xato:", mogrtErr);
