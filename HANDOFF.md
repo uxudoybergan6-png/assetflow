@@ -267,6 +267,28 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 - **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
 - `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
 
+### Claude Code sessiyasida qilingan (2026-06-13) — Plugin+Admin MEDIUM fixes ✅
+
+Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, push kutilmoqda):
+
+**Asosiy plugin (`AssetFlow_Plugin.html` + `assetflow-catalog.js` + `assetflow-account.js`):**
+- ✅ **Saralash haqiqiy** — API endi `createdAt` qaytaradi (`plugin.ts` CATALOG_SELECT + `catalog-map.ts`); "Yangi" sana bo'yicha, "Mos" qidiruv moslik bali (`relevanceScore`) bo'yicha; `assetTime()`.
+- ✅ **Search debounce 300ms** — `__searchDebounce`; ⌕ tugmasi darhol (debounce'ni tozalaydi).
+- ✅ **Jim catch** — `saveDownloadFolderSettings` papkaga yozishni sinaydi + aniq xato; `persistDownloadDir` bool qaytaradi; kesh o'chirishda `cacheFails` hisoblanadi.
+- ✅ **Fetch 30s timeout** — `fetchWithTimeout` (catalog.js + account.js, FormData uchun 180s) + `pubFetch` (publish), `AbortController`.
+- ✅ **Filtr ko'rsatkichi** — «✕ Tozalash (N)» pill (`updateFilterIndicator`, `activeFilterCount`); 0 natijada "N ta filtr natijani yashiryapti".
+- ✅ **Til o'zbekcha** — Qidirish/Saralash/Mos/Yangi/Kategoriya/Sifat/Sevimlilar/Shablonlar/Yuklab olingan; `NAV_LABELS`/`ORIENT_LABELS`/`RES_LABELS` ham. (AE-mockup chrome ataylab inglizcha.)
+- ✅ **Publish progress** — `publishGo` 1/6…6/6 bosqich; pack+preview **XHR `%`** (`pubUpload` XHR'ga o'tdi); xatoda `Xato [bosqich]:` + `friendlyError`.
+- ✅ **Poyga qulfi** — `__afOpBusy`: `importSceneWithMode`/`downloadAll` bir vaqtda bittasi (wrapper + `__…Impl`); qo'sh bosish/drag bloklanadi.
+
+**Admin plugin (`AssetFlow_Admin.html`):**
+- ✅ **Cold-start retry** — `api()` tarmoq xatosida `waitForApi` bilan bir marta uyg'otib qayta urinadi ("Server uyg'onmoqda").
+- ✅ **Jim catch** — `importPackToAE`: unzip xatosi ko'rinadi (`ZIP ochilmadi:`); AE ochilishi tasdiqlanmasa soxta "✓" emas, ⚠ (`opened` flag + `warn` log state); host-boot xatosi toast.
+- ✅ **Tugma disable** — review/publish/save/delete amal davomida bloklanadi + "⏳" (`setBtnBusy`, qardosh tugmalarni ham; `this` uzatiladi).
+- ✅ **Obunachilar** — `lastSeenAt` ISO (`mapSubscriberRow`) → jonli `timeAgo`; «⧉ Nusxalash» email'ni **clipboard**'ga ko'chiradi (`copyToClipboard` — CEF `execCommand` → `navigator.clipboard`), toast "Email nusxalandi: …". mailto/OS-open CEP'da ishlamagani uchun olib tashlandi.
+
+**API:** `createdAt` + `lastSeenAt` ISO; `contributor.ts` PATCH `mergeSceneMeta` — scenes yangilanganda server boyitgan per-scene kalitlar (`previewKey`/`mogrtKey`/`preview`) saqlanadi. `tsc --noEmit` + `npm run build -w apps/api` toza. **Render deploy kerak** (createdAt/lastSeenAt/scene-merge production'ga chiqishi uchun).
+
 ### Claude Code sessiyasida qilingan (2026-06-13) — AE Plugin HIGH fixes ✅
 
 - **Plugin sessiya interceptor ✅** (`assetflow-account.js`, `assetflow-catalog.js`): `handleAuthFailure()` — 401/403 da token tozalash + `assetflow:session-expired` CustomEvent → plugin "Sessiya tugadi — qayta kiring" toast + login oynasi avtomatik ochiladi. `fetchCatalog()` ham katalog 401 da event yuboradi.
@@ -322,4 +344,4 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ---
 
-*Yangilangan: 2026-06-13 — Plugin+Admin HIGH fixes ✅ (sessiya interceptor, boot skeleton, toast navbat, download cancel, import label, scene key, featured filter, admin preset auto-create, data-loss guard, admin auth). Commit `1e4d0d4`. Production deploy kerak (push → Render). Keyingi: Stripe Pro tarif, email bildirishnomalar, re-extract endpoint test.*
+*Yangilangan: 2026-06-13 (kech) — Plugin+Admin MEDIUM fixes ✅ (real sort+createdAt, search debounce, filtr indikatori, fetch timeout, o'zbekcha UI, publish progress, op-lock, cold-start retry, tugma disable, obunachi clipboard nusxa, scene-merge). Commit `c7a7940`. Avvalgi HIGH fixes commit `1e4d0d4`. Production deploy kerak (push → Render; API: createdAt/lastSeenAt/scene-merge). Keyingi: Stripe Pro tarif, email bildirishnomalar, avconvert→ffmpeg, re-extract endpoint test.*
