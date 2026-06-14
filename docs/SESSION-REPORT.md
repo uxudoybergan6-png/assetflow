@@ -1,40 +1,25 @@
-# SESSION REPORT — 2026-06-14 — Qism C: per-user limit override ✅
+# SESSION REPORT — 2026-06-14 — A: override limits serializatsiya, B: Hisob paneli soddalashtirish ✅
 
 ## Nima qilindi
 
-**Prisma schema** (`packages/database/prisma/schema.prisma`):
-- `PluginProfile` ga `downloadLimitOverride Int?` va `importLimitOverride Int?` qo'shildi.
+**A — `apps/api/src/lib/plugin-profile.ts` (`serializePluginUser`)**:
+- `planLimits(...)` → `base` ga saqlandi.
+- `limits` = `{ ...base, downloadLimit: override ?? base.downloadLimit, importLimit: override ?? base.importLimit, unlimitedDownloads: override==null ? base.unlimitedDownloads : false, unlimitedImports: ... }`.
+- `/me` va `/subscription` endi effektiv (override) limitni qaytaradi.
+- Pro + override holati ham to'g'ri: `unlimitedDownloads: false`, `downloadLimit: N`.
+- `tsc` — toza.
 
-**Migration** `20260614100000_plugin_limit_override`:
-- `ALTER TABLE "PluginProfile" ADD COLUMN "downloadLimitOverride" INTEGER;`
-- `ALTER TABLE "PluginProfile" ADD COLUMN "importLimitOverride" INTEGER;`
-- `migrate:deploy` + `generate` bajarildi. tsc toza.
-
-**`apps/api/src/lib/plugin-profile.ts`**:
-- `checkDownloadAllowed`: `effectiveDownloadLimit = profile.downloadLimitOverride ?? limits.downloadLimit` — null bo'lmasa va limit yetganda to'xtatadi.
-- `recordPluginDownload`: xuddi shunday (`effectiveDownloadLimit`).
-- `recordPluginImport`: `effectiveImportLimit = profile.importLimitOverride ?? limits.importLimit`.
-- `mapSubscriberRow`: `downloadLimitOverride`, `importLimitOverride` maydonlari qaytariladi.
-
-**`apps/api/src/routes/admin.ts`** (`PATCH /plugin-subscribers/:userId`):
-- Zod schema'ga `downloadLimitOverride: z.number().int().nonnegative().nullable().optional()` va `importLimitOverride` qo'shildi.
-- `data` tipiga va Prisma update'ga uzatildi (`"key" in parsed.data` bilan).
-
-**`packages/assetflow-studio/js/admin-subscribers.js`** (manba):
-- `openLimitOverrideSub(id)` — modal: joriy/default ko'rinadi, yangi qiymat yoki bo'sh (default), "Defaultga qaytarish" tugmasi.
-- `doLimitOverrideSub(id, reset)` — `patchSubOnServer({downloadLimitOverride, importLimitOverride})`.
-- Detail view: "Tariflarni tahrirlash" → "Limitni tahrirlash" (`openLimitOverrideSub`); override bor bo'lsa sariq "shaxsiy limit" belgisi.
-- Detail view header: "Pro qilish" / "Free qilish" tugmasi (`openTogglePlanSub` — Qism A'dan).
-- studio:sync bajarildi. Manba fayllar o'zgarib qolmadi.
+**B — `plugins/after-effects-cep/AssetFlow_Plugin.html`**:
+- CSS: 4-stat grid (`account-stats`, `account-stat`) → bitta `acc-usage-block` + progress bar CSS.
+- HTML: 4 ta `<div class="account-stat">` → bitta blok: "Bu oy: {N} / {Limit|Cheksiz}" + `acc-usage-bar` + ikkilamchi "Jami: N · Import: N".
+- JS: `accDlTotal/accDlMonth/accImports` saqlanib qoldi; `accLimit` → `accDlLimitDisp` + `accUsageFill` width %.
+- install-cep.sh bajarildi.
 
 ## Holat
 
-Commit kerak. Production'da deploy lozim (`migrate:deploy` Render'da ham kerak bo'ladi).
-
-## MUHIM — Production deploy
-Render'ga push qilinganda `npm run migrate:deploy -w @creative-tools/database` + `npm run generate -w @creative-tools/database` avtomatik `render.yaml`dagi build command'da bo'lishi yoki qo'lda bajarilishi kerak.
+Commit kerak. Render'ga push + deploy lozim.
 
 ## Keyingi ustuvor
-1. 🔴 Push + Render deploy (Stripe bypass + limit override migration)
+1. 🔴 Push + Render deploy
 2. 🟡 Qism B — hard delete backend + ikki bosqichli UI
-3. 🟡 ZXP test, Dizayn tizimi, LemonSqueezy
+3. 🟡 ZXP test, LemonSqueezy

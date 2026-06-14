@@ -21,7 +21,7 @@ const StudioTemplates = (() => {
     return (
       (typeof window !== "undefined" &&
         (window.ASSETFLOW_STUDIO?.mediaUrl || window.ASSETFLOW_STUDIO?.apiUrl)) ||
-      "http://localhost:4000"
+      "https://assetflow-rqbq.onrender.com"
     ).replace(/\/$/, "");
   }
 
@@ -39,7 +39,9 @@ const StudioTemplates = (() => {
       status: mapStatus(t),
       created,
       dur: meta.dur || "—",
-      dl: meta.dl || 0,
+      // Haqiqiy hisoblagichlar (AE plugin usage) — eski meta.dl faqat fallback
+      dl: typeof t.downloadsCount === "number" ? t.downloadsCount : meta.dl || 0,
+      imports: typeof t.importsCount === "number" ? t.importsCount : 0,
       res: (t.res || "4k").toUpperCase().replace("4K", "4K"),
       orient:
         t.orient === "vertical"
@@ -212,7 +214,7 @@ const StudioTemplates = (() => {
           blocked: data?.subscribers?.byStatus?.blocked ?? 0,
           removed: data?.subscribers?.byStatus?.removed ?? 0,
           online: data?.subscribers?.activeLast24h ?? 0,
-          totalDownloads: total,
+          totalDownloads: data?.usage?.downloadsTotal ?? 0,
           free: data?.subscribers?.byPlan?.free ?? 0,
           pro: data?.subscribers?.byPlan?.pro ?? 0,
         };
@@ -235,7 +237,6 @@ const StudioTemplates = (() => {
         if (typeof syncRejectReasons === "function") syncRejectReasons();
       } else {
         await loadForContributor();
-        await loadPluginAnalytics();
       }
       return true;
     } catch (e) {

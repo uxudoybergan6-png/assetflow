@@ -161,23 +161,7 @@ VIEWS.subscribers = function () {
                 <td class="cell-muted mono" style="white-space:nowrap">${s.lastSeen}</td>
                 <td onclick="event.stopPropagation()"><div class="row-actions">
                   <button class="act" title="Xabar" onclick="openMessageSub('${s.id}')">${ic("message")}</button>
-                  ${
-                    s.status === "active"
-                      ? `<button class="act danger" title="Bloklash" onclick="openBlockSub('${s.id}')">${ic("ban")}</button>
-                         <button class="act danger" title="Chiqarib tashlash" onclick="openRemoveSub('${s.id}')">${ic("trash")}</button>`
-                      : ""
-                  }
-                  ${
-                    s.status === "blocked"
-                      ? `<button class="act success" title="Blokdan chiqarish" onclick="unblockSub('${s.id}')">${ic("checkCircle")}</button>
-                         <button class="act danger" title="Chiqarib tashlash" onclick="openRemoveSub('${s.id}')">${ic("trash")}</button>`
-                      : ""
-                  }
-                  ${
-                    s.status === "removed"
-                      ? `<button class="act success" title="Qayta tiklash" onclick="restoreSub('${s.id}')">${ic("refresh")}</button>`
-                      : ""
-                  }
+                  ${subActMenu(s)}
                   <button class="act" title="Profil" onclick="route('subscriber-detail','${s.id}')">${ic("chevR")}</button>
                 </div></td>
               </tr>`;
@@ -294,6 +278,60 @@ VIEWS["subscriber-detail"] = function (id) {
     </div>
   </div>`;
 };
+
+function subActMenu(s) {
+  const isPro = normalizePlanLabel(s.plan) === "Pro";
+  const isRemoved = s.status === "removed";
+  const isBlocked = s.status === "blocked";
+  const isActive = s.status === "active";
+  const cl = "this.closest('details').open=false;";
+  const planItem = !isRemoved
+    ? `<button class="act-item${isPro ? "" : " success"}" onclick="${cl}openTogglePlanSub('${s.id}')">${ic(isPro ? "chevD" : "star")} ${isPro ? "Free qilish" : "Pro qilish"}</button><div class="act-sep"></div>`
+    : "";
+  const blockUnblock = isActive
+    ? `<button class="act-item danger" onclick="${cl}openBlockSub('${s.id}')">${ic("ban")} Bloklash</button>`
+    : isBlocked
+    ? `<button class="act-item success" onclick="${cl}unblockSub('${s.id}')">${ic("checkCircle")} Blokdan chiqarish</button>`
+    : "";
+  const removeRestore = isRemoved
+    ? `<button class="act-item success" onclick="${cl}restoreSub('${s.id}')">${ic("refresh")} Qayta tiklash</button>`
+    : `<button class="act-item danger" onclick="${cl}openRemoveSub('${s.id}')">${ic("trash")} Chiqarish</button>`;
+  return `<details class="act-menu"><summary class="act" title="Amallar">${ic("more")}</summary><div class="act-drop">${planItem}${blockUnblock}${removeRestore}</div></details>`;
+}
+
+function openTogglePlanSub(id) {
+  const s = sById(id);
+  const isPro = normalizePlanLabel(s.plan) === "Pro";
+  const newPlan = isPro ? "free" : "pro";
+  const label = isPro ? "Free" : "Pro";
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic(isPro ? "chevD" : "star")}</div>
+      <div><h3>${label} rejasiga o'tkazish</h3><p>${s.name} \xb7 ${s.email}</p></div>
+    </div>
+    <div class="modal-body">
+      <div class="info-banner">${ic("alert")}<span>${isPro
+        ? `<b>${s.name}</b> Free rejaga o'tkaziladi — oylik limit qayta yoqiladi.`
+        : `<b>${s.name}</b> Pro rejaga o'tkaziladi — cheksiz yuklab olish imkoni beriladi.`
+      }</span></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+      <button class="btn btn-primary" onclick="doTogglePlanSub('${id}','${newPlan}')">${ic(isPro ? "chevD" : "star")} ${label} qilish</button>
+    </div>`);
+}
+
+async function doTogglePlanSub(id, plan) {
+  const s = sById(id);
+  try {
+    await patchSubOnServer(id, { plan });
+    closeModal();
+    toast("Yangilandi", `${s.name} ${plan === "pro" ? "Pro" : "Free"} rejaga o'tkazildi`, plan === "pro" ? "success" : "info");
+    route(CURRENT === "subscriber-detail" ? "subscriber-detail" : "subscribers", id);
+  } catch (e) {
+    toast("Xato", e.message || "API", "danger");
+  }
+}
 
 function openBlockSub(id) {
   const s = sById(id);

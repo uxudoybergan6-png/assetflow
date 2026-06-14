@@ -7,6 +7,22 @@ Bu bosqich ikkala hisobot e'tibordan chetda qoldirgan ishlarni qamraydi: mavjud 
 
 ---
 
+## ⚠️ HANDOFF.md bilan solishtiruv (2026-06-14 holati)
+
+HANDOFF hatto bu topilmalarni **kuchaytiradi** — ya'ni ular haqiqatan e'tibordan chetda:
+
+| Topilma | HANDOFF dalili | Bu rejada |
+|---|---|---|
+| **premiere-uxp plagini** | ⚠️ HANDOFF'da **UMUMAN eslanmagan** — barcha ishlar AE CEP haqida. Bu uning tashlab qo'yilgan/passiv ekanini kuchaytiradi | ✅ Ish 1 (audit) ayniqsa dolzarb |
+| **Dual asset model** | `ContributorTemplate` faol model (HANDOFF butun pipeline shunga asoslangan); legacy `Asset` eslanmaydi | ✅ Ish 2 dolzarb — `ContributorTemplate` manba haqiqat ekani tasdiqlandi |
+| **In-memory state (Redis)** | 🟡 HANDOFF qator 129: "rate limit productionda Redis"; qator 279 SSE in-memory | ✅ Ish 3 dolzarb (kechiktirilgan) |
+| **Preview public URL** | Pack endi auth+gated (qator 290), lekin thumb/preview ochiqligi alohida | ✅ Ish 4 dolzarb (trivial) |
+| **Admin `--disable-web-security`** | Hali manifestda (men ko'rdim) | ✅ Ish 4 |
+
+**Eng muhim:** premiere-uxp HANDOFF'ning hech bir sessiyasida tilga olinmagan — demak hech kim unga tegmagan. Ish 1 (audit) bu noaniqlikni birinchi yopadi.
+
+---
+
 ## Kod tahlilidan tasdiqlangan holat (hisobotlarda YO'Q)
 
 | Topilma | Kodda haqiqat |

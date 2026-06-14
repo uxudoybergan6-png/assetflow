@@ -5,6 +5,15 @@
 window.VIEWS = window.VIEWS || {};
 window.afterRender = window.afterRender || {};
 
+/** XSS himoyasi — server/foydalanuvchi matnini innerHTML ga qo'yishdan oldin escape qiladi */
+const esc = (s) =>
+  window.StudioMedia && StudioMedia.escapeHtml
+    ? StudioMedia.escapeHtml(s)
+    : String(s == null ? "" : s).replace(
+        /[&<>"']/g,
+        (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+      );
+
 function contributorId() {
   const s = typeof AssetFlowAuth !== "undefined" ? AssetFlowAuth.getSession() : null;
   return s?.userId || window.ME || "";
@@ -27,7 +36,8 @@ VIEWS.overview = function(){
   const ts = tByContributor(contributorId());
   const ap=ts.filter(t=>t.status==='approved').length, pe=ts.filter(t=>t.status==='pending').length,
         sr=ts.filter(t=>t.status==='soft').length, hr=ts.filter(t=>t.status==='hard').length;
-  const dl=ts.reduce((a,t)=>a+t.dl,0);
+  const dl=ts.reduce((a,t)=>a+(t.dl||0),0);
+  const im=ts.reduce((a,t)=>a+(t.imports||0),0);
   const needsAction = ts.filter(t=>t.status==='soft' || t.status==='draft');
   const sc = subscriberCounts();
   const freeP = planById('free');
@@ -47,9 +57,9 @@ VIEWS.overview = function(){
         <span class="small">${planPriceLabel(proP)} · ${formatPlanLimit(proP)}</span>
       </div>
       <div class="plan-mini">
-        <span class="label">Sizning shablon yuklab olishlari</span>
-        <span class="num" style="font-size:22px;font-weight:700">${dl.toLocaleString()}</span>
-        <span class="small">tasdiqlangan ${ap} ta shablon</span>
+        <span class="label">Yuklab olishlar / importlar</span>
+        <span class="num" style="font-size:22px;font-weight:700">${dl.toLocaleString()} <span style="font-size:13px;font-weight:500;color:var(--text-dim)">/ ${im.toLocaleString()} import</span></span>
+        <span class="small">tasdiqlangan ${ap} ta shablon bo'yicha</span>
       </div>
     </div>
 
@@ -60,7 +70,7 @@ VIEWS.overview = function(){
       ${kpiCard({label:'Rad etilgan',val:sr+hr,ic:'xCircle',c:'orange',foot:`${sr} soft \u00b7 ${hr} hard`})}
     </div>
 
-    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start">
+    <div class="ov-grid">
       <!-- next step + needs action -->
       <div class="col gap-16">
         <div class="card" style="background:linear-gradient(120deg,var(--violet-dim),transparent);border-color:var(--violet-line)">
@@ -75,7 +85,7 @@ VIEWS.overview = function(){
           <div class="col">
             ${needsAction.length? needsAction.map(t=>`<div class="row center gap-12" style="padding:13px 18px;border-bottom:1px solid var(--line-soft)">
               <div class="row-thumb" style="width:54px;height:34px">${thumbArt(t.grad,'',true)}</div>
-              <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong">${t.name}</span><span class="small">${t.status==='soft'?'Soft reject \u2014 tuzatib qayta yuboring':'Qoralama \u2014 hali yuborilmagan'}</span></div>
+              <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong">${esc(t.name)}</span><span class="small">${t.status==='soft'?'Soft reject \u2014 tuzatib qayta yuboring':'Qoralama \u2014 hali yuborilmagan'}</span></div>
               ${badge(t.status)}
               ${t.status==='draft'?`<button class="btn btn-primary btn-sm" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Yuborish</button>`:''}
               <button class="btn btn-ghost btn-sm" onclick="openTplDrawer('${t.id}')">Ko\u2018rish</button>
@@ -85,7 +95,7 @@ VIEWS.overview = function(){
 
         <div class="card">
           <div class="card-head"><h3>Faoliyat tarixi</h3></div>
-          <div class="card-pad">${ts.length ? `<div class="timeline">${ts.slice(0,5).map(t=>`<div class="tl-item"><div class="tl-dot" style="background:var(--${t.status==='approved'?'green':'violet'})">${ic(t.status==='approved'?'check':'upload')}</div><div class="tl-title">${t.name}</div><div class="tl-meta">${badge(t.status)} \u00b7 ${t.created||''}</div></div>`).join('')}</div>` : `<div class="empty" style="padding:24px"><p class="small">Hali faoliyat yo\u2018q</p></div>`}
+          <div class="card-pad">${ts.length ? `<div class="timeline">${ts.slice(0,5).map(t=>`<div class="tl-item"><div class="tl-dot" style="background:var(--${t.status==='approved'?'green':'violet'})">${ic(t.status==='approved'?'check':'upload')}</div><div class="tl-title">${esc(t.name)}</div><div class="tl-meta">${badge(t.status)} \u00b7 ${esc(t.created||'')}</div></div>`).join('')}</div>` : `<div class="empty" style="padding:24px"><p class="small">Hali faoliyat yo\u2018q</p></div>`}
           </div>
         </div>
       </div>
@@ -93,12 +103,32 @@ VIEWS.overview = function(){
       <!-- recent admin messages -->
       <div class="card">
         <div class="card-head"><div><h3>Admin xabarlari</h3><span class="small">So\u2018nggi</span></div><button class="btn btn-subtle btn-sm" onclick="route('messages')">Barchasi ${ic('chevR')}</button></div>
-        <div class="col">
+        <div class="col" id="ovMsgs">
           <div class="empty" style="padding:34px"><div class="ico">${ic('message')}</div><h3>Xabar yo\u2018q</h3><p class="small">Admin javobi shu yerda chiqadi</p></div>
         </div>
       </div>
     </div>
   </div>`;
+};
+
+/** Overview ochilganda admin xabarlarini API dan yuklab panelni to'ldiradi */
+window.afterRender.overview = async function(){
+  if (!StudioApi.token()) return;
+  try {
+    const data = await StudioApi.listMessageThreads();
+    const threads = (data.items || data.threads || []).slice(0, 4);
+    const box = document.getElementById('ovMsgs');
+    if (!box || !threads.length) return;
+    box.innerHTML = threads.map(th => `<div class="row center gap-12" style="padding:12px 18px;border-bottom:1px solid var(--line-soft);cursor:pointer" onclick="route('messages')">
+      <div class="col grow" style="gap:2px;min-width:0">
+        <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(th.subject || 'Xabar')}</span>
+        <span class="small">${esc((th.lastMessageAt || '').slice(0, 10))}</span>
+      </div>
+      ${th.unreadCount ? `<span class="badge badge-pending"><span class="dot"></span>${esc(th.unreadCount)} yangi</span>` : ''}
+    </div>`).join('');
+  } catch (e) {
+    /* xabarlar paneli ixtiyoriy \u2014 overview bloklanmaydi */
+  }
 };
 
 /* ============================================================
@@ -131,13 +161,13 @@ function renderMy(){
 }
 function myTable(ts){
   return `<div class="card"><div class="table-wrap"><table class="data" style="min-width:820px">
-    <thead><tr><th>Shablon</th><th>Holat</th><th>Yaratilgan</th><th class="th-num">Downloads</th><th>Admin izohi</th><th style="width:130px"></th></tr></thead>
+    <thead><tr><th>Shablon</th><th>Holat</th><th>Yaratilgan</th><th class="th-num">Yuklab olish / import</th><th>Admin izohi</th><th style="width:130px"></th></tr></thead>
     <tbody>${ts.map(t=>`<tr style="cursor:pointer" onclick="openTplDrawer('${t.id}')">
-      <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'',true)}</div><div class="tmpl-meta"><span class="nm">${t.name}</span><span class="sub">${t.cat}</span></div></div></td>
+      <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'',true)}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)}</span></div></div></td>
       <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">AE\u2018da live</div>':''}</td>
-      <td class="cell-muted mono">${t.created}</td>
-      <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
-      <td class="cell-muted" style="max-width:200px">${t.reason?`<span style="color:var(--orange)">${t.reason.slice(0,46)}\u2026</span>`:'\u2014'}</td>
+      <td class="cell-muted mono">${esc(t.created)}</td>
+      <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}${t.imports?`<div class="small" style="font-size:10.5px;font-weight:400">${t.imports.toLocaleString()} import</div>`:''}</td>
+      <td class="cell-muted" style="max-width:200px">${t.reason?`<span style="color:var(--orange)">${esc(t.reason.slice(0,46))}\u2026</span>`:'\u2014'}</td>
       <td onclick="event.stopPropagation()"><div class="row-actions">
         ${(t.status==='draft'||t.status==='soft')?`<button class="act" title="Tahrir" onclick="event.stopPropagation();openEditTemplate('${t.id}')">${ic('edit')}</button>`:''}
         ${(t.status==='draft'||t.status==='soft')?`<button class="act success" title="Moderatsiyaga yuborish" onclick="submitDraftToModeration('${t.id}')">${ic('upload')}</button>`:''}
@@ -150,9 +180,9 @@ function myTable(ts){
 function myGrid(ts){
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px">
     ${ts.map(t=>`<div class="card" style="overflow:hidden;cursor:pointer" onclick="openTplDrawer('${t.id}')">
-      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${t.dur}</span>`:''}<div style="position:absolute;top:8px;left:8px">${badge(t.status)}</div></div>
+      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px">${badge(t.status)}</div></div>
       <div class="card-pad col gap-8">
-        <div class="col" style="gap:2px"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span><span class="small">${t.cat} \u00b7 ${t.created}</span></div>
+        <div class="col" style="gap:2px"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span><span class="small">${esc(t.cat)} \u00b7 ${esc(t.created)}</span></div>
         <div class="row between center"><span class="small">${t.dl?t.dl.toLocaleString()+' yuklab olindi':'\u2014'}</span>
         ${t.status==='soft'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();resubmit('${t.id}')">${ic('refresh')} Qayta</button>`:''}</div>
       </div>
@@ -188,6 +218,9 @@ async function resubmit(id) {
 let UP_STEP=1;
 let UP_EDIT_ID = null;
 const UP_DRAFT = { files: {} };
+// Media bosqichida yuklangan fayllar imzosi (qayta yuklamaslik uchun) + holat
+let UP_UPLOADED_SIG = "";
+let UP_UPLOADING = false;
 
 function openEditTemplate(id) {
   const t = TEMPLATES.find((x) => x.id === id);
@@ -197,6 +230,7 @@ function openEditTemplate(id) {
   }
   UP_EDIT_ID = id;
   UP_STEP = 1;
+  UP_UPLOADED_SIG = ""; // tahrir kontekstida — fayllar qaytadan yuklanadi
   UP_DRAFT.name = t.name;
   UP_DRAFT.desc = t.desc || "";
   UP_DRAFT.catLabel = t.cat;
@@ -257,7 +291,8 @@ function validateUploadStep1() {
   return true;
 }
 
-const MAX_UPLOAD_MB = 500;
+const MAX_UPLOAD_MB = 3072; // 3 GB
+const MAX_UPLOAD_LABEL = "3 GB";
 
 function fmtMB(bytes) {
   return (bytes / 1048576).toFixed(1) + " MB";
@@ -269,7 +304,7 @@ function checkUploadFile(file, label) {
   if (file.size > MAX_UPLOAD_MB * 1048576) {
     toast(
       label,
-      `Fayl ${fmtMB(file.size)} — maksimal ${MAX_UPLOAD_MB} MB. Hajmini kichraytirib qayta tanlang`,
+      `Fayl ${fmtMB(file.size)} — maksimal ${MAX_UPLOAD_LABEL}. Hajmini kichraytirib qayta tanlang`,
       "danger"
     );
     return false;
@@ -303,15 +338,156 @@ function validateUploadPackFile() {
 
 function uploadStepNext() {
   if (UP_STEP === 1 && !validateUploadStep1()) return;
+  // Media bosqichi: "Davom etish" bosilganda tanlangan fayllarni yuklaymiz
+  // (har fayl uchun progress bar), keyin keyingi bosqichga o'tamiz.
+  if (UP_STEP === 2) { startMediaUploadThenNext(); return; }
   UP_STEP = Math.min(3, UP_STEP + 1);
   renderUpload();
+}
+
+/** FormData append tartibida (thumb→preview→pack) fayllar + bayt ofsetlari */
+function orderedUploadFiles(files) {
+  const order = [
+    { key: "thumb", label: "Thumbnail" },
+    { key: "preview", label: "Preview video" },
+    { key: "pack", label: "Loyiha fayli" },
+  ];
+  const list = [];
+  let offset = 0;
+  for (const o of order) {
+    const f = files[o.key];
+    if (!f) continue;
+    list.push({ key: o.key, label: o.label, name: f.name, size: f.size, start: offset });
+    offset += f.size;
+  }
+  return { list, totalBytes: offset };
+}
+
+function uploadFilesSig(files) {
+  return ["thumb", "preview", "pack"]
+    .map((k) => (files[k] ? `${k}:${files[k].name}:${files[k].size}` : `${k}:-`))
+    .join("|");
+}
+
+/** Progress panelini Media bosqichi kartasiga chizadi (har fayl uchun bar) */
+function showUploadProgressPanel(list) {
+  const el = document.getElementById("upProgress");
+  if (!el) return;
+  const rows = list
+    .map(
+      (it) => `
+      <div class="up-prog-row" style="display:flex;flex-direction:column;gap:5px;padding:8px 0">
+        <div class="row between center" style="font-size:12px;gap:8px">
+          <span class="trunc" title="${esc(it.name)}" style="min-width:0">${ic("file")} ${esc(it.label)} — ${esc(it.name)}</span>
+          <span id="up-stat-${it.key}" style="color:var(--text-dim);white-space:nowrap">Kutilmoqda…</span>
+        </div>
+        <div style="height:6px;background:var(--line,#2a2a2a);border-radius:4px;overflow:hidden">
+          <div id="up-fill-${it.key}" style="height:100%;width:0%;background:var(--green,#82c341);transition:width .15s"></div>
+        </div>
+      </div>`
+    )
+    .join("");
+  el.innerHTML = `<div class="card" style="padding:12px;margin-top:4px;border:1px solid var(--line,#2a2a2a)">
+      <div class="small" style="margin-bottom:4px;font-weight:600">Fayllar yuklanmoqda</div>
+      ${rows}
+      <div id="upServerStage" class="small" style="margin-top:8px;color:var(--text-dim)"></div>
+    </div>`;
+}
+
+/** Bayt yuklash davomida har faylning 0-100% va "210MB / 500MB" ko'rsatkichi */
+function updateFileProgress(list, loaded) {
+  for (const it of list) {
+    const fill = document.getElementById(`up-fill-${it.key}`);
+    const stat = document.getElementById(`up-stat-${it.key}`);
+    if (!fill || !stat) continue;
+    const fileLoaded = Math.max(0, Math.min(it.size, loaded - it.start));
+    const pct = it.size > 0 ? Math.floor((fileLoaded / it.size) * 100) : 100;
+    fill.style.width = pct + "%";
+    if (pct >= 100) {
+      stat.textContent = "✓ Yuklandi";
+      stat.style.color = "var(--green,#82c341)";
+    } else {
+      stat.textContent = `Yuklanmoqda… ${pct}% (${fmtMB(fileLoaded)} / ${fmtMB(it.size)})`;
+      stat.style.color = "var(--text-dim)";
+    }
+  }
+}
+
+function markAllFilesDone(list) {
+  for (const it of list) {
+    const fill = document.getElementById(`up-fill-${it.key}`);
+    const stat = document.getElementById(`up-stat-${it.key}`);
+    if (fill) fill.style.width = "100%";
+    if (stat) { stat.textContent = "✓ Yuklandi"; stat.style.color = "var(--green,#82c341)"; }
+  }
+}
+
+function setUploadServerStage(p) {
+  const el = document.getElementById("upServerStage");
+  if (!el) return;
+  if (p.done) { el.textContent = "✓ Server qayta ishlash tugadi"; el.style.color = "var(--green,#82c341)"; return; }
+  const label = UPLOAD_STAGE_LABELS[p.stage] || p.message || "Qayta ishlanmoqda";
+  el.textContent = `${label}… ${Math.round(p.pct || 0)}%`;
+  el.style.color = "var(--text-dim)";
+}
+
+function setUploadStageError(msg) {
+  const el = document.getElementById("upServerStage");
+  if (el) { el.textContent = "Xato: " + msg; el.style.color = "var(--red,#ef4444)"; }
+}
+
+/** Media bosqichi: fayllarni yuklab (per-fayl progress), so'ng 3-bosqichga o'tadi */
+async function startMediaUploadThenNext() {
+  if (UP_UPLOADING) return;
+  if (!validateUploadStep1()) { UP_STEP = 1; renderUpload(); return; }
+  const files = UP_DRAFT.files || {};
+  const hasFiles = !!(files.thumb || files.preview || files.pack);
+  // Pack tanlangan bo'lsa format/hajmini tekshiramiz (xato bo'lsa to'xtaymiz)
+  if (files.pack && !validateUploadPackFile()) return;
+  if (!hasFiles) { UP_STEP = 3; renderUpload(); return; }
+  const sig = uploadFilesSig(files);
+  if (UP_UPLOADED_SIG === sig) { UP_STEP = 3; renderUpload(); return; } // allaqachon yuklangan
+  if (!StudioApi.token()) { toast("API", "Avval tizimga kiring", "warn"); return; }
+
+  const { list } = orderedUploadFiles(files);
+  const btn = document.getElementById("upNextBtn");
+  if (btn) { btn.disabled = true; btn.innerHTML = "Yuklanmoqda…"; }
+  showUploadProgressPanel(list);
+  UP_UPLOADING = true;
+  let prog = null;
+  try {
+    const created = await createUploadTemplateRecord();
+    const tid = UP_EDIT_ID || created.id;
+    UP_EDIT_ID = tid; // retry'da dublikat yozuv yaratilmasin
+    prog = listenUploadProgress(tid, (p) => { if (!p.error) setUploadServerStage(p); });
+    await StudioApi.uploadAssets(tid, files, (done) => updateFileProgress(list, done));
+    markAllFilesDone(list);
+    setUploadServerStage({ done: true });
+    UP_UPLOADED_SIG = sig;
+    // "✓ Yuklandi" ko'rinib qolishi uchun qisqa pauza, so'ng keyingi bosqich
+    await new Promise((r) => setTimeout(r, 700));
+    UP_STEP = 3;
+    renderUpload();
+  } catch (e) {
+    const stageLabel = prog && prog.stage ? UPLOAD_STAGE_LABELS[prog.stage] : "";
+    setUploadStageError(e.message || "Fayllar yuklanmadi");
+    toast(
+      "Xato" + (stageLabel ? ` — ${stageLabel} bosqichida` : ""),
+      (e.message || "Fayllar yuklanmadi") + ". Qayta «Davom etish» bossangiz, shu shablonga qayta yuklanadi",
+      "danger"
+    );
+    if (btn) { btn.disabled = false; btn.innerHTML = `Davom etish ${ic("chevR")}`; }
+  } finally {
+    if (prog) prog.close();
+    UP_UPLOADING = false;
+  }
 }
 
 function bindUploadFileInputs() {
   const thumb = document.getElementById("upThumb");
   const preview = document.getElementById("upPreview");
   const pack = document.getElementById("upPack");
-  if (thumb) thumb.onchange = () => { UP_DRAFT.files.thumb = thumb.files?.[0] || null; };
+  if (thumb) thumb.onchange = () => { UP_DRAFT.files.thumb = thumb.files?.[0] || null; UP_UPLOADED_SIG = ""; };
   if (preview) preview.onchange = () => {
     const f = preview.files?.[0] || null;
     // Hajm darhol tekshiriladi — submit'gacha kutilmaydi
@@ -321,6 +497,7 @@ function bindUploadFileInputs() {
       return;
     }
     UP_DRAFT.files.preview = f;
+    UP_UPLOADED_SIG = ""; // fayl o'zgardi — qayta yuklash kerak
   };
   if (pack) pack.onchange = () => {
     const f = pack.files?.[0] || null;
@@ -330,6 +507,7 @@ function bindUploadFileInputs() {
       return;
     }
     UP_DRAFT.files.pack = f;
+    UP_UPLOADED_SIG = ""; // fayl o'zgardi — qayta yuklash kerak
     if (f) toast("Loyiha fayli", `${f.name} (${fmtMB(f.size)}) tanlandi`, "info");
   };
 }
@@ -351,13 +529,13 @@ function renderUpload(){
     </div>
 
     ${UP_STEP===1?`<div class="card card-pad col gap-16">
-      <div class="field"><label>Shablon nomi <span class="req">*</span></label><input id="upName" class="input" value="${UP_DRAFT.name||''}" placeholder="Masalan: Neon Glitch Logo Reveal"></div>
-      <div class="field"><label>Tavsif <span class="req">*</span></label><textarea id="upDesc" class="textarea" placeholder="Shablon nimadan iborat, qanday foydalaniladi\u2026">${UP_DRAFT.desc||''}</textarea><span class="hint">Aniq tavsif tezroq moderatsiyadan o\u2018tishga yordam beradi.</span></div>
+      <div class="field"><label>Shablon nomi <span class="req">*</span></label><input id="upName" class="input" value="${esc(UP_DRAFT.name||'')}" placeholder="Masalan: Neon Glitch Logo Reveal"></div>
+      <div class="field"><label>Tavsif <span class="req">*</span></label><textarea id="upDesc" class="textarea" placeholder="Shablon nimadan iborat, qanday foydalaniladi\u2026">${esc(UP_DRAFT.desc||'')}</textarea><span class="hint">Aniq tavsif tezroq moderatsiyadan o\u2018tishga yordam beradi.</span></div>
       <div class="row gap-16"><div class="field grow"><label>Kategoriya <span class="req">*</span></label><select id="upCat" class="select" style="height:38px;width:100%"><option value="">Tanlang\u2026</option>${CATS.map(c=>`<option ${UP_DRAFT.catLabel===c?'selected':''}>${c}</option>`).join('')}</select></div>
       <div class="field grow"><label>Yo\u2018nalish</label><select id="upNav" class="select" style="height:38px;width:100%"><option value="video" ${UP_DRAFT.nav==='video'?'selected':''}>Video / Broadcast</option><option value="social" ${UP_DRAFT.nav==='social'?'selected':''}>Social Media</option><option value="corp" ${UP_DRAFT.nav==='corp'?'selected':''}>Korporativ</option></select></div></div>
       <div class="row gap-16"><div class="field grow"><label>Orientatsiya</label><select id="upOrient" class="select" style="height:38px;width:100%"><option>Landscape (16:9)</option><option>Portrait (9:16)</option><option>Square (1:1)</option></select></div>
       <div class="field grow"><label>Resolution</label><select id="upRes" class="select" style="height:38px;width:100%"><option>4K (3840\u00d72160)</option><option>1080p</option><option>1080\u00d71920</option></select></div></div>
-      <div class="field"><label>Teglar</label><input id="upTags" class="input" value="${(UP_DRAFT.tags||[]).join(', ')}" placeholder="vergul bilan: glitch, neon, logo"></div>
+      <div class="field"><label>Teglar</label><input id="upTags" class="input" value="${esc((UP_DRAFT.tags||[]).join(', '))}" placeholder="vergul bilan: glitch, neon, logo"></div>
     </div>`:''}
 
     ${UP_STEP===2?`<div class="card card-pad col gap-16">
@@ -371,20 +549,21 @@ function renderUpload(){
       </div>
       <div class="field"><label>Loyiha fayli (.mogrt yoki .zip)</label>
         <input type="file" id="upPack" accept=".mogrt,.zip,application/zip" class="input" style="padding:8px">
-        <span class="small">Motion Graphics Template (.mogrt) yoki bir nechta .mogrt solingan .zip · Maksimal hajm: <b>500 MB</b></span></div>
+        <span class="small">Motion Graphics Template (.mogrt) yoki bir nechta .mogrt solingan .zip · Maksimal hajm: <b>3 GB</b></span></div>
+      <div id="upProgress"></div>
     </div>`:''}
 
     ${UP_STEP===3?`<div class="card card-pad col gap-16">
       <div class="row gap-16">
         <div class="thumb g1 grain" style="width:200px;aspect-ratio:16/10;border-radius:var(--r-md);flex:0 0 auto"><div class="play"><span>${ic('play')}</span></div></div>
         <div class="col gap-8 grow" style="min-width:0">
-          <span class="h3">${UP_DRAFT.name||'Shablon'}</span>
-          <div class="row gap-6 wrap"><span class="pill">${UP_DRAFT.catLabel||'—'}</span><span class="pill">${(UP_DRAFT.res||'4k').toUpperCase()}</span><span class="pill">${UP_DRAFT.orient==='vertical'?'Portrait':UP_DRAFT.orient==='square'?'Square':'Landscape'}</span></div>
-          <p class="body" style="max-width:100%;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden">${UP_DRAFT.desc||''}</p>
+          <span class="h3">${esc(UP_DRAFT.name||'Shablon')}</span>
+          <div class="row gap-6 wrap"><span class="pill">${esc(UP_DRAFT.catLabel||'—')}</span><span class="pill">${(UP_DRAFT.res||'4k').toUpperCase()}</span><span class="pill">${UP_DRAFT.orient==='vertical'?'Portrait':UP_DRAFT.orient==='square'?'Square':'Landscape'}</span></div>
+          <p class="body" style="max-width:100%;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden">${esc(UP_DRAFT.desc||'')}</p>
           <div class="row gap-8 wrap" style="min-width:0">
-            ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${UP_DRAFT.files.preview.name}">${ic('film')} ${UP_DRAFT.files.preview.name} · ${fmtMB(UP_DRAFT.files.preview.size)}</span>`:''}
-            ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${UP_DRAFT.files.thumb.name}">${ic('image')} ${UP_DRAFT.files.thumb.name}</span>`:''}
-            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${UP_DRAFT.files.pack.name}">${ic('file')} ${UP_DRAFT.files.pack.name} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) majburiy — AE import uchun</span>'}
+            ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${esc(UP_DRAFT.files.preview.name)}">${ic('film')} ${esc(UP_DRAFT.files.preview.name)} · ${fmtMB(UP_DRAFT.files.preview.size)}</span>`:''}
+            ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${esc(UP_DRAFT.files.thumb.name)}">${ic('image')} ${esc(UP_DRAFT.files.thumb.name)}</span>`:''}
+            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${esc(UP_DRAFT.files.pack.name)}">${ic('file')} ${esc(UP_DRAFT.files.pack.name)} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) majburiy — AE import uchun</span>'}
           </div>
         </div>
       </div>
@@ -396,7 +575,7 @@ function renderUpload(){
       <button class="btn btn-ghost" onclick="UP_STEP=Math.max(1,UP_STEP-1);renderUpload()" ${UP_STEP===1?'disabled':''}>${ic('chevL')} Orqaga</button>
       <div class="row gap-8">
         <button class="btn btn-subtle" onclick="saveDraftOnly()">Qoralama saqlash</button>
-        ${UP_STEP<3?`<button class="btn btn-primary" onclick="uploadStepNext()">Davom etish ${ic('chevR')}</button>`
+        ${UP_STEP<3?`<button class="btn btn-primary" id="upNextBtn" onclick="uploadStepNext()">Davom etish ${ic('chevR')}</button>`
           :`<button class="btn btn-success" id="upSubmitBtn" onclick="submitUpload()">${ic('check')} Moderatsiyaga yuborish</button>`}
       </div>
     </div>
@@ -453,6 +632,40 @@ async function createUploadTemplateRecord() {
   return StudioApi.createTemplate(body);
 }
 
+/** Server bosqichlari (80-100%) — SSE orqali real vaqtda */
+const UPLOAD_STAGE_LABELS = {
+  receive: "Fayl qabul qilish",
+  sync: "Bulutga saqlash",
+  extract: "Sahnalarni tayyorlash",
+  db: "Bazaga yozish",
+};
+
+function listenUploadProgress(tid, onUpdate) {
+  const handle = { stage: "", close() {} };
+  if (typeof EventSource === "undefined") return handle;
+  let es = null;
+  try {
+    es = new EventSource(
+      `${StudioApi.baseUrl()}/api/contributor/templates/${tid}/upload-progress`
+    );
+  } catch {
+    return handle;
+  }
+  let live = false;
+  es.onmessage = (ev) => {
+    let p = null;
+    try { p = JSON.parse(ev.data); } catch { return; }
+    if (p.stage === "receive" && !p.error) { live = true; return; }
+    // ES ulanishidan oldingi eski (tugagan) yozuvni e'tiborsiz qoldiramiz
+    if (!live && p.done && !p.error) return;
+    handle.stage = p.stage;
+    onUpdate(p);
+  };
+  es.onerror = () => {}; // SSE uzilsa XHR progress fallback bo'lib qoladi
+  handle.close = () => { try { es.close(); } catch {} };
+  return handle;
+}
+
 async function submitUpload(){
   if (!StudioApi.token()) {
     toast('API', 'Avval tizimga kiring', 'warn');
@@ -477,17 +690,39 @@ async function submitUpload(){
     // Yuklash xato bo'lsa, qayta urinish YANGI shablon yaratmasin —
     // shu yozuvga bog'lab qo'yamiz (dublikat qoralama bug'i tuzatildi)
     UP_EDIT_ID = tid;
+    let prog = null;
+    const filesPresent = !!(UP_DRAFT.files.thumb || UP_DRAFT.files.preview || UP_DRAFT.files.pack);
+    const alreadyUploaded = !!UP_UPLOADED_SIG && UP_UPLOADED_SIG === uploadFilesSig(UP_DRAFT.files || {});
     try {
-      if (UP_DRAFT.files.thumb || UP_DRAFT.files.preview || UP_DRAFT.files.pack) {
+      // Media bosqichida shu fayllar allaqachon yuklangan bo'lsa — qayta yuklamaymiz
+      if (filesPresent && !alreadyUploaded) {
+        // Server bosqichlari (80-100%): R2 saqlash, sahna extract, DB yozish
+        prog = listenUploadProgress(tid, (p) => {
+          if (!btn || p.error) return;
+          btn.innerHTML = `${esc(p.message || "Qayta ishlanmoqda…")} ${Math.round(p.pct)}%`;
+        });
+        // Fayl baytlari serverga ketishi — umumiy jarayonning 0-80% qismi
         await StudioApi.uploadAssets(tid, UP_DRAFT.files, (done, total) => {
           if (!btn) return;
-          const pct = total > 0 ? Math.floor((done / total) * 100) : 0;
+          if (total > 0 && done >= total) {
+            btn.innerHTML = "Server qayta ishlamoqda… 80%";
+            return;
+          }
+          const pct = total > 0 ? Math.floor((done / total) * 80) : 0;
           btn.innerHTML = `Yuklanmoqda… ${pct}% (${fmtMB(done)} / ${fmtMB(total)})`;
         });
+        UP_UPLOADED_SIG = uploadFilesSig(UP_DRAFT.files || {});
       }
     } catch (e) {
-      toast("Xato", "Fayllar yuklanmadi: " + (e.message || "") + ". «Moderatsiyaga yuborish»ni qayta bossangiz, shu shablonga qayta yuklanadi", "danger");
+      const stageLabel = prog && prog.stage ? UPLOAD_STAGE_LABELS[prog.stage] : "";
+      toast(
+        "Xato" + (stageLabel ? ` — ${stageLabel} bosqichida` : ""),
+        (e.message || "Fayllar yuklanmadi") + ". «Moderatsiyaga yuborish»ni qayta bossangiz, shu shablonga qayta yuklanadi",
+        "danger"
+      );
       return;
+    } finally {
+      if (prog) prog.close();
     }
     await StudioApi.submitTemplate(tid);
     await StudioTemplates.refreshAfterUpload();
@@ -500,6 +735,7 @@ async function submitUpload(){
     }
     UP_STEP = 1;
     UP_EDIT_ID = null;
+    UP_UPLOADED_SIG = '';
     UP_DRAFT.name = '';
     UP_DRAFT.desc = '';
     UP_DRAFT.files = {};
@@ -564,7 +800,7 @@ window.afterRender.messages = async function () {
     CMSG_SEL = 0;
     await renderCMsg();
   } catch (e) {
-    root.innerHTML = `<div class="card card-pad empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+    root.innerHTML = `<div class="card card-pad empty"><h3>Xatolik</h3><p>${esc(e.message)}</p></div>`;
   }
 };
 
@@ -604,20 +840,20 @@ async function renderCMsg() {
         ${C_THREADS.map(
           (t, i) => `<div class="mod-item ${i === CMSG_SEL ? "sel" : ""}" onclick="selectContributorThread(${i})">
           <div class="kpi-ico" style="width:38px;height:38px;flex:0 0 auto;background:var(--${t.kind}-dim);color:var(--${t.kind})">${ic(t.isBroadcast ? "megaphone" : "message")}</div>
-          <div class="col grow" style="gap:2px;min-width:0"><div class="row between"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.sub}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${t.t}</span></div><span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${t.last}</span></div>
+          <div class="col grow" style="gap:2px;min-width:0"><div class="row between"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.sub)}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${esc(t.t)}</span></div><span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${esc(t.last)}</span></div>
           ${t.unread ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--violet-bright);flex:0 0 auto"></span>' : ""}
         </div>`
         ).join("")}
       </div>
     </div>
     <div class="col">
-      <div class="card-head"><div class="col" style="gap:1px"><span class="cell-strong">${th.sub}</span>${th.tid ? `<span class="small">Shablon: <a style="color:var(--violet-bright);cursor:pointer" onclick="openTplDrawer('${th.tid}')">${th.tid}</a></span>` : `<span class="small">${th.isBroadcast ? "Broadcast" : "Suhbat"}</span>`}</div>${th.tid ? `<button class="btn btn-ghost btn-sm" onclick="openTplDrawer('${th.tid}')">${ic("eye")} Shablon</button>` : ""}</div>
+      <div class="card-head"><div class="col" style="gap:1px"><span class="cell-strong">${esc(th.sub)}</span>${th.tid ? `<span class="small">Shablon: <a style="color:var(--violet-bright);cursor:pointer" onclick="openTplDrawer('${th.tid}')">${esc(th.tid)}</a></span>` : `<span class="small">${th.isBroadcast ? "Broadcast" : "Suhbat"}</span>`}</div>${th.tid ? `<button class="btn btn-ghost btn-sm" onclick="openTplDrawer('${th.tid}')">${ic("eye")} Shablon</button>` : ""}</div>
       <div class="col grow" style="overflow-y:auto;padding:18px;background:var(--bg-0)">
         ${C_THREAD_MESSAGES.map((m) => {
           const isMe = m.sender?.isMe;
           const nm = m.sender?.name || "User";
           const ini = nm.slice(0, 2).toUpperCase();
-          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">${isMe ? myInitials : ini}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "Siz" : nm}</div><div class="msg-text">${m.body}</div><div class="msg-time">${formatMsgDate(m.createdAt)}</div></div></div>`;
+          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">${isMe ? esc(myInitials) : esc(ini)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "Siz" : esc(nm)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${esc(formatMsgDate(m.createdAt))}</div></div></div>`;
         }).join("")}
       </div>
       ${
@@ -682,7 +918,7 @@ VIEWS.settings = function(){
     <div class="card"><div class="card-head"><h3>Profil</h3></div>
       <div class="card-pad col gap-16">
         <div class="row center gap-14">${avatar(nm,56)}<div class="col gap-6"><span class="hint">Ism API orqali saqlanadi</span></div></div>
-        <div class="row gap-16"><div class="field grow"><label>Ism</label><input id="cProfileName" class="input" value="${nm}"></div><div class="field grow"><label>Email</label><input class="input" value="${em}" readonly></div></div>
+        <div class="row gap-16"><div class="field grow"><label>Ism</label><input id="cProfileName" class="input" value="${esc(nm)}"></div><div class="field grow"><label>Email</label><input class="input" value="${esc(em)}" readonly></div></div>
         <div class="field"><label>Bio</label><textarea class="textarea" placeholder="O\u2018zingiz haqingizda qisqacha\u2026"></textarea></div>
       </div>
     </div>
@@ -730,7 +966,7 @@ async function renderDrawerThreadSection(t) {
   if (!StudioApi.token()) {
     return t.reason
       ? `<div class="divider"></div><div class="col gap-10"><span class="label">Moderatsiya izohi</span>
-      <div class="info-banner warn">${ic("reply")}<span>${t.reason}</span></div></div>`
+      <div class="info-banner warn">${ic("reply")}<span>${esc(t.reason)}</span></div></div>`
       : "";
   }
   try {
@@ -739,7 +975,7 @@ async function renderDrawerThreadSection(t) {
     if (!th) {
       return t.reason
         ? `<div class="divider"></div><div class="col gap-10"><span class="label">Moderatsiya izohi</span>
-        <div class="info-banner warn">${ic("reply")}<span>${t.reason}</span></div>
+        <div class="info-banner warn">${ic("reply")}<span>${esc(t.reason)}</span></div>
         <span class="hint">To\u2018liq suhbat uchun <a style="color:var(--violet-bright);cursor:pointer" onclick="closeDrawer();route('messages')">Xabarlar</a> bo\u2018limiga o\u2018ting.</span></div>`
         : `<div class="divider"></div><div class="info-banner">${ic("inbox")}<span>Xabarlar bo\u2018limida admin bilan yozishingiz mumkin.</span></div>`;
     }
@@ -752,8 +988,8 @@ async function renderDrawerThreadSection(t) {
           const isAdmin = m.sender?.role === "ADMIN";
           const who = m.sender?.name || m.sender?.email || (isAdmin ? "Admin" : "Siz");
           const when = String(m.createdAt || "").slice(0, 16).replace("T", " ");
-          return `<div class="msg"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${isAdmin ? "linear-gradient(140deg,#7b5cff,#4a2fb0)" : "var(--bg-4)"}">${who.slice(0, 2).toUpperCase()}</div>
-          <div class="msg-body"><div class="msg-name" style="color:var(--${isAdmin ? "violet-bright" : "tx-1"})">${who}</div><div class="msg-text">${m.body}</div><div class="msg-time">${when}</div></div></div>`;
+          return `<div class="msg"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${isAdmin ? "linear-gradient(140deg,#7b5cff,#4a2fb0)" : "var(--bg-4)"}">${esc(who.slice(0, 2).toUpperCase())}</div>
+          <div class="msg-body"><div class="msg-name" style="color:var(--${isAdmin ? "violet-bright" : "tx-1"})">${esc(who)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${esc(when)}</div></div></div>`;
         })
         .join("")}</div>
       ${
@@ -763,7 +999,7 @@ async function renderDrawerThreadSection(t) {
       }</div>`;
   } catch (e) {
     return t.reason
-      ? `<div class="info-banner warn">${ic("reply")}<span>${t.reason}</span></div>`
+      ? `<div class="info-banner warn">${ic("reply")}<span>${esc(t.reason)}</span></div>`
       : "";
   }
 }
@@ -794,15 +1030,15 @@ async function openTplDrawer(id){
     <div class="drawer-body col gap-18">
       ${typeof StudioMedia!=='undefined'?`<div style="border-radius:var(--r-md);overflow:hidden">${StudioMedia.renderPreview(t,{aspect:'16/9'})}</div>`:`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/9;border-radius:var(--r-md)"></div>`}
       <div class="row gap-8 wrap">${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}</div>
-      <div class="row between center"><span class="h3">${t.name}</span>${badge(t.status)}</div>
+      <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
       ${t.status==='approved'?`<div class="info-banner">${ic('ext')}<span>Bu shablon hozir <b>AE \u2192 AssetFlow Browse</b> panelida live. <b>${t.dl.toLocaleString()}</b> marta yuklab olingan.</span></div>`:''}
-      <p class="body">${t.desc}</p>
-      <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Orientatsiya',t.orient],['Fayl',t.size],['Yaratilgan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${v}</div></div>`).join('')}</div>
-      <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${x}</span>`).join('')}</div>
+      <p class="body">${esc(t.desc)}</p>
+      <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Orientatsiya',t.orient],['Fayl',t.size],['Yaratilgan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
+      <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${esc(x)}</span>`).join('')}</div>
 
       <div class="divider"></div>
       <div class="col gap-12"><span class="label">Holat tarixi</span>
-        <div class="timeline">${statusTimeline(t).map(s=>`<div class="tl-item"><div class="tl-dot" style="background:var(--${s.c})">${ic(s.ic)}</div><div class="tl-title">${s.t}</div><div class="tl-meta">${s.meta}</div>${s.note?`<div class="tl-note">${s.note}</div>`:''}</div>`).join('')}</div>
+        <div class="timeline">${statusTimeline(t).map(s=>`<div class="tl-item"><div class="tl-dot" style="background:var(--${s.c})">${ic(s.ic)}</div><div class="tl-title">${s.t}</div><div class="tl-meta">${esc(s.meta)}</div>${s.note?`<div class="tl-note">${esc(s.note)}</div>`:''}</div>`).join('')}</div>
       </div>
 
       ${threadBlock}

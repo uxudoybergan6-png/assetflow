@@ -98,6 +98,17 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 5. **Tez orada** (hali to'liq emas): Stripe tariflar (localStorage), email bildirishnomalar, contributor payout.
 6. `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron.
 
+## Studio manba fayllari (MUHIM)
+
+```
+packages/assetflow-studio/js/      ← MANBA (shu yerga edit qil)
+packages/assetflow-studio/styles/  ← MANBA (shu yerga edit qil)
+```
+
+`studio/js/`, `studio/styles/`, `admin/js/`, `admin/styles/` — **build artefakti**.
+`prepare-vercel.mjs` (`copyDir root/js → root/studio/js`) va `studio:sync` bu papkalarni QAYTA YOZADI.
+Artefaktlarga yozilgan o'zgarishlar yo'qoladi. HAR DOIM root `js/` va `styles/` ga edit qil, so'ng `npm run studio:sync`.
+
 ## Foydali buyruqlar
 
 ```bash

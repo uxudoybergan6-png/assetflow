@@ -5,7 +5,7 @@ const StudioApi = (() => {
   function baseUrl() {
     return (
       (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) ||
-      "http://localhost:4000"
+      "https://assetflow-rqbq.onrender.com"
     ).replace(/\/$/, "");
   }
 
@@ -132,7 +132,7 @@ const StudioApi = (() => {
         // Server JSON xato bersa o'shani, bo'lmasa statusga qarab tushunarli xabar
         const friendly =
           xhr.status === 413
-            ? "Fayl juda katta — maksimal 500 MB"
+            ? "Fayl juda katta — maksimal 3 GB"
             : xhr.status === 401
               ? "Sessiya tugagan — qayta tizimga kiring"
               : xhr.status === 502 || xhr.status === 503 || xhr.status === 504
@@ -189,6 +189,13 @@ const StudioApi = (() => {
   }
 
   async function patchPluginSubscriber(userId, body) {
+    return request(`/api/admin/plugin-subscribers/${userId}`, {
+      method: "PATCH",
+      body,
+    });
+  }
+
+  async function updateSubscriber(userId, body) {
     return request(`/api/admin/plugin-subscribers/${userId}`, {
       method: "PATCH",
       body,
@@ -266,6 +273,7 @@ const StudioApi = (() => {
     adminOverview,
     listPluginSubscribers,
     patchPluginSubscriber,
+    updateSubscriber,
     patchContributorStatus,
     patchProfile,
     pluginAnalytics,

@@ -5,6 +5,22 @@
    ============================================================ */
 
 /* ============================================================
+   XSS guard — escape untrusted server/user strings before innerHTML.
+   Reuses window.StudioMedia.escapeHtml when available (same page),
+   with a self-contained fallback.
+   ============================================================ */
+const esc = (s) =>
+  (window.StudioMedia && StudioMedia.escapeHtml
+    ? StudioMedia.escapeHtml(s)
+    : String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[c])));
+
+/* ============================================================
    ALL TEMPLATES — global table
    ============================================================ */
 let T_FILTER = 'all', T_SEARCH = '';
@@ -24,7 +40,7 @@ function renderTemplates(){
           `<button class="chip ${T_FILTER===k?'active':''}" onclick="T_FILTER='${k}';renderTemplates()">${l}<span class="cnt">${n}</span></button>`).join('')}
       </div>
       <div class="toolbar">
-        <div class="search" style="width:230px;height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Qidirish\u2026" oninput="T_SEARCH=this.value;renderTemplates()" value="${T_SEARCH}"></div>
+        <div class="search" style="width:230px;height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Qidirish\u2026" oninput="T_SEARCH=this.value;renderTemplates()" value="${esc(T_SEARCH)}"></div>
         <button class="btn btn-ghost btn-sm">${ic('filter')} Filtr</button>
         <button class="btn btn-ghost btn-sm" onclick="toast('Eksport','CSV fayli yuklab olinmoqda\u2026','info')">${ic('download')} CSV</button>
       </div>
@@ -47,9 +63,9 @@ function renderTemplates(){
           <tbody>
           ${rows.map(t=>{ const con=cById(t.cid); return `<tr>
             <td><div class="checkbox" onclick="this.classList.toggle('on')">${ic('check')}</div></td>
-            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${typeof StudioMedia!=='undefined'?StudioMedia.escapeHtml(t.name):t.name}</span><span class="sub">${t.cat} \u00b7 ${t.res}</span></div></div></td>
+            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)} \u00b7 ${esc(t.res)}</span></div></div></td>
             <td class="cell-muted mono">${t.id}</td>
-            <td><div class="row center gap-8">${avatar(con.name,24)}<span class="cell-muted" style="white-space:nowrap">${con.email.split('@')[0]}</span></div></td>
+            <td><div class="row center gap-8">${avatar(con.name,24)}<span class="cell-muted" style="white-space:nowrap">${esc(con.email.split('@')[0])}</span></div></td>
             <td>${badge(t.status)}</td>
             <td class="cell-muted mono">${t.created}</td>
             <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
@@ -101,14 +117,14 @@ VIEWS.contributors = function(){
       })()}
     </div>
     <div class="toolbar between">
-      <div class="search" style="width:280px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Contributor yoki email\u2026" value="${C_LIST_SEARCH}" oninput="C_LIST_SEARCH=this.value;route('contributors')"></div>
+      <div class="search" style="width:280px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Contributor yoki email\u2026" value="${esc(C_LIST_SEARCH)}" oninput="C_LIST_SEARCH=this.value;route('contributors')"></div>
       <div class="toolbar"><select class="select"><option>Barcha holat</option><option>Faol</option><option>Bloklangan</option></select><button class="btn btn-ghost btn-sm" onclick="toast('Eksport','CSV yuklab olinmoqda','info')">${ic('download')} CSV</button></div>
     </div>
     <div class="card"><div class="table-wrap"><table class="data" style="min-width:1020px">
       <thead><tr><th>Contributor</th><th>Holat</th><th class="th-num">Jami</th><th class="th-num">Approved</th><th class="th-num">Pending</th><th class="th-num">Rejected</th><th>Oxirgi faoliyat</th><th style="width:120px"></th></tr></thead>
       <tbody>
       ${rows.map(({c,total,ap,pe,re})=>`<tr style="cursor:pointer" onclick="route('contributor-detail','${c.id}')">
-        <td><div class="row center gap-10">${avatar(c.name,32)}<div class="col" style="gap:1px"><span class="cell-strong">${c.name}</span><span class="sub" style="font-size:11px;color:var(--tx-3)">${c.email}</span></div></div></td>
+        <td><div class="row center gap-10">${avatar(c.name,32)}<div class="col" style="gap:1px"><span class="cell-strong">${esc(c.name)}</span><span class="sub" style="font-size:11px;color:var(--tx-3)">${esc(c.email)}</span></div></div></td>
         <td><span class="badge ${c.status==='active'?'badge-active':'badge-blocked'}"><span class="dot"></span>${c.status==='active'?'Faol':'Bloklangan'}</span></td>
         <td class="cell-num cell-strong">${total}</td>
         <td class="cell-num" style="color:var(--green)">${ap}</td>
@@ -143,8 +159,8 @@ VIEWS['contributor-detail'] = function(id){
         <div class="row center gap-14">
           ${avatar(c.name,56)}
           <div class="col" style="gap:4px">
-            <div class="row center gap-10"><span class="h2">${c.name}</span><span class="badge ${blocked?'badge-blocked':'badge-active'}"><span class="dot"></span>${blocked?'Bloklangan':'Faol'}</span></div>
-            <div class="row center gap-12 small"><span>${ic('mail')} ${c.email}</span><span class="dot-sep">\u00b7</span><span>${ic('globe')} ${c.country}</span><span class="dot-sep">\u00b7</span><span>${ic('calendar')} ${c.joined} dan beri</span></div>
+            <div class="row center gap-10"><span class="h2">${esc(c.name)}</span><span class="badge ${blocked?'badge-blocked':'badge-active'}"><span class="dot"></span>${blocked?'Bloklangan':'Faol'}</span></div>
+            <div class="row center gap-12 small"><span>${ic('mail')} ${esc(c.email)}</span><span class="dot-sep">\u00b7</span><span>${ic('globe')} ${esc(c.country)}</span><span class="dot-sep">\u00b7</span><span>${ic('calendar')} ${esc(c.joined)} dan beri</span></div>
           </div>
         </div>
         <div class="row gap-8">
@@ -162,14 +178,14 @@ VIEWS['contributor-detail'] = function(id){
     </div>
 
     <div class="card">
-      <div class="card-head"><div><h3>${c.name.split(' ')[0]}ning shablonlari</h3><span class="small">${ts.length} ta element</span></div>
+      <div class="card-head"><div><h3>${esc(c.name.split(' ')[0])}ning shablonlari</h3><span class="small">${ts.length} ta element</span></div>
         ${pe?`<button class="btn btn-ghost btn-sm" onclick="route('moderation')">${ic('shield')} ${pe} ta pending\u2018ni ko\u2018rish</button>`:''}</div>
       <div class="table-wrap"><table class="data" style="min-width:760px">
         <thead><tr><th>Shablon</th><th>Holat</th><th>Kategoriya</th><th class="th-num">Downloads</th><th>Sana</th><th style="width:70px"></th></tr></thead>
         <tbody>
         ${ts.length?ts.map(t=>`<tr>
-          <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${t.name}</span><span class="sub">${t.id}</span></div></div></td>
-          <td>${badge(t.status)}</td><td class="cell-muted">${t.cat}</td>
+          <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${t.id}</span></div></div></td>
+          <td>${badge(t.status)}</td><td class="cell-muted">${esc(t.cat)}</td>
           <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
           <td class="cell-muted mono">${t.created}</td>
           <td><div class="row-actions"><button class="act" onclick="openTplDrawer('${t.id}')">${ic('eye')}</button></div></td>
@@ -219,7 +235,7 @@ window.afterRender.messaging = async function(){
     MSG_SEL = 0;
     await renderMessaging();
   } catch (e) {
-    root.innerHTML = `<div class="card card-pad empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+    root.innerHTML = `<div class="card card-pad empty"><h3>Xatolik</h3><p>${esc(e.message)}</p></div>`;
   }
 };
 
@@ -260,8 +276,8 @@ async function renderMessaging(){
         ${ADMIN_THREADS.map((t,i)=>{const cc=cById(t.cid); const nm = t.contributorName || cc.name; return `<div class="mod-item ${i===MSG_SEL?'sel':''}" onclick="selectAdminThread(${i})">
           ${avatar(nm,38)}
           <div class="col grow" style="gap:2px;min-width:0">
-            <div class="row between center"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cc.name}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${t.t}</span></div>
-            <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${t.sub}</span>
+            <div class="row between center"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cc.name)}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${esc(t.t)}</span></div>
+            <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${esc(t.sub)}</span>
           </div>
           ${t.unread?'<span style="width:8px;height:8px;border-radius:50%;background:var(--violet-bright);flex:0 0 auto"></span>':''}
         </div>`;}).join('')}
@@ -269,16 +285,16 @@ async function renderMessaging(){
     </div>
     <div class="col">
       <div class="card-head">
-        <div class="row center gap-10">${avatar(c.name,34)}<div class="col" style="gap:1px"><span class="cell-strong">${c.name}</span><span class="small">${th.tid?'Shablon: '+th.tid:'Umumiy suhbat'}</span></div></div>
+        <div class="row center gap-10">${avatar(c.name,34)}<div class="col" style="gap:1px"><span class="cell-strong">${esc(c.name)}</span><span class="small">${th.tid?'Shablon: '+esc(th.tid):'Umumiy suhbat'}</span></div></div>
         <button class="btn btn-ghost btn-sm" onclick="route('contributor-detail','${c.id}')">${ic('ext')} Profil</button>
       </div>
       <div class="col grow" style="overflow-y:auto;padding:18px;background:var(--bg-0)">
-        ${th.tid?`<div class="text-c mb-16"><span class="pill">${ic('link')} ${th.tid} ga bog\u2018langan</span></div>`:''}
+        ${th.tid?`<div class="text-c mb-16"><span class="pill">${ic('link')} ${esc(th.tid)} ga bog\u2018langan</span></div>`:''}
         ${ADMIN_THREAD_MESSAGES.map((m) => {
           const isMe = m.sender?.isMe;
           const nm = m.sender?.name || c.name;
           const col = avColor(nm);
-          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,${isMe ? "#7b5cff,#4a2fb0" : col.join(",")})">${isMe ? "AD" : initials(nm)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "Admin" : nm}</div><div class="msg-text">${m.body}</div><div class="msg-time">${String(m.createdAt || "").slice(0, 16).replace("T", " ")}</div></div></div>`;
+          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,${isMe ? "#7b5cff,#4a2fb0" : col.join(",")})">${isMe ? "AD" : initials(nm)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "Admin" : esc(nm)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${String(m.createdAt || "").slice(0, 16).replace("T", " ")}</div></div></div>`;
         }).join("")}
       </div>
       <div class="row gap-8 center" style="padding:14px;border-top:1px solid var(--line)">
@@ -304,7 +320,7 @@ VIEWS.analytics = function(){
   const rejectBlock =
     REJECT_REASONS.length > 0
       ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard;const mx=Math.max(...REJECT_REASONS.map(x=>x.soft+x.hard),1);return `<div class="col gap-6">
-            <div class="row between center"><span class="body" style="color:var(--tx-1)">${r.nm}</span><span class="small">${tot}</span></div>
+            <div class="row between center"><span class="body" style="color:var(--tx-1)">${esc(r.nm)}</span><span class="small">${tot}</span></div>
             <div class="row gap-2" style="height:8px;border-radius:999px;overflow:hidden;background:var(--bg-4)">
               <div style="width:${(r.soft/mx)*100}%;background:var(--orange)"></div>
               <div style="width:${(r.hard/mx)*100}%;background:var(--red)"></div>
@@ -326,7 +342,7 @@ VIEWS.analytics = function(){
         <div class="card-pad col gap-4">
           ${contribRank.slice(0,6).map((r,i)=>`<div class="leader-row">
             <span class="leader-rank">${i+1}</span>${avatar(r.c.name,30)}
-            <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.c.name}</span>
+            <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</span>
             <div class="leader-bar"><span style="width:${contribRank[0].dl?r.dl/contribRank[0].dl*100:0}%"></span></div></div>
             <div class="col" style="align-items:flex-end;gap:1px"><span class="num" style="font-weight:700">${(r.dl/1000).toFixed(1)}K</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${r.rate}% approval</span></div>
           </div>`).join('')}
@@ -358,13 +374,13 @@ VIEWS.settings = function(){
     <div class="card"><div class="card-head"><h3>Marketplace sozlamalari</h3></div>
       <div class="card-pad col gap-16">
         <div class="field"><label>Platforma nomi</label><input class="input" value="AssetFlow"></div>
-        <div class="row gap-16"><div class="field grow"><label>Maks. fayl hajmi (.aep pack)</label><input class="input" value="500 MB"></div>
+        <div class="row gap-16"><div class="field grow"><label>Maks. fayl hajmi (.aep pack)</label><input class="input" value="3 GB"></div>
         <div class="field grow"><label>Preview maks. davomiylik</label><input class="input" value="60 sekund"></div></div>
         <div class="field"><label>Avto-arxiv (faolsiz kunlar)</label><input class="input" value="180"><span class="hint">Approved bo\u2018lmagan qoralamalar shu muddatdan keyin arxivlanadi.</span></div>
       </div>
     </div>
     <div class="card"><div class="card-head"><h3>Kategoriyalar</h3><button class="btn btn-ghost btn-sm">${ic('plus')} Qo\u2018shish</button></div>
-      <div class="card-pad"><div class="row gap-8 wrap">${CATS.map(c=>`<span class="pill" style="height:28px">${ic('folder')}${c} <span style="color:var(--tx-3);cursor:pointer">${ic('x')}</span></span>`).join('')}</div></div>
+      <div class="card-pad"><div class="row gap-8 wrap">${CATS.map(c=>`<span class="pill" style="height:28px">${ic('folder')}${esc(c)} <span style="color:var(--tx-3);cursor:pointer">${ic('x')}</span></span>`).join('')}</div></div>
     </div>
     <div class="card"><div class="card-head"><h3>Moderatsiya qoidalari</h3></div>
       <div class="card-pad col gap-2">
@@ -392,7 +408,7 @@ window.afterRender.audit = async function () {
     await StudioTemplates.loadAuditLogs();
     renderAuditTable();
   } catch (e) {
-    root.innerHTML = `<div class="empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+    root.innerHTML = `<div class="empty"><h3>Xatolik</h3><p>${esc(e.message)}</p></div>`;
   }
 };
 
@@ -431,10 +447,10 @@ function renderAuditTable() {
                   label: a.action,
                 };
                 return `<tr>
-        <td class="cell-muted mono" style="white-space:nowrap">${a.t}</td>
-        <td><div class="row center gap-8">${avatar(a.actor.replace(" (siz)", ""), 24)}<span class="cell-strong">${a.actor}</span></div></td>
-        <td><span class="badge" style="background:var(--${m.cls}-dim);color:var(--${m.cls})">${ic(m.ic)} ${m.label}</span></td>
-        <td class="cell-muted">${a.target}</td>
+        <td class="cell-muted mono" style="white-space:nowrap">${esc(a.t)}</td>
+        <td><div class="row center gap-8">${avatar(a.actor.replace(" (siz)", ""), 24)}<span class="cell-strong">${esc(a.actor)}</span></div></td>
+        <td><span class="badge" style="background:var(--${m.cls}-dim);color:var(--${m.cls})">${ic(m.ic)} ${esc(m.label)}</span></td>
+        <td class="cell-muted">${esc(a.target)}</td>
       </tr>`;
               })
               .join("")
@@ -454,13 +470,13 @@ function openTplDrawer(id){
     <div class="drawer-body col gap-16">
       ${typeof StudioMedia!=='undefined'?`<div style="border-radius:var(--r-md);overflow:hidden">${StudioMedia.renderPreview(t,{aspect:'16/9',radius:'var(--r-md)'})}</div>`:`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/9;border-radius:var(--r-md)"></div>`}
       <div class="row gap-8 wrap">${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}</div>
-      <div class="row between center"><span class="h3">${t.name}</span>${badge(t.status)}</div>
-      <p class="body">${t.desc}</p>
-      <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['Fayl',t.size],['Yuklangan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${v}</div></div>`).join('')}</div>
-      <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${x}</span>`).join('')}</div>
+      <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
+      <p class="body">${esc(t.desc)}</p>
+      <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['Fayl',t.size],['Yuklangan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
+      <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${esc(x)}</span>`).join('')}</div>
       <div class="divider"></div>
-      <div class="row center gap-10">${avatar(con.name,34)}<div class="col grow" style="gap:1px"><span class="cell-strong">${con.name}</span><span class="small">${con.email}</span></div><button class="btn btn-ghost btn-sm" onclick="closeDrawer();route('contributor-detail','${con.id}')">Profil</button></div>
-      ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic('alert')}<div><b style="color:var(--tx-0)">Qaror sababi</b><div class="small mt-4" style="color:var(--tx-1)">${t.reason}</div></div></div>`:''}
+      <div class="row center gap-10">${avatar(con.name,34)}<div class="col grow" style="gap:1px"><span class="cell-strong">${esc(con.name)}</span><span class="small">${esc(con.email)}</span></div><button class="btn btn-ghost btn-sm" onclick="closeDrawer();route('contributor-detail','${con.id}')">Profil</button></div>
+      ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic('alert')}<div><b style="color:var(--tx-0)">Qaror sababi</b><div class="small mt-4" style="color:var(--tx-1)">${esc(t.reason)}</div></div></div>`:''}
     </div>
     <div class="drawer-foot">
       ${t.status==='pending'||t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();modApprove('${t.id}')">${ic('check')} Tasdiqlash</button><button class="btn btn-warn grow" onclick="closeDrawer();modSoftReject('${t.id}')">${ic('reply')} Soft reject</button>`:`<button class="btn btn-ghost grow" onclick="openEditMeta('${t.id}')">${ic('edit')} Tahrirlash</button>`}
@@ -475,7 +491,7 @@ function tName(id){ return TEMPLATES.find(t=>t.id===id).name; }
 function modApprove(id){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--green-dim);color:var(--green)">${ic('checkCircle')}</div>
-      <div><h3>Shablonni tasdiqlash</h3><p>"${tName(id)}" AE katalogiga qo\u2018shiladi.</p></div></div>
+      <div><h3>Shablonni tasdiqlash</h3><p>"${esc(tName(id))}" AE katalogiga qo\u2018shiladi.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner">${ic('ext')}<span>Tasdiqlangach bu shablon obunachilar uchun <b>After Effects \u2192 AssetFlow Browse</b> panelida darhol ko\u2018rinadi.</span></div>
       <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Contributorga tasdiq xabarini yuborish</span></label>
@@ -493,7 +509,7 @@ async function modApproveConfirm(id) {
   try {
     await StudioApi.reviewTemplate(id, "approve");
     await StudioTemplates.refreshAfterReview();
-    toast("Tasdiqlandi", `\u201c${tName(id)}\u201d AE Browse katalogida`, "success");
+    toast("Tasdiqlandi", `\u201c${esc(tName(id))}\u201d AE Browse katalogida`, "success");
     if (typeof AssetFlowLog !== "undefined") {
       AssetFlowLog.info("Shablon tasdiqlandi", { action: "approve", detail: id });
     }
@@ -559,7 +575,7 @@ function modHardReject(id){
 function modDelete(id){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic('trash')}</div>
-      <div><h3>Shablonni o\u2018chirish</h3><p>"${tName(id)}" butunlay o\u2018chiriladi.</p></div></div>
+      <div><h3>Shablonni o\u2018chirish</h3><p>"${esc(tName(id))}" butunlay o\u2018chiriladi.</p></div></div>
     <div class="modal-body"><div class="info-banner danger">${ic('alert')}<span>Bu destructive amal. Fayllar va statistika qaytarilmaydi.</span></div></div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
       <button class="btn btn-danger" onclick="modDeleteConfirm('${id}')">${ic('trash')} O\u2018chirish</button></div>`);
@@ -590,11 +606,11 @@ function openEditMeta(id){
     <div class="modal-head"><div class="modal-ico" style="background:var(--blue-dim);color:var(--blue)">${ic('edit')}</div>
       <div><h3>Metadata tahrirlash</h3><p>Admin override \u2014 ${t.id}</p></div></div>
     <div class="modal-body col gap-12" id="editMetaBody">
-      <div class="field"><label>Nomi</label><input id="emName" class="input" value="${t.name.replace(/"/g,'&quot;')}"></div>
-      <div class="field"><label>Tavsif</label><textarea id="emDesc" class="textarea">${(t.desc||'').replace(/</g,'&lt;')}</textarea></div>
-      <div class="row gap-12"><div class="field grow"><label>Kategoriya</label><select id="emCat" class="select" style="height:38px;width:100%">${CATS.map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${c}</option>`).join('')}</select></div>
-      <div class="field grow"><label>Resolution</label><input id="emRes" class="input" value="${t.res}"></div></div>
-      <div class="field"><label>Teglar</label><input id="emTags" class="input" value="${t.tags.join(', ')}"></div>
+      <div class="field"><label>Nomi</label><input id="emName" class="input" value="${esc(t.name)}"></div>
+      <div class="field"><label>Tavsif</label><textarea id="emDesc" class="textarea">${esc(t.desc||'')}</textarea></div>
+      <div class="row gap-12"><div class="field grow"><label>Kategoriya</label><select id="emCat" class="select" style="height:38px;width:100%">${CATS.map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field grow"><label>Resolution</label><input id="emRes" class="input" value="${esc(t.res)}"></div></div>
+      <div class="field"><label>Teglar</label><input id="emTags" class="input" value="${esc(t.tags.join(', '))}"></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
       <button class="btn btn-primary" onclick="saveEditMeta('${id}')">Saqlash</button></div>`);
@@ -637,7 +653,7 @@ function openBlock(id){
   const c=cById(id);
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic('ban')}</div>
-      <div><h3>Contributorni bloklash</h3><p>${c.name} platformaga kira olmaydi.</p></div></div>
+      <div><h3>Contributorni bloklash</h3><p>${esc(c.name)} platformaga kira olmaydi.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner danger">${ic('alert')}<span>Bloklangan contributor yangi shablon yuklay olmaydi. Mavjud approved shablonlar AE\u2018da qoladi (alohida o\u2018chirmaguningizcha).</span></div>
       <div class="field"><label>Bloklash sababi <span class="req">*</span></label><textarea class="textarea" placeholder="Sabab \u2014 audit logga yoziladi\u2026"></textarea></div>
@@ -651,7 +667,7 @@ async function doBlock(id){
     await StudioApi.patchContributorStatus(id, true);
     c.status='blocked';
     closeModal();
-    toast('Bloklandi',`${c.name} bloklandi`,'danger');
+    toast('Bloklandi',`${esc(c.name)} bloklandi`,'danger');
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor bloklandi',{action:'block',detail:c.email});
     await StudioTemplates.loadAdminContributors();
     route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
@@ -664,7 +680,7 @@ async function unblock(id){
   try {
     await StudioApi.patchContributorStatus(id, false);
     c.status='active';
-    toast('Blokdan chiqarildi',`${c.name} qayta faollashtirildi`,'success');
+    toast('Blokdan chiqarildi',`${esc(c.name)} qayta faollashtirildi`,'success');
     await StudioTemplates.loadAdminContributors();
     route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
   } catch (e) {
@@ -677,9 +693,9 @@ function openMessage(cid, tid){
   const subj = tid ? (tName(tid) + " \u2014 moderatsiya") : "AssetFlow xabar";
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic('message')}</div>
-      <div><h3>Xabar yozish</h3><p>${c.name} ga${tid?' \u00b7 '+tid:''}</p></div></div>
+      <div><h3>Xabar yozish</h3><p>${esc(c.name)} ga${tid?' \u00b7 '+esc(tid):''}</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="field"><label>Mavzu</label><input id="dmSubject" class="input" value="${subj}"></div>
+      <div class="field"><label>Mavzu</label><input id="dmSubject" class="input" value="${esc(subj)}"></div>
       <div class="field"><label>Xabar</label><textarea id="dmBody" class="textarea" placeholder="Xabaringiz\u2026"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>

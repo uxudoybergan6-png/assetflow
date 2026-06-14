@@ -7,6 +7,20 @@ Ikkala hisobot ham bir xil "0-bosqich = blocker" deydi: bularsiz na o'rnatish, n
 
 ---
 
+## ⚠️ HANDOFF.md bilan solishtiruv (2026-06-14 holati)
+
+HANDOFF.md ko'rsatadiki, bu rejaning bir qismi allaqachon bajarilgan:
+
+| Vazifa | HANDOFF holati | Bu rejada qoladi |
+|---|---|---|
+| **A — Stripe bypass** | 🔴 OCHIQ — HANDOFF'ning #1 ustuvori (qator 409) | ✅ To'liq dolzarb |
+| **B — ZXP build/sign** | 🟢 BAJARILGAN — `build-zxp.sh` mavjud (commit `6a7057a`, qator 254/393) | ⚠️ Faqat **AE'da test** qoladi, yangi yozish yo'q |
+| **CORS/URL** | 🟡 QISMAN — klient fayllar `pages.dev`ga ko'chgan (qator 403), lekin `render.yaml` hali eski `vercel.app` | ⚠️ Faqat `render.yaml` + Render dashboard tekshiruvi |
+
+**Xulosa:** bu bosqichda real yangi ish — faqat **Vazifa A**. B va CORS — tekshirish/tasdiqlash.
+
+---
+
 ## Vazifa A — Stripe-bypass'ni yopish (KRITIK, ~10 daqiqa)
 
 ### Muammo (kodda tasdiqlangan)
@@ -34,9 +48,14 @@ Ikkala hisobot ham bir xil "0-bosqich = blocker" deydi: bularsiz na o'rnatish, n
 ### Risk
 Past. Yagona ta'sir — test uchun "bepul PRO" yo'qoladi. Agar demo kerak bo'lsa, lokal `.env`da `NODE_ENV != production` allaqachon ruxsat beradi.
 
+### To'lov provayderi (alohida qaror — bu rejaga bog'liq emas)
+HANDOFF (qator 414) Stripe o'rniga **LemonSqueezy**'ni ko'rib chiqyapti (soddaroq). Muhim: flag'ni `NODE_ENV`-himoyali qilish **provayderga bog'liq emas** — Stripe ham, LemonSqueezy ham bo'ladimi, buni hozir qilsa bo'ladi. "Haqiqiy checkout" ulanishi keyin, alohida vazifa.
+
 ---
 
-## Vazifa B — ZXP build + imzolash quvuri (BLOCKER, ~yarim kun)
+## Vazifa B — ZXP build + imzolash quvuri (✅ ASOSAN BAJARILGAN — faqat test)
+
+> **Yangilanish:** `build-zxp.sh` allaqachon mavjud (HANDOFF qator 254/393, commit `6a7057a`) — ZXPSignCmd auto-detect, self-signed sertifikat, stage + imzolash bor. Quyidagi reja **tarixiy/ma'lumot uchun** qoldirildi; real qoladigan ish — pastdagi "Qolgan ish".
 
 ### Muammo (kodda tasdiqlangan)
 - CEP plagin xom HTML/JS/JSX; `package.json` build "kerak emas" deydi.
@@ -71,16 +90,31 @@ Hisobot Bolt CEP migratsiyasini tavsiya qiladi, lekin u 1-3 haftalik katta ish. 
 ### Risk
 O'rta. Asosiy bog'liqlik — `ZXPSignCmd` mavjudligi (men buni avtomatlashtira olmayman, lekin skript uni tekshiradi). Self-signed sertifikat foydalanuvchida "noma'lum nashriyot" ogohlantirishi beradi — bu normal, keyin haqiqiy sertifikat sotib olinadi.
 
+### ✅ Qolgan ish (faqat shu)
+1. `bash plugins/after-effects-cep/scripts/build-zxp.sh` ishga tushirib `.zxp` hosil bo'lishini ko'rish.
+2. `.zxp`ni AE'da (yoki ZXP-installer bilan) o'rnatib, panel ochilishini tasdiqlash.
+3. (Ixtiyoriy) Admin extension'dan `--disable-web-security` olib tashlanganini tekshirish.
+
 ---
 
-## Yo'l bo'yidagi kuzatuv (0-bosqich emas, lekin qayd)
-- `render.yaml`da `CORS_ORIGIN`/`ADMIN_URL` → `assetflow-studio-one.vercel.app`, lekin `CLAUDE.md` Studio'ni `assetflow-20j.pages.dev` (CF Pages) deydi. **Ikkisi mos kelmaydi** — deploy paytida CORS xatosi berishi mumkin. Blocker'dan keyin tekshirish kerak.
+## Vazifa C — CORS/URL holatini tasdiqlash (tekshirish, ~15 daq)
+
+HANDOFF (qator 403) klient fayllarni `assetflow-20j.pages.dev`ga ko'chirган, lekin `render.yaml`da `CORS_ORIGIN`/`ADMIN_URL` hali `assetflow-studio-one.vercel.app`.
+
+### Qadamlar
+1. **Render dashboard**'da `CORS_ORIGIN`/`ADMIN_URL` haqiqiy qiymatini ko'rish — ehtimol u yerda `pages.dev`ga override qilingan (shunda muammo yo'q).
+2. Agar dashboard ham eski bo'lsa → `render.yaml` + dashboard'ni `assetflow-20j.pages.dev`ga moslash.
+3. CORS handler allaqachon vergulli-ro'yxat va wildcard'ni qo'llaydi (HANDOFF qator 276) — kerak bo'lsa ikkala domenni qo'shsa bo'ladi.
+
+### Risk
+Past. Faqat konfiguratsiya; kod tegmaydi.
 
 ---
 
-## Taklif qilinadigan ketma-ketlik
-1. **Vazifa A** (10 daq, kritik) — darhol.
-2. **Vazifa B** (yarim kun) — keyin.
-3. Har ikkisidan keyin `docs/SESSION-REPORT.md`ni yangilash.
+## Taklif qilinadigan ketma-ketlik (yangilangan)
+1. **Vazifa A** (10 daq, kritik, real yangi ish) — darhol.
+2. **Vazifa C** (15 daq, tekshirish) — CORS holatini tasdiqlash.
+3. **Vazifa B qolgan ish** (test) — `build-zxp.sh`ni ishga tushirib AE'da sinash.
+4. Hammasidan keyin `docs/SESSION-REPORT.md`ni yangilash.
 
 AI Tools (3-bosqich) hali ochiq — poydevor (0+1) mustahkamlangach qaytamiz.

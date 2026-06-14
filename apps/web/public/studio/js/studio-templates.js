@@ -21,7 +21,7 @@ const StudioTemplates = (() => {
     return (
       (typeof window !== "undefined" &&
         (window.ASSETFLOW_STUDIO?.mediaUrl || window.ASSETFLOW_STUDIO?.apiUrl)) ||
-      "http://localhost:4000"
+      "https://assetflow-rqbq.onrender.com"
     ).replace(/\/$/, "");
   }
 
@@ -214,7 +214,7 @@ const StudioTemplates = (() => {
           blocked: data?.subscribers?.byStatus?.blocked ?? 0,
           removed: data?.subscribers?.byStatus?.removed ?? 0,
           online: data?.subscribers?.activeLast24h ?? 0,
-          totalDownloads: total,
+          totalDownloads: data?.usage?.downloadsTotal ?? 0,
           free: data?.subscribers?.byPlan?.free ?? 0,
           pro: data?.subscribers?.byPlan?.pro ?? 0,
         };
@@ -237,7 +237,6 @@ const StudioTemplates = (() => {
         if (typeof syncRejectReasons === "function") syncRejectReasons();
       } else {
         await loadForContributor();
-        await loadPluginAnalytics();
       }
       return true;
     } catch (e) {

@@ -14,7 +14,7 @@ const AssetFlowLog = (() => {
   let source = "unknown";
   let apiBase =
     (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) ||
-    "http://localhost:4000";
+    "https://assetflow-rqbq.onrender.com";
   let syncEnabled = true;
 
   function nowIso() {
@@ -51,10 +51,26 @@ const AssetFlowLog = (() => {
     return entry;
   }
 
+  /** Studio sessiya tokeni — /api/logs endi admin-only, shu sabab Authorization kerak */
+  function authHeader() {
+    try {
+      const raw =
+        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("af_session")) ||
+        (typeof localStorage !== "undefined" && localStorage.getItem("af_session"));
+      const s = raw ? JSON.parse(raw) : null;
+      const tok = s && (s.apiToken || s.token);
+      return tok ? { Authorization: "Bearer " + tok } : {};
+    } catch {
+      return {};
+    }
+  }
+
   async function pushServer(entry) {
+    const auth = authHeader();
+    if (!auth.Authorization) return; // token yo'q — server push'ni o'tkazib yubor
     const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify(entry),
     });
     if (!res.ok) throw new Error("log push failed");
@@ -62,7 +78,9 @@ const AssetFlowLog = (() => {
 
   async function pullServer() {
     try {
-      const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs?limit=300`);
+      const res = await fetch(`${apiBase.replace(/\/$/, "")}/api/logs?limit=300`, {
+        headers: authHeader(),
+      });
       if (!res.ok) return [];
       const data = await res.json();
       return Array.isArray(data.items) ? data.items : [];

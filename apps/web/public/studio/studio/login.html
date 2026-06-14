@@ -55,7 +55,13 @@
             <label>Parol</label>
             <input class="input" type="password" name="password" autocomplete="current-password" placeholder="Kamida 8 belgi" required>
           </div>
-          <a href="reset-password.html" style="display:block;text-align:right;font-size:11px;color:#9ecbff;text-decoration:none;margin-bottom:10px">Parolni unutdingizmi?</a>
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+            <label class="row center gap-8" style="cursor:pointer;font-size:13px;color:var(--tx-1)">
+              <div class="checkbox" id="rememberChk" tabindex="0" role="checkbox" aria-checked="false"></div>
+              Meni eslab qol
+            </label>
+            <a href="reset-password.html" style="font-size:11px;color:#9ecbff;text-decoration:none">Parolni unutdingizmi?</a>
+          </div>
           <p class="auth-error hidden" id="loginError" role="alert"></p>
           <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Kirish</button>
         </form>
@@ -103,26 +109,66 @@
 <script src="/studio/js/auth.js"></script>
 <script>
 (async function () {
-  const apiBanner = document.createElement("p");
-  apiBanner.className = "auth-error";
-  apiBanner.style.marginBottom = "12px";
-  const card = document.querySelector(".auth-card");
-  if (card && typeof StudioApi !== "undefined") {
-    const ok = await StudioApi.healthCheck();
-    if (!ok) {
-      apiBanner.textContent =
-        "API ulanmadi. Alohida terminalda: npm run dev:api";
-      card.prepend(apiBanner);
+  const RM_EMAIL   = "af_remember_email";
+  const RM_SESSION = "af_remember_session";
+
+  const chk = document.getElementById("rememberChk");
+  chk.addEventListener("click", function () {
+    this.classList.toggle("on");
+    this.setAttribute("aria-checked", this.classList.contains("on"));
+  });
+
+  // Saqlangan email ni qayta to'ldirish
+  const savedEmail = localStorage.getItem(RM_EMAIL);
+  if (savedEmail) {
+    document.querySelector('#panelLogin input[name="email"]').value = savedEmail;
+    chk.classList.add("on");
+    chk.setAttribute("aria-checked", "true");
+  }
+
+  // Saqlangan token bilan avtomatik login
+  async function tryAutoLogin() {
+    const saved = JSON.parse(localStorage.getItem(RM_SESSION) || "null");
+    if (!saved?.apiToken) return false;
+    try {
+      const apiBase = (window.ASSETFLOW_STUDIO?.apiUrl || "https://assetflow-rqbq.onrender.com").replace(/\/$/, "");
+      const res = await fetch(`${apiBase}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${saved.apiToken}` }
+      });
+      if (!res.ok) { localStorage.removeItem(RM_SESSION); return false; }
+      AssetFlowAuth.setSession(saved);
+      location.href = saved.role === "admin"
+        ? ASSETFLOW_STUDIO.adminUrl
+        : ASSETFLOW_STUDIO.contributorUrl;
+      return true;
+    } catch {
+      localStorage.removeItem(RM_SESSION);
+      return false;
     }
   }
 
+  const card = document.querySelector(".auth-card");
+
+  // Joriy session tekshirish
   const existing = AssetFlowAuth.getSession();
   if (existing?.apiToken) {
-    location.href =
-      existing.role === "admin"
-        ? ASSETFLOW_STUDIO.adminUrl
-        : ASSETFLOW_STUDIO.contributorUrl;
+    location.href = existing.role === "admin" ? ASSETFLOW_STUDIO.adminUrl : ASSETFLOW_STUDIO.contributorUrl;
     return;
+  }
+
+  // Remember me token tekshirish
+  if (await tryAutoLogin()) return;
+
+  // API sog'liq tekshiruvi
+  if (card && typeof StudioApi !== "undefined") {
+    const ok = await StudioApi.healthCheck();
+    if (!ok) {
+      const apiBanner = document.createElement("p");
+      apiBanner.className = "auth-error";
+      apiBanner.style.marginBottom = "12px";
+      apiBanner.textContent = "API ulanmadi. Alohida terminalda: npm run dev:api";
+      card.prepend(apiBanner);
+    }
   }
 
   document.querySelectorAll(".auth-tab").forEach((tab) => {
@@ -140,9 +186,16 @@
     this.setAttribute("aria-checked", this.classList.contains("on"));
   });
 
-  function afterAuth(r) {
+  function afterAuth(r, remember) {
     if (r.session.role === "user") {
       return "Bu hisob faqat obunachi (USER). Contributor uchun ro'yxatdan o'ting.";
+    }
+    if (remember) {
+      localStorage.setItem(RM_EMAIL, r.session.email);
+      localStorage.setItem(RM_SESSION, JSON.stringify(r.session));
+    } else {
+      localStorage.removeItem(RM_EMAIL);
+      localStorage.removeItem(RM_SESSION);
     }
     if (r.session.role === "admin") {
       AssetFlowLog.init({ source: "admin" });
@@ -154,26 +207,18 @@
     return null;
   }
 
-  async function doLogin(email, password) {
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
     const err = document.getElementById("loginError");
-    const r = await AssetFlowAuth.login(email, password);
-    if (!r.ok) {
-      err.textContent = r.error;
-      err.classList.remove("hidden");
-      return;
-    }
-    const block = afterAuth(r);
+    const fd = new FormData(e.target);
+    const r = await AssetFlowAuth.login(fd.get("email"), fd.get("password"));
+    if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
+    const block = afterAuth(r, chk.classList.contains("on"));
     if (block) {
       err.textContent = block;
       err.classList.remove("hidden");
       AssetFlowAuth.logout(false);
     } else err.classList.add("hidden");
-  }
-
-  document.getElementById("loginForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    doLogin(fd.get("email"), fd.get("password"));
   });
 
   document.getElementById("registerForm").addEventListener("submit", async (e) => {
@@ -195,14 +240,11 @@
       password: fd.get("password"),
       name: fd.get("name"),
     });
-    if (!r.ok) {
-      err.textContent = r.error;
-      err.classList.remove("hidden");
-      return;
-    }
+    if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     err.classList.add("hidden");
     toast("Tayyor", "Contributor hisobi yaratildi", "success");
-    const block = afterAuth(r);
+    // Ro'yxatdan o'tishda "meni eslab qol" checkboxini tekshirmaymiz
+    const block = afterAuth(r, false);
     if (block) {
       err.textContent = block;
       err.classList.remove("hidden");

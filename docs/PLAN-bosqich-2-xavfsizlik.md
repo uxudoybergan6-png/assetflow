@@ -7,6 +7,27 @@ To'rt bog'liq ish: typed bridge (injection xavfini yopadi), refresh token, Sentr
 
 ---
 
+## ⚠️ HANDOFF.md bilan solishtiruv (2026-06-14 holati)
+
+HANDOFF ko'rsatadiki, xavfsizlik poydevori men o'ylaganidan kuchliroq — bir nechta band allaqachon bor:
+
+| Ish | HANDOFF holati | Bu rejada |
+|---|---|---|
+| `evalScript` 30s watchdog + async unzip | 🟢 BAJARILGAN (qator 405) | `evalJSX` typed wrapper hali YO'Q — ✅ dolzarb |
+| Login rate-limit | 🟢 BAJARILGAN (qator 293) | Saqlanadi; AI route'ga kengaytirish (3-bosqich) |
+| JWT `validateEnv` (prod default secret → exit) | 🟢 BAJARILGAN (qator 294) | Saqlanadi |
+| `trust proxy` + global error handler | 🟢 BAJARILGAN (qator 295-296) | Saqlanadi |
+| 401/403 session interceptor (`handleAuthFailure`) | 🟢 BAJARILGAN (qator 331) | Refresh'ning yarmi tayyor — qolgani: jim yangilash |
+| **`evalJSX` typed wrapper** | 🔴 OCHIQ | ✅ Ish 1 — dolzarb |
+| **Sentry (server + panel)** | 🔴 OCHIQ (qator 412) | ✅ Ish 3 — dolzarb |
+| **Refresh token (jim yangilash)** | 🟡 QISMAN — 401 ushlanadi, lekin refresh yo'q | ✅ Ish 2 — dolzarb (kichikroq) |
+| **`/plugin/version` + auto-update** | 🔴 OCHIQ | ✅ Ish 4 — dolzarb |
+| **CORS/URL** | 🟡 0-bosqich Vazifa C'ga ko'chdi | ⛔ Bu rejadan olib tashlandi |
+
+**Xulosa:** Ish 1 (evalJSX), 3 (Sentry), 4 (version) — to'liq dolzarb. Ish 2 (refresh) — 401 interceptor borligi sababli kichikroq. CORS endi 0-bosqichda.
+
+---
+
 ## Kod tahlilidan tasdiqlangan holat
 
 | Da'vo | Kodda haqiqat |
@@ -88,20 +109,12 @@ Past.
 
 ---
 
-## Ish 5 — CORS/URL nomuvofiqligini tuzatish (deploy-kritik, kichik)
+## Ish 5 — CORS/URL nomuvofiqligi → 0-bosqich Vazifa C'ga ko'chdi
 
-### Muammo
-`render.yaml`dagi `CORS_ORIGIN`/`ADMIN_URL` haqiqiy Studio domeni (`assetflow-20j.pages.dev`, CLAUDE.md) bilan mos kelmaydi → brauzer Admin/Studio'dan API chaqiruvlari CORS xatosi berishi mumkin.
-
-### O'zgartirishlar
-- Avval **haqiqiy joriy Studio domenini tasdiqlash** (CF Pages yoki Vercel — qaysi biri faol?).
-- `render.yaml` `CORS_ORIGIN`/`ADMIN_URL`ni unga moslash; bir nechta origin kerak bo'lsa, API CORS'ni massiv qilib sozlash.
-- `CLAUDE.md` bilan `render.yaml`ni bitta haqiqatga keltirish.
-
-### Risk
-Past, lekin **diagnostika talab qiladi** — qaysi domen faol ekanini aniqlamasdan o'zgartirmaslik.
+> Bu band endi `docs/PLAN-bosqich-0-blocker.md` → **Vazifa C**'da. HANDOFF (qator 403) klient fayllarni `pages.dev`ga ko'chirgan; faqat `render.yaml` + Render dashboard tekshiruvi qoldi. Bu yerda takrorlanmaydi.
 
 ---
 
-## Taklif qilinadigan ketma-ketlik
-Ish 5 (CORS — agar 0-bosqichda qilinmagan bo'lsa) → Ish 3 (Sentry, ko'rinishni darhol beradi) → Ish 1 (evalJSX) → Ish 4 (version) → Ish 2 (refresh).
+## Taklif qilinadigan ketma-ketlik (yangilangan)
+Ish 3 (Sentry — ko'rinishni darhol beradi) → Ish 1 (evalJSX — AI importga ham kerak) → Ish 4 (version) → Ish 2 (refresh — eng kichigi, 401 interceptor allaqachon bor).
+CORS → 0-bosqich Vazifa C'da hal qilinadi.

@@ -109,7 +109,14 @@ export async function setPluginPlan(userId: string, plan: PluginPlanTier) {
 export function serializePluginUser(
   profile: Awaited<ReturnType<typeof ensurePluginProfile>>
 ) {
-  const limits = planLimits(profile.plan);
+  const base = planLimits(profile.plan);
+  const limits = {
+    ...base,
+    downloadLimit: profile.downloadLimitOverride ?? base.downloadLimit,
+    importLimit: profile.importLimitOverride ?? base.importLimit,
+    unlimitedDownloads: profile.downloadLimitOverride == null ? base.unlimitedDownloads : false,
+    unlimitedImports: profile.importLimitOverride == null ? base.unlimitedImports : false,
+  };
   const sub = profile.user.subscription;
   const stripeActive =
     sub?.status === SubscriptionStatus.ACTIVE ||

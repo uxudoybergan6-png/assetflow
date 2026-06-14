@@ -7,6 +7,26 @@ Hisobot §5.3 migratsiya strategiyasi: "hammasini bir vaqtda qayta yozma — 4 k
 
 ---
 
+## ⚠️ HANDOFF.md bilan solishtiruv (2026-06-14 holati)
+
+HANDOFF ko'rsatadiki, plagin UI'ning bir qismi allaqachon sayqallangan — lekin **core dizayn tizimi (tokenlar, indigo, shrift, sidebar) hali ochiq** (HANDOFF qator 411: "1-bosqich: Dizayn tizimi — OCHIQ").
+
+| Element | HANDOFF holati | Bu rejada |
+|---|---|---|
+| O'zbekcha UI labellar | 🟢 BAJARILGAN (qator 317, 392) | Core matnlar tayyor; faqat yangi elementlar (AI tab) qoladi |
+| Toast rang + navbat | 🟢 BAJARILGAN (qator 333) | Saqlanadi |
+| Skeleton + retry + cold-start | 🟢 BAJARILGAN (qator 332) | Saqlanadi |
+| Filtr ko'rsatkichi, search debounce | 🟢 BAJARILGAN (qator 314, 316) | Saqlanadi |
+| **Yagona token tizimi (tokens.css)** | 🔴 OCHIQ | ✅ To'liq dolzarb — Qadam 1 |
+| **Indigo o'chirish (11 joy)** | 🔴 OCHIQ | ✅ Dolzarb |
+| **Shrift ≥11px** | 🔴 OCHIQ | ✅ Dolzarb |
+| **Sidebar tooltip + label** | 🔴 OCHIQ | ✅ Dolzarb |
+| **Karta tugmalari doimo ko'rinadigan** | 🔴 OCHIQ | ✅ Dolzarb |
+
+**Xulosa:** rejaning hammasi dolzarb. Faqat eslatma — toast/skeleton/label allaqachon bor, ularni qayta yozmaymiz, `tokens.css`ga moslab faqat ranglarni meros qildiramiz.
+
+---
+
 ## Kod tahlilidan tasdiqlangan holat
 
 | Da'vo (hisobot) | Kodda haqiqat |

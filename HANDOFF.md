@@ -414,3 +414,15 @@ Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, pus
 6. 🟡 **To'lov tizimi: LemonSqueezy ulash** — Stripe o'rniga soddaroq variant.
 
 *Yangilangan: 2026-06-14 — CF Pages ✅, Meni eslab qol ✅, Studio URL ✅, MEDIUM ✅, LOW ✅. Push bajarildi. Ochiq: Stripe/LemonSqueezy, payout, email, evalJSX, Sentry.*
+
+### Claude Code sessiyasida qilingan (2026-06-14, kech) — Xavfsizlik + Obunachi boshqaruvi + Hisob UI ✅
+
+- ✅ **0-bosqich Vazifa A: Stripe bypass yopildi** — `render.yaml` `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false`; `plugin-profile.ts:79` `NODE_ENV !== "production"` himoyasi (dev bypass ishlab, prod'da hech qachon). Commit `573286b` (faqat bu ikkita fayl).
+- ✅ **Mehmon yuklab olish guard** — `AssetFlow_Plugin.html`: `showLoginRequired()` modal (CSS token `--surface-2/--accent/--border`); `importSceneWithMode` + `downloadAll` boshida `AssetFlowAccount.isLoggedIn()` tekshiruvi — login qilmagan foydalanuvchi serverga so'rov yubormaydi. CEP o'rnatildi.
+- ✅ **Obunachi boshqaruvi Qism A** — `packages/assetflow-studio/js/admin-subscribers.js`: har qatorda `⋮` amal menyusi (`<details>`/CSS backdrop) — reja toggle, blok/chiqarish, qaytarish. `packages/assetflow-studio/js/studio-api.js`: `updateSubscriber(userId, body)`. CSS: `.act-menu/.act-drop/.act-item/.act-sep`.
+- ✅ **Obunachi boshqaruvi Qism C: per-user limit override** — `PluginProfile.downloadLimitOverride Int?` + `importLimitOverride Int?` (migration `20260614100000_plugin_limit_override`, `migrate:deploy` bajarildi). `plugin-profile.ts`: `checkDownloadAllowed`/`recordPluginDownload`/`recordPluginImport` `effectiveLimit = override ?? planDefault`. `admin.ts` PATCH: Zod schema + Prisma update. Admin UI: `openLimitOverrideSub` modali, "shaxsiy limit" belgisi, "Pro/Free qilish" tugmasi profil sahifasida. Commit `5c0e289`.
+- ✅ **Plagin effektiv limit fix** — `serializePluginUser`: `base = planLimits(plan)`, keyin `limits = { ...base, downloadLimit: override ?? base.downloadLimit, importLimit: override ?? base.importLimit, unlimitedDownloads: override==null ? base.unlimitedDownloads : false }`. `/me` va `/subscription` endi effektiv (override) limitni qaytaradi.
+- ✅ **Hisob panelini soddalashtirish** — `AssetFlow_Plugin.html`: 4 kartochka grid → bitta `acc-usage-block`: "Bu oy: N / Limit" (Cheksiz → Pro), progress bar, ikkilamchi "Jami: N · Import: N". CEP o'rnatildi.
+
+**OCHIQ:** Qism B (hard delete backend + ikki bosqichli UI tasdiqlash) hali qilinmagan.
+**Deploy:** Push qilinganda Render'da `npm run migrate:deploy -w @creative-tools/database` + `npm run generate -w @creative-tools/database` kerak (yangi ustunlar uchun).

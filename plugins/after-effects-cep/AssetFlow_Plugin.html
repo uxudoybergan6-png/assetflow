@@ -877,11 +877,14 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
 .badge-plan{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;flex-shrink:0}
 .badge-plan.pro{background:rgba(130,195,65,.2);color:#bbf7d0;border:1px solid rgba(130,195,65,.3)}
 .badge-plan.free{background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border)}
-/* Stats */
-.account-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.account-stat{padding:10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)}
-.account-stat b{display:block;font-size:16px;font-weight:800;margin-bottom:2px}
-.account-stat small{font-size:10px;color:var(--muted)}
+/* Usage block */
+.acc-usage-block{margin-top:10px;padding:10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)}
+.acc-usage-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.acc-usage-label{font-size:11px;color:var(--muted)}
+.acc-usage-val{font-size:13px;font-weight:800}
+.acc-usage-bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:6px}
+.acc-usage-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .3s}
+.acc-usage-secondary{font-size:10px;color:var(--muted)}
 /* Login form */
 .account-input{
   width:100%;box-sizing:border-box;height:38px;border-radius:8px;
@@ -942,6 +945,29 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
 .uplan{font-size:9px;color:var(--muted)}
 .set-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s}
 .set-btn:hover{border-color:var(--border-accent);color:var(--text)}
+
+/* ── Login kerak modal ── */
+.lr-overlay{
+  position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+}
+.lr-overlay.open{display:flex}
+.lr-box{
+  width:280px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:16px;padding:24px 20px 20px;box-shadow:var(--shadow);text-align:center;
+}
+.lr-icon{font-size:32px;margin-bottom:12px;display:block}
+.lr-title{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--text)}
+.lr-text{margin:0 0 20px;font-size:12px;color:var(--muted);line-height:1.5}
+.lr-actions{display:flex;gap:8px}
+.lr-btn{
+  flex:1;padding:9px 0;border-radius:var(--radius);border:none;
+  font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;
+}
+.lr-btn.primary{background:var(--accent);color:#000}
+.lr-btn.primary:hover{opacity:.85}
+.lr-btn.secondary{background:var(--surface-3);color:var(--muted);border:1px solid var(--border)}
+.lr-btn.secondary:hover{color:var(--text)}
 
 /* PUBLISH SHEET (contributor) */
 .publish-sheet{
@@ -1498,6 +1524,18 @@ html.cep-mode .panel-body{border-radius:0!important}
   <button type="button" class="af-progress-cancel" id="afProgressCancel" onclick="onAfCancel()">Bekor qilish</button>
 </div>
 
+<div class="lr-overlay" id="lrOverlay" onclick="if(event.target===this)closeLoginRequired()">
+  <div class="lr-box" onclick="event.stopPropagation()">
+    <span class="lr-icon">🔒</span>
+    <h3 class="lr-title">Tizimga kiring</h3>
+    <p class="lr-text">Bu shablonni yuklab olish uchun hisobingizga kiring</p>
+    <div class="lr-actions">
+      <button type="button" class="lr-btn secondary" onclick="closeLoginRequired()">Bekor qilish</button>
+      <button type="button" class="lr-btn primary" onclick="closeLoginRequired();openAccountSheet()">Kirish</button>
+    </div>
+  </div>
+</div>
+
 <div class="account-sheet" id="accountSheet" onclick="if(event.target===this)closeAccountSheet()">
   <div class="account-panel" onclick="event.stopPropagation()">
 
@@ -1530,11 +1568,13 @@ html.cep-mode .panel-body{border-radius:0!important}
         </div>
         <span class="badge-plan free" id="accPlanBadge">Free</span>
       </div>
-      <div class="account-stats">
-        <div class="account-stat"><b id="accDlTotal">0</b><small>Jami yuklab olish</small></div>
-        <div class="account-stat"><b id="accDlMonth">0</b><small>Bu oy</small></div>
-        <div class="account-stat"><b id="accImports">0</b><small>AE import</small></div>
-        <div class="account-stat"><b id="accLimit">—</b><small>Limit</small></div>
+      <div class="acc-usage-block">
+        <div class="acc-usage-row">
+          <span class="acc-usage-label">Bu oy</span>
+          <span class="acc-usage-val"><span id="accDlMonth">0</span> / <span id="accDlLimitDisp">—</span></span>
+        </div>
+        <div class="acc-usage-bar"><div class="acc-usage-fill" id="accUsageFill" style="width:0%"></div></div>
+        <div class="acc-usage-secondary">Jami: <span id="accDlTotal">0</span> · Import: <span id="accImports">0</span></div>
       </div>
       <div class="acc-btn-row">
         <button type="button" class="acc-btn" onclick="refreshAccountAndUi()">↻ Yangilash</button>
@@ -2655,6 +2695,9 @@ async function importSelectedScene(){
 async function importSceneWithMode(pack,scene,packName,mode){
   if(!pack||!scene)return;
   if(__afOpBusy){ showToast('Avvalgi amal tugashini kuting…','warning'); return; }
+  if(typeof AssetFlowAccount!=='undefined'&&!AssetFlowAccount.isLoggedIn()){
+    showLoginRequired(); return;
+  }
   __afOpBusy=true;
   try{
     return await __importSceneWithModeImpl(pack,scene,packName,mode);
@@ -2845,6 +2888,9 @@ function initSceneDrag(){
 async function downloadAll(n){
   if(!packs[n])return;
   if(__afOpBusy){ showToast('Avvalgi amal tugashini kuting…','warning'); return; }
+  if(typeof AssetFlowAccount!=='undefined'&&!AssetFlowAccount.isLoggedIn()){
+    showLoginRequired(); return;
+  }
   __afOpBusy=true;
   try{
     return await __downloadAllImpl(n);
@@ -3571,6 +3617,13 @@ function setupCepMetaListener(){
   window.__afCepMetaListener=true;
 }
 
+function showLoginRequired(){
+  document.getElementById('lrOverlay')?.classList.add('open');
+}
+function closeLoginRequired(){
+  document.getElementById('lrOverlay')?.classList.remove('open');
+}
+
 function openAccountSheet(){
   document.getElementById('accountSheet')?.classList.add('open');
   refreshAccountUi();
@@ -3613,11 +3666,12 @@ function refreshAccountUi(){
   const badge=document.getElementById('accPlanBadge');
   badge.textContent=u.planLabel||'Free';
   badge.className='badge-plan '+(u.plan==='pro'?'pro':'free');
+  const _dlM=u.downloadsMonth??0,_dlLim=u.limits?.downloadLimit,_unlim=u.limits?.unlimitedDownloads;
+  document.getElementById('accDlMonth').textContent=String(_dlM);
   document.getElementById('accDlTotal').textContent=String(u.downloadsTotal??0);
-  document.getElementById('accDlMonth').textContent=String(u.downloadsMonth??0);
   document.getElementById('accImports').textContent=String(u.importsTotal??0);
-  const lim=u.limits?.unlimitedDownloads?'Cheksiz':`${u.downloadsMonth??0}/${u.limits?.downloadLimit??'—'}`;
-  document.getElementById('accLimit').textContent=lim;
+  document.getElementById('accDlLimitDisp').textContent=_unlim?'Cheksiz':String(_dlLim??'—');
+  document.getElementById('accUsageFill').style.width=(!_unlim&&_dlLim)?Math.min(100,Math.round(_dlM/_dlLim*100))+'%':'0%';
   document.getElementById('planOptFree').classList.toggle('active',u.plan!=='pro');
   document.getElementById('planOptPro').classList.toggle('active',u.plan==='pro');
   const hint=document.getElementById('accPlanHint');

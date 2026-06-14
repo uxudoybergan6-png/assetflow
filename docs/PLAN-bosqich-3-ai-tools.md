@@ -7,6 +7,27 @@ AssetFlow poydevori (PluginToken auth, FREE/PRO subscription, R2, SSE) ustiga AI
 
 ---
 
+## ⚠️ HANDOFF.md bilan solishtiruv + strategiya qarori (2026-06-14)
+
+**Strategiya: B — Differensiatsiya** (qaror muhrlangan, `docs/ANALIZ-higgsfield-ai-tools.md`). Higgsfield bilan xom generatsiyada bellashilmaydi; uning naqshlari (job/SSE, cost-estimate, timeline live-link) AssetFlow'ning katalog ustunligi bilan birlashtiriladi.
+
+HANDOFF ko'rsatadiki, **AI bo'yicha hech narsa qilinmagan** (qator 413: to'liq OCHIQ) — lekin **poydevor men o'ylaganidan tayyorroq**:
+
+| Poydevor komponenti | HANDOFF holati | AI uchun ahamiyati |
+|---|---|---|
+| R2 stream-upload (OOM-fix, 3GB) | 🟢 BAJARILGAN (qator 279, 349) | AI natijalarini R2'ga yozish tayyor |
+| SSE progress (in-memory) | 🟢 BAJARILGAN (qator 351) | Job-status real-time uchun tayyor (Higgsfield polling'dan yaxshiroq) |
+| PluginToken auth + `requireAuth` | 🟢 BAJARILGAN | AI route auth tayyor |
+| Subscription gate (`checkDownloadAllowed`) | 🟢 BAJARILGAN (qator 290, 303) | Kredit-gate shu naqshga quriladi |
+| `evalScript` 30s watchdog | 🟢 BAJARILGAN (qator 405) | AE import barqaror |
+| **`ai.ts` route** | 🔴 OCHIQ | ✅ Dolzarb |
+| **Prisma `AiGeneration` + `aiCredits`** | 🔴 OCHIQ | ✅ Dolzarb |
+| **`evalJSX` typed wrapper** | 🔴 OCHIQ (2-bosqich) | ⚠️ Bog'liqlik — AE import xavfsizligi uchun |
+
+**Xulosa:** poydevor (R2, SSE, auth, gate) tayyor — AI uchun "qayta yozish" yo'q, faqat ustiga qurish. SSE borligi job-status uchun ayniqsa qulay.
+
+---
+
 ## Kod tahlilidan tasdiqlangan holat
 
 | Da'vo | Kodda haqiqat |
