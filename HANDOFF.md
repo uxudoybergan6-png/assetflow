@@ -205,6 +205,8 @@ bash plugins/after-effects-cep/scripts/install-cep.sh
 
 **Render env:** `API_PUBLIC_URL`, `ADMIN_URL`, `CORS_ORIGIN`, R2 (`AWS_*`, `S3_ENDPOINT`, `CDN_BASE_URL`).
 
+> **Deploy eslatmasi (2026-06-14):** Render auto-deploy **YOQILDI**. Ilgari Off edi — shuning uchun CF Pages (frontend) yangilanib, Render (API + migration) orqada qolardi. Endi har push'da ikkalasi avtomatik deploy bo'ladi. Yangi migration push qilinsa, Render `migrate:deploy` ni avtomatik ishga tushiradi.
+
 ### Claude Code sessiyasida qilingan (2026-06-04)
 
 - **`catalog-map.ts`** — `templateAssetFlags()`: disk + R2 tekshiradi (Render ephemeral disk muammosi hal).
