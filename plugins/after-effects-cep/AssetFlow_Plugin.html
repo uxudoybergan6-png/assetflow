@@ -388,17 +388,29 @@ body{
   background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:12px;
 }
 
-html.cep-mode .env-sidebar{width:52px}
+html.cep-mode .env-sidebar{width:64px;overflow:visible}
 html.cep-mode .env-brand-text{display:none}
-html.cep-mode .env-side-link{font-size:0;padding:10px 0;justify-content:center;border-left:none}
+html.cep-mode .env-side-link{font-size:0;padding:10px 0;justify-content:center;border-left:none;position:relative}
 html.cep-mode .env-side-link.active{background:rgba(130,195,65,.18)}
 html.cep-mode .env-side-link .ico svg{width:15px;height:15px}
+/* Tor sidebar — ikona hover'da o'ngда tooltip (layout SURILMAYDI; font-size:0 ni ::after da bekor qilamiz) */
+html.cep-mode .env-side-link::after{
+  content:attr(title);
+  position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  padding:5px 9px;border-radius:6px;
+  background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+  box-shadow:var(--shadow);
+  font-size:var(--fs-xs);font-weight:500;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:60;
+}
+html.cep-mode .env-side-link:hover::after{opacity:1}
 html.cep-mode .container{min-width:320px}
 @media (min-width:520px){
   html.cep-mode .env-sidebar{width:132px}
   html.cep-mode .env-brand-text{display:inline}
   html.cep-mode .env-side-link{font-size:11px;padding:9px 12px;justify-content:flex-start}
   html.cep-mode .env-side-link .ico svg{width:14px;height:14px}
+  html.cep-mode .env-side-link::after{display:none}
 }
 
 .panel-brand{display:none!important}
@@ -1353,10 +1365,10 @@ html.cep-mode .panel-body{border-radius:0!important}
                 <span class="env-leaf" aria-hidden="true"></span>
                 <span class="env-brand-text">AssetFlow</span>
               </div>
-              <button type="button" class="env-side-link active" data-nav="video" onclick="switchNavFromSidebar(this,'video')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></span>Shablonlar</button>
-              <button type="button" class="env-side-link" data-nav="motion" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span>Motion Videos</button>
-              <button type="button" class="env-side-link" data-nav="graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span>Graphics</button>
-              <button type="button" class="env-side-link" data-nav="luts" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span>LUTs</button>
+              <button type="button" class="env-side-link active" data-nav="video" title="Shablonlar" onclick="switchNavFromSidebar(this,'video')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></span>Shablonlar</button>
+              <button type="button" class="env-side-link" data-nav="motion" title="Motion Videos" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span>Motion Videos</button>
+              <button type="button" class="env-side-link" data-nav="graphics" title="Graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span>Graphics</button>
+              <button type="button" class="env-side-link" data-nav="luts" title="LUTs" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span>LUTs</button>
             </aside>
 
             <div class="env-content">

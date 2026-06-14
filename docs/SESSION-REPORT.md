@@ -1,23 +1,24 @@
-# SESSION REPORT — 2026-06-14 — 1-bosqich Qadam 3: karta tugmalari doimo ko'rinadigan ✅
+# SESSION REPORT — 2026-06-14 — 1-bosqich Qadam 2: sidebar tooltip + 64px ✅
 
 ## Nima qilindi (`AssetFlow_Plugin.html`)
 
-Karta amal tugmalari hover'siz topilmasdi — endi doimo ko'rinadi:
+Tor CEP sidebar'da ikonalar labelsiz/tooltipsiz edi — endi:
 
-- **`.overlay`** (750–753): `opacity:0` → `opacity:.88` (doimiy yumshoq fon; Import `.dl-btn` doim ko'rinadi). Gradient biroz yengillashtirildi (`transparent 45%,rgba(0,0,0,.7)`). Hover'da `.card:hover .overlay{opacity:1}` (695) endi reveal emas — emphasis.
-- **`.fav-btn`** ★ (761–766): `opacity:0` → `opacity:.55`; hover `opacity:1` (696). `.fav-btn.faved` (768, `opacity:1!important`) o'zgarmadi.
-- **`.del-btn`** 🗑 (769–774): `opacity:0` → `opacity:.55`; hover `opacity:1` (776).
+- **4 nav tugmaga `title=`** (1356–1359 markup): video→"Shablonlar", motion→"Motion Videos", graphics→"Graphics", luts→"LUTs" (a11y + native fallback tooltip).
+- **Toza CSS tooltip** (391 atrofi): `html.cep-mode .env-side-link{position:relative}` + `::after{content:attr(title)}` — ikona hover'da o'ngда (`left:calc(100% + 8px)`) chiqadi. tokens'dan: `--surface-2` fon, `--text` matn, `--border`, `--shadow`. `font-size:0` (393) ::after'ga tushmasligi uchun `var(--fs-xs)` ochiq berildi. `pointer-events:none` + `position:absolute` → **layout surilmaydi**.
+- **Tor sidebar 52px → 64px** (391) + `overflow:visible` (tooltip o'ngga chiqishi uchun; sidebar'da scroll keltirib chiqaradigan element yo'q — faqat brand + 4 nav).
+- **Keng holatda (≥520px) tooltip o'chiriladi** (`::after{display:none}` media query'da) — labellar inline ko'rinadi.
 
-Ranglar tokens.css'dan meros (`--accent` lime, qora gradient). JS/mantiq tegilmadi.
+## Hover-width-expand QO'SHILMADI
+Panel tor, kontent surilmasligi uchun ataylab faqat tooltip + 64px. `env-sidebar:hover{width}` yo'q (grep tasdiqladi).
 
-## TEGILMAGAN (media/animatsiya — tugma emas)
-`.thumb-media` (711), `.thumb-poster` swap (717), `.thumb-play` (727), `.preview-anim` (738), `.toast` (1160), `.af-progress` (1180), notice `from{opacity:0}` (450/474), pack/scene poster swap (1012), `.scene-play-btn`/`.pack-sum-play` (default ko'rinadi) — hammasi saqlandi.
+## TEGILMAGAN (mantiq)
+`switchNavFromSidebar` (3338), `applyNavSwitch`, `onEnvScopeChange`, `.active`, `data-nav`, `onclick`, media-query expand (398) — hammasi o'zgarmadi.
 
-## Tekshirildi (grep)
-- Maqsadli 3 tugma → `.55`/`.88` ✅
-- Hover emphasis qoidalari (695/696/776) `opacity:1` joyida ✅
-- Jami `opacity:0` soni 14 → 11 (3 ta olib tashlandi, TEGILMAYDI 11 ta saqlandi) ✅
-- install-cep.sh: o'rnatilgan nusxa yangilandi ✅
+## Tekshirildi
+- 4 `title=` ✅; 64px + overflow:visible ✅; `::after` (base/hover/suppress) 3 qoida ✅
+- Hover-width-expand yo'q ✅; 52px qolmadi ✅; navigatsiya mantig'i 12 ta nuqta tegilmadi ✅
+- `<style>` qavs balansi 533/533, teglar balansli ✅; install-cep.sh o'rnatildi ✅
 
 ## Holat
-Commit kerak. Qadam 2 (sidebar+tooltip), Qadam 4 (AI tab skelet) — keyin.
+Commit kerak. Qadam 4 (AI tab skelet, ixtiyoriy) — qoldi. 1-bosqich asosiy: Qadam 1+3+2 ✅.
