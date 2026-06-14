@@ -1259,6 +1259,133 @@ html.cep-mode body{background:var(--bg);overflow:hidden}
 html.cep-mode .rh{display:none!important}
 html.cep-mode .ptitlebar{display:none!important}
 html.cep-mode .panel-body{border-radius:0!important}
+/* ════════ AI TOOLS (Strategiya B — UI tayyor, generatsiya «tez orada») ════════ */
+/* AI rejimda browse chrome yashiriladi, #aiPage ko'rsatiladi (nav mantig'i tegilmaydi) */
+html.ai-mode .env-top,
+html.ai-mode .env-subnav,
+html.ai-mode .env-filter-bar,
+html.ai-mode #assetsPage,
+html.ai-mode #favPage,
+html.ai-mode #dlPage{display:none!important}
+html.ai-mode #aiPage{display:block!important}
+/* Sidebar ✨ AI link — biroz ajralib tursin */
+.env-side-ai .ico{color:var(--accent-cta)}
+.env-side-ai.active{background:rgba(163,230,53,.14)}
+
+#aiPage{padding:14px 16px 24px}
+.ai-subnav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.ai-tab{
+  flex:0 0 auto;padding:7px 13px;border-radius:999px;
+  font-size:var(--fs-xs);font-weight:600;cursor:pointer;font-family:inherit;
+  background:var(--surface-2);color:var(--muted);border:1px solid var(--border);
+  transition:background .15s,color .15s,border-color .15s;
+}
+.ai-tab:hover{color:var(--text)}
+.ai-tab.active{background:var(--accent);color:#111;border-color:transparent}
+
+/* AI Qidiruv hero (ustunlik bloki) */
+.ai-hero{
+  border-radius:14px;padding:16px;margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(130,195,65,.12),rgba(163,230,53,.05));
+  border:1px solid var(--border-accent);
+}
+.ai-hero-badge{
+  display:inline-block;font-size:var(--fs-xs);font-weight:700;
+  padding:3px 9px;border-radius:999px;margin-bottom:9px;
+  background:var(--accent);color:#111;letter-spacing:.02em;
+}
+.ai-hero-title{font-size:var(--fs-lg);font-weight:800;color:var(--text);margin-bottom:5px}
+.ai-hero-sub{font-size:var(--fs-xs);color:var(--muted);line-height:1.5;margin-bottom:12px}
+.ai-search-row{display:flex;gap:8px;flex-wrap:wrap}
+.ai-search-row .ai-input{flex:1;min-width:160px}
+
+/* Konteks hint (template-grounded) */
+.ai-ctx-hint{
+  font-size:var(--fs-xs);color:var(--muted);line-height:1.5;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-left:3px solid var(--accent);border-radius:8px;
+  padding:9px 11px;margin-bottom:14px;
+}
+.ai-ctx-hint b{color:var(--text)}
+
+.ai-label{display:block;font-size:var(--fs-xs);font-weight:600;color:var(--muted);margin:12px 0 6px}
+.ai-input,.ai-textarea{
+  width:100%;box-sizing:border-box;font-family:inherit;font-size:var(--fs-sm);
+  color:var(--text);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;padding:10px 12px;outline:none;
+  transition:border-color .15s;
+}
+.ai-input:focus,.ai-textarea:focus{border-color:var(--border-accent)}
+.ai-textarea{min-height:74px;resize:vertical;line-height:1.5}
+
+/* Model selektor (56px — HF naqshi: ikona + nom + tavsif) */
+.ai-model-select{
+  display:flex;align-items:center;gap:11px;height:56px;padding:0 12px;cursor:pointer;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+  transition:border-color .15s;
+}
+.ai-model-select:hover{border-color:var(--border-accent)}
+.ai-model-ico{font-size:20px;flex-shrink:0}
+.ai-model-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ai-model-info b{font-size:var(--fs-sm);color:var(--text)}
+.ai-model-info small{font-size:var(--fs-xs);color:var(--muted)}
+.ai-model-chev{color:var(--muted);font-size:14px;flex-shrink:0}
+.ai-model-menu{
+  margin-top:6px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
+}
+.ai-model-opt{display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;transition:background .12s}
+.ai-model-opt:hover{background:rgba(255,255,255,.05)}
+.ai-model-opt span{font-size:18px}
+.ai-model-opt b{display:block;font-size:var(--fs-sm);color:var(--text)}
+.ai-model-opt small{font-size:var(--fs-xs);color:var(--muted)}
+
+/* Slayder */
+.ai-slider-val{color:var(--accent);font-weight:700}
+.ai-slider{width:100%;accent-color:var(--accent);cursor:pointer;margin-top:2px}
+
+/* Timeline live-link (disabled, tez orada) */
+.ai-ref-btn{
+  width:100%;margin-top:14px;padding:10px;border-radius:10px;cursor:not-allowed;
+  font-family:inherit;font-size:var(--fs-sm);font-weight:600;
+  background:transparent;color:var(--muted);
+  border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.ai-soon{
+  font-size:var(--fs-xs);font-weight:700;padding:2px 7px;border-radius:999px;
+  background:var(--select-dim);color:var(--select);
+}
+
+/* Cost-before-generate tugma (HF naqshi) */
+.ai-gen-btn{
+  padding:11px 16px;border:none;border-radius:10px;cursor:pointer;
+  font-family:inherit;font-size:var(--fs-sm);font-weight:700;
+  background:var(--accent);color:#111;white-space:nowrap;
+  transition:filter .15s;
+}
+.ai-gen-btn:hover{filter:brightness(1.06)}
+.ai-gen-primary{width:100%;margin-top:16px}
+.ai-cost{font-weight:600;opacity:.85}
+
+/* Generatsiya holatlari: idle → generating (radial lime glow) → done */
+.ai-result{margin-top:14px;min-height:96px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;padding:16px;text-align:center}
+.ai-state-idle{font-size:var(--fs-xs);color:var(--muted-2)}
+.ai-state-gen{display:flex;flex-direction:column;align-items:center;gap:12px}
+.ai-state-gen .ai-gen-txt{font-size:var(--fs-xs);color:var(--accent);font-weight:600}
+.ai-glow{
+  width:44px;height:44px;border-radius:50%;
+  background:radial-gradient(circle,var(--accent-hi),var(--accent) 55%,transparent 72%);
+  animation:aiGlow 1.4s ease-in-out infinite;
+}
+@keyframes aiGlow{
+  0%,100%{transform:scale(.78);opacity:.55;box-shadow:0 0 0 0 var(--accent-glow)}
+  50%{transform:scale(1.12);opacity:1;box-shadow:0 0 22px 6px var(--accent-glow)}
+}
+.ai-state-done{display:flex;flex-direction:column;align-items:center;gap:8px}
+
+/* Tor CEP'da AI sahifa nafas */
+html.cep-mode #aiPage{padding:12px 12px 20px}
 </style>
 </head>
 <body>
@@ -1369,6 +1496,7 @@ html.cep-mode .panel-body{border-radius:0!important}
               <button type="button" class="env-side-link" data-nav="motion" title="Motion Videos" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span>Motion Videos</button>
               <button type="button" class="env-side-link" data-nav="graphics" title="Graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span>Graphics</button>
               <button type="button" class="env-side-link" data-nav="luts" title="LUTs" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span>LUTs</button>
+              <button type="button" class="env-side-link env-side-ai" data-nav="ai" title="AI Tools" onclick="switchNavFromSidebar(this,'ai')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/><path d="M19 14l.9 2.6L22.5 17.5l-2.6.9L19 21l-.9-2.6L15.5 17.5l2.6-.9z" opacity=".7"/></svg></span>AI Tools</button>
             </aside>
 
             <div class="env-content">
@@ -1381,6 +1509,7 @@ html.cep-mode .panel-body{border-radius:0!important}
                     <option value="motion">Motion videolar</option>
                     <option value="graphics">Grafika</option>
                     <option value="luts">LUTlar</option>
+                    <option value="ai">AI Tools</option>
                   </select>
                   <div class="env-search-field">
                     <input type="text" placeholder="Qidirish…" id="searchInput">
@@ -1453,6 +1582,91 @@ html.cep-mode .panel-body{border-radius:0!important}
                   <div class="empty" id="dlEmpty">
                     <div class="empty-ico">↓</div>
                     <div class="empty-txt">Kompozitsiyaga qo‘shilgan shablonlar shu yerda ko‘rinadi.</div>
+                  </div>
+                </div>
+
+                <!-- ✨ AI TOOLS — UI tayyor, generatsiya hali ishlamaydi («tez orada») -->
+                <div id="aiPage" style="display:none">
+                  <div class="ai-subnav">
+                    <button type="button" class="ai-tab active" data-aitab="search" onclick="switchAiTab(this,'search')">🔍 AI Qidiruv</button>
+                    <button type="button" class="ai-tab" data-aitab="voice" onclick="switchAiTab(this,'voice')">🎙️ AI Ovoz</button>
+                    <button type="button" class="ai-tab" data-aitab="image" onclick="switchAiTab(this,'image')">🖼️ AI Rasm</button>
+                  </div>
+
+                  <!-- 1) AI QIDIRUV — BIZNING ustunlik (Higgsfield'da katalog yo'q) -->
+                  <div class="ai-pane" id="aiPaneSearch">
+                    <div class="ai-hero">
+                      <span class="ai-hero-badge">AssetFlow ustunligi</span>
+                      <div class="ai-hero-title">Katalogdan semantik qidiruv</div>
+                      <div class="ai-hero-sub">Tabiiy tilda yozing — AI moderatsiyalangan katalogdan mos shablonlarni topadi. Bu Higgsfield'da yo‘q.</div>
+                      <div class="ai-search-row">
+                        <input type="text" class="ai-input" placeholder="Masalan: energiyali kosmik intro, 4K, qorong‘i fon…">
+                        <button type="button" class="ai-gen-btn" onclick="aiComingSoon('AI Qidiruv')">✨ Qidirish · <span class="ai-cost">~2 kredit</span></button>
+                      </div>
+                    </div>
+                    <div class="empty">
+                      <div class="empty-ico">🔍</div>
+                      <div class="empty-txt">Semantik qidiruv natijalari shu yerda chiqadi. <b>Tez orada</b> — embeddinglar bilan ishlaydi.</div>
+                    </div>
+                  </div>
+
+                  <!-- 2) AI OVOZ — model selektor + prompt + slayder + cost-before-generate + holatlar -->
+                  <div class="ai-pane" id="aiPaneVoice" style="display:none">
+                    <div class="ai-ctx-hint">🎬 <b>Shablon uchun:</b> katalogdan shablon tanlangan bo‘lsa, ovoz unга moslab yaratiladi.</div>
+
+                    <label class="ai-label">Ovoz modeli</label>
+                    <div class="ai-model-select" onclick="aiToggleModelMenu()">
+                      <span class="ai-model-ico">🎙️</span>
+                      <div class="ai-model-info"><b id="aiModelName">Jessi</b><small id="aiModelDesc">Tabiiy ayol ovozi · O‘zbek</small></div>
+                      <span class="ai-model-chev">⌄</span>
+                    </div>
+                    <div class="ai-model-menu" id="aiModelMenu" style="display:none">
+                      <div class="ai-model-opt" onclick="aiPickModel('Jessi','Tabiiy ayol ovozi · O‘zbek','🎙️')"><span>🎙️</span><div><b>Jessi</b><small>Tabiiy ayol ovozi · O‘zbek</small></div></div>
+                      <div class="ai-model-opt" onclick="aiPickModel('Aziz','Erkak diktor · O‘zbek','🗣️')"><span>🗣️</span><div><b>Aziz</b><small>Erkak diktor · O‘zbek</small></div></div>
+                      <div class="ai-model-opt" onclick="aiPickModel('Nigora','Yumshoq ayol · Rus/O‘zbek','💬')"><span>💬</span><div><b>Nigora</b><small>Yumshoq ayol · Rus/O‘zbek</small></div></div>
+                    </div>
+
+                    <label class="ai-label">Matn</label>
+                    <textarea class="ai-textarea" placeholder="O‘qiladigan matnni kiriting…"></textarea>
+
+                    <label class="ai-label">Tezlik <span class="ai-slider-val" id="aiSpeedVal">1.0×</span></label>
+                    <input type="range" class="ai-slider" min="50" max="150" value="100" oninput="document.getElementById('aiSpeedVal').textContent=(this.value/100).toFixed(1)+'×'">
+
+                    <button type="button" class="ai-ref-btn" disabled title="Tez orada — Timeline live-link">🔗 Timeline'dan tanlash <span class="ai-soon">tez orada</span></button>
+
+                    <button type="button" class="ai-gen-btn ai-gen-primary" onclick="aiGenerateDemo('aiVoiceResult')">✨ Generatsiya qilish · <span class="ai-cost">~28 kredit</span></button>
+
+                    <div class="ai-result" id="aiVoiceResult">
+                      <div class="ai-state ai-state-idle">Natija shu yerda ko‘rinadi.</div>
+                      <div class="ai-state ai-state-gen" style="display:none">
+                        <div class="ai-glow"></div>
+                        <div class="ai-gen-txt">Generatsiya qilinmoqda…</div>
+                      </div>
+                      <div class="ai-state ai-state-done" style="display:none">
+                        <div class="empty-ico">🎧</div>
+                        <div class="empty-txt"><b>Tez orada.</b> Ovoz generatsiyasi keyingi bosqichda ulanadi.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 3) AI RASM — soddaroq, xuddi shu naqsh -->
+                  <div class="ai-pane" id="aiPaneImage" style="display:none">
+                    <div class="ai-ctx-hint">🎬 <b>Shablon uchun:</b> placeholder joylariga AI rasm/matn (auto-fill).</div>
+                    <label class="ai-label">Tavsif (prompt)</label>
+                    <textarea class="ai-textarea" placeholder="Masalan: minimalist gradient fon, 16:9…"></textarea>
+                    <button type="button" class="ai-ref-btn" disabled title="Tez orada — Timeline live-link">🔗 Timeline'dan tanlash <span class="ai-soon">tez orada</span></button>
+                    <button type="button" class="ai-gen-btn ai-gen-primary" onclick="aiGenerateDemo('aiImageResult')">✨ Generatsiya qilish · <span class="ai-cost">~40 kredit</span></button>
+                    <div class="ai-result" id="aiImageResult">
+                      <div class="ai-state ai-state-idle">Natija shu yerda ko‘rinadi.</div>
+                      <div class="ai-state ai-state-gen" style="display:none">
+                        <div class="ai-glow"></div>
+                        <div class="ai-gen-txt">Generatsiya qilinmoqda…</div>
+                      </div>
+                      <div class="ai-state ai-state-done" style="display:none">
+                        <div class="empty-ico">🖼️</div>
+                        <div class="empty-txt"><b>Tez orada.</b> Rasm generatsiyasi keyingi bosqichda ulanadi.</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3278,6 +3492,16 @@ function switchPage(el,p){
 }
 
 function applyNavSwitch(tab){
+  // AI Tools — alohida sahifa (browse chrome yashiriladi, #aiPage ko'rsatiladi).
+  // Mavjud video/motion/graphics/luts yo'llari pastda o'zgarishsiz qoladi.
+  const isAi=tab==='ai';
+  document.documentElement.classList.toggle('ai-mode',isAi);
+  if(isAi){
+    currentNav=tab;
+    window.currentNav=tab;
+    closePack();
+    return;
+  }
   currentNav=tab;
   window.currentNav=tab;
   currentSub='all';
@@ -3361,6 +3585,44 @@ function onEnvScopeChange(sel){
     t.classList.toggle('active',t.dataset.nav===tab);
   });
   applyNavSwitch(tab);
+}
+
+/* ───── AI Tools (UI demo — backend chaqiruv YO'Q, «tez orada») ───── */
+function switchAiTab(el,pane){
+  document.querySelectorAll('.ai-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('aiPaneSearch').style.display=pane==='search'?'block':'none';
+  document.getElementById('aiPaneVoice').style.display=pane==='voice'?'block':'none';
+  document.getElementById('aiPaneImage').style.display=pane==='image'?'block':'none';
+}
+function aiToggleModelMenu(){
+  const m=document.getElementById('aiModelMenu');
+  if(m)m.style.display=m.style.display==='none'?'block':'none';
+}
+function aiPickModel(name,desc,ico){
+  document.getElementById('aiModelName').textContent=name;
+  document.getElementById('aiModelDesc').textContent=desc;
+  document.querySelector('.ai-model-ico').textContent=ico;
+  document.getElementById('aiModelMenu').style.display='none';
+}
+// Generatsiya holatlari demo: idle → generating (~2s radial glow) → done («tez orada»)
+function aiGenerateDemo(resultId){
+  const box=document.getElementById(resultId);
+  if(!box)return;
+  const idle=box.querySelector('.ai-state-idle');
+  const gen=box.querySelector('.ai-state-gen');
+  const done=box.querySelector('.ai-state-done');
+  if(idle)idle.style.display='none';
+  if(done)done.style.display='none';
+  if(gen)gen.style.display='flex';
+  setTimeout(function(){
+    if(gen)gen.style.display='none';
+    if(done)done.style.display='flex';
+    if(typeof showToast==='function')showToast('AI generatsiya — tez orada ulanadi','info');
+  },2000);
+}
+function aiComingSoon(label){
+  if(typeof showToast==='function')showToast((label||'AI')+' — tez orada ishlaydi','info');
 }
 
 // Qidiruv — har klaviatura bosilishida emas, 300ms jim turgach render qilinadi
