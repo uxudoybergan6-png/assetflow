@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="standart">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -291,32 +291,74 @@ body{
 
 /* Envato-style app shell */
 .envato-app{display:flex;flex:1;min-height:0;min-width:0;background:var(--bg)}
+/* ============================================================
+   SIDEBAR — "AssetFlow Standart" eksporti (aniq qiymatlar).
+   Yuzalar tokens.css; yig'iq holat pastda (qo'lda .sb-collapsed).
+   ============================================================ */
 .env-sidebar{
-  width:148px;flex-shrink:0;background:#000;border-right:1px solid var(--border);
-  display:flex;flex-direction:column;padding:12px 0;overflow-y:auto;
+  width:240px;flex-shrink:0;background:var(--sidebar);border-right:0.5px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;transition:width .2s var(--ease);
 }
-.env-brand{display:flex;align-items:center;gap:8px;padding:0 14px 14px;border-bottom:1px solid var(--border);margin-bottom:8px}
-.env-leaf{
-  width:18px;height:18px;border-radius:4px 10px 4px 10px;
-  background:linear-gradient(135deg,#82c341 40%,#5a9a24);
-  flex-shrink:0;
+/* brand + yig'ish */
+.sb-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 12px}
+.sb-brand{display:flex;align-items:center;gap:10px;overflow:hidden;min-width:0}
+.sb-mark{width:30px;height:30px;border-radius:9px;background:var(--accent-cta);display:flex;align-items:center;justify-content:center;flex:none}
+.sb-mark-inner{width:13px;height:13px;border-radius:4px;background:var(--bg);transform:rotate(45deg)}
+.sb-brand-text{font-size:17px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;color:var(--text)}
+.sb-collapse{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;display:flex;flex:none;font-family:inherit}
+.sb-collapse svg{width:17px;height:17px}
+.sb-collapse:hover{background:rgba(255,255,255,.06);color:var(--text)}
+/* user card */
+.sb-user{display:flex;align-items:center;gap:10px;margin:0 12px 8px;padding:10px;border-radius:14px;background:var(--surface);border:0.5px solid var(--border);cursor:pointer;font-family:inherit;transition:border-color .15s;text-align:left}
+.sb-user:hover{border-color:var(--muted-2)}
+.sb-av{width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,#3a4a26,var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--on-accent);flex:none}
+.sb-user-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sb-user-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-mail{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-plan{font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 7px;border-radius:999px;flex:none;text-transform:uppercase}
+.sb-plan.pro{background:var(--green-dim);color:var(--accent-cta)}
+.sb-plan.free{background:rgba(255,255,255,.08);color:var(--muted)}
+/* nav */
+.sb-nav{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.sb-nav::-webkit-scrollbar{width:4px}
+.sb-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+/* nav link (env-side-link — handlerlar/badge mantig'i saqlanadi) */
+.env-sidebar .env-side-link{
+  display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;border:none;
+  border-left:2px solid transparent;background:transparent;border-radius:10px;
+  color:var(--muted);font-size:13px;font-weight:600;text-align:left;cursor:pointer;
+  font-family:inherit;transition:background .15s,color .15s;
 }
-.env-brand-text{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.02em}
-.env-side-link{
-  display:flex;align-items:center;gap:8px;width:100%;
-  padding:9px 14px;border:none;background:transparent;
-  color:var(--muted);font-size:11px;font-weight:500;text-align:left;
-  cursor:pointer;font-family:inherit;transition:background .15s,color .15s;
-  border-left:3px solid transparent;
-}
-.env-side-link:hover{color:#fff;background:rgba(255,255,255,.04)}
-.env-side-link.active{color:#fff;background:rgba(130,195,65,.12);border-left-color:var(--env-green)}
-.env-side-link .ico{
-  width:16px;height:16px;display:flex;align-items:center;justify-content:center;
-  opacity:.75;flex-shrink:0;
-}
-.env-side-link .ico svg{width:15px;height:15px;display:block}
-.env-side-link.active .ico{opacity:1}
+.env-sidebar .env-side-link:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.env-sidebar .env-side-link.active{background:var(--green-dim);border-left-color:var(--accent-cta);color:var(--text)}
+.env-sidebar .env-side-link .ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;opacity:.85;flex:none}
+.env-sidebar .env-side-link .ico svg{width:18px;height:18px;display:block}
+.env-sidebar .env-side-link.active .ico{opacity:1}
+.sb-label{white-space:nowrap}
+.sb-new{margin-left:auto;font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent)}
+.env-side-ai.active .sb-new{display:none}
+/* katalog yig'iladigan guruh */
+.sb-group-head{display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;border:none;background:transparent;border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left;transition:background .15s}
+.sb-group-head:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.sb-group-head .ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex:none;opacity:.85}
+.sb-group-head .ico svg{width:18px;height:18px}
+.sb-chev{margin-left:auto;display:flex;transition:transform .18s ease}
+.sb-chev svg{width:15px;height:15px}
+.env-sidebar.kat-collapsed .sb-chev{transform:rotate(-90deg)}
+.sb-group-children{display:flex;flex-direction:column;gap:2px;padding-left:14px;margin:2px 0;overflow:hidden;max-height:320px;opacity:1;transition:max-height .2s ease,opacity .15s ease}
+.env-sidebar.kat-collapsed .sb-group-children{max-height:0;opacity:0;margin:0}
+.env-sidebar .sb-child{font-size:12.5px;font-weight:500;gap:10px}
+.sb-child .sb-dot{width:5px;height:5px;border-radius:999px;background:currentColor;opacity:.5;flex:none}
+.env-sidebar .sb-child .ico{display:none}      /* keng: nuqta ko'rinadi, ikona yashirin */
+.sb-plain{font-weight:500!important}
+.sb-divider{height:1px;background:var(--border);margin:10px 6px}
+/* footer AI kredit chip */
+.sb-foot{padding:12px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:8px}
+.sb-credit{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:var(--green-dim);border:0.5px solid var(--border-accent);flex:1;justify-content:center;cursor:default}
+.sb-bolt{color:var(--accent-cta);display:flex}
+.sb-bolt svg{width:15px;height:15px}
+.sb-credit-text{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
+.sb-credit-text b{color:var(--accent-cta)}
 .env-content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 
 .env-top{padding:10px 14px 0;flex-shrink:0}
@@ -388,30 +430,58 @@ body{
   background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:12px;
 }
 
-html.cep-mode .env-sidebar{width:64px;overflow:visible}
-html.cep-mode .env-brand-text{display:none}
-html.cep-mode .env-side-link{font-size:0;padding:10px 0;justify-content:center;border-left:none;position:relative}
-html.cep-mode .env-side-link.active{background:rgba(130,195,65,.18)}
-html.cep-mode .env-side-link .ico svg{width:15px;height:15px}
-/* Tor sidebar — ikona hover'da o'ngда tooltip (layout SURILMAYDI; font-size:0 ni ::after da bekor qilamiz) */
-html.cep-mode .env-side-link::after{
+/* ── YIG'IQ holat (64px) — FAQAT qo'lda (.sb-collapsed). cep-mode buni bekor qilmaydi.
+   Silliq: width + matn fade/max-width o'tishi (~0.2s ease). Hover'da tooltip. ── */
+
+/* fade-able matnlar — silliq yig'ilish/yoyilish uchun o'tish */
+.sb-brand-text,.sb-user-info,.sb-plan,.sb-label,.sb-new,.sb-chev,.sb-credit-text,.sb-dot{
+  overflow:hidden;white-space:nowrap;max-width:220px;opacity:1;
+  transition:opacity .15s ease,max-width .2s ease,margin .2s ease,padding .2s ease;
+}
+/* boot paytida animatsiya bo'lmasin (flash yo'q) */
+html.sb-no-anim .env-sidebar,
+html.sb-no-anim .env-sidebar *{transition:none!important}
+
+html.sb-collapsed .env-sidebar{width:64px;overflow:visible}
+html.sb-collapsed .sb-brand-text,
+html.sb-collapsed .sb-user-info,
+html.sb-collapsed .sb-plan,
+html.sb-collapsed .sb-label,
+html.sb-collapsed .sb-new,
+html.sb-collapsed .sb-chev,
+html.sb-collapsed .sb-credit-text,
+html.sb-collapsed .sb-dot{opacity:0;max-width:0;margin:0;padding:0;pointer-events:none}
+html.sb-collapsed .server-nav-badge{display:none!important}
+/* yig'iqda brand + ⊟ markazda ustun bo'lib joylashadi (ikona-rels bilan bir o'qda).
+   gap:0 — bo'sh (max-width:0) matnlar orasidagi flex-gap ikonani chapga surmasligi uchun */
+html.sb-collapsed .sb-head{flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 0 12px}
+html.sb-collapsed .sb-brand{justify-content:center;gap:0}
+html.sb-collapsed .sb-collapse{padding:4px}
+html.sb-collapsed .sb-user{justify-content:center;gap:0;margin:0 8px 8px;padding:8px}
+html.sb-collapsed .sb-nav{padding:8px 6px}
+html.sb-collapsed .env-sidebar .env-side-link,
+html.sb-collapsed .sb-group-head{justify-content:center;gap:0;padding:10px 0;border-left:none;border-radius:8px;position:relative}
+/* Katalog — yig'iqda BITTA folder ikonasi (bolalar yashirin) */
+html.sb-collapsed .sb-group-children{max-height:0!important;opacity:0;margin:0;padding:0}
+.sb-group-head.cat-active{color:var(--text)}
+html.sb-collapsed .sb-group-head.cat-active{background:var(--green-dim)}
+html.sb-collapsed .sb-divider{margin:8px 10px}
+html.sb-collapsed .sb-foot{padding:10px 8px}
+html.sb-collapsed .sb-credit{padding:8px;justify-content:center}
+/* tooltip (title) — nav + Katalog folder uchun */
+html.sb-collapsed .env-side-link::after,
+html.sb-collapsed .sb-group-head::after{
   content:attr(title);
   position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
-  padding:5px 9px;border-radius:6px;
-  background:var(--surface-2);color:var(--text);border:1px solid var(--border);
+  padding:5px 9px;border-radius:7px;
+  background:var(--surface-3);color:var(--text);border:0.5px solid var(--border);
   box-shadow:var(--shadow);
   font-size:var(--fs-xs);font-weight:500;white-space:nowrap;
-  opacity:0;pointer-events:none;transition:opacity .15s;z-index:60;
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:600;
 }
-html.cep-mode .env-side-link:hover::after{opacity:1}
+html.sb-collapsed .env-side-link:hover::after,
+html.sb-collapsed .sb-group-head:hover::after{opacity:1}
 html.cep-mode .container{min-width:320px}
-@media (min-width:520px){
-  html.cep-mode .env-sidebar{width:132px}
-  html.cep-mode .env-brand-text{display:inline}
-  html.cep-mode .env-side-link{font-size:11px;padding:9px 12px;justify-content:flex-start}
-  html.cep-mode .env-side-link .ico svg{width:14px;height:14px}
-  html.cep-mode .env-side-link::after{display:none}
-}
 
 .panel-brand{display:none!important}
 .nav-tabs,.swrap,.filter-panel{display:none!important}
@@ -422,7 +492,7 @@ html.cep-mode .container{min-width:320px}
   background:transparent;
   flex-shrink:0;
 }
-.topbar:not(:has(.notice-bar)){display:none}
+.topbar:not(:has(.cat-hero)){display:none}
 .notice-zone{width:100%}
 .notice-bar{
   position:relative;display:flex;align-items:stretch;gap:6px;
@@ -797,6 +867,172 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
   font-size:var(--fs-xs);font-weight:700;padding:2px 5px;border-radius:4px;
   background:rgba(0,0,0,.5);color:rgba(255,255,255,.7);
 }
+
+/* ============================================================
+   KATALOG (Shablonlar) — "AssetFlow Standart" eksportiga moslab
+   (pixel-yaqin). Faqat markup/CSS; fetch/filtr/import mantig'i o'sha.
+   Yuzalar glass-model orqali: var(--glass-bg)/blur/--rim.
+   ============================================================ */
+.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:14px 14px 20px}
+html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{
+  background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+  border:0.5px solid var(--border);border-radius:16px;overflow:hidden;
+  box-shadow:inset 0 0 0 0.5px var(--rim);
+  cursor:pointer;transition:transform .2s var(--ease),border-color .15s;position:relative;
+}
+.card:hover{transform:translateY(-3px);border-color:var(--muted-2)}
+.card.selected{border:2px solid var(--select)}
+.card .thumb{
+  border-radius:0;aspect-ratio:16/9;width:100%;height:auto;overflow:hidden;position:relative;
+  box-shadow:none;display:flex;align-items:center;justify-content:center;
+}
+.card:hover .thumb{box-shadow:none}
+.card .thumb::before{display:none}
+
+/* badge'lar (yuqori chap) */
+.thumb-badges{position:absolute;left:9px;top:9px;z-index:4;display:flex;gap:5px}
+.thumb-badges .new-b,.thumb-badges .dl-b{position:static;font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent)}
+.thumb-badges .ai-b{font-size:9px;font-weight:600;padding:3px 7px;border-radius:999px;background:rgba(10,11,8,.7);backdrop-filter:blur(4px);color:rgba(255,255,255,.8)}
+.thumb-badges .nopack-b{font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(10,11,8,.7);color:var(--amber)}
+
+/* pastki gradient + doimiy ★/⬇ */
+.thumb-grad{
+  position:absolute;inset:0;z-index:3;
+  background:linear-gradient(to top,rgba(10,11,8,.72),transparent 55%);
+  display:flex;align-items:flex-end;justify-content:flex-end;padding:9px;gap:6px;
+}
+.card-fav,.card-get,.card-del{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:13px;font-family:inherit;flex:none;transition:all .15s;padding:0;
+}
+.card-fav{background:rgba(10,11,8,.55);border:0.5px solid rgba(255,255,255,.18);color:var(--text)}
+.card-fav:hover{color:var(--accent-cta)}
+.card-fav.faved{color:var(--accent-cta);border-color:var(--border-accent)}
+.card-get{background:var(--accent-cta);border:none;color:var(--on-accent)}
+.card-get:hover{filter:brightness(1.08)}
+.card-del{background:rgba(10,11,8,.55);border:0.5px solid rgba(248,113,113,.4);color:#fca5a5}
+.card-del:hover{background:rgba(248,113,113,.2)}
+
+/* cinfo: kategoriya-label (tepada) → sarlavha → meta */
+.cinfo{padding:11px 13px}
+.card-cat{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted-2);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aname{font-size:14px;font-weight:600;color:var(--text);margin:3px 0 4px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.card-meta-line{font-size:11px;color:var(--muted);margin-top:0}
+
+/* ── Hero strip (Tahrir tanlovi) — eksport hero qatori ── */
+/* ── Hero strip — ixcham AVTO-KARUSEL (eksport ko'rinishi, kichik o'lcham) ── */
+.cat-hero{padding:14px 14px 8px}
+.cat-hero-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px}
+.cat-hero-h{font-size:var(--fs-lg);font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.cat-hero-sub{font-size:var(--fs-xs);color:var(--muted);margin-top:3px}
+.cat-hero-x{background:transparent;border:none;color:var(--muted-2);font-size:18px;cursor:pointer;flex:none;line-height:1;padding:2px 6px;font-family:inherit}
+.cat-hero-x:hover{color:var(--text)}
+
+/* karusel sahnasi */
+.cat-carousel{position:relative;display:flex;align-items:center}
+.cat-carousel-vp{overflow:hidden;width:100%;cursor:grab;touch-action:pan-y}
+.cat-carousel-vp.dragging{cursor:grabbing}
+.cat-carousel-track{display:flex;gap:12px;will-change:transform}
+
+/* ixcham hero karta (~230×150) */
+.cat-hero-card{
+  flex:0 0 230px;max-width:230px;height:150px;
+  position:relative;border-radius:16px;overflow:hidden;border:0.5px solid var(--border);
+  cursor:pointer;transition:border-color .15s;background:var(--surface);
+}
+.cat-hero-card:hover{border-color:var(--muted-2)}
+.cat-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.cat-hero-new{position:absolute;left:12px;top:12px;z-index:2;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent)}
+.cat-hero-cardgrad{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,11,8,.9),transparent 55%);display:flex;flex-direction:column;justify-content:flex-end;padding:13px;z-index:1}
+.cat-hero-cardcat{font-size:10px;font-weight:600;letter-spacing:.08em;color:rgba(255,255,255,.55);text-transform:uppercase;margin-bottom:5px}
+.cat-hero-cardtitle{font-size:14px;font-weight:700;letter-spacing:-.02em;line-height:1.15;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* chap/o'ng strelka */
+.cat-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:5;
+  width:28px;height:28px;border-radius:999px;border:0.5px solid var(--border);
+  background:rgba(10,11,8,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  color:var(--text);cursor:pointer;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;
+  transition:background .15s,color .15s,opacity .15s;opacity:.9;
+}
+.cat-arrow:hover{background:rgba(10,11,8,.92);color:var(--accent-cta)}
+.cat-arrow-prev{left:-2px}
+.cat-arrow-next{right:-2px}
+.cat-carousel.no-scroll .cat-arrow{display:none}
+
+/* nuqta indikatorlar */
+.cat-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.cat-dots:empty{display:none}
+.cat-dot{width:6px;height:6px;border-radius:999px;border:none;padding:0;cursor:pointer;background:rgba(255,255,255,.22);transition:background .15s,width .15s}
+.cat-dot:hover{background:rgba(255,255,255,.4)}
+.cat-dot.active{background:var(--accent-cta);width:16px}
+
+/* ── Filtr qatori: eksport ctrlBtn uslubi + "AI kontent" toggle ── */
+.env-filter-bar{flex-wrap:wrap}
+.env-pill{
+  padding:8px 12px;border-radius:10px;background:var(--surface-2);
+  border:0.5px solid var(--border);color:var(--text);font-size:var(--fs-md);font-weight:500;
+}
+.env-pill:hover{border-color:var(--muted-2);background:var(--surface-2)}
+.env-pill.open{border-color:var(--border-accent);background:var(--green-dim)}
+.env-pill-chevron{opacity:.55}
+.env-view-btn{width:38px;height:38px;border-radius:10px;background:var(--surface);border:0.5px solid var(--border);color:var(--muted)}
+.env-view-btn:hover{border-color:var(--muted-2)}
+.cat-ai-toggle{
+  display:inline-flex;align-items:center;gap:9px;padding:7px 13px 7px 9px;border-radius:999px;
+  background:var(--surface);border:0.5px solid var(--border);color:var(--muted);
+  font-size:var(--fs-md);font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;
+}
+.cat-ai-toggle.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta)}
+.cat-ai-knobwrap{width:30px;height:17px;border-radius:999px;background:rgba(255,255,255,.15);padding:2px;display:flex;transition:background .18s}
+.cat-ai-toggle.on .cat-ai-knobwrap{background:var(--accent-cta)}
+.cat-ai-knob{width:13px;height:13px;border-radius:999px;background:var(--text);transition:transform .18s}
+.cat-ai-toggle.on .cat-ai-knob{transform:translateX(13px);background:var(--bg)}
+
+/* ── Ixcham katalog boshqaruvi (yig'iladigan qidiruv + filtr paneli) ── */
+.env-filter-bar.cmp-wrap{display:block;padding:0;align-items:stretch;flex-wrap:nowrap}
+.cmp-toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px}
+.cmp-spacer{flex:1;min-width:6px}
+.cmp-iconbtn{width:38px;height:38px;border-radius:10px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;font-family:inherit;transition:border-color .15s,background .15s,color .15s}
+.cmp-iconbtn svg{width:17px;height:17px}
+.cmp-iconbtn:hover{border-color:var(--muted-2)}
+.cmp-iconbtn.active{border-color:var(--border-accent);background:var(--green-dim);color:var(--accent-cta)}
+.cmp-filterbtn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:10px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);font-size:var(--fs-md);font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:border-color .15s,background .15s,color .15s}
+.cmp-filterbtn svg{width:16px;height:16px}
+.cmp-filterbtn:hover{border-color:var(--muted-2)}
+.cmp-filterbtn.active{border-color:var(--border-accent);background:var(--green-dim);color:var(--accent-cta)}
+.cmp-filter-count{min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent);font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.cmp-sort{flex:none}
+.cmp-searchbar{padding:0 14px 10px}
+.cmp-searchbar .env-search-field{width:100%}
+.cmp-filterpanel{padding:6px 14px 12px;display:flex;flex-direction:column;gap:10px;border-top:0.5px solid var(--border)}
+.cmp-fp-row{display:flex;align-items:center;gap:8px}
+.cmp-fp-lbl{font-size:var(--fs-xs);font-weight:600;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em;flex:none;min-width:44px}
+.cmp-fp-row .env-scope{flex:1;min-width:0}
+.cmp-fp-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cmp-filterpanel .dd-menu{left:0;right:auto;min-width:148px;max-width:min(280px,92vw);z-index:500}
+.cmp-filterpanel .dd-menu.dd-menu--tall{max-height:240px;overflow-y:auto}
+
+/* ── Glass temalar: asosiy yuzalarga backdrop-blur (+ rim jilo). Standartda no-op
+   (--glass-blur:0, --rim:transparent), shuning uchun standart ko'rinishi o'zgarmaydi. ── */
+.env-sidebar,.ai-composer,.cat-hero-card,.cmp-filterpanel,.cmp-searchbar,
+.account-panel,.lr-box,.toast,.dd-menu,.ai-menu{
+  backdrop-filter:blur(var(--glass-blur));
+  -webkit-backdrop-filter:blur(var(--glass-blur));
+}
+.env-sidebar,.account-panel,.lr-box{box-shadow:inset 0 1px 0 var(--rim)}
+
+/* ── Tema almashtirgich (Hisob ekranida) ── */
+.theme-pick{display:flex;gap:8px;flex-wrap:wrap}
+.theme-opt{flex:1;min-width:96px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 8px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:var(--fs-sm);font-weight:600;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,color .15s}
+.theme-opt:hover{border-color:var(--muted-2)}
+.theme-opt.active{border-color:var(--border-accent);background:var(--green-dim);color:var(--accent-cta)}
+.theme-swatch{width:18px;height:18px;border-radius:6px;flex:none;border:1px solid rgba(255,255,255,.18)}
+.theme-sw-standart{background:linear-gradient(135deg,#141612 40%,#a3e635)}
+.theme-sw-liquid{background:linear-gradient(135deg,rgba(20,24,18,.85),rgba(163,230,53,.7))}
+.theme-sw-light{background:linear-gradient(135deg,#eef1ea 45%,#5a8f2a)}
 
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:10px}
 .empty-ico{
@@ -1272,120 +1508,109 @@ html.ai-mode #aiPage{display:block!important}
 .env-side-ai .ico{color:var(--accent-cta)}
 .env-side-ai.active{background:rgba(163,230,53,.14)}
 
-#aiPage{padding:14px 16px 24px}
-.ai-subnav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.ai-tab{
-  flex:0 0 auto;padding:7px 13px;border-radius:999px;
-  font-size:var(--fs-xs);font-weight:600;cursor:pointer;font-family:inherit;
-  background:var(--surface-2);color:var(--muted);border:1px solid var(--border);
-  transition:background .15s,color .15s,border-color .15s;
-}
-.ai-tab:hover{color:var(--text)}
-.ai-tab.active{background:var(--accent);color:#111;border-color:transparent}
+/* ============================================================
+   AI Tools — dizayn referensiga moslab QAYTA qurilgan
+   (Artlist uslubidagi yagona kompozer; ranglar FAQAT tokens.css)
+   ============================================================ */
+#aiPage{padding:20px 18px 40px}
+html.cep-mode #aiPage{padding:14px 12px 28px}
+.ai-wrap{max-width:920px;margin:0 auto}
 
-/* AI Qidiruv hero (ustunlik bloki) */
-.ai-hero{
-  border-radius:14px;padding:16px;margin-bottom:14px;
-  background:linear-gradient(135deg,rgba(130,195,65,.12),rgba(163,230,53,.05));
-  border:1px solid var(--border-accent);
-}
-.ai-hero-badge{
-  display:inline-block;font-size:var(--fs-xs);font-weight:700;
-  padding:3px 9px;border-radius:999px;margin-bottom:9px;
-  background:var(--accent);color:#111;letter-spacing:.02em;
-}
-.ai-hero-title{font-size:var(--fs-lg);font-weight:800;color:var(--text);margin-bottom:5px}
-.ai-hero-sub{font-size:var(--fs-xs);color:var(--muted);line-height:1.5;margin-bottom:12px}
-.ai-search-row{display:flex;gap:8px;flex-wrap:wrap}
-.ai-search-row .ai-input{flex:1;min-width:160px}
+@keyframes af-spin{to{transform:rotate(360deg)}}
+@keyframes af-pulse{0%,100%{transform:scale(.86);opacity:.35}50%{transform:scale(1.05);opacity:.7}}
+@keyframes af-eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+@keyframes af-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-/* Konteks hint (template-grounded) */
-.ai-ctx-hint{
-  font-size:var(--fs-xs);color:var(--muted);line-height:1.5;
-  background:var(--surface-2);border:1px solid var(--border);
-  border-left:3px solid var(--accent);border-radius:8px;
-  padding:9px 11px;margin-bottom:14px;
-}
-.ai-ctx-hint b{color:var(--text)}
+/* ── "Nima yaratamiz?" launcher ── */
+.ai-launch{text-align:center;padding:30px 0 22px}
+.ai-launch h1{font-size:var(--fs-title);font-weight:700;letter-spacing:-.02em;margin:0 0 8px;color:var(--text)}
+.ai-launch p{font-size:var(--fs-md);color:var(--muted);margin:0;line-height:1.5;max-width:480px;margin-inline:auto}
 
-.ai-label{display:block;font-size:var(--fs-xs);font-weight:600;color:var(--muted);margin:12px 0 6px}
-.ai-input,.ai-textarea{
-  width:100%;box-sizing:border-box;font-family:inherit;font-size:var(--fs-sm);
-  color:var(--text);background:var(--surface-2);
-  border:1px solid var(--border);border-radius:8px;padding:10px 12px;outline:none;
-  transition:border-color .15s;
+/* ── Yagona kompozer bar ── */
+.ai-composer{
+  border-radius:18px;background:var(--surface);padding:16px;
+  border:1px solid var(--border);
+  transition:box-shadow .2s var(--ease),border-color .2s var(--ease);
 }
-.ai-input:focus,.ai-textarea:focus{border-color:var(--border-accent)}
-.ai-textarea{min-height:74px;resize:vertical;line-height:1.5}
+.ai-composer.focused{
+  border-color:var(--border-accent);
+  box-shadow:0 0 0 1px var(--accent-glow),0 0 40px rgba(130,195,65,.14);
+}
+.ai-comp-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.ai-vtoggle{display:flex;padding:3px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border)}
+.ai-vbtn{width:30px;height:26px;border-radius:7px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:transparent;color:var(--muted-2)}
+.ai-vbtn.active{background:rgba(255,255,255,.12);color:var(--text)}
+.ai-add{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:var(--surface-2);border:1px dashed var(--muted-2);color:var(--muted);font-size:var(--fs-sm);font-weight:500;cursor:pointer;font-family:inherit}
+.ai-add:hover{color:var(--text);border-color:var(--muted)}
+.ai-chip-tpl{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:var(--select-dim);border:1px solid rgba(50,123,250,.35);color:var(--select);font-size:var(--fs-sm);font-weight:500}
 
-/* Model selektor (56px — HF naqshi: ikona + nom + tavsif) */
-.ai-model-select{
-  display:flex;align-items:center;gap:11px;height:56px;padding:0 12px;cursor:pointer;
-  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
-  transition:border-color .15s;
+.ai-comp-prompt{position:relative}
+.ai-comp-prompt textarea{
+  width:100%;box-sizing:border-box;resize:none;background:transparent;border:none;outline:none;
+  color:var(--text);font-size:var(--fs-lg);line-height:1.5;padding:2px 42px 8px 2px;font-family:inherit;
 }
-.ai-model-select:hover{border-color:var(--border-accent)}
-.ai-model-ico{font-size:20px;flex-shrink:0}
-.ai-model-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.ai-model-info b{font-size:var(--fs-sm);color:var(--text)}
-.ai-model-info small{font-size:var(--fs-xs);color:var(--muted)}
-.ai-model-chev{color:var(--muted);font-size:14px;flex-shrink:0}
-.ai-model-menu{
-  margin-top:6px;background:var(--surface-2);border:1px solid var(--border);
-  border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
-}
-.ai-model-opt{display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;transition:background .12s}
-.ai-model-opt:hover{background:rgba(255,255,255,.05)}
-.ai-model-opt span{font-size:18px}
-.ai-model-opt b{display:block;font-size:var(--fs-sm);color:var(--text)}
-.ai-model-opt small{font-size:var(--fs-xs);color:var(--muted)}
+.ai-comp-prompt textarea::placeholder{color:var(--muted-2)}
+.ai-improve{position:absolute;top:0;right:0;width:32px;height:32px;border-radius:9px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ai-improve:hover{background:rgba(130,195,65,.22)}
 
-/* Slayder */
-.ai-slider-val{color:var(--accent);font-weight:700}
-.ai-slider{width:100%;accent-color:var(--accent);cursor:pointer;margin-top:2px}
+.ai-comp-ctrls{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.ai-dd{position:relative}
+.ai-ctrl{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:var(--fs-md);cursor:pointer;white-space:nowrap;font-family:inherit;transition:border-color .15s}
+.ai-ctrl:hover{border-color:var(--muted-2)}
+.ai-ctrl .ai-ctrl-ico{color:var(--accent-cta);display:flex}
+.ai-ctrl .chev{color:var(--muted);display:flex}
+.ai-ctrl b{font-weight:600}
+.ai-ctrl-settings .ai-ctrl-ico{color:var(--muted)}
+.ai-mdot{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-cta));flex:none}
 
-/* Timeline live-link (disabled, tez orada) */
-.ai-ref-btn{
-  width:100%;margin-top:14px;padding:10px;border-radius:10px;cursor:not-allowed;
-  font-family:inherit;font-size:var(--fs-sm);font-weight:600;
-  background:transparent;color:var(--muted);
-  border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.ai-soon{
-  font-size:var(--fs-xs);font-weight:700;padding:2px 7px;border-radius:999px;
-  background:var(--select-dim);color:var(--select);
-}
+.ai-menu{position:absolute;bottom:calc(100% + 8px);left:0;min-width:230px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:var(--shadow);z-index:20;display:flex;flex-direction:column;gap:2px}
+.ai-menu-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:transparent;border:none;cursor:pointer;color:var(--text);width:100%;text-align:left;font-family:inherit;transition:background .12s}
+.ai-menu-row:hover{background:rgba(255,255,255,.06)}
+.ai-menu-row.active{background:var(--green-dim)}
+.ai-menu-row .mr-ico{color:var(--accent-cta);display:flex;flex:none}
+.ai-menu-row .mr-mdot{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent-cta));flex:none}
+.ai-menu-row .mr-main{flex:1;min-width:0}
+.ai-menu-row .mr-label{font-size:var(--fs-md);font-weight:600}
+.ai-menu-row .mr-sub{font-size:var(--fs-xs);color:var(--muted)}
+.ai-menu-row .mr-check{color:var(--accent-cta);display:flex;flex:none}
 
-/* Cost-before-generate tugma (HF naqshi) */
-.ai-gen-btn{
-  padding:11px 16px;border:none;border-radius:10px;cursor:pointer;
-  font-family:inherit;font-size:var(--fs-sm);font-weight:700;
-  background:var(--accent);color:#111;white-space:nowrap;
-  transition:filter .15s;
-}
-.ai-gen-btn:hover{filter:brightness(1.06)}
-.ai-gen-primary{width:100%;margin-top:16px}
-.ai-cost{font-weight:600;opacity:.85}
+.ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap}
+.ai-timeline:hover{border-color:var(--muted-2);color:var(--text)}
+.ai-soon{font-size:var(--fs-xs);font-weight:700;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
+.ai-spacer{flex:1;min-width:8px}
+.ai-gen{display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent);border:none;font-size:var(--fs-md);font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;transition:filter .15s,transform .12s}
+.ai-gen:hover{filter:brightness(1.08)}
+.ai-gen:active{transform:scale(.98)}
+.ai-gen[disabled]{cursor:default;opacity:.9}
+.ai-gen .spin{width:15px;height:15px;border:2px solid rgba(0,0,0,.25);border-top-color:var(--on-accent);border-radius:999px;animation:af-spin .7s linear infinite;display:inline-block}
 
-/* Generatsiya holatlari: idle → generating (radial lime glow) → done */
-.ai-result{margin-top:14px;min-height:96px;border-radius:12px;border:1px solid var(--border);
-  background:var(--surface);display:flex;align-items:center;justify-content:center;padding:16px;text-align:center}
-.ai-state-idle{font-size:var(--fs-xs);color:var(--muted-2)}
-.ai-state-gen{display:flex;flex-direction:column;align-items:center;gap:12px}
-.ai-state-gen .ai-gen-txt{font-size:var(--fs-xs);color:var(--accent);font-weight:600}
-.ai-glow{
-  width:44px;height:44px;border-radius:50%;
-  background:radial-gradient(circle,var(--accent-hi),var(--accent) 55%,transparent 72%);
-  animation:aiGlow 1.4s ease-in-out infinite;
-}
-@keyframes aiGlow{
-  0%,100%{transform:scale(.78);opacity:.55;box-shadow:0 0 0 0 var(--accent-glow)}
-  50%{transform:scale(1.12);opacity:1;box-shadow:0 0 22px 6px var(--accent-glow)}
-}
-.ai-state-done{display:flex;flex-direction:column;align-items:center;gap:8px}
+/* ── Tezkor amal kartalari ── */
+.ai-quick{margin-top:26px}
+.ai-quick-h{font-size:var(--fs-xs);font-weight:600;letter-spacing:.08em;color:var(--muted-2);text-transform:uppercase;margin-bottom:12px}
+.ai-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.ai-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s,transform .15s}
+.ai-card:hover{border-color:var(--muted-2);transform:translateY(-2px)}
+.ai-card-ico{width:40px;height:40px;border-radius:11px;background:var(--green-dim);border:1px solid var(--border-accent);display:flex;align-items:center;justify-content:center;color:var(--accent-cta);flex:none}
+.ai-card-main{min-width:0;display:block}
+.ai-card-label{display:block;font-size:var(--fs-md);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-card-sub{display:block;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* Tor CEP'da AI sahifa nafas */
-html.cep-mode #aiPage{padding:12px 12px 20px}
+/* ── Generatsiya + natija ── */
+.ai-genbox{margin-top:28px;border-radius:18px;border:1px solid var(--border-accent);background:var(--surface);padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:20px;position:relative;overflow:hidden}
+.ai-genbox .glow{position:absolute;width:300px;height:300px;border-radius:999px;background:radial-gradient(circle,var(--accent-glow),transparent 70%);animation:af-pulse 2.2s ease-in-out infinite}
+.ai-eq{position:relative;display:flex;gap:6px;align-items:flex-end;height:40px}
+.ai-eq i{width:6px;height:100%;border-radius:999px;background:var(--accent-cta);transform-origin:bottom;animation:af-eq 1s ease-in-out infinite;display:block}
+.ai-eq i:nth-child(2){animation-delay:.15s}
+.ai-eq i:nth-child(3){animation-delay:.3s}
+.ai-eq i:nth-child(4){animation-delay:.45s}
+.ai-gen-cap{position:relative;text-align:center}
+.ai-gen-cap b{font-size:var(--fs-lg);font-weight:600;color:var(--text)}
+.ai-gen-cap small{display:block;font-size:var(--fs-sm);color:var(--muted);margin-top:4px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.ai-soon-box{margin-top:28px;border-radius:16px;border:1px solid var(--border);background:var(--surface);padding:40px 24px;text-align:center;animation:af-up .3s ease}
+.ai-soon-box .ico{color:var(--accent-cta);display:flex;justify-content:center;margin-bottom:10px}
+.ai-soon-box b{font-size:var(--fs-lg);color:var(--text)}
+.ai-soon-box p{font-size:var(--fs-sm);color:var(--muted);margin:8px auto 0;line-height:1.5;max-width:380px}
 </style>
 </head>
 <body>
@@ -1487,71 +1712,82 @@ html.cep-mode #aiPage{padding:12px 12px 20px}
 
         <div class="panel-body">
           <div class="envato-app">
+            <!-- SIDEBAR — "AssetFlow Standart" eksportiga aynan moslangan; barcha
+                 data-nav / switchNavFromSidebar / switchPage / badge mantig'i saqlandi. -->
             <aside class="env-sidebar" id="envSidebar">
-              <div class="env-brand">
-                <span class="env-leaf" aria-hidden="true"></span>
-                <span class="env-brand-text">AssetFlow</span>
+              <!-- brand + yig'ish -->
+              <div class="sb-head">
+                <div class="sb-brand">
+                  <span class="sb-mark" aria-hidden="true"><span class="sb-mark-inner"></span></span>
+                  <span class="sb-brand-text">AssetFlow</span>
+                </div>
+                <button type="button" class="sb-collapse" onclick="toggleSidebar()" title="Yon panelni yig‘ish / ochish" aria-label="Yon panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><line x1="10" y1="5" x2="10" y2="19"/></svg></button>
               </div>
-              <button type="button" class="env-side-link active" data-nav="video" title="Shablonlar" onclick="switchNavFromSidebar(this,'video')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></span>Shablonlar</button>
-              <button type="button" class="env-side-link" data-nav="motion" title="Motion Videos" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span>Motion Videos</button>
-              <button type="button" class="env-side-link" data-nav="graphics" title="Graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span>Graphics</button>
-              <button type="button" class="env-side-link" data-nav="luts" title="LUTs" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span>LUTs</button>
-              <button type="button" class="env-side-link env-side-ai" data-nav="ai" title="AI Tools" onclick="switchNavFromSidebar(this,'ai')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/><path d="M19 14l.9 2.6L22.5 17.5l-2.6.9L19 21l-.9-2.6L15.5 17.5l2.6-.9z" opacity=".7"/></svg></span>AI Tools</button>
+
+              <!-- USER KARTASI — AssetFlowAccount holatiga ulangan (mehmon → login) -->
+              <button type="button" class="sb-user" id="sbUser" onclick="openAccountSheet()" title="Hisob">
+                <span class="sb-av" id="sbAv">U</span>
+                <span class="sb-user-info">
+                  <span class="sb-user-name" id="sbName">Mehmon</span>
+                  <span class="sb-user-mail" id="sbMail">Kirish uchun bosing</span>
+                </span>
+                <span class="sb-plan free" id="sbPlan">Free</span>
+              </button>
+
+              <nav class="sb-nav">
+                <!-- AI Tools (YANGI) -->
+                <button type="button" class="env-side-link sb-link env-side-ai" data-nav="ai" title="AI Tools" onclick="switchNavFromSidebar(this,'ai')">
+                  <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/><path d="M19 14l.9 2.6L22.5 17.5l-2.6.9L19 21l-.9-2.6L15.5 17.5l2.6-.9z" opacity=".7"/></svg></span>
+                  <span class="sb-label">AI Tools</span>
+                  <span class="sb-new">YANGI</span>
+                </button>
+
+                <!-- KATALOG — yig'iladigan guruh -->
+                <button type="button" class="sb-group-head" id="sbKatHead" onclick="toggleKatalogGroup()" title="Katalog" aria-expanded="true">
+                  <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+                  <span class="sb-label">Katalog</span>
+                  <span class="sb-chev" id="sbKatChev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+                </button>
+                <div class="sb-group-children" id="sbKatChildren">
+                  <button type="button" class="env-side-link sb-link sb-child active" data-nav="video" title="Shablonlar" onclick="switchNavFromSidebar(this,'video')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></span><span class="sb-dot"></span><span class="sb-label">Shablonlar</span></button>
+                  <button type="button" class="env-side-link sb-link sb-child" data-nav="motion" title="Motion Videos" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span><span class="sb-dot"></span><span class="sb-label">Motion Videos</span></button>
+                  <button type="button" class="env-side-link sb-link sb-child" data-nav="graphics" title="Graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span><span class="sb-dot"></span><span class="sb-label">Graphics</span></button>
+                  <button type="button" class="env-side-link sb-link sb-child" data-nav="luts" title="LUTs" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span><span class="sb-dot"></span><span class="sb-label">LUTs</span></button>
+                </div>
+
+                <div class="sb-divider"></div>
+
+                <!-- switchPage handlerlari (Yuklab olingan / Sevimli) -->
+                <button type="button" class="env-side-link sb-link sb-plain" data-page="downloaded" title="Yuklab olingan" onclick="switchPageFromSidebar(this,'downloaded')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="sb-label">Yuklab olingan</span></button>
+                <button type="button" class="env-side-link sb-link sb-plain" data-page="favorites" title="Sevimli" onclick="switchPageFromSidebar(this,'favorites')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span><span class="sb-label">Sevimli</span></button>
+              </nav>
+
+              <!-- AI kredit chip (placeholder — 3-bosqichda real ulanadi) -->
+              <div class="sb-foot">
+                <div class="sb-credit" title="AI kredit — tez orada">
+                  <span class="sb-bolt"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></svg></span>
+                  <span class="sb-credit-text"><b id="sbCredit">50</b> kredit</span>
+                </div>
+              </div>
             </aside>
 
             <div class="env-content">
               <div class="topbar"><div id="featuredWrap" class="notice-zone"></div></div>
 
-              <div class="env-top">
-                <div class="env-search">
-                  <select class="env-scope" id="envScope" onchange="onEnvScopeChange(this)">
-                    <option value="video">Video shablonlar</option>
-                    <option value="motion">Motion videolar</option>
-                    <option value="graphics">Grafika</option>
-                    <option value="luts">LUTlar</option>
-                    <option value="ai">AI Tools</option>
-                  </select>
-                  <div class="env-search-field">
-                    <input type="text" placeholder="Qidirish…" id="searchInput">
-                    <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="env-subnav page-tabs">
-                <div class="ptab active" onclick="switchPage(this,'assets')">Shablonlar <span class="ptab-count" id="assetCount">0</span></div>
-                <div class="ptab" onclick="switchPage(this,'favorites')">Sevimlilar <span class="ptab-count" id="favCount">0</span></div>
-                <div class="ptab" onclick="switchPage(this,'downloaded')">Yuklab olingan <span class="ptab-count" id="dlCount">0</span></div>
-              </div>
-
-              <div class="env-filter-bar">
-                <div class="env-filter-pills">
-                  <div class="dropdown" id="catDrop">
-                    <button type="button" class="env-pill"><span id="catPillLabel">Kategoriya</span> <span class="env-pill-chevron">⌄</span></button>
-                    <div class="dd-menu dd-menu--tall" id="catMenu"></div>
-                  </div>
-                  <div class="dropdown" id="orientDrop">
-                    <button type="button" class="env-pill"><span id="orientPillLabel">Format</span> <span class="env-pill-chevron">⌄</span></button>
-                    <div class="dd-menu" id="orientMenu">
-                      <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
-                      <div class="dd-item" data-filter="horizontal">16:9</div>
-                      <div class="dd-item" data-filter="vertical">9:16</div>
-                      <div class="dd-item" data-filter="square">1:1</div>
-                    </div>
-                  </div>
-                  <div class="dropdown" id="resDrop">
-                    <button type="button" class="env-pill"><span id="resPillLabel">Sifat</span> <span class="env-pill-chevron">⌄</span></button>
-                    <div class="dd-menu" id="resMenu">
-                      <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
-                      <div class="dd-item" data-filter="2k">2K</div>
-                      <div class="dd-item" data-filter="4k">4K</div>
-                      <div class="dd-item" data-filter="5k">5K+</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="env-filter-actions">
-                  <button type="button" class="env-pill af-clear-pill" id="clearFiltersPill" onclick="clearAllFilters()" style="display:none" title="Barcha filtrlarni tozalash">✕ Tozalash <span id="clearFiltersCount" class="af-clear-count"></span></button>
-                  <div class="dropdown" id="sortDrop">
+              <!-- Ixcham boshqaruv: 1 qator (⌕ + Filtrlar + Saralash). Qidiruv/filtr kerak
+                   bo'lganda ochiladi. Tablar sidebar'da — bu yerda yashirin (mantiq saqlanadi).
+                   .env-filter-bar wrapper saqlanadi: initEnvFilterUi/closeAllDropdowns shunga bog'liq. -->
+              <div class="env-filter-bar cmp-wrap">
+                <div class="cmp-toolbar">
+                  <button type="button" class="cmp-iconbtn" id="searchToggleBtn" onclick="toggleSearchBar()" title="Qidirish" aria-label="Qidirish">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </button>
+                  <button type="button" class="cmp-filterbtn" id="filterToggleBtn" onclick="toggleFilterPanel()" title="Filtrlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
+                    <span>Filtrlar</span>
+                    <span class="cmp-filter-count" id="filterCountBadge" style="display:none"></span>
+                  </button>
+                  <div class="dropdown cmp-sort" id="sortDrop">
                     <button type="button" class="env-pill" id="sortBtn"><span id="sortLabel">Saralash</span> <span class="env-pill-chevron">⌄</span></button>
                     <div class="dd-menu" id="sortMenu">
                       <div class="dd-item selected" data-sort="relevant">Mos <span class="dd-check">✓</span></div>
@@ -1559,8 +1795,66 @@ html.cep-mode #aiPage{padding:12px 12px 20px}
                       <div class="dd-item" data-sort="name">Nom A–Z</div>
                     </div>
                   </div>
+                  <div class="cmp-spacer"></div>
                   <button type="button" class="env-view-btn" title="Katak ko'rinishi">▦</button>
                 </div>
+
+                <!-- Qidiruv qatori (⌕ bilan ochiladi) -->
+                <div class="cmp-searchbar" id="searchBar" style="display:none">
+                  <div class="env-search-field">
+                    <input type="text" placeholder="Qidirish…" id="searchInput">
+                    <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
+                  </div>
+                </div>
+
+                <!-- Filtrlar paneli (Filtrlar bilan ochiladi): bo'lim + Kategoriya/Format/Sifat + AI kontent -->
+                <div class="cmp-filterpanel" id="filterPanel" style="display:none">
+                  <div class="cmp-fp-row">
+                    <span class="cmp-fp-lbl">Bo‘lim</span>
+                    <select class="env-scope" id="envScope" onchange="onEnvScopeChange(this)">
+                      <option value="video">Video shablonlar</option>
+                      <option value="motion">Motion videolar</option>
+                      <option value="graphics">Grafika</option>
+                      <option value="luts">LUTlar</option>
+                      <option value="ai">AI Tools</option>
+                    </select>
+                  </div>
+                  <div class="cmp-fp-pills">
+                    <div class="dropdown" id="catDrop">
+                      <button type="button" class="env-pill"><span id="catPillLabel">Kategoriya</span> <span class="env-pill-chevron">⌄</span></button>
+                      <div class="dd-menu dd-menu--tall" id="catMenu"></div>
+                    </div>
+                    <div class="dropdown" id="orientDrop">
+                      <button type="button" class="env-pill"><span id="orientPillLabel">Format</span> <span class="env-pill-chevron">⌄</span></button>
+                      <div class="dd-menu" id="orientMenu">
+                        <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
+                        <div class="dd-item" data-filter="horizontal">16:9</div>
+                        <div class="dd-item" data-filter="vertical">9:16</div>
+                        <div class="dd-item" data-filter="square">1:1</div>
+                      </div>
+                    </div>
+                    <div class="dropdown" id="resDrop">
+                      <button type="button" class="env-pill"><span id="resPillLabel">Sifat</span> <span class="env-pill-chevron">⌄</span></button>
+                      <div class="dd-menu" id="resMenu">
+                        <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
+                        <div class="dd-item" data-filter="2k">2K</div>
+                        <div class="dd-item" data-filter="4k">4K</div>
+                        <div class="dd-item" data-filter="5k">5K+</div>
+                      </div>
+                    </div>
+                    <button type="button" class="cat-ai-toggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="AI kontentni ajratish">
+                      <span class="cat-ai-knobwrap"><span class="cat-ai-knob"></span></span>AI kontent
+                    </button>
+                    <button type="button" class="env-pill af-clear-pill" id="clearFiltersPill" onclick="clearAllFilters()" style="display:none" title="Barcha filtrlarni tozalash">✕ Tozalash <span id="clearFiltersCount" class="af-clear-count"></span></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sahifa tablari sidebar'da; bu yerda yashirin (switchPage/count mantig'i saqlanadi) -->
+              <div class="env-subnav page-tabs" style="display:none">
+                <div class="ptab active" data-page="assets" onclick="switchPage(this,'assets')">Shablonlar <span class="ptab-count" id="assetCount">0</span></div>
+                <div class="ptab" data-page="favorites" onclick="switchPage(this,'favorites')">Sevimlilar <span class="ptab-count" id="favCount">0</span></div>
+                <div class="ptab" data-page="downloaded" onclick="switchPage(this,'downloaded')">Yuklab olingan <span class="ptab-count" id="dlCount">0</span></div>
               </div>
 
               <div class="scroll-area">
@@ -1587,86 +1881,77 @@ html.cep-mode #aiPage{padding:12px 12px 20px}
 
                 <!-- ✨ AI TOOLS — UI tayyor, generatsiya hali ishlamaydi («tez orada») -->
                 <div id="aiPage" style="display:none">
-                  <div class="ai-subnav">
-                    <button type="button" class="ai-tab active" data-aitab="search" onclick="switchAiTab(this,'search')">🔍 AI Qidiruv</button>
-                    <button type="button" class="ai-tab" data-aitab="voice" onclick="switchAiTab(this,'voice')">🎙️ AI Ovoz</button>
-                    <button type="button" class="ai-tab" data-aitab="image" onclick="switchAiTab(this,'image')">🖼️ AI Rasm</button>
-                  </div>
+                  <div class="ai-wrap">
 
-                  <!-- 1) AI QIDIRUV — BIZNING ustunlik (Higgsfield'da katalog yo'q) -->
-                  <div class="ai-pane" id="aiPaneSearch">
-                    <div class="ai-hero">
-                      <span class="ai-hero-badge">AssetFlow ustunligi</span>
-                      <div class="ai-hero-title">Katalogdan semantik qidiruv</div>
-                      <div class="ai-hero-sub">Tabiiy tilda yozing — AI moderatsiyalangan katalogdan mos shablonlarni topadi. Bu Higgsfield'da yo‘q.</div>
-                      <div class="ai-search-row">
-                        <input type="text" class="ai-input" placeholder="Masalan: energiyali kosmik intro, 4K, qorong‘i fon…">
-                        <button type="button" class="ai-gen-btn" onclick="aiComingSoon('AI Qidiruv')">✨ Qidirish · <span class="ai-cost">~2 kredit</span></button>
+                    <!-- Launcher: "Nima yaratamiz?" (faqat idle holatda) -->
+                    <div class="ai-launch" id="aiLaunch">
+                      <h1>Nima yaratamiz?</h1>
+                      <p>Promptdan rasm, ovoz, SFX yarating yoki katalogdan toping — to‘g‘ridan-to‘g‘ri After Effects ichida.</p>
+                    </div>
+
+                    <!-- ===== YAGONA KOMPOZER BAR ===== -->
+                    <div class="ai-composer" id="aiComposer" data-dropdown="1">
+                      <!-- yuqori qator: ko'rinish toggle + chiplar -->
+                      <div class="ai-comp-top">
+                        <div class="ai-vtoggle">
+                          <button type="button" class="ai-vbtn active" id="aiViewGrid" title="Panjara" onclick="aiSetView('grid')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button>
+                          <button type="button" class="ai-vbtn" id="aiViewList" title="Ro‘yxat" onclick="aiSetView('list')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+                        </div>
+                        <button type="button" class="ai-add" onclick="aiSoon()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Qo‘shish</button>
+                        <div class="ai-chip-tpl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg> Shablon uchun</div>
+                      </div>
+
+                      <!-- prompt maydoni -->
+                      <div class="ai-comp-prompt">
+                        <textarea id="aiPrompt" rows="3" placeholder="G‘oyangizni yozing…" onfocus="aiFocus(true)" onblur="aiFocus(false)"></textarea>
+                        <button type="button" class="ai-improve" title="Promptni yaxshilash" onclick="aiImprovePrompt()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg></button>
+                      </div>
+
+                      <!-- pastki boshqaruv qatori -->
+                      <div class="ai-comp-ctrls">
+                        <!-- media turi -->
+                        <div class="ai-dd" id="aiMediaDd">
+                          <button type="button" class="ai-ctrl" onclick="aiToggleMenu('media',event)">
+                            <span class="ai-ctrl-ico" id="aiMediaIco"></span><b id="aiMediaLabel">Rasm</b>
+                            <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+                          </button>
+                          <div class="ai-menu" id="aiMediaMenu" style="display:none"></div>
+                        </div>
+                        <!-- model -->
+                        <div class="ai-dd" id="aiModelDd">
+                          <button type="button" class="ai-ctrl" onclick="aiToggleMenu('model',event)">
+                            <span class="ai-mdot"></span><b id="aiModelLabel">Flux 2</b>
+                            <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+                          </button>
+                          <div class="ai-menu" id="aiModelMenu" style="display:none"></div>
+                        </div>
+                        <!-- sozlama -->
+                        <div class="ai-dd" id="aiSettingDd">
+                          <button type="button" class="ai-ctrl ai-ctrl-settings" onclick="aiToggleMenu('setting',event)">
+                            <span class="ai-ctrl-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="13" y2="7"/><line x1="17" y1="7" x2="20" y2="7"/><circle cx="15" cy="7" r="2"/><line x1="4" y1="17" x2="9" y2="17"/><line x1="13" y1="17" x2="20" y2="17"/><circle cx="11" cy="17" r="2"/></svg></span>
+                            <b id="aiSettingLabel">16:9 · 2K · 1 rasm</b>
+                            <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+                          </button>
+                          <div class="ai-menu" id="aiSettingMenu" style="display:none"></div>
+                        </div>
+                        <!-- timeline ref (tez orada) -->
+                        <button type="button" class="ai-timeline" onclick="aiSoon()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan <span class="ai-soon">TEZ ORADA</span></button>
+
+                        <div class="ai-spacer"></div>
+                        <button type="button" class="ai-gen" id="aiGenBtn" onclick="aiGenerate()">
+                          <span class="ai-gen-ico" id="aiGenIco"></span><span id="aiGenLabel">Generatsiya · ~40 kredit</span>
+                        </button>
                       </div>
                     </div>
-                    <div class="empty">
-                      <div class="empty-ico">🔍</div>
-                      <div class="empty-txt">Semantik qidiruv natijalari shu yerda chiqadi. <b>Tez orada</b> — embeddinglar bilan ishlaydi.</div>
-                    </div>
-                  </div>
 
-                  <!-- 2) AI OVOZ — model selektor + prompt + slayder + cost-before-generate + holatlar -->
-                  <div class="ai-pane" id="aiPaneVoice" style="display:none">
-                    <div class="ai-ctx-hint">🎬 <b>Shablon uchun:</b> katalogdan shablon tanlangan bo‘lsa, ovoz unга moslab yaratiladi.</div>
-
-                    <label class="ai-label">Ovoz modeli</label>
-                    <div class="ai-model-select" onclick="aiToggleModelMenu()">
-                      <span class="ai-model-ico">🎙️</span>
-                      <div class="ai-model-info"><b id="aiModelName">Jessi</b><small id="aiModelDesc">Tabiiy ayol ovozi · O‘zbek</small></div>
-                      <span class="ai-model-chev">⌄</span>
-                    </div>
-                    <div class="ai-model-menu" id="aiModelMenu" style="display:none">
-                      <div class="ai-model-opt" onclick="aiPickModel('Jessi','Tabiiy ayol ovozi · O‘zbek','🎙️')"><span>🎙️</span><div><b>Jessi</b><small>Tabiiy ayol ovozi · O‘zbek</small></div></div>
-                      <div class="ai-model-opt" onclick="aiPickModel('Aziz','Erkak diktor · O‘zbek','🗣️')"><span>🗣️</span><div><b>Aziz</b><small>Erkak diktor · O‘zbek</small></div></div>
-                      <div class="ai-model-opt" onclick="aiPickModel('Nigora','Yumshoq ayol · Rus/O‘zbek','💬')"><span>💬</span><div><b>Nigora</b><small>Yumshoq ayol · Rus/O‘zbek</small></div></div>
+                    <!-- tezkor amallar -->
+                    <div class="ai-quick" id="aiQuick">
+                      <div class="ai-quick-h">Tezkor amallar</div>
+                      <div class="ai-cards" id="aiCards"></div>
                     </div>
 
-                    <label class="ai-label">Matn</label>
-                    <textarea class="ai-textarea" placeholder="O‘qiladigan matnni kiriting…"></textarea>
-
-                    <label class="ai-label">Tezlik <span class="ai-slider-val" id="aiSpeedVal">1.0×</span></label>
-                    <input type="range" class="ai-slider" min="50" max="150" value="100" oninput="document.getElementById('aiSpeedVal').textContent=(this.value/100).toFixed(1)+'×'">
-
-                    <button type="button" class="ai-ref-btn" disabled title="Tez orada — Timeline live-link">🔗 Timeline'dan tanlash <span class="ai-soon">tez orada</span></button>
-
-                    <button type="button" class="ai-gen-btn ai-gen-primary" onclick="aiGenerateDemo('aiVoiceResult')">✨ Generatsiya qilish · <span class="ai-cost">~28 kredit</span></button>
-
-                    <div class="ai-result" id="aiVoiceResult">
-                      <div class="ai-state ai-state-idle">Natija shu yerda ko‘rinadi.</div>
-                      <div class="ai-state ai-state-gen" style="display:none">
-                        <div class="ai-glow"></div>
-                        <div class="ai-gen-txt">Generatsiya qilinmoqda…</div>
-                      </div>
-                      <div class="ai-state ai-state-done" style="display:none">
-                        <div class="empty-ico">🎧</div>
-                        <div class="empty-txt"><b>Tez orada.</b> Ovoz generatsiyasi keyingi bosqichda ulanadi.</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 3) AI RASM — soddaroq, xuddi shu naqsh -->
-                  <div class="ai-pane" id="aiPaneImage" style="display:none">
-                    <div class="ai-ctx-hint">🎬 <b>Shablon uchun:</b> placeholder joylariga AI rasm/matn (auto-fill).</div>
-                    <label class="ai-label">Tavsif (prompt)</label>
-                    <textarea class="ai-textarea" placeholder="Masalan: minimalist gradient fon, 16:9…"></textarea>
-                    <button type="button" class="ai-ref-btn" disabled title="Tez orada — Timeline live-link">🔗 Timeline'dan tanlash <span class="ai-soon">tez orada</span></button>
-                    <button type="button" class="ai-gen-btn ai-gen-primary" onclick="aiGenerateDemo('aiImageResult')">✨ Generatsiya qilish · <span class="ai-cost">~40 kredit</span></button>
-                    <div class="ai-result" id="aiImageResult">
-                      <div class="ai-state ai-state-idle">Natija shu yerda ko‘rinadi.</div>
-                      <div class="ai-state ai-state-gen" style="display:none">
-                        <div class="ai-glow"></div>
-                        <div class="ai-gen-txt">Generatsiya qilinmoqda…</div>
-                      </div>
-                      <div class="ai-state ai-state-done" style="display:none">
-                        <div class="empty-ico">🖼️</div>
-                        <div class="empty-txt"><b>Tez orada.</b> Rasm generatsiyasi keyingi bosqichda ulanadi.</div>
-                      </div>
-                    </div>
+                    <!-- generatsiya / natija -->
+                    <div id="aiResultArea"></div>
                   </div>
                 </div>
               </div>
@@ -1788,6 +2073,17 @@ html.cep-mode #aiPage{padding:12px 12px 20px}
       <div class="acc-btn-row">
         <button type="button" class="acc-btn" onclick="refreshAccountAndUi()">↻ Yangilash</button>
       </div>
+    </div>
+
+    <!-- MAVZU (tema) — har doim ko'rinadi -->
+    <div class="account-section">
+      <label>Mavzu</label>
+      <div class="theme-pick">
+        <button type="button" class="theme-opt" data-theme-val="standart" onclick="setTheme('standart')"><span class="theme-swatch theme-sw-standart"></span>Standart</button>
+        <button type="button" class="theme-opt" data-theme-val="liquid-glass" onclick="setTheme('liquid-glass')"><span class="theme-swatch theme-sw-liquid"></span>Liquid Glass</button>
+        <button type="button" class="theme-opt" data-theme-val="light-glass" onclick="setTheme('light-glass')"><span class="theme-swatch theme-sw-light"></span>Light Glass</button>
+      </div>
+      <p class="account-hint">Panel ko'rinishini almashtiring — tanlov saqlanadi.</p>
     </div>
 
     <!-- TARIF -->
@@ -2279,23 +2575,29 @@ function renderCard(a,i,showDl){
     a.t?`<span class="chip cat">${escHtml(a.t)}</span>`:'',
     ...tagList.map(t=>`<span class="chip tag">${escHtml(t)}</span>`)
   ].filter(Boolean).join('');
+  // Markup "AssetFlow Standart" eksportiga moslangan; mantiq (openPack/toggleFav/
+  // deleteDownloadedTemplate/playCardPreview) o'zgarmaydi.
   return`<div class="card${noPack?' no-pack':''}" draggable="true" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
     <div class="thumb${hasPreview?' has-preview':''}" style="background:${escHtml(a.bg)}">
-      ${noPack?'<span class="nopack-b" title="Loyiha (.aep) fayli hali yuklanmagan">⏳ Pack tayyorlanmoqda</span>':(a.nw&&!showDl?'<span class="new-b">YANGI</span>':'')}
-      ${dled&&showDl?'<span class="dl-b">✓</span>':''}
-      ${sceneCount?`<span class="pack-badge">${sceneCount} sahna</span>`:''}
-      ${resLine?`<span class="res-tag">${resLine}</span>`:''}
+      <div class="thumb-badges">
+        ${noPack?'<span class="nopack-b" title="Loyiha (.aep) fayli hali yuklanmagan">⏳ Pack</span>':(a.nw&&!showDl?'<span class="new-b">YANGI</span>':'')}
+        ${a.ai?'<span class="ai-b">AI bilan</span>':''}
+        ${dled&&showDl?'<span class="dl-b">✓ Yuklandi</span>':''}
+      </div>
       ${hasPreview?renderThumbMedia(a):`<span class="ico">${escHtml(a.i)}</span>${getAnim(i)}`}
-      <div class="overlay"><button class="dl-btn">Ko‘rish</button></div>
+      <div class="thumb-grad">
+        <button class="card-fav${faved?' faved':''}" title="Sevimli" onclick="event.stopPropagation();toggleFav('${safeName}')">★</button>
+        ${showDl
+          ?`<button class="card-del" title="Loyihadan o‘chirish" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`
+          :`<button class="card-get" title="Ko‘rish / import" onclick="event.stopPropagation();openPack('${safeName}')">⬇</button>`}
+      </div>
     </div>
-    <button class="fav-btn${faved?' faved':''}" onclick="event.stopPropagation();toggleFav('${safeName}')">★</button>
-    ${showDl?`<button class="del-btn" title="Loyihadan o‘chirish" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`:''}
     <div class="cinfo">
+      ${a.t?`<div class="card-cat">${escHtml(a.t)}</div>`:''}
       <div class="aname">${escHtml(a.displayName||a.n)}</div>
       ${metaLine?`<div class="card-meta-line">${metaLine}</div>`:''}
-      ${chips?`<div class="card-chips">${chips}</div>`:''}
     </div>
   </div>`;
 }
@@ -3301,25 +3603,126 @@ function pauseSpotlightPreview(el){
   v.pause();
 }
 
+// Hero strip — "AssetFlow Standart" eksportidagi editorial qator.
+// Ma'lumot getFeaturedAssets()/shouldShowFeatured() (mantiq) dan; faqat markup eksportga moslangan.
 function renderFeatured(){
   const wrap=document.getElementById('featuredWrap');
-  if(!shouldShowFeatured()){wrap.innerHTML='';return;}
-  const items=getFeaturedAssets();
-  const tabLabel=NAV_LABELS[currentNav]||currentNav;
-  const strip=items.map(a=>renderNoticeItem(a)).join('');
-  wrap.innerHTML=`<div class="notice-bar">
-    <div class="notice-border"></div>
-    <div class="notice-shine"></div>
-    <div class="notice-accent"></div>
-    <div class="notice-meta">
-      <div class="notice-icon">🔔</div>
-      <div class="notice-label">${FEATURED.noticeTitle}</div>
-      <div class="notice-tab">${tabLabel}</div>
+  if(!shouldShowFeatured()){
+    wrap.innerHTML='';
+    if(typeof destroyHeroCarousel==='function')destroyHeroCarousel();
+    return;
+  }
+  const items=getFeaturedAssets().slice(0,10);
+  const cards=items.map(renderHeroCard).join('');
+  wrap.innerHTML=`<div class="cat-hero">
+    <div class="cat-hero-head">
+      <div>
+        <div class="cat-hero-h">Shablonlar</div>
+        <div class="cat-hero-sub">Premium After Effects shablonlari — bir bosishda import.</div>
+      </div>
+      <button type="button" class="cat-hero-x" onclick="dismissFeatured(event)" title="Yopish">×</button>
     </div>
-    <div class="notice-strip">${strip}</div>
-    <button type="button" class="notice-close" onclick="dismissFeatured(event)" title="Yopish">×</button>
+    <div class="cat-carousel" id="catCarousel">
+      <button type="button" class="cat-arrow cat-arrow-prev" onclick="heroCarouselPrev()" aria-label="Oldingi" title="Oldingi">‹</button>
+      <div class="cat-carousel-vp" id="catCarouselVp">
+        <div class="cat-carousel-track" id="catCarouselTrack">${cards}</div>
+      </div>
+      <button type="button" class="cat-arrow cat-arrow-next" onclick="heroCarouselNext()" aria-label="Keyingi" title="Keyingi">›</button>
+    </div>
+    <div class="cat-dots" id="catDots"></div>
+  </div>`;
+  if(typeof initHeroCarousel==='function')initHeroCarousel();
+}
+function renderHeroCard(a){
+  const safe=String(a.n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  const label=a.displayName||a.n;
+  const img=a.thumb?`<img class="cat-hero-img" src="${escHtml(a.thumb)}" alt="" loading="lazy">`:'';
+  const cat=a.t?`<div class="cat-hero-cardcat">${escHtml(a.t)}</div>`:'';
+  return`<div class="cat-hero-card" style="background:${escHtml(a.bg)}" onclick="openPack('${safe}')" title="${escHtml(label)}">
+    ${img}
+    ${a.nw?'<span class="cat-hero-new">YANGI</span>':''}
+    <div class="cat-hero-cardgrad">${cat}<div class="cat-hero-cardtitle">${escHtml(label)}</div></div>
   </div>`;
 }
+
+/* ============================================================
+   Hero strip — AVTO-KARUSEL kontrolleri (faqat ko'rinish/animatsiya).
+   renderFeatured ma'lumot mantig'i SAQLANADI. Avto ~4.5s, hover'da to'xtaydi,
+   drag + strelka + nuqta; loop; silliq ease transition.
+   ============================================================ */
+let __heroCar=null;
+function destroyHeroCarousel(){ if(__heroCar){ __heroCar.destroy(); __heroCar=null; } }
+function initHeroCarousel(){
+  destroyHeroCarousel();
+  const track=document.getElementById('catCarouselTrack');
+  const vp=document.getElementById('catCarouselVp');
+  const dotsWrap=document.getElementById('catDots');
+  const carousel=document.getElementById('catCarousel');
+  if(!track||!vp)return;
+  const cards=Array.prototype.slice.call(track.children);
+  const n=cards.length;
+  if(!n)return;
+
+  let index=0,timer=null,paused=false,dragging=false,moved=false,suppressClick=false,startX=0,startTx=0,curTx=0;
+
+  const stepPx=()=> (n>1 ? (cards[1].offsetLeft-cards[0].offsetLeft) : cards[0].offsetWidth);
+  const overflow=()=> track.scrollWidth>vp.clientWidth+4;
+  const wrapIdx=(i)=>{ if(i<0)return n-1; if(i>n-1)return 0; return i; };
+
+  function apply(animate){
+    track.style.transition=(animate===false)?'none':'transform .5s ease';
+    track.style.transform='translateX('+curTx+'px)';
+  }
+  function renderDots(){
+    if(!dotsWrap)return;
+    dotsWrap.innerHTML=cards.map((_,i)=>'<button type="button" class="cat-dot'+(i===index?' active':'')+'" data-i="'+i+'" aria-label="Hero '+(i+1)+'"></button>').join('');
+  }
+  function go(i,animate){
+    index=wrapIdx(i);
+    let tx=-(index*stepPx());
+    const maxScroll=Math.max(0,track.scrollWidth-vp.clientWidth);
+    if(tx<-maxScroll)tx=-maxScroll;
+    curTx=tx; apply(animate); renderDots();
+  }
+  function next(){ go(index+1,true); }
+  function prev(){ go(index-1,true); }
+
+  function startTimer(){ stopTimer(); if(!overflow())return; timer=setInterval(()=>{ if(!paused&&!dragging)next(); },4500); }
+  function stopTimer(){ if(timer){clearInterval(timer);timer=null;} }
+
+  function onDown(e){ if(!overflow())return; dragging=true;moved=false;paused=true; startX=(e.touches?e.touches[0].clientX:e.clientX); startTx=curTx; track.style.transition='none'; vp.classList.add('dragging'); }
+  function onMove(e){ if(!dragging)return; const x=(e.touches?e.touches[0].clientX:e.clientX); const dx=x-startX; if(Math.abs(dx)>4)moved=true; curTx=startTx+dx; track.style.transform='translateX('+curTx+'px)'; }
+  function onUp(){ if(!dragging)return; dragging=false; vp.classList.remove('dragging'); const s=stepPx()||1; go(Math.round(-curTx/s),true); if(moved){ suppressClick=true; setTimeout(()=>{suppressClick=false;},60); } paused=false; }
+  function onClickCapture(e){ if(suppressClick){ e.stopPropagation(); e.preventDefault(); } }
+  function onDots(e){ const d=e.target.closest('.cat-dot'); if(d){ go(parseInt(d.dataset.i,10)||0,true); } }
+  const onEnter=()=>{paused=true;}, onLeave=()=>{paused=false;};
+
+  vp.addEventListener('pointerdown',onDown);
+  window.addEventListener('pointermove',onMove);
+  window.addEventListener('pointerup',onUp);
+  vp.addEventListener('click',onClickCapture,true);
+  vp.addEventListener('mouseenter',onEnter);
+  vp.addEventListener('mouseleave',onLeave);
+  if(dotsWrap)dotsWrap.addEventListener('click',onDots);
+  if(carousel)carousel.classList.toggle('no-scroll',!overflow());
+
+  __heroCar={
+    next,prev,go,
+    destroy(){
+      stopTimer();
+      window.removeEventListener('pointermove',onMove);
+      window.removeEventListener('pointerup',onUp);
+      vp.removeEventListener('pointerdown',onDown);
+      vp.removeEventListener('click',onClickCapture,true);
+      vp.removeEventListener('mouseenter',onEnter);
+      vp.removeEventListener('mouseleave',onLeave);
+      if(dotsWrap)dotsWrap.removeEventListener('click',onDots);
+    }
+  };
+  go(0,false); startTimer();
+}
+function heroCarouselNext(){ if(__heroCar)__heroCar.next(); }
+function heroCarouselPrev(){ if(__heroCar)__heroCar.prev(); }
 
 /* Katalog yuklash holati: idle | loading | error | ready */
 let catalogLoadState='idle';
@@ -3342,8 +3745,11 @@ function activeFilterCount(){
 /** Filtr bar'da «Tozalash (N)» tugmasini ko'rsatadi/yashiradi */
 function updateFilterIndicator(){
   const pill=document.getElementById('clearFiltersPill');
-  if(!pill)return;
   const n=activeFilterCount();
+  // "Filtrlar" tugmasidagi faol-filtr soni rozetkasi (yig'iladigan panel uchun)
+  const badge=document.getElementById('filterCountBadge');
+  if(badge){ badge.textContent=String(n); badge.style.display=n>0?'inline-flex':'none'; }
+  if(!pill)return;
   if(n>0){
     pill.style.display='';
     const c=document.getElementById('clearFiltersCount');
@@ -3577,6 +3983,75 @@ function switchNavFromSidebar(el,tab){
   const scope=document.getElementById('envScope');
   if(scope) scope.value=tab;
   applyNavSwitch(tab);
+  // Yig'iq holatda Katalog folder ikonasi aktiv ko'rinishi uchun
+  const katHead=document.getElementById('sbKatHead');
+  if(katHead) katHead.classList.toggle('cat-active', ['video','motion','graphics','luts'].indexOf(tab)>=0);
+  // Tablar sidebar'ga ko'chgani uchun katalog navi "Shablonlar" (assets) sahifasini ko'rsatadi
+  if(tab!=='ai'){
+    const at=document.querySelector('.ptab[data-page="assets"]');
+    if(at && typeof switchPage==='function') switchPage(at,'assets');
+  }
+}
+// Boot: saqlangan yig'iq/yoyiq holatni tiklash. Sidebar DOM yuqorida — sinxron chaqiramiz
+// (birinchi bo'yashdan oldin) → flash bo'lmaydi.
+try{ restoreSidebarPref(); }catch(e){}
+// Sidebar — yon panelni QO'LDA yig'ish/yoyish (1↔2 holat). Tanlov prefs'ga saqlanadi.
+// cep-mode avtomatik yig'ilishi ENDI sidebar'ga ta'sir qilmaydi — qo'lda tanlov ustun.
+function toggleSidebar(){
+  const collapsed=document.documentElement.classList.toggle('sb-collapsed');
+  try{ localStorage.setItem('af.sidebarCollapsed', collapsed?'1':'0'); }catch(e){}
+}
+function restoreSidebarPref(){
+  let v=null; try{ v=localStorage.getItem('af.sidebarCollapsed'); }catch(e){}
+  let collapsed;
+  if(v==='1') collapsed=true;
+  else if(v==='0') collapsed=false;
+  else collapsed=(typeof IS_CEP!=='undefined'&&IS_CEP); // birinchi ishga tushirish: CEP'da yig'iq
+  const html=document.documentElement;
+  html.classList.add('sb-no-anim');
+  html.classList.toggle('sb-collapsed',collapsed);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>html.classList.remove('sb-no-anim')));
+}
+// Katalog guruhi: yoyiq → bolalarni yig'ish/ochish; yig'iq → to'g'ridan "Shablonlar" ga o'tadi
+function toggleKatalogGroup(){
+  const sb=document.getElementById('envSidebar');
+  if(!sb)return;
+  if(document.documentElement.classList.contains('sb-collapsed')){
+    const vid=document.querySelector('.env-side-link[data-nav="video"]');
+    if(vid) switchNavFromSidebar(vid,'video');
+    return;
+  }
+  const collapsed=sb.classList.toggle('kat-collapsed');
+  const head=document.getElementById('sbKatHead');
+  if(head)head.setAttribute('aria-expanded',String(!collapsed));
+}
+// Yuklab olingan / Sevimli — sidebar'dan switchPage (mavjud handler) ga ulanadi
+function switchPageFromSidebar(el,page){
+  if(document.documentElement.classList.contains('ai-mode')){
+    const vid=document.querySelector('.env-side-link[data-nav="video"]');
+    if(vid) switchNavFromSidebar(vid,'video');
+  }
+  const ptab=document.querySelector('.ptab[data-page="'+page+'"]');
+  if(ptab) switchPage(ptab,page);
+  document.querySelectorAll('.env-side-link').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+// Sidebar user kartasi — AssetFlowAccount holatiga (updateFootUser bilan birga chaqiriladi)
+function updateSidebarUser(u){
+  const av=document.getElementById('sbAv'),name=document.getElementById('sbName'),
+        mail=document.getElementById('sbMail'),plan=document.getElementById('sbPlan');
+  if(!u){
+    if(av)av.textContent='U';
+    if(name)name.textContent='Mehmon';
+    if(mail)mail.textContent='Kirish uchun bosing';
+    if(plan){plan.textContent='Free';plan.className='sb-plan free';}
+    return;
+  }
+  const initial=(u.name||u.email||'U').trim().charAt(0).toUpperCase();
+  if(av)av.textContent=initial;
+  if(name)name.textContent=u.name||(u.email?u.email.split('@')[0]:'Foydalanuvchi');
+  if(mail)mail.textContent=u.email||'';
+  if(plan){const pro=u.plan==='pro';plan.textContent=u.planLabel||(pro?'Pro':'Free');plan.className='sb-plan '+(pro?'pro':'free');}
 }
 
 function onEnvScopeChange(sel){
@@ -3588,42 +4063,244 @@ function onEnvScopeChange(sel){
 }
 
 /* ───── AI Tools (UI demo — backend chaqiruv YO'Q, «tez orada») ───── */
-function switchAiTab(el,pane){
-  document.querySelectorAll('.ai-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('aiPaneSearch').style.display=pane==='search'?'block':'none';
-  document.getElementById('aiPaneVoice').style.display=pane==='voice'?'block':'none';
-  document.getElementById('aiPaneImage').style.display=pane==='image'?'block':'none';
+/* ============================================================
+   AI Tools — yagona kompozer mantig'i (vanilla, backend YO'Q)
+   Dizayn referensi: Artlist uslubidagi bitta generatsiya bar.
+   Generatsiya hozircha "tez orada" demo holatini ko'rsatadi.
+   ============================================================ */
+const AI_CFG={
+  rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:40,models:['Flux 2','Imagen 4','SDXL Turbo'],settings:['16:9 · 2K · 1 rasm','1:1 · 1K · 4 rasm','9:16 · 2K · 1 rasm'],ph:'G‘oyangizni yozing…'},
+  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:25,models:['Jessi','Aziz','Malika'],settings:['Samimiy · Normal','Hayajonli · Tez','Tinch · Sekin'],ph:'Ovoz uchun matn yozing…'},
+  sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:15,models:['AudioGen','FoleyAI'],settings:['5s · Stereo','10s · Stereo','3s · Mono'],ph:'Tovush effektini tasvirlang…'},
+  qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:0,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
+};
+const af_ai={
+  media:'rasm',
+  model:{rasm:'Flux 2',ovoz:'Jessi',sfx:'AudioGen',qidiruv:'Katalog'},
+  setting:{rasm:'16:9 · 2K · 1 rasm',ovoz:'Samimiy · Normal',sfx:'5s · Stereo',qidiruv:''},
+  view:'grid',open:null,gen:false,_t:null
+};
+function aiIco(name,size,sw){
+  size=size||16; sw=sw||1.6;
+  const P={
+    image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
+    mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/>',
+    wave:'<path d="M4 12h1.5M8 7v10M12 4v16M16 8v8M19.5 12h1"/>',
+    search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    spark:'<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/>',
+    grid:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+    check:'<path d="M5 12l4 4 10-10"/>',
+    bolt:'<path d="M13 3L5 13h5l-1 8 8-10h-5z" fill="currentColor" stroke="none"/>'
+  };
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round">'+(P[name]||'')+'</svg>';
 }
-function aiToggleModelMenu(){
-  const m=document.getElementById('aiModelMenu');
-  if(m)m.style.display=m.style.display==='none'?'block':'none';
+function aiSetView(v){
+  af_ai.view=v;
+  const g=document.getElementById('aiViewGrid'),l=document.getElementById('aiViewList');
+  if(g)g.classList.toggle('active',v==='grid');
+  if(l)l.classList.toggle('active',v==='list');
 }
-function aiPickModel(name,desc,ico){
-  document.getElementById('aiModelName').textContent=name;
-  document.getElementById('aiModelDesc').textContent=desc;
-  document.querySelector('.ai-model-ico').textContent=ico;
-  document.getElementById('aiModelMenu').style.display='none';
+function aiFocus(on){
+  const c=document.getElementById('aiComposer');
+  if(c)c.classList.toggle('focused',!!on);
 }
-// Generatsiya holatlari demo: idle → generating (~2s radial glow) → done («tez orada»)
-function aiGenerateDemo(resultId){
-  const box=document.getElementById(resultId);
-  if(!box)return;
-  const idle=box.querySelector('.ai-state-idle');
-  const gen=box.querySelector('.ai-state-gen');
-  const done=box.querySelector('.ai-state-done');
-  if(idle)idle.style.display='none';
-  if(done)done.style.display='none';
-  if(gen)gen.style.display='flex';
-  setTimeout(function(){
-    if(gen)gen.style.display='none';
-    if(done)done.style.display='flex';
+function aiToggleMenu(which,e){
+  if(e)e.stopPropagation();
+  af_ai.open=af_ai.open===which?null:which;
+  aiRenderMenus();
+}
+function aiCloseMenus(){af_ai.open=null;aiRenderMenus();}
+function aiRenderMenus(){
+  const map={media:'aiMediaMenu',model:'aiModelMenu',setting:'aiSettingMenu'};
+  Object.keys(map).forEach(k=>{
+    const el=document.getElementById(map[k]);
+    if(el)el.style.display=af_ai.open===k?'flex':'none';
+  });
+}
+function aiMenuRow(active,onclick,inner){
+  return '<button type="button" class="ai-menu-row'+(active?' active':'')+'" onclick="'+onclick+'">'+inner
+    +(active?'<span class="mr-check">'+aiIco('check',16)+'</span>':'')+'</button>';
+}
+function aiBuildMenus(){
+  const cfg=AI_CFG[af_ai.media];
+  // media menu
+  const mm=document.getElementById('aiMediaMenu');
+  if(mm)mm.innerHTML=Object.keys(AI_CFG).map(k=>{
+    const c=AI_CFG[k];
+    return aiMenuRow(af_ai.media===k,"aiSetMedia('"+k+"')",
+      '<span class="mr-ico">'+aiIco(c.ico,18)+'</span><div class="mr-main"><div class="mr-label">'+c.label+'</div><div class="mr-sub">'+c.sub+'</div></div>');
+  }).join('');
+  // model menu
+  const dm=document.getElementById('aiModelMenu');
+  if(dm)dm.innerHTML=cfg.models.map((m,i)=>
+    aiMenuRow(af_ai.model[af_ai.media]===m,"aiSetModel("+i+")",
+      '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+m+'</div></div>')).join('');
+  // setting menu
+  const sm=document.getElementById('aiSettingMenu');
+  if(sm)sm.innerHTML=cfg.settings.map((v,i)=>
+    aiMenuRow(af_ai.setting[af_ai.media]===v,"aiSetSetting("+i+")",
+      '<div class="mr-main"><div class="mr-label">'+v+'</div></div>')).join('');
+}
+function aiApplyMedia(){
+  const cfg=AI_CFG[af_ai.media];
+  const set=(id,fn)=>{const el=document.getElementById(id);if(el)fn(el);};
+  set('aiMediaIco',el=>el.innerHTML=aiIco(cfg.ico,16));
+  set('aiMediaLabel',el=>el.textContent=cfg.label);
+  set('aiModelLabel',el=>el.textContent=af_ai.model[af_ai.media]);
+  set('aiSettingDd',el=>el.style.display=cfg.settings.length?'':'none');
+  if(cfg.settings.length)set('aiSettingLabel',el=>el.textContent=af_ai.setting[af_ai.media]);
+  set('aiPrompt',el=>el.placeholder=cfg.ph);
+  aiSetGenBtn(false);
+  aiBuildMenus();
+}
+function aiSetGenBtn(gen){
+  const cfg=AI_CFG[af_ai.media];
+  const ico=document.getElementById('aiGenIco'),lab=document.getElementById('aiGenLabel'),btn=document.getElementById('aiGenBtn');
+  if(ico)ico.innerHTML=gen?'<span class="spin"></span>':aiIco('bolt',15);
+  if(lab)lab.textContent=gen?'Generatsiya…':(af_ai.media==='qidiruv'?'Qidirish':'Generatsiya · ~'+cfg.cost+' kredit');
+  if(btn)btn.disabled=!!gen;
+}
+function aiSetMedia(key){
+  if(!AI_CFG[key])return;
+  af_ai.media=key;
+  af_ai.open=null;
+  aiResetResult();
+  aiApplyMedia();
+  aiRenderMenus();
+}
+function aiSetModel(i){
+  const cfg=AI_CFG[af_ai.media];
+  af_ai.model[af_ai.media]=cfg.models[i];
+  af_ai.open=null;
+  const el=document.getElementById('aiModelLabel');if(el)el.textContent=cfg.models[i];
+  aiBuildMenus();aiRenderMenus();
+}
+function aiSetSetting(i){
+  const cfg=AI_CFG[af_ai.media];
+  af_ai.setting[af_ai.media]=cfg.settings[i];
+  af_ai.open=null;
+  const el=document.getElementById('aiSettingLabel');if(el)el.textContent=cfg.settings[i];
+  aiBuildMenus();aiRenderMenus();
+}
+function aiImprovePrompt(){
+  const ta=document.getElementById('aiPrompt');
+  if(!ta)return;
+  const base=(ta.value||'').trim()||(af_ai.media==='qidiruv'?'kosmik intro':'kelajak shahri');
+  ta.value=af_ai.media==='qidiruv'?base:base+' — kinematik, yumshoq yorug‘lik, 35mm, yuqori detallar';
+  if(typeof showToast==='function')showToast('Prompt yaxshilandi','success');
+}
+function aiResetResult(){
+  af_ai.gen=false;
+  if(af_ai._t){clearTimeout(af_ai._t);af_ai._t=null;}
+  const area=document.getElementById('aiResultArea');if(area)area.innerHTML='';
+  const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='';
+  const q=document.getElementById('aiQuick');if(q)q.style.display='';
+  aiSetGenBtn(false);
+}
+function aiGenerate(){
+  if(af_ai.gen)return;
+  const ta=document.getElementById('aiPrompt');
+  const val=ta?(ta.value||'').trim():'';
+  if(af_ai.media!=='qidiruv'&&!val){
+    if(typeof showToast==='function')showToast('Avval prompt yozing','warning');
+    return;
+  }
+  if(af_ai.media==='qidiruv'&&!val&&ta)ta.value='kosmik intro kerak';
+  const promptTxt=(ta?ta.value.trim():'')||'…';
+  af_ai.gen=true;af_ai.open=null;aiRenderMenus();aiSetGenBtn(true);
+  const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='none';
+  const q=document.getElementById('aiQuick');if(q)q.style.display='none';
+  const area=document.getElementById('aiResultArea');
+  if(area)area.innerHTML='<div class="ai-genbox"><div class="glow"></div>'
+    +'<div class="ai-eq"><i></i><i></i><i></i><i></i></div>'
+    +'<div class="ai-gen-cap"><b>Generatsiya qilinmoqda…</b><small>'+af_ai.model[af_ai.media]+' · '+promptTxt+'</small></div></div>';
+  af_ai._t=setTimeout(function(){
+    af_ai.gen=false;af_ai._t=null;aiSetGenBtn(false);
+    if(area)area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('spark',30,1.6)+'</div>'
+      +'<b>Tez orada</b><p>AI generatsiya backend keyingi bosqichda ulanadi. Hozircha bu vizual demo — prompt, model va sozlamalar tayyor.</p></div>';
     if(typeof showToast==='function')showToast('AI generatsiya — tez orada ulanadi','info');
-  },2000);
+  },2200);
 }
-function aiComingSoon(label){
-  if(typeof showToast==='function')showToast((label||'AI')+' — tez orada ishlaydi','info');
+function aiRenderCards(){
+  const cards=[
+    {label:'Katalogdan qidirish',sub:'Tayyor shablonlar',ico:'search',act:"aiSetMedia('qidiruv')"},
+    {label:'Ovoz yaratish',sub:'AI ovoz dublyaj',ico:'mic',act:"aiSetMedia('ovoz')"},
+    {label:'SFX yaratish',sub:'Tovush effektlari',ico:'wave',act:"aiSetMedia('sfx')"},
+    {label:'Rasm yaratish',sub:'Tekstura, fon, logo',ico:'image',act:"aiSetMedia('rasm')"},
+    {label:'Shablon uchun to‘ldirish',sub:'Bo‘sh joylarni to‘ldiring',ico:'grid',act:"aiSetMedia('rasm')"},
+    {label:'Promptga yordam',sub:'G‘oyani kengaytiring',ico:'spark',act:'aiImprovePrompt()'}
+  ];
+  const el=document.getElementById('aiCards');
+  if(el)el.innerHTML=cards.map(c=>
+    '<button type="button" class="ai-card" onclick="'+c.act+'">'
+    +'<span class="ai-card-ico">'+aiIco(c.ico,20)+'</span>'
+    +'<span class="ai-card-main"><span class="ai-card-label">'+c.label+'</span><span class="ai-card-sub">'+c.sub+'</span></span>'
+    +'</button>').join('');
 }
+function aiInit(){
+  if(!document.getElementById('aiComposer'))return;
+  aiRenderCards();
+  aiApplyMedia();
+  document.addEventListener('mousedown',function(e){
+    if(af_ai.open && !(e.target.closest && e.target.closest('[data-dropdown]'))) aiCloseMenus();
+  });
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',aiInit);
+else aiInit();
+function aiSoon(){if(typeof showToast==='function')showToast('Tez orada','info');}
+// Katalog "AI kontent" toggle — vizual holat (filtr mantig'i tegilmaydi, "tez orada").
+let __catAiOn=false;
+function toggleCatalogAi(btn){
+  __catAiOn=!__catAiOn;
+  btn.classList.toggle('on',__catAiOn);
+  if(typeof showToast==='function')showToast(__catAiOn?'AI kontent filtri — tez orada':'AI kontent filtri o‘chirildi','info');
+}
+// Ixcham boshqaruv — qidiruv qatorini ochish/yopish (runSearch/debounce mantig'i o'sha)
+function toggleSearchBar(){
+  const b=document.getElementById('searchBar'),btn=document.getElementById('searchToggleBtn');
+  if(!b)return;
+  const open=getComputedStyle(b).display==='none';
+  b.style.display=open?'block':'none';
+  if(btn)btn.classList.toggle('active',open);
+  if(open){const i=document.getElementById('searchInput');if(i)setTimeout(()=>i.focus(),0);}
+}
+// Filtrlar panelini ochish/yopish (ichidagi dropdown/AI-toggle mantig'i o'sha)
+function toggleFilterPanel(){
+  const p=document.getElementById('filterPanel'),btn=document.getElementById('filterToggleBtn');
+  if(!p)return;
+  const open=getComputedStyle(p).display==='none';
+  p.style.display=open?'flex':'none';
+  if(btn)btn.classList.toggle('active',open);
+  if(!open&&typeof closeAllDropdowns==='function')closeAllDropdowns();
+}
+
+/* ============================================================
+   TEMA TIZIMI — 3 ta tema: standart / liquid-glass / light-glass.
+   html[data-theme] o'zgaradi → barcha tokenlar (va shu sababli barcha ekran)
+   yangilanadi. Tanlov prefs'ga (merge) saqlanadi, boot'da tiklanadi.
+   ============================================================ */
+const AF_THEMES=['standart','liquid-glass','light-glass'];
+function afGetPrefs(){ try{ return JSON.parse(localStorage.getItem('af.prefs')||'{}')||{}; }catch(e){ return {}; } }
+function afSavePrefs(patch){ try{ const p=afGetPrefs(); Object.assign(p,patch); localStorage.setItem('af.prefs',JSON.stringify(p)); }catch(e){} }
+function markActiveTheme(name){
+  document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('active', b.dataset.themeVal===name));
+}
+function setTheme(name){
+  if(AF_THEMES.indexOf(name)<0)name='standart';
+  document.documentElement.setAttribute('data-theme',name);
+  afSavePrefs({theme:name});       // prefs'ga merge
+  markActiveTheme(name);
+}
+function restoreTheme(){
+  const name=afGetPrefs().theme;
+  const t=(AF_THEMES.indexOf(name)>=0)?name:'standart';   // default: standart
+  document.documentElement.setAttribute('data-theme',t);
+  markActiveTheme(t);
+}
+// Boot: saqlangan temani tiklash (birinchi bo'yashdan oldin — flash yo'q)
+try{ restoreTheme(); }catch(e){}
+// Orqaga moslik: eski nom hali chaqirilsa ham xato bermasin
+function aiComingSoon(label){if(typeof showToast==='function')showToast((label||'AI')+' — tez orada ishlaydi','info');}
 
 // Qidiruv — har klaviatura bosilishida emas, 300ms jim turgach render qilinadi
 let __searchDebounce=null;
@@ -4083,6 +4760,7 @@ function initAccountUi(){
 }
 
 function updateFootUser(u){
+  if(typeof updateSidebarUser==='function') updateSidebarUser(u);
   const av=document.getElementById('footAv');
   const name=document.getElementById('footName');
   const sub=document.getElementById('footSub');

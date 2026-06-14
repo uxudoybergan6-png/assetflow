@@ -1,30 +1,38 @@
-# SESSION REPORT — 2026-06-14 — 1-bosqich Qadam 4: AI Tools UI (Strategiya B) ✅
+# SESSION REPORT — 2026-06-14 — Tema tizimi YAKUNLANDI (3 ta almashtiriladigan tema) ✅
 
-## Nima qilindi (`AssetFlow_Plugin.html`) — backend YO'Q, generatsiya «tez orada»
+`css/tokens.css` + `AssetFlow_Plugin.html`: 3 ta ishlaydigan tema — **standart / liquid-glass /
+light-glass** — Hisob ekranidagi almashtirgich bilan. Tanlov prefs'ga saqlanadi, boot'da tiklanadi.
 
-ANALIZ-higgsfield-ai-tools.md Strategiya B (differensiatsiya) naqshlari UI'ga singdirildi:
+## 1) Liquid Glass tokenlari (`[data-theme="liquid-glass"]`)
+"AssetFlow Liquid Glass" eksportidan aniq qiymatlar: `--bg:#070806`, `--surface:rgba(20,24,18,.55)`,
+`--glass-bg:rgba(20,24,18,.55)`, `--glass-blur:28px`, `--rim:rgba(255,255,255,.18)`, `--text:#f6f8f1`,
+lime accent + kuchli glow. Barcha rang tokenlari to'ldirildi.
 
-- **Sidebar ✨ AI Tools link** (`data-nav="ai"`, lime ikona) + envScope `<option value="ai">`.
-- **`applyNavSwitch` additiv ai-tarmoq**: `tab==='ai'` → `html.ai-mode` class, browse chrome (search/subnav/filter/3 sahifa) yashiriladi, `#aiPage` ko'rsatiladi, erta `return`. Mavjud video/motion/graphics/luts mantig'i **tegilmadi** (early-return ostida).
-- **`#aiPage`** — 3 sub-tab (`switchAiTab`): AI Qidiruv · AI Ovoz · AI Rasm.
+## 2) Light Glass tokenlari (`[data-theme="light-glass"]`) — hosila, WCAG AA
+`--bg:#eef1ea`, `--surface:rgba(255,255,255,.6)`, `--glass-blur:28px`, `--rim:rgba(255,255,255,.7)`,
+`--text:#14160f` (qora), to'q kulrang muted, `--accent:#5a8f2a` (kontrast uchun to'q lime).
+Yangi token **`--on-accent`** (lime ustidagi matn): standart/liquid = qora, light = oq (AA).
+8 ta `color:var(--bg)` → `color:var(--on-accent)` ga ko'chirildi.
 
-HF naqshlari (Strategiya B):
-1. **Cost-before-generate** — tugmalarda taxminiy narx: "✨ Generatsiya qilish · ~28 kredit" (ovoz), ~40 (rasm), ~2 (qidiruv).
-2. **Model selektor (56px)** — ikona + nom + tavsif dropdown; ovoz modellari Jessi/Aziz/Nigora (`aiPickModel`).
-3. **Generatsiya holatlari** — idle → generating (radial lime glow `@keyframes aiGlow` ~2s) → done («tez orada») — `aiGenerateDemo()` uchchalasini ko'rsatadi + toast.
-4. **Template-grounded (BIZNING ustunlik)** — "AI Qidiruv" hero bloki (semantik katalog qidiruv, "AssetFlow ustunligi" badge); "Shablon uchun" konteks hint (ovoz/rasm).
-5. **Timeline live-link** — "🔗 Timeline'dan tanlash" tugmasi `disabled` + "tez orada" pill.
+## 3) Tema almashtirgich (Hisob sheet'da)
+"Mavzu" bo'limi — 3 tugma (Standart/Liquid Glass/Light Glass, swatch bilan). `setTheme(x)`:
+`html[data-theme]=x` + `localStorage['af.prefs']` ga **merge** + joriy tugma belgilanadi.
+`restoreTheme()` boot'da sinxron tiklaydi (default standart, flash yo'q).
 
-CSS tokens.css'dan (lime `--accent/--accent-cta`, `--select` tez-orada pill, `--surface-2`, `--border-accent`). Prompt input, textarea, slayder (`accent-color`), hero, ctx-hint.
+## 4) Barcha ekran tokenlardan foydalanadi
+data-theme o'zgarganda barcha yuza (Katalog/Sidebar/AI Tools/Hisob/modal/toast) tokenlardan
+recolor bo'ladi. Asosiy yuzalarga `backdrop-filter:blur(var(--glass-blur))` qo'shildi (standartda
+no-op; glass'da 28px frost) + `inset 0 1px 0 var(--rim)` jilo.
 
-## TEGILMAGAN
-Mavjud nav (`switchPage`/`switchNavFromSidebar`/4 katalog tab), backend, render mantig'i. Hech qanday API chaqiruv yo'q.
+## Mantiq (TEGILMADI)
+account/login/render/nav/switchPage — hammasi o'sha; faqat tokenlar + almashtirgich qo'shildi.
 
-## Tekshirildi
-- `<style>` qavs 585/585 ✅; `<div>` 288/288 ✅; teglar balansli ✅
-- AI elementlari (#aiPage + 3 pane + result + model menu) mavjud ✅
-- AI JS `node --check` toza ✅; nav funksiyalari 3 ta saqlangan ✅
-- install-cep.sh o'rnatildi ✅
+## Tekshirildi (preview)
+- 3 tema token qiymatlari to'g'ri resolve bo'ladi (bg/surface/blur/rim/text/accent/on-accent) ✅
+- liquid: sidebar `backdrop-filter:blur(28px)`; light: butun panel yorug' (sidebar `rgba(248,250,245,.6)`,
+  matn `#14160f`, lime CTA oq matn bilan — AA) ✅
+- Almashtirgich: 3 tugma, faol belgilanadi, prefs'ga saqlanadi; reload'dan keyin tiklandi (liquid-glass) ✅
+- Inline JS toza; CSS qavslar 762/762; tokens.css 4 blok ✅; install-cep.sh: installed==manba ✅
 
 ## Holat
-Commit kerak. 1-bosqich (Dizayn tizimi) Qadam 1+3+2+4 ✅ — yakunlandi. Keyingi: 3-bosqich (AI backend: SSE job, cost-estimate, ElevenLabs, semantik qidiruv).
+Commit kerak (foydalanuvchi so'raydi). Tema tizimi bosqichi yakunlandi.

@@ -428,3 +428,13 @@ Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, pus
 
 **OCHIQ:** Qism B (hard delete backend + ikki bosqichli UI tasdiqlash) hali qilinmagan.
 **Deploy:** Push qilinganda Render'da `npm run migrate:deploy -w @creative-tools/database` + `npm run generate -w @creative-tools/database` kerak (yangi ustunlar uchun).
+
+### Claude Code sessiyasi (2026-06-14, dizayn + obunachi) ✅
+
+- **0-A: Stripe bypass yopildi** (`573286b`) — `render.yaml PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false` + `plugin-profile.ts` `NODE_ENV!=="production"` himoyasi. **Mehmon yuklab olish guard** + login modal (`showLoginRequired()`; import/download boshida `AssetFlowAccount.isLoggedIn()` tekshiruvi).
+- **Obunachi boshqaruvi** — qator amallari (reja toggle / blok / chiqarish, `admin-subscribers.js`); **per-user limit override** (`PluginProfile.downloadLimitOverride/importLimitOverride`, migration `20260614100000_plugin_limit_override`); profil reja toggle; `serializePluginUser` effektiv limit (`override ?? planDefault`); Hisob panel soddalashtirildi (4 karta → bitta usage-block).
+- **Render AUTO-DEPLOY yoqildi** — ilgari Off edi (backend/migration orqada qolardi, CF Pages auto edi); endi har push'da API + `migrate:deploy` avtomatik.
+- **Dizayn** — Claude Design eksportlari `docs/design-reference/` (**Standart = manba haqiqat**, **Liquid Glass = tema**). Plagin to'liq re-skin: **AI Tools UI** (yagona kompozer + "Nima yaratamiz?" launcher), **Katalog** (hero **karusel** — avto+drag+strelka+nuqta; ixcham **yig'iladigan** qidiruv/filtrlar — ⌕ + "Filtrlar" paneli + Saralash), **Sidebar** (user kartasi + Katalog guruhi + AI kredit chip; qo'lda collapse/expand 240↔64 silliq, prefs persist).
+- **3 TEMA tizimi** — `css/tokens.css` `[data-theme]` **standart / liquid-glass / light-glass** + yangi **`--on-accent`** token. Almashtirgich Hisob sheet'da ("Mavzu" — 3 tugma); `setTheme` → `html[data-theme]` + `localStorage['af.prefs']` merge; boot'da `restoreTheme` (default standart). Asosiy yuzalarda `backdrop-filter:blur(var(--glass-blur))` (standartda no-op).
+- **OCHIQ:** sidebar collapse animatsiyasini yana silliqlash; Hisob ekranini to'liq re-skin; **3-bosqich AI BACKEND** (UI tayyor — API kalitlar OpenAI/ElevenLabs/fal hali YO'Q); Qism B hard delete; 2-bosqich (Sentry / evalJSX / version).
+- **docs/ rejalar:** `PLAN-tema-tizimi.md`, `PLAN-obunachi-boshqaruvi.md`, `CLAUDE-DESIGN-PROMPT.md` (+ `CLAUDE-DESIGN-PROMPT-liquid-glass.md`).
