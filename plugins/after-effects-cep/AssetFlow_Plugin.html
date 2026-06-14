@@ -4315,10 +4315,16 @@ async function aiImportResult(){
     const ext='.'+((af_ai.lastExt||(kind==='image'?'png':'mp3')).replace(/^\./,''));
     const tmp=await aiDownloadToTemp(url,ext);
     const raw=await new Promise(res=>csInterface.evalScript('importMediaFromPath('+JSON.stringify(tmp)+')',r=>res(r||'')));
-    // host structured JSON {ok,reason} qaytaradi; eski "ok:"/"error:" string'ga ham moslik
-    let r;try{r=JSON.parse(raw);}catch(e){r={ok:String(raw).indexOf('ok')===0,reason:String(raw||'')};}
-    if(r&&r.ok){if(typeof showToast==='function')showToast('AE‘ga import qilindi','success');}
-    else{if(typeof showToast==='function')showToast('Import xatosi: '+((r&&r.reason)||'noma\'lum'),'error');}
+    // host structured JSON {ok,addedToComp,compName,item} qaytaradi; eski "ok:" string'ga ham moslik
+    let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=(String(raw).indexOf('ok')===0)?{ok:true}:null;}
+    if(r&&r.ok){
+      const msg=r.addedToComp?('Import qilindi — '+(r.compName?('«'+r.compName+'» '):'')+'kompozitsiyaga qo‘shildi'):'AE‘ga import qilindi (Project panel)';
+      if(typeof showToast==='function')showToast(msg,'success');
+    }else{
+      // ok:false → aniq sabab; raw bo'sh/parse fail bo'lsa generic
+      const reason=(r&&r.reason)?r.reason:(raw?String(raw):'natija olinmadi');
+      if(typeof showToast==='function')showToast('Import xatosi: '+reason,'error');
+    }
   }catch(e){
     if(typeof showToast==='function')showToast('Import xatosi: '+((e&&e.message)||e),'error');
   }

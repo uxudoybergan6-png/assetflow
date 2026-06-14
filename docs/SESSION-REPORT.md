@@ -1,30 +1,30 @@
-# SESSION REPORT — 2026-06-15 — AE import PNG-fix (Higgsfield 1-bosqich) ✅
+# SESSION REPORT — 2026-06-15 — AE import: comp'ga qo'shish + "noma'lum" toast bug ✅
 
-Maqsad: "Input doesn't seem to be a PNG" xatosini yo'qotish — kengaytma/Content-Type
-haqiqiy formatga mos bo'lsin (sabab: REJA-import-mustahkamlash.md §1b).
+Muammo: rasm Project'ga tushdi (format-fix OK), LEKIN (a) aktiv comp'ga qo'shilmadi,
+(b) muvaffaqiyatda ham "Import xatosi: noma'lum" toast.
 
-## 1) Backend — real format aniqlash
-- `workers-ai.ts`: `detectMediaFormat(buf, fallback)` — magic-byte'dan PNG/JPEG/WEBP/GIF/
-  MP4/MP3/WAV/OGG aniqlaydi.
-- `ai.ts`: `/image` va `/voiceover` natija buferidan formatni aniqlab R2'ga TO'G'RI ext+
-  Content-Type bilan yozadi (`ai/img/<u>/<ts>.<ext>`), javobga `ext`+`contentType` qaytaradi
-  (avval DOIM `.png`/`.mp3` edi — flux JPEG qaytarsa nomuvofiqlik).
+## Sabab — "noma'lum"
+`importMediaFromPath` `return`'i `try`+`finally` ICHIDA edi. ExtendScript (ES3) bunda return
+qiymatini yutadi → evalScript bo'sh `""` qaytaradi → frontend fallback `reason=''` → "noma'lum"
+(import esa amalda bo'lib bo'lgan). Mavjud ishlaydigan host funksiyalar `finally`siz — shu sabab.
 
-## 2) Frontend — ext javobdan
-- `aiRenderResult`: `af_ai.lastExt = data.ext` (server real format).
-- `aiImportResult`: hardcoded `.png` o'rniga `af_ai.lastExt` bilan temp fayl nomlanadi.
+## Tuzatish — host.jsx importMediaFromPath
+- `try/finally` olib tashlandi: natija `var result`ga yig'iladi, `app.endUndoGroup()` alohida
+  chaqiriladi, OXIRDA bitta `return JSON.stringify(result)` (qiymat yutilmaydi).
+- Higgsfield naqshi: import bo'lgach, AKTIV comp bo'lsa footage'ni **playhead'ga LAYER** qo'shadi
+  (`active.layers.add(item); layer.startTime = active.time`), `hasVideo||hasAudio` guard bilan.
+  Aktiv comp yo'q bo'lsa — faqat Project (XATO emas). Natija: `{ok,addedToComp,compName,item}`.
 
-## 3) host.jsx — mustahkam import (Higgsfield AEFT naqshi)
-- `importMediaFromPath`: `canImportAs(ImportAsType.FOOTAGE)` GUARD → `importAs=FOOTAGE` →
-  `importFile`; `beginUndoGroup/endUndoGroup` (finally); structured `JSON{ok,reason,item}`.
-  `importAssetToProject` kontrakti tegilmadi (katalog import ishlatadi). Frontend JSON parse
-  qiladi (eski "ok:" string'ga ham moslik).
+## Tuzatish — frontend aiImportResult
+- JSON to'g'ri parse: `ok:true` → muvaffaqiyat toast (comp'ga qo'shilgan bo'lsa «comp nomi»ni
+  ham aytadi; aks holda "Project panel"). FAQAT `ok:false` → xato.
+- "noma'lum" bug yo'q: bo'sh/parse-fail bo'lsa generic "natija olinmadi" (muvaffaqiyatda emas).
 
 ## Tekshirildi
-- `tsc -p apps/api` → EXIT 0 ✅; HTML inline JS + host.jsx `node --check` TOZA ✅
-- `detectMediaFormat` birlik testi: PNG/JPEG/WEBP/MP4/MP3/WAV + fallback → barchasi to'g'ri ✅
-- `install-cep.sh` qayta o'rnatdi; o'rnatilgan CEP'da yangi kod (canImportAs, lastExt) ✅
+- HTML inline JS + host.jsx `node --check` TOZA ✅
+- importMediaFromPath: `var result` + alohida endUndoGroup + oxirda bitta return tasdiqlandi ✅
+- `install-cep.sh` qayta o'rnatdi; o'rnatilgan CEP'da addedToComp (host+html) ✅
 
 ## Holat / kutilmoqda
-Commit foydalanuvchi so'raganda. Render'da CF_* env bo'lsa end-to-end: prompt → AI rasm
-(real format) → AE'ga import xatosiz. Keyingi (REJA §D): Timeline'dan import (getActiveTimelineVideoReference).
+Commit foydalanuvchi so'raganda. AE'da sinash: aktiv comp ochiq → import → footage comp'ga
+qo'shiladi + to'g'ri toast. Keyingi (REJA §D): Timeline'dan import.

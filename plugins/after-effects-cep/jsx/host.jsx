@@ -1840,27 +1840,47 @@ function importMediaFromPath(filePath) {
   if (!file.exists) {
     return JSON.stringify({ ok: false, reason: "Fayl topilmadi: " + filePath });
   }
+  // MUHIM: ExtendScript (ES3) try/finally ichidagi return qiymatni yutishi mumkin
+  // (evalScript bo'sh "" qaytaradi). Shu sabab natijani o'zgaruvchiga yig'ib,
+  // endUndoGroup'ni alohida chaqirib, OXIRIDA bitta return qilamiz.
   app.beginUndoGroup("AssetFlow AI Import");
+  var result;
   try {
     var io = new ImportOptions(file);
     if (!io.canImportAs(ImportAsType.FOOTAGE)) {
-      return JSON.stringify({
-        ok: false,
-        reason: "AE bu faylni footage sifatida qabul qilmaydi: " + file.name
-      });
+      result = { ok: false, reason: "AE bu faylni footage sifatida qabul qilmaydi: " + file.name };
+    } else {
+      io.importAs = ImportAsType.FOOTAGE;
+      var item = app.project.importFile(io);
+      // Higgsfield naqshi: aktiv comp bo'lsa footage'ni playhead'ga LAYER qo'sh.
+      // isItemAddableToComp guard — faqat video/audio (hasVideo||hasAudio).
+      var addedToComp = false;
+      var compName = "";
+      var active = app.project.activeItem;
+      var isComp = active && (active instanceof CompItem);
+      var addable = item && (item.hasVideo === true || item.hasAudio === true);
+      if (isComp && addable) {
+        try {
+          var layer = active.layers.add(item);
+          layer.startTime = active.time; // playhead'ga joylash
+          addedToComp = true;
+          compName = active.name;
+        } catch (addErr) {
+          addedToComp = false; // import baribir muvaffaqiyatli — comp'ga qo'shish XATO emas
+        }
+      }
+      result = {
+        ok: true,
+        addedToComp: addedToComp,
+        compName: compName,
+        item: item ? item.name : ""
+      };
     }
-    io.importAs = ImportAsType.FOOTAGE;
-    var item = app.project.importFile(io);
-    return JSON.stringify({
-      ok: true,
-      reason: "Import qilindi",
-      item: item ? item.name : ""
-    });
   } catch (e) {
-    return JSON.stringify({ ok: false, reason: String(e && e.toString ? e.toString() : e) });
-  } finally {
-    try { app.endUndoGroup(); } catch (ignore) {}
+    result = { ok: false, reason: String(e && e.toString ? e.toString() : e) };
   }
+  try { app.endUndoGroup(); } catch (ignore) {}
+  return JSON.stringify(result);
 }
 
 function importSceneCompToProject(compName) {
