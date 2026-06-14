@@ -1762,9 +1762,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <button type="button" class="env-side-link sb-link sb-plain" data-page="favorites" title="Sevimli" onclick="switchPageFromSidebar(this,'favorites')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span><span class="sb-label">Sevimli</span></button>
               </nav>
 
-              <!-- AI kredit chip (placeholder — 3-bosqichda real ulanadi) -->
+              <!-- AI kredit chip — refreshAccountUi() server balansidan yangilaydi -->
               <div class="sb-foot">
-                <div class="sb-credit" title="AI kredit — tez orada">
+                <div class="sb-credit" title="AI kredit balansi">
                   <span class="sb-bolt"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></svg></span>
                   <span class="sb-credit-text"><b id="sbCredit">50</b> kredit</span>
                 </div>
@@ -4068,12 +4068,16 @@ function onEnvScopeChange(sel){
    Dizayn referensi: Artlist uslubidagi bitta generatsiya bar.
    Generatsiya hozircha "tez orada" demo holatini ko'rsatadi.
    ============================================================ */
+// cost — server narxiga moslangan (backend AI_COST: image 5 · voiceover 3 · sfx 4 · search 1).
+// Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
 const AI_CFG={
-  rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:40,models:['Flux 2','Imagen 4','SDXL Turbo'],settings:['16:9 · 2K · 1 rasm','1:1 · 1K · 4 rasm','9:16 · 2K · 1 rasm'],ph:'G‘oyangizni yozing…'},
-  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:25,models:['Jessi','Aziz','Malika'],settings:['Samimiy · Normal','Hayajonli · Tez','Tinch · Sekin'],ph:'Ovoz uchun matn yozing…'},
-  sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:15,models:['AudioGen','FoleyAI'],settings:['5s · Stereo','10s · Stereo','3s · Mono'],ph:'Tovush effektini tasvirlang…'},
-  qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:0,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
+  rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:5,models:['Flux 2','Imagen 4','SDXL Turbo'],settings:['16:9 · 2K · 1 rasm','1:1 · 1K · 4 rasm','9:16 · 2K · 1 rasm'],ph:'G‘oyangizni yozing…'},
+  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['Jessi','Aziz','Malika'],settings:['Samimiy · Normal','Hayajonli · Tez','Tinch · Sekin'],ph:'Ovoz uchun matn yozing…'},
+  sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['AudioGen','FoleyAI'],settings:['5s · Stereo','10s · Stereo','3s · Mono'],ph:'Tovush effektini tasvirlang…'},
+  qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:1,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
 };
+// Media → backend endpoint mapping. sfx hali backend'da yo'q (faqat /image /voiceover /search).
+const AI_ENDPOINT={rasm:'image',ovoz:'voiceover',qidiruv:'search'};
 const af_ai={
   media:'rasm',
   model:{rasm:'Flux 2',ovoz:'Jessi',sfx:'AudioGen',qidiruv:'Katalog'},
@@ -4197,29 +4201,143 @@ function aiResetResult(){
   const q=document.getElementById('aiQuick');if(q)q.style.display='';
   aiSetGenBtn(false);
 }
-function aiGenerate(){
+/** HTML inyeksiyadan himoya (prompt/URL natijaga qo'yilganda) */
+function aiEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/** AI route'ga POST — code/status'ni saqlab xatoda uzatadi (pubFetch base+timeout). */
+async function aiApiPost(ep,body){
+  const res=await pubFetch('/api/plugin/ai/'+ep,{
+    method:'POST',
+    headers:Object.assign({'Content-Type':'application/json'},pubAuthHeaders()),
+    body:JSON.stringify(body||{})
+  },60000);
+  const txt=await res.text();let data={};try{data=txt?JSON.parse(txt):{};}catch(e){data={};}
+  if(!res.ok){
+    const err=new Error((data&&data.error)||('Xato (HTTP '+res.status+')'));
+    err.status=res.status; err.code=data&&data.code; throw err;
+  }
+  return data;
+}
+
+async function aiGenerate(){
   if(af_ai.gen)return;
+  const media=af_ai.media;
+  // SFX backend'da hali yo'q (faqat /image /voiceover /search ulangan)
+  if(media==='sfx'){aiSoon();return;}
   const ta=document.getElementById('aiPrompt');
   const val=ta?(ta.value||'').trim():'';
-  if(af_ai.media!=='qidiruv'&&!val){
-    if(typeof showToast==='function')showToast('Avval prompt yozing','warning');
+  if(!val){
+    if(typeof showToast==='function')showToast(media==='qidiruv'?'Avval qidiruv so‘zini yozing':'Avval prompt yozing','warning');
     return;
   }
-  if(af_ai.media==='qidiruv'&&!val&&ta)ta.value='kosmik intro kerak';
-  const promptTxt=(ta?ta.value.trim():'')||'…';
-  af_ai.gen=true;af_ai.open=null;aiRenderMenus();aiSetGenBtn(true);
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
+    if(typeof showToast==='function')showToast('AI uchun avval tizimga kiring','warning');
+    return;
+  }
+  af_ai.gen=true;af_ai.open=null;af_ai.lastUrl=null;af_ai.lastKind=null;
+  aiRenderMenus();aiSetGenBtn(true);
   const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='none';
   const q=document.getElementById('aiQuick');if(q)q.style.display='none';
   const area=document.getElementById('aiResultArea');
   if(area)area.innerHTML='<div class="ai-genbox"><div class="glow"></div>'
     +'<div class="ai-eq"><i></i><i></i><i></i><i></i></div>'
-    +'<div class="ai-gen-cap"><b>Generatsiya qilinmoqda…</b><small>'+af_ai.model[af_ai.media]+' · '+promptTxt+'</small></div></div>';
-  af_ai._t=setTimeout(function(){
+    +'<div class="ai-gen-cap"><b>Generatsiya qilinmoqda…</b><small>'+aiEsc(af_ai.model[media])+' · '+aiEsc(val)+'</small></div></div>';
+  try{
+    const ep=AI_ENDPOINT[media];
+    const body=media==='ovoz'?{text:val}:media==='qidiruv'?{query:val}:{prompt:val};
+    const data=await aiApiPost(ep,body);
+    if(media==='qidiruv')aiRenderSearch(data);
+    else aiRenderResult(media,data,val);
+    if(typeof data.creditsLeft==='number')aiUpdateCredits(data.creditsLeft);
+  }catch(e){
+    aiRenderError(e);
+  }finally{
     af_ai.gen=false;af_ai._t=null;aiSetGenBtn(false);
-    if(area)area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('spark',30,1.6)+'</div>'
-      +'<b>Tez orada</b><p>AI generatsiya backend keyingi bosqichda ulanadi. Hozircha bu vizual demo — prompt, model va sozlamalar tayyor.</p></div>';
-    if(typeof showToast==='function')showToast('AI generatsiya — tez orada ulanadi','info');
-  },2200);
+  }
+}
+
+/** Rasm/audio natijani ko'rsatadi + "AE'ga import" tugmasi */
+function aiRenderResult(media,data,promptTxt){
+  const area=document.getElementById('aiResultArea');if(!area)return;
+  const url=data&&data.url;
+  if(!url){aiRenderError(new Error('Natija URL topilmadi'));return;}
+  af_ai.lastUrl=url; af_ai.lastKind=(media==='rasm')?'image':'audio';
+  if(media==='rasm'){
+    area.innerHTML='<div class="ai-res"><div class="ai-res-grid"><figure class="ai-res-card">'
+      +'<img src="'+aiEsc(url)+'" alt="AI natija"/></figure></div>'
+      +'<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
+      +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div></div>';
+  }else{
+    area.innerHTML='<div class="ai-res"><audio controls preload="metadata" src="'+aiEsc(url)+'" style="width:100%;margin-bottom:12px"></audio>'
+      +'<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
+      +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div></div>';
+  }
+}
+
+/** Semantik qidiruv natijasi (hozircha backend STUB — embedding tayyor holatini ko'rsatadi) */
+function aiRenderSearch(data){
+  const area=document.getElementById('aiResultArea');if(!area)return;
+  const dims=data&&data.embeddingDims?(' · vektor o‘lchami '+data.embeddingDims):'';
+  area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('search',30,1.6)+'</div>'
+    +'<b>Semantik qidiruv tayyorlanmoqda</b><p>'+aiEsc((data&&data.note)||'Embedding hisoblandi')+dims+'</p></div>';
+}
+
+/** Xato holatlari — AI_NOT_CONFIGURED / kredit / 401 / boshqa */
+function aiRenderError(e){
+  let msg='Xatolik yuz berdi';
+  const code=e&&e.code, status=e&&e.status;
+  if(code==='AI_NOT_CONFIGURED')msg='AI hali sozlanmagan';
+  else if(code==='AI_CREDITS_EXHAUSTED'||code==='INSUFFICIENT_CREDITS')msg='Kredit yetarli emas — Pro‘ga o‘ting';
+  else if(status===401)msg='Sessiya tugadi — qayta kiring';
+  else if(e&&e.message)msg=e.message;
+  const area=document.getElementById('aiResultArea');
+  if(area)area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('spark',30,1.6)+'</div>'
+    +'<b>'+aiEsc(msg)+'</b><p>Qayta urinib ko‘ring yoki boshqa prompt sinab ko‘ring.</p></div>';
+  if(typeof showToast==='function')showToast(msg,'error');
+}
+
+/** Kredit-pill (#sbCredit) yangilash + cache user'ga yozish */
+function aiUpdateCredits(n){
+  if(typeof n!=='number')return;
+  const el=document.getElementById('sbCredit');if(el)el.textContent=String(n);
+  try{const u=AssetFlowAccount.getCachedUser&&AssetFlowAccount.getCachedUser();if(u)u.aiCredits=n;}catch(e){}
+}
+
+/** Natija URL'ni tmp faylga yuklab → AE'ga import (importMediaFromPath jsx). */
+async function aiImportResult(){
+  const url=af_ai.lastUrl, kind=af_ai.lastKind;
+  if(!url){if(typeof showToast==='function')showToast('Import uchun natija yo‘q','warning');return;}
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Import faqat After Effects ichida ishlaydi','info');return;}
+  try{
+    if(typeof showToast==='function')showToast('Yuklab olinmoqda…','info');
+    const ext=kind==='image'?'.png':'.mp3';
+    const tmp=await aiDownloadToTemp(url,ext);
+    const raw=await new Promise(res=>csInterface.evalScript('importMediaFromPath('+JSON.stringify(tmp)+')',r=>res(r||'')));
+    if(String(raw).indexOf('ok')===0){if(typeof showToast==='function')showToast('AE‘ga import qilindi','success');}
+    else{if(typeof showToast==='function')showToast('Import xatosi: '+String(raw||'noma\'lum'),'error');}
+  }catch(e){
+    if(typeof showToast==='function')showToast('Import xatosi: '+((e&&e.message)||e),'error');
+  }
+}
+
+/** URL (yoki data:) → tmp fayl. data: lokalda dekod; aks holda catalog downloaderi. */
+function aiDownloadToTemp(url,ext){
+  return new Promise((resolve,reject)=>{
+    try{
+      const fs=require('fs'),path=require('path'),os=require('os');
+      let dir=os.tmpdir();
+      try{if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir){dir=AssetFlowCatalog.downloadDir()||dir;}}catch(e){}
+      const dest=path.join(dir,'assetflow_ai_'+Date.now()+ext);
+      if(url.indexOf('data:')===0){
+        const b64=url.slice(url.indexOf(',')+1);
+        fs.writeFileSync(dest,Buffer.from(b64,'base64'));
+        resolve(dest);return;
+      }
+      if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile){
+        AssetFlowCatalog.downloadUrlToFile(url,dest,null,{}).then(()=>resolve(dest)).catch(reject);
+      }else{reject(new Error('Yuklab olish moduli mavjud emas'));}
+    }catch(e){reject(e);}
+  });
 }
 function aiRenderCards(){
   const cards=[
@@ -4591,6 +4709,11 @@ function refreshAccountUi(){
     return;
   }
   if(!u)return;
+  // AI kredit-pill (#sbCredit) — server bergan haqiqiy balans
+  if(typeof u.aiCredits==='number'){
+    const credEl=document.getElementById('sbCredit');
+    if(credEl)credEl.textContent=String(u.aiCredits);
+  }
   // Sheet avatar — birinchi harf
   const initial=(u.name||u.email||'U').trim().charAt(0).toUpperCase();
   const avEl=document.getElementById('accAvatar');

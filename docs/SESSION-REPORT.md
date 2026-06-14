@@ -1,35 +1,29 @@
-# SESSION REPORT — 2026-06-14 — AI backend (Cloudflare Workers AI) qurildi ✅
+# SESSION REPORT — 2026-06-15 — AI Tools UI real backend'ga ulandi ✅
 
-## 1) Prisma
-`AiGeneration` model (type IMAGE/VOICEOVER/SFX/SEARCH, prompt, resultKey?, credits, status
-PENDING/DONE/FAILED, user@relation) + `PluginProfile.aiCredits Int @default(50)` +
-`aiCreditsResetAt`. Migration `20260614160000_add_ai_generation` lokal DB'ga qo'llandi
-(drift bor edi — reset QILMASDAN `migrate diff`+`db execute`+`resolve` bilan), client generate.
+## AssetFlow_Plugin.html (#aiPage)
+- `aiGenerate()` qayta yozildi — "tez orada" demo OLIB TASHLANDI. Tanlangan media'ga qarab
+  real POST: `rasm→/image`, `ovoz→/voiceover`, `qidiruv→/search` (`pubFetch` base+60s timeout,
+  `pubAuthHeaders` token). `sfx` hali backend'da yo'q → "tez orada" (faqat shu).
+- Yangi `aiApiPost` — `code`/`status`ni saqlaydi (xato ishlovi uchun).
+- Holatlar: bosilganda lime glow + "Generatsiya qilinmoqda…" → natija (rasm grid / audio
+  pleyer). `creditsLeft` kelganda kredit-pill (#sbCredit) yangilanadi; cache user ham.
+- "AE‘ga import" → `aiDownloadToTemp(url)` (data: dekod yoki `AssetFlowCatalog.downloadUrlToFile`)
+  → `evalScript('importMediaFromPath(...)')` → toast.
+- Xato matnlari: AI_NOT_CONFIGURED→"AI hali sozlanmagan"; AI_CREDITS_EXHAUSTED/INSUFFICIENT_CREDITS→
+  "Kredit yetarli emas — Pro‘ga o‘ting"; 401→"Sessiya tugadi — qayta kiring".
+- `aiEsc()` — prompt/URL HTML-inyeksiyadan himoya. AI_CFG cost'lari server narxiga (5/3/4/1).
+- `refreshAccountUi` kredit-pill'ni `u.aiCredits`dan to'ldiradi; pill title "tez orada" olib tashlandi.
 
-## 2) plugin-profile.ts
-`consumeAiCredits(userId, cost)` — oylik reset (FREE 50 / PRO 1000) → ATOMIK `updateMany`
-(`aiCredits >= cost`) → `{ok, remaining}`. `refundAiCredits` (provayder xatosida qaytarish).
-`serializePluginUser` ga `aiCredits` + `aiCreditsMonthly`.
+## jsx/host.jsx
+- `importMediaFromPath(filePath)` qo'shildi — `importAssetToProject`ga delegatsiya (png/mp3 footage import).
 
-## 3) lib/ai/workers-ai.ts
-Bitta integratsiya: `POST .../ai/run/{model}` + Bearer. Kalit yo'q → AI_NOT_CONFIGURED.
-Modellar env'dan (default flux-1-schnell / bge-m3 / llama-3.1-8b / melotts).
-`aiGenerateImage`→Buffer (base64/binary), `aiGenerateSpeech`→mp3 Buffer, `aiEmbed`→vektor, `aiText`→string.
-
-## 4) routes/ai.ts (requireAuth + rate-limit 20/min)
-`/estimate` (kalitsiz narx), `/image` (gate→AI→R2 `ai/img/<u>/<ts>.png`→signed URL→AiGeneration),
-`/voiceover` (mp3), `/search` (embed → STUB natija, pgvector keyin). R2 yo'q bo'lsa data URL fallback.
-index.ts: `app.use("/api/plugin/ai", aiRouter)`.
-
-## 5) .env.example + render.yaml: CF_ACCOUNT_ID, CF_AI_TOKEN, AI_MODEL_* (sync:false).
+## assetflow-catalog.js
+- `downloadUrlToFile` public eksport qilindi (AI natija yuklab olish uchun).
 
 ## Tekshirildi
-- `npm run build -w @creative-tools/database` + `tsc -p apps/api` → EXIT 0 ✅
-- Lokal server smoke-test: `/estimate` auth'siz→401; auth bilan→`{credits:5,configured:false}`;
-  `/image`→503 AI_NOT_CONFIGURED (kredit sarflanmaydi) ✅
-- **Haqiqiy AI rasm testi BAJARILMADI** — lokal `.env`da CF_ACCOUNT_ID/CF_AI_TOKEN yo'q.
-  Kalitlar qo'shilsa `/image` to'g'ridan ishlaydi (kod sinovdan o'tgan).
+- HTML inline JS + catalog.js + host.jsx → `node --check` **TOZA** ✅
+- `install-cep.sh` qayta o'rnatdi; o'rnatilgan CEP manba bilan bir xil (importMediaFromPath html+jsx) ✅
 
 ## Holat / kutilmoqda
-Commit foydalanuvchi so'raganda. Render'ga CF_* env qo'shib deploy → birinchi AI rasm.
-Keyingi: AI Tools tab frontend ulash; semantik qidiruv pgvector indeksi.
+Commit foydalanuvchi so'raganda. Render'da CF_* env bo'lsa to'liq ishlaydi (rasm/ovoz/qidiruv).
+SFX route va semantik qidiruv pgvector indeksi — keyingi bosqich.

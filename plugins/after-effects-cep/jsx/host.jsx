@@ -1827,6 +1827,12 @@ function importAssetToProject(filePath) {
   }
 }
 
+// AI Tools natijasi (png/mp3) uchun media import — generic importAssetToProject'ga
+// delegatsiya (footage sifatida Project paneliga qo'shadi). Frontend shu nomni chaqiradi.
+function importMediaFromPath(filePath) {
+  return importAssetToProject(filePath);
+}
+
 function importSceneCompToProject(compName) {
   if (!compName) return "error: no comp";
   try {

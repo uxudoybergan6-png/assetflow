@@ -955,6 +955,7 @@ const AssetFlowCatalog = (() => {
     mergeIntoBrowse,
     downloadPackToTemp,
     downloadSceneMogrt,
+    downloadUrlToFile,
     cancelDownload,
     hasActiveDownload,
     mogrtCompName,
