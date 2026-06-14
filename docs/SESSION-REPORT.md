@@ -1,21 +1,23 @@
-# SESSION REPORT — 2026-06-14 — 1-bosqich Qadam 1: yagona token tizimi ✅
+# SESSION REPORT — 2026-06-14 — 1-bosqich Qadam 3: karta tugmalari doimo ko'rinadigan ✅
 
-## Nima qilindi
+## Nima qilindi (`AssetFlow_Plugin.html`)
 
-**Yangi: `plugins/after-effects-cep/css/tokens.css`** — yagona `:root` (Browse + Admin baham):
-- Birlashtirilgan yuza shkalasi (`--bg:#0f0f0f … --surface-3:#262626`), lime brend (`--accent/--accent-hi/--accent-cta`), `--select:#327bfa` (indigo EMAS), semantik (red/amber), Inter (`@import` + `--font-sans`), shrift tokenlari `--fs-xs:11px…--fs-title:22px`, masofa/harakat.
-- Orqaga moslik aliaslari: `--green→--accent`, `--surface2→--surface-2`, `--surface3→--surface-3`, `--blue→--select`, `--blue-dim→--select-dim`, `--r→--radius` (eski `var()`lar buzilmaydi).
+Karta amal tugmalari hover'siz topilmasdi — endi doimo ko'rinadi:
 
-**`AssetFlow_Plugin.html` + `AssetFlow_Admin.html`**:
-- `<link rel="stylesheet" href="css/tokens.css">` qo'shildi; inline `:root` bloklari olib tashlandi (endi 0 ta inline root). Body shrifti `var(--font-sans)`.
-- **Indigo butunlay o'chirildi** (hex + rgba). Plugin: notice/featured banner gradient, anim-bar, dd-item hover, retry fallback → lime oilasi (12 joy). Admin: `.wf-btn.blue/.scan-mini-btn.blue/.btn-action.blue/.wf-step-icon/.wf-progress-bar/All-render` → `--select` (6 joy).
-- **Shrift ≥11px**: Plugin 5–10px (97 instansi) + Admin 9–10px (33 instansi) → `var(--fs-xs)`. `font-size:0` (sidebar, Qadam 2) ataylab qoldirildi.
+- **`.overlay`** (750–753): `opacity:0` → `opacity:.88` (doimiy yumshoq fon; Import `.dl-btn` doim ko'rinadi). Gradient biroz yengillashtirildi (`transparent 45%,rgba(0,0,0,.7)`). Hover'da `.card:hover .overlay{opacity:1}` (695) endi reveal emas — emphasis.
+- **`.fav-btn`** ★ (761–766): `opacity:0` → `opacity:.55`; hover `opacity:1` (696). `.fav-btn.faved` (768, `opacity:1!important`) o'zgarmadi.
+- **`.del-btn`** 🗑 (769–774): `opacity:0` → `opacity:.55`; hover `opacity:1` (776).
+
+Ranglar tokens.css'dan meros (`--accent` lime, qora gradient). JS/mantiq tegilmadi.
+
+## TEGILMAGAN (media/animatsiya — tugma emas)
+`.thumb-media` (711), `.thumb-poster` swap (717), `.thumb-play` (727), `.preview-anim` (738), `.toast` (1160), `.af-progress` (1180), notice `from{opacity:0}` (450/474), pack/scene poster swap (1012), `.scene-play-btn`/`.pack-sum-play` (default ko'rinadi) — hammasi saqlandi.
 
 ## Tekshirildi (grep)
-- Indigo (`#6366f1|#a855f7|#22d3ee|#a5b4fc|99,102,241|168,85,247|129,140,248`) → **0** ✅
-- `font-size:(5-10)px` → **0** ✅
-- tokens.css `{`=`}`, `<style>/<script>` teglar balansli ✅
-- install-cep.sh bajarildi.
+- Maqsadli 3 tugma → `.55`/`.88` ✅
+- Hover emphasis qoidalari (695/696/776) `opacity:1` joyida ✅
+- Jami `opacity:0` soni 14 → 11 (3 ta olib tashlandi, TEGILMAYDI 11 ta saqlandi) ✅
+- install-cep.sh: o'rnatilgan nusxa yangilandi ✅
 
 ## Holat
-Commit kerak. Qadam 2 (sidebar+tooltip), Qadam 3 (karta tugmalari), Qadam 4 (AI tab skelet) — keyin.
+Commit kerak. Qadam 2 (sidebar+tooltip), Qadam 4 (AI tab skelet) — keyin.
