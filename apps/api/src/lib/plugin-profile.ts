@@ -76,7 +76,7 @@ export async function subscriptionIsPro(userId: string) {
 
 export function proSwitchAllowed(hasStripePro: boolean) {
   if (hasStripePro) return true;
-  if (process.env.PLUGIN_ALLOW_PRO_WITHOUT_STRIPE === "true") return true;
+  if (process.env.PLUGIN_ALLOW_PRO_WITHOUT_STRIPE === "true" && process.env.NODE_ENV !== "production") return true;
   return process.env.NODE_ENV !== "production";
 }
 

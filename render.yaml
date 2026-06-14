@@ -35,4 +35,4 @@ services:
       - key: CDN_BASE_URL
         sync: false          # https://pub-xxx.r2.dev (R2 public URL)
       - key: PLUGIN_ALLOW_PRO_WITHOUT_STRIPE
-        value: "true"        # Test uchun
+        value: "false"
