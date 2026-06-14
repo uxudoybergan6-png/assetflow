@@ -161,23 +161,7 @@ VIEWS.subscribers = function () {
                 <td class="cell-muted mono" style="white-space:nowrap">${s.lastSeen}</td>
                 <td onclick="event.stopPropagation()"><div class="row-actions">
                   <button class="act" title="Xabar" onclick="openMessageSub('${s.id}')">${ic("message")}</button>
-                  ${
-                    s.status === "active"
-                      ? `<button class="act danger" title="Bloklash" onclick="openBlockSub('${s.id}')">${ic("ban")}</button>
-                         <button class="act danger" title="Chiqarib tashlash" onclick="openRemoveSub('${s.id}')">${ic("trash")}</button>`
-                      : ""
-                  }
-                  ${
-                    s.status === "blocked"
-                      ? `<button class="act success" title="Blokdan chiqarish" onclick="unblockSub('${s.id}')">${ic("checkCircle")}</button>
-                         <button class="act danger" title="Chiqarib tashlash" onclick="openRemoveSub('${s.id}')">${ic("trash")}</button>`
-                      : ""
-                  }
-                  ${
-                    s.status === "removed"
-                      ? `<button class="act success" title="Qayta tiklash" onclick="restoreSub('${s.id}')">${ic("refresh")}</button>`
-                      : ""
-                  }
+                  ${subActMenu(s)}
                   <button class="act" title="Profil" onclick="route('subscriber-detail','${s.id}')">${ic("chevR")}</button>
                 </div></td>
               </tr>`;
@@ -242,6 +226,7 @@ VIEWS["subscriber-detail"] = function (id) {
               : ""
           }
           ${removed ? `<button class="btn btn-success btn-sm" onclick="restoreSub('${s.id}')">${ic("refresh")} Qayta tiklash</button>` : ""}
+          ${!removed ? `<button class="btn ${normalizePlanLabel(s.plan) === "Pro" ? "btn-ghost" : "btn-primary"} btn-sm" onclick="openTogglePlanSub('${s.id}')">${ic(normalizePlanLabel(s.plan) === "Pro" ? "chevD" : "star")} ${normalizePlanLabel(s.plan) === "Pro" ? "Free" : "Pro"} qilish</button>` : ""}
           <button class="btn btn-ghost btn-sm" onclick="openMessageSub('${s.id}')">${ic("message")} Xabar</button>
         </div>
       </div>
@@ -249,10 +234,13 @@ VIEWS["subscriber-detail"] = function (id) {
 
     ${(() => {
       const pl = planById(normalizePlanLabel(s.plan).toLowerCase());
-      const limNote = pl.unlimitedDownloads
-        ? "Cheksiz yuklab olish (Pro)"
-        : `${s.downloadsMonth ?? 0} / ${pl.downloadLimit} oy limiti`;
-      return `<div class="info-banner" style="margin-bottom:4px">${ic("download")}<span>Reja: <b>${normalizePlanLabel(s.plan)}</b> — ${limNote}. <a href="#" style="color:var(--violet-bright);text-decoration:underline" onclick="event.preventDefault();route('plans')">Tariflarni tahrirlash</a></span></div>`;
+      const effDl = s.downloadLimitOverride != null ? s.downloadLimitOverride : (pl.unlimitedDownloads ? null : pl.downloadLimit);
+      const hasOverride = s.downloadLimitOverride != null || s.importLimitOverride != null;
+      const overrideNote = hasOverride ? ` \xb7 <b style="color:var(--yellow)">shaxsiy limit</b>` : "";
+      const limNote = effDl === null
+        ? "Cheksiz yuklab olish"
+        : `${s.downloadsMonth ?? 0} / ${effDl} oy yuklab olish`;
+      return `<div class="info-banner" style="margin-bottom:4px">${ic("download")}<span>Reja: <b>${normalizePlanLabel(s.plan)}</b> — ${limNote}${overrideNote}. <a href="#" style="color:var(--violet-bright);text-decoration:underline" onclick="event.preventDefault();openLimitOverrideSub('${s.id}')">Limitni tahrirlash</a></span></div>`;
     })()}
 
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
@@ -294,6 +282,103 @@ VIEWS["subscriber-detail"] = function (id) {
     </div>
   </div>`;
 };
+
+function subActMenu(s) {
+  const isPro = normalizePlanLabel(s.plan) === "Pro";
+  const isRemoved = s.status === "removed";
+  const isBlocked = s.status === "blocked";
+  const isActive = s.status === "active";
+  const cl = "this.closest('details').open=false;";
+  const planItem = !isRemoved
+    ? `<button class="act-item${isPro ? "" : " success"}" onclick="${cl}openTogglePlanSub('${s.id}')">${ic(isPro ? "chevD" : "star")} ${isPro ? "Free qilish" : "Pro qilish"}</button><div class="act-sep"></div>`
+    : "";
+  const blockUnblock = isActive
+    ? `<button class="act-item danger" onclick="${cl}openBlockSub('${s.id}')">${ic("ban")} Bloklash</button>`
+    : isBlocked
+    ? `<button class="act-item success" onclick="${cl}unblockSub('${s.id}')">${ic("checkCircle")} Blokdan chiqarish</button>`
+    : "";
+  const removeRestore = isRemoved
+    ? `<button class="act-item success" onclick="${cl}restoreSub('${s.id}')">${ic("refresh")} Qayta tiklash</button>`
+    : `<button class="act-item danger" onclick="${cl}openRemoveSub('${s.id}')">${ic("trash")} Chiqarish</button>`;
+  return `<details class="act-menu"><summary class="act" title="Amallar">${ic("more")}</summary><div class="act-drop">${planItem}${blockUnblock}${removeRestore}</div></details>`;
+}
+
+function openTogglePlanSub(id) {
+  const s = sById(id);
+  const isPro = normalizePlanLabel(s.plan) === "Pro";
+  const newPlan = isPro ? "free" : "pro";
+  const label = isPro ? "Free" : "Pro";
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic(isPro ? "chevD" : "star")}</div>
+      <div><h3>${label} rejasiga o'tkazish</h3><p>${s.name} \xb7 ${s.email}</p></div>
+    </div>
+    <div class="modal-body">
+      <div class="info-banner">${ic("alert")}<span>${isPro
+        ? `<b>${s.name}</b> Free rejaga o'tkaziladi — oylik limit qayta yoqiladi.`
+        : `<b>${s.name}</b> Pro rejaga o'tkaziladi — cheksiz yuklab olish imkoni beriladi.`
+      }</span></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+      <button class="btn btn-primary" onclick="doTogglePlanSub('${id}','${newPlan}')">${ic(isPro ? "chevD" : "star")} ${label} qilish</button>
+    </div>`);
+}
+
+async function doTogglePlanSub(id, plan) {
+  const s = sById(id);
+  try {
+    await patchSubOnServer(id, { plan });
+    closeModal();
+    toast("Yangilandi", `${s.name} ${plan === "pro" ? "Pro" : "Free"} rejaga o'tkazildi`, plan === "pro" ? "success" : "info");
+    route(CURRENT === "subscriber-detail" ? "subscriber-detail" : "subscribers", id);
+  } catch (e) {
+    toast("Xato", e.message || "API", "danger");
+  }
+}
+
+function openLimitOverrideSub(id) {
+  const s = sById(id);
+  const pl = planById(normalizePlanLabel(s.plan).toLowerCase());
+  const defaultDl = pl.unlimitedDownloads ? "cheksiz" : pl.downloadLimit;
+  const defaultImp = pl.unlimitedImports ? "cheksiz" : pl.importLimit;
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic("sliders")}</div>
+      <div><h3>Shaxsiy limitni tahrirlash</h3><p>${s.name}</p></div>
+    </div>
+    <div class="modal-body col gap-12">
+      <div class="info-banner">${ic("alert")}<span>Reja default: yuklab olish <b>${defaultDl}</b>, import <b>${defaultImp}</b>. Bo'sh qoldiring — reja defaultiga qaytadi.</span></div>
+      <div class="field"><label>Yuklab olish limiti (oy, dona)</label>
+        <input class="input" id="subDlLimit" type="number" min="0" value="${s.downloadLimitOverride != null ? s.downloadLimitOverride : ""}" placeholder="Bo'sh = reja default (${defaultDl})">
+      </div>
+      <div class="field"><label>Import limiti (jami, dona)</label>
+        <input class="input" id="subImpLimit" type="number" min="0" value="${s.importLimitOverride != null ? s.importLimitOverride : ""}" placeholder="Bo'sh = reja default (${defaultImp})">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+      <button class="btn btn-ghost btn-sm" onclick="doLimitOverrideSub('${id}',true)" style="color:var(--tx-2)">Defaultga qaytarish</button>
+      <button class="btn btn-primary" onclick="doLimitOverrideSub('${id}')">Saqlash</button>
+    </div>`);
+}
+
+async function doLimitOverrideSub(id, reset) {
+  const dlRaw = reset ? null : document.getElementById("subDlLimit")?.value.trim();
+  const impRaw = reset ? null : document.getElementById("subImpLimit")?.value.trim();
+  const body = {
+    downloadLimitOverride: dlRaw != null && dlRaw !== "" ? parseInt(dlRaw, 10) : null,
+    importLimitOverride: impRaw != null && impRaw !== "" ? parseInt(impRaw, 10) : null,
+  };
+  try {
+    await patchSubOnServer(id, body);
+    closeModal();
+    toast("Saqlandi", reset ? "Limitlar reja defaultiga qaytarildi" : "Shaxsiy limit yangilandi", "success");
+    route(CURRENT === "subscriber-detail" ? "subscriber-detail" : "subscribers", id);
+  } catch (e) {
+    toast("Xato", e.message || "API", "danger");
+  }
+}
 
 function openBlockSub(id) {
   const s = sById(id);

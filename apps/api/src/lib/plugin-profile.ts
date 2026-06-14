@@ -147,10 +147,8 @@ export async function checkDownloadAllowed(userId: string) {
     return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
   }
   const limits = planLimits(profile.plan);
-  if (
-    !limits.unlimitedDownloads &&
-    profile.downloadsMonth >= (limits.downloadLimit ?? 0)
-  ) {
+  const effectiveDownloadLimit = profile.downloadLimitOverride ?? limits.downloadLimit;
+  if (effectiveDownloadLimit !== null && profile.downloadsMonth >= effectiveDownloadLimit) {
     return {
       ok: false as const,
       error: "Oylik yuklab olish limiti tugadi — Pro tarifga o'ting",
@@ -166,7 +164,8 @@ export async function recordPluginDownload(userId: string, templateId?: string) 
     return { ok: false as const, error: "Hisob faol emas" };
   }
   const limits = planLimits(profile.plan);
-  if (!limits.unlimitedDownloads && profile.downloadsMonth >= (limits.downloadLimit ?? 0)) {
+  const effectiveDownloadLimit = profile.downloadLimitOverride ?? limits.downloadLimit;
+  if (effectiveDownloadLimit !== null && profile.downloadsMonth >= effectiveDownloadLimit) {
     return { ok: false as const, error: "Oylik yuklab olish limiti tugadi" };
   }
 
@@ -188,7 +187,8 @@ export async function recordPluginImport(userId: string, templateId?: string) {
     return { ok: false as const, error: "Hisob faol emas" };
   }
   const limits = planLimits(profile.plan);
-  if (!limits.unlimitedImports && profile.importsTotal >= (limits.importLimit ?? 0)) {
+  const effectiveImportLimit = profile.importLimitOverride ?? limits.importLimit;
+  if (effectiveImportLimit !== null && profile.importsTotal >= effectiveImportLimit) {
     return { ok: false as const, error: "Import limiti tugadi" };
   }
 
@@ -236,5 +236,7 @@ export function mapSubscriberRow(
     ae: profile.aeVersion || "—",
     downloadLimit: limits.downloadLimit,
     unlimitedDownloads: limits.unlimitedDownloads,
+    downloadLimitOverride: profile.downloadLimitOverride ?? null,
+    importLimitOverride: profile.importLimitOverride ?? null,
   };
 }

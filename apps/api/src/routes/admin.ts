@@ -257,6 +257,8 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
 const subPatchSchema = z.object({
   status: z.enum(["active", "blocked", "removed"]).optional(),
   plan: z.enum(["free", "pro"]).optional(),
+  downloadLimitOverride: z.number().int().nonnegative().nullable().optional(),
+  importLimitOverride: z.number().int().nonnegative().nullable().optional(),
 });
 
 adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
@@ -271,6 +273,8 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   const data: {
     status?: PluginAccountStatus;
     plan?: PluginPlanTier;
+    downloadLimitOverride?: number | null;
+    importLimitOverride?: number | null;
   } = {};
 
   if (parsed.data.status) {
@@ -284,6 +288,12 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   if (parsed.data.plan) {
     data.plan =
       parsed.data.plan === "pro" ? PluginPlanTier.PRO : PluginPlanTier.FREE;
+  }
+  if ("downloadLimitOverride" in parsed.data) {
+    data.downloadLimitOverride = parsed.data.downloadLimitOverride ?? null;
+  }
+  if ("importLimitOverride" in parsed.data) {
+    data.importLimitOverride = parsed.data.importLimitOverride ?? null;
   }
 
   await prisma.pluginProfile.update({ where: { userId }, data });

@@ -195,6 +195,13 @@ const StudioApi = (() => {
     });
   }
 
+  async function updateSubscriber(userId, body) {
+    return request(`/api/admin/plugin-subscribers/${userId}`, {
+      method: "PATCH",
+      body,
+    });
+  }
+
   async function patchContributorStatus(userId, blocked) {
     return request(`/api/contributor/users/${userId}/status`, {
       method: "PATCH",
@@ -266,6 +273,7 @@ const StudioApi = (() => {
     adminOverview,
     listPluginSubscribers,
     patchPluginSubscriber,
+    updateSubscriber,
     patchContributorStatus,
     patchProfile,
     pluginAnalytics,

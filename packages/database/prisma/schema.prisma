@@ -87,6 +87,8 @@ model PluginProfile {
   lastSeenAt     DateTime?
   deviceLabel    String?
   aeVersion      String?
+  downloadLimitOverride Int?
+  importLimitOverride   Int?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 

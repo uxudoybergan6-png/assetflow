@@ -101,6 +101,8 @@ const AssetFlowAuth = (() => {
 
   function logout(redirect = true) {
     clearSession();
+    localStorage.removeItem("af_remember_email");
+    localStorage.removeItem("af_remember_session");
     if (redirect) location.href = loginUrl();
   }
 
