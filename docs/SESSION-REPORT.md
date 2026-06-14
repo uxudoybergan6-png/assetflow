@@ -1,30 +1,31 @@
-# SESSION REPORT — 2026-06-15 — AE import: comp'ga qo'shish + "noma'lum" toast bug ✅
+# SESSION REPORT — 2026-06-15 — AI Ovoz (TTS) to'liq ishlaydigan ✅
 
-Muammo: rasm Project'ga tushdi (format-fix OK), LEKIN (a) aktiv comp'ga qo'shilmadi,
-(b) muvaffaqiyatda ham "Import xatosi: noma'lum" toast.
+## 1) workers-ai.ts — aiGenerateSpeech mustahkamlandi
+- Default model `@cf/myshell-ai/melotts` (Workers AI'da MAVJUD; `AI_MODEL_TTS` bilan
+  almashtirsa bo'ladi). Input `{ prompt, lang }`.
+- Javob formati modelga qarab har xil — barchasini qamradik:
+  `result.audio` (melotts) | top-level `audio` | `result` string | `data:`-URI | binary audio/*.
+- `stripDataUri()` — `data:audio/...;base64,` prefiksini tozalaydi.
+- **Diagnostika logi**: `[ai:tts] model=… ct=… keys=… audioLen=…` (base64 emas, faqat metama'lumot)
+  — deploydan keyin javob shaklini ko'rish uchun.
 
-## Sabab — "noma'lum"
-`importMediaFromPath` `return`'i `try`+`finally` ICHIDA edi. ExtendScript (ES3) bunda return
-qiymatini yutadi → evalScript bo'sh `""` qaytaradi → frontend fallback `reason=''` → "noma'lum"
-(import esa amalda bo'lib bo'lgan). Mavjud ishlaydigan host funksiyalar `finally`siz — shu sabab.
+## 2) ai.ts /voiceover — (avvalgi bosqichda) `detectMediaFormat` bilan
+Audio buferdan real format (MP3/WAV/OGG) → R2 `ai/voice/<u>/<ts>.<ext>` to'g'ri Content-Type bilan,
+javobga `ext`+`contentType`. Magic-byte: ID3/0xFFEx→mp3, RIFF…WAVE→wav, OggS→ogg.
 
-## Tuzatish — host.jsx importMediaFromPath
-- `try/finally` olib tashlandi: natija `var result`ga yig'iladi, `app.endUndoGroup()` alohida
-  chaqiriladi, OXIRDA bitta `return JSON.stringify(result)` (qiymat yutilmaydi).
-- Higgsfield naqshi: import bo'lgach, AKTIV comp bo'lsa footage'ni **playhead'ga LAYER** qo'shadi
-  (`active.layers.add(item); layer.startTime = active.time`), `hasVideo||hasAudio` guard bilan.
-  Aktiv comp yo'q bo'lsa — faqat Project (XATO emas). Natija: `{ok,addedToComp,compName,item}`.
-
-## Tuzatish — frontend aiImportResult
-- JSON to'g'ri parse: `ok:true` → muvaffaqiyat toast (comp'ga qo'shilgan bo'lsa «comp nomi»ni
-  ham aytadi; aks holda "Project panel"). FAQAT `ok:false` → xato.
-- "noma'lum" bug yo'q: bo'sh/parse-fail bo'lsa generic "natija olinmadi" (muvaffaqiyatda emas).
+## 3) Frontend — (avvalgi bosqichlarda tayyor, o'zgartirilmadi)
+`aiRenderResult` audio uchun `<audio controls>` pleyer; `af_ai.lastKind='audio'`,
+`lastExt=data.ext`. "AE'ga import" → `importMediaFromPath` audio footage'ni comp'ga
+(playhead, `hasAudio` guard) qo'shadi. Plugin fayllari o'zgarmagani uchun install-cep no-op.
 
 ## Tekshirildi
-- HTML inline JS + host.jsx `node --check` TOZA ✅
-- importMediaFromPath: `var result` + alohida endUndoGroup + oxirda bitta return tasdiqlandi ✅
-- `install-cep.sh` qayta o'rnatdi; o'rnatilgan CEP'da addedToComp (host+html) ✅
+- `tsc -p apps/api` → EXIT 0 ✅
+- Lokal smoke-test: `/estimate voiceover`→`{credits:3,configured:false}`; `/voiceover`→503
+  AI_NOT_CONFIGURED (kredit sarflanmaydi) ✅
+- `detectMediaFormat` audio (MP3/WAV/OGG) testi avval o'tgan ✅
+- **Haqiqiy TTS audio testi BAJARILMADI** — lokal `.env`da CF_AI_TOKEN yo'q. Kalit qo'shilsa
+  `/voiceover` audio qaytaradi; `[ai:tts]` log javob shaklini tasdiqlaydi (kerak bo'lsa model ID moslanadi).
 
 ## Holat / kutilmoqda
-Commit foydalanuvchi so'raganda. AE'da sinash: aktiv comp ochiq → import → footage comp'ga
-qo'shiladi + to'g'ri toast. Keyingi (REJA §D): Timeline'dan import.
+Commit foydalanuvchi so'raganda. Render'ga CF_* qo'shib deploy → ovoz end-to-end; `[ai:tts]` logi
+melotts javob shaklini tasdiqlaydi (mos kelmasa AI_MODEL_TTS env'dan boshqa TTS ID).

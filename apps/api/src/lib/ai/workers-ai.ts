@@ -115,9 +115,20 @@ export async function aiGenerateImage(prompt: string): Promise<AiResult<Buffer>>
   return { ok: true, data: buf };
 }
 
+/** base64 yoki `data:audio/...;base64,XXX` data-URI'dan toza base64 ajratadi. */
+function stripDataUri(s: string): string {
+  const i = s.indexOf("base64,");
+  return i >= 0 ? s.slice(i + 7) : s;
+}
+
 /**
- * Text-to-Speech (MeloTTS). JSON `{ result: { audio: <base64 mp3> } }`.
- * Natija — MP3 `Buffer`.
+ * Text-to-Speech. Default model `@cf/myshell-ai/melotts` (Workers AI'da mavjud;
+ * `AI_MODEL_TTS` orqali almashtirsa bo'ladi). Input `{ prompt, lang }`.
+ * Javob formati modelga qarab har xil bo'lishi mumkin:
+ *   - JSON `{ result: { audio: <base64> } }` (melotts) — eng keng tarqalgan,
+ *   - JSON top-level `{ audio: <base64> }` yoki `data:`-URI,
+ *   - to'g'ridan binary audio (content-type audio/*).
+ * Diagnostika uchun javob shakli loglanadi (base64'ning o'zi emas). Natija — audio `Buffer`.
  */
 export async function aiGenerateSpeech(
   text: string,
@@ -125,16 +136,33 @@ export async function aiGenerateSpeech(
 ): Promise<AiResult<Buffer>> {
   if (!isAiConfigured()) return NOT_CONFIGURED;
   const res = await runModel(AI_MODELS.tts, { prompt: text, lang });
-  if (!res.ok) return { ok: false, error: await errorText(res), status: res.status };
+  if (!res.ok) {
+    const err = await errorText(res);
+    console.error(`[ai:tts] model=${AI_MODELS.tts} HTTP ${res.status}: ${err}`);
+    return { ok: false, error: err, status: res.status };
+  }
 
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
-    const j = (await res.json()) as { result?: { audio?: string } };
-    const b64 = j?.result?.audio;
-    if (!b64) return { ok: false, error: "AI javobida audio topilmadi" };
-    return { ok: true, data: Buffer.from(b64, "base64") };
+    const j = (await res.json()) as {
+      result?: { audio?: string } | string;
+      audio?: string;
+    };
+    const resultObj = typeof j?.result === "object" ? j.result : null;
+    const raw =
+      (resultObj && typeof resultObj.audio === "string" && resultObj.audio) ||
+      (typeof j?.result === "string" && j.result) ||
+      (typeof j?.audio === "string" && j.audio) ||
+      "";
+    console.log(
+      `[ai:tts] model=${AI_MODELS.tts} ct=json keys=${Object.keys(j || {}).join(",")} audioLen=${raw.length}`
+    );
+    if (!raw) return { ok: false, error: "AI javobida audio topilmadi" };
+    return { ok: true, data: Buffer.from(stripDataUri(raw), "base64") };
   }
+
   const buf = Buffer.from(await res.arrayBuffer());
+  console.log(`[ai:tts] model=${AI_MODELS.tts} ct=${ct || "(yo'q)"} bytes=${buf.length}`);
   if (!buf.length) return { ok: false, error: "AI bo'sh audio qaytardi" };
   return { ok: true, data: buf };
 }
