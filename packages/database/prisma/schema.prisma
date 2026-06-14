@@ -61,6 +61,7 @@ model User {
   studioThreads         StudioMessageThread[] @relation("ContributorThreads")
   studioMessagesSent    StudioMessage[]       @relation("StudioMessagesSent")
   studioAuditLogs       StudioAuditLog[]      @relation("StudioAuditActor")
+  aiGenerations         AiGeneration[]
 
   @@index([role])
 }
@@ -84,6 +85,8 @@ model PluginProfile {
   downloadsMonth Int                  @default(0)
   importsTotal   Int                  @default(0)
   monthResetAt   DateTime             @default(now())
+  aiCredits      Int                  @default(50)
+  aiCreditsResetAt DateTime           @default(now())
   lastSeenAt     DateTime?
   deviceLabel    String?
   aeVersion      String?
@@ -299,4 +302,34 @@ model StudioAuditLog {
   @@index([action])
   @@index([createdAt])
   @@index([actorId])
+}
+
+enum AiGenerationType {
+  IMAGE
+  VOICEOVER
+  SFX
+  SEARCH
+}
+
+enum AiGenerationStatus {
+  PENDING
+  DONE
+  FAILED
+}
+
+model AiGeneration {
+  id        String             @id @default(cuid())
+  userId    String
+  type      AiGenerationType
+  prompt    String             @db.Text
+  resultKey String?
+  credits   Int                @default(0)
+  status    AiGenerationStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
 }

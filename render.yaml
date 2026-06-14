@@ -36,3 +36,16 @@ services:
         sync: false          # https://pub-xxx.r2.dev (R2 public URL)
       - key: PLUGIN_ALLOW_PRO_WITHOUT_STRIPE
         value: "false"
+      # Cloudflare Workers AI (AI Tools)
+      - key: CF_ACCOUNT_ID
+        sync: false
+      - key: CF_AI_TOKEN
+        sync: false          # Workers AI ruxsatli token
+      - key: AI_MODEL_IMAGE
+        sync: false
+      - key: AI_MODEL_EMBED
+        sync: false
+      - key: AI_MODEL_TEXT
+        sync: false
+      - key: AI_MODEL_TTS
+        sync: false

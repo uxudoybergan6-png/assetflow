@@ -21,6 +21,7 @@ import { contributorRouter } from "./routes/contributor.js";
 import { logsRouter } from "./routes/logs.js";
 import { messagesRouter } from "./routes/messages.js";
 import { auditRouter } from "./routes/audit.js";
+import { aiRouter } from "./routes/ai.js";
 import { logS3Diagnostics } from "./lib/s3.js";
 
 const app = express();
@@ -82,6 +83,7 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/assets", assetsRouter);
 app.use("/api/plugin", pluginRouter);
+app.use("/api/plugin/ai", aiRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/contributor", contributorRouter);

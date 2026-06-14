@@ -1,21 +1,35 @@
-# SESSION REPORT — 2026-06-14 — Contributor Overview BO'SH render tuzatildi ✅
+# SESSION REPORT — 2026-06-14 — AI backend (Cloudflare Workers AI) qurildi ✅
 
-## Sabab (frontend SyntaxError — backend bilan bog'liq EMAS)
-`packages/assetflow-studio/contributor/index.html:90` da avatar bosh harflari logikasida
-to'g'ri `''` o'rniga **egri qo'shtirnoq** ishlatilgan edi: `w[0]||’’` va `.join(‘’)`
-(U+2019/U+2018). Bu inline `<script>` blokini (78–174) butunlay parse qildirmasdi →
-`route()`/`bootContributor()` ta'riflanmay, `route("overview")` chaqirilmas → `#view`
-bo'sh → Overview oq render. Xato `88d2ca6` ("dynamic identity") commitida kirgan.
+## 1) Prisma
+`AiGeneration` model (type IMAGE/VOICEOVER/SFX/SEARCH, prompt, resultKey?, credits, status
+PENDING/DONE/FAILED, user@relation) + `PluginProfile.aiCredits Int @default(50)` +
+`aiCreditsResetAt`. Migration `20260614160000_add_ai_generation` lokal DB'ga qo'llandi
+(drift bor edi — reset QILMASDAN `migrate diff`+`db execute`+`resolve` bilan), client generate.
 
-## Tuzatish
-- `contributor/index.html:90`: `’’` → `''`, `‘’` → `''` (oddiy ASCII). Bittagina qator.
-- `npm run studio:sync` — artefaktlar qayta yozildi (`apps/web/public/studio/...`).
-- 3 nusxa ham toza: manba `contributor/`, artefakt `studio/contributor/`, `apps/web/.../contributor/`.
+## 2) plugin-profile.ts
+`consumeAiCredits(userId, cost)` — oylik reset (FREE 50 / PRO 1000) → ATOMIK `updateMany`
+(`aiCredits >= cost`) → `{ok, remaining}`. `refundAiCredits` (provayder xatosida qaytarish).
+`serializePluginUser` ga `aiCredits` + `aiCreditsMonthly`.
+
+## 3) lib/ai/workers-ai.ts
+Bitta integratsiya: `POST .../ai/run/{model}` + Bearer. Kalit yo'q → AI_NOT_CONFIGURED.
+Modellar env'dan (default flux-1-schnell / bge-m3 / llama-3.1-8b / melotts).
+`aiGenerateImage`→Buffer (base64/binary), `aiGenerateSpeech`→mp3 Buffer, `aiEmbed`→vektor, `aiText`→string.
+
+## 4) routes/ai.ts (requireAuth + rate-limit 20/min)
+`/estimate` (kalitsiz narx), `/image` (gate→AI→R2 `ai/img/<u>/<ts>.png`→signed URL→AiGeneration),
+`/voiceover` (mp3), `/search` (embed → STUB natija, pgvector keyin). R2 yo'q bo'lsa data URL fallback.
+index.ts: `app.use("/api/plugin/ai", aiRouter)`.
+
+## 5) .env.example + render.yaml: CF_ACCOUNT_ID, CF_AI_TOKEN, AI_MODEL_* (sync:false).
 
 ## Tekshirildi
-- Repo bo'ylab egri-qo'shtirnoq (JS kontekstida) skani → faqat o'sha artefakt, u ham sync'dan keyin toza ✅
-- `node --check` inline skript bloklari ustidan → **PARSE: TOZA** ✅
+- `npm run build -w @creative-tools/database` + `tsc -p apps/api` → EXIT 0 ✅
+- Lokal server smoke-test: `/estimate` auth'siz→401; auth bilan→`{credits:5,configured:false}`;
+  `/image`→503 AI_NOT_CONFIGURED (kredit sarflanmaydi) ✅
+- **Haqiqiy AI rasm testi BAJARILMADI** — lokal `.env`da CF_ACCOUNT_ID/CF_AI_TOKEN yo'q.
+  Kalitlar qo'shilsa `/image` to'g'ridan ishlaydi (kod sinovdan o'tgan).
 
 ## Holat / kutilmoqda
-Commit foydalanuvchi so'raganda. Deploy'dan keyin pages.dev/studio/contributor/ Overview
-to'liq render bo'lishini tasdiqlash (CF `prepare-cf-pages.mjs` `contributor/` ni dist'ga ko'chiradi).
+Commit foydalanuvchi so'raganda. Render'ga CF_* env qo'shib deploy → birinchi AI rasm.
+Keyingi: AI Tools tab frontend ulash; semantik qidiruv pgvector indeksi.

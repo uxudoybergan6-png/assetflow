@@ -8,6 +8,16 @@ import {
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
 
+/** Oylik AI kredit ulushi — har oy boshida shu qiymatga tiklanadi. */
+export const AI_MONTHLY_CREDITS = {
+  [PluginPlanTier.FREE]: 50,
+  [PluginPlanTier.PRO]: 1000,
+} as const;
+
+export function aiMonthlyAllotment(plan: PluginPlanTier) {
+  return AI_MONTHLY_CREDITS[plan] ?? AI_MONTHLY_CREDITS[PluginPlanTier.FREE];
+}
+
 export function planLimits(plan: PluginPlanTier) {
   if (plan === PluginPlanTier.PRO) {
     return {
@@ -133,6 +143,8 @@ export function serializePluginUser(
     downloadsTotal: profile.downloadsTotal,
     downloadsMonth: profile.downloadsMonth,
     importsTotal: profile.importsTotal,
+    aiCredits: profile.aiCredits,
+    aiCreditsMonthly: aiMonthlyAllotment(profile.plan),
     limits,
     stripeSubscriptionActive: stripeActive,
     stripeStatus: sub?.status ?? null,
@@ -208,6 +220,65 @@ export async function recordPluginImport(userId: string, templateId?: string) {
   });
 
   return { ok: true as const, profile: updated, templateId };
+}
+
+/**
+ * AI kredit-gate — har AI generatsiyadan OLDIN chaqiriladi. Server tomonda:
+ *   1) oylik reset (aiCreditsResetAt < oy boshi bo'lsa plan ulushiga tiklash),
+ *   2) ATOMIK kamaytirish — `updateMany` `aiCredits >= cost` sharti bilan, shu
+ *      sabab parallel so'rovlarda balans manfiyga tushmaydi (race-safe).
+ * Frontend hech qachon kredit hisobini boshqarmaydi.
+ */
+export async function consumeAiCredits(userId: string, cost: number) {
+  const profile = await ensurePluginProfile(userId);
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
+    return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
+  }
+
+  // Oylik reset — balansni o'qishdan OLDIN
+  const start = monthStart();
+  let available = profile.aiCredits;
+  if (profile.aiCreditsResetAt < start) {
+    const reset = await prisma.pluginProfile.update({
+      where: { userId },
+      data: { aiCredits: aiMonthlyAllotment(profile.plan), aiCreditsResetAt: start },
+    });
+    available = reset.aiCredits;
+  }
+
+  if (available < cost) {
+    return {
+      ok: false as const,
+      error: "AI kreditlari tugadi — keyingi oyni kuting yoki Pro tarifga o'ting",
+      code: "AI_CREDITS_EXHAUSTED",
+      remaining: available,
+    };
+  }
+
+  // Atomik: faqat balans yetarli bo'lsa kamaytiradi
+  const res = await prisma.pluginProfile.updateMany({
+    where: { userId, aiCredits: { gte: cost } },
+    data: { aiCredits: { decrement: cost }, lastSeenAt: new Date() },
+  });
+  if (res.count === 0) {
+    return {
+      ok: false as const,
+      error: "AI kreditlari tugadi — keyingi oyni kuting yoki Pro tarifga o'ting",
+      code: "AI_CREDITS_EXHAUSTED",
+      remaining: available,
+    };
+  }
+
+  return { ok: true as const, remaining: available - cost };
+}
+
+/** Provayder xato bersa sarflangan kreditni qaytaradi (foydalanuvchi bekorga to'lamasin). */
+export async function refundAiCredits(userId: string, cost: number) {
+  if (cost <= 0) return;
+  await prisma.pluginProfile.update({
+    where: { userId },
+    data: { aiCredits: { increment: cost } },
+  });
 }
 
 export function formatLastSeen(iso: string | Date | null | undefined) {
