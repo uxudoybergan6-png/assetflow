@@ -97,8 +97,8 @@ export function publicMogrtUrl(
   return `${apiBase.replace(/\/$/, "")}/api/plugin/assets/${templateId}/mogrt/${sceneKey(slug)}`;
 }
 
-const SCENE_IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".webp"];
-const SCENE_VIDEO_EXTS = [".mp4", ".mov", ".webm"];
+export const SCENE_IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".webp"];
+export const SCENE_VIDEO_EXTS = [".mp4", ".mov", ".webm"];
 
 /** Per-scene preview yo'li — avval rasm, keyin video (mavjud bo'lsa) */
 export function findScenePreview(templateId: string, key: string): string | null {

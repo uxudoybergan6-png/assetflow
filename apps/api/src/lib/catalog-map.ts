@@ -6,13 +6,37 @@ import {
   publicSceneUrl,
   publicMogrtUrl,
   sceneFileIsVideo,
+  SCENE_IMAGE_EXTS,
+  SCENE_VIDEO_EXTS,
 } from "./template-files.js";
 import {
   isS3Configured,
   s3ObjectExists,
   templateAssetFlags,
   listTemplateS3Keys,
+  s3AssetKeyFromSet,
+  getPublicUrl,
 } from "./s3.js";
+
+/**
+ * Sahna fayli uchun mavjud R2 kalitini topadi (ext bo'yicha). knownS3Keys
+ * berilsa tarmoqsiz (List natijasidan), aks holda HeadObject bilan. Topilsa —
+ * to'g'ridan CDN public URL qurish mumkin (Render orqali stream EMAS).
+ */
+async function resolveSceneS3Key(
+  templateId: string,
+  key: string,
+  exts: string[],
+  knownS3Keys?: Set<string>
+): Promise<string | null> {
+  const base = `templates/${templateId}/scenes/${key}`;
+  const candidates = [base, ...exts.map((e) => base + e)];
+  for (const c of candidates) {
+    const hit = knownS3Keys ? knownS3Keys.has(c) : await s3ObjectExists(c);
+    if (hit) return c;
+  }
+  return null;
+}
 
 /** R2/S3: sahna preview URL — disk + object storage.
  *  knownS3Keys berilsa HeadObject chaqirilmaydi (N+1 oldini olish). */
@@ -39,30 +63,44 @@ async function enrichScenesAsync(
         "";
       if (!key) return s;
 
+      const useS3 = isS3Configured();
+
+      // Video preview: lokal disk (dev) yoki R2.
       const videoFile = findSceneVideo(templateId, key);
-      let hasVideo = !!videoFile;
-      if (!hasVideo && isS3Configured()) {
-        const s3Key = `templates/${templateId}/scenes/${key}.mp4`;
-        hasVideo = knownS3Keys
-          ? knownS3Keys.has(s3Key)
-          : await s3ObjectExists(s3Key);
-      }
-      if (hasVideo) {
-        s.preview = publicSceneUrl(apiBase, templateId, key);
+      const videoS3 = !videoFile && useS3
+        ? await resolveSceneS3Key(templateId, key, SCENE_VIDEO_EXTS, knownS3Keys)
+        : null;
+      if (videoFile || videoS3) {
+        // R2 bo'lsa TO'G'RIDAN CDN public URL — Render orqali stream EMAS
+        // (bandwidth = 0). Faqat lokal disk bo'lsa API endpoint (stream).
+        s.preview = videoS3
+          ? getPublicUrl(videoS3)
+          : publicSceneUrl(apiBase, templateId, key);
+        // Poster thumb (rasm) — mavjud bo'lsa
+        const thumbS3 = useS3
+          ? await resolveSceneS3Key(
+              templateId,
+              key + "_thumb",
+              SCENE_IMAGE_EXTS,
+              knownS3Keys
+            )
+          : null;
         const imgFile = findScenePreview(templateId, key);
-        if (imgFile && !sceneFileIsVideo(imgFile)) {
+        if (thumbS3) {
+          s.thumb = getPublicUrl(thumbS3);
+        } else if (imgFile && !sceneFileIsVideo(imgFile)) {
           s.thumb = publicSceneUrl(apiBase, templateId, key + "_thumb");
         }
       } else {
+        // Rasm preview
         const previewFile = findScenePreview(templateId, key);
-        let hasImg = !!previewFile;
-        if (!hasImg && isS3Configured()) {
-          const s3Key = `templates/${templateId}/scenes/${key}.png`;
-          hasImg = knownS3Keys
-            ? knownS3Keys.has(s3Key)
-            : await s3ObjectExists(s3Key);
-        }
-        if (hasImg) {
+        const imgS3 = !previewFile && useS3
+          ? await resolveSceneS3Key(templateId, key, SCENE_IMAGE_EXTS, knownS3Keys)
+          : null;
+        if (imgS3) {
+          s.preview = getPublicUrl(imgS3); // to'g'ridan CDN
+          s.previewKind = "image";
+        } else if (previewFile) {
           s.preview = publicSceneUrl(apiBase, templateId, key);
           s.previewKind = "image";
         }
@@ -105,6 +143,24 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const hasPreview = assets.preview;
   const hasPack = assets.pack;
 
+  // Thumb/preview — ochiq assetlar. R2'da bo'lsa TO'G'RIDAN CDN public URL
+  // qaytaramiz, shunda brauzer Cloudflare'dan oladi va Render bandwidth = 0
+  // (avval har bir asset Render API → 302 redirect orqali o'tardi). Faqat
+  // lokal disk (dev, R2 yo'q) holatida API endpoint orqali stream qilinadi.
+  const useS3 = isS3Configured();
+  const thumbS3 = useS3 ? s3AssetKeyFromSet(t.id, "thumb", s3Keys) : null;
+  const previewS3 = useS3 ? s3AssetKeyFromSet(t.id, "preview", s3Keys) : null;
+  const thumbUrl = thumbS3
+    ? getPublicUrl(thumbS3)
+    : hasThumb
+      ? publicAssetUrl(apiBase, t.id, "thumb")
+      : null;
+  const previewUrl = previewS3
+    ? getPublicUrl(previewS3)
+    : hasPreview
+      ? publicAssetUrl(apiBase, t.id, "preview")
+      : null;
+
   // Pack URL — DOIM API endpoint orqali (to'g'ridan R2 public URL EMAS).
   // Shu sabab pack yuklab olish auth + published + Free/Pro limit gate'idan
   // o'tadi; route esa qisqa muddatli signed R2 URL'ga redirect qiladi.
@@ -131,8 +187,8 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     hasThumb,
     hasPreview,
     hasPack,
-    thumbUrl: hasThumb ? publicAssetUrl(apiBase, t.id, "thumb") : null,
-    previewUrl: hasPreview ? publicAssetUrl(apiBase, t.id, "preview") : null,
+    thumbUrl,
+    previewUrl,
     packUrl,
     metaJson: meta,
     createdAt: t.createdAt.toISOString(),

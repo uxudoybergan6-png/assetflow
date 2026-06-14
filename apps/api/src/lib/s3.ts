@@ -37,6 +37,10 @@ export const s3 = new S3Client({
     : undefined,
 });
 
+// Brauzer/CDN keshi — thumb/preview/sahna assetlari deyarli o'zgarmaydi (key
+// bo'yicha versiyalangan), shu sabab uzoq immutable kesh egress'ni kamaytiradi.
+export const ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 export function getPublicUrl(key: string): string {
   if (cdnBase) return `${cdnBase.replace(/\/$/, "")}/${key}`;
   if (bucket && region) {
@@ -104,6 +108,33 @@ export async function resolveS3AssetKey(
     if (await s3ObjectExists(key)) return key;
   }
   return null;
+}
+
+/**
+ * knownS3Keys to'plamidan asset uchun mavjud birinchi kalitni qaytaradi —
+ * HeadObject'siz (tarmoqsiz). Katalogda to'g'ridan CDN public URL qurish uchun
+ * ishlatiladi (Render orqali stream qilinmasin → bandwidth = 0).
+ */
+export function s3AssetKeyFromSet(
+  templateId: string,
+  kind: TemplateAssetKind,
+  knownS3Keys: Set<string>
+): string | null {
+  for (const key of s3KeysForAsset(templateId, kind)) {
+    if (knownS3Keys.has(key)) return key;
+  }
+  return null;
+}
+
+/** Startup diagnostikasi — R2/S3 sozlanganmi va qaysi config mavjud (kalitlarni oshkor qilmasdan). */
+export function logS3Diagnostics(): void {
+  console.log(
+    `[s3] isS3Configured=${isS3Configured()} ` +
+      `bucket=${bucket ? "set" : "MISSING"} ` +
+      `accessKey=${process.env.AWS_ACCESS_KEY_ID ? "set" : "MISSING"} ` +
+      `endpoint=${endpoint ? "set" : "(aws default)"} ` +
+      `cdnBase=${cdnBase ? cdnBase : "MISSING (→ Render stream fallback!)"}`
+  );
 }
 
 /**
@@ -238,7 +269,8 @@ export function s3UploadKeyForFile(
 export async function uploadFileToS3(
   localPath: string,
   s3Key: string,
-  contentType: string
+  contentType: string,
+  cacheControl: string = ASSET_CACHE_CONTROL
 ): Promise<string> {
   const contentLength = fs.statSync(localPath).size;
   const body = fs.createReadStream(localPath);
@@ -250,6 +282,7 @@ export async function uploadFileToS3(
         Key: s3Key,
         Body: body,
         ContentType: contentType,
+        CacheControl: cacheControl,
       },
       partSize: 8 * 1024 * 1024, // 8MB bo'laklar
       queueSize: 4, // bir vaqtda 4 bo'lak → ~32MB cho'qqi
@@ -285,7 +318,8 @@ export async function downloadS3ToFile(
 export async function uploadBufferToS3(
   buffer: Buffer,
   s3Key: string,
-  contentType: string
+  contentType: string,
+  cacheControl: string = ASSET_CACHE_CONTROL
 ): Promise<string> {
   await s3.send(
     new PutObjectCommand({
@@ -293,6 +327,7 @@ export async function uploadBufferToS3(
       Key: s3Key,
       Body: buffer,
       ContentType: contentType,
+      CacheControl: cacheControl,
     })
   );
   return getPublicUrl(s3Key);
