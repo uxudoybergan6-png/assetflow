@@ -1827,10 +1827,40 @@ function importAssetToProject(filePath) {
   }
 }
 
-// AI Tools natijasi (png/mp3) uchun media import — generic importAssetToProject'ga
-// delegatsiya (footage sifatida Project paneliga qo'shadi). Frontend shu nomni chaqiradi.
+// AI Tools natijasi (rasm/audio) uchun mustahkam media import (Higgsfield AEFT naqshi):
+// canImportAs(FOOTAGE) guard — AE format'ni qabul qila olishini OLDIN tekshiradi, keyin
+// importAs=FOOTAGE bilan import qiladi. Structured JSON {ok,reason,item} qaytaradi
+// (frontend aniq sabab ko'rsatadi). importAssetToProject kontrakti tegilmaydi.
 function importMediaFromPath(filePath) {
-  return importAssetToProject(filePath);
+  if (!filePath) return JSON.stringify({ ok: false, reason: "Fayl yo'li berilmadi" });
+  if (typeof app === "undefined" || !app.project) {
+    return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
+  }
+  var file = new File(filePath);
+  if (!file.exists) {
+    return JSON.stringify({ ok: false, reason: "Fayl topilmadi: " + filePath });
+  }
+  app.beginUndoGroup("AssetFlow AI Import");
+  try {
+    var io = new ImportOptions(file);
+    if (!io.canImportAs(ImportAsType.FOOTAGE)) {
+      return JSON.stringify({
+        ok: false,
+        reason: "AE bu faylni footage sifatida qabul qilmaydi: " + file.name
+      });
+    }
+    io.importAs = ImportAsType.FOOTAGE;
+    var item = app.project.importFile(io);
+    return JSON.stringify({
+      ok: true,
+      reason: "Import qilindi",
+      item: item ? item.name : ""
+    });
+  } catch (e) {
+    return JSON.stringify({ ok: false, reason: String(e && e.toString ? e.toString() : e) });
+  } finally {
+    try { app.endUndoGroup(); } catch (ignore) {}
+  }
 }
 
 function importSceneCompToProject(compName) {

@@ -26,6 +26,46 @@ export type AiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string; status?: number };
 
+export type MediaFormat = { ext: string; contentType: string };
+
+/**
+ * Bufer magic-byte'laridan haqiqiy media formatni aniqlaydi — kengaytma/Content-Type
+ * mos kelishi uchun (AE "Input doesn't seem to be a PNG" xatosi shu nomuvofiqlikdan).
+ * Aniqlanmasa `fallback` qaytadi.
+ */
+export function detectMediaFormat(buf: Buffer, fallback: MediaFormat): MediaFormat {
+  if (buf.length < 12) return fallback;
+  const b = buf;
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
+    return { ext: "png", contentType: "image/png" };
+  // JPEG: FF D8 FF
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
+    return { ext: "jpg", contentType: "image/jpeg" };
+  // GIF: "GIF8"
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38)
+    return { ext: "gif", contentType: "image/gif" };
+  const tag0 = b.toString("ascii", 0, 4);
+  const tag8 = b.toString("ascii", 8, 12);
+  // RIFF konteyner: WEBP (rasm) yoki WAVE (audio)
+  if (tag0 === "RIFF") {
+    if (tag8 === "WEBP") return { ext: "webp", contentType: "image/webp" };
+    if (tag8 === "WAVE") return { ext: "wav", contentType: "audio/wav" };
+  }
+  // OggS (audio)
+  if (tag0 === "OggS") return { ext: "ogg", contentType: "audio/ogg" };
+  // MP4/ISO-BMFF: 4–7 baytda "ftyp"
+  if (b.toString("ascii", 4, 8) === "ftyp")
+    return { ext: "mp4", contentType: "video/mp4" };
+  // MP3: "ID3" yoki frame sync FF Ex/Fx
+  if (
+    (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) ||
+    (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)
+  )
+    return { ext: "mp3", contentType: "audio/mpeg" };
+  return fallback;
+}
+
 const NOT_CONFIGURED = { ok: false as const, error: "AI_NOT_CONFIGURED" };
 
 /** Workers AI `run` chaqiruvi — javobni xom `Response` sifatida qaytaradi. */

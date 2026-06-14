@@ -14,6 +14,7 @@ import {
   aiGenerateImage,
   aiGenerateSpeech,
   aiEmbed,
+  detectMediaFormat,
 } from "../lib/ai/workers-ai.js";
 import {
   isS3Configured,
@@ -106,8 +107,10 @@ aiRouter.post("/image", async (req: Request, res: Response) => {
     return;
   }
 
-  const key = `ai/img/${userId}/${tsName()}.png`;
-  const url = await persistResult(out.data, key, "image/png");
+  // Haqiqiy format magic-byte'dan (flux JPEG/PNG qaytarishi mumkin) — kengaytma+CT mos bo'lsin.
+  const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
+  const key = `ai/img/${userId}/${tsName()}.${fmt.ext}`;
+  const url = await persistResult(out.data, key, fmt.contentType);
   await prisma.aiGeneration.create({
     data: {
       userId,
@@ -118,7 +121,7 @@ aiRouter.post("/image", async (req: Request, res: Response) => {
       status: AiGenerationStatus.DONE,
     },
   });
-  res.json({ url, creditsLeft: gate.remaining });
+  res.json({ url, ext: fmt.ext, contentType: fmt.contentType, creditsLeft: gate.remaining });
 });
 
 const voiceSchema = z.object({
@@ -157,8 +160,9 @@ aiRouter.post("/voiceover", async (req: Request, res: Response) => {
     return;
   }
 
-  const key = `ai/voice/${userId}/${tsName()}.mp3`;
-  const url = await persistResult(out.data, key, "audio/mpeg");
+  const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
+  const key = `ai/voice/${userId}/${tsName()}.${fmt.ext}`;
+  const url = await persistResult(out.data, key, fmt.contentType);
   await prisma.aiGeneration.create({
     data: {
       userId,
@@ -169,7 +173,7 @@ aiRouter.post("/voiceover", async (req: Request, res: Response) => {
       status: AiGenerationStatus.DONE,
     },
   });
-  res.json({ url, creditsLeft: gate.remaining });
+  res.json({ url, ext: fmt.ext, contentType: fmt.contentType, creditsLeft: gate.remaining });
 });
 
 const searchSchema = z.object({
