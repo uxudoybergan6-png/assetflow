@@ -87,7 +87,7 @@ const ME = window.ME;
 AssetFlowLog.init({ source: "contributor" });
 if (AF_SESSION) {
   const _name = AF_SESSION.name || AF_SESSION.email || "Contributor";
-  const _ini = _name.trim().split(/\s+/).map(function(w){return w[0]||’’;}).join(‘’).toUpperCase().slice(0,2) || "DK";
+  const _ini = _name.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || "DK";
   const _el = document.getElementById("userName"); if(_el) _el.textContent = _name;
   const _av = document.getElementById("userAvatar"); if(_av) _av.textContent = _ini;
 }

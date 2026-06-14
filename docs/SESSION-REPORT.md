@@ -1,20 +1,21 @@
-# SESSION REPORT — 2026-06-14 — Preview transcode (250MB → ~3-8MB) + Render egress 0 ✅
+# SESSION REPORT — 2026-06-14 — Contributor Overview BO'SH render tuzatildi ✅
 
-## 1) Preview HAQIQIY transcode — `optimize-preview.ts`
-Avval faqat `-c copy` + faststart (o'lcham kamaymas, 4K preview ~250MB qolardi). Endi:
-max 720p (`scale=-2:'min(720,ih)'`), H.264 CRF 28 preset fast, 30fps cap, `-an` (ovozsiz),
-`+faststart`, `yuv420p`. Natija ~3-8MB (~98% kam). Timeout 300s (4K uzoq).
-Xatoda eski faststart-only fallback (`faststartOnly`) ishlaydi. Chaqiruv (contributor.ts:734) o'zgarmadi.
-FAQAT preview/thumb uchun — pack.zip (asl fayllar) tegilmaydi.
+## Sabab (frontend SyntaxError — backend bilan bog'liq EMAS)
+`packages/assetflow-studio/contributor/index.html:90` da avatar bosh harflari logikasida
+to'g'ri `''` o'rniga **egri qo'shtirnoq** ishlatilgan edi: `w[0]||’’` va `.join(‘’)`
+(U+2019/U+2018). Bu inline `<script>` blokini (78–174) butunlay parse qildirmasdi →
+`route()`/`bootContributor()` ta'riflanmay, `route("overview")` chaqirilmas → `#view`
+bo'sh → Overview oq render. Xato `88d2ca6` ("dynamic identity") commitida kirgan.
 
-## 2) (oldingi) thumb/preview/sahna → to'g'ridan R2 CDN
-`catalog-map.ts`: R2 bo'lsa `thumbUrl`/`previewUrl`/sahna URL'lari to'g'ridan `CDN_BASE_URL` →
-Render egress 0. Pack DOIM API gate'idan o'tadi. `s3.ts`: `s3AssetKeyFromSet`, `logS3Diagnostics`,
-upload'larga uzoq immutable `Cache-Control`.
+## Tuzatish
+- `contributor/index.html:90`: `’’` → `''`, `‘’` → `''` (oddiy ASCII). Bittagina qator.
+- `npm run studio:sync` — artefaktlar qayta yozildi (`apps/web/public/studio/...`).
+- 3 nusxa ham toza: manba `contributor/`, artefakt `studio/contributor/`, `apps/web/.../contributor/`.
 
 ## Tekshirildi
-`npx tsc -p apps/api/tsconfig.json --noEmit` → EXIT 0 ✅
+- Repo bo'ylab egri-qo'shtirnoq (JS kontekstida) skani → faqat o'sha artefakt, u ham sync'dan keyin toza ✅
+- `node --check` inline skript bloklari ustidan → **PARSE: TOZA** ✅
 
 ## Holat / kutilmoqda
-Commit foydalanuvchi so'raganda. Deploy'dan keyin: yangi preview upload hajmini (~MB) va prod log
-`[s3] ... cdnBase=...` ni tasdiqlash; katalog `thumbUrl` `CDN_BASE_URL` bilan boshlanishi.
+Commit foydalanuvchi so'raganda. Deploy'dan keyin pages.dev/studio/contributor/ Overview
+to'liq render bo'lishini tasdiqlash (CF `prepare-cf-pages.mjs` `contributor/` ni dist'ga ko'chiradi).
