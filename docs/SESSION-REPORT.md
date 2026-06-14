@@ -1,20 +1,45 @@
-# SESSION REPORT — 2026-06-13 (kech-7) — LOW bug fixes ✅
+# SESSION REPORT — 2026-06-14 — CF Pages, Login, Studio URL, MEDIUM+LOW ✅
 
 ## Nima qilindi
-8 ta LOW muammo tuzatildi (commit `6a7057a`). `npm run build -w apps/api` toza, migration lokal DB ga qo'llanildi, CEP qayta o'rnatildi.
 
-- **Toast `__srv_<id>`** — `p.displayName || n` (toast), `asset.displayName || asset.n` (drop-zone).
-- **Stale `downloaded[]` prune** — `refreshBrowse` dan keyin server'dan o'chirilgan `__srv_*` kalitlar `downloaded`+`importedScenes`dan tozalanadi + `savePrefs()`.
-- **DB perf indices** — `User.role`, `PluginProfile.lastSeenAt`, `ContributorTemplate(reviewStatus,published,updatedAt)`. Migration `20260613120000_add_perf_indices` lokal DB ga qo'llanildi.
-- **Dead code** — `switchNav()`, `trendSearch()` `AssetFlow_Plugin.html`dan o'chirildi.
-- **O'zbekcha UI** — "Drop assets here ↓", "Drop asset here", "Video Templates" → O'zbekcha.
-- **ZXP script** — `plugins/after-effects-cep/scripts/build-zxp.sh` yaratildi.
-- **`recordDownload` kvota** — ZIP/mogrt ochilgandan KEYIN hisoblanadi (avval false count bo'lardi).
-- **Kesh size tekshiruvi** — `st.size !== expectedSize` → `st.size < expectedSize * 0.95`.
+**CF Pages sozlandi** (commit `feat(cf-pages): add Cloudflare Pages build script`):
+- `prepare-cf-pages.mjs` — `dist/` tozalash, `_redirects` + `_headers`, barcha studio fayllar.
+- CF Pages Build: `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`, Output: `packages/assetflow-studio/dist`.
+
+**Studio URL yangilandi** (commit `chore: update studio URL to Cloudflare Pages`):
+- Barcha `assetflow-studio-one.vercel.app` → `assetflow-20j.pages.dev`: `app-urls.ts`, `assetflow-env.js`, `assetflow-account.js`, `AssetFlow_Admin.html`, `.env.cloud.example`.
+
+**"Meni eslab qol"** (commit `feat(studio): add remember me to login pages`):
+- Admin login + Contributor login: `localStorage` `af_remember_email`/`af_remember_session`.
+- `GET /api/auth/me` bilan token tekshiruvi (role ADMIN/contributor), `logout()` tozalaydi.
+
+**8 ta MEDIUM bug fix** (commit `88d2ca6`):
+- `findFolderByPath` `parentFolder==null` (AE root tekshiruvi)
+- Marker timing (index-based, threshold emas)
+- S3 N+1 → `listTemplateS3Keys` + `Set<string>` lookup
+- Async unzip (`execFile` + `promisify`)
+- `evalScript` 30s watchdog (`settled` flag)
+- Zod error shape (`issues[0].message`)
+- Dinamik identity (avatar/nom haqiqiy session dan)
+- Localhost havolalar olib tashlandi
+
+**8 ta LOW bug fix** (commit `6a7057a`):
+- Toast `__srv_<id>` → `p.displayName || n`
+- Stale `downloaded[]` prune (sync keyin)
+- DB indices: `User.role`, `PluginProfile.lastSeenAt`, `ContributorTemplate(reviewStatus,published,updatedAt)` + migration
+- Dead code: `switchNav()`, `trendSearch()` o'chirildi
+- O'zbekcha UI: "Drop assets here ↓", "Video Templates" → O'zbekcha
+- ZXP script: `build-zxp.sh`
+- `recordDownload` — extraction KEYIN
+- Kesh size: `!== expectedSize` → `< expectedSize * 0.95`
 
 ## Holat
-Commit `6a7057a` — push kutilmoqda. HANDOFF.md yangilandi (LOW items ✅).
+Barcha commitlar push bajarildi. HANDOFF.md yangilandi.
 
-## Ochiq
-- MED: Stripe Pro (production), upload DB retry, email, orphan threadlar, `execFileSync` async.
-- LOW: Contributor payout, Root `.env` AWS bo'sh (faqat lokal).
+## Keyingi ustuvor
+1. 🔴 Stripe bypass yopish (`PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true` o'chirish) — KRITIK
+2. 🟡 ZXP test (`build-zxp.sh` → AE da sinash)
+3. 🟡 Dizayn tizimi (1-bosqich)
+4. 🟡 evalJSX, refresh token, Sentry (2-bosqich)
+5. 🟡 AI Tools (3-bosqich)
+6. 🟡 LemonSqueezy to'lov tizimi

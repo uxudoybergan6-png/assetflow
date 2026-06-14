@@ -263,8 +263,8 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 
 ### Doimiy ehtiyot bo'lish kerak
 
-- **AE Admin CEP** — brauzer Admin (Vercel) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
-- **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
+- **AE Admin CEP** — brauzer Admin (CF Pages) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
+- **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Shablonlar** tab (`nav: video`).
 - **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
 - `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
 
@@ -397,4 +397,20 @@ Asosiy va Admin plagindagi barcha MED muammolar tuzatildi (commit `c7a7940`, pus
 **Ochiq LOW:** Contributor payout, Root `.env` AWS bo'sh (lokal).
 **Ochiq MED:** Stripe Pro tarif (production), upload DB retry, email, orphan threadlar, `execFileSync` async.
 
-*Yangilangan: 2026-06-13 (kech-7) — LOW fixes ✅ (commit `6a7057a`). Push kutilmoqda. Ochiq: Stripe, payout, email.*
+### Claude Code sessiyasida qilingan (2026-06-14) — CF Pages, Login, Studio URL, LOW ✅
+
+- ✅ **Cloudflare Pages build skript** — `packages/assetflow-studio/scripts/prepare-cf-pages.mjs`: `dist/` tayyorlash, `_redirects` + `_headers`, barcha studio fayllar. CF Pages: Build `node .../prepare-cf-pages.mjs`, Output `packages/assetflow-studio/dist`.
+- ✅ **Studio URL Cloudflare ga yangilandi** — barcha `assetflow-studio-one.vercel.app` → `assetflow-20j.pages.dev`: `app-urls.ts`, `assetflow-env.js`, `assetflow-account.js`, `AssetFlow_Admin.html`, `.env.cloud.example`. Commit `chore: update studio URL to Cloudflare Pages`.
+- ✅ **"Meni eslab qol"** — Admin login + Contributor login: `localStorage` `af_remember_email`/`af_remember_session`; `GET /api/auth/me` bilan token tekshiruvi; `logout()` tozalaydi. Commit `feat(studio): add remember me to login pages`.
+- ✅ **8 ta MEDIUM bug fix** (commit `88d2ca6`): `findFolderByPath` `parentFolder==null`, marker timing, S3 N+1, async unzip (`execFileAsync`), `evalScript` 30s watchdog, Zod error shape (`issues[0].message`), dinamik identity, localhost havolalar olib tashlandi.
+- ✅ **8 ta LOW bug fix** (commit `6a7057a`): toast displayName, stale cache prune, DB indices (migration), dead code, O'zbekcha UI, ZXP script, `recordDownload` after extract, kesh size range.
+
+**Keyingi ustuvor vazifalar:**
+1. 🔴 **0-bosqich A: Stripe bypass yopish** — `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true` o'chirish, haqiqiy Stripe checkout/webhook ulash (KRITIK, ~10 daqiqa konfiguratsiya).
+2. 🟡 **0-bosqich B: ZXP test** — `build-zxp.sh` bilan `.zxp` yaratish va AE da sinash.
+3. 🟡 **1-bosqich: Dizayn tizimi** — Studio / Plugin UI yaxshilash.
+4. 🟡 **2-bosqich: evalJSX, refresh token, Sentry** — ishonchlililik.
+5. 🟡 **3-bosqich: AI Tools** — shablonlar uchun AI funksiyalar.
+6. 🟡 **To'lov tizimi: LemonSqueezy ulash** — Stripe o'rniga soddaroq variant.
+
+*Yangilangan: 2026-06-14 — CF Pages ✅, Meni eslab qol ✅, Studio URL ✅, MEDIUM ✅, LOW ✅. Push bajarildi. Ochiq: Stripe/LemonSqueezy, payout, email, evalJSX, Sentry.*
