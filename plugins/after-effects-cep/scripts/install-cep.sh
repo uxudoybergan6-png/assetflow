@@ -9,7 +9,7 @@ for v in 9 10 11 12; do
   defaults write "com.adobe.CSXS.$v" PlayerDebugMode 1 2>/dev/null || true
 done
 
-mkdir -p "$DEST/CSXS" "$DEST/js" "$DEST/jsx"
+mkdir -p "$DEST/CSXS" "$DEST/js" "$DEST/jsx" "$DEST/css"
 
 cp "$SRC/CSXS/manifest.xml" "$DEST/CSXS/"
 cp "$SRC/.debug" "$DEST/" 2>/dev/null || true
@@ -18,6 +18,7 @@ cp "$SRC/AssetFlow_Admin.html" "$DEST/"
 cp "$SRC/assetflow-"*.js "$DEST/" 2>/dev/null || true
 cp "$SRC/js/CSInterface.js" "$DEST/js/"
 cp "$SRC/jsx/host.jsx" "$DEST/jsx/"
+cp "$SRC/css/"*.css "$DEST/css/" 2>/dev/null || true
 
 echo "✓ AssetFlow o'rnatildi: $DEST"
 echo "  Manba: $SRC"

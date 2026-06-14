@@ -1,25 +1,21 @@
-# SESSION REPORT — 2026-06-14 — A: override limits serializatsiya, B: Hisob paneli soddalashtirish ✅
+# SESSION REPORT — 2026-06-14 — 1-bosqich Qadam 1: yagona token tizimi ✅
 
 ## Nima qilindi
 
-**A — `apps/api/src/lib/plugin-profile.ts` (`serializePluginUser`)**:
-- `planLimits(...)` → `base` ga saqlandi.
-- `limits` = `{ ...base, downloadLimit: override ?? base.downloadLimit, importLimit: override ?? base.importLimit, unlimitedDownloads: override==null ? base.unlimitedDownloads : false, unlimitedImports: ... }`.
-- `/me` va `/subscription` endi effektiv (override) limitni qaytaradi.
-- Pro + override holati ham to'g'ri: `unlimitedDownloads: false`, `downloadLimit: N`.
-- `tsc` — toza.
+**Yangi: `plugins/after-effects-cep/css/tokens.css`** — yagona `:root` (Browse + Admin baham):
+- Birlashtirilgan yuza shkalasi (`--bg:#0f0f0f … --surface-3:#262626`), lime brend (`--accent/--accent-hi/--accent-cta`), `--select:#327bfa` (indigo EMAS), semantik (red/amber), Inter (`@import` + `--font-sans`), shrift tokenlari `--fs-xs:11px…--fs-title:22px`, masofa/harakat.
+- Orqaga moslik aliaslari: `--green→--accent`, `--surface2→--surface-2`, `--surface3→--surface-3`, `--blue→--select`, `--blue-dim→--select-dim`, `--r→--radius` (eski `var()`lar buzilmaydi).
 
-**B — `plugins/after-effects-cep/AssetFlow_Plugin.html`**:
-- CSS: 4-stat grid (`account-stats`, `account-stat`) → bitta `acc-usage-block` + progress bar CSS.
-- HTML: 4 ta `<div class="account-stat">` → bitta blok: "Bu oy: {N} / {Limit|Cheksiz}" + `acc-usage-bar` + ikkilamchi "Jami: N · Import: N".
-- JS: `accDlTotal/accDlMonth/accImports` saqlanib qoldi; `accLimit` → `accDlLimitDisp` + `accUsageFill` width %.
+**`AssetFlow_Plugin.html` + `AssetFlow_Admin.html`**:
+- `<link rel="stylesheet" href="css/tokens.css">` qo'shildi; inline `:root` bloklari olib tashlandi (endi 0 ta inline root). Body shrifti `var(--font-sans)`.
+- **Indigo butunlay o'chirildi** (hex + rgba). Plugin: notice/featured banner gradient, anim-bar, dd-item hover, retry fallback → lime oilasi (12 joy). Admin: `.wf-btn.blue/.scan-mini-btn.blue/.btn-action.blue/.wf-step-icon/.wf-progress-bar/All-render` → `--select` (6 joy).
+- **Shrift ≥11px**: Plugin 5–10px (97 instansi) + Admin 9–10px (33 instansi) → `var(--fs-xs)`. `font-size:0` (sidebar, Qadam 2) ataylab qoldirildi.
+
+## Tekshirildi (grep)
+- Indigo (`#6366f1|#a855f7|#22d3ee|#a5b4fc|99,102,241|168,85,247|129,140,248`) → **0** ✅
+- `font-size:(5-10)px` → **0** ✅
+- tokens.css `{`=`}`, `<style>/<script>` teglar balansli ✅
 - install-cep.sh bajarildi.
 
 ## Holat
-
-Commit kerak. Render'ga push + deploy lozim.
-
-## Keyingi ustuvor
-1. 🔴 Push + Render deploy
-2. 🟡 Qism B — hard delete backend + ikki bosqichli UI
-3. 🟡 ZXP test, LemonSqueezy
+Commit kerak. Qadam 2 (sidebar+tooltip), Qadam 3 (karta tugmalari), Qadam 4 (AI tab skelet) — keyin.

@@ -1,0 +1,64 @@
+/* AssetFlow — yagona dizayn tokenlari (Browse + Admin panellar uchun bitta manba) */
+/* Inter shrifti — internet bo'lmasa system fonts ga jim qaytadi */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  /* ── Fon / yuzalar (birlashtirilgan shkala: Plugin #0d0d0d + Admin #0f0f0f → bitta) ── */
+  --bg:#0f0f0f;
+  --surface:#161616;
+  --surface-2:#1e1e1e;
+  --surface-3:#262626;
+  --border:rgba(255,255,255,.08);
+  --border-accent:rgba(130,195,65,.45);
+
+  /* ── Matn ── */
+  --text:#e8e8e8;
+  --muted:rgba(255,255,255,.55);
+  --muted-2:rgba(255,255,255,.32);
+
+  /* ── Brend (lime) ── */
+  --accent:#82c341;
+  --accent-hi:#9fd356;
+  --accent-cta:#a3e635;
+  --accent-glow:rgba(130,195,65,.25);
+  --green-dim:rgba(130,195,65,.15);
+
+  /* ── Tanlash (MF ko'k = selection; indigo EMAS) ── */
+  --select:#327bfa;
+  --select-dim:rgba(50,123,250,.15);
+
+  /* ── Semantik ── */
+  --red:#ef4444;   --red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.12);
+
+  /* ── Effekt / shakl ── */
+  --shadow:0 12px 40px rgba(0,0,0,.45);
+  --radius:8px;
+
+  /* ── Shrift (--fs-xs = 11px eng kichik; hech narsa undan past emas) ── */
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --fs-xs:11px;
+  --fs-sm:12px;
+  --fs-md:13px;
+  --fs-lg:15px;
+  --fs-xl:18px;
+  --fs-title:22px;
+
+  /* ── Masofa ── */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px;
+
+  /* ── Harakat ── */
+  --ease:cubic-bezier(.34,1.2,.64,1);
+  --dur:.2s;
+
+  /* ── Orqaga moslik aliaslari (eski nomlar — asta-sekin ko'chirish uchun) ── */
+  --accent-2:var(--accent-hi);
+  --env-green:var(--accent);
+  --green:var(--accent);
+  --surface2:var(--surface-2);
+  --surface3:var(--surface-3);
+  --muted2:var(--muted-2);
+  --blue:var(--select);
+  --blue-dim:var(--select-dim);
+  --r:var(--radius);
+}
