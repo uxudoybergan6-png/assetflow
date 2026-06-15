@@ -20,6 +20,14 @@ cp "$SRC/js/CSInterface.js" "$DEST/js/"
 cp "$SRC/jsx/host.jsx" "$DEST/jsx/"
 cp "$SRC/css/"*.css "$DEST/css/" 2>/dev/null || true
 
+# Build yorlig'i — o'rnatilgan HTML'ga sana + git-hash shtamplanadi (manba placeholder qoladi).
+# Panelda ko'rinadi → install + AE qayta ochishdan keyin yangi build yuklanganini bilish.
+BUILD_STAMP="$(date '+%Y-%m-%d %H:%M') · $(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo nogit)"
+for f in "$DEST/AssetFlow_Plugin.html" "$DEST/AssetFlow_Admin.html"; do
+  [ -f "$f" ] && sed -i '' "s|__AF_BUILD__|${BUILD_STAMP}|g" "$f" 2>/dev/null || true
+done
+echo "  Build: $BUILD_STAMP"
+
 echo "✓ AssetFlow o'rnatildi: $DEST"
 echo "  Manba: $SRC"
 

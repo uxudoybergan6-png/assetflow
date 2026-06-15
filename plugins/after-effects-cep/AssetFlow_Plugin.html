@@ -1633,6 +1633,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-ref-sub{font-size:var(--fs-xs);color:var(--accent-cta)}
 .ai-ref-x{flex:none;width:24px;height:24px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;font-family:inherit}
 .ai-ref-x:hover{color:var(--text);border-color:var(--muted-2)}
+/* Build yorlig'i — ko'zga tashlanmaydigan, muted */
+.sb-build{margin-top:8px;font-size:10px;color:var(--muted);text-align:center;opacity:.7;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -1790,6 +1792,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                   <span class="sb-bolt"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></svg></span>
                   <span class="sb-credit-text"><b id="sbCredit">50</b> kredit</span>
                 </div>
+                <div class="sb-build" id="afBuild" title="O'rnatilgan build (install-cep.sh shtamplaydi)">build: __AF_BUILD__</div>
               </div>
             </aside>
 
@@ -5486,6 +5489,9 @@ async function reloadHostScript(){
 }
 
 async function bootPlugin(){
+  // Build yorlig'i — shtamplanmagan bo'lsa (manbadan ishga tushirilgan) "dev".
+  // Token BO'LIB yozilgan — install-cep.sh sed'i bu tekshiruvga tegmasin (faqat element shtamplanadi).
+  try{const _b=document.getElementById('afBuild');const _ph='__AF_'+'BUILD__';if(_b&&_b.textContent.indexOf(_ph)>=0)_b.textContent='build: dev';}catch(e){}
   initEnvFilterUi();
   initAccountUi();
   if(typeof AssetFlowLog!=='undefined') AssetFlowLog.init({ source:'ae_plugin' });
