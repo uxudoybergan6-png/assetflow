@@ -1624,6 +1624,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-sr-name{font-size:var(--fs-sm);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ai-sr-cat{font-size:var(--fs-xs);color:var(--muted)}
 .ai-sr-score{flex:none;font-size:var(--fs-xs);font-weight:700;color:var(--accent-cta);background:var(--green-dim);border-radius:999px;padding:3px 8px}
+/* AI reference chip (Timeline/upload) */
+.ai-refbar{align-items:center;gap:10px;margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border-accent)}
+.ai-ref-thumb{width:46px;height:30px;border-radius:7px;overflow:hidden;flex:none;background:var(--surface-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted-2)}
+.ai-ref-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ai-ref-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.ai-ref-name{font-size:var(--fs-sm);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-ref-sub{font-size:var(--fs-xs);color:var(--accent-cta)}
+.ai-ref-x{flex:none;width:24px;height:24px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;font-family:inherit}
+.ai-ref-x:hover{color:var(--text);border-color:var(--muted-2)}
 </style>
 </head>
 <body>
@@ -1920,6 +1929,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                         <button type="button" class="ai-improve" title="Promptni yaxshilash" onclick="aiImprovePrompt()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg></button>
                       </div>
 
+                      <!-- Timeline/upload reference chip (2a) -->
+                      <div class="ai-refbar" id="aiRefBar" style="display:none"></div>
+
                       <!-- pastki boshqaruv qatori -->
                       <div class="ai-comp-ctrls">
                         <!-- media turi -->
@@ -1948,7 +1960,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           <div class="ai-menu" id="aiSettingMenu" style="display:none"></div>
                         </div>
                         <!-- timeline ref (tez orada) -->
-                        <button type="button" class="ai-timeline" onclick="aiSoon()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan <span class="ai-soon">TEZ ORADA</span></button>
+                        <button type="button" class="ai-timeline" onclick="aiTimelineRef()" title="Timeline'da tanlangan klipni reference sifatida olish"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan</button>
 
                         <div class="ai-spacer"></div>
                         <button type="button" class="ai-gen" id="aiGenBtn" onclick="aiGenerate()">
@@ -4095,8 +4107,34 @@ const af_ai={
   media:'rasm',
   model:{rasm:'Flux 2',ovoz:'Jessi',sfx:'AudioGen',qidiruv:'Katalog'},
   setting:{rasm:'16:9 · 2K · 1 rasm',ovoz:'Samimiy · Normal',sfx:'5s · Stereo',qidiruv:''},
-  view:'grid',open:null,gen:false,_t:null
+  view:'grid',open:null,gen:false,_t:null,reference:null
 };
+
+/* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
+async function aiTimelineRef(){
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
+  const raw=await new Promise(res=>csInterface.evalScript('getActiveTimelineVideoReference()',r=>res(r||'')));
+  let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
+  if(!r||!r.ok){if(typeof showToast==='function')showToast((r&&r.reason)||'Timeline reference olinmadi','warning');return;}
+  af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:'timeline'};
+  aiRenderRefBar();
+  if(typeof showToast==='function')showToast('Timeline reference olindi: '+r.name,'success');
+}
+function aiClearRef(){af_ai.reference=null;aiRenderRefBar();}
+function aiRenderRefBar(){
+  const bar=document.getElementById('aiRefBar');if(!bar)return;
+  const ref=af_ai.reference;
+  if(!ref){bar.style.display='none';bar.innerHTML='';return;}
+  bar.style.display='flex';
+  const isImg=/\.(png|jpg|jpeg|webp|gif)$/i.test(ref.path||'')||ref.mediaType==='image';
+  const thumb=isImg
+    ?('<img src="file://'+aiEsc(ref.path)+'" alt="" onerror="this.style.display=\'none\'">')
+    :('<span class="ai-ref-ico">'+aiIco(ref.mediaType==='audio'?'mic':'image',16)+'</span>');
+  bar.innerHTML='<span class="ai-ref-thumb">'+thumb+'</span>'
+    +'<span class="ai-ref-main"><span class="ai-ref-name">'+aiEsc(ref.name||'Reference')+'</span>'
+    +'<span class="ai-ref-sub">'+(ref.source==='timeline'?'Timeline reference':'Reference')+'</span></span>'
+    +'<button type="button" class="ai-ref-x" onclick="aiClearRef()" title="Olib tashlash">✕</button>';
+}
 function aiIco(name,size,sw){
   size=size||16; sw=sw||1.6;
   const P={

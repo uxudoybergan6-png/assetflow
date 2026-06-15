@@ -1886,6 +1886,78 @@ function importMediaFromPath(filePath) {
   return JSON.stringify(result);
 }
 
+// ── Timeline live-link (Higgsfield AEFT naqshi) ─────────────────────────────
+// Aktiv comp'dagi tanlangan layer manbasining fayl yo'lini qaytaradi (footage).
+function afLayerSourcePath(source) {
+  try {
+    if (source && source.mainSource && source.mainSource.file) {
+      return source.mainSource.file.fsName;
+    }
+  } catch (e) {}
+  try {
+    if (source && source.file) return source.file.fsName;
+  } catch (e) {}
+  return "";
+}
+
+function getActiveTimelineVideoReference() {
+  if (typeof app === "undefined" || !app.project) {
+    return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
+  }
+  var active = app.project.activeItem;
+  if (!(active && active instanceof CompItem)) {
+    return JSON.stringify({ ok: false, reason: "Aktiv kompozitsiya yo'q — Timeline'ni oching" });
+  }
+  var layers = active.selectedLayers;
+  if (!layers || layers.length === 0) {
+    return JSON.stringify({ ok: false, reason: "Timeline'da layer tanlanmagan" });
+  }
+  for (var i = 0; i < layers.length; i++) {
+    var L = layers[i];
+    var src = null;
+    try { src = L.source; } catch (e) {}
+    if (!src) continue;
+    var mediaPath = afLayerSourcePath(src);
+    if (!mediaPath) continue;
+    var hasVideo = false, hasAudio = false;
+    try { hasVideo = src.hasVideo === true; } catch (e) {}
+    try { hasAudio = src.hasAudio === true; } catch (e) {}
+    return JSON.stringify({
+      ok: true,
+      name: L.name || src.name || "Layer",
+      mediaPath: mediaPath,
+      mediaType: hasVideo ? "video" : (hasAudio ? "audio" : "other"),
+      hasVideo: hasVideo,
+      hasAudio: hasAudio,
+      compName: active.name
+    });
+  }
+  return JSON.stringify({ ok: false, reason: "Tanlangan layer manbasi fayl emas (footage kerak)" });
+}
+
+// Tanlangan layer trim/oraliq tafsilotlari (in/out, manba davomiyligi).
+function getActiveTimelineClipDetails() {
+  if (typeof app === "undefined" || !app.project) {
+    return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
+  }
+  var active = app.project.activeItem;
+  if (!(active && active instanceof CompItem)) {
+    return JSON.stringify({ ok: false, reason: "Aktiv kompozitsiya yo'q" });
+  }
+  var layers = active.selectedLayers;
+  if (!layers || layers.length === 0) {
+    return JSON.stringify({ ok: false, reason: "Layer tanlanmagan" });
+  }
+  var L = layers[0];
+  var info = { ok: true, name: L.name || "Layer" };
+  try { info.inPoint = L.inPoint; } catch (e) {}
+  try { info.outPoint = L.outPoint; } catch (e) {}
+  try { info.startTime = L.startTime; } catch (e) {}
+  try { info.compTime = active.time; } catch (e) {}
+  try { if (L.source && L.source.duration) info.sourceDuration = L.source.duration; } catch (e) {}
+  return JSON.stringify(info);
+}
+
 function importSceneCompToProject(compName) {
   if (!compName) return "error: no comp";
   try {
