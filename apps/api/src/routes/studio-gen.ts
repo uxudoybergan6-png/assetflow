@@ -7,7 +7,13 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
 import { isOpenRouterConfigured, orChat } from "../lib/ai/openrouter.js";
 import { isS3Configured, getSignedDownloadUrl } from "../lib/s3.js";
-import { GEN_MODELS, getModelsByMode, getModelById } from "../lib/gen-models.js";
+import {
+  GEN_MODELS,
+  getModelsByMode,
+  getModelById,
+  isModelEnabled,
+  computeGenCost,
+} from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import { processGenerationInBackground } from "../lib/gen-processor.js";
 
@@ -111,12 +117,12 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
     return;
   }
   const model = getModelById(p.data.modelId);
-  if (!model || model.mode !== p.data.mode) {
-    res.status(400).json({ error: "Noma'lum model" });
+  if (!isModelEnabled(model) || model.mode !== p.data.mode) {
+    res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
     return;
   }
   const params = (p.data.params ?? {}) as Record<string, unknown>;
-  const price = model.cost; // kelajakda param-asosli (masalan duration) bo'lishi mumkin
+  const price = computeGenCost(model, params); // video: cost(/s) × duration; boshqa: sobit
   const ph = genParamsHash(model.id, model.mode, params);
   const signature = signCostQuote({ modelId: model.id, mode: model.mode, price, ph });
   res.json({ modelId: model.id, price, signature, feature: model.feature });
@@ -150,9 +156,10 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Session topilmadi" });
     return;
   }
+  // Model JONLILIK guard — generatsiyadan OLDIN (kredit yechilmasin).
   const model = getModelById(modelId);
-  if (!model || model.mode !== mode) {
-    res.status(400).json({ error: "Noma'lum model" });
+  if (!isModelEnabled(model) || model.mode !== mode) {
+    res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
     return;
   }
 

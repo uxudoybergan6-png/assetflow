@@ -13,7 +13,8 @@ import {
   orVideoStatus,
   orDownload,
 } from "./ai/openrouter.js";
-import { getModelById } from "./gen-models.js";
+import { getModelById, resolveVideoParams } from "./gen-models.js";
+import type { GenModel } from "./gen-models.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
@@ -44,23 +45,28 @@ async function persist(
 
 /** Video oqimi: OpenRouter async job → poll → yuklab olish (maks ~5 daqiqa). */
 async function runVideo(
-  feature: string,
-  key: string,
+  model: GenModel,
   prompt: string,
   params: Record<string, unknown>
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
-  const resolution = typeof params.resolution === "string" ? params.resolution : "1080p";
-  const aspectRatio = typeof params.aspectRatio === "string" ? params.aspectRatio : "16:9";
-  const opts: Parameters<typeof orVideoCreate>[1] = { prompt, resolution, aspectRatio };
+  // Param gigiyenasi: model qo'llaydigan qiymatlarga klamp (ortiqcha yuborilmaydi).
+  const v = resolveVideoParams(model, params);
+  const opts: Parameters<typeof orVideoCreate>[1] = {
+    prompt,
+    resolution: v.resolution,
+    aspectRatio: v.aspectRatio,
+    duration: v.duration,
+    generateAudio: v.generateAudio,
+  };
   if (refUrl) {
-    if (feature === "image-to-video") {
+    if (model.feature === "image-to-video") {
       opts.frameImages = [{ url: refUrl, frameType: "first_frame" }];
     } else {
       opts.references = [refUrl];
     }
   }
-  const created = await orVideoCreate(key, opts);
+  const created = await orVideoCreate(model.key, opts);
   if (!created.ok) return { ok: false, error: created.error };
 
   // Poll (5s × 60 = ~5 daqiqa)
@@ -109,8 +115,8 @@ export async function processGeneration(genId: string): Promise<void> {
     if (model.feature === "text-to-image" || model.feature === "image-edit") {
       const out =
         model.feature === "image-edit" && refUrl
-          ? await orImageEdit(model.key, gen.prompt, refUrl)
-          : await orImage(model.key, gen.prompt);
+          ? await orImageEdit(model.key, gen.prompt, refUrl, model.imgModalities)
+          : await orImage(model.key, gen.prompt, model.imgModalities);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
       const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
@@ -130,7 +136,7 @@ export async function processGeneration(genId: string): Promise<void> {
         data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
       });
     } else if (model.feature === "text-to-video" || model.feature === "image-to-video") {
-      const out = await runVideo(model.feature, model.key, gen.prompt, params);
+      const out = await runVideo(model, gen.prompt, params);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);

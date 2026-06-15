@@ -85,12 +85,16 @@ function extractImage(j: OrImageJson): Buffer | null {
   return url ? dataUrlToBuffer(url) : null;
 }
 
-export async function orImage(model: string, prompt: string): Promise<OrResult<Buffer>> {
+export async function orImage(
+  model: string,
+  prompt: string,
+  modalities: string[] = ["image", "text"]
+): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
   const res = await orPost("/chat/completions", {
     model,
     messages: [{ role: "user", content: prompt }],
-    modalities: ["image", "text"],
+    modalities,
   });
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = extractImage((await res.json()) as OrImageJson);
@@ -102,7 +106,8 @@ export async function orImage(model: string, prompt: string): Promise<OrResult<B
 export async function orImageEdit(
   model: string,
   prompt: string,
-  refImageUrl: string
+  refImageUrl: string,
+  modalities: string[] = ["image", "text"]
 ): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
   const res = await orPost("/chat/completions", {
@@ -116,7 +121,7 @@ export async function orImageEdit(
         ],
       },
     ],
-    modalities: ["image", "text"],
+    modalities,
   });
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = extractImage((await res.json()) as OrImageJson);
@@ -162,6 +167,8 @@ export type OrVideoOpts = {
   prompt: string;
   resolution?: string; // "1080p"
   aspectRatio?: string; // "16:9"
+  duration?: number; // soniya (model qo'llaydigan qiymat)
+  generateAudio?: boolean; // native audio (model qo'llasa)
   frameImages?: OrVideoFrame[]; // image-to-video (first/last frame)
   references?: string[]; // reference-to-video (uslub)
 };
@@ -174,6 +181,8 @@ export async function orVideoCreate(
   const body: Record<string, unknown> = { model, prompt: opts.prompt };
   if (opts.resolution) body.resolution = opts.resolution;
   if (opts.aspectRatio) body.aspect_ratio = opts.aspectRatio;
+  if (typeof opts.duration === "number") body.duration = opts.duration;
+  if (typeof opts.generateAudio === "boolean") body.generate_audio = opts.generateAudio;
   if (opts.frameImages?.length) {
     body.frame_images = opts.frameImages.map((f) => ({
       type: "image_url",
