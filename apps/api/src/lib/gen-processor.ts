@@ -118,7 +118,10 @@ export async function processGeneration(genId: string): Promise<void> {
         data: { generationId: genId, type: ASSET_TYPE.image, url, resultKey: key, thumbUrl: url, aspectRatio },
       });
     } else if (model.feature === "text-to-speech") {
-      const voice = typeof params.voice === "string" ? params.voice : "";
+      // Kokoro voice MAJBURIY (bo'sh → "expected string" xatosi). Yo'q/bo'sh bo'lsa
+      // tasdiqlangan default voice'ga tushamiz — audio doim chiqsin (jonli test bilan tekshirilgan).
+      const voice =
+        typeof params.voice === "string" && params.voice ? params.voice : "af_bella";
       const out = await orSpeech(model.key, gen.prompt, voice);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
