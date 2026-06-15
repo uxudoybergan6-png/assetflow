@@ -100,6 +100,30 @@ studioGenRouter.get(
   }
 );
 
+/** GET /gen/history — foydalanuvchining BARCHA tugagan gen'lari (sessiyalardan qat'i nazar). */
+studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
+  const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 30));
+  const items = await prisma.generation.findMany({
+    where: { userId: req.user!.userId, status: "done" },
+    include: { assets: true },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+  // Signed URL eskiradi — har asset uchun yangidan imzolaymiz.
+  if (isS3Configured()) {
+    for (const g of items) {
+      for (const a of g.assets) {
+        if (a.resultKey) {
+          const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
+          a.url = fresh;
+          if (a.thumbUrl) a.thumbUrl = fresh;
+        }
+      }
+    }
+  }
+  res.json({ items });
+});
+
 /** GET /gen/models?mode= — model katalog. */
 studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   const mode = req.query.mode ? String(req.query.mode) : undefined;

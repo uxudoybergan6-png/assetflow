@@ -1630,6 +1630,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-progress{position:relative;width:min(360px,80%);height:8px;border-radius:999px;background:var(--surface-3,rgba(255,255,255,.08));overflow:hidden;margin-top:4px}
 .ai-progress-fill{height:100%;border-radius:999px;background:var(--accent-cta);transition:width .4s var(--ease,ease)}
 .ai-progress-pct{margin-top:8px;font-size:var(--fs-sm);font-weight:700;color:var(--accent-cta);font-variant-numeric:tabular-nums}
+/* generatsiya tarixi */
+.ai-history{margin-top:28px}
+.ai-h-head{font-size:var(--fs-xs);font-weight:600;letter-spacing:.08em;color:var(--muted-2);text-transform:uppercase;margin-bottom:12px}
+.ai-h-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:10px}
+.ai-h-cell{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface);cursor:pointer;padding:0;font-family:inherit;transition:border-color .15s,transform .15s}
+.ai-h-cell:hover{border-color:var(--accent-cta);transform:translateY(-2px)}
+.ai-h-cell img,.ai-h-cell video{width:100%;height:100%;object-fit:cover;display:block}
+.ai-h-audio{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--accent-cta)}
+.ai-h-badge{position:absolute;right:6px;bottom:6px;width:22px;height:22px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px}
 .ai-res-head b{font-size:var(--fs-md);font-weight:600;color:var(--text)}
 .ai-res-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);font-size:var(--fs-xs);font-weight:700}
 /* natija amallar — import / yana / tahrirlash */
@@ -2040,6 +2049,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
                     <!-- generatsiya / natija (composer ostida) -->
                     <div id="aiResultArea"></div>
+
+                    <!-- generatsiya tarixi (oldingi rasm/videolar) -->
+                    <div id="aiHistory" class="ai-history" style="display:none"></div>
                   </div>
                 </div>
               </div>
@@ -4358,6 +4370,7 @@ async function aiLoadModels(media){
       aiBuildMenus();
       aiCostQuote();
     }
+    aiLoadHistory();  // login bo'lib AI ochilganda tarix ham yuklansin
   }catch(e){ /* login yo'q yoki API — statik fallback qoladi */ }
 }
 
@@ -4844,6 +4857,50 @@ function aiRenderImages(list,promptTxt){
   aiResetZoom();
 }
 
+/* ── Generatsiya tarixi (oldingi rasm/videolar) ── */
+// GenAsset.type: 130=image, 120=audio, 140=video (backend konventsiyasi).
+async function aiLoadHistory(){
+  const box=document.getElementById('aiHistory');if(!box)return;
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
+  try{
+    const d=await studioGet('/api/studio/gen/history?limit=30');
+    const items=(d&&d.items)||[];
+    af_ai.history=items;
+    if(!items.length){box.style.display='none';box.innerHTML='';return;}
+    box.style.display='';
+    const cells=items.map(function(g){
+      const a=((g.assets||[])[0])||{};
+      const t=a.type;
+      let inner;
+      if(t===140)inner='<video src="'+aiEsc(a.url||'')+'" muted preload="metadata"></video><span class="ai-h-badge">▶</span>';
+      else if(t===120)inner='<span class="ai-h-audio">'+aiIco('mic',22)+'</span>';
+      else inner='<img src="'+aiEsc(a.thumbUrl||a.url||'')+'" alt=""/>';
+      return '<button type="button" class="ai-h-cell" onclick="aiOpenHistory(\''+aiEsc(g.id)+'\')" title="'+aiEsc(String(g.prompt||'').slice(0,90))+'">'+inner+'</button>';
+    }).join('');
+    box.innerHTML='<div class="ai-h-head">Tarix</div><div class="ai-h-grid">'+cells+'</div>';
+  }catch(e){ /* login yo'q yoki API — jim */ }
+}
+/** Tarixdagi gen'ni natija panelida ochadi (ko'rish / import / o'chirish). */
+function aiOpenHistory(genId){
+  const g=(af_ai.history||[]).filter(function(x){return x.id===genId;})[0];
+  if(!g)return;
+  const all=(g.assets||[]).filter(function(a){return a&&a.url;});
+  if(!all.length)return;
+  af_ai.lastJobId=g.id;
+  const extOf=function(u,d){return (String(u).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||d;};
+  const wrap=document.getElementById('aiWrap');if(wrap)wrap.classList.add('ai-active');
+  const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='none';
+  if(g.mode==='image'){
+    aiRenderImages(all.map(function(a){return {url:a.url,ext:extOf(a.url,'png')};}));
+  }else{
+    const a=all[0];const media=(g.mode==='video')?'video':'ovoz';
+    aiRenderResult(media,{url:a.url,ext:extOf(a.url,g.mode==='video'?'mp4':'mp3')});
+  }
+  const ra=document.getElementById('aiResultArea');if(ra&&ra.scrollIntoView)ra.scrollIntoView({behavior:'smooth',block:'start'});
+}
+// Mavjud chaqiruvlar (aiRunStudioGen / aiDeleteResult) tarixni yangilaydi.
+var StudioGenHistory={refresh:aiLoadHistory};
+
 /** Semantik qidiruv natijasi — mos katalog shablonlari grid'i (bosilganda openPack import). */
 function aiRenderSearch(data){
   const area=document.getElementById('aiResultArea');if(!area)return;
@@ -4977,6 +5034,7 @@ function aiInit(){
   if(ta){ta.addEventListener('input',function(){ aiAutoGrow(ta); aiUpdateCharCount(); if(aiStudioMode(af_ai.media))aiCostQuote(); });aiAutoGrow(ta);aiUpdateCharCount();}
   // Boshlang'ich model katalogini yuklaymiz (default media = rasm/image)
   if(aiStudioMode(af_ai.media))aiLoadModels(af_ai.media);
+  aiLoadHistory();  // oldingi gen'lar (login bo'lsa)
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',aiInit);
 else aiInit();
