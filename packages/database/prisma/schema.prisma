@@ -62,6 +62,8 @@ model User {
   studioMessagesSent    StudioMessage[]       @relation("StudioMessagesSent")
   studioAuditLogs       StudioAuditLog[]      @relation("StudioAuditActor")
   aiGenerations         AiGeneration[]
+  genSessions           GenSession[]
+  generations           Generation[]
 
   @@index([role])
 }
@@ -333,4 +335,65 @@ model AiGeneration {
   @@index([userId])
   @@index([type])
   @@index([createdAt])
+}
+
+// ── Studio Gen (Artlist uslubi) — session = ish maydoni ─────────────────────
+// AiGeneration (yuqorida) eski sinxron AI Tools oqimi uchun qoladi; yangi generativ
+// studio oqimi GenSession/Generation/GenAsset bilan ishlaydi (job + tarix + signed quote).
+
+model GenSession {
+  id          String       @id @default(cuid())
+  userId      String
+  title       String?
+  mode        String       @default("image") // image | voice | video | music
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generations Generation[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Generation {
+  id        String     @id @default(cuid()) // jobId sifatida ishlatiladi
+  sessionId String
+  userId    String                          // kredit/egalik va tezkor so'rov uchun
+  mode      String                          // image | voice | video | music
+  prompt    String     @db.Text
+  modelId   Int                             // model katalog ID (Artlist uslubi → Workers AI key'ga map)
+  params    Json       @default("{}")       // duration/aspectRatio/referenceKey...
+  status    String     @default("queued")   // queued | running | done | failed
+  category  String?
+  cost      Int        @default(0)
+  error     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  session   GenSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assets    GenAsset[]
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model GenAsset {
+  id           String     @id @default(cuid())
+  generationId String
+  type         Int                          // 140=video kabi tur kodi (Artlist uslubi)
+  url          String                       // R2/CDN URL (signed yoki public)
+  resultKey    String?                      // R2 obyekt kaliti (signed URL qayta yaratish uchun)
+  thumbUrl     String?
+  width        Int?
+  height       Int?
+  aspectRatio  String?                      // "16:9"
+  createdAt    DateTime   @default(now())
+
+  generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
+
+  @@index([generationId])
 }

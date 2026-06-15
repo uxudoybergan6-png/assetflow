@@ -1,25 +1,23 @@
-# SESSION REPORT — 2026-06-15 — Timeline ref: A/B/C/D bosqichli diagnostika 🔬
+# SESSION REPORT — 2026-06-15 — Studio Gen / 1a: Prisma sxema ✅
 
-importMediaFromPath ISHLAYDI = evalScript OK → bug Timeline SCRIPT STRING'ida. Bosqichma-bosqich
-izolyatsiya (har biri console.log + toast).
+## 1a — GenSession + Generation + GenAsset (blueprint §5.3)
+- **GenSession**: id, userId, title?, mode (image|voice|video|music), createdAt/updatedAt;
+  relations user + generations. (= Artlist "session = workspace".)
+- **Generation**: id (jobId sifatida), sessionId, userId, mode, prompt, modelId Int (katalog ID →
+  Workers AI key'ga map), params Json, status (queued|running|done|failed), category?, cost,
+  error?; relations session/user/assets. Indexlar: sessionId, userId, status, createdAt.
+- **GenAsset**: id, generationId, type Int, url, resultKey? (R2 signed qayta yaratish), thumbUrl?,
+  width/height/aspectRatio?; relation generation.
+- Eski **AiGeneration** TEGILMADI — joriy sinxron AI Tools (/image,/voiceover,/search) ishlayveradi;
+  yangi generativ studio oqimi Generation bilan (job+tarix+signed-quote).
 
-## aiTimelineRef diagnostik testlari
-- ext = `getSystemPath('extension')` (Higgsfield kabi string), jsxPath log'lanadi.
-- **A**: `evalScript('"ping"')` → "ping" kutiladi (evalScript ifoda qaytaradimi).
-- **B**: `evalScript('$.evalFile(<path>); "loaded"')` → "loaded" yoki "" (bo'sh joyli yo'l evalFile'ni buzyaptimi).
-- **C**: `evalScript('$.evalFile(<path>); typeof getActiveTimelineVideoReference')` → "function"/"undefined".
-- **D**: `evalScript('(function(){$.evalFile(<path>); return getActiveTimelineVideoReference();})()')` → JSON/"".
-- Toast: `A=.. | B=.. | C=.. | Dlen=..` (DevTools'siz o'qish uchun). Console: jsxPath + har test.
-
-## Interpretatsiya
-- B="" → yo'l/bo'sh-joy muammosi (File obyekt/escape kerak).
-- C="undefined" → host.jsx funksiya yo'q/sintaksis.
-- B="loaded" + C="function" lekin Dlen=0 → return type/IIFE muammosi.
+## Migration
+`20260615130000_studio_gen` — diff bilan yaratildi, lokal DB'ga `db execute` + `migrate resolve`,
+`prisma generate`, db paketi build. (Reset YO'Q — drift saqlangan.)
 
 ## Tekshirildi
-- HTML inline JS `node --check` TOZA ✅
-- install AE 2026 restart, Build: 2026-06-15 12:04 · 79362e6 ✅
+- `npm run build -w @creative-tools/database` OK ✅
+- `tsc -p apps/api` EXIT 0 ✅
 
-## Holat / TEST
-"Timeline'dan" bosing → toast `A=.. B=.. C=.. Dlen=..` ni ayting (yoki DevTools 8098 `[ai:tl]`).
-Shu qiymatlar bug'ni aniq lokalizatsiya qiladi → yakuniy tuzatish.
+## Holat
+1a tugadi. Keyingi: 1b — API endpointlar (sessions/models/cost-quote/gen/status/enhance/credits).
