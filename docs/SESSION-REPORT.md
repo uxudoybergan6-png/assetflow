@@ -1,27 +1,24 @@
-# SESSION REPORT — 2026-06-15 — Model-asosli dinamik composer (UI) ✅
+# SESSION REPORT — 2026-06-15 — Rasm sozlamalari NATIVE (image_config) + count ✅
 
-Reja: docs/STUDIO-GEN-composer-v2.md §3,§4 + composer-visual-reference.html. Faqat plugin UI.
+Reja: rasm aspect/quality backend'da haqiqatan qo'llanishi. OpenRouter docs: image_config NATIVE.
 
-## Plugin (AssetFlow_Plugin.html) — hech narsa hardcode emas, model.capabilities'dan render
-- Media: Rasm + **Video** (yangi) + Ovoz + Qidiruv. aiStudioMode: rasm/video/ovoz → studio.
-- Strukturali tanlov af_ai.sel[media]; aiCurrentModel()/aiInitSel() capabilities'dan default.
-- Sozlamalar menyusi capabilities-asosli (aiBuildSettingsMenu): video → aspects/resolutions/
-  durations/audio; rasm → aspects/quality/count; ovoz → voices. Chiplar (ai-chip) + audio toggle.
-- aiGenParams() FAQAT model qo'llaydigan maydonni yig'adi (video {duration,resolution,
-  aspectRatio,audio}; voice {voice}). Tanlov o'zgarsa → quote qayta imzolanadi (aiAfterSelChange).
-- "+" input affordancelar model.inputs[] dan (aiRenderInputs). Settings yorlig'i tanlovdan.
-- Natija: rasm grid / <video controls> / <audio> + AE'ga import. Video polling ~8.6 daq.
-- CSS: ai-chip/ai-set-sec/ai-tg/ai-inputs/ai-res-vid (dark, tokens.css, o'zbekcha).
+## Backend
+- **openrouter.ts orImage/orImageEdit**: yangi `image_config` param →
+  body.image_config={aspect_ratio,image_size} (faqat berilsa). Promptga QO'SHILMAYDI.
+- **gen-models.ts**: IMG_QUALITY → ["1K","2K","4K"] (512px olib tashlandi); resolveImageCount();
+  computeGenCost rasm = cost × count (video = cost/s × duration).
+- **gen-processor.ts**: image branch image_config quradi (aspectRatio→aspect_ratio,
+  quality→image_size) + count marta loop, har biri alohida GenAsset. Bittasi xato →
+  butun batch fail + to'liq refund.
 
-## MUHIM: duration modelga xos (jonli tasdiq, real prod modellari)
-- Veo → 6s (5s YO'Q, faqat 4/6/8) · Kling → 5s (3–15) · Wan → 5s ([5,10]) · Seedance → 5s.
-- Default'lar backend resolveVideoParams bilan BIR XIL → BAD_QUOTE yo'q.
+## Plugin
+- aiRenderImages(): N rasm grid (.multi 2-ustun), har biriga "AE'ga import" (aiImportIdx).
+- aiImportResult → aiImportMedia(url,kind,ext) refaktor (rasm/video/audio umumiy).
+- aiRunStudioGen: rasm → barcha asset'lar grid; video/ovoz → birinchisi.
 
 ## Tekshirildi
-- Inline JS node --check (0 xato) ✅; install-cep ✅
-- Headless sim (real prod modellari): har model to'g'ri sel/params ✅
-- cost-quote round-trip: rasm=5, veo-lite 6s=60, kling 10s=120, imzo bor ✅
-- AE vizual test (kontrollar o'zgarishi) — foydalanuvchi tasdiqlaydi.
+- tsc -p apps/api EXIT 0 ✅; inline JS node --check (0 xato) ✅; install-cep ✅
+- Jonli test (Nano Banana 2, 9:16, 2K, 2 rasm → 2 vertikal) — DEPLOY'dan keyin.
 
 ## Holat
-Commit + push (deploy shart emas — UI plugin lokal). studio:sync shart emas (plugin o'zgardi).
+Commit + push → deploy → jonli image_config testi (2 vertikal rasm).

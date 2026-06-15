@@ -1601,6 +1601,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-res-card img{width:100%;display:block}
 .ai-res-vid video{display:block;width:100%}
 .ai-res-actions{display:flex;justify-content:center;margin-top:14px}
+.ai-res-grid.multi{grid-template-columns:repeat(2,1fr)}
+.ai-res-card{display:flex;flex-direction:column}
+.ai-res-imp{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:var(--surface-2);color:var(--text);border:none;border-top:1px solid var(--border);cursor:pointer;font-family:inherit;font-size:var(--fs-sm)}
+.ai-res-imp:hover{background:var(--green-dim);color:var(--accent-cta)}
 
 .ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap}
 .ai-timeline:hover{border-color:var(--muted-2);color:var(--text)}
@@ -4659,10 +4663,15 @@ async function aiRunStudioGen(media,val){
     aiRefreshCredits();
     return;
   }
-  const asset=(gen.assets&&gen.assets[0])||null;
-  if(!asset||!asset.url){aiRenderError(new Error('Natija topilmadi'));return;}
-  const ext=(String(asset.url).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||(media==='rasm'?'png':media==='video'?'mp4':'mp3');
-  aiRenderResult(media,{url:asset.url,ext:ext},val);
+  const all=(gen.assets||[]).filter(function(a){return a&&a.url;});
+  if(!all.length){aiRenderError(new Error('Natija topilmadi'));return;}
+  const extOf=function(u,d){return (String(u).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||d;};
+  if(media==='rasm'){
+    aiRenderImages(all.map(function(a){return {url:a.url,ext:extOf(a.url,'png')};}),val);
+  }else{
+    const a=all[0];
+    aiRenderResult(media,{url:a.url,ext:extOf(a.url,media==='video'?'mp4':'mp3')},val);
+  }
   if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh(); // 1e-3
 }
 
@@ -4687,6 +4696,19 @@ function aiRenderResult(media,data,promptTxt){
       +'<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
       +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div></div>';
   }
+}
+
+/** Rasm natijalari (1..N) — grid, har biriga alohida import (count>1 uchun). */
+function aiRenderImages(list,promptTxt){
+  const area=document.getElementById('aiResultArea');if(!area)return;
+  if(!list||!list.length){aiRenderError(new Error('Natija topilmadi'));return;}
+  af_ai.lastKind='image';af_ai.lastImages=list;
+  af_ai.lastUrl=list[0].url;af_ai.lastExt=list[0].ext||'png';
+  const cards=list.map(function(it,i){
+    return '<figure class="ai-res-card"><img src="'+aiEsc(it.url)+'" alt="AI natija"/>'
+      +'<button type="button" class="ai-res-imp" onclick="aiImportIdx('+i+')">'+aiIco('bolt',14)+' AE‘ga import</button></figure>';
+  }).join('');
+  area.innerHTML='<div class="ai-res"><div class="ai-res-grid'+(list.length>1?' multi':'')+'">'+cards+'</div></div>';
 }
 
 /** Semantik qidiruv natijasi — mos katalog shablonlari grid'i (bosilganda openPack import). */
@@ -4747,13 +4769,16 @@ function aiUpdateCredits(n){
 }
 
 /** Natija URL'ni tmp faylga yuklab → AE'ga import (importMediaFromPath jsx). */
-async function aiImportResult(){
-  const url=af_ai.lastUrl, kind=af_ai.lastKind;
+async function aiImportResult(){ return aiImportMedia(af_ai.lastUrl,af_ai.lastKind,af_ai.lastExt); }
+/** Grid'dagi i-rasmni import (count>1). */
+function aiImportIdx(i){ const it=(af_ai.lastImages||[])[i]; if(it)aiImportMedia(it.url,'image',it.ext||'png'); }
+/** URL'ni tmp'ga yuklab → AE'ga import (kind: image/video/audio). */
+async function aiImportMedia(url,kind,extRaw){
   if(!url){if(typeof showToast==='function')showToast('Import uchun natija yo‘q','warning');return;}
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Import faqat After Effects ichida ishlaydi','info');return;}
   try{
     if(typeof showToast==='function')showToast('Yuklab olinmoqda…','info');
-    const ext='.'+((af_ai.lastExt||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,''));
+    const ext='.'+((extRaw||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,''));
     const tmp=await aiDownloadToTemp(url,ext);
     const raw=await new Promise(res=>csInterface.evalScript('importMediaFromPath('+JSON.stringify(tmp)+')',r=>res(r||'')));
     // host structured JSON {ok,addedToComp,compName,item} qaytaradi; eski "ok:" string'ga ham moslik

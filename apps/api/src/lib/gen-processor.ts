@@ -13,7 +13,7 @@ import {
   orVideoStatus,
   orDownload,
 } from "./ai/openrouter.js";
-import { getModelById, resolveVideoParams } from "./gen-models.js";
+import { getModelById, resolveVideoParams, resolveImageCount } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
@@ -113,16 +113,26 @@ export async function processGeneration(genId: string): Promise<void> {
     const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
 
     if (model.feature === "text-to-image" || model.feature === "image-edit") {
-      const out =
-        model.feature === "image-edit" && refUrl
-          ? await orImageEdit(model.key, gen.prompt, refUrl, model.imgModalities)
-          : await orImage(model.key, gen.prompt, model.imgModalities);
-      if (!out.ok) return void (await fail(out.error));
-      const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
-      const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
-      await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.image, url, resultKey: key, thumbUrl: url, aspectRatio },
-      });
+      // image_config — NATIVE o'lcham/nisbat (promptga qo'shilmaydi).
+      const quality = typeof params.quality === "string" ? params.quality : null;
+      const imageConfig: { aspect_ratio?: string; image_size?: string } = {};
+      if (aspectRatio) imageConfig.aspect_ratio = aspectRatio;
+      if (quality) imageConfig.image_size = quality;
+      // count > 1 → N marta generatsiya, har biri alohida GenAsset (narx base×N).
+      // Bittasi xato bo'lsa — butun batch fail + to'liq refund (foydalanuvchi yo hammasini oladi, yo hech narsa to'lamaydi).
+      const count = resolveImageCount(model, params);
+      for (let i = 0; i < count; i++) {
+        const out =
+          model.feature === "image-edit" && refUrl
+            ? await orImageEdit(model.key, gen.prompt, refUrl, model.imgModalities, imageConfig)
+            : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
+        if (!out.ok) return void (await fail(out.error));
+        const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
+        const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+        await prisma.genAsset.create({
+          data: { generationId: genId, type: ASSET_TYPE.image, url, resultKey: key, thumbUrl: url, aspectRatio },
+        });
+      }
     } else if (model.feature === "text-to-speech") {
       // Kokoro voice MAJBURIY (bo'sh → "expected string" xatosi). Yo'q/bo'sh bo'lsa
       // tasdiqlangan default voice'ga tushamiz — audio doim chiqsin (jonli test bilan tekshirilgan).

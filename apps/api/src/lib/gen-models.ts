@@ -47,7 +47,7 @@ export type GenModel = {
   effects?: string[];
 };
 
-const IMG_QUALITY = ["512px", "1K", "2K", "4K"];
+const IMG_QUALITY = ["1K", "2K", "4K"]; // OpenRouter image_config.image_size qiymatlari
 const IMG_ASPECTS = ["1:1", "2:3", "3:2", "3:4", "16:9", "4:3", "4:5", "5:4", "9:16", "21:9"];
 const KOKORO_VOICES = [
   { id: "af_bella", label: "Bella" },
@@ -302,10 +302,21 @@ export function resolveVideoParams(
   };
 }
 
-/** Generatsiya narxi. Video: cost(/s) × klamplangan duration. Boshqa: sobit cost. */
+/** So'ralgan rasm sonini model qo'llaganiga klamplaydi (default 1). */
+export function resolveImageCount(model: GenModel, params: Record<string, unknown>): number {
+  const list = model.count && model.count.length ? model.count : [1];
+  const req = Number(params.count);
+  if (Number.isFinite(req) && list.includes(req)) return req;
+  return list[0];
+}
+
+/** Generatsiya narxi. Video: cost(/s) × duration. Rasm: cost × count. Boshqa: sobit cost. */
 export function computeGenCost(model: GenModel, params: Record<string, unknown>): number {
   if (model.mode === "video") {
     return model.cost * resolveVideoParams(model, params).duration;
+  }
+  if (model.mode === "image") {
+    return model.cost * resolveImageCount(model, params);
   }
   return model.cost;
 }

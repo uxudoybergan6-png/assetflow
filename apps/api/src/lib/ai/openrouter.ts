@@ -85,17 +85,23 @@ function extractImage(j: OrImageJson): Buffer | null {
   return url ? dataUrlToBuffer(url) : null;
 }
 
+// Rasm o'lcham/nisbat — NATIVE (image_config), promptga qo'shilmaydi.
+export type OrImageConfig = { aspect_ratio?: string; image_size?: string };
+
 export async function orImage(
   model: string,
   prompt: string,
-  modalities: string[] = ["image", "text"]
+  modalities: string[] = ["image", "text"],
+  imageConfig?: OrImageConfig
 ): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const res = await orPost("/chat/completions", {
+  const body: Record<string, unknown> = {
     model,
     messages: [{ role: "user", content: prompt }],
     modalities,
-  });
+  };
+  if (imageConfig && Object.keys(imageConfig).length) body.image_config = imageConfig;
+  const res = await orPost("/chat/completions", body);
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = extractImage((await res.json()) as OrImageJson);
   if (!buf) return { ok: false, error: "Javobda rasm topilmadi" };
@@ -107,10 +113,11 @@ export async function orImageEdit(
   model: string,
   prompt: string,
   refImageUrl: string,
-  modalities: string[] = ["image", "text"]
+  modalities: string[] = ["image", "text"],
+  imageConfig?: OrImageConfig
 ): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const res = await orPost("/chat/completions", {
+  const body: Record<string, unknown> = {
     model,
     messages: [
       {
@@ -122,7 +129,9 @@ export async function orImageEdit(
       },
     ],
     modalities,
-  });
+  };
+  if (imageConfig && Object.keys(imageConfig).length) body.image_config = imageConfig;
+  const res = await orPost("/chat/completions", body);
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = extractImage((await res.json()) as OrImageJson);
   if (!buf) return { ok: false, error: "Javobda tahrirlangan rasm topilmadi" };
