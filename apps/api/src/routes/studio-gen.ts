@@ -1,0 +1,218 @@
+import { Router } from "express";
+import type { Request, Response } from "express";
+import { z } from "zod";
+import { prisma } from "@creative-tools/database";
+import { requireAuth } from "../middleware/auth.js";
+import { rateLimit } from "../middleware/rate-limit.js";
+import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
+import { isAiConfigured, aiText } from "../lib/ai/workers-ai.js";
+import { GEN_MODELS, getModelsByMode, getModelById } from "../lib/gen-models.js";
+import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
+
+export const studioGenRouter = Router();
+
+studioGenRouter.use(
+  requireAuth,
+  rateLimit({
+    windowMs: 60_000,
+    max: 40,
+    keyPrefix: "studio-gen",
+    message: "Juda ko'p so'rov — bir daqiqadan keyin qayta urinib ko'ring",
+  })
+);
+
+const GEN_MODES = ["image", "voice", "video", "music"] as const;
+
+/** GET /credits — kredit balansi. */
+studioGenRouter.get("/credits", async (req: Request, res: Response) => {
+  const profile = await ensurePluginProfile(req.user!.userId);
+  res.json({ aiCredits: profile.aiCredits, plan: profile.plan.toLowerCase() });
+});
+
+/** POST /gen/sessions — yangi ish maydoni (session). */
+const sessionSchema = z.object({
+  title: z.string().trim().max(200).optional(),
+  mode: z.enum(GEN_MODES).optional(),
+});
+studioGenRouter.post("/gen/sessions", async (req: Request, res: Response) => {
+  const p = sessionSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const session = await prisma.genSession.create({
+    data: {
+      userId: req.user!.userId,
+      title: p.data.title ?? null,
+      mode: p.data.mode ?? "image",
+    },
+  });
+  res.status(201).json(session);
+});
+
+/** GET /gen/sessions/:id/generations — sessiya tarixi (paginatsiya + status filtri). */
+studioGenRouter.get(
+  "/gen/sessions/:id/generations",
+  async (req: Request, res: Response) => {
+    const id = String(req.params.id);
+    const session = await prisma.genSession.findUnique({ where: { id } });
+    if (!session || session.userId !== req.user!.userId) {
+      res.status(404).json({ error: "Session topilmadi" });
+      return;
+    }
+    const perPage = Math.min(50, Math.max(1, Number(req.query.perPage) || 25));
+    const page = Math.max(1, Number(req.query.cursor) || 1);
+    const status = req.query.status ? String(req.query.status) : undefined;
+    const where = { sessionId: id, ...(status ? { status } : {}) };
+    const [items, total] = await Promise.all([
+      prisma.generation.findMany({
+        where,
+        include: { assets: true },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      prisma.generation.count({ where }),
+    ]);
+    res.json({ items, page, perPage, total, hasMore: page * perPage < total });
+  }
+);
+
+/** GET /gen/models?mode= — model katalog. */
+studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
+  const mode = req.query.mode ? String(req.query.mode) : undefined;
+  res.json({
+    models: mode ? getModelsByMode(mode) : GEN_MODELS,
+    configured: isAiConfigured(),
+  });
+});
+
+/** POST /gen/cost-quote — imzolangan narx (klient narxni soxtalashtira olmaydi). */
+const quoteSchema = z.object({
+  modelId: z.number().int(),
+  mode: z.enum(GEN_MODES),
+  params: z.record(z.any()).optional(),
+});
+studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
+  const p = quoteSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const model = getModelById(p.data.modelId);
+  if (!model || model.mode !== p.data.mode) {
+    res.status(400).json({ error: "Noma'lum model" });
+    return;
+  }
+  const params = (p.data.params ?? {}) as Record<string, unknown>;
+  const price = model.cost; // kelajakda param-asosli (masalan duration) bo'lishi mumkin
+  const ph = genParamsHash(model.id, model.mode, params);
+  const signature = signCostQuote({ modelId: model.id, mode: model.mode, price, ph });
+  res.json({ modelId: model.id, price, signature, feature: model.feature });
+});
+
+/** POST /gen — imzoni tekshiradi → kredit zaxira → queued Generation → {jobId}. */
+const genSchema = z.object({
+  sessionId: z.string().min(1),
+  mode: z.enum(GEN_MODES),
+  prompt: z.string().trim().min(2, "Prompt juda qisqa").max(2000),
+  modelId: z.number().int(),
+  params: z.record(z.any()).optional(),
+  price: z.number().int().nonnegative(),
+  costQuoteSignature: z.string().min(10),
+});
+studioGenRouter.post("/gen", async (req: Request, res: Response) => {
+  if (!isAiConfigured()) {
+    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    return;
+  }
+  const p = genSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const { sessionId, mode, prompt, modelId, price, costQuoteSignature } = p.data;
+  const params = (p.data.params ?? {}) as Record<string, unknown>;
+
+  const session = await prisma.genSession.findUnique({ where: { id: sessionId } });
+  if (!session || session.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Session topilmadi" });
+    return;
+  }
+  const model = getModelById(modelId);
+  if (!model || model.mode !== mode) {
+    res.status(400).json({ error: "Noma'lum model" });
+    return;
+  }
+
+  // Imzolangan narxni tekshir — klient `price`ni soxtalashtira olmaydi (blueprint §7.3).
+  const ph = genParamsHash(modelId, mode, params);
+  const v = verifyCostQuote(costQuoteSignature, { modelId, mode, price, ph });
+  if (!v.ok) {
+    res.status(400).json({ error: v.reason || "Narx imzosi yaroqsiz", code: "BAD_QUOTE" });
+    return;
+  }
+
+  // Kredit zaxiraga olinadi (atomik). failed bo'lsa 1c qaytaradi.
+  const gate = await consumeAiCredits(req.user!.userId, price);
+  if (!gate.ok) {
+    res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
+    return;
+  }
+
+  const gen = await prisma.generation.create({
+    data: {
+      sessionId,
+      userId: req.user!.userId,
+      mode,
+      prompt,
+      modelId,
+      params: params as object,
+      status: "queued",
+      cost: price,
+    },
+  });
+
+  // TODO(1c): processGenerationInBackground(gen.id) — Workers AI → R2 → assets → status.
+  res.status(202).json({ jobId: gen.id, status: gen.status, creditsLeft: gate.remaining });
+});
+
+/** POST /gen/prompt/enhance — promptni Workers AI (text) bilan boyitadi (kreditsiz). */
+const enhanceSchema = z.object({
+  prompt: z.string().trim().min(2).max(2000),
+  mode: z.enum(GEN_MODES).optional(),
+});
+studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
+  if (!isAiConfigured()) {
+    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    return;
+  }
+  const p = enhanceSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const mode = p.data.mode || "image";
+  const instruction =
+    `You enrich a short ${mode} generation prompt into a vivid, detailed prompt. ` +
+    `Return ONLY the improved prompt, no preamble, one paragraph.`;
+  const out = await aiText(`${instruction}\n\nPrompt: ${p.data.prompt}`);
+  if (!out.ok) {
+    res.status(502).json({ error: out.error });
+    return;
+  }
+  res.json({ prompt: out.data.trim() });
+});
+
+/** GET /gen/:jobId — job holati (polling). MUHIM: aniq yo'llardan KEYIN ro'yxatdan o'tadi. */
+studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
+  const gen = await prisma.generation.findUnique({
+    where: { id: String(req.params.jobId) },
+    include: { assets: true },
+  });
+  if (!gen || gen.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Generatsiya topilmadi" });
+    return;
+  }
+  res.json(gen);
+});

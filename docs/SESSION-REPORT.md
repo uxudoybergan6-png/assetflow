@@ -1,23 +1,28 @@
-# SESSION REPORT — 2026-06-15 — Studio Gen / 1a: Prisma sxema ✅
+# SESSION REPORT — 2026-06-15 — Studio Gen / 1b: API endpointlar ✅
 
-## 1a — GenSession + Generation + GenAsset (blueprint §5.3)
-- **GenSession**: id, userId, title?, mode (image|voice|video|music), createdAt/updatedAt;
-  relations user + generations. (= Artlist "session = workspace".)
-- **Generation**: id (jobId sifatida), sessionId, userId, mode, prompt, modelId Int (katalog ID →
-  Workers AI key'ga map), params Json, status (queued|running|done|failed), category?, cost,
-  error?; relations session/user/assets. Indexlar: sessionId, userId, status, createdAt.
-- **GenAsset**: id, generationId, type Int, url, resultKey? (R2 signed qayta yaratish), thumbUrl?,
-  width/height/aspectRatio?; relation generation.
-- Eski **AiGeneration** TEGILMADI — joriy sinxron AI Tools (/image,/voiceover,/search) ishlayveradi;
-  yangi generativ studio oqimi Generation bilan (job+tarix+signed-quote).
+## 1b — routes/studio-gen.ts (Express, blueprint §5.2), `/api/studio` ga ulandi
+- `GET  /credits` — kredit balansi {aiCredits, plan}.
+- `POST /gen/sessions` — yangi session (mode, title).
+- `GET  /gen/sessions/:id/generations?cursor=&perPage=&status=` — tarix (ownership, paginatsiya, filtr).
+- `GET  /gen/models?mode=` — model katalog (lib/gen-models.ts: Flux Schnell/SDXL/MeloTTS).
+- `POST /gen/cost-quote` → {price, signature(JWT 15m), feature} — imzolangan narx.
+- `POST /gen` — imzo + (modelId,price,paramsHash) tekshiradi → kredit ATOMIK zaxira →
+  queued Generation → 202 {jobId, status, creditsLeft}. (Workers AI bajarish = 1c TODO.)
+- `POST /gen/prompt/enhance` — Workers AI text bilan promptni boyitadi (kreditsiz).
+- `GET  /gen/:jobId` — job holati (aniq yo'llardan KEYIN — :jobId tutib qolmasin).
+- requireAuth + rate-limit (40/min). Yangi lib: gen-models.ts, gen-quote.ts.
 
-## Migration
-`20260615130000_studio_gen` — diff bilan yaratildi, lokal DB'ga `db execute` + `migrate resolve`,
-`prisma generate`, db paketi build. (Reset YO'Q — drift saqlangan.)
+## Xavfsizlik (blueprint §7.3)
+gen-quote.ts: `signCostQuote`/`verifyCostQuote` — narx JWT bilan imzolanadi, generate'da
+modelId+price+mode+paramsHash mos kelishi tekshiriladi. Klient `price`ni soxtalashtira olmaydi.
 
-## Tekshirildi
-- `npm run build -w @creative-tools/database` OK ✅
+## Tekshirildi (lokal, build + curl)
+- /credits → {aiCredits:50,plan:free}; /gen/models?mode=image → 2 model; /gen/sessions → id;
+  /gen/cost-quote → {price:5, signature} ✅
+- /gen (CF yo'q) → 503 AI_NOT_CONFIGURED ✅
+- Imzo unit: toza→ok; soxta narx→rad; soxta model→rad ✅
 - `tsc -p apps/api` EXIT 0 ✅
 
 ## Holat
-1a tugadi. Keyingi: 1b — API endpointlar (sessions/models/cost-quote/gen/status/enhance/credits).
+1b tugadi. Keyingi: 1c — Workers AI'ni generate oqimiga ulash (job processor → R2 → assets →
+status; failed→kredit qaytarish).

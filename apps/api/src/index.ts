@@ -22,6 +22,7 @@ import { logsRouter } from "./routes/logs.js";
 import { messagesRouter } from "./routes/messages.js";
 import { auditRouter } from "./routes/audit.js";
 import { aiRouter } from "./routes/ai.js";
+import { studioGenRouter } from "./routes/studio-gen.js";
 import { logS3Diagnostics } from "./lib/s3.js";
 
 const app = express();
@@ -90,6 +91,7 @@ app.use("/api/contributor", contributorRouter);
 app.use("/api/logs", logsRouter);
 app.use("/api/studio/messages", messagesRouter);
 app.use("/api/studio/audit", auditRouter);
+app.use("/api/studio", studioGenRouter);
 
 // Topilmagan yo'llar — JSON 404 (hang emas)
 app.use((_req, res) => {
