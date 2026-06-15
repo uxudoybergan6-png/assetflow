@@ -40,6 +40,17 @@ async function errText(res: Response): Promise<string> {
   return `OpenRouter HTTP ${res.status}`;
 }
 
+/** Javobni xavfsiz JSON'ga o'giradi — bo'sh/buzuq bo'lsa null (raw "Unexpected end of JSON" o'rniga). */
+async function safeJson(res: Response): Promise<unknown | null> {
+  const t = await res.text();
+  if (!t) return null;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return null;
+  }
+}
+
 function orPost(path: string, body: unknown): Promise<Response> {
   return fetch(BASE + path, {
     method: "POST",
@@ -101,11 +112,27 @@ export async function orImage(
     modalities,
   };
   if (imageConfig && Object.keys(imageConfig).length) body.image_config = imageConfig;
-  const res = await orPost("/chat/completions", body);
-  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
-  const buf = extractImage((await res.json()) as OrImageJson);
-  if (!buf) return { ok: false, error: "Javobda rasm topilmadi" };
-  return { ok: true, data: buf };
+  // Bo'sh/transient javobga bardosh: 2 marta urinamiz, raw JSON xatosi o'rniga aniq xabar.
+  let lastErr = "Rasm olinmadi";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await orPost("/chat/completions", body);
+    if (!res.ok) {
+      lastErr = await errText(res);
+      if (attempt === 0 && (res.status >= 500 || res.status === 429)) continue;
+      return { ok: false, error: lastErr, status: res.status };
+    }
+    const j = await safeJson(res);
+    if (!j) {
+      lastErr = "OpenRouter bo'sh javob qaytardi — promptni qisqartiring yoki qayta urining";
+      if (attempt === 0) continue;
+      return { ok: false, error: lastErr };
+    }
+    const buf = extractImage(j as OrImageJson);
+    if (buf) return { ok: true, data: buf };
+    lastErr = "Javobda rasm topilmadi — promptni qisqartiring yoki boshqa model tanlang";
+    if (attempt === 0) continue;
+  }
+  return { ok: false, error: lastErr };
 }
 
 /** Rasm EDIT (reference + ko'rsatma — "rangini o'zgartir"). refImageUrl = URL yoki data-URL. */
@@ -131,11 +158,26 @@ export async function orImageEdit(
     modalities,
   };
   if (imageConfig && Object.keys(imageConfig).length) body.image_config = imageConfig;
-  const res = await orPost("/chat/completions", body);
-  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
-  const buf = extractImage((await res.json()) as OrImageJson);
-  if (!buf) return { ok: false, error: "Javobda tahrirlangan rasm topilmadi" };
-  return { ok: true, data: buf };
+  let lastErr = "Tahrirlangan rasm olinmadi";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await orPost("/chat/completions", body);
+    if (!res.ok) {
+      lastErr = await errText(res);
+      if (attempt === 0 && (res.status >= 500 || res.status === 429)) continue;
+      return { ok: false, error: lastErr, status: res.status };
+    }
+    const j = await safeJson(res);
+    if (!j) {
+      lastErr = "OpenRouter bo'sh javob qaytardi — promptni qisqartiring yoki qayta urining";
+      if (attempt === 0) continue;
+      return { ok: false, error: lastErr };
+    }
+    const buf = extractImage(j as OrImageJson);
+    if (buf) return { ok: true, data: buf };
+    lastErr = "Javobda tahrirlangan rasm topilmadi";
+    if (attempt === 0) continue;
+  }
+  return { ok: false, error: lastErr };
 }
 
 // ── Speech (TTS) — POST /audio/speech (OpenAI-mos, RAW bayt qaytaradi, JSON EMAS) ──
