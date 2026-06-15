@@ -5,7 +5,7 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
-import { isAiConfigured, aiText } from "../lib/ai/workers-ai.js";
+import { isOpenRouterConfigured, orChat } from "../lib/ai/openrouter.js";
 import { isS3Configured, getSignedDownloadUrl } from "../lib/s3.js";
 import { GEN_MODELS, getModelsByMode, getModelById } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
@@ -85,7 +85,7 @@ studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   const mode = req.query.mode ? String(req.query.mode) : undefined;
   res.json({
     models: mode ? getModelsByMode(mode) : GEN_MODELS,
-    configured: isAiConfigured(),
+    configured: isOpenRouterConfigured(),
   });
 });
 
@@ -124,7 +124,7 @@ const genSchema = z.object({
   costQuoteSignature: z.string().min(10),
 });
 studioGenRouter.post("/gen", async (req: Request, res: Response) => {
-  if (!isAiConfigured()) {
+  if (!isOpenRouterConfigured()) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
   }
@@ -175,18 +175,18 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     },
   });
 
-  // Fon rejimida bajariladi (Workers AI → R2 → GenAsset → status); frontend polling qiladi.
+  // Fon rejimida bajariladi (OpenRouter → R2 → GenAsset → status); frontend polling qiladi.
   processGenerationInBackground(gen.id);
   res.status(202).json({ jobId: gen.id, status: gen.status, creditsLeft: gate.remaining });
 });
 
-/** POST /gen/prompt/enhance — promptni Workers AI (text) bilan boyitadi (kreditsiz). */
+/** POST /gen/prompt/enhance — promptni OpenRouter (text) bilan boyitadi (kreditsiz). */
 const enhanceSchema = z.object({
   prompt: z.string().trim().min(2).max(2000),
   mode: z.enum(GEN_MODES).optional(),
 });
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
-  if (!isAiConfigured()) {
+  if (!isOpenRouterConfigured()) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
   }
@@ -199,7 +199,10 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   const instruction =
     `You enrich a short ${mode} generation prompt into a vivid, detailed prompt. ` +
     `Return ONLY the improved prompt, no preamble, one paragraph.`;
-  const out = await aiText(`${instruction}\n\nPrompt: ${p.data.prompt}`);
+  const out = await orChat(
+    "openai/gpt-4o-mini",
+    `${instruction}\n\nPrompt: ${p.data.prompt}`
+  );
   if (!out.ok) {
     res.status(502).json({ error: out.error });
     return;

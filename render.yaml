@@ -36,7 +36,10 @@ services:
         sync: false          # https://pub-xxx.r2.dev (R2 public URL)
       - key: PLUGIN_ALLOW_PRO_WITHOUT_STRIPE
         value: "false"
-      # Cloudflare Workers AI (AI Tools)
+      # OpenRouter (Studio Gen — rasm/video/ovoz/embeddings, unified API)
+      - key: OPENROUTER_API_KEY
+        sync: false
+      # Cloudflare Workers AI (eski /plugin/ai AI Tools)
       - key: CF_ACCOUNT_ID
         sync: false
       - key: CF_AI_TOKEN
