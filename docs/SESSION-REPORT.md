@@ -1,23 +1,24 @@
-# SESSION REPORT — 2026-06-15 — AI composer tozalash + zoom + o'chirish ✅
+# SESSION REPORT — 2026-06-15 — Video progress % + kredit refund tuzatish ✅
 
-Foydalanuvchi so'rovi: AI Tools'dan keraksiz elementlarni olib tashlash + gen natija zoom + o'chirish.
+Foydalanuvchi: (1) video gen 100% shkalada ko'rinsin, (2) "kredit qaytarildi" dedi lekin qaytmadi.
 
-## Plugin (UI — funksiya/param oqimi tegilmadi)
-- **Olib tashlandi (AI'da keraksiz):** Shablonlar banneri (html.ai-mode #featuredWrap display:none),
-  "Qo'shish"+"Shablon uchun" tugmalari + view toggle (ai-comp-top butunlay), "Tezkor amallar" (ai-quick).
-- **Natija pastda:** order-flip olib tashlandi — natija composer OSTIDA chiroyli ko'rinadi + scrollIntoView.
-- **Zoom:** natija burchagida −/100%/+/⟲ (aiZoom) → media transform:scale(.25–3×), .ai-res-stage scroll.
-  Bitta rasm + video uchun; ko'p rasm grid (zoom'siz).
-- **O'chirish:** har natijada "O'chirish" (danger) → DELETE /api/studio/gen/:jobId → R2'dan ham o'chadi.
+## Kredit bug (asosiy)
+Sabab: video job Render restart'da "running"da QOTIB qoladi → fail() chaqirilmaydi → refund yo'q.
+UI timeout'da "qaytarildi" deb YOLG'ON ko'rsatardi.
+- **gen-processor.reconcileStuckGenerations(userId)**: 10 daqiqadan oshган queued/running →
+  failed + refundAiCredits (atomik). studio-gen /credits VA POST /gen'da chaqiriladi →
+  panel ochilганда yo'qolган kredit AVTOMATIK qaytadi.
+- UI aiPollJob: timeout endi {status:'timeout'} (failed EMAS) → "qaytarildi" demaydi, halol
+  "hali tugamadi, muvaffaqiyatsiz bo'lsa avtomatik qaytadi" + aiRefreshCredits.
 
-## Backend (DEPLOY kerak)
-- **s3.ts deleteS3Objects(keys)** — R2 obyektlarni o'chiradi.
-- **studio-gen.ts DELETE /gen/:jobId** — egasini tekshiradi → R2 asset o'chiradi → GenAsset+Generation o'chiradi.
-- (Oldingi) prompt limit 2000→5000 ham deploy kutyapti.
+## Video progress %
+- aiPollJob vaqt-asosli % hisoblaydi (asimptotik, 95% gacha); aiShowGenBox progress bar + "NN%".
+- Done bo'lganда natija chiqadi.
 
 ## Tekshirildi
 - tsc -p apps/api EXIT 0 ✅; inline JS node --check (0 xato) ✅; install-cep ✅
+- refundAiCredits/consumeAiCredits simmetrik (pro user) — to'g'ri; muammo qotган job edi.
 
 ## Holat
-COMMIT QILINMADI. ⚠️ O'chirish + 5000 limit PROD'da DEPLOY'dan keyin ishlaydi (UI tayyor).
-Foydalanuvchi AE'da sinaydi → commit+push.
+Commit + push → deploy. Deploy'dan keyin foydalanuvchi panelni ochса (/credits) yo'qolган krediti
+qaytadi (reconcile). Funksiya/param oqimi tegilmadi.

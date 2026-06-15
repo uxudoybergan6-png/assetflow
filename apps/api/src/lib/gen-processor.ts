@@ -163,6 +163,28 @@ export async function processGeneration(genId: string): Promise<void> {
   }
 }
 
+/**
+ * Qotib qolgan generatsiyalarni tiklaydi (Render restart fon jarayonni o'ldirsa job "running"da
+ * qoladi → kredit qaytmaydi). Belgilangan vaqtdan oshган queued/running → failed + refund.
+ * /credits va POST /gen'da chaqiriladi — foydalanuvchi keyingi amalida yo'qolган krediti qaytadi.
+ */
+const STUCK_MS = 10 * 60 * 1000; // 10 daqiqa (video backend poll'i ~5 daq — 2× zaxira)
+export async function reconcileStuckGenerations(userId: string): Promise<number> {
+  const cutoff = new Date(Date.now() - STUCK_MS);
+  const stuck = await prisma.generation.findMany({
+    where: { userId, status: { in: ["queued", "running"] }, createdAt: { lt: cutoff } },
+  });
+  for (const g of stuck) {
+    // Atomik: faqat hali queued/running bo'lsa failed qilamiz (haqiqatan tugagan job'ga tegmaslik).
+    const upd = await prisma.generation.updateMany({
+      where: { id: g.id, status: { in: ["queued", "running"] } },
+      data: { status: "failed", error: "Vaqt tugadi (avtomatik tiklash) — kredit qaytarildi" },
+    });
+    if (upd.count > 0) await refundAiCredits(g.userId, g.cost);
+  }
+  return stuck.length;
+}
+
 /** Fon rejimida ishga tushirish — POST /gen javobini bloklamaydi. */
 export function processGenerationInBackground(genId: string): void {
   void processGeneration(genId).catch((e) => {

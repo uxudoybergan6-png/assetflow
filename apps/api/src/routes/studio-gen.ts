@@ -15,7 +15,10 @@ import {
   computeGenCost,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
-import { processGenerationInBackground } from "../lib/gen-processor.js";
+import {
+  processGenerationInBackground,
+  reconcileStuckGenerations,
+} from "../lib/gen-processor.js";
 
 export const studioGenRouter = Router();
 
@@ -33,6 +36,8 @@ const GEN_MODES = ["image", "voice", "video", "music"] as const;
 
 /** GET /credits — kredit balansi. */
 studioGenRouter.get("/credits", async (req: Request, res: Response) => {
+  // Qotib qolgan job'larni tiklash → yo'qolган kredit qaytadi (panel ochilганда).
+  await reconcileStuckGenerations(req.user!.userId).catch(() => {});
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ aiCredits: profile.aiCredits, plan: profile.plan.toLowerCase() });
 });
@@ -150,6 +155,9 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   }
   const { sessionId, mode, prompt, modelId, price, costQuoteSignature } = p.data;
   const params = (p.data.params ?? {}) as Record<string, unknown>;
+
+  // Qotib qolgan oldingi job'larni tiklash (yangi gen'dan oldin yo'qolган kredit qaytadi).
+  await reconcileStuckGenerations(req.user!.userId).catch(() => {});
 
   const session = await prisma.genSession.findUnique({ where: { id: sessionId } });
   if (!session || session.userId !== req.user!.userId) {
