@@ -4116,20 +4116,31 @@ const af_ai={
 /* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
 async function aiTimelineRef(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
-  // MUHIM: importMediaFromPath ESKI funksiya — AE sessiyasi boshida yuklangan host.jsx'da bor,
-  // shuning uchun ishlaydi. getActiveTimelineVideoReference YANGI (2a) — eski engine'da yo'q
-  // (manifest ScriptPath AE start'da bir marta yuklaydi). AE restartisiz host.jsx'ni engine'ga
-  // qayta yuklaymiz ($.evalFile), keyin named-call (import bilan IDENTIK) ishlaydi.
-  let reloaded=false;
-  if(typeof reloadHostScript==='function'){try{reloaded=await reloadHostScript();}catch(e){}}
-  const raw=await new Promise(res=>csInterface.evalScript('getActiveTimelineVideoReference()',r=>res(r||'')));
-  try{console.log('[ai:timeline-ref] reloaded=',reloaded,'| raw=',JSON.stringify(raw),'| type=',typeof raw,'| len=',(raw||'').length);}catch(e){}
+  // BOSQICHMA-BOSQICH DIAGNOSTIKA — har testni console.log + toast (raw="" bug'ini izolyatsiya).
+  const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
+  const ext=csInterface.getSystemPath(extEnum);
+  const jsxPath=(ext+'/jsx/host.jsx').replace(/\\/g,'/');
+  const pathLit=JSON.stringify(jsxPath);
+  const run=(s)=>new Promise(res=>csInterface.evalScript(s,r=>res(r)));
+  const A=await run('"ping"');
+  const B=await run('$.evalFile('+pathLit+'); "loaded"');
+  const C=await run('$.evalFile('+pathLit+'); typeof getActiveTimelineVideoReference');
+  const D=await run('(function(){$.evalFile('+pathLit+'); return getActiveTimelineVideoReference();})()');
+  try{
+    console.log('[ai:tl] ext=',JSON.stringify(ext));
+    console.log('[ai:tl] jsxPath=',JSON.stringify(jsxPath));
+    console.log('[ai:tl] pathLit=',pathLit);
+    console.log('[ai:tl] A(ping)=',JSON.stringify(A));
+    console.log('[ai:tl] B(evalFile+loaded)=',JSON.stringify(B));
+    console.log('[ai:tl] C(typeof fn)=',JSON.stringify(C));
+    console.log('[ai:tl] D(call) len=',(D||'').length,'val=',JSON.stringify(D));
+  }catch(e){}
+  // Toast'da qisqa xulosa (DevTools'siz o'qish uchun)
+  if(typeof showToast==='function')showToast('A='+A+' | B='+B+' | C='+C+' | Dlen='+(D||'').length,'info');
+  const raw=D;
   let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
   if(!r||!r.ok){
-    const reason=(r&&r.reason)?r.reason
-      :(raw?('Javob o‘qilmadi: '+String(raw).slice(0,120))
-           :'Host bo‘sh javob qaytardi — AE ni TO‘LIQ qayta ishga tushiring (panel/jsx eski)');
-    if(typeof showToast==='function')showToast(reason,'warning');
+    if(r&&r.reason&&typeof showToast==='function')showToast(r.reason,'warning');
     return;
   }
   af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:'timeline'};

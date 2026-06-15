@@ -1,26 +1,25 @@
-# SESSION REPORT — 2026-06-15 — Timeline ref ASL sabab: engine'da eski host.jsx ✅
+# SESSION REPORT — 2026-06-15 — Timeline ref: A/B/C/D bosqichli diagnostika 🔬
 
-## ASL SABAB (nihoyat aniqlandi)
-Panel YANGI xabarni ko'rsatdi ("Host bo'sh javob... AE qayta ishga tushiring") → demak panel
-HTML TOZA yuklangan. Lekin:
-- `importMediaFromPath` ishlaydi = u ESKI funksiya, AE sessiyasi boshida yuklangan host.jsx'da bor.
-- `getActiveTimelineVideoReference` BO'SH = 2a'da qo'shilgan YANGI funksiya — eski engine'da YO'Q.
+importMediaFromPath ISHLAYDI = evalScript OK → bug Timeline SCRIPT STRING'ida. Bosqichma-bosqich
+izolyatsiya (har biri console.log + toast).
 
-Manifest `ScriptPath` host.jsx'ni AE START'da BIR MARTA yuklaydi. Panel webview qayta yuklandi,
-lekin ExtendScript ENGINE eski host.jsx'ni saqlab qoldi (AE to'liq restart bo'lmagan/quit fail).
-Shuning uchun eski funksiya ishlaydi, yangisi yo'q.
+## aiTimelineRef diagnostik testlari
+- ext = `getSystemPath('extension')` (Higgsfield kabi string), jsxPath log'lanadi.
+- **A**: `evalScript('"ping"')` → "ping" kutiladi (evalScript ifoda qaytaradimi).
+- **B**: `evalScript('$.evalFile(<path>); "loaded"')` → "loaded" yoki "" (bo'sh joyli yo'l evalFile'ni buzyaptimi).
+- **C**: `evalScript('$.evalFile(<path>); typeof getActiveTimelineVideoReference')` → "function"/"undefined".
+- **D**: `evalScript('(function(){$.evalFile(<path>); return getActiveTimelineVideoReference();})()')` → JSON/"".
+- Toast: `A=.. | B=.. | C=.. | Dlen=..` (DevTools'siz o'qish uchun). Console: jsxPath + har test.
 
-## Tuzatish
-`aiTimelineRef` named-call'dan OLDIN `await reloadHostScript()` — `$.evalFile(host.jsx)` bilan
-engine'ga JORIY host.jsx'ni AE restartisiz qayta yuklaydi. Keyin
-`evalScript('getActiveTimelineVideoReference()')` (importMediaFromPath bilan IDENTIK) ishlaydi.
-Log: `reloaded=<bool> | raw=... | len=...`.
+## Interpretatsiya
+- B="" → yo'l/bo'sh-joy muammosi (File obyekt/escape kerak).
+- C="undefined" → host.jsx funksiya yo'q/sintaksis.
+- B="loaded" + C="function" lekin Dlen=0 → return type/IIFE muammosi.
 
 ## Tekshirildi
-- HTML inline JS `node --check` TOZA ✅; reloadHostScript mavjud (1) ✅
-- `install-cep.sh` → Build: 2026-06-15 11:38 · 6bb0190 ✅
+- HTML inline JS `node --check` TOZA ✅
+- install AE 2026 restart, Build: 2026-06-15 12:04 · 79362e6 ✅
 
 ## Holat / TEST
-"Timeline'dan" bosing. DevTools (http://localhost:8098) Console: `[ai:timeline-ref] reloaded=true
-| raw={...}` kutilmoqda. reloaded=true + JSON raw → ishladi. reloaded=false → evalFile yo'li
-xato (log'da ko'ramiz). Keyingi: 3a.
+"Timeline'dan" bosing → toast `A=.. B=.. C=.. Dlen=..` ni ayting (yoki DevTools 8098 `[ai:tl]`).
+Shu qiymatlar bug'ni aniq lokalizatsiya qiladi → yakuniy tuzatish.

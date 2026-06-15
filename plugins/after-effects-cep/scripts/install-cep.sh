@@ -3,9 +3,19 @@ set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.assetflow.demo"
-AE_APP="/Applications/Adobe After Effects 2025/Adobe After Effects 2025.app"
 
-for v in 9 10 11 12; do
+# AE versiyasini AVTO-aniqlash: avval ISHLAYOTGAN jarayon (foydalanuvchi aynan shuni ishlatadi),
+# bo'lmasa eng yangi o'rnatilgan. (Hardcode 2025 edi — foydalanuvchi 2026 ishlatsa noto'g'ri AE
+# restart bo'lardi, panel eski qolardi.)
+AE_BIN="$(ps -axo args= 2>/dev/null | grep -oE '/Applications/Adobe After Effects [0-9]+/Adobe After Effects [0-9]+\.app/Contents/MacOS/After Effects' | head -1 || true)"
+if [ -n "$AE_BIN" ]; then
+  AE_APP="${AE_BIN%/Contents/MacOS/After Effects}"
+else
+  AE_DIR="$(ls -d /Applications/Adobe\ After\ Effects\ * 2>/dev/null | sort -V | tail -1 || true)"
+  [ -n "$AE_DIR" ] && AE_APP="$AE_DIR/$(basename "$AE_DIR").app" || AE_APP=""
+fi
+
+for v in 9 10 11 12 13 14; do
   defaults write "com.adobe.CSXS.$v" PlayerDebugMode 1 2>/dev/null || true
 done
 
@@ -31,15 +41,16 @@ echo "  Build: $BUILD_STAMP"
 echo "✓ AssetFlow o'rnatildi: $DEST"
 echo "  Manba: $SRC"
 
-if [ ! -d "$AE_APP" ]; then
-  echo "⚠ After Effects 2025 topilmadi — qo'lda: Window → Extensions → AssetFlow"
+if [ -z "${AE_APP:-}" ] || [ ! -d "$AE_APP" ]; then
+  echo "⚠ After Effects topilmadi — qo'lda: Window → Extensions → AssetFlow"
   exit 0
 fi
+AE_NAME="$(basename "$AE_APP" .app)"   # masalan "Adobe After Effects 2026"
 
-echo "→ After Effects qayta ishga tushirilmoqda..."
-osascript -e "tell application \"Adobe After Effects 2025\" to quit" 2>/dev/null || true
+echo "→ $AE_NAME qayta ishga tushirilmoqda..."
+osascript -e "tell application \"$AE_NAME\" to quit" 2>/dev/null || true
 for _ in {1..25}; do
-  pgrep -f "Adobe After Effects 2025.app/Contents/MacOS/After Effects" >/dev/null || break
+  pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null || break
   sleep 1
 done
 
@@ -47,8 +58,8 @@ open -a "$AE_APP"
 sleep 10
 
 echo "→ AssetFlow panel ochilmoqda..."
-osascript <<'APPLESCRIPT'
-tell application "Adobe After Effects 2025" to activate
+osascript <<APPLESCRIPT 2>/dev/null || true
+tell application "$AE_NAME" to activate
 delay 1.5
 tell application "System Events"
   tell process "After Effects"
@@ -57,4 +68,4 @@ tell application "System Events"
 end tell
 APPLESCRIPT
 
-echo "✓ Tayyor"
+echo "✓ Tayyor ($AE_NAME)"
