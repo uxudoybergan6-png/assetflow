@@ -6,7 +6,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
 import { isOpenRouterConfigured, orChat } from "../lib/ai/openrouter.js";
-import { isS3Configured, getSignedDownloadUrl } from "../lib/s3.js";
+import { isS3Configured, getSignedDownloadUrl, deleteS3Objects } from "../lib/s3.js";
 import {
   GEN_MODELS,
   getModelsByMode,
@@ -132,7 +132,7 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
 const genSchema = z.object({
   sessionId: z.string().min(1),
   mode: z.enum(GEN_MODES),
-  prompt: z.string().trim().min(2, "Prompt juda qisqa").max(2000),
+  prompt: z.string().trim().min(2, "Prompt juda qisqa").max(5000, "Prompt juda uzun (maks 5000 belgi)"),
   modelId: z.number().int(),
   params: z.record(z.any()).optional(),
   price: z.number().int().nonnegative(),
@@ -198,7 +198,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 
 /** POST /gen/prompt/enhance — promptni OpenRouter (text) bilan boyitadi (kreditsiz). */
 const enhanceSchema = z.object({
-  prompt: z.string().trim().min(2).max(2000),
+  prompt: z.string().trim().min(2).max(5000),
   mode: z.enum(GEN_MODES).optional(),
 });
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
@@ -247,4 +247,32 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
     }
   }
   res.json(gen);
+});
+
+/** DELETE /gen/:jobId — gen natijani o'chiradi (R2 obyektlari ham). Faqat egasi. */
+studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
+  const gen = await prisma.generation.findUnique({
+    where: { id: String(req.params.jobId) },
+    include: { assets: true },
+  });
+  if (!gen || gen.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Generatsiya topilmadi" });
+    return;
+  }
+  // Avval R2'dan asset fayllarni o'chiramiz (resultKey bor bo'lsa).
+  const keys = gen.assets
+    .map((a) => a.resultKey)
+    .filter((k): k is string => typeof k === "string" && k.length > 0);
+  let r2deleted = 0;
+  if (keys.length) {
+    try {
+      r2deleted = await deleteS3Objects(keys);
+    } catch (e) {
+      console.error("[studio-gen] R2 delete xato:", e);
+    }
+  }
+  // So'ng DB: assets → generation (FK tartibi).
+  await prisma.genAsset.deleteMany({ where: { generationId: gen.id } });
+  await prisma.generation.delete({ where: { id: gen.id } });
+  res.json({ ok: true, r2deleted });
 });

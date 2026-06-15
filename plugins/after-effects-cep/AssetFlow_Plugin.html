@@ -1502,7 +1502,8 @@ html.ai-mode .env-subnav,
 html.ai-mode .env-filter-bar,
 html.ai-mode #assetsPage,
 html.ai-mode #favPage,
-html.ai-mode #dlPage{display:none!important}
+html.ai-mode #dlPage,
+html.ai-mode #featuredWrap{display:none!important}
 html.ai-mode #aiPage{display:block!important}
 /* Sidebar ✨ AI link — biroz ajralib tursin */
 .env-side-ai .ico{color:var(--accent-cta)}
@@ -1545,13 +1546,20 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-chip-tpl{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:var(--select-dim);border:1px solid rgba(50,123,250,.35);color:var(--select);font-size:var(--fs-sm);font-weight:500}
 
 .ai-comp-prompt{position:relative}
+/* P0-a: o'qiladigan shrift + auto-grow (min ~2, max ~8 qator) + toza scroll; enhance tugmasi alohida qatorda */
 .ai-comp-prompt textarea{
   width:100%;box-sizing:border-box;resize:none;background:transparent;border:none;outline:none;
-  color:var(--text);font-size:var(--fs-lg);line-height:1.5;padding:2px 42px 8px 2px;font-family:inherit;
+  color:var(--text);font-size:var(--fs-md);line-height:1.55;padding:4px 4px 4px 2px;font-family:inherit;
+  min-height:48px;max-height:172px;overflow-y:auto;
 }
 .ai-comp-prompt textarea::placeholder{color:var(--muted-2)}
-.ai-improve{position:absolute;top:0;right:0;width:32px;height:32px;border-radius:9px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ai-prompt-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px}
+.ai-charcount{font-size:var(--fs-xs);color:var(--muted-2);font-variant-numeric:tabular-nums}
+.ai-charcount.warn{color:#e0a83a}
+.ai-charcount.over{color:var(--danger,#e05555);font-weight:600}
+.ai-improve{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:8px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);cursor:pointer;font-family:inherit;font-size:var(--fs-sm);font-weight:500}
 .ai-improve:hover{background:rgba(130,195,65,.22)}
+.ai-improve[disabled]{opacity:.6;cursor:default}
 
 .ai-comp-ctrls{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 .ai-dd{position:relative}
@@ -1605,6 +1613,32 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-res-card{display:flex;flex-direction:column}
 .ai-res-imp{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:var(--surface-2);color:var(--text);border:none;border-top:1px solid var(--border);cursor:pointer;font-family:inherit;font-size:var(--fs-sm)}
 .ai-res-imp:hover{background:var(--green-dim);color:var(--accent-cta)}
+/* Natija composer OSTIDA (pastda) ko'rinadi — banner/quick olib tashlangani uchun darrov ko'rinadi */
+#aiResultArea:empty{display:none}
+.ai-res-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+/* zoom boshqaruvi — natija burchagida */
+.ai-zoom{margin-left:auto;display:inline-flex;align-items:center;gap:2px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px}
+.ai-zoom button{width:26px;height:26px;border:none;background:transparent;color:var(--text);cursor:pointer;border-radius:999px;font-size:15px;line-height:1;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.ai-zoom button:hover{background:rgba(255,255,255,.08)}
+.ai-zoom span{min-width:42px;text-align:center;font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
+/* zoom media — karta ichida scroll qilinadi (kattalashganda) */
+.ai-res-stage{overflow:auto;max-height:66vh;border-radius:14px;border:1px solid var(--border);background:var(--surface);display:flex;justify-content:center}
+.ai-res-stage img,.ai-res-stage video{transform:scale(var(--ai-zoom,1));transform-origin:top center;transition:transform .15s;display:block;max-width:100%}
+.ai-act.danger{color:var(--danger,#e05555)}
+.ai-act.danger:hover{border-color:var(--danger,#e05555)}
+.ai-res-head b{font-size:var(--fs-md);font-weight:600;color:var(--text)}
+.ai-res-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);font-size:var(--fs-xs);font-weight:700}
+/* natija amallar — import / yana / tahrirlash */
+.ai-res-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px}
+.ai-act{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:var(--fs-md);font-weight:500;cursor:pointer;font-family:inherit;transition:border-color .15s,filter .15s}
+.ai-act:hover{border-color:var(--muted-2)}
+.ai-act.primary{background:var(--accent-cta);color:var(--on-accent);border-color:transparent;font-weight:700}
+.ai-act.primary:hover{filter:brightness(1.08)}
+/* natija o'lchamini chekla (P1-4 ham): juda baland bo'lib scroll bo'lmasin */
+.ai-res-vid{display:flex;justify-content:center}
+.ai-res-vid video{max-height:62vh;max-width:100%;width:auto}
+.ai-res-grid:not(.multi) .ai-res-card{align-items:center}
+.ai-res-grid:not(.multi) .ai-res-card img{max-height:60vh;width:auto;max-width:100%}
 
 .ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap}
 .ai-timeline:hover{border-color:var(--muted-2);color:var(--text)}
@@ -1938,7 +1972,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
                 <!-- ✨ AI TOOLS — UI tayyor, generatsiya hali ishlamaydi («tez orada») -->
                 <div id="aiPage" style="display:none">
-                  <div class="ai-wrap">
+                  <div class="ai-wrap" id="aiWrap">
 
                     <!-- Launcher: "Nima yaratamiz?" (faqat idle holatda) -->
                     <div class="ai-launch" id="aiLaunch">
@@ -1948,23 +1982,16 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
                     <!-- ===== YAGONA KOMPOZER BAR ===== -->
                     <div class="ai-composer" id="aiComposer" data-dropdown="1">
-                      <!-- yuqori qator: ko'rinish toggle + chiplar -->
-                      <div class="ai-comp-top">
-                        <div class="ai-vtoggle">
-                          <button type="button" class="ai-vbtn active" id="aiViewGrid" title="Panjara" onclick="aiSetView('grid')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></button>
-                          <button type="button" class="ai-vbtn" id="aiViewList" title="Ro‘yxat" onclick="aiSetView('list')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
-                        </div>
-                        <button type="button" class="ai-add" onclick="aiSoon()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Qo‘shish</button>
-                        <div class="ai-chip-tpl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg> Shablon uchun</div>
-                      </div>
-
                       <!-- model.inputs[] dan dinamik input affordancelar -->
                       <div class="ai-inputs" id="aiInputs" style="display:none"></div>
 
-                      <!-- prompt maydoni -->
+                      <!-- prompt maydoni — auto-grow textarea + alohida Enhance qatori (P0-a) -->
                       <div class="ai-comp-prompt">
-                        <textarea id="aiPrompt" rows="3" placeholder="G‘oyangizni yozing…" onfocus="aiFocus(true)" onblur="aiFocus(false)"></textarea>
-                        <button type="button" class="ai-improve" title="Promptni yaxshilash" onclick="aiImprovePrompt()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg></button>
+                        <textarea id="aiPrompt" rows="2" placeholder="G‘oyangizni yozing…" oninput="aiAutoGrow(this)" onfocus="aiFocus(true)" onblur="aiFocus(false)"></textarea>
+                        <div class="ai-prompt-bar">
+                          <span class="ai-charcount" id="aiCharCount">0 / 5000</span>
+                          <button type="button" class="ai-improve" id="aiImproveBtn" title="Promptni AI bilan boyitish" onclick="aiImprovePrompt()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg> Yaxshilash</button>
+                        </div>
                       </div>
 
                       <!-- Timeline/upload reference chip (2a) -->
@@ -2007,13 +2034,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                       </div>
                     </div>
 
-                    <!-- tezkor amallar -->
-                    <div class="ai-quick" id="aiQuick">
-                      <div class="ai-quick-h">Tezkor amallar</div>
-                      <div class="ai-cards" id="aiCards"></div>
-                    </div>
-
-                    <!-- generatsiya / natija -->
+                    <!-- generatsiya / natija (composer ostida) -->
                     <div id="aiResultArea"></div>
                   </div>
                 </div>
@@ -4201,6 +4222,13 @@ async function studioPost(path,body,ms){
   if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
   return d;
 }
+/** /api/studio DELETE — auth bilan (gen natijani o'chirish). */
+async function studioDelete(path){
+  const res=await pubFetch(path,{method:'DELETE',headers:pubAuthHeaders()},20000);
+  const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
+  return d;
+}
 
 /**
  * params — model capabilities + tanlovdan yig'iladi. FAQAT shu model qo'llaydigan maydon.
@@ -4407,7 +4435,10 @@ function aiIco(name,size,sw){
     spark:'<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/>',
     grid:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
     check:'<path d="M5 12l4 4 10-10"/>',
-    bolt:'<path d="M13 3L5 13h5l-1 8 8-10h-5z" fill="currentColor" stroke="none"/>'
+    bolt:'<path d="M13 3L5 13h5l-1 8 8-10h-5z" fill="currentColor" stroke="none"/>',
+    refresh:'<polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/>',
+    edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
   };
   return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round">'+(P[name]||'')+'</svg>';
 }
@@ -4420,6 +4451,71 @@ function aiSetView(v){
 function aiFocus(on){
   const c=document.getElementById('aiComposer');
   if(c)c.classList.toggle('focused',!!on);
+}
+/** Prompt textarea balandligini matnga moslaydi (min ~2, max ~8 qator, keyin scroll). */
+function aiAutoGrow(el){
+  el=el||document.getElementById('aiPrompt');if(!el)return;
+  el.style.height='auto';
+  el.style.height=Math.max(48,Math.min(172,el.scrollHeight))+'px';
+}
+/** Jonli belgi hisoblagich (backend limiti bilan mos). >90% sariq, oshsa qizil + Generate bloklanadi. */
+var AI_PROMPT_MAX=5000;
+function aiUpdateCharCount(){
+  const ta=document.getElementById('aiPrompt'),el=document.getElementById('aiCharCount');
+  if(!ta||!el)return;
+  const n=(ta.value||'').trim().length;  // backend .trim() qiladi — bir xil hisob
+  el.textContent=n+' / '+AI_PROMPT_MAX;
+  const over=n>AI_PROMPT_MAX, warn=n>AI_PROMPT_MAX*0.9;
+  el.classList.toggle('over',over);
+  el.classList.toggle('warn',warn&&!over);
+  af_ai.promptOver=over;
+  aiSetGenBtn(af_ai.gen);  // tugma holatini qayta qo'llash (limit oshsa bloklanadi)
+}
+/** Natija amallari: import (ixtiyoriy) · Yana (o'sha params) · Tahrirlash (composer'ga qaytish). */
+function aiResultActions(includeImport){
+  const imp=includeImport?('<button type="button" class="ai-act primary" onclick="aiImportResult()">'+aiIco('bolt',15)+' AE‘ga import</button>'):'';
+  return '<div class="ai-res-actions">'+imp
+    +'<button type="button" class="ai-act" onclick="aiRegenerate()">'+aiIco('refresh',14)+' Yana</button>'
+    +'<button type="button" class="ai-act" onclick="aiEditPrompt()">'+aiIco('edit',14)+' Tahrirlash</button>'
+    +'<button type="button" class="ai-act danger" onclick="aiDeleteResult()">'+aiIco('trash',14)+' O‘chirish</button></div>';
+}
+/** Natija sarlavhasi (prominent panel). zoom=true bo'lsa burchakda zoom boshqaruvi. */
+function aiResultHead(zoom){
+  const z=zoom?('<div class="ai-zoom"><button type="button" onclick="aiZoom(-1)" title="Kichraytirish">−</button>'
+    +'<span id="aiZoomLbl">100%</span><button type="button" onclick="aiZoom(1)" title="Kattalashtirish">+</button>'
+    +'<button type="button" onclick="aiZoom(0)" title="Asliga qaytar">⟲</button></div>'):'';
+  return '<div class="ai-res-head"><b>Natija</b><span class="ai-res-badge">'+aiIco('check',12)+' Tayyor</span>'+z+'</div>';
+}
+/** Natija zoom (kichraytir/kattalashtir) — media transform:scale (CSS var). */
+function aiZoom(dir){
+  let z=af_ai.zoom||1;
+  z=(dir===0)?1:Math.max(0.25,Math.min(3,Math.round((z+dir*0.25)*100)/100));
+  af_ai.zoom=z;
+  const area=document.getElementById('aiResultArea');if(area)area.style.setProperty('--ai-zoom',z);
+  const l=document.getElementById('aiZoomLbl');if(l)l.textContent=Math.round(z*100)+'%';
+}
+function aiResetZoom(){ af_ai.zoom=1; const a=document.getElementById('aiResultArea');if(a)a.style.setProperty('--ai-zoom',1); }
+/** Gen natijani o'chirish — backend R2'dan ham o'chiradi. */
+async function aiDeleteResult(){
+  const id=af_ai.lastJobId;
+  if(!id){aiResetResult();return;}
+  if(typeof showToast==='function')showToast('O‘chirilmoqda…','info');
+  try{
+    await studioDelete('/api/studio/gen/'+id);
+    af_ai.lastJobId=null;af_ai.lastUrl=null;af_ai.lastImages=null;
+    aiResetResult();
+    if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh();
+    if(typeof showToast==='function')showToast('Natija o‘chirildi','success');
+  }catch(e){
+    if(typeof showToast==='function')showToast('O‘chirishda xato: '+((e&&e.message)||e),'error');
+  }
+}
+/** Yana — joriy prompt+params bilan qayta generatsiya (oqim o'zgarmaydi). */
+function aiRegenerate(){ if(!af_ai.gen)aiGenerate(); }
+/** Tahrirlash — composer'ga qaytib promptga fokus. */
+function aiEditPrompt(){
+  const c=document.getElementById('aiComposer');if(c&&c.scrollIntoView)c.scrollIntoView({behavior:'smooth',block:'center'});
+  const ta=document.getElementById('aiPrompt');if(ta)setTimeout(function(){ta.focus();},120);
 }
 function aiToggleMenu(which,e){
   if(e)e.stopPropagation();
@@ -4494,8 +4590,10 @@ function aiSetGenBtn(gen){
   // Narx: imzolangan quote bo'lsa aniq narx, aks holda statik taxmin (~)
   const q=af_ai.quote;
   const priceTxt=(q&&aiStudioMode(af_ai.media))?('Generatsiya · '+q.price+' kredit'):('Generatsiya · ~'+cfg.cost+' kredit');
-  if(lab)lab.textContent=gen?'Generatsiya…':(af_ai.media==='qidiruv'?'Qidirish':priceTxt);
-  if(btn)btn.disabled=!!gen;
+  let text=gen?'Generatsiya…':(af_ai.media==='qidiruv'?'Qidirish':priceTxt);
+  if(!gen&&af_ai.promptOver)text='Prompt juda uzun (maks '+AI_PROMPT_MAX+')';
+  if(lab)lab.textContent=text;
+  if(btn)btn.disabled=!!gen||!!af_ai.promptOver;
 }
 function aiSetMedia(key){
   if(!AI_CFG[key])return;
@@ -4529,6 +4627,7 @@ function aiImprovePrompt(){
   if(!ta)return;
   const base=(ta.value||'').trim()||(af_ai.media==='qidiruv'?'kosmik intro':'kelajak shahri');
   ta.value=af_ai.media==='qidiruv'?base:base+' — kinematik, yumshoq yorug‘lik, 35mm, yuqori detallar';
+  aiAutoGrow(ta);aiUpdateCharCount();
   if(typeof showToast==='function')showToast('Prompt yaxshilandi','success');
 }
 function aiResetResult(){
@@ -4536,6 +4635,7 @@ function aiResetResult(){
   if(af_ai._t){clearTimeout(af_ai._t);af_ai._t=null;}
   if(af_ai._poll){clearTimeout(af_ai._poll);af_ai._poll=null;}
   const area=document.getElementById('aiResultArea');if(area)area.innerHTML='';
+  const wrap=document.getElementById('aiWrap');if(wrap)wrap.classList.remove('ai-active');
   const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='';
   const q=document.getElementById('aiQuick');if(q)q.style.display='';
   aiSetGenBtn(false);
@@ -4585,7 +4685,9 @@ async function aiGenerate(){
   aiRenderMenus();aiSetGenBtn(true);
   const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='none';
   const q=document.getElementById('aiQuick');if(q)q.style.display='none';
+  const wrap=document.getElementById('aiWrap');if(wrap)wrap.classList.add('ai-active'); // natija composer tepasiga
   aiShowGenBox(media,val);
+  const ra=document.getElementById('aiResultArea');if(ra&&ra.scrollIntoView)ra.scrollIntoView({behavior:'smooth',block:'start'});
   try{
     if(media==='qidiruv'){
       // Semantik qidiruv — eski /plugin/ai/search (job kerak emas, sinxron)
@@ -4665,6 +4767,7 @@ async function aiRunStudioGen(media,val){
   }
   const all=(gen.assets||[]).filter(function(a){return a&&a.url;});
   if(!all.length){aiRenderError(new Error('Natija topilmadi'));return;}
+  af_ai.lastJobId=(gen&&gen.id)||start.jobId;  // o'chirish uchun
   const extOf=function(u,d){return (String(u).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||d;};
   if(media==='rasm'){
     aiRenderImages(all.map(function(a){return {url:a.url,ext:extOf(a.url,'png')};}),val);
@@ -4683,32 +4786,41 @@ function aiRenderResult(media,data,promptTxt){
   af_ai.lastUrl=url; af_ai.lastKind=(media==='rasm')?'image':(media==='video')?'video':'audio';
   // Server real formatni qaytaradi (png/jpg/webp/mp4/mp3) — ext mos bo'lsin (PNG xatosi yo'qoladi)
   af_ai.lastExt=(data&&data.ext)?String(data.ext).replace(/^\./,''):(media==='rasm'?'png':media==='video'?'mp4':'mp3');
-  const actions='<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
-    +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div>';
+  af_ai.zoom=1;
+  const actions=aiResultActions(true);
   if(media==='video'){
-    area.innerHTML='<div class="ai-res"><div class="ai-res-card ai-res-vid">'
+    area.innerHTML='<div class="ai-res">'+aiResultHead(true)+'<div class="ai-res-stage">'
       +'<video src="'+aiEsc(url)+'" controls playsinline preload="metadata"></video></div>'+actions+'</div>';
   }else if(media==='rasm'){
-    area.innerHTML='<div class="ai-res"><div class="ai-res-grid"><figure class="ai-res-card">'
-      +'<img src="'+aiEsc(url)+'" alt="AI natija"/></figure></div>'+actions+'</div>';
+    area.innerHTML='<div class="ai-res">'+aiResultHead(true)+'<div class="ai-res-stage">'
+      +'<img src="'+aiEsc(url)+'" alt="AI natija"/></div>'+actions+'</div>';
   }else{
-    area.innerHTML='<div class="ai-res"><audio controls preload="metadata" src="'+aiEsc(url)+'" style="width:100%;margin-bottom:12px"></audio>'
-      +'<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
-      +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div></div>';
+    area.innerHTML='<div class="ai-res">'+aiResultHead(false)+'<audio controls preload="metadata" src="'+aiEsc(url)+'" style="width:100%;margin-bottom:12px"></audio>'
+      +actions+'</div>';
   }
+  aiResetZoom();
 }
 
 /** Rasm natijalari (1..N) — grid, har biriga alohida import (count>1 uchun). */
 function aiRenderImages(list,promptTxt){
   const area=document.getElementById('aiResultArea');if(!area)return;
   if(!list||!list.length){aiRenderError(new Error('Natija topilmadi'));return;}
-  af_ai.lastKind='image';af_ai.lastImages=list;
+  af_ai.lastKind='image';af_ai.lastImages=list;af_ai.zoom=1;
   af_ai.lastUrl=list[0].url;af_ai.lastExt=list[0].ext||'png';
-  const cards=list.map(function(it,i){
-    return '<figure class="ai-res-card"><img src="'+aiEsc(it.url)+'" alt="AI natija"/>'
-      +'<button type="button" class="ai-res-imp" onclick="aiImportIdx('+i+')">'+aiIco('bolt',14)+' AE‘ga import</button></figure>';
-  }).join('');
-  area.innerHTML='<div class="ai-res"><div class="ai-res-grid'+(list.length>1?' multi':'')+'">'+cards+'</div></div>';
+  if(list.length===1){
+    // Bitta rasm — zoom stage + import/yana/tahrirlash/o'chirish
+    area.innerHTML='<div class="ai-res">'+aiResultHead(true)+'<div class="ai-res-stage">'
+      +'<img src="'+aiEsc(list[0].url)+'" alt="AI natija"/></div>'+aiResultActions(true)+'</div>';
+  }else{
+    // Bir nechta rasm — grid, har biriga import; pastda Yana/Tahrirlash/O'chirish
+    const cards=list.map(function(it,i){
+      return '<figure class="ai-res-card"><img src="'+aiEsc(it.url)+'" alt="AI natija"/>'
+        +'<button type="button" class="ai-res-imp" onclick="aiImportIdx('+i+')">'+aiIco('bolt',14)+' AE‘ga import</button></figure>';
+    }).join('');
+    area.innerHTML='<div class="ai-res">'+aiResultHead(false)+'<div class="ai-res-grid multi">'+cards+'</div>'
+      +aiResultActions(false)+'</div>';
+  }
+  aiResetZoom();
 }
 
 /** Semantik qidiruv natijasi — mos katalog shablonlari grid'i (bosilganda openPack import). */
@@ -4841,7 +4953,7 @@ function aiInit(){
   });
   // Prompt o'zgarsa cost-quote qayta hisoblanadi (image/voice rejimida)
   const ta=document.getElementById('aiPrompt');
-  if(ta)ta.addEventListener('input',function(){ if(aiStudioMode(af_ai.media))aiCostQuote(); });
+  if(ta){ta.addEventListener('input',function(){ aiAutoGrow(ta); aiUpdateCharCount(); if(aiStudioMode(af_ai.media))aiCostQuote(); });aiAutoGrow(ta);aiUpdateCharCount();}
   // Boshlang'ich model katalogini yuklaymiz (default media = rasm/image)
   if(aiStudioMode(af_ai.media))aiLoadModels(af_ai.media);
 }

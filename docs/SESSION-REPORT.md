@@ -1,24 +1,23 @@
-# SESSION REPORT — 2026-06-15 — Rasm sozlamalari NATIVE (image_config) + count ✅
+# SESSION REPORT — 2026-06-15 — AI composer tozalash + zoom + o'chirish ✅
 
-Reja: rasm aspect/quality backend'da haqiqatan qo'llanishi. OpenRouter docs: image_config NATIVE.
+Foydalanuvchi so'rovi: AI Tools'dan keraksiz elementlarni olib tashlash + gen natija zoom + o'chirish.
 
-## Backend
-- **openrouter.ts orImage/orImageEdit**: yangi `image_config` param →
-  body.image_config={aspect_ratio,image_size} (faqat berilsa). Promptga QO'SHILMAYDI.
-- **gen-models.ts**: IMG_QUALITY → ["1K","2K","4K"] (512px olib tashlandi); resolveImageCount();
-  computeGenCost rasm = cost × count (video = cost/s × duration).
-- **gen-processor.ts**: image branch image_config quradi (aspectRatio→aspect_ratio,
-  quality→image_size) + count marta loop, har biri alohida GenAsset. Bittasi xato →
-  butun batch fail + to'liq refund.
+## Plugin (UI — funksiya/param oqimi tegilmadi)
+- **Olib tashlandi (AI'da keraksiz):** Shablonlar banneri (html.ai-mode #featuredWrap display:none),
+  "Qo'shish"+"Shablon uchun" tugmalari + view toggle (ai-comp-top butunlay), "Tezkor amallar" (ai-quick).
+- **Natija pastda:** order-flip olib tashlandi — natija composer OSTIDA chiroyli ko'rinadi + scrollIntoView.
+- **Zoom:** natija burchagida −/100%/+/⟲ (aiZoom) → media transform:scale(.25–3×), .ai-res-stage scroll.
+  Bitta rasm + video uchun; ko'p rasm grid (zoom'siz).
+- **O'chirish:** har natijada "O'chirish" (danger) → DELETE /api/studio/gen/:jobId → R2'dan ham o'chadi.
 
-## Plugin
-- aiRenderImages(): N rasm grid (.multi 2-ustun), har biriga "AE'ga import" (aiImportIdx).
-- aiImportResult → aiImportMedia(url,kind,ext) refaktor (rasm/video/audio umumiy).
-- aiRunStudioGen: rasm → barcha asset'lar grid; video/ovoz → birinchisi.
+## Backend (DEPLOY kerak)
+- **s3.ts deleteS3Objects(keys)** — R2 obyektlarni o'chiradi.
+- **studio-gen.ts DELETE /gen/:jobId** — egasini tekshiradi → R2 asset o'chiradi → GenAsset+Generation o'chiradi.
+- (Oldingi) prompt limit 2000→5000 ham deploy kutyapti.
 
 ## Tekshirildi
 - tsc -p apps/api EXIT 0 ✅; inline JS node --check (0 xato) ✅; install-cep ✅
-- Jonli test (Nano Banana 2, 9:16, 2K, 2 rasm → 2 vertikal) — DEPLOY'dan keyin.
 
 ## Holat
-Commit + push → deploy → jonli image_config testi (2 vertikal rasm).
+COMMIT QILINMADI. ⚠️ O'chirish + 5000 limit PROD'da DEPLOY'dan keyin ishlaydi (UI tayyor).
+Foydalanuvchi AE'da sinaydi → commit+push.

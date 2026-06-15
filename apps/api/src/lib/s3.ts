@@ -242,6 +242,20 @@ export async function deleteTemplateAssets(templateId: string): Promise<number> 
   return deleted;
 }
 
+/** Berilgan kalitlarni R2'dan o'chiradi (gen natijalarini o'chirish uchun). */
+export async function deleteS3Objects(keys: string[]): Promise<number> {
+  if (!isS3Configured()) return 0;
+  const valid = keys.filter((k): k is string => typeof k === "string" && k.length > 0);
+  if (!valid.length) return 0;
+  await s3.send(
+    new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: { Objects: valid.map((Key) => ({ Key })), Quiet: true },
+    })
+  );
+  return valid.length;
+}
+
 /** Yuklashda R2 kalit — kengaytma saqlanadi (pack.zip / preview.mp4) */
 export function s3UploadKeyForFile(
   templateId: string,
