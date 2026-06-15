@@ -5,6 +5,33 @@ let SUB_FILTER = "all";
 let SUB_SEARCH = "";
 let SUB_PLAN_FILTER = "all";
 
+/** AI semantik qidiruv — tasdiqlangan shablonlarga embedding backfill (admin). */
+async function aiReindex() {
+  const btn = document.getElementById("aiReindexBtn");
+  if (btn) btn.disabled = true;
+  toast("AI", "Indekslanmoqda…", "info");
+  try {
+    const r = await StudioApi.reindexAi(false);
+    const done = r && typeof r.done === "number" ? r.done : 0;
+    const failed = (r && r.failed) || 0;
+    toast(
+      "Tayyor",
+      `${done} shablon indekslandi${failed ? ` (${failed} xato)` : ""}`,
+      "success"
+    );
+  } catch (e) {
+    const msg =
+      e && e.status === 503
+        ? "AI sozlanmagan (CF kaliti kerak)"
+        : e && e.status === 403
+          ? "Faqat admin"
+          : (e && e.message) || "Xato";
+    toast("Xato", msg, "danger");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 async function refreshSubscribersFromApi() {
   if (typeof StudioApi === "undefined" || !StudioApi.listPluginSubscribers) return false;
   try {
@@ -120,6 +147,7 @@ VIEWS.subscribers = function () {
           <option value="Pro" ${SUB_PLAN_FILTER==="Pro"?"selected":""}>Pro</option>
         </select>
         <button class="btn btn-ghost btn-sm" onclick="toast('Eksport','Obunachilar CSV','info')">${ic("download")} CSV</button>
+        <button class="btn btn-ghost btn-sm" id="aiReindexBtn" onclick="aiReindex()" title="Tasdiqlangan shablonlarga AI semantik qidiruv embeddinglarini yaratadi">${ic("refresh")} AI qayta indekslash</button>
       </div>
     </div>
 

@@ -257,6 +257,14 @@ const StudioApi = (() => {
     return request(`/api/studio/audit${q}`);
   }
 
+  /** AI semantik qidiruv — tasdiqlangan shablonlarga embedding backfill (ADMIN). */
+  async function reindexAi(force = false) {
+    return request(`/api/plugin/ai/reindex`, {
+      method: "POST",
+      body: { force: !!force },
+    });
+  }
+
   return {
     baseUrl,
     token,
@@ -284,6 +292,7 @@ const StudioApi = (() => {
     broadcastMessage,
     markMessageThreadRead,
     listAuditLogs,
+    reindexAi,
     healthCheck,
   };
 })();
