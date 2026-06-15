@@ -3934,6 +3934,8 @@ function applyNavSwitch(tab){
     currentNav=tab;
     window.currentNav=tab;
     closePack();
+    // AI sahifa ochilganda real model katalogni yuklaymiz (login bo'lsa)
+    if(typeof aiStudioMode==='function'&&aiStudioMode(af_ai.media))aiLoadModels(af_ai.media);
     return;
   }
   currentNav=tab;
@@ -4110,37 +4112,105 @@ const af_ai={
   media:'rasm',
   model:{rasm:'Flux 2',ovoz:'Jessi',sfx:'AudioGen',qidiruv:'Katalog'},
   setting:{rasm:'16:9 · 2K · 1 rasm',ovoz:'Samimiy · Normal',sfx:'5s · Stereo',qidiruv:''},
-  view:'grid',open:null,gen:false,_t:null,reference:null
+  view:'grid',open:null,gen:false,_t:null,reference:null,
+  // Studio Gen (1e): real model katalog + imzolangan cost-quote + session
+  catalog:{},        // studioMode -> [{id,key,label,cost,feature}]
+  modelId:{},        // media -> tanlangan model numeric id
+  quote:null,        // {modelId,price,signature} (joriy media+model+params uchun)
+  _qt:null,          // cost-quote debounce
+  sessionId:null     // GenSession id (1e-2/1e-3)
 };
+
+// AI media → Studio Gen mode (faqat shu ikkisi yangi /studio/gen oqimida)
+function aiStudioMode(media){ return media==='rasm'?'image':media==='ovoz'?'voice':null; }
+
+/** /api/studio GET — auth bilan (pubFetch base+timeout). */
+async function studioGet(path){
+  const res=await pubFetch(path,{headers:pubAuthHeaders()},30000);
+  const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
+  return d;
+}
+/** /api/studio POST — auth bilan. */
+async function studioPost(path,body,ms){
+  const res=await pubFetch(path,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},pubAuthHeaders()),body:JSON.stringify(body||{})},ms||60000);
+  const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
+  return d;
+}
+
+/** params — cost-quote VA generate uchun BIR XIL bo'lishi shart (imzo hash mos kelsin). */
+function aiGenParams(media){
+  if(media==='ovoz')return {lang:'en'};
+  return {};
+}
+
+/** Model katalogni yuklab dropdown'ni to'ldiradi (faqat image/voice, login bor). */
+async function aiLoadModels(media){
+  const mode=aiStudioMode(media);
+  if(!mode)return;
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
+  try{
+    const data=await studioGet('/api/studio/gen/models?mode='+mode);
+    const models=(data&&data.models)||[];
+    af_ai.catalog[mode]=models;
+    if(models.length){
+      const cur=af_ai.modelId[media];
+      const has=models.some(m=>m.id===cur);
+      const def=has?cur:(models.find(m=>m.isDefault)||models[0]).id;
+      af_ai.modelId[media]=def;
+      const m=models.find(x=>x.id===def);
+      af_ai.model[media]=m?m.label:af_ai.model[media];
+      const el=document.getElementById('aiModelLabel');if(el&&af_ai.media===media)el.textContent=af_ai.model[media];
+      aiBuildMenus();
+      aiCostQuote();
+    }
+  }catch(e){ /* login yo'q yoki API — statik fallback qoladi */ }
+}
+
+/** Katalogdan model tanlash (cost-quote qayta hisoblanadi). */
+function aiSetModelCat(id){
+  const mode=aiStudioMode(af_ai.media);const models=(mode&&af_ai.catalog[mode])||[];
+  const m=models.find(x=>x.id===id);if(!m)return;
+  af_ai.modelId[af_ai.media]=id;
+  af_ai.model[af_ai.media]=m.label;
+  af_ai.open=null;af_ai.quote=null;
+  const el=document.getElementById('aiModelLabel');if(el)el.textContent=m.label;
+  aiBuildMenus();aiRenderMenus();aiCostQuote();
+}
+
+/** Imzolangan cost-quote (debounce) → Generate tugmasida narx. */
+function aiCostQuote(){
+  if(af_ai._qt){clearTimeout(af_ai._qt);}
+  af_ai._qt=setTimeout(async function(){
+    const media=af_ai.media,mode=aiStudioMode(media);
+    if(!mode){return;}
+    const modelId=af_ai.modelId[media];
+    if(!modelId||typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
+    try{
+      const q=await studioPost('/api/studio/gen/cost-quote',{modelId:modelId,mode:mode,params:aiGenParams(media)},20000);
+      af_ai.quote={modelId:modelId,price:q.price,signature:q.signature};
+      if(!af_ai.gen)aiSetGenBtn(false);
+    }catch(e){ af_ai.quote=null; }
+  },350);
+}
 
 /* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
 async function aiTimelineRef(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
-  // BOSQICHMA-BOSQICH DIAGNOSTIKA — har testni console.log + toast (raw="" bug'ini izolyatsiya).
+  // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz. host.jsx endi
+  // qo'lda JSON quradi (JSON.stringify'siz) — har doim yaroqli, bo'sh emas.
   const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
   const ext=csInterface.getSystemPath(extEnum);
   const jsxPath=(ext+'/jsx/host.jsx').replace(/\\/g,'/');
   const pathLit=JSON.stringify(jsxPath);
-  const run=(s)=>new Promise(res=>csInterface.evalScript(s,r=>res(r)));
-  const A=await run('"ping"');
-  const B=await run('$.evalFile('+pathLit+'); "loaded"');
-  const C=await run('$.evalFile('+pathLit+'); typeof getActiveTimelineVideoReference');
-  const D=await run('(function(){$.evalFile('+pathLit+'); return getActiveTimelineVideoReference();})()');
-  try{
-    console.log('[ai:tl] ext=',JSON.stringify(ext));
-    console.log('[ai:tl] jsxPath=',JSON.stringify(jsxPath));
-    console.log('[ai:tl] pathLit=',pathLit);
-    console.log('[ai:tl] A(ping)=',JSON.stringify(A));
-    console.log('[ai:tl] B(evalFile+loaded)=',JSON.stringify(B));
-    console.log('[ai:tl] C(typeof fn)=',JSON.stringify(C));
-    console.log('[ai:tl] D(call) len=',(D||'').length,'val=',JSON.stringify(D));
-  }catch(e){}
-  // Toast'da qisqa xulosa (DevTools'siz o'qish uchun)
-  if(typeof showToast==='function')showToast('A='+A+' | B='+B+' | C='+C+' | Dlen='+(D||'').length,'info');
-  const raw=D;
+  const expr='(function(){$.evalFile('+pathLit+'); return getActiveTimelineVideoReference();})()';
+  const raw=await new Promise(res=>csInterface.evalScript(expr,r=>res(r)));
+  try{console.log('[ai:timeline-ref] raw=',JSON.stringify(raw),'| len=',(raw||'').length);}catch(e){}
   let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
   if(!r||!r.ok){
-    if(r&&r.reason&&typeof showToast==='function')showToast(r.reason,'warning');
+    const reason=(r&&r.reason)?r.reason:(raw?('Javob: '+String(raw).slice(0,140)):'evalScript bo‘sh');
+    if(typeof showToast==='function')showToast(reason,'warning');
     return;
   }
   af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:'timeline'};
@@ -4212,11 +4282,20 @@ function aiBuildMenus(){
     return aiMenuRow(af_ai.media===k,"aiSetMedia('"+k+"')",
       '<span class="mr-ico">'+aiIco(c.ico,18)+'</span><div class="mr-main"><div class="mr-label">'+c.label+'</div><div class="mr-sub">'+c.sub+'</div></div>');
   }).join('');
-  // model menu
+  // model menu — katalog (real /studio/gen/models) bo'lsa undan, aks holda statik
   const dm=document.getElementById('aiModelMenu');
-  if(dm)dm.innerHTML=cfg.models.map((m,i)=>
-    aiMenuRow(af_ai.model[af_ai.media]===m,"aiSetModel("+i+")",
-      '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+m+'</div></div>')).join('');
+  const smode=aiStudioMode(af_ai.media);
+  const cat=(smode&&af_ai.catalog[smode])||null;
+  if(dm&&cat&&cat.length){
+    dm.innerHTML=cat.map(m=>
+      aiMenuRow(af_ai.modelId[af_ai.media]===m.id,"aiSetModelCat("+m.id+")",
+        '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+aiEsc(m.label)+'</div>'
+        +'<div class="mr-sub">'+m.cost+' kredit</div></div>')).join('');
+  }else if(dm){
+    dm.innerHTML=cfg.models.map((m,i)=>
+      aiMenuRow(af_ai.model[af_ai.media]===m,"aiSetModel("+i+")",
+        '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+m+'</div></div>')).join('');
+  }
   // setting menu
   const sm=document.getElementById('aiSettingMenu');
   if(sm)sm.innerHTML=cfg.settings.map((v,i)=>
@@ -4239,16 +4318,22 @@ function aiSetGenBtn(gen){
   const cfg=AI_CFG[af_ai.media];
   const ico=document.getElementById('aiGenIco'),lab=document.getElementById('aiGenLabel'),btn=document.getElementById('aiGenBtn');
   if(ico)ico.innerHTML=gen?'<span class="spin"></span>':aiIco('bolt',15);
-  if(lab)lab.textContent=gen?'Generatsiya…':(af_ai.media==='qidiruv'?'Qidirish':'Generatsiya · ~'+cfg.cost+' kredit');
+  // Narx: imzolangan quote bo'lsa aniq narx, aks holda statik taxmin (~)
+  const q=af_ai.quote;
+  const priceTxt=(q&&aiStudioMode(af_ai.media))?('Generatsiya · '+q.price+' kredit'):('Generatsiya · ~'+cfg.cost+' kredit');
+  if(lab)lab.textContent=gen?'Generatsiya…':(af_ai.media==='qidiruv'?'Qidirish':priceTxt);
   if(btn)btn.disabled=!!gen;
 }
 function aiSetMedia(key){
   if(!AI_CFG[key])return;
   af_ai.media=key;
   af_ai.open=null;
+  af_ai.quote=null;
   aiResetResult();
   aiApplyMedia();
   aiRenderMenus();
+  // Studio Gen rejimi (image/voice) → real model katalog + cost-quote
+  if(aiStudioMode(key))aiLoadModels(key);
 }
 function aiSetModel(i){
   const cfg=AI_CFG[af_ai.media];
@@ -4478,6 +4563,11 @@ function aiInit(){
   document.addEventListener('mousedown',function(e){
     if(af_ai.open && !(e.target.closest && e.target.closest('[data-dropdown]'))) aiCloseMenus();
   });
+  // Prompt o'zgarsa cost-quote qayta hisoblanadi (image/voice rejimida)
+  const ta=document.getElementById('aiPrompt');
+  if(ta)ta.addEventListener('input',function(){ if(aiStudioMode(af_ai.media))aiCostQuote(); });
+  // Boshlang'ich model katalogini yuklaymiz (default media = rasm/image)
+  if(aiStudioMode(af_ai.media))aiLoadModels(af_ai.media);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',aiInit);
 else aiInit();

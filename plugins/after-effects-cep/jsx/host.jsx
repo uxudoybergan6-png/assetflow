@@ -1900,36 +1900,34 @@ function afLayerSourcePath(source) {
   return "";
 }
 
+// JSON STRING'ni QO'LDA quramiz — JSON.stringify'ga bog'liqlik yo'q (evalFile bilan yuklangan
+// kontekstda JSON undefined bo'lib, JSON.stringify throw qilishi → funksiya bo'sh qaytarishi
+// aniqlandi: A=ping,B=loaded,C=function,Dlen=0). Manual escape → DOIM yaroqli JSON string.
+function afJStr(s) {
+  return '"' + String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/[\r\n]+/g, " ") + '"';
+}
+function afFail(reason) {
+  return '{"ok":false,"reason":' + afJStr(reason) + '}';
+}
+
 function getActiveTimelineVideoReference() {
   try {
-    if (typeof app === "undefined" || !app.project) {
-      return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
-    }
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
     var active = app.project.activeItem;
-    if (!active || !(active instanceof CompItem)) {
-      return JSON.stringify({ ok: false, reason: "Kompozitsiya ochiq emas — Timeline'ni oching" });
-    }
+    if (!active || !(active instanceof CompItem)) return afFail("Kompozitsiya ochiq emas — Timeline'ni oching");
     var layers = active.selectedLayers;
-    if (!layers || layers.length === 0) {
-      return JSON.stringify({
-        ok: false,
-        reason: "Layer tanlanmagan — Timeline'da klip tanlang",
-        compName: active.name
-      });
-    }
-    // Birinchi mos (footage + fayl) layer'ni topamiz; bo'lmasa eng aniq sababni qaytaramiz.
+    if (!layers || layers.length === 0) return afFail("Layer tanlanmagan — Timeline'da klip tanlang");
+
     var firstReason = "Tanlangan layer footage emas";
     for (var i = 0; i < layers.length; i++) {
       var L = layers[i];
       var src = null;
       try { src = L.source; } catch (e) { src = null; }
       if (!src) {
-        // matn/shakl/kamera/yorug'lik/adjustment — footage manbasi yo'q
         if (i === 0) firstReason = "Tanlangan layer footage emas (matn/shakl/kamera)";
         continue;
       }
       if (!(src instanceof FootageItem)) {
-        // precomp (CompItem) yoki boshqa
         if (i === 0) firstReason = (src instanceof CompItem)
           ? "Tanlangan layer precomp — footage klip tanlang"
           : "Tanlangan layer footage emas";
@@ -1937,58 +1935,52 @@ function getActiveTimelineVideoReference() {
       }
       var mediaPath = afLayerSourcePath(src);
       if (!mediaPath) {
-        // solid/placeholder — diskda fayl yo'q
         if (i === 0) firstReason = "Footage faylsiz (solid/placeholder) — disk fayli kerak";
         continue;
       }
       var hasVideo = false, hasAudio = false;
       try { hasVideo = src.hasVideo === true; } catch (e) {}
       try { hasAudio = src.hasAudio === true; } catch (e) {}
-      return JSON.stringify({
-        ok: true,
-        name: L.name || src.name || "Layer",
-        mediaPath: mediaPath,
-        mediaType: hasVideo ? "video" : (hasAudio ? "audio" : "other"),
-        hasVideo: hasVideo,
-        hasAudio: hasAudio,
-        compName: active.name
-      });
+      var mt = hasVideo ? "video" : (hasAudio ? "audio" : "other");
+      var nm = L.name || src.name || "Layer";
+      // QO'LDA JSON
+      return '{"ok":true,"name":' + afJStr(nm) +
+             ',"mediaPath":' + afJStr(mediaPath) +
+             ',"mediaType":' + afJStr(mt) +
+             ',"hasVideo":' + (hasVideo ? "true" : "false") +
+             ',"hasAudio":' + (hasAudio ? "true" : "false") +
+             ',"compName":' + afJStr(active.name) + '}';
     }
-    return JSON.stringify({
-      ok: false,
-      reason: firstReason,
-      compName: active.name,
-      selectedCount: layers.length
-    });
+    return afFail(firstReason);
   } catch (e) {
-    return JSON.stringify({
-      ok: false,
-      reason: "Ichki xato: " + String(e && e.toString ? e.toString() : e)
-    });
+    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
-// Tanlangan layer trim/oraliq tafsilotlari (in/out, manba davomiyligi).
+// Tanlangan layer trim/oraliq tafsilotlari — bulletproof (qo'lda JSON, har yo'lda string).
 function getActiveTimelineClipDetails() {
-  if (typeof app === "undefined" || !app.project) {
-    return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    var active = app.project.activeItem;
+    if (!(active && active instanceof CompItem)) return afFail("Aktiv kompozitsiya yo'q");
+    var layers = active.selectedLayers;
+    if (!layers || layers.length === 0) return afFail("Layer tanlanmagan");
+    var L = layers[0];
+    var inP = 0, outP = 0, startT = 0, compT = 0, dur = 0;
+    try { inP = L.inPoint; } catch (e) {}
+    try { outP = L.outPoint; } catch (e) {}
+    try { startT = L.startTime; } catch (e) {}
+    try { compT = active.time; } catch (e) {}
+    try { if (L.source && L.source.duration) dur = L.source.duration; } catch (e) {}
+    return '{"ok":true,"name":' + afJStr(L.name || "Layer") +
+           ',"inPoint":' + Number(inP) +
+           ',"outPoint":' + Number(outP) +
+           ',"startTime":' + Number(startT) +
+           ',"compTime":' + Number(compT) +
+           ',"sourceDuration":' + Number(dur) + '}';
+  } catch (e) {
+    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
-  var active = app.project.activeItem;
-  if (!(active && active instanceof CompItem)) {
-    return JSON.stringify({ ok: false, reason: "Aktiv kompozitsiya yo'q" });
-  }
-  var layers = active.selectedLayers;
-  if (!layers || layers.length === 0) {
-    return JSON.stringify({ ok: false, reason: "Layer tanlanmagan" });
-  }
-  var L = layers[0];
-  var info = { ok: true, name: L.name || "Layer" };
-  try { info.inPoint = L.inPoint; } catch (e) {}
-  try { info.outPoint = L.outPoint; } catch (e) {}
-  try { info.startTime = L.startTime; } catch (e) {}
-  try { info.compTime = active.time; } catch (e) {}
-  try { if (L.source && L.source.duration) info.sourceDuration = L.source.duration; } catch (e) {}
-  return JSON.stringify(info);
 }
 
 function importSceneCompToProject(compName) {

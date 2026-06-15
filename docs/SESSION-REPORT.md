@@ -1,29 +1,23 @@
-# SESSION REPORT — 2026-06-15 — Studio Gen / 1c: Workers AI job processor ✅
+# SESSION REPORT — 2026-06-15 — Studio Gen / 1e-1: model katalog + cost-quote (UI) ✅
 
-## 1c — lib/gen-processor.ts (queued → done/failed)
-- `processGeneration(genId)`: status=running → model.feature bo'yicha Workers AI:
-  - `text-to-image` → `aiGenerateImage(prompt, model.key)` (Flux/SDXL — model tanlanadi),
-  - `text-to-speech` → `aiGenerateSpeech(prompt, lang, model.key)`.
-- Natija: `detectMediaFormat` → R2 `gen/<userId>/<genId>.<ext>` (signed URL) yoki dev'da data-URL →
-  `GenAsset` (type 130/120, url, resultKey, thumbUrl, aspectRatio) → Generation status=done.
-- **failed → `refundAiCredits(userId, cost)`** (kredit yo'qolmaydi) + status=failed + error.
-- `processGenerationInBackground` — POST /gen javobini bloklamaydi (fire-and-forget).
+## 1e-1 — AssetFlow_Plugin.html AI composer
+- `aiStudioMode(media)`: rasm→image, ovoz→voice (yangi /studio/gen oqimi shu ikkisida).
+- `studioGet`/`studioPost` — /api/studio uchun auth'li fetch helperlar.
+- `aiLoadModels(media)` — `GET /studio/gen/models?mode=` → model dropdown'ni REAL katalog bilan
+  to'ldiradi (Flux Schnell/SDXL/MeloTTS, har biri kredit narxi bilan). Default model tanlanadi.
+- `aiBuildMenus` model bo'limi: katalog bo'lsa real modellar (label + "N kredit"), aks holda statik.
+- `aiSetModelCat(id)` — katalogdan model tanlash → cost-quote qayta hisoblanadi.
+- `aiCostQuote()` (debounce 350ms) — `POST /studio/gen/cost-quote` → imzolangan {price,signature}
+  saqlanadi; Generate tugmasi ANIQ narxni ko'rsatadi ("Generatsiya · N kredit").
+- `aiGenParams(media)` — quote VA generate uchun bir xil params (imzo hash mos kelsin).
+- Trigger nuqtalari: aiInit, aiSetMedia(image/voice), AI sahifa ochilishi, prompt input.
+- Login yo'q/API xato → statik fallback (UI buzilmaydi).
 
-## workers-ai
-`aiGenerateImage`/`aiGenerateSpeech` endi ixtiyoriy `model` parametri qabul qiladi (katalog
-model.key — Flux/SDXL/MeloTTS tanlovi).
-
-## studio-gen.ts
-- POST /gen queued yaratgach `processGenerationInBackground(gen.id)`.
-- GET /gen/:jobId — assets'ni qaytaradi; signed URL `resultKey`dan HAR so'rovda qayta imzolanadi
-  (1h muddat o'tmasin).
-
-## Tekshirildi (lokal, CF kalit yo'q)
-- `tsc -p apps/api` EXIT 0 ✅
-- Server smoke: GET /gen/<fakeid>→404 (route+prisma); /gen/models?mode=voice→MeloTTS;
-  /gen/prompt/enhance→503 ✅
-- End-to-end (queued→done+asset) Render'da CF_* bilan; failed→refund yo'li implement + tsc-tekshirildi.
+## Tekshirildi
+- HTML inline JS `node --check` TOZA ✅
+- `install-cep.sh` AE 2026 restart, Build: 2026-06-15 12:50 · 284e3be ✅
+- (Backend /studio/gen/models + /cost-quote 1b'da lokal curl bilan tekshirilgan.)
 
 ## Holat
-1c tugadi. Keyingi: 1d — imzolangan cost-quote (allaqachon 1b'da bor; 1d qattiqlashtirish/tekshiruv)
-yoki 1e — UI (Artlist composer).
+1e-1 tugadi — model dropdown real katalog + imzolangan narx. Generate hali eski /plugin/ai
+oqimida (1e-2 da /studio/gen job+polling'ga ko'chiriladi). Keyingi: 1e-2.
