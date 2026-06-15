@@ -98,9 +98,12 @@ async function errorText(res: Response): Promise<string> {
  * qaytaradi; SDXL kabi modellar to'g'ridan binary PNG qaytarishi mumkin —
  * ikkala holat ham qo'llab-quvvatlanadi. Natija — PNG `Buffer`.
  */
-export async function aiGenerateImage(prompt: string): Promise<AiResult<Buffer>> {
+export async function aiGenerateImage(
+  prompt: string,
+  model: string = AI_MODELS.image
+): Promise<AiResult<Buffer>> {
   if (!isAiConfigured()) return NOT_CONFIGURED;
-  const res = await runModel(AI_MODELS.image, { prompt });
+  const res = await runModel(model, { prompt });
   if (!res.ok) return { ok: false, error: await errorText(res), status: res.status };
 
   const ct = res.headers.get("content-type") || "";
@@ -132,10 +135,11 @@ function stripDataUri(s: string): string {
  */
 export async function aiGenerateSpeech(
   text: string,
-  lang = "en"
+  lang = "en",
+  model: string = AI_MODELS.tts
 ): Promise<AiResult<Buffer>> {
   if (!isAiConfigured()) return NOT_CONFIGURED;
-  const res = await runModel(AI_MODELS.tts, { prompt: text, lang });
+  const res = await runModel(model, { prompt: text, lang });
   if (!res.ok) {
     const err = await errorText(res);
     console.error(`[ai:tts] model=${AI_MODELS.tts} HTTP ${res.status}: ${err}`);

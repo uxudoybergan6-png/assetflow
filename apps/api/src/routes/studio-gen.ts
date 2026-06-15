@@ -6,8 +6,10 @@ import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
 import { isAiConfigured, aiText } from "../lib/ai/workers-ai.js";
+import { isS3Configured, getSignedDownloadUrl } from "../lib/s3.js";
 import { GEN_MODELS, getModelsByMode, getModelById } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
+import { processGenerationInBackground } from "../lib/gen-processor.js";
 
 export const studioGenRouter = Router();
 
@@ -173,7 +175,8 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     },
   });
 
-  // TODO(1c): processGenerationInBackground(gen.id) — Workers AI → R2 → assets → status.
+  // Fon rejimida bajariladi (Workers AI → R2 → GenAsset → status); frontend polling qiladi.
+  processGenerationInBackground(gen.id);
   res.status(202).json({ jobId: gen.id, status: gen.status, creditsLeft: gate.remaining });
 });
 
@@ -213,6 +216,16 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
   if (!gen || gen.userId !== req.user!.userId) {
     res.status(404).json({ error: "Generatsiya topilmadi" });
     return;
+  }
+  // Signed URL 1 soatda eskiradi — resultKey bo'lsa har so'rovda yangidan imzolaymiz.
+  if (isS3Configured()) {
+    for (const a of gen.assets) {
+      if (a.resultKey) {
+        const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
+        a.url = fresh;
+        if (a.thumbUrl) a.thumbUrl = fresh;
+      }
+    }
   }
   res.json(gen);
 });

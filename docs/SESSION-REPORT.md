@@ -1,28 +1,29 @@
-# SESSION REPORT — 2026-06-15 — Studio Gen / 1b: API endpointlar ✅
+# SESSION REPORT — 2026-06-15 — Studio Gen / 1c: Workers AI job processor ✅
 
-## 1b — routes/studio-gen.ts (Express, blueprint §5.2), `/api/studio` ga ulandi
-- `GET  /credits` — kredit balansi {aiCredits, plan}.
-- `POST /gen/sessions` — yangi session (mode, title).
-- `GET  /gen/sessions/:id/generations?cursor=&perPage=&status=` — tarix (ownership, paginatsiya, filtr).
-- `GET  /gen/models?mode=` — model katalog (lib/gen-models.ts: Flux Schnell/SDXL/MeloTTS).
-- `POST /gen/cost-quote` → {price, signature(JWT 15m), feature} — imzolangan narx.
-- `POST /gen` — imzo + (modelId,price,paramsHash) tekshiradi → kredit ATOMIK zaxira →
-  queued Generation → 202 {jobId, status, creditsLeft}. (Workers AI bajarish = 1c TODO.)
-- `POST /gen/prompt/enhance` — Workers AI text bilan promptni boyitadi (kreditsiz).
-- `GET  /gen/:jobId` — job holati (aniq yo'llardan KEYIN — :jobId tutib qolmasin).
-- requireAuth + rate-limit (40/min). Yangi lib: gen-models.ts, gen-quote.ts.
+## 1c — lib/gen-processor.ts (queued → done/failed)
+- `processGeneration(genId)`: status=running → model.feature bo'yicha Workers AI:
+  - `text-to-image` → `aiGenerateImage(prompt, model.key)` (Flux/SDXL — model tanlanadi),
+  - `text-to-speech` → `aiGenerateSpeech(prompt, lang, model.key)`.
+- Natija: `detectMediaFormat` → R2 `gen/<userId>/<genId>.<ext>` (signed URL) yoki dev'da data-URL →
+  `GenAsset` (type 130/120, url, resultKey, thumbUrl, aspectRatio) → Generation status=done.
+- **failed → `refundAiCredits(userId, cost)`** (kredit yo'qolmaydi) + status=failed + error.
+- `processGenerationInBackground` — POST /gen javobini bloklamaydi (fire-and-forget).
 
-## Xavfsizlik (blueprint §7.3)
-gen-quote.ts: `signCostQuote`/`verifyCostQuote` — narx JWT bilan imzolanadi, generate'da
-modelId+price+mode+paramsHash mos kelishi tekshiriladi. Klient `price`ni soxtalashtira olmaydi.
+## workers-ai
+`aiGenerateImage`/`aiGenerateSpeech` endi ixtiyoriy `model` parametri qabul qiladi (katalog
+model.key — Flux/SDXL/MeloTTS tanlovi).
 
-## Tekshirildi (lokal, build + curl)
-- /credits → {aiCredits:50,plan:free}; /gen/models?mode=image → 2 model; /gen/sessions → id;
-  /gen/cost-quote → {price:5, signature} ✅
-- /gen (CF yo'q) → 503 AI_NOT_CONFIGURED ✅
-- Imzo unit: toza→ok; soxta narx→rad; soxta model→rad ✅
+## studio-gen.ts
+- POST /gen queued yaratgach `processGenerationInBackground(gen.id)`.
+- GET /gen/:jobId — assets'ni qaytaradi; signed URL `resultKey`dan HAR so'rovda qayta imzolanadi
+  (1h muddat o'tmasin).
+
+## Tekshirildi (lokal, CF kalit yo'q)
 - `tsc -p apps/api` EXIT 0 ✅
+- Server smoke: GET /gen/<fakeid>→404 (route+prisma); /gen/models?mode=voice→MeloTTS;
+  /gen/prompt/enhance→503 ✅
+- End-to-end (queued→done+asset) Render'da CF_* bilan; failed→refund yo'li implement + tsc-tekshirildi.
 
 ## Holat
-1b tugadi. Keyingi: 1c — Workers AI'ni generate oqimiga ulash (job processor → R2 → assets →
-status; failed→kredit qaytarish).
+1c tugadi. Keyingi: 1d — imzolangan cost-quote (allaqachon 1b'da bor; 1d qattiqlashtirish/tekshiruv)
+yoki 1e — UI (Artlist composer).
