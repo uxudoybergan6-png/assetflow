@@ -1853,12 +1853,15 @@ function importMediaFromPath(filePath) {
       io.importAs = ImportAsType.FOOTAGE;
       var item = app.project.importFile(io);
       // Higgsfield naqshi: aktiv comp bo'lsa footage'ni playhead'ga LAYER qo'sh.
-      // isItemAddableToComp guard — faqat video/audio (hasVideo||hasAudio).
+      // Guard TIP bo'yicha (hasVideo/hasAudio EMAS): mp3/wav AE'da import'dan keyin
+      // darrov "conform" bo'lmaydi → hasAudio vaqtincha false bo'lishi mumkin edi
+      // (audio comp'ga qo'shilmay qolardi). FootageItem/CompItem — comp.layers.add()
+      // qabul qiladigan AVItem; conform holatiga bog'liq emas.
       var addedToComp = false;
       var compName = "";
       var active = app.project.activeItem;
       var isComp = active && (active instanceof CompItem);
-      var addable = item && (item.hasVideo === true || item.hasAudio === true);
+      var addable = item && (item instanceof FootageItem || item instanceof CompItem);
       if (isComp && addable) {
         try {
           var layer = active.layers.add(item);
