@@ -239,6 +239,7 @@ model ContributorTemplate {
   published     Boolean              @default(false)
   downloadsCount Int                 @default(0)
   importsCount   Int                 @default(0)
+  embedding     Json?                // Semantik qidiruv uchun embedding vektori (bge-m3, JSON float[])
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 

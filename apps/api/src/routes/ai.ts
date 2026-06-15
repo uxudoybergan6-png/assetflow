@@ -21,6 +21,8 @@ import {
   uploadBufferToS3,
   getSignedDownloadUrl,
 } from "../lib/s3.js";
+import { backfillEmbeddings, cosineSimilarity } from "../lib/ai/embed-templates.js";
+import { TemplateReviewStatus } from "@creative-tools/database";
 
 export const aiRouter = Router();
 
@@ -180,10 +182,12 @@ const searchSchema = z.object({
   query: z.string().trim().min(2, "So'rov juda qisqa").max(500),
 });
 
+const SEARCH_TOP_N = 12;
+
 /**
- * POST /search — semantik qidiruv. Hozircha embedding hisoblanadi va STUB
- * natija qaytadi (pgvector indeksi keyingi bosqichda ulanadi). Embedding
- * o'lchami javobda — integratsiya ishlayotganini ko'rsatadi.
+ * POST /search — semantik katalog qidiruv. Query → embedding → katalogdagi
+ * shablon embeddinglari bilan cosine similarity → eng mos top-N (ranked).
+ * Embedding'i yo'q shablonlar tashlab ketiladi (reindex kerak).
  */
 aiRouter.post("/search", async (req: Request, res: Response) => {
   if (!isAiConfigured()) {
@@ -211,16 +215,57 @@ aiRouter.post("/search", async (req: Request, res: Response) => {
     res.status(502).json({ error: out.error });
     return;
   }
+  const qvec = out.data;
+
+  const rows = await prisma.contributorTemplate.findMany({
+    where: {
+      reviewStatus: TemplateReviewStatus.APPROVED,
+      published: true,
+    },
+    select: { id: true, name: true, catLabel: true, nav: true, embedding: true },
+  });
+
+  const results = rows
+    .filter((r) => Array.isArray(r.embedding) && (r.embedding as number[]).length > 0)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      catLabel: r.catLabel,
+      nav: r.nav,
+      score: cosineSimilarity(qvec, r.embedding as number[]),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, SEARCH_TOP_N);
+
+  const indexed = rows.filter((r) => Array.isArray(r.embedding)).length;
 
   await prisma.aiGeneration.create({
     data: { userId, type: AiGenerationType.SEARCH, prompt: query, credits: cost, status: AiGenerationStatus.DONE },
   });
-  // STUB: vektor hisoblandi; pgvector cosine-similarity keyingi bosqichda.
   res.json({
     query,
-    embeddingDims: out.data.length,
-    results: [],
-    note: "Semantik indeks tez orada — hozircha embedding tayyor",
+    embeddingDims: qvec.length,
+    indexed,
+    total: rows.length,
+    results,
     creditsLeft: gate.remaining,
   });
+});
+
+/**
+ * POST /reindex — APPROVED+published shablonlarga embedding backfill (ADMIN).
+ * body.force=true → barchasini qayta hisoblaydi.
+ */
+aiRouter.post("/reindex", async (req: Request, res: Response) => {
+  if (req.user!.role !== "ADMIN") {
+    res.status(403).json({ error: "Admin huquqi kerak" });
+    return;
+  }
+  if (!isAiConfigured()) {
+    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    return;
+  }
+  const force = req.body?.force === true;
+  const r = await backfillEmbeddings({ force });
+  res.json({ ok: true, ...r });
 });

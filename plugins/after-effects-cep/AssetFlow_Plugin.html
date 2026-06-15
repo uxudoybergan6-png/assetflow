@@ -1611,6 +1611,19 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-soon-box .ico{color:var(--accent-cta);display:flex;justify-content:center;margin-bottom:10px}
 .ai-soon-box b{font-size:var(--fs-lg);color:var(--text)}
 .ai-soon-box p{font-size:var(--fs-sm);color:var(--muted);margin:8px auto 0;line-height:1.5;max-width:380px}
+/* AI Qidiruv — mos shablonlar grid (katalog import oqimiga ulanadi) */
+.ai-sr-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:24px 0 12px;flex-wrap:wrap}
+.ai-badge-edge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);font-size:var(--fs-xs);font-weight:700}
+.ai-sr-sub{font-size:var(--fs-xs);color:var(--muted)}
+.ai-sr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.ai-sr-card{display:flex;align-items:center;gap:11px;padding:10px;border-radius:14px;background:var(--surface);border:1px solid var(--border);cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s,transform .15s}
+.ai-sr-card:hover{border-color:var(--accent-cta);transform:translateY(-2px)}
+.ai-sr-thumb{width:60px;height:40px;border-radius:9px;overflow:hidden;flex:none;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted-2)}
+.ai-sr-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ai-sr-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.ai-sr-name{font-size:var(--fs-sm);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-sr-cat{font-size:var(--fs-xs);color:var(--muted)}
+.ai-sr-score{flex:none;font-size:var(--fs-xs);font-weight:700;color:var(--accent-cta);background:var(--green-dim);border-radius:999px;padding:3px 8px}
 </style>
 </head>
 <body>
@@ -4276,12 +4289,40 @@ function aiRenderResult(media,data,promptTxt){
   }
 }
 
-/** Semantik qidiruv natijasi (hozircha backend STUB — embedding tayyor holatini ko'rsatadi) */
+/** Semantik qidiruv natijasi — mos katalog shablonlari grid'i (bosilganda openPack import). */
 function aiRenderSearch(data){
   const area=document.getElementById('aiResultArea');if(!area)return;
-  const dims=data&&data.embeddingDims?(' · vektor o‘lchami '+data.embeddingDims):'';
-  area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('search',30,1.6)+'</div>'
-    +'<b>Semantik qidiruv tayyorlanmoqda</b><p>'+aiEsc((data&&data.note)||'Embedding hisoblandi')+dims+'</p></div>';
+  const results=(data&&data.results)||[];
+  if(!results.length){
+    const note=(data&&data.indexed===0)
+      ?'Katalog hali indekslanmagan — admin «reindex» qilishi kerak'
+      :'Mos shablon topilmadi — boshqa so‘z bilan urinib ko‘ring';
+    area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('search',30,1.6)+'</div>'
+      +'<b>Natija yo‘q</b><p>'+aiEsc(note)+'</p></div>';
+    return;
+  }
+  const haveAssets=(typeof assets!=='undefined'&&assets.find);
+  const havePacks=(typeof packs!=='undefined');
+  const cards=results.map(function(r){
+    const key='__srv_'+r.id;
+    const asset=haveAssets?assets.find(function(x){return x.n===key||x.serverTemplateId===r.id;}):null;
+    const thumb=asset&&asset.thumb;
+    const name=aiEsc(r.name||(asset&&asset.displayName)||'Shablon');
+    const cat=aiEsc(r.catLabel||(asset&&asset.catLabel)||'');
+    const pct=Math.round(Math.max(0,Math.min(1,r.score||0))*100);
+    const loaded=havePacks&&packs[key];
+    // Katalogga ulangan bo'lsa mavjud import oqimi (openPack); aks holda Sync taklifi
+    const click=loaded?("openPack('"+key+"')"):("showToast('Avval katalogni yangilang (↻ Sync)','warning')");
+    const media=thumb?('<img src="'+aiEsc(thumb)+'" alt="">'):('<span>'+aiIco('image',20)+'</span>');
+    return '<button type="button" class="ai-sr-card" onclick="'+click+'">'
+      +'<span class="ai-sr-thumb">'+media+'</span>'
+      +'<span class="ai-sr-main"><span class="ai-sr-name">'+name+'</span><span class="ai-sr-cat">'+cat+'</span></span>'
+      +'<span class="ai-sr-score" title="Mos kelish darajasi">'+pct+'%</span></button>';
+  }).join('');
+  area.innerHTML='<div class="ai-res">'
+    +'<div class="ai-sr-head"><span class="ai-badge-edge">'+aiIco('spark',13)+' AssetFlow ustunligi</span>'
+    +'<span class="ai-sr-sub">'+results.length+' mos shablon · katalogdan</span></div>'
+    +'<div class="ai-sr-grid">'+cards+'</div></div>';
 }
 
 /** Xato holatlari — AI_NOT_CONFIGURED / kredit / 401 / boshqa */

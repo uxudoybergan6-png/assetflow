@@ -1,27 +1,35 @@
-# SESSION REPORT — 2026-06-15 — AI Ovoz: audio ham comp'ga qo'shiladi ✅
+# SESSION REPORT — 2026-06-15 — AI semantik katalog qidiruv (1-bosqich yakuni) ✅
 
-Muammo: AI audio Project'ga tushardi, lekin aktiv comp'ga qo'shilmasdi (rasm qo'shilardi).
+## 1) Prisma — embedding ustun
+`ContributorTemplate.embedding Json?` + migration `20260615120000_template_embedding`
+(JSONB; pgvector emas — katalog kichik, Node'da cosine yetarli, scale uchun keyin pgvector).
+Lokal DB'ga qo'llandi + resolve + client generate.
 
-## Sabab
-`importMediaFromPath` comp-add guard'i `item.hasAudio === true` edi. mp3/wav AE'da
-import'dan keyin DARROV "conform" bo'lmaydi → `hasAudio` sinxron tarzda `false` qaytishi
-mumkin → `addable=false` → audio comp'ga qo'shilmasdi. Rasm `hasVideo` darrov `true` —
-shu sabab rasm ishlardi.
+## 2) Embedding kutubxonasi — lib/ai/embed-templates.ts
+- `templateEmbedText` (name+catLabel+tags+description), `embedTemplate(id)` (bge-m3 → JSON saqlash),
+  `embedTemplateInBackground` (fon, bloklamaydi), `backfillEmbeddings({force})`, `cosineSimilarity`.
 
-## Tuzatish — host.jsx importMediaFromPath
-- Comp-add guard endi **TIP bo'yicha**: `item instanceof FootageItem || item instanceof CompItem`
-  (= `comp.layers.add()` qabul qiladigan AVItem). Conform holatiga bog'liq emas → mp3/wav
-  ham aktiv comp'ga **playhead'da LAYER** sifatida qo'shiladi (rasm kabi).
-- Aktiv comp yo'q → faqat Project (XATO emas); bor → comp + layer. `layers.add` try/catch
-  bilan o'ralgan (chinakam qo'shib bo'lmaydigan tur bo'lsa import baribir ok:true).
-- Structured `{ok, addedToComp, compName, item}` — audio uchun ham to'g'ri toast (frontend
-  `addedToComp`ga qarab "kompozitsiyaga qo'shildi" deydi).
+## 3) Backfill / auto-index
+- Approve hook (`contributor.ts /templates/:id/review` approve) + auto-approve upload (moderatsiya
+  o'chiq) → `embedTemplateInBackground(id)`.
+- Admin endpoint `POST /api/plugin/ai/reindex` ({force}) — bir martalik backfill.
+
+## 4) /search — real semantik
+Query → `aiEmbed` → APPROVED+published embeddinglar bilan **cosine similarity** → ranked top-12.
+Javob: `{results:[{id,name,catLabel,nav,score}], indexed, total, creditsLeft}`. Kredit-gate ~1.
+
+## 5) Frontend — mos shablonlar grid
+`aiRenderSearch` natijani **karta grid'i** qiladi (thumb global `assets`dan, nom, mos % badge);
+bosilganda `openPack('__srv_<id>')` — mavjud katalog import oqimi. "AssetFlow ustunligi" badge.
+Katalog yuklanmagan bo'lsa "↻ Sync" taklifi. Yangi CSS `.ai-sr-*` (tokenlar bilan).
 
 ## Tekshirildi
-- host.jsx `node --check` TOZA ✅ (manba va o'rnatilgan nusxa)
-- `install-cep.sh` qayta o'rnatdi; o'rnatilgan host.jsx'da yangi tip-guard tasdiqlandi ✅
-- (Frontend o'zgarmadi — audio pleyer + import oqimi avvaldan tayyor.)
+- `tsc -p apps/api` EXIT 0 ✅; HTML inline JS `node --check` TOZA ✅
+- `cosineSimilarity` testi: identik=1, ortogonal=0, teskari=-1 ✅; `templateEmbedText` to'g'ri ✅
+- Smoke: `/search`→503 (CF yo'q), `/reindex` non-admin→403, admin→503 ✅
+- `install-cep.sh` o'rnatdi; `.ai-sr-grid` CSS+JS tasdiqlandi ✅
+- **Haqiqiy embedding/qidiruv BAJARILMADI** — lokal `.env`da CF_AI_TOKEN yo'q.
 
 ## Holat / kutilmoqda
-Commit foydalanuvchi so'raganda. AE'da: aktiv comp ochiq → AI Ovoz generatsiya → import →
-audio layer comp'ga (playhead) qo'shiladi + to'g'ri toast. CF_* env Render'da kerak (real audio).
+Commit so'raganda. Render'ga CF_* qo'shilгach: admin `/reindex` (backfill) → qidiruv ishlaydi.
+Keyin pgvector (scale) va auto-tagging — REJA bo'yicha.

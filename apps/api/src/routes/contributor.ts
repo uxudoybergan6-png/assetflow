@@ -47,6 +47,7 @@ import {
 } from "../lib/upload-progress.js";
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
 
@@ -974,6 +975,11 @@ contributorRouter.post(
       },
     });
 
+    // Auto-approve (moderatsiya o'chiq) — semantik qidiruv uchun embedding (fon).
+    if (template.reviewStatus === TemplateReviewStatus.APPROVED && template.published) {
+      embedTemplateInBackground(template.id);
+    }
+
     res.status(201).json(template);
   }
 );
@@ -1116,6 +1122,11 @@ contributorRouter.post(
             action === "approve" ? (published ?? true) : false,
         },
       });
+
+      // Tasdiqlangach — semantik qidiruv uchun embedding (fon, bloklamaydi).
+      if (action === "approve" && template.published) {
+        embedTemplateInBackground(template.id);
+      }
 
       const noteText = (note ?? "").trim();
       if (action === "reject" && noteText) {
