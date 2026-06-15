@@ -4304,6 +4304,12 @@ function aiSelLabel(media){
 var AI_INPUT_LABEL={'image-ref':'Rasm reference','start-end-frame':'Start/End kadr','video-ref':'Video reference','audio-file':'Audio fayl','mention':'@mention'};
 function aiRenderInputs(){
   const box=document.getElementById('aiInputs');if(!box)return;
+  // B1 TEST: SFX rejimida Timeline eksport tugmasi (vaqtinchalik)
+  if(af_ai.media==='sfx'){
+    box.style.display='flex';
+    box.innerHTML='<button type="button" class="ai-timeline" onclick="aiSfxReadTest()" title="Timeline tuzilishini o\'qish (render\'siz)">⏱ Timeline o‘qish (B1 test)</button>';
+    return;
+  }
   const m=aiCurrentModel();const inputs=(m&&m.inputs)||[];
   if(!inputs.length){box.style.display='none';box.innerHTML='';return;}
   box.style.display='flex';
@@ -4450,6 +4456,95 @@ function aiRenderRefBar(){
     +'<span class="ai-ref-main"><span class="ai-ref-name">'+aiEsc(ref.name||'Reference')+'</span>'
     +'<span class="ai-ref-sub">'+(ref.source==='timeline'?'Timeline reference':'Reference')+'</span></span>'
     +'<button type="button" class="ai-ref-x" onclick="aiClearRef()" title="Olib tashlash">✕</button>';
+}
+/* ── AI SFX (B) — Timeline work-area eksport (B1) ── */
+function aiFindFfmpeg(){
+  try{const fs=require('fs');const cands=['/opt/homebrew/bin/ffmpeg','/usr/local/bin/ffmpeg','/usr/bin/ffmpeg'];
+    for(let i=0;i<cands.length;i++){try{if(fs.existsSync(cands[i]))return cands[i];}catch(e){}}}catch(e){}
+  return 'ffmpeg';
+}
+/** Work-area'ni AE'дан render → ffmpeg bilan kichik mp4 (tahlil uchun). {mp4Path,workAreaStart,fps,duration,sizeBytes}. */
+async function aiSfxExportClip(){
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Faqat After Effects ichida','info');return null;}
+  const fs=require('fs'),os=require('os'),path=require('path'),cp=require('child_process');
+  const ts=Date.now();
+  const srcPath=path.join(os.tmpdir(),'assetflow_sfx_src_'+ts+'.mov');
+  const mp4Path=path.join(os.tmpdir(),'assetflow_sfx_'+ts+'.mp4');
+  const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
+  const extDir=csInterface.getSystemPath(extEnum);
+  const jsxPath=(extDir+'/jsx/host.jsx').replace(/\\/g,'/');
+  const expr='(function(){$.evalFile('+JSON.stringify(jsxPath)+'); return exportWorkAreaForSfx('+JSON.stringify(srcPath)+',30);})()';
+  if(typeof showToast==='function')showToast('Timeline eksport qilinmoqda… (AE bir lahza muzlashi mumkin)','info');
+  const raw=await new Promise(res=>csInterface.evalScript(expr,r=>res(r||'')));
+  let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
+  if(!r||!r.ok){throw new Error((r&&(r.reason||r.message))||('Eksport javobi: '+String(raw).slice(0,160)));}
+  const ffmpeg=aiFindFfmpeg();
+  await new Promise((resolve,reject)=>{
+    const args=['-y','-i',r.path,'-vf','scale=1280:-2','-c:v','libx264','-crf','30','-preset','veryfast','-c:a','aac','-b:a','96k','-movflags','+faststart',mp4Path];
+    let p;try{p=cp.spawn(ffmpeg,args);}catch(e){reject(new Error("ffmpeg ishga tushmadi — 'brew install ffmpeg' qiling"));return;}
+    let err='';p.stderr.on('data',d=>{err+=String(d);});
+    p.on('error',()=>reject(new Error("ffmpeg topilmadi — 'brew install ffmpeg' qiling")));
+    p.on('close',code=>{code===0?resolve():reject(new Error('ffmpeg xato ('+code+'): '+err.slice(-180)));});
+  });
+  try{fs.unlinkSync(srcPath);}catch(e){}
+  let sz=0;try{sz=fs.statSync(mp4Path).size;}catch(e){}
+  return {mp4Path:mp4Path,workAreaStart:r.workAreaStart,fps:r.fps,duration:r.duration,sizeBytes:sz};
+}
+/** Render QILMASDAN faol comp timeline tuzilishini o'qiydi (layer in/out, marker, nom, audio). */
+async function aiSfxReadTimeline(){
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Faqat After Effects ichida','info');return null;}
+  const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
+  const extDir=csInterface.getSystemPath(extEnum);
+  const jsxPath=(extDir+'/jsx/host.jsx').replace(/\\/g,'/');
+  const expr='(function(){$.evalFile('+JSON.stringify(jsxPath)+'); return readTimelineForSfx();})()';
+  const raw=await new Promise(res=>csInterface.evalScript(expr,r=>res(r||'')));
+  let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
+  if(!r||!r.ok)throw new Error((r&&(r.reason||r.message))||('Javob: '+String(raw).slice(0,160)));
+  return r;
+}
+/** Work-area'дан bir nechta kadr namunasi (PNG, render'siz). times = work-area-nisbiy soniyalar. */
+async function aiSfxSampleFrames(times){
+  if(!IS_CEP||!csInterface)return [];
+  const os=require('os'),path=require('path');
+  const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
+  const extDir=csInterface.getSystemPath(extEnum);
+  const jsxPath=(extDir+'/jsx/host.jsx').replace(/\\/g,'/');
+  const prefix=path.join(os.tmpdir(),'assetflow_sfxframe_'+Date.now());
+  const csv=times.map(t=>Number(t).toFixed(3)).join(',');
+  const expr='(function(){$.evalFile('+JSON.stringify(jsxPath)+'); return sampleFramesForSfx('+JSON.stringify(csv)+','+JSON.stringify(prefix)+');})()';
+  const raw=await new Promise(res=>csInterface.evalScript(expr,r=>res(r||'')));
+  let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
+  if(!r||!r.ok)throw new Error((r&&(r.reason||r.message))||('Kadr javobi: '+String(raw).slice(0,160)));
+  return r.frames||[];
+}
+/** B2a TEST (render'siz) — timeline o'qish + kadr namunasi. */
+async function aiSfxReadTest(){
+  try{
+    const r=await aiSfxReadTimeline();
+    if(!r)return;
+    const dur=Number(r.duration)||0;
+    const N=Math.max(3,Math.min(6,Math.round(dur/2)||3));
+    const times=[];for(let i=0;i<N;i++)times.push(dur*(i+0.5)/N);
+    let frameMsg='';
+    try{
+      const frames=await aiSfxSampleFrames(times);
+      const fs=require('fs');let tot=0;frames.forEach(p=>{try{tot+=fs.statSync(p).size;}catch(e){}});
+      frameMsg=' · '+frames.length+' kadr ('+Math.round(tot/1024)+'KB)';
+      try{console.log('[ai:sfx-frames]',JSON.stringify(frames));}catch(e){}
+    }catch(e){frameMsg=' · kadr xato: '+((e&&e.message)||e);}
+    if(typeof showToast==='function')showToast('Timeline: '+r.layers.length+' layer · '+r.markers.length+' marker · '+dur.toFixed(1)+'s'+frameMsg,'success');
+    try{console.log('[ai:sfx-timeline]',JSON.stringify(r));}catch(e){}
+  }catch(e){ if(typeof showToast==='function')showToast('O‘qish xato: '+((e&&e.message)||e),'error'); }
+}
+/** (Ixtiyoriy, keyin) eksport → mp4 — vizual variant. */
+async function aiSfxExportTest(){
+  try{
+    const r=await aiSfxExportClip();
+    if(!r)return;
+    const msg='Eksport OK: '+Math.round(r.sizeBytes/1024)+'KB · '+Number(r.duration).toFixed(1)+'s · '+r.fps+'fps';
+    if(typeof showToast==='function')showToast(msg,'success');
+    try{console.log('[ai:sfx-export]',JSON.stringify(r));}catch(e){}
+  }catch(e){ if(typeof showToast==='function')showToast('Eksport xato: '+((e&&e.message)||e),'error'); }
 }
 function aiIco(name,size,sw){
   size=size||16; sw=sw||1.6;

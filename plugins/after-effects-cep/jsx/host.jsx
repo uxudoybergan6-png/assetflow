@@ -1957,6 +1957,132 @@ function getActiveTimelineVideoReference() {
   }
 }
 
+/**
+ * AI SFX (B) — faol comp work-area oralig'ini faylga render qiladi (tahlil uchun).
+ * cfg: { destPath, maxDur } . Qaytaradi: {ok, path, workAreaStart, fps, duration}.
+ * Eslatma: rq.render() butun navbatni render qiladi va AE'ni vaqtincha bloklaydi (qisqa klip uchun).
+ */
+function exportWorkAreaForSfx(destPath, maxDur) {
+  try {
+    // ExtendScript JSON.parse ishonchsiz — argumentlar oddiy parametr (JSON blob emas).
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    var comp = app.project.activeItem;
+    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas — Timeline'ni oching");
+    if (!destPath) return afFail("destPath berilmadi");
+
+    var fd = comp.frameDuration;
+    var fps = comp.frameRate;
+    // displayStartTime offset (comp 1:00:00 dan boshlanishi mumkin) — timeSpanStart shu fazoda.
+    var dst = 0; try { dst = comp.displayStartTime; } catch (eD) { dst = 0; }
+    var waRel = Math.round(comp.workAreaStart / fd) * fd;   // 0-asosli (layer joylash uchun)
+    var waDur = Math.round(comp.workAreaDuration / fd) * fd;
+    var md = (typeof maxDur === "number" && maxDur > 0) ? maxDur : 30;
+    if (waDur > md) waDur = Math.round(md / fd) * fd;
+    if (waDur < fd) return afFail("Work area juda qisqa");
+
+    var rq = app.project.renderQueue;
+    var rqItem = rq.items.add(comp);
+    rqItem.timeSpanStart = dst + waRel;        // display-vaqt fazosi (bo'sh kadr ogohlantirishini oldini oladi)
+    rqItem.timeSpanDuration = waDur;
+    var om = rqItem.outputModule(1);
+    applyBestVideoTemplate(om);          // H.264 afzal (bo'lmasa High Quality)
+    var outFile = new File(destPath);
+    om.file = outFile;
+    rq.render();                         // BLOKLAYDI (qisqa klip)
+    try { rqItem.remove(); } catch (ig) {}
+
+    if (!outFile.exists) return afFail("Render fayli yaratilmadi");
+    return '{"ok":true,"path":' + afJStr(outFile.fsName) +
+           ',"workAreaStart":' + waRel +
+           ',"fps":' + fps +
+           ',"duration":' + waDur + '}';
+  } catch (e) {
+    return afFail("Eksport xatosi: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+  }
+}
+
+/**
+ * AI SFX (B) — RENDER QILMASDAN faol comp work-area tuzilishini o'qiydi (qo'lda JSON).
+ * Layer in/out (kesim/hodisa), nomlar, audio/video, comp markerlar — vaqtlar WORK-AREA'ga nisbiy.
+ * LLM shu strukturadan SFX cue plan tuzadi. Frame-aniq, AE muzlamaydi.
+ */
+function readTimelineForSfx() {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    var comp = app.project.activeItem;
+    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas — Timeline'ni oching");
+    var fps = comp.frameRate;
+    var waStart = comp.workAreaStart, waEnd = waStart + comp.workAreaDuration;
+
+    var lay = [], i, L, ip, op, nm, hasA, hasV, en;
+    for (i = 1; i <= comp.numLayers; i++) {
+      L = comp.layer(i);
+      ip = 0; op = 0;
+      try { ip = L.inPoint; op = L.outPoint; } catch (e1) {}
+      if (op < waStart || ip > waEnd) continue;   // work area bilan kesishmaydi
+      nm = L.name || "Layer";
+      hasA = false; hasV = false; en = true;
+      try { hasA = L.hasAudio === true; } catch (e2) {}
+      try { hasV = L.hasVideo === true; } catch (e3) {}
+      try { en = L.enabled === true; } catch (e4) {}
+      lay.push('{"name":' + afJStr(nm) +
+               ',"in":' + (ip - waStart).toFixed(3) +
+               ',"out":' + (op - waStart).toFixed(3) +
+               ',"audio":' + (hasA ? "true" : "false") +
+               ',"video":' + (hasV ? "true" : "false") +
+               ',"enabled":' + (en ? "true" : "false") + '}');
+    }
+
+    var mk = [], mp, n, t, c;
+    try {
+      mp = comp.markerProperty; n = mp.numKeys;
+      for (i = 1; i <= n; i++) {
+        t = mp.keyTime(i);
+        if (t < waStart || t > waEnd) continue;
+        c = ""; try { c = mp.keyValue(i).comment || ""; } catch (e5) {}
+        mk.push('{"t":' + (t - waStart).toFixed(3) + ',"comment":' + afJStr(c) + '}');
+      }
+    } catch (eM) {}
+
+    return '{"ok":true,"comp":' + afJStr(comp.name) +
+           ',"fps":' + fps +
+           ',"workAreaStart":' + waStart.toFixed(3) +
+           ',"duration":' + comp.workAreaDuration.toFixed(3) +
+           ',"layers":[' + lay.join(",") + ']' +
+           ',"markers":[' + mk.join(",") + ']}';
+  } catch (e) {
+    return afFail("Timeline o'qish xatosi: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+  }
+}
+
+/**
+ * AI SFX (B2) — work-area'дан bir nechta KADR namunasini PNG qilib saqlaydi (to'liq render emas).
+ * timesCsv: work-area-nisbiy soniyalar (vergul bilan). destPrefix: fayl prefiksi.
+ * saveFrameToPng comp-ichki (0-asosli) vaqt ishlatadi → workAreaStart + t.
+ */
+function sampleFramesForSfx(timesCsv, destPrefix) {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq loyiha yo'q");
+    var comp = app.project.activeItem;
+    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas");
+    if (!timesCsv || !destPrefix) return afFail("Parametr yo'q");
+    var waStart = comp.workAreaStart;
+    var parts = String(timesCsv).split(",");
+    var out = [], i, t, ct, f;
+    for (i = 0; i < parts.length; i++) {
+      t = parseFloat(parts[i]); if (isNaN(t)) continue;
+      ct = waStart + t;                       // 0-asosli comp vaqti
+      f = new File(destPrefix + "_" + i + ".png");
+      try { comp.saveFrameToPng(ct, f); } catch (eS) { continue; }
+      if (f.exists) out.push(afJStr(f.fsName));
+    }
+    if (!out.length) return afFail("Kadr saqlanmadi");
+    return '{"ok":true,"frames":[' + out.join(",") + ']}';
+  } catch (e) {
+    return afFail("Kadr xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+  }
+}
+
 // Tanlangan layer trim/oraliq tafsilotlari — bulletproof (qo'lda JSON, har yo'lda string).
 function getActiveTimelineClipDetails() {
   try {
