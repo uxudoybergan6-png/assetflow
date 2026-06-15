@@ -1,23 +1,23 @@
-# SESSION REPORT — 2026-06-15 — Studio Gen / 1e-1: model katalog + cost-quote (UI) ✅
+# SESSION REPORT — 2026-06-15 — Studio Gen / 1e-2: Generate → job → polling ✅
 
-## 1e-1 — AssetFlow_Plugin.html AI composer
-- `aiStudioMode(media)`: rasm→image, ovoz→voice (yangi /studio/gen oqimi shu ikkisida).
-- `studioGet`/`studioPost` — /api/studio uchun auth'li fetch helperlar.
-- `aiLoadModels(media)` — `GET /studio/gen/models?mode=` → model dropdown'ni REAL katalog bilan
-  to'ldiradi (Flux Schnell/SDXL/MeloTTS, har biri kredit narxi bilan). Default model tanlanadi.
-- `aiBuildMenus` model bo'limi: katalog bo'lsa real modellar (label + "N kredit"), aks holda statik.
-- `aiSetModelCat(id)` — katalogdan model tanlash → cost-quote qayta hisoblanadi.
-- `aiCostQuote()` (debounce 350ms) — `POST /studio/gen/cost-quote` → imzolangan {price,signature}
-  saqlanadi; Generate tugmasi ANIQ narxni ko'rsatadi ("Generatsiya · N kredit").
-- `aiGenParams(media)` — quote VA generate uchun bir xil params (imzo hash mos kelsin).
-- Trigger nuqtalari: aiInit, aiSetMedia(image/voice), AI sahifa ochilishi, prompt input.
-- Login yo'q/API xato → statik fallback (UI buzilmaydi).
+## 1e-2 — image/voice Generate yangi Studio Gen oqimida
+- `aiGenerate` dispatcher: sfx→soon; qidiruv→eski `/plugin/ai/search` (sinxron); image/voice→`aiRunStudioGen`.
+- `aiRunStudioGen(media,val)`: `aiEnsureSession` (POST /gen/sessions, lazily) → `aiEnsureQuote`
+  (imzolangan cost-quote, model uchun) → `POST /studio/gen {sessionId,mode,modelId,prompt,params,
+  price,costQuoteSignature}` → `{jobId}` (kredit zaxira, creditsLeft yangilanadi).
+- `aiPollJob` — `GET /studio/gen/:jobId` har 3.5s (maks ~2.5 daq), glow holatda "Navbatda…/
+  Generatsiya qilinmoqda…". done/failed da to'xtaydi.
+- done → GenAsset URL → `aiRenderResult` (rasm grid / audio pleyer) → "AE‘ga import" (importMediaFromPath).
+  ext asset URL'dan ajratiladi.
+- failed → toast "muvaffaqiyatsiz — kredit qaytarildi" + `aiRefreshCredits` (server balansidan).
+- `aiResetResult` poll timer'ni tozalaydi (stray polling yo'q).
 
 ## Tekshirildi
 - HTML inline JS `node --check` TOZA ✅
-- `install-cep.sh` AE 2026 restart, Build: 2026-06-15 12:50 · 284e3be ✅
-- (Backend /studio/gen/models + /cost-quote 1b'da lokal curl bilan tekshirilgan.)
+- `install-cep.sh` AE 2026 restart, Build: 2026-06-15 12:56 · 892dba3 ✅
+- End-to-end (queued→done+asset→import) Render'da CF_* bilan; oqim/polling/refund mantig'i
+  1b/1c lokal smoke + tsc bilan tasdiqlangan.
 
 ## Holat
-1e-1 tugadi — model dropdown real katalog + imzolangan narx. Generate hali eski /plugin/ai
-oqimida (1e-2 da /studio/gen job+polling'ga ko'chiriladi). Keyingi: 1e-2.
+1e-2 tugadi — Generate endi real job+polling. Keyingi: 1e-3 — generatsiya tarixi grid + session
+sidebar (GET /gen/sessions/:id/generations).

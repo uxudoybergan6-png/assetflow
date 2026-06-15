@@ -4359,6 +4359,7 @@ function aiImprovePrompt(){
 function aiResetResult(){
   af_ai.gen=false;
   if(af_ai._t){clearTimeout(af_ai._t);af_ai._t=null;}
+  if(af_ai._poll){clearTimeout(af_ai._poll);af_ai._poll=null;}
   const area=document.getElementById('aiResultArea');if(area)area.innerHTML='';
   const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='';
   const q=document.getElementById('aiQuick');if(q)q.style.display='';
@@ -4382,10 +4383,18 @@ async function aiApiPost(ep,body){
   return data;
 }
 
+/** Generatsiya glow qutisi (boshlanish/polling holati). */
+function aiShowGenBox(media,val,cap){
+  const area=document.getElementById('aiResultArea');if(!area)return;
+  area.innerHTML='<div class="ai-genbox"><div class="glow"></div>'
+    +'<div class="ai-eq"><i></i><i></i><i></i><i></i></div>'
+    +'<div class="ai-gen-cap"><b>'+aiEsc(cap||'Generatsiya qilinmoqda…')+'</b>'
+    +'<small>'+aiEsc(af_ai.model[media]||'')+' · '+aiEsc(val)+'</small></div></div>';
+}
+
 async function aiGenerate(){
   if(af_ai.gen)return;
   const media=af_ai.media;
-  // SFX backend'da hali yo'q (faqat /image /voiceover /search ulangan)
   if(media==='sfx'){aiSoon();return;}
   const ta=document.getElementById('aiPrompt');
   const val=ta?(ta.value||'').trim():'';
@@ -4401,22 +4410,85 @@ async function aiGenerate(){
   aiRenderMenus();aiSetGenBtn(true);
   const lp=document.getElementById('aiLaunch');if(lp)lp.style.display='none';
   const q=document.getElementById('aiQuick');if(q)q.style.display='none';
-  const area=document.getElementById('aiResultArea');
-  if(area)area.innerHTML='<div class="ai-genbox"><div class="glow"></div>'
-    +'<div class="ai-eq"><i></i><i></i><i></i><i></i></div>'
-    +'<div class="ai-gen-cap"><b>Generatsiya qilinmoqda…</b><small>'+aiEsc(af_ai.model[media])+' · '+aiEsc(val)+'</small></div></div>';
+  aiShowGenBox(media,val);
   try{
-    const ep=AI_ENDPOINT[media];
-    const body=media==='ovoz'?{text:val}:media==='qidiruv'?{query:val}:{prompt:val};
-    const data=await aiApiPost(ep,body);
-    if(media==='qidiruv')aiRenderSearch(data);
-    else aiRenderResult(media,data,val);
-    if(typeof data.creditsLeft==='number')aiUpdateCredits(data.creditsLeft);
+    if(media==='qidiruv'){
+      // Semantik qidiruv — eski /plugin/ai/search (job kerak emas, sinxron)
+      const data=await aiApiPost('search',{query:val});
+      aiRenderSearch(data);
+      if(typeof data.creditsLeft==='number')aiUpdateCredits(data.creditsLeft);
+    }else{
+      // image/voice — yangi Studio Gen oqimi (session → job → polling)
+      await aiRunStudioGen(media,val);
+    }
   }catch(e){
     aiRenderError(e);
   }finally{
     af_ai.gen=false;af_ai._t=null;aiSetGenBtn(false);
   }
+}
+
+/** Session lazily yaratiladi (bir marta). */
+async function aiEnsureSession(media){
+  if(af_ai.sessionId)return af_ai.sessionId;
+  const s=await studioPost('/api/studio/gen/sessions',{mode:aiStudioMode(media)||'image'},20000);
+  af_ai.sessionId=s&&s.id;
+  return af_ai.sessionId;
+}
+/** Imzolangan quote — joriy model uchun bo'lmasa yangidan oladi. */
+async function aiEnsureQuote(media){
+  const mode=aiStudioMode(media),modelId=af_ai.modelId[media];
+  if(!modelId)throw new Error('Model tanlanmagan');
+  if(af_ai.quote&&af_ai.quote.modelId===modelId)return af_ai.quote;
+  const q=await studioPost('/api/studio/gen/cost-quote',{modelId,mode,params:aiGenParams(media)},20000);
+  af_ai.quote={modelId,price:q.price,signature:q.signature};
+  return af_ai.quote;
+}
+/** Kredit balansini serverdan yangilash (refunddan keyin). */
+async function aiRefreshCredits(){
+  try{const c=await studioGet('/api/studio/credits');if(c&&typeof c.aiCredits==='number')aiUpdateCredits(c.aiCredits);}catch(e){}
+}
+/** Job holatini polling (3.5s, maks ~2.5 daqiqa). done/failed gen obyektini qaytaradi. */
+function aiPollJob(jobId,media,val){
+  return new Promise(function(resolve){
+    let tries=0;const max=40;
+    const tick=async function(){
+      tries++;
+      try{
+        const gen=await studioGet('/api/studio/gen/'+jobId);
+        if(gen&&(gen.status==='done'||gen.status==='failed')){resolve(gen);return;}
+        aiShowGenBox(media,val,gen&&gen.status==='running'?'Generatsiya qilinmoqda…':'Navbatda…');
+      }catch(e){ /* vaqtinchalik tarmoq — davom etamiz */ }
+      if(tries>=max){resolve({status:'failed',error:'Vaqt tugadi (timeout)'});return;}
+      af_ai._poll=setTimeout(tick,3500);
+    };
+    tick();
+  });
+}
+/** image/voice Studio Gen: session → cost-quote → POST /gen → polling → natija. */
+async function aiRunStudioGen(media,val){
+  const mode=aiStudioMode(media),modelId=af_ai.modelId[media];
+  if(!modelId){aiRenderError(new Error('Model yuklanmadi — qayta urinib ko‘ring'));return;}
+  const sessionId=await aiEnsureSession(media);
+  const quote=await aiEnsureQuote(media);
+  const start=await studioPost('/api/studio/gen',{
+    sessionId,mode,modelId,prompt:val,params:aiGenParams(media),
+    price:quote.price,costQuoteSignature:quote.signature
+  },60000);
+  if(typeof start.creditsLeft==='number')aiUpdateCredits(start.creditsLeft);
+  const gen=await aiPollJob(start.jobId,media,val);
+  if(gen.status==='failed'){
+    const why=gen.error||'noma\'lum sabab';
+    if(typeof showToast==='function')showToast('Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
+    aiRenderError(new Error(why));
+    aiRefreshCredits();
+    return;
+  }
+  const asset=(gen.assets&&gen.assets[0])||null;
+  if(!asset||!asset.url){aiRenderError(new Error('Natija topilmadi'));return;}
+  const ext=(String(asset.url).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||(media==='rasm'?'png':'mp3');
+  aiRenderResult(media,{url:asset.url,ext:ext},val);
+  if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh(); // 1e-3
 }
 
 /** Rasm/audio natijani ko'rsatadi + "AE'ga import" tugmasi */
