@@ -204,9 +204,27 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
   return stuck.length;
 }
 
-/** Fon rejimida ishga tushirish — POST /gen javobini bloklamaydi. */
+/**
+ * Fon rejimida ishga tushirish — POST /gen javobini bloklamaydi.
+ * CONCURRENCY CHEKLOVI: bir vaqtda faqat N gen ishlaydi (video/rasm buferlari RAM'ni to'ldirib
+ * OOM qilmasin — Render kichik instance). Ortiqchasi navbatda kutadi (status="queued").
+ */
+const GEN_CONCURRENCY = Math.max(1, Number(process.env.GEN_CONCURRENCY) || 2);
+let genActive = 0;
+const genWaiting: string[] = [];
+function genRunNext(): void {
+  if (genActive >= GEN_CONCURRENCY) return;
+  const genId = genWaiting.shift();
+  if (!genId) return;
+  genActive++;
+  processGeneration(genId)
+    .catch((e) => console.error(`[studio-gen] processor xato (${genId}):`, e))
+    .finally(() => {
+      genActive--;
+      genRunNext();
+    });
+}
 export function processGenerationInBackground(genId: string): void {
-  void processGeneration(genId).catch((e) => {
-    console.error(`[studio-gen] processor xato (${genId}):`, e);
-  });
+  genWaiting.push(genId);
+  genRunNext();
 }
