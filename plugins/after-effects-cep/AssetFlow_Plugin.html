@@ -4176,14 +4176,14 @@ const AI_CFG={
   rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:5,models:['Nano Banana 2'],settings:[],ph:'G‘oyangizni yozing…'},
   video:{label:'Video',ico:'film',sub:'AI video generatsiya',cost:60,models:['Veo 3.1 Lite'],settings:[],ph:'Video sahnani tasvirlang…'},
   ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['Kokoro TTS'],settings:[],ph:'Ovoz uchun matn yozing…'},
-  sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['AudioGen','FoleyAI'],settings:['5s · Stereo','10s · Stereo','3s · Mono'],ph:'Tovush effektini tasvirlang…'},
+  sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['ElevenLabs SFX'],settings:[],ph:'Tovush effektini tasvirlang… (masalan: portlash, shamol, qadam)'},
   qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:1,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
 };
 // Media → backend endpoint mapping. sfx hali backend'da yo'q (faqat /image /voiceover /search).
 const AI_ENDPOINT={rasm:'image',ovoz:'voiceover',qidiruv:'search'};
 const af_ai={
   media:'rasm',
-  model:{rasm:'Nano Banana 2',video:'Veo 3.1 Lite',ovoz:'Kokoro TTS',sfx:'AudioGen',qidiruv:'Katalog'},
+  model:{rasm:'Nano Banana 2',video:'Veo 3.1 Lite',ovoz:'Kokoro TTS',sfx:'ElevenLabs SFX',qidiruv:'Katalog'},
   setting:{sfx:'5s · Stereo',qidiruv:''},  // legacy (faqat sfx/qidiruv)
   view:'grid',open:null,gen:false,_t:null,reference:null,
   // Studio Gen: real model katalog + capabilities-asosli tanlov + imzolangan cost-quote
@@ -4196,7 +4196,7 @@ const af_ai={
 };
 
 // AI media → Studio Gen mode (rasm/video/ovoz yangi /studio/gen oqimida)
-function aiStudioMode(media){ return media==='rasm'?'image':media==='video'?'video':media==='ovoz'?'voice':null; }
+function aiStudioMode(media){ return media==='rasm'?'image':media==='video'?'video':media==='ovoz'?'voice':media==='sfx'?'sfx':null; }
 /** Joriy media uchun tanlangan model obyekti (katalogdan). */
 function aiCurrentModel(){
   const mode=aiStudioMode(af_ai.media);if(!mode)return null;
@@ -4220,6 +4220,8 @@ function aiInitSel(media,model){
     s.aspect=aiPickStr(model.aspects,['16:9','1:1']);
     s.quality=aiPickStr(model.resolutions,['2K','1K']);
     s.count=(model.count&&model.count[0])||1;
+  }else if(media==='sfx'){
+    s.duration=aiPickNum(model.durations,[5,3,10]);
   }
   af_ai.sel[media]=s;
 }
@@ -4271,6 +4273,11 @@ function aiGenParams(media){
     if(m&&m.count&&m.count.length)p.count=Number(sel.count||m.count[0]);
     return p;
   }
+  if(media==='sfx'){
+    const p={};
+    if(m&&m.durations&&m.durations.length)p.duration=Number(sel.duration||m.durations[0]);
+    return p;
+  }
   return {};
 }
 /** Sozlama tugmasidagi qisqa yorliq (tanlangan qiymatlardan). */
@@ -4290,6 +4297,7 @@ function aiSelLabel(media){
     if(sel.count)a.push(sel.count+' rasm');
     return a.join(' · ')||'Sozlama';
   }
+  if(media==='sfx'){ return sel.duration?(sel.duration+'s'):'Sozlama'; }
   return '';
 }
 /** Tanlovga ta'sir qiluvchi input affordancelar (model.inputs[] dan). */
@@ -4320,6 +4328,8 @@ function aiBuildSettingsMenu(media,model){
     if(model.aspects&&model.aspects.length)h+='<div class="ai-set-sec"><h5>Nisbat</h5>'+chips('aspect',model.aspects,sel.aspect)+'</div>';
     if(model.resolutions&&model.resolutions.length)h+='<div class="ai-set-sec"><h5>Sifat</h5>'+chips('quality',model.resolutions,sel.quality)+'</div>';
     if(model.count&&model.count.length)h+='<div class="ai-set-sec"><h5>Rasm soni</h5>'+chips('count',model.count,sel.count)+'</div>';
+  }else if(media==='sfx'){
+    if(model.durations&&model.durations.length)h+='<div class="ai-set-sec"><h5>Davomiylik (soniya)</h5>'+chips('duration',model.durations,sel.duration)+'</div>';
   }else if(media==='ovoz'){
     if(model.voices&&model.voices.length)h+='<div class="ai-set-sec"><h5>Ovoz</h5><div class="ai-chips">'+model.voices.map(v=>
       '<button type="button" class="ai-chip'+(sel.voice===v.id?' on':'')+'" onclick="aiSelSet(\'voice\',\''+aiEsc(v.id)+'\')">'+aiEsc(v.label)+'</button>').join('')+'</div></div>';
@@ -4693,7 +4703,6 @@ function aiShowGenBox(media,val,cap,pct){
 async function aiGenerate(){
   if(af_ai.gen)return;
   const media=af_ai.media;
-  if(media==='sfx'){aiSoon();return;}
   const ta=document.getElementById('aiPrompt');
   const val=ta?(ta.value||'').trim():'';
   if(!val){

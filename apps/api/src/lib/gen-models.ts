@@ -19,14 +19,15 @@ export type GenFeature =
   | "image-edit"
   | "text-to-speech"
   | "text-to-video"
-  | "image-to-video";
+  | "image-to-video"
+  | "text-to-sfx";
 
 export type GenModel = {
   id: number;
-  mode: "image" | "voice" | "video" | "music";
-  key: string; // OpenRouter model ID (jonli tasdiqlangan)
+  mode: "image" | "voice" | "video" | "music" | "sfx";
+  key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik";
+  provider?: "openrouter" | "freepik" | "elevenlabs";
   feature: GenFeature;
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
   isDefault?: boolean;
@@ -148,6 +149,19 @@ export const GEN_MODELS: GenModel[] = [
     isDefault: true,
     voices: KOKORO_VOICES,
     languages: ["English"],
+  },
+
+  // ── SFX (ElevenLabs sound-generation; sync, RAW mp3) ──
+  {
+    id: 4001,
+    mode: "sfx",
+    key: "elevenlabs/sound-effects",
+    label: "ElevenLabs SFX",
+    provider: "elevenlabs",
+    feature: "text-to-sfx",
+    cost: 4,
+    isDefault: true,
+    durations: [3, 5, 10],
   },
 
   // ── VIDEO (POST /videos → poll). cost = soniya boshiga kredit ──

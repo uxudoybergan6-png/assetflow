@@ -39,6 +39,9 @@ services:
       # OpenRouter (Studio Gen — rasm/video/ovoz/embeddings, unified API)
       - key: OPENROUTER_API_KEY
         sync: false
+      # ElevenLabs (SFX — sound effects; OpenRouter SFX'ni qoplamaydi)
+      - key: ELEVENLABS_API_KEY
+        sync: false
       # Cloudflare Workers AI (eski /plugin/ai AI Tools)
       - key: CF_ACCOUNT_ID
         sync: false

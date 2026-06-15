@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
 import { isOpenRouterConfigured, orChat } from "../lib/ai/openrouter.js";
+import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isS3Configured, getSignedDownloadUrl, deleteS3Objects } from "../lib/s3.js";
 import {
   GEN_MODELS,
@@ -32,7 +33,7 @@ studioGenRouter.use(
   })
 );
 
-const GEN_MODES = ["image", "voice", "video", "music"] as const;
+const GEN_MODES = ["image", "voice", "video", "music", "sfx"] as const;
 
 /** GET /credits — kredit balansi. */
 studioGenRouter.get("/credits", async (req: Request, res: Response) => {
@@ -48,6 +49,7 @@ studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
     openrouter: isOpenRouterConfigured(),
     s3: isS3Configured(),
     freepik: Boolean(process.env.FREEPIK_API_KEY),
+    elevenlabs: isElevenLabsConfigured(),
   });
 });
 
@@ -168,10 +170,6 @@ const genSchema = z.object({
   costQuoteSignature: z.string().min(10),
 });
 studioGenRouter.post("/gen", async (req: Request, res: Response) => {
-  if (!isOpenRouterConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
-    return;
-  }
   const p = genSchema.safeParse(req.body);
   if (!p.success) {
     res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
@@ -192,6 +190,13 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const model = getModelById(modelId);
   if (!isModelEnabled(model) || model.mode !== mode) {
     res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
+    return;
+  }
+  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; aks holda OpenRouter).
+  const configured =
+    model.provider === "elevenlabs" ? isElevenLabsConfigured() : isOpenRouterConfigured();
+  if (!configured) {
+    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
   }
 

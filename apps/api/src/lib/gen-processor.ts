@@ -15,6 +15,7 @@ import {
 } from "./ai/openrouter.js";
 import { getModelById, resolveVideoParams, resolveImageCount } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
+import { elSoundEffects } from "./ai/elevenlabs.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
@@ -142,6 +143,21 @@ export async function processGeneration(genId: string): Promise<void> {
       const voice =
         typeof params.voice === "string" && params.voice ? params.voice : "af_bella";
       const out = await orSpeech(model.key, gen.prompt, voice);
+      if (!out.ok) return void (await fail(out.error));
+      const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
+      const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+      await prisma.genAsset.create({
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
+      });
+    } else if (model.feature === "text-to-sfx") {
+      // ElevenLabs SFX (sync, RAW mp3). duration ixtiyoriy (0.5–22s).
+      const dur =
+        typeof params.duration === "number"
+          ? params.duration
+          : typeof params.duration === "string"
+            ? Number(params.duration)
+            : undefined;
+      const out = await elSoundEffects(gen.prompt, dur);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
       const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);

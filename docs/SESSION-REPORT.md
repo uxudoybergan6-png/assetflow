@@ -1,24 +1,24 @@
-# SESSION REPORT — 2026-06-15 — Generatsiya tarixi (gallery) ✅
+# SESSION REPORT — 2026-06-15 — SFX (ElevenLabs) composer'ga ulandi ✅
 
-Foydalanuvchi: oldingi gen qilgan rasm/videolar ko'rinmayapti (tarix yo'q edi).
-Sabab: StudioGenHistory faqat chaqirilardi-yu aniqlanmagan; "barcha gen" endpoint'i yo'q edi;
-plagin har ochilganda yangi sessiya yaratardi → tarix yo'qolardi.
+Foydalanuvchi ElevenLabs hisobini to'ldirdi ($5). Sodda SFX (prompt→SFX) qo'shildi.
 
-## Backend (DEPLOY kerak)
-- **GET /gen/history?limit=30** — foydalanuvchining BARCHA tugagan gen'lari (sessiyalardan qat'i
-  nazar), assetlar bilan, signed URL har so'rovда yangidan imzolanadi. /gen/:jobId'дан OLDIN.
+## Backend
+- **lib/ai/elevenlabs.ts** (yangi): elSoundEffects(prompt, duration) → POST /v1/sound-generation
+  → RAW mp3; duration 0.5–22s klamp; isElevenLabsConfigured().
+- **gen-models.ts**: mode +sfx, provider +elevenlabs, feature +text-to-sfx; SFX modeli (id 4001,
+  ElevenLabs SFX, cost 4, durations [3,5,10]).
+- **gen-processor.ts**: text-to-sfx branch → elSoundEffects → audio GenAsset (kredit/refund mavjud).
+- **studio-gen.ts**: GEN_MODES +sfx; POST /gen provayder-aware gate (sfx→ElevenLabs, aks→OpenRouter);
+  /gen/health +elevenlabs.
+- **render.yaml**: ELEVENLABS_API_KEY (sync:false).
 
 ## Plugin
-- #aiHistory grid (composer ostida): har gen — thumbnail (rasm/video/audio), bosilsa natija
-  panelida ochiladi (ko'rish / zoom / import / o'chirish).
-- aiLoadHistory() — /gen/history dan yuklaydi; aiInit + aiLoadModels (login bo'lganda) +
-  StudioGenHistory.refresh (gen/delete'дан keyin) chaqiradi.
-- aiOpenHistory(id) — tarixdagi gen'ni aiRenderImages/aiRenderResult bilan ochadi.
-- StudioGenHistory={refresh:aiLoadHistory} (mavjud chaqiruvlar ishlaydi).
+- AI_CFG.sfx → ElevenLabs SFX, capabilities settings; aiStudioMode +sfx; aiGenerate stub olib tashlandi.
+- aiInitSel/aiGenParams/aiSelLabel/aiBuildSettingsMenu → sfx duration. Natija: audio player + import.
+- Kredit/refund/tarix/zoom — mavjud tizim avtomatik qamraydi.
 
 ## Tekshirildi
 - tsc EXIT 0 ✅; inline JS node --check (0 xato) ✅; install-cep ✅
 
 ## Holat
-Commit + push → deploy. Deploy'dan keyin oldingi rasm/videolar tarixда ko'rinadi.
-Funksiya/param oqimi tegilmadi.
+Commit + push → deploy. ⚠️ Foydalanuvchi Render'ga ELEVENLABS_API_KEY qo'yishi shart (aks holda 503).
