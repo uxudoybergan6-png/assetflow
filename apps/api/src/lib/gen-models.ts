@@ -98,7 +98,7 @@ export const GEN_MODELS: GenModel[] = [
     aspects: IMG_ASPECTS,
     resolutions: IMG_QUALITY,
     count: [1, 2, 3, 4],
-    imgModalities: ["image", "text"],
+    imgModalities: ["image"], // chiqishi faqat image (OpenRouter endpoints)
   },
   {
     id: 1004,
@@ -122,7 +122,7 @@ export const GEN_MODELS: GenModel[] = [
     aspects: IMG_ASPECTS,
     resolutions: ["1K", "2K"],
     count: [1, 2, 3, 4],
-    imgModalities: ["image", "text"],
+    imgModalities: ["image"], // chiqishi faqat image (OpenRouter endpoints)
   },
   // ── RASM EDIT (reference / "rangini o'zgartir") ──
   {
