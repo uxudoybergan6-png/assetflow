@@ -52,8 +52,8 @@ export const GEN_MODELS: GenModel[] = [
   {
     id: 2001,
     mode: "voice",
-    key: "openai/gpt-4o-mini-tts-2025-12-15",
-    label: "GPT-4o Mini TTS",
+    key: "hexgrad/kokoro-82m",
+    label: "Kokoro TTS",
     feature: "text-to-speech",
     cost: 3,
     isDefault: true,

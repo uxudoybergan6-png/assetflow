@@ -4102,7 +4102,7 @@ function onEnvScopeChange(sel){
 // Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
 const AI_CFG={
   rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:5,models:['Flux 2','Imagen 4','SDXL Turbo'],settings:['16:9 · 2K · 1 rasm','1:1 · 1K · 4 rasm','9:16 · 2K · 1 rasm'],ph:'G‘oyangizni yozing…'},
-  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['GPT-4o Mini TTS'],settings:['Alloy','Echo','Fable','Onyx','Nova','Shimmer'],ph:'Ovoz uchun matn yozing…'},
+  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['Kokoro TTS'],settings:['Bella','Nova','Sarah','Adam','Onyx','Emma'],ph:'Ovoz uchun matn yozing…'},
   sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['AudioGen','FoleyAI'],settings:['5s · Stereo','10s · Stereo','3s · Mono'],ph:'Tovush effektini tasvirlang…'},
   qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:1,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
 };
@@ -4110,8 +4110,8 @@ const AI_CFG={
 const AI_ENDPOINT={rasm:'image',ovoz:'voiceover',qidiruv:'search'};
 const af_ai={
   media:'rasm',
-  model:{rasm:'Flux 2',ovoz:'GPT-4o Mini TTS',sfx:'AudioGen',qidiruv:'Katalog'},
-  setting:{rasm:'16:9 · 2K · 1 rasm',ovoz:'Alloy',sfx:'5s · Stereo',qidiruv:''},
+  model:{rasm:'Flux 2',ovoz:'Kokoro TTS',sfx:'AudioGen',qidiruv:'Katalog'},
+  setting:{rasm:'16:9 · 2K · 1 rasm',ovoz:'Bella',sfx:'5s · Stereo',qidiruv:''},
   view:'grid',open:null,gen:false,_t:null,reference:null,
   // Studio Gen (1e): real model katalog + imzolangan cost-quote + session
   catalog:{},        // studioMode -> [{id,key,label,cost,feature}]
@@ -4140,10 +4140,12 @@ async function studioPost(path,body,ms){
 }
 
 /** params — cost-quote VA generate uchun BIR XIL bo'lishi shart (imzo hash mos kelsin). */
+// Do'stona label → Kokoro (hexgrad/kokoro-82m) voice id. Mos kelmasa '' → model default ovoz.
+var AI_VOICE_MAP={Bella:'af_bella',Nova:'af_nova',Sarah:'af_sarah',Adam:'am_adam',Onyx:'am_onyx',Emma:'bf_emma'};
 function aiGenParams(media){
-  // Voice: setting menyusidagi tanlangan ovoz (Alloy…) → OpenAI voice id (alloy…).
+  // Voice: setting menyusidagi tanlangan ovoz → Kokoro voice id.
   // MUHIM: cost-quote VA generate'da BIR XIL bo'lsin (imzo hash mos kelishi shart).
-  if(media==='ovoz')return {voice:String(af_ai.setting.ovoz||'Alloy').toLowerCase()};
+  if(media==='ovoz')return {voice:AI_VOICE_MAP[af_ai.setting.ovoz]||''};
   return {};
 }
 

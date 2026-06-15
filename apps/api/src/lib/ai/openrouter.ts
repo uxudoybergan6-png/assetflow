@@ -128,15 +128,14 @@ export async function orImageEdit(
 export async function orSpeech(
   model: string,
   text: string,
-  voice = "alloy"
+  voice = ""
 ): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const res = await orPost("/audio/speech", {
-    model,
-    input: text,
-    voice,
-    response_format: "mp3",
-  });
+  // voice IXTIYORIY: bo'sh bo'lsa body'dan tushiramiz → model default ovoz ishlatadi
+  // (voice id noto'g'ri bo'lsa ham audio chiqsin — xavfsizlik).
+  const body: Record<string, unknown> = { model, input: text, response_format: "mp3" };
+  if (voice) body.voice = voice;
+  const res = await orPost("/audio/speech", body);
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = Buffer.from(await res.arrayBuffer()); // RAW audio — JSON EMAS
   if (!buf.length) return { ok: false, error: "Bo'sh audio" };

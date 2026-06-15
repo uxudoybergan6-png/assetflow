@@ -118,7 +118,7 @@ export async function processGeneration(genId: string): Promise<void> {
         data: { generationId: genId, type: ASSET_TYPE.image, url, resultKey: key, thumbUrl: url, aspectRatio },
       });
     } else if (model.feature === "text-to-speech") {
-      const voice = typeof params.voice === "string" ? params.voice : "alloy";
+      const voice = typeof params.voice === "string" ? params.voice : "";
       const out = await orSpeech(model.key, gen.prompt, voice);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
