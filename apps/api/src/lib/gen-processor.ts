@@ -69,19 +69,22 @@ async function runVideo(
   const created = await orVideoCreate(model.key, opts);
   if (!created.ok) return { ok: false, error: created.error };
 
-  // Poll (5s × 60 = ~5 daqiqa)
-  for (let i = 0; i < 60; i++) {
-    await sleep(5000);
+  // Poll (3s × 100 = ~5 daqiqa) — granularlik 5s→3s, tayyor bo'lishini tezroq aniqlaydi.
+  // Birinchi tekshiruvni 2s'da (qisqa video tezroq topilsin), keyin 3s.
+  await sleep(2000);
+  for (let i = 0; i < 100; i++) {
     const st = await orVideoStatus(created.data.id);
-    if (!st.ok) continue; // vaqtinchalik — davom
-    if (st.data.status === "completed") {
-      const url = st.data.urls[0];
-      if (!url) return { ok: false, error: "Video URL qaytmadi" };
-      const dl = await orDownload(url);
-      if (!dl.ok) return { ok: false, error: dl.error };
-      return { ok: true, buf: dl.data };
+    if (st.ok) {
+      if (st.data.status === "completed") {
+        const url = st.data.urls[0];
+        if (!url) return { ok: false, error: "Video URL qaytmadi" };
+        const dl = await orDownload(url);
+        if (!dl.ok) return { ok: false, error: dl.error };
+        return { ok: true, buf: dl.data };
+      }
+      if (st.data.status === "failed") return { ok: false, error: "Video generatsiya muvaffaqiyatsiz" };
     }
-    if (st.data.status === "failed") return { ok: false, error: "Video generatsiya muvaffaqiyatsiz" };
+    await sleep(3000); // keyingi tekshiruvgacha
   }
   return { ok: false, error: "Video vaqt tugadi (timeout)" };
 }

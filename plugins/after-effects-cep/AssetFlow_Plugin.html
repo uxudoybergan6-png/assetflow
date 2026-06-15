@@ -4740,7 +4740,7 @@ function aiPollJob(jobId,media,val){
   return new Promise(function(resolve){
     // Video uzoq (OpenRouter async ~daqiqa) → uzunroq oyna: 130×4s ≈ 8.6 daq; aks holda 40×3.5s
     const isVid=media==='video';
-    const intervalMs=isVid?4000:3500, max=isVid?130:40;
+    const intervalMs=isVid?3000:3000, max=isVid?170:50;
     const runCap=isVid?'Video tayyorlanmoqda… (~daqiqa)':'Generatsiya qilinmoqda…';
     let tries=0;
     const tick=async function(){

@@ -1,24 +1,23 @@
-# SESSION REPORT — 2026-06-15 — Video progress % + kredit refund tuzatish ✅
+# SESSION REPORT — 2026-06-15 — Video gen tezlik tekshiruvi + poll tezlashtirish ✅
 
-Foydalanuvchi: (1) video gen 100% shkalada ko'rinsin, (2) "kredit qaytarildi" dedi lekin qaytmadi.
+Foydalanuvchi: video juda sekin gen qilyapti.
 
-## Kredit bug (asosiy)
-Sabab: video job Render restart'da "running"da QOTIB qoladi → fail() chaqirilmaydi → refund yo'q.
-UI timeout'da "qaytarildi" deb YOLG'ON ko'rsatardi.
-- **gen-processor.reconcileStuckGenerations(userId)**: 10 daqiqadan oshган queued/running →
-  failed + refundAiCredits (atomik). studio-gen /credits VA POST /gen'da chaqiriladi →
-  panel ochilганда yo'qolган kredit AVTOMATIK qaytadi.
-- UI aiPollJob: timeout endi {status:'timeout'} (failed EMAS) → "qaytarildi" demaydi, halol
-  "hali tugamadi, muvaffaqiyatsiz bo'lsa avtomatik qaytadi" + aiRefreshCredits.
+## O'lchov (jonli prod)
+- veo-3.1-lite 4s/720p → **46s** jami (6s'da running, 46s'da done).
+- Ya'ni ~40s = **provayder (Veo) generatsiya vaqti** — AI video uchun normal, bizning kodda emas.
+- Sekinlikning katta qismi provayder tomonida; uzun/1080p/10s video tabiiy uzoqroq.
 
-## Video progress %
-- aiPollJob vaqt-asosli % hisoblaydi (asimptotik, 95% gacha); aiShowGenBox progress bar + "NN%".
-- Done bo'lganда natija chiqadi.
+## Bizning tomondan tezlashtirish (kod)
+- **gen-processor runVideo**: poll granularligi 5s→3s, birinchi tekshiruv 2s'da (avval har doim
+  5s kutardi). Tayyor bo'lishini ~2-3s tezroq aniqlaydi. Oyna ~5 daqiqa (3s×100).
+- **plugin aiPollJob**: video poll 4s→3s (snappier progress).
+
+## Tavsiya (foydalanuvchiga)
+- Eng tez: **veo-3.1-lite**, qisqa duration (4-6s), past resolution (720p).
+- 1080p/10s/Seedance — tabiiy sekinroq (provayder).
 
 ## Tekshirildi
-- tsc -p apps/api EXIT 0 ✅; inline JS node --check (0 xato) ✅; install-cep ✅
-- refundAiCredits/consumeAiCredits simmetrik (pro user) — to'g'ri; muammo qotган job edi.
+- tsc EXIT 0 ✅; inline JS node --check (0 xato) ✅; install-cep ✅
 
 ## Holat
-Commit + push → deploy. Deploy'dan keyin foydalanuvchi panelni ochса (/credits) yo'qolган krediti
-qaytadi (reconcile). Funksiya/param oqimi tegilmadi.
+Commit + push → deploy (poll backend o'zgarishi). Funksiya/param oqimi tegilmadi.
