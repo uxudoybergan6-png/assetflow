@@ -4114,8 +4114,14 @@ const af_ai={
 async function aiTimelineRef(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
   const raw=await new Promise(res=>csInterface.evalScript('getActiveTimelineVideoReference()',r=>res(r||'')));
+  try{console.log('[ai:timeline-ref] host →',raw);}catch(e){}
   let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
-  if(!r||!r.ok){if(typeof showToast==='function')showToast((r&&r.reason)||'Timeline reference olinmadi','warning');return;}
+  if(!r||!r.ok){
+    // ANIQ sabab: host reason → bo'lmasa raw (parse fail/bo'sh) → debug
+    const reason=(r&&r.reason)?r.reason:(raw?('Javob o‘qilmadi: '+String(raw).slice(0,80)):'Host javob bermadi (evalScript bo‘sh)');
+    if(typeof showToast==='function')showToast(reason,'warning');
+    return;
+  }
   af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:'timeline'};
   aiRenderRefBar();
   if(typeof showToast==='function')showToast('Timeline reference olindi: '+r.name,'success');

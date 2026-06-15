@@ -1,23 +1,27 @@
-# SESSION REPORT — 2026-06-15 — Batch A / 2a: Timeline reference ✅
+# SESSION REPORT — 2026-06-15 — 2a tuzatish: Timeline reference aniq sabab ✅
 
-## 2a — Timeline live-link (Higgsfield AEFT naqshi)
-### host.jsx
-- `getActiveTimelineVideoReference()` — aktiv comp'dagi tanlangan layer manbasining fayl yo'li
-  (FootageItem `mainSource.file.fsName`/`file.fsName`), structured JSON {ok,name,mediaPath,
-  mediaType,hasVideo,hasAudio,compName}. AEFT-only (Premiere yo'q).
-- `getActiveTimelineClipDetails()` — tanlangan layer in/out/startTime/compTime/sourceDuration.
+Muammo: "Timeline reference olinmadi" generic — sabab ko'rinmasdi (host throw → evalScript
+bo'sh → frontend generic fallback).
 
-### Frontend (AssetFlow_Plugin.html)
-- "Timeline'dan" tugmasi ("TEZ ORADA" olib tashlandi) → `aiTimelineRef()` → evalScript →
-  reference `af_ai.reference={path,name,mediaType}` → composer'da **chip + thumbnail** (`#aiRefBar`).
-  Rasm bo'lsa `file://` thumbnail, aks holda ikona. `aiClearRef()` ✕ bilan olib tashlanadi.
-- CSS `.ai-refbar`/`.ai-ref-*` (tokenlar bilan).
-- ⚠️ 2a: reference faqat OLINADI va ko'rsatiladi. Uni img2img' da ISHLATISH — 2b/3b sub-qadam.
+## host.jsx getActiveTimelineVideoReference
+- BUTUN tana `try/catch` ichida — endi hech qachon throw qilmaydi (ichki xato ham JSON reason).
+- Har holatga ANIQ sabab:
+  - activeItem CompItem emas → "Kompozitsiya ochiq emas — Timeline'ni oching"
+  - selectedLayers bo'sh → "Layer tanlanmagan — Timeline'da klip tanlang"
+  - `L.source` yo'q (matn/shakl/kamera/yorug'lik) → "footage emas (matn/shakl/kamera)"
+  - `source` precomp (CompItem) → "precomp — footage klip tanlang"
+  - `source instanceof FootageItem` lekin fayl yo'q (solid/placeholder) → "Footage faylsiz"
+  - ✅ FootageItem + fayl → {ok:true, name, mediaPath, mediaType}
+- Birinchi tanlangan layer'ning sababi qaytariladi; diagnostika: compName, selectedCount.
+
+## Frontend aiTimelineRef
+- Host reason'ni to'g'ridan toast'da ko'rsatadi. Parse fail/bo'sh bo'lsa raw (qisqartirilgan)
+  yoki "Host javob bermadi" — debug uchun. `console.log('[ai:timeline-ref] host →', raw)`.
 
 ## Tekshirildi
 - host.jsx + HTML inline JS `node --check` TOZA ✅
-- `install-cep.sh` o'rnatdi; getActiveTimelineVideoReference (host) + aiTimelineRef/aiRefBar (html) ✅
+- `install-cep.sh` o'rnatdi; reason variantlari (8) installed host.jsx'da ✅
 
 ## Holat
-2a tugadi — AE'da test: comp ochib, layer tanlab "Timeline'dan" bossangiz reference chip chiqadi.
-Keyingi: 3a — funksional ko'p-model selektor.
+2a tuzatildi — AE'da test: turli holatlar (comp yo'q / layer yo'q / matn layer / footage)
+aniq sabab qaytaradi; footage layer → reference chip. Keyingi: 3a (ko'p-model selektor).

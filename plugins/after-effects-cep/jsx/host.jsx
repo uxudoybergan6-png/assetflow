@@ -1901,38 +1901,71 @@ function afLayerSourcePath(source) {
 }
 
 function getActiveTimelineVideoReference() {
-  if (typeof app === "undefined" || !app.project) {
-    return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
-  }
-  var active = app.project.activeItem;
-  if (!(active && active instanceof CompItem)) {
-    return JSON.stringify({ ok: false, reason: "Aktiv kompozitsiya yo'q — Timeline'ni oching" });
-  }
-  var layers = active.selectedLayers;
-  if (!layers || layers.length === 0) {
-    return JSON.stringify({ ok: false, reason: "Timeline'da layer tanlanmagan" });
-  }
-  for (var i = 0; i < layers.length; i++) {
-    var L = layers[i];
-    var src = null;
-    try { src = L.source; } catch (e) {}
-    if (!src) continue;
-    var mediaPath = afLayerSourcePath(src);
-    if (!mediaPath) continue;
-    var hasVideo = false, hasAudio = false;
-    try { hasVideo = src.hasVideo === true; } catch (e) {}
-    try { hasAudio = src.hasAudio === true; } catch (e) {}
+  try {
+    if (typeof app === "undefined" || !app.project) {
+      return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
+    }
+    var active = app.project.activeItem;
+    if (!active || !(active instanceof CompItem)) {
+      return JSON.stringify({ ok: false, reason: "Kompozitsiya ochiq emas — Timeline'ni oching" });
+    }
+    var layers = active.selectedLayers;
+    if (!layers || layers.length === 0) {
+      return JSON.stringify({
+        ok: false,
+        reason: "Layer tanlanmagan — Timeline'da klip tanlang",
+        compName: active.name
+      });
+    }
+    // Birinchi mos (footage + fayl) layer'ni topamiz; bo'lmasa eng aniq sababni qaytaramiz.
+    var firstReason = "Tanlangan layer footage emas";
+    for (var i = 0; i < layers.length; i++) {
+      var L = layers[i];
+      var src = null;
+      try { src = L.source; } catch (e) { src = null; }
+      if (!src) {
+        // matn/shakl/kamera/yorug'lik/adjustment — footage manbasi yo'q
+        if (i === 0) firstReason = "Tanlangan layer footage emas (matn/shakl/kamera)";
+        continue;
+      }
+      if (!(src instanceof FootageItem)) {
+        // precomp (CompItem) yoki boshqa
+        if (i === 0) firstReason = (src instanceof CompItem)
+          ? "Tanlangan layer precomp — footage klip tanlang"
+          : "Tanlangan layer footage emas";
+        continue;
+      }
+      var mediaPath = afLayerSourcePath(src);
+      if (!mediaPath) {
+        // solid/placeholder — diskda fayl yo'q
+        if (i === 0) firstReason = "Footage faylsiz (solid/placeholder) — disk fayli kerak";
+        continue;
+      }
+      var hasVideo = false, hasAudio = false;
+      try { hasVideo = src.hasVideo === true; } catch (e) {}
+      try { hasAudio = src.hasAudio === true; } catch (e) {}
+      return JSON.stringify({
+        ok: true,
+        name: L.name || src.name || "Layer",
+        mediaPath: mediaPath,
+        mediaType: hasVideo ? "video" : (hasAudio ? "audio" : "other"),
+        hasVideo: hasVideo,
+        hasAudio: hasAudio,
+        compName: active.name
+      });
+    }
     return JSON.stringify({
-      ok: true,
-      name: L.name || src.name || "Layer",
-      mediaPath: mediaPath,
-      mediaType: hasVideo ? "video" : (hasAudio ? "audio" : "other"),
-      hasVideo: hasVideo,
-      hasAudio: hasAudio,
-      compName: active.name
+      ok: false,
+      reason: firstReason,
+      compName: active.name,
+      selectedCount: layers.length
+    });
+  } catch (e) {
+    return JSON.stringify({
+      ok: false,
+      reason: "Ichki xato: " + String(e && e.toString ? e.toString() : e)
     });
   }
-  return JSON.stringify({ ok: false, reason: "Tanlangan layer manbasi fayl emas (footage kerak)" });
 }
 
 // Tanlangan layer trim/oraliq tafsilotlari (in/out, manba davomiyligi).
