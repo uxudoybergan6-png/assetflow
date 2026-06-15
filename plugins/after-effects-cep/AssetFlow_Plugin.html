@@ -4113,7 +4113,13 @@ const af_ai={
 /* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
 async function aiTimelineRef(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
-  const raw=await new Promise(res=>csInterface.evalScript('getActiveTimelineVideoReference()',r=>res(r||'')));
+  // Reinstall'dan keyin panel qayta yuklanmagan bo'lsa — host.jsx eski (yangi funksiya
+  // engine xotirasida yo'q). Avval majburan reload, keyin funksiya bor-yo'qligini guard qilamiz.
+  if(typeof reloadHostScript==='function'){try{await reloadHostScript();}catch(e){}}
+  const expr='typeof getActiveTimelineVideoReference==="function"'
+    +'?getActiveTimelineVideoReference()'
+    +':JSON.stringify({ok:false,reason:"host.jsx eski yuklangan — AE ni qayta ishga tushiring"})';
+  const raw=await new Promise(res=>csInterface.evalScript(expr,r=>res(r||'')));
   try{console.log('[ai:timeline-ref] host →',raw);}catch(e){}
   let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
   if(!r||!r.ok){
