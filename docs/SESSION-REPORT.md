@@ -1,22 +1,26 @@
-# SESSION REPORT — 2026-06-15 — Panelda build/versiya yorlig'i ✅
+# SESSION REPORT — 2026-06-15 — Timeline ref ASL sabab: engine'da eski host.jsx ✅
 
-Maqsad: install-cep + AE qayta ochishdan keyin panelда yorliqни ko'rib, yangi build
-yuklanganini DARROV bilish (stale-panel chalkashligini bartaraf etish).
+## ASL SABAB (nihoyat aniqlandi)
+Panel YANGI xabarni ko'rsatdi ("Host bo'sh javob... AE qayta ishga tushiring") → demak panel
+HTML TOZA yuklangan. Lekin:
+- `importMediaFromPath` ishlaydi = u ESKI funksiya, AE sessiyasi boshida yuklangan host.jsx'da bor.
+- `getActiveTimelineVideoReference` BO'SH = 2a'da qo'shilgan YANGI funksiya — eski engine'da YO'Q.
 
-## Qo'shildi
-- **AssetFlow_Plugin.html** sidebar-foot (kredit-pill ostida): `<div id="afBuild">build: __AF_BUILD__</div>`
-  — muted, kichik (10px), ko'zga tashlanmaydigan. CSS `.sb-build` (tokenlar).
-- **install-cep.sh** AVTOMATIK shtamplaydi: o'rnatilgan HTML'da `__AF_BUILD__` →
-  `"<sana HH:MM> · <git short hash>"` (sed). Manba placeholder bo'lib qoladi (git churn yo'q).
-  Konsolga ham `Build: ...` chiqaradi.
-- Boot normalizatsiya: shtamplanmagan (manbadan) bo'lsa → "build: dev". Token JS'da BO'LIB
-  yozilgan (`'__AF_'+'BUILD__'`) — sed bu tekshiruvga tegmaydi, faqat element shtamplanadi.
+Manifest `ScriptPath` host.jsx'ni AE START'da BIR MARTA yuklaydi. Panel webview qayta yuklandi,
+lekin ExtendScript ENGINE eski host.jsx'ni saqlab qoldi (AE to'liq restart bo'lmagan/quit fail).
+Shuning uchun eski funksiya ishlaydi, yangisi yo'q.
+
+## Tuzatish
+`aiTimelineRef` named-call'dan OLDIN `await reloadHostScript()` — `$.evalFile(host.jsx)` bilan
+engine'ga JORIY host.jsx'ni AE restartisiz qayta yuklaydi. Keyin
+`evalScript('getActiveTimelineVideoReference()')` (importMediaFromPath bilan IDENTIK) ishlaydi.
+Log: `reloaded=<bool> | raw=... | len=...`.
 
 ## Tekshirildi
-- HTML inline JS `node --check` TOZA ✅; `bash -n install-cep.sh` TOZA ✅
-- Temp-nusxada sed sinovi: element shtamplandi, boot-tekshiruv buzilmadi, qolgan placeholder 0 ✅
-- Haqiqiy `install-cep.sh`: `Build: 2026-06-15 11:20 · ed2735c` → o'rnatilgan element'da ko'rindi ✅
+- HTML inline JS `node --check` TOZA ✅; reloadHostScript mavjud (1) ✅
+- `install-cep.sh` → Build: 2026-06-15 11:38 · 6bb0190 ✅
 
-## Holat
-Panelda (sidebar pastida) "build: <sana> · <hash>" ko'rinadi. AE qayta ochilgach yorliqni
-ko'rib yangi build yuklanganini bilasiz. Keyingi: 2a tasdiq → 3a (ko'p-model selektor).
+## Holat / TEST
+"Timeline'dan" bosing. DevTools (http://localhost:8098) Console: `[ai:timeline-ref] reloaded=true
+| raw={...}` kutilmoqda. reloaded=true + JSON raw → ishladi. reloaded=false → evalFile yo'li
+xato (log'da ko'ramiz). Keyingi: 3a.

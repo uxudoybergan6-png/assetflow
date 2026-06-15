@@ -4114,36 +4114,21 @@ const af_ai={
 };
 
 /* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
-// Timeline reference mantig'i INLINE evalScript — host.jsx yuklanishiga bog'liq EMAS
-// (stale jsx muammosi yo'q). ExtendScript ES3, qo'shtirnoqsiz/apostrofsiz reason matnlari.
-const AI_TIMELINE_REF_JSX = "(function(){try{"
-  + "if(typeof app==='undefined'||!app.project)return JSON.stringify({ok:false,reason:'Loyiha topilmadi'});"
-  + "var a=app.project.activeItem;"
-  + "if(!a||!(a instanceof CompItem))return JSON.stringify({ok:false,reason:'Kompozitsiya ochiq emas (Timeline kerak)'});"
-  + "var ls=a.selectedLayers;"
-  + "if(!ls||ls.length===0)return JSON.stringify({ok:false,reason:'Layer tanlanmagan (Timelineda klip tanlang)',compName:a.name});"
-  + "var why='Tanlangan layer footage emas';"
-  + "for(var i=0;i<ls.length;i++){"
-  + "var L=ls[i],s=null;try{s=L.source;}catch(e){}"
-  + "if(!s){if(i===0)why='Layer footage emas (matn/shakl/kamera)';continue;}"
-  + "if(!(s instanceof FootageItem)){if(i===0)why=(s instanceof CompItem)?'Precomp tanlandi (footage klip kerak)':'Layer footage emas';continue;}"
-  + "var p='';try{if(s.mainSource&&s.mainSource.file)p=s.mainSource.file.fsName;}catch(e){}"
-  + "if(!p){try{if(s.file)p=s.file.fsName;}catch(e){}}"
-  + "if(!p){if(i===0)why='Footage faylsiz (solid/placeholder)';continue;}"
-  + "var hv=false,ha=false;try{hv=s.hasVideo===true;}catch(e){}try{ha=s.hasAudio===true;}catch(e){}"
-  + "return JSON.stringify({ok:true,name:(L.name||s.name||'Layer'),mediaPath:p,mediaType:(hv?'video':(ha?'audio':'other')),compName:a.name});"
-  + "}"
-  + "return JSON.stringify({ok:false,reason:why,compName:a.name,selectedCount:ls.length});"
-  + "}catch(e){return JSON.stringify({ok:false,reason:'Ichki xato: '+e.toString()});}})()";
-
 async function aiTimelineRef(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
-  const raw=await new Promise(res=>csInterface.evalScript(AI_TIMELINE_REF_JSX,r=>res(r||'')));
-  try{console.log('[ai:timeline-ref] host →',raw);}catch(e){}
+  // MUHIM: importMediaFromPath ESKI funksiya — AE sessiyasi boshida yuklangan host.jsx'da bor,
+  // shuning uchun ishlaydi. getActiveTimelineVideoReference YANGI (2a) — eski engine'da yo'q
+  // (manifest ScriptPath AE start'da bir marta yuklaydi). AE restartisiz host.jsx'ni engine'ga
+  // qayta yuklaymiz ($.evalFile), keyin named-call (import bilan IDENTIK) ishlaydi.
+  let reloaded=false;
+  if(typeof reloadHostScript==='function'){try{reloaded=await reloadHostScript();}catch(e){}}
+  const raw=await new Promise(res=>csInterface.evalScript('getActiveTimelineVideoReference()',r=>res(r||'')));
+  try{console.log('[ai:timeline-ref] reloaded=',reloaded,'| raw=',JSON.stringify(raw),'| type=',typeof raw,'| len=',(raw||'').length);}catch(e){}
   let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
   if(!r||!r.ok){
-    // ANIQ sabab: host reason → bo'lmasa raw (parse fail/bo'sh) → debug
-    const reason=(r&&r.reason)?r.reason:(raw?('Javob o‘qilmadi: '+String(raw).slice(0,80)):'Host javob bermadi (evalScript bo‘sh)');
+    const reason=(r&&r.reason)?r.reason
+      :(raw?('Javob o‘qilmadi: '+String(raw).slice(0,120))
+           :'Host bo‘sh javob qaytardi — AE ni TO‘LIQ qayta ishga tushiring (panel/jsx eski)');
     if(typeof showToast==='function')showToast(reason,'warning');
     return;
   }
