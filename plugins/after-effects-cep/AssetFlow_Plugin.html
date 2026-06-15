@@ -1574,6 +1574,34 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-menu-row .mr-sub{font-size:var(--fs-xs);color:var(--muted)}
 .ai-menu-row .mr-check{color:var(--accent-cta);display:flex;flex:none}
 
+/* ── Model-asosli sozlamalar (capabilities'dan) ── */
+#aiSettingMenu{min-width:288px;max-width:344px}
+.ai-set-sec{padding:0 4px 8px}
+.ai-set-sec h5{margin:8px 4px 7px;font-size:var(--fs-xs);color:var(--muted);font-weight:600}
+.ai-set-sec:first-child h5{margin-top:2px}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ai-chip{font-size:var(--fs-sm);color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s}
+.ai-chip:hover{border-color:var(--muted-2)}
+.ai-chip.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta);font-weight:600}
+.ai-set-toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 6px 2px;margin-top:4px;border-top:1px solid var(--border);color:var(--text);font-size:var(--fs-sm)}
+.ai-tg{width:36px;height:20px;border-radius:999px;background:var(--surface-3);border:1px solid var(--border);position:relative;cursor:pointer;transition:background .15s;flex:none}
+.ai-tg::after{content:"";position:absolute;left:2px;top:1px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:left .15s,background .15s}
+.ai-tg.on{background:var(--accent-cta)}
+.ai-tg.on::after{left:18px;background:var(--on-accent)}
+.ai-set-empty{padding:14px;color:var(--muted);font-size:var(--fs-sm);text-align:center}
+/* model.inputs[] dan dinamik input affordancelar */
+.ai-inputs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.ai-inp-add{width:34px;height:34px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;font-family:inherit;line-height:1}
+.ai-inp-add:hover{border-color:var(--muted-2)}
+.ai-inp-chip{font-size:var(--fs-xs);color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px}
+/* natija: rasm grid + video */
+.ai-res{margin-top:24px;animation:af-up .3s ease}
+.ai-res-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.ai-res-card{border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--surface);margin:0}
+.ai-res-card img{width:100%;display:block}
+.ai-res-vid video{display:block;width:100%}
+.ai-res-actions{display:flex;justify-content:center;margin-top:14px}
+
 .ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap}
 .ai-timeline:hover{border-color:var(--muted-2);color:var(--text)}
 .ai-soon{font-size:var(--fs-xs);font-weight:700;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
@@ -1911,7 +1939,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                     <!-- Launcher: "Nima yaratamiz?" (faqat idle holatda) -->
                     <div class="ai-launch" id="aiLaunch">
                       <h1>Nima yaratamiz?</h1>
-                      <p>Promptdan rasm, ovoz, SFX yarating yoki katalogdan toping — to‘g‘ridan-to‘g‘ri After Effects ichida.</p>
+                      <p>Promptdan rasm, video, ovoz yarating yoki katalogdan toping — to‘g‘ridan-to‘g‘ri After Effects ichida.</p>
                     </div>
 
                     <!-- ===== YAGONA KOMPOZER BAR ===== -->
@@ -1925,6 +1953,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                         <button type="button" class="ai-add" onclick="aiSoon()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Qo‘shish</button>
                         <div class="ai-chip-tpl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg> Shablon uchun</div>
                       </div>
+
+                      <!-- model.inputs[] dan dinamik input affordancelar -->
+                      <div class="ai-inputs" id="aiInputs" style="display:none"></div>
 
                       <!-- prompt maydoni -->
                       <div class="ai-comp-prompt">
@@ -4101,8 +4132,9 @@ function onEnvScopeChange(sel){
 // cost — server narxiga moslangan (backend AI_COST: image 5 · voiceover 3 · sfx 4 · search 1).
 // Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
 const AI_CFG={
-  rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:5,models:['Flux 2','Imagen 4','SDXL Turbo'],settings:['16:9 · 2K · 1 rasm','1:1 · 1K · 4 rasm','9:16 · 2K · 1 rasm'],ph:'G‘oyangizni yozing…'},
-  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['Kokoro TTS'],settings:['Bella','Nova','Sarah','Adam','Onyx','Emma'],ph:'Ovoz uchun matn yozing…'},
+  rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:5,models:['Nano Banana 2'],settings:[],ph:'G‘oyangizni yozing…'},
+  video:{label:'Video',ico:'film',sub:'AI video generatsiya',cost:60,models:['Veo 3.1 Lite'],settings:[],ph:'Video sahnani tasvirlang…'},
+  ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['Kokoro TTS'],settings:[],ph:'Ovoz uchun matn yozing…'},
   sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['AudioGen','FoleyAI'],settings:['5s · Stereo','10s · Stereo','3s · Mono'],ph:'Tovush effektini tasvirlang…'},
   qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:1,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
 };
@@ -4110,19 +4142,46 @@ const AI_CFG={
 const AI_ENDPOINT={rasm:'image',ovoz:'voiceover',qidiruv:'search'};
 const af_ai={
   media:'rasm',
-  model:{rasm:'Flux 2',ovoz:'Kokoro TTS',sfx:'AudioGen',qidiruv:'Katalog'},
-  setting:{rasm:'16:9 · 2K · 1 rasm',ovoz:'Bella',sfx:'5s · Stereo',qidiruv:''},
+  model:{rasm:'Nano Banana 2',video:'Veo 3.1 Lite',ovoz:'Kokoro TTS',sfx:'AudioGen',qidiruv:'Katalog'},
+  setting:{sfx:'5s · Stereo',qidiruv:''},  // legacy (faqat sfx/qidiruv)
   view:'grid',open:null,gen:false,_t:null,reference:null,
-  // Studio Gen (1e): real model katalog + imzolangan cost-quote + session
-  catalog:{},        // studioMode -> [{id,key,label,cost,feature}]
+  // Studio Gen: real model katalog + capabilities-asosli tanlov + imzolangan cost-quote
+  catalog:{},        // studioMode -> [{id,key,label,cost,feature,...capabilities}]
   modelId:{},        // media -> tanlangan model numeric id
+  sel:{},            // media -> {aspect,quality,count} | {aspect,resolution,duration,audio} | {voice}
   quote:null,        // {modelId,price,signature} (joriy media+model+params uchun)
   _qt:null,          // cost-quote debounce
-  sessionId:null     // GenSession id (1e-2/1e-3)
+  sessionId:null     // GenSession id
 };
 
-// AI media → Studio Gen mode (faqat shu ikkisi yangi /studio/gen oqimida)
-function aiStudioMode(media){ return media==='rasm'?'image':media==='ovoz'?'voice':null; }
+// AI media → Studio Gen mode (rasm/video/ovoz yangi /studio/gen oqimida)
+function aiStudioMode(media){ return media==='rasm'?'image':media==='video'?'video':media==='ovoz'?'voice':null; }
+/** Joriy media uchun tanlangan model obyekti (katalogdan). */
+function aiCurrentModel(){
+  const mode=aiStudioMode(af_ai.media);if(!mode)return null;
+  const cat=af_ai.catalog[mode]||[];const id=af_ai.modelId[af_ai.media];
+  return cat.find(m=>m.id===id)||null;
+}
+function aiPickStr(list,prefer){ if(!list||!list.length)return ''; for(let i=0;i<prefer.length;i++)if(list.indexOf(prefer[i])>=0)return prefer[i]; return list[0]; }
+function aiPickNum(list,prefer){ if(!list||!list.length)return 0; for(let i=0;i<prefer.length;i++)if(list.indexOf(prefer[i])>=0)return prefer[i]; return list[0]; }
+/** Model capabilities'idan boshlang'ich tanlovni o'rnatadi (backend default'lariga mos). */
+function aiInitSel(media,model){
+  if(!model){af_ai.sel[media]={};return;}
+  const s={};
+  if(media==='ovoz'){
+    s.voice=(model.voices&&model.voices[0]&&model.voices[0].id)||'';
+  }else if(media==='video'){
+    s.duration=aiPickNum(model.durations,[5,6,4]);      // backend resolveVideoParams bilan bir xil
+    s.resolution=aiPickStr(model.resolutions,['1080p','720p']);
+    s.aspect=aiPickStr(model.aspects,['16:9','9:16']);
+    s.audio=(typeof model.audio==='boolean')?model.audio:false;
+  }else if(media==='rasm'){
+    s.aspect=aiPickStr(model.aspects,['16:9','1:1']);
+    s.quality=aiPickStr(model.resolutions,['2K','1K']);
+    s.count=(model.count&&model.count[0])||1;
+  }
+  af_ai.sel[media]=s;
+}
 
 /** /api/studio GET — auth bilan (pubFetch base+timeout). */
 async function studioGet(path){
@@ -4139,14 +4198,103 @@ async function studioPost(path,body,ms){
   return d;
 }
 
-/** params — cost-quote VA generate uchun BIR XIL bo'lishi shart (imzo hash mos kelsin). */
-// Do'stona label → Kokoro (hexgrad/kokoro-82m) voice id. Mos kelmasa '' → model default ovoz.
-var AI_VOICE_MAP={Bella:'af_bella',Nova:'af_nova',Sarah:'af_sarah',Adam:'am_adam',Onyx:'am_onyx',Emma:'bf_emma'};
+/**
+ * params — model capabilities + tanlovdan yig'iladi. FAQAT shu model qo'llaydigan maydon.
+ * cost-quote VA generate uchun BIR XIL bo'lishi shart (imzo hash mos kelsin).
+ * Maydon nomlari backend bilan mos: video {duration,resolution,aspectRatio,audio}, voice {voice}.
+ */
 function aiGenParams(media){
-  // Voice: setting menyusidagi tanlangan ovoz → Kokoro voice id.
-  // MUHIM: cost-quote VA generate'da BIR XIL bo'lsin (imzo hash mos kelishi shart).
-  if(media==='ovoz')return {voice:AI_VOICE_MAP[af_ai.setting.ovoz]||''};
+  const m=aiCurrentModel();const sel=af_ai.sel[media]||{};
+  if(media==='ovoz'){
+    return {voice:sel.voice||(m&&m.voices&&m.voices[0]&&m.voices[0].id)||''};
+  }
+  if(media==='video'){
+    const p={};
+    if(m&&m.durations&&m.durations.length)p.duration=Number(sel.duration||m.durations[0]);
+    if(m&&m.resolutions&&m.resolutions.length)p.resolution=String(sel.resolution||m.resolutions[0]);
+    if(m&&m.aspects&&m.aspects.length)p.aspectRatio=String(sel.aspect||m.aspects[0]);
+    if(m&&typeof m.audio==='boolean')p.audio=(typeof sel.audio==='boolean')?sel.audio:m.audio;
+    return p;
+  }
+  if(media==='rasm'){
+    const p={};
+    if(m&&m.aspects&&m.aspects.length)p.aspectRatio=String(sel.aspect||m.aspects[0]);
+    if(m&&m.resolutions&&m.resolutions.length)p.quality=String(sel.quality||m.resolutions[0]);
+    if(m&&m.count&&m.count.length)p.count=Number(sel.count||m.count[0]);
+    return p;
+  }
   return {};
+}
+/** Sozlama tugmasidagi qisqa yorliq (tanlangan qiymatlardan). */
+function aiSelLabel(media){
+  const m=aiCurrentModel();const sel=af_ai.sel[media]||{};
+  if(media==='ovoz'){
+    const v=m&&m.voices&&m.voices.filter(x=>x.id===sel.voice)[0];
+    return v?v.label:'Ovoz';
+  }
+  if(media==='video'){
+    const a=[];if(sel.aspect)a.push(sel.aspect);if(sel.resolution)a.push(sel.resolution);
+    if(sel.duration)a.push(sel.duration+'s');if(typeof sel.audio==='boolean')a.push(sel.audio?'🔊':'🔇');
+    return a.join(' · ')||'Sozlama';
+  }
+  if(media==='rasm'){
+    const a=[];if(sel.aspect)a.push(sel.aspect);if(sel.quality)a.push(sel.quality);
+    if(sel.count)a.push(sel.count+' rasm');
+    return a.join(' · ')||'Sozlama';
+  }
+  return '';
+}
+/** Tanlovga ta'sir qiluvchi input affordancelar (model.inputs[] dan). */
+var AI_INPUT_LABEL={'image-ref':'Rasm reference','start-end-frame':'Start/End kadr','video-ref':'Video reference','audio-file':'Audio fayl','mention':'@mention'};
+function aiRenderInputs(){
+  const box=document.getElementById('aiInputs');if(!box)return;
+  const m=aiCurrentModel();const inputs=(m&&m.inputs)||[];
+  if(!inputs.length){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='flex';
+  box.innerHTML='<button type="button" class="ai-inp-add" onclick="aiTimelineRef()" title="Timeline klipini reference qilish">+</button>'
+    +inputs.map(k=>'<span class="ai-inp-chip">'+aiEsc(AI_INPUT_LABEL[k]||k)+'</span>').join('');
+}
+/** Capabilities-asosli sozlamalar menyusi (model qaysi maydonni qo'llasa — shu chiqadi). */
+function aiBuildSettingsMenu(media,model){
+  const sm=document.getElementById('aiSettingMenu');if(!sm)return;
+  if(!aiStudioMode(media)){return;}
+  if(!model){sm.innerHTML='<div class="ai-set-empty">Modellar yuklanmoqda… (avval tizimga kiring)</div>';return;}
+  const sel=af_ai.sel[media]||{};
+  const chips=(field,list,cur)=>'<div class="ai-chips">'+list.map(v=>
+    '<button type="button" class="ai-chip'+(String(cur)===String(v)?' on':'')+'" onclick="aiSelSet(\''+field+'\',\''+aiEsc(String(v))+'\')">'+aiEsc(String(v))+'</button>').join('')+'</div>';
+  let h='';
+  if(media==='video'){
+    if(model.aspects&&model.aspects.length)h+='<div class="ai-set-sec"><h5>Nisbat</h5>'+chips('aspect',model.aspects,sel.aspect)+'</div>';
+    if(model.resolutions&&model.resolutions.length)h+='<div class="ai-set-sec"><h5>Sifat</h5>'+chips('resolution',model.resolutions,sel.resolution)+'</div>';
+    if(model.durations&&model.durations.length)h+='<div class="ai-set-sec"><h5>Davomiylik (soniya)</h5>'+chips('duration',model.durations,sel.duration)+'</div>';
+    if(typeof model.audio==='boolean')h+='<div class="ai-set-toggle"><span>Audio</span><button type="button" class="ai-tg'+(sel.audio?' on':'')+'" onclick="aiSelToggle(\'audio\')"></button></div>';
+  }else if(media==='rasm'){
+    if(model.aspects&&model.aspects.length)h+='<div class="ai-set-sec"><h5>Nisbat</h5>'+chips('aspect',model.aspects,sel.aspect)+'</div>';
+    if(model.resolutions&&model.resolutions.length)h+='<div class="ai-set-sec"><h5>Sifat</h5>'+chips('quality',model.resolutions,sel.quality)+'</div>';
+    if(model.count&&model.count.length)h+='<div class="ai-set-sec"><h5>Rasm soni</h5>'+chips('count',model.count,sel.count)+'</div>';
+  }else if(media==='ovoz'){
+    if(model.voices&&model.voices.length)h+='<div class="ai-set-sec"><h5>Ovoz</h5><div class="ai-chips">'+model.voices.map(v=>
+      '<button type="button" class="ai-chip'+(sel.voice===v.id?' on':'')+'" onclick="aiSelSet(\'voice\',\''+aiEsc(v.id)+'\')">'+aiEsc(v.label)+'</button>').join('')+'</div></div>';
+  }
+  sm.innerHTML=h||'<div class="ai-set-empty">Bu model uchun sozlama yo‘q</div>';
+}
+function aiSelSet(field,value){
+  const media=af_ai.media;const sel=af_ai.sel[media]||(af_ai.sel[media]={});
+  if(field==='duration'||field==='count')value=Number(value);
+  sel[field]=value;
+  aiAfterSelChange();
+}
+function aiSelToggle(field){
+  const media=af_ai.media;const sel=af_ai.sel[media]||(af_ai.sel[media]={});
+  sel[field]=!sel[field];
+  aiAfterSelChange();
+}
+/** Tanlov o'zgardi → menyu+yorliq yangilanadi, quote qayta imzolanadi (BAD_QUOTE oldini olish). */
+function aiAfterSelChange(){
+  const media=af_ai.media;
+  aiBuildSettingsMenu(media,aiCurrentModel());  // menyu ochiqligicha qoladi
+  const el=document.getElementById('aiSettingLabel');if(el)el.textContent=aiSelLabel(media);
+  af_ai.quote=null;aiCostQuote();
 }
 
 /** Model katalogni yuklab dropdown'ni to'ldiradi (faqat image/voice, login bor). */
@@ -4165,7 +4313,12 @@ async function aiLoadModels(media){
       af_ai.modelId[media]=def;
       const m=models.find(x=>x.id===def);
       af_ai.model[media]=m?m.label:af_ai.model[media];
-      const el=document.getElementById('aiModelLabel');if(el&&af_ai.media===media)el.textContent=af_ai.model[media];
+      if(!af_ai.sel[media]||!Object.keys(af_ai.sel[media]).length)aiInitSel(media,m);
+      if(af_ai.media===media){
+        const el=document.getElementById('aiModelLabel');if(el)el.textContent=af_ai.model[media];
+        const sl=document.getElementById('aiSettingLabel');if(sl)sl.textContent=aiSelLabel(media);
+        aiRenderInputs();
+      }
       aiBuildMenus();
       aiCostQuote();
     }
@@ -4179,7 +4332,10 @@ function aiSetModelCat(id){
   af_ai.modelId[af_ai.media]=id;
   af_ai.model[af_ai.media]=m.label;
   af_ai.open=null;af_ai.quote=null;
+  aiInitSel(af_ai.media,m);  // yangi model → tanlovni shu model qo'llaganiga reset
   const el=document.getElementById('aiModelLabel');if(el)el.textContent=m.label;
+  const sl=document.getElementById('aiSettingLabel');if(sl)sl.textContent=aiSelLabel(af_ai.media);
+  aiRenderInputs();
   aiBuildMenus();aiRenderMenus();aiCostQuote();
 }
 
@@ -4240,6 +4396,7 @@ function aiIco(name,size,sw){
   size=size||16; sw=sw||1.6;
   const P={
     image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>',
+    film:'<rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="16" y2="20"/>',
     mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/>',
     wave:'<path d="M4 12h1.5M8 7v10M12 4v16M16 8v8M19.5 12h1"/>',
     search:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
@@ -4300,21 +4457,29 @@ function aiBuildMenus(){
       aiMenuRow(af_ai.model[af_ai.media]===m,"aiSetModel("+i+")",
         '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+m+'</div></div>')).join('');
   }
-  // setting menu
+  // setting menu — studio rejim (rasm/video/ovoz): capabilities-asosli; aks holda legacy
   const sm=document.getElementById('aiSettingMenu');
-  if(sm)sm.innerHTML=cfg.settings.map((v,i)=>
-    aiMenuRow(af_ai.setting[af_ai.media]===v,"aiSetSetting("+i+")",
-      '<div class="mr-main"><div class="mr-label">'+v+'</div></div>')).join('');
+  if(aiStudioMode(af_ai.media)){
+    aiBuildSettingsMenu(af_ai.media,aiCurrentModel());
+  }else if(sm){
+    sm.innerHTML=(cfg.settings||[]).map((v,i)=>
+      aiMenuRow(af_ai.setting[af_ai.media]===v,"aiSetSetting("+i+")",
+        '<div class="mr-main"><div class="mr-label">'+v+'</div></div>')).join('');
+  }
 }
 function aiApplyMedia(){
   const cfg=AI_CFG[af_ai.media];
+  const studio=aiStudioMode(af_ai.media);
   const set=(id,fn)=>{const el=document.getElementById(id);if(el)fn(el);};
   set('aiMediaIco',el=>el.innerHTML=aiIco(cfg.ico,16));
   set('aiMediaLabel',el=>el.textContent=cfg.label);
-  set('aiModelLabel',el=>el.textContent=af_ai.model[af_ai.media]);
-  set('aiSettingDd',el=>el.style.display=cfg.settings.length?'':'none');
-  if(cfg.settings.length)set('aiSettingLabel',el=>el.textContent=af_ai.setting[af_ai.media]);
+  set('aiModelLabel',el=>el.textContent=af_ai.model[af_ai.media]||'Model');
+  // Studio rejimlar (rasm/video/ovoz) har doim capabilities-sozlamasiga ega; qidiruv — yo'q
+  const hasSettings=studio?true:((cfg.settings&&cfg.settings.length)>0);
+  set('aiSettingDd',el=>el.style.display=hasSettings?'':'none');
+  if(hasSettings)set('aiSettingLabel',el=>el.textContent=studio?aiSelLabel(af_ai.media):af_ai.setting[af_ai.media]);
   set('aiPrompt',el=>el.placeholder=cfg.ph);
+  aiRenderInputs();
   aiSetGenBtn(false);
   aiBuildMenus();
 }
@@ -4457,16 +4622,20 @@ async function aiRefreshCredits(){
 /** Job holatini polling (3.5s, maks ~2.5 daqiqa). done/failed gen obyektini qaytaradi. */
 function aiPollJob(jobId,media,val){
   return new Promise(function(resolve){
-    let tries=0;const max=40;
+    // Video uzoq (OpenRouter async ~daqiqa) → uzunroq oyna: 130×4s ≈ 8.6 daq; aks holda 40×3.5s
+    const isVid=media==='video';
+    const intervalMs=isVid?4000:3500, max=isVid?130:40;
+    const runCap=isVid?'Video tayyorlanmoqda… (~daqiqa)':'Generatsiya qilinmoqda…';
+    let tries=0;
     const tick=async function(){
       tries++;
       try{
         const gen=await studioGet('/api/studio/gen/'+jobId);
         if(gen&&(gen.status==='done'||gen.status==='failed')){resolve(gen);return;}
-        aiShowGenBox(media,val,gen&&gen.status==='running'?'Generatsiya qilinmoqda…':'Navbatda…');
+        aiShowGenBox(media,val,gen&&gen.status==='running'?runCap:'Navbatda…');
       }catch(e){ /* vaqtinchalik tarmoq — davom etamiz */ }
       if(tries>=max){resolve({status:'failed',error:'Vaqt tugadi (timeout)'});return;}
-      af_ai._poll=setTimeout(tick,3500);
+      af_ai._poll=setTimeout(tick,intervalMs);
     };
     tick();
   });
@@ -4492,7 +4661,7 @@ async function aiRunStudioGen(media,val){
   }
   const asset=(gen.assets&&gen.assets[0])||null;
   if(!asset||!asset.url){aiRenderError(new Error('Natija topilmadi'));return;}
-  const ext=(String(asset.url).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||(media==='rasm'?'png':'mp3');
+  const ext=(String(asset.url).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||(media==='rasm'?'png':media==='video'?'mp4':'mp3');
   aiRenderResult(media,{url:asset.url,ext:ext},val);
   if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh(); // 1e-3
 }
@@ -4502,14 +4671,17 @@ function aiRenderResult(media,data,promptTxt){
   const area=document.getElementById('aiResultArea');if(!area)return;
   const url=data&&data.url;
   if(!url){aiRenderError(new Error('Natija URL topilmadi'));return;}
-  af_ai.lastUrl=url; af_ai.lastKind=(media==='rasm')?'image':'audio';
-  // Server real formatni qaytaradi (png/jpg/webp/mp3/wav) — ext mos bo'lsin (PNG xatosi yo'qoladi)
-  af_ai.lastExt=(data&&data.ext)?String(data.ext).replace(/^\./,''):(media==='rasm'?'png':'mp3');
-  if(media==='rasm'){
+  af_ai.lastUrl=url; af_ai.lastKind=(media==='rasm')?'image':(media==='video')?'video':'audio';
+  // Server real formatni qaytaradi (png/jpg/webp/mp4/mp3) — ext mos bo'lsin (PNG xatosi yo'qoladi)
+  af_ai.lastExt=(data&&data.ext)?String(data.ext).replace(/^\./,''):(media==='rasm'?'png':media==='video'?'mp4':'mp3');
+  const actions='<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
+    +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div>';
+  if(media==='video'){
+    area.innerHTML='<div class="ai-res"><div class="ai-res-card ai-res-vid">'
+      +'<video src="'+aiEsc(url)+'" controls playsinline preload="metadata"></video></div>'+actions+'</div>';
+  }else if(media==='rasm'){
     area.innerHTML='<div class="ai-res"><div class="ai-res-grid"><figure class="ai-res-card">'
-      +'<img src="'+aiEsc(url)+'" alt="AI natija"/></figure></div>'
-      +'<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
-      +aiIco('bolt',15)+' <span>AE‘ga import</span></button></div></div>';
+      +'<img src="'+aiEsc(url)+'" alt="AI natija"/></figure></div>'+actions+'</div>';
   }else{
     area.innerHTML='<div class="ai-res"><audio controls preload="metadata" src="'+aiEsc(url)+'" style="width:100%;margin-bottom:12px"></audio>'
       +'<div class="ai-res-actions"><button type="button" class="ai-gen" onclick="aiImportResult()">'
@@ -4581,7 +4753,7 @@ async function aiImportResult(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Import faqat After Effects ichida ishlaydi','info');return;}
   try{
     if(typeof showToast==='function')showToast('Yuklab olinmoqda…','info');
-    const ext='.'+((af_ai.lastExt||(kind==='image'?'png':'mp3')).replace(/^\./,''));
+    const ext='.'+((af_ai.lastExt||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,''));
     const tmp=await aiDownloadToTemp(url,ext);
     const raw=await new Promise(res=>csInterface.evalScript('importMediaFromPath('+JSON.stringify(tmp)+')',r=>res(r||'')));
     // host structured JSON {ok,addedToComp,compName,item} qaytaradi; eski "ok:" string'ga ham moslik
@@ -4624,6 +4796,7 @@ function aiRenderCards(){
     {label:'Ovoz yaratish',sub:'AI ovoz dublyaj',ico:'mic',act:"aiSetMedia('ovoz')"},
     {label:'SFX yaratish',sub:'Tovush effektlari',ico:'wave',act:"aiSetMedia('sfx')"},
     {label:'Rasm yaratish',sub:'Tekstura, fon, logo',ico:'image',act:"aiSetMedia('rasm')"},
+    {label:'Video yaratish',sub:'AI video sahna',ico:'film',act:"aiSetMedia('video')"},
     {label:'Shablon uchun to‘ldirish',sub:'Bo‘sh joylarni to‘ldiring',ico:'grid',act:"aiSetMedia('rasm')"},
     {label:'Promptga yordam',sub:'G‘oyani kengaytiring',ico:'spark',act:'aiImprovePrompt()'}
   ];

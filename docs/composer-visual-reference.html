@@ -1,0 +1,157 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Studio Gen Composer — vizual reference (tasdiqlangan)</title>
+<style>
+  :root{ --bg:#0a0a0b; --card:#161618; --card2:#1f1f22; --line:#2a2a2e; --txt:#e7e7ea; --mut:#8a8a90; --accent:#c8ff4d; --gen1:#e9eefc; --gen2:#aeb8d6; }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#141416,#08080a);color:var(--txt);
+       font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;padding:40px 20px}
+  h1{font-size:22px;text-align:center;margin:0 0 4px}
+  .sub{text-align:center;color:var(--mut);margin:0 0 36px;font-size:13px}
+  .mode-title{max-width:880px;margin:34px auto 12px;font-size:15px;font-weight:600;color:var(--accent)}
+  .mode-note{max-width:880px;margin:0 auto 12px;color:var(--mut);font-size:12.5px}
+  /* composer card */
+  .composer{max-width:880px;margin:0 auto;background:linear-gradient(180deg,#161618,#121214);
+    border:1px solid var(--line);border-radius:22px;padding:16px 18px 14px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .row{display:flex;align-items:center;gap:10px}
+  .row.top{justify-content:space-between;margin-bottom:14px}
+  .seg{display:flex;background:#000;border:1px solid var(--line);border-radius:999px;padding:3px}
+  .seg span{width:34px;height:26px;display:grid;place-items:center;border-radius:999px;color:var(--mut);font-size:13px}
+  .seg span.on{background:#2c2c30;color:#fff}
+  .chev{color:var(--mut)}
+  .inputs{display:flex;gap:10px;margin-bottom:14px}
+  .pluschip{width:42px;height:42px;border-radius:999px;background:var(--card2);display:grid;place-items:center;color:#fff;font-size:20px;border:1px solid var(--line)}
+  .refchip{display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:0 16px;height:42px;color:#d7d7db;font-size:13px}
+  .prompt{color:var(--mut);font-size:16px;padding:6px 2px 22px;display:flex;justify-content:space-between;align-items:flex-start}
+  .enh{color:var(--mut);font-size:13px}
+  .bar{display:flex;align-items:center;gap:0;border-top:1px solid var(--line);padding-top:14px}
+  .pill{display:flex;align-items:center;gap:7px;background:var(--card2);border:1px solid var(--line);border-radius:999px;
+    padding:7px 13px;color:#e7e7ea;font-size:13px;white-space:nowrap}
+  .pill .g{width:16px;height:16px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center;font-size:10px;font-weight:700}
+  .sep{width:1px;height:20px;background:var(--line);margin:0 12px}
+  .spacer{flex:1}
+  .gen{margin-left:12px;background:linear-gradient(180deg,var(--gen1),var(--gen2));color:#1a1a2a;font-weight:600;
+    border-radius:999px;padding:9px 22px;font-size:14px}
+  .newb{color:var(--accent);border:1px solid var(--accent);border-radius:6px;font-size:10px;padding:1px 6px;margin-left:7px}
+  .togg{width:34px;height:18px;border-radius:999px;background:#3a3a40;position:relative}
+  .togg::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:#aaa}
+  /* settings popover */
+  .settings{max-width:430px;margin:10px auto 0;background:#1a1a1d;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .settings h4{margin:10px 0 8px;font-size:12px;color:var(--mut);font-weight:600;text-transform:none}
+  .settings h4:first-child{margin-top:0}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chips b{font-weight:500;font-size:12.5px;color:#cfcfd4;background:#0f0f11;border:1px solid var(--line);border-radius:8px;padding:5px 11px}
+  .chips b.on{background:#2c2c30;color:#fff;border-color:#3a3a40}
+  .stoggle{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
+  .sub2{max-width:430px;margin:6px auto 0;color:var(--mut);font-size:11.5px;text-align:center}
+  .legend{max-width:880px;margin:40px auto 0;color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+
+<h1>Studio Gen Composer — vizual reference</h1>
+<p class="sub">Artlist toolkit jonli tahlilidan (Claude in Chrome, 2026-06-15) — har rejim/model tasdiqlangan. AssetFlow uchun namuna.</p>
+
+<!-- IMAGE -->
+<div class="mode-title">1) IMAGE — Nano Banana 2</div>
+<div class="composer">
+  <div class="row top"><div class="seg"><span class="on">▦</span><span>💬</span></div><div class="chev">⌄</div></div>
+  <div class="inputs"><div class="pluschip">+</div><div class="refchip">🖼 Image Reference</div></div>
+  <div class="prompt"><span>Describe the image you want to create</span><span class="enh">✦T</span></div>
+  <div class="bar">
+    <div class="pill">🖼 Image ▾</div><div class="sep"></div>
+    <div class="pill"><span class="g">G</span> Nano Banana 2 ▾</div><div class="sep"></div>
+    <div class="pill">⚙ 16:9 / 2K / 1 Images ▾</div><div class="sep"></div>
+    <div class="togg"></div><span style="color:var(--mut);font-size:13px;margin-left:8px">Unlimited<span class="newb">New</span></span>
+    <div class="spacer"></div><div class="gen">Generate</div>
+  </div>
+</div>
+<div class="settings">
+  <h4>Aspect Ratio</h4><div class="chips"><b>1:1</b><b>2:3</b><b>3:2</b><b>3:4</b><b class="on">16:9</b><b>4:3</b><b>4:5</b><b>5:4</b><b>9:16</b><b>21:9</b></div>
+  <h4>Quality</h4><div class="chips"><b>512px</b><b>1K</b><b class="on">2K</b><b>4K</b></div>
+  <h4>Number of Images</h4><div class="chips"><b class="on">1</b><b>2</b><b>3</b><b>4</b><b>5</b></div>
+</div>
+
+<!-- VIDEO KLING -->
+<div class="mode-title">2) VIDEO — Kling 3.0 <span style="color:var(--mut);font-weight:400">(input: Start/End Frame · 4K · 3–15s · Audio)</span></div>
+<div class="composer">
+  <div class="row top"><div class="seg"><span class="on">▦</span><span>💬</span></div><div class="chev">⌄</div></div>
+  <div class="inputs"><div class="pluschip">+</div><div class="refchip">🖼 Start Frame</div><div class="refchip">🖼 End Frame</div></div>
+  <div class="prompt"><span>Describe the video you want to create</span><span class="enh">✦T</span></div>
+  <div class="bar">
+    <div class="pill">▷ Video ▾</div><div class="sep"></div>
+    <div class="pill">⊘ Kling 3.0 ▾</div><div class="sep"></div>
+    <div class="pill">⚙ Auto / Pro / 5 Seconds ▾</div><div class="sep"></div>
+    <div class="togg"></div><span style="color:var(--mut);font-size:13px;margin-left:8px">Unlimited</span>
+    <div class="spacer"></div><div class="gen">Generate</div>
+  </div>
+</div>
+<div class="settings">
+  <h4>Aspect Ratio</h4><div class="chips"><b class="on">Auto</b><b>16:9</b><b>9:16</b><b>1:1</b></div>
+  <div class="stoggle"><span style="color:#cfcfd4">Audio ⓘ</span><div class="togg" style="background:#2c6"></div></div>
+  <h4>Duration</h4><div class="chips"><b>3</b><b>4</b><b class="on">5</b><b>6</b><b>7</b><b>8</b><b>9</b><b>10</b><b>…15 sec</b></div>
+  <h4>Resolution</h4><div class="chips"><b>720p</b><b class="on">1080p</b><b>4K</b></div>
+</div>
+
+<!-- VIDEO SEEDANCE -->
+<div class="mode-title">3) VIDEO — Seedance 2.0 <span style="color:var(--mut);font-weight:400">(Kling'dan FARQLI: 480p, 21:9, @mention)</span></div>
+<div class="composer">
+  <div class="row top"><div class="seg"><span class="on">▦</span><span>💬</span></div><div class="chev">⌄</div></div>
+  <div class="inputs"><div class="pluschip">+</div><div class="refchip" style="color:var(--mut)">Start&End Frame · Image Ref · Video Ref · Audio File</div></div>
+  <div class="prompt"><span>Use @ to mention your images, videos or audio (e.g., "hat from @img1", "motion from @vid1")</span><span class="enh">✦T</span></div>
+  <div class="bar">
+    <div class="pill">▷ Video ▾</div><div class="sep"></div>
+    <div class="pill">📊 Seedance 2.0 ▾</div><div class="sep"></div>
+    <div class="pill">⚙ Auto / 720p / 5 Seconds ▾</div><div class="sep"></div>
+    <div class="togg"></div><span style="color:var(--mut);font-size:13px;margin-left:8px">Unlimited<span class="newb">New</span></span>
+    <div class="spacer"></div><div class="gen">Generate</div>
+  </div>
+</div>
+<div class="settings">
+  <h4>Resolution</h4><div class="chips"><b>480p</b><b class="on">720p</b><b>1080p</b></div>
+  <h4>Aspect Ratio</h4><div class="chips"><b class="on">Auto</b><b>16:9</b><b>9:16</b><b>1:1</b><b>21:9</b></div>
+  <h4>Duration</h4><div class="chips"><b>4</b><b class="on">5</b><b>6</b><b>7</b><b>…</b></div>
+  <div class="stoggle"><span style="color:#cfcfd4">Audio ⓘ</span><div class="togg" style="background:#2c6"></div></div>
+</div>
+<div class="sub2">🔑 Bir xil "Video" rejimi, lekin Kling va Seedance settings'lari TURLI → composer model'ga qarab dinamik bo'lishi shart.</div>
+
+<!-- VOICEOVER -->
+<div class="mode-title">4) VOICEOVER — Eleven v3</div>
+<div class="composer">
+  <div class="row top"><div class="seg"><span class="on">▦</span><span>💬</span></div><div class="chev">⌄</div></div>
+  <div class="inputs"><div class="pluschip">+</div></div>
+  <div class="prompt"><span>Enter your text in English to create a voiceover</span></div>
+  <div class="bar">
+    <div class="pill">🎙 Voiceover ▾</div><div class="sep"></div>
+    <div class="pill">⏸ Eleven v3 ▾</div><div class="sep"></div>
+    <div class="pill">🟠 Suburb ▾</div><div class="sep"></div>
+    <div class="pill">⚙ English / American / No Effect ▾</div>
+    <div class="spacer"></div><div class="gen">Generate</div>
+  </div>
+</div>
+<div class="sub2">Unlimited toggle YO'Q. Maxsus: voice persona (avatar) + Language / Accent / Effect.</div>
+
+<!-- MUSIC -->
+<div class="mode-title">5) MUSIC — Lyria 3 Pro</div>
+<div class="composer">
+  <div class="row top"><div class="seg"><span class="on">▦</span><span>💬</span></div><div class="chev">⌄</div></div>
+  <div class="inputs"><div class="pluschip">+</div></div>
+  <div class="prompt"><span>Describe the song you want to create. Add details like instruments or vocal style.</span><span class="enh">≣✦</span></div>
+  <div class="bar">
+    <div class="pill">♪ Music ▾</div><div class="sep"></div>
+    <div class="pill"><span class="g">G</span> Lyria 3 Pro ▾</div><div class="sep"></div>
+    <div class="pill">♫ Auto Lyrics ▾</div><div class="sep"></div>
+    <div class="pill">⚙ Auto Duration / Auto Genre / Auto Mood ▾</div>
+    <div class="spacer"></div><div class="gen">Generate</div>
+  </div>
+</div>
+<div class="settings">
+  <h4>Duration</h4><div class="chips"><b class="on">Auto</b><b>1 min</b><b>1:30 min</b><b>…</b></div>
+  <div class="stoggle"><span style="color:#cfcfd4">Artlist Sound ⓘ</span><div class="togg" style="background:#2c6"></div></div>
+  <h4>Boshqalar (submenu ›)</h4><div class="chips"><b>Genre ›</b><b>Mood ›</b><b>Theme ›</b><b>Tempo ›</b></div>
+  <h4>Lyrics</h4><div class="chips"><b class="on">Auto Lyrics</b><b>Custom</b><b>Instrumental</b></div>
+</div>
+
+<div class="legend">
+  <b>Izoh:</b> Bu mockup AssetFlow uchun namuna — Artlist toolkit jonli holatidan aniq olingan (har settings dropdown ochilib tekshirilgan).
+  Brend va matnlar AssetFlow'ga moslashtiriladi (o'zbekcha UI). "Standard/Agent" va "Unlimited" toggle'lar AssetFlow'da shart emas (bizда kredit modeli).
+  To'liq schema + Claude Code prompti: <code>docs/STUDIO-GEN-composer-v2.md</code>.
+</div>
