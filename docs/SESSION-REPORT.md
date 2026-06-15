@@ -1,27 +1,21 @@
-# SESSION REPORT — 2026-06-15 — AI kredit boshqaruvi (admin) + ADMIN cheksiz ✅
+# SESSION REPORT — 2026-06-15 — AI Tools Bosqich 2: TTS (ovoz) tuzatish ✅
 
-"Kredit yetarli emas" — ichki aiCredits (FREE 50/oy) tugagan, OpenRouter EMAS (gate'gacha yetdi ✅).
+Reja: docs/REJA-AI-TOOLS-100.md (Bosqich 2). Jonli tasdiq: OpenRouter /audio/speech RAW bayt;
+"openai/gpt-4o-mini-tts-2025-12-15" REAL; eski gpt-4o-audio-preview ro'yxatda YO'Q.
 
 ## Backend
-- **`consumeAiCredits` — ADMIN bypass**: `profile.user.role==="ADMIN"` → cheksiz, kredit kamaymaydi
-  (ega erkin test qiladi).
-- **`mapSubscriberRow`** — `aiCredits` + `aiCreditsMonthly` qaytaradi (admin UI ko'rsatadi).
-- **PATCH /admin/plugin-subscribers/:userId** — `aiCredits` maydoni qo'shildi (set). Birga
-  `aiCreditsResetAt=now` (shu oy avtomatik reset qiymatni qayta yozmasin).
+- **openrouter.ts orSpeech()** QAYTA YOZILDI: POST /audio/speech (chat/completions EMAS),
+  body {model,input,voice,response_format:"mp3"}, javob RAW `Buffer.from(arrayBuffer())` — JSON emas.
+- **gen-models.ts** TTS key → "openai/gpt-4o-mini-tts-2025-12-15", label "GPT-4o Mini TTS".
 
-## Frontend (admin-subscribers.js)
-- Obunachi detalida **"⚡ AI kredit (N)"** tugmasi → `openAiCreditsSub` modali (yangi qiymat input +
-  "Free 50"/"Pro 1000" tezkor) → `doAiCreditsSub` → `patchPluginSubscriber({aiCredits})`.
-
-## Demo (test davom etsin)
-`user@assetflow.uz` aiCredits → **1000** (SQL update). API tasdiq: `/studio/credits` = 1000.
+## Plugin [A] voice param fix (AssetFlow_Plugin.html)
+- AI_CFG.ovoz.settings → real voice'lar: Alloy/Echo/Fable/Onyx/Nova/Shimmer (default Alloy).
+- aiGenParams('ovoz') → {voice:<tanlangan>.toLowerCase()} (avval {lang:'en'} edi → processor params.voice
+  o'qiydi, shuning uchun ovoz har doim alloy edi).
+- aiSetSetting: voice o'zgarsa quote=null + aiCostQuote() (imzo hash mos kelsin, BAD_QUOTE bo'lmasin).
 
 ## Tekshirildi
-- `tsc -p apps/api` EXIT 0 ✅
-- Smoke: demo /studio/credits=1000; admin PATCH aiCredits=777→200 (item.aiCredits:777);
-  admin o'zi consume'da bypass (cheksiz) ✅
-- `node --check` admin-subscribers.js TOZA ✅; `studio:sync` (2x) artefaktlar izchil ✅
+- `tsc -p apps/api` EXIT 0 ✅ · plugin inline JS node --check (2 blok, 0 xato) ✅ · install-cep ✅
 
 ## Holat
-Commit foydalanuvchi so'raganda. Endi admin har obunachiga AI kredit bera oladi, ADMIN o'zi
-cheksiz — OpenRouter kaliti qo'shilgach generatsiya testi kreditdan to'siqsiz davom etadi.
+COMMIT QILINMADI. Keyingi: Bosqich 3 (video gen UI) — tasdiq kutilmoqda.

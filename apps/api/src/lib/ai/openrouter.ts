@@ -124,27 +124,22 @@ export async function orImageEdit(
   return { ok: true, data: buf };
 }
 
-// ── Speech (TTS) — audio output modality ────────────────────────────────────
+// ── Speech (TTS) — POST /audio/speech (OpenAI-mos, RAW bayt qaytaradi, JSON EMAS) ──
 export async function orSpeech(
   model: string,
   text: string,
   voice = "alloy"
 ): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const res = await orPost("/chat/completions", {
+  const res = await orPost("/audio/speech", {
     model,
-    modalities: ["audio", "text"],
-    audio: { voice, format: "mp3" },
-    messages: [{ role: "user", content: text }],
+    input: text,
+    voice,
+    response_format: "mp3",
   });
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
-  const j = (await res.json()) as {
-    choices?: { message?: { audio?: { data?: string } } }[];
-  };
-  const b64 = j?.choices?.[0]?.message?.audio?.data;
-  if (!b64) return { ok: false, error: "Javobda audio topilmadi" };
-  const buf = dataUrlToBuffer(b64);
-  if (!buf) return { ok: false, error: "Audio dekodlanmadi" };
+  const buf = Buffer.from(await res.arrayBuffer()); // RAW audio — JSON EMAS
+  if (!buf.length) return { ok: false, error: "Bo'sh audio" };
   return { ok: true, data: buf };
 }
 
