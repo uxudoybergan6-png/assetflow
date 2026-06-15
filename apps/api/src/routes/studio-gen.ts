@@ -31,6 +31,15 @@ studioGenRouter.get("/credits", async (req: Request, res: Response) => {
   res.json({ aiCredits: profile.aiCredits, plan: profile.plan.toLowerCase() });
 });
 
+/** GET /gen/health — AI sozlamalari holati (faqat boolean — kalitlar QAYTARILMAYDI). */
+studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
+  res.json({
+    openrouter: isOpenRouterConfigured(),
+    s3: isS3Configured(),
+    freepik: Boolean(process.env.FREEPIK_API_KEY),
+  });
+});
+
 /** POST /gen/sessions — yangi ish maydoni (session). */
 const sessionSchema = z.object({
   title: z.string().trim().max(200).optional(),
