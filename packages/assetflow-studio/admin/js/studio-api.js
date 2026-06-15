@@ -22,9 +22,7 @@ const StudioApi = (() => {
     const t = token();
     if (t) headers.Authorization = `Bearer ${t}`;
 
-    let res;
-    try {
-      res = await fetch(`${baseUrl()}${path}`, {
+    const fetchOpts = {
       ...options,
       headers,
       body:
@@ -33,13 +31,27 @@ const StudioApi = (() => {
           : options.body
             ? JSON.stringify(options.body)
             : undefined,
-      });
-    } catch (e) {
+    };
+    // Tarmoq xatosida qayta urinish — Render free-tarif "cold start" (uyqudan uyg'onish)
+    // birinchi so'rovni uzishi mumkin. 3 urinish (1.5s, 3s backoff). Network-throw = server
+    // so'rovni qayta ishlamadi → POST takrori xavfsiz.
+    let res, lastErr;
+    for (let a = 0; a < 3; a++) {
+      try {
+        res = await fetch(`${baseUrl()}${path}`, fetchOpts);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (a < 2) await new Promise((r) => setTimeout(r, 1500 * (a + 1)));
+      }
+    }
+    if (lastErr) {
       const isLocal = /localhost|127\.0\.0\.1/.test(baseUrl());
       throw new Error(
         isLocal
           ? "API ishlamayapti. Terminalda: npm run dev:api (port 4000)"
-          : "Server bilan aloqa uzildi — internetni tekshirib qayta urinib ko'ring"
+          : "Server bilan aloqa uzildi — server uyqudan uyg'onayotgan bo'lishi mumkin, biroz kutib qayta urining"
       );
     }
 
