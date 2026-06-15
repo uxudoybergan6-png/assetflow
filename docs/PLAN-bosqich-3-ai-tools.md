@@ -7,6 +7,25 @@ AssetFlow poydevori (PluginToken auth, FREE/PRO subscription, R2, SSE) ustiga AI
 
 ---
 
+## 🔄 PROVAYDER QARORI (2026-06-14): Cloudflare Workers AI
+
+3 alohida provayder (OpenAI/ElevenLabs/fal.ai) O'RNIGA → bitta **Cloudflare Workers AI**.
+Sabab: bitta token, R2/Pages bilan bir ekosistema, bepul tier (~10k neuron/kun), 163 model.
+
+- **API:** `POST https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{model}`
+  + `Authorization: Bearer {CF_AI_TOKEN}`.
+- **Env:** `CF_ACCOUNT_ID` (888556c670b32b2345e16fcd1682e26f), `CF_AI_TOKEN` (Workers AI ruxsatli).
+- **Model mapping** (aniq ID dashboard "Copy ID" dan):
+  - Rasm → Text-to-Image (Flux `@cf/black-forest-labs/flux-1-schnell` yoki SDXL)
+  - Ovoz → Text-to-Speech (grok-tts / MeloTTS)
+  - Qidiruv → Embeddings (`@cf/baai/bge-m3` ko'p tilli)
+  - Prompt yordam / auto-tag → Text Generation (Llama)
+  - SFX → Audio model (dashboard Task Type=Audio bilan tekshirish)
+- Bitta `lib/ai/workers-ai.ts` integratsiya; har tool shu funksiyani chaqiradi.
+- Natija R2'ga → signed/public URL → AE import (mavjud pattern).
+
+---
+
 ## ⚠️ HANDOFF.md bilan solishtiruv + strategiya qarori (2026-06-14)
 
 **Strategiya: B — Differensiatsiya** (qaror muhrlangan, `docs/ANALIZ-higgsfield-ai-tools.md`). Higgsfield bilan xom generatsiyada bellashilmaydi; uning naqshlari (job/SSE, cost-estimate, timeline live-link) AssetFlow'ning katalog ustunligi bilan birlashtiriladi.

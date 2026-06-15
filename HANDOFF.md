@@ -2,6 +2,56 @@
 
 Bu hujjat loyiha joylashuvi, arxitektura va **hozirgacha qilingan ishlar**ni qisqacha beradi. Claude Code shu repoda davom etishi mumkin.
 
+---
+
+# 🆕 Sessiya 2026-06-14/15 — Dizayn + AI Studio Gen
+
+## Bajarilgan
+- **0-bosqich:** Stripe bypass yopildi (`NODE_ENV` gate); mehmon yuklab olish guard + modal.
+- **Obunachi boshqaruvi:** qator amallar (reja/blok/chiqarish), per-user limit override (migration),
+  AI kredit boshqaruvi (admin set/reset), **ADMIN aiCredits CHEKSIZ bypass**.
+- **Render AUTO-DEPLOY yoqildi** (ilgari Off edi).
+- **Bandwidth:** thumb/preview/sahna to'g'ridan R2 CDN (`CDN_BASE_URL`) — Render egress 0;
+  preview 720p transcode (250MB→~5MB); pack.zip saqlanadi (Variant 1).
+- **Contributor Overview** egri-qo'shtirnoq SyntaxError tuzatildi.
+- **Dizayn:** Claude Design (`docs/design-reference/` Standart+LiquidGlass) → plagin to'liq re-skin
+  (AI Tools, Katalog hero-karusel+ixcham filtr, Sidebar). **3 TEMA tizimi**
+  (`tokens.css [data-theme]` standart/liquid-glass/light-glass) + almashtirgich.
+  Build versiya yorlig'i (`install-cep` stamp).
+- **AI Tools:** Workers AI backend (image/voice/search) → keyin **OPENROUTER**ga ko'chirildi
+  (rasm/edit/video Kling-Veo/ovoz/embeddings unified, `lib/ai/openrouter.ts`).
+- **STUDIO GEN arxitektura** (Artlist namunasi, `docs/STUDIO-GEN-BLUEPRINT.md` + `docs/REJA-studio-gen.md`):
+  Prisma `GenSession`/`Generation`/`GenAsset`; `/api/studio/gen` endpointlar (sessions/models/
+  cost-quote **(IMZOLANGAN JWT)**/gen (job)/status/enhance/credits); `gen-processor` (image/edit sync,
+  video async poll, speech) → R2 → GenAsset; UI **1e-1** (model katalog+cost-quote), **1e-2**
+  (generate+polling+import).
+- **Import mustahkamlash:** magic-byte format aniqlash, `canImportAs(FOOTAGE)`, comp'ga layer,
+  host.jsx **ATOMIK evalFile+call** (engine eski-versiya muammosi), Timeline reference
+  (`getActiveTimelineVideoReference`).
+
+## ENV (Render'ga kerak)
+- **`OPENROUTER_API_KEY`** (yangi, asosiy AI provayder), `CF_ACCOUNT_ID`/`CF_AI_TOKEN` (Workers AI,
+  qidiruv embeddinglari hali shunda), `CDN_BASE_URL` (bandwidth fix), `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false`.
+
+## OCHIQ / KEYINGI
+- **OpenRouter HAQIQIY generatsiya testi qilinmadi** (kalit Render'da bo'lishi + model ID tasdiqlash
+  kerak — ba'zi ID docs namunasidan: `gemini-flash-image`, `gpt-4o-audio`, `kling`/`veo`;
+  `/gen/models` yoki dashboard'dan tekshirilsin, `gen-models.ts`'da bir joyda).
+- **1e-3** (generatsiya tarixi grid + session sidebar) — Batch 1 oxirgi sub-qadam, **qilinmagan**.
+- Qidiruv embeddinglari hali Workers AI'da (keyin OpenRouter'ga).
+- Test: ADMIN hisob (`admin@assetflow.uz`) cheksiz AI kredit — generatsiya testi shu bilan.
+
+## MUHIM SABOQLAR (kelajak uchun)
+- **CEP ochiq panel HTML'ni hot-reload QILMAYDI** — HTML o'zgarishidan keyin `install-cep` +
+  AE to'liq Cmd+Q→qayta ochish. Build yorlig'i bilan tasdiqlanadi.
+- **host.jsx** manifest `ScriptPath` AE start'da bir marta yuklanadi → yangi funksiyalar uchun
+  **ATOMIK evalScript** (`$.evalFile`+call bitta blokda) yoki AE restart.
+- Studio manba: `packages/assetflow-studio/js/` (root), keyin `studio:sync`.
+- `install-cep` AE versiyani avto-aniqlaydi (2026).
+- **Imzolangan cost-quote:** kredit narxini klientga ishonmang.
+
+---
+
 ## Loyiha joyi
 
 ```text
@@ -127,6 +177,17 @@ Pack fayllar: `apps/api/uploads/<templateId>/pack` (va `thumb`, `preview`).
 **Claude Code qo‘shgan (keyingi to‘lqin):** `hasPack:false` UI (badge, stripe, disabled import); pack hero video play; `GET /api/plugin/featured`; `rate-limit.ts` + `GET /api/admin/plugin-analytics`.
 
 **Hali zaif / tekshirish kerak:** to‘liq Stripe ↔ Pro production; rate limit productionda Redis; mavjud TS xatolar (`contributor.ts` va boshqalar) alohida.
+
+## Bandwidth / storage qarorlari (2026-06-14)
+
+- **Render egress 0:** katalog `thumbUrl`/`previewUrl`/sahna URL'lari R2 sozlangan bo'lsa
+  to'g'ridan `CDN_BASE_URL` (R2 public) qaytaradi — Render orqali stream EMAS (`catalog-map.ts`).
+  Pack DOIM API gate → 302 signed R2. Yangi upload'larga uzoq immutable Cache-Control.
+- **Preview transcode:** `optimize-preview.ts` endi 720p H.264 CRF28 30fps ovozsiz (250MB→~5MB),
+  xatoda faststart fallback.
+- **QAROR — pack.zip dublikati:** **Variant 1** — pack.zip DOIM saqlanadi, stream-zip qo'shilmaydi
+  (egress'ni asraydi; R2 storage arzon). Packlar aralash: A=mogrt-only (dublikat), B=.aep+footage
+  (yagona nusxa). Batafsil: `docs/REJA-pack-dedup.md`.
 
 ## Hozirgacha tuzatilgan / qo‘shilgan (Cursor sessiyasi)
 
