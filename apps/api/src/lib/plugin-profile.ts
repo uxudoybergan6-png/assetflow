@@ -235,6 +235,11 @@ export async function consumeAiCredits(userId: string, cost: number) {
     return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
   }
 
+  // ADMIN — cheksiz (ega erkin test qiladi); kredit kamaymaydi.
+  if (profile.user.role === "ADMIN") {
+    return { ok: true as const, remaining: profile.aiCredits };
+  }
+
   // Oylik reset — balansni o'qishdan OLDIN
   const start = monthStart();
   let available = profile.aiCredits;
@@ -316,5 +321,7 @@ export function mapSubscriberRow(
     unlimitedDownloads: limits.unlimitedDownloads,
     downloadLimitOverride: profile.downloadLimitOverride ?? null,
     importLimitOverride: profile.importLimitOverride ?? null,
+    aiCredits: profile.aiCredits,
+    aiCreditsMonthly: aiMonthlyAllotment(profile.plan),
   };
 }

@@ -259,6 +259,7 @@ const subPatchSchema = z.object({
   plan: z.enum(["free", "pro"]).optional(),
   downloadLimitOverride: z.number().int().nonnegative().nullable().optional(),
   importLimitOverride: z.number().int().nonnegative().nullable().optional(),
+  aiCredits: z.number().int().nonnegative().optional(),
 });
 
 adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
@@ -275,6 +276,8 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
     plan?: PluginPlanTier;
     downloadLimitOverride?: number | null;
     importLimitOverride?: number | null;
+    aiCredits?: number;
+    aiCreditsResetAt?: Date;
   } = {};
 
   if (parsed.data.status) {
@@ -294,6 +297,12 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   }
   if ("importLimitOverride" in parsed.data) {
     data.importLimitOverride = parsed.data.importLimitOverride ?? null;
+  }
+  if (typeof parsed.data.aiCredits === "number") {
+    // Admin AI kreditni belgilaydi; reset sanasini hozirgi oyga qo'yamiz —
+    // shu oy ichida avtomatik oylik reset bu qiymatni qayta yozib yubormasin.
+    data.aiCredits = parsed.data.aiCredits;
+    data.aiCreditsResetAt = new Date();
   }
 
   await prisma.pluginProfile.update({ where: { userId }, data });

@@ -256,6 +256,7 @@ VIEWS["subscriber-detail"] = function (id) {
           ${removed ? `<button class="btn btn-success btn-sm" onclick="restoreSub('${s.id}')">${ic("refresh")} Qayta tiklash</button>` : ""}
           ${!removed ? `<button class="btn ${normalizePlanLabel(s.plan) === "Pro" ? "btn-ghost" : "btn-primary"} btn-sm" onclick="openTogglePlanSub('${s.id}')">${ic(normalizePlanLabel(s.plan) === "Pro" ? "chevD" : "star")} ${normalizePlanLabel(s.plan) === "Pro" ? "Free" : "Pro"} qilish</button>` : ""}
           <button class="btn btn-ghost btn-sm" onclick="openMessageSub('${s.id}')">${ic("message")} Xabar</button>
+          ${!removed ? `<button class="btn btn-ghost btn-sm" onclick="openAiCreditsSub('${s.id}')">⚡ AI kredit (${typeof s.aiCredits === "number" ? s.aiCredits : "—"})</button>` : ""}
         </div>
       </div>
     </div>
@@ -402,6 +403,43 @@ async function doLimitOverrideSub(id, reset) {
     await patchSubOnServer(id, body);
     closeModal();
     toast("Saqlandi", reset ? "Limitlar reja defaultiga qaytarildi" : "Shaxsiy limit yangilandi", "success");
+    route(CURRENT === "subscriber-detail" ? "subscriber-detail" : "subscribers", id);
+  } catch (e) {
+    toast("Xato", e.message || "API", "danger");
+  }
+}
+
+/** AI kredit berish/reset (admin) — PATCH /plugin-subscribers/:id { aiCredits }. */
+function openAiCreditsSub(id) {
+  const s = sById(id);
+  if (!s) return;
+  const cur = typeof s.aiCredits === "number" ? s.aiCredits : 0;
+  openModal(`
+    <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">⚡</div>
+      <div><h3>AI kredit</h3><p>${s.name} — joriy: <b>${cur}</b> kredit</p></div></div>
+    <div class="modal-body col gap-12">
+      <div class="info-banner">${ic("alert")}<span>AI generatsiya (rasm/video/ovoz) shu kreditdan sarflanadi. ADMIN rol cheksiz.</span></div>
+      <div class="field"><label>Yangi qiymat</label><input class="input" id="subAiCredits" type="number" min="0" value="${cur}"></div>
+      <div class="row gap-8">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('subAiCredits').value=50">Free (50)</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('subAiCredits').value=1000">Pro (1000)</button>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+      <button class="btn btn-primary" onclick="doAiCreditsSub('${id}')">Saqlash</button></div>`);
+}
+
+async function doAiCreditsSub(id) {
+  const raw = document.getElementById("subAiCredits")?.value.trim();
+  const n = raw != null && raw !== "" ? parseInt(raw, 10) : NaN;
+  if (isNaN(n) || n < 0) {
+    toast("Xato", "Musbat son kiriting", "danger");
+    return;
+  }
+  try {
+    await patchSubOnServer(id, { aiCredits: n });
+    closeModal();
+    toast("Saqlandi", `AI kredit ${n} ga o'rnatildi`, "success");
     route(CURRENT === "subscriber-detail" ? "subscriber-detail" : "subscribers", id);
   } catch (e) {
     toast("Xato", e.message || "API", "danger");
