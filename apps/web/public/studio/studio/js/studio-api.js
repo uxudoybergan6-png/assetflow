@@ -117,61 +117,53 @@ const StudioApi = (() => {
    * Fayllarni XHR bilan yuklaydi — fetch'dan farqli, upload progress beradi.
    * onProgress(yuklangan, jami) baytlarda chaqiriladi.
    */
-  function uploadAssets(id, files, onProgress) {
-    // Bitta urinish. tryNo<2 da tarmoq/5xx uzilishida {__retry:true} bilan rad etadi.
-    const attempt = (tryNo) =>
-      new Promise((resolve, reject) => {
-        const fd = new FormData();
-        if (files.thumb) fd.append("thumb", files.thumb);
-        if (files.preview) fd.append("preview", files.preview);
-        if (files.pack) fd.append("pack", files.pack);
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${baseUrl()}/api/contributor/templates/${id}/assets`);
-        const t = token();
-        if (t) xhr.setRequestHeader("Authorization", `Bearer ${t}`);
-        xhr.upload.onprogress = (ev) => {
-          if (onProgress && ev.lengthComputable) onProgress(ev.loaded, ev.total);
-        };
-        xhr.onload = () => {
-          let data = null;
-          try {
-            data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-          } catch {
-            data = null;
-          }
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(data);
-            return;
-          }
-          // Server restart/yuklanish (502/503/504) → qayta urinish mumkin
-          if ((xhr.status === 502 || xhr.status === 503 || xhr.status === 504) && tryNo < 2) {
-            reject({ __retry: true });
-            return;
-          }
-          const friendly =
-            xhr.status === 413
-              ? "Fayl juda katta — maksimal 3 GB"
-              : xhr.status === 401
-                ? "Sessiya tugagan — qayta tizimga kiring"
-                : xhr.status === 502 || xhr.status === 503 || xhr.status === 504
-                  ? "Server javob bermadi — bir ozdan so'ng qayta urinib ko'ring"
-                  : `Yuklash xatosi (HTTP ${xhr.status})`;
-          const err = new Error((data && (data.error || data.message)) || friendly);
-          err.status = xhr.status;
-          err.data = data;
-          reject(err);
-        };
-        // Tarmoq uzilishi (ko'pincha server OOM-restart) → qayta urinish mumkin
-        xhr.onerror = () => {
-          if (tryNo < 2) reject({ __retry: true });
-          else reject(new Error("Yuklash uzilib qoldi — internetni tekshirib qayta urinib ko'ring"));
-        };
-        xhr.send(fd);
-      });
-    // Uzilishda 2 marta qayta jo'natadi (5s, 10s) — Render restart'дан tiklanadi.
+  // Bitta XHR yuklash (PUT R2 yoki POST server). opts: {method,url,body,headers,onProg}.
+  // 502/503/504/tarmoq uzilishida {__retry:true} bilan rad etadi (tashqi run() qayta uradi).
+  function xhrSend(opts, tryNo) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(opts.method, opts.url);
+      const h = opts.headers || {};
+      Object.keys(h).forEach((k) => xhr.setRequestHeader(k, h[k]));
+      xhr.upload.onprogress = (ev) => {
+        if (opts.onProg && ev.lengthComputable) opts.onProg(ev.loaded);
+      };
+      xhr.onload = () => {
+        let data = null;
+        try {
+          data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+        } catch {
+          data = null;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(data);
+          return;
+        }
+        if ((xhr.status === 502 || xhr.status === 503 || xhr.status === 504) && tryNo < 2) {
+          reject({ __retry: true });
+          return;
+        }
+        const friendly =
+          xhr.status === 413
+            ? "Fayl juda katta — maksimal 3 GB"
+            : xhr.status === 401
+              ? "Sessiya tugagan — qayta tizimga kiring"
+              : `Yuklash xatosi (HTTP ${xhr.status})`;
+        const err = new Error((data && (data.error || data.message)) || friendly);
+        err.status = xhr.status;
+        reject(err);
+      };
+      xhr.onerror = () => {
+        if (tryNo < 2) reject({ __retry: true });
+        else reject(new Error("Yuklash uzilib qoldi — internetni tekshirib qayta urinib ko'ring"));
+      };
+      xhr.send(opts.body);
+    });
+  }
+  function xhrWithRetry(opts) {
     const run = async (tryNo) => {
       try {
-        return await attempt(tryNo);
+        return await xhrSend(opts, tryNo);
       } catch (e) {
         if (e && e.__retry && tryNo < 2) {
           await new Promise((r) => setTimeout(r, 5000 * (tryNo + 1)));
@@ -181,6 +173,63 @@ const StudioApi = (() => {
       }
     };
     return run(0);
+  }
+
+  /**
+   * Fayllarni yuklaydi. thumb+preview → TO'G'RIDAN R2 (presigned PUT, Render chetda — OOM yo'q).
+   * pack → server (/assets) — sahna ekstraktsiyasi uchun. onProgress(jamiYuklangan) baytlarda
+   * (thumb→preview→pack tartibida kumulyativ — orderedUploadFiles bilan mos).
+   */
+  async function uploadAssets(id, files, onProgress) {
+    const order = ["thumb", "preview", "pack"].filter((k) => files[k]);
+    const direct = order.filter((k) => k === "thumb" || k === "preview");
+    let urls = [];
+    if (direct.length) {
+      const resp = await request(`/api/contributor/templates/${id}/upload-url`, {
+        method: "POST",
+        body: {
+          files: direct.map((k) => ({
+            kind: k,
+            fileName: files[k].name,
+            contentType: files[k].type || "application/octet-stream",
+          })),
+        },
+      });
+      urls = (resp && resp.uploads) || [];
+    }
+    let base = 0; // tugagan fayllar yig'indisi (kumulyativ progress uchun)
+    for (const k of order) {
+      const onProg = (loaded) => {
+        if (onProgress) onProgress(base + loaded);
+      };
+      if (k === "thumb" || k === "preview") {
+        const u = urls.find((x) => x.kind === k);
+        if (!u) throw new Error(`${k} uchun yuklash URL olinmadi`);
+        // R2 presigned PUT — FAQAT Content-Type (Authorization YO'Q, imzo buzilmasin)
+        await xhrWithRetry({
+          method: "PUT",
+          url: u.url,
+          body: files[k],
+          headers: { "Content-Type": u.contentType },
+          onProg,
+        });
+      } else {
+        // pack → server (faqat pack maydoni)
+        const fd = new FormData();
+        fd.append("pack", files[k]);
+        const t = token();
+        await xhrWithRetry({
+          method: "POST",
+          url: `${baseUrl()}/api/contributor/templates/${id}/assets`,
+          body: fd,
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          onProg,
+        });
+      }
+      base += files[k].size;
+      if (onProgress) onProgress(base);
+    }
+    return { ok: true };
   }
 
   async function listTemplates(query = "") {

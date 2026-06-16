@@ -34,6 +34,7 @@ import {
   uploadFileToS3,
   templateAssetFlags,
   s3UploadKeyForFile,
+  getSignedUploadUrl,
   deleteTemplateAssets,
   resolveS3AssetKey,
   downloadS3ToFile,
@@ -697,6 +698,65 @@ function handleAssetsUpload(
     fail(400, "Fayl yuklashda xato — qayta urinib ko'ring");
   });
 }
+
+/**
+ * POST /templates/:id/upload-url — thumb/preview uchun presigned PUT URL (to'g'ridan R2).
+ * Brauzer faylni R2'ga to'g'ridan yuklaydi → Render fayl baytlariga tegmaydi (OOM oldini olish).
+ * Pack alohida /assets orqali (server sahna ekstraktsiyasi qiladi).
+ */
+const uploadUrlSchema = z.object({
+  files: z
+    .array(
+      z.object({
+        kind: z.enum(["thumb", "preview"]),
+        fileName: z.string().min(1).max(300),
+        contentType: z.string().min(1).max(120),
+      })
+    )
+    .min(1)
+    .max(2),
+});
+contributorRouter.post(
+  "/templates/:id/upload-url",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Shablon topilmadi" });
+      return;
+    }
+    if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
+      res.status(403).json({ error: "Ruxsat yo‘q" });
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Bulut xotirasi sozlanmagan" });
+      return;
+    }
+    const p = uploadUrlSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+      return;
+    }
+    const uploads = [];
+    for (const f of p.data.files) {
+      const ext = path.extname(f.fileName).toLowerCase();
+      const allowed = ASSET_UPLOAD_EXTS[f.kind] || [];
+      if (!allowed.includes(ext)) {
+        res.status(400).json({
+          error: `"${f.kind}" uchun ${ext || "fayl"} qabul qilinmaydi — ruxsat: ${allowed.join(", ")}`,
+        });
+        return;
+      }
+      const key = s3UploadKeyForFile(id, f.kind, f.fileName);
+      const url = await getSignedUploadUrl(key, f.contentType, 1800);
+      uploads.push({ kind: f.kind, key, url, contentType: f.contentType });
+    }
+    res.json({ uploads });
+  }
+);
 
 contributorRouter.post(
   "/templates/:id/assets",
