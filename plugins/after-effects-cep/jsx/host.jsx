@@ -1957,6 +1957,50 @@ function getActiveTimelineVideoReference() {
   }
 }
 
+// Project panelda TANLANGAN element(lar)dan birinchi footage (rasm/video) manba fayl
+// yo'lini reference sifatida qaytaradi. getActiveTimelineVideoReference bilan bir xil
+// shaklda (mediaPath/mediaType) — frontend ikkala manbani bir xil ishlaydi.
+function getSelectedProjectReference() {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    var sel = app.project.selection;
+    if (!sel || sel.length === 0) return afFail("Project panelda element tanlanmagan — footage (rasm/video) tanlang");
+
+    var firstReason = "Tanlangan element footage emas";
+    for (var i = 0; i < sel.length; i++) {
+      var it = sel[i];
+      if (!(it instanceof FootageItem)) {
+        if (i === 0) firstReason = (it instanceof CompItem)
+          ? "Tanlangan element kompozitsiya — footage (rasm/video) tanlang"
+          : "Tanlangan element footage emas (papka?)";
+        continue;
+      }
+      var mediaPath = afLayerSourcePath(it);
+      if (!mediaPath) {
+        if (i === 0) firstReason = "Footage faylsiz (solid/placeholder) — disk fayli kerak";
+        continue;
+      }
+      var hasVideo = false, hasAudio = false;
+      try { hasVideo = it.hasVideo === true; } catch (e) {}
+      try { hasAudio = it.hasAudio === true; } catch (e) {}
+      var mt = hasVideo ? "video" : (hasAudio ? "audio" : "other");
+      var nm = it.name || "Footage";
+      var kind = (hasAudio && !hasVideo) ? "audio" : "footage";
+      // QO'LDA JSON (timeline funksiyasi bilan bir xil sabab)
+      return '{"ok":true,"name":' + afJStr(nm) +
+             ',"mediaPath":' + afJStr(mediaPath) +
+             ',"mediaType":' + afJStr(mt) +
+             ',"kind":' + afJStr(kind) +
+             ',"hasVideo":' + (hasVideo ? "true" : "false") +
+             ',"hasAudio":' + (hasAudio ? "true" : "false") +
+             ',"source":"project"}';
+    }
+    return afFail(firstReason);
+  } catch (e) {
+    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+  }
+}
+
 /**
  * AI SFX (B) — faol comp work-area oralig'ini faylga render qiladi (tahlil uchun).
  * cfg: { destPath, maxDur } . Qaytaradi: {ok, path, workAreaStart, fps, duration}.

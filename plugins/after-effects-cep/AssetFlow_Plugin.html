@@ -1589,6 +1589,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-menu-row .mr-label{font-size:var(--fs-md);font-weight:600}
 .ai-menu-row .mr-sub{font-size:var(--fs-xs);color:var(--muted)}
 .ai-menu-row .mr-check{color:var(--accent-cta);display:flex;flex:none}
+/* Rasm reference manba menyusi (G4) */
+.ai-refmenu .ai-menu-row{font-size:var(--fs-md);font-weight:600}
+.ai-refmenu .ai-menu-row small{margin-left:auto;font-size:var(--fs-xs);font-weight:500;color:var(--muted);white-space:nowrap}
+.ai-ref-chev{margin-left:4px;opacity:.7;font-size:11px}
 
 /* ── Model-asosli sozlamalar (capabilities'dan) ── */
 #aiSettingMenu{min-width:288px;max-width:344px}
@@ -2064,8 +2068,14 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           </button>
                           <div class="ai-menu" id="aiSettingMenu" style="display:none"></div>
                         </div>
-                        <!-- timeline ref — tanlangan klipni reference sifatida oladi (referenceMode bo'yicha yoqiladi/o'chiriladi) -->
-                        <button type="button" class="ai-timeline" id="aiRefBtn" onclick="aiTimelineRef()" title="Timeline'da tanlangan klipni reference sifatida olish"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan</button>
+                        <!-- Rasm reference — manba menyusi (Timeline / Project); referenceMode bo'yicha yoqiladi/o'chiriladi -->
+                        <div class="ai-dd" id="aiRefDd">
+                          <button type="button" class="ai-timeline" id="aiRefBtn" onclick="aiToggleMenu('ref',event)" title="Rasm reference qo'shish (Timeline yoki Project'dan)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Rasm reference <span class="ai-ref-chev">▾</span></button>
+                          <div class="ai-menu ai-refmenu" id="aiRefMenu" style="display:none">
+                            <button type="button" class="ai-menu-row" onclick="aiPickRef('timeline')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>Timeline'dan <small>tanlangan klip</small></button>
+                            <button type="button" class="ai-menu-row" onclick="aiPickRef('project')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>Project'dan <small>tanlangan footage</small></button>
+                          </div>
+                        </div>
 
                         <div class="ai-spacer"></div>
                         <button type="button" class="ai-gen" id="aiGenBtn" onclick="aiGenerate()">
@@ -4358,9 +4368,10 @@ function aiUpdateRefAffordance(){
   if(btn){
     btn.classList.toggle('is-disabled',!ok);
     btn.setAttribute('aria-disabled',ok?'false':'true');
-    btn.title=ok?'Timeline’da tanlangan klipni reference sifatida olish':'Bu model reference qabul qilmaydi';
+    btn.title=ok?'Rasm reference qo‘shish (Timeline yoki Project’dan)':'Bu model reference qabul qilmaydi';
   }
-  // Mos kelmaydigan reference biriktirilgan bo'lsa — olib tashlaymiz (jim sarflanmasin).
+  // Qo'llamasa — ochiq ref menyuni yopamiz va mos kelmaydigan reference'ni olib tashlaymiz.
+  if(!ok&&af_ai.open==='ref')aiCloseMenus();
   if(!ok&&af_ai.reference){af_ai.reference=null;aiRenderRefBar();}
   if(hint){
     const showHint=!ok&&(media==='rasm'||media==='video');
@@ -4489,32 +4500,39 @@ function aiCostQuote(){
   },350);
 }
 
-/* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
-async function aiTimelineRef(){
-  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
+/* ── Reference (2a/G4) — IKKI manba: Timeline yoki Project panel ── */
+// Menyu'dan tanlash: avval menyuni yopamiz, keyin biriktiramiz.
+function aiPickRef(src){ aiCloseMenus(); aiAttachRef(src); }
+async function aiTimelineRef(){ return aiAttachRef('timeline'); } // eski chaqiruvlar uchun alias
+async function aiProjectRef(){ return aiAttachRef('project'); }
+/** Reference manbadan (timeline/project) olib af_ai.reference ga yozadi. Ikkala manba ham
+ *  host.jsx'da bir xil shaklda ({ok,mediaPath,mediaType,name}) qaytaradi → bir xil chip. */
+async function aiAttachRef(src){
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Reference faqat After Effects ichida','info');return;}
   // Model reference qabul qilmasa — biriktirmaymiz (tugma odatda disabled, lekin himoya).
   if(!aiRefSupported(aiCurrentModel(),af_ai.media)){
     if(typeof showToast==='function')showToast('Bu model reference qabul qilmaydi'+aiRefRecommend(af_ai.media),'warning');
     return;
   }
-  // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz. host.jsx endi
+  // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz. host.jsx
   // qo'lda JSON quradi (JSON.stringify'siz) — har doim yaroqli, bo'sh emas.
+  const fn=(src==='project')?'getSelectedProjectReference':'getActiveTimelineVideoReference';
   const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
   const ext=csInterface.getSystemPath(extEnum);
   const jsxPath=(ext+'/jsx/host.jsx').replace(/\\/g,'/');
   const pathLit=JSON.stringify(jsxPath);
-  const expr='(function(){$.evalFile('+pathLit+'); return getActiveTimelineVideoReference();})()';
+  const expr='(function(){$.evalFile('+pathLit+'); return '+fn+'();})()';
   const raw=await new Promise(res=>csInterface.evalScript(expr,r=>res(r)));
-  try{console.log('[ai:timeline-ref] raw=',JSON.stringify(raw),'| len=',(raw||'').length);}catch(e){}
+  try{console.log('[ai:ref:'+src+'] raw=',JSON.stringify(raw),'| len=',(raw||'').length);}catch(e){}
   let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}
   if(!r||!r.ok){
     const reason=(r&&r.reason)?r.reason:(raw?('Javob: '+String(raw).slice(0,140)):'evalScript bo‘sh');
     if(typeof showToast==='function')showToast(reason,'warning');
     return;
   }
-  af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:'timeline'};
+  af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:(r.source||src)};
   aiRenderRefBar();
-  if(typeof showToast==='function')showToast('Timeline reference olindi: '+r.name,'success');
+  if(typeof showToast==='function')showToast('Reference olindi ('+(af_ai.reference.source==='project'?'Project':'Timeline')+'): '+r.name,'success');
 }
 function aiClearRef(){af_ai.reference=null;aiRenderRefBar();}
 function aiRenderRefBar(){
@@ -4526,9 +4544,10 @@ function aiRenderRefBar(){
   const thumb=isImg
     ?('<img src="file://'+aiEsc(ref.path)+'" alt="" onerror="this.style.display=\'none\'">')
     :('<span class="ai-ref-ico">'+aiIco(ref.mediaType==='audio'?'mic':'image',16)+'</span>');
+  const srcLabel=ref.source==='project'?'Project reference':ref.source==='timeline'?'Timeline reference':'Reference';
   bar.innerHTML='<span class="ai-ref-thumb">'+thumb+'</span>'
     +'<span class="ai-ref-main"><span class="ai-ref-name">'+aiEsc(ref.name||'Reference')+'</span>'
-    +'<span class="ai-ref-sub">'+(ref.source==='timeline'?'Timeline reference':'Reference')+'</span></span>'
+    +'<span class="ai-ref-sub">'+srcLabel+'</span></span>'
     +'<button type="button" class="ai-ref-x" onclick="aiClearRef()" title="Olib tashlash">✕</button>';
 }
 /**
@@ -4766,7 +4785,7 @@ function aiToggleMenu(which,e){
 }
 function aiCloseMenus(){af_ai.open=null;aiRenderMenus();}
 function aiRenderMenus(){
-  const map={media:'aiMediaMenu',model:'aiModelMenu',setting:'aiSettingMenu'};
+  const map={media:'aiMediaMenu',model:'aiModelMenu',setting:'aiSettingMenu',ref:'aiRefMenu'};
   Object.keys(map).forEach(k=>{
     const el=document.getElementById(map[k]);
     if(el)el.style.display=af_ai.open===k?'flex':'none';

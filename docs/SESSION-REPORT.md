@@ -1,20 +1,16 @@
-# SESSION REPORT — 2026-06-19 — G3: Video reference (image-to-video / boshlang'ich kadr)
+# SESSION REPORT — 2026-06-19 — G4: Reference kiritish sodda — Timeline / Project
 
-## Tasdiqlangan format (/videos/models, 2026-06-18 — taxmin emas)
-- Barcha 7 video modeli `supported_frame_images:["first_frame"(,"last_frame")]` → request maydoni `frame_images:[{type:image_url,image_url:{url},frame_type:"first_frame"}]`.
-- `input_references` / `references` ni HECH BIR video model qo'llamaydi (xom qidiruv = 0). Demak Veo uchun ham `first_frame` ishlatilishi kerak.
-
-## Topilgan bug + tuzatish
-- gen-processor video router `feature==="image-to-video" ? frame_images : input_references` edi → Veo (text-to-video) uchun `input_references` yuborardi, lekin Veo uni qo'llamaydi → reference E'TIBORSIZ qolardi. Endi `referenceMode==="video-ref"` bo'lsa BARCHA video modellarga `first_frame` (G2 router mantiqiga mos).
-- **Hosted URL:** video provayderlar frame'ni TASHQARIDAN yuklaydi — data-URI'ni qabul qilmasligi mumkin. Yangi `materializeRefUrl()` data-URI'ni R2'ga yuklab signed URL (2 soat) qaytaradi; URL bo'lsa o'zini. `runVideo(model,prompt,params,userId,genId)`.
-
-## Frontend
-- `aiReferenceDataUri` endi `video` rejimni ham qo'llaydi — reference video bo'lsa first_frame kadr ajratiladi (mavjud canvas yo'li), rasm bo'lsa o'zi kadr. Send oqimi (G1) referenceUrl'ni video'ga ham qo'shadi.
-- G2 affordance (`aiRefSupported`) video+video-ref'ni allaqachon yoqadi; G2 validatsiyasi (none→400) video'ni qamraydi.
+## Bajarildi
+- **host.jsx**: yangi `getSelectedProjectReference()` — Project panelda tanlangan birinchi footage (rasm/video) manba fayl yo'lini qaytaradi. `getActiveTimelineVideoReference` naqshiga mos (atomik `$.evalFile`, qo'lda JSON `{ok,name,mediaPath,mediaType,kind,source:"project"}`). Tanlanmagan/precomp/papka/solid → tushunarli reason.
+- **Frontend** (`AssetFlow_Plugin.html`):
+  - "Rasm reference" tugmasi endi kichik MENYU ochadi (mavjud `af_ai.open`/`aiRenderMenus` tizimiga `ref` qo'shildi): «Timeline'dan» / «Project'dan».
+  - `aiTimelineRef` → umumiy `aiAttachRef(src)` ga refaktor; `aiProjectRef`/`aiPickRef` qo'shildi. Ikkala manba bir xil `af_ai.reference` chip'ini beradi (manba yorlig'i: Timeline/Project reference).
+  - `aiReferenceDataUri` (G1/G3) ikkala manba uchun ishlaydi (rasm yoki video kadr) — o'zgartirish shart emas.
+  - G2 affordance: model `none` bo'lsa tugma disabled + ochiq ref menyu yopiladi (`aiUpdateRefAffordance`).
+  - CSS: `.ai-refmenu` (mavjud `.ai-menu`/`.mr-ico` token'lari — 3 tema mos) + chevron.
 
 ## Tekshirildi
-- tsc toza. Plugin parse: 2 blok, 0 xato. CEP'ga ko'chirildi (AE qo'zg'atilmadi). Studio static UI tegmadi → studio:sync shart emas.
-- Eslatma: `input_references` plumbing (openrouter.ts) hozir ishlatilmaydi — kelajak modellari uchun saqlandi. Jonli test deploy'dan keyin.
+- Plugin inline parse: 2 blok, 0 xato. host.jsx `new Function` syntax OK. HTML+jsx CEP'ga ko'chirildi (AE qo'zg'atilmadi). Studio static UI tegmadi → studio:sync shart emas.
 
 ## Kutilmoqda
-- G4: Project panel'dan reference (host.jsx selektsiya) + "Rasm reference" menyu. G5: image/video-to-prompt.
+- G5: image/video-to-prompt (reverse — rasm/video'dan prompt, vision model /endpoints bilan tasdiqlanadi).
