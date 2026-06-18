@@ -310,7 +310,9 @@ npm run studio:sync           # js/ + styles/ (root) → studio/, admin/, apps/w
 ## 8. MA'LUM MUAMMOLAR / RISKLAR
 
 1. **`hasPack:false`** — pack yo'q shablon katalogda **ko'rinadi, lekin import bloklanadi** (plugin import tugmasini o'chiradi). Sabab: Render bepul instance disk **ephemeral** (qayta deploy/uxlashda yo'qoladi), shuning uchun pack/preview faqat **R2** da turishi shart. `catalog-map.ts` → `templateAssetFlags()` `hasPack`/`hasPreview` ni **disk VA R2** ikkalasidan tekshiradi — R2 da bo'lsa `true`. Agar productionда `hasPack:false` ko'rinsa: pack R2 ga yuklanmagan yoki kalit (`__srv_<id>`) mos emas.
-2. **Render cold-start** — bepul instance uxlaydi; birinchi so'rov sekin. Upload XHR retry (5xx/uzilish → 2x qayta) shu sababli qo'shilgan.
+2. **Render cold-start** — bepul instance 15 daqiqa harakatsizlikdan keyin uxlaydi; birinchi so'rov ~30-60s sekin. Upload XHR retry (5xx/uzilish → 2x qayta) shu sababli qo'shilgan.
+   - **Mitigatsiya (bepul):** `.github/workflows/keepalive.yml` — GitHub Actions cron har ~10 daqiqada `/health`'ga ping yuborib instance'ni uyg'oq tutadi. URL'ni o'zgartirish: repo → Settings → Variables → `HEALTH_URL` (default `https://assetflow-rqbq.onrender.com/health`). ⚠️ GitHub cron kafolatlanmagan (kechikishi yoki repo 60 kun harakatsiz bo'lsa to'xtashi mumkin).
+   - **Muqobil (ishonchliroq):** (a) **Render Starter** ($7/oy — instance umuman uxlamaydi, eng barqaror); (b) tashqi uptime-pinger — **UptimeRobot** yoki **cron-job.org** (5 daqiqalik interval, bepul tariflar bor).
 3. **OpenRouter end-to-end test yo'q** — model ID'lar tasdiqlandi (4.1), lekin real `/gen` chaqiruvi hali sinab ko'rilmagan.
 4. **CORS_ORIGIN** — render.yaml tuzatildi (CF Pages + eski Vercel, 2026-06-18). Render dashboard'dagi qo'lda env yaml'dan ustun turishi mumkin — sinab ko'ring (2-bo'lim).
 5. **AE Admin CEP `Failed to fetch`** — odatda eski extension yoki `localhost` API. Brauzer Admin ishonchliroq.

@@ -1,15 +1,14 @@
-# SESSION REPORT — 2026-06-18 — B: Plugin Refresh tugmasi
+# SESSION REPORT — 2026-06-18 — C: Render cold-start keep-alive
 
 ## Bajarildi
-- **Refresh tugmasi** sidebar pastiga (`.sb-foot`, kredit chip yonida) qo'shildi — doim ko'rinadi.
-  - `AssetFlow_Plugin.html`: tugma + `.sb-refresh` CSS (hover/active rotate) + `reloadPanel()` (`location.reload()` fallback bilan).
-  - Collapsed (64px) holatda `.sb-foot` ustun bo'lib chiqadi (refresh + kredit + build stack).
-- Maqsad: CEP HTML hot-reload qilmaydi → bu tugma AE'ni to'liq Cmd+Q qilmasdan panelni qayta yuklaydi (eski holat/xato bo'lganda).
-- Inline JS parse: 10 blok, 0 syntax xato.
-- Fayllar CEP papkasiga ko'chirildi (foydalanuvchi tanlovi bilan AE qo'zg'atilmadi); build shtamplandi.
+- **`.github/workflows/keepalive.yml`** — GitHub Actions cron har ~10 daqiqada (`*/10 * * * *`) production `/health`'ga curl ping yuboradi → Render bepul instance uxlamaydi (bepul yechim).
+  - `workflow_dispatch` (qo'lda), `concurrency` (kechikkanlar yig'ilmasin), retry + 90s timeout (cold-start uyg'onishi uchun), 200 emas bo'lsa `::warning::`.
+  - URL `vars.HEALTH_URL` orqali sozlanadi (default Render production /health).
+- **PROJECT-STATUS.md (8-bo'lim)**: cold-start bandi kengaytirildi — keepalive mitigatsiyasi + muqobillar (Render Starter $7/oy uxlamaydi; UptimeRobot / cron-job.org tashqi pinger).
+- YAML toza: `js-yaml` parse OK (cron `*/10 * * * *`), tab yo'q.
 
 ## Eslatma
-- AE 2025 ochiq edi — `install-cep.sh` AE'ni quit qiladi, shuning uchun faqat fayl-ko'chirish qilindi. Yangi ↻ tugmasi ko'rinishi uchun panelni bir marta qo'lda reload qilish kerak (keyin tugma ishlaydi).
+- GitHub cron kafolatlanmagan (yuklamada kechikadi, repo 60 kun harakatsiz bo'lsa to'xtaydi). Ishonchli uptime kerak bo'lsa — Starter tarif yoki tashqi pinger.
 
 ## Kutilmoqda
-- C: Render cold-start. D: eski preview re-transcode. E: AE Admin "Failed to fetch". F: Studio Gen tarix grid.
+- D: eski preview re-transcode. E: AE Admin "Failed to fetch". F: Studio Gen tarix grid.
