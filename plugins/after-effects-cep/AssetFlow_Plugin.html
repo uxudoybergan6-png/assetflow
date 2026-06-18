@@ -1568,6 +1568,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-improve-group{display:inline-flex;align-items:center;gap:6px}
 .ai-improve-json{background:rgba(120,130,255,.14);border-color:rgba(120,130,255,.45);color:#9aa6ff}
 .ai-improve-json:hover{background:rgba(120,130,255,.24)}
+/* Image/Video-to-Prompt (G5) — tahlil davom etganda puls (spinner o'rniga yengil) */
+.ai-improve.is-busy{opacity:.7;cursor:wait;animation:ai-improve-pulse 1s ease-in-out infinite}
+@keyframes ai-improve-pulse{0%,100%{opacity:.55}50%{opacity:.9}}
+#aiDescDd{position:relative;display:inline-flex}
 
 .ai-comp-ctrls{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 .ai-dd{position:relative}
@@ -2032,6 +2036,14 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           <div class="ai-improve-group">
                             <button type="button" class="ai-improve" id="aiImproveBtn" title="Promptni AI bilan boyitish" onclick="aiImprovePrompt()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg> Yaxshilash</button>
                             <button type="button" class="ai-improve ai-improve-json" id="aiJsonBtn" title="Strukturalangan JSON promptga aylantirish" onclick="aiToJson()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H7a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h1"/><path d="M16 4h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-1"/></svg> JSON</button>
+                            <!-- Image/Video-to-Prompt (G5) — manba menyusi (Timeline/Project) -->
+                            <div class="ai-dd" id="aiDescDd">
+                              <button type="button" class="ai-improve" id="aiDescBtn" title="Rasm yoki video'dan AI prompt yozish (reverse)" onclick="aiToggleMenu('desc',event)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg> Tasvirdan</button>
+                              <div class="ai-menu ai-refmenu" id="aiDescMenu" style="display:none">
+                                <button type="button" class="ai-menu-row" onclick="aiPickDescribe('timeline')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>Timeline'dan <small>klip → prompt</small></button>
+                                <button type="button" class="ai-menu-row" onclick="aiPickDescribe('project')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>Project'dan <small>footage → prompt</small></button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -4505,17 +4517,12 @@ function aiCostQuote(){
 function aiPickRef(src){ aiCloseMenus(); aiAttachRef(src); }
 async function aiTimelineRef(){ return aiAttachRef('timeline'); } // eski chaqiruvlar uchun alias
 async function aiProjectRef(){ return aiAttachRef('project'); }
-/** Reference manbadan (timeline/project) olib af_ai.reference ga yozadi. Ikkala manba ham
- *  host.jsx'da bir xil shaklda ({ok,mediaPath,mediaType,name}) qaytaradi → bir xil chip. */
-async function aiAttachRef(src){
-  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Reference faqat After Effects ichida','info');return;}
-  // Model reference qabul qilmasa — biriktirmaymiz (tugma odatda disabled, lekin himoya).
-  if(!aiRefSupported(aiCurrentModel(),af_ai.media)){
-    if(typeof showToast==='function')showToast('Bu model reference qabul qilmaydi'+aiRefRecommend(af_ai.media),'warning');
-    return;
-  }
-  // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz. host.jsx
-  // qo'lda JSON quradi (JSON.stringify'siz) — har doim yaroqli, bo'sh emas.
+/** Manbadan (timeline/project) reference obyektini OLADI (af_ai.reference ga yozmaydi).
+ *  host.jsx ikkala manba uchun bir xil shakl qaytaradi ({ok,mediaPath,mediaType,name}).
+ *  Reference biriktirish VA Image-to-Prompt (G5) shu funksiyani baham ko'radi. */
+async function aiFetchRef(src){
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Reference faqat After Effects ichida','info');return null;}
+  // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz.
   const fn=(src==='project')?'getSelectedProjectReference':'getActiveTimelineVideoReference';
   const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';
   const ext=csInterface.getSystemPath(extEnum);
@@ -4528,11 +4535,52 @@ async function aiAttachRef(src){
   if(!r||!r.ok){
     const reason=(r&&r.reason)?r.reason:(raw?('Javob: '+String(raw).slice(0,140)):'evalScript bo‘sh');
     if(typeof showToast==='function')showToast(reason,'warning');
+    return null;
+  }
+  return {path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:(r.source||src)};
+}
+/** Reference biriktirish (generatsiya uchun) — model qo'llashini tekshiradi. */
+async function aiAttachRef(src){
+  if(!aiRefSupported(aiCurrentModel(),af_ai.media)){
+    if(typeof showToast==='function')showToast('Bu model reference qabul qilmaydi'+aiRefRecommend(af_ai.media),'warning');
     return;
   }
-  af_ai.reference={path:r.mediaPath,name:r.name,mediaType:r.mediaType,source:(r.source||src)};
+  const ref=await aiFetchRef(src);
+  if(!ref)return;
+  af_ai.reference=ref;
   aiRenderRefBar();
-  if(typeof showToast==='function')showToast('Reference olindi ('+(af_ai.reference.source==='project'?'Project':'Timeline')+'): '+r.name,'success');
+  if(typeof showToast==='function')showToast('Reference olindi ('+(ref.source==='project'?'Project':'Timeline')+'): '+ref.name,'success');
+}
+/* ── Image/Video-to-Prompt (G5) — manbadan kadr(lar) → vision model → prompt textarea ── */
+function aiPickDescribe(src){ aiCloseMenus(); aiDescribeFrom(src); }
+async function aiDescribeFrom(src){
+  const ref=await aiFetchRef(src);
+  if(!ref)return;
+  const isVid=aiIsVidPath(ref.path,ref.mediaType);
+  const kind=isVid?'video':'image';
+  const btn=document.getElementById('aiDescBtn');
+  const ta=document.getElementById('aiPrompt');
+  try{
+    if(btn){btn.disabled=true;btn.classList.add('is-busy');}
+    if(typeof showToast==='function')showToast((isVid?'Video':'Rasm')+' tahlil qilinmoqda…','info');
+    const imgs=await aiExtractFrames(ref.path,ref.mediaType,isVid?3:1);
+    if(!imgs.length)throw new Error('kadr ajratilmadi');
+    const d=await studioPost('/api/studio/gen/describe',{images:imgs,kind:kind},90000);
+    const prompt=d&&d.prompt;
+    if(!prompt)throw new Error('tavsif bo‘sh');
+    if(ta){
+      ta.value=prompt;
+      if(typeof aiAutoGrow==='function')aiAutoGrow(ta);
+      if(typeof aiUpdateCharCount==='function')aiUpdateCharCount();
+      ta.focus();
+      if(aiStudioMode(af_ai.media)&&typeof aiCostQuote==='function')aiCostQuote();
+    }
+    if(typeof showToast==='function')showToast('Prompt tayyor — tahrirlang va Generatsiya','success');
+  }catch(e){
+    if(typeof showToast==='function')showToast('Tavsif xatosi: '+((e&&e.message)||e),'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.classList.remove('is-busy');}
+  }
 }
 function aiClearRef(){af_ai.reference=null;aiRenderRefBar();}
 function aiRenderRefBar(){
@@ -4550,21 +4598,18 @@ function aiRenderRefBar(){
     +'<span class="ai-ref-sub">'+srcLabel+'</span></span>'
     +'<button type="button" class="ai-ref-x" onclick="aiClearRef()" title="Olib tashlash">✕</button>';
 }
+function aiIsVidPath(p,mediaType){
+  return /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(p||'')||(mediaType==='video'&&!/\.(png|jpe?g|webp|gif|bmp)$/i.test(p||''));
+}
 /**
- * Reference faylini (rasm YOKI video kadr) downscale qilib JPEG data-URI qaytaradi.
- * - rasm rejim → Gemini image edit reference (orImageEdit).
- * - video rejim (G3) → video boshlang'ich kadri (first_frame). Reference video bo'lsa
- *   undan kadr ajratiladi; rasm bo'lsa o'zi kadr sifatida ishlatiladi.
- * fs→Blob→objectURL yo'li canvas "taint" muammosini chetlab o'tadi (file:// rasm
- * toDataURL'ni bloklamasin). Ovoz/SFX → reference yo'q.
+ * Fayldan (rasm yoki video) 1..maxFrames JPEG kadr (data-URI) ajratadi va 1024px'ga
+ * downscale qiladi. fs→Blob→objectURL yo'li canvas "taint" muammosini chetlab o'tadi
+ * (file:// rasm toDataURL'ni bloklamasin). Video → vaqt bo'yicha teng taqsimlangan kadrlar.
+ * Reference biriktirish (G1/G3, 1 kadr) VA Image/Video-to-Prompt (G5, video uchun 3 kadr) shu yerdan.
  */
-async function aiReferenceDataUri(media){
-  const ref=af_ai.reference;
-  if(!ref||!ref.path)return null;
-  if(media!=='rasm'&&media!=='video')return null;
+async function aiExtractFrames(p,mediaType,maxFrames){
   let fs;try{fs=require('fs');}catch(e){fs=null;}
-  if(!fs)return null;
-  const p=ref.path;
+  if(!fs)return [];
   let buf;try{buf=fs.readFileSync(p);}catch(e){throw new Error('fayl o‘qilmadi');}
   const url=URL.createObjectURL(new Blob([buf]));
   const MAX=1024;
@@ -4576,25 +4621,40 @@ async function aiReferenceDataUri(media){
     c.getContext('2d').drawImage(el,0,0,c.width,c.height);
     return c.toDataURL('image/jpeg',0.85);
   };
-  const isVid=/\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(p)||(ref.mediaType==='video'&&!/\.(png|jpe?g|webp|gif|bmp)$/i.test(p));
   try{
-    if(isVid){
-      return await new Promise(function(resolve,reject){
-        const v=document.createElement('video');v.muted=true;v.preload='auto';v.src=url;
-        let done=false;const fail=function(m){if(!done){done=true;reject(new Error(m));}};
-        v.onloadeddata=function(){try{v.currentTime=Math.min(0.5,(v.duration||1)*0.1);}catch(e){fail('kadr olinmadi');}};
-        v.onseeked=function(){if(done)return;done=true;try{resolve(toJpeg(v,v.videoWidth,v.videoHeight));}catch(e){reject(e);}};
-        v.onerror=function(){fail('video yuklanmadi');};
-        setTimeout(function(){fail('video timeout');},15000);
+    if(!aiIsVidPath(p,mediaType)){
+      const d=await new Promise(function(resolve,reject){
+        const img=new Image();
+        img.onload=function(){try{resolve(toJpeg(img,img.naturalWidth,img.naturalHeight));}catch(e){reject(e);}};
+        img.onerror=function(){reject(new Error('rasm yuklanmadi'));};
+        img.src=url;
       });
+      return [d];
     }
+    // video → maxFrames kadr (vaqt bo'yicha teng taqsimlangan)
     return await new Promise(function(resolve,reject){
-      const img=new Image();
-      img.onload=function(){try{resolve(toJpeg(img,img.naturalWidth,img.naturalHeight));}catch(e){reject(e);}};
-      img.onerror=function(){reject(new Error('rasm yuklanmadi'));};
-      img.src=url;
+      const v=document.createElement('video');v.muted=true;v.preload='auto';v.src=url;
+      const frames=[];let times=[],idx=0,done=false;
+      const fail=function(m){if(!done){done=true;reject(new Error(m));}};
+      const seek=function(){ if(idx>=times.length){done=true;resolve(frames);return;} try{v.currentTime=times[idx];}catch(e){fail('kadr olinmadi');} };
+      v.onloadeddata=function(){
+        const dur=v.duration||1;const n=Math.max(1,Math.min(maxFrames||1,3));
+        times=[];for(let i=0;i<n;i++)times.push(Math.min(dur*0.95,Math.max(0.05,dur*((i+0.5)/n))));
+        seek();
+      };
+      v.onseeked=function(){ if(done)return; try{frames.push(toJpeg(v,v.videoWidth,v.videoHeight));}catch(e){return fail(e&&e.message||'kadr');} idx++; seek(); };
+      v.onerror=function(){fail('video yuklanmadi');};
+      setTimeout(function(){fail('video timeout');},20000);
     });
   }finally{ try{URL.revokeObjectURL(url);}catch(e){} }
+}
+/** Reference (af_ai.reference) → BITTA JPEG data-URI (G1/G3 generatsiya oqimi uchun). */
+async function aiReferenceDataUri(media){
+  const ref=af_ai.reference;
+  if(!ref||!ref.path)return null;
+  if(media!=='rasm'&&media!=='video')return null;
+  const frames=await aiExtractFrames(ref.path,ref.mediaType,1);
+  return frames[0]||null;
 }
 /* ── AI SFX (B) — Timeline work-area eksport (B1) ── */
 function aiFindFfmpeg(){
@@ -4785,7 +4845,7 @@ function aiToggleMenu(which,e){
 }
 function aiCloseMenus(){af_ai.open=null;aiRenderMenus();}
 function aiRenderMenus(){
-  const map={media:'aiMediaMenu',model:'aiModelMenu',setting:'aiSettingMenu',ref:'aiRefMenu'};
+  const map={media:'aiMediaMenu',model:'aiModelMenu',setting:'aiSettingMenu',ref:'aiRefMenu',desc:'aiDescMenu'};
   Object.keys(map).forEach(k=>{
     const el=document.getElementById(map[k]);
     if(el)el.style.display=af_ai.open===k?'flex':'none';

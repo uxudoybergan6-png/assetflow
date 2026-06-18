@@ -5,7 +5,7 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
-import { isOpenRouterConfigured, orChatSys } from "../lib/ai/openrouter.js";
+import { isOpenRouterConfigured, orChatSys, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isS3Configured, getSignedDownloadUrl, deleteS3Objects } from "../lib/s3.js";
 import {
@@ -363,6 +363,45 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
   res.json({ prompt: out.data.trim() });
+});
+
+/**
+ * POST /gen/describe — Image/Video-to-Prompt (REVERSE): rasm yoki video kadr(lar)dan
+ * generatsiya prompti yozadi (kreditsiz, enhance kabi). Vision model: gemini-2.5-flash
+ * (/endpoints tasdiqlangan: image+video input, text out — 2026-06-18). Video → frontend
+ * 1-3 kadr ajratadi va shu kadrlar yuboriladi (harakat ham tavsiflanadi).
+ * Auth + rate-limit (40/min) router'dan meros; max 3 rasm + max_tokens 400 — uzunlik cheklovi.
+ */
+const VISION_MODEL = "google/gemini-2.5-flash";
+const describeSchema = z.object({
+  images: z.array(z.string().min(8)).min(1).max(3), // data-URI yoki URL
+  kind: z.enum(["image", "video"]).optional(),
+});
+studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
+  if (!isOpenRouterConfigured()) {
+    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    return;
+  }
+  const p = describeSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  // Uzunlik cheklovi — har rasm ~1024px JPEG (frontend downscale). 1.4MB string ≈ ~1MB rasm.
+  if (p.data.images.some((s) => s.length > 1_400_000)) {
+    res.status(413).json({ error: "Reference rasm juda katta — kichikroq kadr tanlang" });
+    return;
+  }
+  const instruction =
+    p.data.kind === "video"
+      ? "These are sequential frames from a video. Write a single generation prompt capturing the scene AND the motion/action."
+      : "Describe this image as a detailed generation prompt.";
+  const out = await orImageToPrompt(VISION_MODEL, p.data.images, instruction);
+  if (!out.ok) {
+    res.status(502).json({ error: out.error });
+    return;
+  }
+  res.json({ prompt: out.data });
 });
 
 /** GET /gen/:jobId — job holati (polling). MUHIM: aniq yo'llardan KEYIN ro'yxatdan o'tadi. */

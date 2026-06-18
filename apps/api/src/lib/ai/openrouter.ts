@@ -116,6 +116,44 @@ export async function orChatSys(
   return { ok: true, data: txt };
 }
 
+/**
+ * Vision → prompt (REVERSE): rasm(lar)dan generatsiya prompti yozadi. `images` —
+ * data-URI yoki URL ro'yxati (1-3). Bir nechta kadr berilsa video kadrlari deb
+ * qaraladi (harakat ham tavsiflanadi). Faqat MATN qaytaradi (max_tokens bilan cheklangan).
+ */
+export async function orImageToPrompt(
+  model: string,
+  images: string[],
+  instruction?: string
+): Promise<OrResult<string>> {
+  if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
+  const sys =
+    "You are an expert prompt engineer for AI image/video generation. Look at the provided " +
+    "image(s) and write ONE detailed, production-quality generation prompt that recreates the " +
+    "scene: subject, setting, style, lighting, color palette, composition and camera. If multiple " +
+    "frames are given, treat them as sequential video frames and also describe the motion/action. " +
+    "Return ONLY the prompt text as a single paragraph under 600 characters — no commentary, no markdown.";
+  const content: Array<Record<string, unknown>> = [
+    { type: "text", text: instruction || "Describe this as a detailed generation prompt." },
+  ];
+  for (const url of images) content.push({ type: "image_url", image_url: { url } });
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: sys },
+      { role: "user", content },
+    ],
+    max_tokens: 400, // uzunlik cheklovi
+  };
+  const res = await orPost("/chat/completions", body);
+  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
+  const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const txt = j?.choices?.[0]?.message?.content;
+  if (typeof txt !== "string" || !txt.trim())
+    return { ok: false, error: "Tavsif olinmadi — qayta urinib ko'ring" };
+  return { ok: true, data: txt.trim() };
+}
+
 // ── Rasm generatsiya — /chat/completions + modalities:["image","text"] ──────
 type OrImageJson = {
   choices?: { message?: { images?: { image_url?: { url?: string } }[] } }[];
