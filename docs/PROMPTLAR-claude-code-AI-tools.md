@@ -109,7 +109,7 @@ video chiqib AE'ga import bo'lsin. SESSION-REPORT yangila. Commit qilma.
 ## 🟠 BOSQICH 4 — SFX (Freepik adapter + webhook)
 
 ```
-Loyiha: AssetFlow. Reja: docs/REJA-AI-TOOLS-100.md (Bosqich 4). Manba: docs/FREEPIK-API-ANALYSIS.md.
+Loyiha: AssetFlow. Reja: docs/REJA-AI-TOOLS-100.md (Bosqich 4). Manba: docs/archive/FREEPIK-API-ANALYSIS.md.
 OpenRouter SFX/music'ni qamramaydi → Freepik /v1/ai/sound-effects (async + webhook).
 
 Vazifa: SFX generatsiyasini Freepik orqali ishlat.
@@ -167,7 +167,7 @@ Tanlab bajariladigan ishlar (ustuvorlik bo'yicha):
 1. SSE job status (polling o'rniga) — video uzun bo'lgani uchun. Mavjud SSE infra ustiga.
 2. Image upscale + remove-bg (Freepik /v1/ai/image-upscaler, /beta/remove-background) — yangi mode.
 3. Video first/last frame (i2v keyframe) + kamera preset'lari (Higgsfield naqshi).
-4. Template-grounded AI (docs/ANALIZ-higgsfield-ai-tools.md §3): "shu shablon uchun" gen +
+4. Template-grounded AI (docs/archive/ANALIZ-higgsfield-ai-tools.md §3): "shu shablon uchun" gen +
    placeholder auto-fill — AssetFlow ustunligi.
 
 Har biri: o'qi → minimal diff → tsc/node --check → install-cep → AE test → SESSION-REPORT.

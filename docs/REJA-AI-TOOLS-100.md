@@ -237,7 +237,7 @@ export async function fpSoundEffects(prompt:string, webhookUrl:string){
 - **SSE job status** (polling o'rniga) — video uzoq bo'lgani uchun. Mavjud SSE infra ustiga.
 - **First/last frame** (i2v keyframe), **kamera preset'lari** (Higgsfield naqshi).
 - **Image upscale / remove-bg** (Freepik `/v1/ai/image-upscaler`, `/beta/remove-background`).
-- **Template-grounded AI** (AssetFlow ustunligi — `ANALIZ-higgsfield-ai-tools.md` §3): "shu shablon uchun" gen.
+- **Template-grounded AI** (AssetFlow ustunligi — `archive/ANALIZ-higgsfield-ai-tools.md` §3): "shu shablon uchun" gen.
 - *(Eski `routes/ai.ts` tozalash B5'ga ko'chirildi — D nuqtasi.)*
 
 ---
@@ -306,6 +306,6 @@ FREEPIK_WEBHOOK_SECRET=...            # webhook imzo tekshirish
 - OpenRouter: image-generation, tts, video-generation, embeddings docs + live `/api/v1/models`.
 - Freepik: `docs.freepik.com` — sound-effects, music-generation, webhooks (HMAC).
 - UX: Runway Gen-4.5, Higgsfield 2026, Freepik/Magnific, Krea, Artlist AI Toolkit.
-- Batafsil: `docs/RESEARCH-natija-ai-sfx-gemini.md`, `docs/FREEPIK-API-ANALYSIS.md`, `docs/ANALIZ-higgsfield-ai-tools.md`.
+- Batafsil: `docs/archive/RESEARCH-natija-ai-sfx-gemini.md`, `docs/archive/FREEPIK-API-ANALYSIS.md`, `docs/archive/ANALIZ-higgsfield-ai-tools.md`.
 
 *Tayyor: 2026-06-15. Claude Code bu rejani bosqichma-bosqich bajaradi.*

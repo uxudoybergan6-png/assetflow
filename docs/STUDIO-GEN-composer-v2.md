@@ -179,6 +179,6 @@ o'zgarishini ko'r → Generate. SESSION-REPORT yangila. Commit qilma.
 - "Standard / AI Agent" toggle, "Unlimited" toggle — AssetFlow'da kerak emas (bizda kredit modeli). Lekin dizayn (dark/glass) ko'chiriladi.
 - "All Models" submenu — keyin (v2), katalog kengayganda.
 - Voiceover/Music — OpenRouter (kokoro TTS) bor; to'liq music/persona Freepik bilan keyin.
-- Bu hujjat STUDIO-GEN-IMAGE-composer.md (faqat rasm) ni kengaytiradi — barcha rejim + model-asosli.
+- Bu hujjat eski faqat-rasm composer spetsifikatsiyasini almashtiradi — barcha rejim + model-asosli (eski versiya o'chirildi).
 
 *Skrinshot tahlili: 2026-06-15.*
