@@ -38,6 +38,7 @@ import {
   deleteTemplateAssets,
   resolveS3AssetKey,
   downloadS3ToFile,
+  deleteS3Objects,
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
@@ -552,6 +553,92 @@ contributorRouter.post(
     } catch (e) {
       console.error(`[re-extract] xato (stage=${stage}):`, e);
       fail(500, e instanceof Error ? e.message : "Kutilmagan xato");
+    } finally {
+      if (tmpDir) {
+        try {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+        } catch {}
+      }
+    }
+  }
+);
+
+/**
+ * Re-transcode preview — eski/katta (250MB · 4K) previewlarni 720p H.264 ga
+ * QAYTA siqadi (faqat admin). optimizePreviewForStreaming tuzatishi faqat YANGI
+ * uploadlarga tushgan — eski previewlar hali katta. Bu route mavjud previewni
+ * R2'dan (yoki diskdan) oladi, optimizePreviewForStreaming bilan transcode qiladi
+ * va R2 ga `preview.mp4` sifatida qayta yozadi; eski katta nusxa boshqa kalitda
+ * bo'lsa (preview.mov/.webm) o'chiriladi. Per-template; bulk uchun
+ * scripts/retranscode-previews.mjs ketma-ket chaqiradi.
+ */
+contributorRouter.post(
+  "/admin/templates/:id/re-transcode-preview",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    let tmpDir: string | null = null;
+    try {
+      const existing = await prisma.contributorTemplate.findUnique({
+        where: { id },
+      });
+      if (!existing) {
+        res.status(404).json({ error: "Shablon topilmadi" });
+        return;
+      }
+
+      // Orfan tozalash uchun mavjud R2 kalitini aniqlab olamiz (disk manba bo'lsa ham)
+      const srcKey = isS3Configured()
+        ? await resolveS3AssetKey(id, "preview")
+        : null;
+
+      // Manba: avval disk (lokalda mavjud bo'lsa), bo'lmasa R2'dan tmp'ga yuklab ol
+      let localPath: string | null = null;
+      const diskPreview = findAssetPath(id, "preview");
+      if (diskPreview) {
+        localPath = diskPreview;
+      } else if (srcKey) {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_retx_"));
+        const ext = path.extname(srcKey) || ".mp4";
+        localPath = path.join(tmpDir, `preview${ext}`);
+        await downloadS3ToFile(srcKey, localPath);
+      }
+      if (!localPath) {
+        res.status(404).json({ error: "Preview fayli topilmadi (disk/R2)" });
+        return;
+      }
+
+      const beforeBytes = fs.statSync(localPath).size;
+      const transcoded = await optimizePreviewForStreaming(localPath);
+      const afterBytes = fs.statSync(localPath).size;
+
+      // R2 ga qayta yoz — content endi H.264 mp4, shuning uchun kalit preview.mp4
+      let uploaded = false;
+      let removedOldKey = false;
+      if (isS3Configured()) {
+        const destKey = `templates/${id}/preview.mp4`;
+        await uploadFileToS3(localPath, destKey, "video/mp4");
+        uploaded = true;
+        if (srcKey && srcKey !== destKey) {
+          removedOldKey = (await deleteS3Objects([srcKey])) > 0;
+        }
+      }
+
+      res.json({
+        ok: true,
+        transcoded, // false → faststart-only fallback (ffmpeg transcode amalga oshmadi)
+        uploaded,
+        beforeBytes,
+        afterBytes,
+        savedBytes: Math.max(0, beforeBytes - afterBytes),
+        removedOldKey,
+      });
+    } catch (e) {
+      console.error("[re-transcode-preview] xato:", e);
+      res
+        .status(500)
+        .json({ error: e instanceof Error ? e.message : "Kutilmagan xato" });
     } finally {
       if (tmpDir) {
         try {

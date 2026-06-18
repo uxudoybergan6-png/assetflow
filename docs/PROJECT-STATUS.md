@@ -101,6 +101,7 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 - `POST /templates` (yaratish) → `POST /templates/:id/upload-url` (thumb/preview uchun **presigned PUT** to'g'ridan R2 ga, OOM oldini oladi) → `POST /templates/:id/assets` (pack multer orqali, server `.mogrt` sahnalarni ajratadi) → `POST /templates/:id/submit` (tekshiruvga).
 - `POST /templates/:id/review` (admin) — approve/reject + izoh + ixtiyoriy publish.
 - `GET /templates/:id/upload-progress` — SSE orqali upload bosqichi/foiz.
+- **Preview optimizatsiya:** yangi upload'da preview `optimizePreviewForStreaming()` bilan 720p H.264 ga siqiladi (250MB·4K → ~3-8MB). **Eski previewlar** (tuzatishdan oldingilar) hali katta — backfill: `POST /admin/templates/:id/re-transcode-preview` (admin) yoki bulk `npm run retranscode:previews` (admin token bilan, ketma-ket; `scripts/retranscode-previews.mjs`).
 - Status oqimi: `DRAFT → PENDING_REVIEW → APPROVED | REJECTED` (`TemplateReviewStatus` enum).
 
 ### 3.4 Plugin browse + import (AE CEP)

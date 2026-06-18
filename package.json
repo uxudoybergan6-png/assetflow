@@ -24,6 +24,7 @@
     "db:seed:assetflow": "npm run seed:assetflow -w @creative-tools/database",
     "studio:sync": "npm run sync:web -w @creative-tools/assetflow-studio",
     "demo:clear": "node scripts/clear-assetflow-demo.mjs",
+    "retranscode:previews": "node scripts/retranscode-previews.mjs",
     "pm2:start": "node scripts/pm2-start.mjs",
     "pm2:stop": "node scripts/pm2-stop.mjs",
     "pm2:reset": "node scripts/pm2-reset.mjs",
