@@ -4532,15 +4532,17 @@ function aiRenderRefBar(){
     +'<button type="button" class="ai-ref-x" onclick="aiClearRef()" title="Olib tashlash">✕</button>';
 }
 /**
- * Reference faylini (rasm YOKI video kadr) downscale qilib JPEG data-URI qaytaradi —
- * backend `params.referenceUrl` (Gemini image edit) shuni kutadi. fs→Blob→objectURL
- * yo'li canvas "taint" muammosini chetlab o'tadi (file:// rasm toDataURL'ni bloklamasin).
- * Faqat IMAGE rejimda ishlatiladi (G1); video/ovoz keyingi bosqichlarda (G2/G3).
+ * Reference faylini (rasm YOKI video kadr) downscale qilib JPEG data-URI qaytaradi.
+ * - rasm rejim → Gemini image edit reference (orImageEdit).
+ * - video rejim (G3) → video boshlang'ich kadri (first_frame). Reference video bo'lsa
+ *   undan kadr ajratiladi; rasm bo'lsa o'zi kadr sifatida ishlatiladi.
+ * fs→Blob→objectURL yo'li canvas "taint" muammosini chetlab o'tadi (file:// rasm
+ * toDataURL'ni bloklamasin). Ovoz/SFX → reference yo'q.
  */
 async function aiReferenceDataUri(media){
   const ref=af_ai.reference;
   if(!ref||!ref.path)return null;
-  if(media!=='rasm')return null;
+  if(media!=='rasm'&&media!=='video')return null;
   let fs;try{fs=require('fs');}catch(e){fs=null;}
   if(!fs)return null;
   const p=ref.path;

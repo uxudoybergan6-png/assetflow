@@ -44,11 +44,39 @@ async function persist(
   return { url: `data:${contentType};base64,${buf.toString("base64")}`, key: null };
 }
 
+/**
+ * Video reference rasmni provayder OLA OLADIGAN URL'ga aylantiradi. Veo/Kling kabi
+ * video provayderlar frame rasmni TASHQARIDAN yuklab oladi — data-URI'ni qabul
+ * qilmasligi mumkin. Shu bois data-URI bo'lsa R2'ga yuklab signed URL (2 soat —
+ * video async) qaytaramiz. Allaqachon http(s) URL bo'lsa — o'zini qaytaradi.
+ */
+async function materializeRefUrl(
+  userId: string,
+  genId: string,
+  refUrl: string
+): Promise<string> {
+  const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(refUrl);
+  if (!m) return refUrl; // allaqachon URL
+  if (!isS3Configured()) return refUrl; // dev fallback
+  const contentType = m[1] || "image/jpeg";
+  const ext = contentType.includes("png")
+    ? "png"
+    : contentType.includes("webp")
+      ? "webp"
+      : "jpg";
+  const buf = Buffer.from(m[2], "base64");
+  const key = `gen-refs/${userId}/${genId}-${tsName()}.${ext}`;
+  await uploadBufferToS3(buf, key, contentType);
+  return getSignedDownloadUrl(key, 7200);
+}
+
 /** Video oqimi: OpenRouter async job → poll → yuklab olish (maks ~5 daqiqa). */
 async function runVideo(
   model: GenModel,
   prompt: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  userId: string,
+  genId: string
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
   // Param gigiyenasi: model qo'llaydigan qiymatlarga klamp (ortiqcha yuborilmaydi).
@@ -60,12 +88,13 @@ async function runVideo(
     duration: v.duration,
     generateAudio: v.generateAudio,
   };
-  if (refUrl) {
-    if (model.feature === "image-to-video") {
-      opts.frameImages = [{ url: refUrl, frameType: "first_frame" }];
-    } else {
-      opts.references = [refUrl];
-    }
+  // ROUTER (G3): reference rasm → BOSHLANG'ICH KADR (first_frame). /videos/models
+  // tekshiruvi (2026-06-18): barcha 7 video modeli `frame_images:[first_frame]` qo'llaydi,
+  // `input_references` ni HECH BIRI qo'llamaydi — shuning uchun feature'dan qat'i nazar
+  // first_frame ishlatamiz. data-URI → R2 hosted URL (provayder tashqaridan oladi).
+  if (refUrl && getReferenceMode(model) === "video-ref") {
+    const hosted = await materializeRefUrl(userId, genId, refUrl);
+    opts.frameImages = [{ url: hosted, frameType: "first_frame" }];
   }
   const created = await orVideoCreate(model.key, opts);
   if (!created.ok) return { ok: false, error: created.error };
@@ -170,7 +199,7 @@ export async function processGeneration(genId: string): Promise<void> {
         data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
       });
     } else if (model.feature === "text-to-video" || model.feature === "image-to-video") {
-      const out = await runVideo(model, gen.prompt, params);
+      const out = await runVideo(model, gen.prompt, params, gen.userId, genId);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
