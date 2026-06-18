@@ -5,7 +5,7 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
-import { isOpenRouterConfigured, orChat } from "../lib/ai/openrouter.js";
+import { isOpenRouterConfigured, orChatSys } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isS3Configured, getSignedDownloadUrl, deleteS3Objects } from "../lib/s3.js";
 import {
@@ -233,11 +233,36 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   res.status(202).json({ jobId: gen.id, status: gen.status, creditsLeft: gate.remaining });
 });
 
-/** POST /gen/prompt/enhance — promptni OpenRouter (text) bilan boyitadi (kreditsiz). */
+/**
+ * POST /gen/prompt/enhance — promptni OpenRouter bilan boyitadi (kreditsiz).
+ *  format:"text" → bitta boy paragraf; format:"json" → strukturalangan prompt sxemasi.
+ *  modelId berilsa — tanlangan model konteksti (duration/aspect/audio) promptga moslanadi.
+ */
+const ENHANCE_PROMPT_MAX = 1999;
 const enhanceSchema = z.object({
   prompt: z.string().trim().min(2).max(5000),
   mode: z.enum(GEN_MODES).optional(),
+  modelId: z.number().int().optional(),
+  format: z.enum(["text", "json"]).optional(),
 });
+
+/** Rejimga qarab JSON prompt sxemasi (LLM shu shaklda qaytaradi). */
+function enhanceJsonSchema(mode: string): string {
+  if (mode === "voice") {
+    return `{"prompt": string (the spoken script, cleaned), "tone": string, "pace": string, "emphasis": string}`;
+  }
+  if (mode === "sfx") {
+    return `{"prompt": string, "sound": string, "environment": string, "intensity": string, "duration_hint": string}`;
+  }
+  // image | video | music → kinematografik sxema (Magnific uslubi)
+  return (
+    `{"prompt": string, "subject": string, "environment": string, "style": string, ` +
+    `"lighting": string, "camera": {"angle": string, "distance": string, "depth_of_field": string, "focus": string}, ` +
+    `"composition": {"framing": string, "foreground": string, "background": string, "negative_space": string}, ` +
+    `"mood": string, "color_palette": string[], "technical": {"render_type": string}}`
+  );
+}
+
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
   if (!isOpenRouterConfigured()) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
@@ -249,13 +274,58 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
   const mode = p.data.mode || "image";
-  const instruction =
-    `You enrich a short ${mode} generation prompt into a vivid, detailed prompt. ` +
-    `Return ONLY the improved prompt, no preamble, one paragraph.`;
-  const out = await orChat(
-    "openai/gpt-4o-mini",
-    `${instruction}\n\nPrompt: ${p.data.prompt}`
-  );
+  const format = p.data.format || "text";
+
+  // Model-aware kontekst (Magnific `extra_params` uslubi — promptni tanlangan modelga moslaydi).
+  const model = p.data.modelId ? getModelById(p.data.modelId) : undefined;
+  const ctxParts: string[] = [];
+  if (model) {
+    ctxParts.push(`target model: ${model.label}`);
+    if (model.durations?.length) ctxParts.push(`duration options (sec): ${model.durations.join(", ")}`);
+    if (model.aspects?.length) ctxParts.push(`aspect ratios: ${model.aspects.join(", ")}`);
+    if (model.resolutions?.length) ctxParts.push(`resolution/quality: ${model.resolutions.join(", ")}`);
+    if (typeof model.audio === "boolean") ctxParts.push(`native audio: ${model.audio ? "yes" : "no"}`);
+  }
+  const ctx = ctxParts.length
+    ? `\nGeneration context — tailor the prompt to it: ${ctxParts.join("; ")}.`
+    : "";
+  const keepRefs =
+    " Preserve any @img / @image references verbatim (do not rename or remove them).";
+
+  if (format === "json") {
+    const system =
+      `You are an expert ${mode} prompt engineer for AI generation. Rewrite the user's idea into a ` +
+      `rich, production-quality prompt and return it ONLY as a JSON object matching exactly this schema:\n` +
+      `${enhanceJsonSchema(mode)}\n` +
+      `Be concrete and cinematic. No markdown, no commentary. The "prompt" field must be a ` +
+      `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
+    const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, true);
+    if (!out.ok) {
+      res.status(502).json({ error: out.error });
+      return;
+    }
+    let json: Record<string, unknown> | null = null;
+    try {
+      const parsed = JSON.parse(out.data) as unknown;
+      if (parsed && typeof parsed === "object") json = parsed as Record<string, unknown>;
+    } catch {
+      /* ignore — pastda 502 */
+    }
+    if (!json) {
+      res.status(502).json({ error: "JSON prompt olinmadi — qayta urinib ko'ring" });
+      return;
+    }
+    const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
+    res.json({ prompt: promptStr, json });
+    return;
+  }
+
+  // text
+  const system =
+    `You are an expert ${mode} prompt engineer. Enrich the user's short idea into a vivid, detailed, ` +
+    `production-quality ${mode} prompt. Return ONLY the improved prompt — one paragraph, no preamble, ` +
+    `no markdown, under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
+  const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, false);
   if (!out.ok) {
     res.status(502).json({ error: out.error });
     return;

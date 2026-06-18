@@ -87,6 +87,35 @@ export async function orChat(model: string, prompt: string): Promise<OrResult<st
   return { ok: true, data: txt };
 }
 
+/**
+ * Chat — system + user xabarlar bilan (prompt-enhance uchun). jsonMode=true bo'lsa
+ * model JSON obyekt qaytaradi (response_format: json_object — strukturalangan prompt).
+ */
+export async function orChatSys(
+  model: string,
+  system: string,
+  user: string,
+  jsonMode = false
+): Promise<OrResult<string>> {
+  if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  };
+  if (jsonMode) body.response_format = { type: "json_object" };
+  const res = await orPost("/chat/completions", body);
+  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
+  const j = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  const txt = j?.choices?.[0]?.message?.content;
+  if (typeof txt !== "string") return { ok: false, error: "Javobda matn topilmadi" };
+  return { ok: true, data: txt };
+}
+
 // ── Rasm generatsiya — /chat/completions + modalities:["image","text"] ──────
 type OrImageJson = {
   choices?: { message?: { images?: { image_url?: { url?: string } }[] } }[];

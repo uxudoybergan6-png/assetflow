@@ -1495,7 +1495,7 @@ html.cep-mode body{background:var(--bg);overflow:hidden}
 html.cep-mode .rh{display:none!important}
 html.cep-mode .ptitlebar{display:none!important}
 html.cep-mode .panel-body{border-radius:0!important}
-/* ════════ AI TOOLS (Strategiya B — UI tayyor, generatsiya «tez orada») ════════ */
+/* ════════ AI TOOLS (Studio Gen bilan ulangan — rasm/ovoz/video/SFX/qidiruv) ════════ */
 /* AI rejimda browse chrome yashiriladi, #aiPage ko'rsatiladi (nav mantig'i tegilmaydi) */
 html.ai-mode .env-top,
 html.ai-mode .env-subnav,
@@ -1560,6 +1560,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-improve{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:8px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);cursor:pointer;font-family:inherit;font-size:var(--fs-sm);font-weight:500}
 .ai-improve:hover{background:rgba(130,195,65,.22)}
 .ai-improve[disabled]{opacity:.6;cursor:default}
+.ai-improve-group{display:inline-flex;align-items:center;gap:6px}
+.ai-improve-json{background:rgba(120,130,255,.14);border-color:rgba(120,130,255,.45);color:#9aa6ff}
+.ai-improve-json:hover{background:rgba(120,130,255,.24)}
 
 .ai-comp-ctrls{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 .ai-dd{position:relative}
@@ -1983,7 +1986,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                   </div>
                 </div>
 
-                <!-- ✨ AI TOOLS — UI tayyor, generatsiya hali ishlamaydi («tez orada») -->
+                <!-- ✨ AI TOOLS — Studio Gen bilan ulangan (rasm/ovoz/video/SFX/qidiruv) -->
                 <div id="aiPage" style="display:none">
                   <div class="ai-wrap" id="aiWrap">
 
@@ -2003,7 +2006,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                         <textarea id="aiPrompt" rows="2" placeholder="G‘oyangizni yozing…" oninput="aiAutoGrow(this)" onfocus="aiFocus(true)" onblur="aiFocus(false)"></textarea>
                         <div class="ai-prompt-bar">
                           <span class="ai-charcount" id="aiCharCount">0 / 5000</span>
-                          <button type="button" class="ai-improve" id="aiImproveBtn" title="Promptni AI bilan boyitish" onclick="aiImprovePrompt()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg> Yaxshilash</button>
+                          <div class="ai-improve-group">
+                            <button type="button" class="ai-improve" id="aiImproveBtn" title="Promptni AI bilan boyitish" onclick="aiImprovePrompt()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg> Yaxshilash</button>
+                            <button type="button" class="ai-improve ai-improve-json" id="aiJsonBtn" title="Strukturalangan JSON promptga aylantirish" onclick="aiToJson()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H7a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h1"/><path d="M16 4h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-1"/></svg> JSON</button>
+                          </div>
                         </div>
                       </div>
 
@@ -2037,7 +2043,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           </button>
                           <div class="ai-menu" id="aiSettingMenu" style="display:none"></div>
                         </div>
-                        <!-- timeline ref (tez orada) -->
+                        <!-- timeline ref — tanlangan klipni reference sifatida oladi -->
                         <button type="button" class="ai-timeline" onclick="aiTimelineRef()" title="Timeline'da tanlangan klipni reference sifatida olish"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan</button>
 
                         <div class="ai-spacer"></div>
@@ -4164,11 +4170,12 @@ function onEnvScopeChange(sel){
   applyNavSwitch(tab);
 }
 
-/* ───── AI Tools (UI demo — backend chaqiruv YO'Q, «tez orada») ───── */
+/* ───── AI Tools — Studio Gen bilan ulangan (real generatsiya) ───── */
 /* ============================================================
-   AI Tools — yagona kompozer mantig'i (vanilla, backend YO'Q)
+   AI Tools — yagona kompozer mantig'i (vanilla JS).
    Dizayn referensi: Artlist uslubidagi bitta generatsiya bar.
-   Generatsiya hozircha "tez orada" demo holatini ko'rsatadi.
+   Backend: /api/studio/gen/* (session→cost-quote→job→poll) — rasm/ovoz/video/SFX;
+   qidiruv esa /api/plugin/ai/search. Prompt-enhance: /gen/prompt/enhance (kreditsiz).
    ============================================================ */
 // cost — server narxiga moslangan (backend AI_COST: image 5 · voiceover 3 · sfx 4 · search 1).
 // Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
@@ -4179,7 +4186,8 @@ const AI_CFG={
   sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['ElevenLabs SFX'],settings:[],ph:'Tovush effektini tasvirlang… (masalan: portlash, shamol, qadam)'},
   qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:1,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
 };
-// Media → backend endpoint mapping. sfx hali backend'da yo'q (faqat /image /voiceover /search).
+// LEGACY map (/api/plugin/ai/*) — endi faqat qidiruv (search) shu yo'l bilan ketadi.
+// rasm/ovoz/video/sfx Studio Gen oqimida (/api/studio/gen) — aiRunStudioGen / aiStudioMode.
 const AI_ENDPOINT={rasm:'image',ovoz:'voiceover',qidiruv:'search'};
 const af_ai={
   media:'rasm',
@@ -4744,14 +4752,41 @@ function aiSetSetting(i){
   // Setting params'ga ta'sir qilsa (ovoz → voice), quote eskirdi → qayta imzola.
   if(aiStudioMode(af_ai.media)){af_ai.quote=null;aiCostQuote();}
 }
-function aiImprovePrompt(){
+/**
+ * Promptni REAL AI bilan boyitadi (backend /gen/prompt/enhance — kreditsiz, model-aware).
+ *  format='text' → boy paragraf; format='json' → strukturalangan prompt sxemasi.
+ */
+async function aiEnhancePrompt(format){
   const ta=document.getElementById('aiPrompt');
   if(!ta)return;
-  const base=(ta.value||'').trim()||(af_ai.media==='qidiruv'?'kosmik intro':'kelajak shahri');
-  ta.value=af_ai.media==='qidiruv'?base:base+' — kinematik, yumshoq yorug‘lik, 35mm, yuqori detallar';
-  aiAutoGrow(ta);aiUpdateCharCount();
-  if(typeof showToast==='function')showToast('Prompt yaxshilandi','success');
+  const media=af_ai.media;
+  const base=(ta.value||'').trim();
+  if(!base){ if(typeof showToast==='function')showToast('Avval g‘oyangizni yozing','warning'); return; }
+  const mode=aiStudioMode(media);
+  // Qidiruv — generatsiya prompti emas (katalog so'rovi); boyitish qo'llanmaydi.
+  if(!mode){ if(typeof showToast==='function')showToast('Qidiruv so‘rovi boyitishni talab qilmaydi','info'); return; }
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
+    if(typeof showToast==='function')showToast('AI uchun avval tizimga kiring','warning'); return;
+  }
+  if(af_ai._enh)return; af_ai._enh=true;
+  const btn=document.getElementById(format==='json'?'aiJsonBtn':'aiImproveBtn');
+  const old=btn?btn.innerHTML:''; if(btn){btn.disabled=true;btn.innerHTML='<span class="ai-dots">…</span>';}
+  try{
+    const body={prompt:base,mode:mode,format:format||'text'};
+    const id=af_ai.modelId&&af_ai.modelId[media]; if(id)body.modelId=id;
+    const d=await studioPost('/api/studio/gen/prompt/enhance',body,45000);
+    if(format==='json'&&d&&d.json){ ta.value=JSON.stringify(d.json,null,2); }
+    else if(d&&d.prompt){ ta.value=d.prompt; }
+    aiAutoGrow(ta);aiUpdateCharCount();
+    if(typeof showToast==='function')showToast(format==='json'?'Strukturalangan JSON promptga aylantirildi':'Prompt yaxshilandi','success');
+  }catch(e){
+    if(typeof showToast==='function')showToast((e&&e.message)||'Promptni yaxshilab bo‘lmadi','error');
+  }finally{
+    af_ai._enh=false; if(btn){btn.disabled=false;btn.innerHTML=old;}
+  }
 }
+function aiImprovePrompt(){ aiEnhancePrompt('text'); }
+function aiToJson(){ aiEnhancePrompt('json'); }
 function aiResetResult(){
   af_ai.gen=false;
   if(af_ai._t){clearTimeout(af_ai._t);af_ai._t=null;}

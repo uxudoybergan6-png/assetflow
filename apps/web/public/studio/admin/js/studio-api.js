@@ -22,9 +22,7 @@ const StudioApi = (() => {
     const t = token();
     if (t) headers.Authorization = `Bearer ${t}`;
 
-    let res;
-    try {
-      res = await fetch(`${baseUrl()}${path}`, {
+    const fetchOpts = {
       ...options,
       headers,
       body:
@@ -33,13 +31,27 @@ const StudioApi = (() => {
           : options.body
             ? JSON.stringify(options.body)
             : undefined,
-      });
-    } catch (e) {
+    };
+    // Tarmoq xatosida qayta urinish — Render free-tarif "cold start" (uyqudan uyg'onish)
+    // birinchi so'rovni uzishi mumkin. 3 urinish (1.5s, 3s backoff). Network-throw = server
+    // so'rovni qayta ishlamadi → POST takrori xavfsiz.
+    let res, lastErr;
+    for (let a = 0; a < 3; a++) {
+      try {
+        res = await fetch(`${baseUrl()}${path}`, fetchOpts);
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        if (a < 2) await new Promise((r) => setTimeout(r, 1500 * (a + 1)));
+      }
+    }
+    if (lastErr) {
       const isLocal = /localhost|127\.0\.0\.1/.test(baseUrl());
       throw new Error(
         isLocal
           ? "API ishlamayapti. Terminalda: npm run dev:api (port 4000)"
-          : "Server bilan aloqa uzildi — internetni tekshirib qayta urinib ko'ring"
+          : "Server bilan aloqa uzildi — server uyqudan uyg'onayotgan bo'lishi mumkin, biroz kutib qayta urining"
       );
     }
 
@@ -106,51 +118,69 @@ const StudioApi = (() => {
    * onProgress(yuklangan, jami) baytlarda chaqiriladi.
    */
   function uploadAssets(id, files, onProgress) {
-    const fd = new FormData();
-    if (files.thumb) fd.append("thumb", files.thumb);
-    if (files.preview) fd.append("preview", files.preview);
-    if (files.pack) fd.append("pack", files.pack);
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", `${baseUrl()}/api/contributor/templates/${id}/assets`);
-      const t = token();
-      if (t) xhr.setRequestHeader("Authorization", `Bearer ${t}`);
-      xhr.upload.onprogress = (ev) => {
-        if (onProgress && ev.lengthComputable) onProgress(ev.loaded, ev.total);
-      };
-      xhr.onload = () => {
-        let data = null;
-        try {
-          data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-        } catch {
-          data = null;
+    // Bitta urinish. tryNo<2 da tarmoq/5xx uzilishida {__retry:true} bilan rad etadi.
+    const attempt = (tryNo) =>
+      new Promise((resolve, reject) => {
+        const fd = new FormData();
+        if (files.thumb) fd.append("thumb", files.thumb);
+        if (files.preview) fd.append("preview", files.preview);
+        if (files.pack) fd.append("pack", files.pack);
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${baseUrl()}/api/contributor/templates/${id}/assets`);
+        const t = token();
+        if (t) xhr.setRequestHeader("Authorization", `Bearer ${t}`);
+        xhr.upload.onprogress = (ev) => {
+          if (onProgress && ev.lengthComputable) onProgress(ev.loaded, ev.total);
+        };
+        xhr.onload = () => {
+          let data = null;
+          try {
+            data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+          } catch {
+            data = null;
+          }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(data);
+            return;
+          }
+          // Server restart/yuklanish (502/503/504) → qayta urinish mumkin
+          if ((xhr.status === 502 || xhr.status === 503 || xhr.status === 504) && tryNo < 2) {
+            reject({ __retry: true });
+            return;
+          }
+          const friendly =
+            xhr.status === 413
+              ? "Fayl juda katta — maksimal 3 GB"
+              : xhr.status === 401
+                ? "Sessiya tugagan — qayta tizimga kiring"
+                : xhr.status === 502 || xhr.status === 503 || xhr.status === 504
+                  ? "Server javob bermadi — bir ozdan so'ng qayta urinib ko'ring"
+                  : `Yuklash xatosi (HTTP ${xhr.status})`;
+          const err = new Error((data && (data.error || data.message)) || friendly);
+          err.status = xhr.status;
+          err.data = data;
+          reject(err);
+        };
+        // Tarmoq uzilishi (ko'pincha server OOM-restart) → qayta urinish mumkin
+        xhr.onerror = () => {
+          if (tryNo < 2) reject({ __retry: true });
+          else reject(new Error("Yuklash uzilib qoldi — internetni tekshirib qayta urinib ko'ring"));
+        };
+        xhr.send(fd);
+      });
+    // Uzilishda 2 marta qayta jo'natadi (5s, 10s) — Render restart'дан tiklanadi.
+    const run = async (tryNo) => {
+      try {
+        return await attempt(tryNo);
+      } catch (e) {
+        if (e && e.__retry && tryNo < 2) {
+          await new Promise((r) => setTimeout(r, 5000 * (tryNo + 1)));
+          return run(tryNo + 1);
         }
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(data);
-          return;
-        }
-        // Server JSON xato bersa o'shani, bo'lmasa statusga qarab tushunarli xabar
-        const friendly =
-          xhr.status === 413
-            ? "Fayl juda katta — maksimal 3 GB"
-            : xhr.status === 401
-              ? "Sessiya tugagan — qayta tizimga kiring"
-              : xhr.status === 502 || xhr.status === 503 || xhr.status === 504
-                ? "Server javob bermadi — bir ozdan so'ng qayta urinib ko'ring"
-                : `Yuklash xatosi (HTTP ${xhr.status})`;
-        const err = new Error(
-          (data && (data.error || data.message)) || friendly
-        );
-        err.status = xhr.status;
-        err.data = data;
-        reject(err);
-      };
-      xhr.onerror = () =>
-        reject(
-          new Error("Yuklash uzilib qoldi — internetni tekshirib qayta urinib ko'ring")
-        );
-      xhr.send(fd);
-    });
+        throw e;
+      }
+    };
+    return run(0);
   }
 
   async function listTemplates(query = "") {

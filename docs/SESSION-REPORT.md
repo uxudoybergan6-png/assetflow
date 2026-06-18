@@ -1,21 +1,23 @@
-# SESSION REPORT — 2026-06-15 — Contributor upload "aloqa uzildi" + SFX-B davom
+# SESSION REPORT — 2026-06-16 — Prompt-enhancer real ulash + JSON sxema + tozalash
 
-## Contributor upload xatosi (tuzatildi)
-- Shikoyat: shablon yuklashda "Server bilan aloqa uzildi".
-- Diagnoz: API SOG'LOM (prod create-template 0.8s, HTTP 400=validatsiya, tarmoq emas).
-  Sabab vaqtinchalik — Render free-tarif COLD START (uyqudan uyg'onish) yoki deploy-restart
-  birinchi fetch'ni uzdi. Xato fetch-throw (1-bosqich: shablon yozuvi), fayl yuklashda emas.
-- Tuzatish: **studio-api.js request() — tarmoq xatosida 3 marta retry** (1.5s/3s backoff).
-  Cold-start'дан avtomatik tiklanadi. POST takrori xavfsiz (network-throw=server qayta ishlamadi;
-  upload UP_EDIT_ID bilan dublikatsiz). studio:sync bajarildi.
+## Bajarildi (Magnific topilmalari → loyihaga, 1-2-3 bir urinishda)
 
-## SFX-B (timeline → SFX) — bosqichlar holati
-- B1 ✅: readTimelineForSfx (render'siz timeline o'qish — 1 layer/0 marker/10s tasdiqlandi).
-- B2a: sampleFramesForSfx (saveFrameToPng — render'siz kadr namunasi) — test tugmasi pill qilindi.
-  ⏱ "Timeline o'qish (B1 test)" → layer+marker+kadr hisoboti. AE test kutilmoqda.
+### 1. Prompt-enhancer REAL ulandi (oldin soxta edi)
+- `aiImprovePrompt()` faqat lokal string qo'shardi → endi backend `/api/studio/gen/prompt/enhance` chaqiradi.
+- Yangi `aiEnhancePrompt(format)` — async, loading holati, login-gate, model-aware (modelId yuboriladi).
+
+### 2. Strukturalangan JSON sxema + model-aware kontekst
+- Backend enhance route yangilandi: `format:text|json`, `modelId` → model konteksti (duration/aspect/audio) system promptga inject (Magnific `extra_params` uslubi).
+- JSON rejimi kinematografik sxema qaytaradi (subject/lighting/camera/composition/...) — `response_format:json_object`.
+- `openrouter.ts`: yangi `orChatSys(model,system,user,jsonMode)` helper.
+- Plugin UI: "JSON" tugmasi (`aiToJson`) "Yaxshilash" yonida.
+
+### 3. Tozalash
+- Stale "tez orada/demo/backend YO'Q" izohlari tuzatildi (generatsiya aslida ishlaydi).
+- Dead code o'chirildi: `index.html`, `js/app.js`, `js/api.js` (eski CreativeTools stub; manifestda yo'q). README endi mos.
 
 ## Tekshirildi
-- studio-api.js node --check OK; install-cep (SFX-B); inline JS 0 xato.
+- `npm run build -w apps/api` → toza (tsc OK). Plugin inline JS `new Function()` → 0 xato.
 
-## Holat
-Studio fix: commit+push → CF Pages auto-build. SFX-B AE'да davom etadi (kadr to'g'riligini tekshirish).
+## Kutilmoqda
+- AE ichida jonli test (enhance/JSON tugmalari). SFX timeline auto-sync (B2) hali ochiq.
