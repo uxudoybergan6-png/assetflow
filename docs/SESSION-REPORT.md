@@ -1,17 +1,17 @@
-# SESSION REPORT — 2026-06-18 — D: Eski preview re-transcode (720p backfill)
+# SESSION REPORT — 2026-06-18 — E: AE Admin "Failed to fetch" diagnostika + tuzatish
 
-## Bajarildi
-- **Endpoint** `POST /api/contributor/admin/templates/:id/re-transcode-preview` (requireAuth+requireAdmin), `contributor.ts`:
-  - Preview manbasini aniqlaydi (disk → bo'lmasa R2'dan tmp'ga `downloadS3ToFile`).
-  - `optimizePreviewForStreaming()` (mavjud 720p H.264 funksiya) bilan transcode.
-  - R2 ga `templates/:id/preview.mp4` sifatida qayta yozadi (`uploadFileToS3`); eski katta nusxa boshqa kalitda (preview.mov/.webm) bo'lsa `deleteS3Objects` bilan o'chiradi.
-  - JSON: before/after/savedBytes, transcoded (false=faststart-only fallback), removedOldKey. tmpDir finally'da tozalanadi.
-- **Bulk skript** `scripts/retranscode-previews.mjs` + `npm run retranscode:previews`: admin login → `GET /templates?scope=all` → preview'i borlarni KETMA-KET (OOM oldini olish) transcode. `DRY_RUN=1` va per-ID argument qo'llab-quvvatlanadi.
-- PROJECT-STATUS 3.3'ga backfill eslatmasi.
+## Diagnostika (sabablar)
+- CEP origin `file://` → API CORS allowlist'dan o'tadi (index.ts), demak CORS odatda SABAB EMAS.
+- "Failed to fetch" asosiy sabablari: (a) API prefs `localhost` (AE ichida ishlamaydi) — `apiBase()` allaqachon localhost→PROD auto-fix qiladi; (b) Render cold-start (uxlagan); (c) eski extension (eski HTML kesh) — yangi ↻ Refresh + auto-fix yumshatadi.
+- **Bo'shliq topildi:** `apiForm()` (FormData upload) raw `fetch` edi — cold-start retry YO'Q, xato tarjimasi YO'Q → upload'da tarjimasiz "Failed to fetch". Ikki XHR `onerror` ham xom "Network error"/"Tarmoq xatosi" qaytarardi.
+
+## Tuzatish (AssetFlow_Admin.html)
+- `apiForm()` ga `api()` bilan bir xil cold-start retry (`waitForApi`) + `formatFetchError` qo'shildi.
+- `formatFetchError` qayta yozildi: `netErrMsg()` + `isNetworkErr()` helperlar — tushunarli o'zbekcha sabab + «🌐 Brauzer Admin» muqobilini taklif qiladi. Ikki XHR `onerror` shu xabarni ishlatadi.
+- Login ekranidagi «Brauzer Admin» tugmasi `btn-ghost`(kichik)→`btn-secondary` (yashil konturli, ko'zga tashlanadigan) qilindi; noto'g'ri "(Vercel)" yorlig'i olib tashlandi (URL CF Pages). Yangi `.btn-secondary` CSS.
 
 ## Tekshirildi
-- `npm run build -w apps/api` → tsc toza. `node --check` skript OK. package.json JSON OK. UI o'zgarmadi → studio:sync shart emas.
+- Inline JS parse: 1 blok, 0 syntax xato. Fayllar CEP papkasiga ko'chirildi (AE qo'zg'atilmadi), build shtamplandi.
 
-## Eslatma / kutilmoqda
-- Skript productionга qarshi ishlaganda R2 va ffmpeg (Render'da) mavjud bo'lishi kerak; jonli yurish hali o'tkazilmagan.
-- E: AE Admin "Failed to fetch". F: Studio Gen tarix grid.
+## Kutilmoqda
+- F: Studio Gen tarix grid (eng katta).

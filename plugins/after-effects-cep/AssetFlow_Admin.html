@@ -25,6 +25,8 @@ select option{background:#222}
 .btn-primary{width:100%;height:38px;border-radius:8px;background:var(--green);color:#111;font-size:12px;font-weight:700;margin-top:6px;transition:opacity .15s}
 .btn-primary:hover{opacity:.9}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{width:100%;height:36px;border-radius:8px;background:transparent;color:var(--green);border:1px solid var(--green);font-size:12px;font-weight:600;transition:background .15s,color .15s}
+.btn-secondary:hover{background:var(--green);color:#111}
 .login-err{font-size:11px;color:var(--red);margin-top:8px;text-align:center}
 
 /* ── Shell ── */
@@ -394,9 +396,9 @@ select option{background:#222}
       <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn-primary" id="loginBtn" onclick="doLogin()">Kirish</button>
-    <button type="button" class="btn-ghost" style="width:100%;margin-top:8px;font-size:11px" onclick="openWebAdmin()">Brauzerda Admin (Vercel) ochish</button>
+    <button type="button" class="btn-secondary" style="width:100%;margin-top:10px" onclick="openWebAdmin()">🌐 Brauzerda Admin ochish (ishonchliroq)</button>
     <div class="login-err" id="loginErr"></div>
-    <p class="login-sub" style="margin-top:10px;font-size:var(--fs-xs);line-height:1.4">«Failed to fetch» — extension yangilang: <code style="color:var(--green)">install-cep.sh</code></p>
+    <p class="login-sub" style="margin-top:10px;font-size:var(--fs-xs);line-height:1.4">«Failed to fetch» bo‘lsa: CEP panel nozik — yuqoridagi <b>🌐 Brauzer Admin</b> dan foydalaning yoki extension'ni yangilang: <code style="color:var(--green)">install-cep.sh</code></p>
   </div>
 </div>
 
@@ -657,12 +659,19 @@ function apiBase() {
   return url;
 }
 
+/** "Failed to fetch" ko'p sababli bo'ladi (CEP file:// origin CORS'dan o'tadi, demak
+ *  odatda sabab: API URL noto'g'ri/localhost, internet yo'q, yoki Render uxlagan).
+ *  Tushunarli o'zbekcha sabab + Brauzer Admin muqobilini taklif qiladi. */
+function netErrMsg() {
+  return 'API ga ulanib bo‘lmadi: ' + apiBase() + ' — internet yoki API URL ni tekshiring '
+    + '(localhost AE ichida ishlamaydi). Muqobil: «🌐 Brauzer Admin».';
+}
+function isNetworkErr(msg) {
+  return msg === 'Failed to fetch' || /NetworkError|Tarmoq xatosi|Network error/i.test(msg);
+}
 function formatFetchError(e) {
-  const base = apiBase();
   const msg = (e && e.message) || String(e);
-  if (msg === 'Failed to fetch' || msg.includes('NetworkError')) {
-    return 'API ga ulanib bo‘lmadi: ' + base + ' — internet yoki API URL ni tekshiring (localhost AE ichida ishlamaydi).';
-  }
+  if (isNetworkErr(msg)) return netErrMsg();
   return msg;
 }
 
@@ -732,12 +741,23 @@ async function api(path, opts = {}, _retried = false) {
   return data;
 }
 
-async function apiForm(path, formData) {
-  const res = await fetch(apiBase() + path, {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token() },
-    body: formData
-  });
+async function apiForm(path, formData, _retried = false) {
+  let res;
+  try {
+    res = await fetch(apiBase() + path, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token() },
+      body: formData
+    });
+  } catch (netErr) {
+    // api() bilan bir xil: cold-start bo'lsa bir marta uyg'otib qayta urinamiz.
+    if (!_retried) {
+      toast('Server uyg‘onmoqda… qayta urinilmoqda', false);
+      const ok = await waitForApi(null, 5, 4000);
+      if (ok) return apiForm(path, formData, true);
+    }
+    throw new Error(formatFetchError(netErr));
+  }
   const text = await res.text();
   let data;
   try { data = text ? JSON.parse(text) : null; } catch(e) { data = { raw: text }; }
@@ -1430,7 +1450,7 @@ async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
         if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
         else reject(Object.assign(new Error('HTTP ' + xhr.status), { status: xhr.status }));
       };
-      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.onerror = () => reject(new Error(netErrMsg()));
       xhr.send(fd);
     });
 
@@ -2499,7 +2519,7 @@ function xhrUpload(path, formData, onProgress) {
         reject(Object.assign(new Error('HTTP ' + xhr.status), { status: xhr.status }));
       }
     };
-    xhr.onerror = () => reject(new Error('Tarmoq xatosi'));
+    xhr.onerror = () => reject(new Error(netErrMsg()));
     xhr.send(formData);
   });
 }
