@@ -18,9 +18,9 @@ services:
       - key: API_PUBLIC_URL
         value: https://assetflow-rqbq.onrender.com
       - key: CORS_ORIGIN
-        value: https://assetflow-studio-one.vercel.app
+        value: https://assetflow-20j.pages.dev,https://assetflow-studio-one.vercel.app
       - key: ADMIN_URL
-        value: https://assetflow-studio-one.vercel.app/admin/
+        value: https://assetflow-20j.pages.dev/admin/
       # Cloudflare R2
       - key: AWS_ACCESS_KEY_ID
         sync: false
