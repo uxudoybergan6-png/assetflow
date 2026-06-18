@@ -1647,6 +1647,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-h-cell img,.ai-h-cell video{width:100%;height:100%;object-fit:cover;display:block}
 .ai-h-audio{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--accent-cta)}
 .ai-h-badge{position:absolute;right:6px;bottom:6px;width:22px;height:22px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px}
+/* Sessiya tarixi: status chip + prompt caption + placeholder (done bo'lmagan gen'lar uchun) */
+.ai-h-ph{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--muted-2);background:var(--surface-2)}
+.ai-h-status{position:absolute;left:6px;top:6px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.6);z-index:2}
+.ai-h-status.running{background:var(--accent-cta);color:#111}
+.ai-h-status.failed{background:var(--red);color:#fff}
+.ai-h-cap{position:absolute;left:0;right:0;bottom:0;padding:14px 7px 5px;font-size:10px;line-height:1.25;color:#fff;text-align:left;background:linear-gradient(to top,rgba(0,0,0,.74),transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.ai-h-cell.is-failed{border-color:var(--red)}
+.ai-h-spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent-cta);animation:ai-h-rot .8s linear infinite}
+@keyframes ai-h-rot{to{transform:rotate(360deg)}}
 .ai-res-head b{font-size:var(--fs-md);font-weight:600;color:var(--text)}
 .ai-res-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);font-size:var(--fs-xs);font-weight:700}
 /* natija amallar — import / yana / tahrirlash */
@@ -4936,6 +4945,8 @@ async function aiRunStudioGen(media,val){
     price:quote.price,costQuoteSignature:quote.signature
   },60000);
   if(typeof start.creditsLeft==='number')aiUpdateCredits(start.creditsLeft);
+  // Yangi job darhol tarix grid'ida ("Navbatda/Ishlanmoqda") ko'rinsin — poll kutilmasin.
+  if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh();
   const gen=await aiPollJob(start.jobId,media,val);
   if(gen.status==='timeout'){
     // UI kutish oynasi tugadi — backend HALI ishlayotgan bo'lishi mumkin. "Qaytarildi" DEMAYMIZ.
@@ -5012,24 +5023,45 @@ function aiRenderImages(list,promptTxt){
 
 /* ── Generatsiya tarixi (oldingi rasm/videolar) ── */
 // GenAsset.type: 130=image, 120=audio, 140=video (backend konventsiyasi).
+function aiStatusLabel(s){return s==='running'?'Ishlanmoqda':s==='queued'?'Navbatda':s==='failed'?'Xato':'';}
+/** Bitta tarix katakchasi — thumb + status chip + prompt caption. */
+function aiHistoryCell(g){
+  const a=((g.assets||[])[0])||{};
+  const t=a.type, st=g.status||'done';
+  const promptT=aiEsc(String(g.prompt||'').slice(0,90));
+  let inner;
+  if(st!=='done'){
+    // queued/running → spinner; failed → ikona. Thumb hali yo'q.
+    inner='<span class="ai-h-ph">'+(st==='failed'?aiIco('spark',22):'<span class="ai-h-spin"></span>')+'</span>';
+  }else if(t===140){
+    inner='<video src="'+aiEsc(a.url||'')+'" muted preload="metadata"></video><span class="ai-h-badge">▶</span>';
+  }else if(t===120){
+    inner='<span class="ai-h-audio">'+aiIco('mic',22)+'</span>';
+  }else{
+    inner='<img src="'+aiEsc(a.thumbUrl||a.url||'')+'" alt=""/>';
+  }
+  const chip=(st!=='done')?'<span class="ai-h-status '+st+'">'+aiStatusLabel(st)+'</span>':'';
+  const cap=promptT?'<span class="ai-h-cap">'+promptT+'</span>':'';
+  return '<button type="button" class="ai-h-cell'+(st==='failed'?' is-failed':'')+'" onclick="aiOpenHistory(\''+aiEsc(g.id)+'\')" title="'+promptT+'">'+inner+chip+cap+'</button>';
+}
 async function aiLoadHistory(){
   const box=document.getElementById('aiHistory');if(!box)return;
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
   try{
-    const d=await studioGet('/api/studio/gen/history?limit=30');
-    const items=(d&&d.items)||[];
+    // Sessiya bor bo'lsa — SHU sessiya tarixi (queued/running/failed ham); aks holda global.
+    let items=[];
+    if(af_ai.sessionId){
+      const d=await studioGet('/api/studio/gen/sessions/'+af_ai.sessionId+'/generations?perPage=40');
+      items=(d&&d.items)||[];
+    }
+    if(!items.length){
+      const d=await studioGet('/api/studio/gen/history?limit=30');
+      items=(d&&d.items)||[];
+    }
     af_ai.history=items;
     if(!items.length){box.style.display='none';box.innerHTML='';return;}
     box.style.display='';
-    const cells=items.map(function(g){
-      const a=((g.assets||[])[0])||{};
-      const t=a.type;
-      let inner;
-      if(t===140)inner='<video src="'+aiEsc(a.url||'')+'" muted preload="metadata"></video><span class="ai-h-badge">▶</span>';
-      else if(t===120)inner='<span class="ai-h-audio">'+aiIco('mic',22)+'</span>';
-      else inner='<img src="'+aiEsc(a.thumbUrl||a.url||'')+'" alt=""/>';
-      return '<button type="button" class="ai-h-cell" onclick="aiOpenHistory(\''+aiEsc(g.id)+'\')" title="'+aiEsc(String(g.prompt||'').slice(0,90))+'">'+inner+'</button>';
-    }).join('');
+    const cells=items.map(aiHistoryCell).join('');
     box.innerHTML='<div class="ai-h-head">Tarix</div><div class="ai-h-grid">'+cells+'</div>';
   }catch(e){ /* login yo'q yoki API — jim */ }
 }
@@ -5037,8 +5069,10 @@ async function aiLoadHistory(){
 function aiOpenHistory(genId){
   const g=(af_ai.history||[]).filter(function(x){return x.id===genId;})[0];
   if(!g)return;
+  const st=g.status||'done';
+  if(st==='failed'){if(typeof showToast==='function')showToast('Bu generatsiya muvaffaqiyatsiz tugagan — kredit qaytarilgan','error');return;}
   const all=(g.assets||[]).filter(function(a){return a&&a.url;});
-  if(!all.length)return;
+  if(!all.length){if(typeof showToast==='function')showToast(st==='done'?'Natija topilmadi':'Hali tayyor emas — '+aiStatusLabel(st),'info');return;}
   af_ai.lastJobId=g.id;
   const extOf=function(u,d){return (String(u).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||d;};
   const wrap=document.getElementById('aiWrap');if(wrap)wrap.classList.add('ai-active');

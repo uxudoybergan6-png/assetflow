@@ -98,6 +98,19 @@ studioGenRouter.get(
       }),
       prisma.generation.count({ where }),
     ]);
+    // Signed URL 1 soatda eskiradi — /gen/:jobId va /gen/history kabi qayta imzolaymiz
+    // (aks holda tarix grid'idagi thumb/asset'lar 403 bo'ladi).
+    if (isS3Configured()) {
+      for (const g of items) {
+        for (const a of g.assets) {
+          if (a.resultKey) {
+            const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
+            a.url = fresh;
+            if (a.thumbUrl) a.thumbUrl = fresh;
+          }
+        }
+      }
+    }
     res.json({ items, page, perPage, total, hasMore: page * perPage < total });
   }
 );

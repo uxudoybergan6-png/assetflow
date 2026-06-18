@@ -1,17 +1,19 @@
-# SESSION REPORT — 2026-06-18 — E: AE Admin "Failed to fetch" diagnostika + tuzatish
+# SESSION REPORT — 2026-06-18 — F: Studio Gen sessiya tarixi grid
 
-## Diagnostika (sabablar)
-- CEP origin `file://` → API CORS allowlist'dan o'tadi (index.ts), demak CORS odatda SABAB EMAS.
-- "Failed to fetch" asosiy sabablari: (a) API prefs `localhost` (AE ichida ishlamaydi) — `apiBase()` allaqachon localhost→PROD auto-fix qiladi; (b) Render cold-start (uxlagan); (c) eski extension (eski HTML kesh) — yangi ↻ Refresh + auto-fix yumshatadi.
-- **Bo'shliq topildi:** `apiForm()` (FormData upload) raw `fetch` edi — cold-start retry YO'Q, xato tarjimasi YO'Q → upload'da tarjimasiz "Failed to fetch". Ikki XHR `onerror` ham xom "Network error"/"Tarmoq xatosi" qaytarardi.
+## Holat
+- Endpoint `GET /api/studio/gen/sessions/:id/generations` ALLAQACHON bor edi (paginatsiya + status filtri). Tarix grid frontend ham qisman bor edi (`aiLoadHistory` → global `/gen/history`).
 
-## Tuzatish (AssetFlow_Admin.html)
-- `apiForm()` ga `api()` bilan bir xil cold-start retry (`waitForApi`) + `formatFetchError` qo'shildi.
-- `formatFetchError` qayta yozildi: `netErrMsg()` + `isNetworkErr()` helperlar — tushunarli o'zbekcha sabab + «🌐 Brauzer Admin» muqobilini taklif qiladi. Ikki XHR `onerror` shu xabarni ishlatadi.
-- Login ekranidagi «Brauzer Admin» tugmasi `btn-ghost`(kichik)→`btn-secondary` (yashil konturli, ko'zga tashlanadigan) qilindi; noto'g'ri "(Vercel)" yorlig'i olib tashlandi (URL CF Pages). Yangi `.btn-secondary` CSS.
+## Bajarildi
+- **Backend** (`studio-gen.ts`): `/gen/sessions/:id/generations` endi asset signed-URL'larni `/gen/:jobId`/`/gen/history` kabi QAYTA imzolaydi (aks holda grid thumb/asset 403 bo'lardi).
+- **Plugin** (`AssetFlow_Plugin.html`):
+  - `aiLoadHistory()` endi SESSIYA-scoped: `af_ai.sessionId` bor bo'lsa shu sessiya generatsiyalarini (queued/running/failed ham) ko'rsatadi; bo'lmasa global `/gen/history` fallback.
+  - Yangi `aiHistoryCell()` — thumb + **status chip** (Navbatda/Ishlanmoqda/Xato) + **prompt caption**. Done bo'lmaganlar uchun spinner/ikona placeholder.
+  - `aiOpenHistory()` — failed/tayyor-emas bosilsa tushunarli toast (jim qaytmaydi).
+  - Poll BOSHLANISHIDA ham `StudioGenHistory.refresh()` → "Navbatda" katakcha darhol ko'rinadi; poll tugaganda yangi gen grid'da (refresh shart emas — mavjud chaqiruv).
+  - CSS: `.ai-h-status/.ai-h-cap/.ai-h-ph/.ai-h-spin` — tokens (`--accent-cta/--red/--surface-2/--muted-2`) bilan, 3 tema mos.
 
 ## Tekshirildi
-- Inline JS parse: 1 blok, 0 syntax xato. Fayllar CEP papkasiga ko'chirildi (AE qo'zg'atilmadi), build shtamplandi.
+- `npm run build -w apps/api` → tsc toza. Plugin inline JS parse: 2 blok, 0 xato. Studio static UI tegmadi → studio:sync shart emas. Fayllar CEP'ga ko'chirildi (AE qo'zg'atilmadi).
 
-## Kutilmoqda
-- F: Studio Gen tarix grid (eng katta).
+## Kutilmoqda / keyingi
+- AE ichida jonli test (gen → grid status oqimi, import). Barcha A–F sub-qadamlar tugadi.
