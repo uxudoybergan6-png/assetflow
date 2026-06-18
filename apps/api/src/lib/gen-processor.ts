@@ -13,7 +13,7 @@ import {
   orVideoStatus,
   orDownload,
 } from "./ai/openrouter.js";
-import { getModelById, resolveVideoParams, resolveImageCount } from "./gen-models.js";
+import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
 import { refundAiCredits } from "./plugin-profile.js";
@@ -125,11 +125,16 @@ export async function processGeneration(genId: string): Promise<void> {
       // count > 1 → N marta generatsiya, har biri alohida GenAsset (narx base×N).
       // Bittasi xato bo'lsa — butun batch fail + to'liq refund (foydalanuvchi yo hammasini oladi, yo hech narsa to'lamaydi).
       const count = resolveImageCount(model, params);
+      // ROUTER (G2): reference'ni model.referenceMode bo'yicha marshrutlaymiz — `feature`ga
+      // emas. Shu tufayli "text-to-image" feature'li, lekin image-edit qo'llaydigan modellar
+      // (Nano Banana 2 va h.k.) reference bilan orImageEdit'ga to'g'ri tushadi.
+      const refMode = getReferenceMode(model);
+      const useEdit =
+        !!refUrl && (refMode === "image-edit" || refMode === "image-ref");
       for (let i = 0; i < count; i++) {
-        const out =
-          model.feature === "image-edit" && refUrl
-            ? await orImageEdit(model.key, gen.prompt, refUrl, model.imgModalities, imageConfig)
-            : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
+        const out = useEdit
+          ? await orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+          : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
         if (!out.ok) return void (await fail(out.error));
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);

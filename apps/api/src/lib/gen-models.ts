@@ -26,6 +26,17 @@ export type GenFeature =
   | "image-to-video"
   | "text-to-sfx";
 
+/**
+ * Model reference rasmni QANDAY ishlatadi (gen-processor router + UI affordance):
+ *   none       — reference qabul qilmaydi (text→audio/embedding, yoki faqat text2img).
+ *   image-edit — instruct edit: reference + ko'rsatma ("qishki faslga almashtir") → orImageEdit.
+ *   image-ref  — style/subject reference (alohida format bo'lsa; hozircha image-edit bilan bir xil yo'l).
+ *   video-ref  — video model boshlang'ich kadr/reference rasm (input_references).
+ * Qiymat /api/v1/models/<key>/endpoints input_modalities bilan tasdiqlangan (2026-06-18):
+ * barcha rasm modellari image kiritadi → image-edit; barcha video → video-ref; kokoro/SFX → none.
+ */
+export type ReferenceMode = "none" | "image-edit" | "image-ref" | "video-ref";
+
 export type GenModel = {
   id: number;
   mode: "image" | "voice" | "video" | "music" | "sfx";
@@ -34,6 +45,7 @@ export type GenModel = {
   provider?: "openrouter" | "freepik" | "elevenlabs";
   feature: GenFeature;
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
+  referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
   isDefault?: boolean;
   enabled?: boolean; // false → generatsiya bloklanadi (kredit yechilmaydi)
 
@@ -72,6 +84,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Nano Banana 2",
     feature: "text-to-image",
     cost: 5,
+    referenceMode: "image-edit", // Gemini — instruct edit (image input tasdiqlangan)
     isDefault: true,
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
@@ -86,6 +99,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Nano Banana Pro",
     feature: "text-to-image",
     cost: 8,
+    referenceMode: "image-edit", // Gemini Pro — instruct edit
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
     resolutions: IMG_QUALITY,
@@ -99,6 +113,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Seedream 4.5",
     feature: "text-to-image",
     cost: 7,
+    referenceMode: "image-edit", // Seedream — image input + edit qo'llaydi
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
     resolutions: IMG_QUALITY,
@@ -112,6 +127,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Flux 2.0 Pro",
     feature: "text-to-image",
     cost: 8,
+    referenceMode: "image-edit", // Flux.2 pro — image input (ref/edit) qo'llaydi
     aspects: IMG_ASPECTS,
     resolutions: IMG_QUALITY,
     count: [1, 2, 3, 4],
@@ -124,6 +140,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Grok Imagine",
     feature: "text-to-image",
     cost: 6,
+    referenceMode: "image-edit", // Grok image — image input (i2i) qo'llaydi
     aspects: IMG_ASPECTS,
     resolutions: ["1K", "2K"],
     count: [1, 2, 3, 4],
@@ -137,6 +154,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Gemini Edit (reference)",
     feature: "image-edit",
     cost: 6,
+    referenceMode: "image-edit",
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
     imgModalities: ["image", "text"],
@@ -150,6 +168,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Kokoro TTS",
     feature: "text-to-speech",
     cost: 3,
+    referenceMode: "none", // text→speech (input_modalities=[text])
     isDefault: true,
     voices: KOKORO_VOICES,
     languages: ["English"],
@@ -164,6 +183,7 @@ export const GEN_MODELS: GenModel[] = [
     provider: "elevenlabs",
     feature: "text-to-sfx",
     cost: 4,
+    referenceMode: "none", // text→audio
     isDefault: true,
     durations: [3, 5, 10],
   },
@@ -176,6 +196,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Veo 3.1 Lite",
     feature: "text-to-video",
     cost: 10, // /s
+    referenceMode: "video-ref", // boshlang'ich kadr/reference rasm (input_references) — G3
     isDefault: true,
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p"],
@@ -190,6 +211,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Veo 3.1 Fast",
     feature: "text-to-video",
     cost: 20,
+    referenceMode: "video-ref",
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p", "4K"],
     durations: [4, 6, 8],
@@ -203,6 +225,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Veo 3.1",
     feature: "text-to-video",
     cost: 40,
+    referenceMode: "video-ref",
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p", "4K"],
     durations: [4, 6, 8],
@@ -216,6 +239,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Kling v3.0",
     feature: "image-to-video",
     cost: 12,
+    referenceMode: "video-ref",
     aspects: ["16:9", "9:16", "1:1"],
     resolutions: ["720p"],
     durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -229,6 +253,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Kling v3.0 Pro",
     feature: "image-to-video",
     cost: 18,
+    referenceMode: "video-ref",
     aspects: ["16:9", "9:16", "1:1"],
     resolutions: ["720p"],
     durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -242,6 +267,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Seedance 2.0",
     feature: "image-to-video",
     cost: 10,
+    referenceMode: "video-ref",
     aspects: ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"],
     resolutions: ["480p", "720p", "1080p"],
     durations: [4, 5, 6, 7, 8, 9, 10],
@@ -255,6 +281,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Wan 2.6",
     feature: "image-to-video",
     cost: 12,
+    referenceMode: "video-ref",
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p"],
     durations: [5, 10],
@@ -277,6 +304,26 @@ export function getModelById(id: number): GenModel | undefined {
 /** Model generatsiyaga ruxsat berilganmi (registrda bor + enabled). */
 export function isModelEnabled(model: GenModel | undefined): model is GenModel {
   return Boolean(model && model.enabled !== false);
+}
+
+/** Reference rejimi — deklaratsiya bo'lmasa mode'dan default (eski modellar uchun ham xavfsiz). */
+export function getReferenceMode(model: GenModel): ReferenceMode {
+  if (model.referenceMode) return model.referenceMode;
+  if (model.mode === "image") return "image-edit";
+  if (model.mode === "video") return "video-ref";
+  return "none";
+}
+
+/** Model reference rasm qabul qiladimi (none → qabul qilmaydi). */
+export function modelAcceptsReference(model: GenModel): boolean {
+  return getReferenceMode(model) !== "none";
+}
+
+/** Berilgan mode uchun reference qo'llaydigan birinchi enabled model (UI/xato tavsiyasi uchun). */
+export function firstReferenceModel(mode: string): GenModel | undefined {
+  return GEN_MODELS.find(
+    (m) => m.mode === mode && m.enabled !== false && modelAcceptsReference(m)
+  );
 }
 
 function pickStr(list: string[] | undefined, requested: unknown, prefer: string[]): string {

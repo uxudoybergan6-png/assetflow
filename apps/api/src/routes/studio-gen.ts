@@ -14,6 +14,9 @@ import {
   getModelById,
   isModelEnabled,
   computeGenCost,
+  getReferenceMode,
+  modelAcceptsReference,
+  firstReferenceModel,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import {
@@ -210,6 +213,22 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     model.provider === "elevenlabs" ? isElevenLabsConfigured() : isOpenRouterConfigured();
   if (!configured) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    return;
+  }
+
+  // Reference validatsiyasi (G2) — KREDITDAN OLDIN. Reference biriktirilgan, lekin model
+  // qabul qilmasa: aniq xato + qo'llaydigan model tavsiyasi (kredit yechilmaydi).
+  const hasRef = typeof params.referenceUrl === "string" && params.referenceUrl.length > 0;
+  if (hasRef && !modelAcceptsReference(model)) {
+    const rec = firstReferenceModel(mode);
+    res.status(400).json({
+      error: rec
+        ? `«${model.label}» reference qabul qilmaydi — «${rec.label}» modelini tanlang`
+        : `«${model.label}» reference qabul qilmaydi`,
+      code: "REFERENCE_NOT_SUPPORTED",
+      referenceMode: getReferenceMode(model),
+      recommendedModelId: rec?.id ?? null,
+    });
     return;
   }
 

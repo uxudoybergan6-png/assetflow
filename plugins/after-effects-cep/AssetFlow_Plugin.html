@@ -1672,6 +1672,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
 .ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap}
 .ai-timeline:hover{border-color:var(--muted-2);color:var(--text)}
+.ai-timeline.is-disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 .ai-soon{font-size:var(--fs-xs);font-weight:700;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
 .ai-spacer{flex:1;min-width:8px}
 .ai-gen{display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent);border:none;font-size:var(--fs-md);font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;transition:filter .15s,transform .12s}
@@ -1722,6 +1723,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-sr-score{flex:none;font-size:var(--fs-xs);font-weight:700;color:var(--accent-cta);background:var(--green-dim);border-radius:999px;padding:3px 8px}
 /* AI reference chip (Timeline/upload) */
 .ai-refbar{align-items:center;gap:10px;margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border-accent)}
+.ai-refhint{margin-top:8px;padding:7px 11px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted-2);font-size:var(--fs-sm);line-height:1.35}
 .ai-ref-thumb{width:46px;height:30px;border-radius:7px;overflow:hidden;flex:none;background:var(--surface-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted-2)}
 .ai-ref-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .ai-ref-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
@@ -2032,6 +2034,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
                       <!-- Timeline/upload reference chip (2a) -->
                       <div class="ai-refbar" id="aiRefBar" style="display:none"></div>
+                      <!-- model reference qabul qilmasa ko'rsatiladigan eslatma (G2) -->
+                      <div class="ai-refhint" id="aiRefHint" style="display:none"></div>
 
                       <!-- pastki boshqaruv qatori -->
                       <div class="ai-comp-ctrls">
@@ -2060,8 +2064,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           </button>
                           <div class="ai-menu" id="aiSettingMenu" style="display:none"></div>
                         </div>
-                        <!-- timeline ref — tanlangan klipni reference sifatida oladi -->
-                        <button type="button" class="ai-timeline" onclick="aiTimelineRef()" title="Timeline'da tanlangan klipni reference sifatida olish"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan</button>
+                        <!-- timeline ref — tanlangan klipni reference sifatida oladi (referenceMode bo'yicha yoqiladi/o'chiriladi) -->
+                        <button type="button" class="ai-timeline" id="aiRefBtn" onclick="aiTimelineRef()" title="Timeline'da tanlangan klipni reference sifatida olish"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg> Timeline'dan</button>
 
                         <div class="ai-spacer"></div>
                         <button type="button" class="ai-gen" id="aiGenBtn" onclick="aiGenerate()">
@@ -4331,9 +4335,43 @@ function aiSelLabel(media){
   if(media==='sfx'){ return sel.duration?(sel.duration+'s'):'Sozlama'; }
   return '';
 }
+/** Model + media reference qabul qiladimi (backend getReferenceMode bilan mos). */
+function aiRefSupported(model,media){
+  if(!model)return false;
+  const rm=model.referenceMode||(media==='rasm'?'image-edit':media==='video'?'video-ref':'none');
+  if(media==='rasm')return rm==='image-edit'||rm==='image-ref';
+  if(media==='video')return rm==='video-ref';
+  return false; // ovoz/sfx — reference yo'q
+}
+/** Shu media uchun reference qo'llaydigan modelni tavsiya qiladi (matn). */
+function aiRefRecommend(media){
+  const mode=aiStudioMode(media);const cat=(mode&&af_ai.catalog[mode])||[];
+  const rec=cat.filter(function(m){return aiRefSupported(m,media);})[0];
+  return rec?(' — «'+aiEsc(rec.label)+'» tanlang'):'';
+}
+/** Reference tugma + eslatmani joriy modelga moslaydi (G2 — model-aware). */
+function aiUpdateRefAffordance(){
+  const btn=document.getElementById('aiRefBtn');
+  const hint=document.getElementById('aiRefHint');
+  const m=aiCurrentModel();const media=af_ai.media;
+  const ok=aiRefSupported(m,media);
+  if(btn){
+    btn.classList.toggle('is-disabled',!ok);
+    btn.setAttribute('aria-disabled',ok?'false':'true');
+    btn.title=ok?'Timeline’da tanlangan klipni reference sifatida olish':'Bu model reference qabul qilmaydi';
+  }
+  // Mos kelmaydigan reference biriktirilgan bo'lsa — olib tashlaymiz (jim sarflanmasin).
+  if(!ok&&af_ai.reference){af_ai.reference=null;aiRenderRefBar();}
+  if(hint){
+    const showHint=!ok&&(media==='rasm'||media==='video');
+    if(showHint){hint.style.display='';hint.innerHTML='Bu model reference qabul qilmaydi'+aiRefRecommend(media);}
+    else{hint.style.display='none';hint.innerHTML='';}
+  }
+}
 /** Tanlovga ta'sir qiluvchi input affordancelar (model.inputs[] dan). */
 var AI_INPUT_LABEL={'image-ref':'Rasm reference','start-end-frame':'Start/End kadr','video-ref':'Video reference','audio-file':'Audio fayl','mention':'@mention'};
 function aiRenderInputs(){
+  aiUpdateRefAffordance(); // har model/media o'zgarishida reference affordance yangilanadi
   const box=document.getElementById('aiInputs');if(!box)return;
   // B1 TEST: SFX rejimida Timeline eksport tugmasi (vaqtinchalik)
   if(af_ai.media==='sfx'){
@@ -4454,6 +4492,11 @@ function aiCostQuote(){
 /* ── Timeline reference (2a) — tanlangan klipni composer'ga biriktirish ── */
 async function aiTimelineRef(){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Timeline faqat After Effects ichida','info');return;}
+  // Model reference qabul qilmasa — biriktirmaymiz (tugma odatda disabled, lekin himoya).
+  if(!aiRefSupported(aiCurrentModel(),af_ai.media)){
+    if(typeof showToast==='function')showToast('Bu model reference qabul qilmaydi'+aiRefRecommend(af_ai.media),'warning');
+    return;
+  }
   // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz. host.jsx endi
   // qo'lda JSON quradi (JSON.stringify'siz) — har doim yaroqli, bo'sh emas.
   const extEnum=(typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension';

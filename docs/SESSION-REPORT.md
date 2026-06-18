@@ -1,19 +1,16 @@
-# SESSION REPORT — 2026-06-18 — G1: Reference nega e'tiborsiz (diagnostika + tuzatish)
+# SESSION REPORT — 2026-06-19 — G2: Model-aware reference (referenceMode router)
 
-## Diagnostika (ildiz sabab)
-- Oqim: `aiTimelineRef()` reference'ni `af_ai.reference={path,name,mediaType}` (LOKAL fayl yo'li) qilib oladi va ref bar'da ko'rsatadi — LEKIN:
-  - `aiGenParams('rasm')` faqat `{aspectRatio,quality,count}` qaytaradi — reference YO'Q.
-  - `/gen` payload `params:aiGenParams(media)` yuboradi → `params.referenceUrl` doim `undefined`.
-- Backend ASLIDA TO'G'RI: `gen-processor.ts` `refUrl ? orImageEdit : orImage`; `orImageEdit` Gemini formatini to'g'ri yuboradi (`messages[].content` `image_url:{url}`, URL/data-URL). Reference yetmagani uchun har doim `orImage` (text2img) → "aloqasiz yangi rasm".
-- Xulosa: bug 100% FRONTEND — reference hech qachon yuborilmaydi.
+## Muhim topilma (G1 ham qisman shu sabab)
+- gen-processor router `model.feature === "image-edit" && refUrl` ekan. Lekin "Nano Banana 2" (1001) `feature:"text-to-image"` → reference bo'lsa ham `orImage` (text2img) chaqirilardi. `referenceMode` bo'yicha marshrutlash bilan tuzatildi.
 
-## Tuzatish
-- **Frontend** (`AssetFlow_Plugin.html`): yangi `aiReferenceDataUri(media)` — reference faylini (rasm yoki video kadr) fs→Blob→objectURL→canvas orqali 1024px JPEG data-URI ga aylantiradi (canvas taint'siz). `aiRunStudioGen` uni `params.referenceUrl` ga qo'shadi (faqat /gen'da, cost-quote'da emas).
-- **Backend** (`gen-quote.ts`): `genParamsHash` endi `referenceUrl`ni hashdan chiqaradi — narxga ta'sir qilmaydi, shuning uchun cost-quote (referencesiz) va /gen (reference bilan) bir xil hash → BAD_QUOTE bo'lmaydi.
-- **Backend** (`index.ts`): `express.json` limit 100kb→8mb (data-URI reference sig'sin).
+## Bajarildi
+- **gen-models.ts**: `ReferenceMode` type (none/image-edit/image-ref/video-ref) + har 13 modelga qiymat. `/endpoints` input_modalities bilan TASDIQLANGAN (2026-06-18): barcha 5 rasm modeli image kiritadi → `image-edit`; 7 video → `video-ref`; kokoro/SFX → `none`. Helperlar: `getReferenceMode`, `modelAcceptsReference`, `firstReferenceModel`.
+- **gen-processor.ts**: router endi `getReferenceMode(model)` bo'yicha → `image-edit`/`image-ref` + refUrl → `orImageEdit`, aks holda `orImage`. (`feature`ga emas.)
+- **studio-gen.ts** `/gen`: reference biriktirilgan, lekin model `none` → **400 `REFERENCE_NOT_SUPPORTED`** + qo'llaydigan model tavsiyasi, KREDITDAN OLDIN (sarflanmaydi).
+- **Plugin** (`AssetFlow_Plugin.html`): `/gen/models` to'liq model (referenceMode bilan) qaytaradi — frontend o'qiydi. `aiRefSupported/aiUpdateRefAffordance` — model tanlanganda reference tugmasi (`#aiRefBtn`) yoqiladi/o'chiriladi, qo'llamasa `#aiRefHint` ("bu model reference qabul qilmaydi" + tavsiya) + mos kelmaydigan ref avtoremoval. `aiTimelineRef` guard.
 
 ## Tekshirildi
-- `npm run build -w apps/api` → tsc toza. Plugin inline JS parse: 2 blok, 0 xato. Fayllar CEP'ga ko'chirildi (AE qo'zg'atilmadi).
+- tsc toza. Plugin parse: 2 blok, 0 xato. 13 model × referenceMode. Studio static UI tegmadi → studio:sync shart emas. CEP'ga ko'chirildi (AE qo'zg'atilmadi).
 
 ## Kutilmoqda
-- G2: model-aware referenceMode (router). G3: video reference. G4: Project'dan reference. G5: image/video-to-prompt.
+- G3: video reference (video-ref router/format). G4: Project'dan reference. G5: image/video-to-prompt.
