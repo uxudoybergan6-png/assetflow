@@ -73,12 +73,12 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 |--------|-----------|-----|
 | API | Render | https://assetflow-rqbq.onrender.com |
 | Studio (Admin+Contributor) | Cloudflare Pages | https://assetflow-20j.pages.dev |
-| (eski) Studio | Vercel | render.yaml'da CORS hali `assetflow-studio-one.vercel.app` ga ishora qiladi |
+| (eski) Studio | Vercel | render.yaml CORS'da hali ro'yxatda (`assetflow-studio-one.vercel.app`) — orqaga moslik uchun |
 | Storage | Cloudflare R2 (S3-mos) | `S3_ENDPOINT` + `CDN_BASE_URL` |
 | DB | Neon.tech PostgreSQL | `DATABASE_URL` |
 | Git remote | GitHub | `github.com/uxudoybergan6-png/assetflow` |
 
-> ⚠️ **Deploy ikkilanishi:** `render.yaml` da `CORS_ORIGIN`/`ADMIN_URL` hali **Vercel** (`assetflow-studio-one.vercel.app`) ga ishora qiladi, lekin CLAUDE.md va build skriptlari **Cloudflare Pages** (`assetflow-20j.pages.dev`) ni nazarda tutadi. Studio'ni CF Pages'da ishlatish uchun Render'da `CORS_ORIGIN` ni CF domeniga yangilash kerak. Bu — birinchi tekshiriladigan nuqta.
+> ✅ **CORS/ADMIN_URL tuzatildi (2026-06-18):** `render.yaml` da `CORS_ORIGIN` endi `https://assetflow-20j.pages.dev,https://assetflow-studio-one.vercel.app` (CF Pages birinchi, eski Vercel orqaga moslik uchun), `ADMIN_URL` = `https://assetflow-20j.pages.dev/admin/`. ⚠️ **Lekin:** Render dashboard'da bu env'lar qo'lda o'rnatilgan bo'lsa, ular yaml'dan ustun turadi — dashboard → Environment'da ham yangilang yoki "Sync" qiling.
 
 ---
 
@@ -125,10 +125,17 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 - `apps/api/src/routes/messages.ts` — threadlar, reply, **broadcast** (barcha contributor'larga).
 - `apps/api/src/routes/audit.ts` — `GET /api/studio/audit` (admin), barcha amallar `StudioAuditLog` ga yoziladi.
 
-### 3.8 Dizayn / temalar
-**Fayllar:** `packages/assetflow-studio/styles/app.css`, `js/theme.js`
-- ⚠️ **Kodda 2 ta tema bor: `dark` (default) va `light`** — uchinchisi YO'Q (CSS'da faqat `[data-theme="light"]`, theme.js faqat dark↔light toggle). Talabda "3 tema" deyilgan bo'lsa, hozircha bu amalga oshmagan.
-- Tema `localStorage` (`af-theme`) da, system preference fallback bilan.
+### 3.8 Dizayn / temalar — DIQQAT: Studio va Plugin TURLICHA
+Ikki kod bazasida ikki xil tema tizimi bor — aralashtirmang:
+
+**STUDIO (web) — 2 tema.** Fayllar: `packages/assetflow-studio/styles/app.css`, `js/theme.js`.
+- `dark` (default) ↔ `light`. CSS'da faqat `[data-theme="light"]` override, `theme.js` faqat dark↔light toggle.
+- `localStorage` kaliti: `af-theme`, system preference (`prefers-color-scheme`) fallback bilan.
+
+**PLUGIN (AE CEP) — 3 tema.** Fayllar: `plugins/after-effects-cep/css/tokens.css`, `AssetFlow_Plugin.html`.
+- `tokens.css` da `[data-theme]` bo'yicha **3 ta**: `standart` (= `:root` default), `liquid-glass`, `light-glass`.
+- Tanlash UI: Sozlamalardagi `.theme-pick` (Standart / Liquid Glass / Light Glass tugmalari) → `setTheme()` `html[data-theme]` ni o'zgartiradi (`AF_THEMES=['standart','liquid-glass','light-glass']`).
+- ⚠️ Bu Studio'ning 2 temasidan MUSTAQIL — plugin temasini o'zgartirish Studio'ga, va aksincha, ta'sir qilmaydi.
 
 ### 3.9 Bandwidth — R2 CDN direct
 - Yuklab olish/preview to'g'ridan R2/CDN (`CDN_BASE_URL`) yoki signed URL orqali (`apps/api/src/lib/s3.ts`), server orqali oqim emas → Render bandwidth tejaladi. Thumb/preview upload ham presigned PUT bilan to'g'ridan R2 ga (server xotirasini chetlab o'tadi).
@@ -153,20 +160,26 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 
 ## 4. NIMA QISMAN / TEST QILINMAGAN (halol)
 
-### 4.1 OpenRouter generatsiya — kod tayyor, end-to-end TEST QILINMAGAN ⚠️
-- Kod to'liq yozilgan (`openrouter.ts`, `gen-processor.ts`), lekin haqiqiy ishlash uchun Render'da:
-  - `OPENROUTER_API_KEY` o'rnatilgan va balansli bo'lishi kerak.
-  - **Model ID'lar tasdiqlanishi shart.** `gen-models.ts` dagi ba'zi ID'lar docs/namunadan olingan va OpenRouter'da mavjudligi tekshirilmagan, masalan: `google/gemini-3.1-flash-image-preview`, `google/gemini-3-pro-image-preview`, `black-forest-labs/flux.2-pro`, `google/veo-3.1`, `kwaivgi/kling-v3.0-pro`, `bytedance/seedance-2.0`, `alibaba/wan-2.6`, `x-ai/grok-imagine-image-quality`, `hexgrad/kokoro-82m`. Real `/gen` chaqiruvi hali sinab ko'rilmagan.
-- **Birinchi qadam:** OpenRouter model katalogiga qarab har bir `key` ni tekshirish, keyin har mode bo'yicha bitta real generatsiya o'tkazish.
+### 4.1 OpenRouter generatsiya — model ID'lar TASDIQLANDI, end-to-end test hali yo'q ⚠️
+- Kod to'liq yozilgan (`openrouter.ts`, `gen-processor.ts`). Haqiqiy ishlash uchun Render'da `OPENROUTER_API_KEY` o'rnatilgan va balansli bo'lishi kerak.
+- ✅ **Model ID'lar 2026-06-18'da tasdiqlandi.** `gen-models.ts` dagi har bir OpenRouter `key` per-model `/api/v1/models/<key>/endpoints` (status=0) orqali jonli ekanligi tekshirildi — barchasi mavjud. DIQQAT: `/api/v1/models` ro'yxati TO'LIQ EMAS (rasm-gen/TTS/embedding ko'rsatmaydi), shuning uchun avtoritativ tekshiruv — per-model `/endpoints` (izoh `gen-models.ts` boshida).
+- **Qolgan qadam:** har mode (image/voice/video/sfx) bo'yicha bitta real `/gen` chaqiruvi — kredit hisobi + R2 saqlashni end-to-end tasdiqlash (hali sinalmagan).
 
 ### 4.2 Generatsiya tarixi grid (vazifa "1e-3") — QILINMAGAN
 - Backend `GET /api/studio/gen/history` va `GET /gen/sessions/:id/generations` mavjud, lekin Studio'da bu tarixni ko'rsatadigan **frontend grid** yo'q. Studio static UI'da umuman Studio Gen sahifasi topilmadi (AI gen UI faqat backend + AE plugin tomonda).
 
-### 4.3 Qidiruv vs Studio Gen — ikki xil AI provayder
-- **Qidiruv embeddinglari** = Cloudflare **Workers AI** (`bge-m3`, `routes/ai.ts`).
-- **Studio Gen** (rasm/video/ovoz) = **OpenRouter**.
-- **SFX** = **ElevenLabs** (`elevenlabs/sound-effects`, OpenRouter SFX'ni qoplamaydi).
-- Bu uchta alohida provayder; har biriga alohida kalit kerak. Bularning aralashib ketmasligiga e'tibor bering.
+### 4.3 IKKI AI TIZIM — `/plugin/ai` vs `/studio/gen` (aralashtirmang)
+Loyihada **ikkita butunlay alohida AI tizim** bor. Ikkalasi har xil route prefiksi, har xil provayder, har xil kalit ishlatadi:
+
+| Tizim | Route prefiks | Provayder | Nima qiladi | Kalit |
+|-------|---------------|-----------|-------------|-------|
+| **AI Tools (eski)** | `/api/plugin/ai/*` | Cloudflare **Workers AI** | **Semantik qidiruv** (embedding), eski image/voiceover | `CF_ACCOUNT_ID` + `CF_AI_TOKEN` |
+| **Studio Gen (yangi)** | `/api/studio/gen/*` | **OpenRouter** (+ **ElevenLabs** faqat SFX) | rasm / video / ovoz generatsiya | `OPENROUTER_API_KEY` (+ `ELEVENLABS_API_KEY`) |
+
+- **Qidiruv embeddinglari = Workers AI** (`bge-m3`, `routes/ai.ts:212` `aiEmbed`). OpenRouter embedding (`qwen/qwen3-embedding-4b`, `gen-models.ts` `EMBED_MODEL`) faqat Studio Gen tomonida ichki ishlatiladi — qidiruv uni ishlatmaydi.
+- **Plugin (AE CEP) hozir `/plugin/ai` (Workers AI) ni ishlatadi** — Browse qidiruvi va eski AI Tools shu yerda. `/studio/gen` (OpenRouter) plugin AI Tools'iga hali **to'liq ulanmagan** (4.1 va F-vazifa: tarix grid).
+- **SFX = ElevenLabs** (`elevenlabs/sound-effects`) — OpenRouter SFX'ni qoplamaydi, shuning uchun alohida.
+- Uchta provayder, uchta alohida kalit. Birini ikkinchisiga almashtirib bo'lmaydi.
 
 ### 4.4 Stripe / to'lov — to'liq emas
 - Stripe kodi bor (`routes/stripe.ts`, `auth.ts` checkout/portal), lekin to'liq real checkout oqimi sinaб ko'rilmagan.
@@ -209,7 +222,7 @@ healthCheckPath: /health
 | `JWT_SECRET` | JWT + cost-quote + plugin imzo | Render `generateValue:true`; lokalda default xavfli |
 | `API_PORT` / `PORT` | Server porti | Render 10000 |
 | `API_PUBLIC_URL` | OpenRouter Referer + URL fallback | `assetflow-rqbq.onrender.com` |
-| `CORS_ORIGIN` | Ruxsatli frontend domen | ⚠️ hozir Vercel'ga ishora; CF Pages uchun yangilash kerak |
+| `CORS_ORIGIN` | Ruxsatli frontend domen(lar), vergul bilan | CF Pages + eski Vercel (2026-06-18); birinchi qiymat `getWebUrl()` uchun |
 | `ADMIN_URL` | Admin panel URL | render.yaml |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | R2 kalitlari | `sync:false` |
 | `AWS_S3_BUCKET` | R2 bucket nomi | — |
@@ -296,25 +309,25 @@ npm run studio:sync           # js/ + styles/ (root) → studio/, admin/, apps/w
 
 ## 8. MA'LUM MUAMMOLAR / RISKLAR
 
-1. **`hasPack:false`** — pack yo'q shablon katalogda ko'rinadi, lekin import bloklanadi. Render ephemeral disk sababli pack faqat R2 da bo'lishi kerak (disk+R2 tekshiruvi `catalog-map.ts` da hal qilingan).
+1. **`hasPack:false`** — pack yo'q shablon katalogda **ko'rinadi, lekin import bloklanadi** (plugin import tugmasini o'chiradi). Sabab: Render bepul instance disk **ephemeral** (qayta deploy/uxlashda yo'qoladi), shuning uchun pack/preview faqat **R2** da turishi shart. `catalog-map.ts` → `templateAssetFlags()` `hasPack`/`hasPreview` ni **disk VA R2** ikkalasidan tekshiradi — R2 da bo'lsa `true`. Agar productionда `hasPack:false` ko'rinsa: pack R2 ga yuklanmagan yoki kalit (`__srv_<id>`) mos emas.
 2. **Render cold-start** — bepul instance uxlaydi; birinchi so'rov sekin. Upload XHR retry (5xx/uzilish → 2x qayta) shu sababli qo'shilgan.
-3. **OpenRouter model ID tasdiqlash** — 4.1-bo'lim: model nomlari real emas bo'lishi mumkin, end-to-end test yo'q.
-4. **CORS_ORIGIN nomuvofiqligi** — render.yaml Vercel'ga, real deploy CF Pages'ga (2-bo'lim ogohlantirishi).
+3. **OpenRouter end-to-end test yo'q** — model ID'lar tasdiqlandi (4.1), lekin real `/gen` chaqiruvi hali sinab ko'rilmagan.
+4. **CORS_ORIGIN** — render.yaml tuzatildi (CF Pages + eski Vercel, 2026-06-18). Render dashboard'dagi qo'lda env yaml'dan ustun turishi mumkin — sinab ko'ring (2-bo'lim).
 5. **AE Admin CEP `Failed to fetch`** — odatda eski extension yoki `localhost` API. Brauzer Admin ishonchliroq.
 6. **Lokal `JWT_SECRET` default** — `change-me-in-production` xavfli; productionда Render `generateValue` ishlatadi.
-7. **OOM riski** — katta upload/generatsiya RAM spike'lari (presigned PUT + concurrency cheklovi bilan yumshatilgan, lekin Render instance kichik).
+7. **OOM riski + mitigatsiya** — Render instance kichik (512MB). RAM spike manbalari: katta thumb/preview/pack upload va generatsiya. **Mitigatsiya (mavjud):** (a) thumb/preview **presigned PUT** orqali to'g'ridan R2 ga — bayt API server xotirasidan o'tmaydi (`contributor.ts` upload-url); (b) yuklab olish/preview to'g'ridan R2/CDN (`s3.ts`), server orqali oqim emas; (c) upload concurrency cheklovi + XHR retry (5xx/uzilish → 2x). Pack (multer) hali server orqali o'tadi — katta `.aep/.zip` da ehtiyot bo'ling.
 
 ---
 
 ## 9. KEYINGI USTUVOR VAZIFALAR (yo'l xaritasi)
 
-1. **OpenRouter end-to-end test** — model ID'larni tasdiqlash, har mode (image/voice/video/sfx) bo'yicha bitta real generatsiya, kredit hisobi + R2 saqlashni tekshirish.
-2. **CORS_ORIGIN ni CF Pages domeniga yangilash** (Render env) — Studio ↔ API ulanishini barqarorlashtirish.
+1. **OpenRouter end-to-end test** — model ID'lar tasdiqlandi (2026-06-18); qoldi: har mode (image/voice/video/sfx) bo'yicha bitta real generatsiya, kredit hisobi + R2 saqlashni tekshirish.
+2. **CORS_ORIGIN** — render.yaml CF Pages'ga yangilandi (2026-06-18); qoldi: Render dashboard env'ini tasdiqlash (qo'lda qiymat yaml'dan ustun bo'lishi mumkin).
 3. **Generatsiya tarixi grid (1e-3)** — Studio Gen frontend (history grid) yaratish (`GET /gen/history` allaqachon bor).
 4. **End-to-end pipeline test** — Contributor upload → Admin approve → AE Sync → import (productionда).
 5. **To'lov** — Stripe checkout/webhook to'liq oqimini sinash; contributor payout.
 6. **Email bildirishnomalar** — `RESEND_API_KEY` ulash (approve/reject, parol tiklash).
-7. **Tema** — agar 3-tema kerak bo'lsa, `app.css` + `theme.js` ga qo'shish (hozir 2 ta).
+7. **Tema** — Plugin'da allaqachon 3 tema bor (standart/liquid-glass/light-glass). Faqat **Studio** hozir 2 ta (dark/light); agar Studio'ga ham 3-tema kerak bo'lsa, `app.css` + `theme.js` ga qo'shiladi (3.8-bo'lim).
 8. **AE Admin CEP barqarorligi** — `Failed to fetch` muammolarini hal qilish.
 
 ---
