@@ -4,8 +4,12 @@
  *   text-to-image | image-edit | text-to-speech | text-to-video | image-to-video.
  *
  * KREDIT XAVFSIZLIGI: bu ro'yxatdagi HAR key OpenRouter /api/v1/models/<key>/endpoints
- * bilan JONLI tasdiqlangan (2026-06-15). Jonli bo'lmagan model bu yerga qo'shilmaydi.
+ * bilan JONLI tasdiqlangan (2026-06-18). Jonli bo'lmagan model bu yerga qo'shilmaydi.
  * Vaqtincha o'chirish kerak bo'lsa — `enabled:false` (generatsiya 400, kredit yechilmaydi).
+ *
+ * OpenRouter model tekshiruvi: /api/v1/models ro'yxati TO'LIQ EMAS (rasm-gen/TTS/embedding
+ * ko'rsatmaydi). Avtoritativ tekshiruv — per-model /api/v1/models/<key>/endpoints (status=0).
+ * Barcha ID'lar 2026-06-18'da tasdiqlangan.
  *
  * Video capabilities (durations/resolutions/aspects) OpenRouter /api/v1/videos/models
  * avtoritativ ro'yxatidan olingan — processor shularga qarab param'ni klamplaydi (ortiqcha
