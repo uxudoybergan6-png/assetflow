@@ -1,13 +1,15 @@
-# SESSION REPORT — 2026-06-18 — A: Hujjat aniqlashtirish (PROJECT-STATUS.md)
+# SESSION REPORT — 2026-06-18 — B: Plugin Refresh tugmasi
 
 ## Bajarildi
-- **Tema** (3.8): Studio = 2 tema (dark/light, theme.js) vs Plugin = 3 tema (standart/liquid-glass/light-glass, tokens.css) — aniq ajratildi.
-- **Ikki AI tizim** (4.3): `/plugin/ai` = Workers AI (qidiruv/embedding, plugin shuni ishlatadi) vs `/studio/gen` = OpenRouter (rasm/video/ovoz); SFX = ElevenLabs. Jadval + plugin qaysini ishlatishi yozildi.
-- **hasPack:false** (disk ephemeral → R2 shart) va **OOM mitigatsiya** (presigned PUT, R2 direct, concurrency/retry; pack hali server orqali) aniq qayd (8-bo'lim).
-- **4.1**: OpenRouter model ID'lar 2026-06-18 tasdiqlangan (per-model /endpoints). CORS eslatmalari real holatga (render.yaml → CF Pages; Render dashboard tekshiruvi qoldi).
+- **Refresh tugmasi** sidebar pastiga (`.sb-foot`, kredit chip yonida) qo'shildi — doim ko'rinadi.
+  - `AssetFlow_Plugin.html`: tugma + `.sb-refresh` CSS (hover/active rotate) + `reloadPanel()` (`location.reload()` fallback bilan).
+  - Collapsed (64px) holatda `.sb-foot` ustun bo'lib chiqadi (refresh + kredit + build stack).
+- Maqsad: CEP HTML hot-reload qilmaydi → bu tugma AE'ni to'liq Cmd+Q qilmasdan panelni qayta yuklaydi (eski holat/xato bo'lganda).
+- Inline JS parse: 10 blok, 0 syntax xato.
+- Fayllar CEP papkasiga ko'chirildi (foydalanuvchi tanlovi bilan AE qo'zg'atilmadi); build shtamplandi.
 
-## Topildi
-- Plugin 3 temasi `tokens.css` + `AssetFlow_Plugin.html` `setTheme()` da real; Studio faqat 2.
+## Eslatma
+- AE 2025 ochiq edi — `install-cep.sh` AE'ni quit qiladi, shuning uchun faqat fayl-ko'chirish qilindi. Yangi ↻ tugmasi ko'rinishi uchun panelni bir marta qo'lda reload qilish kerak (keyin tugma ishlaydi).
 
-## Kutilmoqda (keyingi sub-qadamlar)
-- B: refresh tugmasi (plugin reload). C: Render cold-start. D: eski preview re-transcode. E: AE Admin "Failed to fetch". F: Studio Gen tarix grid.
+## Kutilmoqda
+- C: Render cold-start. D: eski preview re-transcode. E: AE Admin "Failed to fetch". F: Studio Gen tarix grid.

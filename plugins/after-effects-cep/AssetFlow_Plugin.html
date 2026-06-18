@@ -359,6 +359,11 @@ body{
 .sb-bolt svg{width:15px;height:15px}
 .sb-credit-text{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap}
 .sb-credit-text b{color:var(--accent-cta)}
+/* Refresh — panelni qayta yuklash (CEP HTML hot-reload qilmaydi; bu AE to'liq restart o'rnini bosadi) */
+.sb-refresh{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,transform .5s ease}
+.sb-refresh:hover{border-color:var(--muted-2);background:rgba(255,255,255,.06)}
+.sb-refresh:active{transform:rotate(180deg)}
+.sb-refresh svg{width:16px;height:16px;display:block}
 .env-content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 
 .env-top{padding:10px 14px 0;flex-shrink:0}
@@ -466,7 +471,7 @@ html.sb-collapsed .sb-group-children{max-height:0!important;opacity:0;margin:0;p
 .sb-group-head.cat-active{color:var(--text)}
 html.sb-collapsed .sb-group-head.cat-active{background:var(--green-dim)}
 html.sb-collapsed .sb-divider{margin:8px 10px}
-html.sb-collapsed .sb-foot{padding:10px 8px}
+html.sb-collapsed .sb-foot{padding:10px 8px;flex-direction:column;gap:8px}
 html.sb-collapsed .sb-credit{padding:8px;justify-content:center}
 /* tooltip (title) — nav + Katalog folder uchun */
 html.sb-collapsed .env-side-link::after,
@@ -1870,6 +1875,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
               <!-- AI kredit chip — refreshAccountUi() server balansidan yangilaydi -->
               <div class="sb-foot">
+                <button type="button" class="sb-refresh" onclick="reloadPanel()" title="Panelni yangilash — qayta yuklash (AE'ni to'liq qayta ishga tushirish shart emas)" aria-label="Panelni yangilash">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+                </button>
                 <div class="sb-credit" title="AI kredit balansi">
                   <span class="sb-bolt"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></svg></span>
                   <span class="sb-credit-text"><b id="sbCredit">50</b> kredit</span>
@@ -4108,6 +4116,12 @@ try{ restoreSidebarPref(); }catch(e){}
 function toggleSidebar(){
   const collapsed=document.documentElement.classList.toggle('sb-collapsed');
   try{ localStorage.setItem('af.sidebarCollapsed', collapsed?'1':'0'); }catch(e){}
+}
+/* Panelni qayta yuklash. CEP panel HTML hot-reload qilmaydi — bu location.reload()
+   AE'ni to'liq Cmd+Q qilmasdan UI'ni yangilaydi (eski holat/xato bo'lganda foydali). */
+function reloadPanel(){
+  try{ location.reload(); }
+  catch(e){ try{ window.location.href=window.location.href; }catch(_){ } }
 }
 function restoreSidebarPref(){
   let v=null; try{ v=localStorage.getItem('af.sidebarCollapsed'); }catch(e){}
