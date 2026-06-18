@@ -4488,6 +4488,50 @@ function aiRenderRefBar(){
     +'<span class="ai-ref-sub">'+(ref.source==='timeline'?'Timeline reference':'Reference')+'</span></span>'
     +'<button type="button" class="ai-ref-x" onclick="aiClearRef()" title="Olib tashlash">✕</button>';
 }
+/**
+ * Reference faylini (rasm YOKI video kadr) downscale qilib JPEG data-URI qaytaradi —
+ * backend `params.referenceUrl` (Gemini image edit) shuni kutadi. fs→Blob→objectURL
+ * yo'li canvas "taint" muammosini chetlab o'tadi (file:// rasm toDataURL'ni bloklamasin).
+ * Faqat IMAGE rejimda ishlatiladi (G1); video/ovoz keyingi bosqichlarda (G2/G3).
+ */
+async function aiReferenceDataUri(media){
+  const ref=af_ai.reference;
+  if(!ref||!ref.path)return null;
+  if(media!=='rasm')return null;
+  let fs;try{fs=require('fs');}catch(e){fs=null;}
+  if(!fs)return null;
+  const p=ref.path;
+  let buf;try{buf=fs.readFileSync(p);}catch(e){throw new Error('fayl o‘qilmadi');}
+  const url=URL.createObjectURL(new Blob([buf]));
+  const MAX=1024;
+  const toJpeg=function(el,w,h){
+    const scale=Math.min(1,MAX/Math.max(w||MAX,h||MAX));
+    const c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round((w||MAX)*scale));
+    c.height=Math.max(1,Math.round((h||MAX)*scale));
+    c.getContext('2d').drawImage(el,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg',0.85);
+  };
+  const isVid=/\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(p)||(ref.mediaType==='video'&&!/\.(png|jpe?g|webp|gif|bmp)$/i.test(p));
+  try{
+    if(isVid){
+      return await new Promise(function(resolve,reject){
+        const v=document.createElement('video');v.muted=true;v.preload='auto';v.src=url;
+        let done=false;const fail=function(m){if(!done){done=true;reject(new Error(m));}};
+        v.onloadeddata=function(){try{v.currentTime=Math.min(0.5,(v.duration||1)*0.1);}catch(e){fail('kadr olinmadi');}};
+        v.onseeked=function(){if(done)return;done=true;try{resolve(toJpeg(v,v.videoWidth,v.videoHeight));}catch(e){reject(e);}};
+        v.onerror=function(){fail('video yuklanmadi');};
+        setTimeout(function(){fail('video timeout');},15000);
+      });
+    }
+    return await new Promise(function(resolve,reject){
+      const img=new Image();
+      img.onload=function(){try{resolve(toJpeg(img,img.naturalWidth,img.naturalHeight));}catch(e){reject(e);}};
+      img.onerror=function(){reject(new Error('rasm yuklanmadi'));};
+      img.src=url;
+    });
+  }finally{ try{URL.revokeObjectURL(url);}catch(e){} }
+}
 /* ── AI SFX (B) — Timeline work-area eksport (B1) ── */
 function aiFindFfmpeg(){
   try{const fs=require('fs');const cands=['/opt/homebrew/bin/ffmpeg','/usr/local/bin/ffmpeg','/usr/bin/ffmpeg'];
@@ -4940,8 +4984,15 @@ async function aiRunStudioGen(media,val){
   if(!modelId){aiRenderError(new Error('Model yuklanmadi — qayta urinib ko‘ring'));return;}
   const sessionId=await aiEnsureSession(media);
   const quote=await aiEnsureQuote(media);
+  const params=aiGenParams(media);
+  // Reference biriktirilgan bo'lsa — data-URI sifatida qo'shamiz (referenceUrl narxga
+  // ta'sir qilmaydi, shuning uchun cost-quote'da YO'Q; backend hash undan e'tiborsiz).
+  try{
+    const refUrl=await aiReferenceDataUri(media);
+    if(refUrl)params.referenceUrl=refUrl;
+  }catch(e){ if(typeof showToast==='function')showToast('Reference o‘qilmadi: '+((e&&e.message)||e),'warning'); }
   const start=await studioPost('/api/studio/gen',{
-    sessionId,mode,modelId,prompt:val,params:aiGenParams(media),
+    sessionId,mode,modelId,prompt:val,params,
     price:quote.price,costQuoteSignature:quote.signature
   },60000);
   if(typeof start.creditsLeft==='number')aiUpdateCredits(start.creditsLeft);

@@ -22,13 +22,18 @@ function stableStringify(value: unknown): string {
   return JSON.stringify(value ?? null);
 }
 
-/** modelId + mode + params bo'yicha barqaror hash (quote'ni so'rovga bog'lash uchun). */
+/** modelId + mode + params bo'yicha barqaror hash (quote'ni so'rovga bog'lash uchun).
+ *  `referenceUrl` HASHDAN chiqariladi: u narxga ta'sir qilmaydi va katta (data-URI/URL)
+ *  bo'lishi mumkin. Shu tufayli cost-quote (referencesiz) va /gen (reference bilan)
+ *  bir xil hash beradi — aks holda reference qo'shilsa BAD_QUOTE bo'lardi. */
 export function genParamsHash(
   modelId: number,
   mode: string,
   params: Record<string, unknown>
 ): string {
-  return stableStringify({ modelId, mode, params });
+  const priced = { ...(params || {}) };
+  delete priced.referenceUrl;
+  return stableStringify({ modelId, mode, params: priced });
 }
 
 export type CostQuote = {

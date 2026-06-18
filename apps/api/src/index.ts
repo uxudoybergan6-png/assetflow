@@ -80,7 +80,9 @@ app.post(
   stripeWebhookHandler
 );
 
-app.use(express.json());
+// Limit 8mb: Studio Gen reference rasm `params.referenceUrl` data-URI sifatida
+// kelishi mumkin (default 100kb yetmaydi). Route'lar auth bilan himoyalangan.
+app.use(express.json({ limit: "8mb" }));
 app.use("/api/auth", authRouter);
 app.use("/api/assets", assetsRouter);
 app.use("/api/plugin", pluginRouter);
