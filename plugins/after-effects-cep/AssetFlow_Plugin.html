@@ -1654,22 +1654,55 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-progress-pct{margin-top:8px;font-size:var(--fs-sm);font-weight:700;color:var(--accent-cta);font-variant-numeric:tabular-nums}
 /* generatsiya tarixi */
 .ai-history{margin-top:28px}
-.ai-h-head{font-size:var(--fs-xs);font-weight:600;letter-spacing:.08em;color:var(--muted-2);text-transform:uppercase;margin-bottom:12px}
-.ai-h-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:10px}
-.ai-h-cell{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface);cursor:pointer;padding:0;font-family:inherit;transition:border-color .15s,transform .15s}
+/* ── V2 Creations galereya — header (filtr + view) ── */
+.ai-h-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ai-h-title{font-size:var(--fs-xs);font-weight:700;letter-spacing:.08em;color:var(--muted-2);text-transform:uppercase}
+.ai-h-filters{display:flex;gap:4px;flex-wrap:wrap}
+.ai-h-fbtn{font-size:var(--fs-xs);padding:3px 9px;border-radius:999px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:inherit}
+.ai-h-fbtn.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta);font-weight:600}
+.ai-h-views{margin-left:auto;display:flex;gap:4px}
+.ai-h-vbtn{width:28px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer}
+.ai-h-vbtn.on{background:var(--surface-2);color:var(--accent-cta);border-color:var(--border-accent)}
+.ai-h-empty{padding:18px;text-align:center;color:var(--muted);font-size:var(--fs-sm)}
+/* ── karta ── */
+.ai-h-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px}
+.ai-h-grid.list{display:flex;flex-direction:column;gap:8px}
+.ai-h-cell{position:relative;display:flex;flex-direction:column;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:inherit;transition:border-color .15s,transform .15s}
 .ai-h-cell:hover{border-color:var(--accent-cta);transform:translateY(-2px)}
-.ai-h-cell img,.ai-h-cell video{width:100%;height:100%;object-fit:cover;display:block}
+.ai-h-cell.is-failed{border-color:var(--red)}
+.ai-h-thumb{position:relative;aspect-ratio:1/1;overflow:hidden;border-radius:12px 12px 0 0;background:var(--surface-2)}
+.ai-h-thumb img,.ai-h-thumb video{width:100%;height:100%;object-fit:cover;display:block}
 .ai-h-audio{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--accent-cta)}
-.ai-h-badge{position:absolute;right:6px;bottom:6px;width:22px;height:22px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px}
-/* Sessiya tarixi: status chip + prompt caption + placeholder (done bo'lmagan gen'lar uchun) */
+.ai-h-badge{position:absolute;right:6px;bottom:6px;padding:2px 7px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;gap:2px}
 .ai-h-ph{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--muted-2);background:var(--surface-2)}
-.ai-h-status{position:absolute;left:6px;top:6px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.6);z-index:2}
+.ai-h-status{position:absolute;left:6px;top:6px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600;color:#fff;background:rgba(0,0,0,.6);z-index:2}
 .ai-h-status.running{background:var(--accent-cta);color:#111}
 .ai-h-status.failed{background:var(--red);color:#fff}
-.ai-h-cap{position:absolute;left:0;right:0;bottom:0;padding:14px 7px 5px;font-size:10px;line-height:1.25;color:#fff;text-align:left;background:linear-gradient(to top,rgba(0,0,0,.74),transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.ai-h-cell.is-failed{border-color:var(--red)}
 .ai-h-spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent-cta);animation:ai-h-rot .8s linear infinite}
 @keyframes ai-h-rot{to{transform:rotate(360deg)}}
+/* metadata teglari */
+.ai-h-meta{padding:7px 8px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ai-h-tags{display:flex;flex-wrap:wrap;gap:4px}
+.ai-h-tag{font-size:9px;line-height:1.4;padding:1px 6px;border-radius:999px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--muted-2);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.ai-h-time{font-size:9px;color:var(--muted)}
+/* hover amallar */
+.ai-h-acts{position:absolute;left:0;right:0;top:0;padding:6px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;opacity:0;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);border-radius:12px 12px 0 0;transition:opacity .15s;z-index:5}
+.ai-h-cell:hover .ai-h-acts{opacity:1;pointer-events:auto}
+.ai-h-act{width:25px;height:25px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;font-size:13px;line-height:1}
+.ai-h-act:hover{background:rgba(0,0,0,.82)}
+.ai-h-act.on{color:var(--accent-cta)}
+.ai-h-act.danger:hover{background:var(--red)}
+.ai-h-use{margin-left:auto;padding:0 9px;height:25px;border-radius:7px;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit}
+.ai-h-use:hover{background:var(--accent-cta);color:#111}
+.ai-h-menu{position:absolute;top:38px;right:6px;z-index:30;min-width:152px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:5px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px}
+.ai-h-menu button{text-align:left;padding:7px 9px;border-radius:7px;background:transparent;border:none;color:var(--text);font-size:var(--fs-sm);cursor:pointer;font-family:inherit}
+.ai-h-menu button:hover{background:var(--surface-3)}
+.ai-h-menu button.off{opacity:.45;cursor:not-allowed}
+/* list ko'rinish — gorizontal qatorlar */
+.ai-h-grid.list .ai-h-cell{flex-direction:row;align-items:stretch}
+.ai-h-grid.list .ai-h-thumb{width:96px;aspect-ratio:16/10;flex:none;border-radius:12px 0 0 12px}
+.ai-h-grid.list .ai-h-meta{flex:1;justify-content:center}
+.ai-h-grid.list .ai-h-acts{border-radius:12px 0 0 0}
 .ai-res-head b{font-size:var(--fs-md);font-weight:600;color:var(--text)}
 .ai-res-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);font-size:var(--fs-xs);font-weight:700}
 /* natija amallar — import / yana / tahrirlash */
@@ -4280,6 +4313,9 @@ const af_ai={
   view:'grid',open:null,gen:false,_t:null,reference:null,
   referenceEnd:null,  // V1.5 magnific End kadr (faqat Start/End modellar; generatsiya wiring V5)
   refSlot:'start',    // qaysi katak to'ldirilmoqda (start|end)
+  histView:'grid',    // V2 Creations: grid|list
+  histFilter:'all',   // V2 tur filtri: all|image|video|voice
+  histMenu:null,      // V2 ochiq karta menyusi: {id, type:'more'|'use'}
   // Studio Gen: real model katalog + capabilities-asosli tanlov + imzolangan cost-quote
   catalog:{},        // studioMode -> [{id,key,label,cost,feature,...capabilities}]
   modelId:{},        // media -> tanlangan model numeric id
@@ -4897,7 +4933,10 @@ function aiIco(name,size,sw){
     bolt:'<path d="M13 3L5 13h5l-1 8 8-10h-5z" fill="currentColor" stroke="none"/>',
     refresh:'<polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/>',
     edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
-    trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
+    trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+    download:'<path d="M12 3v12M7 11l5 4 5-4M5 20h14"/>',
+    heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    list:'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>'
   };
   return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round">'+(P[name]||'')+'</svg>';
 }
@@ -5375,26 +5414,105 @@ function aiRenderImages(list,promptTxt){
 /* ── Generatsiya tarixi (oldingi rasm/videolar) ── */
 // GenAsset.type: 130=image, 120=audio, 140=video (backend konventsiyasi).
 function aiStatusLabel(s){return s==='running'?'Ishlanmoqda':s==='queued'?'Navbatda':s==='failed'?'Xato':'';}
-/** Bitta tarix katakchasi — thumb + status chip + prompt caption. */
+/* ── V2 Creations: model nomi · nisbiy vaqt · metadata ── */
+function aiModelName(modelId){
+  const cats=af_ai.catalog||{};
+  for(const k in cats){const m=(cats[k]||[]).find(function(x){return x.id===modelId;});if(m)return m.label;}
+  return '';
+}
+function aiRelTime(iso){
+  if(!iso)return '';
+  let t;try{t=new Date(iso).getTime();}catch(e){return '';}
+  if(!t||isNaN(t))return '';
+  const s=Math.max(0,Math.floor((Date.now()-t)/1000));
+  if(s<60)return 'hozir';
+  const m=Math.floor(s/60);if(m<60)return m+' daqiqa oldin';
+  const h=Math.floor(m/60);if(h<24)return h+' soat oldin';
+  const d=Math.floor(h/24);if(d===1)return 'kecha';
+  if(d<7)return d+' kun oldin';
+  const w=Math.floor(d/7);if(w<5)return w+' hafta oldin';
+  return Math.floor(d/30)+' oy oldin';
+}
+/** Karta metadata teglari: model · aspect · davomiylik (video). */
+function aiGenMeta(g){
+  const a=((g.assets||[])[0])||{};const p=g.params||{};
+  const tags=[];
+  const mn=aiModelName(g.modelId);if(mn)tags.push(mn);
+  const asp=a.aspectRatio||p.aspectRatio;if(asp)tags.push(asp);
+  if(g.mode==='video'&&p.duration)tags.push(p.duration+'s');
+  return tags;
+}
+/* Sevimlilar — lokal (backend favorite maydoni yo'q) */
+function aiFavSet(){ try{return new Set(JSON.parse(localStorage.getItem('af.gen.fav')||'[]'));}catch(e){return new Set();} }
+function aiIsFav(id){ return aiFavSet().has(id); }
+function aiHistFav(id,e){ if(e)e.stopPropagation(); const s=aiFavSet(); if(s.has(id))s.delete(id);else s.add(id); try{localStorage.setItem('af.gen.fav',JSON.stringify(Array.from(s)));}catch(_){} aiRenderHistory(); }
+
+/** Bitta tarix kartasi (magnific uslubi — thumb + status + metadata + hover amallar). */
 function aiHistoryCell(g){
   const a=((g.assets||[])[0])||{};
   const t=a.type, st=g.status||'done';
-  const promptT=aiEsc(String(g.prompt||'').slice(0,90));
+  const promptT=aiEsc(String(g.prompt||'').slice(0,120));
+  const dur=(g.params&&g.params.duration)||0;
   let inner;
   if(st!=='done'){
-    // queued/running → spinner; failed → ikona. Thumb hali yo'q.
     inner='<span class="ai-h-ph">'+(st==='failed'?aiIco('spark',22):'<span class="ai-h-spin"></span>')+'</span>';
   }else if(t===140){
-    inner='<video src="'+aiEsc(a.url||'')+'" muted preload="metadata"></video><span class="ai-h-badge">▶</span>';
+    inner='<video src="'+aiEsc(a.url||'')+'" muted preload="metadata"></video><span class="ai-h-badge">▶'+(dur?(' '+dur+'s'):'')+'</span>';
   }else if(t===120){
     inner='<span class="ai-h-audio">'+aiIco('mic',22)+'</span>';
   }else{
     inner='<img src="'+aiEsc(a.thumbUrl||a.url||'')+'" alt=""/>';
   }
   const chip=(st!=='done')?'<span class="ai-h-status '+st+'">'+aiStatusLabel(st)+'</span>':'';
-  const cap=promptT?'<span class="ai-h-cap">'+promptT+'</span>':'';
-  return '<button type="button" class="ai-h-cell'+(st==='failed'?' is-failed':'')+'" onclick="aiOpenHistory(\''+aiEsc(g.id)+'\')" title="'+promptT+'">'+inner+chip+cap+'</button>';
+  const tags=aiGenMeta(g).map(function(x){return '<span class="ai-h-tag">'+aiEsc(x)+'</span>';}).join('');
+  const time=aiRelTime(g.createdAt);
+  const meta='<div class="ai-h-meta"><div class="ai-h-tags">'+tags+'</div>'+(time?'<span class="ai-h-time">'+aiEsc(time)+'</span>':'')+'</div>';
+  let actions='';
+  if(st==='done'){
+    const idA="'"+aiEsc(g.id)+"'";
+    actions='<div class="ai-h-acts" onclick="event.stopPropagation()">'
+      +'<button type="button" class="ai-h-act" title="Yuklab olish" onclick="aiHistDownload('+idA+',event)">'+aiIco('download',14)+'</button>'
+      +'<button type="button" class="ai-h-act'+(aiIsFav(g.id)?' on':'')+'" title="Sevimli" onclick="aiHistFav('+idA+',event)">'+aiIco('heart',14)+'</button>'
+      +'<button type="button" class="ai-h-act" title="Ochish / tahrirlash" onclick="aiHistEdit('+idA+',event)">'+aiIco('edit',14)+'</button>'
+      +'<button type="button" class="ai-h-act danger" title="O‘chirish" onclick="aiHistDelete('+idA+',event)">'+aiIco('trash',14)+'</button>'
+      +'<button type="button" class="ai-h-act" title="Ko‘proq" onclick="aiHistMenu('+idA+',\'more\',event)">⋯</button>'
+      +'<button type="button" class="ai-h-use" title="Ishlatish" onclick="aiHistMenu('+idA+',\'use\',event)">Use ▾</button>'
+      +aiHistMenuHtml(g)
+      +'</div>';
+  }
+  return '<div class="ai-h-cell'+(st==='failed'?' is-failed':'')+'" title="'+promptT+'" onclick="aiOpenHistory('+"'"+aiEsc(g.id)+"'"+')"><div class="ai-h-thumb">'+inner+chip+'</div>'+meta+actions+'</div>';
 }
+/** Karta ⋯/Use menyusi (af_ai.histMenu bilan). */
+function aiHistMenuHtml(g){
+  const hm=af_ai.histMenu;if(!hm||hm.id!==g.id)return '';
+  const idA="'"+aiEsc(g.id)+"'";
+  if(hm.type==='more'){
+    return '<div class="ai-h-menu" onclick="event.stopPropagation()">'
+      +'<button type="button" onclick="aiHistCopyPrompt('+idA+',event)">Promptni nusxalash</button>'
+      +'<button type="button" onclick="aiHistUsePrompt('+idA+',event)">Promptni ishlatish</button>'
+      +'</div>';
+  }
+  return '<div class="ai-h-menu ai-h-menu-use" onclick="event.stopPropagation()">'
+    +'<button type="button" onclick="aiHistUseRef('+idA+',event)">Reference qil</button>'
+    +'<button type="button" onclick="aiHistRecreate('+idA+',event)">Qayta yaratish</button>'
+    +'<button type="button" onclick="aiHistImport('+idA+',event)">AE‘ga import</button>'
+    +'<button type="button" class="off" disabled title="Tez orada">Upscale / Extend</button>'
+    +'</div>';
+}
+function aiHistMenu(id,type,e){ if(e)e.stopPropagation(); const hm=af_ai.histMenu; af_ai.histMenu=(hm&&hm.id===id&&hm.type===type)?null:{id:id,type:type}; aiRenderHistory(); }
+function aiHistCloseMenu(){ if(af_ai.histMenu){af_ai.histMenu=null;aiRenderHistory();} }
+function aiHistGen(id){ return (af_ai.history||[]).filter(function(x){return x.id===id;})[0]; }
+function aiHistFirstAsset(g){ return ((g&&g.assets)||[]).filter(function(a){return a&&a.url;})[0]; }
+function aiHistExt(g,a){ const u=(a&&a.url)||''; const m=String(u).match(/\.(\w{2,5})(?:\?|$)/); return m?m[1]:(g.mode==='video'?'mp4':g.mode==='image'?'png':'mp3'); }
+async function aiHistDownload(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; const g=aiHistGen(id),a=aiHistFirstAsset(g);if(!a)return; try{ if(typeof showToast==='function')showToast('Yuklab olinmoqda…','info'); const p=await aiDownloadToTemp(a.url,'.'+aiHistExt(g,a)); if(typeof showToast==='function')showToast('Saqlandi: '+p,'success'); }catch(err){ if(typeof showToast==='function')showToast('Yuklab olish xatosi: '+((err&&err.message)||err),'error'); } }
+function aiHistEdit(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; aiOpenHistory(id); }
+async function aiHistDelete(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; try{ await studioDelete('/api/studio/gen/'+id); }catch(err){} if(typeof showToast==='function')showToast('O‘chirildi','success'); aiLoadHistory(); }
+function aiHistCopyPrompt(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; const g=aiHistGen(id);if(!g)return; try{ if(navigator&&navigator.clipboard)navigator.clipboard.writeText(g.prompt||''); }catch(_){} if(typeof showToast==='function')showToast('Prompt nusxalandi','success'); aiRenderHistory(); }
+function aiHistUsePrompt(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; const g=aiHistGen(id);if(!g)return; const ta=document.getElementById('aiPrompt');if(ta){ta.value=g.prompt||'';if(typeof aiAutoGrow==='function')aiAutoGrow(ta);if(typeof aiUpdateCharCount==='function')aiUpdateCharCount();ta.focus();} aiRenderHistory(); if(typeof showToast==='function')showToast('Prompt composerga qo‘yildi','success'); }
+async function aiHistUseRef(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; const g=aiHistGen(id),a=aiHistFirstAsset(g);if(!a)return; if(!aiRefSupported(aiCurrentModel(),af_ai.media)){if(typeof showToast==='function')showToast('Joriy model reference qabul qilmaydi'+aiRefRecommend(af_ai.media),'warning');return;} try{ if(typeof showToast==='function')showToast('Reference tayyorlanmoqda…','info'); const p=await aiDownloadToTemp(a.url,'.'+aiHistExt(g,a)); af_ai.reference={path:p,name:(g.prompt||'Natija').slice(0,40),mediaType:(g.mode==='video'?'video':'image'),source:'history'}; aiRenderRefBar(); if(typeof showToast==='function')showToast('Reference biriktirildi','success'); }catch(err){ if(typeof showToast==='function')showToast('Reference xatosi: '+((err&&err.message)||err),'error'); } }
+function aiHistRecreate(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; const g=aiHistGen(id);if(!g)return; const media=g.mode==='image'?'rasm':g.mode==='video'?'video':g.mode==='voice'?'ovoz':g.mode; const switching=(media&&media!==af_ai.media&&AI_CFG[media]); if(switching)aiSetMedia(media); const apply=function(){ if(g.modelId&&af_ai.modelId[af_ai.media]!==g.modelId&&typeof aiSetModelCat==='function')aiSetModelCat(g.modelId); const ta=document.getElementById('aiPrompt');if(ta){ta.value=g.prompt||'';if(typeof aiAutoGrow==='function')aiAutoGrow(ta);if(typeof aiUpdateCharCount==='function')aiUpdateCharCount();ta.focus();} const c=document.getElementById('aiComposer');if(c&&c.scrollIntoView)c.scrollIntoView({behavior:'smooth',block:'center'}); }; setTimeout(apply,switching?300:0); aiRenderHistory(); if(typeof showToast==='function')showToast('Sozlamalar tiklandi — Generatsiya bosing','info'); }
+async function aiHistImport(id,e){ if(e)e.stopPropagation(); af_ai.histMenu=null; const g=aiHistGen(id),a=aiHistFirstAsset(g);if(!a)return; return aiImportMedia(a.url,(g.mode==='video'?'video':g.mode==='voice'?'audio':'image'),aiHistExt(g,a)); }
+
 async function aiLoadHistory(){
   const box=document.getElementById('aiHistory');if(!box)return;
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
@@ -5410,12 +5528,30 @@ async function aiLoadHistory(){
       items=(d&&d.items)||[];
     }
     af_ai.history=items;
-    if(!items.length){box.style.display='none';box.innerHTML='';return;}
-    box.style.display='';
-    const cells=items.map(aiHistoryCell).join('');
-    box.innerHTML='<div class="ai-h-head">Tarix</div><div class="ai-h-grid">'+cells+'</div>';
+    aiRenderHistory();
   }catch(e){ /* login yo'q yoki API — jim */ }
 }
+/** af_ai.history dan grid/list chizadi (fetch'siz) — view toggle + tur filtri bilan. */
+function aiRenderHistory(){
+  const box=document.getElementById('aiHistory');if(!box)return;
+  const items=af_ai.history||[];
+  if(!items.length){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='';
+  const f=af_ai.histFilter||'all';
+  const modeOf=function(g){return g.mode==='image'?'image':g.mode==='video'?'video':(g.mode==='voice'||g.mode==='sfx')?'voice':g.mode;};
+  const filtered=(f==='all')?items:items.filter(function(g){return modeOf(g)===f;});
+  const filters=[['all','Hammasi'],['image','Rasm'],['video','Video'],['voice','Ovoz']];
+  const fbtns=filters.map(function(x){return '<button type="button" class="ai-h-fbtn'+(f===x[0]?' on':'')+'" onclick="aiHistSetFilter(\''+x[0]+'\')">'+x[1]+'</button>';}).join('');
+  const view=af_ai.histView||'grid';
+  const head='<div class="ai-h-head"><span class="ai-h-title">Tarix</span>'
+    +'<span class="ai-h-filters">'+fbtns+'</span>'
+    +'<span class="ai-h-views"><button type="button" class="ai-h-vbtn'+(view==='list'?' on':'')+'" title="Ro‘yxat" onclick="aiHistSetView(\'list\')">'+aiIco('list',15)+'</button>'
+    +'<button type="button" class="ai-h-vbtn'+(view==='grid'?' on':'')+'" title="Katak" onclick="aiHistSetView(\'grid\')">'+aiIco('grid',15)+'</button></span></div>';
+  const cells=filtered.map(aiHistoryCell).join('')||'<div class="ai-h-empty">Bu turda natija yo‘q</div>';
+  box.innerHTML=head+'<div class="ai-h-grid '+(view==='list'?'list':'')+'">'+cells+'</div>';
+}
+function aiHistSetView(v){ af_ai.histView=v; af_ai.histMenu=null; aiRenderHistory(); }
+function aiHistSetFilter(f){ af_ai.histFilter=f; af_ai.histMenu=null; aiRenderHistory(); }
 /** Tarixdagi gen'ni natija panelida ochadi (ko'rish / import / o'chirish). */
 function aiOpenHistory(genId){
   const g=(af_ai.history||[]).filter(function(x){return x.id===genId;})[0];
@@ -5566,6 +5702,7 @@ function aiInit(){
   aiApplyMedia();
   document.addEventListener('mousedown',function(e){
     if(af_ai.open && !(e.target.closest && e.target.closest('[data-dropdown]'))) aiCloseMenus();
+    if(af_ai.histMenu && !(e.target.closest && e.target.closest('.ai-h-acts'))) aiHistCloseMenu();
   });
   // Prompt o'zgarsa cost-quote qayta hisoblanadi (image/voice rejimida)
   const ta=document.getElementById('aiPrompt');
