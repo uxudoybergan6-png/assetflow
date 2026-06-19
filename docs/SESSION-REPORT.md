@@ -1,17 +1,19 @@
-# SESSION REPORT — 2026-06-19 — AI panel UX audit + tuzatish
+# SESSION REPORT — 2026-06-19 — Dropdown collision-fix (menyular kesilmasin)
 
-## ADIM 0 — Audit (commit afb6702)
-- `docs/AI-PANEL-UX-AUDIT.md` — magnific (Claude in Chrome jonli, kompakt composer) bilan AssetFlow kod tahlili yonma-yon. Topilgan kamchiliklar ro'yxati: hero behuda joy, dropdown anchoring (max-height/width yo'q), composer zichligi, model chip takrori, ovoz kartasi + polish.
+## Muammo
+Settings/model dropdown yuqoriga ochilib (sof-CSS `bottom:100%`) panel TEPASIDAN oshib kesilardi — birinchi qatorlar ko'rinmasdi (skrinshot: Seedream qatori yo'q). Barcha `.ai-menu` popoverlariga taalluqli.
 
-## ADIM 1 — Tuzatishlar (oqim G1–G5 BUZILMADI)
-1. **Hero olib tashlandi** — `#aiLaunch` ("Nima yaratamiz?") HTML o'chirildi (~25% balandlik tejaldi). JS chaqiruvlari guarded (`if(lp)`) → xavfsiz. Panel to'g'ridan composer'dan.
-2. **Dropdown anchoring** (`.ai-menu`) — `max-height:min(56vh,360px)+overflow-y:auto` (balandda tepaga uzilmaydi), `max-width:min(320px,100vw-24px)` (tor panelda chetdan oshmaydi), `bottom 8→6px`, `z-index 20→40`. media/model/setting/ref/desc bir xil.
-3. **Zichlik** — `.ai-composer padding 16→13`, `.ai-comp-ctrls margin-top 14→9`, `.ai-sec-label 10/6→7/4`, `.ai-refbar.cells-mode margin 10→8`, textarea `min 48→44`, `.ai-shots margin 4/8→3/6`.
-4. **Model qatorlari** — `aiModelChipList(m, skipRef)`; dropdown qatorida reference chip OLINDI (takror yo'q) → faqat farqlovchi (rezolyutsiya·davomiylik·🔊·narx). Collapsed-xulosa + All-models modalda reference qoladi (informatив).
-5. **Ovoz kartalari** — yalang'och mikrofon → mic + 5-bar to'lqin + gradient fon (`.ai-h-audio`, 3 tema).
+## Yechim (JS — `aiPositionMenu`, `aiRenderMenus` ichida ochilganda chaqiriladi)
+1. **Flip:** trigger `getBoundingClientRect` + `window.innerHeight` bilan tepa/past bo'sh joyni o'lchaydi — ko'proq joy qayerda bo'lsa o'sha yo'nalishga ochadi (tepada joy yetmasa pastga).
+2. **Dynamic max-height:** `min(tanlangan_yo'nalish_joyi, 56vh, 360px)` + `overflow-y:auto` — menyu uzun bo'lsa ICHIDA scroll, HAMMA variant yetib boriladi, hech narsa kesilmaydi.
+3. **Clamp:** menyu tanlangan yo'nalishdan ochilgani uchun chet (tepa yoki past) viewport ichida qoladi. Gorizontal: o'ng chetdan oshsa `right:0` ga o'tadi (tor panel).
+4. **Past panel/tor panel:** vh/vw kichik bo'lsa max-height/clamp mos kichrayadi (simulyatsiya: vh=360 → maxH=202 + scroll).
+- Barcha composer dropdownlari (media/model/settings/ref/desc) bir xil `previousElementSibling` (trigger) bilan joylanadi.
 
 ## Tekshirildi
-- Plugin parse: 2 blok, 0 xato. Oqim funksiyalari (aiGenerate/aiRunStudioGen/aiHistoryCell) butun. #aiLaunch=0 (guarded). 3 tema (token CSS), responsive. CEP'ga ko'chirildi (AE qo'zg'atilmadi). studio:sync shart emas.
+- Parse: 2 blok, 0 xato. Pozitsiya math simulyatsiya: trigger tepada→DOWN, o'rtada/pastda→UP, past panel→clamp+scroll — hammasi to'g'ri.
+- All-models modal (overlay, max-height 86vh+scroll) va kichik karta menyulari (.ai-h-menu, 2-4 qator) — past xavf, tegmadi.
+- Oqim BUZILMADI. 3 tema. CEP'ga ko'chirildi (AE qo'zg'atilmadi). studio:sync shart emas.
 
 ## Holat
-- AI panel UX tozalash tugadi. Deploy talab qilmaydi (faqat plugin). AE'da reload kerak — vizual tasdiqlash uchun.
+- Deploy talab qilmaydi (faqat plugin). AE'da reload — eng baland menyu (settings) trigger tepada/o'rtada/pastda bo'lsa ham barcha variant ko'rinishini tasdiqlash.

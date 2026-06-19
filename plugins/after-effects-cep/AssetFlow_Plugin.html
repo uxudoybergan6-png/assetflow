@@ -5067,11 +5067,42 @@ function aiToggleMenu(which,e){
   aiRenderMenus();
 }
 function aiCloseMenus(){af_ai.open=null;aiRenderMenus();}
+/**
+ * Ochilgan menyuni trigger'ga nisbatan joylaydi — UX FIX: panel/oyna chetidan KESILMASIN.
+ *  - flip: tepada joy yetmasa pastga ochadi (yoki aksincha, ko'proq joy qayerda).
+ *  - max-height = TANLANGAN yo'nalishdagi mavjud bo'sh joy (min(56vh, joy-12)) + overflow-y:auto
+ *    → menyu uzun bo'lsa ICHIDA scroll, HAMMA variant yetib boriladi.
+ *  - gorizontal clamp: o'ng chetdan oshsa right:0 ga o'tadi.
+ */
+function aiPositionMenu(menu,trigger){
+  if(!menu||!trigger)return;
+  menu.style.top='';menu.style.bottom='';menu.style.left='';menu.style.right='';menu.style.maxHeight='';
+  const vh=window.innerHeight||document.documentElement.clientHeight||800;
+  const vw=window.innerWidth||document.documentElement.clientWidth||360;
+  const tr=trigger.getBoundingClientRect();
+  const GAP=6,PAD=10;
+  const spaceBelow=vh-tr.bottom-GAP-PAD;
+  const spaceAbove=tr.top-GAP-PAD;
+  const openDown=spaceBelow>=spaceAbove;
+  const avail=Math.max(120,openDown?spaceBelow:spaceAbove);
+  menu.style.maxHeight=Math.min(avail,Math.round(vh*0.56),360)+'px';
+  menu.style.overflowY='auto';
+  if(openDown){ menu.style.top='calc(100% + '+GAP+'px)'; menu.style.bottom='auto'; }
+  else { menu.style.bottom='calc(100% + '+GAP+'px)'; menu.style.top='auto'; }
+  // gorizontal: o'ng chetdan oshsa o'ngga yopishtir
+  menu.style.left='0';menu.style.right='auto';
+  const mr=menu.getBoundingClientRect();
+  if(mr.right>vw-8){ menu.style.left='auto'; menu.style.right='0'; }
+}
 function aiRenderMenus(){
   const map={media:'aiMediaMenu',model:'aiModelMenu',setting:'aiSettingMenu',ref:'aiRefMenu',desc:'aiDescMenu'};
-  Object.keys(map).forEach(k=>{
+  Object.keys(map).forEach(function(k){
     const el=document.getElementById(map[k]);
-    if(el)el.style.display=af_ai.open===k?'flex':'none';
+    if(!el)return;
+    const open=af_ai.open===k;
+    el.style.display=open?'flex':'none';
+    if(open){ aiPositionMenu(el,el.previousElementSibling); }
+    else { el.style.top='';el.style.bottom='';el.style.left='';el.style.right='';el.style.maxHeight=''; }
   });
 }
 function aiMenuRow(active,onclick,inner){
