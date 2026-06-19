@@ -2688,6 +2688,21 @@ async function importPackFileToAE(pack){
     showProgress(0,'Tayyorlanmoqda…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
+  // Import limitini AE import qilishdan OLDIN majburlash (kesh'langan qayta-import
+  // ham shu nuqtadan o'tadi). 403 — limit tugadi: import qilinmaydi.
+  if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
+    try{
+      await AssetFlowAccount.recordImport(pack.serverTemplateId);
+      if(typeof refreshAccountUi==='function') refreshAccountUi();
+    }catch(usageErr){
+      if(usageErr&&usageErr.status===403){
+        hideProgress();
+        showToast(usageErr.message||'Import limiti tugadi — Pro tarifga o\'ting','warning');
+        return 'limit';
+      }
+      // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
+    }
+  }
   showProgress(100,'AE\'ga import qilinmoqda…',true);
   return new Promise((resolve)=>{
     csInterface.evalScript(`importAssetToProject(${JSON.stringify(importPath)})`,(result)=>{
@@ -2733,6 +2748,21 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     showProgress(0,'Tayyorlanmoqda…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
+  // Import limitini AE import qilishdan OLDIN majburlash (kesh'langan/extract
+  // qilingan qayta-import ham shu nuqtadan o'tadi). 403 — limit tugadi.
+  if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
+    try{
+      await AssetFlowAccount.recordImport(pack.serverTemplateId);
+      if(typeof refreshAccountUi==='function') refreshAccountUi();
+    }catch(usageErr){
+      if(usageErr&&usageErr.status===403){
+        hideProgress();
+        showToast(usageErr.message||'Import limiti tugadi — Pro tarifga o\'ting','warning');
+        return 'limit';
+      }
+      // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
+    }
+  }
   // Yuklab olindi — endi AE import fazasi (sinxron, vaqt olishi mumkin)
   showProgress(100,'AE\'ga import qilinmoqda…',true);
   const compName=(scene?.aeComp||'').trim()||(scene?.n||'').trim();
@@ -3495,18 +3525,11 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
       showToast(label);
       const raw=await importSingleSceneToAE(pack,scene,packName,mode);
       hideProgress();
+      if(raw==='limit') return;   // import limiti tugadi (toast ko'rsatildi, import qilinmadi)
       let data;
       try{ data=JSON.parse(raw); }catch{ data=null; }
       if(data?.ok){
         markDownloaded(data);
-        if(pack.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
-          try{
-            await AssetFlowAccount.recordImport(pack.serverTemplateId);
-            refreshAccountUi();
-          }catch(usageErr){
-            showToast(usageErr.message||'Import limit');
-          }
-        }
         if(mode==='project'){
           const what=data.fullPack?('"'+(packName||scene.n)+'" to‘liq pack'):('"'+scene.n+'" sahnasi (+ kerakli footage)');
           showToast('✓ '+what+' Project panelga import qilindi');
@@ -3682,6 +3705,7 @@ async function __downloadAllImpl(n){
     try{
       showToast('AE ga import qilinmoqda…');
       const result=await importPackFileToAE(p);
+      if(result==='limit'){ render();renderDl(); return; }   // import limiti tugadi (toast ko'rsatildi)
       if(result==='mogrt:picker'){
         // MOGRT tanlash ro'yxati ochildi — detal ochiq qoladi
         return;
@@ -3698,14 +3722,6 @@ async function __downloadAllImpl(n){
       if(ok){
         markPackDownloaded();
         showToast('✓ "'+(p.displayName||n)+'" AE projectga import qilindi','success');
-        if(p.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
-          try{
-            await AssetFlowAccount.recordImport(p.serverTemplateId);
-            refreshAccountUi();
-          }catch(usageErr){
-            showToast(usageErr.message||'Import limit','warning');
-          }
-        }
       }
       else showToast('Import xato: '+(result||'noma\'lum'),'error');
     }catch(err){

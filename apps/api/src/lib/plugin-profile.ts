@@ -155,19 +155,49 @@ export function serializePluginUser(
 }
 
 /**
- * Yuklab olishdan OLDIN limit tekshiruvi (increment QILMAYDI — haqiqiy
- * hisoblash /usage/download orqali bo'ladi). Pack/MOGRT download route'i
- * shu gate orqali Free/Pro limitni server tomonda majburlaydi —
- * localStorage'dagi tarif bilan chetlab o'tib bo'lmaydi.
+ * Yuklab olishni ATOMIK hisoblaydi + Free/Pro limitni server tomonda MAJBURLAYDI.
+ * Pack/MOGRT download route'i baytlarni berishdan (302 redirect'dan) OLDIN shu
+ * funksiyani chaqiradi: limit ichida bo'lsa hisoblagichni atomik oshiradi, aks
+ * holda fayl berilmaydi (LIMIT_REACHED). `updateMany` `downloadsMonth < limit`
+ * sharti bilan ishlagani uchun parallel so'rovlarda TOCTOU race bo'lmaydi
+ * (`consumeAiCredits` kabi), va klient ixtiyoriy /usage call'ni tashlab ketsa
+ * ham limit ishlaydi — localStorage'dagi tarif bilan chetlab o'tib bo'lmaydi.
  */
-export async function checkDownloadAllowed(userId: string) {
+export async function consumeDownload(userId: string) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
     return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
   }
   const limits = planLimits(profile.plan);
-  const effectiveDownloadLimit = profile.downloadLimitOverride ?? limits.downloadLimit;
-  if (effectiveDownloadLimit !== null && profile.downloadsMonth >= effectiveDownloadLimit) {
+  const effectiveLimit = profile.downloadLimitOverride ?? limits.downloadLimit;
+
+  // Cheksiz (Pro yoki admin override = null) — hisob yuritamiz, lekin to'smaymiz.
+  if (effectiveLimit === null) {
+    await prisma.pluginProfile.update({
+      where: { userId },
+      data: {
+        downloadsTotal: { increment: 1 },
+        downloadsMonth: { increment: 1 },
+        lastSeenAt: new Date(),
+      },
+    });
+    return { ok: true as const };
+  }
+
+  // Atomik: faqat oylik limit ichida bo'lsa oshiradi (race-safe guard WHERE'da).
+  const res = await prisma.pluginProfile.updateMany({
+    where: {
+      userId,
+      status: PluginAccountStatus.ACTIVE,
+      downloadsMonth: { lt: effectiveLimit },
+    },
+    data: {
+      downloadsTotal: { increment: 1 },
+      downloadsMonth: { increment: 1 },
+      lastSeenAt: new Date(),
+    },
+  });
+  if (res.count === 0) {
     return {
       ok: false as const,
       error: "Oylik yuklab olish limiti tugadi — Pro tarifga o'ting",
@@ -177,49 +207,45 @@ export async function checkDownloadAllowed(userId: string) {
   return { ok: true as const };
 }
 
-export async function recordPluginDownload(userId: string, templateId?: string) {
+/**
+ * Importni ATOMIK hisoblaydi + import limitini MAJBURLAYDI. Plagin AE ga
+ * import qilishdan OLDIN /usage/import orqali shu funksiyani chaqiradi
+ * (kesh'langan qayta-import ham — fayl lokal bo'lsa ham gate'dan o'tadi);
+ * limit tugagan bo'lsa LIMIT_REACHED qaytadi va import bloklanadi. Import
+ * limiti `importsTotal` (umrlik) bo'yicha — mavjud semantika saqlanadi.
+ */
+export async function consumeImport(userId: string) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
-    return { ok: false as const, error: "Hisob faol emas" };
+    return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
   }
   const limits = planLimits(profile.plan);
-  const effectiveDownloadLimit = profile.downloadLimitOverride ?? limits.downloadLimit;
-  if (effectiveDownloadLimit !== null && profile.downloadsMonth >= effectiveDownloadLimit) {
-    return { ok: false as const, error: "Oylik yuklab olish limiti tugadi" };
+  const effectiveLimit = profile.importLimitOverride ?? limits.importLimit;
+
+  if (effectiveLimit === null) {
+    await prisma.pluginProfile.update({
+      where: { userId },
+      data: { importsTotal: { increment: 1 }, lastSeenAt: new Date() },
+    });
+    return { ok: true as const };
   }
 
-  const updated = await prisma.pluginProfile.update({
-    where: { userId },
-    data: {
-      downloadsTotal: { increment: 1 },
-      downloadsMonth: { increment: 1 },
-      lastSeenAt: new Date(),
+  const res = await prisma.pluginProfile.updateMany({
+    where: {
+      userId,
+      status: PluginAccountStatus.ACTIVE,
+      importsTotal: { lt: effectiveLimit },
     },
+    data: { importsTotal: { increment: 1 }, lastSeenAt: new Date() },
   });
-
-  return { ok: true as const, profile: updated, templateId };
-}
-
-export async function recordPluginImport(userId: string, templateId?: string) {
-  const profile = await ensurePluginProfile(userId);
-  if (profile.status !== PluginAccountStatus.ACTIVE) {
-    return { ok: false as const, error: "Hisob faol emas" };
+  if (res.count === 0) {
+    return {
+      ok: false as const,
+      error: "Import limiti tugadi — Pro tarifga o'ting",
+      code: "LIMIT_REACHED",
+    };
   }
-  const limits = planLimits(profile.plan);
-  const effectiveImportLimit = profile.importLimitOverride ?? limits.importLimit;
-  if (effectiveImportLimit !== null && profile.importsTotal >= effectiveImportLimit) {
-    return { ok: false as const, error: "Import limiti tugadi" };
-  }
-
-  const updated = await prisma.pluginProfile.update({
-    where: { userId },
-    data: {
-      importsTotal: { increment: 1 },
-      lastSeenAt: new Date(),
-    },
-  });
-
-  return { ok: true as const, profile: updated, templateId };
+  return { ok: true as const };
 }
 
 /**

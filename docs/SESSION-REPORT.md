@@ -1,17 +1,16 @@
-# SESSION REPORT — 2026-06-19 — H1 video-to-prompt aniqligi + H2 generatsiya sodiqligi
+# SESSION REPORT — 2026-06-19 — To'liq loyiha tahlili (multi-agent audit)
 
-## H1 — "Tasvirdan" HAQIQIY video yuboradi (commit 0b93189)
-- Tasdiqlangan: OpenRouter video format `{"type":"video_url","video_url":{"url":...}}`. **Gemini Vertex to'g'ridan URL emas, base64 data-URL kutadi** → base64 yo'li.
-- **Frontend** `aiVideoClipDataUri`: reference videoni ffmpeg bilan KICHIK clip (480p/12fps/qisqa, ovozsiz, crf32) → base64 data-URL; hajm >3.6MB → null (kadr fallback). `aiDescribeFrom` video model + video manba bo'lsa `videoUrl` yuboradi (kadrlar fallback sifatida qoladi).
-- **Backend** `orImageToPrompt(...,videoUrl)`: video bo'lsa `video_url` content + "watch the video" grounding. `/gen/describe`: AVVAL video, xato/rad bo'lsa kadr (G5.2) FALLBACK. `express.json` limit 8→14mb.
-- Natija: haqiqiy harakat/mazmundan (taxmin emas).
+## Nima qilindi
+- 57-agentli audit: 15 quyi-tizim + 5 ko'ndalang (security/e2e/sifat/deploy/data). 177 topilma → 36 tekshirildi → **34 tasdiqlandi, 2 rad**.
 
-## H2 — Generatsiya prompti video-model'ga moslashdi (diagnostika + tuzatish)
-- **Diagnostika:** `runVideo` → `orVideoCreate(opts.prompt=gen.prompt)` — foydalanuvchining TO'LIQ strukturali "Tasvirdan" matni (STYLE:/TIMELINE:/ENDING FRAME:/SOUND DESIGN:) video modelga ketardi. Bu META-tavsif, generatsiya ko'rsatmasi emas — Kling/Veo labellar + per-soniya TIMELINE + SOUND DESIGN'dan chalkashadi → natija promptga mos kelmaydi. Reference wiring (G3/G5) TO'G'RI; skrinshotda reference yo'q edi (referencesiz model erkin ishlaydi).
-- **Tuzatish:** `flattenVideoPrompt(prompt)` — strukturali bo'lsa STYLE+SCENE+SUBJECT+MOTION+CAMERA qiymatlarini ixcham tabiiy tavsifga aylantiradi (TIMELINE/ENDING FRAME/SOUND DESIGN tashlanadi); oddiy prompt o'zgarmaydi. `runVideo` `opts.prompt`'ga qo'llanadi. "Tasvirdan" qolipi describe/tahrir uchun qoladi, GENERATSIYAGA ixcham prompt ketadi. Narx/hash ta'sirlanmaydi (prompt hashda yo'q).
+## Nima topildi (eng muhim)
+- 🔴 KRITIK: Free/Pro paywall chetlab o'tiladi — pack route faqat `checkDownloadAllowed` (increment yo'q); hisoblagich faqat ixtiyoriy `/usage/*`; CEP cache import gate'siz. (`plugin.ts`, `plugin-profile.ts`, `assetflow-catalog.js`)
+- 🟠 HIGH: (1) stored-XSS `admin-views.js`+`admin-subscribers.js` → admin egallash; (2) PRO obuna tugasa downgrade YO'Q; (3) `/gen/describe`+`/enhance` kreditsiz pulli LLM; (4) block/reset token revoke yo'q; (5) R2/CDN stale 1y cache + hash'siz JS; (6) CI/test yo'q, migrate→prod gate'siz; (7) Premiere UXP noto'g'ri katalogga ulangan tashlandiq.
+- 🟡 MEDIUM: ~190 drift artefakt nusxa; `apps/web` o'lik dublikat + dev secret; TOCTOU hisoblagich + O(N) search; `currentPeriodEnd` SDK v18'da null + self-serve PRO fail-open; List/Head nomuvofiqlik + dangling metaJson; path-traversal `params.id`; inline ffmpeg (presigned yo'lda o'lik); webhook idempotency yo'q.
+- RAD: ZipSlip (unzip striplaydi), embedding-mismatch (bir xil model), ochiq-CORS (Bearer-only → inert).
 
-## Tekshirildi
-- Backend tsc toza. Plugin parse: 2 blok, 0 xato. flattenVideoPrompt test: strukturali→ixcham, oddiy→o'zgarmagan. Oqim buzilmadi.
+## Mustahkam (ishlaydi)
+- Marketplace zanjiri (upload→moderatsiya→katalog→AE import→delete) + Studio Gen kredit yo'li (imzolangan quote, atomik kredit, refund).
 
-## Deploy
-- **Har ikkisi backend → Render deploy KERAK:** openrouter.ts, studio-gen.ts, index.ts (H1) + gen-processor.ts (H2). Plugin (H1 frontend) → CEP reload / install-cep.sh.
+## Kutilmoqda / tavsiya tartibi
+1 paywall → 2 XSS → 3 Stripe downgrade → 4 auth revoke → 5 AI kreditlash → 6 CI → 7 artefakt/o'lik kod tozalash. To'liq reestr suhbatda.

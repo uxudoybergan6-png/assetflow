@@ -18,11 +18,10 @@ import { isS3Configured, getPublicUrl, s3ObjectExists } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl } from "../lib/app-urls.js";
 import {
   ensurePluginProfile,
-  recordPluginDownload,
-  recordPluginImport,
+  consumeDownload,
+  consumeImport,
   serializePluginUser,
   setPluginPlan,
-  checkDownloadAllowed,
 } from "../lib/plugin-profile.js";
 import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
 import {
@@ -201,7 +200,10 @@ async function guardDownloadable(
     res.status(404).json({ error: "Pack topilmadi yoki nashr etilmagan" });
     return false;
   }
-  const gate = await checkDownloadAllowed(req.user!.userId);
+  // Limitni baytlarni berishdan OLDIN ATOMIK majburlaymiz: consumeDownload
+  // hisoblagichni shu yerda oshiradi, shu sabab klient ixtiyoriy
+  // /usage/download call'ni tashlab ketsa ham limit chetlab o'tilmaydi.
+  const gate = await consumeDownload(req.user!.userId);
   if (!gate.ok) {
     res.status(403).json({ error: gate.error, code: gate.code });
     return false;
@@ -467,25 +469,26 @@ async function bumpTemplateCounter(
   } catch {}
 }
 
+/** Analitika-only: yuklab olish limiti endi pack route'da (consumeDownload)
+    ATOMIK majburlanadi. Bu endpoint faqat per-shablon analitika hisoblagichini
+    oshiradi va UI uchun yangilangan profilni qaytaradi (limitni boshqarmaydi). */
 pluginRouter.post("/usage/download", usageLimiter, requireAuth, async (req: Request, res: Response) => {
   const parsed = usageSchema.safeParse(req.body);
   const templateId = parsed.success ? parsed.data.templateId : undefined;
-  const result = await recordPluginDownload(req.user!.userId, templateId);
-  if (!result.ok) {
-    res.status(403).json({ error: result.error });
-    return;
-  }
   await bumpTemplateCounter(templateId, "downloadsCount");
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });
 
+/** Import gate: plagin AE ga import qilishdan OLDIN chaqiradi (kesh'langan
+    qayta-import ham). consumeImport import limitini ATOMIK majburlaydi —
+    limit tugasa 403 (LIMIT_REACHED) qaytadi va klient importni bekor qiladi. */
 pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Request, res: Response) => {
   const parsed = usageSchema.safeParse(req.body);
   const templateId = parsed.success ? parsed.data.templateId : undefined;
-  const result = await recordPluginImport(req.user!.userId, templateId);
+  const result = await consumeImport(req.user!.userId);
   if (!result.ok) {
-    res.status(403).json({ error: result.error });
+    res.status(403).json({ error: result.error, code: result.code });
     return;
   }
   await bumpTemplateCounter(templateId, "importsCount");
