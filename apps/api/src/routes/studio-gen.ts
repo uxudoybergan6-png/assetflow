@@ -376,6 +376,7 @@ const VISION_MODEL = "google/gemini-2.5-flash";
 const describeSchema = z.object({
   images: z.array(z.string().min(8)).min(1).max(3), // data-URI yoki URL
   kind: z.enum(["image", "video"]).optional(),
+  durationSec: z.number().positive().max(600).optional(), // video TIMELINE oralig'i
 });
 studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
   if (!isOpenRouterConfigured()) {
@@ -392,11 +393,13 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
     res.status(413).json({ error: "Reference rasm juda katta — kichikroq kadr tanlang" });
     return;
   }
-  const instruction =
-    p.data.kind === "video"
-      ? "These are sequential frames from a video. Write a single generation prompt capturing the scene AND the motion/action."
-      : "Describe this image as a detailed generation prompt.";
-  const out = await orImageToPrompt(VISION_MODEL, p.data.images, instruction);
+  const kind = p.data.kind || "image";
+  const out = await orImageToPrompt(
+    VISION_MODEL,
+    p.data.images,
+    kind,
+    p.data.durationSec
+  );
   if (!out.ok) {
     res.status(502).json({ error: out.error });
     return;

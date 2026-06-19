@@ -116,26 +116,70 @@ export async function orChatSys(
   return { ok: true, data: txt };
 }
 
+/** Soniyani 00:SS / MM:SS ga formatlaydi (TIMELINE breakdown uchun). */
+function fmtClock(sec: number): string {
+  const s = Math.max(0, Math.round(sec));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+}
+
+/** Strukturali kinematik system instruction (kind bo'yicha). */
+function describeSystemPrompt(kind: "image" | "video", durationSec: number): string {
+  if (kind === "video") {
+    const end = fmtClock(durationSec);
+    return (
+      "You are an expert cinematic prompt engineer for AI VIDEO generation. Analyze the provided " +
+      "frame(s) — sequential frames sampled from a video — and write ONE professional, detailed prompt " +
+      "in English. Use EXACTLY these sections, in this order, each on its own line, heading in CAPS " +
+      "followed by a colon. Output ONLY these sections — no preamble, no markdown, no extra commentary:\n\n" +
+      "STYLE: (visual style, quality, color palette, render level)\n" +
+      "SCENE: (environment, space, depth, composition)\n" +
+      "SUBJECT: (main objects/elements)\n" +
+      "MOTION: (movement, acceleration, dynamics)\n" +
+      "CAMERA: (camera movement, perspective, motion blur)\n" +
+      `TIMELINE: (second-by-second breakdown from 00:00 to ${end} in 1-second intervals like ` +
+      "00:00–00:01, 00:01–00:02 … — what happens in each interval)\n" +
+      "ENDING FRAME: (final frame state)\n" +
+      "SOUND DESIGN: (sound design — whoosh, drone, atmosphere)\n\n" +
+      `The TIMELINE MUST cover 00:00 to ${end} in 1-second intervals. Be concrete, production-quality, ` +
+      "and faithful to the visual style and content of the source frames."
+    );
+  }
+  return (
+    "You are an expert prompt engineer for AI IMAGE generation. Analyze the provided image and write " +
+    "ONE professional, detailed prompt in English. Use EXACTLY these sections, in this order, each on " +
+    "its own line, heading in CAPS followed by a colon. Output ONLY these sections — no preamble, no markdown:\n\n" +
+    "STYLE: (visual style, quality, color palette, render level)\n" +
+    "SCENE: (environment, space, depth)\n" +
+    "SUBJECT: (main objects/elements)\n" +
+    "COMPOSITION: (framing, foreground, background, balance)\n" +
+    "LIGHTING: (light sources, mood, shadows)\n" +
+    "DETAILS: (textures, fine details, distinctive features)\n\n" +
+    "Be concrete and faithful to the source image."
+  );
+}
+
 /**
- * Vision → prompt (REVERSE): rasm(lar)dan generatsiya prompti yozadi. `images` —
- * data-URI yoki URL ro'yxati (1-3). Bir nechta kadr berilsa video kadrlari deb
- * qaraladi (harakat ham tavsiflanadi). Faqat MATN qaytaradi (max_tokens bilan cheklangan).
+ * Vision → prompt (REVERSE): rasm/video kadr(lar)dan STRUKTURALI kinematik generatsiya
+ * prompti yozadi. `images` — data-URI yoki URL (1-3). kind="video" → sequential kadrlar
+ * (STYLE/SCENE/SUBJECT/MOTION/CAMERA/TIMELINE/ENDING FRAME/SOUND DESIGN); kind="image" →
+ * qisqaroq (STYLE/SCENE/SUBJECT/COMPOSITION/LIGHTING/DETAILS). durationSec → TIMELINE oralig'i.
  */
 export async function orImageToPrompt(
   model: string,
   images: string[],
-  instruction?: string
+  kind: "image" | "video" = "image",
+  durationSec?: number
 ): Promise<OrResult<string>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const sys =
-    "You are an expert prompt engineer for AI image/video generation. Look at the provided " +
-    "image(s) and write ONE detailed, production-quality generation prompt that recreates the " +
-    "scene: subject, setting, style, lighting, color palette, composition and camera. If multiple " +
-    "frames are given, treat them as sequential video frames and also describe the motion/action. " +
-    "Return ONLY the prompt text as a single paragraph under 600 characters — no commentary, no markdown.";
-  const content: Array<Record<string, unknown>> = [
-    { type: "text", text: instruction || "Describe this as a detailed generation prompt." },
-  ];
+  const dur = Math.min(60, Math.max(1, Math.round(durationSec || 10)));
+  const sys = describeSystemPrompt(kind, dur);
+  const userText =
+    kind === "video"
+      ? `Write the structured video prompt. The source video is about ${dur} seconds long; the TIMELINE must span 00:00 to ${fmtClock(dur)}.`
+      : "Write the structured image prompt for this image.";
+  const content: Array<Record<string, unknown>> = [{ type: "text", text: userText }];
   for (const url of images) content.push({ type: "image_url", image_url: { url } });
   const body: Record<string, unknown> = {
     model,
@@ -143,7 +187,7 @@ export async function orImageToPrompt(
       { role: "system", content: sys },
       { role: "user", content },
     ],
-    max_tokens: 400, // uzunlik cheklovi
+    max_tokens: 1200, // strukturali format uzun (TIMELINE breakdown)
   };
   const res = await orPost("/chat/completions", body);
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
