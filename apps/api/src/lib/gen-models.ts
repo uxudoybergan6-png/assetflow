@@ -46,6 +46,7 @@ export type GenModel = {
   feature: GenFeature;
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
+  endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
   enabled?: boolean; // false → generatsiya bloklanadi (kredit yechilmaydi)
 
@@ -196,7 +197,8 @@ export const GEN_MODELS: GenModel[] = [
     label: "Veo 3.1 Lite",
     feature: "text-to-video",
     cost: 10, // /s
-    referenceMode: "video-ref", // boshlang'ich kadr/reference rasm (input_references) — G3
+    referenceMode: "video-ref", // boshlang'ich kadr/reference rasm — G3
+    endFrame: true, // Veo: first_frame + last_frame (/videos/models 2026-06-18)
     isDefault: true,
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p"],
@@ -212,6 +214,7 @@ export const GEN_MODELS: GenModel[] = [
     feature: "text-to-video",
     cost: 20,
     referenceMode: "video-ref",
+    endFrame: true,
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p", "4K"],
     durations: [4, 6, 8],
@@ -226,6 +229,7 @@ export const GEN_MODELS: GenModel[] = [
     feature: "text-to-video",
     cost: 40,
     referenceMode: "video-ref",
+    endFrame: true,
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p", "4K"],
     durations: [4, 6, 8],
@@ -240,6 +244,7 @@ export const GEN_MODELS: GenModel[] = [
     feature: "image-to-video",
     cost: 12,
     referenceMode: "video-ref",
+    endFrame: true,
     aspects: ["16:9", "9:16", "1:1"],
     resolutions: ["720p"],
     durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -254,6 +259,7 @@ export const GEN_MODELS: GenModel[] = [
     feature: "image-to-video",
     cost: 18,
     referenceMode: "video-ref",
+    endFrame: true,
     aspects: ["16:9", "9:16", "1:1"],
     resolutions: ["720p"],
     durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -268,6 +274,7 @@ export const GEN_MODELS: GenModel[] = [
     feature: "image-to-video",
     cost: 10,
     referenceMode: "video-ref",
+    endFrame: true,
     aspects: ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"],
     resolutions: ["480p", "720p", "1080p"],
     durations: [4, 5, 6, 7, 8, 9, 10],
@@ -317,6 +324,11 @@ export function getReferenceMode(model: GenModel): ReferenceMode {
 /** Model reference rasm qabul qiladimi (none → qabul qilmaydi). */
 export function modelAcceptsReference(model: GenModel): boolean {
   return getReferenceMode(model) !== "none";
+}
+
+/** Video model End kadr (last_frame) qo'llaydimi (/videos/models bilan tasdiqlangan). */
+export function modelSupportsEndFrame(model: GenModel): boolean {
+  return model.mode === "video" && model.endFrame === true;
 }
 
 /** Berilgan mode uchun reference qo'llaydigan birinchi enabled model (UI/xato tavsiyasi uchun). */

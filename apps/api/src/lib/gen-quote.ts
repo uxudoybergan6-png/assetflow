@@ -33,6 +33,7 @@ export function genParamsHash(
 ): string {
   const priced = { ...(params || {}) };
   delete priced.referenceUrl;
+  delete priced.referenceEndUrl; // End kadr ham narxga ta'sir qilmaydi (referenceUrl kabi)
   return stableStringify({ modelId, mode, params: priced });
 }
 

@@ -4506,7 +4506,7 @@ function aiUpdateRefAffordance(){
   if(!ok&&af_ai.open==='ref')aiCloseMenus();
   if(!ok&&af_ai.reference)af_ai.reference=null;
   // End slot — faqat Start/End qo'llaydigan video model; aks holda tozalanadi.
-  const endOk=ok&&media==='video'&&!!(m&&m.inputs&&m.inputs.indexOf('start-end-frame')>=0);
+  const endOk=ok&&media==='video'&&!!(m&&m.endFrame);
   if(!endOk&&af_ai.referenceEnd)af_ai.referenceEnd=null;
   aiRenderRefBar(); // kataklar joriy modelga moslanadi (drop-zona / filled / yashirin)
   if(hint){
@@ -4705,7 +4705,7 @@ async function aiAttachRef(src){
     return;
   }
   // End slot — faqat Start/End qo'llaydigan video model (gen-models inputs).
-  if(slot==='end'&&!(af_ai.media==='video'&&m&&m.inputs&&m.inputs.indexOf('start-end-frame')>=0)){
+  if(slot==='end'&&!(af_ai.media==='video'&&m&&m.endFrame)){
     if(typeof showToast==='function')showToast('Bu model End kadr qabul qilmaydi','warning');
     return;
   }
@@ -4787,7 +4787,7 @@ function aiRenderRefBar(){
   if(media==='video'){
     bar.classList.add('cells-mode');
     const startOk=aiRefSupported(m,media);
-    const endOk=startOk&&!!(m&&m.inputs&&m.inputs.indexOf('start-end-frame')>=0);
+    const endOk=startOk&&!!(m&&m.endFrame);
     const showStart=startOk||!!af_ai.reference;
     const showEnd=endOk||!!af_ai.referenceEnd;
     if(!showStart&&!showEnd){bar.style.display='none';bar.innerHTML='';return;}
@@ -4869,14 +4869,15 @@ async function aiExtractFrames(p,mediaType,maxFrames){
     });
   }finally{ try{URL.revokeObjectURL(url);}catch(e){} }
 }
-/** Reference (af_ai.reference) → BITTA JPEG data-URI (G1/G3 generatsiya oqimi uchun). */
-async function aiReferenceDataUri(media){
-  const ref=af_ai.reference;
+/** Reference obyektidan BITTA JPEG data-URI (Start/End slot uchun umumiy). */
+async function aiRefSlotDataUri(ref,media){
   if(!ref||!ref.path)return null;
   if(media!=='rasm'&&media!=='video')return null;
   const r=await aiExtractFrames(ref.path,ref.mediaType,1);
   return (r.frames&&r.frames[0])||null;
 }
+async function aiReferenceDataUri(media){ return aiRefSlotDataUri(af_ai.reference,media); }     // Start (G1/G3)
+async function aiReferenceEndDataUri(media){ return aiRefSlotDataUri(af_ai.referenceEnd,media); } // End (V5)
 /* ── AI SFX (B) — Timeline work-area eksport (B1) ── */
 function aiFindFfmpeg(){
   try{const fs=require('fs');const cands=['/opt/homebrew/bin/ffmpeg','/usr/local/bin/ffmpeg','/usr/bin/ffmpeg'];
@@ -5089,7 +5090,7 @@ function aiRangeLabel(list,suffix){
 function aiModelChipList(m){
   if(!m)return [];
   const c=[];
-  if(m.referenceMode==='video-ref')c.push((m.inputs&&m.inputs.indexOf('start-end-frame')>=0)?'Start/End':'Start'); // first_frame (G3), Start/End — Kling/Seedance/Wan
+  if(m.referenceMode==='video-ref')c.push(m.endFrame?'Start/End':'Start'); // first_frame (G3) / last_frame (V5, endFrame flag)
   else if(m.referenceMode==='image-edit'||m.referenceMode==='image-ref')c.push('Reference');
   if(m.resolutions&&m.resolutions.length)c.push(aiRangeLabel(m.resolutions));
   if((m.mode==='video'||m.mode==='sfx')&&m.durations&&m.durations.length)c.push(aiRangeLabel(m.durations,'s'));
@@ -5122,7 +5123,7 @@ function aiModelFeatures(m){
   const f=[];
   if(m.referenceMode&&m.referenceMode!=='none')f.push('Reference');
   if(m.referenceMode==='video-ref')f.push('Start frame');
-  if(m.inputs&&m.inputs.indexOf('start-end-frame')>=0)f.push('Start & end frame');
+  if(m.endFrame)f.push('Start & end frame');
   if(m.audio)f.push('Audio');
   return f;
 }
@@ -5401,7 +5402,8 @@ async function aiGenOneShot(media,prompt,shotDur){
   const sessionId=await aiEnsureSession(media);
   const params=aiGenParams(media);
   if(shotDur&&shotDur!=='auto')params.duration=Number(shotDur);
-  try{ const refUrl=await aiReferenceDataUri(media); if(refUrl)params.referenceUrl=refUrl; }catch(e){}
+  try{ const refUrl=await aiReferenceDataUri(media); if(refUrl)params.referenceUrl=refUrl;
+    const cm=aiCurrentModel(); if(media==='video'&&cm&&cm.endFrame){ const endUrl=await aiReferenceEndDataUri(media); if(endUrl)params.referenceEndUrl=endUrl; } }catch(e){}
   const q=await studioPost('/api/studio/gen/cost-quote',{modelId:modelId,mode:mode,params:params},20000);
   const start=await studioPost('/api/studio/gen',{sessionId:sessionId,mode:mode,modelId:modelId,prompt:prompt,params:params,price:q.price,costQuoteSignature:q.signature},60000);
   if(typeof start.creditsLeft==='number')aiUpdateCredits(start.creditsLeft);
@@ -5538,6 +5540,9 @@ async function aiRunStudioGen(media,val){
   try{
     const refUrl=await aiReferenceDataUri(media);
     if(refUrl)params.referenceUrl=refUrl;
+    // V5: End kadr — faqat model last_frame qo'llasa (endFrame).
+    const cm=aiCurrentModel();
+    if(media==='video'&&cm&&cm.endFrame){ const endUrl=await aiReferenceEndDataUri(media); if(endUrl)params.referenceEndUrl=endUrl; }
   }catch(e){ if(typeof showToast==='function')showToast('Reference o‘qilmadi: '+((e&&e.message)||e),'warning'); }
   const start=await studioPost('/api/studio/gen',{
     sessionId,mode,modelId,prompt:val,params,

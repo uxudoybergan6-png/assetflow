@@ -1,14 +1,18 @@
-# SESSION REPORT — 2026-06-19 — V4 Multi-shot storyboard (spec §4)
+# SESSION REPORT — 2026-06-19 — V5 End-frame to'liq wiring (spec §3a/§3b)
 
-## Bajarildi — oqim (G1–G5) BUZILMADI (yagona-shot tegmadi)
-- **SHOTS bar (video):** `#aiShotLabel` endi video rejimda «SHOTS [1][2]… × +» tablar + Manual/Auto rejim selektori + joriy shot davomiyligi (Auto/1"–10"). Boshqa studio rejim — oddiy «Shot» yorlig'i. `aiRenderShots`.
-- **Shot boshqaruvi:** `aiShotAdd` (lazily multi-shot yoqadi: joriy prompt → shot 1, yangi bo'sh shot qo'shadi), `aiShotSwitch` (joriy promptni saqlab, tanlangan shotni yuklaydi), `aiShotRemove` (1 qolsa yagona-shotga qaytadi), `aiShotSetDur`/`aiShotSetMode`. Prompt = joriy shot editori (`aiShotSave`/`aiShotLoad`).
-- **Generatsiya:** video + ≥2 shot → `aiRunMultiShot` har shotni KETMA-KET video qiladi (`aiGenOneShot`: session→per-shot quote→/gen→poll, per-shot davomiylik) va AE'ga KETMA-KET import (storyboard). Backend o'zgartirilmadi — mavjud /studio/gen shot bo'yicha aylantiriladi. Yagona-shot oqimi (`aiRunStudioGen`) o'zgarmagan.
-- **@mention:** placeholder + biriktirilgan Start reference har shotga uzatiladi (referenceUrl). To'liq @image picker — keyin.
-- Kredit: har shot alohida yechiladi/qaytariladi (mavjud atomik oqim), `aiUpdateCredits`/`aiRefreshCredits`.
+## Tasdiqlangan (/videos/models, 2026-06-18 — taxmin emas)
+- `last_frame` (End kadr): Veo 3.1 Lite/Fast/3.1, Kling v3.0 std/pro, Seedance 2.0 → QO'LLAYDI. **Wan 2.6 → faqat first_frame** (End yo'q).
+- V1.5'dagi `inputs⊇start-end-frame` gating NOTO'G'RI edi (Veo'da End bor lekin inputs'da yo'q; Wan'da aksincha). V5 avtoritativ `endFrame` flag bilan tuzatdi.
+
+## Bajarildi — oqim BUZILMADI
+- **gen-models.ts:** `endFrame?: boolean` + Veo×3 / Kling×2 / Seedance = `endFrame: true` (Wan'ga emas). Helper `modelSupportsEndFrame`.
+- **gen-processor.ts** `runVideo`: `params.referenceEndUrl` bo'lsa VA `model.endFrame` → `frame_images` ga `last_frame` qo'shadi (first_frame yoniga), R2 hosted URL bilan (`materializeRefUrl`).
+- **gen-quote.ts:** `genParamsHash` `referenceEndUrl`'ni ham hashdan chiqaradi (referenceUrl kabi) → quote↔gen mos.
+- **Frontend:** End-cell gating endi `model.endFrame` (3 joy: aiRenderRefBar/aiAttachRef/aiUpdateRefAffordance); `aiModelChipList` "Start/End" chip + `aiModelFeatures` ham endFrame'dan. `aiReferenceEndDataUri` (refaktor `aiRefSlotDataUri`); `aiRunStudioGen` + `aiGenOneShot` video+endFrame bo'lsa `referenceEndUrl` (data-URI) yuboradi.
+- **Add media (§3b):** Upload/Timeline/Project rasm+video reference izchil (aiExtractFrames ikkalasini ham). Audio — kadr-reference uchun qo'llanilmaydi (start/end FRAME).
 
 ## Tekshirildi
-- Parse: 2 blok, 0 xato. Oqim funksiyalari (aiGenerate/aiRunStudioGen/aiPollJob/aiReferenceDataUri) butun. 3 tema, responsive (SHOTS bar flex-wrap). CEP'ga ko'chirildi (AE qo'zg'atilmadi). studio:sync shart emas.
+- Backend tsc toza. Plugin parse: 2 blok, 0 xato. endFrame=6 model. quote↔gen hash mos (referenceEndUrl strip). 3 tema. CEP'ga ko'chirildi (AE qo'zg'atilmadi).
 
-## Keyingi
-- V5 End-frame to'liq wiring (frame_images last_frame) + Add media turlari.
+## TUGADI — V2–V5 yakuni
+- Barcha bosqichlar tugadi. Pastda commitlar + deploy/test xulosasi.

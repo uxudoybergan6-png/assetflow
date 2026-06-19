@@ -79,6 +79,7 @@ async function runVideo(
   genId: string
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
   // Param gigiyenasi: model qo'llaydigan qiymatlarga klamp (ortiqcha yuborilmaydi).
   const v = resolveVideoParams(model, params);
   const opts: Parameters<typeof orVideoCreate>[1] = {
@@ -94,7 +95,15 @@ async function runVideo(
   // first_frame ishlatamiz. data-URI → R2 hosted URL (provayder tashqaridan oladi).
   if (refUrl && getReferenceMode(model) === "video-ref") {
     const hosted = await materializeRefUrl(userId, genId, refUrl);
-    opts.frameImages = [{ url: hosted, frameType: "first_frame" }];
+    const frames: NonNullable<typeof opts.frameImages> = [
+      { url: hosted, frameType: "first_frame" },
+    ];
+    // End kadr — FAQAT model last_frame qo'llasa (gen-models.endFrame, /videos/models tasdiqlangan).
+    if (refEndUrl && model.endFrame) {
+      const hostedEnd = await materializeRefUrl(userId, genId, refEndUrl);
+      frames.push({ url: hostedEnd, frameType: "last_frame" });
+    }
+    opts.frameImages = frames;
   }
   const created = await orVideoCreate(model.key, opts);
   if (!created.ok) return { ok: false, error: created.error };
