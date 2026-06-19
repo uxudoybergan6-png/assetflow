@@ -48,6 +48,7 @@
   --surface:#141612;
   --surface-2:#1c1f18;
   --surface-3:#23271e;
+  --pop-bg:#1c1f18; /* popover/menyu — DOIM opaque (glass temalarda ham) */
   --sidebar:#0d0f0a;
 
   /* Glass model (standartda neytral) */
@@ -93,6 +94,7 @@
   --surface:rgba(20,24,18,.55);
   --surface-2:rgba(28,33,24,.62);
   --surface-3:rgba(40,46,33,.7);
+  --pop-bg:#161a13; /* popover/menyu — opaque (glass shaffofligi menyuga tushmaydi) */
   --sidebar:rgba(13,16,10,.55);
 
   --glass-bg:rgba(20,24,18,.55);
@@ -131,6 +133,7 @@
   --surface:rgba(255,255,255,.6);
   --surface-2:rgba(255,255,255,.72);
   --surface-3:rgba(255,255,255,.85);
+  --pop-bg:#f6f8f2; /* popover/menyu — opaque (light glass shaffofligi menyuga tushmaydi) */
   --sidebar:rgba(248,250,245,.6);
 
   --glass-bg:rgba(255,255,255,.6);

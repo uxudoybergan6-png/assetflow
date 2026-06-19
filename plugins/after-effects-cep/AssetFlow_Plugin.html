@@ -1536,6 +1536,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-composer{
   border-radius:18px;background:var(--surface);padding:13px;
   border:1px solid var(--border);
+  position:relative;z-index:60; /* ochilgan menyu (ichida) pastdagi TARIX kartalaridan yuqori turishi uchun — composer backdrop-filter stacking-context'ini ko'taramiz */
   transition:box-shadow .2s var(--ease),border-color .2s var(--ease);
 }
 .ai-composer.focused{
@@ -1583,7 +1584,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-ctrl-settings .ai-ctrl-ico{color:var(--muted)}
 .ai-mdot{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-cta));flex:none}
 
-.ai-menu{position:absolute;bottom:calc(100% + 6px);left:0;min-width:210px;max-width:min(320px,calc(100vw - 24px));max-height:min(56vh,360px);overflow-y:auto;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:var(--shadow);z-index:40;display:flex;flex-direction:column;gap:2px}
+.ai-menu{position:absolute;bottom:calc(100% + 6px);left:0;min-width:210px;max-width:min(320px,calc(100vw - 24px));max-height:min(56vh,360px);overflow-y:auto;background:var(--pop-bg,#1c1f18);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.45),var(--shadow);z-index:80;display:flex;flex-direction:column;gap:2px}
 .ai-menu-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:transparent;border:none;cursor:pointer;color:var(--text);width:100%;text-align:left;font-family:inherit;transition:background .12s}
 .ai-menu-row:hover{background:rgba(255,255,255,.06)}
 .ai-menu-row.active{background:var(--green-dim)}
@@ -1720,7 +1721,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-h-act.danger:hover{background:var(--red)}
 .ai-h-use{margin-left:auto;padding:0 9px;height:25px;border-radius:7px;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit}
 .ai-h-use:hover{background:var(--accent-cta);color:#111}
-.ai-h-menu{position:absolute;top:38px;right:6px;z-index:30;min-width:152px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:5px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px}
+.ai-h-menu{position:absolute;top:38px;right:6px;z-index:30;min-width:152px;background:var(--pop-bg,#1c1f18);border:1px solid var(--border);border-radius:10px;padding:5px;box-shadow:0 10px 28px rgba(0,0,0,.4),var(--shadow);display:flex;flex-direction:column;gap:2px}
 .ai-h-menu button{text-align:left;padding:7px 9px;border-radius:7px;background:transparent;border:none;color:var(--text);font-size:var(--fs-sm);cursor:pointer;font-family:inherit}
 .ai-h-menu button:hover{background:var(--surface-3)}
 .ai-h-menu button.off{opacity:.45;cursor:not-allowed}
