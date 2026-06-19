@@ -70,6 +70,39 @@ async function materializeRefUrl(
   return getSignedDownloadUrl(key, 7200);
 }
 
+/**
+ * H2 — strukturali "Tasvirdan" promptini (STYLE:/SCENE:/SUBJECT:/MOTION:/CAMERA:/TIMELINE:/
+ * ENDING FRAME:/SOUND DESIGN:) VIDEO model uchun ixcham tabiiy tavsifga aylantiradi.
+ * STYLE+SCENE+SUBJECT+MOTION+CAMERA qiymatlari olinadi; per-soniya TIMELINE (chalkash),
+ * ENDING FRAME (End reference qoplaydi), SOUND DESIGN (audio) tashlanadi. Strukturali
+ * bo'lmasa — o'zini qaytaradi (oddiy prompt o'zgarmaydi).
+ */
+export function flattenVideoPrompt(prompt: string): string {
+  const text = String(prompt || "").trim();
+  const KNOWN = [
+    "STYLE", "SCENE", "SUBJECT", "MOTION", "CAMERA",
+    "TIMELINE", "ENDING FRAME", "SOUND DESIGN", "COMPOSITION", "LIGHTING", "DETAILS",
+  ];
+  const labelAlt = KNOWN.map((l) => l.replace(/ /g, "\\s+")).join("|");
+  const re = new RegExp("(?:^|\\n)\\s*(" + labelAlt + ")\\s*:", "gi");
+  const found: { key: string; after: number; idx: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)))
+    found.push({ key: m[1].toUpperCase().replace(/\s+/g, " "), after: re.lastIndex, idx: m.index });
+  if (found.length < 2) return text; // strukturali emas → o'zgarmaydi
+  const sections: Record<string, string> = {};
+  for (let i = 0; i < found.length; i++) {
+    const end = i + 1 < found.length ? found[i + 1].idx : text.length;
+    const val = text.slice(found[i].after, end).trim().replace(/\s+/g, " ");
+    if (val) sections[found[i].key] = val;
+  }
+  const picked = ["STYLE", "SCENE", "SUBJECT", "MOTION", "CAMERA"]
+    .map((k) => sections[k])
+    .filter(Boolean);
+  if (!picked.length) return text;
+  return picked.join(". ").replace(/\.\s*\./g, ".").slice(0, 1800);
+}
+
 /** Video oqimi: OpenRouter async job → poll → yuklab olish (maks ~5 daqiqa). */
 async function runVideo(
   model: GenModel,
@@ -83,7 +116,9 @@ async function runVideo(
   // Param gigiyenasi: model qo'llaydigan qiymatlarga klamp (ortiqcha yuborilmaydi).
   const v = resolveVideoParams(model, params);
   const opts: Parameters<typeof orVideoCreate>[1] = {
-    prompt,
+    // H2: strukturali "Tasvirdan" qolipi (STYLE:/TIMELINE:/...) video model uchun META-tavsif —
+    // generatsiyaga ixcham tabiiy prompt yuboramiz (STYLE+SCENE+SUBJECT+MOTION+CAMERA).
+    prompt: flattenVideoPrompt(prompt),
     resolution: v.resolution,
     aspectRatio: v.aspectRatio,
     duration: v.duration,
