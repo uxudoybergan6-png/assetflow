@@ -1592,6 +1592,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-menu-row .mr-main{flex:1;min-width:0}
 .ai-menu-row .mr-label{font-size:var(--fs-md);font-weight:600}
 .ai-menu-row .mr-sub{font-size:var(--fs-xs);color:var(--muted)}
+/* Magnific-uslub model teglari (V1) */
+.ai-mchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.ai-mchip{font-size:10px;line-height:1.4;padding:1px 6px;border-radius:999px;background:var(--surface-3,var(--surface-2));border:0.5px solid var(--border);color:var(--muted-2);white-space:nowrap}
+.ai-menu-row.active .ai-mchip{border-color:var(--border-accent)}
 .ai-menu-row .mr-check{color:var(--accent-cta);display:flex;flex:none}
 /* Rasm reference manba menyusi (G4) */
 .ai-refmenu .ai-menu-row{font-size:var(--fs-md);font-weight:600}
@@ -1607,6 +1611,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-chip{font-size:var(--fs-sm);color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s}
 .ai-chip:hover{border-color:var(--muted-2)}
 .ai-chip.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta);font-weight:600}
+.ai-chip small{display:block;font-size:9px;font-weight:500;color:var(--muted);margin-top:1px;letter-spacing:.02em}
+.ai-chip.on small{color:var(--accent-cta);opacity:.85}
 .ai-set-toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 6px 2px;margin-top:4px;border-top:1px solid var(--border);color:var(--text);font-size:var(--fs-sm)}
 .ai-tg{width:36px;height:20px;border-radius:999px;background:var(--surface-3);border:1px solid var(--border);position:relative;cursor:pointer;transition:background .15s;flex:none}
 .ai-tg::after{content:"";position:absolute;left:2px;top:1px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:left .15s,background .15s}
@@ -2042,6 +2048,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                               <div class="ai-menu ai-refmenu" id="aiDescMenu" style="display:none">
                                 <button type="button" class="ai-menu-row" onclick="aiPickDescribe('timeline')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>Timeline'dan <small>klip → prompt</small></button>
                                 <button type="button" class="ai-menu-row" onclick="aiPickDescribe('project')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>Project'dan <small>footage → prompt</small></button>
+                                <button type="button" class="ai-menu-row" onclick="aiPickDescribe('upload')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span>Yuklash <small>fayl → prompt</small></button>
                               </div>
                             </div>
                           </div>
@@ -2086,6 +2093,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           <div class="ai-menu ai-refmenu" id="aiRefMenu" style="display:none">
                             <button type="button" class="ai-menu-row" onclick="aiPickRef('timeline')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>Timeline'dan <small>tanlangan klip</small></button>
                             <button type="button" class="ai-menu-row" onclick="aiPickRef('project')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>Project'dan <small>tanlangan footage</small></button>
+                            <button type="button" class="ai-menu-row" onclick="aiPickRef('upload')"><span class="mr-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span>Yuklash <small>diskdan rasm/video</small></button>
                           </div>
                         </div>
 
@@ -4230,7 +4238,7 @@ function onEnvScopeChange(sel){
 // Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
 const AI_CFG={
   rasm:{label:'Rasm',ico:'image',sub:'AI tasvir generatsiyasi',cost:5,models:['Nano Banana 2'],settings:[],ph:'G‘oyangizni yozing…'},
-  video:{label:'Video',ico:'film',sub:'AI video generatsiya',cost:60,models:['Veo 3.1 Lite'],settings:[],ph:'Video sahnani tasvirlang…'},
+  video:{label:'Video',ico:'film',sub:'AI video generatsiya',cost:60,models:['Veo 3.1 Lite'],settings:[],ph:'Sahnani ta‘riflang — kim/nima bor, ular nima qilyapti, kamera harakati…'},
   ovoz:{label:'Ovoz',ico:'mic',sub:'AI ovoz va dublyaj',cost:3,models:['Kokoro TTS'],settings:[],ph:'Ovoz uchun matn yozing…'},
   sfx:{label:'SFX',ico:'wave',sub:'Tovush effektlari',cost:4,models:['ElevenLabs SFX'],settings:[],ph:'Tovush effektini tasvirlang… (masalan: portlash, shamol, qadam)'},
   qidiruv:{label:'Qidiruv',ico:'search',sub:'Katalogdan AI bilan toping',cost:1,models:['Katalog'],settings:[],ph:'Masalan: "kosmik intro kerak"…'}
@@ -4409,6 +4417,14 @@ function aiRenderInputs(){
     +inputs.map(k=>'<span class="ai-inp-chip">'+aiEsc(AI_INPUT_LABEL[k]||k)+'</span>').join('');
 }
 /** Capabilities-asosli sozlamalar menyusi (model qaysi maydonni qo'llasa — shu chiqadi). */
+/** Davomiylik (soniya) → magnific yorliq (Quick/Short/Long/Extended). */
+function aiDurLabel(sec){
+  const s=Number(sec)||0;
+  if(s<=4)return 'Quick';
+  if(s<=7)return 'Short';
+  if(s<=10)return 'Long';
+  return 'Extended';
+}
 function aiBuildSettingsMenu(media,model){
   const sm=document.getElementById('aiSettingMenu');if(!sm)return;
   if(!aiStudioMode(media)){return;}
@@ -4416,12 +4432,15 @@ function aiBuildSettingsMenu(media,model){
   const sel=af_ai.sel[media]||{};
   const chips=(field,list,cur)=>'<div class="ai-chips">'+list.map(v=>
     '<button type="button" class="ai-chip'+(String(cur)===String(v)?' on':'')+'" onclick="aiSelSet(\''+field+'\',\''+aiEsc(String(v))+'\')">'+aiEsc(String(v))+'</button>').join('')+'</div>';
+  // Davomiylik chiplari magnific yorliqli (Quick/Short/Long/Extended) — durationga map.
+  const durChips=(list,cur)=>'<div class="ai-chips">'+list.map(v=>
+    '<button type="button" class="ai-chip'+(String(cur)===String(v)?' on':'')+'" title="'+aiDurLabel(v)+'" onclick="aiSelSet(\'duration\',\''+aiEsc(String(v))+'\')">'+aiEsc(String(v))+'<small>'+aiDurLabel(v)+'</small></button>').join('')+'</div>';
   let h='';
   if(media==='video'){
-    if(model.aspects&&model.aspects.length)h+='<div class="ai-set-sec"><h5>Nisbat</h5>'+chips('aspect',model.aspects,sel.aspect)+'</div>';
+    if(model.aspects&&model.aspects.length)h+='<div class="ai-set-sec"><h5>Nisbat (aspect)</h5>'+chips('aspect',model.aspects,sel.aspect)+'</div>';
     if(model.resolutions&&model.resolutions.length)h+='<div class="ai-set-sec"><h5>Sifat</h5>'+chips('resolution',model.resolutions,sel.resolution)+'</div>';
-    if(model.durations&&model.durations.length)h+='<div class="ai-set-sec"><h5>Davomiylik (soniya)</h5>'+chips('duration',model.durations,sel.duration)+'</div>';
-    if(typeof model.audio==='boolean')h+='<div class="ai-set-toggle"><span>Audio</span><button type="button" class="ai-tg'+(sel.audio?' on':'')+'" onclick="aiSelToggle(\'audio\')"></button></div>';
+    if(model.durations&&model.durations.length)h+='<div class="ai-set-sec"><h5>Davomiylik</h5>'+durChips(model.durations,sel.duration)+'</div>';
+    if(typeof model.audio==='boolean')h+='<div class="ai-set-toggle"><span>🔊 Sound (audio)</span><button type="button" class="ai-tg'+(sel.audio?' on':'')+'" onclick="aiSelToggle(\'audio\')"></button></div>';
   }else if(media==='rasm'){
     if(model.aspects&&model.aspects.length)h+='<div class="ai-set-sec"><h5>Nisbat</h5>'+chips('aspect',model.aspects,sel.aspect)+'</div>';
     if(model.resolutions&&model.resolutions.length)h+='<div class="ai-set-sec"><h5>Sifat</h5>'+chips('quality',model.resolutions,sel.quality)+'</div>';
@@ -4512,15 +4531,29 @@ function aiCostQuote(){
   },350);
 }
 
-/* ── Reference (2a/G4) — IKKI manba: Timeline yoki Project panel ── */
+/* ── Reference (2a/G4 + V1 Upload) — manbalar: Timeline · Project · Upload ── */
 // Menyu'dan tanlash: avval menyuni yopamiz, keyin biriktiramiz.
 function aiPickRef(src){ aiCloseMenus(); aiAttachRef(src); }
 async function aiTimelineRef(){ return aiAttachRef('timeline'); } // eski chaqiruvlar uchun alias
 async function aiProjectRef(){ return aiAttachRef('project'); }
-/** Manbadan (timeline/project) reference obyektini OLADI (af_ai.reference ga yozmaydi).
- *  host.jsx ikkala manba uchun bir xil shakl qaytaradi ({ok,mediaPath,mediaType,name}).
+/** Diskdan reference fayl tanlash (CEP file dialog) → reference obyekti. */
+function aiFetchUploadRef(){
+  if(!(window.cep&&window.cep.fs&&typeof window.cep.fs.showOpenDialog==='function')){
+    if(typeof showToast==='function')showToast('Yuklash bu muhitda mavjud emas','warning');return null;
+  }
+  const exts=['png','jpg','jpeg','webp','gif','bmp','mp4','mov','webm','m4v','avi','mkv'];
+  let r;try{ r=window.cep.fs.showOpenDialog(false,false,'Reference rasm yoki video tanlang','',exts); }catch(e){ r=null; }
+  const p=(r&&r.data&&r.data[0])||'';
+  if(!p)return null; // bekor qilindi
+  let name=p;try{name=require('path').basename(p);}catch(e){name=(p.split(/[\\\/]/).pop())||p;}
+  const isVid=/\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(p);
+  return {path:p,name:name,mediaType:isVid?'video':'image',source:'upload'};
+}
+/** Manbadan (timeline/project/upload) reference obyektini OLADI (af_ai.reference ga yozmaydi).
+ *  Timeline/Project host.jsx orqali ({ok,mediaPath,mediaType,name}); Upload — CEP file dialog.
  *  Reference biriktirish VA Image-to-Prompt (G5) shu funksiyani baham ko'radi. */
 async function aiFetchRef(src){
+  if(src==='upload')return aiFetchUploadRef();
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Reference faqat After Effects ichida','info');return null;}
   // Atomik: jsx'ni yuklab + funksiyani BITTA evalScript IIFE'da chaqiramiz.
   const fn=(src==='project')?'getSelectedProjectReference':'getActiveTimelineVideoReference';
@@ -4549,7 +4582,8 @@ async function aiAttachRef(src){
   if(!ref)return;
   af_ai.reference=ref;
   aiRenderRefBar();
-  if(typeof showToast==='function')showToast('Reference olindi ('+(ref.source==='project'?'Project':'Timeline')+'): '+ref.name,'success');
+  const srcN=ref.source==='project'?'Project':ref.source==='upload'?'Yuklangan':'Timeline';
+  if(typeof showToast==='function')showToast('Reference olindi ('+srcN+'): '+ref.name,'success');
 }
 /* ── Image/Video-to-Prompt (G5) — manbadan kadr(lar) → vision model → prompt textarea ── */
 function aiPickDescribe(src){ aiCloseMenus(); aiDescribeFrom(src); }
@@ -4602,7 +4636,7 @@ function aiRenderRefBar(){
   const thumb=isImg
     ?('<img src="file://'+aiEsc(ref.path)+'" alt="" onerror="this.style.display=\'none\'">')
     :('<span class="ai-ref-ico">'+aiIco(ref.mediaType==='audio'?'mic':'image',16)+'</span>');
-  const srcLabel=ref.source==='project'?'Project reference':ref.source==='timeline'?'Timeline reference':'Reference';
+  const srcLabel=ref.source==='project'?'Project reference':ref.source==='timeline'?'Timeline reference':ref.source==='upload'?'Yuklangan reference':'Reference';
   bar.innerHTML='<span class="ai-ref-thumb">'+thumb+'</span>'
     +'<span class="ai-ref-main"><span class="ai-ref-name">'+aiEsc(ref.name||'Reference')+'</span>'
     +'<span class="ai-ref-sub">'+srcLabel+'</span></span>'
@@ -4870,6 +4904,30 @@ function aiMenuRow(active,onclick,inner){
   return '<button type="button" class="ai-menu-row'+(active?' active':'')+'" onclick="'+onclick+'">'+inner
     +(active?'<span class="mr-check">'+aiIco('check',16)+'</span>':'')+'</button>';
 }
+/* ── Magnific-uslub model metadata chiplari (V1, §2a) — gen-models metadata'dan; yangi qobiliyat o'ylab topilmaydi ── */
+function aiRangeLabel(list,suffix){
+  if(!list||!list.length)return '';
+  const a=list[0], b=list[list.length-1];
+  return (String(a)===String(b)?(''+a):(a+'–'+b))+(suffix||'');
+}
+/** Model qatori uchun teglar: reference · rezolyutsiya · davomiylik · audio · narx oralig'i. */
+function aiModelChips(m){
+  if(!m)return '';
+  const c=[];
+  if(m.referenceMode==='video-ref')c.push('Start');               // first_frame (G3)
+  else if(m.referenceMode==='image-edit'||m.referenceMode==='image-ref')c.push('Reference');
+  if(m.resolutions&&m.resolutions.length)c.push(aiRangeLabel(m.resolutions));
+  if((m.mode==='video'||m.mode==='sfx')&&m.durations&&m.durations.length)c.push(aiRangeLabel(m.durations,'s'));
+  if(m.audio)c.push('🔊');
+  // Narx: video cost = soniya boshiga → oralig'i cost×minDur–cost×maxDur; aks holda sobit.
+  if(m.mode==='video'&&m.durations&&m.durations.length){
+    const lo=m.cost*m.durations[0], hi=m.cost*m.durations[m.durations.length-1];
+    c.push('◇ '+(lo===hi?lo:(lo+'–'+hi)));
+  }else{
+    c.push('◇ '+m.cost);
+  }
+  return '<div class="ai-mchips">'+c.map(x=>'<span class="ai-mchip">'+aiEsc(String(x))+'</span>').join('')+'</div>';
+}
 function aiBuildMenus(){
   const cfg=AI_CFG[af_ai.media];
   // media menu
@@ -4887,7 +4945,7 @@ function aiBuildMenus(){
     dm.innerHTML=cat.map(m=>
       aiMenuRow(af_ai.modelId[af_ai.media]===m.id,"aiSetModelCat("+m.id+")",
         '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+aiEsc(m.label)+'</div>'
-        +'<div class="mr-sub">'+m.cost+' kredit</div></div>')).join('');
+        +aiModelChips(m)+'</div>')).join('');
   }else if(dm){
     dm.innerHTML=cfg.models.map((m,i)=>
       aiMenuRow(af_ai.model[af_ai.media]===m,"aiSetModel("+i+")",
