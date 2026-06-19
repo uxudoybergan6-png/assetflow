@@ -374,10 +374,11 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
  */
 const VISION_MODEL = "google/gemini-2.5-flash";
 const describeSchema = z.object({
-  images: z.array(z.string().min(8)).min(1).max(8), // data-URI yoki URL (video → 6-8 kadr)
+  images: z.array(z.string().min(8)).min(1).max(8), // data-URI yoki URL (video kadr fallback)
   kind: z.enum(["image", "video"]).optional(),
   durationSec: z.number().positive().max(600).optional(), // video TIMELINE oralig'i
   frameTimes: z.array(z.number().nonnegative()).max(8).optional(), // har kadr vaqt belgisi (soniya)
+  videoUrl: z.string().min(8).max(16_000_000).optional(), // H1: HAQIQIY video (base64 data-URL/URL)
 });
 studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
   if (!isOpenRouterConfigured()) {
@@ -395,13 +396,25 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
     return;
   }
   const kind = p.data.kind || "image";
-  const out = await orImageToPrompt(
+  // H1: video bo'lsa AVVAL haqiqiy videoni yuboramiz (gemini-2.5-flash video input).
+  // Xato/rad bo'lsa — kadr (8-frame) FALLBACK (G5.2) bilan qayta urinamiz.
+  let out = await orImageToPrompt(
     VISION_MODEL,
     p.data.images,
     kind,
     p.data.durationSec,
-    p.data.frameTimes
+    p.data.frameTimes,
+    kind === "video" ? p.data.videoUrl : undefined
   );
+  if (!out.ok && kind === "video" && p.data.videoUrl && p.data.images.length) {
+    out = await orImageToPrompt(
+      VISION_MODEL,
+      p.data.images,
+      kind,
+      p.data.durationSec,
+      p.data.frameTimes
+    );
+  }
   if (!out.ok) {
     res.status(502).json({ error: out.error });
     return;

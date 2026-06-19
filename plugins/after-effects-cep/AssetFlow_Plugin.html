@@ -4719,6 +4719,28 @@ async function aiAttachRef(src){
 }
 /* ── Image/Video-to-Prompt (G5) — manbadan kadr(lar) → vision model → prompt textarea ── */
 function aiPickDescribe(src){ aiCloseMenus(); aiDescribeFrom(src); }
+/** Reference videoni KICHIK clip (480p/12fps/qisqa, ovozsiz) → base64 data-URL (H1 — haqiqiy
+ *  video describe; Gemini Vertex URL emas, base64 kutadi). ffmpeg yo'q yoki hajm katta → null (kadr fallback). */
+async function aiVideoClipDataUri(p,maxSec){
+  let fs,os,cp,path;
+  try{fs=require('fs');os=require('os');cp=require('child_process');path=require('path');}catch(e){return null;}
+  const ffmpeg=aiFindFfmpeg();
+  const out=path.join(os.tmpdir(),'assetflow_vdesc_'+Date.now()+'.mp4');
+  try{
+    await new Promise(function(resolve,reject){
+      const args=['-y','-i',p,'-t',String(maxSec||6),'-vf','scale=-2:480','-r','12','-an','-c:v','libx264','-crf','32','-preset','veryfast','-movflags','+faststart',out];
+      let pr;try{pr=cp.spawn(ffmpeg,args);}catch(e){reject(e);return;}
+      let err='';if(pr.stderr)pr.stderr.on('data',function(d){err+=String(d);});
+      pr.on('error',function(){reject(new Error('ffmpeg yo‘q'));});
+      pr.on('close',function(code){code===0?resolve():reject(new Error('ffmpeg '+code));});
+    });
+    const sz=fs.statSync(out).size;
+    if(sz>3.6*1024*1024){ try{fs.unlinkSync(out);}catch(e){} return null; } // juda katta → kadr fallback
+    const b64=fs.readFileSync(out).toString('base64');
+    try{fs.unlinkSync(out);}catch(e){}
+    return 'data:video/mp4;base64,'+b64;
+  }catch(e){ try{fs.unlinkSync(out);}catch(_){} return null; }
+}
 async function aiDescribeFrom(src){
   const ref=await aiFetchRef(src);
   if(!ref)return;
@@ -4740,8 +4762,10 @@ async function aiDescribeFrom(src){
     if(wantMotion){
       if(ex.duration)payload.durationSec=Math.round(ex.duration); // TIMELINE oralig'i (yo'q → backend 10s)
       if(ex.times&&ex.times.length)payload.frameTimes=ex.times.map(function(t){return Math.round(t*10)/10;});
+      // H1: HAQIQIY videoni yuborishga harakat (ffmpeg kichik clip → base64). Backend video→kadr fallback bor.
+      try{ const vurl=await aiVideoClipDataUri(ref.path,Math.min(8,Math.round(ex.duration||6))); if(vurl)payload.videoUrl=vurl; }catch(e){}
     }
-    const d=await studioPost('/api/studio/gen/describe',payload,120000);
+    const d=await studioPost('/api/studio/gen/describe',payload,180000);
     const prompt=d&&d.prompt;
     if(!prompt)throw new Error('tavsif bo‘sh');
     if(ta){

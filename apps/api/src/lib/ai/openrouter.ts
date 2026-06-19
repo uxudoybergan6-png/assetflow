@@ -184,24 +184,36 @@ export async function orImageToPrompt(
   images: string[],
   kind: "image" | "video" = "image",
   durationSec?: number,
-  frameTimes?: number[]
+  frameTimes?: number[],
+  videoUrl?: string
 ): Promise<OrResult<string>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
   const dur = Math.min(60, Math.max(1, Math.round(durationSec || 10)));
   const sys = describeSystemPrompt(kind, dur);
-  // Video: kadrlarning REAL vaqt belgilarini beramiz → MOTION/TIMELINE haqiqiy o'zgarishga asoslanadi.
-  const tsLine =
-    kind === "video" && frameTimes?.length
-      ? ` The ${frameTimes.length} provided frames were sampled at these timestamps (in order): ` +
-        frameTimes.map((t, i) => `frame ${i + 1} @ ${fmtTs(t)}`).join(", ") +
-        ". Compare consecutive frames to infer real motion; if two are nearly identical, mark that interval static/minimal."
-      : "";
-  const userText =
-    kind === "video"
-      ? `Write the structured video prompt. The source video is about ${dur} seconds long; the TIMELINE must span 00:00 to ${fmtClock(dur)}.${tsLine}`
-      : "Write the structured image prompt for this image.";
-  const content: Array<Record<string, unknown>> = [{ type: "text", text: userText }];
-  for (const url of images) content.push({ type: "image_url", image_url: { url } });
+  // HAQIQIY video (H1) → video_url content; aks holda kadr(lar) — frameTimes bilan grounding (G5.2).
+  let userText: string;
+  const content: Array<Record<string, unknown>> = [];
+  if (kind === "video" && videoUrl) {
+    userText =
+      `Watch the provided video (about ${dur} seconds) and write the structured video prompt. ` +
+      `Base MOTION and TIMELINE on the REAL action you observe; the TIMELINE must span 00:00 to ${fmtClock(dur)}. ` +
+      "If the video is static, say motion is minimal.";
+    content.push({ type: "text", text: userText });
+    content.push({ type: "video_url", video_url: { url: videoUrl } }); // OpenRouter video format
+  } else {
+    const tsLine =
+      kind === "video" && frameTimes?.length
+        ? ` The ${frameTimes.length} provided frames were sampled at these timestamps (in order): ` +
+          frameTimes.map((t, i) => `frame ${i + 1} @ ${fmtTs(t)}`).join(", ") +
+          ". Compare consecutive frames to infer real motion; if two are nearly identical, mark that interval static/minimal."
+        : "";
+    userText =
+      kind === "video"
+        ? `Write the structured video prompt. The source video is about ${dur} seconds long; the TIMELINE must span 00:00 to ${fmtClock(dur)}.${tsLine}`
+        : "Write the structured image prompt for this image.";
+    content.push({ type: "text", text: userText });
+    for (const url of images) content.push({ type: "image_url", image_url: { url } });
+  }
   const body: Record<string, unknown> = {
     model,
     messages: [
