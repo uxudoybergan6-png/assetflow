@@ -1797,6 +1797,17 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* ── V1.5 magnific: bo'lim yorliqlari + Start/End reference kataklar + model xulosa ── */
 .ai-sec-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2);margin:10px 2px 6px}
 .ai-sec-shot{margin:2px 2px 6px}
+/* ── V4 SHOTS bar (multi-shot) ── */
+.ai-shots{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 2px 8px}
+.ai-shots-lbl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2)}
+.ai-shot-tabs{display:flex;gap:4px}
+.ai-shot-tab{width:26px;height:26px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:var(--fs-sm);font-weight:600;cursor:pointer;font-family:inherit}
+.ai-shot-tab.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta)}
+.ai-shot-mini{width:26px;height:26px;border-radius:8px;border:1px dashed var(--border);background:transparent;color:var(--muted);font-size:14px;line-height:1;cursor:pointer;font-family:inherit}
+.ai-shot-mini:hover{color:var(--text);border-color:var(--muted-2)}
+.ai-shot-mini.danger:hover{color:var(--red);border-color:var(--red)}
+.ai-shots-right{margin-left:auto;display:flex;gap:5px}
+.ai-shot-sel{font-family:inherit;font-size:var(--fs-xs);padding:4px 7px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);cursor:pointer}
 .ai-refbar.cells-mode{display:block;padding:0;background:transparent;border:none;margin-top:10px}
 .ai-refcells{display:flex;flex-wrap:wrap;gap:8px}
 .ai-refcell{flex:1 1 130px;min-width:118px;display:flex;align-items:center;gap:8px;padding:8px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);font-family:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
@@ -4349,6 +4360,9 @@ const af_ai={
   histFilter:'all',   // V2 tur filtri: all|image|video|voice
   histMenu:null,      // V2 ochiq karta menyusi: {id, type:'more'|'use'}
   mm:{provider:'',feature:'',resolution:'',sort:'default',q:''}, // V3 All-models filtrlari
+  shots:null,         // V4 multi-shot: null=yagona; [{prompt,dur}] = ko'p shot (video)
+  shotIdx:0,          // joriy shot
+  shotMode:'manual',  // Manual|Auto storyboard
   // Studio Gen: real model katalog + capabilities-asosli tanlov + imzolangan cost-quote
   catalog:{},        // studioMode -> [{id,key,label,cost,feature,...capabilities}]
   modelId:{},        // media -> tanlangan model numeric id
@@ -5215,7 +5229,7 @@ function aiApplyMedia(){
   set('aiSettingDd',el=>el.style.display=hasSettings?'':'none');
   if(hasSettings)set('aiSettingLabel',el=>el.textContent=studio?aiSelLabel(af_ai.media):af_ai.setting[af_ai.media]);
   set('aiPrompt',el=>el.placeholder=cfg.ph);
-  set('aiShotLabel',el=>el.style.display=studio?'':'none'); // SHOT yorlig'i — faqat studio rejim
+  aiRenderShots(); // V4: SHOTS bar (video) yoki "Shot" yorlig'i (boshqa studio)
   aiUpdateModelSub();
   aiRenderInputs();
   aiSetGenBtn(false);
@@ -5338,9 +5352,97 @@ function aiShowGenBox(media,val,cap,pct){
     +bar+'</div>';
 }
 
+/* ── V4 MULTI-SHOT (spec §4) — video storyboard: har shot alohida prompt+davomiylik ── */
+function aiShotSave(){ if(af_ai.shots){const ta=document.getElementById('aiPrompt');if(ta&&af_ai.shots[af_ai.shotIdx])af_ai.shots[af_ai.shotIdx].prompt=ta.value;} }
+function aiShotLoad(i){ const ta=document.getElementById('aiPrompt');if(ta&&af_ai.shots&&af_ai.shots[i]){ta.value=af_ai.shots[i].prompt||'';if(typeof aiAutoGrow==='function')aiAutoGrow(ta);if(typeof aiUpdateCharCount==='function')aiUpdateCharCount();ta.focus();} }
+function aiShotSwitch(i){ if(!af_ai.shots)return; aiShotSave(); af_ai.shotIdx=i; aiShotLoad(i); aiRenderShots(); }
+function aiShotAdd(){
+  const ta=document.getElementById('aiPrompt');
+  if(!af_ai.shots){ af_ai.shots=[{prompt:(ta?ta.value:''),dur:'auto'}]; af_ai.shotIdx=0; }
+  else aiShotSave();
+  af_ai.shots.push({prompt:'',dur:'auto'}); af_ai.shotIdx=af_ai.shots.length-1;
+  aiShotLoad(af_ai.shotIdx); aiRenderShots();
+}
+function aiShotRemove(i){
+  if(!af_ai.shots)return;
+  af_ai.shots.splice(i,1);
+  if(af_ai.shots.length<=1){
+    const remain=(af_ai.shots[0]&&af_ai.shots[0].prompt)||'';
+    af_ai.shots=null; af_ai.shotIdx=0;
+    const ta=document.getElementById('aiPrompt');if(ta){ta.value=remain;if(typeof aiAutoGrow==='function')aiAutoGrow(ta);if(typeof aiUpdateCharCount==='function')aiUpdateCharCount();}
+  }else{ af_ai.shotIdx=Math.max(0,Math.min(i,af_ai.shots.length-1)); aiShotLoad(af_ai.shotIdx); }
+  aiRenderShots();
+}
+function aiShotSetDur(i,d){ if(af_ai.shots&&af_ai.shots[i])af_ai.shots[i].dur=d; }
+function aiShotSetMode(m){ af_ai.shotMode=m; }
+/** SHOTS bar (video) / "Shot" yorlig'i (boshqa studio) — #aiShotLabel ichida. */
+function aiRenderShots(){
+  const el=document.getElementById('aiShotLabel');if(!el)return;
+  if(!aiStudioMode(af_ai.media)){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='';
+  if(af_ai.media!=='video'){ el.className='ai-sec-label ai-sec-shot'; el.innerHTML='Shot'; return; }
+  el.className='ai-shots';
+  const shots=af_ai.shots, n=shots?shots.length:1, idx=af_ai.shotIdx||0;
+  let tabs='';for(let i=0;i<n;i++){tabs+='<button type="button" class="ai-shot-tab'+(i===idx?' on':'')+'" onclick="aiShotSwitch('+i+')">'+(i+1)+'</button>';}
+  let h='<span class="ai-shots-lbl">SHOTS</span><span class="ai-shot-tabs">'+tabs+'</span>';
+  if(n>1)h+='<button type="button" class="ai-shot-mini danger" title="Joriy shotni o‘chirish" onclick="aiShotRemove('+idx+')">✕</button>';
+  h+='<button type="button" class="ai-shot-mini" title="Shot qo‘shish" onclick="aiShotAdd()">+</button>';
+  if(n>1){
+    const cur=shots[idx]||{};
+    const durOpts=['auto','1','2','3','4','5','6','7','8','9','10'].map(function(d){return '<option value="'+d+'"'+((String(cur.dur||'auto')===d)?' selected':'')+'>'+(d==='auto'?'Auto':d+'"')+'</option>';}).join('');
+    h+='<span class="ai-shots-right"><select class="ai-shot-sel" title="Shot davomiyligi" onchange="aiShotSetDur('+idx+',this.value)">'+durOpts+'</select>'
+      +'<select class="ai-shot-sel" title="Storyboard rejimi" onchange="aiShotSetMode(this.value)"><option value="manual"'+(af_ai.shotMode!=='auto'?' selected':'')+'>Manual</option><option value="auto"'+(af_ai.shotMode==='auto'?' selected':'')+'>Auto</option></select></span>';
+  }
+  el.innerHTML=h;
+}
+/** Bitta shot generatsiyasi (session→quote→gen→poll) — per-shot davomiylik bilan. */
+async function aiGenOneShot(media,prompt,shotDur){
+  const mode=aiStudioMode(media),modelId=af_ai.modelId[media];
+  const sessionId=await aiEnsureSession(media);
+  const params=aiGenParams(media);
+  if(shotDur&&shotDur!=='auto')params.duration=Number(shotDur);
+  try{ const refUrl=await aiReferenceDataUri(media); if(refUrl)params.referenceUrl=refUrl; }catch(e){}
+  const q=await studioPost('/api/studio/gen/cost-quote',{modelId:modelId,mode:mode,params:params},20000);
+  const start=await studioPost('/api/studio/gen',{sessionId:sessionId,mode:mode,modelId:modelId,prompt:prompt,params:params,price:q.price,costQuoteSignature:q.signature},60000);
+  if(typeof start.creditsLeft==='number')aiUpdateCredits(start.creditsLeft);
+  if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh();
+  return aiPollJob(start.jobId,media,prompt);
+}
+/** Multi-shot: har shotni ketma-ket video qiladi + AE'ga ketma-ket import (storyboard). */
+async function aiRunMultiShot(media,shots){
+  let okN=0;
+  for(let i=0;i<shots.length;i++){
+    const s=shots[i],prompt=(s.prompt||'').trim();if(!prompt)continue;
+    aiShowGenBox(media,prompt,'Shot '+(i+1)+'/'+shots.length+' tayyorlanmoqda…');
+    let gen;try{ gen=await aiGenOneShot(media,prompt,s.dur); }catch(e){ if(typeof showToast==='function')showToast('Shot '+(i+1)+': '+((e&&e.message)||e),'error'); continue; }
+    if(!gen||gen.status==='timeout'){ if(typeof showToast==='function')showToast('Shot '+(i+1)+' uzoq cho‘zildi — keyin tarixdan oling','warning'); continue; }
+    if(gen.status==='failed'){ if(typeof showToast==='function')showToast('Shot '+(i+1)+' muvaffaqiyatsiz','error'); continue; }
+    const a=(gen.assets||[]).filter(function(x){return x&&x.url;})[0];
+    if(a){ okN++; const ext=(String(a.url).match(/\.(\w{2,5})(?:\?|$)/)||[])[1]||'mp4'; await aiImportMedia(a.url,'video',ext); }
+  }
+  aiRefreshCredits();
+  const area=document.getElementById('aiResultArea');
+  if(area)area.innerHTML='<div class="ai-soon-box"><div class="ico">'+aiIco('film',30,1.6)+'</div><b>'+okN+'/'+shots.length+' shot tayyor</b><p>Har biri AE‘ga ketma-ket import qilindi (storyboard). Tarixda ham bor.</p></div>';
+  if(typeof showToast==='function')showToast(okN+' ta shot AE‘ga import qilindi','success');
+}
+
 async function aiGenerate(){
   if(af_ai.gen)return;
   const media=af_ai.media;
+  // V4: video multi-shot (≥2 shot) → ketma-ket generatsiya + import
+  if(media==='video'&&af_ai.shots&&af_ai.shots.length>1){
+    aiShotSave();
+    const filled=af_ai.shots.filter(function(s){return (s.prompt||'').trim();});
+    if(!filled.length){ if(typeof showToast==='function')showToast('Kamida bitta shot promptini yozing','warning'); return; }
+    if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){ if(typeof showToast==='function')showToast('AI uchun avval tizimga kiring','warning'); return; }
+    af_ai.gen=true;af_ai.open=null;aiRenderMenus();aiSetGenBtn(true);
+    const lp0=document.getElementById('aiLaunch');if(lp0)lp0.style.display='none';
+    const q0=document.getElementById('aiQuick');if(q0)q0.style.display='none';
+    const wrap0=document.getElementById('aiWrap');if(wrap0)wrap0.classList.add('ai-active');
+    const ra0=document.getElementById('aiResultArea');if(ra0&&ra0.scrollIntoView)ra0.scrollIntoView({behavior:'smooth',block:'start'});
+    try{ await aiRunMultiShot(media,filled); }catch(e){ aiRenderError(e); }finally{ af_ai.gen=false;af_ai._t=null;aiSetGenBtn(false); }
+    return;
+  }
   const ta=document.getElementById('aiPrompt');
   const val=ta?(ta.value||'').trim():'';
   if(!val){
