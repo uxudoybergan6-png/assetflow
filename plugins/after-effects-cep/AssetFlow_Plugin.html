@@ -1596,6 +1596,29 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-mchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .ai-mchip{font-size:10px;line-height:1.4;padding:1px 6px;border-radius:999px;background:var(--surface-3,var(--surface-2));border:0.5px solid var(--border);color:var(--muted-2);white-space:nowrap}
 .ai-menu-row.active .ai-mchip{border-color:var(--border-accent)}
+/* ── V3 All-models modal ── */
+.ai-mm-trigger .mr-arrow{margin-left:auto;color:var(--muted);font-size:13px}
+.ai-mm-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.ai-mm{width:100%;max-width:560px;max-height:86vh;display:flex;flex-direction:column;background:var(--bg,var(--surface));border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.ai-mm-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.ai-mm-top b{font-size:var(--fs-lg,16px);font-weight:700;color:var(--text);flex:1}
+.ai-mm-x{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;font-family:inherit}
+.ai-mm-x:hover{color:var(--text);border-color:var(--muted-2)}
+.ai-mm-bar{display:flex;flex-wrap:wrap;gap:7px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.ai-mm-sel,.ai-mm-search{font-family:inherit;font-size:var(--fs-sm);padding:6px 9px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);cursor:pointer}
+.ai-mm-search{flex:1;min-width:120px;cursor:text}
+.ai-mm-list{overflow-y:auto;padding:8px}
+.ai-mm-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px;border-radius:12px;background:transparent;border:1px solid transparent;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s}
+.ai-mm-row:hover{background:var(--surface-2)}
+.ai-mm-row.on{border-color:var(--border-accent);background:var(--green-dim)}
+.ai-mm-thumb{flex:none;width:52px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);color:var(--accent-cta)}
+.ai-mm-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.ai-mm-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:var(--fs-md);font-weight:600;color:var(--text)}
+.ai-mm-prov{font-size:var(--fs-xs);font-weight:500;color:var(--muted)}
+.ai-mm-badge{font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--green-dim);border:0.5px solid var(--border-accent);color:var(--accent-cta)}
+.ai-mm-chips{display:flex;flex-wrap:wrap;gap:4px}
+.ai-mm-check{flex:none;color:var(--accent-cta);display:flex}
+.ai-mm-empty{padding:24px;text-align:center;color:var(--muted);font-size:var(--fs-sm)}
 .ai-menu-row .mr-check{color:var(--accent-cta);display:flex;flex:none}
 /* Rasm reference manba menyusi (G4) */
 .ai-refmenu .ai-menu-row{font-size:var(--fs-md);font-weight:600}
@@ -2169,6 +2192,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
                     <!-- generatsiya tarixi (oldingi rasm/videolar) -->
                     <div id="aiHistory" class="ai-history" style="display:none"></div>
+
+                    <!-- V3 All models modal (spec §2b) -->
+                    <div class="ai-mm-overlay" id="aiModelsModal" style="display:none" onclick="if(event.target===this)aiCloseModelsModal()">
+                      <div class="ai-mm">
+                        <div class="ai-mm-top"><b>Barcha modellar</b><button type="button" class="ai-mm-x" onclick="aiCloseModelsModal()" title="Yopish">✕</button></div>
+                        <div class="ai-mm-bar" id="aiMmBar"></div>
+                        <div class="ai-mm-list" id="aiMmList"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4316,6 +4348,7 @@ const af_ai={
   histView:'grid',    // V2 Creations: grid|list
   histFilter:'all',   // V2 tur filtri: all|image|video|voice
   histMenu:null,      // V2 ochiq karta menyusi: {id, type:'more'|'use'}
+  mm:{provider:'',feature:'',resolution:'',sort:'default',q:''}, // V3 All-models filtrlari
   // Studio Gen: real model katalog + capabilities-asosli tanlov + imzolangan cost-quote
   catalog:{},        // studioMode -> [{id,key,label,cost,feature,...capabilities}]
   modelId:{},        // media -> tanlangan model numeric id
@@ -5063,6 +5096,78 @@ function aiModelChips(m){
 }
 /** Collapsed model pill ostidagi qisqa xulosa (matn, · bilan). */
 function aiModelSummary(m){ return aiModelChipList(m).join(' · '); }
+
+/* ── V3 ALL MODELS modali (spec §2b) — filtr qatori + boy model qatorlari ── */
+function aiProviderName(key){
+  const p=String(key||'').split('/')[0];
+  const map={google:'Google','bytedance-seed':'ByteDance',bytedance:'ByteDance','black-forest-labs':'Black Forest','x-ai':'xAI',kwaivgi:'Kling',alibaba:'Alibaba',hexgrad:'Hexgrad',elevenlabs:'ElevenLabs',qwen:'Qwen'};
+  return map[p]||p||'—';
+}
+/** Model qobiliyat teglari (filtr uchun) — metadata'dan, yangi qobiliyat o'ylab topilmaydi. */
+function aiModelFeatures(m){
+  const f=[];
+  if(m.referenceMode&&m.referenceMode!=='none')f.push('Reference');
+  if(m.referenceMode==='video-ref')f.push('Start frame');
+  if(m.inputs&&m.inputs.indexOf('start-end-frame')>=0)f.push('Start & end frame');
+  if(m.audio)f.push('Audio');
+  return f;
+}
+function aiMmCatalog(){ const mode=aiStudioMode(af_ai.media); return (mode&&af_ai.catalog[mode])||[]; }
+function aiUniq(arr){ const s=[];arr.forEach(function(x){if(x&&s.indexOf(x)<0)s.push(x);});return s; }
+/** Modal ochish — filtrlar reset, bar + ro'yxat quriladi. */
+function aiOpenModelsModal(){
+  aiCloseMenus();
+  af_ai.mm={provider:'',feature:'',resolution:'',sort:'default',q:''};
+  const ov=document.getElementById('aiModelsModal');if(!ov)return;
+  aiBuildMmBar();
+  aiRenderModelsModal();
+  ov.style.display='';
+}
+function aiCloseModelsModal(){ const ov=document.getElementById('aiModelsModal');if(ov)ov.style.display='none'; }
+/** Filtr qatorini quradi (native select'lar — katalog metadata'sidan). */
+function aiBuildMmBar(){
+  const bar=document.getElementById('aiMmBar');if(!bar)return;
+  const cat=aiMmCatalog();
+  const providers=aiUniq(cat.map(function(m){return aiProviderName(m.key);})).sort();
+  const features=aiUniq([].concat.apply([],cat.map(aiModelFeatures)));
+  const resolutions=aiUniq([].concat.apply([],cat.map(function(m){return m.resolutions||[];})));
+  const opt=function(v,l,sel){return '<option value="'+aiEsc(v)+'"'+(sel?' selected':'')+'>'+aiEsc(l)+'</option>';};
+  const sel=function(id,label,items,all){return '<select class="ai-mm-sel" onchange="aiMmSet(\''+id+'\',this.value)">'+opt('',all,!af_ai.mm[id])+items.map(function(x){return opt(x,x,af_ai.mm[id]===x);}).join('')+'</select>';};
+  bar.innerHTML=
+    sel('provider','provider',providers,'Barcha provayder')
+    +sel('feature','feature',features,'Qobiliyat')
+    +sel('resolution','resolution',resolutions,'Rezolyutsiya')
+    +'<select class="ai-mm-sel" onchange="aiMmSet(\'sort\',this.value)">'
+      +opt('default','Standart',af_ai.mm.sort==='default')+opt('alpha','Nom A–Z',af_ai.mm.sort==='alpha')
+      +opt('cheap','Arzon',af_ai.mm.sort==='cheap')+opt('expensive','Qimmat',af_ai.mm.sort==='expensive')+'</select>'
+    +'<input type="text" class="ai-mm-search" placeholder="🔍 Qidirish…" value="'+aiEsc(af_ai.mm.q)+'" oninput="aiMmSet(\'q\',this.value)">';
+}
+function aiMmSet(k,v){ af_ai.mm[k]=v; aiRenderModelsModal(); }
+function aiMmCost(m){ return (m.mode==='video'&&m.durations&&m.durations.length)?(m.cost*m.durations[0]):m.cost; }
+/** Filtr/sort qo'llab model qatorlarini chizadi (anatomiya §2b). */
+function aiRenderModelsModal(){
+  const list=document.getElementById('aiMmList');if(!list)return;
+  const mm=af_ai.mm; let cat=aiMmCatalog().slice();
+  if(mm.provider)cat=cat.filter(function(m){return aiProviderName(m.key)===mm.provider;});
+  if(mm.feature)cat=cat.filter(function(m){return aiModelFeatures(m).indexOf(mm.feature)>=0;});
+  if(mm.resolution)cat=cat.filter(function(m){return (m.resolutions||[]).indexOf(mm.resolution)>=0;});
+  if(mm.q){const q=mm.q.toLowerCase();cat=cat.filter(function(m){return String(m.label||'').toLowerCase().indexOf(q)>=0;});}
+  if(mm.sort==='alpha')cat.sort(function(a,b){return String(a.label).localeCompare(String(b.label));});
+  else if(mm.sort==='cheap')cat.sort(function(a,b){return aiMmCost(a)-aiMmCost(b);});
+  else if(mm.sort==='expensive')cat.sort(function(a,b){return aiMmCost(b)-aiMmCost(a);});
+  if(!cat.length){list.innerHTML='<div class="ai-mm-empty">Filtrga mos model yo‘q</div>';return;}
+  const curId=af_ai.modelId[af_ai.media];
+  list.innerHTML=cat.map(function(m){
+    const ico=m.mode==='video'?'film':m.mode==='image'?'image':m.mode==='voice'?'mic':'wave';
+    const badge=m.isDefault?'<span class="ai-mm-badge">★ Standart</span>':'';
+    const chips=aiModelChipList(m).map(function(x){return '<span class="ai-mchip">'+aiEsc(String(x))+'</span>';}).join('');
+    return '<button type="button" class="ai-mm-row'+(curId===m.id?' on':'')+'" onclick="aiSetModelCat('+m.id+');aiCloseModelsModal()">'
+      +'<span class="ai-mm-thumb">'+aiIco(ico,20)+'</span>'
+      +'<span class="ai-mm-info"><span class="ai-mm-name">'+aiEsc(m.label)+badge+'<span class="ai-mm-prov">'+aiEsc(aiProviderName(m.key))+'</span></span>'
+      +'<span class="ai-mm-chips">'+chips+'</span></span>'
+      +(curId===m.id?'<span class="ai-mm-check">'+aiIco('check',16)+'</span>':'')+'</button>';
+  }).join('');
+}
 function aiBuildMenus(){
   const cfg=AI_CFG[af_ai.media];
   // media menu
@@ -5077,10 +5182,12 @@ function aiBuildMenus(){
   const smode=aiStudioMode(af_ai.media);
   const cat=(smode&&af_ai.catalog[smode])||null;
   if(dm&&cat&&cat.length){
-    dm.innerHTML=cat.map(m=>
+    const rows=cat.map(m=>
       aiMenuRow(af_ai.modelId[af_ai.media]===m.id,"aiSetModelCat("+m.id+")",
         '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+aiEsc(m.label)+'</div>'
         +aiModelChips(m)+'</div>')).join('');
+    // V3: "Barcha modellar" → boy filtrlash modali
+    dm.innerHTML='<button type="button" class="ai-menu-row ai-mm-trigger" onclick="aiOpenModelsModal()"><span class="mr-ico">'+aiIco('grid',16)+'</span><div class="mr-main"><div class="mr-label">Barcha modellar</div><div class="mr-sub">filtrlash · taqqoslash</div></div><span class="mr-arrow">▸</span></button>'+rows;
   }else if(dm){
     dm.innerHTML=cfg.models.map((m,i)=>
       aiMenuRow(af_ai.model[af_ai.media]===m,"aiSetModel("+i+")",
