@@ -124,6 +124,14 @@ function fmtClock(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
 
+/** Soniyani 00:SS.s (o'ndan bir aniqlik) ga — kadr vaqt belgilari uchun. */
+function fmtTs(sec: number): string {
+  const s = Math.max(0, sec);
+  const m = Math.floor(s / 60);
+  const r = s - m * 60;
+  return `${String(m).padStart(2, "0")}:${r.toFixed(1).padStart(4, "0")}`;
+}
+
 /** Strukturali kinematik system instruction (kind bo'yicha). */
 function describeSystemPrompt(kind: "image" | "video", durationSec: number): string {
   if (kind === "video") {
@@ -143,7 +151,12 @@ function describeSystemPrompt(kind: "image" | "video", durationSec: number): str
       "ENDING FRAME: (final frame state)\n" +
       "SOUND DESIGN: (sound design — whoosh, drone, atmosphere)\n\n" +
       `The TIMELINE MUST cover 00:00 to ${end} in 1-second intervals. Be concrete, production-quality, ` +
-      "and faithful to the visual style and content of the source frames."
+      "and faithful to the visual style and content of the source frames.\n\n" +
+      "IMPORTANT — the provided frames are NOT consecutive: they were sampled at specific timestamps " +
+      "across the video (the user message lists each frame's timestamp, in order). Base MOTION and " +
+      "TIMELINE ONLY on the REAL differences you can observe between consecutive sampled frames — do " +
+      "NOT invent motion you cannot see. If consecutive frames look nearly identical, explicitly say " +
+      "the motion is static or minimal for that interval. Anchor TIMELINE entries to the given timestamps."
     );
   }
   return (
@@ -170,14 +183,22 @@ export async function orImageToPrompt(
   model: string,
   images: string[],
   kind: "image" | "video" = "image",
-  durationSec?: number
+  durationSec?: number,
+  frameTimes?: number[]
 ): Promise<OrResult<string>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
   const dur = Math.min(60, Math.max(1, Math.round(durationSec || 10)));
   const sys = describeSystemPrompt(kind, dur);
+  // Video: kadrlarning REAL vaqt belgilarini beramiz → MOTION/TIMELINE haqiqiy o'zgarishga asoslanadi.
+  const tsLine =
+    kind === "video" && frameTimes?.length
+      ? ` The ${frameTimes.length} provided frames were sampled at these timestamps (in order): ` +
+        frameTimes.map((t, i) => `frame ${i + 1} @ ${fmtTs(t)}`).join(", ") +
+        ". Compare consecutive frames to infer real motion; if two are nearly identical, mark that interval static/minimal."
+      : "";
   const userText =
     kind === "video"
-      ? `Write the structured video prompt. The source video is about ${dur} seconds long; the TIMELINE must span 00:00 to ${fmtClock(dur)}.`
+      ? `Write the structured video prompt. The source video is about ${dur} seconds long; the TIMELINE must span 00:00 to ${fmtClock(dur)}.${tsLine}`
       : "Write the structured image prompt for this image.";
   const content: Array<Record<string, unknown>> = [{ type: "text", text: userText }];
   for (const url of images) content.push({ type: "image_url", image_url: { url } });

@@ -374,9 +374,10 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
  */
 const VISION_MODEL = "google/gemini-2.5-flash";
 const describeSchema = z.object({
-  images: z.array(z.string().min(8)).min(1).max(3), // data-URI yoki URL
+  images: z.array(z.string().min(8)).min(1).max(8), // data-URI yoki URL (video → 6-8 kadr)
   kind: z.enum(["image", "video"]).optional(),
   durationSec: z.number().positive().max(600).optional(), // video TIMELINE oralig'i
+  frameTimes: z.array(z.number().nonnegative()).max(8).optional(), // har kadr vaqt belgisi (soniya)
 });
 studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
   if (!isOpenRouterConfigured()) {
@@ -398,7 +399,8 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
     VISION_MODEL,
     p.data.images,
     kind,
-    p.data.durationSec
+    p.data.durationSec,
+    p.data.frameTimes
   );
   if (!out.ok) {
     res.status(502).json({ error: out.error });
