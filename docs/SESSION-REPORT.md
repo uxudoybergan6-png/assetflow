@@ -1,18 +1,17 @@
-# SESSION REPORT — 2026-06-19 — V5 End-frame to'liq wiring (spec §3a/§3b)
+# SESSION REPORT — 2026-06-19 — AI panel UX audit + tuzatish
 
-## Tasdiqlangan (/videos/models, 2026-06-18 — taxmin emas)
-- `last_frame` (End kadr): Veo 3.1 Lite/Fast/3.1, Kling v3.0 std/pro, Seedance 2.0 → QO'LLAYDI. **Wan 2.6 → faqat first_frame** (End yo'q).
-- V1.5'dagi `inputs⊇start-end-frame` gating NOTO'G'RI edi (Veo'da End bor lekin inputs'da yo'q; Wan'da aksincha). V5 avtoritativ `endFrame` flag bilan tuzatdi.
+## ADIM 0 — Audit (commit afb6702)
+- `docs/AI-PANEL-UX-AUDIT.md` — magnific (Claude in Chrome jonli, kompakt composer) bilan AssetFlow kod tahlili yonma-yon. Topilgan kamchiliklar ro'yxati: hero behuda joy, dropdown anchoring (max-height/width yo'q), composer zichligi, model chip takrori, ovoz kartasi + polish.
 
-## Bajarildi — oqim BUZILMADI
-- **gen-models.ts:** `endFrame?: boolean` + Veo×3 / Kling×2 / Seedance = `endFrame: true` (Wan'ga emas). Helper `modelSupportsEndFrame`.
-- **gen-processor.ts** `runVideo`: `params.referenceEndUrl` bo'lsa VA `model.endFrame` → `frame_images` ga `last_frame` qo'shadi (first_frame yoniga), R2 hosted URL bilan (`materializeRefUrl`).
-- **gen-quote.ts:** `genParamsHash` `referenceEndUrl`'ni ham hashdan chiqaradi (referenceUrl kabi) → quote↔gen mos.
-- **Frontend:** End-cell gating endi `model.endFrame` (3 joy: aiRenderRefBar/aiAttachRef/aiUpdateRefAffordance); `aiModelChipList` "Start/End" chip + `aiModelFeatures` ham endFrame'dan. `aiReferenceEndDataUri` (refaktor `aiRefSlotDataUri`); `aiRunStudioGen` + `aiGenOneShot` video+endFrame bo'lsa `referenceEndUrl` (data-URI) yuboradi.
-- **Add media (§3b):** Upload/Timeline/Project rasm+video reference izchil (aiExtractFrames ikkalasini ham). Audio — kadr-reference uchun qo'llanilmaydi (start/end FRAME).
+## ADIM 1 — Tuzatishlar (oqim G1–G5 BUZILMADI)
+1. **Hero olib tashlandi** — `#aiLaunch` ("Nima yaratamiz?") HTML o'chirildi (~25% balandlik tejaldi). JS chaqiruvlari guarded (`if(lp)`) → xavfsiz. Panel to'g'ridan composer'dan.
+2. **Dropdown anchoring** (`.ai-menu`) — `max-height:min(56vh,360px)+overflow-y:auto` (balandda tepaga uzilmaydi), `max-width:min(320px,100vw-24px)` (tor panelda chetdan oshmaydi), `bottom 8→6px`, `z-index 20→40`. media/model/setting/ref/desc bir xil.
+3. **Zichlik** — `.ai-composer padding 16→13`, `.ai-comp-ctrls margin-top 14→9`, `.ai-sec-label 10/6→7/4`, `.ai-refbar.cells-mode margin 10→8`, textarea `min 48→44`, `.ai-shots margin 4/8→3/6`.
+4. **Model qatorlari** — `aiModelChipList(m, skipRef)`; dropdown qatorida reference chip OLINDI (takror yo'q) → faqat farqlovchi (rezolyutsiya·davomiylik·🔊·narx). Collapsed-xulosa + All-models modalda reference qoladi (informatив).
+5. **Ovoz kartalari** — yalang'och mikrofon → mic + 5-bar to'lqin + gradient fon (`.ai-h-audio`, 3 tema).
 
 ## Tekshirildi
-- Backend tsc toza. Plugin parse: 2 blok, 0 xato. endFrame=6 model. quote↔gen hash mos (referenceEndUrl strip). 3 tema. CEP'ga ko'chirildi (AE qo'zg'atilmadi).
+- Plugin parse: 2 blok, 0 xato. Oqim funksiyalari (aiGenerate/aiRunStudioGen/aiHistoryCell) butun. #aiLaunch=0 (guarded). 3 tema (token CSS), responsive. CEP'ga ko'chirildi (AE qo'zg'atilmadi). studio:sync shart emas.
 
-## TUGADI — V2–V5 yakuni
-- Barcha bosqichlar tugadi. Pastda commitlar + deploy/test xulosasi.
+## Holat
+- AI panel UX tozalash tugadi. Deploy talab qilmaydi (faqat plugin). AE'da reload kerak — vizual tasdiqlash uchun.
