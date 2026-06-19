@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import Stripe from "stripe";
 import { prisma, SubscriptionStatus } from "@creative-tools/database";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
+import { syncPluginPlanFromStripe } from "../lib/plugin-profile.js";
 
 export const stripeRouter = Router();
 
@@ -51,6 +52,16 @@ async function upsertSubscription(
   });
 }
 
+/** Subscription qatorini VA PluginProfile.plan'ni Stripe holatiga sinxronlash —
+    yagona haqiqat manbai. ACTIVE/TRIALING → PRO, aks holda → FREE. */
+async function syncSubscriptionAndPlan(userId: string, sub: Stripe.Subscription) {
+  await upsertSubscription(userId, sub);
+  const status = mapStripeStatus(sub.status);
+  const isActive =
+    status === SubscriptionStatus.ACTIVE || status === SubscriptionStatus.TRIALING;
+  await syncPluginPlanFromStripe(userId, isActive);
+}
+
 export async function stripeWebhookHandler(req: Request, res: Response) {
   const sig = req.headers["stripe-signature"] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -82,7 +93,7 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
         const sub = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
-        await upsertSubscription(userId, sub);
+        await syncSubscriptionAndPlan(userId, sub);
       }
       break;
     }
@@ -92,7 +103,14 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
       const user = await prisma.user.findFirst({
         where: { stripeCustomerId: sub.customer as string },
       });
-      if (user) await upsertSubscription(user.id, sub);
+      if (user) {
+        // Tartibsiz/eski yetkazishda eskirgan "active" payload PRO'ni noto'g'ri
+        // tiklab yubormasligi uchun jonli holatni Stripe'dan qayta o'qiymiz
+        // (deleted bo'lgan obuna retrieve'da 'canceled' qaytadi → FREE).
+        // To'liq event-id dedup #16'da.
+        const fresh = await stripe.subscriptions.retrieve(sub.id);
+        await syncSubscriptionAndPlan(user.id, fresh);
+      }
       break;
     }
     case "customer.subscription.deleted": {
@@ -105,6 +123,8 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
           where: { userId: user.id },
           data: { status: "CANCELED", cancelAtPeriodEnd: false },
         });
+        // Obuna o'chdi → PluginProfile.plan ham FREE'ga tushadi (PRO abadiy qolmaydi).
+        await syncPluginPlanFromStripe(user.id, false);
       }
       break;
     }

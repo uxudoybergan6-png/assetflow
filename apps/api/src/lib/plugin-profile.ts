@@ -116,6 +116,55 @@ export async function setPluginPlan(userId: string, plan: PluginPlanTier) {
   return { ok: true as const, profile: updated };
 }
 
+/**
+ * Webhook-driven plan sinxronizatsiyasi: PluginProfile.plan'ni Stripe obuna
+ * holatining YAGONA haqiqat manbai sifatida moslashtiradi. isActive=true
+ * (ACTIVE/TRIALING) → PRO, aks holda (canceled/past_due/unpaid/...) → FREE.
+ * Shu sabab obuna tugagach/bekor qilingach PRO abadiy qolmaydi.
+ *
+ * Self-upgrade gate'i (proSwitchAllowed) bu yerda QO'LLANMAYDI — webhook
+ * Stripe'ning avtoritativ signali. Idempotent: bir xil event qayta kelsa
+ * natija o'zgarmaydi. BLOCKED/REMOVED hisoblar uchun ham plan tozalanadi
+ * (hisob statusi alohida — bu yerda faqat plan + AI kredit ulushiga tegamiz).
+ * (To'liq event-id dedup #16'da, currentPeriodEnd #12'da hal qilinadi.)
+ */
+export async function syncPluginPlanFromStripe(userId: string, isActive: boolean) {
+  const profile = await ensurePluginProfile(userId);
+  const plan = isActive ? PluginPlanTier.PRO : PluginPlanTier.FREE;
+  const data: { plan: PluginPlanTier; aiCredits?: number } = { plan };
+
+  // FREE'ga tushganda PRO'ning ortiqcha AI kreditini FREE ulushiga cheklaymiz
+  // (minimal teg — keyingi oylik reset baribir FREE darajasiga tushiradi).
+  if (!isActive) {
+    const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE);
+    if (profile.aiCredits > freeAllot) data.aiCredits = freeAllot;
+  }
+
+  await prisma.pluginProfile.update({ where: { userId }, data });
+  return { plan };
+}
+
+/**
+ * Bir martalik reconciliation: barcha PluginProfile'larni joriy Stripe obuna
+ * holatiga moslashtiradi (webhook o'tkazib yuborilgan/eski holatlar uchun).
+ * `npm run reconcile:plans` orqali chaqiriladi.
+ */
+export async function reconcilePluginPlans() {
+  const profiles = await prisma.pluginProfile.findMany({
+    select: { userId: true, plan: true },
+  });
+  let changed = 0;
+  for (const p of profiles) {
+    const isActive = await subscriptionIsPro(p.userId);
+    const target = isActive ? PluginPlanTier.PRO : PluginPlanTier.FREE;
+    if (p.plan !== target) {
+      await syncPluginPlanFromStripe(p.userId, isActive);
+      changed++;
+    }
+  }
+  return { total: profiles.length, changed };
+}
+
 export function serializePluginUser(
   profile: Awaited<ReturnType<typeof ensurePluginProfile>>
 ) {
