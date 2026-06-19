@@ -4556,19 +4556,22 @@ function aiPickDescribe(src){ aiCloseMenus(); aiDescribeFrom(src); }
 async function aiDescribeFrom(src){
   const ref=await aiFetchRef(src);
   if(!ref)return;
-  const isVid=aiIsVidPath(ref.path,ref.mediaType);
-  const kind=isVid?'video':'image';
+  const isVidSource=aiIsVidPath(ref.path,ref.mediaType);
+  // FORMAT tanlangan MODEL turiga qarab (manba turiga emas) — video-prompt rasm modeliga
+  // berilsa qora/xira rasm chiqadi. rasm model → "image"; video model → "video".
+  const kind=(af_ai.media==='video')?'video':'image';
+  // Ko'p kadr + motion FAQAT video model + video manba bo'lsa; aks holda 1 kadr yetarli.
+  const wantMotion=(kind==='video'&&isVidSource);
   const btn=document.getElementById('aiDescBtn');
   const ta=document.getElementById('aiPrompt');
   try{
     if(btn){btn.disabled=true;btn.classList.add('is-busy');}
-    if(typeof showToast==='function')showToast((isVid?'Video':'Rasm')+' tahlil qilinmoqda…','info');
-    // Video → 8 kadr (davomiylik bo'ylab) + vaqt belgilari → real harakat; rasm → 1 kadr.
-    const ex=await aiExtractFrames(ref.path,ref.mediaType,isVid?8:1);
+    if(typeof showToast==='function')showToast((kind==='video'?'Video':'Rasm')+' prompti tayyorlanmoqda…','info');
+    const ex=await aiExtractFrames(ref.path,ref.mediaType,wantMotion?8:1);
     const imgs=(ex&&ex.frames)||[];
     if(!imgs.length)throw new Error('kadr ajratilmadi');
     const payload={images:imgs,kind:kind};
-    if(isVid){
+    if(wantMotion){
       if(ex.duration)payload.durationSec=Math.round(ex.duration); // TIMELINE oralig'i (yo'q → backend 10s)
       if(ex.times&&ex.times.length)payload.frameTimes=ex.times.map(function(t){return Math.round(t*10)/10;});
     }
@@ -5045,6 +5048,11 @@ async function aiGenerate(){
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
     if(typeof showToast==='function')showToast('AI uchun avval tizimga kiring','warning');
     return;
+  }
+  // G5.3: rasm model tanlangan, lekin prompt'da video-format bo'limlari (MOTION/TIMELINE/
+  // ENDING FRAME/SOUND DESIGN) bor → yengil ogohlantirish (majburlamaydi, foydalanuvchi tahrirlaydi).
+  if(media==='rasm'&&/(^|\n)\s*(MOTION|TIMELINE|ENDING FRAME|SOUND DESIGN)\s*:/i.test(val)){
+    if(typeof showToast==='function')showToast('Rasm modeli MOTION/TIMELINE bo‘limlarini ishlatmaydi — natija buzilmasligi uchun ularni olib tashlang yoki «Tasvirdan»ni rasm modelida qayta bosing','warning');
   }
   af_ai.gen=true;af_ai.open=null;af_ai.lastUrl=null;af_ai.lastKind=null;
   aiRenderMenus();aiSetGenBtn(true);
