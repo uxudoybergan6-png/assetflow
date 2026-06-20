@@ -62,11 +62,41 @@ const redirects = `\
 `;
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 
-// _headers — cache sozlamalari
-// JS/CSS fayl nomlari hash'lanmagani uchun (app.js, studio.css) `immutable` +
-// 1 yillik cache deploy'dan keyin stale qoldiradi. Qisqa max-age + revalidate:
-// kesh ishlaydi, lekin yangi deploy tez ko'rinadi. HTML — no-cache (o'zgarmagan).
+// _headers — xavfsizlik (#17 v3 CSP) + cache (#6) sozlamalari.
+//
+// CSP — REPORT-ONLY (hozircha bloklamaydi, faqat konsolga xato beradi). Sabab:
+// Studio 168+ inline event handler (onclick/oninput…) va 312+ inline style= dan
+// foydalanadi → `script-src`/`style-src` 'unsafe-inline'SIZ butun UI sinadi
+// (inline handler'larni nonce/hash bilan qoplab bo'lmaydi). Shu sabab CSP'ning
+// asosiy qiymati — `connect-src`/`img-src` (XSS token-exfil'ni begona domenga
+// yuborishni to'sish) + clickjacking. Report-Only deploy'dan keyin konsolda
+// buzilishni kuzatib (o'tkazib yuborilgan domen/resurs), so'ng `-Report-Only`
+// qo'shimchasini olib tashlab ENFORCE qilamiz.
+// connect/img/media: 'self' + API (assetflow-rqbq.onrender.com) + R2 CDN (*.r2.dev,
+// thumb/preview API → R2 302 redirect). eval/WebSocket ishlatilmaydi.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https://assetflow-rqbq.onrender.com https://*.r2.dev",
+  "media-src 'self' https://assetflow-rqbq.onrender.com https://*.r2.dev",
+  "connect-src 'self' https://assetflow-rqbq.onrender.com https://*.r2.dev",
+  "font-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join("; ");
+
+// X-Frame-Options/nosniff/Referrer-Policy — ENFORCE (xavfsiz, UI buzmaydi):
+// darhol clickjacking + MIME-sniffing himoyasi (CSP Report-Only fazasida ham).
 const headers = `\
+/*
+  Content-Security-Policy-Report-Only: ${CSP}
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
 /js/*
   Cache-Control: public, max-age=300, must-revalidate
 
