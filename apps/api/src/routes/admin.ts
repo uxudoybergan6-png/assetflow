@@ -308,7 +308,12 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   await prisma.pluginProfile.update({ where: { userId }, data });
 
   if (data.status === PluginAccountStatus.BLOCKED || data.status === PluginAccountStatus.REMOVED) {
+    // Plugin tokenlarni o'chiramiz + JWT'ni bekor qilish uchun tokenVersion oshiramiz.
     await prisma.pluginToken.deleteMany({ where: { userId } });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+    });
   }
 
   const full = await ensurePluginProfile(userId);

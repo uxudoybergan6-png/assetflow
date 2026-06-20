@@ -376,13 +376,14 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
     return;
   }
 
-  const token = await ensurePluginToken(user.id, true);
   const profile = await ensurePluginProfile(user.id);
 
   if (profile.status === PluginAccountStatus.BLOCKED) {
     res.status(403).json({ error: "Hisob bloklangan — admin bilan bog‘laning" });
     return;
   }
+
+  const token = await ensurePluginToken(user.id, true);
 
   res.json({
     token,
@@ -407,8 +408,8 @@ pluginRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
 });
 
 const heartbeatSchema = z.object({
-  deviceLabel: z.string().optional(),
-  aeVersion: z.string().optional(),
+  deviceLabel: z.string().max(120).optional(),
+  aeVersion: z.string().max(60).optional(),
 });
 
 pluginRouter.post("/heartbeat", usageLimiter, requireAuth, async (req: Request, res: Response) => {

@@ -6,6 +6,7 @@ export interface AuthPayload {
   userId: string;
   email: string;
   role: UserRole;
+  tokenVersion?: number;
 }
 
 declare global {
@@ -45,10 +46,14 @@ export async function requireAuth(
 
   const pluginToken = await prisma.pluginToken.findUnique({
     where: { token },
-    include: { user: true },
+    include: { user: { include: { pluginProfile: true } } },
   });
 
   if (pluginToken && pluginToken.expiresAt > new Date()) {
+    if (isBlocked(pluginToken.user)) {
+      res.status(403).json({ error: "Hisob bloklangan", code: "ACCOUNT_BLOCKED" });
+      return;
+    }
     req.user = {
       userId: pluginToken.user.id,
       email: pluginToken.user.email,
@@ -65,13 +70,34 @@ export async function requireAuth(
   }
 
   // JWT payload can outlive DB rows (e.g. demo:clear). Always re-hydrate from DB.
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    include: { pluginProfile: true },
+  });
   if (!user) {
     res.status(401).json({ error: "Session expired" });
     return;
   }
+  // Token-version: reset/block tokenVersion'ni oshiradi — eski JWT bekor bo'ladi.
+  if ((payload.tokenVersion ?? 0) !== user.tokenVersion) {
+    res.status(401).json({ error: "Sessiya tugadi — qayta kiring", code: "TOKEN_REVOKED" });
+    return;
+  }
+  if (isBlocked(user)) {
+    res.status(403).json({ error: "Hisob bloklangan", code: "ACCOUNT_BLOCKED" });
+    return;
+  }
   req.user = { userId: user.id, email: user.email, role: user.role };
   next();
+}
+
+/** Markaziy block tekshiruvi: contributor bloklangan YOKI plugin hisobi BLOCKED. */
+function isBlocked(
+  user: { contributorBlockedAt: Date | null; pluginProfile?: { status: string } | null }
+): boolean {
+  if (user.contributorBlockedAt != null) return true;
+  if (user.pluginProfile?.status === "BLOCKED") return true;
+  return false;
 }
 
 export function requireAdmin(

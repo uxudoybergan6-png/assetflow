@@ -139,7 +139,7 @@ VIEWS.subscribers = function () {
       <div class="toolbar wrap gap-8">
         <div class="search" style="width:260px;height:34px">
           ${ic("search")}
-          <input placeholder="Ism, email, qurilma\u2026" value="${SUB_SEARCH.replace(/"/g, "&quot;")}" oninput="SUB_SEARCH=this.value;route('subscribers')">
+          <input placeholder="Ism, email, qurilma\u2026" value="${esc(SUB_SEARCH)}" oninput="SUB_SEARCH=this.value;route('subscribers')">
         </div>
         <select class="select" style="height:34px" onchange="SUB_PLAN_FILTER=this.value;route('subscribers')">
           <option value="all" ${SUB_PLAN_FILTER==="all"?"selected":""}>Barcha rejalar</option>
@@ -178,10 +178,10 @@ VIEWS.subscribers = function () {
                     .map((s) => {
                       const rowMuted = s.status === "removed" ? "opacity:.55" : "";
                       return `<tr style="cursor:pointer;${rowMuted}" onclick="route('subscriber-detail','${s.id}')">
-                <td><div class="row center gap-10">${avatar(s.name, 32)}<div class="col" style="gap:1px"><span class="cell-strong">${s.name}</span><span class="sub" style="font-size:11px;color:var(--tx-3)">${s.email}</span></div></div></td>
+                <td><div class="row center gap-10">${avatar(s.name, 32)}<div class="col" style="gap:1px"><span class="cell-strong">${esc(s.name)}</span><span class="sub" style="font-size:11px;color:var(--tx-3)">${esc(s.email)}</span></div></div></td>
                 <td>${subscriberStatusBadge(s.status)}</td>
                 <td>${planBadge(s.plan)}</td>
-                <td class="cell-muted" style="max-width:200px"><span class="cell-strong" style="font-size:12px">AE ${s.ae}</span><br><span class="small">${s.device}</span></td>
+                <td class="cell-muted" style="max-width:200px"><span class="cell-strong" style="font-size:12px">AE ${esc(s.ae)}</span><br><span class="small">${esc(s.device)}</span></td>
                 <td>${usageCell(s)}</td>
                 <td class="cell-num cell-strong">${s.downloads.toLocaleString()}</td>
                 <td class="cell-num">${s.imports}</td>
@@ -232,12 +232,12 @@ VIEWS["subscriber-detail"] = function (id) {
           ${avatar(s.name, 56)}
           <div class="col gap-6">
             <div class="row center gap-10 wrap">
-              <span class="h2">${s.name}</span>
+              <span class="h2">${esc(s.name)}</span>
               ${subscriberStatusBadge(s.status)}
               ${planBadge(s.plan)}
             </div>
-            <span class="body">${s.email}</span>
-            <span class="small">${s.device || "—"} · ID: <span class="mono">${s.id}</span></span>
+            <span class="body">${esc(s.email)}</span>
+            <span class="small">${esc(s.device) || "—"} · ID: <span class="mono">${s.id}</span></span>
           </div>
         </div>
         <div class="row gap-8 wrap">
@@ -291,7 +291,7 @@ VIEWS["subscriber-detail"] = function (id) {
           ]
             .map(
               ([k, v]) =>
-                `<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${v}</div></div>`
+                `<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`
             )
             .join("")}
         </div>
@@ -304,7 +304,7 @@ VIEWS["subscriber-detail"] = function (id) {
       <div class="card card-pad col gap-12">
         <span class="label">So\u2018nggi faoliyat</span>
         <div class="empty" style="padding:20px">
-          <p class="small">Plugin harakatlari: oxirgi ko\u2018rinish <b>${s.lastSeen || "—"}</b>${s.device ? ` · ${s.device}` : ""}${s.ae ? ` · AE ${s.ae}` : ""}</p>
+          <p class="small">Plugin harakatlari: oxirgi ko\u2018rinish <b>${esc(s.lastSeen) || "—"}</b>${s.device ? ` · ${esc(s.device)}` : ""}${s.ae ? ` · AE ${esc(s.ae)}` : ""}</p>
           <p class="small mt-8" style="color:var(--tx-3)">Batafsil event log keyingi versiyada qo\u2018shiladi.</p>
         </div>
       </div>
@@ -340,12 +340,12 @@ function openTogglePlanSub(id) {
   openModal(`
     <div class="modal-head">
       <div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic(isPro ? "chevD" : "star")}</div>
-      <div><h3>${label} rejasiga o'tkazish</h3><p>${s.name} \xb7 ${s.email}</p></div>
+      <div><h3>${label} rejasiga o'tkazish</h3><p>${esc(s.name)} \xb7 ${esc(s.email)}</p></div>
     </div>
     <div class="modal-body">
       <div class="info-banner">${ic("alert")}<span>${isPro
-        ? `<b>${s.name}</b> Free rejaga o'tkaziladi — oylik limit qayta yoqiladi.`
-        : `<b>${s.name}</b> Pro rejaga o'tkaziladi — cheksiz yuklab olish imkoni beriladi.`
+        ? `<b>${esc(s.name)}</b> Free rejaga o'tkaziladi — oylik limit qayta yoqiladi.`
+        : `<b>${esc(s.name)}</b> Pro rejaga o'tkaziladi — cheksiz yuklab olish imkoni beriladi.`
       }</span></div>
     </div>
     <div class="modal-foot">
@@ -374,7 +374,7 @@ function openLimitOverrideSub(id) {
   openModal(`
     <div class="modal-head">
       <div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic("sliders")}</div>
-      <div><h3>Shaxsiy limitni tahrirlash</h3><p>${s.name}</p></div>
+      <div><h3>Shaxsiy limitni tahrirlash</h3><p>${esc(s.name)}</p></div>
     </div>
     <div class="modal-body col gap-12">
       <div class="info-banner">${ic("alert")}<span>Reja default: yuklab olish <b>${defaultDl}</b>, import <b>${defaultImp}</b>. Bo'sh qoldiring — reja defaultiga qaytadi.</span></div>
@@ -416,7 +416,7 @@ function openAiCreditsSub(id) {
   const cur = typeof s.aiCredits === "number" ? s.aiCredits : 0;
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">⚡</div>
-      <div><h3>AI kredit</h3><p>${s.name} — joriy: <b>${cur}</b> kredit</p></div></div>
+      <div><h3>AI kredit</h3><p>${esc(s.name)} — joriy: <b>${cur}</b> kredit</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner">${ic("alert")}<span>AI generatsiya (rasm/video/ovoz) shu kreditdan sarflanadi. ADMIN rol cheksiz.</span></div>
       <div class="field"><label>Yangi qiymat</label><input class="input" id="subAiCredits" type="number" min="0" value="${cur}"></div>
@@ -450,7 +450,7 @@ function openBlockSub(id) {
   const s = sById(id);
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic("ban")}</div>
-      <div><h3>Obunachini bloklash</h3><p>${s.name} — AE Browse paneliga kira olmaydi.</p></div></div>
+      <div><h3>Obunachini bloklash</h3><p>${esc(s.name)} — AE Browse paneliga kira olmaydi.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner danger">${ic("alert")}<span>Token bekor qilinadi. Mavjud lokal fayllar o\u2018chirilmaydi, lekin yangi katalog sync bo\u2018lmaydi.</span></div>
       <div class="field"><label>Bloklash sababi <span class="req">*</span></label><textarea class="textarea" id="subBlockReason" placeholder="Masalan: token ulashish, to\u2018lov kechikishi\u2026"></textarea></div>
@@ -508,7 +508,7 @@ function openRemoveSub(id) {
   const s = sById(id);
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic("trash")}</div>
-      <div><h3>Chiqarib tashlash</h3><p>${s.name} tizimdan butunlay olib tashlanadi.</p></div></div>
+      <div><h3>Chiqarib tashlash</h3><p>${esc(s.name)} tizimdan butunlay olib tashlanadi.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner danger">${ic("alert")}<span><b>Destructive.</b> Obunachi ro\u2018yxatdan chiqadi, token o\u2018chiriladi. Keyinroq <b>Qayta tiklash</b> orqali faollashtirish mumkin.</span></div>
       <div class="field"><label>Sabab <span class="req">*</span></label><textarea class="textarea" id="subRemoveReason" placeholder="Audit log uchun sabab\u2026"></textarea></div>
@@ -584,11 +584,16 @@ function openMessageSub(id) {
   const s = sById(id);
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic("message")}</div>
-      <div><h3>Obunachiga xabar</h3><p>${s.name} · ${s.email}</p></div></div>
+      <div><h3>Obunachiga xabar</h3><p>${esc(s.name)} · ${esc(s.email)}</p></div></div>
     <div class="modal-body col gap-12">
       <div class="field"><label>Mavzu</label><input class="input" value="AssetFlow Browse — xabar"></div>
       <div class="field"><label>Xabar</label><textarea class="textarea" placeholder="Obunachiga email yoki in-app xabar\u2026"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-primary" onclick="closeModal();toast('Yuborildi','Xabar '+ '${s.name}' +' ga yuborildi','success')">${ic("send")} Yuborish</button></div>`);
+      <button class="btn btn-primary" onclick="closeModal();notifyMessageSent('${id}')">${ic("send")} Yuborish</button></div>`);
+}
+
+function notifyMessageSent(id) {
+  const s = sById(id);
+  toast("Yuborildi", `Xabar ${s ? s.name : "obunachi"} ga yuborildi`, "success");
 }

@@ -13,8 +13,19 @@ const KIND_EXT: Record<TemplateAssetKind, string[]> = {
   pack: [".aep", ".zip", ".mogrt"],
 };
 
+const RESOLVED_UPLOADS_ROOT = path.resolve(UPLOADS_ROOT);
+
 export function templateDir(templateId: string) {
-  return path.join(UPLOADS_ROOT, templateId);
+  const dir = path.resolve(UPLOADS_ROOT, templateId);
+  // #14 Defense-in-depth — natija UPLOADS_ROOT ichida bo'lishi shart.
+  // (scenesDir/mogrtDir/ensureTemplateDir hammasi shu funksiya orqali o'tadi.)
+  if (
+    dir !== RESOLVED_UPLOADS_ROOT &&
+    !dir.startsWith(RESOLVED_UPLOADS_ROOT + path.sep)
+  ) {
+    throw new Error(`Xavfsiz bo'lmagan shablon yo'li: ${templateId}`);
+  }
+  return dir;
 }
 
 export function ensureTemplateDir(templateId: string) {

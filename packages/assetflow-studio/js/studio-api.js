@@ -14,6 +14,34 @@ const StudioApi = (() => {
     return s?.apiToken || "";
   }
 
+  // Global 401 ishlovi: token yuborilgan bo'lsa-yu server 401 qaytarsa —
+  // sessiya tugagan/bekor qilingan. Sessiyani tozalab login'ga qaytaramiz.
+  let _handling401 = false;
+  function handleExpiredSession() {
+    if (_handling401) return;
+    _handling401 = true;
+    try {
+      if (typeof AssetFlowAuth !== "undefined") AssetFlowAuth.clearSession();
+      localStorage.removeItem("af_remember_email");
+      localStorage.removeItem("af_remember_session");
+    } catch {}
+    // Login sahifalarida redirect qilmaymiz (loop oldini olish)
+    const path = (typeof location !== "undefined" && location.pathname) || "";
+    if (/login\.html$/.test(path)) return;
+    const loginUrl =
+      (typeof AssetFlowAuth !== "undefined" &&
+        AssetFlowAuth.getSession === undefined) // sun'iy emas; aniq URL'ni window konfigdan olamiz
+        ? null
+        : null;
+    const target =
+      (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.loginUrl) ||
+      "/studio/login.html";
+    try {
+      sessionStorage.setItem("af_session_expired", "1");
+    } catch {}
+    location.href = target;
+  }
+
   async function request(path, options = {}) {
     const headers = { ...(options.headers || {}) };
     if (options.body && !(options.body instanceof FormData)) {
@@ -64,7 +92,15 @@ const StudioApi = (() => {
     }
 
     if (!res.ok) {
-      const err = new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      // Global 401: token yuborilgan bo'lsa — sessiya tugagan, login'ga qaytaramiz.
+      if (res.status === 401 && t) {
+        handleExpiredSession();
+      }
+      const err = new Error(
+        res.status === 401
+          ? data?.error || data?.message || "Sessiya tugadi — qayta tizimga kiring"
+          : data?.error || data?.message || `HTTP ${res.status}`
+      );
       err.status = res.status;
       err.data = data;
       throw err;

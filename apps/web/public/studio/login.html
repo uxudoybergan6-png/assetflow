@@ -126,26 +126,8 @@
     chk.setAttribute("aria-checked", "true");
   }
 
-  // Saqlangan token bilan avtomatik login
-  async function tryAutoLogin() {
-    const saved = JSON.parse(localStorage.getItem(RM_SESSION) || "null");
-    if (!saved?.apiToken) return false;
-    try {
-      const apiBase = (window.ASSETFLOW_STUDIO?.apiUrl || "https://assetflow-rqbq.onrender.com").replace(/\/$/, "");
-      const res = await fetch(`${apiBase}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${saved.apiToken}` }
-      });
-      if (!res.ok) { localStorage.removeItem(RM_SESSION); return false; }
-      AssetFlowAuth.setSession(saved);
-      location.href = saved.role === "admin"
-        ? ASSETFLOW_STUDIO.adminUrl
-        : ASSETFLOW_STUDIO.contributorUrl;
-      return true;
-    } catch {
-      localStorage.removeItem(RM_SESSION);
-      return false;
-    }
-  }
+  // Eski versiyadan qolgan JWT'ni localStorage'dan tozalaymiz (XSS xavfi).
+  localStorage.removeItem(RM_SESSION);
 
   const card = document.querySelector(".auth-card");
 
@@ -156,8 +138,17 @@
     return;
   }
 
-  // Remember me token tekshirish
-  if (await tryAutoLogin()) return;
+  // Sessiya tugagan bo'lsa banner (global 401 interceptor qo'ygan)
+  if (sessionStorage.getItem("af_session_expired")) {
+    sessionStorage.removeItem("af_session_expired");
+    if (card) {
+      const exp = document.createElement("p");
+      exp.className = "auth-error";
+      exp.style.marginBottom = "12px";
+      exp.textContent = "Sessiya tugadi — qaytadan tizimga kiring";
+      card.prepend(exp);
+    }
+  }
 
   // API sog'liq tekshiruvi
   if (card && typeof StudioApi !== "undefined") {
@@ -191,12 +182,12 @@
       return "Bu hisob faqat obunachi (USER). Contributor uchun ro'yxatdan o'ting.";
     }
     if (remember) {
+      // FAQAT email saqlanadi — JWT localStorage'ga yozilmaydi (XSS xavfi).
       localStorage.setItem(RM_EMAIL, r.session.email);
-      localStorage.setItem(RM_SESSION, JSON.stringify(r.session));
     } else {
       localStorage.removeItem(RM_EMAIL);
-      localStorage.removeItem(RM_SESSION);
     }
+    localStorage.removeItem(RM_SESSION);
     if (r.session.role === "admin") {
       AssetFlowLog.init({ source: "admin" });
       location.href = ASSETFLOW_STUDIO.adminUrl;

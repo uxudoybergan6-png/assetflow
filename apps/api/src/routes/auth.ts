@@ -73,6 +73,7 @@ authRouter.post("/register", authLimiter, async (req, res) => {
     userId: user.id,
     email: user.email,
     role: user.role,
+    tokenVersion: user.tokenVersion,
   });
 
   res.status(201).json({
@@ -114,6 +115,7 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     userId: user.id,
     email: user.email,
     role: user.role,
+    tokenVersion: user.tokenVersion,
   });
 
   if (user.role === UserRole.CONTRIBUTOR && user.contributorBlockedAt) {
@@ -209,8 +211,11 @@ authRouter.post("/reset-password", async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash },
+    // Parol o'zgardi → barcha eski sessiyalarni bekor qilamiz:
+    // tokenVersion oshadi (eski JWT'lar rad etiladi) + plugin tokenlar o'chadi.
+    data: { passwordHash, tokenVersion: { increment: 1 } },
   });
+  await prisma.pluginToken.deleteMany({ where: { userId: user.id } });
   await prisma.verificationToken.deleteMany({
     where: { identifier: record.identifier },
   });

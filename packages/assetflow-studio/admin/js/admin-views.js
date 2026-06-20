@@ -107,7 +107,7 @@ VIEWS.overview = function(){
               <span class="leader-rank">${i + 1}</span>
               <div class="row-thumb"><div class="thumb ${t.grad} grain" style="width:100%;height:100%"></div></div>
               <div class="col grow" style="gap:3px;min-width:0">
-                <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
+                <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span>
                 <div class="leader-bar"><span style="width:${(t.dl / max) * 100}%"></span></div>
               </div>
               <span class="num" style="font-weight:700;white-space:nowrap">${t.dl >= 1000 ? (t.dl / 1000).toFixed(1) + "K" : t.dl}</span>
@@ -227,8 +227,8 @@ function renderModeration(){
               <div class="checkbox ${MOD_CHECKED.has(t.id)?'on':''}" onclick="event.stopPropagation();toggleCheck('${t.id}')">${ic('check')}</div>
               <div class="row-thumb" style="width:64px;height:42px;overflow:hidden;border-radius:var(--r-sm)">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,t.dur,'lg')}</div>
               <div class="col grow" style="gap:3px;min-width:0">
-                <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</span>
-                <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${con.name} \u00b7 ${t.cat}</span>
+                <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span>
+                <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(con.name)} \u00b7 ${esc(t.cat)}</span>
                 <div class="row center gap-8 mt-4">${badge(t.status)}${t.isNew?'<span class="pill" style="color:var(--violet-bright);border-color:var(--violet-line)">Yangi</span>':''}</div>
               </div>
             </div>`;
@@ -268,21 +268,21 @@ function renderModDetail(t){
             <div class="row center gap-10">
               ${avatar(con.name,34)}
               <div class="col grow" style="gap:1px">
-                <span class="cell-strong">${con.name}</span>
-                <span class="small">${con.email}</span>
+                <span class="cell-strong">${esc(con.name)}</span>
+                <span class="small">${esc(con.email)}</span>
               </div>
               <button class="btn btn-ghost btn-sm" onclick="route('contributor-detail','${t.cid}')">${ic('ext')} Profil</button>
             </div>
             <div class="divider" style="margin:2px 0"></div>
             <div class="meta-grid">
               ${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Orientatsiya',t.orient],['Fayl hajmi',t.size],['Yuklangan',t.created]].map(([k,v])=>
-                `<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${v}</div></div>`).join('')}
+                `<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}
             </div>
             <div>
               <div class="label" style="margin-bottom:6px">Tavsif</div>
-              <p class="body">${t.desc}</p>
+              <p class="body">${esc(t.desc)}</p>
             </div>
-            <div class="row gap-6 wrap">${t.tags.map(tag=>`<span class="pill">${ic('tag')}${tag}</span>`).join('')}</div>
+            <div class="row gap-6 wrap">${t.tags.map(tag=>`<span class="pill">${ic('tag')}${esc(tag)}</span>`).join('')}</div>
           </div>
         </div>
 
@@ -293,7 +293,7 @@ function renderModDetail(t){
               <span class="label">Qaror paneli</span>
               ${badge(t.status)}
             </div>
-            ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic(t.status==='hard'?'ban':'reply')}<div><b style="color:var(--tx-0)">Oldingi qaror sababi</b><div class="small mt-4" style="color:var(--tx-1)">${t.reason}</div></div></div>`:''}
+            ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic(t.status==='hard'?'ban':'reply')}<div><b style="color:var(--tx-0)">Oldingi qaror sababi</b><div class="small mt-4" style="color:var(--tx-1)">${esc(t.reason)}</div></div></div>`:''}
 
             <div class="col gap-8">
               <button class="btn btn-success btn-lg" onclick="modApprove('${t.id}')">${ic('checkCircle')} Tasdiqlash \u2014 AE\u2018da nashr</button>

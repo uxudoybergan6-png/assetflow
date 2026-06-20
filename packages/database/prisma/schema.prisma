@@ -44,6 +44,7 @@ model User {
   passwordHash     String?
   role                 UserRole  @default(USER)
   contributorBlockedAt DateTime?
+  tokenVersion         Int       @default(0)
   stripeCustomerId     String?   @unique
   emailVerified    DateTime?
   image            String?

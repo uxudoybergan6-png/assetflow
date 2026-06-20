@@ -99,6 +99,22 @@ async function withAssetFlags<T extends { id: string }>(row: T) {
 
 export const contributorRouter = Router();
 
+/**
+ * #14 Path traversal himoyasi — :id (templateId) Prisma cuid() shaklida
+ * bo'lishi shart. Bu guard multer diskStorage (destination/filename) va
+ * fs operatsiyalaridan OLDIN, ownership tekshiruvidan ham oldin ishlaydi,
+ * shuning uchun "../", "/", "." kabi belgilar fayl yo'liga umuman tushmaydi.
+ * cuid: 'c' + kichik harf/raqam (masalan cmpzpnnyq0001oc1gzla3mzi5).
+ */
+const TEMPLATE_ID_RE = /^c[a-z0-9]{20,30}$/;
+contributorRouter.param("id", (req, res, next, id) => {
+  if (typeof id !== "string" || !TEMPLATE_ID_RE.test(id)) {
+    res.status(400).json({ error: "Noto'g'ri shablon identifikatori" });
+    return;
+  }
+  next();
+});
+
 const SETTINGS_ID = "platform";
 
 const DEFAULT_CATEGORIES = [
@@ -140,14 +156,14 @@ const settingsPatchSchema = z.object({
 
 const templateBodySchema = z.object({
   externalId: z.string().optional().nullable(),
-  name: z.string().min(1),
-  description: z.string().optional(),
-  nav: z.string().optional(),
-  cat: z.string().min(1),
-  catLabel: z.string().min(1),
-  orient: z.string().optional(),
-  res: z.string().optional(),
-  tags: z.array(z.string()).optional(),
+  name: z.string().min(1).max(200),
+  description: z.string().max(5000).optional(),
+  nav: z.string().max(60).optional(),
+  cat: z.string().min(1).max(80),
+  catLabel: z.string().min(1).max(120),
+  orient: z.string().max(40).optional(),
+  res: z.string().max(40).optional(),
+  tags: z.array(z.string().max(60)).max(30).optional(),
   icon: z.string().optional(),
   bg: z.string().optional(),
   templateApp: z.string().optional(),
@@ -1520,7 +1536,11 @@ contributorRouter.patch(
     }
     const user = await prisma.user.update({
       where: { id: String(req.params.userId) },
-      data: { contributorBlockedAt: blocked.data ? new Date() : null },
+      data: {
+        contributorBlockedAt: blocked.data ? new Date() : null,
+        // Blok qilinganda eski JWT'larni bekor qilamiz (unblock'da o'zgarmaydi).
+        ...(blocked.data ? { tokenVersion: { increment: 1 } } : {}),
+      },
       select: {
         id: true,
         email: true,
@@ -1529,6 +1549,9 @@ contributorRouter.patch(
         contributorBlockedAt: true,
       },
     });
+    if (blocked.data) {
+      await prisma.pluginToken.deleteMany({ where: { userId: user.id } });
+    }
     await writeAuditLog({
       actorId: req.user!.userId,
       action: blocked.data ? "block" : "unblock",
