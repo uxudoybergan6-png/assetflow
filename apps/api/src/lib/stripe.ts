@@ -15,7 +15,10 @@ export function getStripe(): Stripe {
     );
   }
   if (!stripeClient) {
-    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    // apiVersion'ni aniq PIN qilamiz — SDK 18.x bilan mos (kelajakda jim buzilmasin).
+    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: "2025-08-27.basil",
+    });
   }
   return stripeClient;
 }

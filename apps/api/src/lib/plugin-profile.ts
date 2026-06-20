@@ -85,9 +85,12 @@ export async function subscriptionIsPro(userId: string) {
 }
 
 export function proSwitchAllowed(hasStripePro: boolean) {
+  // Stripe orqali haqiqiy PRO obuna — har doim ruxsat. (Webhook #3 va admin
+  // override bunga aloqasiz: ular proSwitchAllowed'dan o'tmaydi.)
   if (hasStripePro) return true;
-  if (process.env.PLUGIN_ALLOW_PRO_WITHOUT_STRIPE === "true" && process.env.NODE_ENV !== "production") return true;
-  return process.env.NODE_ENV !== "production";
+  // Self-serve PRO (Stripe'siz) FAQAT aniq flag bilan ochiladi — fail-CLOSED.
+  // Flag yo'q/false → PRO BERILMAYDI (NODE_ENV'ga TAYANMAYMIZ; render.yaml'da "false").
+  return process.env.PLUGIN_ALLOW_PRO_WITHOUT_STRIPE === "true";
 }
 
 export async function setPluginPlan(userId: string, plan: PluginPlanTier) {

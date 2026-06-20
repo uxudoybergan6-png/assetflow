@@ -22,8 +22,9 @@ function mapStripeStatus(status: Stripe.Subscription.Status): SubscriptionStatus
 }
 
 function getPeriodEnd(sub: Stripe.Subscription): Date | null {
-  const end = (sub as Stripe.Subscription & { current_period_end?: number })
-    .current_period_end;
+  // Stripe SDK v18: current_period_end subscription darajasidan ITEM darajasiga
+  // ko'chdi (sub.items.data[0]). Eski sub-level o'qish doim null qaytarardi.
+  const end = sub.items.data[0]?.current_period_end;
   return end ? new Date(end * 1000) : null;
 }
 
