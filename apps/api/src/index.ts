@@ -11,7 +11,6 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 import express from "express";
 import type { ErrorRequestHandler } from "express";
 import cors from "cors";
-import { assetsRouter } from "./routes/assets.js";
 import { authRouter } from "./routes/auth.js";
 import { stripeWebhookHandler } from "./routes/stripe.js";
 import { pluginRouter } from "./routes/plugin.js";
@@ -84,7 +83,6 @@ app.post(
 // (base64 video_url, transcode bilan kichraytirilgan) + kadr fallback. Route'lar auth bilan.
 app.use(express.json({ limit: "14mb" }));
 app.use("/api/auth", authRouter);
-app.use("/api/assets", assetsRouter);
 app.use("/api/plugin", pluginRouter);
 app.use("/api/plugin/ai", aiRouter);
 app.use("/api/admin", adminRouter);
