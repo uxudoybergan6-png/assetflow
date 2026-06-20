@@ -3,7 +3,11 @@ services:
     name: assetflow-api
     runtime: node
     rootDir: .
-    buildCommand: npm install --include=dev && npm run generate -w @creative-tools/database && npm run migrate:deploy -w @creative-tools/database && npm run build -w @creative-tools/database && npm run build -w apps/api
+    # migrate:deploy build zanjiridan AJRATILDI → preDeployCommand (Variant A, Starter+):
+    # build faqat kodni kompilyatsiya qiladi; migratsiya build MUVAFFAQ bo'lgach,
+    # traffic almashishidan OLDIN alohida ishlaydi (gate + osonroq rollback).
+    buildCommand: npm install --include=dev && npm run generate -w @creative-tools/database && npm run build -w @creative-tools/database && npm run build -w apps/api
+    preDeployCommand: npm run migrate:deploy -w @creative-tools/database
     startCommand: node apps/api/dist/index.js
     healthCheckPath: /health
     envVars:
