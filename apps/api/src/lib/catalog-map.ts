@@ -38,12 +38,25 @@ async function resolveSceneS3Key(
   return null;
 }
 
+/**
+ * CDN public URL'iga cache-bust query qo'shadi (?v=<epoch>). Kalit (R2 key)
+ * versiyalanmagani uchun (templates/{id}/thumb.jpg), contributor assetni qayta
+ * yuklaganda CDN/brauzer keshi eskini ko'rsatadi. updatedAt epoch query'si URL'ni
+ * har yangilanishda o'zgartiradi → yangi versiya olinadi. Faqat ochiq CDN
+ * (getPublicUrl) natijalariga qo'llanadi; pack signed-URL oqimiga ALOQASI YO'Q. */
+function withCacheBust(url: string | null, version: number | string): string | null {
+  if (!url) return url;
+  if (url.includes("?")) return url; // signed yoki query'li URL'larga tegmaymiz
+  return `${url}?v=${version}`;
+}
+
 /** R2/S3: sahna preview URL — disk + object storage.
  *  knownS3Keys berilsa HeadObject chaqirilmaydi (N+1 oldini olish). */
 async function enrichScenesAsync(
   meta: Record<string, unknown>,
   templateId: string,
   apiBase: string,
+  cacheBust: number | string,
   knownS3Keys?: Set<string>
 ) {
   const scenes = meta.scenes;
@@ -74,7 +87,7 @@ async function enrichScenesAsync(
         // R2 bo'lsa TO'G'RIDAN CDN public URL — Render orqali stream EMAS
         // (bandwidth = 0). Faqat lokal disk bo'lsa API endpoint (stream).
         s.preview = videoS3
-          ? getPublicUrl(videoS3)
+          ? withCacheBust(getPublicUrl(videoS3), cacheBust)
           : publicSceneUrl(apiBase, templateId, key);
         // Poster thumb (rasm) — mavjud bo'lsa
         const thumbS3 = useS3
@@ -87,7 +100,7 @@ async function enrichScenesAsync(
           : null;
         const imgFile = findScenePreview(templateId, key);
         if (thumbS3) {
-          s.thumb = getPublicUrl(thumbS3);
+          s.thumb = withCacheBust(getPublicUrl(thumbS3), cacheBust);
         } else if (imgFile && !sceneFileIsVideo(imgFile)) {
           s.thumb = publicSceneUrl(apiBase, templateId, key + "_thumb");
         }
@@ -98,7 +111,7 @@ async function enrichScenesAsync(
           ? await resolveSceneS3Key(templateId, key, SCENE_IMAGE_EXTS, knownS3Keys)
           : null;
         if (imgS3) {
-          s.preview = getPublicUrl(imgS3); // to'g'ridan CDN
+          s.preview = withCacheBust(getPublicUrl(imgS3), cacheBust); // to'g'ridan CDN
           s.previewKind = "image";
         } else if (previewFile) {
           s.preview = publicSceneUrl(apiBase, templateId, key);
@@ -137,7 +150,11 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   // Bitta ListObjectsV2 bilan barcha S3 kalitlarini olish —
   // N×M HeadObject o'rniga 1 ta List chaqiruvi (N+1 muammo hal).
   const s3Keys = await listTemplateS3Keys(t.id);
-  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, s3Keys);
+  // Cache-bust versiyasi: shablon oxirgi yangilangan vaqt (epoch ms). R2 kalitlari
+  // versiyalanmagani uchun CDN public URL'lariga ?v=<epoch> qo'shamiz — assetni
+  // qayta yuklaganda eski kesh ko'rinmasin.
+  const cacheBust = t.updatedAt.getTime();
+  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, cacheBust, s3Keys);
   const assets = await templateAssetFlags(t.id, s3Keys);
   const hasThumb = assets.thumb;
   const hasPreview = assets.preview;
@@ -151,12 +168,12 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const thumbS3 = useS3 ? s3AssetKeyFromSet(t.id, "thumb", s3Keys) : null;
   const previewS3 = useS3 ? s3AssetKeyFromSet(t.id, "preview", s3Keys) : null;
   const thumbUrl = thumbS3
-    ? getPublicUrl(thumbS3)
+    ? withCacheBust(getPublicUrl(thumbS3), cacheBust)
     : hasThumb
       ? publicAssetUrl(apiBase, t.id, "thumb")
       : null;
   const previewUrl = previewS3
-    ? getPublicUrl(previewS3)
+    ? withCacheBust(getPublicUrl(previewS3), cacheBust)
     : hasPreview
       ? publicAssetUrl(apiBase, t.id, "preview")
       : null;

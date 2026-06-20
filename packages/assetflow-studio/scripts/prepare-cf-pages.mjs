@@ -63,12 +63,15 @@ const redirects = `\
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 
 // _headers — cache sozlamalari
+// JS/CSS fayl nomlari hash'lanmagani uchun (app.js, studio.css) `immutable` +
+// 1 yillik cache deploy'dan keyin stale qoldiradi. Qisqa max-age + revalidate:
+// kesh ishlaydi, lekin yangi deploy tez ko'rinadi. HTML — no-cache (o'zgarmagan).
 const headers = `\
 /js/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=300, must-revalidate
 
 /styles/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=300, must-revalidate
 
 /*.html
   Cache-Control: no-cache, must-revalidate

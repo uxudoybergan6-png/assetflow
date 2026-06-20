@@ -707,10 +707,11 @@ async function storeMogrtScenesFromZip(
       const m = mogrts[mi];
       onScene?.(mi + 1, mogrts.length);
       const fileName = `${m.slug}.mogrt`;
-      let saved = false;
+      let diskSaved = false;
+      let r2Saved = false;
       try {
         fs.copyFileSync(m.path, path.join(ensureMogrtDir(id), fileName));
-        saved = true;
+        diskSaved = true;
       } catch (e) {
         console.warn(`[mogrt-extract] mogrt disk copy xato (${fileName}):`, e);
       }
@@ -721,11 +722,17 @@ async function storeMogrtScenesFromZip(
             `templates/${id}/mogrt/${fileName}`,
             "application/octet-stream"
           );
-          saved = true;
+          r2Saved = true;
         } catch (e) {
           console.error(`[mogrt-extract] mogrt R2 upload xato (${fileName}):`, e);
         }
       }
+      // #13: dangling mogrtKey'ning oldini olish. Render disk ephemeral —
+      // R2 sozlangan bo'lsa sahna faqat R2 upload MUVAFFAQ bo'lgandagina
+      // import qilinadi. Shu bois S3 bor bo'lsa mogrtKey'ni faqat r2Saved
+      // bo'lsa yozamiz (disk copy xato yutilmaydi, lekin u yetarli emas).
+      // S3 yo'q (dev) — eski xulq: disk copy yetarli.
+      const saved = isS3Configured() ? r2Saved : diskSaved;
       if (saved) savedMogrtSlugs.add(m.slug);
     }
     return scenes.map((s) =>

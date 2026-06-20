@@ -185,6 +185,16 @@ export async function templateAssetFlags(
           );
         }
       }
+      // #13: pack — pullik/gated asset. Katalog `hasPack` ListObjectsV2'dan
+      // (eventual-consistent) keladi, serve esa HeadObject (resolveS3AssetKey,
+      // strongly-consistent) bilan tekshiradi. Just-uploaded/just-deleted pack
+      // holatida ular nomuvofiq bo'lib, katalog hasPack:true bersa-da serve 404
+      // qaytarishi mumkin. Shu bois pack borligini serve ishlatadigan AYNAN
+      // o'sha manbadan — HeadObject'dan qayta tasdiqlaymiz (bitta qo'shimcha
+      // HeadObject, faqat List pack borligini ko'rsatgan shablon uchun).
+      if (assets.pack) {
+        assets.pack = (await resolveS3AssetKey(templateId, "pack")) != null;
+      }
     } else {
       await Promise.all(
         kinds.map(async (kind) => {

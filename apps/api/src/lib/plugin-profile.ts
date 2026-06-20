@@ -46,12 +46,14 @@ function monthStart(d = new Date()) {
 }
 
 async function resetMonthIfNeeded(userId: string) {
-  const profile = await prisma.pluginProfile.findUnique({ where: { userId } });
-  if (!profile) return;
+  // ATOMIK: guard WHERE'da (monthResetAt < oy boshi). Avvalgi find->check->update
+  // TOCTOU oynasini yopadi — parallel so'rovlarda faqat BITTA reset o'tadi
+  // (count===0 bo'lsa hech narsa qilinmaydi). consumeDownload kabi (#1 naqsh).
+  // Semantika o'zgarmaydi: faqat downloadsMonth tiklanadi (aiCredits emas —
+  // u consumeAiCredits ichida alohida reset bo'ladi).
   const start = monthStart();
-  if (profile.monthResetAt >= start) return;
-  await prisma.pluginProfile.update({
-    where: { userId },
+  await prisma.pluginProfile.updateMany({
+    where: { userId, monthResetAt: { lt: start } },
     data: { downloadsMonth: 0, monthResetAt: start },
   });
 }
