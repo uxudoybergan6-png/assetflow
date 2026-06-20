@@ -86,6 +86,18 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
     return;
   }
 
+  // #16 idempotency: allaqachon ishlangan event'ni qayta ishlamaymiz (Stripe retry
+  // takror yetkazadi). Sequential takror shu yerda 200 bilan to'xtaydi; parallel
+  // takror pastdagi create P2002'da ushlanadi. Ishlov (#3) idempotent — nodir
+  // parallel holatda ham xavfsiz. Ishlov xato bersa marker yozilmaydi → retry qayta ishlaydi.
+  const already = await prisma.webhookEvent.findUnique({
+    where: { stripeEventId: event.id },
+  });
+  if (already) {
+    res.json({ received: true, duplicate: true });
+    return;
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -131,6 +143,16 @@ export async function stripeWebhookHandler(req: Request, res: Response) {
     }
     default:
       break;
+  }
+
+  // Muvaffaqiyatli ishlangach event.id'ni yozamiz (keyingi takrorlar 200 skip).
+  // Parallel poyga: unique constraint P2002 → boshqa yetkazish allaqachon yozgan, e'tiborsiz.
+  try {
+    await prisma.webhookEvent.create({
+      data: { stripeEventId: event.id, type: event.type },
+    });
+  } catch (e) {
+    if ((e as { code?: string })?.code !== "P2002") throw e;
   }
 
   res.json({ received: true });

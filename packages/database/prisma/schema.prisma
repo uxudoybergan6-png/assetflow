@@ -153,6 +153,17 @@ model Subscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/// Stripe webhook idempotency — har event.id bir marta ishlanadi
+/// (takror/parallel yetkazishni dedup qiladi).
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model Asset {
   id          String    @id @default(cuid())
   title       String
