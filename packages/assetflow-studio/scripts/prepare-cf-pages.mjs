@@ -77,11 +77,11 @@ fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: https://assetflow-rqbq.onrender.com https://*.r2.dev",
   "media-src 'self' https://assetflow-rqbq.onrender.com https://*.r2.dev",
   "connect-src 'self' https://assetflow-rqbq.onrender.com https://*.r2.dev",
-  "font-src 'self'",
+  "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",
