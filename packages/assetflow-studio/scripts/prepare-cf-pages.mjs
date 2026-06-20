@@ -64,14 +64,13 @@ fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 
 // _headers — xavfsizlik (#17 v3 CSP) + cache (#6) sozlamalari.
 //
-// CSP — REPORT-ONLY (hozircha bloklamaydi, faqat konsolga xato beradi). Sabab:
+// CSP — ENFORCE (2 tur Report-Only test toza o'tdi → endi bloklaydi). Sabab:
 // Studio 168+ inline event handler (onclick/oninput…) va 312+ inline style= dan
 // foydalanadi → `script-src`/`style-src` 'unsafe-inline'SIZ butun UI sinadi
 // (inline handler'larni nonce/hash bilan qoplab bo'lmaydi). Shu sabab CSP'ning
 // asosiy qiymati — `connect-src`/`img-src` (XSS token-exfil'ni begona domenga
-// yuborishni to'sish) + clickjacking. Report-Only deploy'dan keyin konsolda
-// buzilishni kuzatib (o'tkazib yuborilgan domen/resurs), so'ng `-Report-Only`
-// qo'shimchasini olib tashlab ENFORCE qilamiz.
+// yuborishni to'sish) + clickjacking. Report-Only fazasida (login/hub/contributor/
+// admin + grafiklar) konsol toza bo'lgani tasdiqlangach enforce'ga o'tildi.
 // connect/img/media: 'self' + API (assetflow-rqbq.onrender.com) + R2 CDN (*.r2.dev,
 // thumb/preview API → R2 302 redirect). eval/WebSocket ishlatilmaydi.
 const CSP = [
@@ -92,7 +91,7 @@ const CSP = [
 // darhol clickjacking + MIME-sniffing himoyasi (CSP Report-Only fazasida ham).
 const headers = `\
 /*
-  Content-Security-Policy-Report-Only: ${CSP}
+  Content-Security-Policy: ${CSP}
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
