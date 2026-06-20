@@ -1,8 +1,37 @@
+> **STATUS:** PARTIAL · YAGONA KOD-TASDIQLANGAN HAQIQAT MANBAI (joriy holat) — 2026-06-20
+
 # AssetFlow — Loyiha holati (yangi dasturchi uchun onboarding)
 
-> **Maqsad:** bu hujjat yangi dasturchini loyiha bilan tanishtiradi. Mazmun **haqiqiy koddan** tekshirilgan (route'lar, Prisma schema, build skriptlari, env). `HANDOFF.md` katta va ba'zi joylari eskirgan — ishonchli manba: kodning o'zi va shu hujjat.
+> **Maqsad:** bu hujjat yangi dasturchini loyiha bilan tanishtiradi. Mazmun **haqiqiy koddan** tekshirilgan (route'lar, Prisma schema, build skriptlari, env). Bu — loyiha joriy holati uchun **yagona kod-tasdiqlangan haqiqat manbai**; `docs/REJA-*` va `docs/STUDIO-GEN-*` reja/dizayn hujjatlari joriy holat EMAS. `HANDOFF.md` katta va ba'zi joylari eskirgan — ishonchli manba: kodning o'zi va shu hujjat.
 >
-> *Yangilangan: 2026-06-18 · Tekshirgan: kod tahlili (apps/api, packages/database, packages/assetflow-studio, plugins/after-effects-cep)*
+> *Yangilangan: 2026-06-20 · Tekshirgan: kod tahlili (apps/api, packages/database, packages/assetflow-studio, plugins/after-effects-cep)*
+
+---
+
+## 0. Audit tuzatishlari — joriy holat (2026-06-20 sessiyasi)
+
+> 2026-06-19 multi-agent audit (57 agent, 34 tasdiqlangan topilma) asosida tuzatishlar. Quyidagi jadval shu sessiyada nima bajarilganini ko'rsatadi.
+
+**✅ Productionda jonli (deploy qilingan):**
+
+- **Pul / billing:** `#1` Free/Pro paywall server-tomon atomik majburlash · `#3` PRO obuna tugasa/bekor qilinsa FREE'ga downgrade · `#4` `/gen` describe/enhance kredit yechish + per-user kunlik cap · `#12` `currentPeriodEnd` Stripe v18 (`items.data[0]`) + self-serve PRO **fail-closed** · `#16` webhook idempotency (`WebhookEvent` event-id dedup).
+- **Xavfsizlik:** `#2` admin panel stored-XSS `esc()` escaping (+ server length-cap) · `#5` token revoke (`tokenVersion` + block/parol-reset'da JWT/plugin-token bekor + markaziy block check) · `#14` upload path-traversal cuid-guard + `UPLOADS_ROOT` containment.
+- **Barqarorlik:** `#6` CDN cache-bust (`?v=updatedAt`) + Studio JS/CSS `immutable` olib tashlandi · `#13` katalog/serve mavjudlik birxil + R2 PutObject muvaffaqdan keyin scene "saved".
+- **Infra:** `#7` GitHub Actions CI (build + lint, har PR/main push).
+
+**🟡 Qisman (minimal qism jonli, qolgani reja):**
+
+- `#17` — JWT `localStorage` → `sessionStorage` + global 401 interceptor + email-only remember-me ✅; **HttpOnly cookie qoldi** (server login/CORS o'zgarishi).
+- `#11` — `resetMonthIfNeeded` atomik `updateMany` ✅; **pgvector + HNSW** semantik qidiruv qoldi (DB extension + `ai.ts` qayta yozish).
+- `#15` — ffmpeg global semaphore + `-threads` cap ✅; **fon/queue transcode + presigned post-PUT** qayta-arxitekturasi qoldi.
+
+**⏸️ Qaror kutmoqda (arxitektura):**
+
+- `#8` — **Premiere UXP** tashlandiq prototip (noto'g'ri `/api/assets`ga ulangan): o'chirish (tavsiya) yoki `/api/plugin/catalog`ga qayta ulash + real import.
+- `#10` — o'lik `apps/web/src` + eski `Asset` route'lar: `assets.ts` / `admin.ts` asset CRUD / `Asset` model **hali Premiere UXP ishlatadi**, shuning uchun faqat `#8` (UXP retire) dan keyin o'chiriladi. `apps/web/src` + `packages/shared` esa mustaqil o'lik.
+- `#9` — Studio artefakt drift: **to'g'ri** yechim — CF Pages build buyrug'iga `studio:sync` qo'shib artefaktni git'siz regeneratsiya qilish (CF dashboard build-command o'zgarishi kerak).
+
+> **⚠️ Incident (2026-06-20):** `#9` ning birinchi urinishi (artefaktlarni `git rm --cached`) **CF Pages Studio'ni buzdi** — CF build buyrug'i (`prepare-cf-pages.mjs`) artefaktni faqat **nusxalaydi**, regeneratsiya qilmaydi; git'da bo'lmagach JS/CSS deploy bo'lmadi (stilsiz sahifa). **Revert qilindi (commit `57c4479`)** — `packages/assetflow-studio/studio/` va `admin/js`+`admin/styles` artefaktlari hozir **tracked** (xavfsiz holat). `#9` ni to'g'ri CF-build yechimisiz qayta urinmang.
 
 ---
 

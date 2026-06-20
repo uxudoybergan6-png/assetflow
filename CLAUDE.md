@@ -8,6 +8,9 @@ Sen `/Users/usmonov/Projects/creative-tools-saas` monorepo ustida ishlayapsan. B
 2. Admin tasdiqlaydi (approve/reject, published=true).
 3. Tasdiqlangan shablonlar **Render API** orqali AE plugin katalogida chiqadi.
 4. Obunachi AE ichida Browse paneldan import qiladi (Free/Pro limitlar).
+5. Obunachi AE ichida **Studio Gen AI** bilan rasm/video/ovoz/SFX generatsiya qiladi (kredit asosida) — pastdagi "Studio Gen AI tizimi" bo'limiga qara.
+
+> **HAQIQAT MANBAI:** loyihaning JORIY holati uchun yagona kod-tasdiqlangan manba — `docs/PROJECT-STATUS.md`. `docs/REJA-*` va `docs/STUDIO-GEN-*` hujjatlari KELAJAK reja / dizayn referenslari (bajarilgan deb o'qima). Har doim kod + `PROJECT-STATUS.md` ustun.
 
 ## Production URL'lar
 
@@ -52,6 +55,25 @@ plugins/after-effects-cep/  → AE Browse + AssetFlow Admin CEP panel
 - `GET /api/admin/plugin-subscribers`, `/api/admin/plugin-analytics`
 - `/api/studio/messages/*` — xabarlar (threads, broadcast)
 - `GET /api/studio/audit` — audit log
+
+## Studio Gen AI tizimi (REAL — eslab qol, qayta rejalashtirma)
+
+> Bu tizim ALLAQACHON kodga yozilgan va ishlaydi. `docs/REJA-*` va `docs/STUDIO-GEN-*` hujjatlari KELAJAK/DIZAYN rejasi — joriy holat EMAS. Joriy holatni kod va `docs/PROJECT-STATUS.md` belgilaydi.
+
+AE plagin ichidagi (USER roli) kredit-asosli generativ studiya. Rasm / rasm-edit / video / ovoz / SFX generatsiyasi + shablon semantik qidiruvi.
+
+**Provayderlar** (`apps/api/src/lib/ai/`):
+- **OpenRouter** (`openrouter.ts`) — rasm (text-to-image, image-edit), video (text-to-video, image-to-video).
+- **ElevenLabs** (`elevenlabs.ts`) — SFX (text-to-sfx) va ovoz.
+- **Cloudflare Workers AI** (`workers-ai.ts`) — shablon embeddinglari (`@cf/baai/bge-m3`) + zaxira rasm/matn/TTS.
+
+**Endpointlar** (`apps/api/src/routes/`):
+- `studio-gen.ts` → `/api/studio` ostida: `POST /gen` (job yaratish), `POST /gen/sessions`, `GET /gen/history`, `GET /gen/models`, `POST /gen/cost-quote` (imzolangan narx), `POST /gen/prompt/enhance`, `POST /gen/describe`, `GET|DELETE /gen/:jobId`, `GET /gen/health`, `GET /credits`.
+- `ai.ts` → `/api/plugin/ai` ostida: `POST /estimate`, `/image`, `/voiceover`, `/search` (semantik), `/reindex`.
+
+**Kredit tizimi:** `lib/plugin-profile.ts` (`consumeAiCredits`, `refundAiCredits`, `ensurePluginProfile`) + `lib/gen-models.ts` (model katalogi, `computeGenCost` — video `cost` = soniya/kredit). Oqim: imzolangan `cost-quote` → atomik kredit yechish → muvaffaqiyatsizlikda refund. `gen-processor.ts` job'ni qayta ishlaydi.
+
+**Kirish:** AI faqat AE plagin ichida (`requireAuth`, USER); `/gen/describe` va `/gen/enhance` ham kredit/cap bilan himoyalangan (audit #4 tuzatilgan — TEGMA).
 
 ## Hozirgacha qilingan ishlar (Claude Code sessiyasi — 2026-06-04)
 
