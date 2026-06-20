@@ -5,6 +5,19 @@ import {
 } from "@creative-tools/database";
 import { aiEmbed, isAiConfigured } from "./workers-ai.js";
 
+/**
+ * number[] → pgvector literal '[n,n,...]'. Har element Number() bilan majburlanadi
+ * (NaN/Infinity bo'lsa xato) → SQL-injection xavfsiz (raw matn emas, faqat sonlar).
+ */
+export function toVectorLiteral(vec: number[]): string {
+  const parts = vec.map((n) => {
+    const x = Number(n);
+    if (!Number.isFinite(x)) throw new Error("embedding vektorida noto'g'ri qiymat");
+    return x;
+  });
+  return `[${parts.join(",")}]`;
+}
+
 /** Embedding uchun matn — title + kategoriya + teglar + tavsif (semantik kontekst). */
 export function templateEmbedText(t: {
   name: string;
@@ -31,10 +44,22 @@ export async function embedTemplate(
   if (!t) return { ok: false, reason: "Shablon topilmadi" };
   const out = await aiEmbed(templateEmbedText(t));
   if (!out.ok) return { ok: false, reason: out.error };
+  // Eski embedding(JSONB) — backward-compat/fallback uchun saqlanadi.
   await prisma.contributorTemplate.update({
     where: { id: templateId },
     data: { embedding: out.data as unknown as Prisma.InputJsonValue },
   });
+  // pgvector ustuni (Prisma native qo'llamaydi → raw UPDATE ... ::vector).
+  // Best-effort: extension/migratsiya hali yetib bormagan bo'lsa ham embedding(JSON) saqlanib qoladi.
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "ContributorTemplate" SET "embeddingVec" = $1::vector WHERE "id" = $2`,
+      toVectorLiteral(out.data),
+      templateId
+    );
+  } catch (e) {
+    console.warn(`[ai:embed] embeddingVec yozilmadi (${templateId}):`, e);
+  }
   return { ok: true };
 }
 

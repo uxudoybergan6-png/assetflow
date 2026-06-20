@@ -21,8 +21,8 @@ import {
   uploadBufferToS3,
   getSignedDownloadUrl,
 } from "../lib/s3.js";
-import { backfillEmbeddings, cosineSimilarity } from "../lib/ai/embed-templates.js";
-import { TemplateReviewStatus } from "@creative-tools/database";
+import { backfillEmbeddings, cosineSimilarity, toVectorLiteral } from "../lib/ai/embed-templates.js";
+import { Prisma, TemplateReviewStatus } from "@creative-tools/database";
 
 export const aiRouter = Router();
 
@@ -217,27 +217,68 @@ aiRouter.post("/search", async (req: Request, res: Response) => {
   }
   const qvec = out.data;
 
-  const rows = await prisma.contributorTemplate.findMany({
-    where: {
-      reviewStatus: TemplateReviewStatus.APPROVED,
-      published: true,
-    },
-    select: { id: true, name: true, catLabel: true, nav: true, embedding: true },
-  });
+  // pgvector SQL-side qidiruv: ORDER BY embeddingVec <=> qvec (cosine masofa).
+  // <=> = cosine distance (0=ayni, 2=qarama-qarshi) → score = 1 - distance (cosine similarity).
+  // Faqat APPROVED+published+embeddingVec NOT NULL satrlar; HNSW indeksi ishlatiladi.
+  type SearchRow = { id: string; name: string; catLabel: string; nav: string; distance: number };
+  let results: Array<{ id: string; name: string; catLabel: string; nav: string; score: number }> = [];
+  let indexed = 0;
+  let total = 0;
+  let usedVector = false;
 
-  const results = rows
-    .filter((r) => Array.isArray(r.embedding) && (r.embedding as number[]).length > 0)
-    .map((r) => ({
-      id: r.id,
-      name: r.name,
-      catLabel: r.catLabel,
-      nav: r.nav,
-      score: cosineSimilarity(qvec, r.embedding as number[]),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, SEARCH_TOP_N);
+  try {
+    const qlit = toVectorLiteral(qvec);
+    const vecRows = await prisma.$queryRaw<SearchRow[]>(Prisma.sql`
+      SELECT "id", "name", "catLabel", "nav",
+             ("embeddingVec" <=> ${qlit}::vector) AS "distance"
+      FROM "ContributorTemplate"
+      WHERE "reviewStatus" = ${TemplateReviewStatus.APPROVED}::"TemplateReviewStatus"
+        AND "published" = true
+        AND "embeddingVec" IS NOT NULL
+      ORDER BY "embeddingVec" <=> ${qlit}::vector
+      LIMIT ${SEARCH_TOP_N}
+    `);
+    if (vecRows.length > 0) {
+      usedVector = true;
+      results = vecRows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        catLabel: r.catLabel,
+        nav: r.nav,
+        score: 1 - Number(r.distance),
+      }));
+      indexed = results.length;
+      total = results.length;
+    }
+  } catch (e) {
+    // Extension/ustun/migratsiya hali yo'q bo'lsa → eski yo'lga tushadi (fallback).
+    console.warn("[ai:search] pgvector qidiruv ishlamadi, fallback:", e);
+  }
 
-  const indexed = rows.filter((r) => Array.isArray(r.embedding)).length;
+  // Fallback: embeddingVec hali to'ldirilmagan (backfill oralig'i) yoki pgvector mavjud emas →
+  // eski JSON embedding ustidan in-memory cosine.
+  if (!usedVector) {
+    const rows = await prisma.contributorTemplate.findMany({
+      where: {
+        reviewStatus: TemplateReviewStatus.APPROVED,
+        published: true,
+      },
+      select: { id: true, name: true, catLabel: true, nav: true, embedding: true },
+    });
+    results = rows
+      .filter((r) => Array.isArray(r.embedding) && (r.embedding as number[]).length > 0)
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        catLabel: r.catLabel,
+        nav: r.nav,
+        score: cosineSimilarity(qvec, r.embedding as number[]),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, SEARCH_TOP_N);
+    indexed = rows.filter((r) => Array.isArray(r.embedding)).length;
+    total = rows.length;
+  }
 
   await prisma.aiGeneration.create({
     data: { userId, type: AiGenerationType.SEARCH, prompt: query, credits: cost, status: AiGenerationStatus.DONE },
@@ -246,7 +287,7 @@ aiRouter.post("/search", async (req: Request, res: Response) => {
     query,
     embeddingDims: qvec.length,
     indexed,
-    total: rows.length,
+    total,
     results,
     creditsLeft: gate.remaining,
   });
