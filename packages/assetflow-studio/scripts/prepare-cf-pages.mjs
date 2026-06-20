@@ -29,9 +29,38 @@ function copyFile(src, dst) {
   fs.copyFileSync(src, dst);
 }
 
-// Asosiy papka va fayllarni dist/ ga ko'chir
-const DIRS = ["js", "styles", "admin", "contributor", "studio"];
-for (const d of DIRS) copyDir(path.join(root, d), path.join(dist, d));
+// MANBADAN generatsiya — committed studio/admin artefaktlariga BOG'LIQ EMAS.
+// (Incident: artefaktlar untrack qilinganda build stilsiz chiqardi. Endi root
+// manbadan — js/, styles/, admin/index.html, contributor/index.html, *.html —
+// dist yasaladi. Natija committed-artefakt build bilan bayt-bayt AYNI.)
+const SRC_JS = path.join(root, "js");
+const SRC_STYLES = path.join(root, "styles");
+
+// 1) Kanonik asset'lar (HTML'lar /js/, /styles/ ga ishora qiladi yoki redirect)
+copyDir(SRC_JS, path.join(dist, "js"));
+copyDir(SRC_STYLES, path.join(dist, "styles"));
+
+// 2) /admin/ — admin/index.html MANBA; js/styles root manbadan regeneratsiya
+copyFile(path.join(root, "admin", "index.html"), path.join(dist, "admin", "index.html"));
+copyDir(SRC_JS, path.join(dist, "admin", "js"));
+copyDir(SRC_STYLES, path.join(dist, "admin", "styles"));
+
+// 3) /studio/ — html'lar manbadan, js/styles root manbadan regeneratsiya
+//    (_redirects bularni baribir /js/,/styles/,/login.html,... ga yo'naltiradi)
+copyDir(SRC_JS, path.join(dist, "studio", "js"));
+copyDir(SRC_STYLES, path.join(dist, "studio", "styles"));
+copyFile(path.join(root, "login.html"), path.join(dist, "studio", "login.html"));
+copyFile(path.join(root, "hub.html"), path.join(dist, "studio", "hub.html"));
+copyFile(
+  path.join(root, "contributor", "index.html"),
+  path.join(dist, "studio", "contributor", "index.html")
+);
+
+// 4) /contributor/ — MANBA
+copyFile(
+  path.join(root, "contributor", "index.html"),
+  path.join(dist, "contributor", "index.html")
+);
 
 const FILES = [
   "hub.html",
