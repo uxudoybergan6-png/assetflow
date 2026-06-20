@@ -1,0 +1,51 @@
+name: CI
+
+# AssetFlow CI — har pull_request va main'ga push'da build/lint tekshiruvi.
+# Maqsad: TypeScript build yoki Prisma generate sinmasa main'ga (va Render deploy'ga)
+# yetib bormasligi. Bu workflow DATABASE_URL talab QILMAYDI:
+#   - `migrate:deploy` (prisma migrate deploy) bu yerda ISHLATILMAYDI — u live
+#     DATABASE_URL kerak qiladi; migratsiya faqat Render deploy bosqichida bajariladi.
+#   - `verify:pipeline` / `check:stack` skriptlari ISHLAB TURGAN API talab qiladi —
+#     shuning uchun CI'da ishlatilmaydi (ularni faqat live env'ga qarshi qo'lda ishlating).
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Bir branch uchun bir vaqtda bitta run — eskilari bekor qilinadi
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npm run generate -w @creative-tools/database
+
+      - name: Build database package
+        run: npm run build -w @creative-tools/database
+
+      - name: Build API
+        run: npm run build -w apps/api
+
+      # apps/web lint mavjud (next lint). Build (next build) bu yerda emas, chunki
+      # u Render/Vercel deploy bosqichiga tegishli; CI faqat lint bilan tez tekshiradi.
+      - name: Lint web
+        run: npm run lint -w @creative-tools/web
