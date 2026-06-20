@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { consumeAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
+import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
 import { isOpenRouterConfigured, orChatSys, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isS3Configured, getSignedDownloadUrl, deleteS3Objects } from "../lib/s3.js";
@@ -37,6 +37,36 @@ studioGenRouter.use(
 );
 
 const GEN_MODES = ["image", "voice", "video", "music", "sfx"] as const;
+
+// ── AI-helper (describe/enhance) narx + abuza nazorati ───────────────────────
+// Bu ikki endpoint pulli model chaqiradi (gpt-4o-mini / gemini-2.5-flash vision),
+// shu sabab /gen kabi consumeAiCredits bilan himoyalanadi. Narxlar /gen jadvaliga
+// nisbatan arzon (helper), lekin vision (rasm/video) matn-onlydan QIMMATROQ.
+const ENHANCE_COST = 1;          // gpt-4o-mini matn/JSON — bitta chaqiruv
+const DESCRIBE_IMAGE_COST = 2;   // gemini-2.5-flash vision (rasm)
+const DESCRIBE_VIDEO_COST = 3;   // + haqiqiy video input (og'irroq, ehtimoliy 2-inference)
+
+// Per-user kunlik cap (per-IP rate-limit'dan TASHQARI) — bitta hisob (admin/owner
+// ham) orqali kunlik portlashni to'sadi. In-memory/single-instance (mavjud
+// rate-limit falsafasiga mos); kredit tizimi asosiy oylik cheklov bo'lib qoladi.
+const HELPER_DAILY_CAP = 80;
+const helperDayHits = new Map<string, { day: number; count: number }>();
+function withinDailyCap(userId: string): boolean {
+  const day = Math.floor(Date.now() / 86_400_000); // UTC kun raqami
+  const cur = helperDayHits.get(userId);
+  if (!cur || cur.day !== day) {
+    helperDayHits.set(userId, { day, count: 1 });
+    return true;
+  }
+  if (cur.count >= HELPER_DAILY_CAP) return false;
+  cur.count++;
+  return true;
+}
+
+/** Minimal spend log (Render konsoliga). TODO: alohida AiSpendLog modeli (#3 audit). */
+function logAiSpend(userId: string, op: string, cost: number, model: string) {
+  console.log(`[ai-spend] user=${userId} op=${op} cost=${cost} model=${model}`);
+}
 
 /** GET /credits — kredit balansi. */
 studioGenRouter.get("/credits", async (req: Request, res: Response) => {
@@ -266,7 +296,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 });
 
 /**
- * POST /gen/prompt/enhance — promptni OpenRouter bilan boyitadi (kreditsiz).
+ * POST /gen/prompt/enhance — promptni OpenRouter bilan boyitadi (1 kredit + kunlik cap).
  *  format:"text" → bitta boy paragraf; format:"json" → strukturalangan prompt sxemasi.
  *  modelId berilsa — tanlangan model konteksti (duration/aspect/audio) promptga moslanadi.
  */
@@ -324,6 +354,21 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   const keepRefs =
     " Preserve any @img / @image references verbatim (do not rename or remove them).";
 
+  // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
+  if (!withinDailyCap(req.user!.userId)) {
+    res.status(429).json({
+      error: "Kunlik AI-yordam limiti tugadi — ertaga qayta urinib ko'ring",
+      code: "DAILY_CAP_REACHED",
+    });
+    return;
+  }
+  const gate = await consumeAiCredits(req.user!.userId, ENHANCE_COST);
+  if (!gate.ok) {
+    res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
+    return;
+  }
+  logAiSpend(req.user!.userId, "enhance", ENHANCE_COST, "openai/gpt-4o-mini");
+
   if (format === "json") {
     const system =
       `You are an expert ${mode} prompt engineer for AI generation. Rewrite the user's idea into a ` +
@@ -333,6 +378,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
     const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, true);
     if (!out.ok) {
+      await refundAiCredits(req.user!.userId, ENHANCE_COST);
       res.status(502).json({ error: out.error });
       return;
     }
@@ -344,6 +390,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       /* ignore — pastda 502 */
     }
     if (!json) {
+      await refundAiCredits(req.user!.userId, ENHANCE_COST);
       res.status(502).json({ error: "JSON prompt olinmadi — qayta urinib ko'ring" });
       return;
     }
@@ -359,6 +406,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     `no markdown, under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
   const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, false);
   if (!out.ok) {
+    await refundAiCredits(req.user!.userId, ENHANCE_COST);
     res.status(502).json({ error: out.error });
     return;
   }
@@ -367,7 +415,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
 
 /**
  * POST /gen/describe — Image/Video-to-Prompt (REVERSE): rasm yoki video kadr(lar)dan
- * generatsiya prompti yozadi (kreditsiz, enhance kabi). Vision model: gemini-2.5-flash
+ * generatsiya prompti yozadi (rasm 2 / video 3 kredit + kunlik cap). Vision model: gemini-2.5-flash
  * (/endpoints tasdiqlangan: image+video input, text out — 2026-06-18). Video → frontend
  * 1-3 kadr ajratadi va shu kadrlar yuboriladi (harakat ham tavsiflanadi).
  * Auth + rate-limit (40/min) router'dan meros; max 3 rasm + max_tokens 400 — uzunlik cheklovi.
@@ -396,6 +444,25 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
     return;
   }
   const kind = p.data.kind || "image";
+  // Vision narxi matn-onlydan (enhance) yuqori; haqiqiy video input qimmatroq.
+  const hasVideo = kind === "video" && typeof p.data.videoUrl === "string" && p.data.videoUrl.length > 0;
+  const cost = hasVideo ? DESCRIBE_VIDEO_COST : DESCRIBE_IMAGE_COST;
+
+  // Abuza nazorati + kredit (pulli gemini-2.5-flash vision) — /gen naqshi.
+  if (!withinDailyCap(req.user!.userId)) {
+    res.status(429).json({
+      error: "Kunlik AI-yordam limiti tugadi — ertaga qayta urinib ko'ring",
+      code: "DAILY_CAP_REACHED",
+    });
+    return;
+  }
+  const gate = await consumeAiCredits(req.user!.userId, cost);
+  if (!gate.ok) {
+    res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
+    return;
+  }
+  logAiSpend(req.user!.userId, "describe", cost, VISION_MODEL);
+
   // H1: video bo'lsa AVVAL haqiqiy videoni yuboramiz (gemini-2.5-flash video input).
   // Xato/rad bo'lsa — kadr (8-frame) FALLBACK (G5.2) bilan qayta urinamiz.
   let out = await orImageToPrompt(
@@ -416,6 +483,7 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
     );
   }
   if (!out.ok) {
+    await refundAiCredits(req.user!.userId, cost);
     res.status(502).json({ error: out.error });
     return;
   }
