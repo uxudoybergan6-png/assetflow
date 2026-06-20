@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="assetflow-api" content="https://assetflow-rqbq.onrender.com">
+<title>AssetFlow — Contributor Dashboard</title>
+<link rel="stylesheet" href="/studio/styles/app.css">
+<script src="/studio/js/studio-config.js"></script>
+<script src="/studio/js/theme.js"></script>
+</head>
+<body>
+<div class="app" data-screen-label="Contributor Dashboard">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+      </div>
+      <div class="col" style="gap:0">
+        <span class="brand-name">AssetFlow</span>
+        <span class="brand-sub">Contributor Studio</span>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <div class="role-switch" style="width:100%;margin-bottom:10px">
+        <a class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contributor</a>
+      </div>
+      <div class="user-chip">
+        <div class="avatar" id="userAvatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">DK</div>
+        <div class="col" style="gap:1px;min-width:0">
+          <span id="userName" style="font-size:12.5px;font-weight:600;white-space:nowrap">Contributor</span>
+          <span style="font-size:11px;color:var(--tx-2)">Contributor</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="icon-btn nav-toggle" data-nav-toggle aria-label="Menyu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="topbar-title">
+        <div class="crumb" id="crumb"></div>
+        <h1 id="pageTitle">Overview</h1>
+      </div>
+      <div style="flex:1"></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="contribGlobalSearch" placeholder="Mening shablonlarim&#8230;" oninput="contribGlobalSearch(this.value)">
+      </div>
+      <button class="btn btn-primary" id="uploadTopBtn" onclick="route('upload')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span>Yangi yuklash</span></button>
+      <div class="topbar-actions">
+        <button type="button" class="icon-btn" data-theme-toggle title="Mavzu">
+          <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        </button>
+        <button type="button" class="icon-btn" onclick="route('messages')"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+        <button type="button" class="icon-btn" onclick="AssetFlowAuth.logout()" title="Chiqish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
+      </div>
+    </header>
+    <main class="content">
+      <div id="blockedHost"></div>
+      <div id="view"></div>
+    </main>
+  </div>
+</div>
+
+<script src="/studio/js/ui.js"></script>
+<script src="/studio/js/assetflow-log.js"></script>
+<script src="/studio/js/studio-api.js"></script>
+<script src="/studio/js/studio-media.js"></script>
+<script src="/studio/js/studio-templates.js"></script>
+<script src="/studio/js/auth.js"></script>
+<script src="/studio/js/data.js"></script>
+<script src="/studio/js/studio-stats.js"></script>
+<script src="/studio/js/contributor-views.js"></script>
+<script>
+const AF_SESSION = AssetFlowAuth.requireAuth(["contributor"]);
+if (!AF_SESSION) { /* login.html ga yo’naltirildi */ }
+if (AF_SESSION && AF_SESSION.role !== "contributor") {
+  location.href = ASSETFLOW_STUDIO.loginUrl;
+}
+/** contributor-views.js alohida fayl — global kerak */
+window.ME = (AF_SESSION && AF_SESSION.userId) || "c1";
+const ME = window.ME;
+AssetFlowLog.init({ source: "contributor" });
+if (AF_SESSION) {
+  const _name = AF_SESSION.name || AF_SESSION.email || "Contributor";
+  const _ini = _name.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || "DK";
+  const _el = document.getElementById("userName"); if(_el) _el.textContent = _name;
+  const _av = document.getElementById("userAvatar"); if(_av) _av.textContent = _ini;
+}
+const NAV = [
+  {grp:'Studio'},
+  {id:'overview',  label:'Overview',           icon:'grid'},
+  {id:'templates', label:'Mening shablonlarim', icon:'layers'},
+  {id:'upload',    label:'Yangi yuklash',       icon:'upload'},
+  {grp:'Aloqa'},
+  {id:'messages',  label:'Xabarlar',            icon:'inbox'},
+  {id:'settings',  label:'Sozlamalar',          icon:'gear'},
+];
+const TITLES = {
+  overview:['Overview','Salom'],
+  templates:['Mening shablonlarim','Studio'],
+  upload:['Yangi shablon yuklash','Studio'],
+  messages:['Xabarlar','Aloqa'],
+  settings:['Sozlamalar','Profil'],
+};
+let CURRENT='overview';
+function contributorNavBadge(n) {
+  if (n.id === "messages") {
+    const unread = window._STUDIO_MSG_UNREAD || 0;
+    if (unread) return { badge: String(unread), badgeCls: "brand" };
+  }
+  return { badge: n.badge, badgeCls: n.badgeCls };
+}
+function renderNav(){
+  document.getElementById('nav').innerHTML = NAV.map(n=>{
+    if(n.grp) return `<div class="nav-group-label">${n.grp}</div>`;
+    const b = contributorNavBadge(n);
+    return `<button class="nav-item ${n.id===CURRENT?'active':''}" onclick="route('${n.id}')">${ic(n.icon)}<span>${n.label}</span>${b.badge?`<span class="nav-badge ${b.badgeCls||''}">${b.badge}</span>`:''}</button>`;
+  }).join('') + `<div class="nav-group-label">&nbsp;</div><button class="nav-item" onclick="AssetFlowAuth.logout()">${ic('logout')}<span>Chiqish</span></button>`;
+}
+let CONTRIB_SEARCH = "";
+function contribGlobalSearch(q) {
+  CONTRIB_SEARCH = (q || "").trim().toLowerCase();
+  if (CURRENT === "templates") renderMy();
+}
+function route(view, arg){
+  CURRENT=view;
+  const t=TITLES[view]||[view,''];
+  document.getElementById('pageTitle').textContent=t[0];
+  const cr=document.getElementById('crumb');
+  cr.innerHTML=`<span>AssetFlow</span>${ic('chevR')}<span>${t[1]}</span>`;
+  cr.querySelector('svg').style.width='12px';
+  renderNav();
+  const host = document.getElementById('view');
+  try {
+    host.innerHTML = VIEWS[view] ? VIEWS[view](arg) : '<div class="empty"><h3>Tez orada</h3></div>';
+    if (window.afterRender && window.afterRender[view]) window.afterRender[view](arg);
+    AssetFlowLog.info(`Contributor: ${t[0]}`, { action: "navigate", detail: view });
+  } catch (err) {
+    console.error(err);
+    if (typeof AssetFlowLog !== "undefined") AssetFlowLog.error(err.message, { action: "view_error", detail: view });
+    host.innerHTML = `<div class="card card-pad empty"><div class="ico">${typeof ic==='function'?ic('alert'):'!'}</div><h3>Ko‘rinish yuklanmadi</h3><p class="body" style="margin-top:8px">${err.message}</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="route('overview')">Qayta urinish</button></div>`;
+  }
+  host.scrollTop = 0;
+}
+function patchContributorUI(){
+  const col = document.querySelector(".sidebar-foot .user-chip .col");
+  if (col && AF_SESSION.name) {
+    const spans = col.querySelectorAll("span");
+    if (spans[0]) spans[0].textContent = AF_SESSION.name;
+    if (spans[1]) spans[1].textContent = AF_SESSION.blocked ? "Bloklangan" : "Contributor";
+  }
+  AssetFlowAuth.mountBlockedBanner('blockedHost');
+  AssetFlowAuth.applyBlockedRestrictions();
+}
+(async function bootContributor() {
+  await StudioTemplates.init("contributor");
+  try {
+    if (StudioApi.token()) {
+      const { items } = await StudioApi.listMessageThreads();
+      window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
+    }
+  } catch (_) {}
+  const first = (AF_SESSION.name || "").split(" ")[0];
+  if (first) TITLES.overview[1] = "Salom, " + first;
+  renderNav();
+  route("overview");
+  patchContributorUI();
+})();
+</script>
+</body>
+</html>

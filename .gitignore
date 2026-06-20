@@ -17,13 +17,3 @@ plugins/after-effects-cep/*.zxp
 
 # GitHub Desktop ba'zan yaratadigan ichki bo'sh repo — loyiha emas
 /assetflow/
-
-# AssetFlow Studio build-artefakt (prepare-vercel.mjs / prepare-cf-pages.mjs QAYTA yaratadi).
-# MANBA: packages/assetflow-studio/js/ + styles/ (+ root *.html, admin/index.html, contributor/index.html) — TRACKED qoladi.
-packages/assetflow-studio/studio/js/
-packages/assetflow-studio/studio/styles/
-packages/assetflow-studio/studio/contributor/index.html
-packages/assetflow-studio/studio/hub.html
-packages/assetflow-studio/studio/login.html
-packages/assetflow-studio/admin/js/
-packages/assetflow-studio/admin/styles/

@@ -1,5 +1,3 @@
-> **STATUS:** PARTIAL — backend (OpenRouter/ElevenLabs/Workers AI + kredit) REAL va ishlaydi; bu reja kelajak yaxshilashlar uchun, joriy holat EMAS. Joriy holat: `docs/PROJECT-STATUS.md`. — 2026-06-20
-
 # AI TOOLS — 100% bitirish rejasi (Claude Code uchun)
 
 *Yozildi: 2026-06-15. Asos: kod tahlili + deep-research (OpenRouter reality check, provayder solishtirish, Higgsfield/Freepik/Runway UX).*

@@ -1,5 +1,3 @@
-> **STATUS:** PLANNED — composer dizayn rejasi (model-driven UI), joriy holat EMAS. Joriy holat: `docs/PROJECT-STATUS.md`. — 2026-06-20
-
 # Studio Gen composer v2 — MODEL-ASOSLI dinamik composer (Artlist naqshi)
 
 *Manba: Artlist toolkit composer skrinshotlari (6 rejim/model, 2026-06-15).*

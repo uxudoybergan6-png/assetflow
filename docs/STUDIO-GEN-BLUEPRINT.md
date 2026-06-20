@@ -1,5 +1,3 @@
-> **STATUS:** PLANNED — dizayn referens (Artlist AI Toolkit jonli tahlili), joriy holat EMAS. Joriy holat: `docs/PROJECT-STATUS.md`. — 2026-06-20
-
 # Studio Gen — jonli tahlil (Artlist AI Toolkit → AssetFlow namunasi)
 
 *Manba: toolkit.artlist.io AI Toolkit — Claude in Chrome orqali jonli DOM + Network tahlili (2026-06-15).*

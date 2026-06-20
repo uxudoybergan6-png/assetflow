@@ -1,8 +1,6 @@
-> **STATUS:** PARTIAL · YAGONA KOD-TASDIQLANGAN HAQIQAT MANBAI (joriy holat) — 2026-06-20
-
 # AssetFlow — Loyiha holati (yangi dasturchi uchun onboarding)
 
-> **Maqsad:** bu hujjat yangi dasturchini loyiha bilan tanishtiradi. Mazmun **haqiqiy koddan** tekshirilgan (route'lar, Prisma schema, build skriptlari, env). Bu — loyiha joriy holati uchun **yagona kod-tasdiqlangan haqiqat manbai**; `docs/REJA-*` va `docs/STUDIO-GEN-*` reja/dizayn hujjatlari joriy holat EMAS. `HANDOFF.md` katta va ba'zi joylari eskirgan — ishonchli manba: kodning o'zi va shu hujjat.
+> **Maqsad:** bu hujjat yangi dasturchini loyiha bilan tanishtiradi. Mazmun **haqiqiy koddan** tekshirilgan (route'lar, Prisma schema, build skriptlari, env). `HANDOFF.md` katta va ba'zi joylari eskirgan — ishonchli manba: kodning o'zi va shu hujjat.
 >
 > *Yangilangan: 2026-06-18 · Tekshirgan: kod tahlili (apps/api, packages/database, packages/assetflow-studio, plugins/after-effects-cep)*
 
