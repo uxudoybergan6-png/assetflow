@@ -1,3 +1,5 @@
+> **STATUS:** PLANNED — dizayn/yaxshilash rejasi (Artlist parity), joriy holat EMAS. Asosiy Studio Gen kodga yozilgan — `docs/PROJECT-STATUS.md`'ga qara. — 2026-06-20
+
 # Studio Gen — AI tools'ni Artlist darajasiga ko'tarish (blueprint + model fix)
 
 *Manba: STUDIO-GEN-BLUEPRINT.md (Artlist AI Toolkit jonli tahlili) + reference-edit muammosi.*
