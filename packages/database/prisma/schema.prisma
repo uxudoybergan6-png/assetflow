@@ -255,6 +255,8 @@ model ContributorTemplate {
   importsCount   Int                 @default(0)
   embedding     Json?                // Semantik qidiruv uchun embedding vektori (bge-m3, JSON float[]) — SAQLANADI (backward-compat + fallback)
   embeddingVec  Unsupported("vector(1024)")? // pgvector (bge-m3 = 1024-dim). Prisma native qo'llamaydi → faqat raw SQL bilan o'qiladi/yoziladi.
+  previewTranscodeStatus String?      // #15: fon transcode holati — 'pending' | 'done' | 'failed' (null = hech ishlanmagan)
+  previewTranscodeError  String?      // #15: fon transcode xatosi (qisqartirilgan, faqat 'failed' holatda)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 

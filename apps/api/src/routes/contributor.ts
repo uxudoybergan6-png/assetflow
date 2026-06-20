@@ -41,6 +41,7 @@ import {
   deleteS3Objects,
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
+import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
 import {
   setUploadProgress,
@@ -868,6 +869,44 @@ contributorRouter.post(
   }
 );
 
+/**
+ * POST /templates/:id/preview-uploaded — presigned-PUT yo'li (brauzer → R2 to'g'ridan)
+ * tugaganini bildiruvchi SIGNAL. Bu yo'lda preview server'ga kelmaydi, shu bois
+ * transcode INLINE bajarilmaydi (#15 — o'lik transcode). Frontend preview PUT'i
+ * tugagach shu endpoint'ni chaqiradi; biz status='pending' qo'yib FON transcode'ni
+ * (transcodePreviewInBackground) otamiz — R2'dan preview olib, 720p H.264 ga siqib,
+ * preview.mp4 sifatida qayta yozadi. Javob darrov qaytadi (transcode'ni kutmaydi).
+ */
+contributorRouter.post(
+  "/templates/:id/preview-uploaded",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Shablon topilmadi" });
+      return;
+    }
+    if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
+      res.status(403).json({ error: "Ruxsat yo‘q" });
+      return;
+    }
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
+    await prisma.contributorTemplate.update({
+      where: { id },
+      data: { previewTranscodeStatus: "pending", previewTranscodeError: null },
+    });
+    transcodePreviewInBackground(id); // fon — javobni bloklamaydi
+    res.json({ ok: true, previewTranscodeStatus: "pending" });
+  }
+);
+
 contributorRouter.post(
   "/templates/:id/assets",
   requireAuth,
@@ -901,8 +940,17 @@ contributorRouter.post(
     const preview = files?.preview?.[0];
     const thumb = files?.thumb?.[0];
 
+    // (A) Multipart yo'li — preview shu yerda kelsa INLINE transcode (mavjud xulq,
+    // #15 semaphore ostida, OZGARTIRILMAYDI). Holatni 'done' deb belgilaymiz
+    // (presigned-PUT yo'lidagi (B) fon transcode bilan bir xil status maydoni).
     if (preview?.path) {
       await optimizePreviewForStreaming(preview.path);
+      try {
+        await prisma.contributorTemplate.update({
+          where: { id },
+          data: { previewTranscodeStatus: "done", previewTranscodeError: null },
+        });
+      } catch {}
     }
 
     // S3/R2 ga sync (cloud deployment). Pack — fail-closed: bulutga yozilmasa
