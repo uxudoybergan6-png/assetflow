@@ -265,6 +265,18 @@ const StudioApi = (() => {
       base += files[k].size;
       if (onProgress) onProgress(base);
     }
+    // #15: preview presigned PUT tugadi → server-side fon transcode signali
+    // (POST /preview-uploaded → status='pending' + fon 720p siqish). Xatoga
+    // chidamli: signal fail bo'lsa ham asosiy upload MUVAFFAQIYATLI hisoblanadi
+    // (transcode fon ishi; preview xom holicha baribir ko'rinadi). TODO: UI'da
+    // previewTranscodeStatus badge ('Siqilmoqda…').
+    if (files.preview) {
+      try {
+        await request(`/api/contributor/templates/${id}/preview-uploaded`, { method: "POST" });
+      } catch (e) {
+        console.warn("preview-uploaded signali yuborilmadi (transcode keyinroq urinadi):", e);
+      }
+    }
     return { ok: true };
   }
 
