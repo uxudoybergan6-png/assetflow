@@ -1,4 +1,4 @@
-> **STATUS:** PARTIAL · YAGONA KOD-TASDIQLANGAN HAQIQAT MANBAI (joriy holat) — 2026-06-20
+> **STATUS:** AUDIT YAKUNLANDI (34/34 live, origin/main sinxron) · YAGONA KOD-TASDIQLANGAN HAQIQAT MANBAI — 2026-06-21
 
 # AssetFlow — Loyiha holati (yangi dasturchi uchun onboarding)
 
@@ -8,22 +8,76 @@
 
 ---
 
-## 0. Audit holati — YAKUNLANDI (2026-06-20 sessiyalari)
+## 0. Audit + sessiya HANDOFF — YAKUNLANDI (2026-06-19/21)
 
-> 2026-06-19 multi-agent audit (57 agent, 34 tasdiqlangan topilma). **Barcha 34 topilma hal qilindi va productionga deploy qilindi** (bo'lim-bo'lim, har deploy read-only smoke-test bilan; pul/auth/CSP/CI hech qachon buzilmagan).
+> 2026-06-19 multi-agent audit (57 agent, 177 topilma → 34 tasdiqlangan). **Barcha 34 topilma hal qilindi, productionga deploy qilindi, `origin/main` bilan sinxron.** Bo'lim-bo'lim deploy, har biri read-only smoke-test (`/health` + `/api/plugin/catalog`); pul/auth/CSP/CI hech qachon buzilmagan. **Yangi (toza) sessiya shu §0 dan davom etadi.**
 
-**✅ Pul / billing:** `#1` paywall server-tomon atomik majburlash · `#3` PRO downgrade (webhook plan-sync) · `#4` `/gen` describe/enhance kredit + per-user kunlik cap · `#12` `currentPeriodEnd` (Stripe v18 item) + self-serve PRO fail-closed · `#16` webhook idempotency (`WebhookEvent`).
+### A) Audit topilmalari — har band (✅ live · 🟡 qisman · ⏸️ ixtiyoriy)
 
-**✅ Xavfsizlik:** `#2` admin stored-XSS `esc()` + server cap · `#5` token revoke (`tokenVersion` + block/reset) · `#14` upload path-traversal cuid-guard · `#17` JWT sessionStorage + 401 interceptor + **CSP enforce** (HttpOnly cookie: faqat custom domen bilan — ixtiyoriy, pastga qarang).
+**Pul / billing (5 ✅):** `#1` Free/Pro paywall server-tomon ATOMIK majburlash (`guardDownloadable`→`consumeDownload` baytlardan oldin; `/usage/*` analitika-only) · `#3` Stripe obuna tugasa→`PluginProfile.plan` FREE (`syncPluginPlanFromStripe` + reorder guard; `reconcile:plans`) · `#4` `/gen/describe`+`/enhance` kredit (1/2/3) + per-user kunlik cap + refund · `#12` `currentPeriodEnd` Stripe v18 `items.data[0]` + `apiVersion` pin + self-serve PRO fail-closed · `#16` webhook idempotency (`WebhookEvent` dedup).
 
-**✅ Barqarorlik:** `#6` CDN cache-bust + Studio JS/CSS `immutable` olib tashlandi · `#11` semantik qidiruv → **pgvector HNSW** (JSON-cosine fallback bilan) · `#13` katalog/serve birxil + R2-confirmed scene save · `#15` transcode **fon-worker + status badge** (ffmpeg semaphore + `previewTranscodeStatus`).
+**Xavfsizlik (3 ✅ + 1 🟡):** `#2` admin stored-XSS `esc()` (`admin-views.js`, `admin-subscribers.js`) + server cap · `#5` token revoke (`requireAuth` markaziy block check; `User.tokenVersion` JWT'da, reset/block'da increment + pluginToken o'chirish) · `#14` upload path-traversal `param('id')` cuid-guard + `UPLOADS_ROOT` containment · `#17` 🟡 JWT `sessionStorage` + global 401 interceptor + **CSP enforce** (HttpOnly cookie qoldi — E).
 
-**✅ Infra / tozalash:** `#7` GitHub Actions CI + **migrate-gate** (migration `buildCommand`dan `preDeployCommand`ga) · `#9` CF Pages build **manbadan self-regen** + drift artefaktlar untrack · `#8` Premiere UXP o'chirildi · `#10` apps/web + packages/shared + o'lik Asset CRUD o'chirildi (lokal :3000 host → `dev-studio-server`) · `#18` docs.
+**Barqarorlik (4 ✅):** `#6` CDN cache-bust `?v=updatedAt` + Studio JS/CSS `immutable` olindi · `#11` semantik qidiruv → **pgvector HNSW** (`embeddingVec vector(1024)`, `$queryRaw <=>`, JSON-cosine fallback) · `#13` katalog/serve birxil + scene R2 PutObject muvaffaqdan keyin "saved" · `#15` inline ffmpeg → semaphore + fon transcode worker (`transcode-preview.ts`, `/preview-uploaded` signal, `previewTranscodeStatus` + UI badge).
 
-**⏸️ Qolgan ixtiyoriy (kod-band EMAS):**
+**Infra / tozalash (5 ✅):** `#7` GitHub Actions CI + **migrate-gate** (`migrate:deploy` → `preDeployCommand`) · `#8` Premiere UXP o'chirildi · `#9` CF Pages build **manbadan self-regen** + drift artefaktlar untracked+gitignored · `#10` apps/web (Next.js) + packages/shared + o'lik Asset CRUD o'chirildi, lokal :3000 host → `dev-studio-server.mjs` (Asset/Download MODEL saqlandi — users.ts+seed) · `#18` docs.
 
-- `#11` **prod backfill**: eski shablonlarning `embeddingVec`ini to'ldirish — `npm run backfill:embedvec` (prod `DATABASE_URL` bilan, avval `DRY_RUN=1`). pgvector extension prodda allaqachon qo'llangan. Yangi embeddinglar avtomatik dual-write bo'ladi; bu faqat eski qatorlar uchun.
-- `#17` **HttpOnly cookie**: faqat custom domen (`*.assetflow.uz`) bilan ishonchli — API (`onrender.com`) va Studio (`pages.dev`) hozir boshqa domenlar, cross-domain 3rd-party cookie Safari ITP'da bloklanadi. CSP enforce hozircha yetarli XSS himoyasi. Infra (DNS/domen) qarori.
+### B) Deploy / infra holati
+- **Render (API):** `render.yaml` — build (migratsiyasiz) → **`preDeployCommand: npm run migrate:deploy`** (gated: fail → deploy to'xtaydi, eski kod qoladi) → `start`. Migratsiyalar FAQAT additive. Env: `JWT_SECRET`, `DATABASE_URL` (Neon), R2 (`AWS_*`,`S3_ENDPOINT`,`CDN_BASE_URL`), `OPENROUTER_API_KEY`, `ELEVENLABS_API_KEY`, `CF_ACCOUNT_ID`+`CF_AI_TOKEN`, `STRIPE_*`, `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false`.
+- **CF Pages (Studio, assetflow-20j.pages.dev):** build `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs` — MANBADAN (`js/`,`styles/`,`*.html`) dist yasaydi, committed artefaktga BOG'LIQ EMAS. `_headers`: **CSP enforce** + cache; `_redirects`: /studio/*, /admin/* → manba.
+- **Vercel (eski/zaxira):** `packages/assetflow-studio/vercel.json` → `prepare-vercel.mjs` (`studio:sync` ham shuni chaqiradi).
+- **Lokal dev:** `npm run studio` → API :4000 + Contributor :3000 (`dev-studio-server.mjs`) + Admin :3001 (`dev-admin-server.mjs`), MANBANI to'g'ridan serv. **apps/web YO'Q.** PM2: `ecosystem.config.cjs` (assetflow-api/web/admin → dev:api/dev:studio-web/dev:studio-admin).
+- **Push intizomi:** bosqichma-bosqich — backend+migratsiya alohida, studio/CF alohida (incident zonasi). Har deploy A smoke-test; studio o'zgarsa brauzer + konsol (CSP) tekshiruvi.
+
+### C) Commit tarixi (audit, eng yangidan — hammasi origin/main'da)
+```
+ae28520 chore: docs + render-build cleanup (post-audit)
+4e81018 chore: remove dead apps/web + packages/shared, lightweight local studio host (#10)
+79ec2de chore(studio): untrack build artifacts now that CF build self-regenerates (#9)
+2ff6ab4 chore(db): embeddingVec backfill script (manual, JSON->vector) (#11)
+ff788e8 feat(studio): preview transcode status badge in contributor list (#15)
+47297db chore(api): remove dead Asset CRUD admin handlers (#10 verified-dead; model kept)
+32fa64d feat(studio): trigger preview transcode after upload (#15 frontend)
+0550781 build(studio): CF Pages build regenerates artifacts from source (#9)
+ca70156 chore: remove abandoned Premiere UXP plugin + dead /api/assets route (#8,#10)
+f7bf5a0 feat(transcode): background preview transcode worker + status column (#15 backend)
+998aab4 perf(search): pgvector HNSW semantic search with JSON-cosine fallback (#11)
+0719fa6 security(studio): enforce Content-Security-Policy (#17 done)
+d2e6ca9 security(studio): allow Google Fonts in CSP report-only (#17)
+77ba0b6 security(studio): add Content-Security-Policy headers (#17 v3)
+46c2a5d ci: gate migrations via preDeployCommand (separate from build) (#7)
+a135b70 docs: project status + AI system + plan banners (re-apply #18)
+57c4479 fix(studio): restore tracked CF Pages build artifacts (revert bad untrack) [INCIDENT FIX]
+107c5da chore: untrack generated Studio artifact trees [INCIDENT SABABI — keyin revert]
+7beecaf fix(stability): CDN cache-bust + unify catalog/serve + atomic month-reset + ffmpeg semaphore (#6,#11,#13,#15)
+bf05195 fix(security): escape admin XSS + token revoke (tokenVersion) + cuid path-guard + JWT sessionStorage (#2,#5,#14,#17)
+74b7a95 ci: add build/lint GitHub Actions workflow (#7)
+5ba8c04 fix(billing): idempotent Stripe webhook via WebhookEvent dedup (#16)
+e691f81 fix(billing): currentPeriodEnd from sub item + fail-closed self-serve PRO (#12)
+a450104 fix(ai): charge credits + per-user daily cap on /gen describe & enhance (#4)
+4871009 fix(billing): downgrade plan to FREE when Stripe subscription lapses (#3)
+303ed60 fix(paywall): enforce Free/Pro download+import limits server-side (atomic) (#1)
+```
+
+### D) Operatsion bilim (yangi sessiya bilishi shart)
+- **pgvector:** prodda FAOL; **5 APPROVED+published shablon embed** (6-si qoralama — published emas, search'da ko'rinmaydi). Migration `20260620150000_template_embedding_pgvector` qo'llangan (CREATE EXTENSION vector + embeddingVec + HNSW).
+- **Reindex:** `POST /api/plugin/ai/reindex` — **ADMIN-only**, **kreditsiz**, Workers AI re-embed + dual-write (embedding+embeddingVec). Admin token: `POST /api/auth/login {admin@assetflow.uz/admin123}` → JWT (`Authorization: Bearer`).
+- **backfill:embedvec:** `npm run backfill:embedvec` — mavjud JSON embedding → embeddingVec (re-embed YO'Q). Hozir **0 nomzod** (reindex hammasini to'ldirdi). `DRY_RUN=1` avval. Prod `DATABASE_URL` kerak → Render Shell.
+- **Workers AI:** `configured: true` (CF_ACCOUNT_ID + CF_AI_TOKEN). `POST /api/plugin/ai/estimate {type:"search"}` → `{configured}`.
+- **/search:** `POST /api/plugin/ai/search {query}` — **ACTIVE plugin USER** (`user@assetflow.uz/user123`, 1 kredit). ADMIN'da **402 `ACCOUNT_INACTIVE`** (admin plugin-obunachi emas — BUG EMAS). bge-m3 1024-dim. Tasdiqlangan: "grunge..." → grunge shablon 0.68. Render log'da `[ai:search] ... fallback` CHIQMASA = pgvector ishladi.
+- **with_vec tekshiruv (Render Shell):** `node -e 'const{PrismaClient}=require("@prisma/client");const p=new PrismaClient();p.$queryRawUnsafe(`SELECT count(*) FILTER (WHERE "embedding" IS NOT NULL) AS with_json, count(*) FILTER (WHERE "embeddingVec" IS NOT NULL) AS with_vec FROM "ContributorTemplate"`).then(r=>{console.log(JSON.stringify(r,(k,v)=>typeof v==="bigint"?Number(v):v));return p.$disconnect();})'`
+
+### E) Qolgan ish (ixtiyoriy, kod-band EMAS)
+- **#11 prod backfill** — hozir 0 nomzod (reindex bajardi); kelajakda eski/import qatorlar paydo bo'lsa `backfill:embedvec`.
+- **#17 HttpOnly cookie** — faqat custom domen (`*.assetflow.uz`) bilan ishonchli (API `onrender.com` ≠ Studio `pages.dev` → 3rd-party cookie Safari ITP'da bloklanadi). CSP enforce hozircha yetarli. Infra (DNS) qarori.
+- **`packages/assetflow-studio/README.md:13`** — eski `dev:web` eslatmasi (kichik; "studio package'ga tegma" cheklovi tufayli qoldirilgan → `dev:studio-web` ga yangilash mumkin).
+- **`requireActiveSubscription`** (`apps/api/src/middleware/auth.ts`) — yetim export (0 call-site, auth-sensitive → qoldirilgan).
+- **`render-build.sh`** o'chirilgan (havolasiz edi). Untracked research docs: `docs/AI-API-RESEARCH-2026.md`, `AI-MODELS-PRICING-2026.md`, `FIX-ROADMAP.md`, `MAGNIFIC-API-ANALYSIS.md` (commit qilinmagan).
+
+### F) MUHIM SABOQLAR (incident oldini olish)
+1. **Studio artefakt/build oqimiga tegadigan o'zgarish → ALOHIDA commit + ehtiyot deploy + brauzer/konsol test.** Bir marta CF Studio buzilgan: artefakt `git rm --cached` → CF stilsiz sahifa (`prepare-cf-pages` faqat nusxalardi) → revert `57c4479` → keyin self-regen `0550781` + xavfsiz untrack `79ec2de`.
+2. **Migratsiyalar FAQAT additive** (CREATE/ADD COLUMN/EXTENSION/INDEX; DROP yo'q); preDeploy gate himoyalaydi (fail → eski kod qoladi). Migratsiyani lokal/prod DB'ga qo'lda DEPLOY QILMA — push'da Render o'zi qiladi.
+3. **Pul/auth/CSP kodiga ehtiyot:** `consume*`, `guardDownloadable`, `syncPluginPlanFromStripe`, `WebhookEvent` dedup, `tokenVersion`, CSP `_headers` — har o'zgarishda saqlab qol; har deploy A smoke-test bilan tasdiqla.
 
 ---
 
