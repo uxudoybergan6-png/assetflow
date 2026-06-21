@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
 import {
-  AssetType,
   PluginAccountStatus,
   PluginPlanTier,
   prisma,
@@ -20,61 +19,6 @@ import {
 export const adminRouter = Router();
 
 adminRouter.use(requireAuth, requireAdmin);
-
-const assetSchema = z.object({
-  title: z.string().min(1),
-  slug: z.string().min(1),
-  description: z.string().optional(),
-  type: z.nativeEnum(AssetType),
-  category: z.string(),
-  tags: z.array(z.string()).default([]),
-  fileKey: z.string(),
-  thumbnailKey: z.string().optional(),
-  fileSize: z.number().int().positive(),
-  published: z.boolean().default(false),
-});
-
-adminRouter.get("/assets", async (req, res) => {
-  const page = Number(req.query.page) || 1;
-  const pageSize = 20;
-  const [items, total] = await Promise.all([
-    prisma.asset.findMany({
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.asset.count(),
-  ]);
-  res.json({ items, total, page, pageSize });
-});
-
-adminRouter.post("/assets", async (req, res) => {
-  const parsed = assetSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
-    return;
-  }
-  const asset = await prisma.asset.create({ data: parsed.data });
-  res.status(201).json(asset);
-});
-
-adminRouter.patch("/assets/:id", async (req, res) => {
-  const parsed = assetSchema.partial().safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
-    return;
-  }
-  const asset = await prisma.asset.update({
-    where: { id: String(req.params.id) },
-    data: parsed.data,
-  });
-  res.json(asset);
-});
-
-adminRouter.delete("/assets/:id", async (req, res) => {
-  await prisma.asset.delete({ where: { id: String(req.params.id) } });
-  res.status(204).send();
-});
 
 adminRouter.post("/upload-url", async (req, res) => {
   const { fileName, contentType, folder } = req.body as {
