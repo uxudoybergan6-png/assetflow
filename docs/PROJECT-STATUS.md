@@ -8,30 +8,22 @@
 
 ---
 
-## 0. Audit tuzatishlari — joriy holat (2026-06-20 sessiyasi)
+## 0. Audit holati — YAKUNLANDI (2026-06-20 sessiyalari)
 
-> 2026-06-19 multi-agent audit (57 agent, 34 tasdiqlangan topilma) asosida tuzatishlar. Quyidagi jadval shu sessiyada nima bajarilganini ko'rsatadi.
+> 2026-06-19 multi-agent audit (57 agent, 34 tasdiqlangan topilma). **Barcha 34 topilma hal qilindi va productionga deploy qilindi** (bo'lim-bo'lim, har deploy read-only smoke-test bilan; pul/auth/CSP/CI hech qachon buzilmagan).
 
-**✅ Productionda jonli (deploy qilingan):**
+**✅ Pul / billing:** `#1` paywall server-tomon atomik majburlash · `#3` PRO downgrade (webhook plan-sync) · `#4` `/gen` describe/enhance kredit + per-user kunlik cap · `#12` `currentPeriodEnd` (Stripe v18 item) + self-serve PRO fail-closed · `#16` webhook idempotency (`WebhookEvent`).
 
-- **Pul / billing:** `#1` Free/Pro paywall server-tomon atomik majburlash · `#3` PRO obuna tugasa/bekor qilinsa FREE'ga downgrade · `#4` `/gen` describe/enhance kredit yechish + per-user kunlik cap · `#12` `currentPeriodEnd` Stripe v18 (`items.data[0]`) + self-serve PRO **fail-closed** · `#16` webhook idempotency (`WebhookEvent` event-id dedup).
-- **Xavfsizlik:** `#2` admin panel stored-XSS `esc()` escaping (+ server length-cap) · `#5` token revoke (`tokenVersion` + block/parol-reset'da JWT/plugin-token bekor + markaziy block check) · `#14` upload path-traversal cuid-guard + `UPLOADS_ROOT` containment.
-- **Barqarorlik:** `#6` CDN cache-bust (`?v=updatedAt`) + Studio JS/CSS `immutable` olib tashlandi · `#13` katalog/serve mavjudlik birxil + R2 PutObject muvaffaqdan keyin scene "saved".
-- **Infra:** `#7` GitHub Actions CI (build + lint, har PR/main push).
+**✅ Xavfsizlik:** `#2` admin stored-XSS `esc()` + server cap · `#5` token revoke (`tokenVersion` + block/reset) · `#14` upload path-traversal cuid-guard · `#17` JWT sessionStorage + 401 interceptor + **CSP enforce** (HttpOnly cookie: faqat custom domen bilan — ixtiyoriy, pastga qarang).
 
-**🟡 Qisman (minimal qism jonli, qolgani reja):**
+**✅ Barqarorlik:** `#6` CDN cache-bust + Studio JS/CSS `immutable` olib tashlandi · `#11` semantik qidiruv → **pgvector HNSW** (JSON-cosine fallback bilan) · `#13` katalog/serve birxil + R2-confirmed scene save · `#15` transcode **fon-worker + status badge** (ffmpeg semaphore + `previewTranscodeStatus`).
 
-- `#17` — JWT `localStorage` → `sessionStorage` + global 401 interceptor + email-only remember-me ✅; **HttpOnly cookie qoldi** (server login/CORS o'zgarishi).
-- `#11` — `resetMonthIfNeeded` atomik `updateMany` ✅; **pgvector + HNSW** semantik qidiruv qoldi (DB extension + `ai.ts` qayta yozish).
-- `#15` — ffmpeg global semaphore + `-threads` cap ✅; **fon/queue transcode + presigned post-PUT** qayta-arxitekturasi qoldi.
+**✅ Infra / tozalash:** `#7` GitHub Actions CI + **migrate-gate** (migration `buildCommand`dan `preDeployCommand`ga) · `#9` CF Pages build **manbadan self-regen** + drift artefaktlar untrack · `#8` Premiere UXP o'chirildi · `#10` apps/web + packages/shared + o'lik Asset CRUD o'chirildi (lokal :3000 host → `dev-studio-server`) · `#18` docs.
 
-**⏸️ Qaror kutmoqda (arxitektura):**
+**⏸️ Qolgan ixtiyoriy (kod-band EMAS):**
 
-- `#8` — **Premiere UXP** tashlandiq prototip (noto'g'ri `/api/assets`ga ulangan): o'chirish (tavsiya) yoki `/api/plugin/catalog`ga qayta ulash + real import.
-- `#10` — o'lik `apps/web/src` + eski `Asset` route'lar: `assets.ts` / `admin.ts` asset CRUD / `Asset` model **hali Premiere UXP ishlatadi**, shuning uchun faqat `#8` (UXP retire) dan keyin o'chiriladi. `apps/web/src` + `packages/shared` esa mustaqil o'lik.
-- `#9` — Studio artefakt drift: **to'g'ri** yechim — CF Pages build buyrug'iga `studio:sync` qo'shib artefaktni git'siz regeneratsiya qilish (CF dashboard build-command o'zgarishi kerak).
-
-> **⚠️ Incident (2026-06-20):** `#9` ning birinchi urinishi (artefaktlarni `git rm --cached`) **CF Pages Studio'ni buzdi** — CF build buyrug'i (`prepare-cf-pages.mjs`) artefaktni faqat **nusxalaydi**, regeneratsiya qilmaydi; git'da bo'lmagach JS/CSS deploy bo'lmadi (stilsiz sahifa). **Revert qilindi (commit `57c4479`)** — `packages/assetflow-studio/studio/` va `admin/js`+`admin/styles` artefaktlari hozir **tracked** (xavfsiz holat). `#9` ni to'g'ri CF-build yechimisiz qayta urinmang.
+- `#11` **prod backfill**: eski shablonlarning `embeddingVec`ini to'ldirish — `npm run backfill:embedvec` (prod `DATABASE_URL` bilan, avval `DRY_RUN=1`). pgvector extension prodda allaqachon qo'llangan. Yangi embeddinglar avtomatik dual-write bo'ladi; bu faqat eski qatorlar uchun.
+- `#17` **HttpOnly cookie**: faqat custom domen (`*.assetflow.uz`) bilan ishonchli — API (`onrender.com`) va Studio (`pages.dev`) hozir boshqa domenlar, cross-domain 3rd-party cookie Safari ITP'da bloklanadi. CSP enforce hozircha yetarli XSS himoyasi. Infra (DNS/domen) qarori.
 
 ---
 
@@ -60,15 +52,13 @@
 ```
 apps/
   api/                     → Express 5 + TypeScript API (asosiy backend)
-  web/                     → Next.js (@creative-tools/web) — studio static fayllar mirror'i
 packages/
   database/                → Prisma 6 schema + migratsiyalar + seed (PostgreSQL)
-  assetflow-studio/        → Admin + Contributor static UI (HTML/CSS/JS, build tool YO'Q)
-  shared/                  → umumiy kod
+  assetflow-studio/        → Admin + Contributor static UI (HTML/CSS/JS, build tool YO'Q) + lokal dev serverlar (:3000/:3001)
 plugins/
   after-effects-cep/       → AE CEP plugin (Browse panel + Admin panel)
-  premiere-uxp/            → Premiere Pro UXP plugin (minimal — pastga qarang)
 scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
+# apps/web (Next.js) va packages/shared o'chirildi (#10); premiere-uxp o'chirildi (#8).
 ```
 
 ### Texnologiya stack (haqiqiy versiyalar)
@@ -85,7 +75,6 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 | DB ORM | Prisma | 6.8.2 |
 | DB | PostgreSQL (prod: Neon.tech) | — |
 | Studio UI | toza HTML/CSS/JS (build tool yo'q) | — |
-| Web mirror | Next.js | — |
 | Process manager (lokal) | pm2 | 6.x |
 
 ### Har bo'lim nima qiladi
@@ -93,7 +82,7 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 - **apps/api** — REST API. Auth, katalog, contributor CRUD/upload, admin moderatsiya, xabarlar, audit, AI Tools (`/plugin/ai`), Studio Gen (`/studio/gen`), Stripe. Kirish nuqtasi: `apps/api/src/index.ts`. Route'lar `apps/api/src/routes/*.ts` (11 ta fayl), kutubxonalar `apps/api/src/lib/*`.
 - **packages/database** — Prisma schema (`prisma/schema.prisma`), 12 ta migratsiya, ikkita seed (`seed.ts`, `seed-assetflow.ts`).
 - **packages/assetflow-studio** — Admin va Contributor brauzer UI. **Build tool yo'q** — toza static. `js/` va `styles/` (root) = MANBA; `studio/`, `admin/js`, `dist/` = artefakt (pastga qarang).
-- **apps/web** — Next.js ilova; `npm run studio:sync` static studio'ni `apps/web/public/studio` ga nusxalaydi.
+- **Lokal dev (Studio)** — `packages/assetflow-studio/scripts/dev-studio-server.mjs` (:3000, Contributor) + `dev-admin-server.mjs` (:3001, Admin) Studio MANBASINI to'g'ridan serv qiladi (+ `/api` proxy). Eski apps/web Next.js o'chirildi (#10).
 - **plugins/after-effects-cep** — AE ichidagi CEP panel: Browse (`AssetFlow_Plugin.html`) + Admin (`AssetFlow_Admin.html`), ExtendScript `jsx/host.jsx`.
 
 ### Deploy topologiyasi
@@ -290,7 +279,7 @@ npm run db:seed               # asosiy admin + namuna asset
 npm run db:seed:assetflow     # AssetFlow demo (3 hisob + demo shablon)
 
 # 4. Ishga tushirish (pm2: api + web + admin)
-npm run pm2:start             # yoki: npm run dev:api / dev:web / dev:studio-admin
+npm run pm2:start             # yoki: npm run dev:api / dev:studio-web / dev:studio-admin
 npm run pm2:status
 npm run check:stack           # stack holatini tekshirish
 
@@ -300,7 +289,7 @@ API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs   #
 ```
 
 ### Portlar (pm2 / ecosystem.config.cjs)
-- API: `4000` (lokal), Web (Next.js): `3000`, Studio Admin dev: `3001`.
+- API: `4000` (lokal), Contributor Studio: `3000` (dev-studio-server), Admin Studio: `3001` (dev-admin-server).
 
 ### Seed hisoblar (seed-assetflow.ts)
 | Rol | Email | Parol |
@@ -318,9 +307,10 @@ bash plugins/after-effects-cep/scripts/install-cep.sh
 # build sanasi + git SHA ni HTML'ga yozadi, AE'ni qayta ishga tushiradi va panelni ochadi.
 ```
 
-### Studio (static → web mirror)
+### Studio (static — manbadan build)
 ```bash
-npm run studio:sync           # js/ + styles/ (root) → studio/, admin/, apps/web/public/studio
+npm run studio:sync           # prepare-vercel: js/ + styles/ (root) → studio/, admin/ artefakt (Vercel)
+# CF Pages: prepare-cf-pages.mjs (manbadan self-regen); lokal: dev-studio-server / dev-admin-server (manbani to'g'ridan serv)
 ```
 
 ---

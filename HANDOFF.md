@@ -212,7 +212,7 @@ Pack fayllar: `apps/api/uploads/<templateId>/pack` (va `thumb`, `preview`).
 ### Admin Studio
 
 - Obunachilar bo‘limi API dan yuklanadi (`StudioApi.listPluginSubscribers`).
-- `npm run studio:sync` — `packages/assetflow-studio` → `apps/web/public/studio`.
+- `npm run studio:sync` — `prepare-vercel`: `packages/assetflow-studio` js/+styles/ → studio/, admin/ artefakt (Vercel). (apps/web o'chirildi — #10; CF Pages/lokal dev manbadan ishlaydi.)
 
 ## Muhim fayllar (o‘zgartirishda)
 
@@ -329,7 +329,7 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 - **AE Admin CEP** — brauzer Admin (CF Pages) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
 - **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Shablonlar** tab (`nav: video`).
 - **Pack yo'q** — `hasPack:false` bo'lsa katalogda ko'rinadi, import bloklanadi.
-- `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron saqlash.
+- **Lokal dev** — `npm run studio` → API (:4000) + Contributor Studio (:3000 `dev-studio-server`) + Admin (:3001 `dev-admin-server`), Studio MANBASINI to'g'ridan serv qiladi. (apps/web Next.js o'chirildi — #10.)
 
 ### Claude Code sessiyasida qilingan (2026-06-13, kech-3..6) — Production deploy debugging ✅
 

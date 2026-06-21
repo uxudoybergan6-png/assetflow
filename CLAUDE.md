@@ -118,7 +118,7 @@ GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
 3. **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
 4. **Pack yo'q** bo'lsa katalogda ko'rinadi lekin import bloklanadi (`hasPack:false`).
 5. **Tez orada** (hali to'liq emas): Stripe tariflar (localStorage), email bildirishnomalar, contributor payout.
-6. `apps/web/public/studio` — `npm run studio:sync` bilan package dan sinxron.
+6. **Lokal dev**: `npm run studio` → API (:4000) + Contributor Studio (:3000, `dev-studio-server.mjs`) + Admin (:3001, `dev-admin-server.mjs`), Studio MANBASINI to'g'ridan serv qiladi. (apps/web Next.js o'chirildi — audit #10; CF Pages/Vercel manbadan build qiladi.)
 
 ## Studio manba fayllari (MUHIM)
 
