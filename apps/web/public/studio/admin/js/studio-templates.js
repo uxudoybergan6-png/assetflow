@@ -54,6 +54,8 @@ const StudioTemplates = (() => {
         meta.size ||
         (t.fileSize ? `${(t.fileSize / 1024 / 1024).toFixed(1)} MB` : "—"),
       isNew: t.reviewStatus === "PENDING_REVIEW",
+      // #15: preview fon-transcode holati ('pending'|'done'|'failed'|null) — UI badge uchun
+      previewTranscodeStatus: t.previewTranscodeStatus || null,
       desc: t.description || "",
       tags: t.tags || [],
       reason: t.reviewNote || "",

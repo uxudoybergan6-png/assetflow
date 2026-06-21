@@ -29,6 +29,16 @@ function kpiCard(o){
 }
 function infoBanner(text, kind){ return `<div class="info-banner ${kind||''}">${ic('ext')}<span>${text}</span></div>`; }
 
+/** #15 Preview fon-transcode holati badge'i — faqat 'pending'/'failed' uchun ko'rinadi.
+    'done'/null → bo'sh string (badge yo'q). Mavjud .badge-* uslubidan foydalanadi. */
+function transcodeBadge(status){
+  if (status === 'pending')
+    return `<span class="badge badge-pending" title="Preview 720p ga siqilmoqda"><span class="dot"></span>${esc('Siqilmoqda…')}</span>`;
+  if (status === 'failed')
+    return `<span class="badge badge-hard" title="Preview siqilmadi — xom holicha ko'rinadi"><span class="dot"></span>${esc('Siqib bo‘lmadi')}</span>`;
+  return '';
+}
+
 /* ============================================================
    OVERVIEW
    ============================================================ */
@@ -180,7 +190,7 @@ function myTable(ts){
 function myGrid(ts){
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px">
     ${ts.map(t=>`<div class="card" style="overflow:hidden;cursor:pointer" onclick="openTplDrawer('${t.id}')">
-      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px">${badge(t.status)}</div></div>
+      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">${badge(t.status)}${transcodeBadge(t.previewTranscodeStatus)}</div></div>
       <div class="card-pad col gap-8">
         <div class="col" style="gap:2px"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span><span class="small">${esc(t.cat)} \u00b7 ${esc(t.created)}</span></div>
         <div class="row between center"><span class="small">${t.dl?t.dl.toLocaleString()+' yuklab olindi':'\u2014'}</span>
