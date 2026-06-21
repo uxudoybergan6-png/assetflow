@@ -13,7 +13,6 @@
     "@aws-sdk/lib-storage": "^3.1068.0",
     "@aws-sdk/s3-request-presigner": "^3.812.0",
     "@creative-tools/database": "*",
-    "@creative-tools/shared": "*",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",

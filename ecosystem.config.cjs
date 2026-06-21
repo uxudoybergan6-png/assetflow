@@ -20,7 +20,7 @@ const apps = [
     name: "assetflow-web",
     cwd: root,
     script: "npm",
-    args: "run dev:web",
+    args: "run dev:studio-web",
     interpreter: "none",
     autorestart: true,
     max_restarts: 20,

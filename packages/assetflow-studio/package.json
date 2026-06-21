@@ -5,7 +5,8 @@
   "description": "AssetFlow Admin & Contributor static dashboards (HTML prototypes)",
   "scripts": {
     "sync:web": "node scripts/sync-to-web.mjs",
-    "dev": "node scripts/dev-admin-server.mjs"
+    "dev": "node scripts/dev-admin-server.mjs",
+    "dev:studio-web": "node scripts/dev-studio-server.mjs"
   },
   "dependencies": {
     "express": "^5.1.0",

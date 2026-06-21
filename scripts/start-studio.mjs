@@ -57,7 +57,7 @@ console.log("  keyin UI: npm run studio:ui\n");
 console.log("  To'xtatish: Ctrl+C\n");
 
 const api = run("npm", ["run", "dev:api"], "api");
-const web = run("npm", ["run", "dev:web"], "web");
+const web = run("npm", ["run", "dev:studio-web"], "web");
 const admin = run("npm", ["run", "dev:studio-admin"], "admin");
 
 const shutdown = () => {

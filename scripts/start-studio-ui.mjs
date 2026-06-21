@@ -55,7 +55,7 @@ console.log("  Admin        →  http://localhost:3001/");
 console.log("  API          →  http://localhost:4000  (npm run api:only)\n");
 console.log("  To'xtatish: Ctrl+C\n");
 
-const web = run("npm", ["run", "dev:web"], "web");
+const web = run("npm", ["run", "dev:studio-web"], "web");
 const admin = run("npm", ["run", "dev:studio-admin"], "admin");
 
 const shutdown = () => {

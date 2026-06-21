@@ -44,8 +44,3 @@ jobs:
 
       - name: Build API
         run: npm run build -w apps/api
-
-      # apps/web lint mavjud (next lint). Build (next build) bu yerda emas, chunki
-      # u Render/Vercel deploy bosqichiga tegishli; CI faqat lint bilan tez tekshiradi.
-      - name: Lint web
-        run: npm run lint -w @creative-tools/web

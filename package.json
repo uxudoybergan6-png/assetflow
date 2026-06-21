@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
-    "dev:web": "npm run dev -w @creative-tools/web",
+    "dev:studio-web": "npm run dev:studio-web -w @creative-tools/assetflow-studio",
     "dev:api": "npm run dev -w @creative-tools/api",
     "dev:studio-admin": "npm run dev -w @creative-tools/assetflow-studio",
     "studio": "node scripts/start-studio.mjs",
