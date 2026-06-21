@@ -17,3 +17,14 @@ plugins/after-effects-cep/*.zxp
 
 # GitHub Desktop ba'zan yaratadigan ichki bo'sh repo — loyiha emas
 /assetflow/
+
+# --- CF Pages / Vercel build-artefaktlari (#9) — prepare-cf-pages.mjs + prepare-vercel.mjs
+#     ularni MANBADAN regeneratsiya qiladi. MANBA tracked qoladi:
+#     packages/assetflow-studio/js/ + styles/ + root *.html + admin/index.html + contributor/index.html
+packages/assetflow-studio/studio/js/
+packages/assetflow-studio/studio/styles/
+packages/assetflow-studio/studio/login.html
+packages/assetflow-studio/studio/hub.html
+packages/assetflow-studio/studio/contributor/
+packages/assetflow-studio/admin/js/
+packages/assetflow-studio/admin/styles/
