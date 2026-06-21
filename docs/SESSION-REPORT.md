@@ -1,17 +1,16 @@
-# SESSION REPORT — 2026-06-21 — Audit YAKUNLANDI + chat-reset handoff
+# SESSION REPORT — 2026-06-21 — UI/UX review + redesign mockuplar (1-faza)
 
 ## Nima qilindi
-- 2026-06-19 dagi 57-agentli audit (34 tasdiqlangan topilma) **TO'LIQ yopildi** — 34/34 productionga deploy qilingan, `origin/main` sinxron.
-- Bosqichma-bosqich: pul (#1,3,4,12,16), xavfsizlik (#2,5,14,17-CSP), barqarorlik (#6,11-pgvector,13,15), infra/tozalash (#7 CI+migrate-gate, #8 UXP, #9 CF self-regen, #10 apps/web+shared, #18 docs).
-- Bu sessiya: chat-reset oldidan to'liq handoff `docs/PROJECT-STATUS.md` §0 ga yozildi (audit, deploy/infra, commit tarixi, operatsion bilim, qolgan ish, saboqlar).
+- Multi-agent read-only workflow (12 agent · 3 faza · ~750k token): ikkala UI (AE plagin Browse+Gen+Admin, Web Studio Contributor+Admin) professional UI/UX review + yagona dizayn tizimi sintezi + 6 standalone mockup.
+- `docs/UI-UX-REVIEW.md` (29KB) — ekran-ekran kuchli/zaif, 12+ prioritetlangan tavsiya, yangi dizayn yo'nalishi (palitra/tipografiya/spacing/komponent/holatlar).
+- `design-preview/` — 6 self-contained HTML mockup (index, ae-gen-studio, ae-browse, studio-dashboard, admin, login). Faqat Google Fonts, inline SVG, o'zbekcha, "production EMAS" banner.
+- Brauzerда render tekshirildi (preview MCP): index + AE Gen Studio panel + Studio dashboard — toza, brendli, AA.
+- **PRODUCTION TEGILMADI** — faqat docs/ + design-preview/. studio:sync ishlatilmadi.
 
-## Holat
-- **Yagona haqiqat manbai:** `docs/PROJECT-STATUS.md` §0 — yangi sessiya shu yerdan boshlasin.
-- pgvector prodda faol (5 shablon embed); reindex=ADMIN endpoint; /search=ACTIVE user.
-- apps/web O'CHIRILDI → lokal :3000 = `dev-studio-server.mjs`. CF=manbadan self-regen. Migratsiya=preDeploy gate.
+## Topildi (3 kritik)
+- Uch brend bir vaqtda: AE lime, Web Studio binafsha (--violet), reset-password lime-leaf → bitta :root token ham bo'lishilmaydi.
+- WCAG AA buzilishi token darajasida: --muted-2 (.40 ≈2.6:1), --muted (.55 ≈3.5:1), Studio --tx-2/--tx-3 body matn uchun o'tmaydi.
+- Mahsulot-kritik UX bo'shliqlari: katalog kartasida Pro/Free badge yo'q (kutilmagan paywall); AE Gen kontrol qatori 320px da 4-5 qatorga o'raladi; admin "xabar" aslida email nusxalaydi; kredit berish UI yo'q.
 
-## Qolgan (ixtiyoriy, kod EMAS)
-- #17 HttpOnly cookie (custom domen kerak; CSP enforce hozircha yetarli). README:13 dev:web (kichik). requireActiveSubscription yetim export.
-
-## Saboq (incident)
-- Studio artefakt/build o'zgarishi → alohida commit + brauzer test. Migratsiya additive + preDeploy gate. Pul/auth/CSP'ga ehtiyot.
+## Kutilmoqda
+- Foydalanuvchi mockuplarni ko'rib tasdiqlasin → 2-faza: bosqichli implementatsiya (manba js/styles + studio:sync, AE install-cep). Commit: docs-only (push yo'q).

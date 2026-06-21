@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssetFlow — AE Browse katalog (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* ============================================================
+   AssetFlow — AE PLAGIN base (qorong'i-tor ~380px CEP panel)
+   Yagona dizayn tizimi. :root tokenlar Studio bilan AYNAN bir xil.
+   Faqat layout/zichlik AE-ga moslangan.
+   ============================================================ */
+
+/* ---- STRUKTURA (temaga bog'liq emas) ---- */
+:root{
+  --font-display:'Space Grotesk','Inter',-apple-system,system-ui,sans-serif;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+
+  --fs-xs:11px; --fs-sm:12px; --fs-md:13px; --fs-base:14px;
+  --fs-lg:16px; --fs-xl:19px; --fs-title:23px; --fs-display:30px;
+
+  --lh-tight:1.15; --lh-normal:1.45; --lh-relaxed:1.6;
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-full:999px;
+  --radius:var(--r-md);
+
+  --ease:cubic-bezier(.4,.14,.3,1);
+  --dur:.18s; --dur-slow:.32s;
+
+  --sh-1:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 8px 24px rgba(0,0,0,.4);
+  --sh-3:0 18px 48px rgba(0,0,0,.5);
+
+  /* orqaga moslik aliaslari */
+  --accent-2:var(--accent-hi); --green:var(--accent); --env-green:var(--accent);
+  --surface2:var(--surface-2); --surface3:var(--surface-3);
+  --muted2:var(--muted-2); --blue:var(--select); --blue-dim:var(--select-dim);
+  --r:var(--r-md); --shadow:var(--sh-3);
+}
+
+/* ---- TEMA: STANDART (default qorong'i) ---- */
+:root,[data-theme="standart"]{
+  --bg:#0a0b08; --surface:#141612; --surface-2:#1c1f18; --surface-3:#23271e;
+  --pop-bg:#1c1f18; --sidebar:#0d0f0a;
+  --glass-bg:#141612; --glass-blur:0px; --rim:transparent;
+
+  --border:rgba(255,255,255,.10); --border-accent:rgba(163,230,53,.35);
+
+  --text:#f5f7f0; --text-2:#c2c8ba;
+  --muted:rgba(255,255,255,.66);   /* AA tuzatildi (.55→.66) */
+  --muted-2:rgba(255,255,255,.52);  /* faqat dekorativ/disabled */
+
+  --accent:#82c341; --accent-hi:#9fd356; --accent-cta:#a3e635;
+  --accent-glow:rgba(163,230,53,.25); --green-dim:rgba(163,230,53,.12);
+  --on-accent:#0a0b08;
+
+  --select:#327bfa; --select-dim:rgba(50,123,250,.15);
+  --red:#ef4444; --red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.12);
+  --green-ok:#4ade80; --green-ok-dim:rgba(74,222,128,.12);
+}
+
+/* ---- TEMA: LIQUID GLASS ---- */
+[data-theme="liquid-glass"]{
+  --bg:#070806; --surface:rgba(20,24,18,.55); --surface-2:rgba(28,33,24,.62);
+  --surface-3:rgba(40,46,33,.7); --pop-bg:#161a13; --sidebar:rgba(13,16,10,.55);
+  --glass-bg:rgba(20,24,18,.55); --glass-blur:28px; --rim:rgba(255,255,255,.18);
+  --border:rgba(255,255,255,.14); --border-accent:rgba(163,230,53,.4);
+  --text:#f6f8f1; --text-2:#cdd3c4;
+  --muted:rgba(246,248,241,.7); --muted-2:rgba(246,248,241,.5);
+  --accent:#82c341; --accent-hi:#9fd356; --accent-cta:#a3e635;
+  --accent-glow:rgba(163,230,53,.4); --green-dim:rgba(163,230,53,.16); --on-accent:#070806;
+  --select:#327bfa; --select-dim:rgba(50,123,250,.22);
+  --red:#ef4444; --red-dim:rgba(239,68,68,.16);
+  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.16);
+  --green-ok:#4ade80; --green-ok-dim:rgba(74,222,128,.16);
+}
+
+/* ---- TEMA: LIGHT GLASS (AA: to'q matn + to'q lime) ---- */
+[data-theme="light-glass"]{
+  --bg:#eef1ea; --surface:rgba(255,255,255,.6); --surface-2:rgba(255,255,255,.72);
+  --surface-3:rgba(255,255,255,.85); --pop-bg:#f6f8f2; --sidebar:rgba(248,250,245,.6);
+  --glass-bg:rgba(255,255,255,.6); --glass-blur:28px; --rim:rgba(255,255,255,.7);
+  --border:rgba(20,22,15,.16); --border-accent:rgba(90,143,42,.5);
+  --text:#14160f; --text-2:#3a3f30;
+  --muted:rgba(20,22,15,.68); --muted-2:rgba(20,22,15,.5);
+  --accent:#5a8f2a; --accent-hi:#6fa838; --accent-cta:#5a8f2a;
+  --accent-glow:rgba(90,143,42,.3); --green-dim:rgba(90,143,42,.14); --on-accent:#ffffff;
+  --select:#1f6feb; --select-dim:rgba(31,111,235,.14);
+  --red:#c0392b; --red-dim:rgba(192,57,43,.12);
+  --amber:#b7791f; --amber-dim:rgba(183,121,31,.14);
+  --green-ok:#2f9e44; --green-ok-dim:rgba(47,158,68,.14);
+}
+
+/* ---- RESET ---- */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-sans); font-size:var(--fs-md); line-height:var(--lh-normal);
+  color:var(--text); background:var(--bg);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4{font-family:var(--font-display); line-height:var(--lh-tight); font-weight:var(--fw-semibold)}
+::placeholder{color:var(--muted-2)}
+::selection{background:var(--select-dim)}
+button{font-family:inherit}
+
+/* AE panel ramkasi (~380px) */
+.af-panel{
+  width:100%; max-width:380px; min-height:100%;
+  background:var(--bg); color:var(--text);
+  display:flex; flex-direction:column;
+}
+
+/* caps label (standart) */
+.label{
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold);
+  letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+}
+
+/* ---- TUGMA ---- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-2);
+  font-size:var(--fs-md); font-weight:var(--fw-semibold); line-height:1;
+  padding:8px 14px; border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface-2); color:var(--text); cursor:pointer;
+  transition:background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.btn:hover{background:var(--surface-3); border-color:var(--muted-2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn-primary{
+  background:var(--accent-cta); color:var(--on-accent); border-color:transparent;
+}
+.btn-primary:hover{filter:brightness(1.06); background:var(--accent-cta)}
+.btn-primary:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent-glow)}
+.btn-ghost{background:transparent}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-block{width:100%; padding:11px 16px} /* Generate full-width qator */
+
+/* ---- SEGMENTED ---- */
+.seg{display:inline-flex; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:3px; gap:2px}
+.seg button{flex:1; border:0; background:transparent; color:var(--muted);
+  font-size:var(--fs-sm); font-weight:var(--fw-medium); padding:6px 12px;
+  border-radius:var(--r-sm); cursor:pointer; transition:all var(--dur) var(--ease)}
+.seg button[aria-selected="true"]{background:var(--surface-3); color:var(--text)}
+
+/* ---- CHIP ---- */
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-sm);
+  padding:5px 11px; border-radius:var(--r-full); border:1px solid var(--border);
+  background:var(--surface-2); color:var(--muted); cursor:pointer; transition:all var(--dur) var(--ease)}
+.chip[aria-selected="true"]{background:var(--green-dim); border-color:var(--border-accent); color:var(--text)}
+
+/* ---- KARTA ---- */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  overflow:hidden; transition:transform var(--dur) var(--ease), border-color var(--dur) var(--ease)}
+.card:hover{transform:translateY(-2px); border-color:var(--muted-2); box-shadow:var(--sh-1)}
+.card-thumb{aspect-ratio:16/9; background:var(--surface-2); position:relative}
+.card-body{padding:var(--sp-3)}
+.card-cat{font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.05em;
+  text-transform:uppercase; color:var(--muted)} /* AA: muted, 11px */
+.card-name{font-size:var(--fs-base); font-weight:var(--fw-semibold); color:var(--text);
+  margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card-meta{font-size:var(--fs-sm); color:var(--muted); margin-top:4px}
+
+/* thumbnail badge'lar — maks 2 ko'rsatish, qattiq fon */
+.thumb-badges{position:absolute; left:8px; top:8px; display:flex; gap:5px; max-width:calc(100% - 16px)}
+.thumb-badge{font-size:var(--fs-xs); font-weight:var(--fw-semibold); padding:3px 7px;
+  border-radius:var(--r-full); background:rgba(10,11,8,.82); color:var(--text); backdrop-filter:blur(4px)}
+.thumb-badge.nopack{color:var(--amber)} .thumb-badge.ai{color:var(--accent-cta)}
+/* Pro/Free reja badge (yangi — import oldidan ko'rinadi) */
+.plan-badge{position:absolute; right:8px; top:8px; font-size:var(--fs-xs); font-weight:var(--fw-bold);
+  padding:3px 8px; border-radius:var(--r-full)}
+.plan-badge.pro{background:var(--accent-cta); color:var(--on-accent)}
+.plan-badge.free{background:rgba(10,11,8,.82); color:var(--text)}
+
+/* ---- INPUT ---- */
+.input,.textarea,.select{width:100%; font-family:inherit; font-size:var(--fs-md);
+  color:var(--text); background:var(--surface-3); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:9px 12px; transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)}
+.input:focus,.textarea:focus,.select:focus{outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-glow)}
+.textarea{resize:vertical; line-height:var(--lh-normal); min-height:44px}
+
+/* ---- BADGE (status) ---- */
+.badge{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-xs);
+  font-weight:var(--fw-semibold); padding:3px 9px; border-radius:var(--r-full)}
+.badge::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+.badge.pending{color:var(--amber); background:var(--amber-dim)}
+.badge.approved{color:var(--accent-cta); background:var(--green-dim)}
+.badge.rejected{color:var(--red); background:var(--red-dim)}
+.badge.draft{color:var(--muted); background:var(--surface-2)}
+
+/* ---- PILL / STAT ---- */
+.pill{display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-sm);
+  padding:5px 12px; border-radius:var(--r-full); background:var(--surface-2);
+  border:1px solid var(--border); color:var(--text)}
+.stat{display:flex; flex-direction:column; gap:4px}
+.stat .num{font-family:var(--font-display); font-size:var(--fs-title); font-weight:var(--fw-bold);
+  font-variant-numeric:tabular-nums; color:var(--text); line-height:1}
+.stat .lbl{font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+
+/* ---- IKONA (inline SVG, CDN yo'q) ---- */
+.icon{width:16px; height:16px; flex:none; stroke:currentColor; fill:none;
+  stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+
+/* ---- SKELETON ---- */
+.skeleton{position:relative; overflow:hidden; background:var(--surface-2); border-radius:var(--r-sm)}
+.skeleton::after{content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+  transform:translateX(-100%); animation:af-shimmer 1.2s var(--ease) infinite}
+@keyframes af-shimmer{to{transform:translateX(100%)}}
+
+/* ---- MENYU / POPOVER ---- */
+.menu{background:var(--pop-bg); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--sh-2); padding:5px; min-width:160px}
+.menu-item{display:flex; align-items:center; gap:8px; font-size:var(--fs-md); color:var(--text);
+  padding:8px 10px; border-radius:var(--r-sm); cursor:pointer}
+.menu-item:hover{background:var(--surface-2)}
+
+/* ---- TOAST ---- */
+.toast{display:flex; gap:10px; padding:11px 14px; border-radius:var(--r-md);
+  background:var(--pop-bg); border:1px solid var(--border); border-left:3px solid var(--muted);
+  box-shadow:var(--sh-2); font-size:var(--fs-sm); white-space:normal; max-width:340px}
+.toast.success{border-left-color:var(--green-ok)} .toast.error{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--amber)} .toast.info{border-left-color:var(--select)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+/* ============================================================
+   EKRAN: AE Browse katalog (mockup-ga xos CSS)
+   ============================================================ */
+body{
+  background:#070806;
+  display:flex; flex-direction:column; align-items:center;
+  padding:24px 16px 48px; gap:14px;
+}
+
+/* mockup banner */
+.mock-banner{
+  width:100%; max-width:380px; font-size:var(--fs-xs); line-height:1.5;
+  color:var(--muted); background:rgba(245,158,11,.08);
+  border:1px solid rgba(245,158,11,.28); border-left:3px solid var(--amber);
+  border-radius:var(--r-sm); padding:8px 11px;
+}
+.mock-banner b{color:var(--amber); font-weight:var(--fw-semibold)}
+
+.frame-caption{
+  width:100%; max-width:380px; font-size:var(--fs-xs); color:var(--muted-2);
+  letter-spacing:.04em; text-align:center;
+}
+
+/* AE panel ramka (CEP ko'rinishi) */
+.af-panel{
+  border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--sh-3); overflow:hidden; min-height:auto;
+}
+
+/* ---- HEADER ---- */
+.hdr{
+  display:flex; align-items:center; gap:8px;
+  padding:11px 12px; background:var(--sidebar);
+  border-bottom:1px solid var(--border);
+}
+.hdr-brand{display:flex; align-items:center; gap:7px; margin-right:auto}
+.hdr-logo{
+  width:24px; height:24px; border-radius:7px; flex:none;
+  background:var(--accent-cta); color:var(--on-accent);
+  display:flex; align-items:center; justify-content:center;
+}
+.hdr-logo svg{width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2}
+.hdr-title{font-family:var(--font-display); font-size:var(--fs-lg); font-weight:var(--fw-bold); letter-spacing:-.01em}
+.icon-btn{
+  width:32px; height:32px; flex:none; display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface-2); color:var(--text); cursor:pointer;
+  transition:background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.icon-btn:hover{background:var(--surface-3); border-color:var(--muted-2)}
+.icon-btn:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent-glow)}
+.icon-btn svg{width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+.plan-pill{
+  display:inline-flex; align-items:center; gap:6px; flex:none;
+  font-size:var(--fs-xs); font-weight:var(--fw-bold); letter-spacing:.04em;
+  padding:6px 10px; border-radius:var(--r-full);
+  background:var(--green-dim); color:var(--accent-cta); border:1px solid var(--border-accent);
+}
+.plan-pill svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2}
+.plan-pill .cred{color:var(--text); font-weight:var(--fw-semibold)}
+.plan-pill .sep{width:1px; height:11px; background:var(--border)}
+
+/* ---- TOOLBAR (qidiruv + filtr) ---- */
+.toolbar{padding:10px 12px 4px; display:flex; flex-direction:column; gap:9px; background:var(--bg)}
+.search{position:relative}
+.search svg{position:absolute; left:11px; top:50%; transform:translateY(-50%);
+  width:15px; height:15px; stroke:var(--muted); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+.search .input{padding-left:34px; padding-top:8px; padding-bottom:8px}
+
+.filters{display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters .chip{flex:none; white-space:nowrap}
+
+/* ---- TABLAR ---- */
+.tabs{display:flex; gap:0; padding:6px 12px 0; background:var(--bg); border-bottom:1px solid var(--border)}
+.tab{
+  position:relative; border:0; background:transparent; cursor:pointer;
+  font-size:var(--fs-md); font-weight:var(--fw-semibold); color:var(--muted);
+  padding:8px 12px 11px; transition:color var(--dur) var(--ease);
+}
+.tab[aria-selected="true"]{color:var(--text)}
+.tab[aria-selected="true"]::after{
+  content:""; position:absolute; left:8px; right:8px; bottom:-1px; height:2px;
+  background:var(--accent-cta); border-radius:2px 2px 0 0;
+}
+.tab:hover{color:var(--text-2)}
+
+/* ---- GRID ---- */
+.grid{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:10px;
+  padding:12px; background:var(--bg);
+}
+
+/* ---- KARTA (browse) ---- */
+.tcard{display:flex; flex-direction:column}
+.tcard .card-thumb{aspect-ratio:4/3}
+.thumb-art{position:absolute; inset:0; display:flex; align-items:center; justify-content:center}
+.thumb-art svg{width:30px; height:30px; stroke:rgba(255,255,255,.5); fill:none; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round}
+.thumb-grad-1{background:linear-gradient(135deg,#2b3a16,#101307)}
+.thumb-grad-2{background:linear-gradient(135deg,#163a33,#0a1714)}
+.thumb-grad-3{background:linear-gradient(135deg,#3a2b16,#1a1207)}
+.thumb-grad-4{background:linear-gradient(135deg,#1a2b3a,#0a1017)}
+.thumb-grad-5{background:linear-gradient(135deg,#352244,#140a1a)}
+.thumb-grad-6{background:linear-gradient(135deg,#23271e,#101307)}
+
+/* play overlay */
+.thumb-play{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:32px; height:32px; border-radius:var(--r-full);
+  background:rgba(10,11,8,.6); border:1px solid rgba(255,255,255,.22);
+  display:flex; align-items:center; justify-content:center; backdrop-filter:blur(3px);
+}
+.thumb-play svg{width:14px; height:14px; stroke:none; fill:var(--text)}
+
+.tcard .card-body{padding:9px 10px 10px; display:flex; flex-direction:column; gap:7px}
+.tcard .card-name{font-size:var(--fs-md); white-space:normal; line-height:1.25; margin:0}
+.tc-author{display:flex; align-items:center; gap:5px; font-size:var(--fs-xs); color:var(--muted)}
+.tc-author .av{
+  width:15px; height:15px; flex:none; border-radius:50%;
+  background:var(--surface-3); color:var(--text); font-size:9px; font-weight:var(--fw-bold);
+  display:flex; align-items:center; justify-content:center; letter-spacing:0;
+}
+.tc-tags{display:flex; flex-wrap:wrap; gap:5px}
+.tag{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold); padding:3px 7px; border-radius:var(--r-full);
+  background:var(--surface-2); color:var(--muted); border:1px solid var(--border);
+}
+.tag svg{width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+.tag.pack{color:var(--green-ok)} .tag.pack svg{stroke:var(--green-ok)}
+.tag.nopack{color:var(--amber)} .tag.nopack svg{stroke:var(--amber)}
+
+.tc-import{
+  margin-top:1px; width:100%; padding:8px 10px;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  font-size:var(--fs-sm); font-weight:var(--fw-semibold); line-height:1;
+  border:1px solid transparent; border-radius:var(--r-md); cursor:pointer;
+  background:var(--accent-cta); color:var(--on-accent);
+  transition:filter var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.tc-import:hover{filter:brightness(1.06)}
+.tc-import:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent-glow)}
+.tc-import svg{width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+.tc-import.ghost{background:var(--surface-2); color:var(--text); border-color:var(--border)}
+.tc-import.ghost:hover{filter:none; background:var(--surface-3); border-color:var(--muted-2)}
+/* bloklangan import */
+.tc-import.blocked{background:var(--surface-2); color:var(--muted-2); border-color:var(--border); cursor:not-allowed}
+.tc-import.blocked:hover{filter:none; background:var(--surface-2)}
+
+/* bloklangan karta dim */
+.tcard.is-blocked .card-thumb .thumb-art svg{stroke:rgba(255,255,255,.28)}
+.tcard.is-blocked .card-name{color:var(--text-2)}
+
+/* ---- FOOTER ---- */
+.ftr{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:9px 12px; background:var(--sidebar); border-top:1px solid var(--border);
+  font-size:var(--fs-xs); color:var(--muted-2);
+}
+.ftr .build{display:inline-flex; align-items:center; gap:6px}
+.ftr .dot{width:5px; height:5px; border-radius:50%; background:var(--green-ok)}
+.ftr .ver{color:var(--muted); font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body data-theme="standart">
+
+  <div class="mock-banner">
+    <b>MOCKUP — yangi dizayn taklifi</b> · production EMAS · <code>design-preview/</code>
+  </div>
+  <div class="frame-caption">After Effects · CEP panel · ~380px</div>
+
+  <div class="af-panel" role="region" aria-label="AssetFlow Browse katalog paneli">
+
+    <!-- HEADER -->
+    <header class="hdr">
+      <div class="hdr-brand">
+        <span class="hdr-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4Z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg>
+        </span>
+        <span class="hdr-title">AssetFlow</span>
+      </div>
+      <button class="icon-btn" aria-label="Qidirish">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="Katalogni sinxronlash">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+      </button>
+      <span class="plan-pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg>
+        PRO
+        <span class="sep" aria-hidden="true"></span>
+        <span class="cred">1,200</span>
+      </span>
+    </header>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input class="input" type="search" placeholder="Shablon qidirish..." aria-label="Shablon qidirish">
+      </div>
+      <div class="filters" role="group" aria-label="Toifa filtri">
+        <button class="chip" aria-selected="true">Hammasi</button>
+        <button class="chip" aria-selected="false">Intro</button>
+        <button class="chip" aria-selected="false">Logo</button>
+        <button class="chip" aria-selected="false">Lower-third</button>
+        <button class="chip" aria-selected="false">Transition</button>
+      </div>
+    </div>
+
+    <!-- TABLAR -->
+    <nav class="tabs" role="tablist" aria-label="Katalog turi">
+      <button class="tab" role="tab" aria-selected="true">Shablonlar</button>
+      <button class="tab" role="tab" aria-selected="false">Video</button>
+      <button class="tab" role="tab" aria-selected="false">Stock</button>
+    </nav>
+
+    <!-- GRID -->
+    <main class="grid" aria-label="Shablonlar ro'yxati">
+
+      <!-- 1 -->
+      <article class="card tcard">
+        <div class="card-thumb thumb-grad-1">
+          <div class="thumb-art"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></div>
+          <div class="thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7Z"/></svg></div>
+          <div class="thumb-badges"><span class="thumb-badge">YANGI</span></div>
+          <span class="plan-badge pro">PRO</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">Football Championship Intro</h3>
+          <div class="tc-author"><span class="av" aria-hidden="true">DK</span>Dilnoza K.</div>
+          <div class="tc-tags">
+            <span class="tag pack"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8 9 5 9-5"/><path d="m3 13 9 5 9-5"/></svg>Pack bor</span>
+            <span class="tag">8 sahna</span>
+          </div>
+          <button class="tc-import"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Import</button>
+        </div>
+      </article>
+
+      <!-- 2 -->
+      <article class="card tcard">
+        <div class="card-thumb thumb-grad-2">
+          <div class="thumb-art"><svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.4 2.3 7.4-6.3-4.6L5.7 21 8 13.8l-6-4.4h7.6L12 2Z"/></svg></div>
+          <div class="thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7Z"/></svg></div>
+          <span class="plan-badge free">FREE</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">Minimal Logo Reveal</h3>
+          <div class="tc-author"><span class="av" aria-hidden="true">SR</span>Sardor R.</div>
+          <div class="tc-tags">
+            <span class="tag pack"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8 9 5 9-5"/><path d="m3 13 9 5 9-5"/></svg>Pack bor</span>
+            <span class="tag">3 sahna</span>
+          </div>
+          <button class="tc-import"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Import</button>
+        </div>
+      </article>
+
+      <!-- 3 -->
+      <article class="card tcard">
+        <div class="card-thumb thumb-grad-3">
+          <div class="thumb-art"><svg viewBox="0 0 24 24"><path d="M4 5h16v4H4z"/><path d="M4 15h10v4H4z"/><path d="M17 13l3 3-3 3"/></svg></div>
+          <div class="thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7Z"/></svg></div>
+          <div class="thumb-badges"><span class="thumb-badge ai">AI</span></div>
+          <span class="plan-badge pro">PRO</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">News Lower-third Pack</h3>
+          <div class="tc-author"><span class="av" aria-hidden="true">MA</span>Madina A.</div>
+          <div class="tc-tags">
+            <span class="tag pack"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8 9 5 9-5"/><path d="m3 13 9 5 9-5"/></svg>Pack bor</span>
+            <span class="tag">12 sahna</span>
+          </div>
+          <button class="tc-import"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Import</button>
+        </div>
+      </article>
+
+      <!-- 4: BLOKLANGAN — pack yo'q -->
+      <article class="card tcard is-blocked">
+        <div class="card-thumb thumb-grad-6">
+          <div class="thumb-art"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></div>
+          <div class="thumb-badges"><span class="thumb-badge nopack">⏳ Pack yo'q</span></div>
+          <span class="plan-badge free">FREE</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">Smooth Transitions v3</h3>
+          <div class="tc-author"><span class="av" aria-hidden="true">JT</span>Jasur T.</div>
+          <div class="tc-tags">
+            <span class="tag nopack"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Pack yo'q</span>
+            <span class="tag">6 sahna</span>
+          </div>
+          <button class="tc-import blocked" disabled aria-disabled="true" title="Pack hali yuklanmagan">Import o'chiq</button>
+        </div>
+      </article>
+
+      <!-- 5 -->
+      <article class="card tcard">
+        <div class="card-thumb thumb-grad-5">
+          <div class="thumb-art"><svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.4 2.3 7.4-6.3-4.6L5.7 21 8 13.8l-6-4.4h7.6L12 2Z"/></svg></div>
+          <div class="thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7Z"/></svg></div>
+          <div class="thumb-badges"><span class="thumb-badge">✓ Yuklandi</span></div>
+          <span class="plan-badge pro">PRO</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">Cinematic Title Sequence</h3>
+          <div class="tc-author"><span class="av" aria-hidden="true">NX</span>Nodira X.</div>
+          <div class="tc-tags">
+            <span class="tag pack"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8 9 5 9-5"/><path d="m3 13 9 5 9-5"/></svg>Pack bor</span>
+            <span class="tag">10 sahna</span>
+          </div>
+          <button class="tc-import ghost"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Qayta import</button>
+        </div>
+      </article>
+
+      <!-- 6 -->
+      <article class="card tcard">
+        <div class="card-thumb thumb-grad-4">
+          <div class="thumb-art"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3V9Z"/></svg></div>
+          <div class="thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7Z"/></svg></div>
+          <span class="plan-badge free">FREE</span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">Corporate Slideshow Opener</h3>
+          <div class="tc-author"><span class="av" aria-hidden="true">BU</span>Bekzod U.</div>
+          <div class="tc-tags">
+            <span class="tag pack"><svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8 9 5 9-5"/><path d="m3 13 9 5 9-5"/></svg>Pack bor</span>
+            <span class="tag">7 sahna</span>
+          </div>
+          <button class="tc-import"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Import</button>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="ftr">
+      <span class="build"><span class="dot" aria-hidden="true"></span>Server ulangan</span>
+      <span class="ver">v2 · 21-iyun</span>
+    </footer>
+
+  </div>
+
+</body>
+</html>

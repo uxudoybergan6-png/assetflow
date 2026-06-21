@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssetFlow — Tizimga kirish (MOCKUP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* ============================================================
+   AssetFlow — WEB STUDIO base (responsive, qorong'i default)
+   :root token QIYMATLARI AE plagin bilan AYNAN bir xil (yagona brend).
+   Faqat layout komponentlar Studio-ga xos (topnav/sidebar/shell/jadval).
+   ============================================================ */
+
+:root{
+  --font-display:'Space Grotesk','Inter',-apple-system,system-ui,sans-serif;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+
+  --fs-xs:11px; --fs-sm:12px; --fs-md:13px; --fs-base:14px;
+  --fs-lg:16px; --fs-xl:19px; --fs-title:23px; --fs-display:30px;
+
+  --lh-tight:1.15; --lh-normal:1.45; --lh-relaxed:1.6;
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-full:999px;
+  --radius:var(--r-md);
+
+  --ease:cubic-bezier(.4,.14,.3,1);
+  --dur:.18s; --dur-slow:.32s;
+
+  --sh-1:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 8px 24px rgba(0,0,0,.4);
+  --sh-3:0 18px 48px rgba(0,0,0,.5);
+
+  --sidebar-w:248px; --topbar-h:60px;
+
+  /* eski Studio nomlari → yangi token aliaslari (drift tugatildi) */
+  --bg-0:var(--bg); --bg-1:var(--sidebar); --bg-2:var(--surface);
+  --bg-3:var(--surface-2); --bg-4:var(--surface-3);
+  --tx-0:var(--text); --tx-1:var(--text-2); --tx-2:var(--muted); --tx-3:var(--muted-2);
+  --line:var(--border); --line-soft:var(--border); --line-strong:var(--muted-2);
+  --violet:var(--accent); --violet-bright:var(--accent-hi); --violet-dim:var(--green-dim);
+  --text-dim:var(--muted); /* yetishmayotgan token tuzatildi */
+}
+
+/* ---- TEMA: QORONG'I (default) ---- */
+:root,[data-theme="dark"]{
+  --bg:#0a0b08; --surface:#141612; --surface-2:#1c1f18; --surface-3:#23271e;
+  --pop-bg:#1c1f18; --sidebar:#0d0f0a;
+  --border:rgba(255,255,255,.10); --border-accent:rgba(163,230,53,.35);
+  --text:#f5f7f0; --text-2:#c2c8ba;
+  --muted:rgba(255,255,255,.66); --muted-2:rgba(255,255,255,.52);
+  --accent:#82c341; --accent-hi:#9fd356; --accent-cta:#a3e635;
+  --accent-glow:rgba(163,230,53,.25); --green-dim:rgba(163,230,53,.12); --on-accent:#0a0b08;
+  --select:#327bfa; --select-dim:rgba(50,123,250,.15);
+  --red:#ef4444; --red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.12);
+  --green-ok:#4ade80; --green-ok-dim:rgba(74,222,128,.12);
+}
+
+/* ---- TEMA: LIGHT (ixtiyoriy override) ---- */
+[data-theme="light"]{
+  --bg:#eef1ea; --surface:#ffffff; --surface-2:#f3f6ee; --surface-3:#e8ecdf;
+  --pop-bg:#ffffff; --sidebar:#f6f8f2;
+  --border:rgba(20,22,15,.14); --border-accent:rgba(90,143,42,.5);
+  --text:#14160f; --text-2:#3a3f30;
+  --muted:rgba(20,22,15,.68); --muted-2:rgba(20,22,15,.5);
+  --accent:#5a8f2a; --accent-hi:#6fa838; --accent-cta:#5a8f2a;
+  --accent-glow:rgba(90,143,42,.3); --green-dim:rgba(90,143,42,.14); --on-accent:#ffffff;
+  --select:#1f6feb; --select-dim:rgba(31,111,235,.14);
+  --red:#c0392b; --red-dim:rgba(192,57,43,.12);
+  --amber:#b7791f; --amber-dim:rgba(183,121,31,.14);
+  --green-ok:#2f9e44; --green-ok-dim:rgba(47,158,68,.14);
+  --sh-2:0 8px 24px rgba(20,30,10,.12); --sh-3:0 18px 48px rgba(20,30,10,.16);
+}
+
+/* ---- RESET ---- */
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%}
+body{font-family:var(--font-sans); font-size:var(--fs-base); line-height:var(--lh-normal);
+  color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display); line-height:var(--lh-tight); font-weight:var(--fw-semibold)}
+.h1{font-size:var(--fs-display)} .h2{font-size:var(--fs-title)} .h3{font-size:var(--fs-xl)}
+a{color:var(--accent-cta); text-decoration:none}
+::placeholder{color:var(--muted-2)}
+::selection{background:var(--select-dim)}
+.label{font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted)}
+
+/* ---- SHELL LAYOUT ---- */
+.shell{display:grid; grid-template-columns:var(--sidebar-w) 1fr; min-height:100vh}
+.topnav{position:sticky; top:0; height:var(--topbar-h); z-index:30;
+  display:flex; align-items:center; gap:var(--sp-4); padding:0 var(--sp-5);
+  background:var(--bg); border-bottom:1px solid var(--border)}
+.topnav .brand{font-family:var(--font-display); font-weight:var(--fw-bold); font-size:var(--fs-lg)}
+.sidebar{position:sticky; top:0; height:100vh; overflow-y:auto;
+  background:var(--sidebar); border-right:1px solid var(--border); padding:var(--sp-4) var(--sp-3)}
+.nav-group{margin-bottom:var(--sp-5)}
+.nav-group-title{font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.07em;
+  color:var(--muted); padding:0 var(--sp-3); margin-bottom:var(--sp-2)}
+.nav-item{display:flex; align-items:center; gap:var(--sp-3); padding:9px var(--sp-3);
+  border-radius:var(--r-md); color:var(--muted); font-size:var(--fs-base); font-weight:var(--fw-medium);
+  cursor:pointer; transition:all var(--dur) var(--ease)}
+.nav-item:hover{background:var(--surface); color:var(--text)}
+.nav-item.active{background:var(--green-dim); color:var(--text)}
+.nav-item .nav-badge{margin-left:auto; font-size:var(--fs-xs); font-weight:var(--fw-bold);
+  background:var(--accent-cta); color:var(--on-accent); padding:1px 7px; border-radius:var(--r-full)}
+.main{display:flex; flex-direction:column; min-width:0}
+.page{padding:var(--sp-5) var(--sp-6); max-width:1280px; width:100%}
+
+/* ---- STATCARD (KPI) ---- */
+.statcard{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-2)}
+.statcard .num{font-family:var(--font-display); font-size:var(--fs-display); font-weight:var(--fw-bold);
+  font-variant-numeric:tabular-nums; line-height:1}
+.statcard .lbl{font-size:var(--fs-sm); color:var(--muted)}
+
+/* ---- TABLE (zич B2B) ---- */
+.table{width:100%; border-collapse:collapse; font-size:var(--fs-base)}
+.table th{text-align:left; font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.05em;
+  color:var(--muted); font-weight:var(--fw-semibold); padding:10px var(--sp-3);
+  border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface)}
+.table td{padding:11px var(--sp-3); border-bottom:1px solid var(--border);
+  font-variant-numeric:tabular-nums; color:var(--text-2)}
+.table tr:hover td{background:var(--surface-2)}
+.table tr.removed td{opacity:.55}
+.table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--r-md)}
+
+/* ---- CARD ---- */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:var(--sp-4); transition:border-color var(--dur) var(--ease), transform var(--dur) var(--ease)}
+.card:hover{border-color:var(--muted-2)}
+.card-accent{background:linear-gradient(135deg,var(--green-dim),transparent); border-color:var(--border-accent)}
+
+/* ---- BTN ---- */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-2);
+  font-family:inherit; font-size:var(--fs-base); font-weight:var(--fw-semibold); line-height:1;
+  padding:9px 16px; border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface-2); color:var(--text); cursor:pointer;
+  transition:all var(--dur) var(--ease)}
+.btn:hover{background:var(--surface-3); border-color:var(--muted-2)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn-primary{background:var(--accent-cta); color:var(--on-accent); border-color:transparent}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-primary:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent-glow)}
+.btn-ghost{background:transparent}
+.btn-ghost:hover{background:var(--surface-2)}
+
+/* ---- INPUT ---- */
+.input,.select,.textarea{width:100%; font-family:inherit; font-size:var(--fs-base); color:var(--text);
+  background:var(--surface-3); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:9px 12px; transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)}
+.input:focus,.select:focus,.textarea:focus{outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-glow)}
+
+/* ---- BADGE / CHIP ---- */
+.badge{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-xs);
+  font-weight:var(--fw-semibold); padding:3px 9px; border-radius:var(--r-full)}
+.badge::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+.badge.pending{color:var(--amber); background:var(--amber-dim)}
+.badge.approved{color:var(--accent-cta); background:var(--green-dim)}
+.badge.rejected{color:var(--red); background:var(--red-dim)}
+.badge.draft{color:var(--muted); background:var(--surface-2)}
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-sm);
+  padding:5px 12px; border-radius:var(--r-full); border:1px solid var(--border);
+  background:var(--surface-2); color:var(--muted); cursor:pointer; transition:all var(--dur) var(--ease)}
+.chip[aria-selected="true"]{background:var(--green-dim); border-color:var(--border-accent); color:var(--text)}
+
+/* ---- ICON (inline SVG) ---- */
+.icon{width:18px; height:18px; flex:none; stroke:currentColor; fill:none;
+  stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+
+/* ---- SKELETON (real async yuklashga ulanadi) ---- */
+.skeleton{position:relative; overflow:hidden; background:var(--surface-2); border-radius:var(--r-sm)}
+.skeleton::after{content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+  transform:translateX(-100%); animation:af-shimmer 1.2s var(--ease) infinite}
+@keyframes af-shimmer{to{transform:translateX(100%)}}
+.skeleton-kpi{height:84px; border-radius:var(--r-md)}
+.skeleton-line{height:12px; margin:6px 0}
+
+/* ---- TOAST ---- */
+.toast{display:flex; gap:10px; padding:12px 15px; border-radius:var(--r-md);
+  background:var(--pop-bg); border:1px solid var(--border); border-left:3px solid var(--muted);
+  box-shadow:var(--sh-2); font-size:var(--fs-base); max-width:380px}
+.toast.success{border-left-color:var(--green-ok)} .toast.error{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--amber)} .toast.info{border-left-color:var(--select)}
+
+/* ---- EMPTY ---- */
+.empty{display:flex; flex-direction:column; align-items:center; gap:var(--sp-3);
+  text-align:center; padding:var(--sp-7) var(--sp-4); color:var(--muted)}
+.empty .icon{width:40px; height:40px; opacity:.7}
+.empty h3{font-size:var(--fs-lg); color:var(--text)}
+.empty p{font-size:var(--fs-base); max-width:360px}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:1100px){
+  .shell{grid-template-columns:70px 1fr}
+  .nav-item .label-txt,.nav-group-title{display:none}
+  .nav-item{justify-content:center} /* ikon-rejim, title tooltip orqali */
+}
+@media (max-width:768px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:fixed; left:0; top:0; transform:translateX(-100%); z-index:50;
+    width:260px; transition:transform var(--dur-slow) var(--ease)}
+  .sidebar.open{transform:none}
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40}
+  .page{padding:var(--sp-4)}
+  .split-pane{grid-template-columns:1fr!important} /* inline-grid selektor o'rniga klass */
+}
+@media (max-width:390px){
+  .kpi-grid{grid-template-columns:1fr}
+  .page{padding:var(--sp-3)}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+/* ============================================================
+   EKRANGA XOS — LOGIN (auth split layout, brendli)
+   ============================================================ */
+
+.mockup-banner{position:fixed; top:0; left:0; right:0; z-index:100;
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.02em;
+  text-align:center; padding:6px var(--sp-4); color:var(--on-accent);
+  background:var(--accent-cta); border-bottom:1px solid rgba(0,0,0,.2)}
+
+.auth-shell{display:grid; grid-template-columns:minmax(280px,1fr) minmax(360px,520px);
+  min-height:100vh; padding-top:29px}
+
+/* --- CHAP: BREND PANEL --- */
+.auth-side{position:relative; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:var(--sp-8) var(--sp-7);
+  background:radial-gradient(120% 120% at 0% 0%, rgba(163,230,53,.10), transparent 55%),
+             radial-gradient(90% 90% at 100% 100%, rgba(130,195,65,.07), transparent 60%),
+             var(--sidebar);
+  border-right:1px solid var(--border)}
+
+/* nozik dekorativ lime geometriya (CSS, tashqi rasm yo'q) */
+.auth-deco{position:absolute; inset:0; pointer-events:none; opacity:.5}
+.auth-deco::before{content:""; position:absolute; top:-80px; right:-90px;
+  width:340px; height:340px; border-radius:38% 62% 55% 45% / 50% 45% 55% 50%;
+  border:1.5px solid rgba(163,230,53,.22)}
+.auth-deco::after{content:""; position:absolute; bottom:-110px; left:-70px;
+  width:280px; height:280px; border-radius:50%;
+  border:1.5px solid rgba(163,230,53,.14)}
+.deco-grid{position:absolute; inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:46px 46px; mask-image:radial-gradient(70% 70% at 30% 30%,#000,transparent 75%)}
+.deco-spark{position:absolute; width:10px; height:10px; color:var(--accent-hi); opacity:.7}
+.deco-spark.s1{top:22%; right:24%} .deco-spark.s2{bottom:30%; left:18%; width:7px; height:7px}
+
+.auth-brand-top{position:relative; z-index:1; display:flex; align-items:center; gap:11px}
+.brand-mark{width:38px; height:38px; flex:none; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(150deg,var(--accent-cta),var(--accent));
+  color:var(--on-accent); box-shadow:0 4px 16px rgba(163,230,53,.28)}
+.brand-mark .icon{width:22px; height:22px; stroke-width:2}
+.brand-word{font-family:var(--font-display); font-weight:var(--fw-bold);
+  font-size:var(--fs-xl); letter-spacing:-.01em; color:var(--text)}
+.brand-word b{color:var(--accent-cta); font-weight:var(--fw-bold)}
+
+.auth-hero{position:relative; z-index:1; margin:var(--sp-6) 0}
+.auth-hero h1{font-size:38px; line-height:1.1; letter-spacing:-.02em; margin-bottom:var(--sp-3);
+  font-weight:var(--fw-bold)}
+.auth-hero h1 em{font-style:normal; color:var(--accent-cta)}
+.auth-hero p{font-size:var(--fs-lg); color:var(--muted); max-width:38ch; line-height:var(--lh-normal)}
+
+.auth-feats{position:relative; z-index:1; display:flex; flex-direction:column; gap:var(--sp-3)}
+.feat{display:flex; align-items:center; gap:var(--sp-3);
+  padding:var(--sp-3) var(--sp-4); border-radius:var(--r-md);
+  background:rgba(255,255,255,.025); border:1px solid var(--border)}
+.feat-ico{width:38px; height:38px; flex:none; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--green-dim); color:var(--accent-cta); border:1px solid var(--border-accent)}
+.feat-ico .icon{width:19px; height:19px}
+.feat-txt b{display:block; font-size:var(--fs-base); font-weight:var(--fw-semibold); color:var(--text)}
+.feat-txt span{font-size:var(--fs-sm); color:var(--muted)}
+
+/* --- O'NG: FORMA PANEL --- */
+.auth-main{display:flex; align-items:center; justify-content:center;
+  padding:var(--sp-7) var(--sp-6); background:var(--bg)}
+.auth-card{width:100%; max-width:380px}
+.auth-card .form-head{margin-bottom:var(--sp-5)}
+.auth-card .form-head h2{font-size:var(--fs-title); letter-spacing:-.01em; margin-bottom:6px}
+.auth-card .form-head p{font-size:var(--fs-base); color:var(--muted)}
+
+/* rol segmented control */
+.seg{display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px;
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md);
+  margin-bottom:var(--sp-5)}
+.seg button{display:flex; align-items:center; justify-content:center; gap:7px;
+  font-family:inherit; font-size:var(--fs-md); font-weight:var(--fw-semibold);
+  padding:8px 10px; border:none; border-radius:7px; cursor:pointer;
+  background:transparent; color:var(--muted); transition:all var(--dur) var(--ease)}
+.seg button .icon{width:16px; height:16px}
+.seg button[aria-selected="true"]{background:var(--accent-cta); color:var(--on-accent);
+  box-shadow:var(--sh-1)}
+.seg button:not([aria-selected="true"]):hover{color:var(--text)}
+
+.field{margin-bottom:var(--sp-4)}
+.field label{display:block; font-size:var(--fs-sm); font-weight:var(--fw-medium);
+  color:var(--text-2); margin-bottom:6px}
+.field-wrap{position:relative}
+.field-wrap .lead-ico{position:absolute; left:11px; top:50%; transform:translateY(-50%);
+  color:var(--muted-2); display:flex}
+.field-wrap .lead-ico .icon{width:17px; height:17px}
+.input.has-lead{padding-left:38px}
+.input.has-trail{padding-right:42px}
+.toggle-pw{position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  display:flex; align-items:center; justify-content:center; width:30px; height:30px;
+  background:transparent; border:none; border-radius:7px; cursor:pointer; color:var(--muted)}
+.toggle-pw:hover{background:var(--surface-2); color:var(--text)}
+.toggle-pw .icon{width:18px; height:18px}
+
+/* xato holati */
+.field.error .input{border-color:var(--red); box-shadow:0 0 0 3px var(--red-dim)}
+.field-error{display:flex; align-items:center; gap:6px; margin-top:7px;
+  font-size:var(--fs-sm); color:var(--red)}
+.field-error .icon{width:15px; height:15px; stroke-width:2}
+
+.field-meta{display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:var(--sp-5)}
+.remember{display:flex; align-items:center; gap:8px; cursor:pointer;
+  font-size:var(--fs-sm); color:var(--muted); user-select:none}
+.remember input{position:absolute; opacity:0; width:0; height:0}
+.remember .box{width:18px; height:18px; flex:none; border-radius:5px;
+  border:1.5px solid var(--muted-2); background:var(--surface-3);
+  display:flex; align-items:center; justify-content:center; color:var(--on-accent);
+  transition:all var(--dur) var(--ease)}
+.remember .box .icon{width:13px; height:13px; stroke-width:2.4; opacity:0}
+.remember input:checked + .box{background:var(--accent-cta); border-color:var(--accent-cta)}
+.remember input:checked + .box .icon{opacity:1}
+.remember input:focus-visible + .box{box-shadow:0 0 0 3px var(--accent-glow)}
+.forgot{font-size:var(--fs-sm); font-weight:var(--fw-medium); color:var(--accent-cta)}
+.forgot:hover{text-decoration:underline}
+
+.btn-block{width:100%; padding:12px 16px; font-size:var(--fs-lg)}
+
+.auth-foot{margin-top:var(--sp-5); text-align:center; font-size:var(--fs-base); color:var(--muted)}
+.auth-foot a{font-weight:var(--fw-semibold)}
+
+.divider{display:flex; align-items:center; gap:var(--sp-3); margin:var(--sp-5) 0;
+  color:var(--muted-2); font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.06em}
+.divider::before,.divider::after{content:""; flex:1; height:1px; background:var(--border)}
+
+@media (max-width:860px){
+  .auth-shell{grid-template-columns:1fr}
+  .auth-side{padding:var(--sp-6) var(--sp-5) var(--sp-5);
+    border-right:none; border-bottom:1px solid var(--border)}
+  .auth-hero{margin:var(--sp-4) 0}
+  .auth-hero h1{font-size:28px}
+  .auth-hero p{font-size:var(--fs-base)}
+  .auth-feats{flex-direction:row; flex-wrap:wrap}
+  .feat{flex:1 1 160px}
+  .feat-txt span{display:none}
+}
+@media (max-width:560px){
+  .auth-side{padding:var(--sp-5) var(--sp-4) var(--sp-4)}
+  .auth-hero h1{font-size:24px}
+  .auth-feats{flex-direction:column}
+  .auth-main{padding:var(--sp-5) var(--sp-4)}
+}
+</style>
+</head>
+<body>
+
+<div class="mockup-banner" role="note">MOCKUP — yangi dizayn taklifi · production EMAS · design-preview/</div>
+
+<div class="auth-shell">
+
+  <!-- ============ CHAP: BREND PANEL ============ -->
+  <aside class="auth-side">
+    <div class="auth-deco" aria-hidden="true">
+      <div class="deco-grid"></div>
+      <svg class="deco-spark s1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+      <svg class="deco-spark s2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+    </div>
+
+    <div class="auth-brand-top">
+      <span class="brand-mark" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/></svg>
+      </span>
+      <span class="brand-word">Asset<b>Flow</b></span>
+    </div>
+
+    <div class="auth-hero">
+      <h1>Kreativ aktivlar va <em>AI generatsiya</em> platformasi</h1>
+      <p>Shablonlarni yuklang, moderatsiyadan o'tkazing va After Effects ichida to'g'ridan-to'g'ri import qiling — bitta oqimda.</p>
+    </div>
+
+    <div class="auth-feats">
+      <div class="feat">
+        <span class="feat-ico" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </span>
+        <span class="feat-txt"><b>Shablon marketplace</b><span>Contributor → Admin → katalog</span></span>
+      </div>
+      <div class="feat">
+        <span class="feat-ico" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><polygon points="10 8 16 12 10 16 10 8"/><rect x="3" y="4" width="18" height="16" rx="2.5"/></svg>
+        </span>
+        <span class="feat-txt"><b>AE plagin</b><span>Browse paneli, Free/Pro limitlar</span></span>
+      </div>
+      <div class="feat">
+        <span class="feat-ico" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        <span class="feat-txt"><b>AI Gen Studio</b><span>Rasm · video · ovoz · SFX (kredit)</span></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ O'NG: FORMA PANEL ============ -->
+  <main class="auth-main">
+    <div class="auth-card">
+
+      <div class="form-head">
+        <h2 class="h2">Tizimga kirish</h2>
+        <p>Hisobingizga kirish uchun rolingizni tanlang.</p>
+      </div>
+
+      <div class="seg" role="tablist" aria-label="Rol tanlash">
+        <button role="tab" aria-selected="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+          Contributor
+        </button>
+        <button role="tab" aria-selected="false">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z"/><path d="m9.5 12 1.8 1.8 3.2-3.6"/></svg>
+          Admin
+        </button>
+      </div>
+
+      <form onsubmit="return false">
+        <div class="field">
+          <label for="af-email">Email</label>
+          <div class="field-wrap">
+            <span class="lead-ico" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg>
+            </span>
+            <input id="af-email" class="input has-lead" type="email" placeholder="siz@assetflow.uz" value="dilnoza.k@gmail.com" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="field error">
+          <label for="af-pass">Parol</label>
+          <div class="field-wrap">
+            <span class="lead-ico" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            </span>
+            <input id="af-pass" class="input has-lead has-trail" type="password" placeholder="••••••••" value="wrongpass" autocomplete="current-password" aria-invalid="true" aria-describedby="af-pass-err">
+            <button type="button" class="toggle-pw" id="pwToggle" aria-label="Parolni ko'rsatish" aria-pressed="false">
+              <svg class="icon" id="pwEye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <p class="field-error" id="af-pass-err" role="alert">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>
+            Email yoki parol noto'g'ri
+          </p>
+        </div>
+
+        <div class="field-meta">
+          <label class="remember">
+            <input type="checkbox" checked>
+            <span class="box" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="m5 12 5 5 9-11"/></svg></span>
+            Meni eslab qol
+          </label>
+          <a href="#" class="forgot">Parolni unutdingizmi?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          Kirish
+          <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </button>
+      </form>
+
+      <p class="auth-foot">Hisobingiz yo'qmi? <a href="#">Ro'yxatdan o'tish</a></p>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+  var seg = document.querySelectorAll('.seg button');
+  seg.forEach(function(b){
+    b.addEventListener('click', function(){
+      seg.forEach(function(x){ x.setAttribute('aria-selected','false'); });
+      b.setAttribute('aria-selected','true');
+    });
+  });
+  var pwT = document.getElementById('pwToggle');
+  var pwI = document.getElementById('af-pass');
+  pwT.addEventListener('click', function(){
+    var show = pwI.type === 'password';
+    pwI.type = show ? 'text' : 'password';
+    pwT.setAttribute('aria-pressed', String(show));
+    pwT.setAttribute('aria-label', show ? "Parolni yashirish" : "Parolni ko'rsatish");
+  });
+</script>
+
+</body>
+</html>

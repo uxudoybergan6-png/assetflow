@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssetFlow — AE Gen Studio (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* ============================================================
+   AssetFlow — AE PLAGIN base (qorong'i-tor ~380px CEP panel)
+   Yagona dizayn tizimi. :root tokenlar Studio bilan AYNAN bir xil.
+   Faqat layout/zichlik AE-ga moslangan.
+   ============================================================ */
+
+/* ---- STRUKTURA (temaga bog'liq emas) ---- */
+:root{
+  --font-display:'Space Grotesk','Inter',-apple-system,system-ui,sans-serif;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+
+  --fs-xs:11px; --fs-sm:12px; --fs-md:13px; --fs-base:14px;
+  --fs-lg:16px; --fs-xl:19px; --fs-title:23px; --fs-display:30px;
+
+  --lh-tight:1.15; --lh-normal:1.45; --lh-relaxed:1.6;
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-full:999px;
+  --radius:var(--r-md);
+
+  --ease:cubic-bezier(.4,.14,.3,1);
+  --dur:.18s; --dur-slow:.32s;
+
+  --sh-1:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 8px 24px rgba(0,0,0,.4);
+  --sh-3:0 18px 48px rgba(0,0,0,.5);
+
+  /* orqaga moslik aliaslari */
+  --accent-2:var(--accent-hi); --green:var(--accent); --env-green:var(--accent);
+  --surface2:var(--surface-2); --surface3:var(--surface-3);
+  --muted2:var(--muted-2); --blue:var(--select); --blue-dim:var(--select-dim);
+  --r:var(--r-md); --shadow:var(--sh-3);
+}
+
+/* ---- TEMA: STANDART (default qorong'i) ---- */
+:root,[data-theme="standart"]{
+  --bg:#0a0b08; --surface:#141612; --surface-2:#1c1f18; --surface-3:#23271e;
+  --pop-bg:#1c1f18; --sidebar:#0d0f0a;
+  --glass-bg:#141612; --glass-blur:0px; --rim:transparent;
+
+  --border:rgba(255,255,255,.10); --border-accent:rgba(163,230,53,.35);
+
+  --text:#f5f7f0; --text-2:#c2c8ba;
+  --muted:rgba(255,255,255,.66);   /* AA tuzatildi (.55→.66) */
+  --muted-2:rgba(255,255,255,.52);  /* faqat dekorativ/disabled */
+
+  --accent:#82c341; --accent-hi:#9fd356; --accent-cta:#a3e635;
+  --accent-glow:rgba(163,230,53,.25); --green-dim:rgba(163,230,53,.12);
+  --on-accent:#0a0b08;
+
+  --select:#327bfa; --select-dim:rgba(50,123,250,.15);
+  --red:#ef4444; --red-dim:rgba(239,68,68,.12);
+  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.12);
+  --green-ok:#4ade80; --green-ok-dim:rgba(74,222,128,.12);
+}
+
+/* ---- TEMA: LIQUID GLASS ---- */
+[data-theme="liquid-glass"]{
+  --bg:#070806; --surface:rgba(20,24,18,.55); --surface-2:rgba(28,33,24,.62);
+  --surface-3:rgba(40,46,33,.7); --pop-bg:#161a13; --sidebar:rgba(13,16,10,.55);
+  --glass-bg:rgba(20,24,18,.55); --glass-blur:28px; --rim:rgba(255,255,255,.18);
+  --border:rgba(255,255,255,.14); --border-accent:rgba(163,230,53,.4);
+  --text:#f6f8f1; --text-2:#cdd3c4;
+  --muted:rgba(246,248,241,.7); --muted-2:rgba(246,248,241,.5);
+  --accent:#82c341; --accent-hi:#9fd356; --accent-cta:#a3e635;
+  --accent-glow:rgba(163,230,53,.4); --green-dim:rgba(163,230,53,.16); --on-accent:#070806;
+  --select:#327bfa; --select-dim:rgba(50,123,250,.22);
+  --red:#ef4444; --red-dim:rgba(239,68,68,.16);
+  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.16);
+  --green-ok:#4ade80; --green-ok-dim:rgba(74,222,128,.16);
+}
+
+/* ---- TEMA: LIGHT GLASS (AA: to'q matn + to'q lime) ---- */
+[data-theme="light-glass"]{
+  --bg:#eef1ea; --surface:rgba(255,255,255,.6); --surface-2:rgba(255,255,255,.72);
+  --surface-3:rgba(255,255,255,.85); --pop-bg:#f6f8f2; --sidebar:rgba(248,250,245,.6);
+  --glass-bg:rgba(255,255,255,.6); --glass-blur:28px; --rim:rgba(255,255,255,.7);
+  --border:rgba(20,22,15,.16); --border-accent:rgba(90,143,42,.5);
+  --text:#14160f; --text-2:#3a3f30;
+  --muted:rgba(20,22,15,.68); --muted-2:rgba(20,22,15,.5);
+  --accent:#5a8f2a; --accent-hi:#6fa838; --accent-cta:#5a8f2a;
+  --accent-glow:rgba(90,143,42,.3); --green-dim:rgba(90,143,42,.14); --on-accent:#ffffff;
+  --select:#1f6feb; --select-dim:rgba(31,111,235,.14);
+  --red:#c0392b; --red-dim:rgba(192,57,43,.12);
+  --amber:#b7791f; --amber-dim:rgba(183,121,31,.14);
+  --green-ok:#2f9e44; --green-ok-dim:rgba(47,158,68,.14);
+}
+
+/* ---- RESET ---- */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-sans); font-size:var(--fs-md); line-height:var(--lh-normal);
+  color:var(--text); background:var(--bg);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4{font-family:var(--font-display); line-height:var(--lh-tight); font-weight:var(--fw-semibold)}
+::placeholder{color:var(--muted-2)}
+::selection{background:var(--select-dim)}
+button{font-family:inherit}
+
+/* AE panel ramkasi (~380px) */
+.af-panel{
+  width:100%; max-width:380px; min-height:100%;
+  background:var(--bg); color:var(--text);
+  display:flex; flex-direction:column;
+}
+
+/* caps label (standart) */
+.label{
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold);
+  letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+}
+
+/* ---- TUGMA ---- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-2);
+  font-size:var(--fs-md); font-weight:var(--fw-semibold); line-height:1;
+  padding:8px 14px; border:1px solid var(--border); border-radius:var(--r-md);
+  background:var(--surface-2); color:var(--text); cursor:pointer;
+  transition:background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.btn:hover{background:var(--surface-3); border-color:var(--muted-2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn-primary{
+  background:var(--accent-cta); color:var(--on-accent); border-color:transparent;
+}
+.btn-primary:hover{filter:brightness(1.06); background:var(--accent-cta)}
+.btn-primary:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent-glow)}
+.btn-ghost{background:transparent}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-block{width:100%; padding:11px 16px} /* Generate full-width qator */
+
+/* ---- SEGMENTED ---- */
+.seg{display:inline-flex; background:var(--surface-2); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:3px; gap:2px}
+.seg button{flex:1; border:0; background:transparent; color:var(--muted);
+  font-size:var(--fs-sm); font-weight:var(--fw-medium); padding:6px 12px;
+  border-radius:var(--r-sm); cursor:pointer; transition:all var(--dur) var(--ease)}
+.seg button[aria-selected="true"]{background:var(--surface-3); color:var(--text)}
+
+/* ---- CHIP ---- */
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-sm);
+  padding:5px 11px; border-radius:var(--r-full); border:1px solid var(--border);
+  background:var(--surface-2); color:var(--muted); cursor:pointer; transition:all var(--dur) var(--ease)}
+.chip[aria-selected="true"]{background:var(--green-dim); border-color:var(--border-accent); color:var(--text)}
+
+/* ---- KARTA ---- */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  overflow:hidden; transition:transform var(--dur) var(--ease), border-color var(--dur) var(--ease)}
+.card:hover{transform:translateY(-2px); border-color:var(--muted-2); box-shadow:var(--sh-1)}
+.card-thumb{aspect-ratio:16/9; background:var(--surface-2); position:relative}
+.card-body{padding:var(--sp-3)}
+.card-cat{font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.05em;
+  text-transform:uppercase; color:var(--muted)} /* AA: muted, 11px */
+.card-name{font-size:var(--fs-base); font-weight:var(--fw-semibold); color:var(--text);
+  margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card-meta{font-size:var(--fs-sm); color:var(--muted); margin-top:4px}
+
+/* thumbnail badge'lar — maks 2 ko'rsatish, qattiq fon */
+.thumb-badges{position:absolute; left:8px; top:8px; display:flex; gap:5px; max-width:calc(100% - 16px)}
+.thumb-badge{font-size:var(--fs-xs); font-weight:var(--fw-semibold); padding:3px 7px;
+  border-radius:var(--r-full); background:rgba(10,11,8,.82); color:var(--text); backdrop-filter:blur(4px)}
+.thumb-badge.nopack{color:var(--amber)} .thumb-badge.ai{color:var(--accent-cta)}
+/* Pro/Free reja badge (yangi — import oldidan ko'rinadi) */
+.plan-badge{position:absolute; right:8px; top:8px; font-size:var(--fs-xs); font-weight:var(--fw-bold);
+  padding:3px 8px; border-radius:var(--r-full)}
+.plan-badge.pro{background:var(--accent-cta); color:var(--on-accent)}
+.plan-badge.free{background:rgba(10,11,8,.82); color:var(--text)}
+
+/* ---- INPUT ---- */
+.input,.textarea,.select{width:100%; font-family:inherit; font-size:var(--fs-md);
+  color:var(--text); background:var(--surface-3); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:9px 12px; transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease)}
+.input:focus,.textarea:focus,.select:focus{outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-glow)}
+.textarea{resize:vertical; line-height:var(--lh-normal); min-height:44px}
+
+/* ---- BADGE (status) ---- */
+.badge{display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-xs);
+  font-weight:var(--fw-semibold); padding:3px 9px; border-radius:var(--r-full)}
+.badge::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+.badge.pending{color:var(--amber); background:var(--amber-dim)}
+.badge.approved{color:var(--accent-cta); background:var(--green-dim)}
+.badge.rejected{color:var(--red); background:var(--red-dim)}
+.badge.draft{color:var(--muted); background:var(--surface-2)}
+
+/* ---- PILL / STAT ---- */
+.pill{display:inline-flex; align-items:center; gap:6px; font-size:var(--fs-sm);
+  padding:5px 12px; border-radius:var(--r-full); background:var(--surface-2);
+  border:1px solid var(--border); color:var(--text)}
+.stat{display:flex; flex-direction:column; gap:4px}
+.stat .num{font-family:var(--font-display); font-size:var(--fs-title); font-weight:var(--fw-bold);
+  font-variant-numeric:tabular-nums; color:var(--text); line-height:1}
+.stat .lbl{font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+
+/* ---- IKONA (inline SVG, CDN yo'q) ---- */
+.icon{width:16px; height:16px; flex:none; stroke:currentColor; fill:none;
+  stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+
+/* ---- SKELETON ---- */
+.skeleton{position:relative; overflow:hidden; background:var(--surface-2); border-radius:var(--r-sm)}
+.skeleton::after{content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+  transform:translateX(-100%); animation:af-shimmer 1.2s var(--ease) infinite}
+@keyframes af-shimmer{to{transform:translateX(100%)}}
+
+/* ---- MENYU / POPOVER ---- */
+.menu{background:var(--pop-bg); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--sh-2); padding:5px; min-width:160px}
+.menu-item{display:flex; align-items:center; gap:8px; font-size:var(--fs-md); color:var(--text);
+  padding:8px 10px; border-radius:var(--r-sm); cursor:pointer}
+.menu-item:hover{background:var(--surface-2)}
+
+/* ---- TOAST ---- */
+.toast{display:flex; gap:10px; padding:11px 14px; border-radius:var(--r-md);
+  background:var(--pop-bg); border:1px solid var(--border); border-left:3px solid var(--muted);
+  box-shadow:var(--sh-2); font-size:var(--fs-sm); white-space:normal; max-width:340px}
+.toast.success{border-left-color:var(--green-ok)} .toast.error{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--amber)} .toast.info{border-left-color:var(--select)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+/* ============================================================
+   EKRANGA XOS CSS — AE Gen Studio mockup
+   ============================================================ */
+body{
+  background:#22251d;
+  background-image:radial-gradient(120% 80% at 50% 0%, #2a2e23 0%, #1a1c15 60%, #141611 100%);
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  padding:24px 16px 64px;
+  gap:14px;
+}
+
+/* mockup banner */
+.mock-banner{
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.02em;
+  color:#cdd3c4; background:rgba(163,230,53,.10); border:1px solid var(--border-accent);
+  padding:7px 14px; border-radius:var(--r-full); text-align:center;
+  max-width:420px;
+}
+.frame-caption{
+  font-size:var(--fs-xs); color:rgba(255,255,255,.5); letter-spacing:.04em;
+  text-transform:uppercase; font-weight:var(--fw-semibold);
+}
+
+/* panel frame ko'rinishi */
+.panel-frame{
+  width:380px; max-width:100%;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:var(--r-lg);
+  box-shadow:var(--sh-3);
+  overflow:hidden;
+}
+.af-panel{max-width:none}
+
+/* ---- panel ichki layout ---- */
+.pscroll{display:flex; flex-direction:column; gap:var(--sp-4); padding:14px}
+
+/* HEADER */
+.gs-header{display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3)}
+.wordmark{display:flex; align-items:center; gap:8px}
+.wordmark .mark{
+  width:26px; height:26px; border-radius:7px; flex:none;
+  background:linear-gradient(135deg,var(--accent-cta),var(--accent));
+  display:grid; place-items:center; color:var(--on-accent);
+}
+.wordmark .mark svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2}
+.wordmark .name{font-family:var(--font-display); font-size:var(--fs-lg); font-weight:var(--fw-bold); letter-spacing:-.01em}
+.credit-pill{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); font-variant-numeric:tabular-nums;
+  padding:6px 12px; border-radius:var(--r-full);
+  background:var(--green-dim); border:1px solid var(--border-accent); color:var(--accent-cta);
+}
+.credit-pill svg{width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8}
+
+/* MODE SEGMENT */
+.gs-modes{display:flex}
+.gs-modes .seg{width:100%}
+.gs-modes .seg button{display:inline-flex; align-items:center; justify-content:center; gap:5px}
+.gs-modes .seg button .icon{width:14px; height:14px; stroke-width:1.8}
+
+/* COMPOSER CARD */
+.composer{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); padding:var(--sp-3);
+  display:flex; flex-direction:column; gap:var(--sp-3);
+}
+.cmp-promptwrap{position:relative}
+.cmp-prompt{
+  min-height:84px; border-radius:var(--r-md); background:var(--surface-3);
+  border:1px solid var(--border); padding:11px 12px; padding-bottom:30px;
+  font-size:var(--fs-base); line-height:var(--lh-normal);
+}
+.cmp-prompt[contenteditable]:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow)}
+.cmp-prompt:empty::before{content:attr(data-ph); color:var(--muted-2)}
+.cmp-charcount{
+  position:absolute; right:10px; bottom:8px;
+  font-size:var(--fs-xs); color:var(--muted-2); font-variant-numeric:tabular-nums;
+}
+
+/* prompt tag buttons */
+.cmp-tags{display:flex; gap:7px; flex-wrap:wrap}
+.tag-btn{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:var(--fs-sm); font-weight:var(--fw-medium);
+  padding:6px 11px; border-radius:var(--r-full);
+  background:var(--surface-2); border:1px solid var(--border); color:var(--text-2);
+  cursor:pointer; transition:all var(--dur) var(--ease);
+}
+.tag-btn:hover{border-color:var(--muted-2); color:var(--text)}
+.tag-btn .icon{width:14px; height:14px}
+.tag-btn.accent{color:var(--accent-cta)}
+.tag-btn.accent:hover{background:var(--green-dim); border-color:var(--border-accent)}
+
+/* CONTROL SECTIONS */
+.cmp-divider{height:1px; background:var(--border); margin:0 -2px}
+.ctrl-row{display:flex; flex-direction:column; gap:7px}
+.ctrl-label{
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.05em;
+  text-transform:uppercase; color:var(--muted);
+}
+
+/* model select (custom look) */
+.model-select{
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface-3); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:8px 11px; cursor:pointer;
+  transition:border-color var(--dur) var(--ease);
+}
+.model-select:hover{border-color:var(--muted-2)}
+.model-thumb{
+  width:32px; height:32px; border-radius:7px; flex:none;
+  background:linear-gradient(135deg,#3a4a2a,#23271e);
+  display:grid; place-items:center; color:var(--accent-hi);
+  border:1px solid var(--border);
+}
+.model-thumb svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8}
+.model-meta{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.model-name{font-size:var(--fs-md); font-weight:var(--fw-semibold); color:var(--text)}
+.model-sub{font-size:var(--fs-xs); color:var(--muted)}
+.model-select .chev{width:16px; height:16px; stroke:var(--muted); fill:none; stroke-width:1.8; flex:none}
+
+/* chip rows */
+.chiprow{display:flex; gap:7px; flex-wrap:wrap}
+.chiprow .chip{padding:6px 12px}
+
+/* reference slot */
+.ref-slot{
+  display:flex; align-items:center; gap:11px;
+  border:1px dashed var(--border); border-radius:var(--r-md);
+  padding:11px 12px; background:var(--surface-3); cursor:pointer;
+  transition:border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.ref-slot:hover{border-color:var(--border-accent); background:var(--green-dim)}
+.ref-ic{
+  width:34px; height:34px; border-radius:8px; flex:none;
+  background:var(--surface-2); display:grid; place-items:center; color:var(--muted);
+}
+.ref-ic svg{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.7}
+.ref-tx{flex:1; min-width:0}
+.ref-tx .t{font-size:var(--fs-md); font-weight:var(--fw-medium); color:var(--text)}
+.ref-tx .s{font-size:var(--fs-xs); color:var(--muted); margin-top:1px}
+
+/* PRICE + CTA row */
+.gs-actionbar{display:flex; flex-direction:column; gap:9px}
+.price-line{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:var(--fs-sm);
+}
+.price-line .lbl{color:var(--muted); display:inline-flex; align-items:center; gap:6px}
+.price-line .lbl svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+.price-line .val{
+  font-weight:var(--fw-bold); color:var(--text); font-variant-numeric:tabular-nums;
+}
+.price-line .val b{color:var(--accent-cta)}
+.cta-gen{font-size:var(--fs-base)}
+.cta-gen .icon{width:18px; height:18px; stroke-width:2}
+
+/* RESULT AREA shell */
+.result-shell{display:flex; flex-direction:column; gap:9px}
+.sec-title{
+  display:flex; align-items:center; gap:7px;
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold); letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted);
+}
+.sec-title .dot{width:6px;height:6px;border-radius:50%;background:var(--accent-cta)}
+.sec-title .dot.run{background:var(--select); animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* GENERATING box */
+.genbox{
+  position:relative; border:1px solid var(--border-accent); border-radius:var(--r-lg);
+  background:
+    radial-gradient(60% 70% at 50% 40%, rgba(163,230,53,.10), transparent 70%),
+    var(--surface);
+  overflow:hidden; padding:22px 16px 16px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+.eq{display:flex; align-items:flex-end; gap:5px; height:42px}
+.eq span{
+  width:6px; border-radius:3px; background:linear-gradient(var(--accent-cta),var(--accent));
+  animation:eq 1s ease-in-out infinite;
+}
+.eq span:nth-child(1){height:40%; animation-delay:0s}
+.eq span:nth-child(2){height:75%; animation-delay:.12s}
+.eq span:nth-child(3){height:100%; animation-delay:.24s}
+.eq span:nth-child(4){height:60%; animation-delay:.36s}
+.eq span:nth-child(5){height:88%; animation-delay:.48s}
+.eq span:nth-child(6){height:48%; animation-delay:.6s}
+@keyframes eq{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+.gen-status{font-size:var(--fs-md); color:var(--text); font-weight:var(--fw-medium); text-align:center}
+.gen-status .eta{color:var(--muted)}
+.gen-progress{width:100%; height:6px; border-radius:var(--r-full); background:var(--surface-3); overflow:hidden}
+.gen-progress i{
+  display:block; height:100%; width:64%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-cta));
+  border-radius:var(--r-full);
+}
+.gen-pct{
+  position:absolute; top:14px; right:14px;
+  font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--accent-cta);
+  font-variant-numeric:tabular-nums;
+}
+.gen-cancel{align-self:stretch}
+
+/* DONE result card */
+.res-card{
+  border:1px solid var(--border); border-radius:var(--r-lg);
+  background:var(--surface); overflow:hidden;
+}
+.res-img{
+  aspect-ratio:16/9; position:relative;
+  background:
+    radial-gradient(80% 120% at 25% 15%, rgba(163,230,53,.28), transparent 55%),
+    radial-gradient(90% 90% at 85% 90%, rgba(50,123,250,.30), transparent 60%),
+    linear-gradient(135deg,#2b3320,#1a1f14);
+}
+.res-img .corner-ic{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  color:rgba(245,247,240,.5);
+}
+.res-img .corner-ic svg{width:34px;height:34px;stroke:currentColor;fill:none;stroke-width:1.4}
+.res-img .res-badge{
+  position:absolute; left:9px; top:9px;
+  font-size:var(--fs-xs); font-weight:var(--fw-semibold);
+  padding:3px 9px; border-radius:var(--r-full);
+  background:rgba(10,11,8,.78); color:var(--accent-cta); backdrop-filter:blur(4px);
+  display:inline-flex; align-items:center; gap:5px;
+}
+.res-badge svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
+.res-meta{padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px}
+.res-meta .m{font-size:var(--fs-sm); color:var(--muted); font-variant-numeric:tabular-nums}
+.res-actions{display:flex; gap:7px; padding:0 12px 12px}
+.res-actions .btn{flex:1; padding:9px 10px; font-size:var(--fs-sm)}
+.res-actions .btn .icon{width:15px;height:15px}
+.res-actions .btn-primary{flex:1.3}
+
+/* HISTORY strip */
+.hist{display:flex; flex-direction:column; gap:9px}
+.hist-head{display:flex; align-items:center; justify-content:space-between}
+.hist-head .more{font-size:var(--fs-sm); color:var(--accent-cta); font-weight:var(--fw-medium); cursor:pointer}
+.hist-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
+.hist-row::-webkit-scrollbar{display:none}
+.hist-thumb{
+  width:64px; height:64px; flex:none; border-radius:var(--r-md);
+  position:relative; overflow:hidden; border:1px solid var(--border); cursor:pointer;
+  transition:transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.hist-thumb:hover{transform:translateY(-2px); border-color:var(--muted-2)}
+.hist-thumb .ht-badge{
+  position:absolute; right:4px; bottom:4px;
+  width:16px; height:16px; border-radius:5px;
+  background:rgba(10,11,8,.78); display:grid; place-items:center; color:var(--text);
+}
+.hist-thumb .ht-badge svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2}
+.h1{background:linear-gradient(135deg,#3a4a2a,#1c2114)}
+.h2{background:linear-gradient(135deg,#2a3b4a,#161d23)}
+.h3{background:linear-gradient(135deg,#4a3a2a,#231a14)}
+.h4{background:linear-gradient(135deg,#3a2a4a,#1d1623)}
+.h5{background:linear-gradient(135deg,#2a4a3a,#142319)}
+
+/* spacer between two states */
+.state-note{
+  font-size:var(--fs-xs); color:var(--muted); letter-spacing:.04em;
+  text-transform:uppercase; font-weight:var(--fw-semibold);
+  display:flex; align-items:center; gap:8px; margin-top:2px;
+}
+.state-note::before,.state-note::after{content:""; flex:1; height:1px; background:var(--border)}
+</style>
+</head>
+<body data-theme="standart">
+
+  <div class="mock-banner">MOCKUP — yangi dizayn taklifi · production EMAS · design-preview/</div>
+  <div class="frame-caption">After Effects · CEP panel · ~380px</div>
+
+  <div class="panel-frame">
+    <div class="af-panel" data-theme="standart">
+      <div class="pscroll">
+
+        <!-- HEADER -->
+        <div class="gs-header">
+          <div class="wordmark">
+            <span class="mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg>
+            </span>
+            <span class="name">AssetFlow</span>
+          </div>
+          <span class="credit-pill" title="Mavjud kreditlar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg>
+            847 kredit
+          </span>
+        </div>
+
+        <!-- MODE SEGMENT -->
+        <div class="gs-modes">
+          <div class="seg" role="tablist" aria-label="Generatsiya rejimi">
+            <button role="tab" aria-selected="true">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Rasm
+            </button>
+            <button role="tab" aria-selected="false">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 9l6-3v12l-6-3z"/></svg>
+              Video
+            </button>
+            <button role="tab" aria-selected="false">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              Ovoz
+            </button>
+            <button role="tab" aria-selected="false">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M4 14V10M8 18V6M12 16V8M16 19V5M20 14V10"/></svg>
+              SFX
+            </button>
+          </div>
+        </div>
+
+        <!-- COMPOSER -->
+        <div class="composer">
+          <div class="cmp-promptwrap">
+            <div class="cmp-prompt" contenteditable="true" role="textbox" aria-label="Prompt"
+                 data-ph="Sahna yoki tasvirni ta'riflang...">Quyosh botayotgan paytda tog' cho'qqisida turgan sayyoh, oltin yorug'lik, kinematik kompozitsiya, yuqori detallik</div>
+            <span class="cmp-charcount">118 / 5000</span>
+          </div>
+
+          <div class="cmp-tags">
+            <button class="tag-btn accent" type="button">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z"/></svg>
+              Yaxshilash
+            </button>
+            <button class="tag-btn" type="button">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Tasvirdan
+            </button>
+          </div>
+
+          <div class="cmp-divider"></div>
+
+          <!-- MODEL -->
+          <div class="ctrl-row">
+            <span class="ctrl-label">Model</span>
+            <div class="model-select" role="button" tabindex="0" aria-label="Model tanlash">
+              <span class="model-thumb" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg>
+              </span>
+              <span class="model-meta">
+                <span class="model-name">Mystic</span>
+                <span class="model-sub">Realism · 2K gacha</span>
+              </span>
+              <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+
+          <!-- ASPECT -->
+          <div class="ctrl-row">
+            <span class="ctrl-label">Nisbat</span>
+            <div class="chiprow" role="group" aria-label="Tomonlar nisbati">
+              <button class="chip" aria-selected="false" type="button">1:1</button>
+              <button class="chip" aria-selected="true" type="button">16:9</button>
+              <button class="chip" aria-selected="false" type="button">9:16</button>
+            </div>
+          </div>
+
+          <!-- RESOLUTION -->
+          <div class="ctrl-row">
+            <span class="ctrl-label">Aniqlik</span>
+            <div class="chiprow" role="group" aria-label="Aniqlik">
+              <button class="chip" aria-selected="false" type="button">1K</button>
+              <button class="chip" aria-selected="true" type="button">2K</button>
+              <button class="chip" aria-selected="false" type="button">4K</button>
+            </div>
+          </div>
+
+          <!-- REFERENCE -->
+          <div class="ctrl-row">
+            <span class="ctrl-label">Reference (ixtiyoriy)</span>
+            <div class="ref-slot" role="button" tabindex="0" aria-label="Reference rasm biriktirish">
+              <span class="ref-ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M21 15l-5-5L5 21"/><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+              </span>
+              <span class="ref-tx">
+                <span class="t">Rasm biriktirish</span>
+                <span class="s">Timeline · Project · Yuklash</span>
+              </span>
+              <svg class="chev" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:1.8"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRICE + CTA -->
+        <div class="gs-actionbar">
+          <div class="price-line">
+            <span class="lbl">
+              <svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg>
+              Narx
+            </span>
+            <span class="val"><b>6 kredit</b> · 1 rasm</span>
+          </div>
+          <button class="btn btn-primary btn-block cta-gen" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z"/></svg>
+            Generatsiya
+          </button>
+        </div>
+
+        <!-- STATE A: GENERATING -->
+        <div class="result-shell">
+          <span class="sec-title"><span class="dot run"></span> Yaratilmoqda</span>
+          <div class="genbox">
+            <span class="gen-pct">64%</span>
+            <div class="eq" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="gen-status">Yaratilmoqda… <span class="eta">~12 soniya</span></div>
+            <div class="gen-progress" role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+            <button class="btn btn-ghost gen-cancel" type="button">Bekor qilish</button>
+          </div>
+        </div>
+
+        <div class="state-note">Tayyor bo'lganda</div>
+
+        <!-- STATE B: DONE -->
+        <div class="result-shell">
+          <span class="sec-title"><span class="dot"></span> Natija</span>
+          <div class="res-card">
+            <div class="res-img">
+              <span class="res-badge">
+                <svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg>
+                Mystic
+              </span>
+              <span class="corner-ic" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              </span>
+            </div>
+            <div class="res-meta">
+              <span class="m">2048 × 1152 · 16:9</span>
+              <span class="m">6 kredit ishlatildi</span>
+            </div>
+            <div class="res-actions">
+              <button class="btn btn-primary" type="button">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+                Import
+              </button>
+              <button class="btn" type="button" aria-label="Upscale">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                Upscale
+              </button>
+              <button class="btn" type="button" aria-label="Yana generatsiya">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>
+                Yana
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="hist">
+          <div class="hist-head">
+            <span class="sec-title"><span class="dot"></span> So'nggi ijodlar</span>
+            <span class="more">Barchasi</span>
+          </div>
+          <div class="hist-row">
+            <div class="hist-thumb h1" role="button" tabindex="0" aria-label="Oldingi ijod 1">
+              <span class="ht-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+            </div>
+            <div class="hist-thumb h2" role="button" tabindex="0" aria-label="Oldingi ijod 2">
+              <span class="ht-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4l13 8-13 8z"/></svg></span>
+            </div>
+            <div class="hist-thumb h3" role="button" tabindex="0" aria-label="Oldingi ijod 3">
+              <span class="ht-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+            </div>
+            <div class="hist-thumb h4" role="button" tabindex="0" aria-label="Oldingi ijod 4">
+              <span class="ht-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 14V10M8 18V6M12 16V8M16 19V5M20 14V10"/></svg></span>
+            </div>
+            <div class="hist-thumb h5" role="button" tabindex="0" aria-label="Oldingi ijod 5">
+              <span class="ht-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
