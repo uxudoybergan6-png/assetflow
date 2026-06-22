@@ -92,6 +92,7 @@
 <script src="js/admin-subscribers.js"></script>
 <script src="js/admin-plans.js"></script>
 <script src="js/admin-logs.js"></script>
+<script src="js/admin-dashboard.js"></script>
 <script>
 const AF_ADMIN = AssetFlowAuth.requireAuth(["admin"]);
 if (!AF_ADMIN) { /* /login.html */ }
@@ -108,7 +109,7 @@ if (AF_ADMIN) {
 
 const NAV = [
   {grp:'Workspace'},
-  {id:'overview',     label:'Overview',          icon:'grid'},
+  {id:'overview',     label:'Boshqaruv',         icon:'grid'},
   {id:'moderation',   label:'Moderatsiya navbati', icon:'shield', badge:'5', badgeCls:'warn'},
   {id:'templates',    label:'Barcha shablonlar',  icon:'layers'},
   {grp:'Boshqaruv'},
@@ -124,7 +125,7 @@ const NAV = [
 ];
 
 const TITLES = {
-  overview:['Overview','Boshqaruv paneli'],
+  overview:['Boshqaruv','Platforma holati'],
   moderation:['Moderatsiya navbati','Yangi shablonlarni ko\u2018rib chiqish'],
   templates:['Barcha shablonlar','Global katalog'],
   contributors:['Contributorlar','Foydalanuvchilar boshqaruvi'],
