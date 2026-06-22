@@ -71,6 +71,7 @@ function renderTemplates(){
             <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
             <td class="cell-muted">${t.reason?'Sabab bilan':t.status==='approved'?'Tasdiqlangan':'\u2014'}</td>
             <td><div class="row-actions">
+              <button class="badge badge-plan ${t.isPro?'pro':'free'} tier-toggle" title="${t.isPro?'Pro tarif \u2014 bosib Free qiling':'Free tarif \u2014 bosib Pro qiling'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO':'FREE'}</button>
               <button class="act" title="Ko\u2018rish" onclick="openTplDrawer('${t.id}')">${ic('eye')}</button>
               <button class="act" title="Tahrir" onclick="openEditMeta('${t.id}')">${ic('edit')}</button>
               <button class="act danger" title="O\u2018chirish" onclick="modDelete('${t.id}')">${ic('trash')}</button>
@@ -471,6 +472,7 @@ function openTplDrawer(id){
       ${typeof StudioMedia!=='undefined'?`<div style="border-radius:var(--r-md);overflow:hidden">${StudioMedia.renderPreview(t,{aspect:'16/9',radius:'var(--r-md)'})}</div>`:`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/9;border-radius:var(--r-md)"></div>`}
       <div class="row gap-8 wrap">${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}</div>
       <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
+      <div class="row between center"><span class="label">Tarif (tier)</span><button class="badge badge-plan ${t.isPro?'pro':'free'} tier-toggle" title="${t.isPro?'Pro tarif — bosib Free qiling':'Free tarif — bosib Pro qiling'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO — bosib Free':'FREE — bosib Pro'}</button></div>
       <p class="body">${esc(t.desc)}</p>
       <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['Fayl',t.size],['Yuklangan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
       <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${esc(x)}</span>`).join('')}</div>
@@ -487,6 +489,41 @@ function openTplDrawer(id){
    MODALS & ACTIONS
    ============================================================ */
 function tName(id){ return TEMPLATES.find(t=>t.id===id).name; }
+
+/* ---- Per-shablon Pro/Free tier toggle (admin) ----
+   Mavjud PATCH /api/contributor/templates/:id { isPro } ni chaqiradi (isPro
+   server-side faqat ADMIN uchun). Subscriber plan-toggle naqshining aynan o'zi. */
+function openToggleTierTpl(id){
+  const t = TEMPLATES.find(x=>x.id===id);
+  if(!t) return;
+  const newPro = !t.isPro;
+  const label = newPro ? 'Pro' : 'Free';
+  openModal(`
+    <div class="modal-head"><div class="modal-ico" style="background:${newPro?'var(--violet-dim);color:var(--violet-bright)':'var(--gray-dim);color:var(--gray)'}">${ic('star')}</div>
+      <div><h3>${label} tarifga o‘tkazish</h3><p>${esc(t.name)}</p></div></div>
+    <div class="modal-body"><div class="info-banner">${ic('alert')}<span>${newPro
+        ? `<b>${esc(t.name)}</b> endi faqat <b>Pro</b> obunachilarga ko‘rinadi va import qilinadi.`
+        : `<b>${esc(t.name)}</b> barcha (Free) obunachilarga ochiq bo‘ladi.`}</span></div></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+      <button class="btn ${newPro?'btn-primary':'btn-success'}" onclick="doToggleTierTpl('${id}',${newPro})">${ic('star')} ${label} qilish</button></div>`);
+}
+
+async function doToggleTierTpl(id, isPro){
+  if(!StudioApi.token()){ toast('API','Admin sifatida API orqali kiring','warn'); return; }
+  const t = TEMPLATES.find(x=>x.id===id);
+  const nm = t ? t.name : id;
+  try{
+    await StudioApi.patchTemplate(id, { isPro: !!isPro });
+    await StudioTemplates.refreshAfterReview();
+    closeModal();
+    toast('Yangilandi', `“${esc(nm)}” ${isPro?'Pro':'Free'} tarifga o‘tkazildi`, isPro?'success':'info');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Shablon tarifi o‘zgartirildi',{action:'tier',detail:`${id}:${isPro?'pro':'free'}`});
+    if(CURRENT==='templates') renderTemplates();
+    else if(CURRENT==='moderation') renderModeration();
+  }catch(e){
+    toast('Xato', e.message || 'Tarif o‘zgartirilmadi', 'danger');
+  }
+}
 
 function modApprove(id){
   openModal(`

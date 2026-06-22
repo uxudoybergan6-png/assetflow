@@ -424,6 +424,9 @@ svg { display: block; }
 .badge-plan { background: var(--blue-dim); color: var(--blue); border-color: rgba(86,160,242,.28); }
 .badge-plan.free { background: var(--gray-dim); color: var(--gray); border-color: var(--gray-line); }
 .badge-plan.pro { background: var(--violet-dim); color: var(--violet-bright); border-color: var(--violet-line); }
+/* clickable tier toggle — admin shablon Pro/Free */
+.badge.tier-toggle { cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; line-height: 1; white-space: nowrap; }
+.badge.tier-toggle:hover { filter: brightness(1.12); }
 
 /* ---- plugin plans (admin) ---- */
 .plan-editor-grid {

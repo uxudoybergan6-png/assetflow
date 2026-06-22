@@ -54,6 +54,8 @@ const StudioTemplates = (() => {
         meta.size ||
         (t.fileSize ? `${(t.fileSize / 1024 / 1024).toFixed(1)} MB` : "—"),
       isNew: t.reviewStatus === "PENDING_REVIEW",
+      // Per-shablon tier (admin belgilaydi). API include orqali isPro qaytaradi.
+      isPro: !!t.isPro,
       // #15: preview fon-transcode holati ('pending'|'done'|'failed'|null) — UI badge uchun
       previewTranscodeStatus: t.previewTranscodeStatus || null,
       desc: t.description || "",
