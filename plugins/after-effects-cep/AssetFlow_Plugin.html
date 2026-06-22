@@ -383,6 +383,17 @@ body{
 .af-tb-icon{width:33px;height:33px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);cursor:pointer;transition:border-color .15s,color .15s}
 .af-tb-icon:hover{border-color:var(--muted-2);color:var(--accent-cta)}
 .af-tb-icon svg{width:16px;height:16px}
+/* C3: doim ko'rinadigan format-filter chiplari */
+.af-chips{display:flex;gap:6px;padding:8px 13px 2px;overflow-x:auto;scrollbar-width:none}
+.af-chips::-webkit-scrollbar{display:none}
+.af-chip{flex:none;height:28px;padding:0 13px;border-radius:999px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
+.af-chip:hover{border-color:var(--muted-2);color:var(--text)}
+.af-chip.active{background:var(--accent-cta);border-color:var(--accent-cta);color:var(--on-accent)}
+/* C3: underline-stil page-tablar (mockup). Tablar sidebar-driven (yashirin qoladi);
+   ko'rsatilganda pill o'rniga pastki chiziq bilan chiqadi. */
+.page-tabs .ptab{border-radius:0;position:relative}
+.page-tabs .ptab.active{background:transparent;color:var(--text)}
+.page-tabs .ptab.active::after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--accent-cta);border-radius:2px 2px 0 0}
 
 .env-top{padding:10px 14px 0;flex-shrink:0}
 .env-search{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
@@ -2061,7 +2072,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                    .env-filter-bar wrapper saqlanadi: initEnvFilterUi/closeAllDropdowns shunga bog'liq. -->
               <div class="env-filter-bar cmp-wrap">
                 <div class="cmp-toolbar">
-                  <button type="button" class="cmp-iconbtn" id="searchToggleBtn" onclick="toggleSearchBar()" title="Qidirish" aria-label="Qidirish">
+                  <button type="button" class="cmp-iconbtn" id="searchToggleBtn" onclick="toggleSearchBar()" title="Qidirish" aria-label="Qidirish" style="display:none">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   </button>
                   <button type="button" class="cmp-filterbtn" id="filterToggleBtn" onclick="toggleFilterPanel()" title="Filtrlar">
@@ -2081,12 +2092,19 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                   <button type="button" class="env-view-btn" title="Katak ko'rinishi">▦</button>
                 </div>
 
-                <!-- Qidiruv qatori (⌕ bilan ochiladi) -->
-                <div class="cmp-searchbar" id="searchBar" style="display:none">
+                <!-- Qidiruv qatori — C3: doim ko'rinadi (toggle olib tashlandi) -->
+                <div class="cmp-searchbar" id="searchBar">
                   <div class="env-search-field">
                     <input type="text" placeholder="Qidirish…" id="searchInput">
                     <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
                   </div>
+                </div>
+                <!-- C3: format-filter chiplari (doim ko'rinadi) — mavjud selectOrientFilter ga ulanadi -->
+                <div class="af-chips" id="afOrientChips" role="group" aria-label="Format filtri">
+                  <button type="button" class="af-chip active" data-orient="all" onclick="selectOrientFilter(this,'all','Barchasi')">Hammasi</button>
+                  <button type="button" class="af-chip" data-orient="horizontal" onclick="selectOrientFilter(this,'horizontal','16:9')">16:9</button>
+                  <button type="button" class="af-chip" data-orient="vertical" onclick="selectOrientFilter(this,'vertical','9:16')">9:16</button>
+                  <button type="button" class="af-chip" data-orient="square" onclick="selectOrientFilter(this,'square','1:1')">1:1</button>
                 </div>
 
                 <!-- Filtrlar paneli (Filtrlar bilan ochiladi): bo'lim + Kategoriya/Format/Sifat + AI kontent -->
@@ -3082,6 +3100,12 @@ function selectOrientFilter(el,value,label){
   closeAllDropdowns();
   closePack();
   render();
+}
+// C3: format chiplari aktiv holatini currentOrient bilan moslaydi (render() funneli orqali)
+function syncOrientChips(v){
+  document.querySelectorAll('#afOrientChips .af-chip').forEach(function(c){
+    c.classList.toggle('active',(c.dataset.orient||'all')===(v||'all'));
+  });
 }
 
 function selectResFilter(el,value,label){
@@ -4140,6 +4164,7 @@ window.clearAllFilters=clearAllFilters;
 
 function render(){
   renderFeatured();
+  syncOrientChips(currentOrient);
   const list=getGridAssets();
   const grid=document.getElementById('grid');
   if(!list.length){
