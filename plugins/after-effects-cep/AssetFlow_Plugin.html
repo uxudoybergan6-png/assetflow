@@ -1654,7 +1654,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* natija: rasm grid + video */
 .ai-res{margin-top:24px;animation:af-up .3s ease}
 .ai-res-grid{display:grid;grid-template-columns:1fr;gap:12px}
-.ai-res-card{border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--surface);margin:0}
+.ai-res-card{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:var(--surface);margin:0}
 .ai-res-card img{width:100%;display:block}
 .ai-res-vid video{display:block;width:100%}
 .ai-res-actions{display:flex;justify-content:center;margin-top:14px}
@@ -1671,7 +1671,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-zoom button:hover{background:rgba(255,255,255,.08)}
 .ai-zoom span{min-width:42px;text-align:center;font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
 /* zoom media — karta ichida scroll qilinadi (kattalashganda) */
-.ai-res-stage{overflow:auto;max-height:66vh;border-radius:14px;border:1px solid var(--border);background:var(--surface);display:flex;justify-content:center}
+.ai-res-stage{overflow:auto;max-height:66vh;border-radius:var(--r-lg);border:1px solid var(--border);background:var(--surface);display:flex;justify-content:center}
 .ai-res-stage img,.ai-res-stage video{transform:scale(var(--ai-zoom,1));transform-origin:top center;transition:transform .15s;display:block;max-width:100%}
 .ai-act.danger{color:var(--danger,#e05555)}
 .ai-act.danger:hover{border-color:var(--danger,#e05555)}
@@ -1770,7 +1770,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-card-sub{display:block;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── Generatsiya + natija ── */
-.ai-genbox{margin-top:28px;border-radius:18px;border:1px solid var(--border-accent);background:var(--surface);padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:20px;position:relative;overflow:hidden}
+.ai-genbox{margin-top:28px;border-radius:var(--r-lg);border:1px solid var(--border-accent);background:radial-gradient(70% 70% at 50% 38%,rgba(163,230,53,.10),transparent 72%),var(--surface);padding:36px 22px;display:flex;flex-direction:column;align-items:center;gap:18px;position:relative;overflow:hidden}
 .ai-genbox .glow{position:absolute;width:300px;height:300px;border-radius:999px;background:radial-gradient(circle,var(--accent-glow),transparent 70%);animation:af-pulse 2.2s ease-in-out infinite}
 .ai-eq{position:relative;display:flex;gap:6px;align-items:flex-end;height:40px}
 .ai-eq i{width:6px;height:100%;border-radius:999px;background:var(--accent-cta);transform-origin:bottom;animation:af-eq 1s ease-in-out infinite;display:block}
