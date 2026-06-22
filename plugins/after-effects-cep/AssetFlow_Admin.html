@@ -2293,11 +2293,11 @@ function renderScanList() {
       preview = `<video src="${url}" muted playsinline preload="metadata" onloadedmetadata="this.currentTime=0.3"></video>
         <button class="scan-card-play" onclick="scanPlayVideo(${i},this)">▶</button>`;
     }
-    const st = s.status ? `<div class="scan-card-status ${s.statusType||''}">${s.status}</div>` : '';
+    const st = s.status ? `<div class="scan-card-status ${s.statusType||''}">${escHtml(s.status)}</div>` : '';
     return `<div class="scan-card ${s.videoLocal?'rendered':''}" data-idx="${i}">
       <div class="scan-card-preview">${preview}</div>
       <div class="scan-card-info">
-        <div class="scan-card-name">${s.name}</div>
+        <div class="scan-card-name">${escHtml(s.name)}</div>
         <div class="scan-card-meta">${meta}</div>
         ${st}
         <div class="scan-card-actions">
@@ -2789,7 +2789,7 @@ function applyDlSearch() {
   }
   el.innerHTML = list.map(d => {
     const thumb = d.thumbUrl
-      ? `<img src="${d.thumbUrl}" alt="" onerror="this.style.display='none'">`
+      ? `<img src="${escHtml(d.thumbUrl)}" alt="" onerror="this.style.display='none'">`
       : '📦';
     const date = d.downloadedAt ? new Date(d.downloadedAt).toLocaleDateString('uz-UZ') : '';
     const pathShort = d.dir ? d.dir.replace(/.*[/\\]([^/\\]+)[/\\][^/\\]+$/, '…/$1/…') : 'tmpdir';
@@ -2797,13 +2797,13 @@ function applyDlSearch() {
       <div class="dl-item-row">
         <div class="dl-item-thumb">${thumb}</div>
         <div class="dl-item-info">
-          <div class="dl-item-name">${d.name || d.id}</div>
+          <div class="dl-item-name">${escHtml(d.name || d.id)}</div>
           <div class="dl-item-meta">${date}</div>
-          <div class="dl-item-path" title="${d.aepPath || d.dir}">${pathShort}</div>
+          <div class="dl-item-path" title="${escHtml(d.aepPath || d.dir)}">${escHtml(pathShort)}</div>
         </div>
         <div class="dl-item-actions">
-          ${d.aepPath && IS_CEP ? `<button class="dl-btn-open" onclick="adminOpenInAE('${d.id}')">▶ AE</button>` : ''}
-          <button class="dl-btn-del" onclick="adminDeleteDownloaded('${d.id}')">🗑</button>
+          ${d.aepPath && IS_CEP ? `<button class="dl-btn-open" onclick="adminOpenInAE('${escAttrJs(d.id)}')">▶ AE</button>` : ''}
+          <button class="dl-btn-del" onclick="adminDeleteDownloaded('${escAttrJs(d.id)}')">🗑</button>
         </div>
       </div>
     </div>`;
