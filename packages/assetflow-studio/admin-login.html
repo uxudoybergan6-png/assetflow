@@ -21,20 +21,36 @@
 <body class="auth-page">
 <div class="auth-shell">
   <aside class="auth-side">
-    <div class="brand">
-      <div class="brand-mark">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
-      </div>
-      <div class="col" style="gap:2px">
-        <span class="brand-name">AssetFlow</span>
-        <span class="brand-sub">Admin Console</span>
-      </div>
+    <div class="auth-deco" aria-hidden="true">
+      <div class="deco-grid"></div>
+      <svg class="deco-spark s1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+      <svg class="deco-spark s2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
     </div>
-    <h2 class="h2 auth-side-title">Moderatsiya va<br>tasdiqlash markazi</h2>
-    <p class="body auth-side-desc">Faqat <b>ADMIN</b> roli bilan kirish. Contributor yuklash boshqa manzilda.</p>
-    <p class="auth-side-foot small">
-      <a href="/studio/login.html" id="linkContribSide" style="color:var(--violet-bright)">Contributor Studio →</a>
-    </p>
+    <div class="auth-brand-top">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/></svg>
+      </span>
+      <span class="brand-word">Asset<b>Flow</b> · Admin</span>
+    </div>
+    <div class="auth-hero">
+      <h1>Moderatsiya va <em>tasdiqlash</em> markazi</h1>
+      <p>Faqat ADMIN roli bilan kirish. Shablonlarni tasdiqlang, obunachilarni boshqaring, AI kredit bering.</p>
+    </div>
+    <div class="auth-feats">
+      <div class="feat">
+        <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z"/><path d="m9.5 12 1.8 1.8 3.2-3.6"/></svg></span>
+        <span class="feat-txt"><b>Moderatsiya navbati</b><span>Approve / reject + publish</span></span>
+      </div>
+      <div class="feat">
+        <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span class="feat-txt"><b>Obunachilar</b><span>Free/Pro, kredit, status</span></span>
+      </div>
+      <div class="feat">
+        <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-5"/></svg></span>
+        <span class="feat-txt"><b>Analitika · Audit</b><span>Yuklab olishlar, loglar</span></span>
+      </div>
+      <a href="/studio/login.html" id="linkContribSide" class="forgot" style="margin-top:4px">← Contributor Studio</a>
+    </div>
   </aside>
 
   <main class="auth-main">
@@ -42,31 +58,40 @@
       <button type="button" class="icon-btn" data-theme-toggle title="Mavzu"><span data-theme-icon></span></button>
     </div>
     <div class="auth-card">
-      <h1 class="h1" style="margin-bottom:6px">Admin kirish</h1>
-      <p class="body" style="margin-bottom:22px">Shablonlarni tasdiqlash va boshqarish</p>
-      <form id="loginForm" class="col gap-14">
+      <div class="form-head">
+        <h1 class="h1">Admin kirish</h1>
+        <p>Shablonlarni tasdiqlash va platformani boshqarish.</p>
+      </div>
+      <form id="loginForm">
         <div class="field">
-          <label>Email</label>
-          <input class="input" type="email" name="email" required autocomplete="username"
-            placeholder="admin@email.com" autocomplete="username">
-          <p class="small" style="margin-top:6px;color:var(--tx-2)">
-            <b>ADMIN</b> emas — ro'yxatdan o'tgan to'liq email (masalan <code>admin@assetflow.uz</code>).
-          </p>
+          <label for="adminEmail">Email</label>
+          <div class="field-wrap">
+            <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg></span>
+            <input id="adminEmail" class="input has-lead" type="email" name="email" required autocomplete="username" placeholder="admin@assetflow.uz">
+          </div>
+          <p class="hint" style="margin-top:6px"><b>ADMIN</b> emas — ro'yxatdan o'tgan to'liq email (masalan <code>admin@assetflow.uz</code>).</p>
         </div>
         <div class="field">
-          <label>Parol</label>
-          <input class="input" type="password" name="password" required>
+          <label for="adminPass">Parol</label>
+          <div class="field-wrap">
+            <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+            <input id="adminPass" class="input has-lead has-trail" type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+            <button type="button" class="toggle-pw" id="adminPwToggle" aria-label="Parolni ko'rsatish" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
-        <label class="row center gap-8" style="cursor:pointer;font-size:13px;color:var(--tx-1);margin-top:2px">
-          <div class="checkbox" id="rememberChk" tabindex="0" role="checkbox" aria-checked="false"></div>
-          Meni eslab qol
-        </label>
+        <div class="field-meta">
+          <label class="remember">
+            <div class="checkbox" id="rememberChk" tabindex="0" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg></div>
+            Meni eslab qol
+          </label>
+        </div>
         <p class="auth-error hidden" id="loginError" role="alert"></p>
-        <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Admin sifatida kirish</button>
+        <button type="submit" class="btn btn-primary btn-block">Admin sifatida kirish</button>
       </form>
-      <p class="small" style="margin-top:16px;color:var(--tx-2)">
-        Birinchi marta: avval <a href="/studio/login.html" id="linkContrib">Contributor Studio</a> da ro'yxatdan o'ting,
-        keyin DB da <code>role = ADMIN</code>.
+      <p class="auth-foot" style="font-size:12px">
+        Birinchi marta: avval <a href="/studio/login.html" id="linkContrib">Contributor Studio</a> da ro'yxatdan o'ting, keyin DB da <code>role = ADMIN</code>.
       </p>
     </div>
   </main>
@@ -156,6 +181,19 @@
     }
     localStorage.removeItem(RM_SESSION);
     location.href = ASSETFLOW_STUDIO.adminUrl;
+  });
+})();
+</script>
+<script>
+/* Parolni ko'rsatish/yashirish — auth logikasiga tegmaydi */
+(function () {
+  var t = document.getElementById('adminPwToggle');
+  var i = document.getElementById('adminPass');
+  if (t && i) t.addEventListener('click', function () {
+    var show = i.type === 'password';
+    i.type = show ? 'text' : 'password';
+    t.setAttribute('aria-pressed', String(show));
+    t.setAttribute('aria-label', show ? 'Parolni yashirish' : "Parolni ko'rsatish");
   });
 })();
 </script>
