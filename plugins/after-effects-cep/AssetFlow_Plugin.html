@@ -1537,7 +1537,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
 /* ── Yagona kompozer bar ── */
 .ai-composer{
-  border-radius:18px;background:var(--surface);padding:13px;
+  border-radius:var(--r-lg);background:var(--surface);padding:13px;
   border:1px solid var(--border);
   position:relative;z-index:60; /* ochilgan menyu (ichida) pastdagi TARIX kartalaridan yuqori turishi uchun — composer backdrop-filter stacking-context'ini ko'taramiz */
   transition:box-shadow .2s var(--ease),border-color .2s var(--ease);
@@ -1566,12 +1566,12 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-charcount{font-size:var(--fs-xs);color:var(--muted-2);font-variant-numeric:tabular-nums}
 .ai-charcount.warn{color:#e0a83a}
 .ai-charcount.over{color:var(--danger,#e05555);font-weight:600}
-.ai-improve{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:8px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);cursor:pointer;font-family:inherit;font-size:var(--fs-sm);font-weight:500}
+.ai-improve{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--green-dim);border:1px solid var(--border-accent);color:var(--accent-cta);cursor:pointer;font-family:inherit;font-size:var(--fs-sm);font-weight:500}
 .ai-improve:hover{background:rgba(130,195,65,.22)}
 .ai-improve[disabled]{opacity:.6;cursor:default}
 .ai-improve-group{display:inline-flex;align-items:center;gap:6px}
-.ai-improve-json{background:rgba(120,130,255,.14);border-color:rgba(120,130,255,.45);color:#9aa6ff}
-.ai-improve-json:hover{background:rgba(120,130,255,.24)}
+.ai-improve-json{background:var(--surface-2);border-color:var(--border);color:var(--muted)}
+.ai-improve-json:hover{background:var(--surface-3);border-color:var(--muted-2);color:var(--text)}
 /* Image/Video-to-Prompt (G5) — tahlil davom etganda puls (spinner o'rniga yengil) */
 .ai-improve.is-busy{opacity:.7;cursor:wait;animation:ai-improve-pulse 1s ease-in-out infinite}
 @keyframes ai-improve-pulse{0%,100%{opacity:.55}50%{opacity:.9}}
@@ -1585,7 +1585,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-ctrl .chev{color:var(--muted);display:flex}
 .ai-ctrl b{font-weight:600}
 .ai-ctrl-settings .ai-ctrl-ico{color:var(--muted)}
-.ai-mdot{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-cta));flex:none}
+.ai-mdot{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent-cta));flex:none}
 
 .ai-menu{position:absolute;bottom:calc(100% + 6px);left:0;min-width:210px;max-width:min(320px,calc(100vw - 24px));max-height:min(56vh,360px);overflow-y:auto;background:var(--pop-bg,#1c1f18);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.45),var(--shadow);z-index:80;display:flex;flex-direction:column;gap:2px}
 .ai-menu-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:transparent;border:none;cursor:pointer;color:var(--text);width:100%;text-align:left;font-family:inherit;transition:background .12s}
@@ -1747,8 +1747,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .ai-res-grid:not(.multi) .ai-res-card{align-items:center}
 .ai-res-grid:not(.multi) .ai-res-card img{max-height:60vh;width:auto;max-width:100%}
 
-.ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap}
-.ai-timeline:hover{border-color:var(--muted-2);color:var(--text)}
+.ai-timeline{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;background:var(--surface-3);border:1px dashed var(--border);color:var(--muted);font-size:var(--fs-md);cursor:pointer;font-family:inherit;white-space:nowrap;transition:border-color .15s,background .15s,color .15s}
+.ai-timeline:hover{border-color:var(--border-accent);background:var(--green-dim);color:var(--text)}
 .ai-timeline.is-disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 .ai-soon{font-size:var(--fs-xs);font-weight:700;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
 .ai-spacer{flex:1;min-width:8px}
