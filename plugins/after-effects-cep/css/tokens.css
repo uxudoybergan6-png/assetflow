@@ -1,23 +1,26 @@
 /* AssetFlow — yagona dizayn tokenlari (Browse + Admin panellar uchun bitta manba) */
 /* Inter shrifti — internet bo'lmasa system fonts ga jim qaytadi */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 /* ── STRUKTURA (temaga bog'liq emas: shrift, masofa, shakl, harakat) ── */
 :root{
-  /* Shrift (--fs-xs = 11px eng kichik; hech narsa undan past emas) */
+  /* Shrift — display (Space Grotesk, offline→Inter→system) + UI (Inter). --fs-xs=11px eng kichik */
   --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --font-display:'Space Grotesk','Inter',-apple-system,system-ui,sans-serif;
   --fs-xs:11px;
   --fs-sm:12px;
   --fs-md:13px;
+  --fs-base:14px;
   --fs-lg:15px;
   --fs-xl:18px;
   --fs-title:22px;
+  --fs-display:30px;
 
   /* Masofa */
-  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
 
   /* Shakl / harakat */
-  --radius:8px;
+  --radius:8px; --r-sm:6px; --r-md:10px; --r-lg:14px; --r-full:999px;
   --ease:cubic-bezier(.34,1.2,.64,1);
   --dur:.2s;
 
@@ -57,13 +60,13 @@
   --rim:transparent;
 
   /* Chegaralar */
-  --border:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.10);
   --border-accent:rgba(163,230,53,.35);
 
-  /* Matn */
+  /* Matn (WCAG AA: --muted body uchun ≥4.5:1; --muted-2 faqat dekorativ/disabled) */
   --text:#f5f7f0;
-  --muted:rgba(255,255,255,.55);
-  --muted-2:rgba(255,255,255,.40);
+  --muted:rgba(255,255,255,.66);
+  --muted-2:rgba(255,255,255,.52);
 
   /* Brend (lime) */
   --accent:#82c341;
@@ -105,8 +108,8 @@
   --border-accent:rgba(163,230,53,.4);
 
   --text:#f6f8f1;
-  --muted:rgba(246,248,241,.62);
-  --muted-2:rgba(246,248,241,.42);
+  --muted:rgba(246,248,241,.70);
+  --muted-2:rgba(246,248,241,.50);
 
   --accent:#82c341;
   --accent-hi:#9fd356;
@@ -144,8 +147,8 @@
   --border-accent:rgba(90,143,42,.5);
 
   --text:#14160f;
-  --muted:rgba(20,22,15,.62);
-  --muted-2:rgba(20,22,15,.45);
+  --muted:rgba(20,22,15,.68);
+  --muted-2:rgba(20,22,15,.50);
 
   --accent:#5a8f2a;
   --accent-hi:#6fa838;
@@ -162,3 +165,6 @@
 
   --shadow:0 12px 40px rgba(20,30,10,.18);
 }
+
+/* ── Display tipografiya (Space Grotesk) — sarlavhalar. Offline→Inter→system fallback ── */
+h1,h2,h3,h4{font-family:var(--font-display);letter-spacing:-.01em}
