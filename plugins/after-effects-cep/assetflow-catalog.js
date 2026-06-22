@@ -291,6 +291,10 @@ const AssetFlowCatalog = (() => {
         serverTemplateId: u.id,
         nw: 0,
         templateApp: u.templateApp || "ae",
+        // AE redesign — karta author + per-shablon tier (katalog API additive maydonlari)
+        author: u.author || null,
+        authorInitials: u.authorInitials || "",
+        isPro: !!u.isPro,
         // Saralash uchun haqiqiy sana (createdAt afzal, bo'lmasa updatedAt)
         createdAt: u.createdAt || u.updatedAt || "",
       });
