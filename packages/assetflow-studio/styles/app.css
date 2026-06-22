@@ -317,6 +317,47 @@ svg { display: block; }
 .trend.up { color: var(--green); }
 .trend.down { color: var(--red); }
 .trend svg { width: 13px; height: 13px; }
+.trend.flat { color: var(--tx-2); font-weight: 500; }
+
+/* ============================================================
+   CONTRIBUTOR DASHBOARD — phase 2a (design-preview/studio-dashboard.html)
+   Token-asosli → dark + light ikkala temada ishlaydi.
+   ============================================================ */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.statcard {
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 16px; display: flex; flex-direction: column; gap: 8px;
+}
+.statcard .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.statcard .lbl { font-size: 12px; color: var(--tx-2); }
+.statcard .num {
+  font-family: var(--font-display); font-size: 30px; font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -.02em;
+}
+.stat-ico {
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: var(--r-sm);
+  display: grid; place-items: center; color: var(--violet-bright); background: var(--violet-dim);
+}
+.stat-ico svg { width: 18px; height: 18px; }
+.stat-ico.amber { color: var(--yellow); background: var(--yellow-dim); }
+.stat-ico.blue { color: var(--blue); background: var(--blue-dim); }
+
+.dash-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+
+/* faollik grafigi — inline (CDN/kutubxona yo'q) */
+.chart { display: flex; align-items: flex-end; gap: 14px; height: 168px; padding-top: 8px; }
+.chart-col { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; min-width: 0; }
+.chart-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.chart-bar {
+  width: 62%; max-width: 46px; min-height: 4px; border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--violet-bright), var(--violet));
+  transition: filter .16s var(--ease);
+}
+.chart-col:hover .chart-bar { filter: brightness(1.12); }
+.chart-x { font-size: 11px; color: var(--tx-2); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 980px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr; } }
 
 /* ============================================================
    BADGES (status system)

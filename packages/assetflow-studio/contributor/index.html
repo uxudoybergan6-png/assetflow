@@ -75,6 +75,7 @@
 <script src="/studio/js/data.js"></script>
 <script src="/studio/js/studio-stats.js"></script>
 <script src="/studio/js/contributor-views.js"></script>
+<script src="/studio/js/contributor-dashboard.js"></script>
 <script>
 const AF_SESSION = AssetFlowAuth.requireAuth(["contributor"]);
 if (!AF_SESSION) { /* login.html ga yo’naltirildi */ }
@@ -93,7 +94,7 @@ if (AF_SESSION) {
 }
 const NAV = [
   {grp:'Studio'},
-  {id:'overview',  label:'Overview',           icon:'grid'},
+  {id:'overview',  label:'Boshqaruv',          icon:'grid'},
   {id:'templates', label:'Mening shablonlarim', icon:'layers'},
   {id:'upload',    label:'Yangi yuklash',       icon:'upload'},
   {grp:'Aloqa'},
@@ -101,7 +102,7 @@ const NAV = [
   {id:'settings',  label:'Sozlamalar',          icon:'gear'},
 ];
 const TITLES = {
-  overview:['Overview','Salom'],
+  overview:['Boshqaruv','Salom'],
   templates:['Mening shablonlarim','Studio'],
   upload:['Yangi shablon yuklash','Studio'],
   messages:['Xabarlar','Aloqa'],
