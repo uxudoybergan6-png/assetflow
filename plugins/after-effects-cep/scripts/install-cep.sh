@@ -4,9 +4,12 @@ set -euo pipefail
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.assetflow.demo"
 
+# AF_SKIP_AE=1 → AE'ni yopmasdan/ochmasdan faqat fayl + kesh yangilanadi
+# (CI yoki "AE'ga tegma, men o'zim qayta ochaman" holati uchun).
+SKIP_AE="${AF_SKIP_AE:-0}"
+
 # AE versiyasini AVTO-aniqlash: avval ISHLAYOTGAN jarayon (foydalanuvchi aynan shuni ishlatadi),
-# bo'lmasa eng yangi o'rnatilgan. (Hardcode 2025 edi — foydalanuvchi 2026 ishlatsa noto'g'ri AE
-# restart bo'lardi, panel eski qolardi.)
+# bo'lmasa eng yangi o'rnatilgan.
 AE_BIN="$(ps -axo args= 2>/dev/null | grep -oE '/Applications/Adobe After Effects [0-9]+/Adobe After Effects [0-9]+\.app/Contents/MacOS/After Effects' | head -1 || true)"
 if [ -n "$AE_BIN" ]; then
   AE_APP="${AE_BIN%/Contents/MacOS/After Effects}"
@@ -14,11 +17,42 @@ else
   AE_DIR="$(ls -d /Applications/Adobe\ After\ Effects\ * 2>/dev/null | sort -V | tail -1 || true)"
   [ -n "$AE_DIR" ] && AE_APP="$AE_DIR/$(basename "$AE_DIR").app" || AE_APP=""
 fi
+AE_NAME=""
+[ -n "${AE_APP:-}" ] && [ -d "$AE_APP" ] && AE_NAME="$(basename "$AE_APP" .app)"
 
 for v in 9 10 11 12 13 14; do
   defaults write "com.adobe.CSXS.$v" PlayerDebugMode 1 2>/dev/null || true
 done
 
+# ── 1) AE'ni AVVAL yopish ───────────────────────────────────────────────────
+# Eski skript copy'ni AE ochiq turib bajarardi → CEP faylni egallab turardi va
+# yangi HTML "yopishmasdan" qolardi. Endi avval yopamiz, keyin ko'chiramiz.
+if [ "$SKIP_AE" != "1" ] && [ -n "$AE_NAME" ]; then
+  echo "→ $AE_NAME yopilmoqda (copy/kesh tozalashdan oldin)..."
+  osascript -e "tell application \"$AE_NAME\" to quit" 2>/dev/null || true
+  for _ in {1..25}; do
+    pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null 2>&1 || break
+    sleep 1
+  done
+  if pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null 2>&1; then
+    echo "  ⚠ AE hali ochiq — qo'lda yoping (Cmd+Q) va skriptni qayta ishga tushiring."
+  else
+    echo "  ✓ AE yopildi"
+  fi
+fi
+
+# ── 2) CEP render/HTML keshini tozalash ─────────────────────────────────────
+# CEF (CEP'ning ichki brauzeri) HTML/JS keshini saqlaydi. Eski panel keshda
+# qolsa, fayl yangi bo'lsa ham eski ko'rinish chiqaveradi. Faqat AssetFlow va
+# umumiy CSXS keshini tozalaymiz (boshqa Adobe app keshlariga tegmaymiz).
+echo "→ CEP keshi tozalanmoqda..."
+rm -rf "$HOME/Library/Caches/CSXS/cep_cache" 2>/dev/null || true
+rm -rf "$DEST/cef_cache" "$DEST/Cache" "$DEST/GPUCache" 2>/dev/null || true
+echo "  ✓ kesh tozalandi"
+
+# ── 3) DEST'ni TO'LIQ tozalab qayta ko'chirish (cache-bust) ─────────────────
+# rm -rf DEST → hech qanday eski leftover qolmaydi. Manbadan to'liq qayta quramiz.
+rm -rf "$DEST"
 mkdir -p "$DEST/CSXS" "$DEST/js" "$DEST/jsx" "$DEST/css"
 
 cp "$SRC/CSXS/manifest.xml" "$DEST/CSXS/"
@@ -30,30 +64,44 @@ cp "$SRC/js/CSInterface.js" "$DEST/js/"
 cp "$SRC/jsx/host.jsx" "$DEST/jsx/"
 cp "$SRC/css/"*.css "$DEST/css/" 2>/dev/null || true
 
-# Build yorlig'i — o'rnatilgan HTML'ga sana + git-hash shtamplanadi (manba placeholder qoladi).
-# Panelda ko'rinadi → install + AE qayta ochishdan keyin yangi build yuklanganini bilish.
+# ── 4) VERIFY: o'rnatilgan HTML manbaga BAYT-BA-BAYT mosmi? ─────────────────
+# Build stamp HALI urilmadi (placeholder __AF_BUILD__ saqlanib turibdi), shuning
+# uchun DEST aynan SRC bilan bir xil bo'lishi shart. Farq bo'lsa — copy ishlamadi.
+verify_file() {
+  local name="$1"
+  if [ ! -f "$DEST/$name" ]; then
+    echo "  ✗ VERIFY: $name DEST'da YO'Q — copy muvaffaqiyatsiz!"; return 1
+  fi
+  if diff -q "$SRC/$name" "$DEST/$name" >/dev/null 2>&1; then
+    echo "  ✓ VERIFY: $name manbaga mos ($(wc -c <"$DEST/$name" | tr -d ' ') bayt)"
+  else
+    echo "  ✗ VERIFY: $name manbadan FARQ qiladi — copy muvaffaqiyatsiz!"; return 1
+  fi
+}
+echo "→ O'rnatish tekshirilmoqda..."
+verify_file "AssetFlow_Plugin.html"
+verify_file "AssetFlow_Admin.html"
+
+# ── 5) Build yorlig'i — VERIFY'dan KEYIN stamplaymiz ───────────────────────
 BUILD_STAMP="$(date '+%Y-%m-%d %H:%M') · $(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo nogit)"
 for f in "$DEST/AssetFlow_Plugin.html" "$DEST/AssetFlow_Admin.html"; do
   [ -f "$f" ] && sed -i '' "s|__AF_BUILD__|${BUILD_STAMP}|g" "$f" 2>/dev/null || true
 done
 echo "  Build: $BUILD_STAMP"
-
 echo "✓ AssetFlow o'rnatildi: $DEST"
 echo "  Manba: $SRC"
 
-if [ -z "${AE_APP:-}" ] || [ ! -d "$AE_APP" ]; then
+# ── 6) AE'ni qayta ochish ──────────────────────────────────────────────────
+if [ "$SKIP_AE" = "1" ]; then
+  echo "ℹ AF_SKIP_AE=1 — AE qayta ochilmadi. Qo'lda: AE'ni TO'LIQ yoping (Cmd+Q) va qayta oching."
+  exit 0
+fi
+if [ -z "$AE_NAME" ]; then
   echo "⚠ After Effects topilmadi — qo'lda: Window → Extensions → AssetFlow"
   exit 0
 fi
-AE_NAME="$(basename "$AE_APP" .app)"   # masalan "Adobe After Effects 2026"
 
-echo "→ $AE_NAME qayta ishga tushirilmoqda..."
-osascript -e "tell application \"$AE_NAME\" to quit" 2>/dev/null || true
-for _ in {1..25}; do
-  pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null || break
-  sleep 1
-done
-
+echo "→ $AE_NAME ishga tushirilmoqda..."
 open -a "$AE_APP"
 sleep 10
 
