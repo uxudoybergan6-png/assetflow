@@ -930,10 +930,14 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));ga
 /* Pro/Free badge (yuqori-o'ng) + author (cinfo) — katalog API real ma'lumoti */
 .plan-badge{position:absolute;right:8px;top:8px;z-index:4;font-size:9px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px}
 .plan-badge.pro{background:var(--accent-cta);color:var(--on-accent)}
-.plan-badge.free{background:rgba(10,11,8,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--text);border:0.5px solid rgba(255,255,255,.16)}
+.plan-badge.free{background:rgba(10,11,8,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:rgba(255,255,255,.92);border:0.5px solid rgba(255,255,255,.16)}
 .card-author{display:flex;align-items:center;gap:6px;margin:5px 0 0;min-width:0}
 .card-av{width:18px;height:18px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;background:linear-gradient(135deg,var(--green-dim),var(--surface-2));border:0.5px solid var(--border-accent);color:var(--accent-cta)}
 .card-by{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* Hero karusel author — qorong'i grad ustida doim yorug' (tema farqsiz) */
+.card-author.hero{margin-top:6px}
+.card-author.hero .card-av{color:#a3e635;border-color:rgba(163,230,53,.5)}
+.card-author.hero .card-by{color:rgba(255,255,255,.82)}
 
 /* ── Hero strip (Tahrir tanlovi) — eksport hero qatori ── */
 /* ── Hero strip — ixcham AVTO-KARUSEL (eksport ko'rinishi, kichik o'lcham) ── */
@@ -3928,7 +3932,8 @@ function renderHeroCard(a){
   return`<div class="cat-hero-card" style="background:${escHtml(a.bg)}" onclick="openPack('${safe}')" title="${escHtml(label)}">
     ${img}
     ${a.nw?'<span class="cat-hero-new">YANGI</span>':''}
-    <div class="cat-hero-cardgrad">${cat}<div class="cat-hero-cardtitle">${escHtml(label)}</div></div>
+    <span class="plan-badge ${a.isPro?'pro':'free'}">${a.isPro?'PRO':'FREE'}</span>
+    <div class="cat-hero-cardgrad">${cat}<div class="cat-hero-cardtitle">${escHtml(label)}</div>${a.author?`<div class="card-author hero"><span class="card-av">${escHtml(a.authorInitials||'?')}</span><span class="card-by">${escHtml(a.author)}</span></div>`:''}</div>
   </div>`;
 }
 
