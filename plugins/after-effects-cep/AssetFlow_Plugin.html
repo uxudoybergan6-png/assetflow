@@ -881,28 +881,28 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
    (pixel-yaqin). Faqat markup/CSS; fetch/filtr/import mantig'i o'sha.
    Yuzalar glass-model orqali: var(--glass-bg)/blur/--rim.
    ============================================================ */
-.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:14px 14px 20px}
-html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:12px 12px 16px}
+html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .card{
   background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
-  border:0.5px solid var(--border);border-radius:16px;overflow:hidden;
+  border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
   box-shadow:inset 0 0 0 0.5px var(--rim);
-  cursor:pointer;transition:transform .2s var(--ease),border-color .15s;position:relative;
+  cursor:pointer;transition:transform .2s var(--ease),border-color .15s,box-shadow .15s;position:relative;
 }
-.card:hover{transform:translateY(-3px);border-color:var(--muted-2)}
+.card:hover{transform:translateY(-2px);border-color:var(--muted-2);box-shadow:var(--sh-1)}
 .card.selected{border:2px solid var(--select)}
 .card .thumb{
-  border-radius:0;aspect-ratio:16/9;width:100%;height:auto;overflow:hidden;position:relative;
+  border-radius:0;aspect-ratio:4/3;width:100%;height:auto;overflow:hidden;position:relative;
   box-shadow:none;display:flex;align-items:center;justify-content:center;
 }
 .card:hover .thumb{box-shadow:none}
 .card .thumb::before{display:none}
 
 /* badge'lar (yuqori chap) */
-.thumb-badges{position:absolute;left:9px;top:9px;z-index:4;display:flex;gap:5px}
-.thumb-badges .new-b,.thumb-badges .dl-b{position:static;font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent)}
-.thumb-badges .ai-b{font-size:9px;font-weight:600;padding:3px 7px;border-radius:999px;background:rgba(10,11,8,.7);backdrop-filter:blur(4px);color:rgba(255,255,255,.8)}
-.thumb-badges .nopack-b{font-size:9px;font-weight:700;padding:3px 7px;border-radius:999px;background:rgba(10,11,8,.7);color:var(--amber)}
+.thumb-badges{position:absolute;left:8px;top:8px;z-index:4;display:flex;gap:5px;max-width:calc(100% - 16px)}
+.thumb-badges .new-b,.thumb-badges .dl-b{position:static;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent)}
+.thumb-badges .ai-b{font-size:10px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(10,11,8,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--accent-cta)}
+.thumb-badges .nopack-b{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(10,11,8,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:var(--amber)}
 
 /* pastki gradient + doimiy ★/⬇ */
 .thumb-grad{
@@ -925,7 +925,7 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));ga
 /* cinfo: kategoriya-label (tepada) → sarlavha → meta */
 .cinfo{padding:11px 13px}
 .card-cat{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted-2);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.aname{font-size:14px;font-weight:600;color:var(--text);margin:3px 0 4px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.aname{font-size:13.5px;font-weight:600;color:var(--text);margin:3px 0 4px;line-height:1.3;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-.01em}
 .card-meta-line{font-size:11px;color:var(--muted);margin-top:0}
 
 /* ── Hero strip (Tahrir tanlovi) — eksport hero qatori ── */
