@@ -71,6 +71,8 @@ const CATALOG_SELECT = {
   metaJson: true,
   fileName: true,
   fileSize: true,
+  isPro: true,
+  contributor: { select: { name: true, email: true } },
   createdAt: true,
   updatedAt: true,
 } as const;

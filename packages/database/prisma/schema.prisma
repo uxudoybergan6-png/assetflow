@@ -251,6 +251,7 @@ model ContributorTemplate {
   reviewedById  String?
   reviewedAt    DateTime?
   published     Boolean              @default(false)
+  isPro         Boolean              @default(false) // Per-shablon tier: true=PRO-only, false=FREE. Admin belgilaydi. Additive — default false = mavjud shablonlar FREE.
   downloadsCount Int                 @default(0)
   importsCount   Int                 @default(0)
   embedding     Json?                // Semantik qidiruv uchun embedding vektori (bge-m3, JSON float[]) — SAQLANADI (backward-compat + fallback)

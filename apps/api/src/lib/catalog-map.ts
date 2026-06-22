@@ -141,12 +141,32 @@ type TemplateRow = {
   metaJson: unknown;
   fileName: string | null;
   fileSize: number | null;
+  isPro: boolean;
+  contributor: { name: string | null; email: string } | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
+/** Contributor display name + bosh harflar (karta avatar uchun). Ism yo'q bo'lsa
+ *  email lokal qismidan. Hech qanday maxfiy ma'lumot chiqarilmaydi — faqat
+ *  ko'rsatish nomi va initsiallar (email to'liq qaytarilmaydi). */
+function contributorAuthor(
+  c: { name: string | null; email: string } | null
+): { author: string | null; authorInitials: string } {
+  if (!c) return { author: null, authorInitials: "" };
+  const display = (c.name && c.name.trim()) || c.email.split("@")[0] || "";
+  const parts = display.trim().split(/\s+/).filter(Boolean);
+  const initials = (
+    parts.length >= 2
+      ? parts[0][0] + parts[parts.length - 1][0]
+      : (parts[0] || "").slice(0, 2)
+  ).toUpperCase();
+  return { author: display || null, authorInitials: initials };
+}
+
 export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const rawMeta = (t.metaJson ?? {}) as Record<string, unknown>;
+  const { author, authorInitials } = contributorAuthor(t.contributor);
   // Bitta ListObjectsV2 bilan barcha S3 kalitlarini olish —
   // N×M HeadObject o'rniga 1 ta List chaqiruvi (N+1 muammo hal).
   const s3Keys = await listTemplateS3Keys(t.id);
@@ -208,6 +228,10 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     previewUrl,
     packUrl,
     metaJson: meta,
+    // AE redesign uchun additive maydonlar (mavjud kontrakt o'zgarmaydi):
+    author,            // contributor display name (yo'q bo'lsa null)
+    authorInitials,    // avatar bosh harflar ("Dilnoza K." → "DK")
+    isPro: t.isPro,    // per-shablon tier (false = FREE)
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };

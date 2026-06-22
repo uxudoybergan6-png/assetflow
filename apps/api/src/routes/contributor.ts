@@ -174,6 +174,7 @@ const templateBodySchema = z.object({
   scenes: z.array(z.unknown()).optional(),
   // Faqat ADMIN o'zgartira oladi (handler'da himoyalangan)
   published: z.boolean().optional(),
+  isPro: z.boolean().optional(), // per-shablon tier (PRO/FREE) — faqat ADMIN
 });
 
 const reviewSchema = z.object({
@@ -1238,9 +1239,10 @@ contributorRouter.patch(
     // scenes va metaJson Prisma modelida to'g'ridan field emas —
     // ularni ...d spread'dan ajratib, metaJson ichiga yig'amiz
     const { scenes: _scenes, metaJson: _metaJson, ...directFields } = d;
-    // `published` faqat ADMIN uchun — contributor o'zgartira olmaydi
+    // `published` va `isPro` (tier) faqat ADMIN uchun — contributor o'zgartira olmaydi
     if (req.user!.role !== "ADMIN") {
       delete (directFields as Record<string, unknown>).published;
+      delete (directFields as Record<string, unknown>).isPro;
     }
 
     const existingMetaObj = (existing.metaJson ?? {}) as Record<string, unknown>;
