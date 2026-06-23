@@ -1991,6 +1991,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #aiPage .mf-pane{display:flex;flex-direction:column;gap:12px;padding-top:4px}
 #aiPage .mf-pane[hidden]{display:none}
 #aiWrap.mf-sec > #aiComposer,#aiWrap.mf-sec > #aiResultArea,#aiWrap.mf-sec > #aiHistory{display:none!important}
+#aiPage .ai-composer.mf-gen{display:flex;flex-direction:column;gap:10px}
+#aiPage .mf-gen #aiMediaDd{display:none}
+#aiPage .mf-gen .ai-comp-ctrls{flex-direction:column;align-items:stretch;gap:7px;margin-top:0}
+#aiPage .mf-gen #aiModelDd .ai-ctrl,#aiPage .mf-gen #aiSettingDd .ai-ctrl{width:100%}
+#aiPage .mf-gen #aiGenBtn{width:100%;justify-content:center}
 #aiPage .mf-field{display:flex;flex-direction:column;gap:6px}
 #aiPage .mf-seclbl{display:flex;align-items:center;font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
 #aiPage .mf-hint{font-size:10px;line-height:1.45;color:var(--muted-2)}
@@ -2429,8 +2434,21 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
                     <!-- (UX: "Nima yaratamiz?" hero olib tashlandi — magnific'da yo'q, ~25% balandlik tejaldi; panel to'g'ridan composer'dan boshlanadi) -->
                     <!-- ===== YAGONA KOMPOZER BAR ===== -->
-                    <div class="ai-composer" id="aiComposer" data-dropdown="1">
-                      <!-- model.inputs[] dan dinamik input affordancelar -->
+                    <div class="ai-composer mf-gen" id="aiComposer" data-dropdown="1">
+                      <!-- MODEL (mockup: tepada) — bloki ko'chirildi, ID/onclick o'zgarmas -->
+                      <div class="mf-field">
+                        <span class="mf-seclbl">Model</span>
+                        <div class="ai-dd" id="aiModelDd">
+                          <button type="button" class="ai-ctrl ai-ctrl-model" onclick="aiToggleMenu('model',event)">
+                            <span class="ai-mdot"></span>
+                            <span class="ai-mctrl-text"><b id="aiModelLabel">Flux 2</b><span class="ai-msum" id="aiModelSub"></span></span>
+                            <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+                          </button>
+                          <div class="ai-menu" id="aiModelMenu" style="display:none"></div>
+                        </div>
+                      </div>
+
+                      <!-- model.inputs[] dan dinamik input affordancelar (References) -->
                       <div class="ai-inputs" id="aiInputs" style="display:none"></div>
 
                       <!-- SHOT bo'lim yorlig'i (magnific uslubi — yengil) -->
@@ -2461,24 +2479,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                       <!-- model reference qabul qilmasa ko'rsatiladigan eslatma (G2) -->
                       <div class="ai-refhint" id="aiRefHint" style="display:none"></div>
 
-                      <!-- pastki boshqaruv qatori -->
+                      <!-- sozlama + reference qatori (media yashirin — primary tugmalar boshqaradi) -->
                       <div class="ai-comp-ctrls">
-                        <!-- media turi -->
+                        <!-- media turi (yashirin: media = primary Image/Video Generate tugmalari) -->
                         <div class="ai-dd" id="aiMediaDd">
                           <button type="button" class="ai-ctrl" onclick="aiToggleMenu('media',event)">
                             <span class="ai-ctrl-ico" id="aiMediaIco"></span><b id="aiMediaLabel">Rasm</b>
                             <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
                           </button>
                           <div class="ai-menu" id="aiMediaMenu" style="display:none"></div>
-                        </div>
-                        <!-- model -->
-                        <div class="ai-dd" id="aiModelDd">
-                          <button type="button" class="ai-ctrl ai-ctrl-model" onclick="aiToggleMenu('model',event)">
-                            <span class="ai-mdot"></span>
-                            <span class="ai-mctrl-text"><b id="aiModelLabel">Flux 2</b><span class="ai-msum" id="aiModelSub"></span></span>
-                            <span class="chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
-                          </button>
-                          <div class="ai-menu" id="aiModelMenu" style="display:none"></div>
                         </div>
                         <!-- sozlama -->
                         <div class="ai-dd" id="aiSettingDd">
@@ -2499,11 +2508,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                           </div>
                         </div>
 
-                        <div class="ai-spacer"></div>
-                        <button type="button" class="ai-gen" id="aiGenBtn" onclick="aiGenerate()">
-                          <span class="ai-gen-ico" id="aiGenIco"></span><span id="aiGenLabel">Generatsiya · ~40 kredit</span>
-                        </button>
                       </div>
+                      <button type="button" class="ai-gen" id="aiGenBtn" onclick="aiGenerate()">
+                        <span class="ai-gen-ico" id="aiGenIco"></span><span id="aiGenLabel">Generatsiya · ~40 kredit</span>
+                      </button>
                     </div>
 
                     <!-- generatsiya / natija (composer ostida) -->
