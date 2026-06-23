@@ -396,6 +396,13 @@ body{
 .page-tabs .ptab{border-radius:0;position:relative}
 .page-tabs .ptab.active{background:transparent;color:var(--text)}
 .page-tabs .ptab.active::after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--accent-cta);border-radius:2px 2px 0 0}
+/* E4: pastki status qatori (mockup .ftr) — ulanish nuqtasi + build versiyasi */
+.af-ftr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 14px;background:var(--sidebar);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--muted-2);flex:none}
+.af-ftr-conn{display:inline-flex;align-items:center;gap:6px}
+.af-ftr-dot{width:5px;height:5px;border-radius:50%;background:var(--muted-2);transition:background .2s}
+.af-ftr.ok .af-ftr-dot{background:var(--green-ok,#4ade80)}
+.af-ftr.err .af-ftr-dot{background:var(--red)}
+.af-ftr-ver{color:var(--muted);font-variant-numeric:tabular-nums}
 
 .env-top{padding:10px 14px 0;flex-shrink:0}
 .env-search{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
@@ -2288,6 +2295,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 </div>
                 <button type="button" class="foot-import" id="footImportBtn" disabled onclick="importSelectedScene()">Import qilish</button>
               </div>
+              <!-- E4: status qatori — ulanish holati (catalogLoadState) + build versiyasi -->
+              <div class="af-ftr" id="afFtr">
+                <span class="af-ftr-conn"><span class="af-ftr-dot"></span><span id="afConnText">Kutilmoqda…</span></span>
+                <span class="af-ftr-ver" id="afConnVer"></span>
+              </div>
             </div>
           </div>
 
@@ -3125,6 +3137,18 @@ function syncCategoryChips(slug){
   document.querySelectorAll('#afCatChips .af-chip').forEach(function(c){
     c.classList.toggle('active',(c.dataset.slug||'all')===(slug||'all'));
   });
+}
+// E4: status qatori — ulanish holati (catalogLoadState) + build versiyasi (displey-only)
+function updateConnStatus(){
+  const wrap=document.getElementById('afFtr');
+  if(!wrap)return;
+  const st=(typeof catalogLoadState!=='undefined')?catalogLoadState:'idle';
+  wrap.classList.toggle('ok',st==='ready');
+  wrap.classList.toggle('err',st==='error');
+  const t=document.getElementById('afConnText');
+  if(t)t.textContent=st==='ready'?'Server ulangan':st==='error'?'Server ulanmadi':st==='loading'?'Yuklanmoqda…':'Kutilmoqda';
+  const v=document.getElementById('afConnVer');
+  if(v){const b=document.getElementById('afBuild');v.textContent=b?String(b.textContent).replace(/^build:\s*/,'').trim():'';}
 }
 
 function selectResFilter(el,value,label){
@@ -4185,6 +4209,7 @@ function render(){
   renderFeatured();
   if(__chipNav!==currentNav){buildCategoryChips();__chipNav=currentNav;}
   syncCategoryChips(currentSub);
+  updateConnStatus();
   const list=getGridAssets();
   const grid=document.getElementById('grid');
   if(!list.length){
