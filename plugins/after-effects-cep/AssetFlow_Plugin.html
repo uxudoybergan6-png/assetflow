@@ -400,6 +400,10 @@ body{
 .af-tab:hover{color:var(--text)}
 .af-tab.active{color:var(--text)}
 .af-tab.active::after{content:'';position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent-cta);border-radius:2px 2px 0 0}
+/* ✨ AI Tools tab — lime aksent bilan kategoriya tablardan ajralib turadi */
+.af-tab.af-tab-ai{display:inline-flex;align-items:center;gap:5px;color:var(--accent-cta);border-left:1px solid var(--border);margin-left:4px;padding-left:13px}
+.af-tab.af-tab-ai:hover{color:var(--accent-cta);filter:brightness(1.1)}
+.af-tab.af-tab-ai svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 /* E6.4: sidebar YASHIRILADI (DOM saqlanadi — yashirin nav/account elementlari top-nav
    .click() yo'naltirishi + auth ID yangilanishi uchun kerak). Kontent full-width. */
 .env-sidebar{display:none}
@@ -1594,6 +1598,7 @@ html.cep-mode .panel-body{border-radius:0!important}
 html.ai-mode .env-top,
 html.ai-mode .env-subnav,
 html.ai-mode .env-filter-bar,
+html.ai-mode .af-ai-banner,
 html.ai-mode #assetsPage,
 html.ai-mode #favPage,
 html.ai-mode #dlPage,
@@ -2114,6 +2119,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <button type="button" class="af-tab" data-nav="motion" role="tab" aria-selected="false" onclick="afNavTab('motion')">Motion</button>
                 <button type="button" class="af-tab" data-nav="graphics" role="tab" aria-selected="false" onclick="afNavTab('graphics')">Graphics</button>
                 <button type="button" class="af-tab" data-nav="luts" role="tab" aria-selected="false" onclick="afNavTab('luts')">LUTs</button>
+                <button type="button" class="af-tab af-tab-ai" data-nav="ai" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg>AI Tools</button>
               </nav>
               <!-- Featured AI Tools CTA banner (display-only) — afNavTab('ai') mavjud .click() route bilan AI Tools ochadi -->
               <button type="button" class="af-ai-banner" onclick="afNavTab('ai')" aria-label="AI bilan yarat — AI Tools">
@@ -3185,6 +3191,8 @@ function syncCategoryChips(slug){
 function afNavTab(tab){
   const el=document.querySelector('.env-side-link[data-nav="'+tab+'"]');
   if(el) el.click();
+  // AI yo'li render() chaqirmaydi (alohida sahifa) — tab aktiv holatini shu yerda moslaymiz
+  if(typeof syncTopNav==='function') syncTopNav();
 }
 // E6.2: header ixcham ikonalar (Downloads/Favorites) → yashirin sidebar .env-side-link[data-page]
 // tugmasini .click() qiladi → mavjud onclick ishlaydi (handler tahrirlanmaydi).
