@@ -57,8 +57,10 @@ svg{display:block}
 .plan-pill svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
 
 /* tool-picker */
-.tool-picker{display:flex;gap:6px;padding:9px 10px;overflow-x:auto;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:none}
+.tool-picker{display:flex;align-items:center;gap:6px;padding:9px 10px;overflow-x:auto;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:none}
 .tool-picker::-webkit-scrollbar{display:none}
+.tp-lbl{flex:none;align-self:center;font-size:9px;font-weight:700;letter-spacing:.09em;color:var(--muted-2);text-transform:uppercase;padding:0 1px}
+.tp-div{flex:none;width:1px;align-self:stretch;background:var(--border);margin:3px 2px}
 .tool-chip{flex:none;display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-size:var(--fs-sm);font-weight:600;white-space:nowrap;transition:all .15s}
 .tool-chip svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tool-chip:hover{border-color:var(--muted-2);color:var(--text)}
@@ -68,8 +70,14 @@ svg{display:block}
 .composer{padding:13px;display:flex;flex-direction:column;gap:13px;background:var(--bg)}
 .pane{display:flex;flex-direction:column;gap:12px}
 .pane[hidden]{display:none}
-.section-lbl{font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
+.section-lbl{display:flex;align-items:center;font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
 .field{display:flex;flex-direction:column;gap:6px}
+.hint{font-size:10px;line-height:1.45;color:var(--muted-2)}
+.tool-name{display:flex;align-items:center;gap:7px;font-family:var(--font-display);font-size:var(--fs-base);font-weight:700;color:var(--text)}
+.tool-name .exp{font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:rgba(56,189,248,.12);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
+
+/* web-only tag */
+.wo{display:inline-flex;align-items:center;font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:999px;background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);margin-left:6px}
 
 /* dropdown-look */
 .dd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);font-size:var(--fs-md);font-weight:600;color:var(--text)}
@@ -86,36 +94,86 @@ svg{display:block}
 
 /* prompt */
 .prompt-wrap{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);overflow:hidden}
-.prompt-wrap textarea{width:100%;min-height:64px;resize:none;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;font-size:var(--fs-md);padding:11px 12px}
+.prompt-wrap textarea{width:100%;min-height:60px;resize:none;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;font-size:var(--fs-md);padding:11px 12px}
 .prompt-bar{display:flex;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid var(--border)}
+.prompt-bar .cc{margin-left:auto;font-size:10px;color:var(--muted-2);font-variant-numeric:tabular-nums}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
-.toggle .sw{width:26px;height:15px;border-radius:999px;background:var(--accent-cta);position:relative}
-.toggle .sw::after{content:'';position:absolute;top:2px;right:2px;width:11px;height:11px;border-radius:50%;background:var(--on-accent)}
-.prompt-icons{margin-left:auto;display:flex;gap:9px;color:var(--muted)}
+.sw{width:26px;height:15px;border-radius:999px;background:var(--accent-cta);position:relative;flex:none}
+.sw::after{content:'';position:absolute;top:2px;right:2px;width:11px;height:11px;border-radius:50%;background:var(--on-accent)}
+.sw.off{background:var(--surface-3)}
+.sw.off::after{left:2px;right:auto;background:var(--muted)}
+.prompt-icons{display:flex;gap:9px;color:var(--muted)}
 .prompt-icons svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 /* control row (count/aspect/res) */
 .ctl-row{display:flex;gap:7px}
 .ctl{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 6px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);font-size:var(--fs-sm);font-weight:600}
 .ctl svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8}
-.ctl .step{display:inline-flex;align-items:center;gap:8px}
+.ctl .lbl{color:var(--muted)}
+.ctl .step{display:inline-flex;align-items:center;gap:9px}
 .ctl .step b{color:var(--text)}
+.ctl.inf{color:var(--accent-cta);border-color:var(--border-accent);background:var(--green-dim)}
+
+/* switch row (FPS / Turbo / Audio) */
+.swrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);font-size:var(--fs-md);font-weight:600;color:var(--text)}
+.swrow .sub{font-size:10px;font-weight:500;color:var(--muted-2)}
 
 /* image slot */
-.img-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:20px 12px;border:1px dashed var(--border-accent);border-radius:var(--r-md);background:linear-gradient(120deg,var(--green-dim),transparent 70%),var(--surface-2);color:var(--muted);text-align:center}
+.img-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:18px 12px;border:1px dashed var(--border-accent);border-radius:var(--r-md);background:linear-gradient(120deg,var(--green-dim),transparent 70%),var(--surface-2);color:var(--muted);text-align:center}
 .img-slot.filled{padding:0;border-style:solid;border-color:var(--border);overflow:hidden;background:var(--surface-2)}
 .img-slot .ico{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent-cta);color:var(--on-accent)}
 .img-slot .ico svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .img-slot .t{font-size:var(--fs-sm);font-weight:600;color:var(--text)}
 .img-slot .s{font-size:var(--fs-xs)}
 .img-thumb{width:100%;aspect-ratio:16/9}
+.img-thumb.sq{aspect-ratio:1/1}
 .img-thumb-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;font-size:var(--fs-xs);color:var(--muted)}
 .img-thumb-bar .x{color:var(--muted)}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mini-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;border:1px dashed var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--muted);text-align:center;font-size:11px;font-weight:600;min-height:78px}
+.mini-slot.filled{padding:0;border-style:solid;overflow:hidden;justify-content:flex-end}
+.mini-slot .ico{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--surface-3);color:var(--accent-cta)}
+.mini-slot .ico svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mini-thumb{width:100%;aspect-ratio:16/9}
+.mini-cap{width:100%;padding:5px 7px;font-size:9.5px;color:var(--muted);background:var(--surface-2)}
+.mini-cap b{color:var(--text)}
 
-/* segmented (scale) */
+/* segmented */
 .seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:3px;gap:3px}
-.seg button{flex:1;border:0;background:transparent;color:var(--muted);font-size:var(--fs-sm);font-weight:600;padding:6px 4px;border-radius:var(--r-sm)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font-size:var(--fs-sm);font-weight:600;padding:6px 4px;border-radius:var(--r-sm);white-space:nowrap}
 .seg button.on{background:var(--accent-cta);color:var(--on-accent)}
+.prem{font-size:7px;font-weight:700;color:var(--accent-cta);vertical-align:super;letter-spacing:.02em;margin-left:1px}
+.seg button.on .prem{color:var(--on-accent)}
+
+/* quick-select grid (relight directions) */
+.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.qbtn{padding:7px 4px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:600;text-align:center}
+.qbtn.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
+
+/* color swatches */
+.swatches{display:flex;align-items:center;gap:9px}
+.swatch{width:24px;height:24px;border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 0 1px var(--border);cursor:pointer}
+.swatch.on{box-shadow:0 0 0 2px var(--accent-cta)}
+.lc{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);font-weight:600}
+.lc b{color:var(--text)}
+.lc .add{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--accent-cta);display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+
+/* light-pad / orbit preview */
+.viz{position:relative;border:1px solid var(--border);border-radius:var(--r-md);background:radial-gradient(120% 120% at 70% 20%,rgba(163,230,53,.06),transparent 60%),var(--surface);overflow:hidden}
+.viz svg{width:100%;height:auto;display:block}
+.viz .cap{position:absolute;left:0;right:0;bottom:7px;text-align:center;font-size:10px;color:var(--muted-2);letter-spacing:.03em}
+
+/* perspectives multiselect */
+.persp{display:flex;flex-wrap:wrap;gap:6px}
+.p-chip{padding:5px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-size:10.5px;font-weight:600}
+.p-chip.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
+.p-chip.off{opacity:.5}
+
+/* voice row */
+.voice-row{display:flex;gap:7px}
+.voice-row .dd{flex:1}
+.voice-prev{flex:none;display:inline-flex;align-items:center;gap:6px;padding:0 13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:var(--fs-sm);font-weight:600}
+.voice-prev svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* sliders */
 .slider{display:flex;flex-direction:column;gap:5px}
@@ -123,31 +181,14 @@ svg{display:block}
 .slider .top b{color:var(--text);font-variant-numeric:tabular-nums}
 .slider input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:999px;background:var(--surface-3);accent-color:var(--accent-cta)}
 .slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent-cta);cursor:pointer;border:2px solid var(--bg)}
+.slider2{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
 
 /* generate / primary button */
 .gen-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:none;border-radius:var(--r-md);background:var(--accent-cta);color:var(--on-accent);font-family:var(--font-display);font-size:var(--fs-base);font-weight:700;letter-spacing:.01em}
 .gen-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .gen-btn .cred{font-size:var(--fs-xs);font-weight:600;opacity:.78}
-
-/* stock search */
-.stock-search{position:relative}
-.stock-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.stock-search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-3);color:var(--text);font-family:inherit;font-size:var(--fs-md);outline:none}
-.stock-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-.stock-chips::-webkit-scrollbar{display:none}
-.s-chip{flex:none;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-size:11.5px;font-weight:600;white-space:nowrap}
-.s-chip.on{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
-.stock-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.s-card{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)}
-.s-thumb{aspect-ratio:4/3;position:relative}
-.s-badge{position:absolute;right:6px;top:6px;font-size:8px;font-weight:700;padding:2px 6px;border-radius:999px}
-.s-badge.pro{background:var(--accent-cta);color:var(--on-accent)}
-.s-badge.free{background:rgba(10,11,8,.82);color:#fff;border:.5px solid rgba(255,255,255,.16)}
-.s-info{padding:7px 8px;display:flex;flex-direction:column;gap:6px}
-.s-name{font-size:var(--fs-xs);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.s-import{width:100%;padding:6px;border:none;border-radius:var(--r-sm);background:var(--accent-cta);color:var(--on-accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px}
-.s-import svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.s-import.blocked{background:var(--surface-3);color:var(--muted-2)}
+.ghost-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:var(--fs-sm);font-weight:600}
+.ghost-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* result area */
 .result{border-top:1px solid var(--border);padding:12px 13px;background:var(--sidebar);display:flex;flex-direction:column;gap:9px}
@@ -160,17 +201,23 @@ svg{display:block}
 .import-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border:1px solid var(--border-accent);border-radius:var(--r-md);background:var(--green-dim);color:var(--accent-cta);font-weight:700;font-size:var(--fs-sm)}
 .import-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 
+/* web-only footer note */
+.wo-note{width:100%;max-width:360px;font-size:10.5px;line-height:1.55;color:var(--muted-2);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:9px 11px}
+.wo-note b{color:var(--muted);font-weight:700}
+.wo-note .tag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:999px;background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);margin-right:5px}
+
 .g1{background:linear-gradient(135deg,#2b3a16,#101307)}
 .g2{background:linear-gradient(135deg,#163a33,#0a1714)}
 .g3{background:linear-gradient(135deg,#3a2b16,#1a1207)}
 .g4{background:linear-gradient(135deg,#1a2b3a,#0a1017)}
 .g5{background:linear-gradient(135deg,#352244,#140a1a)}
 .g6{background:linear-gradient(135deg,#5b3a3a,#c0635f)}
+.rainbow{background:conic-gradient(from 90deg,#f87171,#fbbf24,#a3e635,#38bdf8,#a78bfa,#f472b6,#f87171)}
 </style>
 </head>
 <body>
 
-<div class="mock-banner"><b>MOCKUP — production EMAS</b> · "tool-aware" AI composer · <code>design-preview/</code></div>
+<div class="mock-banner"><b>MOCKUP — production EMAS</b> · "tool-aware" composer · real Magnific kontrollarга moslangan · <code>design-preview/</code></div>
 <div class="caption">After Effects · CEP panel · AI Tools · ~360px · tool chip bosib almashtiring</div>
 
 <div class="af-panel" role="region" aria-label="Magnific tools composer">
@@ -184,32 +231,43 @@ svg{display:block}
     <span class="plan-pill"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg>Pro · 1,200</span>
   </header>
 
-  <!-- TOOL PICKER -->
+  <!-- TOOL PICKER (Image | Video alohida) -->
   <div class="tool-picker" role="tablist">
+    <span class="tp-lbl">Image</span>
     <button class="tool-chip active" data-tool="generate"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Generate</button>
     <button class="tool-chip" data-tool="upscale"><svg viewBox="0 0 24 24"><path d="M4 14v6h6M20 10V4h-6M14 4l6 6M10 20l-6-6"/></svg>Upscale</button>
     <button class="tool-chip" data-tool="relight"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 2a7 7 0 0 1 4 12.7V17H8v-2.3A7 7 0 0 1 12 2z"/></svg>Relight</button>
+    <button class="tool-chip" data-tool="camera"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Change Camera</button>
+    <button class="tool-chip" data-tool="skin"><svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="8"/><path d="M9 10h.01M15 10h.01M9 15s1.2 1.5 3 1.5 3-1.5 3-1.5"/></svg>Skin</button>
     <button class="tool-chip" data-tool="extend"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M3 3v4M3 3h4M21 3h-4M21 3v4M3 21v-4M3 21h4M21 21h-4M21 21v-4"/></svg>Extend</button>
     <button class="tool-chip" data-tool="removebg"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M9 3h11a1 1 0 0 1 1 1v11M3 8v12a1 1 0 0 0 1 1h12"/></svg>Remove BG</button>
-    <button class="tool-chip" data-tool="camera"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Change Camera</button>
+    <button class="tool-chip" data-tool="variations"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Variations</button>
+    <button class="tool-chip" data-tool="cinematic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M7 6v12M17 6v12"/></svg>Cinematic Shot</button>
+    <span class="tp-div"></span>
+    <span class="tp-lbl">Video</span>
     <button class="tool-chip" data-tool="video"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>Video</button>
-    <button class="tool-chip" data-tool="audio"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 13l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>SFX/Music</button>
-    <button class="tool-chip" data-tool="stock"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>Stock</button>
+    <button class="tool-chip" data-tool="vupscale"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 12h8M12 8v8" /></svg>Video Upscale</button>
+    <button class="tool-chip" data-tool="speak"><svg viewBox="0 0 24 24"><path d="M4 5h12v10H8l-4 3V5z"/><path d="M19 8c1.5 1.8 1.5 5.2 0 7"/></svg>Speak</button>
+    <button class="tool-chip" data-tool="vrelight"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 8a3 3 0 0 1 1.7 5.4V14h-3.4v-.6A3 3 0 0 1 12 8z"/></svg>Video Relight</button>
   </div>
 
   <!-- COMPOSER -->
   <div class="composer">
 
-    <!-- 1) GENERATE (prompt-asosli, Mystic) -->
+    <!-- ════ IMAGE TOOLS ════ -->
+
+    <!-- 1) GENERATE — Image Generator (Mystic) -->
     <div class="pane" data-pane="generate">
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Image Generator</div>
       <div class="field">
         <span class="section-lbl">Model</span>
-        <div class="dd"><span class="lead"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Auto (Mystic)</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <div class="dd"><span class="lead"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Auto</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <span class="hint">Auto · Cinematic · Multiple (4 modelni birlashtir) · <b style="color:var(--muted)">46 model</b> (Seedream, Nano Banana 2, GPT…)</span>
       </div>
       <div class="field">
-        <span class="section-lbl">Reference · 1/3</span>
+        <span class="section-lbl">Reference · 0/8</span>
         <div class="refs">
-          <span class="ref-btn on"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Style</span>
+          <span class="ref-btn"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Style</span>
           <span class="ref-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Character</span>
           <span class="ref-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Qo'shish</span>
         </div>
@@ -228,15 +286,18 @@ svg{display:block}
         </div>
       </div>
       <div class="ctl-row">
-        <div class="ctl"><span class="step">−<b>1</b>+</span></div>
+        <div class="ctl"><span class="lbl">Soni</span><span class="step">−<b>4</b>+</span></div>
         <div class="ctl">1:1 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div>
-        <div class="ctl">2K <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="ctl inf">∞ unlimited</div>
       </div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M13 3L5 13h5l-1 8 8-10h-5z" fill="currentColor" stroke="none"/></svg>Generatsiya <span class="cred">· ~6 kredit</span></button>
+      <span class="hint">Nisbat (10): 1:1 · 16:9 · 9:16 · 2:3 · 3:4 · 1:2 · 2:1 · 4:5 · 3:2 · 4:3</span>
+      <span class="hint">∞ unlimited va "Multiple" model — <span class="wo">web-only</span> (plan / orkestratsiya)</span>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M13 3L5 13h5l-1 8 8-10h-5z" fill="currentColor" stroke="none"/></svg>Generatsiya <span class="cred">· ∞ (plan)</span></button>
     </div>
 
-    <!-- 2) UPSCALE (rasm-input) -->
+    <!-- 2) UPSCALE — Image Upscaler -->
     <div class="pane" data-pane="upscale" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M4 14v6h6M20 10V4h-6M14 4l6 6M10 20l-6-6"/></svg>Image Upscaler</div>
       <div class="field">
         <span class="section-lbl">Manba rasm</span>
         <div class="img-slot filled">
@@ -244,72 +305,264 @@ svg{display:block}
           <div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1 · 1920×1080</b></span><span class="x">✕ olib tashlash</span></div>
         </div>
       </div>
-      <div class="field">
-        <span class="section-lbl">Kattalashtirish</span>
-        <div class="seg"><button>2×</button><button class="on">4×</button><button>8×</button></div>
+      <div class="seg"><button class="on">Creative</button><button>Precision</button></div>
+      <div class="ctl-row">
+        <div class="field" style="flex:1">
+          <span class="section-lbl">Model</span>
+          <div class="dd"><span class="lead">⚠ Magnific</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        </div>
+        <div class="field" style="flex:1">
+          <span class="section-lbl">Preset</span>
+          <div class="dd"><span class="lead">Subtle</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        </div>
       </div>
-      <div class="slider"><div class="top"><span>Kreativlik</span><b>+3</b></div><input type="range" min="-10" max="10" value="3"></div>
-      <div class="slider"><div class="top"><span>HDR / detal</span><b>+5</b></div><input type="range" min="-10" max="10" value="5"></div>
-      <div class="slider"><div class="top"><span>O'xshashlik</span><b>+2</b></div><input type="range" min="-10" max="10" value="2"></div>
+      <div class="field">
+        <span class="section-lbl">Kattalashtirish (scale)</span>
+        <div class="seg"><button class="on">2×</button><button>4×</button><button>8×<span class="prem">PRO</span></button><button>16×<span class="prem">PRO</span></button></div>
+      </div>
+      <div class="field">
+        <span class="section-lbl">Optimized for</span>
+        <div class="dd"><span class="lead">Standard Ultra</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <span class="hint">9 ta: Portrait (Soft/Hard) · Art & Illustration · Videogame · Nature · Films & Photo · 3D Renders · Sci-Fi & Horror</span>
+      </div>
+      <div class="slider2">
+        <div class="slider"><div class="top"><span>Creativity</span><b>−3</b></div><input type="range" min="-10" max="10" value="-3"></div>
+        <div class="slider"><div class="top"><span>HDR</span><b>0</b></div><input type="range" min="-10" max="10" value="0"></div>
+        <div class="slider"><div class="top"><span>Resemblance</span><b>3</b></div><input type="range" min="-10" max="10" value="3"></div>
+        <div class="slider"><div class="top"><span>Fractality</span><b>0</b></div><input type="range" min="-10" max="10" value="0"></div>
+      </div>
       <div class="field">
         <span class="section-lbl">Engine</span>
-        <div class="dd"><span class="lead">Avtomatik</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <div class="dd"><span class="lead">Automatic</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
       </div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M4 14v6h6M20 10V4h-6M14 4l6 6M10 20l-6-6"/></svg>Upscale <span class="cred">· ~12 kredit</span></button>
+      <div class="field">
+        <span class="section-lbl">Prompt (auto)</span>
+        <div class="prompt-wrap"><textarea style="min-height:44px">STYLE: cinematic action trailer background, dark metallic industrial…</textarea></div>
+      </div>
+      <div class="swrow"><span>Yakuniy o'lcham <span class="wo">web-only</span></span><b>3840 × 2160</b></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M4 14v6h6M20 10V4h-6M14 4l6 6M10 20l-6-6"/></svg>Upscale <span class="cred">· ~12 kr (metered)</span></button>
     </div>
 
-    <!-- 3) STOCK (qidiruv) -->
-    <div class="pane" data-pane="stock" hidden>
-      <div class="stock-search">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="text" value="kechki shahar" placeholder="Stock qidirish…">
-      </div>
-      <div class="stock-chips">
-        <span class="s-chip on">Hammasi</span><span class="s-chip">Photo</span><span class="s-chip">Video</span><span class="s-chip">Icon</span><span class="s-chip">Vector</span>
-      </div>
-      <div class="stock-grid">
-        <div class="s-card"><div class="s-thumb g4"><span class="s-badge free">FREE</span></div><div class="s-info"><span class="s-name">Night city street</span><button class="s-import"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg>Import</button></div></div>
-        <div class="s-card"><div class="s-thumb g6"><span class="s-badge pro">PRO</span></div><div class="s-info"><span class="s-name">Neon sports car</span><button class="s-import"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg>Import</button></div></div>
-        <div class="s-card"><div class="s-thumb g5"><span class="s-badge free">FREE</span></div><div class="s-info"><span class="s-name">Rain reflection</span><button class="s-import"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg>Import</button></div></div>
-        <div class="s-card"><div class="s-thumb g2"><span class="s-badge pro">PRO</span></div><div class="s-info"><span class="s-name">Tunnel motion</span><button class="s-import blocked">PRO kerak</button></div></div>
-      </div>
-    </div>
-
-    <!-- soddaroq paneler (chip bosilganda ko'rinadi) -->
+    <!-- 3) RELIGHT — image-relight -->
     <div class="pane" data-pane="relight" hidden>
-      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="t">AE komp/layer'дан yoki yuklash</span><span class="s">Yorug'likni o'zgartirish</span></div></div>
-      <div class="slider"><div class="top"><span>Yorug'lik yo'nalishi</span><b>↗ o'ng-yuqori</b></div><input type="range" min="0" max="360" value="45"></div>
-      <div class="slider"><div class="top"><span>Intensivlik</span><b>70%</b></div><input type="range" min="0" max="100" value="70"></div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M9 18h6M12 2a7 7 0 0 1 4 12.7V17H8v-2.3A7 7 0 0 1 12 2z"/></svg>Relight <span class="cred">· ~8 kredit</span></button>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M9 18h6M12 2a7 7 0 0 1 4 12.7V17H8v-2.3A7 7 0 0 1 12 2z"/></svg>Relight</div>
+      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot filled"><div class="img-thumb g6"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1</b></span><span class="x">✕</span></div></div></div>
+      <div class="field">
+        <span class="section-lbl">Light preview <span class="wo">drag · web-only</span></span>
+        <div class="viz">
+          <svg viewBox="0 0 280 130" fill="none">
+            <path d="M30 120 L140 36 L250 120 Z" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.08)"/>
+            <path d="M85 120 L140 78 M195 120 L140 78 M58 120 L140 56 M222 120 L140 56" stroke="rgba(255,255,255,.06)"/>
+            <rect x="118" y="74" width="44" height="32" rx="3" fill="#1c1f18" stroke="rgba(255,255,255,.2)"/>
+            <circle cx="196" cy="50" r="20" fill="none" stroke="rgba(163,230,53,.35)"/>
+            <circle cx="196" cy="50" r="8" fill="#a3e635"/>
+            <line x1="196" y1="50" x2="150" y2="86" stroke="rgba(163,230,53,.45)" stroke-dasharray="3 4"/>
+          </svg>
+          <span class="cap">Yorug'lik manbasini suring</span>
+        </div>
+      </div>
+      <div class="field">
+        <span class="section-lbl">Quick select</span>
+        <div class="qgrid"><button class="qbtn">Top</button><button class="qbtn on">Front</button><button class="qbtn">Right</button><button class="qbtn">Left</button><button class="qbtn">Back</button><button class="qbtn">Bottom</button></div>
+      </div>
+      <div class="field">
+        <span class="section-lbl">Light · rang</span>
+        <div class="swatches">
+          <span class="swatch on" style="background:#fff"></span>
+          <span class="swatch" style="background:#fde047"></span>
+          <span class="swatch" style="background:#fb923c"></span>
+          <span class="swatch" style="background:#38bdf8"></span>
+          <span class="swatch rainbow"></span>
+          <span class="lc">Lamp <b>1</b><span class="add">+</span></span>
+        </div>
+      </div>
+      <div class="slider2">
+        <div class="slider"><div class="top"><span>Rotate</span><b>0°</b></div><input type="range" min="0" max="360" value="0"></div>
+        <div class="slider"><div class="top"><span>Elevation</span><b>0°</b></div><input type="range" min="-90" max="90" value="0"></div>
+      </div>
+      <div class="slider"><div class="top"><span>Intensity</span><b>5</b></div><input type="range" min="0" max="10" value="5"></div>
+      <div class="ctl-row"><div class="ctl"><span class="lbl">Soni</span><span class="step">−<b>1</b>+</span></div><div class="ctl">2K <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div><div class="ctl inf">∞</div></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M9 18h6M12 2a7 7 0 0 1 4 12.7V17H8v-2.3A7 7 0 0 1 12 2z"/></svg>Relight <span class="cred">· ~8 kr</span></button>
     </div>
-    <div class="pane" data-pane="extend" hidden>
-      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="t">AE komp/layer'дан yoki yuklash</span><span class="s">Kadrni kengaytirish (outpaint)</span></div></div>
-      <div class="ctl-row"><div class="ctl">Chap <b>512px</b></div><div class="ctl">O'ng <b>512px</b></div></div>
-      <div class="ctl-row"><div class="ctl">Yuqori <b>0px</b></div><div class="ctl">Past <b>0px</b></div></div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M3 3v4M3 3h4M21 21h-4M21 21v-4"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Extend <span class="cred">· ~6 kredit</span></button>
-    </div>
-    <div class="pane" data-pane="removebg" hidden>
-      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="t">AE komp/layer'дан yoki yuklash</span><span class="s">Fonni shaffof qiladi (PNG)</span></div></div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M9 3h11a1 1 0 0 1 1 1v11"/></svg>Remove BG <span class="cred">· ~3 kredit</span></button>
-    </div>
+
+    <!-- 4) CHANGE CAMERA — image-change-camera -->
     <div class="pane" data-pane="camera" hidden>
-      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="t">AE komp/layer'дан yoki yuklash</span><span class="s">Kamera rakursini o'zgartirish</span></div></div>
-      <div class="field"><span class="section-lbl">Rakurs</span><div class="seg"><button class="on">Chap</button><button>Old</button><button>O'ng</button><button>Tepa</button></div></div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>O'zgartirish <span class="cred">· ~8 kredit</span></button>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Change Camera</div>
+      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot filled"><div class="img-thumb g4"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1</b></span><span class="x">✕</span></div></div></div>
+      <div class="field">
+        <span class="section-lbl">Camera preview <span class="wo">orbit · web-only</span></span>
+        <div class="viz">
+          <svg viewBox="0 0 280 130" fill="none">
+            <ellipse cx="140" cy="78" rx="104" ry="30" stroke="rgba(255,255,255,.14)"/>
+            <ellipse cx="140" cy="78" rx="62" ry="18" stroke="rgba(255,255,255,.07)"/>
+            <rect x="120" y="50" width="40" height="40" rx="3" fill="#1c1f18" stroke="rgba(255,255,255,.2)"/>
+            <path d="M236 70l-12 6 12 6V70z" fill="#a3e635"/>
+            <rect x="210" y="68" width="16" height="16" rx="2" fill="#a3e635"/>
+            <path d="M44 84 A104 30 0 0 1 226 72" stroke="rgba(163,230,53,.4)" stroke-dasharray="3 4"/>
+          </svg>
+          <span class="cap">Kamera orbitasi · 45° o'ng</span>
+        </div>
+      </div>
+      <div class="slider"><div class="top"><span>Rotate</span><b>45°</b></div><input type="range" min="-180" max="180" value="45"></div>
+      <div class="slider"><div class="top"><span>Vertical</span><b>0°</b></div><input type="range" min="-90" max="90" value="0"></div>
+      <div class="slider"><div class="top"><span>Zoom</span><b>initial</b></div><input type="range" min="0" max="100" value="0"></div>
+      <div class="ctl-row"><div class="ctl"><span class="lbl">Images</span><span class="step">−<b>2</b>+</span></div></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>O'zgartirish <span class="cred">· ~8 kr</span></button>
     </div>
+
+    <!-- 5) SKIN ENHANCER — skin-enhancer -->
+    <div class="pane" data-pane="skin" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="11" r="8"/><path d="M9 10h.01M15 10h.01M9 15s1.2 1.5 3 1.5 3-1.5 3-1.5"/></svg>Skin Enhancer</div>
+      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot filled"><div class="img-thumb g6"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Portrait layer</b></span><span class="x">✕</span></div></div></div>
+      <div class="ctl-row">
+        <div class="field" style="flex:1"><span class="section-lbl">Version</span><div class="dd"><span class="lead">Flexible</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+        <div class="field" style="flex:1"><span class="section-lbl">Optimized for</span><div class="dd"><span class="lead">Enhance skin</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+      </div>
+      <span class="hint">Version: Flexible · Creative · Faithful</span>
+      <div class="slider"><div class="top"><span>Sharpen</span><b>0%</b></div><input type="range" min="0" max="100" value="0"></div>
+      <div class="slider"><div class="top"><span>Smart grain</span><b>2%</b></div><input type="range" min="0" max="100" value="2"></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Enhance <span class="cred">· ~5 kr</span></button>
+    </div>
+
+    <!-- 6) EXTEND — image-expand (Editor "Expand") -->
+    <div class="pane" data-pane="extend" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M3 3v4M3 3h4M21 21h-4M21 21v-4"/></svg>Image Extender <span class="wo">Editor · Expand</span></div>
+      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot filled"><div class="img-thumb g3"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1 · 2752×1536</b></span><span class="x">✕</span></div></div></div>
+      <div class="field"><span class="section-lbl">Nisbat</span><div class="dd"><span class="lead">Custom</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+      <div class="ctl-row"><div class="ctl"><span class="lbl">Width</span><b>2752 px</b></div><div class="ctl"><span class="lbl">Height</span><b>1536 px</b></div></div>
+      <div class="field"><span class="section-lbl">Prompt (ixtiyoriy)</span><div class="prompt-wrap"><textarea placeholder="Kengaytirilgan zonani tasvirlang…" style="min-height:46px"></textarea></div></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M3 3v4M3 3h4M21 21h-4M21 21v-4"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>Extend <span class="cred">· ~6 kr</span></button>
+    </div>
+
+    <!-- 7) REMOVE BG — remove-background -->
+    <div class="pane" data-pane="removebg" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l18 18M9 3h11a1 1 0 0 1 1 1v11"/></svg>Background Remover</div>
+      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot filled"><div class="img-thumb g6"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1</b></span><span class="x">✕</span></div></div></div>
+      <span class="hint">Bir-bosishli · parametrsiz · fonni shaffof qiladi (PNG)</span>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M9 3h11a1 1 0 0 1 1 1v11"/></svg>Remove BG <span class="cred">· ~3 kr</span></button>
+    </div>
+
+    <!-- 8) VARIATIONS — Experimental -->
+    <div class="pane" data-pane="variations" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Variations <span class="exp">Experimental</span></div>
+      <div class="field"><span class="section-lbl">Manba rasm</span><div class="img-slot filled"><div class="img-thumb g4"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1</b></span><span class="x">✕</span></div></div></div>
+      <div class="field"><span class="section-lbl">Mode</span><div class="dd"><span class="lead">Reframe</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+      <div class="field">
+        <span class="section-lbl">Perspektiv · 9/9 <span class="wo">web-only · fan-out</span></span>
+        <div class="persp">
+          <span class="p-chip on">Ext. long shot</span><span class="p-chip on">Long shot</span><span class="p-chip on">Closeup</span><span class="p-chip on">Medium long</span><span class="p-chip on">Extreme closeup</span><span class="p-chip on">Low angle</span><span class="p-chip on">Back view</span><span class="p-chip on">Med. closeup</span><span class="p-chip on">High angle</span>
+          <span class="p-chip off">OTS</span><span class="p-chip off">Wide</span><span class="p-chip off">POV</span><span class="p-chip off">Aerial</span><span class="p-chip off">Eye level</span><span class="p-chip off">Profile</span><span class="p-chip off">3/4 view</span>
+        </div>
+      </div>
+      <div class="ctl-row"><div class="ctl">Grid <b>3×3</b></div><div class="ctl">1:1 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div><div class="ctl">4K <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Generatsiya <span class="cred">· metered/rakurs</span></button>
+    </div>
+
+    <!-- 9) CINEMATIC SHOT -->
+    <div class="pane" data-pane="cinematic" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M7 6v12M17 6v12"/></svg>Cinematic Shot</div>
+      <div class="field">
+        <span class="section-lbl">Camera preset <span class="wo">web-only → prompt</span></span>
+        <div class="dd"><span class="lead"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8"><rect x="1" y="6" width="15" height="12" rx="2"/><path d="M23 8l-7 4 7 4V8z"/></svg>Standard · 50mm · f/4</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+      </div>
+      <div class="field">
+        <span class="section-lbl">Reference · 0/8</span>
+        <div class="refs">
+          <span class="ref-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Character</span>
+          <span class="ref-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Qo'shish</span>
+        </div>
+      </div>
+      <div class="field"><span class="section-lbl">Prompt</span><div class="prompt-wrap"><textarea placeholder="Kadrni tasvirlang…" style="min-height:48px">Yomg'irli ko'cha, neon aks-sado, kinematik</textarea><div class="prompt-bar"><span class="toggle"><span class="sw"></span>AI prompt</span><span class="prompt-icons"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></span></div></div></div>
+      <div class="ctl-row"><div class="ctl"><span class="lbl">Soni</span><span class="step">−<b>1</b>+</span></div><div class="ctl">1:1 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div><div class="ctl">1K <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div><div class="ctl inf">∞</div></div>
+      <span class="hint">∞ unlimited — <span class="wo">web-only</span> (plan)</span>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v12"/></svg>Generatsiya <span class="cred">· ∞ (plan)</span></button>
+    </div>
+
+    <!-- ════ VIDEO TOOLS ════ -->
+
+    <!-- 10) VIDEO GENERATOR -->
     <div class="pane" data-pane="video" hidden>
-      <div class="field"><span class="section-lbl">Video model</span><div class="seg"><button class="on">Kling v2.6</button><button>Veo 3</button><button>Seedance</button></div></div>
-      <div class="field"><span class="section-lbl">Boshlang'ich kadr</span><div class="img-slot filled"><div class="img-thumb g5"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Comp 1</b></span><span class="x">✕</span></div></div></div>
-      <div class="prompt-wrap"><textarea placeholder="Harakatni yozing…" style="min-height:48px">Sekin oldinga zoom, neon chiroqlar miltillaydi</textarea></div>
-      <div class="ctl-row"><div class="ctl">Davomiyligi <b>5s</b></div><div class="ctl">16:9 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div></div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z" fill="currentColor" stroke="none"/></svg>Video · 5s <span class="cred">· ~60 kredit</span></button>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>Video Generator</div>
+      <div class="field">
+        <span class="section-lbl">Model</span>
+        <div class="dd"><span class="lead"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>Kling 3.0</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <span class="hint">Auto · Kling 3.0 / Omni / Turbo · Seedance 2.0 · Veo · Runway — <b style="color:var(--muted)">metered (kr oralig'i)</b></span>
+      </div>
+      <div class="field">
+        <span class="section-lbl">Reference · kadrlar</span>
+        <div class="dual">
+          <div class="mini-slot filled"><div class="mini-thumb g5"></div><span class="mini-cap"><b>Start</b> · AE Comp 1</span></div>
+          <div class="mini-slot"><span class="ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>End kadr<br>(ixtiyoriy)</div>
+        </div>
+        <div class="persp" style="margin-top:4px"><span class="p-chip">+ Add media:</span><span class="p-chip">Rasm</span><span class="p-chip">Video</span><span class="p-chip">Audio</span><span class="p-chip">Character</span></div>
+      </div>
+      <div class="swrow"><span>Shot · Manual <span class="sub">+ shot qo'shish</span></span><span class="wo">multi-shot · web-only</span></div>
+      <div class="field"><div class="prompt-wrap"><textarea placeholder="Harakatni yozing — @image…" style="min-height:48px">Sekin oldinga zoom, neon chiroqlar miltillaydi</textarea><div class="prompt-bar"><span class="cc">52 / 1999</span></div></div></div>
+      <div class="ctl-row"><div class="ctl"><span class="lbl">Davomiyligi</span><b>5–6"</b></div><div class="ctl">16:9 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></div></div>
+      <div class="swrow"><span><svg viewBox="0 0 24 24" width="14" height="14" style="display:inline;vertical-align:-2px" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15 9a5 5 0 0 1 0 6"/></svg> Audio bilan</span><span class="sw"></span></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z" fill="currentColor" stroke="none"/></svg>Video · 5s <span class="cred">· ~210+ kr (metered)</span></button>
     </div>
-    <div class="pane" data-pane="audio" hidden>
-      <div class="field"><span class="section-lbl">Tur</span><div class="seg"><button class="on">SFX</button><button>Musiqa</button></div></div>
-      <div class="prompt-wrap"><textarea placeholder="Ovozni yozing…" style="min-height:48px">Yomg'ir va uzoq momaqaldiroq, kinematik</textarea></div>
-      <div class="slider"><div class="top"><span>Davomiyligi</span><b>5s</b></div><input type="range" min="1" max="22" value="5"></div>
-      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Generatsiya <span class="cred">· ~4 kredit</span></button>
+
+    <!-- 11) VIDEO UPSCALER -->
+    <div class="pane" data-pane="vupscale" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Video Upscaler</div>
+      <div class="field"><span class="section-lbl">Manba video</span><div class="img-slot filled"><div class="img-thumb g2"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">render · 0:05 · 25fps</b></span><span class="x">✕</span></div></div></div>
+      <div class="seg"><button class="on">Creative</button><button>Precision<span class="prem">NEW</span></button></div>
+      <div class="ctl-row">
+        <div class="field" style="flex:1"><span class="section-lbl">Model</span><div class="dd"><span class="lead">⚠ Magnific</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+        <div class="field" style="flex:1"><span class="section-lbl">Preset</span><div class="dd"><span class="lead">Animation & 3D</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+      </div>
+      <div class="field"><span class="section-lbl">Output resolution</span><div class="dd"><span class="lead">1440p (2K)</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+      <div class="swrow"><span>FPS Boost <span class="sub">silliq harakat</span></span><span class="sw off"></span></div>
+      <div class="swrow"><span>Turbo Mode <span class="sub">tezroq, arzonroq</span></span><span class="sw off"></span></div>
+      <button class="ghost-btn"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>12-kadr preview</button>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Upscale <span class="cred">· metered</span></button>
     </div>
+
+    <!-- 12) SPEAK — lip-sync -->
+    <div class="pane" data-pane="speak" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h12v10H8l-4 3V5z"/><path d="M19 8c1.5 1.8 1.5 5.2 0 7"/></svg>Speak</div>
+      <div class="field"><span class="section-lbl">Baza · rasm yoki video</span><div class="img-slot filled"><div class="img-thumb g5"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">Portrait / clip</b></span><span class="x">✕</span></div></div></div>
+      <div class="seg"><button class="on">Script</button><button>Add audio</button></div>
+      <div class="field"><span class="section-lbl">Script</span><div class="prompt-wrap"><textarea placeholder="Personaj nima deydi…" style="min-height:54px">Assalomu alaykum! AssetFlow'ga xush kelibsiz.</textarea></div></div>
+      <div class="voice-row">
+        <div class="dd"><span class="lead"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Ovoz tanlash</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <button class="voice-prev"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/></svg>Preview</button>
+      </div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><path d="M4 5h12v10H8l-4 3V5z"/></svg>Generatsiya <span class="cred">· metered</span></button>
+    </div>
+
+    <!-- 13) VIDEO RELIGHT -->
+    <div class="pane" data-pane="vrelight" hidden>
+      <div class="tool-name"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 8a3 3 0 0 1 1.7 5.4V14h-3.4v-.6A3 3 0 0 1 12 8z"/></svg>Video Relight <span class="wo">API: tekshirilmoqda</span></div>
+      <div class="field"><span class="section-lbl">Manba video</span><div class="img-slot filled"><div class="img-thumb g2"></div><div class="img-thumb-bar"><span>AE: <b style="color:var(--text)">clip · 0:05</b></span><span class="x">✕</span></div></div></div>
+      <div class="seg"><button class="on">Relight</button><button>Light transfer</button></div>
+      <div class="field">
+        <span class="section-lbl">Light preview <span class="wo">drag · web-only</span></span>
+        <div class="viz">
+          <svg viewBox="0 0 280 120" fill="none">
+            <path d="M30 110 L140 32 L250 110 Z" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.08)"/>
+            <rect x="118" y="66" width="44" height="30" rx="3" fill="#1c1f18" stroke="rgba(255,255,255,.2)"/>
+            <circle cx="92" cy="48" r="8" fill="#a3e635"/>
+            <circle cx="92" cy="48" r="18" fill="none" stroke="rgba(163,230,53,.35)"/>
+            <line x1="92" y1="48" x2="140" y2="78" stroke="rgba(163,230,53,.45)" stroke-dasharray="3 4"/>
+          </svg>
+          <span class="cap">Yorug'likni suring</span>
+        </div>
+      </div>
+      <div class="qgrid"><button class="qbtn">Top</button><button class="qbtn on">Front</button><button class="qbtn">Right</button><button class="qbtn">Left</button><button class="qbtn">Back</button><button class="qbtn">Bottom</button></div>
+      <div class="swatches">
+        <span class="swatch on" style="background:#fff"></span><span class="swatch" style="background:#fde047"></span><span class="swatch" style="background:#fb923c"></span><span class="swatch" style="background:#38bdf8"></span><span class="swatch rainbow"></span>
+        <span class="lc">Lamp <b>1</b><span class="add">+</span></span>
+      </div>
+      <div class="slider2">
+        <div class="slider"><div class="top"><span>Rotate</span><b>0°</b></div><input type="range" min="0" max="360" value="0"></div>
+        <div class="slider"><div class="top"><span>Elevation</span><b>0°</b></div><input type="range" min="-90" max="90" value="0"></div>
+      </div>
+      <div class="ctl-row"><div class="ctl">Intensity <b>5</b></div><div class="ctl">Res <b>1080</b></div></div>
+      <button class="gen-btn"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 8a3 3 0 0 1 1.7 5.4"/></svg>Generatsiya <span class="cred">· metered</span></button>
+    </div>
+
   </div>
 
   <!-- RESULT -->
@@ -321,26 +574,36 @@ svg{display:block}
 
 </div>
 
+<div class="wo-note">
+  <span class="tag">web-only</span><b>Plaginда YO'Q</b> (Magnific web app'да qoladi): Image Editor canvas (composite) ·
+  <b>Adjust</b> filtrlar (vintage/duotone/retrofilm…) · Clip Editor · Video Project Editor (timeline NLE) ·
+  Multiple-model + count + multi-shot orkestratsiya · 3D light/camera preview vizlar.
+</div>
+
 <script>
 (function(){
   var pills = {
-    generate:'Mystic · 1:1 · 2K', upscale:'Upscale 4× · 7680×4320', relight:'Relight · o’ng-yuqori',
-    extend:'Extend · +512px', removebg:'Fon olib tashlandi · PNG', camera:'Kamera · chap rakurs',
-    video:'Kling v2.6 · 5s · 16:9', audio:'SFX · 5s', stock:'Stock import · 4 natija'
+    generate:'Mystic · 1:1 · ∞', upscale:'Upscale 2× · 3840×2160', relight:'Relight · Front',
+    camera:'Kamera · 45° o’ng', skin:'Skin · yumshatildi', extend:'Extend · outpaint',
+    removebg:'Fon olib tashlandi · PNG', variations:'Variations · 9 rakurs', cinematic:'Cinematic · 50mm f/4',
+    video:'Kling 3.0 · 5s · 16:9', vupscale:'Video upscale · 2K', speak:'Speak · lip-sync', vrelight:'Video relight · Front'
+  };
+  var ratios = {
+    generate:'1/1', upscale:'16/9', relight:'16/9', camera:'1/1', skin:'1/1', extend:'21/9',
+    removebg:'1/1', variations:'1/1', cinematic:'16/9', video:'16/9', vupscale:'16/9', speak:'9/16', vrelight:'16/9'
   };
   var chips = document.querySelectorAll('.tool-chip');
   var panes = document.querySelectorAll('.pane');
-  var resultArea = document.getElementById('resultArea');
   var resultPill = document.getElementById('resultPill');
+  var resultThumb = document.querySelector('.result-thumb');
   chips.forEach(function(c){
     c.addEventListener('click', function(){
       chips.forEach(function(x){x.classList.remove('active');});
       c.classList.add('active');
       var t = c.dataset.tool;
       panes.forEach(function(p){ p.hidden = (p.dataset.pane !== t); });
-      // stock'da natija maydoni yashirin (grid o'zi import qiladi)
-      resultArea.style.display = (t === 'stock') ? 'none' : 'flex';
       if(resultPill && pills[t]) resultPill.textContent = pills[t];
+      if(resultThumb && ratios[t]) resultThumb.style.aspectRatio = ratios[t];
     });
   });
 })();
