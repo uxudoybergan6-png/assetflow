@@ -1990,7 +1990,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #aiPage .mf-wo{display:inline-flex;align-items:center;font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:var(--r-full);background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);margin-left:6px}
 #aiPage .mf-pane{display:flex;flex-direction:column;gap:12px;padding-top:4px}
 #aiPage .mf-pane[hidden]{display:none}
-#aiWrap.mf-sec > #aiComposer,#aiWrap.mf-sec > #aiResultArea,#aiWrap.mf-sec > #aiHistory{display:none!important}
+#aiWrap.mf-sec > #aiComposer{display:none!important}
 #aiPage .ai-composer.mf-gen{display:flex;flex-direction:column;gap:10px}
 #aiPage .mf-gen #aiMediaDd{display:none}
 #aiPage .mf-gen .ai-comp-ctrls{flex-direction:column;align-items:stretch;gap:7px;margin-top:0}
@@ -4935,7 +4935,33 @@ function mfSwitchTool(el){
     var found=false;
     panes.forEach(function(p){ var m=(p.dataset.pane===t); p.hidden=!m; if(m)found=true; });
     if(!found){ var fb=document.querySelector('#mfPanes .mf-pane[data-pane="_soon"]'); if(fb)fb.hidden=false; }
+    if(typeof mfWirePane==='function')mfWirePane(t);
   }
+}
+/* MF: adapteri bor toollar (dedicated Magnific endpoint). modelId gen-models'дagi entry. */
+var MF_TOOL={ upscale:{modelId:1201,prompt:'Upscale'}, relight:{modelId:1202,prompt:'Relight'}, camera:{modelId:1203,prompt:'Change camera'}, skin:{modelId:1204,prompt:'Enhance skin'}, extend:{modelId:1205,prompt:'Expand image'}, removebg:{modelId:1206,prompt:'Remove background'} };
+/* Manba rasm — mavjud reference tizimi (AE faol timeline layer → af_ai.reference). */
+function mfPickSource(){ if(typeof aiPickRef==='function')aiPickRef('timeline'); }
+/* Pane Generate → mavjud signed gen oqimi (narx-imzo → kredit → import) — guard tegmaydi. */
+function mfPaneGen(tool){
+  var t=MF_TOOL[tool]; if(!t)return;
+  if(typeof af_ai==='undefined'||!af_ai.reference){ if(typeof showToast==='function')showToast('Avval manba rasmni tanlang (slotni bosing)','warning'); return; }
+  af_ai.media='rasm'; af_ai.modelId['rasm']=t.modelId; af_ai.quote=null;
+  var ta=document.getElementById('aiPrompt'); if(ta)ta.value=t.prompt;
+  if(typeof aiGenerate==='function')aiGenerate(); // mavjud signed oqim (login/quote/consume/refund/import)
+}
+/* Pane ko'rsatilganда: adapteri bor bo'lsa "Tez orada" → ishlaydigan Generate + manba slot bog'lash. */
+function mfWirePane(tool){
+  var t=MF_TOOL[tool]; if(!t)return;
+  var pane=document.querySelector('#mfPanes .mf-pane[data-pane="'+tool+'"]'); if(!pane)return;
+  var btn=pane.querySelector('.mf-genbtn');
+  if(btn&&btn.getAttribute('data-mfwired')!=='1'){
+    btn.setAttribute('data-mfwired','1'); btn.removeAttribute('disabled'); btn.classList.remove('mf-soon');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></svg>Generatsiya';
+    btn.onclick=function(){ mfPaneGen(tool); };
+  }
+  var slot=pane.querySelector('.mf-imgslot');
+  if(slot&&slot.getAttribute('data-mfwired')!=='1'){ slot.setAttribute('data-mfwired','1'); slot.style.cursor='pointer'; slot.onclick=mfPickSource; }
 }
 /** Joriy media uchun tanlangan model obyekti (katalogdan). */
 function aiCurrentModel(){
