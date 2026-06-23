@@ -170,6 +170,92 @@ async function toBase64(u: string): Promise<string | null> {
   return u; // allaqachon toza base64 bo'lishi mumkin
 }
 
+// ── Dedicated Magnific tools (upscale/relight/camera/skin/extend/removebg/video) ──
+// submitAndPoll generic; har tool faqat manba-rasm (base64) + o'z params'ini qo'shadi.
+// MUHIM: quyidagi non-image param nomlari web-UI'дан olingan (taxminiy) — birinchi jonli
+// chaqiruvда (canary) aniq schema tasdiqlanishi kerak (maydon mos kelmasa 400).
+function mfNum(v: unknown, d: number): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : d;
+}
+function mfStr(v: unknown, d: string): string {
+  return typeof v === "string" && v ? v : d;
+}
+
+/** Tool slug (versiya/model segmentisiz) → non-image body params. */
+function mfToolBody(slug: string, params: Record<string, unknown>): Record<string, unknown> {
+  if (slug.startsWith("image-upscaler")) {
+    return {
+      scale_factor: mfStr(params.scale_factor, "2x"),
+      optimized_for: mfStr(params.optimized_for, "standard"),
+      creativity: mfNum(params.creativity, -3),
+      hdr: mfNum(params.hdr, 0),
+      resemblance: mfNum(params.resemblance, 3),
+      fractality: mfNum(params.fractality, 0),
+      engine: mfStr(params.engine, "automatic"),
+      ...(typeof params.prompt === "string" && params.prompt ? { prompt: params.prompt } : {}),
+    };
+  }
+  if (slug.startsWith("image-relight")) {
+    return {
+      rotate: mfNum(params.rotate, 0),
+      elevation: mfNum(params.elevation, 0),
+      intensity: mfNum(params.intensity, 5),
+      light_color: mfStr(params.light_color, "white"),
+    };
+  }
+  if (slug.startsWith("image-change-camera")) {
+    return {
+      rotate: mfNum(params.rotate, 45),
+      vertical: mfNum(params.vertical, 0),
+      zoom: mfStr(params.zoom, "initial"),
+    };
+  }
+  if (slug.startsWith("skin-enhancer")) {
+    return {
+      optimized_for: mfStr(params.optimized_for, "enhance_skin"),
+      sharpen: mfNum(params.sharpen, 0),
+      smart_grain: mfNum(params.smart_grain, 2),
+    };
+  }
+  if (slug.startsWith("image-expand")) {
+    return {
+      ...(params.width ? { width: mfNum(params.width, 0) } : {}),
+      ...(params.height ? { height: mfNum(params.height, 0) } : {}),
+      ...(typeof params.prompt === "string" && params.prompt ? { prompt: params.prompt } : {}),
+    };
+  }
+  if (slug.startsWith("video-upscaler")) {
+    return {
+      resolution: mfStr(params.resolution, "1440p"),
+      fps_boost: Boolean(params.fps_boost),
+      turbo: Boolean(params.turbo),
+    };
+  }
+  // beta/remove-background — parametrsiz; boshqalar default bo'sh.
+  return {};
+}
+
+/**
+ * Generic dedicated tool — manba rasm/video (base64) + tool params → natija Buffer.
+ * Kontrakt `OrResult<Buffer>` (gen-processor ikkala provayderni bir xil chaqiradi).
+ * `inputKey` = "image" (default) yoki "video" (video-upscaler).
+ */
+export async function magnificTool(
+  toolSlug: string,
+  refUrl: string,
+  params: Record<string, unknown>
+): Promise<OrResult<Buffer>> {
+  if (!isMagnificConfigured()) return NOT_CONFIGURED;
+  const b64 = await toBase64(refUrl);
+  if (!b64) return { ok: false, error: "Manba rasm o'qilmadi" };
+  const inputKey = toolSlug.startsWith("video-upscaler") ? "video" : "image";
+  const body: Record<string, unknown> = { [inputKey]: b64, ...mfToolBody(toolSlug, params) };
+  const r = await submitAndPoll(toolSlug, body);
+  if (!r.ok) return r;
+  return mgDownload(r.data);
+}
+
 /** Mystic — text-to-image. `orImage` kontraktiga mos (`OrResult<Buffer>`). */
 export async function magnificImage(
   mysticModel: string,

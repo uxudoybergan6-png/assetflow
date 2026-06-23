@@ -46,6 +46,8 @@ export type GenModel = {
   label: string;
   provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific";
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
+  magnificTool?: string; // dedicated Magnific tool endpoint slug (image-upscaler, image-relight, ...) — provider=magnific only
+  magnificOnly?: boolean; // true → faqat GEN_PROVIDER=magnific'да ishlaydi (openrouter ekvivalenti yo'q)
   feature: GenFeature;
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
@@ -165,6 +167,38 @@ export const GEN_MODELS: GenModel[] = [
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
     imgModalities: ["image", "text"],
+  },
+
+  // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
+  {
+    id: 1201, mode: "image", key: "magnific/image-upscaler", label: "Magnific Upscaler",
+    feature: "image-edit", cost: 12, magnificTool: "image-upscaler", magnificOnly: true,
+    referenceMode: "image-edit", inputs: ["image-ref"], resolutions: IMG_QUALITY,
+  },
+  {
+    id: 1202, mode: "image", key: "magnific/image-relight", label: "Magnific Relight",
+    feature: "image-edit", cost: 8, magnificTool: "image-relight", magnificOnly: true,
+    referenceMode: "image-edit", inputs: ["image-ref"],
+  },
+  {
+    id: 1203, mode: "image", key: "magnific/image-change-camera", label: "Magnific Change Camera",
+    feature: "image-edit", cost: 8, magnificTool: "image-change-camera", magnificOnly: true,
+    referenceMode: "image-edit", inputs: ["image-ref"],
+  },
+  {
+    id: 1204, mode: "image", key: "magnific/skin-enhancer", label: "Magnific Skin Enhancer",
+    feature: "image-edit", cost: 5, magnificTool: "skin-enhancer/flexible", magnificOnly: true,
+    referenceMode: "image-edit", inputs: ["image-ref"],
+  },
+  {
+    id: 1205, mode: "image", key: "magnific/image-expand", label: "Magnific Image Extender",
+    feature: "image-edit", cost: 6, magnificTool: "image-expand/flux-pro", magnificOnly: true,
+    referenceMode: "image-edit", inputs: ["image-ref"],
+  },
+  {
+    id: 1206, mode: "image", key: "magnific/remove-background", label: "Magnific Remove BG",
+    feature: "image-edit", cost: 3, magnificTool: "beta/remove-background", magnificOnly: true,
+    referenceMode: "image-edit", inputs: ["image-ref"],
   },
 
   // ── OVOZ (TTS) ──

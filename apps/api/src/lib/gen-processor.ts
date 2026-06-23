@@ -13,7 +13,7 @@ import {
   orVideoStatus,
   orDownload,
 } from "./ai/openrouter.js";
-import { magnificImage, magnificImageEdit, genProvider } from "./ai/magnific.js";
+import { magnificImage, magnificImageEdit, magnificTool, genProvider } from "./ai/magnific.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
@@ -209,14 +209,21 @@ export async function processGeneration(genId: string): Promise<void> {
       // Kontrakt OrResult<Buffer> bir xil → persist/fail/refund skeleton o'zgarmaydi.
       const useMagnific = genProvider() === "magnific";
       const mModel = model.magnificModel ?? "realism";
+      // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
+      // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
+      const mfTool = model.magnificTool;
+      if (mfTool && !useMagnific) return void (await fail("Bu tool faqat Magnific'да (GEN_PROVIDER=magnific)"));
+      if (mfTool && !refUrl) return void (await fail("Manba rasm kerak — AE komp yoki layer tanlang"));
       for (let i = 0; i < count; i++) {
-        const out = useEdit
-          ? useMagnific
-            ? await magnificImageEdit(mModel, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
-            : await orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
-          : useMagnific
-            ? await magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
-            : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
+        const out = mfTool
+          ? await magnificTool(mfTool, refUrl as string, params)
+          : useEdit
+            ? useMagnific
+              ? await magnificImageEdit(mModel, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+              : await orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+            : useMagnific
+              ? await magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
+              : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
         if (!out.ok) return void (await fail(out.error));
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
