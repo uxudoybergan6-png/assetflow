@@ -13,6 +13,7 @@ import {
   orVideoStatus,
   orDownload,
 } from "./ai/openrouter.js";
+import { magnificImage, magnificImageEdit, genProvider } from "./ai/magnific.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
@@ -204,10 +205,18 @@ export async function processGeneration(genId: string): Promise<void> {
       const refMode = getReferenceMode(model);
       const useEdit =
         !!refUrl && (refMode === "image-edit" || refMode === "image-ref");
+      // PROVAYDER (P1): GEN_PROVIDER=magnific bo'lsa rasm gen/edit Mystic'ga; aks holda OpenRouter.
+      // Kontrakt OrResult<Buffer> bir xil → persist/fail/refund skeleton o'zgarmaydi.
+      const useMagnific = genProvider() === "magnific";
+      const mModel = model.magnificModel ?? "realism";
       for (let i = 0; i < count; i++) {
         const out = useEdit
-          ? await orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
-          : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
+          ? useMagnific
+            ? await magnificImageEdit(mModel, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+            : await orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+          : useMagnific
+            ? await magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
+            : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
         if (!out.ok) return void (await fail(out.error));
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);

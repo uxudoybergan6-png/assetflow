@@ -18,6 +18,8 @@
  * NARX: video `cost` = SONIYA boshiga kredit → umumiy narx = cost × duration (computeGenCost).
  * Boshqa rejimlarda `cost` = generatsiya boshiga sobit kredit.
  */
+import { genProvider } from "./ai/magnific.js";
+
 export type GenFeature =
   | "text-to-image"
   | "image-edit"
@@ -42,7 +44,8 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific";
+  magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
   feature: GenFeature;
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
@@ -85,6 +88,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Nano Banana 2",
     feature: "text-to-image",
     cost: 5,
+    magnificModel: "realism",
     referenceMode: "image-edit", // Gemini — instruct edit (image input tasdiqlangan)
     isDefault: true,
     inputs: ["image-ref"],
@@ -100,6 +104,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Nano Banana Pro",
     feature: "text-to-image",
     cost: 8,
+    magnificModel: "super_real",
     referenceMode: "image-edit", // Gemini Pro — instruct edit
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
@@ -114,6 +119,7 @@ export const GEN_MODELS: GenModel[] = [
     label: "Seedream 4.5",
     feature: "text-to-image",
     cost: 7,
+    magnificModel: "fluid",
     referenceMode: "image-edit", // Seedream — image input + edit qo'llaydi
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
@@ -381,6 +387,9 @@ export function resolveVideoParams(
 
 /** So'ralgan rasm sonini model qo'llaganiga klamplaydi (default 1). */
 export function resolveImageCount(model: GenModel, params: Record<string, unknown>): number {
+  // QB-3: Magnific MVP'da count=1 ga qotirilgan (Mystic 1 natija/task; count>1 = N parallel task →
+  // qisman fail bo'lsa COGS zarari). cost-quote ham, /gen ham shu yo'l → narx izchil (1×cost).
+  if (genProvider() === "magnific") return 1;
   const list = model.count && model.count.length ? model.count : [1];
   const req = Number(params.count);
   if (Number.isFinite(req) && list.includes(req)) return req;

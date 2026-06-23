@@ -34,6 +34,11 @@ export function genParamsHash(
   const priced = { ...(params || {}) };
   delete priced.referenceUrl;
   delete priced.referenceEndUrl; // End kadr ham narxga ta'sir qilmaydi (referenceUrl kabi)
+  // QB-2: Magnific reference kanallari — narxga ta'sir qilmaydi, data-og'ir (base64).
+  // Hashdan chiqarilmasa cost-quote (referencesiz) va /gen (reference bilan) ph'i farq qiladi
+  // → har gen 400 BAD_QUOTE. Shu sabab DOIM o'chiriladi (mavjud bo'lmasa no-op).
+  delete priced.styleReference;
+  delete priced.structureReference;
   return stableStringify({ modelId, mode, params: priced });
 }
 
