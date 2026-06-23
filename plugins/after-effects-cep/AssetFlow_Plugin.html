@@ -5182,8 +5182,22 @@ async function aiLoadModels(media){
   const mode=aiStudioMode(media);
   if(!mode)return;
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
+  const url='/api/studio/gen/models?mode='+mode;
+  // Render free-tier cold-start (~30-50s) → birinchi so'rov 5xx/timeout berishi mumkin →
+  // transient'да qayta urinamiz. 401/403 (auth) — qayta urinmaymiz. Jim catch O'RNIGA aniq xato.
+  let data=null,lastErr=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{ data=await studioGet(url); break; }
+    catch(e){ lastErr=e; const st=e&&e.status; if(st===401||st===403)break; await new Promise(function(r){setTimeout(r,900*(attempt+1));}); }
+  }
+  if(!data){
+    const st=lastErr&&lastErr.status;
+    const msg=(st===401||st===403)?'Sessiya tugadi — qayta kiring':'Modellar yuklanmadi (server uyqudan turyapti?) — ↻ Yangilash bosing';
+    if(typeof showToast==='function')showToast(msg,'warning');
+    if(typeof AssetFlowLog!=='undefined'&&AssetFlowLog.error)AssetFlowLog.error('Model katalogi yuklanmadi',{action:'models_load_fail',status:st||0});
+    return;
+  }
   try{
-    const data=await studioGet('/api/studio/gen/models?mode='+mode);
     const models=(data&&data.models)||[];
     af_ai.catalog[mode]=models;
     if(models.length){
@@ -5202,9 +5216,9 @@ async function aiLoadModels(media){
       }
       aiBuildMenus();
       aiCostQuote();
-    }
+    }else if(typeof showToast==='function'){ showToast('Model katalogi bo\'sh qaytdi','warning'); }
     aiLoadHistory();  // login bo'lib AI ochilganda tarix ham yuklansin
-  }catch(e){ /* login yo'q yoki API — statik fallback qoladi */ }
+  }catch(e){ if(typeof showToast==='function')showToast('Model katalogi xatosi: '+((e&&e.message)||e),'warning'); }
 }
 
 /** Katalogdan model tanlash (cost-quote qayta hisoblanadi). */
@@ -6178,7 +6192,7 @@ function aiPollJob(jobId,media,val){
 /** image/voice Studio Gen: session → cost-quote → POST /gen → polling → natija. */
 async function aiRunStudioGen(media,val){
   const mode=aiStudioMode(media),modelId=af_ai.modelId[media];
-  if(!modelId){aiRenderError(new Error('Model yuklanmadi — qayta urinib ko‘ring'));return;}
+  if(!modelId){aiRenderError(new Error('Modellar hali yuklanmadi (server uyqudan turyapti?) — ↻ Yangilash bosib qayta urining'));return;}
   const sessionId=await aiEnsureSession(media);
   const quote=await aiEnsureQuote(media);
   const params=aiGenParams(media);
