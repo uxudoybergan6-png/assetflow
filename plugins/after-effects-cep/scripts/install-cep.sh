@@ -24,34 +24,12 @@ for v in 9 10 11 12 13 14; do
   defaults write "com.adobe.CSXS.$v" PlayerDebugMode 1 2>/dev/null || true
 done
 
-# ── 1) AE'ni AVVAL yopish ───────────────────────────────────────────────────
-# Eski skript copy'ni AE ochiq turib bajarardi → CEP faylni egallab turardi va
-# yangi HTML "yopishmasdan" qolardi. Endi avval yopamiz, keyin ko'chiramiz.
-if [ "$SKIP_AE" != "1" ] && [ -n "$AE_NAME" ]; then
-  echo "→ $AE_NAME yopilmoqda (copy/kesh tozalashdan oldin)..."
-  osascript -e "tell application \"$AE_NAME\" to quit" 2>/dev/null || true
-  for _ in {1..25}; do
-    pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null 2>&1 || break
-    sleep 1
-  done
-  if pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null 2>&1; then
-    echo "  ⚠ AE hali ochiq — qo'lda yoping (Cmd+Q) va skriptni qayta ishga tushiring."
-  else
-    echo "  ✓ AE yopildi"
-  fi
-fi
-
-# ── 2) CEP render/HTML keshini tozalash ─────────────────────────────────────
-# CEF (CEP'ning ichki brauzeri) HTML/JS keshini saqlaydi. Eski panel keshda
-# qolsa, fayl yangi bo'lsa ham eski ko'rinish chiqaveradi. Faqat AssetFlow va
-# umumiy CSXS keshini tozalaymiz (boshqa Adobe app keshlariga tegmaymiz).
-echo "→ CEP keshi tozalanmoqda..."
-rm -rf "$HOME/Library/Caches/CSXS/cep_cache" 2>/dev/null || true
-rm -rf "$DEST/cef_cache" "$DEST/Cache" "$DEST/GPUCache" 2>/dev/null || true
-echo "  ✓ kesh tozalandi"
-
-# ── 3) DEST'ni TO'LIQ tozalab qayta ko'chirish (cache-bust) ─────────────────
-# rm -rf DEST → hech qanday eski leftover qolmaydi. Manbadan to'liq qayta quramiz.
+# ── 1) FAYLNI AVVAL KO'CHIRISH (har doim yetib boradi) ──────────────────────
+# MUHIM: copy AE yopilishidan OLDIN bajariladi. Aks holda AE "Save?" dialogi
+# quit'ni bloklasa (yoki foydalanuvchi 25s kutishni Ctrl+C qilsa), copy umuman
+# ishlamay qolardi va DEST eski qolardi (kuzatilgan bug). Open faylga yozish
+# macOS'da xavfsiz (eski inode AE xotirasida qoladi, disk yangilanadi) —
+# ko'rinishi uchun keyin AE qayta ochiladi.
 rm -rf "$DEST"
 mkdir -p "$DEST/CSXS" "$DEST/js" "$DEST/jsx" "$DEST/css"
 
@@ -64,7 +42,7 @@ cp "$SRC/js/CSInterface.js" "$DEST/js/"
 cp "$SRC/jsx/host.jsx" "$DEST/jsx/"
 cp "$SRC/css/"*.css "$DEST/css/" 2>/dev/null || true
 
-# ── 4) VERIFY: o'rnatilgan HTML manbaga BAYT-BA-BAYT mosmi? ─────────────────
+# ── 2) VERIFY: o'rnatilgan HTML manbaga BAYT-BA-BAYT mosmi? ─────────────────
 # Build stamp HALI urilmadi (placeholder __AF_BUILD__ saqlanib turibdi), shuning
 # uchun DEST aynan SRC bilan bir xil bo'lishi shart. Farq bo'lsa — copy ishlamadi.
 verify_file() {
@@ -82,14 +60,39 @@ echo "→ O'rnatish tekshirilmoqda..."
 verify_file "AssetFlow_Plugin.html"
 verify_file "AssetFlow_Admin.html"
 
-# ── 5) Build yorlig'i — VERIFY'dan KEYIN stamplaymiz ───────────────────────
+# ── 3) Build yorlig'i — VERIFY'dan KEYIN stamplaymiz ───────────────────────
 BUILD_STAMP="$(date '+%Y-%m-%d %H:%M') · $(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo nogit)"
 for f in "$DEST/AssetFlow_Plugin.html" "$DEST/AssetFlow_Admin.html"; do
   [ -f "$f" ] && sed -i '' "s|__AF_BUILD__|${BUILD_STAMP}|g" "$f" 2>/dev/null || true
 done
 echo "  Build: $BUILD_STAMP"
-echo "✓ AssetFlow o'rnatildi: $DEST"
+echo "✓ Fayl o'rnatildi: $DEST"
 echo "  Manba: $SRC"
+
+# ── 4) AE'ni yopish (CEP xotiradagi ESKI panelni bo'shatish uchun) ─────────
+# Fayl allaqachon diskda yangi; AE faqat CEP keshi/xotirasini yangilash uchun
+# qayta ishga tushishi kerak. Quit muvaffaqiyatsiz bo'lsa ham fayl to'g'ri qoladi.
+AE_OPEN=0
+if [ "$SKIP_AE" != "1" ] && [ -n "$AE_NAME" ]; then
+  echo "→ $AE_NAME yopilmoqda (CEP keshini yangilash uchun)..."
+  osascript -e "tell application \"$AE_NAME\" to quit" 2>/dev/null || true
+  for _ in {1..25}; do
+    pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null 2>&1 || break
+    sleep 1
+  done
+  if pgrep -f "$AE_APP/Contents/MacOS/After Effects" >/dev/null 2>&1; then
+    AE_OPEN=1
+    echo "  ⚠ AE yopilmadi (saqlash dialogi ochiq bo'lishi mumkin)."
+  else
+    echo "  ✓ AE yopildi"
+  fi
+fi
+
+# ── 5) CEP render/HTML keshini tozalash (AE yopiq holatda eng samarali) ────
+echo "→ CEP keshi tozalanmoqda..."
+rm -rf "$HOME/Library/Caches/CSXS/cep_cache" 2>/dev/null || true
+rm -rf "$DEST/cef_cache" "$DEST/Cache" "$DEST/GPUCache" 2>/dev/null || true
+echo "  ✓ kesh tozalandi"
 
 # ── 6) AE'ni qayta ochish ──────────────────────────────────────────────────
 if [ "$SKIP_AE" = "1" ]; then
@@ -98,6 +101,11 @@ if [ "$SKIP_AE" = "1" ]; then
 fi
 if [ -z "$AE_NAME" ]; then
   echo "⚠ After Effects topilmadi — qo'lda: Window → Extensions → AssetFlow"
+  exit 0
+fi
+if [ "$AE_OPEN" = "1" ]; then
+  echo "⚠ AE yopilmadi — fayl to'g'ri o'rnatildi, LEKIN ko'rinishi uchun AE'ni"
+  echo "  TO'LIQ yoping (Cmd+Q, kerak bo'lsa saqlang) va qayta oching."
   exit 0
 fi
 
