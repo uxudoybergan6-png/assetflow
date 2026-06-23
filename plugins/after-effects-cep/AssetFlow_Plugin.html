@@ -2504,6 +2504,37 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                         <div class="mf-ctlrow"><div class="mf-ctl"><span class="mf-cl">Soni</span><span class="mf-step">−<b>1</b>+</span></div><div class="mf-ctl">1:1</div><div class="mf-ctl">1K</div><div class="mf-ctl mf-inf">∞</div></div>
                         <button type="button" class="mf-genbtn mf-soon" disabled>Tez orada <span class="mf-cred">· adapter ulanmagan</span></button>
                       </div>
+                      <!-- MF-5: Video ikkilamchi paneler (vupscale/speak/vrelight) -->
+                      <div class="mf-pane" data-pane="vupscale" hidden>
+                        <div class="mf-toolname"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Video Upscaler</div>
+                        <div class="mf-field"><span class="mf-seclbl">Manba video</span><div class="mf-imgslot"><span class="mf-slot-ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="mf-slot-t">AE komp/render'дан yoki yuklash</span></div></div>
+                        <div class="mf-seg"><button class="mf-on">Creative</button><button>Precision<span class="mf-prem">NEW</span></button></div>
+                        <div class="mf-ctlrow"><div class="mf-field" style="flex:1"><span class="mf-seclbl">Model</span><div class="mf-dd"><span class="mf-lead">Magnific</span><span class="mf-chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div><div class="mf-field" style="flex:1"><span class="mf-seclbl">Preset</span><div class="mf-dd"><span class="mf-lead">Animation & 3D</span><span class="mf-chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div></div>
+                        <div class="mf-field"><span class="mf-seclbl">Output resolution</span><div class="mf-dd"><span class="mf-lead">1440p (2K)</span><span class="mf-chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+                        <div class="mf-swrow"><span>FPS Boost <span class="mf-subt">silliq harakat</span></span><span class="mf-sw mf-off"></span></div>
+                        <div class="mf-swrow"><span>Turbo Mode <span class="mf-subt">tezroq, arzonroq</span></span><span class="mf-sw mf-off"></span></div>
+                        <button type="button" class="mf-ghost"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>12-kadr preview</button>
+                        <button type="button" class="mf-genbtn mf-soon" disabled>Tez orada <span class="mf-cred">· adapter ulanmagan</span></button>
+                      </div>
+                      <div class="mf-pane" data-pane="speak" hidden>
+                        <div class="mf-toolname"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h12v10H8l-4 3V5z"/><path d="M19 8c1.5 1.8 1.5 5.2 0 7"/></svg>Speak</div>
+                        <div class="mf-field"><span class="mf-seclbl">Baza · rasm yoki video</span><div class="mf-imgslot"><span class="mf-slot-ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="mf-slot-t">AE komp/layer'дан yoki yuklash</span></div></div>
+                        <div class="mf-seg"><button class="mf-on">Script</button><button>Add audio</button></div>
+                        <div class="mf-field"><span class="mf-seclbl">Script</span><div class="mf-promptwrap"><textarea placeholder="Personaj nima deydi…" style="min-height:54px"></textarea></div></div>
+                        <div class="mf-voicerow"><div class="mf-dd"><span class="mf-lead"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Ovoz tanlash</span><span class="mf-chev"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div><button type="button" class="mf-voiceprev"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/></svg>Preview</button></div>
+                        <button type="button" class="mf-genbtn mf-soon" disabled>Tez orada <span class="mf-cred">· adapter ulanmagan</span></button>
+                      </div>
+                      <div class="mf-pane" data-pane="vrelight" hidden>
+                        <div class="mf-toolname"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cta)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 8a3 3 0 0 1 1.7 5.4V14h-3.4v-.6A3 3 0 0 1 12 8z"/></svg>Video Relight <span class="mf-wo">API: tekshirilmoqda</span></div>
+                        <div class="mf-field"><span class="mf-seclbl">Manba video</span><div class="mf-imgslot"><span class="mf-slot-ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></span><span class="mf-slot-t">AE komp/render'дан yoki yuklash</span></div></div>
+                        <div class="mf-seg"><button class="mf-on">Relight</button><button>Light transfer</button></div>
+                        <div class="mf-field"><span class="mf-seclbl">Light preview <span class="mf-wo">drag · web-only</span></span><div class="mf-viz"><svg viewBox="0 0 280 120" fill="none"><path d="M30 110 L140 32 L250 110 Z" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.08)"/><rect x="118" y="66" width="44" height="30" rx="3" fill="#1c1f18" stroke="rgba(255,255,255,.2)"/><circle cx="92" cy="48" r="8" fill="#a3e635"/><circle cx="92" cy="48" r="18" fill="none" stroke="rgba(163,230,53,.35)"/><line x1="92" y1="48" x2="140" y2="78" stroke="rgba(163,230,53,.45)" stroke-dasharray="3 4"/></svg><span class="mf-vizcap">Yorug'likni suring</span></div></div>
+                        <div class="mf-qgrid"><button class="mf-qbtn">Top</button><button class="mf-qbtn mf-on">Front</button><button class="mf-qbtn">Right</button><button class="mf-qbtn">Left</button><button class="mf-qbtn">Back</button><button class="mf-qbtn">Bottom</button></div>
+                        <div class="mf-swatches"><span class="mf-swatch mf-on" style="background:#fff"></span><span class="mf-swatch" style="background:#fde047"></span><span class="mf-swatch" style="background:#fb923c"></span><span class="mf-swatch" style="background:#38bdf8"></span><span class="mf-swatch mf-rainbow"></span><span class="mf-lc">Lamp <b>1</b><span class="mf-add">+</span></span></div>
+                        <div class="mf-slider2"><div class="mf-slider"><div class="mf-stop"><span>Rotate</span><b>0°</b></div><input type="range" min="0" max="360" value="0"></div><div class="mf-slider"><div class="mf-stop"><span>Elevation</span><b>0°</b></div><input type="range" min="-90" max="90" value="0"></div></div>
+                        <div class="mf-ctlrow"><div class="mf-ctl">Intensity <b>5</b></div><div class="mf-ctl">Res <b>1080</b></div></div>
+                        <button type="button" class="mf-genbtn mf-soon" disabled>Tez orada <span class="mf-cred">· adapter ulanmagan</span></button>
+                      </div>
                     </div>
 
                     <!-- (UX: "Nima yaratamiz?" hero olib tashlandi — magnific'da yo'q, ~25% balandlik tejaldi; panel to'g'ridan composer'dan boshlanadi) -->
