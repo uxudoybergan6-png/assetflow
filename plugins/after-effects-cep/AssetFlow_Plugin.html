@@ -370,19 +370,21 @@ body{
 .env-content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 /* C2: doimiy top-header (brend + plan-pill + sync). Layout-only; auth va nav
    mantig'i sidebar'da qoladi (faqat ko'rinish qo'shiladi). */
-.af-topbar{display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:0.5px solid var(--border);background:var(--surface);flex:none;position:relative;z-index:6}
-.af-tb-brand{display:flex;align-items:center;gap:8px;min-width:0}
-.af-tb-logo{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--accent-cta)}
-.af-tb-logo svg{width:22px;height:22px}
-.af-tb-title{font-family:var(--font-display);font-size:14.5px;font-weight:700;letter-spacing:-.01em;color:var(--text);white-space:nowrap}
-.af-tb-spacer{flex:1;min-width:6px}
-.af-tb-plan{display:inline-flex;align-items:center;gap:5px;height:23px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.03em}
-.af-tb-plan svg{width:11px;height:11px}
-.af-tb-plan.free{background:var(--surface-2);color:var(--muted);border:0.5px solid var(--border)}
-.af-tb-plan.pro{background:var(--accent-cta);color:var(--on-accent)}
-.af-tb-icon{width:33px;height:33px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);cursor:pointer;transition:border-color .15s,color .15s}
-.af-tb-icon:hover{border-color:var(--muted-2);color:var(--accent-cta)}
-.af-tb-icon svg{width:16px;height:16px}
+.af-topbar{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--border);background:var(--sidebar);flex:none;position:relative;z-index:6}
+.af-tb-brand{display:flex;align-items:center;gap:7px;min-width:0;margin-right:auto}
+.af-tb-logo{width:24px;height:24px;flex:none;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--accent-cta);color:var(--on-accent)}
+.af-tb-logo svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.af-tb-title{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;color:var(--text);white-space:nowrap}
+.af-tb-spacer{flex:1;min-width:0}
+.af-tb-plan{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.04em}
+.af-tb-plan svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.af-tb-plan.free{background:var(--surface-2);color:var(--muted);border:1px solid var(--border)}
+.af-tb-plan.pro{background:var(--green-dim);color:var(--accent-cta);border:1px solid var(--border-accent)}
+.af-tb-plan .sep{width:1px;height:11px;background:var(--border)}
+.af-tb-plan .cred{color:var(--text);font-weight:600}
+.af-tb-icon{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.af-tb-icon:hover{background:var(--surface-3);border-color:var(--muted-2)}
+.af-tb-icon svg{width:17px;height:17px}
 /* C3: doim ko'rinadigan format-filter chiplari */
 .af-chips{display:flex;gap:6px;padding:8px 13px 2px;overflow-x:auto;scrollbar-width:none}
 .af-chips::-webkit-scrollbar{display:none}
@@ -2064,12 +2066,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
             <div class="env-content">
               <header class="af-topbar">
                 <div class="af-tb-brand">
-                  <span class="af-tb-logo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2l8.5 4.9v9.8L12 21.8 3.5 16.9V7.1L12 2.2z" opacity=".22"/><path d="M12 2.2l8.5 4.9L12 12 3.5 7.1 12 2.2z"/></svg></span>
+                  <span class="af-tb-logo"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4Z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></span>
                   <span class="af-tb-title">AssetFlow</span>
                 </div>
-                <div class="af-tb-spacer"></div>
-                <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.26L21.5 9l-5 4.5L18 20.5 12 17l-6 3.5 1.5-7L2.5 9l6.6-.74L12 2z"/></svg><span id="hdrPlanLabel">Free</span></span>
-                <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+                <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
+                <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span></span>
               </header>
               <div class="topbar"><div id="featuredWrap" class="notice-zone"></div></div>
 
