@@ -370,8 +370,9 @@ body{
 .env-content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 /* C2: doimiy top-header (brend + plan-pill + sync). Layout-only; auth va nav
    mantig'i sidebar'da qoladi (faqat ko'rinish qo'shiladi). */
-.af-topbar{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--border);background:var(--sidebar);flex:none;position:relative;z-index:6}
-.af-tb-brand{display:flex;align-items:center;gap:7px;min-width:0;margin-right:auto}
+.af-topbar{display:flex;align-items:center;gap:6px;padding:11px 12px;border-bottom:1px solid var(--border);background:var(--sidebar);flex:none;position:relative;z-index:6}
+.af-tb-brand{display:flex;align-items:center;gap:7px;flex:1;min-width:24px;overflow:hidden}
+.af-tb-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .af-tb-logo{width:24px;height:24px;flex:none;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--accent-cta);color:var(--on-accent)}
 .af-tb-logo svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .af-tb-title{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;color:var(--text);white-space:nowrap}
@@ -382,9 +383,9 @@ body{
 .af-tb-plan.pro{background:var(--green-dim);color:var(--accent-cta);border:1px solid var(--border-accent)}
 .af-tb-plan .sep{width:1px;height:11px;background:var(--border)}
 .af-tb-plan .cred{color:var(--text);font-weight:600}
-.af-tb-icon{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.af-tb-icon{width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
 .af-tb-icon:hover{background:var(--surface-3);border-color:var(--muted-2)}
-.af-tb-icon svg{width:17px;height:17px}
+.af-tb-icon svg{width:16px;height:16px}
 /* C3: doim ko'rinadigan format-filter chiplari */
 .af-chips{display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;scrollbar-width:none}
 .af-chips::-webkit-scrollbar{display:none}
@@ -2085,6 +2086,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                   <span class="af-tb-logo"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4Z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></span>
                   <span class="af-tb-title">AssetFlow</span>
                 </div>
+                <button type="button" class="af-tb-icon" onclick="afNavTab('ai')" title="AI Tools" aria-label="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5L15 9M9 15l-2.5 2.5"/></svg></button>
+                <button type="button" class="af-tb-icon" onclick="afHeaderPage('downloaded')" title="Yuklab olingan" aria-label="Yuklab olingan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
+                <button type="button" class="af-tb-icon" onclick="afHeaderPage('favorites')" title="Sevimli" aria-label="Sevimli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
                 <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
                 <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi · AI kredit"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span><span class="sep" id="hdrPlanSep" hidden></span><span class="cred" id="hdrCred" hidden></span></span>
               </header>
@@ -3156,6 +3160,12 @@ function syncCategoryChips(slug){
 // handler tahrirlanmaydi, guard refs o'zgarmaydi). Aktiv holat render() funnelida syncTopNav bilan.
 function afNavTab(tab){
   const el=document.querySelector('.env-side-link[data-nav="'+tab+'"]');
+  if(el) el.click();
+}
+// E6.2: header ixcham ikonalar (Downloads/Favorites) → yashirin sidebar .env-side-link[data-page]
+// tugmasini .click() qiladi → mavjud onclick ishlaydi (handler tahrirlanmaydi).
+function afHeaderPage(page){
+  const el=document.querySelector('.env-side-link[data-page="'+page+'"]');
   if(el) el.click();
 }
 function syncTopNav(){
