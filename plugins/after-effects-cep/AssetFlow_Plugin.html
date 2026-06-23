@@ -1055,7 +1055,11 @@ html.cep-mode .grid{grid-template-columns:repeat(2,1fr);gap:10px}
 .env-filter-bar.cmp-wrap{display:block;padding:0;align-items:stretch;flex-wrap:nowrap}
 .cmp-toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px}
 .cmp-spacer{flex:1;min-width:6px}
-.cmp-iconbtn{width:38px;height:38px;border-radius:10px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;font-family:inherit;transition:border-color .15s,background .15s,color .15s}
+.cmp-iconbtn{position:relative;width:38px;height:38px;border-radius:10px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none;font-family:inherit;transition:border-color .15s,background .15s,color .15s}
+/* E3: minimal toolbar — qidiruv o'sadi, filtr soni burchak nuqta, saralash menyu o'ngga */
+.cmp-toolbar .env-search-field{flex:1;min-width:0}
+.cmp-iconbtn .cmp-filter-count{position:absolute;top:-5px;right:-5px}
+.cmp-toolbar .cmp-sort .dd-menu{right:0;left:auto;min-width:140px}
 .cmp-iconbtn svg{width:17px;height:17px}
 .cmp-iconbtn:hover{border-color:var(--muted-2)}
 .cmp-iconbtn.active{border-color:var(--border-accent);background:var(--green-dim);color:var(--accent-cta)}
@@ -2076,33 +2080,28 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                    bo'lganda ochiladi. Tablar sidebar'da — bu yerda yashirin (mantiq saqlanadi).
                    .env-filter-bar wrapper saqlanadi: initEnvFilterUi/closeAllDropdowns shunga bog'liq. -->
               <div class="env-filter-bar cmp-wrap">
+                <!-- E3: minimal toolbar — qidiruv asosiy + ixcham filtr/saralash ikonalari.
+                     Filtrlar/Saralash FUNKSIYASI saqlanadi (toggleFilterPanel + #sortMenu). -->
                 <div class="cmp-toolbar">
-                  <button type="button" class="cmp-iconbtn" id="searchToggleBtn" onclick="toggleSearchBar()" title="Qidirish" aria-label="Qidirish" style="display:none">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  </button>
-                  <button type="button" class="cmp-filterbtn" id="filterToggleBtn" onclick="toggleFilterPanel()" title="Filtrlar">
+                  <div class="env-search-field" id="searchBar">
+                    <svg class="env-search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input type="text" placeholder="Shablon qidirish..." id="searchInput">
+                    <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
+                  </div>
+                  <button type="button" class="cmp-iconbtn" id="filterToggleBtn" onclick="toggleFilterPanel()" title="Filtrlar" aria-label="Filtrlar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>
-                    <span>Filtrlar</span>
                     <span class="cmp-filter-count" id="filterCountBadge" style="display:none"></span>
                   </button>
                   <div class="dropdown cmp-sort" id="sortDrop">
-                    <button type="button" class="env-pill" id="sortBtn"><span id="sortLabel">Saralash</span> <span class="env-pill-chevron">⌄</span></button>
+                    <button type="button" class="cmp-iconbtn" id="sortBtn" title="Saralash" aria-label="Saralash">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11M3 12h8M3 18h5M18 4v16M15 17l3 3 3-3"/></svg>
+                      <span id="sortLabel" hidden>Mos</span>
+                    </button>
                     <div class="dd-menu" id="sortMenu">
                       <div class="dd-item selected" data-sort="relevant">Mos <span class="dd-check">✓</span></div>
                       <div class="dd-item" data-sort="newest">Yangi</div>
                       <div class="dd-item" data-sort="name">Nom A–Z</div>
                     </div>
-                  </div>
-                  <div class="cmp-spacer"></div>
-                  <button type="button" class="env-view-btn" title="Katak ko'rinishi">▦</button>
-                </div>
-
-                <!-- Qidiruv qatori — C3: doim ko'rinadi (toggle olib tashlandi) -->
-                <div class="cmp-searchbar" id="searchBar">
-                  <div class="env-search-field">
-                    <svg class="env-search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                    <input type="text" placeholder="Shablon qidirish..." id="searchInput">
-                    <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
                   </div>
                 </div>
                 <!-- C3: format-filter chiplari (doim ko'rinadi) — mavjud selectOrientFilter ga ulanadi -->
