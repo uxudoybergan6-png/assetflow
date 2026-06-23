@@ -943,6 +943,32 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
    ============================================================ */
 .grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:12px}
 html.cep-mode .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+/* Karta zichligi (view density) — html.dens-* grid ustunlari + karta ichi (displey-only, localStorage) */
+html.dens-sm .grid{grid-template-columns:repeat(3,1fr);gap:8px}
+html.dens-md .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+html.dens-lg .grid{grid-template-columns:1fr;gap:10px}
+/* Kichik (3 ustun) — ixcham; teg/import tugma bosiladigan qoladi */
+html.dens-sm .cinfo{padding:7px 8px 8px;gap:5px}
+html.dens-sm .card-cat{font-size:9px}
+html.dens-sm .aname{font-size:var(--fs-sm);margin:0;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html.dens-sm .card-author{display:none}
+html.dens-sm .tc-tags{gap:4px}
+html.dens-sm .tc-tags .tag{font-size:9px;padding:2px 5px}
+html.dens-sm .tc-import{padding:6px 6px;font-size:11px;gap:4px}
+html.dens-sm .tc-import svg{width:12px;height:12px}
+html.dens-sm .plan-badge{font-size:8px;padding:2px 6px}
+html.dens-sm .card-fav{width:26px;height:26px;font-size:11px}
+/* Katta (1 ustun) — yirik, keng thumb */
+html.dens-lg .card .thumb{aspect-ratio:16/9}
+html.dens-lg .cinfo{padding:12px 14px}
+html.dens-lg .aname{font-size:var(--fs-lg)}
+/* density tugma ikonasi — joriy holatga mos bittasi ko'rinadi (default md) */
+.af-dens-btn .dn-ico{display:none}
+.af-dens-btn .dn-md{display:block}
+html.dens-sm .af-dens-btn .dn-md{display:none}
+html.dens-sm .af-dens-btn .dn-sm{display:block}
+html.dens-lg .af-dens-btn .dn-md{display:none}
+html.dens-lg .af-dens-btn .dn-lg{display:block}
 .card{
   background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
   border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
@@ -2158,6 +2184,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                       <div class="dd-item" data-sort="name">Nom A–Z</div>
                     </div>
                   </div>
+                  <button type="button" class="cmp-iconbtn af-dens-btn" id="densityBtn" onclick="afCycleDensity()" title="Karta zichligi" aria-label="Karta zichligi">
+                    <svg class="dn-ico dn-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg>
+                    <svg class="dn-ico dn-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="16" rx="1.2"/><rect x="14" y="4" width="7" height="16" rx="1.2"/></svg>
+                    <svg class="dn-ico dn-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="7" rx="1.2"/><rect x="4" y="13" width="16" height="7" rx="1.2"/></svg>
+                  </button>
                 </div>
                 <!-- C3: format-filter chiplari (doim ko'rinadi) — mavjud selectOrientFilter ga ulanadi -->
                 <!-- E2: kategoriya chiplari — buildCategoryChips() katalogdan dinamik to'ldiradi -->
@@ -3208,6 +3239,23 @@ function syncTopNav(){
     t.setAttribute('aria-selected',on?'true':'false');
   });
 }
+// Karta zichligi (view density) — html.dens-* class grid ustunlarini/karta ichini boshqaradi.
+// Displey-only, localStorage'да saqlanadi. Karta markup'i o'zgarmaydi (faqat o'lcham CSS).
+let __density=(function(){try{const v=localStorage.getItem('af.cardDensity');return (v==='sm'||v==='md'||v==='lg')?v:'md';}catch(e){return 'md';}})();
+function applyDensityClass(){
+  const h=document.documentElement;
+  h.classList.remove('dens-sm','dens-md','dens-lg');
+  h.classList.add('dens-'+__density);
+  const b=document.getElementById('densityBtn');
+  if(b)b.title='Karta zichligi: '+(__density==='sm'?'Kichik (3 ustun)':__density==='lg'?'Katta (1 ustun)':'O‘rta (2 ustun)');
+}
+function afCycleDensity(){
+  const order=['md','sm','lg'];
+  __density=order[(order.indexOf(__density)+1)%order.length];
+  try{localStorage.setItem('af.cardDensity',__density);}catch(e){}
+  applyDensityClass();
+}
+try{applyDensityClass();}catch(e){}
 // E4: status qatori — ulanish holati (catalogLoadState) + build versiyasi (displey-only)
 function updateConnStatus(){
   const wrap=document.getElementById('afFtr');
@@ -4280,6 +4328,7 @@ function render(){
   if(__chipNav!==currentNav){buildCategoryChips();__chipNav=currentNav;}
   syncCategoryChips(currentSub);
   syncTopNav();
+  applyDensityClass();
   updateConnStatus();
   const list=getGridAssets();
   const grid=document.getElementById('grid');
