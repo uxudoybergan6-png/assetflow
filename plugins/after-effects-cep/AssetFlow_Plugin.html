@@ -2081,7 +2081,6 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
                 <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi · AI kredit"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span><span class="sep" id="hdrPlanSep" hidden></span><span class="cred" id="hdrCred" hidden></span></span>
               </header>
-              <div class="topbar"><div id="featuredWrap" class="notice-zone"></div></div>
 
               <!-- Ixcham boshqaruv: 1 qator (⌕ + Filtrlar + Saralash). Qidiruv/filtr kerak
                    bo'lganda ochiladi. Tablar sidebar'da — bu yerda yashirin (mantiq saqlanadi).
@@ -4206,7 +4205,7 @@ function clearAllFilters(){
 window.clearAllFilters=clearAllFilters;
 
 function render(){
-  renderFeatured();
+  // E5: featured karusel olib tashlandi (funksiya saqlangan, lekin chaqirilmaydi — kompakt panel)
   if(__chipNav!==currentNav){buildCategoryChips();__chipNav=currentNav;}
   syncCategoryChips(currentSub);
   updateConnStatus();
