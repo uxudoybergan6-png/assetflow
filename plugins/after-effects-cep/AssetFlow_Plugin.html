@@ -2068,7 +2068,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                   <span class="af-tb-title">AssetFlow</span>
                 </div>
                 <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
-                <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span></span>
+                <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi · AI kredit"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span><span class="sep" id="hdrPlanSep" hidden></span><span class="cred" id="hdrCred" hidden></span></span>
               </header>
               <div class="topbar"><div id="featuredWrap" class="notice-zone"></div></div>
 
@@ -4423,14 +4423,19 @@ function updateSidebarUser(u){
   if(name)name.textContent=u.name||(u.email?u.email.split('@')[0]:'Foydalanuvchi');
   if(mail)mail.textContent=u.email||'';
   if(plan){const pro=u.plan==='pro';plan.textContent=u.planLabel||(pro?'Pro':'Free');plan.className='sb-plan '+(pro?'pro':'free');}
-  setHeaderPlan(u.plan==='pro',u.planLabel||(u.plan==='pro'?'Pro':'Free'));
+  setHeaderPlan(u.plan==='pro',u.planLabel||(u.plan==='pro'?'Pro':'Free'),(typeof u.aiCredits==='number'?u.aiCredits:undefined));
 }
 
 // C2 top-header plan-pill — sidebar user yangilanishi bilan birga (faqat ko'rinish).
-function setHeaderPlan(pro,label){
+// E1: kredit balansi (displey-only) — sidebar #sbCredit bilan bir manba (u.aiCredits).
+function setHeaderPlan(pro,label,credits){
   const hp=document.getElementById('hdrPlanPill'),hl=document.getElementById('hdrPlanLabel');
+  const sep=document.getElementById('hdrPlanSep'),cr=document.getElementById('hdrCred');
   if(hp)hp.className='af-tb-plan '+(pro?'pro':'free');
   if(hl)hl.textContent=label||(pro?'Pro':'Free');
+  const hasCred=typeof credits==='number'&&isFinite(credits);
+  if(cr){cr.textContent=hasCred?credits.toLocaleString('en-US'):'';cr.hidden=!hasCred;}
+  if(sep)sep.hidden=!hasCred;
 }
 
 function onEnvScopeChange(sel){
@@ -6012,6 +6017,8 @@ function aiRenderError(e){
 function aiUpdateCredits(n){
   if(typeof n!=='number')return;
   const el=document.getElementById('sbCredit');if(el)el.textContent=String(n);
+  // E1: top-header kredit pill'ini ham yangilash (displey-only, balans logikasi o'sha)
+  const hc=document.getElementById('hdrCred');if(hc&&!hc.hidden)hc.textContent=n.toLocaleString('en-US');
   try{const u=AssetFlowAccount.getCachedUser&&AssetFlowAccount.getCachedUser();if(u)u.aiCredits=n;}catch(e){}
 }
 
