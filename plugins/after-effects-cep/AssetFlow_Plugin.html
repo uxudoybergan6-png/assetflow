@@ -386,11 +386,11 @@ body{
 .af-tb-icon:hover{background:var(--surface-3);border-color:var(--muted-2)}
 .af-tb-icon svg{width:17px;height:17px}
 /* C3: doim ko'rinadigan format-filter chiplari */
-.af-chips{display:flex;gap:6px;padding:8px 13px 2px;overflow-x:auto;scrollbar-width:none}
+.af-chips{display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;scrollbar-width:none}
 .af-chips::-webkit-scrollbar{display:none}
-.af-chip{flex:none;height:28px;padding:0 13px;border-radius:999px;background:var(--surface-2);border:0.5px solid var(--border);color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
+.af-chip{flex:none;display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:var(--fs-sm);font-weight:500;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
 .af-chip:hover{border-color:var(--muted-2);color:var(--text)}
-.af-chip.active{background:var(--accent-cta);border-color:var(--accent-cta);color:var(--on-accent)}
+.af-chip.active{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
 /* C3: underline-stil page-tablar (mockup). Tablar sidebar-driven (yashirin qoladi);
    ko'rsatilganda pill o'rniga pastki chiziq bilan chiqadi. */
 .page-tabs .ptab{border-radius:0;position:relative}
@@ -408,20 +408,18 @@ body{
   background-repeat:no-repeat;background-position:right 10px center;padding-right:24px;
 }
 .env-search-field{
-  flex:1;display:flex;align-items:stretch;
-  background:#fff;border-radius:999px;overflow:hidden;min-width:0;
+  position:relative;flex:1;display:flex;align-items:center;
+  background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;min-width:0;
+  transition:border-color .15s,box-shadow .15s;
 }
+.env-search-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.env-search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .env-search-field input{
   flex:1;border:none;outline:none;background:transparent;
-  padding:10px 12px;font-size:12px;color:#111;font-family:inherit;min-width:0;
+  padding:9px 12px 9px 34px;font-size:var(--fs-md);color:var(--text);font-family:inherit;min-width:0;
 }
-.env-search-field input::placeholder{color:#888}
-.env-search-go{
-  width:44px;border:none;background:var(--env-green);color:#111;
-  font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0;
-  transition:filter .15s;
-}
-.env-search-go:hover{filter:brightness(1.05)}
+.env-search-field input::placeholder{color:var(--muted-2)}
+.env-search-go{display:none}
 
 .env-subnav{
   display:flex;gap:4px;padding:0 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;
@@ -909,8 +907,8 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
    (pixel-yaqin). Faqat markup/CSS; fetch/filtr/import mantig'i o'sha.
    Yuzalar glass-model orqali: var(--glass-bg)/blur/--rim.
    ============================================================ */
-.grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:12px 12px 16px}
-html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:12px}
+html.cep-mode .grid{grid-template-columns:repeat(2,1fr);gap:10px}
 .card{
   background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
   border:0.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;
@@ -2102,7 +2100,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <!-- Qidiruv qatori — C3: doim ko'rinadi (toggle olib tashlandi) -->
                 <div class="cmp-searchbar" id="searchBar">
                   <div class="env-search-field">
-                    <input type="text" placeholder="Qidirish…" id="searchInput">
+                    <svg class="env-search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input type="text" placeholder="Shablon qidirish..." id="searchInput">
                     <button type="button" class="env-search-go" aria-label="Qidirish" onclick="runSearch()">⌕</button>
                   </div>
                 </div>
