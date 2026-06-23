@@ -377,7 +377,8 @@ body{
 .af-tb-logo svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .af-tb-title{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;color:var(--text);white-space:nowrap}
 .af-tb-spacer{flex:1;min-width:0}
-.af-tb-plan{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.04em}
+.af-tb-plan{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.04em;cursor:pointer;transition:filter .15s}
+.af-tb-plan:hover{filter:brightness(1.08)}
 .af-tb-plan svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .af-tb-plan.free{background:var(--surface-2);color:var(--muted);border:1px solid var(--border)}
 .af-tb-plan.pro{background:var(--green-dim);color:var(--accent-cta);border:1px solid var(--border-accent)}
@@ -2090,7 +2091,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <button type="button" class="af-tb-icon" onclick="afHeaderPage('downloaded')" title="Yuklab olingan" aria-label="Yuklab olingan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
                 <button type="button" class="af-tb-icon" onclick="afHeaderPage('favorites')" title="Sevimli" aria-label="Sevimli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
                 <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
-                <span class="af-tb-plan free" id="hdrPlanPill" title="Tarif rejasi · AI kredit"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span><span class="sep" id="hdrPlanSep" hidden></span><span class="cred" id="hdrCred" hidden></span></span>
+                <span class="af-tb-plan free" id="hdrPlanPill" role="button" tabindex="0" title="Hisob · Tarif · AI kredit" onclick="openAccountSheet()"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span><span class="sep" id="hdrPlanSep" hidden></span><span class="cred" id="hdrCred" hidden></span></span>
               </header>
               <!-- E6.1: katalog nav top-tab — yashirin sidebar .env-side-link tugmasini .click()
                    qiladi → MAVJUD nav onclick ishlaydi. Handler o'zgarmaydi (faqat UI). -->
