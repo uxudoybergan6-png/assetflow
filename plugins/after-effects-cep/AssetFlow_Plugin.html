@@ -393,17 +393,17 @@ body{
 .af-chip{flex:none;display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:var(--fs-sm);font-weight:500;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
 .af-chip:hover{border-color:var(--muted-2);color:var(--text)}
 .af-chip.active{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
-/* E6.1: katalog nav underline top-tab (mockup .tabs/.tab) */
-.af-tabs{display:flex;gap:0;padding:4px 12px 0;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;flex:none}
-.af-tabs::-webkit-scrollbar{display:none}
-.af-tab{position:relative;border:0;background:transparent;cursor:pointer;font-family:inherit;font-size:var(--fs-md);font-weight:600;color:var(--muted);padding:8px 12px 11px;white-space:nowrap;transition:color .15s}
-.af-tab:hover{color:var(--text)}
-.af-tab.active{color:var(--text)}
-.af-tab.active::after{content:'';position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--accent-cta);border-radius:2px 2px 0 0}
-/* ✨ AI Tools tab — lime aksent bilan kategoriya tablardan ajralib turadi */
-.af-tab.af-tab-ai{display:inline-flex;align-items:center;gap:5px;color:var(--accent-cta);border-left:1px solid var(--border);margin-left:4px;padding-left:13px}
-.af-tab.af-tab-ai:hover{color:var(--accent-cta);filter:brightness(1.1)}
-.af-tab.af-tab-ai svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* E6.1: katalog nav — teng taqsimlangan BUTTON/pill tablar (ajratilgan, full-width) */
+.af-tabs{display:flex;gap:4px;padding:8px 10px;background:var(--bg);border-bottom:1px solid var(--border);flex:none}
+.af-tab{flex:1;min-width:0;display:block;text-align:center;border:1px solid var(--border);background:var(--surface-2);border-radius:var(--r-sm);cursor:pointer;font-family:inherit;font-size:10.5px;font-weight:600;letter-spacing:-.01em;color:var(--muted);padding:7px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,border-color .15s,color .15s}
+.af-tab:hover{border-color:var(--muted-2);color:var(--text)}
+.af-tab.active{background:var(--accent-cta);border-color:var(--accent-cta);color:var(--on-accent)}
+.af-tab.active::after{display:none}
+/* ✨ AI Tools — o'ziga xos lime aksent (nofaolда ham ajralib turadi); aktivда to'liq lime */
+.af-tab.af-tab-ai{display:inline-flex;align-items:center;justify-content:center;gap:4px;background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta)}
+.af-tab.af-tab-ai:hover{color:var(--accent-cta);border-color:var(--accent-cta)}
+.af-tab.af-tab-ai.active{background:var(--accent-cta);border-color:var(--accent-cta);color:var(--on-accent)}
+.af-tab.af-tab-ai svg{width:12px;height:12px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 /* E6.4: sidebar YASHIRILADI (DOM saqlanadi — yashirin nav/account elementlari top-nav
    .click() yo'naltirishi + auth ID yangilanishi uchun kerak). Kontent full-width. */
 .env-sidebar{display:none}
