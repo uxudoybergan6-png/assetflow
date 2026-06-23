@@ -403,6 +403,17 @@ body{
 /* E6.4: sidebar YASHIRILADI (DOM saqlanadi — yashirin nav/account elementlari top-nav
    .click() yo'naltirishi + auth ID yangilanishi uchun kerak). Kontent full-width. */
 .env-sidebar{display:none}
+/* Featured AI Tools CTA banner — lime aksent strip, 3-tema toza (display-only) */
+.af-ai-banner{display:flex;align-items:center;gap:11px;width:calc(100% - 24px);margin:9px 12px 2px;padding:10px 12px;border:1px solid var(--border-accent);border-radius:var(--r-md);background:linear-gradient(100deg,var(--green-dim),transparent 72%),var(--surface);cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s,filter .15s}
+.af-ai-banner:hover{border-color:var(--accent-cta);filter:brightness(1.05)}
+.af-ai-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:9px;background:var(--accent-cta);color:var(--on-accent)}
+.af-ai-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.af-ai-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.af-ai-title{display:flex;align-items:center;gap:7px;font-family:var(--font-display);font-size:var(--fs-md);font-weight:700;color:var(--text);white-space:nowrap}
+.af-ai-new{flex:none;font-size:9px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:999px;background:var(--accent-cta);color:var(--on-accent)}
+.af-ai-sub{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-ai-cta{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-xs);font-weight:700;color:var(--accent-cta)}
+.af-ai-cta svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 /* C3: underline-stil page-tablar (mockup). Tablar sidebar-driven (yashirin qoladi);
    ko'rsatilganda pill o'rniga pastki chiziq bilan chiqadi. */
 .page-tabs .ptab{border-radius:0;position:relative}
@@ -2104,6 +2115,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <button type="button" class="af-tab" data-nav="graphics" role="tab" aria-selected="false" onclick="afNavTab('graphics')">Graphics</button>
                 <button type="button" class="af-tab" data-nav="luts" role="tab" aria-selected="false" onclick="afNavTab('luts')">LUTs</button>
               </nav>
+              <!-- Featured AI Tools CTA banner (display-only) — afNavTab('ai') mavjud .click() route bilan AI Tools ochadi -->
+              <button type="button" class="af-ai-banner" onclick="afNavTab('ai')" aria-label="AI bilan yarat — AI Tools">
+                <span class="af-ai-ico"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.4 6.4l2.6 2.6M15 15l2.6 2.6M17.6 6.4L15 9M9 15l-2.6 2.6"/></svg></span>
+                <span class="af-ai-txt">
+                  <span class="af-ai-title">AI bilan yarat<span class="af-ai-new">YANGI</span></span>
+                  <span class="af-ai-sub">Rasm · Video · Upscale · Ikona — kreditda</span>
+                </span>
+                <span class="af-ai-cta">Boshlash <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              </button>
 
               <!-- Ixcham boshqaruv: 1 qator (⌕ + Filtrlar + Saralash). Qidiruv/filtr kerak
                    bo'lganda ochiladi. Tablar sidebar'da — bu yerda yashirin (mantiq saqlanadi).
