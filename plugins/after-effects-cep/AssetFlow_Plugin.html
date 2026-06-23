@@ -1990,6 +1990,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #aiPage .mf-wo{display:inline-flex;align-items:center;font-size:8px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:var(--r-full);background:var(--surface-3);color:var(--muted-2);border:1px solid var(--border);margin-left:6px}
 #aiPage .mf-pane{display:flex;flex-direction:column;gap:12px;padding-top:4px}
 #aiPage .mf-pane[hidden]{display:none}
+#aiWrap.mf-sec > #aiComposer,#aiWrap.mf-sec > #aiResultArea,#aiWrap.mf-sec > #aiHistory{display:none!important}
 #aiPage .mf-field{display:flex;flex-direction:column;gap:6px}
 #aiPage .mf-seclbl{display:flex;align-items:center;font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
 #aiPage .mf-hint{font-size:10px;line-height:1.45;color:var(--muted-2)}
@@ -2386,6 +2387,45 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
                 <!-- ✨ AI TOOLS — Studio Gen bilan ulangan (rasm/ovoz/video/SFX/qidiruv) -->
                 <div id="aiPage" style="display:none">
                   <div class="ai-wrap" id="aiWrap">
+
+                    <!-- MF: tool-aware launcher — 2 asosiy Generate + kontekst-bog'liq ikkilamchi tools -->
+                    <div class="mf-primary">
+                      <button type="button" class="mf-main mf-on" data-tool="generate" data-ctx="image" onclick="mfSwitchTool(this)">
+                        <span class="mf-main-ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg></span>
+                        <span class="mf-main-tx"><b>Image Generate</b><small>Mystic · rasm</small></span>
+                      </button>
+                      <button type="button" class="mf-main" data-tool="video" data-ctx="video" onclick="mfSwitchTool(this)">
+                        <span class="mf-main-ic"><svg viewBox="0 0 24 24"><path d="M3 8h18v12H3z"/><path d="M3 8l2.5-4 4 0-2.5 4M9.5 8l2.5-4 4 0-2.5 4M16 8l2.5-4 2.5 4"/></svg></span>
+                        <span class="mf-main-tx"><b>Video Generate</b><small>Kling · video</small></span>
+                      </button>
+                    </div>
+                    <div class="mf-sublbl">Qo'shimcha tools</div>
+                    <div class="mf-toolpicker" data-group="image">
+                      <span class="mf-grouplbl">Image</span>
+                      <button type="button" class="mf-chip" data-tool="upscale" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><path d="M4 14v6h6M20 10V4h-6M14 4l6 6M10 20l-6-6"/></svg>Upscale</button>
+                      <button type="button" class="mf-chip" data-tool="relight" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 2a7 7 0 0 1 4 12.7V17H8v-2.3A7 7 0 0 1 12 2z"/></svg>Relight</button>
+                      <button type="button" class="mf-chip" data-tool="camera" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Change Camera</button>
+                      <button type="button" class="mf-chip" data-tool="skin" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="11" r="8"/><path d="M9 10h.01M15 10h.01M9 15s1.2 1.5 3 1.5 3-1.5 3-1.5"/></svg>Skin</button>
+                      <button type="button" class="mf-chip" data-tool="extend" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M3 3v4M3 3h4M21 3h-4M21 3v4M3 21v-4M3 21h4M21 21h-4M21 21v-4"/></svg>Extend</button>
+                      <button type="button" class="mf-chip" data-tool="removebg" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M9 3h11a1 1 0 0 1 1 1v11M3 8v12a1 1 0 0 0 1 1h12"/></svg>Remove BG</button>
+                      <button type="button" class="mf-chip" data-tool="variations" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Variations</button>
+                      <button type="button" class="mf-chip" data-tool="cinematic" data-ctx="image" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M7 6v12M17 6v12"/></svg>Cinematic Shot</button>
+                    </div>
+                    <div class="mf-toolpicker" data-group="video" hidden>
+                      <span class="mf-grouplbl">Video</span>
+                      <button type="button" class="mf-chip" data-tool="vupscale" data-ctx="video" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Video Upscale</button>
+                      <button type="button" class="mf-chip" data-tool="speak" data-ctx="video" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><path d="M4 5h12v10H8l-4 3V5z"/><path d="M19 8c1.5 1.8 1.5 5.2 0 7"/></svg>Speak</button>
+                      <button type="button" class="mf-chip" data-tool="vrelight" data-ctx="video" onclick="mfSwitchTool(this)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 8a3 3 0 0 1 1.7 5.4V14h-3.4v-.6A3 3 0 0 1 12 8z"/></svg>Video Relight</button>
+                      <span class="mf-div"></span>
+                      <span class="mf-wochip"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v4M16 5v4"/></svg>Clip Editor <span class="mf-wo">web-only</span></span>
+                      <span class="mf-wochip"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 6v12M2 12h20"/></svg>Video Project <span class="mf-wo">web-only</span></span>
+                    </div>
+                    <!-- MF: ikkilamchi tool paneler bu yerga (mf-3..6) -->
+                    <div id="mfPanes">
+                      <div class="mf-pane" data-pane="_soon" hidden>
+                        <div class="mf-wonote"><b>Tez orada</b> — bu tool plaginга hali ulanmagan.</div>
+                      </div>
+                    </div>
 
                     <!-- (UX: "Nima yaratamiz?" hero olib tashlandi — magnific'da yo'q, ~25% balandlik tejaldi; panel to'g'ridan composer'dan boshlanadi) -->
                     <!-- ===== YAGONA KOMPOZER BAR ===== -->
@@ -4762,6 +4802,28 @@ const af_ai={
 
 // AI media → Studio Gen mode (rasm/video/ovoz yangi /studio/gen oqimida)
 function aiStudioMode(media){ return media==='rasm'?'image':media==='video'?'video':media==='ovoz'?'voice':media==='sfx'?'sfx':null; }
+/* MF: tool-aware launcher. Primary (generate/video) => mavjud composer (media almashadi); ikkilamchi => pane. Hech qaysi gen/credit/import yo'liga tegmaydi. */
+function mfSetCtx(ctx){ document.querySelectorAll('.mf-toolpicker[data-group]').forEach(function(g){ g.hidden=(g.dataset.group!==ctx); }); }
+function mfSwitchTool(el){
+  if(!el||!el.dataset)return;
+  var t=el.dataset.tool, ctx=el.dataset.ctx;
+  document.querySelectorAll('.mf-main[data-tool],.mf-chip[data-tool]').forEach(function(x){ x.classList.remove('mf-on'); });
+  el.classList.add('mf-on');
+  if(ctx)mfSetCtx(ctx);
+  var wrap=document.getElementById('aiWrap');
+  var panes=document.querySelectorAll('#mfPanes .mf-pane');
+  if(t==='generate'||t==='video'){
+    if(wrap)wrap.classList.remove('mf-sec');
+    panes.forEach(function(p){ p.hidden=true; });
+    var target=(t==='video'?'video':'rasm');
+    if(typeof af_ai!=='undefined'&&af_ai.media!==target&&typeof aiSetMedia==='function')aiSetMedia(target);
+  }else{
+    if(wrap)wrap.classList.add('mf-sec');
+    var found=false;
+    panes.forEach(function(p){ var m=(p.dataset.pane===t); p.hidden=!m; if(m)found=true; });
+    if(!found){ var fb=document.querySelector('#mfPanes .mf-pane[data-pane="_soon"]'); if(fb)fb.hidden=false; }
+  }
+}
 /** Joriy media uchun tanlangan model obyekti (katalogdan). */
 function aiCurrentModel(){
   const mode=aiStudioMode(af_ai.media);if(!mode)return null;
