@@ -239,7 +239,12 @@ export async function processGeneration(genId: string): Promise<void> {
             : useMagnific
               ? await magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-        if (!out.ok) return void (await fail(out.error));
+        if (!out.ok) {
+          // ❗ TIMEOUT ≠ REFUND: Magnific poll-timeout (job hali IN_PROGRESS) → "running" qoldiramiz,
+          // KREDIT QAYTARMAYMIZ. Faqat haqiqiy FAILED/xato → fail()+refund. Stuck bo'lsa reconcile (10 daq) hal qiladi.
+          if (out.error.startsWith("MAGNIFIC_TIMEOUT")) return;
+          return void (await fail(out.error));
+        }
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
         await prisma.genAsset.create({

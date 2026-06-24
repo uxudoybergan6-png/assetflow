@@ -89,7 +89,7 @@ function mapResolution(q?: string): "1k" | "2k" | "4k" {
 
 // ── Job submit → poll → birinchi natija URL ────────────────────────────────
 const POLL_INTERVAL_MS = 3000;
-const MAX_POLLS = 100; // ~5 daqiqa
+const MAX_POLLS = 150; // ~7.5 daqiqa (Mystic 30-120s + cold-start zaxira; reconcile 10 daq'дан kam). Fonда ishlaydi — HTTP bloklamaydi.
 const MAX_SUBMIT_RETRY = 2;
 
 type MgTask = { data?: { task_id?: string; status?: string } };
@@ -137,7 +137,8 @@ async function submitAndPoll(
     }
     // CREATED / IN_PROGRESS → poll davom etadi
   }
-  return { ok: false, error: "Magnific poll timeout — natija olinmadi" };
+  // TIMEOUT ≠ FAILED: job hali IN_PROGRESS bo'lishi mumkin → sentinel (gen-processor refund QILMAYDI).
+  return { ok: false, error: "MAGNIFIC_TIMEOUT: job hali ishlamoqda — refund yo'q" };
 }
 
 /** Natija URL'ini Buffer'ga yuklab oladi (chaqiruvchi R2'ga saqlaydi). */

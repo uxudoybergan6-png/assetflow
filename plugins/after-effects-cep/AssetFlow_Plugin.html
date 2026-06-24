@@ -6171,7 +6171,7 @@ function aiPollJob(jobId,media,val){
   return new Promise(function(resolve){
     // Video uzoq (OpenRouter async ~daqiqa) → uzunroq oyna: 130×4s ≈ 8.6 daq; aks holda 40×3.5s
     const isVid=media==='video';
-    const intervalMs=isVid?3000:3000, max=isVid?170:50;
+    const intervalMs=isVid?3000:3000, max=isVid?170:120; // rasm 50→120 (~6 daq): Mystic 30-120s + cold-start — erta to'xtatma
     const runCap=isVid?'Video tayyorlanmoqda… (~daqiqa)':'Generatsiya qilinmoqda…';
     let tries=0;
     const tick=async function(){
@@ -6215,10 +6215,13 @@ async function aiRunStudioGen(media,val){
   if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh();
   const gen=await aiPollJob(start.jobId,media,val);
   if(gen.status==='timeout'){
-    // UI kutish oynasi tugadi — backend HALI ishlayotgan bo'lishi mumkin. "Qaytarildi" DEMAYMIZ.
-    // Agar haqiqatan muvaffaqiyatsiz bo'lsa, server avtomatik tiklab kreditni qaytaradi (reconcile).
-    if(typeof showToast==='function')showToast('Generatsiya kutilganidan uzoq — biroz keyin qayta tekshiring','warning');
-    aiRenderError(new Error('Generatsiya hali tugamadi (kutish vaqti tugadi). Muvaffaqiyatsiz bo‘lsa kredit avtomatik qaytariladi.'));
+    // UI kutish oynasi tugadi — backend HALI ishlayotgan bo'lishi mumkin. FAIL/"Qaytarildi" DEMAYMIZ.
+    // Kartani "Ishlanmoqda" saqlaymiz + tarixни yangilaymiz (natija tayyor bo'lganda o'shanда ko'rinadi).
+    // Server timeout'да kreditni QAYTARMAYDI (job IN_PROGRESS); haqiqatan stuck bo'lsa reconcile (10 daq) tiklaydi.
+    if(typeof showToast==='function')showToast('Generatsiya uzoq cho‘zilyapti — tayyor bo‘lганда tarixda ko‘rinadi','info');
+    const area=document.getElementById('aiResultArea');
+    if(area)area.innerHTML='<div class="ai-soon-box"><b>Ishlanmoqda…</b><p>Server hali generatsiya qilmoqda — natija tayyor bo‘lганда bu yerда yoki tarixда ko‘rinadi. ↻ Yangilash bilan tekshiring.</p></div>';
+    if(typeof StudioGenHistory!=='undefined'&&StudioGenHistory.refresh)StudioGenHistory.refresh();
     aiRefreshCredits();
     return;
   }
