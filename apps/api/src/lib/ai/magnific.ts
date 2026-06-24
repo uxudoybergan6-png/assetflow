@@ -257,6 +257,26 @@ export async function magnificTool(
 }
 
 /**
+ * Remove BG — boshqa AI tools'дан FARQLI format (docs.magnific.com tasdiqlangan):
+ * SINXRON (task_id/poll YO'Q) + `application/x-www-form-urlencoded` + `image_url` (PUBLIC URL,
+ * base64/file EMAS). Javob: `{original, high_resolution, preview, url}` → natija = high_resolution||url.
+ * Manba rasm public URL bo'lishi shart — gen-processor data-URI'ni R2'ga yuklab signed URL beradi.
+ */
+export async function magnificRemoveBg(imageUrl: string): Promise<OrResult<Buffer>> {
+  if (!isMagnificConfigured()) return NOT_CONFIGURED;
+  const res = await fetch(BASE + "/v1/ai/beta/remove-background", {
+    method: "POST",
+    headers: { "x-magnific-api-key": KEY, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ image_url: imageUrl }).toString(),
+  });
+  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
+  const j = (await safeJson(res)) as { high_resolution?: string; url?: string } | null;
+  const url = j?.high_resolution || j?.url;
+  if (typeof url !== "string" || !url) return { ok: false, error: "Remove BG natija URL topilmadi" };
+  return mgDownload(url);
+}
+
+/**
  * Mystic AssetFlow '@mention' (reference) sintaksisini bilmaydi — prompt'даги "@img"/"@image 1"
  * tokenlarni "character name" deb o'qiydi → "Invalid character name". Reference rasm allaqachon
  * `style_reference`/`structure_reference` orqali yuboriladi (prompt matniда EMAS), shuning uchun

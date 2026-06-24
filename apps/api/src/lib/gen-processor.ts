@@ -13,7 +13,7 @@ import {
   orVideoStatus,
   orDownload,
 } from "./ai/openrouter.js";
-import { magnificImage, magnificImageEdit, magnificTool, genProvider } from "./ai/magnific.js";
+import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
@@ -214,8 +214,23 @@ export async function processGeneration(genId: string): Promise<void> {
       const mfTool = model.magnificTool;
       if (mfTool && !useMagnific) return void (await fail("Bu tool faqat Magnific'да (GEN_PROVIDER=magnific)"));
       if (mfTool && !refUrl) return void (await fail("Manba rasm kerak — AE komp yoki layer tanlang"));
+      // Remove BG SINXRON + image_url (public URL) talab qiladi (base64 EMAS) → manba data-URI'ни R2'ga yuklab signed URL olamiz.
+      const mfRemoveBg = mfTool === "beta/remove-background";
+      let mfRbgUrl = "";
+      if (mfRemoveBg) {
+        let u = refUrl as string;
+        if (u.startsWith("data:")) {
+          const sbuf = Buffer.from(u.split("base64,")[1] || "", "base64");
+          const sf = detectMediaFormat(sbuf, { ext: "png", contentType: "image/png" });
+          mfRbgUrl = (await persist(gen.userId, genId, sbuf, sf.ext, sf.contentType)).url;
+        } else {
+          mfRbgUrl = u;
+        }
+      }
       for (let i = 0; i < count; i++) {
-        const out = mfTool
+        const out = mfRemoveBg
+          ? await magnificRemoveBg(mfRbgUrl)
+          : mfTool
           ? await magnificTool(mfTool, refUrl as string, params)
           : useEdit
             ? useMagnific
