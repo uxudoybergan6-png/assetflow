@@ -60,6 +60,22 @@ export async function getSignedDownloadUrl(
   return getSignedUrl(s3, command, { expiresIn });
 }
 
+/**
+ * Tashqi xizmat (masalan Magnific remove-bg) O'ZI YUKLAB OLADIGAN URL.
+ * CDN_BASE_URL bo'lsa — TOZA public URL (so'rov-satrisiz, ".png" bilan tugaydi):
+ * uchinchi-tomon downloaderlar buni ishonchli oladi. Presigned URL'ning uzun
+ * `X-Amz-*` query-string'i + fayl-kengaytmasiz tugashi ba'zi downloaderlarni
+ * adashtiradi → "Failed to download the image". CDN yo'q bo'lsa — presigned GET
+ * (signature kirishni kafolatlaydi) zaxira sifatida.
+ */
+export async function getPublicOrSignedUrl(
+  key: string,
+  expiresIn = 3600
+): Promise<string> {
+  if (cdnBase) return getPublicUrl(key);
+  return getSignedDownloadUrl(key, expiresIn);
+}
+
 export async function getSignedUploadUrl(
   key: string,
   contentType: string,

@@ -3,6 +3,7 @@ import {
   isS3Configured,
   uploadBufferToS3,
   getSignedDownloadUrl,
+  getPublicOrSignedUrl,
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import {
@@ -214,18 +215,26 @@ export async function processGeneration(genId: string): Promise<void> {
       const mfTool = model.magnificTool;
       if (mfTool && !useMagnific) return void (await fail("Bu tool faqat Magnific'да (GEN_PROVIDER=magnific)"));
       if (mfTool && !refUrl) return void (await fail("Manba rasm kerak — AE komp yoki layer tanlang"));
-      // Remove BG SINXRON + image_url (public URL) talab qiladi (base64 EMAS) → manba data-URI'ни R2'ga yuklab signed URL olamiz.
+      // Remove BG SINXRON + image_url (PUBLIC URL) talab qiladi (base64 EMAS — docs tasdiqlandi).
+      // ❗ MUHIM: Magnific serveri AUTH'siz yuklab olishi shart. presigned URL (uzun `X-Amz-*`
+      // query + ".png" bilan tugamaydi) Magnific downloaderini adashtiradi → "Failed to download
+      // the image". Shu bois manba data-URI'ni R2'ga yuklab TOZA public URL beramiz (CDN_BASE_URL /
+      // r2.dev — so'rov-satrisiz, ".png" bilan tugaydi). Public R2 (pub-*.r2.dev) butun bucket ochiq.
       const mfRemoveBg = mfTool === "beta/remove-background";
       let mfRbgUrl = "";
       if (mfRemoveBg) {
-        let u = refUrl as string;
-        if (u.startsWith("data:")) {
+        const u = refUrl as string;
+        if (u.startsWith("data:") && isS3Configured()) {
           const sbuf = Buffer.from(u.split("base64,")[1] || "", "base64");
           const sf = detectMediaFormat(sbuf, { ext: "png", contentType: "image/png" });
-          mfRbgUrl = (await persist(gen.userId, genId, sbuf, sf.ext, sf.contentType)).url;
+          const skey = `gen-refs/${gen.userId}/${genId}-${tsName()}.${sf.ext}`;
+          await uploadBufferToS3(sbuf, skey, sf.contentType);
+          mfRbgUrl = await getPublicOrSignedUrl(skey, 3600);
         } else {
-          mfRbgUrl = u;
+          mfRbgUrl = u; // allaqachon http URL (yoki dev fallback — data-URI'ни Magnific ololmaydi)
         }
+        // Render log: bu URL'ni AUTH'siz `curl` bilan ochib ko'ring — 200 qaytmasa Magnific ham ololmaydi.
+        console.log(`[gen] remove-bg image_url → ${mfRbgUrl}`);
       }
       for (let i = 0; i < count; i++) {
         const out = mfRemoveBg

@@ -265,15 +265,27 @@ export async function magnificTool(
  */
 export async function magnificRemoveBg(imageUrl: string): Promise<OrResult<Buffer>> {
   if (!isMagnificConfigured()) return NOT_CONFIGURED;
-  const res = await fetch(BASE + "/v1/ai/beta/remove-background", {
-    method: "POST",
-    headers: { "x-magnific-api-key": KEY, "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ image_url: imageUrl }).toString(),
-  });
+  // SINXRON chaqiruv — osilib qolmasligi shart (aks holda gen-processor "running"da qotadi,
+  // kredit qaytmaydi). Timeout = HAQIQIY xato → fail()+refund (MAGNIFIC_TIMEOUT sentinel EMAS,
+  // chunki bu yerda fonда davom etadigan job YO'Q — bitta HTTP javobда natija keladi).
+  let res: Response;
+  try {
+    res = await fetch(BASE + "/v1/ai/beta/remove-background", {
+      method: "POST",
+      headers: { "x-magnific-api-key": KEY, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ image_url: imageUrl }).toString(),
+      signal: AbortSignal.timeout(120000),
+    });
+  } catch (e) {
+    return { ok: false, error: `Remove BG so'rovi uzildi: ${(e as Error).message || "timeout"}` };
+  }
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const j = (await safeJson(res)) as { high_resolution?: string; url?: string } | null;
   const url = j?.high_resolution || j?.url;
-  if (typeof url !== "string" || !url) return { ok: false, error: "Remove BG natija URL topilmadi" };
+  // Magnific manba rasmni yuklay olmasa (ko'pincha "Failed to download the image") natija URL bo'lmaydi.
+  if (typeof url !== "string" || !url) {
+    return { ok: false, error: "Remove BG natija URL topilmadi (Magnific manba rasmni yuklay olmadi?)" };
+  }
   return mgDownload(url);
 }
 
