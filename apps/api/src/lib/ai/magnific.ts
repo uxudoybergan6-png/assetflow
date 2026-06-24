@@ -193,7 +193,7 @@ function mfToolBody(slug: string, params: Record<string, unknown>): Record<strin
       resemblance: mfNum(params.resemblance, 3),
       fractality: mfNum(params.fractality, 0),
       engine: mfStr(params.engine, "automatic"),
-      ...(typeof params.prompt === "string" && params.prompt ? { prompt: params.prompt } : {}),
+      ...(typeof params.prompt === "string" && params.prompt ? { prompt: stripMentions(params.prompt) } : {}),
     };
   }
   if (slug.startsWith("image-relight")) {
@@ -222,7 +222,7 @@ function mfToolBody(slug: string, params: Record<string, unknown>): Record<strin
     return {
       ...(params.width ? { width: mfNum(params.width, 0) } : {}),
       ...(params.height ? { height: mfNum(params.height, 0) } : {}),
-      ...(typeof params.prompt === "string" && params.prompt ? { prompt: params.prompt } : {}),
+      ...(typeof params.prompt === "string" && params.prompt ? { prompt: stripMentions(params.prompt) } : {}),
     };
   }
   if (slug.startsWith("video-upscaler")) {
@@ -256,6 +256,20 @@ export async function magnificTool(
   return mgDownload(r.data);
 }
 
+/**
+ * Mystic AssetFlow '@mention' (reference) sintaksisini bilmaydi — prompt'даги "@img"/"@image 1"
+ * tokenlarni "character name" deb o'qiydi → "Invalid character name". Reference rasm allaqachon
+ * `style_reference`/`structure_reference` orqali yuboriladi (prompt matniда EMAS), shuning uchun
+ * Mystic'ga yuborishдан OLDIN @mention'larни olib tashlaymiz.
+ */
+function stripMentions(p: string): string {
+  return (p || "")
+    .replace(/@[\w-]+(?:\s+\d+)?/g, "")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /** Mystic — text-to-image. `orImage` kontraktiga mos (`OrResult<Buffer>`). */
 export async function magnificImage(
   mysticModel: string,
@@ -265,7 +279,7 @@ export async function magnificImage(
 ): Promise<OrResult<Buffer>> {
   if (!isMagnificConfigured()) return NOT_CONFIGURED;
   const body: Record<string, unknown> = {
-    prompt,
+    prompt: stripMentions(prompt),
     model: mysticModel || "realism",
     resolution: mapResolution(imageConfig?.image_size),
     filter_nsfw: true, // Magnific majburiy default
@@ -289,7 +303,7 @@ export async function magnificImageEdit(
   const styleRef = await toBase64(refImageUrl);
   if (!styleRef) return { ok: false, error: "Reference rasm o'qilmadi" };
   const body: Record<string, unknown> = {
-    prompt,
+    prompt: stripMentions(prompt),
     model: mysticModel || "realism",
     resolution: mapResolution(imageConfig?.image_size),
     style_reference: styleRef,
