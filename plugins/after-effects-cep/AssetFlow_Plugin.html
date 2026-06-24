@@ -5788,7 +5788,7 @@ function aiModelFeatures(m){
   if(m.audio)f.push('Audio');
   return f;
 }
-function aiMmCatalog(){ const mode=aiStudioMode(af_ai.media); return (mode&&af_ai.catalog[mode])||[]; }
+function aiMmCatalog(){ const mode=aiStudioMode(af_ai.media); return ((mode&&af_ai.catalog[mode])||[]).filter(function(m){return !m.magnificTool;}); }
 function aiUniq(arr){ const s=[];arr.forEach(function(x){if(x&&s.indexOf(x)<0)s.push(x);});return s; }
 /** Modal ochish — filtrlar reset, bar + ro'yxat quriladi. */
 function aiOpenModelsModal(){
@@ -5858,7 +5858,8 @@ function aiBuildMenus(){
   const smode=aiStudioMode(af_ai.media);
   const cat=(smode&&af_ai.catalog[smode])||null;
   if(dm&&cat&&cat.length){
-    const rows=cat.map(m=>
+    // generate picker — dedicated tool modellari (magnificTool) ko'rsatilmaydi (ular qo'shimcha tools chip'larда)
+    const rows=cat.filter(function(m){return !m.magnificTool;}).map(m=>
       aiMenuRow(af_ai.modelId[af_ai.media]===m.id,"aiSetModelCat("+m.id+")",
         '<span class="mr-mdot"></span><div class="mr-main"><div class="mr-label">'+aiEsc(m.label)+'</div>'
         +aiModelChips(m)+'</div>')).join('');
@@ -7136,8 +7137,9 @@ function setFootConnecting(sub){
 
 async function refreshAccountFromApi(){
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
-  // Render cold start ~50s bo'lishi mumkin — backoff bilan qayta urinamiz
-  const delays=[0,2000,5000,10000];
+  // Render cold start 30-50s bo'lishi mumkin — backoff bilan ~65s gacha qayta urinamiz.
+  // fetchMe 5xx/timeout'да token'ni tozalamaydi (faqat 401/403) → cold-start = logout EMAS.
+  const delays=[0,2000,5000,10000,18000,30000];
   setFootConnecting();
   for(let i=0;i<delays.length;i++){
     if(delays[i])await new Promise(r=>setTimeout(r,delays[i]));

@@ -30,8 +30,21 @@ done
 # ishlamay qolardi va DEST eski qolardi (kuzatilgan bug). Open faylga yozish
 # macOS'da xavfsiz (eski inode AE xotirasida qoladi, disk yangilanadi) —
 # ko'rinishi uchun keyin AE qayta ochiladi.
+# User ma'lumotini (token/favorites/downloads — assetflow-data) saqlab qolamiz:
+# rm -rf "$DEST" uni ham o'chirardi → restart'dan keyin "Mehmon" (login chiqib ketardi).
+AF_DATA_BAK=""
+if [ -d "$DEST/assetflow-data" ]; then
+  AF_DATA_BAK="$(mktemp -d)/afdata"
+  cp -R "$DEST/assetflow-data" "$AF_DATA_BAK" 2>/dev/null || AF_DATA_BAK=""
+fi
 rm -rf "$DEST"
 mkdir -p "$DEST/CSXS" "$DEST/js" "$DEST/jsx" "$DEST/css"
+
+# Saqlangan user ma'lumotini tiklaymiz (token → login restart'dan keyin qoladi)
+if [ -n "$AF_DATA_BAK" ] && [ -d "$AF_DATA_BAK" ]; then
+  cp -R "$AF_DATA_BAK" "$DEST/assetflow-data" && echo "  ✓ assetflow-data saqlandi (token/favorites)"
+  rm -rf "$(dirname "$AF_DATA_BAK")" 2>/dev/null || true
+fi
 
 cp "$SRC/CSXS/manifest.xml" "$DEST/CSXS/"
 cp "$SRC/.debug" "$DEST/" 2>/dev/null || true
