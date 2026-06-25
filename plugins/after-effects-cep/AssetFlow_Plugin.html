@@ -2428,6 +2428,53 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .hcell .th{height:78px}
 .axroot .hcell .mt{padding:6px 7px;font-size:9px;color:var(--mut);border-top:1px solid var(--line)}
 .axroot .hcell .tb{position:absolute;top:4px;left:4px;font-size:7.5px;background:rgba(0,0,0,.65);padding:1px 5px;border-radius:4px;color:#fff}
+/* ===== Genlar galereyasi — umumiy komponent (tool inline + Tarix; filter + zoom + multi-select) ===== */
+.axroot .gal{display:flex;flex-direction:column;gap:10px;min-height:0}
+.axroot .galhead{display:flex;align-items:center;gap:8px}
+.axroot .galtabs{display:flex;gap:6px;overflow-x:auto;flex:1 1 auto;min-width:0;padding-bottom:2px}
+.axroot .galtabs::-webkit-scrollbar{height:0}
+.axroot .galtab{flex:0 0 auto;font-size:11px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 11px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.axroot .galtab.on{background:var(--card3);color:var(--txt);border-color:var(--mut2);font-weight:700}
+.axroot .galtools{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.axroot .galzoom{display:flex;align-items:center;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.axroot .galzoom b{width:26px;height:28px;display:grid;place-items:center;color:var(--mut);cursor:pointer;background:var(--card)}
+.axroot .galzoom b:hover{color:var(--txt);background:var(--card3)}
+.axroot .galzoom b.dis{opacity:.3;pointer-events:none}
+.axroot .galzoom i{width:1px;height:18px;background:var(--line2);flex:0 0 auto}
+.axroot .galselbtn{width:30px;height:30px;border:1px solid var(--line2);border-radius:9px;background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer;flex:0 0 auto}
+.axroot .galselbtn.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.axroot .galmore{font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px;flex:0 0 auto}
+.axroot .galmore:hover{text-decoration:underline}
+.axroot .galgrid{display:grid;gap:9px}
+.axroot .galgrid[data-cols="1"]{grid-template-columns:1fr}
+.axroot .galgrid[data-cols="2"]{grid-template-columns:1fr 1fr}
+.axroot .galgrid[data-cols="3"]{grid-template-columns:1fr 1fr 1fr}
+.axroot .gcard{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card);position:relative}
+.axroot .gcard .gth{width:100%;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);position:relative}
+.axroot .gcard .gbadge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
+.axroot .gcard .gplay{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
+.axroot .gcard .gcb{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:2;color:transparent}
+.axroot .gcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.axroot .gcard.sel .gcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.axroot .gcard .gmeta{padding:7px 8px}
+.axroot .gcard .gmeta b{font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.axroot .gcard .gmeta small{font-size:9.5px;color:var(--mut)}
+.axroot .gcard .gacts{display:flex;border-top:1px solid var(--line)}
+.axroot .gcard .gacts div{flex:1;text-align:center;padding:7px 4px;font-size:10.5px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
+.axroot .gcard .gacts div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.axroot .gcard .gacts div+div{border-left:1px solid var(--line)}
+.axroot .galgrid.selmode .gcard{cursor:pointer}
+.axroot .galgrid.selmode .gcard .gacts{display:none}
+.axroot .galgrid:not(.selmode) .gcard .gcb{display:none}
+.axroot .galbatch{display:none;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line2);border-radius:11px;padding:8px 10px;position:sticky;bottom:0;z-index:4}
+.axroot .galbatch.on{display:flex}
+.axroot .galbatch .gbinfo{font-size:12px;font-weight:700;flex:1 1 auto;min-width:0}
+.axroot .galbatch .gbtn{font-size:11.5px;color:var(--mut);cursor:pointer;display:flex;align-items:center;gap:4px;padding:5px 8px;border-radius:8px;border:1px solid var(--line2);white-space:nowrap;flex:0 0 auto}
+.axroot .galbatch .gbtn:hover{color:var(--txt);border-color:var(--mut2)}
+.axroot .galbatch .gbtn.del:hover{color:var(--red);border-color:var(--red)}
+.axroot .galempty{border:1px dashed var(--line2);border-radius:12px;padding:26px 14px;text-align:center;color:var(--mut);font-size:12px}
+.axroot .galempty b{display:block;color:var(--txt);margin-bottom:5px;font-size:13px}
+/* tool: imggen to'liq balandlikка cho'zilsin (pastда bo'sh joy qolmasin); igscroll ichki scroll */
+.axig{flex:1;display:flex;flex-direction:column;min-height:0}
 .axroot .setrow{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;font-size:12px}
 .axroot .sw2{width:38px;height:22px;border-radius:999px;background:var(--card3);position:relative;cursor:pointer;transition:.15s;flex:0 0 auto}
 .axroot .sw2.on{background:var(--acc)}
@@ -2459,7 +2506,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .pbar{position:sticky;top:0;z-index:20}
 
 /* ===== Rasm yaratish tool — tool-image.html 1:1, .axig scope ===== */
-.axroot #v-imggen.on{display:flex;flex-direction:column;min-height:74vh}
+.axroot #v-imggen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
 /* .axig position:relative QO'YMAYMIZ — sheet'lar to'liq balandlikdagi .axroot .app'ga (pastga) yopishishi uchun */
 .axig .igtop{display:flex;align-items:center;gap:9px;padding:2px 2px 12px;margin-bottom:2px;flex:0 0 auto;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:6}
 .axig .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
@@ -2469,32 +2516,32 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800;white-space:nowrap}
 .axig .ig-hist{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer;flex:0 0 auto}
 .axig .ig-hist:hover{color:var(--txt);border-color:var(--mut2)}
-.axig .igscroll{flex:1;display:flex;flex-direction:column;padding:12px 2px 4px;overflow-y:auto}
+.axig .igscroll{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 2px 4px;overflow-y:auto}
 .axig .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center}
 .axig .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
 .axig .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .axig .lbl .clearbtn:hover{color:var(--red)}
 .axig .req{color:var(--acc);margin-left:5px}
 .axig .sect{margin-bottom:16px}
-.axig .warn{display:none;align-items:flex-start;gap:7px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:11.5px;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.4}
+.axig .warn{display:none;align-items:center;gap:6px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:10px;border-radius:8px;padding:5px 8px;margin-bottom:7px;line-height:1.35}
 .axig .warn.on{display:flex}.axig .warn .wi{flex:0 0 auto;display:flex;align-items:center}
 .axig .mrow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:11px 12px;cursor:pointer}
 .axig .mrow:hover{border-color:var(--mut2)}
 .axig .mrow .mi{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2a3a12,#15171b);display:grid;place-items:center;color:var(--acc);flex:0 0 auto}
 .axig .mrow .mt b{font-size:13.5px;display:block}.axig .mrow .mt small{font-size:10.5px;color:var(--mut)}
 .axig .mrow .ch{margin-left:auto;color:var(--mut);display:flex;align-items:center}
-.axig .refgrid{display:flex;gap:9px;flex-wrap:wrap}
-.axig .reftile{width:80px;height:80px;border-radius:12px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center;background-color:var(--card3);overflow:hidden;cursor:pointer}
+.axig .refgrid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px}.axig .refgrid:empty{display:none;margin:0}
+.axig .reftile{width:50px;height:50px;border-radius:10px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center;background-color:var(--card3);overflow:hidden;cursor:pointer}
 .axig .reftile .tag{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff;font-size:10.5px;font-weight:600;padding:9px 6px 4px;text-align:center}
 .axig .reftile .rx{position:absolute;top:-7px;right:-7px;width:19px;height:19px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:11px;display:grid;place-items:center;cursor:pointer;z-index:2}
 .axig .reftile .rx:hover{color:var(--txt);border-color:var(--red)}
 .axig .reftile .spin{position:absolute;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;z-index:1}
 .axig .reftile .spin i{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:block}
-.axig .refadd{width:80px;height:80px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--mut);font-size:11px;cursor:pointer}
-.axig .refadd:hover{border-color:var(--acc2);color:var(--acc)}.axig .refadd .pl{display:flex}
+.axig .addbtn{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--mut);background:var(--card3);border:1px solid var(--line2);border-radius:9px;padding:6px 10px;cursor:pointer}
+.axig .addbtn:hover{border-color:var(--acc2);color:var(--acc)}.axig .addbtn .pl{display:flex}
 .axig .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s;position:relative}
 .axig .pbox:focus-within{border-color:#3a4150}
-.axig .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:60px;max-height:160px;overflow-y:auto;line-height:1.5;box-sizing:border-box}
+.axig .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:170px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box}
 .axig .pbox textarea::placeholder{color:var(--mut2)}
 /* @ mention dropdown (referens autocomplete — tepaga ochiladi) */
 .axig .mention{position:absolute;left:8px;right:8px;bottom:calc(100% + 6px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:none;z-index:40;max-height:210px;overflow-y:auto}
@@ -2504,17 +2551,38 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .mitem:hover,.axig .mitem.sel{background:var(--card2)}
 .axig .mitem .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;flex:0 0 auto;border:1px solid var(--line2)}
 .axig .mitem b{font-size:12.5px;display:block}.axig .mitem small{font-size:10.5px;color:var(--mut)}
-.axig .prow{display:flex;justify-content:flex-end;margin-top:6px}
-.axig .enhance{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:4px 8px;border-radius:8px}
+.axig .prow{display:flex;align-items:center;margin-top:8px}
+.axig .enhance{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:6px 8px;border-radius:8px}
 .axig .enhance:hover{background:rgba(90,169,255,.12)}.axig .enhance.busy{opacity:.6;pointer-events:none}
-.axig .ctrls{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
-.axig .seg{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;padding:9px 11px;border-radius:11px;white-space:nowrap}
+/* round Yaratish — composer prow o'ng uchida + narx chap yonida */
+.axig .costtag{font-size:11.5px;font-weight:700;color:var(--acc);margin-left:8px;white-space:nowrap}
+.axig .gensend{width:42px;height:42px;border-radius:50%;background:var(--acc);color:var(--acc-ink);border:0;cursor:pointer;display:grid;place-items:center;flex:0 0 auto;margin-left:8px;position:relative;padding:0}
+.axig .gensend svg{width:20px;height:20px}
+.axig .gensend:hover{background:var(--acc2)}.axig .gensend:disabled{opacity:.4;cursor:not-allowed}
+.axig .gensend.busy{color:transparent}
+.axig .gensend.busy::after{content:"";position:absolute;width:18px;height:18px;border:2.5px solid rgba(12,20,0,.3);border-top-color:var(--acc-ink);border-radius:50%;animation:spin .7s linear infinite}
+.axig .ctrls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.axig .seg{min-width:0;display:flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;padding:9px 11px;border-radius:11px;white-space:nowrap}
 .axig .seg:hover{border-color:var(--mut2)}
 .axig .seg .lab{color:var(--mut2);font-size:11px;font-weight:500;flex:0 0 auto}.axig .seg .sv{flex:1;overflow:hidden;text-overflow:ellipsis}.axig .seg .sc{color:var(--mut2);font-size:10px;flex:0 0 auto;margin-left:auto}
 .axig .foot{padding:12px 2px;border-top:1px solid var(--line);flex:0 0 auto;background:var(--panel)}
 .axig .gen{width:100%;height:46px;border-radius:12px;background:var(--acc);color:var(--acc-ink);border:0;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .axig .gen .pc{font-size:12px;font-weight:700;opacity:.7}
 .axig .gen:hover{background:var(--acc2)}.axig .gen:disabled{opacity:.4;cursor:not-allowed}
+/* So'nggi — katta kartali 2-ustun grid (oddiy scroll) */
+.axig .morelink{cursor:pointer;color:var(--blue)}.axig .morelink:hover{text-decoration:underline}
+.axig .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.axig .recentgrid .rc{border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
+.axig .recentgrid .rc:hover{border-color:var(--mut2)}
+.axig .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axig .recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
+.axig .recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
+.axig .recentgrid .empt{grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center}
+/* lightbox — natijani to'liq ko'rish (.app'ni qoplaydi) */
+.axig .lightbox{position:absolute;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:70;padding:18px}
+.axig .lightbox.on{display:flex}
+.axig .lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+.axig .lightbox .lx{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:9px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer}
 .axig .prog{margin-bottom:16px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.axig .prog.on{display:block}
 .axig .prog .pt{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
 .axig .prog .pt .sp{width:16px;height:16px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;flex:0 0 auto}
@@ -2523,7 +2591,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
 .axig .res{margin-bottom:16px;display:none}.axig .res.on{display:block}
 .axig .rgrid{display:grid;gap:9px}.axig .rgrid.g1{grid-template-columns:1fr}.axig .rgrid.g2{grid-template-columns:1fr 1fr}
-.axig .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card);position:relative}.axig .rcard img{display:block;width:100%;height:auto}
+.axig .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card);position:relative}.axig .rcard img{display:block;width:100%;height:auto;cursor:zoom-in}
+.axig .rgrid.g1 .rcard img{max-height:300px;object-fit:cover}
 .axig .rcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .axig .rcard .selcb{position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:2;color:transparent;font-size:13px;font-weight:800}
 .axig .rcard.sel .selcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
@@ -2997,49 +3066,39 @@ html.home-mode #homePage{display:block!important}
                               <div class="rgrid g1" id="igGrid"></div>
                             </div>
 
-                            <!-- MODEL -->
-                            <div class="sect">
-                              <div class="lbl">Model <span class="meta clearbtn" id="igClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
-                              <div class="mrow" id="igModelRow">
-                                <div class="mi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div>
-                                <div class="mt"><b id="igMName">GPT Image 2 Edit</b><small id="igMSub">OpenAI · referens bilan tahrirlash</small></div>
-                                <div class="ch"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
-                              </div>
-                            </div>
-
-                            <!-- REFERENCES (model-aware) -->
+                            <!-- PROMPT + referens (model-aware, hammasi quti ichida) -->
                             <div class="sect" id="igRefSect">
-                              <div class="lbl">Referens <span class="req" id="igRefReq">*</span> <span class="meta" id="igRefMeta">0 ta</span></div>
-                              <div class="warn" id="igRefWarn"><span class="wi"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Bu model uchun referens <b>majburiy</b> — yaratish uchun kamida 1 ta rasm qo'shing.</span></div>
-                              <div class="refgrid" id="igRefgrid">
-                                <div class="refadd" id="igRefAdd"><span class="pl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span>Qo'shish</div>
-                              </div>
-                            </div>
-
-                            <!-- PROMPT -->
-                            <div class="sect">
-                              <div class="lbl">Prompt <span class="req">*</span></div>
+                              <div class="lbl">Prompt <span class="req">*</span> <span class="meta" id="igRefMeta">0 ta referens</span></div>
+                              <div class="warn" id="igRefWarn"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Bu model uchun referens <b>majburiy</b> — kamida 1 ta rasm qo'shing.</span></div>
                               <div class="pbox">
                                 <div class="mention" id="igMention"></div>
+                                <div class="refgrid" id="igRefgrid"></div>
                                 <textarea id="igPrompt" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
-                                <div class="prow"><span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span></div>
+                                <div class="prow">
+                                  <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Referens</div>
+                                  <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
+                                  <span class="costtag" id="igCost">✦12</span>
+                                  <button class="gensend" id="igGen" disabled title="Yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+                                </div>
                               </div>
                             </div>
 
-                            <!-- SETTINGS -->
+                            <!-- SETTINGS — Model + O'lcham + Sifat + Soni (2×2) -->
                             <div class="sect">
-                              <div class="lbl">Sozlamalar</div>
+                              <div class="lbl">Sozlamalar <span class="meta clearbtn" id="igClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                               <div class="ctrls">
+                                <div class="seg" id="igModelSeg"><span class="lab">Model</span><span class="sv" id="igMName">GPT Image 2 Edit</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igArSeg"><span class="lab">O'lcham</span><span class="sv" id="igArVal">Auto</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igQSeg"><span class="lab">Sifat</span><span class="sv" id="igQVal">High</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igNSeg"><span class="lab">Soni</span><span class="sv" id="igNVal">1</span><span class="sc">▾</span></div>
                               </div>
                             </div>
-                          </div>
 
-                          <div class="foot">
-                            <button class="gen" id="igGen" disabled>Yaratish <span class="pc" id="igCost">✦12</span></button>
-                            <div class="recent" id="igRecent"></div>
+                            <!-- SO'NGGI genlar (katta kartali 2-ustun grid; Barchasi → Tarix) -->
+                            <div class="sect" id="igRecentSect">
+                              <div class="lbl">So'nggi <span class="meta morelink" id="igMoreLink">Barchasi →</span></div>
+                              <div class="recentgrid" id="igRecent"></div>
+                            </div>
                           </div>
 
                           <!-- model sheet -->
@@ -3081,9 +3140,12 @@ html.home-mode #homePage{display:block!important}
                             <div class="sheeth"><b>Soni</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="igNPills"></div>
                           </div></div>
+
+                          <!-- lightbox (natijani to'liq ko'rish) -->
+                          <div class="lightbox" id="igLightbox"><img id="igLbImg" alt=""><div class="lx" id="igLbClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div></div>
                         </div>
                       </section>
-                  
+
                       <!-- IMAGE GEN -->
                       <section id="v-genimage" class="view">
                         <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>✦ Image</b></div></div>
@@ -3207,7 +3269,6 @@ html.home-mode #homePage{display:block!important}
                       <!-- HISTORY -->
                       <section id="v-history" class="view">
                         <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🕘 Tarix</b></div></div>
-                        <div class="hfilter"><div class="f on" data-hf="all">Hammasi</div><div class="f" data-hf="image">Rasm</div><div class="f" data-hf="video">Video</div><div class="f" data-hf="audio">Ovoz</div></div>
                         <div id="hgridWrap"></div>
                       </section>
                   
@@ -8750,18 +8811,11 @@ async function bootPlugin(){
     }).catch(function(){ histLoading=false; if(cb)cb(); });
   }
   function renderRecent(){var s=document.getElementById('recentStrip');if(!s)return;if(!HIST.length){s.innerHTML='<div class="rc add" data-go="genimage">+</div>';return;}s.innerHTML='<div class="rc add" data-go="genimage">+</div>';HIST.slice(0,5).forEach(function(h){var d=document.createElement('div');d.className='rc';if(h.thumb){d.style.backgroundImage='url("'+h.thumb+'")';d.style.backgroundSize='cover';d.style.backgroundPosition='center';}d.setAttribute('data-hist',h.id);d.innerHTML='<span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span>';s.appendChild(d);});}
-  function renderHistory(f){
-    document.querySelectorAll('.hfilter .f').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-hf')===f);});
+  // To'liq Tarix view — umumiy galereya komponenti (scope:'all'). Filter+zoom+select galereya ichida.
+  function renderHistory(){
     var w=document.getElementById('hgridWrap'); if(!w)return;
-    if(!histLoaded){ w.innerHTML='<div class="empty"><b>Yuklanmoqda…</b>Tarix olinmoqda.</div>'; loadHistory(function(){ renderHistory(f); }); return; }
-    var list=HIST.filter(function(h){return f==='all'||h.t===f;});
-    if(!list.length){w.innerHTML='<div class="empty"><b>Hali natija yo\'q</b>'+(f==='all'?'Birinchi generatsiyani yarating.':'Bu turда natija yo\'q.')+'<br><span class="pick" data-go="launcher">Boshlash</span></div>';return;}
-    var g='<div class="hgrid">';
-    list.forEach(function(h){
-      var th=h.thumb?(' style="background-image:url(\''+h.thumb+'\');background-size:cover;background-position:center"'):' style="background:var(--card3)"';
-      g+='<div class="hcell" data-hist="'+h.id+'"><div class="th"'+th+'><span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span></div><div class="mt">'+histEsc(h.title)+'</div></div>';
-    });
-    g+='</div>'; w.innerHTML=g;
+    if(window.afGallery){ window.afGallery.invalidate(); window.afGallery.render(w,{scope:'all'}); }
+    else { w.innerHTML='<div class="empty"><b>Galereya yuklanmadi</b></div>'; }
   }
   function histDetail(id){
     var h=HIST.filter(function(x){return x.id===id;})[0]; if(!h)return;
@@ -8972,6 +9026,157 @@ async function bootPlugin(){
 
 </script>
 <script>
+/* ===== Genlar galereyasi — BITTA qayta ishlatiladigan komponent (window.afGallery) =====
+   Tool inline (scope:'recent') HAM, to'liq Tarix view (scope:'all') HAM shuni ishlatadi.
+   Manba: GET /api/studio/gen/history (real shakl: items[].{id,mode,prompt,params,createdAt,assets[].{url,thumbUrl}}).
+   Filter (Hammasi/Rasm/Video/Ovoz=voice+music/SFX) + zoom (−/+ ustun 3↔1, localStorage) + select (batch ⬇/🗑).
+   Faqat mavjud endpointlar: /gen/history, DELETE /gen/:id, aiImportMedia. SVG ikonalar, .axroot scope. */
+window.afGallery=(function(){
+  var CACHE=null,LOADED=false,LOADING=null;
+  var COLS_KEY='af.gal.cols';
+  // SVG ikonalar (emoji emas — CEP)
+  var IC={
+    imp:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+    dl:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+    trash:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+    zin:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+    zout:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
+    sel:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg>',
+    check:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
+    play:'<svg width="26" height="26" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>',
+    img:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+    vid:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M22 8l-6 4 6 4z"/></svg>',
+    aud:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>'
+  };
+  function isCEP(){ return typeof window.__adobe_cep__!=='undefined'; }
+  function esc(s){ return String(s==null?'':s).replace(/[<>&"]/g,function(c){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];}); }
+  function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
+  function cat(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':mode==='sfx'?'sfx':'image'; }
+  function normalize(items){
+    return (items||[]).map(function(g){
+      var a=(g.assets&&g.assets[0])||{}; var p=g.params||{};
+      var sub=[p.aspectRatio,p.quality||p.resolution,(p.duration?(p.duration+'s'):null)].filter(Boolean).join(' · ');
+      return { id:g.id, mode:g.mode, cat:cat(g.mode), url:a.url||'', thumb:a.thumbUrl||a.url||'',
+        title:((g.prompt||'').trim()||'Natija'), sub:sub, createdAt:g.createdAt };
+    }).filter(function(x){ return x.id && x.url; });
+  }
+  function load(force){
+    if(LOADED && !force && CACHE) return Promise.resolve(CACHE);
+    if(LOADING) return LOADING;
+    LOADING=studioGet('/api/studio/gen/history?limit=60').then(function(d){
+      try{ console.log('[gal] /gen/history →',((d&&d.items)||[]).length,'gen'); }catch(_){}
+      CACHE=normalize((d&&d.items)||[]); LOADED=true; LOADING=null; return CACHE;
+    }).catch(function(e){ LOADING=null; throw e; });
+    return LOADING;
+  }
+  function clampCols(n){ n=parseInt(n,10); if(isNaN(n))n=2; return Math.max(1,Math.min(3,n)); }
+  function loadCols(){ try{ return clampCols(localStorage.getItem(COLS_KEY)); }catch(e){ return 2; } }
+  function saveCols(n){ try{ localStorage.setItem(COLS_KEY,String(n)); }catch(e){} }
+  function importMedia(it){
+    var kind=(it.cat==='video')?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image';
+    if(typeof aiImportMedia==='function')aiImportMedia(it.url,kind,null);
+    else toast('Import faqat After Effects ichida','info');
+  }
+  function download(it){
+    if(isCEP()){ toast('Yuklab olish — Import qiling (AE Project panel)','info'); return false; }
+    try{ var a=document.createElement('a'); a.href=it.url; a.download=(String(it.title||'assetflow').slice(0,40).replace(/[^\w.-]+/g,'_')||'assetflow'); document.body.appendChild(a); a.click(); document.body.removeChild(a); return true; }catch(e){ toast('Yuklab bo\'lmadi','error'); return false; }
+  }
+
+  function render(container,opts){
+    if(!container)return null;
+    opts=opts||{}; var scope=opts.scope||'all';
+    var st={ filter:'all', cols:loadCols(), select:false, sel:{} };
+    container.className='gal'; container.setAttribute('data-scope',scope);
+    container.innerHTML=
+      '<div class="galhead">'
+      + '<div class="galtabs"></div>'
+      + '<div class="galtools">'
+      +   '<div class="galzoom"><b class="zout" title="Kichraytirish (ko\'proq ustun)">'+IC.zout+'</b><i></i><b class="zin" title="Kattalashtirish (kamroq ustun)">'+IC.zin+'</b></div>'
+      +   '<div class="galselbtn" title="Tanlash rejimi">'+IC.sel+'</div>'
+      +   (scope==='recent'?'<div class="galmore" title="To\'liq Tarix">Barchasi →</div>':'')
+      + '</div>'
+      + '</div>'
+      + '<div class="galgrid"></div>'
+      + '<div class="galbatch"><span class="gbinfo">0 tanlandi</span><div class="gbtn dl">'+IC.dl+' Yuklab olish</div><div class="gbtn del">'+IC.trash+' O\'chirish</div><div class="gbtn cancel">Bekor</div></div>';
+    var tabsEl=container.querySelector('.galtabs');
+    var gridEl=container.querySelector('.galgrid');
+    var batchEl=container.querySelector('.galbatch');
+    var selBtn=container.querySelector('.galselbtn');
+    var zin=container.querySelector('.zin'), zout=container.querySelector('.zout');
+    var more=container.querySelector('.galmore');
+
+    var FILTERS=[['all','Hammasi'],['image','Rasm'],['video','Video'],['audio','Ovoz'],['sfx','SFX']];
+    FILTERS.forEach(function(f){
+      var d=document.createElement('div'); d.className='galtab'+(f[0]===st.filter?' on':''); d.textContent=f[1]; d.setAttribute('data-f',f[0]);
+      d.addEventListener('click',function(){ st.filter=f[0]; st.sel={}; Array.prototype.forEach.call(tabsEl.children,function(c){ c.classList.toggle('on',c.getAttribute('data-f')===st.filter); }); draw(); });
+      tabsEl.appendChild(d);
+    });
+
+    function applyZoom(){ gridEl.setAttribute('data-cols',st.cols); zout.classList.toggle('dis',st.cols>=3); zin.classList.toggle('dis',st.cols<=1); }
+    zin.addEventListener('click',function(){ if(st.cols>1){ st.cols--; saveCols(st.cols); applyZoom(); } });   // kattalashtirish = kamroq ustun
+    zout.addEventListener('click',function(){ if(st.cols<3){ st.cols++; saveCols(st.cols); applyZoom(); } });  // kichraytirish = ko'proq ustun
+    selBtn.addEventListener('click',function(){ st.select=!st.select; st.sel={}; selBtn.classList.toggle('on',st.select); draw(); });
+    if(more)more.addEventListener('click',function(){ if(typeof opts.onSeeAll==='function')opts.onSeeAll(); });
+    container.querySelector('.galbatch .cancel').addEventListener('click',function(){ st.select=false; st.sel={}; selBtn.classList.remove('on'); draw(); });
+    container.querySelector('.galbatch .dl').addEventListener('click',function(){
+      var list=visible().filter(function(x){ return st.sel[x.id]; });
+      if(!list.length){ toast('Avval tanlang','warning'); return; }
+      var ok=0; list.forEach(function(it){ if(download(it))ok++; });
+      if(!isCEP())toast(ok+' ta yuklab olindi','success');
+    });
+    container.querySelector('.galbatch .del').addEventListener('click',batchDelete);
+
+    function visible(){ var arr=(CACHE||[]).filter(function(x){ return st.filter==='all'||x.cat===st.filter; }); if(scope==='recent')arr=arr.slice(0,12); return arr; }
+    function updBatch(){ batchEl.classList.toggle('on',st.select); container.querySelector('.gbinfo').textContent=Object.keys(st.sel).length+' tanlandi'; }
+
+    function draw(){
+      applyZoom();
+      gridEl.classList.toggle('selmode',st.select);
+      if(!CACHE){ gridEl.innerHTML='<div class="galempty">Yuklanmoqda…</div>'; return; }
+      var list=visible();
+      if(!list.length){ gridEl.innerHTML='<div class="galempty"><b>Hozircha bo\'sh</b>'+(st.filter==='all'?'Gen qilsangiz shu yerda chiqadi.':'Bu turда natija yo\'q.')+'</div>'; updBatch(); return; }
+      gridEl.innerHTML='';
+      list.forEach(function(it){
+        var card=document.createElement('div'); card.className='gcard'+(st.sel[it.id]?' sel':'');
+        var badge=(it.cat==='video')?(IC.vid+' Video'):(it.cat==='audio')?(IC.aud+' Ovoz'):(it.cat==='sfx')?(IC.aud+' SFX'):(IC.img+' Rasm');
+        var th='<div class="gth" style="background-image:url(\''+it.thumb+'\')"><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
+        var sub=esc(it.sub||(it.cat==='image'?'Rasm':it.cat==='video'?'Video':it.cat==='sfx'?'SFX':'Ovoz'));
+        var meta='<div class="gmeta"><b>'+esc(String(it.title).slice(0,60))+'</b><small>'+sub+'</small></div>';
+        var acts='<div class="gacts"><div class="a-imp">'+IC.imp+' Import</div><div class="a-dl">'+IC.dl+' Yuklab</div></div>';
+        card.innerHTML=th+meta+acts;
+        if(st.select){
+          card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
+        }else{
+          card.querySelector('.a-imp').addEventListener('click',function(e){ e.stopPropagation(); importMedia(it); });
+          card.querySelector('.a-dl').addEventListener('click',function(e){ e.stopPropagation(); download(it); });
+        }
+        gridEl.appendChild(card);
+      });
+      updBatch();
+    }
+
+    function batchDelete(){
+      var list=visible().filter(function(x){ return st.sel[x.id]; });
+      if(!list.length){ toast('Avval tanlang','warning'); return; }
+      if(typeof window.confirm==='function' && !window.confirm(list.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.'))return;
+      var done=0,fail=0,total=list.length;
+      list.forEach(function(it){
+        studioDelete('/api/studio/gen/'+it.id).then(function(){
+          done++; if(CACHE)CACHE=CACHE.filter(function(x){ return x.id!==it.id; }); delete st.sel[it.id];
+        }).catch(function(){ fail++; }).then(function(){
+          if(done+fail===total){ st.select=(Object.keys(st.sel).length>0); selBtn.classList.toggle('on',st.select); draw(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''), fail?'warning':'success'); }
+        });
+      });
+    }
+
+    applyZoom();
+    load().then(draw).catch(function(){ gridEl.innerHTML='<div class="galempty"><b>Yuklab bo\'lmadi</b>Internet/sessiyani tekshiring.</div>'; });
+    return { refresh:function(force){ load(force).then(draw).catch(function(){}); }, el:container };
+  }
+  return { render:render, invalidate:function(){ LOADED=false; CACHE=null; } };
+})();
+</script>
+<script>
 /* Rasm yaratish tool — tool-image.html 1:1 JS oqimi, MODEL-AWARE. REAL backend:
    /gen/models (refMode/maxRefs/aspects/resolutions/qualityCost/count) → /gen/ref-upload (referens R2)
    → cost-quote → session → gen → poll. CEP showOpenDialog + listProjectFootage + exportTimelineFrame
@@ -8999,7 +9204,7 @@ async function bootPlugin(){
   function cost(){ return (meta.qcost[st.q]||12)*st.n; }
   function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
   function recost(){ var sc=$('igCost'); if(sc)sc.textContent='✦'+cost(); var g=$('igGen'); if(g)g.title='Yaratish (✦'+cost()+')'; }
-  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); loadRecent(); }
+  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
   window.axIGRefresh=refresh;
 
   // ---- "Yaratish" disabled holatini qayta hisoblash ----
@@ -9046,10 +9251,11 @@ async function bootPlugin(){
     return meta._pending;
   }
   function applyMeta(){
-    $('igMName').textContent=meta.label;
-    // referens bo'limi model talabiga qarab
-    $('igRefSect').style.display = meta.refMode==='none' ? 'none' : '';
-    $('igRefReq').style.display = meta.refMode==='required' ? '' : 'none';
+    $('igMName').textContent=meta.label; // model = sozlamalar chip
+    // prompt bo'limi har doim ko'rinadi; referens funksiyasi model talabiga qarab (refMode='none' → yashirin)
+    var noRef=meta.refMode==='none';
+    $('igRefAdd').style.display=noRef?'none':'';
+    $('igRefMeta').style.display=noRef?'none':'';
     $('igArVal').textContent=st.ar; $('igQVal').textContent=cap(st.q); $('igNVal').textContent=String(st.n);
     recost(); refreshGen();
   }
@@ -9059,7 +9265,7 @@ async function bootPlugin(){
   }
 
   // ---- chip openerlar ----
-  $('igModelRow').addEventListener('click',function(){ openSheet('igMSheet'); });
+  $('igModelSeg').addEventListener('click',function(){ openSheet('igMSheet'); });
   $('igArSeg').addEventListener('click',function(){ buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; $('igArVal').textContent=v; closeSheets(); }); openSheet('igArSheet'); });
   function buildQ(){ var arr=meta.quals.map(function(q){ return {val:q,label:cap(q)}; }); buildPills($('igQPills'),arr,st.q,function(v){ st.q=v; $('igQVal').textContent=cap(v); recost(); buildQ(); }); }
   $('igQSeg').addEventListener('click',function(){ buildQ(); openSheet('igQSheet'); });
@@ -9091,10 +9297,10 @@ async function bootPlugin(){
       x.addEventListener('click',function(ev){ ev.stopPropagation(); var idx=st.refs.indexOf(ref); if(idx>=0)st.refs.splice(idx,1); renderRefs(); updRefMeta(); refreshGen(); });
       t.appendChild(x);
       t.addEventListener('click',function(){ if(!ref.loading)insertToken('@img'+(st.refs.indexOf(ref)+1)); });
-      g.insertBefore(t,$('igRefAdd'));
+      g.appendChild(t); // igRefAdd endi prow'da — grid faqat reftile'lar (bo'sh bo'lsa CSS yashiradi)
     });
   }
-  function updRefMeta(){ $('igRefMeta').textContent=st.refs.length+' ta'; }
+  function updRefMeta(){ $('igRefMeta').textContent=st.refs.length+' ta referens'; }
 
   // dataUrl → push (spinner) → R2 yuklash → ref.url; xato bo'lsa olib tashlash
   function addRef(dataUrl){
@@ -9294,7 +9500,7 @@ async function bootPlugin(){
 
   $('igCancel').addEventListener('click',function(){
     cancelled=true; polling=false; stopTimers(); $('igProg').classList.remove('on');
-    $('igGen').disabled=false; refreshGen(); toast('Bekor qilindi — kredit yechilmadi','info');
+    $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Bekor qilindi — kredit yechilmadi','info');
   });
 
   // ---- generatsiya (REAL) ----
@@ -9306,7 +9512,7 @@ async function bootPlugin(){
     if(anyLoading()){ toast('Referens yuklanmoqda — kuting','info'); return; }
     var c=credits();
     if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
-    cancelled=false; var g=$('igGen'); g.disabled=true;
+    cancelled=false; var g=$('igGen'); g.disabled=true; g.classList.add('busy');
     startProg(meta.label+' ishlamoqda…');
     // @img tartibida URL'lar (@img1=referenceUrls[0])
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
@@ -9325,24 +9531,24 @@ async function bootPlugin(){
       poll(j.jobId,0);
     }).catch(function(err){
       stopTimers(); $('igProg').classList.remove('on'); polling=false;
-      g.disabled=false; refreshGen(); toast((err&&err.message)||'Generatsiya xatosi','error');
+      g.disabled=false; g.classList.remove('busy'); refreshGen(); toast((err&&err.message)||'Generatsiya xatosi','error');
     });
   }
   function poll(jobId,tries){
     if(cancelled){ polling=false; return; }
     polling=true;
-    if(tries>120){ stopTimers(); $('igProg').classList.remove('on'); polling=false; $('igGen').disabled=false; refreshGen(); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
+    if(tries>120){ stopTimers(); $('igProg').classList.remove('on'); polling=false; $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
     studioGet('/api/studio/gen/'+jobId).then(function(gn){
       if(cancelled){ polling=false; return; }
       var s=(gn&&gn.status)||'';
       if(s==='done'){
         polling=false; endProg();
         renderResults((gn&&gn.assets)||[]);
-        $('igGen').disabled=false; refreshGen(); toast('Tayyor! ✦'+cost()+' yechildi','success');
+        $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Tayyor! ✦'+cost()+' yechildi','success');
         setCreditChip(credits());
       }else if(s==='failed'){
         polling=false; stopTimers(); $('igProg').classList.remove('on');
-        $('igGen').disabled=false; refreshGen(); toast((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
+        $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
         setCreditChip(credits());
       }else{
         pollTimer=setTimeout(function(){ poll(jobId,tries+1); },3000);
@@ -9373,7 +9579,9 @@ async function bootPlugin(){
     if(!urls.length){ toast('Natija bo\'sh','warning'); return; }
     urls.forEach(function(url){
       var card=document.createElement('div'); card.className='rcard';
-      var img=document.createElement('img'); img.src=url; card.appendChild(img);
+      var img=document.createElement('img'); img.src=url; img.title='Kattalashtirish';
+      img.addEventListener('click',function(){ openLightbox(url); });
+      card.appendChild(img);
       // ✓ Tanlash (select)
       var cb=document.createElement('div'); cb.className='selcb'; cb.textContent='✓'; cb.title='Tanlash';
       cb.addEventListener('click',function(){ card.classList.toggle('sel'); });
@@ -9392,9 +9600,12 @@ async function bootPlugin(){
     $('igResMeta').textContent=urls.length+' ta · '+st.ar+' · '+cap(st.q);
     $('igRes').classList.add('on');
     try{ $('igRes').scrollIntoView({behavior:'smooth'}); }catch(e){}
-    // so'nggi lentaga qo'shamiz (eng yangisi oldinda)
-    urls.slice().reverse().forEach(function(u){ st.recent.unshift({url:u}); });
-    st.recent=st.recent.slice(0,12); renderRecent();
+    // So'nggi gridга yangi natijalarni qo'shamiz + Tarix galereya cache'ini yangilaymiz
+    try{
+      urls.slice().reverse().forEach(function(u){ st.recent.unshift({url:u,thumb:u,cat:'image',title:(ta.value.trim()||'Natija')}); });
+      st.recent=st.recent.slice(0,12); renderRecentGrid();
+      if(window.afGallery)window.afGallery.invalidate();
+    }catch(e){}
   }
 
   // ---- Tarix view'ni ochish (robust: axGo → tasdiq → to'g'ridan fallback) ----
@@ -9420,36 +9631,47 @@ async function bootPlugin(){
     }catch(e2){ try{console.error('[ig] Tarix fallback xato:',e2);}catch(_){} toast('Tarix ochilmadi','error'); }
   }
 
-  // ---- So'nggi lenta (oxirgi natijalar; Barchasi → Tarix view) ----
-  function renderRecent(){
+  // ---- lightbox (natijani to'liq ko'rish) ----
+  function openLightbox(url){ var lb=$('igLightbox'),im=$('igLbImg'); if(!lb||!im)return; im.src=url; lb.classList.add('on'); }
+  function closeLightbox(){ var lb=$('igLightbox'); if(lb)lb.classList.remove('on'); }
+  (function(){ var x=$('igLbClose'); if(x)x.addEventListener('click',closeLightbox);
+    var lb=$('igLightbox'); if(lb)lb.addEventListener('click',function(e){ if(e.target===lb)closeLightbox(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&$('igLightbox')&&$('igLightbox').classList.contains('on'))closeLightbox(); }); })();
+
+  // ---- SO'NGGI grid (katta kartali 2-ustun; manba /gen/history; Barchasi → Tarix) ----
+  function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Ovoz':(c==='sfx')?'SFX':'Rasm'; }
+  function renderRecentGrid(){
     var r=$('igRecent'); if(!r)return; r.innerHTML='';
     // url bo'yicha dedup, eng yangisi oldinda
-    var seen={},uniq=[];
-    st.recent.forEach(function(it){ if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } });
-    st.recent=uniq;
-    if(!uniq.length)return;
-    var lbl=document.createElement('span'); lbl.className='rlbl'; lbl.textContent='So\'nggi'; r.appendChild(lbl);
-    uniq.slice(0,5).forEach(function(it){
-      var d=document.createElement('div'); d.className='rt'; d.style.backgroundImage='url("'+it.url+'")'; d.title='Natijani ochish';
-      d.addEventListener('click',function(){ renderResults([{url:it.url}]); });
+    var seen={},uniq=[]; st.recent.forEach(function(it){ if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } }); st.recent=uniq;
+    if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha gen yo\'q</div>'; return; }
+    uniq.slice(0,12).forEach(function(it){
+      var d=document.createElement('div'); d.className='rc'; if(it.thumb)d.style.backgroundImage='url("'+it.thumb+'")';
+      var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(it.cat); d.appendChild(tg);
+      if(it.cat==='video'){ var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv); }
+      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||'Natija'); d.appendChild(bd);
+      d.title='Ochish';
+      d.addEventListener('click',function(){ if(it.cat==='image'||!it.cat)openLightbox(it.url); else toast(catLabel(it.cat)+' — Tarixда oching','info'); });
       r.appendChild(d);
     });
-    var m=document.createElement('span'); m.className='more'; m.textContent='Barchasi →'; m.title='Tarix';
-    m.addEventListener('click',openHistory);
-    r.appendChild(m);
   }
-  // dastlabki lenta — foydalanuvchining oxirgi rasm gen'lari (bir marta)
+  // dastlabki So'nggi — foydalanuvchining oxirgi gen'lari (bir marta, tool ochilganda)
   var recentLoaded=false;
   function loadRecent(){
-    if(recentLoaded)return; recentLoaded=true;
+    if(recentLoaded||!$('igRecent'))return;
+    var v=document.getElementById('v-imggen'); if(!v||!v.classList.contains('on'))return; // tool ochiq bo'lsa
+    recentLoaded=true;
     studioGet('/api/studio/gen/history?limit=12').then(function(d){
-      var items=(d&&d.items)||[];
-      var urls=[];
-      items.forEach(function(g){ if(g&&g.mode==='image'&&g.assets){ g.assets.forEach(function(a){ if(a&&a.url)urls.push(a.url); }); } });
-      urls.slice(0,12).forEach(function(u){ if(st.recent.indexOf(u)<0)st.recent.push({url:u}); });
-      renderRecent();
+      (((d&&d.items)||[])).forEach(function(g){
+        var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
+        var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
+        if(st.recent.indexOf(url)<0&&!st.recent.some(function(x){return x.url===url;}))
+          st.recent.push({url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija'});
+      });
+      st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(){ recentLoaded=false; });
   }
+  var igMore=$('igMoreLink'); if(igMore)igMore.addEventListener('click',openHistory);
 
   // ---- header 🕘 → Tarix view (xuddi "Barchasi →" kabi) ----
   var igHist=$('igHist'); if(igHist)igHist.addEventListener('click',openHistory);

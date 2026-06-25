@@ -1,6 +1,15 @@
-# SESSION REPORT — 2026-06-25 — "Yaxshilash" VISION-aware (referensли prompt)
+# SESSION REPORT — 2026-06-25 — "Rasm yaratish" composer refaktor (tool-image.html 1:1) + lightbox + So'nggi grid
 
-1. **fal.ts `falEnhancePrompt(text, imageUrls?)`** — model-aware: `imageUrls` bo'lsa → `openrouter/router/vision` (image_urls @img tartibда [0]=@img1, model `google/gemini-2.5-flash`, system_prompt rasm-tahlil, temp 0.6, max_tokens 500) — rasmlarni KO'RIB yozadi; yo'q bo'lsa → eski matn yo'li (`openrouter/router`). Har ikki yo'lда `console.log` ([fal] enhance VISION/TEXT).
-2. **studio-gen.ts `/gen/prompt/enhance`** — `enhanceSchema` ga ixtiyoriy `image_urls`/`references` (max 10) qo'shildi; text yo'lда http(s) filtrlanib `falEnhancePrompt(prompt, refUrls)` ga uzatiladi. Kredit/cap himoyasi (`withinDailyCap`+`consumeAiCredits`) format-branchdan OLDIN — vision ham, text ham bir xil himoyalangan; `ENHANCE_COST` o'zgarmadi (narx siyosati buzilmadi).
-3. **Plagin ✨ Yaxshilash** — bosilganда `st.refs` url'lari @img TARTIBDA yig'iladi; referens bor → body'ga `image_urls`, yo'q → matn. `console.log('[ig] enhance → VISION/TEXT')`. Tugma busy, javob textarea'ga, xato→toast.
-- TEKSHIRUV: `npm run build -w apps/api` — tsc TOZA. Plagin 5 `<script>` blok `new Function` — 0 xato. Faqat schemaда bor maydon. KUTILMOQDA: backend PUSH (Render, FAL_KEY) → AE'da install-cep → referensли enhance sinash.
+## COMPOSER (AssetFlow_Plugin.html, `.axig`) — yangi tool-image.html 1:1
+- Model KATTA karta OLINDI → **SOZLAMALAR 2×2 grid** chip: [Model · O'lcham · Sifat · Soni] (`.ctrls{grid 1fr 1fr}`, `#igModelSeg`→model sheet).
+- **↺ Tozalash** → Sozlamalar yorlig'ida (`#igClearBtn`): prompt+referens tozalanadi, NATIJA qoladi.
+- **Referens prompt qutisi ICHIDA**: `#igRefgrid` (50px tile, @imgN, ×, spinner) textarea ustida; **＋ Referens** (`.addbtn`) prow chapda; warn quti USTIDA yupqa; "N referens" Prompt yorlig'ида; refMode='none'→＋/meta yashirin.
+- **Round ➤ Yaratish** (`.gensend`) prow o'ng uchida + `✦N` (`#igCost`) yonida; busy→spinner; foot tugma OLINDI. Disabled: prompt<2 || (required&&ref yo'q) || ref yuklanmoqda. Textarea KATTA (min 170px). @ dropdown + ✨Yaxshilash saqlandi.
+- **Natija**: rasm max 300px; rasм bosilsa **lightbox** (`#igLightbox`, ✕/backdrop/Esc); karta ✓Tanlash/✕O'chirish + Import/↺Referensга/⬇.
+- **So'nggi**: oddiy `.recentgrid` (2-ustun katta karta, `/gen/history`, url-dedup, gen tugagach prepend, badge+title); "Barchasi →"→Tarix. (Inline afGallery OLINDI.)
+- **Tarix**: afGallery (filter/zoom/select) — O'ZGARMADI (oldingi task'da tasdiqlangan).
+
+## TEKSHIRUV — REAL oqim BUZILMADI
+- Plagin 6 `<script>` blok `new Function` — **0 xato**. Backend TEGILMADI (mavjud endpointlar).
+- HEADLESS (preview brauzer, mock API, screenshot): composer 1:1 (model chip→sheet, ＋Referens→cep.fs→@img1 tile/"1 ta referens"/warn off, round Yaratish disabled→enabled, @dropdown, reftile→token, Tozalash) ✓ · gen flow (ref-upload→cost-quote→sessions→gen→poll→natija, busy spinner) ✓ · natija (lightbox/select/delete/Referensга 1→2) ✓ · So'nggi grid ✓ · "Barchasi →"→axGo('history') ✓ · 0 console xato.
+- KUTILMOQDA: AE install-cep → real sinash.
