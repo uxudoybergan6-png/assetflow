@@ -461,7 +461,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       return;
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
-    res.json({ prompt: promptStr, json });
+    res.json({ prompt: promptStr, json, creditsLeft: gate.remaining });
     return;
   }
 
@@ -476,7 +476,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     res.status(502).json({ error: out.error });
     return;
   }
-  res.json({ prompt: out.data.trim() });
+  res.json({ prompt: out.data.trim(), creditsLeft: gate.remaining });
 });
 
 /**

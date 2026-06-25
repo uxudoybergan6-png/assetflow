@@ -197,11 +197,14 @@ export async function processGeneration(genId: string): Promise<void> {
   if (!gen || gen.status !== "queued") return;
 
   const fail = async (reason: string) => {
-    await prisma.generation.update({
-      where: { id: genId },
+    // ATOMIK: faqat hali queued/running bo'lsa failed qil + refund. Agar reconcileStuckGenerations
+    // (yoki boshqa yo'l) jobni ALLAQACHON terminal qilган bo'lsa → updateMany count=0 → IKKINCHI marta
+    // refund QILMAYMIZ. reconcile naqshi (double-refund race fix — audit 2026-06-26).
+    const upd = await prisma.generation.updateMany({
+      where: { id: genId, status: { in: ["queued", "running"] } },
       data: { status: "failed", error: reason.slice(0, 480) },
     });
-    await refundAiCredits(gen.userId, gen.cost);
+    if (upd.count > 0) await refundAiCredits(gen.userId, gen.cost);
   };
 
   try {
@@ -363,7 +366,10 @@ export async function processGeneration(genId: string): Promise<void> {
       return void (await fail(`Qo'llab-quvvatlanmaydigan tur: ${model.feature}`));
     }
 
-    await prisma.generation.update({ where: { id: genId }, data: { status: "done" } });
+    // ATOMIK: faqat hali running bo'lsa done qil. Agar reconcile (10 daq) jobni failed+refund qilган
+    // bo'lsa → count=0 → failed→done QILMAYMIZ (refund saqlanadi; assetlar history'да ko'rinmaydi —
+    // "bepul gen" oldini olamiz). Double-refund race fix (audit 2026-06-26).
+    await prisma.generation.updateMany({ where: { id: genId, status: "running" }, data: { status: "done" } });
   } catch (e) {
     await fail(e instanceof Error ? e.message : String(e));
   }

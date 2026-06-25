@@ -218,8 +218,19 @@ export async function falEnhancePrompt(
 
   const r = await falSubmit(modelId, input);
   if (!r.ok) return r;
-  const data = r.data as { output?: string };
-  const out = typeof data?.output === "string" ? data.output.trim() : "";
+  // openrouter/router javob shakli rasman tasdiqlanmagan → bir nechta mumkin maydonni TOLERANT o'qiymiz
+  // (output | text | response | message | content), yoki data o'zi string bo'lsa.
+  const data = r.data as
+    | { output?: unknown; text?: unknown; response?: unknown; message?: unknown; content?: unknown }
+    | string;
+  const pick = (...vals: unknown[]) => {
+    for (const v of vals) if (typeof v === "string" && v.trim()) return v.trim();
+    return "";
+  };
+  const out =
+    typeof data === "string"
+      ? data.trim()
+      : pick(data?.output, data?.text, data?.response, data?.message, data?.content);
   if (!out) return { ok: false, error: "fal: bo'sh javob" };
   return { ok: true, data: out };
 }

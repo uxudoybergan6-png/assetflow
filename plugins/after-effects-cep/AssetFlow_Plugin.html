@@ -8682,6 +8682,9 @@ async function bootPlugin(){
   var PA=[];
 
   function go(id){
+    // Har view almashganda "Rasm yaratish" poll/progress timerlarini tozalaymiz (leak fix — audit).
+    // imggen'gа kirishда ham xavfsiz (faol gen yo'q → no-op; keyingi genClick cancelled'ni qayta tiklaydi).
+    if(typeof window.axIGTeardown==='function'){ try{ window.axIGTeardown(); }catch(e){} }
     if(id==='main'||id==='home'){ if(typeof window.goHome==='function')window.goHome(); return; } // ‹ Asosiy → Home
     closeSheet();
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
@@ -9164,8 +9167,9 @@ window.afGallery=(function(){
     container.querySelector('.galbatch .dl').addEventListener('click',function(){
       var list=visible().filter(function(x){ return st.sel[x.id]; });
       if(!list.length){ toast('Avval tanlang','warning'); return; }
+      if(isCEP()){ toast('Yuklab olish — AE Project panelга import qiling','info'); return; } // CEP: bitta toast (spam yo'q)
       var ok=0; list.forEach(function(it){ if(download(it))ok++; });
-      if(!isCEP())toast(ok+' ta yuklab olindi','success');
+      toast(ok+' ta yuklab olindi','success');
     });
     container.querySelector('.galbatch .del').addEventListener('click',batchDelete);
 
@@ -9548,13 +9552,17 @@ window.afGallery=(function(){
     try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
-      if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); toast('Prompt yaxshilandi ✨','success'); }
+      if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨','success'); }
       else toast('Yaxshilab bo\'lmadi','error');
     }).catch(function(err){ toast((err&&err.message)||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
 
   // ---- progress ----
-  var pollTimer=null,progTimer=null,cancelled=false,polling=false;
+  var pollTimer=null,progTimer=null,cancelled=false,polling=false,submitted=false;
+  // View'дан chiqishда (igBack/Barchasi/🕘) poll/progress timerlarini TOZALAYDI — aks holда yashirin
+  // DOM'ga yozishda davom etadi va API'ni urib turadi (memory/network leak — audit 2026-06-26).
+  function teardownGen(){ cancelled=true; polling=false; stopTimers(); var p=$('igProg'); if(p)p.classList.remove('on'); }
+  window.axIGTeardown=teardownGen;
   // Poll RAMP: dastlabki tekshiruvlar tez (tez rasm ~6-12s'da tayyor → natija tezroq ko'rinadi), keyin
   // uzunroq. Cap 140 → window ≈ 6×1s + 134×1.8s ≈ 247s (server fal poll ~200s'dan keng — erta to'xtamaymiz).
   function pollDelay(t){ return t<6?1000:1800; }
@@ -9570,7 +9578,11 @@ window.afGallery=(function(){
 
   $('igCancel').addEventListener('click',function(){
     cancelled=true; polling=false; stopTimers(); $('igProg').classList.remove('on');
-    $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Bekor qilindi — kredit yechilmadi','info');
+    $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen();
+    // /gen muvaffaqiyatli bo'lsa (jobId olingan) kredit SERVERДА allaqachon yechilgan va job davom etadi —
+    // "kredit yechilmadi" YOLG'ON bo'lardi. Faqat /gen'gача bekor qilinса haqiqatan yechilmagan.
+    if(submitted){ toast('Orqa fonda davom etadi — natija Tarixда chiqadi','info'); }
+    else { toast('Bekor qilindi — kredit yechilmadi','info'); }
   });
 
   // ---- generatsiya (REAL) ----
@@ -9582,7 +9594,7 @@ window.afGallery=(function(){
     if(anyLoading()){ toast('Referens yuklanmoqda — kuting','info'); return; }
     var c=credits();
     if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
-    cancelled=false; var g=$('igGen'); g.disabled=true; g.classList.add('busy');
+    cancelled=false; submitted=false; var g=$('igGen'); g.disabled=true; g.classList.add('busy');
     startProg(meta.label+' ishlamoqda…');
     // @img tartibida URL'lar (@img1=referenceUrls[0])
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
@@ -9601,6 +9613,7 @@ window.afGallery=(function(){
     }).then(function(j){
       if(j&&typeof j.creditsLeft==='number')setCreditChip(j.creditsLeft);
       if(!j||!j.jobId)throw new Error('Job yaratilmadi');
+      submitted=true; // kredit serverда yechildi — bekor qilish endi "orqa fonda davom etadi"
       poll(j.jobId,0);
     }).catch(function(err){
       stopTimers(); $('igProg').classList.remove('on'); polling=false;
@@ -9686,7 +9699,7 @@ window.afGallery=(function(){
   // try/catch xatoni YUTARDI (silent) → view almashmasa hech narsa ko'rinmasdi. Endi:
   // axGo'ni chaqiramiz, v-history.on bo'lganini TEKSHIRAMIZ, bo'lmasa to'g'ridan almashtiramiz.
   function openHistory(){
-    closeSheets(); hideMention();
+    closeSheets(); hideMention(); teardownGen(); // tooldan chiqyapmiz → poll/timer tozalansin (go() fallback'da chaqirilmasligi mumkin)
     try{ console.log('[ig] Tarix → ochilmoqda'); }catch(_){}
     if(typeof window.axGo==='function'){ try{ window.axGo('history'); }catch(e){ try{console.warn('[ig] axGo("history") xato:',e);}catch(_){} } }
     var v=document.getElementById('v-history');
@@ -9807,7 +9820,7 @@ window.afGallery=(function(){
   var igRecentSel=$('igRecentSel'); if(igRecentSel)igRecentSel.addEventListener('click',function(){ st.recentSelect=!st.recentSelect; st.recentSel={}; igRecentSel.classList.toggle('on',st.recentSelect); renderRecentGrid(); });
   // batch bar tugmalari
   (function(){
-    var dl=$('igRecentDl'); if(dl)dl.addEventListener('click',function(){ var items=Object.keys(st.recentSel).map(function(k){return st.recentSel[k];}); if(!items.length){toast('Avval tanlang','warning');return;} items.forEach(function(it){ downloadUrl(it.url); }); if(!IS_CEP)toast(items.length+' yuklab olindi','success'); });
+    var dl=$('igRecentDl'); if(dl)dl.addEventListener('click',function(){ var items=Object.keys(st.recentSel).map(function(k){return st.recentSel[k];}); if(!items.length){toast('Avval tanlang','warning');return;} if(IS_CEP){ toast('Yuklab olish — AE Project panelга import qiling','info'); return; } items.forEach(function(it){ downloadUrl(it.url); }); toast(items.length+' yuklab olindi','success'); });
     var del=$('igRecentDel'); if(del)del.addEventListener('click',recentBatchDelete);
     var can=$('igRecentCancel'); if(can)can.addEventListener('click',function(){ st.recentSelect=false; st.recentSel={}; if(igRecentSel)igRecentSel.classList.remove('on'); renderRecentGrid(); });
   })();

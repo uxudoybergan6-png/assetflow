@@ -33,6 +33,7 @@ export function genParamsHash(
 ): string {
   const priced = { ...(params || {}) };
   delete priced.referenceUrl;
+  delete priced.referenceUrls; // KO'P referens (GPT Image 2 Edit @imgN) — narxga ta'sir qilmaydi, data-og'ir.
   delete priced.referenceEndUrl; // End kadr ham narxga ta'sir qilmaydi (referenceUrl kabi)
   // QB-2: Magnific reference kanallari — narxga ta'sir qilmaydi, data-og'ir (base64).
   // Hashdan chiqarilmasa cost-quote (referencesiz) va /gen (reference bilan) ph'i farq qiladi

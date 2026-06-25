@@ -122,17 +122,28 @@ function validateEnv() {
   const jwt = process.env.JWT_SECRET?.trim();
   const warnings: string[] = [];
 
-  // JWT_SECRET — productionda default qiymat = kritik xavf
-  if (!jwt || jwt === "dev-secret-change-me") {
+  // JWT_SECRET — auth token VA cost-quote imzosi BIR XIL kalit bilan imzolanadi (middleware/auth +
+  // gen-quote). Zaif/ma'lum/example kalit = soxta ADMIN token (cheksiz kredit) + soxta cost-quote
+  // (kredit bypass). Shu sabab productionда: yo'q, ma'lum-zaif, yoki <32 belgi → QAT'IY to'xtatish.
+  // (Audit 2026-06-26: oldingi guard faqat "dev-secret-change-me" ni bloklardi → commit qilingan
+  // example qiymatlar (.env.example va h.k.) o'tib ketardi.)
+  const WEAK_SECRETS = [
+    "dev-secret-change-me",
+    "dev-secret-change-in-production",
+    "change-me-in-production",
+    "changeme",
+    "secret",
+    "your-secret-here",
+  ];
+  if (!jwt || WEAK_SECRETS.includes(jwt) || jwt.length < 32) {
     if (isProd) {
       console.error(
-        "[FATAL] JWT_SECRET o'rnatilmagan (yoki default). Productionda majburiy — server to'xtatildi."
+        "[FATAL] JWT_SECRET zaif/ma'lum/yo'q — productionда kamida 32 belgili TASODIFIY qiymat shart " +
+          "(example/dev qiymat EMAS). Server to'xtatildi."
       );
       process.exit(1);
     }
-    warnings.push("JWT_SECRET default (dev) — productionda kuchli qiymat shart");
-  } else if (jwt.length < 24) {
-    warnings.push("JWT_SECRET juda qisqa — kamida 32 belgi tavsiya etiladi");
+    warnings.push("JWT_SECRET zaif yoki <32 belgi (dev) — productionда kuchli tasodifiy qiymat shart");
   }
 
   if (!process.env.RESEND_API_KEY?.trim())
