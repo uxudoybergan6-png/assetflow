@@ -2467,9 +2467,13 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}
 .axig .spacer{flex:1}
 .axig .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.axig .ig-hist{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer;flex:0 0 auto}
+.axig .ig-hist:hover{color:var(--txt);border-color:var(--mut2)}
 .axig .igscroll{flex:1;display:flex;flex-direction:column;padding:12px 2px 4px;overflow-y:auto}
 .axig .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center}
 .axig .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
+.axig .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.axig .lbl .clearbtn:hover{color:var(--red)}
 .axig .req{color:var(--acc);margin-left:5px}
 .axig .sect{margin-bottom:16px}
 .axig .warn{display:none;align-items:flex-start;gap:7px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:11.5px;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.4}
@@ -2976,6 +2980,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="back" id="igBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> AI Tools</div>
                             <div class="ttl"><span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span> Rasm yaratish</div>
                             <div class="spacer"></div>
+                            <div class="ig-hist" id="igHist" title="Tarix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                             <div class="pro" id="igCredit">✦ —</div>
                           </div>
 
@@ -2994,7 +2999,7 @@ html.home-mode #homePage{display:block!important}
 
                             <!-- MODEL -->
                             <div class="sect">
-                              <div class="lbl">Model</div>
+                              <div class="lbl">Model <span class="meta clearbtn" id="igClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                               <div class="mrow" id="igModelRow">
                                 <div class="mi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div>
                                 <div class="mt"><b id="igMName">GPT Image 2 Edit</b><small id="igMSub">OpenAI · referens bilan tahrirlash</small></div>
@@ -8948,8 +8953,9 @@ async function bootPlugin(){
     };
     tick(); axAutoTimer=setInterval(tick,1500);
   }
-  window.axInit=function(){ try{ go('launcher'); }catch(e){} };
-  window.axGo=function(id){ try{ go(id); }catch(e){} }; // tashqaridan AI ko'rinishiga o'tish (masalan Home 🕘 → history)
+  window.axInit=function(){ try{ go('launcher'); }catch(e){ try{console.error('[ax] axInit xato:',e);}catch(_){} } };
+  window.axGo=function(id){ try{ go(id); }catch(e){ try{console.error('[ax] axGo("'+id+'") xato:',e);}catch(_){} } }; // tashqaridan AI ko'rinishiga o'tish (masalan Home 🕘 → history). Silent catch EMAS — xato log qilinadi.
+  window.axRenderHistory=function(f){ try{ renderHistory(f||'all'); }catch(e){ try{console.error('[ax] axRenderHistory xato:',e);}catch(_){} } }; // imggen fallback uchun
 
   // textarea auto-grow: yozilgan matnga qarab balandlashadi (max ~8 qator), keyin ichki scroll
   function axGrow(ta){if(!ta||ta.tagName!=='TEXTAREA')return;ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,150)+'px';}
@@ -9263,8 +9269,13 @@ async function bootPlugin(){
     if(enhancing)return;
     var b=ta.value.trim();
     if(!b){ toast('Avval prompt yozing','warning'); return; }
+    // referens bo'lsa @img TARTIBDA R2 url'lari → VISION enhance (rasmlarni ham ko'radi). Yo'q bo'lsa → matn.
+    var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
+    var body={prompt:b,mode:'image',format:'text'};
+    if(refUrls.length)body.image_urls=refUrls;
+    try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
-    studioPost('/api/studio/gen/prompt/enhance',{prompt:b,mode:'image',format:'text'}).then(function(e){
+    studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
       if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); toast('Prompt yaxshilandi ✨','success'); }
       else toast('Yaxshilab bo\'lmadi','error');
     }).catch(function(err){ toast((err&&err.message)||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
@@ -9386,6 +9397,29 @@ async function bootPlugin(){
     st.recent=st.recent.slice(0,12); renderRecent();
   }
 
+  // ---- Tarix view'ni ochish (robust: axGo → tasdiq → to'g'ridan fallback) ----
+  // SABAB: avval "Barchasi →" faqat window.axGo('history') chaqirardi; axGo ichidagi
+  // try/catch xatoni YUTARDI (silent) → view almashmasa hech narsa ko'rinmasdi. Endi:
+  // axGo'ni chaqiramiz, v-history.on bo'lganini TEKSHIRAMIZ, bo'lmasa to'g'ridan almashtiramiz.
+  function openHistory(){
+    closeSheets(); hideMention();
+    try{ console.log('[ig] Tarix → ochilmoqda'); }catch(_){}
+    if(typeof window.axGo==='function'){ try{ window.axGo('history'); }catch(e){ try{console.warn('[ig] axGo("history") xato:',e);}catch(_){} } }
+    var v=document.getElementById('v-history');
+    var ok=!!(v&&v.classList.contains('on'));
+    try{ console.log('[ig] axGo dan keyin v-history.on =',ok); }catch(_){}
+    if(ok)return;
+    // Fallback — axGo view'ni almashtirmadi: to'g'ridan-to'g'ri DOM bilan
+    try{
+      document.querySelectorAll('.axroot .view').forEach(function(x){ x.classList.remove('on'); });
+      if(v)v.classList.add('on');
+      var pb=document.querySelector('.axroot .app > .pbar'); if(pb)pb.style.display=''; // imggen .pbar'ni yashirgan edi
+      var sc=document.querySelector('.axroot .scroll'); if(sc)sc.scrollTop=0;
+      if(typeof window.axRenderHistory==='function')window.axRenderHistory('all');
+      try{ console.log('[ig] fallback: to\'g\'ridan v-history ochildi'); }catch(_){}
+    }catch(e2){ try{console.error('[ig] Tarix fallback xato:',e2);}catch(_){} toast('Tarix ochilmadi','error'); }
+  }
+
   // ---- So'nggi lenta (oxirgi natijalar; Barchasi → Tarix view) ----
   function renderRecent(){
     var r=$('igRecent'); if(!r)return; r.innerHTML='';
@@ -9401,7 +9435,7 @@ async function bootPlugin(){
       r.appendChild(d);
     });
     var m=document.createElement('span'); m.className='more'; m.textContent='Barchasi →'; m.title='Tarix';
-    m.addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('history'); });
+    m.addEventListener('click',openHistory);
     r.appendChild(m);
   }
   // dastlabki lenta — foydalanuvchining oxirgi rasm gen'lari (bir marta)
@@ -9416,6 +9450,18 @@ async function bootPlugin(){
       renderRecent();
     }).catch(function(){ recentLoaded=false; });
   }
+
+  // ---- header 🕘 → Tarix view (xuddi "Barchasi →" kabi) ----
+  var igHist=$('igHist'); if(igHist)igHist.addEventListener('click',openHistory);
+
+  // ---- ↺ Tozalash — faqat KIRISH (prompt + referens) tozalanadi; NATIJA tegmaydi ----
+  var igClear=$('igClearBtn');
+  if(igClear)igClear.addEventListener('click',function(){
+    ta.value=''; grow();                 // prompt bo'sh + auto-grow reset
+    st.refs=[]; renderRefs(); updRefMeta(); // barcha referens o'chiriladi, strip qayta render
+    hideMention(); refreshGen();           // @ dropdown yopiladi; ogohlantirish/disabled yangilanadi
+    toast('Tozalandi','info');
+  });
 
   // ---- ‹ AI Tools → launcher home ----
   $('igBack').addEventListener('click',function(){ closeSheets(); if(typeof window.axInit==='function')window.axInit(); });

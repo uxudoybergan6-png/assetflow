@@ -368,6 +368,9 @@ const enhanceSchema = z.object({
   mode: z.enum(GEN_MODES).optional(),
   modelId: z.number().int().optional(),
   format: z.enum(["text", "json"]).optional(),
+  // VISION enhance — referens rasm PUBLIC URL'lari (@img tartibida: [0]=@img1). Ixtiyoriy.
+  image_urls: z.array(z.string().min(8)).max(10).optional(),
+  references: z.array(z.string().min(8)).max(10).optional(),
 });
 
 /** Rejimga qarab JSON prompt sxemasi (LLM shu shaklda qaytaradi). */
@@ -463,7 +466,11 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   }
 
   // text — fal openrouter/router (Gemini 2.5 Flash); kirish tilini saqlaydi, faqat yakuniy prompt.
-  const out = await falEnhancePrompt(p.data.prompt);
+  // Referens bo'lsa (image_urls) → VISION (openrouter/router/vision) — rasmlarni ham ko'rib yozadi.
+  const refUrls = (p.data.image_urls || p.data.references || []).filter(
+    (u) => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
+  const out = await falEnhancePrompt(p.data.prompt, refUrls.length ? refUrls : undefined);
   if (!out.ok) {
     await refundAiCredits(req.user!.userId, ENHANCE_COST);
     res.status(502).json({ error: out.error });

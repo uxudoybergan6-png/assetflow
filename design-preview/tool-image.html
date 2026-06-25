@@ -21,6 +21,7 @@
 
   .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 6px;display:flex;align-items:center}
   .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
+  .clearbtn{cursor:pointer}.clearbtn:hover{color:var(--red)}
   .req{color:var(--acc);margin-left:5px}
   .sect{margin-bottom:11px}
   .warn{display:none;align-items:flex-start;gap:7px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:11.5px;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.4}
@@ -140,7 +141,7 @@
 
     <!-- MODEL -->
     <div class="sect">
-      <div class="lbl">Model</div>
+      <div class="lbl">Model <span class="meta clearbtn" id="clearBtn">↺ Tozalash</span></div>
       <div class="mrow" id="modelRow">
         <div class="mi">✦</div>
         <div class="mt"><b id="mName">GPT Image 2 Edit</b><small id="mSub">OpenAI · referens bilan tahrirlash</small></div>
@@ -397,6 +398,14 @@
   }
   function mkAct(label,fn){var d=document.createElement('div');d.textContent=label;d.addEventListener('click',fn);return d}
   $('back').addEventListener('click',function(){toast('← AI Tools launcher')});
+
+  // Tozalash — prompt + referenslar (yangidan boshlash)
+  $('clearBtn').addEventListener('click',function(){
+    ta.value='';ta.style.height='auto';
+    state.refs=[];renderRefs();updRefMeta();
+    hideMention();refreshGen();
+    toast('Tozalandi');
+  });
 
   // So'nggi genlar lentasi (oxirgi bir nechtasi; barchasi → Tarix view)
   var recents=[

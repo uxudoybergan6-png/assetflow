@@ -162,22 +162,56 @@ export async function falImageEdit(
 }
 
 /**
- * Promptни yaxshilash — fal `openrouter/router` (Gemini 2.5 Flash). KIRISH TILINI saqlaydi.
- * Faqat yakuniy promptни qaytaradi.
+ * Promptни yaxshilash — fal openrouter/router (Gemini 2.5 Flash). KIRISH TILINI saqlaydi,
+ * faqat yakuniy promptни qaytaradi. MODEL-AWARE:
+ *  - `imageUrls` berilsa (referens bor) → VISION yo'li (`openrouter/router/vision`): rasmlarni
+ *    ham KO'RIB prompt yozadi. image_urls @img tartibida (image_urls[0] = @img1) — PUBLIC bo'lishi shart.
+ *  - aks holda → matn yo'li (`openrouter/router`), o'zgarishsiz.
  */
-export async function falEnhancePrompt(text: string): Promise<OrResult<string>> {
+export async function falEnhancePrompt(
+  text: string,
+  imageUrls?: string[]
+): Promise<OrResult<string>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
-  const input = {
-    prompt: text,
-    model: "google/gemini-2.5-flash",
-    system_prompt:
-      "Sen tasvir generatsiyasi uchun prompt muhandisisan. Qisqa g'oyani bitta boy, " +
-      "tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal). KIRISH TILINI " +
-      "saqla. Faqat yakuniy promptni qaytar, izohsiz.",
-    temperature: 0.7,
-    max_tokens: 400,
-  };
-  const r = await falSubmit("openrouter/router", input);
+  const refs = (imageUrls || []).filter(
+    (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
+
+  let modelId: string;
+  let input: Record<string, unknown>;
+  if (refs.length > 0) {
+    // VISION — referens rasmlarni tahlil qilib prompt yozadi.
+    modelId = "openrouter/router/vision";
+    input = {
+      image_urls: refs, // @img tartibida: image_urls[0] = @img1
+      prompt: text,
+      model: "google/gemini-2.5-flash",
+      system_prompt:
+        "Sen tasvir tahrir/yaratish uchun prompt muhandisisan. Referens rasmlar tartibда: " +
+        "1-rasm=@img1, 2-rasm=@img2, ... Foydalanuvchi ko'rsatmasi va rasmlarni tahlil qilib, " +
+        "BITTA boy, aniq prompt yoz (rasmlardagini tushunib, @imgN ni to'g'ri ishlat). " +
+        "KIRISH TILINI saqla. Faqat yakuniy promptni qaytar, izohsiz.",
+      temperature: 0.6,
+      max_tokens: 500,
+    };
+    console.log(`[fal] enhance VISION — ${refs.length} referens (openrouter/router/vision)`);
+  } else {
+    // TEXT — referens yo'q (hozirgi yo'l).
+    modelId = "openrouter/router";
+    input = {
+      prompt: text,
+      model: "google/gemini-2.5-flash",
+      system_prompt:
+        "Sen tasvir generatsiyasi uchun prompt muhandisisan. Qisqa g'oyani bitta boy, " +
+        "tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal). KIRISH TILINI " +
+        "saqla. Faqat yakuniy promptni qaytar, izohsiz.",
+      temperature: 0.7,
+      max_tokens: 400,
+    };
+    console.log("[fal] enhance TEXT (openrouter/router)");
+  }
+
+  const r = await falSubmit(modelId, input);
   if (!r.ok) return r;
   const data = r.data as { output?: string };
   const out = typeof data?.output === "string" ? data.output.trim() : "";
