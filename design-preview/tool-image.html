@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · Rasm yaratish — model-aware</title>
+<style>
+  :root{--bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;--line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;--acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400;--blue:#5aa9ff;--red:#ff6b6b;--warn:#ffb15a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#05060a;color:var(--txt);line-height:1.4;display:flex;flex-direction:column;align-items:center;padding:22px 12px 60px;min-height:100vh}
+  .hint{color:var(--mut);font-size:12.5px;margin-bottom:13px;text-align:center;max-width:440px}.hint b{color:var(--acc2)}
+  .app{width:392px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;height:800px;position:relative}
+  .pbar{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .back:hover{color:var(--txt)}
+  .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}
+  .spacer{flex:1}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
+  .scroll{flex:1;overflow-y:auto;padding:14px}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+
+  .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center}
+  .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
+  .req{color:var(--acc);margin-left:5px}
+  .sect{margin-bottom:16px}
+  .warn{display:none;align-items:flex-start;gap:7px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:11.5px;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.4}
+  .warn.on{display:flex}.warn .wi{flex:0 0 auto}
+
+  /* MODEL qatori (tanada) */
+  .mrow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:11px 12px;cursor:pointer}
+  .mrow:hover{border-color:var(--mut2)}
+  .mrow .mi{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2a3a12,#15171b);display:grid;place-items:center;color:var(--acc);flex:0 0 auto}
+  .mrow .mt b{font-size:13.5px;display:block}.mrow .mt small{font-size:10.5px;color:var(--mut)}
+  .mrow .ch{margin-left:auto;color:var(--mut)}
+
+  /* REFERENCES */
+  .refgrid{display:flex;gap:9px;flex-wrap:wrap}
+  .reftile{width:80px;height:80px;border-radius:12px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center;overflow:hidden}
+  .reftile .tag{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff;font-size:10.5px;font-weight:600;padding:9px 6px 4px;text-align:center}
+  .reftile .rx{position:absolute;top:-7px;right:-7px;width:19px;height:19px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:11px;display:grid;place-items:center;cursor:pointer;z-index:2}
+  .reftile .spin{position:absolute;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;z-index:1}
+  .reftile .spin i{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:block}
+  .refadd{width:80px;height:80px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--mut);font-size:11px;cursor:pointer}
+  .refadd:hover{border-color:var(--acc2);color:var(--acc)}.refadd .pl{font-size:21px;line-height:1}
+
+  /* PROMPT */
+  .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s}
+  .pbox:focus-within{border-color:#3a4150}
+  .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:60px;line-height:1.5}
+  .pbox textarea::placeholder{color:var(--mut2)}
+  .prow{display:flex;justify-content:flex-end;margin-top:6px}
+  .enhance{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:4px 8px;border-radius:8px}
+  .enhance:hover{background:rgba(90,169,255,.12)}
+
+  /* settings — bitta tekis qator */
+  .ctrls{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+  .seg{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;padding:9px 11px;border-radius:11px;white-space:nowrap}
+  .seg:hover{border-color:var(--mut2)}
+  .seg .lab{color:var(--mut2);font-size:11px;font-weight:500;flex:0 0 auto}.seg .sv{flex:1;overflow:hidden;text-overflow:ellipsis}.seg .sc{color:var(--mut2);font-size:10px;flex:0 0 auto;margin-left:auto}
+
+  /* foot tugma */
+  .foot{padding:12px 13px;border-top:1px solid var(--line);flex:0 0 auto;background:var(--panel)}
+  .gen{width:100%;height:46px;border-radius:12px;background:var(--acc);color:var(--acc-ink);border:0;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .gen .pc{font-size:12px;font-weight:700;opacity:.7}
+  .gen:hover{background:var(--acc2)}.gen:disabled{opacity:.4;cursor:not-allowed}
+
+  /* progress + natija */
+  .prog{margin-bottom:16px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.prog.on{display:block}
+  .prog .pt{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
+  .prog .pt .sp{width:16px;height:16px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bar{height:6px;background:var(--card3);border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+  .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
+  .res{margin-bottom:16px;display:none}.res.on{display:block}
+  .rgrid{display:grid;gap:9px}.rgrid.g1{grid-template-columns:1fr}.rgrid.g2{grid-template-columns:1fr 1fr}
+  .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card)}.rcard img{display:block;width:100%;height:auto}
+  .rcard .ra{display:flex;border-top:1px solid var(--line)}
+  .rcard .ra div{flex:1;text-align:center;padding:8px;font-size:11.5px;color:var(--mut);cursor:pointer}
+  .rcard .ra div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.rcard .ra div+div{border-left:1px solid var(--line)}
+
+  /* sheet */
+  .sheet{position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:50}.sheet.on{display:flex}
+  .sheetc{width:100%;background:var(--panel);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;padding:14px;max-height:78%;overflow-y:auto}
+  .sheeth{display:flex;align-items:center;margin-bottom:11px}.sheeth b{font-size:14px}.sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px}
+  .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}.opt:hover{border-color:var(--mut2)}
+  .opt .oi{width:30px;height:30px;border-radius:8px;background:var(--card3);display:grid;place-items:center;font-size:14px;flex:0 0 auto}
+  .opt b{font-size:13px;display:block}.opt small{font-size:10.5px;color:var(--mut)}
+  .opt.cur{border-color:var(--acc2)}.opt.cur .tick{margin-left:auto;color:var(--acc);font-weight:800}
+  .pillrow{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{padding:9px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--card);font-size:13px;cursor:pointer}
+  .pill.cur{border-color:var(--acc2);color:var(--acc);font-weight:700}
+
+  .toast{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:#000;border:1px solid var(--line2);color:var(--txt);font-size:12.5px;padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:60;white-space:nowrap}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+</style>
+</head>
+<body>
+<div class="hint">🖼️ <b>Rasm yaratish</b> — model-aware. Referens majburiyligi MODELGA qarab (GPT Image 2 Edit = majburiy).</div>
+
+<div class="app" id="app">
+  <div class="pbar">
+    <div class="back" id="back">‹ AI Tools</div>
+    <div class="ttl"><span>🖼️</span> Rasm yaratish</div>
+    <div class="spacer"></div>
+    <div class="pro" id="credit">✦ 606</div>
+  </div>
+
+  <div class="scroll" id="scroll">
+    <!-- progress -->
+    <div class="prog" id="prog">
+      <div class="pt"><span class="sp"></span> <span id="progLabel">Ishlanmoqda...</span></div>
+      <div class="bar"><i id="barFill"></i></div>
+      <span class="cancel" id="cancel">Bekor qilish</span>
+    </div>
+    <!-- natija -->
+    <div class="res" id="res">
+      <div class="lbl">Natija <span class="meta" id="resMeta"></span></div>
+      <div class="rgrid g1" id="rgrid"></div>
+    </div>
+
+    <!-- MODEL -->
+    <div class="sect">
+      <div class="lbl">Model</div>
+      <div class="mrow" id="modelRow">
+        <div class="mi">✦</div>
+        <div class="mt"><b id="mName">GPT Image 2 Edit</b><small id="mSub">OpenAI · referens bilan tahrirlash</small></div>
+        <div class="ch">▾</div>
+      </div>
+    </div>
+
+    <!-- REFERENCES (model-aware) -->
+    <div class="sect" id="refSect">
+      <div class="lbl">Referens <span class="req" id="refReq">*</span> <span class="meta" id="refMeta">0 ta</span></div>
+      <div class="warn" id="refWarn"><span class="wi">⚠</span><span>Bu model uchun referens <b>majburiy</b> — yaratish uchun kamida 1 ta rasm qo'shing.</span></div>
+      <div class="refgrid" id="refgrid">
+        <div class="refadd" id="refAdd"><span class="pl">＋</span>Qo'shish</div>
+      </div>
+    </div>
+
+    <!-- PROMPT -->
+    <div class="sect">
+      <div class="lbl">Prompt <span class="req">*</span></div>
+      <div class="pbox">
+        <textarea id="prompt" placeholder="Nima qilish kerak? Referensni bossangiz @img1 qo'shiladi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
+        <div class="prow"><span class="enhance" id="enhanceBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="sect">
+      <div class="lbl">Sozlamalar</div>
+      <div class="ctrls">
+        <div class="seg" id="arSeg"><span class="lab">O'lcham</span><span class="sv" id="arVal">Auto</span><span class="sc">▾</span></div>
+        <div class="seg" id="qSeg"><span class="lab">Sifat</span><span class="sv" id="qVal">High</span><span class="sc">▾</span></div>
+        <div class="seg" id="nSeg"><span class="lab">Soni</span><span class="sv" id="nVal">1</span><span class="sc">▾</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="gen" id="gen" disabled>Yaratish <span class="pc" id="sendCost">✦12</span></button>
+  </div>
+
+  <input type="file" id="fileInp" accept="image/*" multiple style="display:none">
+
+  <!-- model sheet -->
+  <div class="sheet" id="mSheet"><div class="sheetc">
+    <div class="sheeth"><b>Model</b><span class="x" data-close>✕</span></div>
+    <div class="opt cur"><div class="oi">✦</div><div><b>GPT Image 2 Edit</b><small>OpenAI · referens majburiy</small></div><span class="tick">✓</span></div>
+    <div style="text-align:center;color:var(--mut2);font-size:11.5px;padding:8px 4px 2px">Ko'proq modellar keyingi bosqichда (har biri referens qoidasini o'zi belgilaydi)</div>
+  </div></div>
+
+  <!-- referens manba menyu -->
+  <div class="sheet" id="addSheet"><div class="sheetc">
+    <div class="sheeth"><b>Referens qo'shish</b><span class="x" data-close>✕</span></div>
+    <div class="opt" id="srcFile"><div class="oi">＋</div><div><b>Fayl yuklash</b><small>kompyuterdan rasm</small></div></div>
+    <div class="opt" id="srcProj"><div class="oi">📁</div><div><b>Project paneldan</b><small>AE loyiha footage</small></div></div>
+    <div class="opt" id="srcTl"><div class="oi">⏱</div><div><b>Timeline'dan</b><small>kompozitsiyadan kadr</small></div></div>
+  </div></div>
+
+  <!-- o'lcham -->
+  <div class="sheet" id="arSheet"><div class="sheetc">
+    <div class="sheeth"><b>O'lcham</b><span class="x" data-close>✕</span></div>
+    <div class="pillrow" id="arPills"></div>
+    <div style="color:var(--mut2);font-size:11px;margin-top:9px">Auto — kirish rasmidan oladi.</div>
+  </div></div>
+
+  <!-- sifat -->
+  <div class="sheet" id="qSheet"><div class="sheetc">
+    <div class="sheeth"><b>Sifat</b><span class="x" data-close>✕</span></div>
+    <div class="pillrow" id="qPills"></div>
+  </div></div>
+
+  <!-- soni -->
+  <div class="sheet" id="nSheet"><div class="sheetc">
+    <div class="sheeth"><b>Soni</b><span class="x" data-close>✕</span></div>
+    <div class="pillrow" id="nPills"></div>
+  </div></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s)};
+  // MODEL konfig — referens qoidasi MODELGA bog'liq
+  var MODELS={
+    'gpt-image-2/edit':{name:'GPT Image 2 Edit',sub:'OpenAI · referens bilan tahrirlash',
+      refMode:'required',           // 'required' | 'optional' | 'none'
+      ars:['Auto','1:1','4:3','3:4','16:9','9:16'],defAr:'Auto',
+      qs:['Low','Medium','High','Auto'],defQ:'High',
+      qcost:{Low:3,Medium:6,High:12,Auto:12},maxN:4}
+  };
+  var state={modelId:'gpt-image-2/edit',ar:'Auto',q:'High',n:1,credit:606,cost:12,refs:[],lastResults:[]};
+  function M(){return MODELS[state.modelId]}
+
+  function toast(t){var el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('on')},1700)}
+  function open(id){closeAll();$(id).classList.add('on')}
+  function closeAll(){document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('on')})}
+  document.querySelectorAll('[data-close]').forEach(function(x){x.addEventListener('click',closeAll)});
+  document.querySelectorAll('.sheet').forEach(function(s){s.addEventListener('click',function(e){if(e.target===s)closeAll()})});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll()});
+
+  function recost(){state.cost=(M().qcost[state.q]||12)*state.n;$('sendCost').textContent='✦'+state.cost;$('gen').title='Yaratish (✦'+state.cost+')'}
+  function anyLoading(){return state.refs.some(function(r){return r.loading})}
+  function refreshGen(){
+    var m=M();var needRef=m.refMode==='required';
+    var ok=$('prompt').value.trim().length>=2 && (!needRef || state.refs.length>0) && !anyLoading();
+    $('gen').disabled=!ok;
+    $('refWarn').classList.toggle('on', needRef && state.refs.length===0);
+  }
+  function applyModel(){
+    var m=M();$('mName').textContent=m.name;$('mSub').textContent=m.sub;
+    // referens bo'limi: model talabiga qarab
+    $('refSect').style.display = m.refMode==='none' ? 'none' : '';
+    $('refReq').style.display = m.refMode==='required' ? '' : 'none';
+    $('arVal').textContent=m.defAr;state.ar=m.defAr;
+    $('qVal').textContent=m.defQ;state.q=m.defQ;
+    recost();refreshGen();
+  }
+
+  // pills
+  function buildPills(host,arr,cur,onpick){host.innerHTML='';arr.forEach(function(v){var d=document.createElement('div');d.className='pill'+(String(v)===String(cur)?' cur':'');d.textContent=v;d.addEventListener('click',function(){onpick(v)});host.appendChild(d)})}
+  $('modelRow').addEventListener('click',function(){open('mSheet')});
+  $('arSeg').addEventListener('click',function(){buildPills($('arPills'),M().ars,state.ar,function(v){state.ar=v;$('arVal').textContent=v;closeAll()});open('arSheet')});
+  function buildQ(){buildPills($('qPills'),M().qs,state.q,function(v){state.q=v;$('qVal').textContent=v;recost();buildQ()})}
+  $('qSeg').addEventListener('click',function(){buildQ();open('qSheet')});
+  function buildN(){var arr=[];for(var i=1;i<=M().maxN;i++)arr.push(i);buildPills($('nPills'),arr,state.n,function(v){state.n=v;$('nVal').textContent=v;recost();buildN()})}
+  $('nSeg').addEventListener('click',function(){buildN();open('nSheet')});
+
+  // REFERENS — Add → manba menyu
+  $('refAdd').addEventListener('click',function(){open('addSheet')});
+  $('srcFile').addEventListener('click',function(){closeAll();$('fileInp').click()});
+  $('srcProj').addEventListener('click',function(){closeAll();$('fileInp').click();toast('Demo: fayl tanlang (AE’da Project footage)')});
+  $('srcTl').addEventListener('click',function(){closeAll();$('fileInp').click();toast('Demo: fayl tanlang (AE’da Timeline kadr)')});
+  $('fileInp').addEventListener('change',function(e){
+    var files=Array.prototype.slice.call(e.target.files||[]);
+    files.forEach(function(f){var r=new FileReader();r.onload=function(ev){addRef(ev.target.result)};r.readAsDataURL(f)});
+    $('fileInp').value='';
+  });
+  function insertToken(tok){
+    var p=$('prompt');var s=(p.selectionStart!=null)?p.selectionStart:p.value.length;var e=(p.selectionEnd!=null)?p.selectionEnd:p.value.length;
+    var pre=p.value.slice(0,s),post=p.value.slice(e);
+    var sep=(pre&&!/\s$/.test(pre))?' ':'';
+    p.value=pre+sep+tok+' '+post;p.focus();p.dispatchEvent(new Event('input'));
+  }
+  function renderRefs(){
+    var g=$('refgrid');
+    Array.prototype.slice.call(g.querySelectorAll('.reftile')).forEach(function(n){g.removeChild(n)});
+    state.refs.forEach(function(ref,i){
+      var t=document.createElement('div');t.className='reftile';t.style.backgroundImage='url('+ref.url+')';t.title='Promptga @img'+(i+1)+' qo‘shish';
+      var tag=document.createElement('div');tag.className='tag';tag.textContent='@img'+(i+1);t.appendChild(tag);
+      if(ref.loading){var sp=document.createElement('div');sp.className='spin';sp.innerHTML='<i></i>';t.appendChild(sp)}
+      var x=document.createElement('div');x.className='rx';x.textContent='✕';
+      x.addEventListener('click',function(ev){ev.stopPropagation();state.refs.splice(i,1);renderRefs();updRefMeta();refreshGen()});
+      t.appendChild(x);
+      t.addEventListener('click',function(){if(!ref.loading)insertToken('@img'+(i+1))});
+      g.insertBefore(t,$('refAdd'));
+    });
+  }
+  function updRefMeta(){$('refMeta').textContent=state.refs.length+' ta'}
+  function addRef(url){
+    var ref={url:url,loading:true};state.refs.push(ref);renderRefs();updRefMeta();refreshGen();
+    // server yuklash (real: R2 upload) — spinner aylanadi
+    setTimeout(function(){ref.loading=false;renderRefs();refreshGen();toast('@img'+(state.refs.indexOf(ref)+1)+' tayyor')},800);
+  }
+
+  // enhance (mock — realда /gen/prompt/enhance)
+  $('enhanceBtn').addEventListener('click',function(){
+    var b=$('prompt').value.trim();if(!b){toast('Avval prompt yozing');return}
+    if(b.indexOf('aniq')<0){$('prompt').value=b+', aniq detallar, tabiiy yorug‘lik, sifatли natija';$('prompt').dispatchEvent(new Event('input'))}
+    toast('Prompt yaxshilandi');
+  });
+
+  var ta=$('prompt');
+  ta.addEventListener('input',function(){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px';refreshGen()});
+
+  // mock natija (canvas) — realда server natijasi
+  function dims(ar){var base=768;var map={'1:1':[1,1],'16:9':[16,9],'9:16':[9,16],'4:3':[4,3],'3:4':[3,4],'Auto':[1,1]};var m=map[ar]||[1,1];var w,h;if(m[0]>=m[1]){w=base;h=Math.round(base*m[1]/m[0])}else{h=base;w=Math.round(base*m[0]/m[1])}return [w,h]}
+  function makeImg(idx,cb){
+    var d=dims(state.ar);var w=d[0],h=d[1];var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');
+    function paint(){x.fillStyle='rgba(0,0,0,.32)';x.fillRect(0,h-Math.round(h*0.12),w,Math.round(h*0.12));x.fillStyle='rgba(255,255,255,.9)';x.font='600 '+Math.max(11,Math.round(w*0.035))+'px sans-serif';x.textAlign='center';x.fillText('GPT Image 2 · '+state.q,w/2,h-Math.round(h*0.04));cb(c.toDataURL('image/png'))}
+    if(state.refs[0]){var im=new Image();im.onload=function(){var s=Math.max(w/im.width,h/im.height);x.drawImage(im,(w-im.width*s)/2,(h-im.height*s)/2,im.width*s,im.height*s);x.fillStyle='rgba(90,120,200,.16)';x.fillRect(0,0,w,h);paint()};im.onerror=function(){x.fillStyle='#243a18';x.fillRect(0,0,w,h);paint()};im.src=state.refs[0].url}
+    else{var g=x.createLinearGradient(0,0,w,h);g.addColorStop(0,'#243a18');g.addColorStop(1,'#1a2230');x.fillStyle=g;x.fillRect(0,0,w,h);paint()}
+  }
+
+  var genTimer=null,cancelled=false;
+  function setCredit(v){state.credit=v;$('credit').textContent='✦ '+v}
+  $('gen').addEventListener('click',function(){
+    var m=M();var p=ta.value.trim();
+    if(p.length<2){toast('Prompt yozing');return}
+    if(m.refMode==='required'&&state.refs.length===0){toast('Referens yuklang');return}
+    if(state.credit<state.cost){toast('Kredit yetarli emas');return}
+    cancelled=false;$('res').classList.remove('on');$('prog').classList.add('on');$('barFill').style.width='0';$('gen').disabled=true;
+    var pct=0;$('progLabel').textContent=m.name+' ishlamoqda...';
+    genTimer=setInterval(function(){pct+=Math.random()*15+6;if(pct>96)pct=96;$('barFill').style.width=pct+'%'},180);
+    setTimeout(function(){if(cancelled)return;clearInterval(genTimer);$('barFill').style.width='100%';setTimeout(function(){$('prog').classList.remove('on');setCredit(state.credit-state.cost);renderResults();$('gen').disabled=false;refreshGen();toast('Tayyor! ✦'+state.cost+' yechildi')},220)},1400+state.n*500);
+  });
+  $('cancel').addEventListener('click',function(){cancelled=true;clearInterval(genTimer);$('prog').classList.remove('on');$('gen').disabled=false;refreshGen();toast('Bekor qilindi — kredit yechilmadi')});
+
+  function renderResults(){
+    var grid=$('rgrid');grid.innerHTML='';state.lastResults=[];grid.className='rgrid '+(state.n>=2?'g2':'g1');var done=0;
+    for(var i=0;i<state.n;i++){(function(idx){makeImg(idx,function(url){
+      state.lastResults.push(url);
+      var card=document.createElement('div');card.className='rcard';var img=document.createElement('img');img.src=url;card.appendChild(img);
+      var ra=document.createElement('div');ra.className='ra';
+      ra.appendChild(mkAct('⤓ Import',function(){toast('AE‘ga import (demo)')}));
+      ra.appendChild(mkAct('♡ Saqlash',function(){toast('Saqlandi')}));
+      ra.appendChild(mkAct('⬇',function(){var a=document.createElement('a');a.href=url;a.download='assetflow.png';a.click()}));
+      card.appendChild(ra);grid.appendChild(card);
+      done++;if(done===state.n){$('resMeta').textContent=state.n+' ta · '+state.ar+' · '+state.q;$('res').classList.add('on');$('res').scrollIntoView({behavior:'smooth'})}
+    })})(i)}
+  }
+  function mkAct(label,fn){var d=document.createElement('div');d.textContent=label;d.addEventListener('click',fn);return d}
+  $('back').addEventListener('click',function(){toast('← AI Tools launcher')});
+
+  applyModel();updRefMeta();
+})();
+</script>
+</body>
+</html>

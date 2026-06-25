@@ -1,16 +1,43 @@
-# SESSION REPORT — 2026-06-21 — UI/UX review + redesign mockuplar (1-faza)
+# SESSION REPORT — 2026-06-25 — "Rasm yaratish" (model-aware) + ko'p-referens + @imgN
 
-## Nima qilindi
-- Multi-agent read-only workflow (12 agent · 3 faza · ~750k token): ikkala UI (AE plagin Browse+Gen+Admin, Web Studio Contributor+Admin) professional UI/UX review + yagona dizayn tizimi sintezi + 6 standalone mockup.
-- `docs/UI-UX-REVIEW.md` (29KB) — ekran-ekran kuchli/zaif, 12+ prioritetlangan tavsiya, yangi dizayn yo'nalishi (palitra/tipografiya/spacing/komponent/holatlar).
-- `design-preview/` — 6 self-contained HTML mockup (index, ae-gen-studio, ae-browse, studio-dashboard, admin, login). Faqat Google Fonts, inline SVG, o'zbekcha, "production EMAS" banner.
-- Brauzerда render tekshirildi (preview MCP): index + AE Gen Studio panel + Studio dashboard — toza, brendli, AA.
-- **PRODUCTION TEGILMADI** — faqat docs/ + design-preview/. studio:sync ishlatilmadi.
+## BACKEND (apps/api — tsc TOZA, lokal)
+1. **gen-models.ts:** har modelга `refMode` ('none'|'optional'|'required') + `maxRefs`. gpt-image-2/edit:
+   refMode='required', maxRefs=10. /gen/models javobida qaytadi → frontend model-aware (hardcode emas).
+2. **studio-gen.ts:** `POST /gen/ref-upload` (data-URI → R2 **public** URL; kredit yo'q) — plagin har referensни
+   darhol yuklaydi (spinner). `/gen`да refMode='required' guard (referenssiz → 400, KREDITDAN OLDIN).
+   Ko'p referens (`referenceUrls`) imzoga (genParamsHash) ALLAQACHON kiradi → soni+tartibi bog'langan.
+3. **fal.ts:** `@img<N>` → "image N" mapping (image_urls tartibiga mos: @img1=image_urls[0]).
+   gen-processor: referenslar AYNAN TARTIBDA R2 public URL → image_urls.
+4. **host.jsx:** `exportTimelineFrame()` — faol comp joriy kadri → PNG (saveFrameToPng).
 
-## Topildi (3 kritik)
-- Uch brend bir vaqtda: AE lime, Web Studio binafsha (--violet), reset-password lime-leaf → bitta :root token ham bo'lishilmaydi.
-- WCAG AA buzilishi token darajasida: --muted-2 (.40 ≈2.6:1), --muted (.55 ≈3.5:1), Studio --tx-2/--tx-3 body matn uchun o'tmaydi.
-- Mahsulot-kritik UX bo'shliqlari: katalog kartasida Pro/Free badge yo'q (kutilmagan paywall); AE Gen kontrol qatori 320px da 4-5 qatorga o'raladi; admin "xabar" aslida email nusxalaydi; kredit berish UI yo'q.
+## PLAGIN (AssetFlow_Plugin.html — `.axig` scope, SVG ikona)
+- §0: eski "Rasm tahrirlash" (v-imgedit/.axie/axIE) TO'LIQ olindi.
+- §B: "Rasm yaratish" (tool-image.html 1:1). MODEL tanaда (header'da emas). REFERENS MODEL-AWARE:
+  required→"*"+ogohlantirish; thumbnaillar @img1/@img2…(× → qayta raqamlash); upload spinner (ref-upload);
+  tile bosish → @imgN promptga (kursorga). ＋ menyu: Fayl/Project(listProjectFootage)/Timeline(exportTimelineFrame).
+  Sozlamalar O'lcham/Sifat/Soni bitta qator → narx. Yaratish disabled: prompt<2 || (required && ref yo'q) || ref yuklanmoqda.
+- REAL: cost-quote → /gen (referenceUrls @img tartibда) → poll → natija. ✨=/gen/prompt/enhance. Kredit real.
 
-## Kutilmoqda
-- Foydalanuvchi mockuplarni ko'rib tasdiqlasin → 2-faza: bosqichli implementatsiya (manba js/styles + studio:sync, AE install-cep). Commit: docs-only (push yo'q).
+## Tekshiruv
+- tsc TOZA · plagin JS 5 blok 0 xato. Brauzer (mock): model-aware (*/warn), file upload→spinner→@img1, tile→token,
+  ×→renumber, settings ✦24=high×2, enhance, Yaratish → cost-quote(referenceUrl=R2 URL)→sessions→/gen→poll→natija ✓.
+  Project/Timeline = csInterface (lexical, brauzerда mock bo'lmaydi) → kod-inspeksiya (axProbe naqshi). install OK.
+
+## TUZATISH(2) — UCHALA referens manba AE'da ishlamadi
+- Sabab: 3 manба ham `readDataUrl(path)` ga keladi. Oldingi fix bare `require('fs')` ishlatardi — bu CEP panelда
+  ishonchli EMAS (tayanган `require('path')` ~5772 = DORMANT kod, AE'да hech qachon ishlamagan). `require` topilmadi →
+  `cep.fs.readFile(Base64)` fallback → AE'да binary rasm uchun `err!==0` → null → "o'qib bo'lmadi". Timeline'да
+  qo'shimcha: `exportTimelineFrame` `app.project.activeItem` ишлатарди — CEP panel fokusda bo'lsa null.
+- Tuzatish: **`nodeRequire()`** — `require` + **CEP `cep_node.require`** (+ window variantlari) → Node `fs`ni ISHONCHLI
+  oladi → `readFileSync(path).toString('base64')` (bo'shliq/maxsus belgili path ham). cep.fs fallback saqlandi.
+  host.jsx `exportTimelineFrame`: `app.activeViewer.setActive()` + birinchi-comp fallback (panel fokus). hostCall raw
+  natija + `{ok:false,reason}` qaytaradi. Har bosqич ANIQ log/toast (showOpenDialog path, host raw, read `_why` sabab).
+- node 0 xato · host.jsx balans OK · brauzer file-source regressiyasiz (@img1) · install OK.
+
+## TUZATISH(3) — file:// path normalizatsiya (referens o'qish)
+- Sabab: showOpenDialog `file:///Users/.../x.jpg` qaytaradi; Node fs & cep.fs ODDIY yo'l kutadi → ENOENT/err=3.
+- Tuzatish: `toFsPath()` (file:// strip + decodeURIComponent %20→bo'shliq) — readDataUrl Node fs VA cep.fs ikkalasi
+  normalizatsiya qilingan `fp` ishlatadi. 3 manба ham shu yo'ldan o'tadi (host fsName/file:// ham normalizatsiya).
+- Tekshiruv: node 0 xato; `file:///Users/usmonov/Desktop/lage.jpg`→`/Users/usmonov/Desktop/lage.jpg` ✓; `%20`→bo'shliq ✓; brauzer: readFile NORMALIZED path oladi → @img1. install OK.
+
+## Kutilmoqda — **PUSH** (backend Render deploy, FAL_KEY) → AE'da real sinash. Push YO'Q (qoidaga ko'ra).

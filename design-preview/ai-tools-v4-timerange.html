@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · Vaqt-oraliq (Work area) — mockup</title>
+<style>
+  :root{
+    --bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;
+    --line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;
+    --acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400;--warn:#ffb15a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1100px 650px at 50% -240px,#14161c,#090a0c 58%);
+    color:var(--txt);padding:30px 18px 70px;line-height:1.4}
+  .head{max-width:1120px;margin:0 auto 22px}
+  .head h1{font-size:21px;font-weight:800;letter-spacing:-.3px}
+  .head h1 .pill{font-size:11px;background:var(--acc);color:var(--acc-ink);padding:3px 9px;border-radius:999px;margin-left:8px;font-weight:800;vertical-align:middle}
+  .head p{color:var(--mut);font-size:13.5px;margin-top:8px;max-width:780px}
+
+  .stage{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start}
+  @media(max-width:880px){.stage{grid-template-columns:1fr}}
+  .scene{position:relative}
+  .scene>.tag{position:absolute;top:-11px;left:14px;z-index:3;font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;background:var(--acc);color:var(--acc-ink)}
+  .scene>.tag.w{background:var(--warn);color:#241500}
+  .scene>.note{font-size:12px;color:var(--mut);margin-top:10px;padding-left:3px}
+  .scene>.note b{color:var(--acc2)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+  .pbar{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
+  .logo{width:24px;height:24px;border-radius:7px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-weight:900;font-size:12px}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800}
+  .body{padding:12px}
+
+  .crumb{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+  .crumb .bk{width:27px;height:27px;border-radius:8px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut)}
+  .crumb .path{color:var(--mut);font-size:11.5px}.crumb .path b{color:var(--txt);font-weight:700}
+
+  /* source banner */
+  .src{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(194,240,74,.12),transparent);border:1px solid var(--acc2);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+  .src .d{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 7px var(--acc);flex:0 0 auto}
+  .src .x{font-size:11.5px}.src .x b{color:var(--acc)}
+  .src .sw{margin-left:auto;font-size:10px;color:var(--mut);border:1px solid var(--line2);padding:3px 7px;border-radius:6px}
+
+  .prev{border-radius:11px;overflow:hidden;height:96px;position:relative;margin-bottom:10px;
+    background:radial-gradient(40px 20px at 50% 72%,rgba(255,150,40,.4),transparent 70%),linear-gradient(160deg,#1a1d22,#0b0c0f)}
+  .prev .cap{position:absolute;bottom:6px;left:6px;font-size:9px;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:5px;color:var(--mut)}
+
+  /* time-range component */
+  .trc{border:1px solid var(--line2);border-radius:11px;background:var(--card);padding:10px;margin-bottom:11px}
+  .trc .lab{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .trc .lab .dur{margin-left:auto;letter-spacing:0;font-weight:700;color:var(--acc)}
+  .trc .lab .dur.w{color:var(--warn)}
+
+  .seg{display:flex;gap:4px;background:#121317;border:1px solid var(--line2);border-radius:9px;padding:3px;margin-bottom:10px}
+  .seg .s{flex:1;text-align:center;font-size:11px;color:var(--mut);padding:6px;border-radius:6px;font-weight:600}
+  .seg .s.on{background:var(--acc);color:var(--acc-ink)}
+
+  /* mini timeline */
+  .tl{position:relative;height:30px;background:#0e1013;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .tl .ticks{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent,transparent 9px,rgba(255,255,255,.04) 9px,rgba(255,255,255,.04) 10px)}
+  .tl .sel{position:absolute;top:0;bottom:0;background:rgba(194,240,74,.18);border-left:2px solid var(--acc);border-right:2px solid var(--acc)}
+  .tl .sel.w{background:rgba(255,177,90,.18);border-color:var(--warn)}
+  .tl .h{position:absolute;top:50%;transform:translateY(-50%);width:8px;height:18px;border-radius:3px;background:var(--acc)}
+  .tl .h.w{background:var(--warn)}
+  .times{display:flex;justify-content:space-between;font-size:9.5px;color:var(--mut2);margin-top:5px}
+
+  .warnrow{display:flex;align-items:center;gap:7px;background:rgba(255,177,90,.1);border:1px solid #4a3a24;border-radius:8px;padding:7px 9px;font-size:10.5px;color:var(--warn);margin-top:9px}
+
+  .pinput{border:1px solid var(--line2);border-radius:11px;background:var(--card);padding:10px;margin-top:2px}
+  .pinput .ph{font-size:11.5px;color:var(--mut2);min-height:26px}
+  .pinput .row{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .pchip{display:inline-flex;align-items:center;gap:4px;background:#121317;border:1px solid var(--line2);border-radius:8px;padding:5px 8px;font-size:10.5px;color:var(--mut)}
+  .pchip b{color:var(--txt);font-weight:600}
+  .go{margin-left:auto;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:11.5px;padding:8px 13px;border-radius:9px}
+  .go.off{background:var(--card3);color:var(--mut2)}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Vaqt-oraliq tanlash <span class="pill">Work area</span></h1>
+  <p>Foydalanuvchi videoning kerakli SONIYALARINI tanlaydi. Asosiy yo'l — AE'ning Work Area'sini avtomatik o'qish. Banner'га bitta qator qo'shiladi, xolos. 3 holat:</p>
+</div>
+
+<div class="stage">
+
+  <!-- STATE 1: WORK AREA -->
+  <div class="scene">
+    <div class="tag">1 · Work area (auto)</div>
+    <div class="panel">
+      <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="pro">♛ 611</div></div>
+      <div class="body">
+        <div class="crumb"><div class="bk">‹</div><div class="path">AI Tools › <b>Edit video</b></div></div>
+        <div class="src"><span class="d"></span><div class="x"><b>SC_01.mp4</b> · auto-yuklandi</div><span class="sw">Almashtirish</span></div>
+        <div class="prev"><div class="cap">SC_01.mp4 · 16:9 · 10s</div></div>
+
+        <div class="trc">
+          <div class="lab">Qaysi qism? <span class="dur">4s ✓</span></div>
+          <div class="seg"><div class="s">Butun klip</div><div class="s on">Work area</div></div>
+          <div class="tl">
+            <div class="ticks"></div>
+            <div class="sel" style="left:30%;width:40%"></div>
+            <div class="h" style="left:calc(30% - 4px)"></div>
+            <div class="h" style="left:calc(70% - 4px)"></div>
+          </div>
+          <div class="times"><span>0:00</span><span style="color:var(--acc)">0:03 – 0:07</span><span>0:10</span></div>
+        </div>
+
+        <div class="pinput">
+          <div class="ph">G'oya (ixtiyoriy)…</div>
+          <div class="row"><span class="pchip">🎬 <b>Seedance</b></span><span class="pchip">⏱ <b>4s</b></span><span class="go">Yaratish ↑</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>AE'да work area belgilangan</b> → plagin avtomatik o'qiydi (0:03–0:07). Faqat shu qism modelga ketadi. Qo'shimcha UI yo'q.</div>
+  </div>
+
+  <!-- STATE 2: WHOLE CLIP -->
+  <div class="scene">
+    <div class="tag">2 · Butun klip</div>
+    <div class="panel">
+      <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="pro">♛ 611</div></div>
+      <div class="body">
+        <div class="crumb"><div class="bk">‹</div><div class="path">AI Tools › <b>Edit video</b></div></div>
+        <div class="src"><span class="d"></span><div class="x"><b>SC_01.mp4</b> · auto-yuklandi</div><span class="sw">Almashtirish</span></div>
+        <div class="prev"><div class="cap">SC_01.mp4 · 16:9 · 10s</div></div>
+
+        <div class="trc">
+          <div class="lab">Qaysi qism? <span class="dur">10s ✓</span></div>
+          <div class="seg"><div class="s on">Butun klip</div><div class="s">Work area</div></div>
+          <div class="tl">
+            <div class="ticks"></div>
+            <div class="sel" style="left:0;width:100%"></div>
+          </div>
+          <div class="times"><span style="color:var(--acc)">0:00</span><span>butun video</span><span style="color:var(--acc)">0:10</span></div>
+        </div>
+
+        <div class="pinput">
+          <div class="ph">G'oya (ixtiyoriy)…</div>
+          <div class="row"><span class="pchip">🎬 <b>Seedance</b></span><span class="pchip">⏱ <b>10s</b></span><span class="go">Yaratish ↑</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Work area yo'q</b> → default butun klip. Foydalanuvchi "Butun klip / Work area" bilan almashtiradi.</div>
+  </div>
+
+  <!-- STATE 3: TOO LONG -->
+  <div class="scene">
+    <div class="tag w">3 · Limit ogohlantirishi</div>
+    <div class="panel">
+      <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="pro">♛ 611</div></div>
+      <div class="body">
+        <div class="crumb"><div class="bk">‹</div><div class="path">AI Tools › <b>Edit video</b></div></div>
+        <div class="src"><span class="d"></span><div class="x"><b>SC_long.mp4</b> · auto-yuklandi</div><span class="sw">Almashtirish</span></div>
+        <div class="prev"><div class="cap">SC_long.mp4 · 16:9 · 18s</div></div>
+
+        <div class="trc">
+          <div class="lab">Qaysi qism? <span class="dur w">15s ⚠</span></div>
+          <div class="seg"><div class="s">Butun klip</div><div class="s on">Work area</div></div>
+          <div class="tl">
+            <div class="ticks"></div>
+            <div class="sel w" style="left:17%;width:83%"></div>
+            <div class="h w" style="left:calc(17% - 4px)"></div>
+            <div class="h w" style="left:calc(100% - 8px)"></div>
+          </div>
+          <div class="times"><span>0:00</span><span style="color:var(--warn)">0:03 – 0:18</span><span>0:18</span></div>
+          <div class="warnrow">⚠ Model maks 10s — birinchi 10s ishlatiladi (0:03–0:13). Qisqaroq oraliq tanlang.</div>
+        </div>
+
+        <div class="pinput">
+          <div class="ph">G'oya (ixtiyoriy)…</div>
+          <div class="row"><span class="pchip">🎬 <b>Seedance</b></span><span class="pchip">⏱ <b>10s</b></span><span class="go off">Qisqartirib yaratish ↑</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Oraliq model limitidan uzun</b> → ogohlantirish + avto-qisqartirish (birinchi 10s). Foydalanuvchi adashmaydi.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

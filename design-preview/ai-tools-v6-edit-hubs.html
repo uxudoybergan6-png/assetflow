@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · Edit image + Edit video hublar — mockup v6</title>
+<style>
+  :root{
+    --bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;
+    --line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;
+    --acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400;--blue:#5aa9ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1100px 650px at 50% -240px,#14161c,#090a0c 58%);
+    color:var(--txt);padding:30px 18px 70px;line-height:1.4}
+  .head{max-width:1120px;margin:0 auto 22px}
+  .head h1{font-size:21px;font-weight:800;letter-spacing:-.3px}
+  .head h1 .pill{font-size:11px;background:var(--acc);color:var(--acc-ink);padding:3px 9px;border-radius:999px;margin-left:8px;font-weight:800;vertical-align:middle}
+  .head p{color:var(--mut);font-size:13.5px;margin-top:8px;max-width:780px}
+
+  .stage{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start}
+  @media(max-width:880px){.stage{grid-template-columns:1fr}}
+  .scene{position:relative}
+  .scene>.tag{position:absolute;top:-11px;left:14px;z-index:3;font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;background:var(--acc);color:var(--acc-ink)}
+  .scene>.tag.b{background:var(--blue);color:#04101f}
+  .scene>.note{font-size:12px;color:var(--mut);margin-top:10px;padding-left:3px}
+  .scene>.note b{color:var(--acc2)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+  .pbar{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
+  .logo{width:24px;height:24px;border-radius:7px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-weight:900;font-size:12px}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800}
+  .nav{display:flex;gap:5px;padding:9px 11px;overflow-x:auto;border-bottom:1px solid var(--line)}
+  .nav .t{flex:0 0 auto;font-size:11.5px;color:var(--mut);background:var(--card);border:1px solid var(--line);padding:6px 10px;border-radius:9px}
+  .nav .t.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:800}
+  .body{padding:12px}
+
+  .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:2px 2px 8px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+  .cardbig{display:flex;align-items:center;gap:9px;border-radius:12px;padding:12px}
+  .cardbig .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+  .cardbig .tx b{font-size:12.5px;font-weight:700;display:block}.cardbig .tx small{font-size:10px;color:var(--mut)}
+  .create{background:linear-gradient(150deg,#232e12,#16181d);border:1px solid var(--acc2)}
+  .create .ic{background:var(--acc);color:var(--acc-ink)}
+  .edit{background:linear-gradient(150deg,#16233a,#141519);border:1px solid #2a3a52}
+  .edit .ic{background:var(--blue);color:#04101f}
+
+  .mini{font-size:10px;color:var(--mut2);margin:14px 2px 7px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:7px}
+  .mini::after{content:"";flex:1;height:1px;background:var(--line)}
+  .recent{display:flex;gap:7px;overflow-x:auto}
+  .rc{flex:0 0 54px;height:54px;border-radius:9px;border:1px solid var(--line);overflow:hidden}
+  .rc.add{display:grid;place-items:center;color:var(--mut2);font-size:18px;border-style:dashed;background:var(--card)}
+  .warr{background:linear-gradient(200deg,#2b3542,#10141a)}
+  .car{background:radial-gradient(36px 18px at 50% 72%,rgba(255,150,40,.4),transparent 70%),linear-gradient(160deg,#1a1d22,#0b0c0f)}
+
+  /* hub screen */
+  .crumb{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+  .crumb .bk{width:27px;height:27px;border-radius:8px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut)}
+  .crumb .path{color:var(--mut);font-size:11.5px}.crumb .path b{color:var(--txt);font-weight:700}
+  .src{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(194,240,74,.12),transparent);border:1px solid var(--acc2);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+  .src .d{width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 7px var(--acc);flex:0 0 auto}
+  .src .x{font-size:11.5px}.src .x b{color:var(--acc)}.src .sw{margin-left:auto;font-size:10px;color:var(--mut);border:1px solid var(--line2);padding:3px 7px;border-radius:6px}
+  .prev{border-radius:11px;overflow:hidden;height:92px;position:relative;margin-bottom:10px}
+  .prev.v{background:radial-gradient(40px 20px at 50% 72%,rgba(255,150,40,.4),transparent 70%),linear-gradient(160deg,#1a1d22,#0b0c0f)}
+  .prev.i{background:linear-gradient(200deg,#2b3542,#10141a)}
+  .prev .cap{position:absolute;bottom:6px;left:6px;font-size:9px;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:5px;color:var(--mut)}
+
+  .trc{border:1px solid var(--line2);border-radius:10px;background:var(--card);padding:9px;margin-bottom:11px}
+  .trc .lab{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin-bottom:7px;display:flex}
+  .trc .lab .dur{margin-left:auto;letter-spacing:0;color:var(--acc);font-weight:700}
+  .tl{position:relative;height:22px;background:#0e1013;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .tl .ticks{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent,transparent 8px,rgba(255,255,255,.04) 8px,rgba(255,255,255,.04) 9px)}
+  .tl .sel{position:absolute;top:0;bottom:0;left:30%;width:40%;background:rgba(194,240,74,.18);border-left:2px solid var(--acc);border-right:2px solid var(--acc)}
+  .tl .h{position:absolute;top:50%;transform:translateY(-50%);width:7px;height:14px;border-radius:3px;background:var(--acc)}
+
+  .amal{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:4px 2px 8px}
+  .acts{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .act{background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:9px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative}
+  .act .ic{font-size:15px}.act span{font-size:9px;font-weight:600;line-height:1.1}
+  .act.dim{opacity:.55}.act .dot{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--mut2)}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Edit image + Edit video — HUB <span class="pill">v6</span></h1>
+  <p>Simmetrik: Yaratish (Image/Video) + Tahrirlash (Edit image/Edit video). Alohida tool grid YO'Q — barcha amallar ikki hub ichida. Launcher = 4 karta → eng sodda.</p>
+</div>
+
+<div class="stage">
+
+  <!-- LAUNCHER -->
+  <div class="scene">
+    <div class="tag">1 · Launcher (4 karta)</div>
+    <div class="panel">
+      <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="pro">♛ 606</div></div>
+      <div class="nav"><div class="t">Shablonlar</div><div class="t">Motion</div><div class="t">Graphics</div><div class="t">LUTs</div><div class="t on">✦ AI</div></div>
+      <div class="body">
+        <div class="lbl">Yaratish</div>
+        <div class="row2">
+          <div class="cardbig create"><div class="ic">✦</div><div class="tx"><b>Image</b><small>Rasm yaratish</small></div></div>
+          <div class="cardbig create"><div class="ic">🎬</div><div class="tx"><b>Video</b><small>Video yaratish</small></div></div>
+        </div>
+
+        <div class="lbl">Tahrirlash <span style="color:var(--mut2)">· media yuklab</span></div>
+        <div class="row2">
+          <div class="cardbig edit"><div class="ic">🖼️</div><div class="tx"><b>Edit image</b><small>Rasm tahrir</small></div></div>
+          <div class="cardbig edit"><div class="ic">🎞️</div><div class="tx"><b>Edit video</b><small>Video tahrir</small></div></div>
+        </div>
+
+        <div class="mini">So'nggi</div>
+        <div class="recent"><div class="rc add">+</div><div class="rc warr"></div><div class="rc car"></div><div class="rc warr"></div><div class="rc car"></div></div>
+      </div>
+    </div>
+    <div class="note"><b>4 karta, xolos.</b> Grid + segment-filter olib tashlandi → barcha amal hub ichida. Eng sodda launcher.</div>
+  </div>
+
+  <!-- EDIT IMAGE HUB -->
+  <div class="scene">
+    <div class="tag b">2 · Edit image hub</div>
+    <div class="panel">
+      <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="pro">♛ 606</div></div>
+      <div class="body">
+        <div class="crumb"><div class="bk">‹</div><div class="path">AI Tools › <b>🖼️ Edit image</b></div></div>
+        <div class="src"><span class="d"></span><div class="x"><b>warrior_01.png</b> · auto-yuklandi</div><span class="sw">Almashtirish</span></div>
+        <div class="prev i"><div class="cap">warrior_01.png · 2K</div></div>
+
+        <div class="amal">Amal tanlang</div>
+        <div class="acts">
+          <div class="act"><div class="ic">▣</div><span>Remove BG</span></div>
+          <div class="act"><div class="ic">⤴</div><span>Upscale</span></div>
+          <div class="act"><div class="ic">💡</div><span>Relight</span></div>
+          <div class="act"><div class="ic">😊</div><span>Skin</span></div>
+          <div class="act"><div class="ic">⤢</div><span>Reframe</span></div>
+          <div class="act"><div class="ic">✏️</div><span>Edit</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">🎨</div><span>Restyle</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">🎬</div><span>→ Video</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Rasm yuklab</b> → amal bosasiz. Time-range YO'Q (rasm). Auto-import Project bin.</div>
+  </div>
+
+  <!-- EDIT VIDEO HUB -->
+  <div class="scene">
+    <div class="tag b">3 · Edit video hub</div>
+    <div class="panel">
+      <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="pro">♛ 606</div></div>
+      <div class="body">
+        <div class="crumb"><div class="bk">‹</div><div class="path">AI Tools › <b>🎞️ Edit video</b></div></div>
+        <div class="src"><span class="d"></span><div class="x"><b>SC_01.mp4</b> · auto-yuklandi</div><span class="sw">Almashtirish</span></div>
+        <div class="prev v"><div class="cap">SC_01.mp4 · 16:9 · 10s</div></div>
+
+        <div class="trc">
+          <div class="lab">Qaysi qism? <span class="dur">4s</span></div>
+          <div class="tl"><div class="ticks"></div><div class="sel"></div>
+            <div class="h" style="left:calc(30% - 3px)"></div><div class="h" style="left:calc(70% - 3px)"></div></div>
+        </div>
+
+        <div class="amal">Amal tanlang</div>
+        <div class="acts">
+          <div class="act"><div class="ic">⤢</div><span>Reframe</span></div>
+          <div class="act"><div class="ic">▣</div><span>Remove BG</span></div>
+          <div class="act"><div class="ic">⤴</div><span>Upscale</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">🐢</div><span>Slow-mo</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">🔊</div><span>SFX</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">🎨</div><span>Restyle</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">⇄</div><span>Motion</span></div>
+          <div class="act dim"><span class="dot"></span><div class="ic">🎤</div><span>Lip-sync</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Video yuklab</b> → time-range → amal. Auto-import Project bin. "Tez orada" = xira+nuqta.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · AI Tools — Higgsfield-ilhomli struktura (mockup)</title>
+<style>
+  :root{
+    --bg:#0a0b0d; --panel:#0e0f12; --card:#16181c; --card2:#1b1e23;
+    --line:#23262c; --line2:#2c3037;
+    --txt:#f3f5f7; --mut:#9aa0a8; --mut2:#6b7178;
+    --acc:#c2f04a; --acc-dim:#9ec23a; --acc-ink:#0c1400;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -200px,#13151a,#0a0b0d 60%);
+    color:var(--txt); padding:32px 20px 60px; line-height:1.45;
+  }
+  .head{max-width:1180px;margin:0 auto 26px}
+  .head h1{font-size:22px;font-weight:700;letter-spacing:-.3px}
+  .head h1 .pill{font-size:11px;background:var(--acc);color:var(--acc-ink);padding:3px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;font-weight:800}
+  .head p{color:var(--mut);font-size:13.5px;margin-top:8px;max-width:760px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--mut2)}
+  .legend b{color:var(--acc-dim)}
+
+  .stage{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;align-items:start}
+  @media(max-width:1080px){.stage{grid-template-columns:1fr 1fr}}
+  @media(max-width:760px){.stage{grid-template-columns:1fr}}
+
+  .scene{position:relative}
+  .scene > .tag{position:absolute;top:-11px;left:14px;z-index:3;background:var(--acc);color:var(--acc-ink);font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px}
+  .scene > .note{font-size:12px;color:var(--mut);margin-top:10px;padding-left:4px}
+  .scene > .note b{color:var(--acc-dim)}
+
+  /* ---- CEP panel frame (narrow ~ real plugin width) ---- */
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+  .pbar{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px}
+  .logo{width:26px;height:26px;border-radius:8px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-weight:900;font-size:14px}
+  .pbar .right{display:flex;align-items:center;gap:7px}
+  .iconbtn{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut);font-size:13px}
+  .pro{display:flex;align-items:center;gap:6px;border:1px solid var(--acc-dim);color:var(--acc);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700}
+
+  .nav{display:flex;gap:7px;padding:11px 12px;overflow-x:auto;border-bottom:1px solid var(--line)}
+  .nav .t{flex:0 0 auto;font-size:12.5px;color:var(--mut);background:var(--card);border:1px solid var(--line);padding:8px 12px;border-radius:11px;white-space:nowrap}
+  .nav .t.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:800;display:flex;align-items:center;gap:5px}
+
+  .body{padding:14px}
+
+  .sectlabel{font-size:11px;letter-spacing:.12em;color:var(--mut2);font-weight:700;text-transform:uppercase;margin:4px 2px 10px}
+
+  /* hero banner */
+  .hero{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line2);
+    background:linear-gradient(115deg,#1c2410,#14161b 62%);padding:16px;margin-bottom:18px}
+  .hero h2{font-size:16px;font-weight:800;letter-spacing:-.2px}
+  .hero p{font-size:12px;color:var(--mut);margin:6px 0 12px;max-width:80%}
+  .hero .cta{display:inline-flex;align-items:center;gap:6px;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:12.5px;padding:8px 14px;border-radius:10px}
+  .hero .glow{position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.5),transparent 65%);filter:blur(8px)}
+
+  /* last generations strip */
+  .strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin-bottom:20px}
+  .gcard{flex:0 0 92px;height:92px;border-radius:13px;border:1px solid var(--line);background:var(--card);position:relative;overflow:hidden}
+  .gcard.add{display:grid;place-items:center;color:var(--mut2);font-size:26px;border-style:dashed}
+  .gcard .badge{position:absolute;top:6px;left:6px;font-size:9px;font-weight:800;background:var(--acc);color:var(--acc-ink);padding:2px 6px;border-radius:6px}
+  .gcard .badge.run{background:#2a2d33;color:var(--acc)}
+  .thumb-car{background:
+    radial-gradient(60px 30px at 50% 70%,rgba(255,150,40,.35),transparent 70%),
+    linear-gradient(160deg,#1a1d22,#0c0d10)}
+  .thumb-warrior{background:linear-gradient(200deg,#2a3340,#11151b)}
+
+  /* apps grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .app{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;min-height:96px;display:flex;flex-direction:column;gap:7px}
+  .app .ico{width:30px;height:30px;border-radius:9px;background:#202329;display:grid;place-items:center;font-size:15px}
+  .app.prim{background:linear-gradient(150deg,#222c12,#181a1f);border-color:var(--acc-dim)}
+  .app.prim .ico{background:var(--acc);color:var(--acc-ink)}
+  .app h3{font-size:13.5px;font-weight:700}
+  .app span{font-size:11px;color:var(--mut)}
+  .app .new{position:absolute;top:10px;right:10px;font-size:9px;font-weight:800;background:var(--acc);color:var(--acc-ink);padding:2px 6px;border-radius:6px}
+  .app .soon{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;background:#2a2d33;color:var(--mut);padding:2px 6px;border-radius:6px}
+
+  /* ---- tool flow ---- */
+  .toolhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .back{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut)}
+  .toolhead .ttl{font-size:14.5px;font-weight:800;display:flex;align-items:center;gap:7px}
+
+  .srcnote{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(194,240,74,.12),transparent);border:1px solid var(--acc-dim);border-radius:11px;padding:9px 11px;margin-bottom:13px}
+  .srcnote .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+  .srcnote .tx{font-size:12px;color:var(--txt)}
+  .srcnote .tx b{color:var(--acc)}
+  .srcnote .tx small{display:block;color:var(--mut);font-size:10.5px}
+
+  .preview{border-radius:14px;overflow:hidden;border:1px solid var(--line2);height:150px;position:relative;margin-bottom:13px}
+  .preview .lbl{position:absolute;bottom:8px;left:8px;font-size:10px;background:rgba(0,0,0,.6);padding:3px 8px;border-radius:6px;color:var(--mut)}
+  .preview .play{position:absolute;inset:0;margin:auto;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:15px;border:1px solid rgba(255,255,255,.25)}
+
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;justify-content:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--line2);color:var(--txt);font-size:12px;font-weight:600;padding:8px 13px;border-radius:999px}
+  .chip .i{font-size:13px}
+
+  .promptbar{border:1px solid var(--line2);border-radius:14px;background:var(--card);padding:11px 12px}
+  .promptbar .ph{font-size:12.5px;color:var(--mut2);margin-bottom:11px}
+  .ctrls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .ctrl{display:inline-flex;align-items:center;gap:5px;background:#121317;border:1px solid var(--line2);border-radius:9px;padding:6px 9px;font-size:11px;color:var(--mut)}
+  .ctrl b{color:var(--txt);font-weight:600}
+  .send{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-size:14px;font-weight:900}
+  .plusbtn{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut);font-size:15px}
+
+  .foot{display:flex;align-items:center;gap:9px;border-top:1px solid var(--line);padding:11px 14px;margin-top:6px}
+  .ava{width:30px;height:30px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
+  .foot .who{font-size:12px}
+  .foot .who small{display:block;color:var(--mut);font-size:10.5px}
+  .foot .imp{margin-left:auto;font-size:12px;font-weight:700;border:1px solid var(--line2);background:var(--card2);padding:8px 13px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>AssetFlow · AI Tools <span class="pill">MOCKUP · 1:1 EMAS</span></h1>
+  <p>Higgsfield oqim naqshi (launcher → media → context-actions → prompt bar) AssetFlow brendiga moslandi: yashil aksent, o'zbekcha matn, mavjud nav va AI backend saqlangan. <b>Faqat AI Tools tab ichida.</b></p>
+  <div class="legend">
+    <span><b>1</b> Launcher home — Apps grid + so'nggi generatsiyalar</span>
+    <span><b>2</b> Tool flow — Project paneldan media AVTOMATIK yuklanadi</span>
+    <span><b>3</b> Context-actions — media bilan nima qilish mumkin</span>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- ============ SCENE 1: LAUNCHER ============ -->
+  <div class="scene">
+    <div class="tag">1 · Launcher home</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right">
+          <div class="iconbtn">✦</div><div class="iconbtn">↓</div><div class="iconbtn">♡</div>
+          <div class="pro">♛ Pro · 611</div>
+        </div>
+      </div>
+      <div class="nav">
+        <div class="t">Shablonlar</div><div class="t">Motion</div><div class="t">Graphics</div>
+        <div class="t">LUTs</div><div class="t on">✦ AI Tools</div>
+      </div>
+      <div class="body">
+        <div class="hero">
+          <div class="glow"></div>
+          <h2>AI Studio</h2>
+          <p>Generatsiya, edit, reframe va boshqalar — hammasi bitta panelda.</p>
+          <span class="cta">Boshlash ✦</span>
+        </div>
+
+        <div class="sectlabel">So'nggi generatsiyalar</div>
+        <div class="strip">
+          <div class="gcard add">+</div>
+          <div class="gcard"><span class="badge run">⟳</span><div class="thumb-warrior" style="height:100%"></div></div>
+          <div class="gcard"><span class="badge">✓</span><div class="thumb-warrior" style="height:100%"></div></div>
+          <div class="gcard"><span class="badge">✓</span><div class="thumb-car" style="height:100%"></div></div>
+        </div>
+
+        <div class="sectlabel">Apps — nima yaratamiz?</div>
+        <div class="grid">
+          <div class="app prim"><div class="ico">✦</div><h3>Image Generate</h3><span>Mystic · rasm</span></div>
+          <div class="app prim"><div class="ico">🎬</div><h3>Video Generate</h3><span>Kling · video</span></div>
+          <div class="app"><div class="ico">🖼️</div><h3>Edit video</h3><span>Tozalash, reframe, upscale</span></div>
+          <div class="app"><div class="ico">⤢</div><h3>Reframe</h3><span>Aspect o'zgartirish</span></div>
+          <div class="app"><div class="ico">▣</div><h3>Remove BG</h3><span>Fonni tozalash</span></div>
+          <div class="app"><div class="ico">⤴</div><h3>Upscale</h3><span>Sifatni oshirish</span></div>
+          <div class="app"><div class="ico">✎</div><h3>Relight</h3><span>Yorug'lik</span></div>
+          <div class="app"><div class="ico">😊</div><h3>Skin</h3><span>Teri tekislash</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Higgsfield'дan:</b> "Apps" grid + so'nggi generatsiyalar. <b>Bizniki:</b> yashil brend, o'zbekcha, primary 2 ta (Image/Video Generate) ajratilgan.</div>
+  </div>
+
+  <!-- ============ SCENE 2: TOOL FLOW (auto-load) ============ -->
+  <div class="scene">
+    <div class="tag">2 · Edit video — auto-load</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right"><div class="pro">♛ Pro · 611</div></div>
+      </div>
+      <div class="body">
+        <div class="toolhead">
+          <div class="back">‹</div>
+          <div class="ttl">🖼️ Edit video</div>
+        </div>
+
+        <div class="srcnote">
+          <span class="dot"></span>
+          <div class="tx"><b>SC_01.mp4</b> — Project paneldan tanlandi
+            <small>3848×2152 · 10s · 24fps — avtomatik yuklandi</small>
+          </div>
+        </div>
+
+        <div class="preview thumb-car">
+          <div class="play">▶</div>
+          <div class="lbl">SC_01.mp4 · 16:9</div>
+        </div>
+
+        <div class="sectlabel" style="text-align:center">Bu media bilan nima qilamiz?</div>
+        <div class="actions">
+          <span class="chip"><span class="i">✎</span> Draw to video</span>
+          <span class="chip"><span class="i">⤢</span> Reframe</span>
+          <span class="chip"><span class="i">▣</span> Remove BG</span>
+          <span class="chip"><span class="i">⤴</span> Upscale</span>
+        </div>
+
+        <div class="promptbar">
+          <div class="ph">G'oyangizni yozing…</div>
+          <div class="ctrls">
+            <span class="plusbtn">+</span>
+            <span class="ctrl">🎬 <b>Seedance 2.0</b> ▾</span>
+            <span class="ctrl">▭ <b>16:9</b> ▾</span>
+            <span class="ctrl">⏱ <b>15s</b> ▾</span>
+            <span class="ctrl">✦ <b>720p</b> ▾</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="ava">D</div>
+        <div class="who">Demo Obunachi<small>Pro · 19 yuklab olish</small></div>
+        <div class="imp">Import qilish</div>
+      </div>
+    </div>
+    <div class="note"><b>⭐ Asosiy farq:</b> AE Project panelда klip tanlanса — tool ichiga <b>o'zi yuklanadi</b> (qayta yuklash shart emas). Video + rasm ikkalasi uchun.</div>
+  </div>
+
+  <!-- ============ SCENE 3: IMAGE TOOL (context) ============ -->
+  <div class="scene">
+    <div class="tag">3 · Rasm tool — context-actions</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right"><div class="pro">♛ Pro · 611</div></div>
+      </div>
+      <div class="body">
+        <div class="toolhead">
+          <div class="back">‹</div>
+          <div class="ttl">✦ Image Generate</div>
+        </div>
+
+        <div class="srcnote">
+          <span class="dot"></span>
+          <div class="tx"><b>warrior_01.png</b> — natija tayyor
+            <small>Seedream 4.5 · 16:9 — endi tahrirlash mumkin</small>
+          </div>
+        </div>
+
+        <div class="preview thumb-warrior">
+          <div class="lbl">warrior_01.png · 2K</div>
+        </div>
+
+        <div class="sectlabel" style="text-align:center">Keyingi qadam</div>
+        <div class="actions">
+          <span class="chip"><span class="i">⤴</span> Upscale</span>
+          <span class="chip"><span class="i">▣</span> Remove BG</span>
+          <span class="chip"><span class="i">✎</span> Relight</span>
+          <span class="chip"><span class="i">📷</span> Change Camera</span>
+          <span class="chip"><span class="i">⤢</span> Extend</span>
+          <span class="chip"><span class="i">😊</span> Skin</span>
+        </div>
+
+        <div class="promptbar">
+          <div class="ph">Variant uchun prompt…</div>
+          <div class="ctrls">
+            <span class="plusbtn">+</span>
+            <span class="ctrl">✦ <b>Mystic</b> ▾</span>
+            <span class="ctrl">▭ <b>16:9</b> ▾</span>
+            <span class="ctrl">✦ <b>2K</b> ▾</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="ava">D</div>
+        <div class="who">Demo Obunachi<small>Pro · 19 yuklab olish</small></div>
+        <div class="imp">Import qilish</div>
+      </div>
+    </div>
+    <div class="note"><b>Higgsfield'дan:</b> media tayyor bo'lгач "keyingi qadam" tugmalari. <b>Bizniki:</b> mavjud 6 rasm-tool shu yerда kontekstли chiqadi.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

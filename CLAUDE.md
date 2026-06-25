@@ -169,6 +169,20 @@ Avval quyidagilarni o'qi:
 - `apps/api/src/lib/catalog-map.ts`
 - `plugins/after-effects-cep/assetflow-catalog.js`
 
+## fal.ai migratsiya hujjatlari (faza 2 backend — MAJBURIY o'qi)
+
+fal.ai provayder backend yozilаётганda (fal.ts adapter, gen-models/processor/quote) — quyidagilar
+yagona haqiqat manbai. fal.ai'ни QAYTA tekshirma/taxmin qilma, shulardan foydalan:
+
+- `docs/FAL-AI-CATALOG.md` — qaysi tool → qaysi fal model (KEEP/REPLACE/ADD/REMOVE verdict)
+- `docs/FAL-DOCS-CORE.md` — API mexanikasi (auth `Authorization: Key`, queue/submit, webhook ED25519, CDN→R2, billing/refund)
+- `docs/FAL-DOCS-MODELS.md` — HAR model aniq schema (param nomlari, input format, output shakli, narx)
+- `docs/FAL-API-NOTES.md` — qisqa eslatma + aniq model ID'lar
+- `docs/HIGGSFIELD-ANALYSIS.md` — UX naqsh + Project-panel auto-load texnikasi (faza 1 manbasi)
+
+Eslatma: faza 1 (plagin UX, launcher + auto-load + 6 yangi tool pane) BAJARILDI — yangi tool'lar
+hozir "Tez orada · keyingi faza" placeholder. Faza 2 = ularni fal.ai'ga ulash.
+
 ---
 
-*Yangilangan: 2026-06-04*
+*Yangilangan: 2026-06-24*

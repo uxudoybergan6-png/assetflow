@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · Rasm yaratish — ishlaydigan mockup</title>
+<style>
+  :root{--bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;--line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;--acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400;--blue:#5aa9ff;--red:#ff6b6b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#05060a;color:var(--txt);line-height:1.4;display:flex;flex-direction:column;align-items:center;padding:22px 12px 60px;min-height:100vh}
+  .hint{color:var(--mut);font-size:12.5px;margin-bottom:13px;text-align:center;max-width:440px}.hint b{color:var(--acc2)}
+  .app{width:392px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;height:780px;position:relative}
+  .pbar{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .back:hover{color:var(--txt)}
+  .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}
+  .spacer{flex:1}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
+  .scroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+
+  /* composer */
+  .composer{background:var(--card);border:1px solid var(--line2);border-radius:18px;padding:14px 14px 10px;transition:border-color .12s,box-shadow .12s}
+  .composer:focus-within{border-color:#3a4150;box-shadow:0 0 0 1px rgba(194,240,74,.12)}
+  .composer textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:14px;resize:none;outline:none;min-height:52px;line-height:1.5;margin-bottom:8px}
+  .composer textarea::placeholder{color:var(--mut2)}
+  .refrow{display:flex;gap:7px;margin-bottom:9px;flex-wrap:wrap}.refrow:empty{display:none}
+  .rth{width:46px;height:46px;border-radius:9px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center}
+  .rth .rx{position:absolute;top:-6px;right:-6px;width:17px;height:17px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:10px;display:grid;place-items:center;cursor:pointer}
+  .ctrls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .iconbtn{width:36px;height:36px;border-radius:11px;background:var(--card3);border:1px solid var(--line2);display:grid;place-items:center;color:var(--txt);font-size:18px;cursor:pointer;flex:0 0 auto}
+  .iconbtn:hover{border-color:var(--acc2);color:var(--acc)}
+  .seg{display:flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line2);color:var(--txt);font-size:12.5px;font-weight:600;cursor:pointer;padding:8px 10px;border-radius:11px;white-space:nowrap;max-width:130px}
+  .seg:hover{border-color:var(--mut2)}
+  .seg .si{font-size:13px;opacity:.7;flex:0 0 auto}.seg .sv{overflow:hidden;text-overflow:ellipsis}.seg .sc{color:var(--mut2);font-size:10px;flex:0 0 auto}
+  .send{width:100%;margin-top:9px;height:44px;border-radius:12px;background:var(--acc);color:var(--acc-ink);border:0;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px}
+  .send .pc{font-size:12px;font-weight:700;opacity:.7}
+  .send:hover{background:var(--acc2)}.send:disabled{opacity:.45;cursor:not-allowed}
+
+  /* progress */
+  .prog{margin-top:14px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}
+  .prog.on{display:block}
+  .prog .pt{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
+  .prog .pt .sp{width:16px;height:16px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bar{height:6px;background:var(--card3);border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+  .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
+
+  /* natija */
+  .res{margin-top:16px;display:none}.res.on{display:block}
+  .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center}
+  .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
+  .grid{display:grid;gap:9px}.grid.g1{grid-template-columns:1fr}.grid.g2{grid-template-columns:1fr 1fr}
+  .card-r{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card)}
+  .card-r img{display:block;width:100%;height:auto}
+  .card-r .ra{display:flex;border-top:1px solid var(--line)}
+  .card-r .ra div{flex:1;text-align:center;padding:8px;font-size:11.5px;color:var(--mut);cursor:pointer}
+  .card-r .ra div:hover{color:var(--txt);background:rgba(255,255,255,.03)}
+  .card-r .ra div+div{border-left:1px solid var(--line)}
+  .bigimport{margin-top:10px;width:100%;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:13.5px;border:0;border-radius:11px;padding:12px;cursor:pointer}
+  .bigimport:hover{background:var(--acc2)}
+
+  .emptyhint{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut2);text-align:center;gap:8px;padding:24px}
+  .emptyhint .big{font-size:30px;opacity:.5}.emptyhint small{font-size:12px;max-width:230px}
+
+  /* sheet */
+  .sheet{position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:50}
+  .sheet.on{display:flex}
+  .sheetc{width:100%;background:var(--panel);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;padding:14px;max-height:78%;overflow-y:auto}
+  .sheeth{display:flex;align-items:center;margin-bottom:11px}.sheeth b{font-size:14px}.sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px}
+  .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}
+  .opt:hover{border-color:var(--mut2)}
+  .opt .oi{width:30px;height:30px;border-radius:8px;background:var(--card3);display:grid;place-items:center;font-size:14px;flex:0 0 auto}
+  .opt b{font-size:13px;display:block}.opt small{font-size:10.5px;color:var(--mut)}
+  .opt.cur{border-color:var(--acc2)}.opt.cur .tick{margin-left:auto;color:var(--acc);font-weight:800}
+  .opt.soon{opacity:.5;cursor:not-allowed}.opt.soon .badge{margin-left:auto;font-size:10px;color:var(--mut2);border:1px solid var(--line2);border-radius:99px;padding:2px 7px}
+  .pillrow{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{padding:9px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--card);font-size:13px;cursor:pointer}
+  .pill.cur{border-color:var(--acc2);color:var(--acc);font-weight:700}
+
+  /* toast */
+  .toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);background:#000;border:1px solid var(--line2);color:var(--txt);font-size:12.5px;padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:60;white-space:nowrap}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+</style>
+</head>
+<body>
+<div class="hint">🖼️ <b>Rasm yaratish</b> · GPT Image 2 — to'liq ishlaydigan mockup (o'lcham/sifat/soni real schema).</div>
+
+<div class="app" id="app">
+  <div class="pbar">
+    <div class="back" id="back">‹ AI Tools</div>
+    <div class="ttl"><span>🖼️</span> Rasm yaratish</div>
+    <div class="spacer"></div>
+    <div class="pro" id="credit">✦ 606</div>
+  </div>
+
+  <div class="scroll" id="scroll">
+    <div class="emptyhint" id="empty">
+      <div class="big">✦</div>
+      <small>G'oyangizni yozing va ➤ bosing. Natija shu yerда paydo bo'ladi.</small>
+    </div>
+
+    <div class="prog" id="prog">
+      <div class="pt"><span class="sp"></span> <span id="progLabel">Generatsiya...</span></div>
+      <div class="bar"><i id="barFill"></i></div>
+      <span class="cancel" id="cancel">Bekor qilish</span>
+    </div>
+
+    <div class="res" id="res">
+      <div class="lbl">Natija <span class="meta" id="resMeta"></span></div>
+      <div class="grid g1" id="grid"></div>
+      <button class="bigimport" id="bigImport">⤓ Hammasini AE'ga import</button>
+    </div>
+  </div>
+
+  <div style="padding:0 14px 14px;flex:0 0 auto">
+    <div class="composer">
+      <div class="refrow" id="refrow"></div>
+      <textarea id="prompt" placeholder="G'oyangizni yozing…"></textarea>
+      <div class="ctrls">
+        <div class="iconbtn" id="addBtn" title="Qo'shish">＋</div>
+        <div class="seg" id="modelSeg"><span class="si">✦</span><span class="sv" id="mVal">GPT Image 2</span><span class="sc">▾</span></div>
+        <div class="seg" id="arSeg"><span class="si">▢</span><span class="sv" id="arVal">1:1</span><span class="sc">▾</span></div>
+        <div class="seg" id="qSeg"><span class="si">✧</span><span class="sv" id="qVal">High</span><span class="sc">▾</span></div>
+        <button class="send" id="gen" title="Yaratish">Yaratish <span class="pc" id="sendCost">✦4</span></button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInp" accept="image/*" multiple style="display:none">
+
+  <!-- + -->
+  <div class="sheet" id="addSheet"><div class="sheetc">
+    <div class="sheeth"><b>Qo'shish</b><span class="x" data-close>✕</span></div>
+    <div class="opt" id="upRef"><div class="oi">＋</div><div><b>Referens yuklash</b><small>kompyuterdan rasm</small></div></div>
+    <div class="opt" id="projRef"><div class="oi">📁</div><div><b>Loyihadan</b><small>AE project paneldan (demo)</small></div></div>
+    <div class="opt" id="enhanceOpt"><div class="oi">✨</div><div><b>Promptни yaxshilash</b><small>AI bilan kengaytirish</small></div></div>
+  </div></div>
+
+  <!-- model -->
+  <div class="sheet" id="mSheet"><div class="sheetc">
+    <div class="sheeth"><b>Model</b><span class="x" data-close>✕</span></div>
+    <div class="opt cur" id="seedream"><div class="oi">✦</div><div><b>GPT Image 2</b><small>OpenAI · aniq tipografiya · matn → rasm</small></div><span class="tick">✓</span></div>
+    <div style="text-align:center;color:var(--mut2);font-size:11.5px;padding:8px 4px 2px">Ko'proq modellar keyingi bosqichда qo'shiladi</div>
+  </div></div>
+
+  <!-- nisbat -->
+  <div class="sheet" id="arSheet"><div class="sheetc">
+    <div class="sheeth"><b>Nisbat</b><span class="x" data-close>✕</span></div>
+    <div class="pillrow" id="arPills"></div>
+  </div></div>
+
+  <!-- sifat + soni -->
+  <div class="sheet" id="qSheet"><div class="sheetc">
+    <div class="sheeth"><b>Sifat va soni</b><span class="x" data-close>✕</span></div>
+    <div class="lbl">Sifat</div>
+    <div class="pillrow" id="qPills" style="margin-bottom:14px"></div>
+    <div class="lbl">Soni</div>
+    <div class="pillrow" id="nPills"></div>
+  </div></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s)};
+  var state={model:'GPT Image 2',ar:'1:1',q:'High',n:1,credit:606,cost:12,refs:[],lastResults:[]};
+  var QCOST={Low:3,Medium:6,High:12,Auto:12};
+
+  function toast(t){var el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('on')},1700)}
+  function open(id){closeAll();$(id).classList.add('on')}
+  function closeAll(){document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('on')})}
+  document.querySelectorAll('[data-close]').forEach(function(x){x.addEventListener('click',closeAll)});
+  document.querySelectorAll('.sheet').forEach(function(s){s.addEventListener('click',function(e){if(e.target===s)closeAll()})});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll()});
+
+  function recost(){state.cost=(QCOST[state.q]||12)*state.n;$('sendCost').textContent='✦'+state.cost;$('gen').title='Yaratish (✦'+state.cost+')'}
+
+  // pills builder
+  function buildPills(host,arr,cur,onpick){
+    host.innerHTML='';
+    arr.forEach(function(v){
+      var d=document.createElement('div');d.className='pill'+(String(v)===String(cur)?' cur':'');d.textContent=v;
+      d.addEventListener('click',function(){onpick(v)});host.appendChild(d);
+    });
+  }
+  var ars=['1:1','4:3','3:4','16:9','9:16','Auto'],qs=['Low','Medium','High','Auto'],ns=[1,2,3,4];
+
+  // openers
+  $('addBtn').addEventListener('click',function(){open('addSheet')});
+  $('modelSeg').addEventListener('click',function(){open('mSheet')});
+  $('arSeg').addEventListener('click',function(){buildPills($('arPills'),ars,state.ar,function(v){state.ar=v;$('arVal').textContent=v;closeAll()});open('arSheet')});
+  function buildQ(){buildPills($('qPills'),qs,state.q,function(v){state.q=v;$('qVal').textContent=v;recost();buildQ()})}
+  function buildN(){buildPills($('nPills'),ns,state.n,function(v){state.n=v;recost();buildN()})}
+  $('qSeg').addEventListener('click',function(){buildQ();buildN();open('qSheet')});
+  $('seedream').addEventListener('click',closeAll);
+
+  // referens: real fayl yuklash
+  var pendingProj=false;
+  $('upRef').addEventListener('click',function(){pendingProj=false;$('fileInp').click();closeAll()});
+  $('projRef').addEventListener('click',function(){
+    // demo: project footage o'rniga ham fayl tanlash
+    pendingProj=true;$('fileInp').click();closeAll();
+  });
+  $('fileInp').addEventListener('change',function(e){
+    var files=Array.prototype.slice.call(e.target.files||[]);
+    files.forEach(function(f){
+      var r=new FileReader();
+      r.onload=function(ev){addRef(ev.target.result)};
+      r.readAsDataURL(f);
+    });
+    $('fileInp').value='';
+  });
+  function addRef(url){
+    state.refs.push(url);
+    var row=$('refrow');var t=document.createElement('div');t.className='rth';t.style.backgroundImage='url('+url+')';
+    var x=document.createElement('div');x.className='rx';x.textContent='✕';
+    x.addEventListener('click',function(){var i=Array.prototype.indexOf.call(row.children,t);if(i>=0)state.refs.splice(i,1);row.removeChild(t)});
+    t.appendChild(x);row.appendChild(t);
+    toast('Referens qo‘shildi');
+  }
+
+  // prompt enhance (haqiqiy: tavsiflovchi so'zlar qo'shadi)
+  $('enhanceOpt').addEventListener('click',function(){
+    var ta=$('prompt');var base=ta.value.trim();
+    if(!base){toast('Avval g‘oya yozing');closeAll();return}
+    var extra=', kinematik yorug‘lik, yuqori detal, professional kompozitsiya, 8k, realistik';
+    if(base.indexOf('kinematik')<0){ta.value=base+extra;ta.dispatchEvent(new Event('input'))}
+    toast('Prompt yaxshilandi ✨');closeAll();
+  });
+
+  // auto-grow
+  var ta=$('prompt');
+  ta.addEventListener('input',function(){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px'});
+
+  // aspect → o'lcham
+  function dims(ar){
+    var base=768;
+    var map={'1:1':[1,1],'16:9':[16,9],'9:16':[9,16],'4:3':[4,3],'3:4':[3,4],'Auto':[4,3]};
+    var m=map[ar]||[1,1];var w,h;
+    if(m[0]>=m[1]){w=base;h=Math.round(base*m[1]/m[0])}else{h=base;w=Math.round(base*m[0]/m[1])}
+    return [w,h];
+  }
+  // canvas bilan "natija" rasm chizish (prompt+settings seed)
+  function hash(s){var h=0;for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0}return h}
+  function makeImage(prompt,idx){
+    var d=dims(state.ar);var w=d[0],h=d[1];
+    var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');
+    var seed=hash(prompt+'|'+state.ar+'|'+idx);
+    function rnd(){seed=(seed*1103515245+12345)>>>0;return seed/4294967296}
+    var hue=Math.floor(rnd()*360);
+    var g=x.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,'hsl('+hue+',55%,30%)');
+    g.addColorStop(.5,'hsl('+((hue+40)%360)+',45%,18%)');
+    g.addColorStop(1,'hsl('+((hue+90)%360)+',50%,24%)');
+    x.fillStyle=g;x.fillRect(0,0,w,h);
+    for(var i=0;i<26;i++){
+      x.globalAlpha=.10+rnd()*.18;x.fillStyle='hsl('+Math.floor(rnd()*360)+',70%,'+(40+rnd()*40)+'%)';
+      var r=20+rnd()*Math.min(w,h)*.4;x.beginPath();x.arc(rnd()*w,rnd()*h,r,0,7);x.fill();
+    }
+    x.globalAlpha=1;
+    // prompt matnidan bir nechta so'z (faqat his uchun)
+    var words=(prompt||'AI rasm').split(/\s+/).slice(0,4).join(' ');
+    x.fillStyle='rgba(255,255,255,.82)';x.font='600 '+Math.max(13,Math.round(w*0.045))+'px -apple-system,sans-serif';
+    x.textAlign='center';x.fillText(words,w/2,h-Math.round(h*0.06));
+    x.fillStyle='rgba(255,255,255,.4)';x.font=Math.max(10,Math.round(w*0.03))+'px sans-serif';
+    x.fillText('GPT Image 2 · '+state.ar+' · '+state.q,w/2,h-Math.round(h*0.02));
+    return c.toDataURL('image/png');
+  }
+
+  // generatsiya oqimi
+  var genTimer=null,cancelled=false;
+  function setCredit(v){state.credit=v;$('credit').textContent='✦ '+v}
+  $('gen').addEventListener('click',function(){
+    var p=ta.value.trim();
+    if(!p){toast('G‘oya yozing');ta.focus();return}
+    if(state.credit<state.cost){toast('Kredit yetarli emas');return}
+    cancelled=false;
+    $('empty').style.display='none';$('res').classList.remove('on');
+    $('prog').classList.add('on');$('barFill').style.width='0';
+    $('gen').disabled=true;$('gen').innerHTML='Yaratilmoqda…';
+    var pct=0;
+    $('progLabel').textContent='Seedream 4.5 ishlamoqda...';
+    genTimer=setInterval(function(){
+      pct+=Math.random()*16+6;if(pct>96)pct=96;$('barFill').style.width=pct+'%';
+    },180);
+    var dur=1200+state.n*500;
+    setTimeout(function(){
+      if(cancelled)return;
+      clearInterval(genTimer);$('barFill').style.width='100%';
+      setTimeout(function(){
+        $('prog').classList.remove('on');
+        setCredit(state.credit-state.cost);
+        renderResults(p);
+        $('gen').disabled=false;$('gen').innerHTML='Yaratish <span class="pc" id="sendCost">✦'+state.cost+'</span>';
+        toast('Tayyor! ✦'+state.cost+' yechildi');
+      },220);
+    },dur);
+  });
+  $('cancel').addEventListener('click',function(){
+    cancelled=true;clearInterval(genTimer);$('prog').classList.remove('on');
+    $('gen').disabled=false;$('gen').innerHTML='Yaratish <span class="pc" id="sendCost">✦'+state.cost+'</span>';if(!$('res').classList.contains('on'))$('empty').style.display='';
+    toast('Bekor qilindi — kredit yechilmadi');
+  });
+
+  function renderResults(prompt){
+    var grid=$('grid');grid.innerHTML='';state.lastResults=[];
+    grid.className='grid '+(state.n>=2?'g2':'g1');
+    for(var i=0;i<state.n;i++){
+      var url=makeImage(prompt,i);state.lastResults.push(url);
+      var card=document.createElement('div');card.className='card-r';
+      var img=document.createElement('img');img.src=url;card.appendChild(img);
+      var ra=document.createElement('div');ra.className='ra';
+      ra.appendChild(mkAct('⤓ Import',function(){toast('AE‘ga import qilindi (demo)')}));
+      ra.appendChild(mkAct('♡ Saqlash',function(){toast('Saqlandi')}));
+      ra.appendChild(mkAct('⬇',function(u){return function(){var a=document.createElement('a');a.href=u;a.download='assetflow.png';a.click()}}(url)));
+      card.appendChild(ra);grid.appendChild(card);
+    }
+    $('resMeta').textContent=state.n+' ta · '+state.ar+' · '+state.q;
+    $('res').classList.add('on');$('res').scrollIntoView({behavior:'smooth'});
+  }
+  function mkAct(label,fn){var d=document.createElement('div');d.textContent=label;d.addEventListener('click',fn);return d}
+
+  $('bigImport').addEventListener('click',function(){toast(state.lastResults.length+' ta rasm AE‘ga import qilindi (demo)')});
+  $('back').addEventListener('click',function(){toast('← AI Tools launcher')});
+
+  recost();
+})();
+</script>
+</body>
+</html>

@@ -15,6 +15,7 @@ import {
   orDownload,
 } from "./ai/openrouter.js";
 import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
+import { falImageEdit } from "./ai/fal.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
@@ -209,6 +210,7 @@ export async function processGeneration(genId: string): Promise<void> {
       // PROVAYDER (P1): GEN_PROVIDER=magnific bo'lsa rasm gen/edit Mystic'ga; aks holda OpenRouter.
       // Kontrakt OrResult<Buffer> bir xil → persist/fail/refund skeleton o'zgarmaydi.
       const useMagnific = genProvider() === "magnific";
+      const useFal = model.provider === "fal"; // openai/gpt-image-2/edit (image-edit)
       const mModel = model.magnificModel ?? "realism";
       // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
       // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
@@ -236,8 +238,35 @@ export async function processGeneration(genId: string): Promise<void> {
         // Render log: bu URL'ni AUTH'siz `curl` bilan ochib ko'ring — 200 qaytmasa Magnific ham ololmaydi.
         console.log(`[gen] remove-bg image_url → ${mfRbgUrl}`);
       }
+      // FAL image-edit: input rasm(lar) fal'ga PUBLIC URL bo'lib uzatiladi (data-URI/private auth
+      // → file_download_error). data-URI'ni R2'ga yuklab TOZA public URL beramiz (remove-bg naqshi).
+      let falImageUrls: string[] = [];
+      if (useFal) {
+        const rawRefs: string[] = Array.isArray(params.referenceUrls)
+          ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+          : refUrl
+            ? [refUrl]
+            : [];
+        if (!rawRefs.length) return void (await fail("Tahrirlash uchun rasm kerak — ＋ orqali yuklang"));
+        for (const ru of rawRefs) {
+          if (ru.startsWith("data:") && isS3Configured()) {
+            const sbuf = Buffer.from(ru.split("base64,")[1] || "", "base64");
+            const sf = detectMediaFormat(sbuf, { ext: "png", contentType: "image/png" });
+            const skey = `gen-refs/${gen.userId}/${genId}-${tsName()}.${sf.ext}`;
+            await uploadBufferToS3(sbuf, skey, sf.contentType);
+            falImageUrls.push(await getPublicOrSignedUrl(skey, 7200));
+          } else {
+            falImageUrls.push(ru);
+          }
+        }
+      }
       for (let i = 0; i < count; i++) {
-        const out = mfRemoveBg
+        const out = useFal
+          ? await falImageEdit(model.falModel ?? model.key, gen.prompt, falImageUrls, {
+              aspect: aspectRatio,
+              quality,
+            })
+          : mfRemoveBg
           ? await magnificRemoveBg(mfRbgUrl)
           : mfTool
           ? await magnificTool(mfTool, refUrl as string, params)
@@ -249,9 +278,9 @@ export async function processGeneration(genId: string): Promise<void> {
               ? await magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
         if (!out.ok) {
-          // ❗ TIMEOUT ≠ REFUND: Magnific poll-timeout (job hali IN_PROGRESS) → "running" qoldiramiz,
+          // ❗ TIMEOUT ≠ REFUND: poll-timeout (job hali IN_PROGRESS) → "running" qoldiramiz,
           // KREDIT QAYTARMAYMIZ. Faqat haqiqiy FAILED/xato → fail()+refund. Stuck bo'lsa reconcile (10 daq) hal qiladi.
-          if (out.error.startsWith("MAGNIFIC_TIMEOUT")) return;
+          if (out.error.startsWith("MAGNIFIC_TIMEOUT") || out.error.startsWith("FAL_TIMEOUT")) return;
           return void (await fail(out.error));
         }
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });

@@ -7,7 +7,14 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
 import { isOpenRouterConfigured, orChatSys, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
-import { isS3Configured, getSignedDownloadUrl, deleteS3Objects } from "../lib/s3.js";
+import { isFalConfigured, falEnhancePrompt } from "../lib/ai/fal.js";
+import {
+  isS3Configured,
+  getSignedDownloadUrl,
+  deleteS3Objects,
+  uploadBufferToS3,
+  getPublicOrSignedUrl,
+} from "../lib/s3.js";
 import {
   GEN_MODELS,
   getModelsByMode,
@@ -205,6 +212,47 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
   res.json({ modelId: model.id, price, signature, feature: model.feature });
 });
 
+/** POST /gen/ref-upload — referens rasm (data-URI) → R2 public URL. Plagin har referens qo'shganda
+ *  darhol yuklaydi (spinner), so'ng /gen ga URL'lar TARTIBDA uzatiladi (image_urls). Kredit yechmaydi. */
+const refUploadSchema = z.object({ dataUrl: z.string().min(16) });
+studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
+  if (!isS3Configured()) {
+    res.status(503).json({ error: "Saqlash sozlanmagan", code: "S3_NOT_CONFIGURED" });
+    return;
+  }
+  const p = refUploadSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const m = /^data:([^;]+);base64,([\s\S]+)$/.exec(p.data.dataUrl);
+  if (!m) {
+    res.status(400).json({ error: "data-URI (base64 rasm) kerak" });
+    return;
+  }
+  const contentType = m[1] || "image/png";
+  if (!/^image\//.test(contentType)) {
+    res.status(400).json({ error: "Faqat rasm referens qabul qilinadi" });
+    return;
+  }
+  const buf = Buffer.from(m[2], "base64");
+  if (!buf.length || buf.length > 25 * 1024 * 1024) {
+    res.status(400).json({ error: "Rasm bo'sh yoki juda katta (maks 25MB)" });
+    return;
+  }
+  const ext = contentType.includes("png")
+    ? "png"
+    : contentType.includes("webp")
+      ? "webp"
+      : contentType.includes("jpeg") || contentType.includes("jpg")
+        ? "jpg"
+        : "png";
+  const key = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  await uploadBufferToS3(buf, key, contentType);
+  const url = await getPublicOrSignedUrl(key, 7200); // PUBLIC (fal auth'siz yuklab oladi)
+  res.json({ url });
+});
+
 /** POST /gen — imzoni tekshiradi → kredit zaxira → queued Generation → {jobId}. */
 const genSchema = z.object({
   sessionId: z.string().min(1),
@@ -238,9 +286,13 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
     return;
   }
-  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; aks holda OpenRouter).
+  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; aks holda OpenRouter).
   const configured =
-    model.provider === "elevenlabs" ? isElevenLabsConfigured() : isOpenRouterConfigured();
+    model.provider === "elevenlabs"
+      ? isElevenLabsConfigured()
+      : model.provider === "fal"
+        ? isFalConfigured()
+        : isOpenRouterConfigured();
   if (!configured) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
@@ -248,7 +300,17 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 
   // Reference validatsiyasi (G2) — KREDITDAN OLDIN. Reference biriktirilgan, lekin model
   // qabul qilmasa: aniq xato + qo'llaydigan model tavsiyasi (kredit yechilmaydi).
-  const hasRef = typeof params.referenceUrl === "string" && params.referenceUrl.length > 0;
+  const refList = Array.isArray(params.referenceUrls) ? params.referenceUrls : [];
+  const hasRef =
+    (typeof params.referenceUrl === "string" && params.referenceUrl.length > 0) || refList.length > 0;
+  // refMode='required' — referenssiz gen bloklanadi (KREDITDAN OLDIN; aniq xato).
+  if (model.refMode === "required" && !hasRef) {
+    res.status(400).json({
+      error: `«${model.label}» uchun referens majburiy — kamida 1 ta rasm qo'shing`,
+      code: "REFERENCE_REQUIRED",
+    });
+    return;
+  }
   if (hasRef && !modelAcceptsReference(model)) {
     const rec = firstReferenceModel(mode);
     res.status(400).json({
@@ -326,7 +388,8 @@ function enhanceJsonSchema(mode: string): string {
 }
 
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
-  if (!isOpenRouterConfigured()) {
+  // text → fal (openrouter/router); json (describe) → OpenRouter. Ikkalasidan biri sozlangan bo'lsa OK.
+  if (!isFalConfigured() && !isOpenRouterConfigured()) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
   }
@@ -399,12 +462,8 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
 
-  // text
-  const system =
-    `You are an expert ${mode} prompt engineer. Enrich the user's short idea into a vivid, detailed, ` +
-    `production-quality ${mode} prompt. Return ONLY the improved prompt — one paragraph, no preamble, ` +
-    `no markdown, under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
-  const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, false);
+  // text — fal openrouter/router (Gemini 2.5 Flash); kirish tilini saqlaydi, faqat yakuniy prompt.
+  const out = await falEnhancePrompt(p.data.prompt);
   if (!out.ok) {
     await refundAiCredits(req.user!.userId, ENHANCE_COST);
     res.status(502).json({ error: out.error });

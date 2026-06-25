@@ -2001,6 +2001,122 @@ function getSelectedProjectReference() {
   }
 }
 
+// Project paneldagi BARCHA footage'larni (disk fayli bor) ro'yxatlaydi — reference picker uchun.
+// CEP: $.evalFile(host.jsx) so'ng listProjectFootage(). mediaType = video|audio|image|other.
+// QO'LDA JSON — JSON.stringify'ga bog'lanmaydi (evalFile kontekstida JSON undefined bo'lishi mumkin).
+function listProjectFootage() {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+
+    var CAP = 60;
+    var json = '{"ok":true,"items":[';
+    var count = 0;
+    var truncated = false;
+    var i, it, mediaPath, hasVideo, hasAudio, mt, nm;
+
+    for (i = 1; i <= app.project.numItems; i++) {
+      it = app.project.item(i);
+      if (!(it instanceof FootageItem)) continue;
+
+      mediaPath = afLayerSourcePath(it);
+      if (!mediaPath) continue; // solid / placeholder / faylsiz — o'tkazib yubor
+      try { if (it.footageMissing === true) continue; } catch (eM) {} // offline/yo'qolgan fayl — o'tkazib yubor
+
+      if (count >= CAP) { truncated = true; break; }
+
+      hasVideo = false;
+      hasAudio = false;
+      try { hasVideo = it.hasVideo === true; } catch (eV) {}
+      try { hasAudio = it.hasAudio === true; } catch (eA) {}
+
+      // still rasm ham hasVideo=true qaytaradi — duration/isStill bilan ajratamiz
+      if (hasVideo) {
+        var isStill = false;
+        try { isStill = (it.mainSource && it.mainSource.isStill === true) || (it.duration === 0) || /\.(png|jpe?g|webp|gif|bmp|tiff?|psd|avif|heic)$/i.test(mediaPath); } catch (eS) {}
+        mt = isStill ? "image" : "video";
+      } else if (hasAudio) {
+        mt = "audio";
+      } else {
+        mt = "other";
+      }
+
+      nm = it.name || "Footage";
+
+      if (count > 0) json += ",";
+      json += '{"name":' + afJStr(nm) +
+              ',"mediaPath":' + afJStr(mediaPath) +
+              ',"mediaType":' + afJStr(mt) + '}';
+      count++;
+    }
+
+    json += '],"count":' + count + ',"truncated":' + (truncated ? "true" : "false") + '}';
+    return json;
+  } catch (e) {
+    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+  }
+}
+
+// Faol kompozitsiyaning joriy kadrini PNG ga eksport qiladi (Timeline → referens). {ok,path,name}.
+function exportTimelineFrame() {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    var comp = app.project.activeItem;
+    // CEP panel fokusda bo'lsa activeItem null bo'ladi — ochiq comp viewer'ini aktiv qilib qayta o'qiymiz.
+    if (!(comp instanceof CompItem)) {
+      try {
+        if (app.activeViewer && app.activeViewer.type === ViewerType.VIEWER_COMPOSITION) {
+          app.activeViewer.setActive();
+          comp = app.project.activeItem;
+        }
+      } catch (eViewer) {}
+    }
+    // Hali topilmasa — loyihадаги birinchi kompozitsiya (eng yaxshi taxmin).
+    if (!(comp instanceof CompItem)) {
+      for (var i = 1; i <= app.project.numItems; i++) {
+        if (app.project.item(i) instanceof CompItem) { comp = app.project.item(i); break; }
+      }
+    }
+    if (!(comp instanceof CompItem)) return afFail("Faol kompozitsiya yo'q — Timeline'da comp oching");
+    var dir = Folder.temp.fsName + "/assetflow-refs";
+    var folder = new Folder(dir);
+    if (!folder.exists) folder.create();
+    var outFile = new File(dir + "/tlframe-" + new Date().getTime() + ".png");
+    try {
+      comp.openInViewer(); // saveFrameToPng uchun zarur
+      app.purge(PurgeTarget.SNAPSHOT_CACHES);
+    } catch (eV) {}
+    comp.saveFrameToPng(comp.time, outFile);
+    if (!outFile.exists) return afFail("Kadr saqlanmadi — comp viewer'da ochiq bo'lsin");
+    return '{"ok":true,"path":' + afJStr(outFile.fsName) +
+           ',"name":' + afJStr(comp.name + " · kadr") +
+           ',"mediaType":"image"}';
+  } catch (e) {
+    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+  }
+}
+
+/**
+ * Vaqt-oraliq UI uchun (v4): faol comp duration + work area (start/duration) + fps.
+ * Faqat O'QIYDI — AE'ga hech narsa yozmaydi. Plagin shu asosда time-range'ni chizadi.
+ */
+function getWorkAreaInfo() {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    var comp = app.project.activeItem;
+    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas");
+    var compDur = Math.round(comp.duration * 1000) / 1000;
+    var waStart = Math.round((comp.workAreaStart || 0) * 1000) / 1000;
+    var waDur = Math.round((comp.workAreaDuration || comp.duration) * 1000) / 1000;
+    var fps = comp.frameRate ? (Math.round(comp.frameRate * 100) / 100) : 25;
+    return '{"ok":true,"compDuration":' + compDur +
+           ',"workAreaStart":' + waStart +
+           ',"workAreaDuration":' + waDur +
+           ',"fps":' + fps + '}';
+  } catch (e) {
+    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e));
+  }
+}
+
 /**
  * AI SFX (B) — faol comp work-area oralig'ini faylga render qiladi (tahlil uchun).
  * cfg: { destPath, maxDur } . Qaytaradi: {ok, path, workAreaStart, fps, duration}.

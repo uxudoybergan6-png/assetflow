@@ -44,13 +44,17 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal";
+  falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
+  qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
   magnificTool?: string; // dedicated Magnific tool endpoint slug (image-upscaler, image-relight, ...) — provider=magnific only
   magnificOnly?: boolean; // true → faqat GEN_PROVIDER=magnific'да ishlaydi (openrouter ekvivalenti yo'q)
   feature: GenFeature;
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
+  refMode?: "none" | "optional" | "required"; // frontend model-aware: referens majburiymi
+  maxRefs?: number; // referens chegarasi (schemada yo'q bo'lsa frontend 10 deb oladi)
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
   enabled?: boolean; // false → generatsiya bloklanadi (kredit yechilmaydi)
@@ -167,6 +171,26 @@ export const GEN_MODELS: GenModel[] = [
     inputs: ["image-ref"],
     aspects: IMG_ASPECTS,
     imgModalities: ["image", "text"],
+  },
+  // GPT Image 2 Edit (fal.ai) — rasmni prompt bilan tahrirlash; narx quality bo'yicha (per-rasm).
+  {
+    id: 1102,
+    mode: "image",
+    key: "openai/gpt-image-2/edit",
+    label: "GPT Image 2 Edit",
+    provider: "fal",
+    falModel: "openai/gpt-image-2/edit",
+    feature: "image-edit",
+    cost: 6, // fallback (medium); qualityCost ustun
+    qualityCost: { low: 3, medium: 6, high: 12, auto: 12 },
+    referenceMode: "image-edit",
+    refMode: "required", // GPT Image 2 Edit — referens MAJBURIY (frontend shu metadata'dan o'qiydi)
+    maxRefs: 10,
+    inputs: ["image-ref"],
+    aspects: ["Auto", "1:1", "4:3", "3:4", "16:9", "9:16"],
+    resolutions: ["low", "medium", "high", "auto"], // quality opsiyalar
+    count: [1, 2, 3, 4],
+    imgModalities: ["image"],
   },
 
   // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
@@ -423,20 +447,35 @@ export function resolveVideoParams(
 export function resolveImageCount(model: GenModel, params: Record<string, unknown>): number {
   // QB-3: Magnific MVP'da count=1 ga qotirilgan (Mystic 1 natija/task; count>1 = N parallel task →
   // qisman fail bo'lsa COGS zarari). cost-quote ham, /gen ham shu yo'l → narx izchil (1×cost).
-  if (genProvider() === "magnific") return 1;
+  if (genProvider() === "magnific" && model.provider !== "fal") return 1;
   const list = model.count && model.count.length ? model.count : [1];
   const req = Number(params.count);
   if (Number.isFinite(req) && list.includes(req)) return req;
   return list[0];
 }
 
-/** Generatsiya narxi. Video: cost(/s) × duration. Rasm: cost × count. Boshqa: sobit cost. */
+/** Rasm bir dona narxi — qualityCost bor bo'lsa quality bo'yicha, aks holda sobit cost. */
+export function imageUnitCost(model: GenModel, params: Record<string, unknown>): number {
+  if (model.qualityCost) {
+    const q = typeof params.quality === "string" ? params.quality : "";
+    const allowed =
+      model.resolutions && model.resolutions.length
+        ? model.resolutions
+        : Object.keys(model.qualityCost);
+    const key = allowed.includes(q) ? q : allowed.includes("medium") ? "medium" : allowed[0];
+    const c = model.qualityCost[key];
+    if (Number.isFinite(c)) return c;
+  }
+  return model.cost;
+}
+
+/** Generatsiya narxi. Video: cost(/s) × duration. Rasm: bir-dona(quality) × count. Boshqa: sobit cost. */
 export function computeGenCost(model: GenModel, params: Record<string, unknown>): number {
   if (model.mode === "video") {
     return model.cost * resolveVideoParams(model, params).duration;
   }
   if (model.mode === "image") {
-    return model.cost * resolveImageCount(model, params);
+    return imageUnitCost(model, params) * resolveImageCount(model, params);
   }
   return model.cost;
 }

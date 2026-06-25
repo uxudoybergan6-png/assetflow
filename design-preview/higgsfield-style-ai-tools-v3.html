@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · AI Tools v3 — fal.ai (tekshirilgan)</title>
+<style>
+  :root{
+    --bg:#090a0c; --panel:#0d0e11; --card:#15171b; --card2:#1a1d22; --card3:#202329;
+    --line:#22252b; --line2:#2c3138;
+    --txt:#f4f6f8; --mut:#989ea6; --mut2:#676d74;
+    --acc:#c2f04a; --acc2:#a6d83a; --acc-ink:#0c1400;
+    --blue:#5aa9ff; --pink:#ff7ac2; --orange:#ffb15a;
+    --r:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1300px 700px at 50% -260px,#14161c,#090a0c 58%);
+    color:var(--txt); padding:30px 18px 70px; line-height:1.45;
+  }
+  .head{max-width:1320px;margin:0 auto 22px}
+  .head h1{font-size:22px;font-weight:800;letter-spacing:-.4px}
+  .head h1 .pill{font-size:11px;background:var(--acc);color:var(--acc-ink);padding:3px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;font-weight:800}
+  .head p{color:var(--mut);font-size:13.5px;margin-top:8px;max-width:840px}
+
+  .legend{max-width:1320px;margin:0 auto 24px;display:flex;gap:10px;flex-wrap:wrap}
+  .lg{font-size:11.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);color:var(--mut)}
+  .lg b{color:var(--txt)}
+  .lg.keep{border-color:#2f4a2a}.lg.keep b{color:var(--acc2)}
+  .lg.new{border-color:#243240}.lg.new b{color:var(--blue)}
+  .lg.rm{border-color:#4a2a2a}.lg.rm b{color:#ff8a8a}
+
+  .stage{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;align-items:start}
+  @media(max-width:1180px){.stage{grid-template-columns:1fr 1fr}}
+  @media(max-width:680px){.stage{grid-template-columns:1fr}}
+
+  .scene{position:relative}
+  .scene>.tag{position:absolute;top:-11px;left:14px;z-index:3;background:var(--acc);color:var(--acc-ink);font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px}
+  .scene>.tag.bl{background:var(--blue);color:#04101f}
+  .scene>.note{font-size:12px;color:var(--mut);margin-top:10px;padding-left:3px}
+  .scene>.note b{color:var(--acc2)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 26px 64px rgba(0,0,0,.55);position:relative}
+  .pbar{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px}
+  .logo{width:25px;height:25px;border-radius:8px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-weight:900;font-size:13px}
+  .pbar .right{display:flex;align-items:center;gap:6px}
+  .ib{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut);font-size:12px}
+  .pro{display:flex;align-items:center;gap:5px;border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
+
+  .nav{display:flex;gap:6px;padding:10px 11px;overflow-x:auto;border-bottom:1px solid var(--line)}
+  .nav .t{flex:0 0 auto;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line);padding:7px 11px;border-radius:10px;white-space:nowrap}
+  .nav .t.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:800}
+
+  .body{padding:13px}
+  .lbl{font-size:10.5px;letter-spacing:.13em;color:var(--mut2);font-weight:800;text-transform:uppercase;margin:2px 2px 9px;display:flex;align-items:center;gap:7px}
+  .lbl .ct{margin-left:auto;font-size:9px;background:var(--card3);color:var(--mut);padding:2px 7px;border-radius:6px;letter-spacing:0}
+
+  .hero{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--line2);background:linear-gradient(118deg,#1e2810,#13151a 60%);padding:14px;margin-bottom:15px}
+  .hero h2{font-size:15px;font-weight:800}
+  .hero p{font-size:11px;color:var(--mut);margin:5px 0 10px;max-width:80%}
+  .hero .cta{display:inline-flex;align-items:center;gap:6px;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:9px}
+  .hero .glow{position:absolute;right:-26px;top:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.45),transparent 66%);filter:blur(7px)}
+  .hero .fal{position:absolute;right:12px;bottom:11px;font-size:9px;color:var(--mut);border:1px solid var(--line2);padding:2px 7px;border-radius:6px}
+
+  .strip{display:flex;gap:9px;overflow-x:auto;padding-bottom:3px;margin-bottom:16px}
+  .g{flex:0 0 78px;height:78px;border-radius:12px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .g.add{display:grid;place-items:center;color:var(--mut2);font-size:22px;border-style:dashed;background:var(--card)}
+  .g .b{position:absolute;top:5px;left:5px;font-size:8px;font-weight:800;background:var(--acc);color:var(--acc-ink);padding:2px 5px;border-radius:5px}
+  .car{background:radial-gradient(50px 24px at 50% 72%,rgba(255,150,40,.4),transparent 70%),linear-gradient(160deg,#1a1d22,#0b0c0f)}
+  .warr{background:linear-gradient(200deg,#2b3542,#10141a)}
+  .prod{background:linear-gradient(150deg,#2a2430,#14101a)}
+
+  .catsec{margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .app{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px;min-height:78px;display:flex;flex-direction:column;gap:5px}
+  .app .ico{width:27px;height:27px;border-radius:8px;background:var(--card3);display:grid;place-items:center;font-size:13px}
+  .app.prim{background:linear-gradient(150deg,#232e12,#16181d);border-color:var(--acc2)}
+  .app.prim .ico{background:var(--acc);color:var(--acc-ink)}
+  .app h3{font-size:12.5px;font-weight:700}
+  .app span{font-size:10px;color:var(--mut)}
+  .app .tg{position:absolute;top:8px;right:8px;font-size:8px;font-weight:800;padding:2px 6px;border-radius:5px}
+  .tg.new{background:var(--blue);color:#04101f}
+  .tg.chain{background:#243240;color:var(--blue)}
+
+  .th{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .back{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut)}
+  .th .ttl{font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px}
+
+  .src{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(194,240,74,.13),transparent);border:1px solid var(--acc2);border-radius:11px;padding:9px 11px;margin-bottom:12px}
+  .src .d{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);flex:0 0 auto}
+  .src .x{font-size:11.5px}
+  .src .x b{color:var(--acc)}
+  .src .x small{display:block;color:var(--mut);font-size:10px}
+  .src .swap{margin-left:auto;font-size:10px;color:var(--mut);border:1px solid var(--line2);padding:4px 8px;border-radius:7px;flex:0 0 auto}
+
+  .prev{border-radius:13px;overflow:hidden;border:1px solid var(--line2);height:132px;position:relative;margin-bottom:12px}
+  .prev .cap{position:absolute;bottom:7px;left:7px;font-size:9.5px;background:rgba(0,0,0,.6);padding:3px 7px;border-radius:6px;color:var(--mut)}
+  .prev .pl{position:absolute;inset:0;margin:auto;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:12px;border:1px solid rgba(255,255,255,.25)}
+
+  .acts{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;justify-content:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--line2);color:var(--txt);font-size:11px;font-weight:600;padding:7px 11px;border-radius:999px}
+  .chip.ch{border-color:#2a3a4a;color:#cfe6ff}
+  .chip.nw{border-color:#243240;color:#cfe6ff}
+  .chip .i{font-size:12px}
+
+  .pbarx{border:1px solid var(--line2);border-radius:13px;background:var(--card);padding:10px 11px;margin-bottom:12px}
+  .pbarx .ph{font-size:12px;color:var(--mut2);margin-bottom:10px}
+  .ctrls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .ctrl{display:inline-flex;align-items:center;gap:5px;background:#121317;border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font-size:10.5px;color:var(--mut)}
+  .ctrl b{color:var(--txt);font-weight:600}
+  .plus{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut);font-size:14px}
+  .send{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-size:13px;font-weight:900}
+
+  .ddl{border:1px solid var(--line2);border-radius:12px;background:var(--card2);overflow:hidden;margin-bottom:12px}
+  .ddl .hd{padding:8px 11px;font-size:10.5px;color:var(--mut2);border-bottom:1px solid var(--line);letter-spacing:.06em;text-transform:uppercase;display:flex}
+  .ddl .hd .ct{margin-left:auto;color:var(--mut)}
+  .ddl .it{display:flex;align-items:center;gap:9px;padding:8px 11px;font-size:12px;border-bottom:1px solid var(--line)}
+  .ddl .it:last-child{border-bottom:0}
+  .ddl .it.sel{background:rgba(194,240,74,.08)}
+  .ddl .it .m{width:22px;height:22px;border-radius:6px;background:var(--card3);display:grid;place-items:center;font-size:11px}
+  .ddl .it .nm b{font-weight:700;font-size:12px}
+  .ddl .it .nm small{display:block;color:var(--mut);font-size:10px}
+  .ddl .it .ck{margin-left:auto;color:var(--acc);font-weight:900}
+  .ddl .it .pr{margin-left:auto;font-size:10px;color:var(--mut)}
+
+  /* dual input (lip-sync) */
+  .dual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .drop{border:1px dashed var(--line2);border-radius:12px;background:var(--card);padding:13px 10px;text-align:center}
+  .drop.on{border-color:var(--acc2);background:rgba(194,240,74,.05)}
+  .drop .di{font-size:18px}
+  .drop .t{font-size:11px;font-weight:700;margin-top:5px}
+  .drop small{font-size:9.5px;color:var(--mut);display:block;margin-top:2px}
+
+  .dest{border:1px solid var(--acc2);border-radius:13px;background:linear-gradient(160deg,#1c2410,#14161b);padding:12px;margin-bottom:12px}
+  .dest .t{font-size:12px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+  .dest .opts{display:grid;gap:6px}
+  .dopt{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font-size:11.5px}
+  .dopt.sel{border-color:var(--acc);background:rgba(194,240,74,.06)}
+  .dopt .di{width:22px;height:22px;border-radius:7px;background:var(--card3);display:grid;place-items:center;font-size:11px}
+  .dopt small{display:block;color:var(--mut);font-size:9.5px}
+  .dopt .rd{margin-left:auto;width:14px;height:14px;border-radius:50%;border:2px solid var(--line2)}
+  .dopt.sel .rd{border-color:var(--acc);background:var(--acc);box-shadow:inset 0 0 0 3px var(--card)}
+  .dobtn{margin-top:10px;width:100%;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:12px;padding:9px;border-radius:10px;text-align:center}
+
+  .foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding:10px 13px}
+  .ava{width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:800;font-size:12px}
+  .foot .who{font-size:11.5px}
+  .foot .who small{display:block;color:var(--mut);font-size:10px}
+  .foot .imp{margin-left:auto;font-size:11.5px;font-weight:800;background:var(--acc);color:var(--acc-ink);padding:8px 12px;border-radius:9px}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>AssetFlow · AI Tools <span class="pill">v3 · fal.ai · 1:1 EMAS</span></h1>
+  <p>fal.ai katalogi (docs/FAL-AI-CATALOG.md, har model jonli tasdiqlangan) asosida yangilandi. Change Camera olib tashlandi; 4 yangi imkoniyat qo'shildi (Lip-sync, Slow-mo, Video→SFX, Restyle). Model nomlari fal.ai'дан.</p>
+</div>
+
+<div class="legend">
+  <span class="lg keep"><b>✓ KEEP</b> Image/Video Gen · Remove BG · Upscale · Reframe · Relight · Skin · Motion Control</span>
+  <span class="lg new"><b>+ YANGI (fal.ai)</b> Lip-sync · Slow-mo · Video→SFX · Restyle · Draw to video</span>
+  <span class="lg rm"><b>− OLINDI</b> Change Camera (fal.ai'да yo'q) · Extender→Reframe</span>
+</div>
+
+<div class="stage">
+
+  <!-- SCENE 1: LAUNCHER -->
+  <div class="scene">
+    <div class="tag">1 · Launcher</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right"><div class="ib">✦</div><div class="ib">↓</div><div class="pro">♛ 611</div></div>
+      </div>
+      <div class="nav">
+        <div class="t">Shablonlar</div><div class="t">Motion</div><div class="t">Graphics</div><div class="t">LUTs</div><div class="t on">✦ AI Tools</div>
+      </div>
+      <div class="body">
+        <div class="hero">
+          <div class="glow"></div>
+          <h2>AI Studio</h2>
+          <p>Yarat, tahrirla, ovoz qo'sh — hammasi panel ichida.</p>
+          <span class="cta">Boshlash ✦</span>
+          <span class="fal">fal.ai</span>
+        </div>
+
+        <div class="lbl">So'nggi <span class="ct">tarix</span></div>
+        <div class="strip">
+          <div class="g add">+</div>
+          <div class="g"><span class="b">✓</span><div class="warr" style="height:100%"></div></div>
+          <div class="g"><span class="b">✓</span><div class="car" style="height:100%"></div></div>
+          <div class="g"><span class="b">✓</span><div class="prod" style="height:100%"></div></div>
+        </div>
+
+        <div class="catsec">
+          <div class="lbl">Yaratish</div>
+          <div class="grid">
+            <div class="app prim"><div class="ico">✦</div><h3>Image Generate</h3><span>Seedream · Flux</span></div>
+            <div class="app prim"><div class="ico">🎬</div><h3>Video Generate</h3><span>Seedance · Kling</span></div>
+          </div>
+        </div>
+
+        <div class="catsec">
+          <div class="lbl">Tahrirlash <span class="ct">media kerak</span></div>
+          <div class="grid">
+            <div class="app"><span class="tg chain">chain</span><div class="ico">⤢</div><h3>Reframe</h3><span>Aspect + outpaint</span></div>
+            <div class="app"><span class="tg new">YANGI</span><div class="ico">✎</div><h3>Draw to video</h3><span>Chizmadan klip</span></div>
+            <div class="app"><div class="ico">⇄</div><h3>Motion Control</h3><span>Harakat ko'chirish</span></div>
+            <div class="app"><span class="tg new">YANGI</span><div class="ico">🎨</div><h3>Restyle</h3><span>Video uslubi</span></div>
+          </div>
+        </div>
+
+        <div class="catsec">
+          <div class="lbl">Yaxshilash</div>
+          <div class="grid">
+            <div class="app"><div class="ico">▣</div><h3>Remove BG</h3><span>Fon (rasm+video)</span></div>
+            <div class="app"><div class="ico">⤴</div><h3>Upscale</h3><span>Sifat</span></div>
+            <div class="app"><div class="ico">💡</div><h3>Relight</h3><span>Yorug'lik</span></div>
+            <div class="app"><span class="tg new">YANGI</span><div class="ico">🐢</div><h3>Slow-mo</h3><span>Silliq kadr</span></div>
+          </div>
+        </div>
+
+        <div class="catsec">
+          <div class="lbl">Ovoz & Yuz</div>
+          <div class="grid">
+            <div class="app"><span class="tg new">YANGI</span><div class="ico">🎤</div><h3>Lip-sync</h3><span>Gapiruvchi video</span></div>
+            <div class="app"><span class="tg new">YANGI</span><div class="ico">🔊</div><h3>Video→SFX</h3><span>Avto ovoz effekt</span></div>
+            <div class="app"><div class="ico">😊</div><h3>Skin</h3><span>Teri tekislash</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>5 kategoriya:</b> Yaratish · Tahrirlash · Yaxshilash · Ovoz&Yuz. 4 yangi tool ko'k "YANGI" tegi bilan.</div>
+  </div>
+
+  <!-- SCENE 2: VIDEO TOOL + AUTO-LOAD -->
+  <div class="scene">
+    <div class="tag">2 · Edit video · auto-load ⭐</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right"><div class="pro">♛ 611</div></div>
+      </div>
+      <div class="body">
+        <div class="th"><div class="back">‹</div><div class="ttl">🖼️ Edit video</div></div>
+
+        <div class="src">
+          <span class="d"></span>
+          <div class="x"><b>SC_01.mp4</b> — Project paneldan
+            <small>3848×2152 · 10s · 24fps · auto-yuklandi</small>
+          </div>
+          <span class="swap">Almashtirish</span>
+        </div>
+
+        <div class="prev car">
+          <div class="pl">▶</div>
+          <div class="cap">SC_01.mp4 · 16:9</div>
+        </div>
+
+        <div class="lbl" style="justify-content:center">Bu video bilan nima qilamiz?</div>
+        <div class="acts">
+          <span class="chip ch"><span class="i">✎</span> Draw to video</span>
+          <span class="chip ch"><span class="i">⤢</span> Reframe</span>
+          <span class="chip"><span class="i">▣</span> Remove BG</span>
+          <span class="chip"><span class="i">⤴</span> Upscale</span>
+          <span class="chip nw"><span class="i">🐢</span> Slow-mo</span>
+          <span class="chip nw"><span class="i">🔊</span> Video→SFX</span>
+          <span class="chip nw"><span class="i">🎨</span> Restyle</span>
+        </div>
+
+        <div class="pbarx">
+          <div class="ph">G'oyangizni yozing…</div>
+          <div class="ctrls">
+            <span class="plus">+</span>
+            <span class="ctrl">🎬 <b>Seedance Pro</b> ▾</span>
+            <span class="ctrl">▭ <b>16:9</b> ▾</span>
+            <span class="ctrl">⏱ <b>5s</b> ▾</span>
+            <span class="ctrl">✦ <b>1080p</b> ▾</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="ava">D</div>
+        <div class="who">Demo Obunachi<small>Pro · 19 yuklab olish</small></div>
+        <div class="imp">Import</div>
+      </div>
+    </div>
+    <div class="note"><b>Context-actions:</b> endi 7 ta (3 yangi ko'k chip). Auto-load mavjud jsx bilan.</div>
+  </div>
+
+  <!-- SCENE 3: IMAGE + MODEL SELECTOR (fal.ai) -->
+  <div class="scene">
+    <div class="tag">3 · Image · fal.ai modellari</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right"><div class="pro">♛ 611</div></div>
+      </div>
+      <div class="body">
+        <div class="th"><div class="back">‹</div><div class="ttl">✦ Image Generate</div></div>
+
+        <div class="ddl">
+          <div class="hd">Model <span class="ct">fal.ai · kredit</span></div>
+          <div class="it sel"><span class="m">🌊</span><span class="nm"><b>Seedream 4.5</b><small>Badiiy · rang</small></span><span class="ck">✓</span></div>
+          <div class="it"><span class="m">⚡</span><span class="nm"><b>Flux 2.0 Pro</b><small>Aniq · matn</small></span><span class="pr">5 kr</span></div>
+          <div class="it"><span class="m">🍌</span><span class="nm"><b>Nano Banana</b><small>Tez · arzon</small></span><span class="pr">2 kr</span></div>
+          <div class="it"><span class="m">✦</span><span class="nm"><b>Z-Image</b><small>Balansli</small></span><span class="pr">3 kr</span></div>
+        </div>
+
+        <div class="pbarx">
+          <div class="ph">Tasvir promtини yozing…</div>
+          <div class="ctrls">
+            <span class="plus">+</span>
+            <span class="ctrl">▭ <b>16:9</b> ▾</span>
+            <span class="ctrl">✦ <b>2K</b> ▾</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+
+        <div class="lbl" style="justify-content:center">Natija</div>
+        <div class="prev warr" style="height:120px"><div class="cap">warrior_01.png · 2K</div></div>
+        <div class="acts">
+          <span class="chip"><span class="i">⤴</span> Upscale</span>
+          <span class="chip"><span class="i">▣</span> Remove BG</span>
+          <span class="chip"><span class="i">💡</span> Relight</span>
+          <span class="chip ch"><span class="i">🎬</span> → Video</span>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="ava">D</div>
+        <div class="who">Demo Obunachi<small>Pro · 19 yuklab olish</small></div>
+        <div class="imp">Import</div>
+      </div>
+    </div>
+    <div class="note"><b>Model katalogi fal.ai'дан</b> + kredit narxи. "→ Video" — rasmni i2v ga uzatadi (chain).</div>
+  </div>
+
+  <!-- SCENE 4: NEW — LIP-SYNC -->
+  <div class="scene">
+    <div class="tag bl">4 · YANGI · Lip-sync 🎤</div>
+    <div class="panel">
+      <div class="pbar">
+        <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+        <div class="right"><div class="pro">♛ 611</div></div>
+      </div>
+      <div class="body">
+        <div class="th"><div class="back">‹</div><div class="ttl">🎤 Lip-sync</div></div>
+
+        <div class="lbl">Kirish — 2 ta</div>
+        <div class="dual">
+          <div class="drop on">
+            <div class="di">🎬</div>
+            <div class="t">Video / Yuz</div>
+            <small>SC_01.mp4 ✓<br>auto-load</small>
+          </div>
+          <div class="drop">
+            <div class="di">🎵</div>
+            <div class="t">Ovoz</div>
+            <small>yuklang yoki<br>TTS yozing</small>
+          </div>
+        </div>
+
+        <div class="pbarx">
+          <div class="ph">Yoki matn yozing → ovozга aylantiramiz (TTS)…</div>
+          <div class="ctrls">
+            <span class="ctrl">🎙 <b>Ovoz: Aziz</b> ▾</span>
+            <span class="ctrl">⚙ <b>Sync v2</b> ▾</span>
+            <span class="send">↑</span>
+          </div>
+        </div>
+
+        <div class="lbl" style="justify-content:center">Natija — og'iz ovozга mos harakatlanadi</div>
+        <div class="prev warr" style="height:118px"><div class="cap">talking_01.mp4 · tayyor</div></div>
+      </div>
+      <div class="foot">
+        <div class="ava">D</div>
+        <div class="who">Demo Obunachi<small>Pro · 20 yuklab olish</small></div>
+        <div class="imp">Import</div>
+      </div>
+    </div>
+    <div class="note"><b>Yangi imkoniyat:</b> video + ovoz → gapiruvchi video. Dublyaj, avatar uchun. Bir necha yangi tool shu "ikki-kirish" naqshида.</div>
+  </div>
+
+</div>
+
+</body>
+</html>
