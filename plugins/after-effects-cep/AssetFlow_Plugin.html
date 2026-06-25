@@ -2544,7 +2544,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:170px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box}
 .axig .pbox textarea::placeholder{color:var(--mut2)}
 /* @ mention dropdown (referens autocomplete — tepaga ochiladi) */
-.axig .mention{position:absolute;left:8px;right:8px;bottom:calc(100% + 6px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:none;z-index:40;max-height:210px;overflow-y:auto}
+/* PASTGA, prompt qutisi ICHIDA (oldin `bottom:calc(100%+6px)` tepaga ochilib header tagida kesilardi).
+   top:8px — quti tepasidan pastga tushadi; quti baland (textarea 170px+) → to'liq sig'adi, header kesmaydi. */
+.axig .mention{position:absolute;left:8px;right:8px;top:8px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:none;z-index:40;max-height:210px;overflow-y:auto}
 .axig .mention.on{display:block}
 .axig .mention .mh{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);padding:6px 8px}
 .axig .mitem{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer}
@@ -2571,8 +2573,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .gen:hover{background:var(--acc2)}.axig .gen:disabled{opacity:.4;cursor:not-allowed}
 /* So'nggi — katta kartali 2-ustun grid (oddiy scroll) */
 .axig .morelink{cursor:pointer;color:var(--blue)}.axig .morelink:hover{text-decoration:underline}
-.axig .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.axig .recentgrid .rc{border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
+.axig .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* width:100%/height:auto/flex:none — .axroot .rc{flex:0 0 60px;height:60px} (home strip) LEAK'ini yengadi:
+   aks holda karta 60×60 kichik bo'lib qolardi. Endi har karta ustun katagini TO'LIQ to'ldiradi (kvadrat). */
+.axig .recentgrid .rc{width:100%;height:auto;flex:none;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
 .axig .recentgrid .rc:hover{border-color:var(--mut2)}
 .axig .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axig .recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
@@ -2597,7 +2601,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .recbatch .bb{font-size:11.5px;color:var(--mut);cursor:pointer;display:flex;align-items:center;gap:4px;padding:5px 8px;border-radius:8px;border:1px solid var(--line2);white-space:nowrap;flex:0 0 auto}
 .axig .recbatch .bb:hover{color:var(--txt);border-color:var(--mut2)}.axig .recbatch .bb.del:hover{color:var(--red);border-color:var(--red)}
 /* lightbox — natijani to'liq ko'rish (.app'ni qoplaydi) */
-.axig .lightbox{position:absolute;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:70;padding:18px}
+.axig .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:9992;padding:18px}
 .axig .lightbox.on{display:flex}
 .axig .lightbox .lbinner{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:100%;max-height:100%}
 .axig .lightbox .lbinner img{max-width:100%;flex:0 1 auto;min-height:0;object-fit:contain;border-radius:8px}
@@ -2632,9 +2636,12 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .recent .rt:hover{border-color:var(--mut2)}
 .axig .recent .more{flex:0 0 auto;margin-left:auto;font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px}
 .axig .recent .more:hover{text-decoration:underline}
-.axig .sheet{position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:50;padding:0;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
-.axig .sheet.on{display:flex}
-.axig .sheetc{width:100%;background:var(--panel);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;padding:14px;max-height:78%;overflow-y:auto}
+/* .sheet = viewport'ni qoplaydigan tashqi-click ushlovchi (yengil backdrop); .sheetc = POPOVER —
+   JS bosilgan chip yoniga (ostiga/ustiga) joylaydi (positionPopover). Oldin pastki-bar edi (keng panelда
+   bosilgan joydan uzoq tushardi). position:fixed → viewportга nisbatan; ajdod transform yo'q. */
+.axig .sheet{position:fixed;inset:0;background:rgba(0,0,0,.22);display:none;z-index:9990;padding:0;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
+.axig .sheet.on{display:block}
+.axig .sheetc{position:fixed;left:0;top:0;width:auto;max-width:92vw;background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.6);padding:13px;max-height:62vh;overflow-y:auto}
 .axig .sheeth{display:flex;align-items:center;margin-bottom:11px}.axig .sheeth b{font-size:14px}.axig .sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center}
 .axig .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}
 .axig .opt:hover{border-color:var(--mut2)}
@@ -9254,7 +9261,30 @@ window.afGallery=(function(){
 
   // ---- sheet'lar (backdrop + Esc + ✕) ----
   function closeSheets(){ document.querySelectorAll('.axig .sheet').forEach(function(s){s.classList.remove('on');}); }
-  function openSheet(id){ closeSheets(); var s=$(id); if(s)s.classList.add('on'); }
+  // POPOVER: sheetc'ni bosilgan elementга (anchorEl) bog'lab joylaydi — ostiga, joy yetmasa ustiga;
+  // viewport ichида clamp. anchorEl yo'q bo'lsa — markazда past. (Oldin pastki-bar edi.)
+  function positionPopover(sc,anchorEl){
+    if(!sc)return;
+    var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
+    sc.style.bottom='auto';
+    if(anchorEl&&anchorEl.getBoundingClientRect){
+      var ar=anchorEl.getBoundingClientRect();
+      var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
+      sc.style.width=w+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var sh=sc.offsetHeight; // o'lchash
+      var left=Math.min(Math.max(pad,ar.left),Math.max(pad,vw-w-pad));
+      var top;
+      if(ar.bottom+gap+sh<=vh-pad) top=ar.bottom+gap;       // chip OSTIДА joy bor
+      else if(ar.top-gap-sh>=pad) top=ar.top-gap-sh;        // chip USTIDA joy bor
+      else top=Math.max(pad,vh-sh-pad);                     // sig'masa — viewport ichида clamp
+      sc.style.left=left+'px'; sc.style.top=top+'px';
+    }else{
+      var w2=Math.min(380,vw-pad*2);
+      sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
+      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
+    }
+  }
+  function openSheet(id,anchorEl){ closeSheets(); var s=$(id); if(!s)return; s.classList.add('on'); positionPopover(s.querySelector('.sheetc'),anchorEl); }
   document.querySelectorAll('.axig [data-igclose]').forEach(function(x){ x.addEventListener('click',closeSheets); });
   document.querySelectorAll('.axig .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeSheets(); }); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.querySelector('.axig .sheet.on'))closeSheets(); });
@@ -9301,12 +9331,12 @@ window.afGallery=(function(){
   }
 
   // ---- chip openerlar ----
-  $('igModelSeg').addEventListener('click',function(){ openSheet('igMSheet'); });
-  $('igArSeg').addEventListener('click',function(){ buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; $('igArVal').textContent=v; closeSheets(); }); openSheet('igArSheet'); });
+  $('igModelSeg').addEventListener('click',function(){ openSheet('igMSheet',$('igModelSeg')); });
+  $('igArSeg').addEventListener('click',function(){ buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; $('igArVal').textContent=v; closeSheets(); }); openSheet('igArSheet',$('igArSeg')); });
   function buildQ(){ var arr=meta.quals.map(function(q){ return {val:q,label:cap(q)}; }); buildPills($('igQPills'),arr,st.q,function(v){ st.q=v; $('igQVal').textContent=cap(v); recost(); buildQ(); }); }
-  $('igQSeg').addEventListener('click',function(){ buildQ(); openSheet('igQSheet'); });
+  $('igQSeg').addEventListener('click',function(){ buildQ(); openSheet('igQSheet',$('igQSeg')); });
   function buildN(){ buildPills($('igNPills'),meta.counts,st.n,function(v){ st.n=v; $('igNVal').textContent=String(v); recost(); buildN(); }); }
-  $('igNSeg').addEventListener('click',function(){ buildN(); openSheet('igNSheet'); });
+  $('igNSeg').addEventListener('click',function(){ buildN(); openSheet('igNSheet',$('igNSeg')); });
 
   // ---- @imgN token promptga (kursor joyiga) ----
   function insertToken(tok){
@@ -9428,7 +9458,7 @@ window.afGallery=(function(){
   // ---- ＋ Qo'shish → manba menyu (3 ta manba) ----
   $('igRefAdd').addEventListener('click',function(){
     if(st.refs.length>=meta.maxRefs){ toast('Maks '+meta.maxRefs+' ta referens','warning'); return; }
-    openSheet('igAddSheet'); // manba menyu — har manba o'z mavjudligini tekshiradi
+    openSheet('igAddSheet',$('igRefAdd')); // manba menyu — ＋Referens tugmasiga bog'lab (popover)
   });
   // 1) Fayl yuklash
   $('igSrcFile').addEventListener('click',function(){
@@ -9445,7 +9475,7 @@ window.afGallery=(function(){
   $('igSrcProj').addEventListener('click',function(){
     closeSheets();
     if(typeof csInterface==='undefined'||!csInterface){ toast('Project paneldan faqat After Effects ichida','info'); return; }
-    $('igProjList').innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openSheet('igProjSheet');
+    $('igProjList').innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openSheet('igProjSheet',$('igRefAdd'));
     hostCall('listProjectFootage').then(function(r){
       if(!$('igProjList'))return;
       if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; return; }

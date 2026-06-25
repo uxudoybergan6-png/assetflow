@@ -1,7 +1,7 @@
-# SESSION REPORT — 2026-06-25 — So'nggi grid (hover/select/delete) + lightbox amallar
+# SESSION REPORT — 2026-06-26 — Tanlov menyulari pastki-bar → BOSILGAN JOYДА popover
 
-- **So'nggi grid** (`renderRecentGrid`, `.axig .recentgrid`): katta 2-ustun kartalar (aspect 1/1) + HOVER amallar (⬇ Yuklab, ✕ O'chirish→`DELETE /gen/:jobId`, tasdiq bilan) + type badge (Rasm/Video/Ovoz/SFX, Video ▶). Har item `id`(jobId) saqlanadi (`loadRecent` + `renderResults(...,jobId)`).
-- **Multi-select**: "☑ Tanlash" (`#igRecentSel`) → select rejim (checkbox yuqori-chap); batch bar "N tanlandi · ⬇ Yuklab · 🗑 O'chirish · Bekor" (`recentBatchDelete` — har biri DELETE, tasdiq). Tarix cache `afGallery.invalidate()`.
-- **Lightbox amal paneli** (`openLightbox(item)`): rasm bosilsa (natija kartasi YOKI So'nggi) → katta rasm + ⤓ Import (`aiImportMedia`) · ↺ Referensга (`addRefReady`, refMode='none'→yashirin) · ⬇ Yuklab. Video/Ovoz → ikona placeholder + Import/Yuklab. ✕/backdrop/Esc yopadi.
-- TEKSHIRUV: plagin 6 `<script>` `new Function` — **0 xato**. Backend TEGILMADI. **Headless** (preview, mock API): katta kartalar+badge ✓ · hover ⬇/✕ (single delete 5→4) ✓ · ☑ select→batch delete (g1,g2 → 4→2) ✓ · rasm lightbox (3 amal+Referensга) / video lightbox (placeholder+2 amal) ✓ · gen oqimi (cost-quote→/gen→poll→natija, So'nggi prepend id bilan) ISHLAYDI · 0 console xato.
-- KUTILMOQDA: AE install-cep → real sinash.
+- **MUAMMO:** sheet'lar (model/o'lcham/sifat/soni, +Referens manba) `fixed` bilan ko'rinadigan viewport PASTIДА bottom-bar bo'lib ochilardi — keng AE panelда bosilgan chipdan uzoq tushardi (foydalanuvchi: "o'sha bosgan joyida ochilishi kerak").
+- **TUZATISH:** `.axig .sheet` → endi yengil backdrop (tashqi-click ushlovchi); `.sheetc` → **POPOVER** (`position:fixed`, JS `positionPopover` bilan bosilgan chipга bog'lanadi: chip OSTIДА, joy yetmasa USTIДА; viewport ichида clamp; kenglik ~chip eni 240-380px). `openSheet(id,anchorEl)` — har opener clicked elementни uzatadi (igModelSeg/igArSeg/igQSeg/igNSeg, +Referens→igRefAdd). Backdrop/Esc/tanlov mantiqи O'ZGARMADI.
+- Eslatma: `docs/AI-TOOL-UI-STANDARD.md` "pastdan sheet" deydi — bu tool uchun foydalanuvchi so'rovi bilan popover'ga o'tildi (lightbox markazда qoldi).
+- **TEKSHIRUV:** plagin 6 `<script>` `new Function` — 0 xato. Headless (700px panel): Model/O'lcham/Soni popover chip OSTIДА (top≈chipBottom+6), pastki-bar emas, viewport ichида clamp — o'lchov + screenshot; pill tanlash→tanlandi+yopildi, backdrop+Esc yopadi. Backend tegilmadi.
+- KUTILMOQDA: AE install-cep → real ko'rinish.
