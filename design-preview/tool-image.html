@@ -16,37 +16,45 @@
   .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}
   .spacer{flex:1}
   .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
-  .scroll{flex:1;overflow-y:auto;padding:14px}
+  .scroll{flex:1;overflow-y:auto;padding:12px}
   .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
 
-  .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center}
+  .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 6px;display:flex;align-items:center}
   .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
   .req{color:var(--acc);margin-left:5px}
-  .sect{margin-bottom:16px}
+  .sect{margin-bottom:11px}
   .warn{display:none;align-items:flex-start;gap:7px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:11.5px;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.4}
   .warn.on{display:flex}.warn .wi{flex:0 0 auto}
 
   /* MODEL qatori (tanada) */
-  .mrow{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:11px 12px;cursor:pointer}
+  .mrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:9px 11px;cursor:pointer}
   .mrow:hover{border-color:var(--mut2)}
-  .mrow .mi{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2a3a12,#15171b);display:grid;place-items:center;color:var(--acc);flex:0 0 auto}
+  .mrow .mi{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2a3a12,#15171b);display:grid;place-items:center;color:var(--acc);flex:0 0 auto}
   .mrow .mt b{font-size:13.5px;display:block}.mrow .mt small{font-size:10.5px;color:var(--mut)}
   .mrow .ch{margin-left:auto;color:var(--mut)}
 
   /* REFERENCES */
   .refgrid{display:flex;gap:9px;flex-wrap:wrap}
-  .reftile{width:80px;height:80px;border-radius:12px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center;overflow:hidden}
+  .reftile{width:64px;height:64px;border-radius:11px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center;overflow:hidden}
   .reftile .tag{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff;font-size:10.5px;font-weight:600;padding:9px 6px 4px;text-align:center}
   .reftile .rx{position:absolute;top:-7px;right:-7px;width:19px;height:19px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:11px;display:grid;place-items:center;cursor:pointer;z-index:2}
   .reftile .spin{position:absolute;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;z-index:1}
   .reftile .spin i{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:block}
-  .refadd{width:80px;height:80px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--mut);font-size:11px;cursor:pointer}
-  .refadd:hover{border-color:var(--acc2);color:var(--acc)}.refadd .pl{font-size:21px;line-height:1}
+  .refadd{width:64px;height:64px;border-radius:11px;border:1.5px dashed var(--line2);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--mut);font-size:10px;cursor:pointer}
+  .refadd:hover{border-color:var(--acc2);color:var(--acc)}.refadd .pl{font-size:19px;line-height:1}
 
   /* PROMPT */
-  .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s}
+  .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s;position:relative}
   .pbox:focus-within{border-color:#3a4150}
-  .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:60px;line-height:1.5}
+  /* @ mention dropdown */
+  .mention{position:absolute;left:8px;right:8px;bottom:calc(100% + 6px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:none;z-index:40;max-height:210px;overflow-y:auto}
+  .mention.on{display:block}
+  .mention .mh{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);padding:6px 8px}
+  .mitem{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer}
+  .mitem:hover,.mitem.sel{background:var(--card2)}
+  .mitem .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;flex:0 0 auto;border:1px solid var(--line2)}
+  .mitem b{font-size:12.5px;display:block}.mitem small{font-size:10.5px;color:var(--mut)}
+  .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:46px;line-height:1.5}
   .pbox textarea::placeholder{color:var(--mut2)}
   .prow{display:flex;justify-content:flex-end;margin-top:6px}
   .enhance{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:4px 8px;border-radius:8px}
@@ -59,10 +67,17 @@
   .seg .lab{color:var(--mut2);font-size:11px;font-weight:500;flex:0 0 auto}.seg .sv{flex:1;overflow:hidden;text-overflow:ellipsis}.seg .sc{color:var(--mut2);font-size:10px;flex:0 0 auto;margin-left:auto}
 
   /* foot tugma */
-  .foot{padding:12px 13px;border-top:1px solid var(--line);flex:0 0 auto;background:var(--panel)}
-  .gen{width:100%;height:46px;border-radius:12px;background:var(--acc);color:var(--acc-ink);border:0;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .foot{padding:10px 13px;border-top:1px solid var(--line);flex:0 0 auto;background:var(--panel)}
+  .gen{width:100%;height:44px;border-radius:12px;background:var(--acc);color:var(--acc-ink);border:0;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
   .gen .pc{font-size:12px;font-weight:700;opacity:.7}
   .gen:hover{background:var(--acc2)}.gen:disabled{opacity:.4;cursor:not-allowed}
+  .recent{display:flex;align-items:center;gap:6px;margin-top:9px;overflow-x:auto}
+  .recent::-webkit-scrollbar{height:0}
+  .recent .rlbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2);font-weight:700;flex:0 0 auto;margin-right:2px}
+  .recent .rt{width:38px;height:38px;border-radius:8px;background-size:cover;background-position:center;flex:0 0 auto;border:1px solid var(--line2);cursor:pointer}
+  .recent .rt:hover{border-color:var(--mut2)}
+  .recent .more{flex:0 0 auto;margin-left:auto;font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px}
+  .recent .more:hover{text-decoration:underline}
 
   /* progress + natija */
   .prog{margin-bottom:16px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.prog.on{display:block}
@@ -73,7 +88,12 @@
   .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
   .res{margin-bottom:16px;display:none}.res.on{display:block}
   .rgrid{display:grid;gap:9px}.rgrid.g1{grid-template-columns:1fr}.rgrid.g2{grid-template-columns:1fr 1fr}
-  .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card)}.rcard img{display:block;width:100%;height:auto}
+  .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card);position:relative}.rcard img{display:block;width:100%;height:auto}
+  .rcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+  .rcard .del{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer;font-size:13px;z-index:2}
+  .rcard .del:hover{background:rgba(255,107,107,.75)}
+  .rcard .selcb{position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:2;color:transparent;font-size:13px;font-weight:800}
+  .rcard.sel .selcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
   .rcard .ra{display:flex;border-top:1px solid var(--line)}
   .rcard .ra div{flex:1;text-align:center;padding:8px;font-size:11.5px;color:var(--mut);cursor:pointer}
   .rcard .ra div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.rcard .ra div+div{border-left:1px solid var(--line)}
@@ -141,7 +161,8 @@
     <div class="sect">
       <div class="lbl">Prompt <span class="req">*</span></div>
       <div class="pbox">
-        <textarea id="prompt" placeholder="Nima qilish kerak? Referensni bossangiz @img1 qo'shiladi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
+        <div class="mention" id="mention"></div>
+        <textarea id="prompt" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
         <div class="prow"><span class="enhance" id="enhanceBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span></div>
       </div>
     </div>
@@ -159,6 +180,7 @@
 
   <div class="foot">
     <button class="gen" id="gen" disabled>Yaratish <span class="pc" id="sendCost">✦12</span></button>
+    <div class="recent" id="recent"></div>
   </div>
 
   <input type="file" id="fileInp" accept="image/*" multiple style="display:none">
@@ -284,6 +306,13 @@
     // server yuklash (real: R2 upload) — spinner aylanadi
     setTimeout(function(){ref.loading=false;renderRefs();refreshGen();toast('@img'+(state.refs.indexOf(ref)+1)+' tayyor')},800);
   }
+  // natijani to'g'ridan referensga (server URL tayyor — qayta yuklash shart emas)
+  function addRefReady(url){
+    if(M().refMode==='none'){toast('Bu model referens olmaydi');return}
+    if(M().maxRefs&&state.refs.length>=M().maxRefs){toast('Referens chegarasi: '+M().maxRefs);return}
+    state.refs.push({url:url,loading:false});renderRefs();updRefMeta();refreshGen();
+    toast('@img'+state.refs.length+' referensga qo‘shildi');
+  }
 
   // enhance (mock — realда /gen/prompt/enhance)
   $('enhanceBtn').addEventListener('click',function(){
@@ -293,7 +322,34 @@
   });
 
   var ta=$('prompt');
-  ta.addEventListener('input',function(){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px';refreshGen()});
+  var mention=$('mention');
+  ta.addEventListener('input',function(){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,160)+'px';refreshGen();checkMention()});
+  ta.addEventListener('keydown',function(e){if(e.key==='Escape'&&mention.classList.contains('on')){e.stopPropagation();hideMention()}});
+  ta.addEventListener('blur',function(){setTimeout(hideMention,150)});
+
+  // @ yozilsa referenslar ro'yxati (Magnific kabi)
+  function checkMention(){
+    var caret=ta.selectionStart;var pre=ta.value.slice(0,caret);var m=pre.match(/@(\w*)$/);
+    if(m)showMention(m[1]);else hideMention();
+  }
+  function showMention(q){
+    if(state.refs.length===0){mention.innerHTML='<div class="mh">Referens yo‘q — avval rasm qo‘shing</div>';mention.classList.add('on');return}
+    q=(q||'').toLowerCase();
+    var html='<div class="mh">Referenslar</div>',shown=0;
+    state.refs.forEach(function(r,i){
+      var name='img'+(i+1);if(q&&name.indexOf(q)!==0&&String(i+1)!==q)return;shown++;
+      html+='<div class="mitem" data-i="'+i+'"><div class="mt" style="background-image:url('+r.url+')"></div><div><b>@'+name+'</b><small>referens</small></div></div>';
+    });
+    if(!shown){hideMention();return}
+    mention.innerHTML=html;mention.classList.add('on');
+    Array.prototype.forEach.call(mention.querySelectorAll('.mitem'),function(el){el.addEventListener('mousedown',function(ev){ev.preventDefault();pickMention(parseInt(el.getAttribute('data-i'),10))})});
+  }
+  function hideMention(){mention.classList.remove('on')}
+  function pickMention(i){
+    var caret=ta.selectionStart;var val=ta.value;var pre=val.slice(0,caret);var m=pre.match(/@(\w*)$/);
+    if(m){var s=caret-m[0].length;var tok='@img'+(i+1)+' ';ta.value=val.slice(0,s)+tok+val.slice(caret);var np=s+tok.length;ta.focus();ta.setSelectionRange(np,np)}
+    hideMention();ta.dispatchEvent(new Event('input'));
+  }
 
   // mock natija (canvas) — realда server natijasi
   function dims(ar){var base=768;var map={'1:1':[1,1],'16:9':[16,9],'9:16':[9,16],'4:3':[4,3],'3:4':[3,4],'Auto':[1,1]};var m=map[ar]||[1,1];var w,h;if(m[0]>=m[1]){w=base;h=Math.round(base*m[1]/m[0])}else{h=base;w=Math.round(base*m[0]/m[1])}return [w,h]}
@@ -323,9 +379,17 @@
     for(var i=0;i<state.n;i++){(function(idx){makeImg(idx,function(url){
       state.lastResults.push(url);
       var card=document.createElement('div');card.className='rcard';var img=document.createElement('img');img.src=url;card.appendChild(img);
+      // Tanlash (select)
+      var cb=document.createElement('div');cb.className='selcb';cb.textContent='✓';cb.title='Tanlash';
+      cb.addEventListener('click',function(){card.classList.toggle('sel')});
+      card.appendChild(cb);
+      // O'chirish
+      var del=document.createElement('div');del.className='del';del.textContent='✕';del.title='Natijani o‘chirish';
+      del.addEventListener('click',function(){var k=state.lastResults.indexOf(url);if(k>=0)state.lastResults.splice(k,1);grid.removeChild(card);if(!grid.children.length)$('res').classList.remove('on');toast('Natija o‘chirildi')});
+      card.appendChild(del);
       var ra=document.createElement('div');ra.className='ra';
       ra.appendChild(mkAct('⤓ Import',function(){toast('AE‘ga import (demo)')}));
-      ra.appendChild(mkAct('♡ Saqlash',function(){toast('Saqlandi')}));
+      ra.appendChild(mkAct('↺ Referensga',function(){addRefReady(url)}));
       ra.appendChild(mkAct('⬇',function(){var a=document.createElement('a');a.href=url;a.download='assetflow.png';a.click()}));
       card.appendChild(ra);grid.appendChild(card);
       done++;if(done===state.n){$('resMeta').textContent=state.n+' ta · '+state.ar+' · '+state.q;$('res').classList.add('on');$('res').scrollIntoView({behavior:'smooth'})}
@@ -334,7 +398,24 @@
   function mkAct(label,fn){var d=document.createElement('div');d.textContent=label;d.addEventListener('click',fn);return d}
   $('back').addEventListener('click',function(){toast('← AI Tools launcher')});
 
-  applyModel();updRefMeta();
+  // So'nggi genlar lentasi (oxirgi bir nechtasi; barchasi → Tarix view)
+  var recents=[
+    {bg:'linear-gradient(160deg,#3a2418,#14100c)'},
+    {bg:'radial-gradient(circle at 50% 45%,#5a3bd0,#1a1030)'},
+    {bg:'linear-gradient(180deg,#1a2740,#0c0f18)'}
+  ];
+  function renderRecent(){
+    var r=$('recent');r.innerHTML='';
+    if(!recents.length){return}
+    var lbl=document.createElement('span');lbl.className='rlbl';lbl.textContent='So‘nggi';r.appendChild(lbl);
+    recents.slice(0,5).forEach(function(it){var d=document.createElement('div');d.className='rt';if(it.url)d.style.backgroundImage='url('+it.url+')';else d.style.background=it.bg;d.title='Ochish';d.addEventListener('click',function(){toast('So‘nggi natija ochildi (demo)')});r.appendChild(d)});
+    var m=document.createElement('span');m.className='more';m.textContent='Barchasi →';m.title='Tarix';m.addEventListener('click',function(){toast('← Tarix view (barcha genlar)')});r.appendChild(m);
+  }
+  // gen tugagach so'nggi lentaga qo'shamiz
+  var _origRender=renderResults;
+  renderResults=function(){_origRender();state.lastResults.forEach(function(u){recents.unshift({url:u})});renderRecent()};
+
+  applyModel();updRefMeta();renderRecent();
 })();
 </script>
 </body>

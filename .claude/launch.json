@@ -1,0 +1,1 @@
+{ "version":"0.0.1","configurations":[{"name":"ae-plugin-preview","runtimeExecutable":"python3","runtimeArgs":["-m","http.server","8973","--directory","plugins/after-effects-cep"],"port":8973}] }

@@ -2488,10 +2488,18 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .reftile .spin i{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:block}
 .axig .refadd{width:80px;height:80px;border-radius:12px;border:1.5px dashed var(--line2);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--mut);font-size:11px;cursor:pointer}
 .axig .refadd:hover{border-color:var(--acc2);color:var(--acc)}.axig .refadd .pl{display:flex}
-.axig .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s}
+.axig .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s;position:relative}
 .axig .pbox:focus-within{border-color:#3a4150}
 .axig .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:60px;max-height:160px;overflow-y:auto;line-height:1.5;box-sizing:border-box}
 .axig .pbox textarea::placeholder{color:var(--mut2)}
+/* @ mention dropdown (referens autocomplete — tepaga ochiladi) */
+.axig .mention{position:absolute;left:8px;right:8px;bottom:calc(100% + 6px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:6px;display:none;z-index:40;max-height:210px;overflow-y:auto}
+.axig .mention.on{display:block}
+.axig .mention .mh{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);padding:6px 8px}
+.axig .mitem{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer}
+.axig .mitem:hover,.axig .mitem.sel{background:var(--card2)}
+.axig .mitem .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;flex:0 0 auto;border:1px solid var(--line2)}
+.axig .mitem b{font-size:12.5px;display:block}.axig .mitem small{font-size:10.5px;color:var(--mut)}
 .axig .prow{display:flex;justify-content:flex-end;margin-top:6px}
 .axig .enhance{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:4px 8px;border-radius:8px}
 .axig .enhance:hover{background:rgba(90,169,255,.12)}.axig .enhance.busy{opacity:.6;pointer-events:none}
@@ -2511,10 +2519,23 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
 .axig .res{margin-bottom:16px;display:none}.axig .res.on{display:block}
 .axig .rgrid{display:grid;gap:9px}.axig .rgrid.g1{grid-template-columns:1fr}.axig .rgrid.g2{grid-template-columns:1fr 1fr}
-.axig .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card)}.axig .rcard img{display:block;width:100%;height:auto}
+.axig .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card);position:relative}.axig .rcard img{display:block;width:100%;height:auto}
+.axig .rcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.axig .rcard .selcb{position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:2;color:transparent;font-size:13px;font-weight:800}
+.axig .rcard.sel .selcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.axig .rcard .del{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer;font-size:13px;z-index:2}
+.axig .rcard .del:hover{background:rgba(255,107,107,.75)}
 .axig .rcard .ra{display:flex;border-top:1px solid var(--line)}
 .axig .rcard .ra div{flex:1;text-align:center;padding:8px;font-size:11.5px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
 .axig .rcard .ra div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.axig .rcard .ra div+div{border-left:1px solid var(--line)}
+/* So'nggi lenta (foot ostida — oxirgi natijalar + Barchasi → Tarix) */
+.axig .recent{display:flex;align-items:center;gap:6px;margin-top:9px;overflow-x:auto}
+.axig .recent::-webkit-scrollbar{height:0}
+.axig .recent .rlbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2);font-weight:700;flex:0 0 auto;margin-right:2px}
+.axig .recent .rt{width:38px;height:38px;border-radius:8px;background-size:cover;background-position:center;background-color:var(--card3);flex:0 0 auto;border:1px solid var(--line2);cursor:pointer}
+.axig .recent .rt:hover{border-color:var(--mut2)}
+.axig .recent .more{flex:0 0 auto;margin-left:auto;font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px}
+.axig .recent .more:hover{text-decoration:underline}
 .axig .sheet{position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:50;padding:0;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
 .axig .sheet.on{display:flex}
 .axig .sheetc{width:100%;background:var(--panel);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;padding:14px;max-height:78%;overflow-y:auto}
@@ -2994,7 +3015,8 @@ html.home-mode #homePage{display:block!important}
                             <div class="sect">
                               <div class="lbl">Prompt <span class="req">*</span></div>
                               <div class="pbox">
-                                <textarea id="igPrompt" placeholder="Nima qilish kerak? Referensni bossangiz @img1 qo'shiladi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
+                                <div class="mention" id="igMention"></div>
+                                <textarea id="igPrompt" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
                                 <div class="prow"><span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span></div>
                               </div>
                             </div>
@@ -3012,6 +3034,7 @@ html.home-mode #homePage{display:block!important}
 
                           <div class="foot">
                             <button class="gen" id="igGen" disabled>Yaratish <span class="pc" id="igCost">✦12</span></button>
+                            <div class="recent" id="igRecent"></div>
                           </div>
 
                           <!-- model sheet -->
@@ -8703,11 +8726,49 @@ async function bootPlugin(){
     var sb=document.querySelector('#opBar .sendbtn');if(sb)sb.onclick=function(){if(sb.classList.contains('off')){toast('Kredit yetarli emas','err');return;}run(sb,{type:'video',count:1,isOp:true,parent:'editvideo'});};
   }
 
-  // ===== history =====
-  var HIST=[];
-  function renderRecent(){var s=document.getElementById('recentStrip');if(!s)return;if(!HIST.length){s.innerHTML='<div class="rc add" data-go="genimage">+</div>';return;}s.innerHTML='<div class="rc add" data-go="genimage">+</div>';HIST.slice(0,5).forEach(function(h){var d=document.createElement('div');d.className='rc '+h.c;d.setAttribute('data-hist',h.n);d.innerHTML='<span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span>';s.appendChild(d);});}
-  function renderHistory(f){document.querySelectorAll('.hfilter .f').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-hf')===f);});var w=document.getElementById('hgridWrap');var list=HIST.filter(function(h){return f==='all'||h.t===f;});if(!list.length){w.innerHTML='<div class="empty"><b>Hali natija yo\'q</b>Birinchi generatsiyani yarating.<br><span class="pick" data-go="launcher">Boshlash</span></div>';return;}var g='<div class="hgrid">';list.forEach(function(h){g+='<div class="hcell" data-hist="'+h.n+'"><div class="th '+h.c+'"><span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span></div><div class="mt">'+h.n+'</div></div>';});g+='</div>';w.innerHTML=g;}
-  function histDetail(n){var h=HIST.find(function(x){return x.n===n;});if(!h)return;openSheet('<div class="sh"><b>'+h.n+'</b><span class="cl" data-close>✕</span></div><div class="prev '+(h.t==='video'?'v':'i')+'" style="height:150px">'+(h.t==='video'?'<div class=pl>▶</div>':'')+'<div class="cap">'+h.n+'</div></div><div class="resbtns" style="margin-bottom:8px"><div class="rb pri" data-close data-toastmsg="Faol comp\'ga">🎬 Comp\'ga</div><div class="rb" data-close data-toastmsg="Yuklab olindi">⬇ Download</div></div><div class="resbtns"><div class="rb" data-close data-go="'+(h.t==='video'?'editvideo':'editimage')+'">✏️ Tahrirla</div>'+(h.t==='image'?'<div class="rb" data-close data-go="genvideo">🎬 →Video</div>':'')+'</div>');}
+  // ===== history (REAL /api/studio/gen/history) =====
+  var HIST=[],histLoaded=false,histLoading=false;
+  function histEsc(s){return String(s==null?'':s).replace(/[<>&"]/g,function(c){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];});}
+  function histType(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':'image'; }
+  function loadHistory(cb){
+    if(histLoading)return; histLoading=true;
+    studioGet('/api/studio/gen/history?limit=40').then(function(d){
+      var items=(d&&d.items)||[];
+      HIST=items.map(function(g){
+        var a=(g.assets&&g.assets[0])||{};
+        var p=(g.params||{});
+        var sub=[p.aspectRatio,p.quality||p.resolution,p.duration?(p.duration+'s'):null].filter(Boolean).join(' · ');
+        return {id:g.id,t:histType(g.mode),mode:g.mode,url:a.url||'',thumb:a.thumbUrl||a.url||'',
+          title:((g.prompt||'').trim()||'Natija').slice(0,60),sub:sub};
+      });
+      histLoaded=true; histLoading=false; if(cb)cb();
+    }).catch(function(){ histLoading=false; if(cb)cb(); });
+  }
+  function renderRecent(){var s=document.getElementById('recentStrip');if(!s)return;if(!HIST.length){s.innerHTML='<div class="rc add" data-go="genimage">+</div>';return;}s.innerHTML='<div class="rc add" data-go="genimage">+</div>';HIST.slice(0,5).forEach(function(h){var d=document.createElement('div');d.className='rc';if(h.thumb){d.style.backgroundImage='url("'+h.thumb+'")';d.style.backgroundSize='cover';d.style.backgroundPosition='center';}d.setAttribute('data-hist',h.id);d.innerHTML='<span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span>';s.appendChild(d);});}
+  function renderHistory(f){
+    document.querySelectorAll('.hfilter .f').forEach(function(x){x.classList.toggle('on',x.getAttribute('data-hf')===f);});
+    var w=document.getElementById('hgridWrap'); if(!w)return;
+    if(!histLoaded){ w.innerHTML='<div class="empty"><b>Yuklanmoqda…</b>Tarix olinmoqda.</div>'; loadHistory(function(){ renderHistory(f); }); return; }
+    var list=HIST.filter(function(h){return f==='all'||h.t===f;});
+    if(!list.length){w.innerHTML='<div class="empty"><b>Hali natija yo\'q</b>'+(f==='all'?'Birinchi generatsiyani yarating.':'Bu turда natija yo\'q.')+'<br><span class="pick" data-go="launcher">Boshlash</span></div>';return;}
+    var g='<div class="hgrid">';
+    list.forEach(function(h){
+      var th=h.thumb?(' style="background-image:url(\''+h.thumb+'\');background-size:cover;background-position:center"'):' style="background:var(--card3)"';
+      g+='<div class="hcell" data-hist="'+h.id+'"><div class="th"'+th+'><span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span></div><div class="mt">'+histEsc(h.title)+'</div></div>';
+    });
+    g+='</div>'; w.innerHTML=g;
+  }
+  function histDetail(id){
+    var h=HIST.filter(function(x){return x.id===id;})[0]; if(!h)return;
+    var kindLabel=h.t==='video'?'Video':h.t==='audio'?'Ovoz':'Rasm';
+    var prev=h.thumb?('<div class="prev i" style="height:150px;background-image:url(\''+h.thumb+'\');background-size:cover;background-position:center">'+(h.t==='video'?'<div class=pl>▶</div>':(h.t==='audio'?'<div class=pl>♪</div>':''))+'</div>')
+      :('<div class="prev '+(h.t==='video'?'v':'i')+'" style="height:150px">'+(h.t==='video'?'<div class=pl>▶</div>':'')+'<div class="cap">'+histEsc(h.title)+'</div></div>');
+    openSheet('<div class="sh"><b>'+kindLabel+'</b><span class="cl" data-close>✕</span></div>'+prev
+      +'<div style="font-size:12px;color:var(--mut);margin:4px 2px 10px;line-height:1.4">'+histEsc(h.title)+(h.sub?(' · '+histEsc(h.sub)):'')+'</div>'
+      +'<div class="resbtns"><div class="rb pri" id="histImp" data-close>⤓ Import</div><div class="rb" id="histDl" data-close>⬇ Yuklab olish</div></div>');
+    var imp=document.getElementById('histImp'); if(imp)imp.onclick=function(){ if(typeof aiImportMedia==='function')aiImportMedia(h.url,h.t,null); };
+    var dl=document.getElementById('histDl'); if(dl)dl.onclick=function(){ if(typeof window.__adobe_cep__!=='undefined'){toast('Yuklab olish — Import qiling (AE Project panel)');} else { try{var a=document.createElement('a');a.href=h.url;a.download='assetflow';document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){toast('Yuklab bo\'lmadi');} } };
+  }
 
   // ===== modal / picker =====
   function openSheet(h){document.getElementById('sheet').innerHTML=h;document.getElementById('ov').classList.add('on');}
@@ -8918,7 +8979,7 @@ async function bootPlugin(){
   var meta={loaded:false,modelId:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,
     ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],
     qcost:{low:3,medium:6,high:12,auto:12},counts:[1,2,3,4]};
-  var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[]};
+  var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[],recent:[]};
 
   function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
   function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
@@ -8932,7 +8993,7 @@ async function bootPlugin(){
   function cost(){ return (meta.qcost[st.q]||12)*st.n; }
   function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
   function recost(){ var sc=$('igCost'); if(sc)sc.textContent='✦'+cost(); var g=$('igGen'); if(g)g.title='Yaratish (✦'+cost()+')'; }
-  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); }
+  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); loadRecent(); }
   window.axIGRefresh=refresh;
 
   // ---- "Yaratish" disabled holatini qayta hisoblash ----
@@ -9046,6 +9107,15 @@ async function bootPlugin(){
     });
   }
 
+  // natijani to'g'ridan referensga — URL allaqachon R2'da (qayta yuklash shart emas)
+  function addRefReady(url){
+    if(!url)return;
+    if(meta.refMode==='none'){ toast('Bu model referens olmaydi','warning'); return; }
+    if(st.refs.length>=meta.maxRefs){ toast('Maks '+meta.maxRefs+' ta referens','warning'); return; }
+    st.refs.push({dataUrl:url,url:url,loading:false}); renderRefs(); updRefMeta(); refreshGen();
+    toast('@img'+st.refs.length+' referensga qo\'shildi','success');
+  }
+
   // ---- CEP fayl o'qish → data-URL ----
   // Node modulини ISHONCHLI olish: CEP --enable-nodejs'да bare `require` har doim ko'rinmaydi —
   // CEP `cep_node` global'ini in'eksiya qiladi (cep_node.require). Bir nechta yo'lni sinaymiz.
@@ -9154,10 +9224,38 @@ async function bootPlugin(){
     }).catch(function(e){ toast('Kadr eksport xatosi: '+String(e),'error'); });
   });
 
-  // ---- prompt auto-grow + validatsiya ----
+  // ---- prompt auto-grow + validatsiya + @ mention ----
   var ta=$('igPrompt');
+  var mention=$('igMention');
   function grow(){ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,160)+'px'; }
-  ta.addEventListener('input',function(){ grow(); refreshGen(); });
+  ta.addEventListener('input',function(){ grow(); refreshGen(); checkMention(); });
+  ta.addEventListener('keydown',function(e){ if(e.key==='Escape'&&mention.classList.contains('on')){ e.stopPropagation(); hideMention(); } });
+  ta.addEventListener('blur',function(){ setTimeout(hideMention,150); });
+
+  // @ yozilsa referenslar ro'yxati (autocomplete) — kursordan oldingi @<so'z> ni ushlaydi
+  function checkMention(){
+    var caret=ta.selectionStart; var pre=ta.value.slice(0,caret); var m=pre.match(/@(\w*)$/);
+    if(m)showMention(m[1]); else hideMention();
+  }
+  function showMention(q){
+    if(!mention)return;
+    if(st.refs.length===0){ mention.innerHTML='<div class="mh">Referens yo\'q — avval rasm qo\'shing</div>'; mention.classList.add('on'); return; }
+    q=(q||'').toLowerCase();
+    var html='<div class="mh">Referenslar</div>',shown=0;
+    st.refs.forEach(function(r,i){
+      var name='img'+(i+1); if(q&&name.indexOf(q)!==0&&String(i+1)!==q)return; shown++;
+      html+='<div class="mitem" data-i="'+i+'"><div class="mt" style="background-image:url(\''+(r.dataUrl||r.url||'')+'\')"></div><div><b>@'+name+'</b><small>referens</small></div></div>';
+    });
+    if(!shown){ hideMention(); return; }
+    mention.innerHTML=html; mention.classList.add('on');
+    Array.prototype.forEach.call(mention.querySelectorAll('.mitem'),function(el){ el.addEventListener('mousedown',function(ev){ ev.preventDefault(); pickMention(parseInt(el.getAttribute('data-i'),10)); }); });
+  }
+  function hideMention(){ if(mention)mention.classList.remove('on'); }
+  function pickMention(i){
+    var caret=ta.selectionStart; var val=ta.value; var pre=val.slice(0,caret); var m=pre.match(/@(\w*)$/);
+    if(m){ var s=caret-m[0].length; var tok='@img'+(i+1)+' '; ta.value=val.slice(0,s)+tok+val.slice(caret); var np=s+tok.length; ta.focus(); try{ta.setSelectionRange(np,np);}catch(e){} }
+    hideMention(); ta.dispatchEvent(new Event('input'));
+  }
 
   // ---- ✨ Yaxshilash (REAL /gen/prompt/enhance) ----
   var enhancing=false;
@@ -9251,6 +9349,7 @@ async function bootPlugin(){
   var IC_IMP='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
   var IC_SAVE='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
   var IC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
+  var IC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
   function downloadUrl(url){
     if(IS_CEP){ toast('Yuklab olish — AE Project panelга import qiling','info'); return; }
     try{ var a=document.createElement('a'); a.href=url; a.download='assetflow.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Yuklab bo\'lmadi','error'); }
@@ -9264,15 +9363,58 @@ async function bootPlugin(){
     urls.forEach(function(url){
       var card=document.createElement('div'); card.className='rcard';
       var img=document.createElement('img'); img.src=url; card.appendChild(img);
+      // ✓ Tanlash (select)
+      var cb=document.createElement('div'); cb.className='selcb'; cb.textContent='✓'; cb.title='Tanlash';
+      cb.addEventListener('click',function(){ card.classList.toggle('sel'); });
+      card.appendChild(cb);
+      // ✕ O'chirish (natijani ro'yxatdan olib tashlash)
+      var del=document.createElement('div'); del.className='del'; del.textContent='✕'; del.title='Natijani o\'chirish';
+      del.addEventListener('click',function(){ var k=st.lastResults.indexOf(url); if(k>=0)st.lastResults.splice(k,1); if(card.parentNode)grid.removeChild(card); if(!grid.children.length)$('igRes').classList.remove('on'); toast('Natija o\'chirildi','info'); });
+      card.appendChild(del);
+      // pastki amallar: Import / ↺ Referensга / ⬇ Yuklab olish
       var ra=document.createElement('div'); ra.className='ra';
       ra.appendChild(mkAct(IC_IMP,'Import',function(){ importOne(url); }));
-      ra.appendChild(mkAct(IC_SAVE,'Saqlash',function(){ downloadUrl(url); }));
+      ra.appendChild(mkAct(IC_REF,'Referensга',function(){ addRefReady(url); }));
       ra.appendChild(mkAct(IC_DL,'Yuklab olish',function(){ downloadUrl(url); }));
       card.appendChild(ra); grid.appendChild(card);
     });
     $('igResMeta').textContent=urls.length+' ta · '+st.ar+' · '+cap(st.q);
     $('igRes').classList.add('on');
     try{ $('igRes').scrollIntoView({behavior:'smooth'}); }catch(e){}
+    // so'nggi lentaga qo'shamiz (eng yangisi oldinda)
+    urls.slice().reverse().forEach(function(u){ st.recent.unshift({url:u}); });
+    st.recent=st.recent.slice(0,12); renderRecent();
+  }
+
+  // ---- So'nggi lenta (oxirgi natijalar; Barchasi → Tarix view) ----
+  function renderRecent(){
+    var r=$('igRecent'); if(!r)return; r.innerHTML='';
+    // url bo'yicha dedup, eng yangisi oldinda
+    var seen={},uniq=[];
+    st.recent.forEach(function(it){ if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } });
+    st.recent=uniq;
+    if(!uniq.length)return;
+    var lbl=document.createElement('span'); lbl.className='rlbl'; lbl.textContent='So\'nggi'; r.appendChild(lbl);
+    uniq.slice(0,5).forEach(function(it){
+      var d=document.createElement('div'); d.className='rt'; d.style.backgroundImage='url("'+it.url+'")'; d.title='Natijani ochish';
+      d.addEventListener('click',function(){ renderResults([{url:it.url}]); });
+      r.appendChild(d);
+    });
+    var m=document.createElement('span'); m.className='more'; m.textContent='Barchasi →'; m.title='Tarix';
+    m.addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('history'); });
+    r.appendChild(m);
+  }
+  // dastlabki lenta — foydalanuvchining oxirgi rasm gen'lari (bir marta)
+  var recentLoaded=false;
+  function loadRecent(){
+    if(recentLoaded)return; recentLoaded=true;
+    studioGet('/api/studio/gen/history?limit=12').then(function(d){
+      var items=(d&&d.items)||[];
+      var urls=[];
+      items.forEach(function(g){ if(g&&g.mode==='image'&&g.assets){ g.assets.forEach(function(a){ if(a&&a.url)urls.push(a.url); }); } });
+      urls.slice(0,12).forEach(function(u){ if(st.recent.indexOf(u)<0)st.recent.push({url:u}); });
+      renderRecent();
+    }).catch(function(){ recentLoaded=false; });
   }
 
   // ---- ‹ AI Tools → launcher home ----

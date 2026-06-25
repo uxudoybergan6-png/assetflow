@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · Tarix</title>
+<style>
+  :root{--bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;--line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;--acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400;--blue:#5aa9ff;--red:#ff6b6b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#05060a;color:var(--txt);line-height:1.4;display:flex;flex-direction:column;align-items:center;padding:22px 12px 60px;min-height:100vh}
+  .hint{color:var(--mut);font-size:12.5px;margin-bottom:13px;text-align:center;max-width:440px}.hint b{color:var(--acc2)}
+  .app{width:392px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;height:760px;position:relative}
+  .pbar{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer}
+  .back:hover{color:var(--txt)}
+  .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}.spacer{flex:1}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
+  /* filter tabs */
+  .tabs{display:flex;gap:7px;padding:11px 13px;overflow-x:auto;flex:0 0 auto;border-bottom:1px solid var(--line)}
+  .tab{flex:0 0 auto;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:7px 12px;border-radius:10px;cursor:pointer;white-space:nowrap}
+  .tab.on{background:var(--card3);color:var(--txt);border-color:var(--mut2);font-weight:700}
+  .scroll{flex:1;overflow-y:auto;padding:13px}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+  .daylbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:6px 2px 9px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+  .item{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card);cursor:pointer;position:relative}
+  .item .th{width:100%;aspect-ratio:1/1;background-size:cover;background-position:center;position:relative}
+  .item .badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
+  .item .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  .item .meta{padding:7px 8px}.item .meta b{font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item .meta small{font-size:9.5px;color:var(--mut)}
+  .item .acts{display:flex;border-top:1px solid var(--line)}
+  .item .acts div{flex:1;text-align:center;padding:7px;font-size:10.5px;color:var(--mut);cursor:pointer}
+  .item .acts div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.item .acts div+div{border-left:1px solid var(--line)}
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut2);text-align:center;gap:8px;padding:30px}
+  .empty .big{font-size:30px;opacity:.5}
+  /* thumb fonlari */
+  .b-sofa{background:linear-gradient(160deg,#3a2418,#14100c)}.b-flower{background:radial-gradient(circle at 50% 45%,#5a3bd0,#1a1030)}.b-city{background:linear-gradient(180deg,#1a2740,#0c0f18)}.b-prod{background:linear-gradient(150deg,#243a18,#10140c)}.b-vid{background:linear-gradient(150deg,#2a1f40,#101018)}.b-aud{background:linear-gradient(150deg,#0f3030,#0c1414)}
+  .toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:#000;border:1px solid var(--line2);color:var(--txt);font-size:12.5px;padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="hint">🕘 <b>Tarix</b> — gen qilingan rasm / video / ovoz. Filter + qayta import / yuklab olish.</div>
+
+<div class="app" id="app">
+  <div class="pbar">
+    <div class="back" id="back">‹ Asosiy</div>
+    <div class="ttl"><span>🕘</span> Tarix</div>
+    <div class="spacer"></div>
+    <div class="pro">✦ 604</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-f="all">Hammasi</div>
+    <div class="tab" data-f="image">Rasm</div>
+    <div class="tab" data-f="video">Video</div>
+    <div class="tab" data-f="audio">Ovoz</div>
+  </div>
+  <div class="scroll" id="scroll"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s)};
+  function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},1500)}
+  // DEMO data (realда /api/studio/gen/history dan keladi)
+  var DATA=[
+    {id:1,type:'image',title:'Qizil etik · GPT Image 2',sub:'4:3 · Low',day:'Bugun',bg:'b-sofa'},
+    {id:2,type:'image',title:'Billur gul · Nano Banana',sub:'1:1 · 2K',day:'Bugun',bg:'b-flower'},
+    {id:3,type:'video',title:'Shahar fly-through',sub:'5s · 720p',day:'Bugun',bg:'b-vid',dur:'0:05'},
+    {id:4,type:'image',title:'Mahsulot foni',sub:'1:1 · High',day:'Kecha',bg:'b-prod'},
+    {id:5,type:'audio',title:'Fon musiqa',sub:'0:30',day:'Kecha',bg:'b-aud',dur:'0:30'},
+    {id:6,type:'image',title:'Kechki shahar',sub:'16:9 · Medium',day:'Kecha',bg:'b-city'}
+  ];
+  var filter='all';
+  function render(){
+    var sc=$('scroll');sc.innerHTML='';
+    var list=DATA.filter(function(d){return filter==='all'||d.type===filter});
+    if(!list.length){sc.innerHTML='<div class="empty"><div class="big">🕘</div><small>Hozircha tarix bo‘sh. Gen qilsangiz shu yerda chiqadi.</small></div>';return}
+    var days=[];list.forEach(function(d){if(days.indexOf(d.day)<0)days.push(d.day)});
+    days.forEach(function(day){
+      var lbl=document.createElement('div');lbl.className='daylbl';lbl.textContent=day;sc.appendChild(lbl);
+      var g=document.createElement('div');g.className='grid';
+      list.filter(function(d){return d.day===day}).forEach(function(d){
+        var it=document.createElement('div');it.className='item';
+        var icon=d.type==='video'?'🎬':d.type==='audio'?'🎵':'🖼';
+        var th='<div class="th '+d.bg+'"><div class="badge">'+icon+' '+(d.type==='image'?'Rasm':d.type==='video'?'Video':'Ovoz')+'</div>'+(d.type==='video'?'<div class="play">▶</div>':'')+'</div>';
+        var actImport=d.type==='audio'?'⤓ Import':'⤓ Import';
+        it.innerHTML=th+'<div class="meta"><b>'+d.title+'</b><small>'+d.sub+'</small></div><div class="acts"><div class="a-imp">⤓ Import</div><div class="a-dl">⬇</div><div class="a-re">↻</div></div>';
+        it.querySelector('.a-imp').addEventListener('click',function(e){e.stopPropagation();toast('AE‘ga import (demo)')});
+        it.querySelector('.a-dl').addEventListener('click',function(e){e.stopPropagation();toast('Yuklab olindi')});
+        it.querySelector('.a-re').addEventListener('click',function(e){e.stopPropagation();toast('Qaytadan ochildi')});
+        it.addEventListener('click',function(){toast(d.title)});
+        g.appendChild(it);
+      });
+      sc.appendChild(g);
+    });
+  }
+  Array.prototype.forEach.call($('tabs').children,function(t){t.addEventListener('click',function(){Array.prototype.forEach.call($('tabs').children,function(x){x.classList.remove('on')});t.classList.add('on');filter=t.getAttribute('data-f');render()})});
+  $('back').addEventListener('click',function(){toast('← Asosiy')});
+  render();
+})();
+</script>
+</body>
+</html>
