@@ -18,6 +18,7 @@ import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genPr
 import { falImageEdit } from "./ai/fal.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
+import type { OrResult } from "./ai/openrouter.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
@@ -30,6 +31,26 @@ function tsName() {
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
+
+/**
+ * CHEGARALANGAN parallel — n ta task'ni eng ko'pi `limit` ta bir vaqtda bajaradi, natija TARTIBDA.
+ * Cheklanmagan Promise.all OOM xavfi tug'diradi (har task rasm buferini RAM'da ushlaydi; GEN_CONCURRENCY
+ * faqat GENERATSIYALARNI cheklaydi, gen ICHIDAGI rasm sonini emas). Limit bilan peak xotira = limit ta bufer.
+ */
+async function mapLimit<R>(n: number, limit: number, fn: (i: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(n);
+  let next = 0;
+  async function worker(): Promise<void> {
+    while (next < n) {
+      const i = next++;
+      results[i] = await fn(i); // bufer fn ichida persist'dan keyin scope'dan chiqadi → xotira ozod
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, n)) }, () => worker()));
+  return results;
+}
+// Gen ICHIDAGI rasm parallelligi (count>1) — kichik Render instance'да xotira/429 burst'ni cheklash uchun.
+const IMG_CONCURRENCY = Math.max(1, Number(process.env.GEN_IMG_CONCURRENCY) || 2);
 
 /** Bufer → R2 (signed URL) yoki lokal dev'da data-URL. {url, key}. */
 async function persist(
@@ -248,45 +269,59 @@ export async function processGeneration(genId: string): Promise<void> {
             ? [refUrl]
             : [];
         if (!rawRefs.length) return void (await fail("Tahrirlash uchun rasm kerak — ＋ orqali yuklang"));
-        for (const ru of rawRefs) {
-          if (ru.startsWith("data:") && isS3Configured()) {
-            const sbuf = Buffer.from(ru.split("base64,")[1] || "", "base64");
-            const sf = detectMediaFormat(sbuf, { ext: "png", contentType: "image/png" });
-            const skey = `gen-refs/${gen.userId}/${genId}-${tsName()}.${sf.ext}`;
-            await uploadBufferToS3(sbuf, skey, sf.contentType);
-            falImageUrls.push(await getPublicOrSignedUrl(skey, 7200));
-          } else {
-            falImageUrls.push(ru);
-          }
-        }
+        // PARALLEL — referenslar bir vaqtда R2'ga (odatda plagin allaqachon public R2 URL yuboradi → no-op).
+        // Promise.all TARTIBNI saqlaydi → @imgN→image_urls[N-1] mapping buzilmaydi.
+        falImageUrls = await Promise.all(
+          rawRefs.map(async (ru) => {
+            if (ru.startsWith("data:") && isS3Configured()) {
+              const sbuf = Buffer.from(ru.split("base64,")[1] || "", "base64");
+              const sf = detectMediaFormat(sbuf, { ext: "png", contentType: "image/png" });
+              const skey = `gen-refs/${gen.userId}/${genId}-${tsName()}.${sf.ext}`;
+              await uploadBufferToS3(sbuf, skey, sf.contentType);
+              return getPublicOrSignedUrl(skey, 7200);
+            }
+            return ru;
+          })
+        );
       }
-      for (let i = 0; i < count; i++) {
-        const out = useFal
-          ? await falImageEdit(model.falModel ?? model.key, gen.prompt, falImageUrls, {
-              aspect: aspectRatio,
-              quality,
-            })
+      // count>1 → CHEGARALANGAN parallel (oldin serial: N× sekin). genOne() bitta rasm yaratadi
+      // (loop-body holatsiz — har task bir xil argument). Har task: yaratish → persist (bufer scope'dan
+      // chiqadi → xotira ozod). mapLimit eng ko'pi IMG_CONCURRENCY ta bir vaqtda → tezlik + cheklangan
+      // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
+      const genOne = (): Promise<OrResult<Buffer>> =>
+        useFal
+          ? falImageEdit(model.falModel ?? model.key, gen.prompt, falImageUrls, { aspect: aspectRatio, quality })
           : mfRemoveBg
-          ? await magnificRemoveBg(mfRbgUrl)
+          ? magnificRemoveBg(mfRbgUrl)
           : mfTool
-          ? await magnificTool(mfTool, refUrl as string, params)
+          ? magnificTool(mfTool, refUrl as string, params)
           : useEdit
             ? useMagnific
-              ? await magnificImageEdit(mModel, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
-              : await orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+              ? magnificImageEdit(mModel, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
+              : orImageEdit(model.key, gen.prompt, refUrl as string, model.imgModalities, imageConfig)
             : useMagnific
-              ? await magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
-              : await orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-        if (!out.ok) {
-          // ❗ TIMEOUT ≠ REFUND: poll-timeout (job hali IN_PROGRESS) → "running" qoldiramiz,
-          // KREDIT QAYTARMAYMIZ. Faqat haqiqiy FAILED/xato → fail()+refund. Stuck bo'lsa reconcile (10 daq) hal qiladi.
-          if (out.error.startsWith("MAGNIFIC_TIMEOUT") || out.error.startsWith("FAL_TIMEOUT")) return;
-          return void (await fail(out.error));
-        }
+              ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
+              : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
+      type Slot = { ok: true; url: string; key: string | null } | { ok: false; error: string };
+      const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
+        const out = await genOne();
+        if (!out.ok) return { ok: false, error: out.error };
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
-        const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+        const p = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+        return { ok: true, url: p.url, key: p.key };
+      });
+      // ❗ TIMEOUT ≠ REFUND: birortasi poll-timeout sentinel bo'lsa → "running" qoldiramiz, KREDIT
+      // QAYTARMAYMIZ (reconcile 10 daq hal qiladi). Tekshiruv refund/asset YARATISHDAN OLDIN.
+      if (slots.some((s) => !s.ok && (s.error.startsWith("FAL_TIMEOUT") || s.error.startsWith("MAGNIFIC_TIMEOUT"))))
+        return;
+      // Haqiqiy xato (birortasi) → to'liq refund BIR MARTA + HECH QANDAY DB asset (all-or-nothing).
+      const firstErr = slots.find((s) => !s.ok);
+      if (firstErr && !firstErr.ok) return void (await fail(firstErr.error));
+      // Hammasi OK → assetlar TARTIBDA yaratiladi.
+      for (const s of slots) {
+        if (!s.ok) continue;
         await prisma.genAsset.create({
-          data: { generationId: genId, type: ASSET_TYPE.image, url, resultKey: key, thumbUrl: url, aspectRatio },
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.url, aspectRatio },
         });
       }
     } else if (model.feature === "text-to-speech") {

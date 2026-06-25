@@ -9489,6 +9489,10 @@ window.afGallery=(function(){
 
   // ---- progress ----
   var pollTimer=null,progTimer=null,cancelled=false,polling=false;
+  // Poll RAMP: dastlabki tekshiruvlar tez (tez rasm ~6-12s'da tayyor → natija tezroq ko'rinadi), keyin
+  // uzunroq. Cap 140 → window ≈ 6×1s + 134×1.8s ≈ 247s (server fal poll ~200s'dan keng — erta to'xtamaymiz).
+  function pollDelay(t){ return t<6?1000:1800; }
+  var POLL_CAP=140;
   function stopTimers(){ if(pollTimer){clearTimeout(pollTimer);pollTimer=null;} if(progTimer){clearInterval(progTimer);progTimer=null;} }
   function startProg(label){
     $('igRes').classList.remove('on');
@@ -9520,10 +9524,13 @@ window.afGallery=(function(){
     var quote=null;
     ensureMeta().then(function(){
       if(meta.modelId==null)throw new Error('Model topilmadi');
-      return studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params});
-    }).then(function(q){
-      quote=q; return ensureSession();
-    }).then(function(sid){
+      // cost-quote va session BIR-BIRIDAN MUSTAQIL → parallel (1 RTT tejaladi, ayniqsa birinchi bosishда).
+      return Promise.all([
+        studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params}),
+        ensureSession()
+      ]);
+    }).then(function(arr){
+      quote=arr[0]; var sid=arr[1];
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},60000);
     }).then(function(j){
       if(j&&typeof j.creditsLeft==='number')setCreditChip(j.creditsLeft);
@@ -9537,7 +9544,7 @@ window.afGallery=(function(){
   function poll(jobId,tries){
     if(cancelled){ polling=false; return; }
     polling=true;
-    if(tries>120){ stopTimers(); $('igProg').classList.remove('on'); polling=false; $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
+    if(tries>POLL_CAP){ stopTimers(); $('igProg').classList.remove('on'); polling=false; $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
     studioGet('/api/studio/gen/'+jobId).then(function(gn){
       if(cancelled){ polling=false; return; }
       var s=(gn&&gn.status)||'';
@@ -9551,11 +9558,11 @@ window.afGallery=(function(){
         $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
         setCreditChip(credits());
       }else{
-        pollTimer=setTimeout(function(){ poll(jobId,tries+1); },3000);
+        pollTimer=setTimeout(function(){ poll(jobId,tries+1); },pollDelay(tries));
       }
     }).catch(function(err){
       if(cancelled){ polling=false; return; }
-      pollTimer=setTimeout(function(){ poll(jobId,tries+1); },3000);
+      pollTimer=setTimeout(function(){ poll(jobId,tries+1); },pollDelay(tries));
     });
   }
   $('igGen').addEventListener('click',genClick);

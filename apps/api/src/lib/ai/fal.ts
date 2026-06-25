@@ -45,8 +45,13 @@ async function errText(res: Response): Promise<string> {
   return `fal HTTP ${res.status}`;
 }
 
-const POLL_INTERVAL_MS = 1500;
-const MAX_POLLS = 100; // ~150s (rasm/LLM jobs uchun yetarli; background, HTTP'ni bloklamaydi)
+// Poll RAMP: dastlabki tekshiruvlar TEZ (tez rasm/LLM jobs ~5-12s'da tugaydi → kichik granularlik =
+// natija tezroq topiladi), keyin uzunroq (status API'ni ortiqcha urmaslik). COMPLETED/timeout mantig'i
+// o'zgarmaydi — faqat kutish oralig'i. Window ≈ 200s (oldingi ~150s'dan keng; video-ref edit ham sig'adi).
+const MAX_POLLS = 110;
+function pollDelayMs(i: number): number {
+  return i < 6 ? 600 : i < 20 ? 1200 : 2000; // 6×600 + 14×1200 + 90×2000 ≈ 200s
+}
 
 type FalSubmitResp = { request_id?: string; status_url?: string; response_url?: string };
 type FalStatus = { status?: string; error?: string };
@@ -74,7 +79,7 @@ async function falSubmit(modelId: string, input: Record<string, unknown>): Promi
   if (!statusUrl || !responseUrl) return { ok: false, error: "fal: status_url qaytmadi" };
 
   for (let i = 0; i < MAX_POLLS; i++) {
-    await sleep(POLL_INTERVAL_MS);
+    await sleep(pollDelayMs(i));
     let st: Response;
     try {
       st = await fetch(statusUrl, { headers: falHeaders() });
