@@ -78,11 +78,28 @@
   .gensend.busy{color:transparent}
   .gensend.busy::after{content:"";position:absolute;width:18px;height:18px;border:2.5px solid rgba(12,20,0,.3);border-top-color:var(--acc-ink);border-radius:50%;animation:spin .7s linear infinite}
   .morelink{cursor:pointer;color:var(--blue)}.morelink:hover{text-decoration:underline}
-  .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .recentgrid .rc{border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;cursor:pointer;position:relative}
+  .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .recentgrid .rc{border:1px solid var(--line2);border-radius:13px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;cursor:pointer;position:relative}
   .recentgrid .rc:hover{border-color:var(--mut2)}
-  .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px}
+  .recentgrid .rc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+  .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff;font-size:10.5px;padding:16px 8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .recentgrid .rc .tg{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+  /* hover amallar (⬇ / 🗑) */
+  .recentgrid .rc .rcacts{position:absolute;top:6px;right:6px;display:none;gap:5px;z-index:3}
+  .recentgrid .rc:hover .rcacts{display:flex}
+  .recentgrid .rc .rcacts .ic{width:27px;height:27px;border-radius:7px;background:rgba(0,0,0,.7);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;font-size:12px;cursor:pointer}
+  .recentgrid .rc .rcacts .ic:hover{background:rgba(0,0,0,.9)}.recentgrid .rc .rcacts .ic.del:hover{background:rgba(255,107,107,.85);border-color:transparent}
+  /* select checkbox */
+  .recentgrid .rc .rccb{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:none;place-items:center;color:transparent;font-size:12px;font-weight:800;cursor:pointer;z-index:3}
+  .selmode-r .recentgrid .rc .rccb{display:grid}.selmode-r .recentgrid .rc .tg{display:none}
+  .selmode-r .recentgrid .rc:hover .rcacts{display:none}
+  .recentgrid .rc.sel .rccb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+  /* batch bar */
+  .recentbatch{display:none;align-items:center;gap:8px;margin-top:9px;padding:9px 11px;border:1px solid var(--line2);border-radius:11px;background:var(--card)}
+  .recentbatch.on{display:flex}.recentbatch .cnt{font-size:12.5px;font-weight:700}
+  .recentbatch .bb{font-size:12px;border:1px solid var(--line2);background:var(--card3);border-radius:9px;padding:7px 11px;cursor:pointer}
+  .recentbatch .bb:hover{border-color:var(--mut2)}.recentbatch .bb.dl{margin-left:auto}.recentbatch .bb.del{color:var(--red);border-color:rgba(255,107,107,.4)}
+  .selbtn{cursor:pointer}.selbtn.on{color:var(--acc)}
 
   /* progress + natija */
   .prog{margin-bottom:16px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.prog.on{display:block}
@@ -119,7 +136,11 @@
   /* lightbox (natijani to'liq ko'rish) */
   .lightbox{position:absolute;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:70;padding:18px}
   .lightbox.on{display:flex}
-  .lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+  .lbInner{display:flex;flex-direction:column;gap:12px;align-items:center;max-width:100%;max-height:100%}
+  .lightbox img{max-width:100%;max-height:calc(100% - 60px);border-radius:8px}
+  .lbacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .lba{font-size:12.5px;background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:9px 14px;cursor:pointer;color:var(--txt)}
+  .lba:hover{border-color:var(--mut2)}.lba.pri{background:var(--acc);color:var(--acc-ink);font-weight:800;border-color:var(--acc)}
   .lightbox .lx{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:9px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer;font-size:15px}
 
   .toast{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:#000;border:1px solid var(--line2);color:var(--txt);font-size:12.5px;padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:60;white-space:nowrap}
@@ -180,8 +201,14 @@
 
     <!-- SO'NGGI genlar (katta kartali grid — oddiy scroll) -->
     <div class="sect" id="recentSect">
-      <div class="lbl">So'nggi <span class="meta morelink" id="moreLink">Barchasi →</span></div>
+      <div class="lbl">So'nggi <span class="meta selbtn" id="selToggle" style="margin-left:auto">☑ Tanlash</span> <span class="meta morelink" id="moreLink" style="margin-left:10px">Barchasi →</span></div>
       <div class="recentgrid" id="recent"></div>
+      <div class="recentbatch" id="recentBatch">
+        <span class="cnt" id="recentBatchCnt">0 tanlandi</span>
+        <div class="bb dl" id="recentDl">⬇ Yuklab</div>
+        <div class="bb del" id="recentDel">🗑 O'chirish</div>
+        <div class="bb" id="recentCancel">Bekor</div>
+      </div>
     </div>
 
   </div>
@@ -222,7 +249,17 @@
     <div class="pillrow" id="nPills"></div>
   </div></div>
 
-  <div class="lightbox" id="lightbox"><img id="lbImg" alt=""><div class="lx" id="lbClose">✕</div></div>
+  <div class="lightbox" id="lightbox">
+    <div class="lbInner">
+      <img id="lbImg" alt="">
+      <div class="lbacts">
+        <div class="lba pri" id="lbImport">⤓ AE'ga import</div>
+        <div class="lba" id="lbRef">↺ Referensga</div>
+        <div class="lba" id="lbDl">⬇ Yuklab olish</div>
+      </div>
+    </div>
+    <div class="lx" id="lbClose">✕</div>
+  </div>
   <div class="toast" id="toast"></div>
 </div>
 
@@ -384,7 +421,7 @@
     for(var i=0;i<state.n;i++){(function(idx){makeImg(idx,function(url){
       state.lastResults.push(url);
       var card=document.createElement('div');card.className='rcard';var img=document.createElement('img');img.src=url;img.title='Kattalashtirish';
-      img.addEventListener('click',function(){$('lbImg').src=url;$('lightbox').classList.add('on')});
+      img.addEventListener('click',function(){openLightbox(url)});
       card.appendChild(img);
       // Tanlash (select)
       var cb=document.createElement('div');cb.className='selcb';cb.textContent='✓';cb.title='Tanlash';
@@ -405,10 +442,16 @@
   function mkAct(label,fn){var d=document.createElement('div');d.textContent=label;d.addEventListener('click',fn);return d}
   $('back').addEventListener('click',function(){toast('← AI Tools launcher')});
 
-  // lightbox yopish
-  $('lbClose').addEventListener('click',function(){$('lightbox').classList.remove('on')});
-  $('lightbox').addEventListener('click',function(e){if(e.target===$('lightbox'))$('lightbox').classList.remove('on')});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')$('lightbox').classList.remove('on')});
+  // lightbox — gen rasmga bosilganda amallar bilan
+  var lbUrl=null;
+  function openLightbox(url){lbUrl=url;$('lbImg').src=url;$('lightbox').classList.add('on')}
+  function closeLightbox(){$('lightbox').classList.remove('on')}
+  $('lbClose').addEventListener('click',closeLightbox);
+  $('lightbox').addEventListener('click',function(e){if(e.target===$('lightbox'))closeLightbox()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLightbox()});
+  $('lbImport').addEventListener('click',function(){toast('AE‘ga import qilindi (demo)')});
+  $('lbRef').addEventListener('click',function(){if(lbUrl){addRefReady(lbUrl);closeLightbox()}});
+  $('lbDl').addEventListener('click',function(){if(lbUrl){var a=document.createElement('a');a.href=lbUrl;a.download='assetflow.png';a.click()}});
 
   // Tozalash — prompt + referenslar (yangidan boshlash)
   $('clearBtn').addEventListener('click',function(){
@@ -418,7 +461,9 @@
     toast('Tozalandi');
   });
 
-  // So'nggi genlar — katta kartali grid (oddiy scroll)
+  // So'nggi genlar — katta kartali grid + hover amallar + multi-select o'chirish
+  var _rid=0;
+  function rmake(o){o._id=++_rid;return o}
   var recents=[
     {bg:'linear-gradient(160deg,#3a2418,#14100c)',t:'Qizil etik',tag:'Rasm'},
     {bg:'radial-gradient(circle at 50% 45%,#5a3bd0,#1a1030)',t:'Billur gul',tag:'Rasm'},
@@ -428,22 +473,41 @@
     {bg:'linear-gradient(150deg,#0f3030,#0c1414)',t:'Fon musiqa',tag:'Ovoz'},
     {bg:'linear-gradient(160deg,#402030,#140c10)',t:'Portret',tag:'Rasm'},
     {bg:'linear-gradient(180deg,#2a3542,#10141a)',t:'Kel manzara',tag:'Rasm'}
-  ];
+  ].map(rmake);
+  var selModeR=false, selR={};
+  function selCount(){return Object.keys(selR).length}
+  function updBatchR(){$('recentBatchCnt').textContent=selCount()+' tanlandi';$('recentBatch').classList.toggle('on',selModeR&&selCount()>0)}
   function renderRecent(){
     var r=$('recent');r.innerHTML='';
     if(!recents.length){r.innerHTML='<div style="grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center">Hozircha gen yo‘q</div>';return}
     recents.forEach(function(it){
-      var d=document.createElement('div');d.className='rc';
+      var d=document.createElement('div');d.className='rc'+(selR[it._id]?' sel':'');
       if(it.url)d.style.backgroundImage='url('+it.url+')';else d.style.background=it.bg;
       var tg=document.createElement('div');tg.className='tg';tg.textContent=it.tag||'Rasm';d.appendChild(tg);
+      // hover amallar
+      var acts=document.createElement('div');acts.className='rcacts';
+      var dl=document.createElement('div');dl.className='ic';dl.textContent='⬇';dl.title='Yuklab olish';dl.addEventListener('click',function(e){e.stopPropagation();toast('Yuklab olindi')});
+      var del=document.createElement('div');del.className='ic del';del.textContent='✕';del.title='O‘chirish';del.addEventListener('click',function(e){e.stopPropagation();var i=recents.indexOf(it);if(i>=0)recents.splice(i,1);delete selR[it._id];renderRecent();updBatchR();toast('O‘chirildi')});
+      acts.appendChild(dl);acts.appendChild(del);d.appendChild(acts);
+      // select checkbox
+      var cb=document.createElement('div');cb.className='rccb';cb.textContent='✓';
+      cb.addEventListener('click',function(e){e.stopPropagation();toggleSelR(it._id)});d.appendChild(cb);
       var bd=document.createElement('div');bd.className='bd';bd.textContent=it.t||'Natija';d.appendChild(bd);
-      d.title='Ochish';d.addEventListener('click',function(){toast('So‘nggi natija ochildi (demo)')});
+      d.title='Ochish';d.addEventListener('click',function(){if(selModeR){toggleSelR(it._id)}else if(it.url){openLightbox(it.url)}else{toast('Natija (demo — rasm yo‘q)')}});
       r.appendChild(d);
     });
   }
+  function toggleSelR(id){if(selR[id])delete selR[id];else selR[id]=1;renderRecent();updBatchR()}
+  $('selToggle').addEventListener('click',function(){
+    selModeR=!selModeR;$('selToggle').classList.toggle('on',selModeR);$('recentSect').classList.toggle('selmode-r',selModeR);
+    if(!selModeR)selR={};renderRecent();updBatchR();
+  });
+  $('recentCancel').addEventListener('click',function(){selModeR=false;selR={};$('selToggle').classList.remove('on');$('recentSect').classList.remove('selmode-r');renderRecent();updBatchR()});
+  $('recentDl').addEventListener('click',function(){toast(selCount()+' ta yuklab olindi')});
+  $('recentDel').addEventListener('click',function(){var ids=Object.keys(selR).map(Number);recents=recents.filter(function(x){return ids.indexOf(x._id)<0});selR={};renderRecent();updBatchR();toast(ids.length+' ta o‘chirildi')});
   $('moreLink').addEventListener('click',function(){toast('← Tarix view (barcha genlar)')});
   var _origRender=renderResults;
-  renderResults=function(){_origRender();state.lastResults.forEach(function(u){recents.unshift({url:u})});renderRecent()};
+  renderResults=function(){_origRender();state.lastResults.forEach(function(u){recents.unshift(rmake({url:u,t:'Natija',tag:'Rasm'}))});renderRecent()};
 
   applyModel();updRefMeta();renderRecent();
 })();
