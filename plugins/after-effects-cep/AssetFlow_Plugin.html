@@ -9382,14 +9382,23 @@ window.afGallery=(function(){
     if(meta.refMode==='none'){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
     applyMeta();
   }
-  // Model sheet'ни meta.models dan dinamik render (har biri refMode bilan: majburiy/referenssiz)
+  var BRAND_SVG={
+    openai:'<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#10a37f"/><circle cx="11" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg>',
+    google:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="16.5" text-anchor="middle" font-size="16" font-weight="900" fill="#4285F4" font-family="Arial,sans-serif">G</text></svg>',
+    bytedance:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg>',
+    bfl:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="#c2f04a" font-family="Arial,sans-serif">BFL</text></svg>'
+  };
+  var BRAND_LABEL={openai:'OpenAI',google:'Google',bytedance:'ByteDance',bfl:'Black Forest Labs'};
+  // Model sheet'ни meta.models dan dinamik render (har biri brand logosi + to'g'ri subtitle)
   function renderModelSheet(){
     var host=$('igMList'); if(!host)return; host.innerHTML='';
     (meta.models||[]).forEach(function(m){
       var cur=(m.id===meta.modelId);
-      var sub=(m.refMode==='required')?'OpenAI · referens majburiy':(m.refMode==='none')?'OpenAI · referenssiz':'OpenAI';
+      var brandName=BRAND_LABEL[m.brand]||'AI';
+      var sub=(m.refMode==='required')?brandName+' · referens majburiy':(m.refMode==='none')?brandName+' · referenssiz':brandName;
+      var ico=BRAND_SVG[m.brand]||'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
       var o=document.createElement('div'); o.className='opt'+(cur?' cur':'');
-      o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
+      o.innerHTML='<div class="oi">'+ico+'</div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
       o.addEventListener('click',function(){ if(m.id!==meta.modelId){ setModel(m); renderModelSheet(); toast(m.label+' tanlandi','info'); } closeSheets(); });
       host.appendChild(o);
     });

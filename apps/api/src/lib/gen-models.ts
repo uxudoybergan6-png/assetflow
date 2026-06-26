@@ -55,6 +55,7 @@ export type GenModel = {
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
   refMode?: "none" | "optional" | "required"; // frontend model-aware: referens majburiymi
   maxRefs?: number; // referens chegarasi (schemada yo'q bo'lsa frontend 10 deb oladi)
+  brand?: string; // model egasi: "openai" | "google" | "bytedance" | "bfl"
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
   enabled?: boolean; // false → generatsiya bloklanadi (kredit yechilmaydi)
@@ -190,6 +191,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "openai/gpt-image-2/edit",
     label: "GPT Image 2 Edit",
+    brand: "openai",
     provider: "fal",
     falModel: "openai/gpt-image-2/edit",
     feature: "image-edit",
@@ -219,6 +221,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "openai/gpt-image-2",
     label: "GPT Image 2",
+    brand: "openai",
     provider: "fal",
     falModel: "openai/gpt-image-2",
     feature: "text-to-image", // REFERENSSIZ (gpt-image-2/edit'dan farqi)
@@ -247,6 +250,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/nano-banana-2/edit",
     label: "Nano Banana 2 Edit",
+    brand: "google",
     provider: "fal",
     falModel: "fal-ai/nano-banana-2/edit",
     feature: "image-edit",
@@ -278,6 +282,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/nano-banana-2",
     label: "Nano Banana 2",
+    brand: "google",
     provider: "fal",
     falModel: "fal-ai/nano-banana-2",
     feature: "text-to-image",
@@ -308,6 +313,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/bytedance/seedream/v4.5/edit",
     label: "Seedream V4.5 Edit",
+    brand: "bytedance",
     provider: "fal",
     falModel: "fal-ai/bytedance/seedream/v4.5/edit",
     feature: "image-edit",
@@ -345,6 +351,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/flux-2-pro",
     label: "Flux 2 Pro",
+    brand: "bfl",
     provider: "fal",
     falModel: "fal-ai/flux-2-pro",
     feature: "text-to-image",
@@ -372,6 +379,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/flux-2-pro/edit",
     label: "Flux 2 Pro Edit",
+    brand: "bfl",
     provider: "fal",
     falModel: "fal-ai/flux-2-pro/edit",
     feature: "image-edit",
@@ -401,6 +409,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/bytedance/seedream/v5/lite/text-to-image",
     label: "Seedream V5 Lite",
+    brand: "bytedance",
     provider: "fal",
     falModel: "fal-ai/bytedance/seedream/v5/lite/text-to-image",
     feature: "text-to-image",
@@ -437,6 +446,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "fal-ai/bytedance/seedream/v5/lite/edit",
     label: "Seedream V5 Lite Edit",
+    brand: "bytedance",
     provider: "fal",
     falModel: "fal-ai/bytedance/seedream/v5/lite/edit",
     feature: "image-edit",
