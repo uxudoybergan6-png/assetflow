@@ -1,18 +1,19 @@
-# SESSION REPORT — 2026-06-26 — Seedream V5 Lite (t2i + edit)
+# SESSION REPORT — 2026-06-26 — AI Tools Launcher (4 kategoriya)
 
-Jami 9 fal model (1102-1110). Yangi: Seedream V5 Lite t2i (id:1109) + Seedream V5 Lite Edit (id:1110).
+Vazifa: AI Tools launcher'ni 4-kategoriya tuzilishiga (2×2 grid) ko'chirish.
 
-1. **gen-models.ts:** id:1109 — `fal-ai/bytedance/seedream/v5/lite/text-to-image`, refMode:none, maxRefs:0, cost:4. id:1110 — `fal-ai/bytedance/seedream/v5/lite/edit`, refMode:required, maxRefs:10, cost:4. Ikkalasida `imgSettings.aspect` = image_size (Auto 2K/3K/4K→auto_2K/3K/4K; 1:1→square_hd; 4:3/3:4/16:9/9:16→nisbat enumlar), def:"Auto 2K". `quality` YO'Q (tekis narx, 2-chip yashirin). `num:[1-6]`. `noNumParam` YO'Q (num_images=1 yuboriladi, gen-processor loop qiladi).
-2. **fal.ts / gen-processor.ts:** O'ZGARMADI — generic `falImage` + imgSettings yo'li to'g'ridan to'g'ri ishlaydi.
-3. **Plagin:** O'ZGARMADI — `/gen/models` dinamik, model picker avtomatik chiqaradi.
+1. **CSS:** `.cats` (2×2 grid), `.cat` (karta), `.cat.soon` (54px lime cic), `.aicattool` (tool qatori), `.aicattools-lbl`, `.aicatempty` — `AssetFlow_Plugin.html` ga qo'shildi.
+2. **HTML:** `v-launcher` → `#aiCatGrid` (JS tomonidan to'ldiriladi); yangi `v-aicat` → `#aiCatTools`. Navigatsiya: `v-launcher[data-go=main]`, `v-aicat[data-go=launcher]`.
+3. **JS (blok 8651-9070):** SVG ikonalar (`_catImgSVG` va b.), `AI_CATS[]` (image/video/audio/3d), `aiRenderCatGrid()`, `aiOpenCat(c)`, `aiRenderCatGrid()` chaqiruvi.
+4. **igBack:** `axInit()` → `axGo('aicat')` — imggen'dan orqaga aicat ga qaytadi.
+5. **Mavjud "Rasm yaratish" buzilmadi:** `v-imggen` + igScript IIFE o'ZGARMADI; faqat igBack manzili yangilandi.
 
-## TEKSHIRUV (9-model harness)
+## TEKSHIRUV
 
-- tsc TOZA. Plagin JS 0 xato.
-- V5 Lite t2i (1109): arVal:Auto 2K, 2-chip:none, Soni:1-6, ref:yashirin, POST modelId:1109 aspectRatio:"Auto 2K" count:3 referenceUrls:[], ✦12 yechildi (=4×3). ✓
-- V5 Lite Edit (1110): 2-chip:none, ref:ko'rinadi+warn (majburiy), arVal:Auto 2K. ✓
-- Regressiya GPT Image 2: qSeg ko'rinadi, ✦12, count 1-4. ✓
+- 6/6 script blok 0 sintaksis xato. Barcha strukturalar mavjud: catCSS, v-launcher, v-aicat, aiCatGrid, aiCatTools, AI_CATS, aiRenderCatGrid, aiOpenCat, axGo, igBack→aicat.
+- Image: 1 tool (Rasm yaratish, dest:'imggen'). Video: soon. Audio/3D: bo'sh.
+- Nav zanjiri: imggen ‹ → aicat ‹ → launcher ‹ → Asosiy. ✓
 
 ## KUTILMOQDA
 
-Backend PUSH (Render) — FAL_KEY env kerak (fal-ai/bytedance/seedream/v5/lite/... endpointlar).
+Backend PUSH (Render) — modellar 1102-1110 uchun FAL_KEY env kerak. Lokal AE test.
