@@ -158,8 +158,11 @@ studioGenRouter.get(
 /** GET /gen/history — foydalanuvchining BARCHA tugagan gen'lari (sessiyalardan qat'i nazar). */
 studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 30));
+  // ?mode=video → faqat shu turdagi gen'lar (video tool So'nggi gridi rasm gen'larni tortmasin).
+  const modeRaw = req.query.mode ? String(req.query.mode) : "";
+  const mode = (GEN_MODES as readonly string[]).includes(modeRaw) ? modeRaw : "";
   const items = await prisma.generation.findMany({
-    where: { userId: req.user!.userId, status: "done" },
+    where: { userId: req.user!.userId, status: "done", ...(mode ? { mode } : {}) },
     include: { assets: true },
     orderBy: { createdAt: "desc" },
     take: limit,

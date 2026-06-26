@@ -10157,6 +10157,18 @@ window.afGallery=(function(){
     try{ if(window.cep&&window.cep.fs&&window.cep.fs.readFile){ var enc=(window.cep.encoding&&window.cep.encoding.Base64)||'Base64'; var r=window.cep.fs.readFile(fp,enc); if(r&&(r.err===0||r.err==null)&&r.data)return 'data:'+mime(fp)+';base64,'+r.data; } }catch(e2){}
     return null;
   }
+  // host (jsx) chaqiruv — listProjectFootage / exportTimelineFrame (igScript bilan bir xil isbotlangan yo'l).
+  // Bular GLOBAL funksiya EMAS — csInterface.evalScript orqali host.jsx evallanadi va natija JSON qaytadi.
+  function hostCall(fn){ return new Promise(function(res){
+    if(typeof csInterface==='undefined'||!csInterface){ res(null); return; }
+    try{ var ed=csInterface.getSystemPath((typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension');
+      var jp=(ed+'/jsx/host.jsx').replace(/\\/g,'/');
+      csInterface.evalScript('(function(){$.evalFile('+JSON.stringify(jp)+'); return '+fn+'();})()',function(raw){
+        var r=null; try{ r=raw?JSON.parse(raw):null; }catch(e){ r=null; }
+        if(r&&!r.ok&&r.reason){ try{console.warn('[vg] host '+fn+' xato:',r.reason);}catch(_){} }
+        res(r||null); });
+    }catch(e){ try{console.warn('[vg] host '+fn+' eval xato:',String(e));}catch(_){} res(null); }
+  }); }
 
   function refreshVgBtn(){
     var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
@@ -10310,36 +10322,37 @@ window.afGallery=(function(){
     closeVgSheets();
   }
   function pickProjFrame(which){
-    if(!IS_CEP){ toast('Faqat AE ichida ishlaydi','info'); closeVgSheets(); return; }
+    if(typeof csInterface==='undefined'||!csInterface){ toast('Project paneldan faqat AE ichida','info'); closeVgSheets(); return; }
     var host=$('vgProjList'); if(!host)return;
     host.innerHTML='<div class="axighint">Yuklanmoqda…</div>';
     openVgSheet('vgProjSheet');
-    try{
-      var list=(typeof listProjectFootage==='function')?listProjectFootage():[];
+    // igScript bilan bir xil: async hostCall('listProjectFootage') → {items:[{name,mediaPath,mediaType}]}.
+    hostCall('listProjectFootage').then(function(r){
+      if(!$('vgProjList'))return;
+      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; return; }
+      var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
+      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; return; }
       host.innerHTML='';
-      if(!list||!list.length){ host.innerHTML='<div class="axighint">Project footage topilmadi</div>'; return; }
-      list.forEach(function(item){
-        if(!isImg(item.path||item.name||''))return;
+      items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
-        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(item.name||item.path||'').replace(/[<>&]/g,'')+'</b></div>';
-        (function(it){ d.addEventListener('click',function(){
-          var du=readDataUrl(it.path||''); // readDataUrl: file:// normalize + Node fs → cep.fs
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div>';
+        (function(item){ d.addEventListener('click',function(){
+          var du=readDataUrl(item.mediaPath||''); // readDataUrl: file:// normalize + Node fs → cep.fs
           if(du){ uploadFrame(du,which); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
           closeVgSheets();
-        }); })(item);
+        }); })(it);
         host.appendChild(d);
       });
-      if(!host.children.length)host.innerHTML='<div class="axighint">Rasm fayllari topilmadi</div>';
-    }catch(e){ host.innerHTML='<div class="axighint">Ro\'yxat yuklanmadi</div>'; }
+    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
   }
   function pickTlFrame(which){
-    if(!IS_CEP||typeof exportTimelineFrame!=='function'){ toast('Faqat AE ichida, timeline aktiv bo\'lganda','info'); closeVgSheets(); return; }
-    try{
-      var r=exportTimelineFrame();
-      if(!r){ toast('Timeline kadr olinmadi','warning'); closeVgSheets(); return; }
-      var dataUrl=r.dataUrl||r;
-      uploadFrame(String(dataUrl),which); closeVgSheets();
-    }catch(e){ toast((e&&e.message)||'Timeline xatosi','error'); closeVgSheets(); }
+    if(typeof csInterface==='undefined'||!csInterface){ toast('Timeline kadr faqat AE ichida','info'); closeVgSheets(); return; }
+    closeVgSheets(); toast('Kadr eksport qilinmoqda…','info');
+    // igScript bilan bir xil: async hostCall('exportTimelineFrame') → {path} (joriy kadr → PNG).
+    hostCall('exportTimelineFrame').then(function(r){
+      if(!r||!r.path){ toast('Kadr olinmadi'+((r&&r.reason)?': '+r.reason:' — comp Timeline\'da ochiq bo\'lsin'),'warning'); return; }
+      var du=readDataUrl(r.path); if(du){ uploadFrame(du,which); } else { toast('Kadrni o\'qib bo\'lmadi','error'); }
+    }).catch(function(e){ toast('Kadr eksport xatosi: '+String(e),'error'); });
   }
 
   var _pendingWhich='start';
@@ -10469,7 +10482,12 @@ window.afGallery=(function(){
     if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha video gen yo\'q</div>'; updVgRcBatch(); return; }
     uniq.slice(0,12).forEach(function(it){
       var d=document.createElement('div'); d.className='rc'+(it.id&&vgRcState.sel[it.id]?' sel':'');
-      if(it.thumb)d.style.backgroundImage='url("'+it.thumb+'")';
+      if(it.thumb){ d.style.backgroundImage='url("'+it.thumb+'")'; }
+      else { // poster yo'q → video birinchi kadrini ko'rsatamiz (CSS background videoni render qilmaydi)
+        var vthumb=document.createElement('video'); vthumb.src=it.url; vthumb.muted=true; vthumb.playsInline=true; vthumb.preload='metadata';
+        vthumb.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none'; d.appendChild(vthumb);
+        try{ vthumb.addEventListener('loadedmetadata',function(){ try{vthumb.currentTime=0.1;}catch(e){} }); }catch(e){}
+      }
       var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv);
       var tg=document.createElement('div'); tg.className='tg'; tg.textContent='Video'; d.appendChild(tg);
       var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||'Video'); d.appendChild(bd);
@@ -10513,9 +10531,10 @@ window.afGallery=(function(){
     vgRcState.loaded=true;
     studioGet('/api/studio/gen/history?mode=video&limit=12').then(function(d){
       ((d&&d.items)||[]).forEach(function(g){
-        var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
+        if(g&&g.mode&&g.mode!=='video')return; // faqat video gen'lar (server eski bo'lsa ham himoya)
+        var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url||!/\.(mp4|webm|mov|m4v)(\?|$)/i.test(url))return;
         if(!vgRcState.items.some(function(x){return x.url===url||x.id===g.id;}))
-          vgRcState.items.push({id:g.id,url:url,thumb:a.thumbUrl||url,title:(g.prompt||'').trim()||'Video'});
+          vgRcState.items.push({id:g.id,url:url,thumb:a.thumbUrl||null,title:(g.prompt||'').trim()||'Video'});
       });
       vgRcState.items=vgRcState.items.slice(0,12); renderVgRecent();
     }).catch(function(){ vgRcState.loaded=false; });
