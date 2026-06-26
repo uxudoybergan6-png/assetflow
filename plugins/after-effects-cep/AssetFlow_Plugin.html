@@ -2670,7 +2670,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* ===== Video yaratish tool — .axvg scope ===== */
 .axroot #v-vidgen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
 .axvg .frames{display:flex;gap:8px;margin-bottom:10px}
-.axvg .fbox{flex:1;border:1.5px dashed var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card);min-height:60px}
+.axvg .frame{flex:1}.axvg .fbox{height:90px;width:100%;border:1.5px dashed var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card)}.axvg .fcap{font-size:10px;color:var(--mut2);text-align:center;margin-top:5px}
 .axvg .fbox:hover{border-color:var(--acc2)}
 .axvg .fbox.has-img{border-style:solid;border-color:var(--line2)}
 .axvg .fbox .fbi{font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:3px;position:relative;z-index:1}
@@ -3250,8 +3250,8 @@ html.home-mode #homePage{display:block!important}
                             <div class="sect" id="vgFrameSect">
                               <div class="lbl">Kadrlar <span class="req">*</span></div>
                               <div class="frames">
-                                <div class="fbox" id="vgStartBox"><div class="fbi">Boshlang'ich</div><div class="fbadd">+</div></div>
-                                <div class="fbox" id="vgEndBox"><div class="fbi">Yakuniy <span class="fb-opt">ixt.</span></div><div class="fbadd">+</div></div>
+                                <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Boshlang'ich kadr</div></div>
+                                <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">Yakuniy kadr <span class="fb-opt">ixt.</span></div></div>
                               </div>
                               <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Boshlang'ich kadr majburiy — + bosib qo'shing.</span></div>
                               <div class="pbox">
@@ -3274,6 +3274,12 @@ html.home-mode #homePage{display:block!important}
                                 <div class="seg" id="vgDurSeg"><span class="lab">Davomiylik</span><span class="sv" id="vgDurVal">Auto</span><span class="sc">▾</span></div>
                               </div>
                               <div class="aud-toggle on" id="vgAudToggle"><div class="aud-sw"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg><span>Ovoz</span></div>
+                            </div>
+                            <!-- Video So'nggi genlar -->
+                            <div class="sect" id="vgRecentSect">
+                              <div class="lbl">So'nggi <span class="recsel" id="vgRecentSel">☑ Tanlash</span><span class="morelink" id="vgMoreVid" style="margin-left:auto">Barchasi →</span></div>
+                              <div class="recentgrid" id="vgRecent"></div>
+                              <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 tanlandi</span><div class="bb del" id="vgRecentDel">✕ O'chirish</div><div class="bb" id="vgRecentCancel">Bekor</div></div>
                             </div>
                           </div>
 
@@ -3318,6 +3324,14 @@ html.home-mode #homePage{display:block!important}
                             <div id="vgMList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div class="axighint">Kelajakda ko'proq video model qo'shiladi</div>
                           </div></div>
+                          <!-- Video lightbox -->
+                          <div class="lightbox" id="vgLightbox">
+                            <div class="lbinner">
+                              <video id="vgLbVideo" controls playsinline style="max-width:100%;border-radius:8px;max-height:70vh"></video>
+                              <div class="lbacts" id="vgLbActs"></div>
+                            </div>
+                            <div class="lx" id="vgLbClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>
+                          </div>
                         </div>
                       </section>
 
@@ -10255,9 +10269,6 @@ window.afGallery=(function(){
   function renderFbox(id,frame,which){
     var box=$(id); if(!box)return;
     box.innerHTML='';
-    var lbl=document.createElement('div'); lbl.className='fbi';
-    lbl.innerHTML=(which==='start')?"Boshlang'ich":"Yakuniy <span class='fb-opt'>ixt.</span>";
-    box.appendChild(lbl);
     if(frame){
       box.classList.add('has-img');
       var img=document.createElement('img'); img.className='fb-thumb'; img.src=frame.dataUrl; box.appendChild(img);
@@ -10405,6 +10416,9 @@ window.afGallery=(function(){
   function showVgResult(assets,j){
     var url=(assets&&assets[0]&&assets[0].url)||null;
     if(!url){ toast('Natija bo\'sh','warning'); return; }
+    try{ if(!vgRcState.items.some(function(x){return x.url===url;})){
+      vgRcState.items.unshift({id:(j&&j.jobId)||null,url:url,thumb:url,title:(j&&j.prompt)||'Video'});
+      vgRcState.items=vgRcState.items.slice(0,12);} renderVgRecent(); }catch(_){}
     var res=$('vgRes'); if(res)res.style.display='';
     var vid=$('vgVideo'); if(vid){ vid.src=url; vid.load(); }
     var acts=$('vgActs'); if(!acts)return; acts.innerHTML='';
@@ -10419,6 +10433,102 @@ window.afGallery=(function(){
       acts.appendChild(btnDl);
     }
   }
+
+  // ── video So'nggi grid (2-ustun; ▶ overlay; hover ✕; ☑ batch; lightbox) ──
+  var VG_RC_X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
+  var VG_RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+  var vgRcState={items:[],sel:{},selecting:false,loaded:false};
+
+  function openVgLightbox(it){
+    var lb=$('vgLightbox'),vid=$('vgLbVideo'),acts=$('vgLbActs');
+    if(!lb||!it||!it.url)return;
+    lb.classList.add('on');
+    if(vid){ vid.src=it.url; vid.load(); }
+    if(acts){
+      acts.innerHTML='';
+      var ai=document.createElement('div'); ai.className='lba';
+      ai.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> AE import';
+      ai.addEventListener('click',function(){ if(typeof aiImportMedia==='function')aiImportMedia(it.url,'video','mp4'); else toast('Faqat AE ichida','info'); });
+      acts.appendChild(ai);
+      if(!IS_CEP){
+        var dl=document.createElement('div'); dl.className='lba';
+        dl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Yuklab olish';
+        dl.addEventListener('click',function(){ try{var a=document.createElement('a');a.href=it.url;a.download='seedance-video.mp4';document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){} });
+        acts.appendChild(dl);
+      }
+    }
+  }
+  function closeVgLightbox(){ var lb=$('vgLightbox'); if(lb)lb.classList.remove('on'); var vid=$('vgLbVideo'); if(vid){vid.pause();vid.src='';} }
+
+  function updVgRcBatch(){ var b=$('vgRecentBatch'); if(!b)return; b.classList.toggle('on',vgRcState.selecting); var bi=$('vgRecentBI'); if(bi)bi.textContent=Object.keys(vgRcState.sel).length+' tanlandi'; }
+
+  function renderVgRecent(){
+    var r=$('vgRecent'); if(!r)return; r.innerHTML='';
+    r.className='recentgrid'+(vgRcState.selecting?' selmode':'');
+    var seen={},uniq=[]; vgRcState.items.forEach(function(it){ if(it&&it.url&&!seen[it.url]){seen[it.url]=1;uniq.push(it);} }); vgRcState.items=uniq;
+    if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha video gen yo\'q</div>'; updVgRcBatch(); return; }
+    uniq.slice(0,12).forEach(function(it){
+      var d=document.createElement('div'); d.className='rc'+(it.id&&vgRcState.sel[it.id]?' sel':'');
+      if(it.thumb)d.style.backgroundImage='url("'+it.thumb+'")';
+      var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv);
+      var tg=document.createElement('div'); tg.className='tg'; tg.textContent='Video'; d.appendChild(tg);
+      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||'Video'); d.appendChild(bd);
+      var ra=document.createElement('div'); ra.className='racts';
+      var del=document.createElement('b'); del.className='del'; del.title='O\'chirish'; del.innerHTML=VG_RC_X;
+      (function(item){ del.addEventListener('click',function(e){ e.stopPropagation(); vgRcDelete(item); }); })(it);
+      ra.appendChild(del); d.appendChild(ra);
+      var cb=document.createElement('div'); cb.className='rcb'; cb.innerHTML=VG_RC_CHK; d.appendChild(cb);
+      d.addEventListener('click',function(){
+        if(vgRcState.selecting){
+          if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; }
+          if(vgRcState.sel[it.id])delete vgRcState.sel[it.id]; else vgRcState.sel[it.id]=it;
+          d.classList.toggle('sel',!!vgRcState.sel[it.id]); updVgRcBatch();
+        } else openVgLightbox(it);
+      });
+      r.appendChild(d);
+    });
+    updVgRcBatch();
+  }
+  function vgRcDelete(it){
+    if(!it.id){ toast('Bu natijani hali o\'chirib bo\'lmaydi','info'); return; }
+    if(typeof window.confirm==='function'&&!window.confirm('O\'chirilsinmi? Bu qaytarilmaydi.'))return;
+    studioDelete('/api/studio/gen/'+it.id).then(function(){
+      vgRcState.items=vgRcState.items.filter(function(x){return !(x.id===it.id||x.url===it.url);}); delete vgRcState.sel[it.id];
+      renderVgRecent(); toast('O\'chirildi','success');
+    }).catch(function(err){ toast((err&&err.message)||'O\'chirib bo\'lmadi','error'); });
+  }
+  function vgRcBatchDelete(){
+    var items=Object.keys(vgRcState.sel).map(function(k){return vgRcState.sel[k];}).filter(function(x){return x&&x.id;});
+    if(!items.length){ toast('Avval tanlang','warning'); return; }
+    if(typeof window.confirm==='function'&&!window.confirm(items.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.'))return;
+    var done=0,fail=0,total=items.length;
+    items.forEach(function(it){ studioDelete('/api/studio/gen/'+it.id).then(function(){
+      done++; vgRcState.items=vgRcState.items.filter(function(x){return !(x.id===it.id||x.url===it.url);}); delete vgRcState.sel[it.id];
+    }).catch(function(){ fail++; }).then(function(){
+      if(done+fail===total){ vgRcState.selecting=false; vgRcState.sel={}; renderVgRecent(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''),fail?'warning':'success'); }
+    }); });
+  }
+  function loadVgRecent(){
+    if(vgRcState.loaded||!$('vgRecent'))return;
+    vgRcState.loaded=true;
+    studioGet('/api/studio/gen/history?mode=video&limit=12').then(function(d){
+      ((d&&d.items)||[]).forEach(function(g){
+        var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
+        if(!vgRcState.items.some(function(x){return x.url===url||x.id===g.id;}))
+          vgRcState.items.push({id:g.id,url:url,thumb:a.thumbUrl||url,title:(g.prompt||'').trim()||'Video'});
+      });
+      vgRcState.items=vgRcState.items.slice(0,12); renderVgRecent();
+    }).catch(function(){ vgRcState.loaded=false; });
+  }
+  // lightbox
+  (function(){ var lb=$('vgLightbox'); if(lb)lb.addEventListener('click',function(e){ if(e.target===lb)closeVgLightbox(); }); var cl=$('vgLbClose'); if(cl)cl.addEventListener('click',closeVgLightbox); document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&$('vgLightbox')&&$('vgLightbox').classList.contains('on'))closeVgLightbox(); }); })();
+  // So'nggi select/batch/more
+  (function(){
+    var sel=$('vgRecentSel'); if(sel)sel.addEventListener('click',function(){ vgRcState.selecting=!vgRcState.selecting; vgRcState.sel={}; sel.classList.toggle('on',vgRcState.selecting); renderVgRecent(); });
+    var del=$('vgRecentDel'); if(del)del.addEventListener('click',vgRcBatchDelete);
+    var can=$('vgRecentCancel'); if(can)can.addEventListener('click',function(){ vgRcState.selecting=false; vgRcState.sel={}; var sel2=$('vgRecentSel'); if(sel2)sel2.classList.remove('on'); renderVgRecent(); });
+    var more=$('vgMoreVid'); if(more)more.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('history'); });
+  })();
 
   // ── gen tugmasi ──
   function genVgClick(){
@@ -10459,6 +10569,7 @@ window.afGallery=(function(){
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
+  loadVgRecent(); renderVgRecent();
 })();
 </script>
 </body>

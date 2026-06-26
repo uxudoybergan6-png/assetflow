@@ -1,17 +1,16 @@
-# SESSION REPORT — 2026-06-26 — Video yaratish tool (Seedance 2.0 Fast)
+# SESSION REPORT — 2026-06-26 — Video tool: ixcham kadrlar + So'nggi grid
 
 ## Bajarildi
 
-1. **gen-models.ts:** `GenModel` tipiga `videoSettings` deskriptori qo'shildi. Seedance 2.0 Fast modeli (id:3101, provider:fal, falModel:bytedance/seedance-2.0/fast/image-to-video, perSec:{480p:8,720p:12}, autoSec:5) qo'shildi.
-2. **gen-models.ts:** `resolveVideoParams` — "auto" davomiylik → `videoSettings.duration.autoSec` (narx hisoblash). `computeGenCost` — `perSec[res] × duration` formulasi (videoSettings bor bo'lsa).
-3. **fal.ts:** `falSubmit` → `opts.maxPolls` parametri (video uchun 150 poll ≈ 280s). `falVideo()` funksiyasi: Seedance queue submit + poll + CDN download.
-4. **gen-processor.ts:** `falVideo` import. `runFalVideo()` funksiyasi (referenceUrl → start kadr, referenceEndUrl → end kadr, materializeRefUrl). `provider==='fal'` → `runFalVideo`, aks holda `runVideo`.
-5. **Plugin:** `.axvg` CSS scope (frames, fbox, vwrap, video, vacts, aud-toggle). `<section id="v-vidgen">` (start/end kadrlar, prompt, sozlamalar, sheets). vgScript IIFE (model yuklanishi, kadr upload, enhance, cost, poll, video player, AE import). AI_CATS → `dest:'vidgen'` (soon:true olib tashlandi).
+1. **Ixcham kadr kartalar:** `.axvg .fbox` `aspect-ratio:16/9;min-height:60px` → `height:90px;width:100%`. Har kadr `.frame` wrapperida, yorliq `.fcap` (tashqi, quti ostida). `renderFbox` ichidan `.fbi` label olib tashlandi.
+2. **So'nggi video genlar grid:** Settings bo'limidan keyin `<div class="sect" id="vgRecentSect">` qo'shildi — 2-ustun `.recentgrid`, ▶ play overlay, hover ✕, ☑ batch o'chirish, "Barchasi →" → Tarix.
+3. **Video lightbox:** `id="vgLightbox"` — `<video>` player, AE import + Yuklab olish amallar, Esc/× yopish.
+4. **JS:** `vgRcState` holat, `openVgLightbox`, `closeVgLightbox`, `renderVgRecent`, `vgRcDelete`, `vgRcBatchDelete`, `loadVgRecent` + barcha event listenerlar. `showVgResult` har gen tugagach `vgRcState.items`ga qo'shadi.
 
-## Natija
+## Tekshiruv
 
-Backend tsc TOZA. vgScript syntax TOZA (20411 b). `dest:'vidgen'` ulandi — launcher chiqadi. API PUSH kerak (Render): Seedance model (3101) + FAL_KEY env.
+vgScript syntax TOZA (30243 b). Barcha `.axig` CSS (recentgrid/rc/lightbox/recbatch) `.axig.axvg` orqali meros oladi.
 
 ## KUTILMOQDA
 
-Render deploy (FAL_KEY env) + AE plugin qayta o'rnatish (`bash install-cep.sh`) + end-to-end test (kadr yuklash → gen → video player → AE import).
+AE install-cep.sh → end-to-end test (kadr → gen → So'nggi grid → lightbox → AE import).
