@@ -77,6 +77,8 @@ export type GenModel = {
     quality?: { label: string; param: "quality" | "resolution"; options: string[]; def: string; cost: Record<string, number> };
     num: number[];
   };
+  noNumParam?: boolean; // true → falImage num_images YUBORILMAYDI (Flux, Seedream kabi)
+  outputFormat?: string; // fal output_format override (default 'png'); 'jpeg' Flux uchun
 
   // voice modeli uchun:
   voices?: { id: string; label: string }[];
@@ -335,6 +337,61 @@ export const GEN_MODELS: GenModel[] = [
       },
       // quality YO'Q — tekis narx (cost=4/rasm); 2-chip UI'da yashirin.
       num: [1, 2, 3, 4, 5, 6],
+    },
+  },
+
+  {
+    id: 1107,
+    mode: "image",
+    key: "fal-ai/flux-2-pro",
+    label: "Flux 2 Pro",
+    provider: "fal",
+    falModel: "fal-ai/flux-2-pro",
+    feature: "text-to-image",
+    cost: 4,
+    referenceMode: "none",
+    refMode: "none",
+    maxRefs: 0,
+    inputs: [],
+    count: [1, 2, 3, 4],
+    noNumParam: true,
+    outputFormat: "jpeg",
+    imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "image_size",
+        options: ["1:1", "4:3", "3:4", "16:9", "9:16", "Kvadrat"],
+        map: { "1:1": "square_hd", "4:3": "landscape_4_3", "3:4": "portrait_4_3", "16:9": "landscape_16_9", "9:16": "portrait_16_9", Kvadrat: "square" },
+        def: "4:3",
+      },
+      num: [1, 2, 3, 4],
+    },
+  },
+  {
+    id: 1108,
+    mode: "image",
+    key: "fal-ai/flux-2-pro/edit",
+    label: "Flux 2 Pro Edit",
+    provider: "fal",
+    falModel: "fal-ai/flux-2-pro/edit",
+    feature: "image-edit",
+    cost: 4,
+    referenceMode: "image-edit",
+    refMode: "required",
+    maxRefs: 4,
+    inputs: ["image-ref"],
+    count: [1, 2, 3, 4],
+    noNumParam: true,
+    outputFormat: "jpeg",
+    imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "image_size",
+        options: ["Auto", "1:1", "4:3", "3:4", "16:9", "9:16"],
+        map: { Auto: "auto", "1:1": "square_hd", "4:3": "landscape_4_3", "3:4": "portrait_4_3", "16:9": "landscape_16_9", "9:16": "portrait_16_9" },
+        def: "Auto",
+      },
+      num: [1, 2, 3, 4],
     },
   },
 

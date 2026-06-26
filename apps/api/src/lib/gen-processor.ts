@@ -295,7 +295,7 @@ export async function processGeneration(genId: string): Promise<void> {
       // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
       const genOne = (): Promise<OrResult<Buffer>> =>
         useFal
-          ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings })
+          ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat })
           : mfRemoveBg
           ? magnificRemoveBg(mfRbgUrl)
           : mfTool

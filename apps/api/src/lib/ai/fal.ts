@@ -149,7 +149,7 @@ export type FalImageSettings = {
 export async function falImage(
   modelKey: string,
   prompt: string,
-  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null; settings?: FalImageSettings }
+  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null; settings?: FalImageSettings; noNumParam?: boolean; outputFormat?: string }
 ): Promise<OrResult<Buffer>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
   const imageUrls = (opts?.imageUrls || []).filter(
@@ -176,20 +176,21 @@ export async function falImage(
       : QUALITIES.includes(qRaw.toLowerCase())
         ? qRaw.toLowerCase()
         : "high";
+  const outFmt = opts?.outputFormat || "png";
   const input: Record<string, unknown> = {
     // edit: @img<N> → "image N" (image_urls tartibiga mos). t2i: referenssiz → mapping shart emas.
     prompt: imageUrls.length
       ? String(prompt).replace(/@img(\d+)/gi, (_m, n) => `image ${n}`)
       : String(prompt),
     [aspectParam]: aspectVal,
-    num_images: 1,
-    output_format: "png",
+    output_format: outFmt,
   };
+  if (!opts?.noNumParam) input.num_images = 1; // Flux/Seedream kabi modellar num_images qabul qilmaydi
   if (hasQuality) input[qualityParam] = qualityVal; // quality yo'q model → param tushirilmaydi
   if (imageUrls.length) input.image_urls = imageUrls; // edit-only
   try {
     console.log(
-      `[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i"} → ${modelKey} ${aspectParam}=${aspectVal}${hasQuality ? " " + qualityParam + "=" + qualityVal : " (no-quality)"}`
+      `[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i"} → ${modelKey} ${aspectParam}=${aspectVal}${hasQuality ? " " + qualityParam + "=" + qualityVal : " (no-quality)"} fmt=${outFmt}${opts?.noNumParam ? " no-num" : ""}`
     );
   } catch {
     /* ignore */
