@@ -9248,7 +9248,7 @@ window.afGallery=(function(){
 
   // ---- kredit (REAL profil) + narx ----
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
-  function cost(){ return (meta.qcost[st.q]||12)*st.n; }
+  function cost(){ return meta.hasQuality ? (meta.qcost[st.q]||12)*st.n : (meta.flatCost||4)*st.n; }
   function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
   function recost(){ var sc=$('igCost'); if(sc)sc.textContent='✦'+cost(); var g=$('igGen'); if(g)g.title='Yaratish (✦'+cost()+')'; }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
@@ -9309,6 +9309,8 @@ window.afGallery=(function(){
     meta.ars=(asp&&asp.options&&asp.options.length)?asp.options:((m.aspects&&m.aspects.length)?m.aspects:meta.ars);
     meta.aspDef=(asp&&asp.def)||meta.ars[0];
     meta.quals=(ql&&ql.options&&ql.options.length)?ql.options:((m.resolutions&&m.resolutions.length)?m.resolutions:meta.quals);
+    meta.hasQuality=!!ql; // false → 2-chip yashiriladi, narx flatCost×n
+    meta.flatCost=m.cost||4; // quality yo'q modellar uchun tekis kredit/rasm
     meta.qcost=(ql&&ql.cost)||m.qualityCost||meta.qcost;
     meta.qLabel=(ql&&ql.label)||'Sifat'; // 2-chip label: gpt→"Sifat", nano→"Resolution"
     meta.qDefault=(ql&&ql.def)||((meta.quals.indexOf('high')>=0)?'high':meta.quals[0]);
@@ -9355,7 +9357,8 @@ window.afGallery=(function(){
     var noRef=meta.refMode==='none';
     $('igRefAdd').style.display=noRef?'none':'';
     $('igRefMeta').style.display=noRef?'none':'';
-    var ql=$('igQLab'); if(ql)ql.textContent=meta.qLabel||'Sifat'; // gpt→"Sifat", nano→"Resolution"
+    var qlEl=$('igQLab'); if(qlEl)qlEl.textContent=meta.qLabel||'Sifat'; // gpt→"Sifat", nano→"Resolution"
+    var qseg=$('igQSeg'); if(qseg)qseg.style.display=meta.hasQuality?'':'none'; // quality yo'q → chip yashirin
     $('igArVal').textContent=st.ar; $('igQVal').textContent=cap(st.q); $('igNVal').textContent=String(st.n);
     recost(); refreshGen();
   }

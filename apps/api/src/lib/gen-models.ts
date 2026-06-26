@@ -73,7 +73,8 @@ export type GenModel = {
   // Bo'lmasa — eski flat fieldlar (aspects/resolutions/qualityCost/count) ishlatiladi (orqaga moslik).
   imgSettings?: {
     aspect: { param: "image_size" | "aspect_ratio"; options: string[]; map?: Record<string, string>; def?: string };
-    quality: { label: string; param: "quality" | "resolution"; options: string[]; def: string; cost: Record<string, number> };
+    // quality yo'q = tekis narx (model.cost × count); 2-chip UI'da yashiriladi.
+    quality?: { label: string; param: "quality" | "resolution"; options: string[]; def: string; cost: Record<string, number> };
     num: number[];
   };
 
@@ -297,6 +298,43 @@ export const GEN_MODELS: GenModel[] = [
       },
       quality: { label: "Resolution", param: "resolution", options: ["0.5K", "1K", "2K", "4K"], def: "1K", cost: { "0.5K": 6, "1K": 8, "2K": 12, "4K": 16 } },
       num: [1, 2, 3, 4],
+    },
+  },
+
+  {
+    id: 1106,
+    mode: "image",
+    key: "fal-ai/bytedance/seedream/v4.5/edit",
+    label: "Seedream V4.5 Edit",
+    provider: "fal",
+    falModel: "fal-ai/bytedance/seedream/v4.5/edit",
+    feature: "image-edit",
+    cost: 4, // tekis narx/rasm (× count); quality chip yo'q
+    referenceMode: "image-edit",
+    refMode: "required",
+    maxRefs: 10,
+    inputs: ["image-ref"],
+    aspects: ["Auto 2K", "Auto 4K", "1:1", "4:3", "3:4", "16:9", "9:16"],
+    count: [1, 2, 3, 4, 5, 6],
+    imgModalities: ["image"],
+    imgSettings: {
+      // image_size enum (fal): Auto 2K/4K → auto_2K/auto_4K; nisbatlar → fal enumlari.
+      aspect: {
+        param: "image_size",
+        options: ["Auto 2K", "Auto 4K", "1:1", "4:3", "3:4", "16:9", "9:16"],
+        map: {
+          "Auto 2K": "auto_2K",
+          "Auto 4K": "auto_4K",
+          "1:1": "square_hd",
+          "4:3": "landscape_4_3",
+          "3:4": "portrait_4_3",
+          "16:9": "landscape_16_9",
+          "9:16": "portrait_16_9",
+        },
+        def: "Auto 2K",
+      },
+      // quality YO'Q — tekis narx (cost=4/rasm); 2-chip UI'da yashirin.
+      num: [1, 2, 3, 4, 5, 6],
     },
   },
 

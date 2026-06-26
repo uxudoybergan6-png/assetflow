@@ -164,7 +164,8 @@ export async function falImage(
     s && s.aspect
       ? (s.aspect.map && s.aspect.map[aspectLabel]) || aspectLabel || s.aspect.def || "auto"
       : AR_TO_SIZE[aspectLabel] || "auto";
-  // quality: deskriptor param + value (yo'q → eski quality enum). Plagin yaroqli option yuboradi; bu — himoya.
+  // quality: deskriptor param + value. settings bor lekin quality yo'q → param YUBORILMAYDI (seedream naqshi).
+  const hasQuality = !s || !!s.quality; // settings yo'q → eski xulq (param yuboriladi)
   const qualityParam = (s && s.quality && s.quality.param) || "quality";
   const qOpts = s && s.quality && s.quality.options;
   const qualityVal =
@@ -181,14 +182,14 @@ export async function falImage(
       ? String(prompt).replace(/@img(\d+)/gi, (_m, n) => `image ${n}`)
       : String(prompt),
     [aspectParam]: aspectVal,
-    [qualityParam]: qualityVal,
     num_images: 1,
     output_format: "png",
   };
+  if (hasQuality) input[qualityParam] = qualityVal; // quality yo'q model → param tushirilmaydi
   if (imageUrls.length) input.image_urls = imageUrls; // edit-only
   try {
     console.log(
-      `[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i"} → ${modelKey} ${aspectParam}=${aspectVal} ${qualityParam}=${qualityVal}`
+      `[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i"} → ${modelKey} ${aspectParam}=${aspectVal}${hasQuality ? " " + qualityParam + "=" + qualityVal : " (no-quality)"}`
     );
   } catch {
     /* ignore */
