@@ -1,10 +1,13 @@
-# SESSION REPORT — 2026-06-26 — AI Tools chuqur audit (ultracode/adversarial) + bloker tuzatishlar
+# SESSION REPORT — 2026-06-26 — 2-model (GPT Image 2 t2i) + arxitektura umumlashtirish
 
-- Metod: 24-agentli audit (7 o'lcham) + kredit/refund, xavfsizlik, overlay invariantlari mustaqil adversarial tasdiq. To'liq hisobot: `docs/AI-TOOLS-AUDIT.md`.
-- **BLOKER tuzatildi — double-refund/bepul-gen race** (`gen-processor.ts`): `fail()`/`done` UNGUARDED edi vs atomik `reconcile` → 10 daq'dan oshган job double refund yoki failed→done. Tuzatish: ikkalasi atomik `updateMany where status IN[queued,running]`/`=running`, refund faqat count>0. Node race test 6/6 PASS.
-- **BLOKER tuzatildi — timer/network leak** (plagin): tooldan chiqsa poll/progress timerlari tozalanmasdi. `teardownGen()` (`window.axIGTeardown`) — `go()`+`openHistory`'да. Headless: navigate → poll TO'XTAYDI.
-- **Jiddiy tuzatildi:** cancel YOLG'ON "kredit yechilmadi" → `submitted` flag → "Orqa fonда davom etadi"; enhance kredit chip stale → endpoint `creditsLeft` + `setCreditChip`; JWT_SECRET zaif guard → `WEAK_SECRETS`+`<32` prod-blok (auth/cost-quote bir xil kalit). Headless/tsc tasdiq.
-- **Past/minor tuzatildi:** `genParamsHash` `referenceUrls` strip (latent BAD_QUOTE); `falEnhancePrompt` tolerant parse; batch download CEP toast-spam → 1 toast.
-- **Invariantlar (tasdiq):** kredit/refund HOLDS (tuzatishdan keyin), xavfsizlik HOLDS (FAL_KEY sizmaydi, XSS eskeyplangan), overlay HOLDS. Qoldiq: count>1 qisman-xатoда orphan R2 (storage, kredit-to'g'ri).
-- **Yangi model hukmi: QISMAN** — backend katalog generic+tayyor; LIVE imggen UI bitta modelга hardcode (`:9300` filter → picker kerak) + fal adapter image-edit'ga xos (generic kerak) + gen-processor routing image blokiда. Qadamlar `AI-TOOLS-AUDIT.md`да.
-- TEKSHIRUV: `npm run build -w apps/api` TOZA; plagin 6 blok 0 xato. KUTILMOQDA: backend PUSH (Render) + install-cep.
+Audit "3 to'siq"i yechildi: model picker + generic fal + provider routing. Kredit/refund/atomik guard, @imgN, vision enhance — BUZILMADI.
+
+1. **gen-models.ts:** yangi model `id:1103 openai/gpt-image-2` (provider fal, feature `text-to-image`, `referenceMode:"none"`+`refMode:"none"`, maxRefs 0, qualityCost low3/med6/high12). Mavjud `1102 .../edit` (required) qoldi. MUHIM: `referenceMode:"none"` (aks holда getReferenceMode image-default='image-edit' referens talab qilardi).
+2. **fal.ts:** `falImageEdit` → GENERIC `falImage(modelKey, prompt, {imageUrls?,aspect,quality})`. imageUrls bo'sh → t2i (`openai/gpt-image-2`, image_urls yo'q, @imgN mapping yo'q); imageUrls bor → edit (`.../edit`, image_urls + @imgN→"image N"). Submit/poll/R2/timeout-sentinel o'zgarmadi.
+3. **gen-processor.ts:** image blok `falNeedsRef = useFal && refMode!=='none'` — edit referens materialize qiladi (talab), t2i o'tkazib yuboradi (falImageUrls=[]). genOne → `falImage(...)`. Atomik consume/refund guard (audit fix) saqlandi.
+4. **PLAGIN model picker (model-aware):** `meta.models` /gen/models'дан (provider==='fal' filtr) → 2 model dinamik sheet (`renderModelSheet`/`setModel`). t2i tanlanса: ＋Referens/ogohlantirish/refMeta YASHIRIN, @dropdown o'chiq (`checkMention` refMode none guard), Yaratish faqat prompt bilan, refs tozalanadi. edit: referens majburiy. ✨ Yaxshilash: ref bor→vision, yo'q→text (mavjud).
+
+## TEKSHIRUV
+- `npm run build -w apps/api` TOZA · plagin 6 `<script>` blok 0 xato.
+- Headless (preview, screenshot): picker 2 model (Edit=majburiy✓ / t2i=referenssiz); t2i → /gen `modelId:1103` REFERENSSIZ (referenceUrls bo'sh) → natija; edit → `modelId:1102` referenceUrls YUBORILADI (regressiyasiz); model almashganда UI model-aware (t2i ref yashirin, @dropdown yo'q, Yaratish prompt-only).
+- Kredit/refund/atomik guard tegilmadi. KUTILMOQDA: backend PUSH (Render, FAL_KEY) → AE'da t2i real sinash.

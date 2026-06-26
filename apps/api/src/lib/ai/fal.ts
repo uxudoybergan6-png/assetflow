@@ -134,30 +134,40 @@ const AR_TO_SIZE: Record<string, string> = {
 const QUALITIES = ["auto", "low", "medium", "high"];
 
 /**
- * GPT Image 2 Edit (image-to-image). `imageUrls` PUBLIC bo'lishi shart (caller R2'ga
- * materializatsiya qiladi — private/auth URL fal'da `file_download_error` beradi).
- * Bitta chaqiruv = bitta rasm (num_images:1); gen-processor count marta loop qiladi.
+ * GENERIC fal image gen (text-to-image VA image-edit). `modelKey` = endpoint (falModel):
+ *  - t2i: `openai/gpt-image-2` — `opts.imageUrls` BO'SH → image_urls yuborilmaydi.
+ *  - edit: `openai/gpt-image-2/edit` — `opts.imageUrls` bor → image_urls + @imgN→"image N".
+ * imageUrls PUBLIC bo'lishi shart (caller R2'ga materializatsiya qiladi — private URL → file_download_error).
+ * Bitta chaqiruv = bitta rasm (num_images:1); gen-processor count marta (bounded) chaqiradi.
+ * Submit/poll/R2/timeout-sentinel o'zgarmaydi.
  */
-export async function falImageEdit(
+export async function falImage(
   modelKey: string,
   prompt: string,
-  imageUrls: string[],
-  opts?: { aspect?: string | null; quality?: string | null }
+  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null }
 ): Promise<OrResult<Buffer>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
-  if (!imageUrls.length) return { ok: false, error: "fal: tahrirlash uchun rasm yo'q" };
+  const imageUrls = (opts?.imageUrls || []).filter(
+    (u): u is string => typeof u === "string" && u.length > 0
+  );
   const aspect = opts?.aspect || "";
   const q = (opts?.quality || "high").toLowerCase();
-  // @img<N> → "image N" (image_urls tartibiga mos: @img1 = image_urls[0]). Model shu ko'rinishni tushunadi.
-  const mappedPrompt = String(prompt).replace(/@img(\d+)/gi, (_m, n) => `image ${n}`);
   const input: Record<string, unknown> = {
-    prompt: mappedPrompt,
-    image_urls: imageUrls,
+    // edit: @img<N> → "image N" (image_urls tartibiga mos). t2i: referenssiz → mapping shart emas.
+    prompt: imageUrls.length
+      ? String(prompt).replace(/@img(\d+)/gi, (_m, n) => `image ${n}`)
+      : String(prompt),
     image_size: AR_TO_SIZE[aspect] || "auto",
     quality: QUALITIES.includes(q) ? q : "high",
     num_images: 1,
     output_format: "png",
   };
+  if (imageUrls.length) input.image_urls = imageUrls; // edit-only
+  try {
+    console.log(`[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i (referenssiz)"} → ${modelKey}`);
+  } catch {
+    /* ignore */
+  }
   const r = await falSubmit(modelKey, input);
   if (!r.ok) return r;
   const data = r.data as { images?: { url?: string }[]; image?: { url?: string } };

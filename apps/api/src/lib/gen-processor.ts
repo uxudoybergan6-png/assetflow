@@ -15,7 +15,7 @@ import {
   orDownload,
 } from "./ai/openrouter.js";
 import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
-import { falImageEdit } from "./ai/fal.js";
+import { falImage } from "./ai/fal.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
@@ -264,8 +264,10 @@ export async function processGeneration(genId: string): Promise<void> {
       }
       // FAL image-edit: input rasm(lar) fal'ga PUBLIC URL bo'lib uzatiladi (data-URI/private auth
       // → file_download_error). data-URI'ni R2'ga yuklab TOZA public URL beramiz (remove-bg naqshi).
+      // t2i (referenceMode 'none') → referens YO'Q: falImageUrls bo'sh qoladi (falImage image_urls yubormaydi).
       let falImageUrls: string[] = [];
-      if (useFal) {
+      const falNeedsRef = useFal && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
+      if (falNeedsRef) {
         const rawRefs: string[] = Array.isArray(params.referenceUrls)
           ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
           : refUrl
@@ -293,7 +295,7 @@ export async function processGeneration(genId: string): Promise<void> {
       // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
       const genOne = (): Promise<OrResult<Buffer>> =>
         useFal
-          ? falImageEdit(model.falModel ?? model.key, gen.prompt, falImageUrls, { aspect: aspectRatio, quality })
+          ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality })
           : mfRemoveBg
           ? magnificRemoveBg(mfRbgUrl)
           : mfTool

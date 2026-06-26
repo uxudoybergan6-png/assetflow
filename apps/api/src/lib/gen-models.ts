@@ -192,6 +192,24 @@ export const GEN_MODELS: GenModel[] = [
     count: [1, 2, 3, 4],
     imgModalities: ["image"],
   },
+  {
+    id: 1103,
+    mode: "image",
+    key: "openai/gpt-image-2",
+    label: "GPT Image 2",
+    provider: "fal",
+    falModel: "openai/gpt-image-2",
+    feature: "text-to-image", // REFERENSSIZ (gpt-image-2/edit'dan farqi)
+    cost: 12, // fallback (high); qualityCost ustun
+    qualityCost: { low: 3, medium: 6, high: 12, auto: 12 },
+    referenceMode: "none", // text-to-image — REFERENS YO'Q (getReferenceMode 'none' → guard/route to'g'ri)
+    refMode: "none", // frontend: referens bo'limi (＋Referens/ogohlantirish/@dropdown) yashirin
+    maxRefs: 0,
+    aspects: ["Auto", "1:1", "4:3", "3:4", "16:9", "9:16"],
+    resolutions: ["low", "medium", "high", "auto"],
+    count: [1, 2, 3, 4],
+    imgModalities: ["image"],
+  },
 
   // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
   {

@@ -3140,8 +3140,8 @@ html.home-mode #homePage{display:block!important}
                           <!-- model sheet -->
                           <div class="sheet" id="igMSheet"><div class="sheetc">
                             <div class="sheeth"><b>Model</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="opt cur"><div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div><div><b>GPT Image 2 Edit</b><small>OpenAI · referens majburiy</small></div><span class="tick">✓</span></div>
-                            <div class="axighint">Ko'proq modellar keyingi bosqichда (har biri referens qoidasini o'zi belgilaydi)</div>
+                            <div id="igMList"><div class="axighint">Yuklanmoqda…</div></div>
+                            <div class="axighint">Har model referens qoidasini o'zi belgilaydi (Edit = referens majburiy, t2i = referenssiz)</div>
                           </div></div>
 
                           <!-- referens manba menyu -->
@@ -9234,7 +9234,7 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model metadata (lazy, cached) — refMode/maxRefs/aspects/resolutions/qualityCost/count backenddan
-  var meta={loaded:false,modelId:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,
+  var meta={loaded:false,models:[],modelId:null,key:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,
     ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],
     qcost:{low:3,medium:6,high:12,auto:12},counts:[1,2,3,4]};
   var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
@@ -9296,21 +9296,43 @@ window.afGallery=(function(){
   // ---- pill'lar ----
   function buildPills(host,arr,cur,onpick){ if(!host)return; host.innerHTML=''; arr.forEach(function(v){ var d=document.createElement('div'); d.className='pill'+(String(v.val!=null?v.val:v)===String(cur)?' cur':''); d.textContent=(v.label!=null?v.label:v); d.addEventListener('click',function(){ onpick(v.val!=null?v.val:v); }); host.appendChild(d); }); }
 
-  // ---- model metadata (lazy, cached) ----
+  // ---- model metadata (lazy, cached, MODEL-AWARE picker) ----
+  // Tanlangan modelni qo'llaydi: refMode/maxRefs/aspects/quals/qcost/counts + default'lar.
+  // refMode='none' (t2i) → referenslar tozalanadi (referenssiz model).
+  function setModel(m){
+    if(!m)return;
+    meta.modelId=m.id; meta.key=m.key; meta.label=m.label||meta.label;
+    meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||0;
+    meta.ars=(m.aspects&&m.aspects.length)?m.aspects:meta.ars;
+    meta.quals=(m.resolutions&&m.resolutions.length)?m.resolutions:meta.quals;
+    meta.qcost=m.qualityCost||meta.qcost; meta.counts=(m.count&&m.count.length)?m.count:meta.counts;
+    st.ar=meta.ars[0]; st.q=(meta.quals.indexOf('high')>=0)?'high':meta.quals[0]; st.n=meta.counts[0]||1;
+    if(meta.refMode==='none'){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
+    applyMeta();
+  }
+  // Model sheet'ни meta.models dan dinamik render (har biri refMode bilan: majburiy/referenssiz)
+  function renderModelSheet(){
+    var host=$('igMList'); if(!host)return; host.innerHTML='';
+    (meta.models||[]).forEach(function(m){
+      var cur=(m.id===meta.modelId);
+      var sub=(m.refMode==='required')?'OpenAI · referens majburiy':(m.refMode==='none')?'OpenAI · referenssiz':'OpenAI';
+      var o=document.createElement('div'); o.className='opt'+(cur?' cur':'');
+      o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
+      o.addEventListener('click',function(){ if(m.id!==meta.modelId){ setModel(m); renderModelSheet(); toast(m.label+' tanlandi','info'); } closeSheets(); });
+      host.appendChild(o);
+    });
+  }
   function ensureMeta(){
     if(meta.loaded)return Promise.resolve(meta);
     if(meta._pending)return meta._pending;
     meta._pending=studioGet('/api/studio/gen/models?mode=image').then(function(r){
-      var m=(r&&r.models||[]).filter(function(x){ return x.key==='openai/gpt-image-2/edit'; })[0];
-      if(!m||m.id==null)throw new Error('Model topilmadi (GPT Image 2 Edit)');
-      meta.modelId=m.id; meta.label=m.label||meta.label;
-      meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||10;
-      meta.ars=(m.aspects&&m.aspects.length)?m.aspects:meta.ars;
-      meta.quals=(m.resolutions&&m.resolutions.length)?m.resolutions:meta.quals;
-      meta.qcost=m.qualityCost||meta.qcost; meta.counts=(m.count&&m.count.length)?m.count:meta.counts;
-      // default'lar
-      st.ar=meta.ars[0]; st.q=(meta.quals.indexOf('high')>=0)?'high':meta.quals[0]; st.n=meta.counts[0]||1;
-      meta.loaded=true; applyMeta();
+      // FAQAT fal image modellari (GPT Image 2 oilasi) — magnific/openrouter tool'lar emas.
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.id!=null; });
+      if(!fal.length)throw new Error('Model topilmadi');
+      meta.models=fal;
+      // default: GPT Image 2 Edit (joriy xulq) bo'lsa, aks holда 1-chi
+      var def=fal.filter(function(x){ return x.key==='openai/gpt-image-2/edit'; })[0]||fal[0];
+      meta.loaded=true; setModel(def); renderModelSheet();
       return meta;
     }).catch(function(err){
       meta._pending=null;
@@ -9335,7 +9357,7 @@ window.afGallery=(function(){
   }
 
   // ---- chip openerlar ----
-  $('igModelSeg').addEventListener('click',function(){ openSheet('igMSheet',$('igModelSeg')); });
+  $('igModelSeg').addEventListener('click',function(){ renderModelSheet(); openSheet('igMSheet',$('igModelSeg')); });
   $('igArSeg').addEventListener('click',function(){ buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; $('igArVal').textContent=v; closeSheets(); }); openSheet('igArSheet',$('igArSeg')); });
   function buildQ(){ var arr=meta.quals.map(function(q){ return {val:q,label:cap(q)}; }); buildPills($('igQPills'),arr,st.q,function(v){ st.q=v; $('igQVal').textContent=cap(v); recost(); buildQ(); }); }
   $('igQSeg').addEventListener('click',function(){ buildQ(); openSheet('igQSheet',$('igQSeg')); });
@@ -9516,6 +9538,7 @@ window.afGallery=(function(){
 
   // @ yozilsa referenslar ro'yxati (autocomplete) — kursordan oldingi @<so'z> ni ushlaydi
   function checkMention(){
+    if(meta.refMode==='none'){ hideMention(); return; } // t2i (referenssiz) → @dropdown yo'q
     var caret=ta.selectionStart; var pre=ta.value.slice(0,caret); var m=pre.match(/@(\w*)$/);
     if(m)showMention(m[1]); else hideMention();
   }
