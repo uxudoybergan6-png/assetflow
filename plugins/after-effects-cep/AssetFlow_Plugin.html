@@ -2616,6 +2616,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .axig .bar{height:6px;background:var(--card3);border-radius:99px;overflow:hidden}.axig .bar>i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
 .axig .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
+.axig .prog .jrow+.jrow{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .axig .res{margin-bottom:16px;display:none}.axig .res.on{display:block}
 .axig .rgrid{display:grid;gap:9px}.axig .rgrid.g1{grid-template-columns:1fr}.axig .rgrid.g2{grid-template-columns:1fr 1fr}
 .axig .rcard{border:1px solid var(--line2);border-radius:13px;overflow:hidden;background:var(--card);position:relative}.axig .rcard img{display:block;width:100%;height:auto;cursor:zoom-in}
@@ -3085,11 +3086,7 @@ html.home-mode #homePage{display:block!important}
 
                           <div class="igscroll" id="igScroll">
                             <!-- progress -->
-                            <div class="prog" id="igProg">
-                              <div class="pt"><span class="sp"></span> <span id="igProgLabel">Ishlanmoqda…</span></div>
-                              <div class="bar"><i id="igBarFill"></i></div>
-                              <span class="cancel" id="igCancel">Bekor qilish</span>
-                            </div>
+                            <div class="prog" id="igProg"><!-- faol job qatorlari JS renderJobs() tomonidan to'ldiriladi --></div>
                             <!-- natija -->
                             <div class="res" id="igRes">
                               <div class="lbl">Natija <span class="meta" id="igResMeta"></span></div>
@@ -9258,7 +9255,7 @@ window.afGallery=(function(){
   function anyLoading(){ return st.refs.some(function(r){ return r.loading; }); }
   function refreshGen(){
     var needRef=meta.refMode==='required';
-    var ok=meta.loaded && $('igPrompt').value.trim().length>=2 && (!needRef || st.refs.length>0) && !anyLoading();
+    var ok=meta.loaded && $('igPrompt').value.trim().length>=2 && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS;
     var g=$('igGen'); if(g)g.disabled=!ok;
     $('igRefWarn').classList.toggle('on', needRef && st.refs.length===0);
   }
@@ -9591,91 +9588,129 @@ window.afGallery=(function(){
     }).catch(function(err){ toast((err&&err.message)||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
 
-  // ---- progress ----
-  var pollTimer=null,progTimer=null,cancelled=false,polling=false,submitted=false;
-  // View'дан chiqishда (igBack/Barchasi/🕘) poll/progress timerlarini TOZALAYDI — aks holда yashirin
-  // DOM'ga yozishda davom etadi va API'ni urib turadi (memory/network leak — audit 2026-06-26).
-  function teardownGen(){ cancelled=true; polling=false; stopTimers(); var p=$('igProg'); if(p)p.classList.remove('on'); }
-  window.axIGTeardown=teardownGen;
-  // Poll RAMP: dastlabki tekshiruvlar tez (tez rasm ~6-12s'da tayyor → natija tezroq ko'rinadi), keyin
-  // uzunroq. Cap 140 → window ≈ 6×1s + 134×1.8s ≈ 247s (server fal poll ~200s'dan keng — erta to'xtamaymiz).
-  function pollDelay(t){ return t<6?1000:1800; }
+  // ---- parallel gen — job massivi ----
+  // Har gen ALOHIDA job ob'ekti. MAX_JOBS gacha bir vaqtda. igGen tugmasi faol joblar MAX_JOBS ga yetganда
+  // disabled bo'ladi; aks holda yangi gen boshlash mumkin. Har job mustaqil poll/progress/kredit/refund.
+  var activeJobs=[]; var jobSeq=0; var MAX_JOBS=5;
   var POLL_CAP=140;
-  function stopTimers(){ if(pollTimer){clearTimeout(pollTimer);pollTimer=null;} if(progTimer){clearInterval(progTimer);progTimer=null;} }
-  function startProg(label){
-    $('igRes').classList.remove('on');
-    $('igProg').classList.add('on'); $('igBarFill').style.width='0'; $('igProgLabel').textContent=label||'Ishlanmoqda…';
-    var t0=Date.now(); // ~time-based %, max 95% — fal poll bilan birga
-    progTimer=setInterval(function(){ var pct=Math.min(95,Math.round((Date.now()-t0)/1800)); $('igBarFill').style.width=pct+'%'; },300);
+  function pollDelay(t){ return t<6?1000:1800; }
+
+  // Faol job qatorlarini igProg'ga render qiladi.
+  function renderJobs(){
+    var el=$('igProg'); if(!el)return;
+    if(!activeJobs.length){ el.classList.remove('on'); el.innerHTML=''; return; }
+    el.classList.add('on'); el.innerHTML='';
+    activeJobs.forEach(function(j){
+      var row=document.createElement('div'); row.className='jrow';
+      var pt=document.createElement('div'); pt.className='pt';
+      var sp=document.createElement('span'); sp.className='sp'; pt.appendChild(sp);
+      var lbl=document.createElement('span');
+      var preview=j.prompt.length>30?j.prompt.slice(0,30)+'…':j.prompt;
+      lbl.textContent=j.label+' · '+preview; pt.appendChild(lbl);
+      row.appendChild(pt);
+      if(j.jobId){
+        var bar=document.createElement('div'); bar.className='bar';
+        var fill=document.createElement('i'); fill.id='jbar'+j.seq; row._fill=fill;
+        bar.appendChild(fill); row.appendChild(bar);
+      }else{
+        var sending=document.createElement('div'); sending.style.cssText='font-size:11.5px;color:var(--mut);margin:4px 0'; sending.textContent='Yuborilmoqda…'; row.appendChild(sending);
+      }
+      var cn=document.createElement('span'); cn.className='cancel'; cn.textContent='Bekor qilish';
+      (function(job){ cn.addEventListener('click',function(){ cancelJob(job); }); })(j);
+      row.appendChild(cn);
+      el.appendChild(row);
+    });
   }
-  function endProg(){ stopTimers(); $('igBarFill').style.width='100%'; setTimeout(function(){ $('igProg').classList.remove('on'); },200); }
 
-  $('igCancel').addEventListener('click',function(){
-    cancelled=true; polling=false; stopTimers(); $('igProg').classList.remove('on');
-    $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen();
-    // /gen muvaffaqiyatli bo'lsa (jobId olingan) kredit SERVERДА allaqachon yechilgan va job davom etadi —
-    // "kredit yechilmadi" YOLG'ON bo'lardi. Faqat /gen'gача bekor qilinса haqiqatan yechilmagan.
-    if(submitted){ toast('Orqa fonda davom etadi — natija Tarixда chiqadi','info'); }
+  // Job progress timer (jobId olinganidan keyin boshlaydi).
+  function startJobProg(j){
+    j.t0=Date.now(); renderJobs();
+    j.progTimer=setInterval(function(){
+      var pct=Math.min(95,Math.round((Date.now()-j.t0)/1800));
+      var bar=document.getElementById('jbar'+j.seq); if(bar)bar.style.width=pct+'%';
+    },300);
+  }
+
+  // Jobni massivdan olib tashlaydi, UI yangilaydi.
+  function removeJob(j){
+    var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
+    if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
+    if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
+    renderJobs(); refreshGen();
+  }
+
+  // Foydalanuvchi "Bekor qilish" bosdi.
+  function cancelJob(j){
+    j.cancelled=true; removeJob(j);
+    if(j.submitted){ toast('Orqa fonda davom etadi — natija Tarixда chiqadi','info'); }
     else { toast('Bekor qilindi — kredit yechilmadi','info'); }
-  });
+  }
 
-  // ---- generatsiya (REAL) ----
+  // View'дан chiqishда barcha faol joblarni to'xtatamiz (timer/network leak oldini olish).
+  function teardownGen(){
+    activeJobs.forEach(function(j){ j.cancelled=true; if(j.pollTimer)clearTimeout(j.pollTimer); if(j.progTimer)clearInterval(j.progTimer); });
+    activeJobs=[]; renderJobs();
+  }
+  window.axIGTeardown=teardownGen;
+
+  // ---- generatsiya (REAL, parallel) ----
   function genClick(){
-    if(polling)return;
+    if(activeJobs.length>=MAX_JOBS){ toast('Maksimal '+MAX_JOBS+' ta faol gen — biri tugasin','info'); return; }
     var prompt=ta.value.trim();
     if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
     if(meta.refMode==='required'&&st.refs.length===0){ toast('Referens yuklang','warning'); return; }
     if(anyLoading()){ toast('Referens yuklanmoqda — kuting','info'); return; }
     var c=credits();
     if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
-    cancelled=false; submitted=false; var g=$('igGen'); g.disabled=true; g.classList.add('busy');
-    startProg(meta.label+' ishlamoqda…');
+    var j={seq:++jobSeq,jobId:null,prompt:prompt,label:meta.label,jcost:cost(),ar:st.ar,q:st.q,
+           cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
+    activeJobs.push(j); renderJobs(); refreshGen();
     // @img tartibida URL'lar (@img1=referenceUrls[0])
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
-    var params={ aspectRatio:st.ar, quality:st.q, count:st.n, referenceUrl:refUrls[0]||null, referenceUrls:refUrls };
+    var params={aspectRatio:st.ar,quality:st.q,count:st.n,referenceUrl:refUrls[0]||null,referenceUrls:refUrls};
     var quote=null;
     ensureMeta().then(function(){
+      if(j.cancelled)throw new Error('CANCELLED');
       if(meta.modelId==null)throw new Error('Model topilmadi');
-      // cost-quote va session BIR-BIRIDAN MUSTAQIL → parallel (1 RTT tejaladi, ayniqsa birinchi bosishда).
       return Promise.all([
         studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params}),
         ensureSession()
       ]);
     }).then(function(arr){
+      if(j.cancelled)throw new Error('CANCELLED');
       quote=arr[0]; var sid=arr[1];
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},60000);
-    }).then(function(j){
-      if(j&&typeof j.creditsLeft==='number')setCreditChip(j.creditsLeft);
-      if(!j||!j.jobId)throw new Error('Job yaratilmadi');
-      submitted=true; // kredit serverда yechildi — bekor qilish endi "orqa fonda davom etadi"
-      poll(j.jobId,0);
+    }).then(function(res){
+      if(j.cancelled)throw new Error('CANCELLED');
+      if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
+      if(!res||!res.jobId)throw new Error('Job yaratilmadi');
+      j.jobId=res.jobId; j.submitted=true;
+      startJobProg(j); pollJob(j,0);
     }).catch(function(err){
-      stopTimers(); $('igProg').classList.remove('on'); polling=false;
-      g.disabled=false; g.classList.remove('busy'); refreshGen(); toast((err&&err.message)||'Generatsiya xatosi','error');
+      if(j.cancelled||(err&&err.message==='CANCELLED')){ removeJob(j); return; }
+      removeJob(j); toast((err&&err.message)||'Generatsiya xatosi','error');
     });
   }
-  function poll(jobId,tries){
-    if(cancelled){ polling=false; return; }
-    polling=true;
-    if(tries>POLL_CAP){ stopTimers(); $('igProg').classList.remove('on'); polling=false; $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
-    studioGet('/api/studio/gen/'+jobId).then(function(gn){
-      if(cancelled){ polling=false; return; }
+  function pollJob(j,tries){
+    if(j.cancelled)return;
+    if(tries>POLL_CAP){ removeJob(j); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
+    studioGet('/api/studio/gen/'+j.jobId).then(function(gn){
+      if(j.cancelled)return;
       var s=(gn&&gn.status)||'';
       if(s==='done'){
-        polling=false; endProg();
-        renderResults((gn&&gn.assets)||[], jobId);
-        $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast('Tayyor! ✦'+cost()+' yechildi','success');
-        setCreditChip(credits());
+        var bar=document.getElementById('jbar'+j.seq); if(bar)bar.style.width='100%';
+        setTimeout(function(){
+          renderResults((gn&&gn.assets)||[],j.jobId,j);
+          removeJob(j); setCreditChip(credits()); toast('Tayyor! ✦'+j.jcost+' yechildi','success');
+        },200);
       }else if(s==='failed'){
-        polling=false; stopTimers(); $('igProg').classList.remove('on');
-        $('igGen').disabled=false; $('igGen').classList.remove('busy'); refreshGen(); toast((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
-        setCreditChip(credits());
+        removeJob(j); setCreditChip(credits()); toast((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
       }else{
-        pollTimer=setTimeout(function(){ poll(jobId,tries+1); },pollDelay(tries));
+        j.pollTimer=setTimeout(function(){ pollJob(j,tries+1); },pollDelay(tries));
       }
-    }).catch(function(err){
-      if(cancelled){ polling=false; return; }
-      pollTimer=setTimeout(function(){ poll(jobId,tries+1); },pollDelay(tries));
+    }).catch(function(){
+      if(j.cancelled)return;
+      j.pollTimer=setTimeout(function(){ pollJob(j,tries+1); },pollDelay(tries));
     });
   }
   $('igGen').addEventListener('click',genClick);
@@ -9692,11 +9727,13 @@ window.afGallery=(function(){
     try{ var a=document.createElement('a'); a.href=url; a.download='assetflow.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Yuklab bo\'lmadi','error'); }
   }
   function importOne(url){ if(typeof aiImportMedia==='function')aiImportMedia(url,'image','png'); else toast('AE import — faqat After Effects ichida','info'); }
-  function renderResults(assets,jobId){
+  function renderResults(assets,jobId,j){
     var urls=(assets||[]).map(function(a){ return a&&a.url; }).filter(Boolean);
-    st.lastResults=urls;
-    var grid=$('igGrid'); grid.innerHTML=''; grid.className='rgrid '+(urls.length>=2?'g2':'g1');
     if(!urls.length){ toast('Natija bo\'sh','warning'); return; }
+    st.lastResults=urls.concat(st.lastResults);
+    var grid=$('igGrid');
+    var total=grid.children.length+urls.length;
+    grid.className='rgrid '+(total>=2?'g2':'g1');
     urls.forEach(function(url){
       var card=document.createElement('div'); card.className='rcard';
       var img=document.createElement('img'); img.src=url; img.title='Kattalashtirish';
@@ -9715,14 +9752,16 @@ window.afGallery=(function(){
       ra.appendChild(mkAct(IC_IMP,'Import',function(){ importOne(url); }));
       ra.appendChild(mkAct(IC_REF,'Referensга',function(){ addRefReady(url); }));
       ra.appendChild(mkAct(IC_DL,'Yuklab olish',function(){ downloadUrl(url); }));
-      card.appendChild(ra); grid.appendChild(card);
+      card.appendChild(ra); grid.insertBefore(card,grid.firstChild); // yangi natijalar tepada
     });
-    $('igResMeta').textContent=urls.length+' ta · '+st.ar+' · '+cap(st.q);
+    var jAr=(j&&j.ar)||st.ar; var jQ=(j&&j.q)||st.q;
+    $('igResMeta').textContent=grid.children.length+' ta · '+jAr+(jQ&&!meta.hasQuality?'':jQ?' · '+cap(jQ):'');
     $('igRes').classList.add('on');
     try{ $('igRes').scrollIntoView({behavior:'smooth'}); }catch(e){}
     // So'nggi gridга yangi gen'ni qo'shamiz (bitta karta/gen, id=jobId → o'chirish ishlaydi) + Tarix cache
+    var promptLabel=(j&&j.prompt)||ta.value.trim()||'Natija';
     try{
-      if(urls[0])st.recent.unshift({id:jobId||null,url:urls[0],thumb:urls[0],cat:'image',title:(ta.value.trim()||'Natija')});
+      if(urls[0])st.recent.unshift({id:jobId||null,url:urls[0],thumb:urls[0],cat:'image',title:promptLabel});
       st.recent=st.recent.slice(0,12); renderRecentGrid();
       if(window.afGallery)window.afGallery.invalidate();
     }catch(e){}
