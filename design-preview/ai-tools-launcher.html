@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · AI Tools (kategoriyalar)</title>
+<style>
+  :root{--bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;--line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;--acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#05060a;color:var(--txt);line-height:1.4;display:flex;flex-direction:column;align-items:center;padding:22px 12px 60px;min-height:100vh}
+  .hint{color:var(--mut);font-size:12.5px;margin-bottom:13px;text-align:center;max-width:440px}.hint b{color:var(--acc2)}
+  .app{width:392px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;height:680px;position:relative}
+  .pbar{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer}
+  .back:hover{color:var(--txt)}
+  .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}.spacer{flex:1}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
+  .scroll{flex:1;overflow-y:auto;padding:16px}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+  svg{display:block}
+
+  /* kategoriya kartalar (2x2) */
+  .cats{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .cat{display:flex;flex-direction:column;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:22px 14px;cursor:pointer;transition:border-color .12s,transform .1s}
+  .cat:hover{border-color:var(--mut2);transform:translateY(-1px)}.cat:active{transform:scale(.98)}
+  .cat .cic{width:60px;height:60px;border-radius:17px;display:grid;place-items:center}
+  .cat .cn{font-size:14px;font-weight:800}
+  .cat .cs{font-size:10.5px;color:var(--mut2);margin-top:-5px}
+  .cat.soon{opacity:.55}
+  /* kategoriya ikonalari — brand (lime) rangida */
+  .cat .cic{background:rgba(194,240,74,.14);color:var(--acc)}
+
+  /* tool kartalar (kategoriya ichida) */
+  .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 11px}
+  .tool{display:flex;align-items:center;gap:12px;background:linear-gradient(110deg,#1a2410,#15171b 70%);border:1px solid var(--acc2);border-radius:15px;padding:14px;cursor:pointer;margin-bottom:10px}
+  .tool:hover{box-shadow:0 0 16px rgba(194,240,74,.16)}
+  .tool .ic{width:42px;height:42px;border-radius:12px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;flex:0 0 auto}
+  .tool .tx b{font-size:14px;font-weight:800;display:block}.tool .tx small{font-size:11px;color:var(--mut)}
+  .tool .ar{margin-left:auto;color:var(--acc);font-size:19px}
+  .empty{color:var(--mut2);text-align:center;padding:40px 20px;font-size:13px}
+
+  .view{display:none}.view.on{display:block}
+  .toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:#000;border:1px solid var(--line2);color:var(--txt);font-size:12.5px;padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="hint">✦ <b>AI Tools</b> — kategoriya kartalari → ichida toollar. Image→Rasm yaratish, Video→Video yaratish.</div>
+
+<div class="app" id="app">
+  <div class="pbar">
+    <div class="back" id="back">‹ Asosiy</div>
+    <div class="ttl">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+      <span id="ttlTxt">AI Tools</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="pro">✦ 606</div>
+  </div>
+
+  <!-- KATEGORIYALAR -->
+  <div class="scroll view on" id="vCats"></div>
+  <!-- KATEGORIYA ICHI -->
+  <div class="scroll view" id="vTools"></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s)};
+  function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},1500)}
+
+  var ICONS={
+    image:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>',
+    video:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>',
+    audio:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 010 8M19.5 5.5a9 9 0 010 13"/></svg>',
+    "3d":'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5L3 7"/></svg>'
+  };
+  var CATS=[
+    {id:'image', name:'Image', cls:'c-image'},
+    {id:'video', name:'Video', cls:'c-video'},
+    {id:'audio', name:'Audio', cls:'c-audio', soon:true},
+    {id:'3d',    name:'3D',    cls:'c-3d',    soon:true}
+  ];
+  var TOOL_SVG={
+    image:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>',
+    video:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>'
+  };
+  // har kategoriyadagi toollar
+  var TOOLS={
+    image:[{name:'Rasm yaratish', sub:'GPT Image 2 · Nano Banana · Flux · Seedream', ic:TOOL_SVG.image}],
+    video:[{name:'Video yaratish', sub:'tez orada', ic:TOOL_SVG.video}],
+    audio:[],
+    "3d":[]
+  };
+
+  function show(v){document.querySelectorAll('.view').forEach(function(x){x.classList.remove('on')});$(v).classList.add('on')}
+
+  function renderCats(){
+    var sc=$('vCats');sc.innerHTML='';
+    var g=document.createElement('div');g.className='cats';
+    CATS.forEach(function(c){
+      var n=(TOOLS[c.id]||[]).length;
+      var el=document.createElement('div');el.className='cat '+c.cls+(c.soon&&!n?' soon':'');
+      el.innerHTML='<div class="cic">'+ICONS[c.id]+'</div><div class="cn">'+c.name+'</div><div class="cs">'+(n?n+' tool':'tez orada')+'</div>';
+      el.addEventListener('click',function(){openCat(c)});
+      g.appendChild(el);
+    });
+    sc.appendChild(g);
+  }
+  function openCat(c){
+    $('ttlTxt').textContent=c.name;
+    var sc=$('vTools');sc.innerHTML='';
+    var lbl=document.createElement('div');lbl.className='lbl';lbl.textContent=c.name+' toollar';sc.appendChild(lbl);
+    var items=TOOLS[c.id]||[];
+    if(!items.length){sc.innerHTML+='<div class="empty">Hali tool yo‘q — tez orada qo‘shiladi.</div>';show('vTools');inCat=true;return}
+    items.forEach(function(t){
+      var el=document.createElement('div');el.className='tool';
+      el.innerHTML='<div class="ic">'+t.ic+'</div><div class="tx"><b>'+t.name+'</b><small>'+t.sub+'</small></div><div class="ar">›</div>';
+      el.addEventListener('click',function(){toast(t.name+' ochildi')});
+      sc.appendChild(el);
+    });
+    show('vTools');inCat=true;
+  }
+  var inCat=false;
+  $('back').addEventListener('click',function(){
+    if(inCat){inCat=false;$('ttlTxt').textContent='AI Tools';show('vCats')}
+    else toast('← Asosiy');
+  });
+
+  renderCats();
+})();
+</script>
+</body>
+</html>
