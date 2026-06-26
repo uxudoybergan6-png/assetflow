@@ -59,9 +59,15 @@ type FalStatus = { status?: string; error?: string };
 /**
  * Queue submit + status_url'ni COMPLETED gacha poll + response_url → output obyekt.
  * Timeout (job hali IN_PROGRESS) → FAL_TIMEOUT sentinel (refund YO'Q — magnific naqshi).
+ * opts.maxPolls — video uchun MAX_POLLS=150 (~280s) ishlatiladi.
  */
-async function falSubmit(modelId: string, input: Record<string, unknown>): Promise<OrResult<unknown>> {
+async function falSubmit(
+  modelId: string,
+  input: Record<string, unknown>,
+  opts?: { maxPolls?: number }
+): Promise<OrResult<unknown>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
+  const maxPolls = opts?.maxPolls ?? MAX_POLLS;
   let sub: Response;
   try {
     sub = await fetch(`${QUEUE_BASE}/${modelId}`, {
@@ -78,7 +84,7 @@ async function falSubmit(modelId: string, input: Record<string, unknown>): Promi
   const responseUrl = sj?.response_url;
   if (!statusUrl || !responseUrl) return { ok: false, error: "fal: status_url qaytmadi" };
 
-  for (let i = 0; i < MAX_POLLS; i++) {
+  for (let i = 0; i < maxPolls; i++) {
     await sleep(pollDelayMs(i));
     let st: Response;
     try {
@@ -107,6 +113,52 @@ async function falSubmit(modelId: string, input: Record<string, unknown>): Promi
     // IN_QUEUE / IN_PROGRESS → poll davom
   }
   return { ok: false, error: "FAL_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+}
+
+/**
+ * Seedance 2.0 Fast image-to-video. imageUrl = start kadr (R2 public URL). endImageUrl ixtiyoriy.
+ * maxPolls=150 (~280s) — video generatsiya uzoqroq davom etadi.
+ */
+export async function falVideo(
+  modelKey: string,
+  prompt: string,
+  imageUrl: string,
+  opts?: {
+    endImageUrl?: string;
+    resolution?: string;
+    duration?: string | number;
+    aspectRatio?: string;
+    generateAudio?: boolean;
+  }
+): Promise<OrResult<Buffer>> {
+  if (!isFalConfigured()) return NOT_CONFIGURED;
+  const dur = opts?.duration;
+  const durVal =
+    dur == null || String(dur).toLowerCase() === "auto" ? "auto" : String(dur);
+  const arRaw = opts?.aspectRatio ?? "auto";
+  const arVal = arRaw.toLowerCase() === "auto" ? "auto" : arRaw;
+  const input: Record<string, unknown> = {
+    prompt: String(prompt),
+    image_url: imageUrl,
+    resolution: opts?.resolution ?? "720p",
+    duration: durVal,
+    aspect_ratio: arVal,
+    generate_audio: opts?.generateAudio ?? true,
+  };
+  if (opts?.endImageUrl) input.end_image_url = opts.endImageUrl;
+  try {
+    console.log(
+      `[fal] video i2v → ${modelKey} res=${input.resolution} dur=${input.duration} ar=${input.aspect_ratio} audio=${input.generate_audio}`
+    );
+  } catch {
+    /* ignore */
+  }
+  const r = await falSubmit(modelKey, input, { maxPolls: 150 });
+  if (!r.ok) return r;
+  const data = r.data as { video?: { url?: string } };
+  const url = data?.video?.url;
+  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  return falDownload(url);
 }
 
 // fal CDN natija URL'ini Buffer'ga yuklaydi (caller R2'ga persist qiladi).

@@ -81,6 +81,14 @@ export type GenModel = {
   noNumParam?: boolean; // true → falImage num_images YUBORILMAYDI (Flux, Seedream kabi)
   outputFormat?: string; // fal output_format override (default 'png'); 'jpeg' Flux uchun
 
+  // ── MODEL-AWARE sozlama deskriptori (fal video): UI chiplar + fal input + cost SHUNDAN o'qiladi ──
+  videoSettings?: {
+    aspect: { options: string[]; def: string };
+    resolution: { options: string[]; def: string; perSec: Record<string, number> }; // kredit/soniya
+    duration: { options: string[]; def: string; autoSec: number }; // "Auto" + raqamlar (string[])
+    audio: boolean;
+  };
+
   // voice modeli uchun:
   voices?: { id: string; label: string }[];
   languages?: string[];
@@ -644,6 +652,40 @@ export const GEN_MODELS: GenModel[] = [
     audio: true,
     inputs: ["start-end-frame"],
   },
+  {
+    id: 3101,
+    mode: "video",
+    key: "bytedance/seedance-2.0/fast/image-to-video",
+    label: "Seedance 2.0 Fast",
+    brand: "bytedance",
+    provider: "fal",
+    falModel: "bytedance/seedance-2.0/fast/image-to-video",
+    feature: "image-to-video",
+    cost: 12,
+    referenceMode: "video-ref",
+    refMode: "required",
+    maxRefs: 1,
+    endFrame: true,
+    inputs: ["start-end-frame"],
+    aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+    resolutions: ["480p", "720p"],
+    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 15],
+    audio: true,
+    videoSettings: {
+      aspect: { options: ["Auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], def: "Auto" },
+      resolution: {
+        options: ["480p", "720p"],
+        def: "720p",
+        perSec: { "480p": 8, "720p": 12 },
+      },
+      duration: {
+        options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15"],
+        def: "Auto",
+        autoSec: 5,
+      },
+      audio: true,
+    },
+  },
 ];
 
 // Semantik qidiruv uchun embedding modeli (katalogda emas — ichki ishlatiladi).
@@ -719,10 +761,18 @@ export function resolveVideoParams(
   model: GenModel,
   params: Record<string, unknown>
 ): ResolvedVideoParams {
+  // "auto" davomiylik → videoSettings.duration.autoSec (narx hisoblash uchun)
+  const durParam = params.duration;
+  const durStr = String(durParam ?? "").toLowerCase();
+  const isAuto = durStr === "auto" || durStr === "";
+  const duration =
+    isAuto && model.videoSettings?.duration?.autoSec
+      ? model.videoSettings.duration.autoSec
+      : pickNum(model.durations, durParam, [5, 6, 4]);
   return {
-    duration: pickNum(model.durations, params.duration, [5, 6, 4]),
-    resolution: pickStr(model.resolutions, params.resolution, ["1080p", "720p"]),
-    aspectRatio: pickStr(model.aspects, params.aspectRatio, ["16:9", "9:16"]),
+    duration,
+    resolution: pickStr(model.resolutions, params.resolution, ["720p", "1080p"]),
+    aspectRatio: pickStr(model.aspects, params.aspectRatio, ["auto", "16:9", "9:16"]),
     generateAudio:
       typeof params.audio === "boolean" ? params.audio : Boolean(model.audio),
   };
@@ -762,10 +812,13 @@ export function imageUnitCost(model: GenModel, params: Record<string, unknown>):
   return model.cost;
 }
 
-/** Generatsiya narxi. Video: cost(/s) × duration. Rasm: bir-dona(quality) × count. Boshqa: sobit cost. */
+/** Generatsiya narxi. Video: perSec[res] × duration (videoSettings bo'lsa), aks holda cost × duration. Rasm: bir-dona(quality) × count. Boshqa: sobit cost. */
 export function computeGenCost(model: GenModel, params: Record<string, unknown>): number {
   if (model.mode === "video") {
-    return model.cost * resolveVideoParams(model, params).duration;
+    const vp = resolveVideoParams(model, params);
+    const perSec = model.videoSettings?.resolution?.perSec;
+    const ratePerSec = perSec ? (perSec[vp.resolution] ?? model.cost) : model.cost;
+    return ratePerSec * vp.duration;
   }
   if (model.mode === "image") {
     return imageUnitCost(model, params) * resolveImageCount(model, params);

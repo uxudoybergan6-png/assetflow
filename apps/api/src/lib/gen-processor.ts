@@ -15,7 +15,7 @@ import {
   orDownload,
 } from "./ai/openrouter.js";
 import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
-import { falImage } from "./ai/fal.js";
+import { falImage, falVideo } from "./ai/fal.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
@@ -185,6 +185,36 @@ async function runVideo(
     await sleep(3000); // keyingi tekshiruvgacha
   }
   return { ok: false, error: "Video vaqt tugadi (timeout)" };
+}
+
+/** fal.ai video (Seedance 2.0 Fast). referenceUrl = start kadr, referenceEndUrl = end kadr (ixtiyoriy). */
+async function runFalVideo(
+  model: GenModel,
+  prompt: string,
+  params: Record<string, unknown>,
+  userId: string,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
+  if (!refUrl) return { ok: false, error: "Video uchun boshlang'ich kadr (referenceUrl) talab qilinadi" };
+  const startUrl = await materializeRefUrl(userId, genId, refUrl);
+  let endUrl: string | undefined;
+  if (refEndUrl && model.endFrame) {
+    endUrl = await materializeRefUrl(userId, genId, refEndUrl);
+  }
+  const v = resolveVideoParams(model, params);
+  const dur = params.duration;
+  const durVal = dur == null || String(dur).toLowerCase() === "auto" ? "auto" : String(dur);
+  const out = await falVideo(model.falModel ?? model.key, prompt, startUrl, {
+    endImageUrl: endUrl,
+    resolution: v.resolution,
+    duration: durVal,
+    aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
+    generateAudio: v.generateAudio,
+  });
+  if (!out.ok) return { ok: false, error: out.error };
+  return { ok: true, buf: out.data };
 }
 
 /**
@@ -357,7 +387,10 @@ export async function processGeneration(genId: string): Promise<void> {
         data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
       });
     } else if (model.feature === "text-to-video" || model.feature === "image-to-video") {
-      const out = await runVideo(model, gen.prompt, params, gen.userId, genId);
+      const out =
+        model.provider === "fal"
+          ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
+          : await runVideo(model, gen.prompt, params, gen.userId, genId);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);

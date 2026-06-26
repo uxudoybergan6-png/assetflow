@@ -2667,6 +2667,28 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .pill.cur{border-color:var(--acc2);color:var(--acc);font-weight:700}
 .axig .axighint{color:var(--mut2);font-size:11.5px;text-align:center;padding:8px 4px 2px}
 
+/* ===== Video yaratish tool — .axvg scope ===== */
+.axroot #v-vidgen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
+.axvg .frames{display:flex;gap:8px;margin-bottom:10px}
+.axvg .fbox{flex:1;border:1.5px dashed var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card);min-height:60px}
+.axvg .fbox:hover{border-color:var(--acc2)}
+.axvg .fbox.has-img{border-style:solid;border-color:var(--line2)}
+.axvg .fbox .fbi{font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:3px;position:relative;z-index:1}
+.axvg .fb-opt{font-size:9.5px;color:var(--mut2);margin-left:2px}
+.axvg .fbadd{font-size:20px;color:var(--mut2);line-height:1}
+.axvg .fbox .fb-thumb{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:9px}
+.axvg .fbox .fbx{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;line-height:1}
+.axvg .vwrap{border-radius:10px;overflow:hidden;background:#000;margin-bottom:6px}
+.axvg .vwrap video{width:100%;display:block;max-height:180px;object-fit:contain}
+.axvg .vacts{display:flex;gap:6px;padding:4px 0 2px;flex-wrap:wrap}
+.axvg .vact{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:9px;background:var(--card);border:1px solid var(--line2);font-size:12px;cursor:pointer;color:var(--txt)}
+.axvg .vact:hover{border-color:var(--acc2);color:var(--acc)}
+.axvg .aud-toggle{display:flex;align-items:center;gap:8px;padding:8px 2px 4px;font-size:12.5px;color:var(--txt);cursor:pointer;user-select:none}
+.axvg .aud-sw{width:32px;height:17px;border-radius:9px;background:var(--line2);position:relative;transition:background .2s;flex-shrink:0}
+.axvg .aud-toggle.on .aud-sw{background:var(--acc)}
+.axvg .aud-sw::after{content:'';width:13px;height:13px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s}
+.axvg .aud-toggle.on .aud-sw::after{left:17px}
+
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
 html.home-mode .af-topbar,
 html.home-mode .af-tabs,
@@ -3201,6 +3223,93 @@ html.home-mode #homePage{display:block!important}
                             </div>
                             <div class="lx" id="igLbClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>
                           </div>
+                        </div>
+                      </section>
+
+                      <!-- VIDEO GEN — Seedance 2.0 Fast (fal.ai image-to-video) -->
+                      <section id="v-vidgen" class="view">
+                        <div class="axig axvg">
+                          <div class="igtop">
+                            <div class="back" id="vgBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> AI Tools</div>
+                            <div class="ttl"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.55-2.85A1 1 0 0 1 21 8v8a1 1 0 0 1-1.45.85L15 14z"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg></span> Video yaratish</div>
+                            <div class="spacer"></div>
+                            <div class="pro" id="vgCredit">✦ —</div>
+                          </div>
+
+                          <div class="igscroll" id="vgScroll">
+                            <div class="prog" id="vgProg"></div>
+
+                            <!-- Natija (video player) -->
+                            <div class="res" id="vgRes" style="display:none">
+                              <div class="lbl">Natija</div>
+                              <div class="vwrap"><video id="vgVideo" controls playsinline></video></div>
+                              <div class="vacts" id="vgActs"></div>
+                            </div>
+
+                            <!-- Kadrlar + Prompt -->
+                            <div class="sect" id="vgFrameSect">
+                              <div class="lbl">Kadrlar <span class="req">*</span></div>
+                              <div class="frames">
+                                <div class="fbox" id="vgStartBox"><div class="fbi">Boshlang'ich</div><div class="fbadd">+</div></div>
+                                <div class="fbox" id="vgEndBox"><div class="fbi">Yakuniy <span class="fb-opt">ixt.</span></div><div class="fbadd">+</div></div>
+                              </div>
+                              <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Boshlang'ich kadr majburiy — + bosib qo'shing.</span></div>
+                              <div class="pbox">
+                                <textarea id="vgPrompt" placeholder="Video harakat tavsifi (ixtiyoriy). Masalan: kamera sekin ko'tariladi, yashil o't sokin silkinadi…"></textarea>
+                                <div class="prow">
+                                  <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
+                                  <span class="costtag" id="vgCost">✦—</span>
+                                  <button class="gensend" id="vgGen" disabled title="Video yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Sozlamalar -->
+                            <div class="sect">
+                              <div class="lbl">Sozlamalar</div>
+                              <div class="ctrls">
+                                <div class="seg" id="vgResSeg"><span class="lab">Sifat</span><span class="sv" id="vgResVal">720p</span><span class="sc">▾</span></div>
+                                <div class="seg" id="vgDurSeg"><span class="lab">Davomiylik</span><span class="sv" id="vgDurVal">Auto</span><span class="sc">▾</span></div>
+                                <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
+                              </div>
+                              <div class="aud-toggle on" id="vgAudToggle"><div class="aud-sw"></div><span>Ovoz generatsiya</span></div>
+                            </div>
+                          </div>
+
+                          <!-- Kadr manba sheet -->
+                          <div class="sheet" id="vgSrcSheet"><div class="sheetc">
+                            <div class="sheeth"><b id="vgSrcTitle">Kadr qo'shish</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="opt" id="vgSrcFile"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div><div><b>Fayl yuklash</b><small>kompyuterdan rasm</small></div></div>
+                            <div class="opt" id="vgSrcProj"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div><b>Project paneldan</b><small>AE loyiha footage</small></div></div>
+                            <div class="opt" id="vgSrcTl"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><b>Timeline'dan</b><small>kompozitsiyadan kadr</small></div></div>
+                          </div></div>
+
+                          <!-- Project footage picker -->
+                          <div class="sheet" id="vgProjSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Project footage</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div id="vgProjList"><div class="axighint">Yuklanmoqda…</div></div>
+                          </div></div>
+
+                          <!-- Sifat (resolution) -->
+                          <div class="sheet" id="vgResSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Sifat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="pillrow" id="vgResPills"></div>
+                            <div class="axighint" style="text-align:left">480p = ✦8/s · 720p = ✦12/s</div>
+                          </div></div>
+
+                          <!-- Davomiylik (duration) -->
+                          <div class="sheet" id="vgDurSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Davomiylik (soniya)</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="pillrow" id="vgDurPills"></div>
+                            <div class="axighint" style="text-align:left">Auto ≈ 5 soniya</div>
+                          </div></div>
+
+                          <!-- Nisbat (aspect ratio) -->
+                          <div class="sheet" id="vgArSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Nisbat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="pillrow" id="vgArPills"></div>
+                            <div class="axighint" style="text-align:left">Auto — kirish kadridan oladi.</div>
+                          </div></div>
                         </div>
                       </section>
 
@@ -9080,7 +9189,7 @@ async function bootPlugin(){
       {name:'Rasm yaratish',sub:'GPT Image 2 · Nano · Flux · Seedream',icon:_toolImgSVG,dest:'imggen'}
     ]},
     {id:'video',name:'Video',icon:_catVidSVG,tools:[
-      {name:'Video yaratish',sub:'tez orada',icon:_toolVidSVG,dest:null,soon:true}
+      {name:'Video yaratish',sub:'Seedance 2.0 Fast · i2v',icon:_toolVidSVG,dest:'vidgen'}
     ]},
     {id:'audio',name:'Audio',icon:_catAudSVG,tools:[]},
     {id:'3d',name:'3D',icon:_cat3dSVG,tools:[]}
@@ -9989,6 +10098,338 @@ window.afGallery=(function(){
   $('igBack').addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('aicat'); });
 
   refresh(); updRefMeta(); refreshGen();
+})();
+</script>
+<script>
+/* Video yaratish tool — Seedance 2.0 Fast (fal.ai image-to-video). */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  if(!$('v-vidgen'))return;
+  var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
+
+  // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
+  var vm={loaded:false,model:null,res:'720p',dur:'Auto',ar:'Auto',audio:true,
+    resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','15'],
+    arOpts:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],
+    perSec:{'480p':8,'720p':12},autoSec:5,sessionId:null};
+  // kadr holati
+  var st={start:null,end:null}; // {dataUrl, url, loading}
+
+  function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
+  function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
+  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
+  function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
+  function cost(){ return (vm.perSec[vm.res]||12)*durSec(); }
+  function recost(){ var c=$('vgCost'); if(c)c.textContent='✦'+cost(); }
+  function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
+  function isImg(p){ return /\.(png|jpe?g|webp|gif|bmp|tiff?|avif|heic)$/i.test(String(p||'')); }
+
+  function refreshVgBtn(){
+    var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
+    var ok=vm.loaded&&hasStart&&activeJobs.length<1;
+    var g=$('vgGen'); if(g)g.disabled=!ok;
+    var w=$('vgWarn'); if(w)w.style.display=(!st.start)?'':'none';
+    setCreditChip(credits()); recost();
+  }
+
+  // ── sheet'lar (backdrop + Esc + ×) ──
+  function closeVgSheets(){ document.querySelectorAll('.axvg .sheet').forEach(function(s){s.classList.remove('on');}); }
+  function positionVgPopover(sc,anch){
+    if(!sc)return;
+    var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
+    sc.style.bottom='auto';
+    if(anch&&anch.getBoundingClientRect){
+      var ar=anch.getBoundingClientRect();
+      var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
+      sc.style.width=w+'px'; sc.style.maxHeight=Math.round(vh*0.58)+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var sh=sc.offsetHeight;
+      var left=Math.min(Math.max(pad,ar.left),Math.max(pad,vw-w-pad));
+      var top;
+      if(ar.bottom+gap+sh<=vh-pad) top=ar.bottom+gap;
+      else if(ar.top-gap-sh>=pad) top=ar.top-gap-sh;
+      else top=Math.max(pad,vh-sh-pad);
+      sc.style.left=left+'px'; sc.style.top=top+'px';
+    } else {
+      var w2=Math.min(380,vw-pad*2);
+      sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.58)+'px';
+      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
+    }
+  }
+  function openVgSheet(id,anch){ closeVgSheets(); var s=$(id); if(!s)return; s.classList.add('on'); positionVgPopover(s.querySelector('.sheetc'),anch); }
+  document.querySelectorAll('.axvg [data-vgclose]').forEach(function(x){ x.addEventListener('click',closeVgSheets); });
+  document.querySelectorAll('.axvg .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeVgSheets(); }); });
+
+  // ── pill'lar ──
+  function buildPills(host,arr,cur,onpick){
+    if(!host)return; host.innerHTML='';
+    arr.forEach(function(v){ var d=document.createElement('div'); d.className='pill'+(String(v)===String(cur)?' cur':''); d.textContent=String(v); d.addEventListener('click',function(){ onpick(v); }); host.appendChild(d); });
+  }
+
+  // ── model yuklanishi (videoSettings deskriptoridan) ──
+  function ensureVgMeta(){
+    if(vm.loaded)return Promise.resolve(vm);
+    if(vm._pending)return vm._pending;
+    vm._pending=studioGet('/api/studio/gen/models?mode=video').then(function(r){
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.mode==='video'; });
+      if(!fal.length)throw new Error('Video model topilmadi');
+      var m=fal[0]; vm.model=m; vm.loaded=true;
+      var vs=m.videoSettings;
+      if(vs){
+        if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; vm.res=vs.resolution.def||vm.res; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
+        if(vs.duration){ vm.durOpts=vs.duration.options||vm.durOpts; vm.dur=vs.duration.def||vm.dur; if(vs.duration.autoSec)vm.autoSec=vs.duration.autoSec; }
+        if(vs.aspect){ vm.arOpts=vs.aspect.options||vm.arOpts; vm.ar=vs.aspect.def||vm.ar; }
+        if(typeof vs.audio==='boolean')vm.audio=vs.audio;
+      }
+      applyVgMeta(); return vm;
+    }).catch(function(err){
+      vm._pending=null; var g=$('vgGen'); if(g)g.disabled=true;
+      toast((err&&err.message)||'Video model yuklanmadi','error'); throw err;
+    });
+    return vm._pending;
+  }
+  function applyVgMeta(){
+    var rv=$('vgResVal'); if(rv)rv.textContent=vm.res;
+    var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
+    var av=$('vgArVal'); if(av)av.textContent=vm.ar;
+    var at=$('vgAudToggle'); if(at)at.className='aud-toggle'+(vm.audio?' on':'');
+    refreshVgBtn();
+  }
+  function ensureVgSession(){
+    if(vm.sessionId)return Promise.resolve(vm.sessionId);
+    return studioPost('/api/studio/gen/sessions',{mode:'video'}).then(function(s){ vm.sessionId=(s&&s.id)||null; return vm.sessionId; });
+  }
+
+  // ── sozlama chip openerlar ──
+  $('vgResSeg').addEventListener('click',function(){
+    buildPills($('vgResPills'),vm.resOpts,vm.res,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); buildPills($('vgResPills'),vm.resOpts,vm.res,function(v2){ vm.res=v2; var rv2=$('vgResVal'); if(rv2)rv2.textContent=v2; recost(); closeVgSheets(); }); closeVgSheets(); });
+    openVgSheet('vgResSheet',$('vgResSeg'));
+  });
+  $('vgDurSeg').addEventListener('click',function(){
+    buildPills($('vgDurPills'),vm.durOpts,vm.dur,function(v){ vm.dur=v; var dv=$('vgDurVal'); if(dv)dv.textContent=v; recost(); closeVgSheets(); });
+    openVgSheet('vgDurSheet',$('vgDurSeg'));
+  });
+  $('vgArSeg').addEventListener('click',function(){
+    buildPills($('vgArPills'),vm.arOpts,vm.ar,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; closeVgSheets(); });
+    openVgSheet('vgArSheet',$('vgArSeg'));
+  });
+  var audTgl=$('vgAudToggle');
+  if(audTgl)audTgl.addEventListener('click',function(){ vm.audio=!vm.audio; audTgl.className='aud-toggle'+(vm.audio?' on':''); });
+
+  // ── kadr render (fbox ichiga thumb/spinner/× qo'yadi) ──
+  function renderFrameBoxes(){ renderFbox('vgStartBox',st.start,'start'); renderFbox('vgEndBox',st.end,'end'); }
+  function renderFbox(id,frame,which){
+    var box=$(id); if(!box)return;
+    box.innerHTML='';
+    var lbl=document.createElement('div'); lbl.className='fbi';
+    lbl.innerHTML=(which==='start')?"Boshlang'ich":"Yakuniy <span class='fb-opt'>ixt.</span>";
+    box.appendChild(lbl);
+    if(frame){
+      box.classList.add('has-img');
+      var img=document.createElement('img'); img.className='fb-thumb'; img.src=frame.dataUrl; box.appendChild(img);
+      if(frame.loading){
+        var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Yuklanmoqda…'; box.appendChild(sp);
+      } else {
+        var x=document.createElement('div'); x.className='fbx'; x.textContent='×'; x.title='O\'chirish';
+        (function(w){ x.addEventListener('click',function(e){ e.stopPropagation(); if(w==='start')st.start=null; else st.end=null; renderFbox(id,null,w); refreshVgBtn(); }); })(which);
+        box.appendChild(x);
+        // re-pick on click (frame bor bo'lsa ham kadrni o'zgartirish)
+        (function(w){ box.addEventListener('click',function(){ if(!box.querySelector('.fbx:hover'))openFrameSrc(w); }); })(which);
+      }
+    } else {
+      box.classList.remove('has-img');
+      var add=document.createElement('div'); add.className='fbadd'; add.textContent='+'; box.appendChild(add);
+    }
+  }
+
+  // ── kadr upload (dataUrl → R2 URL) ──
+  function uploadFrame(dataUrl,which){
+    var frameObj={dataUrl:dataUrl,url:null,loading:true};
+    if(which==='start')st.start=frameObj; else st.end=frameObj;
+    renderFrameBoxes(); refreshVgBtn();
+    studioPost('/api/studio/gen/ref-upload',{dataUrl:dataUrl}).then(function(r){
+      if(!r||!r.url){ toast('Kadr yuklab bo\'lmadi','error'); if(which==='start')st.start=null; else st.end=null; renderFrameBoxes(); refreshVgBtn(); return; }
+      frameObj.url=r.url; frameObj.loading=false; renderFrameBoxes(); refreshVgBtn();
+    }).catch(function(e){ toast((e&&e.message)||'Upload xatosi','error'); if(which==='start')st.start=null; else st.end=null; renderFrameBoxes(); refreshVgBtn(); });
+  }
+
+  // ── kadr manba funksiyalari ──
+  function pickFileFrame(which){
+    if(!IS_CEP){ toast('Faqat AE ichida fayl yuklash mumkin','info'); return; }
+    try{
+      var r=window.cep.fs.showOpenDialog(false,false,'Rasm tanlang','',['jpg','jpeg','png','webp','gif','bmp']);
+      if(!r||!r.data||!r.data.length)return;
+      var path=r.data[0];
+      if(!isImg(path)){ toast('Rasm faylini tanlang (jpg/png/webp)','warning'); return; }
+      var rd=window.cep.fs.readFile(path,window.cep.encoding.Base64);
+      if(rd.err){ toast('Fayl o\'qilmadi','error'); return; }
+      var e=ext(path); var mime_=e==='jpg'?'image/jpeg':(e==='png'?'image/png':(e==='webp'?'image/webp':'image/jpeg'));
+      uploadFrame('data:'+mime_+';base64,'+rd.data,which);
+    }catch(err){ toast((err&&err.message)||'Fayl tanlash xatosi','error'); }
+    closeVgSheets();
+  }
+  function pickProjFrame(which){
+    if(!IS_CEP){ toast('Faqat AE ichida ishlaydi','info'); closeVgSheets(); return; }
+    var host=$('vgProjList'); if(!host)return;
+    host.innerHTML='<div class="axighint">Yuklanmoqda…</div>';
+    openVgSheet('vgProjSheet');
+    try{
+      var list=(typeof listProjectFootage==='function')?listProjectFootage():[];
+      host.innerHTML='';
+      if(!list||!list.length){ host.innerHTML='<div class="axighint">Project footage topilmadi</div>'; return; }
+      list.forEach(function(item){
+        if(!isImg(item.path||item.name||''))return;
+        var d=document.createElement('div'); d.className='opt';
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(item.name||item.path||'').replace(/[<>&]/g,'')+'</b></div>';
+        (function(it){ d.addEventListener('click',function(){
+          var p=it.path||'';
+          try{ var rd2=window.cep.fs.readFile(p,window.cep.encoding.Base64); if(rd2.err){ toast('Fayl o\'qilmadi','error'); closeVgSheets(); return; }
+            var e2=ext(p); var m2=e2==='jpg'?'image/jpeg':(e2==='png'?'image/png':'image/jpeg');
+            uploadFrame('data:'+m2+';base64,'+rd2.data,which); closeVgSheets();
+          }catch(e3){ toast((e3&&e3.message)||'Xato','error'); closeVgSheets(); }
+        }); })(item);
+        host.appendChild(d);
+      });
+      if(!host.children.length)host.innerHTML='<div class="axighint">Rasm fayllari topilmadi</div>';
+    }catch(e){ host.innerHTML='<div class="axighint">Ro\'yxat yuklanmadi</div>'; }
+  }
+  function pickTlFrame(which){
+    if(!IS_CEP||typeof exportTimelineFrame!=='function'){ toast('Faqat AE ichida, timeline aktiv bo\'lganda','info'); closeVgSheets(); return; }
+    try{
+      var r=exportTimelineFrame();
+      if(!r){ toast('Timeline kadr olinmadi','warning'); closeVgSheets(); return; }
+      var dataUrl=r.dataUrl||r;
+      uploadFrame(String(dataUrl),which); closeVgSheets();
+    }catch(e){ toast((e&&e.message)||'Timeline xatosi','error'); closeVgSheets(); }
+  }
+
+  var _pendingWhich='start';
+  function openFrameSrc(which){
+    _pendingWhich=which;
+    var t=$('vgSrcTitle'); if(t)t.textContent=(which==='start')?"Boshlang'ich kadr":"Yakuniy kadr";
+    openVgSheet('vgSrcSheet',(which==='start')?$('vgStartBox'):$('vgEndBox'));
+  }
+  $('vgSrcFile').addEventListener('click',function(){ pickFileFrame(_pendingWhich); });
+  $('vgSrcProj').addEventListener('click',function(){ pickProjFrame(_pendingWhich); });
+  $('vgSrcTl').addEventListener('click',function(){ pickTlFrame(_pendingWhich); });
+  $('vgStartBox').addEventListener('click',function(){ if(!st.start)openFrameSrc('start'); });
+  $('vgEndBox').addEventListener('click',function(){ if(!st.end)openFrameSrc('end'); });
+
+  // ── enhance ──
+  $('vgEnhance').addEventListener('click',function(){
+    var ta=$('vgPrompt'); var txt=(ta&&ta.value||'').trim();
+    if(!txt){ toast('Avval prompt yozing','warning'); return; }
+    var enh=$('vgEnhance'); if(enh)enh.style.opacity='0.4';
+    studioPost('/api/studio/gen/prompt/enhance',{prompt:txt,mode:'video'}).then(function(r){
+      if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt boyitildi','success'); }
+      else toast('Boyitish muvaffaqiyatsiz','warning');
+    }).catch(function(e){ toast((e&&e.message)||'Enhance xatosi','error');
+    }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });
+  });
+
+  // ── polling (video uzoq — 3–4s oraliq) ──
+  var activeJobs=[]; var jobSeq=0;
+  var VG_POLL_CAP=160;
+  function vgPollDelay(t){ return t<6?3000:4000; }
+
+  function renderVgJobs(){
+    var el=$('vgProg'); if(!el)return;
+    if(!activeJobs.length){ el.classList.remove('on'); el.innerHTML=''; return; }
+    el.classList.add('on'); el.innerHTML='';
+    activeJobs.forEach(function(j){
+      var row=document.createElement('div'); row.className='jrow';
+      var pt=document.createElement('div'); pt.className='pt';
+      var sp=document.createElement('span'); sp.className='sp'; pt.appendChild(sp);
+      var lbl=document.createElement('span');
+      var preview=(j.prompt&&j.prompt.length>28)?j.prompt.slice(0,28)+'…':(j.prompt||'Video generatsiya');
+      lbl.textContent='Seedance · '+preview; pt.appendChild(lbl); row.appendChild(pt);
+      if(j.jobId){
+        var bar=document.createElement('div'); bar.className='bar';
+        var fill=document.createElement('i'); fill.id='vjbar'+j.seq; bar.appendChild(fill); row.appendChild(bar);
+      } else {
+        var s2=document.createElement('div'); s2.style.cssText='font-size:11.5px;color:var(--mut);margin:4px 0'; s2.textContent='Yuborilmoqda…'; row.appendChild(s2);
+      }
+      var cn=document.createElement('span'); cn.className='cancel'; cn.textContent='Bekor qilish';
+      (function(job){ cn.addEventListener('click',function(){ job.cancelled=true; removeVgJob(job); if(job.submitted)toast('Orqa fonda davom etadi — Tarixda chiqadi','info'); else toast('Bekor qilindi — kredit yechilmadi','info'); }); })(j);
+      row.appendChild(cn); el.appendChild(row);
+    });
+  }
+  function removeVgJob(j){ var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1); if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} renderVgJobs(); refreshVgBtn(); }
+  function startVgProg(j){ j.t0=Date.now(); renderVgJobs(); j.progTimer=setInterval(function(){ var pct=Math.min(90,Math.round((Date.now()-j.t0)/3000)); var bar=document.getElementById('vjbar'+j.seq); if(bar)bar.style.width=pct+'%'; },500); }
+
+  function pollVgJob(j,tries){
+    if(j.cancelled)return;
+    if(tries>VG_POLL_CAP){ removeVgJob(j); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
+    studioGet('/api/studio/gen/'+j.jobId).then(function(gn){
+      if(j.cancelled)return;
+      var s=(gn&&gn.status)||'';
+      if(s==='done'){
+        var bar=document.getElementById('vjbar'+j.seq); if(bar)bar.style.width='100%';
+        setTimeout(function(){ showVgResult((gn&&gn.assets)||[],j); removeVgJob(j); setCreditChip(credits()); toast('Video tayyor! ✦'+j.jcost+' yechildi','success'); },200);
+      } else if(s==='failed'){
+        removeVgJob(j); setCreditChip(credits()); toast((gn&&gn.error)||'Video muvaffaqiyatsiz — kredit qaytarildi','error');
+      } else {
+        j.pollTimer=setTimeout(function(){ pollVgJob(j,tries+1); },vgPollDelay(tries));
+      }
+    }).catch(function(){ if(j.cancelled)return; j.pollTimer=setTimeout(function(){ pollVgJob(j,tries+1); },vgPollDelay(tries)); });
+  }
+
+  function showVgResult(assets,j){
+    var url=(assets&&assets[0]&&assets[0].url)||null;
+    if(!url){ toast('Natija bo\'sh','warning'); return; }
+    var res=$('vgRes'); if(res)res.style.display='';
+    var vid=$('vgVideo'); if(vid){ vid.src=url; vid.load(); }
+    var acts=$('vgActs'); if(!acts)return; acts.innerHTML='';
+    var btnImp=document.createElement('div'); btnImp.className='vact';
+    btnImp.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> AE import';
+    btnImp.addEventListener('click',function(){ if(typeof aiImportMedia==='function')aiImportMedia(url,'video','mp4'); else toast('Faqat AE ichida','info'); });
+    acts.appendChild(btnImp);
+    if(!IS_CEP){
+      var btnDl=document.createElement('div'); btnDl.className='vact';
+      btnDl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Yuklab olish';
+      btnDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=url; a.download='seedance-video.mp4'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
+      acts.appendChild(btnDl);
+    }
+  }
+
+  // ── gen tugmasi ──
+  function genVgClick(){
+    if(activeJobs.length>=1){ toast('Bir vaqtda bitta video — tugashini kuting','info'); return; }
+    if(!st.start||!st.start.url){ toast("Boshlang'ich kadr qo'shing",'warning'); return; }
+    if(st.start.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
+    var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
+    var prompt=($('vgPrompt')&&$('vgPrompt').value||'').trim();
+    var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
+    activeJobs.push(j); renderVgJobs(); refreshVgBtn();
+    var params={referenceUrl:st.start.url,referenceEndUrl:(st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+    var quote=null;
+    ensureVgMeta().then(function(){
+      if(j.cancelled)throw new Error('CANCELLED');
+      if(!vm.model)throw new Error('Model topilmadi');
+      return Promise.all([
+        studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params}),
+        ensureVgSession()
+      ]);
+    }).then(function(arr){
+      if(j.cancelled)throw new Error('CANCELLED');
+      quote=arr[0]; var sid=arr[1];
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:vm.model.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},300000);
+    }).then(function(res){
+      if(j.cancelled)throw new Error('CANCELLED');
+      if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
+      if(!res||!res.jobId)throw new Error('Job yaratilmadi');
+      j.jobId=res.jobId; j.submitted=true; startVgProg(j); pollVgJob(j,0);
+    }).catch(function(err){
+      if(j.cancelled||(err&&err.message==='CANCELLED')){ removeVgJob(j); return; }
+      removeVgJob(j); toast((err&&err.message)||'Gen xatosi','error');
+    });
+  }
+  $('vgGen').addEventListener('click',genVgClick);
+  $('vgPrompt').addEventListener('keydown',function(e){ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); if(!$('vgGen').disabled)genVgClick(); } });
+  $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('aicat'); });
+  $('vgPrompt').addEventListener('input',refreshVgBtn);
+
+  ensureVgMeta().catch(function(){});
+  renderFrameBoxes(); refreshVgBtn();
 })();
 </script>
 </body>
