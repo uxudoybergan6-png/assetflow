@@ -68,6 +68,15 @@ export type GenModel = {
   audio?: boolean; // video native audio qo'llaydimi (generate_audio)
   imgModalities?: string[]; // rasm: chat/completions modalities (Flux=["image"], Gemini=["image","text"])
 
+  // ── MODEL-AWARE sozlama deskriptori (image): UI chiplar + fal input + cost SHUNDAN o'qiladi ──
+  // Har model param NOMLARINI o'zi e'lon qiladi (gpt: image_size/quality; nano: aspect_ratio/resolution).
+  // Bo'lmasa — eski flat fieldlar (aspects/resolutions/qualityCost/count) ishlatiladi (orqaga moslik).
+  imgSettings?: {
+    aspect: { param: "image_size" | "aspect_ratio"; options: string[]; map?: Record<string, string>; def?: string };
+    quality: { label: string; param: "quality" | "resolution"; options: string[]; def: string; cost: Record<string, number> };
+    num: number[];
+  };
+
   // voice modeli uchun:
   voices?: { id: string; label: string }[];
   languages?: string[];
@@ -191,6 +200,16 @@ export const GEN_MODELS: GenModel[] = [
     resolutions: ["low", "medium", "high", "auto"], // quality opsiyalar
     count: [1, 2, 3, 4],
     imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "image_size",
+        options: ["Auto", "1:1", "4:3", "3:4", "16:9", "9:16"],
+        map: { Auto: "auto", "1:1": "square_hd", "4:3": "landscape_4_3", "3:4": "portrait_4_3", "16:9": "landscape_16_9", "9:16": "portrait_16_9" },
+        def: "Auto",
+      },
+      quality: { label: "Sifat", param: "quality", options: ["low", "medium", "high", "auto"], def: "high", cost: { low: 3, medium: 6, high: 12, auto: 12 } },
+      num: [1, 2, 3, 4],
+    },
   },
   {
     id: 1103,
@@ -209,6 +228,46 @@ export const GEN_MODELS: GenModel[] = [
     resolutions: ["low", "medium", "high", "auto"],
     count: [1, 2, 3, 4],
     imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "image_size",
+        options: ["Auto", "1:1", "4:3", "3:4", "16:9", "9:16"],
+        map: { Auto: "auto", "1:1": "square_hd", "4:3": "landscape_4_3", "3:4": "portrait_4_3", "16:9": "landscape_16_9", "9:16": "portrait_16_9" },
+        def: "Auto",
+      },
+      quality: { label: "Sifat", param: "quality", options: ["low", "medium", "high", "auto"], def: "high", cost: { low: 3, medium: 6, high: 12, auto: 12 } },
+      num: [1, 2, 3, 4],
+    },
+  },
+  {
+    id: 1104,
+    mode: "image",
+    key: "fal-ai/nano-banana-2/edit",
+    label: "Nano Banana 2 Edit",
+    provider: "fal",
+    falModel: "fal-ai/nano-banana-2/edit",
+    feature: "image-edit",
+    cost: 8, // fallback (1K); imgSettings.quality.cost ustun
+    qualityCost: { "0.5K": 6, "1K": 8, "2K": 12, "4K": 16 },
+    referenceMode: "image-edit",
+    refMode: "required", // referens MAJBURIY
+    maxRefs: 10,
+    inputs: ["image-ref"],
+    aspects: ["Auto", "1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", "5:4", "4:5", "21:9"],
+    resolutions: ["0.5K", "1K", "2K", "4K"],
+    count: [1, 2, 3, 4],
+    imgModalities: ["image"],
+    imgSettings: {
+      // aspect_ratio: ratio string o'zini-o'zi (Auto→auto); map'да bo'lmagani identity
+      aspect: {
+        param: "aspect_ratio",
+        options: ["Auto", "1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", "5:4", "4:5", "21:9"],
+        map: { Auto: "auto" },
+        def: "Auto",
+      },
+      quality: { label: "Resolution", param: "resolution", options: ["0.5K", "1K", "2K", "4K"], def: "1K", cost: { "0.5K": 6, "1K": 8, "2K": 12, "4K": 16 } },
+      num: [1, 2, 3, 4],
+    },
   },
 
   // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
@@ -474,14 +533,22 @@ export function resolveImageCount(model: GenModel, params: Record<string, unknow
 
 /** Rasm bir dona narxi — qualityCost bor bo'lsa quality bo'yicha, aks holda sobit cost. */
 export function imageUnitCost(model: GenModel, params: Record<string, unknown>): number {
-  if (model.qualityCost) {
+  // MODEL-AWARE: narx model deskriptoridagi quality.cost'dan (gpt: quality, nano: resolution).
+  // imgSettings bo'lmasa — eski flat qualityCost (orqaga moslik). params.quality = tanlangan option (normalizatsiyalangan nom).
+  const s = model.imgSettings?.quality;
+  const cost = (s && s.cost) || model.qualityCost;
+  if (cost) {
     const q = typeof params.quality === "string" ? params.quality : "";
     const allowed =
-      model.resolutions && model.resolutions.length
-        ? model.resolutions
-        : Object.keys(model.qualityCost);
-    const key = allowed.includes(q) ? q : allowed.includes("medium") ? "medium" : allowed[0];
-    const c = model.qualityCost[key];
+      s && s.options && s.options.length
+        ? s.options
+        : model.resolutions && model.resolutions.length
+          ? model.resolutions
+          : Object.keys(cost);
+    const fallback =
+      s && s.def && cost[s.def] != null ? s.def : allowed.includes("medium") ? "medium" : allowed[0];
+    const key = allowed.includes(q) && cost[q] != null ? q : fallback;
+    const c = cost[key];
     if (Number.isFinite(c)) return c;
   }
   return model.cost;

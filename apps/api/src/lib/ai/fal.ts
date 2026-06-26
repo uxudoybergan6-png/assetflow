@@ -133,38 +133,63 @@ const AR_TO_SIZE: Record<string, string> = {
 };
 const QUALITIES = ["auto", "low", "medium", "high"];
 
+/** Model-aware image sozlama deskriptori (gen-models.imgSettings'дан keladi). */
+export type FalImageSettings = {
+  aspect?: { param: string; map?: Record<string, string>; def?: string };
+  quality?: { param: string; options?: string[]; def?: string };
+};
+
 /**
- * GENERIC fal image gen (text-to-image VA image-edit). `modelKey` = endpoint (falModel):
- *  - t2i: `openai/gpt-image-2` — `opts.imageUrls` BO'SH → image_urls yuborilmaydi.
- *  - edit: `openai/gpt-image-2/edit` — `opts.imageUrls` bor → image_urls + @imgN→"image N".
- * imageUrls PUBLIC bo'lishi shart (caller R2'ga materializatsiya qiladi — private URL → file_download_error).
- * Bitta chaqiruv = bitta rasm (num_images:1); gen-processor count marta (bounded) chaqiradi.
- * Submit/poll/R2/timeout-sentinel o'zgarmaydi.
+ * GENERIC fal image gen (text-to-image VA image-edit), MODEL-AWARE. `modelKey` = endpoint (falModel).
+ * Input param NOMLARI `opts.settings` deskriptoridan: gpt → image_size/quality; nano → aspect_ratio/resolution.
+ *  - imageUrls BO'SH → t2i (image_urls yuborilmaydi). bor → edit + @imgN→"image N".
+ * imageUrls PUBLIC bo'lishi shart (caller R2'ga materializatsiya qiladi). Bitta chaqiruv = bitta rasm.
+ * settings yo'q → eski xulq (image_size enum AR_TO_SIZE + quality enum). Submit/poll/R2/timeout o'zgarmaydi.
  */
 export async function falImage(
   modelKey: string,
   prompt: string,
-  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null }
+  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null; settings?: FalImageSettings }
 ): Promise<OrResult<Buffer>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
   const imageUrls = (opts?.imageUrls || []).filter(
     (u): u is string => typeof u === "string" && u.length > 0
   );
-  const aspect = opts?.aspect || "";
-  const q = (opts?.quality || "high").toLowerCase();
+  const aspectLabel = opts?.aspect || "";
+  const qRaw = (opts?.quality || "").toString();
+  const s = opts?.settings;
+  // aspect: deskriptor param + map (yo'q → eski image_size enum)
+  const aspectParam = (s && s.aspect && s.aspect.param) || "image_size";
+  const aspectVal =
+    s && s.aspect
+      ? (s.aspect.map && s.aspect.map[aspectLabel]) || aspectLabel || s.aspect.def || "auto"
+      : AR_TO_SIZE[aspectLabel] || "auto";
+  // quality: deskriptor param + value (yo'q → eski quality enum). Plagin yaroqli option yuboradi; bu — himoya.
+  const qualityParam = (s && s.quality && s.quality.param) || "quality";
+  const qOpts = s && s.quality && s.quality.options;
+  const qualityVal =
+    qOpts && qOpts.length
+      ? qOpts.indexOf(qRaw) >= 0
+        ? qRaw
+        : (s && s.quality && s.quality.def) || qOpts[0]
+      : QUALITIES.includes(qRaw.toLowerCase())
+        ? qRaw.toLowerCase()
+        : "high";
   const input: Record<string, unknown> = {
     // edit: @img<N> → "image N" (image_urls tartibiga mos). t2i: referenssiz → mapping shart emas.
     prompt: imageUrls.length
       ? String(prompt).replace(/@img(\d+)/gi, (_m, n) => `image ${n}`)
       : String(prompt),
-    image_size: AR_TO_SIZE[aspect] || "auto",
-    quality: QUALITIES.includes(q) ? q : "high",
+    [aspectParam]: aspectVal,
+    [qualityParam]: qualityVal,
     num_images: 1,
     output_format: "png",
   };
   if (imageUrls.length) input.image_urls = imageUrls; // edit-only
   try {
-    console.log(`[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i (referenssiz)"} → ${modelKey}`);
+    console.log(
+      `[fal] image ${imageUrls.length ? "edit(" + imageUrls.length + " ref)" : "t2i"} → ${modelKey} ${aspectParam}=${aspectVal} ${qualityParam}=${qualityVal}`
+    );
   } catch {
     /* ignore */
   }

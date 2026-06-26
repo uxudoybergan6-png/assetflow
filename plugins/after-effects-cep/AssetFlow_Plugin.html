@@ -3119,7 +3119,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="ctrls">
                                 <div class="seg" id="igModelSeg"><span class="lab">Model</span><span class="sv" id="igMName">GPT Image 2 Edit</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igArSeg"><span class="lab">O'lcham</span><span class="sv" id="igArVal">Auto</span><span class="sc">▾</span></div>
-                                <div class="seg" id="igQSeg"><span class="lab">Sifat</span><span class="sv" id="igQVal">High</span><span class="sc">▾</span></div>
+                                <div class="seg" id="igQSeg"><span class="lab" id="igQLab">Sifat</span><span class="sv" id="igQVal">High</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igNSeg"><span class="lab">Soni</span><span class="sv" id="igNVal">1</span><span class="sc">▾</span></div>
                               </div>
                             </div>
@@ -9235,7 +9235,7 @@ window.afGallery=(function(){
 
   // model metadata (lazy, cached) — refMode/maxRefs/aspects/resolutions/qualityCost/count backenddan
   var meta={loaded:false,models:[],modelId:null,key:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,
-    ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],
+    ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],qLabel:'Sifat',aspDef:'Auto',qDefault:'high',
     qcost:{low:3,medium:6,high:12,auto:12},counts:[1,2,3,4]};
   var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
 
@@ -9303,10 +9303,17 @@ window.afGallery=(function(){
     if(!m)return;
     meta.modelId=m.id; meta.key=m.key; meta.label=m.label||meta.label;
     meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||0;
-    meta.ars=(m.aspects&&m.aspects.length)?m.aspects:meta.ars;
-    meta.quals=(m.resolutions&&m.resolutions.length)?m.resolutions:meta.quals;
-    meta.qcost=m.qualityCost||meta.qcost; meta.counts=(m.count&&m.count.length)?m.count:meta.counts;
-    st.ar=meta.ars[0]; st.q=(meta.quals.indexOf('high')>=0)?'high':meta.quals[0]; st.n=meta.counts[0]||1;
+    // MODEL-AWARE: sozlama deskriptoridan (imgSettings) — bo'lmasa eski flat fieldlar (orqaga moslik).
+    var s=m.imgSettings||null;
+    var asp=s&&s.aspect, ql=s&&s.quality;
+    meta.ars=(asp&&asp.options&&asp.options.length)?asp.options:((m.aspects&&m.aspects.length)?m.aspects:meta.ars);
+    meta.aspDef=(asp&&asp.def)||meta.ars[0];
+    meta.quals=(ql&&ql.options&&ql.options.length)?ql.options:((m.resolutions&&m.resolutions.length)?m.resolutions:meta.quals);
+    meta.qcost=(ql&&ql.cost)||m.qualityCost||meta.qcost;
+    meta.qLabel=(ql&&ql.label)||'Sifat'; // 2-chip label: gpt→"Sifat", nano→"Resolution"
+    meta.qDefault=(ql&&ql.def)||((meta.quals.indexOf('high')>=0)?'high':meta.quals[0]);
+    meta.counts=(s&&s.num&&s.num.length)?s.num:((m.count&&m.count.length)?m.count:meta.counts);
+    st.ar=meta.aspDef; st.q=meta.qDefault; st.n=meta.counts[0]||1;
     if(meta.refMode==='none'){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
     applyMeta();
   }
@@ -9348,6 +9355,7 @@ window.afGallery=(function(){
     var noRef=meta.refMode==='none';
     $('igRefAdd').style.display=noRef?'none':'';
     $('igRefMeta').style.display=noRef?'none':'';
+    var ql=$('igQLab'); if(ql)ql.textContent=meta.qLabel||'Sifat'; // gpt→"Sifat", nano→"Resolution"
     $('igArVal').textContent=st.ar; $('igQVal').textContent=cap(st.q); $('igNVal').textContent=String(st.n);
     recost(); refreshGen();
   }
