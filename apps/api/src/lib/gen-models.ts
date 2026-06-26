@@ -395,6 +395,79 @@ export const GEN_MODELS: GenModel[] = [
     },
   },
 
+  // Seedream V5 Lite t2i — referenssiz, image_size(auto_2K/3K/4K + nisbatlar), 1-6 soni, tekis narx 4kr.
+  {
+    id: 1109,
+    mode: "image",
+    key: "fal-ai/bytedance/seedream/v5/lite/text-to-image",
+    label: "Seedream V5 Lite",
+    provider: "fal",
+    falModel: "fal-ai/bytedance/seedream/v5/lite/text-to-image",
+    feature: "text-to-image",
+    cost: 4,
+    referenceMode: "none",
+    refMode: "none",
+    maxRefs: 0,
+    inputs: [],
+    count: [1, 2, 3, 4, 5, 6],
+    imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "image_size",
+        options: ["Auto 2K", "Auto 3K", "Auto 4K", "1:1", "4:3", "3:4", "16:9", "9:16"],
+        map: {
+          "Auto 2K": "auto_2K",
+          "Auto 3K": "auto_3K",
+          "Auto 4K": "auto_4K",
+          "1:1": "square_hd",
+          "4:3": "landscape_4_3",
+          "3:4": "portrait_4_3",
+          "16:9": "landscape_16_9",
+          "9:16": "portrait_16_9",
+        },
+        def: "Auto 2K",
+      },
+      // quality YO'Q — tekis narx (cost=4/rasm × count); 2-chip UI'da yashirin.
+      num: [1, 2, 3, 4, 5, 6],
+    },
+  },
+  // Seedream V5 Lite edit — referens MAJBURIY (≤10), image_size, 1-6 soni, tekis narx 4kr.
+  {
+    id: 1110,
+    mode: "image",
+    key: "fal-ai/bytedance/seedream/v5/lite/edit",
+    label: "Seedream V5 Lite Edit",
+    provider: "fal",
+    falModel: "fal-ai/bytedance/seedream/v5/lite/edit",
+    feature: "image-edit",
+    cost: 4,
+    referenceMode: "image-edit",
+    refMode: "required",
+    maxRefs: 10,
+    inputs: ["image-ref"],
+    count: [1, 2, 3, 4, 5, 6],
+    imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "image_size",
+        options: ["Auto 2K", "Auto 3K", "Auto 4K", "1:1", "4:3", "3:4", "16:9", "9:16"],
+        map: {
+          "Auto 2K": "auto_2K",
+          "Auto 3K": "auto_3K",
+          "Auto 4K": "auto_4K",
+          "1:1": "square_hd",
+          "4:3": "landscape_4_3",
+          "3:4": "portrait_4_3",
+          "16:9": "landscape_16_9",
+          "9:16": "portrait_16_9",
+        },
+        def: "Auto 2K",
+      },
+      // quality YO'Q — tekis narx (cost=4/rasm × count); 2-chip UI'da yashirin.
+      num: [1, 2, 3, 4, 5, 6],
+    },
+  },
+
   // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
   {
     id: 1201, mode: "image", key: "magnific/image-upscaler", label: "Magnific Upscaler",
