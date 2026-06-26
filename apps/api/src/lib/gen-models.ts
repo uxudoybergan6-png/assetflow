@@ -270,6 +270,36 @@ export const GEN_MODELS: GenModel[] = [
     },
   },
 
+  {
+    id: 1105,
+    mode: "image",
+    key: "fal-ai/nano-banana-2",
+    label: "Nano Banana 2",
+    provider: "fal",
+    falModel: "fal-ai/nano-banana-2",
+    feature: "text-to-image",
+    cost: 8, // fallback (1K); imgSettings.quality.cost ustun
+    qualityCost: { "0.5K": 6, "1K": 8, "2K": 12, "4K": 16 },
+    referenceMode: "none",
+    refMode: "none", // referens SHART EMAS (text-to-image)
+    maxRefs: 0,
+    inputs: [],
+    aspects: ["Auto", "1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", "5:4", "4:5", "21:9"],
+    resolutions: ["0.5K", "1K", "2K", "4K"],
+    count: [1, 2, 3, 4],
+    imgModalities: ["image"],
+    imgSettings: {
+      aspect: {
+        param: "aspect_ratio",
+        options: ["Auto", "1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", "5:4", "4:5", "21:9"],
+        map: { Auto: "auto" },
+        def: "Auto",
+      },
+      quality: { label: "Resolution", param: "resolution", options: ["0.5K", "1K", "2K", "4K"], def: "1K", cost: { "0.5K": 6, "1K": 8, "2K": 12, "4K": 16 } },
+      num: [1, 2, 3, 4],
+    },
+  },
+
   // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
   {
     id: 1201, mode: "image", key: "magnific/image-upscaler", label: "Magnific Upscaler",

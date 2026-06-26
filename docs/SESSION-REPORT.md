@@ -1,13 +1,18 @@
-# SESSION REPORT — 2026-06-26 — Nano Banana 2 Edit + MODEL-AWARE sozlama arxitekturasi
+# SESSION REPORT — 2026-06-26 — Nano Banana 2 (t2i) + MODEL-AWARE arxitektura
 
-Har model sozlama param NOMLARI/variantlari/narxini O'ZI e'lon qiladi (imgSettings deskriptor) → UI+fal+cost shundan. Mavjud 3 model regressiyasiz, kredit/refund/atomik guard buzilmadi.
+Jami 4 fal model: gpt-image-2/edit (1102), gpt-image-2 (1103), nano-banana-2/edit (1104), nano-banana-2 (1105).
 
-1. **gen-models.ts:** `GenModel.imgSettings` deskriptori — `aspect{param,options,map,def}` + `quality{label,param,options,def,cost}` + `num`. Yangi model `id:1104 fal-ai/nano-banana-2/edit` (provider fal, image-edit, refMode required): aspect param `aspect_ratio` (Auto→auto, ratio'lar o'zi), quality `resolution` [0.5K/1K/2K/4K] def 1K cost 6/8/12/16. gpt-2 edit+t2i: aspect `image_size` (square_hd/...), quality `quality` (low/med/high). `imageUnitCost` endi `imgSettings.quality.cost`dan (flat qualityCost fallback).
-2. **fal.ts:** `falImage` MODEL-AWARE — input param nomlari `opts.settings`dan: aspectParam+map, qualityParam+value, num_images, output_format, image_urls (refs bo'lsa, @imgN→"image N"). settings yo'q → eski xulq (AR_TO_SIZE/quality). Submit/poll/R2/timeout o'zgarmadi.
-3. **gen-processor.ts:** `genOne → falImage(..., {settings:model.imgSettings})`. `falNeedsRef` refMode'дан (t2i refsiz, edit/nano referens). Atomik consume/refund guard SAQLANDI.
-4. **PLAGIN:** `setModel` `imgSettings`dan ars/quals/qcost/qLabel/qDefault/aspDef/counts o'qiydi; `applyMeta` 2-chip LABEL'ini model'dan (`#igQLab`: gpt→"Sifat", nano→"Resolution"). Picker /gen/models provider=fal (3 model). refMode/@dropdown/✨enhance model-aware (mavjud).
+1. **gen-models.ts id:1105** — `fal-ai/nano-banana-2`, feature:`text-to-image`, refMode:`none`, maxRefs:0, imgSettings: nano naqshi (aspect_ratio+resolution, def 1K, cost 6/8/12/16). Barcha avvalgi modellar tegilmadi.
+2. **fal.ts, gen-processor.ts** — O'ZGARMADI. `falImage` bo'sh `imageUrls` → t2i (image_urls yo'q). `falNeedsRef = useFal && refMode!=='none'` → nano t2i refsiz.
+3. **Plagin picker** — avtomatik 4 model ko'rsatadi (provider==='fal' filtr). `setModel` imgSettings dan ars/quals/qcost/qLabel/qDefault o'qiydi.
 
-## TEKSHIRUV
-- `npm run build -w apps/api` TOZA · plagin 6 `<script>` blok 0 xato.
-- Headless (screenshot): picker 3 model; **nano → chip "Resolution" [0.5K/1K/2K/4K], 4K→✦16, /gen modelId:1104 quality:'4K' referens bilan**; gpt edit/t2i → "Sifat" (low/med/high) regressiyasiz; cost model deskriptoridan.
-- Kredit/refund/atomik/@imgN/vision/overlay tegilmadi. KUTILMOQDA: backend PUSH (Render, FAL_KEY) → AE'da nano real sinash.
+## TEKSHIRUV (headless harness)
+- tsc TOZA (npm run build -w apps/api).
+- Picker: 4 model (GPT Image 2 Edit / GPT Image 2 / Nano Banana 2 Edit / Nano Banana 2).
+- Nano Banana 2 tanlash → qLabel:"Resolution", qVal:"1K", cost ✦8, @mention yashirildi, igRefSect ref-children barchasi none.
+- /gen POST: modelId:1105, referenceUrls:[], referenceUrl:null, quality:"1K", aspectRatio:"Auto" — image_urls yo'q.
+- gpt modellari regressiyasiz (avvalgi sessiya tasdiqlaridan).
+
+## KUTILMOQDA
+- Backend PUSH (Render, FAL_KEY env) → AE'da real sinash.
+- fal endpoint: queue.fal.run/fal-ai/nano-banana-2, params: aspect_ratio + resolution.
