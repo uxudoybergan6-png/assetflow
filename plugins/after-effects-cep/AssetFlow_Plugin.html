@@ -3268,11 +3268,12 @@ html.home-mode #homePage{display:block!important}
                             <div class="sect">
                               <div class="lbl">Sozlamalar</div>
                               <div class="ctrls">
+                                <div class="seg" id="vgModelSeg"><span class="lab">Model</span><span class="sv" id="vgMName">Seedance 2.0</span><span class="sc">▾</span></div>
+                                <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
                                 <div class="seg" id="vgResSeg"><span class="lab">Sifat</span><span class="sv" id="vgResVal">720p</span><span class="sc">▾</span></div>
                                 <div class="seg" id="vgDurSeg"><span class="lab">Davomiylik</span><span class="sv" id="vgDurVal">Auto</span><span class="sc">▾</span></div>
-                                <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
                               </div>
-                              <div class="aud-toggle on" id="vgAudToggle"><div class="aud-sw"></div><span>Ovoz generatsiya</span></div>
+                              <div class="aud-toggle on" id="vgAudToggle"><div class="aud-sw"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg><span>Ovoz</span></div>
                             </div>
                           </div>
 
@@ -3309,6 +3310,13 @@ html.home-mode #homePage{display:block!important}
                             <div class="sheeth"><b>Nisbat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="vgArPills"></div>
                             <div class="axighint" style="text-align:left">Auto — kirish kadridan oladi.</div>
+                          </div></div>
+
+                          <!-- Model sheet -->
+                          <div class="sheet" id="vgMSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Video model</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div id="vgMList"><div class="axighint">Yuklanmoqda…</div></div>
+                            <div class="axighint">Kelajakda ko'proq video model qo'shiladi</div>
                           </div></div>
                         </div>
                       </section>
@@ -10122,7 +10130,19 @@ window.afGallery=(function(){
   function cost(){ return (vm.perSec[vm.res]||12)*durSec(); }
   function recost(){ var c=$('vgCost'); if(c)c.textContent='✦'+cost(); }
   function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
+  function mime(p){ var e=ext(p); return e==='jpg'?'image/jpeg':((e==='tif'||e==='tiff')?'image/tiff':(e==='svg'?'image/svg+xml':'image/'+(e||'png'))); }
   function isImg(p){ return /\.(png|jpe?g|webp|gif|bmp|tiff?|avif|heic)$/i.test(String(p||'')); }
+  // ── CEP fayl o'qish — igScript bilan bir xil isbotlangan yo'l ──
+  // showOpenDialog `file:///path` qaytarishi mumkin; cep.fs bunday yo'lda ENOENT beradi.
+  // toFsPath: file:// striplash + URI-decode. nodeRequire: Node fs → cep.fs fallback.
+  function nodeRequire(n){ try{if(typeof require==='function')return require(n);}catch(e){} try{if(typeof cep_node!=='undefined'&&cep_node&&cep_node.require)return cep_node.require(n);}catch(e){} try{if(window.cep_node&&window.cep_node.require)return window.cep_node.require(n);}catch(e){} try{if(typeof window.require==='function')return window.require(n);}catch(e){} return null; }
+  function toFsPath(p){ if(!p)return p; p=String(p); if(p.indexOf('file://')===0)p=p.replace(/^file:\/\//,''); try{p=decodeURIComponent(p);}catch(e){} return p; }
+  function readDataUrl(path){
+    var fp=toFsPath(path);
+    try{ var fsmod=nodeRequire('fs'); if(fsmod&&fsmod.readFileSync){ var buf=fsmod.readFileSync(fp); if(buf&&buf.length)return 'data:'+mime(fp)+';base64,'+buf.toString('base64'); } }catch(e1){}
+    try{ if(window.cep&&window.cep.fs&&window.cep.fs.readFile){ var enc=(window.cep.encoding&&window.cep.encoding.Base64)||'Base64'; var r=window.cep.fs.readFile(fp,enc); if(r&&(r.err===0||r.err==null)&&r.data)return 'data:'+mime(fp)+';base64,'+r.data; } }catch(e2){}
+    return null;
+  }
 
   function refreshVgBtn(){
     var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
@@ -10172,7 +10192,7 @@ window.afGallery=(function(){
     vm._pending=studioGet('/api/studio/gen/models?mode=video').then(function(r){
       var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.mode==='video'; });
       if(!fal.length)throw new Error('Video model topilmadi');
-      var m=fal[0]; vm.model=m; vm.loaded=true;
+      var m=fal[0]; vm.model=m; vm.models=fal; vm.loaded=true;
       var vs=m.videoSettings;
       if(vs){
         if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; vm.res=vs.resolution.def||vm.res; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
@@ -10188,11 +10208,25 @@ window.afGallery=(function(){
     return vm._pending;
   }
   function applyVgMeta(){
+    var mn=$('vgMName'); if(mn&&vm.model)mn.textContent=vm.model.label||'Seedance 2.0 Fast';
     var rv=$('vgResVal'); if(rv)rv.textContent=vm.res;
     var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
     var av=$('vgArVal'); if(av)av.textContent=vm.ar;
     var at=$('vgAudToggle'); if(at)at.className='aud-toggle'+(vm.audio?' on':'');
-    refreshVgBtn();
+    renderVgModelSheet(); refreshVgBtn();
+  }
+  function renderVgModelSheet(){
+    var host=$('vgMList'); if(!host)return; host.innerHTML='';
+    var models=vm.models||[];
+    if(!models.length&&vm.model)models=[vm.model];
+    models.forEach(function(m){
+      var cur=(vm.model&&m.id===vm.model.id);
+      var o=document.createElement('div'); o.className='opt'+(cur?' cur':'');
+      o.innerHTML='<div class="oi"><svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg></div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>ByteDance · i2v</small></div>'+(cur?'<span class="tick">✓</span>':'');
+      o.addEventListener('click',function(){ closeVgSheets(); });
+      host.appendChild(o);
+    });
+    if(!host.children.length)host.innerHTML='<div class="axighint">Model yuklanmoqda…</div>';
   }
   function ensureVgSession(){
     if(vm.sessionId)return Promise.resolve(vm.sessionId);
@@ -10200,6 +10234,7 @@ window.afGallery=(function(){
   }
 
   // ── sozlama chip openerlar ──
+  $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); openVgSheet('vgMSheet',$('vgModelSeg')); });
   $('vgResSeg').addEventListener('click',function(){
     buildPills($('vgResPills'),vm.resOpts,vm.res,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); buildPills($('vgResPills'),vm.resOpts,vm.res,function(v2){ vm.res=v2; var rv2=$('vgResVal'); if(rv2)rv2.textContent=v2; recost(); closeVgSheets(); }); closeVgSheets(); });
     openVgSheet('vgResSheet',$('vgResSeg'));
@@ -10252,19 +10287,15 @@ window.afGallery=(function(){
     }).catch(function(e){ toast((e&&e.message)||'Upload xatosi','error'); if(which==='start')st.start=null; else st.end=null; renderFrameBoxes(); refreshVgBtn(); });
   }
 
-  // ── kadr manba funksiyalari ──
+  // ── kadr manba funksiyalari (readDataUrl = igScript bilan bir xil isbotlangan yo'l) ──
   function pickFileFrame(which){
     if(!IS_CEP){ toast('Faqat AE ichida fayl yuklash mumkin','info'); return; }
-    try{
-      var r=window.cep.fs.showOpenDialog(false,false,'Rasm tanlang','',['jpg','jpeg','png','webp','gif','bmp']);
-      if(!r||!r.data||!r.data.length)return;
-      var path=r.data[0];
-      if(!isImg(path)){ toast('Rasm faylini tanlang (jpg/png/webp)','warning'); return; }
-      var rd=window.cep.fs.readFile(path,window.cep.encoding.Base64);
-      if(rd.err){ toast('Fayl o\'qilmadi','error'); return; }
-      var e=ext(path); var mime_=e==='jpg'?'image/jpeg':(e==='png'?'image/png':(e==='webp'?'image/webp':'image/jpeg'));
-      uploadFrame('data:'+mime_+';base64,'+rd.data,which);
-    }catch(err){ toast((err&&err.message)||'Fayl tanlash xatosi','error'); }
+    var exts=['png','jpg','jpeg','webp','gif','bmp'],r;
+    try{ r=window.cep.fs.showOpenDialog(false,false,'Rasm tanlang','',exts); }catch(e){ toast('Dialog xatosi','error'); return; }
+    var paths=(r&&r.data)||[]; if(!paths.length)return;
+    var p=paths[0]; if(!isImg(p)){ toast('Rasm faylini tanlang (jpg/png/webp)','warning'); return; }
+    var d=readDataUrl(p); // toFsPath(file:// strip + URI-decode) → Node fs → cep.fs fallback
+    if(d){ uploadFrame(d,which); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
     closeVgSheets();
   }
   function pickProjFrame(which){
@@ -10281,11 +10312,9 @@ window.afGallery=(function(){
         var d=document.createElement('div'); d.className='opt';
         d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(item.name||item.path||'').replace(/[<>&]/g,'')+'</b></div>';
         (function(it){ d.addEventListener('click',function(){
-          var p=it.path||'';
-          try{ var rd2=window.cep.fs.readFile(p,window.cep.encoding.Base64); if(rd2.err){ toast('Fayl o\'qilmadi','error'); closeVgSheets(); return; }
-            var e2=ext(p); var m2=e2==='jpg'?'image/jpeg':(e2==='png'?'image/png':'image/jpeg');
-            uploadFrame('data:'+m2+';base64,'+rd2.data,which); closeVgSheets();
-          }catch(e3){ toast((e3&&e3.message)||'Xato','error'); closeVgSheets(); }
+          var du=readDataUrl(it.path||''); // readDataUrl: file:// normalize + Node fs → cep.fs
+          if(du){ uploadFrame(du,which); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
+          closeVgSheets();
         }); })(item);
         host.appendChild(d);
       });
