@@ -1,20 +1,17 @@
-# SESSION REPORT — 2026-06-27 — Video R2V model (ko'p-modal referens)
+# SESSION REPORT — 2026-06-27 — Video model almashmaydi (BUG) tuzatildi
 
-Yangi 2-video model: `bytedance/seedance-2.0/reference-to-video` (@Image/@Video/@Audio). Video tool referens hududi MODEL-AWARE.
+## Root cause
+Asosiy sabab: o'rnatilgan CEP STALE edi (eski kodда model option click faqat `closeVgSheets()` qilardi — `switchVgModel` yo'q). Qo'shimcha CEF88 xavf: option ichidagi SVG `<text>`/`<b>` ga bosilganda per-option listener'ga bubble bo'lmasligi mumkin.
 
-## Backend
-1. **gen-models.ts:** model id 3102 (Seedance 2.0 R2V), feature `reference-to-video`, refKind `media-refs`, `mediaRefs{image:9,video:3,audio:3,total:12}`, videoSettings resolution[480/720/1080/4k] perSec{8/15/34/60}, refMode `optional`. `GenFeature` + `getRefKind` + refKind tip kengaytirildi. Fast (3101) o'zgarmadi.
-2. **fal.ts:** `falRefVideo` — image_urls/video_urls/audio_urls (bo'sh ro'yxat yuborilmaydi) + prompt/resolution/duration/aspect/generate_audio; poll uzun (maxPolls=250 ≈480s); video.url → R2.
-3. **gen-processor.ts:** `runFalRefVideo` — refs R2 public URL'ga (tartibda), schema invariant (audio→kamida 1 image/video; jami≤total), `reference-to-video` routing. Kredit perSec×dur, atomik consume/refund guard TEGILMADI.
-4. **studio-gen.ts:** ref-upload endi image/video/audio qabul qiladi (to'g'ri ext/content-type).
+## Tuzatish (robust — barcha 5 ishorani qoplaydi)
+1. **Delegatsiya:** per-option `addEventListener` o'rniga `#vgMList`'ga BIR marta delegated listener. Bosilgan element bola (SVG/`<text>`/`<b>`) bo'lsa ham `.opt`'gача ko'tariladi → ishlaydi (CEF88-safe).
+2. **`data-mid`:** har option `data-mid=id`; listener `vm.models`'дан `String(id)` bo'yicha topadi.
+3. **String id taqqoslash:** `switchVgModel` va `cur` (✓) endi `String(m.id)===String(vm.model.id)` (number/string mosligi).
+4. **Backdrop:** `.axvg .sheet` `e.target===s` tekshiruvi option bosishini ushlamaydi (delegatsiya alohida `#vgMList`'да) — to'qnashuv yo'q.
+5. **Log:** `ensureVgMeta` `[vg] video modellar: 3101:...(frames), 3102:...(media-refs)` — ikkala model distinct id bilan kelishini tasdiqlaydi.
 
-## Plagin (vgScript)
-5. Model picker REAL: 2 model (/gen/models dinamik), `switchVgModel` → sozlama+UI yangilanadi, resolution model'dan klamp.
-6. refKind-aware referens: `frames`→Kadrlar (mavjud) ↔ `media-refs`→[＋Rasm ＋Video ＋Ovoz] + thumbnaillar (@Image1/@Video1/@Audio1, tur belgisi, × o'chirish, limit) + @ mention dropdown. Referens IXTIYORIY.
-7. `mime()` video/audio content-type; ref-upload mavjud readDataUrl/showOpenDialog qayta ishlatildi. genVgClick refKind-aware params (frames=referenceUrl; media-refs=imageUrls/videoUrls/audioUrls).
+## Tekshiruv (headless harness, REAL funksiyalar)
+Bosish: SVG `<text>` (eng chuqur bola) → Fast; `<b>` label → R2V; `.opt` div → R2V — HAMMA holatда almashadi. ✓ checkmark + `cur` + `vgMName` ("Seedance 2.0 R2V") + referens hudud (frames↔media-refs) almashadi, sheet yopiladi. data-mid=[3101,3102]. 7 inline script 0 xato, console 0 xato.
 
-## Tekshiruv (brauzer harness, REAL funksiyalar)
-`tsc` 0 xato, 7 inline script 0 xato, console 0 xato. Model switch Fast↔R2V → UI flip ✓; 4 ref (@Image1/2,@Video1,@Audio1) + refMeta 4/12 ✓; genVgClick → imageUrls:2/videoUrls:1/audioUrls:1, modelId 3102, frame param yo'q ✓; @ mention ✓; resolution 480/720/1080/4k, cost ✦300@4k/✦75@720p ✓; Fast'ga qaytsa frames UI + 4k→720p klamp + disabled (kadr yo'q) ✓. Image gen/kredit regressiyasiz.
-
-## KUTILMOQDA
-Render API redeploy (R2V model + ref-upload + falRefVideo) + AE install-cep.sh: referenssiz prompt→video; rasm+video+audio referens→video. FAL_KEY env.
+## O'rnatish
+`install-cep.sh` qayta o'rnatildi (exit 0) → o'rnatilgan HTML'да `data-mid`×3 + log bor. AE'ni QAYTA OCHIB R2V tanlanishini tasdiqlang (R2V tagida "ByteDance · R2V (ko'p-modal)").

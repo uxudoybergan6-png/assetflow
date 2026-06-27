@@ -10356,6 +10356,7 @@ window.afGallery=(function(){
       var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.mode==='video'; });
       if(!fal.length)throw new Error('Video model topilmadi');
       vm.models=fal; vm.loaded=true;
+      try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}
       applyModelSettings(fal[0]); // default — birinchi fal video model (Seedance Fast)
       applyVgMeta(); return vm;
     }).catch(function(err){
@@ -10364,9 +10365,10 @@ window.afGallery=(function(){
     });
     return vm._pending;
   }
-  // model almashtirish — sozlamalar + referens UI (frames ↔ media-refs) yangilanadi
+  // model almashtirish — sozlamalar + referens UI (frames ↔ media-refs) yangilanadi.
+  // id taqqoslash String bilan (API number/string bo'lishi mumkin — xavfsiz).
   function switchVgModel(m){
-    if(!m||(vm.model&&m.id===vm.model.id)){ closeVgSheets(); return; }
+    if(!m||(vm.model&&String(m.id)===String(vm.model.id))){ closeVgSheets(); return; }
     applyModelSettings(m); applyVgMeta(); closeVgSheets();
     toast(String(m.label||'Model')+' tanlandi','info');
   }
@@ -10388,15 +10390,25 @@ window.afGallery=(function(){
     var models=vm.models||[];
     if(!models.length&&vm.model)models=[vm.model];
     models.forEach(function(m){
-      var cur=(vm.model&&m.id===vm.model.id);
+      var cur=(vm.model&&String(m.id)===String(vm.model.id));
       var sub=m.feature==='reference-to-video'?'ByteDance · R2V (ko\'p-modal)':'ByteDance · i2v (kadr)';
-      var o=document.createElement('div'); o.className='opt'+(cur?' cur':'');
+      var o=document.createElement('div'); o.className='opt'+(cur?' cur':''); o.setAttribute('data-mid',String(m.id));
       o.innerHTML='<div class="oi"><svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg></div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
-      (function(model){ o.addEventListener('click',function(){ switchVgModel(model); }); })(m);
       host.appendChild(o);
     });
     if(!host.children.length)host.innerHTML='<div class="axighint">Model yuklanmoqda…</div>';
   }
+  // Model tanlash — DELEGATSIYA (#vgMList'ga BIR marta). CEF88'да option ichidagi SVG/<text>/<b>'ga
+  // bosilganda ham ishlaydi (e.target bola → .opt'gача ko'tarilamiz). data-mid → String taqqoslash.
+  (function(){ var host=$('vgMList'); if(!host)return;
+    host.addEventListener('click',function(e){
+      var n=e.target; while(n&&n!==host&&!(n.classList&&n.classList.contains('opt')))n=n.parentNode;
+      if(!n||n===host)return;
+      var mid=n.getAttribute&&n.getAttribute('data-mid'); if(mid==null)return;
+      var m=(vm.models||[]).filter(function(x){return String(x.id)===String(mid);})[0];
+      if(m)switchVgModel(m);
+    });
+  })();
   function ensureVgSession(){
     if(vm.sessionId)return Promise.resolve(vm.sessionId);
     return studioPost('/api/studio/gen/sessions',{mode:'video'}).then(function(s){ vm.sessionId=(s&&s.id)||null; return vm.sessionId; });
