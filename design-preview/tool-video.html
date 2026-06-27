@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssetFlow · Video yaratish — mockup</title>
+<style>
+  :root{--bg:#090a0c;--panel:#0d0e11;--card:#15171b;--card2:#1a1d22;--card3:#202329;--line:#22252b;--line2:#2c3138;--txt:#f4f6f8;--mut:#989ea6;--mut2:#676d74;--acc:#c2f04a;--acc2:#a6d83a;--acc-ink:#0c1400;--blue:#5aa9ff;--red:#ff6b6b;--warn:#ffb15a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#05060a;color:var(--txt);line-height:1.4;display:flex;flex-direction:column;align-items:center;padding:22px 12px 60px;min-height:100vh}
+  .hint{color:var(--mut);font-size:12.5px;margin-bottom:13px;text-align:center;max-width:440px}.hint b{color:var(--acc2)}
+  .app{width:392px;max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;height:800px;position:relative}
+  .pbar{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer}.back:hover{color:var(--txt)}
+  .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}.spacer{flex:1}
+  .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800}
+  .scroll{flex:1;overflow-y:auto;padding:14px}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+  .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 6px;display:flex;align-items:center}
+  .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500;cursor:pointer}.lbl .req{color:var(--acc);margin-left:4px}
+  .sect{margin-bottom:13px}
+
+  /* kadrlar (start majburiy + end ixtiyoriy) */
+  .frames{display:flex;gap:10px}
+  .frame{flex:1}
+  .fbox{height:84px;border:1.5px dashed var(--line2);border-radius:13px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mut);font-size:11px;cursor:pointer;background-size:cover;background-position:center;position:relative;overflow:hidden}
+  .fbox:hover{border-color:var(--acc2);color:var(--acc)}.fbox .pl{font-size:20px}
+  .fbox.has{border-style:solid}
+  .fbox .rx{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;font-size:11px}
+  .fcap{font-size:10px;color:var(--mut2);text-align:center;margin-top:5px}
+
+  /* composer */
+  .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;position:relative}
+  .pbox:focus-within{border-color:#3a4150}
+  .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:64px;line-height:1.5}
+  .pbox textarea::placeholder{color:var(--mut2)}
+  .prow{display:flex;align-items:center;margin-top:8px}
+  .enhance{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:6px 8px;border-radius:8px}.enhance:hover{background:rgba(90,169,255,.12)}
+  .costtag{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--acc)}
+  .gensend{margin-left:8px;width:42px;height:42px;border-radius:50%;background:var(--acc);color:var(--acc-ink);border:0;cursor:pointer;display:grid;place-items:center;flex:0 0 auto;position:relative}
+  .gensend:hover{background:var(--acc2)}.gensend:disabled{opacity:.4;cursor:not-allowed}
+  .gensend.busy{color:transparent}.gensend.busy::after{content:"";position:absolute;width:18px;height:18px;border:2.5px solid rgba(12,20,0,.3);border-top-color:var(--acc-ink);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* settings */
+  .ctrls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .seg{min-width:0;display:flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;padding:9px 11px;border-radius:11px;white-space:nowrap}
+  .seg:hover{border-color:var(--mut2)}.seg .lab{color:var(--mut2);font-size:11px;font-weight:500}.seg .sv{flex:1;overflow:hidden;text-overflow:ellipsis}.seg .sc{color:var(--mut2);font-size:10px;margin-left:auto}
+  .toggle{display:flex;align-items:center;gap:8px;background:var(--card3);border:1px solid var(--line2);border-radius:11px;padding:9px 11px;cursor:pointer;grid-column:1/-1}
+  .toggle .lab{font-size:13px;font-weight:600}.toggle .sw{margin-left:auto;width:38px;height:22px;border-radius:99px;background:var(--line2);position:relative;transition:background .15s}
+  .toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+  .toggle.on .sw{background:var(--acc)}.toggle.on .sw::after{left:18px}
+
+  /* progress + natija (video) */
+  .prog{margin-bottom:14px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.prog.on{display:block}
+  .prog .pt{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
+  .prog .pt .sp{width:16px;height:16px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+  .bar{height:6px;background:var(--card3);border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+  .cancel{margin-top:10px;font-size:12px;color:var(--red);cursor:pointer;display:inline-block}
+  .res{margin-bottom:14px;display:none}.res.on{display:block}
+  .vcard{border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#000}
+  .vwrap{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#243a18,#1a2230 60%,#2a1f30);display:grid;place-items:center;position:relative}
+  .vwrap .play{width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);display:grid;place-items:center;color:#fff;font-size:22px;cursor:pointer}
+  .vwrap .dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;font-size:11px;padding:2px 7px;border-radius:6px}
+  .vwrap .au{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:11px;padding:2px 7px;border-radius:6px}
+  .ra{display:flex;border-top:1px solid var(--line)}
+  .ra div{flex:1;text-align:center;padding:9px;font-size:12px;color:var(--mut);cursor:pointer}.ra div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.ra div+div{border-left:1px solid var(--line)}
+  .ra div.pri{background:var(--acc);color:var(--acc-ink);font-weight:800}
+
+  /* So'nggi */
+  .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rc{border:1px solid var(--line2);border-radius:13px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;cursor:pointer;position:relative}
+  .rc .tg{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .rc .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#fff;font-size:10.5px;padding:16px 8px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* sheet */
+  .sheet{position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;z-index:50}.sheet.on{display:flex}
+  .sheetc{width:100%;background:var(--panel);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;padding:14px;max-height:78%;overflow-y:auto}
+  .sheeth{display:flex;align-items:center;margin-bottom:11px}.sheeth b{font-size:14px}.sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px}
+  .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}.opt:hover{border-color:var(--mut2)}
+  .opt .oi{width:30px;height:30px;border-radius:8px;background:var(--card3);display:grid;place-items:center;font-size:14px;color:var(--acc)}
+  .opt b{font-size:13px;display:block}.opt small{font-size:10.5px;color:var(--mut)}.opt.cur{border-color:var(--acc2)}.opt.cur .tick{margin-left:auto;color:var(--acc);font-weight:800}
+  .pillrow{display:flex;gap:8px;flex-wrap:wrap}.pill{padding:9px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--card);font-size:13px;cursor:pointer}.pill.cur{border-color:var(--acc2);color:var(--acc);font-weight:700}
+  input[type=file]{display:none}
+  .toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:#000;border:1px solid var(--line2);color:var(--txt);font-size:12.5px;padding:9px 14px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}.toast.on{opacity:1}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="hint">🎬 <b>Video yaratish</b> · Seedance 2.0 Fast (i2v) — boshlang'ich kadr + harakat prompt → video (+ovoz).</div>
+
+<div class="app" id="app">
+  <div class="pbar">
+    <div class="back">‹ Video</div>
+    <div class="ttl"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg> Video yaratish</div>
+    <div class="spacer"></div>
+    <div class="pro" id="credit">✦ 606</div>
+  </div>
+
+  <div class="scroll" id="scroll">
+    <div class="prog" id="prog">
+      <div class="pt"><span class="sp"></span> <span id="progLabel">Video yaratilmoqda... (~1-2 daqiqa)</span></div>
+      <div class="bar"><i id="barFill"></i></div>
+      <span class="cancel" id="cancel">Bekor qilish</span>
+    </div>
+
+    <div class="res" id="res">
+      <div class="lbl">Natija</div>
+      <div class="vcard">
+        <div class="vwrap"><div class="play" id="resPlay">▶</div><span class="au" id="resAu">🔊 ovozli</span><span class="dur" id="resDur">0:05</span></div>
+        <div class="ra"><div class="pri" id="resImport">⤓ AE'ga import</div><div id="resDl">⬇ Yuklab olish</div></div>
+      </div>
+    </div>
+
+    <!-- KADRLAR -->
+    <div class="sect">
+      <div class="lbl">Kadr(lar) <span class="req">*</span></div>
+      <div class="frames">
+        <div class="frame">
+          <div class="fbox" id="startBox"><span class="pl">＋</span>Boshlang'ich</div>
+          <div class="fcap">Boshlang'ich kadr (majburiy)</div>
+        </div>
+        <div class="frame">
+          <div class="fbox" id="endBox"><span class="pl">＋</span>Oxirgi</div>
+          <div class="fcap">Oxirgi kadr (ixtiyoriy)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROMPT -->
+    <div class="sect">
+      <div class="lbl">Harakat prompt <span class="req">*</span></div>
+      <div class="pbox">
+        <textarea id="prompt" placeholder="Qanday harakat? Masalan: kamera sekin yaqinlashadi, shamol barglarni tebratadi, dramatik yorug'lik"></textarea>
+        <div class="prow">
+          <span class="enhance" id="enhanceBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Yaxshilash</span>
+          <span class="costtag" id="sendCost">✦60</span>
+          <button class="gensend" id="gen" disabled title="Yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="sect">
+      <div class="lbl">Sozlamalar <span class="meta" id="clearBtn">↺ Tozalash</span></div>
+      <div class="ctrls">
+        <div class="seg" id="modelSeg"><span class="lab">Model</span><span class="sv" id="mName">Seedance 2.0 Fast</span><span class="sc">▾</span></div>
+        <div class="seg" id="arSeg"><span class="lab">Nisbat</span><span class="sv" id="arVal">Auto</span><span class="sc">▾</span></div>
+        <div class="seg" id="resSeg"><span class="lab">Sifat</span><span class="sv" id="resVal">720p</span><span class="sc">▾</span></div>
+        <div class="seg" id="durSeg"><span class="lab">Davomiylik</span><span class="sv" id="durVal">Auto</span><span class="sc">▾</span></div>
+        <div class="toggle on" id="audioToggle"><span class="lab">Ovoz (sinxron)</span><span class="sw"></span></div>
+      </div>
+    </div>
+
+    <!-- SO'NGGI -->
+    <div class="sect">
+      <div class="lbl">So'nggi <span class="meta" id="moreLink">Barchasi →</span></div>
+      <div class="recentgrid" id="recent"></div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInp" accept="image/*">
+
+  <!-- model sheet -->
+  <div class="sheet" id="mSheet"><div class="sheetc">
+    <div class="sheeth"><b>Model</b><span class="x" data-close>✕</span></div>
+    <div class="opt cur"><div class="oi">🎬</div><div><b>Seedance 2.0 Fast</b><small>ByteDance · i2v · ovozli</small></div><span class="tick">✓</span></div>
+    <div style="text-align:center;color:var(--mut2);font-size:11.5px;padding:8px 4px 2px">Ko'proq video modellar keyingi bosqichда</div>
+  </div></div>
+  <!-- aspect -->
+  <div class="sheet" id="arSheet"><div class="sheetc"><div class="sheeth"><b>Nisbat</b><span class="x" data-close>✕</span></div><div class="pillrow" id="arPills"></div></div></div>
+  <!-- resolution -->
+  <div class="sheet" id="resSheet"><div class="sheetc"><div class="sheeth"><b>Sifat (resolution)</b><span class="x" data-close>✕</span></div><div class="pillrow" id="resPills"></div></div></div>
+  <!-- duration -->
+  <div class="sheet" id="durSheet"><div class="sheetc"><div class="sheeth"><b>Davomiylik (soniya)</b><span class="x" data-close>✕</span></div><div class="pillrow" id="durPills"></div></div></div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s)};
+  function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},1600)}
+  function open(id){closeAll();$(id).classList.add('on')}
+  function closeAll(){document.querySelectorAll('.sheet').forEach(function(s){s.classList.remove('on')})}
+  document.querySelectorAll('[data-close]').forEach(function(x){x.addEventListener('click',closeAll)});
+  document.querySelectorAll('.sheet').forEach(function(s){s.addEventListener('click',function(e){if(e.target===s)closeAll()})});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll()});
+
+  // Seedance 2.0 Fast deskriptori
+  var M={ars:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],defAr:'Auto',
+          res:['480p','720p'],defRes:'720p',
+          durs:['Auto','4','5','6','7','8','9','10','11','12','15'],defDur:'Auto',
+          // kredit/soniya: 480p=8, 720p=12; Auto davomiylik ~5s deб hisoblanadi
+          perSec:{'480p':8,'720p':12}, autoSec:5};
+  var st={ar:'Auto',res:'720p',dur:'Auto',audio:true,credit:606,start:null,end:null};
+
+  function durNum(){return st.dur==='Auto'?M.autoSec:parseInt(st.dur,10)}
+  function cost(){return (M.perSec[st.res]||12)*durNum()}
+  function recost(){var c=cost();$('sendCost').textContent=(st.dur==='Auto'?'≈✦':'✦')+c;$('gen').title='Yaratish (✦'+c+')'}
+  function refresh(){$('gen').disabled=!(st.start && $('prompt').value.trim().length>=2)}
+
+  // kadr yuklash
+  var pickTarget=null;
+  function pickFrame(which){pickTarget=which;$('fileInp').click()}
+  $('startBox').addEventListener('click',function(){if(st.start){return}pickFrame('start')});
+  $('endBox').addEventListener('click',function(){if(st.end){return}pickFrame('end')});
+  $('fileInp').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){setFrame(pickTarget,ev.target.result)};r.readAsDataURL(f);$('fileInp').value=''});
+  function setFrame(which,url){
+    st[which]=url;var box=$(which==='start'?'startBox':'endBox');
+    box.classList.add('has');box.style.backgroundImage='url('+url+')';box.innerHTML='';
+    var rx=document.createElement('div');rx.className='rx';rx.textContent='✕';
+    rx.addEventListener('click',function(ev){ev.stopPropagation();st[which]=null;box.classList.remove('has');box.style.backgroundImage='';box.innerHTML='<span class="pl">＋</span>'+(which==='start'?'Boshlang’ich':'Oxirgi');refresh()});
+    box.appendChild(rx);refresh();toast((which==='start'?'Boshlang’ich':'Oxirgi')+' kadr qo‘shildi');
+  }
+
+  // sheets
+  function buildPills(host,arr,cur,onpick){host.innerHTML='';arr.forEach(function(v){var d=document.createElement('div');d.className='pill'+(String(v)===String(cur)?' cur':'');d.textContent=(host.id==='durPills'&&v!=='Auto')?v+'s':v;d.addEventListener('click',function(){onpick(v)});host.appendChild(d)})}
+  $('modelSeg').addEventListener('click',function(){open('mSheet')});
+  $('arSeg').addEventListener('click',function(){buildPills($('arPills'),M.ars,st.ar,function(v){st.ar=v;$('arVal').textContent=v;closeAll()});open('arSheet')});
+  function buildRes(){buildPills($('resPills'),M.res,st.res,function(v){st.res=v;$('resVal').textContent=v;recost();buildRes()})}
+  $('resSeg').addEventListener('click',function(){buildRes();open('resSheet')});
+  function buildDur(){buildPills($('durPills'),M.durs,st.dur,function(v){st.dur=v;$('durVal').textContent=v;recost();buildDur()})}
+  $('durSeg').addEventListener('click',function(){buildDur();open('durSheet')});
+  $('audioToggle').addEventListener('click',function(){st.audio=!st.audio;$('audioToggle').classList.toggle('on',st.audio)});
+
+  // enhance (mock)
+  $('enhanceBtn').addEventListener('click',function(){var b=$('prompt').value.trim();if(!b){toast('Avval harakat yozing');return}if(b.indexOf('kinematik')<0){$('prompt').value=b+', kinematik kamera harakati, silliq, dramatik yorug‘lik';$('prompt').dispatchEvent(new Event('input'))}toast('Prompt yaxshilandi')});
+
+  var ta=$('prompt');ta.addEventListener('input',function(){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,150)+'px';refresh()});
+  $('clearBtn').addEventListener('click',function(){ta.value='';ta.style.height='auto';st.start=null;st.end=null;['startBox','endBox'].forEach(function(id){var b=$(id);b.classList.remove('has');b.style.backgroundImage='';b.innerHTML='<span class="pl">＋</span>'+(id==='startBox'?'Boshlang’ich':'Oxirgi')});refresh();toast('Tozalandi')});
+
+  // recent (demo)
+  var recents=[
+    {bg:'linear-gradient(160deg,#2a1f40,#101018)',t:'Shahar fly-through',dur:'0:05'},
+    {bg:'linear-gradient(160deg,#243a18,#10140c)',t:'Logo animatsiya',dur:'0:04'},
+    {bg:'linear-gradient(160deg,#3a2418,#14100c)',t:'Portret motion',dur:'0:06'}
+  ];
+  function renderRecent(){var r=$('recent');r.innerHTML='';recents.forEach(function(it){var d=document.createElement('div');d.className='rc';d.style.background=it.bg;d.innerHTML='<div class="tg">🎬 Video</div><div class="play">▶</div><div class="bd">'+it.t+' · '+it.dur+'</div>';d.addEventListener('click',function(){toast(it.t)});r.appendChild(d)})}
+
+  // generate (mock)
+  var genTimer=null,cancelled=false;
+  function setCredit(v){st.credit=v;$('credit').textContent='✦ '+v}
+  $('gen').addEventListener('click',function(){
+    if(!st.start){toast('Boshlang‘ich kadr yuklang');return}
+    if(ta.value.trim().length<2){toast('Harakat yozing');return}
+    var c=cost();if(st.credit<c){toast('Kredit yetarli emas');return}
+    cancelled=false;$('res').classList.remove('on');$('prog').classList.add('on');$('barFill').style.width='0';$('gen').disabled=true;$('gen').classList.add('busy');
+    var pct=0;genTimer=setInterval(function(){pct+=Math.random()*8+3;if(pct>95)pct=95;$('barFill').style.width=pct+'%'},300);
+    setTimeout(function(){if(cancelled)return;clearInterval(genTimer);$('barFill').style.width='100%';setTimeout(function(){
+      $('prog').classList.remove('on');setCredit(st.credit-c);
+      $('resDur').textContent='0:'+String(durNum()).padStart(2,'0');$('resAu').style.display=st.audio?'':'none';
+      $('res').classList.add('on');$('res').scrollIntoView({behavior:'smooth'});
+      recents.unshift({bg:'linear-gradient(160deg,#243a18,#1a2230)',t:ta.value.trim().slice(0,18),dur:'0:'+String(durNum()).padStart(2,'0')});renderRecent();
+      $('gen').disabled=false;$('gen').classList.remove('busy');refresh();toast('Tayyor! ✦'+c+' yechildi');
+    },220)},2600);
+  });
+  $('cancel').addEventListener('click',function(){cancelled=true;clearInterval(genTimer);$('prog').classList.remove('on');$('gen').disabled=false;$('gen').classList.remove('busy');refresh();toast('Bekor qilindi — kredit yechilmadi')});
+  $('resImport').addEventListener('click',function(){toast('AE‘ga import (demo)')});
+  $('resDl').addEventListener('click',function(){toast('Yuklab olindi')});
+  $('resPlay').addEventListener('click',function(){toast('Video o‘ynaydi (demo)')});
+  $('moreLink').addEventListener('click',function(){toast('← Tarix')});
+
+  recost();refresh();renderRecent();
+})();
+</script>
+</body>
+</html>
