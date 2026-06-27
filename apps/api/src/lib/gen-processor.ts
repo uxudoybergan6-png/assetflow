@@ -15,7 +15,7 @@ import {
   orDownload,
 } from "./ai/openrouter.js";
 import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
-import { falImage, falVideo } from "./ai/fal.js";
+import { falImage, falVideo, falRefVideo } from "./ai/fal.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
@@ -218,6 +218,53 @@ async function runFalVideo(
 }
 
 /**
+ * fal.ai reference-to-video (Seedance 2.0 R2V). Ko'p-modal referens: params.imageUrls/videoUrls/audioUrls
+ * (data-URI yoki URL) → R2 public URL, TARTIBDA. Referens IXTIYORIY (referenssiz ham ishlaydi).
+ * Schema invariant: audio bo'lsa kamida 1 image/video; jami ≤12.
+ */
+async function runFalRefVideo(
+  model: GenModel,
+  prompt: string,
+  params: Record<string, unknown>,
+  userId: string,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const matAll = async (val: unknown): Promise<string[]> => {
+    const list = Array.isArray(val)
+      ? (val as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+      : [];
+    const out: string[] = [];
+    for (const u of list) out.push(await materializeRefUrl(userId, genId, u));
+    return out;
+  };
+  const lim = model.mediaRefs ?? { image: 9, video: 3, audio: 3, total: 12 };
+  const imageUrls = (await matAll(params.imageUrls)).slice(0, lim.image);
+  const videoUrls = (await matAll(params.videoUrls)).slice(0, lim.video);
+  const audioUrls = (await matAll(params.audioUrls)).slice(0, lim.audio);
+  // Schema: audio bo'lsa kamida 1 image/video kerak.
+  if (audioUrls.length && imageUrls.length + videoUrls.length === 0) {
+    return { ok: false, error: "Audio referens uchun kamida 1 rasm yoki video referens kerak" };
+  }
+  if (imageUrls.length + videoUrls.length + audioUrls.length > lim.total) {
+    return { ok: false, error: `Jami referens ≤${lim.total}` };
+  }
+  const v = resolveVideoParams(model, params);
+  const dur = params.duration;
+  const durVal = dur == null || String(dur).toLowerCase() === "auto" ? "auto" : String(dur);
+  const out = await falRefVideo(model.falModel ?? model.key, prompt, {
+    imageUrls,
+    videoUrls,
+    audioUrls,
+    resolution: v.resolution,
+    duration: durVal,
+    aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
+    generateAudio: v.generateAudio,
+  });
+  if (!out.ok) return { ok: false, error: out.error };
+  return { ok: true, buf: out.data };
+}
+
+/**
  * queued Generation'ni qayta ishlaydi — model.feature bo'yicha OpenRouter'ga marshrutlaydi:
  * text-to-image / image-edit → sync; text-to-speech → audio; text/image-to-video → async poll.
  * Natija R2'ga → GenAsset → status=done. Xato → status=failed + KREDIT QAYTARILADI.
@@ -386,11 +433,17 @@ export async function processGeneration(genId: string): Promise<void> {
       await prisma.genAsset.create({
         data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
       });
-    } else if (model.feature === "text-to-video" || model.feature === "image-to-video") {
+    } else if (
+      model.feature === "text-to-video" ||
+      model.feature === "image-to-video" ||
+      model.feature === "reference-to-video"
+    ) {
       const out =
-        model.provider === "fal"
-          ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
-          : await runVideo(model, gen.prompt, params, gen.userId, genId);
+        model.feature === "reference-to-video"
+          ? await runFalRefVideo(model, gen.prompt, params, gen.userId, genId) // R2V — ko'p-modal referens
+          : model.provider === "fal"
+            ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
+            : await runVideo(model, gen.prompt, params, gen.userId, genId);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);

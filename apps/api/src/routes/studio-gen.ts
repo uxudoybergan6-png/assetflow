@@ -246,22 +246,24 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     return;
   }
   const contentType = m[1] || "image/png";
-  if (!/^image\//.test(contentType)) {
-    res.status(400).json({ error: "Faqat rasm referens qabul qilinadi" });
+  // R2V ko'p-modal: rasm + video + ovoz referens qabul qilinadi (Seedance R2V). Boshqa modellar faqat rasm yuboradi.
+  if (!/^(image|video|audio)\//.test(contentType)) {
+    res.status(400).json({ error: "Faqat rasm/video/ovoz referens qabul qilinadi" });
     return;
   }
   const buf = Buffer.from(m[2], "base64");
   if (!buf.length || buf.length > 25 * 1024 * 1024) {
-    res.status(400).json({ error: "Rasm bo'sh yoki juda katta (maks 25MB)" });
+    res.status(400).json({ error: "Referens bo'sh yoki juda katta (maks 25MB)" });
     return;
   }
-  const ext = contentType.includes("png")
-    ? "png"
-    : contentType.includes("webp")
-      ? "webp"
-      : contentType.includes("jpeg") || contentType.includes("jpg")
-        ? "jpg"
-        : "png";
+  const EXT: Record<string, string> = {
+    "image/png": "png", "image/webp": "webp", "image/jpeg": "jpg", "image/jpg": "jpg", "image/gif": "gif",
+    "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
+    "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/wav": "wav", "audio/x-wav": "wav", "audio/mp4": "m4a", "audio/aac": "aac",
+  };
+  const ext =
+    EXT[contentType] ||
+    (contentType.startsWith("video/") ? "mp4" : contentType.startsWith("audio/") ? "mp3" : "png");
   const key = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await uploadBufferToS3(buf, key, contentType);
   const url = await getPublicOrSignedUrl(key, 7200); // PUBLIC (fal auth'siz yuklab oladi)

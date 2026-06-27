@@ -161,6 +161,59 @@ export async function falVideo(
   return falDownload(url);
 }
 
+/**
+ * Seedance 2.0 reference-to-video — ko'p-modal referens. image_urls(≤9)/video_urls(≤3)/audio_urls(≤3)
+ * R2 PUBLIC URL'lar (caller materializatsiya qiladi); bo'sh ro'yxat yuborilmaydi. @Image/@Video/@Audio
+ * prompt'da o'zicha qoladi (model tushunadi). Poll uzun (maxPolls=250 ≈ 480s — R2V uzoq davom etadi).
+ */
+export async function falRefVideo(
+  modelKey: string,
+  prompt: string,
+  opts: {
+    imageUrls?: string[];
+    videoUrls?: string[];
+    audioUrls?: string[];
+    resolution?: string;
+    duration?: string | number;
+    aspectRatio?: string;
+    generateAudio?: boolean;
+  }
+): Promise<OrResult<Buffer>> {
+  if (!isFalConfigured()) return NOT_CONFIGURED;
+  const dur = opts.duration;
+  const durVal = dur == null || String(dur).toLowerCase() === "auto" ? "auto" : String(dur);
+  const arRaw = opts.aspectRatio ?? "auto";
+  const arVal = arRaw.toLowerCase() === "auto" ? "auto" : arRaw;
+  const clean = (a?: string[]) =>
+    (a || []).filter((u): u is string => typeof u === "string" && u.length > 0);
+  const imgs = clean(opts.imageUrls);
+  const vids = clean(opts.videoUrls);
+  const auds = clean(opts.audioUrls);
+  const input: Record<string, unknown> = {
+    prompt: String(prompt),
+    resolution: opts.resolution ?? "720p",
+    duration: durVal,
+    aspect_ratio: arVal,
+    generate_audio: opts.generateAudio ?? true,
+  };
+  if (imgs.length) input.image_urls = imgs; // bo'sh ro'yxat YUBORILMAYDI
+  if (vids.length) input.video_urls = vids;
+  if (auds.length) input.audio_urls = auds;
+  try {
+    console.log(
+      `[fal] ref2video → ${modelKey} imgs=${imgs.length} vids=${vids.length} auds=${auds.length} res=${input.resolution} dur=${input.duration} ar=${input.aspect_ratio} audio=${input.generate_audio}`
+    );
+  } catch {
+    /* ignore */
+  }
+  const r = await falSubmit(modelKey, input, { maxPolls: 250 });
+  if (!r.ok) return r;
+  const data = r.data as { video?: { url?: string } };
+  const url = data?.video?.url;
+  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  return falDownload(url);
+}
+
 // fal CDN natija URL'ini Buffer'ga yuklaydi (caller R2'ga persist qiladi).
 async function falDownload(url: string): Promise<OrResult<Buffer>> {
   try {

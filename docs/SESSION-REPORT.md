@@ -1,20 +1,20 @@
-# SESSION REPORT — 2026-06-27 — AI Tools 100% audit + tuzatish
+# SESSION REPORT — 2026-06-27 — Video R2V model (ko'p-modal referens)
 
-Metod: 3 parallel adversarial subagent + kredit/overlay mustaqil tasdiq. To'liq: docs/AI-TOOLS-AUDIT2.md.
+Yangi 2-video model: `bytedance/seedance-2.0/reference-to-video` (@Image/@Video/@Audio). Video tool referens hududi MODEL-AWARE.
 
-## Tuzatildi (JIDDIY)
-1. **Kredit asimmetriyasi** (`plugin-profile.ts`): ADMIN consume kamaytirmaydi, lekin refund increment qilardi → har xatoда admin'ga kredit "yaratiladi". Refund'ga role guard + `updateMany` (P2025 yo'q).
-2. **Cheksiz `params`** (`studio-gen.ts`): `boundedParams` JSON ≤16KB (DoS/storage) — /gen + /gen/cost-quote.
-3. **Video teardown leak** (`AssetFlow_Plugin.html`): `axVGTeardown` qo'shildi (joblar bekor, timer tozalash, inline `vgVideo` pause) + `go()`да chaqiriladi — view almashganда poll/ovoz to'xtaydi.
-4. **Stale demo `606`**: `syncBal` real kredit (yoki `—`); HTML default `—`. `bal()` raqam eski estimate uchun qoldi.
-5. **O'lik `#igLightbox`/`#vgLightbox`** DOM + wiring olib tashlandi (umumiy `#afLightbox`'ga ko'chgan; `vgRefSlotSheet` saqlandi).
-6. **KICHIK:** Video So'nggi `☑/✕` emoji → SVG (CEF88).
+## Backend
+1. **gen-models.ts:** model id 3102 (Seedance 2.0 R2V), feature `reference-to-video`, refKind `media-refs`, `mediaRefs{image:9,video:3,audio:3,total:12}`, videoSettings resolution[480/720/1080/4k] perSec{8/15/34/60}, refMode `optional`. `GenFeature` + `getRefKind` + refKind tip kengaytirildi. Fast (3101) o'zgarmadi.
+2. **fal.ts:** `falRefVideo` — image_urls/video_urls/audio_urls (bo'sh ro'yxat yuborilmaydi) + prompt/resolution/duration/aspect/generate_audio; poll uzun (maxPolls=250 ≈480s); video.url → R2.
+3. **gen-processor.ts:** `runFalRefVideo` — refs R2 public URL'ga (tartibda), schema invariant (audio→kamida 1 image/video; jami≤total), `reference-to-video` routing. Kredit perSec×dur, atomik consume/refund guard TEGILMADI.
+4. **studio-gen.ts:** ref-upload endi image/video/audio qabul qiladi (to'g'ri ext/content-type).
 
-## False positive
-Subagent "lightbox unstyled BLOKER" — NOTO'G'RI: `#afLightbox` CSS (`:2629`) bor, computed-style to'liq-ekran tasdiqlangan (oldingi taskда tuzatilgan).
+## Plagin (vgScript)
+5. Model picker REAL: 2 model (/gen/models dinamik), `switchVgModel` → sozlama+UI yangilanadi, resolution model'dan klamp.
+6. refKind-aware referens: `frames`→Kadrlar (mavjud) ↔ `media-refs`→[＋Rasm ＋Video ＋Ovoz] + thumbnaillar (@Image1/@Video1/@Audio1, tur belgisi, × o'chirish, limit) + @ mention dropdown. Referens IXTIYORIY.
+7. `mime()` video/audio content-type; ref-upload mavjud readDataUrl/showOpenDialog qayta ishlatildi. genVgClick refKind-aware params (frames=referenceUrl; media-refs=imageUrls/videoUrls/audioUrls).
 
-## Tasdiq (SOLID)
-Kredit consume 1× (atomik), refund 1× faqat real xato (double-refund guard, timeout→yo'q), video narx imzoli, FAL_KEY sizmaydi, XSS textContent, DELETE ownership, overlay fixed markaz, hover preview. `tsc` 0, 7 script 0 xato, console 0 xato.
+## Tekshiruv (brauzer harness, REAL funksiyalar)
+`tsc` 0 xato, 7 inline script 0 xato, console 0 xato. Model switch Fast↔R2V → UI flip ✓; 4 ref (@Image1/2,@Video1,@Audio1) + refMeta 4/12 ✓; genVgClick → imageUrls:2/videoUrls:1/audioUrls:1, modelId 3102, frame param yo'q ✓; @ mention ✓; resolution 480/720/1080/4k, cost ✦300@4k/✦75@720p ✓; Fast'ga qaytsa frames UI + 4k→720p klamp + disabled (kadr yo'q) ✓. Image gen/kredit regressiyasiz.
 
 ## KUTILMOQDA
-Render API redeploy (refund/params fix) + AE install-cep.sh end-to-end. Qolgan KICHIK'lar (errText/transaction/demo-toggle) — keyingi faza.
+Render API redeploy (R2V model + ref-upload + falRefVideo) + AE install-cep.sh: referenssiz prompt→video; rasm+video+audio referens→video. FAL_KEY env.

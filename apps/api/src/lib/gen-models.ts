@@ -26,6 +26,7 @@ export type GenFeature =
   | "text-to-speech"
   | "text-to-video"
   | "image-to-video"
+  | "reference-to-video"
   | "text-to-sfx";
 
 /**
@@ -55,9 +56,12 @@ export type GenModel = {
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
   refMode?: "none" | "optional" | "required"; // frontend model-aware: referens majburiymi
   // So'nggi-grid "Referens" tugmasi model-aware turi (deklaratsiya bo'lmasa getRefKind derive qiladi):
-  //  frames=Boshlang'ich/Yakuniy IMAGE kadr (i2v) · image=@imgN ref-strip · video/imagevideo=video/rasm ref · none=referens yo'q
-  refKind?: "frames" | "image" | "video" | "imagevideo" | "none";
+  //  frames=Boshlang'ich/Yakuniy IMAGE kadr (i2v) · image=@imgN ref-strip · video/imagevideo=video/rasm ref
+  //  media-refs=ko'p modal @Image/@Video/@Audio (reference-to-video) · none=referens yo'q
+  refKind?: "frames" | "image" | "video" | "imagevideo" | "media-refs" | "none";
   maxRefs?: number; // referens chegarasi (schemada yo'q bo'lsa frontend 10 deb oladi)
+  // Ko'p-modal referens limitlari (refKind 'media-refs'): image/video/audio alohida + jami.
+  mediaRefs?: { image: number; video: number; audio: number; total: number };
   brand?: string; // model egasi: "openai" | "google" | "bytedance" | "bfl"
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
@@ -690,6 +694,42 @@ export const GEN_MODELS: GenModel[] = [
       audio: true,
     },
   },
+  // Seedance 2.0 R2V — ko'p-modal referens (image≤9 + video≤3 + audio≤3, jami≤12, IXTIYORIY) + prompt.
+  // @Image/@Video/@Audio prompt'да o'zicha qoladi (model tushunadi). Narx soniyaga, resolutionга qarab.
+  {
+    id: 3102,
+    mode: "video",
+    key: "bytedance/seedance-2.0/reference-to-video",
+    label: "Seedance 2.0 R2V",
+    brand: "bytedance",
+    provider: "fal",
+    falModel: "bytedance/seedance-2.0/reference-to-video",
+    feature: "reference-to-video",
+    cost: 15,
+    referenceMode: "video-ref",
+    refMode: "optional", // referenssiz ham ishlaydi (faqat prompt)
+    refKind: "media-refs",
+    mediaRefs: { image: 9, video: 3, audio: 3, total: 12 },
+    inputs: ["image-ref", "video-ref", "audio-file"],
+    aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+    resolutions: ["480p", "720p", "1080p", "4k"],
+    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 15],
+    audio: true,
+    videoSettings: {
+      aspect: { options: ["Auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], def: "Auto" },
+      resolution: {
+        options: ["480p", "720p", "1080p", "4k"],
+        def: "720p",
+        perSec: { "480p": 8, "720p": 15, "1080p": 34, "4k": 60 },
+      },
+      duration: {
+        options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15"],
+        def: "Auto",
+        autoSec: 5,
+      },
+      audio: true,
+    },
+  },
 ];
 
 // Semantik qidiruv uchun embedding modeli (katalogda emas — ichki ishlatiladi).
@@ -730,7 +770,7 @@ export function modelAcceptsReference(model: GenModel): boolean {
  */
 export function getRefKind(
   model: GenModel
-): "frames" | "image" | "video" | "imagevideo" | "none" {
+): "frames" | "image" | "video" | "imagevideo" | "media-refs" | "none" {
   if (model.refKind) return model.refKind;
   const rm = getReferenceMode(model);
   if (model.mode === "video") {
