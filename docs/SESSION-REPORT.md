@@ -1,10 +1,14 @@
-# SESSION REPORT — 2026-06-27 — Plagin tepa: 3 qator header → 1 ixcham qator
+# SESSION REPORT — 2026-06-27 — So'nggi grid: umumiy komponent (real lightbox + karta amallari)
 
-## Bajarildi (compact-header.html "Yangi" 1:1)
-1. **Takror brand olib tashlandi:** AI `.pbar` (`▲ AssetFlow` + demo `✦606`) `go()` da tool/AI Tools view'larida (imggen/vidgen/launcher/aicat) `display:none` — har view o'z bitta header qatoriga ega.
-2. **vidgen/imggen igtop = bitta ixcham qator:** `‹ AI Tools · <ikona> nomi · spacer · 🕘 · ⚙ · ✦kredit`. vidgen'ga 🕘+⚙, imggen'ga ⚙ qo'shildi (handlerlar `axGo('history'|'settings')`). Sarlavha `nowrap` (46px, 1 qator).
-3. **launcher/aicat ailead'ga** spacer + 🕘 + ⚙ (`data-go`) + bitta kredit pill qo'shildi.
-4. **Kredit YAGONA manba (606 demo emas):** `bal()`/yangi `aiCredReal()`+`aiLeadSync()` real `AssetFlowAccount.aiCredits` dan o'qiydi; `go()` har navda `syncBal()` → barcha header bir xil qiymat (439 ↔ 606 chalkashlik yo'q).
+## Bajarildi
+1. **UMUMIY komponent** `window.afRecent` (main AI script): `card(it,ctx)` + `openLightbox(it,ctx)` + `closeLightbox()`. Rasm tool (igScript) va Video tool (vgScript) AYNAN shuni ishlatadi — kod takrorlanmaydi.
+2. **Lightbox REAL media:** video → `<video controls autoplay playsinline>` (statik kamera-ikona placeholder OLIB TASHLANDI), rasm → `<img>`, ovoz → `<audio controls>`. Bitta umumiy `#afLightbox` (.axroot ichida, position:fixed).
+3. **Karta hover amallari (ochmasdan):** ⤓ Import (har doim) · ↺ Referens (model-aware) · ⬇ Yuklab (non-CEP) · ✕ O'chirish. Lightbox amallari ham bir xil.
+4. **Model-aware Referens (refKind):** har tool `ctx.refAllowed`/`onRef` beradi — igScript: image karta → `addRefReady` (@imgN); vgScript: frames → image karta → Boshlang'ich/Yakuniy menyu; mos kelmasa Referens yashirin (video/ovoz).
+5. **afVideoThumb** ham umumiy (video birinchi kadr — qora emas).
 
-## Tekshiruv
-7 inline script syntax TOZA. Headless: vidgen 1 qatorli header (brand/pbar yo'q, kredit 1 marta) ✓; 🕘→history, ⚙→settings ✓; launcher pbar yashirin + kredit real 439 (606 emas), barcha pill bir xil ✓. Asosiy (Home) brand/pbar tegilmadi. Gen oqimi/kredit BUZILMADI.
+## Tekshiruv (brauzer harness, REAL funksiyalar)
+7 inline script syntax TOZA. Video tool: 5 karta, video→`<video>` thumb, Referens faqat rasm kartada; lightbox video/img/audio to'g'ri. Image tool: video karta bosish → lightbox `<video controls>` (placeholder EMAS) ✓; hover Import→importMediaCat, Referens→addRefReady ishladi; video/ovoz kartada Referens yo'q. Gen oqimi/kredit/refund/multi-gen — TEGILMADI.
+
+## KUTILMOQDA
+AE'da install-cep.sh → real R2 video lightboxда o'ynashi + ikkala toolда karta amallari end-to-end.

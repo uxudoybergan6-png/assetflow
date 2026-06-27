@@ -8824,6 +8824,95 @@ async function bootPlugin(){
   function syncBal(){var b=document.getElementById('balTop');if(b)b.textContent=bal();var s=document.getElementById('balSet');if(s)s.textContent=bal();aiLeadSync();}
   // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
   function aiLeadSync(){ var v=aiCredReal(); var t=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; var a=document.getElementById('aiLeadCredL'); if(a)a.textContent=t; var c=document.getElementById('aiLeadCredA'); if(c)c.textContent=t; }
+  // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
+  // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 preload=metadata muted> + birinchi kadrga seek.
+  window.afVideoThumb=function(url){
+    var v=document.createElement('video');
+    v.src=String(url)+(/#/.test(String(url))?'':'#t=0.1');
+    v.muted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.preload='metadata';
+    v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:#000';
+    try{ var sk=false; var seek=function(){ if(sk)return; try{v.currentTime=0.1;}catch(e){} };
+      v.addEventListener('loadedmetadata',seek); v.addEventListener('loadeddata',seek); v.addEventListener('seeked',function(){sk=true;}); }catch(e){}
+    return v;
+  };
+
+  // ===== UMUMIY So'nggi-grid komponenti (rasm tool + video tool BIR XIL ishlatadi) =====
+  // ctx: {isCEP, selecting():bool, isSelected(it):bool, onToggleSelect(it,cardEl), onImport(it),
+  //       onDownload(it), onDelete(it), refAllowed(it):bool, onRef(it)}
+  // — har tool o'z ctx'ini beradi (model-aware refKind/onRef tool ichida); RENDER + LIGHTBOX umumiy.
+  window.afRecent=(function(){
+    var IC={
+      x:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>',
+      chk:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
+      imp:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+      ref:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>',
+      dl:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+      aud:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
+      play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'
+    };
+    function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Ovoz':(c==='sfx')?'SFX':'Rasm'; }
+
+    // ---- UMUMIY lightbox (bitta DOM, .axroot ichida; rasm/video/ovoz) ----
+    var lb=null;
+    function ensureLb(){
+      if(lb)return lb;
+      lb=document.createElement('div'); lb.className='lightbox'; lb.id='afLightbox';
+      lb.innerHTML='<div class="lbinner">'
+        +'<video id="afLbVideo" controls playsinline style="display:none;max-width:100%;border-radius:8px;max-height:70vh"></video>'
+        +'<img id="afLbImg" alt="" style="display:none;max-width:100%;border-radius:8px;max-height:70vh;object-fit:contain"/>'
+        +'<audio id="afLbAudio" controls style="display:none;width:90%"></audio>'
+        +'<div class="lbacts" id="afLbActs"></div></div>'
+        +'<div class="lx" id="afLbClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>';
+      (document.querySelector('.axroot')||document.body).appendChild(lb);
+      lb.addEventListener('click',function(e){ if(e.target===lb)closeLb(); });
+      lb.querySelector('#afLbClose').addEventListener('click',closeLb);
+      document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&lb&&lb.classList.contains('on'))closeLb(); });
+      return lb;
+    }
+    function closeLb(){ if(!lb)return; lb.classList.remove('on');
+      var v=document.getElementById('afLbVideo'); if(v){try{v.pause();}catch(e){} v.removeAttribute('src'); v.load&&v.load();}
+      var a=document.getElementById('afLbAudio'); if(a){try{a.pause();}catch(e){} a.removeAttribute('src');} }
+    function lba(svg,label,fn){ var d=document.createElement('div'); d.className='lba'; d.innerHTML=svg+' '+label; d.addEventListener('click',fn); return d; }
+    function openLightbox(it,ctx){
+      if(!it||!it.url)return; ensureLb(); ctx=ctx||{};
+      var cat=it.cat||'image';
+      var v=document.getElementById('afLbVideo'),img=document.getElementById('afLbImg'),au=document.getElementById('afLbAudio'),acts=document.getElementById('afLbActs');
+      v.style.display='none'; img.style.display='none'; au.style.display='none';
+      try{v.pause();}catch(e){} try{au.pause();}catch(e){}
+      if(cat==='video'){ v.style.display=''; v.src=it.url; v.muted=false; try{v.currentTime=0;}catch(e){} v.load&&v.load(); var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); }
+      else if(cat==='audio'||cat==='sfx'){ au.style.display=''; au.src=it.url; }
+      else { img.style.display=''; img.src=it.url; }
+      acts.innerHTML='';
+      acts.appendChild(lba(IC.imp,'AE import',function(){ ctx.onImport&&ctx.onImport(it); }));
+      if(ctx.refAllowed&&ctx.refAllowed(it)) acts.appendChild(lba(IC.ref,'Referens',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); }));
+      if(!ctx.isCEP) acts.appendChild(lba(IC.dl,'Yuklab olish',function(){ ctx.onDownload&&ctx.onDownload(it); }));
+      lb.classList.add('on');
+    }
+
+    // ---- UMUMIY karta ----
+    function actBtn(svg,title,fn,cls){ var b=document.createElement('b'); if(cls)b.className=cls; b.title=title; b.innerHTML=svg; b.addEventListener('click',fn); return b; }
+    function card(it,ctx){
+      ctx=ctx||{}; var cat=it.cat||'image';
+      var d=document.createElement('div'); d.className='rc'+(ctx.isSelected&&ctx.isSelected(it)?' sel':'');
+      if(cat==='video'){ if(typeof window.afVideoThumb==='function')d.appendChild(window.afVideoThumb(it.url)); else if(it.thumb)d.style.backgroundImage='url("'+it.thumb+'")';
+        var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML=IC.play; d.appendChild(pv); }
+      else if(cat==='audio'||cat==='sfx'){ var pa=document.createElement('div'); pa.className='pv'; pa.innerHTML=IC.aud; d.appendChild(pa); }
+      else { d.style.backgroundImage='url("'+(it.thumb||it.url)+'")'; }
+      var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(cat); d.appendChild(tg);
+      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
+      var ra=document.createElement('div'); ra.className='racts';
+      ra.appendChild(actBtn(IC.imp,"AE'ga import",function(e){ e.stopPropagation(); ctx.onImport&&ctx.onImport(it); }));
+      if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Referens qilib ishlatish',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
+      if(!ctx.isCEP) ra.appendChild(actBtn(IC.dl,'Yuklab olish',function(e){ e.stopPropagation(); ctx.onDownload&&ctx.onDownload(it); }));
+      ra.appendChild(actBtn(IC.x,"O'chirish",function(e){ e.stopPropagation(); ctx.onDelete&&ctx.onDelete(it); },'del'));
+      d.appendChild(ra);
+      var cb=document.createElement('div'); cb.className='rcb'; cb.innerHTML=IC.chk; d.appendChild(cb);
+      d.addEventListener('click',function(){ if(ctx.selecting&&ctx.selecting()){ ctx.onToggleSelect&&ctx.onToggleSelect(it,d); } else openLightbox(it,ctx); });
+      return d;
+    }
+    return { card: card, openLightbox: openLightbox, closeLightbox: closeLb, catLabel: catLabel };
+  })();
+
   function setBusy(b){var el=document.getElementById('busy');if(el)el.style.display=b?'inline-flex':'none';}
 
   // ===== MODELS =====
@@ -10021,25 +10110,12 @@ window.afGallery=(function(){
   var IC_AUD='<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
   function importMediaCat(url,cat){ var kind=cat==='video'?'video':(cat==='audio'||cat==='sfx')?'audio':'image'; if(typeof aiImportMedia==='function')aiImportMedia(url,kind,null); else toast('AE import — faqat After Effects ichida','info'); }
   function lbAct(svg,label,fn){ var d=document.createElement('div'); d.className='lba'; d.innerHTML=svg+' '+label; d.addEventListener('click',fn); return d; }
-  // item = string (rasm) yoki {url,cat}. Video/Ovoz → rasm o'rniga ikona + Import/Yuklab (Referensга yo'q).
+  // item = string (rasm) yoki {url,cat}. UMUMIY lightbox: rasm→<img>, video→<video controls autoplay>, ovoz→<audio>.
   function openLightbox(item){
     if(typeof item==='string')item={url:item,cat:'image'};
-    var lb=$('igLightbox'),im=$('igLbImg'),ph=$('igLbPh'),acts=$('igLbActs'); if(!lb||!item||!item.url)return;
-    var cat=item.cat||'image',url=item.url;
-    if(cat==='image'){ if(im){im.src=url;im.style.display='';} if(ph)ph.style.display='none'; }
-    else { if(im)im.style.display='none'; if(ph){ ph.style.display=''; ph.innerHTML=(cat==='video'?IC_VID:IC_AUD); } }
-    if(acts){
-      acts.innerHTML='';
-      acts.appendChild(lbAct(IC_IMP,'AE\'ga import',function(){ importMediaCat(url,cat); }));
-      if(cat==='image' && meta.refMode!=='none') acts.appendChild(lbAct(IC_REF,'Referensга',function(){ addRefReady(url); closeLightbox(); }));
-      acts.appendChild(lbAct(IC_DL,'Yuklab olish',function(){ downloadUrl(url); }));
-    }
-    lb.classList.add('on');
+    window.afRecent.openLightbox(item, igRecentCtx());
   }
-  function closeLightbox(){ var lb=$('igLightbox'); if(lb)lb.classList.remove('on'); }
-  (function(){ var x=$('igLbClose'); if(x)x.addEventListener('click',closeLightbox);
-    var lb=$('igLightbox'); if(lb)lb.addEventListener('click',function(e){ if(e.target===lb)closeLightbox(); });
-    document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&$('igLightbox')&&$('igLightbox').classList.contains('on'))closeLightbox(); }); })();
+  function closeLightbox(){ if(window.afRecent)window.afRecent.closeLightbox(); }
 
   // ---- SO'NGGI grid (katta kartali 2-ustun; hover ⬇/✕ · ☑ select batch o'chirish; Barchasi → Tarix) ----
   function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Ovoz':(c==='sfx')?'SFX':'Rasm'; }
@@ -10048,34 +10124,28 @@ window.afGallery=(function(){
   var RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
   function recentBatchEl(){ return $('igRecentBatch'); }
   function updRecentBatch(){ var b=recentBatchEl(); if(!b)return; b.classList.toggle('on',st.recentSelect); var bi=$('igRecentBI'); if(bi)bi.textContent=Object.keys(st.recentSel).length+' tanlandi'; }
+  // Image tool refKind (model-aware): edit modellar referens oladi (image/@imgN), t2i — yo'q.
+  function igRefKind(){ return (meta&&meta.refKind) || ((meta&&meta.refMode&&meta.refMode!=='none')?'image':'none'); }
+  // So'nggi-grid ctx — umumiy afRecent.card/openLightbox shundan foydalanadi (model-aware Referens shu yerda).
+  function igRecentCtx(){ return {
+    isCEP: IS_CEP,
+    selecting: function(){ return st.recentSelect; },
+    isSelected: function(it){ return !!(it.id&&st.recentSel[it.id]); },
+    onToggleSelect: function(it,d){ if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; } if(st.recentSel[it.id])delete st.recentSel[it.id]; else st.recentSel[it.id]=it; d.classList.toggle('sel',!!st.recentSel[it.id]); updRecentBatch(); },
+    onImport: function(it){ importMediaCat(it.url,it.cat); },
+    onDownload: function(it){ downloadUrl(it.url); },
+    onDelete: function(it){ recentDelete(it); },
+    refAllowed: function(it){ return igRefKind()==='image' && (it.cat||'image')==='image'; },
+    onRef: function(it){ addRefReady(it.url); } // image tool: @imgN referens stripга qo'shadi
+  }; }
   function renderRecentGrid(){
     var r=$('igRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(st.recentSelect?' selmode':'');
     // url bo'yicha dedup, eng yangisi oldinda
     var seen={},uniq=[]; st.recent.forEach(function(it){ if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } }); st.recent=uniq;
     if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha gen yo\'q</div>'; updRecentBatch(); return; }
-    uniq.slice(0,12).forEach(function(it){
-      var d=document.createElement('div'); d.className='rc'+(it.id&&st.recentSel[it.id]?' sel':''); if(it.thumb)d.style.backgroundImage='url("'+it.thumb+'")';
-      var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(it.cat); d.appendChild(tg);
-      if(it.cat==='video'){ var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv); }
-      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||'Natija'); d.appendChild(bd);
-      // hover amallar (normal rejim): ⬇ Yuklab · ✕ O'chirish
-      var ra=document.createElement('div'); ra.className='racts';
-      var dl=document.createElement('b'); dl.title='Yuklab olish'; dl.innerHTML=RC_DL; dl.addEventListener('click',function(e){ e.stopPropagation(); downloadUrl(it.url); }); ra.appendChild(dl);
-      var del=document.createElement('b'); del.className='del'; del.title='O\'chirish'; del.innerHTML=RC_X; del.addEventListener('click',function(e){ e.stopPropagation(); recentDelete(it); }); ra.appendChild(del);
-      d.appendChild(ra);
-      // checkbox (select rejim)
-      var cb=document.createElement('div'); cb.className='rcb'; cb.innerHTML=RC_CHK; d.appendChild(cb);
-      d.title=st.recentSelect?'Tanlash':'Ochish';
-      d.addEventListener('click',function(){
-        if(st.recentSelect){
-          if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; }
-          if(st.recentSel[it.id])delete st.recentSel[it.id]; else st.recentSel[it.id]=it;
-          d.classList.toggle('sel',!!st.recentSel[it.id]); updRecentBatch();
-        } else openLightbox(it); // rasm→lightbox; video/ovoz→ikona+amallar
-      });
-      r.appendChild(d);
-    });
+    var ctx=igRecentCtx();
+    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY karta
     updRecentBatch();
   }
   // bitta gen o'chirish (DELETE /gen/:jobId) — tasdiq bilan
@@ -10490,41 +10560,20 @@ window.afGallery=(function(){
     try{ var a=document.createElement('a'); a.href=it.url; a.download=(it.cat==='video'?'video.mp4':it.cat==='audio'||it.cat==='sfx'?'audio.mp3':'image.'+(urlExt(it.url)||'png')); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){}
   }
 
-  function openVgLightbox(it){
-    var lb=$('vgLightbox'),vid=$('vgLbVideo'),img=$('vgLbImg'),aud=$('vgLbAudio'),acts=$('vgLbActs');
-    if(!lb||!it||!it.url)return;
-    var cat=it.cat||'image';
-    lb.classList.add('on');
-    if(vid){ vid.style.display='none'; vid.pause(); vid.removeAttribute('src'); }
-    if(img){ img.style.display='none'; img.removeAttribute('src'); }
-    if(aud){ aud.style.display='none'; aud.pause(); aud.removeAttribute('src'); }
-    if(cat==='video'){ if(vid){ vid.style.display=''; vid.src=it.url; vid.load(); } }
-    else if(cat==='audio'||cat==='sfx'){ if(aud){ aud.style.display=''; aud.src=it.url; } }
-    else { if(img){ img.style.display=''; img.src=it.url; } }
-    if(acts){
-      acts.innerHTML='';
-      var ai=document.createElement('div'); ai.className='lba';
-      ai.innerHTML=VG_RC_IMP+' AE import';
-      ai.addEventListener('click',function(){ vgImport(it); });
-      acts.appendChild(ai);
-      // Referens — model-aware (faqat mos tur uchun chiqadi)
-      if(vgRefAllowed(it)){
-        var rf=document.createElement('div'); rf.className='lba';
-        rf.innerHTML=VG_RC_REF+' Referens';
-        rf.addEventListener('click',function(){ closeVgLightbox(); vgUseAsRef(it); });
-        acts.appendChild(rf);
-      }
-      if(!IS_CEP){
-        var dl=document.createElement('div'); dl.className='lba';
-        dl.innerHTML=VG_RC_DL+' Yuklab olish';
-        dl.addEventListener('click',function(){ vgDownload(it); });
-        acts.appendChild(dl);
-      }
-    }
-  }
-  function closeVgLightbox(){ var lb=$('vgLightbox'); if(lb)lb.classList.remove('on');
-    var vid=$('vgLbVideo'); if(vid){vid.pause();vid.removeAttribute('src');}
-    var aud=$('vgLbAudio'); if(aud){aud.pause();aud.removeAttribute('src');} }
+  // So'nggi-grid ctx — umumiy afRecent.card/openLightbox shundan foydalanadi (model-aware Referens shu yerda).
+  function vgRecentCtx(){ return {
+    isCEP: IS_CEP,
+    selecting: function(){ return vgRcState.selecting; },
+    isSelected: function(it){ return !!(it.id&&vgRcState.sel[it.id]); },
+    onToggleSelect: function(it,d){ if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; } if(vgRcState.sel[it.id])delete vgRcState.sel[it.id]; else vgRcState.sel[it.id]=it; d.classList.toggle('sel',!!vgRcState.sel[it.id]); updVgRcBatch(); },
+    onImport: function(it){ vgImport(it); },
+    onDownload: function(it){ vgDownload(it); },
+    onDelete: function(it){ vgRcDelete(it); },
+    refAllowed: function(it){ return vgRefAllowed(it); },
+    onRef: function(it){ vgUseAsRef(it); }
+  }; }
+  function openVgLightbox(it){ window.afRecent.openLightbox(it, vgRecentCtx()); } // UMUMIY lightbox
+  function closeVgLightbox(){ if(window.afRecent)window.afRecent.closeLightbox(); }
 
   // ── Referens model-aware: joriy model refKind'iga qarab karta turi mosmi? ──
   function vgRefAllowed(it){
@@ -10559,50 +10608,8 @@ window.afGallery=(function(){
     r.className='recentgrid'+(vgRcState.selecting?' selmode':'');
     var seen={},uniq=[]; vgRcState.items.forEach(function(it){ if(it&&it.url&&!seen[it.url]){seen[it.url]=1;uniq.push(it);} }); vgRcState.items=uniq;
     if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha gen yo\'q</div>'; updVgRcBatch(); return; }
-    uniq.slice(0,12).forEach(function(it){
-      var cat=it.cat||'image';
-      var d=document.createElement('div'); d.className='rc'+(it.id&&vgRcState.sel[it.id]?' sel':'');
-      if(cat==='video'){ // video → <video> birinchi kadri (qora bo'lmasin): #t media-fragment + seek
-        var vthumb=document.createElement('video'); vthumb.src=it.url+(/#/.test(it.url)?'':'#t=0.1'); vthumb.muted=true; vthumb.setAttribute('muted',''); vthumb.playsInline=true; vthumb.setAttribute('playsinline',''); vthumb.preload='metadata';
-        vthumb.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:#000';
-        try{ var _sk=false; var _seek=function(){ if(_sk)return; try{vthumb.currentTime=0.1;}catch(e){} }; vthumb.addEventListener('loadedmetadata',_seek); vthumb.addEventListener('loadeddata',_seek); vthumb.addEventListener('seeked',function(){_sk=true;}); }catch(e){}
-        d.appendChild(vthumb);
-        var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv);
-      } else if(cat==='audio'||cat==='sfx'){ // ovoz/sfx → ikona (vizual yo'q)
-        var pv2=document.createElement('div'); pv2.className='pv'; pv2.innerHTML=VG_IC_AUD; d.appendChild(pv2);
-      } else { // rasm → bg
-        d.style.backgroundImage='url("'+(it.thumb||it.url)+'")';
-      }
-      var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(cat); d.appendChild(tg);
-      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
-      // hover amallar: ⤓ Import · ↺ Referens(model-aware) · ⬇ Yuklab(non-CEP) · ✕ O'chirish
-      var ra=document.createElement('div'); ra.className='racts';
-      var imp=document.createElement('b'); imp.title="AE'ga import"; imp.innerHTML=VG_RC_IMP;
-      (function(item){ imp.addEventListener('click',function(e){ e.stopPropagation(); vgImport(item); }); })(it);
-      ra.appendChild(imp);
-      if(vgRefAllowed(it)){
-        var rf=document.createElement('b'); rf.title='Referens qilib ishlatish'; rf.innerHTML=VG_RC_REF;
-        (function(item){ rf.addEventListener('click',function(e){ e.stopPropagation(); vgUseAsRef(item); }); })(it);
-        ra.appendChild(rf);
-      }
-      if(!IS_CEP){
-        var dl=document.createElement('b'); dl.title='Yuklab olish'; dl.innerHTML=VG_RC_DL;
-        (function(item){ dl.addEventListener('click',function(e){ e.stopPropagation(); vgDownload(item); }); })(it);
-        ra.appendChild(dl);
-      }
-      var del=document.createElement('b'); del.className='del'; del.title='O\'chirish'; del.innerHTML=VG_RC_X;
-      (function(item){ del.addEventListener('click',function(e){ e.stopPropagation(); vgRcDelete(item); }); })(it);
-      ra.appendChild(del); d.appendChild(ra);
-      var cb=document.createElement('div'); cb.className='rcb'; cb.innerHTML=VG_RC_CHK; d.appendChild(cb);
-      d.addEventListener('click',function(){
-        if(vgRcState.selecting){
-          if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; }
-          if(vgRcState.sel[it.id])delete vgRcState.sel[it.id]; else vgRcState.sel[it.id]=it;
-          d.classList.toggle('sel',!!vgRcState.sel[it.id]); updVgRcBatch();
-        } else openVgLightbox(it);
-      });
-      r.appendChild(d);
-    });
+    var ctx=vgRecentCtx();
+    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY karta
     updVgRcBatch();
   }
   function vgRcDelete(it){
