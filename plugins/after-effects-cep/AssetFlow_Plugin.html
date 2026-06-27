@@ -2216,6 +2216,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px}
 .axroot .logo{width:25px;height:25px;border-radius:8px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-weight:900;font-size:13px}
 .axroot .right{display:flex;align-items:center;gap:6px}
+.axroot .ailead .spacer{flex:1}
 .axroot .ib{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:#121317;display:grid;place-items:center;color:var(--mut);font-size:12px;cursor:pointer}
 .axroot .ib:hover{color:var(--txt)}
 .axroot .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800;cursor:pointer}
@@ -2521,10 +2522,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* ===== Rasm yaratish tool — tool-image.html 1:1, .axig scope ===== */
 .axroot #v-imggen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
 /* .axig position:relative QO'YMAYMIZ — sheet'lar to'liq balandlikdagi .axroot .app'ga (pastga) yopishishi uchun */
-.axig .igtop{display:flex;align-items:center;gap:9px;padding:2px 2px 12px;margin-bottom:2px;flex:0 0 auto;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:6}
-.axig .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.axig .igtop{display:flex;align-items:center;gap:7px;padding:2px 2px 12px;margin-bottom:2px;flex:0 0 auto;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:6}
+.axig .igtop .ig-hist{width:28px;height:28px}
+.axig .back{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line2);padding:6px 9px;border-radius:9px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
 .axig .back:hover{color:var(--txt);border-color:var(--mut2)}
-.axig .ttl{font-weight:800;font-size:15px;display:flex;align-items:center;gap:7px}
+.axig .ttl{font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0;overflow:hidden}
 .axig .spacer{flex:1}
 .axig .pro{border:1px solid var(--acc2);color:var(--acc);border-radius:999px;padding:5px 10px;font-size:11.5px;font-weight:800;white-space:nowrap}
 .axig .ig-hist{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer;flex:0 0 auto}
@@ -3103,13 +3105,13 @@ html.home-mode #homePage{display:block!important}
                   
                       <!-- AI LAUNCHER — 4 kategoriya (2×2 grid, JS aiRenderCatGrid() tomonidan) -->
                       <section id="v-launcher" class="view on">
-                        <div class="ailead"><span class="exit" data-go="main">‹ Asosiy</span><b>✦ AI Tools</b></div>
+                        <div class="ailead"><span class="exit" data-go="main">‹ Asosiy</span><b>✦ AI Tools</b><div class="spacer"></div><div class="ib" data-go="history" title="Tarix">🕘</div><div class="ib" data-go="settings" title="Sozlamalar">⚙</div><div class="pro" data-go="settings" id="aiLeadCredL">✦ —</div></div>
                         <div class="cats" id="aiCatGrid"></div>
                       </section>
 
                       <!-- AI KATEGORIYA ICHI — aiOpenCat() tomonidan to'ldiriladi -->
                       <section id="v-aicat" class="view">
-                        <div class="ailead"><span class="exit" data-go="launcher">‹ AI Tools</span><b id="aiCatTitle"></b></div>
+                        <div class="ailead"><span class="exit" data-go="launcher">‹ AI Tools</span><b id="aiCatTitle"></b><div class="spacer"></div><div class="ib" data-go="history" title="Tarix">🕘</div><div class="ib" data-go="settings" title="Sozlamalar">⚙</div><div class="pro" data-go="settings" id="aiLeadCredA">✦ —</div></div>
                         <div id="aiCatTools"></div>
                       </section>
 
@@ -3121,6 +3123,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="ttl"><span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span> Rasm yaratish</div>
                             <div class="spacer"></div>
                             <div class="ig-hist" id="igHist" title="Tarix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ig-hist" id="igSet" title="Sozlamalar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                             <div class="pro" id="igCredit">✦ —</div>
                           </div>
 
@@ -3233,6 +3236,8 @@ html.home-mode #homePage{display:block!important}
                             <div class="back" id="vgBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> AI Tools</div>
                             <div class="ttl"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.55-2.85A1 1 0 0 1 21 8v8a1 1 0 0 1-1.45.85L15 14z"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg></span> Video yaratish</div>
                             <div class="spacer"></div>
+                            <div class="ig-hist" id="vgHist" title="Tarix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ig-hist" id="vgSet" title="Sozlamalar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                             <div class="pro" id="vgCredit">✦ —</div>
                           </div>
 
@@ -8813,8 +8818,12 @@ async function bootPlugin(){
   var balance=606, lowDemo=false, errMode=false, emptyDemo=false, importTarget='comp', toastT;
   function toast(m,k){var t=document.getElementById('axToast');t.textContent=m;t.className='on'+(k?' '+k:'');clearTimeout(toastT);toastT=setTimeout(function(){t.className='';},2200);}
   function soon(){toast("⏳ Tez orada · keyingi faza",'warn');}
-  function bal(){return lowDemo?5:606;}
-  function syncBal(){document.getElementById('balTop').textContent=bal();document.getElementById('balSet').textContent=bal();}
+  // Kredit — YAGONA manba: AssetFlowAccount.aiCredits (demo 606 emas). Header'lar shundan o'qiydi → bir xil qiymat.
+  function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
+  function bal(){ if(lowDemo)return 5; var v=aiCredReal(); if(v!=null)return v; return 606; }
+  function syncBal(){var b=document.getElementById('balTop');if(b)b.textContent=bal();var s=document.getElementById('balSet');if(s)s.textContent=bal();aiLeadSync();}
+  // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
+  function aiLeadSync(){ var v=aiCredReal(); var t=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; var a=document.getElementById('aiLeadCredL'); if(a)a.textContent=t; var c=document.getElementById('aiLeadCredA'); if(c)c.textContent=t; }
   function setBusy(b){var el=document.getElementById('busy');if(el)el.style.display=b?'inline-flex':'none';}
 
   // ===== MODELS =====
@@ -8852,7 +8861,9 @@ async function bootPlugin(){
     if(id==='history')renderHistory('all');
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
-    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen')?'none':'';
+    // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
+    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='launcher'||id==='aicat')?'none':'';
+    syncBal(); // kredit yagona manba (real aiCredits) — balTop + AI Tools ixcham header sinxron
     if(id==='imggen'&&typeof window.axIGRefresh==='function'){try{window.axIGRefresh();}catch(e){}}
   }
 
@@ -10115,6 +10126,7 @@ window.afGallery=(function(){
 
   // ---- header 🕘 → Tarix view (xuddi "Barchasi →" kabi) ----
   var igHist=$('igHist'); if(igHist)igHist.addEventListener('click',openHistory);
+  var igSet=$('igSet'); if(igSet)igSet.addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('settings'); });
 
   // ---- ↺ Tozalash — faqat KIRISH (prompt + referens) tozalanadi; NATIJA tegmaydi ----
   var igClear=$('igClearBtn');
@@ -10677,6 +10689,7 @@ window.afGallery=(function(){
   $('vgGen').addEventListener('click',genVgClick);
   $('vgPrompt').addEventListener('keydown',function(e){ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); if(!$('vgGen').disabled)genVgClick(); } });
   $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('aicat'); });
+  (function(){ var h=$('vgHist'); if(h)h.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('history'); }); var s=$('vgSet'); if(s)s.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('settings'); }); })();
   $('vgPrompt').addEventListener('input',refreshVgBtn);
 
   ensureVgMeta().catch(function(){});
