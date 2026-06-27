@@ -194,11 +194,20 @@ studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   });
 });
 
+// params hajmi cheklanadi — z.record(z.any()) cheksiz; ulkan obyekt DB'ga yoziladi + har quote/gen'da
+// hash qilinadi (DoS/storage-amplifikatsiya). Haqiqiy params (sozlama + referens URL'lar) ≪16KB.
+const boundedParams = z
+  .record(z.any())
+  .refine((p) => {
+    try { return JSON.stringify(p).length <= 16384; } catch { return false; }
+  }, "params juda katta")
+  .optional();
+
 /** POST /gen/cost-quote — imzolangan narx (klient narxni soxtalashtira olmaydi). */
 const quoteSchema = z.object({
   modelId: z.number().int(),
   mode: z.enum(GEN_MODES),
-  params: z.record(z.any()).optional(),
+  params: boundedParams,
 });
 studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
   const p = quoteSchema.safeParse(req.body);
@@ -265,7 +274,7 @@ const genSchema = z.object({
   mode: z.enum(GEN_MODES),
   prompt: z.string().trim().min(2, "Prompt juda qisqa").max(5000, "Prompt juda uzun (maks 5000 belgi)"),
   modelId: z.number().int(),
-  params: z.record(z.any()).optional(),
+  params: boundedParams,
   price: z.number().int().nonnegative(),
   costQuoteSignature: z.string().min(10),
 });

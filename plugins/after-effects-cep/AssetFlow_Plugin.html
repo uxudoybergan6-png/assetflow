@@ -3109,7 +3109,7 @@ html.home-mode #homePage{display:block!important}
                 <div id="aiPage" style="display:none">
                   <div class="axroot">
                   <div class="app" id="app">
-                    <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="right"><span id="busy" class="busybadge" data-go="history" style="display:none">⟳ ishlanmoqda</span><div class="ib" data-go="history">🕘</div><div class="ib" data-go="settings">⚙</div><div class="ib" data-go="launcher">⌂</div><div class="pro" data-go="settings">✦ <span id="balTop">606</span></div></div></div>
+                    <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="right"><span id="busy" class="busybadge" data-go="history" style="display:none">⟳ ishlanmoqda</span><div class="ib" data-go="history">🕘</div><div class="ib" data-go="settings">⚙</div><div class="ib" data-go="launcher">⌂</div><div class="pro" data-go="settings">✦ <span id="balTop">—</span></div></div></div>
                     <div class="scroll">
                   
                       <!-- v-main: plaginда bor, ko'chirilmadi -->
@@ -3228,15 +3228,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="pillrow" id="igNPills"></div>
                           </div></div>
 
-                          <!-- lightbox (natijani to'liq ko'rish + amal paneli) -->
-                          <div class="lightbox" id="igLightbox">
-                            <div class="lbinner">
-                              <img id="igLbImg" alt="">
-                              <div class="lbph" id="igLbPh" style="display:none"></div>
-                              <div class="lbacts" id="igLbActs"></div>
-                            </div>
-                            <div class="lx" id="igLbClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>
-                          </div>
+                          <!-- lightbox: umumiy #afLightbox (afRecent) ishlatiladi — eski #igLightbox olib tashlandi -->
                         </div>
                       </section>
 
@@ -3293,9 +3285,9 @@ html.home-mode #homePage{display:block!important}
                             </div>
                             <!-- Video So'nggi genlar -->
                             <div class="sect" id="vgRecentSect">
-                              <div class="lbl">So'nggi <span class="recsel" id="vgRecentSel">☑ Tanlash</span><span class="morelink" id="vgMoreVid" style="margin-left:auto">Barchasi →</span></div>
+                              <div class="lbl">So'nggi <span class="recsel" id="vgRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Tanlash</span><span class="morelink" id="vgMoreVid" style="margin-left:auto">Barchasi →</span></div>
                               <div class="recentgrid" id="vgRecent"></div>
-                              <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 tanlandi</span><div class="bb del" id="vgRecentDel">✕ O'chirish</div><div class="bb" id="vgRecentCancel">Bekor</div></div>
+                              <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 tanlandi</span><div class="bb del" id="vgRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> O'chirish</div><div class="bb" id="vgRecentCancel">Bekor</div></div>
                             </div>
                           </div>
 
@@ -3340,16 +3332,7 @@ html.home-mode #homePage{display:block!important}
                             <div id="vgMList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div class="axighint">Kelajakda ko'proq video model qo'shiladi</div>
                           </div></div>
-                          <!-- So'nggi lightbox (rasm / video / ovoz) -->
-                          <div class="lightbox" id="vgLightbox">
-                            <div class="lbinner">
-                              <video id="vgLbVideo" controls playsinline style="display:none;max-width:100%;border-radius:8px;max-height:70vh"></video>
-                              <img id="vgLbImg" alt="" style="display:none;max-width:100%;border-radius:8px;max-height:70vh;object-fit:contain"/>
-                              <audio id="vgLbAudio" controls style="display:none;width:100%"></audio>
-                              <div class="lbacts" id="vgLbActs"></div>
-                            </div>
-                            <div class="lx" id="vgLbClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>
-                          </div>
+                          <!-- lightbox: umumiy #afLightbox (afRecent) ishlatiladi — eski #vgLightbox olib tashlandi -->
 
                           <!-- Referens kadr slot menyusi -->
                           <div class="sheet" id="vgRefSlotSheet"><div class="sheetc">
@@ -3489,7 +3472,7 @@ html.home-mode #homePage{display:block!important}
                       <!-- SETTINGS -->
                       <section id="v-settings" class="view">
                         <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>⚙ Sozlama</b></div></div>
-                        <div class="setrow">Kredit balansи <b style="color:var(--acc);margin-left:6px" id="balSet">606</b><span class="buybtn" style="margin-left:auto" data-toast="Tarif/kredit sahifasi">Kredit to'ldirish</span></div>
+                        <div class="setrow">Kredit balansи <b style="color:var(--acc);margin-left:6px" id="balSet">—</b><span class="buybtn" style="margin-left:auto" data-toast="Tarif/kredit sahifasi">Kredit to'ldirish</span></div>
                         <div class="setrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
                         <div class="setrow">Auto-load (Project tanlovi)<div class="sw2 on" data-toggle style="margin-left:auto"></div></div>
                         <div class="setrow">Demo: media tanlanmagan (empty)<div class="sw2" id="emptyToggle" data-toggle style="margin-left:auto"></div></div>
@@ -8832,7 +8815,8 @@ async function bootPlugin(){
   // Kredit — YAGONA manba: AssetFlowAccount.aiCredits (demo 606 emas). Header'lar shundan o'qiydi → bir xil qiymat.
   function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
   function bal(){ if(lowDemo)return 5; var v=aiCredReal(); if(v!=null)return v; return 606; }
-  function syncBal(){var b=document.getElementById('balTop');if(b)b.textContent=bal();var s=document.getElementById('balSet');if(s)s.textContent=bal();aiLeadSync();}
+  // Displey: real kredit (yoki '—' yuklanmaguncha) — demo 606 EMAS. bal() (raqam) eski estimate uchun qoladi.
+  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):(lowDemo?'5':'—');var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();}
   // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
   function aiLeadSync(){ var v=aiCredReal(); var t=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; var a=document.getElementById('aiLeadCredL'); if(a)a.textContent=t; var c=document.getElementById('aiLeadCredA'); if(c)c.textContent=t; }
   // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
@@ -8952,9 +8936,9 @@ async function bootPlugin(){
   var PA=[];
 
   function go(id){
-    // Har view almashganda "Rasm yaratish" poll/progress timerlarini tozalaymiz (leak fix — audit).
-    // imggen'gа kirishда ham xavfsiz (faol gen yo'q → no-op; keyingi genClick cancelled'ni qayta tiklaydi).
+    // Har view almashganda Rasm/Video tool poll/progress timerlari + inline pleyer ovozini tozalaymiz (leak fix — audit).
     if(typeof window.axIGTeardown==='function'){ try{ window.axIGTeardown(); }catch(e){} }
+    if(typeof window.axVGTeardown==='function'){ try{ window.axVGTeardown(); }catch(e){} }
     if(id==='main'||id==='home'){ if(typeof window.goHome==='function')window.goHome(); return; } // ‹ Asosiy → Home
     closeSheet();
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
@@ -10664,7 +10648,7 @@ window.afGallery=(function(){
     }).catch(function(){ vgRcState.loaded=false; });
   }
   // lightbox
-  (function(){ var lb=$('vgLightbox'); if(lb)lb.addEventListener('click',function(e){ if(e.target===lb)closeVgLightbox(); }); var cl=$('vgLbClose'); if(cl)cl.addEventListener('click',closeVgLightbox); document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&$('vgLightbox')&&$('vgLightbox').classList.contains('on'))closeVgLightbox(); }); })();
+  // (eski #vgLightbox wiring olib tashlandi — umumiy afRecent #afLightbox o'z close/Esc/backdrop'ini boshqaradi)
   // Referens kadr slot menyusi (Boshlang'ich / Yakuniy)
   (function(){
     var s=$('vgRefStart'); if(s)s.addEventListener('click',function(){ var u=_pendingRefUrl; _pendingRefUrl=null; closeVgSheets(); setFrameFromUrl(u,'start'); });
@@ -10715,6 +10699,16 @@ window.afGallery=(function(){
   $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('aicat'); });
   (function(){ var h=$('vgHist'); if(h)h.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('history'); }); var s=$('vgSet'); if(s)s.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('settings'); }); })();
   $('vgPrompt').addEventListener('input',refreshVgBtn);
+
+  // View'дан chiqishда video joblar timer/network + inline pleyer ovozini to'xtatamiz (leak oldini olish — igScript naqshi).
+  function teardownVg(){
+    activeJobs.forEach(function(j){ j.cancelled=true; if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} });
+    activeJobs=[]; renderVgJobs();
+    var v=$('vgVideo'); if(v){ try{v.pause();}catch(e){} }
+    if(window.afRecent&&window.afRecent.closeLightbox)window.afRecent.closeLightbox();
+    refreshVgBtn();
+  }
+  window.axVGTeardown=teardownVg;
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();

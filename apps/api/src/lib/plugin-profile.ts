@@ -360,7 +360,15 @@ export async function consumeAiCredits(userId: string, cost: number) {
 /** Provayder xato bersa sarflangan kreditni qaytaradi (foydalanuvchi bekorga to'lamasin). */
 export async function refundAiCredits(userId: string, cost: number) {
   if (cost <= 0) return;
-  await prisma.pluginProfile.update({
+  // ADMIN consume paytida kredit kamaytirmaydi (cheksiz) → refund ham QILMASLIK kerak,
+  // aks holda har muvaffaqiyatsiz genда admin balansiga kredit "yaratiladi" (consume/refund asimmetriyasi).
+  const prof = await prisma.pluginProfile.findUnique({
+    where: { userId },
+    include: { user: { select: { role: true } } },
+  });
+  if (!prof || prof.user.role === "ADMIN") return;
+  // updateMany → profil yo'q bo'lsa no-op (update P2025 throw EMAS).
+  await prisma.pluginProfile.updateMany({
     where: { userId },
     data: { aiCredits: { increment: cost } },
   });
