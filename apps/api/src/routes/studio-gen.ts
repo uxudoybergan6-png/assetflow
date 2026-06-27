@@ -24,6 +24,7 @@ import {
   getReferenceMode,
   modelAcceptsReference,
   firstReferenceModel,
+  getRefKind,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import {
@@ -185,8 +186,10 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
 /** GET /gen/models?mode= — model katalog. */
 studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   const mode = req.query.mode ? String(req.query.mode) : undefined;
+  const base = mode ? getModelsByMode(mode) : GEN_MODELS;
   res.json({
-    models: mode ? getModelsByMode(mode) : GEN_MODELS,
+    // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
+    models: base.map((m) => ({ ...m, refKind: getRefKind(m) })),
     configured: isOpenRouterConfigured(),
   });
 });

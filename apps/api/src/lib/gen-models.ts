@@ -54,6 +54,9 @@ export type GenModel = {
   cost: number; // image/voice: sobit; video: soniya boshiga kredit
   referenceMode?: ReferenceMode; // reference rasm qo'llashi (default mode'dan kelib chiqadi)
   refMode?: "none" | "optional" | "required"; // frontend model-aware: referens majburiymi
+  // So'nggi-grid "Referens" tugmasi model-aware turi (deklaratsiya bo'lmasa getRefKind derive qiladi):
+  //  frames=Boshlang'ich/Yakuniy IMAGE kadr (i2v) · image=@imgN ref-strip · video/imagevideo=video/rasm ref · none=referens yo'q
+  refKind?: "frames" | "image" | "video" | "imagevideo" | "none";
   maxRefs?: number; // referens chegarasi (schemada yo'q bo'lsa frontend 10 deb oladi)
   brand?: string; // model egasi: "openai" | "google" | "bytedance" | "bfl"
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
@@ -666,6 +669,7 @@ export const GEN_MODELS: GenModel[] = [
     refMode: "required",
     maxRefs: 1,
     endFrame: true,
+    refKind: "frames", // So'nggi-grid: RASM karta → Boshlang'ich/Yakuniy kadr; VIDEO karta → faqat Import
     inputs: ["start-end-frame"],
     aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
     resolutions: ["480p", "720p"],
@@ -715,6 +719,28 @@ export function getReferenceMode(model: GenModel): ReferenceMode {
 /** Model reference rasm qabul qiladimi (none → qabul qilmaydi). */
 export function modelAcceptsReference(model: GenModel): boolean {
   return getReferenceMode(model) !== "none";
+}
+
+/**
+ * So'nggi-grid "Referens" tugmasi uchun model-aware tur. Deklaratsiya (refKind) bo'lmasa
+ * mode + referenceMode'dan derive qilinadi (eski modellar uchun ham xavfsiz):
+ *  - video + ref qabul qiladi (endFrame/start-end-frame/image-ref/video-ref) → "frames" (start/end IMAGE)
+ *  - video + referenssiz (t2v) → "none"
+ *  - image + edit → "image" (@imgN ref-strip) · image + referenssiz (t2i) → "none"
+ */
+export function getRefKind(
+  model: GenModel
+): "frames" | "image" | "video" | "imagevideo" | "none" {
+  if (model.refKind) return model.refKind;
+  const rm = getReferenceMode(model);
+  if (model.mode === "video") {
+    if (rm === "none") return "none";
+    const inp = model.inputs || [];
+    if (model.endFrame || inp.includes("start-end-frame") || inp.includes("image-ref")) return "frames";
+    return rm === "video-ref" ? "frames" : "none";
+  }
+  if (model.mode === "image") return rm === "none" ? "none" : "image";
+  return "none";
 }
 
 /** Video model End kadr (last_frame) qo'llaydimi (/videos/models bilan tasdiqlangan). */

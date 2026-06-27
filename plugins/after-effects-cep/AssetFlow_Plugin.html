@@ -2670,7 +2670,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* ===== Video yaratish tool — .axvg scope ===== */
 .axroot #v-vidgen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
 .axvg .frames{display:flex;gap:8px;margin-bottom:10px}
-.axvg .frame{flex:1}.axvg .fbox{height:90px;width:100%;border:1.5px dashed var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card)}.axvg .fcap{font-size:10px;color:var(--mut2);text-align:center;margin-top:5px}
+.axvg .frame{flex:1}.axvg .fbox{height:78px;width:100%;border:1.5px dashed var(--line2);border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card)}.axvg .fcap{font-size:9.5px;color:var(--mut2);text-align:center;margin-top:4px}
 .axvg .fbox:hover{border-color:var(--acc2)}
 .axvg .fbox.has-img{border-style:solid;border-color:var(--line2)}
 .axvg .fbox .fbi{font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:3px;position:relative;z-index:1}
@@ -3324,14 +3324,23 @@ html.home-mode #homePage{display:block!important}
                             <div id="vgMList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div class="axighint">Kelajakda ko'proq video model qo'shiladi</div>
                           </div></div>
-                          <!-- Video lightbox -->
+                          <!-- So'nggi lightbox (rasm / video / ovoz) -->
                           <div class="lightbox" id="vgLightbox">
                             <div class="lbinner">
-                              <video id="vgLbVideo" controls playsinline style="max-width:100%;border-radius:8px;max-height:70vh"></video>
+                              <video id="vgLbVideo" controls playsinline style="display:none;max-width:100%;border-radius:8px;max-height:70vh"></video>
+                              <img id="vgLbImg" alt="" style="display:none;max-width:100%;border-radius:8px;max-height:70vh;object-fit:contain"/>
+                              <audio id="vgLbAudio" controls style="display:none;width:100%"></audio>
                               <div class="lbacts" id="vgLbActs"></div>
                             </div>
                             <div class="lx" id="vgLbClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>
                           </div>
+
+                          <!-- Referens kadr slot menyusi -->
+                          <div class="sheet" id="vgRefSlotSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Referens kadr</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="opt" id="vgRefStart"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div><div><b>Boshlang'ich kadrga</b><small>start frame</small></div></div>
+                            <div class="opt" id="vgRefEnd"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg></div><div><b>Yakuniy kadrga</b><small>end frame</small></div></div>
+                          </div></div>
                         </div>
                       </section>
 
@@ -10130,7 +10139,7 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
-  var vm={loaded:false,model:null,res:'720p',dur:'Auto',ar:'Auto',audio:true,
+  var vm={loaded:false,model:null,res:'720p',dur:'Auto',ar:'Auto',audio:true,refKind:'frames',
     resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','15'],
     arOpts:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],
     perSec:{'480p':8,'720p':12},autoSec:5,sessionId:null};
@@ -10219,6 +10228,7 @@ window.afGallery=(function(){
       var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.mode==='video'; });
       if(!fal.length)throw new Error('Video model topilmadi');
       var m=fal[0]; vm.model=m; vm.models=fal; vm.loaded=true;
+      vm.refKind=m.refKind||'frames'; // model-aware So'nggi-grid "Referens" (Seedance → frames)
       var vs=m.videoSettings;
       if(vs){
         if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; vm.res=vs.resolution.def||vm.res; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
@@ -10430,7 +10440,7 @@ window.afGallery=(function(){
     var url=(assets&&assets[0]&&assets[0].url)||null;
     if(!url){ toast('Natija bo\'sh','warning'); return; }
     try{ if(!vgRcState.items.some(function(x){return x.url===url;})){
-      vgRcState.items.unshift({id:(j&&j.jobId)||null,url:url,thumb:url,title:(j&&j.prompt)||'Video'});
+      vgRcState.items.unshift({id:(j&&j.jobId)||null,url:url,thumb:null,title:(j&&j.prompt)||'Video',cat:'video'});
       vgRcState.items=vgRcState.items.slice(0,12);} renderVgRecent(); }catch(_){}
     var res=$('vgRes'); if(res)res.style.display='';
     var vid=$('vgVideo'); if(vid){ vid.src=url; vid.load(); }
@@ -10447,31 +10457,88 @@ window.afGallery=(function(){
     }
   }
 
-  // ── video So'nggi grid (2-ustun; ▶ overlay; hover ✕; ☑ batch; lightbox) ──
+  // ── So'nggi grid (2-ustun; HAMMA tur: rasm/video/ovoz; to'g'ri badge; hover Import/Referens/⬇/✕; ☑ batch; lightbox) ──
   var VG_RC_X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
   var VG_RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+  var VG_RC_IMP='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
+  var VG_RC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
+  var VG_RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
+  var VG_IC_AUD='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
   var vgRcState={items:[],sel:{},selecting:false,loaded:false};
+  function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Ovoz':(c==='sfx')?'SFX':'Rasm'; }
+  function urlExt(u){ var m=String(u||'').match(/\.(\w{2,5})(?:\?|#|$)/); return m?m[1].toLowerCase():''; }
+  function vgImport(it){
+    if(typeof aiImportMedia!=='function'){ toast('AE import — faqat After Effects ichida','info'); return; }
+    var cat=it.cat||'image';
+    var kind=cat==='video'?'video':(cat==='audio'||cat==='sfx')?'audio':'image';
+    aiImportMedia(it.url,kind,urlExt(it.url)||null);
+  }
+  function vgDownload(it){
+    if(IS_CEP){ toast('Yuklab olish — AE Project panelга import qiling','info'); return; }
+    try{ var a=document.createElement('a'); a.href=it.url; a.download=(it.cat==='video'?'video.mp4':it.cat==='audio'||it.cat==='sfx'?'audio.mp3':'image.'+(urlExt(it.url)||'png')); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){}
+  }
 
   function openVgLightbox(it){
-    var lb=$('vgLightbox'),vid=$('vgLbVideo'),acts=$('vgLbActs');
+    var lb=$('vgLightbox'),vid=$('vgLbVideo'),img=$('vgLbImg'),aud=$('vgLbAudio'),acts=$('vgLbActs');
     if(!lb||!it||!it.url)return;
+    var cat=it.cat||'image';
     lb.classList.add('on');
-    if(vid){ vid.src=it.url; vid.load(); }
+    if(vid){ vid.style.display='none'; vid.pause(); vid.removeAttribute('src'); }
+    if(img){ img.style.display='none'; img.removeAttribute('src'); }
+    if(aud){ aud.style.display='none'; aud.pause(); aud.removeAttribute('src'); }
+    if(cat==='video'){ if(vid){ vid.style.display=''; vid.src=it.url; vid.load(); } }
+    else if(cat==='audio'||cat==='sfx'){ if(aud){ aud.style.display=''; aud.src=it.url; } }
+    else { if(img){ img.style.display=''; img.src=it.url; } }
     if(acts){
       acts.innerHTML='';
       var ai=document.createElement('div'); ai.className='lba';
-      ai.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> AE import';
-      ai.addEventListener('click',function(){ if(typeof aiImportMedia==='function')aiImportMedia(it.url,'video','mp4'); else toast('Faqat AE ichida','info'); });
+      ai.innerHTML=VG_RC_IMP+' AE import';
+      ai.addEventListener('click',function(){ vgImport(it); });
       acts.appendChild(ai);
+      // Referens — model-aware (faqat mos tur uchun chiqadi)
+      if(vgRefAllowed(it)){
+        var rf=document.createElement('div'); rf.className='lba';
+        rf.innerHTML=VG_RC_REF+' Referens';
+        rf.addEventListener('click',function(){ closeVgLightbox(); vgUseAsRef(it); });
+        acts.appendChild(rf);
+      }
       if(!IS_CEP){
         var dl=document.createElement('div'); dl.className='lba';
-        dl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Yuklab olish';
-        dl.addEventListener('click',function(){ try{var a=document.createElement('a');a.href=it.url;a.download='seedance-video.mp4';document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){} });
+        dl.innerHTML=VG_RC_DL+' Yuklab olish';
+        dl.addEventListener('click',function(){ vgDownload(it); });
         acts.appendChild(dl);
       }
     }
   }
-  function closeVgLightbox(){ var lb=$('vgLightbox'); if(lb)lb.classList.remove('on'); var vid=$('vgLbVideo'); if(vid){vid.pause();vid.src='';} }
+  function closeVgLightbox(){ var lb=$('vgLightbox'); if(lb)lb.classList.remove('on');
+    var vid=$('vgLbVideo'); if(vid){vid.pause();vid.removeAttribute('src');}
+    var aud=$('vgLbAudio'); if(aud){aud.pause();aud.removeAttribute('src');} }
+
+  // ── Referens model-aware: joriy model refKind'iga qarab karta turi mosmi? ──
+  function vgRefAllowed(it){
+    var rk=vm.refKind||'frames'; var cat=it.cat||'image';
+    if(rk==='frames')return cat==='image';      // i2v: faqat RASM → Boshlang'ich/Yakuniy kadr
+    if(rk==='imagevideo')return cat==='image'||cat==='video';
+    if(rk==='video')return cat==='video';
+    if(rk==='image')return cat==='image';        // (video toolда ref-strip yo'q — amalda 'frames' ishlaydi)
+    return false;                                // 'none' → Referens yo'q
+  }
+  var _pendingRefUrl=null;
+  function vgUseAsRef(it){
+    var rk=vm.refKind||'frames';
+    if(rk==='frames'){ // RASM → qaysi kadr slotiga? menyu (Boshlang'ich / Yakuniy)
+      _pendingRefUrl=it.url; openVgSheet('vgRefSlotSheet'); return;
+    }
+    // (kelajak refKind'lar uchun joy — video toolда hozir faqat 'frames')
+    toast('Bu model uchun referens qo\'llab-quvvatlanmaydi','info');
+  }
+  function setFrameFromUrl(url,which){
+    if(!url)return;
+    var f={dataUrl:url,url:url,loading:false}; // gen natijasi allaqachon R2 URL → qayta upload shart emas
+    if(which==='start')st.start=f; else st.end=f;
+    renderFrameBoxes(); refreshVgBtn();
+    toast((which==='start'?"Boshlang'ich":"Yakuniy")+' kadrга qo\'shildi','success');
+  }
 
   function updVgRcBatch(){ var b=$('vgRecentBatch'); if(!b)return; b.classList.toggle('on',vgRcState.selecting); var bi=$('vgRecentBI'); if(bi)bi.textContent=Object.keys(vgRcState.sel).length+' tanlandi'; }
 
@@ -10479,19 +10546,38 @@ window.afGallery=(function(){
     var r=$('vgRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(vgRcState.selecting?' selmode':'');
     var seen={},uniq=[]; vgRcState.items.forEach(function(it){ if(it&&it.url&&!seen[it.url]){seen[it.url]=1;uniq.push(it);} }); vgRcState.items=uniq;
-    if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha video gen yo\'q</div>'; updVgRcBatch(); return; }
+    if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha gen yo\'q</div>'; updVgRcBatch(); return; }
     uniq.slice(0,12).forEach(function(it){
+      var cat=it.cat||'image';
       var d=document.createElement('div'); d.className='rc'+(it.id&&vgRcState.sel[it.id]?' sel':'');
-      if(it.thumb){ d.style.backgroundImage='url("'+it.thumb+'")'; }
-      else { // poster yo'q → video birinchi kadrini ko'rsatamiz (CSS background videoni render qilmaydi)
-        var vthumb=document.createElement('video'); vthumb.src=it.url; vthumb.muted=true; vthumb.playsInline=true; vthumb.preload='metadata';
-        vthumb.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none'; d.appendChild(vthumb);
-        try{ vthumb.addEventListener('loadedmetadata',function(){ try{vthumb.currentTime=0.1;}catch(e){} }); }catch(e){}
+      if(cat==='video'){ // video → <video> birinchi kadri (qora bo'lmasin): #t media-fragment + seek
+        var vthumb=document.createElement('video'); vthumb.src=it.url+(/#/.test(it.url)?'':'#t=0.1'); vthumb.muted=true; vthumb.setAttribute('muted',''); vthumb.playsInline=true; vthumb.setAttribute('playsinline',''); vthumb.preload='metadata';
+        vthumb.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:#000';
+        try{ var _sk=false; var _seek=function(){ if(_sk)return; try{vthumb.currentTime=0.1;}catch(e){} }; vthumb.addEventListener('loadedmetadata',_seek); vthumb.addEventListener('loadeddata',_seek); vthumb.addEventListener('seeked',function(){_sk=true;}); }catch(e){}
+        d.appendChild(vthumb);
+        var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv);
+      } else if(cat==='audio'||cat==='sfx'){ // ovoz/sfx → ikona (vizual yo'q)
+        var pv2=document.createElement('div'); pv2.className='pv'; pv2.innerHTML=VG_IC_AUD; d.appendChild(pv2);
+      } else { // rasm → bg
+        d.style.backgroundImage='url("'+(it.thumb||it.url)+'")';
       }
-      var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'; d.appendChild(pv);
-      var tg=document.createElement('div'); tg.className='tg'; tg.textContent='Video'; d.appendChild(tg);
-      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||'Video'); d.appendChild(bd);
+      var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(cat); d.appendChild(tg);
+      var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
+      // hover amallar: ⤓ Import · ↺ Referens(model-aware) · ⬇ Yuklab(non-CEP) · ✕ O'chirish
       var ra=document.createElement('div'); ra.className='racts';
+      var imp=document.createElement('b'); imp.title="AE'ga import"; imp.innerHTML=VG_RC_IMP;
+      (function(item){ imp.addEventListener('click',function(e){ e.stopPropagation(); vgImport(item); }); })(it);
+      ra.appendChild(imp);
+      if(vgRefAllowed(it)){
+        var rf=document.createElement('b'); rf.title='Referens qilib ishlatish'; rf.innerHTML=VG_RC_REF;
+        (function(item){ rf.addEventListener('click',function(e){ e.stopPropagation(); vgUseAsRef(item); }); })(it);
+        ra.appendChild(rf);
+      }
+      if(!IS_CEP){
+        var dl=document.createElement('b'); dl.title='Yuklab olish'; dl.innerHTML=VG_RC_DL;
+        (function(item){ dl.addEventListener('click',function(e){ e.stopPropagation(); vgDownload(item); }); })(it);
+        ra.appendChild(dl);
+      }
       var del=document.createElement('b'); del.className='del'; del.title='O\'chirish'; del.innerHTML=VG_RC_X;
       (function(item){ del.addEventListener('click',function(e){ e.stopPropagation(); vgRcDelete(item); }); })(it);
       ra.appendChild(del); d.appendChild(ra);
@@ -10526,21 +10612,28 @@ window.afGallery=(function(){
       if(done+fail===total){ vgRcState.selecting=false; vgRcState.sel={}; renderVgRecent(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''),fail?'warning':'success'); }
     }); });
   }
+  function genCat(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':mode==='sfx'?'sfx':'image'; }
   function loadVgRecent(){
     if(vgRcState.loaded||!$('vgRecent'))return;
     vgRcState.loaded=true;
-    studioGet('/api/studio/gen/history?mode=video&limit=12').then(function(d){
+    // HAMMA tur (rasm+video+ovoz) — filtr yo'q. Har kartaга TO'G'RI badge cat'дан.
+    studioGet('/api/studio/gen/history?limit=12').then(function(d){
       ((d&&d.items)||[]).forEach(function(g){
-        if(g&&g.mode&&g.mode!=='video')return; // faqat video gen'lar (server eski bo'lsa ham himoya)
-        var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url||!/\.(mp4|webm|mov|m4v)(\?|$)/i.test(url))return;
+        var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
+        var cat=genCat(g.mode);
         if(!vgRcState.items.some(function(x){return x.url===url||x.id===g.id;}))
-          vgRcState.items.push({id:g.id,url:url,thumb:a.thumbUrl||null,title:(g.prompt||'').trim()||'Video'});
+          vgRcState.items.push({id:g.id,url:url,thumb:(cat==='image'?(a.thumbUrl||url):null),title:(g.prompt||'').trim()||catLabel(cat),cat:cat});
       });
       vgRcState.items=vgRcState.items.slice(0,12); renderVgRecent();
     }).catch(function(){ vgRcState.loaded=false; });
   }
   // lightbox
   (function(){ var lb=$('vgLightbox'); if(lb)lb.addEventListener('click',function(e){ if(e.target===lb)closeVgLightbox(); }); var cl=$('vgLbClose'); if(cl)cl.addEventListener('click',closeVgLightbox); document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&$('vgLightbox')&&$('vgLightbox').classList.contains('on'))closeVgLightbox(); }); })();
+  // Referens kadr slot menyusi (Boshlang'ich / Yakuniy)
+  (function(){
+    var s=$('vgRefStart'); if(s)s.addEventListener('click',function(){ var u=_pendingRefUrl; _pendingRefUrl=null; closeVgSheets(); setFrameFromUrl(u,'start'); });
+    var e=$('vgRefEnd'); if(e)e.addEventListener('click',function(){ var u=_pendingRefUrl; _pendingRefUrl=null; closeVgSheets(); setFrameFromUrl(u,'end'); });
+  })();
   // So'nggi select/batch/more
   (function(){
     var sel=$('vgRecentSel'); if(sel)sel.addEventListener('click',function(){ vgRcState.selecting=!vgRcState.selecting; vgRcState.sel={}; sel.classList.toggle('on',vgRcState.selecting); renderVgRecent(); });

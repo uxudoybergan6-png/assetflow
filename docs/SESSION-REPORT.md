@@ -1,21 +1,17 @@
-# SESSION REPORT — 2026-06-27 — Video tool: kadr manba + So'nggi grid tuzatish
+# SESSION REPORT — 2026-06-27 — Video tool: refKind + So'nggi grid (5 tuzatish)
 
-## Topilgan xatolar (foydalanuvchi 2bf65a2 da sinab topdi)
+## Bajarildi
 
-1. **So'nggi grid rasm gen'larni "Video" deb ko'rsatardi:** `/gen/history` endpoint `?mode=` parametrini E'TIBORSIZ qoldirardi → barcha gen (rasm ham) qaytarardi.
-2. **Project paneldan + Timeline'dan kadr ISHLAMAYDI:** vgScript `listProjectFootage()`/`exportTimelineFrame()` ni GLOBAL sync funksiya deb chaqirardi — aslida ular host.jsx funksiyalari, `hostCall(fn)` (csInterface.evalScript) orqali ASYNC chaqiriladi (igScript naqshi). Faqat "Fayl yuklash" ishlardi.
+1. **So'nggi grid — HAMMA tur:** `loadVgRecent` `?mode=video` filtri olib tashlandi → `/gen/history?limit=12` (rasm+video+ovoz+sfx). Har kartaга `genCat(mode)` → to'g'ri badge (`catLabel`): Rasm/Video/Ovoz/SFX.
+2. **Video thumbnail (qora emas):** video karta `<video src=url#t=0.1 preload=metadata muted playsinline>` + `loadedmetadata/loadeddata` da `currentTime=0.1` seek → birinchi kadr. ▶ overlay ustida.
+3. **Kadr qutilari ixcham:** `.axvg .fbox` 90→**78px**, `.fcap` 9.5px.
+4. **Karta amal tugmalari:** har kartada hover `.racts`: ⤓ Import (doim) · ↺ Referens (model-aware) · ⬇ Yuklab (non-CEP) · ✕ O'chirish.
+5. **Referens MODEL-AWARE (`refKind`):** `gen-models.ts` — `refKind` field + `getRefKind()` helper, Seedance 3101 = `frames`; `/gen/models` har modelга `refKind` qo'shadi. Plagin: `vgRefAllowed(it)` (frames→RASM karta; video/ovoz→yo'q), RASM "Referens" → `vgRefSlotSheet` (Boshlang'ich/Yakuniy) → `setFrameFromUrl` (R2 URL to'g'ridan slotga). Lightbox endi rasm/video/ovoz (img/video/audio).
 
-## Tuzatildi
+## Tekshiruv (brauzer harness)
 
-1. **Backend** `studio-gen.ts` `/gen/history`: `?mode=video` filtri qo'shildi (GEN_MODES validatsiya, Prisma `where.mode`).
-2. **Frontend filtr:** `loadVgRecent` — `g.mode==='video'` + URL `.mp4|webm|mov|m4v` tekshiruvi (server eski bo'lsa ham himoya).
-3. **`hostCall` helper** vgScript'ga qo'shildi; `pickProjFrame` → `hostCall('listProjectFootage')` (`items[].mediaPath/mediaType`), `pickTlFrame` → `hostCall('exportTimelineFrame')` (`r.path`). `readDataUrl` bilan o'qiydi.
-4. **Video thumbnail:** poster yo'q video → `<video preload=metadata>` birinchi kadri (CSS background videoni render qilmaydi).
-
-## Tekshiruv (brauzer harness — vidgen-test.html)
-
-vgScript syntax TOZA (32492 b). API `tsc` 0 xato. Harness: kadr quti click → manba sheet ✓; So'nggi grid faqat 2 video (rasm filtrlandi) ✓; video thumbnaillar ✓; lightbox video player + AE import/Yuklab ✓.
+vgScript 37994 b · API `tsc` 0 xato. Harness: 5 kartaли grid (Rasm/Video/Ovoz/SFX to'g'ri badge ✓); RASM kartada Referens bor, video/ovozda yo'q ✓; Referens→Boshlang'ich→start kadr+gen enable ✓; lightbox img/video/audio to'g'ri ✓; kadr 78px ✓. Kredit/refund/multi-gen oqimi TEGILMADI.
 
 ## KUTILMOQDA
 
-Render API redeploy (`/gen/history?mode` filtri) + AE'da install-cep.sh → Project/Timeline kadr end-to-end.
+Render API redeploy (`/gen/models` refKind + `/gen/history` filtrsiz) + AE install-cep.sh → real R2 video thumbnail + Referens→kadr end-to-end.
