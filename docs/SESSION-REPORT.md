@@ -1,17 +1,16 @@
-# SESSION REPORT — 2026-06-27 — Video model almashmaydi (BUG) tuzatildi
+# SESSION REPORT — 2026-06-27 — R2V referensга 3-manba menyu
 
-## Root cause
-Asosiy sabab: o'rnatilgan CEP STALE edi (eski kodда model option click faqat `closeVgSheets()` qilardi — `switchVgModel` yo'q). Qo'shimcha CEF88 xavf: option ichidagi SVG `<text>`/`<b>` ga bosilganda per-option listener'ga bubble bo'lmasligi mumkin.
+## So'rov
+R2V ko'p-modal referens (＋Rasm/＋Video/＋Ovoz) ham kadrlardagidek manba menyusiga ega bo'lsin: Fayl yuklash / Project paneldan / Timeline'dan (faqat to'g'ridan fayl emas).
 
-## Tuzatish (robust — barcha 5 ishorani qoplaydi)
-1. **Delegatsiya:** per-option `addEventListener` o'rniga `#vgMList`'ga BIR marta delegated listener. Bosilgan element bola (SVG/`<text>`/`<b>`) bo'lsa ham `.opt`'gача ko'tariladi → ishlaydi (CEF88-safe).
-2. **`data-mid`:** har option `data-mid=id`; listener `vm.models`'дан `String(id)` bo'yicha topadi.
-3. **String id taqqoslash:** `switchVgModel` va `cur` (✓) endi `String(m.id)===String(vm.model.id)` (number/string mosligi).
-4. **Backdrop:** `.axvg .sheet` `e.target===s` tekshiruvi option bosishini ushlamaydi (delegatsiya alohida `#vgMList`'да) — to'qnashuv yo'q.
-5. **Log:** `ensureVgMeta` `[vg] video modellar: 3101:...(frames), 3102:...(media-refs)` — ikkala model distinct id bilan kelishini tasdiqlaydi.
+## Bajarildi (vgScript)
+1. `addMediaRef` (faqat showOpenDialog) o'rniga **modality-aware 3 picker**: `pickFileMedia` (kompyuter, type-exts), `pickProjMedia` (AE footage, mediaType filtr image/video/audio), `pickTlMedia` (Timeline kadr → PNG, FAQAT rasm).
+2. `openMediaSrc(type)` — ＋Rasm/＋Video/＋Ovoz bosilganda mavjud `vgSrcSheet` (Fayl/Project/Timeline) qayta ishlatiladi. Timeline FAQAT rasm uchun ko'rinadi (video/ovozда yashirin). Sarlavha + File/Project subtitle turga moslanadi.
+3. **Yagona manba-nishon** `_vgSrcTarget={kind:'frame',which}|{kind:'media',type}`. `vgSrcFile/Proj/Tl` handlerlari shunga qarab kadr ↔ media'ga marshrutlaydi. `openFrameSrc` Timeline'ni qayta ko'rsatadi + subtitle'ни tiklaydi.
+4. `mediaAllowed(type)` — limit (jami≤12, image≤9/video≤3/audio≤3) menyu ochishdan oldin tekshiriladi. Mavjud `uploadMediaRef`/`readDataUrl`/`hostCall` qayta ishlatildi.
 
 ## Tekshiruv (headless harness, REAL funksiyalar)
-Bosish: SVG `<text>` (eng chuqur bola) → Fast; `<b>` label → R2V; `.opt` div → R2V — HAMMA holatда almashadi. ✓ checkmark + `cur` + `vgMName` ("Seedance 2.0 R2V") + referens hudud (frames↔media-refs) almashadi, sheet yopiladi. data-mid=[3101,3102]. 7 inline script 0 xato, console 0 xato.
+＋Rasm → menyu (Fayl/Project/**Timeline ko'rinadi**); ＋Video/＋Ovoz → menyu (**Timeline yashirin**), sarlavha "Video/Ovoz referens", subtitle "kompyuterdan video/ovoz". ＋Video→Fayl yuklash→@Video1 qo'shildi (1/12). Kadr regressiyasiz: Fast'да start-box→manba menyu, Timeline qayta ko'rinadi. 7 inline script 0 xato, console 0 xato.
 
 ## O'rnatish
-`install-cep.sh` qayta o'rnatildi (exit 0) → o'rnatilgan HTML'да `data-mid`×3 + log bor. AE'ni QAYTA OCHIB R2V tanlanishini tasdiqlang (R2V tagida "ByteDance · R2V (ko'p-modal)").
+`install-cep.sh` qayta o'rnatildi → AE'ni qayta oching. R2V referens ＋ tugmalari endi Fayl/Project/Timeline menyusini ochadi.
