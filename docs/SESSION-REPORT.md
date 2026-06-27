@@ -1,14 +1,13 @@
-# SESSION REPORT — 2026-06-27 — So'nggi grid: umumiy komponent (real lightbox + karta amallari)
+# SESSION REPORT — 2026-06-27 — Audit#2: lightbox layout fix + hover preview
 
-## Bajarildi
-1. **UMUMIY komponent** `window.afRecent` (main AI script): `card(it,ctx)` + `openLightbox(it,ctx)` + `closeLightbox()`. Rasm tool (igScript) va Video tool (vgScript) AYNAN shuni ishlatadi — kod takrorlanmaydi.
-2. **Lightbox REAL media:** video → `<video controls autoplay playsinline>` (statik kamera-ikona placeholder OLIB TASHLANDI), rasm → `<img>`, ovoz → `<audio controls>`. Bitta umumiy `#afLightbox` (.axroot ichida, position:fixed).
-3. **Karta hover amallari (ochmasdan):** ⤓ Import (har doim) · ↺ Referens (model-aware) · ⬇ Yuklab (non-CEP) · ✕ O'chirish. Lightbox amallari ham bir xil.
-4. **Model-aware Referens (refKind):** har tool `ctx.refAllowed`/`onRef` beradi — igScript: image karta → `addRefReady` (@imgN); vgScript: frames → image karta → Boshlang'ich/Yakuniy menyu; mos kelmasa Referens yashirin (video/ovoz).
-5. **afVideoThumb** ham umumiy (video birinchi kadr — qora emas).
+## Topilgan + tuzatilgan (docs/AI-TOOLS-AUDIT2.md to'liq)
+1. **Lightbox BUZUQ → tuzatildi (asosiy):** `#afLightbox` `.axroot` ichida edi, lekin CSS faqat `.axig .lightbox*` skopida → stil qo'llanmagan (video kichik yuqori-chap, amallar oddiy matn). Maxsus `#afLightbox{...}` CSS qo'shildi: to'liq overlay (position:fixed;inset:0), markaz, dim backdrop, TUGMA amallar (⤓ Import · ↺ Referens · ⬇ Yuklab), ✕ yuqori-o'ng.
+2. **Hover preview:** karta videoга sichqoncha → JIM (muted) autoplay; ketganда pause + birinchi kadr (afRecent.card mouseenter/leave).
+3. **Lightbox video REAL:** `<video controls>` + `muted=false` + `play()` (click user-gesture → ovoz bilan). Rasm→`<img>`, ovoz→`<audio>`. Placeholder ikona yo'q.
+4. Ikkala tool (Image+Video) umumiy `afRecent`/`#afLightbox` — bir xil.
 
 ## Tekshiruv (brauzer harness, REAL funksiyalar)
-7 inline script syntax TOZA. Video tool: 5 karta, video→`<video>` thumb, Referens faqat rasm kartada; lightbox video/img/audio to'g'ri. Image tool: video karta bosish → lightbox `<video controls>` (placeholder EMAS) ✓; hover Import→importMediaCat, Referens→addRefReady ishladi; video/ovoz kartada Referens yo'q. Gen oqimi/kredit/refund/multi-gen — TEGILMADI.
+7 inline script syntax TOZA, console 0 xato. Eval: `#afLightbox` 0,0 885×1100 (to'liq ekran), position:fixed; `.lba` tugma (bg/border/radius); ✕ top-right; hover enter→play(muted), leave→pause+reset; ikkala toolда bir xil. Containing-block ajdodlarида transform/contain YO'Q → prod to'g'ri. Gen oqimi/kredit/refund/multi-gen — TEGILMADI.
 
 ## KUTILMOQDA
-AE'da install-cep.sh → real R2 video lightboxда o'ynashi + ikkala toolда karta amallari end-to-end.
+AE'da install-cep.sh → real R2 video lightboxда katta o'ynashi + hover preview end-to-end.

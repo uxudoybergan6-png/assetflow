@@ -2625,6 +2625,17 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .lightbox .lba{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--txt);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;cursor:pointer}
 .axig .lightbox .lba:hover{border-color:var(--acc2);color:var(--acc)}
 .axig .lightbox .lx{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:9px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer;z-index:2}
+/* UMUMIY lightbox — #afLightbox .axroot ichida (.axig EMAS) → o'z to'liq-ekran stili. To'liq overlay + markaz + katta media. */
+#afLightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:9992;padding:18px}
+#afLightbox.on{display:flex}
+#afLightbox .lbinner{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:100%;max-height:100%}
+#afLightbox video,#afLightbox img{max-width:100%;max-height:74vh;object-fit:contain;border-radius:10px;background:#000}
+#afLightbox audio{width:340px;max-width:84vw}
+#afLightbox .lbacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;flex:0 0 auto}
+#afLightbox .lba{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--txt);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;cursor:pointer}
+#afLightbox .lba:hover{border-color:var(--acc2);color:var(--acc)}
+#afLightbox .lx{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer;z-index:2}
+#afLightbox .lx:hover{border-color:var(--acc2);color:var(--acc)}
 .axig .prog{margin-bottom:16px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.axig .prog.on{display:block}
 .axig .prog .pt{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
 .axig .prog .pt .sp{width:16px;height:16px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;flex:0 0 auto}
@@ -8894,7 +8905,13 @@ async function bootPlugin(){
     function card(it,ctx){
       ctx=ctx||{}; var cat=it.cat||'image';
       var d=document.createElement('div'); d.className='rc'+(ctx.isSelected&&ctx.isSelected(it)?' sel':'');
-      if(cat==='video'){ if(typeof window.afVideoThumb==='function')d.appendChild(window.afVideoThumb(it.url)); else if(it.thumb)d.style.backgroundImage='url("'+it.thumb+'")';
+      if(cat==='video'){
+        var vEl=(typeof window.afVideoThumb==='function')?window.afVideoThumb(it.url):null;
+        if(vEl){ d.appendChild(vEl);
+          // HOVER PREVIEW: sichqoncha → JIM (muted) o'ynaydi; ketganда → to'xtab birinchi kadrга qaytadi (ovozsiz)
+          d.addEventListener('mouseenter',function(){ try{ vEl.muted=true; var pp=vEl.play(); if(pp&&pp.catch)pp.catch(function(){}); }catch(e){} });
+          d.addEventListener('mouseleave',function(){ try{ vEl.pause(); vEl.currentTime=0.1; }catch(e){} });
+        } else if(it.thumb){ d.style.backgroundImage='url("'+it.thumb+'")'; }
         var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML=IC.play; d.appendChild(pv); }
       else if(cat==='audio'||cat==='sfx'){ var pa=document.createElement('div'); pa.className='pv'; pa.innerHTML=IC.aud; d.appendChild(pa); }
       else { d.style.backgroundImage='url("'+(it.thumb||it.url)+'")'; }
