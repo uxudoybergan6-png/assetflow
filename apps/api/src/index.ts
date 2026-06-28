@@ -79,12 +79,12 @@ app.post(
   stripeWebhookHandler
 );
 
-// Studio Gen'da ikki endpoint katta base64 payload qabul qiladi:
+// Studio Gen'da ikki endpoint juda katta base64 payload qabul qiladi:
 // - /gen/ref-upload  → R2V image/video/audio referenslar
 // - /gen/describe    → haqiqiy video input (data-URL) yoki bir nechta kadr
-// 25MB binary base64'da ~33MB+ bo'ladi, shu sabab route-level limit alohida kattaroq.
-app.use("/api/studio/gen/ref-upload", express.json({ limit: "40mb" }));
-app.use("/api/studio/gen/describe", express.json({ limit: "40mb" }));
+// 100MB binary base64'dа ~133MB+ bo'ladi, shu sabab route-level limit kattaroq.
+app.use("/api/studio/gen/ref-upload", express.json({ limit: "150mb" }));
+app.use("/api/studio/gen/describe", express.json({ limit: "150mb" }));
 // Qolgan API JSON'lari uchun odatdagi limit.
 app.use(express.json({ limit: "14mb" }));
 app.use("/api/auth", authRouter);
@@ -122,7 +122,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
   if (status === 413 || type === "entity.too.large") {
     res.status(413).json({
-      error: "Referens juda katta — 25MB dan kichikroq fayl tanlang",
+      error: "Referens juda katta — 100MB dan kichikroq fayl tanlang",
       code: "PAYLOAD_TOO_LARGE",
     });
     return;
