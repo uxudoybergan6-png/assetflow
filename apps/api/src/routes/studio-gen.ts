@@ -299,7 +299,7 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   const key = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await uploadBufferToS3(buf, key, contentType);
   const url = await getPublicOrSignedUrl(key, 7200); // PUBLIC (fal auth'siz yuklab oladi)
-  res.json({ url });
+  res.json({ url, bytes: buf.length, contentType });
 });
 
 /** POST /gen — imzoni tekshiradi → kredit zaxira → queued Generation → {jobId}. */
