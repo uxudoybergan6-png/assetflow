@@ -1,16 +1,12 @@
-# SESSION REPORT — 2026-06-27 — R2V referensга 3-manba menyu
+# SESSION REPORT — 2026-06-28 — Video referens oqimi
 
-## So'rov
-R2V ko'p-modal referens (＋Rasm/＋Video/＋Ovoz) ham kadrlardagidek manba menyusiga ega bo'lsin: Fayl yuklash / Project paneldan / Timeline'dan (faqat to'g'ridan fayl emas).
-
-## Bajarildi (vgScript)
-1. `addMediaRef` (faqat showOpenDialog) o'rniga **modality-aware 3 picker**: `pickFileMedia` (kompyuter, type-exts), `pickProjMedia` (AE footage, mediaType filtr image/video/audio), `pickTlMedia` (Timeline kadr → PNG, FAQAT rasm).
-2. `openMediaSrc(type)` — ＋Rasm/＋Video/＋Ovoz bosilganda mavjud `vgSrcSheet` (Fayl/Project/Timeline) qayta ishlatiladi. Timeline FAQAT rasm uchun ko'rinadi (video/ovozда yashirin). Sarlavha + File/Project subtitle turga moslanadi.
-3. **Yagona manba-nishon** `_vgSrcTarget={kind:'frame',which}|{kind:'media',type}`. `vgSrcFile/Proj/Tl` handlerlari shunga qarab kadr ↔ media'ga marshrutlaydi. `openFrameSrc` Timeline'ni qayta ko'rsatadi + subtitle'ни tiklaydi.
-4. `mediaAllowed(type)` — limit (jami≤12, image≤9/video≤3/audio≤3) menyu ochishdan oldin tekshiriladi. Mavjud `uploadMediaRef`/`readDataUrl`/`hostCall` qayta ishlatildi.
-
-## Tekshiruv (headless harness, REAL funksiyalar)
-＋Rasm → menyu (Fayl/Project/**Timeline ko'rinadi**); ＋Video/＋Ovoz → menyu (**Timeline yashirin**), sarlavha "Video/Ovoz referens", subtitle "kompyuterdan video/ovoz". ＋Video→Fayl yuklash→@Video1 qo'shildi (1/12). Kadr regressiyasiz: Fast'да start-box→manba menyu, Timeline qayta ko'rinadi. 7 inline script 0 xato, console 0 xato.
-
-## O'rnatish
-`install-cep.sh` qayta o'rnatildi → AE'ni qayta oching. R2V referens ＋ tugmalari endi Fayl/Project/Timeline menyusini ochadi.
+- Video referens uploaddagi `Server xatosi` ildizi topildi: global error middleware `entity.too.large` holatini 500 ga aylantirib yuborayotgan edi.
+- Tuzatildi: [apps/api/src/index.ts](/Users/usmonov/Projects/creative-tools-saas/apps/api/src/index.ts:121) endi 413 holatni `Referens juda katta — 25MB dan kichikroq fayl tanlang` deb qaytaradi.
+- Oldingi route-level fix saqlandi: `/api/studio/gen/ref-upload` va `/api/studio/gen/describe` uchun katta JSON limit ishlatiladi.
+- R2V video tool’da recent natijadan bevosita referens olish yo‘q edi: video karta faqat yuklab olish/o‘chirish ko‘rsatardi.
+- Tuzatildi: [plugins/after-effects-cep/AssetFlow_Plugin.html](/Users/usmonov/Projects/creative-tools-saas/plugins/after-effects-cep/AssetFlow_Plugin.html:10774) da `media-refs` modeli uchun rasm/video/ovoz/SFX kartalari referens sifatida ruxsat etildi.
+- Qo‘shildi: [plugins/after-effects-cep/AssetFlow_Plugin.html](/Users/usmonov/Projects/creative-tools-saas/plugins/after-effects-cep/AssetFlow_Plugin.html:10477) `addExistingMediaRef()` — recent’dagi natijani qayta upload qilmasdan `mref` strip’ga qo‘shadi va `@Image/@Video/@Audio` tokenini promptga kiritadi.
+- Qo‘shildi: upload catch’larda `friendlyError` + 413 uchun aniq matn; endi `Server xatosi` o‘rniga foydaliroq xabar chiqadi.
+- `npm run build -w apps/api` muvaffaqiyatli o‘tdi.
+- CEP qayta o‘rnatishni shu sessiyada avtomatik qila olmadim: joriy ruxsat qatlami workspace’dan tashqariga yozishni blokladi.
+- Keyingi amaliy qadam: lokal `install-cep.sh` va kerak bo‘lsa API deploy; shundagina AE ichida katta video referens va yangi recent→referens oqimi to‘liq ishlaydi.
