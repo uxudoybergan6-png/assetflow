@@ -64,6 +64,12 @@ export type GenModel = {
   mediaRefs?: { image: number; video: number; audio: number; total: number };
   // Provider ichki media input limiti. Masalan, ayrim R2V modellar video referensni 50MB gacha qabul qiladi.
   mediaRefMaxBytes?: { image?: number; video?: number; audio?: number };
+  // Ayrim modellar ayrim modality uchun jami hajm limiti qo'yadi (masalan, video referenslar jami 50MB).
+  mediaRefMaxTotalBytes?: { image?: number; video?: number; audio?: number };
+  // Fayl formatlari modelga qarab toraytirilishi mumkin (masalan, R2V video: MP4/MOV).
+  mediaRefFormats?: { image?: string[]; video?: string[]; audio?: string[] };
+  // Video referens bo'lsa ayrim model arzonroq tarif qo'llaydi (fal Seedance R2V docs: ×0.6).
+  videoInputPerSecMultiplier?: number;
   brand?: string; // model egasi: "openai" | "google" | "bytedance" | "bfl"
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
@@ -96,6 +102,7 @@ export type GenModel = {
     resolution: { options: string[]; def: string; perSec: Record<string, number> }; // kredit/soniya
     duration: { options: string[]; def: string; autoSec: number }; // "Auto" + raqamlar (string[])
     audio: boolean;
+    bitrate?: { options: string[]; def: string };
   };
 
   // voice modeli uchun:
@@ -712,11 +719,18 @@ export const GEN_MODELS: GenModel[] = [
     refMode: "optional", // referenssiz ham ishlaydi (faqat prompt)
     refKind: "media-refs",
     mediaRefs: { image: 9, video: 3, audio: 3, total: 12 },
-    mediaRefMaxBytes: { video: 50 * 1024 * 1024 },
+    mediaRefMaxBytes: { image: 30 * 1024 * 1024, audio: 15 * 1024 * 1024 },
+    mediaRefMaxTotalBytes: { video: 50 * 1024 * 1024 },
+    mediaRefFormats: {
+      image: ["jpg", "jpeg", "png", "webp"],
+      video: ["mp4", "mov"],
+      audio: ["mp3", "wav"],
+    },
+    videoInputPerSecMultiplier: 0.6,
     inputs: ["image-ref", "video-ref", "audio-file"],
     aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
     resolutions: ["480p", "720p", "1080p", "4k"],
-    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 15],
+    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     audio: true,
     videoSettings: {
       aspect: { options: ["Auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], def: "Auto" },
@@ -726,11 +740,12 @@ export const GEN_MODELS: GenModel[] = [
         perSec: { "480p": 8, "720p": 15, "1080p": 34, "4k": 60 },
       },
       duration: {
-        options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15"],
+        options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
         def: "Auto",
         autoSec: 5,
       },
       audio: true,
+      bitrate: { options: ["standard", "high"], def: "standard" },
     },
   },
 ];
@@ -819,6 +834,7 @@ export type ResolvedVideoParams = {
   resolution: string;
   aspectRatio: string;
   generateAudio: boolean;
+  bitrateMode?: string;
 };
 
 /**
@@ -844,6 +860,9 @@ export function resolveVideoParams(
     aspectRatio: pickStr(model.aspects, params.aspectRatio, ["auto", "16:9", "9:16"]),
     generateAudio:
       typeof params.audio === "boolean" ? params.audio : Boolean(model.audio),
+    bitrateMode: model.videoSettings?.bitrate
+      ? pickStr(model.videoSettings.bitrate.options, params.bitrateMode, [model.videoSettings.bitrate.def, "standard"])
+      : undefined,
   };
 }
 
@@ -886,7 +905,13 @@ export function computeGenCost(model: GenModel, params: Record<string, unknown>)
   if (model.mode === "video") {
     const vp = resolveVideoParams(model, params);
     const perSec = model.videoSettings?.resolution?.perSec;
-    const ratePerSec = perSec ? (perSec[vp.resolution] ?? model.cost) : model.cost;
+    let ratePerSec = perSec ? (perSec[vp.resolution] ?? model.cost) : model.cost;
+    const hasVideoInputs =
+      Array.isArray(params.videoUrls) &&
+      params.videoUrls.some((x) => typeof x === "string" && x.length > 0);
+    if (hasVideoInputs && model.videoInputPerSecMultiplier && model.videoInputPerSecMultiplier > 0) {
+      ratePerSec = Math.max(1, Math.round(ratePerSec * model.videoInputPerSecMultiplier));
+    }
     return ratePerSec * vp.duration;
   }
   if (model.mode === "image") {

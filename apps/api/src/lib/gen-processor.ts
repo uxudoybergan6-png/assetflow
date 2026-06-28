@@ -259,6 +259,8 @@ async function runFalRefVideo(
     duration: durVal,
     aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
     generateAudio: v.generateAudio,
+    bitrateMode: v.bitrateMode,
+    endUserId: userId,
   });
   if (!out.ok) {
     if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(out.error || ""))) {

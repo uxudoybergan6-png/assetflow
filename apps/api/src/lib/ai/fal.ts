@@ -177,6 +177,8 @@ export async function falRefVideo(
     duration?: string | number;
     aspectRatio?: string;
     generateAudio?: boolean;
+    bitrateMode?: string;
+    endUserId?: string;
   }
 ): Promise<OrResult<Buffer>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
@@ -196,6 +198,8 @@ export async function falRefVideo(
     aspect_ratio: arVal,
     generate_audio: opts.generateAudio ?? true,
   };
+  if (typeof opts.bitrateMode === "string" && opts.bitrateMode) input.bitrate_mode = opts.bitrateMode;
+  if (typeof opts.endUserId === "string" && opts.endUserId) input.end_user_id = opts.endUserId;
   if (imgs.length) input.image_urls = imgs; // bo'sh ro'yxat YUBORILMAYDI
   if (vids.length) input.video_urls = vids;
   if (auds.length) input.audio_urls = auds;

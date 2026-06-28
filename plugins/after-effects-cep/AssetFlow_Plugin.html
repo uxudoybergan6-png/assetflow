@@ -3322,6 +3322,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
                                   <div class="seg" id="vgResSeg"><span class="lab">Sifat</span><span class="sv" id="vgResVal">720p</span><span class="sc">▾</span></div>
                                   <div class="seg" id="vgDurSeg"><span class="lab">Davomiylik</span><span class="sv" id="vgDurVal">Auto</span><span class="sc">▾</span></div>
+                                  <div class="seg" id="vgBitSeg" style="display:none"><span class="lab">Bitrate</span><span class="sv" id="vgBitVal">standard</span><span class="sc">▾</span></div>
                                 </div>
                                 <div class="aud-toggle on" id="vgAudToggle"><div class="aud-sw"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg><span>Ovoz</span></div>
                               </div>
@@ -3355,14 +3356,14 @@ html.home-mode #homePage{display:block!important}
                           <div class="sheet" id="vgResSheet"><div class="sheetc">
                             <div class="sheeth"><b>Sifat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="vgResPills"></div>
-                            <div class="axighint" style="text-align:left">480p = ✦8/s · 720p = ✦12/s</div>
+                            <div class="axighint" id="vgResHint" style="text-align:left">480p = ✦8/s · 720p = ✦12/s</div>
                           </div></div>
 
                           <!-- Davomiylik (duration) -->
                           <div class="sheet" id="vgDurSheet"><div class="sheetc">
                             <div class="sheeth"><b>Davomiylik (soniya)</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="vgDurPills"></div>
-                            <div class="axighint" style="text-align:left">Auto ≈ 5 soniya</div>
+                            <div class="axighint" id="vgDurHint" style="text-align:left">Auto ≈ 5 soniya</div>
                           </div></div>
 
                           <!-- Nisbat (aspect ratio) -->
@@ -3370,6 +3371,13 @@ html.home-mode #homePage{display:block!important}
                             <div class="sheeth"><b>Nisbat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="vgArPills"></div>
                             <div class="axighint" style="text-align:left">Auto — kirish kadridan oladi.</div>
+                          </div></div>
+
+                          <!-- Bitrate -->
+                          <div class="sheet" id="vgBitSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Bitrate</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="pillrow" id="vgBitPills"></div>
+                            <div class="axighint" style="text-align:left">High = kattaroq, sifatliroq fayl. Standard = odatiy chiqish.</div>
                           </div></div>
 
                           <!-- Model sheet -->
@@ -10299,9 +10307,10 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
-  var vm={loaded:false,model:null,res:'720p',dur:'Auto',ar:'Auto',audio:true,refKind:'frames',
+  var vm={loaded:false,model:null,res:'720p',dur:'Auto',ar:'Auto',audio:true,bitrate:'standard',refKind:'frames',
     mediaRefs:{image:9,video:3,audio:3,total:12},
-    resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','15'],
+    mediaRefFormats:null,mediaRefMaxTotalBytes:null,videoInputCostMult:0,
+    resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','13','14','15'],bitOpts:['standard','high'],
     arOpts:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],
     perSec:{'480p':8,'720p':12},autoSec:5,sessionId:null};
   // kadr holati (refKind=frames) + ko'p-modal referens (refKind=media-refs)
@@ -10324,7 +10333,7 @@ window.afGallery=(function(){
   }
   function vgGuideText(){
     return vm.refKind==='media-refs'
-      ? "<b>R2V:</b> Ixtiyoriy rasm, video yoki ovoz referens qo'shing. Keyin prompt yozib video yarating."
+      ? "<b>R2V:</b> 9 tagacha rasm, 3 tagacha video, 3 tagacha audio qo'shishingiz mumkin. Promptda <b>@Image1</b>, <b>@Video1</b>, <b>@Audio1</b> deb chaqiring."
       : "<b>Fast:</b> Boshlang'ich kadr qo'shing, ixtiyoriy yakuniy kadr tanlang, keyin prompt yozib video yarating.";
   }
   function vgPromptPlaceholder(){
@@ -10348,9 +10357,21 @@ window.afGallery=(function(){
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
   function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
-  function cost(){ return (vm.perSec[vm.res]||12)*durSec(); }
+  function hasVideoRefs(){ return mref.some(function(r){ return r.type==='video' && r.url; }); }
+  function ratePerSec(){
+    var base=(vm.perSec[vm.res]||12);
+    if(vm.refKind==='media-refs' && hasVideoRefs() && vm.videoInputCostMult && vm.videoInputCostMult>0){
+      return Math.max(1,Math.round(base*vm.videoInputCostMult));
+    }
+    return base;
+  }
+  function cost(){ return ratePerSec()*durSec(); }
   function recost(){ var c=$('vgCost'); if(c)c.textContent='✦'+cost(); }
   function fmtMb(n){ return Math.round((Number(n||0)/(1024*1024))*10)/10; }
+  function extAllowed(type,path){
+    var opts=mediaExts(type), e=ext(path);
+    return !opts.length || opts.indexOf(e)>=0;
+  }
   function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
   function mime(p){ var e=ext(p);
     var V={mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',m4v:'video/mp4'};
@@ -10499,12 +10520,17 @@ window.afGallery=(function(){
     vm.refKind=m.refKind||'frames';
     vm.mediaRefs=m.mediaRefs||{image:9,video:3,audio:3,total:12};
     vm.mediaRefMaxBytes=m.mediaRefMaxBytes||null;
+    vm.mediaRefMaxTotalBytes=m.mediaRefMaxTotalBytes||null;
+    vm.mediaRefFormats=m.mediaRefFormats||null;
+    vm.videoInputCostMult=(typeof m.videoInputPerSecMultiplier==='number'&&m.videoInputPerSecMultiplier>0)?m.videoInputPerSecMultiplier:0;
     var vs=m.videoSettings;
     if(vs){
       if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; if(vm.resOpts.indexOf(vm.res)<0)vm.res=vs.resolution.def||vm.resOpts[0]; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
       if(vs.duration){ vm.durOpts=vs.duration.options||vm.durOpts; if(vm.durOpts.indexOf(vm.dur)<0)vm.dur=vs.duration.def||vm.durOpts[0]; if(vs.duration.autoSec)vm.autoSec=vs.duration.autoSec; }
       if(vs.aspect){ vm.arOpts=vs.aspect.options||vm.arOpts; if(vm.arOpts.indexOf(vm.ar)<0)vm.ar=vs.aspect.def||vm.arOpts[0]; }
       if(typeof vs.audio==='boolean')vm.audio=vs.audio;
+      if(vs.bitrate){ vm.bitOpts=vs.bitrate.options||vm.bitOpts; if(vm.bitOpts.indexOf(vm.bitrate)<0)vm.bitrate=vs.bitrate.def||vm.bitOpts[0]; }
+      else { vm.bitOpts=['standard','high']; vm.bitrate='standard'; }
     }
   }
   function clearFrameState(){
@@ -10583,7 +10609,11 @@ window.afGallery=(function(){
     var rv=$('vgResVal'); if(rv)rv.textContent=vm.res;
     var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
     var av=$('vgArVal'); if(av)av.textContent=vm.ar;
+    var bv=$('vgBitVal'); if(bv)bv.textContent=vm.bitrate;
     var at=$('vgAudToggle'); if(at)at.className='aud-toggle'+(vm.audio?' on':'');
+    var bs=$('vgBitSeg'); if(bs)bs.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
+    var rh=$('vgResHint'); if(rh)rh.textContent=vm.resOpts.map(function(k){ return k+' = ✦'+(vm.perSec[k]||vm.perSec[vm.resOpts[0]]||0)+'/s'; }).join(' · ');
+    var dh=$('vgDurHint'); if(dh)dh.textContent='Auto ≈ '+vm.autoSec+' soniya';
     // referens hudud model-aware: frames=Kadrlar ↔ media-refs=ko'p-modal
     var isMedia=vm.refKind==='media-refs';
     var fs=$('vgFrameSect'); if(fs)fs.style.display=isMedia?'none':'';
@@ -10635,6 +10665,12 @@ window.afGallery=(function(){
     buildPills($('vgArPills'),vm.arOpts,vm.ar,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; closeVgSheets(); });
     openVgSheet('vgArSheet',$('vgArSeg'));
   });
+  var bitSeg=$('vgBitSeg');
+  if(bitSeg)bitSeg.addEventListener('click',function(){
+    if(!(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate))return;
+    buildPills($('vgBitPills'),vm.bitOpts,vm.bitrate,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; closeVgSheets(); });
+    openVgSheet('vgBitSheet',bitSeg);
+  });
   var audTgl=$('vgAudToggle');
   if(audTgl)audTgl.addEventListener('click',function(){ vm.audio=!vm.audio; audTgl.className='aud-toggle'+(vm.audio?' on':''); });
 
@@ -10647,8 +10683,19 @@ window.afGallery=(function(){
     if(!caps||typeof caps[type]!=='number'||!(caps[type]>0))return 0;
     return caps[type];
   }
+  function mediaRefTotalLimitBytes(type){
+    var caps=vm.mediaRefMaxTotalBytes||null;
+    if(!caps||typeof caps[type]!=='number'||!(caps[type]>0))return 0;
+    return caps[type];
+  }
   function mediaRefLimitMsg(type,maxBytes){
     return typeLabel(type)+' referens bu model uchun juda katta — '+fmtMb(maxBytes)+'MB dan kichikroq fayl tanlang';
+  }
+  function mediaRefTotalLimitMsg(type,maxBytes){
+    return typeLabel(type)+" referenslarning jami hajmi "+fmtMb(maxBytes)+"MB dan oshmasligi kerak";
+  }
+  function totalRefBytes(type){
+    return mref.filter(function(r){ return r.type===type; }).reduce(function(sum,r){ return sum + (Number(r.sizeBytes)||0); },0);
   }
   function refTypeFromItem(it){
     var cat=(it&&it.cat)||'image';
@@ -10657,7 +10704,7 @@ window.afGallery=(function(){
   function refUploadErr(err,type){
     var msg=(typeof friendlyError==='function')?friendlyError(err):((err&&err.message)||'Upload xatosi');
     if(/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String((err&&err.message)||''))){
-      return mediaRefLimitMsg(type,mediaRefLimitBytes(type)||50*1024*1024);
+      return mediaRefTotalLimitMsg(type,mediaRefTotalLimitBytes(type)||50*1024*1024);
     }
     if(err&&((err.status===413)||(err.code==='PAYLOAD_TOO_LARGE')))return typeLabel(type)+' referens juda katta — 100MB dan kichikroq fayl tanlang';
     if(err&&((err.status===408)||/upload timeout|javob bermadi/i.test(String(err.message||''))))return typeLabel(type)+" referens yuklanishi cho'zildi — qayta urinib ko'ring";
@@ -10688,8 +10735,9 @@ window.afGallery=(function(){
   }
   function insertVgTok(tok){ var p=$('vgPrompt'); if(!p)return; var c=p.selectionStart||p.value.length; var pre=p.value.slice(0,c),post=p.value.slice(c); var sep=(pre&&!/\s$/.test(pre))?' ':''; p.value=pre+sep+tok+' '+post; p.focus(); refreshVgBtn(); }
   function uploadMediaRef(src,type){
-    var sizeBytes=(src&&src.sizeBytes)||0, lim=mediaRefLimitBytes(type);
+    var sizeBytes=(src&&src.sizeBytes)||0, lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type);
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return; }
+    if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return; }
     var preview=(src&&src.dataUrl)||null;
     var obj={type:type,dataUrl:type==='image'?preview:null,url:null,loading:true,sizeBytes:sizeBytes||0};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
@@ -10702,8 +10750,10 @@ window.afGallery=(function(){
     var type=refTypeFromItem(it);
     if(!mediaAllowed(type))return false;
     if(!it||!it.url){ toast('Referens topilmadi','warning'); return false; }
-    var lim=mediaRefLimitBytes(type), sizeBytes=(it&&it.sizeBytes)||0;
+    if(!extAllowed(type,it.url)){ toast(typeLabel(type)+' formati bu modelga mos emas','warning'); return false; }
+    var lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type), sizeBytes=(it&&it.sizeBytes)||0;
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return false; }
+    if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return false; }
     if(mref.some(function(r){ return r.type===type&&r.url===it.url; })){ toast(typeLabel(type)+' referens allaqachon qo‘shilgan','info'); return false; }
     var obj={type:type,dataUrl:type==='image'?(it.thumb||it.url):null,url:it.url,loading:false,source:'recent',sizeBytes:sizeBytes||0};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
@@ -10711,7 +10761,11 @@ window.afGallery=(function(){
     toast(typeLabel(type)+' referens qo‘shildi','success');
     return true;
   }
-  function mediaExts(type){ return type==='image'?['png','jpg','jpeg','webp','gif']:type==='video'?['mp4','webm','mov','m4v']:['mp3','wav','m4a','aac','ogg']; }
+  function mediaExts(type){
+    var fm=vm.mediaRefFormats&&vm.mediaRefFormats[type];
+    if(fm&&fm.length)return fm.slice();
+    return type==='image'?['png','jpg','jpeg','webp','gif']:type==='video'?['mp4','webm','mov','m4v']:['mp3','wav','m4a','aac','ogg'];
+  }
   function mediaAllowed(type){ // limit tekshiruvi (manba tanlashdan oldin)
     var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12};
     if(mref.length>=lim.total){ toast('Jami referens ≤'+lim.total,'warning'); return false; }
@@ -10724,6 +10778,7 @@ window.afGallery=(function(){
     if(!mediaAllowed(type))return;
     var r; try{ r=window.cep.fs.showOpenDialog(false,false,typeLabel(type)+' referens tanlang','',mediaExts(type)); }catch(e){ toast('Dialog xatosi','error'); return; }
     var paths=(r&&r.data)||[]; if(!paths.length)return;
+    if(!extAllowed(type,paths[0])){ toast(typeLabel(type)+' formati mos emas','warning'); return; }
     var st=readFileStat(paths[0]);
     var src={path:paths[0],dataUrl:(type==='image'?readDataUrl(paths[0]):null),sizeBytes:(st&&st.size)||0};
     if(type!=='image' || src.dataUrl || readFileStat(paths[0])){ uploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
@@ -10738,7 +10793,11 @@ window.afGallery=(function(){
     hostCall('listProjectFootage').then(function(r){
       if(!$('vgProjList'))return;
       if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; return; }
-      var items=((r&&r.items)||[]).filter(function(it){ return type==='image'?(it.mediaType==='image'||isImg(it.mediaPath)):it.mediaType===type; });
+      var items=((r&&r.items)||[]).filter(function(it){
+        var mp=it&&it.mediaPath||'';
+        if(type==='image')return (it.mediaType==='image'||isImg(mp)) && extAllowed(type,mp);
+        return it.mediaType===type && extAllowed(type,mp);
+      });
       if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos '+typeLabel(type)+' topilmadi. Fayldan yuklang.</div>'; return; }
       host.innerHTML='';
       items.forEach(function(it){
@@ -10895,7 +10954,8 @@ window.afGallery=(function(){
     var ta=$('vgPrompt'); var txt=(ta&&ta.value||'').trim();
     if(!txt){ toast('Avval prompt yozing','warning'); return; }
     var enh=$('vgEnhance'); if(enh)enh.style.opacity='0.4';
-    studioPost('/api/studio/gen/prompt/enhance',{prompt:txt,mode:'video'}).then(function(r){
+    var imgRefs=mref.filter(function(r){ return r.type==='image'&&r.url; }).map(function(r){ return r.url; });
+    studioPost('/api/studio/gen/prompt/enhance',{prompt:txt,mode:'video',modelId:(vm.model&&vm.model.id)||null,image_urls:imgRefs}).then(function(r){
       if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt boyitildi','success'); }
       else toast('Boyitish muvaffaqiyatsiz','warning');
     }).catch(function(e){ toast((e&&e.message)||'Enhance xatosi','error');
@@ -11128,6 +11188,7 @@ window.afGallery=(function(){
       if(st.start.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
       params={referenceUrl:st.start.url,referenceEndUrl:(st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     }
+    if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
     activeJobs.push(j); renderVgJobs(); refreshVgBtn();

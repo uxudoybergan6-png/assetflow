@@ -1,9 +1,11 @@
-# SESSION REPORT — 2026-06-28 — Video ref size clarification
+# SESSION REPORT — 2026-06-28 — Seedance 2 R2V capability alignment
 
-- AssetFlow upload limiti 100MB ekanligi tasdiqlandi: backend referens upload shu limitda qoladi.
-- Amaliy xato generatsiya bosqichida chiqayotgani aniqlandi: Seedance R2V provayderi video referensni 50MB dan katta bo‘lsa rad qilmoqda.
-- `apps/api/src/lib/gen-models.ts` ichida R2V modeliga `mediaRefMaxBytes.video = 50MB` qo‘shildi.
-- Plugin endi lokal fayl yoki Project paneldan video referens tanlanganda shu model limitini oldindan tekshiradi.
-- Backend R2V generatsiya xatosi inglizcha raw matndan foydalanuvchi uchun tushunarli o‘zbekcha xabarga aylantirildi.
-- `/api/studio/gen/ref-upload` javobi endi `bytes` va `contentType` ham qaytaradi.
-- Kutilayotgan natija: 100MB upload bilan chalg‘ish bo‘lmaydi; R2V uchun haqiqiy 50MB video cheklovi aniq ko‘rinadi.
+- Seedance 2 R2V hujjatlari tahlil qilindi va model deskriptori docs bilan yaqinlashtirildi.
+- R2V uchun davomiyliklar `13s` va `14s` qo‘shildi.
+- Yangi capability qo‘shildi: `bitrate_mode` (`standard` / `high`) — plugin UI va backend fal payloadga ulandi.
+- `end_user_id` endi backenddan fal so‘roviga uzatiladi.
+- Referens limitlari aniqlashtirildi: rasm `30MB/file`, audio `15MB/file`, video referenslar jami `50MB`.
+- R2V uchun ruxsat etilgan formatlar toraytirildi: image `jpg/jpeg/png/webp`, video `mp4/mov`, audio `mp3/wav`.
+- Video referens ishlatilsa narx hisobida modelning `0.6x` chegirma logikasi qo‘shildi.
+- Video tool `Prompt yaxshilash` endi tanlangan model va image referenslar kontekstini yuboradi.
+- Tekshiruv: `npm run build -w apps/api` OK, plugin script parse `OK 15`.
