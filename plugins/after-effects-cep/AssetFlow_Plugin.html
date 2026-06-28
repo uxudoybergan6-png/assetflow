@@ -1630,7 +1630,9 @@ html.ai-mode .af-ai-banner,
 html.ai-mode #assetsPage,
 html.ai-mode #favPage,
 html.ai-mode #dlPage,
-html.ai-mode #featuredWrap{display:none!important}
+html.ai-mode #featuredWrap,
+html.ai-mode .foot,
+html.ai-mode #afFtr{display:none!important}
 html.ai-mode #aiPage{display:block!important}
 /* Sidebar ✨ AI link — biroz ajralib tursin */
 .env-side-ai .ico{color:var(--accent-cta)}
@@ -2597,6 +2599,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
 .axig .recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
 .axig .recentgrid .empt{grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center}
+.axig .recentgrid .empt b{display:block;color:var(--txt);margin-bottom:5px;font-size:13px}
+.axig .recentgrid .empt button{margin-top:10px;font-size:11.5px;font-weight:700;background:transparent;border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:7px 11px;cursor:pointer}
+.axig .recentgrid .empt button:hover{border-color:var(--mut2)}
 /* hover amallar (yuqori-o'ng) + select checkbox (yuqori-chap) + batch bar */
 .axig .recentgrid .rc .racts{position:absolute;top:5px;right:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;z-index:3}
 .axig .recentgrid .rc:hover .racts{opacity:1}
@@ -10435,6 +10440,16 @@ window.afGallery=(function(){
   function cntRef(t){ return mref.filter(function(r){return r.type===t;}).length; }
   function tokFor(type,idx){ return '@'+(type==='image'?'Image':type==='video'?'Video':'Audio')+idx; }
   function typeLabel(t){ return t==='image'?'Rasm':t==='video'?'Video':'Ovoz'; }
+  function refTypeFromItem(it){
+    var cat=(it&&it.cat)||'image';
+    return (cat==='video')?'video':((cat==='audio'||cat==='sfx')?'audio':'image');
+  }
+  function refUploadErr(err,type){
+    var msg=(typeof friendlyError==='function')?friendlyError(err):((err&&err.message)||'Upload xatosi');
+    if(err&&((err.status===413)||(err.code==='PAYLOAD_TOO_LARGE')))return typeLabel(type)+' referens juda katta — 25MB dan kichikroq fayl tanlang';
+    if(err&&err.status>=500&&/server xatosi/i.test(String(err.message||'')))return typeLabel(type)+' referens serverda qabul qilinmadi — backend upload limitini yangilash kerak bo‘lishi mumkin';
+    return msg;
+  }
   function updRefMeta(){ var m=$('vgRefMeta'); if(m)m.textContent=mref.length+' / '+((vm.mediaRefs&&vm.mediaRefs.total)||12); }
   function renderMediaRefs(){
     var g=$('vgRefGrid'); if(!g)return; g.innerHTML='';
@@ -10459,7 +10474,18 @@ window.afGallery=(function(){
     studioPost('/api/studio/gen/ref-upload',{dataUrl:dataUrl}).then(function(r){
       if(!r||!r.url){ toast('Referens yuklab bo\'lmadi','error'); var i=mref.indexOf(obj); if(i>=0)mref.splice(i,1); renderMediaRefs(); updRefMeta(); refreshVgBtn(); return; }
       obj.url=r.url; obj.loading=false; renderMediaRefs(); refreshVgBtn();
-    }).catch(function(e){ toast((e&&e.message)||'Upload xatosi','error'); var i=mref.indexOf(obj); if(i>=0)mref.splice(i,1); renderMediaRefs(); updRefMeta(); refreshVgBtn(); });
+    }).catch(function(e){ toast(refUploadErr(e,type),'error'); var i=mref.indexOf(obj); if(i>=0)mref.splice(i,1); renderMediaRefs(); updRefMeta(); refreshVgBtn(); });
+  }
+  function addExistingMediaRef(it){
+    var type=refTypeFromItem(it);
+    if(!mediaAllowed(type))return false;
+    if(!it||!it.url){ toast('Referens topilmadi','warning'); return false; }
+    if(mref.some(function(r){ return r.type===type&&r.url===it.url; })){ toast(typeLabel(type)+' referens allaqachon qo‘shilgan','info'); return false; }
+    var obj={type:type,dataUrl:type==='image'?(it.thumb||it.url):null,url:it.url,loading:false,source:'recent'};
+    mref.push(obj); renderMediaRefs(); updRefMeta(); refreshVgBtn();
+    insertVgTok(tokFor(type,cntRef(type)));
+    toast(typeLabel(type)+' referens qo‘shildi','success');
+    return true;
   }
   function mediaExts(type){ return type==='image'?['png','jpg','jpeg','webp','gif']:type==='video'?['mp4','webm','mov','m4v']:['mp3','wav','m4a','aac','ogg']; }
   function mediaAllowed(type){ // limit tekshiruvi (manba tanlashdan oldin)
@@ -10575,7 +10601,7 @@ window.afGallery=(function(){
     studioPost('/api/studio/gen/ref-upload',{dataUrl:dataUrl}).then(function(r){
       if(!r||!r.url){ toast('Kadr yuklab bo\'lmadi','error'); if(which==='start')st.start=null; else st.end=null; renderFrameBoxes(); refreshVgBtn(); return; }
       frameObj.url=r.url; frameObj.loading=false; renderFrameBoxes(); refreshVgBtn();
-    }).catch(function(e){ toast((e&&e.message)||'Upload xatosi','error'); if(which==='start')st.start=null; else st.end=null; renderFrameBoxes(); refreshVgBtn(); });
+    }).catch(function(e){ toast(refUploadErr(e,'image'),'error'); if(which==='start')st.start=null; else st.end=null; renderFrameBoxes(); refreshVgBtn(); });
   }
 
   // ── kadr manba funksiyalari (readDataUrl = igScript bilan bir xil isbotlangan yo'l) ──
@@ -10726,7 +10752,7 @@ window.afGallery=(function(){
   var VG_RC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
   var VG_RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
   var VG_IC_AUD='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
-  var vgRcState={items:[],sel:{},selecting:false,loaded:false};
+  var vgRcState={items:[],sel:{},selecting:false,loaded:false,loading:false,error:''};
   function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Ovoz':(c==='sfx')?'SFX':'Rasm'; }
   function urlExt(u){ var m=String(u||'').match(/\.(\w{2,5})(?:\?|#|$)/); return m?m[1].toLowerCase():''; }
   function vgImport(it){
@@ -10759,6 +10785,7 @@ window.afGallery=(function(){
   function vgRefAllowed(it){
     var rk=vm.refKind||'frames'; var cat=it.cat||'image';
     if(rk==='frames')return cat==='image';      // i2v: faqat RASM → Boshlang'ich/Yakuniy kadr
+    if(rk==='media-refs')return cat==='image'||cat==='video'||cat==='audio'||cat==='sfx';
     if(rk==='imagevideo')return cat==='image'||cat==='video';
     if(rk==='video')return cat==='video';
     if(rk==='image')return cat==='image';        // (video toolда ref-strip yo'q — amalda 'frames' ishlaydi)
@@ -10770,7 +10797,10 @@ window.afGallery=(function(){
     if(rk==='frames'){ // RASM → qaysi kadr slotiga? menyu (Boshlang'ich / Yakuniy)
       _pendingRefUrl=it.url; openVgSheet('vgRefSlotSheet'); return;
     }
-    // (kelajak refKind'lar uchun joy — video toolда hozir faqat 'frames')
+    if(rk==='media-refs'){
+      addExistingMediaRef(it); return;
+    }
+    // (kelajak refKind'lar uchun joy)
     toast('Bu model uchun referens qo\'llab-quvvatlanmaydi','info');
   }
   function setFrameFromUrl(url,which){
@@ -10787,7 +10817,9 @@ window.afGallery=(function(){
     var r=$('vgRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(vgRcState.selecting?' selmode':'');
     var seen={},uniq=[]; vgRcState.items.forEach(function(it){ if(it&&it.url&&!seen[it.url]){seen[it.url]=1;uniq.push(it);} }); vgRcState.items=uniq;
-    if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha gen yo\'q</div>'; updVgRcBatch(); return; }
+    if(vgRcState.loading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updVgRcBatch(); return; }
+    if(vgRcState.error&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(vgRcState.error||'Internet/sessiyani tekshiring.')+'<br><button type="button" onclick="retryVgRecent()">↻ Qayta urinish</button></div>'; updVgRcBatch(); return; }
+    if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updVgRcBatch(); return; }
     var ctx=vgRecentCtx();
     uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY karta
     updVgRcBatch();
@@ -10812,9 +10844,12 @@ window.afGallery=(function(){
     }); });
   }
   function genCat(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':mode==='sfx'?'sfx':'image'; }
-  function loadVgRecent(){
-    if(vgRcState.loaded||!$('vgRecent'))return;
-    vgRcState.loaded=true;
+  function loadVgRecent(force){
+    if(vgRcState.loading||!$('vgRecent'))return;
+    if(vgRcState.loaded&&!force)return;
+    vgRcState.loading=true; vgRcState.error='';
+    if(force)vgRcState.loaded=false;
+    renderVgRecent();
     // HAMMA tur (rasm+video+ovoz) — filtr yo'q. Har kartaга TO'G'RI badge cat'дан.
     studioGet('/api/studio/gen/history?limit=12').then(function(d){
       ((d&&d.items)||[]).forEach(function(g){
@@ -10823,9 +10858,16 @@ window.afGallery=(function(){
         if(!vgRcState.items.some(function(x){return x.url===url||x.id===g.id;}))
           vgRcState.items.push({id:g.id,url:url,thumb:(cat==='image'?(a.thumbUrl||url):null),title:(g.prompt||'').trim()||catLabel(cat),cat:cat});
       });
-      vgRcState.items=vgRcState.items.slice(0,12); renderVgRecent();
-    }).catch(function(){ vgRcState.loaded=false; });
+      vgRcState.items=vgRcState.items.slice(0,12);
+      vgRcState.loaded=true; vgRcState.loading=false; vgRcState.error='';
+      renderVgRecent();
+    }).catch(function(err){
+      vgRcState.loaded=false; vgRcState.loading=false;
+      vgRcState.error=(err&&err.message)?String(err.message):'Internet yoki sessiyani tekshiring.';
+      renderVgRecent();
+    });
   }
+  window.retryVgRecent=function(){ loadVgRecent(true); };
   // lightbox
   // (eski #vgLightbox wiring olib tashlandi — umumiy afRecent #afLightbox o'z close/Esc/backdrop'ini boshqaradi)
   // Referens kadr slot menyusi (Boshlang'ich / Yakuniy)
