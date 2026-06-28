@@ -260,7 +260,15 @@ async function runFalRefVideo(
     aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
     generateAudio: v.generateAudio,
   });
-  if (!out.ok) return { ok: false, error: out.error };
+  if (!out.ok) {
+    if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(out.error || ""))) {
+      return {
+        ok: false,
+        error: "Video referens juda katta — Seedance R2V hozir 50MB dan katta video referensni qabul qilmaydi",
+      };
+    }
+    return { ok: false, error: out.error };
+  }
   return { ok: true, buf: out.data };
 }
 
