@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import multer from "multer";
 import { z } from "zod";
 import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
@@ -230,30 +231,61 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
 /** POST /gen/ref-upload — referens rasm (data-URI) → R2 public URL. Plagin har referens qo'shganda
  *  darhol yuklaydi (spinner), so'ng /gen ga URL'lar TARTIBDA uzatiladi (image_urls). Kredit yechmaydi. */
 const refUploadSchema = z.object({ dataUrl: z.string().min(16) });
+const MAX_REF_UPLOAD_BYTES = 100 * 1024 * 1024;
+const refUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_REF_UPLOAD_BYTES },
+});
 studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   if (!isS3Configured()) {
     res.status(503).json({ error: "Saqlash sozlanmagan", code: "S3_NOT_CONFIGURED" });
     return;
   }
-  const p = refUploadSchema.safeParse(req.body);
-  if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      refUpload.single("file")(req as Parameters<ReturnType<typeof refUpload.single>>[0], res as Parameters<ReturnType<typeof refUpload.single>>[1], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  } catch (err) {
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      res.status(413).json({ error: "Referens juda katta — 100MB dan kichikroq fayl tanlang", code: "PAYLOAD_TOO_LARGE" });
+      return;
+    }
+    res.status(400).json({ error: "Referens faylini qabul qilib bo'lmadi" });
     return;
   }
-  const m = /^data:([^;]+);base64,([\s\S]+)$/.exec(p.data.dataUrl);
-  if (!m) {
-    res.status(400).json({ error: "data-URI (base64 rasm) kerak" });
-    return;
+
+  let contentType = "image/png";
+  let buf: Buffer | null = null;
+
+  const uploadedFile = (req as Request & { file?: Express.Multer.File }).file;
+  if (uploadedFile?.buffer?.length) {
+    contentType = uploadedFile.mimetype || contentType;
+    buf = uploadedFile.buffer;
+  } else {
+    const p = refUploadSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+      return;
+    }
+    const m = /^data:([^;]+);base64,([\s\S]+)$/.exec(p.data.dataUrl);
+    if (!m) {
+      res.status(400).json({ error: "data-URI yoki multipart fayl kerak" });
+      return;
+    }
+    contentType = m[1] || contentType;
+    buf = Buffer.from(m[2], "base64");
   }
-  const contentType = m[1] || "image/png";
+
   // R2V ko'p-modal: rasm + video + ovoz referens qabul qilinadi (Seedance R2V). Boshqa modellar faqat rasm yuboradi.
   if (!/^(image|video|audio)\//.test(contentType)) {
     res.status(400).json({ error: "Faqat rasm/video/ovoz referens qabul qilinadi" });
     return;
   }
-  const buf = Buffer.from(m[2], "base64");
-  if (!buf.length || buf.length > 25 * 1024 * 1024) {
-    res.status(400).json({ error: "Referens bo'sh yoki juda katta (maks 25MB)" });
+  if (!buf?.length || buf.length > MAX_REF_UPLOAD_BYTES) {
+    res.status(400).json({ error: "Referens bo'sh yoki juda katta (maks 100MB)" });
     return;
   }
   const EXT: Record<string, string> = {
