@@ -15,6 +15,7 @@ import {
   deleteS3Objects,
   uploadBufferToS3,
   getPublicOrSignedUrl,
+  getS3ObjectMeta,
 } from "../lib/s3.js";
 import {
   GEN_MODELS,
@@ -34,6 +35,22 @@ import {
 } from "../lib/gen-processor.js";
 
 export const studioGenRouter = Router();
+
+async function hydrateGenAssets<T extends { assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null }> }>(
+  holder: T
+): Promise<T> {
+  if (!isS3Configured()) return holder;
+  for (const a of holder.assets) {
+    if (!a.resultKey) continue;
+    const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
+    a.url = fresh;
+    if (a.thumbUrl) a.thumbUrl = fresh;
+    const meta = await getS3ObjectMeta(a.resultKey);
+    (a as typeof a & { sizeBytes?: number | null; contentType?: string | null }).sizeBytes = meta.sizeBytes;
+    (a as typeof a & { sizeBytes?: number | null; contentType?: string | null }).contentType = meta.contentType;
+  }
+  return holder;
+}
 
 studioGenRouter.use(
   requireAuth,
@@ -171,15 +188,7 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   });
   // Signed URL eskiradi — har asset uchun yangidan imzolaymiz.
   if (isS3Configured()) {
-    for (const g of items) {
-      for (const a of g.assets) {
-        if (a.resultKey) {
-          const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
-          a.url = fresh;
-          if (a.thumbUrl) a.thumbUrl = fresh;
-        }
-      }
-    }
+    for (const g of items) await hydrateGenAssets(g);
   }
   res.json({ items });
 });
@@ -419,6 +428,8 @@ const enhanceSchema = z.object({
   format: z.enum(["text", "json"]).optional(),
   // VISION enhance — referens rasm PUBLIC URL'lari (@img tartibida: [0]=@img1). Ixtiyoriy.
   image_urls: z.array(z.string().min(8)).max(10).optional(),
+  // VIDEO enhance — referens video PUBLIC URL'lari (@video tartibida: [0]=@video1). Ixtiyoriy.
+  video_urls: z.array(z.string().min(8)).max(10).optional(),
   references: z.array(z.string().min(8)).max(10).optional(),
 });
 
@@ -467,8 +478,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     ? `\nGeneration context — tailor the prompt to it: ${ctxParts.join("; ")}.`
     : "";
   const keepRefs =
-    " Preserve any @img / @image references verbatim (do not rename or remove them).";
-
+    " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
   if (!withinDailyCap(req.user!.userId)) {
     res.status(429).json({
@@ -514,12 +524,19 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
 
-  // text — fal openrouter/router (Gemini 2.5 Flash); kirish tilini saqlaydi, faqat yakuniy prompt.
-  // Referens bo'lsa (image_urls) → VISION (openrouter/router/vision) — rasmlarni ham ko'rib yozadi.
+  // text — fal openrouter/router; image referens → VISION; video referens → VIDEO.
   const refUrls = (p.data.image_urls || p.data.references || []).filter(
     (u) => typeof u === "string" && /^https?:\/\//i.test(u)
   );
-  const out = await falEnhancePrompt(p.data.prompt, refUrls.length ? refUrls : undefined);
+  const videoRefUrls = (p.data.video_urls || []).filter(
+    (u) => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
+  const out = await falEnhancePrompt(p.data.prompt, {
+    imageUrls: refUrls.length ? refUrls : undefined,
+    videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
+    mode,
+    modelContext: ctx.replace(/^\s+/, ""),
+  });
   if (!out.ok) {
     await refundAiCredits(req.user!.userId, ENHANCE_COST);
     res.status(502).json({ error: out.error });
@@ -616,15 +633,7 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
     return;
   }
   // Signed URL 1 soatda eskiradi — resultKey bo'lsa har so'rovda yangidan imzolaymiz.
-  if (isS3Configured()) {
-    for (const a of gen.assets) {
-      if (a.resultKey) {
-        const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
-        a.url = fresh;
-        if (a.thumbUrl) a.thumbUrl = fresh;
-      }
-    }
-  }
+  await hydrateGenAssets(gen);
   res.json(gen);
 });
 

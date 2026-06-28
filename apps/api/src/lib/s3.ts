@@ -103,6 +103,21 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
   }
 }
 
+export async function getS3ObjectMeta(
+  key: string
+): Promise<{ sizeBytes: number | null; contentType: string | null }> {
+  if (!isS3Configured()) return { sizeBytes: null, contentType: null };
+  try {
+    const out = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return {
+      sizeBytes: typeof out.ContentLength === "number" ? out.ContentLength : null,
+      contentType: typeof out.ContentType === "string" ? out.ContentType : null,
+    };
+  } catch {
+    return { sizeBytes: null, contentType: null };
+  }
+}
+
 /** R2 da pack/preview/thumb turli kengaytma bilan saqlanishi mumkin */
 export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): string[] {
   const base = `templates/${templateId}/${kind}`;

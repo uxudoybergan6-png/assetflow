@@ -5839,7 +5839,7 @@ function onEnvScopeChange(sel){
    AI Tools — yagona kompozer mantig'i (vanilla JS).
    Dizayn referensi: Artlist uslubidagi bitta generatsiya bar.
    Backend: /api/studio/gen/* (session→cost-quote→job→poll) — rasm/ovoz/video/SFX;
-   qidiruv esa /api/plugin/ai/search. Prompt-enhance: /gen/prompt/enhance (kreditsiz).
+   qidiruv esa /api/plugin/ai/search. Prompt-enhance: /gen/prompt/enhance (1 kredit).
    ============================================================ */
 // cost — server narxiga moslangan (backend AI_COST: image 5 · voiceover 3 · sfx 4 · search 1).
 // Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
@@ -7129,7 +7129,7 @@ function aiSetSetting(i){
   if(aiStudioMode(af_ai.media)){af_ai.quote=null;aiCostQuote();}
 }
 /**
- * Promptni REAL AI bilan boyitadi (backend /gen/prompt/enhance — kreditsiz, model-aware).
+ * Promptni REAL AI bilan boyitadi (backend /gen/prompt/enhance — 1 kredit, model-aware).
  *  format='text' → boy paragraf; format='json' → strukturalangan prompt sxemasi.
  */
 async function aiEnhancePrompt(format){
@@ -10334,11 +10334,15 @@ window.afGallery=(function(){
   function vgGuideText(){
     return vm.refKind==='media-refs'
       ? "<b>R2V:</b> 9 tagacha rasm, 3 tagacha video, 3 tagacha audio qo'shishingiz mumkin. Promptda <b>@Image1</b>, <b>@Video1</b>, <b>@Audio1</b> deb chaqiring."
+      : vm.refKind==='none'
+      ? "<b>Text-to-video:</b> Referens shart emas. Faqat prompt yozib video yarating."
       : "<b>Fast:</b> Boshlang'ich kadr qo'shing, ixtiyoriy yakuniy kadr tanlang, keyin prompt yozib video yarating.";
   }
   function vgPromptPlaceholder(){
     return vm.refKind==='media-refs'
       ? 'Video harakat tavsifi. R2V: @Image1 / @Video1 / @Audio1 referenslarga ishora qiling (ixtiyoriy).'
+      : vm.refKind==='none'
+      ? 'Video tavsifi. Referenssiz model uchun sahna, harakat, kamera va uslubni aniq yozing.'
       : 'Video harakat tavsifi. Fast: sahnada nima bo‘lishini aniq yozing.';
   }
   function applyVgGuide(){
@@ -10413,6 +10417,33 @@ window.afGallery=(function(){
     try{ if(window.cep&&window.cep.fs&&window.cep.fs.readFile){ var enc=(window.cep.encoding&&window.cep.encoding.Base64)||'Base64'; var r=window.cep.fs.readFile(fp,enc); if(r&&(r.err===0||r.err==null)&&r.data)return 'data:'+mime(fp)+';base64,'+r.data; } }catch(e2){}
     return null;
   }
+  function probeBlobMeta(blob,type){
+    return new Promise(function(resolve,reject){
+      if(typeof URL==='undefined'||!URL.createObjectURL){ reject(new Error('META_UNAVAILABLE')); return; }
+      var el=document.createElement(type==='audio'?'audio':'video');
+      var url=URL.createObjectURL(blob), done=false;
+      var clean=function(){ try{ URL.revokeObjectURL(url); }catch(_){} if(el){ el.removeAttribute('src'); try{ el.load(); }catch(_){} } };
+      el.preload='metadata';
+      el.onloadedmetadata=function(){
+        if(done)return; done=true;
+        var meta={ duration:Number(el.duration)||0, width:Number(el.videoWidth)||0, height:Number(el.videoHeight)||0, sizeBytes:Number(blob.size)||0 };
+        clean(); resolve(meta);
+      };
+      el.onerror=function(){ if(done)return; done=true; clean(); reject(new Error('META_LOAD_FAILED')); };
+      el.src=url;
+    });
+  }
+  async function inspectMediaSource(src,type){
+    if(!src||type==='image')return null;
+    if(src.meta)return src.meta;
+    var fp=src.path||'';
+    var buf=readFileBuffer(fp);
+    if(!buf||!buf.length||typeof Blob==='undefined')return null;
+    var meta=await probeBlobMeta(new Blob([new Uint8Array(buf)],{type:mime(fp)}),type);
+    src.meta=meta;
+    if(!src.sizeBytes&&meta&&meta.sizeBytes)src.sizeBytes=meta.sizeBytes;
+    return meta;
+  }
   async function studioUploadRefFromPath(path){
     var fp=toFsPath(path);
     var st=readFileStat(fp);
@@ -10468,6 +10499,10 @@ window.afGallery=(function(){
       ok=vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<1;
       if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
       else if(refLoading)setVgWarn('Referens yuklanmoqda — tugashini kuting.');
+      else setVgWarn('');
+    } else if(vm.refKind==='none'){
+      ok=vm.loaded&&pr.length>=2&&activeJobs.length<1;
+      if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
       else setVgWarn('');
     } else {
       // Fast (frames): Boshlang'ich kadr + prompt majburiy
@@ -10601,6 +10636,9 @@ window.afGallery=(function(){
     if(prevKind!=='media-refs'&&nextKind==='media-refs'){
       clearFrameState();
     }
+    if(nextKind==='none'){
+      clearFrameState();
+    }
     applyModelSettings(m); applyVgMeta(); closeVgSheets();
     toast(String(m.label||'Model')+' tanlandi','info');
   }
@@ -10616,7 +10654,8 @@ window.afGallery=(function(){
     var dh=$('vgDurHint'); if(dh)dh.textContent='Auto ≈ '+vm.autoSec+' soniya';
     // referens hudud model-aware: frames=Kadrlar ↔ media-refs=ko'p-modal
     var isMedia=vm.refKind==='media-refs';
-    var fs=$('vgFrameSect'); if(fs)fs.style.display=isMedia?'none':'';
+    var isNone=vm.refKind==='none';
+    var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
     if(isMedia){ renderMediaRefs(); updRefMeta(); }
@@ -10694,6 +10733,25 @@ window.afGallery=(function(){
   function mediaRefTotalLimitMsg(type,maxBytes){
     return typeLabel(type)+" referenslarning jami hajmi "+fmtMb(maxBytes)+"MB dan oshmasligi kerak";
   }
+  function mediaMetaRuleMsg(type,metaOrItem){
+    if(!metaOrItem||vm.refKind!=='media-refs')return '';
+    if(type==='video'){
+      var d=Number(metaOrItem.duration||metaOrItem.sourceDurationSec||0);
+      if(d && (d<2 || d>15))return 'Video referens 2–15 soniya oralig‘ida bo‘lishi kerak';
+      var res=String(metaOrItem.sourceResolution||'').toLowerCase();
+      if(res==='1080p'||res==='4k')return 'Video referens 480p–720p oralig‘ida bo‘lishi kerak';
+      var w=Number(metaOrItem.width||0), h=Number(metaOrItem.height||0);
+      if(w&&h){
+        var hi=Math.max(w,h), lo=Math.min(w,h);
+        if(hi>1280 || lo<480)return 'Video referens 480p–720p oralig‘ida bo‘lishi kerak';
+      }
+    }
+    if(type==='audio'){
+      var ad=Number(metaOrItem.duration||metaOrItem.sourceDurationSec||0);
+      if(ad && ad>15)return 'Audio referens 15 soniyadan uzun bo‘lmasligi kerak';
+    }
+    return '';
+  }
   function totalRefBytes(type){
     return mref.filter(function(r){ return r.type===type; }).reduce(function(sum,r){ return sum + (Number(r.sizeBytes)||0); },0);
   }
@@ -10738,6 +10796,8 @@ window.afGallery=(function(){
     var sizeBytes=(src&&src.sizeBytes)||0, lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type);
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return; }
     if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return; }
+    var metaMsg=mediaMetaRuleMsg(type,(src&&src.meta)||src);
+    if(metaMsg){ toast(metaMsg,'warning'); return; }
     var preview=(src&&src.dataUrl)||null;
     var obj={type:type,dataUrl:type==='image'?preview:null,url:null,loading:true,sizeBytes:sizeBytes||0};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
@@ -10754,12 +10814,18 @@ window.afGallery=(function(){
     var lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type), sizeBytes=(it&&it.sizeBytes)||0;
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return false; }
     if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return false; }
+    var metaMsg=mediaMetaRuleMsg(type,it);
+    if(metaMsg){ toast(metaMsg,'warning'); return false; }
     if(mref.some(function(r){ return r.type===type&&r.url===it.url; })){ toast(typeLabel(type)+' referens allaqachon qo‘shilgan','info'); return false; }
     var obj={type:type,dataUrl:type==='image'?(it.thumb||it.url):null,url:it.url,loading:false,source:'recent',sizeBytes:sizeBytes||0};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
     insertVgTok(obj.token||tokFor(type,cntRef(type)));
     toast(typeLabel(type)+' referens qo‘shildi','success');
     return true;
+  }
+  function prepAndUploadMediaRef(src,type){
+    if(type==='image'){ uploadMediaRef(src,type); return; }
+    inspectMediaSource(src,type).then(function(){ uploadMediaRef(src,type); }).catch(function(){ uploadMediaRef(src,type); });
   }
   function mediaExts(type){
     var fm=vm.mediaRefFormats&&vm.mediaRefFormats[type];
@@ -10781,7 +10847,7 @@ window.afGallery=(function(){
     if(!extAllowed(type,paths[0])){ toast(typeLabel(type)+' formati mos emas','warning'); return; }
     var st=readFileStat(paths[0]);
     var src={path:paths[0],dataUrl:(type==='image'?readDataUrl(paths[0]):null),sizeBytes:(st&&st.size)||0};
-    if(type!=='image' || src.dataUrl || readFileStat(paths[0])){ uploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
+    if(type!=='image' || src.dataUrl || readFileStat(paths[0])){ prepAndUploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
     closeVgSheets();
   }
   // Manba 2 — Project paneldan (AE footage); turga mos filtr (image/video/audio)
@@ -10803,7 +10869,7 @@ window.afGallery=(function(){
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
         d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>';
-        (function(item){ d.addEventListener('click',function(){ var mp=item.mediaPath||''; var st=readFileStat(mp); var src={path:mp,dataUrl:(type==='image'?readDataUrl(mp):null),sizeBytes:(st&&st.size)||0}; if((type!=='image' || src.dataUrl || readFileStat(mp)) && mp){ uploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); } closeVgSheets(); }); })(it);
+        (function(item){ d.addEventListener('click',function(){ var mp=item.mediaPath||''; var st=readFileStat(mp); var src={path:mp,dataUrl:(type==='image'?readDataUrl(mp):null),sizeBytes:(st&&st.size)||0}; if((type!=='image' || src.dataUrl || readFileStat(mp)) && mp){ prepAndUploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); } closeVgSheets(); }); })(it);
         host.appendChild(d);
       });
     }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
@@ -10955,7 +11021,14 @@ window.afGallery=(function(){
     if(!txt){ toast('Avval prompt yozing','warning'); return; }
     var enh=$('vgEnhance'); if(enh)enh.style.opacity='0.4';
     var imgRefs=mref.filter(function(r){ return r.type==='image'&&r.url; }).map(function(r){ return r.url; });
-    studioPost('/api/studio/gen/prompt/enhance',{prompt:txt,mode:'video',modelId:(vm.model&&vm.model.id)||null,image_urls:imgRefs}).then(function(r){
+    var vidRefs=mref.filter(function(r){ return r.type==='video'&&r.url; }).map(function(r){ return r.url; });
+    studioPost('/api/studio/gen/prompt/enhance',{
+      prompt:txt,
+      mode:'video',
+      modelId:(vm.model&&vm.model.id)||null,
+      image_urls:imgRefs,
+      video_urls:vidRefs
+    }).then(function(r){
       if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt boyitildi','success'); }
       else toast('Boyitish muvaffaqiyatsiz','warning');
     }).catch(function(e){ toast((e&&e.message)||'Enhance xatosi','error');
@@ -10977,7 +11050,7 @@ window.afGallery=(function(){
       var sp=document.createElement('span'); sp.className='sp'; pt.appendChild(sp);
       var lbl=document.createElement('span');
       var preview=(j.prompt&&j.prompt.length>28)?j.prompt.slice(0,28)+'…':(j.prompt||'Video generatsiya');
-      lbl.textContent='Seedance · '+preview; pt.appendChild(lbl); row.appendChild(pt);
+      lbl.textContent=(j.modelLabel||'Video model')+' · '+preview; pt.appendChild(lbl); row.appendChild(pt);
       if(j.jobId){
         var bar=document.createElement('div'); bar.className='bar';
         var fill=document.createElement('i'); fill.id='vjbar'+j.seq; bar.appendChild(fill); row.appendChild(bar);
@@ -11010,10 +11083,20 @@ window.afGallery=(function(){
   }
 
   function showVgResult(assets,j){
-    var url=(assets&&assets[0]&&assets[0].url)||null;
+    var a0=(assets&&assets[0])||{};
+    var url=a0.url||null;
     if(!url){ toast('Natija bo\'sh','warning'); return; }
     try{ if(!vgRcState.items.some(function(x){return x.url===url;})){
-      vgRcState.items.unshift({id:(j&&j.jobId)||null,url:url,thumb:null,title:(j&&j.prompt)||'Video',cat:'video'});
+      vgRcState.items.unshift({
+        id:(j&&j.jobId)||null,
+        url:url,
+        thumb:null,
+        title:(j&&j.prompt)||'Video',
+        cat:'video',
+        sizeBytes:(a0&&a0.sizeBytes)||0,
+        sourceDurationSec:(j&&j.sourceDurationSec)||0,
+        sourceResolution:(j&&j.sourceResolution)||''
+      });
       vgRcState.items=vgRcState.items.slice(0,12);} renderVgRecent(); }catch(_){}
     var res=$('vgRes'); if(res)res.style.display='';
     var vid=$('vgVideo'); if(vid){ vid.src=url; vid.load(); }
@@ -11025,7 +11108,7 @@ window.afGallery=(function(){
     if(!IS_CEP){
       var btnDl=document.createElement('div'); btnDl.className='vact';
       btnDl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Yuklab olish';
-      btnDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=url; a.download='seedance-video.mp4'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
+      btnDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=url; a.download='video.mp4'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
       acts.appendChild(btnDl);
     }
   }
@@ -11141,7 +11224,16 @@ window.afGallery=(function(){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var cat=genCat(g.mode);
         if(!vgRcState.items.some(function(x){return x.url===url||x.id===g.id;}))
-          vgRcState.items.push({id:g.id,url:url,thumb:(cat==='image'?(a.thumbUrl||url):null),title:(g.prompt||'').trim()||catLabel(cat),cat:cat});
+          vgRcState.items.push({
+            id:g.id,
+            url:url,
+            thumb:(cat==='image'?(a.thumbUrl||url):null),
+            title:(g.prompt||'').trim()||catLabel(cat),
+            cat:cat,
+            sizeBytes:(a&&a.sizeBytes)||0,
+            sourceDurationSec:(g&&g.params&&g.params.duration&&String(g.params.duration)!=='auto')?(Number(g.params.duration)||0):0,
+            sourceResolution:(g&&g.params&&g.params.resolution)?String(g.params.resolution):''
+          });
       });
       vgRcState.items=vgRcState.items.slice(0,12);
       vgRcState.loaded=true; vgRcState.loading=false; vgRcState.error='';
@@ -11181,6 +11273,9 @@ window.afGallery=(function(){
       var auds=pick('audio'), imgs=pick('image'), vids=pick('video');
       if(auds.length&&imgs.length+vids.length===0){ toast('Audio uchun kamida 1 rasm yoki video referens kerak','warning'); return; }
       params={imageUrls:imgs,videoUrls:vids,audioUrls:auds,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+    } else if(vm.refKind==='none'){
+      if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
+      params={resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     } else {
       // Fast (frames) — Boshlang'ich kadr + prompt majburiy
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
@@ -11190,7 +11285,7 @@ window.afGallery=(function(){
     }
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
-    var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
+    var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model'};
     activeJobs.push(j); renderVgJobs(); refreshVgBtn();
     var quote=null;
     ensureVgMeta().then(function(){

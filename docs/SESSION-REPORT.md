@@ -1,11 +1,14 @@
-# SESSION REPORT — 2026-06-28 — Seedance 2 R2V capability alignment
+# SESSION REPORT — 2026-06-28 — Video tool hardening before new model
 
-- Seedance 2 R2V hujjatlari tahlil qilindi va model deskriptori docs bilan yaqinlashtirildi.
-- R2V uchun davomiyliklar `13s` va `14s` qo‘shildi.
-- Yangi capability qo‘shildi: `bitrate_mode` (`standard` / `high`) — plugin UI va backend fal payloadga ulandi.
-- `end_user_id` endi backenddan fal so‘roviga uzatiladi.
-- Referens limitlari aniqlashtirildi: rasm `30MB/file`, audio `15MB/file`, video referenslar jami `50MB`.
-- R2V uchun ruxsat etilgan formatlar toraytirildi: image `jpg/jpeg/png/webp`, video `mp4/mov`, audio `mp3/wav`.
-- Video referens ishlatilsa narx hisobida modelning `0.6x` chegirma logikasi qo‘shildi.
-- Video tool `Prompt yaxshilash` endi tanlangan model va image referenslar kontekstini yuboradi.
-- Tekshiruv: `npm run build -w apps/api` OK, plugin script parse `OK 15`.
+- Video tool oqimi qayta tekshirildi: 2 model ishlaydi, lekin yangi model qo‘shishdan oldin universal bo‘lmagan joylar ajratib olindi.
+- Backend `/gen/history` va `/gen/:jobId` endi asset `sizeBytes` va `contentType` metadata bilan qaytadi.
+- Shu metadata sabab So‘nggi genlardan video/audio natijani referens sifatida qo‘shishda limit tekshiruvi aniq ishlaydi.
+- Plugin video/audio referensni uploaddan oldin o‘zi tekshiradi: video `2–15s`, audio `<=15s`, video referens rezolyutsiyasi `480p–720p`.
+- R2V provider’ning `50MB` video referens cheklovi foydalanuvchiga aniq xabar bilan ko‘rsatiladi.
+- Video progress label endi hardcoded emas, tanlangan model nomini ko‘rsatadi.
+- Prompt yaxshilash endi tanlangan model capability contextini AI’ga uzatadi va `@img/@image/@video/@audio` tokenlarini saqlashga majbur qiladi.
+- Video tool endi `refKind='none'` modelini ham ko‘tara oladi: referenssiz `text-to-video` oqimi uchun kadr majburiy emas.
+- Video referensli `Prompt yaxshilash` uchun `openrouter/router/video` ulandi va production uchun `google/gemini-2.5-pro` tanlandi.
+- Tekshiruv: `npm run build -w apps/api` OK.
+- Tekshiruv: plugin script parse `OK 7`.
+- Qolgan asosiy cheklov: video tool hali to‘liq schema-driven emas; noodatiy yangi per-model settinglar uchun qo‘shimcha UI branch kerak bo‘ladi.

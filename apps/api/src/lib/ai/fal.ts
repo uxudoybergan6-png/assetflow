@@ -6,6 +6,10 @@ import type { OrResult } from "./openrouter.js";
 
 const QUEUE_BASE = "https://queue.fal.run";
 const KEY = process.env.FAL_KEY ?? ""; // bir marta, modul darajasida
+const OPENROUTER_TEXT_MODEL = "google/gemini-2.5-flash";
+const OPENROUTER_VISION_MODEL = "google/gemini-2.5-flash";
+// Video analyze uchun "eng kuchli + preview emas" variantni olamiz — production barqarorroq.
+const OPENROUTER_VIDEO_MODEL = "google/gemini-2.5-pro";
 
 export function isFalConfigured(): boolean {
   return Boolean(KEY);
@@ -321,27 +325,62 @@ export async function falImage(
  */
 export async function falEnhancePrompt(
   text: string,
-  imageUrls?: string[]
+  opts?: {
+    imageUrls?: string[];
+    videoUrls?: string[];
+    mode?: string;
+    modelContext?: string;
+  }
 ): Promise<OrResult<string>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
-  const refs = (imageUrls || []).filter(
+  const refs = (opts?.imageUrls || []).filter(
     (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u)
   );
+  const vids = (opts?.videoUrls || []).filter(
+    (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
+  const mode = String(opts?.mode || "image").toLowerCase() === "video" ? "video" : "image";
+  const role =
+    mode === "video"
+      ? "Sen video generatsiyasi uchun prompt muhandisisan."
+      : "Sen tasvir generatsiyasi uchun prompt muhandisisan.";
+  const detailHint =
+    mode === "video"
+      ? "Qisqa g'oyani bitta boy, aniq video promptga aylantir (subyekt, kamera harakati, kompozitsiya, yorug'lik, atmosfera, detal)."
+      : "Qisqa g'oyani bitta boy, tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal).";
+  const tokenHint =
+    " @img/@image/@video/@audio tokenlarini bo'lsa XUDDI O'ZICHA saqla, nomini o'zgartirma va olib tashlama.";
+  const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
 
   let modelId: string;
   let input: Record<string, unknown>;
-  if (refs.length > 0) {
+  if (vids.length > 0) {
+    modelId = "openrouter/router/video";
+    input = {
+      video_urls: vids,
+      prompt: text,
+      model: OPENROUTER_VIDEO_MODEL,
+      system_prompt:
+        `${role} Referens videolar tartibда: ` +
+        "1-video=@video1, 2-video=@video2, ... Foydalanuvchi ko'rsatmasi va videolardagi " +
+        `harakat, kamera, ritm va sahna o'zgarishini tahlil qilib, BITTA boy, aniq ${mode} prompt yoz. ` +
+        `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
+      temperature: 0.6,
+      max_tokens: 600,
+    };
+    console.log(`[fal] enhance VIDEO — ${vids.length} referens (openrouter/router/video)`);
+  } else if (refs.length > 0) {
     // VISION — referens rasmlarni tahlil qilib prompt yozadi.
     modelId = "openrouter/router/vision";
     input = {
       image_urls: refs, // @img tartibida: image_urls[0] = @img1
       prompt: text,
-      model: "google/gemini-2.5-flash",
+      model: OPENROUTER_VISION_MODEL,
       system_prompt:
-        "Sen tasvir tahrir/yaratish uchun prompt muhandisisan. Referens rasmlar tartibда: " +
+        `${role} Referens rasmlar tartibда: ` +
         "1-rasm=@img1, 2-rasm=@img2, ... Foydalanuvchi ko'rsatmasi va rasmlarni tahlil qilib, " +
-        "BITTA boy, aniq prompt yoz (rasmlardagini tushunib, @imgN ni to'g'ri ishlat). " +
-        "KIRISH TILINI saqla. Faqat yakuniy promptni qaytar, izohsiz.",
+        `BITTA boy, aniq ${mode} prompt yoz (rasmlardagini tushunib, @imgN ni to'g'ri ishlat). ` +
+        `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
       temperature: 0.6,
       max_tokens: 500,
     };
@@ -351,11 +390,10 @@ export async function falEnhancePrompt(
     modelId = "openrouter/router";
     input = {
       prompt: text,
-      model: "google/gemini-2.5-flash",
+      model: OPENROUTER_TEXT_MODEL,
       system_prompt:
-        "Sen tasvir generatsiyasi uchun prompt muhandisisan. Qisqa g'oyani bitta boy, " +
-        "tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal). KIRISH TILINI " +
-        "saqla. Faqat yakuniy promptni qaytar, izohsiz.",
+        `${role} ${detailHint} KIRISH TILINI saqla.${tokenHint}${modelContext} ` +
+        "Faqat yakuniy promptni qaytar, izohsiz.",
       temperature: 0.7,
       max_tokens: 400,
     };
