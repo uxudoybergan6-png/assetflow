@@ -62,6 +62,8 @@ export type GenModel = {
   maxRefs?: number; // referens chegarasi (schemada yo'q bo'lsa frontend 10 deb oladi)
   // Ko'p-modal referens limitlari (refKind 'media-refs'): image/video/audio alohida + jami.
   mediaRefs?: { image: number; video: number; audio: number; total: number };
+  // Provider ichki media input limiti. Masalan, ayrim R2V modellar video referensni 50MB gacha qabul qiladi.
+  mediaRefMaxBytes?: { image?: number; video?: number; audio?: number };
   brand?: string; // model egasi: "openai" | "google" | "bytedance" | "bfl"
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
@@ -710,6 +712,7 @@ export const GEN_MODELS: GenModel[] = [
     refMode: "optional", // referenssiz ham ishlaydi (faqat prompt)
     refKind: "media-refs",
     mediaRefs: { image: 9, video: 3, audio: 3, total: 12 },
+    mediaRefMaxBytes: { video: 50 * 1024 * 1024 },
     inputs: ["image-ref", "video-ref", "audio-file"],
     aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
     resolutions: ["480p", "720p", "1080p", "4k"],
