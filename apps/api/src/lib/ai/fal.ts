@@ -64,6 +64,9 @@ export type FalQueueJob = {
   statusUrl: string;
   responseUrl: string;
 };
+export type FalPollStepResult =
+  | { state: "pending" }
+  | { state: "completed"; data: unknown };
 
 /**
  * Queue submit + status_url'ni COMPLETED gacha poll + response_url → output obyekt.
@@ -72,12 +75,15 @@ export type FalQueueJob = {
  */
 export async function falSubmitJob(
   modelId: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  opts?: { webhookUrl?: string }
 ): Promise<OrResult<FalQueueJob>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
+  const url = new URL(`${QUEUE_BASE}/${modelId}`);
+  if (opts?.webhookUrl) url.searchParams.set("fal_webhook", opts.webhookUrl);
   let sub: Response;
   try {
-    sub = await fetch(`${QUEUE_BASE}/${modelId}`, {
+    sub = await fetch(url, {
       method: "POST",
       headers: falHeaders(),
       body: JSON.stringify(input),
@@ -110,33 +116,45 @@ export async function falPollJob(
   const maxPolls = opts?.maxPolls ?? MAX_POLLS;
   for (let i = 0; i < maxPolls; i++) {
     await sleep(pollDelayMs(i));
-    let st: Response;
-    try {
-      st = await fetch(job.statusUrl, { headers: falHeaders() });
-    } catch {
-      continue; // tarmoq tebranishi — poll davom etadi
-    }
-    if (!st.ok) {
-      if (st.status === 429 || st.status >= 500) continue; // transient → poll davom
-      return { ok: false, error: await errText(st), status: st.status };
-    }
-    const sd = (await safeJson(st)) as FalStatus | null;
-    const status = sd?.status;
-    if (status === "COMPLETED") {
-      let rr: Response;
-      try {
-        rr = await fetch(job.responseUrl, { headers: falHeaders() });
-      } catch (e) {
-        return { ok: false, error: (e as Error).message || "fal natija ulanmadi" };
-      }
-      if (!rr.ok) return { ok: false, error: await errText(rr), status: rr.status };
-      const out = await safeJson(rr);
-      if (out == null) return { ok: false, error: "fal: bo'sh natija" };
-      return { ok: true, data: out };
-    }
-    // IN_QUEUE / IN_PROGRESS → poll davom
+    const step = await falPollStep(job);
+    if (!step.ok) return step;
+    if (step.data.state === "completed") return { ok: true, data: step.data.data };
   }
   return { ok: false, error: "FAL_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+}
+
+export async function falPollStep(
+  job: FalQueueJob
+): Promise<OrResult<FalPollStepResult>> {
+  if (!isFalConfigured()) return NOT_CONFIGURED;
+  let st: Response;
+  try {
+    st = await fetch(job.statusUrl, { headers: falHeaders() });
+  } catch {
+    return { ok: true, data: { state: "pending" } }; // transient tarmoq tebranishi
+  }
+  if (!st.ok) {
+    if (st.status === 429 || st.status >= 500) {
+      return { ok: true, data: { state: "pending" } }; // vaqtinchalik holat
+    }
+    return { ok: false, error: await errText(st), status: st.status };
+  }
+  const sd = (await safeJson(st)) as FalStatus | null;
+  const status = sd?.status;
+  if (typeof sd?.error === "string" && sd.error.trim()) {
+    return { ok: false, error: sd.error.trim() };
+  }
+  if (status !== "COMPLETED") return { ok: true, data: { state: "pending" } };
+  let rr: Response;
+  try {
+    rr = await fetch(job.responseUrl, { headers: falHeaders() });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "fal natija ulanmadi" };
+  }
+  if (!rr.ok) return { ok: false, error: await errText(rr), status: rr.status };
+  const out = await safeJson(rr);
+  if (out == null) return { ok: false, error: "fal: bo'sh natija" };
+  return { ok: true, data: { state: "completed", data: out } };
 }
 
 async function falSubmit(
@@ -262,8 +280,11 @@ async function falDownload(url: string): Promise<OrResult<Buffer>> {
 }
 
 export async function falVideoResultToBuffer(data: unknown): Promise<OrResult<Buffer>> {
-  const box = data as { video?: { url?: string } };
-  const url = box?.video?.url;
+  const box = data as { video?: { url?: string } | string; url?: string };
+  const url =
+    typeof box?.video === "string"
+      ? box.video
+      : box?.video?.url || box?.url;
   if (!url) return { ok: false, error: "fal: video URL topilmadi" };
   return falDownload(url);
 }

@@ -13,6 +13,7 @@ import type { ErrorRequestHandler } from "express";
 import cors from "cors";
 import { authRouter } from "./routes/auth.js";
 import { stripeWebhookHandler } from "./routes/stripe.js";
+import { falWebhookHandler } from "./routes/fal-webhook.js";
 import { pluginRouter } from "./routes/plugin.js";
 import { adminRouter } from "./routes/admin.js";
 import { usersRouter } from "./routes/users.js";
@@ -77,6 +78,11 @@ app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhookHandler
+);
+app.post(
+  "/api/studio/gen/fal-webhook",
+  express.raw({ type: "application/json" }),
+  falWebhookHandler
 );
 
 // Studio Gen'da ikki endpoint juda katta base64 payload qabul qiladi:

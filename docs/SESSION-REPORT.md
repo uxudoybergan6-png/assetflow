@@ -1,12 +1,12 @@
-# SESSION REPORT — 2026-06-29 — Durable video resume groundwork
+# SESSION REPORT — 2026-06-29 — fal webhook ulanishi
 
-- Video gen oqimi mustahkamlandi: provider job holati endi `Generation.params.__providerJob` ichida saqlanadi.
-- OpenRouter video job ID ham, fal video `requestId/statusUrl/responseUrl` ham DB’da yozilib qoladi.
-- Server restart bo‘lsa `queued` joblar va provider holati bor `running` video joblar avtomatik qayta navbatga olinadi.
-- `/api/studio/gen/:jobId` polling endpointi ham resume trigger bo‘ldi; foydalanuvchi kutayotgan paytda job yana ushlanadi.
-- Seedance Fast va R2V timeoutlari timeout bo‘lsa darrov `failed` qilinmaydi; `running` holatda qolib keyin resume qilinadi.
-- Durable resume uchun local queue dedupe qo‘shildi; bitta job bir process ichida ikki marta parallel yurmaydi.
-- Oldingi quick stabilization saqlandi: `480p`, `Auto≈4s`, `audio default off`, parallel referens materializatsiyasi.
-- Hali qolgan katta qadam: fal webhook bilan push-complete oqimiga o‘tish (hozircha DB-resume + repoll).
+- fal video submit endi `fal_webhook` bilan yuboriladi; video tugasa fal serverning o‘ziga xabar beradi.
+- Yangi route qo‘shildi: `/api/studio/gen/fal-webhook` — raw body, imzo tekshiruvi, JWKS cache bilan.
+- Webhook xavfsizligi qo‘shildi: `X-Fal-Webhook-*` headerlari, timestamp oynasi, ED25519 verify.
+- Webhook kelganda natija `Generation.params.__providerWebhook` ichida vaqtincha saqlanadi.
+- Ishlab turgan `running` video job ham shu webhook holatini DB’dan ko‘rib, natija kelishi bilan yakunlay oladi.
+- Seedance Fast va Seedance R2V ikkalasi ham endi webhook + resume oqimida ishlaydi.
+- Provider job ma’lumoti `__providerJob` ichida saqlanishda davom etadi; restartdan keyin resume saqlanib qoladi.
+- Job tugaganda provider job tozalanadi, webhook izi esa duplicate webhook’larni tanish uchun qoladi.
+- Natija: video gen faqat uzun poll’ga qaram bo‘lmaydi; fal tayyor bo‘ldi deganda server ushlab oladi.
 - Tekshiruv: `npm run build -w apps/api` OK.
-- Tekshiruv: plugin inline script parse `OK 15`.

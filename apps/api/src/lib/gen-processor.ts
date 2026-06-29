@@ -17,7 +17,7 @@ import {
 import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
 import {
   falImage,
-  falPollJob,
+  falPollStep,
   falSubmitJob,
   falVideoResultToBuffer,
   type FalQueueJob,
@@ -41,6 +41,15 @@ function sleep(ms: number) {
 type StoredProviderJob =
   | { provider: "openrouter-video"; jobId: string; submittedAt: string }
   | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob);
+type StoredProviderWebhook = {
+  provider: "fal";
+  requestId: string;
+  status: "OK" | "ERROR";
+  payload?: unknown;
+  error?: string;
+  payloadError?: string;
+  receivedAt: string;
+};
 
 function readProviderJob(params: Record<string, unknown>): StoredProviderJob | null {
   const raw = params.__providerJob;
@@ -84,6 +93,96 @@ async function persistProviderJob(
   });
 }
 
+function readProviderWebhook(params: Record<string, unknown>): StoredProviderWebhook | null {
+  const raw = params.__providerWebhook;
+  if (!raw || typeof raw !== "object") return null;
+  const box = raw as Record<string, unknown>;
+  const status = String(box.status || "");
+  const requestId = String(box.requestId || "");
+  if ((status !== "OK" && status !== "ERROR") || !requestId) return null;
+  return {
+    provider: "fal",
+    requestId,
+    status,
+    payload: box.payload,
+    error: typeof box.error === "string" ? box.error : undefined,
+    payloadError: typeof box.payloadError === "string" ? box.payloadError : undefined,
+    receivedAt:
+      typeof box.receivedAt === "string" ? box.receivedAt : new Date().toISOString(),
+  };
+}
+
+async function persistProviderWebhook(
+  genId: string,
+  params: Record<string, unknown>,
+  hook: StoredProviderWebhook | null
+): Promise<void> {
+  if (hook) params.__providerWebhook = hook;
+  else delete params.__providerWebhook;
+  await prisma.generation.update({
+    where: { id: genId },
+    data: { params: params as object },
+  });
+}
+
+async function clearProviderJob(genId: string): Promise<void> {
+  const gen = await prisma.generation.findUnique({
+    where: { id: genId },
+    select: { params: true },
+  });
+  const params =
+    gen?.params && typeof gen.params === "object"
+      ? ({ ...(gen.params as Record<string, unknown>) } as Record<string, unknown>)
+      : {};
+  if (!readProviderJob(params)) return;
+  await persistProviderJob(genId, params, null);
+}
+
+function falWebhookUrl(): string {
+  const base = process.env.API_PUBLIC_URL?.trim();
+  if (!base) return "";
+  return `${base.replace(/\/+$/, "")}/api/studio/gen/fal-webhook`;
+}
+
+function falWaitMs(i: number): number {
+  return i < 6 ? 600 : i < 20 ? 1200 : 2000;
+}
+
+async function readProviderWebhookFresh(genId: string): Promise<StoredProviderWebhook | null> {
+  const gen = await prisma.generation.findUnique({
+    where: { id: genId },
+    select: { params: true },
+  });
+  if (!gen?.params || typeof gen.params !== "object") return null;
+  return readProviderWebhook(gen.params as Record<string, unknown>);
+}
+
+async function waitForFalResult(
+  genId: string,
+  job: FalQueueJob,
+  maxPolls: number
+): Promise<OrResult<unknown>> {
+  for (let i = 0; i < maxPolls; i++) {
+    const hook = await readProviderWebhookFresh(genId);
+    if (hook?.status === "ERROR") {
+      return { ok: false, error: hook.error || hook.payloadError || "fal webhook xatosi" };
+    }
+    if (hook?.status === "OK") {
+      return { ok: true, data: hook.payload };
+    }
+    await sleep(falWaitMs(i));
+    const step = await falPollStep(job);
+    if (!step.ok) return step;
+    if (step.data.state === "completed") return { ok: true, data: step.data.data };
+  }
+  const finalHook = await readProviderWebhookFresh(genId);
+  if (finalHook?.status === "ERROR") {
+    return { ok: false, error: finalHook.error || finalHook.payloadError || "fal webhook xatosi" };
+  }
+  if (finalHook?.status === "OK") return { ok: true, data: finalHook.payload };
+  return { ok: false, error: "FAL_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+}
+
 function isResumableRunningGeneration(gen: {
   mode: string;
   status: string;
@@ -92,7 +191,8 @@ function isResumableRunningGeneration(gen: {
   if (gen.status !== "running" || gen.mode !== "video" || !gen.params || typeof gen.params !== "object") {
     return false;
   }
-  return Boolean(readProviderJob(gen.params as Record<string, unknown>));
+  const params = gen.params as Record<string, unknown>;
+  return Boolean(readProviderJob(params) || readProviderWebhook(params));
 }
 
 /**
@@ -287,12 +387,23 @@ async function runFalVideo(
     generate_audio: v.generateAudio,
   };
   if (endUrl) input.end_image_url = endUrl;
+  const savedHook = readProviderWebhook(params);
+  if (savedHook?.status === "ERROR") {
+    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook xatosi" };
+  }
+  if (savedHook?.status === "OK") {
+    const ready = await falVideoResultToBuffer(savedHook.payload);
+    if (!ready.ok) return { ok: false, error: ready.error };
+    return { ok: true, buf: ready.data };
+  }
   const saved = readProviderJob(params);
   let job: FalQueueJob;
   if (saved?.provider === "fal-video") {
     job = { requestId: saved.requestId, statusUrl: saved.statusUrl, responseUrl: saved.responseUrl };
   } else {
-    const sub = await falSubmitJob(model.falModel ?? model.key, input);
+    const sub = await falSubmitJob(model.falModel ?? model.key, input, {
+      webhookUrl: falWebhookUrl() || undefined,
+    });
     if (!sub.ok) return { ok: false, error: sub.error };
     job = sub.data;
     await persistProviderJob(genId, params, {
@@ -303,7 +414,7 @@ async function runFalVideo(
       submittedAt: new Date().toISOString(),
     });
   }
-  const out = await falPollJob(job, { maxPolls: 210 });
+  const out = await waitForFalResult(genId, job, 210);
   if (!out.ok) return { ok: false, error: out.error };
   const buf = await falVideoResultToBuffer(out.data);
   if (!buf.ok) return { ok: false, error: buf.error };
@@ -357,12 +468,23 @@ async function runFalRefVideo(
   if (imageUrls.length) input.image_urls = imageUrls;
   if (videoUrls.length) input.video_urls = videoUrls;
   if (audioUrls.length) input.audio_urls = audioUrls;
+  const savedHook = readProviderWebhook(params);
+  if (savedHook?.status === "ERROR") {
+    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook xatosi" };
+  }
+  if (savedHook?.status === "OK") {
+    const ready = await falVideoResultToBuffer(savedHook.payload);
+    if (!ready.ok) return { ok: false, error: ready.error };
+    return { ok: true, buf: ready.data };
+  }
   const saved = readProviderJob(params);
   let job: FalQueueJob;
   if (saved?.provider === "fal-ref-video") {
     job = { requestId: saved.requestId, statusUrl: saved.statusUrl, responseUrl: saved.responseUrl };
   } else {
-    const sub = await falSubmitJob(model.falModel ?? model.key, input);
+    const sub = await falSubmitJob(model.falModel ?? model.key, input, {
+      webhookUrl: falWebhookUrl() || undefined,
+    });
     if (!sub.ok) {
       if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(sub.error || ""))) {
         return {
@@ -381,7 +503,7 @@ async function runFalRefVideo(
       submittedAt: new Date().toISOString(),
     });
   }
-  const out = await falPollJob(job, { maxPolls: 360 });
+  const out = await waitForFalResult(genId, job, 360);
   if (!out.ok) {
     if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(out.error || ""))) {
       return {
@@ -415,6 +537,7 @@ export async function processGeneration(genId: string): Promise<void> {
       where: { id: genId, status: { in: ["queued", "running"] } },
       data: { status: "failed", error: reason.slice(0, 480) },
     });
+    await clearProviderJob(genId);
     if (upd.count > 0) await refundAiCredits(gen.userId, gen.cost);
   };
 
@@ -593,7 +716,7 @@ export async function processGeneration(genId: string): Promise<void> {
       await prisma.genAsset.create({
         data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: url, aspectRatio },
       });
-      await persistProviderJob(genId, params, null);
+      await clearProviderJob(genId);
     } else {
       return void (await fail(`Qo'llab-quvvatlanmaydigan tur: ${model.feature}`));
     }
