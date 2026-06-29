@@ -40,6 +40,7 @@ import {
   processGenerationInBackground,
   reconcileStuckGenerations,
 } from "../lib/gen-processor.js";
+import { preflightSafetyCheck } from "../lib/preflight-safety.js";
 
 export const studioGenRouter = Router();
 
@@ -407,6 +408,13 @@ const quoteSchema = z.object({
   mode: z.enum(GEN_MODES),
   params: boundedParams,
 });
+
+const preflightSchema = z.object({
+  mode: z.enum(GEN_MODES),
+  prompt: z.string().trim().min(2).max(5000),
+  modelId: z.number().int().optional(),
+  params: boundedParams.optional(),
+});
 studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
   const p = quoteSchema.safeParse(req.body);
   if (!p.success) {
@@ -423,6 +431,23 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
   const ph = genParamsHash(model.id, model.mode, params);
   const signature = signCostQuote({ modelId: model.id, mode: model.mode, price, ph });
   res.json({ modelId: model.id, price, signature, feature: model.feature });
+});
+
+/** POST /gen/preflight-safety — yuborishdan oldin tezkor safety tekshiruv. */
+studioGenRouter.post("/gen/preflight-safety", async (req: Request, res: Response) => {
+  const p = preflightSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const model = p.data.modelId ? getModelById(p.data.modelId) : null;
+  const result = preflightSafetyCheck({
+    mode: p.data.mode,
+    prompt: p.data.prompt,
+    params: (p.data.params ?? {}) as Record<string, unknown>,
+    modelLabel: model?.label,
+  });
+  res.json(result);
 });
 
 /** POST /gen/ref-upload — referens rasm (data-URI) → R2 public URL. Plagin har referens qo'shganda
@@ -676,6 +701,22 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       code: "REFERENCE_NOT_SUPPORTED",
       referenceMode: getReferenceMode(model),
       recommendedModelId: rec?.id ?? null,
+    });
+    return;
+  }
+
+  const preflight = preflightSafetyCheck({
+    mode,
+    prompt,
+    params,
+    modelLabel: model.label,
+  });
+  if (preflight.blocked) {
+    res.status(400).json({
+      error: preflight.reason || "Prompt safety tekshiruvdan o'tmadi",
+      code: "PREFLIGHT_BLOCKED",
+      severity: preflight.severity,
+      suggestions: preflight.suggestions,
     });
     return;
   }

@@ -11606,6 +11606,14 @@ window.afGallery=(function(){
 
   function updVgRcBatch(){ var b=$('vgRecentBatch'); if(!b)return; b.classList.toggle('on',vgRcState.selecting); var bi=$('vgRecentBI'); if(bi)bi.textContent=Object.keys(vgRcState.sel).length+' tanlandi'; }
 
+  function preflightMsg(d){
+    if(!d)return 'Prompt safety tekshiruvdan o‘tmadi';
+    var msg=(d.reason||d.error||'Prompt safety tekshiruvdan o‘tmadi');
+    var tips=(d.suggestions||[]).slice(0,2);
+    if(tips.length)msg+=' · '+tips.join(' ');
+    return msg;
+  }
+
   function renderVgRecent(){
     var r=$('vgRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(vgRcState.selecting?' selmode':'');
@@ -11717,6 +11725,15 @@ window.afGallery=(function(){
     ensureVgMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(!vm.model)throw new Error('Model topilmadi');
+      return studioPost('/api/studio/gen/preflight-safety',{mode:'video',modelId:vm.model.id,prompt:prompt,params:params},20000);
+    }).then(function(pre){
+      if(j.cancelled)throw new Error('CANCELLED');
+      if(pre&&pre.blocked){
+        var er=new Error(preflightMsg(pre));
+        er.code='PREFLIGHT_BLOCKED';
+        throw er;
+      }
+      if(pre&&pre.warnings&&pre.warnings.length)toast(pre.warnings[0],'warning');
       return Promise.all([
         studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params}),
         ensureVgSession()
