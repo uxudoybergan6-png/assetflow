@@ -821,24 +821,39 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
     return;
   }
-  const spendModel =
-    enhanceCost.hasVideo
-      ? "openrouter/router/video"
-      : enhanceCost.hasImage
-        ? "openrouter/router/vision"
-        : enhanceCost.hasAudio
-          ? "nvidia/nemotron-3-nano-omni/audio + openrouter/router"
-          : "openrouter/router";
+  const spendModels = [
+    enhanceCost.hasImage ? "openrouter/router/vision" : "",
+    enhanceCost.hasVideo ? "fal-ai/video-understanding" : "",
+    enhanceCost.hasAudio ? "nvidia/nemotron-3-nano-omni/audio" : "",
+    "openrouter/router",
+  ].filter(Boolean);
+  const spendModel = Array.from(new Set(spendModels)).join(" + ");
   logAiSpend(req.user!.userId, "enhance", enhanceCost.cost, spendModel);
 
   if (format === "json") {
+    let ideaForJson = p.data.prompt;
+    if (refUrls.length || videoRefUrls.length || audioRefUrls.length) {
+      const enhanced = await falEnhancePrompt(p.data.prompt, {
+        imageUrls: refUrls.length ? refUrls : undefined,
+        videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
+        audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
+        mode,
+        modelContext: ctx.replace(/^\s+/, ""),
+      });
+      if (!enhanced.ok) {
+        await refundAiCredits(req.user!.userId, enhanceCost.cost);
+        res.status(502).json({ error: enhanced.error });
+        return;
+      }
+      ideaForJson = enhanced.data.trim();
+    }
     const system =
       `You are an expert ${mode} prompt engineer for AI generation. Rewrite the user's idea into a ` +
       `rich, production-quality prompt and return it ONLY as a JSON object matching exactly this schema:\n` +
       `${enhanceJsonSchema(mode)}\n` +
       `Be concrete and cinematic. No markdown, no commentary. The "prompt" field must be a ` +
       `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
-    const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, true);
+    const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${ideaForJson}`, true);
     if (!out.ok) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
       res.status(502).json({ error: out.error });
@@ -861,7 +876,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
 
-  // text — fal openrouter/router; image referens → VISION; video referens → VIDEO; audio → Nemotron analysis + router.
+  // text — universal multimodal oqim: image/video/audio avval tahlil qilinadi, keyin final prompt yig'iladi.
   const out = await falEnhancePrompt(p.data.prompt, {
     imageUrls: refUrls.length ? refUrls : undefined,
     videoUrls: videoRefUrls.length ? videoRefUrls : undefined,

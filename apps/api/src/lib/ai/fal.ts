@@ -8,8 +8,7 @@ const QUEUE_BASE = "https://queue.fal.run";
 const KEY = process.env.FAL_KEY ?? ""; // bir marta, modul darajasida
 const OPENROUTER_TEXT_MODEL = "google/gemini-2.5-flash";
 const OPENROUTER_VISION_MODEL = "google/gemini-2.5-flash";
-// Video analyze uchun "eng kuchli + preview emas" variantni olamiz — production barqarorroq.
-const OPENROUTER_VIDEO_MODEL = "google/gemini-2.5-pro";
+const FAL_VIDEO_UNDERSTANDING_MODEL = "fal-ai/video-understanding";
 const NEMOTRON_AUDIO_MODEL = "nvidia/nemotron-3-nano-omni/audio";
 
 export function isFalConfigured(): boolean {
@@ -356,7 +355,61 @@ export async function falEnhancePrompt(
   const tokenHint =
     " @img/@image/@video/@audio tokenlarini bo'lsa XUDDI O'ZICHA saqla, nomini o'zgartirma va olib tashlama.";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
-  let promptText = text;
+  const pickText = (data: unknown): string => {
+    if (typeof data === "string") return data.trim();
+    if (!data || typeof data !== "object") return "";
+    const box = data as {
+      output?: unknown;
+      text?: unknown;
+      response?: unknown;
+      message?: unknown;
+      content?: unknown;
+    };
+    for (const v of [box.output, box.text, box.response, box.message, box.content]) {
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return "";
+  };
+  const notes: string[] = [];
+
+  if (refs.length) {
+    const img = await falSubmit("openrouter/router/vision", {
+      image_urls: refs,
+      prompt: text,
+      model: OPENROUTER_VISION_MODEL,
+      system_prompt:
+        `${role} Referens rasmlar tartibda: 1-rasm=@img1, 2-rasm=@img2, ... ` +
+        `Foydalanuvchi matni bilan birga rasmlarni tahlil qil va faqat prompt uchun foydali kuzatuvlarni yoz. ` +
+        "Subyekt, kompozitsiya, uslub, material, rang, yorug'lik, fon, kayfiyat va muhim vizual cheklovlarni qisqa paragrafda qaytar. " +
+        `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat tahlil yoz, final prompt yozma.`,
+      temperature: 0.4,
+      max_tokens: 350,
+    });
+    if (!img.ok) return img;
+    const note = pickText(img.data);
+    if (!note) return { ok: false, error: "fal: image enhance bo'sh javob qaytardi" };
+    notes.push(`Image reference analysis:\n${note}`);
+  }
+
+  if (vids.length) {
+    const videoNotes: string[] = [];
+    for (let i = 0; i < vids.length; i++) {
+      const vr = await falSubmit(FAL_VIDEO_UNDERSTANDING_MODEL, {
+        video_url: vids[i],
+        prompt:
+          "Analyze this video reference for an AI generation prompt. Describe only the useful prompt cues: " +
+          "subject, action, camera movement, framing, speed, pacing, transitions, environment, lighting, mood, texture, and notable motion details. " +
+          "Return one concise paragraph in the same language as the user's request if possible.",
+        detailed_analysis: true,
+      });
+      if (!vr.ok) return vr;
+      const note = pickText(vr.data);
+      if (!note) return { ok: false, error: "fal: video enhance bo'sh javob qaytardi" };
+      videoNotes.push(`@video${i + 1}: ${note}`);
+    }
+    notes.push(`Video reference analysis:\n${videoNotes.join("\n")}`);
+  }
+
   if (auds.length) {
     const audioNotes: string[] = [];
     for (let i = 0; i < auds.length; i++) {
@@ -374,85 +427,30 @@ export async function falEnhancePrompt(
         audio_url: auds[i],
       });
       if (!ar.ok) return ar;
-      const data = ar.data as { output?: unknown; text?: unknown; response?: unknown; message?: unknown; content?: unknown } | string;
-      const note =
-        typeof data === "string"
-          ? data.trim()
-          : [data?.output, data?.text, data?.response, data?.message, data?.content]
-              .find((v) => typeof v === "string" && v.trim()) as string | undefined;
-      if (!note || !String(note).trim()) return { ok: false, error: "fal: audio enhance bo'sh javob qaytardi" };
-      audioNotes.push(`@audio${i + 1}: ${String(note).trim()}`);
+      const note = pickText(ar.data);
+      if (!note) return { ok: false, error: "fal: audio enhance bo'sh javob qaytardi" };
+      audioNotes.push(`@audio${i + 1}: ${note}`);
     }
-    promptText =
-      `${text}\n\nAudio reference analysis:\n` +
-      audioNotes.join("\n");
+    notes.push(`Audio reference analysis:\n${audioNotes.join("\n")}`);
   }
 
-  let modelId: string;
-  let input: Record<string, unknown>;
-  if (vids.length > 0) {
-    modelId = "openrouter/router/video";
-    input = {
-      video_urls: vids,
-      prompt: promptText,
-      model: OPENROUTER_VIDEO_MODEL,
-      system_prompt:
-        `${role} Referens videolar tartibда: ` +
-        "1-video=@video1, 2-video=@video2, ... Foydalanuvchi ko'rsatmasi va videolardagi " +
-        `harakat, kamera, ritm va sahna o'zgarishini tahlil qilib, BITTA boy, aniq ${mode} prompt yoz. ` +
-        "Agar prompt ichida 'Audio reference analysis' bo'lsa, uni ham birga hisobga ol. " +
-        `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
-      temperature: 0.6,
-      max_tokens: 600,
-    };
-    console.log(`[fal] enhance VIDEO — ${vids.length} video, ${auds.length} audio referens`);
-  } else if (refs.length > 0) {
-    // VISION — referens rasmlarni tahlil qilib prompt yozadi.
-    modelId = "openrouter/router/vision";
-    input = {
-      image_urls: refs, // @img tartibida: image_urls[0] = @img1
-      prompt: promptText,
-      model: OPENROUTER_VISION_MODEL,
-      system_prompt:
-        `${role} Referens rasmlar tartibда: ` +
-        "1-rasm=@img1, 2-rasm=@img2, ... Foydalanuvchi ko'rsatmasi va rasmlarni tahlil qilib, " +
-        `BITTA boy, aniq ${mode} prompt yoz (rasmlardagini tushunib, @imgN ni to'g'ri ishlat). ` +
-        "Agar prompt ichida 'Audio reference analysis' bo'lsa, uni ham birga hisobga ol. " +
-        `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
-      temperature: 0.6,
-      max_tokens: 500,
-    };
-    console.log(`[fal] enhance VISION — ${refs.length} image, ${auds.length} audio referens`);
-  } else {
-    // TEXT — referens yo'q (hozirgi yo'l).
-    modelId = "openrouter/router";
-    input = {
-      prompt: promptText,
-      model: OPENROUTER_TEXT_MODEL,
-      system_prompt:
-        `${role} ${detailHint} KIRISH TILINI saqla.${tokenHint}${modelContext} ` +
-        "Faqat yakuniy promptni qaytar, izohsiz.",
-      temperature: 0.7,
-      max_tokens: 400,
-    };
-    console.log(`[fal] enhance TEXT — ${auds.length} audio referens`);
-  }
-
-  const r = await falSubmit(modelId, input);
+  const promptText = notes.length ? `${text}\n\n${notes.join("\n\n")}` : text;
+  console.log(
+    `[fal] enhance UNIVERSAL — images=${refs.length} videos=${vids.length} audios=${auds.length}`
+  );
+  const r = await falSubmit("openrouter/router", {
+    prompt: promptText,
+    model: OPENROUTER_TEXT_MODEL,
+    system_prompt:
+      `${role} ${detailHint} Foydalanuvchi matni va berilgan reference analysis bloklarini birlashtirib, ` +
+      `bitta yakuniy, ishlatishga tayyor ${mode} prompt yoz. Agar analysis bloklarida ziddiyat bo'lsa, foydalanuvchi matnini ustun qo'y, ` +
+      "qolganini esa mos ravishda uyg'unlashtir. Referenslar haqida alohida izoh yozma, faqat final prompt yoz. " +
+      `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
+    temperature: 0.7,
+    max_tokens: 600,
+  });
   if (!r.ok) return r;
-  // openrouter/router javob shakli rasman tasdiqlanmagan → bir nechta mumkin maydonni TOLERANT o'qiymiz
-  // (output | text | response | message | content), yoki data o'zi string bo'lsa.
-  const data = r.data as
-    | { output?: unknown; text?: unknown; response?: unknown; message?: unknown; content?: unknown }
-    | string;
-  const pick = (...vals: unknown[]) => {
-    for (const v of vals) if (typeof v === "string" && v.trim()) return v.trim();
-    return "";
-  };
-  const out =
-    typeof data === "string"
-      ? data.trim()
-      : pick(data?.output, data?.text, data?.response, data?.message, data?.content);
+  const out = pickText(r.data);
   if (!out) return { ok: false, error: "fal: bo'sh javob" };
   return { ok: true, data: out };
 }

@@ -1,11 +1,12 @@
-# SESSION REPORT — 2026-06-29 — Enhance pricing + audio-aware prompt improve
+# SESSION REPORT — 2026-06-29 — Universal multimodal prompt improve
 
-- `Yaxshilash` endi bitta tekis 1 kredit emas: backend ishlatilgan modalga qarab dinamik kredit oladi.
-- Yangi hisob: `text=1`, `+image=+1`, `+video=+2`, `+audio=+1` → masalan `text+video=3`, `text+image+video+audio=5`.
-- Video tool `Yaxshilash` endi `audio_urls` ham yuboradi; oldin faqat `image_urls` va `video_urls` bor edi.
-- Backend `falEnhancePrompt` ichida audio referens bo‘lsa avval `nvidia/nemotron-3-nano-omni/audio` bilan audioni promptga foydali matnli tahlilga aylantiradi.
-- Keyin shu audio tahlili mavjud promptga qo‘shilib, rasm/video bo‘lsa `openrouter/router/vision` yoki `openrouter/router/video` bilan yakuniy prompt boyitiladi.
-- Audio referenssiz foydalanuvchi audio uchun kredit to‘lamaydi; audio ishlatilsa va tahlil bo‘lsa shundagina qo‘shimcha kredit olinadi.
-- Frontend toast endi `Yaxshilash` qancha kredit olganini ko‘rsatadi (`✦N`).
+- `Yaxshilash` endi haqiqiy universal oqimga o‘tdi: text + image + video + audio birga ishlaydi.
+- Oldin video referens bo‘lsa image referens amalda chetda qolib ketishi mumkin edi; endi har modal alohida tahlil qilinadi.
+- Rasm referens `openrouter/router/vision` bilan tahlil qilinadi.
+- Video referens endi `fal-ai/video-understanding` bilan tahlil qilinadi.
+- Audio referens `nvidia/nemotron-3-nano-omni/audio` bilan tahlil qilinadi.
+- Shu uchala tahlil foydalanuvchi prompti bilan birga yakunda `openrouter/router` orqali bitta final promptga yig‘iladi.
+- `format:"json"` oqimi ham endi referensli universal improve’dan o‘tib keyin JSON sxemaga aylantiriladi.
+- Kredit logi endi universal stekni aniqroq ko‘rsatadi (`vision + video-understanding + audio + router` kombinatsiyasi).
 - Tekshiruv: `npm run build -w apps/api` OK.
-- Tekshiruv: plugin script parse `OK 15`.
+- Tekshiruv: plugin inline script parse `OK 15`.
