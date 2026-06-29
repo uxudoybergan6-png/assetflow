@@ -10,6 +10,7 @@ const OPENROUTER_TEXT_MODEL = "google/gemini-2.5-flash";
 const OPENROUTER_VISION_MODEL = "google/gemini-2.5-flash";
 // Video analyze uchun "eng kuchli + preview emas" variantni olamiz — production barqarorroq.
 const OPENROUTER_VIDEO_MODEL = "google/gemini-2.5-pro";
+const NEMOTRON_AUDIO_MODEL = "nvidia/nemotron-3-nano-omni/audio";
 
 export function isFalConfigured(): boolean {
   return Boolean(KEY);
@@ -328,6 +329,7 @@ export async function falEnhancePrompt(
   opts?: {
     imageUrls?: string[];
     videoUrls?: string[];
+    audioUrls?: string[];
     mode?: string;
     modelContext?: string;
   }
@@ -337,6 +339,9 @@ export async function falEnhancePrompt(
     (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u)
   );
   const vids = (opts?.videoUrls || []).filter(
+    (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
+  const auds = (opts?.audioUrls || []).filter(
     (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u)
   );
   const mode = String(opts?.mode || "image").toLowerCase() === "video" ? "video" : "image";
@@ -351,6 +356,37 @@ export async function falEnhancePrompt(
   const tokenHint =
     " @img/@image/@video/@audio tokenlarini bo'lsa XUDDI O'ZICHA saqla, nomini o'zgartirma va olib tashlama.";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
+  let promptText = text;
+  if (auds.length) {
+    const audioNotes: string[] = [];
+    for (let i = 0; i < auds.length; i++) {
+      const ar = await falSubmit(NEMOTRON_AUDIO_MODEL, {
+        prompt:
+          "Analyze this audio reference for an AI generation prompt. " +
+          "Describe only the useful prompt cues: mood, rhythm, pacing, intensity, instruments or sound design, ambience, and any spoken content. " +
+          "Return one concise paragraph in the same language as the user's request if possible.",
+        system_prompt:
+          "You analyze an audio clip and return only concise prompt-useful observations. No markdown. No bullet list. No reasoning trace.",
+        reasoning_mode: "no_think",
+        max_tokens: 220,
+        temperature: 0.3,
+        top_p: 0.9,
+        audio_url: auds[i],
+      });
+      if (!ar.ok) return ar;
+      const data = ar.data as { output?: unknown; text?: unknown; response?: unknown; message?: unknown; content?: unknown } | string;
+      const note =
+        typeof data === "string"
+          ? data.trim()
+          : [data?.output, data?.text, data?.response, data?.message, data?.content]
+              .find((v) => typeof v === "string" && v.trim()) as string | undefined;
+      if (!note || !String(note).trim()) return { ok: false, error: "fal: audio enhance bo'sh javob qaytardi" };
+      audioNotes.push(`@audio${i + 1}: ${String(note).trim()}`);
+    }
+    promptText =
+      `${text}\n\nAudio reference analysis:\n` +
+      audioNotes.join("\n");
+  }
 
   let modelId: string;
   let input: Record<string, unknown>;
@@ -358,38 +394,40 @@ export async function falEnhancePrompt(
     modelId = "openrouter/router/video";
     input = {
       video_urls: vids,
-      prompt: text,
+      prompt: promptText,
       model: OPENROUTER_VIDEO_MODEL,
       system_prompt:
         `${role} Referens videolar tartibда: ` +
         "1-video=@video1, 2-video=@video2, ... Foydalanuvchi ko'rsatmasi va videolardagi " +
         `harakat, kamera, ritm va sahna o'zgarishini tahlil qilib, BITTA boy, aniq ${mode} prompt yoz. ` +
+        "Agar prompt ichida 'Audio reference analysis' bo'lsa, uni ham birga hisobga ol. " +
         `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
       temperature: 0.6,
       max_tokens: 600,
     };
-    console.log(`[fal] enhance VIDEO — ${vids.length} referens (openrouter/router/video)`);
+    console.log(`[fal] enhance VIDEO — ${vids.length} video, ${auds.length} audio referens`);
   } else if (refs.length > 0) {
     // VISION — referens rasmlarni tahlil qilib prompt yozadi.
     modelId = "openrouter/router/vision";
     input = {
       image_urls: refs, // @img tartibida: image_urls[0] = @img1
-      prompt: text,
+      prompt: promptText,
       model: OPENROUTER_VISION_MODEL,
       system_prompt:
         `${role} Referens rasmlar tartibда: ` +
         "1-rasm=@img1, 2-rasm=@img2, ... Foydalanuvchi ko'rsatmasi va rasmlarni tahlil qilib, " +
         `BITTA boy, aniq ${mode} prompt yoz (rasmlardagini tushunib, @imgN ni to'g'ri ishlat). ` +
+        "Agar prompt ichida 'Audio reference analysis' bo'lsa, uni ham birga hisobga ol. " +
         `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
       temperature: 0.6,
       max_tokens: 500,
     };
-    console.log(`[fal] enhance VISION — ${refs.length} referens (openrouter/router/vision)`);
+    console.log(`[fal] enhance VISION — ${refs.length} image, ${auds.length} audio referens`);
   } else {
     // TEXT — referens yo'q (hozirgi yo'l).
     modelId = "openrouter/router";
     input = {
-      prompt: text,
+      prompt: promptText,
       model: OPENROUTER_TEXT_MODEL,
       system_prompt:
         `${role} ${detailHint} KIRISH TILINI saqla.${tokenHint}${modelContext} ` +
@@ -397,7 +435,7 @@ export async function falEnhancePrompt(
       temperature: 0.7,
       max_tokens: 400,
     };
-    console.log("[fal] enhance TEXT (openrouter/router)");
+    console.log(`[fal] enhance TEXT — ${auds.length} audio referens`);
   }
 
   const r = await falSubmit(modelId, input);
