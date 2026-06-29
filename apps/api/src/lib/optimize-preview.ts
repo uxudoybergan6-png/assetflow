@@ -115,3 +115,123 @@ export async function optimizePreviewForStreaming(filePath: string): Promise<boo
     return faststartOnly(filePath);
   }
 }
+
+type VideoRefPreset = {
+  scaleExpr: string;
+  fps: string;
+  crf: string;
+  preset: string;
+};
+
+async function transcodeVideoReferencePass(
+  inputPath: string,
+  outputPath: string,
+  clip: { startSec?: number; endSec?: number } | null,
+  preset: VideoRefPreset
+): Promise<void> {
+  const args = ["-y", "-threads", "1"];
+  const startSec = Number(clip?.startSec);
+  const endSec = Number(clip?.endSec);
+  if (Number.isFinite(startSec) && startSec > 0) args.push("-ss", startSec.toFixed(3));
+  args.push("-i", inputPath);
+  if (Number.isFinite(startSec) && Number.isFinite(endSec) && endSec > startSec) {
+    args.push("-t", Math.max(0.1, endSec - startSec).toFixed(3));
+  }
+  args.push(
+    "-vf",
+    `${preset.scaleExpr},fps=${preset.fps}`,
+    "-c:v",
+    "libx264",
+    "-crf",
+    preset.crf,
+    "-preset",
+    preset.preset,
+    "-pix_fmt",
+    "yuv420p",
+    "-an",
+    "-movflags",
+    "+faststart",
+    outputPath
+  );
+  await runFfmpeg(args, { timeout: 300_000 });
+}
+
+/**
+ * Video referensni modelga qulay klipga aylantiradi:
+ *  - ixtiyoriy start/end oralig'i
+ *  - 720p→480p fallback
+ *  - 12fps→10fps fallback
+ *  - audio olib tashlanadi
+ * Natija shu filePath ustiga qayta yoziladi.
+ */
+export async function optimizeVideoReferenceForUpload(
+  filePath: string,
+  clip?: { startSec?: number; endSec?: number }
+): Promise<boolean> {
+  if (!fs.existsSync(filePath)) return false;
+  const tmp = `${filePath}.refopt.mp4`;
+  const presets: VideoRefPreset[] = [
+    { scaleExpr: "scale=-2:'min(720,ih)'", fps: "12", crf: "30", preset: "veryfast" },
+    { scaleExpr: "scale=-2:'min(480,ih)'", fps: "10", crf: "34", preset: "veryfast" },
+  ];
+  for (const preset of presets) {
+    try {
+      await transcodeVideoReferencePass(filePath, tmp, clip || null, preset);
+      fs.renameSync(tmp, filePath);
+      return true;
+    } catch {
+      try {
+        if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+      } catch {
+        /* */
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Video ichidan audio referens chiqaradi:
+ *  - ixtiyoriy start/end oralig'i
+ *  - mono, 24kHz, mp3
+ *  - kichikroq bitrate, referens uchun yetarli
+ * Audio stream bo'lmasa yoki ffmpeg xato bersa false qaytaradi.
+ */
+export async function extractAudioReferenceForUpload(
+  inputPath: string,
+  outputPath: string,
+  clip?: { startSec?: number; endSec?: number }
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath)) return false;
+  const args = ["-y", "-threads", "1"];
+  const startSec = Number(clip?.startSec);
+  const endSec = Number(clip?.endSec);
+  if (Number.isFinite(startSec) && startSec > 0) args.push("-ss", startSec.toFixed(3));
+  args.push("-i", inputPath);
+  if (Number.isFinite(startSec) && Number.isFinite(endSec) && endSec > startSec) {
+    args.push("-t", Math.max(0.1, endSec - startSec).toFixed(3));
+  }
+  args.push(
+    "-vn",
+    "-ac",
+    "1",
+    "-ar",
+    "24000",
+    "-c:a",
+    "libmp3lame",
+    "-b:a",
+    "96k",
+    outputPath
+  );
+  try {
+    await runFfmpeg(args, { timeout: 180_000 });
+    return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0;
+  } catch {
+    try {
+      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+    } catch {
+      /* */
+    }
+    return false;
+  }
+}

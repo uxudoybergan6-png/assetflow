@@ -1,5 +1,8 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import multer from "multer";
 import { z } from "zod";
 import { prisma } from "@creative-tools/database";
@@ -9,6 +12,10 @@ import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/p
 import { isOpenRouterConfigured, orChatSys, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured, falEnhancePrompt } from "../lib/ai/fal.js";
+import {
+  optimizeVideoReferenceForUpload,
+  extractAudioReferenceForUpload,
+} from "../lib/optimize-preview.js";
 import {
   isS3Configured,
   getSignedDownloadUrl,
@@ -241,6 +248,8 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
  *  darhol yuklaydi (spinner), so'ng /gen ga URL'lar TARTIBDA uzatiladi (image_urls). Kredit yechmaydi. */
 const refUploadSchema = z.object({ dataUrl: z.string().min(16) });
 const MAX_REF_UPLOAD_BYTES = 100 * 1024 * 1024;
+const MAX_VIDEO_REF_TARGET_BYTES = 50 * 1024 * 1024;
+const MAX_AUDIO_REF_TARGET_BYTES = 15 * 1024 * 1024;
 const refUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_REF_UPLOAD_BYTES },
@@ -268,6 +277,17 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
 
   let contentType = "image/png";
   let buf: Buffer | null = null;
+  const clipStartSec =
+    typeof req.body?.clipStartSec === "string" ? Number(req.body.clipStartSec) : undefined;
+  const clipEndSec =
+    typeof req.body?.clipEndSec === "string" ? Number(req.body.clipEndSec) : undefined;
+  const clipEnabled =
+    req.body?.clipMode === "part" ||
+    (Number.isFinite(clipStartSec) && Number.isFinite(clipEndSec) && (clipEndSec as number) > (clipStartSec as number));
+  const extractAudioRef =
+    req.body?.extractAudioRef === "1" ||
+    req.body?.extractAudioRef === "true" ||
+    req.body?.extractAudioRef === true;
 
   const uploadedFile = (req as Request & { file?: Express.Multer.File }).file;
   if (uploadedFile?.buffer?.length) {
@@ -297,6 +317,82 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Referens bo'sh yoki juda katta (maks 100MB)" });
     return;
   }
+  let audioRef:
+    | {
+        url: string;
+        bytes: number;
+        contentType: string;
+      }
+    | undefined;
+  let audioError: string | undefined;
+  if (/^video\//.test(contentType) && uploadedFile?.buffer?.length) {
+    let tmpDir: string | null = null;
+    try {
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_vref_"));
+      const ext = path.extname(uploadedFile.originalname || "") || ".mp4";
+      const sourcePath = path.join(tmpDir, `source${ext}`);
+      const localPath = path.join(tmpDir, `ref${ext}`);
+      fs.writeFileSync(sourcePath, uploadedFile.buffer);
+      fs.copyFileSync(sourcePath, localPath);
+      const optimized = await optimizeVideoReferenceForUpload(
+        localPath,
+        clipEnabled ? { startSec: clipStartSec, endSec: clipEndSec } : undefined
+      );
+      if (!optimized) {
+        res.status(500).json({ error: "Video referens serverda optimizatsiya qilinmadi" });
+        return;
+      }
+      const out = fs.readFileSync(localPath);
+      if (!out.length) {
+        res.status(500).json({ error: "Video referens optimizatsiyadan keyin bo'sh qoldi" });
+        return;
+      }
+      if (out.length > MAX_VIDEO_REF_TARGET_BYTES) {
+        res.status(413).json({
+          error: "Video referens optimizatsiyadan keyin ham 50MB dan katta — qisqaroq joy tanlang",
+          code: "VIDEO_REF_STILL_TOO_LARGE",
+        });
+        return;
+      }
+      buf = out;
+      contentType = "video/mp4";
+      if (extractAudioRef) {
+        const audioPath = path.join(tmpDir, "ref-audio.mp3");
+        const audioOk = await extractAudioReferenceForUpload(
+          sourcePath,
+          audioPath,
+          clipEnabled ? { startSec: clipStartSec, endSec: clipEndSec } : undefined
+        );
+        if (audioOk) {
+          const audioBuf = fs.readFileSync(audioPath);
+          if (audioBuf.length > 0 && audioBuf.length <= MAX_AUDIO_REF_TARGET_BYTES) {
+            const audioKey = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp3`;
+            await uploadBufferToS3(audioBuf, audioKey, "audio/mpeg");
+            const audioUrl = await getPublicOrSignedUrl(audioKey, 7200);
+            audioRef = {
+              url: audioUrl,
+              bytes: audioBuf.length,
+              contentType: "audio/mpeg",
+            };
+          } else if (audioBuf.length > MAX_AUDIO_REF_TARGET_BYTES) {
+            audioError = "Video ichidagi audio referens 15MB limitdan oshdi";
+          } else {
+            audioError = "Video ichidan audio olinmadi";
+          }
+        } else {
+          audioError = "Videoda ishlatiladigan audio topilmadi yoki ajratib bo'lmadi";
+        }
+      }
+    } finally {
+      if (tmpDir) {
+        try {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+        } catch {
+          /* */
+        }
+      }
+    }
+  }
   const EXT: Record<string, string> = {
     "image/png": "png", "image/webp": "webp", "image/jpeg": "jpg", "image/jpg": "jpg", "image/gif": "gif",
     "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
@@ -308,7 +404,7 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   const key = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await uploadBufferToS3(buf, key, contentType);
   const url = await getPublicOrSignedUrl(key, 7200); // PUBLIC (fal auth'siz yuklab oladi)
-  res.json({ url, bytes: buf.length, contentType });
+  res.json({ url, bytes: buf.length, contentType, audioRef, audioError });
 });
 
 /** POST /gen — imzoni tekshiradi → kredit zaxira → queued Generation → {jobId}. */

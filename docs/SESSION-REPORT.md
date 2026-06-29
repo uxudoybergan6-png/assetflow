@@ -1,14 +1,15 @@
-# SESSION REPORT — 2026-06-28 — Video tool hardening before new model
+# SESSION REPORT — 2026-06-29 — Video reference backend optimization
 
-- Video tool oqimi qayta tekshirildi: 2 model ishlaydi, lekin yangi model qo‘shishdan oldin universal bo‘lmagan joylar ajratib olindi.
-- Backend `/gen/history` va `/gen/:jobId` endi asset `sizeBytes` va `contentType` metadata bilan qaytadi.
-- Shu metadata sabab So‘nggi genlardan video/audio natijani referens sifatida qo‘shishda limit tekshiruvi aniq ishlaydi.
-- Plugin video/audio referensni uploaddan oldin o‘zi tekshiradi: video `2–15s`, audio `<=15s`, video referens rezolyutsiyasi `480p–720p`.
-- R2V provider’ning `50MB` video referens cheklovi foydalanuvchiga aniq xabar bilan ko‘rsatiladi.
-- Video progress label endi hardcoded emas, tanlangan model nomini ko‘rsatadi.
-- Prompt yaxshilash endi tanlangan model capability contextini AI’ga uzatadi va `@img/@image/@video/@audio` tokenlarini saqlashga majbur qiladi.
-- Video tool endi `refKind='none'` modelini ham ko‘tara oladi: referenssiz `text-to-video` oqimi uchun kadr majburiy emas.
-- Video referensli `Prompt yaxshilash` uchun `openrouter/router/video` ulandi va production uchun `google/gemini-2.5-pro` tanlandi.
+- Video referens uchun clip-picker saqlandi, lekin kesish/siqish oqimi foydalanuvchi kompyuteridan backend tomonga ko‘chirildi.
+- Plugin endi video tanlangach start/end oralig‘ini yuboradi; server shu bo‘lakni `mp4`, `audio off`, yengil preset bilan optimizatsiya qiladi.
+- Shu o‘zgarish sabab foydalanuvchida alohida `ffmpeg` o‘rnatilgan bo‘lishi shart emas.
+- Endi clip-picker ichida `Videodagi audioni ham referens qil` toggli bor: yoqilsa server shu bo‘lakdan audioni ham ajratib, alohida `@Audio` referens sifatida qaytaradi.
+- Audio ajratish asosiy video upload’ni sindirmaydi: audio topilmasa video referens baribir qo‘shiladi, faqat ogohlantirish qaytadi.
+- Backend `/api/studio/gen/ref-upload` video multipart yuklashda vaqtinchalik fayl yaratib, klipni kesadi va 50MB targetga sig‘dirishga urinadi.
+- Birinchi preset yetmasa backend 480p / pastroq fps fallback bilan qayta urinadi.
+- Optimizatsiyadan keyin ham 50MB dan katta qolsa foydalanuvchiga endi aniq “qisqaroq joy tanlang” xabari qaytadi.
+- Plugin video uchun oldingi “asl fayl hajmi” bo‘yicha 50MB blokni yumshatdi; yakuniy tekshiruv endi server qaytargan real optimizatsiya hajmiga qaraydi.
+- Vertikal video referenslar uchun rezolyutsiya tekshiruvi avvalgidek yumshatilgan holda saqlandi.
 - Tekshiruv: `npm run build -w apps/api` OK.
-- Tekshiruv: plugin script parse `OK 7`.
-- Qolgan asosiy cheklov: video tool hali to‘liq schema-driven emas; noodatiy yangi per-model settinglar uchun qo‘shimcha UI branch kerak bo‘ladi.
+- Tekshiruv: plugin script parse `OK 15`.
+- Keyingi qadam: shu oqimni recent-generated video referenslardan segment tanlash bilan ham birlashtirish mumkin.
