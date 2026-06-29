@@ -1,16 +1,14 @@
-# SESSION REPORT — 2026-06-29 — Video reference backend optimization
+# SESSION REPORT — 2026-06-29 — Temporary saved references
 
-- Video referens uchun clip-picker saqlandi, lekin kesish/siqish oqimi foydalanuvchi kompyuteridan backend tomonga ko‘chirildi.
-- Plugin endi video tanlangach start/end oralig‘ini yuboradi; server shu bo‘lakni `mp4`, `audio off`, yengil preset bilan optimizatsiya qiladi.
-- Shu o‘zgarish sabab foydalanuvchida alohida `ffmpeg` o‘rnatilgan bo‘lishi shart emas.
-- Endi clip-picker ichida `Videodagi audioni ham referens qil` toggli bor: yoqilsa server shu bo‘lakdan audioni ham ajratib, alohida `@Audio` referens sifatida qaytaradi.
-- Audio ajratish asosiy video upload’ni sindirmaydi: audio topilmasa video referens baribir qo‘shiladi, faqat ogohlantirish qaytadi.
-- Backend `/api/studio/gen/ref-upload` video multipart yuklashda vaqtinchalik fayl yaratib, klipni kesadi va 50MB targetga sig‘dirishga urinadi.
-- Birinchi preset yetmasa backend 480p / pastroq fps fallback bilan qayta urinadi.
-- Optimizatsiyadan keyin ham 50MB dan katta qolsa foydalanuvchiga endi aniq “qisqaroq joy tanlang” xabari qaytadi.
-- Plugin video uchun oldingi “asl fayl hajmi” bo‘yicha 50MB blokni yumshatdi; yakuniy tekshiruv endi server qaytargan real optimizatsiya hajmiga qaraydi.
-- Clip-picker endi anchor menyu emas, markazdagi kengroq modal bo‘lib ochiladi; server optimizatsiya qiladigan video source esa endi rezolyutsiya sabab bekordan-bekor rad qilinmaydi.
-- Vertikal video referenslar uchun rezolyutsiya tekshiruvi avvalgidek yumshatilgan holda saqlandi.
+- Video referens upload oqimi saqlanib qoldi, lekin endi yuklangan rasm/video/audio referenslar “temporary saved references” sifatida 1 soatga yoziladi.
+- Backendga `SavedReference` modeli qo‘shildi: user, type, R2 key, size, expiry va oxirgi ishlatilgan vaqt saqlanadi.
+- `/api/studio/gen/references` qo‘shildi: plagin vaqtinchalik saved referenslarni olib ko‘rsata oladi.
+- `/api/studio/gen/references/:id` qo‘shildi: saved referensni qo‘lda ham o‘chirish mumkin.
+- Expiry tugagan saved referenslar server tomonidan avtomatik tozalanadi; upload/gen/credits/history oqimlarida ham opportunistic cleanup bor.
+- Referens qayta ishlatilsa uning TTL’i yangilanadi; shuning uchun foydalanuvchi oxirgi daqiqada tanlagan referens birdan yo‘qolib qolmaydi.
+- Plugin video tool ichida `Saved references` bo‘limi qo‘shildi: shu yerdan referensni qayta bosib tanlash mumkin.
+- Saved referens kartalari tur badge’i, qolgan vaqt va qo‘lda o‘chirish tugmasi bilan chiqadi.
+- Saved referens o‘chirilsa joriy prompt/referens listida soya bo‘lib qolmasligi uchun inline referensdan ham olib tashlanadi.
+- Tekshiruv: `npm run generate -w @creative-tools/database` OK.
+- Tekshiruv: `npm run build -w @creative-tools/database` OK.
 - Tekshiruv: `npm run build -w apps/api` OK.
-- Tekshiruv: plugin script parse `OK 15`.
-- Keyingi qadam: shu oqimni recent-generated video referenslardan segment tanlash bilan ham birlashtirish mumkin.

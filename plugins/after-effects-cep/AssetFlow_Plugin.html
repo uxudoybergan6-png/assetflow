@@ -2740,6 +2740,20 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .mrt .rx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:11px;line-height:1;display:grid;place-items:center;cursor:pointer;z-index:2}
 .axvg .mrt .rx:hover{color:var(--red);border-color:var(--red)}
 .axvg .mrt .msp{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;color:#fff;font-size:9px;border-radius:9px}
+.axvg .savedrefs{margin-top:12px;padding-top:12px;border-top:1px solid rgba(63,72,89,.55)}
+.axvg .savedrefs .sublbl{font-size:11px}
+.axvg .savedgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+.axvg .savedgrid:empty{display:none}
+.axvg .savedcard{position:relative;aspect-ratio:1/1;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card3);cursor:pointer;background-size:cover;background-position:center}
+.axvg .savedcard:hover{border-color:var(--acc2)}
+.axvg .savedcard.video{background-image:linear-gradient(150deg,#2a1f40,#101018)}
+.axvg .savedcard.audio{background-image:linear-gradient(150deg,#0f3030,#0c1414)}
+.axvg .savedcard .kind{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.68);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px}
+.axvg .savedcard .ttl{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.86));color:#fff;font-size:9px;padding:14px 6px 5px}
+.axvg .savedcard .del{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:8px;background:rgba(0,0,0,.62);border:1px solid var(--line2);display:grid;place-items:center;color:#fff;font-size:12px;cursor:pointer}
+.axvg .savedcard .del:hover{border-color:var(--red);color:var(--red)}
+.axvg .savedcard .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:19px}
+.axvg .savedempty{grid-column:1/-1;border:1px dashed var(--line2);border-radius:12px;padding:12px 10px;color:var(--mut);font-size:11px;line-height:1.45;text-align:center}
 
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
 html.home-mode .af-topbar,
@@ -3315,6 +3329,10 @@ html.home-mode #homePage{display:block!important}
                                   <div class="maddb" id="vgAddAud"><span class="pl">＋</span> Ovoz</div>
                                 </div>
                                 <div class="mrefgrid" id="vgRefGrid"></div>
+                                <div class="savedrefs" id="vgSavedWrap">
+                                  <div class="lbl sublbl">Saved references <span class="meta" id="vgSavedMeta">1 soat saqlanadi</span></div>
+                                  <div class="savedgrid" id="vgSavedGrid"></div>
+                                </div>
                               </div>
                               <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Boshlang'ich kadr majburiy — + bosib qo'shing.</span></div>
                               <!-- Prompt (umumiy — ikkala refKind) -->
@@ -10373,6 +10391,7 @@ window.afGallery=(function(){
   // kadr holati (refKind=frames) + ko'p-modal referens (refKind=media-refs)
   var st={start:null,end:null}; // {dataUrl, url, loading}
   var mref=[]; // [{type:'image'|'video'|'audio', dataUrl, url, loading}]
+  var vgSaved={items:[],loaded:false,loading:false,error:'',ttlMs:3600000};
   var vgClip={src:null,meta:null,url:'',startSec:0,endSec:0,lastStartSec:0,lastEndSec:0,totalSec:0,mode:'part',drag:null,busy:false,includeAudio:false};
 
   function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
@@ -10883,7 +10902,8 @@ window.afGallery=(function(){
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
-    if(isMedia){ renderMediaRefs(); updRefMeta(); }
+    if(isMedia){ renderMediaRefs(); updRefMeta(); loadVgSavedRefs(); }
+    else renderVgSavedRefs();
     renderVgModelSheet(); refreshVgBtn();
   }
   function renderVgModelSheet(){
@@ -10942,6 +10962,13 @@ window.afGallery=(function(){
   function cntRef(t){ return mref.filter(function(r){return r.type===t;}).length; }
   function tokFor(type,idx){ return '@'+(type==='image'?'Image':type==='video'?'Video':'Audio')+idx; }
   function typeLabel(t){ return t==='image'?'Rasm':t==='video'?'Video':'Ovoz'; }
+  function savedRefTtlLabel(expiresAt){
+    var ms=Math.max(0,new Date(expiresAt).getTime()-Date.now());
+    var min=Math.ceil(ms/60000);
+    if(!isFinite(min)||min<=1)return '1 daqiqadan kam';
+    if(min<60)return min+' daqiqa qoldi';
+    return Math.ceil(min/60)+' soat qoldi';
+  }
   function mediaRefLimitBytes(type){
     var caps=vm.mediaRefMaxBytes||null;
     if(!caps||typeof caps[type]!=='number'||!(caps[type]>0))return 0;
@@ -11003,7 +11030,7 @@ window.afGallery=(function(){
     var sizeBytes=(payload&&payload.bytes)||0, lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type);
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return null; }
     if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return null; }
-    var obj={type:type,dataUrl:type==='image'?(payload.thumb||payload.url):null,url:payload.url,loading:false,source:'upload',sizeBytes:sizeBytes||0};
+    var obj={type:type,dataUrl:type==='image'?(payload.thumb||payload.url):null,url:payload.url,loading:false,source:'upload',sizeBytes:sizeBytes||0,savedRefId:(payload&&payload.id)||null,expiresAt:(payload&&payload.expiresAt)||null};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
     return obj;
   }
@@ -11029,6 +11056,92 @@ window.afGallery=(function(){
       g.appendChild(d);
     });
   }
+  function renderVgSavedRefs(){
+    var wrap=$('vgSavedWrap'), grid=$('vgSavedGrid'), meta=$('vgSavedMeta');
+    if(!wrap||!grid||vm.refKind!=='media-refs'){ if(wrap)wrap.style.display='none'; return; }
+    wrap.style.display='';
+    if(meta){
+      meta.textContent=vgSaved.loading?'Yuklanmoqda…':(vgSaved.items.length?vgSaved.items.length+' ta · 1 soat saqlanadi':'1 soat saqlanadi');
+    }
+    grid.innerHTML='';
+    if(vgSaved.loading&&!vgSaved.items.length){
+      grid.innerHTML='<div class="savedempty">Saved references yuklanmoqda…</div>';
+      return;
+    }
+    if(vgSaved.error&&!vgSaved.items.length){
+      grid.innerHTML='<div class="savedempty">Saved references olinmadi. Keyinroq qayta urinib ko‘ring.</div>';
+      return;
+    }
+    if(!vgSaved.items.length){
+      grid.innerHTML='<div class="savedempty">Yuklangan referenslar shu yerda vaqtincha ko‘rinadi. 1 soatdan keyin o‘zi o‘chadi.</div>';
+      return;
+    }
+    vgSaved.items.forEach(function(it){
+      var d=document.createElement('div');
+      d.className='savedcard '+String(it.kind||'image');
+      if(it.kind==='image'&&(it.thumbUrl||it.url))d.style.backgroundImage='url("'+(it.thumbUrl||it.url)+'")';
+      d.innerHTML='<div class="kind">'+typeLabel(it.kind||'image')+'</div>'
+        +(it.kind==='video'?'<div class="play">▶</div>':it.kind==='audio'?'<div class="play">♪</div>':'')
+        +'<div class="del" title="O‘chirish">×</div>'
+        +'<div class="ttl">'+savedRefTtlLabel(it.expiresAt)+'</div>';
+      d.addEventListener('click',function(){
+        addExistingMediaRef({
+          id:it.id,
+          savedRefId:it.id,
+          cat:it.kind,
+          url:it.url,
+          thumb:it.thumbUrl||it.url,
+          sizeBytes:it.sizeBytes||0,
+          skipClipper:true,
+          expiresAt:it.expiresAt
+        });
+      });
+      var del=d.querySelector('.del');
+      if(del)del.addEventListener('click',function(e){
+        e.stopPropagation();
+        studioDelete('/api/studio/gen/references/'+encodeURIComponent(it.id)).then(function(){
+          vgSaved.items=vgSaved.items.filter(function(x){ return x.id!==it.id; });
+          var removedToken=null;
+          mref=mref.filter(function(r){
+            var hit=(r&&((r.savedRefId&&r.savedRefId===it.id)||(r.url&&r.url===it.url)));
+            if(hit&&!removedToken)removedToken=r.token||null;
+            return !hit;
+          });
+          if(removedToken||!mref.length)syncMediaRefTokens(removedToken);
+          renderMediaRefs(); updRefMeta(); refreshVgBtn();
+          renderVgSavedRefs();
+          toast('Saved reference o‘chirildi','success');
+        }).catch(function(err){
+          toast((err&&err.message)||'Saved reference o‘chirilmadi','error');
+        });
+      });
+      grid.appendChild(d);
+    });
+  }
+  function loadVgSavedRefs(force){
+    if(vm.refKind!=='media-refs'){ renderVgSavedRefs(); return; }
+    if(vgSaved.loading||(!force&&vgSaved.loaded))return;
+    vgSaved.loading=true; if(force)vgSaved.loaded=false; vgSaved.error='';
+    renderVgSavedRefs();
+    studioGet('/api/studio/gen/references?limit=12').then(function(d){
+      vgSaved.items=((d&&d.items)||[]).map(function(it){
+        return {
+          id:it.id,
+          kind:it.kind||'image',
+          url:it.url,
+          thumbUrl:it.thumbUrl||null,
+          sizeBytes:(it&&it.sizeBytes)||0,
+          expiresAt:it.expiresAt
+        };
+      });
+      vgSaved.ttlMs=(d&&d.ttlMs)||3600000;
+      vgSaved.loaded=true; vgSaved.loading=false; vgSaved.error='';
+      renderVgSavedRefs();
+    }).catch(function(err){
+      vgSaved.loaded=false; vgSaved.loading=false; vgSaved.error=(err&&err.message)||'Xato';
+      renderVgSavedRefs();
+    });
+  }
   function insertVgTok(tok){ var p=$('vgPrompt'); if(!p)return; var c=p.selectionStart||p.value.length; var pre=p.value.slice(0,c),post=p.value.slice(c); var sep=(pre&&!/\s$/.test(pre))?' ':''; p.value=pre+sep+tok+' '+post; p.focus(); refreshVgBtn(); }
   function uploadMediaRef(src,type){
     var sizeBytes=(src&&src.sizeBytes)||0, lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type);
@@ -11048,7 +11161,7 @@ window.afGallery=(function(){
         var ti=mref.indexOf(obj); if(ti>=0){ var tremoved=(mref[ti]&&mref[ti].token)||null; mref.splice(ti,1); syncMediaRefTokens(tremoved); }
         renderMediaRefs(); updRefMeta(); refreshVgBtn(); return;
       }
-      obj.url=r.url; obj.loading=false; obj.sizeBytes=finalBytes; renderMediaRefs(); refreshVgBtn();
+      obj.url=r.url; obj.loading=false; obj.sizeBytes=finalBytes; obj.savedRefId=r.id||null; obj.expiresAt=r.expiresAt||null; renderMediaRefs(); refreshVgBtn(); loadVgSavedRefs(true);
       if(type==='video'&&r.audioRef&&r.audioRef.url){
         var addedAudio=appendUploadedRef('audio',r.audioRef);
         if(addedAudio)toast('Video va uning audiosi referens sifatida qo‘shildi','success');
@@ -11070,7 +11183,7 @@ window.afGallery=(function(){
     var metaMsg=mediaMetaRuleMsg(type,it);
     if(metaMsg){ toast(metaMsg,'warning'); return false; }
     if(mref.some(function(r){ return r.type===type&&r.url===it.url; })){ toast(typeLabel(type)+' referens allaqachon qo‘shilgan','info'); return false; }
-    var obj={type:type,dataUrl:type==='image'?(it.thumb||it.url):null,url:it.url,loading:false,source:'recent',sizeBytes:sizeBytes||0};
+    var obj={type:type,dataUrl:type==='image'?(it.thumb||it.url):null,url:it.url,loading:false,source:'recent',sizeBytes:sizeBytes||0,savedRefId:it.savedRefId||it.id||null,expiresAt:it.expiresAt||null};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
     insertVgTok(obj.token||tokFor(type,cntRef(type)));
     toast(typeLabel(type)+' referens qo‘shildi','success');
@@ -11571,9 +11684,10 @@ window.afGallery=(function(){
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
       if(mref.some(function(r){return r.loading;})){ toast('Referens yuklanmoqda — kuting','info'); return; }
       var pick=function(t){ return mref.filter(function(r){return r.type===t&&r.url;}).map(function(r){return r.url;}); };
+      var savedIds=mref.map(function(r){ return r&&r.savedRefId; }).filter(function(id){ return !!id; });
       var auds=pick('audio'), imgs=pick('image'), vids=pick('video');
       if(auds.length&&imgs.length+vids.length===0){ toast('Audio uchun kamida 1 rasm yoki video referens kerak','warning'); return; }
-      params={imageUrls:imgs,videoUrls:vids,audioUrls:auds,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      params={imageUrls:imgs,videoUrls:vids,audioUrls:auds,savedReferenceIds:savedIds,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     } else if(vm.refKind==='none'){
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
       params={resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
@@ -11630,7 +11744,7 @@ window.afGallery=(function(){
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
-  loadVgRecent(); renderVgRecent();
+  loadVgRecent(); renderVgRecent(); renderVgSavedRefs();
 })();
 </script>
 </body>

@@ -65,6 +65,7 @@ model User {
   aiGenerations         AiGeneration[]
   genSessions           GenSession[]
   generations           Generation[]
+  savedReferences       SavedReference[]
 
   @@index([role])
 }
@@ -390,11 +391,34 @@ model Generation {
   session   GenSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   assets    GenAsset[]
+  savedReferences SavedReference[]
 
   @@index([sessionId])
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model SavedReference {
+  id           String      @id @default(cuid())
+  userId       String
+  generationId String?
+  kind         String
+  url          String      @db.Text
+  resultKey    String?
+  thumbUrl     String?
+  contentType  String?
+  sizeBytes    Int?
+  createdAt    DateTime    @default(now())
+  lastUsedAt   DateTime?
+  expiresAt    DateTime
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generation Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([userId, expiresAt])
+  @@index([generationId])
 }
 
 model GenAsset {

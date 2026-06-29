@@ -78,6 +78,8 @@ const GEN_MODES = ["image", "voice", "video", "music", "sfx"] as const;
 const ENHANCE_COST = 1;          // gpt-4o-mini matn/JSON — bitta chaqiruv
 const DESCRIBE_IMAGE_COST = 2;   // gemini-2.5-flash vision (rasm)
 const DESCRIBE_VIDEO_COST = 3;   // + haqiqiy video input (og'irroq, ehtimoliy 2-inference)
+const SAVED_REF_TTL_MS = 60 * 60 * 1000; // 1 soat
+const SAVED_REF_MAX_LIST = 24;
 
 // Per-user kunlik cap (per-IP rate-limit'dan TASHQARI) — bitta hisob (admin/owner
 // ham) orqali kunlik portlashni to'sadi. In-memory/single-instance (mavjud
@@ -101,10 +103,118 @@ function logAiSpend(userId: string, op: string, cost: number, model: string) {
   console.log(`[ai-spend] user=${userId} op=${op} cost=${cost} model=${model}`);
 }
 
+function savedReferenceKind(contentType: string): "image" | "video" | "audio" {
+  if (/^video\//i.test(contentType)) return "video";
+  if (/^audio\//i.test(contentType)) return "audio";
+  return "image";
+}
+
+function savedReferenceExpiry(base = new Date()): Date {
+  return new Date(base.getTime() + SAVED_REF_TTL_MS);
+}
+
+async function hydrateSavedReferences<
+  T extends Array<{ resultKey: string | null; url: string; thumbUrl: string | null }>
+>(items: T): Promise<T> {
+  if (!isS3Configured()) return items;
+  for (const item of items) {
+    if (!item.resultKey) continue;
+    const fresh = await getSignedDownloadUrl(item.resultKey, 3600);
+    item.url = fresh;
+    if (item.thumbUrl) item.thumbUrl = fresh;
+  }
+  return items;
+}
+
+async function cleanupExpiredSavedReferences(userId?: string): Promise<number> {
+  const expired = await prisma.savedReference.findMany({
+    where: {
+      expiresAt: { lte: new Date() },
+      ...(userId ? { userId } : {}),
+    },
+    take: 200,
+  });
+  if (!expired.length) return 0;
+  const keys = expired
+    .map((r) => r.resultKey)
+    .filter((k): k is string => typeof k === "string" && k.length > 0);
+  if (keys.length) {
+    try {
+      await deleteS3Objects(keys);
+    } catch (e) {
+      console.error("[studio-gen] saved refs cleanup R2 xato:", e);
+    }
+  }
+  await prisma.savedReference.deleteMany({
+    where: { id: { in: expired.map((r) => r.id) } },
+  });
+  return expired.length;
+}
+
+async function createSavedReference(input: {
+  userId: string;
+  url: string;
+  resultKey: string;
+  contentType: string;
+  sizeBytes: number;
+  thumbUrl?: string | null;
+}): Promise<{
+  id: string;
+  expiresAt: string;
+}> {
+  const row = await prisma.savedReference.create({
+    data: {
+      userId: input.userId,
+      kind: savedReferenceKind(input.contentType),
+      url: input.url,
+      resultKey: input.resultKey,
+      thumbUrl: input.thumbUrl ?? null,
+      contentType: input.contentType,
+      sizeBytes: input.sizeBytes,
+      expiresAt: savedReferenceExpiry(),
+    },
+    select: { id: true, expiresAt: true },
+  });
+  return { id: row.id, expiresAt: row.expiresAt.toISOString() };
+}
+
+async function touchSavedReferences(
+  userId: string,
+  input: { ids?: string[]; urls?: string[] },
+  generationId: string
+): Promise<void> {
+  const validIds = Array.from(new Set((input.ids || []).filter((u) => typeof u === "string" && u.length > 7)));
+  const validUrls = Array.from(new Set((input.urls || []).filter((u) => typeof u === "string" && u.length > 7)));
+  if (!validIds.length && !validUrls.length) return;
+  const now = new Date();
+  await prisma.savedReference.updateMany({
+    where: {
+      userId,
+      OR: [
+        ...(validIds.length ? [{ id: { in: validIds } }] : []),
+        ...(validUrls.length ? [{ url: { in: validUrls } }] : []),
+      ],
+    },
+    data: {
+      generationId,
+      lastUsedAt: now,
+      expiresAt: savedReferenceExpiry(now),
+    },
+  });
+}
+
+const savedRefCleanupTimer = setInterval(() => {
+  cleanupExpiredSavedReferences().catch((e) => {
+    console.error("[studio-gen] saved refs cleanup xato:", e);
+  });
+}, 15 * 60 * 1000);
+if (typeof savedRefCleanupTimer.unref === "function") savedRefCleanupTimer.unref();
+
 /** GET /credits — kredit balansi. */
 studioGenRouter.get("/credits", async (req: Request, res: Response) => {
   // Qotib qolgan job'larni tiklash → yo'qolган kredit qaytadi (panel ochilганда).
   await reconcileStuckGenerations(req.user!.userId).catch(() => {});
+  await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ aiCredits: profile.aiCredits, plan: profile.plan.toLowerCase() });
 });
@@ -183,6 +293,7 @@ studioGenRouter.get(
 
 /** GET /gen/history — foydalanuvchining BARCHA tugagan gen'lari (sessiyalardan qat'i nazar). */
 studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
+  await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 30));
   // ?mode=video → faqat shu turdagi gen'lar (video tool So'nggi gridi rasm gen'larni tortmasin).
   const modeRaw = req.query.mode ? String(req.query.mode) : "";
@@ -198,6 +309,49 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
     for (const g of items) await hydrateGenAssets(g);
   }
   res.json({ items });
+});
+
+/** GET /gen/references — vaqtinchalik saved references (1 soat TTL). */
+studioGenRouter.get("/gen/references", async (req: Request, res: Response) => {
+  await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
+  const limit = Math.min(SAVED_REF_MAX_LIST, Math.max(1, Number(req.query.limit) || 12));
+  const items = await prisma.savedReference.findMany({
+    where: { userId: req.user!.userId, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+  await hydrateSavedReferences(items);
+  res.json({
+    items: items.map((it) => ({
+      id: it.id,
+      kind: it.kind,
+      url: it.url,
+      thumbUrl: it.thumbUrl,
+      contentType: it.contentType,
+      sizeBytes: it.sizeBytes,
+      expiresAt: it.expiresAt,
+      generationId: it.generationId,
+    })),
+    ttlMs: SAVED_REF_TTL_MS,
+  });
+});
+
+/** DELETE /gen/references/:id — saved reference'ni qo'lda o'chirish. */
+studioGenRouter.delete("/gen/references/:id", async (req: Request, res: Response) => {
+  const row = await prisma.savedReference.findUnique({ where: { id: String(req.params.id) } });
+  if (!row || row.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Referens topilmadi" });
+    return;
+  }
+  if (row.resultKey) {
+    try {
+      await deleteS3Objects([row.resultKey]);
+    } catch (e) {
+      console.error("[studio-gen] saved ref delete R2 xato:", e);
+    }
+  }
+  await prisma.savedReference.delete({ where: { id: row.id } });
+  res.json({ ok: true });
 });
 
 /** GET /gen/models?mode= — model katalog. */
@@ -259,6 +413,7 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     res.status(503).json({ error: "Saqlash sozlanmagan", code: "S3_NOT_CONFIGURED" });
     return;
   }
+  await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   try {
     await new Promise<void>((resolve, reject) => {
       refUpload.single("file")(req as Parameters<ReturnType<typeof refUpload.single>>[0], res as Parameters<ReturnType<typeof refUpload.single>>[1], (err) => {
@@ -319,9 +474,11 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   }
   let audioRef:
     | {
+        id: string;
         url: string;
         bytes: number;
         contentType: string;
+        expiresAt: string;
       }
     | undefined;
   let audioError: string | undefined;
@@ -369,10 +526,19 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
             const audioKey = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp3`;
             await uploadBufferToS3(audioBuf, audioKey, "audio/mpeg");
             const audioUrl = await getPublicOrSignedUrl(audioKey, 7200);
+            const audioSaved = await createSavedReference({
+              userId: req.user!.userId,
+              url: audioUrl,
+              resultKey: audioKey,
+              contentType: "audio/mpeg",
+              sizeBytes: audioBuf.length,
+            });
             audioRef = {
+              id: audioSaved.id,
               url: audioUrl,
               bytes: audioBuf.length,
               contentType: "audio/mpeg",
+              expiresAt: audioSaved.expiresAt,
             };
           } else if (audioBuf.length > MAX_AUDIO_REF_TARGET_BYTES) {
             audioError = "Video ichidagi audio referens 15MB limitdan oshdi";
@@ -404,7 +570,15 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   const key = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await uploadBufferToS3(buf, key, contentType);
   const url = await getPublicOrSignedUrl(key, 7200); // PUBLIC (fal auth'siz yuklab oladi)
-  res.json({ url, bytes: buf.length, contentType, audioRef, audioError });
+  const saved = await createSavedReference({
+    userId: req.user!.userId,
+    url,
+    resultKey: key,
+    contentType,
+    sizeBytes: buf.length,
+    thumbUrl: contentType.startsWith("image/") ? url : null,
+  });
+  res.json({ id: saved.id, url, bytes: buf.length, contentType, expiresAt: saved.expiresAt, audioRef, audioError });
 });
 
 /** POST /gen — imzoni tekshiradi → kredit zaxira → queued Generation → {jobId}. */
@@ -418,6 +592,7 @@ const genSchema = z.object({
   costQuoteSignature: z.string().min(10),
 });
 studioGenRouter.post("/gen", async (req: Request, res: Response) => {
+  await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const p = genSchema.safeParse(req.body);
   if (!p.success) {
     res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
@@ -505,6 +680,27 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       cost: price,
     },
   });
+
+  const refUrls = Array.from(
+    new Set(
+      [
+        typeof params.referenceUrl === "string" ? params.referenceUrl : "",
+        typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : "",
+        ...(Array.isArray(params.referenceUrls) ? params.referenceUrls : []),
+        ...(Array.isArray(params.imageUrls) ? params.imageUrls : []),
+        ...(Array.isArray(params.videoUrls) ? params.videoUrls : []),
+        ...(Array.isArray(params.audioUrls) ? params.audioUrls : []),
+      ].filter((u): u is string => typeof u === "string" && u.length > 7)
+    )
+  );
+  const savedRefIds = Array.from(
+    new Set(
+      (Array.isArray(params.savedReferenceIds) ? params.savedReferenceIds : []).filter(
+        (id): id is string => typeof id === "string" && id.length > 7
+      )
+    )
+  );
+  await touchSavedReferences(req.user!.userId, { ids: savedRefIds, urls: refUrls }, gen.id).catch(() => {});
 
   // Fon rejimida bajariladi (OpenRouter → R2 → GenAsset → status); frontend polling qiladi.
   processGenerationInBackground(gen.id);
