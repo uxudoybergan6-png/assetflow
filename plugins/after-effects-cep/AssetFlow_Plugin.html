@@ -8109,6 +8109,8 @@ function __drainToasts(){
 /** Xom xato matnlarini (Failed to fetch, ExtendScript, HTTP) tushunarli qiladi */
 function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
+  if(/output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw))
+    return 'Video xavfsizlik filtri sabab bloklandi — promptni yumshatib, ochiq tana/sexual ma’noni kamaytirib qayta urinib ko‘ring';
   if(/Failed to fetch|NetworkError|ENOTFOUND|ECONNREFUSED|network/i.test(raw))
     return 'Internetga ulanib bo‘lmadi — tarmoq yoki API ni tekshiring';
   if(/\b401\b|\b403\b|unauthorized|forbidden/i.test(raw))

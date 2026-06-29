@@ -38,6 +38,16 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function normalizeGenerationError(message: string): string {
+  const raw = String(message || "");
+  if (
+    /output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw)
+  ) {
+    return "Video xavfsizlik filtri sabab bloklandi — promptni yumshating yoki kiyim/pozani kamroq ochiq tasvirlab qayta urinib ko‘ring";
+  }
+  return raw;
+}
+
 type StoredProviderJob =
   | { provider: "openrouter-video"; jobId: string; submittedAt: string }
   | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob);
@@ -530,12 +540,13 @@ export async function processGeneration(genId: string): Promise<void> {
   if (gen.status !== "queued" && !canResume) return;
 
   const fail = async (reason: string) => {
+    const safeReason = normalizeGenerationError(reason).slice(0, 480);
     // ATOMIK: faqat hali queued/running bo'lsa failed qil + refund. Agar reconcileStuckGenerations
     // (yoki boshqa yo'l) jobni ALLAQACHON terminal qilган bo'lsa → updateMany count=0 → IKKINCHI marta
     // refund QILMAYMIZ. reconcile naqshi (double-refund race fix — audit 2026-06-26).
     const upd = await prisma.generation.updateMany({
       where: { id: genId, status: { in: ["queued", "running"] } },
-      data: { status: "failed", error: reason.slice(0, 480) },
+      data: { status: "failed", error: safeReason },
     });
     await clearProviderJob(genId);
     if (upd.count > 0) await refundAiCredits(gen.userId, gen.cost);
