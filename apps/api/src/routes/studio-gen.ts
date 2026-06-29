@@ -75,7 +75,10 @@ const GEN_MODES = ["image", "voice", "video", "music", "sfx"] as const;
 // Bu ikki endpoint pulli model chaqiradi (gpt-4o-mini / gemini-2.5-flash vision),
 // shu sabab /gen kabi consumeAiCredits bilan himoyalanadi. Narxlar /gen jadvaliga
 // nisbatan arzon (helper), lekin vision (rasm/video) matn-onlydan QIMMATROQ.
-const ENHANCE_COST = 1;          // gpt-4o-mini matn/JSON — bitta chaqiruv
+const ENHANCE_COST_BASE = 1;     // faqat text
+const ENHANCE_COST_IMAGE = 1;    // rasm referens tahlili
+const ENHANCE_COST_VIDEO = 2;    // video referens tahlili
+const ENHANCE_COST_AUDIO = 1;    // audio referens tahlili
 const DESCRIBE_IMAGE_COST = 2;   // gemini-2.5-flash vision (rasm)
 const DESCRIBE_VIDEO_COST = 3;   // + haqiqiy video input (og'irroq, ehtimoliy 2-inference)
 const SAVED_REF_TTL_MS = 60 * 60 * 1000; // 1 soat
@@ -101,6 +104,30 @@ function withinDailyCap(userId: string): boolean {
 /** Minimal spend log (Render konsoliga). TODO: alohida AiSpendLog modeli (#3 audit). */
 function logAiSpend(userId: string, op: string, cost: number, model: string) {
   console.log(`[ai-spend] user=${userId} op=${op} cost=${cost} model=${model}`);
+}
+
+function publicUrls(list?: string[]): string[] {
+  return (list || []).filter((u): u is string => typeof u === "string" && /^https?:\/\//i.test(u));
+}
+
+function computeEnhanceCost(input: {
+  imageUrls?: string[];
+  videoUrls?: string[];
+  audioUrls?: string[];
+}): { cost: number; hasImage: boolean; hasVideo: boolean; hasAudio: boolean } {
+  const hasImage = publicUrls(input.imageUrls).length > 0;
+  const hasVideo = publicUrls(input.videoUrls).length > 0;
+  const hasAudio = publicUrls(input.audioUrls).length > 0;
+  return {
+    hasImage,
+    hasVideo,
+    hasAudio,
+    cost:
+      ENHANCE_COST_BASE +
+      (hasImage ? ENHANCE_COST_IMAGE : 0) +
+      (hasVideo ? ENHANCE_COST_VIDEO : 0) +
+      (hasAudio ? ENHANCE_COST_AUDIO : 0),
+  };
 }
 
 function savedReferenceKind(contentType: string): "image" | "video" | "audio" {
@@ -708,7 +735,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 });
 
 /**
- * POST /gen/prompt/enhance — promptni OpenRouter bilan boyitadi (1 kredit + kunlik cap).
+ * POST /gen/prompt/enhance — promptni OpenRouter/fal bilan boyitadi (dinamik kredit + kunlik cap).
  *  format:"text" → bitta boy paragraf; format:"json" → strukturalangan prompt sxemasi.
  *  modelId berilsa — tanlangan model konteksti (duration/aspect/audio) promptga moslanadi.
  */
@@ -722,6 +749,8 @@ const enhanceSchema = z.object({
   image_urls: z.array(z.string().min(8)).max(10).optional(),
   // VIDEO enhance — referens video PUBLIC URL'lari (@video tartibida: [0]=@video1). Ixtiyoriy.
   video_urls: z.array(z.string().min(8)).max(10).optional(),
+  // AUDIO enhance — referens audio PUBLIC URL'lari (@audio tartibida: [0]=@audio1). Ixtiyoriy.
+  audio_urls: z.array(z.string().min(8)).max(10).optional(),
   references: z.array(z.string().min(8)).max(10).optional(),
 });
 
@@ -779,12 +808,28 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     });
     return;
   }
-  const gate = await consumeAiCredits(req.user!.userId, ENHANCE_COST);
+  const refUrls = publicUrls(p.data.image_urls || p.data.references);
+  const videoRefUrls = publicUrls(p.data.video_urls);
+  const audioRefUrls = publicUrls(p.data.audio_urls);
+  const enhanceCost = computeEnhanceCost({
+    imageUrls: refUrls,
+    videoUrls: videoRefUrls,
+    audioUrls: audioRefUrls,
+  });
+  const gate = await consumeAiCredits(req.user!.userId, enhanceCost.cost);
   if (!gate.ok) {
     res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
     return;
   }
-  logAiSpend(req.user!.userId, "enhance", ENHANCE_COST, "openai/gpt-4o-mini");
+  const spendModel =
+    enhanceCost.hasVideo
+      ? "openrouter/router/video"
+      : enhanceCost.hasImage
+        ? "openrouter/router/vision"
+        : enhanceCost.hasAudio
+          ? "nvidia/nemotron-3-nano-omni/audio + openrouter/router"
+          : "openrouter/router";
+  logAiSpend(req.user!.userId, "enhance", enhanceCost.cost, spendModel);
 
   if (format === "json") {
     const system =
@@ -795,7 +840,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
     const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${p.data.prompt}`, true);
     if (!out.ok) {
-      await refundAiCredits(req.user!.userId, ENHANCE_COST);
+      await refundAiCredits(req.user!.userId, enhanceCost.cost);
       res.status(502).json({ error: out.error });
       return;
     }
@@ -807,34 +852,29 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       /* ignore — pastda 502 */
     }
     if (!json) {
-      await refundAiCredits(req.user!.userId, ENHANCE_COST);
+      await refundAiCredits(req.user!.userId, enhanceCost.cost);
       res.status(502).json({ error: "JSON prompt olinmadi — qayta urinib ko'ring" });
       return;
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
-    res.json({ prompt: promptStr, json, creditsLeft: gate.remaining });
+    res.json({ prompt: promptStr, json, creditsLeft: gate.remaining, creditsCharged: enhanceCost.cost });
     return;
   }
 
-  // text — fal openrouter/router; image referens → VISION; video referens → VIDEO.
-  const refUrls = (p.data.image_urls || p.data.references || []).filter(
-    (u) => typeof u === "string" && /^https?:\/\//i.test(u)
-  );
-  const videoRefUrls = (p.data.video_urls || []).filter(
-    (u) => typeof u === "string" && /^https?:\/\//i.test(u)
-  );
+  // text — fal openrouter/router; image referens → VISION; video referens → VIDEO; audio → Nemotron analysis + router.
   const out = await falEnhancePrompt(p.data.prompt, {
     imageUrls: refUrls.length ? refUrls : undefined,
     videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
+    audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
     mode,
     modelContext: ctx.replace(/^\s+/, ""),
   });
   if (!out.ok) {
-    await refundAiCredits(req.user!.userId, ENHANCE_COST);
+    await refundAiCredits(req.user!.userId, enhanceCost.cost);
     res.status(502).json({ error: out.error });
     return;
   }
-  res.json({ prompt: out.data.trim(), creditsLeft: gate.remaining });
+  res.json({ prompt: out.data.trim(), creditsLeft: gate.remaining, creditsCharged: enhanceCost.cost });
 });
 
 /**
