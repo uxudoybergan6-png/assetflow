@@ -15,7 +15,13 @@ import {
   orDownload,
 } from "./ai/openrouter.js";
 import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genProvider } from "./ai/magnific.js";
-import { falImage, falVideo, falRefVideo } from "./ai/fal.js";
+import {
+  falImage,
+  falPollJob,
+  falSubmitJob,
+  falVideoResultToBuffer,
+  type FalQueueJob,
+} from "./ai/fal.js";
 import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
@@ -30,6 +36,63 @@ function tsName() {
 }
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+type StoredProviderJob =
+  | { provider: "openrouter-video"; jobId: string; submittedAt: string }
+  | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob);
+
+function readProviderJob(params: Record<string, unknown>): StoredProviderJob | null {
+  const raw = params.__providerJob;
+  if (!raw || typeof raw !== "object") return null;
+  const job = raw as Record<string, unknown>;
+  const provider = String(job.provider || "");
+  if (provider === "openrouter-video" && typeof job.jobId === "string" && job.jobId) {
+    return {
+      provider,
+      jobId: job.jobId,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  if (
+    (provider === "fal-video" || provider === "fal-ref-video") &&
+    typeof job.requestId === "string" &&
+    typeof job.statusUrl === "string" &&
+    typeof job.responseUrl === "string"
+  ) {
+    return {
+      provider,
+      requestId: job.requestId,
+      statusUrl: job.statusUrl,
+      responseUrl: job.responseUrl,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  return null;
+}
+
+async function persistProviderJob(
+  genId: string,
+  params: Record<string, unknown>,
+  job: StoredProviderJob | null
+): Promise<void> {
+  if (job) params.__providerJob = job;
+  else delete params.__providerJob;
+  await prisma.generation.update({
+    where: { id: genId },
+    data: { params: params as object },
+  });
+}
+
+function isResumableRunningGeneration(gen: {
+  mode: string;
+  status: string;
+  params: unknown;
+}): boolean {
+  if (gen.status !== "running" || gen.mode !== "video" || !gen.params || typeof gen.params !== "object") {
+    return false;
+  }
+  return Boolean(readProviderJob(gen.params as Record<string, unknown>));
 }
 
 /**
@@ -164,14 +227,24 @@ async function runVideo(
     }
     opts.frameImages = frames;
   }
-  const created = await orVideoCreate(model.key, opts);
-  if (!created.ok) return { ok: false, error: created.error };
+  const saved = readProviderJob(params);
+  let remoteId = saved?.provider === "openrouter-video" ? saved.jobId : "";
+  if (!remoteId) {
+    const created = await orVideoCreate(model.key, opts);
+    if (!created.ok) return { ok: false, error: created.error };
+    remoteId = created.data.id;
+    await persistProviderJob(genId, params, {
+      provider: "openrouter-video",
+      jobId: remoteId,
+      submittedAt: new Date().toISOString(),
+    });
+  }
 
   // Poll (3s × 100 = ~5 daqiqa) — granularlik 5s→3s, tayyor bo'lishini tezroq aniqlaydi.
   // Birinchi tekshiruvni 2s'da (qisqa video tezroq topilsin), keyin 3s.
   await sleep(2000);
   for (let i = 0; i < 100; i++) {
-    const st = await orVideoStatus(created.data.id);
+    const st = await orVideoStatus(remoteId);
     if (st.ok) {
       if (st.data.status === "completed") {
         const url = st.data.urls[0];
@@ -184,7 +257,7 @@ async function runVideo(
     }
     await sleep(3000); // keyingi tekshiruvgacha
   }
-  return { ok: false, error: "Video vaqt tugadi (timeout)" };
+  return { ok: false, error: "OPENROUTER_TIMEOUT: job hali ishlamoqda — refund yo'q" };
 }
 
 /** fal.ai video (Seedance 2.0 Fast). referenceUrl = start kadr, referenceEndUrl = end kadr (ixtiyoriy). */
@@ -205,15 +278,36 @@ async function runFalVideo(
       : Promise.resolve(undefined),
   ]);
   const v = resolveVideoParams(model, params);
-  const out = await falVideo(model.falModel ?? model.key, prompt, startUrl, {
-    endImageUrl: endUrl,
+  const input: Record<string, unknown> = {
+    prompt: String(prompt),
+    image_url: startUrl,
     resolution: v.resolution,
-    duration: v.duration,
-    aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
-    generateAudio: v.generateAudio,
-  });
+    duration: String(v.duration),
+    aspect_ratio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
+    generate_audio: v.generateAudio,
+  };
+  if (endUrl) input.end_image_url = endUrl;
+  const saved = readProviderJob(params);
+  let job: FalQueueJob;
+  if (saved?.provider === "fal-video") {
+    job = { requestId: saved.requestId, statusUrl: saved.statusUrl, responseUrl: saved.responseUrl };
+  } else {
+    const sub = await falSubmitJob(model.falModel ?? model.key, input);
+    if (!sub.ok) return { ok: false, error: sub.error };
+    job = sub.data;
+    await persistProviderJob(genId, params, {
+      provider: "fal-video",
+      requestId: job.requestId,
+      statusUrl: job.statusUrl,
+      responseUrl: job.responseUrl,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  const out = await falPollJob(job, { maxPolls: 210 });
   if (!out.ok) return { ok: false, error: out.error };
-  return { ok: true, buf: out.data };
+  const buf = await falVideoResultToBuffer(out.data);
+  if (!buf.ok) return { ok: false, error: buf.error };
+  return { ok: true, buf: buf.data };
 }
 
 /**
@@ -251,17 +345,43 @@ async function runFalRefVideo(
     return { ok: false, error: `Jami referens ≤${lim.total}` };
   }
   const v = resolveVideoParams(model, params);
-  const out = await falRefVideo(model.falModel ?? model.key, prompt, {
-    imageUrls,
-    videoUrls,
-    audioUrls,
+  const input: Record<string, unknown> = {
+    prompt: String(prompt),
     resolution: v.resolution,
-    duration: v.duration,
-    aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
-    generateAudio: v.generateAudio,
-    bitrateMode: v.bitrateMode,
-    endUserId: userId,
-  });
+    duration: String(v.duration),
+    aspect_ratio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
+    generate_audio: v.generateAudio,
+    end_user_id: userId,
+  };
+  if (v.bitrateMode) input.bitrate_mode = v.bitrateMode;
+  if (imageUrls.length) input.image_urls = imageUrls;
+  if (videoUrls.length) input.video_urls = videoUrls;
+  if (audioUrls.length) input.audio_urls = audioUrls;
+  const saved = readProviderJob(params);
+  let job: FalQueueJob;
+  if (saved?.provider === "fal-ref-video") {
+    job = { requestId: saved.requestId, statusUrl: saved.statusUrl, responseUrl: saved.responseUrl };
+  } else {
+    const sub = await falSubmitJob(model.falModel ?? model.key, input);
+    if (!sub.ok) {
+      if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(sub.error || ""))) {
+        return {
+          ok: false,
+          error: "Video referens juda katta — Seedance R2V hozir 50MB dan katta video referensni qabul qilmaydi",
+        };
+      }
+      return { ok: false, error: sub.error };
+    }
+    job = sub.data;
+    await persistProviderJob(genId, params, {
+      provider: "fal-ref-video",
+      requestId: job.requestId,
+      statusUrl: job.statusUrl,
+      responseUrl: job.responseUrl,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  const out = await falPollJob(job, { maxPolls: 360 });
   if (!out.ok) {
     if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(out.error || ""))) {
       return {
@@ -271,7 +391,9 @@ async function runFalRefVideo(
     }
     return { ok: false, error: out.error };
   }
-  return { ok: true, buf: out.data };
+  const buf = await falVideoResultToBuffer(out.data);
+  if (!buf.ok) return { ok: false, error: buf.error };
+  return { ok: true, buf: buf.data };
 }
 
 /**
@@ -281,7 +403,9 @@ async function runFalRefVideo(
  */
 export async function processGeneration(genId: string): Promise<void> {
   const gen = await prisma.generation.findUnique({ where: { id: genId } });
-  if (!gen || gen.status !== "queued") return;
+  if (!gen) return;
+  const canResume = isResumableRunningGeneration(gen);
+  if (gen.status !== "queued" && !canResume) return;
 
   const fail = async (reason: string) => {
     // ATOMIK: faqat hali queued/running bo'lsa failed qil + refund. Agar reconcileStuckGenerations
@@ -295,7 +419,13 @@ export async function processGeneration(genId: string): Promise<void> {
   };
 
   try {
-    await prisma.generation.update({ where: { id: genId }, data: { status: "running" } });
+    if (gen.status === "queued") {
+      const claimed = await prisma.generation.updateMany({
+        where: { id: genId, status: "queued" },
+        data: { status: "running" },
+      });
+      if (claimed.count === 0) return;
+    }
     const model = getModelById(gen.modelId);
     if (!model) return void (await fail("Noma'lum model"));
 
@@ -454,12 +584,16 @@ export async function processGeneration(genId: string): Promise<void> {
           : model.provider === "fal"
             ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
             : await runVideo(model, gen.prompt, params, gen.userId, genId);
+      if (!out.ok && (out.error.startsWith("FAL_TIMEOUT") || out.error.startsWith("OPENROUTER_TIMEOUT"))) {
+        return;
+      }
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
       await prisma.genAsset.create({
         data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: url, aspectRatio },
       });
+      await persistProviderJob(genId, params, null);
     } else {
       return void (await fail(`Qo'llab-quvvatlanmaydigan tur: ${model.feature}`));
     }
@@ -509,19 +643,52 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
 const GEN_CONCURRENCY = Math.max(1, Number(process.env.GEN_CONCURRENCY) || 2);
 let genActive = 0;
 const genWaiting: string[] = [];
+const genWaitingSet = new Set<string>();
+const genActiveSet = new Set<string>();
 function genRunNext(): void {
   if (genActive >= GEN_CONCURRENCY) return;
   const genId = genWaiting.shift();
   if (!genId) return;
+  genWaitingSet.delete(genId);
+  genActiveSet.add(genId);
   genActive++;
   processGeneration(genId)
     .catch((e) => console.error(`[studio-gen] processor xato (${genId}):`, e))
     .finally(() => {
       genActive--;
+      genActiveSet.delete(genId);
       genRunNext();
     });
 }
 export function processGenerationInBackground(genId: string): void {
+  if (genWaitingSet.has(genId) || genActiveSet.has(genId)) return;
   genWaiting.push(genId);
+  genWaitingSet.add(genId);
   genRunNext();
 }
+
+async function resumePendingGenerations(): Promise<void> {
+  const pending = await prisma.generation.findMany({
+    where: { status: { in: ["queued", "running"] } },
+    select: { id: true, mode: true, status: true, params: true },
+    take: 100,
+    orderBy: { createdAt: "asc" },
+  });
+  for (const gen of pending) {
+    if (gen.status === "queued" || isResumableRunningGeneration(gen)) {
+      processGenerationInBackground(gen.id);
+    }
+  }
+}
+
+const genResumeTimer = setInterval(() => {
+  resumePendingGenerations().catch((e) => {
+    console.error("[studio-gen] pending resume xato:", e);
+  });
+}, 30_000);
+if (typeof genResumeTimer.unref === "function") genResumeTimer.unref();
+setTimeout(() => {
+  resumePendingGenerations().catch((e) => {
+    console.error("[studio-gen] initial resume xato:", e);
+  });
+}, 1000);

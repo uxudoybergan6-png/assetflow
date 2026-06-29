@@ -979,6 +979,9 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Generatsiya topilmadi" });
     return;
   }
+  if (gen.status === "queued" || gen.status === "running") {
+    processGenerationInBackground(gen.id);
+  }
   // Signed URL 1 soatda eskiradi — resultKey bo'lsa har so'rovda yangidan imzolaymiz.
   await hydrateGenAssets(gen);
   res.json(gen);

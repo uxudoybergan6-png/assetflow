@@ -59,19 +59,22 @@ function pollDelayMs(i: number): number {
 
 type FalSubmitResp = { request_id?: string; status_url?: string; response_url?: string };
 type FalStatus = { status?: string; error?: string };
+export type FalQueueJob = {
+  requestId: string;
+  statusUrl: string;
+  responseUrl: string;
+};
 
 /**
  * Queue submit + status_url'ni COMPLETED gacha poll + response_url → output obyekt.
  * Timeout (job hali IN_PROGRESS) → FAL_TIMEOUT sentinel (refund YO'Q — magnific naqshi).
  * opts.maxPolls — video uchun modelga qarab oshiriladi (uzoqroq jobs erta yiqilmasin).
  */
-async function falSubmit(
+export async function falSubmitJob(
   modelId: string,
-  input: Record<string, unknown>,
-  opts?: { maxPolls?: number }
-): Promise<OrResult<unknown>> {
+  input: Record<string, unknown>
+): Promise<OrResult<FalQueueJob>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
-  const maxPolls = opts?.maxPolls ?? MAX_POLLS;
   let sub: Response;
   try {
     sub = await fetch(`${QUEUE_BASE}/${modelId}`, {
@@ -86,13 +89,30 @@ async function falSubmit(
   const sj = (await safeJson(sub)) as FalSubmitResp | null;
   const statusUrl = sj?.status_url;
   const responseUrl = sj?.response_url;
-  if (!statusUrl || !responseUrl) return { ok: false, error: "fal: status_url qaytmadi" };
+  if (!statusUrl || !responseUrl || !sj?.request_id) {
+    return { ok: false, error: "fal: status_url qaytmadi" };
+  }
+  return {
+    ok: true,
+    data: {
+      requestId: sj.request_id,
+      statusUrl,
+      responseUrl,
+    },
+  };
+}
 
+export async function falPollJob(
+  job: FalQueueJob,
+  opts?: { maxPolls?: number }
+): Promise<OrResult<unknown>> {
+  if (!isFalConfigured()) return NOT_CONFIGURED;
+  const maxPolls = opts?.maxPolls ?? MAX_POLLS;
   for (let i = 0; i < maxPolls; i++) {
     await sleep(pollDelayMs(i));
     let st: Response;
     try {
-      st = await fetch(statusUrl, { headers: falHeaders() });
+      st = await fetch(job.statusUrl, { headers: falHeaders() });
     } catch {
       continue; // tarmoq tebranishi — poll davom etadi
     }
@@ -105,7 +125,7 @@ async function falSubmit(
     if (status === "COMPLETED") {
       let rr: Response;
       try {
-        rr = await fetch(responseUrl, { headers: falHeaders() });
+        rr = await fetch(job.responseUrl, { headers: falHeaders() });
       } catch (e) {
         return { ok: false, error: (e as Error).message || "fal natija ulanmadi" };
       }
@@ -117,6 +137,16 @@ async function falSubmit(
     // IN_QUEUE / IN_PROGRESS → poll davom
   }
   return { ok: false, error: "FAL_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+}
+
+async function falSubmit(
+  modelId: string,
+  input: Record<string, unknown>,
+  opts?: { maxPolls?: number }
+): Promise<OrResult<unknown>> {
+  const sub = await falSubmitJob(modelId, input);
+  if (!sub.ok) return sub;
+  return falPollJob(sub.data, opts);
 }
 
 /**
@@ -216,10 +246,7 @@ export async function falRefVideo(
   }
   const r = await falSubmit(modelKey, input, { maxPolls: 360 });
   if (!r.ok) return r;
-  const data = r.data as { video?: { url?: string } };
-  const url = data?.video?.url;
-  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
-  return falDownload(url);
+  return falVideoResultToBuffer(r.data);
 }
 
 // fal CDN natija URL'ini Buffer'ga yuklaydi (caller R2'ga persist qiladi).
@@ -232,6 +259,13 @@ async function falDownload(url: string): Promise<OrResult<Buffer>> {
   } catch (e) {
     return { ok: false, error: (e as Error).message || "fal yuklab olish xatosi" };
   }
+}
+
+export async function falVideoResultToBuffer(data: unknown): Promise<OrResult<Buffer>> {
+  const box = data as { video?: { url?: string } };
+  const url = box?.video?.url;
+  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  return falDownload(url);
 }
 
 // UI nisbat → fal image_size enum.
