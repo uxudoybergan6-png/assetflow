@@ -11452,10 +11452,12 @@ window.afGallery=(function(){
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });
   });
 
-  // ── polling (video uzoq — 3–4s oraliq) ──
+  // ── polling (video uzoq — backend fal/OpenRouter + Render cold-start bilan 10 daqiqadan oshishi mumkin) ──
   var activeJobs=[]; var jobSeq=0;
-  var VG_POLL_CAP=160;
-  function vgPollDelay(t){ return t<6?3000:4000; }
+  // Oldingi limit ~10.5 daqiqa edi va R2V ba'zan undan oshib ketardi → plagin erta "taslim" bo'lardi.
+  // Endi ~38-40 daqiqagacha yumshoq kuzatamiz: tez-tez → keyin siyrakroq.
+  var VG_POLL_CAP=420;
+  function vgPollDelay(t){ return t<10?3000:(t<80?4000:6000); }
 
   function renderVgJobs(){
     var el=$('vgProg'); if(!el)return;
@@ -11484,7 +11486,11 @@ window.afGallery=(function(){
 
   function pollVgJob(j,tries){
     if(j.cancelled)return;
-    if(tries>VG_POLL_CAP){ removeVgJob(j); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
+    if(tries>VG_POLL_CAP){
+      removeVgJob(j);
+      toast('Video hali serverda ishlanayotgan bo‘lishi mumkin — keyinroq Tarixdan tekshiring','warning');
+      return;
+    }
     studioGet('/api/studio/gen/'+j.jobId).then(function(gn){
       if(j.cancelled)return;
       var s=(gn&&gn.status)||'';
