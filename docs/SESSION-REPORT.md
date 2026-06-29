@@ -9,6 +9,7 @@
 - Birinchi preset yetmasa backend 480p / pastroq fps fallback bilan qayta urinadi.
 - Optimizatsiyadan keyin ham 50MB dan katta qolsa foydalanuvchiga endi aniq “qisqaroq joy tanlang” xabari qaytadi.
 - Plugin video uchun oldingi “asl fayl hajmi” bo‘yicha 50MB blokni yumshatdi; yakuniy tekshiruv endi server qaytargan real optimizatsiya hajmiga qaraydi.
+- Clip-picker endi anchor menyu emas, markazdagi kengroq modal bo‘lib ochiladi; server optimizatsiya qiladigan video source esa endi rezolyutsiya sabab bekordan-bekor rad qilinmaydi.
 - Vertikal video referenslar uchun rezolyutsiya tekshiruvi avvalgidek yumshatilgan holda saqlandi.
 - Tekshiruv: `npm run build -w apps/api` OK.
 - Tekshiruv: plugin script parse `OK 15`.

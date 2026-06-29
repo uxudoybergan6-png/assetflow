@@ -2717,12 +2717,12 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vpanel .recentgrid .rc{border-radius:16px}
 .axvg .vpanel .recentgrid .rc .bd{padding:18px 8px 6px}
 .axvg .vpanel .aud-toggle{padding:10px 2px 2px}
-.axvg .clip-sheet{width:min(540px,92vw)}
+.axvg .clip-sheet{width:min(620px,96vw)}
 .axvg .clip-head{margin-bottom:10px}
 .axvg .clip-head b{display:block;font-size:13px;color:var(--txt);margin-bottom:3px}
 .axvg .clip-head small{display:block;font-size:11px;color:var(--mut);line-height:1.45}
 .axvg .clip-player{border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line2);margin-bottom:11px}
-.axvg .clip-player video{width:100%;display:block;max-height:230px;object-fit:contain;background:#000}
+.axvg .clip-player video{width:100%;display:block;max-height:270px;object-fit:contain;background:#000}
 .axvg .clip-audio{margin-top:8px;padding-top:4px;border-top:1px solid var(--line2)}
 .axvg .clip-note{font-size:11px;color:var(--mut);line-height:1.45;margin-top:8px}
 .axvg .clip-note b{color:var(--txt)}
@@ -2730,6 +2730,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .clip-meta span{white-space:nowrap}
 .axvg .clip-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .axvg .clip-actions .vact{justify-content:center}
+.axvg .clip-actions .primary{min-width:190px}
 .axvg .vpanel.compose-panel .guide{display:none}
 .axvg .vpanel.recent-panel .lbl .morelink{color:var(--blue);font-weight:800}
 .axvg .mrefgrid{display:flex;gap:8px;flex-wrap:wrap}.axvg .mrefgrid:empty{display:none}
@@ -10685,7 +10686,7 @@ window.afGallery=(function(){
     var v=$('vgClipVideo'); if(v){ v.src=vgClip.url; try{ v.currentTime=0; }catch(_){} try{ v.load(); }catch(_){} }
     bindVgClipTimeline();
     renderVgClipUi();
-    openVgSheet('vgClipSheet',$('vgAddVid'));
+    openVgSheet('vgClipSheet');
   }
   // host (jsx) chaqiruv — listProjectFootage / exportTimelineFrame (igScript bilan bir xil isbotlangan yo'l).
   // Bular GLOBAL funksiya EMAS — csInterface.evalScript orqali host.jsx evallanadi va natija JSON qaytadi.
@@ -10735,6 +10736,17 @@ window.afGallery=(function(){
     if(!sc)return;
     var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
     sc.style.bottom='auto';
+    if(sc.classList&&sc.classList.contains('clip-sheet')){
+      var cw=Math.min(620,vw-pad*2);
+      sc.style.width=cw+'px';
+      sc.style.maxHeight=Math.round(vh*0.86)+'px';
+      sc.style.left='-9999px';
+      sc.style.top='0px';
+      var ch=sc.offsetHeight;
+      sc.style.left=Math.round((vw-cw)/2)+'px';
+      sc.style.top=Math.max(pad,Math.round((vh-ch)/2))+'px';
+      return;
+    }
     if(anch&&anch.getBoundingClientRect){
       var ar=anch.getBoundingClientRect();
       var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
@@ -10951,6 +10963,7 @@ window.afGallery=(function(){
     if(type==='video'){
       var d=Number(metaOrItem.duration||metaOrItem.sourceDurationSec||0);
       if(d && (d<2 || d>15))return 'Video referens 2–15 soniya oralig‘ida bo‘lishi kerak';
+      if(metaOrItem.skipClipper||metaOrItem.clipMode)return '';
       var res=String(metaOrItem.sourceResolution||'').toLowerCase();
       if(res==='1080p'||res==='4k')return 'Video referens 480p–720p oralig‘ida bo‘lishi kerak';
       var w=Number(metaOrItem.width||0), h=Number(metaOrItem.height||0);
@@ -11021,7 +11034,8 @@ window.afGallery=(function(){
     var sizeBytes=(src&&src.sizeBytes)||0, lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type);
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return; }
     if(type!=='video' && totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return; }
-    var metaMsg=mediaMetaRuleMsg(type,(src&&src.meta)||src);
+    var metaSrc=(type==='video'&&src&&(src.skipClipper||src.clipMode))?src:((src&&src.meta)||src);
+    var metaMsg=mediaMetaRuleMsg(type,metaSrc);
     if(metaMsg){ toast(metaMsg,'warning'); return; }
     var preview=(src&&src.dataUrl)||null;
     var obj={type:type,dataUrl:type==='image'?preview:null,url:null,loading:true,sizeBytes:(type==='video'?0:(sizeBytes||0))};
