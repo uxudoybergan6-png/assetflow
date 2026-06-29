@@ -5914,7 +5914,7 @@ function onEnvScopeChange(sel){
    AI Tools — yagona kompozer mantig'i (vanilla JS).
    Dizayn referensi: Artlist uslubidagi bitta generatsiya bar.
    Backend: /api/studio/gen/* (session→cost-quote→job→poll) — rasm/ovoz/video/SFX;
-   qidiruv esa /api/plugin/ai/search. Prompt-enhance: /gen/prompt/enhance (1 kredit).
+   qidiruv esa /api/plugin/ai/search. Prompt-enhance: /gen/prompt/enhance (dinamik kredit).
    ============================================================ */
 // cost — server narxiga moslangan (backend AI_COST: image 5 · voiceover 3 · sfx 4 · search 1).
 // Haqiqiy hisoblash DOIM serverda; bu faqat ko'rsatuv.
@@ -7204,7 +7204,7 @@ function aiSetSetting(i){
   if(aiStudioMode(af_ai.media)){af_ai.quote=null;aiCostQuote();}
 }
 /**
- * Promptni REAL AI bilan boyitadi (backend /gen/prompt/enhance — 1 kredit, model-aware).
+ * Promptni REAL AI bilan boyitadi (backend /gen/prompt/enhance — dinamik kredit, model-aware).
  *  format='text' → boy paragraf; format='json' → strukturalangan prompt sxemasi.
  */
 async function aiEnhancePrompt(format){
@@ -10059,7 +10059,7 @@ window.afGallery=(function(){
     try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
-      if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨','success'); }
+      if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Yaxshilab bo\'lmadi','error');
     }).catch(function(err){ toast((err&&err.message)||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
@@ -11436,14 +11436,16 @@ window.afGallery=(function(){
     var enh=$('vgEnhance'); if(enh)enh.style.opacity='0.4';
     var imgRefs=mref.filter(function(r){ return r.type==='image'&&r.url; }).map(function(r){ return r.url; });
     var vidRefs=mref.filter(function(r){ return r.type==='video'&&r.url; }).map(function(r){ return r.url; });
+    var audRefs=mref.filter(function(r){ return r.type==='audio'&&r.url; }).map(function(r){ return r.url; });
     studioPost('/api/studio/gen/prompt/enhance',{
       prompt:txt,
       mode:'video',
       modelId:(vm.model&&vm.model.id)||null,
       image_urls:imgRefs,
-      video_urls:vidRefs
+      video_urls:vidRefs,
+      audio_urls:audRefs
     }).then(function(r){
-      if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt boyitildi','success'); }
+      if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt boyitildi'+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Boyitish muvaffaqiyatsiz','warning');
     }).catch(function(e){ toast((e&&e.message)||'Enhance xatosi','error');
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });
