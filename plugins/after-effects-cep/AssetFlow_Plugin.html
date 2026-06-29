@@ -11448,7 +11448,7 @@ window.afGallery=(function(){
       video_urls:vidRefs,
       audio_urls:audRefs
     }).then(function(r){
-      if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt boyitildi'+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
+      if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast((r&&r.safetyAdjusted?'Prompt boyitildi va safety uchun yumshatildi':'Prompt boyitildi')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Boyitish muvaffaqiyatsiz','warning');
     }).catch(function(e){ toast((e&&e.message)||'Enhance xatosi','error');
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });

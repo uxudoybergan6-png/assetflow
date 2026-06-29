@@ -409,6 +409,10 @@ export async function falEnhancePrompt(
       : "Qisqa g'oyani bitta boy, tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal).";
   const tokenHint =
     " @img/@image/@video/@audio tokenlarini bo'lsa XUDDI O'ZICHA saqla, nomini o'zgartirma va olib tashlama.";
+  const safetyHint =
+    mode === "video"
+      ? " Safety: referenslarda odam bo'lsa ham promptni xavfsiz tut. Yalang'ochlik, shirtless/topless, bare chest, tana qismlariga ortiqcha urg'u, sexual yoki erotik iboralar yozma. `full body` o'rniga `full figure`, `body parts` o'rniga `appearance details`, `muscular` o'rniga `athletic`, `torso/chest` o'rniga `upper silhouette/frame` kabi xavfsizroq til ishlat. Kiyim, harakat, kamera va atmosfera ustun bo'lsin."
+      : "";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
   const pickText = (data: unknown): string => {
     if (typeof data === "string") return data.trim();
@@ -436,7 +440,7 @@ export async function falEnhancePrompt(
         `${role} Referens rasmlar tartibda: 1-rasm=@img1, 2-rasm=@img2, ... ` +
         `Foydalanuvchi matni bilan birga rasmlarni tahlil qil va faqat prompt uchun foydali kuzatuvlarni yoz. ` +
         "Subyekt, kompozitsiya, uslub, material, rang, yorug'lik, fon, kayfiyat va muhim vizual cheklovlarni qisqa paragrafda qaytar. " +
-        `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat tahlil yoz, final prompt yozma.`,
+        `KIRISH TILINI saqla.${tokenHint}${safetyHint}${modelContext} Faqat tahlil yoz, final prompt yozma.`,
       temperature: 0.4,
       max_tokens: 350,
     });
@@ -500,7 +504,7 @@ export async function falEnhancePrompt(
       `${role} ${detailHint} Foydalanuvchi matni va berilgan reference analysis bloklarini birlashtirib, ` +
       `bitta yakuniy, ishlatishga tayyor ${mode} prompt yoz. Agar analysis bloklarida ziddiyat bo'lsa, foydalanuvchi matnini ustun qo'y, ` +
       "qolganini esa mos ravishda uyg'unlashtir. Referenslar haqida alohida izoh yozma, faqat final prompt yoz. " +
-      `KIRISH TILINI saqla.${tokenHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
+      `KIRISH TILINI saqla.${tokenHint}${safetyHint}${modelContext} Faqat yakuniy promptni qaytar, izohsiz.`,
     temperature: 0.7,
     max_tokens: 600,
   });

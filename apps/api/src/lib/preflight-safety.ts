@@ -34,26 +34,62 @@ const SEXUAL_EXPLICIT = [
   "ko'krak ochiq",
 ];
 
-const BODY_EXPOSURE = [
+const STRONG_BODY_EXPOSURE = [
   "muscular",
   "muscle",
   "abs",
   "six pack",
   "torso",
   "chest",
-  "body",
-  "skin",
   "shirtless",
   "topless",
   "mushak",
-  "tana",
   "ko'krak",
-  "teri",
-  "to'liq tana",
-  "tana qismlari",
   "yalang'och",
   "yalangoch",
 ];
+
+const GENERIC_BODY_TERMS = [
+  "body",
+  "skin",
+  "tana",
+  "teri",
+  "to'liq tana",
+  "tana qismlari",
+  "qo'l va oyoq",
+  "qo'l va oyoqlari",
+  "full body",
+  "body parts",
+];
+
+export function softenPromptForSafety(prompt: string, mode = "video"): string {
+  let text = String(prompt || "");
+  if (!text) return text;
+  const swaps: Array<[RegExp, string]> = [
+    [/\bshirtless\b/gi, "in sportswear"],
+    [/\btopless\b/gi, "fully clothed"],
+    [/\bbare chest\b/gi, "upper-body silhouette"],
+    [/\bfull body\b/gi, "full figure"],
+    [/\bbody parts\b/gi, "appearance details"],
+    [/\bmuscular\b/gi, "athletic"],
+    [/\btorso\b/gi, "upper silhouette"],
+    [/\bchest\b/gi, "upper frame"],
+    [/to'liq tanasini/gi, "obrazini"],
+    [/to'liq tana/gi, "to'liq figura"],
+    [/tana qismlari/gi, "tashqi ko'rinishi"],
+    [/qo'l va oyoqlarini qo'y/gi, "pozasi va harakatini moslashtir"],
+    [/qo'l va oyoq/gi, "poza va harakat"],
+    [/\btana\b/gi, "figura"],
+  ];
+  swaps.forEach(([from, to]) => {
+    text = text.replace(from, to);
+  });
+  if (mode === "video") {
+    text +=
+      " Subject remains fully clothed in sportswear. Focus on motion, composition, lighting, and athletic performance rather than exposed body details.";
+  }
+  return text.trim();
+}
 
 const REAL_PERSON = [
   "realistic",
@@ -117,7 +153,8 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
   const refs = countRefs(input.params);
   const hasVisualRefs = refs.image + refs.video > 0;
   const sexual = hasAny(text, SEXUAL_EXPLICIT);
-  const body = hasAny(text, BODY_EXPOSURE);
+  const strongBody = hasAny(text, STRONG_BODY_EXPOSURE);
+  const genericBody = hasAny(text, GENERIC_BODY_TERMS);
   const real = hasAny(text, REAL_PERSON);
   const minor = hasAny(text, MINOR_TERMS);
   const gore = hasAny(text, GORE_TERMS);
@@ -161,7 +198,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     };
   }
 
-  if (input.mode === "video" && hasVisualRefs && body && real) {
+  if (input.mode === "video" && hasVisualRefs && strongBody && real) {
     return {
       blocked: true,
       severity: "medium",
@@ -172,7 +209,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     };
   }
 
-  if (input.mode === "video" && hasVisualRefs && body) {
+  if (input.mode === "video" && hasVisualRefs && strongBody) {
     return {
       blocked: true,
       severity: "medium",
@@ -183,7 +220,18 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     };
   }
 
-  if (body && real) {
+  if (input.mode === "video" && hasVisualRefs && genericBody) {
+    warnings.push("Referensli video promptda tana ta'rifi kuchli — harakat va kiyimga ko'proq urg'u bering");
+    return {
+      blocked: false,
+      severity: "medium",
+      reason: null,
+      warnings,
+      suggestions,
+    };
+  }
+
+  if ((strongBody || genericBody) && real) {
     warnings.push("Realistik odam va tana detaliga kuchli urg'u safety filtrga yaqinlashishi mumkin");
     return {
       blocked: false,

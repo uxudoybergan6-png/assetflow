@@ -40,7 +40,7 @@ import {
   processGenerationInBackground,
   reconcileStuckGenerations,
 } from "../lib/gen-processor.js";
-import { preflightSafetyCheck } from "../lib/preflight-safety.js";
+import { preflightSafetyCheck, softenPromptForSafety } from "../lib/preflight-safety.js";
 
 export const studioGenRouter = Router();
 
@@ -871,6 +871,33 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   const spendModel = Array.from(new Set(spendModels)).join(" + ");
   logAiSpend(req.user!.userId, "enhance", enhanceCost.cost, spendModel);
 
+  const settleEnhancedPrompt = (rawPrompt: string) => {
+    const trimmed = String(rawPrompt || "").trim();
+    const safetyParams = {
+      imageUrls: refUrls,
+      videoUrls: videoRefUrls,
+      audioUrls: audioRefUrls,
+    };
+    const firstPass = preflightSafetyCheck({
+      mode,
+      prompt: trimmed,
+      params: safetyParams as unknown as Record<string, unknown>,
+      modelLabel: model?.label,
+    });
+    if (!firstPass.blocked) return { prompt: trimmed, safetyAdjusted: false };
+    const softened = softenPromptForSafety(trimmed, mode);
+    const secondPass = preflightSafetyCheck({
+      mode,
+      prompt: softened,
+      params: safetyParams as unknown as Record<string, unknown>,
+      modelLabel: model?.label,
+    });
+    return {
+      prompt: secondPass.blocked ? trimmed : softened,
+      safetyAdjusted: !secondPass.blocked,
+    };
+  };
+
   if (format === "json") {
     let ideaForJson = p.data.prompt;
     if (refUrls.length || videoRefUrls.length || audioRefUrls.length) {
@@ -913,7 +940,15 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       return;
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
-    res.json({ prompt: promptStr, json, creditsLeft: gate.remaining, creditsCharged: enhanceCost.cost });
+    const settled = settleEnhancedPrompt(promptStr);
+    json.prompt = settled.prompt;
+    res.json({
+      prompt: settled.prompt,
+      json,
+      safetyAdjusted: settled.safetyAdjusted,
+      creditsLeft: gate.remaining,
+      creditsCharged: enhanceCost.cost,
+    });
     return;
   }
 
@@ -930,7 +965,13 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     res.status(502).json({ error: out.error });
     return;
   }
-  res.json({ prompt: out.data.trim(), creditsLeft: gate.remaining, creditsCharged: enhanceCost.cost });
+  const settled = settleEnhancedPrompt(out.data);
+  res.json({
+    prompt: settled.prompt,
+    safetyAdjusted: settled.safetyAdjusted,
+    creditsLeft: gate.remaining,
+    creditsCharged: enhanceCost.cost,
+  });
 });
 
 /**

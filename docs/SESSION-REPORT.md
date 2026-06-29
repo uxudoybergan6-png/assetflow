@@ -1,12 +1,12 @@
-# SESSION REPORT — 2026-06-29 — preflight safety check qo‘shildi
+# SESSION REPORT — 2026-06-29 — enhance safety-aware qilindi
 
 - fal webhook + resume oqimi saqlandi; video joblar serverga tugagach push qilinadi.
-- Qo‘shimcha topilma: foydalanuvchi ko‘p kutgan holatlarning bir qismi safety blok bo‘lib, oldin faqat oxirida bilinardi.
-- Yangi backend helper qo‘shildi: `preflight-safety.ts` — prompt va referensli holat uchun tezkor safety heuristic.
-- Yangi endpoint: `POST /api/studio/gen/preflight-safety`.
-- `POST /api/studio/gen` ichiga ham shu guard qo‘shildi; bloklansa kredit yechilmasdan oldin to‘xtaydi.
-- Video tool Generate bosishidan oldin endi preflight endpoint’ni chaqiradi.
-- Yuqori xavf holatida job umuman yuborilmaydi; foydalanuvchi darrov tushunarli ogohlantirish oladi.
-- O‘rta xavf holatida warning chiqadi, lekin ishni davom ettirish mumkin.
-- Oldingi video poll uzaytirilgani ham saqlanib qoldi.
+- Preflight safety check saqlandi, lekin false-positive kamaytirildi: kiyimli oddiy `full figure` / tana tavsifi endi ko‘proq warning bo‘ladi, darrov block emas.
+- `preflight-safety.ts` ichida `strong body` va `generic body` atamalari alohida ajratildi.
+- Yangi helper qo‘shildi: `softenPromptForSafety()` — xavfli iboralarni yumshoqroq prompt tiliga o‘tkazadi.
+- `falEnhancePrompt()` video mode uchun safety instruction oldi: expose/body-focus o‘rniga kiyim, harakat, kamera va atmosfera ustuvor bo‘ladi.
+- `/gen/prompt/enhance` endi promptni qaytarishdan oldin preflight’dan o‘tkazadi.
+- Agar enhance natijasi xavfli chiqsa, backend uni avtomatik yumshatib qaytaradi va `safetyAdjusted:true` beradi.
+- Plugin video tool `Yaxshilash` tugmasida endi “safety uchun yumshatildi” degan aniq xabar ko‘rsatadi.
+- Maqsad: prompt enhance yozgan matn keyin yana o‘sha tizim tomonidan bekordan-bekor bloklanmasin.
 - Tekshiruv: `npm run build -w apps/api` OK, plugin script parse `OK 7`.
