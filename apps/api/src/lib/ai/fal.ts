@@ -63,7 +63,7 @@ type FalStatus = { status?: string; error?: string };
 /**
  * Queue submit + status_url'ni COMPLETED gacha poll + response_url → output obyekt.
  * Timeout (job hali IN_PROGRESS) → FAL_TIMEOUT sentinel (refund YO'Q — magnific naqshi).
- * opts.maxPolls — video uchun MAX_POLLS=150 (~280s) ishlatiladi.
+ * opts.maxPolls — video uchun modelga qarab oshiriladi (uzoqroq jobs erta yiqilmasin).
  */
 async function falSubmit(
   modelId: string,
@@ -121,7 +121,7 @@ async function falSubmit(
 
 /**
  * Seedance 2.0 Fast image-to-video. imageUrl = start kadr (R2 public URL). endImageUrl ixtiyoriy.
- * maxPolls=150 (~280s) — video generatsiya uzoqroq davom etadi.
+ * maxPolls=210 (~400s) — uzoqroq jobs erta timeout bo'lib ketmasin.
  */
 export async function falVideo(
   modelKey: string,
@@ -157,7 +157,7 @@ export async function falVideo(
   } catch {
     /* ignore */
   }
-  const r = await falSubmit(modelKey, input, { maxPolls: 150 });
+  const r = await falSubmit(modelKey, input, { maxPolls: 210 });
   if (!r.ok) return r;
   const data = r.data as { video?: { url?: string } };
   const url = data?.video?.url;
@@ -168,7 +168,7 @@ export async function falVideo(
 /**
  * Seedance 2.0 reference-to-video — ko'p-modal referens. image_urls(≤9)/video_urls(≤3)/audio_urls(≤3)
  * R2 PUBLIC URL'lar (caller materializatsiya qiladi); bo'sh ro'yxat yuborilmaydi. @Image/@Video/@Audio
- * prompt'da o'zicha qoladi (model tushunadi). Poll uzun (maxPolls=250 ≈ 480s — R2V uzoq davom etadi).
+ * prompt'da o'zicha qoladi (model tushunadi). Poll uzun (maxPolls=360 ≈ 700s — R2V uzoq davom etadi).
  */
 export async function falRefVideo(
   modelKey: string,
@@ -214,7 +214,7 @@ export async function falRefVideo(
   } catch {
     /* ignore */
   }
-  const r = await falSubmit(modelKey, input, { maxPolls: 250 });
+  const r = await falSubmit(modelKey, input, { maxPolls: 360 });
   if (!r.ok) return r;
   const data = r.data as { video?: { url?: string } };
   const url = data?.video?.url;

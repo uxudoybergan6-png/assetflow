@@ -10382,12 +10382,12 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
-  var vm={loaded:false,model:null,res:'720p',dur:'Auto',ar:'Auto',audio:true,bitrate:'standard',refKind:'frames',
+  var vm={loaded:false,model:null,res:'480p',dur:'Auto',ar:'Auto',audio:false,bitrate:'standard',refKind:'frames',
     mediaRefs:{image:9,video:3,audio:3,total:12},
     mediaRefFormats:null,mediaRefMaxTotalBytes:null,videoInputCostMult:0,
     resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','13','14','15'],bitOpts:['standard','high'],
     arOpts:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],
-    perSec:{'480p':8,'720p':12},autoSec:5,sessionId:null};
+    perSec:{'480p':8,'720p':12},autoSec:4,sessionId:null};
   // kadr holati (refKind=frames) + ko'p-modal referens (refKind=media-refs)
   var st={start:null,end:null}; // {dataUrl, url, loading}
   var mref=[]; // [{type:'image'|'video'|'audio', dataUrl, url, loading}]
@@ -10804,11 +10804,12 @@ window.afGallery=(function(){
     vm.videoInputCostMult=(typeof m.videoInputPerSecMultiplier==='number'&&m.videoInputPerSecMultiplier>0)?m.videoInputPerSecMultiplier:0;
     var vs=m.videoSettings;
     if(vs){
-      if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; if(vm.resOpts.indexOf(vm.res)<0)vm.res=vs.resolution.def||vm.resOpts[0]; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
-      if(vs.duration){ vm.durOpts=vs.duration.options||vm.durOpts; if(vm.durOpts.indexOf(vm.dur)<0)vm.dur=vs.duration.def||vm.durOpts[0]; if(vs.duration.autoSec)vm.autoSec=vs.duration.autoSec; }
-      if(vs.aspect){ vm.arOpts=vs.aspect.options||vm.arOpts; if(vm.arOpts.indexOf(vm.ar)<0)vm.ar=vs.aspect.def||vm.arOpts[0]; }
-      if(typeof vs.audio==='boolean')vm.audio=vs.audio;
-      if(vs.bitrate){ vm.bitOpts=vs.bitrate.options||vm.bitOpts; if(vm.bitOpts.indexOf(vm.bitrate)<0)vm.bitrate=vs.bitrate.def||vm.bitOpts[0]; }
+      if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; vm.res=vs.resolution.def||vm.resOpts[0]||vm.res; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
+      if(vs.duration){ vm.durOpts=vs.duration.options||vm.durOpts; vm.dur=vs.duration.def||vm.durOpts[0]||vm.dur; if(vs.duration.autoSec)vm.autoSec=vs.duration.autoSec; }
+      if(vs.aspect){ vm.arOpts=vs.aspect.options||vm.arOpts; vm.ar=vs.aspect.def||vm.arOpts[0]||vm.ar; }
+      if(typeof vs.audioDefault==='boolean')vm.audio=vs.audioDefault;
+      else if(typeof vs.audio==='boolean')vm.audio=vs.audio;
+      if(vs.bitrate){ vm.bitOpts=vs.bitrate.options||vm.bitOpts; vm.bitrate=vs.bitrate.def||vm.bitOpts[0]||vm.bitrate; }
       else { vm.bitOpts=['standard','high']; vm.bitrate='standard'; }
     }
   }

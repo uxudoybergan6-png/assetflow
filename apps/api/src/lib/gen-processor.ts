@@ -198,18 +198,17 @@ async function runFalVideo(
   const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
   const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
   if (!refUrl) return { ok: false, error: "Video uchun boshlang'ich kadr (referenceUrl) talab qilinadi" };
-  const startUrl = await materializeRefUrl(userId, genId, refUrl);
-  let endUrl: string | undefined;
-  if (refEndUrl && model.endFrame) {
-    endUrl = await materializeRefUrl(userId, genId, refEndUrl);
-  }
+  const [startUrl, endUrl] = await Promise.all([
+    materializeRefUrl(userId, genId, refUrl),
+    refEndUrl && model.endFrame
+      ? materializeRefUrl(userId, genId, refEndUrl)
+      : Promise.resolve(undefined),
+  ]);
   const v = resolveVideoParams(model, params);
-  const dur = params.duration;
-  const durVal = dur == null || String(dur).toLowerCase() === "auto" ? "auto" : String(dur);
   const out = await falVideo(model.falModel ?? model.key, prompt, startUrl, {
     endImageUrl: endUrl,
     resolution: v.resolution,
-    duration: durVal,
+    duration: v.duration,
     aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
     generateAudio: v.generateAudio,
   });
@@ -233,14 +232,17 @@ async function runFalRefVideo(
     const list = Array.isArray(val)
       ? (val as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
       : [];
-    const out: string[] = [];
-    for (const u of list) out.push(await materializeRefUrl(userId, genId, u));
-    return out;
+    return Promise.all(list.map((u) => materializeRefUrl(userId, genId, u)));
   };
   const lim = model.mediaRefs ?? { image: 9, video: 3, audio: 3, total: 12 };
-  const imageUrls = (await matAll(params.imageUrls)).slice(0, lim.image);
-  const videoUrls = (await matAll(params.videoUrls)).slice(0, lim.video);
-  const audioUrls = (await matAll(params.audioUrls)).slice(0, lim.audio);
+  const [imageUrlsRaw, videoUrlsRaw, audioUrlsRaw] = await Promise.all([
+    matAll(params.imageUrls),
+    matAll(params.videoUrls),
+    matAll(params.audioUrls),
+  ]);
+  const imageUrls = imageUrlsRaw.slice(0, lim.image);
+  const videoUrls = videoUrlsRaw.slice(0, lim.video);
+  const audioUrls = audioUrlsRaw.slice(0, lim.audio);
   // Schema: audio bo'lsa kamida 1 image/video kerak.
   if (audioUrls.length && imageUrls.length + videoUrls.length === 0) {
     return { ok: false, error: "Audio referens uchun kamida 1 rasm yoki video referens kerak" };
@@ -249,14 +251,12 @@ async function runFalRefVideo(
     return { ok: false, error: `Jami referens ≤${lim.total}` };
   }
   const v = resolveVideoParams(model, params);
-  const dur = params.duration;
-  const durVal = dur == null || String(dur).toLowerCase() === "auto" ? "auto" : String(dur);
   const out = await falRefVideo(model.falModel ?? model.key, prompt, {
     imageUrls,
     videoUrls,
     audioUrls,
     resolution: v.resolution,
-    duration: durVal,
+    duration: v.duration,
     aspectRatio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
     generateAudio: v.generateAudio,
     bitrateMode: v.bitrateMode,
@@ -478,13 +478,19 @@ export async function processGeneration(genId: string): Promise<void> {
  * qoladi → kredit qaytmaydi). Belgilangan vaqtdan oshган queued/running → failed + refund.
  * /credits va POST /gen'da chaqiriladi — foydalanuvchi keyingi amalida yo'qolган krediti qaytadi.
  */
-const STUCK_MS = 10 * 60 * 1000; // 10 daqiqa (video backend poll'i ~5 daq — 2× zaxira)
+function stuckTimeoutMs(g: { mode: string; modelId: number }): number {
+  if (g.mode !== "video") return 10 * 60 * 1000;
+  const model = getModelById(g.modelId);
+  if (model?.provider === "fal") return 20 * 60 * 1000;
+  return 15 * 60 * 1000;
+}
 export async function reconcileStuckGenerations(userId: string): Promise<number> {
-  const cutoff = new Date(Date.now() - STUCK_MS);
   const stuck = await prisma.generation.findMany({
-    where: { userId, status: { in: ["queued", "running"] }, createdAt: { lt: cutoff } },
+    where: { userId, status: { in: ["queued", "running"] } },
   });
   for (const g of stuck) {
+    const cutoff = new Date(Date.now() - stuckTimeoutMs(g));
+    if (g.createdAt >= cutoff) continue;
     // Atomik: faqat hali queued/running bo'lsa failed qilamiz (haqiqatan tugagan job'ga tegmaslik).
     const upd = await prisma.generation.updateMany({
       where: { id: g.id, status: { in: ["queued", "running"] } },

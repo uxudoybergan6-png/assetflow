@@ -102,6 +102,7 @@ export type GenModel = {
     resolution: { options: string[]; def: string; perSec: Record<string, number> }; // kredit/soniya
     duration: { options: string[]; def: string; autoSec: number }; // "Auto" + raqamlar (string[])
     audio: boolean;
+    audioDefault?: boolean;
     bitrate?: { options: string[]; def: string };
   };
 
@@ -692,15 +693,16 @@ export const GEN_MODELS: GenModel[] = [
       aspect: { options: ["Auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], def: "Auto" },
       resolution: {
         options: ["480p", "720p"],
-        def: "720p",
+        def: "480p",
         perSec: { "480p": 8, "720p": 12 },
       },
       duration: {
         options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "15"],
         def: "Auto",
-        autoSec: 5,
+        autoSec: 4,
       },
       audio: true,
+      audioDefault: false,
     },
   },
   // Seedance 2.0 R2V — ko'p-modal referens (image≤9 + video≤3 + audio≤3, jami≤12, IXTIYORIY) + prompt.
@@ -736,15 +738,16 @@ export const GEN_MODELS: GenModel[] = [
       aspect: { options: ["Auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], def: "Auto" },
       resolution: {
         options: ["480p", "720p", "1080p", "4k"],
-        def: "720p",
+        def: "480p",
         perSec: { "480p": 8, "720p": 15, "1080p": 34, "4k": 60 },
       },
       duration: {
         options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
         def: "Auto",
-        autoSec: 5,
+        autoSec: 4,
       },
       audio: true,
+      audioDefault: false,
       bitrate: { options: ["standard", "high"], def: "standard" },
     },
   },
@@ -859,7 +862,11 @@ export function resolveVideoParams(
     resolution: pickStr(model.resolutions, params.resolution, ["720p", "1080p"]),
     aspectRatio: pickStr(model.aspects, params.aspectRatio, ["auto", "16:9", "9:16"]),
     generateAudio:
-      typeof params.audio === "boolean" ? params.audio : Boolean(model.audio),
+      typeof params.audio === "boolean"
+        ? params.audio
+        : typeof model.videoSettings?.audioDefault === "boolean"
+          ? model.videoSettings.audioDefault
+          : Boolean(model.audio),
     bitrateMode: model.videoSettings?.bitrate
       ? pickStr(model.videoSettings.bitrate.options, params.bitrateMode, [model.videoSettings.bitrate.def, "standard"])
       : undefined,
