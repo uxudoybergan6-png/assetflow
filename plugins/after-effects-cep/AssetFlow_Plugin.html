@@ -2734,13 +2734,20 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vpanel.compose-panel .guide{display:none}
 .axvg .vpanel.recent-panel .lbl .morelink{color:var(--blue);font-weight:800}
 .axvg .mrefgrid{display:flex;gap:8px;flex-wrap:wrap}.axvg .mrefgrid:empty{display:none}
+.axvg .refbox{margin-top:10px;border:1px solid rgba(63,72,89,.72);border-radius:16px;background:rgba(18,21,27,.92);padding:10px 10px 12px}
+.axvg .refbox + .refbox{margin-top:12px}
+.axvg .refbox.activebox{box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.axvg .refbox.savedbox{background:rgba(15,18,24,.72);border-style:dashed}
+.axvg .refboxhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.axvg .refboxtitle{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#cfd6df}
+.axvg .refboxsub{margin-left:auto;font-size:10px;color:var(--mut)}
 .axvg .mrt{width:60px;height:60px;border-radius:10px;border:1px solid var(--line2);position:relative;background-size:cover;background-position:center;background-color:var(--card3);overflow:visible;cursor:pointer;flex:0 0 auto}
 .axvg .mrt.vid{background-image:linear-gradient(150deg,#2a1f40,#101018)}.axvg .mrt.aud{background-image:linear-gradient(150deg,#0f3030,#0c1414)}
 .axvg .mrt .tag{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;font-size:9px;font-weight:700;padding:9px 3px 3px;text-align:center;border-radius:0 0 9px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axvg .mrt .rx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:11px;line-height:1;display:grid;place-items:center;cursor:pointer;z-index:2}
 .axvg .mrt .rx:hover{color:var(--red);border-color:var(--red)}
 .axvg .mrt .msp{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;color:#fff;font-size:9px;border-radius:9px}
-.axvg .savedrefs{margin-top:12px;padding-top:12px;border-top:1px solid rgba(63,72,89,.55)}
+.axvg .savedrefs{margin-top:0;padding-top:0;border-top:0}
 .axvg .savedrefs .sublbl{font-size:11px}
 .axvg .savedgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
 .axvg .savedgrid:empty{display:none}
@@ -3328,9 +3335,18 @@ html.home-mode #homePage{display:block!important}
                                   <div class="maddb" id="vgAddVid"><span class="pl">＋</span> Video</div>
                                   <div class="maddb" id="vgAddAud"><span class="pl">＋</span> Ovoz</div>
                                 </div>
-                                <div class="mrefgrid" id="vgRefGrid"></div>
-                                <div class="savedrefs" id="vgSavedWrap">
-                                  <div class="lbl sublbl">Saved references <span class="meta" id="vgSavedMeta">1 soat saqlanadi</span></div>
+                                <div class="refbox activebox">
+                                  <div class="refboxhead">
+                                    <div class="refboxtitle">Faol Referenslar</div>
+                                    <div class="refboxsub">Generate uchun hozir ishlatiladi</div>
+                                  </div>
+                                  <div class="mrefgrid" id="vgRefGrid"></div>
+                                </div>
+                                <div class="savedrefs refbox savedbox" id="vgSavedWrap">
+                                  <div class="refboxhead">
+                                    <div class="refboxtitle">Saved References</div>
+                                    <div class="refboxsub" id="vgSavedMeta">1 soat saqlanadi</div>
+                                  </div>
                                   <div class="savedgrid" id="vgSavedGrid"></div>
                                 </div>
                               </div>
@@ -11062,9 +11078,18 @@ window.afGallery=(function(){
   function renderVgSavedRefs(){
     var wrap=$('vgSavedWrap'), grid=$('vgSavedGrid'), meta=$('vgSavedMeta');
     if(!wrap||!grid||vm.refKind!=='media-refs'){ if(wrap)wrap.style.display='none'; return; }
+    var reusable=vgSaved.items.filter(function(it){
+      return !mref.some(function(r){
+        return !!(r&&((r.savedRefId&&r.savedRefId===it.id)||(r.url&&it.url&&r.url===it.url)));
+      });
+    });
     wrap.style.display='';
     if(meta){
-      meta.textContent=vgSaved.loading?'Yuklanmoqda…':(vgSaved.items.length?vgSaved.items.length+' ta · 1 soat saqlanadi':'1 soat saqlanadi');
+      meta.textContent=vgSaved.loading
+        ? 'Yuklanmoqda…'
+        : (vgSaved.items.length
+            ? reusable.length+' ta qayta ishlatish uchun · 1 soat saqlanadi'
+            : '1 soat saqlanadi');
     }
     grid.innerHTML='';
     if(vgSaved.loading&&!vgSaved.items.length){
@@ -11079,16 +11104,21 @@ window.afGallery=(function(){
       grid.innerHTML='<div class="savedempty">Yuklangan referenslar shu yerda vaqtincha ko‘rinadi. 1 soatdan keyin o‘zi o‘chadi.</div>';
       return;
     }
-    vgSaved.items.forEach(function(it){
+    if(!reusable.length){
+      grid.innerHTML='<div class="savedempty">Hozir barcha saved referenslar yuqorida faol ishlatilmoqda. Birortasini olib tashlasangiz, bu yerda qayta ishlatish uchun yana ko‘rinadi.</div>';
+      return;
+    }
+    reusable.forEach(function(it){
       var d=document.createElement('div');
       d.className='savedcard '+String(it.kind||'image');
       if(it.kind==='image'&&(it.thumbUrl||it.url))d.style.backgroundImage='url("'+(it.thumbUrl||it.url)+'")';
       d.innerHTML='<div class="kind">'+typeLabel(it.kind||'image')+'</div>'
         +(it.kind==='video'?'<div class="play">▶</div>':it.kind==='audio'?'<div class="play">♪</div>':'')
         +'<div class="del" title="O‘chirish">×</div>'
+        +'<div class="ttl" style="left:12px;right:auto;bottom:42px;padding:5px 10px;background:rgba(10,16,26,.82);border:1px solid rgba(255,255,255,.12)">Qayta ishlatish</div>'
         +'<div class="ttl">'+savedRefTtlLabel(it.expiresAt)+'</div>';
       d.addEventListener('click',function(){
-        addExistingMediaRef({
+        var ok=addExistingMediaRef({
           id:it.id,
           savedRefId:it.id,
           cat:it.kind,
@@ -11098,6 +11128,7 @@ window.afGallery=(function(){
           skipClipper:true,
           expiresAt:it.expiresAt
         });
+        if(ok)renderVgSavedRefs();
       });
       var del=d.querySelector('.del');
       if(del)del.addEventListener('click',function(e){

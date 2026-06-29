@@ -1,12 +1,11 @@
-# SESSION REPORT — 2026-06-29 — enhance safety-aware qilindi
+# SESSION REPORT — 2026-06-29 — referens bloklari vizual ajratildi
 
-- fal webhook + resume oqimi saqlandi; video joblar serverga tugagach push qilinadi.
-- Preflight safety check saqlandi, lekin false-positive kamaytirildi: kiyimli oddiy `full figure` / tana tavsifi endi ko‘proq warning bo‘ladi, darrov block emas.
-- `preflight-safety.ts` ichida `strong body` va `generic body` atamalari alohida ajratildi.
-- Yangi helper qo‘shildi: `softenPromptForSafety()` — xavfli iboralarni yumshoqroq prompt tiliga o‘tkazadi.
-- `falEnhancePrompt()` video mode uchun safety instruction oldi: expose/body-focus o‘rniga kiyim, harakat, kamera va atmosfera ustuvor bo‘ladi.
-- `/gen/prompt/enhance` endi promptni qaytarishdan oldin preflight’dan o‘tkazadi.
-- Agar enhance natijasi xavfli chiqsa, backend uni avtomatik yumshatib qaytaradi va `safetyAdjusted:true` beradi.
-- Plugin video tool `Yaxshilash` tugmasida endi “safety uchun yumshatildi” degan aniq xabar ko‘rsatadi.
-- Maqsad: prompt enhance yozgan matn keyin yana o‘sha tizim tomonidan bekordan-bekor bloklanmasin.
-- Tekshiruv: `npm run build -w apps/api` OK, plugin script parse `OK 7`.
+- fal webhook + preflight + enhance safety-aware oqimlari saqlandi.
+- Saved references bo‘limidagi reuse mantiqi saqlandi, lekin qo‘shimcha UX muammo topildi: faol referenslar va saved stash ko‘rinishda bitta blokdek tuyulardi.
+- Video tool media-refs qismi endi ikki alohida vizual container oldi.
+- Yuqori blok: `Faol Referenslar` — hozirgi generatsiyada ishlatiladigan referenslar.
+- Pastki blok: `Saved References` — vaqtinchalik stash, qayta ishlatish uchun.
+- Saved references konteyneriga dashed stil va alohida sublabel berildi.
+- Foydalanuvchi bir qarashda “hozir ishlatyapman” va “keyin ishlataman” farqini ko‘radi.
+- Takror kartalarni yashirish va `Qayta ishlatish` ishorasi avvalgi tuzatishdan saqlanib qoldi.
+- Tekshiruv: plugin script parse `OK 7`.
