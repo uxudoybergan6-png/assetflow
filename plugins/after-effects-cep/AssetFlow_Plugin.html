@@ -3405,6 +3405,10 @@ html.home-mode #homePage{display:block!important}
                           <div class="sheet" id="vgProjSheet"><div class="sheetc">
                             <div class="sheeth"><b>Project footage</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div id="vgProjList"><div class="axighint">Yuklanmoqda…</div></div>
+                            <div id="vgProjFoot" style="display:none;align-items:center;gap:8px;margin-top:10px">
+                              <span id="vgProjInfo" style="font-size:11px;color:var(--mut)">0 tanlandi</span>
+                              <button type="button" id="vgProjAdd" style="margin-left:auto;background:var(--acc);color:var(--acc-ink);border:0;border-radius:9px;padding:8px 14px;font-weight:700;cursor:pointer">Qo'shish</button>
+                            </div>
                           </div></div>
 
                           <!-- Video referens clip picker -->
@@ -11274,28 +11278,43 @@ window.afGallery=(function(){
     addMediaPaths(paths,type);
     if(type!=='video')closeVgSheets();
   }
-  // Manba 2 — Project paneldan (AE footage); turga mos filtr (image/video/audio)
+  // Manba 2 — Project paneldan (AE footage); turga mos filtr. Rasm/ovoz: CHECKBOX multi-select (birdaniga).
   function pickProjMedia(type){
     if(typeof csInterface==='undefined'||!csInterface){ toast('Project paneldan faqat AE ichida','info'); closeVgSheets(); return; }
     if(!mediaAllowed(type)){ closeVgSheets(); return; }
     var host=$('vgProjList'); if(!host)return;
+    var multi=(type!=='video'); // video: klipper bittadan → multi yo'q
+    var sel={}; // mediaPath → true
+    var foot=$('vgProjFoot'), info=$('vgProjInfo'), addBtn=$('vgProjAdd');
+    if(foot)foot.style.display=multi?'flex':'none';
+    function slotsLeft(){ var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12}; return Math.max(0,Math.min((lim[type]||0)-cntRef(type),(lim.total||0)-mref.length)); }
+    function refreshFoot(){ var n=Object.keys(sel).length; if(info)info.textContent=n+' tanlandi · bo\'sh joy '+slotsLeft(); if(addBtn){ addBtn.textContent='Qo\'shish'+(n?(' ('+n+')'):''); addBtn.style.opacity=n?'1':'.5'; } }
+    if(addBtn)addBtn.onclick=function(){ var paths=Object.keys(sel); if(!paths.length){ toast('Avval belgilang','warning'); return; } addMediaPaths(paths,type); closeVgSheets(); };
     host.innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openVgSheet('vgProjSheet');
     hostCall('listProjectFootage').then(function(r){
       if(!$('vgProjList'))return;
-      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; return; }
+      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; return; }
       var items=((r&&r.items)||[]).filter(function(it){
         var mp=it&&it.mediaPath||'';
         if(type==='image')return (it.mediaType==='image'||isImg(mp)) && extAllowed(type,mp);
         return it.mediaType===type && extAllowed(type,mp);
       });
-      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos '+typeLabel(type)+' topilmadi. Fayldan yuklang.</div>'; return; }
+      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos '+typeLabel(type)+' topilmadi. Fayldan yuklang.</div>'; if(foot)foot.style.display='none'; return; }
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
-        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>';
-        (function(item){ d.addEventListener('click',function(){ var mp=item.mediaPath||''; if(!mp)return; if(!mediaAllowed(type))return; addOneMediaPath(mp,type); if(type==='video')closeVgSheets(); else toast(typeLabel(type)+' qo\'shildi — yana tanlashingiz mumkin','success'); }); })(it);
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>'+(multi?'<span class="vgprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>':'');
+        (function(item,row){ d.addEventListener('click',function(){
+          var mp=item.mediaPath||''; if(!mp)return;
+          if(!multi){ if(!mediaAllowed('video'))return; addOneMediaPath(mp,'video'); closeVgSheets(); return; }
+          var chk=row.querySelector('.vgprojchk');
+          if(sel[mp]){ delete sel[mp]; row.style.background=''; if(chk)chk.textContent='○'; }
+          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Bo\'sh joy yetarli emas (≤'+slotsLeft()+')','warning'); return; } sel[mp]=true; row.style.background='rgba(194,240,74,.10)'; if(chk)chk.textContent='✓'; }
+          refreshFoot();
+        }); })(it,d);
         host.appendChild(d);
       });
+      refreshFoot();
     }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
   }
   // Manba 3 — Timeline'dan (joriy kadr → PNG); FAQAT rasm referens uchun
