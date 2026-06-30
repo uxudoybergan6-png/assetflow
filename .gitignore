@@ -28,3 +28,6 @@ packages/assetflow-studio/studio/hub.html
 packages/assetflow-studio/studio/contributor/
 packages/assetflow-studio/admin/js/
 packages/assetflow-studio/admin/styles/
+
+# Cloud Run secrets (real values — never commit)
+cloudrun-env.yaml

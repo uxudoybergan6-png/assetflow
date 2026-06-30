@@ -1,11 +1,11 @@
-# SESSION REPORT — 2026-06-30 — "Yaxshilash" tezligi: 100% fal, lekin tez
+# SESSION REPORT — 2026-06-30 — Render → Cloud Run ko'chirish (tayyorgarlik)
 
-Foydalanuvchi: hammasi fal'da bo'lsin (OpenRouter to'g'ridan-to'g'ri emas). Shunga moslab fal yo'lining O'ZI tezlashtirildi.
+Backend API'ni Render'dan Google Cloud Run'ga ko'chirish uchun fayllar qo'shildi (DB=Neon, R2=Cloudflare — o'zgarmaydi).
 
-- **Revert:** oldingi "referenssiz → to'g'ridan-to'g'ri OpenRouter" yo'li olib tashlandi. Enhance endi 100% fal (`falEnhancePrompt`).
-- **fal SYNC** (`https://fal.run/<model>`) qo'shildi (`falRun` + `falRunOrQueue`) — queue submit + `sleep(600ms)` + status/response poll'siz, natija darrov. Enhance ning hamma LLM/vision/video/audio chaqiruvlari endi SYNC; muvaffaqiyatsiz bo'lsa avtomatik QUEUE'ga qaytadi (har holда fal'da).
-- **Parallel:** rasm + har video + har audio tahlili endi `Promise.all` (avval ketma-ket edi) → referensли enhance sezilarli tez.
-- studio-gen text yo'li yana `falEnhancePrompt`ga; OrResult/OpenRouter detour olib tashlandi.
+- **Dockerfile** (root): node:20 + **tizim ffmpeg** (transcode-preview SHART) + openssl (Prisma) + render.yaml buildCommand'ning aynan nusxasi → `node apps/api/dist/index.js`. App `process.env.PORT` (Cloud Run 8080) ni o'qiydi.
+- **.dockerignore**, **cloudrun-env.example.yaml** (env shablon), `.gitignore`ga `cloudrun-env.yaml` (maxfiy).
+- **docs/CLOUD-RUN-DEPLOY.md** — qadam-baqadam: API yoqish, migratsiya (Neon'ga qo'lda), `gcloud run deploy --source .`, URL yangilash (plagin/studio/Stripe webhook), tekshirish.
 
-Natija: enhance ancha tez (queue/poll overhead yo'q + parallel), va 100% fal. tsc ✓.
-⚠️ Backend o'zgardi — **push → Render deploy** SHART. Plagin tegilmadi.
+⚠️ KRITIK: gen jobi javobdan keyin FONда ishlaydi (`processGenerationInBackground`). Cloud Run default'да fon CPU bermaydi → gen tugamaydi. Shuning uchun deploy'da **`--no-cpu-throttling` + `--min-instances=1` SHART** (cold-start ham yo'qoladi).
+
+Render hozircha o'chirilmaydi (rollback uchun). $300 trial 2026-09-29 gacha.

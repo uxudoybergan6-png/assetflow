@@ -1,0 +1,39 @@
+# Cloud Run env'lar — `cloudrun-env.yaml` nomiga NUSXALAB qiymatlarni to'ldiring.
+# (cloudrun-env.yaml git'ga QO'SHILMAYDI — maxfiy. Bu .example faqat shablon.)
+# Qiymatlar Render dashboard → assetflow-api → Environment dan ko'chiriladi.
+
+NODE_ENV: "production"
+# DB — O'ZGARMAYDI (Neon.tech). Render'dagi DATABASE_URL'ni shu yerga qo'ying:
+DATABASE_URL: "postgresql://...neon..."
+JWT_SECRET: "RENDER'DAGI BILAN BIR XIL bo'lsin (aks holda hamma token bekor bo'ladi)"
+
+# URL'lar — Cloud Run URL olgandan keyin yangilang (deploy 1-marta bo'lgach):
+API_PUBLIC_URL: "https://REPLACE-with-cloudrun-url.run.app"
+CORS_ORIGIN: "https://assetflow-20j.pages.dev,https://assetflow-studio-one.vercel.app"
+ADMIN_URL: "https://assetflow-20j.pages.dev/admin/"
+PLUGIN_ALLOW_PRO_WITHOUT_STRIPE: "false"
+
+# Cloudflare R2 (assetlar) — O'ZGARMAYDI:
+AWS_ACCESS_KEY_ID: ""
+AWS_SECRET_ACCESS_KEY: ""
+AWS_S3_BUCKET: ""
+AWS_REGION: "auto"
+S3_ENDPOINT: "https://<account_id>.r2.cloudflarestorage.com"
+CDN_BASE_URL: "https://pub-xxx.r2.dev"
+
+# AI provayderlar — O'ZGARMAYDI:
+FAL_KEY: ""
+OPENROUTER_API_KEY: ""
+ELEVENLABS_API_KEY: ""
+CF_ACCOUNT_ID: ""
+CF_AI_TOKEN: ""
+AI_MODEL_IMAGE: ""
+AI_MODEL_EMBED: ""
+AI_MODEL_TEXT: ""
+AI_MODEL_TTS: ""
+
+# Stripe (to'lov) — bo'lsa qo'shing; webhook secret'ni yangi URL uchun yangilash kerak:
+STRIPE_SECRET_KEY: ""
+STRIPE_WEBHOOK_SECRET: ""
+STRIPE_PRICE_MONTHLY: ""
+STRIPE_PRICE_YEARLY: ""
