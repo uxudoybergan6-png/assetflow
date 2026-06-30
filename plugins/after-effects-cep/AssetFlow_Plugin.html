@@ -3331,7 +3331,7 @@ html.home-mode #homePage{display:block!important}
                               </div>
                               <!-- Ko'p-modal referens (refKind=media-refs — Seedance R2V; IXTIYORIY) -->
                               <div class="sect" id="vgMediaSect" style="display:none">
-                                <div class="lbl">Referens <span class="meta" id="vgRefMeta">0 / 12</span></div>
+                                <div class="lbl">Referens <span class="meta" id="vgRefMeta">0 / —</span></div>
                                 <div class="mrefadd">
                                   <div class="maddb" id="vgAddImg"><span class="pl">＋</span> Rasm</div>
                                   <div class="maddb" id="vgAddVid"><span class="pl">＋</span> Video</div>
@@ -3373,7 +3373,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="sect">
                                 <div class="lbl">Sozlamalar</div>
                                 <div class="ctrls">
-                                  <div class="seg" id="vgModelSeg"><span class="lab">Model</span><span class="sv" id="vgMName">Seedance 2.0</span><span class="sc">▾</span></div>
+                                  <div class="seg" id="vgModelSeg"><span class="lab">Model</span><span class="sv" id="vgMName">…</span><span class="sc">▾</span></div>
                                   <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
                                   <div class="seg" id="vgResSeg"><span class="lab">Sifat</span><span class="sv" id="vgResVal">720p</span><span class="sc">▾</span></div>
                                   <div class="seg" id="vgDurSeg"><span class="lab">Davomiylik</span><span class="sv" id="vgDurVal">Auto</span><span class="sc">▾</span></div>
@@ -10430,7 +10430,7 @@ window.afGallery=(function(){
   // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
   var vm={loaded:false,model:null,res:'480p',dur:'Auto',ar:'Auto',audio:false,bitrate:'standard',refKind:'frames',
     mediaRefs:{image:9,video:3,audio:3,total:12},
-    mediaRefFormats:null,mediaRefMaxTotalBytes:null,videoInputCostMult:0,
+    mediaRefFormats:null,mediaRefMaxTotalBytes:null,videoInputCostMult:0,pricing:'per-second',flatCost:0,
     resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','13','14','15'],bitOpts:['standard','high'],
     arOpts:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],
     perSec:{'480p':8,'720p':12},autoSec:4,sessionId:null};
@@ -10442,9 +10442,15 @@ window.afGallery=(function(){
 
   function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
   function brandLabel(b){
-    var m={bytedance:'ByteDance',openai:'OpenAI',google:'Google',kling:'Kling'};
+    var m={bytedance:'ByteDance',openai:'OpenAI',google:'Google',kling:'Kling',kwaivgi:'Kling',alibaba:'Alibaba',bfl:'Black Forest Labs',luma:'Luma'};
     var s=String(b||'').toLowerCase();
     return m[s]||String(b||'AI');
+  }
+  // Model-sheet ikonka harflari — brendga qarab (B11: avval har modelда 'BD' edi).
+  function brandInitials(b){
+    var s=String(b||'').toLowerCase();
+    var m={bytedance:'BD',openai:'AI',google:'G',kling:'KL',kwaivgi:'KL',alibaba:'AL',bfl:'BF',luma:'LU'};
+    return m[s]||(s?s.slice(0,2).toUpperCase():'AI');
   }
   function vgModelSubtitle(m){
     if(!m)return 'Video model';
@@ -10492,9 +10498,10 @@ window.afGallery=(function(){
     }
     return base;
   }
-  function cost(){ return ratePerSec()*durSec(); }
+  function cost(){ return vm.pricing==='per-generation'?(vm.flatCost||0):(ratePerSec()*durSec()); }
   function recost(){
     var c=$('vgCost'); if(!c)return;
+    if(vm.pricing==='per-generation'){ c.textContent='✦'+cost(); c.title='Sobit narx: ✦'+cost()+' / video'; return; }
     var auto=(!vm.dur||/^auto$/i.test(String(vm.dur)));
     // Auto bo'lsa qancha soniyaga to'lashini ko'rsatamiz (✦48 (~4s)) — narx qaydan kelganini foydalanuvchi ko'rsin.
     c.textContent='✦'+cost()+(auto?(' (~'+durSec()+'s)'):'');
@@ -10862,12 +10869,16 @@ window.afGallery=(function(){
   // ── model sozlamalarini qo'llash (videoSettings deskriptoridan; joriy tanlov mos kelmasa def'ga klamp) ──
   function applyModelSettings(m){
     vm.model=m;
-    vm.refKind=m.refKind||'frames';
+    // B4: refKind ko'rsatilmasa 'none' (t2v xavfsiz) — 'frames' default kadr talab qilib submitни bloklardi.
+    vm.refKind=m.refKind||'none';
     vm.mediaRefs=m.mediaRefs||{image:9,video:3,audio:3,total:12};
     vm.mediaRefMaxBytes=m.mediaRefMaxBytes||null;
     vm.mediaRefMaxTotalBytes=m.mediaRefMaxTotalBytes||null;
     vm.mediaRefFormats=m.mediaRefFormats||null;
     vm.videoInputCostMult=(typeof m.videoInputPerSecMultiplier==='number'&&m.videoInputPerSecMultiplier>0)?m.videoInputPerSecMultiplier:0;
+    // B3: narx rejimi — per-generation modelда sobit cost (soniyaga emas).
+    vm.pricing=(m.pricing==='per-generation')?'per-generation':'per-second';
+    vm.flatCost=(typeof m.cost==='number')?m.cost:0;
     var vs=m.videoSettings;
     if(vs){
       if(vs.resolution){ vm.resOpts=vs.resolution.options||vm.resOpts; vm.res=vs.resolution.def||vm.resOpts[0]||vm.res; if(vs.resolution.perSec)vm.perSec=vs.resolution.perSec; }
@@ -10943,9 +10954,8 @@ window.afGallery=(function(){
     // Referens UI o'zgarsa (kadr ↔ ko'p-modal) biriktirilgan referenslar olib tashlanadi —
     // yo'qotadigan narsa bo'lsa avval tasdiqlaymiz (kutilmagan o'chishning oldini olish — audit HIGH).
     var hasFrames=!!(st.start||st.end);
-    var willDiscard=((prevKind==='media-refs'&&nextKind!=='media-refs')&&mref.length>0)
-                  ||((prevKind!=='media-refs'&&nextKind==='media-refs')&&hasFrames)
-                  ||(nextKind==='none'&&(mref.length>0||hasFrames));
+    // B17: referens UI turi o'zgarsa (har qanday kind→kind) va biriktirilgan narsa bo'lsa — tasdiqlaymiz.
+    var willDiscard=(prevKind!==nextKind)&&(mref.length>0||hasFrames);
     if(willDiscard&&typeof confirm==='function'&&!confirm('«'+String(m.label||'Model')+'»ga o‘tilsa, biriktirilgan referenslar olib tashlanadi. Davom etamizmi?')){ closeVgSheets(); return; }
     if(prevKind==='media-refs'&&nextKind!=='media-refs'){
       var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
@@ -10961,7 +10971,7 @@ window.afGallery=(function(){
     toast(String(m.label||'Model')+' tanlandi','info');
   }
   function applyVgMeta(){
-    var mn=$('vgMName'); if(mn&&vm.model)mn.textContent=vm.model.label||'Seedance 2.0';
+    var mn=$('vgMName'); if(mn&&vm.model)mn.textContent=vm.model.label||'Model';
     var rv=$('vgResVal'); if(rv)rv.textContent=vm.res;
     var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
     var av=$('vgArVal'); if(av)av.textContent=vm.ar;
@@ -10988,7 +10998,7 @@ window.afGallery=(function(){
       var cur=(vm.model&&String(m.id)===String(vm.model.id));
       var sub=vgModelSubtitle(m);
       var o=document.createElement('div'); o.className='opt'+(cur?' cur':''); o.setAttribute('data-mid',String(m.id));
-      o.innerHTML='<div class="oi"><svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg></div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
+      o.innerHTML='<div class="oi"><svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">'+brandInitials(m.brand)+'</text></svg></div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
       host.appendChild(o);
     });
     if(!host.children.length)host.innerHTML='<div class="axighint">Model yuklanmoqda…</div>';

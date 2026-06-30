@@ -1,17 +1,17 @@
-# SESSION REPORT — 2026-06-30 — AI Tools UX: LOW tuzatishlar
+# SESSION REPORT — 2026-06-30 — Video poydevor: model-aware refactor (B1–B18)
 
-Audit LOW'lar (faqat `plugins/after-effects-cep/AssetFlow_Plugin.html`):
+Maqsad: yangi video model qo'shishni "bitta deklarativ entry" qilish. Invariant: Seedance 1:1 saqlandi.
 
-- **#15 Bo'sh kategoriya:** Audio/3D tile'lariga aniq "tez orada" badge (ishlaydiganlardan ajraladi).
-- **#17 Klaviatura a11y:** `:focus-visible` outline qo'shildi (button/chip/cat/aicattool); igGen/vgGen'ga `aria-label`. (To'liq div keyboard-nav — kattaroq follow-up.)
-- **#18 Terminologiya:** rasm "O'lcham" → "Nisbat" (video bilan bir xil — ikkalasi ham aspect ratio).
-- **#20 O'lik kod:** `renderVgSavedRefs` ichidagi `return;` ostidagi 73 qator erishib bo'lmaydigan kod olib tashlandi (saved-refs UI doimiy yashirin).
-- **#21 Narx chaqnashi:** resolution hint markup'dagi hardcoded "✦8/s · ✦12/s" bo'shatildi → JS (vm.perSec) to'ldiradi, noto'g'ri narx ko'rinmaydi.
+Backend (gen-models.ts, gen-processor.ts, fal.ts) — tasdiqlandi (tsc ✓ + backward-compat 10/10 byte-identical):
+- **B1** `videoInput` descriptor + generic `buildFalVideoInput` (imgSettings/falImage naqshi) → fal kalitlari modeldan.
+- **B2** text-to-video: `videoRequiresStartFrame`; i2v kadr majburiy, t2v emas.
+- **B3** `pricing:'per-generation'` → `computeGenCost` + frontend `cost()` shunga qarab.
+- **B5** `extractFalVideoUrl` (model `outputPaths`) — boshqa javob shaklini ham o'qiydi.
+- **B6** 3001–3007 (non-fal Veo/Kling/Wan) `enabled:false` (kredit yemaydi).
+- **B9** o'lik `falVideo`/`falRefVideo` (99 qator) olib tashlandi; `falVideoUrlToBuffer`.
+- **B15** audio ixtiyoriy (audioKey), **B16** duration string/number.
 
-Tahlil bilan yopilganlar (o'zgartirish shart emas):
-- **#16:** rasm-natija o'chirish FAQAT ko'rinishdan olib tashlaydi (serverга tegmaydi) → tasdiq shart emas; server o'chirishlar allaqachon `confirm` bilan.
-- **#19:** referens tile'lar allaqachon `@img1` tag + bosib qo'shishni ko'rsatadi (placeholder + tag yetarli).
-- **#11:** soxta enhance — o'lik/erishib bo'lmaydigan UI'da (moot).
+Frontend (AssetFlow_Plugin.html — node ✓, AE jonli test kutiladi):
+- **B11** model ikonkasi brenddan (avval har modelда "BD"). **B12** neytral default'lar (Seedance/0-12 sizmaydi). **B4** noma'lum refKind→'none' (t2v submit bo'ladi). **B17** model-switch confirm umumiy.
 
-Tekshirildi: 7 inline `<script>` `node --check` ✓.
-Qoldi: #14a ref-retry (nice-to-have), H1/H2 dead-code tozalash (AE runtime tekshiruv bilan). Kutilmoqda: push + AE jonli test.
+Deferred (kerak bo'lmaguncha): **B7** extra-param UI (seed/negative_prompt), **B8** dispatch-table (t2v marshrut allaqachon ishlaydi), **B10** quote-hash (ataylab: videoUrls hashда — chegirma-gaming oldini oladi), **B13/B14/B18** (LOW). Kutilmoqda: push + AE test. Endi Kling/Veo/Wan/t2v ≈ bitta entry bilan qo'shiladi.

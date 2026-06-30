@@ -19,10 +19,18 @@ import {
   falImage,
   falPollStep,
   falSubmitJob,
-  falVideoResultToBuffer,
+  falVideoUrlToBuffer,
   type FalQueueJob,
 } from "./ai/fal.js";
-import { getModelById, resolveVideoParams, resolveImageCount, getReferenceMode } from "./gen-models.js";
+import {
+  getModelById,
+  resolveVideoParams,
+  resolveImageCount,
+  getReferenceMode,
+  buildFalVideoInput,
+  videoRequiresStartFrame,
+  extractFalVideoUrl,
+} from "./gen-models.js";
 import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
@@ -370,6 +378,18 @@ async function runVideo(
   return { ok: false, error: "OPENROUTER_TIMEOUT: job hali ishlamoqda — refund yo'q" };
 }
 
+/** fal video natija javobidan URL'ni model deklaratsiyasi bo'yicha topib (B5) Buffer'ga yuklaydi. */
+async function falVideoOut(
+  model: GenModel,
+  data: unknown
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const url = extractFalVideoUrl(model, data);
+  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  const dl = await falVideoUrlToBuffer(url);
+  if (!dl.ok) return { ok: false, error: dl.error };
+  return { ok: true, buf: dl.data };
+}
+
 /** fal.ai video (Seedance 2.0 Fast). referenceUrl = start kadr, referenceEndUrl = end kadr (ixtiyoriy). */
 async function runFalVideo(
   model: GenModel,
@@ -380,31 +400,24 @@ async function runFalVideo(
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
   const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
-  if (!refUrl) return { ok: false, error: "Video uchun boshlang'ich kadr (referenceUrl) talab qilinadi" };
+  // B2: t2v modellar (videoInput.imageRequired emas) kadrsiz ishlaydi; i2v majbur qiladi.
+  if (!refUrl && videoRequiresStartFrame(model))
+    return { ok: false, error: "Video uchun boshlang'ich kadr (referenceUrl) talab qilinadi" };
   const [startUrl, endUrl] = await Promise.all([
-    materializeRefUrl(userId, genId, refUrl),
+    refUrl ? materializeRefUrl(userId, genId, refUrl) : Promise.resolve(undefined),
     refEndUrl && model.endFrame
       ? materializeRefUrl(userId, genId, refEndUrl)
       : Promise.resolve(undefined),
   ]);
   const v = resolveVideoParams(model, params);
-  const input: Record<string, unknown> = {
-    prompt: String(prompt),
-    image_url: startUrl,
-    resolution: v.resolution,
-    duration: String(v.duration),
-    aspect_ratio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
-    generate_audio: v.generateAudio,
-  };
-  if (endUrl) input.end_image_url = endUrl;
+  // B1: fal input model deklaratsiyasidan quriladi (Seedance uchun natija eski bilan AYNAN bir xil).
+  const input = buildFalVideoInput(model, prompt, v, { startUrl, endUrl }, userId);
   const savedHook = readProviderWebhook(params);
   if (savedHook?.status === "ERROR") {
     return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook xatosi" };
   }
   if (savedHook?.status === "OK") {
-    const ready = await falVideoResultToBuffer(savedHook.payload);
-    if (!ready.ok) return { ok: false, error: ready.error };
-    return { ok: true, buf: ready.data };
+    return falVideoOut(model, savedHook.payload);
   }
   const saved = readProviderJob(params);
   let job: FalQueueJob;
@@ -426,9 +439,7 @@ async function runFalVideo(
   }
   const out = await waitForFalResult(genId, job, 210);
   if (!out.ok) return { ok: false, error: out.error };
-  const buf = await falVideoResultToBuffer(out.data);
-  if (!buf.ok) return { ok: false, error: buf.error };
-  return { ok: true, buf: buf.data };
+  return falVideoOut(model, out.data);
 }
 
 /**
@@ -466,26 +477,14 @@ async function runFalRefVideo(
     return { ok: false, error: `Jami referens ≤${lim.total}` };
   }
   const v = resolveVideoParams(model, params);
-  const input: Record<string, unknown> = {
-    prompt: String(prompt),
-    resolution: v.resolution,
-    duration: String(v.duration),
-    aspect_ratio: v.aspectRatio === "auto" ? "auto" : v.aspectRatio,
-    generate_audio: v.generateAudio,
-    end_user_id: userId,
-  };
-  if (v.bitrateMode) input.bitrate_mode = v.bitrateMode;
-  if (imageUrls.length) input.image_urls = imageUrls;
-  if (videoUrls.length) input.video_urls = videoUrls;
-  if (audioUrls.length) input.audio_urls = audioUrls;
+  // B1: fal input model deklaratsiyasidan (Seedance R2V uchun natija eski bilan AYNAN bir xil).
+  const input = buildFalVideoInput(model, prompt, v, { imageUrls, videoUrls, audioUrls }, userId);
   const savedHook = readProviderWebhook(params);
   if (savedHook?.status === "ERROR") {
     return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook xatosi" };
   }
   if (savedHook?.status === "OK") {
-    const ready = await falVideoResultToBuffer(savedHook.payload);
-    if (!ready.ok) return { ok: false, error: ready.error };
-    return { ok: true, buf: ready.data };
+    return falVideoOut(model, savedHook.payload);
   }
   const saved = readProviderJob(params);
   let job: FalQueueJob;
@@ -523,9 +522,7 @@ async function runFalRefVideo(
     }
     return { ok: false, error: out.error };
   }
-  const buf = await falVideoResultToBuffer(out.data);
-  if (!buf.ok) return { ok: false, error: buf.error };
-  return { ok: true, buf: buf.data };
+  return falVideoOut(model, out.data);
 }
 
 /**

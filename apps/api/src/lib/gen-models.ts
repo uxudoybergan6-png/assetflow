@@ -106,6 +106,28 @@ export type GenModel = {
     bitrate?: { options: string[]; def: string };
   };
 
+  // ── MODEL-AWARE fal VIDEO input deskriptori (imgSettings'ning video ekvivalenti) ──
+  // Har video model fal `input` KALITLARINI o'zi e'lon qiladi → buildFalVideoInput SHUNDAN quradi.
+  // Bo'lmasa: Seedance default kalitlari ishlatiladi (orqaga moslik — eski xatti-harakat saqlanadi).
+  videoInput?: {
+    startFrameKey?: string; // i2v boshlang'ich kadr → fal kaliti (Seedance: image_url)
+    endFrameKey?: string; // yakuniy kadr → fal kaliti (Seedance: end_image_url; model.endFrame bilan birga)
+    imageRefsKey?: string; // ko'p-modal rasm massivi → fal kaliti (R2V: image_urls)
+    videoRefsKey?: string; // ko'p-modal video massivi (R2V: video_urls)
+    audioRefsKey?: string; // ko'p-modal audio massivi (R2V: audio_urls)
+    imageRequired?: boolean; // i2v: boshlang'ich kadr majburiymi (Fast: true; t2v: false/undefined)
+    resolutionKey?: string; // 'resolution' | undefined=yuborilmaydi
+    durationKey?: string; // 'duration'
+    durationFormat?: "string" | "number"; // Seedance string; ayrim modellar number
+    aspectKey?: string; // 'aspect_ratio'
+    audioKey?: string; // 'generate_audio' | undefined=yuborilmaydi (audiosiz model — B15)
+    bitrateKey?: string; // 'bitrate_mode'
+    injectUserIdKey?: string; // bu kalitga end-user id yoziladi (R2V: end_user_id)
+    staticInput?: Record<string, unknown>; // doimiy qo'shimcha kalitlar
+    outputPaths?: string[]; // natija URL yo'llari (default ['video.url','video','url'])
+  };
+  pricing?: "per-second" | "per-generation"; // video narx rejimi (default per-second)
+
   // voice modeli uchun:
   voices?: { id: string; label: string }[];
   languages?: string[];
@@ -569,6 +591,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "google/veo-3.1-lite",
     label: "Veo 3.1 Lite",
+    enabled: false, // B6: fal'ga ulanmagan — katalogdan yashirin + gen bloklangan (kredit yechmaydi)
     feature: "text-to-video",
     cost: 10, // /s
     referenceMode: "video-ref", // boshlang'ich kadr/reference rasm — G3
@@ -585,6 +608,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "google/veo-3.1-fast",
     label: "Veo 3.1 Fast",
+    enabled: false, // B6: fal'ga ulanmagan
     feature: "text-to-video",
     cost: 20,
     referenceMode: "video-ref",
@@ -600,6 +624,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "google/veo-3.1",
     label: "Veo 3.1",
+    enabled: false, // B6: fal'ga ulanmagan
     feature: "text-to-video",
     cost: 40,
     referenceMode: "video-ref",
@@ -615,6 +640,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "kwaivgi/kling-v3.0-std",
     label: "Kling v3.0",
+    enabled: false, // B6: fal'ga ulanmagan
     feature: "image-to-video",
     cost: 12,
     referenceMode: "video-ref",
@@ -630,6 +656,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "kwaivgi/kling-v3.0-pro",
     label: "Kling v3.0 Pro",
+    enabled: false, // B6: fal'ga ulanmagan
     feature: "image-to-video",
     cost: 18,
     referenceMode: "video-ref",
@@ -645,6 +672,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "bytedance/seedance-2.0",
     label: "Seedance 2.0",
+    enabled: false, // B6: fal'ga ulanmagan (fal varianti: 3101/3102)
     feature: "image-to-video",
     cost: 10,
     referenceMode: "video-ref",
@@ -660,6 +688,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "alibaba/wan-2.6",
     label: "Wan 2.6",
+    enabled: false, // B6: fal'ga ulanmagan
     feature: "image-to-video",
     cost: 12,
     referenceMode: "video-ref",
@@ -911,6 +940,8 @@ export function imageUnitCost(model: GenModel, params: Record<string, unknown>):
 export function computeGenCost(model: GenModel, params: Record<string, unknown>): number {
   if (model.mode === "video") {
     const vp = resolveVideoParams(model, params);
+    // PRICING (B3): per-generation → resolution/duration'dan QAT'I NAZAR sobit cost.
+    if (model.pricing === "per-generation") return model.cost;
     const perSec = model.videoSettings?.resolution?.perSec;
     let ratePerSec = perSec ? (perSec[vp.resolution] ?? model.cost) : model.cost;
     const hasVideoInputs =
@@ -925,4 +956,98 @@ export function computeGenCost(model: GenModel, params: Record<string, unknown>)
     return imageUnitCost(model, params) * resolveImageCount(model, params);
   }
   return model.cost;
+}
+
+// Seedance default fal video input kalitlari (videoInput deklaratsiya bo'lmasa — orqaga moslik).
+const SEEDANCE_FRAMES_INPUT: NonNullable<GenModel["videoInput"]> = {
+  startFrameKey: "image_url",
+  endFrameKey: "end_image_url",
+  imageRequired: true,
+  resolutionKey: "resolution",
+  durationKey: "duration",
+  durationFormat: "string",
+  aspectKey: "aspect_ratio",
+  audioKey: "generate_audio",
+};
+const SEEDANCE_REF_INPUT: NonNullable<GenModel["videoInput"]> = {
+  imageRefsKey: "image_urls",
+  videoRefsKey: "video_urls",
+  audioRefsKey: "audio_urls",
+  resolutionKey: "resolution",
+  durationKey: "duration",
+  durationFormat: "string",
+  aspectKey: "aspect_ratio",
+  audioKey: "generate_audio",
+  bitrateKey: "bitrate_mode",
+  injectUserIdKey: "end_user_id",
+};
+
+/** Model'ning fal-video input deskriptorini qaytaradi (deklaratsiya bo'lmasa Seedance default'i feature bo'yicha). */
+export function videoInputDescriptor(model: GenModel): NonNullable<GenModel["videoInput"]> {
+  if (model.videoInput) return model.videoInput;
+  return model.feature === "reference-to-video" ? SEEDANCE_REF_INPUT : SEEDANCE_FRAMES_INPUT;
+}
+
+export type VideoRefUrls = {
+  startUrl?: string;
+  endUrl?: string;
+  imageUrls?: string[];
+  videoUrls?: string[];
+  audioUrls?: string[];
+};
+
+/**
+ * fal VIDEO input obyektini MODEL DEKLARATSIYASIDAN quradi (imgSettings/falImage naqshi).
+ * Seedance modellari uchun natija eski qo'lda yozilgan input bilan AYNAN bir xil (orqaga moslik).
+ * Yangi model faqat videoInput kalitlarini e'lon qiladi — kod o'zgarmaydi.
+ */
+export function buildFalVideoInput(
+  model: GenModel,
+  prompt: string,
+  resolved: ResolvedVideoParams,
+  refs: VideoRefUrls,
+  userId?: string
+): Record<string, unknown> {
+  const d = videoInputDescriptor(model);
+  const input: Record<string, unknown> = { prompt: String(prompt) };
+  if (d.startFrameKey && refs.startUrl) input[d.startFrameKey] = refs.startUrl;
+  if (d.endFrameKey && model.endFrame && refs.endUrl) input[d.endFrameKey] = refs.endUrl;
+  const arr = (a?: string[]) => (Array.isArray(a) ? a.filter((u) => typeof u === "string" && u.length > 0) : []);
+  const imgs = arr(refs.imageUrls), vids = arr(refs.videoUrls), auds = arr(refs.audioUrls);
+  if (d.imageRefsKey && imgs.length) input[d.imageRefsKey] = imgs;
+  if (d.videoRefsKey && vids.length) input[d.videoRefsKey] = vids;
+  if (d.audioRefsKey && auds.length) input[d.audioRefsKey] = auds;
+  if (d.resolutionKey) input[d.resolutionKey] = resolved.resolution;
+  if (d.durationKey)
+    input[d.durationKey] = d.durationFormat === "number" ? resolved.duration : String(resolved.duration);
+  if (d.aspectKey) input[d.aspectKey] = resolved.aspectRatio === "auto" ? "auto" : resolved.aspectRatio;
+  if (d.audioKey) input[d.audioKey] = resolved.generateAudio;
+  if (d.bitrateKey && resolved.bitrateMode) input[d.bitrateKey] = resolved.bitrateMode;
+  if (d.injectUserIdKey && userId) input[d.injectUserIdKey] = userId;
+  if (d.staticInput) Object.assign(input, d.staticInput);
+  return input;
+}
+
+/** Model i2v boshlang'ich kadrni MAJBUR qiladimi (t2v → false). */
+export function videoRequiresStartFrame(model: GenModel): boolean {
+  return videoInputDescriptor(model).imageRequired === true;
+}
+
+/** fal video natija javobidan URL'ni model deklaratsiyasidagi yo'llar bo'yicha topadi (B5). */
+export function extractFalVideoUrl(model: GenModel, data: unknown): string {
+  const paths = videoInputDescriptor(model).outputPaths || ["video.url", "video", "url"];
+  const root = data as Record<string, unknown>;
+  for (const p of paths) {
+    let cur: unknown = root;
+    for (const seg of p.split(".")) {
+      if (cur && typeof cur === "object" && seg in (cur as Record<string, unknown>)) {
+        cur = (cur as Record<string, unknown>)[seg];
+      } else {
+        cur = undefined;
+        break;
+      }
+    }
+    if (typeof cur === "string" && cur) return cur;
+  }
+  return "";
 }
