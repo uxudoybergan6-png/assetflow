@@ -3335,6 +3335,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="maddb" id="vgAddVid"><span class="pl">＋</span> Video</div>
                                   <div class="maddb" id="vgAddAud"><span class="pl">＋</span> Ovoz</div>
                                 </div>
+                                <div id="vgRefLimits" style="font-size:10.5px;color:var(--mut);margin:-2px 0 8px;line-height:1.5"></div>
                                 <div class="refbox activebox">
                                   <div class="refboxhead">
                                     <div class="refboxtitle">Faol Referenslar</div>
@@ -8996,7 +8997,11 @@ async function bootPlugin(){
 (function(){
 
   var balance=606, lowDemo=false, errMode=false, emptyDemo=false, importTarget='comp', toastT;
-  function toast(m,k){var t=document.getElementById('axToast');t.textContent=m;t.className='on'+(k?' '+k:'');clearTimeout(toastT);toastT=setTimeout(function(){t.className='';},2200);}
+  // Yagona toast — asosiy showToast'ga yo'naltiramiz (warn/err → warning/error) → AI Tools va panel bir xil ko'rinish.
+  function toast(m,k){
+    if(typeof showToast==='function'){ showToast(m,(k==='warn')?'warning':(k==='err')?'error':(k||'info')); return; }
+    var t=document.getElementById('axToast'); if(!t)return; t.textContent=m;t.className='on'+(k?' '+k:'');clearTimeout(toastT);toastT=setTimeout(function(){t.className='';},2200);
+  }
   function soon(){toast("⏳ Tez orada · keyingi faza",'warn');}
   // Kredit — YAGONA manba: AssetFlowAccount.aiCredits (demo 606 emas). Header'lar shundan o'qiydi → bir xil qiymat.
   function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
@@ -9005,6 +9010,15 @@ async function bootPlugin(){
   function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):(lowDemo?'5':'—');var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();}
   // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
   function aiLeadSync(){ var v=aiCredReal(); var t=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; var a=document.getElementById('aiLeadCredL'); if(a)a.textContent=t; var c=document.getElementById('aiLeadCredA'); if(c)c.textContent=t; }
+  // UMUMIY kredit sinxron — yagona manba (cached aiCredits) → BARCHA chip (balTop/balSet/aiLead/igCredit/vgCredit).
+  // Har tool gen/enhance'dan keyin shuni chaqiradi → chiplar bir-biridan farq qilib qolmaydi (drift fix — audit MEDIUM).
+  window.afSyncCredits=function(v){
+    if(typeof v==='number'&&isFinite(v)){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u)u.aiCredits=v; }catch(e){} }
+    try{ syncBal(); }catch(e){}
+    var rv=aiCredReal(); var t=(rv!=null)?('✦ '+Number(rv).toLocaleString('en-US')):'✦ —';
+    var ig=document.getElementById('igCredit'); if(ig)ig.textContent=t;
+    var vg=document.getElementById('vgCredit'); if(vg)vg.textContent=t;
+  };
   // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
   // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 preload=metadata muted> + birinchi kadrga seek.
   window.afVideoThumb=function(url){
@@ -9633,7 +9647,7 @@ window.afGallery=(function(){
       + '</div>'
       + '</div>'
       + '<div class="galgrid"></div>'
-      + '<div class="galbatch"><span class="gbinfo">0 tanlandi</span><div class="gbtn dl">'+IC.dl+' Yuklab olish</div><div class="gbtn del">'+IC.trash+' O\'chirish</div><div class="gbtn cancel">Bekor</div></div>';
+      + '<div class="galbatch"><span class="gbinfo">0 tanlandi</span>'+(isCEP()?'':'<div class="gbtn dl">'+IC.dl+' Yuklab olish</div>')+'<div class="gbtn del">'+IC.trash+' O\'chirish</div><div class="gbtn cancel">Bekor</div></div>';
     var tabsEl=container.querySelector('.galtabs');
     var gridEl=container.querySelector('.galgrid');
     var batchEl=container.querySelector('.galbatch');
@@ -9654,7 +9668,8 @@ window.afGallery=(function(){
     selBtn.addEventListener('click',function(){ st.select=!st.select; st.sel={}; selBtn.classList.toggle('on',st.select); draw(); });
     if(more)more.addEventListener('click',function(){ if(typeof opts.onSeeAll==='function')opts.onSeeAll(); });
     container.querySelector('.galbatch .cancel').addEventListener('click',function(){ st.select=false; st.sel={}; selBtn.classList.remove('on'); draw(); });
-    container.querySelector('.galbatch .dl').addEventListener('click',function(){
+    var _galDl=container.querySelector('.galbatch .dl');
+    if(_galDl)_galDl.addEventListener('click',function(){
       var list=visible().filter(function(x){ return st.sel[x.id]; });
       if(!list.length){ toast('Avval tanlang','warning'); return; }
       if(isCEP()){ toast('Yuklab olish — AE Project panelга import qiling','info'); return; } // CEP: bitta toast (spam yo'q)
@@ -9679,13 +9694,13 @@ window.afGallery=(function(){
         var th='<div class="gth" style="background-image:url(\''+it.thumb+'\')"><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
         var sub=esc(it.sub||(it.cat==='image'?'Rasm':it.cat==='video'?'Video':it.cat==='sfx'?'SFX':'Ovoz'));
         var meta='<div class="gmeta"><b>'+esc(String(it.title).slice(0,60))+'</b><small>'+sub+'</small></div>';
-        var acts='<div class="gacts"><div class="a-imp">'+IC.imp+' Import</div><div class="a-dl">'+IC.dl+' Yuklab</div></div>';
+        var acts='<div class="gacts"><div class="a-imp">'+IC.imp+' Import</div>'+(isCEP()?'':'<div class="a-dl">'+IC.dl+' Yuklab</div>')+'</div>';
         card.innerHTML=th+meta+acts;
         if(st.select){
           card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
         }else{
           card.querySelector('.a-imp').addEventListener('click',function(e){ e.stopPropagation(); importMedia(it); });
-          card.querySelector('.a-dl').addEventListener('click',function(e){ e.stopPropagation(); download(it); });
+          var _adl=card.querySelector('.a-dl'); if(_adl)_adl.addEventListener('click',function(e){ e.stopPropagation(); download(it); });
         }
         gridEl.appendChild(card);
       });
@@ -9739,7 +9754,7 @@ window.afGallery=(function(){
   // ---- kredit (REAL profil) + narx ----
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function cost(){ return meta.hasQuality ? (meta.qcost[st.q]||12)*st.n : (meta.flatCost||4)*st.n; }
-  function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
+  function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
   function recost(){ var sc=$('igCost'); if(sc)sc.textContent='✦'+cost(); var g=$('igGen'); if(g)g.title='Yaratish (✦'+cost()+')'; }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
   window.axIGRefresh=refresh;
@@ -10167,6 +10182,7 @@ window.afGallery=(function(){
     var j={seq:++jobSeq,jobId:null,prompt:prompt,label:meta.label,jcost:cost(),ar:st.ar,q:st.q,
            cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
     activeJobs.push(j); renderJobs(); refreshGen();
+    var _gb=$('igGen'); if(_gb)_gb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     // @img tartibida URL'lar (@img1=referenceUrls[0])
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
     var params={aspectRatio:st.ar,quality:st.q,count:st.n,referenceUrl:refUrls[0]||null,referenceUrls:refUrls};
@@ -10187,8 +10203,10 @@ window.afGallery=(function(){
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job yaratilmadi');
       j.jobId=res.jobId; j.submitted=true;
+      if(_gb)_gb.classList.remove('busy');
       startJobProg(j); pollJob(j,0);
     }).catch(function(err){
+      if(_gb)_gb.classList.remove('busy');
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeJob(j); return; }
       removeJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Generatsiya xatosi','error');
     });
@@ -10241,10 +10259,6 @@ window.afGallery=(function(){
       var img=document.createElement('img'); img.src=url; img.title='Kattalashtirish';
       img.addEventListener('click',function(){ openLightbox(url); });
       card.appendChild(img);
-      // ✓ Tanlash (select)
-      var cb=document.createElement('div'); cb.className='selcb'; cb.textContent='✓'; cb.title='Tanlash';
-      cb.addEventListener('click',function(){ card.classList.toggle('sel'); });
-      card.appendChild(cb);
       // ✕ O'chirish (natijani ro'yxatdan olib tashlash)
       var del=document.createElement('div'); del.className='del'; del.textContent='✕'; del.title='Natijani o\'chirish';
       del.addEventListener('click',function(){ var k=st.lastResults.indexOf(url); if(k>=0)st.lastResults.splice(k,1); if(card.parentNode)grid.removeChild(card); if(!grid.children.length)$('igRes').classList.remove('on'); toast('Natija o\'chirildi','info'); });
@@ -10253,7 +10267,8 @@ window.afGallery=(function(){
       var ra=document.createElement('div'); ra.className='ra';
       ra.appendChild(mkAct(IC_IMP,'Import',function(){ importOne(url); }));
       ra.appendChild(mkAct(IC_REF,'Referensга',function(){ addRefReady(url); }));
-      ra.appendChild(mkAct(IC_DL,'Yuklab olish',function(){ downloadUrl(url); }));
+      // "Yuklab olish" AE (CEP) ichida ishlamaydi (faqat Import) → tugmani ko'rsatmaymiz.
+      if(typeof IS_CEP==='undefined'||!IS_CEP)ra.appendChild(mkAct(IC_DL,'Yuklab olish',function(){ downloadUrl(url); }));
       card.appendChild(ra); grid.insertBefore(card,grid.firstChild); // yangi natijalar tepada
     });
     var jAr=(j&&j.ar)||st.ar; var jQ=(j&&j.q)||st.q;
@@ -10462,7 +10477,7 @@ window.afGallery=(function(){
   }
   function vgPromptValue(){ return (($('vgPrompt')&&$('vgPrompt').value)||'').trim(); }
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
-  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; }
+  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
   function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
   function hasVideoRefs(){ return mref.some(function(r){ return r.type==='video' && r.url; }); }
   function ratePerSec(){
@@ -10473,7 +10488,14 @@ window.afGallery=(function(){
     return base;
   }
   function cost(){ return ratePerSec()*durSec(); }
-  function recost(){ var c=$('vgCost'); if(c)c.textContent='✦'+cost(); }
+  function recost(){
+    var c=$('vgCost'); if(!c)return;
+    var auto=(!vm.dur||/^auto$/i.test(String(vm.dur)));
+    // Auto bo'lsa qancha soniyaga to'lashini ko'rsatamiz (✦48 (~4s)) — narx qaydan kelganini foydalanuvchi ko'rsin.
+    c.textContent='✦'+cost()+(auto?(' (~'+durSec()+'s)'):'');
+    var hasMult=(vm.refKind==='media-refs'&&hasVideoRefs()&&vm.videoInputCostMult&&vm.videoInputCostMult>1);
+    c.title='Narx ≈ ✦'+ratePerSec()+'/s × '+durSec()+'s'+(auto?' (Auto)':'')+(hasMult?' · video referens narxni oshiradi':'');
+  }
   function fmtMb(n){ return Math.round((Number(n||0)/(1024*1024))*10)/10; }
   function fmtClockSec(sec){
     sec=Math.max(0,Number(sec)||0);
@@ -11081,7 +11103,17 @@ window.afGallery=(function(){
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
     return obj;
   }
-  function updRefMeta(){ var m=$('vgRefMeta'); if(m)m.textContent=mref.length+' / '+((vm.mediaRefs&&vm.mediaRefs.total)||12); }
+  function updRefMeta(){
+    var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12};
+    var m=$('vgRefMeta'); if(m)m.textContent=mref.length+' / '+(lim.total||12);
+    // Limitlarni OLDINDAN ko'rsatamiz (fayl tanlagandan keyin xato chiqishidan oldin).
+    var h=$('vgRefLimits');
+    if(h){
+      var imgMb=(vm.mediaRefMaxBytes&&vm.mediaRefMaxBytes.image)?Math.round(vm.mediaRefMaxBytes.image/1048576):0;
+      var vidMb=(vm.mediaRefMaxTotalBytes&&vm.mediaRefMaxTotalBytes.video)?Math.round(vm.mediaRefMaxTotalBytes.video/1048576):0;
+      h.textContent='Maks '+lim.image+' rasm'+(imgMb?(' (≤'+imgMb+'MB)'):'')+' · '+lim.video+' video'+(vidMb?(' (jami ≤'+vidMb+'MB)'):'')+' · '+lim.audio+' ovoz';
+    }
+  }
   function renderMediaRefs(){
     var g=$('vgRefGrid'); if(!g)return; g.innerHTML='';
     mref.forEach(function(r,i){
@@ -11538,6 +11570,9 @@ window.afGallery=(function(){
       if(j.jobId){
         var bar=document.createElement('div'); bar.className='bar';
         var fill=document.createElement('i'); fill.id='vjbar'+j.seq; bar.appendChild(fill); row.appendChild(bar);
+        var eta=document.createElement('div'); eta.style.cssText='font-size:11px;color:var(--mut);margin:4px 0 0';
+        eta.textContent='⏳ Video odatda 1–5 daqiqa oladi — bu oynani yopsangiz ham Tarixda chiqadi';
+        row.appendChild(eta);
       } else {
         var s2=document.createElement('div'); s2.style.cssText='font-size:11.5px;color:var(--mut);margin:4px 0'; s2.textContent='Yuborilmoqda…'; row.appendChild(s2);
       }
@@ -11784,6 +11819,7 @@ window.afGallery=(function(){
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model'};
     activeJobs.push(j); renderVgJobs(); refreshVgBtn();
+    var _vgb=$('vgGen'); if(_vgb)_vgb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     var quote=null;
     ensureVgMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
@@ -11809,8 +11845,10 @@ window.afGallery=(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job yaratilmadi');
+      if(_vgb)_vgb.classList.remove('busy');
       j.jobId=res.jobId; j.submitted=true; startVgProg(j); pollVgJob(j,0);
     }).catch(function(err){
+      if(_vgb)_vgb.classList.remove('busy');
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeVgJob(j); return; }
       removeVgJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Gen xatosi','error');
     });
