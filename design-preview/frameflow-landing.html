@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrameFlow — Creative Platform for Video Professionals</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #090a0c;
+      --bg2: #0c0e12;
+      --bg3: #101418;
+      --card: #0e1115;
+      --border: #1a2028;
+      --border2: #252d38;
+      --acc: #c2f04a;
+      --acc-dim: rgba(194,240,74,0.07);
+      --acc-dim2: rgba(194,240,74,0.14);
+      --text: #eef1f6;
+      --text2: #8c95a3;
+      --text3: #505861;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; cursor: pointer; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 64px;
+      background: rgba(9,10,12,0.80);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 19px; letter-spacing: -0.5px;
+    }
+    .nav-logo .lime { color: var(--acc); }
+
+    .nav-links {
+      display: flex; align-items: center; gap: 36px; list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px; font-weight: 500; color: var(--text2);
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-ctas { display: flex; align-items: center; gap: 10px; }
+
+    .btn-ghost {
+      padding: 8px 18px; font-size: 14px; font-weight: 500;
+      color: var(--text2); background: transparent;
+      border: 1px solid var(--border2); border-radius: 8px;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-ghost:hover { color: var(--text); background: var(--bg3); }
+
+    .btn-acc {
+      padding: 9px 20px; font-size: 14px; font-weight: 700;
+      color: #050801; background: var(--acc);
+      border: none; border-radius: 8px;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-acc:hover { background: #d0ff50; }
+
+    /* ─── HERO ─── */
+    .hero {
+      padding: 148px 48px 80px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-glow {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 700px;
+      background: radial-gradient(ellipse at 50% 30%, rgba(194,240,74,0.07) 0%, transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 16px 5px 12px;
+      background: var(--acc-dim2);
+      border: 1px solid rgba(194,240,74,0.22);
+      border-radius: 100px;
+      font-size: 13px; font-weight: 600; color: var(--acc);
+      margin-bottom: 36px;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      background: var(--acc); border-radius: 50%;
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .hero h1 {
+      font-size: 76px; font-weight: 900; line-height: 1.04;
+      letter-spacing: -4px; margin-bottom: 28px;
+      background: linear-gradient(175deg, #fff 30%, rgba(255,255,255,0.38));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 20px; color: var(--text2); line-height: 1.6;
+      max-width: 560px; margin: 0 auto 44px;
+    }
+
+    .hero-ctas {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; margin-bottom: 64px;
+    }
+
+    .btn-hero {
+      padding: 15px 34px; font-size: 16px; font-weight: 700;
+      color: #050801; background: var(--acc);
+      border: none; border-radius: 12px; cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-hero:hover { background: #d0ff50; transform: translateY(-1px); }
+
+    .btn-hero-outline {
+      padding: 14px 34px; font-size: 16px; font-weight: 600;
+      color: var(--text); background: transparent;
+      border: 1px solid var(--border2); border-radius: 12px;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-hero-outline:hover { background: var(--bg3); border-color: #36404e; }
+
+    /* Stats bar */
+    .hero-stats {
+      display: inline-flex;
+      border: 1px solid var(--border); border-radius: 16px;
+      background: var(--bg2); overflow: hidden;
+    }
+    .hero-stat {
+      padding: 20px 32px; text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .hero-stat:last-child { border-right: none; }
+    .hs-num { display: block; font-size: 26px; font-weight: 800; color: var(--acc); letter-spacing: -1px; }
+    .hs-lbl { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; display: block; }
+
+    /* ─── TRUSTED ─── */
+    .trusted {
+      padding: 32px 48px;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .trusted-inner {
+      max-width: 1160px; margin: 0 auto;
+      display: flex; align-items: center; gap: 40px;
+    }
+    .trusted-label { font-size: 12px; font-weight: 600; color: var(--text3); white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
+    .trusted-logos { display: flex; align-items: center; gap: 36px; flex-wrap: wrap; }
+    .trusted-logo { font-size: 15px; font-weight: 800; color: var(--text3); letter-spacing: -0.5px; opacity:.5; transition:opacity .2s; }
+    .trusted-logo:hover { opacity:.9; color: var(--text2); }
+
+    /* ─── SECTION ─── */
+    .sec { padding: 104px 48px; max-width: 1200px; margin: 0 auto; }
+    .sec-full { padding: 104px 48px; }
+
+    .sec-lbl {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      letter-spacing: 2.5px; text-transform: uppercase; color: var(--acc); margin-bottom: 18px;
+    }
+    .sec-h { font-size: 50px; font-weight: 900; letter-spacing: -2.5px; line-height: 1.08; margin-bottom: 18px; }
+    .sec-p { font-size: 18px; color: var(--text2); line-height: 1.65; max-width: 540px; }
+
+    /* ─── FEATURES GRID ─── */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 20px;
+      overflow: hidden; margin-top: 64px;
+    }
+    .feat-card {
+      background: var(--card); padding: 38px 34px;
+      transition: background .2s;
+    }
+    .feat-card:hover { background: #111519; }
+    .feat-icon {
+      width: 50px; height: 50px; border-radius: 14px;
+      background: var(--acc-dim2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 20px;
+    }
+    .feat-card h3 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 10px; }
+    .feat-card p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+    .feat-count {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      color: var(--acc); margin-top: 18px; letter-spacing: .3px;
+    }
+
+    /* ─── SHOWCASE ─── */
+    .showcase-wrap {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
+      padding: 0 48px 104px;
+    }
+    .showcase-text .sec-h { font-size: 44px; }
+    .showcase-text p { font-size: 17px; color: var(--text2); line-height: 1.72; margin: 18px 0 30px; }
+    .feat-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .feat-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; font-weight: 500; }
+    .chk {
+      width: 22px; height: 22px; background: var(--acc-dim2);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 900; color: var(--acc); flex-shrink: 0; margin-top: 1px;
+    }
+    .showcase-vis {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden; position: relative;
+    }
+
+    /* Plugin mockup */
+    .plugin-mock {
+      background: #080b10; font-family: 'Inter',sans-serif;
+      font-size: 12px; color: #c0c8d4; user-select: none;
+    }
+    .pm-bar {
+      background: #0d1118; padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid #1a2230;
+    }
+    .pm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); }
+    .pm-title { font-size: 11px; font-weight: 700; color: var(--acc); }
+    .pm-pill {
+      margin-left: auto; background: var(--acc); color: #050801;
+      font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 100px;
+    }
+    .pm-tabs {
+      display: flex; gap: 0;
+      border-bottom: 1px solid #1a2230;
+    }
+    .pm-tab {
+      padding: 8px 14px; font-size: 11px; font-weight: 600; color: var(--text3);
+      border-bottom: 2px solid transparent; cursor: pointer;
+    }
+    .pm-tab.active { color: var(--acc); border-bottom-color: var(--acc); }
+    .pm-search {
+      margin: 10px; background: #111820; border: 1px solid #1e2838;
+      border-radius: 8px; padding: 7px 12px;
+      display: flex; align-items: center; gap: 8px; color: var(--text3); font-size: 11px;
+    }
+    .pm-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; padding: 0 10px 10px;
+    }
+    .pm-card {
+      background: #111820; border: 1px solid #1e2838; border-radius: 8px;
+      overflow: hidden; cursor: pointer; transition: border-color .15s;
+    }
+    .pm-card:hover { border-color: rgba(194,240,74,.3); }
+    .pm-thumb {
+      height: 56px; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; position: relative;
+    }
+    .pm-ai-badge {
+      position: absolute; top: 4px; right: 4px;
+      background: var(--acc); color: #050801;
+      font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px;
+    }
+    .pm-card-info { padding: 6px 8px; }
+    .pm-card-name { font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pm-card-meta { font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+    /* ─── PRICING ─── */
+    .pricing-bg { background: var(--bg2); }
+    .price-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 24px; margin-top: 64px;
+    }
+    .price-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px 32px;
+      position: relative; transition: border-color .2s;
+    }
+    .price-card:hover { border-color: var(--border2); }
+    .price-card.pop {
+      border-color: rgba(194,240,74,.35);
+      background: linear-gradient(160deg, rgba(194,240,74,.055) 0%, var(--card) 55%);
+    }
+    .pop-badge {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--acc); color: #050801;
+      font-size: 11px; font-weight: 800; padding: 4px 16px; border-radius: 100px;
+      white-space: nowrap; letter-spacing: .3px;
+    }
+    .price-name { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
+    .price-row { display: flex; align-items: baseline; gap: 3px; margin-bottom: 6px; }
+    .price-$ { font-size: 18px; font-weight: 700; color: var(--text2); }
+    .price-n { font-size: 56px; font-weight: 900; letter-spacing: -3px; }
+    .price-mo { font-size: 14px; color: var(--text3); margin-left: 2px; }
+    .price-desc { font-size: 13px; color: var(--text3); line-height: 1.6; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .price-feats { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+    .price-feats li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text2); }
+    .price-feats li::before { content: '✓'; color: var(--acc); font-weight: 800; font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+    .btn-plan {
+      width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
+      border-radius: 10px; cursor: pointer; transition: all .15s; border: none;
+    }
+    .btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+    .btn-outline:hover { background: var(--bg3); }
+    .btn-lime { background: var(--acc); color: #050801; }
+    .btn-lime:hover { background: #d0ff50; }
+
+    /* ─── TESTIMONIALS ─── */
+    .test-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 64px; }
+    .test-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+    .test-stars { color: var(--acc); font-size: 14px; margin-bottom: 16px; letter-spacing: 2px; }
+    .test-q { font-size: 15px; color: var(--text2); line-height: 1.72; margin-bottom: 24px; font-style: italic; }
+    .test-author { display: flex; align-items: center; gap: 12px; }
+    .test-av {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--acc-dim2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--acc); flex-shrink: 0;
+    }
+    .test-name { font-size: 14px; font-weight: 700; }
+    .test-role { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    /* ─── FAQ ─── */
+    .faq-list { margin-top: 64px; border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .faq-item { background: var(--card); border-bottom: 1px solid var(--border); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      padding: 22px 28px; font-size: 16px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      transition: color .15s;
+    }
+    .faq-q:hover { color: var(--acc); }
+    .faq-ic { font-size: 22px; color: var(--text3); flex-shrink: 0; line-height: 1; }
+    .faq-a {
+      padding: 0 28px 22px; font-size: 15px; color: var(--text2); line-height: 1.72;
+      display: none;
+    }
+    .faq-item.open .faq-q { color: var(--acc); }
+    .faq-item.open .faq-ic { color: var(--acc); content: '−'; }
+    .faq-item.open .faq-a { display: block; }
+
+    /* ─── FINAL CTA ─── */
+    .final-cta {
+      margin: 0 48px 80px;
+      background: linear-gradient(135deg, #0e1a08 0%, #0a1208 60%, #0d1115 100%);
+      border: 1px solid rgba(194,240,74,0.18);
+      border-radius: 28px; padding: 96px 60px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .final-cta::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(194,240,74,0.1) 0%, transparent 70%);
+    }
+    .final-cta h2 { font-size: 58px; font-weight: 900; letter-spacing: -3px; margin-bottom: 16px; position: relative; }
+    .final-cta p { font-size: 19px; color: var(--text2); margin-bottom: 44px; position: relative; }
+    .cta-btns { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+    /* ─── FOOTER ─── */
+    footer { border-top: 1px solid var(--border); background: var(--bg2); padding: 64px 48px 32px; }
+    .foot-inner { max-width: 1200px; margin: 0 auto; }
+    .foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 56px; }
+    .foot-brand p { font-size: 14px; color: var(--text3); line-height: 1.7; margin-top: 16px; max-width: 260px; }
+    .foot-col h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text3); margin-bottom: 20px; }
+    .foot-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .foot-col a { font-size: 14px; color: var(--text2); transition: color .15s; }
+    .foot-col a:hover { color: var(--text); }
+    .foot-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 28px; border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--text3);
+    }
+
+    @media (max-width: 960px) {
+      .hero h1 { font-size: 48px; letter-spacing: -2.5px; }
+      .feat-grid { grid-template-columns: 1fr 1fr; }
+      .price-grid { grid-template-columns: 1fr; }
+      .test-grid { grid-template-columns: 1fr; }
+      .showcase-wrap { grid-template-columns: 1fr; }
+      .foot-grid { grid-template-columns: 1fr 1fr; }
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .feat-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 38px; }
+      .sec-h { font-size: 36px; }
+      .hero-stats { flex-wrap: wrap; }
+      .final-cta { margin: 0 20px 60px; padding: 60px 28px; }
+      .final-cta h2 { font-size: 38px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <rect width="512" height="512" rx="88" fill="#090a0c"/>
+      <g fill="none" stroke="#c2f04a" stroke-linecap="round" stroke-linejoin="round" stroke-width="22">
+        <path d="M 130 204 L 130 130 L 204 130"/>
+        <path d="M 308 130 L 382 130 L 382 204"/>
+        <path d="M 130 308 L 130 382 L 204 382"/>
+        <path d="M 308 382 L 382 382 L 382 308"/>
+      </g>
+      <g fill="none" stroke="#c2f04a" stroke-linecap="round" stroke-linejoin="round" stroke-width="16">
+        <line x1="190" y1="256" x2="288" y2="256"/>
+        <path d="M 286 234 L 314 256 L 286 278"/>
+      </g>
+    </svg>
+    Frame<span class="lime">Flow</span>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#plugin">Plugin</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+
+  <div class="nav-ctas">
+    <button class="btn-ghost">Sign in</button>
+    <button class="btn-acc">Get started →</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    AI-Powered Creative Platform
+  </div>
+
+  <h1>Everything You Need<br>to Create Stunning<br>Videos</h1>
+
+  <p class="hero-sub">
+    100,000+ templates, AI generation, stock footage, and sound effects — all accessible directly inside After Effects and Premiere Pro.
+  </p>
+
+  <div class="hero-ctas">
+    <button class="btn-hero">Start for free →</button>
+    <button class="btn-hero-outline">Browse templates</button>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <span class="hs-num">100K+</span>
+      <span class="hs-lbl">Templates</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hs-num">4M+</span>
+      <span class="hs-lbl">Creators</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hs-num">200+</span>
+      <span class="hs-lbl">AI Models</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hs-num">30K+</span>
+      <span class="hs-lbl">Sound FX</span>
+    </div>
+  </div>
+</div>
+
+<!-- TRUSTED BY -->
+<div class="trusted">
+  <div class="trusted-inner">
+    <span class="trusted-label">Trusted by teams at</span>
+    <div class="trusted-logos">
+      <span class="trusted-logo">Netflix</span>
+      <span class="trusted-logo">Disney+</span>
+      <span class="trusted-logo">BBC Studios</span>
+      <span class="trusted-logo">Adobe</span>
+      <span class="trusted-logo">YouTube</span>
+      <span class="trusted-logo">Spotify</span>
+      <span class="trusted-logo">Wunderman</span>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="sec" id="features">
+  <span class="sec-lbl">Platform</span>
+  <h2 class="sec-h">One Platform,<br>Infinite Creativity</h2>
+  <p class="sec-p">From motion graphics to AI-generated content — everything a video professional needs, in one place.</p>
+
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🎬</div>
+      <h3>Video Templates</h3>
+      <p>Professional motion graphics, title sequences, transitions, and intros for After Effects & Premiere Pro.</p>
+      <span class="feat-count">50,000+ templates</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <h3>AI Suite</h3>
+      <p>Generate images, video clips, voiceovers, and custom SFX using 200+ AI models — all powered by credits.</p>
+      <span class="feat-count">200+ AI models</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎵</div>
+      <h3>Sound Effects</h3>
+      <p>Cinematic SFX, ambient loops, UI sounds, and music — all cleared for commercial use in any project.</p>
+      <span class="feat-count">30,000+ SFX</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📹</div>
+      <h3>Stock Video</h3>
+      <p>4K cinematic footage, aerial shots, b-roll, and specialty clips from professional videographers worldwide.</p>
+      <span class="feat-count">10,000+ clips</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎨</div>
+      <h3>Graphic Assets</h3>
+      <p>Icons, illustrations, Photoshop files, LUT packs, and design elements for any creative project.</p>
+      <span class="feat-count">20,000+ assets</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔌</div>
+      <h3>Native Plugin</h3>
+      <p>Browse, import, and generate assets directly inside After Effects and Premiere without switching apps.</p>
+      <span class="feat-count">AE + Premiere CEP</span>
+    </div>
+  </div>
+</section>
+
+<!-- PLUGIN SHOWCASE -->
+<div class="showcase-wrap" id="plugin">
+  <div class="showcase-text">
+    <span class="sec-lbl">Native Plugin</span>
+    <h2 class="sec-h" style="font-size:44px;">Create Inside<br>After Effects</h2>
+    <p>Browse the full FrameFlow library, run AI generation, and import assets into your composition — without leaving your editing timeline.</p>
+    <ul class="feat-list">
+      <li><span class="chk">✓</span> Browse 100K+ templates by category, mood, duration</li>
+      <li><span class="chk">✓</span> AI image & video generation with 1-click import</li>
+      <li><span class="chk">✓</span> AI voiceover in 29 languages, directly in your comp</li>
+      <li><span class="chk">✓</span> Semantic search: "find slow cinematic titles"</li>
+      <li><span class="chk">✓</span> After Effects CEP + Premiere Pro panel</li>
+    </ul>
+  </div>
+
+  <!-- Plugin UI Mockup -->
+  <div class="showcase-vis">
+    <div class="plugin-mock">
+      <div class="pm-bar">
+        <div class="pm-dot"></div>
+        <span class="pm-title">FrameFlow</span>
+        <div class="pm-pill">✦ 12,440 Credits</div>
+      </div>
+      <div class="pm-tabs">
+        <div class="pm-tab active">Browse</div>
+        <div class="pm-tab">AI Tools</div>
+        <div class="pm-tab">History</div>
+        <div class="pm-tab">Projects</div>
+      </div>
+      <div class="pm-search">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Search templates, SFX, footage...
+      </div>
+      <div style="display:flex;gap:6px;padding:0 10px 8px;overflow-x:auto;">
+        <div style="background:#c2f04a;color:#050801;font-size:9px;font-weight:800;padding:3px 10px;border-radius:100px;white-space:nowrap;">All</div>
+        <div style="background:#111820;border:1px solid #1e2838;color:#8c95a3;font-size:9px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap;">Titles</div>
+        <div style="background:#111820;border:1px solid #1e2838;color:#8c95a3;font-size:9px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap;">Transitions</div>
+        <div style="background:#111820;border:1px solid #1e2838;color:#8c95a3;font-size:9px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap;">Intros</div>
+        <div style="background:#111820;border:1px solid #1e2838;color:#8c95a3;font-size:9px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap;">SFX</div>
+      </div>
+      <div class="pm-grid">
+        <div class="pm-card">
+          <div class="pm-thumb" style="background:linear-gradient(135deg,#0f2040,#1a3a60);">🎬</div>
+          <div class="pm-card-info">
+            <div class="pm-card-name">Cinematic Title</div>
+            <div class="pm-card-meta">AE · Free</div>
+          </div>
+        </div>
+        <div class="pm-card">
+          <div class="pm-thumb" style="background:linear-gradient(135deg,#200f10,#3d1a1c);">
+            ✨
+            <div class="pm-ai-badge">AI</div>
+          </div>
+          <div class="pm-card-info">
+            <div class="pm-card-name">AI Image Gen</div>
+            <div class="pm-card-meta">✦ 4 credits</div>
+          </div>
+        </div>
+        <div class="pm-card">
+          <div class="pm-thumb" style="background:linear-gradient(135deg,#0f200f,#1a3a1a);">🎵</div>
+          <div class="pm-card-info">
+            <div class="pm-card-name">Impact SFX</div>
+            <div class="pm-card-meta">SFX · Pro</div>
+          </div>
+        </div>
+        <div class="pm-card">
+          <div class="pm-thumb" style="background:linear-gradient(135deg,#201a0f,#3a2e10);">📹</div>
+          <div class="pm-card-info">
+            <div class="pm-card-name">Aerial 4K</div>
+            <div class="pm-card-meta">Stock · Pro</div>
+          </div>
+        </div>
+        <div class="pm-card">
+          <div class="pm-thumb" style="background:linear-gradient(135deg,#15102a,#261a4a);">
+            🎤
+            <div class="pm-ai-badge">AI</div>
+          </div>
+          <div class="pm-card-info">
+            <div class="pm-card-name">Voiceover</div>
+            <div class="pm-card-meta">✦ 2 credits</div>
+          </div>
+        </div>
+        <div class="pm-card">
+          <div class="pm-thumb" style="background:linear-gradient(135deg,#0f1820,#152533);">🎨</div>
+          <div class="pm-card-info">
+            <div class="pm-card-name">Neon LUT Pack</div>
+            <div class="pm-card-meta">LUT · Free</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="pricing-bg sec-full" id="pricing">
+  <div class="sec" style="padding-top:0;padding-bottom:0;">
+    <span class="sec-lbl">Pricing</span>
+    <h2 class="sec-h">Simple, Transparent<br>Pricing</h2>
+    <p class="sec-p">Start free. Upgrade when you're ready. Cancel anytime — no contracts.</p>
+
+    <div class="price-grid">
+      <!-- Starter -->
+      <div class="price-card">
+        <div class="price-name">Starter</div>
+        <div class="price-row">
+          <span class="price-$">$</span>
+          <span class="price-n">9</span>
+          <span class="price-mo">/mo</span>
+        </div>
+        <p class="price-desc">For freelancers getting started with AI tools and a curated template library.</p>
+        <ul class="price-feats">
+          <li>10,000 AI Credits / month</li>
+          <li>AI Voiceover — 5 languages</li>
+          <li>500 free templates</li>
+          <li>After Effects + Premiere plugin</li>
+          <li>5 GB cloud storage</li>
+          <li>Commercial license</li>
+        </ul>
+        <button class="btn-plan btn-outline">Get started</button>
+      </div>
+
+      <!-- Pro -->
+      <div class="price-card pop">
+        <div class="pop-badge">Most Popular</div>
+        <div class="price-name">Pro</div>
+        <div class="price-row">
+          <span class="price-$">$</span>
+          <span class="price-n">19</span>
+          <span class="price-mo">/mo</span>
+        </div>
+        <p class="price-desc">For professional video editors who need full access to templates, AI, stock, and SFX.</p>
+        <ul class="price-feats">
+          <li>25,000 AI Credits / month</li>
+          <li>AI Voiceover — 29 languages</li>
+          <li>Full template library (50K+)</li>
+          <li>Stock Video collection</li>
+          <li>Sound Effects library (30K+)</li>
+          <li>20 GB cloud storage</li>
+          <li>Commercial license</li>
+        </ul>
+        <button class="btn-plan btn-lime">Get Pro →</button>
+      </div>
+
+      <!-- Max -->
+      <div class="price-card">
+        <div class="price-name">Max</div>
+        <div class="price-row">
+          <span class="price-$">$</span>
+          <span class="price-n">29</span>
+          <span class="price-mo">/mo</span>
+        </div>
+        <p class="price-desc">For studios and power users who need maximum credits, storage, and team tools.</p>
+        <ul class="price-feats">
+          <li>50,000 AI Credits / month</li>
+          <li>Everything in Pro</li>
+          <li>Priority AI processing</li>
+          <li>Graphic Assets library (20K+)</li>
+          <li>LUT Collections</li>
+          <li>100 GB cloud storage</li>
+          <li>Team collaboration tools</li>
+        </ul>
+        <button class="btn-plan btn-outline">Get Max</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<section class="sec">
+  <span class="sec-lbl">Testimonials</span>
+  <h2 class="sec-h">Loved by 4 Million<br>Video Creators</h2>
+
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-q">"FrameFlow has completely transformed my After Effects workflow. Templates, AI tools, and SFX all in one plugin — I save 3–4 hours per project easily."</p>
+      <div class="test-author">
+        <div class="test-av">AG</div>
+        <div>
+          <div class="test-name">Adam Gutierrez</div>
+          <div class="test-role">Motion Designer, Freelance</div>
+        </div>
+      </div>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-q">"The AI voiceover quality is broadcast-grade. Our team uses FrameFlow for every project now. The template library is massive and well-organized."</p>
+      <div class="test-author">
+        <div class="test-av">FL</div>
+        <div>
+          <div class="test-name">Fabien Lapierre</div>
+          <div class="test-role">VFX Art Director</div>
+        </div>
+      </div>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-q">"I signed up for transitions but discovered so much more — stock footage, AI generation, sound effects. FrameFlow is now essential to my entire workflow."</p>
+      <div class="test-author">
+        <div class="test-av">GV</div>
+        <div>
+          <div class="test-name">Gina Vogel</div>
+          <div class="test-role">Video Editor, Berlin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec" id="faq" style="padding-top:0">
+  <span class="sec-lbl">FAQ</span>
+  <h2 class="sec-h">Questions Answered</h2>
+
+  <div class="faq-list">
+    <div class="faq-item open">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        What is FrameFlow?
+        <span class="faq-ic">−</span>
+      </div>
+      <div class="faq-a">FrameFlow is an all-in-one creative platform offering unlimited access to professional video templates, AI generation tools (image, video, voice, SFX), stock footage, sound effects, and graphic assets — all accessible inside After Effects and Premiere Pro via a native plugin.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Can I use assets in commercial projects?
+        <span class="faq-ic">+</span>
+      </div>
+      <div class="faq-a">Yes. All FrameFlow templates, stock footage, sound effects, and AI-generated content are cleared for commercial use with an active subscription. Your completed projects are protected under our commercial license for the duration of your subscription.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        How does the After Effects plugin work?
+        <span class="faq-ic">+</span>
+      </div>
+      <div class="faq-a">The FrameFlow plugin installs as a CEP panel inside After Effects (and Premiere Pro). Browse the entire library, search with AI-powered semantic search, run AI generation, and import any asset directly into your active composition — no switching apps required.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        What are AI Credits?
+        <span class="faq-ic">+</span>
+      </div>
+      <div class="faq-a">AI Credits are used for generative features: image generation, video generation, AI voiceover, and custom SFX generation. Credits reset monthly. Unused credits do not roll over. You can see a cost preview before each generation — there are no surprise charges.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Can I cancel my subscription anytime?
+        <span class="faq-ic">+</span>
+      </div>
+      <div class="faq-a">Yes, you can cancel anytime. Once your billing cycle ends, your account reverts to free access. Projects you've completed during your paid subscription remain covered under the license. No long-term contracts or commitments.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Is there a free plan?
+        <span class="faq-ic">+</span>
+      </div>
+      <div class="faq-a">Yes. Free accounts can browse the catalog and download free-tier templates and assets with watermarks. To access the full library, AI generation, stock video, and SFX, upgrade to Starter, Pro, or Max.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<div class="final-cta">
+  <h2>Start Creating Today —<br><span style="color:var(--acc)">Free</span></h2>
+  <p>Join 4 million creators using FrameFlow to build better videos, faster.</p>
+  <div class="cta-btns">
+    <button class="btn-hero">Get started for free →</button>
+    <button class="btn-hero-outline">Browse templates</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="#" class="nav-logo" style="font-size:17px;">
+          <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <rect width="512" height="512" rx="88" fill="#090a0c"/>
+            <g fill="none" stroke="#c2f04a" stroke-linecap="round" stroke-linejoin="round" stroke-width="22">
+              <path d="M 130 204 L 130 130 L 204 130"/>
+              <path d="M 308 130 L 382 130 L 382 204"/>
+              <path d="M 130 308 L 130 382 L 204 382"/>
+              <path d="M 308 382 L 382 382 L 382 308"/>
+            </g>
+            <g fill="none" stroke="#c2f04a" stroke-linecap="round" stroke-linejoin="round" stroke-width="16">
+              <line x1="190" y1="256" x2="288" y2="256"/>
+              <path d="M 286 234 L 314 256 L 286 278"/>
+            </g>
+          </svg>
+          Frame<span class="lime">Flow</span>
+        </a>
+        <p>The creative platform for video professionals. AI tools, templates, and stock assets — all inside After Effects.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#">Video Templates</a></li>
+          <li><a href="#">AI Suite</a></li>
+          <li><a href="#">Sound Effects</a></li>
+          <li><a href="#">Stock Video</a></li>
+          <li><a href="#">Plugins</a></li>
+          <li><a href="#">Graphic Assets</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press</a></li>
+          <li><a href="#">Affiliates</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">License</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2025 FrameFlow. All rights reserved.</span>
+      <span>getframeflow.app</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // FAQ toggle icons
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const ic = q.querySelector('.faq-ic');
+      ic.textContent = q.parentElement.classList.contains('open') ? '+' : '−';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: rounded square -->
+  <rect width="512" height="512" rx="88" fill="#090a0c"/>
+
+  <!-- Subtle glow behind marks -->
+  <g fill="none" stroke="#c2f04a" stroke-opacity="0.12" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke-width="52">
+      <path d="M 130 204 L 130 130 L 204 130"/>
+      <path d="M 308 130 L 382 130 L 382 204"/>
+      <path d="M 130 308 L 130 382 L 204 382"/>
+      <path d="M 308 382 L 382 382 L 382 308"/>
+    </g>
+    <g stroke-width="38">
+      <line x1="190" y1="256" x2="288" y2="256"/>
+      <path d="M 286 234 L 314 256 L 286 278"/>
+    </g>
+  </g>
+
+  <!-- Corner bracket marks (viewfinder / frame) -->
+  <g fill="none" stroke="#c2f04a" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke-width="22">
+      <path d="M 130 204 L 130 130 L 204 130"/>
+      <path d="M 308 130 L 382 130 L 382 204"/>
+      <path d="M 130 308 L 130 382 L 204 382"/>
+      <path d="M 308 382 L 382 382 L 382 308"/>
+    </g>
+    <!-- Flow arrow -->
+    <g stroke-width="16">
+      <line x1="190" y1="256" x2="288" y2="256"/>
+      <path d="M 286 234 L 314 256 L 286 278"/>
+    </g>
+  </g>
+</svg>

@@ -7,3 +7,10 @@
 .env
 .env.*
 scratchpad
+cloudrun-env.yaml
+
+# API uchun kerak emas — npm install sekinlashtiradi
+packages/assetflow-studio
+plugins/after-effects-cep
+design-preview
+docs

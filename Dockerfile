@@ -12,6 +12,11 @@ RUN apt-get update \
 # Monorepo: barcha workspace manbasi (node_modules .dockerignore'da chiqarilgan)
 COPY . .
 
+# .dockerignore dan chiqarilgan workspacelar uchun stub (npm workspaces topishi uchun)
+RUN mkdir -p packages/assetflow-studio plugins/after-effects-cep \
+ && echo '{"name":"@creative-tools/assetflow-studio","version":"1.0.0","private":true}' > packages/assetflow-studio/package.json \
+ && echo '{"name":"@creative-tools/after-effects-cep","version":"0.1.0","private":true}' > plugins/after-effects-cep/package.json
+
 # render.yaml buildCommand bilan AYNAN bir xil: install → prisma generate → build db → build api
 RUN npm install --include=dev \
  && npm run generate -w @creative-tools/database \
