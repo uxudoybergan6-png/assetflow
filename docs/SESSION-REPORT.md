@@ -1,10 +1,10 @@
-# SESSION REPORT — 2026-06-30 — AI tool header'ga Home (Asosiy) tugmasi
+# SESSION REPORT — 2026-06-30 — Video|Rasm toggle markazga + ajralib turadigan
 
-Faqat `AssetFlow_Plugin.html`. Oldingi tuzatish tashqi `.af-topbar`ни (undagi "‹ Asosiy" home tugmasi) yashirgach, tool ichidan to'g'ridan-to'g'ri Home'ga qaytish yo'qoldi (faqat "‹ AI Tools" qolgan edi).
+Faqat `AssetFlow_Plugin.html` (CSS+markup). Foydalanuvchi: toggle o'rtada va ajralib tursin.
 
-- Rasm va Video tool header'lariga **Home (Asosiy)** tugmasi (uy ikonkasi) qo'shildi — `data-go="main"` → mavjud delegatsiya → `goHome()`. Tarix/Sozlama yonida.
-- Launcher ailead'da "‹ Asosiy" allaqachon bor edi; endi tool'lardan ham bir bosishda Home.
+- Ikkala tool header'iga `back`dan keyin 2-`spacer` qo'shildi → toggle endi markazda (back | spacer | toggle | spacer | ikonalar).
+- `.tabsw` ko'rinishi kuchaytirildi: konteyner yorqinroq bg + border + shadow; faol tomon (`.tsw.on`) endi **accent (yashil) pill** (`--acc`/`--acc-ink`) — aniq ajralib turadi.
 
-Avval (shu sessiya): tashqi topbar ai-mode'да yashirildi; Video⇄Rasm toggle; rasm tool video bilan teng (vpanel, paste, multi-select, So'nggi loading+lazy); magnific disable; enhance META fix; video 3-concurrent+Tozalash.
+Avval (shu sessiya): tool header'ga Home tugmasi; tashqi topbar ai-mode'да yashirildi; Video⇄Rasm toggle; rasm tool video bilan teng.
 
-Kutilmoqda: push + AE qayta o'rnatildi + test (tool header'da uy tugmasi → Home).
+Kutilmoqda: push + AE qayta o'rnatildi + test (toggle markazda, yashil faol).
