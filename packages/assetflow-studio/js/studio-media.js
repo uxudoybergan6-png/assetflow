@@ -6,7 +6,7 @@ const StudioMedia = (() => {
     return (
       (typeof window !== "undefined" &&
         (window.ASSETFLOW_STUDIO?.mediaUrl || window.ASSETFLOW_STUDIO?.apiUrl)) ||
-      "https://assetflow-rqbq.onrender.com"
+      "https://assetflow-api-331762958776.europe-west1.run.app"
     ).replace(/\/$/, "");
   }
 

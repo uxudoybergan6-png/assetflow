@@ -5,7 +5,7 @@
  */
 const BASE = "https://openrouter.ai/api/v1";
 const KEY = process.env.OPENROUTER_API_KEY ?? "";
-const REFERER = process.env.API_PUBLIC_URL ?? "https://assetflow-rqbq.onrender.com";
+const REFERER = process.env.API_PUBLIC_URL ?? "https://assetflow-api-331762958776.europe-west1.run.app";
 
 export function isOpenRouterConfigured(): boolean {
   return Boolean(KEY);

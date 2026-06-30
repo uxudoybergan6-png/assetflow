@@ -100,15 +100,17 @@ fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 // asosiy qiymati — `connect-src`/`img-src` (XSS token-exfil'ni begona domenga
 // yuborishni to'sish) + clickjacking. Report-Only fazasida (login/hub/contributor/
 // admin + grafiklar) konsol toza bo'lgani tasdiqlangach enforce'ga o'tildi.
-// connect/img/media: 'self' + API (assetflow-rqbq.onrender.com) + R2 CDN (*.r2.dev,
-// thumb/preview API → R2 302 redirect). eval/WebSocket ishlatilmaydi.
+// connect/img/media: 'self' + API (Cloud Run) + GCS (storage.googleapis.com,
+// thumb/preview API → GCS signed-URL redirect). eval/WebSocket ishlatilmaydi.
+const API_ORIGIN = "https://assetflow-api-331762958776.europe-west1.run.app";
+const GCS_ORIGIN = "https://storage.googleapis.com";
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: https://assetflow-rqbq.onrender.com https://*.r2.dev",
-  "media-src 'self' https://assetflow-rqbq.onrender.com https://*.r2.dev",
-  "connect-src 'self' https://assetflow-rqbq.onrender.com https://*.r2.dev",
+  `img-src 'self' data: ${API_ORIGIN} ${GCS_ORIGIN}`,
+  `media-src 'self' ${API_ORIGIN} ${GCS_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGIN} ${GCS_ORIGIN}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",

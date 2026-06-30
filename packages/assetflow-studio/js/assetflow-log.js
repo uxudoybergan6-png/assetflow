@@ -14,7 +14,7 @@ const AssetFlowLog = (() => {
   let source = "unknown";
   let apiBase =
     (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) ||
-    "https://assetflow-rqbq.onrender.com";
+    "https://assetflow-api-331762958776.europe-west1.run.app";
   let syncEnabled = true;
 
   function nowIso() {

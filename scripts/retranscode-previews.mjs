@@ -8,7 +8,7 @@
  * chaqiradi (parallel emas — Render 512MB OOM oldini olish uchun).
  *
  * Ishlatish:
- *   API_URL=https://assetflow-rqbq.onrender.com \
+ *   API_URL=https://assetflow-api-331762958776.europe-west1.run.app \
  *   ADMIN_EMAIL=admin@assetflow.uz ADMIN_PASSWORD=admin123 \
  *   node scripts/retranscode-previews.mjs
  *
