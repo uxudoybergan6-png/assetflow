@@ -1,10 +1,19 @@
-# SESSION REPORT — 2026-06-30 — Video gen: ko'p gen + tezlik + Tozalash
+# SESSION REPORT — 2026-06-30 — Rasm tool ↔ Video tool parity + model wiring
 
-Faqat `plugins/after-effects-cep/AssetFlow_Plugin.html` (frontend; node ✓).
+3 parallel audit (model wiring · referens parity · funksiyalar/UX) → rasm tool video bilan teng qilindi.
 
-- **Ko'p gen (avval faqat 1 edi):** `MAX_VG_JOBS=3` qo'shildi. `refreshVgBtn` (3 shox) `activeJobs.length<1` → `<MAX_VG_JOBS`; `genVgClick` guard `>=1` → `>=MAX_VG_JOBS` (aniq xabar). Endi bir vaqtda 3 ta video gen navbatga qo'yiladi (rasm tool'dagi MAX_JOBS=5 naqshi).
-- **Tezlik:** `genVgClick` da `preflight-safety` + `cost-quote` + `session` endi PARALLEL (`Promise.all`) — avval ketma-ket edi (preflight alohida round-trip). Kredit faqat `/gen`'da yechilgani uchun xavfsiz (preflight bloklasa /gen'gача yetib bormaydi → kredit yechilmaydi). Cold-start Render'da sezilarli tejam.
-  - Eslatma: video gen'ning ASOSIY sekinligi fal video render (daqiqalar) + Render cold-start — bu infra, kodда tezlatib bo'lmaydi. Poll cadence (3s) yetarli.
-- **Tozalash:** video tool'ga `vgClearBtn` qo'shildi (Sozlamalar yorlig'ida, rasm tool'dagidek). Bosilganda: prompt bo'shaydi, media-refs (+@token) tozalanadi, Boshlang'ich/Yakuniy kadr o'chadi. NATIJA (So'nggi grid) tegmaydi. `.axvg .lbl .clearbtn` CSS qo'shildi.
+**Model wiring (gen-models.ts):**
+- 9 jonli fal rasm modeli (1102–1110) ✅ to'g'ri ulangan (audit tasdiqladi — charge-then-fail yo'q).
+- **Magnific 1201–1206** `enabled:false` (magnificOnly, GEN_PROVIDER=magnific dormant → latent charge-then-fail yopildi; video B6 naqshi). tsc ✓.
 
-Kutilmoqda: push + AE jonli test (3 ta gen birga, Tozalash, tezroq submit).
+**Rasm tool parity (AssetFlow_Plugin.html — node ✓):**
+- **Ctrl+V paste** rasm → referens (video naqshi; addRef qayta ishlatildi).
+- **Project paneldan checkbox multi-select** + "Qo'shish (N)" footer (avval bittadan edi).
+- **Model almashda tasdiq** — referenssiz modelга o'tishda biriktirilgan refs yo'qotilishidan oldin confirm (H2).
+- **Limitlar oldindan**: igRefMeta "N / max referens · majburiy".
+- **Narx tooltip**: "✦/rasm × N = ✦total" (video kabi).
+- **Neytral default'lar**: igMName "…", igCost "✦—" (GPT/✦12 sizmaydi).
+- **Fayl multi**: bo'sh-slot qadar + bitta umumiy toast (spam emas).
+- **Enhance**: safetyAdjusted xabari qo'shildi.
+
+Qoldi (minor): video model-sheet ikonkasi rasm darajasiga (BRAND_SVG) — reverse parity; image job ETA hint; download fayl nomi. Kutilmoqda: push + AE qayta o'rnatish + jonli test.

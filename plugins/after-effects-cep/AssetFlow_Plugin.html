@@ -3220,7 +3220,7 @@ html.home-mode #homePage{display:block!important}
                                 <div class="prow">
                                   <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Referens</div>
                                   <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
-                                  <span class="costtag" id="igCost">✦12</span>
+                                  <span class="costtag" id="igCost">✦—</span>
                                   <button class="gensend" id="igGen" disabled title="Yaratish" aria-label="Rasm yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
                                 </div>
                               </div>
@@ -3230,7 +3230,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="sect">
                               <div class="lbl">Sozlamalar <span class="meta clearbtn" id="igClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                               <div class="ctrls">
-                                <div class="seg" id="igModelSeg"><span class="lab">Model</span><span class="sv" id="igMName">GPT Image 2 Edit</span><span class="sc">▾</span></div>
+                                <div class="seg" id="igModelSeg"><span class="lab">Model</span><span class="sv" id="igMName">…</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igArSeg"><span class="lab">Nisbat</span><span class="sv" id="igArVal">Auto</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igQSeg"><span class="lab" id="igQLab">Sifat</span><span class="sv" id="igQVal">High</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igNSeg"><span class="lab">Soni</span><span class="sv" id="igNVal">1</span><span class="sc">▾</span></div>
@@ -3269,6 +3269,10 @@ html.home-mode #homePage{display:block!important}
                           <div class="sheet" id="igProjSheet"><div class="sheetc">
                             <div class="sheeth"><b>Project footage</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div id="igProjList"><div class="axighint">Yuklanmoqda…</div></div>
+                            <div id="igProjFoot" style="display:none;align-items:center;gap:8px;margin-top:10px">
+                              <span id="igProjInfo" style="font-size:11px;color:var(--mut2)">0 tanlandi</span>
+                              <button type="button" id="igProjAdd" style="margin-left:auto;background:var(--acc);color:var(--acc-ink);border:0;border-radius:9px;padding:8px 14px;font-weight:700;cursor:pointer">Qo'shish</button>
+                            </div>
                           </div></div>
 
                           <!-- o'lcham -->
@@ -9772,7 +9776,14 @@ window.afGallery=(function(){
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function cost(){ return meta.hasQuality ? (meta.qcost[st.q]||12)*st.n : (meta.flatCost||4)*st.n; }
   function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
-  function recost(){ var sc=$('igCost'); if(sc)sc.textContent='✦'+cost(); var g=$('igGen'); if(g)g.title='Yaratish (✦'+cost()+')'; }
+  function recost(){
+    var sc=$('igCost'), c=cost();
+    if(sc){ sc.textContent='✦'+c;
+      sc.title=meta.hasQuality
+        ? ('Narx ≈ ✦'+(meta.qcost[st.q]||12)+'/rasm × '+st.n+' = ✦'+c)
+        : ('Sobit narx: ✦'+(meta.flatCost||4)+'/rasm × '+st.n+' = ✦'+c); }
+    var g=$('igGen'); if(g)g.title='Yaratish (✦'+c+')';
+  }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
   window.axIGRefresh=refresh;
 
@@ -9822,7 +9833,10 @@ window.afGallery=(function(){
   // Tanlangan modelni qo'llaydi: refMode/maxRefs/aspects/quals/qcost/counts + default'lar.
   // refMode='none' (t2i) → referenslar tozalanadi (referenssiz model).
   function setModel(m){
-    if(!m)return;
+    if(!m)return false;
+    // H2: yangi model referenssiz (refMode none) bo'lsa va biriktirilgan referens bo'lsa — avval tasdiq (video naqshi).
+    if(m.refMode==='none' && st.refs.length>0 && typeof confirm==='function'
+       && !confirm('«'+(m.label||'Bu model')+'»da referens ishlatilmaydi — biriktirilgan rasmlar olib tashlanadi. Davom etamizmi?')) return false;
     meta.modelId=m.id; meta.key=m.key; meta.label=m.label||meta.label;
     meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||0;
     // MODEL-AWARE: sozlama deskriptoridan (imgSettings) — bo'lmasa eski flat fieldlar (orqaga moslik).
@@ -9840,6 +9854,7 @@ window.afGallery=(function(){
     st.ar=meta.aspDef; st.q=meta.qDefault; st.n=meta.counts[0]||1;
     if(meta.refMode==='none'){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
     applyMeta();
+    return true;
   }
   var BRAND_SVG={
     openai:'<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#10a37f"/><circle cx="11" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg>',
@@ -9858,7 +9873,7 @@ window.afGallery=(function(){
       var ico=BRAND_SVG[m.brand]||'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
       var o=document.createElement('div'); o.className='opt'+(cur?' cur':'');
       o.innerHTML='<div class="oi">'+ico+'</div><div><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+(cur?'<span class="tick">✓</span>':'');
-      o.addEventListener('click',function(){ if(m.id!==meta.modelId){ setModel(m); renderModelSheet(); toast(m.label+' tanlandi','info'); } closeSheets(); });
+      o.addEventListener('click',function(){ if(m.id!==meta.modelId){ if(setModel(m)!==false){ renderModelSheet(); toast(m.label+' tanlandi','info'); } } closeSheets(); });
       host.appendChild(o);
     });
   }
@@ -9934,7 +9949,12 @@ window.afGallery=(function(){
       g.appendChild(t); // igRefAdd endi prow'da — grid faqat reftile'lar (bo'sh bo'lsa CSS yashiradi)
     });
   }
-  function updRefMeta(){ $('igRefMeta').textContent=st.refs.length+' ta referens'; }
+  function updRefMeta(){
+    var el=$('igRefMeta'); if(!el)return;
+    var max=meta.maxRefs||0;
+    // Limitni OLDINDAN ko'rsatamiz (N / max) + edit modelда "majburiy" ogohlantirish.
+    el.textContent=st.refs.length+(max?(' / '+max):'')+' referens'+((meta.refMode==='required'&&st.refs.length===0)?' · majburiy':'');
+  }
 
   // dataUrl → push (spinner) → R2 yuklash → ref.url; xato bo'lsa olib tashlash
   function addRef(dataUrl){
@@ -10028,6 +10048,22 @@ window.afGallery=(function(){
     if(st.refs.length>=meta.maxRefs){ toast('Maks '+meta.maxRefs+' ta referens','warning'); return; }
     openSheet('igAddSheet',$('igRefAdd')); // manba menyu — ＋Referens tugmasiga bog'lab (popover)
   });
+  // Copy-paste: clipboarddagi RASM → referens (rasm tool ko'rinib turganda; matn promptga odatdagidek yopishadi).
+  document.addEventListener('paste',function(e){
+    try{
+      if(meta.refMode==='none')return; // referenssiz model — referens qabul qilmaydi
+      var ip=$('igPrompt'); if(!ip||ip.offsetParent===null)return; // rasm tool ko'rinmasa — aralashmaymiz
+      var items=(e.clipboardData&&e.clipboardData.items)||[];
+      var img=null; for(var i=0;i<items.length;i++){ if(items[i].type&&items[i].type.indexOf('image/')===0){ img=items[i]; break; } }
+      if(!img)return;
+      e.preventDefault();
+      if(st.refs.length>=meta.maxRefs){ toast('Maks '+meta.maxRefs+' ta referens','warning'); return; }
+      var blob=img.getAsFile(); if(!blob)return;
+      var rd=new FileReader();
+      rd.onload=function(){ addRef(String(rd.result||'')); toast('Rasm clipboarddan qo\'shildi','success'); };
+      rd.readAsDataURL(blob);
+    }catch(_){}
+  });
   // 1) Fayl yuklash
   $('igSrcFile').addEventListener('click',function(){
     closeSheets();
@@ -10037,25 +10073,41 @@ window.afGallery=(function(){
     var paths=(r&&r.data)||[];
     try{console.log('[ig] showOpenDialog →',paths.length,'fayl:',paths);}catch(_){}
     if(!paths.length)return; // bekor qilindi
-    paths.forEach(function(p){ if(!isImg(p))return; var d=readDataUrl(p); if(d)addRef(d); else toast('Faylni o\'qib bo\'lmadi: '+base(p)+readErr(),'error'); });
+    // Bo'sh slot qadar qo'shamiz (limitдан oshmaydi) + bitta umumiy ogohlantirish (spam emas).
+    var imgs=paths.filter(isImg), slots=Math.max(0,(meta.maxRefs||0)-st.refs.length), take=imgs.slice(0,slots);
+    take.forEach(function(p){ var d=readDataUrl(p); if(d)addRef(d); else toast('Faylni o\'qib bo\'lmadi: '+base(p)+readErr(),'error'); });
+    if(imgs.length>take.length)toast(take.length+' ta qo\'shildi (maks '+meta.maxRefs+')','info');
   });
-  // 2) Project paneldan
+  // 2) Project paneldan — CHECKBOX multi-select (birdaniga bir nechta rasm; video tool naqshi)
   $('igSrcProj').addEventListener('click',function(){
     closeSheets();
     if(typeof csInterface==='undefined'||!csInterface){ toast('Project paneldan faqat After Effects ichida','info'); return; }
+    var sel={}, foot=$('igProjFoot'), info=$('igProjInfo'), addBtn=$('igProjAdd');
+    if(foot)foot.style.display='flex';
+    function slotsLeft(){ return Math.max(0,(meta.maxRefs||0)-st.refs.length); }
+    function refreshFoot(){ var n=Object.keys(sel).length; if(info)info.textContent=n+' tanlandi · bo\'sh joy '+slotsLeft(); if(addBtn){ addBtn.textContent='Qo\'shish'+(n?(' ('+n+')'):''); addBtn.style.opacity=n?'1':'.5'; } }
+    if(addBtn)addBtn.onclick=function(){ var paths=Object.keys(sel); if(!paths.length){ toast('Avval belgilang','warning'); return; } paths.forEach(function(p){ if(st.refs.length>=meta.maxRefs)return; var d=readDataUrl(p); if(d)addRef(d); else toast('Faylni o\'qib bo\'lmadi: '+base(p)+readErr(),'error'); }); closeSheets(); };
     $('igProjList').innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openSheet('igProjSheet',$('igRefAdd'));
     hostCall('listProjectFootage').then(function(r){
       if(!$('igProjList'))return;
-      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; return; }
+      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; return; }
       var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
-      if(!items.length){ $('igProjList').innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; return; }
+      if(!items.length){ $('igProjList').innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; if(foot)foot.style.display='none'; return; }
       $('igProjList').innerHTML='';
       items.forEach(function(it){
+        var mp=it.mediaPath||'';
         var o=document.createElement('div'); o.className='opt';
-        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||base(it.mediaPath)).replace(/[<>]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div>';
-        o.addEventListener('click',function(){ closeSheets(); try{console.log('[ig] project pick:',it.mediaPath);}catch(_){} var d=readDataUrl(it.mediaPath); if(d)addRef(d); else toast('Faylni o\'qib bo\'lmadi: '+base(it.mediaPath)+readErr(),'error'); });
+        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||base(mp)).replace(/[<>]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
+        (function(path,row){ o.addEventListener('click',function(){
+          if(!path)return;
+          var chk=row.querySelector('.igprojchk');
+          if(sel[path]){ delete sel[path]; row.style.background=''; if(chk)chk.textContent='○'; }
+          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Bo\'sh joy yetarli emas (≤'+slotsLeft()+')','warning'); return; } sel[path]=true; row.style.background='rgba(194,240,74,.10)'; if(chk)chk.textContent='✓'; }
+          refreshFoot();
+        }); })(mp,o);
         $('igProjList').appendChild(o);
       });
+      refreshFoot();
     }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
   });
   // 3) Timeline'dan (joriy kadr → PNG)
@@ -10117,7 +10169,7 @@ window.afGallery=(function(){
     try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
-      if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
+      if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast((e&&e.safetyAdjusted?'Prompt yaxshilandi va safety uchun yumshatildi ✨':'Prompt yaxshilandi ✨')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Yaxshilab bo\'lmadi','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });

@@ -528,32 +528,32 @@ export const GEN_MODELS: GenModel[] = [
   // ── MAGNIFIC DEDICATED TOOLS (faqat GEN_PROVIDER=magnific; manba rasm yeydi, image-edit refMode) ──
   {
     id: 1201, mode: "image", key: "magnific/image-upscaler", label: "Magnific Upscaler",
-    feature: "image-edit", cost: 12, magnificTool: "image-upscaler", magnificOnly: true,
+    feature: "image-edit", cost: 12, magnificTool: "image-upscaler", magnificOnly: true, enabled: false, // B6: GEN_PROVIDER=magnific dormant — katalogdan yashirin + gen bloklangan (charge-then-fail oldini olish)
     referenceMode: "image-edit", inputs: ["image-ref"], resolutions: IMG_QUALITY,
   },
   {
     id: 1202, mode: "image", key: "magnific/image-relight", label: "Magnific Relight",
-    feature: "image-edit", cost: 8, magnificTool: "image-relight", magnificOnly: true,
+    feature: "image-edit", cost: 8, magnificTool: "image-relight", magnificOnly: true, enabled: false, // B6: GEN_PROVIDER=magnific dormant — katalogdan yashirin + gen bloklangan (charge-then-fail oldini olish)
     referenceMode: "image-edit", inputs: ["image-ref"],
   },
   {
     id: 1203, mode: "image", key: "magnific/image-change-camera", label: "Magnific Change Camera",
-    feature: "image-edit", cost: 8, magnificTool: "image-change-camera", magnificOnly: true,
+    feature: "image-edit", cost: 8, magnificTool: "image-change-camera", magnificOnly: true, enabled: false, // B6: GEN_PROVIDER=magnific dormant — katalogdan yashirin + gen bloklangan (charge-then-fail oldini olish)
     referenceMode: "image-edit", inputs: ["image-ref"],
   },
   {
     id: 1204, mode: "image", key: "magnific/skin-enhancer", label: "Magnific Skin Enhancer",
-    feature: "image-edit", cost: 5, magnificTool: "skin-enhancer/flexible", magnificOnly: true,
+    feature: "image-edit", cost: 5, magnificTool: "skin-enhancer/flexible", magnificOnly: true, enabled: false, // B6: GEN_PROVIDER=magnific dormant — katalogdan yashirin + gen bloklangan (charge-then-fail oldini olish)
     referenceMode: "image-edit", inputs: ["image-ref"],
   },
   {
     id: 1205, mode: "image", key: "magnific/image-expand", label: "Magnific Image Extender",
-    feature: "image-edit", cost: 6, magnificTool: "image-expand/flux-pro", magnificOnly: true,
+    feature: "image-edit", cost: 6, magnificTool: "image-expand/flux-pro", magnificOnly: true, enabled: false, // B6: GEN_PROVIDER=magnific dormant — katalogdan yashirin + gen bloklangan (charge-then-fail oldini olish)
     referenceMode: "image-edit", inputs: ["image-ref"],
   },
   {
     id: 1206, mode: "image", key: "magnific/remove-background", label: "Magnific Remove BG",
-    feature: "image-edit", cost: 3, magnificTool: "beta/remove-background", magnificOnly: true,
+    feature: "image-edit", cost: 3, magnificTool: "beta/remove-background", magnificOnly: true, enabled: false, // B6: GEN_PROVIDER=magnific dormant — katalogdan yashirin + gen bloklangan (charge-then-fail oldini olish)
     referenceMode: "image-edit", inputs: ["image-ref"],
   },
 
