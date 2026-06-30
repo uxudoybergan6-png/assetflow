@@ -1,9 +1,11 @@
-# SESSION REPORT — 2026-06-30 — Rasm tool: Sozlamalar/So'nggi alohida kartalarga
+# SESSION REPORT — 2026-06-30 — Video ⇄ Rasm tez almashtirgich
 
-Faqat `AssetFlow_Plugin.html` (node ✓). Muammo: rasm-gen'da Sozlamalar va So'nggi flat `.sect` edi (video tool'da har biri alohida `.vpanel` kartada).
+Faqat `AssetFlow_Plugin.html` (node ✓). Muammo: video gen ketayotganda rasm gen'ga o'tib-kelish qiyin edi (har safar AI Tools launcher orqali).
 
-- Rasm tool 3 bo'limi endi `.vpanel` kartalarga o'raldi (video bilan teng): **compose-panel** (Prompt+referens), **settings-panel** (Sozlamalar), **recent-panel** (So'nggi grid). Div balans tekshirildi (compose/settings/recent → outer).
-- CSS: `.axig .vpanel{...}` qo'shildi (border + radius:20 + bg + padding; `.sect` reset; seg/rc radius; recent morelink ko'k) — `.axvg .vpanel` ni 1:1 takrorlaydi.
-- Avvalgi (shu sessiya): rasm So'nggi loading/error/retry holatlari + lazy/async thumbnail (tezlik); rasm tool parity (paste, project multi-select, model-switch confirm, limitlar, narx tooltip, neytral default); magnific 1201-1206 enabled:false; enhance META fix; video 3-concurrent + Tozalash + parallel preflight.
+- Ikkala tool header'idagi statik sarlavha o'rniga **Video|Rasm segmented toggle** (`.tabsw`) qo'yildi. Faol tomon yoritilgan; ikkinchi tomon bosilsa `window.axGo('vidgen'|'imggen')` orqali darrov o'tadi (go() marshruti).
+- CSS `.axroot .tabsw` (pill, ikkala tool'da). Ikonalar: video=kamera, rasm=surat.
+- Eslatma: video gen ketayotganda boshqa tool'ga o'tilsa, server-tomonда davom etadi va natija "So'nggi"/Tarixда chiqadi (jonli progress bar mahalliy to'xtaydi — bu mavjud xulq). To'liq cross-tool jonli kuzatish — kattaroq ish (keyingi).
 
-Kutilmoqda: push + AE qayta o'rnatildi + jonli test (3 ta alohida quti ko'rinishi).
+Avval (shu sessiya): rasm tool video bilan teng (vpanel kartalar, paste, project multi-select, model-switch confirm, limit/narx/neytral default, So'nggi loading+lazy); magnific disable; enhance META fix; video 3-concurrent + Tozalash.
+
+Kutilmoqda: push + AE qayta o'rnatildi + jonli test (header'da toggle, almashtirish).
