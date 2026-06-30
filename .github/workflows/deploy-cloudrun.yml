@@ -2,8 +2,9 @@ name: Deploy API to Cloud Run
 
 # main'ga apps/api yoki packages/database o'zgarsa, avtomatik Cloud Run'ga deploy
 # qiladi (Cloud Shell'da qo'lda bash deploy-cloudrun.sh ishlatishga o'rin qoldirmaydi).
-# Kerakli repo secret'lar: GCP_SA_KEY (deploy uchun service account JSON kaliti),
-# CLOUDRUN_ENV_YAML (cloudrun-env.yaml fayl tarkibi, butunligicha).
+# Auth — Workload Identity Federation (kalitsiz; org policy JSON kalit yaratishni
+# bloklagani uchun). Kerakli repo secret: CLOUDRUN_ENV_YAML (cloudrun-env.yaml
+# fayl tarkibi, butunligicha).
 
 on:
   push:
@@ -23,12 +24,15 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
   PROJECT: project-289028d3-984c-4d84-bd4
   REGION: europe-west1
   SERVICE: assetflow-api
   REPO: assetflow
+  WIF_PROVIDER: projects/331762958776/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  WIF_SERVICE_ACCOUNT: github-deployer@project-289028d3-984c-4d84-bd4.iam.gserviceaccount.com
 
 jobs:
   deploy:
@@ -41,7 +45,8 @@ jobs:
       - name: Auth to GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
