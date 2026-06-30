@@ -126,6 +126,9 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Res
         return;
       }
     }
+    // Bulut sozlangan — diskka tushmaymiz (Cloud Run diski ephemeral).
+    res.status(404).json({ error: "Sahna preview topilmadi" });
+    return;
   }
 
   const filePath = findScenePreview(templateId, key);
@@ -225,6 +228,9 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Req
       res.redirect(302, getPublicUrl(s3Key));
       return;
     }
+    // Bulut sozlangan — diskka tushmaymiz (Cloud Run diski ephemeral).
+    res.status(404).json({ error: "MOGRT fayl topilmadi" });
+    return;
   }
 
   const filePath = findMogrtFile(templateId, slug);

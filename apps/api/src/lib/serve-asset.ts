@@ -2,7 +2,12 @@ import fs from "fs";
 import path from "path";
 import type { Request, Response } from "express";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
-import { getPublicUrl, getSignedDownloadUrl, resolveS3AssetKey } from "./s3.js";
+import {
+  getPublicUrl,
+  getSignedDownloadUrl,
+  isS3Configured,
+  resolveS3AssetKey,
+} from "./s3.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
   thumb: "image/jpeg",
@@ -26,6 +31,14 @@ export async function serveTemplateAsset(
         ? await getSignedDownloadUrl(s3Key, 300)
         : getPublicUrl(s3Key);
     res.redirect(302, url);
+    return;
+  }
+
+  // Bulut sozlangan bo'lsa — diskka umuman tushmaymiz (Cloud Run diski
+  // ephemeral, "muvaqqat mavjud" fayl chalg'ituvchi bo'lardi). Disk fallback
+  // faqat S3 sozlanmagan lokal dev muhitida ishlaydi.
+  if (isS3Configured()) {
+    res.status(404).json({ error: "Fayl topilmadi" });
     return;
   }
 

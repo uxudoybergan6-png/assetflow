@@ -685,8 +685,9 @@ async function storeMogrtScenesFromZip(
     const scenesDirPath = ensureScenesDir(id);
     for (const th of thumbs) {
       const fileName = `${th.previewKey}${th.ext}`;
+      const destPath = path.join(scenesDirPath, fileName);
       try {
-        fs.copyFileSync(th.path, path.join(scenesDirPath, fileName));
+        fs.copyFileSync(th.path, destPath);
       } catch (e) {
         console.warn(`[mogrt-extract] thumb disk copy xato (${fileName}):`, e);
       }
@@ -699,6 +700,11 @@ async function storeMogrtScenesFromZip(
           );
         } catch (e) {
           console.error(`[mogrt-extract] thumb R2 upload xato (${fileName}):`, e);
+          // Fail-closed: bulutga yozilmagan nusxa diskda qolmasin (Cloud Run
+          // diski ephemeral — disk-only fayl serve qilinmaydi, faqat chalkashtiradi).
+          try {
+            fs.rmSync(destPath, { force: true });
+          } catch {}
         }
       }
     }
@@ -709,10 +715,11 @@ async function storeMogrtScenesFromZip(
       const m = mogrts[mi];
       onScene?.(mi + 1, mogrts.length);
       const fileName = `${m.slug}.mogrt`;
+      const destPath = path.join(ensureMogrtDir(id), fileName);
       let diskSaved = false;
       let r2Saved = false;
       try {
-        fs.copyFileSync(m.path, path.join(ensureMogrtDir(id), fileName));
+        fs.copyFileSync(m.path, destPath);
         diskSaved = true;
       } catch (e) {
         console.warn(`[mogrt-extract] mogrt disk copy xato (${fileName}):`, e);
@@ -727,9 +734,15 @@ async function storeMogrtScenesFromZip(
           r2Saved = true;
         } catch (e) {
           console.error(`[mogrt-extract] mogrt R2 upload xato (${fileName}):`, e);
+          // Fail-closed: bulutga yozilmagan nusxa diskda qolmasin.
+          if (diskSaved) {
+            try {
+              fs.rmSync(destPath, { force: true });
+            } catch {}
+          }
         }
       }
-      // #13: dangling mogrtKey'ning oldini olish. Render disk ephemeral —
+      // #13: dangling mogrtKey'ning oldini olish. Cloud Run diski ephemeral —
       // R2 sozlangan bo'lsa sahna faqat R2 upload MUVAFFAQ bo'lgandagina
       // import qilinadi. Shu bois S3 bor bo'lsa mogrtKey'ni faqat r2Saved
       // bo'lsa yozamiz (disk copy xato yutilmaydi, lekin u yetarli emas).
@@ -954,9 +967,14 @@ contributorRouter.post(
       } catch {}
     }
 
-    // S3/R2 ga sync (cloud deployment). Pack — fail-closed: bulutga yozilmasa
-    // diskdagi nusxa o'chiriladi va aniq xato qaytadi (Render diski vaqtinchalik,
-    // jim o'tilsa pack keyinroq g'oyib bo'ladi).
+    // S3/R2 ga sync (cloud deployment) — TO'LIQ fail-closed: bulutga
+    // yozilmasa diskdagi nusxa o'chiriladi (Cloud Run diski ephemeral,
+    // jim o'tilsa fayl keyinroq g'oyib bo'ladi va hech qachon serve
+    // qilinmaydi — shu bois disk-only holat saqlanmaydi). Pack uchun
+    // butun so'rov 502 bilan to'xtaydi; thumb/preview uchun yuklash
+    // davom etadi, lekin muvaffaqiyatsiz bo'lgan kind javobda false
+    // qaytariladi (frontend qayta urinishi mumkin).
+    const cloudSyncFailed = new Set<string>();
     if (isS3Configured()) {
       setUploadProgress(id, {
         stage: "sync",
@@ -978,10 +996,10 @@ contributorRouter.post(
           );
         } catch (s3Err) {
           console.error(`S3 upload error (${kind}):`, s3Err);
+          try {
+            fs.rmSync(file.path, { force: true });
+          } catch {}
           if (kind === "pack") {
-            try {
-              fs.rmSync(file.path, { force: true });
-            } catch {}
             const errText =
               "Pack faylni bulut xotirasiga yozib bo'lmadi — bir ozdan so'ng qayta urinib ko'ring";
             setUploadProgress(id, {
@@ -994,6 +1012,7 @@ contributorRouter.post(
             res.status(502).json({ error: errText });
             return;
           }
+          cloudSyncFailed.add(kind);
         }
       }
     }
@@ -1058,8 +1077,8 @@ contributorRouter.post(
     res.json({
       ok: true,
       uploaded: {
-        thumb: !!thumb,
-        preview: !!preview,
+        thumb: !!thumb && !cloudSyncFailed.has("thumb"),
+        preview: !!preview && !cloudSyncFailed.has("preview"),
         pack: !!pack,
       },
     });
@@ -1120,8 +1139,11 @@ contributorRouter.post(
       return;
     }
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const failedKeys = new Set<string>();
 
-    // Scene preview'larni S3/R2 ga sync
+    // Scene preview'larni S3/R2 ga sync — fail-closed: bulutga yozilmasa
+    // diskdagi nusxa o'chiriladi (Cloud Run diski ephemeral, disk-only
+    // fayl hech qachon serve qilinmaydi).
     if (isS3Configured() && files.length) {
       for (const f of files) {
         try {
@@ -1132,14 +1154,20 @@ contributorRouter.post(
           await uploadFileToS3(f.path, `templates/${id}/scenes/${f.filename}`, ct);
         } catch (s3Err) {
           console.error("Scene S3 upload error:", s3Err);
+          failedKeys.add(sceneKey(f.fieldname));
+          try {
+            fs.rmSync(f.path, { force: true });
+          } catch {}
         }
       }
     }
 
+    const okFiles = files.filter((f) => !failedKeys.has(sceneKey(f.fieldname)));
     res.json({
-      ok: true,
-      count: files.length,
-      keys: files.map((f) => sceneKey(f.fieldname)),
+      ok: failedKeys.size === 0,
+      count: okFiles.length,
+      keys: okFiles.map((f) => sceneKey(f.fieldname)),
+      ...(failedKeys.size ? { failed: Array.from(failedKeys) } : {}),
     });
   }
 );

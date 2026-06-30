@@ -203,11 +203,16 @@ export async function templateAssetFlags(
   knownS3Keys?: Set<string>
 ) {
   const kinds: TemplateAssetKind[] = ["thumb", "preview", "pack"];
-  const assets: Record<TemplateAssetKind, boolean> = {
-    thumb: !!findAssetPath(templateId, "thumb"),
-    preview: !!findAssetPath(templateId, "preview"),
-    pack: !!findAssetPath(templateId, "pack"),
-  };
+  // Bulut sozlangan bo'lsa diskni umuman tekshirmaymiz — serve-asset endi
+  // bulutda topilmagan faylni diskdan bermaydi, shu bois disk-only mavjudlik
+  // "hasPack: true" deb noto'g'ri reklama qilinmasligi kerak.
+  const assets: Record<TemplateAssetKind, boolean> = isS3Configured()
+    ? { thumb: false, preview: false, pack: false }
+    : {
+        thumb: !!findAssetPath(templateId, "thumb"),
+        preview: !!findAssetPath(templateId, "preview"),
+        pack: !!findAssetPath(templateId, "pack"),
+      };
   if (isS3Configured()) {
     if (knownS3Keys) {
       for (const kind of kinds) {

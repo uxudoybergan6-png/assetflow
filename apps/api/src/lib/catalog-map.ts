@@ -77,10 +77,13 @@ async function enrichScenesAsync(
       if (!key) return s;
 
       const useS3 = isS3Configured();
+      // Bulut sozlangan bo'lsa diskni umuman tekshirmaymiz — serve-asset
+      // endi S3'da topilmagan sahna faylini diskdan bermaydi, shu bois
+      // disk-only mavjudlik bu yerda ham e'tiborga olinmasligi kerak.
 
-      // Video preview: lokal disk (dev) yoki R2.
-      const videoFile = findSceneVideo(templateId, key);
-      const videoS3 = !videoFile && useS3
+      // Video preview: lokal disk (S3 sozlanmagan dev) yoki R2/GCS.
+      const videoFile = useS3 ? null : findSceneVideo(templateId, key);
+      const videoS3 = useS3
         ? await resolveSceneS3Key(templateId, key, SCENE_VIDEO_EXTS, knownS3Keys)
         : null;
       if (videoFile || videoS3) {
@@ -98,7 +101,7 @@ async function enrichScenesAsync(
               knownS3Keys
             )
           : null;
-        const imgFile = findScenePreview(templateId, key);
+        const imgFile = useS3 ? null : findScenePreview(templateId, key);
         if (thumbS3) {
           s.thumb = withCacheBust(getPublicUrl(thumbS3), cacheBust);
         } else if (imgFile && !sceneFileIsVideo(imgFile)) {
@@ -106,8 +109,8 @@ async function enrichScenesAsync(
         }
       } else {
         // Rasm preview
-        const previewFile = findScenePreview(templateId, key);
-        const imgS3 = !previewFile && useS3
+        const previewFile = useS3 ? null : findScenePreview(templateId, key);
+        const imgS3 = useS3
           ? await resolveSceneS3Key(templateId, key, SCENE_IMAGE_EXTS, knownS3Keys)
           : null;
         if (imgS3) {
