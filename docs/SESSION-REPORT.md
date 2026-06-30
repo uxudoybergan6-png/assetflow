@@ -1,13 +1,11 @@
-# SESSION REPORT — 2026-06-30 — "Yaxshilash" (enhance) sekinligi: sabab + tuzatish
+# SESSION REPORT — 2026-06-30 — "Yaxshilash" tezligi: 100% fal, lekin tez
 
-SABAB (kod tahlili): enhance har doim **fal QUEUE** orqali ketardi (`falEnhancePrompt` → `falSubmit` = submit + POLL). Har chaqiruv:
-1. fal queue overhead — submit + birinchi pollдан OLDIN `sleep(600ms)` + status GET + response GET.
-2. 3 sakrash: Render → fal queue → fal worker → OpenRouter → gemini-2.5-flash.
-3. Referensли holatda KETMA-KET: rasm tahlili + har video + har audio + yakuniy birlashtirish (hammasi alohida queue submit+poll) → ko'paytiriladi.
-(JSON/describe yo'li allaqachon to'g'ridan-to'g'ri OpenRouter (`orChatSys`) — tezroq edi; text-enhance esa fal'da qolgan edi.)
+Foydalanuvchi: hammasi fal'da bo'lsin (OpenRouter to'g'ridan-to'g'ri emas). Shunga moslab fal yo'lining O'ZI tezlashtirildi.
 
-TUZATISH (1-bosqich, `studio-gen.ts`, tsc ✓):
-- **Referenssiz (faqat matn) enhance → to'g'ridan-to'g'ri OpenRouter (sync)** `orChatSys(gemini-2.5-flash)` — fal queue/poll/3-hop overhead'siz. Eng keng tarqalgan holat (ikkala tool) sezilarli tezlashadi. META-blok yo'qligi (ctx) saqlanadi. OpenRouter sozlanmagan bo'lsa → fal'ga qaytadi.
-- Referens (rasm/video/audio) holati hali fal'da (vision/video/audio understanding faqat fal'da). Keyingi: rasm-only'ni OpenRouter vision'ga + multimodal tahlilni PARALLEL qilish.
+- **Revert:** oldingi "referenssiz → to'g'ridan-to'g'ri OpenRouter" yo'li olib tashlandi. Enhance endi 100% fal (`falEnhancePrompt`).
+- **fal SYNC** (`https://fal.run/<model>`) qo'shildi (`falRun` + `falRunOrQueue`) — queue submit + `sleep(600ms)` + status/response poll'siz, natija darrov. Enhance ning hamma LLM/vision/video/audio chaqiruvlari endi SYNC; muvaffaqiyatsiz bo'lsa avtomatik QUEUE'ga qaytadi (har holда fal'da).
+- **Parallel:** rasm + har video + har audio tahlili endi `Promise.all` (avval ketma-ket edi) → referensли enhance sezilarli tez.
+- studio-gen text yo'li yana `falEnhancePrompt`ga; OrResult/OpenRouter detour olib tashlandi.
 
-⚠️ Backend o'zgardi — **push → Render deploy** SHART (aks holda eski sekin yo'l). Frontend tegilmadi.
+Natija: enhance ancha tez (queue/poll overhead yo'q + parallel), va 100% fal. tsc ✓.
+⚠️ Backend o'zgardi — **push → Render deploy** SHART. Plagin tegilmadi.

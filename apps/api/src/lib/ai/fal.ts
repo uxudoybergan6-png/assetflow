@@ -167,6 +167,44 @@ async function falSubmit(
   return falPollJob(sub.data, opts);
 }
 
+const SYNC_BASE = "https://fal.run"; // SYNC — natijani to'g'ridan-to'g'ri qaytaradi (queue submit+poll YO'Q)
+/** fal SYNC chaqiruv — tez modellar (LLM/vision/understanding) uchun: navbat ortig'isiz darrov javob. */
+async function falRun(
+  modelId: string,
+  input: Record<string, unknown>,
+  timeoutMs = 90000
+): Promise<OrResult<unknown>> {
+  if (!isFalConfigured()) return NOT_CONFIGURED;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(`${SYNC_BASE}/${modelId}`, {
+      method: "POST",
+      headers: falHeaders(),
+      body: JSON.stringify(input),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "fal sync ulanmadi" };
+  } finally {
+    clearTimeout(t);
+  }
+  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
+  const out = await safeJson(res);
+  if (out == null) return { ok: false, error: "fal: bo'sh natija" };
+  return { ok: true, data: out };
+}
+/** Avval SYNC (tez); muvaffaqiyatsiz bo'lsa QUEUE'ga qaytadi — har holda 100% fal'da. */
+async function falRunOrQueue(
+  modelId: string,
+  input: Record<string, unknown>
+): Promise<OrResult<unknown>> {
+  const r = await falRun(modelId, input);
+  if (r.ok) return r;
+  return falSubmit(modelId, input);
+}
+
 /**
  * fal video natija URL'ini Buffer'ga yuklaydi. gen-processor model-aware extractFalVideoUrl bilan
  * javobdan URL'ni topib shu yerga beradi. Eski qo'lda-yozilgan falVideo/falRefVideo dublikatlari
@@ -341,36 +379,61 @@ export async function falEnhancePrompt(
   };
   const notes: string[] = [];
 
-  if (refs.length) {
-    const img = await falSubmit("openrouter/router/vision", {
-      image_urls: refs,
-      prompt: text,
-      model: OPENROUTER_VISION_MODEL,
+  // TEZLIK: rasm + har video + har audio tahlili PARALLEL (ketma-ket emas) va SYNC fal (queue+poll'siz).
+  const imgTask: Promise<OrResult<unknown>> | null = refs.length
+    ? falRunOrQueue("openrouter/router/vision", {
+        image_urls: refs,
+        prompt: text,
+        model: OPENROUTER_VISION_MODEL,
+        system_prompt:
+          `${role} Referens rasmlar tartibda: 1-rasm=@img1, 2-rasm=@img2, ... ` +
+          `Foydalanuvchi matni bilan birga rasmlarni tahlil qil va faqat prompt uchun foydali kuzatuvlarni yoz. ` +
+          "Subyekt, kompozitsiya, uslub, material, rang, yorug'lik, fon, kayfiyat va muhim vizual cheklovlarni qisqa paragrafda qaytar. " +
+          `KIRISH TILINI saqla.${tokenHint}${safetyHint}${modelContext} Faqat tahlil yoz, final prompt yozma.`,
+        temperature: 0.4,
+        max_tokens: 350,
+      })
+    : null;
+  const vidTasks = vids.map((v) =>
+    falRunOrQueue(FAL_VIDEO_UNDERSTANDING_MODEL, {
+      video_url: v,
+      prompt:
+        "Analyze this video reference for an AI generation prompt. Describe only the useful prompt cues: " +
+        "subject, action, camera movement, framing, speed, pacing, transitions, environment, lighting, mood, texture, and notable motion details. " +
+        "Return one concise paragraph in the same language as the user's request if possible.",
+      detailed_analysis: true,
+    })
+  );
+  const audTasks = auds.map((a) =>
+    falRunOrQueue(NEMOTRON_AUDIO_MODEL, {
+      prompt:
+        "Analyze this audio reference for an AI generation prompt. " +
+        "Describe only the useful prompt cues: mood, rhythm, pacing, intensity, instruments or sound design, ambience, and any spoken content. " +
+        "Return one concise paragraph in the same language as the user's request if possible.",
       system_prompt:
-        `${role} Referens rasmlar tartibda: 1-rasm=@img1, 2-rasm=@img2, ... ` +
-        `Foydalanuvchi matni bilan birga rasmlarni tahlil qil va faqat prompt uchun foydali kuzatuvlarni yoz. ` +
-        "Subyekt, kompozitsiya, uslub, material, rang, yorug'lik, fon, kayfiyat va muhim vizual cheklovlarni qisqa paragrafda qaytar. " +
-        `KIRISH TILINI saqla.${tokenHint}${safetyHint}${modelContext} Faqat tahlil yoz, final prompt yozma.`,
-      temperature: 0.4,
-      max_tokens: 350,
-    });
-    if (!img.ok) return img;
-    const note = pickText(img.data);
+        "You analyze an audio clip and return only concise prompt-useful observations. No markdown. No bullet list. No reasoning trace.",
+      reasoning_mode: "no_think",
+      max_tokens: 220,
+      temperature: 0.3,
+      top_p: 0.9,
+      audio_url: a,
+    })
+  );
+  const [imgRes, vidResults, audResults] = await Promise.all([
+    imgTask ?? Promise.resolve(null),
+    Promise.all(vidTasks),
+    Promise.all(audTasks),
+  ]);
+  if (imgRes) {
+    if (!imgRes.ok) return imgRes;
+    const note = pickText(imgRes.data);
     if (!note) return { ok: false, error: "fal: image enhance bo'sh javob qaytardi" };
     notes.push(`Image reference analysis:\n${note}`);
   }
-
   if (vids.length) {
     const videoNotes: string[] = [];
-    for (let i = 0; i < vids.length; i++) {
-      const vr = await falSubmit(FAL_VIDEO_UNDERSTANDING_MODEL, {
-        video_url: vids[i],
-        prompt:
-          "Analyze this video reference for an AI generation prompt. Describe only the useful prompt cues: " +
-          "subject, action, camera movement, framing, speed, pacing, transitions, environment, lighting, mood, texture, and notable motion details. " +
-          "Return one concise paragraph in the same language as the user's request if possible.",
-        detailed_analysis: true,
-      });
+    for (let i = 0; i < vidResults.length; i++) {
+      const vr = vidResults[i];
       if (!vr.ok) return vr;
       const note = pickText(vr.data);
       if (!note) return { ok: false, error: "fal: video enhance bo'sh javob qaytardi" };
@@ -378,23 +441,10 @@ export async function falEnhancePrompt(
     }
     notes.push(`Video reference analysis:\n${videoNotes.join("\n")}`);
   }
-
   if (auds.length) {
     const audioNotes: string[] = [];
-    for (let i = 0; i < auds.length; i++) {
-      const ar = await falSubmit(NEMOTRON_AUDIO_MODEL, {
-        prompt:
-          "Analyze this audio reference for an AI generation prompt. " +
-          "Describe only the useful prompt cues: mood, rhythm, pacing, intensity, instruments or sound design, ambience, and any spoken content. " +
-          "Return one concise paragraph in the same language as the user's request if possible.",
-        system_prompt:
-          "You analyze an audio clip and return only concise prompt-useful observations. No markdown. No bullet list. No reasoning trace.",
-        reasoning_mode: "no_think",
-        max_tokens: 220,
-        temperature: 0.3,
-        top_p: 0.9,
-        audio_url: auds[i],
-      });
+    for (let i = 0; i < audResults.length; i++) {
+      const ar = audResults[i];
       if (!ar.ok) return ar;
       const note = pickText(ar.data);
       if (!note) return { ok: false, error: "fal: audio enhance bo'sh javob qaytardi" };
@@ -407,7 +457,7 @@ export async function falEnhancePrompt(
   console.log(
     `[fal] enhance UNIVERSAL — images=${refs.length} videos=${vids.length} audios=${auds.length}`
   );
-  const r = await falSubmit("openrouter/router", {
+  const r = await falRunOrQueue("openrouter/router", {
     prompt: promptText,
     model: OPENROUTER_TEXT_MODEL,
     system_prompt:
