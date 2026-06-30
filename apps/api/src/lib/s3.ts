@@ -22,7 +22,8 @@ const endpoint = process.env.S3_ENDPOINT ?? undefined;
 
 export const s3 = new S3Client({
   region,
-  ...(endpoint ? { endpoint, forcePathStyle: false } : {}),
+  // R2 → false (virtual-host); GCS S3-mosligi → S3_FORCE_PATH_STYLE=true (path-style ishonchliroq)
+  ...(endpoint ? { endpoint, forcePathStyle: (process.env.S3_FORCE_PATH_STYLE ?? "false") === "true" } : {}),
   // AWS SDK v3 (2025+) default `when_supported` checksumi stream body ustidan
   // CRC32 ni OLDINDAN hisoblaydi — Cloudflare R2 stream-trailer checksumni
   // ishonchli qo'llamagani uchun SDK butun faylni XOTIRAGA yig'adi (512MB OOM).
