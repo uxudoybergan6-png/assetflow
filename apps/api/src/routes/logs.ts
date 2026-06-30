@@ -43,10 +43,11 @@ type LogEntry = {
 
 export const logsRouter = Router();
 
-// Tizim loglari — faqat admin o'qiy/yoza/o'chira oladi
-logsRouter.use(requireAuth, requireAdmin);
+// Yozish — har qanday autentifikatsiyalangan manba (admin/contributor/AE plagin)
+// o'z faoliyat logini yuborishi mumkin. O'qish/tozalash — faqat admin.
+logsRouter.use(requireAuth);
 
-logsRouter.get("/", (req, res) => {
+logsRouter.get("/", requireAdmin, (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 200, MAX_LOGS);
   const source = req.query.source as string | undefined;
   let items = readLogs();
@@ -81,7 +82,7 @@ logsRouter.post("/", (req, res) => {
   res.json({ ok: true, id: row.id });
 });
 
-logsRouter.delete("/", (_req, res) => {
+logsRouter.delete("/", requireAdmin, (_req, res) => {
   writeLogs([]);
   res.json({ ok: true });
 });
