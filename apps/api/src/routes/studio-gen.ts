@@ -9,7 +9,7 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
-import { isOpenRouterConfigured, orChatSys, orImageToPrompt } from "../lib/ai/openrouter.js";
+import { isOpenRouterConfigured, orChatSys, orImageToPrompt, type OrResult } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured, falEnhancePrompt } from "../lib/ai/fal.js";
 import {
@@ -948,14 +948,25 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
 
-  // text — universal multimodal oqim: image/video/audio avval tahlil qilinadi, keyin final prompt yig'iladi.
-  const out = await falEnhancePrompt(p.data.prompt, {
-    imageUrls: refUrls.length ? refUrls : undefined,
-    videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
-    audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
-    mode,
-    modelContext: ctx.replace(/^\s+/, ""),
-  });
+  // text oqimi. TEZLIK: referenssiz (faqat matn) → to'g'ridan-to'g'ri OpenRouter (sync) — fal QUEUE
+  // (submit + poll + 3-hop) overhead'isiz, sezilarli tez. Image/video/audio referens bo'lsagina fal
+  // ishlatamiz (vision/video/audio understanding faqat fal'da bor).
+  let out: OrResult<string>;
+  if (!refUrls.length && !videoRefUrls.length && !audioRefUrls.length && isOpenRouterConfigured()) {
+    const sys =
+      `You are an expert ${mode} prompt engineer. Rewrite the user's short idea into ONE rich, ` +
+      `production-quality ${mode} prompt (subject, composition, lighting, style, detail). ` +
+      `Keep the input language. Preserve any @img/@image/@video/@audio tokens verbatim.${ctx}`;
+    out = await orChatSys("google/gemini-2.5-flash", sys, `Idea: ${p.data.prompt}`);
+  } else {
+    out = await falEnhancePrompt(p.data.prompt, {
+      imageUrls: refUrls.length ? refUrls : undefined,
+      videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
+      audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
+      mode,
+      modelContext: ctx.replace(/^\s+/, ""),
+    });
+  }
   if (!out.ok) {
     await refundAiCredits(req.user!.userId, enhanceCost.cost);
     res.status(502).json({ error: out.error });
