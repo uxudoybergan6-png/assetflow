@@ -1,19 +1,11 @@
-# SESSION REPORT — 2026-06-30 — Rasm tool ↔ Video tool parity + model wiring
+# SESSION REPORT — 2026-06-30 — Rasm "So'nggi" tezligi + video bilan teng
 
-3 parallel audit (model wiring · referens parity · funksiyalar/UX) → rasm tool video bilan teng qilindi.
+Muammo: rasm-gen "So'nggi" juda sekin ochilardi va bo'sh ko'rinardi. Faqat `AssetFlow_Plugin.html` (node ✓).
 
-**Model wiring (gen-models.ts):**
-- 9 jonli fal rasm modeli (1102–1110) ✅ to'g'ri ulangan (audit tasdiqladi — charge-then-fail yo'q).
-- **Magnific 1201–1206** `enabled:false` (magnificOnly, GEN_PROVIDER=magnific dormant → latent charge-then-fail yopildi; video B6 naqshi). tsc ✓.
+Sabablar + tuzatish:
+1. **Bo'sh ko'rinish (sekin tuyulardi):** `renderRecentGrid` yuklanayotganda ham "Hozircha gen yo'q" ko'rsatardi (video "Yuklanmoqda…" ko'rsatadi). → `recentLoading`/`recentError` flaglari qo'shildi; endi "Yuklanmoqda…" / xato + "↻ Qayta urinish" (video naqshi 1:1). `loadRecent(force)` + `window.afIgRetryRecent`.
+2. **Haqiqiy sekinlik (rasm baytlari):** umumiy `afRecent.card` rasm kartasini CSS `background-image` (to'liq o'lchamli PNG, darrov yuklanardi) bilan chizardi → **`<img loading="lazy" decoding="async">`** ga o'tkazildi (overlaylar absolute → ustida; `.rc` relative+overflow hidden). Ekrandan tashqari rasmlar kechiktirilib yuklanadi, dekod async → grid bloklanmaydi. Rasm VA video so'nggi gridlar foyda oladi.
 
-**Rasm tool parity (AssetFlow_Plugin.html — node ✓):**
-- **Ctrl+V paste** rasm → referens (video naqshi; addRef qayta ishlatildi).
-- **Project paneldan checkbox multi-select** + "Qo'shish (N)" footer (avval bittadan edi).
-- **Model almashda tasdiq** — referenssiz modelга o'tishda biriktirilgan refs yo'qotilishidan oldin confirm (H2).
-- **Limitlar oldindan**: igRefMeta "N / max referens · majburiy".
-- **Narx tooltip**: "✦/rasm × N = ✦total" (video kabi).
-- **Neytral default'lar**: igMName "…", igCost "✦—" (GPT/✦12 sizmaydi).
-- **Fayl multi**: bo'sh-slot qadar + bitta umumiy toast (spam emas).
-- **Enhance**: safetyAdjusted xabari qo'shildi.
+Dizayn: ikkala tool allaqachon BIR XIL `afRecent.card` + `.recentgrid` ishlatadi — farq faqat yuklash-holati edi (endi teng).
 
-Qoldi (minor): video model-sheet ikonkasi rasm darajasiga (BRAND_SVG) — reverse parity; image job ETA hint; download fayl nomi. Kutilmoqda: push + AE qayta o'rnatish + jonli test.
+Eslatma: rasmlar hali to'liq o'lcham (backend thumbnail yo'q) — lazy/async yumshatadi; haqiqiy thumbnail = backend ishi (keyingi). Kutilmoqda: push + AE qayta o'rnatildi + test.

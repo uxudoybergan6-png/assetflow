@@ -9116,7 +9116,12 @@ async function bootPlugin(){
         } else if(it.thumb){ d.style.backgroundImage='url("'+it.thumb+'")'; }
         var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML=IC.play; d.appendChild(pv); }
       else if(cat==='audio'||cat==='sfx'){ var pa=document.createElement('div'); pa.className='pv'; pa.innerHTML=IC.aud; d.appendChild(pa); }
-      else { d.style.backgroundImage='url("'+(it.thumb||it.url)+'")'; }
+      else {
+        // Lazy + async dekod — to'liq o'lchamli rasm grid'ni bloklamasin (sekin ochilish fix). Overlaylar absolute → ustida.
+        var im=document.createElement('img'); im.loading='lazy'; im.decoding='async'; im.alt=''; im.src=(it.thumb||it.url);
+        im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+        d.appendChild(im);
+      }
       var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(cat); d.appendChild(tg);
       var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
       var ra=document.createElement('div'); ra.className='racts';
@@ -10414,7 +10419,9 @@ window.afGallery=(function(){
     r.className='recentgrid'+(st.recentSelect?' selmode':'');
     // url bo'yicha dedup, eng yangisi oldinda
     var seen={},uniq=[]; st.recent.forEach(function(it){ if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } }); st.recent=uniq;
-    if(!uniq.length){ r.innerHTML='<div class="empt">Hozircha gen yo\'q</div>'; updRecentBatch(); return; }
+    if(recentLoading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updRecentBatch(); return; }
+    if(recentError&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(recentError)+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Qayta urinish</button></div>'; updRecentBatch(); return; }
+    if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updRecentBatch(); return; }
     var ctx=igRecentCtx();
     uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY karta
     updRecentBatch();
@@ -10440,11 +10447,11 @@ window.afGallery=(function(){
       }); });
   }
   // dastlabki So'nggi — foydalanuvchining oxirgi gen'lari (bir marta, tool ochilganda). id (jobId) saqlanadi → o'chirish.
-  var recentLoaded=false;
-  function loadRecent(){
-    if(recentLoaded||!$('igRecent'))return;
+  var recentLoaded=false,recentLoading=false,recentError='';
+  function loadRecent(force){
+    if((recentLoaded&&!force)||recentLoading||!$('igRecent'))return;
     var v=document.getElementById('v-imggen'); if(!v||!v.classList.contains('on'))return; // tool ochiq bo'lsa
-    recentLoaded=true;
+    recentLoading=true; recentError=''; renderRecentGrid(); // "Yuklanmoqda…" — bo'sh ko'rinmasin (cold-start sekin)
     studioGet('/api/studio/gen/history?limit=12').then(function(d){
       (((d&&d.items)||[])).forEach(function(g){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
@@ -10452,9 +10459,10 @@ window.afGallery=(function(){
         if(!st.recent.some(function(x){return x.url===url||x.id===g.id;}))
           st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija'});
       });
-      st.recent=st.recent.slice(0,12); renderRecentGrid();
-    }).catch(function(){ recentLoaded=false; });
+      recentLoaded=true; recentLoading=false; st.recent=st.recent.slice(0,12); renderRecentGrid();
+    }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Internet yoki sessiyani tekshiring.'; renderRecentGrid(); });
   }
+  window.afIgRetryRecent=function(){ recentLoaded=false; recentError=''; loadRecent(true); };
   var igMore=$('igMoreLink'); if(igMore)igMore.addEventListener('click',openHistory);
   // ☑ Tanlash → select rejim toggle
   var igRecentSel=$('igRecentSel'); if(igRecentSel)igRecentSel.addEventListener('click',function(){ st.recentSelect=!st.recentSelect; st.recentSel={}; igRecentSel.classList.toggle('on',st.recentSelect); renderRecentGrid(); });
