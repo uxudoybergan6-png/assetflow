@@ -1,0 +1,78 @@
+name: Deploy API to Cloud Run
+
+# main'ga apps/api yoki packages/database o'zgarsa, avtomatik Cloud Run'ga deploy
+# qiladi (Cloud Shell'da qo'lda bash deploy-cloudrun.sh ishlatishga o'rin qoldirmaydi).
+# Kerakli repo secret'lar: GCP_SA_KEY (deploy uchun service account JSON kaliti),
+# CLOUDRUN_ENV_YAML (cloudrun-env.yaml fayl tarkibi, butunligicha).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "packages/database/**"
+      - "Dockerfile"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-cloudrun.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-cloudrun
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PROJECT: project-289028d3-984c-4d84-bd4
+  REGION: europe-west1
+  SERVICE: assetflow-api
+  REPO: assetflow
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" -q
+
+      - name: Write cloudrun-env.yaml
+        env:
+          CLOUDRUN_ENV_YAML: ${{ secrets.CLOUDRUN_ENV_YAML }}
+        run: printf '%s\n' "$CLOUDRUN_ENV_YAML" > cloudrun-env.yaml
+
+      - name: Build image
+        run: |
+          IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api"
+          docker build --provenance=false -t "$IMG:latest" -t "$IMG:${GITHUB_SHA}" .
+
+      - name: Push image
+        run: |
+          IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api"
+          docker push "$IMG:latest"
+          docker push "$IMG:${GITHUB_SHA}"
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api:${GITHUB_SHA}"
+          gcloud run deploy "$SERVICE" --image "$IMG" \
+            --region "$REGION" --allow-unauthenticated \
+            --no-cpu-throttling --min-instances 1 --max-instances 2 \
+            --memory 1Gi --cpu 1 --timeout 600 \
+            --env-vars-file cloudrun-env.yaml
+
+      - name: Show URL
+        run: gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)'
