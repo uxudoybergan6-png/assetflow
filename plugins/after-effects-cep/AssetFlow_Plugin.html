@@ -8130,6 +8130,14 @@ function __drainToasts(){
 }
 
 /** Xom xato matnlarini (Failed to fetch, ExtendScript, HTTP) tushunarli qiladi */
+// Enhance natijasini tozalaydi — LLM ba'zan META blok qo'shadi (sarlavha + Target Model/Duration/
+// Aspect Ratio/Resolution/Quality/Native Audio). Ular promptда bo'lmasligi kerak (UI boshqaradi).
+function afCleanEnhancedPrompt(t){
+  var s=String(t==null?'':t);
+  s=s.replace(/^\s*(?:\*\*\s*)?(?:video|image|audio)\s*prompt\s*:?\s*(?:\*\*)?\s*/i,''); // boshidagi sarlavha
+  s=s.replace(/(?:\n\s*\**\s*(?:target model|duration|aspect ratio|resolution\s*\/?\s*quality|resolution|quality|native audio|audio)\s*:\**[^\n]*)+\s*$/i,''); // oxiridagi meta bloki
+  return s.trim();
+}
 function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
   const code=(e&&e.code)||'', status=(e&&e.status)||0;
@@ -10109,7 +10117,7 @@ window.afGallery=(function(){
     try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
-      if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
+      if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Yaxshilab bo\'lmadi','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
@@ -11550,7 +11558,7 @@ window.afGallery=(function(){
       video_urls:vidRefs,
       audio_urls:audRefs
     }).then(function(r){
-      if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast((r&&r.safetyAdjusted?'Prompt boyitildi va safety uchun yumshatildi':'Prompt boyitildi')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
+      if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast((r&&r.safetyAdjusted?'Prompt boyitildi va safety uchun yumshatildi':'Prompt boyitildi')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Boyitish muvaffaqiyatsiz','warning');
     }).catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance xatosi','error');
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });

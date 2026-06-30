@@ -826,19 +826,15 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   const mode = p.data.mode || "image";
   const format = p.data.format || "text";
 
-  // Model-aware kontekst (Magnific `extra_params` uslubi — promptni tanlangan modelga moslaydi).
   const model = p.data.modelId ? getModelById(p.data.modelId) : undefined;
-  const ctxParts: string[] = [];
-  if (model) {
-    ctxParts.push(`target model: ${model.label}`);
-    if (model.durations?.length) ctxParts.push(`duration options (sec): ${model.durations.join(", ")}`);
-    if (model.aspects?.length) ctxParts.push(`aspect ratios: ${model.aspects.join(", ")}`);
-    if (model.resolutions?.length) ctxParts.push(`resolution/quality: ${model.resolutions.join(", ")}`);
-    if (typeof model.audio === "boolean") ctxParts.push(`native audio: ${model.audio ? "yes" : "no"}`);
-  }
-  const ctx = ctxParts.length
-    ? `\nGeneration context — tailor the prompt to it: ${ctxParts.join("; ")}.`
-    : "";
+  // MUHIM: enhance FAQAT tavsifiy prompt matnini qaytarsin. Sozlamalar (model/davomiylik/nisbat/
+  // sifat/audio) UI'da boshqariladi — ularni promptga META blok qilib YOZMASIN. Avval "target model:
+  // ... duration options ..." kontekst berilardi va LLM uni "**Target Model:** ... **Duration:** ..."
+  // deb prompt ichiga sizdirardi (model uni shovqin deb o'qiydi). (audit fix)
+  const ctx =
+    " Output ONLY the final descriptive prompt as plain prose. Do NOT add any title, heading, label, " +
+    "bullet list, or metadata lines such as 'Video Prompt', 'Target Model', 'Duration', 'Aspect Ratio', " +
+    "'Resolution', 'Quality', or 'Native Audio' — those are controlled by the app UI, not the prompt.";
   const keepRefs =
     " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.

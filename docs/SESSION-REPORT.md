@@ -1,10 +1,11 @@
-# SESSION REPORT — 2026-06-30 — Video referens: Timeline (video/audio) + copy-paste + multi-import
+# SESSION REPORT — 2026-06-30 — Enhance META blok bug tuzatildi
 
-Faqat `plugins/after-effects-cep/AssetFlow_Plugin.html` (frontend; node ✓). R2V media-refs manba menyusi yaxshilandi:
+Muammo: "Yaxshilash" (prompt enhance) prompt matniga META blok qo'shardi — "**Video Prompt:**" sarlavha + "**Target Model / Duration / Aspect Ratio / Resolution/Quality / Native Audio**" qatorlari. Bu fal modelga matn bo'lib ketardi (shovqin) va qiymatlari UI sozlamalariga zid edi (LLM 8s/4k dedi, UI 5s/480p).
 
-- **Timeline'dan (video/ovoz)** — avval faqat rasmда bor edi. Endi video/ovoz uchun ham: `pickTlSource(type)` → `getActiveTimelineVideoReference` (tanlangan layer manba fayli; hasVideo/hasAudio tekshiriladi, format/limit nazorati). Menyu (`openMediaSrc`) Timeline'ni barcha turlar uchun ko'rsatadi, subtitle turga mos.
-- **Copy-paste** — clipboarddagi RASM Ctrl+V bilan media-refs'ga qo'shiladi (faqat video tool ko'rinib turganda; matn promptga odatdagidek yopishadi). `document.paste` listener → FileReader → `uploadMediaRef` (dataUrl yo'li allaqachon bor).
-- **Multi-import** — Fayl dialogi rasm/ovoz uchun **bir nechta** fayl (`showOpenDialog(multi)`), `addMediaPaths` bo'sh slot/limit hisobi bilan qo'shadi (video bittadan — klipper ketma-ket). Project panel: tanlagach sheet ochiq qoladi → bir nechta footage ketma-ket qo'shiladi.
-- Yangi yordamchilar: `addOneMediaPath`, `addMediaPaths`, `pickTlSource`. host.jsx o'zgarmadi (mavjud funksiya).
+Sabab: `studio-gen.ts` enhance `ctx` LLM'ga "target model / duration options / aspect ratios / resolution / native audio" ro'yxatini berib "tailor the prompt to it" derdi → LLM uni labeled blok qilib qaytarardi.
 
-Kutilmoqda: push + AE jonli test (Timeline video/audio tanlash, paste, multi-select). Eslatma: paste hozir video R2V tool'da; image-gen tool'ga ham qo'shsa bo'ladi (follow-up). Timeline multi (bir nechta tanlangan layer) — host.jsx kengaytmasi kerak (follow-up).
+2 qatlamli tuzatish:
+- **Backend** (`apps/api/src/routes/studio-gen.ts`): sozlamalar-konteksti olib tashlandi; o'rniga aniq ko'rsatma — "FAQAT tavsifiy prompt qaytar; sarlavha/label/META (Video Prompt/Target Model/Duration/Aspect/Resolution/Quality/Native Audio) YOZMA — ular UI'da". tsc ✓.
+- **Frontend** (`AssetFlow_Plugin.html`): xavfsizlik to'ri — `afCleanEnhancedPrompt()` boshidagi "Video Prompt:" sarlavhasi va oxiridagi META blokini olib tashlaydi; image+video enhance natijalariga qo'llandi. node ✓. Test: META ketdi, @Image1/@Image2 referenslar saqlandi.
+
+Kutilmoqda: push (Render deploy — backend o'zgargani uchun MUHIM) + AE jonli test (Yaxshilash → faqat tavsif chiqishi).
