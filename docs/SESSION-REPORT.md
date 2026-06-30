@@ -1,12 +1,12 @@
-# SESSION REPORT — 2026-07-01 — FrameFlow redesign (verify + fine-tune)
+# SESSION REPORT — 2026-07-01 — Cloud Run CI/CD (GitHub Actions) + JWT_SECRET tuzatish
 
-Avvalgi sessiyada (commit 9fef317) qilingan FrameFlow 1:1 dizayn porti — bu sessiyada brauzer demo orqali ekran-ekran tasdiqlandi va topilgan kamchiliklar tuzatildi.
+`bash deploy-cloudrun.sh`ni har safar qo'lda Cloud Shell'da ishga tushirish o'rniga, `main`'ga push qilinganda avtomatik Cloud Run'ga deploy qiluvchi GitHub Actions workflow sozlandi.
 
-- **Topildi:** plagin markupi haqiqatan ham deyarli to'liq mos edi (tokens.css + brend matni yetarli bo'lgan). Lekin 2 ta joy eski palitrada qolib ketgan, chunki ular global `tokens.css` o'rniga o'z mahalliy/qattiq kodlangan ranglaridan foydalanadi:
-  1. `.theme-sw-standart` (Hisob → Mavzu tanlash) — eski `#141612/#a3e635` swatch, yangi temani aks ettirmasdi.
-  2. `.axhome .sec` (Home → Bo'limlar grid: Shablonlar/Motion/Graphics/LUTs + Stok video) — eski rangli gradient/glow kartalar, mockup esa tekis `#13161C` karta + rangli icon-chip talab qiladi.
-- **Tuzatildi (shu sessiyada):**
-  - `.theme-sw-standart` → `#06080B`/`#C2F04A` (joriy palitra).
-  - `.axhome .sec*` CSS qayta yozildi: tekis karta (`#13161C`, border `#232A35`, hover `#171B22`/`#3A4456`) + icon-chip ranglar (Shablonlar `#7CC4FF`, Motion `#C2F04A`, Graphics `#C9A6FF`, LUTs `#FFB27C`); glow effektlar olib tashlandi; Stok video qatori ham tekis gradientga o'tkazildi.
-- **Tasdiqlandi (brauzer demo, http://localhost:8973/AssetFlow_Plugin.html):** Home, AI Tools launcher (Image/Video/Audio/3D), Image toollar ro'yxati, Rasm yaratish paneli, Login bottom-sheet (Hisob), Shablon brauzeri — barchasi yangi lime/Hanken Grotesk dizaynga mos. `.axroot` (AI Tools/Account) o'zining mahalliy CSS o'zgaruvchilari eski hardcode qilingan, lekin ular tasodifan yangi palitraga juda yaqin (`#090a0c` vs `#06080B` kabi) — vizual farq sezilarsiz, tuzatish shart emas.
-- **Kutilmoqda:** Video yaratish (R2V/Fast), Tarix gallery, Sozlamalar paneli, Lightbox — brauzer demo login/API talab qilmagani uchun chuqurroq tekshirilmadi (yuzaki ko'rinishda bir xil dizayn tilidan foydalanadi). Haqiqiy AE'da (`install-cep.sh`) login bilan yakuniy tasdiqlash hali kerak. Boshqa temalar (liquid/light glass) hali eski lime palitrada — standart tema bilan birga yangilanmadi.
+- **Qo'shildi:** `.github/workflows/deploy-cloudrun.yml` — `apps/api`/`packages/database`/`Dockerfile` o'zgarganda avtomatik: Docker build → Artifact Registry push → `gcloud run deploy`.
+- **Auth:** boshida `GCP_SA_KEY` (service account JSON kalit) bilan rejalashtirilgan edi, lekin loyiha org policy'si (`constraints/iam.disableServiceAccountKeyCreation`) kalit yaratishni butunlay bloklaydi. **Workload Identity Federation (WIF)**ga o'tildi — kalitsiz, xavfsizroq, Cloud Shell'da bir martalik pool/provider/IAM binding sozlandi (`github-pool`/`github-provider`, repo `uxudoybergan6-png/assetflow` bilan cheklangan).
+- **Repo secret:** `CLOUDRUN_ENV_YAML` (cloudrun-env.yaml fayl tarkibi) GitHub'ga qo'shildi. `GCP_SA_KEY` kerak emas.
+- **Birinchi avtomatik deploy** (`#2`, commit `a9bf7d6`) muvaffaqiyatli o'tdi (~2m20s), API tirik tasdiqlandi.
+- **MUHIM XAVFSIZLIK TOPILMASI VA TUZATILDI:** production `JWT_SECRET` haqiqiy kalit emas, `cloudrun-env.example.yaml`dagi (git'da committed, hammaga ko'rinadigan) izoh-matnning o'zi edi — bu orqali istalgan kishi tokenlarni soxtalashtira olardi. Yangi tasodifiy kalit (`openssl rand -hex 32`) generatsiya qilindi, Cloud Run'da `gcloud run services update --update-env-vars` bilan yangilandi va lokal `cloudrun-env.yaml`ga ham yozildi (CI keyingi deploy'larda eskisini qaytarmasligi uchun). Bu barcha eski tokenlarni bekor qildi — foydalanuvchilar qayta login qilishi kerak.
+- `cloudrun-env.example.yaml` ham tuzatildi (placeholder matn olib tashlandi, `openssl rand -hex 32` ko'rsatmasi qo'yildi).
+
+**Kutilmoqda:** keyingi push'larda CI/CD avtomatik ishlashini doimiy kuzatish; Studio/Admin/AE plagin foydalanuvchilarini JWT bekor bo'lgani haqida xabardor qilish (agar kerak bo'lsa).
