@@ -1,11 +1,9 @@
-# SESSION REPORT — 2026-06-30 — Rasm "So'nggi" tezligi + video bilan teng
+# SESSION REPORT — 2026-06-30 — Rasm tool: Sozlamalar/So'nggi alohida kartalarga
 
-Muammo: rasm-gen "So'nggi" juda sekin ochilardi va bo'sh ko'rinardi. Faqat `AssetFlow_Plugin.html` (node ✓).
+Faqat `AssetFlow_Plugin.html` (node ✓). Muammo: rasm-gen'da Sozlamalar va So'nggi flat `.sect` edi (video tool'da har biri alohida `.vpanel` kartada).
 
-Sabablar + tuzatish:
-1. **Bo'sh ko'rinish (sekin tuyulardi):** `renderRecentGrid` yuklanayotganda ham "Hozircha gen yo'q" ko'rsatardi (video "Yuklanmoqda…" ko'rsatadi). → `recentLoading`/`recentError` flaglari qo'shildi; endi "Yuklanmoqda…" / xato + "↻ Qayta urinish" (video naqshi 1:1). `loadRecent(force)` + `window.afIgRetryRecent`.
-2. **Haqiqiy sekinlik (rasm baytlari):** umumiy `afRecent.card` rasm kartasini CSS `background-image` (to'liq o'lchamli PNG, darrov yuklanardi) bilan chizardi → **`<img loading="lazy" decoding="async">`** ga o'tkazildi (overlaylar absolute → ustida; `.rc` relative+overflow hidden). Ekrandan tashqari rasmlar kechiktirilib yuklanadi, dekod async → grid bloklanmaydi. Rasm VA video so'nggi gridlar foyda oladi.
+- Rasm tool 3 bo'limi endi `.vpanel` kartalarga o'raldi (video bilan teng): **compose-panel** (Prompt+referens), **settings-panel** (Sozlamalar), **recent-panel** (So'nggi grid). Div balans tekshirildi (compose/settings/recent → outer).
+- CSS: `.axig .vpanel{...}` qo'shildi (border + radius:20 + bg + padding; `.sect` reset; seg/rc radius; recent morelink ko'k) — `.axvg .vpanel` ni 1:1 takrorlaydi.
+- Avvalgi (shu sessiya): rasm So'nggi loading/error/retry holatlari + lazy/async thumbnail (tezlik); rasm tool parity (paste, project multi-select, model-switch confirm, limitlar, narx tooltip, neytral default); magnific 1201-1206 enabled:false; enhance META fix; video 3-concurrent + Tozalash + parallel preflight.
 
-Dizayn: ikkala tool allaqachon BIR XIL `afRecent.card` + `.recentgrid` ishlatadi — farq faqat yuklash-holati edi (endi teng).
-
-Eslatma: rasmlar hali to'liq o'lcham (backend thumbnail yo'q) — lazy/async yumshatadi; haqiqiy thumbnail = backend ishi (keyingi). Kutilmoqda: push + AE qayta o'rnatildi + test.
+Kutilmoqda: push + AE qayta o'rnatildi + jonli test (3 ta alohida quti ko'rinishi).
