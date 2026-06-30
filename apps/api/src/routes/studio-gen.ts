@@ -82,7 +82,7 @@ const ENHANCE_COST_VIDEO = 2;    // video referens tahlili
 const ENHANCE_COST_AUDIO = 1;    // audio referens tahlili
 const DESCRIBE_IMAGE_COST = 2;   // gemini-2.5-flash vision (rasm)
 const DESCRIBE_VIDEO_COST = 3;   // + haqiqiy video input (og'irroq, ehtimoliy 2-inference)
-const SAVED_REF_TTL_MS = 60 * 60 * 1000; // 1 soat
+const SAVED_REF_TTL_MS = 10 * 60 * 1000; // 10 minut
 const SAVED_REF_MAX_LIST = 24;
 
 // Per-user kunlik cap (per-IP rate-limit'dan TASHQARI) — bitta hisob (admin/owner
@@ -235,7 +235,7 @@ const savedRefCleanupTimer = setInterval(() => {
   cleanupExpiredSavedReferences().catch((e) => {
     console.error("[studio-gen] saved refs cleanup xato:", e);
   });
-}, 15 * 60 * 1000);
+}, 2 * 60 * 1000);
 if (typeof savedRefCleanupTimer.unref === "function") savedRefCleanupTimer.unref();
 
 /** GET /credits — kredit balansi. */
@@ -339,7 +339,7 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   res.json({ items });
 });
 
-/** GET /gen/references — vaqtinchalik saved references (1 soat TTL). */
+/** GET /gen/references — vaqtinchalik saved references (10 minut TTL). */
 studioGenRouter.get("/gen/references", async (req: Request, res: Response) => {
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const limit = Math.min(SAVED_REF_MAX_LIST, Math.max(1, Number(req.query.limit) || 12));

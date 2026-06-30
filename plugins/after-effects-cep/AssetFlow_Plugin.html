@@ -3342,10 +3342,10 @@ html.home-mode #homePage{display:block!important}
                                   </div>
                                   <div class="mrefgrid" id="vgRefGrid"></div>
                                 </div>
-                                <div class="savedrefs refbox savedbox" id="vgSavedWrap">
+                                <div class="savedrefs refbox savedbox" id="vgSavedWrap" style="display:none">
                                   <div class="refboxhead">
                                     <div class="refboxtitle">Saved References</div>
-                                    <div class="refboxsub" id="vgSavedMeta">1 soat saqlanadi</div>
+                                    <div class="refboxsub" id="vgSavedMeta">10 minut saqlanadi</div>
                                   </div>
                                   <div class="savedgrid" id="vgSavedGrid"></div>
                                 </div>
@@ -10409,7 +10409,7 @@ window.afGallery=(function(){
   // kadr holati (refKind=frames) + ko'p-modal referens (refKind=media-refs)
   var st={start:null,end:null}; // {dataUrl, url, loading}
   var mref=[]; // [{type:'image'|'video'|'audio', dataUrl, url, loading}]
-  var vgSaved={items:[],loaded:false,loading:false,error:'',ttlMs:3600000};
+  var vgSaved={items:[],loaded:false,loading:false,error:'',ttlMs:600000};
   var vgClip={src:null,meta:null,url:'',startSec:0,endSec:0,lastStartSec:0,lastEndSec:0,totalSec:0,mode:'part',drag:null,busy:false,includeAudio:false};
 
   function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
@@ -10476,7 +10476,20 @@ window.afGallery=(function(){
     var opts=mediaExts(type), e=ext(path);
     return !opts.length || opts.indexOf(e)>=0;
   }
-  function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
+  function ext(p){
+    var s=String(p||'').split(/[?#]/)[0];
+    var m=s.match(/\.([a-z0-9]{2,6})$/i);
+    return m?String(m[1]).toLowerCase():'';
+  }
+  function savedRefFormatAllowed(type,it){
+    if(extAllowed(type,(it&&it.url)||''))return true;
+    if(extAllowed(type,(it&&it.thumbUrl)||''))return true;
+    var ct=String((it&&it.contentType)||'').toLowerCase();
+    if(!ct)return !!(it&&it.id&&type===refTypeFromItem(it));
+    if(type==='image')return ct.indexOf('image/')===0;
+    if(type==='video')return ct.indexOf('video/')===0;
+    return ct.indexOf('audio/')===0;
+  }
   function mime(p){ var e=ext(p);
     var V={mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',m4v:'video/mp4'};
     var A={mp3:'audio/mpeg',wav:'audio/wav',m4a:'audio/mp4',aac:'audio/aac',ogg:'audio/ogg'};
@@ -11078,6 +11091,9 @@ window.afGallery=(function(){
   function renderVgSavedRefs(){
     var wrap=$('vgSavedWrap'), grid=$('vgSavedGrid'), meta=$('vgSavedMeta');
     if(!wrap||!grid||vm.refKind!=='media-refs'){ if(wrap)wrap.style.display='none'; return; }
+    wrap.style.display='none';
+    grid.innerHTML='';
+    return;
     var reusable=vgSaved.items.filter(function(it){
       return !mref.some(function(r){
         return !!(r&&((r.savedRefId&&r.savedRefId===it.id)||(r.url&&it.url&&r.url===it.url)));
@@ -11164,11 +11180,12 @@ window.afGallery=(function(){
           kind:it.kind||'image',
           url:it.url,
           thumbUrl:it.thumbUrl||null,
+          contentType:it.contentType||'',
           sizeBytes:(it&&it.sizeBytes)||0,
           expiresAt:it.expiresAt
         };
       });
-      vgSaved.ttlMs=(d&&d.ttlMs)||3600000;
+      vgSaved.ttlMs=(d&&d.ttlMs)||600000;
       vgSaved.loaded=true; vgSaved.loading=false; vgSaved.error='';
       renderVgSavedRefs();
     }).catch(function(err){
@@ -11210,7 +11227,7 @@ window.afGallery=(function(){
     var type=refTypeFromItem(it);
     if(!mediaAllowed(type))return false;
     if(!it||!it.url){ toast('Referens topilmadi','warning'); return false; }
-    if(!extAllowed(type,it.url)){ toast(typeLabel(type)+' formati bu modelga mos emas','warning'); return false; }
+    if(!savedRefFormatAllowed(type,it)){ toast(typeLabel(type)+' formati bu modelga mos emas','warning'); return false; }
     var lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type), sizeBytes=(it&&it.sizeBytes)||0;
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return false; }
     if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return false; }

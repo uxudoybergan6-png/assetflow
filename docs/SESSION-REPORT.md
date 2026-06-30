@@ -1,11 +1,10 @@
-# SESSION REPORT — 2026-06-29 — referens bloklari vizual ajratildi
+# SESSION REPORT — 2026-06-30 — saved references fon rejimiga o'tkazildi
 
-- fal webhook + preflight + enhance safety-aware oqimlari saqlandi.
-- Saved references bo‘limidagi reuse mantiqi saqlandi, lekin qo‘shimcha UX muammo topildi: faol referenslar va saved stash ko‘rinishda bitta blokdek tuyulardi.
-- Video tool media-refs qismi endi ikki alohida vizual container oldi.
-- Yuqori blok: `Faol Referenslar` — hozirgi generatsiyada ishlatiladigan referenslar.
-- Pastki blok: `Saved References` — vaqtinchalik stash, qayta ishlatish uchun.
-- Saved references konteyneriga dashed stil va alohida sublabel berildi.
-- Foydalanuvchi bir qarashda “hozir ishlatyapman” va “keyin ishlataman” farqini ko‘radi.
-- Takror kartalarni yashirish va `Qayta ishlatish` ishorasi avvalgi tuzatishdan saqlanib qoldi.
-- Tekshiruv: plugin script parse `OK 7`.
+- Foydalanuvchi uchun `Saved References` ko‘rinadigan blok olib tashlandi.
+- Saved referenslar endi UI’da chiqmaydi, lekin backend’da vaqtincha saqlanishda davom etadi.
+- TTL 1 soatdan 10 minutga tushirildi.
+- Referens cleanup intervali ham qisqartirildi, shunda amalda tezroq o‘chadi.
+- Video tool ichida saved ref fetch fon rejimida qoladi, lekin foydalanuvchi ko‘rmaydi.
+- Demak: user referens yuklaydi, gen qiladi, keyin referenslar taxminan 10 minut ichida avtomatik tozalanadi.
+- Qo‘shimcha: saved ref mapping ichiga `contentType` ham qo‘shildi.
+- Kutilayotgan tekshiruv: plugin qayta ochilganda `Saved References` bo‘limi umuman ko‘rinmasligi kerak.
