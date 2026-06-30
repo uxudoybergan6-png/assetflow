@@ -3617,7 +3617,7 @@ html.home-mode #homePage{display:block!important}
                       <!-- SETTINGS -->
                       <section id="v-settings" class="view">
                         <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>⚙ Sozlama</b></div></div>
-                        <div class="setrow">Kredit balansи <b style="color:var(--acc);margin-left:6px" id="balSet">—</b><span class="buybtn" style="margin-left:auto" data-toast="Tarif/kredit sahifasi">Kredit to'ldirish</span></div>
+                        <div class="setrow">Kredit balansи <b style="color:var(--acc);margin-left:6px" id="balSet">—</b><span class="buybtn" style="margin-left:auto" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}">Kredit to'ldirish</span></div>
                         <div class="setrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
                         <div class="setrow">Auto-load (Project tanlovi)<div class="sw2 on" data-toggle style="margin-left:auto"></div></div>
                         <div class="setrow">Demo: media tanlanmagan (empty)<div class="sw2" id="emptyToggle" data-toggle style="margin-left:auto"></div></div>
@@ -8125,6 +8125,14 @@ function __drainToasts(){
 /** Xom xato matnlarini (Failed to fetch, ExtendScript, HTTP) tushunarli qiladi */
 function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
+  const code=(e&&e.code)||'', status=(e&&e.status)||0;
+  if(code==='INSUFFICIENT_CREDITS'||code==='AI_CREDITS_EXHAUSTED'||status===402||/kredit yetarli emas|insufficient credit/i.test(raw))
+    return 'Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»';
+  if(code==='AI_DAILY_CAP'||/kunlik.*(cap|chek|limit)|daily.*cap|cap.*(reached|tugadi)/i.test(raw))
+    return 'Bugungi limit tugadi — ertaga qayta urinib ko‘ring';
+  if(code==='AI_NOT_CONFIGURED')return 'AI hali sozlanmagan — administrator bilan bog‘laning';
+  if(status===429||code==='RATE_LIMITED'||/too many requests|rate.?limit/i.test(raw))
+    return 'Juda ko‘p so‘rov — biroz kuting va qayta urinib ko‘ring';
   if(/output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw))
     return 'Video xavfsizlik filtri sabab bloklandi — promptni yumshatib, ochiq tana/sexual ma’noni kamaytirib qayta urinib ko‘ring';
   if(/Failed to fetch|NetworkError|ENOTFOUND|ECONNREFUSED|network/i.test(raw))
@@ -10079,7 +10087,7 @@ window.afGallery=(function(){
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
       if(e&&e.prompt){ ta.value=String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt yaxshilandi ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Yaxshilab bo\'lmadi','error');
-    }).catch(function(err){ toast((err&&err.message)||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
+    }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Yaxshilash xatosi','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
 
   // ---- parallel gen — job massivi ----
@@ -10155,7 +10163,7 @@ window.afGallery=(function(){
     if(meta.refMode==='required'&&st.refs.length===0){ toast('Referens yuklang','warning'); return; }
     if(anyLoading()){ toast('Referens yuklanmoqda — kuting','info'); return; }
     var c=credits();
-    if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
+    if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,label:meta.label,jcost:cost(),ar:st.ar,q:st.q,
            cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
     activeJobs.push(j); renderJobs(); refreshGen();
@@ -10182,7 +10190,7 @@ window.afGallery=(function(){
       startJobProg(j); pollJob(j,0);
     }).catch(function(err){
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeJob(j); return; }
-      removeJob(j); toast((err&&err.message)||'Generatsiya xatosi','error');
+      removeJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Generatsiya xatosi','error');
     });
   }
   function pollJob(j,tries){
@@ -10198,7 +10206,7 @@ window.afGallery=(function(){
           removeJob(j); setCreditChip(credits()); toast('Tayyor! ✦'+j.jcost+' yechildi','success');
         },200);
       }else if(s==='failed'){
-        removeJob(j); setCreditChip(credits()); toast((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi','error');
+        removeJob(j); setCreditChip(credits()); toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi'),'error');
       }else{
         j.pollTimer=setTimeout(function(){ pollJob(j,tries+1); },pollDelay(tries));
       }
@@ -10895,7 +10903,7 @@ window.afGallery=(function(){
       applyVgMeta(); return vm;
     }).catch(function(err){
       vm._pending=null; var g=$('vgGen'); if(g)g.disabled=true;
-      toast((err&&err.message)||'Video model yuklanmadi','error'); throw err;
+      toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Video model yuklanmadi','error'); throw err;
     });
     return vm._pending;
   }
@@ -10905,6 +10913,13 @@ window.afGallery=(function(){
     if(!m||(vm.model&&String(m.id)===String(vm.model.id))){ closeVgSheets(); return; }
     var prevKind=vm.refKind||'frames';
     var nextKind=m.refKind||'frames';
+    // Referens UI o'zgarsa (kadr ↔ ko'p-modal) biriktirilgan referenslar olib tashlanadi —
+    // yo'qotadigan narsa bo'lsa avval tasdiqlaymiz (kutilmagan o'chishning oldini olish — audit HIGH).
+    var hasFrames=!!(st.start||st.end);
+    var willDiscard=((prevKind==='media-refs'&&nextKind!=='media-refs')&&mref.length>0)
+                  ||((prevKind!=='media-refs'&&nextKind==='media-refs')&&hasFrames)
+                  ||(nextKind==='none'&&(mref.length>0||hasFrames));
+    if(willDiscard&&typeof confirm==='function'&&!confirm('«'+String(m.label||'Model')+'»ga o‘tilsa, biriktirilgan referenslar olib tashlanadi. Davom etamizmi?')){ closeVgSheets(); return; }
     if(prevKind==='media-refs'&&nextKind!=='media-refs'){
       var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
       mref=[]; stripPromptTokens(toks); hideVgMention(); renderMediaRefs(); updRefMeta();
@@ -11498,7 +11513,7 @@ window.afGallery=(function(){
     }).then(function(r){
       if(r&&r.prompt){ ta.value=r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast((r&&r.safetyAdjusted?'Prompt boyitildi va safety uchun yumshatildi':'Prompt boyitildi')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Boyitish muvaffaqiyatsiz','warning');
-    }).catch(function(e){ toast((e&&e.message)||'Enhance xatosi','error');
+    }).catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance xatosi','error');
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });
   });
 
@@ -11766,7 +11781,7 @@ window.afGallery=(function(){
       params={referenceUrl:st.start.url,referenceEndUrl:(st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     }
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
-    var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas','error'); return; }
+    var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model'};
     activeJobs.push(j); renderVgJobs(); refreshVgBtn();
     var quote=null;
@@ -11797,7 +11812,7 @@ window.afGallery=(function(){
       j.jobId=res.jobId; j.submitted=true; startVgProg(j); pollVgJob(j,0);
     }).catch(function(err){
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeVgJob(j); return; }
-      removeVgJob(j); toast((err&&err.message)||'Gen xatosi','error');
+      removeVgJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Gen xatosi','error');
     });
   }
   $('vgGen').addEventListener('click',genVgClick);
