@@ -2580,6 +2580,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .gensend:hover{background:var(--acc2)}.axig .gensend:disabled{opacity:.4;cursor:not-allowed}
 .axig .gensend.busy{color:transparent}
 .axig .gensend.busy::after{content:"";position:absolute;width:18px;height:18px;border:2.5px solid rgba(12,20,0,.3);border-top-color:var(--acc-ink);border-radius:50%;animation:spin .7s linear infinite}
+/* Klaviatura fokusi ko'rinishi (a11y) — faqat klaviatura bilan o'tilganda chiqadi, sichqonchada yo'q */
+.axig button:focus-visible,.axig [tabindex]:focus-visible,.axig .seg:focus-visible,.axig .cchip:focus-visible,.axig .maddb:focus-visible,.axig .vact:focus-visible,.axig .gensend:focus-visible,.axig .enhance:focus-visible,.axig .addbtn:focus-visible,.axroot .cat:focus-visible,.axroot .aicattool:focus-visible,.axroot button:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
 .axig .ctrls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .axig .seg{min-width:0;display:flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line2);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;padding:9px 11px;border-radius:11px;white-space:nowrap}
 .axig .seg:hover{border-color:var(--mut2)}
@@ -3219,7 +3221,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Referens</div>
                                   <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
                                   <span class="costtag" id="igCost">✦12</span>
-                                  <button class="gensend" id="igGen" disabled title="Yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+                                  <button class="gensend" id="igGen" disabled title="Yaratish" aria-label="Rasm yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
                                 </div>
                               </div>
                             </div>
@@ -3229,7 +3231,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="lbl">Sozlamalar <span class="meta clearbtn" id="igClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                               <div class="ctrls">
                                 <div class="seg" id="igModelSeg"><span class="lab">Model</span><span class="sv" id="igMName">GPT Image 2 Edit</span><span class="sc">▾</span></div>
-                                <div class="seg" id="igArSeg"><span class="lab">O'lcham</span><span class="sv" id="igArVal">Auto</span><span class="sc">▾</span></div>
+                                <div class="seg" id="igArSeg"><span class="lab">Nisbat</span><span class="sv" id="igArVal">Auto</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igQSeg"><span class="lab" id="igQLab">Sifat</span><span class="sv" id="igQVal">High</span><span class="sc">▾</span></div>
                                 <div class="seg" id="igNSeg"><span class="lab">Soni</span><span class="sv" id="igNVal">1</span><span class="sc">▾</span></div>
                               </div>
@@ -3271,7 +3273,7 @@ html.home-mode #homePage{display:block!important}
 
                           <!-- o'lcham -->
                           <div class="sheet" id="igArSheet"><div class="sheetc">
-                            <div class="sheeth"><b>O'lcham</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="sheeth"><b>Nisbat</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="igArPills"></div>
                             <div class="axighint" style="text-align:left">Auto — kirish rasmidan oladi.</div>
                           </div></div>
@@ -3360,7 +3362,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="prow">
                                     <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
                                     <span class="costtag" id="vgCost">✦—</span>
-                                    <button class="gensend" id="vgGen" disabled title="Video yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+                                    <button class="gensend" id="vgGen" disabled title="Video yaratish" aria-label="Video yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
                                   </div>
                                 </div>
                               </div>
@@ -3448,7 +3450,7 @@ html.home-mode #homePage{display:block!important}
                           <div class="sheet" id="vgResSheet"><div class="sheetc">
                             <div class="sheeth"><b>Sifat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="vgResPills"></div>
-                            <div class="axighint" id="vgResHint" style="text-align:left">480p = ✦8/s · 720p = ✦12/s</div>
+                            <div class="axighint" id="vgResHint" style="text-align:left"></div>
                           </div></div>
 
                           <!-- Davomiylik (duration) -->
@@ -9533,7 +9535,10 @@ async function bootPlugin(){
       var hasTools=c.tools.some(function(t){return !t.soon;});
       var el=document.createElement('div');
       el.className='cat'+(hasTools?'':' soon');
-      el.innerHTML='<div class="cic">'+c.icon+'</div><div class="cn">'+c.name+'</div><div class="cs">'+(hasTools?c.tools.length+' tool':'tez orada')+'</div>';
+      // Bo'sh kategoriya (Audio/3D) — aniq "tez orada" badge bilan ishlaydiganlardan ajraladi.
+      var soonBadge=hasTools?'':'<span style="position:absolute;top:8px;right:8px;font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:7px;background:rgba(255,217,168,.14);color:#ffd9a8;border:1px solid rgba(255,217,168,.28)">tez orada</span>';
+      el.style.position='relative';
+      el.innerHTML=soonBadge+'<div class="cic">'+c.icon+'</div><div class="cn">'+c.name+'</div><div class="cs">'+(hasTools?c.tools.length+' tool':'tez orada')+'</div>';
       el.addEventListener('click',function(){ aiOpenCat(c); });
       g.appendChild(el);
     });
@@ -11141,79 +11146,6 @@ window.afGallery=(function(){
     wrap.style.display='none';
     grid.innerHTML='';
     return;
-    var reusable=vgSaved.items.filter(function(it){
-      return !mref.some(function(r){
-        return !!(r&&((r.savedRefId&&r.savedRefId===it.id)||(r.url&&it.url&&r.url===it.url)));
-      });
-    });
-    wrap.style.display='';
-    if(meta){
-      meta.textContent=vgSaved.loading
-        ? 'Yuklanmoqda…'
-        : (vgSaved.items.length
-            ? reusable.length+' ta qayta ishlatish uchun · 1 soat saqlanadi'
-            : '1 soat saqlanadi');
-    }
-    grid.innerHTML='';
-    if(vgSaved.loading&&!vgSaved.items.length){
-      grid.innerHTML='<div class="savedempty">Saved references yuklanmoqda…</div>';
-      return;
-    }
-    if(vgSaved.error&&!vgSaved.items.length){
-      grid.innerHTML='<div class="savedempty">Saved references olinmadi. Keyinroq qayta urinib ko‘ring.</div>';
-      return;
-    }
-    if(!vgSaved.items.length){
-      grid.innerHTML='<div class="savedempty">Yuklangan referenslar shu yerda vaqtincha ko‘rinadi. 1 soatdan keyin o‘zi o‘chadi.</div>';
-      return;
-    }
-    if(!reusable.length){
-      grid.innerHTML='<div class="savedempty">Hozir barcha saved referenslar yuqorida faol ishlatilmoqda. Birortasini olib tashlasangiz, bu yerda qayta ishlatish uchun yana ko‘rinadi.</div>';
-      return;
-    }
-    reusable.forEach(function(it){
-      var d=document.createElement('div');
-      d.className='savedcard '+String(it.kind||'image');
-      if(it.kind==='image'&&(it.thumbUrl||it.url))d.style.backgroundImage='url("'+(it.thumbUrl||it.url)+'")';
-      d.innerHTML='<div class="kind">'+typeLabel(it.kind||'image')+'</div>'
-        +(it.kind==='video'?'<div class="play">▶</div>':it.kind==='audio'?'<div class="play">♪</div>':'')
-        +'<div class="del" title="O‘chirish">×</div>'
-        +'<div class="ttl" style="left:12px;right:auto;bottom:42px;padding:5px 10px;background:rgba(10,16,26,.82);border:1px solid rgba(255,255,255,.12)">Qayta ishlatish</div>'
-        +'<div class="ttl">'+savedRefTtlLabel(it.expiresAt)+'</div>';
-      d.addEventListener('click',function(){
-        var ok=addExistingMediaRef({
-          id:it.id,
-          savedRefId:it.id,
-          cat:it.kind,
-          url:it.url,
-          thumb:it.thumbUrl||it.url,
-          sizeBytes:it.sizeBytes||0,
-          skipClipper:true,
-          expiresAt:it.expiresAt
-        });
-        if(ok)renderVgSavedRefs();
-      });
-      var del=d.querySelector('.del');
-      if(del)del.addEventListener('click',function(e){
-        e.stopPropagation();
-        studioDelete('/api/studio/gen/references/'+encodeURIComponent(it.id)).then(function(){
-          vgSaved.items=vgSaved.items.filter(function(x){ return x.id!==it.id; });
-          var removedToken=null;
-          mref=mref.filter(function(r){
-            var hit=(r&&((r.savedRefId&&r.savedRefId===it.id)||(r.url&&r.url===it.url)));
-            if(hit&&!removedToken)removedToken=r.token||null;
-            return !hit;
-          });
-          if(removedToken||!mref.length)syncMediaRefTokens(removedToken);
-          renderMediaRefs(); updRefMeta(); refreshVgBtn();
-          renderVgSavedRefs();
-          toast('Saved reference o‘chirildi','success');
-        }).catch(function(err){
-          toast((err&&err.message)||'Saved reference o‘chirilmadi','error');
-        });
-      });
-      grid.appendChild(d);
-    });
   }
   function loadVgSavedRefs(force){
     if(vm.refKind!=='media-refs'){ renderVgSavedRefs(); return; }
