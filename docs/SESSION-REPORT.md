@@ -1,11 +1,10 @@
-# SESSION REPORT — 2026-06-30 — Enhance META blok bug tuzatildi
+# SESSION REPORT — 2026-06-30 — Video gen: ko'p gen + tezlik + Tozalash
 
-Muammo: "Yaxshilash" (prompt enhance) prompt matniga META blok qo'shardi — "**Video Prompt:**" sarlavha + "**Target Model / Duration / Aspect Ratio / Resolution/Quality / Native Audio**" qatorlari. Bu fal modelga matn bo'lib ketardi (shovqin) va qiymatlari UI sozlamalariga zid edi (LLM 8s/4k dedi, UI 5s/480p).
+Faqat `plugins/after-effects-cep/AssetFlow_Plugin.html` (frontend; node ✓).
 
-Sabab: `studio-gen.ts` enhance `ctx` LLM'ga "target model / duration options / aspect ratios / resolution / native audio" ro'yxatini berib "tailor the prompt to it" derdi → LLM uni labeled blok qilib qaytarardi.
+- **Ko'p gen (avval faqat 1 edi):** `MAX_VG_JOBS=3` qo'shildi. `refreshVgBtn` (3 shox) `activeJobs.length<1` → `<MAX_VG_JOBS`; `genVgClick` guard `>=1` → `>=MAX_VG_JOBS` (aniq xabar). Endi bir vaqtda 3 ta video gen navbatga qo'yiladi (rasm tool'dagi MAX_JOBS=5 naqshi).
+- **Tezlik:** `genVgClick` da `preflight-safety` + `cost-quote` + `session` endi PARALLEL (`Promise.all`) — avval ketma-ket edi (preflight alohida round-trip). Kredit faqat `/gen`'da yechilgani uchun xavfsiz (preflight bloklasa /gen'gача yetib bormaydi → kredit yechilmaydi). Cold-start Render'da sezilarli tejam.
+  - Eslatma: video gen'ning ASOSIY sekinligi fal video render (daqiqalar) + Render cold-start — bu infra, kodда tezlatib bo'lmaydi. Poll cadence (3s) yetarli.
+- **Tozalash:** video tool'ga `vgClearBtn` qo'shildi (Sozlamalar yorlig'ida, rasm tool'dagidek). Bosilganda: prompt bo'shaydi, media-refs (+@token) tozalanadi, Boshlang'ich/Yakuniy kadr o'chadi. NATIJA (So'nggi grid) tegmaydi. `.axvg .lbl .clearbtn` CSS qo'shildi.
 
-2 qatlamli tuzatish:
-- **Backend** (`apps/api/src/routes/studio-gen.ts`): sozlamalar-konteksti olib tashlandi; o'rniga aniq ko'rsatma — "FAQAT tavsifiy prompt qaytar; sarlavha/label/META (Video Prompt/Target Model/Duration/Aspect/Resolution/Quality/Native Audio) YOZMA — ular UI'da". tsc ✓.
-- **Frontend** (`AssetFlow_Plugin.html`): xavfsizlik to'ri — `afCleanEnhancedPrompt()` boshidagi "Video Prompt:" sarlavhasi va oxiridagi META blokini olib tashlaydi; image+video enhance natijalariga qo'llandi. node ✓. Test: META ketdi, @Image1/@Image2 referenslar saqlandi.
-
-Kutilmoqda: push (Render deploy — backend o'zgargani uchun MUHIM) + AE jonli test (Yaxshilash → faqat tavsif chiqishi).
+Kutilmoqda: push + AE jonli test (3 ta gen birga, Tozalash, tezroq submit).

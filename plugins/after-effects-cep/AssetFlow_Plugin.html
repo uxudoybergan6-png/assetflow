@@ -2536,8 +2536,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .igscroll{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 2px 4px;overflow-y:auto}
 .axig .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center}
 .axig .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
-.axig .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-.axig .lbl .clearbtn:hover{color:var(--red)}
+.axig .lbl .clearbtn,.axvg .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.axig .lbl .clearbtn:hover,.axvg .lbl .clearbtn:hover{color:var(--red)}
 .axig .req{color:var(--acc);margin-left:5px}
 .axig .sect{margin-bottom:16px}
 .axig .warn{display:none;align-items:center;gap:6px;background:rgba(255,177,90,.1);border:1px solid rgba(255,177,90,.35);color:var(--warn);font-size:10px;border-radius:8px;padding:5px 8px;margin-bottom:7px;line-height:1.35}
@@ -3371,7 +3371,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="vpanel settings-panel">
                               <!-- Sozlamalar -->
                               <div class="sect">
-                                <div class="lbl">Sozlamalar</div>
+                                <div class="lbl">Sozlamalar <span class="meta clearbtn" id="vgClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                                 <div class="ctrls">
                                   <div class="seg" id="vgModelSeg"><span class="lab">Model</span><span class="sv" id="vgMName">…</span><span class="sc">▾</span></div>
                                   <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
@@ -10810,18 +10810,18 @@ window.afGallery=(function(){
     if(vm.refKind==='media-refs'){
       // R2V: referens IXTIYORIY → prompt majburiy (≥2 belgi); referens yuklanayotgan bo'lsa bloklanadi
       var refLoading=mref.some(function(r){return r.loading;});
-      ok=vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<1;
+      ok=vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<MAX_VG_JOBS;
       if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
       else if(refLoading)setVgWarn('Referens yuklanmoqda — tugashini kuting.');
       else setVgWarn('');
     } else if(vm.refKind==='none'){
-      ok=vm.loaded&&pr.length>=2&&activeJobs.length<1;
+      ok=vm.loaded&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS;
       if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
       else setVgWarn('');
     } else {
       // Fast (frames): Boshlang'ich kadr + prompt majburiy
       var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
-      ok=vm.loaded&&hasStart&&pr.length>=2&&activeJobs.length<1;
+      ok=vm.loaded&&hasStart&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS;
       if(!hasStart)setVgWarn("Boshlang'ich kadr majburiy — + bosib qo'shing.");
       else if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
       else setVgWarn('');
@@ -11565,7 +11565,7 @@ window.afGallery=(function(){
   });
 
   // ── polling (video uzoq — backend fal/OpenRouter + Render cold-start bilan 10 daqiqadan oshishi mumkin) ──
-  var activeJobs=[]; var jobSeq=0;
+  var activeJobs=[]; var jobSeq=0; var MAX_VG_JOBS=3; // bir vaqtda 3 ta video gen (avval 1 edi)
   // Oldingi limit ~10.5 daqiqa edi va R2V ba'zan undan oshib ketardi → plagin erta "taslim" bo'lardi.
   // Endi ~38-40 daqiqagacha yumshoq kuzatamiz: tez-tez → keyin siyrakroq.
   var VG_POLL_CAP=420;
@@ -11808,7 +11808,7 @@ window.afGallery=(function(){
 
   // ── gen tugmasi ──
   function genVgClick(){
-    if(activeJobs.length>=1){ toast('Bir vaqtda bitta video — tugashini kuting','info'); return; }
+    if(activeJobs.length>=MAX_VG_JOBS){ toast('Maksimal '+MAX_VG_JOBS+' ta video gen — biri tugasin','info'); return; }
     var prompt=vgPromptValue();
     var params;
     if(vm.refKind==='media-refs'){
@@ -11839,22 +11839,21 @@ window.afGallery=(function(){
     ensureVgMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(!vm.model)throw new Error('Model topilmadi');
-      return studioPost('/api/studio/gen/preflight-safety',{mode:'video',modelId:vm.model.id,prompt:prompt,params:params},20000);
-    }).then(function(pre){
+      // TEZLIK: preflight + cost-quote + session PARALLEL (kredit faqat /gen'da yechiladi → xavfsiz).
+      return Promise.all([
+        studioPost('/api/studio/gen/preflight-safety',{mode:'video',modelId:vm.model.id,prompt:prompt,params:params},20000),
+        studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params}),
+        ensureVgSession()
+      ]);
+    }).then(function(arr){
       if(j.cancelled)throw new Error('CANCELLED');
+      var pre=arr[0]; quote=arr[1]; var sid=arr[2];
       if(pre&&pre.blocked){
         var er=new Error(preflightMsg(pre));
         er.code='PREFLIGHT_BLOCKED';
         throw er;
       }
       if(pre&&pre.warnings&&pre.warnings.length)toast(pre.warnings[0],'warning');
-      return Promise.all([
-        studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params}),
-        ensureVgSession()
-      ]);
-    }).then(function(arr){
-      if(j.cancelled)throw new Error('CANCELLED');
-      quote=arr[0]; var sid=arr[1];
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:vm.model.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},300000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
@@ -11871,6 +11870,14 @@ window.afGallery=(function(){
   $('vgGen').addEventListener('click',genVgClick);
   $('vgPrompt').addEventListener('keydown',function(e){ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); if(!$('vgGen').disabled)genVgClick(); } });
   $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('aicat'); });
+  // ↺ Tozalash — KIRISH (prompt + referens/kadr) tozalanadi; NATIJA (So'nggi grid) tegmaydi.
+  (function(){ var b=$('vgClearBtn'); if(!b)return; b.addEventListener('click',function(){
+    var ta=$('vgPrompt'); if(ta){ ta.value=''; if(typeof axGrow==='function')axGrow(ta); }
+    if(mref.length){ var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean); mref=[]; stripPromptTokens(toks); }
+    clearFrameState();
+    hideVgMention(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
+    toast('Tozalandi','info');
+  }); })();
   (function(){ var h=$('vgHist'); if(h)h.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('history'); }); var s=$('vgSet'); if(s)s.addEventListener('click',function(){ closeVgSheets(); if(typeof window.axGo==='function')window.axGo('settings'); }); })();
   $('vgPrompt').addEventListener('input',function(){ refreshVgBtn(); checkVgMention(); });
   $('vgPrompt').addEventListener('keyup',checkVgMention);
