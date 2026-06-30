@@ -382,10 +382,10 @@ select option{background:#222}
       <div class="login-leaf"></div>
       <div class="login-title">AssetFlow Admin</div>
     </div>
-    <div class="login-sub">Faqat ADMIN hisobi uchun · API: Render</div>
+    <div class="login-sub">Faqat ADMIN hisobi uchun · API: Cloud Run</div>
     <div class="login-field">
-      <label>API (Render)</label>
-      <input type="url" id="loginApi" value="https://assetflow-rqbq.onrender.com" autocomplete="off" spellcheck="false">
+      <label>API</label>
+      <input type="url" id="loginApi" value="https://assetflow-api-331762958776.europe-west1.run.app" autocomplete="off" spellcheck="false">
     </div>
     <div class="login-field">
       <label>Email</label>
@@ -502,7 +502,7 @@ select option{background:#222}
     <div class="admin-section">
       <span class="admin-section-label">API manzili</span>
       <div class="admin-api-row">
-        <input type="url" id="sheetApiUrl" placeholder="https://assetflow-rqbq.onrender.com" spellcheck="false">
+        <input type="url" id="sheetApiUrl" placeholder="https://assetflow-api-331762958776.europe-west1.run.app" spellcheck="false">
         <button onclick="adminSaveApi()">Saqlash</button>
         <button onclick="adminResetApi()">Asl</button>
       </div>
@@ -641,7 +641,8 @@ function openFileInAE(child, aepPath, aeAppName) {
 const API_KEY = 'af_admin_api';
 const TOKEN_KEY = 'af_admin_token';
 const USER_KEY = 'af_admin_user';
-const PROD_API = 'https://assetflow-rqbq.onrender.com';
+const PROD_API = 'https://assetflow-api-331762958776.europe-west1.run.app';
+const STALE_API_HOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https?:\/\/assetflow-rqbq\.onrender\.com\/?$/i;
 let allTemplates = [];
 let allSubscribers = [];
 let currentTab = 'moderation';
@@ -650,10 +651,12 @@ function defaultApiUrl() {
   return typeof ASSETFLOW_ENV !== 'undefined' ? ASSETFLOW_ENV.defaultApi() : PROD_API;
 }
 
+// Render'dan Cloud Run'ga ko'chishdan oldin saqlangan localStorage qiymati
+// (localhost yoki eski Render manzili) bo'lsa — joriy default'ga almashtiriladi.
 function apiBase() {
   let url = (localStorage.getItem(API_KEY) || defaultApiUrl()).replace(/\/$/, '');
-  if (IS_CEP && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(url)) {
-    url = PROD_API;
+  if (IS_CEP && STALE_API_HOST_RE.test(url)) {
+    url = defaultApiUrl();
     localStorage.setItem(API_KEY, url);
   }
   return url;

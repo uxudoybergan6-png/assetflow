@@ -559,6 +559,22 @@ const AssetFlowStore = (() => {
     return aep;
   }
 
+  // Eski (Render) manzilga ulangan saqlangan prefs'larni joriy default'ga
+  // moslaydi va o'zgargan bo'lsa diskka qaytadan yozadi — aks holda eski
+  // manzil kod yangilangach ham doimiy ustun kelaveradi.
+  function sanitizeLoadedPrefs(prefs) {
+    try {
+      const sanitize = typeof window !== "undefined" && window.ASSETFLOW_ENV && window.ASSETFLOW_ENV.sanitizeApi;
+      if (!sanitize || !prefs.client || !prefs.client.apiBaseUrl) return prefs;
+      const fixed = sanitize(prefs.client.apiBaseUrl);
+      if (fixed !== prefs.client.apiBaseUrl) {
+        prefs.client = { ...prefs.client, apiBaseUrl: fixed };
+        savePrefs(prefs);
+      }
+    } catch {}
+    return prefs;
+  }
+
   function loadPrefs() {
     initDiskBackend();
     const defaults = { favorites: [], downloaded: [], client: null };
@@ -566,13 +582,13 @@ const AssetFlowStore = (() => {
       const p = pathLib.join(dataRoot, "prefs.json");
       if (!fs.existsSync(p)) return defaults;
       try {
-        return { ...defaults, ...JSON.parse(fs.readFileSync(p, "utf8")) };
+        return sanitizeLoadedPrefs({ ...defaults, ...JSON.parse(fs.readFileSync(p, "utf8")) });
       } catch {
         return defaults;
       }
     }
     try {
-      return { ...defaults, ...JSON.parse(localStorage.getItem("assetflow_prefs") || "{}") };
+      return sanitizeLoadedPrefs({ ...defaults, ...JSON.parse(localStorage.getItem("assetflow_prefs") || "{}") });
     } catch {
       return defaults;
     }
