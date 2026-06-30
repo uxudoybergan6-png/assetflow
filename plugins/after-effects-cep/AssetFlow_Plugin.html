@@ -11245,16 +11245,33 @@ window.afGallery=(function(){
     if(cntRef(type)>=lim[type]){ toast(typeLabel(type)+' ≤'+lim[type],'warning'); return false; }
     return true;
   }
-  // Manba 1 — Fayl yuklash (kompyuterdan); type-aware kengaytma
+  // Bitta disk-fayl yo'lidan referens qo'shadi (Fayl/Project/Timeline manbalari shuni chaqiradi).
+  function addOneMediaPath(path,type){
+    if(!path)return;
+    var st=readFileStat(path);
+    var src={path:path,dataUrl:(type==='image'?readDataUrl(path):null),sizeBytes:(st&&st.size)||0};
+    prepAndUploadMediaRef(src,type);
+  }
+  // Bir nechta fayl yo'lini qo'shadi (multi-import): bo'sh slotlar qadar, limitдан oshmaydi.
+  function addMediaPaths(paths,type){
+    var list=(paths||[]).filter(function(p){ return p && extAllowed(type,p); });
+    if(!list.length){ toast(typeLabel(type)+' formati mos emas','warning'); return; }
+    var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12};
+    var slots=Math.min((lim[type]||0)-cntRef(type),(lim.total||0)-mref.length);
+    if(slots<=0){ toast(typeLabel(type)+' limiti to\'ldi','warning'); return; }
+    if(type==='video'){ addOneMediaPath(list[0],'video'); if(list.length>1)toast('Videolar bittadan qo\'shiladi — qolganini keyin tanlang','info'); return; }
+    var take=list.slice(0,slots);
+    take.forEach(function(p){ addOneMediaPath(p,type); });
+    if(list.length>take.length)toast(take.length+' ta qo\'shildi (limit '+lim[type]+')','info');
+  }
+  // Manba 1 — Fayl yuklash (kompyuterdan); rasm/ovoz uchun BIR NECHTA fayl tanlash mumkin (video bittadan)
   function pickFileMedia(type){
     if(!IS_CEP){ toast('Faqat AE ichida fayl yuklash mumkin','info'); return; }
     if(!mediaAllowed(type))return;
-    var r; try{ r=window.cep.fs.showOpenDialog(false,false,typeLabel(type)+' referens tanlang','',mediaExts(type)); }catch(e){ toast('Dialog xatosi','error'); return; }
+    var multi=(type!=='video'); // video klipperда bittadan
+    var r; try{ r=window.cep.fs.showOpenDialog(multi,false,typeLabel(type)+' referens(lar)ni tanlang','',mediaExts(type)); }catch(e){ toast('Dialog xatosi','error'); return; }
     var paths=(r&&r.data)||[]; if(!paths.length)return;
-    if(!extAllowed(type,paths[0])){ toast(typeLabel(type)+' formati mos emas','warning'); return; }
-    var st=readFileStat(paths[0]);
-    var src={path:paths[0],dataUrl:(type==='image'?readDataUrl(paths[0]):null),sizeBytes:(st&&st.size)||0};
-    if(type!=='image' || src.dataUrl || readFileStat(paths[0])){ prepAndUploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); }
+    addMediaPaths(paths,type);
     if(type!=='video')closeVgSheets();
   }
   // Manba 2 — Project paneldan (AE footage); turga mos filtr (image/video/audio)
@@ -11276,7 +11293,7 @@ window.afGallery=(function(){
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
         d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>';
-        (function(item){ d.addEventListener('click',function(){ var mp=item.mediaPath||''; var st=readFileStat(mp); var src={path:mp,dataUrl:(type==='image'?readDataUrl(mp):null),sizeBytes:(st&&st.size)||0}; if((type!=='image' || src.dataUrl || readFileStat(mp)) && mp){ prepAndUploadMediaRef(src,type); } else { toast('Faylni o\'qib bo\'lmadi','error'); } if(type!=='video')closeVgSheets(); }); })(it);
+        (function(item){ d.addEventListener('click',function(){ var mp=item.mediaPath||''; if(!mp)return; if(!mediaAllowed(type))return; addOneMediaPath(mp,type); if(type==='video')closeVgSheets(); else toast(typeLabel(type)+' qo\'shildi — yana tanlashingiz mumkin','success'); }); })(it);
         host.appendChild(d);
       });
     }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
@@ -11291,12 +11308,25 @@ window.afGallery=(function(){
       var du=readDataUrl(r.path); if(du){ uploadMediaRef({path:r.path,dataUrl:du},'image'); } else { toast('Kadrni o\'qib bo\'lmadi','error'); }
     }).catch(function(e){ toast('Kadr eksport xatosi: '+String(e),'error'); });
   }
+  // Manba 3b — Timeline'dan (video/audio): TANLANGAN layer manba fayli (getActiveTimelineVideoReference)
+  function pickTlSource(type){
+    if(typeof csInterface==='undefined'||!csInterface){ toast('Timeline faqat AE ichida','info'); closeVgSheets(); return; }
+    if(!mediaAllowed(type)){ closeVgSheets(); return; }
+    closeVgSheets(); toast('Timeline klipi olinmoqda…','info');
+    hostCall('getActiveTimelineVideoReference').then(function(r){
+      if(!r||!r.mediaPath){ toast('Klip olinmadi'+((r&&r.reason)?': '+r.reason:' — Timeline\'da klip tanlang'),'warning'); return; }
+      var okType=(type==='video')?(r.hasVideo||r.mediaType==='video'):(r.hasAudio||r.mediaType==='audio');
+      if(!okType){ toast('Tanlangan klip '+typeLabel(type).toLowerCase()+' emas','warning'); return; }
+      if(!extAllowed(type,r.mediaPath)){ toast(typeLabel(type)+' formati mos emas','warning'); return; }
+      addOneMediaPath(r.mediaPath,type);
+    }).catch(function(e){ toast('Timeline xatosi: '+String(e),'error'); });
+  }
   // ＋Rasm/＋Video/＋Ovoz → manba menyu (Fayl/Project/Timeline) — kadrlardagidek (vgSrcSheet qayta ishlatiladi)
   function openMediaSrc(type){
     if(!mediaAllowed(type))return;
     _vgSrcTarget={kind:'media',type:type};
     var t=$('vgSrcTitle'); if(t)t.textContent=typeLabel(type)+' referens';
-    var tl=$('vgSrcTl'); if(tl)tl.style.display=(type==='image')?'':'none'; // Timeline kadr = PNG → faqat rasm
+    var tl=$('vgSrcTl'); if(tl){ tl.style.display=''; var s3=tl.querySelector('small'); if(s3)s3.textContent=(type==='image')?'kompozitsiyadan kadr':'tanlangan klip manbasi'; } // image=kadr PNG · video/audio=layer manbasi
     var fs=$('vgSrcFile'); if(fs){var s=fs.querySelector('small'); if(s)s.textContent='kompyuterdan '+typeLabel(type).toLowerCase();}
     var pr=$('vgSrcProj'); if(pr){var s2=pr.querySelector('small'); if(s2)s2.textContent='AE loyiha '+typeLabel(type).toLowerCase();}
     var anch=$(type==='image'?'vgAddImg':type==='video'?'vgAddVid':'vgAddAud');
@@ -11306,6 +11336,22 @@ window.afGallery=(function(){
     if(i)i.addEventListener('click',function(){ openMediaSrc('image'); });
     if(v)v.addEventListener('click',function(){ openMediaSrc('video'); });
     if(a)a.addEventListener('click',function(){ openMediaSrc('audio'); }); })();
+  // Copy-paste: clipboarddagi RASM → media-refs (R2V) rasm referens (video tool ko'rinib turganda; matn promptga odatdagidek yopishadi).
+  document.addEventListener('paste',function(e){
+    try{
+      if(vm.refKind!=='media-refs')return;
+      var ta=$('vgPrompt'); if(!ta||ta.offsetParent===null)return; // video tool ko'rinmasa — aralashmaymiz
+      var items=(e.clipboardData&&e.clipboardData.items)||[];
+      var img=null; for(var i=0;i<items.length;i++){ if(items[i].type&&items[i].type.indexOf('image/')===0){ img=items[i]; break; } }
+      if(!img)return;
+      e.preventDefault();
+      if(!mediaAllowed('image'))return;
+      var blob=img.getAsFile(); if(!blob)return;
+      var rd=new FileReader();
+      rd.onload=function(){ uploadMediaRef({path:null,dataUrl:String(rd.result||''),sizeBytes:(blob.size||0)},'image'); toast('Rasm clipboarddan qo\'shildi','success'); };
+      rd.readAsDataURL(blob);
+    }catch(_){}
+  });
   (function(){
     var full=$('vgClipFull'), part=$('vgClipPart'), cancel=$('vgClipCancel'), apply=$('vgClipApply'), audioTgl=$('vgClipAudioToggle');
     if(full)full.addEventListener('click',function(){
@@ -11465,7 +11511,7 @@ window.afGallery=(function(){
   }
   $('vgSrcFile').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media')pickFileMedia(_vgSrcTarget.type); else pickFileFrame(_vgSrcTarget.which); });
   $('vgSrcProj').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media')pickProjMedia(_vgSrcTarget.type); else pickProjFrame(_vgSrcTarget.which); });
-  $('vgSrcTl').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media')pickTlMedia(); else pickTlFrame(_vgSrcTarget.which); });
+  $('vgSrcTl').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media'){ _vgSrcTarget.type==='image'?pickTlMedia():pickTlSource(_vgSrcTarget.type); } else pickTlFrame(_vgSrcTarget.which); });
   $('vgStartBox').addEventListener('click',function(){ if(!st.start)openFrameSrc('start'); });
   $('vgEndBox').addEventListener('click',function(){ if(!st.end)openFrameSrc('end'); });
 

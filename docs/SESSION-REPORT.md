@@ -1,17 +1,10 @@
-# SESSION REPORT — 2026-06-30 — Video poydevor: model-aware refactor (B1–B18)
+# SESSION REPORT — 2026-06-30 — Video referens: Timeline (video/audio) + copy-paste + multi-import
 
-Maqsad: yangi video model qo'shishni "bitta deklarativ entry" qilish. Invariant: Seedance 1:1 saqlandi.
+Faqat `plugins/after-effects-cep/AssetFlow_Plugin.html` (frontend; node ✓). R2V media-refs manba menyusi yaxshilandi:
 
-Backend (gen-models.ts, gen-processor.ts, fal.ts) — tasdiqlandi (tsc ✓ + backward-compat 10/10 byte-identical):
-- **B1** `videoInput` descriptor + generic `buildFalVideoInput` (imgSettings/falImage naqshi) → fal kalitlari modeldan.
-- **B2** text-to-video: `videoRequiresStartFrame`; i2v kadr majburiy, t2v emas.
-- **B3** `pricing:'per-generation'` → `computeGenCost` + frontend `cost()` shunga qarab.
-- **B5** `extractFalVideoUrl` (model `outputPaths`) — boshqa javob shaklini ham o'qiydi.
-- **B6** 3001–3007 (non-fal Veo/Kling/Wan) `enabled:false` (kredit yemaydi).
-- **B9** o'lik `falVideo`/`falRefVideo` (99 qator) olib tashlandi; `falVideoUrlToBuffer`.
-- **B15** audio ixtiyoriy (audioKey), **B16** duration string/number.
+- **Timeline'dan (video/ovoz)** — avval faqat rasmда bor edi. Endi video/ovoz uchun ham: `pickTlSource(type)` → `getActiveTimelineVideoReference` (tanlangan layer manba fayli; hasVideo/hasAudio tekshiriladi, format/limit nazorati). Menyu (`openMediaSrc`) Timeline'ni barcha turlar uchun ko'rsatadi, subtitle turga mos.
+- **Copy-paste** — clipboarddagi RASM Ctrl+V bilan media-refs'ga qo'shiladi (faqat video tool ko'rinib turganda; matn promptga odatdagidek yopishadi). `document.paste` listener → FileReader → `uploadMediaRef` (dataUrl yo'li allaqachon bor).
+- **Multi-import** — Fayl dialogi rasm/ovoz uchun **bir nechta** fayl (`showOpenDialog(multi)`), `addMediaPaths` bo'sh slot/limit hisobi bilan qo'shadi (video bittadan — klipper ketma-ket). Project panel: tanlagach sheet ochiq qoladi → bir nechta footage ketma-ket qo'shiladi.
+- Yangi yordamchilar: `addOneMediaPath`, `addMediaPaths`, `pickTlSource`. host.jsx o'zgarmadi (mavjud funksiya).
 
-Frontend (AssetFlow_Plugin.html — node ✓, AE jonli test kutiladi):
-- **B11** model ikonkasi brenddan (avval har modelда "BD"). **B12** neytral default'lar (Seedance/0-12 sizmaydi). **B4** noma'lum refKind→'none' (t2v submit bo'ladi). **B17** model-switch confirm umumiy.
-
-Deferred (kerak bo'lmaguncha): **B7** extra-param UI (seed/negative_prompt), **B8** dispatch-table (t2v marshrut allaqachon ishlaydi), **B10** quote-hash (ataylab: videoUrls hashда — chegirma-gaming oldini oladi), **B13/B14/B18** (LOW). Kutilmoqda: push + AE test. Endi Kling/Veo/Wan/t2v ≈ bitta entry bilan qo'shiladi.
+Kutilmoqda: push + AE jonli test (Timeline video/audio tanlash, paste, multi-select). Eslatma: paste hozir video R2V tool'da; image-gen tool'ga ham qo'shsa bo'ladi (follow-up). Timeline multi (bir nechta tanlangan layer) — host.jsx kengaytmasi kerak (follow-up).
