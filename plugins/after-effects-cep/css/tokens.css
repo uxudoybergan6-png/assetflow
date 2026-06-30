@@ -1,12 +1,13 @@
-/* AssetFlow — yagona dizayn tokenlari (Browse + Admin panellar uchun bitta manba) */
-/* Inter shrifti — internet bo'lmasa system fonts ga jim qaytadi */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+/* FrameFlow — yagona dizayn tokenlari (Browse + Admin panellar uchun bitta manba) */
+/* Hanken Grotesk (UI) + IBM Plex Mono (kredit/label) — internet bo'lmasa system fonts ga jim qaytadi */
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 /* ── STRUKTURA (temaga bog'liq emas: shrift, masofa, shakl, harakat) ── */
 :root{
-  /* Shrift — display (Space Grotesk, offline→Inter→system) + UI (Inter). --fs-xs=11px eng kichik */
-  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-  --font-display:'Space Grotesk','Inter',-apple-system,system-ui,sans-serif;
+  /* Shrift — UI + display (Hanken Grotesk, offline→system) + mono (IBM Plex Mono). --fs-xs=11px eng kichik */
+  --font-sans:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --font-display:'Hanken Grotesk',-apple-system,system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
   --fs-xs:11px;
   --fs-sm:12px;
   --fs-md:13px;
@@ -46,46 +47,46 @@
    ============================================================ */
 :root,
 [data-theme="standart"]{
-  /* Fon / yuzalar */
-  --bg:#0a0b08;
-  --surface:#141612;
-  --surface-2:#1c1f18;
-  --surface-3:#23271e;
-  --pop-bg:#1c1f18; /* popover/menyu — DOIM opaque (glass temalarda ham) */
-  --sidebar:#0d0f0a;
+  /* Fon / yuzalar — FrameFlow (sovuq neytral qora) */
+  --bg:#06080B;          /* canvas */
+  --surface:#13161C;     /* card */
+  --surface-2:#171B22;   /* card hover */
+  --surface-3:#1A1F28;   /* raised */
+  --pop-bg:#171B22; /* popover/menyu — DOIM opaque (glass temalarda ham) */
+  --sidebar:#0A0D12;     /* panel */
 
   /* Glass model (standartda neytral) */
-  --glass-bg:#141612;
+  --glass-bg:#13161C;
   --glass-blur:0px;
   --rim:transparent;
 
   /* Chegaralar */
-  --border:rgba(255,255,255,.10);
-  --border-accent:rgba(163,230,53,.35);
+  --border:#2A3140;
+  --border-accent:rgba(194,240,74,.3);
 
   /* Matn (WCAG AA: --muted body uchun ≥4.5:1; --muted-2 faqat dekorativ/disabled) */
-  --text:#f5f7f0;
-  --muted:rgba(255,255,255,.66);
-  --muted-2:rgba(255,255,255,.52);
+  --text:#F2F5F8;
+  --muted:#8A93A3;
+  --muted-2:#5E6675;
 
   /* Brend (lime) */
-  --accent:#82c341;
-  --accent-hi:#9fd356;
-  --accent-cta:#a3e635;
-  --accent-glow:rgba(163,230,53,.25);
-  --green-dim:rgba(163,230,53,.12);
-  --on-accent:#0a0b08;   /* lime ustidagi matn (qora) */
+  --accent:#C2F04A;
+  --accent-hi:#9CD62B;
+  --accent-cta:#C2F04A;
+  --accent-glow:rgba(194,240,74,.3);
+  --green-dim:rgba(194,240,74,.12);
+  --on-accent:#0E1400;   /* lime ustidagi matn (ink) */
 
-  /* Tanlash (MF ko'k = selection; indigo EMAS) */
-  --select:#327bfa;
-  --select-dim:rgba(50,123,250,.15);
+  /* Tanlash (kategoriya ko'k) */
+  --select:#7CC4FF;
+  --select-dim:rgba(124,196,255,.16);
 
   /* Semantik */
-  --red:#ef4444;   --red-dim:rgba(239,68,68,.12);
-  --amber:#f59e0b; --amber-dim:rgba(245,158,11,.12);
+  --red:#FF6B5E;   --red-dim:rgba(255,107,94,.14);
+  --amber:#FFB27C; --amber-dim:rgba(255,178,124,.14);
 
   /* Effekt */
-  --shadow:0 12px 40px rgba(0,0,0,.45);
+  --shadow:0 30px 70px -30px rgba(0,0,0,.85);
 }
 
 /* ============================================================

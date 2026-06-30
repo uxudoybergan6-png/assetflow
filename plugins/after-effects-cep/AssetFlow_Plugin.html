@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AssetFlow — After Effects</title>
+<title>FrameFlow — After Effects</title>
 <link rel="stylesheet" href="css/tokens.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -2849,7 +2849,7 @@ html.home-mode #homePage{display:block!important}
 
 <div class="demo-badge">
   <span class="dot"></span>
-  <span><strong>AssetFlow</strong> — After Effects plugin</span>
+  <span><strong>FrameFlow</strong> — After Effects plugin</span>
 </div>
 
 <div class="demo-stage">
@@ -2938,7 +2938,7 @@ html.home-mode #homePage{display:block!important}
             <div class="pdot pdot-y" onclick="toggleCollapse()"></div>
             <div class="pdot pdot-g" onclick="toggleExpand()"></div>
           </div>
-          <div class="ptitle">AssetFlow</div>
+          <div class="ptitle">FrameFlow</div>
           <div class="pmenu" onclick="toggleCollapse()">⌄</div>
         </div>
 
@@ -2951,7 +2951,7 @@ html.home-mode #homePage{display:block!important}
               <div class="sb-head">
                 <div class="sb-brand">
                   <span class="sb-mark" aria-hidden="true"><span class="sb-mark-inner"></span></span>
-                  <span class="sb-brand-text">AssetFlow</span>
+                  <span class="sb-brand-text">FrameFlow</span>
                 </div>
                 <button type="button" class="sb-collapse" onclick="toggleSidebar()" title="Yon panelni yig‘ish / ochish" aria-label="Yon panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"/><line x1="10" y1="5" x2="10" y2="19"/></svg></button>
               </div>
@@ -3012,7 +3012,7 @@ html.home-mode #homePage{display:block!important}
                 <button type="button" class="af-tb-home" id="afHomeBtn" title="Asosiy" aria-label="Asosiy">‹ Asosiy</button>
                 <div class="af-tb-brand">
                   <span class="af-tb-logo"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4Z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></span>
-                  <span class="af-tb-title">AssetFlow</span>
+                  <span class="af-tb-title">FrameFlow</span>
                 </div>
                 <button type="button" class="af-tb-icon" onclick="afNavTab('ai')" title="AI Tools" aria-label="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5L15 9M9 15l-2.5 2.5"/></svg></button>
                 <button type="button" class="af-tb-icon" onclick="afHeaderPage('downloaded')" title="Yuklab olingan" aria-label="Yuklab olingan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
@@ -3131,7 +3131,7 @@ html.home-mode #homePage{display:block!important}
                 <div id="homePage">
                   <div class="axhome">
                     <div class="pbar">
-                      <div class="brand"><span class="logo">▲</span> AssetFlow</div>
+                      <div class="brand"><span class="logo">▲</span> FrameFlow</div>
                       <div class="right">
                         <div class="ib" id="homeHist" title="Tarix">🕘</div>
                         <div class="ib" id="homeSet" title="Sozlamalar">⚙</div>
@@ -3184,7 +3184,7 @@ html.home-mode #homePage{display:block!important}
                 <div id="aiPage" style="display:none">
                   <div class="axroot">
                   <div class="app" id="app">
-                    <div class="pbar"><div class="brand"><span class="logo">▲</span> AssetFlow</div><div class="right"><span id="busy" class="busybadge" data-go="history" style="display:none">⟳ ishlanmoqda</span><div class="ib" data-go="history">🕘</div><div class="ib" data-go="settings">⚙</div><div class="ib" data-go="launcher">⌂</div><div class="pro" data-go="settings">✦ <span id="balTop">—</span></div></div></div>
+                    <div class="pbar"><div class="brand"><span class="logo">▲</span> FrameFlow</div><div class="right"><span id="busy" class="busybadge" data-go="history" style="display:none">⟳ ishlanmoqda</span><div class="ib" data-go="history">🕘</div><div class="ib" data-go="settings">⚙</div><div class="ib" data-go="launcher">⌂</div><div class="pro" data-go="settings">✦ <span id="balTop">—</span></div></div></div>
                     <div class="scroll">
                   
                       <!-- v-main: plaginда bor, ko'chirilmadi -->
@@ -4230,7 +4230,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   const displayLabel=String(pack?.displayName||'').trim()
     ||(!isInternalKey?String(packLabel||'').trim():'')
     ||String(pack?.name||'').trim()
-    ||'AssetFlow';
+    ||'FrameFlow';
   const altNames=[];
   const pushAlt=(v)=>{const t=String(v||'').trim();if(t&&altNames.indexOf(t)<0)altNames.push(t);};
   pushAlt(scene?.aeComp);
@@ -7808,7 +7808,7 @@ function aiRenderSearch(data){
       +'<span class="ai-sr-score" title="Mos kelish darajasi">'+pct+'%</span></button>';
   }).join('');
   area.innerHTML='<div class="ai-res">'
-    +'<div class="ai-sr-head"><span class="ai-badge-edge">'+aiIco('spark',13)+' AssetFlow ustunligi</span>'
+    +'<div class="ai-sr-head"><span class="ai-badge-edge">'+aiIco('spark',13)+' FrameFlow ustunligi</span>'
     +'<span class="ai-sr-sub">'+results.length+' mos shablon · katalogdan</span></div>'
     +'<div class="ai-sr-grid">'+cards+'</div></div>';
 }
