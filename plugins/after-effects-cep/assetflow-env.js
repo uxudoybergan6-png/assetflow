@@ -2,7 +2,7 @@
  * AssetFlow CEP — production API/admin (file:// panelda ham cloud ishlaydi)
  */
 window.ASSETFLOW_ENV = (function () {
-  const PROD_API = "https://assetflow-rqbq.onrender.com";
+  const PROD_API = "https://assetflow-api-331762958776.europe-west1.run.app";
   const PROD_ADMIN = "https://assetflow-20j.pages.dev/admin/";
   const LOCAL_API = "http://localhost:4000";
   const LOCAL_ADMIN = "http://localhost:3001/";

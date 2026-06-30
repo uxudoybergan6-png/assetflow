@@ -27,7 +27,7 @@
       ? document.querySelector('meta[name="assetflow-api"]')?.getAttribute("content")
       : null;
 
-  const DEFAULT_ONLINE_API = "https://assetflow-rqbq.onrender.com";
+  const DEFAULT_ONLINE_API = "https://assetflow-api-331762958776.europe-west1.run.app";
 
   let apiUrl = apiFromMeta || DEFAULT_ONLINE_API;
   let mediaUrl = apiUrl;
