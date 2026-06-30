@@ -5,7 +5,7 @@
 NODE_ENV: "production"
 # DB — O'ZGARMAYDI (Neon.tech). Render'dagi DATABASE_URL'ni shu yerga qo'ying:
 DATABASE_URL: "postgresql://...neon..."
-JWT_SECRET: "RENDER'DAGI BILAN BIR XIL bo'lsin (aks holda hamma token bekor bo'ladi)"
+JWT_SECRET: "haqiqiy tasodifiy qiymat: `openssl rand -hex 32` (bu izoh matnini ASLO ishlatmang — committed fayl, hammaga ko'rinadi)"
 
 # URL'lar — Cloud Run URL olgandan keyin yangilang (deploy 1-marta bo'lgach):
 API_PUBLIC_URL: "https://REPLACE-with-cloudrun-url.run.app"
