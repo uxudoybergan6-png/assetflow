@@ -1,20 +1,19 @@
-# SESSION REPORT — 2026-07-01 — Gen-progress UX: So'nggi grid ichida karta (0-100%) + 20 daqiqa
+# SESSION REPORT — 2026-07-01 — Video UX + Omni referens/deskriptor tuzatildi
 
-Foydalanuvchi so'rovi: gen progressi yuqorida sanаb turmasin; pastdagi So'nggi grid kartasida 0-100% aniq sanasin; kutmasdan yana gen; kutish 20 daqiqa (rasm+video).
+Video pane UX (progress karta grid ichida, 20 daqiqa, non-blocking) + video gen tugmasi + Omni referens/deskriptor.
 
-## O'zgarishlar (rasm + video panel)
-- **YUQORI progress ro'yxati OLIB TASHLANDI** (renderJobs/renderVgJobs endi bo'sh — igProg/vgProg ko'rinmaydi).
-- **Har gen So'nggi grid tepasiga "pending" karta** bo'lib qo'shiladi: spinner + 0-100% shkala + prompt + Bekor. Vaqt-asosli silliq shkala (97*(1-e^(-t/45)) rasm, /90 video).
-- **Done bo'lganda pending karta O'SHA JOYDA natijaga aylanadi** (url/id/thumb bilan) — sakramaydi. count>1 → qolgan rasmlar ham qatorga qo'shiladi.
-- **Non-blocking**: foydalanuvchi kutmasdan yana gen qiladi (MAX_JOBS parallel), har biri alohida pending karta.
-- **Umumiy komponent**: `afRecent.pendingCard()` + `afRecent.updatePending()` (rasm+video birga ishlatadi). CSS `.rc-pend`.
+## Video pane UX (rasm+video)
+- Gen-progress YUQORIdan olib tashlandi → So'nggi grid tepasida pending karta (0-100% shkala); done → o'sha joyda natijaga aylanadi. Non-blocking. afRecent.pendingCard/updatePending.
+- Timeout: rasm UI POLL_CAP 670 (~20 daq); backend stuckTimeout hammasi 20 daq.
 
-## Timeout (20 daqiqa)
-- Rasm UI: POLL_CAP 340→**670** (~20 daqiqa). Video UI: VG_POLL_CAP 420 (~39 daq, backend cheklaydi).
-- Backend `stuckTimeoutMs`: hammasi (rasm+video) **20 daqiqa**.
+## Video gen tugmasi (matndan-video)
+- refKind='frames' boshlang'ich kadrni MAJBURIY qilardi → Veo/Omni (text-to-video) tugmasi bloklanardi. `vm.startRequired=(feature==='image-to-video')` — faqat Seedance (i2v) kadr talab qiladi; Veo/Omni ixtiyoriy.
 
-## Tekshiruv
-- 7 inline skript sintaksis-toza (node --check). CEP reinstall + backend deploy. AE'da real sinash foydalanuvchida (CEP).
+## Omni referens + deskriptor (foydalanuvchi xatosini tuzatish)
+- **Referens ishlamasdi**: adapter faqat start kadrni ishlatardi. Endi `omniGenerateVideo` KO'P referens-rasm oladi (Omni = subject reference/i2v); runVertexOmniVideo start+end+referenceUrls hammasini uzatadi.
+- **480p/Auto xato ko'rsatuv**: Omni'da `videoSettings` yo'q edi → pane default ko'rsatardi. Qo'shildi: 720p/10s qat'iy, audio; pricing per-generation (80 FLAT, 800 emas); maxRefs 3.
+- Jonli sinov (prod): 2 referens bilan Omni video YARATILDI, narx 80. ✅
 
-## Foydalanuvchiga
-- AE'ni Cmd+Q qayta oching. Rasm/Video: gen boshlanganda pastda karta 0→100% sanaydi, tugaganda rasm/video bo'ladi; yuqorida darrov yana gen qilsa bo'ladi.
+## KEYINGI (birin-ketin)
+- Veo Lite/Std/Fast uchun ham videoSettings deskriptor + to'g'ri referens/frame semantikasi — foydalanuvchi hujjatlari yoki jonli sinov bilan (Omni tugadi).
+- Model integratsiya ma'lumoti manbai: ai.google.dev/gemini-api/docs (Gemini/Omni/Nano Banana), cloud.google.com/vertex-ai/generative-ai/docs/models (Veo/Imagen), Model Garden "View Code".
