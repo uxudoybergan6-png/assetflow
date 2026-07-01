@@ -21,6 +21,11 @@ AWS_REGION: "auto"
 S3_ENDPOINT: "https://<account_id>.r2.cloudflarestorage.com"
 CDN_BASE_URL: "https://pub-xxx.r2.dev"
 
+# Vertex AI (Veo video, to'g'ridan-to'g'ri — fal.ai orqali EMAS). ADC orqali ishlaydi,
+# API key kerak emas — Cloud Run service account'ga roles/aiplatform.user berilgan bo'lishi shart.
+GOOGLE_CLOUD_PROJECT: ""
+GOOGLE_CLOUD_LOCATION: "us-central1"
+
 # AI provayderlar — O'ZGARMAYDI:
 FAL_KEY: ""
 OPENROUTER_API_KEY: ""

@@ -1,16 +1,13 @@
-# SESSION REPORT — 2026-07-01 — Google Vertex AI (Veo) to'g'ridan-to'g'ri integratsiya
+# SESSION REPORT — 2026-07-01 — Vertex AI (Veo) kod + GCP infratuzilma sozlash + Cloud Run deploy
 
-Foydalanuvchi so'rovi: fal.ai orqali emas, TO'G'RIDAN-TO'G'RI Google Cloud/Vertex AI ($300 GCP kredit sarflash uchun), video (Veo) bilan boshlab.
+Oldingi qismda yozilgan Vertex AI kod ustiga: gcloud CLI o'rnatildi, GCP loyiha/API/IAM sozlandi, Cloud Run qayta deploy qilindi.
 
-- **Qo'shildi:** `apps/api/src/lib/ai/vertex.ts` — ADC (API key yo'q) orqali `@google/genai` (v2.10.0) SDK adapter: `vertexSubmitVideo`, `vertexPollVideo`, `vertexGcsUriToKey`. Usul nomlari (`generateVideos`, `operations.getVideosOperation`) HAQIQIY `.d.ts` fayldan tasdiqlangan.
-- **Qo'shildi:** `s3.ts` → `downloadS3ToBuffer()` — Vertex natijasi (GCS'da, mavjud S3-moslik bucket) xotiraga yuklanadi, alohida GCS auth kerak emas.
-- **Qo'shildi:** `gen-processor.ts` → `runVertexVideo()` + `"vertex-video"` job persistence variant + dispatcher branch + `VERTEX_TIMEOUT` + `stuckTimeoutMs` (20 daq, fal bilan bir xil).
-- **Katalog (gen-models.ts):** id 3002 "Veo 3.1 Fast" → `provider:"vertex"`, `key:"veo-3.1-fast-generate-001"` (yagona tasdiqlangan model ID), cost ≈8 kredit/s (TAXMINIY — $0.10/s ~1kredit=$0.012-0.015 asosida). `enabled:false` — QASDAN o'chirilgan.
-- 3001 (Lite)/3003 (Veo 3.1) model ID'lari TASDIQLANMAGAN — Model Garden'da tekshirish kerak.
-- `npm run build -w apps/api` — TypeScript toza o'tdi.
+- **gcloud CLI o'rnatildi** (`brew install --cask google-cloud-sdk`), `gkmockups@gmail.com` bilan login, loyiha tanlandi: `project-289028d3-984c-4d84-bd4` (`deploy-cloudrun.sh`dagi bilan bir xil — $300 kreditli loyiha).
+- **Yoqildi:** `aiplatform.googleapis.com` (Vertex AI API).
+- **IAM:** Cloud Run service account (`331762958776-compute@developer.gserviceaccount.com`) ga `roles/aiplatform.user` berildi — tasdiqlangan (`get-iam-policy` bilan tekshirildi).
+- **`cloudrun-env.yaml`** (maxfiy, git'da yo'q) ga qo'shildi: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION="us-central1"` (Veo shu regionda; Cloud Run o'zi `europe-west1`da qoladi). `.example.yaml` ham yangilandi (izoh sifatida).
+- **Deploy environment tuzatildi:** bu Mac'da Docker yo'q edi → `colima`+`docker`+`docker-buildx` o'rnatildi. `deploy-cloudrun.sh` xato berdi (`exec format error` — arm64 image, Cloud Run amd64 kutadi) → skript `docker buildx build --platform linux/amd64 --load` ga tuzatildi (bu Mac'dan keyingi deploy'lar uchun ham SHART).
+- **Deploy muvaffaqiyatli:** revision `assetflow-api-00010-cdb`, 100% traffic, `/health` OK. Eski revision xato berганда AVTOMATIK almashtirilmadi (Cloud Run xavfsizlik xususiyati) — production uzilish bo'lmadi.
+- Vertex model (`gen-models.ts` id 3002) hali `enabled:false` — qasddan, $300 kredit bilan qo'lda smoke-test qilingunча yoqilmaydi.
 
-**Kutilmoqda (foydalanuvchi qiladi, men qila olmayman — lokal gcloud yo'q):**
-1. `gcloud services enable aiplatform.googleapis.com`
-2. Cloud Run service account'ga `roles/aiplatform.user` berish
-3. Cloud Run env: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (masalan `us-central1`)
-4. $300 kredit bilan qo'lda 1 video smoke-test, keyin `gen-models.ts`dagi 3002'dan `enabled:false` qatorini olib tashlash so'rash.
+**Kutilmoqda:** foydalanuvchi (yoki men, so'rasa) haqiqiy video generatsiya bilan smoke-test qilish, keyin `enabled:false` qatorini olib tashlash. `/api/plugin/catalog` bo'sh (`{"items":[]}`) qaytardi — Vertex ishiga aloqasi yo'q, alohida tekshirish kerak bo'lishi mumkin.

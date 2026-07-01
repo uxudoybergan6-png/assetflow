@@ -30,7 +30,9 @@ gcloud artifacts repositories create "$REPO" \
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" -q >/dev/null
 
 echo "▶ Image qurilmoqda (lokal docker, ~1-2 daq)…"
-docker build --provenance=false -t "$IMG" .
+# --platform linux/amd64 SHART: Cloud Run amd64 kutadi, Apple Silicon (arm64) mac'da
+# platform ko'rsatilmasa "exec format error" bilan konteyner ishga tushmaydi.
+docker buildx build --platform linux/amd64 --provenance=false -t "$IMG" --load .
 
 echo "▶ Artifact Registry'ga push…"
 docker push "$IMG"
