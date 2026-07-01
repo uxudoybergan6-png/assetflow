@@ -165,6 +165,7 @@ export const GEN_MODELS: GenModel[] = [
     isDefault: true,
     referenceMode: "image-edit", // referens bo'lsa Gemini image edit (rasm tahrirlash/birlashtirish)
     inputs: ["image-ref"],
+    maxRefs: 10, // Gemini bir necha rasmni birlashtiradi (@img1..@img10). maxRefs YO'Q bo'lsa plagin 0 deb bloklaydi!
     aspects: NANO_ASPECTS, // 8 nisbat (SDK ImageConfig; adapter imageConfig.aspectRatio yuboradi)
     resolutions: ["1K", "2K", "4K"], // fallback; imgSettings.quality "Sifat" selektorini ko'rsatadi
     count: [1, 2, 3, 4],

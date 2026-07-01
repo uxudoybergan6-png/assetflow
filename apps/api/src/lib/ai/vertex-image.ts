@@ -83,31 +83,32 @@ export async function vertexImage(
   }
 }
 
-/** Referens rasm bilan tahrirlash (Nano Banana / Gemini image). Imagen edit BU YO'LDA EMAS (t2i only). */
+/** Referens rasm(lar) bilan tahrirlash (Nano Banana / Gemini image). BIR YOKI KO'P referens
+ * (Gemini bir necha rasmni birlashtira oladi — @img1/@img2). Imagen edit BU YO'LDA EMAS (t2i only). */
 export async function vertexImageEdit(
   modelId: string,
   prompt: string,
-  refUrl: string,
+  refUrls: string | string[],
   opts: { aspectRatio?: string; imageSize?: string }
 ): Promise<OrResult<Buffer>> {
   if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
-    const inline = await refToInline(refUrl);
-    if (!inline) return { ok: false, error: "Referens rasm yuklanmadi" };
+    const urls = (Array.isArray(refUrls) ? refUrls : [refUrls]).filter((u) => typeof u === "string" && u.length > 0);
+    if (!urls.length) return { ok: false, error: "Referens rasm yo'q" };
+    // Barcha referenslarni inline (base64) ga — TARTIB saqlanadi (@imgN mapping).
+    const inlines = await Promise.all(urls.map((u) => refToInline(u)));
+    const reqParts: Array<{ inlineData: { data: string; mimeType: string } } | { text: string }> = [];
+    for (const inl of inlines) {
+      if (!inl) return { ok: false, error: "Referens rasm yuklanmadi" };
+      reqParts.push({ inlineData: { data: inl.data, mimeType: inl.mimeType } });
+    }
+    reqParts.push({ text: prompt });
     const ar = cleanAspect(opts.aspectRatio);
     const sz = cleanSize(opts.imageSize);
     const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
     const r = await getClient(locationFor(modelId)).models.generateContent({
       model: modelId,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: { data: inline.data, mimeType: inline.mimeType } },
-            { text: prompt },
-          ],
-        },
-      ],
+      contents: [{ role: "user", parts: reqParts }],
       config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];

@@ -742,10 +742,16 @@ export async function processGeneration(genId: string): Promise<void> {
       // (loop-body holatsiz — har task bir xil argument). Har task: yaratish → persist (bufer scope'dan
       // chiqadi → xotira ozod). mapLimit eng ko'pi IMG_CONCURRENCY ta bir vaqtda → tezlik + cheklangan
       // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
+      // Vertex edit uchun BARCHA referenslar (Gemini ko'p rasmni birlashtiradi) — TARTIB saqlanadi.
+      const vertexRefUrls: string[] = Array.isArray(params.referenceUrls)
+        ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+        : refUrl
+          ? [refUrl]
+          : [];
       const genOne = (): Promise<OrResult<Buffer>> =>
         useVertexImg
           ? useEdit
-            ? vertexImageEdit(model.key, gen.prompt, refUrl as string, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
+            ? vertexImageEdit(model.key, gen.prompt, vertexRefUrls, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
             : vertexImage(model.key, gen.prompt, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
           : useFal
           ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat })
