@@ -864,11 +864,8 @@ export async function processGeneration(genId: string): Promise<void> {
  * /credits va POST /gen'da chaqiriladi — foydalanuvchi keyingi amalida yo'qolган krediti qaytadi.
  */
 function stuckTimeoutMs(g: { mode: string; modelId: number }): number {
-  if (g.mode !== "video") return 10 * 60 * 1000;
-  const model = getModelById(g.modelId);
-  if (model?.provider === "fal" || model?.provider === "vertex" || model?.provider === "vertex-omni")
-    return 20 * 60 * 1000;
-  return 15 * 60 * 1000;
+  // Foydalanuvchi so'rovi (2026-07-01): kutish 20 daqiqa — sekin 4K/Pro rasm ham, video ham.
+  return 20 * 60 * 1000;
 }
 export async function reconcileStuckGenerations(userId: string): Promise<number> {
   const stuck = await prisma.generation.findMany({

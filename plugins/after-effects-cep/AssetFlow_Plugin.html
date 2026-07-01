@@ -2610,6 +2610,17 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
    aks holda karta 60×60 kichik bo'lib qolardi. Endi har karta ustun katagini TO'LIQ to'ldiradi (kvadrat). */
 .axig .recentgrid .rc{width:100%;height:auto;flex:none;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
 .axig .recentgrid .rc:hover{border-color:var(--mut2)}
+/* ── PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala (rasm+video umumiy) ── */
+.recentgrid .rc-pend{cursor:default;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:12px 10px;background:var(--card3);border:1px solid var(--line2)!important}
+.recentgrid .rc-pend .rc-cat{position:absolute;top:6px;left:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:6px}
+.recentgrid .rc-pend .rc-pmid{display:flex;align-items:center;gap:7px}
+.recentgrid .rc-pend .rc-spin{width:15px;height:15px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--acc,#c2f04a);animation:af-spin .8s linear infinite;flex:none}
+.recentgrid .rc-pend .rc-ppct{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--acc,#c2f04a)}
+.recentgrid .rc-pend .rc-pbar{width:82%;height:5px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden}
+.recentgrid .rc-pend .rc-pbar > i{display:block;height:100%;border-radius:999px;background:var(--acc,#c2f04a);transition:width .35s ease}
+.recentgrid .rc-pend .rc-pprompt{font-size:9.5px;color:var(--mut);line-height:1.4;text-align:center;max-height:26px;overflow:hidden;width:100%}
+.recentgrid .rc-pend .rc-pcancel{font-size:10px;font-weight:600;color:var(--mut2);cursor:pointer;padding:2px 8px;border-radius:7px;border:1px solid var(--line2)}
+.recentgrid .rc-pend .rc-pcancel:hover{color:#ff6b5e;border-color:rgba(255,107,94,.4)}
 .axig .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axig .recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
 .axig .recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
@@ -9154,7 +9165,30 @@ async function bootPlugin(){
       d.addEventListener('click',function(){ if(ctx.selecting&&ctx.selecting()){ ctx.onToggleSelect&&ctx.onToggleSelect(it,d); } else openLightbox(it,ctx); });
       return d;
     }
-    return { card: card, openLightbox: openLightbox, closeLightbox: closeLb, catLabel: catLabel };
+    // ---- PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala. seq bo'yicha yangilanadi. ----
+    function pcEsc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    function pendingCard(it,ctx){
+      ctx=ctx||{}; var cat=it.cat||'image';
+      var d=document.createElement('div'); d.className='rc rc-pend'; d.setAttribute('data-pseq',it.seq);
+      var pct=Math.max(2,Math.min(100,Math.round(it.progress||2)));
+      d.innerHTML=''
+        +'<span class="rc-cat">'+(cat==='video'?'Video':cat==='audio'||cat==='sfx'?catLabel(cat):'Rasm')+'</span>'
+        +'<div class="rc-pmid"><span class="rc-spin"></span><span class="rc-ppct">'+pct+'%</span></div>'
+        +'<div class="rc-pbar"><i style="width:'+pct+'%"></i></div>'
+        +'<div class="rc-pprompt">'+pcEsc(it.prompt||'')+'</div>'
+        +'<div class="rc-pcancel">Bekor</div>';
+      var cn=d.querySelector('.rc-pcancel');
+      if(cn)cn.addEventListener('click',function(e){ e.stopPropagation(); ctx.onCancel&&ctx.onCancel(it); });
+      return d;
+    }
+    // Mavjud pending kartaning shkalasini yangilaydi (re-render'siz — silliq).
+    function updatePending(root,seq,pct){
+      var el=(root||document).querySelector('.rc-pend[data-pseq="'+seq+'"]'); if(!el)return;
+      var p=Math.max(2,Math.min(100,Math.round(pct)));
+      var fill=el.querySelector('.rc-pbar > i'); if(fill)fill.style.width=p+'%';
+      var lab=el.querySelector('.rc-ppct'); if(lab)lab.textContent=p+'%';
+    }
+    return { card: card, pendingCard: pendingCard, updatePending: updatePending, openLightbox: openLightbox, closeLightbox: closeLb, catLabel: catLabel };
   })();
 
   function setBusy(b){var el=document.getElementById('busy');if(el)el.style.display=b?'inline-flex':'none';}
@@ -10204,51 +10238,31 @@ window.afGallery=(function(){
   // Har gen ALOHIDA job ob'ekti. MAX_JOBS gacha bir vaqtda. igGen tugmasi faol joblar MAX_JOBS ga yetganда
   // disabled bo'ladi; aks holda yangi gen boshlash mumkin. Har job mustaqil poll/progress/kredit/refund.
   var activeJobs=[]; var jobSeq=0; var MAX_JOBS=5;
-  var POLL_CAP=340; // ~10 daqiqa (backend limitiga mos) — Nano Banana Pro 4K kabi sekin genlar uzilmasin (2026-07-01)
+  var POLL_CAP=670; // ~20 daqiqa (foydalanuvchi so'rovi) — sekin 4K/Pro genlar uzilmasin (2026-07-01)
   function pollDelay(t){ return t<6?1000:1800; }
 
   // Faol job qatorlarini igProg'ga render qiladi.
-  function renderJobs(){
-    var el=$('igProg'); if(!el)return;
-    if(!activeJobs.length){ el.classList.remove('on'); el.innerHTML=''; return; }
-    el.classList.add('on'); el.innerHTML='';
-    activeJobs.forEach(function(j){
-      var row=document.createElement('div'); row.className='jrow';
-      var pt=document.createElement('div'); pt.className='pt';
-      var sp=document.createElement('span'); sp.className='sp'; pt.appendChild(sp);
-      var lbl=document.createElement('span');
-      var preview=j.prompt.length>30?j.prompt.slice(0,30)+'…':j.prompt;
-      lbl.textContent=j.label+' · '+preview; pt.appendChild(lbl);
-      row.appendChild(pt);
-      if(j.jobId){
-        var bar=document.createElement('div'); bar.className='bar';
-        var fill=document.createElement('i'); fill.id='jbar'+j.seq; row._fill=fill;
-        bar.appendChild(fill); row.appendChild(bar);
-      }else{
-        var sending=document.createElement('div'); sending.style.cssText='font-size:11.5px;color:var(--mut);margin:4px 0'; sending.textContent='Yuborilmoqda…'; row.appendChild(sending);
-      }
-      var cn=document.createElement('span'); cn.className='cancel'; cn.textContent='Bekor qilish';
-      (function(job){ cn.addEventListener('click',function(){ cancelJob(job); }); })(j);
-      row.appendChild(cn);
-      el.appendChild(row);
-    });
-  }
+  // YUQORI progress endi ishlatilmaydi — gen holati pastdagi So'nggi grid kartasida ko'rsatiladi.
+  function renderJobs(){ var el=$('igProg'); if(el){ el.classList.remove('on'); el.innerHTML=''; } }
 
-  // Job progress timer (jobId olinganidan keyin boshlaydi).
+  // Job progress timer (jobId olinganidan keyin boshlaydi) — pastdagi pending kartani yangilaydi.
   function startJobProg(j){
-    j.t0=Date.now(); renderJobs();
+    j.t0=Date.now();
     j.progTimer=setInterval(function(){
-      var pct=Math.min(95,Math.round((Date.now()-j.t0)/1800));
-      var bar=document.getElementById('jbar'+j.seq); if(bar)bar.style.width=pct+'%';
-    },300);
+      // vaqt-asosli silliq shkala: ~90s da 90% ga yetadi, keyin sekinlashib 97% da to'xtaydi (done→100%)
+      var el=(Date.now()-j.t0)/1000;
+      var pct=Math.min(97,Math.round(97*(1-Math.exp(-el/45))));
+      if(j.pit){ j.pit.progress=pct; if(window.afRecent)window.afRecent.updatePending($('igRecent'),j.seq,pct); }
+    },500);
   }
 
-  // Jobni massivdan olib tashlaydi, UI yangilaydi.
+  // Jobni massivdan olib tashlaydi, pending kartani ham tozalaydi, UI yangilaydi.
   function removeJob(j){
     var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
     if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
     if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
-    renderJobs(); refreshGen();
+    if(j.pit){ var pi=st.recent.indexOf(j.pit); if(pi>=0)st.recent.splice(pi,1); j.pit=null; }
+    renderRecentGrid(); refreshGen();
   }
 
   // Foydalanuvchi "Bekor qilish" bosdi.
@@ -10276,7 +10290,10 @@ window.afGallery=(function(){
     if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,label:meta.label,jcost:cost(),ar:st.ar,q:st.q,
            cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
-    activeJobs.push(j); renderJobs(); refreshGen();
+    activeJobs.push(j);
+    // GEN ishlamoqda kartasi — YUQORIDA emas, pastdagi So'nggi grid tepasiga (0-100% shkala)
+    j.pit={seq:j.seq,pending:true,prompt:prompt,cat:'image',progress:2,job:j};
+    st.recent.unshift(j.pit); renderRecentGrid(); refreshGen();
     var _gb=$('igGen'); if(_gb)_gb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     // @img tartibida URL'lar (@img1=referenceUrls[0])
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
@@ -10313,10 +10330,22 @@ window.afGallery=(function(){
       if(j.cancelled)return;
       var s=(gn&&gn.status)||'';
       if(s==='done'){
-        var bar=document.getElementById('jbar'+j.seq); if(bar)bar.style.width='100%';
+        if(j.pit&&window.afRecent)window.afRecent.updatePending($('igRecent'),j.seq,100);
         setTimeout(function(){
-          renderResults((gn&&gn.assets)||[],j.jobId,j);
-          removeJob(j); setCreditChip(credits()); toast('Tayyor! ✦'+j.jcost+' yechildi','success');
+          var assets=(gn&&gn.assets)||[]; var first=null;
+          for(var fi=0;fi<assets.length;fi++){ if(assets[fi]&&assets[fi].url){ first=assets[fi]; break; } }
+          if(j.pit&&first){
+            // pending kartani O'SHA JOYDA natijaga aylantiramiz (So'nggi grid)
+            j.pit.pending=false; j.pit.url=first.url; j.pit.thumb=first.thumbUrl||first.url; j.pit.id=(gn&&gn.id)||first.id||null; j.pit.cat='image';
+            var pidx=st.recent.indexOf(j.pit); var off=1;
+            for(var ai=0;ai<assets.length;ai++){ var a=assets[ai]; if(a&&a.url&&a.url!==first.url){ st.recent.splice((pidx>=0?pidx:0)+off,0,{url:a.url,thumb:a.thumbUrl||a.url,id:(gn&&gn.id)||null,cat:'image',prompt:j.prompt}); off++; } }
+            j.pit=null; // endi natija — removeJob o'chirmasin
+          }
+          var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
+          if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
+          if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
+          renderRecentGrid(); refreshGen(); setCreditChip(credits()); toast('Tayyor! ✦'+j.jcost+' yechildi','success');
+          if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },2000); // history bilan id/thumb sinxron
         },200);
       }else if(s==='failed'){
         removeJob(j); setCreditChip(credits()); toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Generatsiya muvaffaqiyatsiz — kredit qaytarildi'),'error');
@@ -10438,13 +10467,18 @@ window.afGallery=(function(){
   function renderRecentGrid(){
     var r=$('igRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(st.recentSelect?' selmode':'');
-    // url bo'yicha dedup, eng yangisi oldinda
-    var seen={},uniq=[]; st.recent.forEach(function(it){ if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } }); st.recent=uniq;
-    if(recentLoading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updRecentBatch(); return; }
-    if(recentError&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(recentError)+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Qayta urinish</button></div>'; updRecentBatch(); return; }
-    if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updRecentBatch(); return; }
-    var ctx=igRecentCtx();
-    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY karta
+    // pending (gen ishlamoqda) itemlarni saqlaymiz + url bo'yicha dedup, eng yangisi oldinda
+    var pend=[],seen={},uniq=[];
+    st.recent.forEach(function(it){ if(it&&it.pending){ pend.push(it); } else if(it&&it.url&&!seen[it.url]){ seen[it.url]=1; uniq.push(it); } });
+    st.recent=pend.concat(uniq);
+    if(!pend.length){
+      if(recentLoading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updRecentBatch(); return; }
+      if(recentError&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(recentError)+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Qayta urinish</button></div>'; updRecentBatch(); return; }
+      if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updRecentBatch(); return; }
+    }
+    var ctx=igRecentCtx(); var pctx={ onCancel:function(it){ if(it.job)cancelJob(it.job); } };
+    pend.forEach(function(it){ r.appendChild(window.afRecent.pendingCard(it,pctx)); }); // gen ishlamoqda — progress karta
+    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY natija karta
     updRecentBatch();
   }
   // bitta gen o'chirish (DELETE /gen/:jobId) — tasdiq bilan
@@ -11656,33 +11690,10 @@ window.afGallery=(function(){
   var VG_POLL_CAP=420;
   function vgPollDelay(t){ return t<10?3000:(t<80?4000:6000); }
 
-  function renderVgJobs(){
-    var el=$('vgProg'); if(!el)return;
-    if(!activeJobs.length){ el.classList.remove('on'); el.innerHTML=''; return; }
-    el.classList.add('on'); el.innerHTML='';
-    activeJobs.forEach(function(j){
-      var row=document.createElement('div'); row.className='jrow';
-      var pt=document.createElement('div'); pt.className='pt';
-      var sp=document.createElement('span'); sp.className='sp'; pt.appendChild(sp);
-      var lbl=document.createElement('span');
-      var preview=(j.prompt&&j.prompt.length>28)?j.prompt.slice(0,28)+'…':(j.prompt||'Video generatsiya');
-      lbl.textContent=(j.modelLabel||'Video model')+' · '+preview; pt.appendChild(lbl); row.appendChild(pt);
-      if(j.jobId){
-        var bar=document.createElement('div'); bar.className='bar';
-        var fill=document.createElement('i'); fill.id='vjbar'+j.seq; bar.appendChild(fill); row.appendChild(bar);
-        var eta=document.createElement('div'); eta.style.cssText='font-size:11px;color:var(--mut);margin:4px 0 0';
-        eta.textContent='⏳ Video odatda 1–5 daqiqa oladi — bu oynani yopsangiz ham Tarixda chiqadi';
-        row.appendChild(eta);
-      } else {
-        var s2=document.createElement('div'); s2.style.cssText='font-size:11.5px;color:var(--mut);margin:4px 0'; s2.textContent='Yuborilmoqda…'; row.appendChild(s2);
-      }
-      var cn=document.createElement('span'); cn.className='cancel'; cn.textContent='Bekor qilish';
-      (function(job){ cn.addEventListener('click',function(){ job.cancelled=true; removeVgJob(job); if(job.submitted)toast('Orqa fonda davom etadi — Tarixda chiqadi','info'); else toast('Bekor qilindi — kredit yechilmadi','info'); }); })(j);
-      row.appendChild(cn); el.appendChild(row);
-    });
-  }
-  function removeVgJob(j){ var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1); if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} renderVgJobs(); refreshVgBtn(); }
-  function startVgProg(j){ j.t0=Date.now(); renderVgJobs(); j.progTimer=setInterval(function(){ var pct=Math.min(90,Math.round((Date.now()-j.t0)/3000)); var bar=document.getElementById('vjbar'+j.seq); if(bar)bar.style.width=pct+'%'; },500); }
+  // YUQORI progress endi ishlatilmaydi — gen holati pastdagi So'nggi grid kartasida (0-100%).
+  function renderVgJobs(){ var el=$('vgProg'); if(el){ el.classList.remove('on'); el.innerHTML=''; } }
+  function removeVgJob(j){ var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1); if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} if(j.pit){var pi=vgRcState.items.indexOf(j.pit); if(pi>=0)vgRcState.items.splice(pi,1); j.pit=null;} renderVgRecent(); refreshVgBtn(); }
+  function startVgProg(j){ j.t0=Date.now(); j.progTimer=setInterval(function(){ var el=(Date.now()-j.t0)/1000; var pct=Math.min(97,Math.round(97*(1-Math.exp(-el/90)))); if(j.pit){ j.pit.progress=pct; if(window.afRecent)window.afRecent.updatePending($('vgRecent'),j.seq,pct); } },700); }
 
   function pollVgJob(j,tries){
     if(j.cancelled)return;
@@ -11695,8 +11706,18 @@ window.afGallery=(function(){
       if(j.cancelled)return;
       var s=(gn&&gn.status)||'';
       if(s==='done'){
-        var bar=document.getElementById('vjbar'+j.seq); if(bar)bar.style.width='100%';
-        setTimeout(function(){ showVgResult((gn&&gn.assets)||[],j); removeVgJob(j); setCreditChip(credits()); toast('Video tayyor! ✦'+j.jcost+' yechildi','success'); },200);
+        if(j.pit&&window.afRecent)window.afRecent.updatePending($('vgRecent'),j.seq,100);
+        setTimeout(function(){
+          var a0=((gn&&gn.assets)||[])[0]||{};
+          if(j.pit&&a0.url){ // pending kartani O'SHA JOYDA natijaga aylantiramiz
+            j.pit.pending=false; j.pit.url=a0.url; j.pit.thumb=a0.thumbUrl||null; j.pit.id=(gn&&gn.id)||j.jobId||null; j.pit.cat='video'; j.pit=null;
+          }
+          showVgResult((gn&&gn.assets)||[],j); // url dedup: unshift skip, faqat player + render
+          var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1);
+          if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
+          if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
+          renderVgRecent(); refreshVgBtn(); setCreditChip(credits()); toast('Video tayyor! ✦'+j.jcost+' yechildi','success');
+        },200);
       } else if(s==='failed'){
         removeVgJob(j); setCreditChip(credits()); toast((gn&&gn.error)||'Video muvaffaqiyatsiz — kredit qaytarildi','error');
       } else {
@@ -11815,12 +11836,17 @@ window.afGallery=(function(){
   function renderVgRecent(){
     var r=$('vgRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(vgRcState.selecting?' selmode':'');
-    var seen={},uniq=[]; vgRcState.items.forEach(function(it){ if(it&&it.url&&!seen[it.url]){seen[it.url]=1;uniq.push(it);} }); vgRcState.items=uniq;
-    if(vgRcState.loading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updVgRcBatch(); return; }
-    if(vgRcState.error&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(vgRcState.error||'Internet/sessiyani tekshiring.')+'<br><button type="button" onclick="retryVgRecent()">↻ Qayta urinish</button></div>'; updVgRcBatch(); return; }
-    if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updVgRcBatch(); return; }
-    var ctx=vgRecentCtx();
-    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY karta
+    var pend=[],seen={},uniq=[];
+    vgRcState.items.forEach(function(it){ if(it&&it.pending){ pend.push(it); } else if(it&&it.url&&!seen[it.url]){seen[it.url]=1;uniq.push(it);} });
+    vgRcState.items=pend.concat(uniq);
+    if(!pend.length){
+      if(vgRcState.loading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updVgRcBatch(); return; }
+      if(vgRcState.error&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(vgRcState.error||'Internet/sessiyani tekshiring.')+'<br><button type="button" onclick="retryVgRecent()">↻ Qayta urinish</button></div>'; updVgRcBatch(); return; }
+      if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updVgRcBatch(); return; }
+    }
+    var ctx=vgRecentCtx(); var pctx={ onCancel:function(it){ if(it.job){ it.job.cancelled=true; removeVgJob(it.job); toast(it.job.submitted?'Orqa fonda davom etadi — Tarixda chiqadi':'Bekor qilindi — kredit yechilmadi','info'); } } };
+    pend.forEach(function(it){ r.appendChild(window.afRecent.pendingCard(it,pctx)); }); // gen ishlamoqda
+    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY natija karta
     updVgRcBatch();
   }
   function vgRcDelete(it){
@@ -11918,7 +11944,10 @@ window.afGallery=(function(){
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model'};
-    activeJobs.push(j); renderVgJobs(); refreshVgBtn();
+    activeJobs.push(j);
+    // GEN ishlamoqda kartasi — pastdagi So'nggi grid tepasiga (0-100% shkala), yuqorida emas
+    j.pit={seq:j.seq,pending:true,prompt:(prompt||'Video'),cat:'video',progress:2,job:j};
+    vgRcState.items.unshift(j.pit); renderVgRecent(); refreshVgBtn();
     var _vgb=$('vgGen'); if(_vgb)_vgb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     var quote=null;
     ensureVgMeta().then(function(){
