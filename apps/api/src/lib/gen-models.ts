@@ -158,6 +158,7 @@ export const GEN_MODELS: GenModel[] = [
     key: "gemini-2.5-flash-image", // Nano Banana — Vertex to'g'ridan-to'g'ri
     label: "Nano Banana",
     provider: "vertex-image",
+    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
     feature: "text-to-image",
     cost: 4, // Google ~$0.04/rasm ≈ 3-4 kredit (fal orqali 6-16 edi)
     isDefault: true,
@@ -173,6 +174,7 @@ export const GEN_MODELS: GenModel[] = [
     key: "imagen-4.0-generate-001", // Imagen 4 — foto-realistik (smoke: 1024x1024, 8s)
     label: "Imagen 4",
     provider: "vertex-image",
+    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
     feature: "text-to-image",
     cost: 4,
     referenceMode: "none", // Imagen bu yo'lda t2i (referens/edit yo'q)
@@ -186,6 +188,7 @@ export const GEN_MODELS: GenModel[] = [
     key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium (1 rasm/chaqiruv, lekin loop bilan count OK)
     label: "Imagen 4 Ultra",
     provider: "vertex-image",
+    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
     feature: "text-to-image",
     cost: 8,
     referenceMode: "none",
@@ -672,8 +675,8 @@ export const GEN_MODELS: GenModel[] = [
     key: "veo-3.1-fast-generate-001", // Vertex Model Garden model ID (tasdiqlangan — real ishlaydigan kod namunasidan)
     label: "Veo 3.1 Fast (Google Cloud)",
     provider: "vertex", // TO'G'RIDAN-TO'G'RI Vertex AI (fal.ai orqali EMAS) — foydalanuvchining o'z GCP krediti
-    enabled: true, // 2026-07-01 real smoke-test o'tdi (submit→poll→GCS→S3 yuklab olish, 4s/720p ~60s)
-    // + poll cast bug tuzatildi → foydalanuvchilarga YOQILDI.
+    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
+    // (kod/smoke-test tayyor: submit→poll→GCS→S3, poll cast bug tuzatilgan)
     feature: "text-to-video",
     // Google narxi ~$0.10/s (audiosiz). 8 kredit/s (~1 kredit≈$0.012-0.015 taxmini bilan deyarli
     // teppa-teng) — foydalanuvchi qarori bilan shu narxda qoldirildi (foyda kam, keyin oshirish mumkin).
@@ -692,7 +695,7 @@ export const GEN_MODELS: GenModel[] = [
     key: "gemini-omni-flash-preview", // Vertex Interactions API (global) — jonli probe tasdiqladi
     label: "Gemini Omni Flash (Google Cloud)",
     provider: "vertex-omni", // SINXRON Interactions API (Veo submit/poll'дан farqli) — har chaqiruv pul oladi
-    enabled: true, // 2026-07-01 nazoratli sinov o'tdi: 1280x720, 10.005s, audio bor, 2.46MB, 38s (submit->data->buffer)
+    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan qayta yoqiladi (kod/sinov tayyor: 1280x720, 10s, audio)
     feature: "text-to-video", // rasm referens bo'lsa image-to-video sifatida ishlaydi (runVertexOmniVideo ichida)
     // NARX QAT'IY: har gen ~10s (API duration tanlatmaydi) = 57920 video-token = ~$1.00 (Google 5792 tok/s@720p x $0.10).
     // 80 kredit ~ $1.00 (1 kr~$0.0125) = deyarli teppa-teng — Veo Fast break-even qaroriga mos. Margin uchun oshirsa bo'ladi.
