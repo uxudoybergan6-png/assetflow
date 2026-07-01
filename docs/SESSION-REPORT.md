@@ -1,17 +1,21 @@
-# SESSION REPORT — 2026-07-01 — VERTEX_NOT_CONFIGURED asosiy sabab tuzatildi + barcha funksiya tekshirildi
+# SESSION REPORT — 2026-07-01 — Nano Banana 2 referens tuzatildi (maxRefs + ko'p-referens)
 
-Nano Banana 2 ulangach, plaginda qayta VERTEX_NOT_CONFIGURED + referens ishlamasligi. Asosiy sabab topilib, doimiy tuzatildi.
+Foydalanuvchi: "referens ishlamayapti" ("Maks 0 ta referens") + referens-manba popover mockupga mos bo'lsin.
 
-## ASOSIY SABAB (nihoyat aniqlandi)
-- `.github/workflows/deploy-cloudrun.yml` — git push'da (apps/api o'zgarsa) AVTO-deploy qiladi. Env'ni `CLOUDRUN_ENV_YAML` GitHub secret'idan oladi. O'sha **secret'da GOOGLE_CLOUD_PROJECT/LOCATION YO'Q** (lokal cloudrun-env.yaml'da bor, lekin secret eski 26-var). Har push → GitHub deploy → Google env tushadi → VERTEX_NOT_CONFIGURED. (Shuning uchun qayta-qayta: men lokal deploy qilaman → ishlaydi → user push qiladi → GitHub deploy env'ni tushiradi.)
+## BUG: "Maks 0 ta referens" — TUZATILDI
+- Sabab: Nano Banana 2 (id 1010) da `maxRefs` YO'Q edi → plagin `meta.maxRefs=m.maxRefs||0` → 0 → +Referens bosilganda darrov "Maks 0" toast, popover ochilmasdi.
+- Tuzatish: `maxRefs: 10` qo'shildi (prod=10 tasdiq). Plagin HTML tegilmadi — maxRefs API katalogdan keladi.
 
-## TUZATISH (doimiy)
-- 3 adapter (vertex/vertex-omni/vertex-image): `process.env.GOOGLE_CLOUD_PROJECT || "project-289028d3-984c-4d84-bd4"` hardcode fallback. Env tushsa ham ishlaydi (ID maxfiy emas — deploy config'da ochiq). Endi qaysi deploy yo'li bo'lsa ham (lokal/GitHub) Vertex ishlaydi.
-- Toza fix BAJARILDI: `gh` o'rnatildi (brew), foydalanuvchi `gh auth login` (uxudoybergan6-png), `gh secret set CLOUDRUN_ENV_YAML < cloudrun-env.yaml` (28 var, Google bilan). Endi GitHub Actions deploy ham to'g'ri env bilan ketadi. Ikki qavat himoya: kod fallback + secret.
+## KO'P-REFERENS qo'llab-quvvatlash qo'shildi
+- `vertexImageEdit` endi bir yoki KO'P referens oladi (string|string[]) — Gemini bir necha rasmni birlashtiradi (@img1..@imgN), tartib saqlanadi. gen-processor `referenceUrls[]` uzatadi.
+- Jonli tasdiq: manba gen ✅, ref-upload ✅, 1-referens ✅, 2-referens tahrir ✅.
 
-## BARCHA FUNKSIYA TEKSHIRILDI (e2e prod, hozir) ✅
-- A) t2i (1:1,1K) narx 4 · B) nisbat+sifat (16:9,2K) narx 8 · C) soni 2 → narx 8, 2 rasm · D) ref-upload → URL · E) ref-tahrir (referens bilan) → narx 4. Hammasi ishlaydi.
-- "Referens import bo'lmadi" ham aslida VERTEX_NOT_CONFIGURED sabab edi (edit ham Vertex talab qiladi). CEP fayl-tanlash dialogini AE'da sinash kerak (client-side).
+## Referens-manba popover — ALLAQACHON MOS
+- Plagin (satr 3279-3281) da popover bor va mockupga 1:1 mos: "Fayl yuklash / kompyuterdan rasm", "Project paneldan / AE loyiha footage", "Timeline'dan / kompozitsiyadan kadr". O'zgartirish shart emas — bug tufayli erishib bo'lmasdi, endi ochiladi.
 
-## Holat
-- Nano Banana 2 (id 1010) JONLI, barcha funksiya ishlaydi. Boshqa modellar hali o'chiq (birin-ketin).
+## Boshqa
+- Test hisob (user@assetflow.uz) krediti tugagan edi (sinovlar sarfladi) → aiCredits 0 → 1000 (foydalanuvchi sinashi uchun).
+- Mockup (Downloads/AssetFlow.html) decode qilindi (scratchpad/mockup.html) — to'liq 1:1 dizayn-port uchun etalon (header toggle joylashuvi kabi mayda farqlar bor, alohida vazifa).
+
+## Foydalanuvchiga
+- Plaginda Rasm tab qayta ochilsin (maxRefs API'dan yangilanadi). +Referens → popover ochiladi → manba tanlab referens qo'shiladi → tahrirlash ishlaydi.
