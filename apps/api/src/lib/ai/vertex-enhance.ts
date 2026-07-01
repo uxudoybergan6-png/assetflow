@@ -14,6 +14,7 @@
 //   maxOutputTokens, temperature } }) → response.text (matn), Part: inlineData{data,mimeType}|text.
 import { GoogleGenAI } from "@google/genai";
 import type { OrResult } from "./openrouter.js";
+import { gcsUriFromUrl, gcsKeyFromUrl, getS3ObjectMeta } from "../s3.js";
 
 // Fallback (2026-07-01): GitHub Actions deploy env secret'ida Google var yo'qligi sabab
 // VERTEX_NOT_CONFIGURED qayta-qayta chiqardi. Loyiha ID maxfiy emas (deploy config'da ochiq).
@@ -22,14 +23,15 @@ const LOCATION = process.env.GOOGLE_CLOUD_LOCATION ?? "us-central1";
 // Ko'p-modal TAHLIL modeli — matn chiqishli (rasm generatsiya EMAS). 2.5 Flash image+video+audio in.
 const ENHANCE_MODEL = "gemini-2.5-flash";
 
-// INLINE-ONLY (base64) — haqiqiy content-type bilan, isbotlangan naqsh (describe endpoint video'ni
-// base64 16MB'gача yuboradi va gemini-2.5-flash qabul qiladi). gs:// fileData ISHLATILMAYDI: bucket
-// turi (GCS/R2) + mimeType taxminidan qochish uchun (100% to'g'rilik).
-//
-// MUHIM: Vertex inline chegarasi SO'ROV TANASI (base64) ustida (~20MB) — XOM bayt EMAS. Shu sabab
-// cap'lar base64 UZUNLIGIDA o'lchanadi (aynan so'rovga ketadigan hajm). Budjet YIG'IB HISOBLANADI
-// (fetch'lar parallel, lekin budjet o'tkazish fetch'lardan KEYIN, SINXRON va DETERMINISTIK tartibda
-// — poyga yo'q, qaysi referens tashlanishi barqaror). Oshsa — o'sha referens tashlab, promptga izoh.
+// Referens yetkazish — IKKI YO'L (katta/uzun video ham qo'llab-quvvatlanadi):
+//  1) BIZNING GCS bucket'dagi referens (assetflow-assets-2026, S3_ENDPOINT=storage.googleapis.com) →
+//     gs:// fileData. So'rov TANASIGA KIRMAYDI → HAJM CHEGARASI YO'Q (uzun/katta video ham). mimeType
+//     HeadObject'dan (getS3ObjectMeta — taxmin YO'Q). Enhance rasm loyihasida (GOOGLE_CLOUD_PROJECT),
+//     bucket ham shu loyihada → Vertex gs:// o'qiydi (Veo shu bucket'ga gs:// yozgani jonli tasdiqlangan).
+//  2) TASHQI URL / data-URI → inline base64 (haqiqiy content-type). Vertex inline chegarasi SO'ROV
+//     TANASI (base64) ustida ~20MB — shu sabab cap base64 UZUNLIGIDA: per-ref 16MB, umumiy 18MB. Oshsa
+//     o'sha referens tashlanadi (promptga izoh). gs:// refs bu budjetga KIRMAYDI (URI kичик).
+// Budjet fetch'lardan KEYIN SINXRON, DETERMINISTIK o'tkaziladi (poyga yo'q).
 const PER_REF_MAX_B64 = 16 * 1024 * 1024;
 const TOTAL_B64_MAX = 18 * 1024 * 1024;
 
@@ -49,20 +51,41 @@ const DEFAULT_MIME: Record<RefKind, string> = {
   video: "video/mp4",
   audio: "audio/mpeg",
 };
-// Yuklab olingan xom referens (base64), budjet o'tkazishga tayyor. idx — kind ichidagi tartib (@imgN).
-type RawRef = { kind: RefKind; idx: number; data: string; mimeType: string };
+// Yechilgan referens: inline (base64 — budjetga kiradi) YOKI gcs (gs:// URI — budjetsiz, katta fayl).
+type ResolvedRef =
+  | { kind: RefKind; idx: number; mode: "inline"; data: string; mimeType: string }
+  | { kind: RefKind; idx: number; mode: "gcs"; fileUri: string; mimeType: string };
 
-/** Bitta referens URL → xom base64 (haqiqiy content-type bilan). data-URI to'g'ridan; URL → yuklab
- * olinadi. Xato → null. Budjet BU YERDA TEKSHIRILMAYDI (fetch'dan keyin sinxron o'tkaziladi). */
-async function fetchRef(url: string, kind: RefKind, idx: number): Promise<RawRef | null> {
+// mimeType'ni trim + `type/subtype` validatsiya; yaroqsiz bo'lsa kind default (Gemini'ga yaroqli mime).
+function validMime(raw: string | undefined, kind: RefKind): string {
+  const mt = (raw || "").trim();
+  return /^[\w.+-]+\/[\w.+-]+$/.test(mt) ? mt : DEFAULT_MIME[kind];
+}
+
+/** Bitta referens URL → ResolvedRef. Bizning GCS bucket → gs:// (yuklab OLINMAYDI, hajm chegarasiz);
+ * data-URI/tashqi URL → inline base64 (haqiqiy content-type). Xato/mavjud emas → null. Budjet BU YERDA EMAS. */
+async function resolveRef(url: string, kind: RefKind, idx: number): Promise<ResolvedRef | null> {
+  // data-URI → inline (mimeType trim + validatsiya, aks holda default)
   const dm = /^data:([^;]+);base64,([\s\S]*)$/.exec(url);
-  if (dm) return { kind, idx, data: dm[2].replace(/\s+/g, ""), mimeType: dm[1] || DEFAULT_MIME[kind] };
+  if (dm) return { kind, idx, mode: "inline", data: dm[2].replace(/\s+/g, ""), mimeType: validMime(dm[1], kind) };
+  // Bizning GCS bucket → gs:// fileData (hajm chegarasi yo'q). mimeType HeadObject'dan (taxmin yo'q).
+  const gsUri = gcsUriFromUrl(url);
+  if (gsUri) {
+    const key = gcsKeyFromUrl(url);
+    const meta = key ? await getS3ObjectMeta(key) : { contentType: null, sizeBytes: null };
+    // Obyekt MAVJUDLIGINI tasdiqla: HeadObject sizeBytes qaytarsa bor. YO'Q bo'lsa (o'chirilgan yoki
+    // o'qib bo'lmaydi) → SKIP (null) — tashqi 404'dek muloyim degradatsiya. Aks holda Vertex yo'q
+    // gs:// obyektni o'qishga urinib BUTUN enhance'ni yiqitardi (audit #2). null → filtrlanadi + sanaladi.
+    if (meta.sizeBytes == null) return null;
+    return { kind, idx, mode: "gcs", fileUri: gsUri, mimeType: validMime(meta.contentType || undefined, kind) };
+  }
+  // Tashqi URL → yuklab olib inline (haqiqiy content-type)
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    const ct = res.headers.get("content-type") || DEFAULT_MIME[kind];
-    return { kind, idx, data: buf.toString("base64"), mimeType: ct };
+    const ct = validMime(res.headers.get("content-type") || undefined, kind);
+    return { kind, idx, mode: "inline", data: buf.toString("base64"), mimeType: ct };
   } catch {
     return null;
   }
@@ -117,35 +140,51 @@ export async function vertexEnhancePrompt(
     `KIRISH TILINI saqla.${tokenHint}${safetyHint}${modelContext} ` +
     "Faqat yakuniy promptni qaytar — hech qanday sarlavha, izoh, referens tahlili, ro'yxat yoki metadata yozma.";
 
-  // 1) Barcha referenslarni PARALLEL yuklab ol (Promise.all TARTIBNI saqlaydi: rasm→video→audio,
-  //    har biri o'z guruhida idx bilan). Fetch xatosi → null (filtrlanadi). Budjet BU YERDA EMAS.
-  const raw = (
+  // 1) Barcha referenslarni PARALLEL yech (Promise.all TARTIBNI saqlaydi: rasm→video→audio, har biri
+  //    o'z guruhida idx bilan). Yuklab bo'lmadi/mavjud emas → null (filtrlanadi). Budjet BU YERDA EMAS.
+  const totalRefs = imgs.length + vids.length + auds.length;
+  const resolved = (
     await Promise.all([
-      ...imgs.map((u, i) => fetchRef(u, "image", i)),
-      ...vids.map((u, i) => fetchRef(u, "video", i)),
-      ...auds.map((u, i) => fetchRef(u, "audio", i)),
+      ...imgs.map((u, i) => resolveRef(u, "image", i)),
+      ...vids.map((u, i) => resolveRef(u, "video", i)),
+      ...auds.map((u, i) => resolveRef(u, "audio", i)),
     ])
-  ).filter((r): r is RawRef => r !== null);
+  ).filter((r): r is ResolvedRef => r !== null);
+  const droppedAtLoad = totalRefs - resolved.length; // yuklab bo'lmadi yoki obyekt mavjud emas
 
-  // 2) SINXRON, DETERMINISTIK budjet o'tkazish (poyga yo'q). Cap = base64 UZUNLIGI (aynan so'rovga
-  //    ketadigan hajm). @imgN/@videoN/@audioN yorlig'i idx'dan (referens tashlansa ham raqam barqaror).
-  const parts: Array<{ inlineData: { data: string; mimeType: string } } | { text: string }> = [];
+  // 2) SINXRON, DETERMINISTIK budjet o'tkazish (poyga yo'q). gs:// (mode:gcs) → so'rov tanasiga
+  //    kirmaydi, HAJM CHEGARASI YO'Q (katta/uzun video). inline → cap = base64 UZUNLIGI (aynan
+  //    so'rovga ketadigan hajm). @imgN/@videoN/@audioN yorlig'i idx'dan (tashlansa ham raqam barqaror).
+  const parts: Array<
+    | { inlineData: { data: string; mimeType: string } }
+    | { fileData: { fileUri: string; mimeType: string } }
+    | { text: string }
+  > = [];
   let usedB64 = 0;
   let skipped = 0;
-  for (const r of raw) {
+  for (const r of resolved) {
+    const tag = r.kind === "image" ? "img" : r.kind; // @img1 / @video1 / @audio1
+    const label = `@${tag}${r.idx + 1} (referens):`;
+    if (r.mode === "gcs") {
+      // gs:// — hajm chegarasisiz (uzun/katta video). Budjetga kirmaydi.
+      parts.push({ text: label });
+      parts.push({ fileData: { fileUri: r.fileUri, mimeType: r.mimeType } });
+      continue;
+    }
     const cost = r.data.length; // base64 belgilar soni ≈ so'rov tanasidagi bayt
     if (cost > PER_REF_MAX_B64 || usedB64 + cost > TOTAL_B64_MAX) {
       skipped++;
       continue;
     }
     usedB64 += cost;
-    const tag = r.kind === "image" ? "img" : r.kind; // @img1 / @video1 / @audio1
-    parts.push({ text: `@${tag}${r.idx + 1} (referens):` });
+    parts.push({ text: label });
     parts.push({ inlineData: { data: r.data, mimeType: r.mimeType } });
   }
 
-  const skipNote = skipped
-    ? `\n\n(eslatma: ${skipped} ta referens juda katta bo'lgani uchun tahlilga kirmadi — matn asosida davom et.)`
+  // Halol eslatma: yuklab bo'lmagan/mavjud emas (droppedAtLoad) + juda katta (skipped) — ikkalasi ham.
+  const missing = droppedAtLoad + skipped;
+  const skipNote = missing
+    ? `\n\n(eslatma: ${missing} ta referens yuklanmadi yoki juda katta bo'lgani uchun tahlilga kirmadi — matn asosida davom et.)`
     : "";
   parts.push({ text: `Foydalanuvchi so'rovi: ${text}${skipNote}` });
 
