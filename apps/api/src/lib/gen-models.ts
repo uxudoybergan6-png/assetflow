@@ -758,16 +758,26 @@ export const GEN_MODELS: GenModel[] = [
     provider: "vertex-omni", // SINXRON Interactions API (Veo submit/poll'дан farqli) — har chaqiruv pul oladi
     enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Sinov: 1280x720, 10s, audio.
     feature: "text-to-video", // rasm referens bo'lsa image-to-video sifatida ishlaydi (runVertexOmniVideo ichida)
-    // NARX QAT'IY: har gen ~10s (API duration tanlatmaydi) = 57920 video-token = ~$1.00 (Google 5792 tok/s@720p x $0.10).
-    // 80 kredit ~ $1.00 (1 kr~$0.0125) = deyarli teppa-teng — Veo Fast break-even qaroriga mos. Margin uchun oshirsa bo'ladi.
+    // NARX QAT'IY (per-generation): har gen ~10s = ~$1.00. 80 kredit FLAT (soniyaga ko'paytirilmaydi).
+    pricing: "per-generation",
     cost: 80,
-    referenceMode: "video-ref", // ixtiyoriy boshlang'ich rasm (image-to-video)
+    referenceMode: "video-ref", // ixtiyoriy referens rasm(lar) — Omni KO'P rasm oladi (subject reference)
     endFrame: false,
+    maxRefs: 3, // Omni bir necha referens-rasm qabul qiladi (subject reference / image-to-video)
     aspects: ["16:9", "9:16"],
     resolutions: ["720p"],
-    durations: [10], // QAT'IY ~10s — API duration tanlatmaydi (sinov: 10.005s)
-    audio: true, // sinovda audio (AAC) avtomatik qo'shildi
+    durations: [10],
+    audio: true,
     inputs: ["image-ref"],
+    // videoSettings deskriptor — video pane sozlamalarni SHUNDAN o'qiydi (aks holda 480p/Auto default).
+    // Omni: 720p qat'iy, 10s qat'iy, audio doim (jonli sinov: 1280x720, 10.005s, AAC).
+    videoSettings: {
+      aspect: { options: ["16:9", "9:16"], def: "16:9" },
+      resolution: { options: ["720p"], def: "720p", perSec: { "720p": 80 } },
+      duration: { options: ["10"], def: "10", autoSec: 10 },
+      audio: true,
+      audioDefault: true,
+    },
   },
   {
     id: 3003,

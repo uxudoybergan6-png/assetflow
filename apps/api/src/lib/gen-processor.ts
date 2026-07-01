@@ -613,12 +613,19 @@ async function runVertexOmniVideo(
   _userId: string,
   _genId: string
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
-  const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
   const v = resolveVideoParams(model, params);
-  const inline = refUrl ? await refUrlToInlineImage(refUrl) : null;
+  // Omni KO'P referens-rasm oladi: boshlang'ich kadr (referenceUrl) + yakuniy kadr (referenceEndUrl)
+  // + qo'shimcha (referenceUrls). TARTIB saqlanadi. Hammasini inline base64 ga aylantiramiz.
+  const refUrls: string[] = [];
+  if (typeof params.referenceUrl === "string" && params.referenceUrl) refUrls.push(params.referenceUrl);
+  if (typeof params.referenceEndUrl === "string" && params.referenceEndUrl) refUrls.push(params.referenceEndUrl);
+  if (Array.isArray(params.referenceUrls))
+    for (const u of params.referenceUrls) if (typeof u === "string" && u && !refUrls.includes(u)) refUrls.push(u);
+  const inlines = (await Promise.all(refUrls.map((u) => refUrlToInlineImage(u)))).filter(
+    (x): x is { data: string; mimeType: string } => !!x
+  );
   const out = await omniGenerateVideo(model.key, prompt, {
-    imageBase64: inline?.data,
-    imageMimeType: inline?.mimeType,
+    images: inlines.map((i) => ({ data: i.data, mimeType: i.mimeType })),
     aspectRatio: v.aspectRatio,
   });
   if (!out.ok) return { ok: false, error: out.error };

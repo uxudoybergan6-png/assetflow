@@ -34,18 +34,21 @@ async function getToken(): Promise<string> {
 type OmniContent = { type?: string; data?: string; uri?: string; mime_type?: string };
 type OmniStep = { type?: string; content?: OmniContent[] };
 
-/** Gemini Omni Flash bilan video generatsiya (sinxron). Referens rasm IXTIYORIY (image-to-video). */
+/** Gemini Omni Flash bilan video generatsiya (sinxron). Referens rasm(lar) IXTIYORIY —
+ * Omni KO'P referens-rasm oladi (subject reference / image-to-video), tartib saqlanadi
+ * (interactions `input` massivi: [{image},{image},...,{text}]). Doc: ai.google.dev/.../omni. */
 export async function omniGenerateVideo(
   modelId: string,
   prompt: string,
-  opts: { imageBase64?: string; imageMimeType?: string; aspectRatio?: string }
+  opts: { images?: Array<{ data: string; mimeType?: string }>; aspectRatio?: string }
 ): Promise<OrResult<Buffer>> {
   if (!isVertexOmniConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
     const token = await getToken();
-    const input = opts.imageBase64
+    const imgs = (opts.images || []).filter((im) => im && im.data);
+    const input = imgs.length
       ? [
-          { type: "image", data: opts.imageBase64, mime_type: opts.imageMimeType || "image/png" },
+          ...imgs.map((im) => ({ type: "image", data: im.data, mime_type: im.mimeType || "image/png" })),
           { type: "text", text: prompt },
         ]
       : prompt;
