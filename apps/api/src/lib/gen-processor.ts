@@ -5,6 +5,7 @@ import {
   getSignedDownloadUrl,
   getPublicOrSignedUrl,
   downloadS3ToBuffer,
+  gcsKeyFromUrl,
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import {
@@ -606,6 +607,34 @@ async function runVertexVideo(
  * bitta chaqiruv videoni (Buffer) darrov qaytaradi. Referens rasm IXTIYORIY (image-to-video).
  * Sinxron bo'lgani uchun provider-job persist qilinmaydi — xato bo'lsa oddiy fail+refund.
  */
+const OMNI_INLINE_VIDEO_MAX = 15 * 1024 * 1024; // ~15MB gacha inline base64; kattasi gs:// SHART
+
+/** Video referens URL → Omni video input INLINE base64 (≤15MB). MUHIM: gs:// cross-loyiha ishlamaydi
+ *  (Omni VIDEO_PROJECT'da, bucket boshqa loyihada) → gs:// EMAS, videoni yuklab base64 qilamiz. Bu
+ *  loyihaga bog'liq emas. Katta video (>15MB) uchun same-project GCS bucket kerak (hozircha yo'q). */
+async function videoRefToOmniInput(url: string): Promise<{ data?: string } | null> {
+  const m = /^data:[^;]+;base64,([\s\S]*)$/.exec(url);
+  if (m) {
+    const buf = Buffer.from(m[2], "base64");
+    return buf.length <= OMNI_INLINE_VIDEO_MAX ? { data: m[2] } : null;
+  }
+  // bizning bucket → S3'dan yuklab; tashqi → fetch
+  const key = gcsKeyFromUrl(url);
+  let buf: Buffer;
+  try {
+    if (key) buf = await downloadS3ToBuffer(key);
+    else {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      buf = Buffer.from(await res.arrayBuffer());
+    }
+  } catch {
+    return null;
+  }
+  if (buf.length > OMNI_INLINE_VIDEO_MAX) return null; // katta → same-project GCS kerak (yo'q)
+  return { data: buf.toString("base64") };
+}
+
 async function runVertexOmniVideo(
   model: GenModel,
   prompt: string,
@@ -614,18 +643,30 @@ async function runVertexOmniVideo(
   _genId: string
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const v = resolveVideoParams(model, params);
-  // Omni KO'P referens-rasm oladi: boshlang'ich kadr (referenceUrl) + yakuniy kadr (referenceEndUrl)
-  // + qo'shimcha (referenceUrls). TARTIB saqlanadi. Hammasini inline base64 ga aylantiramiz.
-  const refUrls: string[] = [];
-  if (typeof params.referenceUrl === "string" && params.referenceUrl) refUrls.push(params.referenceUrl);
-  if (typeof params.referenceEndUrl === "string" && params.referenceEndUrl) refUrls.push(params.referenceEndUrl);
-  if (Array.isArray(params.referenceUrls))
-    for (const u of params.referenceUrls) if (typeof u === "string" && u && !refUrls.includes(u)) refUrls.push(u);
-  const inlines = (await Promise.all(refUrls.map((u) => refUrlToInlineImage(u)))).filter(
+  const lim = model.mediaRefs ?? { image: 3, video: 2, audio: 0, total: 3 };
+  // Media-refs: rasm (image-to-video/subject) + VIDEO (reference-to-video/editing). Frames (referenceUrl/End)
+  // ham rasm sifatida qo'shiladi (orqaga moslik). TARTIB saqlanadi.
+  const imageRefs: string[] = [];
+  if (typeof params.referenceUrl === "string" && params.referenceUrl) imageRefs.push(params.referenceUrl);
+  if (typeof params.referenceEndUrl === "string" && params.referenceEndUrl) imageRefs.push(params.referenceEndUrl);
+  if (Array.isArray(params.imageUrls))
+    for (const u of params.imageUrls) if (typeof u === "string" && u && !imageRefs.includes(u)) imageRefs.push(u);
+  const videoRefs: string[] = Array.isArray(params.videoUrls)
+    ? (params.videoUrls as unknown[]).filter((u): u is string => typeof u === "string" && u.length > 0)
+    : [];
+
+  const inlines = (await Promise.all(imageRefs.slice(0, lim.image).map((u) => refUrlToInlineImage(u)))).filter(
     (x): x is { data: string; mimeType: string } => !!x
   );
+  const vids = (await Promise.all(videoRefs.slice(0, lim.video).map((u) => videoRefToOmniInput(u)))).filter(
+    (x): x is { gsUri?: string; data?: string } => !!x
+  );
+  if (videoRefs.length && vids.length < videoRefs.length)
+    return { ok: false, error: "Video referens juda katta yoki yuklanmadi (gs:// yoki ≤15MB kerak)" };
+
   const out = await omniGenerateVideo(model.key, prompt, {
     images: inlines.map((i) => ({ data: i.data, mimeType: i.mimeType })),
+    videos: vids,
     aspectRatio: v.aspectRatio,
   });
   if (!out.ok) return { ok: false, error: out.error };

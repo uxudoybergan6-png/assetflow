@@ -761,14 +761,18 @@ export const GEN_MODELS: GenModel[] = [
     // NARX QAT'IY (per-generation): har gen ~10s = ~$1.00. 80 kredit FLAT (soniyaga ko'paytirilmaydi).
     pricing: "per-generation",
     cost: 80,
-    referenceMode: "video-ref", // ixtiyoriy referens rasm(lar) — Omni KO'P rasm oladi (subject reference)
+    // KO'P-MODAL referens: RASM (image-to-video/subject) + VIDEO (reference-to-video/editing).
+    // Video Vertex Omni'ga gs:// yoki inline base64 uzatiladi (workflow 2026-07-01 jonli tasdiqladi).
+    refKind: "media-refs",
+    referenceMode: "video-ref",
     endFrame: false,
-    maxRefs: 3, // Omni bir necha referens-rasm qabul qiladi (subject reference / image-to-video)
+    mediaRefs: { image: 3, video: 2, audio: 0, total: 3 },
+    mediaRefFormats: { image: ["png", "jpg", "jpeg", "webp"], video: ["mp4", "mov", "webm"] },
     aspects: ["16:9", "9:16"],
     resolutions: ["720p"],
     durations: [10],
     audio: true,
-    inputs: ["image-ref"],
+    inputs: ["image-ref", "video-ref"],
     // videoSettings deskriptor — video pane sozlamalarni SHUNDAN o'qiydi (aks holda 480p/Auto default).
     // Omni: 720p qat'iy, 10s qat'iy, audio doim (jonli sinov: 1280x720, 10.005s, AAC).
     videoSettings: {

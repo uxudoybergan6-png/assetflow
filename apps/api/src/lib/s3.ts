@@ -51,6 +51,33 @@ export function getPublicUrl(key: string): string {
   return `/placeholder/${key}`;
 }
 
+/** Bizning GCS bucket URL'idan (public/signed/CDN) obyekt KEY'ini ajratadi. Boshqa host → null.
+ *  Vertex Omni video input `gs://` talab qiladi — shu key'dan gs:// yasaladi. */
+export function gcsKeyFromUrl(url: string): string | null {
+  if (!bucket) return null;
+  if (cdnBase && url.startsWith(cdnBase.replace(/\/$/, "") + "/"))
+    return decodeURIComponent(url.slice(cdnBase.replace(/\/$/, "").length + 1).split("?")[0]);
+  try {
+    const u = new URL(url);
+    const path = decodeURIComponent(u.pathname.replace(/^\//, ""));
+    // https://storage.googleapis.com/<bucket>/<key>  (GCS S3-mos)
+    if (u.hostname === "storage.googleapis.com" && path.startsWith(bucket + "/")) return path.slice(bucket.length + 1);
+    // https://<bucket>.storage.googleapis.com/<key>
+    if (u.hostname === `${bucket}.storage.googleapis.com`) return path;
+    // https://<bucket>.s3.<region>.amazonaws.com/<key>
+    if (u.hostname.startsWith(`${bucket}.s3.`)) return path;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Bizning bucket'dagi obyekt uchun gs:// URI (Omni video input). Boshqa manba → null. */
+export function gcsUriFromUrl(url: string): string | null {
+  const key = gcsKeyFromUrl(url);
+  return key ? `gs://${bucket}/${key}` : null;
+}
+
 export async function getSignedDownloadUrl(
   key: string,
   expiresIn = 3600

@@ -34,26 +34,35 @@ async function getToken(): Promise<string> {
 type OmniContent = { type?: string; data?: string; uri?: string; mime_type?: string };
 type OmniStep = { type?: string; content?: OmniContent[] };
 
-/** Gemini Omni Flash bilan video generatsiya (sinxron). Referens rasm(lar) IXTIYORIY —
- * Omni KO'P referens-rasm oladi (subject reference / image-to-video), tartib saqlanadi
- * (interactions `input` massivi: [{image},{image},...,{text}]). Doc: ai.google.dev/.../omni. */
+/** Gemini Omni Flash bilan video generatsiya (sinxron). Referens rasm VA/YOKI video IXTIYORIY:
+ * - rasm: {type:"image", data:<base64>, mime_type} (image-to-video / subject reference)
+ * - VIDEO: {type:"video", uri:"gs://..."} (katta) YOKI {type:"video", data:<base64>} (kichik) —
+ *   reference-to-video / video editing. FAQAT gs:// yoki base64 (HTTPS/presigned QABUL QILINMAYDI),
+ *   mime_type snake_case xom MIME (video/mp4). Workflow 2026-07-01 jonli tasdiqladi. */
 export async function omniGenerateVideo(
   modelId: string,
   prompt: string,
-  opts: { images?: Array<{ data: string; mimeType?: string }>; aspectRatio?: string }
+  opts: {
+    images?: Array<{ data: string; mimeType?: string }>;
+    videos?: Array<{ gsUri?: string; data?: string; mimeType?: string }>;
+    aspectRatio?: string;
+  }
 ): Promise<OrResult<Buffer>> {
   if (!isVertexOmniConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
     const token = await getToken();
-    const imgs = (opts.images || []).filter((im) => im && im.data);
-    const input = imgs.length
-      ? [
-          ...imgs.map((im) => ({ type: "image", data: im.data, mime_type: im.mimeType || "image/png" })),
-          { type: "text", text: prompt },
-        ]
-      : prompt;
+    const items: Array<Record<string, unknown>> = [];
+    for (const im of opts.images || []) if (im && im.data) items.push({ type: "image", data: im.data, mime_type: im.mimeType || "image/png" });
+    let hasVideoInput = false;
+    for (const v of opts.videos || []) {
+      if (v && v.gsUri) { items.push({ type: "video", uri: v.gsUri, mime_type: v.mimeType || "video/mp4" }); hasVideoInput = true; }
+      else if (v && v.data) { items.push({ type: "video", data: v.data, mime_type: v.mimeType || "video/mp4" }); hasVideoInput = true; }
+    }
+    const input = items.length ? [...items, { type: "text", text: prompt }] : prompt;
     const body: Record<string, unknown> = { model: modelId, input };
-    if (opts.aspectRatio) body.response_format = { type: "video", aspect_ratio: opts.aspectRatio };
+    // MUHIM (jonli tasdiq 2026-07-01): VIDEO input bo'lsa response_format YUBORILMAYDI — aks holda 400.
+    // Video input'siz esa response_format aspect_ratio'ni boshqaradi. Video input bilan model baribir video chiqaradi.
+    if (opts.aspectRatio && !hasVideoInput) body.response_format = { type: "video", aspect_ratio: opts.aspectRatio };
 
     const res = await fetch(OMNI_ENDPOINT, {
       method: "POST",
