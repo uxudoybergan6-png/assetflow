@@ -45,7 +45,7 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
   qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
@@ -622,6 +622,25 @@ export const GEN_MODELS: GenModel[] = [
     resolutions: ["720p", "1080p"],
     durations: [4, 6, 8],
     audio: false, // Vertex generateAudio hali smoke-test qilinmagan — MVP audiosiz
+    inputs: ["image-ref"],
+  },
+  {
+    id: 3010,
+    mode: "video",
+    key: "gemini-omni-flash-preview", // Vertex Interactions API (global) — jonli probe tasdiqladi
+    label: "Gemini Omni Flash (Google Cloud)",
+    provider: "vertex-omni", // SINXRON Interactions API (Veo submit/poll'дан farqli) — har chaqiruv pul oladi
+    enabled: true, // 2026-07-01 nazoratli sinov o'tdi: 1280x720, 10.005s, audio bor, 2.46MB, 38s (submit->data->buffer)
+    feature: "text-to-video", // rasm referens bo'lsa image-to-video sifatida ishlaydi (runVertexOmniVideo ichida)
+    // NARX QAT'IY: har gen ~10s (API duration tanlatmaydi) = 57920 video-token = ~$1.00 (Google 5792 tok/s@720p x $0.10).
+    // 80 kredit ~ $1.00 (1 kr~$0.0125) = deyarli teppa-teng — Veo Fast break-even qaroriga mos. Margin uchun oshirsa bo'ladi.
+    cost: 80,
+    referenceMode: "video-ref", // ixtiyoriy boshlang'ich rasm (image-to-video)
+    endFrame: false,
+    aspects: ["16:9", "9:16"],
+    resolutions: ["720p"],
+    durations: [10], // QAT'IY ~10s — API duration tanlatmaydi (sinov: 10.005s)
+    audio: true, // sinovda audio (AAC) avtomatik qo'shildi
     inputs: ["image-ref"],
   },
   {

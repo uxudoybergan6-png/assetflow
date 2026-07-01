@@ -36,6 +36,7 @@ import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
 import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vertex.js";
+import { omniGenerateVideo } from "./ai/vertex-omni.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
@@ -600,6 +601,30 @@ async function runVertexVideo(
 }
 
 /**
+ * Gemini Omni Flash (Vertex Interactions API) — SINXRON. Veo'дан farqli submit/poll YO'Q:
+ * bitta chaqiruv videoni (Buffer) darrov qaytaradi. Referens rasm IXTIYORIY (image-to-video).
+ * Sinxron bo'lgani uchun provider-job persist qilinmaydi — xato bo'lsa oddiy fail+refund.
+ */
+async function runVertexOmniVideo(
+  model: GenModel,
+  prompt: string,
+  params: Record<string, unknown>,
+  _userId: string,
+  _genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  const v = resolveVideoParams(model, params);
+  const inline = refUrl ? await refUrlToInlineImage(refUrl) : null;
+  const out = await omniGenerateVideo(model.key, prompt, {
+    imageBase64: inline?.data,
+    imageMimeType: inline?.mimeType,
+    aspectRatio: v.aspectRatio,
+  });
+  if (!out.ok) return { ok: false, error: out.error };
+  return { ok: true, buf: out.data };
+}
+
+/**
  * queued Generation'ni qayta ishlaydi — model.feature bo'yicha OpenRouter'ga marshrutlaydi:
  * text-to-image / image-edit → sync; text-to-speech → audio; text/image-to-video → async poll.
  * Natija R2'ga → GenAsset → status=done. Xato → status=failed + KREDIT QAYTARILADI.
@@ -790,7 +815,9 @@ export async function processGeneration(genId: string): Promise<void> {
             ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
             : model.provider === "vertex"
               ? await runVertexVideo(model, gen.prompt, params, gen.userId, genId)
-              : await runVideo(model, gen.prompt, params, gen.userId, genId);
+              : model.provider === "vertex-omni"
+                ? await runVertexOmniVideo(model, gen.prompt, params, gen.userId, genId)
+                : await runVideo(model, gen.prompt, params, gen.userId, genId);
       if (
         !out.ok &&
         (out.error.startsWith("FAL_TIMEOUT") ||
@@ -827,7 +854,8 @@ export async function processGeneration(genId: string): Promise<void> {
 function stuckTimeoutMs(g: { mode: string; modelId: number }): number {
   if (g.mode !== "video") return 10 * 60 * 1000;
   const model = getModelById(g.modelId);
-  if (model?.provider === "fal" || model?.provider === "vertex") return 20 * 60 * 1000;
+  if (model?.provider === "fal" || model?.provider === "vertex" || model?.provider === "vertex-omni")
+    return 20 * 60 * 1000;
   return 15 * 60 * 1000;
 }
 export async function reconcileStuckGenerations(userId: string): Promise<number> {
