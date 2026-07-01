@@ -7,7 +7,7 @@ Nano Banana 2 ulangach, plaginda qayta VERTEX_NOT_CONFIGURED + referens ishlamas
 
 ## TUZATISH (doimiy)
 - 3 adapter (vertex/vertex-omni/vertex-image): `process.env.GOOGLE_CLOUD_PROJECT || "project-289028d3-984c-4d84-bd4"` hardcode fallback. Env tushsa ham ishlaydi (ID maxfiy emas — deploy config'da ochiq). Endi qaysi deploy yo'li bo'lsa ham (lokal/GitHub) Vertex ishlaydi.
-- Toza fix (ixtiyoriy): `gh secret set CLOUDRUN_ENV_YAML < cloudrun-env.yaml` — GitHub secret'ni yangilash (foydalanuvchi ruxsati bilan).
+- Toza fix BAJARILDI: `gh` o'rnatildi (brew), foydalanuvchi `gh auth login` (uxudoybergan6-png), `gh secret set CLOUDRUN_ENV_YAML < cloudrun-env.yaml` (28 var, Google bilan). Endi GitHub Actions deploy ham to'g'ri env bilan ketadi. Ikki qavat himoya: kod fallback + secret.
 
 ## BARCHA FUNKSIYA TEKSHIRILDI (e2e prod, hozir) ✅
 - A) t2i (1:1,1K) narx 4 · B) nisbat+sifat (16:9,2K) narx 8 · C) soni 2 → narx 8, 2 rasm · D) ref-upload → URL · E) ref-tahrir (referens bilan) → narx 4. Hammasi ishlaydi.
