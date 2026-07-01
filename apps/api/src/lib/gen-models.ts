@@ -45,7 +45,7 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
   qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
@@ -146,9 +146,56 @@ const KOKORO_VOICES = [
 ];
 
 export const GEN_MODELS: GenModel[] = [
-  // ── RASM (text-to-image) — chat/completions + modalities ──
+  // ── RASM — GOOGLE TO'G'RIDAN-TO'G'RI (Vertex Imagen/Nano Banana; fal/openrouter EMAS) ──
+  // 2026-07-01 smoke-test o'tdi (Imagen 4 & Nano Banana 1024x1024). Foydalanuvchi qarori: "to'liq Google".
+  {
+    id: 1010,
+    mode: "image",
+    key: "gemini-2.5-flash-image", // Nano Banana — Vertex to'g'ridan-to'g'ri
+    label: "Nano Banana",
+    provider: "vertex-image",
+    feature: "text-to-image",
+    cost: 4, // Google ~$0.04/rasm ≈ 3-4 kredit (fal orqali 6-16 edi)
+    isDefault: true,
+    referenceMode: "image-edit", // referens bo'lsa Gemini image edit
+    inputs: ["image-ref"],
+    aspects: IMG_ASPECTS,
+    resolutions: IMG_QUALITY,
+    count: [1, 2, 3, 4],
+    imgModalities: ["image", "text"],
+  },
+  {
+    id: 1011,
+    mode: "image",
+    key: "imagen-4.0-generate-001", // Imagen 4 — foto-realistik (smoke: 1024x1024, 8s)
+    label: "Imagen 4",
+    provider: "vertex-image",
+    feature: "text-to-image",
+    cost: 4,
+    referenceMode: "none", // Imagen bu yo'lda t2i (referens/edit yo'q)
+    aspects: IMG_ASPECTS,
+    resolutions: IMG_QUALITY,
+    count: [1, 2, 3, 4],
+    imgModalities: ["image"],
+  },
+  {
+    id: 1012,
+    mode: "image",
+    key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium
+    label: "Imagen 4 Ultra",
+    provider: "vertex-image",
+    feature: "text-to-image",
+    cost: 8,
+    referenceMode: "none",
+    aspects: IMG_ASPECTS,
+    resolutions: IMG_QUALITY,
+    count: [1, 2, 3, 4],
+    imgModalities: ["image"],
+  },
+  // ── RASM (text-to-image) — ESKI fal/openrouter avlod: to'liq-Google qaroriga ko'ra HAMMASI enabled:false ──
   {
     id: 1001,
+    enabled: false, // to'liq-Google (2026-07-01): fal/openrouter rasm o'chirildi
     mode: "image",
     key: "google/gemini-3.1-flash-image-preview",
     label: "Nano Banana 2",
@@ -165,6 +212,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1002,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "google/gemini-3-pro-image-preview",
     label: "Nano Banana Pro",
@@ -180,6 +228,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1003,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "bytedance-seed/seedream-4.5",
     label: "Seedream 4.5",
@@ -195,6 +244,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1004,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "black-forest-labs/flux.2-pro",
     label: "Flux 2.0 Pro",
@@ -208,6 +258,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1005,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "x-ai/grok-imagine-image-quality",
     label: "Grok Imagine",
@@ -222,6 +273,7 @@ export const GEN_MODELS: GenModel[] = [
   // ── RASM EDIT (reference / "rangini o'zgartir") ──
   {
     id: 1101,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "google/gemini-3.1-flash-image-preview",
     label: "Gemini Edit (reference)",
@@ -235,6 +287,7 @@ export const GEN_MODELS: GenModel[] = [
   // GPT Image 2 Edit (fal.ai) — rasmni prompt bilan tahrirlash; narx quality bo'yicha (per-rasm).
   {
     id: 1102,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "openai/gpt-image-2/edit",
     label: "GPT Image 2 Edit",
@@ -265,6 +318,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1103,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "openai/gpt-image-2",
     label: "GPT Image 2",
@@ -294,6 +348,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1104,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/nano-banana-2/edit",
     label: "Nano Banana 2 Edit",
@@ -326,6 +381,7 @@ export const GEN_MODELS: GenModel[] = [
 
   {
     id: 1105,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/nano-banana-2",
     label: "Nano Banana 2",
@@ -357,6 +413,7 @@ export const GEN_MODELS: GenModel[] = [
 
   {
     id: 1106,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/bytedance/seedream/v4.5/edit",
     label: "Seedream V4.5 Edit",
@@ -395,6 +452,7 @@ export const GEN_MODELS: GenModel[] = [
 
   {
     id: 1107,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/flux-2-pro",
     label: "Flux 2 Pro",
@@ -423,6 +481,7 @@ export const GEN_MODELS: GenModel[] = [
   },
   {
     id: 1108,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/flux-2-pro/edit",
     label: "Flux 2 Pro Edit",
@@ -453,6 +512,7 @@ export const GEN_MODELS: GenModel[] = [
   // Seedream V5 Lite t2i — referenssiz, image_size(auto_2K/3K/4K + nisbatlar), 1-6 soni, tekis narx 4kr.
   {
     id: 1109,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/bytedance/seedream/v5/lite/text-to-image",
     label: "Seedream V5 Lite",
@@ -490,6 +550,7 @@ export const GEN_MODELS: GenModel[] = [
   // Seedream V5 Lite edit — referens MAJBURIY (≤10), image_size, 1-6 soni, tekis narx 4kr.
   {
     id: 1110,
+    enabled: false, // to'liq-Google (2026-07-01)
     mode: "image",
     key: "fal-ai/bytedance/seedream/v5/lite/edit",
     label: "Seedream V5 Lite Edit",

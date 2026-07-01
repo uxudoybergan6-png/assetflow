@@ -37,6 +37,7 @@ import type { OrResult } from "./ai/openrouter.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
 import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vertex.js";
 import { omniGenerateVideo } from "./ai/vertex-omni.js";
+import { vertexImage, vertexImageEdit } from "./ai/vertex-image.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
@@ -682,6 +683,7 @@ export async function processGeneration(genId: string): Promise<void> {
       // Kontrakt OrResult<Buffer> bir xil → persist/fail/refund skeleton o'zgarmaydi.
       const useMagnific = genProvider() === "magnific";
       const useFal = model.provider === "fal"; // openai/gpt-image-2/edit (image-edit)
+      const useVertexImg = model.provider === "vertex-image"; // Imagen/Nano Banana — Google to'g'ridan-to'g'ri
       const mModel = model.magnificModel ?? "realism";
       // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
       // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
@@ -741,7 +743,11 @@ export async function processGeneration(genId: string): Promise<void> {
       // chiqadi → xotira ozod). mapLimit eng ko'pi IMG_CONCURRENCY ta bir vaqtda → tezlik + cheklangan
       // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
       const genOne = (): Promise<OrResult<Buffer>> =>
-        useFal
+        useVertexImg
+          ? useEdit
+            ? vertexImageEdit(model.key, gen.prompt, refUrl as string, { aspectRatio: imageConfig.aspect_ratio })
+            : vertexImage(model.key, gen.prompt, { aspectRatio: imageConfig.aspect_ratio })
+          : useFal
           ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat })
           : mfRemoveBg
           ? magnificRemoveBg(mfRbgUrl)
