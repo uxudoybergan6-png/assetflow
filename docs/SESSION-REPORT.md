@@ -1,17 +1,19 @@
-# SESSION REPORT — 2026-07-01 — Google Vertex modellar: parametr to'g'riligi tekshiruvi
+# SESSION REPORT — 2026-07-01 — Nano Banana 2 (Gemini 3.1 Flash Image) plaginga ulandi
 
-Video + rasm Google Vertex'ga ulanган (Veo Fast, Omni Flash, Imagen 4, Imagen 4 Ultra, Nano Banana). Bu qadam: har model parametrlarini (nisbat/soni/davomiylik/audio) HAQIQIY qo'llab-quvvatlashiga solishtirib to'g'rilash.
+Barcha qo'shilgan modellar vaqtincha o'chirilgach (toza qayta-qo'shish), foydalanuvchi tanlovi bilan BIRINCHI model — Nano Banana 2 — to'liq spec bilan ulandi.
 
-## RASM — to'g'rilandi + tasdiqlandi ✅
-- **Nano Banana aspectRatio ULANDI:** adapter avval imageConfig.aspectRatio yubormasди → "Nisbat" ishlamasди. Endi yuboradi. Sinov: 16:9 → 1344×768 ✓.
-- **Model-aware nisbat ro'yxati:** Imagen 4/Ultra = 5 (1:1,3:4,4:3,16:9,9:16); Nano Banana = 8 (Gemini ImageConfig). Eski IMG_ASPECTS'da 4:5/5:4 ikkalasida ham YO'Q edi (xato manbasi).
-- **resolutions olib tashlandi** (adapter imageSize ishlatmaydi; UI flat-cost fallback). Ultra "1 rasm/chaqiruv" limiti muammo emas (adapter har chaqiruvda numberOfImages:1, processor count marta loop).
-- Deploy: cloudrun-env.yaml bilan (Google env qayta tasdiqlandi). Prod katalog to'g'ri nisbatlarni ko'rsatadi.
+## Nano Banana 2 (id 1010) — JONLI ✅
+- **Model:** `gemini-3.1-flash-image` (Model Garden'da "Nano Banana 2" — 2.5'dan yangi/kuchli).
+- **MUHIM region:** yangi Gemini 3.x image FAQAT `global`da (us-central1 → 404). Adapter `locationFor()` bilan model'ga qarab region tanlaydi.
+- **Imkoniyatlar (jonli sinov):** t2i + referens-tahrir; 8 nisbat (16:9→2752×1536 ✓); o'lcham 1K/2K/4K (4K→4096² 16MP, ~51s).
+- **UI:** Model + Nisbat(8) + **Sifat(1K/2K/4K)** + Soni(1-4) + Referens. Sifat selektori uchun `imgSettings.quality` SHART (plagin `hasQuality=!!ql`) — qo'shildi.
+- **Narx:** 1K=4, 2K=8, 4K=16 kredit (qualityCost + imgSettings.quality.cost).
+- **Adapter:** `vertexImage`/`vertexImageEdit` endi imageSize (imageConfig.imageSize) yuboradi; gen-processor quality→imageSize uzatadi.
+- **Tekshiruv:** built adapter (global+2K) ✅; e2e prod (katalog, narx 1K=4/2K=8, gen→GCS) ✅. Deploy: cloudrun-env.yaml bilan (env qayta tasdiqlandi).
 
-## VIDEO — holat
-- **Omni Flash** ✅ tasdiqlangan (10s qat'iy, audio, 16:9/9:16).
-- **Veo 3.1 Fast** ⚠️ katalog: aspects[16:9,9:16] res[720p,1080p] dur[4,6,8] audio=false. FAQAT 720p/16:9/4s real sinaldi. 1080p/6s/8s — standart Veo qiymati, lekin "Fast" variant cheklangan bo'lishi mumkin. Metadata endpoint spec bermaydi.
-- **Kutilmoqda:** foydalanuvchi Google konsol Veo 3.1 Fast model-card'dan aniq durations/resolutions/audio ro'yxatini beradi → katalog moslanadi.
+## Holat
+- Rasm tab'da FAQAT Nano Banana 2 (default). Imagen 4/Ultra, Veo Fast, Omni Flash — hali `enabled:false` (birin-ketin qo'shiladi).
+- Foydalanuvchi plaginda AI Tools → Rasm ni qayta ochib sinaydi (CEP qayta o'rnatish shart emas — o'zgarish katalogda, API orqali keladi).
 
-## Env eslatma
-- Cloud Run env'ini KONSOLDAN tahrirlashda Google 2 var (PROJECT/LOCATION) tushib qolmasin — deploy-cloudrun.sh (env-vars-file) ishlatilsin. Bu deploy ularni qayta tasdiqladi.
+## Keyingi
+- Nano Banana 2 tasdiqlangach → keyingi model (Imagen 4 yoki Veo). Veo uchun model-card spec kerak (davomiylik/1080p/audio).
