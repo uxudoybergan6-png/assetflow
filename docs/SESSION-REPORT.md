@@ -1,23 +1,17 @@
-# SESSION REPORT — 2026-07-01 — Google Vertex: video + rasm jonli + plagin dropdown tuzatildi
+# SESSION REPORT — 2026-07-01 — Google Vertex modellar: parametr to'g'riligi tekshiruvi
 
-Veo Fast + Omni Flash (video) va Imagen/Nano Banana (rasm) Google Vertex'ga to'g'ridan-to'g'ri ulanди. Plagin UI ularni ko'rsatmagani tuzatildi.
+Video + rasm Google Vertex'ga ulanган (Veo Fast, Omni Flash, Imagen 4, Imagen 4 Ultra, Nano Banana). Bu qadam: har model parametrlarini (nisbat/soni/davomiylik/audio) HAQIQIY qo'llab-quvvatlashiga solishtirib to'g'rilash.
 
-## Backend (oldingi qadamlar shu sessiyada)
-- Video: Veo 3.1 Fast (`veo-3.1-fast-generate-001`, 8kr/s, id 3002), Gemini Omni Flash (Interactions API, sinxron, 80kr, id 3010).
-- Rasm: fal→Google. `vertex-image.ts`. Katalog: 1010 Nano Banana (default,4kr), 1011 Imagen 4 (4kr), 1012 Imagen 4 Ultra (8kr). 15 eski fal/openrouter rasm modeli enabled:false.
-- Hammasi real smoke-test + prod e2e (kredit yechildi, GCS asset). Cloud Run: assetflow-api-00016-759.
+## RASM — to'g'rilandi + tasdiqlandi ✅
+- **Nano Banana aspectRatio ULANDI:** adapter avval imageConfig.aspectRatio yubormasди → "Nisbat" ishlamasди. Endi yuboradi. Sinov: 16:9 → 1344×768 ✓.
+- **Model-aware nisbat ro'yxati:** Imagen 4/Ultra = 5 (1:1,3:4,4:3,16:9,9:16); Nano Banana = 8 (Gemini ImageConfig). Eski IMG_ASPECTS'da 4:5/5:4 ikkalasida ham YO'Q edi (xato manbasi).
+- **resolutions olib tashlandi** (adapter imageSize ishlatmaydi; UI flat-cost fallback). Ultra "1 rasm/chaqiruv" limiti muammo emas (adapter har chaqiruvda numberOfImages:1, processor count marta loop).
+- Deploy: cloudrun-env.yaml bilan (Google env qayta tasdiqlandi). Prod katalog to'g'ri nisbatlarni ko'rsatadi.
 
-## Plagin dropdown tuzatishi (BUGUNGI muammo)
-- **Muammo:** foydalanuvchi plaginda rasm modeli bo'sh ("Model topilmadi"), videoda faqat Seedance — yangi Google modellar ko'rinmadi.
-- **Sabab:** plagin `/gen/models` javobini `provider==='fal'` ga FILTRLARDI (AssetFlow_Plugin.html ~9910 rasm, ~11028 video). Google provayderlar (vertex-image/vertex/vertex-omni) tushib qolardi.
-- **Tuzatish:** ikkала filtr Google provayderlarni ham qabul qiladi. Rasm default=isDefault (Nano Banana). Veo/Omni refKind='frames' → video pane to'g'ri render qiladi (i2v-uslub, matndan-video ham ishlaydi).
-- Plagin Cloud Run API'ga to'g'ri ulanган (assetflow-env.js PROD_API). CEP yangilandi (install-cep.sh, AF_SKIP_AE=1).
+## VIDEO — holat
+- **Omni Flash** ✅ tasdiqlangan (10s qat'iy, audio, 16:9/9:16).
+- **Veo 3.1 Fast** ⚠️ katalog: aspects[16:9,9:16] res[720p,1080p] dur[4,6,8] audio=false. FAQAT 720p/16:9/4s real sinaldi. 1080p/6s/8s — standart Veo qiymati, lekin "Fast" variant cheklangan bo'lishi mumkin. Metadata endpoint spec bermaydi.
+- **Kutilmoqda:** foydalanuvchi Google konsol Veo 3.1 Fast model-card'dan aniq durations/resolutions/audio ro'yxatini beradi → katalog moslanadi.
 
-## VERTEX_NOT_CONFIGURED tuzatildi (env yo'qolgan)
-- **Muammo:** plaginda Nano Banana gen → "VERTEX_NOT_CONFIGURED". Sabab: joriy Cloud Run revision (00017-6bv) da GOOGLE_CLOUD_PROJECT/LOCATION YO'Q edi — mendan keyin tashqi (konsol?) revision paydo bo'lib 2 Google env'ni yo'qotgan (boshqa 24 env bor edi).
-- **Tuzatish:** `gcloud run services update --update-env-vars GOOGLE_CLOUD_PROJECT/LOCATION` (Docker qayta qurmasdan). Revision **00018-h7l**, env SET. Nano Banana e2e gen O'TDI (GCS asset). cloudrun-env.yaml'da vars bor → keyingi deploy'lar to'g'ri.
-- **Ehtiyot:** Cloud Run env'ini KONSOLDAN tahrirlashda Google 2 var tushib qolmasin — deploy-cloudrun.sh (env-vars-file) ishlatilsin.
-
-## Kutilmoqda
-- Foydalanuvchi plaginda qayta gen qiladi (AE restart shart emas — server tuzatishi). Rasm 3 Google model, video Veo+Omni+2 Seedance.
-- Launcher preview yorliqlari (5969-5980) hali 'Veo 3.1 Lite'/'Nano Banana 2' — kosmetik, keyin yangilash mumkin.
+## Env eslatma
+- Cloud Run env'ini KONSOLDAN tahrirlashda Google 2 var (PROJECT/LOCATION) tushib qolmasin — deploy-cloudrun.sh (env-vars-file) ishlatilsin. Bu deploy ularni qayta tasdiqladi.
