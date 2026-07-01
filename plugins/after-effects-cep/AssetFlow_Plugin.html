@@ -9906,12 +9906,13 @@ window.afGallery=(function(){
     if(meta.loaded)return Promise.resolve(meta);
     if(meta._pending)return meta._pending;
     meta._pending=studioGet('/api/studio/gen/models?mode=image').then(function(r){
-      // FAQAT fal image modellari (GPT Image 2 oilasi) — magnific/openrouter tool'lar emas.
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.id!=null; });
+      // Rasm gen modellari: Google to'g'ridan-to'g'ri (vertex-image) + fal (agar qolgan bo'lsa).
+      // magnific/openrouter TOOL'lar emas (ular provider boshqa). 2026-07-01: to'liq-Google.
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&(x.provider==='vertex-image'||x.provider==='fal')&&x.id!=null; });
       if(!fal.length)throw new Error('Model topilmadi');
       meta.models=fal;
-      // default: GPT Image 2 Edit (joriy xulq) bo'lsa, aks holда 1-chi
-      var def=fal.filter(function(x){ return x.key==='openai/gpt-image-2/edit'; })[0]||fal[0];
+      // default: isDefault belgilangani (Nano Banana), aks holда 1-chi
+      var def=fal.filter(function(x){ return x.isDefault; })[0]||fal[0];
       meta.loaded=true; setModel(def); renderModelSheet();
       return meta;
     }).catch(function(err){
@@ -11025,7 +11026,9 @@ window.afGallery=(function(){
     if(vm.loaded)return Promise.resolve(vm);
     if(vm._pending)return vm._pending;
     vm._pending=studioGet('/api/studio/gen/models?mode=video').then(function(r){
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.provider==='fal'&&x.mode==='video'; });
+      // Video modellar: Google to'g'ridan-to'g'ri (Veo=vertex, Omni=vertex-omni) + fal (Seedance).
+      // 2026-07-01: Veo/Omni refKind='frames' (i2v-uslub) — pane ularni to'g'ri ko'rsatadi.
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&(x.provider==='fal'||x.provider==='vertex'||x.provider==='vertex-omni')&&x.mode==='video'; });
       if(!fal.length)throw new Error('Video model topilmadi');
       vm.models=fal; vm.loaded=true;
       try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}
