@@ -136,6 +136,10 @@ export type GenModel = {
 
 const IMG_QUALITY = ["1K", "2K", "4K"]; // OpenRouter image_config.image_size qiymatlari
 const IMG_ASPECTS = ["1:1", "2:3", "3:2", "3:4", "16:9", "4:3", "4:5", "5:4", "9:16", "21:9"];
+// Google Vertex rasm — model QO'LLAYDIGAN aniq nisbatlar (SDK/hujjat bilan tasdiqlangan 2026-07-01):
+// Imagen 4/Ultra faqat 5 ta; Nano Banana (Gemini image ImageConfig) 8 ta (4:5, 5:4 YO'Q).
+const IMAGEN_ASPECTS = ["1:1", "3:4", "4:3", "16:9", "9:16"];
+const NANO_ASPECTS = ["1:1", "2:3", "3:2", "3:4", "4:3", "16:9", "9:16", "21:9"];
 const KOKORO_VOICES = [
   { id: "af_bella", label: "Bella" },
   { id: "af_nova", label: "Nova" },
@@ -159,8 +163,7 @@ export const GEN_MODELS: GenModel[] = [
     isDefault: true,
     referenceMode: "image-edit", // referens bo'lsa Gemini image edit
     inputs: ["image-ref"],
-    aspects: IMG_ASPECTS,
-    resolutions: IMG_QUALITY,
+    aspects: NANO_ASPECTS, // Gemini image ImageConfig qo'llaydigan 8 nisbat (adapter imageConfig.aspectRatio yuboradi)
     count: [1, 2, 3, 4],
     imgModalities: ["image", "text"],
   },
@@ -173,22 +176,20 @@ export const GEN_MODELS: GenModel[] = [
     feature: "text-to-image",
     cost: 4,
     referenceMode: "none", // Imagen bu yo'lda t2i (referens/edit yo'q)
-    aspects: IMG_ASPECTS,
-    resolutions: IMG_QUALITY,
-    count: [1, 2, 3, 4],
+    aspects: IMAGEN_ASPECTS, // Imagen faqat 5 nisbat
+    count: [1, 2, 3, 4], // adapter har chaqiruvda numberOfImages:1 → processor count marta (Ultra limiti muammo emas)
     imgModalities: ["image"],
   },
   {
     id: 1012,
     mode: "image",
-    key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium
+    key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium (1 rasm/chaqiruv, lekin loop bilan count OK)
     label: "Imagen 4 Ultra",
     provider: "vertex-image",
     feature: "text-to-image",
     cost: 8,
     referenceMode: "none",
-    aspects: IMG_ASPECTS,
-    resolutions: IMG_QUALITY,
+    aspects: IMAGEN_ASPECTS,
     count: [1, 2, 3, 4],
     imgModalities: ["image"],
   },

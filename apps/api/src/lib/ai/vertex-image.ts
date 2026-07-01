@@ -54,11 +54,12 @@ export async function vertexImage(
       if (!b64) return { ok: false, error: "Imagen: rasm qaytmadi (xavfsizlik filtri bo'lishi mumkin)" };
       return { ok: true, data: Buffer.from(b64, "base64") };
     }
-    // Nano Banana (gemini image)
+    // Nano Banana (gemini image) — aspectRatio imageConfig orqali (SDK ImageConfig; agar berilsa)
+    const ar = cleanAspect(opts.aspectRatio);
     const r = await getClient().models.generateContent({
       model: modelId,
       contents: prompt,
-      config: { responseModalities: ["IMAGE"] },
+      config: { responseModalities: ["IMAGE"], ...(ar ? { imageConfig: { aspectRatio: ar } } : {}) },
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
@@ -74,12 +75,13 @@ export async function vertexImageEdit(
   modelId: string,
   prompt: string,
   refUrl: string,
-  _opts: { aspectRatio?: string }
+  opts: { aspectRatio?: string }
 ): Promise<OrResult<Buffer>> {
   if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
     const inline = await refToInline(refUrl);
     if (!inline) return { ok: false, error: "Referens rasm yuklanmadi" };
+    const ar = cleanAspect(opts.aspectRatio);
     const r = await getClient().models.generateContent({
       model: modelId,
       contents: [
@@ -91,7 +93,7 @@ export async function vertexImageEdit(
           ],
         },
       ],
-      config: { responseModalities: ["IMAGE"] },
+      config: { responseModalities: ["IMAGE"], ...(ar ? { imageConfig: { aspectRatio: ar } } : {}) },
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
