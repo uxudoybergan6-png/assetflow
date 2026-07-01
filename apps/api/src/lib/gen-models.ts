@@ -610,11 +610,11 @@ export const GEN_MODELS: GenModel[] = [
     key: "veo-3.1-fast-generate-001", // Vertex Model Garden model ID (tasdiqlangan — real ishlaydigan kod namunasidan)
     label: "Veo 3.1 Fast (Google Cloud)",
     provider: "vertex", // TO'G'RIDAN-TO'G'RI Vertex AI (fal.ai orqali EMAS) — foydalanuvchining o'z GCP krediti
-    enabled: false, // gcloud infratuzilma (API yoqish + IAM + env var) va $300 kredit bilan qo'lda smoke-test
-    // qilinmaguncha OCHIQ QOLDIRILMAYDI — tayyor bo'lgach shu qatorni olib tashlash kifoya
+    enabled: true, // 2026-07-01 real smoke-test o'tdi (submit→poll→GCS→S3 yuklab olish, 4s/720p ~60s)
+    // + poll cast bug tuzatildi → foydalanuvchilarga YOQILDI.
     feature: "text-to-video",
-    // Google narxi ~$0.10/s (audiosiz). ~1 kredit≈$0.012-0.015 taxminiga asoslanib — TAXMINIY,
-    // haqiqiy $300 kredit hisobida sinovdan keyin foydalanuvchi tasdiqlashi/tuzatishi kerak.
+    // Google narxi ~$0.10/s (audiosiz). 8 kredit/s (~1 kredit≈$0.012-0.015 taxmini bilan deyarli
+    // teppa-teng) — foydalanuvchi qarori bilan shu narxda qoldirildi (foyda kam, keyin oshirish mumkin).
     cost: 8,
     referenceMode: "video-ref", // ixtiyoriy boshlang'ich kadr (Veo sof matndan ham video yasaydi)
     endFrame: false, // runVertexVideo endFrame'ni QOLLAMAYDI hozircha — UI'da ko'rsatilmasin (jimgina yo'qolib ketmasin)
