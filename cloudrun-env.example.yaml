@@ -25,6 +25,11 @@ CDN_BASE_URL: "https://pub-xxx.r2.dev"
 # API key kerak emas — Cloud Run service account'ga roles/aiplatform.user berilgan bo'lishi shart.
 GOOGLE_CLOUD_PROJECT: ""
 GOOGLE_CLOUD_LOCATION: "us-central1"
+# IXTIYORIY: VIDEO'ni (Veo, Omni) ALOHIDA GCP loyihaga yo'naltirish (masalan 2-$300 krediti).
+# Yo'q bo'lsa → video ham GOOGLE_CLOUD_PROJECT'da. SHART: (1) 2-loyihada Vertex AI API yoqilgan,
+# (2) Cloud Run SA (331762958776-compute@...) 2-loyihada roles/aiplatform.user, (3) 2-loyiha video
+# service-agent (service-<num>@gcp-sa-aiplatform...) GCS bucket'ga storage.objectAdmin.
+GOOGLE_CLOUD_PROJECT_VIDEO: ""
 
 # AI provayderlar — O'ZGARMAYDI:
 FAL_KEY: ""

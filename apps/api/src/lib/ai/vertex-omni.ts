@@ -14,10 +14,12 @@ import type { OrResult } from "./openrouter.js";
 // Fallback (2026-07-01): GitHub Actions deploy env secret'ida Google var yo'qligi sabab
 // VERTEX_NOT_CONFIGURED qayta-qayta chiqardi. Loyiha ID maxfiy emas (deploy config'da ochiq).
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "project-289028d3-984c-4d84-bd4";
-const OMNI_ENDPOINT = `https://aiplatform.googleapis.com/v1beta1/projects/${PROJECT}/locations/global/interactions`;
+// VIDEO alohida loyihaga (2-$300) yo'naltirilishi mumkin — [[vertex.ts]] bilan bir xil VIDEO_PROJECT.
+const VIDEO_PROJECT = process.env.GOOGLE_CLOUD_PROJECT_VIDEO || PROJECT;
+const OMNI_ENDPOINT = `https://aiplatform.googleapis.com/v1beta1/projects/${VIDEO_PROJECT}/locations/global/interactions`;
 
 export function isVertexOmniConfigured(): boolean {
-  return Boolean(PROJECT);
+  return Boolean(VIDEO_PROJECT);
 }
 
 let auth: GoogleAuth | null = null;
@@ -54,7 +56,7 @@ export async function omniGenerateVideo(
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        "x-goog-user-project": PROJECT,
+        "x-goog-user-project": VIDEO_PROJECT,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),

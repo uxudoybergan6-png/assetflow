@@ -716,19 +716,19 @@ export const GEN_MODELS: GenModel[] = [
   {
     id: 3001,
     mode: "video",
-    key: "google/veo-3.1-lite",
+    key: "veo-3.1-lite-generate-001", // Veo 3.1 Lite — foydalanuvchi havolasi bilan tasdiqlangan ID
     label: "Veo 3.1 Lite",
-    enabled: false, // model ID Vertex Model Garden'da TASDIQLANMAGAN — yoqishdan oldin foydalanuvchi
-    // o'z GCP konsolida aniq ID'ni tekshirishi kerak (faqat 3002/"veo-3.1-fast-generate-001" tasdiqlangan)
+    provider: "vertex", // to'g'ridan-to'g'ri Vertex → VIDEO_PROJECT (2-$300)
+    enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Lite: arzon/tez tier.
     feature: "text-to-video",
-    cost: 10, // /s
-    referenceMode: "video-ref", // boshlang'ich kadr/reference rasm — G3
-    endFrame: true, // Veo: first_frame + last_frame (/videos/models 2026-06-18)
+    cost: 3, // /s — Lite eng arzon (Google ~$0.03-0.05/s)
+    referenceMode: "video-ref", // ixtiyoriy boshlang'ich kadr (image-to-video)
+    endFrame: false, // runVertexVideo endFrame'ni qo'llamaydi — UI'da ko'rsatilmasin
     isDefault: true,
     aspects: ["16:9", "9:16"],
-    resolutions: ["720p", "1080p"],
+    resolutions: ["720p"], // Lite — 720p
     durations: [4, 6, 8],
-    audio: true,
+    audio: false, // Lite — audiosiz (arzon)
     inputs: ["image-ref"],
   },
   {
@@ -737,8 +737,7 @@ export const GEN_MODELS: GenModel[] = [
     key: "veo-3.1-fast-generate-001", // Vertex Model Garden model ID (tasdiqlangan — real ishlaydigan kod namunasidan)
     label: "Veo 3.1 Fast (Google Cloud)",
     provider: "vertex", // TO'G'RIDAN-TO'G'RI Vertex AI (fal.ai orqali EMAS) — foydalanuvchining o'z GCP krediti
-    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
-    // (kod/smoke-test tayyor: submit→poll→GCS→S3, poll cast bug tuzatilgan)
+    enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Smoke-test o'tgan (submit→poll→GCS→S3).
     feature: "text-to-video",
     // Google narxi ~$0.10/s (audiosiz). 8 kredit/s (~1 kredit≈$0.012-0.015 taxmini bilan deyarli
     // teppa-teng) — foydalanuvchi qarori bilan shu narxda qoldirildi (foyda kam, keyin oshirish mumkin).
@@ -757,7 +756,7 @@ export const GEN_MODELS: GenModel[] = [
     key: "gemini-omni-flash-preview", // Vertex Interactions API (global) — jonli probe tasdiqladi
     label: "Gemini Omni Flash (Google Cloud)",
     provider: "vertex-omni", // SINXRON Interactions API (Veo submit/poll'дан farqli) — har chaqiruv pul oladi
-    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan qayta yoqiladi (kod/sinov tayyor: 1280x720, 10s, audio)
+    enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Sinov: 1280x720, 10s, audio.
     feature: "text-to-video", // rasm referens bo'lsa image-to-video sifatida ishlaydi (runVertexOmniVideo ichida)
     // NARX QAT'IY: har gen ~10s (API duration tanlatmaydi) = 57920 video-token = ~$1.00 (Google 5792 tok/s@720p x $0.10).
     // 80 kredit ~ $1.00 (1 kr~$0.0125) = deyarli teppa-teng — Veo Fast break-even qaroriga mos. Margin uchun oshirsa bo'ladi.
@@ -773,15 +772,16 @@ export const GEN_MODELS: GenModel[] = [
   {
     id: 3003,
     mode: "video",
-    key: "google/veo-3.1",
+    key: "veo-3.1-generate-001", // Veo 3.1 (Standard) — foydalanuvchi havolasi bilan tasdiqlangan ID
     label: "Veo 3.1",
-    enabled: false, // model ID Vertex Model Garden'da TASDIQLANMAGAN (yuqoridagi 3001 izohiga qarang)
+    provider: "vertex", // to'g'ridan-to'g'ri Vertex → VIDEO_PROJECT (2-$300)
+    enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Standard: eng yuqori sifat.
     feature: "text-to-video",
-    cost: 40,
+    cost: 30, // /s — premium (Google ~$0.35-0.40/s)
     referenceMode: "video-ref",
-    endFrame: true,
+    endFrame: false, // runVertexVideo endFrame'ni qo'llamaydi
     aspects: ["16:9", "9:16"],
-    resolutions: ["720p", "1080p", "4K"],
+    resolutions: ["720p", "1080p"],
     durations: [4, 6, 8],
     audio: true,
     inputs: ["image-ref"],
