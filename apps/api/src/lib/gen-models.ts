@@ -723,13 +723,21 @@ export const GEN_MODELS: GenModel[] = [
     feature: "text-to-video",
     cost: 3, // /s — Lite eng arzon (Google ~$0.03-0.05/s)
     referenceMode: "video-ref", // ixtiyoriy boshlang'ich kadr (image-to-video)
-    endFrame: false, // runVertexVideo endFrame'ni qo'llamaydi — UI'da ko'rsatilmasin
+    endFrame: true, // Veo last_frame qo'llaydi (SDK GenerateVideosConfig.lastFrame) — start+end kadr interpolatsiya
     isDefault: true,
     aspects: ["16:9", "9:16"],
     resolutions: ["720p"], // Lite — 720p
     durations: [4, 6, 8],
-    audio: false, // Lite — audiosiz (arzon)
+    audio: false, // MVP qaror (Google blog: 3 tier ham native audio — imkoniyat cheklovi emas)
     inputs: ["image-ref"],
+    // videoSettings — video pane sozlamalarni SHUNDAN o'qiydi (aks holda 480p/Auto default). Veo narxi
+    // soniyaga, resolution'dan mustaqil → perSec teng (billing o'zgarmaydi: computeGenCost perSec[res]).
+    videoSettings: {
+      aspect: { options: ["16:9", "9:16"], def: "16:9" },
+      resolution: { options: ["720p"], def: "720p", perSec: { "720p": 3 } },
+      duration: { options: ["4", "6", "8"], def: "8", autoSec: 8 },
+      audio: false,
+    },
   },
   {
     id: 3002,
@@ -743,12 +751,19 @@ export const GEN_MODELS: GenModel[] = [
     // teppa-teng) — foydalanuvchi qarori bilan shu narxda qoldirildi (foyda kam, keyin oshirish mumkin).
     cost: 8,
     referenceMode: "video-ref", // ixtiyoriy boshlang'ich kadr (Veo sof matndan ham video yasaydi)
-    endFrame: false, // runVertexVideo endFrame'ni QOLLAMAYDI hozircha — UI'da ko'rsatilmasin (jimgina yo'qolib ketmasin)
+    endFrame: true, // Veo last_frame qo'llaydi (SDK) — start+end kadr
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p"],
     durations: [4, 6, 8],
-    audio: false, // Vertex generateAudio hali smoke-test qilinmagan — MVP audiosiz
+    audio: false, // MVP qaror (audio-qodir, lekin default o'chiq)
     inputs: ["image-ref"],
+    // videoSettings — 1080p'ni UI'da OCHADI (avval erishib bo'lmasdi). perSec teng (billing o'zgarmaydi).
+    videoSettings: {
+      aspect: { options: ["16:9", "9:16"], def: "16:9" },
+      resolution: { options: ["720p", "1080p"], def: "720p", perSec: { "720p": 8, "1080p": 8 } },
+      duration: { options: ["4", "6", "8"], def: "8", autoSec: 8 },
+      audio: false,
+    },
   },
   {
     id: 3010,
@@ -793,12 +808,20 @@ export const GEN_MODELS: GenModel[] = [
     feature: "text-to-video",
     cost: 30, // /s — premium (Google ~$0.35-0.40/s)
     referenceMode: "video-ref",
-    endFrame: false, // runVertexVideo endFrame'ni qo'llamaydi
+    endFrame: true, // Veo last_frame qo'llaydi (SDK) — start+end kadr
     aspects: ["16:9", "9:16"],
     resolutions: ["720p", "1080p"],
     durations: [4, 6, 8],
     audio: true,
     inputs: ["image-ref"],
+    // videoSettings — 1080p ochiladi; audioDefault:true (Standard audio-qodir). perSec teng (billing o'zgarmaydi).
+    videoSettings: {
+      aspect: { options: ["16:9", "9:16"], def: "16:9" },
+      resolution: { options: ["720p", "1080p"], def: "720p", perSec: { "720p": 30, "1080p": 30 } },
+      duration: { options: ["4", "6", "8"], def: "8", autoSec: 8 },
+      audio: true,
+      audioDefault: true,
+    },
   },
   {
     id: 3004,

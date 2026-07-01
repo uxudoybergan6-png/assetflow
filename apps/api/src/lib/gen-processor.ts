@@ -565,6 +565,9 @@ async function runVertexVideo(
   genId: string
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  // YAKUNIY kadr faqat endFrame:true modelda o'qiladi (Veo last_frame).
+  const refEndUrl =
+    model.endFrame && typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
   const v = resolveVideoParams(model, params);
   const saved = readProviderJob(params);
   let job: { operationName: string };
@@ -572,9 +575,14 @@ async function runVertexVideo(
     job = { operationName: saved.operationName };
   } else {
     const inline = refUrl ? await refUrlToInlineImage(refUrl) : null;
+    const inlineEnd = refEndUrl ? await refUrlToInlineImage(refEndUrl) : null;
+    // SDK: lastFrame faqat i2v'da (start image SHART) → start kadrsiz end kadr YUBORILMAYDI (400 + kredit sarfini oldini oladi).
+    const endData = inline ? inlineEnd?.data : undefined;
     const sub = await vertexSubmitVideo(model.key, prompt, {
       imageBase64: inline?.data,
       imageMimeType: inline?.mimeType,
+      endImageBase64: endData,
+      endImageMimeType: endData ? inlineEnd?.mimeType : undefined,
       aspectRatio: v.aspectRatio,
       durationSeconds: v.duration,
       generateAudio: v.generateAudio,

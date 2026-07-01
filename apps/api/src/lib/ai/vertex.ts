@@ -44,6 +44,8 @@ export async function vertexSubmitVideo(
   opts: {
     imageBase64?: string;
     imageMimeType?: string;
+    endImageBase64?: string; // YAKUNIY kadr (last_frame) — FAQAT start image bilan (SDK: i2v)
+    endImageMimeType?: string;
     aspectRatio?: string;
     durationSeconds?: number;
     generateAudio?: boolean;
@@ -63,6 +65,11 @@ export async function vertexSubmitVideo(
         durationSeconds: opts.durationSeconds,
         generateAudio: opts.generateAudio,
         resolution: opts.resolution,
+        // YAKUNIY kadr interpolatsiya (SDK GenerateVideosConfig.lastFrame). "Only supported for i2v" —
+        // start image ham berilishi shart (runVertexVideo guard qiladi).
+        lastFrame: opts.endImageBase64
+          ? { imageBytes: opts.endImageBase64, mimeType: opts.endImageMimeType || "image/png" }
+          : undefined,
         outputGcsUri: `gs://${OUTPUT_BUCKET}/vertex-video-tmp/`,
       },
     });
