@@ -16,15 +16,23 @@ export function isVertexImageConfigured(): boolean {
   return Boolean(PROJECT);
 }
 
-let client: GoogleGenAI | null = null;
-function getClient(): GoogleGenAI {
-  if (!client) client = new GoogleGenAI({ vertexai: true, project: PROJECT, location: LOCATION });
-  return client;
+// Region model'ga bog'liq (jonli sinov 2026-07-01): yangi Gemini 3.x image modellar FAQAT
+// `global`da (us-central1 → 404); Imagen va gemini-2.5 esa us-central1'da. Shu sabab per-location client.
+function locationFor(modelId: string): string {
+  return modelId.startsWith("gemini-3") ? "global" : LOCATION;
+}
+const clients: Record<string, GoogleGenAI> = {};
+function getClient(loc: string): GoogleGenAI {
+  if (!clients[loc]) clients[loc] = new GoogleGenAI({ vertexai: true, project: PROJECT, location: loc });
+  return clients[loc];
 }
 
 const isImagen = (modelId: string): boolean => modelId.startsWith("imagen");
 const cleanAspect = (a?: string): string | undefined =>
   !a || a.toLowerCase() === "auto" ? undefined : a;
+// Sifat/o'lcham — faqat Gemini/Imagen qo'llaydigan qiymatlar (1K/2K/4K). Boshqa (0.5K, low/high) → default.
+const cleanSize = (s?: string): string | undefined =>
+  s && ["1K", "2K", "4K"].includes(s) ? s : undefined;
 
 async function refToInline(refUrl: string): Promise<{ data: string; mimeType: string } | null> {
   const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(refUrl);
@@ -40,26 +48,29 @@ async function refToInline(refUrl: string): Promise<{ data: string; mimeType: st
 export async function vertexImage(
   modelId: string,
   prompt: string,
-  opts: { aspectRatio?: string }
+  opts: { aspectRatio?: string; imageSize?: string }
 ): Promise<OrResult<Buffer>> {
   if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
+    const client = getClient(locationFor(modelId));
+    const ar = cleanAspect(opts.aspectRatio);
+    const sz = cleanSize(opts.imageSize);
     if (isImagen(modelId)) {
-      const r = await getClient().models.generateImages({
+      const r = await client.models.generateImages({
         model: modelId,
         prompt,
-        config: { numberOfImages: 1, aspectRatio: cleanAspect(opts.aspectRatio) },
+        config: { numberOfImages: 1, aspectRatio: ar, ...(sz ? { imageSize: sz } : {}) },
       });
       const b64 = r.generatedImages?.[0]?.image?.imageBytes;
       if (!b64) return { ok: false, error: "Imagen: rasm qaytmadi (xavfsizlik filtri bo'lishi mumkin)" };
       return { ok: true, data: Buffer.from(b64, "base64") };
     }
-    // Nano Banana (gemini image) — aspectRatio imageConfig orqali (SDK ImageConfig; agar berilsa)
-    const ar = cleanAspect(opts.aspectRatio);
-    const r = await getClient().models.generateContent({
+    // Nano Banana (gemini image) — aspectRatio + imageSize imageConfig orqali (SDK ImageConfig)
+    const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
+    const r = await client.models.generateContent({
       model: modelId,
       contents: prompt,
-      config: { responseModalities: ["IMAGE"], ...(ar ? { imageConfig: { aspectRatio: ar } } : {}) },
+      config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
@@ -75,14 +86,16 @@ export async function vertexImageEdit(
   modelId: string,
   prompt: string,
   refUrl: string,
-  opts: { aspectRatio?: string }
+  opts: { aspectRatio?: string; imageSize?: string }
 ): Promise<OrResult<Buffer>> {
   if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
     const inline = await refToInline(refUrl);
     if (!inline) return { ok: false, error: "Referens rasm yuklanmadi" };
     const ar = cleanAspect(opts.aspectRatio);
-    const r = await getClient().models.generateContent({
+    const sz = cleanSize(opts.imageSize);
+    const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
+    const r = await getClient(locationFor(modelId)).models.generateContent({
       model: modelId,
       contents: [
         {
@@ -93,7 +106,7 @@ export async function vertexImageEdit(
           ],
         },
       ],
-      config: { responseModalities: ["IMAGE"], ...(ar ? { imageConfig: { aspectRatio: ar } } : {}) },
+      config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;

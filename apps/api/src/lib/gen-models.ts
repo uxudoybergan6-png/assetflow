@@ -155,17 +155,25 @@ export const GEN_MODELS: GenModel[] = [
   {
     id: 1010,
     mode: "image",
-    key: "gemini-2.5-flash-image", // Nano Banana — Vertex to'g'ridan-to'g'ri
-    label: "Nano Banana",
+    key: "gemini-3.1-flash-image", // Nano Banana 2 — Vertex to'g'ridan-to'g'ri (GLOBAL region; adapter locationFor)
+    label: "Nano Banana 2",
     provider: "vertex-image",
-    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
+    enabled: true, // 2026-07-01 jonli sinov: t2i+edit, nisbat(16:9→2752×1536), 1K/2K/4K(4096²), global region
     feature: "text-to-image",
-    cost: 4, // Google ~$0.04/rasm ≈ 3-4 kredit (fal orqali 6-16 edi)
+    cost: 4, // fallback (1K); imgSettings.quality.cost / qualityCost ustun
+    qualityCost: { "1K": 4, "2K": 8, "4K": 16 }, // sifat oshgan sari narx (4K=16MP, sekin ~51s)
     isDefault: true,
-    referenceMode: "image-edit", // referens bo'lsa Gemini image edit
+    referenceMode: "image-edit", // referens bo'lsa Gemini image edit (rasm tahrirlash/birlashtirish)
     inputs: ["image-ref"],
-    aspects: NANO_ASPECTS, // Gemini image ImageConfig qo'llaydigan 8 nisbat (adapter imageConfig.aspectRatio yuboradi)
+    aspects: NANO_ASPECTS, // 8 nisbat (SDK ImageConfig; adapter imageConfig.aspectRatio yuboradi)
+    resolutions: ["1K", "2K", "4K"], // fallback; imgSettings.quality "Sifat" selektorini ko'rsatadi
     count: [1, 2, 3, 4],
+    // imgSettings — plagin "Sifat" selektorini FAQAT quality bo'lsa ko'rsatadi (hasQuality=!!ql). fal naqshi.
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: NANO_ASPECTS, def: "1:1" },
+      quality: { label: "Sifat", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 4, "2K": 8, "4K": 16 } },
+      num: [1, 2, 3, 4],
+    },
     imgModalities: ["image", "text"],
   },
   {

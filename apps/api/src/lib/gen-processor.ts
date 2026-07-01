@@ -745,8 +745,8 @@ export async function processGeneration(genId: string): Promise<void> {
       const genOne = (): Promise<OrResult<Buffer>> =>
         useVertexImg
           ? useEdit
-            ? vertexImageEdit(model.key, gen.prompt, refUrl as string, { aspectRatio: imageConfig.aspect_ratio })
-            : vertexImage(model.key, gen.prompt, { aspectRatio: imageConfig.aspect_ratio })
+            ? vertexImageEdit(model.key, gen.prompt, refUrl as string, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
+            : vertexImage(model.key, gen.prompt, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
           : useFal
           ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat })
           : mfRemoveBg
