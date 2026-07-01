@@ -1,25 +1,20 @@
-# SESSION REPORT — 2026-07-01 — Video → alohida GCP loyiha (2-$300) + 4 video model
+# SESSION REPORT — 2026-07-01 — Gen-progress UX: So'nggi grid ichida karta (0-100%) + 20 daqiqa
 
-Foydalanuvchining 2-Google-hisobidagi 2-$300 kreditli loyiha (project-62cb1324-b958-4bc1-b50) videoga ulandi. 4 video model yoqildi.
+Foydalanuvchi so'rovi: gen progressi yuqorida sanаb turmasin; pastdagi So'nggi grid kartasida 0-100% aniq sanasin; kutmasdan yana gen; kutish 20 daqiqa (rasm+video).
 
-## Cross-loyiha routing (video → 2-loyiha)
-- **Kod:** `GOOGLE_CLOUD_PROJECT_VIDEO` env. `vertex.ts` (Veo) + `vertex-omni.ts` (Omni) shu loyihani ishlatadi (client project + x-goog-user-project). Fallback → asosiy loyiha. Rasm asosiy loyihada qoladi.
-- **Env:** cloudrun-env.yaml + GitHub secret (CLOUDRUN_ENV_YAML) yangilandi.
-- **Foydalanuvchi (2-hisob konsolida):** Vertex AI API yoqdi + Cloud Run SA (331762958776-compute@...) ga "Agent Platform User" (=aiplatform.user) berdi.
-- **Bir martalik infra (men, 1-loyiha bucket'ida):** 2-loyiha video service-agent (service-918943206370@gcp-sa-aiplatform...) ga GCS bucket assetflow-assets-2026 da roles/storage.objectAdmin berildi — Veo natijani bucket'ga yozishi uchun (avval "storage.objects.create access yo'q" xatosi bergan edi).
+## O'zgarishlar (rasm + video panel)
+- **YUQORI progress ro'yxati OLIB TASHLANDI** (renderJobs/renderVgJobs endi bo'sh — igProg/vgProg ko'rinmaydi).
+- **Har gen So'nggi grid tepasiga "pending" karta** bo'lib qo'shiladi: spinner + 0-100% shkala + prompt + Bekor. Vaqt-asosli silliq shkala (97*(1-e^(-t/45)) rasm, /90 video).
+- **Done bo'lganda pending karta O'SHA JOYDA natijaga aylanadi** (url/id/thumb bilan) — sakramaydi. count>1 → qolgan rasmlar ham qatorga qo'shiladi.
+- **Non-blocking**: foydalanuvchi kutmasdan yana gen qiladi (MAX_JOBS parallel), har biri alohida pending karta.
+- **Umumiy komponent**: `afRecent.pendingCard()` + `afRecent.updatePending()` (rasm+video birga ishlatadi). CSS `.rc-pend`.
 
-## 4 video model (provider vertex/vertex-omni, TO'G'RI ID)
-| Model | key | res | dur | narx |
-|---|---|---|---|---|
-| Veo 3.1 Lite (default) | veo-3.1-lite-generate-001 | 720p | 4/6/8 | 3/s |
-| Veo 3.1 Fast | veo-3.1-fast-generate-001 | 720p/1080p | 4/6/8 | 8/s |
-| Veo 3.1 | veo-3.1-generate-001 | 720p/1080p | 4/6/8 | 30/s |
-| Gemini Omni Flash | gemini-omni-flash-preview | 720p | 10 | 80 |
+## Timeout (20 daqiqa)
+- Rasm UI: POLL_CAP 340→**670** (~20 daqiqa). Video UI: VG_POLL_CAP 420 (~39 daq, backend cheklaydi).
+- Backend `stuckTimeoutMs`: hammasi (rasm+video) **20 daqiqa**.
 
 ## Tekshiruv
-- **Veo 3.1 Lite production sinov: VIDEO YARATILDI (2-loyihada)** ✅ — submit→poll→GCS→S3, SA+bucket ruxsatidan keyin. Routing tasdiqlandi.
-- Provisioning: 2-loyihada Vertex yangi yoqilgani uchun dastlab "service agents provisioning" + "bucket access yo'q" xatolari — normal, ruxsat berilgach o'tdi.
+- 7 inline skript sintaksis-toza (node --check). CEP reinstall + backend deploy. AE'da real sinash foydalanuvchida (CEP).
 
-## OCHIQ MUAMMO (alohida)
-- **OpenRouter krediti TUGAGAN** → "Yaxshilash" (enhance) ishlamaydi ("Insufficient credits openrouter.ai"). Video/rasm gen (Google) buga bog'liq EMAS. Yechim: OpenRouter top-up YOKI enhance'ni fal/Gemini'ga o'tkazish (keyingi vazifa).
-- Narxlar (Veo Std/Omni) taxminiy — Google aniq narxi bilan moslash mumkin.
+## Foydalanuvchiga
+- AE'ni Cmd+Q qayta oching. Rasm/Video: gen boshlanganda pastda karta 0→100% sanaydi, tugaganda rasm/video bo'ladi; yuqorida darrov yana gen qilsa bo'ladi.
