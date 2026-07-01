@@ -11,7 +11,10 @@
 import { GoogleGenAI, GenerateVideosOperation } from "@google/genai";
 import type { OrResult } from "./openrouter.js";
 
-const PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? "";
+// Fallback: env yo'qolsa ham ishlasin (GitHub Actions deploy CLOUDRUN_ENV_YAML secret'ida Google
+// var'lar yo'qligi sabab qayta-qayta tushib qolardi → VERTEX_NOT_CONFIGURED). Loyiha ID maxfiy
+// emas (deploy-cloudrun.sh/.yml'da ochiq). 2026-07-01.
+const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "project-289028d3-984c-4d84-bd4";
 const LOCATION = process.env.GOOGLE_CLOUD_LOCATION ?? "us-central1";
 // Video natijasi shu GCS bucket'ga yoziladi — mavjud AWS_S3_BUCKET (GCS, S3-moslik
 // orqali allaqachon ulangan) qayta ishlatiladi, alohida bucket kerak emas.

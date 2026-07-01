@@ -11,7 +11,9 @@
 import { GoogleAuth } from "google-auth-library";
 import type { OrResult } from "./openrouter.js";
 
-const PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? "";
+// Fallback (2026-07-01): GitHub Actions deploy env secret'ida Google var yo'qligi sabab
+// VERTEX_NOT_CONFIGURED qayta-qayta chiqardi. Loyiha ID maxfiy emas (deploy config'da ochiq).
+const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "project-289028d3-984c-4d84-bd4";
 const OMNI_ENDPOINT = `https://aiplatform.googleapis.com/v1beta1/projects/${PROJECT}/locations/global/interactions`;
 
 export function isVertexOmniConfigured(): boolean {
