@@ -2701,6 +2701,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .fbadd{font-size:20px;color:var(--mut2);line-height:1}
 .axvg .fbox .fb-thumb{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:9px}
 .axvg .fbox .fbx{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;line-height:1}
+.axvg .fbox .fbtag{position:absolute;bottom:5px;left:5px;font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--acc-ink);background:var(--acc);padding:1px 6px;border-radius:5px;z-index:1}
+.axvg .kadrtag{display:inline-flex;align-items:center;gap:4px;background:rgba(124,196,255,.1);color:var(--blue);border:1px solid rgba(124,196,255,.25);font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:6px;font-family:var(--font-mono);margin-left:auto}
 .axvg .vwrap{border-radius:10px;overflow:hidden;background:#000;margin-bottom:6px}
 .axvg .vwrap video{width:100%;display:block;max-height:180px;object-fit:contain}
 .axvg .vacts{display:flex;gap:6px;padding:4px 0 2px;flex-wrap:wrap}
@@ -3345,7 +3347,7 @@ html.home-mode #homePage{display:block!important}
 
                               <!-- Kadrlar (refKind=frames — Seedance Fast) -->
                               <div class="sect" id="vgFrameSect">
-                                <div class="lbl">Kadrlar <span class="req">*</span></div>
+                                <div class="lbl">Kadrlar <span class="req">*</span><span class="kadrtag" id="vgKadrTag" style="display:none">FAST</span></div>
                                 <div class="frames">
                                   <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Boshlang'ich kadr</div></div>
                                   <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">Yakuniy kadr <span class="fb-opt">ixt.</span></div></div>
@@ -11075,6 +11077,7 @@ window.afGallery=(function(){
     var isNone=vm.refKind==='none';
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
+    var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
     if(isMedia){ renderMediaRefs(); updRefMeta(); loadVgSavedRefs(); }
     else renderVgSavedRefs();
@@ -11536,6 +11539,7 @@ window.afGallery=(function(){
       if(frame.loading){
         var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Yuklanmoqda…'; box.appendChild(sp);
       } else {
+        var tag=document.createElement('span'); tag.className='fbtag'; tag.textContent='kadr '+(which==='start'?1:2); box.appendChild(tag);
         var x=document.createElement('div'); x.className='fbx'; x.textContent='×'; x.title='O\'chirish';
         (function(w){ x.addEventListener('click',function(e){ e.stopPropagation(); if(w==='start')st.start=null; else st.end=null; renderFbox(id,null,w); refreshVgBtn(); }); })(which);
         box.appendChild(x);
