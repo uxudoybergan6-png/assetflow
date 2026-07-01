@@ -10934,11 +10934,13 @@ window.afGallery=(function(){
       if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
       else setVgWarn('');
     } else {
-      // Fast (frames): Boshlang'ich kadr + prompt majburiy
+      // frames: image-to-video (Seedance) → boshlang'ich kadr MAJBURIY; matndan-video (Veo/Omni) → IXTIYORIY.
       var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
-      ok=vm.loaded&&hasStart&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS;
-      if(!hasStart)setVgWarn("Boshlang'ich kadr majburiy — + bosib qo'shing.");
+      var frameLoading=!!(st.start&&st.start.loading)||!!(st.end&&st.end.loading);
+      ok=vm.loaded&&pr.length>=2&&!frameLoading&&(!vm.startRequired||hasStart)&&activeJobs.length<MAX_VG_JOBS;
+      if(vm.startRequired&&!hasStart)setVgWarn("Boshlang'ich kadr majburiy — + bosib qo'shing.");
       else if(!pr.length)setVgWarn('Prompt majburiy — video nima qilishini yozing.');
+      else if(frameLoading)setVgWarn('Kadr yuklanmoqda — tugashini kuting.');
       else setVgWarn('');
     }
     var g=$('vgGen'); if(g)g.disabled=!ok;
@@ -10998,6 +11000,9 @@ window.afGallery=(function(){
     vm.model=m;
     // B4: refKind ko'rsatilmasa 'none' (t2v xavfsiz) — 'frames' default kadr talab qilib submitни bloklardi.
     vm.refKind=m.refKind||'none';
+    // KADR MAJBURIY faqat image-to-video modellarda (Seedance). Matndan-video (Veo/Omni) — kadr IXTIYORIY,
+    // shuning uchun 'frames' bo'lsa ham boshlang'ich kadrni talab qilmaymiz (2026-07-01, foydalanuvchi xatosi tuzatildi).
+    vm.startRequired=(m.feature==='image-to-video');
     vm.mediaRefs=m.mediaRefs||{image:9,video:3,audio:3,total:12};
     vm.mediaRefMaxBytes=m.mediaRefMaxBytes||null;
     vm.mediaRefMaxTotalBytes=m.mediaRefMaxTotalBytes||null;
@@ -11935,11 +11940,11 @@ window.afGallery=(function(){
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
       params={resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     } else {
-      // Fast (frames) — Boshlang'ich kadr + prompt majburiy
+      // frames: image-to-video (Seedance) → boshlang'ich kadr majburiy; matndan-video (Veo/Omni) → IXTIYORIY
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
-      if(!st.start||!st.start.url){ toast("Boshlang'ich kadr qo'shing",'warning'); return; }
-      if(st.start.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
-      params={referenceUrl:st.start.url,referenceEndUrl:(st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      if(vm.startRequired&&(!st.start||!st.start.url)){ toast("Boshlang'ich kadr qo'shing",'warning'); return; }
+      if(st.start&&st.start.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
+      params={referenceUrl:(st.start&&st.start.url)||null,referenceEndUrl:(st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     }
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
