@@ -13,6 +13,11 @@ Veo Fast + Omni Flash (video) va Imagen/Nano Banana (rasm) Google Vertex'ga to'g
 - **Tuzatish:** ikkала filtr Google provayderlarni ham qabul qiladi. Rasm default=isDefault (Nano Banana). Veo/Omni refKind='frames' → video pane to'g'ri render qiladi (i2v-uslub, matndan-video ham ishlaydi).
 - Plagin Cloud Run API'ga to'g'ri ulanган (assetflow-env.js PROD_API). CEP yangilandi (install-cep.sh, AF_SKIP_AE=1).
 
+## VERTEX_NOT_CONFIGURED tuzatildi (env yo'qolgan)
+- **Muammo:** plaginda Nano Banana gen → "VERTEX_NOT_CONFIGURED". Sabab: joriy Cloud Run revision (00017-6bv) da GOOGLE_CLOUD_PROJECT/LOCATION YO'Q edi — mendan keyin tashqi (konsol?) revision paydo bo'lib 2 Google env'ni yo'qotgan (boshqa 24 env bor edi).
+- **Tuzatish:** `gcloud run services update --update-env-vars GOOGLE_CLOUD_PROJECT/LOCATION` (Docker qayta qurmasdan). Revision **00018-h7l**, env SET. Nano Banana e2e gen O'TDI (GCS asset). cloudrun-env.yaml'da vars bor → keyingi deploy'lar to'g'ri.
+- **Ehtiyot:** Cloud Run env'ini KONSOLDAN tahrirlashda Google 2 var tushib qolmasin — deploy-cloudrun.sh (env-vars-file) ishlatilsin.
+
 ## Kutilmoqda
-- Foydalanuvchi AE'ni TO'LIQ yopib (Cmd+Q) qayta ochadi → rasm 3 Google model, video Veo+Omni+2 Seedance ko'rinadi. Real gen bilan tekshirish.
+- Foydalanuvchi plaginda qayta gen qiladi (AE restart shart emas — server tuzatishi). Rasm 3 Google model, video Veo+Omni+2 Seedance.
 - Launcher preview yorliqlari (5969-5980) hali 'Veo 3.1 Lite'/'Nano Banana 2' — kosmetik, keyin yangilash mumkin.
