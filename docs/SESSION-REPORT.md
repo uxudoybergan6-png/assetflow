@@ -1,24 +1,20 @@
-# SESSION REPORT — 2026-07-01 — Omni VIDEO referens + video editing OCHILDI (ultracode workflow)
+# SESSION REPORT — 2026-07-01 — Barcha model parametrlari auditi + Veo tuzatishlari (ultracode)
 
-Foydalanuvchi: Omni'ga video referens / video editing MUHIM. Ultracode ko'p-agentli workflow + jonli sinov bilan Vertex Omni video-input formati topildi va ulandi.
+Foydalanuvchi: barcha model funksiyalarini (nisbat/sifat/davomiylik/start-end kadr/audio/referens) 100% tekshir + tuzat. Ultracode 5-agentli audit workflow (SDK + jonli probe) → aniq fix ro'yxati → qo'llandi.
 
-## VIDEO INPUT formati (workflow topdi, jonli tasdiq)
-- Item: `{type:"video", data:<base64> | uri:"gs://...", mime_type:"video/mp4"}`.
-- `mime_type` snake_case xom MIME (`mimeType`/enum `TYPE_MP4` RAD etiladi). data/uri oneof.
-- **HTTPS/presigned QABUL QILINMAYDI** — faqat `gs://` (same-project) yoki inline base64.
-- gs:// same-project SHART: Omni VIDEO_PROJECT=project2, bucket project1 → cross-loyiha gs:// 400.
-  → **INLINE base64 (≤15MB)** ishlatamiz (videoRefToOmniInput yuklab base64 qiladi, loyihaga bog'liq emas).
-- **ENG KRITIK: VIDEO input bo'lsa `response_format` YUBORILMAYDI** — aks holda 400. Model video input bilan baribir video chiqaradi. Video input'siz esa response_format aspect uchun qoladi.
+## AUDIT NATIJASI
+- **RASM (Nano Banana 2/Lite/Pro, Imagen 4/Ultra): TO'G'RI, nomuvofiqlik YO'Q** ✅. Jonli tasdiq: NB2 8 aspect+1K/2K/4K+edit; Imagen 4 → 4K RAD ETADI (400 "unsupported"), katalog 1K/2K TO'G'RI; Lite 2K rad (faqat 1K) TO'G'RI. quality→imageSize wiring to'g'ri.
+- **VIDEO Veo (Lite/Fast/Std): 2 muammo topildi va tuzatildi.**
 
-## Kod
-- `vertex-omni.ts` omniGenerateVideo: images + videos; video item quradi; hasVideoInput → response_format skip.
-- `gen-processor.ts` runVertexOmniVideo: media-refs (imageUrls rasm + videoUrls video); videoRefToOmniInput (data-URI/bucket/tashqi → inline base64 ≤15MB).
-- `s3.ts`: gcsKeyFromUrl / gcsUriFromUrl.
-- `gen-models.ts` Omni: refKind='media-refs', mediaRefs{image:3,video:2}, videoSettings (720p/10s), pricing per-generation 80.
+## VEO TUZATISHLARI
+### 1. videoSettings deskriptorlari (asosiy)
+- Sabab: 3 Veo'da videoSettings YO'Q edi → video pane 480p/Auto DEFAULT ko'rsatardi (XATO); Fast/Std'da 1080p katalogda bor-u UI'da erishib bo'lmasdi.
+- Fix: har Veo'ga videoSettings — Lite(720p,4/6/8 def8,audio false), Fast(720p/1080p,audio false), Std(720p/1080p,audio true,audioDefault true). perSec=cost → **billing o'zgarmadi**. 1080p endi UI'da ochiq.
 
-## Jonli tasdiq (prod, project2)
-- Manba video (Veo Lite) → Omni'ga video referens (inline base64, 4.9MB) → **Omni video YARATILDI ✅** (reference-to-video). Log: rf=no, project2, video item qabul qilindi.
+### 2. End-kadr (last_frame) wiring
+- Sabab: SDK GenerateVideosConfig.lastFrame MAVJUD, plagin referenceEndUrl yuboradi, lekin adapter tashlardi (endFrame:false).
+- Fix: vertex.ts endImageBase64→config.lastFrame; runVertexVideo referenceEndUrl o'qiydi (FAQAT start kadr bilan — SDK i2v sharti, aks holda tashlaydi → 400+kredit oldini oladi). endFrame:true → UI end-kadr slotini ko'rsatadi.
+- **Jonli sinov: Veo Fast start+END kadr interpolatsiya video YARATILDI ✅.**
 
 ## Foydalanuvchiga
-- AE'ni Cmd+Q qayta oching. Omni tanlanganda referens = ko'p-modal strip (rasm + VIDEO). Video referens yuklab, "shu videoni davom ettir/o'zgartir" prompt bilan → reference-to-video / editing ishlaydi.
-- Cheklov: video referens ≤15MB (uzun/katta klip uchun kelajakda same-project GCS bucket kerak).
+- AE'ni Cmd+Q qayta oching (CEP o'zgarmadi — hammasi katalogda). Video: Veo tanlanganda endi to'g'ri Sifat (720p/1080p), Davomiylik (4/6/8), Ovoz + **Boshlang'ich + Yakuniy kadr** (interpolatsiya). Rasm: allaqachon to'g'ri edi.
