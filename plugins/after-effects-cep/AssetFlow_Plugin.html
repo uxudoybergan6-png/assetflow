@@ -10204,7 +10204,7 @@ window.afGallery=(function(){
   // Har gen ALOHIDA job ob'ekti. MAX_JOBS gacha bir vaqtda. igGen tugmasi faol joblar MAX_JOBS ga yetganда
   // disabled bo'ladi; aks holda yangi gen boshlash mumkin. Har job mustaqil poll/progress/kredit/refund.
   var activeJobs=[]; var jobSeq=0; var MAX_JOBS=5;
-  var POLL_CAP=140;
+  var POLL_CAP=340; // ~10 daqiqa (backend limitiga mos) — Nano Banana Pro 4K kabi sekin genlar uzilmasin (2026-07-01)
   function pollDelay(t){ return t<6?1000:1800; }
 
   // Faol job qatorlarini igProg'ga render qiladi.
@@ -10308,7 +10308,7 @@ window.afGallery=(function(){
   }
   function pollJob(j,tries){
     if(j.cancelled)return;
-    if(tries>POLL_CAP){ removeJob(j); toast('Vaqt tugadi — keyinroq urinib ko\'ring','warning'); return; }
+    if(tries>POLL_CAP){ removeJob(j); toast('Uzoq davom etyapti — gen hali ishlashi mumkin, biroz kutib Tarix🕘 ni tekshiring','warning'); return; }
     studioGet('/api/studio/gen/'+j.jobId).then(function(gn){
       if(j.cancelled)return;
       var s=(gn&&gn.status)||'';
