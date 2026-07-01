@@ -9,9 +9,14 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
-import { isOpenRouterConfigured, orChatSys, orImageToPrompt } from "../lib/ai/openrouter.js";
+import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
-import { isFalConfigured, falEnhancePrompt } from "../lib/ai/fal.js";
+import { isFalConfigured } from "../lib/ai/fal.js";
+import {
+  isVertexEnhanceConfigured,
+  vertexEnhancePrompt,
+  vertexEnhanceJson,
+} from "../lib/ai/vertex-enhance.js";
 import {
   optimizeVideoReferenceForUpload,
   extractAudioReferenceForUpload,
@@ -813,8 +818,8 @@ function enhanceJsonSchema(mode: string): string {
 }
 
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
-  // text → fal (openrouter/router); json (describe) → OpenRouter. Ikkalasidan biri sozlangan bo'lsa OK.
-  if (!isFalConfigured() && !isOpenRouterConfigured()) {
+  // 100% Google: matn ham JSON ham Vertex Gemini (gemini-2.5-flash) ko'p-modal — fal/OpenRouter EMAS.
+  if (!isVertexEnhanceConfigured()) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
   }
@@ -858,13 +863,8 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
     return;
   }
-  const spendModels = [
-    enhanceCost.hasImage ? "openrouter/router/vision" : "",
-    enhanceCost.hasVideo ? "fal-ai/video-understanding" : "",
-    enhanceCost.hasAudio ? "nvidia/nemotron-3-nano-omni/audio" : "",
-    "openrouter/router",
-  ].filter(Boolean);
-  const spendModel = Array.from(new Set(spendModels)).join(" + ");
+  // 100% Vertex Gemini — rasm+video+audio+matn bitta ko'p-modal chaqiruvda (vositasiz).
+  const spendModel = "vertex/gemini-2.5-flash";
   logAiSpend(req.user!.userId, "enhance", enhanceCost.cost, spendModel);
 
   const settleEnhancedPrompt = (rawPrompt: string) => {
@@ -897,7 +897,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   if (format === "json") {
     let ideaForJson = p.data.prompt;
     if (refUrls.length || videoRefUrls.length || audioRefUrls.length) {
-      const enhanced = await falEnhancePrompt(p.data.prompt, {
+      const enhanced = await vertexEnhancePrompt(p.data.prompt, {
         imageUrls: refUrls.length ? refUrls : undefined,
         videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
         audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
@@ -917,7 +917,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       `${enhanceJsonSchema(mode)}\n` +
       `Be concrete and cinematic. No markdown, no commentary. The "prompt" field must be a ` +
       `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
-    const out = await orChatSys("openai/gpt-4o-mini", system, `Idea: ${ideaForJson}`, true);
+    const out = await vertexEnhanceJson(system, ideaForJson);
     if (!out.ok) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
       res.status(502).json({ error: out.error });
@@ -948,9 +948,9 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
 
-  // text — UNIVERSAL multimodal oqim, 100% fal. Tezlik: fal SYNC (queue+poll'siz) + referens tahlillari
-  // PARALLEL (falEnhancePrompt ichida). OpenRouter to'g'ridan-to'g'ri ISHLATILMAYDI — hammasi fal orqali.
-  const out = await falEnhancePrompt(p.data.prompt, {
+  // text — UNIVERSAL multimodal oqim, 100% Vertex Gemini. Rasm+video+audio+matn BITTA generateContent
+  // chaqiruvida (Gemini tabiiy ko'p-modal) — referenslar PARALLEL Part'ga aylantiriladi. Vositasiz.
+  const out = await vertexEnhancePrompt(p.data.prompt, {
     imageUrls: refUrls.length ? refUrls : undefined,
     videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
     audioUrls: audioRefUrls.length ? audioRefUrls : undefined,

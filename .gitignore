@@ -31,3 +31,6 @@ packages/assetflow-studio/admin/styles/
 
 # Cloud Run secrets (real values — never commit)
 cloudrun-env.yaml
+
+# Local scratch/wrapper scripts with hardcoded credentials — never commit
+vwrap.mjs
