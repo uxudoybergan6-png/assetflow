@@ -1,11 +1,10 @@
-# SESSION REPORT — 2026-07-01 — AE plugin FrameFlow redesign: 100% rang/shrift parity audit
+# SESSION REPORT — 2026-07-01 — AE plugin: FAST tag + kadr-N badge (mockup parity davomi)
 
-Foydalanuvchi ekran skrinshoti orqali "100% bir-ga-bir bo'lishi kerak edi" deb tuzatdi — taxminiy emas, mockup bilan aniq solishtirib tuzatish so'raldi.
+Oldingi "100% rang/shrift parity" sessiyasidan qolgan 2 ta ataylab keyinga qoldirilgan item bajarildi.
 
-- **Tekshirildi:** `AssetFlow_Plugin.html` CSS qiymatlari `scratchpad/assetflow-design/sec_*.html` (14 ta mockup fragment) bilan literal solishtirildi (chastota analizi orqali standart ranglar aniqlandi).
-- **Tuzatildi:** `.pro`/`.lbl` badge'larga `font-family:var(--font-mono)` qo'shildi; eski `#121317` fon → `var(--card)` (9 joy); Video gen KADRLAR frame-box (`.axvg .fbox`) bg/border/hover/filled holat mockup bilan aniq moslandi; `.vpanel` border `#3f4859`→`#3A4456`.
-- **MUHIM REGRESSIYA O'ZIM TOPDIM VA TUZATDIM:** `.af-tb-home` (global "‹ Asosiy" tugmasi) `.axroot`/`.axhome` scope'idan TASHQARIDA — blanket sed uni `var(--card)`ga o'zgartirib, rangsiz qilib qo'ygan edi. Literal `#13161C`/`#2A3140`ga tuzatildi, brauzerda tasdiqlandi.
-- **Ishonchsiz background agent:** avvalgi sessiyada ishga tushirilgan umumiy audit agent xato/to'xtab qolgan, lekin baribir faylga ba'zi edit qilib ulgurgan ekan (`.warnrow`, `.cbar-model .mbtn`, `.errbox` va h.k. border ranglari). Bularni qayta tekshirdim: `.warnrow` eski `--warn` qiymatidan (`#ffb15a`) qoldiq rgba ishlatgan ekan — joriy `--warn:#FFB27C` tokeniga to'g'irladim (CSS + JS trim-timeline ogohlantirish rangi).
-- Barcha o'zgarishlar brauzer preview'da `preview_inspect` orqali tasdiqlandi (computed style mockup bilan bir xil).
+- **Qo'shildi:** Video gen KADRLAR bo'limida `.lbl` qatoriga model-aware "FAST" pill (`#vgKadrTag`, faqat `refKind==='frames'` bo'lganda `applyVgMeta()` orqali ko'rinadi) — mockup `sec_11`dagi rang/shrift bilan bir xil (`rgba(124,196,255,...)`, `var(--blue)`, IBM Plex Mono).
+- **Qo'shildi:** To'ldirilgan frame-box'larga (`renderFbox`) "kadr 1"/"kadr 2" mono badge overlay (`.fbtag`, `var(--acc)`/`var(--acc-ink)`) — mockup bilan bir xil pozitsiya (bottom-left).
+- Ikkalasi ham faqat qo'shimcha (CSS + bitta `<span>`/ID) — mavjud model/refKind mantig'iga tegilmadi. Brauzer preview'da qiymatlar `getComputedStyle` orqali mockup bilan bir xil ekani tasdiqlandi (real model-list fetch lokal preview'da `localhost:4000` yo'qligi sababli ishlamaydi — CEP host'da haqiqiy oqim ishlaydi).
+- **Tekshirildi va TEGILMADI:** orqaga qaytish tugmasi (`.crumb .bk`, boxed "‹" dizayni) mockup'dagi borderless "‹ AI Tools" link'dan farq qiladi — LEKIN bu farq faqat ESKI/legacy `v-genvideo`/`v-genimage` ekranlarida (qisman reachable — masalan Edit image → "→Video" tugmasi orqali). Joriy asosiy oqim (`v-vidgen`/`v-imggen`) allaqachon mockup bilan bir xil compact header'ga ega (screenshot bilan tasdiqlandi). Bu — avvalgi audit'da ("o'lik UI avlodlari") qayd etilgan legacy tozalash masalasi, alohida qaror talab qiladi — shu sabab TEGILMADI.
 
-**Kutilmoqda:** "FAST" model-tag pill, "kadr N" mono-badge overlay, orqaga qaytish tugmasi dizayn farqi — bular markup/JS o'zgarishi talab qiladi, foydalanuvchi tasdiqlasa keyingi navbatda qilinadi. Commit `d308a9b` mahalliy, push foydalanuvchi tomonidan qilinishi kerak (oldingi `71bb1de` bilan birga).
+**Kutilmoqda:** foydalanuvchi legacy `.crumb` ekranlarini (genvideo/genimage/editvideo va h.k.) tozalash/yangilashni xohlasa — alohida vazifa sifatida ko'rib chiqish kerak. Commit `7c365c4` mahalliy, push kerak (oldingi `d308a9b`/`5486b11` bilan birga).
