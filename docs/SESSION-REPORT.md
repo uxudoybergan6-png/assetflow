@@ -1,26 +1,25 @@
-# SESSION REPORT — 2026-07-01 — 4 yangi Google rasm modeli qo'shildi (jami 5)
+# SESSION REPORT — 2026-07-01 — Video → alohida GCP loyiha (2-$300) + 4 video model
 
-Foydalanuvchi 4 model havolasini yubordi. Ish tartibi bo'yicha har biri JONLI tahlil (region + param + real gen) qilinib model-aware UI bilan ulandi.
+Foydalanuvchining 2-Google-hisobidagi 2-$300 kreditli loyiha (project-62cb1324-b958-4bc1-b50) videoga ulandi. 4 video model yoqildi.
 
-## Qo'shilgan modellar (hammasi JONLI ✅)
-| Model | key | region | nisbat | sifat | referens | narx |
-|---|---|---|---|---|---|---|
-| Nano Banana 2 (default) | gemini-3.1-flash-image | global | 8 | 1K/2K/4K | 10 | 4/8/16 |
-| Nano Banana 2 Lite | gemini-3.1-flash-lite-image | global | 8 | 1K | 10 | 2 |
-| Nano Banana Pro | gemini-3-pro-image | global | 8 | 1K/2K/4K | 10 | 8/14/24 |
-| Imagen 4 | imagen-4.0-generate-001 | us-central1 | 5 | 1K/2K | — (t2i) | 4/6 |
-| Imagen 4 Ultra | imagen-4.0-ultra-generate-001 | us-central1 | 5 | 1K/2K | — (t2i) | 6/10 |
+## Cross-loyiha routing (video → 2-loyiha)
+- **Kod:** `GOOGLE_CLOUD_PROJECT_VIDEO` env. `vertex.ts` (Veo) + `vertex-omni.ts` (Omni) shu loyihani ishlatadi (client project + x-goog-user-project). Fallback → asosiy loyiha. Rasm asosiy loyihada qoladi.
+- **Env:** cloudrun-env.yaml + GitHub secret (CLOUDRUN_ENV_YAML) yangilandi.
+- **Foydalanuvchi (2-hisob konsolida):** Vertex AI API yoqdi + Cloud Run SA (331762958776-compute@...) ga "Agent Platform User" (=aiplatform.user) berdi.
+- **Bir martalik infra (men, 1-loyiha bucket'ida):** 2-loyiha video service-agent (service-918943206370@gcp-sa-aiplatform...) ga GCS bucket assetflow-assets-2026 da roles/storage.objectAdmin berildi — Veo natijani bucket'ga yozishi uchun (avval "storage.objects.create access yo'q" xatosi bergan edi).
 
-## Jonli sinovlar
-- Lite: t2i+edit ✅, 2K=400 xato → FAQAT 1K (tez ~5s, ~200KB). Sifat selektori yo'q (tekis 2 kr).
-- Pro: 2K (6.7MB/26s) ✅, 4K (20.5MB/58s) ✅ tasdiqlandi. Premium/sekin.
-- Imagen 4 / Ultra: 16:9+2K ✅ (6.4/6.9MB). t2i only (referens UI yashirin). imageSize ishlaydi.
-- E2e prod pipeline: Lite (narx 2), Imagen 4 (2K narx 6) ✅.
+## 4 video model (provider vertex/vertex-omni, TO'G'RI ID)
+| Model | key | res | dur | narx |
+|---|---|---|---|---|
+| Veo 3.1 Lite (default) | veo-3.1-lite-generate-001 | 720p | 4/6/8 | 3/s |
+| Veo 3.1 Fast | veo-3.1-fast-generate-001 | 720p/1080p | 4/6/8 | 8/s |
+| Veo 3.1 | veo-3.1-generate-001 | 720p/1080p | 4/6/8 | 30/s |
+| Gemini Omni Flash | gemini-omni-flash-preview | 720p | 10 | 80 |
 
-## Texnik
-- Adapter (vertex-image.ts) o'zgarmadi — locationFor (gemini-3.x=global, imagen=us-central1) + imageSize allaqachon qo'llaydi.
-- Model-aware: imgSettings.quality (Sifat selektori) faqat ko'p o'lchamli modellarda; Imagen referenceMode=none.
-- Narxlar TAXMINIY (premium tierlar) — Google aniq narxi bilan keyin moslash mumkin.
+## Tekshiruv
+- **Veo 3.1 Lite production sinov: VIDEO YARATILDI (2-loyihada)** ✅ — submit→poll→GCS→S3, SA+bucket ruxsatidan keyin. Routing tasdiqlandi.
+- Provisioning: 2-loyihada Vertex yangi yoqilgani uchun dastlab "service agents provisioning" + "bucket access yo'q" xatolari — normal, ruxsat berilgach o'tdi.
 
-## Foydalanuvchiga
-- Plaginda Rasm tab qayta ochilsin → Model dropdownda 5 Google model. Har biri o'z UI'si bilan (Lite'da Sifat yo'q, Imagen'da referens yo'q).
+## OCHIQ MUAMMO (alohida)
+- **OpenRouter krediti TUGAGAN** → "Yaxshilash" (enhance) ishlamaydi ("Insufficient credits openrouter.ai"). Video/rasm gen (Google) buga bog'liq EMAS. Yechim: OpenRouter top-up YOKI enhance'ni fal/Gemini'ga o'tkazish (keyingi vazifa).
+- Narxlar (Veo Std/Omni) taxminiy — Google aniq narxi bilan moslash mumkin.
