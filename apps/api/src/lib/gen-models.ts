@@ -178,31 +178,84 @@ export const GEN_MODELS: GenModel[] = [
     imgModalities: ["image", "text"],
   },
   {
+    id: 1013,
+    mode: "image",
+    key: "gemini-3.1-flash-lite-image", // Nano Banana 2 Lite — GLOBAL (jonli sinov: tez, ~200KB, faqat 1K)
+    label: "Nano Banana 2 Lite",
+    provider: "vertex-image",
+    enabled: true, // 2026-07-01 jonli sinov: t2i+edit, 8 nisbat, 1K (2K=400 xato → faqat 1K)
+    feature: "text-to-image",
+    cost: 2, // eng arzon (lite, tez ~5s, kichik rasm). Sifat selektori YO'Q (faqat 1K) → tekis narx
+    referenceMode: "image-edit",
+    inputs: ["image-ref"],
+    maxRefs: 10,
+    aspects: NANO_ASPECTS, // 8 nisbat (Gemini image)
+    count: [1, 2, 3, 4],
+    imgModalities: ["image", "text"],
+  },
+  {
+    id: 1014,
+    mode: "image",
+    key: "gemini-3-pro-image", // Nano Banana Pro — GLOBAL (jonli sinov: 6.7MB, 26s@2K, premium)
+    label: "Nano Banana Pro",
+    provider: "vertex-image",
+    enabled: true, // 2026-07-01 jonli sinov: t2i+edit, 8 nisbat, 2K ishladi (4K e2e'da tasdiqlanadi)
+    feature: "text-to-image",
+    cost: 8, // fallback (1K); premium (eng yuqori sifat, sekin)
+    qualityCost: { "1K": 8, "2K": 14, "4K": 24 }, // TAXMINIY — premium tier
+    referenceMode: "image-edit",
+    inputs: ["image-ref"],
+    maxRefs: 10,
+    aspects: NANO_ASPECTS,
+    resolutions: ["1K", "2K", "4K"],
+    count: [1, 2, 3, 4],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: NANO_ASPECTS, def: "1:1" },
+      quality: { label: "Sifat", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 8, "2K": 14, "4K": 24 } },
+      num: [1, 2, 3, 4],
+    },
+    imgModalities: ["image", "text"],
+  },
+  {
     id: 1011,
     mode: "image",
-    key: "imagen-4.0-generate-001", // Imagen 4 — foto-realistik (smoke: 1024x1024, 8s)
+    key: "imagen-4.0-generate-001", // Imagen 4 — foto-realistik (jonli sinov: 6.4MB@2K, us-central1)
     label: "Imagen 4",
     provider: "vertex-image",
-    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
+    enabled: true, // 2026-07-01 jonli sinov: t2i, 5 nisbat, 1K/2K
     feature: "text-to-image",
-    cost: 4,
-    referenceMode: "none", // Imagen bu yo'lda t2i (referens/edit yo'q)
+    cost: 4, // fallback (1K); qualityCost ustun
+    qualityCost: { "1K": 4, "2K": 6 },
+    referenceMode: "none", // Imagen t2i ONLY (referens/edit YO'Q) → plagin referens UI'ni yashiradi
     aspects: IMAGEN_ASPECTS, // Imagen faqat 5 nisbat
-    count: [1, 2, 3, 4], // adapter har chaqiruvda numberOfImages:1 → processor count marta (Ultra limiti muammo emas)
+    resolutions: ["1K", "2K"], // Imagen 4 max 2K
+    count: [1, 2, 3, 4], // adapter har chaqiruvda numberOfImages:1 → processor count marta
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: IMAGEN_ASPECTS, def: "1:1" },
+      quality: { label: "Sifat", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 4, "2K": 6 } },
+      num: [1, 2, 3, 4],
+    },
     imgModalities: ["image"],
   },
   {
     id: 1012,
     mode: "image",
-    key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium (1 rasm/chaqiruv, lekin loop bilan count OK)
+    key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium (jonli sinov: 6.9MB@2K)
     label: "Imagen 4 Ultra",
     provider: "vertex-image",
-    enabled: false, // VAQTINCHA o'chirildi (2026-07-01) — to'g'ri spec bilan birin-ketin qayta yoqiladi
+    enabled: true, // 2026-07-01 jonli sinov: t2i, 5 nisbat, 1K/2K
     feature: "text-to-image",
-    cost: 8,
+    cost: 6, // fallback (1K); premium
+    qualityCost: { "1K": 6, "2K": 10 },
     referenceMode: "none",
     aspects: IMAGEN_ASPECTS,
+    resolutions: ["1K", "2K"],
     count: [1, 2, 3, 4],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: IMAGEN_ASPECTS, def: "1:1" },
+      quality: { label: "Sifat", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 6, "2K": 10 } },
+      num: [1, 2, 3, 4],
+    },
     imgModalities: ["image"],
   },
   // ── RASM (text-to-image) — ESKI fal/openrouter avlod: to'liq-Google qaroriga ko'ra HAMMASI enabled:false ──
