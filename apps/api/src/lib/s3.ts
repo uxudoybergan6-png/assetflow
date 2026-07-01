@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
+import type { SdkStreamMixin } from "@smithy/types";
 import {
   S3Client,
   PutObjectCommand,
@@ -373,6 +374,14 @@ export async function downloadS3ToFile(
   const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
   if (!res.Body) throw new Error(`R2 obyekt bo'sh yoki topilmadi: ${key}`);
   await pipeline(res.Body as Readable, fs.createWriteStream(destPath));
+}
+
+/** R2/S3 obyektni to'g'ridan-to'g'ri xotiraga (Buffer) yuklab oladi — kichik fayllar uchun. */
+export async function downloadS3ToBuffer(key: string): Promise<Buffer> {
+  const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  if (!res.Body) throw new Error(`R2 obyekt bo'sh yoki topilmadi: ${key}`);
+  const bytes = await (res.Body as Readable & SdkStreamMixin).transformToByteArray();
+  return Buffer.from(bytes);
 }
 
 /** Buffer'ni S3/R2 ga yuklash */

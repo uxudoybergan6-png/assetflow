@@ -45,7 +45,7 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
   qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
@@ -591,7 +591,8 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "google/veo-3.1-lite",
     label: "Veo 3.1 Lite",
-    enabled: false, // B6: fal'ga ulanmagan — katalogdan yashirin + gen bloklangan (kredit yechmaydi)
+    enabled: false, // model ID Vertex Model Garden'da TASDIQLANMAGAN — yoqishdan oldin foydalanuvchi
+    // o'z GCP konsolida aniq ID'ni tekshirishi kerak (faqat 3002/"veo-3.1-fast-generate-001" tasdiqlangan)
     feature: "text-to-video",
     cost: 10, // /s
     referenceMode: "video-ref", // boshlang'ich kadr/reference rasm — G3
@@ -606,17 +607,21 @@ export const GEN_MODELS: GenModel[] = [
   {
     id: 3002,
     mode: "video",
-    key: "google/veo-3.1-fast",
-    label: "Veo 3.1 Fast",
-    enabled: false, // B6: fal'ga ulanmagan
+    key: "veo-3.1-fast-generate-001", // Vertex Model Garden model ID (tasdiqlangan — real ishlaydigan kod namunasidan)
+    label: "Veo 3.1 Fast (Google Cloud)",
+    provider: "vertex", // TO'G'RIDAN-TO'G'RI Vertex AI (fal.ai orqali EMAS) — foydalanuvchining o'z GCP krediti
+    enabled: false, // gcloud infratuzilma (API yoqish + IAM + env var) va $300 kredit bilan qo'lda smoke-test
+    // qilinmaguncha OCHIQ QOLDIRILMAYDI — tayyor bo'lgach shu qatorni olib tashlash kifoya
     feature: "text-to-video",
-    cost: 20,
-    referenceMode: "video-ref",
-    endFrame: true,
+    // Google narxi ~$0.10/s (audiosiz). ~1 kredit≈$0.012-0.015 taxminiga asoslanib — TAXMINIY,
+    // haqiqiy $300 kredit hisobida sinovdan keyin foydalanuvchi tasdiqlashi/tuzatishi kerak.
+    cost: 8,
+    referenceMode: "video-ref", // ixtiyoriy boshlang'ich kadr (Veo sof matndan ham video yasaydi)
+    endFrame: false, // runVertexVideo endFrame'ni QOLLAMAYDI hozircha — UI'da ko'rsatilmasin (jimgina yo'qolib ketmasin)
     aspects: ["16:9", "9:16"],
-    resolutions: ["720p", "1080p", "4K"],
+    resolutions: ["720p", "1080p"],
     durations: [4, 6, 8],
-    audio: true,
+    audio: false, // Vertex generateAudio hali smoke-test qilinmagan — MVP audiosiz
     inputs: ["image-ref"],
   },
   {
@@ -624,7 +629,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "google/veo-3.1",
     label: "Veo 3.1",
-    enabled: false, // B6: fal'ga ulanmagan
+    enabled: false, // model ID Vertex Model Garden'da TASDIQLANMAGAN (yuqoridagi 3001 izohiga qarang)
     feature: "text-to-video",
     cost: 40,
     referenceMode: "video-ref",

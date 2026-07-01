@@ -4,6 +4,7 @@ import {
   uploadBufferToS3,
   getSignedDownloadUrl,
   getPublicOrSignedUrl,
+  downloadS3ToBuffer,
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import {
@@ -34,6 +35,7 @@ import {
 import type { GenModel } from "./gen-models.js";
 import type { OrResult } from "./ai/openrouter.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
+import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vertex.js";
 import { refundAiCredits } from "./plugin-profile.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
@@ -58,7 +60,8 @@ function normalizeGenerationError(message: string): string {
 
 type StoredProviderJob =
   | { provider: "openrouter-video"; jobId: string; submittedAt: string }
-  | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob);
+  | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob)
+  | { provider: "vertex-video"; operationName: string; submittedAt: string };
 type StoredProviderWebhook = {
   provider: "fal";
   requestId: string;
@@ -92,6 +95,13 @@ function readProviderJob(params: Record<string, unknown>): StoredProviderJob | n
       requestId: job.requestId,
       statusUrl: job.statusUrl,
       responseUrl: job.responseUrl,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  if (provider === "vertex-video" && typeof job.operationName === "string" && job.operationName) {
+    return {
+      provider,
+      operationName: job.operationName,
       submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
     };
   }
@@ -525,6 +535,70 @@ async function runFalRefVideo(
   return falVideoOut(model, out.data);
 }
 
+/** data:URI yoki http(s) URL'ni Vertex kutgan inline base64 rasmga aylantiradi. */
+async function refUrlToInlineImage(
+  refUrl: string
+): Promise<{ data: string; mimeType: string } | null> {
+  const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(refUrl);
+  if (m) return { data: m[2], mimeType: m[1] || "image/jpeg" };
+  const res = await fetch(refUrl);
+  if (!res.ok) return null;
+  const contentType = res.headers.get("content-type") || "image/jpeg";
+  const buf = Buffer.from(await res.arrayBuffer());
+  return { data: buf.toString("base64"), mimeType: contentType };
+}
+
+/**
+ * Google Vertex AI (Veo) — TO'G'RIDAN-TO'G'RI (fal.ai orqali EMAS, foydalanuvchining
+ * o'z GCP krediti sarflanadi). Uzun operatsiya: submit → poll → natija shu bucket'dagi
+ * GCS obyektidan (mavjud S3-moslik client orqali) yuklanadi. Referens rasm IXTIYORIY —
+ * Veo sof matn promptidan ham video yasay oladi.
+ */
+async function runVertexVideo(
+  model: GenModel,
+  prompt: string,
+  params: Record<string, unknown>,
+  userId: string,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  const v = resolveVideoParams(model, params);
+  const saved = readProviderJob(params);
+  let job: { operationName: string };
+  if (saved?.provider === "vertex-video") {
+    job = { operationName: saved.operationName };
+  } else {
+    const inline = refUrl ? await refUrlToInlineImage(refUrl) : null;
+    const sub = await vertexSubmitVideo(model.key, prompt, {
+      imageBase64: inline?.data,
+      imageMimeType: inline?.mimeType,
+      aspectRatio: v.aspectRatio,
+      durationSeconds: v.duration,
+      generateAudio: v.generateAudio,
+      resolution: v.resolution,
+    });
+    if (!sub.ok) return { ok: false, error: sub.error };
+    job = sub.data;
+    await persistProviderJob(genId, params, {
+      provider: "vertex-video",
+      operationName: job.operationName,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  for (let i = 0; i < 90; i++) {
+    await sleep(falWaitMs(i));
+    const poll = await vertexPollVideo(job);
+    if (!poll.ok) return { ok: false, error: poll.error };
+    if (poll.data.state === "pending") continue;
+    if (poll.data.state === "error") return { ok: false, error: poll.data.error };
+    const key = vertexGcsUriToKey(poll.data.gcsUri);
+    if (!key) return { ok: false, error: `Vertex: kutilmagan GCS manzil — ${poll.data.gcsUri}` };
+    const buf = await downloadS3ToBuffer(key);
+    return { ok: true, buf };
+  }
+  return { ok: false, error: "VERTEX_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+}
+
 /**
  * queued Generation'ni qayta ishlaydi — model.feature bo'yicha OpenRouter'ga marshrutlaydi:
  * text-to-image / image-edit → sync; text-to-speech → audio; text/image-to-video → async poll.
@@ -714,8 +788,15 @@ export async function processGeneration(genId: string): Promise<void> {
           ? await runFalRefVideo(model, gen.prompt, params, gen.userId, genId) // R2V — ko'p-modal referens
           : model.provider === "fal"
             ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
-            : await runVideo(model, gen.prompt, params, gen.userId, genId);
-      if (!out.ok && (out.error.startsWith("FAL_TIMEOUT") || out.error.startsWith("OPENROUTER_TIMEOUT"))) {
+            : model.provider === "vertex"
+              ? await runVertexVideo(model, gen.prompt, params, gen.userId, genId)
+              : await runVideo(model, gen.prompt, params, gen.userId, genId);
+      if (
+        !out.ok &&
+        (out.error.startsWith("FAL_TIMEOUT") ||
+          out.error.startsWith("OPENROUTER_TIMEOUT") ||
+          out.error.startsWith("VERTEX_TIMEOUT"))
+      ) {
         return;
       }
       if (!out.ok) return void (await fail(out.error));
@@ -746,7 +827,7 @@ export async function processGeneration(genId: string): Promise<void> {
 function stuckTimeoutMs(g: { mode: string; modelId: number }): number {
   if (g.mode !== "video") return 10 * 60 * 1000;
   const model = getModelById(g.modelId);
-  if (model?.provider === "fal") return 20 * 60 * 1000;
+  if (model?.provider === "fal" || model?.provider === "vertex") return 20 * 60 * 1000;
   return 15 * 60 * 1000;
 }
 export async function reconcileStuckGenerations(userId: string): Promise<number> {
