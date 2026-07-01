@@ -1,13 +1,11 @@
-# SESSION REPORT — 2026-07-01 — Vertex AI (Veo) kod + GCP infratuzilma sozlash + Cloud Run deploy
+# SESSION REPORT — 2026-07-01 — Vertex AI (Veo) SMOKE-TEST ✅ + adapter bug tuzatildi
 
-Oldingi qismda yozilgan Vertex AI kod ustiga: gcloud CLI o'rnatildi, GCP loyiha/API/IAM sozlandi, Cloud Run qayta deploy qilindi.
+Oldingi qismдa yozilган Vertex kod + infratuzilma ustiga: haqiqiy uchidan-uchiga smoke-test o'tkazildi, kritik bug topilib tuzatildi.
 
-- **gcloud CLI o'rnatildi** (`brew install --cask google-cloud-sdk`), `gkmockups@gmail.com` bilan login, loyiha tanlandi: `project-289028d3-984c-4d84-bd4` (`deploy-cloudrun.sh`dagi bilan bir xil — $300 kreditli loyiha).
-- **Yoqildi:** `aiplatform.googleapis.com` (Vertex AI API).
-- **IAM:** Cloud Run service account (`331762958776-compute@developer.gserviceaccount.com`) ga `roles/aiplatform.user` berildi — tasdiqlangan (`get-iam-policy` bilan tekshirildi).
-- **`cloudrun-env.yaml`** (maxfiy, git'da yo'q) ga qo'shildi: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION="us-central1"` (Veo shu regionda; Cloud Run o'zi `europe-west1`da qoladi). `.example.yaml` ham yangilandi (izoh sifatida).
-- **Deploy environment tuzatildi:** bu Mac'da Docker yo'q edi → `colima`+`docker`+`docker-buildx` o'rnatildi. `deploy-cloudrun.sh` xato berdi (`exec format error` — arm64 image, Cloud Run amd64 kutadi) → skript `docker buildx build --platform linux/amd64 --load` ga tuzatildi (bu Mac'dan keyingi deploy'lar uchun ham SHART).
-- **Deploy muvaffaqiyatli:** revision `assetflow-api-00010-cdb`, 100% traffic, `/health` OK. Eski revision xato berганда AVTOMATIK almashtirilmadi (Cloud Run xavfsizlik xususiyati) — production uzilish bo'lmadi.
-- Vertex model (`gen-models.ts` id 3002) hali `enabled:false` — qasddan, $300 kredit bilan qo'lda smoke-test qilingunча yoqilmaydi.
+- **ADC sozlandi:** `gcloud auth application-default login` (gkmockups@gmail.com) — lokal to'g'ridan-to'g'ri Google Vertex chaqiruvi uchun. Kredit saqlandi.
+- **Smoke-test o'tdi (real):** `veo-3.1-fast-generate-001`, 4s, 16:9, 720p → ~60s da video yaratildi va GCS'ga yozildi (`gs://assetflow-assets-2026/vertex-video-tmp/.../sample_0.mp4`). Model ID, ADC auth, IAM, GCS chiqish — hammasi TASDIQLANDI.
+- **Yuklab olish tasdiqlandi:** o'sha videoni bizning S3-mos klient (GCS HMAC kalit) o'qidi — 3.6 MB `video/mp4`. Ya'ni `downloadS3ToBuffer` yo'li ishlaydi.
+- **KRITIK BUG topildi va tuzatildi** (`vertex.ts` `vertexPollVideo`): poll uchun `{name} as GenerateVideosOperation` (oddiy cast) productionдa `operation._fromAPIResponse is not a function` beradi — SDK haqiqiy class nusxasini kutadi. Tuzatildi: `Object.assign(new GenerateVideosOperation(), {name})`. Smoke-test aynan shu tuzatilган nusxa bilan ishladi. `tsc` build toza.
+- **Narx aniqlandi:** Veo 3.1 Fast Vertex'da **$0.10/soniya** (audiosiz). Katalog hozir `cost: 8` kredit/s, `audio: false` — kredit qiymatiga qarab margin tekshirilishi kerak.
 
-**Kutilmoqda:** foydalanuvchi (yoki men, so'rasa) haqiqiy video generatsiya bilan smoke-test qilish, keyin `enabled:false` qatorini olib tashlash. `/api/plugin/catalog` bo'sh (`{"items":[]}`) qaytardi — Vertex ishiga aloqasi yo'q, alohida tekshirish kerak bo'lishi mumkin.
+**Kutilmoqda (foydalanuvchi qарори):** (1) tuzatilган adapter'ni Cloud Run'ga qayta deploy; (2) `gen-models.ts` id 3002 `enabled:false` → yoqish; (3) kredit narxini $0.10/s ga moslash (margin). Yoqilmagunча foydalanuvchilarga ko'rinmaydi.

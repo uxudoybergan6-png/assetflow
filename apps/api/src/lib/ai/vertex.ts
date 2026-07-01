@@ -8,7 +8,7 @@
 // o'laroq HALI HAQIQIY $300 kredit hisobida sinovdan o'tkazilmagan (bu muhitda
 // gcloud/tarmoq yo'q) — ishga tushirishdan oldin bitta kichik video bilan qo'lda
 // smoke-test SHART.
-import { GoogleGenAI, type GenerateVideosOperation } from "@google/genai";
+import { GoogleGenAI, GenerateVideosOperation } from "@google/genai";
 import type { OrResult } from "./openrouter.js";
 
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? "";
@@ -72,11 +72,14 @@ export type VertexPollResult =
 
 /** Operatsiya holatini so'raydi (bir marta) — gen-processor loop'ida chaqiriladi.
  * Operatsiya ob'ekti process qayta ishga tushgach ham davom etishi uchun faqat
- * `name`dan tiklanadi (SDK operatsiyani to'liq class deb kutadi — shu sabab cast). */
+ * `name`dan tiklanadi. SDK `getVideosOperation` uzatilgan obyektда `_fromAPIResponse`
+ * metodini chaqiradi, shu sabab HAQIQIY class nusxasi shart (oddiy cast EMAS —
+ * cast productionda "operation._fromAPIResponse is not a function" beradi; smoke-test
+ * 2026-07-01 bu tuzatilgan nusxa bilan uchidan-uchiga ishladi). */
 export async function vertexPollVideo(job: VertexVideoJob): Promise<OrResult<VertexPollResult>> {
   if (!isVertexConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
-    const resumedOp = { name: job.operationName } as GenerateVideosOperation;
+    const resumedOp = Object.assign(new GenerateVideosOperation(), { name: job.operationName });
     const op = await getClient().operations.getVideosOperation({ operation: resumedOp });
     if (!op.done) return { ok: true, data: { state: "pending" } };
     if (op.error) {
