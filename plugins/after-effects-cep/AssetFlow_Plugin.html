@@ -2537,8 +2537,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .igscroll{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 2px 4px;overflow-y:auto}
 .axig .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center;font-family:var(--font-mono)}
 .axig .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
-.axig .lbl .clearbtn,.axvg .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-.axig .lbl .clearbtn:hover,.axvg .lbl .clearbtn:hover{color:var(--red)}
+.axig .lbl .clearbtn,.axvg .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:4px 10px 4px 8px;border-radius:20px;background:var(--card3);border:1px solid var(--line2);color:var(--mut);font-weight:600;transition:.15s}
+.axig .lbl .clearbtn:hover,.axvg .lbl .clearbtn:hover{color:#fff;background:var(--red);border-color:var(--red)}
 .axig .req{color:var(--acc);margin-left:5px}
 .axig .sect{margin-bottom:16px}
 /* vpanel kartalar — Sozlamalar/So'nggi/Prompt alohida qutilarда (video tool bilan teng dizayn) */
@@ -9124,8 +9124,8 @@ async function bootPlugin(){
       x:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>',
       chk:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
       imp:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
-      ref:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>',
-      rst:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      ref:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+      rst:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>',
       dl:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
       aud:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
       play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'
@@ -11332,6 +11332,8 @@ window.afGallery=(function(){
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
     var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
+    // Ovoz referens import — faqat model haqiqatan qabul qiladigan bo'lsa (Omni: mediaRefs.audio=0 — toggle qulf bilan bir xil sabab).
+    var aa=$('vgAddAud'); if(aa)aa.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.audio)?'':'none';
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
     if(isMedia){ renderMediaRefs(); updRefMeta(); loadVgSavedRefs(); }
     else renderVgSavedRefs();

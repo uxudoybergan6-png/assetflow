@@ -1,15 +1,15 @@
-# SESSION REPORT — 2026-07-02 — Qayta gen (model+ref) · Omni halol sozlamalar · ichki confirm modal
+# SESSION REPORT — 2026-07-02 — 4 ta AI Tools kamchilik tuzatildi
 
 Foydalanuvchi 4 kamchilik xabar qildi — hammasi tuzatildi:
 
 ## TUZATILDI
-- **Qayta gen referens tiklamasdi (ROOT CAUSE):** shu sessiyada tugagan gen kartasiga (`j.pit`) `params`/`modelId` yozilmasdi → restore faqat prompt tiklardi. Endi submit'da `j.params/j.modelId`, tugashda `pit.params/pit.modelId` (ig+vg), history itemlarida ham `modelId`.
-- **Qayta gen endi ASL MODELga o'tadi:** restore avval gen qilingan modelga almashtiradi (`vgSilentSwitchModel`/ig `setModel`), keyin prompt+referens tiklaydi. Cross-tool: rasm genini video toolda bossa → rasm tooliga (va aksincha) o'tib tiklaydi (`window.afIgRestoreGen`/`afVgRestoreGen` + `axGo`). Restore holatni ALMASHTIRADI (joriy kadr/ref tozalanadi).
-- **Omni Flash halol sozlamalar:** adapter (vertex-omni.ts) faqat aspect yuboradi; audio/duration/resolution API'da YO'Q. `videoSettings.audioLocked` + `aspectIgnoredWithVideoRef` flag'lari qo'shildi → Ovoz toggle qulflangan ("doim yoqilgan"), video-ref biriktirilganda Nisbat chipi qulflanadi + tushuntirish. Rasm modellari allaqachon jonli-tasdiqlangan (o'zgartirilmadi).
-- **OS "JavaScript Confirm" yo'qotildi:** `window.afConfirm` — plagin ichki chiroyli modal (Promise, Escape/overlay=bekor, danger tugma). 9 ta joy almashtirildi: gen o'chirish (ig/vg/galereya, bitta+batch), model almashtirish tasdig'i (ig `setModel`, vg `switchVgModel`), shablon o'chirish.
+- **#35+#36 (Qayta gen refs aralashadi / rasm restore video toolda qolib ketadi):** Restore/almashtirish logikasi (`igRestoreGen`/`vgRestoreGen`, cross-tool `axGo`+handoff) 5 marta jonli test qilindi — HAMMASI to'g'ri ishladi. Haqiqiy sabab: `window.afRecent` ikonkalari TESKARI edi — "Referens qilib ishlatish" (qo'shuvchi) refresh-ikonka, "Qayta gen" (almashtiruvchi, tool almashtiradi) qalam-ikonka bo'lib ko'rinardi → foydalanuvchi noto'g'ri tugmani bosardi. Ikonkalar almashtirildi ("+"=referens, refresh=qayta gen).
+- **#37 (Omni: ovoz doim yoqiq bo'lsa ham "+ Ovoz" referens ko'rinardi):** `vgAddAud` tugmasi endi `vm.mediaRefs.audio` soniga qarab yashiriladi (Omni: audio:0 → yashirin; Seedance R2V: audio:3 → ko'rinadi).
+- **#38 (Tozalash tugmasi kichkina/notiy edi):** `.clearbtn` CSS pill/chip dizaynga o'zgartirildi (fon, radius 20px, hover'da qizil).
 
 ## TEKSHIRILDI
-- 7 inline skript sintaksis ✅, API tsc ✅, brauzer smoke: yuklanish xatosiz, afConfirm OK→true/Bekor→false jonli ✅.
+- Barcha 4 tuzatish brauzer preview'da jonli tasdiqlandi (`getComputedStyle`, ikonka `.innerHTML`, ko'rinish/yashirish holatlari — Omni va Seedance R2V ikkalasida).
+- Debug uchun qo'shilgan vaqtinchalik hook'lar (`__vgDebug/__vgSetup/__vgRcSetup`) olib tashlandi — `git diff` faqat 4 haqiqiy tuzatishni ko'rsatadi.
 
 ## KUTILMOQDA
-- git push (foydalanuvchi) → GitHub Actions Cloud Run'ga avtomatik deploy (audioLocked flag'lar shundan keyin keladi); CEP qayta o'rnatildi — AE'da qo'lda test.
+- AE'da CEP orqali qo'lda test (ikonka almashinuvi, Omni'da Ovoz tugmasi yo'qligi, Tozalash tugmasi ko'rinishi).
