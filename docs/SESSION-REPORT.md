@@ -1,21 +1,15 @@
-# SESSION REPORT — 2026-07-02 — Ultracode audit: o'xshash muammolar (16 topilma → 12 tuzatildi)
+# SESSION REPORT — 2026-07-02 — Qayta gen (model+ref) · Omni halol sozlamalar · ichki confirm modal
 
-6 foydalanuvchi muammosidan keyin "shunga o'xshashlarini top" — 29-agentli audit (6 yo'nalish, adversarial verify) → 16 tasdiqlangan topilma; 12 tuzatildi, 4 rad (asosli).
+Foydalanuvchi 4 kamchilik xabar qildi — hammasi tuzatildi:
 
 ## TUZATILDI
-- **CRITICAL** `/gen` provider tekshiruvi: vertex/vertex-omni/vertex-image endi O'Z konfiguratsiyasini tekshiradi (ilgari OpenRouter kalitiga bog'liq — kalit olib tashlansa hamma Google model 503).
-- **HIGH** Qayta-gen referenslari: gen'ga bog'langan saved ref obyektlari endi O'CHIRILMAYDI (cleanup `generationId:null` filtri; gen o'chirilganda birga tozalanadi) + `/gen/history` params URL'lari qayta imzolanadi (`hydrateParamsRefUrls`) — eski genni tiklash endi TIRIK referens beradi.
-- **HIGH** Rasm tooli: model almashganda So'nggi grid + limit matni qayta chiziladi (`applyMeta`→`renderRecentGrid`+`updRefMeta`) — vg bilan bir xil.
-- **HIGH** 1080p/4K video referens yolg'on bloki OLIB TASHLANDI (server o'zi 720p ga tushiradi) — o'z gen natijasini referens qilib bo'lardi endi.
-- **HIGH** stat o'qilmagan katta fayl ham presigned yo'lga (32MB devor yana urilmasin).
-- **HIGH** igRestoreGen mode-guard: video gen → faqat prompt (video ref'lari rasm chipiga kirmaydi); vgRestore endi ig genlarining `referenceUrls`ini ham oladi.
-- **MED** tempSrcKey `res.once('finish')` bilan XATO yo'llarida ham tozalanadi; enhance tashqi-fetch fallback log; legacy (ovoz/SFX) poll 6→20 daq; restore toast halol matn.
-- **O'zim topganim:** klipper cheksiz rekursiya (meta fail→skipClipper) + video chip overflow×(×) kesilishi.
+- **Qayta gen referens tiklamasdi (ROOT CAUSE):** shu sessiyada tugagan gen kartasiga (`j.pit`) `params`/`modelId` yozilmasdi → restore faqat prompt tiklardi. Endi submit'da `j.params/j.modelId`, tugashda `pit.params/pit.modelId` (ig+vg), history itemlarida ham `modelId`.
+- **Qayta gen endi ASL MODELga o'tadi:** restore avval gen qilingan modelga almashtiradi (`vgSilentSwitchModel`/ig `setModel`), keyin prompt+referens tiklaydi. Cross-tool: rasm genini video toolda bossa → rasm tooliga (va aksincha) o'tib tiklaydi (`window.afIgRestoreGen`/`afVgRestoreGen` + `axGo`). Restore holatni ALMASHTIRADI (joriy kadr/ref tozalanadi).
+- **Omni Flash halol sozlamalar:** adapter (vertex-omni.ts) faqat aspect yuboradi; audio/duration/resolution API'da YO'Q. `videoSettings.audioLocked` + `aspectIgnoredWithVideoRef` flag'lari qo'shildi → Ovoz toggle qulflangan ("doim yoqilgan"), video-ref biriktirilganda Nisbat chipi qulflanadi + tushuntirish. Rasm modellari allaqachon jonli-tasdiqlangan (o'zgartirilmadi).
+- **OS "JavaScript Confirm" yo'qotildi:** `window.afConfirm` — plagin ichki chiroyli modal (Promise, Escape/overlay=bekor, danger tugma). 9 ta joy almashtirildi: gen o'chirish (ig/vg/galereya, bitta+batch), model almashtirish tasdig'i (ig `setModel`, vg `switchVgModel`), shablon o'chirish.
 
-## RAD ETILDI (asosli)
-- history mode-filter (atayin: hamma tur ko'rinadi — rasm natijani video ref qilish uchun); describe videoUrl cap (zod 16M bor); describe EN (allaqachon EN); ig ko'p-modal ref (feature, bug emas).
+## TEKSHIRILDI
+- 7 inline skript sintaksis ✅, API tsc ✅, brauzer smoke: yuklanish xatosiz, afConfirm OK→true/Bekor→false jonli ✅.
 
-## HOLAT
-- API tsc ✅, plagin 7 skript sintaksis ✅. Push ✅, Cloud Run deploy ✅ (revision 00047, commit 7fa9236 dan keyin).
-- Jonli tekshirildi: `POST /gen/ref-upload-url` presigned URL qaytaradi ✅; `/gen/history` prompt+ref maydonlari bilan, URL'lar qayta imzolangan (HTTP 206) ✅.
-- CEP qayta o'rnatildi (build 7fa9236), AE qayta ochildi. Qo'lda AE test KUTILMOQDA.
+## KUTILMOQDA
+- git push (foydalanuvchi) → GitHub Actions Cloud Run'ga avtomatik deploy (audioLocked flag'lar shundan keyin keladi); CEP qayta o'rnatildi — AE'da qo'lda test.

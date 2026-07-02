@@ -103,6 +103,12 @@ export type GenModel = {
     duration: { options: string[]; def: string; autoSec: number }; // "Auto" + raqamlar (string[])
     audio: boolean;
     audioDefault?: boolean;
+    // true → ovoz MODEL xususiyati (o'chirib bo'lmaydi) — UI toggle qulflanadi (Omni: API'da audio parametri YO'Q,
+    // adapter ham yubormaydi; ilgari toggle yolg'on ishlagan — foydalanuvchi "audiosiz" tanlasa ham audio chiqardi).
+    audioLocked?: boolean;
+    // true → VIDEO referens biriktirilганда nisbat API tomonidan e'tiborga olinmaydi (Omni: video input
+    // bilan response_format yuborilsa 400 — adapter tashlab yuboradi) — UI nisbat chipini qulflab tushuntiradi.
+    aspectIgnoredWithVideoRef?: boolean;
     bitrate?: { options: string[]; def: string };
   };
 
@@ -789,13 +795,16 @@ export const GEN_MODELS: GenModel[] = [
     audio: true,
     inputs: ["image-ref", "video-ref"],
     // videoSettings deskriptor — video pane sozlamalarni SHUNDAN o'qiydi (aks holda 480p/Auto default).
-    // Omni: 720p qat'iy, 10s qat'iy, audio doim (jonli sinov: 1280x720, 10.005s, AAC).
+    // Omni REAL imkoniyatlari (adapter vertex-omni.ts + jonli sinov 2026-07-01): 720p QAT'IY, ~10s QAT'IY,
+    // audio DOIM (API'da o'chirish parametri yo'q), nisbat FAQAT video-referenssiz ishlaydi.
     videoSettings: {
       aspect: { options: ["16:9", "9:16"], def: "16:9" },
       resolution: { options: ["720p"], def: "720p", perSec: { "720p": 80 } },
       duration: { options: ["10"], def: "10", autoSec: 10 },
       audio: true,
       audioDefault: true,
+      audioLocked: true, // toggle YOLG'ON ishlagan (audio baribir chiqadi) — endi UI qulflab halol ko'rsatadi
+      aspectIgnoredWithVideoRef: true, // video ref bilan response_format yuborilmaydi (400) — nisbat model ixtiyorida
     },
   },
   {

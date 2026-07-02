@@ -5296,7 +5296,7 @@ async function deleteDownloadedTemplate(key){
   const pack=packs[key];
   const meta=window.downloadedMeta[key]||{folders:[],comps:[]};
   const name=(pack&&pack.displayName)||meta.displayName||key;
-  if(!confirm('"'+name+'" loyihangizdan o‘chirilsinmi?\nAE Project paneldagi import qilingan papka/comp va comp ichidagi layerlar ham olib tashlanadi.'))return;
+  if(!(await window.afConfirm('"'+name+'" loyihangizdan o‘chirilsinmi?\nAE Project paneldagi import qilingan papka/comp va comp ichidagi layerlar ham olib tashlanadi.',{ok:"O'chirish",danger:true})))return;
 
   // 1) AE loyihasidan olib tashlash (CEP)
   if(IS_CEP&&csInterface){
@@ -8164,6 +8164,41 @@ function __drainToasts(){
   },dur);
 }
 
+/** Plagin ichki tasdiqlash modali — OS'ning "JavaScript Confirm" oynasi O'RNIGA.
+ * window.afConfirm(msg,{ok,cancel,danger}) → Promise<boolean>. Overlay/Escape = bekor.
+ * DOM ishlamay qolsa xavfsiz fallback: native confirm (funksiya hech qachon reject qilmaydi). */
+window.afConfirm=function(msg,opts){
+  opts=opts||{};
+  return new Promise(function(resolve){
+    try{
+      var old=document.getElementById('afConfirmOv'); if(old)old.parentNode.removeChild(old);
+      var ov=document.createElement('div'); ov.id='afConfirmOv';
+      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(8,9,12,.62);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)';
+      var card=document.createElement('div');
+      card.style.cssText='width:min(340px,86vw);background:#17191f;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px 16px 14px;box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:inherit';
+      var tx=document.createElement('div');
+      tx.style.cssText='color:#e8eaf0;font-size:13px;line-height:1.5;white-space:pre-line;margin-bottom:14px';
+      tx.textContent=String(msg==null?'':msg);
+      var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
+      var mk=function(label,primary){ var b=document.createElement('button'); b.type='button'; b.textContent=label;
+        b.style.cssText='padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid '+(primary?(opts.danger?'#e5484d':'#c2f04a'):'rgba(255,255,255,.14)')+';background:'+(primary?(opts.danger?'#e5484d':'#c2f04a'):'transparent')+';color:'+(primary?(opts.danger?'#fff':'#10120a'):'#c9cdd6');
+        return b; };
+      var no=mk(opts.cancel||'Bekor qilish',false), yes=mk(opts.ok||'Davom etish',true);
+      var done=function(v){ try{ ov.parentNode.removeChild(ov); }catch(_){ } document.removeEventListener('keydown',esc,true); resolve(!!v); };
+      var esc=function(e){ if(e.key==='Escape'){ e.stopPropagation(); done(false); } };
+      no.addEventListener('click',function(){ done(false); });
+      yes.addEventListener('click',function(){ done(true); });
+      ov.addEventListener('click',function(e){ if(e.target===ov)done(false); });
+      document.addEventListener('keydown',esc,true);
+      row.appendChild(no); row.appendChild(yes); card.appendChild(tx); card.appendChild(row); ov.appendChild(card);
+      document.body.appendChild(ov);
+      try{ yes.focus(); }catch(_){ }
+    }catch(e){
+      try{ resolve(typeof window.confirm==='function'?window.confirm(String(msg||'')):true); }catch(_){ resolve(false); }
+    }
+  });
+};
+
 /** Xom xato matnlarini (Failed to fetch, ExtendScript, HTTP) tushunarli qiladi */
 // Enhance natijasini tozalaydi — LLM ba'zan META blok qo'shadi (sarlavha + Target Model/Duration/
 // Aspect Ratio/Resolution/Quality/Native Audio). Ular promptда bo'lmasligi kerak (UI boshqaradi).
@@ -9793,13 +9828,15 @@ window.afGallery=(function(){
     function batchDelete(){
       var list=visible().filter(function(x){ return st.sel[x.id]; });
       if(!list.length){ toast('Avval tanlang','warning'); return; }
-      if(typeof window.confirm==='function' && !window.confirm(list.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.'))return;
-      var done=0,fail=0,total=list.length;
-      list.forEach(function(it){
-        studioDelete('/api/studio/gen/'+it.id).then(function(){
-          done++; if(CACHE)CACHE=CACHE.filter(function(x){ return x.id!==it.id; }); delete st.sel[it.id];
-        }).catch(function(){ fail++; }).then(function(){
-          if(done+fail===total){ st.select=(Object.keys(st.sel).length>0); selBtn.classList.toggle('on',st.select); draw(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''), fail?'warning':'success'); }
+      window.afConfirm(list.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.',{ok:"O'chirish",danger:true}).then(function(ok){
+        if(!ok)return;
+        var done=0,fail=0,total=list.length;
+        list.forEach(function(it){
+          studioDelete('/api/studio/gen/'+it.id).then(function(){
+            done++; if(CACHE)CACHE=CACHE.filter(function(x){ return x.id!==it.id; }); delete st.sel[it.id];
+          }).catch(function(){ fail++; }).then(function(){
+            if(done+fail===total){ st.select=(Object.keys(st.sel).length>0); selBtn.classList.toggle('on',st.select); draw(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''), fail?'warning':'success'); }
+          });
         });
       });
     }
@@ -9896,9 +9933,16 @@ window.afGallery=(function(){
   // refMode='none' (t2i) → referenslar tozalanadi (referenssiz model).
   function setModel(m){
     if(!m)return false;
-    // H2: yangi model referenssiz (refMode none) bo'lsa va biriktirilgan referens bo'lsa — avval tasdiq (video naqshi).
-    if(m.refMode==='none' && st.refs.length>0 && typeof confirm==='function'
-       && !confirm('«'+(m.label||'Bu model')+'»da referens ishlatilmaydi — biriktirilgan rasmlar olib tashlanadi. Davom etamizmi?')) return false;
+    // H2: yangi model referenssiz (refMode none) bo'lsa va biriktirilgan referens bo'lsa — avval tasdiq
+    // (video naqshi). Plagin ichki modal (OS confirm EMAS) → async: tasdiqdan keyin qayta chaqiramiz.
+    if(m.refMode==='none' && st.refs.length>0){
+      window.afConfirm('«'+(m.label||'Bu model')+'»da referens ishlatilmaydi — biriktirilgan rasmlar olib tashlanadi. Davom etamizmi?',{ok:'Davom etish',danger:true}).then(function(ok){
+        if(!ok)return;
+        st.refs=[]; renderRefs(); updRefMeta(); hideMention();
+        if(setModel(m)!==false){ renderModelSheet(); toast((m.label||'Model')+' tanlandi','info'); }
+      });
+      return false; // hozircha almashtirilmadi — tasdiqdan keyin async davom etadi
+    }
     meta.modelId=m.id; meta.key=m.key; meta.label=m.label||meta.label;
     meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||0;
     // MODEL-AWARE: sozlama deskriptoridan (imgSettings) — bo'lmasa eski flat fieldlar (orqaga moslik).
@@ -10305,6 +10349,7 @@ window.afGallery=(function(){
     // @img tartibida URL'lar (@img1=referenceUrls[0])
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
     var params={aspectRatio:st.ar,quality:st.q,count:st.n,referenceUrl:refUrls[0]||null,referenceUrls:refUrls};
+    j.params=params; j.modelId=meta.modelId; // Qayta gen: yangi tugagan kartada ham params/model bo'lsin
     var quote=null;
     ensureMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
@@ -10344,8 +10389,10 @@ window.afGallery=(function(){
           if(j.pit&&first){
             // pending kartani O'SHA JOYDA natijaga aylantiramiz (So'nggi grid)
             j.pit.pending=false; j.pit.url=first.url; j.pit.thumb=first.thumbUrl||first.url; j.pit.id=(gn&&gn.id)||first.id||null; j.pit.cat='image';
+            // Qayta gen: yangi tugagan kartada ham params/modelId bo'lsin (aks holda restore faqat prompt tiklaydi — bug fix)
+            j.pit.params=(gn&&gn.params)||j.params||null; j.pit.modelId=(gn&&gn.modelId)||j.modelId||null;
             var pidx=st.recent.indexOf(j.pit); var off=1;
-            for(var ai=0;ai<assets.length;ai++){ var a=assets[ai]; if(a&&a.url&&a.url!==first.url){ st.recent.splice((pidx>=0?pidx:0)+off,0,{url:a.url,thumb:a.thumbUrl||a.url,id:(gn&&gn.id)||null,cat:'image',prompt:j.prompt}); off++; } }
+            for(var ai=0;ai<assets.length;ai++){ var a=assets[ai]; if(a&&a.url&&a.url!==first.url){ st.recent.splice((pidx>=0?pidx:0)+off,0,{url:a.url,thumb:a.thumbUrl||a.url,id:(gn&&gn.id)||null,cat:'image',prompt:j.prompt,params:(gn&&gn.params)||j.params||null,modelId:(gn&&gn.modelId)||j.modelId||null}); off++; } }
             j.pit=null; // endi natija — removeJob o'chirmasin
           }
           var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
@@ -10472,33 +10519,53 @@ window.afGallery=(function(){
     onRef: function(it){ addRefReady(it.url); }, // image tool: @imgN referens stripга qo'shadi
     onRestore: function(it){ igRestoreGen(it); }
   }; }
-  // "Qayta gen" (rasm tool) — prompt + referenslar composer'ga qaytadi.
+  // "Qayta gen" (rasm tool) — ASL MODELga avtomatik o'tib, prompt + referenslar composer'ga qaytadi.
   function igRestoreGen(it){
     if(!it||!it.prompt){ toast('Bu natijaning prompti saqlanmagan','info'); return; }
-    var p=it.params||{}; var restored=0;
-    // AUDIT FIX: faqat RASM genlarining referenslari tiklanadi — video genda params.videoUrls/
-    // referenceUrl (kadr) rasm-ref sifatida noto'g'ri chip bo'lardi. Video gen → faqat prompt.
+    // Video gen → VIDEO TOOLga o'tib o'sha yerda tiklanadi (asl model video modeli — cross-tool).
     if((it.cat||'image')!=='image'){
+      if(it.cat==='video'&&typeof window.afVgRestoreGen==='function'&&typeof window.axGo==='function'){
+        window.axGo('vidgen');
+        setTimeout(function(){ window.afVgRestoreGen(it); },60);
+        return;
+      }
       ta.value=it.prompt; grow(); hideMention(); refreshGen();
       try{ ta.focus(); }catch(_){ }
-      toast('Prompt tiklandi (bu video/ovoz gen — referenslari rasm tooliga mos emas)','info');
+      toast('Prompt tiklandi (bu ovoz/SFX gen — referenslari rasm tooliga mos emas)','info');
       return;
     }
-    var urls=Array.isArray(p.referenceUrls)?p.referenceUrls:(p.referenceUrl?[p.referenceUrl]:[]);
-    if(urls.length&&meta.refMode!=='none'){
-      urls.forEach(function(u){
-        if(typeof u!=='string'||!u)return;
-        if(st.refs.length>=meta.maxRefs)return;
-        if(st.refs.some(function(r){return r.url===u;}))return;
-        st.refs.push({dataUrl:u,url:u,loading:false}); restored++;
-      });
+    var doRestore=function(){
+      var p=it.params||{}; var restored=0;
+      st.refs=[]; // restore = holatni ALMASHTIRISH — eski referenslar limit/duplikatga to'sqinlik qilmasin
+      var urls=Array.isArray(p.referenceUrls)?p.referenceUrls:(p.referenceUrl?[p.referenceUrl]:[]);
+      if(urls.length&&meta.refMode!=='none'){
+        urls.forEach(function(u){
+          if(typeof u!=='string'||!u)return;
+          if(st.refs.length>=meta.maxRefs)return;
+          if(st.refs.some(function(r){return r.url===u;}))return;
+          st.refs.push({dataUrl:u,url:u,loading:false}); restored++;
+        });
+      }
       renderRefs(); updRefMeta();
-    }
-    ta.value=it.prompt; grow(); hideMention(); refreshGen();
-    try{ ta.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
-    try{ ta.focus(); }catch(_){ }
-    toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):''),'success');
+      ta.value=it.prompt; grow(); hideMention(); refreshGen();
+      try{ ta.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
+      try{ ta.focus(); }catch(_){ }
+      toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):''),'success');
+    };
+    // ASL modelga o'tish — gen qaysi modelda qilingan bo'lsa restore ham o'sha modelda.
+    var tgt=(it.modelId!=null)?String(it.modelId):null;
+    ensureMeta().then(function(){
+      if(tgt&&String(meta.modelId)!==tgt){
+        var m=(meta.models||[]).filter(function(x){return String(x.id)===tgt;})[0];
+        if(m){
+          st.refs=[]; renderRefs(); updRefMeta(); hideMention(); // refs bo'sh → setModel tasdiq so'ramaydi
+          if(setModel(m)!==false){ renderModelSheet(); toast((m.label||'Model')+' — asl gen modeliga o\'tildi','info'); }
+        } else toast('Asl model hozir mavjud emas — joriy modelda tiklanadi','info');
+      }
+      doRestore();
+    }).catch(function(){ doRestore(); });
   }
+  window.afIgRestoreGen=igRestoreGen; // cross-tool: video tool rasm genini shu yerga uzatadi
   function renderRecentGrid(){
     var r=$('igRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(st.recentSelect?' selmode':'');
@@ -10519,22 +10586,26 @@ window.afGallery=(function(){
   // bitta gen o'chirish (DELETE /gen/:jobId) — tasdiq bilan
   function recentDelete(it){
     if(!it.id){ toast('Bu natijani hali o\'chirib bo\'lmaydi','info'); return; }
-    if(typeof window.confirm==='function' && !window.confirm('O\'chirilsinmi? Bu qaytarilmaydi.'))return;
-    studioDelete('/api/studio/gen/'+it.id).then(function(){
-      st.recent=st.recent.filter(function(x){ return !(x.id===it.id||x.url===it.url); }); delete st.recentSel[it.id];
-      if(window.afGallery)window.afGallery.invalidate(); renderRecentGrid(); toast('O\'chirildi','success');
-    }).catch(function(err){ toast((err&&err.message)||'O\'chirib bo\'lmadi','error'); });
+    window.afConfirm('O\'chirilsinmi? Bu qaytarilmaydi.',{ok:"O'chirish",danger:true}).then(function(ok){
+      if(!ok)return;
+      studioDelete('/api/studio/gen/'+it.id).then(function(){
+        st.recent=st.recent.filter(function(x){ return !(x.id===it.id||x.url===it.url); }); delete st.recentSel[it.id];
+        if(window.afGallery)window.afGallery.invalidate(); renderRecentGrid(); toast('O\'chirildi','success');
+      }).catch(function(err){ toast((err&&err.message)||'O\'chirib bo\'lmadi','error'); });
+    });
   }
   function recentBatchDelete(){
     var items=Object.keys(st.recentSel).map(function(k){ return st.recentSel[k]; }).filter(function(x){ return x&&x.id; });
     if(!items.length){ toast('Avval tanlang','warning'); return; }
-    if(typeof window.confirm==='function' && !window.confirm(items.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.'))return;
-    var done=0,fail=0,total=items.length;
-    items.forEach(function(it){ studioDelete('/api/studio/gen/'+it.id).then(function(){
-        done++; st.recent=st.recent.filter(function(x){ return !(x.id===it.id||x.url===it.url); }); delete st.recentSel[it.id];
-      }).catch(function(){ fail++; }).then(function(){
-        if(done+fail===total){ st.recentSelect=(Object.keys(st.recentSel).length>0); var sb=$('igRecentSel'); if(sb)sb.classList.toggle('on',st.recentSelect); if(window.afGallery)window.afGallery.invalidate(); renderRecentGrid(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''), fail?'warning':'success'); }
-      }); });
+    window.afConfirm(items.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.',{ok:"O'chirish",danger:true}).then(function(ok){
+      if(!ok)return;
+      var done=0,fail=0,total=items.length;
+      items.forEach(function(it){ studioDelete('/api/studio/gen/'+it.id).then(function(){
+          done++; st.recent=st.recent.filter(function(x){ return !(x.id===it.id||x.url===it.url); }); delete st.recentSel[it.id];
+        }).catch(function(){ fail++; }).then(function(){
+          if(done+fail===total){ st.recentSelect=(Object.keys(st.recentSel).length>0); var sb=$('igRecentSel'); if(sb)sb.classList.toggle('on',st.recentSelect); if(window.afGallery)window.afGallery.invalidate(); renderRecentGrid(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''), fail?'warning':'success'); }
+        }); });
+    });
   }
   // dastlabki So'nggi — foydalanuvchining oxirgi gen'lari (bir marta, tool ochilganda). id (jobId) saqlanadi → o'chirish.
   var recentLoaded=false,recentLoading=false,recentError='';
@@ -10547,7 +10618,7 @@ window.afGallery=(function(){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
         if(!st.recent.some(function(x){return x.url===url||x.id===g.id;}))
-          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija',prompt:(g.prompt||'').trim(),params:g.params||null});
+          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null});
       });
       recentLoaded=true; recentLoading=false; st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Internet yoki sessiyani tekshiring.'; renderRecentGrid(); });
@@ -11133,6 +11204,10 @@ window.afGallery=(function(){
       if(vs.bitrate){ vm.bitOpts=vs.bitrate.options||vm.bitOpts; vm.bitrate=vs.bitrate.def||vm.bitOpts[0]||vm.bitrate; }
       else { vm.bitOpts=['standard','high']; vm.bitrate='standard'; }
     }
+    // Model xususiyati qulflari (Omni): ovoz doim yoqiq / video-ref bilan nisbat model ixtiyorida.
+    vm.audioLocked=!!(vs&&vs.audioLocked);
+    vm.arLockVideoRef=!!(vs&&vs.aspectIgnoredWithVideoRef);
+    if(vm.audioLocked)vm.audio=(vs&&typeof vs.audioDefault==='boolean')?vs.audioDefault:true;
     // So'nggi grid kartalari model-aware (Referens tugmasi refKind'ga bog'liq) — model almashganda
     // QAYTA chiziladi, aks holda eski model bilan chizilgan kartada tugma yo'qolib/ortib qoladi.
     try{ if(typeof renderVgRecent==='function')renderVgRecent(); }catch(_){}
@@ -11205,7 +11280,17 @@ window.afGallery=(function(){
     var hasFrames=!!(st.start||st.end);
     // B17: referens UI turi o'zgarsa (har qanday kind→kind) va biriktirilgan narsa bo'lsa — tasdiqlaymiz.
     var willDiscard=(prevKind!==nextKind)&&(mref.length>0||hasFrames);
-    if(willDiscard&&typeof confirm==='function'&&!confirm('«'+String(m.label||'Model')+'»ga o‘tilsa, biriktirilgan referenslar olib tashlanadi. Davom etamizmi?')){ closeVgSheets(); return; }
+    if(willDiscard){
+      // Plagin ichki modal (OS "JavaScript Confirm" EMAS) — tasdiqdan keyin davom.
+      window.afConfirm('«'+String(m.label||'Model')+'»ga o‘tilsa, biriktirilgan referenslar olib tashlanadi. Davom etamizmi?',{ok:'Davom etish',danger:true}).then(function(ok){
+        if(!ok){ closeVgSheets(); return; }
+        doSwitchVgModel(m,prevKind,nextKind);
+      });
+      return;
+    }
+    doSwitchVgModel(m,prevKind,nextKind);
+  }
+  function doSwitchVgModel(m,prevKind,nextKind){
     if(prevKind==='media-refs'&&nextKind!=='media-refs'){
       var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
       mref=[]; stripPromptTokens(toks); hideVgMention(); renderMediaRefs(); updRefMeta();
@@ -11219,13 +11304,25 @@ window.afGallery=(function(){
     applyModelSettings(m); applyVgMeta(); closeVgSheets();
     toast(String(m.label||'Model')+' tanlandi','info');
   }
+  // Qayta-gen model-switch: TASDIQSIZ almashtirish (restore holatni baribir almashtiradi) —
+  // joriy referens/kadrlar tozalanadi, model sozlamalari qo'llanadi.
+  function vgSilentSwitchModel(m){
+    var prevKind=vm.refKind||'frames';
+    if(prevKind==='media-refs'&&mref.length){
+      var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
+      mref=[]; stripPromptTokens(toks); hideVgMention(); renderMediaRefs(); updRefMeta();
+    }
+    clearFrameState();
+    applyModelSettings(m); applyVgMeta(); closeVgSheets();
+  }
   function applyVgMeta(){
     var mn=$('vgMName'); if(mn&&vm.model)mn.textContent=vm.model.label||'Model';
     var rv=$('vgResVal'); if(rv)rv.textContent=vm.res;
     var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
     var av=$('vgArVal'); if(av)av.textContent=vm.ar;
     var bv=$('vgBitVal'); if(bv)bv.textContent=vm.bitrate;
-    var at=$('vgAudToggle'); if(at)at.className='aud-toggle'+(vm.audio?' on':'');
+    var at=$('vgAudToggle'); if(at){ at.className='aud-toggle'+(vm.audio?' on':''); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Bu modelda ovoz doim yoqilgan — model xususiyati':''; }
+    applyVgArLock(); // model almashdi — nisbat chipi qulfi qayta hisoblansin
     var bs=$('vgBitSeg'); if(bs)bs.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
     var rh=$('vgResHint'); if(rh)rh.textContent=vm.resOpts.map(function(k){ return k+' = ✦'+(vm.perSec[k]||vm.perSec[vm.resOpts[0]]||0)+'/s'; }).join(' · ');
     var dh=$('vgDurHint'); if(dh)dh.textContent='Auto ≈ '+vm.autoSec+' soniya';
@@ -11280,6 +11377,8 @@ window.afGallery=(function(){
     openVgSheet('vgDurSheet',$('vgDurSeg'));
   });
   $('vgArSeg').addEventListener('click',function(){
+    var seg=$('vgArSeg');
+    if(seg&&seg.getAttribute('data-arlock')==='1'){ toast('Video referens biriktirilgan — nisbatni model o\'zi belgilaydi','info'); return; }
     buildPills($('vgArPills'),vm.arOpts,vm.ar,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; closeVgSheets(); });
     openVgSheet('vgArSheet',$('vgArSeg'));
   });
@@ -11290,7 +11389,10 @@ window.afGallery=(function(){
     openVgSheet('vgBitSheet',bitSeg);
   });
   var audTgl=$('vgAudToggle');
-  if(audTgl)audTgl.addEventListener('click',function(){ vm.audio=!vm.audio; audTgl.className='aud-toggle'+(vm.audio?' on':''); });
+  if(audTgl)audTgl.addEventListener('click',function(){
+    if(vm.audioLocked){ toast('Bu modelda ovoz doim yoqilgan — o\'chirib bo\'lmaydi (model xususiyati)','info'); return; }
+    vm.audio=!vm.audio; audTgl.className='aud-toggle'+(vm.audio?' on':'');
+  });
 
   // ── R2V ko'p-modal referens (refKind='media-refs'): @Image/@Video/@Audio, IXTIYORIY ──
   function cntRef(t){ return mref.filter(function(r){return r.type===t;}).length; }
@@ -11373,6 +11475,16 @@ window.afGallery=(function(){
       var vidMb=(vm.mediaRefMaxTotalBytes&&vm.mediaRefMaxTotalBytes.video)?Math.round(vm.mediaRefMaxTotalBytes.video/1048576):0;
       h.textContent='Maks '+lim.image+' rasm'+(imgMb?(' (≤'+imgMb+'MB)'):'')+' · '+lim.video+' video'+(vidMb?(' (jami ≤'+vidMb+'MB)'):'')+' · '+lim.audio+' ovoz';
     }
+    applyVgArLock(); // video referens qo'shildi/olindi → nisbat chipi qulfi yangilansin (Omni)
+  }
+  // Nisbat chipi qulfi: model video-referens bilan nisbatni e'tiborga olmasa (Omni: API 400 bermasligi
+  // uchun adapter aspect'ni tashlab yuboradi) — chip xira + tushuntirish, foydalanuvchi aldanmaydi.
+  function applyVgArLock(){
+    var seg=$('vgArSeg'); if(!seg)return;
+    var locked=!!(vm.arLockVideoRef&&hasVideoRefs());
+    seg.style.opacity=locked?'.45':'';
+    seg.title=locked?'Video referens biriktirilgan — nisbatni model o\'zi belgilaydi':'';
+    seg.setAttribute('data-arlock',locked?'1':'0');
   }
   function renderMediaRefs(){
     var g=$('vgRefGrid'); if(!g)return; g.innerHTML='';
@@ -11832,7 +11944,10 @@ window.afGallery=(function(){
         setTimeout(function(){
           var a0=((gn&&gn.assets)||[])[0]||{};
           if(j.pit&&a0.url){ // pending kartani O'SHA JOYDA natijaga aylantiramiz
-            j.pit.pending=false; j.pit.url=a0.url; j.pit.thumb=a0.thumbUrl||null; j.pit.id=(gn&&gn.id)||j.jobId||null; j.pit.cat='video'; j.pit=null;
+            j.pit.pending=false; j.pit.url=a0.url; j.pit.thumb=a0.thumbUrl||null; j.pit.id=(gn&&gn.id)||j.jobId||null; j.pit.cat='video';
+            // Qayta gen: yangi tugagan kartada ham params/modelId bo'lsin (aks holda restore faqat prompt tiklaydi — bug fix)
+            j.pit.params=(gn&&gn.params)||j.params||null; j.pit.modelId=(gn&&gn.modelId)||j.modelId||null;
+            j.pit=null;
           }
           showVgResult((gn&&gn.assets)||[],j); // url dedup: unshift skip, faqat player + render
           var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1);
@@ -11913,34 +12028,62 @@ window.afGallery=(function(){
     onRef: function(it){ vgUseAsRef(it); },
     onRestore: function(it){ vgRestoreGen(it); }
   }; }
-  // "Qayta gen" — o'sha gen'ning prompti + referenslari composer'ga QAYTIB chiqadi (foydalanuvchi
-  // xohlasa tahrirlab yana yuboradi). Referenslar JORIY model refKind'iga mos tiklanadi.
+  // "Qayta gen" — ASL MODELga avtomatik o'tib, o'sha gen'ning prompti + referenslari composer'ga
+  // QAYTIB chiqadi (foydalanuvchi xohlasa tahrirlab yana yuboradi).
   function vgRestoreGen(it){
     if(!it||!it.prompt){ toast('Bu natijaning prompti saqlanmagan','info'); return; }
-    var p=it.params||{}; var restored=0, skippedRef=0;
-    // AVVAL referenslar (addExistingMediaRef promptga token yozadi), KEYIN prompt ustidan
-    // asl matn yoziladi — asl @img/@video tokenlari takrorlanmaydi va tartib mos qoladi.
-    if(vm.refKind==='frames'){
-      if(p.referenceUrl){ setFrameFromUrl(String(p.referenceUrl),'start'); restored++; }
-      if(p.referenceEndUrl){ setFrameFromUrl(String(p.referenceEndUrl),'end'); restored++; }
-    } else if(vm.refKind==='media-refs'){
-      var addList=function(arr,cat){ (Array.isArray(arr)?arr:[]).forEach(function(u){
-        if(typeof u!=='string'||!u)return;
-        if(addExistingMediaRef({cat:cat,url:u}))restored++; else skippedRef++;
-      }); };
-      addList(p.imageUrls,'image'); addList(p.videoUrls,'video'); addList(p.audioUrls,'audio');
-      addList(p.referenceUrls,'image'); // rasm-gen (ig) natijasini video toolда tiklash — uning ref'lari rasm
-      if(p.referenceUrl&&!(Array.isArray(p.imageUrls)&&p.imageUrls.length)&&!(Array.isArray(p.referenceUrls)&&p.referenceUrls.length)){ if(addExistingMediaRef({cat:'image',url:String(p.referenceUrl)}))restored++; }
-    } else {
-      var hadRefs=!!(p.referenceUrl||p.referenceEndUrl||(Array.isArray(p.imageUrls)&&p.imageUrls.length)||(Array.isArray(p.videoUrls)&&p.videoUrls.length));
-      if(hadRefs)skippedRef++;
+    // Rasm gen → RASM TOOLga o'tib o'sha yerda tiklanadi (asl model rasm modeli — cross-tool).
+    if((it.cat||'video')!=='video'){
+      if(it.cat==='image'&&typeof window.afIgRestoreGen==='function'&&typeof window.axGo==='function'){
+        window.axGo('imggen');
+        setTimeout(function(){ window.afIgRestoreGen(it); },60);
+        return;
+      }
+      var ta0=$('vgPrompt'); if(ta0){ ta0.value=it.prompt; try{ ta0.dispatchEvent(new Event('input')); }catch(_){ } }
+      refreshVgBtn();
+      toast('Prompt tiklandi (ovoz/SFX gen — referenslari video toolga mos emas)','info');
+      return;
     }
-    var ta=$('vgPrompt'); if(ta){ ta.value=it.prompt; try{ ta.dispatchEvent(new Event('input')); }catch(_){} }
-    refreshVgBtn();
-    var host=$('vgPrompt'); if(host&&host.scrollIntoView)try{ host.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
-    if(host)try{ host.focus(); }catch(_){ }
-    toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):'')+(skippedRef?(' · '+skippedRef+' referens qo\'shilmadi (takroriy, limit yoki mos emas)'):''),'success');
+    var doRestore=function(){
+      var p=it.params||{}; var restored=0, skippedRef=0;
+      // restore = holatni ALMASHTIRISH: joriy kadr/referenslar tozalanadi (limit/duplikat to'siq bo'lmasin)
+      if(mref.length){ var toks=mref.map(function(r){return r&&r.token;}).filter(Boolean); mref=[]; stripPromptTokens(toks); hideVgMention(); renderMediaRefs(); updRefMeta(); }
+      clearFrameState();
+      // AVVAL referenslar (addExistingMediaRef promptga token yozadi), KEYIN prompt ustidan
+      // asl matn yoziladi — asl @img/@video tokenlari takrorlanmaydi va tartib mos qoladi.
+      if(vm.refKind==='frames'){
+        if(p.referenceUrl){ setFrameFromUrl(String(p.referenceUrl),'start'); restored++; }
+        if(p.referenceEndUrl){ setFrameFromUrl(String(p.referenceEndUrl),'end'); restored++; }
+      } else if(vm.refKind==='media-refs'){
+        var addList=function(arr,cat){ (Array.isArray(arr)?arr:[]).forEach(function(u){
+          if(typeof u!=='string'||!u)return;
+          if(addExistingMediaRef({cat:cat,url:u}))restored++; else skippedRef++;
+        }); };
+        addList(p.imageUrls,'image'); addList(p.videoUrls,'video'); addList(p.audioUrls,'audio');
+        addList(p.referenceUrls,'image'); // rasm-gen (ig) natijasini video toolда tiklash — uning ref'lari rasm
+        if(p.referenceUrl&&!(Array.isArray(p.imageUrls)&&p.imageUrls.length)&&!(Array.isArray(p.referenceUrls)&&p.referenceUrls.length)){ if(addExistingMediaRef({cat:'image',url:String(p.referenceUrl)}))restored++; }
+      } else {
+        var hadRefs=!!(p.referenceUrl||p.referenceEndUrl||(Array.isArray(p.imageUrls)&&p.imageUrls.length)||(Array.isArray(p.videoUrls)&&p.videoUrls.length));
+        if(hadRefs)skippedRef++;
+      }
+      var ta=$('vgPrompt'); if(ta){ ta.value=it.prompt; try{ ta.dispatchEvent(new Event('input')); }catch(_){} }
+      refreshVgBtn();
+      var host=$('vgPrompt'); if(host&&host.scrollIntoView)try{ host.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
+      if(host)try{ host.focus(); }catch(_){ }
+      toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):'')+(skippedRef?(' · '+skippedRef+' referens qo\'shilmadi (takroriy, limit yoki mos emas)'):''),'success');
+    };
+    // ASL modelga o'tish — gen qaysi modelda qilingan bo'lsa restore ham o'sha modelda (referens UI mos bo'ladi).
+    var tgt=(it.modelId!=null)?String(it.modelId):null;
+    ensureVgMeta().then(function(){
+      if(tgt&&vm.model&&String(vm.model.id)!==tgt){
+        var m=(vm.models||[]).filter(function(x){return String(x.id)===tgt;})[0];
+        if(m){ vgSilentSwitchModel(m); toast((m.label||'Model')+' — asl gen modeliga o\'tildi','info'); }
+        else toast('Asl model hozir mavjud emas — joriy modelda tiklanadi','info');
+      }
+      doRestore();
+    }).catch(function(){ doRestore(); });
   }
+  window.afVgRestoreGen=vgRestoreGen; // cross-tool: rasm tool video genini shu yerga uzatadi
   function openVgLightbox(it){ window.afRecent.openLightbox(it, vgRecentCtx()); } // UMUMIY lightbox
   function closeVgLightbox(){ if(window.afRecent)window.afRecent.closeLightbox(); }
 
@@ -12010,22 +12153,26 @@ window.afGallery=(function(){
   }
   function vgRcDelete(it){
     if(!it.id){ toast('Bu natijani hali o\'chirib bo\'lmaydi','info'); return; }
-    if(typeof window.confirm==='function'&&!window.confirm('O\'chirilsinmi? Bu qaytarilmaydi.'))return;
-    studioDelete('/api/studio/gen/'+it.id).then(function(){
-      vgRcState.items=vgRcState.items.filter(function(x){return !(x.id===it.id||x.url===it.url);}); delete vgRcState.sel[it.id];
-      renderVgRecent(); toast('O\'chirildi','success');
-    }).catch(function(err){ toast((err&&err.message)||'O\'chirib bo\'lmadi','error'); });
+    window.afConfirm('O\'chirilsinmi? Bu qaytarilmaydi.',{ok:"O'chirish",danger:true}).then(function(ok){
+      if(!ok)return;
+      studioDelete('/api/studio/gen/'+it.id).then(function(){
+        vgRcState.items=vgRcState.items.filter(function(x){return !(x.id===it.id||x.url===it.url);}); delete vgRcState.sel[it.id];
+        renderVgRecent(); toast('O\'chirildi','success');
+      }).catch(function(err){ toast((err&&err.message)||'O\'chirib bo\'lmadi','error'); });
+    });
   }
   function vgRcBatchDelete(){
     var items=Object.keys(vgRcState.sel).map(function(k){return vgRcState.sel[k];}).filter(function(x){return x&&x.id;});
     if(!items.length){ toast('Avval tanlang','warning'); return; }
-    if(typeof window.confirm==='function'&&!window.confirm(items.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.'))return;
-    var done=0,fail=0,total=items.length;
-    items.forEach(function(it){ studioDelete('/api/studio/gen/'+it.id).then(function(){
-      done++; vgRcState.items=vgRcState.items.filter(function(x){return !(x.id===it.id||x.url===it.url);}); delete vgRcState.sel[it.id];
-    }).catch(function(){ fail++; }).then(function(){
-      if(done+fail===total){ vgRcState.selecting=false; vgRcState.sel={}; renderVgRecent(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''),fail?'warning':'success'); }
-    }); });
+    window.afConfirm(items.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.',{ok:"O'chirish",danger:true}).then(function(ok){
+      if(!ok)return;
+      var done=0,fail=0,total=items.length;
+      items.forEach(function(it){ studioDelete('/api/studio/gen/'+it.id).then(function(){
+        done++; vgRcState.items=vgRcState.items.filter(function(x){return !(x.id===it.id||x.url===it.url);}); delete vgRcState.sel[it.id];
+      }).catch(function(){ fail++; }).then(function(){
+        if(done+fail===total){ vgRcState.selecting=false; vgRcState.sel={}; renderVgRecent(); toast(done+' o\'chirildi'+(fail?(' · '+fail+' xato'):''),fail?'warning':'success'); }
+      }); });
+    });
   }
   function genCat(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':mode==='sfx'?'sfx':'image'; }
   function loadVgRecent(force){
@@ -12047,6 +12194,7 @@ window.afGallery=(function(){
             title:(g.prompt||'').trim()||catLabel(cat),
             prompt:(g.prompt||'').trim(),      // Qayta gen: to'liq prompt tiklash uchun
             params:g.params||null,             // Qayta gen: referens URL'lari shu yerda
+            modelId:g.modelId||null,           // Qayta gen: asl modelga avtomatik o'tish uchun
             cat:cat,
             sizeBytes:(a&&a.sizeBytes)||0,
             sourceDurationSec:(g&&g.params&&g.params.duration&&String(g.params.duration)!=='auto')?(Number(g.params.duration)||0):0,
@@ -12104,7 +12252,8 @@ window.afGallery=(function(){
     }
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
-    var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model'};
+    var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model',
+           params:params,modelId:(vm.model&&vm.model.id)||null}; // Qayta gen: yangi kartada ham params/model bo'lsin
     activeJobs.push(j);
     // GEN ishlamoqda kartasi — pastdagi So'nggi grid tepasiga (0-100% shkala), yuqorida emas
     j.pit={seq:j.seq,pending:true,prompt:(prompt||'Video'),cat:'video',progress:2,job:j};
