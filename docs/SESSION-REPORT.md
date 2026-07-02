@@ -16,4 +16,6 @@
 - history mode-filter (atayin: hamma tur ko'rinadi — rasm natijani video ref qilish uchun); describe videoUrl cap (zod 16M bor); describe EN (allaqachon EN); ig ko'p-modal ref (feature, bug emas).
 
 ## HOLAT
-- API tsc ✅, plagin 7 skript sintaksis ✅. git push + `install-cep.sh` + AE test KUTILMOQDA.
+- API tsc ✅, plagin 7 skript sintaksis ✅. Push ✅, Cloud Run deploy ✅ (revision 00047, commit 7fa9236 dan keyin).
+- Jonli tekshirildi: `POST /gen/ref-upload-url` presigned URL qaytaradi ✅; `/gen/history` prompt+ref maydonlari bilan, URL'lar qayta imzolangan (HTTP 206) ✅.
+- CEP qayta o'rnatildi (build 7fa9236), AE qayta ochildi. Qo'lda AE test KUTILMOQDA.
