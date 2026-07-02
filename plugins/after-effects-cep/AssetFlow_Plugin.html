@@ -9090,6 +9090,7 @@ async function bootPlugin(){
       chk:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
       imp:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
       ref:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>',
+      rst:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
       dl:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
       aud:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
       play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'
@@ -9129,6 +9130,7 @@ async function bootPlugin(){
       acts.innerHTML='';
       acts.appendChild(lba(IC.imp,'AE import',function(){ ctx.onImport&&ctx.onImport(it); }));
       if(ctx.refAllowed&&ctx.refAllowed(it)) acts.appendChild(lba(IC.ref,'Referens',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); }));
+      if(ctx.onRestore&&it.prompt) acts.appendChild(lba(IC.rst,'Qayta gen',function(){ closeLb(); ctx.onRestore(it); }));
       if(!ctx.isCEP) acts.appendChild(lba(IC.dl,'Yuklab olish',function(){ ctx.onDownload&&ctx.onDownload(it); }));
       lb.classList.add('on');
     }
@@ -9158,6 +9160,7 @@ async function bootPlugin(){
       var ra=document.createElement('div'); ra.className='racts';
       ra.appendChild(actBtn(IC.imp,"AE'ga import",function(e){ e.stopPropagation(); ctx.onImport&&ctx.onImport(it); }));
       if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Referens qilib ishlatish',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
+      if(ctx.onRestore&&it.prompt) ra.appendChild(actBtn(IC.rst,'Qayta gen — prompt + referenslarni tiklash',function(e){ e.stopPropagation(); ctx.onRestore(it); }));
       if(!ctx.isCEP) ra.appendChild(actBtn(IC.dl,'Yuklab olish',function(e){ e.stopPropagation(); ctx.onDownload&&ctx.onDownload(it); }));
       ra.appendChild(actBtn(IC.x,"O'chirish",function(e){ e.stopPropagation(); ctx.onDelete&&ctx.onDelete(it); },'del'));
       d.appendChild(ra);
@@ -10462,8 +10465,28 @@ window.afGallery=(function(){
     onDownload: function(it){ downloadUrl(it.url); },
     onDelete: function(it){ recentDelete(it); },
     refAllowed: function(it){ return igRefKind()==='image' && (it.cat||'image')==='image'; },
-    onRef: function(it){ addRefReady(it.url); } // image tool: @imgN referens stripга qo'shadi
+    onRef: function(it){ addRefReady(it.url); }, // image tool: @imgN referens stripга qo'shadi
+    onRestore: function(it){ igRestoreGen(it); }
   }; }
+  // "Qayta gen" (rasm tool) — prompt + referenslar composer'ga qaytadi.
+  function igRestoreGen(it){
+    if(!it||!it.prompt){ toast('Bu natijaning prompti saqlanmagan','info'); return; }
+    var p=it.params||{}; var restored=0;
+    var urls=Array.isArray(p.referenceUrls)?p.referenceUrls:(p.referenceUrl?[p.referenceUrl]:[]);
+    if(urls.length&&meta.refMode!=='none'){
+      urls.forEach(function(u){
+        if(typeof u!=='string'||!u)return;
+        if(st.refs.length>=meta.maxRefs)return;
+        if(st.refs.some(function(r){return r.url===u;}))return;
+        st.refs.push({dataUrl:u,url:u,loading:false}); restored++;
+      });
+      renderRefs(); updRefMeta();
+    }
+    ta.value=it.prompt; grow(); hideMention(); refreshGen();
+    try{ ta.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
+    try{ ta.focus(); }catch(_){ }
+    toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):''),'success');
+  }
   function renderRecentGrid(){
     var r=$('igRecent'); if(!r)return; r.innerHTML='';
     r.className='recentgrid'+(st.recentSelect?' selmode':'');
@@ -10512,7 +10535,7 @@ window.afGallery=(function(){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
         if(!st.recent.some(function(x){return x.url===url||x.id===g.id;}))
-          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija'});
+          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija',prompt:(g.prompt||'').trim(),params:g.params||null});
       });
       recentLoaded=true; recentLoading=false; st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Internet yoki sessiyani tekshiring.'; renderRecentGrid(); });
@@ -10726,6 +10749,41 @@ window.afGallery=(function(){
     if(!src.sizeBytes&&meta&&meta.sizeBytes)src.sizeBytes=meta.sizeBytes;
     return meta;
   }
+  // Node https PUT — katta faylni presigned URL'ga TO'G'RIDAN GCS'ga yuboradi (CORS/panel cheklovisiz,
+  // Cloud Run'ga tegmaydi → 32MB so'rov chegarasi YO'Q). Stream — xotira ikkilanmaydi.
+  function nodePutFile(putUrl,fp,contentType,sizeBytes){
+    return new Promise(function(resolve,reject){
+      var https=nodeRequire('https'), fsmod=nodeRequire('fs'), urlmod=nodeRequire('url');
+      if(!https||!fsmod){ reject(new Error('NODE_UNAVAILABLE')); return; }
+      var u; try{ u=new (urlmod&&urlmod.URL?urlmod.URL:URL)(putUrl); }catch(e){ reject(new Error('URL xatosi')); return; }
+      var req=https.request({
+        method:'PUT', hostname:u.hostname, port:u.port||443, path:u.pathname+u.search,
+        headers:{ 'Content-Type':contentType||'application/octet-stream', 'Content-Length':sizeBytes }
+      },function(res){
+        var body=''; res.on('data',function(c){ if(body.length<500)body+=String(c); }); // Buffer globalisiz (CEP)
+        res.on('end',function(){
+          if(res.statusCode>=200&&res.statusCode<300){ resolve(true); }
+          else reject(new Error('GCS PUT '+res.statusCode+': '+body.slice(0,200)));
+        });
+      });
+      req.on('error',reject);
+      req.setTimeout(300000,function(){ try{req.destroy(new Error('upload timeout'));}catch(_){} });
+      fsmod.createReadStream(fp).on('error',reject).pipe(req);
+    });
+  }
+  // Clip parametrlarini JSON tanaga qo'shadi (srcKey/srcUrl rejimlari uchun)
+  function clipParamsJson(src){
+    var b={};
+    if(src){
+      if(src.clipMode)b.clipMode=String(src.clipMode);
+      if(typeof src.clipStartSec==='number'&&isFinite(src.clipStartSec))b.clipStartSec=src.clipStartSec;
+      if(typeof src.clipEndSec==='number'&&isFinite(src.clipEndSec))b.clipEndSec=src.clipEndSec;
+      if(src.extractAudioRef)b.extractAudioRef='1';
+    }
+    return b;
+  }
+  // Cloud Run so'rov tanasi ~32MB — bundan katta fayllar presigned PUT bilan to'g'ridan GCS'ga.
+  var DIRECT_UPLOAD_THRESHOLD=30*1024*1024;
   async function studioUploadRefFromPath(srcOrPath){
     var src=(srcOrPath&&typeof srcOrPath==='object')?srcOrPath:null;
     var fp=toFsPath(src?src.path:srcOrPath);
@@ -10735,6 +10793,15 @@ window.afGallery=(function(){
       ex.code='PAYLOAD_TOO_LARGE';
       ex.status=413;
       throw ex;
+    }
+    // KATTA fayl (30–100MB): presigned PUT → GCS, so'ng serverga srcKey (kesish/optimizatsiya odatdagidek).
+    // Ilgari bu oraliq Cloud Run 32MB chegarasida 413 olib "100MB dan kichik tanlang" degan YOLG'ON xato berardi.
+    if(st&&st.size>DIRECT_UPLOAD_THRESHOLD){
+      var pre=await studioPost('/api/studio/gen/ref-upload-url',{contentType:mime(fp)||'application/octet-stream',sizeBytes:st.size,name:baseName(fp)},30000);
+      if(!pre||!pre.url||!pre.key)throw new Error('Katta fayl uchun upload URL olinmadi');
+      await nodePutFile(pre.url,fp,mime(fp)||'application/octet-stream',st.size);
+      var body=clipParamsJson(src); body.srcKey=pre.key;
+      return studioPost('/api/studio/gen/ref-upload',body,300000);
     }
     var buf=readFileBuffer(fp);
     if(!buf||!buf.length)throw new Error('Faylni o‘qib bo‘lmadi');
@@ -10752,6 +10819,12 @@ window.afGallery=(function(){
     return studioPostForm('/api/studio/gen/ref-upload',form,300000);
   }
   async function studioUploadRefUniversal(src){
+    // So'nggi grid'dagi gen natijasi (bizning bucket URL) — fayl qayta yuklanmaydi: server o'zi
+    // bucket'dan olib kesadi/optimizatsiya qiladi (srcUrl rejimi).
+    if(src&&src.srcUrl){
+      var body=clipParamsJson(src); body.srcUrl=src.srcUrl;
+      return studioPost('/api/studio/gen/ref-upload',body,300000);
+    }
     if(src&&src.path){
       try{
         return await studioUploadRefFromPath(src);
@@ -10885,9 +10958,24 @@ window.afGallery=(function(){
     document.addEventListener('mouseup',function(){ vgClip.drag=null; });
     document.addEventListener('touchend',function(){ vgClip.drag=null; });
   }
+  // Masofaviy (bucket'dagi) video meta — <video> elementi orqali (fayl yuklab olinmaydi).
+  function probeRemoteMeta(url){
+    return new Promise(function(resolve,reject){
+      var el=document.createElement('video'), done=false;
+      el.preload='metadata'; el.muted=true;
+      var clean=function(){ if(el){ el.removeAttribute('src'); try{ el.load(); }catch(_){} } };
+      el.onloadedmetadata=function(){ if(done)return; done=true;
+        var m={ duration:Number(el.duration)||0, width:Number(el.videoWidth)||0, height:Number(el.videoHeight)||0, sizeBytes:0 };
+        clean(); resolve(m); };
+      el.onerror=function(){ if(done)return; done=true; clean(); reject(new Error('META_LOAD_FAILED')); };
+      el.src=url;
+    });
+  }
   async function openVgClipper(src){
-    if(!src||!src.path){ prepAndUploadMediaRef(src,'video'); return; }
-    var meta=await inspectMediaSource(src,'video');
+    if(!src||(!src.path&&!src.srcUrl)){ prepAndUploadMediaRef(src,'video'); return; }
+    var meta=null;
+    if(src.srcUrl){ try{ meta=await probeRemoteMeta(src.srcUrl); }catch(_){ meta=null; } }
+    else meta=await inspectMediaSource(src,'video');
     if(!meta||!meta.duration){ prepAndUploadMediaRef(src,'video'); return; }
     if(meta.duration<2){ toast('Video referens kamida 2 soniya bo‘lishi kerak','warning'); return; }
     resetVgClipper();
@@ -10900,8 +10988,8 @@ window.afGallery=(function(){
     vgClip.lastStartSec=vgClip.startSec;
     vgClip.lastEndSec=vgClip.endSec;
     vgClip.includeAudio=false;
-    vgClip.url=clipPreviewUrl(src);
-    var nm=$('vgClipName'); if(nm)nm.textContent=baseName(src.path||'')||'Video referens';
+    vgClip.url=src.srcUrl||clipPreviewUrl(src); // remote: URL to'g'ridan preview (blob shart emas)
+    var nm=$('vgClipName'); if(nm)nm.textContent=src.srcUrl?(src.title||'Gen natijasi'):(baseName(src.path||'')||'Video referens');
     var v=$('vgClipVideo'); if(v){ v.src=vgClip.url; try{ v.currentTime=0; }catch(_){} try{ v.load(); }catch(_){} }
     bindVgClipTimeline();
     renderVgClipUi();
@@ -11021,6 +11109,9 @@ window.afGallery=(function(){
       if(vs.bitrate){ vm.bitOpts=vs.bitrate.options||vm.bitOpts; vm.bitrate=vs.bitrate.def||vm.bitOpts[0]||vm.bitrate; }
       else { vm.bitOpts=['standard','high']; vm.bitrate='standard'; }
     }
+    // So'nggi grid kartalari model-aware (Referens tugmasi refKind'ga bog'liq) — model almashganda
+    // QAYTA chiziladi, aks holda eski model bilan chizilgan kartada tugma yo'qolib/ortib qoladi.
+    try{ if(typeof renderVgRecent==='function')renderVgRecent(); }catch(_){}
   }
   function clearFrameState(){
     st.start=null; st.end=null; renderFrameBoxes();
@@ -11270,7 +11361,11 @@ window.afGallery=(function(){
       var tag=r.token||tokFor(r.type,i+1);
       var d=document.createElement('div'); d.className='mrt'+(r.type==='video'?' vid':r.type==='audio'?' aud':'');
       if(r.type==='image'&&r.dataUrl)d.style.backgroundImage='url("'+r.dataUrl+'")';
-      var t=document.createElement('div'); t.className='tag'; t.textContent=tag; d.appendChild(t);
+      // VIDEO chip: gradient emas — HAQIQIY birinchi kadr (foydalanuvchi adashmasligi uchun).
+      if(r.type==='video'&&r.url&&typeof window.afVideoThumb==='function'){
+        var vt=window.afVideoThumb(r.url); if(vt){ d.style.position='relative'; d.style.overflow='hidden'; d.appendChild(vt); }
+      }
+      var t=document.createElement('div'); t.className='tag'; t.textContent=tag; t.style.position='relative'; t.style.zIndex='2'; d.appendChild(t);
       if(r.loading){ var sp=document.createElement('div'); sp.className='msp'; sp.textContent='…'; d.appendChild(sp); }
       var x=document.createElement('div'); x.className='rx'; x.textContent='×'; x.title='O\'chirish';
       (function(idx){ x.addEventListener('click',function(e){
@@ -11536,7 +11631,8 @@ window.afGallery=(function(){
       apply.setAttribute('aria-disabled','true');
       toast('Video referens serverda kesilib optimizatsiya qilinadi…','info');
       var uploadSrc={
-        path:vgClip.src.path,
+        path:vgClip.src.path||null,
+        srcUrl:vgClip.src.srcUrl||null, // So'nggi grid gen natijasi — server bucket'dan o'zi oladi
         sizeBytes:(vgClip.src&&vgClip.src.sizeBytes)||0,
         meta:vgClip.meta,
         skipClipper:true,
@@ -11793,8 +11889,36 @@ window.afGallery=(function(){
     onDownload: function(it){ vgDownload(it); },
     onDelete: function(it){ vgRcDelete(it); },
     refAllowed: function(it){ return vgRefAllowed(it); },
-    onRef: function(it){ vgUseAsRef(it); }
+    onRef: function(it){ vgUseAsRef(it); },
+    onRestore: function(it){ vgRestoreGen(it); }
   }; }
+  // "Qayta gen" — o'sha gen'ning prompti + referenslari composer'ga QAYTIB chiqadi (foydalanuvchi
+  // xohlasa tahrirlab yana yuboradi). Referenslar JORIY model refKind'iga mos tiklanadi.
+  function vgRestoreGen(it){
+    if(!it||!it.prompt){ toast('Bu natijaning prompti saqlanmagan','info'); return; }
+    var p=it.params||{}; var restored=0, skippedRef=0;
+    // AVVAL referenslar (addExistingMediaRef promptga token yozadi), KEYIN prompt ustidan
+    // asl matn yoziladi — asl @img/@video tokenlari takrorlanmaydi va tartib mos qoladi.
+    if(vm.refKind==='frames'){
+      if(p.referenceUrl){ setFrameFromUrl(String(p.referenceUrl),'start'); restored++; }
+      if(p.referenceEndUrl){ setFrameFromUrl(String(p.referenceEndUrl),'end'); restored++; }
+    } else if(vm.refKind==='media-refs'){
+      var addList=function(arr,cat){ (Array.isArray(arr)?arr:[]).forEach(function(u){
+        if(typeof u!=='string'||!u)return;
+        if(addExistingMediaRef({cat:cat,url:u}))restored++; else skippedRef++;
+      }); };
+      addList(p.imageUrls,'image'); addList(p.videoUrls,'video'); addList(p.audioUrls,'audio');
+      if(p.referenceUrl&&!(Array.isArray(p.imageUrls)&&p.imageUrls.length)){ if(addExistingMediaRef({cat:'image',url:String(p.referenceUrl)}))restored++; }
+    } else {
+      var hadRefs=!!(p.referenceUrl||p.referenceEndUrl||(Array.isArray(p.imageUrls)&&p.imageUrls.length)||(Array.isArray(p.videoUrls)&&p.videoUrls.length));
+      if(hadRefs)skippedRef++;
+    }
+    var ta=$('vgPrompt'); if(ta){ ta.value=it.prompt; try{ ta.dispatchEvent(new Event('input')); }catch(_){} }
+    refreshVgBtn();
+    var host=$('vgPrompt'); if(host&&host.scrollIntoView)try{ host.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
+    if(host)try{ host.focus(); }catch(_){ }
+    toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):'')+(skippedRef?(' · '+skippedRef+' referens joriy modelga mos emas'):''),'success');
+  }
   function openVgLightbox(it){ window.afRecent.openLightbox(it, vgRecentCtx()); } // UMUMIY lightbox
   function closeVgLightbox(){ if(window.afRecent)window.afRecent.closeLightbox(); }
 
@@ -11815,6 +11939,14 @@ window.afGallery=(function(){
       _pendingRefUrl=it.url; openVgSheet('vgRefSlotSheet'); return;
     }
     if(rk==='media-refs'){
+      // VIDEO natija → ham KESISH dialogi (fayl yuklashdagi kabi): foydalanuvchi qaysi qismni
+      // ishlatishni tanlaydi, server bucket'dan olib kesadi (srcUrl rejimi).
+      if(refTypeFromItem(it)==='video'){
+        if(!mediaAllowed('video'))return;
+        openVgClipper({srcUrl:it.url,title:(it.title||'').slice(0,60),sizeBytes:it.sizeBytes||0})
+          .catch(function(e){ toast((e&&e.message)||'Video referens ochilmadi','error'); });
+        return;
+      }
       addExistingMediaRef(it); return;
     }
     // (kelajak refKind'lar uchun joy)
@@ -11891,6 +12023,8 @@ window.afGallery=(function(){
             url:url,
             thumb:(cat==='image'?(a.thumbUrl||url):null),
             title:(g.prompt||'').trim()||catLabel(cat),
+            prompt:(g.prompt||'').trim(),      // Qayta gen: to'liq prompt tiklash uchun
+            params:g.params||null,             // Qayta gen: referens URL'lari shu yerda
             cat:cat,
             sizeBytes:(a&&a.sizeBytes)||0,
             sourceDurationSec:(g&&g.params&&g.params.duration&&String(g.params.duration)!=='auto')?(Number(g.params.duration)||0):0,

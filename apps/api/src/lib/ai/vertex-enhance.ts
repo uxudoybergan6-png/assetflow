@@ -115,30 +115,33 @@ export async function vertexEnhancePrompt(
 
   const role =
     mode === "video"
-      ? "Sen video generatsiyasi uchun prompt muhandisisan."
-      : "Sen tasvir generatsiyasi uchun prompt muhandisisan.";
+      ? "You are an expert AI video-generation prompt engineer."
+      : "You are an expert AI image-generation prompt engineer.";
   const detailHint =
     mode === "video"
-      ? "Qisqa g'oyani bitta boy, aniq video promptga aylantir (subyekt, kamera harakati, kompozitsiya, yorug'lik, atmosfera, detal)."
-      : "Qisqa g'oyani bitta boy, tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal).";
+      ? "Turn the user's idea into ONE rich, precise video prompt (subject, action, camera movement, composition, lighting, atmosphere, detail)."
+      : "Turn the user's idea into ONE rich, detailed image prompt (subject, composition, lighting, style, detail).";
   const tokenHint =
-    " @img/@image/@video/@audio tokenlarini bo'lsa XUDDI O'ZICHA saqla, nomini o'zgartirma va olib tashlama.";
+    " If the text contains @img/@image/@video/@audio tokens, keep them EXACTLY as written — never rename or remove them.";
   const safetyHint =
     mode === "video"
-      ? " Safety: referenslarda odam bo'lsa ham promptni xavfsiz tut. Yalang'ochlik, shirtless/topless, bare chest, tana qismlariga ortiqcha urg'u, sexual yoki erotik iboralar yozma. `full body` o'rniga `full figure`, `body parts` o'rniga `appearance details`, `muscular` o'rniga `athletic`, `torso/chest` o'rniga `upper silhouette/frame` kabi xavfsizroq til ishlat. Kiyim, harakat, kamera va atmosfera ustun bo'lsin."
+      ? " Safety: even if references contain people, keep the prompt safe. Never write nudity, shirtless/topless, bare chest, undue focus on body parts, or sexual/erotic phrasing. Prefer safer wording: `full figure` instead of `full body`, `appearance details` instead of `body parts`, `athletic` instead of `muscular`, `upper silhouette/frame` instead of `torso/chest`. Let clothing, action, camera and atmosphere dominate."
       : "";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
 
+  // ASSISTENT uslubi: referens + matnni birga o'qib foydalanuvchi NIYATINI tushunadi; yakuniy prompt
+  // HAR DOIM INGLIZCHA (generatsiya modellari eng yaxshi ingliz promptni tushunadi) — kirish har tilda.
   const systemInstruction =
     `${role} ${detailHint} ` +
-    "Sengga foydalanuvchi matni va (bo'lsa) referens media beriladi: rasmlar @img1, @img2..., " +
-    "videolar @video1..., audiolar @audio1... tartibida. Referens media va foydalanuvchi matnini BIRGA " +
-    "tahlil qilib, ularni BITTA yaxlit ma'noga jamlagan, ishlatishga tayyor yagona yakuniy prompt yoz. " +
-    "Har bir referensdan faqat prompt uchun foydali kuzatuvlarni (subyekt, kompozitsiya, uslub, material, " +
-    "rang, yorug'lik, fon, kayfiyat; video uchun harakat, kamera, temp, o'tishlar; audio uchun kayfiyat, " +
-    "ritm, ohang, instrument) ol. Agar referens va matn ziddiyatli bo'lsa, foydalanuvchi matnini USTUN qo'y. " +
-    `KIRISH TILINI saqla.${tokenHint}${safetyHint}${modelContext} ` +
-    "Faqat yakuniy promptni qaytar — hech qanday sarlavha, izoh, referens tahlili, ro'yxat yoki metadata yozma.";
+    "You receive the user's request (in ANY language — often Uzbek) and, if present, reference media in order: " +
+    "images as @img1, @img2..., videos as @video1..., audios as @audio1... " +
+    "Act like a thoughtful assistant: carefully analyze the references TOGETHER with the user's text, infer what the user " +
+    "actually wants, and merge everything into ONE coherent, production-ready final prompt. " +
+    "From each reference take only prompt-useful observations (subject, composition, style, materials, colors, lighting, " +
+    "background, mood; for video: motion, camera, pacing, transitions; for audio: mood, rhythm, tone, instruments). " +
+    "If a reference conflicts with the user's text, the user's text WINS. " +
+    `IMPORTANT: write the final prompt in fluent natural ENGLISH, regardless of the input language — translate the user's idea faithfully.${tokenHint}${safetyHint}${modelContext} ` +
+    "Return ONLY the final prompt — no titles, no commentary, no reference analysis, no lists, no metadata.";
 
   // 1) Barcha referenslarni PARALLEL yech (Promise.all TARTIBNI saqlaydi: rasm→video→audio, har biri
   //    o'z guruhida idx bilan). Yuklab bo'lmadi/mavjud emas → null (filtrlanadi). Budjet BU YERDA EMAS.
@@ -164,7 +167,7 @@ export async function vertexEnhancePrompt(
   let skipped = 0;
   for (const r of resolved) {
     const tag = r.kind === "image" ? "img" : r.kind; // @img1 / @video1 / @audio1
-    const label = `@${tag}${r.idx + 1} (referens):`;
+    const label = `@${tag}${r.idx + 1} (reference):`;
     if (r.mode === "gcs") {
       // gs:// — hajm chegarasisiz (uzun/katta video). Budjetga kirmaydi.
       parts.push({ text: label });
@@ -184,9 +187,9 @@ export async function vertexEnhancePrompt(
   // Halol eslatma: yuklab bo'lmagan/mavjud emas (droppedAtLoad) + juda katta (skipped) — ikkalasi ham.
   const missing = droppedAtLoad + skipped;
   const skipNote = missing
-    ? `\n\n(eslatma: ${missing} ta referens yuklanmadi yoki juda katta bo'lgani uchun tahlilga kirmadi — matn asosida davom et.)`
+    ? `\n\n(note: ${missing} reference(s) could not be loaded or were too large and are not included — continue from the text.)`
     : "";
-  parts.push({ text: `Foydalanuvchi so'rovi: ${text}${skipNote}` });
+  parts.push({ text: `User request: ${text}${skipNote}` });
 
   try {
     const r = await getClient().models.generateContent({
@@ -196,6 +199,9 @@ export async function vertexEnhancePrompt(
         systemInstruction,
         temperature: 0.7,
         maxOutputTokens: 700,
+        // TEZLIK: gemini-2.5-flash default "thinking" bilan sekin — enhance uchun o'chirilgan
+        // (SDK ThinkingConfig.thinkingBudget=0). Sifat: prompt-yozish thinking talab qilmaydi.
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
     const out = (r.text || "").trim();
@@ -222,6 +228,8 @@ export async function vertexEnhanceJson(system: string, userIdea: string): Promi
         responseMimeType: "application/json",
         temperature: 0.7,
         maxOutputTokens: 900,
+        // TEZLIK: thinking o'chirilgan (yuqoridagi kabi).
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
     const out = (r.text || "").trim();

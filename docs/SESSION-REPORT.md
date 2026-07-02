@@ -1,15 +1,15 @@
-# SESSION REPORT — 2026-07-01 — Enhance → Vertex Gemini + katta video referens (gs://)
+# SESSION REPORT — 2026-07-02 — Referens UX (kesish/thumbnail/qayta-gen) + katta fayl + EN enhance
 
-Foydalanuvchi: "Yaxshilash" (enhance) funksiyasini fal.ai/OpenRouter'dan 100% Google (Vertex Gemini)'ga; keyin katta/uzun video referens uchun GCS (gs://) qo'shish.
+Foydalanuvchi 6 muammo berdi; hammasi tuzatildi (AE jonli test kutilmoqda).
 
 ## QILINGAN
-1. **Enhance → Vertex** — yangi `vertex-enhance.ts`: `vertexEnhancePrompt` (ko'p-modal) + `vertexEnhanceJson`. `gemini-2.5-flash` bitta generateContent chaqiruvida rasm+video+audio+matn → bitta yaxlit ma'no. `studio-gen.ts` 3 call-site Vertex'ga; kredit consume/refund TEGILMADI.
-2. **Katta/uzun video referens (gs://)** — bizning GCS bucket referens (S3_ENDPOINT=storage.googleapis.com, bucket assetflow-assets-2026, rasm loyihasida) → `gs://` fileData: so'rov tanasiga kirmaydi → **hajm chegarasi yo'q**. mimeType HeadObject'dan (getS3ObjectMeta). Tashqi/data-URI → inline base64 (cap: per-ref 16MB, umumiy 18MB b64). gs:// budjetsiz.
-
-## ADVERSARIAL VERIFY (ultracode, 2 tur)
-- Tur 1 (enhance): budjet poyga/nondeterminizm + base64 hajm aniqligi → tuzatildi (parallel fetch → sinxron deterministik, cap base64 uzunligida).
-- Tur 2 (gs://): 3 topilma → tuzatildi: (a) **HIGH** o'chirilgan gs:// obyekt butun enhance'ni yiqitardi → HeadObject sizeBytes bilan mavjudlik tekshiruvi, yo'q bo'lsa muloyim skip; (b) skipNote endi "yuklanmadi yoki juda katta"; (c) data-URI/mime trim+validatsiya (validMime).
+1. **100MB yolg'on xato**: ildiz — Cloud Run so'rov tanasi ~32MB (32–100MB fayl 413 olardi). Fix: yangi `POST /gen/ref-upload-url` (presigned PUT) + plagin `nodePutFile` (Node https stream) → katta fayl TO'G'RIDAN GCS'ga, so'ng `ref-upload {srcKey}` (kesish/optimizatsiya odatdagidek). Chegara: >30MB avtomatik presigned.
+2. **So'nggi grid video → referens + KESISH dialogi**: `vgUseAsRef` video → `openVgClipper({srcUrl})` (remote preview + `probeRemoteMeta`); server `ref-upload {srcUrl}` bucket'dan o'zi olib kesadi. Xavfsizlik: srcUrl faqat o'z `gen/<uid>/`+`gen-refs/<uid>/` obyektlari; srcKey faqat `gen-ref-src/<uid>/`.
+3. **Kartada Referens tugmasi yo'qolishi**: model almashganda grid QAYTA chiziladi (`applyModelSettings`→`renderVgRecent`) — eski refKind bilan chizilgan kartalar yangilanadi.
+4. **Referens chip gradient**: video chip endi HAQIQIY birinchi kadr (`afVideoThumb`).
+5. **Qayta gen**: karta+lightbox'da yangi tugma — prompt + referenslar composer'ga qaytadi (vg: frames/media-refs mos; ig: referenceUrls). Tartib: avval ref, keyin prompt (token takrorlanmasin).
+6. **Yaxshilash tez + EN**: `thinkingConfig:{thinkingBudget:0}` (2.5-flash thinking o'chirildi — asosiy sekinlik); system yangilandi — assistentdek referens+niyatni tahlil qiladi, yakuniy prompt HAR DOIM INGLIZCHA (kirish har tilda), JSON yo'li ham EN.
 
 ## HOLAT
-- `tsc` toza (0 xato). git push + AE jonli test KUTILMOQDA (gs:// o'qish Veo naqshi bilan tasdiqlangan, lekin enhance uchun jonli sinov shart).
-- ⚠️ ESLATMA: `vwrap.mjs` (ochiq GCS kalitlari) tasodifan commit bo'lib GitHub secret-scan bloklagan edi — commit'dan olindi, .gitignore'ga qo'shildi, push bo'lmadi (xavfsiz). Kalitni .env'ga ko'chirish tavsiya.
+- API `tsc` toza; plagin 7 inline skript sintaksis toza. git push + CEP reinstall (`install-cep.sh`) + AE test KUTILMOQDA.
+- Kesish serverda ffmpeg bilan — srcUrl yo'li ham xuddi shu quvur (multipart bilan bir xil), lekin jonli sinov shart.

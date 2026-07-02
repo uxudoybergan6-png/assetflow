@@ -28,6 +28,9 @@ import {
   uploadBufferToS3,
   getPublicOrSignedUrl,
   getS3ObjectMeta,
+  getSignedUploadUrl,
+  gcsKeyFromUrl,
+  downloadS3ToBuffer,
 } from "../lib/s3.js";
 import {
   GEN_MODELS,
@@ -456,8 +459,16 @@ studioGenRouter.post("/gen/preflight-safety", async (req: Request, res: Response
 });
 
 /** POST /gen/ref-upload — referens rasm (data-URI) → R2 public URL. Plagin har referens qo'shganda
- *  darhol yuklaydi (spinner), so'ng /gen ga URL'lar TARTIBDA uzatiladi (image_urls). Kredit yechmaydi. */
+ *  darhol yuklaydi (spinner), so'ng /gen ga URL'lar TARTIBDA uzatiladi (image_urls). Kredit yechmaydi.
+ *
+ *  MANBA 4 XIL: multipart fayl | dataUrl (base64) | srcKey (presigned PUT bilan avval GCS'ga
+ *  yuklangan katta fayl — Cloud Run 32MB so'rov chegarasini aylanadi) | srcUrl (bizning bucket'dagi
+ *  mavjud obyekt, masalan So'nggi grid'dagi gen natijasi — video kesish clipMode bilan). */
 const refUploadSchema = z.object({ dataUrl: z.string().min(16) });
+const refUploadSrcSchema = z.object({
+  srcKey: z.string().min(8).max(512).optional(),
+  srcUrl: z.string().min(8).max(4096).optional(),
+});
 const MAX_REF_UPLOAD_BYTES = 100 * 1024 * 1024;
 const MAX_VIDEO_REF_TARGET_BYTES = 50 * 1024 * 1024;
 const MAX_AUDIO_REF_TARGET_BYTES = 15 * 1024 * 1024;
@@ -489,10 +500,15 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
 
   let contentType = "image/png";
   let buf: Buffer | null = null;
-  const clipStartSec =
-    typeof req.body?.clipStartSec === "string" ? Number(req.body.clipStartSec) : undefined;
-  const clipEndSec =
-    typeof req.body?.clipEndSec === "string" ? Number(req.body.clipEndSec) : undefined;
+  let srcFileName = ""; // ext aniqlash (video optimize)
+  let tempSrcKey = ""; // presigned yo'lidagi vaqtinchalik obyekt — oxirida o'chiriladi
+  // Clip param'lar multipart'da SATR ("3.5"), JSON'da RAQAM keladi — ikkalasini ham qabul qilamiz.
+  const numParam = (v: unknown): number | undefined => {
+    const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
+    return Number.isFinite(n) ? n : undefined;
+  };
+  const clipStartSec = numParam(req.body?.clipStartSec);
+  const clipEndSec = numParam(req.body?.clipEndSec);
   const clipEnabled =
     req.body?.clipMode === "part" ||
     (Number.isFinite(clipStartSec) && Number.isFinite(clipEndSec) && (clipEndSec as number) > (clipStartSec as number));
@@ -502,9 +518,53 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     req.body?.extractAudioRef === true;
 
   const uploadedFile = (req as Request & { file?: Express.Multer.File }).file;
+  const srcRef = refUploadSrcSchema.safeParse(req.body || {});
   if (uploadedFile?.buffer?.length) {
     contentType = uploadedFile.mimetype || contentType;
     buf = uploadedFile.buffer;
+    srcFileName = uploadedFile.originalname || "";
+  } else if (srcRef.success && (srcRef.data.srcKey || srcRef.data.srcUrl)) {
+    // srcKey: presigned PUT bilan yuklangan vaqtinchalik obyekt — FAQAT o'z prefiksidan (xavfsizlik).
+    // srcUrl: bizning bucket'dagi mavjud obyekt (So'nggi grid gen natijasi) — kesish/optimizatsiya uchun.
+    let key = "";
+    if (srcRef.data.srcKey) {
+      key = srcRef.data.srcKey;
+      if (!key.startsWith(`gen-ref-src/${req.user!.userId}/`)) {
+        res.status(403).json({ error: "Noto'g'ri manba kaliti" });
+        return;
+      }
+      tempSrcKey = key;
+    } else {
+      key = gcsKeyFromUrl(String(srcRef.data.srcUrl)) || "";
+      if (!key) {
+        res.status(400).json({ error: "Manba URL bizning saqlashdan emas" });
+        return;
+      }
+      // FAQAT o'z obyektlari: gen natijalari (gen/<userId>/) va referenslar (gen-refs/<userId>/).
+      // Aks holda boshqa foydalanuvchi obyektini (key ma'lum bo'lsa) ko'chirib olish mumkin bo'lardi.
+      const uid = req.user!.userId;
+      if (!key.startsWith(`gen/${uid}/`) && !key.startsWith(`gen-refs/${uid}/`)) {
+        res.status(403).json({ error: "Bu manba sizga tegishli emas" });
+        return;
+      }
+    }
+    const meta = await getS3ObjectMeta(key);
+    if (meta.sizeBytes == null) {
+      res.status(404).json({ error: "Manba fayl topilmadi — qayta yuklang" });
+      return;
+    }
+    if (meta.sizeBytes > MAX_REF_UPLOAD_BYTES) {
+      res.status(413).json({ error: "Referens juda katta — 100MB dan kichikroq fayl tanlang", code: "PAYLOAD_TOO_LARGE" });
+      return;
+    }
+    try {
+      buf = await downloadS3ToBuffer(key);
+    } catch {
+      res.status(404).json({ error: "Manba faylni o'qib bo'lmadi — qayta yuklang" });
+      return;
+    }
+    contentType = meta.contentType || (/(\.mp4|\.webm|\.mov)(\?|$)/i.test(key) ? "video/mp4" : contentType);
+    srcFileName = key.split("/").pop() || "";
   } else {
     const p = refUploadSchema.safeParse(req.body);
     if (!p.success) {
@@ -539,14 +599,14 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
       }
     | undefined;
   let audioError: string | undefined;
-  if (/^video\//.test(contentType) && uploadedFile?.buffer?.length) {
+  if (/^video\//.test(contentType) && buf?.length) {
     let tmpDir: string | null = null;
     try {
       tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_vref_"));
-      const ext = path.extname(uploadedFile.originalname || "") || ".mp4";
+      const ext = path.extname(srcFileName || "") || ".mp4";
       const sourcePath = path.join(tmpDir, `source${ext}`);
       const localPath = path.join(tmpDir, `ref${ext}`);
-      fs.writeFileSync(sourcePath, uploadedFile.buffer);
+      fs.writeFileSync(sourcePath, buf);
       fs.copyFileSync(sourcePath, localPath);
       const optimized = await optimizeVideoReferenceForUpload(
         localPath,
@@ -636,6 +696,33 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     thumbUrl: contentType.startsWith("image/") ? url : null,
   });
   res.json({ id: saved.id, url, bytes: buf.length, contentType, expiresAt: saved.expiresAt, audioRef, audioError });
+  // Presigned yo'lidagi vaqtinchalik manba obyektini tozalash (javobdan keyin, best-effort).
+  if (tempSrcKey) deleteS3Objects([tempSrcKey]).catch(() => {});
+});
+
+/** POST /gen/ref-upload-url — KATTA fayl (>~30MB) uchun presigned PUT URL. Cloud Run so'rov tanasi
+ *  ~32MB bilan chegaralangan — plagin katta videoni TO'G'RIDAN GCS'ga PUT qiladi (chegara yo'q),
+ *  so'ng /gen/ref-upload'ga {srcKey} yuboradi (server kesish/optimizatsiya odatdagidek). */
+const refUploadUrlSchema = z.object({
+  contentType: z.string().regex(/^(image|video|audio)\//),
+  sizeBytes: z.number().int().positive().max(MAX_REF_UPLOAD_BYTES),
+  name: z.string().max(200).optional(),
+});
+studioGenRouter.post("/gen/ref-upload-url", async (req: Request, res: Response) => {
+  if (!isS3Configured()) {
+    res.status(503).json({ error: "Saqlash sozlanmagan", code: "S3_NOT_CONFIGURED" });
+    return;
+  }
+  const p = refUploadUrlSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const extFromName = /\.([a-z0-9]{2,5})$/i.exec(p.data.name || "")?.[1]?.toLowerCase() || "";
+  const ext = extFromName || (p.data.contentType.startsWith("video/") ? "mp4" : p.data.contentType.startsWith("audio/") ? "mp3" : "png");
+  const key = `gen-ref-src/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const url = await getSignedUploadUrl(key, p.data.contentType, 900);
+  res.json({ key, url, expiresInSec: 900 });
 });
 
 /** POST /gen — imzoni tekshiradi → kredit zaxira → queued Generation → {jobId}. */
@@ -916,7 +1003,8 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       `rich, production-quality prompt and return it ONLY as a JSON object matching exactly this schema:\n` +
       `${enhanceJsonSchema(mode)}\n` +
       `Be concrete and cinematic. No markdown, no commentary. The "prompt" field must be a ` +
-      `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters.${keepRefs}${ctx}`;
+      `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters. ` +
+      `Write ALL output text in fluent natural ENGLISH regardless of the input language.${keepRefs}${ctx}`;
     const out = await vertexEnhanceJson(system, ideaForJson);
     if (!out.ok) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
