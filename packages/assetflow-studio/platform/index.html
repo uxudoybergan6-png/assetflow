@@ -7,6 +7,7 @@
 <script src="assets/react.production.min.js"></script>
 <script src="assets/react-dom.production.min.js"></script>
 <script src="assets/dc-runtime.js"></script>
+<script src="ff-api.js"></script>
 </head>
 <body>
 <x-dc>
@@ -14311,8 +14312,8 @@
           <a onclick="{{ goLanding }}" style="padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;transition:.16s" style-hover="background:rgba(255,255,255,.10);color:var(--txt)">Blog</a>
         </nav>
         <div style="justify-self:end;display:flex;align-items:center;gap:10px">
-          <a onclick="{{ goDashboard }}" class="ff-cta-ghost" style="padding:10px 18px;border-radius:999px;border:1px solid var(--bd2);background:var(--card2);font-size:14px;font-weight:600;color:var(--txt);cursor:pointer;transition:.16s;white-space:nowrap" style-hover="background:var(--card3);border-color:var(--txt3)">Kirish</a>
-          <button onclick="{{ goDashboard }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 19px;border:none;border-radius:999px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 8px 22px -8px var(--ring);transition:transform .18s,box-shadow .18s;white-space:nowrap" style-hover="transform:translateY(-2px);box-shadow:0 14px 30px -8px var(--ring)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
+          <a onclick="{{ goLogin }}" class="ff-cta-ghost" style="padding:10px 18px;border-radius:999px;border:1px solid var(--bd2);background:var(--card2);font-size:14px;font-weight:600;color:var(--txt);cursor:pointer;transition:.16s;white-space:nowrap" style-hover="background:var(--card3);border-color:var(--txt3)">Kirish</a>
+          <button onclick="{{ goRegister }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 19px;border:none;border-radius:999px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 8px 22px -8px var(--ring);transition:transform .18s,box-shadow .18s;white-space:nowrap" style-hover="transform:translateY(-2px);box-shadow:0 14px 30px -8px var(--ring)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
           <button class="ff-burger" onclick="{{ toggleNav }}" style="width:42px;height:42px;border-radius:12px;background:var(--card2);border:1px solid var(--bd);color:var(--txt);place-items:center;cursor:pointer;font-size:20px"><i class="ph ph-list"></i></button>
         </div>
       </div>
@@ -14322,7 +14323,7 @@
           <a onclick="{{ goAistudio }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">AI Studio</a>
           <a onclick="{{ goPricing }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">Narxlar</a>
           <a onclick="{{ goPlugin }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">Plagin</a>
-          <button onclick="{{ goDashboard }}" style="margin-top:8px;padding:13px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer">Bepul boshlash</button>
+          <button onclick="{{ goRegister }}" style="margin-top:8px;padding:13px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer">Bepul boshlash</button>
         </div>
       </sc-if>
     </header>
@@ -14345,7 +14346,7 @@
               <h1 style="font-size:clamp(40px,5.4vw,66px);line-height:1.05;letter-spacing:-.035em;font-weight:600;margin:0 0 22px"><sc-for list="{{ heroWords }}" as="hw" hint-placeholder-count="4"><span data-rv="" data-rv-delay="{{ hw.rd }}" style="display:inline-block;margin-right:.24em">{{ hw.w }}</span></sc-for><span data-rv="" data-rv-delay="340" style="display:inline-block;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">AI generatsiya</span></h1>
               <p data-rv="" data-rv-delay="240" style="font-size:18.5px;line-height:1.6;color:var(--txt2);max-width:528px;margin:0 0 34px">Shablonlarni yuklab oling, AI bilan rasm, video va ovoz yarating — hammasi bitta ijodiy makonda. Brauzerda ishlang yoki After Effects ichida davom eting.</p>
               <div data-rv="" data-rv-delay="360" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:38px">
-                <button onclick="{{ goDashboard }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 26px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;box-shadow:0 12px 32px -8px var(--ring);transition:transform .18s,box-shadow .18s" style-hover="transform:translateY(-2px);box-shadow:0 18px 40px -8px var(--ring)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
+                <button onclick="{{ goRegister }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 26px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;box-shadow:0 12px 32px -8px var(--ring);transition:transform .18s,box-shadow .18s" style-hover="transform:translateY(-2px);box-shadow:0 18px 40px -8px var(--ring)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
                 <button onclick="{{ goTemplates }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 24px;border:1px solid var(--bd2);border-radius:14px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;backdrop-filter:blur(8px);transition:background .18s" style-hover="background:rgba(255,255,255,.12)"><i class="ph ph-play-circle" style="font-size:19px"></i>Shablonlarni ko'rish</button>
               </div>
               <div data-rv="" data-rv-delay="470" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
@@ -14624,7 +14625,7 @@
               <div style="font-size:16px;font-weight:600;color:{{ p.nameCol }};margin-bottom:6px">{{ p.name }}</div>
               <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px"><span style="font-size:44px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:15px;color:var(--txt3)">/oy</span></div>
               <div style="font-size:13px;color:var(--txt3);margin-bottom:18px">{{ p.note }} · {{ p.cr }}</div>
-              <button onclick="{{ goDashboard }}" style="width:100%;padding:13px;border:none;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:24px;border:1px solid {{ p.btnBd }};transition:.15s">{{ p.cta }}</button>
+              <button onclick="{{ goRegister }}" style="width:100%;padding:13px;border:none;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:24px;border:1px solid {{ p.btnBd }};transition:.15s">{{ p.cta }}</button>
               <div style="display:flex;flex-direction:column;gap:12px">
                 <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="5">
                   <div style="display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:15px;margin-top:2px;flex:none"></i>{{ f }}</div>
@@ -14678,7 +14679,7 @@
           <div style="position:relative">
             <h2 style="font-size:clamp(30px,4vw,50px);font-weight:600;letter-spacing:-.03em;line-height:1.08;margin:0 0 16px;max-width:680px;margin-left:auto;margin-right:auto">Bugun ijod qilishni boshlang</h2>
             <p style="font-size:18px;color:var(--txt2);margin:0 auto 30px;max-width:520px">Kredit kartasiz. 50 bepul kredit. Bir necha soniyada birinchi ijodingiz.</p>
-            <button onclick="{{ goDashboard }}" style="display:inline-flex;align-items:center;gap:9px;padding:16px 30px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16.5px;cursor:pointer;box-shadow:0 16px 40px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-2px)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
+            <button onclick="{{ goRegister }}" style="display:inline-flex;align-items:center;gap:9px;padding:16px 30px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16.5px;cursor:pointer;box-shadow:0 16px 40px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-2px)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
           </div>
         </div>
       </section>
@@ -14703,7 +14704,7 @@
               <div style="font-size:17px;font-weight:600;color:{{ p.nameCol }};margin-bottom:8px">{{ p.name }}</div>
               <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px"><span style="font-size:48px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:15px;color:var(--txt3)">/oy</span></div>
               <div style="font-size:13px;color:var(--txt3);margin-bottom:20px">{{ p.note }} · {{ p.cr }}</div>
-              <button onclick="{{ goDashboard }}" style="width:100%;padding:14px;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:26px;border:1px solid {{ p.btnBd }}">{{ p.cta }}</button>
+              <button onclick="{{ goRegister }}" style="width:100%;padding:14px;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:26px;border:1px solid {{ p.btnBd }}">{{ p.cta }}</button>
               <div style="display:flex;flex-direction:column;gap:13px">
                 <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="6">
                   <div style="display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:15px;margin-top:2px;flex:none"></i>{{ f }}</div>
@@ -14825,15 +14826,18 @@
           <a data-screen="{{ it.screen }}" onclick="{{ onNav }}" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;background:{{ it.bg }};color:{{ it.col }};font-size:14.5px;font-weight:500;cursor:pointer;transition:.15s"><i class="ph-fill ph-{{ it.icon }}" style="font-size:18px;color:{{ it.icol }}"></i>{{ it.label }}</a>
         </sc-for>
       </nav>
-      <div style="margin:12px 4px;padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(194,240,74,.16),rgba(194,240,74,.08));border:1px solid var(--bd2)">
-        <div style="font-size:13.5px;font-weight:600;margin-bottom:4px">Pro ga o'ting</div>
-        <div style="font-size:12px;color:var(--txt2);line-height:1.45;margin-bottom:12px">Cheksiz shablon va 1,500 kredit</div>
-        <button onclick="{{ goPricing }}" style="width:100%;padding:9px;border:none;border-radius:9px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Yangilash</button>
-      </div>
+      <sc-if value="{{ isFreePlan }}" hint-placeholder-val="{{ true }}">
+        <div style="margin:12px 4px;padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(194,240,74,.16),rgba(194,240,74,.08));border:1px solid var(--bd2)">
+          <div style="font-size:13.5px;font-weight:600;margin-bottom:4px">Pro ga o'ting</div>
+          <div style="font-size:12px;color:var(--txt2);line-height:1.45;margin-bottom:12px">Cheksiz shablon va 1,500 kredit</div>
+          <button onclick="{{ goPricing }}" style="width:100%;padding:9px;border:none;border-radius:9px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">Yangilash</button>
+        </div>
+      </sc-if>
       <div style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:1px solid var(--bd)">
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);flex:none;display:grid;place-items:center;font-size:13px;font-weight:600;color:#fff">AX</div>
-        <div style="min-width:0;flex:1"><div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Aziz Xolmatov</div><div style="font-size:11.5px;color:var(--txt3)">Pro reja</div></div>
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);flex:none;display:grid;place-items:center;font-size:13px;font-weight:600;color:#fff">{{ userInitials }}</div>
+        <div style="min-width:0;flex:1"><div style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-size:11.5px;color:var(--txt3)">{{ planLabel }}</div></div>
         <div style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:8px;background:rgba(194,240,74,.1);font-size:11px;font-weight:700;color:var(--acc);font-family:'IBM Plex Mono',monospace"><i class="ph-fill ph-lightning"></i>{{ creditsFmt }}</div>
+        <button onclick="{{ doLogout }}" title="Chiqish" style="width:30px;height:30px;border-radius:8px;background:none;border:1px solid var(--bd);color:var(--txt3);cursor:pointer;display:grid;place-items:center;font-size:14px;flex:none;transition:.15s" style-hover="color:#ff6b6b;border-color:rgba(255,107,107,.4)"><i class="ph ph-sign-out"></i></button>
       </div>
     </aside>
 
@@ -14865,7 +14869,7 @@
         <div style="display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:11px;background:rgba(194,240,74,.1);border:1px solid rgba(194,240,74,.25);font-size:13px;font-weight:600;color:var(--acc);font-family:'IBM Plex Mono',monospace"><i class="ph-fill ph-lightning"></i>{{ creditsFmt }}</div>
         <button onclick="{{ openCredits }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph-bold ph-plus"></i>Kredit qo'shish</button>
         <button style="width:42px;height:42px;border-radius:11px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:18px;position:relative"><i class="ph ph-bell"></i><span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--acc);border:2px solid var(--bg2)"></span></button>
-        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);display:grid;place-items:center;font-size:13px;font-weight:600;color:#fff;cursor:pointer">AX</div>
+        <div onclick="{{ goAccount }}" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);display:grid;place-items:center;font-size:13px;font-weight:600;color:#fff;cursor:pointer">{{ userInitials }}</div>
       </header>
 
       <div data-rv="" data-page-wrap="" style="flex:1;padding:30px 30px 64px;max-width:1340px;width:100%">
@@ -14873,7 +14877,7 @@
         <!-- DASHBOARD -->
         <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
           <div style="margin-bottom:26px">
-            <h1 style="font-size:30px;font-weight:600;letter-spacing:-.025em;margin:0 0 6px">Xush kelibsiz, Aziz</h1>
+            <h1 style="font-size:30px;font-weight:600;letter-spacing:-.025em;margin:0 0 6px">Xush kelibsiz, {{ userName }}</h1>
             <p style="font-size:15.5px;color:var(--txt2);margin:0">Bugun nima yaratamiz? Shablon tanlang yoki AI bilan boshlang.</p>
           </div>
           <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px">
@@ -14889,16 +14893,27 @@
             <h2 style="font-size:20px;font-weight:600;margin:0">So'nggi generatsiyalar</h2>
             <a onclick="{{ goAistudio }}" style="font-size:14px;font-weight:600;color:var(--acc);cursor:pointer">AI Studio'ga o'tish</a>
           </div>
-          <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:38px">
-            <sc-for list="{{ dashGens }}" as="g" hint-placeholder-count="4">
-              <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ff-tcard" style="border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--bd);cursor:pointer">
-                <div style="position:relative;aspect-ratio:1;background:{{ g.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite">
-                  <div style="position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:7px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-size:10.5px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ g.tIcon }}"></i>{{ g.tool }}</div>
+          <sc-if value="{{ hasDashGens }}" hint-placeholder-val="{{ true }}">
+            <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:38px">
+              <sc-for list="{{ dashGens }}" as="g" hint-placeholder-count="4">
+                <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ff-tcard" style="border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--bd);cursor:pointer">
+                  <div style="position:relative;aspect-ratio:1;background:{{ g.g }}">
+                    <div style="position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:7px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-size:10.5px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ g.tIcon }}"></i>{{ g.tool }}</div>
+                  </div>
+                  <div style="padding:11px 13px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.label }}</div>
                 </div>
-                <div style="padding:11px 13px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.label }}</div>
-              </div>
-            </sc-for>
-          </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noDashGens }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1.5px dashed var(--bd2);border-radius:18px;padding:34px 24px;text-align:center;margin-bottom:38px">
+              <i class="ph ph-sparkle" style="font-size:26px;color:var(--acc)"></i>
+              <div style="font-size:15px;font-weight:600;margin:10px 0 4px">Hali generatsiya yo'q</div>
+              <div style="font-size:13px;color:var(--txt2);margin-bottom:14px">AI Studio'da birinchi rasm yoki videongizni yarating</div>
+              <button onclick="{{ goAistudio }}" style="padding:10px 18px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer">AI Studio'ni ochish</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasRec }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <h2 style="font-size:20px;font-weight:600;margin:0">Tavsiya etilgan shablonlar</h2>
             <a onclick="{{ goTemplates }}" style="font-size:14px;font-weight:600;color:var(--acc);cursor:pointer">Barchasi</a>
@@ -14907,7 +14922,7 @@
             <sc-for list="{{ recTemplates }}" as="t" hint-placeholder-count="6">
               <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ff-tcard" style="border-radius:16px;background:var(--card);border:1px solid var(--bd);overflow:hidden;cursor:pointer">
                 <div style="position:relative;aspect-ratio:16/10;overflow:hidden">
-                  <div class="ff-tprev" style="position:absolute;inset:0;background:{{ t.g }};background-size:180% 180%;animation:ffShimmer 8s ease infinite;transition:transform .25s"></div>
+                  <div class="ff-tprev" style="position:absolute;inset:0;background:{{ t.g }};transition:transform .25s"></div>
                   <div style="position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:7px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font-size:10.5px;font-weight:600;color:#fff"><span style="width:7px;height:7px;border-radius:2px;background:{{ t.ac }}"></span>{{ t.a }}</div>
                   <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:7px;background:#C2F04A;font-size:10px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</div></sc-if>
                   <div class="ff-tplay" style="position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.85);transition:.25s"><div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.4);display:grid;place-items:center"><i class="ph-fill ph-play" style="color:#fff;font-size:17px;margin-left:2px"></i></div></div>
@@ -14916,6 +14931,7 @@
               </div>
             </sc-for>
           </div>
+          </sc-if>
         </sc-if>
 
         <!-- TEMPLATES MARKETPLACE -->
@@ -14958,7 +14974,7 @@
                   <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="9">
                     <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ff-tcard" style="border-radius:16px;background:var(--card);border:1px solid var(--bd);overflow:hidden;cursor:pointer">
                       <div style="position:relative;aspect-ratio:16/10;overflow:hidden">
-                        <div class="ff-tprev" style="position:absolute;inset:0;background:{{ t.g }};background-size:180% 180%;animation:ffShimmer 8s ease infinite;transition:transform .25s"></div>
+                        <div class="ff-tprev" style="position:absolute;inset:0;background:{{ t.g }};transition:transform .25s"></div>
                         <div style="position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:7px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font-size:10.5px;font-weight:600;color:#fff"><span style="width:7px;height:7px;border-radius:2px;background:{{ t.ac }}"></span>{{ t.a }}</div>
                         <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:7px;background:#C2F04A;font-size:10px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</div></sc-if>
                         <div class="ff-tplay" style="position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.85);transition:.25s"><div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.4);display:grid;place-items:center"><i class="ph-fill ph-play" style="color:#fff;font-size:17px;margin-left:2px"></i></div></div>
@@ -14973,7 +14989,7 @@
                 <div style="text-align:center;padding:80px 20px;border-radius:18px;background:var(--card);border:1px solid var(--bd)">
                   <i class="ph ph-magnifying-glass" style="font-size:40px;color:var(--txt3)"></i>
                   <div style="font-size:18px;font-weight:600;margin:16px 0 6px">Hech narsa topilmadi</div>
-                  <p style="font-size:14px;color:var(--txt2);margin:0 0 18px">Filtrlarni o'zgartirib ko'ring</p>
+                  <p style="font-size:14px;color:var(--txt2);margin:0 0 18px">Filtrlarni o'zgartirib ko'ring — katalog muntazam to'ldirilmoqda</p>
                   <button onclick="{{ resetFilters }}" style="padding:11px 20px;border:1px solid var(--bd2);border-radius:11px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Filtrlarni tozalash</button>
                 </div>
               </sc-if>
@@ -15030,27 +15046,32 @@
                   </div>
                 </div>
                 <div style="border-top:1px solid var(--bd);padding-top:18px">
-                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Reference</div>
-                  <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
-                    <button onclick="{{ addRef }}" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:62px;height:62px;border:1px dashed var(--bd2);border-radius:13px;background:none;color:var(--txt3);font-family:inherit;font-size:10px;cursor:pointer;transition:.18s" style-hover="border-color:rgba(194,240,74,.4);color:var(--acc)"><i class="ph ph-plus" style="font-size:17px"></i>Yuklash</button>
-                    <div style="position:relative;width:62px;height:62px;border-radius:13px;overflow:hidden;border:1px solid var(--bd);background:radial-gradient(120% 120% at 22% 12%,#2b3550,#0d1119)"><span style="position:absolute;bottom:4px;left:5px;font-size:8.5px;color:rgba(255,255,255,.7);font-family:'IBM Plex Mono',monospace">ref_01</span><i class="ph ph-x" style="position:absolute;top:4px;right:4px;font-size:10px;color:#fff;background:rgba(0,0,0,.55);border-radius:50%;padding:2.5px;cursor:pointer"></i></div>
-                  </div>
-                </div>
-                <div style="border-top:1px solid var(--bd);padding-top:18px">
                   <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Model</div>
                   <div style="position:relative">
                     <button onclick="{{ toggleModel }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:border-color .18s" style-hover="border-color:var(--bd2)"><span style="display:inline-flex;align-items:center;gap:9px"><i class="ph-fill ph-cube" style="color:var(--acc)"></i>{{ modelName }}</span><i class="ph ph-caret-down" style="font-size:13px;color:var(--txt3)"></i></button>
                     <sc-if value="{{ modelOpen }}" hint-placeholder-val="{{ false }}">
                       <div style="position:absolute;top:100%;left:0;margin-top:6px;width:100%;border-radius:13px;background:var(--panel2);border:1px solid var(--bd2);box-shadow:0 18px 44px -12px rgba(0,0,0,.75);overflow:hidden;z-index:20">
-                        <sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="4"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;background:none;border:none;color:var(--txt);font-family:inherit;font-size:13px;cursor:pointer;text-align:left;transition:background .12s" style-hover="background:var(--card2)">{{ m.v }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--acc)"></i></sc-if></button></sc-for>
+                        <sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="4"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;background:none;border:none;color:var(--txt);font-family:inherit;font-size:13px;cursor:pointer;text-align:left;transition:background .12s" style-hover="background:var(--card2)">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--acc)"></i></sc-if></button></sc-for>
                       </div>
                     </sc-if>
                   </div>
                 </div>
-                <div style="border-top:1px solid var(--bd);padding-top:18px">
+                <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
                   <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">O'lcham</div>
                   <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div>
-                </div>
+                </div></sc-if>
+                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
+                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Sifat</div>
+                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div>
+                </div></sc-if>
+                <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
+                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Rezolyutsiya</div>
+                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div>
+                </div></sc-if>
+                <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
+                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Ovoz</div>
+                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ voicesView }}" as="z" hint-placeholder-count="6"><button data-v="{{ z.v }}" onclick="{{ onVoice }}" style="padding:9px 13px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer">{{ z.label }}</button></sc-for></div>
+                </div></sc-if>
                 <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px"><div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Davomiylik</div><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div></div></sc-if>
                 <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><div style="border-top:1px solid var(--bd);padding-top:18px"><div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Soni</div><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" style="flex:1;min-width:44px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div></div></sc-if>
               </div>
@@ -15071,7 +15092,7 @@
                   <div style="display:flex;align-items:center;gap:8px">
                     <button onclick="{{ useAsRef }}" title="Reference sifatida ishlatish" style="display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border:1px solid var(--bd2);border-radius:10px;background:var(--card2);color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .15s" style-hover="background:var(--card3)"><i class="ph ph-image"></i>Reference</button>
                     <button onclick="{{ delActive }}" title="O'chirish" style="width:35px;height:35px;border:1px solid var(--bd2);border-radius:10px;background:var(--card2);color:#ff6b6b;cursor:pointer;display:grid;place-items:center;transition:background .15s" style-hover="background:rgba(255,107,107,.12)"><i class="ph ph-trash"></i></button>
-                    <button onclick="{{ download }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border:none;border-radius:10px;background:var(--grad);color:#0E1400;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px -8px var(--ring);transition:transform .15s;white-space:nowrap" style-hover="transform:translateY(-1px)"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button>
+                    <button onclick="{{ downloadGen }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border:none;border-radius:10px;background:var(--grad);color:#0E1400;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px -8px var(--ring);transition:transform .15s;white-space:nowrap" style-hover="transform:translateY(-1px)"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button>
                   </div>
                 </sc-if>
               </div>
@@ -15086,8 +15107,8 @@
                   <div style="position:relative;width:min(100%,520px)">
                     <div style="position:relative;aspect-ratio:{{ activeAspect }};border-radius:20px;overflow:hidden;border:1px solid var(--bd2);box-shadow:0 50px 110px -35px rgba(0,0,0,.85),0 0 90px -30px var(--ring);background:{{ activeView.g }}">
                       <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.52))"></div>
-                      <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:grid;place-items:center"><div style="width:68px;height:68px;border-radius:50%;background:rgba(194,240,74,.15);backdrop-filter:blur(8px);border:1px solid rgba(194,240,74,.5);display:grid;place-items:center;cursor:pointer;transition:transform .18s" style-hover="transform:scale(1.07)"><i class="ph-fill ph-play" style="color:var(--acc);font-size:25px;margin-left:3px"></i></div></div><div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.13)"><div style="width:37%;height:100%;background:var(--grad)"></div></div></sc-if>
-                      <sc-if value="{{ isAudioActive }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2.5px;padding:0 26px"><sc-for list="{{ waveBars }}" as="w" hint-placeholder-count="46"><span style="flex:1;height:{{ w.h }}%;max-height:78%;border-radius:3px;background:rgba(194,240,74,.55)"></span></sc-for></div><div style="position:absolute;top:14px;left:14px;width:40px;height:40px;border-radius:12px;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);display:grid;place-items:center;cursor:pointer"><i class="ph-fill ph-play" style="color:var(--acc);font-size:17px;margin-left:2px"></i></div></sc-if>
+                      <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ videoUrl }}" preload="none" controls="" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
+                      <sc-if value="{{ isAudioActive }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2.5px;padding:0 26px 40px"><sc-for list="{{ waveBars }}" as="w" hint-placeholder-count="46"><span style="flex:1;height:{{ w.h }}%;max-height:78%;border-radius:3px;background:rgba(194,240,74,.55)"></span></sc-for></div><audio src="{{ audioUrl }}" preload="none" controls="" style="position:absolute;left:14px;right:14px;bottom:56px;width:calc(100% - 28px)"></audio></sc-if>
                       <div style="position:absolute;left:18px;right:18px;bottom:15px">
                         <div style="font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.01em">{{ activeView.label }}</div>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:5px;font-size:11px;color:rgba(255,255,255,.65);font-family:'IBM Plex Mono',monospace"><span>{{ activeView.tool }}</span><span>·</span><span>{{ modelName }}</span><span>·</span><span>4K</span></div>
@@ -15128,29 +15149,29 @@
           <sc-if value="{{ accProfile }}" hint-placeholder-val="{{ true }}">
             <div class="ff-plugin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:920px">
               <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);padding:24px">
-                <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);display:grid;place-items:center;font-size:22px;font-weight:600;color:#fff">AX</div><div><div style="font-size:18px;font-weight:600">Aziz Xolmatov</div><div style="font-size:13.5px;color:var(--txt2)">aziz@assetflow.uz</div></div></div>
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);display:grid;place-items:center;font-size:22px;font-weight:600;color:#fff">{{ userInitials }}</div><div><div style="font-size:18px;font-weight:600">{{ userName }}</div><div style="font-size:13.5px;color:var(--txt2)">{{ userEmail }}</div></div></div>
                 <div style="display:flex;flex-direction:column;gap:14px">
-                  <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">To'liq ism</div><input value="Aziz Xolmatov" style="width:100%;height:42px;padding:0 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none"></div>
-                  <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">Email</div><input value="aziz@assetflow.uz" style="width:100%;height:42px;padding:0 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none"></div>
-                  <button style="margin-top:4px;align-self:flex-start;padding:11px 20px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Saqlash</button>
+                  <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">To'liq ism</div><input value="{{ accName }}" oninput="{{ onAccName }}" placeholder="Ismingiz" style="width:100%;height:42px;padding:0 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none"></div>
+                  <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">Email</div><input value="{{ userEmail }}" readonly="" style="width:100%;height:42px;padding:0 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt3);font-family:inherit;font-size:14px;outline:none"></div>
+                  <button onclick="{{ saveAcc }}" style="margin-top:4px;align-self:flex-start;padding:11px 20px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Saqlash</button>
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:20px">
                 <div style="border-radius:18px;background:linear-gradient(135deg,rgba(194,240,74,.14),var(--card));border:1px solid var(--bd2);padding:24px">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:var(--txt2)">Joriy reja</span><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:11.5px;font-weight:700"><i class="ph-fill ph-crown"></i>PRO</span></div>
-                  <div style="font-size:24px;font-weight:600;margin-bottom:4px">Pro reja</div>
-                  <div style="font-size:13.5px;color:var(--txt2);margin-bottom:18px">Keyingi to'lov: 1-avgust, 2026 · $19/oy</div>
-                  <div style="display:flex;gap:10px"><button onclick="{{ goPricing }}" style="padding:10px 18px;border:none;border-radius:10px;background:var(--card3);color:var(--txt);font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer">Rejani o'zgartirish</button><button style="padding:10px 18px;border:1px solid var(--bd);border-radius:10px;background:none;color:var(--txt2);font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer">Bekor qilish</button></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:var(--txt2)">Joriy reja</span><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:11.5px;font-weight:700"><i class="ph-fill ph-crown"></i>{{ planLabel }}</span></div>
+                  <div style="font-size:24px;font-weight:600;margin-bottom:4px">{{ planLabel }}</div>
+                  <div style="font-size:13.5px;color:var(--txt2);margin-bottom:18px">{{ planNote }}</div>
+                  <div style="display:flex;gap:10px"><button onclick="{{ goPricing }}" style="padding:10px 18px;border:none;border-radius:10px;background:var(--card3);color:var(--txt);font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer">Rejani o'zgartirish</button></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                   <div style="border-radius:16px;background:var(--card);border:1px solid var(--bd);padding:20px"><div style="font-size:13px;color:var(--txt2);margin-bottom:6px">Kredit balansi</div><div style="font-size:26px;font-weight:600;color:var(--teal2)">{{ creditsFmt }}</div></div>
-                  <div style="border-radius:16px;background:var(--card);border:1px solid var(--bd);padding:20px"><div style="font-size:13px;color:var(--txt2);margin-bottom:6px">Yuklamalar</div><div style="font-size:26px;font-weight:600">248</div></div>
+                  <div style="border-radius:16px;background:var(--card);border:1px solid var(--bd);padding:20px"><div style="font-size:13px;color:var(--txt2);margin-bottom:6px">Yuklamalar (oy)</div><div style="font-size:26px;font-weight:600">{{ downloadsMonth }}</div></div>
                 </div>
               </div>
             </div>
           </sc-if>
           <sc-if value="{{ accObuna }}" hint-placeholder-val="{{ false }}">
-            <div class="ff-price-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px"><sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3"><div style="position:relative;border-radius:22px;background:{{ p.cardBg }};border:1px solid {{ p.cardBd }};padding:30px;{{ p.cardExtra }}"><sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:12px;font-weight:700">Joriy reja</div></sc-if><div style="font-size:16px;font-weight:600;color:{{ p.nameCol }};margin-bottom:6px">{{ p.name }}</div><div style="display:flex;align-items:baseline;gap:4px;margin-bottom:18px"><span style="font-size:40px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:14px;color:var(--txt3)">/oy</span></div><button onclick="{{ goPricing }}" style="width:100%;padding:12px;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:20px;border:1px solid {{ p.btnBd }}">{{ p.cta }}</button><div style="display:flex;flex-direction:column;gap:11px"><sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="5"><div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:14px;margin-top:2px;flex:none"></i>{{ f }}</div></sc-for></div></div></sc-for></div>
+            <div class="ff-price-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px"><sc-for list="{{ plansCur }}" as="p" hint-placeholder-count="3"><div style="position:relative;border-radius:22px;background:{{ p.cardBg }};border:1px solid {{ p.cardBd }};padding:30px;{{ p.cardExtra }}"><sc-if value="{{ p.cur }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:12px;font-weight:700">Joriy reja</div></sc-if><div style="font-size:16px;font-weight:600;color:{{ p.nameCol }};margin-bottom:6px">{{ p.name }}</div><div style="display:flex;align-items:baseline;gap:4px;margin-bottom:18px"><span style="font-size:40px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:14px;color:var(--txt3)">/oy</span></div><button onclick="{{ goPricing }}" style="width:100%;padding:12px;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:20px;border:1px solid {{ p.btnBd }}">{{ p.cta }}</button><div style="display:flex;flex-direction:column;gap:11px"><sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="5"><div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:14px;margin-top:2px;flex:none"></i>{{ f }}</div></sc-for></div></div></sc-for></div>
           </sc-if>
           <sc-if value="{{ accKredit }}" hint-placeholder-val="{{ false }}">
             <div style="max-width:720px">
@@ -15161,13 +15182,17 @@
               <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);overflow:hidden">
                 <div style="padding:16px 20px;border-bottom:1px solid var(--bd);font-size:14px;font-weight:600">Tranzaksiyalar tarixi</div>
                 <sc-for list="{{ creditHistoryView }}" as="h" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid var(--bd)"><div style="width:40px;height:40px;border-radius:11px;background:{{ h.ibg }};display:grid;place-items:center;flex:none"><i class="ph-fill ph-{{ h.icon }}" style="color:{{ h.icol }};font-size:18px"></i></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">{{ h.t }}</div><div style="font-size:12px;color:var(--txt3);margin-top:2px">{{ h.d }}</div></div><div style="font-size:15px;font-weight:700;color:{{ h.col }}">{{ h.amt }}</div></div></sc-for>
+                <sc-if value="{{ noCreditHistory }}" hint-placeholder-val="{{ false }}"><div style="padding:34px 20px;text-align:center;font-size:13.5px;color:var(--txt3)">Hozircha tranzaksiya yo'q — AI Studio'da generatsiya qiling</div></sc-if>
               </div>
             </div>
           </sc-if>
           <sc-if value="{{ accYuklama }}" hint-placeholder-val="{{ false }}">
             <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);overflow:hidden;max-width:720px">
               <div style="padding:16px 20px;border-bottom:1px solid var(--bd);font-size:14px;font-weight:600">Yuklab olingan shablonlar</div>
-              <sc-for list="{{ downloadHistoryView }}" as="d" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--bd)"><div style="width:64px;height:40px;border-radius:9px;background:{{ d.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.n }}</div><div style="font-size:12px;color:var(--txt3);margin-top:2px">{{ d.c }} · {{ d.d }}</div></div><button style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--bd);border-radius:9px;background:var(--card2);color:var(--txt);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer"><i class="ph ph-download-simple"></i>Qayta</button></div></sc-for>
+              <div style="padding:30px 20px;text-align:center">
+                <div style="font-size:14px;color:var(--txt2);margin-bottom:4px">Bu oyda {{ downloadsMonth }} ta yuklama</div>
+                <div style="font-size:12.5px;color:var(--txt3)">Batafsil yuklamalar tarixi tez orada qo'shiladi</div>
+              </div>
             </div>
           </sc-if>
         </sc-if>
@@ -15188,6 +15213,45 @@
       </div>
     </div>
   </div>
+  </sc-if>
+
+  <!-- ============ AUTH (login / register / forgot) ============ -->
+  <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height:100vh;display:grid;place-items:center;padding:32px 20px;position:relative">
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(50% 40% at 50% 30%,rgba(194,240,74,.07),transparent 70%);pointer-events:none"></div>
+      <div style="width:100%;max-width:420px">
+        <a onclick="{{ goLanding }}" style="display:flex;align-items:center;justify-content:center;gap:11px;cursor:pointer;margin-bottom:26px">
+          <div style="width:38px;height:38px;border-radius:11px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 22px -6px var(--ring)"><i class="ph-fill ph-stack" style="color:#0E1400;font-size:17px"></i></div>
+          <span style="font-weight:600;font-size:21px;letter-spacing:-.02em">FrameFlow</span>
+        </a>
+        <div style="border-radius:22px;background:var(--card);border:1px solid var(--bd);padding:30px;box-shadow:0 30px 70px -30px rgba(0,0,0,.7)">
+          <h1 style="font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px;text-align:center">{{ authTitle }}</h1>
+          <p style="font-size:13.5px;color:var(--txt2);margin:0 0 22px;text-align:center">{{ authSub }}</p>
+          <sc-if value="{{ authErr }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:rgba(255,107,107,.09);border:1px solid rgba(255,107,107,.3);font-size:13px;color:#ff9c9c;margin-bottom:16px"><i class="ph-fill ph-warning-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authErr }}</div>
+          </sc-if>
+          <sc-if value="{{ authInfo }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:rgba(194,240,74,.09);border:1px solid rgba(194,240,74,.3);font-size:13px;color:var(--acc);margin-bottom:16px"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
+              <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">Ism</div><input value="{{ authName }}" oninput="{{ onAuthName }}" placeholder="Ismingiz" style="width:100%;height:44px;padding:0 14px;border-radius:11px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></div>
+            </sc-if>
+            <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">Email</div><input value="{{ authEmail }}" oninput="{{ onAuthEmail }}" onkeydown="{{ onAuthKey }}" type="email" placeholder="siz@email.com" style="width:100%;height:44px;padding:0 14px;border-radius:11px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></div>
+            <sc-if value="{{ authShowPassword }}" hint-placeholder-val="{{ true }}">
+              <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--txt3)">Parol</span><a onclick="{{ switchForgot }}" style="font-size:12px;color:var(--acc);cursor:pointer">Unutdingizmi?</a></div><input value="{{ authPassword }}" oninput="{{ onAuthPassword }}" onkeydown="{{ onAuthKey }}" type="password" placeholder="••••••••" style="width:100%;height:44px;padding:0 14px;border-radius:11px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></div>
+            </sc-if>
+            <button onclick="{{ authSubmit }}" style="margin-top:4px;width:100%;padding:14px;border:none;border-radius:13px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 12px 30px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-1px)">{{ authBtn }}</button>
+          </div>
+          <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--bd);text-align:center;font-size:13.5px;color:var(--txt2)">
+            <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">Hisobingiz bormi? <a onclick="{{ switchLogin }}" style="color:var(--acc);font-weight:600;cursor:pointer">Kirish</a></sc-if>
+            <sc-if value="{{ authIsForgot }}" hint-placeholder-val="{{ false }}"><a onclick="{{ switchLogin }}" style="color:var(--acc);font-weight:600;cursor:pointer">← Kirishga qaytish</a></sc-if>
+            <sc-if value="{{ authShowLoginLinks }}" hint-placeholder-val="{{ true }}">Hisobingiz yo'qmi? <a onclick="{{ switchRegister }}" style="color:var(--acc);font-weight:600;cursor:pointer">Ro'yxatdan o'ting</a></sc-if>
+          </div>
+        </div>
+        <a onclick="{{ goLanding }}" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:18px;font-size:13px;color:var(--txt3);cursor:pointer"><i class="ph ph-arrow-left"></i>Bosh sahifaga qaytish</a>
+      </div>
+    </div>
   </sc-if>
 
   <!-- ============ GLOBAL: CREDITS MODAL ============ -->
@@ -15218,21 +15282,21 @@
   <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeDetail }}" style="position:fixed;inset:0;z-index:90;background:rgba(5,5,9,.75);backdrop-filter:blur(7px);display:grid;place-items:start center;padding:32px 24px;overflow:auto">
       <div onclick="{{ stop }}" style="width:100%;max-width:880px;border-radius:24px;background:var(--panel);border:1px solid var(--bd2);overflow:hidden;box-shadow:0 50px 100px -30px rgba(0,0,0,.85)">
-        <div style="position:relative;aspect-ratio:16/8;background:{{ detail.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite">
+        <div style="position:relative;aspect-ratio:16/8;background:{{ detail.g }}">
+          <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" preload="none" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
           <button onclick="{{ closeDetail }}" style="position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px"><i class="ph ph-x"></i></button>
           <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:9px;background:#C2F04A;font-size:11px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</div></sc-if>
-          <div style="position:absolute;inset:0;display:grid;place-items:center"><div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.4);display:grid;place-items:center"><i class="ph-fill ph-play" style="color:#fff;font-size:24px;margin-left:3px"></i></div></div>
         </div>
         <div style="padding:24px 26px 26px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:16px">
-            <div><h2 style="font-size:24px;font-weight:600;margin:0 0 6px">{{ detail.n }}</h2><div style="font-size:14px;color:var(--txt2)">{{ detail.c }} · {{ detail.a }} · {{ detail.d }}</div></div>
-            <div style="display:flex;gap:10px"><button style="display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:1px solid var(--bd2);border-radius:12px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer"><i class="ph ph-plugs-connected"></i>Plaginda ochish</button><button onclick="{{ download }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:none;border-radius:12px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 10px 26px -10px var(--ring)"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button></div>
+            <div><h2 style="font-size:24px;font-weight:600;margin:0 0 6px">{{ detail.n }}</h2><div style="font-size:14px;color:var(--txt2)">{{ detail.c }} · {{ detail.a }} · {{ detail.author }}</div></div>
+            <div style="display:flex;gap:10px"><button onclick="{{ goPlugin }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:1px solid var(--bd2);border-radius:12px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer"><i class="ph ph-plugs-connected"></i>Plaginda ochish</button><button onclick="{{ downloadTpl }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:none;border-radius:12px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 10px 26px -10px var(--ring)"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button></div>
           </div>
-          <p style="font-size:15px;color:var(--txt2);line-height:1.6;margin:0 0 18px">Professional darajadagi shablon. To'liq moslashtiriladigan ranglar, matn va davomiylik. 4K eksport va tezkor render qo'llab-quvvatlanadi.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px"><span style="padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);font-size:12.5px;color:var(--txt2)">#motion</span><span style="padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);font-size:12.5px;color:var(--txt2)">#4k</span><span style="padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);font-size:12.5px;color:var(--txt2)">#animated</span><span style="padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);font-size:12.5px;color:var(--txt2)">#trending</span></div>
+          <p style="font-size:15px;color:var(--txt2);line-height:1.6;margin:0 0 18px">{{ detail.descText }}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);font-size:12.5px;color:var(--txt2)">{{ tg }}</span></sc-for></div>
           <div style="font-size:14px;font-weight:600;margin-bottom:14px">O'xshash shablonlar</div>
           <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-            <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4"><div data-id="{{ r.id }}" onclick="{{ openDetail }}" style="cursor:pointer"><div style="position:relative;aspect-ratio:16/10;border-radius:11px;overflow:hidden;background:{{ r.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite"></div><div style="font-size:12.5px;font-weight:500;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.n }}</div></div></sc-for>
+            <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4"><div data-id="{{ r.id }}" onclick="{{ openDetail }}" style="cursor:pointer"><div style="position:relative;aspect-ratio:16/10;border-radius:11px;overflow:hidden;background:{{ r.g }}"></div><div style="font-size:12.5px;font-weight:500;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.n }}</div></div></sc-for>
           </div>
         </div>
       </div>
@@ -15243,16 +15307,17 @@
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
       <div onclick="{{ stop }}" style="width:100%;max-width:620px">
-        <div style="position:relative;aspect-ratio:1;border-radius:20px;overflow:hidden;background:{{ lb.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite;border:1px solid var(--bd2);box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="position:relative;aspect-ratio:1;border-radius:20px;overflow:hidden;background:{{ lb.g }};border:1px solid var(--bd2);box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+          <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" preload="none" controls="" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
+          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><audio src="{{ lb.url }}" preload="none" controls="" style="position:absolute;left:14px;right:14px;bottom:14px;width:calc(100% - 28px)"></audio></sc-if>
           <button onclick="{{ closeLightbox }}" style="position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px"><i class="ph ph-x"></i></button>
           <div style="position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-size:11.5px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tool }}</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;flex-wrap:wrap">
-          <div style="min-width:0"><div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lb.label }}</div><div style="font-size:13px;color:var(--txt3);margin-top:2px">{{ lb.tool }} · {{ modelName }}</div></div>
+          <div style="min-width:0"><div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lb.label }}</div><div style="font-size:13px;color:var(--txt3);margin-top:2px">{{ lb.tool }}</div></div>
           <div style="display:flex;gap:10px">
-            <button onclick="{{ useAsRef }}" style="display:inline-flex;align-items:center;gap:7px;padding:11px 16px;border:1px solid var(--bd2);border-radius:11px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph ph-image"></i>Reference</button>
             <button onclick="{{ deleteGen }}" style="display:inline-flex;align-items:center;gap:7px;padding:11px 16px;border:1px solid var(--bd2);border-radius:11px;background:var(--card2);color:#ff6b6b;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph ph-trash"></i>O'chirish</button>
-            <button onclick="{{ download }}" style="display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button>
+            <button onclick="{{ downloadGen }}" style="display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button>
           </div>
         </div>
       </div>
@@ -15275,13 +15340,19 @@ class Component extends DCLogic {
     activeCat: 'Video shablonlar',
     billing: 'yearly',
     openFaq: 0,
-    credits: 1250,
+    credits: 0,
+    plan: 'free',
+    user: null,
+    downloadsMonth: 0,
     aiTool: 'Rasm yaratish',
     aiPrompt: '',
-    aiModel: 'FrameFlow Vision 2',
     aiSize: '1:1',
-    aiCount: 4,
+    aiQuality: '',
+    aiCount: 1,
+    aiVoice: '',
+    aiRes: '',
     generating: false,
+    enhBusy: false,
     showCredits: false,
     lightbox: null,
     detail: null,
@@ -15292,21 +15363,26 @@ class Component extends DCLogic {
     q: '',
     modelOpen: false,
     accountTab: 'Profil',
-    aiDuration: '4s',
+    aiDuration: '',
     activeGenId: null,
     scrollP: 0,
     statP: 0,
     animOk: false,
     tipIdx: 0,
     pageFlip: 0,
-    gens: [
-      { id: 1, type: 'image', h: 262, label: 'Neon portret', tool: 'Rasm yaratish' },
-      { id: 2, type: 'video', h: 200, label: 'Okean drone', tool: 'Video yaratish' },
-      { id: 3, type: 'image', h: 330, label: 'Abstrakt fon', tool: 'Rasm yaratish' },
-      { id: 4, type: 'image', h: 158, label: 'Mahsulot shot', tool: 'Rasm yaratish' },
-      { id: 5, type: 'video', h: 22, label: 'Shahar timelapse', tool: 'Video yaratish' },
-      { id: 6, type: 'image', h: 288, label: 'Logo konsept', tool: 'Rasm yaratish' },
-    ],
+    gens: [],
+    catalog: [],
+    catalogReady: false,
+    genModels: {},
+    selModel: {},
+    authMode: 'login',
+    authEmail: '',
+    authPassword: '',
+    authName: '',
+    authBusy: false,
+    authErr: null,
+    authInfo: null,
+    accName: '',
   };
 
   templates = [
@@ -15387,13 +15463,14 @@ class Component extends DCLogic {
     { n: '3', t: 'Hisobingiz bilan ulang', d: 'Platforma kalitini kiriting — shablonlar va kreditlar tayyor.' },
   ];
 
+  // Real Studio Gen rejimlari (API: /api/studio/gen). cost model katalogidan olinadi.
   aiTools = [
-    { key: 'Rasm yaratish', short: 'Rasm', icon: 'image', cost: 5, unit: 'rasm', multi: true },
-    { key: 'Rasm tahrirlash', short: 'Tahrir', icon: 'magic-wand', cost: 6, unit: 'tahrir', multi: true },
-    { key: 'Video yaratish', short: 'Video', icon: 'video-camera', cost: 40, unit: 'video', multi: false },
-    { key: 'Voiceover', short: 'Ovoz', icon: 'microphone', cost: 8, unit: 'ovoz', multi: false },
-    { key: 'SFX', short: 'SFX', icon: 'waveform', cost: 3, unit: 'effekt', multi: false },
+    { key: 'Rasm yaratish', short: 'Rasm', icon: 'image', mode: 'image', unit: 'rasm', multi: true },
+    { key: 'Video yaratish', short: 'Video', icon: 'video-camera', mode: 'video', unit: 'video', multi: false },
+    { key: 'Voiceover', short: 'Ovoz', icon: 'microphone', mode: 'voice', unit: 'ovoz', multi: false },
+    { key: 'SFX', short: 'SFX', icon: 'waveform', mode: 'sfx', unit: 'effekt', multi: false },
   ];
+  toolByMode = { image: 'Rasm yaratish', video: 'Video yaratish', voice: 'Voiceover', sfx: 'SFX', music: 'SFX' };
 
   creditPacks = [
     { c: 500, label: '500', p: 5, sub: 'Kichik loyihalar uchun', pop: false },
@@ -15410,28 +15487,14 @@ class Component extends DCLogic {
     { label: 'Plagin', icon: 'plugs-connected', screen: 'plugin' },
     { label: 'Sozlamalar', icon: 'gear-six', screen: 'account' },
   ];
-  models = ['FrameFlow Vision 2', 'FrameFlow Vision XL', 'Flux Pro', 'Realtime SD'];
-  sizes = ['1:1', '16:9', '9:16', '4:3'];
-  counts = [1, 2, 4, 8];
   accountTabs = ['Profil', 'Obuna', 'Kreditlar', 'Yuklamalar'];
   quickActions = [
     { t: 'Shablon qidir', d: '10,000+ video shablon', icon: 'magnifying-glass', screen: 'templates', g: 'var(--grad)' },
     { t: 'AI bilan yarat', d: 'Rasm, video, ovoz', icon: 'sparkle', screen: 'aistudio', g: 'var(--grad)' },
     { t: 'Plagin o\'rnat', d: 'AE / Premiere uchun', icon: 'plugs-connected', screen: 'plugin', g: 'var(--grad)' },
   ];
-  creditHistory = [
-    { t: 'Video yaratish', d: 'Bugun, 14:32', a: -40, icon: 'video-camera' },
-    { t: 'Kredit paketi sotib olindi', d: 'Bugun, 11:20', a: 1500, icon: 'lightning' },
-    { t: 'Rasm yaratish ×4', d: 'Kecha, 18:05', a: -20, icon: 'image' },
-    { t: 'Voiceover', d: 'Kecha, 16:40', a: -8, icon: 'microphone' },
-    { t: 'Oylik yangilanish', d: '1-iyul', a: 1500, icon: 'arrows-clockwise' },
-  ];
-  downloadHistory = [
-    { n: 'Neon Pulse Intro', c: 'Video shablonlar', d: 'Bugun', h: 262 },
-    { n: 'Cinematic LUT — Dune', c: 'LUT', d: 'Kecha', h: 34 },
-    { n: 'Glass HUD Graphics', c: 'Graphics', d: '2 kun oldin', h: 250 },
-    { n: 'Minimal Lower Third', c: 'Lower Thirds', d: '3 kun oldin', h: 200 },
-  ];
+  // creditHistory/downloadHistory endi real ma'lumotdan hisoblanadi (renderVals):
+  // kredit tarixi — gen tarixidagi cost'lardan; yuklamalar — Faza C'da (endpoint hali yo'q).
   projects = [
     { n: 'Instagram Reels — Iyul', d: '12 ta element', h: 262 },
     { n: 'Mahsulot reklama', d: '6 ta element', h: 190 },
@@ -15440,7 +15503,14 @@ class Component extends DCLogic {
   ];
 
   go(screen) {
+    // App ekranlari login talab qiladi — token yo'q bo'lsa auth ekraniga.
+    const APP_SCREENS = ['dashboard', 'templates', 'aistudio', 'account', 'projects'];
+    if (APP_SCREENS.indexOf(screen) >= 0 && !(window.FFAPI && FFAPI.getToken())) {
+      this._afterAuth = screen;
+      screen = 'auth';
+    }
     this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, detail: null, lightbox: null, pageFlip: s.pageFlip + 1 }));
+    try { if (window.history && history.replaceState) history.replaceState(null, '', '#' + screen); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     // Replay the app page-wrap entrance via transition (never keyframes): hide -> reflow -> reveal.
     if (this._armed) { try { requestAnimationFrame(() => { const w = document.querySelector('[data-page-wrap]'); if (w) { w.classList.remove('rv-in'); void w.offsetWidth; w.classList.add('rv-in'); } }); } catch (e) {} }
@@ -15450,6 +15520,25 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this._applyEntry();
+    this._sess = {};
+    // Saqlangan sessiya + katalog + hash deep-link
+    try {
+      if (window.FFAPI) {
+        if (FFAPI.getToken()) {
+          this.setState({ user: FFAPI.getUser() });
+          this.bootData();
+        }
+        this.loadCatalog();
+        window.addEventListener('ff-auth-expired', this._onExpired = () => {
+          this.setState({ user: null, credits: 0 });
+          this.toast('Sessiya muddati tugadi — qayta kiring');
+          this.go('auth');
+        });
+      }
+      const h = (window.location.hash || '').replace('#', '');
+      const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
+      if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h); }
+    } catch (e) {}
     try {
       this._io = new IntersectionObserver((es) => {
         es.forEach(e => { if (e.isIntersecting) { const el = e.target; el.style.transitionDelay = (el.getAttribute('data-rv-delay') || 0) + 'ms'; el.classList.add('rv-in'); this._io.unobserve(el); if (el.hasAttribute('data-stats')) this.runStats(); } });
@@ -15475,32 +15564,283 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); if (this._io) this._io.disconnect(); } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._io) this._io.disconnect(); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
   runStats() { if (this._statsRun) return; this._statsRun = true; const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
   _applyEntry() {
+    // Hash deep-link ustuvor: boshlang'ich props kechikib kelsa ham uni qayta yozmaydi.
+    if (this._hashApplied) return;
     const map = { 'Landing': 'landing', 'Dashboard': 'dashboard', 'AI Studio': 'aistudio', 'Marketplace': 'templates', 'Pricing': 'pricing', 'Plugin': 'plugin', 'Account': 'account' };
     const e = this.props.entryScreen;
     if (e && map[e] && map[e] !== this.state.screen) this.setState({ screen: map[e] });
   }
 
   grad(h) { return 'radial-gradient(120% 120% at 22% 12%,hsl(' + h + ' 46% 30%) 0%,hsl(' + ((h + 26) % 360) + ' 52% 15%) 42%,hsl(' + ((h + 44) % 360) + ' 60% 7%) 100%)'; }
+  hueOf(s) { let n = 0; const t = String(s); for (let i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) % 360; return n; }
+  errMsg(e) {
+    if (e && e.message === 'NETWORK') return "Server bilan aloqa yo'q — internetni tekshiring";
+    return (e && e.message) || 'Xatolik yuz berdi';
+  }
+  fmtDate(iso) {
+    if (!iso) return '';
+    try { const d = new Date(iso); return d.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+  }
+  fmtDay(iso) {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ''; }
+  }
 
-  generate() {
-    const tool = this.aiTools.find(t => t.key === this.state.aiTool) || this.aiTools[0];
-    const n = tool.multi ? this.state.aiCount : 1;
-    const cost = tool.cost * n;
-    if (this.state.credits < cost) { this.setState({ showCredits: true }); return; }
+  // ── DATA LOADERS ──
+  async loadCatalog() {
+    try {
+      const r = await FFAPI.catalog();
+      const APP_L = { ae: 'Ae', pr: 'Pr', dr: 'Dr' };
+      const APP_C = { ae: '#b794f6', pr: '#7aa2f7', dr: '#f0907f' };
+      const items = (r.items || []).map((it) => ({
+        id: String(it.id), n: it.name || 'Shablon', c: it.catLabel || it.cat || 'Shablon',
+        a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6',
+        pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
+        thumbUrl: it.thumbUrl || null, previewUrl: it.previewUrl || null, hasPack: !!it.packUrl,
+        desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
+        author: (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
+      }));
+      this.setState({ catalog: items, catalogReady: true });
+    } catch (e) { this.setState({ catalogReady: true }); }
+  }
+  bootData() {
+    this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();
+    FFAPI.me().then(u => { FFAPI.setSession(FFAPI.getToken(), u); this.setState({ user: u, accName: (u && u.name) || '' }); }).catch(() => {});
+  }
+  async refreshCredits() {
+    try { const c = await FFAPI.credits(); this.setState({ credits: c.aiCredits || 0, plan: c.plan || 'free' }); } catch (e) {}
+  }
+  async loadPluginMe() {
+    try { const r = await FFAPI.pluginMe(); if (r && r.user) this.setState({ downloadsMonth: r.user.downloadsMonth || 0 }); } catch (e) {}
+  }
+  async loadModels() {
+    const modes = ['image', 'video', 'voice', 'sfx'];
+    for (const m of modes) {
+      try {
+        const r = await FFAPI.models(m);
+        const list = (r.models || []).filter(x => x.enabled !== false);
+        this.setState(s => {
+          const gm = Object.assign({}, s.genModels); gm[m] = list;
+          const sel = Object.assign({}, s.selModel);
+          if (!sel[m] && list.length) { const d = list.find(x => x.isDefault) || list[0]; sel[m] = d.id; }
+          return { genModels: gm, selModel: sel };
+        });
+      } catch (e) {}
+    }
+  }
+  async loadHistory() {
+    try {
+      const r = await FFAPI.history(40);
+      const gens = (r.items || []).filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
+      this.setState(s => ({ gens, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
+    } catch (e) {}
+  }
+  mapGen(it) {
+    const asset = (it.assets && it.assets[0]) || null;
+    const type = it.mode === 'video' ? 'video' : ((it.mode === 'voice' || it.mode === 'sfx' || it.mode === 'music') ? 'audio' : 'image');
+    return {
+      id: String(it.id), type, h: this.hueOf(it.id),
+      label: (it.prompt || 'Generatsiya').slice(0, 34),
+      tool: this.toolByMode[it.mode] || it.mode,
+      url: (asset && asset.url) || null,
+      thumb: (asset && (asset.thumbUrl || (type === 'image' ? asset.url : null))) || null,
+      cost: it.cost || 0, at: it.createdAt || null,
+    };
+  }
+
+  // ── AUTH ──
+  gotoAuth(mode) { this.setState({ authMode: mode || 'login', authErr: null, authInfo: null }); this.go('auth'); }
+  async doAuth() {
+    const st = this.state;
+    const email = (st.authEmail || '').trim(), pass = st.authPassword || '';
+    if (!email || email.indexOf('@') < 0) { this.setState({ authErr: 'Email kiriting' }); return; }
+    if (st.authMode !== 'forgot' && pass.length < (st.authMode === 'register' ? 8 : 1)) {
+      this.setState({ authErr: st.authMode === 'register' ? 'Parol kamida 8 belgi' : 'Parol kiriting' }); return;
+    }
+    this.setState({ authBusy: true, authErr: null, authInfo: null });
+    try {
+      if (st.authMode === 'forgot') {
+        const r = await FFAPI.forgot(email);
+        this.setState({ authBusy: false, authInfo: (r && r.message) || 'Tiklash havolasi yuborildi' });
+        return;
+      }
+      const r = st.authMode === 'register'
+        ? await FFAPI.register(email, pass, (st.authName || '').trim())
+        : await FFAPI.login(email, pass);
+      FFAPI.setSession(r.token, r.user);
+      this.setState({ user: r.user, accName: (r.user && r.user.name) || '', authBusy: false, authPassword: '', authErr: null });
+      this.bootData();
+      const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
+      this.go(next);
+      this.toast(st.authMode === 'register' ? 'Xush kelibsiz!' : 'Kirish muvaffaqiyatli');
+    } catch (e) {
+      this.setState({ authBusy: false, authErr: this.errMsg(e) });
+    }
+  }
+  logout() {
+    if (window.FFAPI) FFAPI.clearSession();
+    this.setState({ user: null, credits: 0, plan: 'free', gens: [], downloadsMonth: 0, selModel: {}, genModels: {} });
+    this.go('landing');
+    this.toast('Chiqdingiz');
+  }
+
+  // ── GEN (real API oqimi: quote → gen → poll) ──
+  curTool() { return this.aiTools.find(t => t.key === this.state.aiTool) || this.aiTools[0]; }
+  curModel() {
+    const tool = this.curTool();
+    const list = this.state.genModels[tool.mode] || [];
+    return list.find(m => m.id === this.state.selModel[tool.mode]) || list[0] || null;
+  }
+  buildParams(tool, model) {
+    const st = this.state, p = {};
+    if (tool.mode === 'image') {
+      p.aspectRatio = st.aiSize || '1:1';
+      const counts = (model.imgSettings && model.imgSettings.num) || model.count || [1];
+      p.count = counts.indexOf(st.aiCount) >= 0 ? st.aiCount : counts[0];
+      const ql = model.imgSettings && model.imgSettings.quality;
+      if (ql) p.quality = (ql.options.indexOf(st.aiQuality) >= 0 ? st.aiQuality : ql.def);
+    } else if (tool.mode === 'video') {
+      const durs = model.durations || [4, 6, 8];
+      const d = parseInt(st.aiDuration, 10);
+      p.duration = durs.indexOf(d) >= 0 ? d : durs[0];
+      if (model.resolutions && model.resolutions.length) p.resolution = (model.resolutions.indexOf(st.aiRes) >= 0 ? st.aiRes : model.resolutions[0]);
+      if (model.aspects && model.aspects.length) p.aspectRatio = (model.aspects.indexOf(st.aiSize) >= 0 ? st.aiSize : model.aspects[0]);
+    } else if (tool.mode === 'voice') {
+      const voices = model.voices || [];
+      if (voices.length) p.voice = (voices.some(v => v.id === st.aiVoice) ? st.aiVoice : voices[0].id);
+    } else if (tool.mode === 'sfx') {
+      const durs = model.durations || [];
+      if (durs.length) { const d = parseInt(st.aiDuration, 10); p.duration = durs.indexOf(d) >= 0 ? d : durs[0]; }
+    }
+    return p;
+  }
+  estCost(tool, model, params) {
+    if (!model) return 0;
+    if (tool.mode === 'image') {
+      const ql = model.imgSettings && model.imgSettings.quality;
+      const unit = (ql && ql.cost && ql.cost[params.quality] != null) ? ql.cost[params.quality] : model.cost;
+      return unit * (params.count || 1);
+    }
+    if (tool.mode === 'video') {
+      const perSec = model.videoSettings && model.videoSettings.resolution && model.videoSettings.resolution.perSec;
+      const rate = (perSec && params.resolution && perSec[params.resolution] != null) ? perSec[params.resolution] : model.cost;
+      if (model.pricing === 'per-generation') return model.cost;
+      return rate * (params.duration || 5);
+    }
+    return model.cost;
+  }
+  async generate() {
+    if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    const tool = this.curTool(), model = this.curModel();
+    if (!model) { this.toast("Model yuklanmadi — sahifani yangilang"); return; }
+    const prompt = (this.state.aiPrompt || '').trim();
+    if (prompt.length < 2) { this.toast('Prompt yozing'); return; }
+    if (this.state.generating) return;
+    const params = this.buildParams(tool, model);
     this.setState({ generating: true });
-    clearTimeout(this._g);
-    this._g = setTimeout(() => {
-      const type = tool.key.indexOf('Video') >= 0 ? 'video' : ((tool.key === 'Voiceover' || tool.key === 'SFX') ? 'audio' : 'image');
-      const base = Date.now();
-      const items = Array.from({ length: n }, (_, i) => ({ id: base + i, type, h: Math.floor(Math.random() * 360), label: (this.state.aiPrompt || 'Generatsiya').slice(0, 24), tool: tool.key }));
-      this.setState(s => ({ gens: items.concat(s.gens), credits: s.credits - cost, generating: false, activeGenId: items[0].id }));
-      this.toast('Generatsiya tayyor!');
-    }, 1700);
+    try {
+      const q = await FFAPI.quote(model.id, tool.mode, params);
+      if (q.price > this.state.credits) { this.setState({ generating: false, showCredits: true }); return; }
+      let sid = this._sess[tool.mode];
+      if (!sid) { const s = await FFAPI.session(tool.mode); sid = s.id; this._sess[tool.mode] = sid; }
+      const r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
+      if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
+      this.pollJob(r.jobId);
+    } catch (e) {
+      this.setState({ generating: false });
+      if (e && e.code === 'INSUFFICIENT_CREDITS') this.setState({ showCredits: true });
+      else this.toast(this.errMsg(e));
+    }
+  }
+  pollJob(jobId) {
+    clearTimeout(this._pt);
+    let delay = 1800;
+    const tick = async () => {
+      let g = null;
+      try { g = await FFAPI.genGet(jobId); } catch (e) { /* vaqtinchalik — davom */ }
+      if (g && g.status === 'done') {
+        const m = this.mapGen(g);
+        this.setState(s => ({ gens: [m].concat(s.gens.filter(x => x.id !== m.id)), generating: false, activeGenId: m.id }));
+        this.toast('Generatsiya tayyor!');
+        this.refreshCredits();
+        return;
+      }
+      if (g && g.status === 'failed') {
+        this.setState({ generating: false });
+        this.toast(g.error || 'Generatsiya xato — kredit qaytarildi');
+        this.refreshCredits();
+        return;
+      }
+      delay = Math.min(Math.round(delay * 1.25), 6000);
+      this._pt = setTimeout(tick, delay);
+    };
+    this._pt = setTimeout(tick, delay);
+  }
+  async doEnhance() {
+    const prompt = (this.state.aiPrompt || '').trim();
+    if (prompt.length < 2) { this.toast('Avval prompt yozing'); return; }
+    if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    if (this.state.enhBusy) return;
+    const tool = this.curTool(), model = this.curModel();
+    this.setState({ enhBusy: true });
+    try {
+      const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined);
+      if (r && r.prompt) this.setState({ aiPrompt: r.prompt });
+      this.toast('Prompt yaxshilandi');
+      if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
+    } catch (e) { this.toast(this.errMsg(e)); }
+    this.setState({ enhBusy: false });
+  }
+  async downloadGenAsset(id) {
+    try {
+      const g = await FFAPI.genGet(id);
+      const asset = (g.assets && g.assets[0]) || null;
+      if (!asset || !asset.url) { this.toast('Fayl topilmadi'); return; }
+      const a = document.createElement('a');
+      a.href = asset.url; a.download = ''; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      this.toast('Yuklab olish boshlandi');
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  async deleteGenById(id) {
+    try { await FFAPI.genDelete(id); } catch (e) { this.toast(this.errMsg(e)); return; }
+    this.setState(st => {
+      const gens = st.gens.filter(x => x.id !== id);
+      return { gens, activeGenId: st.activeGenId === id ? (gens[0] ? gens[0].id : null) : st.activeGenId, lightbox: st.lightbox && st.lightbox.id === id ? null : st.lightbox };
+    });
+    this.toast("O'chirildi");
+  }
+  async downloadTemplate() {
+    const d = this.state.detail;
+    if (!d) return;
+    if (!d.real) { this.toast("Bu ko'rgazma shabloni — katalog tez orada to'ldiriladi"); return; }
+    if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    if (!d.hasPack) { this.toast('Bu shablonda pack fayli hali yuklanmagan'); return; }
+    try {
+      const r = await FFAPI.packLink(d.id);
+      if (r && r.url) {
+        const a = document.createElement('a');
+        a.href = r.url; a.download = ''; a.rel = 'noopener';
+        document.body.appendChild(a); a.click(); a.remove();
+        this.toast('Yuklab olish boshlandi');
+        this.loadPluginMe();
+      }
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  async saveProfile() {
+    const name = (this.state.accName || '').trim();
+    if (!name) { this.toast('Ism kiriting'); return; }
+    try {
+      const u = await FFAPI.saveName(name);
+      FFAPI.setSession(FFAPI.getToken(), u);
+      this.setState({ user: u });
+      this.toast('Saqlandi');
+    } catch (e) { this.toast(this.errMsg(e)); }
   }
 
   renderVals() {
@@ -15544,33 +15884,89 @@ class Component extends DCLogic {
 
     const bill = this.state.billing;
     const sidebarView = this.sidebarItems.map(it => ({ ...it, active: it.screen === s, col: it.screen === s ? 'var(--txt)' : 'var(--txt2)', bg: it.screen === s ? 'var(--card2)' : 'transparent', icol: it.screen === s ? 'var(--acc)' : 'var(--txt2)' }));
-    const tool = this.aiTools.find(t => t.key === this.state.aiTool) || this.aiTools[0];
-    const nSel = tool.multi ? this.state.aiCount : 1;
-    const costNow = tool.cost * nSel;
-    const toolDesc = { 'Rasm yaratish': 'Matndan yuqori sifatli rasm yarating', 'Rasm tahrirlash': 'Mavjud rasmni AI bilan o\'zgartiring', 'Video yaratish': 'Promptdan qisqa video klip yarating', 'Voiceover': 'Matnni tabiiy ovozga aylantiring', 'SFX': 'Sahna uchun tovush effekti yarating' }[tool.key];
+    const tool = this.curTool();
+    const model = this.curModel();
+    const modelList = this.state.genModels[tool.mode] || [];
+    const genParams = model ? this.buildParams(tool, model) : {};
+    const nSel = genParams.count || 1;
+    const costNow = this.estCost(tool, model, genParams);
+    const toolDesc = { 'Rasm yaratish': 'Matndan yuqori sifatli rasm yarating', 'Video yaratish': 'Promptdan qisqa video klip yarating', 'Voiceover': 'Matnni tabiiy ovozga aylantiring', 'SFX': 'Sahna uchun tovush effekti yarating' }[tool.key];
     const aiToolsView = this.aiTools.map(t => ({ ...t, col: t.key === this.state.aiTool ? 'var(--txt)' : 'var(--txt2)', bg: t.key === this.state.aiTool ? 'var(--card2)' : 'transparent', icol: t.key === this.state.aiTool ? 'var(--acc)' : 'var(--txt2)', bd: t.key === this.state.aiTool ? 'var(--bd2)' : 'transparent', dotOp: t.key === this.state.aiTool ? 1 : 0 }));
-    const sizesView = this.sizes.map(z => ({ v: z, bg: z === this.state.aiSize ? 'var(--grad)' : 'var(--card2)', col: z === this.state.aiSize ? '#fff' : 'var(--txt2)' }));
-    const countsView = this.counts.map(z => ({ v: z, bg: z === this.state.aiCount ? 'var(--grad)' : 'var(--card2)', col: z === this.state.aiCount ? '#fff' : 'var(--txt2)' }));
-    const durationsView = ['2s', '4s', '8s', '15s'].map(z => ({ v: z, bg: z === this.state.aiDuration ? 'var(--grad)' : 'var(--card2)', col: z === this.state.aiDuration ? '#fff' : 'var(--txt2)' }));
-    const modelsView = this.models.map(m => ({ v: m, active: m === this.state.aiModel }));
-    const genView = this.state.gens.map(g => ({ ...g, g: this.grad(g.h), tIcon: g.type === 'video' ? 'play-circle' : (g.type === 'audio' ? 'waveform' : 'image') }));
+    // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
+    const chip = (v, on) => ({ v, bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
+    const aspectOpts = model ? (model.aspects || (tool.mode === 'image' ? ['1:1', '16:9', '9:16', '4:3'] : [])) : [];
+    const sizesView = aspectOpts.map(z => chip(z, z === genParams.aspectRatio));
+    const showSize = aspectOpts.length > 1;
+    const countOpts = (tool.multi && model) ? ((model.imgSettings && model.imgSettings.num) || model.count || [1]) : [];
+    const countsView = countOpts.map(z => chip(z, z === nSel));
+    const durOpts = ((tool.mode === 'video' || tool.mode === 'sfx') && model) ? (model.durations || []) : [];
+    const durationsView = durOpts.map(z => chip(z + 's', z === genParams.duration));
+    const qualityOpts = (tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality) ? model.imgSettings.quality.options : [];
+    const qualityView = qualityOpts.map(z => chip(z, z === genParams.quality));
+    const showQuality = qualityOpts.length > 1;
+    const resOpts = (tool.mode === 'video' && model && model.resolutions && model.resolutions.length > 1) ? model.resolutions : [];
+    const resView = resOpts.map(z => chip(z, z === genParams.resolution));
+    const showRes = resOpts.length > 1;
+    const voiceOpts = (tool.mode === 'voice' && model) ? (model.voices || []) : [];
+    const voicesView = voiceOpts.map(v => Object.assign(chip(v.id, v.id === genParams.voice), { label: v.label }));
+    const showVoices = voiceOpts.length > 0;
+    const modelsView = modelList.map(m => ({ v: String(m.id), label: m.label, active: !!model && m.id === model.id }));
+    const modelName = model ? model.label : ((window.FFAPI && FFAPI.getToken()) ? 'Yuklanmoqda…' : 'Kirish kerak');
+    // Real media fon: thumb bo'lsa rasm + orqada gradient (yuklanmasa gradient qoladi)
+    const media = (url, h) => url ? "url('" + url + "') center/cover no-repeat, " + this.grad(h) : this.grad(h);
+    const genView = this.state.gens.map(g => ({ ...g, g: media(g.thumb, g.h), tIcon: g.type === 'video' ? 'play-circle' : (g.type === 'audio' ? 'waveform' : 'image') }));
     const activeGenRaw = this.state.gens.find(g => g.id === this.state.activeGenId) || this.state.gens[0] || null;
-    const activeView = activeGenRaw ? { ...activeGenRaw, g: this.grad(activeGenRaw.h), tIcon: activeGenRaw.type === 'video' ? 'play-circle' : (activeGenRaw.type === 'audio' ? 'waveform' : 'image'), isVideo: activeGenRaw.type === 'video' } : null;
+    const activeView = activeGenRaw ? { ...activeGenRaw, g: media(activeGenRaw.type === 'image' ? (activeGenRaw.thumb || activeGenRaw.url) : activeGenRaw.thumb, activeGenRaw.h), tIcon: activeGenRaw.type === 'video' ? 'play-circle' : (activeGenRaw.type === 'audio' ? 'waveform' : 'image'), isVideo: activeGenRaw.type === 'video' && !!activeGenRaw.url } : null;
     const filmstrip = genView.map(g => ({ ...g, active: activeGenRaw && g.id === activeGenRaw.id, ring: (activeGenRaw && g.id === activeGenRaw.id) ? 'var(--acc)' : 'transparent' }));
     const skeletons = Array.from({ length: nSel }, (_, i) => ({ i }));
     const q = (this.state.q || '').toLowerCase();
-    const filtered = this.templates.filter(t => (this.state.fApp === 'Barchasi' || t.a === this.state.fApp) && (this.state.fCat === 'Barchasi' || t.c === this.state.fCat) && (this.state.fPlan === 'Barchasi' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => ({ ...t, g: this.grad(t.h) }));
+    // Marketplace — REAL katalog (/api/plugin/catalog)
+    const src = this.state.catalog;
+    const filtered = src.filter(t => (this.state.fApp === 'Barchasi' || t.a === this.state.fApp) && (this.state.fCat === 'Barchasi' || t.c === this.state.fCat) && (this.state.fPlan === 'Barchasi' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => ({ ...t, g: media(t.thumbUrl, t.h) }));
     const fAppsView = ['Barchasi', 'Ae', 'Pr', 'Dr'].map(x => ({ v: x, bg: x === this.state.fApp ? 'var(--card3)' : 'var(--card)', col: x === this.state.fApp ? 'var(--txt)' : 'var(--txt2)', bd: x === this.state.fApp ? 'var(--bd2)' : 'var(--bd)' }));
-    const fCatsView = ['Barchasi'].concat(this.categories).map(x => ({ v: x, active: x === this.state.fCat, col2: x === this.state.fCat ? 'var(--txt)' : 'var(--txt2)' }));
+    const catalogCats = Array.from(new Set(src.map(t => t.c)));
+    const fCatsView = ['Barchasi'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, col2: x === this.state.fCat ? 'var(--txt)' : 'var(--txt2)' }));
     const fPlansView = ['Barchasi', 'Bepul', 'Pro'].map(x => ({ v: x, bg: x === this.state.fPlan ? 'var(--card3)' : 'var(--card)', col: x === this.state.fPlan ? 'var(--txt)' : 'var(--txt2)', bd: x === this.state.fPlan ? 'var(--bd2)' : 'var(--bd)' }));
-    const detail = this.state.detail ? { ...this.state.detail, g: this.grad(this.state.detail.h), related: this.templates.filter(t => t.c === this.state.detail.c && t.id !== this.state.detail.id).slice(0, 4).map(t => ({ ...t, g: this.grad(t.h) })) } : null;
-    const lb = this.state.lightbox ? { ...this.state.lightbox, g: this.grad(this.state.lightbox.h) } : null;
+    const dRaw = this.state.detail;
+    const detail = dRaw ? {
+      ...dRaw, g: media(dRaw.thumbUrl, dRaw.h),
+      descText: dRaw.desc || (dRaw.real ? 'Professional darajadagi shablon. To\'liq moslashtiriladigan elementlar.' : 'Ko\'rgazma shabloni — real katalog tez orada to\'ldiriladi.'),
+      tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
+      hasPreview: !!dRaw.previewUrl,
+      related: (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c && t.id !== dRaw.id).slice(0, 4).map(t => ({ ...t, g: media(t.thumbUrl, t.h) })),
+    } : null;
+    const lb = this.state.lightbox ? { ...this.state.lightbox, g: media(this.state.lightbox.type === 'image' ? (this.state.lightbox.thumb || this.state.lightbox.url) : this.state.lightbox.thumb, this.state.lightbox.h), isVideo: this.state.lightbox.type === 'video' && !!this.state.lightbox.url, isAudio: this.state.lightbox.type === 'audio' && !!this.state.lightbox.url } : null;
     const accView = this.accountTabs.map(x => ({ v: x, col: x === this.state.accountTab ? 'var(--txt)' : 'var(--txt2)', bd: x === this.state.accountTab ? 'var(--acc)' : 'transparent' }));
-    const creditHistoryView = this.creditHistory.map(h => ({ ...h, amt: (h.a > 0 ? '+' : '') + h.a.toLocaleString(), col: h.a > 0 ? 'var(--teal2)' : 'var(--txt)', ibg: h.a > 0 ? 'rgba(194,240,74,.14)' : 'var(--card3)', icol: h.a > 0 ? 'var(--teal2)' : 'var(--txt2)' }));
-    const downloadHistoryView = this.downloadHistory.map(d => ({ ...d, g: this.grad(d.h) }));
+    // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
+    const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
+    const creditHistoryView = this.state.gens.filter(g => g.cost > 0).slice(0, 12).map(g => ({ t: g.tool, d: this.fmtDate(g.at), a: -g.cost, icon: toolIcon[g.type] || 'image', amt: '-' + g.cost, col: 'var(--txt)', ibg: 'var(--card3)', icol: 'var(--txt2)' }));
+    const hasCreditHistory = creditHistoryView.length > 0;
+    const downloadHistoryView = [];
+    const hasDownloads = false;
     const projectsView = this.projects.map(p => ({ ...p, g: this.grad(p.h) }));
-    const recTemplates = this.templates.slice(0, 6).map(t => ({ ...t, g: this.grad(t.h) }));
+    const recTemplates = src.slice(0, 6).map(t => ({ ...t, g: media(t.thumbUrl, t.h) }));
+    const hasRec = recTemplates.length > 0;
     const dashGens = genView.slice(0, 4);
+    const hasDashGens = dashGens.length > 0;
+    // Foydalanuvchi ma'lumoti (sidebar/topbar/account)
+    const u = this.state.user || {};
+    const userName = u.name || (u.email ? u.email.split('@')[0] : 'Foydalanuvchi');
+    const userEmail = u.email || '';
+    const userInitials = ((userName.match(/\b[\wА-Яа-яЎўҚқҒғҲҳ]/g) || ['F']).slice(0, 2).join('')).toUpperCase();
+    const planKey = this.state.plan || 'free';
+    const planLabel = planKey === 'pro' ? 'Pro reja' : (planKey === 'studio' ? 'Studio reja' : 'Bepul reja');
+    const isFreePlan = planKey === 'free';
+    const sub = u.subscription || null;
+    const planNote = sub && sub.currentPeriodEnd ? ('Keyingi yangilanish: ' + this.fmtDay(sub.currentPeriodEnd)) : 'Oylik 50 bepul kredit bilan';
+    const plansCur = plansView.map(p => ({ ...p, cur: p.key === planKey }));
+    // Auth ekrani
+    const am = this.state.authMode;
+    const authTitle = am === 'register' ? "Ro'yxatdan o'tish" : (am === 'forgot' ? 'Parolni tiklash' : 'Hisobga kirish');
+    const authSub = am === 'register' ? "Bepul boshlang — 50 AI kredit sovg'a" : (am === 'forgot' ? 'Email kiriting — tiklash havolasini yuboramiz' : 'FrameFlow hisobingizga kiring');
+    const authBtn = this.state.authBusy ? 'Kutilmoqda…' : (am === 'register' ? "Ro'yxatdan o'tish" : (am === 'forgot' ? 'Havola yuborish' : 'Kirish'));
+    const authIsRegister = am === 'register';
+    const authIsForgot = am === 'forgot';
+    const authShowPassword = am !== 'forgot';
     const sp = this._armed ? this.state.statP : 1;
     const statsView = [
       { v: Math.round(10 * sp) + 'K+', l: 'Tayyor shablon' },
@@ -15608,6 +16004,7 @@ class Component extends DCLogic {
       showMarketing: marketing, showApp: app,
       isLanding: s === 'landing', isPricing: s === 'pricing', isPlugin: s === 'plugin',
       isDashboard: s === 'dashboard', isTemplates: s === 'templates', isAistudio: s === 'aistudio', isAccount: s === 'account', isProjects: s === 'projects',
+      isAuth: s === 'auth',
       navOpen: this.state.navOpen,
       brands: this.brands,
       catTabs, carousel, categoryTiles, studioCards, plansView, testimonials, faqsView, footerCols: this.footerCols, pluginSteps: this.pluginSteps, creditPacks,
@@ -15615,7 +16012,23 @@ class Component extends DCLogic {
       billYearlyBg: bill === 'yearly' ? 'var(--card3)' : 'transparent', billYearlyCol: bill === 'yearly' ? 'var(--txt)' : 'var(--txt2)',
       showCredits: this.state.showCredits,
       toast: this.state.toast,
-      // handlers
+      // Auth
+      authTitle, authSub, authBtn, authIsRegister, authIsForgot, authShowPassword, authShowLoginLinks: am === 'login',
+      authEmail: this.state.authEmail, authPassword: this.state.authPassword, authName: this.state.authName,
+      authErr: this.state.authErr, authInfo: this.state.authInfo, authBusy: this.state.authBusy,
+      onAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
+      onAuthPassword: (e) => this.setState({ authPassword: e.target.value }),
+      onAuthName: (e) => this.setState({ authName: e.target.value }),
+      authSubmit: () => this.doAuth(),
+      onAuthKey: (e) => { if (e.key === 'Enter') this.doAuth(); },
+      switchLogin: () => this.setState({ authMode: 'login', authErr: null, authInfo: null }),
+      switchRegister: () => this.setState({ authMode: 'register', authErr: null, authInfo: null }),
+      switchForgot: () => this.setState({ authMode: 'forgot', authErr: null, authInfo: null }),
+      // Foydalanuvchi
+      userName, userEmail, userInitials, planLabel, isFreePlan, planNote, plansCur,
+      isLoggedIn: !!(window.FFAPI && FFAPI.getToken()),
+      doLogout: () => this.logout(),
+      // Navigatsiya
       goLanding: () => this.go('landing'),
       goDashboard: () => this.go('dashboard'),
       goTemplates: () => this.go('templates'),
@@ -15623,64 +16036,83 @@ class Component extends DCLogic {
       goPricing: () => this.go('pricing'),
       goPlugin: () => this.go('plugin'),
       goAccount: () => this.go('account'),
+      goLogin: () => this.gotoAuth('login'),
+      goRegister: () => this.gotoAuth('register'),
       toggleNav: () => this.setState(st => ({ navOpen: !st.navOpen })),
       onNav: (e) => this.go(e.currentTarget.dataset.screen),
       onCat: (e) => this.setState({ activeCat: e.currentTarget.dataset.cat }),
       onBill: (e) => this.setState({ billing: e.currentTarget.dataset.bill }),
       onFaq: (e) => { const i = +e.currentTarget.dataset.idx; this.setState(st => ({ openFaq: st.openFaq === i ? -1 : i })); },
       onTryTool: (e) => { this.setState({ aiTool: e.currentTarget.dataset.tool }); this.go('aistudio'); },
-      download: () => this.toast('Plagin yuklab olinmoqda…'),
+      download: () => this.toast('Plagin fayli (.zxp) tez orada — Faza G'),
+      downloadTpl: () => this.downloadTemplate(),
+      downloadGen: () => { const g = this.state.lightbox || activeGenRaw; if (g) this.downloadGenAsset(g.id); },
       closeCredits: () => this.setState({ showCredits: false }),
       stop: (e) => e.stopPropagation(),
-      onBuyCredits: (e) => { const amt = +e.currentTarget.dataset.amt; this.setState(st => ({ credits: st.credits + amt, showCredits: false })); this.toast('+' + amt.toLocaleString() + ' kredit qo\'shildi'); },
-      sidebarView, quickActions: this.quickActions, dashGens, recTemplates,
+      onBuyCredits: () => { this.setState({ showCredits: false }); this.toast("To'lov tizimi (Paddle) tez orada ulanadi"); },
+      sidebarView, quickActions: this.quickActions, dashGens, hasDashGens, noDashGens: !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
       creditsFmt: this.state.credits.toLocaleString(),
-      aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow, showCount: tool.multi,
+      aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow,
+      showCount: tool.multi && countsView.length > 1,
       showActive: !!activeGenRaw && !this.state.generating, canvasEmpty: !activeGenRaw && !this.state.generating,
-      aiPrompt: this.state.aiPrompt, modelName: this.state.aiModel, modelOpen: this.state.modelOpen, modelsView,
-      sizesView, countsView, durationsView, showDuration: tool.key === 'Video yaratish' || tool.key === 'Voiceover', generating: this.state.generating, skeletons,
+      aiPrompt: this.state.aiPrompt, modelName, modelOpen: this.state.modelOpen, modelsView,
+      sizesView, showSize, countsView, durationsView, showDuration: durOpts.length > 1,
+      qualityView, showQuality, resView, showRes, voicesView, showVoices,
+      generating: this.state.generating, skeletons,
       genView, genCount: this.state.gens.length,
       activeView, hasActive: !!activeGenRaw, noActive: !activeGenRaw, filmstrip,
       promptLen: (this.state.aiPrompt || '').length,
       promptChips: ['Neon shahar, yomg\'ir', 'Minimal mahsulot studiyasi', 'Kinematik tog\' manzarasi'],
       onChip: (e) => this.setState({ aiPrompt: e.currentTarget.dataset.v }),
-      costLine: tool.cost + ' ⚡ × ' + nSel + ' ' + tool.unit,
+      costLine: model ? (tool.mode === 'video' ? (genParams.duration || '') + 's video' : (tool.mode === 'image' ? nSel + ' ' + tool.unit + (genParams.quality ? ' · ' + genParams.quality : '') : '1 ' + tool.unit)) : '—',
+      enhBusy: this.state.enhBusy,
       activeAspect: activeGenRaw ? (activeGenRaw.type === 'video' ? '16/9' : (activeGenRaw.type === 'audio' ? '16/6' : '1/1')) : '1/1',
       isAudioActive: !!activeGenRaw && activeGenRaw.type === 'audio',
-      waveBars: activeGenRaw ? Array.from({ length: 46 }, (_, i) => ({ h: 18 + Math.abs(Math.sin((activeGenRaw.id % 97) + i * .7)) * 74 })) : [],
-      pickActive: (e) => this.setState({ activeGenId: +e.currentTarget.dataset.id }),
-      delActive: () => { this.setState(st => { const cur = st.activeGenId != null ? st.activeGenId : (st.gens[0] && st.gens[0].id); const gens = st.gens.filter(g => g.id !== cur); return { gens, activeGenId: gens[0] ? gens[0].id : null }; }); this.toast('O\'chirildi'); },
-      q: this.state.q, filtered, filtCount: filtered.length, hasFiltered: filtered.length > 0, noFiltered: filtered.length === 0,
+      audioUrl: (activeGenRaw && activeGenRaw.type === 'audio' && activeGenRaw.url) || '',
+      videoUrl: (activeGenRaw && activeGenRaw.type === 'video' && activeGenRaw.url) || '',
+      waveBars: activeGenRaw ? Array.from({ length: 46 }, (_, i) => ({ h: 18 + Math.abs(Math.sin(this.hueOf(activeGenRaw.id) + i * .7)) * 74 })) : [],
+      pickActive: (e) => this.setState({ activeGenId: e.currentTarget.dataset.id }),
+      delActive: () => { const cur = activeGenRaw && activeGenRaw.id; if (cur) this.deleteGenById(cur); },
+      q: this.state.q, filtered, filtCount: filtered.length,
+      hasFiltered: filtered.length > 0, noFiltered: this.state.catalogReady && filtered.length === 0,
+      catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
       fAppsView, fCatsView, fPlansView,
       detail, lb, accView, accountTab: this.state.accountTab,
       accProfile: this.state.accountTab === 'Profil', accObuna: this.state.accountTab === 'Obuna', accKredit: this.state.accountTab === 'Kreditlar', accYuklama: this.state.accountTab === 'Yuklamalar',
-      creditHistoryView, downloadHistoryView, projectsView,
+      creditHistoryView, hasCreditHistory, noCreditHistory: !hasCreditHistory, downloadHistoryView, hasDownloads, projectsView,
+      accName: this.state.accName,
+      onAccName: (e) => this.setState({ accName: e.target.value }),
+      saveAcc: () => this.saveProfile(),
+      downloadsMonth: this.state.downloadsMonth,
       onSearch: (e) => this.setState({ q: e.target.value }),
       onPickTool: (e) => this.setState({ aiTool: e.currentTarget.dataset.tool }),
       setPrompt: (e) => this.setState({ aiPrompt: e.target.value }),
-      improve: () => { this.setState(st => ({ aiPrompt: (st.aiPrompt || 'Sahna') + ', kinematik yorug\'lik, yuqori detal, 8K' })); this.toast('Prompt yaxshilandi'); },
-      addRef: () => this.toast('Reference qo\'shildi'),
+      improve: () => this.doEnhance(),
+      addRef: () => this.toast('Referens yuklash tez orada'),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
-      pickModel: (e) => this.setState({ aiModel: e.currentTarget.dataset.v, modelOpen: false }),
+      pickModel: (e) => { const id = +e.currentTarget.dataset.v; this.setState(st => { const sel = Object.assign({}, st.selModel); sel[tool.mode] = id; return { selModel: sel, modelOpen: false }; }); },
       onSize: (e) => this.setState({ aiSize: e.currentTarget.dataset.v }),
       onCount: (e) => this.setState({ aiCount: +e.currentTarget.dataset.v }),
       onDuration: (e) => this.setState({ aiDuration: e.currentTarget.dataset.v }),
+      onQuality: (e) => this.setState({ aiQuality: e.currentTarget.dataset.v }),
+      onRes: (e) => this.setState({ aiRes: e.currentTarget.dataset.v }),
+      onVoice: (e) => this.setState({ aiVoice: e.currentTarget.dataset.v }),
       doGenerate: () => this.generate(),
-      openLightbox: (e) => { const id = +e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
+      openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
       closeLightbox: () => this.setState({ lightbox: null }),
-      deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; this.setState(st => ({ gens: st.gens.filter(x => x.id !== id), lightbox: null })); this.toast('O\'chirildi'); },
-      useAsRef: () => { this.setState({ lightbox: null }); this.toast('Reference sifatida qo\'shildi'); },
+      deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
+      useAsRef: () => { this.setState({ lightbox: null }); this.toast('Referens tez orada'); },
       onFApp: (e) => this.setState({ fApp: e.currentTarget.dataset.v }),
       onFCat: (e) => this.setState({ fCat: e.currentTarget.dataset.v }),
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
       resetFilters: () => this.setState({ fApp: 'Barchasi', fCat: 'Barchasi', fPlan: 'Barchasi', q: '' }),
-      openDetail: (e) => { const id = +e.currentTarget.dataset.id; const t = this.templates.find(x => x.id === id); if (t) this.setState({ detail: t }); },
+      openDetail: (e) => { const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) this.setState({ detail: t }); },
       closeDetail: () => this.setState({ detail: null }),
       onAccTab: (e) => this.setState({ accountTab: e.currentTarget.dataset.v }),
       openCredits: () => this.setState({ showCredits: true }),
       appMenuOpen: this.state.appMenuOpen,
       toggleAppMenu: () => this.setState(st => ({ appMenuOpen: !st.appMenuOpen })),
-      newProject: () => this.toast('Yangi loyiha yaratildi'),
+      newProject: () => this.toast('Loyihalar tez orada'),
     };
   }
 }

@@ -40,6 +40,17 @@
     "packages/assetflow-studio/platform"
    ],
    "port": 8975
+  },
+  {
+   "name": "api-dev",
+   "runtimeExecutable": "npm",
+   "runtimeArgs": [
+    "run",
+    "dev",
+    "-w",
+    "apps/api"
+   ],
+   "port": 4000
   }
  ]
 }

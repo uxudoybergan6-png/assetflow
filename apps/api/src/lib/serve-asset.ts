@@ -30,6 +30,13 @@ export async function serveTemplateAsset(
       kind === "pack"
         ? await getSignedDownloadUrl(s3Key, 300)
         : getPublicUrl(s3Key);
+    // ?json=1 — web platforma uchun: brauzer fetch redirect'ni GCS'ga CORS'siz
+    // kuzata olmaydi, shu sabab signed URL JSON'da qaytadi va klient unga
+    // to'g'ridan (navigatsiya/anchor) o'tadi — navigatsiya CORS'ga tushmaydi.
+    if (req.query.json === "1") {
+      res.json({ url });
+      return;
+    }
     res.redirect(302, url);
     return;
   }
