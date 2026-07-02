@@ -1,5 +1,45 @@
-{ "version":"0.0.1","configurations":[
-  {"name":"ae-plugin-preview","runtimeExecutable":"python3","runtimeArgs":["-m","http.server","8973","--directory","plugins/after-effects-cep"],"port":8973},
-  {"name":"studio-dev","runtimeExecutable":"node","runtimeArgs":["packages/assetflow-studio/scripts/dev-studio-server.mjs"],"port":3000},
-  {"name":"admin-dev","runtimeExecutable":"node","runtimeArgs":["packages/assetflow-studio/scripts/dev-admin-server.mjs"],"port":3001}
-]}
+{
+ "version": "0.0.1",
+ "configurations": [
+  {
+   "name": "ae-plugin-preview",
+   "runtimeExecutable": "python3",
+   "runtimeArgs": [
+    "-m",
+    "http.server",
+    "8973",
+    "--directory",
+    "plugins/after-effects-cep"
+   ],
+   "port": 8973
+  },
+  {
+   "name": "studio-dev",
+   "runtimeExecutable": "node",
+   "runtimeArgs": [
+    "packages/assetflow-studio/scripts/dev-studio-server.mjs"
+   ],
+   "port": 3000
+  },
+  {
+   "name": "admin-dev",
+   "runtimeExecutable": "node",
+   "runtimeArgs": [
+    "packages/assetflow-studio/scripts/dev-admin-server.mjs"
+   ],
+   "port": 3001
+  },
+  {
+   "name": "platform-preview",
+   "runtimeExecutable": "python3",
+   "runtimeArgs": [
+    "-m",
+    "http.server",
+    "8975",
+    "--directory",
+    "packages/assetflow-studio/platform"
+   ],
+   "port": 8975
+  }
+ ]
+}

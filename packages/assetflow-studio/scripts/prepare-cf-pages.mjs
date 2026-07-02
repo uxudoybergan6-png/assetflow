@@ -66,11 +66,15 @@ const FILES = [
   "hub.html",
   "login.html",
   "admin-login.html",
-  "index.html",
   "reset-password.html",
   "design-system.html",
 ];
 for (const f of FILES) copyFile(path.join(root, f), path.join(dist, f));
+
+// 5) Public platforma (getframeflow.app root) — platform/ manbadan.
+//    index.html dist ROOT'ga tushadi (CF Pages / ni avtomatik shu faylga beradi),
+//    shu sabab eski root index.html endi FILES ro'yxatida EMAS.
+copyDir(path.join(root, "platform"), dist);
 
 // _redirects — Cloudflare Pages routing
 const redirects = `\
@@ -87,7 +91,6 @@ const redirects = `\
 /admin/login.html   /admin-login.html           200
 /admin              /admin/index.html           200
 /admin/             /admin/index.html           200
-/                   /hub.html                   200
 `;
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 
@@ -121,6 +124,25 @@ const CSP = [
   "form-action 'self'",
 ].join("; ");
 
+// Platforma (dc-runtime) CSP — runtime `text/x-dc` skriptni eval qiladi, shu
+// sabab FAQAT platforma HTML'iga 'unsafe-eval' beriladi (studio/admin'ga emas).
+// `! Content-Security-Policy` — CF Pages'da umumiy /* qoidasidagi headerni
+// olib tashlash sintaksisi (aks holda ikkala CSP vergul bilan qo'shilib,
+// eng qattig'i amal qilardi va eval bloklanardi).
+const PLATFORM_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  `img-src 'self' data: blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `media-src 'self' blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
+  "font-src 'self' https://fonts.gstatic.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+].join("; ");
+
 // X-Frame-Options/nosniff/Referrer-Policy — ENFORCE (xavfsiz, UI buzmaydi):
 // darhol clickjacking + MIME-sniffing himoyasi (CSP Report-Only fazasida ham).
 const headers = `\
@@ -130,11 +152,22 @@ const headers = `\
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
+/
+  ! Content-Security-Policy
+  Content-Security-Policy: ${PLATFORM_CSP}
+
+/index.html
+  ! Content-Security-Policy
+  Content-Security-Policy: ${PLATFORM_CSP}
+
 /js/*
   Cache-Control: public, max-age=300, must-revalidate
 
 /styles/*
   Cache-Control: public, max-age=300, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=86400, must-revalidate
 
 /*.html
   Cache-Control: no-cache, must-revalidate
