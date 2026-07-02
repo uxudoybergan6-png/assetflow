@@ -66,7 +66,7 @@ app.get("/", (_req, res) => {
     status: "ok",
     health: "/health",
     pluginCatalog: "/api/plugin/catalog",
-    docs: "AssetFlow API — AE plugin va Studio shu manzildan foydalanadi.",
+    docs: "FrameFlow API — AE plugin va Studio shu manzildan foydalanadi.",
   });
 });
 

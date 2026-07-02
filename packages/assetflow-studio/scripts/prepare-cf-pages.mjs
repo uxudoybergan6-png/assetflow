@@ -102,15 +102,18 @@ fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 // admin + grafiklar) konsol toza bo'lgani tasdiqlangach enforce'ga o'tildi.
 // connect/img/media: 'self' + API (Cloud Run) + GCS (storage.googleapis.com,
 // thumb/preview API → GCS signed-URL redirect). eval/WebSocket ishlatilmaydi.
-const API_ORIGIN = "https://assetflow-api-331762958776.europe-west1.run.app";
+// Yangi domen + eski run.app (o'tish davri: keshlangan HTML/eski CEP hali eski
+// originga murojaat qiladi; api. domain-mapping kechiksa ham ish to'xtamaydi)
+const API_ORIGINS =
+  "https://api.getframeflow.app https://assetflow-api-331762958776.europe-west1.run.app";
 const GCS_ORIGIN = "https://storage.googleapis.com";
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `img-src 'self' data: ${API_ORIGIN} ${GCS_ORIGIN}`,
-  `media-src 'self' ${API_ORIGIN} ${GCS_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGIN} ${GCS_ORIGIN}`,
+  `img-src 'self' data: ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `media-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",

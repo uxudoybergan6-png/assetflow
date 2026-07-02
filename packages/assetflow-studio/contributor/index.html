@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
-<title>AssetFlow — Contributor Dashboard</title>
+<title>FrameFlow — Contributor Dashboard</title>
 <link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/studio-config.js"></script>
 <script src="/studio/js/theme.js"></script>
@@ -14,10 +14,10 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-mark">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg>
       </div>
       <div class="col" style="gap:0">
-        <span class="brand-name">AssetFlow</span>
+        <span class="brand-name">FrameFlow</span>
         <span class="brand-sub">Contributor Studio</span>
       </div>
     </div>
@@ -133,7 +133,7 @@ function route(view, arg){
   const t=TITLES[view]||[view,''];
   document.getElementById('pageTitle').textContent=t[0];
   const cr=document.getElementById('crumb');
-  cr.innerHTML=`<span>AssetFlow</span>${ic('chevR')}<span>${t[1]}</span>`;
+  cr.innerHTML=`<span>FrameFlow</span>${ic('chevR')}<span>${t[1]}</span>`;
   cr.querySelector('svg').style.width='12px';
   renderNav();
   const host = document.getElementById('view');

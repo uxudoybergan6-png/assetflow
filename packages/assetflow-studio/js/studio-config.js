@@ -1,5 +1,5 @@
 /**
- * AssetFlow Studio — static dashboards (lokal + Vercel)
+ * FrameFlow Studio — static dashboards (lokal + CF Pages)
  */
 (function () {
   const loc = typeof window !== "undefined" ? window.location : null;
@@ -10,7 +10,9 @@
 
   const isLocalAdmin = hostname === "localhost" && port === "3001";
   const isLocalStudio = hostname === "localhost" && port === "3000";
-  const isOnlineAdminPath = pathname.startsWith("/admin");
+  // Subdomen-asosli aniqlash (admin.getframeflow.app)
+  const isAdminSubdomain = hostname.startsWith("admin.");
+  const isOnlineAdminPath = pathname.startsWith("/admin") || isAdminSubdomain;
   const isAdminHost = isLocalAdmin || isOnlineAdminPath;
 
   const pathMatch = pathname.match(/^(.*\/studio)\//);
@@ -24,10 +26,11 @@
 
   const apiFromMeta =
     typeof document !== "undefined"
-      ? document.querySelector('meta[name="assetflow-api"]')?.getAttribute("content")
+      ? document.querySelector('meta[name="frameflow-api"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="assetflow-api"]')?.getAttribute("content")
       : null;
 
-  const DEFAULT_ONLINE_API = "https://assetflow-api-331762958776.europe-west1.run.app";
+  const DEFAULT_ONLINE_API = "https://api.getframeflow.app";
 
   let apiUrl = apiFromMeta || DEFAULT_ONLINE_API;
   let mediaUrl = apiUrl;

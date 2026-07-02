@@ -16,7 +16,7 @@ function orHeaders(): Record<string, string> {
     Authorization: `Bearer ${KEY}`,
     "Content-Type": "application/json",
     "HTTP-Referer": REFERER,
-    "X-Title": "AssetFlow",
+    "X-Title": "FrameFlow",
   };
 }
 

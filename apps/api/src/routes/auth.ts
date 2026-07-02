@@ -168,7 +168,7 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
     const resetUrl = `${getWebUrl()}/studio/reset-password.html?token=${token}`;
     await sendEmail({
       to: email,
-      subject: "AssetFlow — parolni tiklash",
+      subject: "FrameFlow — parolni tiklash",
       html: renderEmailLayout(
         "Parolni tiklash",
         `<p style="font-size:13px;line-height:1.6">Parolingizni tiklash uchun quyidagi tugmani bosing. Havola 1 soat amal qiladi.</p>

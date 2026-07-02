@@ -80,7 +80,7 @@ async function notifyContributorReview(
         }`;
     await sendEmail({
       to: user.email,
-      subject: `AssetFlow — ${title}`,
+      subject: `FrameFlow — ${title}`,
       html: renderEmailLayout(
         title,
         `${body}<a href="${studioUrl}" style="display:inline-block;margin-top:14px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Studio'ni ochish</a>`
@@ -134,7 +134,7 @@ async function getOrCreateSettings() {
         id: SETTINGS_ID,
         categoriesJson: DEFAULT_CATEGORIES,
         contributorInstructions:
-          "After Effects → AssetFlow Contributor panelida shablon yuklang. Tasdiqlangandan keyin Browse panelda ko‘rinadi.",
+          "After Effects → FrameFlow Contributor panelida shablon yuklang. Tasdiqlangandan keyin Browse panelda ko‘rinadi.",
       },
     });
   }

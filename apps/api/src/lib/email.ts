@@ -8,7 +8,7 @@ export function isEmailConfigured(): boolean {
 }
 
 function fromAddress(): string {
-  return process.env.EMAIL_FROM?.trim() || "AssetFlow <onboarding@resend.dev>";
+  return process.env.EMAIL_FROM?.trim() || "FrameFlow <onboarding@resend.dev>";
 }
 
 export type SendEmailInput = {
@@ -60,7 +60,7 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
 export function renderEmailLayout(title: string, bodyHtml: string): string {
   return `<!DOCTYPE html><html><body style="margin:0;background:#0f0f0f;font-family:-apple-system,Segoe UI,sans-serif;color:#e8e8e8;padding:24px">
   <div style="max-width:480px;margin:0 auto;background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:28px">
-    <div style="font-size:18px;font-weight:700;color:#82c341;margin-bottom:16px">AssetFlow</div>
+    <div style="font-size:18px;font-weight:700;color:#C2F04A;margin-bottom:16px">FrameFlow</div>
     <h1 style="font-size:16px;margin:0 0 12px">${title}</h1>
     ${bodyHtml}
     <p style="font-size:11px;color:#888;margin-top:24px">Agar bu so'rovni siz yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.</p>
