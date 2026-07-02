@@ -79,8 +79,10 @@ async function resolveRef(url: string, kind: RefKind, idx: number): Promise<Reso
     if (meta.sizeBytes == null) return null;
     return { kind, idx, mode: "gcs", fileUri: gsUri, mimeType: validMime(meta.contentType || undefined, kind) };
   }
-  // Tashqi URL → yuklab olib inline (haqiqiy content-type)
+  // Tashqi URL → yuklab olib inline (haqiqiy content-type). Bizning bucket URL bu yerga tushsa —
+  // CDN_BASE_URL/gcsKeyFromUrl nomuvofiqligi belgisi (sekin yo'l) — log bilan ko'rinsin.
   try {
+    if (/storage\.googleapis\.com/i.test(url)) console.warn("[enhance] bucket URL gs:// ga mos kelmadi — tashqi fetch (sekin):", url.slice(0, 120));
     const res = await fetch(url);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());

@@ -7495,7 +7495,7 @@ function aiPollJob(jobId,media,val){
   return new Promise(function(resolve){
     // Video uzoq (OpenRouter async ~daqiqa) → uzunroq oyna: 130×4s ≈ 8.6 daq; aks holda 40×3.5s
     const isVid=media==='video';
-    const intervalMs=isVid?3000:3000, max=isVid?170:120; // rasm 50→120 (~6 daq): Mystic 30-120s + cold-start — erta to'xtatma
+    const intervalMs=isVid?3000:3000, max=400; // 400×3s≈20 daq — backend stuck-timeout (20 daq) bilan MOS (audit fix; ilgari 6-8.5 daq edi — sekin gen'da erta "tashlab ketilardi")
     const runCap=isVid?'Video tayyorlanmoqda… (~daqiqa)':'Generatsiya qilinmoqda…';
     let tries=0;
     const tick=async function(){
@@ -9970,6 +9970,10 @@ window.afGallery=(function(){
     var qseg=$('igQSeg'); if(qseg)qseg.style.display=meta.hasQuality?'':'none'; // quality yo'q → chip yashirin
     $('igArVal').textContent=st.ar; $('igQVal').textContent=cap(st.q); $('igNVal').textContent=String(st.n);
     recost(); refreshGen();
+    // Model-aware UI yangilanishi (audit fix): limit matni (N / max) + So'nggi grid kartalari
+    // (Referens tugmasi refMode'ga bog'liq) — model almashganda QAYTA chiziladi (vg bilan bir xil).
+    try{ if(typeof updRefMeta==='function')updRefMeta(); }catch(_){}
+    try{ if(typeof renderRecentGrid==='function')renderRecentGrid(); }catch(_){}
   }
   function ensureSession(){
     if(st.sessionId)return Promise.resolve(st.sessionId);
@@ -10472,6 +10476,14 @@ window.afGallery=(function(){
   function igRestoreGen(it){
     if(!it||!it.prompt){ toast('Bu natijaning prompti saqlanmagan','info'); return; }
     var p=it.params||{}; var restored=0;
+    // AUDIT FIX: faqat RASM genlarining referenslari tiklanadi — video genda params.videoUrls/
+    // referenceUrl (kadr) rasm-ref sifatida noto'g'ri chip bo'lardi. Video gen → faqat prompt.
+    if((it.cat||'image')!=='image'){
+      ta.value=it.prompt; grow(); hideMention(); refreshGen();
+      try{ ta.focus(); }catch(_){ }
+      toast('Prompt tiklandi (bu video/ovoz gen — referenslari rasm tooliga mos emas)','info');
+      return;
+    }
     var urls=Array.isArray(p.referenceUrls)?p.referenceUrls:(p.referenceUrl?[p.referenceUrl]:[]);
     if(urls.length&&meta.refMode!=='none'){
       urls.forEach(function(u){
@@ -10805,6 +10817,16 @@ window.afGallery=(function(){
     }
     var buf=readFileBuffer(fp);
     if(!buf||!buf.length)throw new Error('Faylni o‘qib bo‘lmadi');
+    // AUDIT FIX: stat o'qilmagan (st=null) katta fayl ham presigned yo'lga tushsin — aks holda
+    // multipart Cloud Run 32MB devoriga urilib yana yolg'on 413 berardi.
+    if(buf.length>DIRECT_UPLOAD_THRESHOLD){
+      if(buf.length>100*1024*1024){ var ex2=new Error('Referens juda katta — 100MB dan kichikroq fayl tanlang'); ex2.code='PAYLOAD_TOO_LARGE'; ex2.status=413; throw ex2; }
+      var pre2=await studioPost('/api/studio/gen/ref-upload-url',{contentType:mime(fp)||'application/octet-stream',sizeBytes:buf.length,name:baseName(fp)},30000);
+      if(!pre2||!pre2.url||!pre2.key)throw new Error('Katta fayl uchun upload URL olinmadi');
+      await nodePutFile(pre2.url,fp,mime(fp)||'application/octet-stream',buf.length);
+      var body2=clipParamsJson(src); body2.srcKey=pre2.key;
+      return studioPost('/api/studio/gen/ref-upload',body2,300000);
+    }
     if(typeof FormData==='undefined' || typeof Blob==='undefined'){
       throw new Error('FORM_UNAVAILABLE');
     }
@@ -10972,11 +10994,13 @@ window.afGallery=(function(){
     });
   }
   async function openVgClipper(src){
-    if(!src||(!src.path&&!src.srcUrl)){ prepAndUploadMediaRef(src,'video'); return; }
+    if(!src||(!src.path&&!src.srcUrl)){ if(src)src.skipClipper=true; prepAndUploadMediaRef(src,'video'); return; }
     var meta=null;
     if(src.srcUrl){ try{ meta=await probeRemoteMeta(src.srcUrl); }catch(_){ meta=null; } }
     else meta=await inspectMediaSource(src,'video');
-    if(!meta||!meta.duration){ prepAndUploadMediaRef(src,'video'); return; }
+    // MUHIM: fallback'da skipClipper=true — aks holda prepAndUploadMediaRef yana openVgClipper'ni
+    // chaqirib CHEKSIZ REKURSIYA bo'lardi (meta har safar olinmasa).
+    if(!meta||!meta.duration){ src.skipClipper=true; prepAndUploadMediaRef(src,'video'); return; }
     if(meta.duration<2){ toast('Video referens kamida 2 soniya bo‘lishi kerak','warning'); return; }
     resetVgClipper();
     vgClip.src=src;
@@ -11300,14 +11324,9 @@ window.afGallery=(function(){
     if(type==='video'){
       var d=Number(metaOrItem.duration||metaOrItem.sourceDurationSec||0);
       if(d && (d<2 || d>15))return 'Video referens 2–15 soniya oralig‘ida bo‘lishi kerak';
-      if(metaOrItem.skipClipper||metaOrItem.clipMode)return '';
-      var res=String(metaOrItem.sourceResolution||'').toLowerCase();
-      if(res==='1080p'||res==='4k')return 'Video referens 480p–720p oralig‘ida bo‘lishi kerak';
-      var w=Number(metaOrItem.width||0), h=Number(metaOrItem.height||0);
-      if(w&&h){
-        var hi=Math.max(w,h), lo=Math.min(w,h);
-        if(hi>1280 || hi<480)return 'Video referens 480p–720p oralig‘ida bo‘lishi kerak';
-      }
+      // AUDIT FIX: 1080p/4K bloklash OLIB TASHLANDI — server (optimize-preview) HAR QANDAY
+      // o'lchamni avtomatik 720p/480p ga tushiradi; ilgari foydalanuvchi O'ZI yaratgan 1080p
+      // gen natijasini referens qilolmasdi (yolg'on "480p–720p bo'lishi kerak" xatosi).
     }
     if(type==='audio'){
       var ad=Number(metaOrItem.duration||metaOrItem.sourceDurationSec||0);
@@ -11362,8 +11381,10 @@ window.afGallery=(function(){
       var d=document.createElement('div'); d.className='mrt'+(r.type==='video'?' vid':r.type==='audio'?' aud':'');
       if(r.type==='image'&&r.dataUrl)d.style.backgroundImage='url("'+r.dataUrl+'")';
       // VIDEO chip: gradient emas — HAQIQIY birinchi kadr (foydalanuvchi adashmasligi uchun).
+      // DIQQAT: overflow:hidden EMAS — .rx (×) tugmasi chip tashqarisida (top:-6px) — kesilmasin;
+      // buning o'rniga video elementning o'zi tile radiusi bilan yumaloqlanadi.
       if(r.type==='video'&&r.url&&typeof window.afVideoThumb==='function'){
-        var vt=window.afVideoThumb(r.url); if(vt){ d.style.position='relative'; d.style.overflow='hidden'; d.appendChild(vt); }
+        var vt=window.afVideoThumb(r.url); if(vt){ vt.style.borderRadius='10px'; vt.style.zIndex='0'; d.appendChild(vt); }
       }
       var t=document.createElement('div'); t.className='tag'; t.textContent=tag; t.style.position='relative'; t.style.zIndex='2'; d.appendChild(t);
       if(r.loading){ var sp=document.createElement('div'); sp.className='msp'; sp.textContent='…'; d.appendChild(sp); }
@@ -11908,7 +11929,8 @@ window.afGallery=(function(){
         if(addExistingMediaRef({cat:cat,url:u}))restored++; else skippedRef++;
       }); };
       addList(p.imageUrls,'image'); addList(p.videoUrls,'video'); addList(p.audioUrls,'audio');
-      if(p.referenceUrl&&!(Array.isArray(p.imageUrls)&&p.imageUrls.length)){ if(addExistingMediaRef({cat:'image',url:String(p.referenceUrl)}))restored++; }
+      addList(p.referenceUrls,'image'); // rasm-gen (ig) natijasini video toolда tiklash — uning ref'lari rasm
+      if(p.referenceUrl&&!(Array.isArray(p.imageUrls)&&p.imageUrls.length)&&!(Array.isArray(p.referenceUrls)&&p.referenceUrls.length)){ if(addExistingMediaRef({cat:'image',url:String(p.referenceUrl)}))restored++; }
     } else {
       var hadRefs=!!(p.referenceUrl||p.referenceEndUrl||(Array.isArray(p.imageUrls)&&p.imageUrls.length)||(Array.isArray(p.videoUrls)&&p.videoUrls.length));
       if(hadRefs)skippedRef++;
@@ -11917,7 +11939,7 @@ window.afGallery=(function(){
     refreshVgBtn();
     var host=$('vgPrompt'); if(host&&host.scrollIntoView)try{ host.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
     if(host)try{ host.focus(); }catch(_){ }
-    toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):'')+(skippedRef?(' · '+skippedRef+' referens joriy modelga mos emas'):''),'success');
+    toast('Prompt tiklandi'+(restored?(' · '+restored+' referens qayta ulandi'):'')+(skippedRef?(' · '+skippedRef+' referens qo\'shilmadi (takroriy, limit yoki mos emas)'):''),'success');
   }
   function openVgLightbox(it){ window.afRecent.openLightbox(it, vgRecentCtx()); } // UMUMIY lightbox
   function closeVgLightbox(){ if(window.afRecent)window.afRecent.closeLightbox(); }

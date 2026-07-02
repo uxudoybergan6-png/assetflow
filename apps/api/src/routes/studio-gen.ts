@@ -17,6 +17,9 @@ import {
   vertexEnhancePrompt,
   vertexEnhanceJson,
 } from "../lib/ai/vertex-enhance.js";
+import { isVertexConfigured } from "../lib/ai/vertex.js";
+import { isVertexOmniConfigured } from "../lib/ai/vertex-omni.js";
+import { isVertexImageConfigured } from "../lib/ai/vertex-image.js";
 import {
   optimizeVideoReferenceForUpload,
   extractAudioReferenceForUpload,
@@ -66,6 +69,31 @@ async function hydrateGenAssets<T extends { assets: Array<{ resultKey: string | 
     (a as typeof a & { sizeBytes?: number | null; contentType?: string | null }).contentType = meta.contentType;
   }
   return holder;
+}
+
+/** Gen params ichidagi referens URL'larini QAYTA imzolaydi (o'qish payti, DB'ga yozilmaydi).
+ *  "Qayta gen" eski genning params URL'larini tiklaydi — imzolangan URL 1-2 soatda eskiradi,
+ *  obyekt esa (gen'ga bog'langan saved ref) saqlanadi → yangi imzo bilan referens tirik qoladi. */
+async function hydrateParamsRefUrls(params: unknown): Promise<void> {
+  if (!params || typeof params !== "object" || !isS3Configured()) return;
+  const p = params as Record<string, unknown>;
+  const resign = async (u: unknown): Promise<unknown> => {
+    if (typeof u !== "string" || !/^https?:\/\//i.test(u)) return u; // data-URI/boshqa — tegilmaydi
+    const key = gcsKeyFromUrl(u);
+    if (!key) return u;
+    try {
+      return await getSignedDownloadUrl(key, 7200);
+    } catch {
+      return u;
+    }
+  };
+  for (const field of ["referenceUrl", "referenceEndUrl"]) {
+    if (p[field]) p[field] = await resign(p[field]);
+  }
+  for (const field of ["referenceUrls", "imageUrls", "videoUrls", "audioUrls"]) {
+    const arr = p[field];
+    if (Array.isArray(arr)) p[field] = await Promise.all(arr.map(resign));
+  }
 }
 
 studioGenRouter.use(
@@ -166,6 +194,10 @@ async function cleanupExpiredSavedReferences(userId?: string): Promise<number> {
   const expired = await prisma.savedReference.findMany({
     where: {
       expiresAt: { lte: new Date() },
+      // AUDIT FIX (qayta-gen): gen'da ISHLATILGAN referens (generationId bog'langan) O'CHIRILMAYDI —
+      // aks holda "Qayta gen" tugmasi 10+ daqiqalik genlarda o'lik (obyekt yo'q) referens tiklardi.
+      // Bog'langan referenslar gen o'chirilganda (DELETE /gen/:jobId) birga tozalanadi.
+      generationId: null,
       ...(userId ? { userId } : {}),
     },
     take: 200,
@@ -340,9 +372,13 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
     orderBy: { createdAt: "desc" },
     take: limit,
   });
-  // Signed URL eskiradi — har asset uchun yangidan imzolaymiz.
+  // Signed URL eskiradi — har asset uchun yangidan imzolaymiz. Params ref URL'lari ham
+  // ("Qayta gen" tiklashi tirik referens olishi uchun — audit fix).
   if (isS3Configured()) {
-    for (const g of items) await hydrateGenAssets(g);
+    for (const g of items) {
+      await hydrateGenAssets(g);
+      await hydrateParamsRefUrls(g.params).catch(() => {});
+    }
   }
   res.json({ items });
 });
@@ -548,6 +584,13 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
         return;
       }
     }
+    // Vaqtinchalik manba obyektini HAR QANDAY javobda tozalash (xato yo'llarida ham yetim qolmasin).
+    if (tempSrcKey) {
+      const cleanupKey = tempSrcKey;
+      res.once("finish", () => {
+        deleteS3Objects([cleanupKey]).catch(() => {});
+      });
+    }
     const meta = await getS3ObjectMeta(key);
     if (meta.sizeBytes == null) {
       res.status(404).json({ error: "Manba fayl topilmadi — qayta yuklang" });
@@ -696,8 +739,7 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     thumbUrl: contentType.startsWith("image/") ? url : null,
   });
   res.json({ id: saved.id, url, bytes: buf.length, contentType, expiresAt: saved.expiresAt, audioRef, audioError });
-  // Presigned yo'lidagi vaqtinchalik manba obyektini tozalash (javobdan keyin, best-effort).
-  if (tempSrcKey) deleteS3Objects([tempSrcKey]).catch(() => {});
+  // (tempSrcKey tozalash res.once("finish") bilan yuqorida — xato yo'llarini ham qamraydi.)
 });
 
 /** POST /gen/ref-upload-url — KATTA fayl (>~30MB) uchun presigned PUT URL. Cloud Run so'rov tanasi
@@ -759,13 +801,21 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
     return;
   }
-  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; aks holda OpenRouter).
+  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; vertex* → Google ADC;
+  // aks holda OpenRouter). AUDIT FIX: vertex modellari ilgari OpenRouter kalitiga bog'lanib qolardi —
+  // OPENROUTER_API_KEY olib tashlansa barcha Google modellar 503 bo'lardi.
   const configured =
     model.provider === "elevenlabs"
       ? isElevenLabsConfigured()
       : model.provider === "fal"
         ? isFalConfigured()
-        : isOpenRouterConfigured();
+        : model.provider === "vertex"
+          ? isVertexConfigured()
+          : model.provider === "vertex-omni"
+            ? isVertexOmniConfigured()
+            : model.provider === "vertex-image"
+              ? isVertexImageConfigured()
+              : isOpenRouterConfigured();
   if (!configured) {
     res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
     return;
@@ -1175,6 +1225,16 @@ studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
     } catch (e) {
       console.error("[studio-gen] R2 delete xato:", e);
     }
+  }
+  // Gen'ga bog'langan saved referenslar ham birga tozalanadi (cleanup ularni saqlab yuradi —
+  // "Qayta gen" uchun; gen o'chsa keragi qolmaydi).
+  try {
+    const linkedRefs = await prisma.savedReference.findMany({ where: { generationId: gen.id, userId: gen.userId } });
+    const refKeys = linkedRefs.map((r) => r.resultKey).filter((k): k is string => typeof k === "string" && k.length > 0);
+    if (refKeys.length) await deleteS3Objects(refKeys).catch(() => {});
+    if (linkedRefs.length) await prisma.savedReference.deleteMany({ where: { id: { in: linkedRefs.map((r) => r.id) } } });
+  } catch (e) {
+    console.error("[studio-gen] linked refs delete xato:", e);
   }
   // So'ng DB: assets → generation (FK tartibi).
   await prisma.genAsset.deleteMany({ where: { generationId: gen.id } });
