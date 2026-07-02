@@ -165,7 +165,9 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
     await prisma.verificationToken.create({
       data: { identifier: email, token, expires },
     });
-    const resetUrl = `${getWebUrl()}/studio/reset-password.html?token=${token}`;
+    // reset-password.html CF Pages ROOT'da xizmat qilinadi (getframeflow.app/
+    // reset-password.html). Eski `/studio/` prefiksi uchun redirect yo'q edi → 404.
+    const resetUrl = `${getWebUrl()}/reset-password.html?token=${token}`;
     await sendEmail({
       to: email,
       subject: "FrameFlow — parolni tiklash",

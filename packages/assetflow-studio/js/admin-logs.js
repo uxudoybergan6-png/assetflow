@@ -97,7 +97,8 @@ function sourceBadge(src) {
     ae_plugin: "green",
   };
   const c = map[src] || "gray";
-  return `<span class="badge badge-plan ${src === "contributor" ? "" : ""}" style="background:var(--${c}-dim);color:var(--${c});border-color:var(--${c}-line,var(--line))">${AssetFlowLog.sources[src] || src}</span>`;
+  const label = (AssetFlowLog.sources && AssetFlowLog.sources[src]) || src;
+  return `<span class="badge badge-plan" style="background:var(--${c}-dim);color:var(--${c});border-color:var(--${c}-line,var(--line))">${escapeHtml(label)}</span>`;
 }
 
 async function refreshLogs(showToast) {

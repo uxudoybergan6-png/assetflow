@@ -35,6 +35,7 @@ import {
   templateAssetFlags,
   s3UploadKeyForFile,
   getSignedUploadUrl,
+  getS3ObjectMeta,
   deleteTemplateAssets,
   resolveS3AssetKey,
   downloadS3ToFile,
@@ -833,13 +834,13 @@ const uploadUrlSchema = z.object({
   files: z
     .array(
       z.object({
-        kind: z.enum(["thumb", "preview"]),
+        kind: z.enum(["thumb", "preview", "pack"]),
         fileName: z.string().min(1).max(300),
         contentType: z.string().min(1).max(120),
       })
     )
     .min(1)
-    .max(2),
+    .max(3),
 });
 contributorRouter.post(
   "/templates/:id/upload-url",
@@ -918,6 +919,138 @@ contributorRouter.post(
     });
     transcodePreviewInBackground(id); // fon — javobni bloklamaydi
     res.json({ ok: true, previewTranscodeStatus: "pending" });
+  }
+);
+
+/**
+ * Pack .zip'ni bulutdan (presigned yo'l bilan yuklangan) olib, .mogrt sahnalarni
+ * ajratadi va metaJson.scenes'ni yangilaydi. FON (fire-and-forget) — /pack-uploaded
+ * javobni bloklamaydi. Progress mavjud upload-progress SSE orqali oqadi. re-extract
+ * endpoint'i bilan bir xil mantiq, faqat manba doim bulut (R2/GCS).
+ */
+async function extractPackScenesInBackground(id: string, packKey: string): Promise<void> {
+  let tmpDir: string | null = null;
+  try {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
+    const zipPath = path.join(tmpDir, "pack.zip");
+    setUploadProgress(id, { stage: "download", pct: 15, message: "Pack yuklab olinmoqda…" });
+    await downloadS3ToFile(packKey, zipPath);
+    const scenesOut = await storeMogrtScenesFromZip(id, zipPath, (done, total) => {
+      setUploadProgress(id, {
+        stage: "extract",
+        pct: 40 + Math.floor((done / total) * 55),
+        message: `Sahna ${done}/${total} tayyorlanmoqda…`,
+      });
+    });
+    if (scenesOut.length > 0) {
+      const fresh = await prisma.contributorTemplate.findUnique({ where: { id } });
+      const existingMeta = (fresh?.metaJson ?? {}) as Record<string, unknown>;
+      await prisma.contributorTemplate.update({
+        where: { id },
+        data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
+      });
+    }
+    setUploadProgress(id, {
+      stage: "done",
+      pct: 100,
+      message: scenesOut.length ? `Tayyor — ${scenesOut.length} sahna` : "Tayyor!",
+      done: true,
+    });
+  } catch (e) {
+    console.error("[pack-uploaded] sahna ekstraktsiya xato:", e);
+    setUploadProgress(id, {
+      stage: "error",
+      pct: 0,
+      message: "",
+      error: e instanceof Error ? e.message : "Sahna ekstraktsiya xatosi",
+      done: true,
+    });
+  } finally {
+    if (tmpDir) {
+      try {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      } catch {}
+    }
+  }
+}
+
+/**
+ * POST /templates/:id/pack-uploaded — pack presigned-PUT (brauzer → bulut to'g'ridan)
+ * tugaganini bildiruvchi SIGNAL. Cloud Run 32MB so'rov limiti katta AE pack'larni
+ * (100MB–GB) multer orqali qabul qila olmagani uchun pack ham thumb/preview kabi
+ * presigned PUT bilan to'g'ridan bulutga yuklanadi. Bu endpoint fayl bulutda
+ * borligini tasdiqlaydi (HeadObject), DB'ga nom/hajm yozadi va .zip bo'lsa FON
+ * rejimida .mogrt sahnalarni ajratadi (javobni bloklamaydi).
+ */
+const packUploadedSchema = z.object({
+  fileName: z.string().min(1).max(300),
+});
+contributorRouter.post(
+  "/templates/:id/pack-uploaded",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Shablon topilmadi" });
+      return;
+    }
+    if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
+      res.status(403).json({ error: "Ruxsat yo‘q" });
+      return;
+    }
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
+    const p = packUploadedSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Bulut xotirasi sozlanmagan" });
+      return;
+    }
+    const ext = path.extname(p.data.fileName).toLowerCase();
+    if (!(ASSET_UPLOAD_EXTS.pack || []).includes(ext)) {
+      res.status(400).json({
+        error: `Pack uchun ${ext || "fayl"} qabul qilinmaydi — ruxsat: ${ASSET_UPLOAD_EXTS.pack.join(", ")}`,
+      });
+      return;
+    }
+    // Presigned PUT `s3UploadKeyForFile(id, "pack", fileName)` kaliti bilan yozdi —
+    // aynan shu kalitni tekshiramiz (klient uploadga bergan fileName bilan mos).
+    const packKey = s3UploadKeyForFile(id, "pack", p.data.fileName);
+    const meta = await getS3ObjectMeta(packKey);
+    if (meta.sizeBytes == null) {
+      res
+        .status(404)
+        .json({ error: "Pack bulutda topilmadi — yuklashni qayta urinib ko'ring" });
+      return;
+    }
+    await prisma.contributorTemplate.update({
+      where: { id },
+      data: { fileName: p.data.fileName, fileSize: meta.sizeBytes },
+    });
+    // .zip bo'lsa — .mogrt sahna ekstraktsiyasini FON'da bajaramiz (javob darrov
+    // qaytadi; progress upload-progress SSE orqali oqadi). .aep/.mogrt yakka
+    // fayldan sahna ajratilmaydi — darrov 'done'.
+    if (/\.zip$/i.test(packKey)) {
+      setUploadProgress(id, {
+        stage: "extract",
+        pct: 5,
+        message: "Pack qabul qilindi, sahnalar tayyorlanmoqda…",
+      });
+      extractPackScenesInBackground(id, packKey);
+      res.json({ ok: true, extracting: true });
+    } else {
+      setUploadProgress(id, { stage: "done", pct: 100, message: "Tayyor!", done: true });
+      res.json({ ok: true, extracting: false });
+    }
   }
 );
 

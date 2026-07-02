@@ -57,21 +57,36 @@ logsRouter.get("/", requireAdmin, (req, res) => {
   res.json({ items: items.slice(0, limit) });
 });
 
+const ALLOWED_LEVELS = new Set(["error", "warn", "info", "debug"]);
+const clip = (v: unknown, n: number): string => String(v ?? "").slice(0, n);
+/** Manba SPOOF qilinmasin — autentifikatsiyalangan roldan majburlanadi
+ *  (klient body'siga ishonmaymiz). Admin panelidagi saqlangan-XSS (source
+ *  badge'ida escape'siz matn) va manba soxtalashtirishni ildizidan yopadi. */
+function sourceFromRole(role?: string): string {
+  if (role === "ADMIN") return "admin";
+  if (role === "CONTRIBUTOR") return "contributor";
+  return "ae_plugin"; // USER (plugin obunachi)
+}
+
 logsRouter.post("/", (req, res) => {
   const entry = req.body;
   if (!entry?.message) {
     res.status(400).json({ error: "message kerak" });
     return;
   }
+  const source = sourceFromRole(req.user?.role);
+  const ts = typeof entry.ts === "string" && !Number.isNaN(Date.parse(entry.ts))
+    ? entry.ts
+    : new Date().toISOString();
   const row: LogEntry = {
-    id: entry.id || crypto.randomUUID(),
-    ts: entry.ts || new Date().toISOString(),
-    level: entry.level || "info",
-    source: entry.source || "unknown",
-    sourceLabel: entry.sourceLabel || entry.source,
-    message: String(entry.message),
-    action: entry.action || "",
-    detail: entry.detail || "",
+    id: clip(entry.id, 80) || crypto.randomUUID(),
+    ts,
+    level: ALLOWED_LEVELS.has(entry.level) ? entry.level : "info",
+    source,
+    sourceLabel: clip(entry.sourceLabel || source, 60),
+    message: clip(entry.message, 500),
+    action: clip(entry.action, 120),
+    detail: clip(entry.detail, 1000),
     meta: entry.meta ?? null,
   };
   const all = readLogs();

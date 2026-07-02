@@ -1,19 +1,18 @@
-# SESSION REPORT — 2026-07-02 — Faza E: platforma real API'ga ulandi
+# SESSION REPORT — 2026-07-03 — Audit 2026-07-02 Faza 1 (launch-blokerlar)
 
-Master-reja: `~/.claude/plans/sleepy-beaming-lobster.md`. A+D+domenlar bajarilgan edi; bu sessiya = **Faza E**.
+Manba: `docs/AUDIT-2026-07-02.md` Faza 1. 6 majburiy banddan 5 tasi bajarildi (#6 — user infra qarori).
 
 ## QILINDI
-- **`platform/ff-api.js`** (yangi): window.FFAPI klienti — baseUrl auto (localhost→:4000, prod→api.getframeflow.app, meta override), Bearer, 3x retry, global 401→`ff-auth-expired`.
-- **`platform/index.html`**: mock → real API. Auth ekran (login/register/forgot, `#auth`), token `localStorage.ff_token`, app-ekranlar gating (`go()`), hash deep-link (`_hashApplied` — entryScreen prop bilan poyga tuzatildi). Dashboard (real ism/kredit/gens/katalog), Marketplace (`/api/plugin/catalog`, thumb, dinamik kategoriya filtri), Detail (real desc/tag/preview-video/download), AI Studio (model katalogi `/gen/models`dan, model-aware chiplar: aspect/quality/resolution/voice/duration, `cost-quote`→`gen`→poll, enhance, delete, yuklab olish), Account (PATCH name, plan, kredit tarixi gen'lardan), logout. Media teglar `preload="none"` (parse-vaqti literal `{{ }}` fetch oldini oladi).
-- **Backend**: `serve-asset.ts` pack `?json=1` → `{url}` JSON (web fetch redirect'ni GCS'ga CORS'siz kuzata olmaydi; klient signed URL'ga anchor-navigatsiya qiladi).
-- **Halol UX**: kredit sotib olish → "Paddle tez orada" toast (soxta balans YO'Q); yuklamalar tarixi "tez orada" (Faza C); referens yuklash "tez orada".
-- **Lokal tekshiruv o'tdi** (localhost:8975 + :4000): login→dashboard→AI Studio (Nano Banana 2, =4 kredit quote, yetarli emas→modal)→marketplace (4 real shablon)→detail→account→logout. Lokal DB migratsiyasi tuzatildi (pgvector stub `--applied`), lokal CORS'ga :8975 qo'shildi (.env, gitignored).
+- **[P0] Pack presigned PUT** — pack endi thumb/preview kabi to'g'ridan bulutga (Cloud Run 32MB limitini chetlab): `uploadUrlSchema` enum'iga "pack" (max 3); yangi `POST /templates/:id/pack-uploaded` (HeadObject → DB fileName/fileSize, .zip bo'lsa `extractPackScenesInBackground` fon .mogrt ekstraktsiyasi); `studio-api.js uploadAssets` multer yo'lini presigned+signal bilan almashtirdi. *(contributor.ts, s3.ts import, studio-api.js)*
+- **[P1] CDN_BASE_URL bo'sh bug** — `getPublicUrl()` endi S3_ENDPOINT'dan (GCS `storage.googleapis.com`) path-style URL yasaydi; ilgari region=auto → o'lik `s3.auto.amazonaws.com`. Secret o'zgarishi shart emas (S3_ENDPOINT allaqachon deploy env'da). *(s3.ts:46)*
+- **[P1] Migrate gate** — `deploy-cloudrun.yml`: deploy'dan OLDIN gated `migrate:deploy` (DATABASE_URL cloudrun-env.yaml'dan; xato → build/deploy to'xtaydi, eski revision qoladi). *(deploy-cloudrun.yml)*
+- **[P1] Admin XSS** — `logs.ts` POST: source rol'dan MAJBURLANADI (spoof yo'q) + level allowlist + uzunlik cap; `admin-logs.js` sourceBadge label escape. *(logs.ts:60, admin-logs.js:100)*
+- **[P1] Forgot-password 404** — resetUrl'dan `/studio` prefiks olindi (reset-password.html CF root'da); login.html forgot havolasi absolyut `/reset-password.html`. *(auth.ts:168, login.html:87)*
 
-## DEPLOY MEXANIZMI (aniqlandi)
-- API deploy = **GitHub Actions** (`.github/workflows/deploy-cloudrun.yml`): main'ga `apps/api/**` push → docker build → Artifact Registry → Cloud Run (WIF, kalitsiz). Qo'lda `gcloud builds submit` ISHLAMAYDI (push retry-xato — ma'lum muammo, kerak ham emas).
-- **`CLOUDRUN_ENV_YAML` GitHub secret yangilandi** (02.07 17:05) — eski (01.07) qiymat push'da bugungi domen/CORS env'ini orqaga qaytargan bo'lardi.
+## TEKSHIRILDI
+- `npm run build -w apps/api` — tsc TOZA. `npm run studio:sync` bajarildi. Eski `/assets` multer endpoint fallback sifatida saqlandi (frontend chaqirmaydi).
 
 ## KUTILMOQDA
-- **User push** → bir vaqtda: CF Pages (platforma frontend) + GitHub Actions (API `?json=1` + yangi env) deploy bo'ladi.
-- Production sinovi push'dan keyin: getframeflow.app login → AI Studio real gen (user@assetflow.uz, 4181 kredit) → pack download (katalog hozir bo'sh — shablon publish kerak).
-- Resend DNS, Secret Manager (risk #6), Faza B/C/F/G.
+- **[P1] #6 Abuse** — BAJARILMADI (user qarori kerak): GCP Billing budget=console; Turnstile=CF kaliti; emailVerified gate=risk (barcha mavjud user null → lockout, grandfather kerak).
+- Push (user) → GitHub Actions API deploy + CF Pages. Prod sinov: contributor pack upload E2E, thumb ko'rinishi, forgot-password.
+- **GCS bucket public-read** tekshirilishi kerak (getPublicUrl to'g'ridan public URL beradi).

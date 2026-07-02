@@ -212,19 +212,21 @@ const StudioApi = (() => {
   }
 
   /**
-   * Fayllarni yuklaydi. thumb+preview → TO'G'RIDAN R2 (presigned PUT, Render chetda — OOM yo'q).
-   * pack → server (/assets) — sahna ekstraktsiyasi uchun. onProgress(jamiYuklangan) baytlarda
-   * (thumb→preview→pack tartibida kumulyativ — orderedUploadFiles bilan mos).
+   * Fayllarni yuklaydi. thumb+preview+pack — HAMMASI TO'G'RIDAN bulutga (presigned PUT,
+   * server chetda — OOM/413 yo'q). Pack ilgari multer /assets orqali server tanasidan
+   * oqardi; Cloud Run 32MB so'rov limiti katta AE pack'larni (100MB–GB) rad etardi.
+   * Endi pack ham presigned PUT, so'ng /pack-uploaded signali (server .zip'dan .mogrt
+   * sahnalarni FON'da ajratadi). onProgress(jamiYuklangan) baytlarda (thumb→preview→pack
+   * tartibida kumulyativ — orderedUploadFiles bilan mos).
    */
   async function uploadAssets(id, files, onProgress) {
     const order = ["thumb", "preview", "pack"].filter((k) => files[k]);
-    const direct = order.filter((k) => k === "thumb" || k === "preview");
     let urls = [];
-    if (direct.length) {
+    if (order.length) {
       const resp = await request(`/api/contributor/templates/${id}/upload-url`, {
         method: "POST",
         body: {
-          files: direct.map((k) => ({
+          files: order.map((k) => ({
             kind: k,
             fileName: files[k].name,
             contentType: files[k].type || "application/octet-stream",
@@ -238,44 +240,38 @@ const StudioApi = (() => {
       const onProg = (loaded) => {
         if (onProgress) onProgress(base + loaded);
       };
-      if (k === "thumb" || k === "preview") {
-        const u = urls.find((x) => x.kind === k);
-        if (!u) throw new Error(`${k} uchun yuklash URL olinmadi`);
-        // R2 presigned PUT — FAQAT Content-Type (Authorization YO'Q, imzo buzilmasin)
-        await xhrWithRetry({
-          method: "PUT",
-          url: u.url,
-          body: files[k],
-          headers: { "Content-Type": u.contentType },
-          onProg,
-        });
-      } else {
-        // pack → server (faqat pack maydoni)
-        const fd = new FormData();
-        fd.append("pack", files[k]);
-        const t = token();
-        await xhrWithRetry({
-          method: "POST",
-          url: `${baseUrl()}/api/contributor/templates/${id}/assets`,
-          body: fd,
-          headers: t ? { Authorization: `Bearer ${t}` } : {},
-          onProg,
-        });
-      }
+      const u = urls.find((x) => x.kind === k);
+      if (!u) throw new Error(`${k} uchun yuklash URL olinmadi`);
+      // Bulut presigned PUT — FAQAT Content-Type (Authorization YO'Q, imzo buzilmasin)
+      await xhrWithRetry({
+        method: "PUT",
+        url: u.url,
+        body: files[k],
+        headers: { "Content-Type": u.contentType },
+        onProg,
+      });
       base += files[k].size;
       if (onProgress) onProgress(base);
     }
     // #15: preview presigned PUT tugadi → server-side fon transcode signali
     // (POST /preview-uploaded → status='pending' + fon 720p siqish). Xatoga
     // chidamli: signal fail bo'lsa ham asosiy upload MUVAFFAQIYATLI hisoblanadi
-    // (transcode fon ishi; preview xom holicha baribir ko'rinadi). TODO: UI'da
-    // previewTranscodeStatus badge ('Siqilmoqda…').
+    // (transcode fon ishi; preview xom holicha baribir ko'rinadi).
     if (files.preview) {
       try {
         await request(`/api/contributor/templates/${id}/preview-uploaded`, { method: "POST" });
       } catch (e) {
         console.warn("preview-uploaded signali yuborilmadi (transcode keyinroq urinadi):", e);
       }
+    }
+    // Pack presigned PUT tugadi → server signali: DB'ga nom/hajm yozadi va .zip
+    // bo'lsa .mogrt sahnalarni FON'da ajratadi. Bu signal MAJBURIY (multer yo'li
+    // olib tashlangani uchun DB fileName/fileSize faqat shu yerda yoziladi).
+    if (files.pack) {
+      await request(`/api/contributor/templates/${id}/pack-uploaded`, {
+        method: "POST",
+        body: { fileName: files.pack.name },
+      });
     }
     return { ok: true };
   }

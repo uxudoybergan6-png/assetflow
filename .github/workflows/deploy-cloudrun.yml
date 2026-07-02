@@ -59,6 +59,33 @@ jobs:
           CLOUDRUN_ENV_YAML: ${{ secrets.CLOUDRUN_ENV_YAML }}
         run: printf '%s\n' "$CLOUDRUN_ENV_YAML" > cloudrun-env.yaml
 
+      # Gate: yangi kod DEPLOY bo'lishidan OLDIN migratsiyalar qo'llanadi. Xato
+      # bo'lsa bu qadam yiqiladi → build/push/deploy ISHLAMAYDI → eski (ishlaydigan)
+      # revision jonli qoladi. render.yaml'ning preDeployCommand gate'i o'rnini
+      # bosadi (Cloud Run'da preDeploy yo'q). Migratsiyalar FAQAT additive bo'lgani
+      # uchun eski kod yangi sxemani ham tolerat qiladi.
+      - name: Setup Node (migration)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps (migration)
+        run: npm ci
+
+      - name: Run DB migrations (gated — fail stops deploy)
+        run: |
+          set -euo pipefail
+          # DATABASE_URL'ni deploy env yaml'idan ajratamiz (yagona haqiqat manbai —
+          # CLOUDRUN_ENV_YAML secret). Qo'shtirnoqlarni tozalaymiz.
+          DB_URL="$(grep -E '^DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//')"
+          if [ -z "$DB_URL" ]; then
+            echo "::error::DATABASE_URL cloudrun-env.yaml'da topilmadi — migratsiya bekor qilindi" >&2
+            exit 1
+          fi
+          export DATABASE_URL="$DB_URL"
+          npm run migrate:deploy -w @creative-tools/database
+
       - name: Build image
         run: |
           IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api"

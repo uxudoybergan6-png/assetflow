@@ -45,7 +45,15 @@ export const ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 export function getPublicUrl(key: string): string {
   if (cdnBase) return `${cdnBase.replace(/\/$/, "")}/${key}`;
-  if (bucket && region) {
+  // CDN_BASE_URL bo'sh bo'lsa — S3_ENDPOINT'dan (masalan GCS S3-mos
+  // https://storage.googleapis.com) path-style public URL yasaymiz. Bu GCS/R2
+  // uchun to'g'ri; ilgari region="auto" bilan o'lik AWS host qaytardi
+  // (<bucket>.s3.auto.amazonaws.com) → barcha thumb/preview buzilardi.
+  if (endpoint && bucket) {
+    return `${endpoint.replace(/\/$/, "")}/${encodeURIComponent(bucket)}/${key}`;
+  }
+  // Haqiqiy AWS S3 (endpoint yo'q, region belgilangan) — virtual-host URL.
+  if (bucket && region && region !== "auto") {
     return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   }
   return `/placeholder/${key}`;
