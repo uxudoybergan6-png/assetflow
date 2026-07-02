@@ -15673,6 +15673,7 @@ class Component extends DCLogic {
         ? await FFAPI.register(email, pass, (st.authName || '').trim())
         : await FFAPI.login(email, pass);
       FFAPI.setSession(r.token, r.user);
+      this._sess = {}; // eski foydalanuvchi gen-sessiyalari yaroqsiz
       this.setState({ user: r.user, accName: (r.user && r.user.name) || '', authBusy: false, authPassword: '', authErr: null });
       this.bootData();
       const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
@@ -15684,6 +15685,7 @@ class Component extends DCLogic {
   }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
+    this._sess = {};
     this.setState({ user: null, credits: 0, plan: 'free', gens: [], downloadsMonth: 0, selModel: {}, genModels: {} });
     this.go('landing');
     this.toast('Chiqdingiz');
@@ -15746,9 +15748,19 @@ class Component extends DCLogic {
     try {
       const q = await FFAPI.quote(model.id, tool.mode, params);
       if (q.price > this.state.credits) { this.setState({ generating: false, showCredits: true }); return; }
+      if (!this._sess) this._sess = {};
       let sid = this._sess[tool.mode];
       if (!sid) { const s = await FFAPI.session(tool.mode); sid = s.id; this._sess[tool.mode] = sid; }
-      const r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
+      let r;
+      try {
+        r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
+      } catch (ge) {
+        // Eskirgan/begona session (404) — yangi session bilan BIR marta qayta urinish
+        if (ge && ge.status === 404) {
+          const s2 = await FFAPI.session(tool.mode); this._sess[tool.mode] = s2.id;
+          r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
+        } else { throw ge; }
+      }
       if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
       this.pollJob(r.jobId);
     } catch (e) {
