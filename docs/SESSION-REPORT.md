@@ -1,15 +1,11 @@
-# SESSION REPORT — 2026-07-02 — 4 ta AI Tools kamchilik tuzatildi
+# SESSION REPORT — 2026-07-02 — FrameFlow launch: Faza A + D
 
-Foydalanuvchi 4 kamchilik xabar qildi — hammasi tuzatildi:
+Master-reja tasdiqlandi (7 faza: A→D→E→B→C→F→G), `~/.claude/plans/sleepy-beaming-lobster.md`.
 
-## TUZATILDI
-- **#35+#36 (Qayta gen refs aralashadi / rasm restore video toolda qolib ketadi):** Restore/almashtirish logikasi (`igRestoreGen`/`vgRestoreGen`, cross-tool `axGo`+handoff) 5 marta jonli test qilindi — HAMMASI to'g'ri ishladi. Haqiqiy sabab: `window.afRecent` ikonkalari TESKARI edi — "Referens qilib ishlatish" (qo'shuvchi) refresh-ikonka, "Qayta gen" (almashtiruvchi, tool almashtiradi) qalam-ikonka bo'lib ko'rinardi → foydalanuvchi noto'g'ri tugmani bosardi. Ikonkalar almashtirildi ("+"=referens, refresh=qayta gen).
-- **#37 (Omni: ovoz doim yoqiq bo'lsa ham "+ Ovoz" referens ko'rinardi):** `vgAddAud` tugmasi endi `vm.mediaRefs.audio` soniga qarab yashiriladi (Omni: audio:0 → yashirin; Seedance R2V: audio:3 → ko'rinadi).
-- **#38 (Tozalash tugmasi kichkina/notiy edi):** `.clearbtn` CSS pill/chip dizaynga o'zgartirildi (fon, radius 20px, hover'da qizil).
-
-## TEKSHIRILDI
-- Barcha 4 tuzatish brauzer preview'da jonli tasdiqlandi (`getComputedStyle`, ikonka `.innerHTML`, ko'rinish/yashirish holatlari — Omni va Seedance R2V ikkalasida).
-- Debug uchun qo'shilgan vaqtinchalik hook'lar (`__vgDebug/__vgSetup/__vgRcSetup`) olib tashlandi — `git diff` faqat 4 haqiqiy tuzatishni ko'rsatadi.
+## TUZATILDI / QILINDI
+- **Faza A (rebrand+domenlar):** app-urls.ts/cloudrun-env.yaml yangi domenlar (api./admin./getframeflow.app, CORS qo'shimcha — eski originlar saqlandi), studio-config.js host-detection + frameflow-api meta, CSP ikkala API origin, barcha ko'rinadigan brend/logo/email FrameFlow (commit c980c13)
+- **Faza D (platforma porti):** `packages/assetflow-studio/platform/` — dizayn dc-runtime bilan 1:1 (7MB→1.2MB: React UMD lokal, woff2 fontlar, 9MB eski SVG tashlandi), CF Pages build root=platforma, scoped CSP ('unsafe-eval' faqat platformaga, `!` header-remove sintaksisi), terms/privacy/refund (Paddle uchun). Landing+Dashboard jonli tekshirildi — oflayn, xatosiz.
 
 ## KUTILMOQDA
-- AE'da CEP orqali qo'lda test (ikonka almashinuvi, Omni'da Ovoz tugmasi yo'qligi, Tozalash tugmasi ko'rinishi).
+- Qo'lda: CF Pages custom domains (3), api. Cloud Run mapping (yoki Worker proxy), Resend domen DNS, subdomen-root Redirect Rules (2), Cloud Run redeploy
+- Faza E (API ulanish) — keyingi qadam; B/C/F/G navbatda
