@@ -702,7 +702,7 @@ export async function processGeneration(genId: string): Promise<void> {
       data: { status: "failed", error: safeReason },
     });
     await clearProviderJob(genId);
-    if (upd.count > 0) await refundAiCredits(gen.userId, gen.cost);
+    if (upd.count > 0) await refundAiCredits(gen.userId, gen.cost, { generationId: genId });
   };
 
   try {
@@ -935,7 +935,7 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
       where: { id: g.id, status: { in: ["queued", "running"] } },
       data: { status: "failed", error: "Vaqt tugadi (avtomatik tiklash) — kredit qaytarildi" },
     });
-    if (upd.count > 0) await refundAiCredits(g.userId, g.cost);
+    if (upd.count > 0) await refundAiCredits(g.userId, g.cost, { generationId: g.id });
   }
   return stuck.length;
 }

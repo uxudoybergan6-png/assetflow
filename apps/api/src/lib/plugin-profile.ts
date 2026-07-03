@@ -5,6 +5,7 @@ import {
   prisma,
 } from "@creative-tools/database";
 import { isEmailConfigured } from "./email.js";
+import { writeCreditLedger } from "./ledger.js";
 
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
@@ -369,23 +370,68 @@ export async function consumeAiCredits(userId: string, cost: number) {
     };
   }
 
+  // Moliyaviy izi (#2.6) — atomik kamaytirishdan KEYIN, best-effort (bloklamaydi).
+  await writeCreditLedger({
+    userId,
+    delta: -cost,
+    reason: "consume",
+    balanceAfter: available - cost,
+  });
+
   return { ok: true as const, remaining: available - cost };
 }
 
-/** Provayder xato bersa sarflangan kreditni qaytaradi (foydalanuvchi bekorga to'lamasin). */
-export async function refundAiCredits(userId: string, cost: number) {
+/**
+ * Provayder xato bersa sarflangan kreditni qaytaradi (foydalanuvchi bekorga to'lamasin).
+ *
+ * (#2.3) IKKI himoya:
+ *   1) Oy-chegarasi leak'ni to'sish: refund balansni oylik ulushdan (allotment) OSHIRMAYDI —
+ *      oy reset'idan keyin eski failed gen refund'i tekin kredit "yaratmasin". Lekin mavjud
+ *      (admin top-up) balansni ham KAMAYTIRMAYDI.
+ *   2) Idempotent (generationId berilsa): bir gen faqat BIR marta refund qilinadi — atomik
+ *      `refunded=false → true` claim; claim yutmasa kredit qaytarilmaydi (double-refund guard).
+ *
+ * ADMIN consume paytida kredit kamaytirmaydi (cheksiz) → refund ham QILMASLIK kerak (simmetriya).
+ */
+export async function refundAiCredits(
+  userId: string,
+  cost: number,
+  opts: { generationId?: string } = {}
+) {
   if (cost <= 0) return;
-  // ADMIN consume paytida kredit kamaytirmaydi (cheksiz) → refund ham QILMASLIK kerak,
-  // aks holda har muvaffaqiyatsiz genда admin balansiga kredit "yaratiladi" (consume/refund asimmetriyasi).
   const prof = await prisma.pluginProfile.findUnique({
     where: { userId },
     include: { user: { select: { role: true } } },
   });
   if (!prof || prof.user.role === "ADMIN") return;
-  // updateMany → profil yo'q bo'lsa no-op (update P2025 throw EMAS).
-  await prisma.pluginProfile.updateMany({
-    where: { userId },
-    data: { aiCredits: { increment: cost } },
+
+  // Idempotent per-generation: faqat hali refund qilinmagan gen refund qilinadi (atomik claim).
+  if (opts.generationId) {
+    const claim = await prisma.generation.updateMany({
+      where: { id: opts.generationId, refunded: false },
+      data: { refunded: true },
+    });
+    if (claim.count === 0) return; // allaqachon refund qilingan → qayta refund YO'Q
+  }
+
+  // Oy-chegarasi cap: refund allotmentdan oshirmaydi, lekin mavjud balansni kamaytirmaydi.
+  const allot = aiMonthlyAllotment(prof.plan);
+  const newBalance = Math.min(prof.aiCredits + cost, Math.max(allot, prof.aiCredits));
+  const credited = newBalance - prof.aiCredits;
+  if (credited > 0) {
+    // updateMany → profil yo'q bo'lsa no-op (update P2025 throw EMAS).
+    await prisma.pluginProfile.updateMany({
+      where: { userId },
+      data: { aiCredits: newBalance },
+    });
+  }
+  // Moliyaviy izi (#2.6) — haqiqiy qaytarilgan miqdor (cap tufayli cost'dan kam bo'lishi mumkin).
+  await writeCreditLedger({
+    userId,
+    generationId: opts.generationId ?? null,
+    delta: credited,
+    reason: "refund",
+    balanceAfter: newBalance,
   });
 }
 

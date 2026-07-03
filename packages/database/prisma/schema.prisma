@@ -396,6 +396,7 @@ model Generation {
   status    String     @default("queued")   // queued | running | done | failed
   category  String?
   cost      Int        @default(0)
+  refunded  Boolean    @default(false)       // idempotent refund guard — bir job IKKI marta refund qilinmasin (additive, default false)
   error     String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -448,4 +449,37 @@ model GenAsset {
   generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)
 
   @@index([generationId])
+}
+
+// ── Moliyaviy audit izi (Faza 2) — ADDITIVE, mavjud kredit oqimiga aloqasiz ──
+// CreditLedger: har kredit consume/refund uchun bitta yozuv (kim, qancha, qaysi gen).
+// FK-siz (userId/generationId oddiy indeksli ustun) — User/Generation modeliga tegmaymiz.
+model CreditLedger {
+  id           String   @id @default(cuid())
+  userId       String
+  generationId String?
+  delta        Int      // manfiy = consume, musbat = refund
+  reason       String   // "consume" | "refund"
+  balanceAfter Int?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([generationId])
+  @@index([createdAt])
+}
+
+// ProviderSpend: har gen provayderga yuborilganda bitta yozuv (provayder narx tahlili uchun).
+model ProviderSpend {
+  id               String   @id @default(cuid())
+  generationId     String?
+  provider         String   // "vertex" | "vertex-omni" | "vertex-image" | "fal" | "elevenlabs" | "openrouter"
+  modelId          Int?
+  mode             String?
+  credits          Int?
+  estimatedCostUsd Decimal? @db.Decimal(10, 4)
+  createdAt        DateTime @default(now())
+
+  @@index([generationId])
+  @@index([provider])
+  @@index([createdAt])
 }

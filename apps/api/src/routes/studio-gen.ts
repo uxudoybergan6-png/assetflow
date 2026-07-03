@@ -47,6 +47,7 @@ import {
   getRefKind,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
+import { writeProviderSpend } from "../lib/ledger.js";
 import {
   processGenerationInBackground,
   reconcileStuckGenerations,
@@ -911,6 +912,15 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     )
   );
   await touchSavedReferences(req.user!.userId, { ids: savedRefIds, urls: refUrls }, gen.id).catch(() => {});
+
+  // Provayder narx izi (#2.6) — gen provayderga yuborilganda (best-effort, bloklamaydi).
+  await writeProviderSpend({
+    generationId: gen.id,
+    provider: model.provider || "openrouter",
+    modelId: model.id,
+    mode: model.mode,
+    credits: price,
+  });
 
   // Fon rejimida bajariladi (OpenRouter → R2 → GenAsset → status); frontend polling qiladi.
   processGenerationInBackground(gen.id);

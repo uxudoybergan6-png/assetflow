@@ -15,6 +15,7 @@ import {
   getPublicUrl,
   isS3Configured,
 } from "../lib/s3.js";
+import { writeAuditLog } from "../lib/audit-log.js";
 
 export const adminRouter = Router();
 
@@ -259,6 +260,23 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
       data: { tokenVersion: { increment: 1 } },
     });
   }
+
+  // Audit izi (#2.4) — admin obunachi amallari (faqat so'rovda kelgan maydonlar).
+  const changed: Record<string, unknown> = {};
+  if (parsed.data.status) changed.status = parsed.data.status;
+  if (parsed.data.plan) changed.plan = parsed.data.plan;
+  if ("downloadLimitOverride" in parsed.data)
+    changed.downloadLimitOverride = parsed.data.downloadLimitOverride ?? null;
+  if ("importLimitOverride" in parsed.data)
+    changed.importLimitOverride = parsed.data.importLimitOverride ?? null;
+  if (typeof parsed.data.aiCredits === "number") changed.aiCredits = parsed.data.aiCredits;
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "plugin-subscriber.update",
+    targetType: "pluginSubscriber",
+    targetId: userId,
+    meta: changed,
+  });
 
   const full = await ensurePluginProfile(userId);
   const token = await prisma.pluginToken.findFirst({

@@ -15662,7 +15662,7 @@ class Component extends DCLogic {
         pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
         thumbUrl: it.thumbUrl || null, previewUrl: it.previewUrl || null, hasPack: !!it.packUrl,
         desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
-        author: (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
+        author: it.author || (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
       }));
       this.setState({ catalog: items, catalogReady: true });
     } catch (e) { this.setState({ catalogReady: true }); }

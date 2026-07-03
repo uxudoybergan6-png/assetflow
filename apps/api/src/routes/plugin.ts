@@ -205,7 +205,7 @@ async function guardDownloadable(
   if (req.user?.role === "ADMIN") return true;
   const tpl = await prisma.contributorTemplate.findUnique({
     where: { id: templateId },
-    select: { reviewStatus: true, published: true },
+    select: { reviewStatus: true, published: true, isPro: true },
   });
   if (
     !tpl ||
@@ -214,6 +214,19 @@ async function guardDownloadable(
   ) {
     res.status(404).json({ error: "Pack topilmadi yoki nashr etilmagan" });
     return false;
+  }
+  // (#2.5) Server-tomon PRO tier gate — baytlar/redirect'dan OLDIN (fail-closed).
+  // Per-shablon PRO (isPro=true) + FREE foydalanuvchi → 402 PRO_REQUIRED. ADMIN yuqorida
+  // chetlab o'tgan. Bu Free/Pro download SANOQ limitidan ALOHIDA qo'shimcha tier gate'i.
+  if (tpl.isPro) {
+    const profile = await ensurePluginProfile(req.user!.userId);
+    if (profile.plan !== PluginPlanTier.PRO) {
+      res.status(402).json({
+        error: "Bu shablon Pro tarif uchun — Pro'ga o'ting",
+        code: "PRO_REQUIRED",
+      });
+      return false;
+    }
   }
   // Limitni baytlarni berishdan OLDIN ATOMIK majburlaymiz: consumeDownload
   // hisoblagichni shu yerda oshiradi, shu sabab klient ixtiyoriy
