@@ -3175,6 +3175,37 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .warn{background:rgba(255,178,124,.08);border:1px solid rgba(255,178,124,.26);color:#F0CBAA}
 .axig .warn .wi{color:#FFB27C}
 
+/* ── b8/b9 — Tarix galereya mockup verbatim ── */
+.axroot .galtab{padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-weight:500;font-size:11px;color:#8A93A3}
+.axroot .galtab.on{background:rgba(255,255,255,.10);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8}
+.axroot .galzoom{border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.05);padding:2px}
+.axroot .galzoom b{width:24px;height:24px;background:transparent;color:#8A93A3}
+.axroot .galzoom b:hover{color:#F2F5F8;background:transparent}
+.axroot .galzoom i{height:12px;background:rgba(255,255,255,.08)}
+.axroot .galselbtn{width:auto;height:auto;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);font-size:11px;font-weight:600;color:#E7ECF3}
+.axroot .galselbtn.on{background:#C2F04A;border-color:#C2F04A;color:#0E1400}
+.axroot .galgrid{gap:6px}
+.axroot .gcard{border:0;border-radius:9px;background:transparent;overflow:hidden}
+.axroot .gcard .gth{aspect-ratio:1/1;border-radius:9px}
+.axroot .gcard .gbadge{top:auto;left:6px;bottom:5px;right:auto;background:transparent;padding:0;color:#fff;opacity:.9}
+.axroot .gcard .gcb{top:5px;right:5px;left:auto;width:17px;height:17px;border-radius:50%;background:rgba(8,10,14,.55);border:1px solid rgba(255,255,255,.3);color:transparent}
+.axroot .gcard.sel{outline:2px solid #7CC4FF;outline-offset:-2px;box-shadow:none;border:0}
+.axroot .gcard.sel .gcb{background:#7CC4FF;border-color:#7CC4FF;color:#0A2238}
+.axroot .galfoot{font-family:var(--font-mono);text-align:center;font-size:9px;color:#5E6675;padding:12px}
+.axroot .galselhead{display:none;align-items:center;gap:10px;padding:2px 0 8px}
+.axroot .galselhead.on{display:flex}
+.axroot .galselhead .gx{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#8A93A3;cursor:pointer}
+.axroot .galselhead .gx:hover{color:#F2F5F8}
+.axroot .galselhead b{font-weight:700;font-size:13px;color:#F2F5F8}
+.axroot .galselhead .gall{margin-left:auto;font-size:11px;font-weight:600;color:#7CC4FF;cursor:pointer}
+.axroot .galbatch{position:fixed;left:12px;right:12px;bottom:12px;display:none;align-items:center;gap:6px;padding:8px;border-radius:999px;background:rgba(19,22,28,.72);backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5);z-index:50;max-width:416px;margin:0 auto}
+.axroot .galbatch.on{display:flex}
+.axroot .galbatch .gbinfo{font-family:var(--font-mono);font-size:10px;color:#8A93A3;padding:0 8px;font-weight:400;flex:1 1 auto;min-width:0}
+.axroot .galbatch .gbtn{height:32px;padding:0 13px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-weight:600;font-size:11px;color:#F2F5F8;display:flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;cursor:pointer}
+.axroot .galbatch .gbtn:hover{border-color:rgba(255,255,255,.2);color:#F2F5F8}
+.axroot .galbatch .gbtn.del{background:rgba(255,107,94,.12);border-color:rgba(255,107,94,.3);color:#FF6B5E}
+.axroot .galbatch .gbtn.del:hover{border-color:rgba(255,107,94,.5);color:#FF6B5E}
+
 /* ── b11 — AI Sozlamalar mockup verbatim ── */
 .axroot .set-balcard{border-radius:14px;background:#13161C;border:1px solid rgba(255,255,255,.08);padding:16px;position:relative;overflow:hidden}
 .axroot .set-balglow{position:absolute;inset:0;background:radial-gradient(120% 100% at 90% -20%,rgba(194,240,74,.10),transparent 55%)}
@@ -9246,15 +9277,25 @@ window.afConfirm=function(msg,opts){
     try{
       var old=document.getElementById('afConfirmOv'); if(old)old.parentNode.removeChild(old);
       var ov=document.createElement('div'); ov.id='afConfirmOv';
-      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(8,9,12,.62);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)';
+      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
       var card=document.createElement('div');
-      card.style.cssText='width:min(340px,86vw);background:#17191f;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px 16px 14px;box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:inherit';
-      var tx=document.createElement('div');
-      tx.style.cssText='color:#e8eaf0;font-size:13px;line-height:1.5;white-space:pre-line;margin-bottom:14px';
-      tx.textContent=String(msg==null?'':msg);
-      var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
+      card.style.cssText='width:100%;max-width:340px;background:#161B22;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
+      // b9 mockup: birinchi qator — sarlavha (700), qolgani — izoh (kichik, kulrang)
+      var raw=String(msg==null?'':msg); var nl=raw.indexOf('\n');
+      var titleTxt=(nl>=0)?raw.slice(0,nl):raw, subTxt=(nl>=0)?raw.slice(nl+1):'';
+      var tt=document.createElement('div');
+      tt.style.cssText='color:#F2F5F8;font-weight:700;font-size:13.5px;line-height:1.4';
+      tt.textContent=titleTxt;
+      card.appendChild(tt);
+      if(subTxt){ var tx=document.createElement('div');
+        tx.style.cssText='color:#8A93A3;font-size:11px;margin-top:5px;line-height:1.5;white-space:pre-line';
+        tx.textContent=subTxt; card.appendChild(tx); }
+      var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:14px';
       var mk=function(label,primary){ var b=document.createElement('button'); b.type='button'; b.textContent=label;
-        b.style.cssText='padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid '+(primary?(opts.danger?'#e5484d':'#c2f04a'):'rgba(255,255,255,.14)')+';background:'+(primary?(opts.danger?'#e5484d':'#c2f04a'):'transparent')+';color:'+(primary?(opts.danger?'#fff':'#10120a'):'#c9cdd6');
+        b.style.cssText='flex:1;height:36px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;'
+          +(primary
+            ?('border:0;background:'+(opts.danger?'#FF6B5E':'#C2F04A')+';color:'+(opts.danger?'#1C0806':'#0E1400')+';font-weight:700')
+            :'border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.06);color:#F2F5F8;font-weight:600');
         return b; };
       var no=mk(opts.cancel||'Bekor qilish',false), yes=mk(opts.ok||'Davom etish',true);
       var done=function(v){ try{ ov.parentNode.removeChild(ov); }catch(_){ } document.removeEventListener('keydown',esc,true); resolve(!!v); };
@@ -9263,7 +9304,7 @@ window.afConfirm=function(msg,opts){
       yes.addEventListener('click',function(){ done(true); });
       ov.addEventListener('click',function(e){ if(e.target===ov)done(false); });
       document.addEventListener('keydown',esc,true);
-      row.appendChild(no); row.appendChild(yes); card.appendChild(tx); card.appendChild(row); ov.appendChild(card);
+      row.appendChild(no); row.appendChild(yes); card.appendChild(row); ov.appendChild(card);
       document.body.appendChild(ov);
       try{ yes.focus(); }catch(_){ }
     }catch(e){
@@ -11007,8 +11048,17 @@ window.afGallery=(function(){
       var a=(g.assets&&g.assets[0])||{}; var p=g.params||{};
       var sub=[p.aspectRatio,p.quality||p.resolution,(p.duration?(p.duration+'s'):null)].filter(Boolean).join(' · ');
       return { id:g.id, mode:g.mode, cat:cat(g.mode), url:a.url||'', thumb:a.thumbUrl||a.url||'',
-        title:((g.prompt||'').trim()||'Natija'), sub:sub, createdAt:g.createdAt };
+        title:((g.prompt||'').trim()||'Natija'), sub:sub, createdAt:g.createdAt,
+        prompt:(g.prompt||'').trim(), params:p,
+        cost:(typeof g.cost==='number'?g.cost:null), size:(a&&a.sizeBytes)||0 };
     }).filter(function(x){ return x.id && x.url; });
+  }
+  // b8: footer hajm formati — "2.1 GB" / "340 MB"
+  function fmtSize(bytes){
+    var b=Number(bytes)||0; if(!b)return '';
+    var gb=b/(1024*1024*1024);
+    if(gb>=1)return (Math.round(gb*10)/10)+' GB';
+    return Math.max(1,Math.round(b/(1024*1024)))+' MB';
   }
   function load(force){
     if(LOADED && !force && CACHE) return Promise.resolve(CACHE);
@@ -11038,20 +11088,24 @@ window.afGallery=(function(){
     var st={ filter:'all', cols:loadCols(), select:false, sel:{} };
     container.className='gal'; container.setAttribute('data-scope',scope);
     container.innerHTML=
-      '<div class="galhead">'
+      '<div class="galselhead"><span class="gx"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span><b class="gscount">0 tanlandi</b><span class="gall">Barchasini tanlash</span></div>'
+      + '<div class="galhead">'
       + '<div class="galtabs"></div>'
       + '<div class="galtools">'
       +   '<div class="galzoom"><b class="zout" title="Kichraytirish (ko\'proq ustun)">'+IC.zout+'</b><i></i><b class="zin" title="Kattalashtirish (kamroq ustun)">'+IC.zin+'</b></div>'
-      +   '<div class="galselbtn" title="Tanlash rejimi">'+IC.sel+'</div>'
+      +   '<div class="galselbtn" title="Tanlash rejimi">Tanlash</div>'
       +   (scope==='recent'?'<div class="galmore" title="To\'liq Tarix">Barchasi →</div>':'')
       + '</div>'
       + '</div>'
       + '<div class="galgrid"></div>'
-      + '<div class="galbatch"><span class="gbinfo">0 tanlandi</span>'+(isCEP()?'':'<div class="gbtn dl">'+IC.dl+' Yuklab olish</div>')+'<div class="gbtn del">'+IC.trash+' O\'chirish</div><div class="gbtn cancel">Bekor</div></div>';
+      + '<div class="galfoot"></div>'
+      + '<div class="galbatch"><span class="gbinfo">0 tanlandi</span>'+(isCEP()?'':'<div class="gbtn dl">'+IC.dl+' Yuklab olish</div>')+'<div class="gbtn del">'+IC.trash+' O\'chirish</div></div>';
     var tabsEl=container.querySelector('.galtabs');
     var gridEl=container.querySelector('.galgrid');
     var batchEl=container.querySelector('.galbatch');
     var selBtn=container.querySelector('.galselbtn');
+    var selHead=container.querySelector('.galselhead');
+    var footEl=container.querySelector('.galfoot');
     var zin=container.querySelector('.zin'), zout=container.querySelector('.zout');
     var more=container.querySelector('.galmore');
 
@@ -11067,7 +11121,9 @@ window.afGallery=(function(){
     zout.addEventListener('click',function(){ if(st.cols<3){ st.cols++; saveCols(st.cols); applyZoom(); } });  // kichraytirish = ko'proq ustun
     selBtn.addEventListener('click',function(){ st.select=!st.select; st.sel={}; selBtn.classList.toggle('on',st.select); draw(); });
     if(more)more.addEventListener('click',function(){ if(typeof opts.onSeeAll==='function')opts.onSeeAll(); });
-    container.querySelector('.galbatch .cancel').addEventListener('click',function(){ st.select=false; st.sel={}; selBtn.classList.remove('on'); draw(); });
+    // b9: select-mode header — ✕ chiqish + "Barchasini tanlash"
+    selHead.querySelector('.gx').addEventListener('click',function(){ st.select=false; st.sel={}; selBtn.classList.remove('on'); draw(); });
+    selHead.querySelector('.gall').addEventListener('click',function(){ visible().forEach(function(x){ st.sel[x.id]=1; }); draw(); });
     var _galDl=container.querySelector('.galbatch .dl');
     if(_galDl)_galDl.addEventListener('click',function(){
       var list=visible().filter(function(x){ return st.sel[x.id]; });
@@ -11079,38 +11135,52 @@ window.afGallery=(function(){
     container.querySelector('.galbatch .del').addEventListener('click',batchDelete);
 
     function visible(){ var arr=(CACHE||[]).filter(function(x){ return st.filter==='all'||x.cat===st.filter; }); if(scope==='recent')arr=arr.slice(0,12); return arr; }
-    function updBatch(){ batchEl.classList.toggle('on',st.select); container.querySelector('.gbinfo').textContent=Object.keys(st.sel).length+' tanlandi'; }
+    function updBatch(){
+      var n=Object.keys(st.sel).length;
+      batchEl.classList.toggle('on',st.select);
+      container.querySelector('.gbinfo').textContent=n+' tanlandi';
+      // b9: select-mode header ("✕ N tanlandi · Barchasini tanlash"); oddiy head yashirinadi
+      selHead.classList.toggle('on',st.select);
+      selHead.querySelector('.gscount').textContent=n+' tanlandi';
+      var gh=container.querySelector('.galhead'); if(gh)gh.style.display=st.select?'none':'';
+    }
+    // b10: galereya kartasi lightbox'ga ochiladi (Import/Download lightbox ichida)
+    function galLbCtx(){ return {
+      isCEP:isCEP(),
+      list:function(){ return visible(); },
+      onImport:function(x){ importMedia(x); },
+      onDownload:function(x){ download(x); }
+    }; }
 
     function draw(){
       applyZoom();
       gridEl.classList.toggle('selmode',st.select);
       if(!CACHE){ gridEl.innerHTML='<div class="galempty">Yuklanmoqda…</div>'; return; }
       var list=visible();
-      if(!list.length){ gridEl.innerHTML='<div class="galempty"><b>Hozircha bo\'sh</b>'+(st.filter==='all'?'Gen qilsangiz shu yerda chiqadi.':'Bu turда natija yo\'q.')+'</div>'; updBatch(); return; }
+      if(!list.length){ gridEl.innerHTML='<div class="galempty"><b>Hozircha bo\'sh</b>'+(st.filter==='all'?'Gen qilsangiz shu yerda chiqadi.':'Bu turда natija yo\'q.')+'</div>'; footEl.textContent=''; updBatch(); return; }
       gridEl.innerHTML='';
       list.forEach(function(it){
         var card=document.createElement('div'); card.className='gcard'+(st.sel[it.id]?' sel':'');
-        var badge=(it.cat==='video')?(IC.vid+' Video'):(it.cat==='audio')?(IC.aud+' Ovoz'):(it.cat==='sfx')?(IC.aud+' SFX'):(IC.img+' Rasm');
+        var badge=(it.cat==='video')?IC.vid:(it.cat==='audio'||it.cat==='sfx')?IC.aud:IC.img;
         var th='<div class="gth" style="background-image:url(\''+it.thumb+'\')"><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
-        var sub=esc(it.sub||(it.cat==='image'?'Rasm':it.cat==='video'?'Video':it.cat==='sfx'?'SFX':'Ovoz'));
-        var meta='<div class="gmeta"><b>'+esc(String(it.title).slice(0,60))+'</b><small>'+sub+'</small></div>';
-        var acts='<div class="gacts"><div class="a-imp">'+IC.imp+' Import</div>'+(isCEP()?'':'<div class="a-dl">'+IC.dl+' Yuklab</div>')+'</div>';
-        card.innerHTML=th+meta+acts;
+        card.innerHTML=th;
         if(st.select){
           card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
         }else{
-          card.querySelector('.a-imp').addEventListener('click',function(e){ e.stopPropagation(); importMedia(it); });
-          var _adl=card.querySelector('.a-dl'); if(_adl)_adl.addEventListener('click',function(e){ e.stopPropagation(); download(it); });
+          card.addEventListener('click',function(){ if(window.afRecent&&window.afRecent.openLightbox)window.afRecent.openLightbox(it,galLbCtx()); else importMedia(it); });
         }
         gridEl.appendChild(card);
       });
+      // b8: "N ta natija · X GB" footer
+      var total=0; list.forEach(function(x){ total+=(x.size||0); });
+      footEl.textContent=list.length+' ta natija'+(total?(' · '+fmtSize(total)):'');
       updBatch();
     }
 
     function batchDelete(){
       var list=visible().filter(function(x){ return st.sel[x.id]; });
       if(!list.length){ toast('Avval tanlang','warning'); return; }
-      window.afConfirm(list.length+' ta natija o\'chirilsinmi? Bu qaytarilmaydi.',{ok:"O'chirish",danger:true}).then(function(ok){
+      window.afConfirm(list.length+' ta element o\'chirilsinmi?\nBu amalni ortga qaytarib bo\'lmaydi. Fayllar serverdan ham o\'chadi.',{ok:"O'chirish",danger:true}).then(function(ok){
         if(!ok)return;
         var done=0,fail=0,total=list.length;
         list.forEach(function(it){
