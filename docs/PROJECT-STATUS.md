@@ -1,10 +1,47 @@
-> **STATUS:** AUDIT YAKUNLANDI (34/34 live, origin/main sinxron) · YAGONA KOD-TASDIQLANGAN HAQIQAT MANBAI — 2026-06-21
+> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval pastdagi **«§-1 · 2026-07-03 YANGILANISH»** blokini o'qing (u eski faktlarni bekor qiladi).
 
 # AssetFlow — Loyiha holati (yangi dasturchi uchun onboarding)
 
 > **Maqsad:** bu hujjat yangi dasturchini loyiha bilan tanishtiradi. Mazmun **haqiqiy koddan** tekshirilgan (route'lar, Prisma schema, build skriptlari, env). Bu — loyiha joriy holati uchun **yagona kod-tasdiqlangan haqiqat manbai**; `docs/REJA-*` va `docs/STUDIO-GEN-*` reja/dizayn hujjatlari joriy holat EMAS. `HANDOFF.md` katta va ba'zi joylari eskirgan — ishonchli manba: kodning o'zi va shu hujjat.
 >
 > *Yangilangan: 2026-06-20 · Tekshirgan: kod tahlili (apps/api, packages/database, packages/assetflow-studio, plugins/after-effects-cep)*
+
+---
+
+## §-1. 2026-07-03 YANGILANISH — INFRA/AI/BREND KO'CHDI (eski §0-§9 ni bekor qiladi)
+
+> Bu blok koddan tekshirilgan (`Dockerfile`, `deploy-cloudrun.sh`, `cloudrun-env.yaml`, `.github/workflows/`, `apps/api/src/lib/ai/*`, `functions/_middleware.js`). Pastdagi bo'limlar hali eski Render/R2/OpenRouter/AssetFlow deb yozadi — QUYIDAGI ustun.
+
+### Nima o'zgardi (ESKI → HOZIR)
+
+| Qism | ESKI (§0-§9) | HOZIR (kodda tasdiqlangan) |
+|------|--------------|----------------------------|
+| API hosting | Render (`assetflow-rqbq.onrender.com`) | **Google Cloud Run** — `europe-west1`, service `assetflow-api`, `https://api.getframeflow.app`. `min-instances 1` (cold-start yo'q). |
+| Deploy | render.yaml auto | **GitHub Actions** `.github/workflows/deploy-cloudrun.yml` (WIF auth, kalitsiz). `main`'ga push → build (Docker) → **migrate-gate** (`migrate:deploy` yiqilsa deploy to'xtaydi) → deploy. Qo'lda: `deploy-cloudrun.sh`. |
+| Storage | Cloudflare R2 | **GCS (S3-mos)** — bucket `assetflow-assets-2026`, `S3_ENDPOINT=https://storage.googleapis.com`, `AWS_*` = GCS HMAC. `s3.ts` `gcsKeyFromUrl/gcsUriFromUrl` bilan `gs://` chiqaradi (Vertex video input uchun). |
+| DB | Neon PostgreSQL | Neon PostgreSQL — **o'zgarmagan** ✅ |
+| Rasm AI | OpenRouter | **Vertex AI** (`vertex-image.ts`) — Imagen 4/Ultra + Nano Banana 2/Lite/Pro (5 model `enabled`). |
+| Video AI | OpenRouter | **Vertex Omni Flash** (`vertex-omni.ts`, SINXRON) + **Veo** (`vertex.ts`, async) + **fal.ai** R2V (`fal.ts`, zaxira). |
+| Ovoz/SFX | ElevenLabs | ElevenLabs — o'zgarmagan ✅ (SFX). Kokoro TTS OpenRouter'da (dormant). |
+| Frontend | CF Pages `assetflow-20j.pages.dev` | **CF Pages `getframeflow.app`** + `admin.` / `studio.` subdomenlar (`functions/_middleware.js` host-router). Yangi **public platforma** (`platform/`, `ff-api.js`, `window.FFAPI`) — faqat USER roli. |
+| To'lov | Stripe (yopiq) | Stripe kodi bor, lekin `STRIPE_*` kalitlari BO'SH → **to'lov amalda o'chiq**. (Reja: Paddle — `docs` / xotira.) |
+| Brend | AssetFlow | **FrameFlow** (public UI/API/domen/email). Ichki JS klasslar hali `AssetFlow*`, `af_*` localStorage — texnik qarz. |
+
+**Dormant (kodda bor, `enabled:false`):** OpenRouter (barcha modellar), fal.ai RASM modellari, Magnific. Vertex ustun.
+
+### Yangi/qo'shilgan (2026-06-21 dan keyin)
+
+- **Auth:** Google OAuth (web `login.html`), **Google device-code** (AE plagin — webview GIS yuklay olmaydi), **email-verify gate** (`consumeAiCredits` ichida, RESEND sozlangan → majburiy; eski userlar grandfather), **Turnstile** (register formalar). Rate-limiting (`middleware/rate-limit.ts`).
+- **DB migratsiyalar (oxirgi):** `20260622_template_is_pro_tier` (per-shablon Free/Pro), `20260629_saved_references_ttl` (`SavedReference` TTL), `20260703_backfill_email_verified`, `20260703_plugin_device_code` (`PluginDeviceCode`). pgvector saqlanadi.
+- **AI kredit oqimi (tekshirilgan, SOG'LOM):** imzolangan `cost-quote` (`gen-quote.ts`) → `consumeAiCredits` ATOMIK (`updateMany aiCredits>=cost`) → xato/timeout≠refund ajratilgan → `fail()` `updateMany count>0` bilan BIR MARTA refund (double-refund race yopiq) → ADMIN consume/refund'dan ozod (simmetriya). `gen.cost = price` (consume=refund summasi).
+- **Env manbai:** `cloudrun-env.yaml` (git-ignored, hech qachon commit qilinmagan). Deploy'da GitHub secret `CLOUDRUN_ENV_YAML` dan yoziladi — YAML o'zgarsa `gh secret set CLOUDRUN_ENV_YAML` SHART.
+
+### Hali ochiq / ehtiyot
+- **Vertex Omni video** — kredit MANTIG'I sog'lom, lekin real GCP billing'da (~$1/video) end-to-end SINALMAGAN (`vertex-omni.ts` izohi). `>15MB` video referens uchun same-project GCS bucket yo'q (`OMNI_INLINE_VIDEO_MAX`).
+- **`keepalive.yml`** — hali ESKI Render URL'ni (`assetflow-rqbq.onrender.com`) pinglaydi. Cloud Run `min-instances 1` bo'lgani uchun **keraksiz** — o'chirilsin yoki URL yangilansin.
+- **`render.yaml`** — legacy, deploy qilinmaydi (referens uchun qolgan).
+- **`cloudrun-env.yaml`** — jonli maxfiy kalitlar mahalliy diskda; commit qilinmasin, davriy rotatsiya tavsiya.
+- **Faza 2 plagin AI tool'lar** (lip-sync/motion/slow-mo/video→SFX/restyle/draw) — UI tayyor, backend "Tez orada · fal.ai".
 
 ---
 
@@ -141,6 +178,8 @@ scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
 
 ### Deploy topologiyasi
 
+> ⚠️ ESKIRGAN — joriy topologiya (Cloud Run + GCS + `getframeflow.app`) uchun **§-1** ga qarang. Quyidagi jadval 2026-06-21 holati.
+
 | Xizmat | Platforma | URL |
 |--------|-----------|-----|
 | API | Render | https://assetflow-rqbq.onrender.com |
@@ -269,6 +308,7 @@ Loyihada **ikkita butunlay alohida AI tizim** bor. Ikkalasi har xil route prefik
 ## 5. DEPLOY va ENV
 
 ### Production URL'lar
+> ⚠️ ESKIRGAN — joriy: API `https://api.getframeflow.app` (Cloud Run), Frontend `https://getframeflow.app` (+ `admin.`/`studio.`). Batafsil **§-1**. Quyi qatorlar 2026-06-21 holati (eski Render/Pages hali CORS'da orqaga-moslik uchun).
 - API: `https://assetflow-rqbq.onrender.com` (Render, auto-deploy `render.yaml` dan)
 - Studio: `https://assetflow-20j.pages.dev` (Cloudflare Pages)
 

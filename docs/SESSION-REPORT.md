@@ -1,22 +1,18 @@
-# SESSION REPORT — 2026-07-03 — Plagin FAZA 2 + Home 1:1 (Faza 3 boshi)
+# SESSION REPORT — 2026-07-03 — To'liq tahlil + 3 ustuvor ish
 
 ## NIMA QILINDI
-- **FAZA 2 (yagona nav):** 11 o'lik prototip view o'chirildi; ff-components.css link qilindi;
-  3 marta takrorlangan "AI Tools" tugmasi → 1 ta `.ff-seg` segment; af-topbar 2 qatorga bo'lindi.
-- **Home (Asosiy) 1:1 qayta qurildi** → dizayn `VAR·A / 1b "Editorial stack"` (referens: `design-preview/
-  New Design/.../FrameFlow Redesign.dc.html`, 66–123-qatorlar). `#homePage .axhome` to'liq almashtirildi:
-  - Header (logo+FrameFlow+kredit pill+avatar) → segment (Katalog | AI Tools) → qidiruv+filtr →
-    TAVSIYA ETILGAN featured hero → "Shablonlar 🎬" + Barchasi → 2-ustun shablon grid.
-  - Phosphor `ph` ikonalar → inline SVG (saboq: `.ph` klassdan qoch).
-  - Real katalog (`assets`) bo'lsa undan render; bo'lmasa dizayn demo to'plami (1:1 ko'rinish).
-  - Kredit pill + avatar → openAccountSheet; segment AI Tools → homeGo('ai'); qidiruv/filtr/Barchasi/
-    karta → tegishli Katalog nav. Eski renderHomeRecent/homeName/bo'limlar grid olib tashlandi.
+- Loyiha 5 soha bo'yicha koddan to'liq tahlil qilindi (backend, frontend/platforma, AE plagin, DB, deploy/infra).
+- **1)** `docs/PROJECT-STATUS.md` yangilandi — «§-1 · 2026-07-03» tuzatish bloki qo'shildi (eski §0-§9 ni bekor qiladi) + Deploy/URL jadvallariga ESKIRGAN belgisi.
+- **2)** Vertex Omni video kredit yo'li ADVERSARIAL audit qilindi (kod bo'yicha).
+- **3)** `cloudrun-env.yaml` git holati tekshirildi.
 
-## NIMA TOPILDI / TEKSHIRILDI
-- Brauzer preview (`cep-plugin-preview` :8976): Home dizaynga bayt-mos render; AI Tools segment ✓,
-  ‹ Asosiy qaytish ✓, karta→Katalog ✓, konsol xatosiz. Kredit real userда raqam, oflaynда "Free".
-- ⚠️ AE'dagi o'rnatilgan CEP eski — ko'rish uchun `install-cep.sh` + panel reload SHART.
+## NIMA TOPILDI
+- Status doc ESKIRGAN edi: kod Render→**Cloud Run**, R2→**GCS**, OpenRouter→**Vertex/fal.ai**, AssetFlow→**FrameFlow** ga ko'chgan.
+- **Kredit mantig'i SOG'LOM:** imzolangan quote → atomik consume → timeout≠refund → bir martalik refund (double-refund yopiq) → ADMIN ozod. `gen.cost=price` simmetrik. Kod xatosi TOPILMADI.
+- **Ochiq (operatsion):** Omni real GCP billing'da (~$1/video) sinalmagan; muvaffaqiyatli paid call'dan keyin persist yiqilsa user refund oladi, biz GCP to'laymiz (o'z-xarajat, ekspluatatsiya emas).
+- **3)** `cloudrun-env.yaml` git'da HECH QACHON kuzatilmagan + aniq gitignored ✅ (oshkorlik faqat mahalliy disk).
 
-## KUTILMOQDA / KEYINGI
-- Faza 3 davomi: karta→shablon detali (hozircha Katalog'ga yo'naltiradi), Home/Katalog to'liq merge,
-  Kutubxonam (Sevimli+Yuklab olingan). Faza 4: AI Tools pillar. Faza 6: o'lik JS/CSS tozalash + AE regressiya.
+## KUTILMOQDA
+- Omni bir marta real `/gen` (video) — kredit yechish+refund+cost'ni jonli tasdiqlash (pul yechadi).
+- Kalit rotatsiya (fal/ElevenLabs/OpenRouter/GCS HMAC/Google) — ixtiyoriy, ehtiyot chorasi.
+- `keepalive.yml` eski Render URL — o'chirish/yangilash.
