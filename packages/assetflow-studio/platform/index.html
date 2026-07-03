@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
+<meta name="turnstile-site-key" content="">
 <title>FrameFlow — Kreativ aktivlar va AI generatsiya platformasi</title>
 
 <script src="assets/react.production.min.js"></script>
@@ -10,6 +11,7 @@
 <script src="assets/dc-runtime.js"></script>
 <script src="ff-api.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <x-dc>
@@ -15243,6 +15245,9 @@
             <sc-if value="{{ authShowPassword }}" hint-placeholder-val="{{ true }}">
               <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--txt3)">Parol</span><a onclick="{{ switchForgot }}" style="font-size:12px;color:var(--acc);cursor:pointer">Unutdingizmi?</a></div><input value="{{ authPassword }}" oninput="{{ onAuthPassword }}" onkeydown="{{ onAuthKey }}" type="password" placeholder="••••••••" style="width:100%;height:44px;padding:0 14px;border-radius:11px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></div>
             </sc-if>
+            <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
+              <div id="ffTurnstileWidget" style="margin-top:2px"></div>
+            </sc-if>
             <button onclick="{{ authSubmit }}" style="margin-top:4px;width:100%;padding:14px;border:none;border-radius:13px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 12px 30px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-1px)">{{ authBtn }}</button>
           </div>
           <sc-if value="{{ authShowGoogle }}" hint-placeholder-val="{{ false }}">
@@ -15592,6 +15597,7 @@ class Component extends DCLogic {
       }
     } catch (e) {}
     this.renderGoogleBtn();
+    this.renderTurnstile();
     try {
       this._io = new IntersectionObserver((es) => {
         es.forEach(e => { if (e.isIntersecting) { const el = e.target; el.style.transitionDelay = (el.getAttribute('data-rv-delay') || 0) + 'ms'; el.classList.add('rv-in'); this._io.unobserve(el); if (el.hasAttribute('data-stats')) this.runStats(); } });
@@ -15618,7 +15624,7 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._io) this._io.disconnect(); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.renderGoogleBtn(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.renderGoogleBtn(); this.renderTurnstile(); }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
   runStats() { if (this._statsRun) return; this._statsRun = true; const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
   _applyEntry() {
@@ -15715,6 +15721,10 @@ class Component extends DCLogic {
     if (st.authMode !== 'forgot' && pass.length < (st.authMode === 'register' ? 8 : 1)) {
       this.setState({ authErr: st.authMode === 'register' ? 'Parol kamida 8 belgi' : 'Parol kiriting' }); return;
     }
+    const turnstileSiteKey = (document.querySelector('meta[name="turnstile-site-key"]') || {}).getAttribute && document.querySelector('meta[name="turnstile-site-key"]').getAttribute('content');
+    if (st.authMode === 'register' && turnstileSiteKey && !this._turnstileToken) {
+      this.setState({ authErr: 'Bot tekshiruvini yakunlang' }); return;
+    }
     this.setState({ authBusy: true, authErr: null, authInfo: null });
     try {
       if (st.authMode === 'forgot') {
@@ -15723,10 +15733,12 @@ class Component extends DCLogic {
         return;
       }
       const r = st.authMode === 'register'
-        ? await FFAPI.register(email, pass, (st.authName || '').trim())
+        ? await FFAPI.register(email, pass, (st.authName || '').trim(), this._turnstileToken)
         : await FFAPI.login(email, pass);
+      if (window.turnstile && this._turnstileWidgetId != null) { window.turnstile.reset(this._turnstileWidgetId); this._turnstileToken = ''; }
       this._afterLoginSuccess(r, st.authMode === 'register' ? 'Xush kelibsiz!' : 'Kirish muvaffaqiyatli');
     } catch (e) {
+      if (window.turnstile && this._turnstileWidgetId != null) { window.turnstile.reset(this._turnstileWidgetId); this._turnstileToken = ''; }
       this.setState({ authBusy: false, authErr: this.errMsg(e) });
     }
   }
@@ -15778,6 +15790,24 @@ class Component extends DCLogic {
       this._giInited = true;
     }
     google.accounts.id.renderButton(container, { theme: 'outline', size: 'large', width: 280, text: 'continue_with' });
+  }
+  /** Turnstile widget — faqat register rejimida, meta[turnstile-site-key] bo'sh
+   *  bo'lsa chizilmaydi (backend ham kalit yo'q bo'lsa fail-open, token talab
+   *  qilmaydi). Idempotent: konteyner allaqachon to'ldirilgan bo'lsa qayta chizmaydi. */
+  renderTurnstile() {
+    if (this.state.screen !== 'auth' || this.state.authMode !== 'register') return;
+    const container = document.getElementById('ffTurnstileWidget');
+    if (!container || container.childElementCount > 0) return;
+    const siteKeyMeta = document.querySelector('meta[name="turnstile-site-key"]');
+    const siteKey = siteKeyMeta && siteKeyMeta.getAttribute('content');
+    if (!siteKey) return;
+    if (!window.turnstile) { setTimeout(() => this.renderTurnstile(), 200); return; }
+    this._turnstileWidgetId = window.turnstile.render(container, {
+      sitekey: siteKey,
+      callback: (token) => { this._turnstileToken = token; },
+      'expired-callback': () => { this._turnstileToken = ''; },
+      'error-callback': () => { this._turnstileToken = ''; },
+    });
   }
   resendVerification() {
     const email = this.state.user && this.state.user.email;

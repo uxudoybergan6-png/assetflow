@@ -125,7 +125,7 @@ const StudioApi = (() => {
     return data;
   }
 
-  async function register({ email, password, name }) {
+  async function register({ email, password, name, turnstileToken }) {
     const data = await request("/api/auth/register", {
       method: "POST",
       body: {
@@ -133,6 +133,7 @@ const StudioApi = (() => {
         password,
         name,
         asContributor: true,
+        turnstileToken,
       },
     });
     return data;

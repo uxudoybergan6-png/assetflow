@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
+<meta name="turnstile-site-key" content="">
 <title>FrameFlow — Kirish</title>
 <link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/studio-config.js"></script>
 <script src="/studio/js/theme.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="auth-page">
 <div class="auth-shell">
@@ -119,6 +121,7 @@
             <div class="checkbox" id="termsChk" tabindex="0" role="checkbox"></div>
             Platforma qoidalariga roziman
           </label>
+          <div id="turnstileWidget" style="margin:2px 0"></div>
           <p class="auth-error hidden" id="registerError" role="alert"></p>
           <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Ro'yxatdan o'tish</button>
         </form>
@@ -207,6 +210,25 @@
     this.setAttribute("aria-checked", this.classList.contains("on"));
   });
 
+  // Turnstile — meta[turnstile-site-key] bo'sh bo'lsa widget chizilmaydi
+  // (backend ham kalit yo'q bo'lsa fail-open, token talab qilinmaydi).
+  let turnstileToken = "";
+  const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.getAttribute("content") || "";
+  let turnstileWidgetId = null;
+  function initTurnstile() {
+    if (!turnstileSiteKey || turnstileWidgetId !== null) return;
+    if (!window.turnstile) { setTimeout(initTurnstile, 200); return; }
+    const el = document.getElementById("turnstileWidget");
+    if (!el) return;
+    turnstileWidgetId = window.turnstile.render(el, {
+      sitekey: turnstileSiteKey,
+      callback: (token) => { turnstileToken = token; },
+      "expired-callback": () => { turnstileToken = ""; },
+      "error-callback": () => { turnstileToken = ""; },
+    });
+  }
+  if (turnstileSiteKey) initTurnstile();
+
   function afterAuth(r, remember) {
     if (r.session.role === "user") {
       return "Bu hisob faqat obunachi (USER). Contributor uchun ro'yxatdan o'ting.";
@@ -283,11 +305,19 @@
       err.classList.remove("hidden");
       return;
     }
+    if (turnstileSiteKey && !turnstileToken) {
+      err.textContent = "Bot tekshiruvini yakunlang";
+      err.classList.remove("hidden");
+      return;
+    }
     const r = await AssetFlowAuth.register({
       email: fd.get("email"),
       password: fd.get("password"),
       name: fd.get("name"),
+      turnstileToken: turnstileToken || undefined,
     });
+    if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+    turnstileToken = "";
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     err.classList.add("hidden");
     toast("Tayyor", "Contributor hisobi yaratildi", "success");

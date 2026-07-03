@@ -115,14 +115,17 @@ const GCS_ORIGIN = "https://storage.googleapis.com";
 // Google Identity Services (Studio login "Google bilan kirish" tugmasi) —
 // gsi/client skripti + hisob tanlash popup/iframe shu origin'lardan yuklanadi.
 const GOOGLE_GSI_ORIGINS = "https://accounts.google.com https://accounts.google.com/gsi/";
+// Cloudflare Turnstile (register formadagi bot-himoya widget'i) — widget skripti
+// + challenge iframe shu origin'dan yuklanadi.
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${GOOGLE_GSI_ORIGINS}`,
+  `script-src 'self' 'unsafe-inline' ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: ${API_ORIGINS} ${GCS_ORIGIN}`,
   `media-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com`,
-  `frame-src ${GOOGLE_GSI_ORIGINS}`,
+  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com ${TURNSTILE_ORIGIN}`,
+  `frame-src ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -137,12 +140,12 @@ const CSP = [
 // eng qattig'i amal qilardi va eval bloklanardi).
 const PLATFORM_CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${GOOGLE_GSI_ORIGINS}`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
   `media-src 'self' blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com`,
-  `frame-src ${GOOGLE_GSI_ORIGINS}`,
+  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com ${TURNSTILE_ORIGIN}`,
+  `frame-src ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",

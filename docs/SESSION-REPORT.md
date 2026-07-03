@@ -1,28 +1,30 @@
-# SESSION REPORT — 2026-07-03 — Rol bo'yicha login segregatsiyasi (platforma)
+# SESSION REPORT — 2026-07-03 — Turnstile frontend widget + GCP billing budget
 
 ## MUAMMO
-Foydalanuvchi so'radi: USER/CONTRIBUTOR/ADMIN bir-birining login sahifasidan kira olmasin.
-Tekshiruv natijasi: `login.html` (Studio/Contributor) va `admin-login.html` allaqachon
-mos kelmagan rolni rad etardi (xato xabar + logout), lekin **platforma**
-(`platform/index.html`, getframeflow.app) hech qanday rol tekshiruvi qilmasdi — CONTRIBUTOR
-yoki ADMIN hisobi bilan ham kirib, USER dashboard/AI Studio'dan foydalanish mumkin edi.
+Turnstile backend (`turnstile.ts`, `/register`) allaqachon bor edi, lekin frontend widget
+yo'q edi (site key konfiguratsiya qilinmaguncha fail-open ishlaydi). GCP loyihada billing
+budget umuman yo'q edi (xarajat oshib ketsa ogohlantirish yo'q).
 
-## TUZATILDI
-- `platform/index.html` `_afterLoginSuccess(r, msg)` — login/register/Google javobida
-  `r.user.role !== 'USER'` bo'lsa: sessiya tozalanadi, `authErr` bilan rad javobi ko'rsatiladi,
-  dashboard'ga o'tkazilmaydi (login.html'dagi bir xil naqsh).
-- `componentDidMount()` — localStorage'da saqlangan eski sessiya CONTRIBUTOR/ADMIN role
-  bo'lsa avtomatik tozalanadi (himoya: eski/qo'lda kiritilgan token qolib ketgan holat).
-- `login.html` (USER rad etadi) va `admin-login.html` (non-ADMIN rad etadi) — o'zgarishsiz,
-  ular allaqachon to'g'ri edi.
+## O'ZGARTIRILDI
+- `js/studio-api.js`, `platform/ff-api.js` — `register()` ga `turnstileToken` parametri.
+- `login.html`, `platform/index.html` — Turnstile widget (Google tugma naqshiga o'xshab):
+  meta `turnstile-site-key` bo'sh bo'lsa render qilinmaydi/bloklamaydi (backend fail-open
+  bilan bir xil naqsh); to'lganda `renderTurnstile()`/`initTurnstile()` widget'ni render
+  qiladi va tokenni submit'ga bog'laydi.
+- `scripts/prepare-cf-pages.mjs` — CSP (Studio va Platform ikkalasi) ga
+  `challenges.cloudflare.com` qo'shildi (script-src/connect-src/frame-src).
+- GCP: `billingbudgets.googleapis.com` yoqildi, `project-289028d3-984c-4d84-bd4` uchun
+  $50/oy budget yaratildi (50%/90%/100% ogohlantirish, default email kanal).
 
-## TEKSHIRILDI (platform-preview)
-- Stale CONTRIBUTOR sessiya bilan `#dashboard`ga kirishga urinish → sessiya tozalanib
-  `#auth`ga tushdi.
-- Mock login javobi `role:'CONTRIBUTOR'` bilan submit qilinganda — aniq xato xabari
-  ko'rsatildi, sessiya saqlanmadi (`ff_token`/`ff_user` bo'sh qoldi), dashboard ochilmadi.
-- Mock `role:'USER'` bilan — regressiya yo'q, to'g'ridan-to'g'ri dashboard ochildi.
-- `git diff --stat` — faqat `platform/index.html` (14 qo'shildi/2 o'chdi).
+## TEKSHIRILDI (preview)
+- `login.html` va `platform/index.html` ikkalasida ham: bo'sh site key → widget render
+  bo'lmaydi (0 farzand element, konsol toza) — production-safe default.
+- Test site key (`1x00000000000000000000AA`) bilan: widget to'g'ri joyda render bo'ldi,
+  avtomatik dummy token berdi, submit oqimi real network'gacha yetdi. Keyin ikkalasida
+  ham qiymat bo'shga qaytarildi (joriy production holat).
 
 ## KUTILMOQDA
-1. Deploy → productionda haqiqiy uchta rol (USER/CONTRIBUTOR/ADMIN) bilan qayta tekshirish.
+1. Foydalanuvchi Cloudflare Turnstile dashboard'da haqiqiy widget yaratishi kerak → site
+   key ikkala HTML faylning meta tegiga, secret key `cloudrun-env.yaml`dagi
+   `TURNSTILE_SECRET_KEY`ga + `gh secret set CLOUDRUN_ENV_YAML` + redeploy.
+2. GCP billing budget — hozircha faqat default email ogohlantirish (custom kanal yo'q).
