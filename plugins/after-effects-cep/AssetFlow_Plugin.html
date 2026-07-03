@@ -3175,6 +3175,28 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .warn{background:rgba(255,178,124,.08);border:1px solid rgba(255,178,124,.26);color:#F0CBAA}
 .axig .warn .wi{color:#FFB27C}
 
+/* ── b12 — chekka holatlar (kam kredit banner · sessiya modal · bo'sh hero) ── */
+.axig .lowcred{display:none;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:rgba(255,107,94,.08);border:1px solid rgba(255,107,94,.26);margin-bottom:10px;cursor:pointer}
+.axig .lowcred.on{display:flex}
+.axig .lowcred svg{flex:none;color:#FF6B5E}
+.axig .lowcred .lt{font-size:10.5px;font-weight:600;color:#FFC6BF}
+.axig .lowcred .ls{font-family:var(--font-mono);font-size:8.5px;color:#D99790;margin-top:1px}
+.axroot .ai-cred.low{background:rgba(255,107,94,.12);border-color:rgba(255,107,94,.3);color:#FF6B5E}
+.axroot .ai-cred.low .cs{color:#FF6B5E}
+.axig .recentgrid .empt.emptyhero{display:flex;flex-direction:column;align-items:center;gap:9px;padding:34px 40px;text-align:center}
+.axig .emptyhero .eh-ic{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#8A93A3}
+.axig .emptyhero b{font-weight:600;font-size:12px;color:#F2F5F8;margin:0;display:block}
+.axig .emptyhero .eh-s{font-size:10.5px;color:#5E6675;line-height:1.5}
+.axig .emptyhero .eh-ar{color:#5E6675;margin-top:4px}
+.ai-sess-ov{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:0 34px}
+.ai-sess-ov.on{display:flex}
+.ai-sess-card{width:100%;max-width:340px;background:#161B22;border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:20px 16px;box-shadow:0 18px 42px rgba(0,0,0,.5);text-align:center}
+.ai-sess-ic{width:42px;height:42px;border-radius:50%;background:rgba(255,178,124,.1);border:1px solid rgba(255,178,124,.3);display:flex;align-items:center;justify-content:center;color:#FFB27C;margin:0 auto}
+.ai-sess-t{font-weight:700;font-size:13.5px;margin-top:11px;color:#F2F5F8}
+.ai-sess-s{font-size:11px;color:#8A93A3;margin-top:5px;line-height:1.5}
+.ai-sess-btn{width:100%;height:40px;border-radius:999px;background:#C2F04A;border:0;color:#0E1400;font-weight:700;font-size:12.5px;margin-top:14px;cursor:pointer;font-family:inherit}
+.ai-sess-btn:hover{background:#9CD62B}
+
 /* ── b7 — birlashgan "Video sozlamalari" sheet mockup verbatim ── */
 .axvg .vg-setk{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:#5E6675;margin:12px 0 6px;text-transform:uppercase}
 .axvg .vg-mrow{height:46px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:12px;cursor:pointer}
@@ -3727,6 +3749,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="lbl">Prompt <span class="req">*</span> <span class="meta" id="igRefMeta">0 ta referens</span></div>
                               <div class="warn" id="igRefWarn"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Bu model uchun referens <b>majburiy</b> — kamida 1 ta rasm qo'shing.</span></div>
                               <div class="pbox">
+                                <div class="lowcred" id="igLowBanner" title="Kredit to'ldirish — Sozlamalar" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Kredit yetarli emas</div><div class="ls" id="igLowNeed"></div></div></div>
                                 <div class="mention" id="igMention"></div>
                                 <div class="refgrid" id="igRefgrid"></div>
                                 <textarea id="igPrompt" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi. Masalan: @img1 materialini @img2 shakliga qo'lla"></textarea>
@@ -3883,6 +3906,7 @@ html.home-mode #homePage{display:block!important}
                               <!-- Prompt (umumiy — ikkala refKind) -->
                               <div class="sect">
                                 <div class="pbox">
+                                  <div class="lowcred" id="vgLowBanner" title="Kredit to'ldirish — Sozlamalar" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Kredit yetarli emas</div><div class="ls" id="vgLowNeed"></div></div></div>
                                   <div class="mention" id="vgMention"></div>
                                   <textarea id="vgPrompt" placeholder="Kadrni jonlantir: yomg'ir tomchilari, neon aks, sekin dolly-in…"></textarea>
                                   <div class="vg-pchips">
@@ -10279,11 +10303,28 @@ async function bootPlugin(){
     if(e.key===AssetFlowStore?.META_KEY) onMeta();
   });
   window.addEventListener('assetflow:meta-updated',onMeta);
-  // Token eskirdi (401/403) — mehmon holatiga qaytib, login oynasini ochamiz
+  // Token eskirdi (401/403) — b12: toast o'rniga modal karta (mockup), Kirish → account sheet
+  function ensureAiSessModal(){
+    var ov=document.getElementById('aiSessModal');
+    if(ov)return ov;
+    ov=document.createElement('div'); ov.className='ai-sess-ov'; ov.id='aiSessModal';
+    ov.innerHTML='<div class="ai-sess-card">'
+      +'<div class="ai-sess-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>'
+      +'<div class="ai-sess-t">Sessiya tugadi — qayta kiring</div>'
+      +'<div class="ai-sess-s">Xavfsizlik uchun sessiya 24 soatda yangilanadi.</div>'
+      +'<button type="button" class="ai-sess-btn">Kirish</button></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',function(e){ if(e.target===ov)ov.classList.remove('on'); });
+    ov.querySelector('.ai-sess-btn').addEventListener('click',function(){
+      ov.classList.remove('on');
+      try{ openAccountSheet(); }catch(e){}
+    });
+    return ov;
+  }
   window.addEventListener('assetflow:session-expired',()=>{
     try{ refreshAccountUi(); }catch(e){}
-    showToast('Sessiya tugadi — qayta kiring','warning');
-    try{ openAccountSheet(); }catch(e){}
+    try{ ensureAiSessModal().classList.add('on'); }
+    catch(e){ showToast('Sessiya tugadi — qayta kiring','warning'); try{ openAccountSheet(); }catch(_){} }
   });
   // Panel yopilsa — faol yuklab olishni uzamiz (oqim ortda qolmasin)
   window.addEventListener('beforeunload',()=>{
@@ -11277,6 +11318,10 @@ window.afGallery=(function(){
         ? ('Narx ≈ ✦'+(meta.qcost[st.q]||12)+'/rasm × '+st.n+' = ✦'+c)
         : ('Sobit narx: ✦'+(meta.flatCost||4)+'/rasm × '+st.n+' = ✦'+c); }
     var g=$('igGen'); if(g)g.title='Yaratish (✦'+c+')';
+    // b12: kam kredit — compose'da qizil banner + kredit chip qizil
+    var cr=credits(); var low=(cr!=null)&&(c>cr);
+    var b=$('igLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('igLowNeed'); if(nn)nn.textContent='kerak ✦ '+c+' · sizda ✦ '+cr; }
+    var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
   }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
   window.axIGRefresh=refresh;
@@ -11968,7 +12013,7 @@ window.afGallery=(function(){
     if(!pend.length){
       if(recentLoading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updRecentBatch(); return; }
       if(recentError&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(recentError)+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Qayta urinish</button></div>'; updRecentBatch(); return; }
-      if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updRecentBatch(); return; }
+      if(!uniq.length){ r.innerHTML='<div class="empt emptyhero"><span class="eh-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span><b>Hali generatsiya yo\'q</b><span class="eh-s">Quyidagi maydonga prompt yozing — natijalar shu yerda paydo bo\'ladi</span><svg class="eh-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></div>'; updRecentBatch(); return; }
     }
     var ctx=igRecentCtx(); var pctx={ onCancel:function(it){ if(it.job)cancelJob(it.job); } };
     pend.forEach(function(it){ r.appendChild(window.afRecent.pendingCard(it,pctx)); }); // gen ishlamoqda — progress karta
@@ -12126,12 +12171,18 @@ window.afGallery=(function(){
   function cost(){ return vm.pricing==='per-generation'?(vm.flatCost||0):(ratePerSec()*durSec()); }
   function recost(){
     var c=$('vgCost'); if(!c)return;
-    if(vm.pricing==='per-generation'){ c.textContent='✦'+cost(); c.title='Sobit narx: ✦'+cost()+' / video'; return; }
-    var auto=(!vm.dur||/^auto$/i.test(String(vm.dur)));
-    // Auto bo'lsa qancha soniyaga to'lashini ko'rsatamiz (✦48 (~4s)) — narx qaydan kelganini foydalanuvchi ko'rsin.
-    c.textContent='✦'+cost()+(auto?(' (~'+durSec()+'s)'):'');
-    var hasMult=(vm.refKind==='media-refs'&&hasVideoRefs()&&vm.videoInputCostMult&&vm.videoInputCostMult>1);
-    c.title='Narx ≈ ✦'+ratePerSec()+'/s × '+durSec()+'s'+(auto?' (Auto)':'')+(hasMult?' · video referens narxni oshiradi':'');
+    if(vm.pricing==='per-generation'){ c.textContent='✦'+cost(); c.title='Sobit narx: ✦'+cost()+' / video'; }
+    else {
+      var auto=(!vm.dur||/^auto$/i.test(String(vm.dur)));
+      // Auto bo'lsa qancha soniyaga to'lashini ko'rsatamiz (✦48 (~4s)) — narx qaydan kelganini foydalanuvchi ko'rsin.
+      c.textContent='✦'+cost()+(auto?(' (~'+durSec()+'s)'):'');
+      var hasMult=(vm.refKind==='media-refs'&&hasVideoRefs()&&vm.videoInputCostMult&&vm.videoInputCostMult>1);
+      c.title='Narx ≈ ✦'+ratePerSec()+'/s × '+durSec()+'s'+(auto?' (Auto)':'')+(hasMult?' · video referens narxni oshiradi':'');
+    }
+    // b12: kam kredit — compose'da qizil banner + kredit chip qizil
+    var cr=credits(); var need=cost(); var low=(cr!=null)&&(need>cr);
+    var b=$('vgLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('vgLowNeed'); if(nn)nn.textContent='kerak ✦ '+need+' · sizda ✦ '+cr; }
+    var chip=$('vgCredit'); if(chip)chip.classList.toggle('low',low);
   }
   function fmtMb(n){ return Math.round((Number(n||0)/(1024*1024))*10)/10; }
   function fmtClockSec(sec){
@@ -13593,7 +13644,7 @@ window.afGallery=(function(){
     if(!pend.length){
       if(vgRcState.loading&&!uniq.length){ r.innerHTML='<div class="empt"><b>Yuklanmoqda…</b>So‘nggi generatsiyalar olinmoqda.</div>'; updVgRcBatch(); return; }
       if(vgRcState.error&&!uniq.length){ r.innerHTML='<div class="empt"><b>So‘nggi yuklanmadi</b>'+String(vgRcState.error||'Internet/sessiyani tekshiring.')+'<br><button type="button" onclick="retryVgRecent()">↻ Qayta urinish</button></div>'; updVgRcBatch(); return; }
-      if(!uniq.length){ r.innerHTML='<div class="empt"><b>Hozircha gen yo\'q</b>Yangi natijalar shu yerda chiqadi.</div>'; updVgRcBatch(); return; }
+      if(!uniq.length){ r.innerHTML='<div class="empt emptyhero"><span class="eh-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span><b>Hali generatsiya yo\'q</b><span class="eh-s">Quyidagi maydonga prompt yozing — natijalar shu yerda paydo bo\'ladi</span><svg class="eh-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></div>'; updVgRcBatch(); return; }
     }
     var ctx=vgRecentCtx(); var pctx={ onCancel:function(it){ if(it.job){ it.job.cancelled=true; removeVgJob(it.job); toast(it.job.submitted?'Orqa fonda davom etadi — Tarixda chiqadi':'Bekor qilindi — kredit yechilmadi','info'); } } };
     pend.forEach(function(it){ r.appendChild(window.afRecent.pendingCard(it,pctx)); }); // gen ishlamoqda
