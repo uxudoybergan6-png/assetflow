@@ -2702,9 +2702,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .sw2.on{background:var(--acc)}
 .axroot .sw2::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
 .axroot .sw2.on::after{left:18px}
-.axroot .ov{position:absolute;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:60}
+.axroot .ov{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:60}
 .axroot .ov.on{display:flex}
-.axroot .sheet{width:100%;background:var(--panel);border-top:1px solid var(--line2);border-radius:18px 18px 0 0;padding:14px;max-height:82%;overflow-y:auto;animation:up .2s ease}
+.axroot .sheet{width:100%;max-width:440px;background:#161B22;border-top:1px solid rgba(255,255,255,.10);border-radius:18px 18px 0 0;padding:8px 14px 16px;max-height:82%;overflow-y:auto;animation:fsheetUp .22s cubic-bezier(.22,1,.36,1);box-shadow:0 -18px 42px rgba(0,0,0,.5)}
+.axroot .ov .sheet::before{content:'';display:block;width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 10px}
 .axroot from{transform:translateY(40px)}
 .axroot to{transform:none}
 .axroot .sheet .sh{display:flex;align-items:center;margin-bottom:12px}
@@ -2889,12 +2890,12 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .recent .rt:hover{border-color:var(--mut2)}
 .axig .recent .more{flex:0 0 auto;margin-left:auto;font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px}
 .axig .recent .more:hover{text-decoration:underline}
-/* .sheet = viewport'ni qoplaydigan tashqi-click ushlovchi (yengil backdrop); .sheetc = POPOVER —
-   JS bosilgan chip yoniga (ostiga/ustiga) joylaydi (positionPopover). Oldin pastki-bar edi (keng panelда
-   bosilgan joydan uzoq tushardi). position:fixed → viewportга nisbatan; ajdod transform yo'q. */
-.axig .sheet{position:fixed;inset:0;background:rgba(0,0,0,.22);display:none;z-index:9990;padding:0;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
-.axig .sheet.on{display:block}
-.axig .sheetc{position:fixed;left:0;top:0;width:auto;max-width:92vw;background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.6);padding:13px;max-height:62vh;overflow-y:auto}
+/* STEP0: .sheet = bottom-sheet backdrop (Katalog .fsheet idiomi bilan bir xil); .sheetc = pastdan
+   chiqadigan varaq (bg #161B22, radius 18px 18px 0 0, grab-handle 36×4). positionPopover endi no-op. */
+.axig .sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:9990;padding:0;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
+.axig .sheet.on{display:flex}
+.axig .sheetc{width:100%;max-width:440px;box-sizing:border-box;background:#161B22;border:0;border-top:1px solid rgba(255,255,255,.10);border-radius:18px 18px 0 0;box-shadow:0 -18px 42px rgba(0,0,0,.5);padding:8px 14px 16px;max-height:82vh;overflow-y:auto;animation:fsheetUp .22s cubic-bezier(.22,1,.36,1)}
+.axig .sheetc::before{content:'';display:block;width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 10px}
 .axig .sheeth{display:flex;align-items:center;margin-bottom:11px}.axig .sheeth b{font-size:14px}.axig .sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center}
 .axig .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}
 .axig .opt:hover{border-color:var(--mut2)}
@@ -2950,7 +2951,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vpanel .recentgrid .rc{border-radius:16px}
 .axvg .vpanel .recentgrid .rc .bd{padding:18px 8px 6px}
 .axvg .vpanel .aud-toggle{padding:10px 2px 2px}
-.axvg .clip-sheet{width:min(620px,96vw)}
+.axvg .clip-sheet{max-width:620px}
 .axvg .clip-head{margin-bottom:10px}
 .axvg .clip-head b{display:block;font-size:13px;color:var(--txt);margin-bottom:3px}
 .axvg .clip-head small{display:block;font-size:11px;color:var(--mut);line-height:1.45}
@@ -2994,6 +2995,59 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .savedcard .del:hover{border-color:var(--red);color:var(--red)}
 .axvg .savedcard .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:19px}
 .axvg .savedempty{grid-column:1/-1;border:1px dashed var(--line2);border-radius:12px;padding:12px 10px;color:var(--mut);font-size:11px;line-height:1.45;text-align:center}
+
+/* ===== STEP0 poydevor — AI Tools redesign (mockup b1–b12) ko'ndalang naqshlari.
+   Verbatim hex/px (tokenlashtirilmagan): pill-sozlama (b4/b5), to'liq lime CTA (b4/b5),
+   per-ekran ai-header (b1/b4/b8/b11). ===== */
+/* pill-sozlama qatori */
+.axroot .pillbar{display:flex;flex-wrap:wrap;gap:6px}
+.axroot .pillseg{padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);cursor:pointer;min-width:0}
+.axroot .pillseg:hover{border-color:rgba(255,255,255,.18)}
+.axroot .pillseg .plab{font-family:var(--font-mono);font-size:7px;letter-spacing:.08em;color:#5E6675;text-transform:uppercase}
+.axroot .pillseg .pval{font-weight:600;font-size:10.5px;color:#F2F5F8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.axroot .pillseg.tgl{display:flex;align-items:center;gap:7px}
+.axroot .pillseg.tgl .pval{color:#8A93A3}
+.axroot .pillseg.tgl.on .pval{color:#F2F5F8}
+.axroot .pillseg .ptr{width:26px;height:15px;border-radius:99px;background:rgba(255,255,255,.1);position:relative;transition:background .15s;flex:none}
+.axroot .pillseg .ptr::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#8A93A3;transition:left .15s,background .15s}
+.axroot .pillseg.on .ptr{background:#C2F04A}
+.axroot .pillseg.on .ptr::after{left:13px;background:#0E1400}
+/* to'liq kenglik lime CTA (gensend qayta ishlatiladi — id/handler saqlanadi) */
+.axig .gensend{width:100%;height:44px;border-radius:999px;background:#C2F04A;color:#0E1400;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:13px;font-family:inherit;margin:14px 0 0;position:relative;padding:0}
+.axig .gensend svg{display:none}
+.axig .gensend .costtag{font-family:var(--font-mono);font-weight:600;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(14,20,0,.14);color:#0E1400;margin:0;white-space:nowrap}
+.axig .gensend:hover{background:#9CD62B}
+.axig .gensend:disabled{opacity:.4;cursor:not-allowed}
+.axig .gensend.busy{color:transparent}
+.axig .gensend.busy .costtag{visibility:hidden}
+.axig .gensend.busy::after{content:"";position:absolute;width:18px;height:18px;border:2.5px solid rgba(12,20,0,.3);border-top-color:#0E1400;border-radius:50%;animation:spin .7s linear infinite}
+.axig .genhint{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;text-align:center;margin-top:8px}
+/* per-ekran ai-header (52px, mockup b1/b4) — .scroll padding'ini yorib to'liq kenglik */
+.axroot .ai-hdr{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:rgba(10,13,18,.92);border-bottom:1px solid rgba(255,255,255,.05);margin:-12px -12px 12px;position:sticky;top:0;z-index:8}
+.axroot .ai-hdr .ai-logo{width:24px;height:24px;border-radius:7px;background:#C2F04A;display:flex;align-items:center;justify-content:center;color:#0E1400;flex:none;cursor:pointer;border:0;padding:0}
+.axroot .ai-hdr .ai-logo svg{width:13px;height:13px}
+.axroot .ai-hdr-c{flex:1;display:flex;justify-content:center;min-width:0}
+.axroot .ai-seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px}
+.axroot .ai-seg-i{padding:5px 16px;border-radius:999px;font-weight:500;font-size:12px;color:#8A93A3;background:none;border:0;font-family:inherit;cursor:pointer;white-space:nowrap}
+.axroot .ai-seg-i.is-on{background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8;cursor:default}
+.axroot .ai-back{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#8A93A3;cursor:pointer;flex:none;background:none;border:0;padding:0}
+.axroot .ai-back:hover{color:#F2F5F8}
+.axroot .ai-back svg{width:16px;height:16px}
+.axroot .ai-ttl{font-weight:700;font-size:13px;color:#F2F5F8}
+.axroot .ai-icon{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#8A93A3;cursor:pointer;flex:none}
+.axroot .ai-icon:hover{color:#F2F5F8}
+.axroot .ai-icon svg{width:15px;height:15px}
+.axroot .ai-ava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);border:1px solid rgba(255,255,255,.14);flex:none;cursor:pointer;padding:0}
+/* kredit chip — mockup b1 (mono, ✦ lime) */
+.axroot .ai-cred,.axroot .pro,.axig .pro{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:#F2F5F8;font-family:var(--font-mono);cursor:pointer;white-space:nowrap}
+.axroot .ai-cred .cs,.axroot .pro .cs,.axig .pro .cs{color:#C2F04A}
+/* nuqtali fon (mockup ish maydoni) */
+.axroot .aibg{background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:18px 18px}
+/* launcher sarlavha qatori (b1) */
+.axroot .ai-launch-lead{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 0}
+.axroot .ai-launch-t{font-weight:800;font-size:20px;letter-spacing:-.02em;color:#F2F5F8}
+.axroot .ai-launch-acts{display:flex;gap:8px}
+.axroot .ai-launch-sub{font-size:11px;color:#8A93A3;margin:4px 2px 16px}
 
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
 html.home-mode .af-topbar,
@@ -3386,30 +3440,53 @@ html.home-mode #homePage{display:block!important}
                   
                       <!-- AI LAUNCHER — 4 kategoriya (2×2 grid, JS aiRenderCatGrid() tomonidan) -->
                       <section id="v-launcher" class="view on">
-                        <div class="ailead"><span class="exit" data-go="main">‹ Asosiy</span><b>✦ AI Tools</b><div class="spacer"></div><div class="ib" data-go="history" title="Tarix">🕘</div><div class="ib" data-go="settings" title="Sozlamalar">⚙</div><div class="pro" data-go="settings" id="aiLeadCredL">✦ —</div></div>
+                        <div class="ai-hdr">
+                          <button type="button" class="ai-logo" data-go="main" title="Asosiy (Home)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h5L9 22l8.5-11.5h-5z"/></svg></button>
+                          <div class="ai-hdr-c">
+                            <div class="ai-seg">
+                              <button type="button" class="ai-seg-i" data-go="main">Katalog</button>
+                              <button type="button" class="ai-seg-i is-on">AI Tools</button>
+                            </div>
+                          </div>
+                          <div class="ai-cred" data-go="settings" id="aiLeadCredL"><span class="cs">✦</span> —</div>
+                          <button type="button" class="ai-ava" title="Hisob" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                        </div>
+                        <div class="ai-launch-lead">
+                          <div class="ai-launch-t"><span style="color:#C2F04A">✦</span> AI Tools</div>
+                          <div class="ai-launch-acts">
+                            <div class="ai-icon" data-go="history" title="Tarix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ai-icon" data-go="settings" title="Sozlamalar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                          </div>
+                        </div>
+                        <div class="ai-launch-sub">Prompt → natija → to'g'ridan-to'g'ri AE'ga import</div>
                         <div class="cats" id="aiCatGrid"></div>
                       </section>
 
                       <!-- AI KATEGORIYA ICHI — aiOpenCat() tomonidan to'ldiriladi -->
                       <section id="v-aicat" class="view">
-                        <div class="ailead"><span class="exit" data-go="launcher">‹ AI Tools</span><b id="aiCatTitle"></b><div class="spacer"></div><div class="ib" data-go="history" title="Tarix">🕘</div><div class="ib" data-go="settings" title="Sozlamalar">⚙</div><div class="pro" data-go="settings" id="aiLeadCredA">✦ —</div></div>
+                        <div class="ai-hdr">
+                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl" id="aiCatTitle"></span>
+                          <div class="ai-hdr-c"></div>
+                          <div class="ai-cred" data-go="settings" id="aiLeadCredA"><span class="cs">✦</span> —</div>
+                        </div>
                         <div id="aiCatTools"></div>
                       </section>
 
                       <!-- RASM YARATISH (tool-image.html 1:1, .axig scope) -->
                       <section id="v-imggen" class="view">
                         <div class="axig">
-                          <div class="igtop">
-                            <div class="back" id="igBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> AI Tools</div>
-                            <div class="spacer"></div>
-                            <div class="tabsw" title="Video ⇄ Rasm tez almashtirish">
-                              <span class="tsw" onclick="if(window.axGo)window.axGo('vidgen')" title="Video yaratishga o'tish"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg> Video</span>
-                              <span class="tsw on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Rasm</span>
+                          <div class="ai-hdr">
+                            <button type="button" class="ai-back" id="igBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                            <div class="ai-hdr-c">
+                              <div class="ai-seg">
+                                <button type="button" class="ai-seg-i is-on">Rasm</button>
+                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('vidgen')" title="Video yaratishga o'tish">Video</button>
+                              </div>
                             </div>
-                            <div class="spacer"></div>
-                            <div class="ig-hist" data-go="main" title="Asosiy (Home)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 21v-6h6v6"/></svg></div><div class="ig-hist" id="igHist" title="Tarix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-                            <div class="ig-hist" id="igSet" title="Sozlamalar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                            <div class="pro" id="igCredit">✦ —</div>
+                            <div class="ai-icon" id="igHist" title="Tarix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ai-icon" id="igSet" title="Sozlamalar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                            <div class="ai-cred" id="igCredit"><span class="cs">✦</span> —</div>
                           </div>
 
                           <div class="igscroll" id="igScroll">
@@ -3433,8 +3510,6 @@ html.home-mode #homePage{display:block!important}
                                 <div class="prow">
                                   <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Referens</div>
                                   <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
-                                  <span class="costtag" id="igCost">✦—</span>
-                                  <button class="gensend" id="igGen" disabled title="Yaratish" aria-label="Rasm yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
                                 </div>
                               </div>
                             </div>
@@ -3444,12 +3519,13 @@ html.home-mode #homePage{display:block!important}
                             <div class="vpanel settings-panel">
                             <div class="sect">
                               <div class="lbl">Sozlamalar <span class="meta clearbtn" id="igClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
-                              <div class="ctrls">
-                                <div class="seg" id="igModelSeg"><span class="lab">Model</span><span class="sv" id="igMName">…</span><span class="sc">▾</span></div>
-                                <div class="seg" id="igArSeg"><span class="lab">Nisbat</span><span class="sv" id="igArVal">Auto</span><span class="sc">▾</span></div>
-                                <div class="seg" id="igQSeg"><span class="lab" id="igQLab">Sifat</span><span class="sv" id="igQVal">High</span><span class="sc">▾</span></div>
-                                <div class="seg" id="igNSeg"><span class="lab">Soni</span><span class="sv" id="igNVal">1</span><span class="sc">▾</span></div>
+                              <div class="pillbar">
+                                <div class="pillseg" id="igModelSeg"><div class="plab">Model</div><div class="pval" id="igMName">…</div></div>
+                                <div class="pillseg" id="igArSeg"><div class="plab">Nisbat</div><div class="pval" id="igArVal">Auto</div></div>
+                                <div class="pillseg" id="igQSeg"><div class="plab" id="igQLab">Sifat</div><div class="pval" id="igQVal">High</div></div>
+                                <div class="pillseg" id="igNSeg"><div class="plab">Soni</div><div class="pval" id="igNVal">1</div></div>
                               </div>
+                              <button class="gensend" id="igGen" disabled title="Yaratish" aria-label="Rasm yaratish">Rasm yaratish<span class="costtag" id="igCost">✦—</span></button>
                             </div>
                             </div>
 
@@ -3519,17 +3595,17 @@ html.home-mode #homePage{display:block!important}
                       <!-- VIDEO GEN — Seedance 2.0 Fast (fal.ai image-to-video) -->
                       <section id="v-vidgen" class="view">
                         <div class="axig axvg">
-                          <div class="igtop">
-                            <div class="back" id="vgBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg> AI Tools</div>
-                            <div class="spacer"></div>
-                            <div class="tabsw" title="Video ⇄ Rasm tez almashtirish">
-                              <span class="tsw on"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg> Video</span>
-                              <span class="tsw" onclick="if(window.axGo)window.axGo('imggen')" title="Rasm yaratishga o'tish"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Rasm</span>
+                          <div class="ai-hdr">
+                            <button type="button" class="ai-back" id="vgBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                            <div class="ai-hdr-c">
+                              <div class="ai-seg">
+                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('imggen')" title="Rasm yaratishga o'tish">Rasm</button>
+                                <button type="button" class="ai-seg-i is-on">Video</button>
+                              </div>
                             </div>
-                            <div class="spacer"></div>
-                            <div class="ig-hist" data-go="main" title="Asosiy (Home)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 21v-6h6v6"/></svg></div><div class="ig-hist" id="vgHist" title="Tarix"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-                            <div class="ig-hist" id="vgSet" title="Sozlamalar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                            <div class="pro" id="vgCredit">✦ —</div>
+                            <div class="ai-icon" id="vgHist" title="Tarix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ai-icon" id="vgSet" title="Sozlamalar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                            <div class="ai-cred" id="vgCredit"><span class="cs">✦</span> —</div>
                           </div>
 
                           <div class="igscroll" id="vgScroll">
@@ -3587,8 +3663,6 @@ html.home-mode #homePage{display:block!important}
                                   <textarea id="vgPrompt" placeholder="Video harakat tavsifi. R2V: @Image1 / @Video1 / @Audio1 referenslarga ishora qiling (ixtiyoriy)."></textarea>
                                   <div class="prow">
                                     <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
-                                    <span class="costtag" id="vgCost">✦—</span>
-                                    <button class="gensend" id="vgGen" disabled title="Video yaratish" aria-label="Video yaratish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
                                   </div>
                                 </div>
                               </div>
@@ -3598,14 +3672,16 @@ html.home-mode #homePage{display:block!important}
                               <!-- Sozlamalar -->
                               <div class="sect">
                                 <div class="lbl">Sozlamalar <span class="meta clearbtn" id="vgClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
-                                <div class="ctrls">
-                                  <div class="seg" id="vgModelSeg"><span class="lab">Model</span><span class="sv" id="vgMName">…</span><span class="sc">▾</span></div>
-                                  <div class="seg" id="vgArSeg"><span class="lab">Nisbat</span><span class="sv" id="vgArVal">Auto</span><span class="sc">▾</span></div>
-                                  <div class="seg" id="vgResSeg"><span class="lab">Sifat</span><span class="sv" id="vgResVal">720p</span><span class="sc">▾</span></div>
-                                  <div class="seg" id="vgDurSeg"><span class="lab">Davomiylik</span><span class="sv" id="vgDurVal">Auto</span><span class="sc">▾</span></div>
-                                  <div class="seg" id="vgBitSeg" style="display:none"><span class="lab">Bitrate</span><span class="sv" id="vgBitVal">standard</span><span class="sc">▾</span></div>
+                                <div class="pillbar">
+                                  <div class="pillseg" id="vgModelSeg"><div class="plab">Model</div><div class="pval" id="vgMName">…</div></div>
+                                  <div class="pillseg" id="vgArSeg"><div class="plab">Nisbat</div><div class="pval" id="vgArVal">Auto</div></div>
+                                  <div class="pillseg" id="vgResSeg"><div class="plab">Rezolyutsiya</div><div class="pval" id="vgResVal">720p</div></div>
+                                  <div class="pillseg" id="vgDurSeg"><div class="plab">Davomiylik</div><div class="pval" id="vgDurVal">Auto</div></div>
+                                  <div class="pillseg" id="vgBitSeg" style="display:none"><div class="plab">Bitrate</div><div class="pval" id="vgBitVal">standard</div></div>
+                                  <div class="pillseg tgl on" id="vgAudToggle"><div><div class="plab">Ovoz</div><div class="pval" id="vgAudVal">Yoqilgan</div></div><div class="ptr"></div></div>
                                 </div>
-                                <div class="aud-toggle on" id="vgAudToggle"><div class="aud-sw"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg><span>Ovoz</span></div>
+                                <button class="gensend" id="vgGen" disabled title="Video yaratish" aria-label="Video yaratish">Video yaratish<span class="costtag" id="vgCost">✦—</span></button>
+                                <div class="genhint">≈ 1–2 minut · xatoda kredit qaytadi</div>
                               </div>
                             </div>
 
@@ -3723,13 +3799,19 @@ html.home-mode #homePage{display:block!important}
 
                       <!-- HISTORY -->
                       <section id="v-history" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🕘 Tarix</b></div></div>
+                        <div class="ai-hdr">
+                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl">Tarix</span>
+                        </div>
                         <div id="hgridWrap"></div>
                       </section>
                   
                       <!-- SETTINGS -->
                       <section id="v-settings" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>⚙ Sozlama</b></div></div>
+                        <div class="ai-hdr">
+                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl">Sozlamalar</span>
+                        </div>
                         <div class="setrow">Kredit balansи <b style="color:var(--acc);margin-left:6px" id="balSet">—</b><span class="buybtn" style="margin-left:auto" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}">Kredit to'ldirish</span></div>
                         <div class="setrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
                         <div class="setrow">Auto-load (Project tanlovi)<div class="sw2 on" data-toggle style="margin-left:auto"></div></div>
@@ -9953,15 +10035,15 @@ async function bootPlugin(){
   // Displey: real kredit (yoki '—' yuklanmaguncha) — demo 606 EMAS. bal() (raqam) eski estimate uchun qoladi.
   function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):(lowDemo?'5':'—');var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();}
   // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
-  function aiLeadSync(){ var v=aiCredReal(); var t=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; var a=document.getElementById('aiLeadCredL'); if(a)a.textContent=t; var c=document.getElementById('aiLeadCredA'); if(c)c.textContent=t; }
+  function aiLeadSync(){ var v=aiCredReal(); var t='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); var a=document.getElementById('aiLeadCredL'); if(a)a.innerHTML=t; var c=document.getElementById('aiLeadCredA'); if(c)c.innerHTML=t; }
   // UMUMIY kredit sinxron — yagona manba (cached aiCredits) → BARCHA chip (balTop/balSet/aiLead/igCredit/vgCredit).
   // Har tool gen/enhance'dan keyin shuni chaqiradi → chiplar bir-biridan farq qilib qolmaydi (drift fix — audit MEDIUM).
   window.afSyncCredits=function(v){
     if(typeof v==='number'&&isFinite(v)){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u)u.aiCredits=v; }catch(e){} }
     try{ syncBal(); }catch(e){}
-    var rv=aiCredReal(); var t=(rv!=null)?('✦ '+Number(rv).toLocaleString('en-US')):'✦ —';
-    var ig=document.getElementById('igCredit'); if(ig)ig.textContent=t;
-    var vg=document.getElementById('vgCredit'); if(vg)vg.textContent=t;
+    var rv=aiCredReal(); var t='<span class="cs">✦</span> '+((rv!=null)?Number(rv).toLocaleString('en-US'):'—');
+    var ig=document.getElementById('igCredit'); if(ig)ig.innerHTML=t;
+    var vg=document.getElementById('vgCredit'); if(vg)vg.innerHTML=t;
   };
   // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
   // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 preload=metadata muted> + birinchi kadrga seek.
@@ -10127,7 +10209,7 @@ async function bootPlugin(){
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
-    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='launcher'||id==='aicat')?'none':'';
+    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings')?'none':'';
     syncBal(); // kredit yagona manba (real aiCredits) — balTop + AI Tools ixcham header sinxron
     if(id==='imggen'&&typeof window.axIGRefresh==='function'){try{window.axIGRefresh();}catch(e){}}
   }
@@ -10734,7 +10816,7 @@ window.afGallery=(function(){
   // ---- kredit (REAL profil) + narx ----
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function cost(){ return meta.hasQuality ? (meta.qcost[st.q]||12)*st.n : (meta.flatCost||4)*st.n; }
-  function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
+  function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
   function recost(){
     var sc=$('igCost'), c=cost();
     if(sc){ sc.textContent='✦'+c;
@@ -10757,28 +10839,10 @@ window.afGallery=(function(){
 
   // ---- sheet'lar (backdrop + Esc + ✕) ----
   function closeSheets(){ document.querySelectorAll('.axig .sheet').forEach(function(s){s.classList.remove('on');}); }
-  // POPOVER: sheetc'ni bosilgan elementга (anchorEl) bog'lab joylaydi — ostiga, joy yetmasa ustiga;
-  // viewport ichида clamp. anchorEl yo'q bo'lsa — markazда past. (Oldin pastki-bar edi.)
+  // STEP0: bottom-sheet idiomi — pozitsiyani to'liq CSS boshqaradi; eski popover inline stillarini tozalaymiz.
   function positionPopover(sc,anchorEl){
     if(!sc)return;
-    var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
-    sc.style.bottom='auto';
-    if(anchorEl&&anchorEl.getBoundingClientRect){
-      var ar=anchorEl.getBoundingClientRect();
-      var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
-      sc.style.width=w+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
-      sc.style.left='-9999px'; sc.style.top='0px'; var sh=sc.offsetHeight; // o'lchash
-      var left=Math.min(Math.max(pad,ar.left),Math.max(pad,vw-w-pad));
-      var top;
-      if(ar.bottom+gap+sh<=vh-pad) top=ar.bottom+gap;       // chip OSTIДА joy bor
-      else if(ar.top-gap-sh>=pad) top=ar.top-gap-sh;        // chip USTIDA joy bor
-      else top=Math.max(pad,vh-sh-pad);                     // sig'masa — viewport ichида clamp
-      sc.style.left=left+'px'; sc.style.top=top+'px';
-    }else{
-      var w2=Math.min(380,vw-pad*2);
-      sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
-      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
-    }
+    sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight='';
   }
   function openSheet(id,anchorEl){ closeSheets(); var s=$(id); if(!s)return; s.classList.add('on'); positionPopover(s.querySelector('.sheetc'),anchorEl); }
   document.querySelectorAll('.axig [data-igclose]').forEach(function(x){ x.addEventListener('click',closeSheets); });
@@ -11581,7 +11645,7 @@ window.afGallery=(function(){
   }
   function vgPromptValue(){ return (($('vgPrompt')&&$('vgPrompt').value)||'').trim(); }
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
-  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.textContent=(v!=null)?('✦ '+Number(v).toLocaleString('en-US')):'✦ —'; if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
+  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
   function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
   function hasVideoRefs(){ return mref.some(function(r){ return r.type==='video' && r.url; }); }
   function ratePerSec(){
@@ -11996,37 +12060,10 @@ window.afGallery=(function(){
     document.querySelectorAll('.axvg .sheet').forEach(function(s){s.classList.remove('on');});
     if(clipOpen)resetVgClipper();
   }
+  // STEP0: bottom-sheet idiomi — pozitsiyani to'liq CSS boshqaradi; eski popover inline stillarini tozalaymiz.
   function positionVgPopover(sc,anch){
     if(!sc)return;
-    var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
-    sc.style.bottom='auto';
-    if(sc.classList&&sc.classList.contains('clip-sheet')){
-      var cw=Math.min(620,vw-pad*2);
-      sc.style.width=cw+'px';
-      sc.style.maxHeight=Math.round(vh*0.86)+'px';
-      sc.style.left='-9999px';
-      sc.style.top='0px';
-      var ch=sc.offsetHeight;
-      sc.style.left=Math.round((vw-cw)/2)+'px';
-      sc.style.top=Math.max(pad,Math.round((vh-ch)/2))+'px';
-      return;
-    }
-    if(anch&&anch.getBoundingClientRect){
-      var ar=anch.getBoundingClientRect();
-      var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
-      sc.style.width=w+'px'; sc.style.maxHeight=Math.round(vh*0.58)+'px';
-      sc.style.left='-9999px'; sc.style.top='0px'; var sh=sc.offsetHeight;
-      var left=Math.min(Math.max(pad,ar.left),Math.max(pad,vw-w-pad));
-      var top;
-      if(ar.bottom+gap+sh<=vh-pad) top=ar.bottom+gap;
-      else if(ar.top-gap-sh>=pad) top=ar.top-gap-sh;
-      else top=Math.max(pad,vh-sh-pad);
-      sc.style.left=left+'px'; sc.style.top=top+'px';
-    } else {
-      var w2=Math.min(380,vw-pad*2);
-      sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.58)+'px';
-      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
-    }
+    sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight='';
   }
   function openVgSheet(id,anch){ closeVgSheets(); var s=$(id); if(!s)return; s.classList.add('on'); positionVgPopover(s.querySelector('.sheetc'),anch); }
   document.querySelectorAll('.axvg [data-vgclose]').forEach(function(x){ x.addEventListener('click',closeVgSheets); });
@@ -12181,7 +12218,8 @@ window.afGallery=(function(){
     var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
     var av=$('vgArVal'); if(av)av.textContent=vm.ar;
     var bv=$('vgBitVal'); if(bv)bv.textContent=vm.bitrate;
-    var at=$('vgAudToggle'); if(at){ at.className='aud-toggle'+(vm.audio?' on':''); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Bu modelda ovoz doim yoqilgan — model xususiyati':''; }
+    var at=$('vgAudToggle'); if(at){ at.classList.toggle('on',!!vm.audio); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Bu modelda ovoz doim yoqilgan — model xususiyati':''; }
+    var avv=$('vgAudVal'); if(avv)avv.textContent=vm.audio?'Yoqilgan':'O\'chiq';
     applyVgArLock(); // model almashdi — nisbat chipi qulfi qayta hisoblansin
     var bs=$('vgBitSeg'); if(bs)bs.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
     var rh=$('vgResHint'); if(rh)rh.textContent=vm.resOpts.map(function(k){ return k+' = ✦'+(vm.perSec[k]||vm.perSec[vm.resOpts[0]]||0)+'/s'; }).join(' · ');
@@ -12253,7 +12291,8 @@ window.afGallery=(function(){
   var audTgl=$('vgAudToggle');
   if(audTgl)audTgl.addEventListener('click',function(){
     if(vm.audioLocked){ toast('Bu modelda ovoz doim yoqilgan — o\'chirib bo\'lmaydi (model xususiyati)','info'); return; }
-    vm.audio=!vm.audio; audTgl.className='aud-toggle'+(vm.audio?' on':'');
+    vm.audio=!vm.audio; audTgl.classList.toggle('on',!!vm.audio);
+    var avv2=$('vgAudVal'); if(avv2)avv2.textContent=vm.audio?'Yoqilgan':'O\'chiq';
   });
 
   // ── R2V ko'p-modal referens (refKind='media-refs'): @Image/@Video/@Audio, IXTIYORIY ──
