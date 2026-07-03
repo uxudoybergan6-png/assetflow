@@ -1,28 +1,28 @@
-# SESSION REPORT — 2026-07-03 — verify-email redirect fix (admin login leak)
+# SESSION REPORT — 2026-07-03 — Rol bo'yicha login segregatsiyasi (platforma)
 
 ## MUAMMO
-Foydalanuvchi skrinshot bilan ko'rsatdi: emailni tasdiqlagan oddiy USER (plugin obunachi)
-tasdiqlash havolasidan keyin `getframeflow.app/login.html?verified=1`ga tushib qolardi —
-bu **Studio/Contributor/Admin login sahifasi**, platforma emas. U yerda "Admin uchun: SQL
-da UPDATE User SET role='ADMIN'" degan xavfli hint + Contributor→Admin oqimi ko'rinadi —
-oddiy foydalanuvchiga umuman tegishli emas va xavfsizlik nuqtai nazaridan yomon.
-
-## SABAB
-`verify-email.html:78` muvaffaqiyatli tasdiqlashdan keyin har doim `/login.html?verified=1`ga
-hardcoded redirect qilardi — foydalanuvchi roli (USER/CONTRIBUTOR/ADMIN) tekshirilmasdi.
+Foydalanuvchi so'radi: USER/CONTRIBUTOR/ADMIN bir-birining login sahifasidan kira olmasin.
+Tekshiruv natijasi: `login.html` (Studio/Contributor) va `admin-login.html` allaqachon
+mos kelmagan rolni rad etardi (xato xabar + logout), lekin **platforma**
+(`platform/index.html`, getframeflow.app) hech qanday rol tekshiruvi qilmasdi — CONTRIBUTOR
+yoki ADMIN hisobi bilan ham kirib, USER dashboard/AI Studio'dan foydalanish mumkin edi.
 
 ## TUZATILDI
-- `apps/api/src/routes/auth.ts` — `POST /verify-email` javobiga `role: user.role` qo'shildi.
-- `verify-email.html` — endi `role`ga qarab: CONTRIBUTOR/ADMIN → `/login.html?verified=1`
-  (Studio, o'zgarmadi), oddiy USER → `/?verified=1` (platforma root).
-- `platform/index.html` `componentDidMount()` — `?verified=1` query'ni o'qiydi, URL'dan
-  tozalaydi, toast ko'rsatadi va login qilmagan bo'lsa `auth` ekraniga o'tkazadi.
+- `platform/index.html` `_afterLoginSuccess(r, msg)` — login/register/Google javobida
+  `r.user.role !== 'USER'` bo'lsa: sessiya tozalanadi, `authErr` bilan rad javobi ko'rsatiladi,
+  dashboard'ga o'tkazilmaydi (login.html'dagi bir xil naqsh).
+- `componentDidMount()` — localStorage'da saqlangan eski sessiya CONTRIBUTOR/ADMIN role
+  bo'lsa avtomatik tozalanadi (himoya: eski/qo'lda kiritilgan token qolib ketgan holat).
+- `login.html` (USER rad etadi) va `admin-login.html` (non-ADMIN rad etadi) — o'zgarishsiz,
+  ular allaqachon to'g'ri edi.
 
-## TEKSHIRILDI
-- `npm run build -w apps/api` — toza.
-- platform-preview: `/?verified=1` ochilganda to'g'ridan-to'g'ri `#auth` ekraniga tushdi,
-  query param URL'dan tozalandi, konsol toza.
-- `git diff --stat` — faqat 3 fayl (`auth.ts`, `verify-email.html`, `platform/index.html`).
+## TEKSHIRILDI (platform-preview)
+- Stale CONTRIBUTOR sessiya bilan `#dashboard`ga kirishga urinish → sessiya tozalanib
+  `#auth`ga tushdi.
+- Mock login javobi `role:'CONTRIBUTOR'` bilan submit qilinganda — aniq xato xabari
+  ko'rsatildi, sessiya saqlanmadi (`ff_token`/`ff_user` bo'sh qoldi), dashboard ochilmadi.
+- Mock `role:'USER'` bilan — regressiya yo'q, to'g'ridan-to'g'ri dashboard ochildi.
+- `git diff --stat` — faqat `platform/index.html` (14 qo'shildi/2 o'chdi).
 
 ## KUTILMOQDA
-1. Deploy (API + CF Pages) → productionda haqiqiy tasdiqlash email havolasi bilan sinash.
+1. Deploy → productionda haqiqiy uchta rol (USER/CONTRIBUTOR/ADMIN) bilan qayta tekshirish.

@@ -15566,8 +15566,13 @@ class Component extends DCLogic {
     try {
       if (window.FFAPI) {
         if (FFAPI.getToken()) {
-          this.setState({ user: FFAPI.getUser() });
-          this.bootData();
+          const savedUser = FFAPI.getUser();
+          if (savedUser && savedUser.role && savedUser.role !== 'USER') {
+            FFAPI.clearSession();
+          } else {
+            this.setState({ user: savedUser });
+            this.bootData();
+          }
         }
         this.loadCatalog();
         window.addEventListener('ff-auth-expired', this._onExpired = () => {
@@ -15729,6 +15734,13 @@ class Component extends DCLogic {
    *  emailVerifyRequired'ni user obyektiga qo'shib (bir xil shakl — /me bilan
    *  moslashtirish uchun), gate() orqali dashboard yoki verify-email'ga o'tish. */
   _afterLoginSuccess(r, msg) {
+    // Platforma faqat USER roli uchun — Contributor/Admin login.html/admin-login.html
+    // orqali kirsin (o'sha sahifalarda ham teskari yo'nalishda xuddi shu tekshiruv bor).
+    if (r.user && r.user.role && r.user.role !== 'USER') {
+      FFAPI.clearSession();
+      this.setState({ authBusy: false, authErr: "Bu hisob Contributor/Admin roliga tegishli — platformadan emas, Studio panelidan kiring." });
+      return;
+    }
     const user = Object.assign({}, r.user, { emailVerifyRequired: r.emailVerifyRequired });
     FFAPI.setSession(r.token, user);
     this._sess = {}; // eski foydalanuvchi gen-sessiyalari yaroqsiz
