@@ -15,7 +15,8 @@ import type { Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { isS3Configured, getPublicUrl, s3ObjectExists } from "../lib/s3.js";
-import { getAdminUrl, getPublicApiUrl } from "../lib/app-urls.js";
+import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
+import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 import {
   ensurePluginProfile,
   consumeDownload,
@@ -49,6 +50,15 @@ const usageLimiter = rateLimit({
   max: 120,
   keyPrefix: "plugin-usage",
 });
+
+/** Device-code poll: har 3s so'raladi, loginLimiter juda qattiq bo'lardi */
+const deviceStatusLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  keyPrefix: "plugin-device-poll",
+});
+
+const DEVICE_CODE_TTL_MS = 10 * 60 * 1000;
 
 function apiPublicBase(req: { protocol: string; get: (h: string) => string | undefined }) {
   return getPublicApiUrl(req);
@@ -399,6 +409,111 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
     apiBaseUrl: getPublicApiUrl(req),
     adminUrl: getAdminUrl(),
   });
+});
+
+// ── Google bilan kirish (device-code oqimi) ─────────────────────────────────
+// CEP paneli GIS'ni to'g'ridan-to'g'ri ocha olmaydi (embedded webview bloklanadi)
+// — shu sabab plagin bir martalik kod oladi, tizim brauzerida device.html
+// ochiladi, u yerda Google orqali tasdiqlangach plagin pollik qilib token oladi.
+
+/** 1) Plagin: bir martalik kod so'raydi */
+pluginRouter.post("/device/start", loginLimiter, async (_req: Request, res: Response) => {
+  await prisma.pluginDeviceCode.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+
+  const code = crypto.randomBytes(4).toString("hex");
+  const expiresAt = new Date(Date.now() + DEVICE_CODE_TTL_MS);
+  await prisma.pluginDeviceCode.create({ data: { code, expiresAt } });
+
+  res.json({
+    code,
+    verificationUrl: `${getWebUrl()}/device.html?code=${code}`,
+    expiresIn: DEVICE_CODE_TTL_MS / 1000,
+  });
+});
+
+const deviceConfirmSchema = z.object({
+  code: z.string().min(1),
+  credential: z.string().min(10),
+});
+
+/** 2) Brauzer (device.html): Google ID token'ni koda bog'laydi */
+pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Response) => {
+  const parsed = deviceConfirmSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Noto'g'ri ma'lumot" });
+    return;
+  }
+
+  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: parsed.data.code } });
+  if (!row) {
+    res.status(404).json({ error: "Kod topilmadi" });
+    return;
+  }
+  if (row.expiresAt < new Date()) {
+    await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    res.status(410).json({ error: "Kod muddati tugagan — plaginda qaytadan urinib ko'ring" });
+    return;
+  }
+  if (row.status !== "pending") {
+    res.status(409).json({ error: "Kod allaqachon ishlatilgan" });
+    return;
+  }
+
+  const result = await verifyGoogleIdTokenAndUpsertUser(parsed.data.credential);
+  if (!result.ok) {
+    await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
+    res.status(result.status).json({ error: result.error, ...(result.code ? { code: result.code } : {}) });
+    return;
+  }
+  const user = result.user;
+
+  const profile = await ensurePluginProfile(user.id);
+  if (profile.status === PluginAccountStatus.BLOCKED) {
+    await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
+    res.status(403).json({ error: "Hisob bloklangan — admin bilan bog'laning" });
+    return;
+  }
+
+  const pluginToken = await ensurePluginToken(user.id, true);
+  await prisma.pluginDeviceCode.update({
+    where: { id: row.id },
+    data: { status: "confirmed", userId: user.id, pluginToken },
+  });
+
+  res.json({ ok: true, email: user.email });
+});
+
+/** 3) Plagin: kod holatini pollik qiladi */
+pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: Response) => {
+  const code = String(req.query.code || "");
+  const row = code ? await prisma.pluginDeviceCode.findUnique({ where: { code } }) : null;
+
+  if (!row || row.expiresAt < new Date()) {
+    if (row) await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    res.json({ status: "expired" });
+    return;
+  }
+
+  if (row.status === "denied") {
+    await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    res.json({ status: "denied" });
+    return;
+  }
+
+  if (row.status === "confirmed" && row.userId && row.pluginToken) {
+    const profile = await ensurePluginProfile(row.userId);
+    await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    res.json({
+      status: "confirmed",
+      token: row.pluginToken,
+      user: serializePluginUser(profile),
+      apiBaseUrl: getPublicApiUrl(req),
+      adminUrl: getAdminUrl(),
+    });
+    return;
+  }
+
+  res.json({ status: "pending" });
 });
 
 /** Joriy foydalanuvchi + tarif + limitlar */

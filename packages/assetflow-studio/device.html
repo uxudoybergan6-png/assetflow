@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
+<meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
+<title>FrameFlow — Plaginni tasdiqlash</title>
+<link rel="stylesheet" href="/studio/styles/app.css">
+<script src="/studio/js/studio-config.js"></script>
+<script src="/studio/js/theme.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="auth-page">
+<div class="auth-shell" style="grid-template-columns:1fr">
+  <main class="auth-main">
+    <div class="auth-card" style="max-width:420px;margin:0 auto">
+      <div class="form-head">
+        <h1 class="h1">AE plaginni tasdiqlash</h1>
+        <p id="deviceIntro">Plaginda kirish uchun Google hisobingiz bilan tasdiqlang.</p>
+      </div>
+      <p class="auth-error hidden" id="deviceError" role="alert"></p>
+      <div id="deviceGoogleBtn" style="display:flex;justify-content:center;margin-top:8px"></div>
+      <div id="deviceDone" class="hidden" style="text-align:center;margin-top:12px">
+        <p style="color:var(--tx-1);font-weight:600">✓ Tasdiqlandi — <span id="deviceEmail"></span></p>
+        <p style="color:var(--tx-2);font-size:13px;margin-top:6px">Endi bu oynani yopib, AE plaginiga qaytishingiz mumkin.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const code = params.get("code") || "";
+  const errEl = document.getElementById("deviceError");
+  const introEl = document.getElementById("deviceIntro");
+  const btnEl = document.getElementById("deviceGoogleBtn");
+  const doneEl = document.getElementById("deviceDone");
+
+  function showError(msg) {
+    errEl.textContent = msg;
+    errEl.classList.remove("hidden");
+  }
+
+  if (!code) {
+    showError("Kod topilmadi — plaginda qaytadan urinib ko'ring");
+    introEl.classList.add("hidden");
+    return;
+  }
+
+  const apiBase = (window.ASSETFLOW_STUDIO && window.ASSETFLOW_STUDIO.apiUrl) || "";
+
+  async function onGoogleCredential(resp) {
+    try {
+      const r = await fetch(`${apiBase}/api/plugin/device/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, credential: resp.credential }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showError(data.error || "Tasdiqlab bo'lmadi — qaytadan urinib ko'ring");
+        return;
+      }
+      introEl.classList.add("hidden");
+      btnEl.classList.add("hidden");
+      errEl.classList.add("hidden");
+      document.getElementById("deviceEmail").textContent = data.email || "";
+      doneEl.classList.remove("hidden");
+    } catch {
+      showError("Tarmoq xatosi — internetni tekshirib qaytadan urinib ko'ring");
+    }
+  }
+
+  const googleClientId = document.querySelector('meta[name="google-client-id"]')?.getAttribute("content") || "";
+  if (!googleClientId) {
+    showError("Google kirish hali sozlanmagan");
+    return;
+  }
+
+  function initGoogleButton() {
+    if (!window.google?.accounts?.id) { setTimeout(initGoogleButton, 200); return; }
+    google.accounts.id.initialize({ client_id: googleClientId, callback: onGoogleCredential });
+    google.accounts.id.renderButton(btnEl, { theme: "outline", size: "large", width: 280, text: "signin_with" });
+  }
+  initGoogleButton();
+})();
+</script>
+</body>
+</html>

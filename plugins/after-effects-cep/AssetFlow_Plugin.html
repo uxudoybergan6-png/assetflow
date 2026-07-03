@@ -3770,6 +3770,10 @@ html.home-mode #homePage{display:block!important}
       <div class="acc-btn-row">
         <button type="button" class="acc-btn primary" onclick="accountLogin()">Kirish</button>
       </div>
+      <div class="acc-btn-row" style="margin-top:8px">
+        <button type="button" class="acc-btn" id="accGoogleBtn" onclick="accountLoginWithGoogle()">Google bilan kirish</button>
+      </div>
+      <p class="account-hint" id="accGoogleHint" style="display:none">Brauzerda oching va Google bilan tasdiqlang…</p>
       <p class="account-hint">Cloud hisob bilan kiring. Admin panel — faqat ADMIN roli.</p>
     </div>
 
@@ -8567,6 +8571,61 @@ async function accountLogin(){
       render();
     }
   }catch(e){
+    showToast(friendlyError(e),'error');
+  }
+}
+
+async function accountLoginWithGoogle(){
+  const btn=document.getElementById('accGoogleBtn');
+  const hint=document.getElementById('accGoogleHint');
+  try{
+    const {code,verificationUrl,expiresIn}=await AssetFlowAccount.startDeviceLogin();
+    AssetFlowAccount.openExternal(verificationUrl);
+    if(btn) btn.disabled=true;
+    if(hint) hint.style.display='block';
+    const safetyTimeout=setTimeout(()=>{
+      AssetFlowAccount.stopDevicePolling();
+      if(btn) btn.disabled=false;
+      if(hint) hint.style.display='none';
+    },(expiresIn||600)*1000+5000);
+    AssetFlowAccount.pollDeviceLogin(code,{
+      onConfirmed:async ()=>{
+        clearTimeout(safetyTimeout);
+        if(btn) btn.disabled=false;
+        if(hint) hint.style.display='none';
+        refreshAccountUi();
+        showToast('Kirish muvaffaqiyatli','success');
+        if(typeof AssetFlowCatalog!=='undefined'){
+          catalogLoadState='loading';
+          render();
+          try{
+            await AssetFlowCatalog.refreshBrowse();
+            catalogLoadState='ready';
+          }catch(e){
+            catalogLoadState='error';
+          }
+          render();
+        }
+      },
+      onExpired:()=>{
+        clearTimeout(safetyTimeout);
+        if(btn) btn.disabled=false;
+        if(hint) hint.style.display='none';
+        showToast('Vaqt tugadi — qaytadan urinib ko\'ring','warning');
+      },
+      onDenied:()=>{
+        clearTimeout(safetyTimeout);
+        if(btn) btn.disabled=false;
+        if(hint) hint.style.display='none';
+        showToast('Kirish rad etildi','error');
+      },
+      onError:(e)=>{
+        /* tarmoq xatosi — pollik davom etadi, safetyTimeout oxir-oqibat to'xtatadi */
+      },
+    });
+  }catch(e){
+    if(btn) btn.disabled=false;
+    if(hint) hint.style.display='none';
     showToast(friendlyError(e),'error');
   }
 }

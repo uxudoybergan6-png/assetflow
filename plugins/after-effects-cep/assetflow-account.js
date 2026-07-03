@@ -150,6 +150,53 @@ const AssetFlowAccount = (() => {
 
   function logout() {
     clearToken();
+    stopDevicePolling();
+  }
+
+  // ── Google bilan kirish (device-code oqimi) ───────────────────────────────
+  // CEP paneli Google'ning GIS'ini to'g'ridan-to'g'ri ocha olmaydi (embedded
+  // webview bloklanadi) — shu sabab bir martalik kod olib, tasdiqlashni tizim
+  // brauzerida (device.html) o'tkazamiz, so'ng natijani pollik qilib olamiz.
+  let devicePollTimer = null;
+
+  async function startDeviceLogin() {
+    return request("/api/plugin/device/start", { method: "POST" });
+  }
+
+  function stopDevicePolling() {
+    if (devicePollTimer) {
+      clearInterval(devicePollTimer);
+      devicePollTimer = null;
+    }
+  }
+
+  /** `code` bo'yicha holatni har `intervalMs`da so'raydi, terminal holatda to'xtaydi. */
+  function pollDeviceLogin(code, { onConfirmed, onExpired, onDenied, onError, intervalMs = 3000 } = {}) {
+    stopDevicePolling();
+    devicePollTimer = setInterval(async () => {
+      try {
+        const data = await request(`/api/plugin/device/poll?code=${encodeURIComponent(code)}`);
+        if (data.status === "confirmed") {
+          stopDevicePolling();
+          persistClient({
+            apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
+            token: data.token,
+          });
+          cachedUser = data.user;
+          if (data.adminUrl) adminUrl = data.adminUrl;
+          if (onConfirmed) onConfirmed(data);
+        } else if (data.status === "expired") {
+          stopDevicePolling();
+          if (onExpired) onExpired();
+        } else if (data.status === "denied") {
+          stopDevicePolling();
+          if (onDenied) onDenied();
+        }
+        // "pending" — kutishda davom etamiz
+      } catch (e) {
+        if (onError) onError(e);
+      }
+    }, intervalMs);
   }
 
   async function fetchMe() {
@@ -270,6 +317,9 @@ const AssetFlowAccount = (() => {
     isLoggedIn,
     login,
     logout,
+    startDeviceLogin,
+    pollDeviceLogin,
+    stopDevicePolling,
     fetchMe,
     setPlan,
     requestCheckout,

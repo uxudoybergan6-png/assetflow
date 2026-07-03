@@ -68,6 +68,7 @@ const FILES = [
   "admin-login.html",
   "reset-password.html",
   "verify-email.html",
+  "device.html",
   "design-system.html",
 ];
 for (const f of FILES) copyFile(path.join(root, f), path.join(dist, f));

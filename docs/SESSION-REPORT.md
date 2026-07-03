@@ -1,18 +1,17 @@
-# SESSION REPORT — 2026-07-03 — Google bilan kirish (OAuth) qo'shildi
+# SESSION REPORT — 2026-07-03 — AE plagin: Google bilan kirish (device-code)
 
 ## QILINDI
-- **Backend**: `google-auth-library` qo'shildi; `POST /api/auth/google` — GIS ID token'ni tekshiradi (`OAuth2Client.verifyIdToken`), email bo'yicha find-or-create, `Account` modeliga (`provider="google"`) bog'laydi, `emailVerified` avtomatik o'rnatiladi (Google email'ni allaqachon tasdiqlagani uchun — Resend'ga bog'liq emas). *(auth.ts)*
-- Mavjud `/login`: Google-only (parolsiz) hisobga parol bilan kirishga urinilsa aniq xabar: "Google bilan kiring".
-- **Backend fail-safe**: `GOOGLE_CLIENT_ID` yo'q bo'lsa `/api/auth/google` 503 `GOOGLE_NOT_CONFIGURED` qaytaradi — hozircha yo'q, kod zararsiz.
-- **Frontend**: `studio-api.js` (`googleLogin`), `auth.js` (`loginWithGoogle`) qo'shildi; `login.html`ga GIS skript + "Google bilan kirish/ro'yxatdan o'tish" tugmasi (login VA register panelida) — faqat `meta[google-client-id]` to'ldirilganda chiqadi (hozir bo'sh → tugma chizilmaydi, eski xulq saqlanadi).
-- **CSP** (`prepare-cf-pages.mjs`): `script-src`/`frame-src`/`connect-src`ga `accounts.google.com` qo'shildi.
+- CEP plagin GIS'ni to'g'ridan-to'g'ri ocha olmaydi (embedded webview bloklanadi) — device-code oqimi qo'shildi (GitHub CLI uslubi).
+- **DB**: `PluginDeviceCode` modeli + migratsiya (`20260703130000_plugin_device_code`), lokalda qo'lda ishlab chiqilib `migrate resolve --applied` bilan belgilandi (shadow DB'da pgvector yo'qligi sababli `migrate dev` ishlamaydi — bilinadigan cheklov).
+- **Backend**: `apps/api/src/lib/google-auth.ts` — Google verify+upsert logikasi `/api/auth/google`dan chiqarilib umumiy funksiyaga aylantirildi (dublikat yo'q). `plugin.ts`ga 3 ta endpoint: `POST /device/start`, `POST /device/confirm`, `GET /device/poll` + `deviceStatusLimiter`.
+- **Frontend**: yangi `packages/assetflow-studio/device.html` (GIS tugma, `/device/confirm`ga fetch) — `prepare-cf-pages.mjs` FILES ro'yxatiga qo'shildi.
+- **CEP**: `assetflow-account.js` — `startDeviceLogin/pollDeviceLogin/stopDevicePolling`; `AssetFlow_Plugin.html` — "Google bilan kirish" tugmasi + `accountLoginWithGoogle()`.
 
 ## TEKSHIRILDI
-- `npm run build -w apps/api` — TOZA.
-- Lokal preview (`studio-dev`, login.html): konsolda xato yo'q; Google tugmasi client-id bo'shligida to'g'ri yashirin; login/register forma avvalgidek ishlaydi (regressiya yo'q).
+- `npm run build -w apps/api` — TOZA (google-auth extraction + yangi endpointlar bilan).
+- Lokal curl: `/device/start` → kod qaytadi; `/device/poll` → pending/expired to'g'ri; `/device/confirm` → xato holatlar (404/GOOGLE_NOT_CONFIGURED) to'g'ri.
+- `device.html` studio-dev preview'da ochildi — Google tugmasi (iframe) to'g'ri render bo'ldi.
 
-## KUTILMOQDA (user infra)
-1. [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials) — OAuth 2.0 Client ID (Web application), Authorized origin: `https://getframeflow.app`.
-2. Backend: `GOOGLE_CLIENT_ID` → `CLOUDRUN_ENV_YAML` GitHub secret (`gh secret set`).
-3. Frontend: `login.html`dagi `<meta name="google-client-id" content="">` ga shu Client ID yozish (public qiymat, xavfsiz commit qilinadi).
-4. Push → deploy → production'da haqiqiy Google Client ID bilan sinov (yangi email + mavjud email/parol hisobga bog'lanish).
+## KUTILMOQDA
+1. Migratsiyani production'da qo'llash: `npm run migrate:deploy -w @creative-tools/database`.
+2. Push → deploy → CEP panelda haqiqiy AE ichida to'liq oqimni sinash (tugma → brauzer → Google → panel avtomatik login).

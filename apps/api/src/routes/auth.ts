@@ -2,7 +2,6 @@ import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { OAuth2Client } from "google-auth-library";
 import { prisma, UserRole } from "@creative-tools/database";
 import { signToken, requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
@@ -10,11 +9,9 @@ import { getStripe, isStripeConfigured } from "../lib/stripe.js";
 import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
+import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 
 export const authRouter = Router();
-
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 soat
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 soat
@@ -211,74 +208,18 @@ const googleAuthSchema = z.object({ credential: z.string().min(10) });
  *  Google email'ni allaqachon tasdiqlagani uchun emailVerified darhol o'rnatiladi
  *  (Resend'ga bog'liq emas). Mavjud email/parol hisobi bo'lsa — shunga bog'lanadi. */
 authRouter.post("/google", authLimiter, async (req, res) => {
-  if (!googleClient) {
-    res.status(503).json({ error: "Google kirish sozlanmagan", code: "GOOGLE_NOT_CONFIGURED" });
-    return;
-  }
   const parsed = googleAuthSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
     return;
   }
 
-  let payload;
-  try {
-    const ticket = await googleClient.verifyIdToken({
-      idToken: parsed.data.credential,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    payload = ticket.getPayload();
-  } catch {
-    res.status(401).json({ error: "Google tokeni yaroqsiz" });
+  const result = await verifyGoogleIdTokenAndUpsertUser(parsed.data.credential);
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error, ...(result.code ? { code: result.code } : {}) });
     return;
   }
-  if (!payload?.email || payload.email_verified !== true) {
-    res.status(401).json({ error: "Google emailingiz tasdiqlanmagan" });
-    return;
-  }
-
-  const email = payload.email;
-  const googleSub = payload.sub;
-  let user = await prisma.user.findUnique({
-    where: { email },
-    include: { subscription: true },
-  });
-
-  if (!user) {
-    const created = await prisma.user.create({
-      data: {
-        email,
-        name: payload.name,
-        role: UserRole.USER,
-        emailVerified: new Date(),
-        accounts: {
-          create: { type: "oauth", provider: "google", providerAccountId: googleSub },
-        },
-      },
-    });
-    await prisma.subscription.create({
-      data: { userId: created.id, status: "INCOMPLETE" },
-    });
-    user = { ...created, subscription: null };
-  } else {
-    await prisma.account.upsert({
-      where: { provider_providerAccountId: { provider: "google", providerAccountId: googleSub } },
-      update: {},
-      create: { userId: user.id, type: "oauth", provider: "google", providerAccountId: googleSub },
-    });
-    if (!user.emailVerified) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { emailVerified: new Date() },
-        include: { subscription: true },
-      });
-    }
-  }
-
-  if (user.role === UserRole.CONTRIBUTOR && user.contributorBlockedAt) {
-    res.status(403).json({ error: "Contributor hisobi bloklangan", code: "CONTRIBUTOR_BLOCKED" });
-    return;
-  }
+  const user = result.user;
 
   const token = signToken({
     userId: user.id,

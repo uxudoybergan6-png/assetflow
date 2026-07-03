@@ -217,6 +217,18 @@ model PluginToken {
   @@index([token])
 }
 
+model PluginDeviceCode {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  userId      String?
+  status      String   @default("pending") // pending | confirmed | denied
+  pluginToken String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
 model ContributorPlatformSettings {
   id                      String   @id @default("platform")
   apiBaseUrl              String?
