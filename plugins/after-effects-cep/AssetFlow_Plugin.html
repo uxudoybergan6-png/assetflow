@@ -1295,6 +1295,63 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .lr-btn.secondary{background:var(--surface-3);color:var(--muted);border:1px solid var(--border)}
 .lr-btn.secondary:hover{color:var(--text)}
 
+/* ── Filtrlar bottom-sheet (a2) — verbatim hex/px, re-tokenizatsiya yo'q ── */
+.fsheet{
+  position:fixed;inset:0;z-index:8200;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.55);
+}
+.fsheet.open{display:flex}
+.fsheet-panel{
+  width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-sizing:border-box;
+  background:#161B22;border-top:1px solid rgba(255,255,255,.10);
+  border-radius:18px 18px 0 0;padding:8px 16px 16px;
+  box-shadow:0 -18px 42px rgba(0,0,0,.5);
+  animation:fsheetUp .22s cubic-bezier(.22,1,.36,1);
+  color:#F2F5F8;
+}
+@keyframes fsheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.fsheet-grip{width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 12px}
+.fsheet-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.fsheet-title{font-weight:700;font-size:14.5px;letter-spacing:-.01em;color:#F2F5F8}
+.fsheet-reset{font-size:11px;color:#8A93A3;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.fsheet-reset:hover{color:#F2F5F8}
+.fsheet-lbl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:#5E6675;margin-bottom:7px}
+/* Bo'lim segment */
+.fsheet-seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px;margin-bottom:14px}
+.fsheet-segi{flex:1;text-align:center;padding:5px 0;border-radius:999px;font-weight:500;font-size:10.5px;color:#8A93A3;background:none;border:0;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.fsheet-segi.on{background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8}
+/* Kategoriya chiplari */
+.fsheet-cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.fsheet-catchip{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-weight:500;font-size:10.5px;color:#8A93A3;cursor:pointer;font-family:inherit;transition:background .15s,color .15s,border-color .15s}
+.fsheet-catchip.on{background:rgba(255,255,255,.10);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8}
+.fsheet-catchip.on::before{content:'';width:6px;height:6px;border-radius:50%;background:#C2F04A;flex:none}
+/* Format / Sifat qatori */
+.fsheet-row{display:flex;gap:16px;margin-bottom:14px}
+.fsheet-col{flex:1;min-width:0}
+.fsheet-fchips{display:flex;gap:5px;flex-wrap:wrap}
+.fsheet-fchip{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-weight:500;font-size:10px;color:#8A93A3;cursor:pointer;font-family:inherit;transition:background .15s,color .15s,border-color .15s}
+.fsheet-fchip.on{background:rgba(255,255,255,.10);border-color:transparent;font-weight:600;color:#F2F5F8}
+/* AI kontent toggle */
+.fsheet-aicol{flex:none;display:flex;flex-direction:column;gap:7px}
+.fsheet-aitoggle{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.fsheet-aitrack{width:36px;height:20px;border-radius:99px;background:rgba(255,255,255,.15);position:relative;transition:background .18s;flex:none}
+.fsheet-aiknob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#F2F5F8;transition:left .18s,background .18s}
+.fsheet-aitoggle.on .fsheet-aitrack{background:#C2F04A}
+.fsheet-aitoggle.on .fsheet-aiknob{left:18px;background:#0E1400}
+.fsheet-aistate{font-size:10.5px;color:#B7C0CE}
+.fsheet-aitoggle .fsheet-aion{display:none}
+.fsheet-aitoggle.on .fsheet-aion{display:inline}
+.fsheet-aitoggle.on .fsheet-aioff{display:none}
+/* Saralash */
+.fsheet-sorts{display:flex;flex-direction:column;margin-bottom:14px}
+.fsheet-sortrow{height:38px;display:flex;align-items:center;gap:9px;padding:0 10px;border-radius:10px;background:none;border:0;cursor:pointer;font-family:inherit;text-align:left;width:100%;color:#8A93A3;font-weight:500;font-size:11.5px;transition:background .15s}
+.fsheet-sortdot{width:8px;height:8px;border-radius:50%;background:transparent;flex:none}
+.fsheet-sortrow.on{background:rgba(255,255,255,.08);color:#F2F5F8;font-weight:600}
+.fsheet-sortrow.on .fsheet-sortdot{background:#C2F04A}
+/* Ko'rsatish */
+.fsheet-apply{height:42px;width:100%;border-radius:999px;background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);border:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;color:#F2F5F8;transition:background .15s}
+.fsheet-apply:hover{background:rgba(255,255,255,.14)}
+
 /* PUBLISH SHEET (contributor) */
 .publish-sheet{
   position:fixed;inset:0;z-index:8500;display:none;align-items:flex-end;justify-content:center;
@@ -3073,47 +3130,15 @@ html.home-mode #homePage{display:block!important}
                 <!-- E2: kategoriya chiplari — buildCategoryChips() (a1: Filtrlar ichida; bu yerda yashirin, wiring saqlanadi) -->
                 <div class="af-chips" id="afCatChips" role="group" aria-label="Toifa filtri" hidden></div>
 
-                <!-- Filtrlar paneli (Filtrlar bilan ochiladi): bo'lim + Kategoriya/Format/Sifat + AI kontent -->
-                <div class="cmp-filterpanel" id="filterPanel" style="display:none">
-                  <div class="cmp-fp-row">
-                    <span class="cmp-fp-lbl">Bo‘lim</span>
-                    <select class="env-scope" id="envScope" onchange="onEnvScopeChange(this)">
-                      <option value="video">Video shablonlar</option>
-                      <option value="motion">Motion videolar</option>
-                      <option value="graphics">Grafika</option>
-                      <option value="luts">LUTlar</option>
-                      <option value="ai">AI Tools</option>
-                    </select>
-                  </div>
-                  <div class="cmp-fp-pills">
-                    <div class="dropdown" id="catDrop">
-                      <button type="button" class="env-pill"><span id="catPillLabel">Kategoriya</span> <span class="env-pill-chevron">⌄</span></button>
-                      <div class="dd-menu dd-menu--tall" id="catMenu"></div>
-                    </div>
-                    <div class="dropdown" id="orientDrop">
-                      <button type="button" class="env-pill"><span id="orientPillLabel">Format</span> <span class="env-pill-chevron">⌄</span></button>
-                      <div class="dd-menu" id="orientMenu">
-                        <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
-                        <div class="dd-item" data-filter="horizontal">16:9</div>
-                        <div class="dd-item" data-filter="vertical">9:16</div>
-                        <div class="dd-item" data-filter="square">1:1</div>
-                      </div>
-                    </div>
-                    <div class="dropdown" id="resDrop">
-                      <button type="button" class="env-pill"><span id="resPillLabel">Sifat</span> <span class="env-pill-chevron">⌄</span></button>
-                      <div class="dd-menu" id="resMenu">
-                        <div class="dd-item selected" data-filter="all">Barchasi <span class="dd-check">✓</span></div>
-                        <div class="dd-item" data-filter="2k">2K</div>
-                        <div class="dd-item" data-filter="4k">4K</div>
-                        <div class="dd-item" data-filter="5k">5K+</div>
-                      </div>
-                    </div>
-                    <button type="button" class="cat-ai-toggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="AI kontentni ajratish">
-                      <span class="cat-ai-knobwrap"><span class="cat-ai-knob"></span></span>AI kontent
-                    </button>
-                    <button type="button" class="env-pill af-clear-pill" id="clearFiltersPill" onclick="clearAllFilters()" style="display:none" title="Barcha filtrlarni tozalash">✕ Tozalash <span id="clearFiltersCount" class="af-clear-count"></span></button>
-                  </div>
-                </div>
+                <!-- Filtrlar endi bottom-sheet (a2): pastdagi #filterSheet. Bu yerda faqat bo'lim
+                     (nav) holat-tashuvchisi qoladi — onEnvScopeChange/switchNavFromSidebar shunga bog'liq. -->
+                <select class="env-scope" id="envScope" onchange="onEnvScopeChange(this)" style="display:none" aria-hidden="true" tabindex="-1">
+                  <option value="video">Video shablonlar</option>
+                  <option value="motion">Motion videolar</option>
+                  <option value="graphics">Grafika</option>
+                  <option value="luts">LUTlar</option>
+                  <option value="ai">AI Tools</option>
+                </select>
               </div>
 
               <!-- Sahifa tablari sidebar'da; bu yerda yashirin (switchPage/count mantig'i saqlanadi) -->
@@ -3735,6 +3760,69 @@ html.home-mode #homePage{display:block!important}
       <button type="button" class="acc-btn danger" onclick="accountLogout()">⎋ Chiqish</button>
     </div>
 
+  </div>
+</div>
+
+<!-- Filtrlar bottom-sheet — a2 (bo'lim · kategoriya · format · sifat · AI · saralash). Filtr mantig'i o'zgarmaydi. -->
+<div class="fsheet" id="filterSheet" onclick="if(event.target===this)closeFilterSheet()">
+  <div class="fsheet-panel" onclick="event.stopPropagation()" role="dialog" aria-label="Filtrlar" aria-modal="true">
+    <div class="fsheet-grip"></div>
+    <div class="fsheet-head">
+      <span class="fsheet-title">Filtrlar</span>
+      <button type="button" class="fsheet-reset" onclick="clearAllFilters()">Filtrlarni tozalash</button>
+    </div>
+
+    <div class="fsheet-lbl">BO‘LIM</div>
+    <div class="fsheet-seg" id="fsheetScope">
+      <button type="button" class="fsheet-segi" data-scope="video" onclick="afFilterSheetScope('video')">Video</button>
+      <button type="button" class="fsheet-segi" data-scope="motion" onclick="afFilterSheetScope('motion')">Motion</button>
+      <button type="button" class="fsheet-segi" data-scope="graphics" onclick="afFilterSheetScope('graphics')">Graphics</button>
+      <button type="button" class="fsheet-segi" data-scope="luts" onclick="afFilterSheetScope('luts')">LUTs</button>
+      <button type="button" class="fsheet-segi" data-scope="ai" onclick="afFilterSheetScope('ai')">AI</button>
+    </div>
+
+    <div class="fsheet-lbl">KATEGORIYA</div>
+    <div class="fsheet-cats" id="fsheetCats"></div>
+
+    <div class="fsheet-row" id="fsheetFmtSec">
+      <div class="fsheet-col">
+        <div class="fsheet-lbl">FORMAT</div>
+        <div class="fsheet-fchips" id="fsheetFmt">
+          <button type="button" class="fsheet-fchip" data-filter="all" onclick="selectOrientFilter(this,'all','Barchasi')">Barchasi</button>
+          <button type="button" class="fsheet-fchip" data-filter="horizontal" onclick="selectOrientFilter(this,'horizontal','16:9')">16:9</button>
+          <button type="button" class="fsheet-fchip" data-filter="vertical" onclick="selectOrientFilter(this,'vertical','9:16')">9:16</button>
+          <button type="button" class="fsheet-fchip" data-filter="square" onclick="selectOrientFilter(this,'square','1:1')">1:1</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fsheet-row">
+      <div class="fsheet-col" id="fsheetQualCol">
+        <div class="fsheet-lbl">SIFAT</div>
+        <div class="fsheet-fchips" id="fsheetQual">
+          <button type="button" class="fsheet-fchip" data-filter="all" onclick="selectResFilter(this,'all','Barchasi')">Barchasi</button>
+          <button type="button" class="fsheet-fchip" data-filter="2k" onclick="selectResFilter(this,'2k','2K')">2K</button>
+          <button type="button" class="fsheet-fchip" data-filter="4k" onclick="selectResFilter(this,'4k','4K')">4K</button>
+          <button type="button" class="fsheet-fchip" data-filter="5k" onclick="selectResFilter(this,'5k','5K+')">5K+</button>
+        </div>
+      </div>
+      <div class="fsheet-aicol">
+        <div class="fsheet-lbl" style="margin-bottom:0">AI KONTENTNI AJRATISH</div>
+        <button type="button" class="fsheet-aitoggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="AI kontentni ajratish">
+          <span class="fsheet-aitrack"><span class="fsheet-aiknob"></span></span>
+          <span class="fsheet-aistate"><span class="fsheet-aion">Yoqilgan</span><span class="fsheet-aioff">O‘chirilgan</span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="fsheet-lbl">SARALASH</div>
+    <div class="fsheet-sorts" id="fsheetSort">
+      <button type="button" class="fsheet-sortrow" data-sort="relevant" onclick="afFilterSheetSort('relevant')"><span class="fsheet-sortdot"></span><span>Mos kelishi bo‘yicha</span></button>
+      <button type="button" class="fsheet-sortrow" data-sort="newest" onclick="afFilterSheetSort('newest')"><span class="fsheet-sortdot"></span><span>Eng yangi</span></button>
+      <button type="button" class="fsheet-sortrow" data-sort="name" onclick="afFilterSheetSort('name')"><span class="fsheet-sortdot"></span><span>Nom A–Z</span></button>
+    </div>
+
+    <button type="button" class="fsheet-apply" id="fsheetApply" onclick="closeFilterSheet()">Ko‘rsatish</button>
   </div>
 </div>
 
@@ -5515,6 +5603,7 @@ function render(){
   document.getElementById('assetCount').textContent=list.length;
   updateGridLabel();
   updateFilterIndicator();
+  if(typeof syncFilterSheet==='function')syncFilterSheet();
 }
 function renderFav(){
   const list=assets.filter(a=>window.favorites.has(a.n));
@@ -7854,15 +7943,112 @@ function toggleSearchBar(){
   if(btn)btn.classList.toggle('active',open);
   if(open){const i=document.getElementById('searchInput');if(i)setTimeout(()=>i.focus(),0);}
 }
-// Filtrlar panelini ochish/yopish (ichidagi dropdown/AI-toggle mantig'i o'sha)
+// Filtrlar bottom-sheet (a2) — ochish/yopish. Filtr mantig'i (selectCategory / selectOrientFilter /
+// selectResFilter / toggleCatalogAi / selectSort / clearAllFilters) o'zgarmaydi; faqat markup ko'chdi.
 function toggleFilterPanel(){
-  const p=document.getElementById('filterPanel'),btn=document.getElementById('filterToggleBtn');
-  if(!p)return;
-  const open=getComputedStyle(p).display==='none';
-  p.style.display=open?'flex':'none';
-  if(btn)btn.classList.toggle('active',open);
-  if(!open&&typeof closeAllDropdowns==='function')closeAllDropdowns();
+  const sheet=document.getElementById('filterSheet');
+  if(!sheet)return;
+  if(sheet.classList.contains('open'))closeFilterSheet();
+  else openFilterSheet();
 }
+function openFilterSheet(){
+  const sheet=document.getElementById('filterSheet');
+  if(!sheet)return;
+  buildFilterSheetCats();
+  syncFilterSheet();
+  sheet.classList.add('open');
+  const btn=document.getElementById('filterToggleBtn');
+  if(btn)btn.classList.add('active');
+}
+function closeFilterSheet(){
+  const sheet=document.getElementById('filterSheet');
+  if(!sheet)return;
+  sheet.classList.remove('open');
+  const btn=document.getElementById('filterToggleBtn');
+  if(btn)btn.classList.remove('active');
+}
+window.toggleFilterPanel=toggleFilterPanel;
+window.openFilterSheet=openFilterSheet;
+window.closeFilterSheet=closeFilterSheet;
+// Esc — ochiq bo'lsa sheet'ni yopadi
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  const s=document.getElementById('filterSheet');
+  if(s&&s.classList.contains('open')){ e.stopPropagation(); closeFilterSheet(); }
+});
+
+// Bo'lim segmenti — mavjud #envScope + onEnvScopeChange yo'lidan boradi (nav almashadi).
+function afFilterSheetScope(val){
+  const s=document.getElementById('envScope');
+  if(s){ s.value=val; if(typeof onEnvScopeChange==='function')onEnvScopeChange(s); }
+  else if(typeof applyNavSwitch==='function'){ applyNavSwitch(val); }
+  if(val==='ai'){ closeFilterSheet(); return; }  // AI — alohida sahifa
+  syncFilterSheet();
+}
+window.afFilterSheetScope=afFilterSheetScope;
+
+// Saralash — grid sarlavhasidagi mavjud #sortMenu bilan sinxron (selectSort qayta ishlatiladi).
+function afFilterSheetSort(key){
+  const item=document.querySelector('#sortMenu .dd-item[data-sort="'+key+'"]');
+  if(item&&typeof selectSort==='function'){
+    const label=(item.textContent||'').replace('✓','').trim();
+    selectSort(item,key,label);
+  }
+  syncFilterSheet();
+}
+window.afFilterSheetSort=afFilterSheetSort;
+
+// Kategoriya chiplari — navSubs'dan dinamik (buildCategoryChips bilan bir xil manba + selectCategory).
+let __fsheetCatNav=null;
+function buildFilterSheetCats(){
+  const wrap=document.getElementById('fsheetCats');
+  if(!wrap||typeof navSubs==='undefined')return;
+  const labels=navSubs[currentNav]||navSubs.video||[];
+  wrap.innerHTML=labels.map(function(label){
+    const slug=catSlug(label);
+    const disp=slug==='all'?'Hammasi':label;
+    const sj=String(slug).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const on=slug===currentSub;
+    return '<button type="button" class="fsheet-catchip'+(on?' on':'')+'" data-slug="'+escHtml(slug)+
+      '" onclick="selectCategory(this,\''+sj+'\')">'+escHtml(disp)+'</button>';
+  }).join('');
+  __fsheetCatNav=currentNav;
+}
+window.buildFilterSheetCats=buildFilterSheetCats;
+
+// Sheet ichidagi barcha kontrollarni joriy filtr holatiga moslaydi (render() funnelidan chaqiriladi).
+function syncFilterSheet(){
+  const sheet=document.getElementById('filterSheet');
+  if(!sheet)return;
+  if(__fsheetCatNav!==currentNav)buildFilterSheetCats();
+  sheet.querySelectorAll('#fsheetCats .fsheet-catchip').forEach(function(c){
+    c.classList.toggle('on',(c.dataset.slug||'all')===(currentSub||'all'));
+  });
+  sheet.querySelectorAll('#fsheetFmt .fsheet-fchip').forEach(function(c){
+    c.classList.toggle('on',(c.dataset.filter||'all')===(currentOrient||'all'));
+  });
+  sheet.querySelectorAll('#fsheetQual .fsheet-fchip').forEach(function(c){
+    c.classList.toggle('on',(c.dataset.filter||'all')===(currentRes||'all'));
+  });
+  sheet.querySelectorAll('#fsheetScope .fsheet-segi').forEach(function(s){
+    s.classList.toggle('on',s.dataset.scope===currentNav);
+  });
+  sheet.querySelectorAll('#fsheetSort .fsheet-sortrow').forEach(function(r){
+    r.classList.toggle('on',(r.dataset.sort||'relevant')===(currentSort||'relevant'));
+  });
+  const ai=document.getElementById('catAiToggle');
+  if(ai)ai.classList.toggle('on',!!(typeof __catAiOn!=='undefined'&&__catAiOn));
+  // LUTs / Graphics — format+sifat qo'llanmaydi (applyNavSwitch is-hidden bilan bir xil)
+  const hideFmt=currentNav==='luts'||currentNav==='graphics';
+  const fmtSec=document.getElementById('fsheetFmtSec');if(fmtSec)fmtSec.style.display=hideFmt?'none':'';
+  const qualCol=document.getElementById('fsheetQualCol');if(qualCol)qualCol.style.display=hideFmt?'none':'';
+  const btn=document.getElementById('fsheetApply');
+  if(btn){
+    let n=0;try{ n=(typeof getGridAssets==='function')?getGridAssets().length:0; }catch(e){}
+    btn.textContent='Ko‘rsatish — '+n+' ta shablon';
+  }
+}
+window.syncFilterSheet=syncFilterSheet;
 
 /* ============================================================
    TEMA TIZIMI — 3 ta tema: standart / liquid-glass / light-glass.
