@@ -111,13 +111,17 @@ fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 const API_ORIGINS =
   "https://api.getframeflow.app https://assetflow-api-331762958776.europe-west1.run.app";
 const GCS_ORIGIN = "https://storage.googleapis.com";
+// Google Identity Services (Studio login "Google bilan kirish" tugmasi) —
+// gsi/client skripti + hisob tanlash popup/iframe shu origin'lardan yuklanadi.
+const GOOGLE_GSI_ORIGINS = "https://accounts.google.com https://accounts.google.com/gsi/";
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline' ${GOOGLE_GSI_ORIGINS}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: ${API_ORIGINS} ${GCS_ORIGIN}`,
   `media-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com`,
+  `frame-src ${GOOGLE_GSI_ORIGINS}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",

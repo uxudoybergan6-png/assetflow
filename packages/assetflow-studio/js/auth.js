@@ -85,6 +85,20 @@ const AssetFlowAuth = (() => {
     }
   }
 
+  async function loginWithGoogle(credential) {
+    if (typeof StudioApi === "undefined") {
+      return { ok: false, error: "API ulanishi yo‘q" };
+    }
+    try {
+      const data = await StudioApi.googleLogin(credential);
+      const session = sessionFromUser(data);
+      setSession(session);
+      return { ok: true, session };
+    } catch (e) {
+      return { ok: false, error: e.message || "Google bilan kirish muvaffaqiyatsiz" };
+    }
+  }
+
   async function register(payload) {
     if (typeof StudioApi === "undefined") {
       return { ok: false, error: "API ulanishi yo\u2018q" };
@@ -153,6 +167,7 @@ const AssetFlowAuth = (() => {
     clearSession,
     login,
     register,
+    loginWithGoogle,
     logout,
     requireAuth,
     renderBlockedBanner,

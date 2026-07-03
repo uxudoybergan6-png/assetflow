@@ -138,6 +138,13 @@ const StudioApi = (() => {
     return data;
   }
 
+  async function googleLogin(credential) {
+    return request("/api/auth/google", {
+      method: "POST",
+      body: { credential },
+    });
+  }
+
   async function createTemplate(payload) {
     return request("/api/contributor/templates", {
       method: "POST",
@@ -394,6 +401,7 @@ const StudioApi = (() => {
     request,
     login,
     register,
+    googleLogin,
     createTemplate,
     submitTemplate,
     uploadAssets,

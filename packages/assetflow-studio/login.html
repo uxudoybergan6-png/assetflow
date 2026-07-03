@@ -4,10 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
+<meta name="google-client-id" content="">
 <title>FrameFlow — Kirish</title>
 <link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/studio-config.js"></script>
 <script src="/studio/js/theme.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="auth-page">
 <div class="auth-shell">
@@ -89,6 +91,8 @@
           <p class="auth-error hidden" id="loginError" role="alert"></p>
           <button type="submit" class="btn btn-primary btn-block">Kirish</button>
         </form>
+        <div class="auth-or hidden" id="loginGoogleSep" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">yoki</div>
+        <div id="loginGoogleBtn" style="display:flex;justify-content:center"></div>
       </div>
 
       <div id="panelRegister" class="hidden">
@@ -118,6 +122,8 @@
           <p class="auth-error hidden" id="registerError" role="alert"></p>
           <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Ro'yxatdan o'tish</button>
         </form>
+        <div class="auth-or hidden" id="registerGoogleSep" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">yoki</div>
+        <div id="registerGoogleBtn" style="display:flex;justify-content:center"></div>
       </div>
     </div>
 
@@ -220,6 +226,33 @@
     AssetFlowLog.init({ source: "contributor" });
     location.href = ASSETFLOW_STUDIO.contributorUrl;
     return null;
+  }
+
+  // Google bilan kirish — meta[google-client-id] bo'sh bo'lsa tugma chizilmaydi
+  // (kalit hali sozlanmagan). GIS skript async yuklanadi — window.google tayyor
+  // bo'lguncha kutamiz.
+  const googleClientId = document.querySelector('meta[name="google-client-id"]')?.getAttribute("content") || "";
+  if (googleClientId) {
+    async function onGoogleCredential(resp) {
+      const err = document.getElementById("loginError");
+      const r = await AssetFlowAuth.loginWithGoogle(resp.credential);
+      if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
+      const block = afterAuth(r, chk.classList.contains("on"));
+      if (block) {
+        err.textContent = block;
+        err.classList.remove("hidden");
+        AssetFlowAuth.logout(false);
+      } else err.classList.add("hidden");
+    }
+    function initGoogleButtons() {
+      if (!window.google?.accounts?.id) { setTimeout(initGoogleButtons, 200); return; }
+      google.accounts.id.initialize({ client_id: googleClientId, callback: onGoogleCredential });
+      document.getElementById("loginGoogleSep").classList.remove("hidden");
+      document.getElementById("registerGoogleSep").classList.remove("hidden");
+      google.accounts.id.renderButton(document.getElementById("loginGoogleBtn"), { theme: "outline", size: "large", width: 280, text: "signin_with" });
+      google.accounts.id.renderButton(document.getElementById("registerGoogleBtn"), { theme: "outline", size: "large", width: 280, text: "signup_with" });
+    }
+    initGoogleButtons();
   }
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
