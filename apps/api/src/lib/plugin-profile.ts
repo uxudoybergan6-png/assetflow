@@ -4,6 +4,7 @@ import {
   SubscriptionStatus,
   prisma,
 } from "@creative-tools/database";
+import { isEmailConfigured } from "./email.js";
 
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
@@ -71,6 +72,7 @@ export async function ensurePluginProfile(userId: string) {
           email: true,
           name: true,
           role: true,
+          emailVerified: true,
           subscription: true,
         },
       },
@@ -318,6 +320,19 @@ export async function consumeAiCredits(userId: string, cost: number) {
   // ADMIN — cheksiz (ega erkin test qiladi); kredit kamaymaydi.
   if (profile.user.role === "ADMIN") {
     return { ok: true as const, remaining: profile.aiCredits };
+  }
+
+  // Email-verify gate — tasdiqlanmagan hisoblar AI kredit ISHLATOLMAYDI (bot
+  // bepul-kredit abuzasini to'sadi). FAQAT email yuborish sozlangan bo'lsa
+  // (RESEND_API_KEY) majburlanadi — aks holda foydalanuvchi tasdiqlash
+  // havolasini ololmaydi, shu sabab bloklamaymiz (fail-open). Mavjud hisoblar
+  // migratsiyada grandfather qilingan (emailVerified backfill) → bloklanmaydi.
+  if (isEmailConfigured() && !profile.user.emailVerified) {
+    return {
+      ok: false as const,
+      error: "Emailingizni tasdiqlang — pochtangizga yuborilgan havolani bosing (yoki qayta yuboring).",
+      code: "EMAIL_NOT_VERIFIED",
+    };
   }
 
   // Oylik reset — balansni o'qishdan OLDIN

@@ -8,10 +8,40 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
 import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
+import { verifyTurnstile } from "../lib/turnstile.js";
 
 export const authRouter = Router();
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 soat
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 soat
+/** Email-tasdiqlash tokenlari uchun identifier prefiksi (parol-tiklash bilan
+ *  to'qnashmasin — reset identifier=email, verify identifier=`verify:<email>`). */
+const VERIFY_ID_PREFIX = "verify:";
+
+/** Email-tasdiqlash havolasini yaratib yuboradi (RESEND_API_KEY yo'q bo'lsa
+ *  log'ga yozadi). Eski verify-tokenlarni tozalab, yangisini yozadi. */
+async function sendVerificationEmail(email: string): Promise<void> {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+  const identifier = VERIFY_ID_PREFIX + email;
+  await prisma.verificationToken.deleteMany({ where: { identifier } });
+  await prisma.verificationToken.create({ data: { identifier, token, expires } });
+  const verifyUrl = `${getWebUrl()}/verify-email.html?token=${token}`;
+  await sendEmail({
+    to: email,
+    subject: "FrameFlow — emailni tasdiqlang",
+    html: renderEmailLayout(
+      "Emailni tasdiqlang",
+      `<p style="font-size:13px;line-height:1.6">FrameFlow'ga xush kelibsiz! AI generatsiyadan foydalanish uchun emailingizni tasdiqlang. Havola 24 soat amal qiladi.</p>
+       <a href="${verifyUrl}" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Emailni tasdiqlash</a>
+       <p style="font-size:11px;color:#888;margin-top:16px;word-break:break-all">${verifyUrl}</p>`
+    ),
+    text: `Emailni tasdiqlash: ${verifyUrl}`,
+  });
+  if (!isEmailConfigured()) {
+    console.log(`[auth] Email tasdiqlash havolasi (${email}): ${verifyUrl}`);
+  }
+}
 
 /** Brute-force'dan himoya: Studio/admin login + register */
 const authLimiter = rateLimit({
@@ -34,6 +64,7 @@ const registerSchema = z.object({
   password: z.string().min(8),
   name: z.string().optional(),
   asContributor: z.boolean().optional(),
+  turnstileToken: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -49,6 +80,17 @@ authRouter.post("/register", authLimiter, async (req, res) => {
   }
 
   const { email, password, name } = parsed.data;
+
+  // Bot-himoya (Turnstile) — kalit sozlangan bo'lsagina majburlanadi (fail-open).
+  const captchaOk = await verifyTurnstile(
+    parsed.data.turnstileToken,
+    req.ip
+  );
+  if (!captchaOk) {
+    res.status(400).json({ error: "Bot tekshiruvi o'tmadi — sahifani yangilab qayta urinib ko'ring", code: "CAPTCHA_FAILED" });
+    return;
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     res.status(409).json({ error: "Email already registered" });
@@ -69,6 +111,15 @@ authRouter.post("/register", authLimiter, async (req, res) => {
     data: { userId: user.id, status: "INCOMPLETE" },
   });
 
+  // Email-tasdiqlash havolasini yuboramiz (email sozlanmagan bo'lsa log'ga).
+  // Xatoga chidamli — tasdiqlash yuborilmasa ham ro'yxatdan o'tish muvaffaqiyatli
+  // (foydalanuvchi keyin "qayta yuborish"dan foydalanadi).
+  try {
+    await sendVerificationEmail(user.email);
+  } catch (e) {
+    console.warn("[auth] tasdiqlash emaili yuborilmadi:", e);
+  }
+
   const token = signToken({
     userId: user.id,
     email: user.email,
@@ -78,11 +129,15 @@ authRouter.post("/register", authLimiter, async (req, res) => {
 
   res.status(201).json({
     token,
+    // emailVerifyRequired — email yuborish sozlangan bo'lsa AI gate faol
+    // (frontend "emailingizni tasdiqlang" bannerini ko'rsatishi mumkin).
+    emailVerifyRequired: isEmailConfigured(),
     user: {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      emailVerified: false,
       contributorBlocked: false,
     },
   });
@@ -128,11 +183,13 @@ authRouter.post("/login", authLimiter, async (req, res) => {
 
   res.json({
     token,
+    emailVerifyRequired: isEmailConfigured(),
     user: {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      emailVerified: !!user.emailVerified,
       subscription: user.subscription,
       contributorBlocked: false,
     },
@@ -224,6 +281,64 @@ authRouter.post("/reset-password", async (req, res) => {
   res.json({ ok: true, message: "Parol yangilandi — endi kirishingiz mumkin" });
 });
 
+// ── Email tasdiqlash ─────────────────────────────────────────────────────────
+const verifyEmailSchema = z.object({ token: z.string().min(10) });
+
+/** Token bilan emailni tasdiqlash (verify-email.html sahifasi chaqiradi). */
+authRouter.post("/verify-email", async (req, res) => {
+  const parsed = verifyEmailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    return;
+  }
+  const record = await prisma.verificationToken.findUnique({
+    where: { token: parsed.data.token },
+  });
+  // Faqat verify-tokenlar (identifier `verify:` prefiksli) — parol-tiklash
+  // tokeni bu yerda ishlamasin.
+  if (
+    !record ||
+    !record.identifier.startsWith(VERIFY_ID_PREFIX) ||
+    record.expires < new Date()
+  ) {
+    res.status(400).json({ error: "Havola yaroqsiz yoki muddati tugagan" });
+    return;
+  }
+  const email = record.identifier.slice(VERIFY_ID_PREFIX.length);
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    res.status(400).json({ error: "Foydalanuvchi topilmadi" });
+    return;
+  }
+  if (!user.emailVerified) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: new Date() },
+    });
+  }
+  await prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } });
+  res.json({ ok: true, message: "Email tasdiqlandi — endi AI'dan foydalanishingiz mumkin" });
+});
+
+/** Tasdiqlash havolasini qayta yuborish — enumeratsiyaga yo'l qo'ymaslik uchun
+ *  doim 200 (email bor va tasdiqlanmagan bo'lsagina haqiqiy yuboradi). */
+authRouter.post("/resend-verification", forgotLimiter, async (req, res) => {
+  const parsed = forgotSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    return;
+  }
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (user && !user.emailVerified) {
+    try {
+      await sendVerificationEmail(user.email);
+    } catch (e) {
+      console.warn("[auth] tasdiqlash emaili qayta yuborilmadi:", e);
+    }
+  }
+  res.json({ ok: true, message: "Agar hisob mavjud va tasdiqlanmagan bo'lsa, havola yuborildi" });
+});
+
 authRouter.get("/me", requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
@@ -238,6 +353,8 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     email: user.email,
     name: user.name,
     role: user.role,
+    emailVerified: !!user.emailVerified,
+    emailVerifyRequired: isEmailConfigured(),
     subscription: user.subscription,
     contributorBlocked: !!user.contributorBlockedAt,
   });

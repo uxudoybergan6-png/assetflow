@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="assetflow-api" content="https://api.getframeflow.app">
+<title>FrameFlow — Emailni tasdiqlash</title>
+<link rel="stylesheet" href="/studio/styles/app.css">
+<script src="/studio/js/theme.js"></script>
+</head>
+<body class="auth-page">
+<div class="auth-main" style="min-height:100vh">
+  <div class="auth-card">
+    <div class="auth-brand-top" style="margin-bottom:24px">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/></svg>
+      </span>
+      <span class="brand-word">Frame<b>Flow</b></span>
+    </div>
+
+    <!-- Token bilan avtomatik tasdiqlash -->
+    <div id="verifyView">
+      <div class="form-head">
+        <h1 class="h1">Emailni tasdiqlash</h1>
+        <p id="verifyStatus">Tekshirilmoqda…</p>
+      </div>
+      <div class="msg" id="verifyMsg"></div>
+      <a class="auth-back" href="/login.html">← Kirishga qaytish</a>
+    </div>
+
+    <!-- Token yo'q yoki muddati tugagan — qayta yuborish -->
+    <div id="resendView" style="display:none">
+      <div class="form-head">
+        <h1 class="h1">Tasdiqlash havolasini qayta yuborish</h1>
+        <p>Email manzilingizni kiriting — yangi tasdiqlash havolasi yuboriladi.</p>
+      </div>
+      <div class="field">
+        <label for="reEmail">Email</label>
+        <div class="field-wrap">
+          <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg></span>
+          <input id="reEmail" class="input has-lead" type="email" placeholder="email@getframeflow.app" autocomplete="username">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="reBtn" onclick="doResend()">Havola yuborish</button>
+      <div class="msg" id="reMsg"></div>
+      <a class="auth-back" href="/login.html">← Kirishga qaytish</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function apiBase(){
+  const meta=document.querySelector('meta[name="assetflow-api"]');
+  return (meta?.getAttribute('content')||'https://api.getframeflow.app').replace(/\/$/,'');
+}
+const params=new URLSearchParams(location.search);
+const token=params.get('token');
+
+async function postJson(path,body){
+  const res=await fetch(apiBase()+path,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const txt=await res.text();let data;try{data=txt?JSON.parse(txt):null;}catch(e){data={raw:txt};}
+  if(!res.ok) throw new Error((data&&(data.error?.formErrors?.[0]||data.error))||('HTTP '+res.status));
+  return data;
+}
+
+async function doVerify(){
+  const status=document.getElementById('verifyStatus');
+  const msg=document.getElementById('verifyMsg');
+  try{
+    await postJson('/api/auth/verify-email',{token});
+    status.textContent='✓ Email tasdiqlandi!';
+    msg.className='msg ok';
+    msg.textContent='Endi AI generatsiyadan foydalanishingiz mumkin. Kirish sahifasiga yo\'naltirilyapsiz…';
+    setTimeout(()=>{location.href='/login.html?verified=1';},1800);
+  }catch(e){
+    // Havola yaroqsiz/muddati tugagan → qayta yuborish ko'rinishi
+    document.getElementById('verifyView').style.display='none';
+    document.getElementById('resendView').style.display='block';
+    document.getElementById('reMsg').className='msg err';
+    document.getElementById('reMsg').textContent=String(e.message||e);
+  }
+}
+
+async function doResend(){
+  const email=document.getElementById('reEmail').value.trim();
+  const msg=document.getElementById('reMsg');
+  const btn=document.getElementById('reBtn');
+  if(!email){ msg.className='msg err'; msg.textContent='Email kiriting'; return; }
+  btn.disabled=true; msg.className='msg'; msg.textContent='Yuborilmoqda…';
+  try{
+    await postJson('/api/auth/resend-verification',{email});
+    msg.className='msg ok';
+    msg.textContent='Agar hisob mavjud va tasdiqlanmagan bo\'lsa, havola yuborildi. Pochtangizni tekshiring.';
+  }catch(e){
+    msg.className='msg err'; msg.textContent=String(e.message||e);
+    btn.disabled=false;
+  }
+}
+
+if(token){ doVerify(); }
+else {
+  document.getElementById('verifyView').style.display='none';
+  document.getElementById('resendView').style.display='block';
+}
+document.getElementById('reEmail')?.addEventListener('keydown',e=>{if(e.key==='Enter')doResend();});
+</script>
+</body>
+</html>

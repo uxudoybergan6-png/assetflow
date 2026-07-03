@@ -1,18 +1,27 @@
-# SESSION REPORT — 2026-07-03 — Audit 2026-07-02 Faza 1 (launch-blokerlar)
+# SESSION REPORT — 2026-07-03 — Audit 2026-07-02 Faza 1 (launch-blokerlar) — YAKUNLANDI
 
-Manba: `docs/AUDIT-2026-07-02.md` Faza 1. 6 majburiy banddan 5 tasi bajarildi (#6 — user infra qarori).
+Manba: `docs/AUDIT-2026-07-02.md` Faza 1. 6 majburiy band — kod 100% bajarildi (qolgani = user infra: GCP budget console + Resend/Turnstile kalitlari).
 
-## QILINDI
-- **[P0] Pack presigned PUT** — pack endi thumb/preview kabi to'g'ridan bulutga (Cloud Run 32MB limitini chetlab): `uploadUrlSchema` enum'iga "pack" (max 3); yangi `POST /templates/:id/pack-uploaded` (HeadObject → DB fileName/fileSize, .zip bo'lsa `extractPackScenesInBackground` fon .mogrt ekstraktsiyasi); `studio-api.js uploadAssets` multer yo'lini presigned+signal bilan almashtirdi. *(contributor.ts, s3.ts import, studio-api.js)*
-- **[P1] CDN_BASE_URL bo'sh bug** — `getPublicUrl()` endi S3_ENDPOINT'dan (GCS `storage.googleapis.com`) path-style URL yasaydi; ilgari region=auto → o'lik `s3.auto.amazonaws.com`. Secret o'zgarishi shart emas (S3_ENDPOINT allaqachon deploy env'da). *(s3.ts:46)*
-- **[P1] Migrate gate** — `deploy-cloudrun.yml`: deploy'dan OLDIN gated `migrate:deploy` (DATABASE_URL cloudrun-env.yaml'dan; xato → build/deploy to'xtaydi, eski revision qoladi). *(deploy-cloudrun.yml)*
-- **[P1] Admin XSS** — `logs.ts` POST: source rol'dan MAJBURLANADI (spoof yo'q) + level allowlist + uzunlik cap; `admin-logs.js` sourceBadge label escape. *(logs.ts:60, admin-logs.js:100)*
-- **[P1] Forgot-password 404** — resetUrl'dan `/studio` prefiks olindi (reset-password.html CF root'da); login.html forgot havolasi absolyut `/reset-password.html`. *(auth.ts:168, login.html:87)*
+## QILINDI — 2 commit
+### Commit 1 (759bfaa) — #1–5
+- **[P0] Pack presigned PUT** — pack ham to'g'ridan bulutga (Cloud Run 32MB limitini chetlab); `POST /pack-uploaded` signali fon .mogrt ekstraktsiyasini otadi. *(contributor.ts, studio-api.js)*
+- **[P1] getPublicUrl()** — S3_ENDPOINT'dan path-style GCS URL (o'lik s3.auto.amazonaws.com tuzatildi). *(s3.ts:46)*
+- **[P1] Migrate gate** — deploy-cloudrun.yml: deploy'dan oldin gated migrate:deploy. *(deploy-cloudrun.yml)*
+- **[P1] Admin XSS** — logs.ts source rol'dan majburlanadi + cap; admin-logs.js label escape.
+- **[P1] Forgot-password 404** — resetUrl /studio prefiksisiz + login.html absolyut.
+
+### Commit 2 (bu) — #6 Abuse (kod)
+- **Email-verify gate** — `consumeAiCredits`da: `isEmailConfigured() && !emailVerified` → 402 EMAIL_NOT_VERIFIED. **Fail-safe:** email (RESEND) sozlanmaguncha gate O'CHIQ (yangi userlar buzilmaydi); Resend qo'shilgach avtomatik yoqiladi. *(plugin-profile.ts)*
+- **Grandfather migratsiya** `20260703120000_backfill_email_verified` — mavjud hamma user verified (lockout yo'q).
+- **auth.ts**: register→verify email yuboradi + Turnstile tekshiruvi (fail-open); `POST /verify-email`, `POST /resend-verification`; /login+/me+register javobiga emailVerified. *(auth.ts)*
+- **verify-email.html** (yangi, CF root) + `lib/turnstile.ts` (fail-open — TURNSTILE_SECRET_KEY yo'q → o'tkazadi).
+- Xato platforma + plaginda tayyor toast (errMsg→toast) bilan chiqadi — frontend o'zgarishi shart emas.
 
 ## TEKSHIRILDI
-- `npm run build -w apps/api` — tsc TOZA. `npm run studio:sync` bajarildi. Eski `/assets` multer endpoint fallback sifatida saqlandi (frontend chaqirmaydi).
+- `npm run build -w apps/api` TOZA (2×). studio:sync + prepare-cf-pages OK (verify-email.html dist root'da).
 
-## KUTILMOQDA
-- **[P1] #6 Abuse** — BAJARILMADI (user qarori kerak): GCP Billing budget=console; Turnstile=CF kaliti; emailVerified gate=risk (barcha mavjud user null → lockout, grandfather kerak).
-- Push (user) → GitHub Actions API deploy + CF Pages. Prod sinov: contributor pack upload E2E, thumb ko'rinishi, forgot-password.
-- **GCS bucket public-read** tekshirilishi kerak (getPublicUrl to'g'ridan public URL beradi).
+## KUTILMOQDA (user infra — kod EMAS)
+- **Resend** (`RESEND_API_KEY` → CLOUDRUN_ENV_YAML secret) — email-verify VA forgot-password shunga bog'liq. Qo'shilmaguncha gate o'chiq.
+- **GCP Billing budget+alert** — faqat console.
+- **Turnstile** — CF site+secret kalit. Backend tayyor; **frontend widget kalit kelganda qo'shiladi** (CSP entry + widget kerak — CSP'ni ishlamas feature uchun zaiflashtirмadim).
+- Push (user) → GitHub Actions API + CF Pages deploy. Prod: pack upload E2E, thumb ko'rinishi, GCS bucket public-read.
