@@ -1,17 +1,14 @@
-# SESSION REPORT — 2026-07-03 — AUDIT Faza 2 (#2.2–2.6) implement
+# SESSION REPORT — 2026-07-03 — Home (Asosiy) 1:1 + offline fonts
 
 ## NIMA QILINDI
-- **2.2** Katalog author: frontend `it.author` o'qiydi (backend `mapCatalogItem` allaqachon qaytaradi); `|| 'FrameFlow'` fallback saqlandi.
-- **2.3** `refundAiCredits`: oy-chegarasi cap (`min(bal+cost, max(allot,bal))` — leak yo'q) + `Generation.refunded` atomik claim (double-refund guard); gen-processor 2 caller `generationId` uzatadi. Timeout≠refund + ADMIN early-return saqlandi.
-- **2.4** Admin `PATCH /plugin-subscribers/:id` → `writeAuditLog` (faqat kelgan maydonlar).
-- **2.5** `guardDownloadable`: `isPro` shablon + FREE user → 402 `PRO_REQUIRED` (bayt/redirect'dan OLDIN, ADMIN bypass, sanoq-limitdan alohida).
-- **2.6** Yangi `CreditLedger` + `ProviderSpend` modellari + best-effort `lib/ledger.ts`; consume/refund → ledger, `/gen` → ProviderSpend.
-- Migration: `20260703140000_faza2_ledger_refund` (ADD COLUMN + 2 CREATE TABLE + indekslar — additive).
+- AE plagin Home (`#homePage`/`.axhome`) mockup panel 1b ("Editorial stack", `_frameflow-redesign-mockup.html`) bilan 1:1 tekshirildi (380×720 headless screenshot solishtiruv).
+- Shriftlar O'ZINI-HOST qilindi: `css/tokens.css` CDN `@import` → 11 lokal `@font-face` (Hanken Grotesk 400–800 variable, IBM Plex Mono 400/500/600/700); fayllar `css/fonts/*.woff2` (latin + latin-ext).
+- Filtr tugmasi ikonkasi mockup glyphiga moslandi: funnel → `sliders-horizontal` inline SVG; `.hm-sbtn svg` 15px.
 
-## NATIJA
-- `generate` + `build -w @creative-tools/database` + `build -w apps/api` — toza; `prisma validate` OK.
-- Guardrails: refund ≤ consumed (cap+flag); FREE Pro-pack yuklolmaydi (402); ADMIN simmetriya saqlangan.
+## NIMA TOPILDI
+- Oldingi port CSS/markup allaqachon 1:1 edi (hex/px/gap/font-weight mos). AEda "buzilgan" ko'rinish sababi CDN shrift fallback edi — endi offline ishlaydi.
+- `document.fonts.check` faqat `file://` orqali TRUE (tarmoqsiz). Real bindinglar (homeCred/homeFeat/homeGrid/homeGo) buzilmadi.
+- Yagona ataylab farq: mockup pastki fade gradient qo'shilmadi (real panel `.scroll-area` bilan scroll bo'ladi).
 
 ## KUTILMOQDA
-- Keyingi deploy'da migratsiya avto-qo'llanadi (`migrate:deploy` — men ishga tushirmadim).
-- AE plugin + platforma katalog/gen end-to-end test.
+- CEP qayta o'rnatish: `bash plugins/after-effects-cep/scripts/install-cep.sh` + AE restart (hot-reload yo'q).
