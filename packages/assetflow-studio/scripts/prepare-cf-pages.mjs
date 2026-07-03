@@ -111,7 +111,12 @@ fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 // originga murojaat qiladi; api. domain-mapping kechiksa ham ish to'xtamaydi)
 const API_ORIGINS =
   "https://api.getframeflow.app https://assetflow-api-331762958776.europe-west1.run.app";
-const GCS_ORIGIN = "https://storage.googleapis.com";
+// GCS: path-style (storage.googleapis.com/<bucket>/…) VA virtual-hosted
+// (<bucket>.storage.googleapis.com/…) hostlarini qamrash uchun. Presigned PUT
+// URL'lar virtual-hosted (forcePathStyle default false) → wildcard SHART; CSP
+// host-source moslashuvi ANIQ, bucket-subdomain bare hostga kirmaydi. Bare host
+// ham qoldiriladi — wildcard apex hostni qoplamaydi.
+const GCS_ORIGIN = "https://storage.googleapis.com https://*.storage.googleapis.com";
 // Google Identity Services (Studio login "Google bilan kirish" tugmasi) —
 // gsi/client skripti + hisob tanlash popup/iframe shu origin'lardan yuklanadi.
 const GOOGLE_GSI_ORIGINS = "https://accounts.google.com https://accounts.google.com/gsi/";
