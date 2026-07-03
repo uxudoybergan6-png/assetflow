@@ -1,0 +1,279 @@
+/* ============================================================
+   FrameFlow — COMPONENT LIBRARY (redesign Faza 1)
+   Yangi dizayn (design-preview/.../FrameFlow Redesign.dc.html, f2–f4 zonalar)
+   komponentlarining qayta-ishlatiladigan vanilla CSS versiyasi.
+
+   QOIDALAR:
+   - Barcha ranglar css/tokens.css o'zgaruvchilaridan (hardcode rang YO'Q) →
+     Standart / Liquid Glass / Light Glass temalarida avtomatik ishlaydi.
+   - Klasslar `ff-` bilan namespace qilinadi. `.ph`/`ph-*` NOMLARIDAN QOCHILADI
+     (Phosphor icon CSS ularni egallaydi — Faza 0 saboq).
+   - Struktura: BEM-ga o'xshash (`ff-block__element`, holat `.is-*`).
+   - tokens.css'dan KEYIN yuklanadi.
+   ============================================================ */
+
+/* ── Komponent-lokal strukturaviy o'zgaruvchilar (temaga bog'liq emas:
+   surface ustidagi oq-alpha qatlamlar + doim-frosted composer) ── */
+:root{
+  --ff-fill-1:rgba(255,255,255,.05);   /* eng yengil control fon */
+  --ff-fill-2:rgba(255,255,255,.06);
+  --ff-fill-3:rgba(255,255,255,.10);   /* faol/tanlangan control fon */
+  --ff-hair:rgba(255,255,255,.07);     /* hairline border */
+  --ff-inset:inset 0 1px 0 rgba(255,255,255,.10); /* tepa jilo */
+  --ff-scrim:rgba(8,10,14,.72);        /* media ustidagi qoraytirish */
+  --ff-composer-bg:rgba(19,22,28,.72); /* frosted composer (DOIM blur) */
+  --ff-composer-blur:44px;
+  --ff-glow:rgba(194,240,74,.24);      /* pending nafas jilosi */
+}
+
+/* ── Keyframes ── */
+@keyframes ff-breathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px var(--ff-glow)}}
+@keyframes ff-spin{to{transform:rotate(360deg)}}
+@keyframes ff-bar{0%{left:-40%}100%{left:110%}}
+@keyframes ff-shim{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+/* ── Yordamchi ── */
+.ff-mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.ff-dotgrid{background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:18px 18px}
+
+/* ============================================================
+   1. TUGMALAR
+   ============================================================ */
+/* Primary — full-width lime, 44px */
+.ff-btn{height:44px;border-radius:var(--r-full);background:var(--accent-cta);color:var(--on-accent);
+  border:0;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--font-sans);font-weight:700;font-size:13px;cursor:pointer;
+  transition:transform var(--dur) var(--ease);width:100%}
+.ff-btn:active{transform:scale(.98)}
+.ff-btn__cost{font-family:var(--font-mono);font-weight:600;font-size:11px;padding:2px 8px;
+  border-radius:var(--r-full);background:rgba(14,20,0,.14)}
+.ff-btn.is-pending{background:var(--accent-hi);animation:ff-breathe 2.2s ease-in-out infinite;cursor:default}
+.ff-btn.is-disabled,.ff-btn:disabled{background:var(--ff-fill-2);color:var(--muted-2);cursor:not-allowed}
+.ff-btn .ff-spin{animation:ff-spin 1.1s linear infinite}
+
+/* Secondary — oq/.06, lime yo'q */
+.ff-btn--secondary{background:var(--ff-fill-2);border:1px solid var(--ff-hair);color:var(--text);
+  height:38px;font-weight:600;font-size:12px}
+.ff-btn--secondary:active{transform:scale(.98)}
+
+/* Send-circle — 32px composer tugmasi */
+.ff-send{width:32px;height:32px;border-radius:50%;background:var(--accent-cta);color:var(--on-accent);
+  border:0;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;
+  transition:transform var(--dur) var(--ease);flex:none}
+.ff-send:active{transform:scale(.94)}
+.ff-send--off{background:var(--ff-fill-1);border:1px solid rgba(255,255,255,.08);color:var(--muted-2);cursor:not-allowed}
+
+/* ============================================================
+   2. SEGMENT / TAB
+   ============================================================ */
+.ff-seg{display:flex;background:var(--ff-fill-1);border:1px solid var(--ff-fill-2);
+  border-radius:var(--r-full);padding:3px}
+.ff-seg__item{flex:1;text-align:center;padding:6px 0;border-radius:var(--r-full);
+  font-weight:500;font-size:12px;color:var(--muted);cursor:pointer;
+  transition:background var(--dur) var(--ease)}
+.ff-seg__item.is-on{background:var(--ff-fill-3);box-shadow:var(--ff-inset);font-weight:600;color:var(--text)}
+
+/* Sub-tab chiplar (Hammasi · Rasm · Video …) */
+.ff-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.ff-tab{padding:6px 13px;border-radius:var(--r-full);background:var(--ff-fill-1);
+  border:1px solid var(--ff-fill-2);font-weight:500;font-size:11.5px;color:var(--muted);
+  cursor:pointer;white-space:nowrap}
+.ff-tab.is-on{background:var(--ff-fill-3);box-shadow:var(--ff-inset);border-color:transparent;
+  font-weight:600;color:var(--text)}
+
+/* ============================================================
+   3. SETTING CHIP (micro-label + sheet ochadi)
+   ============================================================ */
+.ff-chip{display:inline-flex;flex-direction:column;padding:6px 13px;border-radius:var(--r-full);
+  background:var(--ff-fill-2);border:1px solid var(--ff-hair);cursor:pointer;line-height:1.15}
+.ff-chip__label{font-family:var(--font-mono);font-size:7px;letter-spacing:.08em;color:var(--muted-2)}
+.ff-chip__val{font-weight:600;font-size:11px;color:var(--text);display:flex;align-items:center;gap:5px}
+.ff-chip.is-open{border-color:var(--border-accent)}
+.ff-chip.is-open .ff-chip__val::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+/* Bare compose chip (kompozer ichidagi Flux/1:1/2K) */
+.ff-pill{padding:5px 9px;border-radius:var(--r-full);background:var(--ff-fill-2);
+  border:1px solid var(--ff-hair);font-family:var(--font-mono);font-size:9.5px;color:#B7C0CE}
+
+/* ============================================================
+   4. INPUT / QIDIRUV
+   ============================================================ */
+.ff-input{height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;
+  background:var(--ff-fill-1);border:1px solid var(--ff-hair);border-radius:var(--r-md);
+  color:var(--muted-2);font-size:12px}
+.ff-input.is-focus{background:var(--ff-fill-2);border-color:rgba(194,240,74,.5);
+  box-shadow:0 0 0 3px rgba(194,240,74,.12);color:var(--text)}
+.ff-caret{width:1px;height:14px;background:var(--accent);display:inline-block}
+
+/* ============================================================
+   5. CREDIT PILL · COST
+   ============================================================ */
+.ff-credit{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);
+  font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--r-full);
+  background:var(--ff-fill-1);border:1px solid var(--ff-hair);color:var(--text)}
+.ff-credit__mark{color:var(--accent)}
+.ff-credit--low{background:var(--red-dim);border-color:rgba(255,107,94,.3);color:var(--red)}
+.ff-cost{font-family:var(--font-mono);font-size:10px;color:var(--accent)}
+
+/* ============================================================
+   6. PROGRESS
+   ============================================================ */
+.ff-prog{height:4px;border-radius:99px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.ff-prog__bar{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--accent)}
+.ff-prog--indet .ff-prog__bar{width:36%;animation:ff-bar 1.4s ease-in-out infinite}
+
+/* ============================================================
+   7. SKELETON
+   ============================================================ */
+.ff-skel{border-radius:var(--r-md);background:linear-gradient(100deg,
+  rgba(255,255,255,.04) 32%,rgba(255,255,255,.09) 48%,rgba(255,255,255,.04) 64%);
+  background-size:200% 100%;animation:ff-shim 1.6s linear infinite}
+
+/* ============================================================
+   8. SHABLON KARTA (4 holat)
+   ============================================================ */
+.ff-card{display:flex;flex-direction:column;gap:6px}
+.ff-card__thumb{position:relative;height:96px;border-radius:var(--r-md);overflow:hidden;background:var(--surface-2)}
+.ff-card.is-dim .ff-card__thumb{opacity:.5}
+.ff-card__name{font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.ff-card__meta{font-size:10px;color:var(--muted-2);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ff-card__note{font-size:9px;color:var(--amber);line-height:1.4}
+
+/* Karta badge'lari */
+.ff-badge{position:absolute;font-family:var(--font-mono);font-weight:700;font-size:8px;
+  letter-spacing:.06em;padding:2px 6px;border-radius:4px}
+.ff-badge--plan-pro{top:7px;left:7px;background:var(--accent);color:var(--on-accent)}
+.ff-badge--plan-free{top:7px;left:7px;background:var(--ff-scrim);color:#E7ECF3;font-weight:600}
+.ff-badge--x{top:7px;right:7px;font-weight:600;background:var(--ff-scrim);color:#E7ECF3}
+.ff-app{position:absolute;bottom:7px;left:7px;display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;
+  background:var(--ff-scrim);border-radius:4px;color:#E7ECF3}
+.ff-app__dot{width:5px;height:5px;border-radius:50%}
+
+/* Import tugmasi (3 holat) */
+.ff-imp{height:28px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;
+  gap:6px;font-weight:600;font-size:10.5px;cursor:pointer;background:var(--accent-cta);color:var(--on-accent)}
+.ff-imp--done{background:var(--ff-fill-2);border:1px solid var(--ff-hair);color:var(--text)}
+.ff-imp--off{background:var(--ff-fill-1);border:1px solid var(--ff-hair);color:var(--muted-2);cursor:not-allowed}
+
+/* PRO qulf overlay */
+.ff-lock{position:absolute;inset:0;background:rgba(6,8,11,.44);display:flex;align-items:center;justify-content:center}
+.ff-lock__ic{width:32px;height:32px;border-radius:50%;background:var(--ff-scrim);
+  border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#E7ECF3}
+
+/* ============================================================
+   9. AI NATIJA KARTASI (3 holat)
+   ============================================================ */
+.ff-res{display:flex;flex-direction:column}
+.ff-res__media{position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--media,#0A0A0A)}
+.ff-res__tag{position:absolute;top:8px;left:8px;font-family:var(--font-mono);font-weight:600;
+  font-size:8px;padding:2px 6px;background:var(--ff-scrim);border-radius:4px;color:#E7ECF3}
+.ff-res__acts{display:flex;gap:5px;margin-top:7px}
+.ff-res__act{flex:1;height:26px;border-radius:8px;background:var(--ff-fill-2);
+  border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--text);cursor:pointer}
+.ff-res__act--danger{color:var(--red)}
+/* pending */
+.ff-res.is-pending .ff-res__media{background:#0D1119;border:1px solid rgba(194,240,74,.28);
+  animation:ff-breathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px}
+.ff-res__pctline{position:absolute;left:0;bottom:0;height:3px;background:var(--accent)}
+/* error */
+.ff-res.is-error .ff-res__media{background:#160D0D;border:1px solid rgba(255,107,94,.3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center}
+
+/* ============================================================
+   10. REFERENS TILE
+   ============================================================ */
+.ff-ref{width:46px;height:46px;border-radius:9px;position:relative;flex:none;background:var(--surface-2);overflow:hidden}
+.ff-ref--add{background:transparent;border:1px dashed rgba(255,255,255,.16);
+  display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;cursor:pointer}
+.ff-ref--blocked{background:var(--red-dim);border:1.5px solid var(--red);
+  display:flex;align-items:center;justify-content:center;color:var(--red);font-size:15px}
+.ff-ref__x{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;
+  background:var(--border);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;
+  justify-content:center;font-size:8px;color:#E7ECF3;cursor:pointer}
+.ff-ref__dur{position:absolute;right:4px;bottom:3px;font-family:var(--font-mono);font-size:7px;color:#E7ECF3}
+
+/* ============================================================
+   11. TOAST
+   ============================================================ */
+.ff-toast{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--pop-bg);
+  border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);box-shadow:var(--shadow);
+  font-size:11.5px;font-weight:500;color:var(--text)}
+.ff-toast__ic{font-size:15px;flex:none}
+.ff-toast--success .ff-toast__ic{color:var(--accent)}
+.ff-toast--error .ff-toast__ic{color:var(--red)}
+.ff-toast--warn .ff-toast__ic{color:var(--amber)}
+.ff-toast--info .ff-toast__ic{color:var(--select)}
+
+/* ============================================================
+   12. CONFIRM MODAL (custom, native emas)
+   ============================================================ */
+.ff-confirm{background:var(--pop-bg);border:1px solid rgba(255,255,255,.09);border-radius:var(--r-lg);
+  padding:16px;box-shadow:var(--shadow)}
+.ff-confirm__title{font-weight:700;font-size:13.5px;color:var(--text)}
+.ff-confirm__body{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+.ff-confirm__acts{display:flex;gap:8px;margin-top:14px}
+.ff-confirm__acts>*{flex:1;height:36px;border-radius:var(--r-full);display:flex;align-items:center;
+  justify-content:center;font-weight:600;font-size:12px;cursor:pointer}
+.ff-confirm__cancel{background:var(--ff-fill-2);border:1px solid var(--ff-hair);color:var(--text)}
+.ff-confirm__ok{background:var(--red);color:#1C0806;font-weight:700}
+
+/* ============================================================
+   13. BOTTOM-SHEET
+   ============================================================ */
+.ff-sheet{background:var(--pop-bg);border-radius:18px 18px 0 0;border-top:1px solid var(--ff-fill-3);
+  padding:8px 16px 16px;box-shadow:0 -18px 42px rgba(0,0,0,.5)}
+.ff-sheet__handle{width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 12px}
+.ff-sheet__head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.ff-sheet__title{font-weight:700;font-size:14px;letter-spacing:-.01em;color:var(--text)}
+.ff-sheet__row{height:44px;display:flex;align-items:center;gap:9px;padding:0 10px;border-radius:var(--r-md);cursor:pointer}
+.ff-sheet__row.is-sel{background:var(--ff-fill-3)}
+.ff-sheet__row.is-sel::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.ff-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+
+/* ============================================================
+   14. NOTICE-BAR / TICKER
+   ============================================================ */
+.ff-notice{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--green-dim);
+  border:1px solid rgba(194,240,74,.22);border-radius:var(--r-md);overflow:hidden}
+.ff-notice__bell{position:relative;flex:none;color:var(--accent);font-size:14px}
+.ff-notice__dot{position:absolute;top:-1px;right:-2px;width:6px;height:6px;border-radius:50%;
+  background:var(--red);border:1.5px solid var(--bg)}
+.ff-notice__txt{font-size:11px;font-weight:500;color:#DCE7C8;white-space:nowrap}
+
+/* ============================================================
+   15. @MENTION DROPDOWN
+   ============================================================ */
+.ff-mention{background:var(--pop-bg);border:1px solid rgba(255,255,255,.09);border-radius:var(--r-md);
+  padding:5px;box-shadow:var(--shadow)}
+.ff-mention__row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px}
+.ff-mention__row.is-on{background:var(--ff-fill-2)}
+
+/* ============================================================
+   16. EMPTY STATE
+   ============================================================ */
+.ff-empty{border:1px dashed rgba(255,255,255,.1);border-radius:var(--r-lg);padding:22px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
+.ff-empty__ic{width:38px;height:38px;border-radius:50%;background:var(--ff-fill-1);
+  border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;
+  font-size:17px;color:var(--muted)}
+.ff-empty__title{font-weight:600;font-size:12px;color:var(--text)}
+.ff-empty__sub{font-size:10.5px;color:var(--muted-2);line-height:1.5}
+
+/* ============================================================
+   17. SKEW BRAND BADGE (juda kam ishlatiladi)
+   ============================================================ */
+.ff-skew{display:inline-block;font-family:var(--font-mono);font-weight:800;font-size:9px;
+  letter-spacing:.1em;padding:4px 9px;background:var(--accent);color:var(--on-accent);
+  transform:skewX(-12deg);box-shadow:0 2px 0 rgba(0,0,0,.55)}
+
+/* ============================================================
+   18. FROSTED COMPOSER (doim blur, AI ish maydonlari)
+   ============================================================ */
+.ff-composer{border-radius:18px;background:var(--ff-composer-bg);
+  backdrop-filter:blur(var(--ff-composer-blur));-webkit-backdrop-filter:blur(var(--ff-composer-blur));
+  border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5);padding:12px}
+.ff-composer__ph{font-size:12.5px;color:var(--muted-2);padding:2px 2px 12px}

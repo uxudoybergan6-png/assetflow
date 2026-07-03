@@ -1,19 +1,26 @@
-# SESSION REPORT — 2026-07-03 — Plagin redesign FAZA 0 + platforma dizayn prompti
+# SESSION REPORT — 2026-07-03 — Plagin redesign FAZA 0 + FAZA 1
 
 ## NIMA QILINDI
-- Yangi plagin dizayni (`design-preview/.../FrameFlow Redesign.dc.html`) tahlil qilindi:
-  18/18 capability bor, tokenlar spec bilan bayt-bayt mos, double-nav va o'lik view'lar tozalangan.
-- Platforma to'liq kod-inventari → `docs/DESIGN-PROMPT-PLATFORM.md` (bir xil dizayn tizimi,
-  lekin web-shakl; joriy 10 buzilgan/soxta joy belgilangan: o'lik Blog, soxta testimonial, ishlamaydigan filtr h.k.).
-- **Plagin redesign FAZA 0 (texnik spike) yakunlandi** → `docs/PLUGIN-REDESIGN-FAZA0.md`.
+- Yangi plagin dizayni tahlil qilindi (18/18 capability, tokenlar spec bilan bayt-mos).
+- Platforma inventari → `docs/DESIGN-PROMPT-PLATFORM.md` (bir xil tizim, web-shakl).
+- **FAZA 0 (spike) yakunlandi** → `docs/PLUGIN-REDESIGN-FAZA0.md`.
+- **FAZA 1 (component library) yakunlandi:**
+  - `plugins/after-effects-cep/css/ff-components.css` — dizayn f2–f4 komponentlari
+    (tugma/segment/chip/input/credit/progress/skeleton/shablon-karta 4 holat/AI natija 3 holat/
+    referens/toast/confirm/sheet/notice/@mention/empty/skew/composer) `ff-*` namespace, BEM-simon.
+  - `plugins/after-effects-cep/_ff-gallery.html` — barcha komponent galereyasi (verifikatsiya).
 
 ## NIMA TOPILDI
-- **QAROR: Strategiya B (vanilla ekstraksiya), dc-runtime RAD ETILDI** — render sababi emas,
-  arxitektura: dc-runtime 12k qatorli ishlayotgan kredit/host JS'ni React'ga qayta yozishni majbur qiladi.
-- Dizayn CEF 88+ dan tashqari CSS ishlatmaydi; joriy `.axhome` allaqachon aynan shu tokenlarni
-  CEF'da render qiladi. Vanilla ekstraksiya real Chromium'da 1:1 render bo'ldi (`scratchpad/faza0-spike`).
-- Saboq: `.ph`/`ph-*` klass nomidan qoch (Phosphor CSS egallaydi) → `ff-*` namespace.
+- **QAROR: Strategiya B (vanilla), dc-runtime RAD** — arxitektura sababi (12k qatorli kredit/host JS'ni
+  React'ga qayta yozmaslik). Dizayn CEF 88+ dan tashqari CSS ishlatmaydi.
+- **Token qatlami ALLAQACHON bor:** `css/tokens.css` (171 qator) jonli, ikkala panel link qiladi,
+  tema-aware (standart/liquid-glass/light-glass), dizaynga bayt-mos. ff-components.css FAQAT shu
+  o'zgaruvchilardan quriladi (hardcode rang yo'q) → uchala temada bepul ishlaydi.
+- Galereya real Chromium'da render qilindi, konsol toza, barcha komponent dizaynga sodiq.
+- Saboq (Faza 0): `.ph`/`ph-*` klassdan qoch (Phosphor egallaydi).
 
-## KUTILMOQDA
-- Faza 1: component library (tokenlar + `f1`-`f4`) vanilla CSS modul, `.axroot`/`.axhome` bilan birlashtirish.
-- Keyin: Faza 2 yagona nav → Faza 3 Katalog → Faza 4 AI Tools → Faza 5 Account → Faza 6 tozalash.
+## KUTILMOQDA / KEYINGI
+- Migratsiya eslatmasi: `AssetFlow_Plugin.html` `.axhome` (2809-qator) tokenlarni LOKAL qayta e'lon
+  qiladi — Faza 2+ da tokens.css'ga bog'lab, dublikatni olib tashlash.
+- Faza 2: yagona nav (double-nav + o'lik view'lar olib tashlanadi) → 3 Katalog → 4 AI Tools → 5 Account → 6 tozalash.
+- ff-components.css hali plagin HTML'ga LINK qilinmagan (ataylab) — Faza 2 UI'ni qurishda ulanadi.

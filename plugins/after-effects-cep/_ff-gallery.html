@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FrameFlow — Component Gallery (Faza 1)</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/ff-components.css">
+<style>
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);padding:24px;
+    display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:26px}
+  .grp{background:#0D1016;border:1px solid var(--ff-hair);border-radius:12px;padding:16px 18px;width:340px}
+  .grp>h3{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted);
+    margin:0 0 12px;font-weight:600}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  /* panel slice */
+  .pnl{width:380px;height:560px;background:var(--bg);border:1px solid #222A37;border-radius:12px;
+    overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+  .tile{aspect-ratio:1/1;border-radius:12px;overflow:hidden;position:relative}
+  .thumb-p{background:linear-gradient(135deg,#3a2a5a,#5a3a7a)}
+  .thumb-a{background:linear-gradient(135deg,#5a4a2a,#7a5a2a)}
+  .thumb-t{background:linear-gradient(135deg,#1a5a5a,#2a7a6a)}
+  .thumb-c{background:linear-gradient(135deg,#7a2a3a,#a03a4a)}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <!-- TUGMALAR -->
+  <div class="grp">
+    <h3>TUGMALAR</h3>
+    <div class="ff-btn" style="margin-bottom:8px">Yaratish<span class="ff-btn__cost">✦ 5</span></div>
+    <div class="ff-btn is-pending" style="margin-bottom:8px"><i class="ph ph-circle-notch ff-spin"></i>Ishlanmoqda…</div>
+    <div class="ff-btn is-disabled" style="margin-bottom:8px">Import o'chiq</div>
+    <div class="ff-btn--secondary" style="margin-bottom:10px"><i class="ph ph-download-simple"></i>Qayta import</div>
+    <div class="row">
+      <button class="ff-send"><i class="ph-fill ph-arrow-up"></i></button>
+      <button class="ff-send ff-send--off"><i class="ph-fill ph-arrow-up"></i></button>
+      <span style="font-size:10px;color:var(--muted-2)">send · faol / o'chiq</span>
+    </div>
+  </div>
+
+  <!-- SEGMENT / TAB / CHIP -->
+  <div class="grp">
+    <h3>SEGMENT · TAB · CHIP</h3>
+    <div class="ff-seg" style="margin-bottom:10px">
+      <div class="ff-seg__item is-on">Katalog</div>
+      <div class="ff-seg__item">AI Tools</div>
+    </div>
+    <div class="ff-tabs" style="margin-bottom:12px">
+      <div class="ff-tab is-on">Hammasi</div>
+      <div class="ff-tab">Rasm</div>
+      <div class="ff-tab">Video</div>
+      <div class="ff-tab">SFX</div>
+    </div>
+    <div class="row">
+      <div class="ff-chip"><span class="ff-chip__label">MODEL</span><span class="ff-chip__val">Flux 1.1 Pro</span></div>
+      <div class="ff-chip is-open"><span class="ff-chip__label">NISBAT</span><span class="ff-chip__val">16:9</span></div>
+    </div>
+  </div>
+
+  <!-- INPUT / CREDIT / PROGRESS -->
+  <div class="grp">
+    <h3>INPUT · CREDIT · PROGRESS</h3>
+    <div class="ff-input" style="margin-bottom:8px"><i class="ph ph-magnifying-glass" style="font-size:14px;color:var(--muted)"></i>Shablon qidirish...</div>
+    <div class="ff-input is-focus" style="margin-bottom:12px">email@studio.uz<span class="ff-caret"></span></div>
+    <div class="row">
+      <span class="ff-credit"><span class="ff-credit__mark">✦</span>1,230</span>
+      <span class="ff-credit ff-credit--low"><span>✦</span>12</span>
+      <span class="ff-cost">✦ 5</span><span class="ff-cost">✦ 60</span>
+    </div>
+    <div class="ff-prog" style="margin-bottom:10px"><div class="ff-prog__bar" style="width:64%"></div></div>
+    <div class="ff-prog ff-prog--indet" style="margin-bottom:10px"><div class="ff-prog__bar"></div></div>
+    <div class="row"><div class="ff-skel" style="flex:1;height:44px"></div><div class="ff-skel" style="flex:1;height:44px"></div></div>
+  </div>
+</div>
+
+<div class="col">
+  <!-- SHABLON KARTA 4 HOLAT -->
+  <div class="grp">
+    <h3>SHABLON KARTA — 4 HOLAT</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <!-- normal -->
+      <div class="ff-card">
+        <div class="ff-card__thumb thumb-p">
+          <span class="ff-badge ff-badge--plan-pro">PRO</span>
+          <span class="ff-badge ff-badge--x">YANGI</span>
+          <span class="ff-app"><span class="ff-app__dot" style="background:#8E7CFF"></span>Ae</span>
+        </div>
+        <div class="ff-card__name">Glitch Logo Reveal</div>
+        <div class="ff-card__meta">Motion · Studio Kadr</div>
+        <div class="ff-imp"><i class="ph ph-download-simple"></i>Import</div>
+      </div>
+      <!-- pack yo'q -->
+      <div class="ff-card is-dim">
+        <div class="ff-card__thumb thumb-a">
+          <span class="ff-badge ff-badge--plan-free">FREE</span>
+          <span class="ff-app"><span class="ff-app__dot" style="background:#8E7CFF"></span>Ae</span>
+        </div>
+        <div class="ff-card__name">Neon Titles</div>
+        <div class="ff-card__meta">Titles · Vizor</div>
+        <div class="ff-imp ff-imp--off"><i class="ph ph-download-simple"></i>Import o'chiq</div>
+        <div class="ff-card__note">Loyiha (.aep) fayli hali yuklanmagan</div>
+      </div>
+      <!-- downloaded -->
+      <div class="ff-card">
+        <div class="ff-card__thumb thumb-t">
+          <span class="ff-badge ff-badge--plan-free">FREE</span>
+          <span class="ff-badge ff-badge--x" style="color:var(--accent)">✓ Yuklandi</span>
+          <span class="ff-app"><span class="ff-app__dot" style="background:#7CC4FF"></span>Pr</span>
+        </div>
+        <div class="ff-card__name">Smooth Transitions</div>
+        <div class="ff-card__meta">Transitions · Lumen</div>
+        <div class="ff-imp ff-imp--done"><i class="ph ph-arrows-clockwise"></i>Qayta import</div>
+      </div>
+      <!-- PRO lock -->
+      <div class="ff-card">
+        <div class="ff-card__thumb thumb-c">
+          <span class="ff-badge ff-badge--plan-pro">PRO</span>
+          <span class="ff-app"><span class="ff-app__dot" style="background:#8E7CFF"></span>Ae</span>
+          <div class="ff-lock"><div class="ff-lock__ic"><i class="ph ph-lock-simple"></i></div></div>
+        </div>
+        <div class="ff-card__name">Cinematic Pack</div>
+        <div class="ff-card__meta">Promo · ORBIT</div>
+        <div class="ff-imp"><i class="ph ph-crown-simple"></i>Pro'ga o'tish</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI NATIJA 3 HOLAT -->
+  <div class="grp">
+    <h3>AI NATIJA KARTASI — 3 HOLAT</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="ff-res">
+        <div class="ff-res__media thumb-p" style="height:100px"><span class="ff-res__tag">RASM</span></div>
+        <div class="ff-res__acts">
+          <div class="ff-res__act"><i class="ph ph-download-simple"></i></div>
+          <div class="ff-res__act"><i class="ph ph-paperclip"></i></div>
+          <div class="ff-res__act ff-res__act--danger"><i class="ph ph-trash"></i></div>
+        </div>
+      </div>
+      <div class="ff-res is-pending">
+        <div class="ff-res__media" style="height:100px">
+          <i class="ph ph-circle-notch ff-spin" style="font-size:20px;color:var(--accent)"></i>
+          <span class="ff-mono" style="font-size:10px;color:var(--accent)">62%</span>
+          <div class="ff-res__pctline" style="width:62%"></div>
+        </div>
+      </div>
+      <div class="ff-res is-error">
+        <div class="ff-res__media" style="height:100px">
+          <i class="ph ph-warning-circle" style="font-size:20px;color:var(--red)"></i>
+          <span style="font-weight:600;font-size:10px;color:var(--red)">Gen xato</span>
+          <span class="ff-btn--secondary" style="height:24px;padding:0 10px;font-size:10px">↻ Qayta</span>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="ff-ref thumb-t"><span class="ff-ref__x"><i class="ph ph-x"></i></span></div>
+      <div class="ff-ref thumb-c"><span class="ff-ref__dur">0:05</span><span class="ff-ref__x"><i class="ph ph-x"></i></span></div>
+      <div class="ff-ref ff-ref--blocked"><i class="ph ph-prohibit"></i></div>
+      <div class="ff-ref ff-ref--add"><i class="ph ph-plus"></i></div>
+      <span style="font-size:9px;color:var(--muted-2)">referens: rasm·video·IP-blok·+</span>
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div class="grp">
+    <h3>TOAST · CONFIRM · NOTICE · EMPTY</h3>
+    <div class="ff-toast ff-toast--success" style="margin-bottom:6px"><i class="ph-fill ph-check-circle ff-toast__ic"></i>Shablon AE'ga qo'shildi</div>
+    <div class="ff-toast ff-toast--error" style="margin-bottom:6px"><i class="ph-fill ph-x-circle ff-toast__ic"></i>Server javob bermadi</div>
+    <div class="ff-toast ff-toast--warn" style="margin-bottom:6px"><i class="ph-fill ph-warning ff-toast__ic"></i>Referens majburiy</div>
+    <div class="ff-notice" style="margin-bottom:12px">
+      <span class="ff-notice__bell"><i class="ph-fill ph-bell"></i><span class="ff-notice__dot"></span></span>
+      <span class="ff-notice__txt">Seedance 2.0 qo'shildi — video 2× tez…</span>
+    </div>
+    <div class="ff-confirm" style="margin-bottom:12px">
+      <div class="ff-confirm__title">2 ta element o'chirilsinmi?</div>
+      <div class="ff-confirm__body">Bu amalni ortga qaytarib bo'lmaydi.</div>
+      <div class="ff-confirm__acts"><div class="ff-confirm__cancel">Bekor</div><div class="ff-confirm__ok">O'chirish</div></div>
+    </div>
+    <div class="ff-empty">
+      <div class="ff-empty__ic"><i class="ph ph-sparkle"></i></div>
+      <div class="ff-empty__title">Hali generatsiya yo'q</div>
+      <div class="ff-empty__sub">Birinchi rasmni yarating — natijalar shu yerda</div>
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <!-- BOTTOM-SHEET + COMPOSER yig'ilgan panel -->
+  <div class="grp" style="width:auto;background:transparent;border:0;padding:0">
+    <h3 style="padding-left:2px">YIG'ILGAN — SHEET · COMPOSER · SKEW</h3>
+    <div class="pnl ff-dotgrid">
+      <div style="flex:1;position:relative">
+        <!-- composer -->
+        <div class="ff-composer" style="position:absolute;left:10px;right:10px;top:14px">
+          <div class="row" style="margin-bottom:10px">
+            <div class="ff-ref thumb-t" style="width:42px;height:42px"><span class="ff-ref__x"><i class="ph ph-x"></i></span></div>
+            <div class="ff-ref thumb-c" style="width:42px;height:42px"><span class="ff-ref__x"><i class="ph ph-x"></i></span></div>
+            <div class="ff-ref ff-ref--add" style="width:42px;height:42px"><i class="ph ph-plus"></i></div>
+          </div>
+          <div class="ff-composer__ph">Nima qilish kerak? @ yozsangiz referenslar chiqadi…</div>
+          <div class="row" style="margin-bottom:0">
+            <span class="ff-pill">Flux 1.1 Pro</span><span class="ff-pill">1:1</span><span class="ff-pill">2K</span>
+            <div style="flex:1"></div>
+            <span class="ff-cost">✦ 5</span>
+            <button class="ff-send"><i class="ph-fill ph-arrow-up"></i></button>
+          </div>
+        </div>
+        <span class="ff-skew" style="position:absolute;left:14px;bottom:230px">PLAGIN</span>
+      </div>
+      <!-- bottom sheet -->
+      <div class="ff-sheet">
+        <div class="ff-sheet__handle"></div>
+        <div class="ff-sheet__head"><span class="ff-sheet__title">Model</span><span class="ff-mono" style="font-size:9px;color:var(--muted-2)">1 kredit = 1 ✦</span></div>
+        <div class="ff-sheet__row is-sel"><div style="flex:1"><div style="font-weight:600;font-size:11.5px">Flux 1.1 Pro</div><div style="font-size:9.5px;color:var(--muted-2)">Eng sifatli · sekinroq</div></div><span class="ff-cost">✦ 5</span></div>
+        <div class="ff-sheet__row"><div style="flex:1"><div style="font-weight:600;font-size:11.5px">Nano</div><div style="font-size:9.5px;color:var(--muted-2)">Tez · arzon</div></div><span class="ff-cost">✦ 2</span></div>
+        <div class="ff-sheet__row"><div style="flex:1"><div style="font-weight:600;font-size:11.5px">Seedream</div><div style="font-size:9.5px;color:var(--muted-2)">Fotorealistik</div></div><span class="ff-cost">✦ 4</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
