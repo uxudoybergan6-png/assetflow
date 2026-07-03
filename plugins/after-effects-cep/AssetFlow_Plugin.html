@@ -1751,6 +1751,73 @@ html.ai-mode #aiPage{display:block!important}
 .env-side-ai.active{background:rgba(163,230,53,.14)}
 
 /* ============================================================
+   Katalog a6 — "Kutubxonam" (Sevimli grid + Yuklab olingan qatorlar)
+   mockup _frameflow-redesign-mockup.html #a6 dan 1:1 (verbatim).
+   lib-mode = katalog chrome yashiriladi, #libPage ko'rsatiladi.
+   switchPage/favorites/downloaded state + toggleFav/openPack/sync saqlanadi.
+   ============================================================ */
+html.lib-mode .af-topbar,
+html.lib-mode .env-filter-bar,
+html.lib-mode .env-subnav,
+html.lib-mode .scroll-area,
+html.lib-mode .foot,
+html.lib-mode #afFtr{display:none!important}
+html.lib-mode #libPage{display:flex!important}
+#libPage{display:none;flex:1;min-width:0;flex-direction:column;overflow:hidden;background:#06080B}
+.lib-top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:rgba(10,13,18,.92);border-bottom:1px solid rgba(255,255,255,.05)}
+.lib-back{display:flex;align-items:center;justify-content:center;padding:0;background:none;border:0;color:#8A93A3;cursor:pointer}
+.lib-back svg{width:16px;height:16px;display:block}
+.lib-title{font-weight:700;font-size:13px;color:#F2F5F8}
+.lib-sync{display:flex;align-items:center;gap:4px;padding:0;background:none;border:0;font-family:var(--font-mono);font-size:9.5px;color:#8A93A3;cursor:pointer}
+.lib-sync svg{width:12px;height:12px;display:block}
+.lib-segwrap{padding:10px 14px 0;flex:none}
+.lib-seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px}
+.lib-seg-i{flex:1;text-align:center;padding:6px 0;border:0;background:none;border-radius:999px;font-weight:500;font-size:11.5px;color:#8A93A3;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:inherit}
+.lib-seg-i svg{width:11px;height:11px;display:block}
+.lib-seg-i.is-on{background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8}
+.lib-seg-star{color:#C2F04A}
+.lib-body{flex:1;position:relative;overflow:hidden}
+.lib-scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden}
+.lib-scroll::-webkit-scrollbar{width:4px}
+.lib-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.lib-fade{position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(180deg,rgba(6,8,11,0),#06080B);pointer-events:none}
+/* Sevimli grid */
+.lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;padding:14px}
+.lib-card{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lib-thumb{position:relative;height:96px;border-radius:10px;overflow:hidden}
+.lib-plan{position:absolute;top:7px;left:7px;font-family:var(--font-mono);font-weight:700;font-size:8px;letter-spacing:.06em;padding:2px 6px;border-radius:4px}
+.lib-plan.pro{background:#C2F04A;color:#0E1400}
+.lib-plan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+.lib-star{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(8,10,14,.72);display:flex;align-items:center;justify-content:center;color:#C2F04A;cursor:pointer;padding:0;border:0}
+.lib-star svg{width:11px;height:11px;display:block}
+.lib-name{font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-sub{font-size:10px;color:#5E6675;margin-top:-3px}
+.lib-imp{height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:10.5px;color:#E7ECF3;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);cursor:pointer;font-family:inherit}
+.lib-imp svg{width:12px;height:12px;display:block}
+/* Yuklab olingan qatorlar */
+.lib-rows{padding:6px 14px}
+.lib-row{display:flex;align-items:center;gap:10px;padding:8px 0}
+.lib-rthumb{width:58px;height:38px;border-radius:8px;flex:none;position:relative}
+.lib-rck{position:absolute;left:4px;bottom:3px;font-family:var(--font-mono);font-size:7px;color:#C2F04A;background:rgba(8,10,14,.72);padding:1px 4px;border-radius:3px}
+.lib-rmid{flex:1;min-width:0}
+.lib-rname{font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-rmeta{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;margin-top:2px}
+.lib-reimp{height:26px;padding:0 11px;border-radius:999px;display:flex;align-items:center;gap:5px;font-weight:600;font-size:10px;color:#E7ECF3;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);cursor:pointer;flex:none;font-family:inherit}
+.lib-reimp svg{width:11px;height:11px;display:block}
+.lib-rtrash{padding:0;background:none;border:0;color:#5E6675;cursor:pointer;flex:none;display:flex;align-items:center}
+.lib-rtrash svg{width:14px;height:14px;display:block}
+/* Bo'sh holatlar (a6 lug'ati) */
+.lib-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:52px 42px;text-align:center}
+.lib-empty-ico{width:44px;height:44px;border-radius:50%;background:rgba(194,240,74,.10);border:1px solid rgba(194,240,74,.28);display:flex;align-items:center;justify-content:center;color:#C2F04A}
+.lib-empty-ico svg{width:20px;height:20px;display:block}
+.lib-empty-t{font-weight:600;font-size:12px;color:#F2F5F8}
+.lib-empty-s{font-size:11px;color:#8A93A3;line-height:1.55;max-width:220px}
+/* Keng ekran (~900px): grid ustunlar auto-fill; qatorlar bir ustun to'liq kenglik */
+@media (min-width:560px){
+  .lib-grid{grid-template-columns:repeat(auto-fill,minmax(166px,1fr))}
+}
+
+/* ============================================================
    AI Tools — dizayn referensiga moslab QAYTA qurilgan
    (Artlist uslubidagi yagona kompozer; ranglar FAQAT tokens.css)
    ============================================================ */
@@ -3648,6 +3715,43 @@ html.home-mode #homePage{display:block!important}
                     <div id="axToast"></div>
                   </div>
                   </div>
+                </div>
+              </div>
+
+              <!-- Katalog a6 — "Kutubxonam" (Sevimli grid + Yuklab olingan qatorlar). lib-mode'da ko'rsatiladi. -->
+              <div id="libPage">
+                <div class="lib-top">
+                  <button type="button" class="lib-back" onclick="afLibClose()" aria-label="Katalogga qaytish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                  <span class="lib-title">Kutubxonam</span>
+                  <div style="flex:1"></div>
+                  <button type="button" class="lib-sync" onclick="syncServerCatalog()" title="Katalogni sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Sinxronlash</button>
+                </div>
+                <div class="lib-segwrap">
+                  <div class="lib-seg" role="tablist" aria-label="Kutubxona bo'limi">
+                    <button type="button" class="lib-seg-i is-on" id="libSegFav" role="tab" aria-selected="true" onclick="afLibTab('favorites')"><svg class="lib-seg-star" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.06 6.6.72-4.9 4.48 1.32 6.5L12 17.9l-5.92 2.86L7.4 14.26 2.5 9.78l6.6-.72z"/></svg>Sevimli · <span id="libFavCount">0</span></button>
+                    <button type="button" class="lib-seg-i" id="libSegDl" role="tab" aria-selected="false" onclick="afLibTab('downloaded')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg>Yuklab olingan · <span id="libDlCount">0</span></button>
+                  </div>
+                </div>
+                <div class="lib-body">
+                  <div class="lib-scroll">
+                    <div id="libFavView">
+                      <div class="lib-grid" id="libFavGrid"></div>
+                      <div class="lib-empty" id="libFavEmpty" style="display:none">
+                        <div class="lib-empty-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.06 6.6.72-4.9 4.48 1.32 6.5L12 17.9l-5.92 2.86L7.4 14.26 2.5 9.78l6.6-.72z"/></svg></div>
+                        <div class="lib-empty-t">Hali sevimlilar yo'q</div>
+                        <div class="lib-empty-s">Tez kirish uchun istalgan shablonni ★ bilan belgilang.</div>
+                      </div>
+                    </div>
+                    <div id="libDlView" style="display:none">
+                      <div class="lib-rows" id="libDlRows"></div>
+                      <div class="lib-empty" id="libDlEmpty" style="display:none">
+                        <div class="lib-empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></div>
+                        <div class="lib-empty-t">Hali yuklab olingan yo'q</div>
+                        <div class="lib-empty-s">Kompozitsiyaga qo'shilgan shablonlar shu yerda ko'rinadi.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="lib-fade"></div>
                 </div>
               </div>
 
@@ -5578,6 +5682,7 @@ async function deleteDownloadedTemplate(key){
   delete window.downloadedMeta[key];
   persistUserPrefs();
   render();renderDl();
+  if(document.documentElement.classList.contains('lib-mode'))renderLibDl();
 }
 window.deleteDownloadedTemplate=deleteDownloadedTemplate;
 
@@ -5895,11 +6000,115 @@ function renderDl(){
   initDrag();
 }
 
+/* ===== Katalog a6 — "Kutubxonam" (Sevimli grid + Yuklab olingan qatorlar) =====
+   Yangi a6 markup; ma'lumot (assets + favorites/downloaded) va handlerlar
+   (toggleFav / openPack / deleteDownloadedTemplate / syncServerCatalog) o'zgarmaydi. */
+function afLibEscKey(n){return String(n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
+var AF_LIB_STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.06 6.6.72-4.9 4.48 1.32 6.5L12 17.9l-5.92 2.86L7.4 14.26 2.5 9.78l6.6-.72z"/></svg>';
+var AF_LIB_IMP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
+var AF_LIB_REIMP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/></svg>';
+var AF_LIB_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>';
+
+function afLibFavCard(a){
+  const safe=afLibEscKey(a.n);
+  const isPro=!!a.isPro;
+  const authorStr=a.author?(a.author.name||a.author):'';
+  const sub=[a.t,authorStr].filter(Boolean).map(x=>escHtml(String(x))).join(' · ');
+  return `<div class="lib-card">
+    <div class="lib-thumb" style="background:${escHtml(a.bg||'')}">
+      <span class="lib-plan ${isPro?'pro':'free'}">${isPro?'PRO':'FREE'}</span>
+      <button type="button" class="lib-star" title="Sevimlidan olib tashlash" onclick="toggleFav('${safe}')">${AF_LIB_STAR}</button>
+    </div>
+    <div class="lib-name">${escHtml(a.displayName||a.n)}</div>
+    ${sub?`<div class="lib-sub">${sub}</div>`:''}
+    <button type="button" class="lib-imp" title="Import — pack'ni ochish" onclick="openPack('${safe}')">${AF_LIB_IMP}Import</button>
+  </div>`;
+}
+function afLibDlMeta(a){
+  const pack=packs[a.n];
+  const bits=[];
+  const hasPack=pack?((typeof packCanAeImport==='function')?packCanAeImport(pack):pack.hasPack!==false):(a.hasPack!==false);
+  bits.push(hasPack?'Pack bor':'Pack yo‘q');
+  let sc=0;
+  if(pack&&Array.isArray(pack.scenes))sc=pack.scenes.length;
+  else if(Array.isArray(a.scenes))sc=a.scenes.length;
+  else if(a.sceneCount)sc=a.sceneCount;
+  if(sc)bits.push(sc+' sahna');
+  const res=a.res?String(a.res).toUpperCase():'';
+  const ratio=(typeof orientLabel==='function')?orientLabel(a.orient):'';
+  if(res&&ratio)bits.push(res+'·'+ratio); else if(res)bits.push(res); else if(ratio)bits.push(ratio);
+  return bits.join(' · ');
+}
+function afLibDlRow(a){
+  const safe=afLibEscKey(a.n);
+  return `<div class="lib-row">
+    <div class="lib-rthumb" style="background:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
+    <div class="lib-rmid"><div class="lib-rname">${escHtml(a.displayName||a.n)}</div><div class="lib-rmeta">${escHtml(afLibDlMeta(a))}</div></div>
+    <button type="button" class="lib-reimp" title="Qayta import — pack'ni ochish" onclick="openPack('${safe}')">${AF_LIB_REIMP}Qayta import</button>
+    <button type="button" class="lib-rtrash" title="Loyihadan o‘chirish" onclick="deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</button>
+  </div>`;
+}
+function afLibSyncCounts(){
+  const f=(window.favorites&&window.favorites.size)||0;
+  const d=(window.downloaded&&window.downloaded.size)||0;
+  const fe=document.getElementById('libFavCount'); if(fe)fe.textContent=f;
+  const de=document.getElementById('libDlCount'); if(de)de.textContent=d;
+}
+function renderLibFav(){
+  const grid=document.getElementById('libFavGrid'); if(!grid)return;
+  const list=assets.filter(a=>window.favorites.has(a.n));
+  grid.innerHTML=list.map(afLibFavCard).join('');
+  const emp=document.getElementById('libFavEmpty'); if(emp)emp.style.display=list.length?'none':'flex';
+  afLibSyncCounts();
+}
+function renderLibDl(){
+  const rows=document.getElementById('libDlRows'); if(!rows)return;
+  const list=assets.filter(a=>window.downloaded.has(a.n));
+  rows.innerHTML=list.map(afLibDlRow).join('');
+  const emp=document.getElementById('libDlEmpty'); if(emp)emp.style.display=list.length?'none':'flex';
+  afLibSyncCounts();
+}
+function afLibTab(tab){
+  tab=(tab==='downloaded')?'downloaded':'favorites';
+  window.__libTab=tab;
+  const fav=tab==='favorites';
+  const sf=document.getElementById('libSegFav'),sd=document.getElementById('libSegDl');
+  if(sf){sf.classList.toggle('is-on',fav);sf.setAttribute('aria-selected',fav?'true':'false');}
+  if(sd){sd.classList.toggle('is-on',!fav);sd.setAttribute('aria-selected',!fav?'true':'false');}
+  const vf=document.getElementById('libFavView'),vd=document.getElementById('libDlView');
+  if(vf)vf.style.display=fav?'block':'none';
+  if(vd)vd.style.display=fav?'none':'block';
+  // Eski holat mashinasini saqlaymiz — favCount/dlCount + renderFav/renderDl (yashirin) sinxron qoladi
+  const ptab=document.querySelector('.ptab[data-page="'+tab+'"]');
+  if(ptab&&typeof switchPage==='function')switchPage(ptab,tab);
+  if(fav)renderLibFav(); else renderLibDl();
+}
+window.afLibTab=afLibTab;
+function afLibOpen(page){
+  const tab=(page==='downloaded')?'downloaded':'favorites';
+  document.documentElement.classList.remove('home-mode','ai-mode');
+  document.documentElement.classList.add('lib-mode');
+  document.querySelectorAll('.env-side-link').forEach(b=>b.classList.remove('active'));
+  const link=document.querySelector('.env-side-link[data-page="'+page+'"]');
+  if(link)link.classList.add('active');
+  afLibTab(tab);
+}
+window.afLibOpen=afLibOpen;
+function afLibClose(){
+  document.documentElement.classList.remove('lib-mode');
+  const nav=(typeof currentNav!=='undefined'&&currentNav&&currentNav!=='ai')?currentNav:'video';
+  const link=document.querySelector('.env-side-link[data-nav="'+nav+'"]');
+  if(link&&typeof switchNavFromSidebar==='function')switchNavFromSidebar(link,nav);
+  else{const at=document.querySelector('.ptab[data-page="assets"]');if(at)switchPage(at,'assets');}
+}
+window.afLibClose=afLibClose;
+
 function toggleFav(n){
   window.favorites.has(n)?window.favorites.delete(n):window.favorites.add(n);
   persistUserPrefs();
   showToast(window.favorites.has(n)?'★ Sevimlilarga qo‘shildi':'Sevimlilardan olib tashlandi');
   render();renderFav();
+  if(document.documentElement.classList.contains('lib-mode')){(window.__libTab==='downloaded'?renderLibDl:renderLibFav)();}
 }
 
 const aeColors=['#6eb5ff','#46a046','#f7a028','#e84242','#9d72ff','#46cfcf','#e8428e','#c9a227'];
@@ -6021,13 +6230,15 @@ async function syncServerCatalog(){
   try{
     const n=await AssetFlowCatalog.refreshBrowse();
     reconcileDownloadedFromScenes();
+    // Kutubxonam ochiq bo'lsa (a6) — yangilangan katalogdan sevimli/yuklab olingan qayta chiziladi
+    if(document.documentElement.classList.contains('lib-mode')){(window.__libTab==='downloaded'?renderLibDl:renderLibFav)();}
     const base=AssetFlowCatalog.apiBase();
   if(n>0){
       const where=AssetFlowCatalog.primaryServerNav();
       showToast(n+' ta server shablon · '+base);
       // Faqat foydalanuvchi hali katalog rejimida bo'lsa avto-o'tamiz — Sync await'i (cold-start)
       // davomida AI Tools/Home'ga o'tgan bo'lsa, uни tortib qaytarmaymiz.
-      const _inCatalog=!document.documentElement.classList.contains('ai-mode')&&!document.documentElement.classList.contains('home-mode');
+      const _inCatalog=!document.documentElement.classList.contains('ai-mode')&&!document.documentElement.classList.contains('home-mode')&&!document.documentElement.classList.contains('lib-mode');
       if(_inCatalog&&AssetFlowCatalog.serverCountForNav(currentNav)===0&&where!==currentNav){
         switchNavFromSidebar(document.querySelector('.env-side-link[data-nav="'+where+'"]'),where);
       }
@@ -6199,16 +6410,10 @@ function toggleKatalogGroup(){
   const head=document.getElementById('sbKatHead');
   if(head)head.setAttribute('aria-expanded',String(!collapsed));
 }
-// Yuklab olingan / Sevimli — sidebar'dan switchPage (mavjud handler) ga ulanadi
+// Yuklab olingan / Sevimli — sidebar'dan a6 "Kutubxonam" (lib-mode) ochiladi.
+// switchPage('favorites'|'downloaded') holati afLibOpen ichida saqlanadi.
 function switchPageFromSidebar(el,page){
-  if(document.documentElement.classList.contains('ai-mode')){
-    const vid=document.querySelector('.env-side-link[data-nav="video"]');
-    if(vid) switchNavFromSidebar(vid,'video');
-  }
-  const ptab=document.querySelector('.ptab[data-page="'+page+'"]');
-  if(ptab) switchPage(ptab,page);
-  document.querySelectorAll('.env-side-link').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
+  afLibOpen(page);
 }
 // Sidebar user kartasi — AssetFlowAccount holatiga (updateFootUser bilan birga chaqiriladi)
 function updateSidebarUser(u){
