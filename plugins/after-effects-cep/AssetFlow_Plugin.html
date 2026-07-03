@@ -1380,6 +1380,41 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .mgs-imp svg{flex:none}
 .mgs-imp:disabled{opacity:.4;cursor:not-allowed}
 
+/* ===== Limit holatlari bottom-sheet (a5) — Free oylik limit + PRO qulf =====
+   .fsheet shell'ni qayta ishlatadi (backdrop / bottom-align / z-index / Esc).
+   Panel qiymatlari mockup a5 dan 1:1 (padding 8px 18px 18px). */
+.lim-panel{
+  width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-sizing:border-box;
+  background:#161B22;border-top:1px solid rgba(255,255,255,.10);
+  border-radius:18px 18px 0 0;padding:8px 18px 18px;
+  box-shadow:0 -18px 42px rgba(0,0,0,.5);
+  animation:fsheetUp .22s cubic-bezier(.22,1,.36,1);color:#F2F5F8;
+}
+.lim-panel--c{text-align:center}
+/* SHEET 1 — Free oylik limit */
+.lim-ico{width:44px;height:44px;border-radius:50%;background:rgba(255,178,124,.1);border:1px solid rgba(255,178,124,.3);display:flex;align-items:center;justify-content:center;color:#FFB27C;margin:0 auto}
+.lim-title{font-weight:700;font-size:15px;margin-top:12px}
+.lim-sub{font-size:11.5px;color:#8A93A3;line-height:1.55;margin-top:6px}
+.lim-prog{display:flex;align-items:center;gap:9px;margin:14px 0}
+.lim-track{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.lim-fill{position:absolute;left:0;top:0;bottom:0;width:100%;background:#FFB27C}
+.lim-count{font-family:var(--font-mono);font-size:10px;color:#FFB27C;flex:none;font-variant-numeric:tabular-nums}
+.lim-cta{height:44px;width:100%;border-radius:999px;background:#C2F04A;border:0;display:flex;align-items:center;justify-content:center;gap:8px;color:#0E1400;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.lim-cta:hover{opacity:.92}
+.lim-cta svg{flex:none}
+.lim-later{display:block;width:100%;font-size:11px;color:#8A93A3;margin-top:11px;background:none;border:0;cursor:pointer;font-family:inherit}
+.lim-later:hover{color:#F2F5F8}
+/* SHEET 2 — PRO qulf */
+.lim2-head{display:flex;align-items:center;gap:10px}
+.lim2-badge{font-family:var(--font-mono);font-weight:700;font-size:9px;letter-spacing:.06em;padding:4px 8px;border-radius:5px;background:#C2F04A;color:#0E1400;flex:none}
+.lim2-title{font-weight:700;font-size:15px}
+.lim2-sub{font-size:11.5px;color:#8A93A3;line-height:1.55;margin-top:7px}
+.lim2-feats{display:flex;flex-direction:column;gap:9px;margin:14px 0 16px}
+.lim2-feat{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#DCE3ED}
+.lim2-feat svg{flex:none}
+.lim2-cancel{display:block;width:100%;font-size:11px;color:#8A93A3;margin-top:11px;text-align:center;background:none;border:0;cursor:pointer;font-family:inherit}
+.lim2-cancel:hover{color:#F2F5F8}
+
 /* PUBLISH SHEET (contributor) */
 .publish-sheet{
   position:fixed;inset:0;z-index:8500;display:none;align-items:flex-end;justify-content:center;
@@ -3918,6 +3953,41 @@ html.home-mode #homePage{display:block!important}
   </div>
 </div>
 
+<!-- Limit: Free oylik yuklama limiti tugadi (a5 chap) -->
+<div class="fsheet" id="limitSheet" onclick="if(event.target===this)closeLimitSheet()">
+  <div class="lim-panel lim-panel--c" onclick="event.stopPropagation()" role="dialog" aria-label="Yuklama limiti" aria-modal="true">
+    <div class="fsheet-grip"></div>
+    <div class="lim-ico"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200 75.64V40a16 16 0 0 0-16-16H72a16 16 0 0 0-16 16v35.64a16 16 0 0 0 6.09 12.57L109.44 128l-47.35 39.79A16 16 0 0 0 56 180.36V216a16 16 0 0 0 16 16h112a16 16 0 0 0 16-16v-35.64a16 16 0 0 0-6.09-12.57L146.56 128l47.35-39.79A16 16 0 0 0 200 75.64ZM72 40h112v35.64l-4.51 3.79A8 8 0 0 1 176 80H80a8 8 0 0 1-3.49-.57L72 75.64Zm112 140.36V216H72v-35.64l56-47.06Z"/></svg></div>
+    <div class="lim-title">Oylik yuklama limiti tugadi</div>
+    <div class="lim-sub" id="limitSub">Free rejada oyiga 15 ta yuklama.</div>
+    <div class="lim-prog">
+      <div class="lim-track"><div class="lim-fill" id="limitFill" style="width:100%"></div></div>
+      <span class="lim-count" id="limitCount">15 / 15</span>
+    </div>
+    <button type="button" class="lim-cta" onclick="limitUpgrade()"><svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M248 80a28 28 0 1 0-51.12 15.77l-26.79 33L146 73.4a28 28 0 1 0-36.06 0l-24.03 55.34-26.79-33a28 28 0 1 0-26.6 8.35l19.9 88.4A16 16 0 0 0 68 205h120a16 16 0 0 0 15.61-12.51l19.9-88.4A28 28 0 0 0 248 80Z"/></svg>Pro'ga o'tish — cheksiz</button>
+    <button type="button" class="lim-later" onclick="closeLimitSheet()">Keyinroq</button>
+  </div>
+</div>
+
+<!-- Limit: PRO shablon qulfi (Free foydalanuvchi) (a5 o'ng) -->
+<div class="fsheet" id="proSheet" onclick="if(event.target===this)closeProSheet()">
+  <div class="lim-panel" onclick="event.stopPropagation()" role="dialog" aria-label="Pro shablon" aria-modal="true">
+    <div class="fsheet-grip"></div>
+    <div class="lim2-head">
+      <span class="lim2-badge">PRO</span>
+      <span class="lim2-title">Pro shablon</span>
+    </div>
+    <div class="lim2-sub" id="proSub">«Glitch Logo Reveal» faqat Pro rejada import qilinadi.</div>
+    <div class="lim2-feats">
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Cheksiz yuklab olish</div>
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>4K pack fayllari</div>
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Barcha PRO shablonlar ochiq</div>
+    </div>
+    <button type="button" class="lim-cta" onclick="limitUpgrade()">Pro'ga o'tish</button>
+    <button type="button" class="lim2-cancel" onclick="closeProSheet()">Bekor</button>
+  </div>
+</div>
+
 <div class="publish-sheet" id="publishSheet" onclick="if(event.target===this)closePublish()">
   <div class="publish-panel" onclick="event.stopPropagation()">
     <div class="account-head">
@@ -4195,6 +4265,9 @@ async function importPackFileToAE(pack){
         applyMogrtItems('__srv_'+pack.serverTemplateId,e.mogrtItems);
         return 'mogrt:picker';
       }
+      // Server gate (pack download): 402 PRO_REQUIRED → PRO sheet, 403 → oylik limit sheet (a5)
+      if(e&&(e.status===402||e.code==='PRO_REQUIRED')){ openProSheet(pack?.displayName||pack?.name||''); return 'limit'; }
+      if(e&&e.status===403){ openLimitSheet(); return 'limit'; }
       showToast(friendlyError(e),'error');
       return '';
     }
@@ -4211,7 +4284,7 @@ async function importPackFileToAE(pack){
     }catch(usageErr){
       if(usageErr&&usageErr.status===403){
         hideProgress();
-        showToast(usageErr.message||'Import limiti tugadi — Pro tarifga o\'ting','warning');
+        openLimitSheet();   // Free oylik limit tugadi — a5 sheet (toast o'rniga)
         return 'limit';
       }
       // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
@@ -4255,6 +4328,9 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
         applyMogrtItems(packLabel,e.mogrtItems);
         return JSON.stringify({ok:false,mogrtPicker:true});
       }
+      // Server gate (pack/mogrt download): 402 PRO_REQUIRED → PRO sheet, 403 → oylik limit sheet (a5)
+      if(e&&(e.status===402||e.code==='PRO_REQUIRED')){ openProSheet(pack?.displayName||pack?.name||packLabel||''); return 'limit'; }
+      if(e&&e.status===403){ openLimitSheet(); return 'limit'; }
       showToast(friendlyError(e),'error');
       return '';
     }
@@ -4271,7 +4347,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     }catch(usageErr){
       if(usageErr&&usageErr.status===403){
         hideProgress();
-        showToast(usageErr.message||'Import limiti tugadi — Pro tarifga o\'ting','warning');
+        openLimitSheet();   // Free oylik limit tugadi — a5 sheet (toast o'rniga)
         return 'limit';
       }
       // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
@@ -8258,6 +8334,63 @@ document.addEventListener('keydown',function(e){
   if(e.key!=='Escape')return;
   const s=document.getElementById('mogrtSheet');
   if(s&&s.classList.contains('open')){ e.stopPropagation(); closeMogrtSheet(); }
+});
+
+/* ===== Limit holatlari bottom-sheet (a5) — Free oylik limit + PRO qulf =====
+   Import gate to'sganda (server signali) toast o'rniga shu sheet'lar ochiladi.
+   Faqat prezentatsiya — server enforcement / atomik gate / import mantig'iga tegmaydi.
+   CTA'lar mavjud window.startProCheckout'ni chaqiradi (Stripe o'chiq bo'lsa info toast). */
+function afDaysToMonthReset(){
+  // Server oylik hisoblagichni keyingi oy boshida tiklaydi (monthResetAt=start).
+  // Reset sanasi serializatsiyada yo'q → joriy oy oxirigacha qolgan kunlarni hisoblaymiz.
+  try{
+    const now=new Date();
+    const next=new Date(now.getFullYear(),now.getMonth()+1,1,0,0,0,0);
+    return Math.max(1,Math.ceil((next-now)/86400000));
+  }catch(e){ return null; }
+}
+function openLimitSheet(){
+  const u=(typeof homeCachedUser==='function')?homeCachedUser():null;
+  const lim=(u&&u.limits&&u.limits.downloadLimit!=null)?u.limits.downloadLimit:15;
+  const used=(u&&u.downloadsMonth!=null)?u.downloadsMonth:lim;
+  const subEl=document.getElementById('limitSub');
+  if(subEl){
+    let html='Free rejada oyiga '+lim+' ta yuklama.';
+    const days=afDaysToMonthReset();
+    if(days!=null) html+='<br>Yangilanishga '+days+' kun qoldi.';
+    subEl.innerHTML=html;
+  }
+  const cntEl=document.getElementById('limitCount');
+  if(cntEl)cntEl.textContent=used+' / '+lim;
+  const fillEl=document.getElementById('limitFill');
+  if(fillEl)fillEl.style.width=((lim>0)?Math.min(100,Math.round(used/lim*100)):100)+'%';
+  document.getElementById('limitSheet')?.classList.add('open');
+}
+function closeLimitSheet(){ document.getElementById('limitSheet')?.classList.remove('open'); }
+function openProSheet(name){
+  const t=String(name||'').trim()||'Bu shablon';
+  const subEl=document.getElementById('proSub');
+  if(subEl)subEl.textContent='«'+t+'» faqat Pro rejada import qilinadi.';   // textContent = XSS-safe
+  document.getElementById('proSheet')?.classList.add('open');
+}
+function closeProSheet(){ document.getElementById('proSheet')?.classList.remove('open'); }
+function limitUpgrade(){
+  closeLimitSheet(); closeProSheet();
+  if(typeof window.startProCheckout==='function') window.startProCheckout();
+  else if(typeof showToast==='function') showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');
+}
+window.openLimitSheet=openLimitSheet;
+window.closeLimitSheet=closeLimitSheet;
+window.openProSheet=openProSheet;
+window.closeProSheet=closeProSheet;
+window.limitUpgrade=limitUpgrade;
+// Esc — limit / PRO sheet ochiq bo'lsa yopadi
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  const l=document.getElementById('limitSheet');
+  if(l&&l.classList.contains('open')){ e.stopPropagation(); closeLimitSheet(); return; }
+  const p=document.getElementById('proSheet');
+  if(p&&p.classList.contains('open')){ e.stopPropagation(); closeProSheet(); }
 });
 
 // Bo'lim segmenti — mavjud #envScope + onEnvScopeChange yo'lidan boradi (nav almashadi).
