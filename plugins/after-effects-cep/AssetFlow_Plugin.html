@@ -1352,6 +1352,34 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .fsheet-apply{height:42px;width:100%;border-radius:999px;background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);border:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;color:#F2F5F8;transition:background .15s}
 .fsheet-apply:hover{background:rgba(255,255,255,.14)}
 
+/* ── MOGRT_PACK tanlash bottom-sheet (a4) — verbatim hex/px ── */
+.mgs-panel{
+  width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-sizing:border-box;
+  background:#161B22;border-top:1px solid rgba(255,255,255,.10);
+  border-radius:18px 18px 0 0;padding:8px 14px 14px;
+  box-shadow:0 -18px 42px rgba(0,0,0,.5);
+  animation:fsheetUp .22s cubic-bezier(.22,1,.36,1);color:#F2F5F8;
+}
+.mgs-title{font-weight:700;font-size:13.5px;color:#F2F5F8}
+.mgs-sub{font-size:10.5px;color:#8A93A3;margin-top:3px;margin-bottom:10px}
+.mgs-list{display:flex;flex-direction:column;gap:2px}
+.mgs-row{height:40px;display:flex;align-items:center;gap:10px;padding:0 8px;border-radius:9px;background:none;border:0;cursor:pointer;font-family:inherit;width:100%;text-align:left;transition:background .12s}
+.mgs-row.on{background:rgba(255,255,255,.06)}
+.mgs-chk{width:17px;height:17px;border-radius:5px;border:1.5px solid rgba(255,255,255,.2);flex:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#0E1400}
+.mgs-chk svg{display:none}
+.mgs-row.on .mgs-chk{background:#C2F04A;border-color:#C2F04A}
+.mgs-row.on .mgs-chk svg{display:block}
+.mgs-thumb{width:34px;height:24px;border-radius:5px;flex:none;background-position:center;background-size:cover}
+.mgs-name{flex:1;font-family:var(--font-mono);font-size:10px;color:#F2F5F8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgs-row:not(.on) .mgs-name{color:#8A93A3}
+.mgs-size{font-family:var(--font-mono);font-size:9px;color:#5E6675;flex:none}
+.mgs-foot{display:flex;gap:8px;margin-top:12px}
+.mgs-all{height:40px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;font-weight:600;font-size:11.5px;color:#F2F5F8;cursor:pointer;font-family:inherit;flex:none;transition:background .15s}
+.mgs-all:hover{background:rgba(255,255,255,.1)}
+.mgs-imp{flex:1;height:40px;border-radius:999px;background:#C2F04A;border:0;display:flex;align-items:center;justify-content:center;gap:7px;color:#0E1400;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.mgs-imp svg{flex:none}
+.mgs-imp:disabled{opacity:.4;cursor:not-allowed}
+
 /* PUBLISH SHEET (contributor) */
 .publish-sheet{
   position:fixed;inset:0;z-index:8500;display:none;align-items:flex-end;justify-content:center;
@@ -1584,39 +1612,46 @@ html.cep-mode .pack-dropbar{display:flex}
   display:flex;align-items:center;gap:8px;
 }
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.toast.t-success{border-left-color:#3fb950}
+/* Success — a4 card (dark #161B22, lime check-circle, optional mono elapsed) */
+.toast.t-success{
+  width:min(340px,86vw);text-align:left;color:#F2F5F8;gap:9px;
+  background:#161B22;border:1px solid rgba(255,255,255,.09);border-left:1px solid rgba(255,255,255,.09);
+  border-radius:10px;padding:11px 12px;box-shadow:0 14px 34px rgba(0,0,0,.5);
+}
+.toast.t-success svg{flex:none;display:block}
+.toast.t-success .toast-msg{font-size:11.5px;font-weight:500;color:#F2F5F8}
+.toast.t-success .toast-sp{flex:1}
+.toast.t-success .toast-elapsed{font-family:var(--font-mono);font-size:9px;color:#5E6675;flex:none}
 .toast.t-error{border-left-color:#f85149;color:#ffd7d5}
 .toast.t-warning{border-left-color:#d29922}
 .toast.t-info{border-left-color:var(--accent-2,#6cf)}
 
-/* Import/Download progress bar */
+/* Import/Download progress — a4 verbatim (translucent card, lime spinner + track) */
 .af-progress{
   position:fixed;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);
-  width:min(360px,86%);z-index:9997;
-  background:var(--surface-3);border:1px solid var(--border-accent);
-  border-radius:12px;padding:12px 14px;
+  width:min(360px,86%);z-index:9997;box-sizing:border-box;
+  background:#101215;border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;padding:12px;
   box-shadow:0 12px 40px rgba(0,0,0,.5);
-  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;color:#F2F5F8;
 }
 .af-progress.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.af-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.af-progress-text{font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.af-progress-pct{font-size:11px;color:var(--accent-2);font-weight:700;margin-left:8px}
-.af-progress-track{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
-.af-progress-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .2s ease}
-.af-progress.indeterminate .af-progress-fill{
-  width:40%!important;animation:afIndet 1.1s ease-in-out infinite;
-}
+.af-progress-row{display:flex;align-items:center;gap:8px}
+.af-progress-spin{flex:none;display:flex;color:#C2F04A}
+.af-progress-spin svg{display:block;animation:ffspin 1.1s linear infinite}
+.af-progress-text{font-weight:600;font-size:11.5px;color:#F2F5F8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-progress-sp{flex:1}
+.af-progress-mb{font-family:var(--font-mono);font-size:9.5px;color:#8A93A3;flex:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+.af-progress-pct{font-family:var(--font-mono);font-size:9.5px;color:#8A93A3;flex:none;font-variant-numeric:tabular-nums}
+.af-progress-cancel{display:none;flex:none;background:none;border:0;padding:0;margin:0;cursor:pointer;color:#8A93A3;line-height:0;align-items:center;justify-content:center}
+.af-progress-cancel:hover{color:#E7ECF3}
+.af-progress.cancellable .af-progress-cancel{display:flex}
+.af-progress-track{height:4px;border-radius:99px;background:rgba(255,255,255,.08);position:relative;overflow:hidden;margin-top:10px}
+.af-progress-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:#C2F04A;transition:width .2s ease}
+.af-progress.indeterminate .af-progress-fill{width:40%!important;animation:afIndet 1.1s ease-in-out infinite}
 @keyframes afIndet{0%{margin-left:-40%}100%{margin-left:100%}}
-.af-progress-cancel{
-  display:none;margin-top:10px;width:100%;
-  background:transparent;border:1px solid var(--border-accent);
-  color:var(--text);font-size:11px;font-weight:600;
-  padding:6px 10px;border-radius:8px;cursor:pointer;
-  transition:background .15s,border-color .15s;
-}
-.af-progress-cancel:hover{background:rgba(248,81,73,.12);border-color:#f85149;color:#ffd7d5}
-.af-progress.cancellable .af-progress-cancel{display:block}
+@keyframes ffspin{to{transform:rotate(360deg)}}
+.af-progress-sub{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;margin-top:7px}
 
 /* Katalog yuklanishi — skeleton kartalar */
 .af-skel-wrap{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
@@ -3666,11 +3701,15 @@ html.home-mode #homePage{display:block!important}
 
 <div class="af-progress" id="afProgress">
   <div class="af-progress-row">
-    <span class="af-progress-text" id="afProgressText">Yuklanmoqda…</span>
-    <span class="af-progress-pct" id="afProgressPct">0%</span>
+    <span class="af-progress-spin" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg></span>
+    <span class="af-progress-text" id="afProgressText">Yuklab olinmoqda…</span>
+    <span class="af-progress-sp"></span>
+    <span class="af-progress-mb" id="afProgressMB" style="display:none"></span>
+    <span class="af-progress-pct" id="afProgressPct"></span>
+    <button type="button" class="af-progress-cancel" id="afProgressCancel" onclick="onAfCancel()" aria-label="Bekor qilish" title="Bekor qilish"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg></button>
   </div>
   <div class="af-progress-track"><div class="af-progress-fill" id="afProgressFill"></div></div>
-  <button type="button" class="af-progress-cancel" id="afProgressCancel" onclick="onAfCancel()">Bekor qilish</button>
+  <div class="af-progress-sub">Faol kompozitsiyaga qo'shiladi · bekor qilish — ×</div>
 </div>
 
 <div class="lr-overlay" id="lrOverlay" onclick="if(event.target===this)closeLoginRequired()">
@@ -3862,6 +3901,20 @@ html.home-mode #homePage{display:block!important}
     </div>
 
     <button type="button" class="fsheet-apply" id="fsheetApply" onclick="closeFilterSheet()">Ko‘rsatish</button>
+  </div>
+</div>
+
+<!-- MOGRT_PACK ko'p-fayl tanlash bottom-sheet (a4) -->
+<div class="fsheet" id="mogrtSheet" onclick="if(event.target===this)closeMogrtSheet()">
+  <div class="mgs-panel" onclick="event.stopPropagation()" role="dialog" aria-label="MOGRT tanlash" aria-modal="true">
+    <div class="fsheet-grip"></div>
+    <div class="mgs-title" id="mogrtSheetTitle">MOGRT_PACK — 0 fayl</div>
+    <div class="mgs-sub">Qaysi sahnalar timeline'ga qo'shilsin?</div>
+    <div class="mgs-list" id="mogrtSheetList"></div>
+    <div class="mgs-foot">
+      <button type="button" class="mgs-all" id="mogrtSheetAll" onclick="toggleMogrtAll()">Barchasi</button>
+      <button type="button" class="mgs-imp" id="mogrtSheetImport" onclick="importSelectedMogrts()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"/><path d="M8 11l4 4 4-4"/><path d="M5 20h14"/></svg><span id="mogrtSheetImportLbl">0 ta sahnani import qilish</span></button>
+    </div>
   </div>
 </div>
 
@@ -4107,25 +4160,23 @@ function packDownloadOpts(pack){
     packUrl:pack?.serverPackUrl,
     fileSize:pack?.fileSize||0,
     onProgress(done,total){
-      const pct=total>0?Math.min(100,Math.floor((done/total)*100)):0;
-      const mb=total>0
-        ?(' · '+(done/1048576).toFixed(1)+'/'+(total/1048576).toFixed(1)+' MB')
-        :(' · '+(done/1048576).toFixed(1)+' MB');
-      // total noma'lum bo'lsa indeterminate, aks holda foiz — yuklab olish bekor qilinishi mumkin
-      if(total>0) showProgress(pct,'Pack yuklanmoqda'+mb,false,true);
-      else showProgress(0,'Pack yuklanmoqda'+mb,true,true);
+      // total ma'lum → foiz + "X / Y MB"; noma'lum → indeterminate, MB yo'q (soxta raqam yo'q)
+      if(total>0){
+        const pct=Math.min(100,Math.floor((done/total)*100));
+        const mb=(done/1048576).toFixed(1)+' / '+(total/1048576).toFixed(1)+' MB';
+        showProgress(pct,'Yuklab olinmoqda…',false,true,mb);
+      }else showProgress(0,'Yuklab olinmoqda…',true,true);
     }
   };
 }
 function sceneDownloadOpts(){
   return{
     onProgress(done,total){
-      const pct=total>0?Math.min(100,Math.floor((done/total)*100)):0;
-      const mb=total>0
-        ?(' · '+(done/1048576).toFixed(1)+'/'+(total/1048576).toFixed(1)+' MB')
-        :(' · '+(done/1048576).toFixed(1)+' MB');
-      if(total>0) showProgress(pct,'Sahna yuklanmoqda'+mb,false,true);
-      else showProgress(0,'Sahna yuklanmoqda'+mb,true,true);
+      if(total>0){
+        const pct=Math.min(100,Math.floor((done/total)*100));
+        const mb=(done/1048576).toFixed(1)+' / '+(total/1048576).toFixed(1)+' MB';
+        showProgress(pct,'Yuklab olinmoqda…',false,true,mb);
+      }else showProgress(0,'Yuklab olinmoqda…',true,true);
     }
   };
 }
@@ -5056,7 +5107,9 @@ function applyMogrtItems(packKey,items){
   pack.scenes=mergeMogrtItems(pack,items);
   pack.mogrtScenesLoaded=true;
   if(currentPackName===packKey)openPack(packKey);
-  showToast('Pack ichida '+items.length+' ta MOGRT bor — sahnani tanlab import qiling');
+  // Bir nechta .mogrt — a4 tanlash bottom-sheet'i; bitta bo'lsa detal grid yetarli
+  if(items.length>1) openMogrtSheet(packKey,items);
+  else showToast('Pack ichida '+items.length+' ta MOGRT bor — sahnani tanlab import qiling');
 }
 
 function openPack(name){
@@ -5151,6 +5204,8 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
     showToast('Sahna comp nomi yo‘q');
     return;
   }
+  const __t0=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  const __elapsed=()=>((((typeof performance!=='undefined'&&performance.now)?performance.now():Date.now())-__t0)/1000);
   // Muvaffaqiyatda template'ni Downloaded'ga, sahnani importedScenes'ga belgilaymiz
   const markDownloaded=(data)=>{
     window.downloaded.add(packName);
@@ -5172,9 +5227,9 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
         markDownloaded(data);
         if(mode==='project'){
           const what=data.fullPack?('"'+(packName||scene.n)+'" to‘liq pack'):('"'+scene.n+'" sahnasi (+ kerakli footage)');
-          showToast('✓ '+what+' Project panelga import qilindi');
+          showToast('✓ '+what+' Project panelga import qilindi','success',__elapsed());
         }else if(data.addedToTimeline){
-          showToast('✓ "'+scene.n+'" timeline ga qo‘shildi');
+          showToast('✓ "'+scene.n+'" timeline ga qo‘shildi','success',__elapsed());
         }else if(data.timelineReason==='no_dest_comp'){
           showToast('Pack import qilindi. Timeline uchun avval o‘z compingizni oching, keyin sahna qo‘shing');
         }else{
@@ -5200,7 +5255,7 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
     markDownloaded();
     addLayer(scene.n,scene.ico,false);
     showMonitorPreview(getScenePreviewMedia(scene,pack));
-    showToast('✓ "'+scene.n+'" timeline ga qo‘shildi');
+    showToast('✓ "'+scene.n+'" timeline ga qo‘shildi','success',__elapsed());
   }
 
   render();renderDl();
@@ -5334,6 +5389,8 @@ async function downloadAll(n){
 async function __downloadAllImpl(n){
   const p=packs[n];
   if(!p)return;
+  const __t0=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  const __elapsed=()=>((((typeof performance!=='undefined'&&performance.now)?performance.now():Date.now())-__t0)/1000);
   // Template'ni Downloaded'ga, barcha sahnalarni importedScenes'ga
   const markPackDownloaded=()=>{
     window.downloaded.add(n);
@@ -5361,7 +5418,7 @@ async function __downloadAllImpl(n){
       }
       if(ok){
         markPackDownloaded();
-        showToast('✓ "'+(p.displayName||n)+'" AE projectga import qilindi','success');
+        showToast('✓ "'+(p.displayName||n)+'" AE projectga import qilindi','success',__elapsed());
       }
       else showToast('Import xato: '+(result||'noma\'lum'),'error');
     }catch(err){
@@ -8119,6 +8176,90 @@ document.addEventListener('keydown',function(e){
   if(s&&s.classList.contains('open')){ e.stopPropagation(); closeFilterSheet(); }
 });
 
+/* ===== MOGRT_PACK ko'p-fayl tanlash bottom-sheet (a4) =====
+   Zip ichida bir nechta .mogrt bo'lsa (applyMogrtItems) — tanlab, har birini
+   MAVJUD per-entry extract+import yo'lidan (importSceneWithMode → extractMogrtItem)
+   ketma-ket import qiladi va STATE-1 progress kartasini haydaydi. Bitta sahna va
+   "Hammasini import" (downloadAll) yo'llari o'zgarmaydi. */
+const MGS_CHECK='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+let __mogrtPackKey='', __mogrtItems=[], __mogrtSel=new Set();
+function openMogrtSheet(packKey,items){
+  __mogrtPackKey=packKey;
+  __mogrtItems=(items||[]).slice();
+  __mogrtSel=new Set(__mogrtItems.map((_,i)=>i));   // default: barchasi tanlangan
+  const t=document.getElementById('mogrtSheetTitle');
+  if(t)t.textContent='MOGRT_PACK — '+__mogrtItems.length+' fayl';
+  renderMogrtSheet();
+  document.getElementById('mogrtSheet')?.classList.add('open');
+}
+function renderMogrtSheet(){
+  const list=document.getElementById('mogrtSheetList');
+  if(!list)return;
+  list.innerHTML=__mogrtItems.map((it,i)=>{
+    const on=__mogrtSel.has(i);
+    const thumb=it.thumbPng
+      ? `background-image:url('${escHtml(it.thumbPng)}')`
+      : `background:${pd3Grad(it.name||('m'+i))}`;
+    const sizeTxt=(it.size>0)?`<span class="mgs-size">${(it.size/1048576).toFixed(1)} MB</span>`:'';
+    return `<button type="button" class="mgs-row${on?' on':''}" data-idx="${i}" onclick="toggleMogrtRow(${i})">`
+      +`<span class="mgs-chk">${MGS_CHECK}</span>`
+      +`<span class="mgs-thumb" style="${thumb}"></span>`
+      +`<span class="mgs-name">${escHtml(it.name||'')}</span>`
+      +sizeTxt
+      +`</button>`;
+  }).join('');
+  updateMogrtFooter();
+}
+function updateMogrtFooter(){
+  const n=__mogrtSel.size;
+  const lbl=document.getElementById('mogrtSheetImportLbl');
+  if(lbl)lbl.textContent=n+' ta sahnani import qilish';
+  const imp=document.getElementById('mogrtSheetImport');
+  if(imp)imp.disabled=(n===0);
+}
+function toggleMogrtRow(i){
+  if(__mogrtSel.has(i))__mogrtSel.delete(i); else __mogrtSel.add(i);
+  const row=document.querySelector('#mogrtSheetList .mgs-row[data-idx="'+i+'"]');
+  if(row)row.classList.toggle('on',__mogrtSel.has(i));
+  updateMogrtFooter();
+}
+function toggleMogrtAll(){
+  if(__mogrtSel.size===__mogrtItems.length)__mogrtSel.clear();
+  else __mogrtSel=new Set(__mogrtItems.map((_,i)=>i));
+  renderMogrtSheet();
+}
+function closeMogrtSheet(){
+  document.getElementById('mogrtSheet')?.classList.remove('open');
+}
+async function importSelectedMogrts(){
+  const pack=packs[__mogrtPackKey];
+  const idxs=[...__mogrtSel].sort((a,b)=>a-b);
+  if(!pack||!idxs.length)return;
+  if(typeof AssetFlowAccount!=='undefined'&&!AssetFlowAccount.isLoggedIn()){ showLoginRequired(); return; }
+  const items=idxs.map(i=>__mogrtItems[i]);
+  closeMogrtSheet();
+  currentPackName=__mogrtPackKey;
+  const mode=selectedDropMode||'project';
+  for(const it of items){
+    // Merge natijasidan mos sahna (mogrtPath barqaror kalit); topilmasa itemdan quramiz
+    let scene=(pack.scenes||[]).find(s=>s.mogrtPath&&s.mogrtPath===it.path);
+    if(!scene)scene={n:it.name,aeComp:'',meta:'MOGRT',ico:pack.ico||'✦',bg:pack.bg,mogrtPath:it.path,
+      preview:it.thumbMp4||it.thumbPng||undefined,previewKind:(!it.thumbMp4&&it.thumbPng)?'image':undefined};
+    await importSceneWithMode(pack,scene,__mogrtPackKey,mode);
+  }
+}
+window.openMogrtSheet=openMogrtSheet;
+window.closeMogrtSheet=closeMogrtSheet;
+window.toggleMogrtRow=toggleMogrtRow;
+window.toggleMogrtAll=toggleMogrtAll;
+window.importSelectedMogrts=importSelectedMogrts;
+// Esc — MOGRT sheet ochiq bo'lsa yopadi
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  const s=document.getElementById('mogrtSheet');
+  if(s&&s.classList.contains('open')){ e.stopPropagation(); closeMogrtSheet(); }
+});
+
 // Bo'lim segmenti — mavjud #envScope + onEnvScopeChange yo'lidan boradi (nav almashadi).
 function afFilterSheetScope(val){
   const s=document.getElementById('envScope');
@@ -8386,11 +8527,17 @@ function toggleExpand(){
 /* ===== Toast — turli xil (success/error/warning/info) + navbat ===== */
 const __toastQueue=[];
 let __toastBusy=false;
-function showToast(msg,type){
+// Success (a4) kartadagi lime check-circle ikonasi (Phosphor fill · inline SVG)
+const TOAST_CHECK='<svg width="15" height="15" viewBox="0 0 256 256" fill="#C2F04A"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+function showToast(msg,type,elapsedSec){
   let t=type||'info';
   if(t==='danger') t='error';           // catalog.js eski "danger" → error
   if(['success','error','warning','info'].indexOf(t)<0) t='info';
-  __toastQueue.push({msg:String(msg==null?'':msg),type:t});
+  const item={msg:String(msg==null?'':msg),type:t};
+  // O'tgan vaqt — faqat haqiqiy o'lchangan bo'lsa (success kartasida o'ngda)
+  if(t==='success'&&elapsedSec!=null&&isFinite(elapsedSec)&&elapsedSec>=0.1)
+    item.elapsed=elapsedSec.toFixed(1)+'s';
+  __toastQueue.push(item);
   if(!__toastBusy)__drainToasts();
 }
 function __drainToasts(){
@@ -8399,7 +8546,12 @@ function __drainToasts(){
   const next=__toastQueue.shift();
   if(!next){__toastBusy=false;return;}
   __toastBusy=true;
-  el.textContent=next.msg;
+  if(next.type==='success'){
+    const elapsed=next.elapsed?`<span class="toast-elapsed">${escHtml(next.elapsed)}</span>`:'';
+    el.innerHTML=`${TOAST_CHECK}<span class="toast-msg">${escHtml(next.msg)}</span><span class="toast-sp"></span>${elapsed}`;
+  }else{
+    el.textContent=next.msg;
+  }
   el.className='toast t-'+next.type+' show';
   const dur=next.type==='error'?4200:(next.type==='warning'?3400:2600);
   setTimeout(()=>{
@@ -8477,23 +8629,28 @@ function friendlyError(e){
   return raw||'Noma\'lum xato';
 }
 
-/* ===== Import/Download progress bar ===== */
-function showProgress(pct,text,indeterminate,cancellable){
+/* ===== Import/Download progress (a4) — label + optional MB counter, else % ===== */
+function showProgress(pct,text,indeterminate,cancellable,mbText){
   const box=document.getElementById('afProgress');
   if(!box)return;
   const fill=document.getElementById('afProgressFill');
   const pctEl=document.getElementById('afProgressPct');
+  const mbEl=document.getElementById('afProgressMB');
   const txtEl=document.getElementById('afProgressText');
   box.classList.add('show');
   box.classList.toggle('indeterminate',!!indeterminate);
   box.classList.toggle('cancellable',!!cancellable);
   if(txtEl&&text!=null) txtEl.textContent=text;
+  // MB hisoblagichni faqat bayt jami ma'lum bo'lsa ko'rsatamiz (soxta raqam yo'q)
+  const hasMb=mbText!=null&&mbText!=='';
+  if(mbEl){ mbEl.textContent=hasMb?mbText:''; mbEl.style.display=hasMb?'':'none'; }
   if(indeterminate){
-    if(pctEl) pctEl.textContent='';
+    if(pctEl){ pctEl.textContent=''; pctEl.style.display='none'; }
   }else{
     const p=Math.max(0,Math.min(100,Math.round(pct||0)));
     if(fill) fill.style.width=p+'%';
-    if(pctEl) pctEl.textContent=p+'%';
+    // MB bo'lsa foizni yashiramiz; aks holda foizni fallback sifatida ko'rsatamiz
+    if(pctEl){ pctEl.textContent=p+'%'; pctEl.style.display=hasMb?'none':''; }
   }
 }
 function hideProgress(){
@@ -8502,6 +8659,8 @@ function hideProgress(){
   box.classList.remove('show','indeterminate','cancellable');
   const fill=document.getElementById('afProgressFill');
   if(fill) fill.style.width='0';
+  const mbEl=document.getElementById('afProgressMB');
+  if(mbEl){ mbEl.textContent=''; mbEl.style.display='none'; }
 }
 /** Progress'dagi «Bekor qilish» — faol yuklab olishni uzadi */
 function onAfCancel(){

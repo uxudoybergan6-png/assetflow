@@ -574,9 +574,12 @@ const AssetFlowCatalog = (() => {
           /* thumb'siz mogrt — karta ikonka bilan qoladi */
         }
       }
+      let size = 0;
+      try { size = fs.statSync(p).size || 0; } catch (e) { /* nomavjud/o'qib bo'lmadi */ }
       return {
         name: base,
         path: p,
+        size,
         thumbPng: fs.existsSync(png) ? fileUrl(png) : "",
         thumbMp4: fs.existsSync(mp4) ? fileUrl(mp4) : "",
       };
