@@ -15579,6 +15579,12 @@ class Component extends DCLogic {
       const h = (window.location.hash || '').replace('#', '');
       const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
       if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h); }
+      // verify-email.html'dan qaytish (email tasdiqlandi) — auth ekraniga yo'naltirib toast ko'rsatish.
+      if (/[?&]verified=1\b/.test(window.location.search)) {
+        try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (e2) {}
+        this.toast('Email tasdiqlandi — kirishingiz mumkin');
+        if (!this.state.user) this.gotoAuth('login');
+      }
     } catch (e) {}
     this.renderGoogleBtn();
     try {

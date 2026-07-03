@@ -71,11 +71,13 @@ async function doVerify(){
   const status=document.getElementById('verifyStatus');
   const msg=document.getElementById('verifyMsg');
   try{
-    await postJson('/api/auth/verify-email',{token});
+    const data=await postJson('/api/auth/verify-email',{token});
     status.textContent='✓ Email tasdiqlandi!';
     msg.className='msg ok';
     msg.textContent='Endi AI generatsiyadan foydalanishingiz mumkin. Kirish sahifasiga yo\'naltirilyapsiz…';
-    setTimeout(()=>{location.href='/login.html?verified=1';},1800);
+    // CONTRIBUTOR/ADMIN — Studio login (contributor/admin panel); oddiy USER — platforma (getframeflow.app).
+    const dest=(data&&(data.role==='CONTRIBUTOR'||data.role==='ADMIN'))?'/login.html?verified=1':'/?verified=1';
+    setTimeout(()=>{location.href=dest;},1800);
   }catch(e){
     // Havola yaroqsiz/muddati tugagan → qayta yuborish ko'rinishi
     document.getElementById('verifyView').style.display='none';

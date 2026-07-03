@@ -364,7 +364,7 @@ authRouter.post("/verify-email", async (req, res) => {
     });
   }
   await prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } });
-  res.json({ ok: true, message: "Email tasdiqlandi — endi AI'dan foydalanishingiz mumkin" });
+  res.json({ ok: true, message: "Email tasdiqlandi — endi AI'dan foydalanishingiz mumkin", role: user.role });
 });
 
 /** Tasdiqlash havolasini qayta yuborish — enumeratsiyaga yo'l qo'ymaslik uchun
