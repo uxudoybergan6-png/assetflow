@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FrameFlow — After Effects</title>
 <link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/ff-components.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 /* Token to'plami css/tokens.css da (yagona :root). Panelga xos override pastda. */
@@ -370,13 +371,14 @@ body{
 .env-content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 /* C2: doimiy top-header (brend + plan-pill + sync). Layout-only; auth va nav
    mantig'i sidebar'da qoladi (faqat ko'rinish qo'shiladi). */
-.af-topbar{display:flex;align-items:center;gap:6px;padding:11px 12px;border-bottom:1px solid var(--border);background:var(--sidebar);flex:none;position:relative;z-index:6}
-.af-tb-brand{display:flex;align-items:center;gap:7px;flex:1;min-width:24px;overflow:hidden}
-.af-tb-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.af-topbar{display:flex;align-items:center;gap:6px;padding:11px 12px;background:var(--sidebar);flex:none;position:relative;z-index:6}
 .af-tb-logo{width:24px;height:24px;flex:none;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--accent-cta);color:var(--on-accent)}
 .af-tb-logo svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.af-tb-title{font-family:var(--font-display);font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;color:var(--text);white-space:nowrap}
 .af-tb-spacer{flex:1;min-width:0}
+/* E7: Katalog | AI Tools segmenti — af-topbar tagida alohida qator (icon+pill dublikati o'rniga) */
+.af-pillar-row{display:flex;justify-content:center;padding:0 12px 10px;background:var(--sidebar);border-bottom:1px solid var(--border);flex:none}
+.af-pillar-row .ff-seg{width:100%;max-width:280px}
+.af-pillar-row .ff-seg__item{padding:7px 0;border:0;background:none;font-family:inherit;font-size:12px}
 .af-tb-plan{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.04em;cursor:pointer;transition:filter .15s}
 .af-tb-plan:hover{filter:brightness(1.08)}
 .af-tb-plan svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -399,11 +401,6 @@ body{
 .af-tab:hover{border-color:var(--muted-2);color:var(--text)}
 .af-tab.active{background:var(--accent-cta);border-color:var(--accent-cta);color:var(--on-accent)}
 .af-tab.active::after{display:none}
-/* ✨ AI Tools — o'ziga xos lime aksent (nofaolда ham ajralib turadi); aktivда to'liq lime */
-.af-tab.af-tab-ai{display:inline-flex;align-items:center;justify-content:center;gap:4px;background:var(--green-dim);border-color:var(--border-accent);color:var(--accent-cta)}
-.af-tab.af-tab-ai:hover{color:var(--accent-cta);border-color:var(--accent-cta)}
-.af-tab.af-tab-ai.active{background:var(--accent-cta);border-color:var(--accent-cta);color:var(--on-accent)}
-.af-tab.af-tab-ai svg{width:12px;height:12px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 /* E6.4: sidebar YASHIRILADI (DOM saqlanadi — yashirin nav/account elementlari top-nav
    .click() yo'naltirishi + auth ID yangilanishi uchun kerak). Kontent full-width. */
 .env-sidebar{display:none}
@@ -1623,6 +1620,7 @@ html.cep-mode .panel-body{border-radius:0!important}
 /* ════════ AI TOOLS (Studio Gen bilan ulangan — rasm/ovoz/video/SFX/qidiruv) ════════ */
 /* AI rejimda browse chrome yashiriladi, #aiPage ko'rsatiladi (nav mantig'i tegilmaydi) */
 html.ai-mode .af-topbar,
+html.ai-mode .af-pillar-row,
 html.ai-mode .af-tabs,
 html.ai-mode .env-top,
 html.ai-mode .env-subnav,
@@ -2792,6 +2790,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
 html.home-mode .af-topbar,
+html.home-mode .af-pillar-row,
 html.home-mode .af-tabs,
 html.home-mode .env-top,
 html.home-mode .env-subnav,
@@ -3013,17 +3012,23 @@ html.home-mode #homePage{display:block!important}
 
             <div class="env-content">
               <header class="af-topbar">
-                <button type="button" class="af-tb-home" id="afHomeBtn" title="Asosiy" aria-label="Asosiy">‹ Asosiy</button>
-                <div class="af-tb-brand">
+                <button type="button" class="af-tb-home" id="afHomeBtn" title="Asosiy" aria-label="Asosiy">
                   <span class="af-tb-logo"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4Z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></span>
-                  <span class="af-tb-title">FrameFlow</span>
-                </div>
-                <button type="button" class="af-tb-icon" onclick="afNavTab('ai')" title="AI Tools" aria-label="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5L15 9M9 15l-2.5 2.5"/></svg></button>
+                </button>
+                <span class="af-tb-spacer"></span>
                 <button type="button" class="af-tb-icon" onclick="afHeaderPage('downloaded')" title="Yuklab olingan" aria-label="Yuklab olingan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
                 <button type="button" class="af-tb-icon" onclick="afHeaderPage('favorites')" title="Sevimli" aria-label="Sevimli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
                 <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Katalogni sinxronlash" aria-label="Sinxronlash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
                 <span class="af-tb-plan free" id="hdrPlanPill" role="button" tabindex="0" title="Hisob · Tarif · AI kredit" onclick="openAccountSheet()"><svg viewBox="0 0 24 24"><path d="M5 16 3 7l5.5 4L12 4l3.5 7L21 7l-2 9H5Z"/></svg><span id="hdrPlanLabel">Free</span><span class="sep" id="hdrPlanSep" hidden></span><span class="cred" id="hdrCred" hidden></span></span>
               </header>
+              <!-- E7: yagona bo'lim segmenti (Katalog | AI Tools) — af-tb-icon + af-tab-ai
+                   ikkalasining o'rnini bosadi (bir xil afNavTab('ai') maqsadga bitta yo'l). -->
+              <div class="af-pillar-row">
+                <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Bo'lim">
+                  <span class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true">Katalog</span>
+                  <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio">AI Tools</button>
+                </div>
+              </div>
               <!-- E6.1: katalog nav top-tab — yashirin sidebar .env-side-link tugmasini .click()
                    qiladi → MAVJUD nav onclick ishlaydi. Handler o'zgarmaydi (faqat UI). -->
               <nav class="af-tabs" id="afTabs" role="tablist" aria-label="Katalog turi">
@@ -3031,7 +3036,6 @@ html.home-mode #homePage{display:block!important}
                 <button type="button" class="af-tab" data-nav="motion" role="tab" aria-selected="false" onclick="afNavTab('motion')">Motion</button>
                 <button type="button" class="af-tab" data-nav="graphics" role="tab" aria-selected="false" onclick="afNavTab('graphics')">Graphics</button>
                 <button type="button" class="af-tab" data-nav="luts" role="tab" aria-selected="false" onclick="afNavTab('luts')">LUTs</button>
-                <button type="button" class="af-tab af-tab-ai" data-nav="ai" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18 14l.7 1.9L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7z"/></svg>AI Tools</button>
               </nav>
               <!-- Featured AI Tools CTA banner (display-only) — afNavTab('ai') mavjud .click() route bilan AI Tools ochadi -->
               <button type="button" class="af-ai-banner" onclick="afNavTab('ai')" aria-label="AI bilan yarat — AI Tools">
@@ -3530,126 +3534,6 @@ html.home-mode #homePage{display:block!important}
                         </div>
                       </section>
 
-                      <!-- IMAGE GEN -->
-                      <section id="v-genimage" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>✦ Image</b></div></div>
-                        <div id="imgRef"></div>
-                        <div class="pin">
-                          <div class="describe" data-describe="geni">✨ Yordamchi</div>
-                          <textarea placeholder="Tasvir promtини yozing… (Cmd/Ctrl+Enter — yuborish)"></textarea>
-                          <div class="cbar" id="imgBar"></div>
-                        </div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
-                      <!-- VIDEO GEN -->
-                      <section id="v-genvideo" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🎬 Video</b></div></div>
-                        <div id="vidMode"></div>
-                        <div id="vidFrames"></div>
-                        <div class="pin">
-                          <div class="describe" data-describe="genv">✨ Yordamchi</div>
-                          <textarea placeholder="Video promtини yozing… (Cmd/Ctrl+Enter — yuborish)"></textarea>
-                          <div class="cbar" id="vidBar"></div>
-                        </div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
-                      <!-- 3D GEN -->
-                      <section id="v-gen3d" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🧊 3D model</b></div></div>
-                        <div id="td3Ref"></div>
-                        <div class="pin">
-                          <div style="font-size:11px;color:var(--mut2);margin-bottom:9px">Rasmdan 3D model — manba rasm <b style="color:var(--acc)">majburiy</b> · natija AE comp'ga 3D layer</div>
-                          <div class="cbar" id="td3Bar"></div>
-                        </div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
-                      <!-- AUDIO: TTS -->
-                      <section id="v-gentts" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🎙️ Ovoz (TTS)</b></div></div>
-                        <div class="pin"><textarea placeholder="Matnни yozing → nutqqa aylantiramiz… (Cmd/Ctrl+Enter)"></textarea><div class="cbar" id="ttsBar"></div></div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                      <!-- AUDIO: MUSIC -->
-                      <section id="v-genmusic" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🎵 Musiqa</b></div></div>
-                        <div class="pin"><div class="describe" data-describe="geni">✨ Yordamchi</div><textarea placeholder="Qanday musiqa? masalan: tinch lo-fi, kechki…"></textarea><div class="cbar" id="musicBar"></div></div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                      <!-- AUDIO: SFX -->
-                      <section id="v-gensfx" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🔊 SFX</b></div></div>
-                        <div class="pin"><textarea placeholder="Qanday ovoz effekt? masalan: yomg'ir, qadam tovushi…"></textarea><div class="cbar" id="sfxBar"></div></div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                      <!-- AUDIO: STT -->
-                      <section id="v-genstt" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>📝 Transkript (STT)</b></div></div>
-                        <div id="sttRef"></div>
-                        <div class="pin"><div style="font-size:11px;color:var(--mut2);margin-bottom:9px">Video yoki ovozдан matn / SRT</div><div class="cbar" id="sttBar"></div></div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                      <!-- AUDIO: AVATAR -->
-                      <section id="v-genavatar" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🗣️ Talking avatar</b></div></div>
-                        <div class="amal">Kirish — yuz + ovoz</div>
-                        <div class="dual"><div class="frame on" data-ref="image"><div class="di">🧑</div><div class="t">Yuz rasm *</div><small>majburiy</small></div><div class="frame" data-ref="audio"><div class="di">🎵</div><div class="t">Ovoz *</div><small>yuklang yoki TTS</small></div></div>
-                        <div class="pin"><textarea placeholder="Yoki matn → TTS (gapiradigan matn)…"></textarea><div class="cbar" id="avatarBar"></div></div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
-                      <!-- EDIT IMAGE HUB -->
-                      <section id="v-editimage" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🖼️ Edit image</b></div></div>
-                        <div id="eiSrc"></div>
-                        <div class="amal">Nimani o'zgartirasiz? — prompt bilan</div>
-                        <div class="pin"><div class="describe" data-describe="image">✨ Tasvirla</div><textarea placeholder="masalan: osmonni qizart · ko'ylakni ko'k qil…"></textarea><div class="cbar" id="eiBar"></div></div>
-                        <div class="amal">Yoki aniq amal</div>
-                        <div class="acts">
-                          <div class="act" data-op="Remove BG|image"><div class="ic">▣</div><span>Remove BG</span><small class="mm">Bria</small></div>
-                          <div class="act" data-op="Upscale|image"><div class="ic">⤴</div><span>Upscale</span><small class="mm">Clarity</small></div>
-                          <div class="act" data-op="Relight|image"><div class="ic">💡</div><span>Relight</span><small class="mm">IC-Light</small></div>
-                          <div class="act" data-op="Skin|image"><div class="ic">😊</div><span>Skin</span><small class="mm">Retouch</small></div>
-                          <div class="act" data-op="Reframe|image"><div class="ic">⤢</div><span>Reframe</span><small class="mm">Reframe</small></div>
-                          <div class="act" data-op="Inpaint|image"><div class="ic">🖌️</div><span>Inpaint</span><small class="mm">Flux Fill</small></div>
-                          <div class="act dim" data-soon><span class="dot"></span><div class="ic">🎨</div><span>Restyle</span><small class="mm">Tez orada</small></div>
-                          <div class="act" data-img2vid><div class="ic">🎬</div><span>→Video</span><small class="mm">Seedance</small></div>
-                        </div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
-                      <!-- EDIT VIDEO HUB -->
-                      <section id="v-editvideo" class="view">
-                        <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🎞️ Edit video</b></div></div>
-                        <div id="evSrc"></div>
-                        <div id="evTr"></div>
-                        <div class="amal">Nimani o'zgartirasiz? — prompt bilan</div>
-                        <div class="pin"><div class="describe" data-describe="video">✨ Tasvirla</div><textarea placeholder="masalan: mashinani qizil qil · fonni qishga aylantir…"></textarea><div class="cbar" id="evBar"></div></div>
-                        <div class="amal">Yoki aniq amal</div>
-                        <div class="acts">
-                          <div class="act" data-op="Reframe|video"><div class="ic">⤢</div><span>Reframe</span><small class="mm">Luma Ray-2</small></div>
-                          <div class="act" data-op="Remove BG|video"><div class="ic">▣</div><span>Remove BG</span><small class="mm">Bria</small></div>
-                          <div class="act" data-op="Upscale|video"><div class="ic">⤴</div><span>Upscale</span><small class="mm">Topaz</small></div>
-                          <div class="act" data-op="Lip-sync|lipsync"><div class="ic">🎤</div><span>Lip-sync</span><small class="mm">sync-v2</small></div>
-                          <div class="act" data-op="Motion|motion"><div class="ic">⇄</div><span>Motion</span><small class="mm">Kling</small></div>
-                          <div class="act" data-op="SFX|sfx"><div class="ic">🔊</div><span>SFX</span><small class="mm">mmaudio</small></div>
-                          <div class="act dim" data-soon><span class="dot"></span><div class="ic">🐢</div><span>Slow-mo</span><small class="mm">RIFE</small></div>
-                          <div class="act dim" data-soon><span class="dot"></span><div class="ic">🎨</div><span>Restyle</span><small class="mm">Tez orada</small></div>
-                        </div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
-                      <!-- OP (standardized) -->
-                      <section id="v-op" class="view">
-                        <div class="crumb"><div class="bk" id="opBack">‹</div><div class="path" id="opCrumb"></div></div>
-                        <div id="opInputs"></div>
-                        <div id="opTr"></div>
-                        <div class="pin" id="opPin"></div>
-                        <div class="proc"></div><div class="resultArea"></div>
-                      </section>
-                  
                       <!-- HISTORY -->
                       <section id="v-history" class="view">
                         <div class="crumb"><div class="bk" data-go="launcher">‹</div><div class="path">AI Tools › <b>🕘 Tarix</b></div></div>
