@@ -19,7 +19,7 @@ body{
 }
 
 /* Display tipografiya — brend wordmark + bo'lim sarlavhalari (Space Grotesk → Inter → system) */
-.sb-brand-text,.ai-h-title,.cat-hero-cardtitle,.pack-sum-title,.lr-title,.scenes-title,.ptitle{font-family:var(--font-display);letter-spacing:-.01em}
+.sb-brand-text,.ai-h-title,.cat-hero-cardtitle,.lr-title,.scenes-title,.ptitle{font-family:var(--font-display);letter-spacing:-.01em}
 
 /* AFTER EFFECTS DEMO STAGE */
 .demo-stage{
@@ -1386,64 +1386,76 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pack-detail{
   display:none;flex-direction:column;
   position:absolute;inset:0;z-index:600;
-  background:var(--bg);
+  background:#06080B;overflow:hidden;
 }
 .pack-detail.open{display:flex}
-.pack-back{
-  display:flex;align-items:center;gap:8px;
-  padding:12px 14px;border-bottom:1px solid var(--border);
-  cursor:pointer;color:var(--muted);font-size:11px;font-weight:500;
-  transition:color .2s;
-}
-.pack-back:hover{color:var(--text)}
-.pack-hero{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-.pack-summary{
-  display:flex;align-items:center;gap:12px;
-  padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;
-}
-.pack-sum-preview{
-  width:96px;height:60px;border-radius:10px;overflow:hidden;flex-shrink:0;
-  background:#111;display:grid;place-items:center;position:relative;
-}
-.pack-sum-preview img{width:100%;height:100%;object-fit:cover;display:block}
-.pack-sum-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1}
-.pack-sum-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-.pack-sum-preview.playing .pack-sum-vid{display:block}
-.pack-sum-preview.playing .pack-sum-poster{opacity:0}
-.pack-sum-play{
-  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
-  width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.32);
-  background:rgba(0,0,0,.6);color:#fff;font-size:var(--fs-xs);cursor:pointer;font-family:inherit;
-  display:flex;align-items:center;justify-content:center;padding:0;transition:opacity .2s;
-}
-.pack-sum-play:hover{background:rgba(0,0,0,.8)}
-.pack-sum-preview.playing .pack-sum-play{opacity:0}
-.pack-sum-preview.playing:hover .pack-sum-play{opacity:1}
-.pack-sum-fallback{font-size:22px;opacity:.85}
-.pack-sum-body{flex:1;min-width:0}
-.pack-sum-title{
-  font-size:12px;font-weight:700;line-height:1.35;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.pack-sum-meta{font-size:var(--fs-xs);color:var(--muted);margin-top:4px;line-height:1.45}
-.pack-sum-desc{font-size:var(--fs-xs);color:rgba(255,255,255,.62);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pack-sum-file{font-size:var(--fs-xs);color:var(--muted-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pack-sum-dl{
-  flex-shrink:0;background:var(--accent);color:#111;border:none;border-radius:999px;
-  padding:9px 12px;font-size:var(--fs-xs);font-weight:700;cursor:pointer;font-family:inherit;
-}
-.scenes-title{
-  padding:8px 12px 6px;font-size:var(--fs-xs);font-weight:700;
-  color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
-}
-.scenes-count{color:var(--accent-2)}
-.scenes-grid{
-  display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start;
-  padding:0 12px 16px;overflow-y:auto;flex:1 1 auto;min-height:120px;
-}
+
+/* ---- a3 top bar (48px) ---- */
+.pd3-top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:rgba(10,13,18,.92);border-bottom:1px solid rgba(255,255,255,.05)}
+.pd3-back{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;cursor:pointer;font-family:inherit;color:#8A93A3;font-weight:600;font-size:12.5px;line-height:1}
+.pd3-back svg{color:#8A93A3;flex:none}
+.pd3-back:hover{color:#E7ECF3}.pd3-back:hover svg{color:#E7ECF3}
+.pd3-top-sp{flex:1}
+.pd3-topstar{background:none;border:0;padding:0;margin:0;cursor:pointer;color:#8A93A3;display:flex;align-items:center;justify-content:center;line-height:0}
+.pd3-topstar:hover{color:#E7ECF3}
+.pd3-topstar.on{color:#C2F04A}
+
+/* ---- a3 hero (210px) ---- */
+.pd3-hero{position:relative;height:210px;flex:none;overflow:hidden;background:#12101c}
+.pd3-hero-poster,.pd3-hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pd3-hero-vid{display:none;z-index:1}
+.pd3-hero.playing .pd3-hero-vid{display:block}
+.pd3-hero.playing .pd3-hero-poster{opacity:0}
+.pd3-hero-shade{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(6,8,11,0) 55%,rgba(6,8,11,.7))}
+.pd3-hero-plan{position:absolute;top:12px;left:12px;z-index:3;font-family:var(--font-mono);font-weight:700;font-size:8.5px;letter-spacing:.06em;padding:3px 7px;border-radius:5px}
+.pd3-hero-plan.pro{background:#C2F04A;color:#0E1400}
+.pd3-hero-plan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+.pd3-hero-ai{position:absolute;top:12px;right:12px;z-index:3;font-family:var(--font-mono);font-weight:600;font-size:8.5px;padding:3px 7px;border-radius:5px;background:rgba(8,10,14,.72);color:#7CC4FF}
+.pd3-hero-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:46px;height:46px;border-radius:50%;background:rgba(19,22,28,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#F2F5F8;cursor:pointer;padding:0;transition:opacity .2s}
+.pd3-hero.playing .pd3-hero-play{opacity:0}
+.pd3-hero.playing:hover .pd3-hero-play{opacity:1}
+.pd3-hero-dur{position:absolute;right:10px;bottom:10px;z-index:3;font-family:var(--font-mono);font-size:8.5px;color:#E7ECF3;background:rgba(8,10,14,.72);padding:2px 6px;border-radius:4px}
+
+/* ---- a3 scrollable body ---- */
+.pd3-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;padding:14px}
+.pd3-title{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.01em;color:#F2F5F8;line-height:1.2}
+.pd3-metarow{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:7px}
+.pd3-cat{font-size:11px;color:#8A93A3}
+.pd3-appchip{display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8.5px;padding:2px 7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:4px;color:#E7ECF3}
+.pd3-appchip i{width:5px;height:5px;border-radius:50%;flex:none}
+.pd3-mdot{width:3px;height:3px;border-radius:50%;background:#5E6675;flex:none}
+.pd3-av{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#A8434E,#6C3FA8);flex:none}
+.pd3-by{font-size:11px;color:#B7C0CE}
+.pd3-sub{font-family:var(--font-mono);font-size:9px;color:#5E6675;margin-top:9px}
+.pd3-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.pd3-tag{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:10px;color:#8A93A3}
+.pd3-desc{font-size:11.5px;line-height:1.6;color:#8A93A3;margin-top:10px}
+.pd3-nopack{margin-top:10px;font-size:10.5px;line-height:1.45;color:#ffd866;background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.28);border-radius:9px;padding:8px 10px}
+.pd3-fr{font-size:10.5px;color:#8A93A3;margin-top:8px}
+.pd3-fr strong{color:#B7C0CE}
+
+/* ---- a3 primary CTA + favorite ---- */
+.pd3-cta{display:flex;gap:8px;margin-top:14px}
+.pd3-import{flex:1;height:44px;border:0;border-radius:999px;background:#C2F04A;color:#0E1400;font-family:var(--font-display);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,opacity .2s}
+.pd3-import svg{flex:none}
+.pd3-import:not(:disabled):hover{transform:translateY(-1px)}
+.pd3-import:disabled{opacity:.4;cursor:not-allowed}
+.pd3-favbtn{width:44px;height:44px;flex:none;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#E7ECF3;cursor:pointer;padding:0}
+.pd3-favbtn:hover{background:rgba(255,255,255,.09)}
+.pd3-favbtn.on{color:#C2F04A;border-color:rgba(194,240,74,.4)}
+.pd3-plan{font-family:var(--font-mono);font-size:9px;color:#5E6675;text-align:center;margin-top:8px}
+
+/* ---- scenes (a3 vocabulary; no mockup ref) ---- */
+.pd3-scenes{margin-top:16px}
+.scenes-title{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:#5E6675;text-transform:uppercase;margin-bottom:8px}
+.scenes-count{color:#8A93A3}
+.pd3-importall{margin-left:auto;background:none;border:0;padding:0;font-family:var(--font-mono);font-size:8.5px;letter-spacing:.06em;color:#8A93A3;text-transform:uppercase;cursor:pointer}
+.pd3-importall:hover{color:#C2F04A}
+.pd3-scenehint{font-size:10px;color:#8A93A3;margin:-2px 0 9px;line-height:1.4}
+.scenes-grid{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;padding:0;overflow:visible}
 .scenes-grid.single .scene-card{flex:1 1 100%;max-width:100%}
 .scene-card{
-  flex:1 1 calc(50% - 6px);max-width:calc(50% - 6px);min-width:120px;
+  flex:1 1 calc(50% - 5px);max-width:calc(50% - 5px);min-width:120px;
   display:block;background:var(--surface-2);border:1px solid var(--border);
   border-radius:10px;overflow:hidden;cursor:pointer;
   position:relative;margin:0;
@@ -1459,8 +1471,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
   background:rgba(0,0,0,.55);color:var(--muted);pointer-events:none;
 }
 .pack-dropbar{
-  display:none;gap:8px;padding:10px 16px;border-top:1px dashed var(--border);
-  background:rgba(135,230,75,.04);
+  display:none;gap:8px;margin-top:10px;padding:10px 0 0;border-top:1px dashed var(--border);
 }
 html.cep-mode .pack-dropbar{display:flex}
 .pack-dropbar.active{display:flex!important}
@@ -1479,18 +1490,25 @@ html.cep-mode .pack-dropbar{display:flex}
 .pack-drop-zone.selected{border-style:solid;color:var(--text)}
 .pack-drop-zone.timeline.selected{border-color:var(--accent);background:rgba(135,230,75,.08)}
 .pack-drop-zone.project.selected{border-color:var(--amber);background:rgba(255,193,7,.06)}
-.pack-footer{
-  padding:12px 16px;border-top:1px solid var(--border);
-  background:var(--surface);display:flex;align-items:center;
-  justify-content:space-between;gap:10px;flex-shrink:0;
-}
-.pack-footer-label{font-size:var(--fs-xs);color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pack-import-btn{
-  background:var(--accent);color:#111;border:none;border-radius:999px;
-  padding:8px 16px;font-size:var(--fs-xs);font-weight:700;cursor:pointer;font-family:inherit;
-  white-space:nowrap;transition:opacity .2s,transform .15s;
-}
-.pack-import-btn:not(:disabled):hover{transform:translateY(-1px)}
+
+/* ---- a3 similar templates ---- */
+.pd3-simhead{display:flex;align-items:baseline;justify-content:space-between;margin:16px 0 9px}
+.pd3-simhead>span{font-family:var(--font-display);font-weight:700;font-size:12.5px;color:#F2F5F8}
+.pd3-simall{background:none;border:0;padding:0;font-family:inherit;font-size:10.5px;color:#8A93A3;cursor:pointer}
+.pd3-simall:hover{color:#C2F04A}
+.pd3-simrow{display:flex;gap:9px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}
+.pd3-simrow::-webkit-scrollbar{height:0;width:0;display:none}
+.pd3-simrow:empty{display:none}
+.pd3-simcard{width:124px;flex:none;cursor:pointer}
+.pd3-simthumb{position:relative;height:70px;border-radius:9px;overflow:hidden;background-size:cover;background-position:center}
+.pd3-simthumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pd3-simplan{position:absolute;top:5px;left:5px;z-index:2;font-family:var(--font-mono);font-weight:700;font-size:7.5px;padding:2px 5px;border-radius:4px}
+.pd3-simplan.pro{background:#C2F04A;color:#0E1400}
+.pd3-simplan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+.pd3-simname{font-weight:600;font-size:10.5px;color:#E7ECF3;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- a3 bottom fade ---- */
+.pd3-fade{position:absolute;left:0;right:0;bottom:0;height:30px;z-index:5;background:linear-gradient(180deg,rgba(6,8,11,0),#06080B);pointer-events:none}
 .pack-badge{
   position:absolute;top:6px;right:28px;z-index:4;
   font-size:var(--fs-xs);font-weight:700;padding:2px 6px;border-radius:999px;
@@ -1508,11 +1526,6 @@ html.cep-mode .pack-dropbar{display:flex}
   background:repeating-linear-gradient(45deg,transparent 0 8px,rgba(0,0,0,.16) 8px 16px);
 }
 .card.no-pack .dl-btn{background:rgba(255,255,255,.6);color:#333}
-.pack-sum-nopack{
-  margin-top:6px;font-size:var(--fs-xs);line-height:1.4;color:#ffd866;
-  background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.28);
-  border-radius:8px;padding:6px 8px;
-}
 /* Scene media — inline pixel height on slot (required for CEP) */
 .scene-media-slot{
   display:block;width:100%;position:relative;overflow:hidden;
@@ -3583,27 +3596,53 @@ html.home-mode #homePage{display:block!important}
             </div>
           </div>
 
+          <!-- Katalog a3 — shablon detail (mockup 1:1 qobiq; import mantig'i saqlangan) -->
           <div class="pack-detail" id="packDetail">
-            <div class="pack-back" onclick="closePack()"><span>←</span> Kutubxona</div>
-            <div class="pack-hero" id="packHero"></div>
-            <div class="scenes-title">Sahnalar <span class="scenes-count" id="scenesCount"></span></div>
-            <div class="scenes-grid" id="scenesGrid"></div>
-            <div class="pack-dropbar" id="packDropBar">
-              <div class="pack-drop-zone timeline" data-drop="timeline">
-                <span>🎬</span>
-                <strong>Timeline</strong>
-                Sudrab tashlang
-              </div>
-              <div class="pack-drop-zone project" data-drop="project">
-                <span>📁</span>
-                <strong>Project panel</strong>
-                Sudrab tashlang
-              </div>
+            <div class="pd3-top">
+              <button type="button" class="pd3-back" onclick="closePack()" aria-label="Katalogga qaytish">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <span>Katalog</span>
+              </button>
+              <div class="pd3-top-sp"></div>
+              <button type="button" class="pd3-topstar" id="pd3StarTop" onclick="pd3ToggleFav()" aria-label="Sevimli"></button>
             </div>
-            <div class="pack-footer">
-              <span class="pack-footer-label" id="selectedSceneLabel">Sahna tanlang yoki ▶ bosib videoni ko‘ring</span>
-              <button class="pack-import-btn" id="importSceneBtn" disabled onclick="importSelectedScene()">Import qilish</button>
+            <div class="pd3-hero" id="packHero"></div>
+            <div class="pd3-body" id="pd3Body">
+              <div id="pd3Meta"></div>
+              <div class="pd3-cta">
+                <button class="pd3-import" id="importSceneBtn" disabled onclick="importSelectedScene()">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+                  <span>Import</span>
+                </button>
+                <button type="button" class="pd3-favbtn" id="pd3StarBtn" onclick="pd3ToggleFav()" aria-label="Sevimli"></button>
+              </div>
+              <div class="pd3-plan" id="pd3PlanLine">Free reja — bu oy: 0 / 15 yuklama</div>
+              <div class="pd3-scenes">
+                <div class="scenes-title">Sahnalar <span class="scenes-count" id="scenesCount"></span>
+                  <button type="button" class="pd3-importall" id="pd3ImportAll" onclick="pd3ImportAll()">Hammasini import</button>
+                </div>
+                <div class="pd3-scenehint" id="selectedSceneLabel">Sahna tanlang yoki ▶ bosib videoni ko‘ring</div>
+                <div class="scenes-grid" id="scenesGrid"></div>
+                <div class="pack-dropbar" id="packDropBar">
+                  <div class="pack-drop-zone timeline" data-drop="timeline">
+                    <span>🎬</span>
+                    <strong>Timeline</strong>
+                    Sudrab tashlang
+                  </div>
+                  <div class="pack-drop-zone project" data-drop="project">
+                    <span>📁</span>
+                    <strong>Project panel</strong>
+                    Sudrab tashlang
+                  </div>
+                </div>
+              </div>
+              <div class="pd3-simhead" id="pd3SimHead" style="display:none">
+                <span>O‘xshash shablonlar</span>
+                <button type="button" class="pd3-simall" onclick="pd3ShowAllSimilar()">Barchasi →</button>
+              </div>
+              <div class="pd3-simrow" id="pd3Similar"></div>
             </div>
+            <div class="pd3-fade"></div>
           </div>
 
         </div>
@@ -4762,22 +4801,19 @@ function toggleScenePlay(e,idx){
   playSceneCard(idx);
 }
 
-function togglePackHeroPlay(btn){
-  const wrap=btn.closest('.pack-sum-preview');
-  const v=wrap?.querySelector('.pack-sum-vid');
+/* a3 hero video — glass play tugmasi (poster→video) */
+function pd3ToggleHeroPlay(btn){
+  const hero=btn.closest('.pd3-hero');
+  const v=hero?.querySelector('.pd3-hero-vid');
   if(!v)return;
-  if(wrap.classList.contains('playing')&&!v.paused){
-    v.pause();
-    wrap.classList.remove('playing');
-    btn.textContent='▶';
-    return;
+  if(hero.classList.contains('playing')&&!v.paused){
+    v.pause();hero.classList.remove('playing');return;
   }
-  wrap.classList.add('playing');
-  btn.textContent='⏸';
+  hero.classList.add('playing');
   v.currentTime=0;
   v.play().catch(()=>{});
 }
-window.togglePackHeroPlay=togglePackHeroPlay;
+window.pd3ToggleHeroPlay=pd3ToggleHeroPlay;
 
 function selectScene(idx){
   selectedSceneIdx=idx;
@@ -4788,55 +4824,154 @@ function selectScene(idx){
   if(scene) showMonitorPreview(getScenePreviewMedia(scene,pack));
 }
 
-function formatPackSummary(asset,pack){
-  const bits=[];
-  if(asset?.templateApp==='pr') bits.push('Premiere Pro');
-  else if(asset?.templateApp==='ae'||(asset?.nav==='video'&&!asset?.templateApp)) bits.push('After Effects');
-  else if(asset?.nav) bits.push(NAV_LABELS[asset.nav]||asset.nav);
-  if(asset?.t) bits.push(asset.t);
-  const res=asset?.res?asset.res.toUpperCase():'';
-  const ratio=orientLabel(asset?.orient);
-  if(res&&ratio) bits.push(res+' · '+ratio);
-  else if(res) bits.push(res);
-  bits.push(pack.scenes.length+' ta sahna');
-  if(pack.fileName){
-    const ext=pack.fileName.split('.').pop();
-    if(ext) bits.push('.'+ext.toLowerCase());
+/* ===== Katalog a3 — shablon detail (mockup 1:1 qobiq; import mantig'i saqlangan) ===== */
+const PD3_STAR='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9L12 3.2z"/></svg>';
+const PD3_STAR_FILL='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9L12 3.2z"/></svg>';
+const PD3_PLAY='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>';
+
+/* Gradient placeholder — Home (1b) bilan bir xil oila, nom bo'yicha barqaror */
+function pd3Grad(key){
+  try{ if(typeof HM_GRAD!=='undefined'&&typeof HM_GKEYS!=='undefined'&&HM_GKEYS.length)
+    return HM_GRAD[HM_GKEYS[hmHash(key)%HM_GKEYS.length]]; }catch(e){}
+  return 'radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)';
+}
+function pd3AppInfo(asset){
+  const raw=String(asset?.templateApp||'ae').toLowerCase();
+  const lbl=raw==='pr'?'Pr':(raw==='dr'||asset?.nav==='luts')?'Dr':'Ae';
+  const dot=lbl==='Pr'?'#E585FF':lbl==='Dr'?'#FFB27C':'#A79BFF';
+  return {lbl,dot};
+}
+function pd3AuthorName(asset){ return (asset&&asset.author&&(asset.author.name||asset.author))||''; }
+function pd3Fmt(s){ s=Math.max(0,Math.round(s)); const m=Math.floor(s/60); return m+':'+String(s%60).padStart(2,'0'); }
+
+/* Hero (210px) — real preview/thumb bo'lsa undan, aks holda gradient placeholder */
+function renderPackHero(name,pack,asset){
+  const hero=document.getElementById('packHero');
+  if(!hero)return;
+  const heroVid=pack.preview||asset?.preview||'';
+  const thumb=asset?.thumb||'';
+  const isPro=!!(asset&&asset.isPro);
+  const isAi=!!(asset&&asset.ai);
+  hero.className='pd3-hero';
+  hero.style.background=pd3Grad(name);
+  let inner='';
+  if(thumb) inner+=`<img class="pd3-hero-poster" src="${escHtml(thumb)}" alt="${escHtml(asset?.displayName||name)}">`;
+  if(heroVid) inner+=`<video class="pd3-hero-vid" src="${escHtml(heroVid)}" muted loop playsinline preload="metadata"></video>`;
+  inner+='<div class="pd3-hero-shade"></div>';
+  inner+=`<span class="pd3-hero-plan ${isPro?'pro':'free'}">${isPro?'PRO':'FREE'}</span>`;
+  if(isAi) inner+='<span class="pd3-hero-ai">AI bilan</span>';
+  if(heroVid) inner+=`<button type="button" class="pd3-hero-play" onclick="pd3ToggleHeroPlay(this)" aria-label="Preview">${PD3_PLAY}</button>`;
+  inner+='<span class="pd3-hero-dur" id="pd3HeroDur" style="display:none"></span>';
+  hero.innerHTML=inner;
+  // Davomiylik pill — video metadata yuklangach real qiymat bilan
+  const v=hero.querySelector('.pd3-hero-vid');const dur=hero.querySelector('#pd3HeroDur');
+  if(v&&dur){
+    const set=()=>{ if(v.duration&&isFinite(v.duration)){ dur.textContent=pd3Fmt(v.duration); dur.style.display='block'; } };
+    if(v.readyState>=1&&v.duration)set(); else v.addEventListener('loadedmetadata',set,{once:true});
   }
-  return bits.join(' · ');
 }
 
-function renderPackSummary(name,pack,asset){
-  const safe=name.replace(/'/g,"\\'");
-  const summary=formatPackSummary(asset,pack);
-  const heroVid=pack.preview||asset?.preview||'';
-  let preview;
-  if(heroVid){
-    const poster=asset?.thumb?`<img class="pack-sum-poster" src="${escHtml(asset.thumb)}" alt="${escHtml(name)}">`:`<span class="pack-sum-fallback pack-sum-poster" style="display:grid;place-items:center">${escHtml(pack.ico)}</span>`;
-    preview=`${poster}<video class="pack-sum-vid" src="${escHtml(heroVid)}" muted loop playsinline preload="metadata"></video><button type="button" class="pack-sum-play" aria-label="Preview" onclick="event.stopPropagation();togglePackHeroPlay(this)">▶</button>`;
-  }else if(asset?.thumb){
-    preview=`<img src="${escHtml(asset.thumb)}" alt="${escHtml(name)}">`;
-  }else{
-    preview=`<span class="pack-sum-fallback">${escHtml(pack.ico)}</span>`;
-  }
+/* Meta — sarlavha, kategoriya+Ae chip+muallif, mono sub-line, teglar, tavsif */
+function renderPackMeta(name,pack,asset){
+  const title=escHtml(asset?.displayName||pack.displayName||name);
+  const cat=escHtml(asset?.t||asset?.catLabel||NAV_LABELS[asset?.nav]||'Shablonlar');
+  const app=pd3AppInfo(asset);
+  const author=pd3AuthorName(asset);
+  const authorHtml=author?`<span class="pd3-mdot"></span><span class="pd3-av"></span><span class="pd3-by">${escHtml(author)}</span>`:'';
+  const bits=[];
+  bits.push(packCanAeImport(pack)?'Pack bor':'Pack yo‘q');
+  bits.push(pack.scenes.length+' sahna');
+  const res=asset?.res?String(asset.res).toUpperCase():'';
+  const ratio=orientLabel(asset?.orient);
+  if(res&&ratio)bits.push(res+'·'+ratio); else if(res)bits.push(res); else if(ratio)bits.push(ratio);
+  const tags=(asset?.tags||[]).filter(Boolean).slice(0,6);
+  const tagsHtml=tags.length?`<div class="pd3-tags">${tags.map(t=>`<span class="pd3-tag">${escHtml(String(t))}</span>`).join('')}</div>`:'';
+  const desc=(pack.description||'').trim();
+  const descHtml=desc?`<div class="pd3-desc">${escHtml(desc)}</div>`:'';
   const noPack=!!(pack.server&&pack.hasPack===false);
-  const fileLine=(pack.fileName&&!noPack)?`<div class="pack-sum-file">${escHtml(pack.fileName)}</div>`:'';
-  const noPackLine=noPack?`<div class="pack-sum-nopack">⏳ Loyiha (.aep) fayli hali yuklanmagan — import qilib bo‘lmaydi. Contributor Studio orqali pack faylini yuklashi kerak.</div>`:'';
-  const descLine=pack.description?`<div class="pack-sum-desc">${escHtml(pack.description)}</div>`:'';
+  const noPackHtml=noPack?`<div class="pd3-nopack">⏳ Loyiha (.aep) fayli hali yuklanmagan — import qilib bo‘lmaydi. Contributor Studio orqali pack faylini yuklashi kerak.</div>`:'';
   const fr=pack.aeFinalRender;
-  const frLine=fr?`<div class="pack-sum-desc">Final Render: <strong>${escHtml(fr.name)}</strong>${fr.width?' · '+fr.width+'×'+fr.height:''}${fr.fps?' · '+fr.fps+'fps':''}</div>`:'';
-  return `<div class="pack-summary">
-    <div class="pack-sum-preview">${preview}</div>
-    <div class="pack-sum-body">
-      <div class="pack-sum-title">${escHtml(name)}</div>
-      <div class="pack-sum-meta">${escHtml(summary)}</div>
-      ${frLine}
-      ${descLine}
-      ${fileLine}
-      ${noPackLine}
+  const frHtml=fr?`<div class="pd3-fr">Final Render: <strong>${escHtml(fr.name)}</strong>${fr.width?' · '+fr.width+'×'+fr.height:''}${fr.fps?' · '+fr.fps+'fps':''}</div>`:'';
+  return `<div class="pd3-title">${title}</div>
+    <div class="pd3-metarow">
+      <span class="pd3-cat">${cat}</span>
+      <span class="pd3-appchip"><i style="background:${app.dot}"></i>${app.lbl}</span>
+      ${authorHtml}
     </div>
-    <button type="button" class="pack-sum-dl" ${noPack?'disabled style="opacity:.4;cursor:not-allowed"':''} onclick="event.stopPropagation();downloadAll('${safe}')">↓ Hammasini import</button>
-  </div>`;
+    <div class="pd3-sub">${escHtml(bits.join(' · '))}</div>
+    ${tagsHtml}
+    ${descHtml}
+    ${frHtml}
+    ${noPackHtml}`;
+}
+
+/* O'xshash shablonlar — bir kategoriya yoki bir turdagilar (joriysiz), maks 6 */
+function pd3SimilarList(name,asset){
+  if(!asset||typeof assets==='undefined')return [];
+  const others=assets.filter(x=>x&&x.n!==name);
+  const cat=asset.cat,nav=asset.nav,t=asset.t;
+  const sameCat=cat?others.filter(x=>x.cat===cat):[];
+  const seen=new Set(sameCat.map(x=>x.n));
+  const sameType=others.filter(x=>!seen.has(x.n)&&((nav&&x.nav===nav)||(t&&x.t===t)));
+  return sameCat.concat(sameType).slice(0,6);
+}
+function renderPackSimilar(name,asset){
+  const row=document.getElementById('pd3Similar');const head=document.getElementById('pd3SimHead');
+  if(!row)return;
+  const list=pd3SimilarList(name,asset);
+  if(!list.length){ row.innerHTML=''; if(head)head.style.display='none'; return; }
+  if(head)head.style.display='flex';
+  row.innerHTML=list.map(x=>{
+    const safe=String(x.n).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const pro=!!x.isPro;
+    const bg=x.thumb?`background-image:url('${escHtml(x.thumb)}')`:`background:${pd3Grad(x.n)}`;
+    return `<div class="pd3-simcard" onclick="openPack('${safe}')">
+      <div class="pd3-simthumb" style="${bg}">
+        <span class="pd3-simplan ${pro?'pro':'free'}">${pro?'PRO':'FREE'}</span>
+      </div>
+      <div class="pd3-simname">${escHtml(x.displayName||x.n)}</div>
+    </div>`;
+  }).join('');
+}
+function pd3ShowAllSimilar(){
+  const asset=assets.find(x=>x.n===currentPackName);
+  if(!asset){ closePack(); return; }
+  if(asset.nav&&typeof currentNav!=='undefined'&&asset.nav!==currentNav&&typeof applyNavSwitch==='function'){
+    applyNavSwitch(asset.nav);
+  }
+  if(typeof selectCategory==='function') selectCategory(null,asset.cat||'all');
+  else closePack();
+}
+window.pd3ShowAllSimilar=pd3ShowAllSimilar;
+
+/* Sevimli — mavjud toggleFav (window.favorites) mexanizmiga ulanadi */
+function pd3SyncFav(){
+  const on=!!(window.favorites&&currentPackName&&window.favorites.has(currentPackName));
+  ['pd3StarTop','pd3StarBtn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.classList.toggle('on',on); el.innerHTML=on?PD3_STAR_FILL:PD3_STAR; }
+  });
+}
+function pd3ToggleFav(){
+  if(!currentPackName)return;
+  toggleFav(currentPackName);   // persist + toast + katalog grid re-render (detal ochiq qoladi)
+  pd3SyncFav();
+}
+window.pd3ToggleFav=pd3ToggleFav;
+
+/* "Hammasini import" — mavjud downloadAll (butun pack) */
+function pd3ImportAll(){ if(currentPackName) downloadAll(currentPackName); }
+window.pd3ImportAll=pd3ImportAll;
+
+/* Plan/usage qatori — real reja + bu oygi yuklamalar (account cache'dan) */
+function pd3PlanText(){
+  const u=(typeof homeCachedUser==='function')?homeCachedUser():null;
+  if(!u) return 'Free reja — bu oy: 0 / 15 yuklama';
+  const pro=u.plan==='pro'||!!(u.limits&&u.limits.unlimitedDownloads);
+  if(pro) return 'Pro reja — cheksiz yuklama';
+  const used=u.downloadsMonth!=null?u.downloadsMonth:0;
+  const lim=(u.limits&&u.limits.downloadLimit!=null)?u.limits.downloadLimit:15;
+  return 'Free reja — bu oy: '+used+' / '+lim+' yuklama';
 }
 
 function renderSceneCard(s,i,asset,slotW){
@@ -4941,7 +5076,14 @@ function openPack(name){
   currentPackName=name;
   selectedSceneIdx=-1;
   document.getElementById('packDetail').classList.add('open');
-  document.getElementById('packHero').innerHTML=renderPackSummary(name,pack,asset);
+  renderPackHero(name,pack,asset);
+  document.getElementById('pd3Meta').innerHTML=renderPackMeta(name,pack,asset);
+  const planEl=document.getElementById('pd3PlanLine');if(planEl)planEl.textContent=pd3PlanText();
+  const impAll=document.getElementById('pd3ImportAll');
+  if(impAll)impAll.style.display=(pack.scenes.length>1&&packCanAeImport(pack))?'inline-flex':'none';
+  renderPackSimilar(name,asset);
+  pd3SyncFav();
+  const body=document.getElementById('pd3Body');if(body)body.scrollTop=0;
   document.getElementById('scenesCount').textContent='('+pack.scenes.length+')';
   const grid=document.getElementById('scenesGrid');
   const singleCol=pack.scenes.length===1;
