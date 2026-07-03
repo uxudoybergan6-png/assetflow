@@ -137,11 +137,12 @@ const CSP = [
 // eng qattig'i amal qilardi va eval bloklanardi).
 const PLATFORM_CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${GOOGLE_GSI_ORIGINS}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
   `media-src 'self' blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com`,
+  `frame-src ${GOOGLE_GSI_ORIGINS}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",

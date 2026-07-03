@@ -1,17 +1,19 @@
-# SESSION REPORT — 2026-07-03 — AE plagin: Google bilan kirish (device-code)
+# SESSION REPORT — 2026-07-03 — Platforma: Google bilan kirish + email-verify gate
 
 ## QILINDI
-- CEP plagin GIS'ni to'g'ridan-to'g'ri ocha olmaydi (embedded webview bloklanadi) — device-code oqimi qo'shildi (GitHub CLI uslubi).
-- **DB**: `PluginDeviceCode` modeli + migratsiya (`20260703130000_plugin_device_code`), lokalda qo'lda ishlab chiqilib `migrate resolve --applied` bilan belgilandi (shadow DB'da pgvector yo'qligi sababli `migrate dev` ishlamaydi — bilinadigan cheklov).
-- **Backend**: `apps/api/src/lib/google-auth.ts` — Google verify+upsert logikasi `/api/auth/google`dan chiqarilib umumiy funksiyaga aylantirildi (dublikat yo'q). `plugin.ts`ga 3 ta endpoint: `POST /device/start`, `POST /device/confirm`, `GET /device/poll` + `deviceStatusLimiter`.
-- **Frontend**: yangi `packages/assetflow-studio/device.html` (GIS tugma, `/device/confirm`ga fetch) — `prepare-cf-pages.mjs` FILES ro'yxatiga qo'shildi.
-- **CEP**: `assetflow-account.js` — `startDeviceLogin/pollDeviceLogin/stopDevicePolling`; `AssetFlow_Plugin.html` — "Google bilan kirish" tugmasi + `accountLoginWithGoogle()`.
+- Foydalanuvchi skrinshot orqali ko'rsatdi: `getframeflow.app` platforma (`platform/index.html`, login.html'dan BUTUNLAY boshqa kod) — Google tugmasi yo'q va email tasdiqlanmasa ham dashboard ochilardi.
+- Backend o'zgarmadi — `/api/auth/google`, `/me`, `/resend-verification` allaqachon kerakli flag'larni (`emailVerified`, `emailVerifyRequired`) qaytarardi, faqat platforma frontend'i o'qimasdi.
+- `prepare-cf-pages.mjs`: `PLATFORM_CSP`ga Google GSI originlari (`script-src`, `connect-src`, yangi `frame-src`).
+- `platform/index.html`: GIS meta+script, auth ekraniga Google tugma konteyner (faqat login/register, forgot'da yo'q), yangi `verify-email` ekran (bypass tugmasisiz), `renderGoogleBtn()` (idempotent, componentDidMount+componentDidUpdate'da chaqiriladi), `onGoogleCredential`, umumiy `_afterLoginSuccess(r)` helper (doAuth+google ikkalasi ishlatadi), `go(screen)`ga verify-gate, `resendVerification/recheckVerification/logoutAndGoAuth`, `renderVals()`ga yangi maydonlar.
+- `ff-api.js`: `google(credential)`, `resendVerification(email)`, `me()` metodlari.
 
-## TEKSHIRILDI
-- `npm run build -w apps/api` — TOZA (google-auth extraction + yangi endpointlar bilan).
-- Lokal curl: `/device/start` → kod qaytadi; `/device/poll` → pending/expired to'g'ri; `/device/confirm` → xato holatlar (404/GOOGLE_NOT_CONFIGURED) to'g'ri.
-- `device.html` studio-dev preview'da ochildi — Google tugmasi (iframe) to'g'ri render bo'ldi.
+## TEKSHIRILDI (platform-preview, localhost:8975)
+- Google tugma auth ekranida konsol xatosiz render bo'ldi; forgot-password rejimida ko'rinmaydi (to'g'ri).
+- Tasdiqlanmagan user (`emailVerified:false`) bilan `#dashboard`ga o'tishga urinilganda avtomatik `verify-email` ekraniga yo'naltirildi (email to'g'ri ko'rsatildi).
+- Tasdiqlangan user bilan xuddi shu hash — to'g'ridan-to'g'ri dashboard (regressiya yo'q).
+- "Qayta yuborish" tugmasi `POST /api/auth/resend-verification`ga so'rov yubordi (network tab tasdiqlandi, faqat lokal API server yo'qligi sabab connection-refused — endpoint yo'li to'g'ri).
+- `git diff --stat` — faqat 3 fayl (`ff-api.js`, `platform/index.html`, `prepare-cf-pages.mjs`); backend/login.html/AE plagin tegilmagan.
 
 ## KUTILMOQDA
-1. Migratsiyani production'da qo'llash: `npm run migrate:deploy -w @creative-tools/database`.
-2. Push → deploy → CEP panelda haqiqiy AE ichida to'liq oqimni sinash (tugma → brauzer → Google → panel avtomatik login).
+1. CF Pages deploy → production'da real Google hisob bilan to'liq oqimni sinash (GIS origin cheklovi tufayli lokalda to'liq end-to-end tekshirib bo'lmadi).
+2. Commit qilish (user so'ragandan keyin yoki "auto-commit on finish" bo'yicha).

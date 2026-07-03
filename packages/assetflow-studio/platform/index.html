@@ -2,12 +2,14 @@
 <html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
 <title>FrameFlow — Kreativ aktivlar va AI generatsiya platformasi</title>
 
 <script src="assets/react.production.min.js"></script>
 <script src="assets/react-dom.production.min.js"></script>
 <script src="assets/dc-runtime.js"></script>
 <script src="ff-api.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <x-dc>
@@ -15243,6 +15245,10 @@
             </sc-if>
             <button onclick="{{ authSubmit }}" style="margin-top:4px;width:100%;padding:14px;border:none;border-radius:13px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 12px 30px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-1px)">{{ authBtn }}</button>
           </div>
+          <sc-if value="{{ authShowGoogle }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;margin:18px 0"><div style="flex:1;height:1px;background:var(--bd)"></div><span style="font-size:12px;color:var(--txt3)">yoki</span><div style="flex:1;height:1px;background:var(--bd)"></div></div>
+            <div id="ffGoogleBtn" style="display:flex;justify-content:center;min-height:44px"></div>
+          </sc-if>
           <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--bd);text-align:center;font-size:13.5px;color:var(--txt2)">
             <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">Hisobingiz bormi? <a onclick="{{ switchLogin }}" style="color:var(--acc);font-weight:600;cursor:pointer">Kirish</a></sc-if>
             <sc-if value="{{ authIsForgot }}" hint-placeholder-val="{{ false }}"><a onclick="{{ switchLogin }}" style="color:var(--acc);font-weight:600;cursor:pointer">← Kirishga qaytish</a></sc-if>
@@ -15250,6 +15256,35 @@
           </div>
         </div>
         <a onclick="{{ goLanding }}" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:18px;font-size:13px;color:var(--txt3);cursor:pointer"><i class="ph ph-arrow-left"></i>Bosh sahifaga qaytish</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ VERIFY EMAIL GATE ============ -->
+  <sc-if value="{{ isVerifyEmail }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height:100vh;display:grid;place-items:center;padding:32px 20px;position:relative">
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(50% 40% at 50% 30%,rgba(194,240,74,.07),transparent 70%);pointer-events:none"></div>
+      <div style="width:100%;max-width:420px">
+        <a onclick="{{ goLanding }}" style="display:flex;align-items:center;justify-content:center;gap:11px;cursor:pointer;margin-bottom:26px">
+          <div style="width:38px;height:38px;border-radius:11px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 22px -6px var(--ring)"><i class="ph-fill ph-stack" style="color:#0E1400;font-size:17px"></i></div>
+          <span style="font-weight:600;font-size:21px;letter-spacing:-.02em">FrameFlow</span>
+        </a>
+        <div style="border-radius:22px;background:var(--card);border:1px solid var(--bd);padding:30px;box-shadow:0 30px 70px -30px rgba(0,0,0,.7);text-align:center">
+          <div style="width:56px;height:56px;border-radius:16px;background:rgba(194,240,74,.09);display:grid;place-items:center;margin:0 auto 18px"><i class="ph-fill ph-envelope-simple-open" style="font-size:26px;color:var(--acc)"></i></div>
+          <h1 style="font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0 0 8px">Emailingizni tasdiqlang</h1>
+          <p style="font-size:13.5px;color:var(--txt2);margin:0 0 22px;line-height:1.5"><b>{{ verifyEmailAddr }}</b> manziliga tasdiqlash havolasi yuborilgan. Havolani bosib, so'ng "Tekshirish" tugmasini bosing.</p>
+          <sc-if value="{{ authErr }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:rgba(255,107,107,.09);border:1px solid rgba(255,107,107,.3);font-size:13px;color:#ff9c9c;margin-bottom:16px;text-align:left"><i class="ph-fill ph-warning-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authErr }}</div>
+          </sc-if>
+          <sc-if value="{{ authInfo }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:rgba(194,240,74,.09);border:1px solid rgba(194,240,74,.3);font-size:13px;color:var(--acc);margin-bottom:16px;text-align:left"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button onclick="{{ recheckVerification }}" style="width:100%;padding:14px;border:none;border-radius:13px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 12px 30px -10px var(--ring)">Tekshirish</button>
+            <button onclick="{{ resendVerification }}" style="width:100%;padding:13px;border:1px solid var(--bd);border-radius:13px;background:transparent;color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Havolani qayta yuborish</button>
+          </div>
+          <a onclick="{{ logoutAndGoAuth }}" style="display:inline-block;margin-top:20px;font-size:13px;color:var(--txt3);cursor:pointer">Chiqish</a>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -15509,6 +15544,12 @@ class Component extends DCLogic {
       this._afterAuth = screen;
       screen = 'auth';
     }
+    const st = this.state;
+    const needsVerify = st.user && st.user.emailVerifyRequired && !st.user.emailVerified;
+    if (APP_SCREENS.indexOf(screen) >= 0 && needsVerify) {
+      this._afterAuth = screen;
+      screen = 'verify-email';
+    }
     this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, detail: null, lightbox: null, pageFlip: s.pageFlip + 1 }));
     try { if (window.history && history.replaceState) history.replaceState(null, '', '#' + screen); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
@@ -15539,6 +15580,7 @@ class Component extends DCLogic {
       const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
       if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h); }
     } catch (e) {}
+    this.renderGoogleBtn();
     try {
       this._io = new IntersectionObserver((es) => {
         es.forEach(e => { if (e.isIntersecting) { const el = e.target; el.style.transitionDelay = (el.getAttribute('data-rv-delay') || 0) + 'ms'; el.classList.add('rv-in'); this._io.unobserve(el); if (el.hasAttribute('data-stats')) this.runStats(); } });
@@ -15565,7 +15607,7 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._io) this._io.disconnect(); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.renderGoogleBtn(); }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
   runStats() { if (this._statsRun) return; this._statsRun = true; const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
   _applyEntry() {
@@ -15672,17 +15714,71 @@ class Component extends DCLogic {
       const r = st.authMode === 'register'
         ? await FFAPI.register(email, pass, (st.authName || '').trim())
         : await FFAPI.login(email, pass);
-      FFAPI.setSession(r.token, r.user);
-      this._sess = {}; // eski foydalanuvchi gen-sessiyalari yaroqsiz
-      this.setState({ user: r.user, accName: (r.user && r.user.name) || '', authBusy: false, authPassword: '', authErr: null });
-      this.bootData();
-      const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
-      this.go(next);
-      this.toast(st.authMode === 'register' ? 'Xush kelibsiz!' : 'Kirish muvaffaqiyatli');
+      this._afterLoginSuccess(r, st.authMode === 'register' ? 'Xush kelibsiz!' : 'Kirish muvaffaqiyatli');
     } catch (e) {
       this.setState({ authBusy: false, authErr: this.errMsg(e) });
     }
   }
+  /** Login/register/google javobidan keyingi umumiy oqim: sessiyani saqlash,
+   *  emailVerifyRequired'ni user obyektiga qo'shib (bir xil shakl — /me bilan
+   *  moslashtirish uchun), gate() orqali dashboard yoki verify-email'ga o'tish. */
+  _afterLoginSuccess(r, msg) {
+    const user = Object.assign({}, r.user, { emailVerifyRequired: r.emailVerifyRequired });
+    FFAPI.setSession(r.token, user);
+    this._sess = {}; // eski foydalanuvchi gen-sessiyalari yaroqsiz
+    this.setState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null });
+    this.bootData();
+    const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
+    this.go(next);
+    if (msg) this.toast(msg);
+  }
+  async onGoogleCredential(resp) {
+    this.setState({ authBusy: true, authErr: null, authInfo: null });
+    try {
+      const r = await FFAPI.google(resp.credential);
+      this._afterLoginSuccess(r, 'Kirish muvaffaqiyatli');
+    } catch (e) {
+      this.setState({ authBusy: false, authErr: this.errMsg(e) });
+    }
+  }
+  /** Google Identity Services tugmasini auth ekraniga (qayta) chizadi —
+   *  idempotent: konteyner allaqachon to'ldirilgan bo'lsa hech narsa qilmaydi,
+   *  shu sabab har componentDidMount/componentDidUpdate'da xavfsiz chaqiriladi. */
+  renderGoogleBtn() {
+    if (this.state.screen !== 'auth' || this.state.authMode === 'forgot') return;
+    const container = document.getElementById('ffGoogleBtn');
+    if (!container || container.childElementCount > 0) return;
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+      setTimeout(() => this.renderGoogleBtn(), 200);
+      return;
+    }
+    const clientId = document.querySelector('meta[name="google-client-id"]');
+    const id = clientId && clientId.getAttribute('content');
+    if (!id) return;
+    if (!this._giInited) {
+      google.accounts.id.initialize({ client_id: id, callback: (r) => this.onGoogleCredential(r) });
+      this._giInited = true;
+    }
+    google.accounts.id.renderButton(container, { theme: 'outline', size: 'large', width: 280, text: 'continue_with' });
+  }
+  resendVerification() {
+    const email = this.state.user && this.state.user.email;
+    if (!email) return;
+    this.setState({ authErr: null, authInfo: null });
+    FFAPI.resendVerification(email)
+      .then(r => this.setState({ authInfo: (r && r.message) || 'Havola yuborildi' }))
+      .catch(e => this.setState({ authErr: this.errMsg(e) }));
+  }
+  recheckVerification() {
+    this.setState({ authErr: null, authInfo: null });
+    FFAPI.me().then(u => {
+      FFAPI.setSession(FFAPI.getToken(), u);
+      this.setState({ user: u, accName: u.name || '' });
+      if (u.emailVerified) { const next = this._afterAuth || 'dashboard'; this._afterAuth = null; this.go(next); }
+      else this.setState({ authInfo: 'Hali tasdiqlanmagan — pochtangizni tekshiring' });
+    }).catch(e => this.setState({ authErr: this.errMsg(e) }));
+  }
+  logoutAndGoAuth() { this.logout(); this.gotoAuth('login'); }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
     this._sess = {};
@@ -16017,6 +16113,8 @@ class Component extends DCLogic {
       isLanding: s === 'landing', isPricing: s === 'pricing', isPlugin: s === 'plugin',
       isDashboard: s === 'dashboard', isTemplates: s === 'templates', isAistudio: s === 'aistudio', isAccount: s === 'account', isProjects: s === 'projects',
       isAuth: s === 'auth',
+      isVerifyEmail: s === 'verify-email',
+      verifyEmailAddr: (this.state.user && this.state.user.email) || '',
       navOpen: this.state.navOpen,
       brands: this.brands,
       catTabs, carousel, categoryTiles, studioCards, plansView, testimonials, faqsView, footerCols: this.footerCols, pluginSteps: this.pluginSteps, creditPacks,
@@ -16026,6 +16124,10 @@ class Component extends DCLogic {
       toast: this.state.toast,
       // Auth
       authTitle, authSub, authBtn, authIsRegister, authIsForgot, authShowPassword, authShowLoginLinks: am === 'login',
+      authShowGoogle: am !== 'forgot',
+      recheckVerification: () => this.recheckVerification(),
+      resendVerification: () => this.resendVerification(),
+      logoutAndGoAuth: () => this.logoutAndGoAuth(),
       authEmail: this.state.authEmail, authPassword: this.state.authPassword, authName: this.state.authName,
       authErr: this.state.authErr, authInfo: this.state.authInfo, authBusy: this.state.authBusy,
       onAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
