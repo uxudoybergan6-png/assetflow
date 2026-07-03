@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://getframeflow.app",
+      "https://studio.getframeflow.app",
+      "https://admin.getframeflow.app"
+    ],
+    "method": ["GET", "PUT", "HEAD", "OPTIONS"],
+    "responseHeader": ["Content-Type", "ETag", "x-goog-resumable"],
+    "maxAgeSeconds": 3600
+  }
+]
