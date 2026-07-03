@@ -2496,6 +2496,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .ai-soontoast.on{display:flex}
 .axroot .ai-soontoast svg{flex:none}
 .axroot .ai-soontoast span{font-size:11.5px;font-weight:500;color:#F2F5F8}
+
 .axroot .aicattool{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,#1a2410,#15171b 70%);border:1px solid var(--acc2);border-radius:13px;padding:13px;cursor:pointer;margin-bottom:10px;transition:box-shadow .15s}
 .axroot .aicattool:hover{box-shadow:0 0 14px rgba(194,240,74,.15)}.axroot .aicattool.soon{opacity:.55;cursor:default}
 .axroot .aicattool .ic{width:38px;height:38px;border-radius:10px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;flex:0 0 auto}
@@ -3074,6 +3075,52 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .ai-launch-acts{display:flex;gap:8px}
 .axroot .ai-launch-sub{font-size:11px;color:#8A93A3;margin:4px 2px 16px}
 
+/* ── b4/b5 — Video tool (Fast/R2V) mockup verbatim ── */
+.axvg .vg-modeseg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px;margin-bottom:14px}
+.axvg .vg-mode-i{flex:1;text-align:center;padding:6px 0;border-radius:999px;font-weight:500;font-size:11px;color:#8A93A3;background:none;border:0;font-family:inherit;cursor:pointer}
+.axvg .vg-mode-i.is-on{background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8;cursor:default}
+.axvg .vg-lblrow{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.axvg .vg-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3;text-transform:uppercase}
+.axvg .vg-meta{margin-left:auto;font-family:var(--font-mono);font-size:8.5px;color:#5E6675}
+.axvg .kadrtag{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;color:#C2F04A;border:1px solid rgba(194,240,74,.35);padding:1px 6px;border-radius:99px;background:none;margin-left:0;font-weight:400}
+.axvg .vpanel{border:0;border-radius:0;background:transparent;padding:0;margin-bottom:0;box-shadow:none}
+.axvg .vpanel .pbox{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px}
+.axvg .vpanel .pbox textarea{font-size:12px;line-height:1.5;min-height:40px}
+.axvg .frames{display:flex;gap:10px;margin-bottom:0}
+.axvg .fbox{height:92px;border-radius:12px;border:1px dashed rgba(255,255,255,.14);background:transparent}
+.axvg .fbox:hover{border-color:rgba(255,255,255,.3)}
+.axvg .fbox.has-img{border-style:solid;border-color:transparent}
+.axvg .fbadd{display:flex;flex-direction:column;align-items:center;gap:5px;color:#5E6675;font-size:15px;line-height:1}
+.axvg .fbadd small{font-size:9.5px}
+.axvg .fcap{font-size:10px;color:#8A93A3;margin-top:5px;text-align:center}
+.axvg .fbox .fb-thumb{border-radius:12px}
+.axvg .fbox .fbtag{position:absolute;left:6px;bottom:5px;font-family:var(--font-mono);font-size:7.5px;font-weight:400;color:#E7ECF3;background:rgba(8,10,14,.72);padding:1px 5px;border-radius:3px;z-index:1}
+.axvg .fbox .fbx{top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:#2A3140;border:1px solid rgba(255,255,255,.2);font-size:10px;color:#E7ECF3}
+.axvg .vg-srcchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.axvg .vg-srcchip{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:9.5px;color:#8A93A3;cursor:pointer;white-space:nowrap}
+.axvg .vg-srcchip:hover{color:#F2F5F8;border-color:rgba(255,255,255,.16)}
+.axvg .vg-srcchip svg{width:11px;height:11px;flex:none}
+.axvg .vg-pchips{display:flex;align-items:center;gap:6px;margin-top:9px}
+.axvg .vg-pchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);font-weight:500;font-size:10px;color:#E7ECF3;cursor:pointer}
+.axvg .vg-pchip svg{width:11px;height:11px;flex:none}
+.axvg .vg-pchip.busy{opacity:.6;pointer-events:none}
+.axvg .vg-pchip.ghost{background:none;border:0;color:#5E6675}
+.axvg .vg-pchip.ghost:hover{color:#F2F5F8}
+.axvg .vpanel .mrefadd{display:flex;gap:6px;margin:9px 0 0;grid-template-columns:none}
+.axvg .vpanel .maddb{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;border:1px dashed rgba(255,255,255,.16);background:none;font-size:10px;color:#8A93A3;min-height:0;white-space:nowrap;justify-content:center}
+.axvg .vpanel .maddb:hover{color:#C2F04A;border-color:rgba(194,240,74,.4)}
+.axvg .vpanel .maddb.dim{opacity:.55;color:#5E6675}
+.axvg .mrt{width:62px;height:62px;border-radius:10px}
+.axvg .mrt .tag{position:absolute;left:5px;right:auto;bottom:4px;top:auto;background:rgba(8,10,14,.72);color:#E7ECF3;font-family:var(--font-mono);font-size:7px;font-weight:400;padding:1px 4px;border-radius:3px;text-align:left;max-width:calc(100% - 8px);overflow:hidden;text-overflow:ellipsis}
+.axvg .mrt .rx{top:-5px;right:-5px;width:15px;height:15px;background:#2A3140;border:1px solid rgba(255,255,255,.2);color:#E7ECF3;font-size:9px}
+.axvg .savedgrid{display:flex;gap:8px;flex-wrap:wrap;grid-template-columns:none}
+.axvg .savedcard{width:46px;height:46px;aspect-ratio:auto;border-radius:9px;opacity:.55}
+.axvg .savedcard:hover{opacity:1}
+.axvg .savedcard .del{width:16px;height:16px;font-size:10px;border-radius:6px}
+.axvg .savedcard .kind{font-size:7px;padding:1px 4px}
+.axvg .savedcard .ttl{font-size:6.5px;padding:10px 4px 3px}
+.axvg .frame{flex:1;border:0;background:transparent;padding:0;border-radius:0;text-align:inherit;cursor:default}
+
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
 html.home-mode .af-topbar,
 html.home-mode .af-pillar-row,
@@ -3639,6 +3686,10 @@ html.home-mode #homePage{display:block!important}
                           </div>
 
                           <div class="igscroll" id="vgScroll">
+                            <div class="vg-modeseg">
+                              <button type="button" class="vg-mode-i is-on" id="vgModeFast">Fast — kadrlar</button>
+                              <button type="button" class="vg-mode-i" id="vgModeR2V">R2V — referenslar</button>
+                            </div>
                             <div class="prog" id="vgProg"></div>
 
                             <!-- Natija (video player) -->
@@ -3655,33 +3706,29 @@ html.home-mode #homePage{display:block!important}
 
                               <!-- Kadrlar (refKind=frames — Seedance Fast) -->
                               <div class="sect" id="vgFrameSect">
-                                <div class="lbl">Kadrlar <span class="req">*</span><span class="kadrtag" id="vgKadrTag" style="display:none">FAST</span></div>
+                                <div class="vg-lblrow"><span class="vg-lbl">Kadrlar</span><span class="kadrtag" id="vgKadrTag" style="display:none">FAST</span></div>
                                 <div class="frames">
-                                  <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Boshlang'ich kadr</div></div>
-                                  <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">Yakuniy kadr <span class="fb-opt">ixt.</span></div></div>
+                                  <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Boshlang'ich</div></div>
+                                  <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">Yakuniy (ixtiyoriy)</div></div>
+                                </div>
+                                <div class="vg-srcchips">
+                                  <div class="vg-srcchip" id="vgChipFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Fayl yuklash</div>
+                                  <div class="vg-srcchip" id="vgChipProj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Project paneldan</div>
+                                  <div class="vg-srcchip" id="vgChipTl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M2 15h5M17 9h5M17 15h5"/></svg>Timeline'dan</div>
                                 </div>
                               </div>
                               <!-- Ko'p-modal referens (refKind=media-refs — Seedance R2V; IXTIYORIY) -->
                               <div class="sect" id="vgMediaSect" style="display:none">
-                                <div class="lbl">Referens <span class="meta" id="vgRefMeta">0 / —</span></div>
+                                <div class="vg-lblrow"><span class="vg-lbl">Faol referenslar</span><span class="vg-meta" id="vgRefMeta">—</span></div>
+                                <div class="mrefgrid" id="vgRefGrid"></div>
                                 <div class="mrefadd">
-                                  <div class="maddb" id="vgAddImg"><span class="pl">＋</span> Rasm</div>
-                                  <div class="maddb" id="vgAddVid"><span class="pl">＋</span> Video</div>
-                                  <div class="maddb" id="vgAddAud"><span class="pl">＋</span> Ovoz</div>
+                                  <div class="maddb" id="vgAddImg"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> + Rasm</div>
+                                  <div class="maddb" id="vgAddVid"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg> + Video</div>
+                                  <div class="maddb" id="vgAddAud"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 010 8"/></svg> + Ovoz</div>
                                 </div>
-                                <div id="vgRefLimits" style="font-size:10.5px;color:var(--mut);margin:-2px 0 8px;line-height:1.5"></div>
-                                <div class="refbox activebox">
-                                  <div class="refboxhead">
-                                    <div class="refboxtitle">Faol Referenslar</div>
-                                    <div class="refboxsub">Generate uchun hozir ishlatiladi</div>
-                                  </div>
-                                  <div class="mrefgrid" id="vgRefGrid"></div>
-                                </div>
-                                <div class="savedrefs refbox savedbox" id="vgSavedWrap" style="display:none">
-                                  <div class="refboxhead">
-                                    <div class="refboxtitle">Saved References</div>
-                                    <div class="refboxsub" id="vgSavedMeta">10 minut saqlanadi</div>
-                                  </div>
+                                <div id="vgRefLimits" style="font-size:10.5px;color:var(--mut);margin:8px 0 0;line-height:1.5"></div>
+                                <div id="vgSavedWrap" style="display:none">
+                                  <div class="vg-lblrow" style="margin:14px 0 7px"><span class="vg-lbl">Saved References</span><span class="vg-meta" id="vgSavedMeta">10 minut saqlanadi</span></div>
                                   <div class="savedgrid" id="vgSavedGrid"></div>
                                 </div>
                               </div>
@@ -3690,18 +3737,18 @@ html.home-mode #homePage{display:block!important}
                               <div class="sect">
                                 <div class="pbox">
                                   <div class="mention" id="vgMention"></div>
-                                  <textarea id="vgPrompt" placeholder="Video harakat tavsifi. R2V: @Image1 / @Video1 / @Audio1 referenslarga ishora qiling (ixtiyoriy)."></textarea>
-                                  <div class="prow">
-                                    <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
+                                  <textarea id="vgPrompt" placeholder="Kadrni jonlantir: yomg'ir tomchilari, neon aks, sekin dolly-in…"></textarea>
+                                  <div class="vg-pchips">
+                                    <span class="vg-pchip" id="vgEnhance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
+                                    <span class="vg-pchip ghost" id="vgClearBtn" title="Prompt va referenslarni tozalash">Tozalash</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
 
                             <div class="vpanel settings-panel">
-                              <!-- Sozlamalar -->
+                              <!-- Sozlamalar (pill qatori — mockup b4/b5) -->
                               <div class="sect">
-                                <div class="lbl">Sozlamalar <span class="meta clearbtn" id="vgClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                                 <div class="pillbar">
                                   <div class="pillseg" id="vgModelSeg"><div class="plab">Model</div><div class="pval" id="vgMName">…</div></div>
                                   <div class="pillseg" id="vgArSeg"><div class="plab">Nisbat</div><div class="pval" id="vgArVal">Auto</div></div>
@@ -3718,7 +3765,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="vpanel recent-panel" id="vgRecentSect">
                               <!-- Video So'nggi genlar -->
                               <div class="sect">
-                                <div class="lbl">So'nggi <span class="recsel" id="vgRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Tanlash</span><span class="morelink" id="vgMoreVid" style="margin-left:auto">Barchasi →</span></div>
+                                <div class="vg-lblrow" style="margin:16px 0 8px"><span class="vg-lbl">So'nggi</span><span class="recsel" id="vgRecentSel" style="margin-left:auto;font-size:10.5px;color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Tanlash</span><span class="morelink" id="vgMoreVid" style="font-size:10.5px;color:#8A93A3">Barchasi →</span></div>
                                 <div class="recentgrid" id="vgRecent"></div>
                                 <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 tanlandi</span><div class="bb del" id="vgRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> O'chirish</div><div class="bb" id="vgRecentCancel">Bekor</div></div>
                               </div>
@@ -11691,10 +11738,10 @@ window.afGallery=(function(){
   }
   function vgPromptPlaceholder(){
     return vm.refKind==='media-refs'
-      ? 'Video harakat tavsifi. R2V: @Image1 / @Video1 / @Audio1 referenslarga ishora qiling (ixtiyoriy).'
+      ? 'Nima qilish kerak? @ yozsangiz referenslar chiqadi… (@Image1 / @Video1 / @Audio1)'
       : vm.refKind==='none'
       ? 'Video tavsifi. Referenssiz model uchun sahna, harakat, kamera va uslubni aniq yozing.'
-      : 'Video harakat tavsifi. Fast: sahnada nima bo‘lishini aniq yozing.';
+      : 'Kadrni jonlantir: yomg\'ir tomchilari, neon aks, sekin dolly-in…';
   }
   function applyVgGuide(){
     var g=$('vgGuide'); if(g)g.innerHTML=vgGuideText();
@@ -12295,6 +12342,9 @@ window.afGallery=(function(){
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
     var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
+    // b4/b5: Fast|R2V segment-toggle holati modelning refKind'idan sinxron
+    var mf=$('vgModeFast'); if(mf)mf.classList.toggle('is-on',!isMedia);
+    var mr2=$('vgModeR2V'); if(mr2)mr2.classList.toggle('is-on',isMedia);
     // Ovoz referens import — faqat model haqiqatan qabul qiladigan bo'lsa (Omni: mediaRefs.audio=0 — toggle qulf bilan bir xil sabab).
     var aa=$('vgAddAud'); if(aa)aa.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.audio)?'':'none';
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
@@ -12433,7 +12483,12 @@ window.afGallery=(function(){
   }
   function updRefMeta(){
     var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12};
-    var m=$('vgRefMeta'); if(m)m.textContent=mref.length+' / '+(lim.total||12);
+    // b5: hisob mockup formatida — "Rasm 2/3 · Video 1/1 · Ovoz 0/1"
+    var m=$('vgRefMeta'); if(m)m.textContent='Rasm '+cntRef('image')+'/'+(lim.image||0)+' · Video '+cntRef('video')+'/'+(lim.video||0)+' · Ovoz '+cntRef('audio')+'/'+(lim.audio||0);
+    // limit to'lgan turdagi + chip xira (mockup: +Video dim)
+    var ai=$('vgAddImg'); if(ai)ai.classList.toggle('dim',cntRef('image')>=(lim.image||0));
+    var av=$('vgAddVid'); if(av)av.classList.toggle('dim',cntRef('video')>=(lim.video||0));
+    var aa2=$('vgAddAud'); if(aa2)aa2.classList.toggle('dim',cntRef('audio')>=(lim.audio||0));
     // Limitlarni OLDINDAN ko'rsatamiz (fayl tanlagandan keyin xato chiqishidan oldin).
     var h=$('vgRefLimits');
     if(h){
@@ -12785,7 +12840,7 @@ window.afGallery=(function(){
       }
     } else {
       box.classList.remove('has-img');
-      var add=document.createElement('div'); add.className='fbadd'; add.textContent='+'; box.appendChild(add);
+      var add=document.createElement('div'); add.className='fbadd'; add.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg><small>kadr qo\'shish</small>'; box.appendChild(add);
     }
   }
 
@@ -12860,6 +12915,29 @@ window.afGallery=(function(){
   $('vgSrcTl').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media'){ _vgSrcTarget.type==='image'?pickTlMedia():pickTlSource(_vgSrcTarget.type); } else pickTlFrame(_vgSrcTarget.which); });
   $('vgStartBox').addEventListener('click',function(){ if(!st.start)openFrameSrc('start'); });
   $('vgEndBox').addEventListener('click',function(){ if(!st.end)openFrameSrc('end'); });
+  // b4: inline manba chiplari — bo'sh slotga (start bo'lsa end) MAVJUD pick funksiyalarini chaqiradi
+  function vgChipPick(fn){
+    var which=(st.start&&st.start.url&&!st.start.loading)?'end':'start';
+    _vgSrcTarget={kind:'frame',which:which};
+    fn(which);
+  }
+  var _cf=$('vgChipFile'); if(_cf)_cf.addEventListener('click',function(){ vgChipPick(pickFileFrame); });
+  var _cp=$('vgChipProj'); if(_cp)_cp.addEventListener('click',function(){ vgChipPick(pickProjFrame); });
+  var _ct=$('vgChipTl'); if(_ct)_ct.addEventListener('click',function(){ vgChipPick(pickTlFrame); });
+  // b4/b5: Fast|R2V toggle — mos refKind'li birinchi modelga o'tadi (switchVgModel tasdiq oqimini saqlaydi)
+  function vgModelOfKind(wantMedia){
+    var ms=vm.models||[];
+    for(var i=0;i<ms.length;i++){ var k=ms[i].refKind||'none'; if(wantMedia?(k==='media-refs'):(k!=='media-refs'))return ms[i]; }
+    return null;
+  }
+  var _mf=$('vgModeFast'); if(_mf)_mf.addEventListener('click',function(){
+    if(vm.refKind!=='media-refs')return;
+    var m=vgModelOfKind(false); if(m)switchVgModel(m); else toast('Fast model topilmadi','warning');
+  });
+  var _mr=$('vgModeR2V'); if(_mr)_mr.addEventListener('click',function(){
+    if(vm.refKind==='media-refs')return;
+    var m=vgModelOfKind(true); if(m)switchVgModel(m); else toast('R2V model topilmadi','warning');
+  });
 
   // ── enhance ──
   $('vgEnhance').addEventListener('click',function(){
