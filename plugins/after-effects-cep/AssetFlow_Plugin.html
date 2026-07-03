@@ -3121,6 +3121,44 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .savedcard .ttl{font-size:6.5px;padding:10px 4px 3px}
 .axvg .frame{flex:1;border:0;background:transparent;padding:0;border-radius:0;text-align:inherit;cursor:default}
 
+/* ── b11 — AI Sozlamalar mockup verbatim ── */
+.axroot .set-balcard{border-radius:14px;background:#13161C;border:1px solid rgba(255,255,255,.08);padding:16px;position:relative;overflow:hidden}
+.axroot .set-balglow{position:absolute;inset:0;background:radial-gradient(120% 100% at 90% -20%,rgba(194,240,74,.10),transparent 55%)}
+.axroot .set-balin{position:relative}
+.axroot .set-balk{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:#8A93A3}
+.axroot .set-balv{font-family:var(--font-mono);font-size:30px;font-weight:600;margin-top:6px;color:#F2F5F8}
+.axroot .set-balv .cs{color:#C2F04A}
+.axroot .set-balsub{font-family:var(--font-mono);font-size:9px;color:#5E6675;margin-top:4px}
+.axroot .set-topup{height:40px;border-radius:999px;background:#C2F04A;display:flex;align-items:center;justify-content:center;gap:7px;color:#0E1400;font-weight:700;font-size:12.5px;margin-top:14px;cursor:pointer}
+.axroot .set-topup:hover{background:#9CD62B}
+.axroot .set-topup svg{width:14px;height:14px}
+.axroot .set-packs{display:flex;gap:8px;margin-top:10px}
+.axroot .set-pack{flex:1;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:11px 10px;text-align:center;position:relative;cursor:pointer}
+.axroot .set-pack:hover{border-color:rgba(255,255,255,.16)}
+.axroot .set-pack.top{border-color:rgba(194,240,74,.4)}
+.axroot .set-pack.top:hover{border-color:rgba(194,240,74,.6)}
+.axroot .set-topb{position:absolute;top:-7px;left:50%;transform:translateX(-50%) skewX(-12deg);font-family:var(--font-mono);font-weight:800;font-size:7px;letter-spacing:.08em;padding:2px 6px;background:#C2F04A;color:#0E1400;box-shadow:0 2px 0 rgba(0,0,0,.55)}
+.axroot .set-pack .pv{font-family:var(--font-mono);font-size:12px;font-weight:600;color:#F2F5F8}
+.axroot .set-pack .pv .cs{color:#C2F04A}
+.axroot .set-pack .pp{font-family:var(--font-mono);font-size:8.5px;color:#8A93A3;margin-top:3px}
+.axroot .set-seck{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3;margin:16px 0 8px}
+.axroot .set-lrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.axroot .set-lrow:last-child{border-bottom:0}
+.axroot .set-lic{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#8A93A3;flex:none}
+.axroot .set-lic svg{width:13px;height:13px}
+.axroot .set-lrow.plus .set-lic{background:rgba(194,240,74,.08);color:#C2F04A}
+.axroot .set-lt{flex:1;min-width:0}
+.axroot .set-lt b{display:block;font-size:11.5px;font-weight:500;color:#F2F5F8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axroot .set-lt small{font-family:var(--font-mono);font-size:8.5px;color:#5E6675}
+.axroot .set-lamt{font-family:var(--font-mono);font-size:11px;color:#8A93A3;white-space:nowrap}
+.axroot .set-lrow.plus .set-lamt{color:#C2F04A}
+.axroot .set-lgempty{font-size:11px;color:#5E6675;padding:6px 0}
+.axroot .set-prefrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px;font-weight:500;color:#F2F5F8}
+.axroot .sw2{width:36px;height:20px;border-radius:99px;background:rgba(255,255,255,.1);position:relative;cursor:pointer;transition:.15s;flex:0 0 auto}
+.axroot .sw2.on{background:#C2F04A}
+.axroot .sw2::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#8A93A3;transition:.15s}
+.axroot .sw2.on::after{left:18px;background:#0E1400}
+
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
 html.home-mode .af-topbar,
 html.home-mode .af-pillar-row,
@@ -3889,12 +3927,34 @@ html.home-mode #homePage{display:block!important}
                           <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                           <span class="ai-ttl">Sozlamalar</span>
                         </div>
-                        <div class="setrow">Kredit balansи <b style="color:var(--acc);margin-left:6px" id="balSet">—</b><span class="buybtn" style="margin-left:auto" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}">Kredit to'ldirish</span></div>
-                        <div class="setrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
-                        <div class="setrow">Auto-load (Project tanlovi)<div class="sw2 on" data-toggle style="margin-left:auto"></div></div>
-                        <div class="setrow">Demo: media tanlanmagan (empty)<div class="sw2" id="emptyToggle" data-toggle style="margin-left:auto"></div></div>
-                        <div class="setrow">Demo: kam kredit (5)<div class="sw2" id="lowToggle" data-toggle style="margin-left:auto"></div></div>
-                        <div class="setrow">Demo: keyingi gen xato<div class="sw2" id="errToggle" data-toggle style="margin-left:auto"></div></div>
+                        <!-- b11: kredit balans karta -->
+                        <div class="set-balcard">
+                          <div class="set-balglow"></div>
+                          <div class="set-balin">
+                            <div class="set-balk">KREDIT BALANS</div>
+                            <div class="set-balv"><span class="cs">✦</span> <span id="balSet">—</span></div>
+                            <div class="set-balsub" id="setPlanLine">&nbsp;</div>
+                            <div class="set-topup" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Kredit to'ldirish</div>
+                          </div>
+                        </div>
+                        <!-- b11: kredit paketlari (hammasi mavjud checkout oqimiga boradi) -->
+                        <div class="set-packs">
+                          <div class="set-pack" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}"><div class="pv"><span class="cs">✦</span> 500</div><div class="pp">49 000 so'm</div></div>
+                          <div class="set-pack top" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}"><span class="set-topb">TOP</span><div class="pv"><span class="cs">✦</span> 1,200</div><div class="pp">99 000 so'm</div></div>
+                          <div class="set-pack" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('To‘lov hozircha mavjud emas — admin bilan bog‘laning','info');}"><div class="pv"><span class="cs">✦</span> 3,000</div><div class="pp">219 000 so'm</div></div>
+                        </div>
+                        <!-- b11: kredit tarixi (gen xarajatlari — /gen/history cost) -->
+                        <div class="set-seck">KREDIT TARIXI</div>
+                        <div id="setLedger"><div class="set-lgempty">Yuklanmoqda…</div></div>
+                        <!-- b11: preferenslar (real mavjud sozlamalar) -->
+                        <div class="set-seck">PREFERENSLAR</div>
+                        <div class="set-prefrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
+                        <div class="set-prefrow">Auto-load (Project tanlovi)<div class="sw2 on" data-toggle style="margin-left:auto"></div></div>
+                        <!-- dev-only demo toggle'lar — mockupda yo'q, alohida DEV bo'limida -->
+                        <div class="set-seck" style="color:#5E6675">DEV · DEMO</div>
+                        <div class="set-prefrow">Demo: media tanlanmagan (empty)<div class="sw2" id="emptyToggle" data-toggle style="margin-left:auto"></div></div>
+                        <div class="set-prefrow">Demo: kam kredit (5)<div class="sw2" id="lowToggle" data-toggle style="margin-left:auto"></div></div>
+                        <div class="set-prefrow">Demo: keyingi gen xato<div class="sw2" id="errToggle" data-toggle style="margin-left:auto"></div></div>
                       </section>
                     </div>
                     <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
@@ -10284,6 +10344,7 @@ async function bootPlugin(){
     if(id==='editimage')initEditImage();if(id==='editvideo')initEditVideo();
     if(id==='history')renderHistory('all');
     if(id==='launcher'&&typeof aiRenderHistStrip==='function')aiRenderHistStrip();
+    if(id==='settings'){ if(typeof renderLedger==='function')renderLedger(); if(typeof renderPlanLine==='function')renderPlanLine(); }
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
@@ -10433,7 +10494,10 @@ async function bootPlugin(){
   var HIST=[],histLoaded=false,histLoading=false;
   function histEsc(s){return String(s==null?'':s).replace(/[<>&"]/g,function(c){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];});}
   function histType(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':'image'; }
+  var histCbs=[];
+  function histFlush(){ var cbs=histCbs.splice(0); cbs.forEach(function(f){ try{ f(); }catch(e){} }); }
   function loadHistory(cb){
+    if(cb)histCbs.push(cb);
     if(histLoading)return; histLoading=true;
     studioGet('/api/studio/gen/history?limit=40').then(function(d){
       var items=(d&&d.items)||[];
@@ -10442,10 +10506,52 @@ async function bootPlugin(){
         var p=(g.params||{});
         var sub=[p.aspectRatio,p.quality||p.resolution,p.duration?(p.duration+'s'):null].filter(Boolean).join(' · ');
         return {id:g.id,t:histType(g.mode),mode:g.mode,url:a.url||'',thumb:a.thumbUrl||a.url||'',
-          title:((g.prompt||'').trim()||'Natija').slice(0,60),sub:sub};
+          title:((g.prompt||'').trim()||'Natija').slice(0,60),sub:sub,
+          cost:(typeof g.cost==='number'?g.cost:0),created:g.createdAt};
       });
-      histLoaded=true; histLoading=false; if(cb)cb();
-    }).catch(function(){ histLoading=false; if(cb)cb(); });
+      histLoaded=true; histLoading=false; histFlush();
+    }).catch(function(){ histLoading=false; histFlush(); });
+  }
+  // b11: KREDIT TARIXI — gen xarajatlari (/gen/history cost maydonidan; alohida ledger endpoint yo'q)
+  function ledgerWhen(iso){
+    var d=new Date(iso); if(isNaN(d.getTime()))return '';
+    var now=new Date();
+    var hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    var day=function(x){return x.getFullYear()+'-'+x.getMonth()+'-'+x.getDate();};
+    if(day(d)===day(now))return 'bugun '+hm;
+    var y=new Date(now.getTime()-86400000);
+    if(day(d)===day(y))return 'kecha '+hm;
+    return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+hm;
+  }
+  var _ledIC={
+    video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg>',
+    image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+    audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 010 8"/></svg>'
+  };
+  function renderLedger(){
+    var w=document.getElementById('setLedger'); if(!w)return;
+    var draw=function(){
+      if(!HIST.length){ w.innerHTML='<div class="set-lgempty">Hozircha xarajat yo\'q — gen qilsangiz shu yerda chiqadi.</div>'; return; }
+      w.innerHTML='';
+      HIST.slice(0,8).forEach(function(h){
+        var kindLbl=h.t==='video'?'Video':h.t==='audio'?'Ovoz':'Rasm';
+        var row=document.createElement('div'); row.className='set-lrow';
+        row.innerHTML='<div class="set-lic">'+(_ledIC[h.t]||_ledIC.image)+'</div>'
+          +'<div class="set-lt"><b>'+kindLbl+' · '+histEsc(h.title)+'</b><small>'+ledgerWhen(h.created)+'</small></div>'
+          +'<span class="set-lamt">'+(h.cost?('− '+h.cost):'—')+'</span>';
+        w.appendChild(row);
+      });
+    };
+    if(histLoaded)draw();
+    else loadHistory(function(){ if(!histLoaded){ w.innerHTML='<div class="set-lgempty">Tarix yuklanmadi — internet/sessiyani tekshiring.</div>'; return; } draw(); });
+  }
+  function renderPlanLine(){
+    var el=document.getElementById('setPlanLine'); if(!el)return;
+    try{
+      var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
+      var plan=u&&(u.plan||u.subscription);
+      el.textContent=plan?('tarif — '+String(plan).toUpperCase()):' ';
+    }catch(e){ el.textContent=' '; }
   }
   function renderRecent(){var s=document.getElementById('recentStrip');if(!s)return;if(!HIST.length){s.innerHTML='<div class="rc add" data-go="genimage">+</div>';return;}s.innerHTML='<div class="rc add" data-go="genimage">+</div>';HIST.slice(0,5).forEach(function(h){var d=document.createElement('div');d.className='rc';if(h.thumb){d.style.backgroundImage='url("'+h.thumb+'")';d.style.backgroundSize='cover';d.style.backgroundPosition='center';}d.setAttribute('data-hist',h.id);d.innerHTML='<span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span>';s.appendChild(d);});}
   // To'liq Tarix view — umumiy galereya komponenti (scope:'all'). Filter+zoom+select galereya ichida.
