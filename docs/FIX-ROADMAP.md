@@ -23,7 +23,7 @@ Mehnat: S (kichik, <1 soat) · M (o'rta, yarim kun) · L (katta, 1+ kun)
 
 | # | Muammo | Fayl | Belgi | Mehnat | Nega avval |
 |---|--------|------|-------|--------|------------|
-| 7 | Build/test/lint CI yo'q; Prisma migrate gate'siz prodga | `.github/workflows/keepalive.yml`, `render.yaml:6` | 🟠 | M | Boshqa hamma tuzatishni xavfsiz qiladi. Regressiya ushlanadi. |
+| 7 | Build/test/lint CI yo'q; Prisma migrate gate'siz prodga | `render.yaml:6` (`keepalive.yml` 2026-07-03 da o'chirildi — Cloud Run min-instances 1 kerak qilmadi) | 🟠 | M | Boshqa hamma tuzatishni xavfsiz qiladi. Regressiya ushlanadi. |
 
 **Natija:** PR'da `tsc + lint + verify-*` ishlaydigan CI; migratsiya alohida gated qadamda + Neon snapshot. Shundan keyin qolgan ishlar xavfsiz.
 

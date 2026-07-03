@@ -38,7 +38,7 @@
 
 ### Hali ochiq / ehtiyot
 - **Vertex Omni video** — kredit MANTIG'I sog'lom, lekin real GCP billing'da (~$1/video) end-to-end SINALMAGAN (`vertex-omni.ts` izohi). `>15MB` video referens uchun same-project GCS bucket yo'q (`OMNI_INLINE_VIDEO_MAX`).
-- **`keepalive.yml`** — hali ESKI Render URL'ni (`assetflow-rqbq.onrender.com`) pinglaydi. Cloud Run `min-instances 1` bo'lgani uchun **keraksiz** — o'chirilsin yoki URL yangilansin.
+- **`keepalive.yml`** — O'CHIRILDI (2026-07-03). Cloud Run `min-instances 1` bo'lgani uchun keraksiz edi.
 - **`render.yaml`** — legacy, deploy qilinmaydi (referens uchun qolgan).
 - **`cloudrun-env.yaml`** — jonli maxfiy kalitlar mahalliy diskda; commit qilinmasin, davriy rotatsiya tavsiya.
 - **Faza 2 plagin AI tool'lar** (lip-sync/motion/slow-mo/video→SFX/restyle/draw) — UI tayyor, backend "Tez orada · fal.ai".
@@ -424,9 +424,7 @@ npm run studio:sync           # prepare-vercel: js/ + styles/ (root) → studio/
 ## 8. MA'LUM MUAMMOLAR / RISKLAR
 
 1. **`hasPack:false`** — pack yo'q shablon katalogda **ko'rinadi, lekin import bloklanadi** (plugin import tugmasini o'chiradi). Sabab: Render bepul instance disk **ephemeral** (qayta deploy/uxlashda yo'qoladi), shuning uchun pack/preview faqat **R2** da turishi shart. `catalog-map.ts` → `templateAssetFlags()` `hasPack`/`hasPreview` ni **disk VA R2** ikkalasidan tekshiradi — R2 da bo'lsa `true`. Agar productionда `hasPack:false` ko'rinsa: pack R2 ga yuklanmagan yoki kalit (`__srv_<id>`) mos emas.
-2. **Render cold-start** — bepul instance 15 daqiqa harakatsizlikdan keyin uxlaydi; birinchi so'rov ~30-60s sekin. Upload XHR retry (5xx/uzilish → 2x qayta) shu sababli qo'shilgan.
-   - **Mitigatsiya (bepul):** `.github/workflows/keepalive.yml` — GitHub Actions cron har ~10 daqiqada `/health`'ga ping yuborib instance'ni uyg'oq tutadi. URL'ni o'zgartirish: repo → Settings → Variables → `HEALTH_URL` (default `https://assetflow-rqbq.onrender.com/health`). ⚠️ GitHub cron kafolatlanmagan (kechikishi yoki repo 60 kun harakatsiz bo'lsa to'xtashi mumkin).
-   - **Muqobil (ishonchliroq):** (a) **Render Starter** ($7/oy — instance umuman uxlamaydi, eng barqaror); (b) tashqi uptime-pinger — **UptimeRobot** yoki **cron-job.org** (5 daqiqalik interval, bepul tariflar bor).
+2. **Render cold-start** — ESKIRGAN: API Cloud Run'ga ko'chirildi (`min-instances 1`, cold-start yo'q). `.github/workflows/keepalive.yml` shu sababli 2026-07-03 da o'chirildi (endi keraksiz edi). Quyidagi izoh tarixiy referens sifatida qoldirilgan (Render'da bepul instance 15 daqiqa harakatsizlikdan keyin uxlardi; birinchi so'rov ~30-60s sekin edi; Upload XHR retry shu sababli qo'shilgan edi).
 3. **OpenRouter end-to-end test yo'q** — model ID'lar tasdiqlandi (4.1), lekin real `/gen` chaqiruvi hali sinab ko'rilmagan.
 4. **CORS_ORIGIN** — render.yaml tuzatildi (CF Pages + eski Vercel, 2026-06-18). Render dashboard'dagi qo'lda env yaml'dan ustun turishi mumkin — sinab ko'ring (2-bo'lim).
 5. **AE Admin CEP `Failed to fetch`** — odatda eski extension yoki `localhost` API. Brauzer Admin ishonchliroq.
