@@ -2464,13 +2464,38 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .cardbig .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
 .axroot .cardbig .tx b{font-size:13px;font-weight:700;display:block}
 .axroot .cardbig .tx small{font-size:10px;color:var(--mut)}
-/* ── AI Tools kategoriya kartalari (2×2) ── */
-.axroot .cats{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding-bottom:4px}
-.axroot .cat{display:flex;flex-direction:column;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line2);border-radius:15px;padding:20px 10px 16px;cursor:pointer;transition:border-color .12s,transform .1s;text-align:center}
-.axroot .cat:hover{border-color:var(--mut2)}.axroot .cat:active{transform:scale(.98)}
-.axroot .cat .cic{width:54px;height:54px;border-radius:15px;background:rgba(194,240,74,.14);color:var(--acc);display:grid;place-items:center}
-.axroot .cat .cn{font-size:13px;font-weight:800}.axroot .cat .cs{font-size:10px;color:var(--mut2);margin-top:-3px}
-.axroot .cat.soon{opacity:.52}
+/* ── AI Tools kategoriya kartalari (2×2) — mockup b1 verbatim ── */
+.axroot .cats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.axroot .cat{border-radius:14px;background:#13161C;border:1px solid rgba(255,255,255,.08);padding:14px;position:relative;overflow:hidden;cursor:pointer;text-align:left}
+.axroot .cat:active{transform:scale(.98)}
+.axroot .cat .cat-glow{position:absolute;inset:0;pointer-events:none}
+.axroot .cat .cat-in{position:relative}
+.axroot .cat .cat-ic{color:#F2F5F8;display:block}
+.axroot .cat .cat-ic svg{width:22px;height:22px;display:block}
+.axroot .cat .cat-nm{font-weight:700;font-size:13.5px;margin-top:9px;color:#F2F5F8}
+.axroot .cat .cat-models{font-family:var(--font-mono);font-size:8.5px;color:#8A93A3;margin-top:4px;line-height:1.6}
+.axroot .cat .cat-live{display:flex;align-items:center;gap:5px;margin-top:9px}
+.axroot .cat .cat-live .dot{width:6px;height:6px;border-radius:50%;background:#C2F04A;animation:ffbreathe 2.2s ease-in-out infinite}
+.axroot .cat .cat-live .lt{font-family:var(--font-mono);font-size:8.5px;color:#C2F04A}
+.axroot .cat.soon{background:#0D1016;border-color:rgba(255,255,255,.05);opacity:.62}
+.axroot .cat.soon .cat-ic{color:#8A93A3}
+.axroot .cat.soon .cat-nm{color:#8A93A3}
+.axroot .cat.soon .cat-models{color:#5E6675}
+.axroot .cat-soonb{display:inline-block;margin-top:9px;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.06);color:#8A93A3}
+@keyframes ffbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
+/* TARIX strip (b1) */
+.axroot .ai-hist-head{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 9px}
+.axroot .ai-hist-k{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3}
+.axroot .ai-hist-all{font-size:10.5px;color:#8A93A3;cursor:pointer}
+.axroot .ai-hist-all:hover{color:#F2F5F8}
+.axroot .ai-hist-strip{display:flex;gap:8px;overflow:hidden}
+.axroot .ai-hist-strip .ht{width:74px;height:74px;border-radius:10px;flex:none;position:relative;overflow:hidden;background-size:cover;background-position:center;background-color:#13161C;cursor:pointer}
+.axroot .ai-hist-strip .ht svg{position:absolute;left:6px;bottom:5px}
+/* pastki info-toast (b1) */
+.axroot .ai-soontoast{position:fixed;left:12px;right:12px;bottom:12px;display:none;align-items:center;gap:9px;padding:11px 12px;background:#161B22;border:1px solid rgba(255,255,255,.09);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.5);z-index:70;max-width:416px;margin:0 auto}
+.axroot .ai-soontoast.on{display:flex}
+.axroot .ai-soontoast svg{flex:none}
+.axroot .ai-soontoast span{font-size:11.5px;font-weight:500;color:#F2F5F8}
 .axroot .aicattool{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,#1a2410,#15171b 70%);border:1px solid var(--acc2);border-radius:13px;padding:13px;cursor:pointer;margin-bottom:10px;transition:box-shadow .15s}
 .axroot .aicattool:hover{box-shadow:0 0 14px rgba(194,240,74,.15)}.axroot .aicattool.soon{opacity:.55;cursor:default}
 .axroot .aicattool .ic{width:38px;height:38px;border-radius:10px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;flex:0 0 auto}
@@ -3460,6 +3485,11 @@ html.home-mode #homePage{display:block!important}
                         </div>
                         <div class="ai-launch-sub">Prompt → natija → to'g'ridan-to'g'ri AE'ga import</div>
                         <div class="cats" id="aiCatGrid"></div>
+                        <div id="aiHistSec" style="display:none">
+                          <div class="ai-hist-head"><span class="ai-hist-k">TARIX</span><span class="ai-hist-all" data-go="history">Barchasi →</span></div>
+                          <div class="ai-hist-strip" id="aiHistStrip"></div>
+                        </div>
+                        <div class="ai-soontoast" id="aiSoonToast"><svg width="15" height="15" viewBox="0 0 24 24" fill="#7CC4FF"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 7zm1.2 10h-2.4v-6h2.4z"/></svg><span>Hali tool yo'q — tez orada qo'shiladi.</span></div>
                       </section>
 
                       <!-- AI KATEGORIYA ICHI — aiOpenCat() tomonidan to'ldiriladi -->
@@ -10206,6 +10236,7 @@ async function bootPlugin(){
     if(id==='gentts')initTTS();if(id==='genmusic')initMusic();if(id==='gensfx')initSFX();if(id==='genstt')initSTT();if(id==='genavatar')initAvatar();
     if(id==='editimage')initEditImage();if(id==='editvideo')initEditVideo();
     if(id==='history')renderHistory('all');
+    if(id==='launcher'&&typeof aiRenderHistStrip==='function')aiRenderHistStrip();
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
@@ -10574,15 +10605,22 @@ async function bootPlugin(){
   var _toolImgSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
   var _toolVidSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>';
   var AI_CATS=[
-    {id:'image',name:'Image',icon:_catImgSVG,tools:[
+    {id:'image',name:'Image',icon:_catImgSVG,card:'Rasm yaratish',models:'GPT Image 2 · Nano<br>Flux · Seedream',glow:'rgba(143,79,209,.22)',tools:[
       {name:'Rasm yaratish',sub:'GPT Image 2 · Nano · Flux · Seedream',icon:_toolImgSVG,dest:'imggen'}
     ]},
-    {id:'video',name:'Video',icon:_catVidSVG,tools:[
+    {id:'video',name:'Video',icon:_catVidSVG,card:'Video yaratish',models:'Seedance 2.0<br>Fast + R2V',glow:'rgba(46,157,192,.2)',tools:[
       {name:'Video yaratish',sub:'Seedance 2.0 · Fast (kadr) + R2V (ko\'p-modal)',icon:_toolVidSVG,dest:'vidgen'}
     ]},
-    {id:'audio',name:'Audio',icon:_catAudSVG,tools:[]},
-    {id:'3d',name:'3D',icon:_cat3dSVG,tools:[]}
+    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Audio',models:'Ovoz · musiqa · SFX',tools:[]},
+    {id:'3d',name:'3D',icon:_cat3dSVG,card:'3D',models:'Model · tekstura',tools:[]}
   ];
+  // b1: pastki info-toast — bo'sh kategoriya bosilganda (mockup)
+  var _soonToastT=null;
+  function aiSoonToast(){
+    var t=document.getElementById('aiSoonToast'); if(!t)return;
+    t.classList.add('on'); clearTimeout(_soonToastT);
+    _soonToastT=setTimeout(function(){ t.classList.remove('on'); },2400);
+  }
   function aiRenderCatGrid(){
     var g=document.getElementById('aiCatGrid'); if(!g)return;
     g.innerHTML='';
@@ -10590,13 +10628,39 @@ async function bootPlugin(){
       var hasTools=c.tools.some(function(t){return !t.soon;});
       var el=document.createElement('div');
       el.className='cat'+(hasTools?'':' soon');
-      // Bo'sh kategoriya (Audio/3D) — aniq "tez orada" badge bilan ishlaydiganlardan ajraladi.
-      var soonBadge=hasTools?'':'<span style="position:absolute;top:8px;right:8px;font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:7px;background:rgba(255,217,168,.14);color:#ffd9a8;border:1px solid rgba(255,217,168,.28)">tez orada</span>';
-      el.style.position='relative';
-      el.innerHTML=soonBadge+'<div class="cic">'+c.icon+'</div><div class="cn">'+c.name+'</div><div class="cs">'+(hasTools?c.tools.length+' tool':'tez orada')+'</div>';
-      el.addEventListener('click',function(){ aiOpenCat(c); });
+      if(hasTools){
+        el.innerHTML='<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
+          +'<div class="cat-in"><span class="cat-ic">'+c.icon+'</span>'
+          +'<div class="cat-nm">'+c.card+'</div>'
+          +'<div class="cat-models">'+c.models+'</div>'
+          +'<div class="cat-live"><span class="dot"></span><span class="lt">LIVE</span></div></div>';
+      } else {
+        el.innerHTML='<span class="cat-ic">'+c.icon+'</span>'
+          +'<div class="cat-nm">'+c.card+'</div>'
+          +'<div class="cat-models">'+c.models+'</div>'
+          +'<span class="cat-soonb">TEZ ORADA</span>';
+      }
+      el.addEventListener('click',function(){ if(hasTools)aiOpenCat(c); else aiSoonToast(); });
       g.appendChild(el);
     });
+  }
+  // b1: TARIX strip — real /gen/history thumbnaillari (74×74), bosilsa Tarix
+  function aiRenderHistStrip(){
+    var sec=document.getElementById('aiHistSec'), s=document.getElementById('aiHistStrip');
+    if(!sec||!s)return;
+    var draw=function(){
+      if(!HIST.length){ sec.style.display='none'; return; }
+      sec.style.display='';
+      s.innerHTML='';
+      HIST.slice(0,5).forEach(function(h){
+        var d=document.createElement('div'); d.className='ht';
+        if(h.thumb){ d.style.backgroundImage='url("'+h.thumb+'")'; }
+        if(h.t==='video')d.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>';
+        d.addEventListener('click',function(){ go('history'); });
+        s.appendChild(d);
+      });
+    };
+    if(histLoaded)draw(); else loadHistory(draw);
   }
   function aiOpenCat(c){
     var ttl=document.getElementById('aiCatTitle'); if(ttl)ttl.textContent=c.name;
@@ -10616,6 +10680,7 @@ async function bootPlugin(){
     go('aicat');
   }
   aiRenderCatGrid();
+  aiRenderHistStrip();
 
   window.axInit=function(){ try{ go('launcher'); }catch(e){ try{console.error('[ax] axInit xato:',e);}catch(_){} } };
   window.axGo=function(id){ try{ go(id); }catch(e){ try{console.error('[ax] axGo("'+id+'") xato:',e);}catch(_){} } }; // tashqaridan AI ko'rinishiga o'tish (masalan Home 🕘 → history). Silent catch EMAS — xato log qilinadi.
