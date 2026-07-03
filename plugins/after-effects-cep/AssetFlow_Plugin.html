@@ -3175,6 +3175,29 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .warn{background:rgba(255,178,124,.08);border:1px solid rgba(255,178,124,.26);color:#F0CBAA}
 .axig .warn .wi{color:#FFB27C}
 
+/* ── b7 — birlashgan "Video sozlamalari" sheet mockup verbatim ── */
+.axvg .vg-setk{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:#5E6675;margin:12px 0 6px;text-transform:uppercase}
+.axvg .vg-mrow{height:46px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:12px;cursor:pointer}
+.axvg .vg-mrow:hover{background:rgba(255,255,255,.04)}
+.axvg .vg-mrow.cur{background:rgba(255,255,255,.08)}
+.axvg .vg-mrow .mdot{width:8px;height:8px;border-radius:50%;flex:none;background:transparent}
+.axvg .vg-mrow.cur .mdot{background:#C2F04A}
+.axvg .vg-mrow .t{flex:1;min-width:0}
+.axvg .vg-mrow .t b{display:block;font-weight:600;font-size:12px;color:#B7C0CE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axvg .vg-mrow.cur .t b{color:#F2F5F8}
+.axvg .vg-mrow .t small{display:block;font-size:9.5px;color:#5E6675;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axvg .vg-mrow .mprice{font-family:var(--font-mono);font-size:10.5px;color:#C2F04A;white-space:nowrap}
+.axvg .vg-chiprow{display:flex;gap:6px;flex-wrap:wrap}
+.axvg .vg-chip{padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-weight:500;font-size:11px;color:#8A93A3;cursor:pointer;display:flex;align-items:center;gap:6px}
+.axvg .vg-chip.cur{background:rgba(255,255,255,.10);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8}
+.axvg .vg-chip.cur::before{content:'';width:6px;height:6px;border-radius:50%;background:#C2F04A}
+.axvg .vg-chip.dis{opacity:.45;pointer-events:none}
+.axvg .vg-audrow{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);cursor:pointer}
+.axvg .vg-audrow .t{font-size:11.5px;font-weight:500;color:#F2F5F8}
+.axvg .vg-audrow .s{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;margin-top:2px}
+.axvg .vg-ready{width:100%;height:42px;border-radius:999px;background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);border:0;color:#F2F5F8;font-weight:700;font-size:12.5px;font-family:inherit;cursor:pointer;margin-top:12px}
+.axvg .vg-ready:hover{background:rgba(255,255,255,.14)}
+
 /* ── b8/b9 — Tarix galereya mockup verbatim ── */
 .axroot .galtab{padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-weight:500;font-size:11px;color:#8A93A3}
 .axroot .galtab.on{background:rgba(255,255,255,.10);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:#F2F5F8}
@@ -3987,6 +4010,26 @@ html.home-mode #homePage{display:block!important}
                             <div class="sheeth"><b>Model</b><span class="shnote">narx — 1 natija uchun</span></div>
                             <div id="vgMList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div class="minfobox" id="vgMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Kelajakda ko'proq video model qo'shiladi</span></div>
+                          </div></div>
+
+                          <!-- b7: birlashgan "Video sozlamalari" sheet — MODEL+NISBAT+REZOLYUTSIYA+DAVOMIYLIK+OVOZ bitta joyda -->
+                          <div class="sheet" id="vgSettingsSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Video sozlamalari</b></div>
+                            <div class="vg-setk" style="margin-top:0">Model</div>
+                            <div id="vgSetMList"></div>
+                            <div class="vg-setk">Nisbat</div>
+                            <div class="vg-chiprow" id="vgSetAr"></div>
+                            <div class="vg-setk">Rezolyutsiya</div>
+                            <div class="vg-chiprow" id="vgSetRes"></div>
+                            <div class="vg-setk">Davomiylik</div>
+                            <div class="vg-chiprow" id="vgSetDur"></div>
+                            <div class="vg-setk" id="vgSetBitLbl" style="display:none">Bitrate</div>
+                            <div class="vg-chiprow" id="vgSetBit" style="display:none"></div>
+                            <div class="vg-audrow" id="vgSetAud">
+                              <div><div class="t">Ovoz generatsiyasi</div><div class="s" id="vgSetAudNote">narxga kiritilgan · har bir video uchun</div></div>
+                              <div class="sw2" id="vgSetAudSw"></div>
+                            </div>
+                            <button type="button" class="vg-ready" id="vgSetReady">Tayyor</button>
                           </div></div>
                           <!-- lightbox: umumiy #afLightbox (afRecent) ishlatiladi — eski #vgLightbox olib tashlandi -->
 
@@ -12705,28 +12748,65 @@ window.afGallery=(function(){
     return studioPost('/api/studio/gen/sessions',{mode:'video'}).then(function(s){ vm.sessionId=(s&&s.id)||null; return vm.sessionId; });
   }
 
-  // ── sozlama chip openerlar ──
-  $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); openVgSheet('vgMSheet',$('vgModelSeg')); });
-  $('vgResSeg').addEventListener('click',function(){
-    buildPills($('vgResPills'),vm.resOpts,vm.res,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); buildPills($('vgResPills'),vm.resOpts,vm.res,function(v2){ vm.res=v2; var rv2=$('vgResVal'); if(rv2)rv2.textContent=v2; recost(); closeVgSheets(); }); closeVgSheets(); });
-    openVgSheet('vgResSheet',$('vgResSeg'));
-  });
-  $('vgDurSeg').addEventListener('click',function(){
-    buildPills($('vgDurPills'),vm.durOpts,vm.dur,function(v){ vm.dur=v; var dv=$('vgDurVal'); if(dv)dv.textContent=v; recost(); closeVgSheets(); });
-    openVgSheet('vgDurSheet',$('vgDurSeg'));
-  });
+  // ── b7: birlashgan "Video sozlamalari" sheet — barcha sozlama pill'lari SHU sheetni ochadi ──
+  function vgDurChipLabel(v){
+    if(/^auto$/i.test(String(v)))return 'Auto ≈ '+vm.autoSec+' soniya';
+    return String(v)+(/^\d+$/.test(String(v))?'s':'');
+  }
+  function vgSetChips(host,opts,cur,labelFn,locked,onpick){
+    if(!host)return; host.innerHTML='';
+    (opts||[]).forEach(function(v){
+      var d=document.createElement('div');
+      d.className='vg-chip'+(String(v)===String(cur)?' cur':'')+(locked?' dis':'');
+      d.textContent=labelFn?labelFn(v):String(v);
+      d.addEventListener('click',function(){ onpick(v); });
+      host.appendChild(d);
+    });
+  }
+  function renderVgSettingsSheet(){
+    // MODEL qatorlari (46px, tanlangan = bg + lime nuqta, narx ✦N)
+    var host=$('vgSetMList');
+    if(host){
+      host.innerHTML='';
+      var models=vm.models||[]; if(!models.length&&vm.model)models=[vm.model];
+      models.forEach(function(m){
+        var cur=(vm.model&&String(m.id)===String(vm.model.id));
+        var price=vgModelPrice(m);
+        var o=document.createElement('div'); o.className='vg-mrow'+(cur?' cur':'');
+        o.innerHTML='<span class="mdot"></span><div class="t"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+String(m.desc||m.description||vgModelSubtitle(m)).replace(/[<>&]/g,'')+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'');
+        o.addEventListener('click',function(){ if(!(vm.model&&String(m.id)===String(vm.model.id)))switchVgModel(m); });
+        host.appendChild(o);
+      });
+      if(!host.children.length)host.innerHTML='<div class="axighint">Model yuklanmoqda…</div>';
+    }
+    var arLocked=($('vgArSeg')&&$('vgArSeg').getAttribute('data-arlock')==='1');
+    vgSetChips($('vgSetAr'),vm.arOpts,vm.ar,null,arLocked,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; renderVgSettingsSheet(); });
+    vgSetChips($('vgSetRes'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); renderVgSettingsSheet(); });
+    vgSetChips($('vgSetDur'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; var dv=$('vgDurVal'); if(dv)dv.textContent=v; recost(); renderVgSettingsSheet(); });
+    var hasBit=!!(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate);
+    var bl=$('vgSetBitLbl'), bh=$('vgSetBit');
+    if(bl)bl.style.display=hasBit?'':'none';
+    if(bh){ bh.style.display=hasBit?'':'none'; if(hasBit)vgSetChips(bh,vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; renderVgSettingsSheet(); }); }
+    var sw=$('vgSetAudSw'); if(sw){ sw.classList.toggle('on',!!vm.audio); sw.style.opacity=vm.audioLocked?'.45':''; }
+  }
+  function openVgSettingsSheet(anch){ renderVgSettingsSheet(); openVgSheet('vgSettingsSheet',anch); }
+  $('vgModelSeg').addEventListener('click',function(){ openVgSettingsSheet($('vgModelSeg')); });
+  $('vgResSeg').addEventListener('click',function(){ openVgSettingsSheet($('vgResSeg')); });
+  $('vgDurSeg').addEventListener('click',function(){ openVgSettingsSheet($('vgDurSeg')); });
   $('vgArSeg').addEventListener('click',function(){
     var seg=$('vgArSeg');
-    if(seg&&seg.getAttribute('data-arlock')==='1'){ toast('Video referens biriktirilgan — nisbatni model o\'zi belgilaydi','info'); return; }
-    buildPills($('vgArPills'),vm.arOpts,vm.ar,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; closeVgSheets(); });
-    openVgSheet('vgArSheet',$('vgArSeg'));
+    if(seg&&seg.getAttribute('data-arlock')==='1'){ toast('Video referens biriktirilgan — nisbatni model o\'zi belgilaydi','info'); }
+    openVgSettingsSheet(seg);
   });
   var bitSeg=$('vgBitSeg');
-  if(bitSeg)bitSeg.addEventListener('click',function(){
-    if(!(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate))return;
-    buildPills($('vgBitPills'),vm.bitOpts,vm.bitrate,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; closeVgSheets(); });
-    openVgSheet('vgBitSheet',bitSeg);
+  if(bitSeg)bitSeg.addEventListener('click',function(){ openVgSettingsSheet(bitSeg); });
+  var setAudRow=$('vgSetAud');
+  if(setAudRow)setAudRow.addEventListener('click',function(){
+    var at=$('vgAudToggle'); if(at)at.click(); // yagona manba — mavjud toggle mantiqi (audioLocked toast shu yerda)
+    renderVgSettingsSheet();
   });
+  var setReady=$('vgSetReady');
+  if(setReady)setReady.addEventListener('click',function(){ closeVgSheets(); });
   var audTgl=$('vgAudToggle');
   if(audTgl)audTgl.addEventListener('click',function(){
     if(vm.audioLocked){ toast('Bu modelda ovoz doim yoqilgan — o\'chirib bo\'lmaydi (model xususiyati)','info'); return; }
