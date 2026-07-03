@@ -402,8 +402,10 @@ body{
 .af-tab.active{background:rgba(255,255,255,.10);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);color:#F2F5F8;font-weight:600}
 .af-tab.active::after{display:none}
 /* a1 grid sarlavha qatori (hisob + saralash) */
-.af-cathead{display:flex;align-items:baseline;justify-content:space-between;padding:14px 14px 10px;flex:none}
+/* Ataylab a1'dan chetlanish: hisob + saralash bitta markazlashgan guruh (chap/o'ng bo'linishi emas) */
+.af-cathead{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:14px 14px 10px;flex:none;flex-wrap:nowrap;min-width:0}
 .af-catcount{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3;text-transform:uppercase}
+.af-cathead-sep{font-family:var(--font-mono);font-size:9px;color:#8A93A3;line-height:1;user-select:none;flex:none}
 .af-cathead .cmp-sort{position:relative;flex:none}
 .af-sortbtn{display:flex;align-items:center;gap:4px;background:none;border:0;padding:0;margin:0;font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;color:#8A93A3;text-transform:uppercase;cursor:pointer;line-height:1}
 .af-sortbtn:hover{color:#F2F5F8}
@@ -3057,6 +3059,7 @@ html.home-mode #homePage{display:block!important}
                 <!-- a1 grid sarlavha qatori: hisob + saralash. sortDrop .env-filter-bar ichida qoladi (initEnvFilterUi delegatsiyasi ishlaydi). -->
                 <div class="af-cathead">
                   <span class="af-catcount" id="gridLabel">Barcha shablonlar</span>
+                  <span class="af-cathead-sep" aria-hidden="true">·</span>
                   <div class="dropdown cmp-sort" id="sortDrop">
                     <button type="button" class="af-sortbtn" id="sortBtn" title="Saralash" aria-label="Saralash"><span id="sortLabel">MOS</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
                     <div class="dd-menu" id="sortMenu">
