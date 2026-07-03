@@ -395,7 +395,8 @@ body{
 .af-chip:hover{border-color:var(--muted-2);color:var(--text)}
 .af-chip.active{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
 /* a1 chip qatori — bo'lim navigatsiyasi (avtomatik kenglik pill'lar, gorizontal scroll) */
-.af-tabs{display:flex;gap:6px;padding:10px 14px 0;background:transparent;border-bottom:0;flex:none;overflow-x:auto;scrollbar-width:none}
+/* Ataylab markazlashgan: pastdagi .af-cathead qatoriga mos (chap tekislash emas) */
+.af-tabs{display:flex;justify-content:center;gap:6px;padding:10px 14px 0;background:transparent;border-bottom:0;flex:none;overflow-x:auto;scrollbar-width:none}
 .af-tabs::-webkit-scrollbar{display:none}
 .af-tab{flex:none;display:inline-flex;align-items:center;white-space:nowrap;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#8A93A3;font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
 .af-tab:hover{color:#F2F5F8}
