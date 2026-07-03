@@ -2878,17 +2878,45 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .recbatch .bi{font-size:12px;font-weight:700;flex:1 1 auto;min-width:0}
 .axig .recbatch .bb{font-size:11.5px;color:var(--mut);cursor:pointer;display:flex;align-items:center;gap:4px;padding:5px 8px;border-radius:8px;border:1px solid var(--line2);white-space:nowrap;flex:0 0 auto}
 .axig .recbatch .bb:hover{color:var(--txt);border-color:var(--mut2)}.axig .recbatch .bb.del:hover{color:var(--red);border-color:var(--red)}
-/* UMUMIY lightbox — #afLightbox .axroot ichida (.axig EMAS) → o'z to'liq-ekran stili. To'liq overlay + markaz + katta media. */
-#afLightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:9992;padding:18px}
+/* UMUMIY lightbox — b10 mockup verbatim: qora fon, counter+ESC, prev/next, scrubber, meta karta, lime Import */
+#afLightbox{position:fixed;inset:0;background:#0A0A0A;display:none;flex-direction:column;align-items:center;z-index:9992;padding:0;overflow-y:auto}
 #afLightbox.on{display:flex}
-#afLightbox .lbinner{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:100%;max-height:100%}
-#afLightbox video,#afLightbox img{max-width:100%;max-height:74vh;object-fit:contain;border-radius:10px;background:#000}
-#afLightbox audio{width:340px;max-width:84vw}
-#afLightbox .lbacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;flex:0 0 auto}
-#afLightbox .lba{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--txt);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:9px 13px;cursor:pointer}
-#afLightbox .lba:hover{border-color:var(--acc2);color:var(--acc)}
-#afLightbox .lx{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,.6);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer;z-index:2}
-#afLightbox .lx:hover{border-color:var(--acc2);color:var(--acc)}
+#afLightbox .lbinner{width:100%;max-width:440px;display:flex;flex-direction:column;padding:0 14px 20px}
+#afLightbox .lbtop{height:48px;display:flex;align-items:center;gap:10px;flex:none}
+#afLightbox .lbcount{font-family:var(--font-mono);font-size:10px;color:#8A93A3}
+#afLightbox .lbsp{flex:1}
+#afLightbox .lbesc{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:2px 6px}
+#afLightbox .lx{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:#F2F5F8;cursor:pointer}
+#afLightbox .lx:hover{border-color:rgba(255,255,255,.2)}
+#afLightbox .lbmedia{position:relative;border-radius:12px;overflow:hidden;background:#000;min-height:120px;display:flex;align-items:center;justify-content:center}
+#afLightbox video,#afLightbox img{display:block;max-width:100%;max-height:56vh;object-fit:contain;border-radius:12px;background:#000;margin:0 auto}
+#afLightbox audio{width:100%;margin:24px 12px}
+#afLightbox .lbplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(19,22,28,.72);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;z-index:3}
+#afLightbox .lbnav{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;padding:0 8px;pointer-events:none;z-index:3}
+#afLightbox .lbnavb{width:28px;height:28px;border-radius:50%;background:rgba(8,10,14,.62);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#F2F5F8;cursor:pointer;pointer-events:auto}
+#afLightbox .lbnavb:hover{border-color:rgba(255,255,255,.3)}
+#afLightbox .lbnavb.off{opacity:.3;pointer-events:none}
+#afLightbox .lbscrub{display:none;align-items:center;gap:8px;margin-top:10px}
+#afLightbox .lbscrub.on{display:flex}
+#afLightbox .lbtrack{flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.1);position:relative;cursor:pointer}
+#afLightbox .lbfill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:#C2F04A}
+#afLightbox .lbknob{position:absolute;left:0;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:#C2F04A}
+#afLightbox .lbtime{font-family:var(--font-mono);font-size:9px;color:#8A93A3;white-space:nowrap}
+#afLightbox .lbspk{color:#8A93A3;cursor:pointer;display:flex}
+#afLightbox .lbspk.muted{color:#5E6675}
+#afLightbox .lbcard{display:none;margin-top:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 12px}
+#afLightbox .lbcard.on{display:block}
+#afLightbox .lbprompt{font-size:11.5px;line-height:1.55;color:#DCE3ED}
+#afLightbox .lbchips{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+#afLightbox .lbchips span{font-family:var(--font-mono);font-size:8.5px;color:#8A93A3;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.05)}
+#afLightbox .lbacts{display:flex;gap:8px;margin-top:14px}
+#afLightbox .lbimp{flex:1;height:42px;border-radius:999px;background:#C2F04A;display:flex;align-items:center;justify-content:center;gap:7px;color:#0E1400;font-weight:700;font-size:12.5px;cursor:pointer}
+#afLightbox .lbimp:hover{background:#9CD62B}
+#afLightbox .lbimp svg{width:14px;height:14px}
+#afLightbox .lbico{width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#F2F5F8;cursor:pointer;flex:none}
+#afLightbox .lbico:hover{border-color:rgba(255,255,255,.2)}
+#afLightbox .lbico svg{width:15px;height:15px}
+#afLightbox .lbcap{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;text-align:center;margin-top:10px}
 .axig .prog{margin-bottom:16px;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:14px;display:none}.axig .prog.on{display:block}
 .axig .prog .pt{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
 .axig .prog .pt .sp{width:16px;height:16px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;flex:0 0 auto}
@@ -10211,41 +10239,107 @@ async function bootPlugin(){
     };
     function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Ovoz':(c==='sfx')?'SFX':'Rasm'; }
 
-    // ---- UMUMIY lightbox (bitta DOM, .axroot ichida; rasm/video/ovoz) ----
-    var lb=null;
+    // ---- UMUMIY lightbox (bitta DOM, body oxirida; rasm/video/ovoz) — b10 mockup 1:1 ----
+    var lb=null,lbCur=null; // lbCur={it,ctx} — prev/next + klaviatura nav uchun
+    function fmtT(s){ s=Math.max(0,Math.floor(Number(s)||0)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
     function ensureLb(){
       if(lb)return lb;
       lb=document.createElement('div'); lb.className='lightbox'; lb.id='afLightbox';
       lb.innerHTML='<div class="lbinner">'
-        +'<video id="afLbVideo" controls playsinline style="display:none;max-width:100%;border-radius:8px;max-height:70vh"></video>'
-        +'<img id="afLbImg" alt="" style="display:none;max-width:100%;border-radius:8px;max-height:70vh;object-fit:contain"/>'
-        +'<audio id="afLbAudio" controls style="display:none;width:90%"></audio>'
-        +'<div class="lbacts" id="afLbActs"></div></div>'
-        +'<div class="lx" id="afLbClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div>';
-      (document.querySelector('.axroot')||document.body).appendChild(lb);
+        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><div class="lx" id="afLbClose"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div></div>'
+        +'<div class="lbmedia">'
+        +  '<video id="afLbVideo" playsinline style="display:none"></video>'
+        +  '<img id="afLbImg" alt="" style="display:none"/>'
+        +  '<audio id="afLbAudio" controls style="display:none"></audio>'
+        +  '<div class="lbplay" id="afLbPlay" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></div>'
+        +  '<div class="lbnav" id="afLbNav" style="display:none"><div class="lbnavb" id="afLbPrev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="lbnavb" id="afLbNext"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div></div>'
+        +'</div>'
+        +'<div class="lbscrub" id="afLbScrub"><div class="lbtrack" id="afLbTrack"><div class="lbfill" id="afLbFill"></div><span class="lbknob" id="afLbKnob"></span></div><span class="lbtime" id="afLbTime">00:00 / 00:00</span><span class="lbspk" id="afLbSpk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span></div>'
+        +'<div class="lbcard" id="afLbCard"><div class="lbprompt" id="afLbPrompt"></div><div class="lbchips" id="afLbChips"></div></div>'
+        +'<div class="lbacts" id="afLbActs"></div>'
+        +'<div class="lbcap" id="afLbCap"></div>'
+        +'</div>';
+      document.body.appendChild(lb);
       lb.addEventListener('click',function(e){ if(e.target===lb)closeLb(); });
       lb.querySelector('#afLbClose').addEventListener('click',closeLb);
-      document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&lb&&lb.classList.contains('on'))closeLb(); });
+      document.addEventListener('keydown',function(e){
+        if(!lb||!lb.classList.contains('on'))return;
+        if(e.key==='Escape'){ closeLb(); return; }
+        if(e.key==='ArrowLeft'){ var p=document.getElementById('afLbPrev'); if(p&&!p.classList.contains('off'))p.click(); }
+        if(e.key==='ArrowRight'){ var n=document.getElementById('afLbNext'); if(n&&!n.classList.contains('off'))n.click(); }
+      });
+      // video boshqaruvi (bitta marta bog'lanadi)
+      var v=lb.querySelector('#afLbVideo'), play=lb.querySelector('#afLbPlay'),
+          track=lb.querySelector('#afLbTrack'), fill=lb.querySelector('#afLbFill'), knob=lb.querySelector('#afLbKnob'),
+          time=lb.querySelector('#afLbTime'), spk=lb.querySelector('#afLbSpk');
+      function updScrub(){
+        var d=v.duration||0, c=v.currentTime||0, p=d?Math.min(100,c/d*100):0;
+        fill.style.width=p+'%'; knob.style.left=p+'%';
+        time.textContent=fmtT(c)+' / '+fmtT(d);
+      }
+      v.addEventListener('timeupdate',updScrub);
+      v.addEventListener('loadedmetadata',updScrub);
+      v.addEventListener('play',function(){ play.style.display='none'; });
+      v.addEventListener('pause',function(){ if(v.style.display!=='none')play.style.display='flex'; });
+      v.addEventListener('ended',function(){ play.style.display='flex'; });
+      play.addEventListener('click',function(){ var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); });
+      v.addEventListener('click',function(){ if(v.paused){ var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); } else v.pause(); });
+      track.addEventListener('click',function(e){ var r=track.getBoundingClientRect(); var x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)); if(v.duration)v.currentTime=x*v.duration; updScrub(); });
+      spk.addEventListener('click',function(){ v.muted=!v.muted; spk.classList.toggle('muted',v.muted); });
       return lb;
     }
-    function closeLb(){ if(!lb)return; lb.classList.remove('on');
+    function closeLb(){ if(!lb)return; lb.classList.remove('on'); lbCur=null;
       var v=document.getElementById('afLbVideo'); if(v){try{v.pause();}catch(e){} v.removeAttribute('src'); v.load&&v.load();}
       var a=document.getElementById('afLbAudio'); if(a){try{a.pause();}catch(e){} a.removeAttribute('src');} }
-    function lba(svg,label,fn){ var d=document.createElement('div'); d.className='lba'; d.innerHTML=svg+' '+label; d.addEventListener('click',fn); return d; }
+    function lbIcon(svg,title,fn){ var d=document.createElement('div'); d.className='lbico'; d.title=title; d.innerHTML=svg; d.addEventListener('click',fn); return d; }
     function openLightbox(it,ctx){
       if(!it||!it.url)return; ensureLb(); ctx=ctx||{};
       var cat=it.cat||'image';
-      var v=document.getElementById('afLbVideo'),img=document.getElementById('afLbImg'),au=document.getElementById('afLbAudio'),acts=document.getElementById('afLbActs');
-      v.style.display='none'; img.style.display='none'; au.style.display='none';
+      var v=document.getElementById('afLbVideo'),img=document.getElementById('afLbImg'),au=document.getElementById('afLbAudio'),
+          acts=document.getElementById('afLbActs'),play=document.getElementById('afLbPlay'),scrub=document.getElementById('afLbScrub');
+      lbCur={it:it,ctx:ctx};
+      v.style.display='none'; img.style.display='none'; au.style.display='none'; play.style.display='none';
+      scrub.classList.remove('on');
       try{v.pause();}catch(e){} try{au.pause();}catch(e){}
-      if(cat==='video'){ v.style.display=''; v.src=it.url; v.muted=false; try{v.currentTime=0;}catch(e){} v.load&&v.load(); var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); }
+      if(cat==='video'){ v.style.display=''; v.controls=false; v.src=it.url; v.muted=false; try{v.currentTime=0;}catch(e){} v.load&&v.load(); scrub.classList.add('on'); var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){ play.style.display='flex'; }); }
       else if(cat==='audio'||cat==='sfx'){ au.style.display=''; au.src=it.url; }
       else { img.style.display=''; img.src=it.url; }
-      acts.innerHTML='';
-      acts.appendChild(lba(IC.imp,'AE import',function(){ ctx.onImport&&ctx.onImport(it); }));
-      if(ctx.refAllowed&&ctx.refAllowed(it)) acts.appendChild(lba(IC.ref,'Referens',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); }));
-      if(ctx.onRestore&&it.prompt) acts.appendChild(lba(IC.rst,'Qayta gen',function(){ closeLb(); ctx.onRestore(it); }));
-      if(!ctx.isCEP) acts.appendChild(lba(IC.dl,'Yuklab olish',function(){ ctx.onDownload&&ctx.onDownload(it); }));
+      // counter + prev/next (ctx.list bo'lsa)
+      var list=(ctx&&typeof ctx.list==='function')?(ctx.list()||[]):[];
+      var idx=-1;
+      for(var i=0;i<list.length;i++){ var x=list[i]; if(x===it||(it.id&&x.id===it.id)){ idx=i; break; } }
+      if(idx<0&&it.url){ for(var i2=0;i2<list.length;i2++){ if(list[i2].url===it.url){ idx=i2; break; } } }
+      var cnt=document.getElementById('afLbCount');
+      cnt.textContent=(idx>=0&&list.length)?((idx+1)+' / '+list.length):'';
+      var nav=document.getElementById('afLbNav'), pv=document.getElementById('afLbPrev'), nx=document.getElementById('afLbNext');
+      if(list.length>1&&idx>=0){
+        nav.style.display='';
+        pv.classList.toggle('off',idx<=0); nx.classList.toggle('off',idx>=list.length-1);
+        pv.onclick=function(){ if(idx>0)openLightbox(list[idx-1],ctx); };
+        nx.onclick=function(){ if(idx<list.length-1)openLightbox(list[idx+1],ctx); };
+      } else { nav.style.display='none'; pv.onclick=nx.onclick=null; }
+      // prompt + meta karta
+      var card=document.getElementById('afLbCard'), pr=document.getElementById('afLbPrompt'), chips=document.getElementById('afLbChips');
+      var prompt=(it.prompt||it.title||'').trim();
+      chips.innerHTML='';
+      var addChip=function(t){ if(!t)return; var s=document.createElement('span'); s.textContent=t; chips.appendChild(s); };
+      var pp=it.params||{};
+      addChip(it.modelLabel||pp.modelLabel||'');
+      addChip([pp.aspectRatio,pp.resolution||pp.quality].filter(Boolean).join(' · ')||it.sub||'');
+      if(typeof it.cost==='number'&&it.cost>0)addChip('✦ '+it.cost);
+      if(it.createdAt){ try{ var d=new Date(it.createdAt); if(!isNaN(d.getTime())){ var now=new Date(); var same=d.toDateString()===now.toDateString(); addChip((same?'bugun':String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0'))+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); } }catch(e){} }
+      pr.textContent=prompt;
+      card.classList.toggle('on',!!(prompt||chips.children.length));
+      // amallar: lime Import + icon-doiralar (ctx handlerlari SAQLANADI)
+      acts.innerHTML=''; var cap=[];
+      var imp=document.createElement('div'); imp.className='lbimp';
+      imp.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Import';
+      imp.addEventListener('click',function(){ ctx.onImport&&ctx.onImport(it); });
+      acts.appendChild(imp); cap.push('Import');
+      if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Referens',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Referens'); }
+      if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>','Qayta gen',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Qayta gen'); }
+      if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
+      document.getElementById('afLbCap').textContent=cap.join(' · ');
       lb.classList.add('on');
     }
 
@@ -11651,6 +11745,7 @@ window.afGallery=(function(){
   // So'nggi-grid ctx — umumiy afRecent.card/openLightbox shundan foydalanadi (model-aware Referens shu yerda).
   function igRecentCtx(){ return {
     isCEP: IS_CEP,
+    list: function(){ return st.recent.filter(function(x){ return x&&x.url&&!x.pending; }); }, // b10: lightbox prev/next
     selecting: function(){ return st.recentSelect; },
     isSelected: function(it){ return !!(it.id&&st.recentSel[it.id]); },
     onToggleSelect: function(it,d){ if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; } if(st.recentSel[it.id])delete st.recentSel[it.id]; else st.recentSel[it.id]=it; d.classList.toggle('sel',!!st.recentSel[it.id]); updRecentBatch(); },
@@ -11760,7 +11855,7 @@ window.afGallery=(function(){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
         if(!st.recent.some(function(x){return x.url===url||x.id===g.id;}))
-          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null});
+          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Natija',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
       });
       recentLoaded=true; recentLoading=false; st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Internet yoki sessiyani tekshiring.'; renderRecentGrid(); });
@@ -13168,6 +13263,7 @@ window.afGallery=(function(){
   // So'nggi-grid ctx — umumiy afRecent.card/openLightbox shundan foydalanadi (model-aware Referens shu yerda).
   function vgRecentCtx(){ return {
     isCEP: IS_CEP,
+    list: function(){ return vgRcState.items.filter(function(x){ return x&&x.url&&!x.pending; }); }, // b10: lightbox prev/next
     selecting: function(){ return vgRcState.selecting; },
     isSelected: function(it){ return !!(it.id&&vgRcState.sel[it.id]); },
     onToggleSelect: function(it,d){ if(!it.id){ toast('Bu natija hali saqlanmoqda','info'); return; } if(vgRcState.sel[it.id])delete vgRcState.sel[it.id]; else vgRcState.sel[it.id]=it; d.classList.toggle('sel',!!vgRcState.sel[it.id]); updVgRcBatch(); },
@@ -13348,7 +13444,9 @@ window.afGallery=(function(){
             cat:cat,
             sizeBytes:(a&&a.sizeBytes)||0,
             sourceDurationSec:(g&&g.params&&g.params.duration&&String(g.params.duration)!=='auto')?(Number(g.params.duration)||0):0,
-            sourceResolution:(g&&g.params&&g.params.resolution)?String(g.params.resolution):''
+            sourceResolution:(g&&g.params&&g.params.resolution)?String(g.params.resolution):'',
+            cost:(typeof g.cost==='number'?g.cost:null),          // b10: lightbox meta chip
+            createdAt:g.createdAt||null
           });
       });
       vgRcState.items=vgRcState.items.slice(0,12);
