@@ -2833,7 +2833,7 @@ html.home-mode #homePage{display:block!important}
 .axhome .hm-body{flex:1;padding-bottom:20px}
 .axhome .hm-kick{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--mut);padding:16px 14px 8px}
 /* featured hero */
-.axhome .hm-feat{margin:0 14px;position:relative;height:184px;border-radius:12px;overflow:hidden;background-size:cover;background-position:center;cursor:pointer}
+.axhome .hm-feat{margin:0 14px;position:relative;aspect-ratio:352/184;border-radius:12px;overflow:hidden;background-size:cover;background-position:center;cursor:pointer}
 .axhome .hm-feat-ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 38%,rgba(6,8,11,.88))}
 .axhome .hm-feat-bot{position:absolute;left:12px;right:12px;bottom:10px;display:flex;align-items:flex-end;gap:10px}
 .axhome .hm-feat-bot .tx{flex:1;min-width:0}
@@ -2852,10 +2852,10 @@ html.home-mode #homePage{display:block!important}
 .axhome .hm-all{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:3px;background:none;border:0;font-family:inherit;cursor:pointer}
 .axhome .hm-all svg{width:10px;height:10px}
 /* template grid */
-.axhome .hm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;padding:0 14px}
+.axhome .hm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:12px 10px;padding:0 14px}
 .axhome .hm-card{display:flex;flex-direction:column;gap:6px;cursor:pointer}
 .axhome .hm-card:active{transform:scale(.98)}
-.axhome .hm-thumb{position:relative;height:96px;border-radius:10px;overflow:hidden;background-size:cover;background-position:center}
+.axhome .hm-thumb{position:relative;aspect-ratio:171/96;border-radius:10px;overflow:hidden;background-size:cover;background-position:center}
 .axhome .hm-card .hm-badge{top:7px;left:7px;font-size:8px;padding:2px 6px;border-radius:4px}
 .axhome .hm-x{position:absolute;top:7px;right:7px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(8,10,14,.72)}
 .axhome .hm-app{position:absolute;bottom:7px;left:7px;display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;background:rgba(8,10,14,.72);border-radius:4px;color:#E7ECF3}
