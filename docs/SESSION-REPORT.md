@@ -1,33 +1,19 @@
-# SESSION REPORT — 2026-07-03 — Turnstile frontend widget + GCP billing budget
+# SESSION REPORT — 2026-07-03 — Plagin redesign FAZA 0 + platforma dizayn prompti
 
-## MUAMMO
-Turnstile backend (`turnstile.ts`, `/register`) allaqachon bor edi, lekin frontend widget
-yo'q edi (site key konfiguratsiya qilinmaguncha fail-open ishlaydi). GCP loyihada billing
-budget umuman yo'q edi (xarajat oshib ketsa ogohlantirish yo'q).
+## NIMA QILINDI
+- Yangi plagin dizayni (`design-preview/.../FrameFlow Redesign.dc.html`) tahlil qilindi:
+  18/18 capability bor, tokenlar spec bilan bayt-bayt mos, double-nav va o'lik view'lar tozalangan.
+- Platforma to'liq kod-inventari → `docs/DESIGN-PROMPT-PLATFORM.md` (bir xil dizayn tizimi,
+  lekin web-shakl; joriy 10 buzilgan/soxta joy belgilangan: o'lik Blog, soxta testimonial, ishlamaydigan filtr h.k.).
+- **Plagin redesign FAZA 0 (texnik spike) yakunlandi** → `docs/PLUGIN-REDESIGN-FAZA0.md`.
 
-## O'ZGARTIRILDI
-- `js/studio-api.js`, `platform/ff-api.js` — `register()` ga `turnstileToken` parametri.
-- `login.html`, `platform/index.html` — Turnstile widget (Google tugma naqshiga o'xshab):
-  meta `turnstile-site-key` bo'sh bo'lsa render qilinmaydi/bloklamaydi (backend fail-open
-  bilan bir xil naqsh); to'lganda `renderTurnstile()`/`initTurnstile()` widget'ni render
-  qiladi va tokenni submit'ga bog'laydi.
-- `scripts/prepare-cf-pages.mjs` — CSP (Studio va Platform ikkalasi) ga
-  `challenges.cloudflare.com` qo'shildi (script-src/connect-src/frame-src).
-- GCP: `billingbudgets.googleapis.com` yoqildi, `project-289028d3-984c-4d84-bd4` uchun
-  $50/oy budget yaratildi (50%/90%/100% ogohlantirish, default email kanal).
-
-## TEKSHIRILDI (preview)
-- `login.html` va `platform/index.html` ikkalasida ham: bo'sh site key → widget render
-  bo'lmaydi (0 farzand element, konsol toza) — production-safe default.
-- Test site key (`1x00000000000000000000AA`) bilan: widget to'g'ri joyda render bo'ldi,
-  avtomatik dummy token berdi, submit oqimi real network'gacha yetdi. Keyin ikkalasida
-  ham qiymat bo'shga qaytarildi (joriy production holat).
+## NIMA TOPILDI
+- **QAROR: Strategiya B (vanilla ekstraksiya), dc-runtime RAD ETILDI** — render sababi emas,
+  arxitektura: dc-runtime 12k qatorli ishlayotgan kredit/host JS'ni React'ga qayta yozishni majbur qiladi.
+- Dizayn CEF 88+ dan tashqari CSS ishlatmaydi; joriy `.axhome` allaqachon aynan shu tokenlarni
+  CEF'da render qiladi. Vanilla ekstraksiya real Chromium'da 1:1 render bo'ldi (`scratchpad/faza0-spike`).
+- Saboq: `.ph`/`ph-*` klass nomidan qoch (Phosphor CSS egallaydi) → `ff-*` namespace.
 
 ## KUTILMOQDA
-1. ~~Foydalanuvchi Cloudflare Turnstile widget yaratishi~~ — BAJARILDI: haqiqiy site key
-   (`login.html`, `platform/index.html`) va secret key (`cloudrun-env.yaml` →
-   `TURNSTILE_SECRET_KEY`, gitignored) qo'yildi, `gh secret set CLOUDRUN_ENV_YAML` +
-   `gh workflow run deploy-cloudrun.yml` orqali deploy qilindi (run 28657798609, success).
-   Production'da tasdiqlandi: soxta token bilan `/api/auth/register` →
-   `400 CAPTCHA_FAILED` (avval fail-open edi, endi real tekshiradi).
-2. GCP billing budget — hozircha faqat default email ogohlantirish (custom kanal yo'q).
+- Faza 1: component library (tokenlar + `f1`-`f4`) vanilla CSS modul, `.axroot`/`.axhome` bilan birlashtirish.
+- Keyin: Faza 2 yagona nav → Faza 3 Katalog → Faza 4 AI Tools → Faza 5 Account → Faza 6 tozalash.
