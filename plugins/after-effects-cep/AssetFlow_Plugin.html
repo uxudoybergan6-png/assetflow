@@ -1696,6 +1696,33 @@ html.cep-mode .pack-dropbar{display:flex}
 .af-skel-line{height:9px;margin:9px 10px;border-radius:6px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 37%,var(--surface-2) 63%);background-size:400% 100%;animation:afShimmer 1.3s ease infinite}
 .af-skel-line.short{width:55%}
 @keyframes afShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+
+/* Katalog holatlari a7 — cold-start · xato · bo'sh natija (mockup a7 1:1) */
+@keyframes ffbar{0%{left:-40%}100%{left:110%}}
+@keyframes ffshim{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.af7-load{grid-column:1/-1}
+.af7-load-head{display:flex;flex-direction:column;align-items:center;gap:10px;padding:26px 30px 18px;text-align:center}
+.af7-spin{width:22px;height:22px;color:#C2F04A;animation:ffspin 1.1s linear infinite}
+.af7-spin svg{display:block;width:22px;height:22px}
+.af7-load-title{font-weight:600;font-size:12px;color:#F2F5F8}
+.af7-bar{width:170px;height:4px;border-radius:99px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.af7-bar-fill{position:absolute;top:0;bottom:0;width:36%;border-radius:99px;background:#C2F04A;animation:ffbar 1.4s ease-in-out infinite}
+.af7-hint{font-family:var(--font-mono);font-size:9px;color:#5E6675}
+.af7-skel{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0}
+.af7-skel-card{height:96px;border-radius:10px;background:linear-gradient(100deg,rgba(255,255,255,.04) 32%,rgba(255,255,255,.09) 48%,rgba(255,255,255,.04) 64%);background-size:200% 100%;animation:ffshim 1.6s linear infinite}
+.af7-skel-line{height:14px;border-radius:6px;background:rgba(255,255,255,.05);width:80%}
+.af7-state{grid-column:1/-1;min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:0 42px;text-align:center}
+.af7-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.af7-circle svg{display:block;width:19px;height:19px}
+.af7-circle.err{background:rgba(255,107,94,.09);border:1px solid rgba(255,107,94,.28);color:#FF6B5E}
+.af7-circle.none{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#8A93A3}
+.af7-title{font-weight:700;font-size:13.5px;color:#F2F5F8}
+.af7-desc{font-size:11px;color:#8A93A3;line-height:1.55}
+.af7-btn{height:38px;padding:0 18px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:12px;color:#E7ECF3;cursor:pointer;font-family:inherit}
+.af7-btn svg{display:block;width:13px;height:13px}
+.af7-sync{font-family:var(--font-mono);font-size:9px;color:#5E6675}
+@media (min-width:560px){.af7-skel{grid-template-columns:repeat(auto-fill,minmax(166px,1fr))}}
+
 .empty .empty-retry{
   margin-top:14px;background:var(--accent,#82c341);color:#fff;border:0;
   font-size:12px;font-weight:600;padding:9px 18px;border-radius:9px;cursor:pointer;
@@ -5913,29 +5940,64 @@ function updateFilterIndicator(){
   }
 }
 
-/** Grid bo'sh bo'lganda holatga qarab tegishli xabar/skeleton/retry chiqaradi */
+// a7 holat ikonlari (inline SVG — a3–a6 uslubi; CDN yo'q)
+var AF7_SPIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>';
+var AF7_WIFI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3l20 20"/><path d="M5 12.6a11 11 0 0 1 4.3-2.6"/><path d="M1.4 8.8A16 16 0 0 1 7 5.6"/><path d="M8.5 16.1a6 6 0 0 1 6-1.2"/><path d="M16.7 10.5a11 11 0 0 1 2.9 2.1"/><path d="M22.6 8.8a16 16 0 0 0-5-3.1"/><path d="M12 20h.01"/></svg>';
+var AF7_REFRESH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>';
+var AF7_SEARCHMINUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/><path d="M8 11h6"/></svg>';
+
+/** So'nggi muvaffaqiyatli sinxron vaqti (HH:MM) yoki '' */
+function af7LastSync(){
+  const d=window.__afLastSyncAt;
+  if(!(d instanceof Date)||isNaN(d.getTime()))return '';
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+/** Grid bo'sh bo'lganda holatga qarab tegishli xabar/skeleton/retry chiqaradi (a7 dizayn 1:1) */
 function catalogEmptyStateHtml(){
   if(catalogLoadState==='loading'){
-    const card='<div class="af-skel-card"><div class="af-skel-thumb"></div><div class="af-skel-line"></div><div class="af-skel-line short"></div></div>';
-    return '<div class="af-skel-wrap"><div class="af-skel-note">Katalog yuklanmoqda — server uyg‘onmoqda (~60s gacha)…</div>'+
-      card+card+card+card+'</div>';
+    const skelCard='<div class="af7-skel-card"></div>';
+    const skelLine='<div class="af7-skel-line"></div>';
+    return '<div class="af7-load">'+
+        '<div class="af7-load-head">'+
+          '<span class="af7-spin">'+AF7_SPIN+'</span>'+
+          '<div class="af7-load-title">Katalog yuklanmoqda — server uyg‘onmoqda…</div>'+
+          '<div class="af7-bar"><div class="af7-bar-fill"></div></div>'+
+          '<div class="af7-hint">odatda 10–20 soniya</div>'+
+        '</div>'+
+        '<div class="af7-skel">'+skelCard+skelCard+skelLine+skelLine+'</div>'+
+      '</div>';
   }
   if(catalogLoadState==='error'){
-    return '<div class="empty" style="grid-column:1/-1"><div class="empty-ico">⚠</div>'+
-      '<div class="empty-txt">Server javob bermadi. Internet yoki API ni tekshiring.</div>'+
-      '<button type="button" class="empty-retry" onclick="retryCatalog()">↻ Qayta urinish</button></div>';
+    const last=af7LastSync();
+    return '<div class="af7-state">'+
+        '<div class="af7-circle err">'+AF7_WIFI+'</div>'+
+        '<div class="af7-title">Server javob bermadi</div>'+
+        '<div class="af7-desc">Internetni tekshiring yoki birozdan so‘ng qayta urinib ko‘ring.</div>'+
+        '<button type="button" class="af7-btn" onclick="retryCatalog()">'+AF7_REFRESH+'Qayta urinish</button>'+
+        (last?'<div class="af7-sync">So‘nggi sinxron: '+last+'</div>':'')+
+      '</div>';
   }
-  // Katalog tayyor, lekin filtr natija bermadi
+  // Katalog tayyor, lekin filtr/qidiruv natija bermadi
   if(catalogLoadState==='ready'&&hasAnyAssets()&&filtersActive()){
-    const n=activeFilterCount();
-    return '<div class="empty" style="grid-column:1/-1"><div class="empty-ico">◌</div>'+
-      '<div class="empty-txt">'+n+' ta filtr natijani yashiryapti.</div>'+
-      '<button type="button" class="empty-retry ghost" onclick="clearAllFilters()">Filtrlarni tozalash</button></div>';
+    const q=(currentSearch||'').trim();
+    const sub=q
+      ? '«'+escHtml(q)+'» bo‘yicha natija yo‘q. Filtrlarni yumshatib ko‘ring.'
+      : 'Filtrlarga mos natija yo‘q. Filtrlarni yumshatib ko‘ring.';
+    return '<div class="af7-state">'+
+        '<div class="af7-circle none">'+AF7_SEARCHMINUS+'</div>'+
+        '<div class="af7-title">Hech narsa topilmadi</div>'+
+        '<div class="af7-desc">'+sub+'</div>'+
+        '<button type="button" class="af7-btn" onclick="clearAllFilters()">Filtrlarni tozalash</button>'+
+      '</div>';
   }
-  // Haqiqatan bo'sh
-  return '<div class="empty" style="grid-column:1/-1"><div class="empty-ico">◌</div>'+
-    '<div class="empty-txt">Hali shablon yo‘q.</div>'+
-    '<button type="button" class="empty-retry ghost" onclick="retryCatalog()">↻ Yangilash</button></div>';
+  // Haqiqatan bo'sh (hech qanday shablon yo'q)
+  return '<div class="af7-state">'+
+      '<div class="af7-circle none">'+AF7_SEARCHMINUS+'</div>'+
+      '<div class="af7-title">Hali shablon yo‘q</div>'+
+      '<div class="af7-desc">Katalogni yangilang yoki birozdan so‘ng qayting.</div>'+
+      '<button type="button" class="af7-btn" onclick="retryCatalog()">'+AF7_REFRESH+'Yangilash</button>'+
+    '</div>';
 }
 
 /** Katalogni qayta yuklaydi — empty/error holatdagi tugma uchun */
@@ -5946,6 +6008,7 @@ async function retryCatalog(){
   try{
     await AssetFlowCatalog.refreshBrowse();
     catalogLoadState='ready';
+    window.__afLastSyncAt=new Date();
   }catch(e){
     catalogLoadState='error';
   }
@@ -6229,6 +6292,7 @@ async function syncServerCatalog(){
   }
   try{
     const n=await AssetFlowCatalog.refreshBrowse();
+    window.__afLastSyncAt=new Date();
     reconcileDownloadedFromScenes();
     // Kutubxonam ochiq bo'lsa (a6) — yangilangan katalogdan sevimli/yuklab olingan qayta chiziladi
     if(document.documentElement.classList.contains('lib-mode')){(window.__libTab==='downloaded'?renderLibDl:renderLibFav)();}
