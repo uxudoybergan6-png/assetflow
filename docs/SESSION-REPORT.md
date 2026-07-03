@@ -24,7 +24,10 @@ budget umuman yo'q edi (xarajat oshib ketsa ogohlantirish yo'q).
   ham qiymat bo'shga qaytarildi (joriy production holat).
 
 ## KUTILMOQDA
-1. Foydalanuvchi Cloudflare Turnstile dashboard'da haqiqiy widget yaratishi kerak → site
-   key ikkala HTML faylning meta tegiga, secret key `cloudrun-env.yaml`dagi
-   `TURNSTILE_SECRET_KEY`ga + `gh secret set CLOUDRUN_ENV_YAML` + redeploy.
+1. ~~Foydalanuvchi Cloudflare Turnstile widget yaratishi~~ — BAJARILDI: haqiqiy site key
+   (`login.html`, `platform/index.html`) va secret key (`cloudrun-env.yaml` →
+   `TURNSTILE_SECRET_KEY`, gitignored) qo'yildi, `gh secret set CLOUDRUN_ENV_YAML` +
+   `gh workflow run deploy-cloudrun.yml` orqali deploy qilindi (run 28657798609, success).
+   Production'da tasdiqlandi: soxta token bilan `/api/auth/register` →
+   `400 CAPTCHA_FAILED` (avval fail-open edi, endi real tekshiradi).
 2. GCP billing budget — hozircha faqat default email ogohlantirish (custom kanal yo'q).
