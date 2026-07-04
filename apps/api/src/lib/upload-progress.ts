@@ -5,7 +5,7 @@
  * → db (88-90) → extract (90-97, sahnalar) → db (97-99) → done (100).
  */
 export interface UploadProgressState {
-  stage: "receive" | "sync" | "download" | "extract" | "db" | "done" | "error";
+  stage: "receive" | "sync" | "download" | "scan" | "extract" | "db" | "done" | "error";
   pct: number;
   message: string;
   error?: string;

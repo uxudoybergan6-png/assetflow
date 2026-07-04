@@ -243,4 +243,5 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
 export const approvedCatalogWhere = {
   reviewStatus: TemplateReviewStatus.APPROVED,
   published: true,
+  takedownAt: null, // DMCA/takedown belgilangan shablonlar katalogda ko'rinmaydi (Bosqich 2 #2)
 };

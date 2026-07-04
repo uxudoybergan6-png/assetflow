@@ -54,6 +54,8 @@ import { writeAuditLog } from "../lib/audit-log.js";
 import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
+import { scanFileHash } from "../lib/malware-scan.js";
+import crypto from "crypto";
 
 /** Moderatsiya natijasini contributor'ga email qiladi (xato bo'lsa jim o'tadi) */
 async function notifyContributorReview(
@@ -922,47 +924,138 @@ contributorRouter.post(
   }
 );
 
+/** Fayl sha256 (hex) — stream (GB pack ham RAM'ni to'ldirmaydi). */
+function sha256File(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash("sha256");
+    const stream = fs.createReadStream(filePath);
+    stream.on("error", reject);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("end", () => resolve(hash.digest("hex")));
+  });
+}
+
 /**
- * Pack .zip'ni bulutdan (presigned yo'l bilan yuklangan) olib, .mogrt sahnalarni
- * ajratadi va metaJson.scenes'ni yangilaydi. FON (fire-and-forget) — /pack-uploaded
- * javobni bloklamaydi. Progress mavjud upload-progress SSE orqali oqadi. re-extract
- * endpoint'i bilan bir xil mantiq, faqat manba doim bulut (R2/GCS).
+ * Pack yuklangач FON xavfsizlik + ekstraktsiya quvuri (Bosqich 2 #2). Bulutdan tmp'ga
+ * yuklab: (1) sha256 hash → dedup (anti-theft/anti-spam), (2) malware skan (VirusTotal),
+ * (3) natijaga qarab TOZA bo'lsa .zip sahnalarni ajratadi; MALICIOUS/DUPLICATE/prod-UNKNOWN
+ * bo'lsa KARANTIN (published=false, ekstraktsiya/serve YO'Q) + audit. FON (fire-and-forget)
+ * — /pack-uploaded javobni bloklamaydi. Progress upload-progress SSE orqali oqadi.
  */
-async function extractPackScenesInBackground(id: string, packKey: string): Promise<void> {
+async function processPackInBackground(
+  id: string,
+  packKey: string,
+  contributorId: string,
+  isZip: boolean
+): Promise<void> {
   let tmpDir: string | null = null;
   try {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
-    const zipPath = path.join(tmpDir, "pack.zip");
-    setUploadProgress(id, { stage: "download", pct: 15, message: "Pack yuklab olinmoqda…" });
-    await downloadS3ToFile(packKey, zipPath);
-    const scenesOut = await storeMogrtScenesFromZip(id, zipPath, (done, total) => {
-      setUploadProgress(id, {
-        stage: "extract",
-        pct: 40 + Math.floor((done / total) * 55),
-        message: `Sahna ${done}/${total} tayyorlanmoqda…`,
-      });
+    const ext = path.extname(packKey) || ".bin";
+    const packPath = path.join(tmpDir, `pack${ext}`);
+    setUploadProgress(id, { stage: "download", pct: 12, message: "Pack yuklab olinmoqda…" });
+    await downloadS3ToFile(packKey, packPath);
+
+    // 1) Content-hash → dedup (boshqa contributor bir xil pack = anti-theft; o'zi = warn).
+    setUploadProgress(id, { stage: "scan", pct: 22, message: "Xavfsizlik tekshiruvi…" });
+    const hash = await sha256File(packPath);
+    const dup = await prisma.contributorTemplate.findFirst({
+      where: { packHash: hash, id: { not: id } },
+      select: { id: true, contributorId: true },
     });
-    if (scenesOut.length > 0) {
-      const fresh = await prisma.contributorTemplate.findUnique({ where: { id } });
-      const existingMeta = (fresh?.metaJson ?? {}) as Record<string, unknown>;
-      await prisma.contributorTemplate.update({
-        where: { id },
-        data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
-      });
+
+    // 2) Malware skan (hash-asosli). Sozlanmagan → dev clean / prod unknown.
+    const scan = await scanFileHash(hash);
+
+    // 3) Verdikt: karantin sabablarини aniqlash (fail-closed og'ir holatlarда).
+    const prod = process.env.NODE_ENV === "production";
+    let scanStatus = "clean";
+    let detail = scan.detail;
+    let quarantine = false;
+    let userError: string | null = null;
+    if (dup && dup.contributorId !== contributorId) {
+      scanStatus = "duplicate";
+      quarantine = true;
+      detail = `Boshqa contributor shabloni bilan bir xil pack (${dup.id}) — anti-theft`;
+      userError = "Bu pack allaqachon boshqa shablon sifatida mavjud — nashr bloklandi.";
+    } else if (scan.verdict === "malicious") {
+      scanStatus = "malicious";
+      quarantine = true;
+      detail = scan.detail;
+      userError = "Pack xavfsizlik tekshiruvidan o'tmadi (zararli dastur aniqlandi) — nashr bloklandi.";
+    } else if (scan.verdict === "unknown" && prod) {
+      // Fail-closed: prodda noma'lum/skan qilib bo'lmaydigan → karantin, admin ko'rib chiqadi.
+      scanStatus = "quarantined";
+      quarantine = true;
+      detail = scan.detail;
+      userError = "Pack xavfsizlik tekshiruvi kutilmoqda — admin ko'rib chiqadi.";
+    } else {
+      scanStatus = "clean";
+      detail = dup ? `Toza (o'zingizning oldingi nusxangiz: ${dup.id})` : scan.detail;
     }
-    setUploadProgress(id, {
-      stage: "done",
-      pct: 100,
-      message: scenesOut.length ? `Tayyor — ${scenesOut.length} sahna` : "Tayyor!",
-      done: true,
+
+    await prisma.contributorTemplate.update({
+      where: { id },
+      data: {
+        packHash: hash,
+        packScanStatus: scanStatus,
+        packScanDetail: detail.slice(0, 480),
+        ...(quarantine ? { published: false } : {}),
+      },
     });
+
+    if (quarantine) {
+      await writeAuditLog({
+        actorId: contributorId,
+        action: "template.pack_quarantined",
+        targetType: "template",
+        targetId: id,
+        detail,
+        meta: { scanStatus, hash, malicious: scan.malicious ?? null, duplicateOf: dup?.id ?? null },
+      });
+      setUploadProgress(id, {
+        stage: "error",
+        pct: 0,
+        message: "",
+        error: userError || "Pack karantinga olindi.",
+        done: true,
+      });
+      return; // ekstraktsiya YO'Q — karantin.
+    }
+
+    // TOZA → .zip bo'lsa sahnalarni ajrat (.aep/.mogrt yakka fayldan ajratilmaydi).
+    if (isZip) {
+      const scenesOut = await storeMogrtScenesFromZip(id, packPath, (done, total) => {
+        setUploadProgress(id, {
+          stage: "extract",
+          pct: 40 + Math.floor((done / total) * 55),
+          message: `Sahna ${done}/${total} tayyorlanmoqda…`,
+        });
+      });
+      if (scenesOut.length > 0) {
+        const fresh = await prisma.contributorTemplate.findUnique({ where: { id } });
+        const existingMeta = (fresh?.metaJson ?? {}) as Record<string, unknown>;
+        await prisma.contributorTemplate.update({
+          where: { id },
+          data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
+        });
+      }
+      setUploadProgress(id, {
+        stage: "done",
+        pct: 100,
+        message: scenesOut.length ? `Tayyor — ${scenesOut.length} sahna` : "Tayyor!",
+        done: true,
+      });
+    } else {
+      setUploadProgress(id, { stage: "done", pct: 100, message: "Tayyor!", done: true });
+    }
   } catch (e) {
-    console.error("[pack-uploaded] sahna ekstraktsiya xato:", e);
+    console.error("[pack-uploaded] xavfsizlik/ekstraktsiya xato:", e);
     setUploadProgress(id, {
       stage: "error",
       pct: 0,
       message: "",
-      error: e instanceof Error ? e.message : "Sahna ekstraktsiya xatosi",
+      error: e instanceof Error ? e.message : "Pack ishlashda xato",
       done: true,
     });
   } finally {
@@ -1032,25 +1125,27 @@ contributorRouter.post(
         .json({ error: "Pack bulutda topilmadi — yuklashni qayta urinib ko'ring" });
       return;
     }
+    // Yangi pack yuklandi → skan holatini reset (eski 'clean' qolib ketmasin).
     await prisma.contributorTemplate.update({
       where: { id },
-      data: { fileName: p.data.fileName, fileSize: meta.sizeBytes },
+      data: {
+        fileName: p.data.fileName,
+        fileSize: meta.sizeBytes,
+        packHash: null,
+        packScanStatus: "pending",
+        packScanDetail: null,
+      },
     });
-    // .zip bo'lsa — .mogrt sahna ekstraktsiyasini FON'da bajaramiz (javob darrov
-    // qaytadi; progress upload-progress SSE orqali oqadi). .aep/.mogrt yakka
-    // fayldan sahna ajratilmaydi — darrov 'done'.
-    if (/\.zip$/i.test(packKey)) {
-      setUploadProgress(id, {
-        stage: "extract",
-        pct: 5,
-        message: "Pack qabul qilindi, sahnalar tayyorlanmoqda…",
-      });
-      extractPackScenesInBackground(id, packKey);
-      res.json({ ok: true, extracting: true });
-    } else {
-      setUploadProgress(id, { stage: "done", pct: 100, message: "Tayyor!", done: true });
-      res.json({ ok: true, extracting: false });
-    }
+    // FON xavfsizlik quvuri (hash dedup + malware skan) → TOZA bo'lsa .zip sahnalarni
+    // ajratadi. Barcha pack turlari uchun (javob darrov; progress SSE orqali oqadi).
+    const isZip = /\.zip$/i.test(packKey);
+    setUploadProgress(id, {
+      stage: "scan",
+      pct: 5,
+      message: "Pack qabul qilindi, xavfsizlik tekshiruvi…",
+    });
+    processPackInBackground(id, packKey, existing.contributorId, isZip);
+    res.json({ ok: true, extracting: isZip, scanning: true });
   }
 );
 
@@ -1488,6 +1583,29 @@ contributorRouter.post(
     const id = String(req.params.id);
     const { action, note, published } = parsed.data;
 
+    // Karantin gate (Bosqich 2 #2): malware/dedup karantinидаги pack TASDIQLANMAYDI/NASHR
+    // ETILMAYDI. Reject bloklanmaydi (admin baribir rad qila oladi).
+    if (action === "approve") {
+      const pre = await prisma.contributorTemplate.findUnique({
+        where: { id },
+        select: { packScanStatus: true },
+      });
+      const s = pre?.packScanStatus;
+      if (s === "malicious" || s === "quarantined" || s === "duplicate") {
+        res.status(409).json({
+          error:
+            s === "duplicate"
+              ? "Pack nusxa deb belgilangan (dedup) — tasdiqlab bo'lmaydi"
+              : s === "malicious"
+                ? "Pack malware skanida zararli topilgan — tasdiqlab bo'lmaydi"
+                : "Pack xavfsizlik tekshiruvi kutilmoqda (karantin) — tasdiqlab bo'lmaydi",
+          code: "PACK_QUARANTINED",
+          packScanStatus: s,
+        });
+        return;
+      }
+    }
+
     try {
       const template = await prisma.contributorTemplate.update({
         where: { id },
@@ -1675,6 +1793,76 @@ contributorRouter.post(
     }
 
     res.json({ ok: true, created, updated });
+  }
+);
+
+/**
+ * POST /admin/templates/:id/takedown — DMCA/huquqiy da'voga javob (Bosqich 2 #2).
+ * Shablonni katalogdan/serve'dan olib tashlaydi (takedownAt + published=false), sababни
+ * yozadi. Fayllar O'CHIRILMAYDI (dalil sifatida saqlanadi) — /restore bilan qaytariladi.
+ */
+const takedownSchema = z.object({ reason: z.string().trim().min(3).max(1000) });
+contributorRouter.post(
+  "/admin/templates/:id/takedown",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const parsed = takedownSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message || "Sabab kerak (min 3 belgi)" });
+      return;
+    }
+    const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Shablon topilmadi" });
+      return;
+    }
+    const template = await prisma.contributorTemplate.update({
+      where: { id },
+      data: {
+        takedownAt: new Date(),
+        takedownReason: parsed.data.reason,
+        takedownById: req.user!.userId,
+        published: false,
+      },
+    });
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "template.takedown",
+      targetType: "template",
+      targetId: id,
+      detail: `${existing.name}: ${parsed.data.reason}`,
+    });
+    res.json(template);
+  }
+);
+
+/** POST /admin/templates/:id/restore — takedown'ni bekor qiladi (qayta nashr QILMAYDI —
+ *  admin alohida /review approve bilan nashr etadi). */
+contributorRouter.post(
+  "/admin/templates/:id/restore",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "Shablon topilmadi" });
+      return;
+    }
+    const template = await prisma.contributorTemplate.update({
+      where: { id },
+      data: { takedownAt: null, takedownReason: null, takedownById: null },
+    });
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "template.takedown_restore",
+      targetType: "template",
+      targetId: id,
+      detail: existing.name,
+    });
+    res.json(template);
   }
 );
 

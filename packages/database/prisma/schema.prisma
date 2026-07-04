@@ -271,6 +271,14 @@ model ContributorTemplate {
   embeddingVec  Unsupported("vector(1024)")? // pgvector (bge-m3 = 1024-dim). Prisma native qo'llamaydi → faqat raw SQL bilan o'qiladi/yoziladi.
   previewTranscodeStatus String?      // #15: fon transcode holati — 'pending' | 'done' | 'failed' (null = hech ishlanmagan)
   previewTranscodeError  String?      // #15: fon transcode xatosi (qisqartirilgan, faqat 'failed' holatda)
+  // ── Upload xavfsizligi (Bosqich 2 #2) — ADDITIVE ──
+  packHash       String?             // Pack sha256 (hex) — dedup / anti-theft. null = hali hisoblanmagan.
+  packScanStatus String?             // Malware+dedup holati: pending|clean|malicious|unknown|quarantined|duplicate. null = eski/skan qilinmagan.
+  packScanDetail String?             // Skan tafsiloti (VirusTotal/dedup izohi, admin ko'rishi uchun).
+  // ── DMCA / takedown (Bosqich 2 #2) — ADDITIVE ──
+  takedownAt     DateTime?           // Belgilangan bo'lsa — katalogdan/serve'dan olib tashlangan (huquqiy da'vo).
+  takedownReason String?             // Takedown sababi (DMCA da'vosi va h.k.).
+  takedownById   String?             // Kim belgiladi (admin userId).
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
@@ -283,6 +291,8 @@ model ContributorTemplate {
   @@index([reviewStatus])
   @@index([published])
   @@index([reviewStatus, published, updatedAt])
+  @@index([packHash])
+  @@index([takedownAt])
 }
 
 model StudioMessageThread {

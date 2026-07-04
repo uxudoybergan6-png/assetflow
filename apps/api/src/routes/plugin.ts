@@ -202,6 +202,19 @@ async function guardDownloadable(
     res.status(400).json({ error: "Noto'g'ri shablon ID" });
     return false;
   }
+  // Takedown/karantin — HAMMAGA (admin ham) serve bloklanadi (huquqiy/xavfsizlik, fail-closed).
+  const legal = await prisma.contributorTemplate.findUnique({
+    where: { id: templateId },
+    select: { takedownAt: true, packScanStatus: true },
+  });
+  if (legal?.takedownAt) {
+    res.status(451).json({ error: "Bu shablon huquqiy sabablarga ko'ra olib tashlangan", code: "TAKEDOWN" });
+    return false;
+  }
+  if (legal && (legal.packScanStatus === "malicious" || legal.packScanStatus === "quarantined" || legal.packScanStatus === "duplicate")) {
+    res.status(451).json({ error: "Bu shablon xavfsizlik tekshiruvida bloklangan", code: "PACK_QUARANTINED" });
+    return false;
+  }
   if (req.user?.role === "ADMIN") return true;
   const tpl = await prisma.contributorTemplate.findUnique({
     where: { id: templateId },
