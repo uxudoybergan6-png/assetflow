@@ -14553,51 +14553,88 @@
     .ff .ffa-dash-qa{grid-template-columns:1fr!important}
   }
 
-  /* ═══════════ AI STUDIO — 3-panel workspace (mockup ai1..ai4 · 1:1, ffa- scoped) ═══════════ */
-  .ff .ffa-ai-work{display:flex;gap:12px;height:calc(100vh - 150px);min-height:560px}
-  /* tool rail (mockup 88px · icon over label · lime bar on active) */
-  .ff .ffa-ai-rail{width:88px;flex:none;background:var(--rail);border:1px solid var(--hair);border-radius:18px;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;overflow:hidden}
-  .ff .ffa-trail{display:flex;flex-direction:column;align-items:center;gap:5px;width:64px;padding:9px 0;border-radius:12px;background:none;border:none;color:var(--muted);font-family:inherit;cursor:pointer;position:relative;transition:background .15s,color .15s}
-  .ff .ffa-trail:hover{color:var(--text)}
-  .ff .ffa-trail.on{background:var(--f2);color:var(--text)}
-  .ff .ffa-trail.on::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--lime)}
-  .ff .ffa-trail i{font-size:20px}
-  .ff .ffa-trail.on i{color:var(--lime)}
-  .ff .ffa-trail span{font-size:9.5px;font-weight:600;letter-spacing:.02em}
-  .ff .ffa-trail-sp{flex:1;min-height:8px}
-  .ff .ffa-railcr{display:flex;flex-direction:column;align-items:center;gap:3px;width:64px;padding:11px 0;border-radius:12px;background:rgba(194,240,74,.08);border:1px solid rgba(194,240,74,.22);cursor:pointer;font-family:inherit;transition:background .15s}
-  .ff .ffa-railcr:hover{background:rgba(194,240,74,.14)}
-  /* composer (frosted middle panel) */
-  .ff .ffa-ai-composer{width:360px;flex:none;background:var(--surface);border:1px solid var(--hair2);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
-  .ff .ffa-cbody{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:18px}
-  .ff .ffa-csect{border-top:1px solid var(--hair);padding-top:16px}
-  /* setting option chips */
-  .ff .ffa-optrow{display:flex;gap:7px;flex-wrap:wrap}
-  .ff .ffa-opt{flex:1;min-width:52px;padding:10px 8px;border-radius:11px;background:var(--f2);border:1px solid var(--hair2);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;cursor:pointer;text-align:center;transition:.15s}
-  .ff .ffa-opt:hover{color:var(--text);border-color:var(--f3)}
-  .ff .ffa-opt.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
-  .ff .ffa-opt.wide{flex:none;min-width:0;padding:9px 13px}
-  .ff .ffa-modelbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 14px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:border-color .15s}
-  .ff .ffa-modelbtn:hover{border-color:var(--f3)}
-  /* canvas (results) */
-  .ff .ffa-ai-canvas{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--hair2);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
-  .ff .ffa-cdot{flex:1;min-height:0;position:relative;overflow-y:auto;padding:22px 24px;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:20px 20px}
-  .ff .ffa-cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .ff .ffa-ai-canvas.vid .ffa-cgrid{grid-template-columns:repeat(2,1fr);max-width:660px}
-  .ff .ffa-ai-canvas.aud .ffa-cgrid{grid-template-columns:1fr;max-width:520px}
-  .ff .ffa-res.g{background:none}
+  /* ═══════════ AI STUDIO — bottom-docked composer (mockup ai1..ai4 · 1:1, ffa- scoped) ═══════════ */
+  /* Root: full-height column — TOP tool tabs · CANVAS (hero + filmstrip) · docked composer floats bottom */
+  .ff .ffa-st{display:flex;flex-direction:column;height:calc(100vh - 150px);min-height:600px}
+  /* TOP horizontal tool tab bar (per user preference — replaces mockup's 88px left rail) */
+  .ff .ffa-st-top{display:flex;align-items:center;gap:12px;padding-bottom:14px;flex-wrap:wrap}
+  .ff .ffa-st-tabs{display:flex;gap:7px;flex-wrap:wrap}
+  .ff .ffa-ttab{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--muted);font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+  .ff .ffa-ttab i{font-size:15px}
+  .ff .ffa-ttab:hover{color:var(--text)}
+  .ff .ffa-ttab.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
+  .ff .ffa-st-title{font-weight:700;font-size:16px;letter-spacing:-.01em;white-space:nowrap}
+  .ff .ffa-st-modeltag{padding:5px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#B7C0CE;white-space:nowrap}
+  /* CANVAS shell — dotted bg; body (stage + filmstrip) fills, dock floats over bottom */
+  .ff .ffa-st-canvas{position:relative;flex:1;min-height:0;border:1px solid var(--hair2);border-radius:18px;overflow:hidden;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:20px 20px}
+  .ff .ffa-st-body{position:absolute;inset:0;display:flex}
+  .ff .ffa-st-stage{flex:1;min-width:0;overflow-y:auto;padding:26px 26px 168px;display:flex;flex-direction:column;align-items:center}
+  .ff .ffa-st-hero{display:flex;gap:16px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%}
+  .ff .ffa-st-main{position:relative;border-radius:16px;overflow:hidden;background:var(--media);width:100%;max-width:440px}
+  .ff .ffa-st-cost{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted2);margin-top:16px;text-align:center}
+  /* right filmstrip (Tarix — result thumbs) */
+  .ff .ffa-st-strip{width:108px;flex:none;border-left:1px solid var(--hair);background:rgba(10,13,18,.4);overflow-y:auto;padding:14px 12px 156px;display:flex;flex-direction:column;gap:10px}
+  .ff .ffa-st-striph{font:500 8.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted2);text-align:center;margin-bottom:2px}
+  .ff .ffa-st-sthumb{position:relative;border-radius:9px;overflow:hidden;aspect-ratio:1/1;cursor:pointer;border:1.5px solid transparent;background:var(--media);transition:border-color .15s}
+  .ff .ffa-st-sthumb:hover{border-color:rgba(255,255,255,.2)}
+  .ff .ffa-st-sthumb.on{border-color:var(--lime)}
+  .ff .ffa-st-sthumb .pi{position:absolute;inset:0;display:grid;place-items:center;font-size:18px;color:rgba(255,255,255,.9)}
+  /* DOCKED frosted composer (mockup glass · left/right/bottom insets) */
+  .ff .ffa-st-dock{position:absolute;left:20px;right:20px;bottom:18px;z-index:20;border-radius:18px;padding:12px 13px;background:rgba(19,22,28,.72);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
+  .ff .ffa-st-refs{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .ff .ffa-st-refadd{width:44px;height:44px;border-radius:9px;border:1px dashed rgba(255,255,255,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:1px;background:none;cursor:pointer;font-family:inherit}
+  .ff .ffa-st-refadd:hover{color:var(--text);border-color:rgba(255,255,255,.28)}
+  .ff .ffa-st-refadd i{font-size:14px}
+  .ff .ffa-st-refadd span{font-size:7px}
+  .ff .ffa-st-ta{width:100%;min-height:44px;max-height:148px;resize:none;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:13.5px;line-height:1.5;padding:4px 2px 9px}
+  .ff .ffa-st-ta::placeholder{color:var(--muted2)}
+  .ff .ffa-st-ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ff .ffa-st-chips{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+  /* compact setting chip — click opens popover */
+  .ff .ffa-chip{position:relative;display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:11px;background:var(--f2);border:1px solid var(--hair2);line-height:1.15;white-space:nowrap;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s}
+  .ff .ffa-chip:hover{border-color:var(--f3)}
+  .ff .ffa-chip.open{border-color:rgba(194,240,74,.5)}
+  .ff .ffa-chip b{font:400 7px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted2)}
+  .ff .ffa-chip>span{font-weight:600;font-size:11px;color:var(--text);display:flex;align-items:center;gap:5px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+  .ff .ffa-chip.open>span::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex:none}
+  /* chip popover — opens upward from the docked bar */
+  .ff .ffa-pop{position:absolute;bottom:calc(100% + 8px);left:0;min-width:150px;z-index:60;background:var(--pop);border:1px solid rgba(255,255,255,.09);border-radius:13px;box-shadow:0 18px 44px -12px rgba(0,0,0,.75);padding:6px;max-height:244px;overflow-y:auto}
+  .ff .ffa-poprow{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;padding:9px 11px;background:none;border:none;color:var(--text);font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;text-align:left;border-radius:8px;transition:background .12s}
+  .ff .ffa-poprow:hover{background:var(--f1)}
+  .ff .ffa-poprow.on{color:var(--lime)}
+  .ff .ffa-popbd{position:fixed;inset:0;z-index:15}
+  .ff .ffa-st-imp{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid rgba(194,240,74,.28);border-radius:10px;background:rgba(194,240,74,.08);color:var(--lime);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s}
+  .ff .ffa-st-imp:hover{background:rgba(194,240,74,.15)}
+  .ff .ffa-st-eq{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--lime);white-space:nowrap}
+  .ff .ffa-st-bal{display:flex;align-items:center;gap:5px;margin-top:9px;font-size:10px;color:var(--muted2);font-family:'IBM Plex Mono',monospace}
+  /* indeterminate progress bar inside the breathing pending tile */
   .ff .ffa-pendbar{position:absolute;left:0;bottom:0;height:3px;background:var(--lime);border-radius:0 3px 3px 0;animation:ffaProg 1.7s ease-in-out infinite}
-  @keyframes ffaProg{0%{width:10%}50%{width:80%}100%{width:10%}}
-  /* mobile tool tabs (stacked) */
-  .ff .ffa-ttabs{display:none}
-  @media(max-width:1120px){ .ff .ffa-ai-composer{width:322px} .ff .ffa-cgrid{grid-template-columns:repeat(2,1fr)} .ff .ffa-cnt{display:none} }
+  @keyframes ffaProg{0%{width:10%}50%{width:82%}100%{width:10%}}
+  /* ── Ovoz / SFX — left panel (matn + voice list) + right results list (mockup ai3) ── */
+  .ff .ffa-st-aud{display:flex;height:calc(100vh - 150px);min-height:560px;border:1px solid var(--hair2);border-radius:18px;overflow:hidden;background:var(--bg2)}
+  .ff .ffa-st-audl{flex:1;min-width:0;display:flex;flex-direction:column;padding:22px 24px;overflow-y:auto}
+  .ff .ffa-st-audr{width:340px;flex:none;border-left:1px solid var(--hair);padding:20px;overflow-y:auto;background:rgba(10,13,18,.4)}
+  .ff .ffa-st-audta{width:100%;min-height:118px;resize:vertical;padding:13px 15px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-size:13px;line-height:1.6;outline:none;transition:border-color .18s}
+  .ff .ffa-st-audta:focus{border-color:rgba(194,240,74,.45)}
+  .ff .ffa-vrow{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:11px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;margin-bottom:8px}
+  .ff .ffa-vrow:hover{border-color:var(--f3)}
+  .ff .ffa-vrow.on{border-color:rgba(194,240,74,.5);background:rgba(194,240,74,.06)}
+  .ff .ffa-vrow .av{width:34px;height:34px;border-radius:50%;background:var(--f3);display:grid;place-items:center;font-size:14px;flex:none;color:var(--muted)}
+  .ff .ffa-vrow.on .av{background:var(--lime);color:var(--onlime)}
+  .ff .ffa-audres{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px;margin-bottom:10px}
+  .ff .ffa-wave{display:flex;align-items:flex-end;gap:2px;height:13px;margin-top:5px}
+  .ff .ffa-wave span{width:2.5px;border-radius:2px;background:var(--lime)}
+  /* responsive — mockup ai4 (mobile 390 stacked): top tabs · canvas · docked composer pinned bottom */
+  @media(max-width:1120px){ .ff .ffa-st-strip{width:94px} .ff .ffa-st-main{max-width:400px} }
   @media(max-width:820px){
-    .ff .ffa-ai-work{flex-direction:column;height:auto;min-height:0}
-    .ff .ffa-ai-rail{display:none}
-    .ff .ffa-ttabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 2px}
-    .ff .ffa-ai-canvas{order:1;width:100%;min-height:60vh}
-    .ff .ffa-ai-composer{order:2;width:100%}
-    .ff .ffa-cdot{max-height:none}
+    .ff .ffa-st{height:auto;min-height:0}
+    .ff .ffa-st-canvas{height:64vh;min-height:440px}
+    .ff .ffa-st-strip{display:none}
+    .ff .ffa-st-title,.ff .ffa-st-modeltag{display:none}
+    .ff .ffa-st-dock{left:12px;right:12px;bottom:12px;border-radius:16px;padding:11px 12px}
+    .ff .ffa-st-refs{margin-bottom:8px}
+    .ff .ffa-st-aud{flex-direction:column;height:auto}
+    .ff .ffa-st-audr{width:100%;border-left:none;border-top:1px solid var(--hair)}
   }
   /* ── Account (mockup ac1/ac2 · 1:1) ── */
   .ff .ffa-acc-tabs{display:flex;gap:0;border-bottom:1px solid var(--hair);margin-bottom:22px;overflow-x:auto}
@@ -15120,150 +15157,148 @@
           </sc-if>
         </sc-if>
 
-        <!-- AI STUDIO -->
+        <!-- AI STUDIO — bottom-docked composer (mockup ai1..ai4 · 1:1) -->
         <sc-if value="{{ isAistudio }}" hint-placeholder-val="{{ false }}">
-          <div class="ffa-ai-work">
+          <div class="ffa-st">
 
-            <!-- TOOL RAIL (mockup ai1 · 88px · icon over label · lime bar) -->
-            <div data-rv="" class="ffa-ai-rail">
-              <span class="ffa-logo" style="pointer-events:none;margin-bottom:6px"><span class="lb" style="width:30px;height:30px;font-size:15px"><i class="ph-fill ph-lightning"></i></span></span>
-              <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4">
-                <button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" title="{{ t.key }}" class="{{ t.cls }}">
-                  <i class="ph-fill ph-{{ t.icon }}"></i><span>{{ t.short }}</span>
-                </button>
-              </sc-for>
-              <div class="ffa-trail-sp"></div>
-              <button onclick="{{ openCredits }}" title="Kredit qo'shish" class="ffa-railcr">
-                <i class="ph-fill ph-lightning" style="color:var(--lime);font-size:15px"></i>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--lime)">{{ creditsFmt }}</span>
-                <span style="display:inline-flex;align-items:center;gap:2px;font-size:8.5px;color:var(--muted)"><i class="ph-bold ph-plus" style="font-size:7px"></i>qo'shish</span>
-              </button>
+            <!-- TOP horizontal tool tab bar (Rasm · Video · Ovoz · SFX) + title/model -->
+            <div class="ffa-st-top">
+              <div class="ffa-st-tabs">
+                <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.ttabCls }}"><i class="ph-fill ph-{{ t.icon }}"></i>{{ t.short }}</button></sc-for>
+              </div>
+              <span style="flex:1"></span>
+              <span class="ffa-st-title">{{ toolName }}</span>
+              <span class="ffa-st-modeltag">{{ modelName }}</span>
             </div>
 
-            <!-- COMPOSER (frosted · guided settings · cost clarity) -->
-            <div data-rv="" data-rv-delay="80" class="ffa-ai-composer">
-              <div style="padding:16px 18px 14px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,rgba(194,240,74,.05),transparent)">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-                  <div style="display:flex;align-items:center;gap:11px;min-width:0">
-                    <div style="width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;flex:none;box-shadow:0 8px 22px -8px var(--ring)"><i class="ph-fill ph-{{ toolIcon }}" style="color:#0E1400;font-size:18px"></i></div>
-                    <div style="min-width:0"><div style="font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ toolName }}</div><div style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ modelName }}</div></div>
-                  </div>
-                  <span class="ffa-credit" style="flex:none"><em>✦</em>{{ costNow }}</span>
-                </div>
-              </div>
-              <div class="ffa-cbody">
-                <!-- PROMPT -->
-                <div>
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-                    <span class="ffa-flab" style="margin-bottom:0">PROMPT</span>
-                    <span style="font-size:10px;color:var(--muted2);font-family:'IBM Plex Mono',monospace">{{ promptLen }}/800</span>
-                  </div>
-                  <div style="position:relative">
-                    <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi…" style="width:100%;min-height:118px;resize:vertical;padding:12px 13px;padding-bottom:44px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-size:13.5px;line-height:1.55;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></textarea>
-                    <button onclick="{{ improve }}" style="position:absolute;bottom:11px;right:11px;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid rgba(194,240,74,.28);border-radius:9px;background:rgba(194,240,74,.08);color:var(--lime);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .18s" style-hover="background:rgba(194,240,74,.15)"><i class="ph-fill ph-sparkle" style="font-size:12px"></i>Yaxshilash</button>
-                  </div>
-                  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
-                    <sc-for list="{{ promptChips }}" as="c" hint-placeholder-count="3">
-                      <button data-v="{{ c }}" onclick="{{ onChip }}" style="padding:6px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--muted);font-family:inherit;font-size:11.5px;cursor:pointer;transition:.15s" style-hover="border-color:var(--f3);color:var(--text)">{{ c }}</button>
-                    </sc-for>
-                  </div>
-                </div>
-                <!-- MODEL -->
-                <div class="ffa-csect">
-                  <span class="ffa-flab">MODEL</span>
-                  <div style="position:relative">
-                    <button onclick="{{ toggleModel }}" class="ffa-modelbtn"><span style="display:inline-flex;align-items:center;gap:9px;min-width:0"><i class="ph-fill ph-cube" style="color:var(--lime)"></i><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ modelName }}</span></span><i class="ph ph-caret-down" style="font-size:13px;color:var(--muted)"></i></button>
-                    <sc-if value="{{ modelOpen }}" hint-placeholder-val="{{ false }}">
-                      <div style="position:absolute;top:100%;left:0;margin-top:6px;width:100%;border-radius:13px;background:var(--pop);border:1px solid rgba(255,255,255,.09);box-shadow:0 18px 44px -12px rgba(0,0,0,.75);overflow:hidden;z-index:20">
-                        <sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="4"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;text-align:left;transition:background .12s" style-hover="background:var(--f1)">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--lime)"></i></sc-if></button></sc-for>
+            <!-- ═══ CANVAS branch (Rasm / Video) — hero + filmstrip + docked composer ═══ -->
+            <sc-if value="{{ aiIsCanvas }}" hint-placeholder-val="{{ true }}">
+              <div class="ffa-st-canvas">
+                <div class="ffa-st-body">
+                  <!-- stage: latest/selected result + pending-glow + cost summary -->
+                  <div class="ffa-st-stage">
+                    <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin:auto;text-align:center;color:var(--muted);max-width:340px;border:1.5px dashed rgba(255,255,255,.14);border-radius:20px;padding:40px 30px">
+                        <div style="width:62px;height:62px;border-radius:18px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 15px"><i class="ph ph-sparkle" style="font-size:26px;color:var(--lime)"></i></div>
+                        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Hali generatsiya yo'q</div>
+                        <div style="font-size:13px;line-height:1.55">Promptni yozing va <strong style="color:var(--lime);font-weight:600">Yaratish</strong> tugmasini bosing — natija shu yerda ochiladi</div>
                       </div>
                     </sc-if>
+                    <div class="ffa-st-hero">
+                      <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
+                        <div data-id="{{ activeView.id }}" onclick="{{ openLightbox }}" class="ffa-res ffa-st-main" style="aspect-ratio:{{ activeAspect }};background:{{ activeView.g }};cursor:pointer">
+                          <span class="rtag">{{ activeView.rtag }}</span>
+                          <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px;color:rgba(255,255,255,.9)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
+                          <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(6,8,11,.5))"></div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
+                        <div class="ffa-res pend ffa-st-main" style="aspect-ratio:{{ pendAspect }};max-width:284px"><i class="ph ph-circle-notch ffm-spin" style="font-size:26px;color:var(--lime)"></i><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lime)">Ishlanmoqda…</div><div class="ffa-pendbar"></div></div>
+                      </sc-if>
+                    </div>
+                    <sc-if value="{{ showPartiya }}" hint-placeholder-val="{{ false }}"><div class="ffa-st-cost">{{ partiyaLine }}</div></sc-if>
+                  </div>
+                  <!-- right filmstrip (Tarix — result thumbs) -->
+                  <sc-if value="{{ hasGens }}" hint-placeholder-val="{{ false }}">
+                    <div class="ffa-st-strip">
+                      <div class="ffa-st-striph">TARIX</div>
+                      <sc-for list="{{ filmstrip }}" as="g" hint-placeholder-count="4">
+                        <div data-id="{{ g.id }}" onclick="{{ pickActive }}" class="{{ g.stripCls }}" style="background:{{ g.g }}">
+                          <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="pi"><i class="ph-fill ph-play-circle"></i></span></sc-if>
+                          <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><span class="pi"><i class="ph-fill ph-waveform"></i></span></sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <!-- DOCKED frosted composer -->
+                <div class="ffa-st-dock" data-rv="" data-rv-delay="80">
+                  <div class="ffa-st-refs">
+                    <button onclick="{{ addRef }}" class="ffa-st-refadd"><i class="ph ph-plus"></i><span>Referens</span></button>
+                    <span style="font-size:11px;color:var(--muted2)">Referens qo'shish — ixtiyoriy</span>
+                  </div>
+                  <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi…" class="ffa-st-ta"></textarea>
+                  <div class="ffa-st-ctl">
+                    <div class="ffa-st-chips">
+                      <!-- MODEL chip -->
+                      <div class="{{ chipModelCls }}" data-pop="model" onclick="{{ toggleChip }}"><b>MODEL</b><span>{{ modelName }}</span>
+                        <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="3"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
+                      </div>
+                      <!-- NISBAT chip -->
+                      <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="{{ chipAspectCls }}" data-pop="aspect" onclick="{{ toggleChip }}"><b>NISBAT</b><span>{{ aspectVal }}</span>
+                        <sc-if value="{{ popAspect }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
+                      </div></sc-if>
+                      <!-- SIFAT chip -->
+                      <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="{{ chipQualityCls }}" data-pop="quality" onclick="{{ toggleChip }}"><b>SIFAT</b><span>{{ qualityVal }}</span>
+                        <sc-if value="{{ popQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
+                      </div></sc-if>
+                      <!-- REZOLYUTSIYA chip -->
+                      <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="{{ chipResCls }}" data-pop="res" onclick="{{ toggleChip }}"><b>REZOLYUTSIYA</b><span>{{ resVal }}</span>
+                        <sc-if value="{{ popRes }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
+                      </div></sc-if>
+                      <!-- DAVOMIYLIK chip -->
+                      <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="{{ chipDurCls }}" data-pop="duration" onclick="{{ toggleChip }}"><b>DAVOMIYLIK</b><span>{{ durVal }}</span>
+                        <sc-if value="{{ popDur }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
+                      </div></sc-if>
+                      <!-- SONI chip -->
+                      <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><div class="{{ chipCountCls }}" data-pop="count" onclick="{{ toggleChip }}"><b>SONI</b><span>{{ countVal }}</span>
+                        <sc-if value="{{ popCount }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
+                      </div></sc-if>
+                    </div>
+                    <button onclick="{{ improve }}" class="ffa-st-imp"><i class="ph-fill ph-sparkle" style="font-size:12px"></i>Yaxshilash</button>
+                    <span style="flex:1"></span>
+                    <span class="ffa-st-eq">= ✦ {{ costNow }}</span>
+                    <button onclick="{{ doGenerate }}" class="ffm-btn"><i class="ph-fill ph-sparkle" style="font-size:14px"></i>Yaratish<span class="bc">✦ {{ costNow }}</span></button>
+                  </div>
+                  <div class="ffa-st-bal"><i class="ph ph-wallet" style="font-size:12px"></i>Balans: ✦ {{ creditsFmt }}</div>
+                </div>
+
+                <!-- popover backdrop (click-away to close chips) -->
+                <sc-if value="{{ chipAnyOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-popbd" onclick="{{ closeChip }}"></div></sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ═══ AUDIO branch (Ovoz / SFX) — left panel + right results list (mockup ai3) ═══ -->
+            <sc-if value="{{ aiIsAudio }}" hint-placeholder-val="{{ false }}">
+              <div class="ffa-st-aud">
+                <div class="ffa-st-audl">
+                  <div style="font-weight:700;font-size:16px">{{ toolName }}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:3px">{{ toolDesc }}</div>
+                  <span class="ffa-flab" style="margin-top:18px">MATN</span>
+                  <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="Matn yozing — tabiiy ovozda o'qiladi…" class="ffa-st-audta"></textarea>
+                  <!-- voice list (Ayol/Erkak ovozlar) -->
+                  <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}">
+                    <span class="ffa-flab" style="margin-top:18px">OVOZ</span>
+                    <sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoice }}" class="{{ v.vrowCls }}"><span class="av"><i class="ph-fill ph-user"></i></span><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.label }}</div></div><sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--lime)"></i></sc-if></button></sc-for>
+                  </sc-if>
+                  <!-- TEZLIK / FORMAT (davomiylik) chip -->
+                  <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}">
+                    <span class="ffa-flab" style="margin-top:16px">DAVOMIYLIK</span>
+                    <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.optCls }}">{{ z.v }}</button></sc-for></div>
+                  </sc-if>
+                  <div style="display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:20px">
+                    <span class="ffa-st-eq">= ✦ {{ costNow }}</span>
+                    <span style="flex:1"></span>
+                    <button onclick="{{ doGenerate }}" class="ffm-btn"><i class="ph-fill ph-microphone" style="font-size:14px"></i>Yaratish<span class="bc">✦ {{ costNow }}</span></button>
                   </div>
                 </div>
-                <!-- NISBAT (aspect) -->
-                <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="ffa-csect">
-                  <span class="ffa-flab">NISBAT</span>
-                  <div class="ffa-optrow"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
-                </div></sc-if>
-                <!-- SIFAT -->
-                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
-                  <span class="ffa-flab">SIFAT</span>
-                  <div class="ffa-optrow"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
-                </div></sc-if>
-                <!-- REZOLYUTSIYA -->
-                <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
-                  <span class="ffa-flab">REZOLYUTSIYA</span>
-                  <div class="ffa-optrow"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
-                </div></sc-if>
-                <!-- DAVOMIYLIK -->
-                <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
-                  <span class="ffa-flab">DAVOMIYLIK</span>
-                  <div class="ffa-optrow"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
-                </div></sc-if>
-                <!-- OVOZ -->
-                <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
-                  <span class="ffa-flab">OVOZ</span>
-                  <div class="ffa-optrow"><sc-for list="{{ voicesView }}" as="z" hint-placeholder-count="6"><button data-v="{{ z.v }}" onclick="{{ onVoice }}" class="{{ z.cls }} wide">{{ z.label }}</button></sc-for></div>
-                </div></sc-if>
-                <!-- SONI -->
-                <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><div class="ffa-csect">
-                  <span class="ffa-flab">SONI</span>
-                  <div class="ffa-optrow"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
-                </div></sc-if>
-              </div>
-              <!-- COST CLARITY + generate -->
-              <div style="padding:14px 18px 16px;border-top:1px solid var(--hair);background:linear-gradient(0deg,rgba(194,240,74,.05),transparent)">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                  <span style="font-size:11.5px;color:var(--muted)">{{ costLine }}</span>
-                  <span style="font-size:12.5px;font-weight:700;color:var(--lime);font-family:'IBM Plex Mono',monospace">= ✦ {{ costNow }}</span>
-                </div>
-                <button onclick="{{ doGenerate }}" class="ffm-btn full lg" style="border-radius:13px"><i class="ph-fill ph-sparkle" style="font-size:15px"></i>Yaratish<span class="bc">✦ {{ costNow }}</span></button>
-                <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:9px;font-size:10.5px;color:var(--muted2);font-family:'IBM Plex Mono',monospace"><i class="ph ph-wallet" style="font-size:12px"></i>Balans: ✦ {{ creditsFmt }}</div>
-              </div>
-            </div>
-
-            <!-- CANVAS (results · dotted grid · pending-glow · lightbox) -->
-            <div data-rv="" data-rv-delay="160" class="{{ canvasCls }}">
-              <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--hair);background:rgba(10,13,18,.55)">
-                <span style="font-size:15px;font-weight:700">{{ toolName }}</span>
-                <span style="padding:4px 10px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:'IBM Plex Mono',monospace;font-size:10px;color:#B7C0CE;white-space:nowrap">{{ modelName }}</span>
-                <span style="flex:1"></span>
-                <span class="ffa-cnt" style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap;flex:none">{{ genCount }} ta natija</span>
-              </div>
-              <!-- mobile tool tabs -->
-              <div class="ffa-ttabs" style="padding:12px 16px 0">
-                <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.tagCls }}"><i class="ph-fill ph-{{ t.icon }}" style="font-size:12px"></i>{{ t.short }}</button></sc-for>
-              </div>
-              <div class="ffa-cdot">
-                <!-- RESULTS GRID -->
-                <div class="ffa-cgrid">
+                <div class="ffa-st-audr">
+                  <div class="ffa-flab">SO'NGGI NATIJALAR</div>
                   <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
-                    <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="1">
-                      <div class="ffa-res pend" style="aspect-ratio:{{ pendAspect }}"><i class="ph ph-circle-notch ffm-spin" style="font-size:24px;color:var(--lime)"></i><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--lime)">Ishlanmoqda…</div><div class="ffa-pendbar"></div></div>
-                    </sc-for>
+                    <div class="ffa-audres"><span style="width:32px;height:32px;border-radius:50%;background:var(--limedim);color:var(--lime);display:inline-flex;align-items:center;justify-content:center;flex:none"><i class="ph ph-circle-notch ffm-spin" style="font-size:15px"></i></span><div style="flex:1;min-width:0"><div class="ffa-nm">Ishlanmoqda…</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px">Generatsiya davom etmoqda</div></div></div>
                   </sc-if>
-                  <sc-for list="{{ genView }}" as="g" hint-placeholder-count="6">
-                    <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ffa-res g" style="aspect-ratio:{{ g.asp }};background:{{ g.g }};cursor:pointer">
-                      <span class="rtag">{{ g.rtag }}</span>
-                      <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:rgba(255,255,255,.85)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
-                      <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--lime)"><i class="ph-fill ph-waveform"></i></span></sc-if>
-                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(6,8,11,.55))"></div>
+                  <sc-for list="{{ voiceResults }}" as="g" hint-placeholder-count="2">
+                    <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ffa-audres" style="cursor:pointer">
+                      <span style="width:32px;height:32px;border-radius:50%;background:{{ g.avBg }};color:{{ g.avCol }};display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:none"><i class="ph-fill ph-{{ g.avIcon }}"></i></span>
+                      <div style="flex:1;min-width:0"><div class="ffa-nm">{{ g.title }}</div><div class="ffa-wave"><sc-for list="{{ g.bars }}" as="b" hint-placeholder-count="9"><span style="height:{{ b.h }}px"></span></sc-for></div></div>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">{{ g.meta }}</span>
                     </div>
                   </sc-for>
+                  <sc-if value="{{ noVoiceResults }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 14px;text-align:center;font-size:12px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:12px;margin-top:2px">Hozircha natija yo'q — matn yozing va yarating</div></sc-if>
                 </div>
-                <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ true }}"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">{{ partiyaLine }}</div></sc-if>
-                <!-- EMPTY -->
-                <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
-                  <div style="position:absolute;inset:0;display:grid;place-items:center;padding:26px">
-                    <div style="text-align:center;color:var(--muted);max-width:340px;border:1.5px dashed rgba(255,255,255,.14);border-radius:20px;padding:40px 30px">
-                      <div style="width:62px;height:62px;border-radius:18px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 15px"><i class="ph ph-sparkle" style="font-size:26px;color:var(--lime)"></i></div>
-                      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Hali generatsiya yo'q</div>
-                      <div style="font-size:13px;line-height:1.55">Promptni to'ldiring va <strong style="color:var(--lime);font-weight:600">Yaratish</strong> tugmasini bosing — natija shu yerda ochiladi</div>
-                    </div>
-                  </div>
-                </sc-if>
               </div>
-            </div>
+            </sc-if>
           </div>
         </sc-if>
 
@@ -15606,6 +15641,7 @@ class Component extends DCLogic {
     toast: null,
     q: '',
     modelOpen: false,
+    chipPop: null,
     accountTab: 'Profil',
     aiDuration: '',
     activeGenId: null,
@@ -15762,7 +15798,7 @@ class Component extends DCLogic {
       this._afterAuth = screen;
       screen = 'verify-email';
     }
-    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, pageFlip: s.pageFlip + 1 }));
+    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, pageFlip: s.pageFlip + 1 }));
     try { if (window.history && history.replaceState) history.replaceState(null, '', '#' + screen); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     // Replay the app page-wrap entrance via transition (never keyframes): hide -> reflow -> reveal.
@@ -16269,9 +16305,10 @@ class Component extends DCLogic {
     const nSel = genParams.count || 1;
     const costNow = this.estCost(tool, model, genParams);
     const toolDesc = { 'Rasm yaratish': 'Matndan yuqori sifatli rasm yarating', 'Video yaratish': 'Promptdan qisqa video klip yarating', 'Voiceover': 'Matnni tabiiy ovozga aylantiring', 'SFX': 'Sahna uchun tovush effekti yarating' }[tool.key];
-    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag' }; });
+    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
-    const chip = (v, on) => ({ v, cls: on ? 'ffa-opt on' : 'ffa-opt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
+    // cls=eski option grid, rowCls=popover qatori, optCls=inline option tugma (Ovoz paneli), on=faol
+    const chip = (v, on) => ({ v, on, cls: on ? 'ffa-opt on' : 'ffa-opt', rowCls: on ? 'ffa-poprow on' : 'ffa-poprow', optCls: on ? 'ffa-opt on' : 'ffa-opt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
     const aspectOpts = model ? (model.aspects || (tool.mode === 'image' ? ['1:1', '16:9', '9:16', '4:3'] : [])) : [];
     const sizesView = aspectOpts.map(z => chip(z, z === genParams.aspectRatio));
     const showSize = aspectOpts.length > 1;
@@ -16286,9 +16323,9 @@ class Component extends DCLogic {
     const resView = resOpts.map(z => chip(z, z === genParams.resolution));
     const showRes = resOpts.length > 1;
     const voiceOpts = (tool.mode === 'voice' && model) ? (model.voices || []) : [];
-    const voicesView = voiceOpts.map(v => Object.assign(chip(v.id, v.id === genParams.voice), { label: v.label }));
+    const voicesView = voiceOpts.map(v => Object.assign(chip(v.id, v.id === genParams.voice), { label: v.label, vrowCls: (v.id === genParams.voice) ? 'ffa-vrow on' : 'ffa-vrow' }));
     const showVoices = voiceOpts.length > 0;
-    const modelsView = modelList.map(m => ({ v: String(m.id), label: m.label, active: !!model && m.id === model.id }));
+    const modelsView = modelList.map(m => { const active = !!model && m.id === model.id; return { v: String(m.id), label: m.label, active, rowCls: active ? 'ffa-poprow on' : 'ffa-poprow' }; });
     const modelName = model ? model.label : ((window.FFAPI && FFAPI.getToken()) ? 'Yuklanmoqda…' : 'Kirish kerak');
     // "bu partiya" xulosa qatori (mockup) + canvas rejim klassi
     const partiyaBits = [modelName];
@@ -16306,8 +16343,30 @@ class Component extends DCLogic {
     const genView = this.state.gens.map(g => ({ ...g, g: media(g.thumb, g.h), tIcon: g.type === 'video' ? 'play-circle' : (g.type === 'audio' ? 'waveform' : 'image'), asp: g.type === 'video' ? '16 / 9' : (g.type === 'audio' ? '16 / 6' : '1 / 1'), rtag: rtagOf(g.type) + (g.model ? ' · ' + g.model : ''), isVideo: g.type === 'video', isAudio: g.type === 'audio' || g.type === 'sfx' }));
     const activeGenRaw = this.state.gens.find(g => g.id === this.state.activeGenId) || this.state.gens[0] || null;
     const activeView = activeGenRaw ? { ...activeGenRaw, g: media(activeGenRaw.type === 'image' ? (activeGenRaw.thumb || activeGenRaw.url) : activeGenRaw.thumb, activeGenRaw.h), tIcon: activeGenRaw.type === 'video' ? 'play-circle' : (activeGenRaw.type === 'audio' ? 'waveform' : 'image'), isVideo: activeGenRaw.type === 'video' && !!activeGenRaw.url } : null;
-    const filmstrip = genView.map(g => ({ ...g, active: activeGenRaw && g.id === activeGenRaw.id, ring: (activeGenRaw && g.id === activeGenRaw.id) ? 'var(--acc)' : 'transparent' }));
+    const filmstrip = genView.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; return { ...g, active: on, ring: on ? 'var(--acc)' : 'transparent', stripCls: on ? 'ffa-st-sthumb on' : 'ffa-st-sthumb' }; });
     const skeletons = Array.from({ length: nSel }, (_, i) => ({ i }));
+    // ── Bottom-docked composer: branch, chip values, popover state ──
+    const aiIsCanvas = tool.mode === 'image' || tool.mode === 'video';
+    const aiIsAudio = tool.mode === 'voice' || tool.mode === 'sfx';
+    const hasGens = this.state.gens.length > 0;
+    const showPartiya = !!activeGenRaw || this.state.generating;
+    const aspectVal = genParams.aspectRatio || '—';
+    const qualityVal = genParams.quality || '—';
+    const countVal = nSel;
+    const resVal = genParams.resolution || '—';
+    const durVal = genParams.duration ? (genParams.duration + 's') : '—';
+    const cp = this.state.chipPop;
+    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration';
+    const chipCls = (open) => open ? 'ffa-chip open' : 'ffa-chip';
+    const chipModelCls = chipCls(popModel), chipAspectCls = chipCls(popAspect), chipQualityCls = chipCls(popQuality), chipCountCls = chipCls(popCount), chipResCls = chipCls(popRes), chipDurCls = chipCls(popDur);
+    const chipAnyOpen = !!cp;
+    // Ovoz/SFX o'ng panel — audio natijalar (waveform bilan)
+    const voiceResults = this.state.gens.filter(g => g.type === 'audio' || g.type === 'sfx').slice(0, 12).map(g => ({
+      id: g.id, title: g.label || g.tool || 'Natija', meta: '✦ ' + (g.cost || 0),
+      avBg: g.type === 'sfx' ? 'var(--amberdim)' : 'var(--lime)', avCol: g.type === 'sfx' ? 'var(--amber)' : 'var(--onlime)', avIcon: g.type === 'sfx' ? 'waveform' : 'play',
+      bars: Array.from({ length: 9 }, (_, i) => ({ h: 4 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.8)) * 9) })),
+    }));
+    const noVoiceResults = voiceResults.length === 0 && !this.state.generating;
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
@@ -16512,6 +16571,13 @@ class Component extends DCLogic {
       btmDashCls: btmCls('dashboard'), btmTplCls: btmCls('templates'), btmAiCls: btmCls('aistudio'), btmAccCls: btmCls('account'),
       creditsFmt: this.state.credits.toLocaleString(),
       aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow, partiyaLine, canvasCls, pendAspect,
+      aiIsCanvas, aiIsAudio, hasGens, showPartiya,
+      aspectVal, qualityVal, countVal, resVal, durVal,
+      popModel, popAspect, popQuality, popCount, popRes, popDur,
+      chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
+      voiceResults, noVoiceResults,
+      toggleChip: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ chipPop: st.chipPop === p ? null : p, modelOpen: false })); },
+      closeChip: () => this.setState({ chipPop: null }),
       showCount: tool.multi && countsView.length > 1,
       showActive: !!activeGenRaw && !this.state.generating, canvasEmpty: !activeGenRaw && !this.state.generating,
       aiPrompt: this.state.aiPrompt, modelName, modelOpen: this.state.modelOpen, modelsView,
@@ -16548,18 +16614,18 @@ class Component extends DCLogic {
       saveAcc: () => this.saveProfile(),
       downloadsMonth: this.state.downloadsMonth,
       onSearch: (e) => this.setState({ q: e.target.value }),
-      onPickTool: (e) => this.setState({ aiTool: e.currentTarget.dataset.tool }),
+      onPickTool: (e) => this.setState({ aiTool: e.currentTarget.dataset.tool, chipPop: null, modelOpen: false }),
       setPrompt: (e) => this.setState({ aiPrompt: e.target.value }),
       improve: () => this.doEnhance(),
       addRef: () => this.toast('Referens yuklash tez orada'),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
-      pickModel: (e) => { const id = +e.currentTarget.dataset.v; this.setState(st => { const sel = Object.assign({}, st.selModel); sel[tool.mode] = id; return { selModel: sel, modelOpen: false }; }); },
-      onSize: (e) => this.setState({ aiSize: e.currentTarget.dataset.v }),
-      onCount: (e) => this.setState({ aiCount: +e.currentTarget.dataset.v }),
-      onDuration: (e) => this.setState({ aiDuration: e.currentTarget.dataset.v }),
-      onQuality: (e) => this.setState({ aiQuality: e.currentTarget.dataset.v }),
-      onRes: (e) => this.setState({ aiRes: e.currentTarget.dataset.v }),
-      onVoice: (e) => this.setState({ aiVoice: e.currentTarget.dataset.v }),
+      pickModel: (e) => { const id = +e.currentTarget.dataset.v; this.setState(st => { const sel = Object.assign({}, st.selModel); sel[tool.mode] = id; return { selModel: sel, modelOpen: false, chipPop: null }; }); },
+      onSize: (e) => this.setState({ aiSize: e.currentTarget.dataset.v, chipPop: null }),
+      onCount: (e) => this.setState({ aiCount: +e.currentTarget.dataset.v, chipPop: null }),
+      onDuration: (e) => this.setState({ aiDuration: e.currentTarget.dataset.v, chipPop: null }),
+      onQuality: (e) => this.setState({ aiQuality: e.currentTarget.dataset.v, chipPop: null }),
+      onRes: (e) => this.setState({ aiRes: e.currentTarget.dataset.v, chipPop: null }),
+      onVoice: (e) => this.setState({ aiVoice: e.currentTarget.dataset.v, chipPop: null }),
       doGenerate: () => this.generate(),
       openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
       closeLightbox: () => this.setState({ lightbox: null }),
