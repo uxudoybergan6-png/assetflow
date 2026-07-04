@@ -1,16 +1,16 @@
-# Sessiya hisoboti — 2026-07-04 — AI Tools (Pillar B) to'liq redesign
+# Sessiya hisoboti — 2026-07-04 — AI Tools jonli-test tuzatishlari (5 ta)
 
-**Nima qilindi:** Plagin AI Tools mockup b1–b12 ga 1:1 keltirildi, 9 commit:
-STEP0 poydevor (bottom-sheet+grab-handle barcha .axroot sheet'larga, pill sozlamalar,
-to'liq lime CTA, per-ekran ai-header) → b1 launcher → b4+b5 video Fast/R2V
-(Fast|R2V toggle, inline manba chiplari) → b11 Sozlamalar (balans karta, paketlar,
-KREDIT TARIXI) → b10 lightbox (counter, prev/next, scrubber, meta karta) → b2+b3
-sheet'lar (narx ✦N, caret, olov warn) → b8+b9 Tarix (footer, select-all, qizil
-confirm) → b7 birlashgan Video sozlamalari sheet → b12 chekka holatlar (kam-kredit
-banner, sessiya modal, bo'sh hero). Gen/kredit/sheet handlerlari saqlangan.
+**Nima qilindi:** AE jonli testidan keyingi 5 fix, har biri alohida commit (push yo'q):
+1. d0d4fa2 — KREDIT TARIXI qatorlari: tur ikon + title + muted vaqt + o'ngda rangli
+   summa (− qizil / + lime), hover, scroll quti.
+2. dbb050e — Video kartalarda real preview: afVideoThumb(poster) + preload=auto/canplay;
+   afGallery + TARIX strip posterisiz video uchun <video> birinchi kadr (qora tile fix).
+3. 439e989 — Lightbox: media dominant (lbmedia flex:1), meta+Import zich tagida, ≤980px.
+4. 3e8815d — Sozlama picker'lari bottom-sheet EMAS — pill yonida popover (.sheet.pop,
+   positionPopover tiklandi); video pill'lar per-pill popover; qora chiziq artefakti yo'q.
+5. 79d7f83 — Video tool rasm tool bilan bir xil karta tuzilishi (flat compose bekor,
+   Fast|R2V toggle karta ichida, PROMPT/SOZLAMALAR/SO'NGGI lbl); b7 birlashgan sheet o'chdi.
 
-**Nima topildi:** loadHistory parallel callback'larni tashlab yuborardi (queue fix);
-afGallery kartasi endi umumiy lightbox'ga ochiladi (karta ichidagi tugmalar o'rniga).
-
-**Nima kutilmoqda:** AE ichida jonli test (modellar/gen — brauzerda offline edi);
-saved-refs render hali stub (atayin tegilmadi); push foydalanuvchidan.
+**Eslatma:** b7 bottom-sheet spetsi ATAYIN bekor qilindi — jonli test UX qarori.
+**Tekshiruv:** cep-plugin-preview 380/900px — handler/kredit/gen mantiq saqlangan, yangi xato yo'q.
+**Kutilmoqda:** AE ichida jonli qayta-test + push (foydalanuvchi).
