@@ -3654,7 +3654,8 @@ html.home-mode #homePage{display:block!important}
                       <button type="button" class="hm-seg-i" id="homeSegAi" role="tab" aria-selected="false" onclick="homeGo('ai')">AI Tools</button>
                     </div>
                     <div class="hm-search">
-                      <button type="button" class="hm-sfield" id="homeSearch" onclick="homeGo('video')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Shablon qidirish...</button>
+                      <!-- FIX H: qidiruv maydoniga borgach input avtofokus (avval shunchaki ro'yxat ochilardi) -->
+                      <button type="button" class="hm-sfield" id="homeSearch" onclick="homeGo('video');setTimeout(function(){var i=document.getElementById('searchInput');if(i)i.focus();},0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Shablon qidirish...</button>
                       <!-- FIX F: filtr tugmasi endi FILTRni ochadi (avval faqat shablonlarga navigatsiya qilardi) —
                            filtr shablonlar ro'yxatiga tegishli, shu uchun avval o'sha bo'limga o'tib panel ochiladi -->
                       <button type="button" class="hm-sbtn" id="homeFilter" onclick="homeGo('video');if(typeof openFilterSheet==='function')openFilterSheet()" title="Filtr" aria-label="Filtr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="15" cy="6" r="2.4"/><circle cx="8" cy="12" r="2.4"/><circle cx="16" cy="18" r="2.4"/></svg></button>
@@ -10606,6 +10607,7 @@ async function bootPlugin(){
     var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings')?'none':'';
     syncBal(); // kredit yagona manba (real aiCredits) — balTop + AI Tools ixcham header sinxron
     if(id==='imggen'&&typeof window.axIGRefresh==='function'){try{window.axIGRefresh();}catch(e){}}
+    if(id==='vidgen'&&typeof window.axVGRefresh==='function'){try{window.axVGRefresh();}catch(e){}} // FIX H: video ham view ochilганда retry
   }
 
   // ===== price / send =====
@@ -13898,6 +13900,9 @@ window.afGallery=(function(){
     refreshVgBtn();
   }
   window.axVGTeardown=teardownVg;
+  // FIX H: rasm tool (axIGRefresh) bilan bir xil — view har ochilganda kredit sinxron + model
+  // yuklanmagan bo'lsa QAYTA uriniladi (avval birinchi fetch xatosi tool'ni butunlay o'chirib qo'yardi)
+  window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); };
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
