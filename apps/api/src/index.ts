@@ -168,6 +168,13 @@ function validateEnv() {
     warnings.push("JWT_SECRET zaif yoki <32 belgi (dev) — productionда kuchli tasodifiy qiymat shart");
   }
 
+  // PRO-without-Stripe teshigi: productionда =true bo'lsa PRO PULSIZ beriladi (fail-closed buzilgan).
+  // Gate (proSwitchAllowed) o'zi env'ga tayanadi — default false; bu faqat LOUD ogohlantirish.
+  if (isProd && process.env.PLUGIN_ALLOW_PRO_WITHOUT_STRIPE === "true")
+    warnings.push(
+      "PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true — productionда PRO Stripe'siz beriladi (tekin PRO teshigi)! Faqat lokal dev uchun; productga =false qo'ying."
+    );
+
   if (!process.env.RESEND_API_KEY?.trim())
     warnings.push("RESEND_API_KEY yo'q — email yuborilmaydi (parol tiklash/bildirishnoma)");
   if (!process.env.STRIPE_SECRET_KEY?.trim())
