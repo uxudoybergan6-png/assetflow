@@ -2952,6 +2952,13 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .sheet.on{display:flex}
 .axig .sheetc{width:100%;max-width:440px;box-sizing:border-box;background:#161B22;border:0;border-top:1px solid rgba(255,255,255,.10);border-radius:18px 18px 0 0;box-shadow:0 -18px 42px rgba(0,0,0,.5);padding:8px 14px 16px;max-height:82vh;overflow-y:auto;animation:fsheetUp .22s cubic-bezier(.22,1,.36,1)}
 .axig .sheetc::before{content:'';display:block;width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 10px}
+/* FIX4 (live-test): SOZLAMA picker'lari bottom-sheet EMAS — bosilgan pill yonida ochiladigan popover
+   (.sheet.pop + positionPopover). Yengil backdrop tashqi-clickni ushlaydi; grab-handle/border-top yo'q
+   (qora chiziq artefakti shu edi). Referens-manba/trim sheet'lari bottom-sheet bo'lib qoladi. */
+.axig .sheet.pop{background:rgba(0,0,0,.22);align-items:initial;justify-content:initial}
+.axig .sheet.pop.on{display:block}
+.axig .sheet.pop .sheetc{position:fixed;left:0;top:0;width:auto;max-width:92vw;background:#161B22;border:1px solid var(--line2);border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.6);padding:13px;max-height:62vh;overflow-y:auto;animation:none}
+.axig .sheet.pop .sheetc::before{display:none}
 .axig .sheeth{display:flex;align-items:center;margin-bottom:11px}.axig .sheeth b{font-size:14px}.axig .sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center}
 .axig .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}
 .axig .opt:hover{border-color:var(--mut2)}
@@ -3795,8 +3802,8 @@ html.home-mode #homePage{display:block!important}
                             </div>
                           </div>
 
-                          <!-- model sheet (b2) -->
-                          <div class="sheet" id="igMSheet"><div class="sheetc">
+                          <!-- model sheet (b2) — FIX4: pill yonida popover -->
+                          <div class="sheet pop" id="igMSheet"><div class="sheetc">
                             <div class="sheeth"><b>Model</b><span class="shnote">narx — 1 natija uchun</span></div>
                             <div id="igMList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div class="minfobox" id="igMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Har model referens qoidasini o'zi belgilaydi</span></div>
@@ -3822,20 +3829,20 @@ html.home-mode #homePage{display:block!important}
                           </div></div>
 
                           <!-- o'lcham -->
-                          <div class="sheet" id="igArSheet"><div class="sheetc">
+                          <div class="sheet pop" id="igArSheet"><div class="sheetc">
                             <div class="sheeth"><b>Nisbat</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="igArPills"></div>
                             <div class="axighint" style="text-align:left">Auto — kirish rasmidan oladi.</div>
                           </div></div>
 
                           <!-- sifat -->
-                          <div class="sheet" id="igQSheet"><div class="sheetc">
+                          <div class="sheet pop" id="igQSheet"><div class="sheetc">
                             <div class="sheeth"><b>Sifat</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="igQPills"></div>
                           </div></div>
 
                           <!-- soni -->
-                          <div class="sheet" id="igNSheet"><div class="sheetc">
+                          <div class="sheet pop" id="igNSheet"><div class="sheetc">
                             <div class="sheeth"><b>Soni</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="pillrow" id="igNPills"></div>
                           </div></div>
@@ -4006,36 +4013,36 @@ html.home-mode #homePage{display:block!important}
                             </div>
                           </div></div>
 
-                          <!-- Sifat (resolution) -->
-                          <div class="sheet" id="vgResSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Sifat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="vgResPills"></div>
+                          <!-- Sifat (resolution) — FIX4/5: pill yonida popover (b7 birlashgan sheet o'rniga) -->
+                          <div class="sheet pop" id="vgResSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Rezolyutsiya</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="vg-chiprow" id="vgResPills"></div>
                             <div class="axighint" id="vgResHint" style="text-align:left"></div>
                           </div></div>
 
                           <!-- Davomiylik (duration) -->
-                          <div class="sheet" id="vgDurSheet"><div class="sheetc">
+                          <div class="sheet pop" id="vgDurSheet"><div class="sheetc">
                             <div class="sheeth"><b>Davomiylik (soniya)</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="vgDurPills"></div>
+                            <div class="vg-chiprow" id="vgDurPills"></div>
                             <div class="axighint" id="vgDurHint" style="text-align:left">Auto ≈ 5 soniya</div>
                           </div></div>
 
                           <!-- Nisbat (aspect ratio) -->
-                          <div class="sheet" id="vgArSheet"><div class="sheetc">
+                          <div class="sheet pop" id="vgArSheet"><div class="sheetc">
                             <div class="sheeth"><b>Nisbat</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="vgArPills"></div>
+                            <div class="vg-chiprow" id="vgArPills"></div>
                             <div class="axighint" style="text-align:left">Auto — kirish kadridan oladi.</div>
                           </div></div>
 
                           <!-- Bitrate -->
-                          <div class="sheet" id="vgBitSheet"><div class="sheetc">
+                          <div class="sheet pop" id="vgBitSheet"><div class="sheetc">
                             <div class="sheeth"><b>Bitrate</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="vgBitPills"></div>
+                            <div class="vg-chiprow" id="vgBitPills"></div>
                             <div class="axighint" style="text-align:left">High = kattaroq, sifatliroq fayl. Standard = odatiy chiqish.</div>
                           </div></div>
 
-                          <!-- Model sheet (b2) -->
-                          <div class="sheet" id="vgMSheet"><div class="sheetc">
+                          <!-- Model sheet (b2) — FIX4: pill yonida popover -->
+                          <div class="sheet pop" id="vgMSheet"><div class="sheetc">
                             <div class="sheeth"><b>Model</b><span class="shnote">narx — 1 natija uchun</span></div>
                             <div id="vgMList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div class="minfobox" id="vgMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Kelajakda ko'proq video model qo'shiladi</span></div>
@@ -11357,12 +11364,35 @@ window.afGallery=(function(){
 
   // ---- sheet'lar (backdrop + Esc + ✕) ----
   function closeSheets(){ document.querySelectorAll('.axig .sheet').forEach(function(s){s.classList.remove('on');}); }
-  // STEP0: bottom-sheet idiomi — pozitsiyani to'liq CSS boshqaradi; eski popover inline stillarini tozalaymiz.
+  // FIX4: sozlama sheet'lari (.pop) — bosilgan pill yoniga joylanadigan popover (ostiga, joy yetmasa
+  // ustiga; viewport ichida clamp). .pop bo'lmagan sheet'lar bottom-sheet (CSS boshqaradi, inline toza).
   function positionPopover(sc,anchorEl){
     if(!sc)return;
-    sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight='';
+    var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
+    sc.style.bottom='auto';
+    if(anchorEl&&anchorEl.getBoundingClientRect){
+      var ar=anchorEl.getBoundingClientRect();
+      var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
+      sc.style.width=w+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var sh=sc.offsetHeight; // o'lchash
+      var left=Math.min(Math.max(pad,ar.left),Math.max(pad,vw-w-pad));
+      var top;
+      if(ar.bottom+gap+sh<=vh-pad) top=ar.bottom+gap;       // pill OSTIDA joy bor
+      else if(ar.top-gap-sh>=pad) top=ar.top-gap-sh;        // pill USTIDA joy bor
+      else top=Math.max(pad,vh-sh-pad);                     // sig'masa — viewport ichida clamp
+      sc.style.left=left+'px'; sc.style.top=top+'px';
+    }else{
+      var w2=Math.min(380,vw-pad*2);
+      sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
+      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
+    }
   }
-  function openSheet(id,anchorEl){ closeSheets(); var s=$(id); if(!s)return; s.classList.add('on'); positionPopover(s.querySelector('.sheetc'),anchorEl); }
+  function openSheet(id,anchorEl){
+    closeSheets(); var s=$(id); if(!s)return; s.classList.add('on');
+    var sc=s.querySelector('.sheetc'); if(!sc)return;
+    if(s.classList.contains('pop'))positionPopover(sc,anchorEl);
+    else { sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight=''; }
+  }
   document.querySelectorAll('.axig [data-igclose]').forEach(function(x){ x.addEventListener('click',closeSheets); });
   document.querySelectorAll('.axig .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeSheets(); }); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.querySelector('.axig .sheet.on'))closeSheets(); });
@@ -12599,12 +12629,34 @@ window.afGallery=(function(){
     document.querySelectorAll('.axvg .sheet').forEach(function(s){s.classList.remove('on');});
     if(clipOpen)resetVgClipper();
   }
-  // STEP0: bottom-sheet idiomi — pozitsiyani to'liq CSS boshqaradi; eski popover inline stillarini tozalaymiz.
+  // FIX4: sozlama sheet'lari (.pop) — pill yoniga joylanadigan popover; qolganlari bottom-sheet.
   function positionVgPopover(sc,anch){
     if(!sc)return;
-    sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight='';
+    var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
+    sc.style.bottom='auto';
+    if(anch&&anch.getBoundingClientRect){
+      var ar=anch.getBoundingClientRect();
+      var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
+      sc.style.width=w+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var sh=sc.offsetHeight; // o'lchash
+      var left=Math.min(Math.max(pad,ar.left),Math.max(pad,vw-w-pad));
+      var top;
+      if(ar.bottom+gap+sh<=vh-pad) top=ar.bottom+gap;
+      else if(ar.top-gap-sh>=pad) top=ar.top-gap-sh;
+      else top=Math.max(pad,vh-sh-pad);
+      sc.style.left=left+'px'; sc.style.top=top+'px';
+    }else{
+      var w2=Math.min(380,vw-pad*2);
+      sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
+      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
+    }
   }
-  function openVgSheet(id,anch){ closeVgSheets(); var s=$(id); if(!s)return; s.classList.add('on'); positionVgPopover(s.querySelector('.sheetc'),anch); }
+  function openVgSheet(id,anch){
+    closeVgSheets(); var s=$(id); if(!s)return; s.classList.add('on');
+    var sc=s.querySelector('.sheetc'); if(!sc)return;
+    if(s.classList.contains('pop'))positionVgPopover(sc,anch);
+    else { sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight=''; }
+  }
   document.querySelectorAll('.axvg [data-vgclose]').forEach(function(x){ x.addEventListener('click',closeVgSheets); });
   document.querySelectorAll('.axvg .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeVgSheets(); }); });
 
@@ -12860,24 +12912,28 @@ window.afGallery=(function(){
     if(bh){ bh.style.display=hasBit?'':'none'; if(hasBit)vgSetChips(bh,vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; renderVgSettingsSheet(); }); }
     var sw=$('vgSetAudSw'); if(sw){ sw.classList.toggle('on',!!vm.audio); sw.style.opacity=vm.audioLocked?'.45':''; }
   }
-  function openVgSettingsSheet(anch){ renderVgSettingsSheet(); openVgSheet('vgSettingsSheet',anch); }
-  $('vgModelSeg').addEventListener('click',function(){ openVgSettingsSheet($('vgModelSeg')); });
-  $('vgResSeg').addEventListener('click',function(){ openVgSettingsSheet($('vgResSeg')); });
-  $('vgDurSeg').addEventListener('click',function(){ openVgSettingsSheet($('vgDurSeg')); });
+  // FIX4/5: b7 birlashgan sheet o'rniga — har pill O'Z popover'ini ochadi (rasm tool bilan bir xil).
+  // Qiymat/apply/recost mantiqлари vgSetChips'dagi bilan aynan bir xil saqlangan.
+  $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); openVgSheet('vgMSheet',$('vgModelSeg')); });
+  $('vgResSeg').addEventListener('click',function(){
+    vgSetChips($('vgResPills'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); closeVgSheets(); });
+    openVgSheet('vgResSheet',$('vgResSeg'));
+  });
+  $('vgDurSeg').addEventListener('click',function(){
+    vgSetChips($('vgDurPills'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; var dv=$('vgDurVal'); if(dv)dv.textContent=v; recost(); closeVgSheets(); });
+    openVgSheet('vgDurSheet',$('vgDurSeg'));
+  });
   $('vgArSeg').addEventListener('click',function(){
     var seg=$('vgArSeg');
-    if(seg&&seg.getAttribute('data-arlock')==='1'){ toast('Video referens biriktirilgan — nisbatni model o\'zi belgilaydi','info'); }
-    openVgSettingsSheet(seg);
+    if(seg&&seg.getAttribute('data-arlock')==='1'){ toast('Video referens biriktirilgan — nisbatni model o\'zi belgilaydi','info'); return; }
+    vgSetChips($('vgArPills'),vm.arOpts,vm.ar,null,false,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; closeVgSheets(); });
+    openVgSheet('vgArSheet',seg);
   });
   var bitSeg=$('vgBitSeg');
-  if(bitSeg)bitSeg.addEventListener('click',function(){ openVgSettingsSheet(bitSeg); });
-  var setAudRow=$('vgSetAud');
-  if(setAudRow)setAudRow.addEventListener('click',function(){
-    var at=$('vgAudToggle'); if(at)at.click(); // yagona manba — mavjud toggle mantiqi (audioLocked toast shu yerda)
-    renderVgSettingsSheet();
+  if(bitSeg)bitSeg.addEventListener('click',function(){
+    vgSetChips($('vgBitPills'),vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; closeVgSheets(); });
+    openVgSheet('vgBitSheet',bitSeg);
   });
-  var setReady=$('vgSetReady');
-  if(setReady)setReady.addEventListener('click',function(){ closeVgSheets(); });
   var audTgl=$('vgAudToggle');
   if(audTgl)audTgl.addEventListener('click',function(){
     if(vm.audioLocked){ toast('Bu modelda ovoz doim yoqilgan — o\'chirib bo\'lmaydi (model xususiyati)','info'); return; }
