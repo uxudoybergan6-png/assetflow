@@ -1469,8 +1469,8 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-topstar:hover{color:#E7ECF3}
 .pd3-topstar.on{color:#C2F04A}
 
-/* ---- a3 hero (210px) ---- */
-.pd3-hero{position:relative;height:210px;flex:none;overflow:hidden;background:#12101c}
+/* ---- a3 hero (210px @380 = aspect 38/21; kengda cho'zilmasin, aspect saqlansin) ---- */
+.pd3-hero{position:relative;width:100%;max-width:420px;margin-inline:auto;aspect-ratio:38/21;flex:none;overflow:hidden;background:#12101c}
 .pd3-hero-poster,.pd3-hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .pd3-hero-vid{display:none;z-index:1}
 .pd3-hero.playing .pd3-hero-vid{display:block}
@@ -1569,12 +1569,17 @@ html.cep-mode .pack-dropbar{display:flex}
 .pd3-simrow::-webkit-scrollbar{height:0;width:0;display:none}
 .pd3-simrow:empty{display:none}
 .pd3-simcard{width:124px;flex:none;cursor:pointer}
-.pd3-simthumb{position:relative;height:70px;border-radius:9px;overflow:hidden;background-size:cover;background-position:center}
+.pd3-simthumb{position:relative;aspect-ratio:124/70;border-radius:9px;overflow:hidden;background-size:cover;background-position:center}
 .pd3-simthumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .pd3-simplan{position:absolute;top:5px;left:5px;z-index:2;font-family:var(--font-mono);font-weight:700;font-size:7.5px;padding:2px 5px;border-radius:4px}
 .pd3-simplan.pro{background:#C2F04A;color:#0E1400}
 .pd3-simplan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
 .pd3-simname{font-weight:600;font-size:10.5px;color:#E7ECF3;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- Responsive: 380px'da a3 AYNAN (max-width>panel → ta'sirsiz); kengroqda
+   markazlashgan ustun (top + hero + body kontenti cho'zilmaydi), karusel skroll ---- */
+.pd3-top{width:100%;max-width:420px;margin-left:auto;margin-right:auto}
+.pd3-body>*{max-width:420px;margin-left:auto;margin-right:auto}
 
 /* ---- a3 bottom fade ---- */
 .pd3-fade{position:absolute;left:0;right:0;bottom:0;height:30px;z-index:5;background:linear-gradient(180deg,rgba(6,8,11,0),#06080B);pointer-events:none}
