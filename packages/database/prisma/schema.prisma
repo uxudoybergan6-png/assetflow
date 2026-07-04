@@ -526,3 +526,51 @@ model TemplateDownloadEvent {
   @@index([createdAt])
   @@index([templateId, kind])
 }
+
+// ── Bosqich 4 #3 — Contributor payout / earnings (50% ulush) ────────────────
+// Shablonlar obunaga kiritilgan (cheksiz yuklab olish) → per-sotuv attribution
+// to'g'ridan qo'llanmaydi. Shu bois DEFAULT (sozlanadigan) formula: HAR download
+// hodisasi uchun qat'iy stavka (CONTRIBUTOR_PAYOUT_PER_DOWNLOAD_CENTS, default 10¢).
+// ⚠️ EGA QARORI: aniq stavka/formula (qat'iy-per-download vs oylik pool ulushi) va
+// "50% ulush"ni maqsadga moslashtirish — biznes qarori (kod default beradi, qulflamaydi).
+//
+// ContributorEarning: har download hodisasi uchun BITTA earning qatori. Idempotentlik
+// downloadEventId @unique bilan (bir hodisa IKKI marta kredit BERMAYDI). Grant ADDITIVE
+// va HECH QACHON manfiy emas (amountCents > 0 gate). FK-siz (ledger naqshi).
+model ContributorEarning {
+  id              String   @id @default(cuid())
+  contributorId   String
+  templateId      String
+  downloadEventId String   @unique // idempotency key — bir download = bir earning
+  amountCents     Int                 // > 0, additive, hech qachon manfiy emas
+  currency        String   @default("USD")
+  payoutId        String?             // admin payout'ga kiritilganda o'rnatiladi
+  createdAt       DateTime @default(now())
+
+  @@index([contributorId])
+  @@index([payoutId])
+  @@index([templateId])
+  @@index([createdAt])
+}
+
+// ContributorPayout: admin tomonidan yozilgan to'lov qaydi (Khamkorbank UZ va h.k.).
+// To'lov earning qatorlari amountlarini O'ZGARTIRMAYDI — faqat ularni payoutId bilan
+// bog'laydi (balans = to'lanmagan earninglar yig'indisi).
+model ContributorPayout {
+  id            String    @id @default(cuid())
+  contributorId String
+  amountCents   Int
+  currency      String    @default("USD")
+  method        String?               // "khamkorbank" | "manual" | ...
+  reference     String?               // bank ref / izoh
+  note          String?
+  status        String    @default("paid") // "pending" | "paid" | "reversed"
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  createdById   String?               // admin userId
+  createdAt     DateTime  @default(now())
+
+  @@index([contributorId])
+  @@index([status])
+  @@index([createdAt])
+}

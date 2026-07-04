@@ -1,4 +1,5 @@
 import { prisma } from "@creative-tools/database";
+import { grantContributorEarning } from "./earnings.js";
 
 /**
  * Bosqich 4 #1 — REAL download/import event tracking.
@@ -34,6 +35,13 @@ export async function recordTemplateDownloadEvent(input: {
         source: input.source ?? "plugin",
       },
       select: { id: true, contributorId: true },
+    });
+    // Bosqich 4 #3: har download hodisasidan contributor earning (idempotent, best-effort).
+    await grantContributorEarning({
+      downloadEventId: ev.id,
+      templateId: input.templateId,
+      contributorId: ev.contributorId,
+      kind: input.kind,
     });
     return ev;
   } catch (e) {

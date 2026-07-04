@@ -56,6 +56,11 @@ import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
 import { scanFileHash } from "../lib/malware-scan.js";
 import { realTemplateCounts, applyRealCounts } from "../lib/download-events.js";
+import {
+  getContributorEarningsSummary,
+  recordContributorPayout,
+  payoutPerDownloadCents,
+} from "../lib/earnings.js";
 import crypto from "crypto";
 
 /** Moderatsiya natijasini contributor'ga email qiladi (xato bo'lsa jim o'tadi) */
@@ -320,6 +325,86 @@ contributorRouter.get("/admin/overview", requireAuth, requireAdmin, async (_req,
       return rows.map((r) => applyRealCounts(r, counts));
     })(),
   });
+});
+
+/** Bosqich 4 #3 — Contributor "daromadim": o'z earning balansi + so'nggi payoutlar. */
+contributorRouter.get("/earnings", requireAuth, async (req, res) => {
+  const summary = await getContributorEarningsSummary(req.user!.userId);
+  const payouts = await prisma.contributorPayout.findMany({
+    where: { contributorId: req.user!.userId },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+  res.json({ ...summary, payouts });
+});
+
+/** Bosqich 4 #3 — Admin: barcha contributor'lar earning balansi (payout UI uchun). */
+contributorRouter.get("/admin/earnings", requireAuth, requireAdmin, async (_req, res) => {
+  const grouped = await prisma.contributorEarning.groupBy({
+    by: ["contributorId"],
+    _sum: { amountCents: true },
+    _count: { _all: true },
+  });
+  const unpaid = await prisma.contributorEarning.groupBy({
+    by: ["contributorId"],
+    where: { payoutId: null },
+    _sum: { amountCents: true },
+  });
+  const unpaidMap = new Map(unpaid.map((r) => [r.contributorId, r._sum.amountCents ?? 0]));
+  const ids = grouped.map((g) => g.contributorId);
+  const users = ids.length
+    ? await prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, email: true, name: true },
+      })
+    : [];
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  res.json({
+    perDownloadCents: payoutPerDownloadCents(),
+    contributors: grouped.map((g) => ({
+      contributorId: g.contributorId,
+      email: userMap.get(g.contributorId)?.email ?? null,
+      name: userMap.get(g.contributorId)?.name ?? null,
+      totalEarnedCents: g._sum.amountCents ?? 0,
+      balanceCents: Math.max(0, unpaidMap.get(g.contributorId) ?? 0),
+      earningEvents: g._count._all,
+    })),
+  });
+});
+
+/** Bosqich 4 #3 — Admin: contributor'ga payout yozadi (to'lanmagan earninglarni bog'laydi). */
+const payoutSchema = z.object({
+  contributorId: z.string().min(1),
+  method: z.string().optional(),
+  reference: z.string().optional(),
+  note: z.string().optional(),
+});
+contributorRouter.post("/admin/payouts", requireAuth, requireAdmin, async (req, res) => {
+  const parsed = payoutSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Noto'g'ri payout ma'lumoti" });
+    return;
+  }
+  const result = await recordContributorPayout({
+    contributorId: parsed.data.contributorId,
+    method: parsed.data.method,
+    reference: parsed.data.reference,
+    note: parsed.data.note,
+    createdById: req.user!.userId,
+  });
+  if (!result.ok) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "contributor.payout.create",
+    targetType: "contributor",
+    targetId: parsed.data.contributorId,
+    detail: `Payout ${(result.payout.amountCents / 100).toFixed(2)} ${result.payout.currency}`,
+    meta: { payoutId: result.payout.id, linkedEarnings: result.linkedEarnings },
+  });
+  res.json({ ok: true, payout: result.payout, linkedEarnings: result.linkedEarnings });
 });
 
 contributorRouter.get("/templates", requireAuth, async (req, res) => {
