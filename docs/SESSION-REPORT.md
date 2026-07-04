@@ -1,23 +1,15 @@
-# Sessiya hisoboti — 2026-07-04 — a3 shablon detail: 1:1 fidelity + responsivlik (plagin)
+# Sessiya hisoboti — 2026-07-04
 
-**Nima qilindi:** `AssetFlow_Plugin.html` `#packDetail` (a3 detail). Scaffold allaqachon
-a3 qiymatlariga mos edi (top bar, 210px hero, sarlavha/meta/teglar/tavsif, Import+sevimli,
-O'xshash karusel). Fidelity-fix sifatida FAQAT responsivlik qo'shildi (commit 42dbf5e, push yo'q):
-- `.pd3-hero`: `height:210px` → `aspect-ratio:38/21` + `max-width:420` + markaz.
-- `.pd3-simthumb`: `height:70px` → `aspect-ratio:124/70`.
-- `.pd3-top` + `.pd3-body>*`: `max-width:420` markaz ustun (max-width>panel → 380px ta'sirsiz).
+**Vazifa:** AI gen pipeline statik auditi — enabled 13 modelning parametrlari (plagin→/gen→quote→processor→adapter) real provider kontraktiga mosligi. Pul zonasi (kredit/refund/imzo) TEGILMADI.
 
-**Nima topildi:** yagona haqiqiy bo'shliq — keng kenglikda (900px) kontent cho'zilardi
-(markaz-cap yo'q edi). a3 elementlari qiymatlari o'zi mos edi.
+**Natija:** `docs/AI-API-AUDIT.md` (per-model matritsa): 9 PASS · 4 FIXED · 1 NEEDS-CONFIRMATION.
 
-**Tekshirildi (preview, cep-mode + demo seed):**
-- 380px → a3 AYNAN (hero 380×210, thumb 124×70, top bar to'liq eni).
-- 900px → 420px markaz ustun, cho'zilish yo'q; 6 kartada karusel skroll (789>420).
-- Import: tanlanmaguncha o'chiq → tanlangach yoniq → bosilganda auth gate (login overlay).
-- Back yopadi; O'xshash karta boshqa shablonni ochadi (title almashdi); sevimli WIRED
-  (toggleFav, ikkala yulduz sync, window.favorites). Konsol xato yo'q.
+**Tuzatilgan (2 fix, alohida commitlar):**
+1. `ea031c5` — Yakuniy kadr boshlang'ich kadrsiz: processor indamay tashlab yuborardi (Veo lastFrame i2v-only) → /gen 400 `END_FRAME_REQUIRES_START` (kreditdan OLDIN) + plagin guard.
+2. `88bf250` — Nano Banana 2 Lite `resolutions:["1K"]` (2K=400; stale quality merosi tuzatildi).
 
-**Manba:** preview real thumb/video (renderPackHero) yoki nom-hashli a3-oila gradient (fallback);
-O'xshash: bir kategoriya/tur, maks 6 (pd3SimilarList) — yangi backend yo'q.
+**NEEDS-CONFIRMATION:** Kokoro TTS — OpenRouter kaliti jonliligi env'da (statik tasdiqlanmaydi).
 
-**Kutilmoqda:** AE (real CEP) da end-to-end import testi.
+**AE jonli tekshiruv kutilmoqda:** Veo 9:16×1080p, Veo Lite ID, start+end interpolatsiya, Nano Pro 4K, Kokoro, Omni video-ref, Seedance (fal zaxira), yangi end-kadr guard toast.
+
+**Kutilmoqda:** push + Cloud Run deploy (API o'zgardi), `npm run build -w apps/api` toza o'tdi.
