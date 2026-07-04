@@ -1591,14 +1591,16 @@ contributorRouter.post(
         select: { packScanStatus: true },
       });
       const s = pre?.packScanStatus;
-      if (s === "malicious" || s === "quarantined" || s === "duplicate") {
+      if (s === "malicious" || s === "quarantined" || s === "duplicate" || s === "pending") {
         res.status(409).json({
           error:
             s === "duplicate"
               ? "Pack nusxa deb belgilangan (dedup) — tasdiqlab bo'lmaydi"
               : s === "malicious"
                 ? "Pack malware skanida zararli topilgan — tasdiqlab bo'lmaydi"
-                : "Pack xavfsizlik tekshiruvi kutilmoqda (karantin) — tasdiqlab bo'lmaydi",
+                : s === "pending"
+                  ? "Pack xavfsizlik tekshiruvi hali tugamagan — biroz kuting"
+                  : "Pack xavfsizlik tekshiruvi kutilmoqda (karantin) — admin ko'rib chiqishi kerak",
           code: "PACK_QUARANTINED",
           packScanStatus: s,
         });
@@ -1793,6 +1795,50 @@ contributorRouter.post(
     }
 
     res.json({ ok: true, created, updated });
+  }
+);
+
+/**
+ * POST /admin/templates/:id/pack-clear — KARANTINni qo'lda ko'rib chiqib TOZALASH (Bosqich 2 #2).
+ * Faqat NOANIQ karantin ("quarantined"/"unknown"/"pending") uchun — prodda malware skaner
+ * sozlanmagan yoki VirusTotal'da avval ko'rilmagan fayl. Admin qo'lda tekshirgach "clean" qiladi.
+ * TASDIQLANGAN "malicious"/"duplicate" TOZALANMAYDI (o'chirib qayta yuklash kerak).
+ */
+contributorRouter.post(
+  "/admin/templates/:id/pack-clear",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({
+      where: { id },
+      select: { name: true, packScanStatus: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Shablon topilmadi" });
+      return;
+    }
+    const s = existing.packScanStatus;
+    if (s === "malicious" || s === "duplicate") {
+      res.status(409).json({
+        error: "Tasdiqlangan zararli/nusxa pack qo'lda tozalanmaydi — o'chirib qayta yuklang",
+        code: "PACK_HARD_BLOCKED",
+        packScanStatus: s,
+      });
+      return;
+    }
+    const template = await prisma.contributorTemplate.update({
+      where: { id },
+      data: { packScanStatus: "clean", packScanDetail: "Admin qo'lda ko'rib chiqib tozaladi" },
+    });
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "template.pack_cleared",
+      targetType: "template",
+      targetId: id,
+      detail: `${existing.name} (oldingi holat: ${s ?? "null"})`,
+    });
+    res.json(template);
   }
 );
 
