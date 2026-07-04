@@ -40,6 +40,7 @@ import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vert
 import { omniGenerateVideo } from "./ai/vertex-omni.js";
 import { vertexImage, vertexImageEdit } from "./ai/vertex-image.js";
 import { refundAiCredits } from "./plugin-profile.js";
+import { fetchSafe } from "./fetch-safe.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
 const ASSET_TYPE = { image: 130, audio: 120, video: 140 } as const;
@@ -544,7 +545,12 @@ async function refUrlToInlineImage(
 ): Promise<{ data: string; mimeType: string } | null> {
   const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(refUrl);
   if (m) return { data: m[2], mimeType: m[1] || "image/jpeg" };
-  const res = await fetch(refUrl);
+  let res: Response;
+  try {
+    res = await fetchSafe(refUrl); // SSRF: faqat bizning bucket/data-URI
+  } catch {
+    return null;
+  }
   if (!res.ok) return null;
   const contentType = res.headers.get("content-type") || "image/jpeg";
   const buf = Buffer.from(await res.arrayBuffer());
@@ -632,7 +638,7 @@ async function videoRefToOmniInput(url: string): Promise<{ data?: string } | nul
   try {
     if (key) buf = await downloadS3ToBuffer(key);
     else {
-      const res = await fetch(url);
+      const res = await fetchSafe(url); // SSRF: bizning bucket bo'lmasa throw → catch → null
       if (!res.ok) return null;
       buf = Buffer.from(await res.arrayBuffer());
     }

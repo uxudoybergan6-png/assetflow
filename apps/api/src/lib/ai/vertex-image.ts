@@ -8,6 +8,7 @@
 //      → candidates[0].content.parts[].inlineData.data (base64)
 import { GoogleGenAI } from "@google/genai";
 import type { OrResult } from "./openrouter.js";
+import { fetchSafe } from "../fetch-safe.js";
 
 // Fallback (2026-07-01): GitHub Actions deploy env secret'ida Google var yo'qligi sabab
 // VERTEX_NOT_CONFIGURED qayta-qayta chiqardi. Loyiha ID maxfiy emas (deploy config'da ochiq).
@@ -39,7 +40,12 @@ const cleanSize = (s?: string): string | undefined =>
 async function refToInline(refUrl: string): Promise<{ data: string; mimeType: string } | null> {
   const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(refUrl);
   if (m) return { data: m[2], mimeType: m[1] || "image/png" };
-  const res = await fetch(refUrl);
+  let res: Response;
+  try {
+    res = await fetchSafe(refUrl); // SSRF: faqat bizning bucket/data-URI
+  } catch {
+    return null;
+  }
   if (!res.ok) return null;
   const ct = res.headers.get("content-type") || "image/png";
   const buf = Buffer.from(await res.arrayBuffer());

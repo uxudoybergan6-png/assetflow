@@ -15,6 +15,7 @@
 import { GoogleGenAI } from "@google/genai";
 import type { OrResult } from "./openrouter.js";
 import { gcsUriFromUrl, gcsKeyFromUrl, getS3ObjectMeta } from "../s3.js";
+import { fetchSafe } from "../fetch-safe.js";
 
 // Fallback (2026-07-01): GitHub Actions deploy env secret'ida Google var yo'qligi sabab
 // VERTEX_NOT_CONFIGURED qayta-qayta chiqardi. Loyiha ID maxfiy emas (deploy config'da ochiq).
@@ -83,7 +84,7 @@ async function resolveRef(url: string, kind: RefKind, idx: number): Promise<Reso
   // CDN_BASE_URL/gcsKeyFromUrl nomuvofiqligi belgisi (sekin yo'l) — log bilan ko'rinsin.
   try {
     if (/storage\.googleapis\.com/i.test(url)) console.warn("[enhance] bucket URL gs:// ga mos kelmadi — tashqi fetch (sekin):", url.slice(0, 120));
-    const res = await fetch(url);
+    const res = await fetchSafe(url); // SSRF: faqat bizning bucket/data-URI (tashqi host → throw → null)
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     const ct = validMime(res.headers.get("content-type") || undefined, kind);
