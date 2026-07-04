@@ -219,6 +219,14 @@ function validateEnv() {
 
   if (!process.env.RESEND_API_KEY?.trim())
     warnings.push("RESEND_API_KEY yo'q — email yuborilmaydi (parol tiklash/bildirishnoma)");
+  else if (isProd) {
+    // Email yetkazuvchanlik (Bosqich 1 #9): productionда EMAIL_FROM tasdiqlangan domendan bo'lsin.
+    const from = process.env.EMAIL_FROM?.trim();
+    if (!from || /resend\.dev/i.test(from))
+      warnings.push(
+        "EMAIL_FROM yo'q yoki resend.dev sandbox — xatlar real foydalanuvchilarga YETMAYDI. Resend'da domenni tasdiqlang (DKIM/SPF) va EMAIL_FROM='FrameFlow <no-reply@sizning-domen>' qo'ying."
+      );
+  }
   if (!process.env.STRIPE_SECRET_KEY?.trim())
     warnings.push("STRIPE_SECRET_KEY yo'q — to'lov o'chirilgan");
   if (isProd && !process.env.CORS_ORIGIN?.trim())

@@ -11,6 +11,16 @@ function fromAddress(): string {
   return process.env.EMAIL_FROM?.trim() || "FrameFlow <onboarding@resend.dev>";
 }
 
+/**
+ * Productionда EMAIL_FROM tasdiqlangan domendan bo'lishi SHART (Bosqich 1 #9). Yo'q yoki
+ * `resend.dev` sandbox bo'lsa — xatlar FAQAT Resend hisob egasiga yetadi, HAQIQIY foydalanuvchilarga
+ * EMAS. Bu holatda loud log (yuborishni bloklamaymiz — dev/test buzilmasin).
+ */
+function isProdSandboxFrom(): boolean {
+  const from = process.env.EMAIL_FROM?.trim();
+  return process.env.NODE_ENV === "production" && (!from || /resend\.dev/i.test(from));
+}
+
 export type SendEmailInput = {
   to: string;
   subject: string;
@@ -28,6 +38,12 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
       `[email] RESEND_API_KEY yo'q — yuborilmadi. To: ${input.to} · ${input.subject}`
     );
     return false;
+  }
+  if (isProdSandboxFrom()) {
+    console.error(
+      "[email] ⚠️ Productionда EMAIL_FROM tasdiqlanmagan (yo'q yoki resend.dev sandbox) — bu xat HAQIQIY " +
+        `foydalanuvchiga (${input.to}) YETMAYDI. Resend'da domenni tasdiqlang (DKIM/SPF) va EMAIL_FROM='FrameFlow <no-reply@sizning-domen>' qo'ying.`
+    );
   }
   try {
     const res = await fetch("https://api.resend.com/emails", {
