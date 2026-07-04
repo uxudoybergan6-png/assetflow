@@ -1,10 +1,12 @@
 /**
  * Cloudflare Turnstile — register formasida bot-himoyasi.
  *
- * FAIL-OPEN: `TURNSTILE_SECRET_KEY` o'rnatilmagan bo'lsa tekshiruv o'tkazib
- * yuboriladi (mavjud oqim buzilmaydi). Kalit qo'yilgach avtomatik majburlanadi.
- * Frontend site-key'i alohida (studio-config / meta-tag) — u ham bo'sh bo'lsa
- * widget ko'rsatilmaydi va token yuborilmaydi; server ham tekshirmaydi → izchil.
+ * FAIL-CLOSED PRODUCTIONДА (Bosqich 1 #5): `TURNSTILE_SECRET_KEY` yo'q bo'lsa —
+ *   • dev (NODE_ENV !== production) → o'tkazib yuboriladi (fail-open, dev qulayligi);
+ *   • production → RAD ETILADI (fail-closed) — bot ro'yxatdan o'tishning oldini oladi.
+ * ⚠️ Shu sabab productionда TURNSTILE_SECRET_KEY (+ frontend site-key) SOZLANMASA
+ *    RO'YXATDAN O'TISH BLOKLANADI. Kalitni sozlash MAJBURIY manual qadam.
+ * Frontend site-key'i alohida (studio-config / meta-tag).
  */
 
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
@@ -14,14 +16,17 @@ export function isTurnstileConfigured(): boolean {
 }
 
 /**
- * Turnstile token'ini Cloudflare'da tekshiradi. Kalit yo'q → true (fail-open).
- * Tarmoq/xato holatida false (fail-closed — kalit BOR bo'lsa tekshiruv haqiqiy).
+ * Turnstile token'ini Cloudflare'da tekshiradi. Kalit yo'q → dev true (fail-open),
+ * production false (fail-closed). Tarmoq/xato holatida false (kalit BOR bo'lsa tekshiruv haqiqiy).
  */
 export async function verifyTurnstile(
   token: string | undefined,
   remoteIp?: string
 ): Promise<boolean> {
-  if (!isTurnstileConfigured()) return true; // sozlanmagan → o'tkazib yuboramiz
+  if (!isTurnstileConfigured()) {
+    // Fail-CLOSED productionда: sozlanmagan bo'lsa rad et. Dev'da fail-open (qulaylik).
+    return process.env.NODE_ENV !== "production";
+  }
   if (!token || typeof token !== "string") return false;
   try {
     const body = new URLSearchParams({

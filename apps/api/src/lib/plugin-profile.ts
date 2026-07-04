@@ -324,11 +324,13 @@ export async function consumeAiCredits(userId: string, cost: number) {
   }
 
   // Email-verify gate — tasdiqlanmagan hisoblar AI kredit ISHLATOLMAYDI (bot
-  // bepul-kredit abuzasini to'sadi). FAQAT email yuborish sozlangan bo'lsa
-  // (RESEND_API_KEY) majburlanadi — aks holda foydalanuvchi tasdiqlash
-  // havolasini ololmaydi, shu sabab bloklamaymiz (fail-open). Mavjud hisoblar
-  // migratsiyada grandfather qilingan (emailVerified backfill) → bloklanmaydi.
-  if (isEmailConfigured() && !profile.user.emailVerified) {
+  // bepul-kredit abuzasini to'sadi). FAIL-CLOSED PRODUCTIONДА (Bosqich 1 #5):
+  //   • dev → faqat email sozlangan bo'lsa (RESEND_API_KEY) majburlanadi (fail-open);
+  //   • production → email sozlanmagan bo'lsa ham tasdiq TALAB qilinadi (fail-closed).
+  // ⚠️ Productionда RESEND sozlanmasa yangi (tasdiqlanmagan) hisoblar kredit ishlatolmaydi.
+  // Mavjud hisoblar migratsiyada grandfather qilingan (emailVerified backfill) → bloklanmaydi.
+  const requireEmailVerify = isEmailConfigured() || process.env.NODE_ENV === "production";
+  if (requireEmailVerify && !profile.user.emailVerified) {
     return {
       ok: false as const,
       error: "Emailingizni tasdiqlang — pochtangizga yuborilgan havolani bosing (yoki qayta yuboring).",
