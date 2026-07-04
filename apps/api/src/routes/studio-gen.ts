@@ -60,6 +60,8 @@ import {
   reconcileStuckGenerations,
 } from "../lib/gen-processor.js";
 import { preflightSafetyCheck, softenPromptForSafety } from "../lib/preflight-safety.js";
+import { moderateContent, collectImageRefUrls } from "../lib/moderation.js";
+import { writeAuditLog } from "../lib/audit-log.js";
 
 export const studioGenRouter = Router();
 
@@ -866,6 +868,8 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
+  // ── MODERATSIYA (Bosqich 2 #1) — KREDIT YECHISHDAN OLDIN (bloklangan gen'ga charge YO'Q) ──
+  // 1) Kalit-so'z (heuristik) qatlami — og'ir kategoriyalar (CSAM/deepfake/gore/jinsiy) FAIL-CLOSED.
   const preflight = preflightSafetyCheck({
     mode,
     prompt,
@@ -873,11 +877,53 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     modelLabel: model.label,
   });
   if (preflight.blocked) {
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "moderation.blocked",
+      targetType: "generation",
+      detail: preflight.reason || "preflight blocked",
+      meta: {
+        layer: "keyword",
+        category: preflight.category || null,
+        severity: preflight.severity,
+        mode,
+        modelId,
+        promptExcerpt: prompt.slice(0, 240),
+      },
+    });
     res.status(400).json({
       error: preflight.reason || "Prompt safety tekshiruvdan o'tmadi",
       code: "PREFLIGHT_BLOCKED",
       severity: preflight.severity,
       suggestions: preflight.suggestions,
+    });
+    return;
+  }
+  // 2) ML klassifikator (env-configured) — matn prompt + referens RASM'lar. Sozlanmagan → no-op.
+  //    Og'ir kategoriya → FAIL-CLOSED blok; API xatosi → fail-open (kalit-so'z qatlami baribir gate).
+  const moderation = await moderateContent({
+    text: prompt,
+    imageUrls: collectImageRefUrls(params),
+  });
+  if (moderation.blocked) {
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "moderation.blocked",
+      targetType: "generation",
+      detail: moderation.reason || "moderation blocked",
+      meta: {
+        layer: "ml",
+        categories: moderation.categories,
+        severity: moderation.severity,
+        mode,
+        modelId,
+        promptExcerpt: prompt.slice(0, 240),
+      },
+    });
+    res.status(400).json({
+      error: moderation.reason || "Kontent moderatsiyadan o'tmadi",
+      code: "MODERATION_BLOCKED",
+      severity: moderation.severity,
     });
     return;
   }

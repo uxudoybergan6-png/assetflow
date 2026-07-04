@@ -11,6 +11,7 @@ export type PreflightSafetyResult = {
   reason: string | null;
   warnings: string[];
   suggestions: string[];
+  category?: string; // moderatsiya izi uchun: "csam" | "deepfake" | "sexual" | "gore" | ...
 };
 
 const SEXUAL_EXPLICIT = [
@@ -91,34 +92,94 @@ export function softenPromptForSafety(prompt: string, mode = "video"): string {
   return text.trim();
 }
 
-const REAL_PERSON = [
+// Umumiy "realistik uslub / rol" — o'zi BLOK EMAS (warn). Legitim mahsulot (realistik sport
+// personaji) buzilmasin. Aniq REAL SHAXS uchun pastdagi NAMED_REAL_PEOPLE/DEEPFAKE_INTENT ishlaydi.
+const REALISTIC_STYLE = [
   "realistic",
   "photoreal",
   "photorealistic",
-  "real person",
-  "celebrity",
   "footballer",
   "athlete",
   "sportsman",
-  "ronaldo",
-  "messi",
-  "haqiqiy odam",
   "fotoreal",
-  "real odam",
   "sportchi",
   "futbolchi",
 ];
 
+// Aniqlanadigan HAQIQIY shaxs (nom/mashhurlik) — o'xshashlik (likeness) → HARD BLOK (audit 1b).
+const NAMED_REAL_PEOPLE = [
+  "real person",
+  "celebrity",
+  "ronaldo",
+  "messi",
+  "haqiqiy odam",
+  "real odam",
+  "mashhur shaxs",
+  "mashhur odam",
+];
+
+// Deepfake/yuz-almashtirish NIYATI — HARD BLOK (audit 1b). Referens bo'lsin/bo'lmasin.
+const DEEPFAKE_INTENT = [
+  "deepfake",
+  "deep fake",
+  "deepfeyk",
+  "face swap",
+  "face-swap",
+  "faceswap",
+  "swap face",
+  "swap the face",
+  "swap his face",
+  "swap her face",
+  "put his face",
+  "put her face",
+  "clone his face",
+  "clone her face",
+  "real person's face",
+  "someone's face",
+  "impersonate",
+  "impersonation",
+  "yuz almashtirish",
+  "yuzini almashtirish",
+  "boshqa odamning yuzi",
+  "soxta yuz",
+];
+
 const MINOR_TERMS = [
   "child",
+  "children",
   "kid",
+  "kids",
   "teen",
+  "teenager",
   "underage",
   "minor",
+  "preteen",
+  "toddler",
+  "schoolgirl",
+  "schoolboy",
+  "little girl",
+  "little boy",
   "bola",
+  "bolalar",
   "o'smir",
+  "osmir",
   "osm ir",
   "voyaga yetmagan",
+  "maktab o'quvchisi",
+];
+
+// Yalang'ochlikka yaqin kiyim (o'zi neytral) — LEKIN nozik yosh bilan birga → CSAM signali.
+const SWIMWEAR_UNDERWEAR = [
+  "bikini",
+  "swimsuit",
+  "swimwear",
+  "lingerie",
+  "underwear",
+  "panties",
+  "thong",
+  "cholva",
+  "ich kiyim",
+  "cho'milish kiyimi",
 ];
 
 const GORE_TERMS = [
@@ -155,7 +216,10 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
   const sexual = hasAny(text, SEXUAL_EXPLICIT);
   const strongBody = hasAny(text, STRONG_BODY_EXPOSURE);
   const genericBody = hasAny(text, GENERIC_BODY_TERMS);
-  const real = hasAny(text, REAL_PERSON);
+  const swimwear = hasAny(text, SWIMWEAR_UNDERWEAR);
+  const real = hasAny(text, REALISTIC_STYLE);
+  const namedPerson = hasAny(text, NAMED_REAL_PEOPLE);
+  const deepfake = hasAny(text, DEEPFAKE_INTENT);
   const minor = hasAny(text, MINOR_TERMS);
   const gore = hasAny(text, GORE_TERMS);
   const warnings: string[] = [];
@@ -165,13 +229,32 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     "Tana detali o'rniga harakat, kamera, yorug'lik va sport atmosferasiga urg'u bering.",
   ];
 
-  if (minor && sexual) {
+  // CSAM (audit 1a) — nozik yosh + ISTALGAN jinsiylashtirish/ochiq-tana/ich-kiyim signali → HARD BLOK.
+  // Ilgari faqat (minor && sexual) so'z birga kelganда bloklardi; endi ANY signal bloklaydi. Bypass yo'q.
+  if (minor && (sexual || strongBody || genericBody || swimwear)) {
     return {
       blocked: true,
       severity: "high",
-      reason: "Promptda nozik yosh + jinsiy mazmun kombinatsiyasi bor, bu bloklanadi",
+      reason: "Nozik yosh + tana/jinsiy kontekst aniqlandi — bu qat'iy taqiqlangan va bloklanadi",
       warnings,
       suggestions,
+      category: "csam",
+    };
+  }
+
+  // Deepfake / haqiqiy shaxs o'xshashligi (audit 1b) — WARN emas, HARD BLOK.
+  if (deepfake || namedPerson) {
+    return {
+      blocked: true,
+      severity: "high",
+      reason:
+        "Haqiqiy shaxsning o'xshashligi yoki yuz almashtirish (deepfake) so'ralgan — bu bloklanadi",
+      warnings,
+      suggestions: [
+        "Aniq real shaxs (nom/mashhurlik) o'rniga xayoliy, neytral personaj tasvirlang.",
+        "«deepfake», «face swap», «real person's face» kabi niyatlarni olib tashlang.",
+      ],
+      category: "deepfake",
     };
   }
 
@@ -185,6 +268,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
         "Grafik jarohat, ichki a'zo yoki qonli tafsilotlarni olib tashlang.",
         "Kuchli sahna kerak bo'lsa, `cinematic tension` yoki `dramatic action` kabi yumshoqroq tasvir bering.",
       ],
+      category: "gore",
     };
   }
 
@@ -195,6 +279,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
       reason: "Promptda ochiq jinsiy yoki yalang'ochlikka yaqin iboralar bor, model buni ko'pincha bloklaydi",
       warnings,
       suggestions,
+      category: "sexual",
     };
   }
 

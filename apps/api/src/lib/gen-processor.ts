@@ -41,6 +41,8 @@ import { omniGenerateVideo } from "./ai/vertex-omni.js";
 import { vertexImage, vertexImageEdit } from "./ai/vertex-image.js";
 import { refundAiCredits } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
+import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
+import { writeAuditLog } from "./audit-log.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
 const ASSET_TYPE = { image: 130, audio: 120, video: 140 } as const;
@@ -692,6 +694,48 @@ async function runVertexOmniVideo(
  * text-to-image / image-edit → sync; text-to-speech → audio; text/image-to-video → async poll.
  * Natija R2'ga → GenAsset → status=done. Xato → status=failed + KREDIT QAYTARILADI.
  */
+/**
+ * Chiqish moderatsiyasi (Bosqich 2 #1, env-gated MODERATION_MODERATE_OUTPUTS) — generatsiya
+ * NATIJASIDAGI rasm assetlarini ML klassifikatorga yuboradi. Og'ir kategoriya aniqlansa
+ * assetlar o'chiriladi va Error otiladi → processGeneration catch → fail()=failed+refund
+ * (bloklangan gen'ga charge qolmaydi). Video/audio bu API'da tekshirilmaydi. API xatosi →
+ * fail-open (input moderatsiya allaqachon og'ir kategoriyalarni gate qilgan). Best-effort.
+ */
+async function moderateGeneratedOutput(gen: {
+  id: string;
+  userId: string;
+  mode: string;
+  modelId: number;
+}): Promise<void> {
+  if (!moderateOutputsEnabled()) return;
+  let result;
+  try {
+    const assets = await prisma.genAsset.findMany({
+      where: { generationId: gen.id, type: ASSET_TYPE.image },
+      select: { url: true },
+    });
+    const urls = assets
+      .map((a) => a.url)
+      .filter((u): u is string => typeof u === "string" && /^https?:\/\//i.test(u));
+    if (!urls.length) return;
+    result = await moderateContent({ imageUrls: urls });
+  } catch (e) {
+    console.warn("[moderation] output check xato — fail-open:", e instanceof Error ? e.message : e);
+    return;
+  }
+  if (!result.blocked) return;
+  await prisma.genAsset.deleteMany({ where: { generationId: gen.id } });
+  await writeAuditLog({
+    actorId: gen.userId,
+    action: "moderation.blocked",
+    targetType: "generation",
+    targetId: gen.id,
+    detail: result.reason || "output moderation blocked",
+    meta: { layer: "ml-output", categories: result.categories, severity: result.severity, mode: gen.mode, modelId: gen.modelId },
+  });
+  throw new Error(`MODERATION_OUTPUT_BLOCKED: ${result.reason || "chiqish moderatsiyadan o'tmadi"}`);
+}
+
 export async function processGeneration(genId: string): Promise<void> {
   const gen = await prisma.generation.findUnique({ where: { id: genId } });
   if (!gen) return;
@@ -911,7 +955,10 @@ export async function processGeneration(genId: string): Promise<void> {
       return void (await fail(`Qo'llab-quvvatlanmaydigan tur: ${model.feature}`));
     }
 
-    // ATOMIK: faqat hali running bo'lsa done qil. Agar reconcile (10 daq) jobni failed+refund qilган
+    // Chiqish moderatsiyasi (env-gated) — done'dan OLDIN. Og'ir kategoriya → throw → catch → fail+refund.
+    await moderateGeneratedOutput({ id: genId, userId: gen.userId, mode: gen.mode, modelId: gen.modelId });
+
+    // ATOMIK: faqat hali running bo'lsa done qil. Agar reconcile (10 daq) jobni failed+refund qilған
     // bo'lsa → count=0 → failed→done QILMAYMIZ (refund saqlanadi; assetlar history'да ko'rinmaydi —
     // "bepul gen" oldini olamiz). Double-refund race fix (audit 2026-06-26).
     await prisma.generation.updateMany({ where: { id: genId, status: "running" }, data: { status: "done" } });
