@@ -196,6 +196,7 @@ export const GEN_MODELS: GenModel[] = [
     inputs: ["image-ref"],
     maxRefs: 10,
     aspects: NANO_ASPECTS, // 8 nisbat (Gemini image)
+    resolutions: ["1K"], // FAQAT 1K (2K=400 — jonli sinov 2026-07-01); deklaratsiyasiz plagin oldingi model qiymatini yuborardi
     count: [1, 2, 3, 4],
     imgModalities: ["image", "text"],
   },
