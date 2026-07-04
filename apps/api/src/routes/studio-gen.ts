@@ -51,6 +51,11 @@ import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.
 import { writeProviderSpend } from "../lib/ledger.js";
 import { estimateProviderUsd } from "../lib/provider-cost.js";
 import {
+  isGenKillSwitchOn,
+  checkGlobalSpendCeiling,
+  withinGenDailyCap,
+} from "../lib/spend-guard.js";
+import {
   processGenerationInBackground,
   reconcileStuckGenerations,
 } from "../lib/gen-processor.js";
@@ -877,11 +882,40 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
+  // ── SPEND HIMOYASI (Bosqich 1 #2) — HAMMASI KREDIT YECHISHDAN OLDIN (charge yo'q) ──
+  // 1) Kill-switch: runaway bill / provider incident'da barcha gen'ni to'xtatadi.
+  if (isGenKillSwitchOn()) {
+    res.status(503).json({
+      error: "AI generatsiya vaqtincha to'xtatilgan — birozdan keyin qayta urinib ko'ring",
+      code: "GEN_KILL_SWITCH",
+    });
+    return;
+  }
+  // 2) Global provider USD shifti (kunlik/oylik) — belgilangan shiftdan oshsa to'xtaydi.
+  const ceil = await checkGlobalSpendCeiling();
+  if (ceil.exceeded) {
+    res.status(503).json({
+      error: ceil.reason || "Kunlik xarajat chegarasiga yetildi — ertaga qayta urinib ko'ring",
+      code: "SPEND_CEILING_REACHED",
+    });
+    return;
+  }
   // Imzolangan narxni tekshir — klient `price`ni soxtalashtira olmaydi (blueprint §7.3).
   const ph = genParamsHash(modelId, mode, params);
   const v = verifyCostQuote(costQuoteSignature, { modelId, mode, price, ph });
   if (!v.ok) {
     res.status(400).json({ error: v.reason || "Narx imzosi yaroqsiz", code: "BAD_QUOTE" });
+    return;
+  }
+
+  // 3) Per-user kunlik /gen cap (ADMIN ozod) — bitta hisob orqali portlashni to'sadi.
+  // Imzo tekshiruvidan KEYIN (muddati o'tgan/soxta quote hisoblagichni oshirmasin), lekin
+  // kredit yechishdan OLDIN (reject → charge yo'q).
+  if (!withinGenDailyCap(req.user!.userId, req.user!.role === "ADMIN")) {
+    res.status(429).json({
+      error: "Kunlik generatsiya limiti tugadi — ertaga qayta urinib ko'ring",
+      code: "GEN_DAILY_CAP_REACHED",
+    });
     return;
   }
 
