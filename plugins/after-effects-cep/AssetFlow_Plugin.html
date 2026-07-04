@@ -3132,10 +3132,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .fbox .fb-thumb{border-radius:12px}
 .axvg .fbox .fbtag{position:absolute;left:6px;bottom:5px;font-family:var(--font-mono);font-size:7.5px;font-weight:400;color:#E7ECF3;background:rgba(8,10,14,.72);padding:1px 5px;border-radius:3px;z-index:1}
 .axvg .fbox .fbx{top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:#2A3140;border:1px solid rgba(255,255,255,.2);font-size:10px;color:#E7ECF3}
-.axvg .vg-srcchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.axvg .vg-srcchip{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:9.5px;color:#8A93A3;cursor:pointer;white-space:nowrap}
-.axvg .vg-srcchip:hover{color:#F2F5F8;border-color:rgba(255,255,255,.16)}
-.axvg .vg-srcchip svg{width:11px;height:11px;flex:none}
+/* FIX D: .vg-srcchip doimiy chiplar olib tashlandi — manba menyu popover (vgSrcSheet) */
 .axvg .vg-pchips{display:flex;align-items:center;gap:6px;margin-top:9px}
 .axvg .vg-pchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);font-weight:500;font-size:10px;color:#E7ECF3;cursor:pointer}
 .axvg .vg-pchip svg{width:11px;height:11px;flex:none}
@@ -3895,11 +3892,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Boshlang'ich</div></div>
                                   <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">Yakuniy (ixtiyoriy)</div></div>
                                 </div>
-                                <div class="vg-srcchips">
-                                  <div class="vg-srcchip" id="vgChipFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>Fayl yuklash</div>
-                                  <div class="vg-srcchip" id="vgChipProj"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Project paneldan</div>
-                                  <div class="vg-srcchip" id="vgChipTl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M2 15h5M17 9h5M17 15h5"/></svg>Timeline'dan</div>
-                                </div>
+                                <!-- FIX D: doimiy manba chiplari olib tashlandi — manba menyu kadr box / ＋Referens bosilganda popover bo'lib chiqadi (vgSrcSheet) -->
                               </div>
                               <!-- Ko'p-modal referens (refKind=media-refs — Seedance R2V; IXTIYORIY) -->
                               <div class="sect" id="vgMediaSect" style="display:none">
@@ -13433,15 +13426,8 @@ window.afGallery=(function(){
     var which=(st.start&&!st.start.loading)?'end':'start';
     openFrameSrc(which,_vgRA);
   });
-  // b4: inline manba chiplari — bo'sh slotga (start bo'lsa end) MAVJUD pick funksiyalarini chaqiradi
-  function vgChipPick(fn){
-    var which=(st.start&&st.start.url&&!st.start.loading)?'end':'start';
-    _vgSrcTarget={kind:'frame',which:which};
-    fn(which);
-  }
-  var _cf=$('vgChipFile'); if(_cf)_cf.addEventListener('click',function(){ vgChipPick(pickFileFrame); });
-  var _cp=$('vgChipProj'); if(_cp)_cp.addEventListener('click',function(){ vgChipPick(pickProjFrame); });
-  var _ct=$('vgChipTl'); if(_ct)_ct.addEventListener('click',function(){ vgChipPick(pickTlFrame); });
+  // FIX D: doimiy manba chiplari (vgChipFile/Proj/Tl) olib tashlandi — manba tanlash faqat
+  // kadr box yoki ＋Referens popover menyusi (vgSrcSheet) orqali, rasm tool bilan bir xil.
   // b4/b5: Fast|R2V toggle — mos refKind'li birinchi modelga o'tadi (switchVgModel tasdiq oqimini saqlaydi)
   function vgModelOfKind(wantMedia){
     var ms=vm.models||[];
