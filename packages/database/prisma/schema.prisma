@@ -91,6 +91,7 @@ model PluginProfile {
   importsTotal   Int                  @default(0)
   monthResetAt   DateTime             @default(now())
   aiCredits      Int                  @default(50)
+  aiCreditsTopup Int                  @default(0)  // Bosqich 4 #5: aiCredits ichidagi sotib olingan TOP-UP ulushi (oylik reset'da SAQLANADI). Invariant: 0 <= aiCreditsTopup <= aiCredits.
   aiCreditsResetAt DateTime           @default(now())
   lastSeenAt     DateTime?
   deviceLabel    String?

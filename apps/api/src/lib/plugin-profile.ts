@@ -169,8 +169,9 @@ export async function syncPluginPlanFromStripe(userId: string, isActive: boolean
 
   // FREE'ga tushganda PRO'ning ortiqcha AI kreditini FREE ulushiga cheklaymiz
   // (minimal teg — keyingi oylik reset baribir FREE darajasiga tushiradi).
+  // Bosqich 4 #5: sotib olingan TOP-UP saqlanadi — cap = FREE allotment + top-up.
   if (!isActive) {
-    const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE);
+    const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE) + profile.aiCreditsTopup;
     if (profile.aiCredits > freeAllot) data.aiCredits = freeAllot;
   }
 
@@ -203,11 +204,12 @@ export async function applyBillingPlan(userId: string, plan: PluginPlanTier) {
   const changingPlan = profile.plan !== plan;
   const data: { plan: PluginPlanTier; aiCredits?: number } = { plan };
 
+  // Bosqich 4 #5: sotib olingan TOP-UP har plan o'zgarishida saqlanadi.
   if (plan === PluginPlanTier.FREE) {
-    const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE);
+    const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE) + profile.aiCreditsTopup;
     if (profile.aiCredits > freeAllot) data.aiCredits = freeAllot;
   } else if (changingPlan) {
-    const allot = aiMonthlyAllotment(plan);
+    const allot = aiMonthlyAllotment(plan) + profile.aiCreditsTopup;
     if (profile.aiCredits < allot) data.aiCredits = allot;
   }
 
@@ -222,10 +224,9 @@ export async function applyBillingPlan(userId: string, plan: PluginPlanTier) {
  * order/event dedup bilan ta'minlanadi (bu funksiya faqat grant qiladi — retry
  * himoyasini chaqiruvchi qiladi). CreditLedger'ga reason="topup" yoziladi.
  *
- * ⚠️ Ma'lum cheklov: oylik reset (consumeAiCredits) balansni allotment'ga
- * TIKLAYDI — shu sabab oy oxirida sarflanmagan topup kreditlar yo'qoladi.
- * Bu mavjud reset semantikasi (o'zgartirilmaydi) — kelajakda alohida "topup"
- * balans ustuni bilan carry-over qilinishi mumkin.
+ * Bosqich 4 #5 (TUZATILDI): aiCredits VA aiCreditsTopup ikkalasi ham oshiriladi.
+ * Endi oylik reset (consumeAiCredits) balansni `allotment + aiCreditsTopup` ga
+ * tiklaydi — sarflanmagan top-up kreditlar oy oxirida YO'QOLMAYDI (carry-over).
  */
 export async function grantAiCreditsTopup(
   userId: string,
@@ -236,7 +237,10 @@ export async function grantAiCreditsTopup(
   await ensurePluginProfile(userId);
   const updated = await prisma.pluginProfile.update({
     where: { userId },
-    data: { aiCredits: { increment: Math.floor(amount) } },
+    data: {
+      aiCredits: { increment: Math.floor(amount) },
+      aiCreditsTopup: { increment: Math.floor(amount) },
+    },
     select: { aiCredits: true },
   });
   await writeCreditLedger({
@@ -298,6 +302,7 @@ export function serializePluginUser(
     importsTotal: profile.importsTotal,
     aiCredits: profile.aiCredits,
     aiCreditsMonthly: aiMonthlyAllotment(profile.plan),
+    aiCreditsTopup: profile.aiCreditsTopup, // Bosqich 4 #5: sotib olingan carry-over top-up
     limits,
     stripeSubscriptionActive: stripeActive,
     stripeStatus: sub?.status ?? null,
@@ -434,13 +439,19 @@ export async function consumeAiCredits(userId: string, cost: number) {
     };
   }
 
-  // Oylik reset — balansni o'qishdan OLDIN
+  // Oylik reset — balansni o'qishdan OLDIN.
+  // Bosqich 4 #5: reset balansni allotment + QOLGAN TOP-UP ga tiklaydi (avval faqat
+  // allotment edi → sotib olingan sarflanmagan top-up yo'qolardi). aiCreditsTopup
+  // (top-up ulushi tracker'i) o'zgarmaydi — u reset'da SAQLANADI.
   const start = monthStart();
   let available = profile.aiCredits;
   if (profile.aiCreditsResetAt < start) {
     const reset = await prisma.pluginProfile.update({
       where: { userId },
-      data: { aiCredits: aiMonthlyAllotment(profile.plan), aiCreditsResetAt: start },
+      data: {
+        aiCredits: aiMonthlyAllotment(profile.plan) + profile.aiCreditsTopup,
+        aiCreditsResetAt: start,
+      },
     });
     available = reset.aiCredits;
   }
@@ -466,6 +477,16 @@ export async function consumeAiCredits(userId: string, cost: number) {
       code: "AI_CREDITS_EXHAUSTED",
       remaining: available,
     };
+  }
+
+  // Bosqich 4 #5: top-up tracker'ni yangi balansga clamp (allotment AVVAL sarflanadi;
+  // balans top-up chizig'idan pastga tushsagina top-up ulushi kamayadi). Bu tracker
+  // MONEY-GATE emas (atomik gate yuqorida aiCredits ustida) — best-effort follow-up.
+  const newBalance = available - cost;
+  if (profile.aiCreditsTopup > newBalance) {
+    await prisma.pluginProfile
+      .updateMany({ where: { userId }, data: { aiCreditsTopup: Math.max(0, newBalance) } })
+      .catch(() => {});
   }
 
   // Moliyaviy izi (#2.6) — atomik kamaytirishdan KEYIN, best-effort (bloklamaydi).
@@ -512,9 +533,12 @@ export async function refundAiCredits(
     if (claim.count === 0) return; // allaqachon refund qilingan → qayta refund YO'Q
   }
 
-  // Oy-chegarasi cap: refund allotmentdan oshirmaydi, lekin mavjud balansni kamaytirmaydi.
+  // Oy-chegarasi cap: refund allotment + TOP-UP dan oshirmaydi (Bosqich 4 #5 — top-up'dan
+  // moliyalangan gen refund'i allotment'gacha qirqilmasin), lekin mavjud balansni kamaytirmaydi.
+  // Refund faqat aiCredits'ni oshiradi → invariant (aiCreditsTopup <= aiCredits) saqlanadi.
   const allot = aiMonthlyAllotment(prof.plan);
-  const newBalance = Math.min(prof.aiCredits + cost, Math.max(allot, prof.aiCredits));
+  const ceiling = Math.max(allot + prof.aiCreditsTopup, prof.aiCredits);
+  const newBalance = Math.min(prof.aiCredits + cost, ceiling);
   const credited = newBalance - prof.aiCredits;
   if (credited > 0) {
     // updateMany → profil yo'q bo'lsa no-op (update P2025 throw EMAS).
