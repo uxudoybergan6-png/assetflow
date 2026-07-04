@@ -14,13 +14,31 @@ const FREE_IMPORT_LIMIT = 10;
 export const AI_MONTHLY_CREDITS = {
   [PluginPlanTier.FREE]: 50,
   [PluginPlanTier.PRO]: 1000,
+  [PluginPlanTier.STUDIO]: 6000,
 } as const;
 
 export function aiMonthlyAllotment(plan: PluginPlanTier) {
   return AI_MONTHLY_CREDITS[plan] ?? AI_MONTHLY_CREDITS[PluginPlanTier.FREE];
 }
 
+/** Pullik (obunali) tarifmi? FREE emas => PRO yoki STUDIO. Template-tier
+    gate'lari (Pro shablonlar) uchun: PRO va STUDIO ikkalasi ham ochiq. */
+export function isPaidPlan(plan: PluginPlanTier) {
+  return plan !== PluginPlanTier.FREE;
+}
+
 export function planLimits(plan: PluginPlanTier) {
+  if (plan === PluginPlanTier.STUDIO) {
+    return {
+      plan: "studio" as const,
+      label: "Studio",
+      unlimitedDownloads: true,
+      unlimitedImports: true,
+      downloadLimit: null,
+      importLimit: null,
+      maxResolution: "4K",
+    };
+  }
   if (plan === PluginPlanTier.PRO) {
     return {
       plan: "pro" as const,
@@ -158,6 +176,76 @@ export async function syncPluginPlanFromStripe(userId: string, isActive: boolean
 
   await prisma.pluginProfile.update({ where: { userId }, data });
   return { plan };
+}
+
+/**
+ * Lemon Squeezy (MoR) webhook-driven, PLAN-AWARE plan setter — obuna faol
+ * bo'lganda sotib olingan variant → PRO/STUDIO plan. syncPluginPlanFromStripe'ning
+ * plan-aware kengaytmasi (u faqat PRO/FREE'ni bilardi).
+ *
+ * Semantika:
+ *   • PRO/STUDIO (faol) va plan HAQIQATAN o'zgarganda → darhol shu planning oylik
+ *     AI ulushiga kirish beriladi (aiCredits < allotment bo'lsa allotment'ga
+ *     to'ldiriladi; mavjud balansni/topup'ni KAMAYTIRMAYDI). Plan o'zgarmagan
+ *     takror update'larda (karta yangilash, spam) kredit TEGILMAYDI — bepul
+ *     to'ldirish (allotment leak) bo'lmaydi. Oylik tsikl (aiCreditsResetAt)
+ *     o'zgarmaydi: recurring refill mavjud consumeAiCredits reset mantig'ida.
+ *   • FREE (bekor/muddat tugadi) → syncPluginPlanFromStripe(false) kabi FREE
+ *     ulushiga cheklaydi (lapse). Topup'lar ham FREE ulushiga tushadi (Stripe
+ *     lapse mantig'ini AYNAN takrorlaydi).
+ *
+ * Idempotent: qayta chaqiruv natijani o'zgartirmaydi. Webhook-layer event-id
+ * dedup'i literal retry'larni to'sadi; bu funksiya genuine-but-spurious
+ * update'larga qo'shimcha himoya beradi.
+ */
+export async function applyBillingPlan(userId: string, plan: PluginPlanTier) {
+  const profile = await ensurePluginProfile(userId);
+  const changingPlan = profile.plan !== plan;
+  const data: { plan: PluginPlanTier; aiCredits?: number } = { plan };
+
+  if (plan === PluginPlanTier.FREE) {
+    const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE);
+    if (profile.aiCredits > freeAllot) data.aiCredits = freeAllot;
+  } else if (changingPlan) {
+    const allot = aiMonthlyAllotment(plan);
+    if (profile.aiCredits < allot) data.aiCredits = allot;
+  }
+
+  await prisma.pluginProfile.update({ where: { userId }, data });
+  return { plan, changed: changingPlan };
+}
+
+/**
+ * Kredit-paket TOP-UP (Lemon Squeezy order_created) — ADDITIVE grant. Oylik
+ * reset EMAS: mavjud balansga QO'SHILADI va oylik ulushdan (allotment) OSHISHI
+ * MUMKIN (paket = qo'shimcha kredit, har planda). Idempotentlik webhook-layer'da
+ * order/event dedup bilan ta'minlanadi (bu funksiya faqat grant qiladi — retry
+ * himoyasini chaqiruvchi qiladi). CreditLedger'ga reason="topup" yoziladi.
+ *
+ * ⚠️ Ma'lum cheklov: oylik reset (consumeAiCredits) balansni allotment'ga
+ * TIKLAYDI — shu sabab oy oxirida sarflanmagan topup kreditlar yo'qoladi.
+ * Bu mavjud reset semantikasi (o'zgartirilmaydi) — kelajakda alohida "topup"
+ * balans ustuni bilan carry-over qilinishi mumkin.
+ */
+export async function grantAiCreditsTopup(
+  userId: string,
+  amount: number,
+  opts: { reason?: string } = {}
+) {
+  if (!Number.isFinite(amount) || amount <= 0) return { balance: null as number | null };
+  await ensurePluginProfile(userId);
+  const updated = await prisma.pluginProfile.update({
+    where: { userId },
+    data: { aiCredits: { increment: Math.floor(amount) } },
+    select: { aiCredits: true },
+  });
+  await writeCreditLedger({
+    userId,
+    delta: Math.floor(amount),
+    reason: opts.reason ?? "topup",
+    balanceAfter: updated.aiCredits,
+  });
+  return { balance: updated.aiCredits };
 }
 
 /**

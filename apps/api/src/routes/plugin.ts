@@ -23,6 +23,7 @@ import {
   consumeImport,
   serializePluginUser,
   setPluginPlan,
+  isPaidPlan,
 } from "../lib/plugin-profile.js";
 import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
 import {
@@ -233,7 +234,8 @@ async function guardDownloadable(
   // chetlab o'tgan. Bu Free/Pro download SANOQ limitidan ALOHIDA qo'shimcha tier gate'i.
   if (tpl.isPro) {
     const profile = await ensurePluginProfile(req.user!.userId);
-    if (profile.plan !== PluginPlanTier.PRO) {
+    // PRO va STUDIO ikkalasi ham Pro shablonlarni ochadi (faqat FREE bloklanadi).
+    if (!isPaidPlan(profile.plan)) {
       res.status(402).json({
         error: "Bu shablon Pro tarif uchun — Pro'ga o'ting",
         code: "PRO_REQUIRED",

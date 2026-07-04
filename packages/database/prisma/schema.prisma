@@ -73,6 +73,7 @@ model User {
 enum PluginPlanTier {
   FREE
   PRO
+  STUDIO
 }
 
 enum PluginAccountStatus {
