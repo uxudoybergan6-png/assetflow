@@ -1,18 +1,11 @@
-# SESSION-REPORT — Bosqich 3: Lemon Squeezy (MoR) to'lov integratsiyasi
+# SESSION-REPORT — Bosqich 4 (zanjir yaxlitligi · payout · storage)
 
-**Sana:** 2026-07-05 · **Ko'lam:** billing backend (LS) + STUDIO tarif. 4 mantiqiy commit, push YO'Q.
+Backend-only, additive, har item alohida commit (5 commit, PUSH YO'Q). Build toza.
 
-## Nima qilindi
-- **STUDIO tarifi**: `PluginPlanTier` enum (additive migration), allotment 6000
-  (FREE=50/PRO=1000 saqlandi), planLimits=Pro falsafasi; `isPaidPlan()` gate fix (Pro shablon PRO+STUDIO'ga ochiq).
-- **LS klient** (`lib/lemonsqueezy.ts`): Bearer API, variant→plan/kredit xarita (nomdan, ID hardcode yo'q, 5-daq kesh), createCheckout, HMAC imzo verify.
-- **Checkout** `POST /api/billing/checkout` (auth) → hosted URL; platforma "Kredit qo'shish"/plan CTA ulandi.
-- **Webhook** `POST /api/lemonsqueezy/webhook`: HMAC verify + claim-first dedup (order=`ls:order:<id>`, sub=body-hash) → topup exactly-once; subscription_*→plan+ulush (grace-aware), order_created→additive topup + CreditLedger(topup). Stripe saqlandi, LS faol yo'l.
-- `npm run build` (db + api) toza.
+- **#1 Real download tracking:** `TemplateDownloadEvent` (atomik, non-blocking) — pack/mogrt/import. Contributor stat forgeable Int emas real hodisadan (transitional fallback).
+- **#2 Konsolidatsiya:** ContributorTemplate = jonli katalog manbai. Asset+Download o'lik → DEPRECATED (destructive migratsiya EMAS); `/api/users/downloads` real hodisaga o'tdi.
+- **#3 Payout/Earnings:** `ContributorEarning`(idempotent downloadEventId UNIQUE) + `ContributorPayout`. DEFAULT: $0.10/download (`CONTRIBUTOR_PAYOUT_PER_DOWNLOAD_CENTS`) — **EGA QARORI** (stavka/formula, "50%"). Endpoint: /earnings, /admin/earnings, /admin/payouts.
+- **#4 Storage kvota:** `GenAsset.sizeBytes`. Kvota FREE 3GB/PRO 50GB/STUDIO 200GB (env, **EGA QARORI**). /gen consume'dan OLDIN 413 rad (charge yo'q) + persist'dan keyin retention (eng eski o'chirish). Privacy tasdiqlandi (ownership + signed URL).
+- **#5 Top-up carry-over (money fix):** `aiCreditsTopup` tracker — reset endi allotment+topup (sarflanmagan top-up yo'qolmaydi). Consume allotment-avval; refund ceiling +topup; lapse/upgrade saqlaydi.
 
-## Money guard
-- consumeAiCredits/refundAiCredits/cost-quote TEGILMADI (diff: 0 deletion). ADMIN exempt saqlandi.
-
-## Kutilmoqda
-- Env: `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_WEBHOOK_SECRET` (deploy). LS dashboard'da webhook URL + mahsulot nomlari (Pro/Studio/N Credits).
-- ⚠️ Frontend "1,500 kredit/oy" (Pro) vs backend 1000 — moslashtirish qarori.
+**Money-logic tasdiq:** atomik consume gate, signed cost-quote (0 diff), idempotent refund claim, ADMIN ozodligi — TEGILMAGAN. Migratsiyalar additive (4 ta, DROP yo'q) — `migrate:deploy` ISHLATILMADI.
