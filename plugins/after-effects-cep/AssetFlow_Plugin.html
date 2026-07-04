@@ -3008,7 +3008,6 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vpanel .sect{background:transparent;border:0;padding:0;margin:0}
 .axvg .vpanel .sect + .sect{margin-top:12px}
 .axvg .vpanel .warn{margin-top:12px}
-.axvg .vpanel .pbox{border:1px solid #3A4456;border-radius:18px;padding:14px}
 .axvg .vpanel .ctrls .seg{min-height:58px;border-radius:14px}
 .axvg .vpanel .maddb{min-height:46px;border-radius:12px}
 .axvg .vpanel .recentgrid .rc{border-radius:16px}
@@ -3120,9 +3119,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vg-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3;text-transform:uppercase}
 .axvg .vg-meta{margin-left:auto;font-family:var(--font-mono);font-size:8.5px;color:#5E6675}
 .axvg .kadrtag{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;color:#C2F04A;border:1px solid rgba(194,240,74,.35);padding:1px 6px;border-radius:99px;background:none;margin-left:0;font-weight:400}
-.axvg .vpanel{border:0;border-radius:0;background:transparent;padding:0;margin-bottom:0;box-shadow:none}
-.axvg .vpanel .pbox{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px}
-.axvg .vpanel .pbox textarea{font-size:12px;line-height:1.5;min-height:40px}
+/* FIX5 (live-test): b4/b5 flat compose BEKOR — video tool rasm tool bilan BIR XIL karta tuzilishi:
+   .axig .vpanel (border #3A4456, radius 20, bg) va .axig .pbox meros bo'lib qoladi. */
+.axvg .vpanel .pbox textarea{min-height:64px}
 .axvg .frames{display:flex;gap:10px;margin-bottom:0}
 .axvg .fbox{height:92px;border-radius:12px;border:1px dashed rgba(255,255,255,.14);background:transparent}
 .axvg .fbox:hover{border-color:rgba(255,255,255,.3)}
@@ -3868,10 +3867,6 @@ html.home-mode #homePage{display:block!important}
                           </div>
 
                           <div class="igscroll" id="vgScroll">
-                            <div class="vg-modeseg">
-                              <button type="button" class="vg-mode-i is-on" id="vgModeFast">Fast — kadrlar</button>
-                              <button type="button" class="vg-mode-i" id="vgModeR2V">R2V — referenslar</button>
-                            </div>
                             <div class="prog" id="vgProg"></div>
 
                             <!-- Natija (video player) -->
@@ -3882,6 +3877,13 @@ html.home-mode #homePage{display:block!important}
                             </div>
 
                             <div class="vpanel compose-panel">
+                              <!-- FIX5: Fast|R2V toggle karta ichida — rasm tool karta idiomi bilan bir xil tuzilish -->
+                              <div class="sect">
+                                <div class="vg-modeseg" style="margin-bottom:0">
+                                  <button type="button" class="vg-mode-i is-on" id="vgModeFast">Fast — kadrlar</button>
+                                  <button type="button" class="vg-mode-i" id="vgModeR2V">R2V — referenslar</button>
+                                </div>
+                              </div>
                               <div class="sect">
                                 <div class="guide" id="vgGuide"><b>Fast:</b> Boshlang'ich kadr qo'shing, prompt yozing va video yarating.</div>
                               </div>
@@ -3915,23 +3917,24 @@ html.home-mode #homePage{display:block!important}
                                 </div>
                               </div>
                               <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Boshlang'ich kadr majburiy — + bosib qo'shing.</span></div>
-                              <!-- Prompt (umumiy — ikkala refKind) -->
+                              <!-- Prompt (umumiy — ikkala refKind) — FIX5: rasm tool lbl idiomi -->
                               <div class="sect">
+                                <div class="lbl">Prompt <span class="req">*</span></div>
                                 <div class="pbox">
                                   <div class="lowcred" id="vgLowBanner" title="Kredit to'ldirish — Sozlamalar" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Kredit yetarli emas</div><div class="ls" id="vgLowNeed"></div></div></div>
                                   <div class="mention" id="vgMention"></div>
                                   <textarea id="vgPrompt" placeholder="Kadrni jonlantir: yomg'ir tomchilari, neon aks, sekin dolly-in…"></textarea>
-                                  <div class="vg-pchips">
-                                    <span class="vg-pchip" id="vgEnhance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
-                                    <span class="vg-pchip ghost" id="vgClearBtn" title="Prompt va referenslarni tozalash">Tozalash</span>
+                                  <div class="prow">
+                                    <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
 
                             <div class="vpanel settings-panel">
-                              <!-- Sozlamalar (pill qatori — mockup b4/b5) -->
+                              <!-- Sozlamalar (pill qatori) — FIX5: rasm tool lbl + Tozalash idiomi -->
                               <div class="sect">
+                                <div class="lbl">Sozlamalar <span class="meta clearbtn" id="vgClearBtn" title="Prompt va referenslarni tozalash"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Tozalash</span></div>
                                 <div class="pillbar">
                                   <div class="pillseg" id="vgModelSeg"><div class="plab">Model</div><div class="pval" id="vgMName">…</div></div>
                                   <div class="pillseg" id="vgArSeg"><div class="plab">Nisbat</div><div class="pval" id="vgArVal">Auto</div></div>
@@ -3946,9 +3949,9 @@ html.home-mode #homePage{display:block!important}
                             </div>
 
                             <div class="vpanel recent-panel" id="vgRecentSect">
-                              <!-- Video So'nggi genlar -->
+                              <!-- Video So'nggi genlar — FIX5: rasm tool lbl idiomi -->
                               <div class="sect">
-                                <div class="vg-lblrow" style="margin:16px 0 8px"><span class="vg-lbl">So'nggi</span><span class="recsel" id="vgRecentSel" style="margin-left:auto;font-size:10.5px;color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Tanlash</span><span class="morelink" id="vgMoreVid" style="font-size:10.5px;color:#8A93A3">Barchasi →</span></div>
+                                <div class="lbl">So'nggi <span class="meta recsel" id="vgRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Tanlash</span><span class="morelink" id="vgMoreVid" style="margin-left:10px">Barchasi →</span></div>
                                 <div class="recentgrid" id="vgRecent"></div>
                                 <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 tanlandi</span><div class="bb del" id="vgRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> O'chirish</div><div class="bb" id="vgRecentCancel">Bekor</div></div>
                               </div>
@@ -4048,25 +4051,7 @@ html.home-mode #homePage{display:block!important}
                             <div class="minfobox" id="vgMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Kelajakda ko'proq video model qo'shiladi</span></div>
                           </div></div>
 
-                          <!-- b7: birlashgan "Video sozlamalari" sheet — MODEL+NISBAT+REZOLYUTSIYA+DAVOMIYLIK+OVOZ bitta joyda -->
-                          <div class="sheet" id="vgSettingsSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Video sozlamalari</b></div>
-                            <div class="vg-setk" style="margin-top:0">Model</div>
-                            <div id="vgSetMList"></div>
-                            <div class="vg-setk">Nisbat</div>
-                            <div class="vg-chiprow" id="vgSetAr"></div>
-                            <div class="vg-setk">Rezolyutsiya</div>
-                            <div class="vg-chiprow" id="vgSetRes"></div>
-                            <div class="vg-setk">Davomiylik</div>
-                            <div class="vg-chiprow" id="vgSetDur"></div>
-                            <div class="vg-setk" id="vgSetBitLbl" style="display:none">Bitrate</div>
-                            <div class="vg-chiprow" id="vgSetBit" style="display:none"></div>
-                            <div class="vg-audrow" id="vgSetAud">
-                              <div><div class="t">Ovoz generatsiyasi</div><div class="s" id="vgSetAudNote">narxga kiritilgan · har bir video uchun</div></div>
-                              <div class="sw2" id="vgSetAudSw"></div>
-                            </div>
-                            <button type="button" class="vg-ready" id="vgSetReady">Tayyor</button>
-                          </div></div>
+                          <!-- b7 birlashgan "Video sozlamalari" sheet OLIB TASHLANDI (FIX4/5) — har pill o'z popover'ini ochadi -->
                           <!-- lightbox: umumiy #afLightbox (afRecent) ishlatiladi — eski #vgLightbox olib tashlandi -->
 
                           <!-- Referens kadr slot menyusi -->
@@ -12886,32 +12871,7 @@ window.afGallery=(function(){
       host.appendChild(d);
     });
   }
-  function renderVgSettingsSheet(){
-    // MODEL qatorlari (46px, tanlangan = bg + lime nuqta, narx ✦N)
-    var host=$('vgSetMList');
-    if(host){
-      host.innerHTML='';
-      var models=vm.models||[]; if(!models.length&&vm.model)models=[vm.model];
-      models.forEach(function(m){
-        var cur=(vm.model&&String(m.id)===String(vm.model.id));
-        var price=vgModelPrice(m);
-        var o=document.createElement('div'); o.className='vg-mrow'+(cur?' cur':'');
-        o.innerHTML='<span class="mdot"></span><div class="t"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+String(m.desc||m.description||vgModelSubtitle(m)).replace(/[<>&]/g,'')+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'');
-        o.addEventListener('click',function(){ if(!(vm.model&&String(m.id)===String(vm.model.id)))switchVgModel(m); });
-        host.appendChild(o);
-      });
-      if(!host.children.length)host.innerHTML='<div class="axighint">Model yuklanmoqda…</div>';
-    }
-    var arLocked=($('vgArSeg')&&$('vgArSeg').getAttribute('data-arlock')==='1');
-    vgSetChips($('vgSetAr'),vm.arOpts,vm.ar,null,arLocked,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; renderVgSettingsSheet(); });
-    vgSetChips($('vgSetRes'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); renderVgSettingsSheet(); });
-    vgSetChips($('vgSetDur'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; var dv=$('vgDurVal'); if(dv)dv.textContent=v; recost(); renderVgSettingsSheet(); });
-    var hasBit=!!(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate);
-    var bl=$('vgSetBitLbl'), bh=$('vgSetBit');
-    if(bl)bl.style.display=hasBit?'':'none';
-    if(bh){ bh.style.display=hasBit?'':'none'; if(hasBit)vgSetChips(bh,vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; renderVgSettingsSheet(); }); }
-    var sw=$('vgSetAudSw'); if(sw){ sw.classList.toggle('on',!!vm.audio); sw.style.opacity=vm.audioLocked?'.45':''; }
-  }
+  // (b7 renderVgSettingsSheet OLIB TASHLANDI — birlashgan sheet o'rniga per-pill popover'lar)
   // FIX4/5: b7 birlashgan sheet o'rniga — har pill O'Z popover'ini ochadi (rasm tool bilan bir xil).
   // Qiymat/apply/recost mantiqлари vgSetChips'dagi bilan aynan bir xil saqlangan.
   $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); openVgSheet('vgMSheet',$('vgModelSeg')); });
