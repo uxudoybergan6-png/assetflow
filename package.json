@@ -27,6 +27,7 @@
     "reconcile:plans": "node scripts/reconcile-plugin-plans.mjs",
     "db:backup": "node scripts/db-backup.mjs",
     "backfill:embedvec": "node scripts/backfill-embedding-vec.mjs",
+    "backfill:free-credits": "node scripts/backfill-free-credits.mjs",
     "retranscode:previews": "node scripts/retranscode-previews.mjs",
     "pm2:start": "node scripts/pm2-start.mjs",
     "pm2:stop": "node scripts/pm2-stop.mjs",
