@@ -62,9 +62,17 @@ async function resetMonthIfNeeded(userId: string) {
 
 export async function ensurePluginProfile(userId: string) {
   await resetMonthIfNeeded(userId);
+  // `create` ANIQ aiCredits/aiCreditsResetAt beradi — faqat ustun DEFAULT'iga
+  // TAYANMAYDI (schema.prisma'dagi @default(50) bilan AI_MONTHLY_CREDITS.FREE
+  // qiymati kelajakda bir-biridan uzoqlashsa, yangi foydalanuvchi 0/eski
+  // ulush bilan qolib ketmasin — yagona haqiqat manbai shu funksiya).
   return prisma.pluginProfile.upsert({
     where: { userId },
-    create: { userId },
+    create: {
+      userId,
+      aiCredits: aiMonthlyAllotment(PluginPlanTier.FREE),
+      aiCreditsResetAt: monthStart(),
+    },
     update: {},
     include: {
       user: {
