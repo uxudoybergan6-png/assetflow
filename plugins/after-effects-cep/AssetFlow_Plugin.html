@@ -11336,7 +11336,7 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model metadata (lazy, cached) — refMode/maxRefs/aspects/resolutions/qualityCost/count backenddan
-  var meta={loaded:false,models:[],modelId:null,key:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,
+  var meta={loaded:false,models:[],modelId:null,key:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,refKind:null,refOk:true,
     ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],qLabel:'Sifat',aspDef:'Auto',qDefault:'high',
     qcost:{low:3,medium:6,high:12,auto:12},counts:[1,2,3,4]};
   var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
@@ -11423,13 +11423,20 @@ window.afGallery=(function(){
   function buildPills(host,arr,cur,onpick){ if(!host)return; host.innerHTML=''; arr.forEach(function(v){ var d=document.createElement('div'); d.className='pill'+(String(v.val!=null?v.val:v)===String(cur)?' cur':''); d.textContent=(v.label!=null?v.label:v); d.addEventListener('click',function(){ onpick(v.val!=null?v.val:v); }); host.appendChild(d); }); }
 
   // ---- model metadata (lazy, cached, MODEL-AWARE picker) ----
-  // Tanlangan modelni qo'llaydi: refMode/maxRefs/aspects/quals/qcost/counts + default'lar.
-  // refMode='none' (t2i) → referenslar tozalanadi (referenssiz model).
+  // FIX3: model referens qabul qiladimi — FAQAT /gen/models imkoniyatlaridan: refKind ('image'|'media-refs')
+  // + maxRefs>0. refKind deklaratsiya qilinmagan eski modelda refMode fallback (orqaga moslik).
+  function igModelRefOk(m){
+    var rk=(m&&m.refKind)||null;
+    var okKind=rk?(rk==='image'||rk==='media-refs'):(((m&&m.refMode)||'optional')!=='none');
+    return okKind&&((m&&m.maxRefs)||0)>0;
+  }
+  // Tanlangan modelni qo'llaydi: refKind/maxRefs/aspects/quals/qcost/counts + default'lar.
+  // Referens qo'llamaydigan model (refKind none yoki maxRefs 0) → referenslar tozalanadi.
   function setModel(m){
     if(!m)return false;
-    // H2: yangi model referenssiz (refMode none) bo'lsa va biriktirilgan referens bo'lsa — avval tasdiq
+    // H2: yangi model referens QO'LLAMASA va biriktirilgan referens bo'lsa — avval tasdiq
     // (video naqshi). Plagin ichki modal (OS confirm EMAS) → async: tasdiqdan keyin qayta chaqiramiz.
-    if(m.refMode==='none' && st.refs.length>0){
+    if(!igModelRefOk(m) && st.refs.length>0){
       window.afConfirm('«'+(m.label||'Bu model')+'»da referens ishlatilmaydi — biriktirilgan rasmlar olib tashlanadi. Davom etamizmi?',{ok:'Davom etish',danger:true}).then(function(ok){
         if(!ok)return;
         st.refs=[]; renderRefs(); updRefMeta(); hideMention();
@@ -11437,8 +11444,18 @@ window.afGallery=(function(){
       });
       return false; // hozircha almashtirilmadi — tasdiqdan keyin async davom etadi
     }
+    // FIX3: yangi model KAMROQ referens qo'llasa — yaroqlilari qoladi, ortiqchasi tasdiq bilan olib tashlanadi.
+    if(igModelRefOk(m) && st.refs.length>(m.maxRefs||0)){
+      window.afConfirm('«'+(m.label||'Bu model')+'»da maks '+(m.maxRefs||0)+' ta referens — ortiqchasi olib tashlanadi. Davom etamizmi?',{ok:'Davom etish',danger:true}).then(function(ok){
+        if(!ok)return;
+        st.refs=st.refs.slice(0,m.maxRefs||0); renderRefs(); updRefMeta(); hideMention();
+        if(setModel(m)!==false){ renderModelSheet(); toast((m.label||'Model')+' tanlandi','info'); }
+      });
+      return false;
+    }
     meta.modelId=m.id; meta.key=m.key; meta.label=m.label||meta.label;
     meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||0;
+    meta.refKind=m.refKind||null; meta.refOk=igModelRefOk(m);
     // MODEL-AWARE: sozlama deskriptoridan (imgSettings) — bo'lmasa eski flat fieldlar (orqaga moslik).
     var s=m.imgSettings||null;
     var asp=s&&s.aspect, ql=s&&s.quality;
@@ -11452,7 +11469,7 @@ window.afGallery=(function(){
     meta.qDefault=(ql&&ql.def)||((meta.quals.indexOf('high')>=0)?'high':meta.quals[0]);
     meta.counts=(s&&s.num&&s.num.length)?s.num:((m.count&&m.count.length)?m.count:meta.counts);
     st.ar=meta.aspDef; st.q=meta.qDefault; st.n=meta.counts[0]||1;
-    if(meta.refMode==='none'){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
+    if(!meta.refOk){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
     applyMeta();
     return true;
   }
@@ -11511,8 +11528,9 @@ window.afGallery=(function(){
   }
   function applyMeta(){
     $('igMName').textContent=meta.label; // model = sozlamalar chip
-    // prompt bo'limi har doim ko'rinadi; referens funksiyasi model talabiga qarab (refMode='none' → yashirin)
-    var noRef=meta.refMode==='none';
+    // FIX3: prompt bo'limi har doim ko'rinadi; ＋Referens FAQAT model referens qo'llasa
+    // (refKind 'image'|'media-refs' va maxRefs>0) — sof t2i modelda butunlay yashirin.
+    var noRef=!meta.refOk;
     $('igRefAdd').style.display=noRef?'none':'';
     $('igRefMeta').style.display=noRef?'none':'';
     var qlEl=$('igQLab'); if(qlEl)qlEl.textContent=meta.qLabel||'Sifat'; // gpt→"Sifat", nano→"Resolution"
@@ -11595,7 +11613,7 @@ window.afGallery=(function(){
   // natijani to'g'ridan referensga — URL allaqachon R2'da (qayta yuklash shart emas)
   function addRefReady(url){
     if(!url)return;
-    if(meta.refMode==='none'){ toast('Bu model referens olmaydi','warning'); return; }
+    if(!meta.refOk){ toast('Bu model referens olmaydi','warning'); return; }
     if(st.refs.length>=meta.maxRefs){ toast('Maks '+meta.maxRefs+' ta referens','warning'); return; }
     st.refs.push({dataUrl:url,url:url,loading:false}); renderRefs(); updRefMeta(); refreshGen();
     toast('@img'+st.refs.length+' referensga qo\'shildi','success');
@@ -11670,7 +11688,7 @@ window.afGallery=(function(){
   // Copy-paste: clipboarddagi RASM → referens (rasm tool ko'rinib turganda; matn promptga odatdagidek yopishadi).
   document.addEventListener('paste',function(e){
     try{
-      if(meta.refMode==='none')return; // referenssiz model — referens qabul qilmaydi
+      if(!meta.refOk)return; // referenssiz model — referens qabul qilmaydi (FIX3: maxRefs=0 ham)
       var ip=$('igPrompt'); if(!ip||ip.offsetParent===null)return; // rasm tool ko'rinmasa — aralashmaymiz
       var items=(e.clipboardData&&e.clipboardData.items)||[];
       var img=null; for(var i=0;i<items.length;i++){ if(items[i].type&&items[i].type.indexOf('image/')===0){ img=items[i]; break; } }
@@ -11751,7 +11769,7 @@ window.afGallery=(function(){
 
   // @ yozilsa referenslar ro'yxati (autocomplete) — kursordan oldingi @<so'z> ni ushlaydi
   function checkMention(){
-    if(meta.refMode==='none'){ hideMention(); return; } // t2i (referenssiz) → @dropdown yo'q
+    if(!meta.refOk){ hideMention(); return; } // t2i (referenssiz) → @dropdown yo'q (FIX3: maxRefs=0 ham)
     var caret=ta.selectionStart; var pre=ta.value.slice(0,caret); var m=pre.match(/@(\w*)$/);
     if(m)showMention(m[1]); else hideMention();
   }
@@ -12013,7 +12031,7 @@ window.afGallery=(function(){
   function recentBatchEl(){ return $('igRecentBatch'); }
   function updRecentBatch(){ var b=recentBatchEl(); if(!b)return; b.classList.toggle('on',st.recentSelect); var bi=$('igRecentBI'); if(bi)bi.textContent=Object.keys(st.recentSel).length+' tanlandi'; }
   // Image tool refKind (model-aware): edit modellar referens oladi (image/@imgN), t2i — yo'q.
-  function igRefKind(){ return (meta&&meta.refKind) || ((meta&&meta.refMode&&meta.refMode!=='none')?'image':'none'); }
+  function igRefKind(){ if(meta&&meta.refOk===false)return 'none'; return (meta&&meta.refKind) || ((meta&&meta.refMode&&meta.refMode!=='none')?'image':'none'); } // FIX3: maxRefs=0 → 'none'
   // So'nggi-grid ctx — umumiy afRecent.card/openLightbox shundan foydalanadi (model-aware Referens shu yerda).
   function igRecentCtx(){ return {
     isCEP: IS_CEP,
@@ -12047,7 +12065,7 @@ window.afGallery=(function(){
       var p=it.params||{}; var restored=0;
       st.refs=[]; // restore = holatni ALMASHTIRISH — eski referenslar limit/duplikatga to'sqinlik qilmasin
       var urls=Array.isArray(p.referenceUrls)?p.referenceUrls:(p.referenceUrl?[p.referenceUrl]:[]);
-      if(urls.length&&meta.refMode!=='none'){
+      if(urls.length&&meta.refOk){
         urls.forEach(function(u){
           if(typeof u!=='string'||!u)return;
           if(st.refs.length>=meta.maxRefs)return;
@@ -12696,15 +12714,36 @@ window.afGallery=(function(){
     arr.forEach(function(v){ var d=document.createElement('div'); d.className='pill'+(String(v)===String(cur)?' cur':''); d.textContent=String(v); d.addEventListener('click',function(){ onpick(v); }); host.appendChild(d); });
   }
 
+  // ── FIX3: model imkoniyat xaritasi — FAQAT /gen/models maydonlaridan (refKind, maxRefs, endFrame,
+  // mediaRefs, videoInput.imageRequired). Media-turdagi refKind'lar ('media-refs'|'imagevideo'|'image'|
+  // 'video') BITTA media-UI'ga normallashadi, ruxsat etilmagan tur limiti 0 bo'ladi; hamma limit 0 → 'none'.
+  function vgCapsFor(m){
+    var kind=(m&&m.refKind)||'none';
+    if(kind==='frames'){
+      // KADR MAJBURIY: videoInput.imageRequired deklaratsiyasi; bo'lmasa feature fallback (Seedance i2v).
+      var req=(m.videoInput&&typeof m.videoInput.imageRequired==='boolean')?m.videoInput.imageRequired:(m.feature==='image-to-video');
+      return {kind:'frames',end:!!m.endFrame,startRequired:req,limits:{image:0,video:0,audio:0,total:0}};
+    }
+    if(kind==='media-refs'||kind==='imagevideo'||kind==='image'||kind==='video'){
+      var mr=m.mediaRefs||(kind==='media-refs'?{image:9,video:3,audio:3,total:12}:null);
+      var mx=m.maxRefs||0;
+      var img=(kind==='video')?0:(mr?(mr.image||0):mx);
+      var vid=(kind==='image')?0:(mr?(mr.video||0):mx);
+      var aud=(kind==='media-refs')?(mr?(mr.audio||0):0):0;
+      var tot=Math.min(mr?(mr.total||(img+vid+aud)):(mx||(img+vid+aud)),img+vid+aud);
+      if(tot>0)return {kind:'media-refs',end:false,startRequired:false,limits:{image:img,video:vid,audio:aud,total:tot}};
+    }
+    return {kind:'none',end:false,startRequired:false,limits:{image:0,video:0,audio:0,total:0}};
+  }
   // ── model sozlamalarini qo'llash (videoSettings deskriptoridan; joriy tanlov mos kelmasa def'ga klamp) ──
   function applyModelSettings(m){
     vm.model=m;
-    // B4: refKind ko'rsatilmasa 'none' (t2v xavfsiz) — 'frames' default kadr talab qilib submitни bloklardi.
-    vm.refKind=m.refKind||'none';
-    // KADR MAJBURIY faqat image-to-video modellarda (Seedance). Matndan-video (Veo/Omni) — kadr IXTIYORIY,
-    // shuning uchun 'frames' bo'lsa ham boshlang'ich kadrni talab qilmaymiz (2026-07-01, foydalanuvchi xatosi tuzatildi).
-    vm.startRequired=(m.feature==='image-to-video');
-    vm.mediaRefs=m.mediaRefs||{image:9,video:3,audio:3,total:12};
+    // FIX3: refKind/limitlar imkoniyat xaritasidan (B4 'none' default saqlangan — kadr talab qilib bloklamaydi).
+    var caps=vgCapsFor(m);
+    vm.refKind=caps.kind;
+    vm.endFrameOk=caps.end;
+    vm.startRequired=caps.startRequired;
+    vm.mediaRefs=caps.limits;
     vm.mediaRefMaxBytes=m.mediaRefMaxBytes||null;
     vm.mediaRefMaxTotalBytes=m.mediaRefMaxTotalBytes||null;
     vm.mediaRefFormats=m.mediaRefFormats||null;
@@ -12787,37 +12826,53 @@ window.afGallery=(function(){
     });
     return vm._pending;
   }
-  // model almashtirish — sozlamalar + referens UI (frames ↔ media-refs) yangilanadi.
+  // FIX3: yangi model uchun ko'p-modal referenslarni saralash — hali YAROQLI bo'lganlari qoladi
+  // (tur limiti + jami limit ichида), qolganlari olib tashlanadi (token'lari promptdan ham).
+  function vgPruneMrefFor(caps){
+    var cnt={image:0,video:0,audio:0},tot=0,kept=[],removedToks=[];
+    mref.forEach(function(r){
+      if(!r)return;
+      var lim=(caps.limits&&caps.limits[r.type])||0;
+      if(caps.kind==='media-refs'&&cnt[r.type]<lim&&tot<caps.limits.total){ cnt[r.type]++; tot++; kept.push(r); }
+      else if(r.token)removedToks.push(r.token);
+    });
+    return {kept:kept,removedToks:removedToks};
+  }
+  // model almashtirish — imkoniyatga qarab: yaroqli kadr/referenslar SAQLANADI, yangi model
+  // qo'llamaydiganlari olib tashlanadi (stale ref/kadr yuborilmasin). Yo'qotish bo'lsa avval tasdiq.
   // id taqqoslash String bilan (API number/string bo'lishi mumkin — xavfsiz).
   function switchVgModel(m){
     if(!m||(vm.model&&String(m.id)===String(vm.model.id))){ closeVgSheets(); return; }
-    var prevKind=vm.refKind||'frames';
-    var nextKind=m.refKind||'frames';
-    // Referens UI o'zgarsa (kadr ↔ ko'p-modal) biriktirilgan referenslar olib tashlanadi —
-    // yo'qotadigan narsa bo'lsa avval tasdiqlaymiz (kutilmagan o'chishning oldini olish — audit HIGH).
-    var hasFrames=!!(st.start||st.end);
-    // B17: referens UI turi o'zgarsa (har qanday kind→kind) va biriktirilgan narsa bo'lsa — tasdiqlaymiz.
-    var willDiscard=(prevKind!==nextKind)&&(mref.length>0||hasFrames);
+    var caps=vgCapsFor(m);
+    var pr=vgPruneMrefFor(caps);
+    var willDiscard=pr.removedToks.length>0||(mref.length>pr.kept.length)
+      ||(caps.kind!=='frames'&&!!(st.start||st.end))
+      ||(caps.kind==='frames'&&!caps.end&&!!st.end);
     if(willDiscard){
       // Plagin ichki modal (OS "JavaScript Confirm" EMAS) — tasdiqdan keyin davom.
-      window.afConfirm('«'+String(m.label||'Model')+'»ga o‘tilsa, biriktirilgan referenslar olib tashlanadi. Davom etamizmi?',{ok:'Davom etish',danger:true}).then(function(ok){
+      window.afConfirm('«'+String(m.label||'Model')+'»ga o‘tilsa, mos kelmaydigan biriktirilgan referenslar olib tashlanadi. Davom etamizmi?',{ok:'Davom etish',danger:true}).then(function(ok){
         if(!ok){ closeVgSheets(); return; }
-        doSwitchVgModel(m,prevKind,nextKind);
+        doSwitchVgModel(m);
       });
       return;
     }
-    doSwitchVgModel(m,prevKind,nextKind);
+    doSwitchVgModel(m);
   }
-  function doSwitchVgModel(m,prevKind,nextKind){
-    if(prevKind==='media-refs'&&nextKind!=='media-refs'){
-      var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
-      mref=[]; stripPromptTokens(toks); hideVgMention(); renderMediaRefs(); updRefMeta();
-    }
-    if(prevKind!=='media-refs'&&nextKind==='media-refs'){
+  function doSwitchVgModel(m){
+    var caps=vgCapsFor(m);
+    if(caps.kind==='media-refs'){
+      var pr=vgPruneMrefFor(caps);
+      mref=pr.kept;
+      if(pr.removedToks.length)stripPromptTokens(pr.removedToks);
+      syncMediaRefTokens(); hideVgMention(); renderMediaRefs(); updRefMeta();
       clearFrameState();
-    }
-    if(nextKind==='none'){
-      clearFrameState();
+    } else {
+      if(mref.length){
+        var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
+        mref=[]; stripPromptTokens(toks); hideVgMention(); renderMediaRefs(); updRefMeta();
+      }
+      if(caps.kind==='frames'){ if(!caps.end)st.end=null; renderFrameBoxes(); }
+      else clearFrameState();
     }
     applyModelSettings(m); applyVgMeta(); closeVgSheets();
     toast(String(m.label||'Model')+' tanlandi','info');
@@ -12845,16 +12900,25 @@ window.afGallery=(function(){
     var bs=$('vgBitSeg'); if(bs)bs.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
     var rh=$('vgResHint'); if(rh)rh.textContent=vm.resOpts.map(function(k){ return k+' = ✦'+(vm.perSec[k]||vm.perSec[vm.resOpts[0]]||0)+'/s'; }).join(' · ');
     var dh=$('vgDurHint'); if(dh)dh.textContent='Auto ≈ '+vm.autoSec+' soniya';
-    // referens hudud model-aware: frames=Kadrlar ↔ media-refs=ko'p-modal
+    // FIX3: referens hudud TO'LIQ model imkoniyatidan: frames=Kadrlar ↔ media-refs=ko'p-modal ↔ none=hech biri
     var isMedia=vm.refKind==='media-refs';
     var isNone=vm.refKind==='none';
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
+    // Yakuniy kadr qutisi — FAQAT model endFrame qo'llasa (Veo: bor; StartOnly modellar: yo'q)
+    var eb=$('vgEndBox'); if(eb&&eb.parentNode)eb.parentNode.style.display=(vm.refKind==='frames'&&vm.endFrameOk)?'':'none';
+    // Lightbox/So'nggi "Referens kadr" menyusida Yakuniy varianti ham endFrame'ga bog'liq
+    var reOpt=$('vgRefEnd'); if(reOpt)reOpt.style.display=vm.endFrameOk?'':'none';
     var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
-    // b4/b5: Fast|R2V segment-toggle holati modelning refKind'idan sinxron
-    var mf=$('vgModeFast'); if(mf)mf.classList.toggle('is-on',!isMedia);
-    var mr2=$('vgModeR2V'); if(mr2)mr2.classList.toggle('is-on',isMedia);
-    // Ovoz referens import — faqat model haqiqatan qabul qiladigan bo'lsa (Omni: mediaRefs.audio=0 — toggle qulf bilan bir xil sabab).
+    // b4/b5 + FIX3: Fast|R2V toggle FAQAT joriy model qo'llaydigan rejim(lar)ni ko'rsatadi —
+    // frames model R2V taklif qilmaydi (Veo bug'i), media model Fast taklif qilmaydi; 'none' → butun qator yashirin.
+    var mf=$('vgModeFast'); var mr2=$('vgModeR2V');
+    if(mf){ mf.classList.toggle('is-on',vm.refKind==='frames'); mf.style.display=(vm.refKind==='frames')?'':'none'; }
+    if(mr2){ mr2.classList.toggle('is-on',isMedia); mr2.style.display=isMedia?'':'none'; }
+    var segRow=mf&&mf.parentNode; if(segRow&&segRow.classList.contains('vg-modeseg')&&segRow.parentNode&&segRow.parentNode.classList.contains('sect'))segRow.parentNode.style.display=isNone?'none':'';
+    // Media referens tugmalari — har tur FAQAT limiti >0 bo'lsa (Omni: audio=0 → +Ovoz yo'q; refKind 'image' → +Video yo'q)
+    var ai2=$('vgAddImg'); if(ai2)ai2.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.image)?'':'none';
+    var av2=$('vgAddVid'); if(av2)av2.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.video)?'':'none';
     var aa=$('vgAddAud'); if(aa)aa.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.audio)?'':'none';
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
     if(isMedia){ renderMediaRefs(); updRefMeta(); loadVgSavedRefs(); }
@@ -13457,7 +13521,7 @@ window.afGallery=(function(){
   // b4/b5: Fast|R2V toggle — mos refKind'li birinchi modelga o'tadi (switchVgModel tasdiq oqimini saqlaydi)
   function vgModelOfKind(wantMedia){
     var ms=vm.models||[];
-    for(var i=0;i<ms.length;i++){ var k=ms[i].refKind||'none'; if(wantMedia?(k==='media-refs'):(k!=='media-refs'))return ms[i]; }
+    for(var i=0;i<ms.length;i++){ var k=vgCapsFor(ms[i]).kind; if(wantMedia?(k==='media-refs'):(k!=='media-refs'))return ms[i]; }
     return null;
   }
   var _mf=$('vgModeFast'); if(_mf)_mf.addEventListener('click',function(){
@@ -13666,7 +13730,7 @@ window.afGallery=(function(){
   function vgRefAllowed(it){
     var rk=vm.refKind||'frames'; var cat=it.cat||'image';
     if(rk==='frames')return cat==='image';      // i2v: faqat RASM → Boshlang'ich/Yakuniy kadr
-    if(rk==='media-refs')return cat==='image'||cat==='video'||cat==='audio'||cat==='sfx';
+    if(rk==='media-refs'){ var t=refTypeFromItem(it); return !!(vm.mediaRefs&&vm.mediaRefs[t]>0); } // FIX3: tur limiti 0 → Referens tugmasi yo'q
     if(rk==='imagevideo')return cat==='image'||cat==='video';
     if(rk==='video')return cat==='video';
     if(rk==='image')return cat==='image';        // (video toolда ref-strip yo'q — amalda 'frames' ishlaydi)
@@ -13694,6 +13758,7 @@ window.afGallery=(function(){
   }
   function setFrameFromUrl(url,which){
     if(!url)return;
+    if(which==='end'&&!vm.endFrameOk){ toast('Bu model yakuniy kadr qo\'llamaydi','warning'); return; } // FIX3
     var f={dataUrl:url,url:url,loading:false}; // gen natijasi allaqachon R2 URL → qayta upload shart emas
     if(which==='start')st.start=f; else st.end=f;
     renderFrameBoxes(); refreshVgBtn();
@@ -13825,7 +13890,8 @@ window.afGallery=(function(){
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
       if(vm.startRequired&&(!st.start||!st.start.url)){ toast("Boshlang'ich kadr qo'shing",'warning'); return; }
       if(st.start&&st.start.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
-      params={referenceUrl:(st.start&&st.start.url)||null,referenceEndUrl:(st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      // FIX3: end kadr FAQAT model endFrame qo'llasa yuboriladi (stale ref himoyasi)
+      params={referenceUrl:(st.start&&st.start.url)||null,referenceEndUrl:(vm.endFrameOk&&st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     }
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Kredit yetarli emas — ⚙ Sozlama › «Kredit to‘ldirish»','error'); return; }
