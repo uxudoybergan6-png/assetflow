@@ -1502,37 +1502,59 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .lim2-cancel{display:block;width:100%;font-size:11px;color:#8A93A3;margin-top:11px;text-align:center;background:none;border:0;cursor:pointer;font-family:inherit}
 .lim2-cancel:hover{color:#F2F5F8}
 
-/* PUBLISH SHEET (contributor) */
-/* FIX H: publish paneli markazlashgan modal (bottom-slide emas) */
+/* PUBLISH SHEET (contributor, g3) — mockup g3 dan 1:1 literal.
+   FIX: markazlashgan, QAT'IY BELGILANGAN balandlikdagi modal (bottom-slide EMAS). */
 .publish-sheet{
   position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.55);padding:18px;box-sizing:border-box;
+  background:rgba(0,0,0,.55);padding:0;box-sizing:border-box;
 }
 .publish-sheet.open{display:flex}
 .publish-panel{
-  width:100%;max-width:440px;max-height:88vh;overflow-y:auto;
-  background:var(--surface-3);border:1px solid var(--border);
-  border-radius:16px;padding:16px 16px 22px;
-  box-shadow:0 10px 32px rgba(0,0,0,.45);
+  width:100%;max-width:404px;height:min(640px,92vh);box-sizing:border-box;
+  background:#161B22;border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;padding:0;overflow:hidden;display:flex;flex-direction:column;color:#F2F5F8;
+  box-shadow:0 30px 70px rgba(0,0,0,.5);
   animation:afModalIn .18s cubic-bezier(.22,1,.36,1);
 }
+.pub-head{flex:none;position:relative;padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.pub-title{font-weight:700;font-size:14.5px;letter-spacing:-.01em}
+.pub-sub{font-size:10.5px;color:#8A93A3;margin-top:2px;line-height:1.45;padding-right:26px}
+.pub-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);color:#8A93A3;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.pub-close:hover{color:#F2F5F8;background:rgba(255,255,255,.08)}
+.pub-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:14px 16px 18px}
 .publish-step{margin-bottom:14px}
-.publish-step>label{display:block;font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
-.publish-step textarea.account-input{font-family:inherit}
-.publish-step select.account-input{appearance:none;cursor:pointer}
-.pub-scenes-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
+.publish-step>label{display:block;font-family:var(--font-mono);font-size:8.5px;font-weight:400;text-transform:uppercase;letter-spacing:.12em;color:#5E6675;margin-bottom:6px}
+/* g3 maydonlari — mockup input stili */
+.pub-body .account-input{height:40px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px;color:#F2F5F8;font-size:12px}
+.pub-body .account-input:focus{border-color:rgba(194,240,74,.4);box-shadow:none}
+.pub-body textarea.account-input{font-family:inherit;height:auto}
+.pub-body select.account-input{appearance:none;cursor:pointer}
+.pub-body .account-input::placeholder{color:#5E6675}
+.pub-scan{width:100%;height:40px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:#F2F5F8;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
+.pub-scan:hover{background:rgba(255,255,255,.1)}
+.pub-scan svg{flex:none}
+.pub-scenes-list{display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto}
 .pub-scene-row{
-  display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;
-  background:var(--surface-2);border:1px solid var(--border);font-size:11px;
+  display:flex;align-items:center;gap:10px;height:48px;padding:0 12px;border-radius:12px;font-size:11px;
 }
+.pub-scene-dot{width:8px;height:8px;border-radius:50%;background:#C2F04A;flex:none}
+.pub-scene-row.fail .pub-scene-dot{background:#FF6B5E}
 .pub-scene-thumb{
-  width:44px;height:28px;border-radius:5px;flex-shrink:0;object-fit:cover;
-  background:#0a0a0b;display:grid;place-items:center;font-size:var(--fs-xs);color:var(--muted)
+  width:38px;height:26px;border-radius:6px;flex:none;object-fit:cover;
+  background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24);
+  display:grid;place-items:center;font-size:10px;color:#E7ECF3;overflow:hidden;
 }
-.pub-scene-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-weight:600}
-.pub-scene-meta{font-size:var(--fs-xs);color:var(--muted)}
-.pub-scene-row.fail{border-color:rgba(248,113,113,.4)}
-.pub-scene-row.fail .pub-scene-meta{color:#fca5a5}
+.pub-scene-txt{flex:1;min-width:0}
+.pub-scene-name{font-weight:600;font-size:11.5px;color:#F2F5F8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pub-scene-meta{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;margin-top:1px}
+.pub-scene-check{color:#C2F04A;flex:none;display:flex}
+.pub-scene-row.fail .pub-scene-meta{color:#FF6B5E}
+.pub-go{width:100%;height:44px;border-radius:999px;background:#C2F04A;border:0;color:#0E1400;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.pub-go:hover{opacity:.92}
+.pub-go:disabled{opacity:.5;cursor:not-allowed}
+.pub-go svg{flex:none}
+.pub-modnote{font-family:var(--font-mono);font-size:8.5px;color:#5E6675;text-align:center;margin-top:9px;line-height:1.5}
+.pub-status{font-size:10.5px;color:#8A93A3;text-align:center;margin-top:8px;line-height:1.4}
 
 /* PACK DETAIL */
 .pack-detail{
@@ -4605,14 +4627,17 @@ html.home-mode #homePage{display:block!important}
 
 <div class="publish-sheet" id="publishSheet" onclick="if(event.target===this)closePublish()">
   <div class="publish-panel" onclick="event.stopPropagation()">
-    <div class="account-head">
-      <h3>Shablon Publish</h3>
-      <button type="button" class="account-close" onclick="closePublish()">×</button>
+    <div class="pub-head">
+      <div class="pub-title">Shablon Publish qilish</div>
+      <div class="pub-sub">Loyihadagi kompozitsiyani tanlang — moderatsiyadan keyin katalogga chiqadi</div>
+      <button type="button" class="pub-close" onclick="closePublish()" aria-label="Yopish">×</button>
     </div>
+
+    <div class="pub-body">
 
     <div class="publish-step">
       <label>1 · Loyiha</label>
-      <button type="button" class="account-btn" onclick="publishScan()">↻ Ochiq loyihani skanlash</button>
+      <button type="button" class="pub-scan" onclick="publishScan()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Ochiq loyihani skanlash</button>
       <p class="account-hint" id="pubProjectInfo">AE'da loyihani oching va saqlang (File → Save), keyin skanlang.</p>
     </div>
 
@@ -4623,13 +4648,14 @@ html.home-mode #homePage{display:block!important}
     </div>
 
     <div class="publish-step" id="pubScenesStep" style="display:none">
-      <label>Aniqlangan sahnalar <span id="pubScenesCount" class="scenes-count"></span></label>
+      <label>Kompozitsiya <span id="pubScenesCount" class="scenes-count"></span></label>
       <div id="pubScenesList" class="pub-scenes-list"></div>
     </div>
 
     <div class="publish-step" id="pubMetaStep" style="display:none">
-      <label>3 · Ma'lumot</label>
+      <label>Nom</label>
       <input class="account-input" id="pubName" placeholder="Shablon nomi">
+      <label style="margin-top:12px">Kategoriya</label>
       <div class="account-row">
         <select class="account-input" id="pubNav">
           <option value="video">Shablonlar</option>
@@ -4656,9 +4682,12 @@ html.home-mode #homePage{display:block!important}
       <textarea class="account-input" id="pubDesc" placeholder="Qisqa tavsif" style="margin-top:8px;height:60px;padding:8px;resize:vertical"></textarea>
     </div>
 
-    <div class="publish-step" id="pubActionStep" style="display:none">
-      <button type="button" class="account-btn primary" id="pubGoBtn" onclick="publishGo()">⬆ Publish qilish</button>
-      <p class="account-hint" id="pubStatus"></p>
+    <div class="publish-step" id="pubActionStep" style="display:none;margin-bottom:0">
+      <button type="button" class="pub-go" id="pubGoBtn" onclick="publishGo()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>Publish qilish</button>
+      <p class="pub-modnote">Moderatsiya — 1–2 ish kuni · holat: Hisob → Publish</p>
+      <p class="pub-status" id="pubStatus"></p>
+    </div>
+
     </div>
   </div>
 </div>
@@ -10196,12 +10225,14 @@ async function publishDetectScenes(){
   if(!data||!data.ok){ listEl.innerHTML='<div class="account-hint">'+((data&&data.message)||'Sahna topilmadi')+'</div>'; return; }
   window.__pubScenes=data.results;
   document.getElementById('pubScenesCount').textContent='('+data.results.length+')';
+  const _checkSvg='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>';
   listEl.innerHTML=data.results.map(function(s){
     const meta=(s.width&&s.height?s.width+'×'+s.height:'')+(s.fps?' · '+s.fps+'fps':'');
     const thumb=(s.ok&&s.path)?'<img class="pub-scene-thumb" src="file://'+encodeURI(s.path)+'">':'<div class="pub-scene-thumb">✦</div>';
-    return '<div class="pub-scene-row'+(s.ok?'':' fail')+'">'+thumb+
-      '<div style="flex:1;min-width:0"><div class="pub-scene-name">'+s.name+'</div>'+
-      '<div class="pub-scene-meta">'+(s.ok?meta:'preview render bo‘lmadi')+'</div></div></div>';
+    return '<div class="pub-scene-row'+(s.ok?'':' fail')+'"><span class="pub-scene-dot"></span>'+thumb+
+      '<div class="pub-scene-txt"><div class="pub-scene-name">'+s.name+'</div>'+
+      '<div class="pub-scene-meta">'+(s.ok?meta:'preview render bo‘lmadi')+'</div></div>'+
+      (s.ok?'<span class="pub-scene-check">'+_checkSvg+'</span>':'')+'</div>';
   }).join('');
   document.getElementById('pubMetaStep').style.display='block';
   document.getElementById('pubActionStep').style.display='block';
