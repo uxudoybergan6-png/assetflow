@@ -1337,28 +1337,48 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .set-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s}
 .set-btn:hover{border-color:var(--border-accent);color:var(--text)}
 
-/* ── Login kerak modal ── */
+/* ── Login-required modal (g2) — mockup g2 dan 1:1 literal; markazlashgan modal ── */
 .lr-overlay{
   position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+  background:rgba(0,0,0,.55);padding:34px;box-sizing:border-box;
 }
 .lr-overlay.open{display:flex}
 .lr-box{
-  width:280px;background:var(--surface-2);border:1px solid var(--border);
-  border-radius:16px;padding:24px 20px 20px;box-shadow:var(--shadow);text-align:center;
+  width:100%;max-width:320px;box-sizing:border-box;
+  background:#161B22;border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;padding:20px 16px;box-shadow:0 18px 42px rgba(0,0,0,.5);text-align:center;
+  animation:afModalIn .18s cubic-bezier(.22,1,.36,1);
 }
-.lr-icon{font-size:32px;margin-bottom:12px;display:block}
-.lr-title{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--text)}
-.lr-text{margin:0 0 20px;font-size:12px;color:var(--muted);line-height:1.5}
-.lr-actions{display:flex;gap:8px}
-.lr-btn{
-  flex:1;padding:9px 0;border-radius:var(--radius);border:none;
-  font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;
-}
-.lr-btn.primary{background:var(--accent);color:#000}
-.lr-btn.primary:hover{opacity:.85}
-.lr-btn.secondary{background:var(--surface-3);color:var(--muted);border:1px solid var(--border)}
-.lr-btn.secondary:hover{color:var(--text)}
+.lr-ico{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#8A93A3;margin:0 auto}
+.lr-title{margin:11px 0 0;font-size:13.5px;font-weight:700;color:#F2F5F8;letter-spacing:-.01em}
+.lr-text{margin:5px 0 0;font-size:11px;color:#8A93A3;line-height:1.5}
+.lr-primary{width:100%;height:40px;border-radius:999px;background:#C2F04A;border:0;color:#0E1400;font-weight:700;font-size:12.5px;margin-top:14px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.lr-primary:hover{opacity:.92}
+.lr-later{display:block;width:100%;background:none;border:0;font-size:11px;color:#8A93A3;margin-top:10px;cursor:pointer;font-family:inherit}
+.lr-later:hover{color:#F2F5F8}
+
+/* ── Login ekrani (g2) — accountLoginBlock (logout holat), mockup g2 chap paneli 1:1 ── */
+.lg-screen{padding:12px 12px 6px}
+.lg-logo{width:40px;height:40px;border-radius:11px;background:#C2F04A;display:flex;align-items:center;justify-content:center;color:#0E1400}
+.lg-title{font-weight:800;font-size:21px;letter-spacing:-.02em;margin-top:14px;color:#F2F5F8}
+.lg-sub{font-size:11.5px;color:#8A93A3;margin-top:5px;line-height:1.4}
+.lg-flabel{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.1em;color:#5E6675;margin:12px 0 6px}
+.lg-input{width:100%;box-sizing:border-box;height:42px;padding:0 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px;font-size:12px;color:#F2F5F8;font-family:inherit;outline:none}
+.lg-input::placeholder{color:#5E6675}
+.lg-input:focus{border-color:rgba(194,240,74,.4)}
+.lg-passwrap{display:flex;align-items:center;gap:8px;height:42px;padding:0 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px}
+.lg-passwrap:focus-within{border-color:rgba(194,240,74,.4)}
+.lg-passinput{flex:1;min-width:0;height:100%;background:none;border:0;outline:none;color:#F2F5F8;font-size:12px;font-family:inherit}
+.lg-passinput::placeholder{color:#5E6675}
+.lg-eye{background:none;border:0;padding:0;cursor:pointer;color:#5E6675;display:flex;flex:none}
+.lg-eye:hover{color:#8A93A3}
+.lg-primary{width:100%;height:44px;border-radius:999px;background:#C2F04A;border:0;color:#0E1400;font-weight:700;font-size:13px;margin-top:16px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.lg-primary:hover{opacity:.92}
+.lg-google{width:100%;height:40px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:#F2F5F8;font-weight:600;font-size:12px;margin-top:8px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
+.lg-google:hover{background:rgba(255,255,255,.08)}
+.lg-hint{font-size:10.5px;color:#8A93A3;text-align:center;margin-top:8px}
+.lg-forgot{font-size:10.5px;color:#8A93A3;text-align:center;margin-top:12px;background:none;border:0;width:100%;cursor:pointer;font-family:inherit}
+.lg-forgot:hover{color:#F2F5F8}
 
 /* ── Filtrlar (a2) — FIX F/H: bottom-slide EMAS, markazlashgan modal (katta ko'p-bo'limli surface;
    .fsheet shell'ni mogrt/limit/pro ham qayta ishlatadi — barchasi markazda ochiladi) ── */
@@ -3200,7 +3220,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .kadrtag{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;color:#C2F04A;border:1px solid rgba(194,240,74,.35);padding:1px 6px;border-radius:99px;background:none;margin-left:0;font-weight:400}
 /* FIX5 (live-test): b4/b5 flat compose BEKOR — video tool rasm tool bilan BIR XIL karta tuzilishi:
    .axig .vpanel (border #3A4456, radius 20, bg) va .axig .pbox meros bo'lib qoladi. */
-.axvg .vpanel .pbox textarea{min-height:64px}
+.axvg .vpanel .pbox textarea{min-height:150px;max-height:280px;overflow-y:auto}
 .axvg .frames{display:flex;gap:10px;margin-bottom:0}
 /* FIX C: kadr box kompakt (92px→44px), ikon+matn yonma-yon — ikkita katta dashed quti tool'ni bosmasin */
 .axvg .fbox{height:44px;border-radius:12px;border:1px dashed rgba(255,255,255,.14);background:transparent}
@@ -4328,13 +4348,11 @@ html.home-mode #homePage{display:block!important}
 
 <div class="lr-overlay" id="lrOverlay" onclick="if(event.target===this)closeLoginRequired()">
   <div class="lr-box" onclick="event.stopPropagation()">
-    <span class="lr-icon">🔒</span>
-    <h3 class="lr-title">Tizimga kiring</h3>
-    <p class="lr-text">Bu shablonni yuklab olish uchun hisobingizga kiring</p>
-    <div class="lr-actions">
-      <button type="button" class="lr-btn secondary" onclick="closeLoginRequired()">Bekor qilish</button>
-      <button type="button" class="lr-btn primary" onclick="closeLoginRequired();openAccountSheet()">Kirish</button>
-    </div>
+    <div class="lr-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div>
+    <div class="lr-title">Katalog foydalanish uchun hisobga kiring.</div>
+    <div class="lr-text">Yuklamalar va sevimlilar hisobingizga bog'lanadi.</div>
+    <button type="button" class="lr-primary" onclick="closeLoginRequired();openAccountSheet()">Kirish</button>
+    <button type="button" class="lr-later" onclick="closeLoginRequired()">Keyinroq</button>
   </div>
 </div>
 
@@ -4348,21 +4366,24 @@ html.home-mode #homePage{display:block!important}
 
     <div class="acs-body">
 
-    <!-- LOGIN (kirish) -->
-    <div id="accountLoginBlock" class="account-section">
-      <label>Hisobga kirish</label>
-      <input class="account-input" type="email" id="accEmail"
-        placeholder="email@assetflow.uz" autocomplete="username">
-      <input class="account-input" type="password" id="accPass"
-        placeholder="Parol" style="margin-top:8px" autocomplete="current-password">
-      <div class="acc-btn-row">
-        <button type="button" class="acc-btn primary" onclick="accountLogin()">Kirish</button>
+    <!-- LOGIN (kirish) — g2 login ekrani -->
+    <div id="accountLoginBlock" class="lg-screen">
+      <div class="lg-logo"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5H11l-1 8.5L19 10.5H12L13 2z"/></svg></div>
+      <div class="lg-title">FrameFlow'ga kirish</div>
+      <div class="lg-sub">Cloud hisob bilan kiring — katalog va AI Tools ochiladi</div>
+      <div class="lg-flabel" style="margin-top:18px">EMAIL</div>
+      <input class="lg-input" type="email" id="accEmail"
+        placeholder="email@frameflow.app" autocomplete="username">
+      <div class="lg-flabel">PAROL</div>
+      <div class="lg-passwrap">
+        <input class="lg-passinput" type="password" id="accPass"
+          placeholder="••••••••" autocomplete="current-password">
+        <button type="button" class="lg-eye" aria-label="Parolni ko'rsatish" onclick="var p=document.getElementById('accPass');p.type=p.type==='password'?'text':'password'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
       </div>
-      <div class="acc-btn-row" style="margin-top:8px">
-        <button type="button" class="acc-btn" id="accGoogleBtn" onclick="accountLoginWithGoogle()">Google bilan kirish</button>
-      </div>
-      <p class="account-hint" id="accGoogleHint" style="display:none">Brauzerda oching va Google bilan tasdiqlang…</p>
-      <p class="account-hint">Cloud hisob bilan kiring. Admin panel — faqat ADMIN roli.</p>
+      <button type="button" class="lg-primary" onclick="accountLogin()">Kirish</button>
+      <button type="button" class="lg-google" id="accGoogleBtn" onclick="accountLoginWithGoogle()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.98h5.28c-.23 1.48-1.72 4.33-5.28 4.33-3.18 0-5.77-2.63-5.77-5.87s2.59-5.87 5.77-5.87c1.81 0 3.02.77 3.72 1.43l2.53-2.44C16.9 4.04 14.76 3 12.18 3 7.03 3 2.86 7.17 2.86 12.32s4.17 9.32 9.32 9.32c5.38 0 8.94-3.78 8.94-9.11 0-.61-.07-1.08-.17-1.43z"/></svg>Google bilan kirish</button>
+      <p class="lg-hint" id="accGoogleHint" style="display:none">Brauzerda oching va Google bilan tasdiqlang…</p>
+      <button type="button" class="lg-forgot" onclick="showToast('Parolni tiklash — brauzerda hisobingizga kiring')">Parolni unutdingizmi?</button>
     </div>
 
     <!-- PROFIL -->
