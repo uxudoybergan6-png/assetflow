@@ -2973,12 +2973,14 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* ===== Video yaratish tool — .axvg scope ===== */
 .axroot #v-vidgen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
 .axvg .frames{display:flex;gap:8px;margin-bottom:10px}
-.axvg .frame{flex:1}.axvg .fbox{height:78px;width:100%;border:1.5px dashed #2E3644;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--panel)}.axvg .fcap{font-size:9.5px;color:var(--mut2);text-align:center;margin-top:4px}
+/* FIX C: kadr box kompakt — 78px ustun emas, 44px qator (ikon+matn yonma-yon), tool'ni bosib yubormaydi */
+.axvg .frame{flex:1}.axvg .fbox{height:44px;width:100%;border:1.5px dashed #2E3644;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;background:var(--panel)}.axvg .fcap{font-size:9.5px;color:var(--mut2);text-align:center;margin-top:4px}
 .axvg .fbox:hover{border-color:#3A4456}
 .axvg .fbox.has-img{border-style:solid;border-color:rgba(194,240,74,.45)}
 .axvg .fbox .fbi{font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:3px;position:relative;z-index:1}
 .axvg .fb-opt{font-size:9.5px;color:var(--mut2);margin-left:2px}
-.axvg .fbadd{font-size:20px;color:var(--mut2);line-height:1}
+.axvg .fbadd{display:flex;align-items:center;gap:6px;color:var(--mut2);line-height:1}
+.axvg .fbadd small{font-size:10.5px;color:var(--mut)}
 .axvg .fbox .fb-thumb{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:9px}
 .axvg .fbox .fbx{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;line-height:1}
 .axvg .fbox .fbtag{position:absolute;bottom:5px;left:5px;font-family:var(--font-mono);font-size:9px;font-weight:600;color:var(--acc-ink);background:var(--acc);padding:1px 6px;border-radius:5px;z-index:1}
@@ -3123,11 +3125,13 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
    .axig .vpanel (border #3A4456, radius 20, bg) va .axig .pbox meros bo'lib qoladi. */
 .axvg .vpanel .pbox textarea{min-height:64px}
 .axvg .frames{display:flex;gap:10px;margin-bottom:0}
-.axvg .fbox{height:92px;border-radius:12px;border:1px dashed rgba(255,255,255,.14);background:transparent}
+/* FIX C: kadr box kompakt (92px→44px), ikon+matn yonma-yon — ikkita katta dashed quti tool'ni bosmasin */
+.axvg .fbox{height:44px;border-radius:12px;border:1px dashed rgba(255,255,255,.14);background:transparent}
 .axvg .fbox:hover{border-color:rgba(255,255,255,.3)}
 .axvg .fbox.has-img{border-style:solid;border-color:transparent}
-.axvg .fbadd{display:flex;flex-direction:column;align-items:center;gap:5px;color:#5E6675;font-size:15px;line-height:1}
+.axvg .fbadd{display:flex;flex-direction:row;align-items:center;gap:6px;color:#5E6675;font-size:13px;line-height:1}
 .axvg .fbadd small{font-size:9.5px}
+.axvg .fbadd svg{width:12px;height:12px}
 .axvg .fcap{font-size:10px;color:#8A93A3;margin-top:5px;text-align:center}
 .axvg .fbox .fb-thumb{border-radius:12px}
 .axvg .fbox .fbtag{position:absolute;left:6px;bottom:5px;font-family:var(--font-mono);font-size:7.5px;font-weight:400;color:#E7ECF3;background:rgba(8,10,14,.72);padding:1px 5px;border-radius:3px;z-index:1}
