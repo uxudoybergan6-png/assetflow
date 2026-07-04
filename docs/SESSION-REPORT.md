@@ -1,22 +1,22 @@
 # Sessiya hisoboti — 2026-07-04
 
-## Landing spacing kompakt (~30% vertikal)
+## Bosqich 3 — Auth + Dashboard + yagona app sidebar (mockup 1:1)
 
-**Vazifa:** `packages/assetflow-studio/platform/index.html` — faqat LANDING
-(`isLanding`) ekranidagi vertikal bo'shliqlar ~30% qisqartirildi. Qiymatlar inline
-(har seksiyada), shu bois tabiiy landing-scoped; Pricing/Plugin alohida inline.
+**Nima qilindi:** `platform/index.html`
+- Auth (login/register/forgot) → mockup a1..a3 split (chapda mesh brend, o'ngda
+  forma); verify-email → a4 1:1. `ffa-` scoped app CSS bloki qo'shildi.
+- Dashboard → mockup d1 1:1: welcome, 3 tezkor amal (lime/select/amber ikonka),
+  So'nggi generatsiyalar (`ffa-res`), Tavsiya shablonlar (`ffa-tc`).
+- Yagona app sidebar (`ffa-sbar`): logo+collapse, asosiy nav + HISOB bo'limi,
+  pastda kredit bloki. Bitta komponent → mobil drawer + avatar dropdown (Chiqish)
+  + mobil pastki tab-bar. Commit `e5cf0ad` (push qilinmagan).
 
-**O'zgargan (vertikal only):**
-- Hero: top `64→44`; headline margin `22→16`, subhead `18→14`, CTA `28→20`,
-  "Karta shart emas" `14→10`, product-shot `44→28`.
-- Seksiyalar: 01 `64→44`; 02/03/04 + FAQ `72→50`. Stats strip `26→18`.
-  CTA band pastki margin `90→62`.
-- Ichki margin: tabs `20→14`, showcase `22→16`, studio4 `26→18`, plans `28→20`,
-  FAQ list `26→18`.
+**Saqlandi:** FFAPI login/register/forgot/Google (`#ffGoogleBtn`), Turnstile
+(`#ffTurnstileWidget`), verify gate, routing, real o'zbekcha copy, sc-if/sc-for.
+Marketing (`ffm-`) va templates/aistudio/account/projects TEGILMADI.
 
-**O'zgarmadi:** shriftlar (hero 56px), gorizontal padding 80px, grid ustunlar,
-kartalar, ranglar. Pricing (`56px 80px 72px`)/Plugin (`56px 80px 0`) TEGILMADI.
-Mobile media query (32px) TEGILMADI.
+**Tekshiruv:** desktop 1280 / tablet 960 (sidebar) / mobil 390 (drawer) — auth
+4 holat + dashboard + collapse + avatar dropdown + drawer, konsol xatosiz.
 
-**Tekshiruv:** desktop 1280px (hero+stats+showcase fold ichida), mobile 390px OK,
-console xatosiz. Pricing/Plugin padding eski holicha tasdiqlandi.
+**Kutilmoqda:** Bosqich 4/5 — qolgan app ekranlarni shu chrome ustida redizayn.
+To'ldirilgan grid faqat backendli muhitda (preview'da bo'sh holat tekshirildi).
