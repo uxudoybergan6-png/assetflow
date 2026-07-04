@@ -14292,6 +14292,128 @@
     .ff-mkt-grid{grid-template-columns:1fr!important}
     .ff-mkt-filters{display:none!important}
   }
+
+  /* ═══════════ MARKETING REDESIGN — mockup 1:1 (Bosqich 2, ffm- scoped) ═══════════ */
+  .ff{
+    --lime:#C2F04A;--lime2:#9CD62B;--onlime:#0E1400;
+    --surface:#13161C;--surface2:#171B22;--surface3:#1A1F28;
+    --rail:#0A0D12;--pop:#161B22;--media:#0A0A0A;
+    --text:#F2F5F8;--muted:#8A93A3;--muted2:#5E6675;
+    --border:#2A3140;--hair:rgba(255,255,255,.05);--hair2:rgba(255,255,255,.07);
+    --f1:rgba(255,255,255,.05);--f2:rgba(255,255,255,.06);--f3:rgba(255,255,255,.10);
+    --inset:inset 0 1px 0 rgba(255,255,255,.10);--scrim:rgba(8,10,14,.72);
+    --limedim:rgba(194,240,74,.12);--seldim:rgba(124,196,255,.16);--select:#7CC4FF;
+    --reddim:rgba(255,107,94,.14);--amberdim:rgba(255,178,124,.14);--amber:#FFB27C;
+  }
+  @keyframes ffmBreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
+  @keyframes ffmSpin{to{transform:rotate(360deg)}}
+  /* textures */
+  .ff .ffm-mesh{background:radial-gradient(58% 46% at 72% 6%,rgba(124,196,255,.09),transparent 62%),radial-gradient(46% 38% at 16% 14%,rgba(194,240,74,.07),transparent 60%)}
+  .ff .ffm-dotbg{background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:18px 18px}
+  .ff .ffm-glass{background:rgba(19,22,28,.72);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
+  .ff .ffm-g1{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)}
+  .ff .ffm-g2{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#1A2A4E,#33549E 62%,#0C1220)}
+  .ff .ffm-g3{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#3A2A12,#BE8428 62%,#171006)}
+  .ff .ffm-g4{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#122032,#3E7BA6 62%,#0A1118)}
+  .ff .ffm-g5{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24)}
+  .ff .ffm-g6{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#0F312C,#1F7A5F 62%,#08150F)}
+  .ff .ffm-g7{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#3A1B22,#A8434E 62%,#150A0D)}
+  .ff .ffm-g8{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#1C2027,#4A5568 62%,#0D1014)}
+  /* display type */
+  .ff .ffm-d56{font-weight:800;font-size:56px;line-height:1.04;letter-spacing:-.035em}
+  .ff .ffm-d44{font-weight:800;font-size:44px;line-height:1.08;letter-spacing:-.03em}
+  .ff .ffm-d36{font-weight:800;font-size:36px;line-height:1.1;letter-spacing:-.025em}
+  .ff .ffm-d30{font-weight:700;font-size:30px;line-height:1.15;letter-spacing:-.02em}
+  .ff .ffm-grad{background:linear-gradient(92deg,#C2F04A 10%,#7CC4FF 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .ff .ffm-eyebrow{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:var(--lime)}
+  /* buttons */
+  .ff .ffm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border:none;border-radius:999px;background:var(--lime);color:var(--onlime);font-family:inherit;font-weight:700;font-size:13.5px;white-space:nowrap;cursor:pointer;text-decoration:none}
+  .ff .ffm-btn .bc{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(14,20,0,.14)}
+  .ff .ffm-btn.lg{height:50px;padding:0 28px;font-size:14.5px}
+  .ff .ffm-btn.sm{height:32px;padding:0 15px;font-size:12px}
+  .ff .ffm-btn.full{width:100%}
+  .ff .ffm-btn.off{background:var(--f2);color:var(--muted2)}
+  .ff .ffm-btn.pending{background:var(--lime2);animation:ffmBreathe 2.2s ease-in-out infinite}
+  .ff .ffm-btn2{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-weight:600;font-size:12.5px;white-space:nowrap;cursor:pointer;text-decoration:none}
+  .ff .ffm-btn2.lg{height:50px;padding:0 24px;font-size:13.5px}
+  .ff .ffm-btn2.sm{height:32px;padding:0 14px;font-size:11.5px}
+  .ff .ffm-btn2.full{width:100%}
+  .ff .ffm-btn:hover,.ff .ffm-btn2:hover{filter:brightness(1.06)}
+  /* nav */
+  .ff .ffm-nav{height:64px;display:flex;align-items:center;gap:6px;max-width:1280px;margin:0 auto;padding:0 40px}
+  .ff .ffm-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;letter-spacing:-.02em;color:var(--text);cursor:pointer}
+  .ff .ffm-logo .lb{width:24px;height:24px;border-radius:7px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+  .ff .ffm-link{padding:7px 13px;border-radius:999px;font-weight:500;font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none}
+  .ff .ffm-link:hover{color:var(--text)}
+  .ff .ffm-link.on{background:var(--f2);color:var(--text);font-weight:600}
+  .ff .ffm-burger{display:none;width:38px;height:38px;border-radius:9px;background:var(--f1);border:1px solid var(--hair2);align-items:center;justify-content:center;font-size:18px;color:#E7ECF3;cursor:pointer}
+  /* segment / tag */
+  .ff .ffm-seg{display:inline-flex;background:var(--f1);border:1px solid var(--f2);border-radius:999px;padding:3px}
+  .ff .ffm-seg>span{padding:6px 16px;border-radius:999px;font-weight:500;font-size:12.5px;color:var(--muted);text-align:center;white-space:nowrap;cursor:pointer}
+  .ff .ffm-seg>span.on{background:var(--f3);box-shadow:var(--inset);font-weight:600;color:var(--text)}
+  .ff .ffm-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font-weight:500;font-size:11.5px;color:var(--muted);white-space:nowrap;cursor:pointer}
+  .ff .ffm-tag.on{background:var(--f3);box-shadow:var(--inset);border-color:transparent;font-weight:600;color:var(--text)}
+  .ff .ffm-credit{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);white-space:nowrap}
+  .ff .ffm-credit em{font-style:normal;color:var(--lime)}
+  .ff .ffm-cost{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--lime);white-space:nowrap}
+  /* plan */
+  .ff .ffm-plan{flex:1;min-width:0;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px 22px;display:flex;flex-direction:column;gap:0}
+  .ff .ffm-plan.rec{border-color:rgba(194,240,74,.35);background:linear-gradient(180deg,rgba(194,240,74,.045),rgba(194,240,74,0) 40%),var(--surface)}
+  .ff .ffm-pf{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);padding:5px 0}
+  .ff .ffm-pf i{color:var(--lime);font-size:13px;flex:none}
+  /* template card */
+  .ff .ffm-tc{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .ff .ffm-th{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/10;background:var(--surface2)}
+  .ff .ffm-nm{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+  .ff .ffm-mt{font-size:10.5px;color:var(--muted2);margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .ffm-bgpro{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:8.5px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+  .ff .ffm-bgfree{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8.5px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+  .ff .ffm-bgtr{position:absolute;top:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8.5px;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3}
+  .ff .ffm-appc{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8.5px;padding:3px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffm-appc .d{width:5px;height:5px;border-radius:50%}
+  .ff .ffm-dur{position:absolute;bottom:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;padding:3px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  /* AI result tile */
+  .ff .ffm-res{position:relative;border-radius:14px;overflow:hidden;background:var(--media)}
+  .ff .ffm-res .rtag{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffm-res.pend{background:#0D1119;border:1px solid rgba(194,240,74,.28);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  .ff .ffm-spin{animation:ffmSpin 1.1s linear infinite;display:inline-flex}
+  /* marketing responsive */
+  .ff .ffm-hide-960{display:inline-flex}
+  /* nav collapse to hamburger — mockup keeps links at tablet 960, collapses near mobile */
+  @media(max-width:820px){
+    .ff .ffm-navlinks,.ff .ffm-navcta{display:none!important}
+    .ff .ffm-burger{display:flex!important}
+  }
+  @media(max-width:960px){
+    .ff .ffm-nav{padding:0 28px}
+    .ff .ffm-d56{font-size:44px;line-height:1.08;letter-spacing:-.03em}
+    .ff .ffm-d44{font-size:36px;line-height:1.1;letter-spacing:-.025em}
+    .ff .ffm-sect{padding-left:40px!important;padding-right:40px!important}
+    .ff .ffm-sectx{padding-left:40px!important;padding-right:40px!important}
+    .ff .ffm-showcase{grid-template-columns:repeat(3,1fr)!important}
+    .ff .ffm-studio4{grid-template-columns:repeat(2,1fr)!important}
+    .ff .ffm-plans{flex-direction:column!important}
+    .ff .ffm-plugin-grid{grid-template-columns:1fr!important}
+    .ff .ffm-steps3{grid-template-columns:1fr!important}
+    .ff .ffm-foot{flex-direction:column!important;gap:32px!important}
+    .ff .ffm-footcols{grid-template-columns:repeat(3,1fr)!important}
+  }
+  @media(max-width:680px){
+    .ff .ffm-nav{padding:0 16px;height:56px}
+    .ff .ffm-sect{padding:32px 20px!important}
+    .ff .ffm-sectx{padding-left:20px!important;padding-right:20px!important}
+    .ff .ffm-hero{padding:32px 20px 0!important}
+    .ff .ffm-d56{font-size:30px;line-height:1.12;letter-spacing:-.02em}
+    .ff .ffm-d44{font-size:26px;line-height:1.12}
+    .ff .ffm-d36{font-size:24px}
+    .ff .ffm-showcase{grid-template-columns:1fr 1fr!important}
+    .ff .ffm-studio4{grid-template-columns:1fr!important}
+    .ff .ffm-stats4{grid-template-columns:1fr 1fr!important}
+    .ff .ffm-steps3{grid-template-columns:1fr!important}
+    .ff .ffm-footcols{grid-template-columns:1fr!important}
+    .ff .ffm-herocta{flex-direction:column!important}
+    .ff .ffm-herocta>*{width:100%}
+  }
 </style>
 </helmet>
 
@@ -14300,34 +14422,31 @@
   <!-- ============ MARKETING CHROME ============ -->
   <sc-if value="{{ showMarketing }}" hint-placeholder-val="{{ true }}">
   <div>
-    <div style="position:fixed;top:0;left:0;right:0;height:2.5px;z-index:80;pointer-events:none"><div style="width:{{ scrollPW }};height:100%;background:var(--grad);border-radius:0 3px 3px 0;box-shadow:0 0 12px var(--ring)"></div></div>
-    <!-- NAVBAR -->
-    <header style="position:sticky;top:0;z-index:60;backdrop-filter:blur(18px);background:rgba(10,10,17,.72);border-bottom:1px solid var(--bd)">
-      <div style="max-width:1280px;margin:0 auto;padding:0 22px;height:74px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px">
-        <a onclick="{{ goLanding }}" style="justify-self:start;display:flex;align-items:center;gap:11px;cursor:pointer">
-          <div style="width:36px;height:36px;border-radius:11px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 18px -4px var(--ring)"><i class="ph-fill ph-stack" style="color:#0E1400;font-size:16px"></i></div>
-          <span style="font-weight:600;font-size:19.5px;letter-spacing:-.02em;color:var(--txt)">FrameFlow</span>
-        </a>
-        <nav class="ff-navlinks" style="justify-self:center;display:flex;align-items:center;gap:2px;padding:5px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10);box-shadow:0 8px 24px -14px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.05)">
-          <a onclick="{{ goTemplates }}" style="padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;transition:.16s" style-hover="background:rgba(255,255,255,.10);color:var(--txt)">Shablonlar</a>
-          <a onclick="{{ goAistudio }}" style="padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;transition:.16s" style-hover="background:rgba(255,255,255,.10);color:var(--txt)">AI Studio</a>
-          <a onclick="{{ goPricing }}" style="padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;transition:.16s" style-hover="background:rgba(255,255,255,.10);color:var(--txt)">Narxlar</a>
-          <a onclick="{{ goPlugin }}" style="padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;transition:.16s" style-hover="background:rgba(255,255,255,.10);color:var(--txt)">Plagin</a>
-          <a onclick="{{ goLanding }}" style="padding:8px 15px;border-radius:999px;font-size:14px;font-weight:500;color:var(--txt2);cursor:pointer;transition:.16s" style-hover="background:rgba(255,255,255,.10);color:var(--txt)">Blog</a>
-        </nav>
-        <div style="justify-self:end;display:flex;align-items:center;gap:10px">
-          <a onclick="{{ goLogin }}" class="ff-cta-ghost" style="padding:10px 18px;border-radius:999px;border:1px solid var(--bd2);background:var(--card2);font-size:14px;font-weight:600;color:var(--txt);cursor:pointer;transition:.16s;white-space:nowrap" style-hover="background:var(--card3);border-color:var(--txt3)">Kirish</a>
-          <button onclick="{{ goRegister }}" style="display:inline-flex;align-items:center;gap:8px;padding:11px 19px;border:none;border-radius:999px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 8px 22px -8px var(--ring);transition:transform .18s,box-shadow .18s;white-space:nowrap" style-hover="transform:translateY(-2px);box-shadow:0 14px 30px -8px var(--ring)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
-          <button class="ff-burger" onclick="{{ toggleNav }}" style="width:42px;height:42px;border-radius:12px;background:var(--card2);border:1px solid var(--bd);color:var(--txt);place-items:center;cursor:pointer;font-size:20px"><i class="ph ph-list"></i></button>
-        </div>
+    <!-- MARKETING TOP-NAV — flat at top, frosted on scroll -->
+    <header style="position:sticky;top:0;z-index:60;background:{{ navBg }};backdrop-filter:{{ navBlur }};-webkit-backdrop-filter:{{ navBlur }};border-bottom:{{ navBorder }};transition:background .2s,border-color .2s">
+      <div class="ffm-nav">
+        <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
+        <span style="flex:1"></span>
+        <span class="ffm-navlinks" style="display:flex;align-items:center;gap:6px">
+          <a class="ffm-link" onclick="{{ goTemplates }}">Shablonlar</a>
+          <a class="ffm-link" onclick="{{ goAistudio }}">AI Studio</a>
+          <a class="{{ navPricingCls }}" onclick="{{ goPricing }}">Narxlar</a>
+          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}">Plagin</a>
+        </span>
+        <span class="ffm-navcta" style="width:14px"></span>
+        <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}">Kirish</a>
+        <button class="ffm-btn sm ffm-navcta" onclick="{{ goRegister }}">Bepul boshlash</button>
+        <span class="ffm-burger" onclick="{{ toggleNav }}"><i class="ph ph-list"></i></span>
       </div>
       <sc-if value="{{ navOpen }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:8px 20px 18px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:2px;background:rgba(10,10,17,.95)">
-          <a onclick="{{ goTemplates }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">Shablonlar</a>
-          <a onclick="{{ goAistudio }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">AI Studio</a>
-          <a onclick="{{ goPricing }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">Narxlar</a>
-          <a onclick="{{ goPlugin }}" class="ff-link" style="padding:12px;border-radius:10px;font-size:16px;font-weight:500;cursor:pointer">Plagin</a>
-          <button onclick="{{ goRegister }}" style="margin-top:8px;padding:13px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer">Bepul boshlash</button>
+        <div style="padding:10px 16px 18px;border-top:1px solid var(--hair2);display:flex;flex-direction:column;gap:4px;background:rgba(10,13,18,.96);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px)">
+          <a class="ffm-link" onclick="{{ goTemplates }}" style="padding:12px 13px;font-size:15px">Shablonlar</a>
+          <a class="ffm-link" onclick="{{ goAistudio }}" style="padding:12px 13px;font-size:15px">AI Studio</a>
+          <a class="ffm-link" onclick="{{ goPricing }}" style="padding:12px 13px;font-size:15px">Narxlar</a>
+          <a class="ffm-link" onclick="{{ goPlugin }}" style="padding:12px 13px;font-size:15px">Plagin</a>
+          <div style="height:1px;background:var(--hair2);margin:6px 0"></div>
+          <a class="ffm-btn2 full" onclick="{{ goLogin }}" style="margin-bottom:8px">Kirish</a>
+          <button class="ffm-btn full" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:14px"></i>Bepul boshlash</button>
         </div>
       </sc-if>
     </header>
@@ -14336,480 +14455,265 @@
     <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
     <main>
       <!-- HERO -->
-      <section style="position:relative;overflow:hidden;padding:72px 24px 40px">
-        <div aria-hidden="true" style="position:absolute;top:-140px;left:-100px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,color-mix(in oklab,var(--glow1) 60%,transparent),transparent 68%);filter:blur(70px);animation:ffGlow 9s ease-in-out infinite;pointer-events:none"></div>
-        <div aria-hidden="true" style="position:absolute;top:20px;right:-140px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,color-mix(in oklab,var(--glow2) 45%,transparent),transparent 68%);filter:blur(80px);animation:ffGlow 12s ease-in-out infinite;pointer-events:none"></div>
-        <div style="max-width:1280px;margin:0 auto;position:relative">
-          <div class="ff-hero-grid" style="display:grid;grid-template-columns:1.06fr .94fr;gap:52px;align-items:center">
-            <div>
-              <div style="display:inline-flex;align-items:center;gap:9px;padding:6px 13px 6px 7px;border-radius:999px;background:var(--card2);border:1px solid var(--bd2);font-size:13px;color:var(--txt2);margin-bottom:26px">
-                <span style="display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:11px;font-weight:600;letter-spacing:.02em">YANGI</span>
-                AI Video 2.0 endi mavjud
-                <i class="ph ph-arrow-right" style="font-size:13px"></i>
-              </div>
-              <h1 style="font-size:clamp(40px,5.4vw,66px);line-height:1.05;letter-spacing:-.035em;font-weight:600;margin:0 0 22px"><sc-for list="{{ heroWords }}" as="hw" hint-placeholder-count="4"><span data-rv="" data-rv-delay="{{ hw.rd }}" style="display:inline-block;margin-right:.24em">{{ hw.w }}</span></sc-for><span data-rv="" data-rv-delay="340" style="display:inline-block;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">AI generatsiya</span></h1>
-              <p data-rv="" data-rv-delay="240" style="font-size:18.5px;line-height:1.6;color:var(--txt2);max-width:528px;margin:0 0 34px">Shablonlarni yuklab oling, AI bilan rasm, video va ovoz yarating — hammasi bitta ijodiy makonda. Brauzerda ishlang yoki After Effects ichida davom eting.</p>
-              <div data-rv="" data-rv-delay="360" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:38px">
-                <button onclick="{{ goRegister }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 26px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;box-shadow:0 12px 32px -8px var(--ring);transition:transform .18s,box-shadow .18s" style-hover="transform:translateY(-2px);box-shadow:0 18px 40px -8px var(--ring)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
-                <button onclick="{{ goTemplates }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 24px;border:1px solid var(--bd2);border-radius:14px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;backdrop-filter:blur(8px);transition:background .18s" style-hover="background:rgba(255,255,255,.12)"><i class="ph ph-play-circle" style="font-size:19px"></i>Shablonlarni ko'rish</button>
-              </div>
-              <div data-rv="" data-rv-delay="470" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-                <div style="display:flex">
-                  <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);border:2px solid var(--bg)"></div>
-                  <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%,#3a4258,#171b24);border:2px solid var(--bg);margin-left:-12px"></div>
-                  <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%,#4a4030,#1c1813);border:2px solid var(--bg);margin-left:-12px"></div>
-                  <div style="width:38px;height:38px;border-radius:50%;background:var(--card3);border:2px solid var(--bg);margin-left:-12px;display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--txt2)">5M</div>
-                </div>
-                <div>
-                  <div style="display:flex;gap:2px;color:var(--acc);font-size:13px;margin-bottom:3px"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i></div>
-                  <div style="font-size:14px;color:var(--txt2)"><strong style="color:var(--txt)">5M+ ijodkor</strong> ishonadi</div>
-                </div>
-              </div>
-              <div data-rv="" data-rv-delay="580" style="margin-top:22px"><div style="display:inline-flex;align-items:center;gap:9px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--bd)"><span style="width:7px;height:7px;border-radius:50%;background:var(--acc);animation:ffDot 1.6s ease-in-out infinite"></span><span style="font-size:12.5px;color:var(--txt2);font-family:'IBM Plex Mono',monospace">{{ tipText }}</span></div></div>
+      <section class="ffm-mesh ffm-hero" style="padding:64px 80px 0;text-align:center;position:relative">
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-size:11.5px;color:#B7C0CE"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:8.5px;letter-spacing:.1em;padding:2px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)">YANGI</span>AI Video 2.0 endi mavjud<i class="ph ph-arrow-right" style="font-size:11px;color:var(--muted)"></i></span>
+        <div class="ffm-d56" style="margin:22px auto 0;max-width:860px">Shablonlar, AI video va ovoz — <span class="ffm-grad">bitta ijodiy makonda</span></div>
+        <div style="font-size:16px;line-height:1.6;color:var(--muted);max-width:640px;margin:18px auto 0">Shablonlarni yuklab oling, AI bilan rasm, video va ovoz yarating — hammasi bitta ijodiy makonda. Brauzerda ishlang yoki After Effects ichida davom eting.</div>
+        <div class="ffm-herocta" style="display:flex;gap:12px;justify-content:center;margin-top:28px">
+          <button class="ffm-btn lg" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Bepul boshlash</button>
+          <button class="ffm-btn2 lg" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>Shablonlarni ko'rish</button>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted2);margin-top:14px">Karta shart emas · 50 AI kredit sovg'a</div>
+        <!-- Product shot -->
+        <div style="max-width:980px;margin:44px auto 0;border-radius:18px 18px 0 0;border:1px solid rgba(255,255,255,.1);border-bottom:0;background:var(--rail);box-shadow:0 -30px 80px rgba(194,240,74,.05),0 30px 70px rgba(0,0,0,.55);overflow:hidden">
+          <div style="height:34px;display:flex;align-items:center;gap:6px;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)"></span><span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)"></span><span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)"></span><span style="font-family:'IBM Plex Mono',monospace;margin:0 auto;font-size:9px;color:var(--muted2)">FrameFlow — AI Studio</span></div>
+          <div class="ffm-dotbg" style="display:flex;gap:14px;padding:18px;background-color:var(--bg);align-items:flex-start;text-align:left">
+            <div style="width:150px;flex:none;display:flex;flex-direction:column;gap:3px">
+              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:600;color:var(--text);background:var(--f2)"><i class="ph ph-image"></i>Rasm</div>
+              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:500;color:var(--muted)"><i class="ph ph-film-strip"></i>Video</div>
+              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:500;color:var(--muted)"><i class="ph ph-microphone"></i>Ovoz</div>
+              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:500;color:var(--muted)"><i class="ph ph-waveform"></i>SFX</div>
             </div>
-            <!-- hero visual -->
-            <div data-rv="" data-rv-delay="200" class="ff-hero-visual" style="position:relative;max-width:560px;margin-left:auto;width:100%">
-              <div style="position:relative">
-                <!-- featured showreel tile -->
-                <div class="ff-tcard" style="position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--bd2);box-shadow:0 50px 110px -35px rgba(0,0,0,.85)">
-                  <div style="position:relative;aspect-ratio:4/3;overflow:hidden">
-                    <div class="ff-tprev" style="position:absolute;inset:0;background:radial-gradient(120% 120% at 24% 8%,#2b3550,#121622 52%,#070a10);transition:transform .4s"></div>
-                    <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(0,0,0,.62)),radial-gradient(70% 55% at 76% 26%,rgba(194,240,74,.14),transparent 62%)"></div>
-                    <div style="position:absolute;top:15px;left:15px;right:15px;display:flex;align-items:center;gap:8px">
-                      <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);font-size:10.5px;font-weight:600;color:#fff;font-family:'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:50%;background:#ff5f57"></span>REC · 4K</span>
-                      <div style="flex:1"></div>
-                      <span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:var(--grad);font-size:10px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</span>
-                    </div>
-                    <div class="ff-tplay" style="position:absolute;inset:0;display:grid;place-items:center;transition:.3s"><div style="width:68px;height:68px;border-radius:50%;background:rgba(194,240,74,.16);backdrop-filter:blur(8px);border:1px solid rgba(194,240,74,.5);display:grid;place-items:center"><i class="ph-fill ph-play" style="color:var(--acc);font-size:25px;margin-left:3px"></i></div></div>
-                    <div style="position:absolute;left:16px;right:16px;bottom:16px">
-                      <div style="font-size:16.5px;font-weight:600;color:#fff;letter-spacing:-.01em">Neon Pulse — Cinematic Intro</div>
-                      <div style="display:flex;align-items:center;gap:7px;margin-top:5px;font-size:11px;color:rgba(255,255,255,.62);font-family:'IBM Plex Mono',monospace"><span>NOVA Studio</span><span>·</span><span>0:12</span><span>·</span><span>AE</span></div>
-                    </div>
-                    <div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.14)"><div style="width:44%;height:100%;background:var(--grad)"></div></div>
-                  </div>
-                </div>
-                <!-- thumb strip -->
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:11px">
-                  <div style="position:relative;aspect-ratio:16/10;border-radius:12px;overflow:hidden;border:1px solid var(--bd);background:radial-gradient(120% 120% at 22% 12%,hsl(20 46% 30%),hsl(40 56% 8%))"><div style="position:absolute;inset:0;display:grid;place-items:center"><i class="ph-fill ph-play" style="color:rgba(255,255,255,.85);font-size:13px"></i></div></div>
-                  <div style="position:relative;aspect-ratio:16/10;border-radius:12px;overflow:hidden;border:1px solid var(--bd);background:radial-gradient(120% 120% at 22% 12%,hsl(200 44% 28%),hsl(220 54% 8%))"><div style="position:absolute;inset:0;display:grid;place-items:center"><i class="ph-fill ph-play" style="color:rgba(255,255,255,.85);font-size:13px"></i></div></div>
-                  <div style="position:relative;aspect-ratio:16/10;border-radius:12px;overflow:hidden;border:1px solid var(--acc);background:radial-gradient(120% 120% at 22% 12%,hsl(76 44% 26%),hsl(90 56% 7%))"><div style="position:absolute;inset:0;display:grid;place-items:center"><i class="ph-fill ph-plus" style="color:var(--acc);font-size:14px"></i></div></div>
-                </div>
-                <!-- floating AI generation card -->
-                <div style="position:absolute;right:-22px;bottom:34px;width:248px;border-radius:16px;background:rgba(12,15,20,.9);border:1px solid var(--bd2);backdrop-filter:blur(14px);box-shadow:0 26px 60px -18px rgba(0,0,0,.8);padding:13px;animation:ffFloat2 7s ease-in-out infinite">
-                  <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px"><i class="ph-fill ph-sparkle" style="color:var(--acc);font-size:14px"></i><span style="font-size:11.5px;font-weight:600;color:var(--txt)">AI Studio</span><div style="flex:1"></div><span style="font-size:10px;color:var(--txt3);font-family:'IBM Plex Mono',monospace">5 ⚡</span></div>
-                  <div style="font-size:11.5px;color:var(--txt2);line-height:1.45;background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:8px 10px;margin-bottom:9px">neon shahar, kechqurun yomg'ir...</div>
-                  <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:9px;background:var(--grad);color:#0E1400;font-size:12px;font-weight:700"><i class="ph-bold ph-lightning"></i>Yaratish</div>
-                </div>
-                <!-- floating stat chip -->
-                <div style="position:absolute;top:-15px;left:-16px;display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:13px;background:rgba(12,15,20,.9);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 14px 32px -10px rgba(0,0,0,.7);font-size:12px;font-weight:600;color:var(--txt);animation:ffFloat 6s ease-in-out infinite"><i class="ph-fill ph-lightning" style="color:var(--acc)"></i>5s ichida render</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                <div class="ffm-res ffm-g1" style="aspect-ratio:1/1"><span class="rtag">RASM</span></div>
+                <div class="ffm-res ffm-g3" style="aspect-ratio:1/1"><span class="rtag">RASM</span></div>
+                <div class="ffm-res pend" style="aspect-ratio:1/1"><i class="ph ph-circle-notch ffm-spin" style="font-size:18px;color:var(--lime)"></i><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--lime)">62%</span><div style="position:absolute;left:0;bottom:0;height:3px;width:62%;background:var(--lime)"></div></div>
+                <div class="ffm-res ffm-g6" style="aspect-ratio:1/1"><span class="rtag">RASM</span></div>
               </div>
-            </div>
-          </div>
-          <!-- brand strip -->
-          <div style="margin-top:60px">
-            <p style="text-align:center;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt3);margin:0 0 24px">Yetakchi ijodiy jamoalar ishlatadi</p>
-            <div style="position:relative;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)">
-              <div class="ff-marq" style="--mqd:26s;gap:64px;align-items:center;opacity:.5">
-                <sc-for list="{{ brands }}" as="b" hint-placeholder-count="6"><span style="font-size:19px;font-weight:600;letter-spacing:.02em;color:var(--txt);white-space:nowrap">{{ b }}</span></sc-for>
-                <sc-for list="{{ brands }}" as="b" hint-placeholder-count="6"><span style="font-size:19px;font-weight:600;letter-spacing:.02em;color:var(--txt);white-space:nowrap">{{ b }}</span></sc-for>
+              <div class="ffm-glass" style="border-radius:14px;margin-top:12px;padding:11px;text-align:left">
+                <div style="font-size:11.5px;color:var(--muted2);padding:1px 2px 9px">Neon yorug'likdagi shahar, yomg'ir aksi, kinematik kadr…</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-family:'IBM Plex Mono',monospace;padding:4px 9px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-size:9px;color:#B7C0CE">GPT Image 2</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;padding:4px 9px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-size:9px;color:#B7C0CE">16:9</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;padding:4px 9px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-size:9px;color:#B7C0CE">2K</span>
+                  <span style="flex:1"></span>
+                  <span class="ffm-cost">✦ 5</span>
+                  <span style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:inline-flex;align-items:center;justify-content:center;color:var(--onlime);font-size:12px"><i class="ph-fill ph-arrow-up"></i></span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-
-      <!-- SHOWREEL MARQUEE -->
-      <section style="padding:26px 0 10px;overflow:hidden">
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <div style="overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)">
-            <div class="ff-marq" style="--mqd:52s;padding:4px 0">
-              <sc-for list="{{ marqA }}" as="t" hint-placeholder-count="12">
-                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ff-mcard" style="position:relative;flex:0 0 264px;aspect-ratio:16/9;border-radius:15px;overflow:hidden;border:1px solid var(--bd);cursor:pointer;background:{{ t.g }}">
-                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 52%,rgba(0,0,0,.55))"></div>
-                  <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:9px;right:9px;padding:3px 8px;border-radius:7px;background:#C2F04A;font-size:9.5px;font-weight:700;color:#0E1400">PRO</span></sc-if>
-                  <div style="position:absolute;left:12px;bottom:10px;right:12px"><div style="font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.n }}</div><div style="font-size:10px;color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;margin-top:2px">{{ t.c }}</div></div>
-                </div>
-              </sc-for>
-            </div>
-          </div>
-          <div style="overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)">
-            <div class="ff-marq" style="--mqd:64s;animation-direction:reverse;padding:4px 0">
-              <sc-for list="{{ marqB }}" as="t" hint-placeholder-count="12">
-                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ff-mcard" style="position:relative;flex:0 0 264px;aspect-ratio:16/9;border-radius:15px;overflow:hidden;border:1px solid var(--bd);cursor:pointer;background:{{ t.g }}">
-                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 52%,rgba(0,0,0,.55))"></div>
-                  <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:9px;right:9px;padding:3px 8px;border-radius:7px;background:#C2F04A;font-size:9.5px;font-weight:700;color:#0E1400">PRO</span></sc-if>
-                  <div style="position:absolute;left:12px;bottom:10px;right:12px"><div style="font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.n }}</div><div style="font-size:10px;color:rgba(255,255,255,.6);font-family:'IBM Plex Mono',monospace;margin-top:2px">{{ t.c }}</div></div>
-                </div>
-              </sc-for>
-            </div>
-          </div>
+      <!-- REAL STATS STRIP — real mahsulot statistikasi (soxta logo/testimonial YO'Q) -->
+      <section style="border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);background:rgba(10,13,18,.5)">
+        <div class="ffm-stats4" style="max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:26px 40px;gap:20px">
+          <div style="text-align:center"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">10,000+</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">Tayyor shablon</div></div>
+          <div style="text-align:center;border-left:1px solid rgba(255,255,255,.06)"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">4</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">AI vosita — rasm · video · ovoz · SFX</div></div>
+          <div style="text-align:center;border-left:1px solid rgba(255,255,255,.06)"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">6</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">Kategoriya — Ae · Pr · DaVinci</div></div>
+          <div style="text-align:center;border-left:1px solid rgba(255,255,255,.06)"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">14 kun</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">Pulni qaytarish kafolati</div></div>
         </div>
       </section>
-
-      <!-- STATS BAND -->
-      <section style="max-width:1280px;margin:0 auto;padding:56px 24px 8px">
-        <div data-rv="" data-stats="" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px" class="ff-studio-grid">
-          <sc-for list="{{ statsView }}" as="st" hint-placeholder-count="4">
-            <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);padding:26px 22px;text-align:center">
-              <div style="font-size:clamp(30px,3.2vw,42px);font-weight:700;letter-spacing:-.03em;color:var(--acc);font-family:'IBM Plex Mono',monospace">{{ st.v }}</div>
-              <div style="font-size:13.5px;color:var(--txt2);margin-top:6px">{{ st.l }}</div>
-            </div>
-          </sc-for>
-        </div>
-      </section>
-
-      <!-- TEMPLATE CAROUSEL -->
-      <section style="max-width:1280px;margin:0 auto;padding:80px 24px">
-        <div data-rv="" style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px">
+      <!-- SHOWCASE -->
+      <section class="ffm-sect" style="padding:64px 80px 0">
+        <div style="display:flex;align-items:flex-end;gap:20px">
           <div>
-            <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:12px">01 — TRENDING</div>
-            <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:600;letter-spacing:-.025em;margin:0">Tayyor shablonlar kutubxonasi</h2>
+            <div class="ffm-eyebrow">01 — SHABLONLAR</div>
+            <div class="ffm-d44" style="margin-top:10px">Tayyor shablonlar kutubxonasi</div>
           </div>
-          <a onclick="{{ goTemplates }}" style="display:inline-flex;align-items:center;gap:7px;font-size:14.5px;font-weight:600;color:var(--acc);cursor:pointer">Barchasini ko'rish<i class="ph-bold ph-arrow-right"></i></a>
+          <span style="flex:1"></span>
+          <a onclick="{{ goTemplates }}" style="font-size:13px;color:#B7C0CE;display:inline-flex;align-items:center;gap:6px;padding-bottom:6px;cursor:pointer">Barchasini ko'rish<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
-        <div class="ff-row" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:26px">
-          <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6">
-            <button data-cat="{{ c.label }}" onclick="{{ onCat }}" style="white-space:nowrap;padding:9px 17px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.col }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:.15s">{{ c.label }}</button>
-          </sc-for>
+        <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap">
+          <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.cls }}">{{ c.label }}</span></sc-for>
         </div>
-        <div class="ff-row" style="display:flex;gap:18px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x mandatory">
-          <sc-for list="{{ carousel }}" as="t" hint-placeholder-count="5">
-            <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ff-tcard" style="flex:0 0 332px;scroll-snap-align:start;border-radius:18px;background:var(--card);border:1px solid var(--bd);overflow:hidden;cursor:pointer">
-              <div style="position:relative;aspect-ratio:16/10;overflow:hidden">
-                <div class="ff-tprev" style="position:absolute;inset:0;background:{{ t.g }};transition:transform .35s"></div>
-                <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.35))"></div>
-                <div style="position:absolute;top:11px;left:11px;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:8px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font-size:11px;font-weight:600;color:#fff;font-family:'IBM Plex Mono',monospace"><span style="width:7px;height:7px;border-radius:2px;background:{{ t.ac }}"></span>{{ t.a }}</div>
-                <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:11px;right:11px;display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#C2F04A;font-size:10.5px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</div></sc-if>
-                <div class="ff-tplay" style="position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.85);transition:.25s"><div style="width:52px;height:52px;border-radius:50%;background:rgba(194,240,74,.18);backdrop-filter:blur(6px);border:1px solid rgba(194,240,74,.5);display:grid;place-items:center"><i class="ph-fill ph-play" style="color:var(--acc);font-size:19px;margin-left:3px"></i></div></div>
-                <div style="position:absolute;bottom:10px;right:10px;padding:3px 8px;border-radius:7px;background:rgba(0,0,0,.55);font-size:10.5px;font-weight:600;color:#fff;font-family:'IBM Plex Mono',monospace">{{ t.d }}</div>
+        <div class="ffm-showcase" style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px 18px;margin-top:22px">
+          <sc-for list="{{ carousel }}" as="t" hint-placeholder-count="8">
+            <div class="ffm-tc" data-id="{{ t.id }}" onclick="{{ openDetail }}" style="cursor:pointer">
+              <div class="ffm-th" style="background:{{ t.g }}">
+                <span class="{{ t.badgeCls }}">{{ t.badge }}</span>
+                <span class="ffm-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
+                <span class="ffm-dur">{{ t.d }}</span>
               </div>
-              <div style="padding:13px 15px">
-                <div style="font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.n }}</div>
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px">
-                  <div style="display:flex;align-items:center;gap:7px;min-width:0">
-                    <div style="width:18px;height:18px;border-radius:50%;background:radial-gradient(120% 120% at 30% 20%,#3a4258,#171b24);flex:none"></div>
-                    <span style="font-size:12px;color:var(--txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.author }}</span>
-                  </div>
-                  <span style="display:inline-flex;align-items:center;padding:4px 9px;border-radius:7px;background:var(--card2);border:1px solid var(--bd);font-size:11px;font-weight:600;color:var(--txt2);font-family:'IBM Plex Mono',monospace;flex:none">{{ t.price }}</span>
-                </div>
-              </div>
+              <div class="ffm-nm">{{ t.n }}</div><div class="ffm-mt">{{ t.c }}</div>
             </div>
           </sc-for>
         </div>
       </section>
-
-      <!-- CATEGORY TILES -->
-      <section style="max-width:1280px;margin:0 auto;padding:24px 24px 56px">
-        <div data-rv="" style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:26px">
-          <div>
-            <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:12px">02 — KATEGORIYALAR</div>
-            <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:600;letter-spacing:-.025em;margin:0">Kategoriya bo'yicha ko'rish</h2>
-          </div>
+      <!-- AI STUDIO PROMO -->
+      <section class="ffm-sect" style="padding:72px 80px 0">
+        <div class="ffm-eyebrow">02 — AI STUDIO</div>
+        <div style="display:flex;align-items:flex-end;gap:24px;margin-top:10px;flex-wrap:wrap">
+          <div class="ffm-d44" style="max-width:520px">AI Studio — brauzerda yarating</div>
+          <div style="flex:1;font-size:14px;line-height:1.6;color:var(--muted);max-width:420px;padding-bottom:4px;min-width:280px">Rasm, video, ovoz va effektlar — promptdan boshlab bir necha soniyada. Hammasi brauzerda.</div>
         </div>
-        <div class="ff-cat-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px">
-          <sc-for list="{{ catTilesRv }}" as="c" hint-placeholder-count="6">
-            <div data-rv="" data-rv-delay="{{ c.rd }}" onclick="{{ goTemplates }}" class="ff-feat" style="position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--bd);cursor:pointer;min-height:172px;display:flex;flex-direction:column;justify-content:flex-end;padding:16px">
-              <div style="position:absolute;inset:0;background:{{ c.g }}"></div>
-              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.55))"></div>
-              <div style="position:absolute;top:14px;left:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);display:grid;place-items:center"><i class="ph-fill ph-{{ c.icon }}" style="color:var(--acc);font-size:18px"></i></div>
-              <div style="position:relative">
-                <div style="font-size:14.5px;font-weight:600;color:#fff;line-height:1.2">{{ c.label }}</div>
-                <div style="font-size:11.5px;color:rgba(255,255,255,.6);margin-top:3px;font-family:'IBM Plex Mono',monospace">{{ c.count }}</div>
-              </div>
+        <div class="ffm-studio4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:26px">
+          <sc-for list="{{ studioCards }}" as="s" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px">
+              <span style="width:38px;height:38px;border-radius:11px;background:{{ s.ibg }};display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:{{ s.icol }}"><i class="ph ph-{{ s.icon }}"></i></span>
+              <div style="font-weight:700;font-size:15.5px;margin-top:14px">{{ s.t }}</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:6px">{{ s.d }}</div>
+              <div style="display:flex;align-items:center;margin-top:16px"><span class="ffm-cost" style="font-size:11px">✦ {{ s.cost }}</span><span style="flex:1"></span><a data-tool="{{ s.tool }}" onclick="{{ onTryTool }}" style="font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer">Sinab ko'rish<i class="ph ph-arrow-right" style="font-size:11px"></i></a></div>
             </div>
           </sc-for>
         </div>
       </section>
-
-      <!-- AI STUDIO SECTION -->
-      <section style="position:relative;overflow:hidden;padding:84px 24px">
-        <div aria-hidden="true" style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:400px;border-radius:50%;background:radial-gradient(circle,color-mix(in oklab,var(--glow1) 32%,transparent),transparent 70%);filter:blur(90px);pointer-events:none"></div>
-        <div style="max-width:1280px;margin:0 auto;position:relative">
-          <div data-rv="" style="text-align:center;max-width:640px;margin:0 auto 52px">
-            <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px">03 — AI STUDIO</div>
-            <h2 style="font-size:clamp(30px,3.8vw,46px);font-weight:600;letter-spacing:-.03em;line-height:1.08;margin:0 0 16px">Yaratish uchun barcha AI vositalari</h2>
-            <p style="font-size:17.5px;color:var(--txt2);line-height:1.6;margin:0">Rasm, video, ovoz va effektlar — promptdan boshlab bir necha soniyada. Hammasi brauzerda.</p>
+      <!-- PLAGIN PROMO -->
+      <section class="ffm-sect" style="padding:72px 80px 0">
+        <div class="ffm-plugin-grid" style="border-radius:20px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(120deg,rgba(194,240,74,.05),rgba(124,196,255,.04) 70%),var(--surface);padding:36px 40px;display:flex;gap:40px;align-items:center;flex-wrap:wrap">
+          <div style="flex:1.1;min-width:300px">
+            <div class="ffm-eyebrow">03 — PLAGIN</div>
+            <div class="ffm-d36" style="margin-top:10px">FrameFlow plagini — to'g'ridan-to'g'ri After Effects ichida</div>
+            <div style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:12px">Katalog, import va AI Studio — panelda. Platformadagi hisobingiz va kreditlaringiz bilan ishlaydi.</div>
+            <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+              <button class="ffm-btn" onclick="{{ goPlugin }}"><i class="ph ph-download-simple" style="font-size:14px"></i>Plaginni yuklab olish (.zxp)</button>
+            </div>
+            <div style="display:flex;gap:14px;margin-top:16px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:#b794f6"></span>After Effects</span>
+              <span style="font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:#7aa2f7"></span>Premiere Pro</span>
+              <span style="font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted2)"><span style="width:6px;height:6px;border-radius:50%;background:#f0907f"></span>DaVinci — tez orada</span>
+            </div>
           </div>
-          <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
-            <sc-for list="{{ studioRv }}" as="s" hint-placeholder-count="4">
-              <div data-rv="" data-rv-delay="{{ s.rd }}" class="ff-feat" style="border-radius:20px;background:var(--card);border:1px solid var(--bd);overflow:hidden;display:flex;flex-direction:column">
-                <div style="position:relative;aspect-ratio:4/3;overflow:hidden;background:{{ s.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite">
-                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))"></div>
-                  <div style="position:absolute;top:14px;left:14px;width:42px;height:42px;border-radius:12px;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);display:grid;place-items:center"><i class="ph-fill ph-{{ s.icon }}" style="color:#fff;font-size:20px"></i></div>
-                  <div style="position:absolute;bottom:12px;left:14px;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:8px;background:rgba(0,0,0,.5);font-size:11px;font-weight:600;color:#fff"><i class="ph-fill ph-lightning" style="color:var(--teal)"></i>{{ s.cost }}</div>
-                </div>
-                <div style="padding:18px 18px 20px;display:flex;flex-direction:column;flex:1">
-                  <h3 style="font-size:18px;font-weight:600;margin:0 0 7px">{{ s.t }}</h3>
-                  <p style="font-size:13.5px;color:var(--txt2);line-height:1.5;margin:0 0 18px;flex:1">{{ s.d }}</p>
-                  <button data-tool="{{ s.tool }}" onclick="{{ onTryTool }}" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px;border:1px solid var(--bd2);border-radius:11px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:background .15s" style-hover="background:var(--card3)">Sinab ko'rish<i class="ph-bold ph-arrow-right" style="font-size:13px"></i></button>
-                </div>
+          <div style="flex:.9;display:flex;justify-content:center;min-width:250px">
+            <div style="width:250px;background:var(--bg);border:1px solid #222A37;border-radius:12px;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5)">
+              <div style="height:40px;display:flex;align-items:center;gap:7px;padding:0 11px;background:rgba(10,13,18,.92);border-bottom:1px solid rgba(255,255,255,.05)">
+                <span style="width:18px;height:18px;border-radius:5px;background:var(--lime);display:inline-flex;align-items:center;justify-content:center;color:var(--onlime);font-size:10px"><i class="ph-fill ph-lightning"></i></span>
+                <div class="ffm-seg" style="flex:1"><span class="on" style="flex:1;padding:4px 0;font-size:10.5px">Katalog</span><span style="flex:1;padding:4px 0;font-size:10.5px">AI Tools</span></div>
+                <span class="ffm-credit" style="font-size:9px;padding:3px 7px"><em>✦</em>1,230</span>
               </div>
-            </sc-for>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px">
+                <div class="ffm-tc"><div class="ffm-th ffm-g1" style="height:56px;aspect-ratio:auto;border-radius:8px"><span class="ffm-bgpro" style="font-size:7px;padding:2px 5px">PRO</span></div></div>
+                <div class="ffm-tc"><div class="ffm-th ffm-g2" style="height:56px;aspect-ratio:auto;border-radius:8px"><span class="ffm-bgfree" style="font-size:7px;padding:2px 5px">BEPUL</span></div></div>
+                <div class="ffm-tc"><div class="ffm-th ffm-g6" style="height:56px;aspect-ratio:auto;border-radius:8px"></div></div>
+                <div class="ffm-tc"><div class="ffm-th ffm-g3" style="height:56px;aspect-ratio:auto;border-radius:8px"></div></div>
+              </div>
+              <div style="padding:0 10px 10px"><span class="ffm-btn full" style="height:34px;font-size:11px">Import<span class="bc" style="font-size:9px">AE</span></span></div>
+            </div>
           </div>
         </div>
       </section>
-
-      <!-- HOW IT WORKS -->
-      <section style="max-width:1280px;margin:0 auto;padding:70px 24px 30px">
-        <div data-rv="" style="text-align:center;max-width:620px;margin:0 auto 46px">
-          <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px">04 — JARAYON</div>
-          <h2 style="font-size:clamp(30px,3.8vw,46px);font-weight:600;letter-spacing:-.03em;line-height:1.08;margin:0">Uch qadamda tayyor natija</h2>
-        </div>
-        <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;position:relative">
-          <sc-for list="{{ howSteps }}" as="h" hint-placeholder-count="3">
-            <div data-rv="" data-rv-delay="{{ $index }}00" style="position:relative;border-radius:20px;background:var(--card);border:1px solid var(--bd);padding:28px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-                <div style="width:46px;height:46px;border-radius:13px;background:var(--grad);display:grid;place-items:center;box-shadow:0 10px 24px -8px var(--ring)"><i class="ph-fill ph-{{ h.icon }}" style="color:#0E1400;font-size:21px"></i></div>
-                <span style="font-size:13px;font-weight:600;color:var(--txt3);font-family:'IBM Plex Mono',monospace">{{ h.n }}</span>
-              </div>
-              <h3 style="font-size:18.5px;font-weight:600;margin:0 0 8px">{{ h.t }}</h3>
-              <p style="font-size:14px;color:var(--txt2);line-height:1.55;margin:0">{{ h.d }}</p>
+      <!-- NARX TEASER -->
+      <section class="ffm-sect" style="padding:72px 80px 0;text-align:center">
+        <div class="ffm-eyebrow">04 — NARXLAR</div>
+        <div class="ffm-d44" style="margin-top:10px">Bepul boshlang, kerak bo'lganda kengaytiring</div>
+        <div style="font-size:14px;color:var(--muted);margin-top:10px">Istalgan vaqtda bekor qiling. Barcha rejalar 14 kunlik pulni qaytarish kafolati bilan.</div>
+        <div class="ffm-plans" style="display:flex;gap:16px;margin-top:28px;text-align:left">
+          <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
+            <div class="{{ p.planCls }}" style="position:relative">
+              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-weight:700;font-size:8.5px;letter-spacing:.08em;padding:3px 9px;border-radius:999px;background:var(--lime);color:var(--onlime)">ENG MASHHUR</span></sc-if>
+              <div style="font-weight:700;font-size:14px">{{ p.name }}</div>
+              <div style="display:flex;align-items:baseline;gap:5px;margin-top:10px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:30px;letter-spacing:-.02em">${{ p.price }}</span><span style="font-size:12px;color:var(--muted)">/oy</span></div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:{{ p.crCol }};margin-top:4px">✦ {{ p.cr }}</div>
+              <button class="{{ p.ctaCls }}" onclick="{{ goRegister }}" style="margin:16px 0 6px">{{ p.cta }}</button>
+              <sc-for list="{{ p.tf }}" as="f" hint-placeholder-count="3"><div class="ffm-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
             </div>
           </sc-for>
         </div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:16px">To'liq taqqoslash — <a onclick="{{ goPricing }}" style="color:var(--text);font-weight:600;cursor:pointer">Narxlar sahifasida →</a></div>
       </section>
-
-      <!-- PLUGIN SECTION -->
-      <section style="max-width:1280px;margin:0 auto;padding:80px 24px">
-        <div data-rv="" class="ff-plugin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;border-radius:28px;background:linear-gradient(135deg,rgba(194,240,74,.07),rgba(194,240,74,.03));border:1px solid var(--bd);padding:48px">
-          <div>
-            <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px">05 — PLAGIN</div>
-            <h2 style="font-size:clamp(28px,3.4vw,42px);font-weight:600;letter-spacing:-.03em;line-height:1.08;margin:0 0 16px">To'g'ridan-to'g'ri After Effects ichida</h2>
-            <p style="font-size:17px;color:var(--txt2);line-height:1.6;margin:0 0 26px">Platformada sozlang, AE ichida ishlating. Shablonlar, AI generatsiyalar va kreditlaringiz panelda — eksportsiz, qayta yuklamasdan.</p>
-            <div style="display:flex;flex-direction:column;gap:13px;margin-bottom:30px">
-              <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:var(--txt)"><i class="ph-fill ph-check-circle" style="color:var(--teal);font-size:20px"></i>Premiere Pro, AE va DaVinci qo'llab-quvvatlanadi</div>
-              <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:var(--txt)"><i class="ph-fill ph-check-circle" style="color:var(--teal);font-size:20px"></i>Bir bosishda layout va render</div>
-              <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:var(--txt)"><i class="ph-fill ph-check-circle" style="color:var(--teal);font-size:20px"></i>Kreditlar real vaqt sinxronizatsiyasi</div>
-            </div>
-            <button onclick="{{ goPlugin }}" style="display:inline-flex;align-items:center;gap:9px;padding:14px 24px;border:none;border-radius:13px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:15.5px;cursor:pointer;box-shadow:0 12px 30px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-2px)"><i class="ph-bold ph-download-simple"></i>Plaginni yuklab olish</button>
-          </div>
-          <!-- AE window mockup -->
-          <div style="border-radius:16px;overflow:hidden;border:1px solid var(--bd2);box-shadow:0 30px 70px -25px rgba(0,0,0,.7);background:#16161d">
-            <div style="height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;background:#0f0f15;border-bottom:1px solid rgba(255,255,255,.06)">
-              <div style="display:flex;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></span><span style="width:11px;height:11px;border-radius:50%;background:#febc2e"></span><span style="width:11px;height:11px;border-radius:50%;background:#28c840"></span></div>
-              <span style="font-size:12px;color:var(--txt3);margin-left:8px">Adobe After Effects — FrameFlow panel</span>
-            </div>
-            <div style="display:flex;height:280px">
-              <div style="flex:1;background:#101016;border-right:1px solid rgba(255,255,255,.06);display:grid;place-items:center;position:relative">
-                <div style="width:78%;aspect-ratio:16/9;border-radius:8px;background:radial-gradient(120% 120% at 24% 10%,#2b3550,#0d1119);background-size:180% 180%;animation:ffShimmer 8s ease infinite;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)"></div>
-                <div style="position:absolute;bottom:10px;left:12px;right:12px;height:26px;border-radius:5px;background:#1a1a22;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 8px;gap:4px"><span style="width:2px;height:14px;background:var(--acc)"></span><span style="flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--acc),transparent)"></span></div>
-              </div>
-              <div style="width:200px;background:#13131a;padding:13px;display:flex;flex-direction:column;gap:10px">
-                <div style="display:flex;align-items:center;gap:7px"><div style="width:20px;height:20px;border-radius:6px;background:var(--grad);display:grid;place-items:center"><i class="ph-fill ph-stack" style="color:#0E1400;font-size:9px;margin-left:1px"></i></div><span style="font-size:12px;font-weight:600">FrameFlow</span><div style="flex:1"></div><i class="ph ph-magnifying-glass" style="font-size:13px;color:var(--txt3)"></i></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
-                  <div style="aspect-ratio:1;border-radius:6px;background:radial-gradient(120% 120% at 22% 12%,hsl(278 38% 27%),hsl(320 44% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:6px;background:radial-gradient(120% 120% at 22% 12%,hsl(190 42% 25%),hsl(210 50% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:6px;background:radial-gradient(120% 120% at 22% 12%,hsl(30 46% 27%),hsl(8 50% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:6px;background:linear-gradient(155deg,#222a35,#12161d)"></div>
-                  <div style="aspect-ratio:1;border-radius:6px;background:radial-gradient(120% 120% at 22% 12%,hsl(200 42% 25%),hsl(232 46% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:6px;background:radial-gradient(120% 120% at 22% 12%,hsl(330 42% 26%),hsl(32 46% 9%))"></div>
-                </div>
-                <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:rgba(194,240,74,.1);border:1px solid rgba(194,240,74,.25)"><span style="font-size:11px;color:var(--txt2)">Kredit</span><span style="font-size:12px;font-weight:700;color:var(--teal2)">⚡ 1,250</span></div>
-                <div style="padding:9px;border-radius:8px;background:var(--grad);text-align:center;font-size:12px;font-weight:700;color:#0E1400">Kompozitsiyaga qo'shish</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- PRICING BLOCK -->
-      <section style="max-width:1280px;margin:0 auto;padding:80px 24px">
-        <div data-rv="" style="text-align:center;max-width:640px;margin:0 auto 44px">
-          <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px">06 — NARXLAR</div>
-          <h2 style="font-size:clamp(30px,3.8vw,46px);font-weight:600;letter-spacing:-.03em;line-height:1.08;margin:0 0 22px">O'zingizga mos rejani tanlang</h2>
-          <div style="display:inline-flex;align-items:center;gap:4px;padding:5px;border-radius:999px;background:var(--card);border:1px solid var(--bd)">
-            <button data-bill="monthly" onclick="{{ onBill }}" style="padding:9px 20px;border:none;border-radius:999px;background:{{ billMonthlyBg }};color:{{ billMonthlyCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:.15s">Oylik</button>
-            <button data-bill="yearly" onclick="{{ onBill }}" style="padding:9px 20px;border:none;border-radius:999px;background:{{ billYearlyBg }};color:{{ billYearlyCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.15s">Yillik<span style="padding:2px 7px;border-radius:999px;background:rgba(194,240,74,.18);color:var(--teal2);font-size:11px;font-weight:700">-20%</span></button>
-          </div>
-        </div>
-        <div class="ff-price-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto;align-items:start">
-          <sc-for list="{{ plansRv }}" as="p" hint-placeholder-count="3">
-            <div data-rv="" data-rv-delay="{{ p.rd }}" style="position:relative;border-radius:22px;background:{{ p.cardBg }};border:1px solid {{ p.cardBd }};padding:30px;{{ p.cardExtra }}">
-              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:12px;font-weight:700;box-shadow:0 8px 20px -6px var(--ring)">Eng mashhur</div></sc-if>
-              <div style="font-size:16px;font-weight:600;color:{{ p.nameCol }};margin-bottom:6px">{{ p.name }}</div>
-              <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px"><span style="font-size:44px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:15px;color:var(--txt3)">/oy</span></div>
-              <div style="font-size:13px;color:var(--txt3);margin-bottom:18px">{{ p.note }} · {{ p.cr }}</div>
-              <button onclick="{{ goRegister }}" style="width:100%;padding:13px;border:none;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:24px;border:1px solid {{ p.btnBd }};transition:.15s">{{ p.cta }}</button>
-              <div style="display:flex;flex-direction:column;gap:12px">
-                <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="5">
-                  <div style="display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:15px;margin-top:2px;flex:none"></i>{{ f }}</div>
-                </sc-for>
-              </div>
-            </div>
-          </sc-for>
-        </div>
-      </section>
-
-      <!-- TESTIMONIALS -->
-      <section style="max-width:1280px;margin:0 auto;padding:80px 24px">
-        <div data-rv="" style="text-align:center;max-width:600px;margin:0 auto 48px">
-          <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px">07 — SHARHLAR</div>
-          <h2 style="font-size:clamp(28px,3.4vw,42px);font-weight:600;letter-spacing:-.03em;margin:0">Ijodkorlar nima deydi</h2>
-        </div>
-        <div class="ff-test-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
-          <sc-for list="{{ testsRv }}" as="t" hint-placeholder-count="3">
-            <div data-rv="" data-rv-delay="{{ t.rd }}" style="border-radius:20px;background:var(--card);border:1px solid var(--bd);padding:28px;display:flex;flex-direction:column">
-              <i class="ph-fill ph-quotes" style="font-size:28px;color:var(--acc);opacity:.6;margin-bottom:14px"></i>
-              <p style="font-size:15.5px;line-height:1.6;color:var(--txt);margin:0 0 22px;flex:1">{{ t.q }}</p>
-              <div style="display:flex;align-items:center;gap:12px">
-                <div style="width:44px;height:44px;border-radius:50%;background:{{ t.g }};flex:none"></div>
-                <div><div style="font-size:14.5px;font-weight:600">{{ t.n }}</div><div style="font-size:12.5px;color:var(--txt3)">{{ t.r }}</div></div>
-              </div>
-            </div>
-          </sc-for>
-        </div>
-      </section>
-
       <!-- FAQ -->
-      <section style="max-width:780px;margin:0 auto;padding:80px 24px">
-        <div data-rv="" style="text-align:center;margin:0 auto 40px">
-          <div style="font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-bottom:14px">08 — SAVOLLAR</div>
-          <h2 style="font-size:clamp(28px,3.4vw,42px);font-weight:600;letter-spacing:-.03em;margin:0">Tez-tez so'raladigan savollar</h2>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:12px">
+      <section style="padding:72px 80px;max-width:880px;margin:0 auto" class="ffm-sectx">
+        <div class="ffm-d36" style="text-align:center">Ko'p so'raladigan savollar</div>
+        <div style="margin-top:26px;display:flex;flex-direction:column;gap:10px">
           <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
-            <div data-rv="" data-rv-delay="{{ f.idx }}0" style="border-radius:16px;background:var(--card);border:1px solid {{ f.bd }};overflow:hidden">
-              <button data-idx="{{ f.idx }}" onclick="{{ onFaq }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;background:none;border:none;color:var(--txt);font-family:inherit;font-size:16.5px;font-weight:600;cursor:pointer;text-align:left">{{ f.q }}<i class="ph-bold ph-{{ f.icon }}" style="font-size:18px;color:var(--txt2);flex:none"></i></button>
-              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}"><div style="padding:0 22px 22px;font-size:15px;line-height:1.6;color:var(--txt2)">{{ f.a }}</div></sc-if>
+            <div style="background:var(--surface);border:1px solid {{ f.faqBd }};border-radius:14px;padding:16px 20px">
+              <div data-idx="{{ f.idx }}" onclick="{{ onFaq }}" style="display:flex;align-items:center;gap:10px;cursor:pointer"><span style="font-weight:600;font-size:14px;flex:1;color:{{ f.qCol }}">{{ f.q }}</span><i class="ph ph-{{ f.icon }}" style="color:{{ f.iCol }}"></i></div>
+              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:10px">{{ f.a }}</div></sc-if>
             </div>
           </sc-for>
         </div>
       </section>
-
       <!-- CTA BAND -->
-      <section style="max-width:1280px;margin:0 auto;padding:40px 24px 90px">
-        <div data-rv="" style="position:relative;overflow:hidden;border-radius:28px;padding:64px 40px;text-align:center;background:linear-gradient(135deg,rgba(194,240,74,.18),rgba(194,240,74,.12),rgba(194,240,74,.08));border:1px solid var(--bd2)">
-          <div aria-hidden="true" style="position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:600px;height:300px;border-radius:50%;background:radial-gradient(circle,color-mix(in oklab,var(--glow1) 40%,transparent),transparent 70%);filter:blur(70px);animation:ffGlow 10s ease-in-out infinite"></div>
-          <div style="position:relative">
-            <h2 style="font-size:clamp(30px,4vw,50px);font-weight:600;letter-spacing:-.03em;line-height:1.08;margin:0 0 16px;max-width:680px;margin-left:auto;margin-right:auto">Bugun ijod qilishni boshlang</h2>
-            <p style="font-size:18px;color:var(--txt2);margin:0 auto 30px;max-width:520px">Kredit kartasiz. 50 bepul kredit. Bir necha soniyada birinchi ijodingiz.</p>
-            <button onclick="{{ goRegister }}" style="display:inline-flex;align-items:center;gap:9px;padding:16px 30px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16.5px;cursor:pointer;box-shadow:0 16px 40px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-2px)"><i class="ph-bold ph-lightning"></i>Bepul boshlash</button>
-          </div>
-        </div>
+      <section class="ffm-sectx" style="margin:0 80px 90px;border-radius:20px;background:linear-gradient(120deg,rgba(194,240,74,.10),rgba(124,196,255,.06)),var(--surface);border:1px solid rgba(194,240,74,.2);padding:44px;text-align:center">
+        <div class="ffm-d36">Bugun bepul boshlang</div>
+        <div style="font-size:14px;color:var(--muted);margin-top:8px">Ro'yxatdan o'ting — 50 AI kredit sovg'a. Karta shart emas.</div>
+        <button class="ffm-btn lg" onclick="{{ goRegister }}" style="margin-top:20px"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Bepul boshlash</button>
       </section>
     </main>
     </sc-if>
 
-    <!-- PRICING PAGE -->
+    <!-- ============ PRICING PAGE ============ -->
     <sc-if value="{{ isPricing }}" hint-placeholder-val="{{ false }}">
-      <main style="max-width:1280px;margin:0 auto;padding:64px 24px 90px">
-        <div style="text-align:center;max-width:660px;margin:0 auto 44px">
-          <h1 style="font-size:clamp(36px,4.6vw,56px);font-weight:600;letter-spacing:-.035em;line-height:1.05;margin:0 0 18px">Sodda, shaffof narxlar</h1>
-          <p style="font-size:18px;color:var(--txt2);line-height:1.6;margin:0 0 28px">Bepul boshlang, kerak bo'lganda kengaytiring. Istalgan vaqtda bekor qiling.</p>
-          <div style="display:inline-flex;align-items:center;gap:4px;padding:5px;border-radius:999px;background:var(--card);border:1px solid var(--bd)">
-            <button data-bill="monthly" onclick="{{ onBill }}" style="padding:9px 20px;border:none;border-radius:999px;background:{{ billMonthlyBg }};color:{{ billMonthlyCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Oylik</button>
-            <button data-bill="yearly" onclick="{{ onBill }}" style="padding:9px 20px;border:none;border-radius:999px;background:{{ billYearlyBg }};color:{{ billYearlyCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px">Yillik<span style="padding:2px 7px;border-radius:999px;background:rgba(194,240,74,.18);color:var(--teal2);font-size:11px;font-weight:700">-20%</span></button>
-          </div>
-        </div>
-        <div class="ff-price-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto 56px;align-items:start">
-          <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
-            <div style="position:relative;border-radius:22px;background:{{ p.cardBg }};border:1px solid {{ p.cardBd }};padding:32px;{{ p.cardExtra }}">
-              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:12px;font-weight:700">Eng mashhur</div></sc-if>
-              <div style="font-size:17px;font-weight:600;color:{{ p.nameCol }};margin-bottom:8px">{{ p.name }}</div>
-              <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px"><span style="font-size:48px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:15px;color:var(--txt3)">/oy</span></div>
-              <div style="font-size:13px;color:var(--txt3);margin-bottom:20px">{{ p.note }} · {{ p.cr }}</div>
-              <button onclick="{{ goRegister }}" style="width:100%;padding:14px;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:26px;border:1px solid {{ p.btnBd }}">{{ p.cta }}</button>
-              <div style="display:flex;flex-direction:column;gap:13px">
-                <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="6">
-                  <div style="display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:15px;margin-top:2px;flex:none"></i>{{ f }}</div>
-                </sc-for>
-              </div>
-            </div>
-          </sc-for>
-        </div>
-        <div style="text-align:center;font-size:14px;color:var(--txt3)">Barcha rejalar 14 kunlik pulni qaytarish kafolati bilan keladi · <a onclick="{{ goPlugin }}" style="color:var(--acc);cursor:pointer">Plagin haqida</a></div>
-      </main>
-    </sc-if>
-
-    <!-- PLUGIN PAGE -->
-    <sc-if value="{{ isPlugin }}" hint-placeholder-val="{{ false }}">
-      <main>
-        <section style="position:relative;overflow:hidden;padding:64px 24px 48px;text-align:center">
-          <div aria-hidden="true" style="position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:680px;height:420px;border-radius:50%;background:radial-gradient(circle,color-mix(in oklab,var(--glow1) 35%,transparent),transparent 70%);filter:blur(90px);pointer-events:none"></div>
-          <div style="max-width:760px;margin:0 auto;position:relative">
-            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--card2);border:1px solid var(--bd2);font-size:13px;color:var(--txt2);margin-bottom:22px"><i class="ph-fill ph-plugs-connected" style="color:var(--teal)"></i>v2.4.0 · After Effects 2023+</div>
-            <h1 style="font-size:clamp(36px,4.8vw,58px);font-weight:600;letter-spacing:-.035em;line-height:1.04;margin:0 0 18px">FrameFlow plagini</h1>
-            <p style="font-size:18.5px;color:var(--txt2);line-height:1.6;margin:0 auto 32px;max-width:560px">Platformada sozlang — After Effects, Premiere Pro va DaVinci Resolve ichida ishlating. Shablonlar va kreditlar har doim yoningizda.</p>
-            <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-              <button onclick="{{ download }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 28px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:16px;cursor:pointer;box-shadow:0 14px 36px -10px var(--ring);transition:transform .18s" style-hover="transform:translateY(-2px)"><i class="ph-bold ph-download-simple"></i>Plaginni yuklab olish (.zxp)</button>
-              <button onclick="{{ goDashboard }}" style="display:inline-flex;align-items:center;gap:9px;padding:15px 24px;border:1px solid var(--bd2);border-radius:14px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:16px;cursor:pointer">Hujjatlar</button>
-            </div>
-            <div style="font-size:13px;color:var(--txt3);margin-top:18px">macOS · Windows · 24 MB</div>
-          </div>
-        </section>
-        <section style="max-width:1080px;margin:0 auto;padding:40px 24px 40px">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px" class="ff-studio-grid">
-            <sc-for list="{{ pluginSteps }}" as="s" hint-placeholder-count="3">
-              <div style="border-radius:20px;background:var(--card);border:1px solid var(--bd);padding:28px">
-                <div style="width:44px;height:44px;border-radius:13px;background:var(--grad);display:grid;place-items:center;font-size:19px;font-weight:700;color:#0E1400;margin-bottom:18px">{{ s.n }}</div>
-                <h3 style="font-size:18px;font-weight:600;margin:0 0 8px">{{ s.t }}</h3>
-                <p style="font-size:14px;color:var(--txt2);line-height:1.55;margin:0">{{ s.d }}</p>
+      <main class="ffm-mesh">
+        <section class="ffm-sect" style="padding:56px 80px 72px;text-align:center">
+          <div class="ffm-eyebrow">NARXLAR</div>
+          <div class="ffm-d44" style="margin-top:12px">Sizga mos rejani tanlang</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:10px">Bepul boshlang, kerak bo'lganda kengaytiring. Istalgan vaqtda bekor qiling.</div>
+          <div style="display:inline-flex;margin-top:24px"><div class="ffm-seg"><span data-bill="monthly" onclick="{{ onBill }}" class="{{ billMonthlyCls }}">Oylik</span><span data-bill="yearly" onclick="{{ onBill }}" class="{{ billYearlyCls }}">Yillik <em style="font-style:normal;color:var(--lime)">-20%</em></span></div></div>
+          <div class="ffm-plans" style="display:flex;gap:20px;margin-top:32px;text-align:left;max-width:1040px;margin-left:auto;margin-right:auto">
+            <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
+              <div class="{{ p.planCls }}" style="position:relative;padding:24px 22px">
+                <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;position:absolute;top:-10px;left:24px;font-weight:700;font-size:9px;letter-spacing:.08em;padding:4px 11px;border-radius:999px;background:var(--lime);color:var(--onlime)">ENG MASHHUR</span></sc-if>
+                <div style="font-weight:700;font-size:16px">{{ p.name }}</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">{{ p.sub }}</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:14px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:38px;letter-spacing:-.02em">${{ p.price }}</span><span style="font-size:13px;color:var(--muted)">/oy</span></div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ p.crCol }};margin-top:5px">✦ {{ p.cr }}</div>
+                <button class="{{ p.ctaCls }}" onclick="{{ goRegister }}" style="margin:18px 0 8px">{{ p.cta }}</button>
+                <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="6"><div class="ffm-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
               </div>
             </sc-for>
           </div>
-        </section>
-        <section style="max-width:1080px;margin:0 auto;padding:40px 24px 90px">
-          <div class="ff-plugin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;border-radius:28px;background:linear-gradient(135deg,rgba(194,240,74,.08),rgba(194,240,74,.05));border:1px solid var(--bd);padding:44px">
-            <div>
-              <h2 style="font-size:clamp(26px,3.2vw,38px);font-weight:600;letter-spacing:-.03em;line-height:1.1;margin:0 0 16px">Platforma ↔ plagin ulanishi</h2>
-              <p style="font-size:16px;color:var(--txt2);line-height:1.6;margin:0 0 22px">Hisobingizni bir marta ulang. Brauzerda saqlangan har bir shablon, generatsiya va kredit balansi AE panelida darhol paydo bo'ladi.</p>
-              <div style="display:flex;flex-direction:column;gap:14px">
-                <div style="display:flex;align-items:center;gap:12px;font-size:15px"><i class="ph-fill ph-arrows-clockwise" style="color:var(--teal);font-size:19px"></i>Real vaqt sinxronizatsiya</div>
-                <div style="display:flex;align-items:center;gap:12px;font-size:15px"><i class="ph-fill ph-stack" style="color:var(--teal);font-size:19px"></i>Layerlarga avtomatik joylash</div>
-                <div style="display:flex;align-items:center;gap:12px;font-size:15px"><i class="ph-fill ph-shield-check" style="color:var(--teal);font-size:19px"></i>Xavfsiz token orqali ulanish</div>
-              </div>
-            </div>
-            <div style="border-radius:16px;overflow:hidden;border:1px solid var(--bd2);box-shadow:0 30px 70px -25px rgba(0,0,0,.7);background:#16161d">
-              <div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 14px;background:#0f0f15;border-bottom:1px solid rgba(255,255,255,.06)"><div style="display:flex;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#ff5f57"></span><span style="width:10px;height:10px;border-radius:50%;background:#febc2e"></span><span style="width:10px;height:10px;border-radius:50%;background:#28c840"></span></div><span style="font-size:11.5px;color:var(--txt3);margin-left:6px">FrameFlow panel</span></div>
-              <div style="padding:16px;display:flex;flex-direction:column;gap:11px">
-                <div style="display:flex;align-items:center;gap:8px"><div style="width:22px;height:22px;border-radius:6px;background:var(--grad);display:grid;place-items:center"><i class="ph-fill ph-stack" style="color:#0E1400;font-size:10px"></i></div><span style="font-size:12.5px;font-weight:600">Ulangan: Studio</span><div style="flex:1"></div><span style="width:8px;height:8px;border-radius:50%;background:#28c840"></span></div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-                  <div style="aspect-ratio:1;border-radius:7px;background:radial-gradient(120% 120% at 22% 12%,hsl(278 38% 27%),hsl(320 44% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:7px;background:radial-gradient(120% 120% at 22% 12%,hsl(190 42% 25%),hsl(210 50% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:7px;background:radial-gradient(120% 120% at 22% 12%,hsl(30 46% 27%),hsl(8 50% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:7px;background:linear-gradient(155deg,#222a35,#12161d)"></div>
-                  <div style="aspect-ratio:1;border-radius:7px;background:radial-gradient(120% 120% at 22% 12%,hsl(200 42% 25%),hsl(232 46% 9%))"></div>
-                  <div style="aspect-ratio:1;border-radius:7px;background:radial-gradient(120% 120% at 22% 12%,hsl(330 42% 26%),hsl(32 46% 9%))"></div>
+          <div style="max-width:760px;margin:56px auto 0;text-align:left">
+            <div class="ffm-d30" style="text-align:center">Savollar</div>
+            <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
+                <div style="background:var(--surface);border:1px solid {{ f.faqBd }};border-radius:14px;padding:16px 20px">
+                  <div data-idx="{{ f.idx }}" onclick="{{ onFaq }}" style="display:flex;align-items:center;gap:10px;cursor:pointer"><span style="font-weight:600;font-size:14px;flex:1;color:{{ f.qCol }}">{{ f.q }}</span><i class="ph ph-{{ f.icon }}" style="color:{{ f.iCol }}"></i></div>
+                  <sc-if value="{{ f.open }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:10px">{{ f.a }}</div></sc-if>
                 </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:9px;background:rgba(194,240,74,.1);border:1px solid rgba(194,240,74,.25)"><span style="font-size:12px;color:var(--txt2)">Balans</span><span style="font-size:13px;font-weight:700;color:var(--teal2)">⚡ 6,000</span></div>
-              </div>
+              </sc-for>
             </div>
           </div>
         </section>
       </main>
     </sc-if>
 
-    <!-- FOOTER -->
-    <footer style="border-top:1px solid var(--bd);background:var(--bg2)">
-      <div style="max-width:1280px;margin:0 auto;padding:60px 24px 40px">
-        <div class="ff-foot-grid" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px">
-          <div>
-            <a onclick="{{ goLanding }}" style="display:flex;align-items:center;gap:11px;cursor:pointer;margin-bottom:16px">
-              <div style="width:32px;height:32px;border-radius:9px;background:var(--grad);display:grid;place-items:center"><i class="ph-fill ph-stack" style="color:#0E1400;font-size:14px"></i></div>
-              <span style="font-weight:600;font-size:18px">FrameFlow</span>
-            </a>
-            <p style="font-size:14px;color:var(--txt2);line-height:1.6;margin:0 0 18px;max-width:260px">Shablonlar va AI — bitta ijodiy makonda.</p>
-            <div style="display:flex;gap:10px">
-              <a style="width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--bd);display:grid;place-items:center;color:var(--txt2);cursor:pointer;font-size:17px" class="ff-link"><i class="ph ph-instagram-logo"></i></a>
-              <a style="width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--bd);display:grid;place-items:center;color:var(--txt2);cursor:pointer;font-size:17px" class="ff-link"><i class="ph ph-youtube-logo"></i></a>
-              <a style="width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--bd);display:grid;place-items:center;color:var(--txt2);cursor:pointer;font-size:17px" class="ff-link"><i class="ph ph-x-logo"></i></a>
-              <a style="width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--bd);display:grid;place-items:center;color:var(--txt2);cursor:pointer;font-size:17px" class="ff-link"><i class="ph ph-tiktok-logo"></i></a>
+    <!-- ============ PLUGIN PAGE ============ -->
+    <sc-if value="{{ isPlugin }}" hint-placeholder-val="{{ false }}">
+      <main>
+        <section class="ffm-mesh ffm-hero" style="padding:56px 80px 0;text-align:center">
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>After Effects · Premiere Pro</span>
+          <div class="ffm-d44" style="margin:20px auto 0;max-width:640px">FrameFlow plugini bitta bosishda o'rnang</div>
+          <div style="font-size:15px;color:var(--muted);max-width:520px;margin:14px auto 0;line-height:1.6">Katalog, import va AI Studio — to'g'ridan-to'g'ri NLE ichida. Hisobingiz va kreditlaringiz bilan.</div>
+          <div class="ffm-herocta" style="display:flex;gap:12px;justify-content:center;margin-top:26px">
+            <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>Plaginni yuklab olish (.zxp)</button>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:12px">v2.4.1 · ~18 MB · ZXP Installer yoki Creative Cloud</div>
+        </section>
+        <section class="ffm-sect" style="padding:56px 80px 0">
+          <div class="ffm-steps3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+            <sc-for list="{{ pluginSteps }}" as="s" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px">
+                <div style="font-family:'IBM Plex Mono',monospace;width:34px;height:34px;border-radius:10px;background:var(--limedim);color:var(--lime);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">{{ s.n }}</div>
+                <div style="font-weight:700;font-size:15px;margin-top:14px">{{ s.t }}</div>
+                <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:6px">{{ s.d }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;justify-content:center;margin:28px 0 90px;font-size:12px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:14px"></i>Barcha rejalar 14 kunlik pulni qaytarish kafolati bilan keladi</div>
+        </section>
+      </main>
+    </sc-if>
+
+    <!-- ============ FOOTER — faqat REAL havolalar ============ -->
+    <footer style="border-top:1px solid rgba(255,255,255,.06);background:var(--bg)">
+      <div class="ffm-sect" style="max-width:1280px;margin:0 auto;padding:56px 80px 34px">
+        <div class="ffm-foot" style="display:flex;gap:60px">
+          <div style="width:260px">
+            <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
+            <div style="font-size:12px;color:var(--muted2);line-height:1.6;margin-top:12px">Motion dizaynerlar va video ijodkorlar uchun shablonlar hamda AI studiya.</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">support@getframeflow.app</div>
+          </div>
+          <div class="ffm-footcols" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">MAHSULOT</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Shablonlar</a><a class="ff-link" onclick="{{ goAistudio }}" style="cursor:pointer">AI Studio</a><a class="ff-link" onclick="{{ goPlugin }}" style="cursor:pointer">Plagin</a><a class="ff-link" onclick="{{ goPricing }}" style="cursor:pointer">Narxlar</a></div>
+            </div>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">KATEGORIYALAR</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Video shablonlar</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Lower Thirds</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Transitions</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">LUT &amp; Presetlar</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">SFX</a></div>
+            </div>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">HUQUQIY</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><a class="ff-link" href="terms.html">Foydalanish shartlari</a><a class="ff-link" href="privacy.html">Maxfiylik siyosati</a><a class="ff-link" href="refund.html">Pulni qaytarish siyosati</a></div>
             </div>
           </div>
-          <sc-for list="{{ footerCols }}" as="col" hint-placeholder-count="4">
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--txt);margin-bottom:16px">{{ col.h }}</div>
-              <div style="display:flex;flex-direction:column;gap:11px">
-                <sc-for list="{{ col.items }}" as="it" hint-placeholder-count="5">
-                  <a class="ff-link" style="font-size:14px;cursor:pointer">{{ it }}</a>
-                </sc-for>
-              </div>
-            </div>
-          </sc-for>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:28px;border-top:1px solid var(--bd)">
-          <div style="font-size:13px;color:var(--txt3)">© 2026 FrameFlow. Barcha huquqlar himoyalangan.</div>
-          <div style="display:flex;gap:24px"><a class="ff-link" style="font-size:13px;cursor:pointer">Maxfiylik</a><a class="ff-link" style="font-size:13px;cursor:pointer">Shartlar</a><a class="ff-link" style="font-size:13px;cursor:pointer">Cookie</a></div>
+        <div style="display:flex;align-items:center;margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.05);flex-wrap:wrap;gap:12px">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)">© 2026 FrameFlow</span>
+          <span style="flex:1"></span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:13px"></i>Barcha rejalar 14 kunlik pulni qaytarish kafolati bilan keladi</span>
         </div>
       </div>
     </footer>
@@ -15378,7 +15282,7 @@ class Component extends DCLogic {
     navOpen: false,
     appMenuOpen: false,
     activeCat: 'Video shablonlar',
-    billing: 'yearly',
+    billing: 'monthly',
     openFaq: 0,
     credits: 0,
     plan: 'free',
@@ -15406,6 +15310,7 @@ class Component extends DCLogic {
     aiDuration: '',
     activeGenId: null,
     scrollP: 0,
+    scrollY: 0,
     statP: 0,
     animOk: false,
     tipIdx: 0,
@@ -15471,9 +15376,9 @@ class Component extends DCLogic {
   ];
 
   plans = [
-    { key: 'free', name: 'Bepul', pm: 0, py: 0, cr: '50 kredit/oy', pop: false, cta: 'Boshlash', feats: ['50 AI kredit oyiga', 'HD shablonlar kutubxonasi', 'Suvli belgi bilan eksport', '1 ta faol loyiha', 'Community qo\'llab-quvvatlash'] },
-    { key: 'pro', name: 'Pro', pm: 24, py: 19, cr: '1,500 kredit/oy', pop: true, cta: 'Pro ga o\'tish', feats: ['1,500 AI kredit oyiga', 'Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'Cheksiz loyihalar', 'AE / Premiere plagin', 'Tezkor generatsiya', 'Email qo\'llab-quvvatlash'] },
-    { key: 'studio', name: 'Studio', pm: 59, py: 49, cr: '6,000 kredit/oy', pop: false, cta: 'Studio tanlash', feats: ['6,000 AI kredit oyiga', 'Pro dagi barcha imkoniyatlar', 'Jamoaviy ish (5 a\'zo)', 'Brand kit va shablonlar', 'API kirish', 'Ustuvor render navbati', 'Shaxsiy menejer'] },
+    { key: 'free', name: 'Bepul', pm: 0, py: 0, cr: '50 kredit/oy', pop: false, cta: 'Boshlash', sub: 'Sinab ko\'rish uchun', feats: ['50 AI kredit oyiga', 'HD shablonlar kutubxonasi', 'Suvli belgi bilan eksport', '1 ta faol loyiha', 'Community qo\'llab-quvvatlash'], tf: ['HD shablonlar kutubxonasi', 'Suvli belgi bilan eksport', '1 ta faol loyiha'] },
+    { key: 'pro', name: 'Pro', pm: 24, py: 19, cr: '1,500 kredit/oy', pop: true, cta: 'Pro ga o\'tish', sub: 'Professionallar uchun', feats: ['1,500 AI kredit oyiga', 'Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'Cheksiz loyihalar', 'AE / Premiere plagin', 'Tezkor generatsiya', 'Email qo\'llab-quvvatlash'], tf: ['Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'AE / Premiere plagin'] },
+    { key: 'studio', name: 'Studio', pm: 59, py: 49, cr: '6,000 kredit/oy', pop: false, cta: 'Studio tanlash', sub: 'Jamoalar uchun', feats: ['6,000 AI kredit oyiga', 'Pro dagi barcha imkoniyatlar', 'Jamoaviy ish (5 a\'zo)', 'Brand kit va shablonlar', 'API kirish', 'Ustuvor render navbati', 'Shaxsiy menejer'], tf: ['Jamoaviy ish (5 a\'zo)', 'API kirish', 'Shaxsiy menejer'] },
   ];
 
   testimonials = [
@@ -15603,7 +15508,7 @@ class Component extends DCLogic {
         es.forEach(e => { if (e.isIntersecting) { const el = e.target; el.style.transitionDelay = (el.getAttribute('data-rv-delay') || 0) + 'ms'; el.classList.add('rv-in'); this._io.unobserve(el); if (el.hasAttribute('data-stats')) this.runStats(); } });
       }, { rootMargin: '0px 0px -7% 0px', threshold: 0.06 });
     } catch (e) { this._io = null; }
-    this._onScroll = () => { try { const d = document.documentElement; const p = d.scrollHeight > innerHeight ? (d.scrollTop || document.body.scrollTop) / (d.scrollHeight - innerHeight) : 0; this.setState({ scrollP: Math.max(0, Math.min(1, p)) }); } catch (e) {} };
+    this._onScroll = () => { try { const d = document.documentElement; const y = d.scrollTop || document.body.scrollTop; const p = d.scrollHeight > innerHeight ? y / (d.scrollHeight - innerHeight) : 0; this.setState({ scrollP: Math.max(0, Math.min(1, p)), scrollY: y }); } catch (e) {} };
     window.addEventListener('scroll', this._onScroll, { passive: true });
     this._tipT = setInterval(() => this.setState(s => ({ tipIdx: s.tipIdx + 1 })), 3400);
     // Arm reveal choreography ONLY once live rendering frames are confirmed (double rAF).
@@ -16009,13 +15914,19 @@ class Component extends DCLogic {
 
     const catTabs = this.categories.map(c => {
       const active = c === this.state.activeCat;
-      return { label: c, col: active ? '#fff' : 'var(--txt2)', bg: active ? 'var(--grad)' : 'var(--card)', bd: active ? 'transparent' : 'var(--bd)' };
+      return { label: c, col: active ? '#fff' : 'var(--txt2)', bg: active ? 'var(--grad)' : 'var(--card)', bd: active ? 'transparent' : 'var(--bd)', cls: active ? 'ffm-tag on' : 'ffm-tag' };
     });
 
-    const carousel = this.templates.filter(t => t.c === this.state.activeCat).map(t => ({ ...t, g: this.grad(t.h), author: this.authors[t.id % this.authors.length], price: t.pro ? 'Pro' : 'Bepul' }));
+    const carousel = this.templates.filter(t => t.c === this.state.activeCat).map(t => ({ ...t, g: this.grad(t.h), author: this.authors[t.id % this.authors.length], price: t.pro ? 'Pro' : 'Bepul', badge: t.pro ? 'PRO' : 'BEPUL', badgeCls: t.pro ? 'ffm-bgpro' : 'ffm-bgfree' }));
     const categoryTiles = this.categoryTiles.map(c => ({ ...c, g: this.grad(c.h) }));
 
-    const studioCards = this.studioCards.map(c => ({ ...c, g: this.grad(c.h) }));
+    const studioIcon = {
+      'Rasm yaratish': { ibg: 'var(--limedim)', icol: 'var(--lime)' },
+      'Video yaratish': { ibg: 'var(--seldim)', icol: 'var(--select)' },
+      'Voiceover': { ibg: 'var(--amberdim)', icol: 'var(--amber)' },
+      'SFX': { ibg: 'var(--reddim)', icol: '#FF9C8F' },
+    };
+    const studioCards = this.studioCards.map(c => ({ ...c, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)' }));
 
     const plansView = this.plans.map(p => {
       const price = this.state.billing === 'yearly' ? p.py : p.pm;
@@ -16029,12 +15940,16 @@ class Component extends DCLogic {
         btnBg: p.pop ? 'var(--grad)' : 'var(--card2)',
         btnCol: '#fff',
         btnBd: p.pop ? 'transparent' : 'var(--bd2)',
+        // Mockup (ffm) plan bindings
+        planCls: p.pop ? 'ffm-plan rec' : 'ffm-plan',
+        ctaCls: p.pop ? 'ffm-btn full' : 'ffm-btn2 full',
+        crCol: p.pop ? 'var(--lime)' : 'var(--muted)',
       };
     });
 
     const testimonials = this.testimonials.map(t => ({ ...t, g: this.grad(t.h) }));
 
-    const faqsView = this.faqs.map((f, i) => ({ ...f, idx: i, open: i === this.state.openFaq, icon: i === this.state.openFaq ? 'minus' : 'plus', bd: i === this.state.openFaq ? 'var(--bd2)' : 'var(--bd)' }));
+    const faqsView = this.faqs.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'rgba(194,240,74,.25)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)' }; });
 
     const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,rgba(194,240,74,.12),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
 
@@ -16140,6 +16055,13 @@ class Component extends DCLogic {
     const tipAnim = 'none';
     const pageAnim = 'none';
     const scrollPW = (this.state.scrollP * 100).toFixed(2) + '%';
+    // Marketing nav: landing = flat at top, frosted on scroll; pricing/plugin = always frosted.
+    const navFrost = (s !== 'landing') || (this.state.scrollY > 8);
+    const navBg = navFrost ? 'rgba(10,13,18,.72)' : 'transparent';
+    const navBorder = navFrost ? '1px solid rgba(255,255,255,.08)' : '1px solid transparent';
+    const navBlur = navFrost ? 'blur(44px)' : 'blur(0px)';
+    const navPricingCls = s === 'pricing' ? 'ffm-link on' : 'ffm-link';
+    const navPluginCls = s === 'plugin' ? 'ffm-link on' : 'ffm-link';
     const mq = this.templates.map(t => ({ ...t, g: this.grad(t.h) }));
     const marqA = mq.slice(0, 10).concat(mq.slice(0, 10));
     const marqB = mq.slice(10, 20).concat(mq.slice(10, 20));
@@ -16154,6 +16076,7 @@ class Component extends DCLogic {
     const plansRv = plansView.map((p, i) => ({ ...p, rd: i * 110 }));
     const testsRv = testimonials.map((t, i) => ({ ...t, rd: i * 110 }));
     return {
+      navBg, navBorder, navBlur, navPricingCls, navPluginCls,
       statsView, tipText, tipAnim, pageAnim, scrollPW, marqA, marqB, heroWords, howSteps,
       catTilesRv, studioRv, plansRv, testsRv,
       accentKey, animKey,
@@ -16168,6 +16091,7 @@ class Component extends DCLogic {
       catTabs, carousel, categoryTiles, studioCards, plansView, testimonials, faqsView, footerCols: this.footerCols, pluginSteps: this.pluginSteps, creditPacks,
       billMonthlyBg: bill === 'monthly' ? 'var(--card3)' : 'transparent', billMonthlyCol: bill === 'monthly' ? 'var(--txt)' : 'var(--txt2)',
       billYearlyBg: bill === 'yearly' ? 'var(--card3)' : 'transparent', billYearlyCol: bill === 'yearly' ? 'var(--txt)' : 'var(--txt2)',
+      billMonthlyCls: bill === 'monthly' ? 'on' : '', billYearlyCls: bill === 'yearly' ? 'on' : '',
       showCredits: this.state.showCredits,
       toast: this.state.toast,
       // Auth
