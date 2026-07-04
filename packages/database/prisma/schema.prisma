@@ -494,3 +494,27 @@ model ProviderSpend {
   @@index([provider])
   @@index([createdAt])
 }
+
+// ── Bosqich 4 #1 — REAL download/import tracking (zanjir yaxlitligi) ─────────
+// TemplateDownloadEvent: HAR haqiqiy pack/mogrt yuklab olish yoki import uchun
+// BITTA atomik qatorlangan hodisa (kim, qaysi katalog shabloni, qaysi contributor).
+// Contributor statistikasi endi shu REAL hodisalardan olinadi — ilgari forgeable
+// ContributorTemplate.downloadsCount/importsCount Int hisoblagichdan olinardi (o'lik
+// `Download` model esa hech qachon yaratilmasdi). FK-siz (CreditLedger/ProviderSpend
+// naqshi) — mavjud User/ContributorTemplate modellariga tegmaymiz. contributorId
+// denormalizatsiya qilingan (payout attribution + tez agregatsiya uchun).
+model TemplateDownloadEvent {
+  id            String   @id @default(cuid())
+  templateId    String
+  userId        String
+  contributorId String
+  kind          String   @default("download") // "download" | "import"
+  source        String   @default("plugin")   // "plugin" | "web"
+  createdAt     DateTime @default(now())
+
+  @@index([templateId])
+  @@index([userId])
+  @@index([contributorId])
+  @@index([createdAt])
+  @@index([templateId, kind])
+}

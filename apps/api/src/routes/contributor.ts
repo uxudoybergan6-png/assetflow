@@ -55,6 +55,7 @@ import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
 import { scanFileHash } from "../lib/malware-scan.js";
+import { realTemplateCounts, applyRealCounts } from "../lib/download-events.js";
 import crypto from "crypto";
 
 /** Moderatsiya natijasini contributor'ga email qiladi (xato bo'lsa jim o'tadi) */
@@ -313,7 +314,11 @@ contributorRouter.get("/admin/overview", requireAuth, requireAdmin, async (_req,
       rejected: statusCounts.REJECTED ?? 0,
       draft: statusCounts.DRAFT ?? 0,
     },
-    recent: await Promise.all(recent.map(withAssetFlags)),
+    recent: await (async () => {
+      const rows = await Promise.all(recent.map(withAssetFlags));
+      const counts = await realTemplateCounts(rows.map((r) => r.id));
+      return rows.map((r) => applyRealCounts(r, counts));
+    })(),
   });
 });
 
@@ -351,7 +356,10 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
     },
   });
 
-  res.json({ items: await Promise.all(items.map(withAssetFlags)) });
+  // Bosqich 4 #1: download/import sonini REAL hodisalardan olamiz (forgeable Int emas).
+  const rows = await Promise.all(items.map(withAssetFlags));
+  const counts = await realTemplateCounts(rows.map((r) => r.id));
+  res.json({ items: rows.map((r) => applyRealCounts(r, counts)) });
 });
 
 /** Har maydon uchun ruxsat etilgan kengaytmalar (server-side validatsiya) */

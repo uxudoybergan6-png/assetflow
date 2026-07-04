@@ -26,6 +26,7 @@ import {
   isPaidPlan,
 } from "../lib/plugin-profile.js";
 import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
+import { recordTemplateDownloadEvent } from "../lib/download-events.js";
 import {
   type TemplateAssetKind,
   findScenePreview,
@@ -258,6 +259,8 @@ async function guardDownloadable(
 pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   if (!(await guardDownloadable(req, res, templateId))) return;
+  // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (non-blocking).
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin" });
   const slug = sceneKey(String(req.params.slug));
 
   if (isS3Configured()) {
@@ -287,6 +290,8 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Req
 pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   if (!(await guardDownloadable(req, res, templateId))) return;
+  // Bosqich 4 #1: REAL yuklab olish hodisasi (non-blocking — fayl berishni to'smaydi).
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin" });
   await serveTemplateAsset(req, res, templateId, "pack");
 });
 
@@ -644,6 +649,8 @@ pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Reques
     return;
   }
   await bumpTemplateCounter(templateId, "importsCount");
+  // Bosqich 4 #1: REAL import hodisasi (non-blocking).
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin" });
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });
