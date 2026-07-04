@@ -14552,6 +14552,62 @@
   @media(max-width:480px){
     .ff .ffa-dash-qa{grid-template-columns:1fr!important}
   }
+
+  /* ═══════════ AI STUDIO — 3-panel workspace (mockup ai1..ai4 · 1:1, ffa- scoped) ═══════════ */
+  .ff .ffa-ai-work{display:flex;gap:12px;height:calc(100vh - 150px);min-height:560px}
+  /* tool rail (mockup 88px · icon over label · lime bar on active) */
+  .ff .ffa-ai-rail{width:88px;flex:none;background:var(--rail);border:1px solid var(--hair);border-radius:18px;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;overflow:hidden}
+  .ff .ffa-trail{display:flex;flex-direction:column;align-items:center;gap:5px;width:64px;padding:9px 0;border-radius:12px;background:none;border:none;color:var(--muted);font-family:inherit;cursor:pointer;position:relative;transition:background .15s,color .15s}
+  .ff .ffa-trail:hover{color:var(--text)}
+  .ff .ffa-trail.on{background:var(--f2);color:var(--text)}
+  .ff .ffa-trail.on::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--lime)}
+  .ff .ffa-trail i{font-size:20px}
+  .ff .ffa-trail.on i{color:var(--lime)}
+  .ff .ffa-trail span{font-size:9.5px;font-weight:600;letter-spacing:.02em}
+  .ff .ffa-trail-sp{flex:1;min-height:8px}
+  .ff .ffa-railcr{display:flex;flex-direction:column;align-items:center;gap:3px;width:64px;padding:11px 0;border-radius:12px;background:rgba(194,240,74,.08);border:1px solid rgba(194,240,74,.22);cursor:pointer;font-family:inherit;transition:background .15s}
+  .ff .ffa-railcr:hover{background:rgba(194,240,74,.14)}
+  /* composer (frosted middle panel) */
+  .ff .ffa-ai-composer{width:360px;flex:none;background:var(--surface);border:1px solid var(--hair2);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
+  .ff .ffa-cbody{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:18px}
+  .ff .ffa-csect{border-top:1px solid var(--hair);padding-top:16px}
+  /* setting option chips */
+  .ff .ffa-optrow{display:flex;gap:7px;flex-wrap:wrap}
+  .ff .ffa-opt{flex:1;min-width:52px;padding:10px 8px;border-radius:11px;background:var(--f2);border:1px solid var(--hair2);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;cursor:pointer;text-align:center;transition:.15s}
+  .ff .ffa-opt:hover{color:var(--text);border-color:var(--f3)}
+  .ff .ffa-opt.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
+  .ff .ffa-opt.wide{flex:none;min-width:0;padding:9px 13px}
+  .ff .ffa-modelbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 14px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:border-color .15s}
+  .ff .ffa-modelbtn:hover{border-color:var(--f3)}
+  /* canvas (results) */
+  .ff .ffa-ai-canvas{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--hair2);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
+  .ff .ffa-cdot{flex:1;min-height:0;position:relative;overflow-y:auto;padding:22px 24px;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:20px 20px}
+  .ff .ffa-cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .ff .ffa-ai-canvas.vid .ffa-cgrid{grid-template-columns:repeat(2,1fr);max-width:660px}
+  .ff .ffa-ai-canvas.aud .ffa-cgrid{grid-template-columns:1fr;max-width:520px}
+  .ff .ffa-res.g{background:none}
+  .ff .ffa-pendbar{position:absolute;left:0;bottom:0;height:3px;background:var(--lime);border-radius:0 3px 3px 0;animation:ffaProg 1.7s ease-in-out infinite}
+  @keyframes ffaProg{0%{width:10%}50%{width:80%}100%{width:10%}}
+  /* mobile tool tabs (stacked) */
+  .ff .ffa-ttabs{display:none}
+  @media(max-width:1120px){ .ff .ffa-ai-composer{width:322px} .ff .ffa-cgrid{grid-template-columns:repeat(2,1fr)} .ff .ffa-cnt{display:none} }
+  @media(max-width:820px){
+    .ff .ffa-ai-work{flex-direction:column;height:auto;min-height:0}
+    .ff .ffa-ai-rail{display:none}
+    .ff .ffa-ttabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 2px}
+    .ff .ffa-ai-canvas{order:1;width:100%;min-height:60vh}
+    .ff .ffa-ai-composer{order:2;width:100%}
+    .ff .ffa-cdot{max-height:none}
+  }
+  /* ── Account (mockup ac1/ac2 · 1:1) ── */
+  .ff .ffa-acc-tabs{display:flex;gap:0;border-bottom:1px solid var(--hair);margin-bottom:22px;overflow-x:auto}
+  .ff .ffa-acctab{padding:9px 4px;margin-right:20px;font-size:13.5px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;font-family:inherit;cursor:pointer;white-space:nowrap;margin-bottom:-1px;transition:color .15s}
+  .ff .ffa-acctab:hover{color:var(--text)}
+  .ff .ffa-acctab.on{color:var(--text);font-weight:600;border-bottom-color:var(--lime)}
+  .ff .ffa-acccard{background:var(--surface);border:1px solid var(--hair2);border-radius:14px}
+  .ff .ffa-lrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--f1)}
+  .ff .ffa-acc-2col{display:grid;grid-template-columns:1fr 280px;gap:22px;align-items:start}
+  @media(max-width:820px){ .ff .ffa-acc-2col{grid-template-columns:1fr} }
 </style>
 </helmet>
 
@@ -15066,200 +15122,248 @@
 
         <!-- AI STUDIO -->
         <sc-if value="{{ isAistudio }}" hint-placeholder-val="{{ false }}">
-          <div class="ff-ai-work" style="display:flex;gap:12px;height:calc(100vh - 158px);min-height:580px">
+          <div class="ffa-ai-work">
 
-            <!-- TOOL RAIL -->
-            <div data-rv="" class="ff-ai-rail" style="width:80px;flex:none;border-radius:20px;background:var(--panel);border:1px solid var(--bd);display:flex;flex-direction:column;padding:12px 9px;gap:6px;overflow:hidden">
-              <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="5">
-                <button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" title="{{ t.key }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border-radius:14px;background:{{ t.bg }};border:1px solid {{ t.bd }};color:{{ t.col }};font-family:inherit;cursor:pointer;transition:background .18s,transform .18s" style-hover="background:var(--card2);transform:translateY(-1px)">
-                  <span style="position:absolute;left:-9px;top:50%;transform:translateY(-50%);width:3px;height:22px;border-radius:0 3px 3px 0;background:{{ t.icol }};opacity:{{ t.dotOp }}"></span>
-                  <i class="ph-fill ph-{{ t.icon }}" style="font-size:21px;color:{{ t.icol }}"></i>
-                  <span style="font-size:9.5px;font-weight:600;line-height:1.15;text-align:center;letter-spacing:.02em">{{ t.short }}</span>
+            <!-- TOOL RAIL (mockup ai1 · 88px · icon over label · lime bar) -->
+            <div data-rv="" class="ffa-ai-rail">
+              <span class="ffa-logo" style="pointer-events:none;margin-bottom:6px"><span class="lb" style="width:30px;height:30px;font-size:15px"><i class="ph-fill ph-lightning"></i></span></span>
+              <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4">
+                <button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" title="{{ t.key }}" class="{{ t.cls }}">
+                  <i class="ph-fill ph-{{ t.icon }}"></i><span>{{ t.short }}</span>
                 </button>
               </sc-for>
-              <div style="flex:1;min-height:8px"></div>
-              <button onclick="{{ openCredits }}" title="Kredit qo'shish" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border-radius:14px;background:rgba(194,240,74,.08);border:1px solid rgba(194,240,74,.22);cursor:pointer;font-family:inherit;transition:background .18s" style-hover="background:rgba(194,240,74,.14)">
-                <i class="ph-fill ph-lightning" style="color:var(--acc);font-size:16px"></i>
-                <span style="font-size:10px;font-weight:700;color:var(--acc);font-family:'IBM Plex Mono',monospace">{{ creditsFmt }}</span>
-                <span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;color:var(--txt3)"><i class="ph-bold ph-plus" style="font-size:8px"></i>qo'shish</span>
+              <div class="ffa-trail-sp"></div>
+              <button onclick="{{ openCredits }}" title="Kredit qo'shish" class="ffa-railcr">
+                <i class="ph-fill ph-lightning" style="color:var(--lime);font-size:15px"></i>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--lime)">{{ creditsFmt }}</span>
+                <span style="display:inline-flex;align-items:center;gap:2px;font-size:8.5px;color:var(--muted)"><i class="ph-bold ph-plus" style="font-size:7px"></i>qo'shish</span>
               </button>
             </div>
 
-            <!-- CONTROLS -->
-            <div data-rv="" data-rv-delay="80" class="ff-ai-controls" style="width:372px;flex:none;border-radius:20px;background:var(--panel);border:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden">
-              <div style="padding:18px 20px 15px;border-bottom:1px solid var(--bd);background:linear-gradient(180deg,rgba(194,240,74,.045),transparent)">
+            <!-- COMPOSER (frosted · guided settings · cost clarity) -->
+            <div data-rv="" data-rv-delay="80" class="ffa-ai-composer">
+              <div style="padding:16px 18px 14px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,rgba(194,240,74,.05),transparent)">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-                  <div style="display:flex;align-items:center;gap:11px">
-                    <div style="width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 22px -8px var(--ring)"><i class="ph-fill ph-{{ toolIcon }}" style="color:#0E1400;font-size:18px"></i></div>
-                    <div><div style="font-size:16.5px;font-weight:600;letter-spacing:-.01em">{{ toolName }}</div><div style="font-size:11px;color:var(--txt3);font-family:'IBM Plex Mono',monospace;margin-top:2px">{{ modelName }}</div></div>
+                  <div style="display:flex;align-items:center;gap:11px;min-width:0">
+                    <div style="width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;flex:none;box-shadow:0 8px 22px -8px var(--ring)"><i class="ph-fill ph-{{ toolIcon }}" style="color:#0E1400;font-size:18px"></i></div>
+                    <div style="min-width:0"><div style="font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ toolName }}</div><div style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ modelName }}</div></div>
                   </div>
-                  <div style="display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:10px;background:rgba(194,240,74,.08);border:1px solid rgba(194,240,74,.22);font-size:12px;font-weight:700;color:var(--acc);font-family:'IBM Plex Mono',monospace;white-space:nowrap"><i class="ph-fill ph-lightning"></i>{{ costNow }}</div>
+                  <span class="ffa-credit" style="flex:none"><em>✦</em>{{ costNow }}</span>
                 </div>
               </div>
-              <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:20px">
+              <div class="ffa-cbody">
+                <!-- PROMPT -->
                 <div>
                   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-                    <span style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3)">Prompt</span>
-                    <span style="font-size:10.5px;color:var(--txt3);font-family:'IBM Plex Mono',monospace">{{ promptLen }}/800</span>
+                    <span class="ffa-flab" style="margin-bottom:0">PROMPT</span>
+                    <span style="font-size:10px;color:var(--muted2);font-family:'IBM Plex Mono',monospace">{{ promptLen }}/800</span>
                   </div>
                   <div style="position:relative">
-                    <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="Yaratmoqchi bo'lgan narsangizni tasvirlang... neon shahar, kechqurun yomg'ir, kinematik" style="width:100%;min-height:124px;resize:vertical;padding:14px;padding-bottom:46px;border-radius:14px;background:var(--bg);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;line-height:1.55;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></textarea>
-                    <button onclick="{{ improve }}" style="position:absolute;bottom:12px;right:12px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid rgba(194,240,74,.28);border-radius:9px;background:rgba(194,240,74,.08);color:var(--acc);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .18s" style-hover="background:rgba(194,240,74,.15)"><i class="ph-fill ph-sparkle"></i>Yaxshilash</button>
+                    <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="Nima qilish kerak? @ yozsangiz referenslar chiqadi…" style="width:100%;min-height:118px;resize:vertical;padding:12px 13px;padding-bottom:44px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-size:13.5px;line-height:1.55;outline:none;transition:border-color .18s" style-focus="border-color:rgba(194,240,74,.45)"></textarea>
+                    <button onclick="{{ improve }}" style="position:absolute;bottom:11px;right:11px;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid rgba(194,240,74,.28);border-radius:9px;background:rgba(194,240,74,.08);color:var(--lime);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;transition:background .18s" style-hover="background:rgba(194,240,74,.15)"><i class="ph-fill ph-sparkle" style="font-size:12px"></i>Yaxshilash</button>
                   </div>
                   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
                     <sc-for list="{{ promptChips }}" as="c" hint-placeholder-count="3">
-                      <button data-v="{{ c }}" onclick="{{ onChip }}" style="padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--bd);color:var(--txt2);font-family:inherit;font-size:11.5px;cursor:pointer;transition:.15s" style-hover="border-color:var(--bd2);color:var(--txt)">{{ c }}</button>
+                      <button data-v="{{ c }}" onclick="{{ onChip }}" style="padding:6px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--muted);font-family:inherit;font-size:11.5px;cursor:pointer;transition:.15s" style-hover="border-color:var(--f3);color:var(--text)">{{ c }}</button>
                     </sc-for>
                   </div>
                 </div>
-                <div style="border-top:1px solid var(--bd);padding-top:18px">
-                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Model</div>
+                <!-- MODEL -->
+                <div class="ffa-csect">
+                  <span class="ffa-flab">MODEL</span>
                   <div style="position:relative">
-                    <button onclick="{{ toggleModel }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:border-color .18s" style-hover="border-color:var(--bd2)"><span style="display:inline-flex;align-items:center;gap:9px"><i class="ph-fill ph-cube" style="color:var(--acc)"></i>{{ modelName }}</span><i class="ph ph-caret-down" style="font-size:13px;color:var(--txt3)"></i></button>
+                    <button onclick="{{ toggleModel }}" class="ffa-modelbtn"><span style="display:inline-flex;align-items:center;gap:9px;min-width:0"><i class="ph-fill ph-cube" style="color:var(--lime)"></i><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ modelName }}</span></span><i class="ph ph-caret-down" style="font-size:13px;color:var(--muted)"></i></button>
                     <sc-if value="{{ modelOpen }}" hint-placeholder-val="{{ false }}">
-                      <div style="position:absolute;top:100%;left:0;margin-top:6px;width:100%;border-radius:13px;background:var(--panel2);border:1px solid var(--bd2);box-shadow:0 18px 44px -12px rgba(0,0,0,.75);overflow:hidden;z-index:20">
-                        <sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="4"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;background:none;border:none;color:var(--txt);font-family:inherit;font-size:13px;cursor:pointer;text-align:left;transition:background .12s" style-hover="background:var(--card2)">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--acc)"></i></sc-if></button></sc-for>
+                      <div style="position:absolute;top:100%;left:0;margin-top:6px;width:100%;border-radius:13px;background:var(--pop);border:1px solid rgba(255,255,255,.09);box-shadow:0 18px 44px -12px rgba(0,0,0,.75);overflow:hidden;z-index:20">
+                        <sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="4"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;text-align:left;transition:background .12s" style-hover="background:var(--f1)">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--lime)"></i></sc-if></button></sc-for>
                       </div>
                     </sc-if>
                   </div>
                 </div>
-                <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
-                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">O'lcham</div>
-                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div>
+                <!-- NISBAT (aspect) -->
+                <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="ffa-csect">
+                  <span class="ffa-flab">NISBAT</span>
+                  <div class="ffa-optrow"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
                 </div></sc-if>
-                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
-                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Sifat</div>
-                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div>
+                <!-- SIFAT -->
+                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
+                  <span class="ffa-flab">SIFAT</span>
+                  <div class="ffa-optrow"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
                 </div></sc-if>
-                <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
-                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Rezolyutsiya</div>
-                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div>
+                <!-- REZOLYUTSIYA -->
+                <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
+                  <span class="ffa-flab">REZOLYUTSIYA</span>
+                  <div class="ffa-optrow"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
                 </div></sc-if>
-                <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px">
-                  <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Ovoz</div>
-                  <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ voicesView }}" as="z" hint-placeholder-count="6"><button data-v="{{ z.v }}" onclick="{{ onVoice }}" style="padding:9px 13px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer">{{ z.label }}</button></sc-for></div>
+                <!-- DAVOMIYLIK -->
+                <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
+                  <span class="ffa-flab">DAVOMIYLIK</span>
+                  <div class="ffa-optrow"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
                 </div></sc-if>
-                <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid var(--bd);padding-top:18px"><div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Davomiylik</div><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" style="flex:1;min-width:56px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div></div></sc-if>
-                <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><div style="border-top:1px solid var(--bd);padding-top:18px"><div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin-bottom:9px">Soni</div><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" style="flex:1;min-width:44px;padding:11px 8px;border-radius:11px;background:{{ z.bg }};border:1px solid var(--bd);color:{{ z.col }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace">{{ z.v }}</button></sc-for></div></div></sc-if>
+                <!-- OVOZ -->
+                <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="ffa-csect">
+                  <span class="ffa-flab">OVOZ</span>
+                  <div class="ffa-optrow"><sc-for list="{{ voicesView }}" as="z" hint-placeholder-count="6"><button data-v="{{ z.v }}" onclick="{{ onVoice }}" class="{{ z.cls }} wide">{{ z.label }}</button></sc-for></div>
+                </div></sc-if>
+                <!-- SONI -->
+                <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><div class="ffa-csect">
+                  <span class="ffa-flab">SONI</span>
+                  <div class="ffa-optrow"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" class="{{ z.cls }}">{{ z.v }}</button></sc-for></div>
+                </div></sc-if>
               </div>
-              <div style="padding:15px 20px 18px;border-top:1px solid var(--bd);background:linear-gradient(0deg,rgba(194,240,74,.045),transparent)">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="font-size:12px;color:var(--txt3)">{{ costLine }}</span><span style="font-size:12.5px;font-weight:700;color:var(--acc);font-family:'IBM Plex Mono',monospace">= {{ costNow }} kredit</span></div>
-                <button onclick="{{ doGenerate }}" style="display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px;border:none;border-radius:14px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 14px 34px -10px var(--ring);transition:transform .18s,box-shadow .18s" style-hover="transform:translateY(-2px);box-shadow:0 20px 44px -10px var(--ring)"><i class="ph-bold ph-lightning"></i>Yaratish</button>
+              <!-- COST CLARITY + generate -->
+              <div style="padding:14px 18px 16px;border-top:1px solid var(--hair);background:linear-gradient(0deg,rgba(194,240,74,.05),transparent)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <span style="font-size:11.5px;color:var(--muted)">{{ costLine }}</span>
+                  <span style="font-size:12.5px;font-weight:700;color:var(--lime);font-family:'IBM Plex Mono',monospace">= ✦ {{ costNow }}</span>
+                </div>
+                <button onclick="{{ doGenerate }}" class="ffm-btn full lg" style="border-radius:13px"><i class="ph-fill ph-sparkle" style="font-size:15px"></i>Yaratish<span class="bc">✦ {{ costNow }}</span></button>
+                <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:9px;font-size:10.5px;color:var(--muted2);font-family:'IBM Plex Mono',monospace"><i class="ph ph-wallet" style="font-size:12px"></i>Balans: ✦ {{ creditsFmt }}</div>
               </div>
             </div>
 
-            <!-- CANVAS -->
-            <div data-rv="" data-rv-delay="160" class="ff-ai-canvas" style="flex:1;min-width:0;border-radius:20px;background:var(--bg2);border:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;border-bottom:1px solid var(--bd);background:var(--panel)">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0">
-                  <i class="ph-fill ph-monitor-play" style="color:var(--acc);font-size:17px"></i><span style="font-size:14.5px;font-weight:600;white-space:nowrap">Ishchi maydon</span>
-                  <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ true }}"><span class="ff-canvas-chip" style="padding:4px 9px;border-radius:7px;background:var(--card2);border:1px solid var(--bd);font-size:10.5px;color:var(--txt2);font-family:'IBM Plex Mono',monospace;white-space:nowrap">{{ activeView.tool }}</span></sc-if>
-                </div>
-                <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ true }}">
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <button onclick="{{ useAsRef }}" title="Reference sifatida ishlatish" style="display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border:1px solid var(--bd2);border-radius:10px;background:var(--card2);color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .15s" style-hover="background:var(--card3)"><i class="ph ph-image"></i>Reference</button>
-                    <button onclick="{{ delActive }}" title="O'chirish" style="width:35px;height:35px;border:1px solid var(--bd2);border-radius:10px;background:var(--card2);color:#ff6b6b;cursor:pointer;display:grid;place-items:center;transition:background .15s" style-hover="background:rgba(255,107,107,.12)"><i class="ph ph-trash"></i></button>
-                    <button onclick="{{ downloadGen }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border:none;border-radius:10px;background:var(--grad);color:#0E1400;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 8px 20px -8px var(--ring);transition:transform .15s;white-space:nowrap" style-hover="transform:translateY(-1px)"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button>
-                  </div>
-                </sc-if>
+            <!-- CANVAS (results · dotted grid · pending-glow · lightbox) -->
+            <div data-rv="" data-rv-delay="160" class="{{ canvasCls }}">
+              <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--hair);background:rgba(10,13,18,.55)">
+                <span style="font-size:15px;font-weight:700">{{ toolName }}</span>
+                <span style="padding:4px 10px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:'IBM Plex Mono',monospace;font-size:10px;color:#B7C0CE;white-space:nowrap">{{ modelName }}</span>
+                <span style="flex:1"></span>
+                <span class="ffa-cnt" style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap;flex:none">{{ genCount }} ta natija</span>
               </div>
-              <div style="flex:1;min-height:0;position:relative;padding:26px;display:grid;place-items:center;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.4px);background-size:24px 24px">
-                <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(60% 55% at 50% 42%,rgba(194,240,74,.05),transparent 70%);pointer-events:none"></div>
-                <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
-                  <div style="width:min(100%,460px);aspect-ratio:1;border-radius:20px;background:linear-gradient(100deg,var(--card) 30%,var(--card3) 50%,var(--card) 70%);background-size:200% 100%;animation:ffSkel 1.3s linear infinite;border:1px solid var(--bd);display:grid;place-items:center">
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:13px;color:var(--txt2)"><i class="ph ph-spinner" style="font-size:32px;color:var(--acc);animation:ffSpin 1s linear infinite"></i><span style="font-size:13.5px;font-weight:600">Yaratilmoqda…</span><span style="font-size:11px;color:var(--txt3);font-family:'IBM Plex Mono',monospace">{{ modelName }}</span></div>
-                  </div>
-                </sc-if>
-                <sc-if value="{{ showActive }}" hint-placeholder-val="{{ true }}">
-                  <div style="position:relative;width:min(100%,520px)">
-                    <div style="position:relative;aspect-ratio:{{ activeAspect }};border-radius:20px;overflow:hidden;border:1px solid var(--bd2);box-shadow:0 50px 110px -35px rgba(0,0,0,.85),0 0 90px -30px var(--ring);background:{{ activeView.g }}">
-                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.52))"></div>
-                      <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ videoUrl }}" preload="none" controls="" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
-                      <sc-if value="{{ isAudioActive }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2.5px;padding:0 26px 40px"><sc-for list="{{ waveBars }}" as="w" hint-placeholder-count="46"><span style="flex:1;height:{{ w.h }}%;max-height:78%;border-radius:3px;background:rgba(194,240,74,.55)"></span></sc-for></div><audio src="{{ audioUrl }}" preload="none" controls="" style="position:absolute;left:14px;right:14px;bottom:56px;width:calc(100% - 28px)"></audio></sc-if>
-                      <div style="position:absolute;left:18px;right:18px;bottom:15px">
-                        <div style="font-size:15.5px;font-weight:600;color:#fff;letter-spacing:-.01em">{{ activeView.label }}</div>
-                        <div style="display:flex;align-items:center;gap:8px;margin-top:5px;font-size:11px;color:rgba(255,255,255,.65);font-family:'IBM Plex Mono',monospace"><span>{{ activeView.tool }}</span><span>·</span><span>{{ modelName }}</span><span>·</span><span>4K</span></div>
-                      </div>
-                    </div>
-                  </div>
-                </sc-if>
-                <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
-                  <div style="text-align:center;color:var(--txt3);max-width:320px;border:1.5px dashed var(--bd2);border-radius:22px;padding:44px 30px">
-                    <div style="width:66px;height:66px;border-radius:19px;background:var(--card2);border:1px solid var(--bd);display:grid;place-items:center;margin:0 auto 16px"><i class="ph ph-sparkle" style="font-size:28px;color:var(--acc)"></i></div>
-                    <div style="font-size:16.5px;font-weight:600;color:var(--txt2);margin-bottom:6px">Hali generatsiya yo'q</div>
-                    <div style="font-size:13.5px;line-height:1.55">Promptni to'ldiring va <strong style="color:var(--acc);font-weight:600">Yaratish</strong> tugmasini bosing — natija shu yerda ochiladi</div>
-                  </div>
-                </sc-if>
+              <!-- mobile tool tabs -->
+              <div class="ffa-ttabs" style="padding:12px 16px 0">
+                <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.tagCls }}"><i class="ph-fill ph-{{ t.icon }}" style="font-size:12px"></i>{{ t.short }}</button></sc-for>
               </div>
-              <div style="border-top:1px solid var(--bd);padding:13px 16px;background:var(--panel)">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px"><span style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3)">So'nggi generatsiyalar</span><span style="font-size:11.5px;color:var(--txt3);font-family:'IBM Plex Mono',monospace">{{ genCount }} ta</span></div>
-                <div class="ff-row" style="display:flex;gap:10px;overflow-x:auto;padding:2px">
-                  <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="4"><div style="flex:0 0 88px;width:88px;height:88px;border-radius:13px;background:linear-gradient(100deg,var(--card) 30%,var(--card3) 50%,var(--card) 70%);background-size:200% 100%;animation:ffSkel 1.3s linear infinite;border:1px solid var(--bd)"></div></sc-for></sc-if>
-                  <sc-for list="{{ filmstrip }}" as="g" hint-placeholder-count="8">
-                    <div data-id="{{ g.id }}" onclick="{{ pickActive }}" style="position:relative;flex:0 0 88px;width:88px;height:88px;border-radius:13px;overflow:hidden;background:{{ g.g }};cursor:pointer;border:2px solid {{ g.ring }};transition:transform .18s" style-hover="transform:translateY(-3px)">
-                      <div style="position:absolute;top:5px;left:5px;display:inline-flex;align-items:center;padding:2.5px 5.5px;border-radius:6px;background:rgba(0,0,0,.5);font-size:9px;color:#fff"><i class="ph-fill ph-{{ g.tIcon }}"></i></div>
-                      <sc-if value="{{ g.active }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;right:5px;bottom:5px;width:16px;height:16px;border-radius:50%;background:var(--acc);display:grid;place-items:center"><i class="ph-bold ph-check" style="color:#0E1400;font-size:9px"></i></div></sc-if>
+              <div class="ffa-cdot">
+                <!-- RESULTS GRID -->
+                <div class="ffa-cgrid">
+                  <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
+                    <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="1">
+                      <div class="ffa-res pend" style="aspect-ratio:{{ pendAspect }}"><i class="ph ph-circle-notch ffm-spin" style="font-size:24px;color:var(--lime)"></i><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--lime)">Ishlanmoqda…</div><div class="ffa-pendbar"></div></div>
+                    </sc-for>
+                  </sc-if>
+                  <sc-for list="{{ genView }}" as="g" hint-placeholder-count="6">
+                    <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ffa-res g" style="aspect-ratio:{{ g.asp }};background:{{ g.g }};cursor:pointer">
+                      <span class="rtag">{{ g.rtag }}</span>
+                      <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:rgba(255,255,255,.85)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
+                      <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--lime)"><i class="ph-fill ph-waveform"></i></span></sc-if>
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(6,8,11,.55))"></div>
                     </div>
                   </sc-for>
                 </div>
+                <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ true }}"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">{{ partiyaLine }}</div></sc-if>
+                <!-- EMPTY -->
+                <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;inset:0;display:grid;place-items:center;padding:26px">
+                    <div style="text-align:center;color:var(--muted);max-width:340px;border:1.5px dashed rgba(255,255,255,.14);border-radius:20px;padding:40px 30px">
+                      <div style="width:62px;height:62px;border-radius:18px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 15px"><i class="ph ph-sparkle" style="font-size:26px;color:var(--lime)"></i></div>
+                      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Hali generatsiya yo'q</div>
+                      <div style="font-size:13px;line-height:1.55">Promptni to'ldiring va <strong style="color:var(--lime);font-weight:600">Yaratish</strong> tugmasini bosing — natija shu yerda ochiladi</div>
+                    </div>
+                  </div>
+                </sc-if>
               </div>
             </div>
           </div>
         </sc-if>
 
-        <!-- ACCOUNT -->
+        <!-- ACCOUNT (mockup ac1/ac2 · Profil · Obuna · Kreditlar · Yuklamalar) -->
         <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-bottom:22px"><h1 style="font-size:28px;font-weight:600;letter-spacing:-.025em;margin:0 0 6px">Hisob va sozlamalar</h1><p style="font-size:15px;color:var(--txt2);margin:0">Profilingiz, obuna va kredit tarixini boshqaring</p></div>
-          <div style="display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:26px;overflow-x:auto" class="ff-row">
-            <sc-for list="{{ accView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onAccTab }}" style="white-space:nowrap;padding:12px 16px;background:none;border:none;border-bottom:2px solid {{ x.bd }};color:{{ x.col }};font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;margin-bottom:-1px">{{ x.v }}</button></sc-for>
+          <div style="margin-bottom:18px"><div style="font-weight:700;font-size:22px;letter-spacing:-.015em">Hisob</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Profilingiz, obuna, kreditlar va yuklamalarni boshqaring</div></div>
+          <div class="ffa-acc-tabs">
+            <sc-for list="{{ accView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onAccTab }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for>
           </div>
+
+          <!-- PROFIL -->
           <sc-if value="{{ accProfile }}" hint-placeholder-val="{{ true }}">
-            <div class="ff-plugin-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:920px">
-              <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);padding:24px">
-                <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(155deg,#222a35,#12161d);display:grid;place-items:center;font-size:22px;font-weight:600;color:#fff">{{ userInitials }}</div><div><div style="font-size:18px;font-weight:600">{{ userName }}</div><div style="font-size:13.5px;color:var(--txt2)">{{ userEmail }}</div></div></div>
+            <div class="ffa-acc-2col" style="max-width:920px">
+              <div class="ffa-acccard" style="padding:24px">
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);display:grid;place-items:center;font-size:22px;font-weight:700;color:#fff;flex:none">{{ userInitials }}</div><div style="min-width:0"><div style="font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userEmail }}</div></div></div>
                 <div style="display:flex;flex-direction:column;gap:14px">
-                  <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">To'liq ism</div><input value="{{ accName }}" oninput="{{ onAccName }}" placeholder="Ismingiz" style="width:100%;height:42px;padding:0 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt);font-family:inherit;font-size:14px;outline:none"></div>
-                  <div><div style="font-size:12px;color:var(--txt3);margin-bottom:6px">Email</div><input value="{{ userEmail }}" readonly="" style="width:100%;height:42px;padding:0 13px;border-radius:10px;background:var(--bg2);border:1px solid var(--bd);color:var(--txt3);font-family:inherit;font-size:14px;outline:none"></div>
-                  <button onclick="{{ saveAcc }}" style="margin-top:4px;align-self:flex-start;padding:11px 20px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Saqlash</button>
+                  <div><span class="ffa-flab">TO'LIQ ISM</span><input value="{{ accName }}" oninput="{{ onAccName }}" placeholder="Ismingiz" class="ffa-field"></div>
+                  <div><span class="ffa-flab">EMAIL</span><input value="{{ userEmail }}" readonly="" class="ffa-field" style="color:var(--muted2)"></div>
+                  <button onclick="{{ saveAcc }}" class="ffm-btn" style="align-self:flex-start;margin-top:4px">Saqlash</button>
                 </div>
               </div>
-              <div style="display:flex;flex-direction:column;gap:20px">
-                <div style="border-radius:18px;background:linear-gradient(135deg,rgba(194,240,74,.14),var(--card));border:1px solid var(--bd2);padding:24px">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:var(--txt2)">Joriy reja</span><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:11.5px;font-weight:700"><i class="ph-fill ph-crown"></i>{{ planLabel }}</span></div>
-                  <div style="font-size:24px;font-weight:600;margin-bottom:4px">{{ planLabel }}</div>
-                  <div style="font-size:13.5px;color:var(--txt2);margin-bottom:18px">{{ planNote }}</div>
-                  <div style="display:flex;gap:10px"><button onclick="{{ goPricing }}" style="padding:10px 18px;border:none;border-radius:10px;background:var(--card3);color:var(--txt);font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer">Rejani o'zgartirish</button></div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="border-radius:14px;background:linear-gradient(120deg,rgba(194,240,74,.1),transparent 65%),var(--surface);border:1px solid rgba(194,240,74,.2);padding:20px">
+                  <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);margin-bottom:8px"><i class="ph-fill ph-crown" style="color:var(--lime)"></i>Joriy reja</div>
+                  <div style="font-size:22px;font-weight:700;margin-bottom:3px">{{ planLabel }}</div>
+                  <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">{{ planNote }}</div>
+                  <button onclick="{{ goPricing }}" class="ffm-btn2 sm">Rejani o'zgartirish</button>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-                  <div style="border-radius:16px;background:var(--card);border:1px solid var(--bd);padding:20px"><div style="font-size:13px;color:var(--txt2);margin-bottom:6px">Kredit balansi</div><div style="font-size:26px;font-weight:600;color:var(--teal2)">{{ creditsFmt }}</div></div>
-                  <div style="border-radius:16px;background:var(--card);border:1px solid var(--bd);padding:20px"><div style="font-size:13px;color:var(--txt2);margin-bottom:6px">Yuklamalar (oy)</div><div style="font-size:26px;font-weight:600">{{ downloadsMonth }}</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Kredit balansi</div><div style="font-size:24px;font-weight:700;color:var(--lime);font-family:'IBM Plex Mono',monospace">✦ {{ creditsFmt }}</div></div>
+                  <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Yuklamalar (oy)</div><div style="font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace">{{ downloadsMonth }}</div></div>
                 </div>
               </div>
             </div>
           </sc-if>
+
+          <!-- OBUNA -->
           <sc-if value="{{ accObuna }}" hint-placeholder-val="{{ false }}">
-            <div class="ff-price-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px"><sc-for list="{{ plansCur }}" as="p" hint-placeholder-count="3"><div style="position:relative;border-radius:22px;background:{{ p.cardBg }};border:1px solid {{ p.cardBd }};padding:30px;{{ p.cardExtra }}"><sc-if value="{{ p.cur }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:var(--grad);color:#0E1400;font-size:12px;font-weight:700">Joriy reja</div></sc-if><div style="font-size:16px;font-weight:600;color:{{ p.nameCol }};margin-bottom:6px">{{ p.name }}</div><div style="display:flex;align-items:baseline;gap:4px;margin-bottom:18px"><span style="font-size:40px;font-weight:600;letter-spacing:-.03em">${{ p.price }}</span><span style="font-size:14px;color:var(--txt3)">/oy</span></div><button onclick="{{ goPricing }}" style="width:100%;padding:12px;border-radius:12px;background:{{ p.btnBg }};color:{{ p.btnCol }};font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:20px;border:1px solid {{ p.btnBd }}">{{ p.cta }}</button><div style="display:flex;flex-direction:column;gap:11px"><sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="5"><div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:var(--txt2);line-height:1.4"><i class="ph-bold ph-check" style="color:var(--teal);font-size:14px;margin-top:2px;flex:none"></i>{{ f }}</div></sc-for></div></div></sc-for></div>
-          </sc-if>
-          <sc-if value="{{ accKredit }}" hint-placeholder-val="{{ false }}">
             <div style="max-width:720px">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;border-radius:18px;background:linear-gradient(135deg,rgba(194,240,74,.12),var(--card));border:1px solid var(--bd2);padding:24px;margin-bottom:20px">
-                <div><div style="font-size:13px;color:var(--txt2);margin-bottom:4px">Mavjud kreditlar</div><div style="font-size:32px;font-weight:600;color:var(--teal2)">⚡ {{ creditsFmt }}</div></div>
-                <button onclick="{{ openCredits }}" style="display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border:none;border-radius:12px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14.5px;cursor:pointer"><i class="ph-bold ph-plus"></i>Kredit qo'shish</button>
+              <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(120deg,rgba(194,240,74,.08),transparent),var(--surface);border:1px solid rgba(194,240,74,.2);border-radius:14px;padding:18px">
+                <span style="width:44px;height:44px;border-radius:12px;background:var(--limedim);color:var(--lime);display:inline-flex;align-items:center;justify-content:center;font-size:20px;flex:none"><i class="ph-fill ph-crown"></i></span>
+                <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:16px">{{ planLabel }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px">{{ planPriceLabel }} · {{ planNote }}</div></div>
+                <button onclick="{{ goPricing }}" class="ffm-btn2 sm">Obunani boshqarish</button>
               </div>
-              <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);overflow:hidden">
-                <div style="padding:16px 20px;border-bottom:1px solid var(--bd);font-size:14px;font-weight:600">Tranzaksiyalar tarixi</div>
-                <sc-for list="{{ creditHistoryView }}" as="h" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:14px;padding:15px 20px;border-bottom:1px solid var(--bd)"><div style="width:40px;height:40px;border-radius:11px;background:{{ h.ibg }};display:grid;place-items:center;flex:none"><i class="ph-fill ph-{{ h.icon }}" style="color:{{ h.icol }};font-size:18px"></i></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500">{{ h.t }}</div><div style="font-size:12px;color:var(--txt3);margin-top:2px">{{ h.d }}</div></div><div style="font-size:15px;font-weight:700;color:{{ h.col }}">{{ h.amt }}</div></div></sc-for>
-                <sc-if value="{{ noCreditHistory }}" hint-placeholder-val="{{ false }}"><div style="padding:34px 20px;text-align:center;font-size:13.5px;color:var(--txt3)">Hozircha tranzaksiya yo'q — AI Studio'da generatsiya qiling</div></sc-if>
+              <div style="display:flex;gap:12px;margin-top:16px">
+                <div class="ffa-acccard" style="flex:1;padding:14px"><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:.08em">OYLIK KREDIT</div><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;margin-top:4px">{{ creditMaxFmt }}</div></div>
+                <div class="ffa-acccard" style="flex:1;padding:14px"><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:.08em">YUKLAMALAR</div><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;margin-top:4px">{{ downloadsLimitLabel }}</div></div>
+                <div class="ffa-acccard" style="flex:1;padding:14px"><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted);letter-spacing:.08em">EKSPORT</div><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;margin-top:4px">{{ exportLabel }}</div></div>
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:16px;display:flex;align-items:center;gap:7px"><i class="ph ph-shield-check" style="color:var(--lime)"></i>Paddle orqali xavfsiz to'lov · istalgan vaqtda bekor qilinadi</div>
+            </div>
+          </sc-if>
+
+          <!-- KREDITLAR -->
+          <sc-if value="{{ accKredit }}" hint-placeholder-val="{{ false }}">
+            <div class="ffa-acc-2col" style="max-width:1000px">
+              <div>
+                <div style="background:linear-gradient(120deg,rgba(194,240,74,.1),transparent 65%),var(--surface);border:1px solid rgba(194,240,74,.2);border-radius:16px;padding:22px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted)">JORIY BALANS</div>
+                  <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:40px;letter-spacing:-.02em;color:var(--lime)">✦ {{ creditsFmt }}</span><span style="font-size:13px;color:var(--muted)">kredit</span></div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);margin-top:4px">{{ creditRefreshNote }}</div>
+                  <button onclick="{{ openCredits }}" class="ffm-btn" style="margin-top:16px"><i class="ph-bold ph-plus" style="font-size:14px"></i>Kredit qo'shish</button>
+                </div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);margin:24px 0 12px">TRANZAKSIYA TARIXI</div>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ creditHistoryView }}" as="h" hint-placeholder-count="4"><div class="ffa-lrow"><span style="width:30px;height:30px;border-radius:8px;background:{{ h.ibg }};color:{{ h.icol }};display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex:none"><i class="ph-fill ph-{{ h.icon }}"></i></span><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.t }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ h.d }}</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ h.col }}">{{ h.amt }}</span></div></sc-for>
+                  <sc-if value="{{ noCreditHistory }}" hint-placeholder-val="{{ false }}"><div style="padding:30px 16px;text-align:center;font-size:13px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:12px">Hozircha tranzaksiya yo'q — AI Studio'da generatsiya qiling</div></sc-if>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);margin-bottom:12px">KREDIT PAKETLARI</div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ creditPacksAcc }}" as="c" hint-placeholder-count="3">
+                    <div style="background:{{ c.cardBg }};border:1px solid {{ c.cardBd }};border-radius:12px;padding:15px;display:flex;align-items:center;gap:12px;position:relative">
+                      <sc-if value="{{ c.pop }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-8px;left:14px;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:var(--lime);color:var(--onlime)">ENG MASHHUR</span></sc-if>
+                      <div style="min-width:0"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px">✦ {{ c.label }}</div><div style="font-size:10.5px;color:{{ c.subCol }}">{{ c.sub }}</div></div>
+                      <span style="flex:1"></span>
+                      <button onclick="{{ openCredits }}" class="{{ c.btnCls }}">${{ c.p }}</button>
+                    </div>
+                  </sc-for>
+                </div>
               </div>
             </div>
           </sc-if>
+
+          <!-- YUKLAMALAR -->
           <sc-if value="{{ accYuklama }}" hint-placeholder-val="{{ false }}">
-            <div style="border-radius:18px;background:var(--card);border:1px solid var(--bd);overflow:hidden;max-width:720px">
-              <div style="padding:16px 20px;border-bottom:1px solid var(--bd);font-size:14px;font-weight:600">Yuklab olingan shablonlar</div>
-              <div style="padding:30px 20px;text-align:center">
-                <div style="font-size:14px;color:var(--txt2);margin-bottom:4px">Bu oyda {{ downloadsMonth }} ta yuklama</div>
-                <div style="font-size:12.5px;color:var(--txt3)">Batafsil yuklamalar tarixi tez orada qo'shiladi</div>
-              </div>
+            <div style="max-width:720px">
+              <div style="display:flex;align-items:baseline;margin-bottom:14px"><span style="font-weight:600;font-size:15px">Yuklab olingan shablonlar</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-left:8px">Bu oy: {{ downloadsMonth }}</span></div>
+              <sc-if value="{{ hasDownloads }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ downloadHistoryView }}" as="d" hint-placeholder-count="3"><div class="ffa-lrow"><div style="width:52px;height:34px;border-radius:6px;background:{{ d.g }};flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ d.meta }}</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ d.when }}</span><i class="ph ph-download-simple" style="font-size:15px;color:var(--muted)"></i></div></sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noDownloads }}" hint-placeholder-val="{{ true }}"><div style="padding:40px 20px;text-align:center;border:1px dashed var(--hair2);border-radius:14px;background:var(--surface)">
+                <div style="width:52px;height:52px;border-radius:15px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 14px"><i class="ph ph-download-simple" style="font-size:22px;color:var(--muted)"></i></div>
+                <div style="font-size:14px;font-weight:600;margin-bottom:5px">Hali yuklama yo'q</div>
+                <div style="font-size:12.5px;color:var(--muted);line-height:1.5">Shablonlar marketpleysidan yuklab oling — yuklamalaringiz shu yerda ko'rinadi</div>
+                <button onclick="{{ goTemplates }}" class="ffm-btn2 sm" style="margin-top:16px"><i class="ph ph-stack" style="font-size:14px"></i>Shablonlarni ko'rish</button>
+              </div></sc-if>
             </div>
           </sc-if>
         </sc-if>
@@ -15439,17 +15543,18 @@
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
       <div onclick="{{ stop }}" style="width:100%;max-width:620px">
-        <div style="position:relative;aspect-ratio:1;border-radius:20px;overflow:hidden;background:{{ lb.g }};border:1px solid var(--bd2);box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="position:relative;aspect-ratio:{{ lb.asp }};border-radius:20px;overflow:hidden;background:{{ lb.g }};border:1px solid var(--hair2);box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" preload="none" controls="" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
           <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><audio src="{{ lb.url }}" preload="none" controls="" style="position:absolute;left:14px;right:14px;bottom:14px;width:calc(100% - 28px)"></audio></sc-if>
           <button onclick="{{ closeLightbox }}" style="position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px"><i class="ph ph-x"></i></button>
-          <div style="position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-size:11.5px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tool }}</div>
+          <div style="position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tag }}</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;flex-wrap:wrap">
-          <div style="min-width:0"><div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lb.label }}</div><div style="font-size:13px;color:var(--txt3);margin-top:2px">{{ lb.tool }}</div></div>
-          <div style="display:flex;gap:10px">
-            <button onclick="{{ deleteGen }}" style="display:inline-flex;align-items:center;gap:7px;padding:11px 16px;border:1px solid var(--bd2);border-radius:11px;background:var(--card2);color:#ff6b6b;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph ph-trash"></i>O'chirish</button>
-            <button onclick="{{ downloadGen }}" style="display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border:none;border-radius:11px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button>
+          <div style="min-width:0"><div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lb.label }}</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace">{{ lb.tool }}</div></div>
+          <div style="display:flex;gap:9px">
+            <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Yuklab olish</button>
+            <button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Referens</button>
+            <button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="O'chirish"><i class="ph ph-trash" style="font-size:15px;color:#FF6B5E"></i></button>
           </div>
         </div>
       </div>
@@ -16164,9 +16269,9 @@ class Component extends DCLogic {
     const nSel = genParams.count || 1;
     const costNow = this.estCost(tool, model, genParams);
     const toolDesc = { 'Rasm yaratish': 'Matndan yuqori sifatli rasm yarating', 'Video yaratish': 'Promptdan qisqa video klip yarating', 'Voiceover': 'Matnni tabiiy ovozga aylantiring', 'SFX': 'Sahna uchun tovush effekti yarating' }[tool.key];
-    const aiToolsView = this.aiTools.map(t => ({ ...t, col: t.key === this.state.aiTool ? 'var(--txt)' : 'var(--txt2)', bg: t.key === this.state.aiTool ? 'var(--card2)' : 'transparent', icol: t.key === this.state.aiTool ? 'var(--acc)' : 'var(--txt2)', bd: t.key === this.state.aiTool ? 'var(--bd2)' : 'transparent', dotOp: t.key === this.state.aiTool ? 1 : 0 }));
+    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
-    const chip = (v, on) => ({ v, bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
+    const chip = (v, on) => ({ v, cls: on ? 'ffa-opt on' : 'ffa-opt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
     const aspectOpts = model ? (model.aspects || (tool.mode === 'image' ? ['1:1', '16:9', '9:16', '4:3'] : [])) : [];
     const sizesView = aspectOpts.map(z => chip(z, z === genParams.aspectRatio));
     const showSize = aspectOpts.length > 1;
@@ -16185,9 +16290,20 @@ class Component extends DCLogic {
     const showVoices = voiceOpts.length > 0;
     const modelsView = modelList.map(m => ({ v: String(m.id), label: m.label, active: !!model && m.id === model.id }));
     const modelName = model ? model.label : ((window.FFAPI && FFAPI.getToken()) ? 'Yuklanmoqda…' : 'Kirish kerak');
+    // "bu partiya" xulosa qatori (mockup) + canvas rejim klassi
+    const partiyaBits = [modelName];
+    if (genParams.aspectRatio) partiyaBits.push(genParams.aspectRatio);
+    if (genParams.quality) partiyaBits.push(genParams.quality);
+    else if (genParams.resolution) partiyaBits.push(genParams.resolution);
+    if (genParams.duration) partiyaBits.push(genParams.duration + 's');
+    if (tool.multi) partiyaBits.push(nSel + ' ta');
+    const partiyaLine = partiyaBits.join(' · ') + ' · ✦ ' + costNow + ' — bu partiya';
+    const canvasCls = 'ffa-ai-canvas' + (tool.mode === 'video' ? ' vid' : ((tool.mode === 'voice' || tool.mode === 'sfx') ? ' aud' : ''));
+    const pendAspect = tool.mode === 'video' ? '16 / 9' : ((tool.mode === 'voice' || tool.mode === 'sfx') ? '16 / 6' : '1 / 1');
     // Real media fon: thumb bo'lsa rasm + orqada gradient (yuklanmasa gradient qoladi)
     const media = (url, h) => url ? "url('" + url + "') center/cover no-repeat, " + this.grad(h) : this.grad(h);
-    const genView = this.state.gens.map(g => ({ ...g, g: media(g.thumb, g.h), tIcon: g.type === 'video' ? 'play-circle' : (g.type === 'audio' ? 'waveform' : 'image') }));
+    const rtagOf = (ty) => (ty === 'video' ? 'VIDEO' : (ty === 'audio' ? 'OVOZ' : (ty === 'sfx' ? 'SFX' : 'RASM')));
+    const genView = this.state.gens.map(g => ({ ...g, g: media(g.thumb, g.h), tIcon: g.type === 'video' ? 'play-circle' : (g.type === 'audio' ? 'waveform' : 'image'), asp: g.type === 'video' ? '16 / 9' : (g.type === 'audio' ? '16 / 6' : '1 / 1'), rtag: rtagOf(g.type) + (g.model ? ' · ' + g.model : ''), isVideo: g.type === 'video', isAudio: g.type === 'audio' || g.type === 'sfx' }));
     const activeGenRaw = this.state.gens.find(g => g.id === this.state.activeGenId) || this.state.gens[0] || null;
     const activeView = activeGenRaw ? { ...activeGenRaw, g: media(activeGenRaw.type === 'image' ? (activeGenRaw.thumb || activeGenRaw.url) : activeGenRaw.thumb, activeGenRaw.h), tIcon: activeGenRaw.type === 'video' ? 'play-circle' : (activeGenRaw.type === 'audio' ? 'waveform' : 'image'), isVideo: activeGenRaw.type === 'video' && !!activeGenRaw.url } : null;
     const filmstrip = genView.map(g => ({ ...g, active: activeGenRaw && g.id === activeGenRaw.id, ring: (activeGenRaw && g.id === activeGenRaw.id) ? 'var(--acc)' : 'transparent' }));
@@ -16227,11 +16343,13 @@ class Component extends DCLogic {
       metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
       related: (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c && t.id !== dRaw.id).slice(0, 4).map(t => ({ ...t, g: media(t.thumbUrl, t.h) })),
     } : null;
-    const lb = this.state.lightbox ? { ...this.state.lightbox, g: media(this.state.lightbox.type === 'image' ? (this.state.lightbox.thumb || this.state.lightbox.url) : this.state.lightbox.thumb, this.state.lightbox.h), isVideo: this.state.lightbox.type === 'video' && !!this.state.lightbox.url, isAudio: this.state.lightbox.type === 'audio' && !!this.state.lightbox.url } : null;
-    const accView = this.accountTabs.map(x => ({ v: x, col: x === this.state.accountTab ? 'var(--txt)' : 'var(--txt2)', bd: x === this.state.accountTab ? 'var(--acc)' : 'transparent' }));
+    const lbRaw = this.state.lightbox;
+    const lb = lbRaw ? { ...lbRaw, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'OVOZ' : (lbRaw.type === 'sfx' ? 'SFX' : 'RASM'))) } : null;
+    const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'ffa-acctab on' : 'ffa-acctab' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
-    const creditHistoryView = this.state.gens.filter(g => g.cost > 0).slice(0, 12).map(g => ({ t: g.tool, d: this.fmtDate(g.at), a: -g.cost, icon: toolIcon[g.type] || 'image', amt: '-' + g.cost, col: 'var(--txt)', ibg: 'var(--card3)', icol: 'var(--txt2)' }));
+    const histTone = { image: { ibg: 'var(--reddim)', icol: '#FF9C8F' }, video: { ibg: 'var(--seldim)', icol: '#7CC4FF' }, audio: { ibg: 'var(--limedim)', icol: 'var(--lime)' }, sfx: { ibg: 'var(--amberdim)', icol: 'var(--amber)' } };
+    const creditHistoryView = this.state.gens.filter(g => g.cost > 0).slice(0, 12).map(g => { const tone = histTone[g.type] || histTone.image; return { t: g.tool, d: this.fmtDate(g.at), a: -g.cost, icon: toolIcon[g.type] || 'image', amt: '−' + g.cost, col: '#FF6B5E', ibg: tone.ibg, icol: tone.icol }; });
     const hasCreditHistory = creditHistoryView.length > 0;
     const downloadHistoryView = [];
     const hasDownloads = false;
@@ -16268,6 +16386,13 @@ class Component extends DCLogic {
     const sub = u.subscription || null;
     const planNote = sub && sub.currentPeriodEnd ? ('Keyingi yangilanish: ' + this.fmtDay(sub.currentPeriodEnd)) : 'Oylik 50 bepul kredit bilan';
     const plansCur = plansView.map(p => ({ ...p, cur: p.key === planKey }));
+    // Hisob — obuna/kredit ko'rsatkichlari (real reja holatidan)
+    const curPlanRow = plansCur.find(p => p.cur) || null;
+    const planPriceLabel = isFreePlan ? 'Bepul' : ('$' + (curPlanRow ? curPlanRow.price : 0) + '/oy');
+    const creditRefreshNote = isFreePlan ? ('Bepul reja · har oy ' + creditMaxFmt + ' kredit') : (planShort + ' reja · har oy ' + creditMaxFmt + ' yangilanadi');
+    const downloadsLimitLabel = isFreePlan ? '10 / oy' : 'Cheksiz';
+    const exportLabel = isFreePlan ? '1080p' : '4K';
+    const creditPacksAcc = this.creditPacks.map(c => ({ ...c, cardBd: c.pop ? 'rgba(194,240,74,.3)' : 'var(--hair2)', cardBg: c.pop ? 'linear-gradient(120deg,rgba(194,240,74,.08),transparent),var(--surface)' : 'var(--surface)', subCol: c.pop ? 'var(--lime)' : 'var(--muted)', btnCls: c.pop ? 'ffm-btn sm' : 'ffm-btn2 sm' }));
     // Auth ekrani
     const am = this.state.authMode;
     const authTitle = am === 'register' ? "Ro'yxatdan o'tish" : (am === 'forgot' ? 'Parolni tiklash' : 'Hisobga kirish');
@@ -16386,7 +16511,7 @@ class Component extends DCLogic {
       creditPct, creditMaxFmt, planShort, authBrandTitle, authBrandSub,
       btmDashCls: btmCls('dashboard'), btmTplCls: btmCls('templates'), btmAiCls: btmCls('aistudio'), btmAccCls: btmCls('account'),
       creditsFmt: this.state.credits.toLocaleString(),
-      aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow,
+      aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow, partiyaLine, canvasCls, pendAspect,
       showCount: tool.multi && countsView.length > 1,
       showActive: !!activeGenRaw && !this.state.generating, canvasEmpty: !activeGenRaw && !this.state.generating,
       aiPrompt: this.state.aiPrompt, modelName, modelOpen: this.state.modelOpen, modelsView,
@@ -16417,6 +16542,7 @@ class Component extends DCLogic {
       detail, lb, accView, accountTab: this.state.accountTab,
       accProfile: this.state.accountTab === 'Profil', accObuna: this.state.accountTab === 'Obuna', accKredit: this.state.accountTab === 'Kreditlar', accYuklama: this.state.accountTab === 'Yuklamalar',
       creditHistoryView, hasCreditHistory, noCreditHistory: !hasCreditHistory, downloadHistoryView, hasDownloads, projectsView,
+      planPriceLabel, creditRefreshNote, downloadsLimitLabel, exportLabel, creditPacksAcc, noDownloads: !hasDownloads,
       accName: this.state.accName,
       onAccName: (e) => this.setState({ accName: e.target.value }),
       saveAcc: () => this.saveProfile(),
