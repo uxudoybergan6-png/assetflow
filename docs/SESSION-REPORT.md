@@ -1,22 +1,30 @@
 # Sessiya hisoboti — 2026-07-04
 
-## Bosqich 3 — Auth + Dashboard + yagona app sidebar (mockup 1:1)
+## Bosqich 4 — Shablonlar marketplace + Loyihalar (mockup 1:1)
 
-**Nima qilindi:** `platform/index.html`
-- Auth (login/register/forgot) → mockup a1..a3 split (chapda mesh brend, o'ngda
-  forma); verify-email → a4 1:1. `ffa-` scoped app CSS bloki qo'shildi.
-- Dashboard → mockup d1 1:1: welcome, 3 tezkor amal (lime/select/amber ikonka),
-  So'nggi generatsiyalar (`ffa-res`), Tavsiya shablonlar (`ffa-tc`).
-- Yagona app sidebar (`ffa-sbar`): logo+collapse, asosiy nav + HISOB bo'limi,
-  pastda kredit bloki. Bitta komponent → mobil drawer + avatar dropdown (Chiqish)
-  + mobil pastki tab-bar. Commit `e5cf0ad` (push qilinmagan).
+**Nima qilindi:** `platform/index.html` — Shablonlar (templates) va Loyihalar
+(projects) ekranlari maketdan real app'ga 1:1 port (`ffa-` scoped). Bosqich 3
+sidebar/topbar/mobil-drawer qayta ishlatildi.
 
-**Saqlandi:** FFAPI login/register/forgot/Google (`#ffGoogleBtn`), Turnstile
-(`#ffTurnstileWidget`), verify gate, routing, real o'zbekcha copy, sc-if/sc-for.
-Marketing (`ffm-`) va templates/aistudio/account/projects TEGILMADI.
+**Marketplace:** chap filter rail (Dastur·Kategoriya·Narx·Orientatsiya·Sifat) +
+keng frameless karta grid + faol chip'lar + Saralash (real reorder) + detal modal
+split layout (`downloadTemplate()`/`goPlugin()` handlerlari saqlandi).
 
-**Tekshiruv:** desktop 1280 / tablet 960 (sidebar) / mobil 390 (drawer) — auth
-4 holat + dashboard + collapse + avatar dropdown + drawer, konsol xatosiz.
+**§5 IA tuzatishlari (ISHLAYDI):**
+- Orientatsiya (16:9/9:16/1:1) va Sifat (HD/4K) filtrlari REAL — katalog `orient`/
+  `res` maydonidan `ori`/`qual` normallashtirildi, mavjud `filtered()` so'roviga
+  ulandi (toggle bilan tozalanadi).
+- Mobil (<680px) filter DRAWER — "Filtrlar" tugmasi jonli filter sheet ochadi,
+  "N natijani ko'rsatish" bilan yopadi.
 
-**Kutilmoqda:** Bosqich 4/5 — qolgan app ekranlarni shu chrome ustida redizayn.
-To'ldirilgan grid faqat backendli muhitda (preview'da bo'sh holat tekshirildi).
+**Loyihalar:** 2×2 gradient mozaik karta + dashed "Yangi loyiha", 1:1.
+
+**Saqlandi:** katalog logikasi (API list, qidiruv, kategoriya/dastur/narx filtri,
+PRO/FREE, download/import), FFAPI bindinglar, routing, o'zbekcha copy. Marketing/
+auth/dashboard/aistudio/account/ff-api TEGILMADI.
+
+**Tekshiruv (preview, 0 console error):** desktop 1280 / tablet 960 / mobil 390 —
+filtrlar jonli filtrlaydi, sort reorder, drawer ochiladi/qo'llaydi, detal modal
+ochiladi/yopiladi, Stage 3 chrome buzilmadi. Commit `a2a4b5d` (push YO'Q).
+
+**Kutilmoqda:** Bosqich 5 — AI Studio + Hisob shu chrome ustida redizayn.
