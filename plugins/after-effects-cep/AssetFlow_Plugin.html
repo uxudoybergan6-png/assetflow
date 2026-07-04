@@ -3925,6 +3925,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="mention" id="vgMention"></div>
                                   <textarea id="vgPrompt" placeholder="Kadrni jonlantir: yomg'ir tomchilari, neon aks, sekin dolly-in…"></textarea>
                                   <div class="prow">
+                                    <div class="addbtn" id="vgRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Referens</div>
                                     <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
                                   </div>
                                 </div>
@@ -3958,8 +3959,8 @@ html.home-mode #homePage{display:block!important}
                             </div>
                           </div>
 
-                          <!-- Kadr manba sheet (b3) -->
-                          <div class="sheet" id="vgSrcSheet"><div class="sheetc">
+                          <!-- Kadr manba sheet (b3) — FIX B: bosilgan tugma/kadr yonida popover (bottom-sheet emas) -->
+                          <div class="sheet pop" id="vgSrcSheet"><div class="sheetc">
                             <div class="sheeth"><b id="vgSrcTitle">+ Referens</b></div>
                             <div class="sheetsub">Manbani tanlang — rasm yoki video</div>
                             <div class="opt" id="vgSrcFile"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></div><div><b>Fayl yuklash</b><small>PNG · JPG · MP4 · 50MB gacha</small></div><span class="ocar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span></div>
@@ -3967,8 +3968,8 @@ html.home-mode #homePage{display:block!important}
                             <div class="opt" id="vgSrcTl"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M2 15h5M17 9h5M17 15h5"/></svg></div><div><b>Timeline'dan</b><small>Faol kompozitsiya kadri</small></div><span class="ocar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span></div>
                           </div></div>
 
-                          <!-- Project footage picker -->
-                          <div class="sheet" id="vgProjSheet"><div class="sheetc">
+                          <!-- Project footage picker — FIX B: manba tugmasi yonida popover -->
+                          <div class="sheet pop" id="vgProjSheet"><div class="sheetc">
                             <div class="sheeth"><b>Project footage</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div id="vgProjList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div id="vgProjFoot" style="display:none;align-items:center;gap:8px;margin-top:10px">
@@ -4054,8 +4055,8 @@ html.home-mode #homePage{display:block!important}
                           <!-- b7 birlashgan "Video sozlamalari" sheet OLIB TASHLANDI (FIX4/5) — har pill o'z popover'ini ochadi -->
                           <!-- lightbox: umumiy #afLightbox (afRecent) ishlatiladi — eski #vgLightbox olib tashlandi -->
 
-                          <!-- Referens kadr slot menyusi -->
-                          <div class="sheet" id="vgRefSlotSheet"><div class="sheetc">
+                          <!-- Referens kadr slot menyusi — FIX B: popover (anchor'siz — markazda) -->
+                          <div class="sheet pop" id="vgRefSlotSheet"><div class="sheetc">
                             <div class="sheeth"><b>Referens kadr</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div class="opt" id="vgRefStart"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div><div><b>Boshlang'ich kadrga</b><small>start frame</small></div></div>
                             <div class="opt" id="vgRefEnd"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg></div><div><b>Yakuniy kadrga</b><small>end frame</small></div></div>
@@ -12639,16 +12640,24 @@ window.afGallery=(function(){
       else top=Math.max(pad,vh-sh-pad);
       sc.style.left=left+'px'; sc.style.top=top+'px';
     }else{
+      // anchor yo'q — markazda ochiladi (pastdan chiqmaydi)
       var w2=Math.min(380,vw-pad*2);
       sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
-      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var sh2=sc.offsetHeight;
+      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.bottom='auto';
+      sc.style.top=Math.max(pad,Math.round((vh-sh2)/2))+'px';
     }
   }
   function openVgSheet(id,anch){
-    closeVgSheets(); var s=$(id); if(!s)return; s.classList.add('on');
+    closeVgSheets(); var s=$(id); if(!s)return; s.classList.add('on'); s._anchor=anch||null;
     var sc=s.querySelector('.sheetc'); if(!sc)return;
     if(s.classList.contains('pop'))positionVgPopover(sc,anch);
     else { sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight=''; }
+  }
+  // async kontent (Project ro'yxati) kelgach popover'ni qayta joylash
+  function repositionVgSheet(id){
+    var s=$(id); if(!s||!s.classList.contains('on')||!s.classList.contains('pop'))return;
+    positionVgPopover(s.querySelector('.sheetc'),s._anchor);
   }
   document.querySelectorAll('.axvg [data-vgclose]').forEach(function(x){ x.addEventListener('click',closeVgSheets); });
   document.querySelectorAll('.axvg .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeVgSheets(); }); });
@@ -12813,6 +12822,8 @@ window.afGallery=(function(){
     var isNone=vm.refKind==='none';
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
+    // FIX B: ＋Referens (rasm tool idiomi) — referens qabul qilmaydigan modelda yashirin
+    var ra=$('vgRefAdd'); if(ra)ra.style.display=isNone?'none':'';
     var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
     // b4/b5: Fast|R2V segment-toggle holati modelning refKind'idan sinxron
     var mf=$('vgModeFast'); if(mf)mf.classList.toggle('is-on',!isMedia);
@@ -13169,16 +13180,16 @@ window.afGallery=(function(){
     function slotsLeft(){ var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12}; return Math.max(0,Math.min((lim[type]||0)-cntRef(type),(lim.total||0)-mref.length)); }
     function refreshFoot(){ var n=Object.keys(sel).length; if(info)info.textContent=n+' tanlandi · bo\'sh joy '+slotsLeft(); if(addBtn){ addBtn.textContent='Qo\'shish'+(n?(' ('+n+')'):''); addBtn.style.opacity=n?'1':'.5'; } }
     if(addBtn)addBtn.onclick=function(){ var paths=Object.keys(sel); if(!paths.length){ toast('Avval belgilang','warning'); return; } addMediaPaths(paths,type); closeVgSheets(); };
-    host.innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openVgSheet('vgProjSheet');
+    host.innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openVgSheet('vgProjSheet',_vgSrcTarget.anchor);
     hostCall('listProjectFootage').then(function(r){
       if(!$('vgProjList'))return;
-      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; return; }
+      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; repositionVgSheet('vgProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){
         var mp=it&&it.mediaPath||'';
         if(type==='image')return (it.mediaType==='image'||isImg(mp)) && extAllowed(type,mp);
         return it.mediaType===type && extAllowed(type,mp);
       });
-      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos '+typeLabel(type)+' topilmadi. Fayldan yuklang.</div>'; if(foot)foot.style.display='none'; return; }
+      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos '+typeLabel(type)+' topilmadi. Fayldan yuklang.</div>'; if(foot)foot.style.display='none'; repositionVgSheet('vgProjSheet'); return; }
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
@@ -13193,8 +13204,8 @@ window.afGallery=(function(){
         }); })(it,d);
         host.appendChild(d);
       });
-      refreshFoot();
-    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
+      refreshFoot(); repositionVgSheet('vgProjSheet');
+    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; repositionVgSheet('vgProjSheet'); });
   }
   // Manba 3 — Timeline'dan (joriy kadr → PNG); FAQAT rasm referens uchun
   function pickTlMedia(){
@@ -13220,15 +13231,14 @@ window.afGallery=(function(){
     }).catch(function(e){ toast('Timeline xatosi: '+String(e),'error'); });
   }
   // ＋Rasm/＋Video/＋Ovoz → manba menyu (Fayl/Project/Timeline) — kadrlardagidek (vgSrcSheet qayta ishlatiladi)
-  function openMediaSrc(type){
+  function openMediaSrc(type,anch){
     if(!mediaAllowed(type))return;
-    _vgSrcTarget={kind:'media',type:type};
+    _vgSrcTarget={kind:'media',type:type,anchor:anch||$(type==='image'?'vgAddImg':type==='video'?'vgAddVid':'vgAddAud')};
     var t=$('vgSrcTitle'); if(t)t.textContent=typeLabel(type)+' referens';
     var tl=$('vgSrcTl'); if(tl){ tl.style.display=''; var s3=tl.querySelector('small'); if(s3)s3.textContent=(type==='image')?'kompozitsiyadan kadr':'tanlangan klip manbasi'; } // image=kadr PNG · video/audio=layer manbasi
     var fs=$('vgSrcFile'); if(fs){var s=fs.querySelector('small'); if(s)s.textContent='kompyuterdan '+typeLabel(type).toLowerCase();}
     var pr=$('vgSrcProj'); if(pr){var s2=pr.querySelector('small'); if(s2)s2.textContent='AE loyiha '+typeLabel(type).toLowerCase();}
-    var anch=$(type==='image'?'vgAddImg':type==='video'?'vgAddVid':'vgAddAud');
-    openVgSheet('vgSrcSheet',anch);
+    openVgSheet('vgSrcSheet',_vgSrcTarget.anchor);
   }
   (function(){ var i=$('vgAddImg'),v=$('vgAddVid'),a=$('vgAddAud');
     if(i)i.addEventListener('click',function(){ openMediaSrc('image'); });
@@ -13369,13 +13379,13 @@ window.afGallery=(function(){
     if(typeof csInterface==='undefined'||!csInterface){ toast('Project paneldan faqat AE ichida','info'); closeVgSheets(); return; }
     var host=$('vgProjList'); if(!host)return;
     host.innerHTML='<div class="axighint">Yuklanmoqda…</div>';
-    openVgSheet('vgProjSheet');
+    openVgSheet('vgProjSheet',_vgSrcTarget.anchor);
     // igScript bilan bir xil: async hostCall('listProjectFootage') → {items:[{name,mediaPath,mediaType}]}.
     hostCall('listProjectFootage').then(function(r){
       if(!$('vgProjList'))return;
-      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; return; }
+      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; repositionVgSheet('vgProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
-      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; return; }
+      if(!items.length){ host.innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; repositionVgSheet('vgProjSheet'); return; }
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
@@ -13387,7 +13397,8 @@ window.afGallery=(function(){
         }); })(it);
         host.appendChild(d);
       });
-    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
+      repositionVgSheet('vgProjSheet');
+    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; repositionVgSheet('vgProjSheet'); });
   }
   function pickTlFrame(which){
     if(typeof csInterface==='undefined'||!csInterface){ toast('Timeline kadr faqat AE ichida','info'); closeVgSheets(); return; }
@@ -13401,19 +13412,27 @@ window.afGallery=(function(){
 
   // Yagona manba-nishon: {kind:'frame',which} (kadr) yoki {kind:'media',type} (R2V referens)
   var _vgSrcTarget={kind:'frame',which:'start'};
-  function openFrameSrc(which){
-    _vgSrcTarget={kind:'frame',which:which};
+  function openFrameSrc(which,anch){
+    _vgSrcTarget={kind:'frame',which:which,anchor:anch||((which==='start')?$('vgStartBox'):$('vgEndBox'))};
     var t=$('vgSrcTitle'); if(t)t.textContent=(which==='start')?"Boshlang'ich kadr":"Yakuniy kadr";
     var tl=$('vgSrcTl'); if(tl)tl.style.display=''; // kadr: Timeline doim bor (media yashirgan bo'lishi mumkin)
     var fs=$('vgSrcFile'); if(fs){var s=fs.querySelector('small'); if(s)s.textContent='kompyuterdan rasm';}
     var pr=$('vgSrcProj'); if(pr){var s2=pr.querySelector('small'); if(s2)s2.textContent='AE loyiha footage';}
-    openVgSheet('vgSrcSheet',(which==='start')?$('vgStartBox'):$('vgEndBox'));
+    openVgSheet('vgSrcSheet',_vgSrcTarget.anchor);
   }
   $('vgSrcFile').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media')pickFileMedia(_vgSrcTarget.type); else pickFileFrame(_vgSrcTarget.which); });
   $('vgSrcProj').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media')pickProjMedia(_vgSrcTarget.type); else pickProjFrame(_vgSrcTarget.which); });
   $('vgSrcTl').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media'){ _vgSrcTarget.type==='image'?pickTlMedia():pickTlSource(_vgSrcTarget.type); } else pickTlFrame(_vgSrcTarget.which); });
   $('vgStartBox').addEventListener('click',function(){ if(!st.start)openFrameSrc('start'); });
   $('vgEndBox').addEventListener('click',function(){ if(!st.end)openFrameSrc('end'); });
+  // FIX B: ＋Referens (rasm tool addbtn idiomi) — Fast: bo'sh kadr slotiga manba menyu (tugma yonida
+  // popover); R2V: rasm referens manba menyu (＋Rasm oqimi bilan bir xil, mavjud handlerlar saqlanadi)
+  var _vgRA=$('vgRefAdd');
+  if(_vgRA)_vgRA.addEventListener('click',function(){
+    if(vm.refKind==='media-refs'){ openMediaSrc('image',_vgRA); return; }
+    var which=(st.start&&!st.start.loading)?'end':'start';
+    openFrameSrc(which,_vgRA);
+  });
   // b4: inline manba chiplari — bo'sh slotga (start bo'lsa end) MAVJUD pick funksiyalarini chaqiradi
   function vgChipPick(fn){
     var which=(st.start&&st.start.url&&!st.start.loading)?'end':'start';
