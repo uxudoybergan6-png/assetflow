@@ -1,6 +1,12 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret-change-me";
+// KALIT AJRATISH (Bosqich 1 #4): cost-quote imzosi AUTH tokenidan ALOHIDA kalit bilan imzolanadi.
+// Ilgari JWT_SECRET ham auth token, ham cost-quote uchun ishlatilardi — u sizib chiqsa hujjatchi
+// SOXTA cost-quote yasab tekin generatsiya olardi. Endi COST_QUOTE_SECRET alohida. In-flight
+// quote'larni buzmaslik uchun COST_QUOTE_SECRET yo'q bo'lsa JWT_SECRET'ga qaytadi (fallback);
+// LEKIN productionда ALOHIDA qiymat SHART (index.ts validateEnv ogohlantiradi).
+const QUOTE_SECRET =
+  process.env.COST_QUOTE_SECRET?.trim() || process.env.JWT_SECRET || "dev-secret-change-me";
 const QUOTE_KIND = "studio-gen-quote";
 
 /** Stabil (kalitlar tartiblangan) JSON — params hash uchun. */
@@ -55,7 +61,7 @@ export type CostQuote = {
  * generate paytida imzo + (modelId, price, paramsHash) tekshiriladi (blueprint §7.3).
  */
 export function signCostQuote(q: CostQuote): string {
-  return jwt.sign({ ...q, k: QUOTE_KIND }, JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign({ ...q, k: QUOTE_KIND }, QUOTE_SECRET, { expiresIn: "15m" });
 }
 
 /** Imzolangan narxni tekshiradi — so'rovdagi qiymatlar imzo bilan mos kelishi shart. */
@@ -65,7 +71,7 @@ export function verifyCostQuote(
 ): { ok: boolean; reason?: string } {
   let decoded: jwt.JwtPayload;
   try {
-    decoded = jwt.verify(signature, JWT_SECRET) as jwt.JwtPayload;
+    decoded = jwt.verify(signature, QUOTE_SECRET) as jwt.JwtPayload;
   } catch {
     return { ok: false, reason: "Imzo yaroqsiz yoki muddati o'tgan" };
   }

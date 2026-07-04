@@ -175,6 +175,15 @@ function validateEnv() {
       "PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true — productionда PRO Stripe'siz beriladi (tekin PRO teshigi)! Faqat lokal dev uchun; productga =false qo'ying."
     );
 
+  // COST_QUOTE_SECRET (Bosqich 1 #4): cost-quote imzosi auth tokenidan ALOHIDA kalit bilan
+  // imzolanishi kerak. Yo'q/JWT_SECRET bilan bir xil bo'lsa — JWT_SECRET sizishi = soxta cost-quote
+  // (tekin gen). Fallback bor (buzilmaydi), lekin productionда alohida qiymat SHART.
+  const quoteSecret = process.env.COST_QUOTE_SECRET?.trim();
+  if (isProd && (!quoteSecret || quoteSecret === jwt))
+    warnings.push(
+      "COST_QUOTE_SECRET yo'q yoki JWT_SECRET bilan bir xil — cost-quote imzosi auth kalitidan ALOHIDA bo'lsin (openssl rand -hex 32). Aks holda JWT_SECRET sizishi soxta tekin generatsiyaga olib keladi."
+    );
+
   if (!process.env.RESEND_API_KEY?.trim())
     warnings.push("RESEND_API_KEY yo'q — email yuborilmaydi (parol tiklash/bildirishnoma)");
   if (!process.env.STRIPE_SECRET_KEY?.trim())
