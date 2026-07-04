@@ -1,15 +1,17 @@
-# Sessiya hisoboti — 2026-07-04 — AI Tools: bottom-sheet'lar butunlay yo'q + interaksiya auditi
+# Sessiya hisoboti — 2026-07-04 — AI tools: model-aware boshqaruvlar + 2 UI fix
 
-**Nima qilindi:** 8 fix, har biri alohida commit (push yo'q):
-1. e251be3 — Rasm ＋Referens manba menyu + Project picker → tugma yonida popover.
-2. 64b18e8 — Video manba menyulari (vgSrc/vgProj/vgRefSlot) → popover + rasm-idiom ＋Referens tugmasi.
-3. 132f996 — Video doimiy manba chiplari olib tashlandi (menyu faqat kadr box/＋Referens'da).
-4. 03bb3d8 — Kadr qutilari kompakt: 92px→44px qator.
-5. 6708e3f — Popover ortidagi qora polosa/uzun soya yo'q (backdrop shaffof, soya .35/20px).
-6. 24d4440 — Home filtr tugmasi endi FILTRni ochadi (avval faqat navigatsiya) + BARCHA bottom-slide
-   varaqlar markazlashgan modal: filtr/mogrt/limit/pro/hisob/publish/video-trim/legacy #ov.
-7. 1a3ab1d — TARIX strip kartasi O'SHA genni lightbox'da ochadi (avval ro'yxatga ketardi).
-8. 1ae9980 — Audit: video tool view ochilganda model retry (axVGRefresh) + Home qidiruv avtofokus.
+**Nima qilindi:** 3 fix, har biri alohida commit (push yo'q):
+1. 879b4a2 — Popover ortidagi "shisha panel" ILDIZI topildi: `.axig .sheet` hit-layer eski
+   `.axroot .sheet`dan 440px max-width + 0.45 box-shadow meros olardi — 440px'dan KENG panelda
+   qora soya ustuni ko'rinardi (392px'da viewport tashqarisida, shu sabab avval topilmagan). Endi
+   width:auto/max-width:none/box-shadow:none — popover toza karta, tashqi-click to'liq enda ishlaydi.
+2. 8760303 — Video tool prompt ichidagi takror ＋Referens olib tashlandi (Fast+R2V); rasm tooldagi qoldi.
+3. 14d14cf — QAT'IY model-aware: vgCapsFor/igModelRefOk — refKind/maxRefs/endFrame/videoInput.imageRequired
+   (faqat /gen/models maydonlari, API o'zgarmadi). End-kadr faqat endFrame modelda; +Rasm/+Video/+Ovoz
+   har biri limit>0 bo'lsa; Fast|R2V toggle faqat model qo'llagan rejim (t2v'da yashirin); model
+   almashganda yaroqli kadr/ref SAQLANADI, mos kelmagani tasdiq bilan o'chadi; rasm t2i (maxRefs 0,
+   Imagen 4) ＋Referens butunlay yashirin; maxRefs kichrayganda ref trim.
 
-**Tekshiruv:** cep-plugin-preview 392/900px, stub API bilan — gen/kredit/manba handlerlari ishlaydi, 0 JS xato.
-**Kutilmoqda:** AE jonli qayta-test + push (foydalanuvchi); markazlashgan modal qarori tasdig'i.
+**Tekshiruv:** stub /gen/models (frames S+E · frames start-only · media-refs · pure t2v/t2i · maxRefs 1)
+bilan 392/900px — har model faqat o'z boshqaruvlarini ko'rsatadi; gen/cost-quote/param builder shakllari
+(frames/media/t2v/rasm) stub bilan aynan tekshirildi; 0 konsol xato. **Kutilmoqda:** AE jonli test + push.
