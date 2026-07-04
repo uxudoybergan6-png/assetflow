@@ -1,22 +1,18 @@
-# SESSION-REPORT — Bosqich 5 (final): AI Studio + Hisob port
+# SESSION-REPORT — Bosqich 1 (Himoya · ko'rinuvchanlik · xavfsizlik)
 
-## Nima qilindi
-- **AI Studio (aistudio)** mockup ai1..ai4'ga 1:1 qayta terildi: tool rail (lime aksent), frosted
-  composer (prompt + referens + model-aware belgilangan sozlama chiplari + ANIQ NARX: Yaratish ✦N +
-  Balans), nuqtali-grid canvas (natija kartalari + pending-glow breathing lime + bo'sh holat),
-  "bu partiya" xulosa qatori, kattalashtirilgan lightbox (Yuklab olish/Referens/O'chirish).
-- **Hisob (account)** mockup ac1/ac2'ga 1:1: Profil / Obuna / Kreditlar / Yuklamalar — 4 aniq tab.
-  §5 IA muammosi hal: "Yuklamalar" endi alohida tab (halol bo'sh holat, real binding).
-- ffa- scoped; Bosqich 3 sidebar/topbar/drawer/tab-bar qayta ishlatildi. Platforma redizayni YAKUNLANDI.
+**Sana:** 2026-07-04 · **Ko'lam:** backend-only, 9 item, har biri alohida commit. Pul zonasi TEGILMADI.
 
-## Saqlangan mantiq (tegilmadi)
-- Gen oqimi: FFAPI cost-quote → consume/refund → job polling; model/sozlama/referens; narx-oldi gating.
-- Hisob: reja/obuna, balans+tarix, yuklamalar — barcha ff-api.js binding'lari faqat restyle.
+- **#1** provider USD cost: `lib/provider-cost.ts` → `writeProviderSpend.estimatedCostUsd` (best-effort, marja poydevori).
+- **#2** spend himoya: `lib/spend-guard.ts` — GEN_KILL_SWITCH + kunlik/oylik USD ceiling + per-user GEN_DAILY_CAP (charge'dan oldin).
+- **#3** PRO-without-Stripe: gate allaqachon fail-closed; `.env.cloud.example` =false + prod warning.
+- **#4** COST_QUOTE_SECRET: cost-quote imzosi auth JWT_SECRET'dan ajratildi (JWT_SECRET'ga fallback).
+- **#5** fail-closed anti-abuse: Turnstile + email-verify prod'da rad (dev fail-open, grandfather saqlandi).
+- **#6** observability: `lib/sentry.ts` (dinamik, no-op) + real `/health` (DB SELECT 1 + HeadBucket) + `/livez`.
+- **#7** SSRF: `lib/fetch-safe.ts` (data + bizning bucket, private IP blok) → 4 user-URL fetch marshrutlandi.
+- **#8** DR: `scripts/db-backup.mjs` + `.github/workflows/db-backup.yml` + `docs/DR-RUNBOOK.md` + `npm run db:backup`.
+- **#9** email: prod'da resend.dev sandbox LOUD warning + `EMAIL_FROM` DKIM/SPF hujjat.
 
-## Tekshirildi
-- Desktop 1280 / tablet 960 / mobil 375: har tool variant + pending-glow + lightbox + 4 hisob tab.
-- Mobil: AI Studio 3 panel vertikal stack. Konsol xatosiz. Prior ekran (dashboard) regressiyasiz.
-- Vaqtinchalik preview-seed tekshiruv uchun qo'shildi → OLIB TASHLANDI (commit'da yo'q). Commit: `4347d92` (main, push qilinmagan).
-
-## Kutilmoqda
-- Yuklamalar real tarixi (download events — Faza C). CF Pages deploy.
+**Build:** `npm run build` (api + database) toza. Migratsiya QO'SHILMADI (estimatedCostUsd allaqachon bor).
+**Manual (env/tashqi):** COST_QUOTE_SECRET (prod), PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false, TURNSTILE_SECRET_KEY,
+RESEND domen+DKIM/SPF, SENTRY_DSN (+`npm i @sentry/node`), backup bucket+versioning+BACKUP_GCS_BUCKET.
+**Kutilmoqda:** deploy + AE end-to-end test. ⚠️ #5 prod'da Turnstile/RESEND sozlanmasa register/kredit bloklanadi (kutilgan).
