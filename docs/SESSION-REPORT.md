@@ -1,16 +1,15 @@
-# Sessiya hisoboti — 2026-07-04 — AI Tools jonli-test tuzatishlari (5 ta)
+# Sessiya hisoboti — 2026-07-04 — AI Tools: bottom-sheet'lar butunlay yo'q + interaksiya auditi
 
-**Nima qilindi:** AE jonli testidan keyingi 5 fix, har biri alohida commit (push yo'q):
-1. d0d4fa2 — KREDIT TARIXI qatorlari: tur ikon + title + muted vaqt + o'ngda rangli
-   summa (− qizil / + lime), hover, scroll quti.
-2. dbb050e — Video kartalarda real preview: afVideoThumb(poster) + preload=auto/canplay;
-   afGallery + TARIX strip posterisiz video uchun <video> birinchi kadr (qora tile fix).
-3. 439e989 — Lightbox: media dominant (lbmedia flex:1), meta+Import zich tagida, ≤980px.
-4. 3e8815d — Sozlama picker'lari bottom-sheet EMAS — pill yonida popover (.sheet.pop,
-   positionPopover tiklandi); video pill'lar per-pill popover; qora chiziq artefakti yo'q.
-5. 79d7f83 — Video tool rasm tool bilan bir xil karta tuzilishi (flat compose bekor,
-   Fast|R2V toggle karta ichida, PROMPT/SOZLAMALAR/SO'NGGI lbl); b7 birlashgan sheet o'chdi.
+**Nima qilindi:** 8 fix, har biri alohida commit (push yo'q):
+1. e251be3 — Rasm ＋Referens manba menyu + Project picker → tugma yonida popover.
+2. 64b18e8 — Video manba menyulari (vgSrc/vgProj/vgRefSlot) → popover + rasm-idiom ＋Referens tugmasi.
+3. 132f996 — Video doimiy manba chiplari olib tashlandi (menyu faqat kadr box/＋Referens'da).
+4. 03bb3d8 — Kadr qutilari kompakt: 92px→44px qator.
+5. 6708e3f — Popover ortidagi qora polosa/uzun soya yo'q (backdrop shaffof, soya .35/20px).
+6. 24d4440 — Home filtr tugmasi endi FILTRni ochadi (avval faqat navigatsiya) + BARCHA bottom-slide
+   varaqlar markazlashgan modal: filtr/mogrt/limit/pro/hisob/publish/video-trim/legacy #ov.
+7. 1a3ab1d — TARIX strip kartasi O'SHA genni lightbox'da ochadi (avval ro'yxatga ketardi).
+8. 1ae9980 — Audit: video tool view ochilganda model retry (axVGRefresh) + Home qidiruv avtofokus.
 
-**Eslatma:** b7 bottom-sheet spetsi ATAYIN bekor qilindi — jonli test UX qarori.
-**Tekshiruv:** cep-plugin-preview 380/900px — handler/kredit/gen mantiq saqlangan, yangi xato yo'q.
-**Kutilmoqda:** AE ichida jonli qayta-test + push (foydalanuvchi).
+**Tekshiruv:** cep-plugin-preview 392/900px, stub API bilan — gen/kredit/manba handlerlari ishlaydi, 0 JS xato.
+**Kutilmoqda:** AE jonli qayta-test + push (foydalanuvchi); markazlashgan modal qarori tasdig'i.
