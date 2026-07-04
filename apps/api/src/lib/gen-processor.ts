@@ -8,6 +8,7 @@ import {
   gcsKeyFromUrl,
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
+import { enforceStorageRetention } from "./storage-quota.js";
 import {
   orImage,
   orImageEdit,
@@ -256,13 +257,17 @@ async function persist(
   buf: Buffer,
   ext: string,
   contentType: string
-): Promise<{ url: string; key: string | null }> {
+): Promise<{ url: string; key: string | null; sizeBytes: number }> {
   const key = `gen/${userId}/${genId}-${tsName()}.${ext}`;
+  const sizeBytes = buf.length; // Bosqich 4 #4: storage kvota hisobi uchun
   if (isS3Configured()) {
+    // Privacy (Bosqich 4 #4): assetlar `gen/<userId>/...` ostida, public ACL'siz
+    // saqlanadi; faqat qisqa muddatli signed URL bilan beriladi (serve/download
+    // route'lari egalikni tekshiradi: gen.userId !== req.user.userId → 404).
     await uploadBufferToS3(buf, key, contentType);
-    return { url: await getSignedDownloadUrl(key, 3600), key };
+    return { url: await getSignedDownloadUrl(key, 3600), key, sizeBytes };
   }
-  return { url: `data:${contentType};base64,${buf.toString("base64")}`, key: null };
+  return { url: `data:${contentType};base64,${buf.toString("base64")}`, key: null, sizeBytes };
 }
 
 /**
@@ -872,13 +877,13 @@ export async function processGeneration(genId: string): Promise<void> {
             : useMagnific
               ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-      type Slot = { ok: true; url: string; key: string | null } | { ok: false; error: string };
+      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number } | { ok: false; error: string };
       const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
         const out = await genOne();
         if (!out.ok) return { ok: false, error: out.error };
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const p = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
-        return { ok: true, url: p.url, key: p.key };
+        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes };
       });
       // ❗ TIMEOUT ≠ REFUND: birortasi poll-timeout sentinel bo'lsa → "running" qoldiramiz, KREDIT
       // QAYTARMAYMIZ (reconcile 10 daq hal qiladi). Tekshiruv refund/asset YARATISHDAN OLDIN.
@@ -891,7 +896,7 @@ export async function processGeneration(genId: string): Promise<void> {
       for (const s of slots) {
         if (!s.ok) continue;
         await prisma.genAsset.create({
-          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.url, aspectRatio },
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.url, aspectRatio, sizeBytes: s.sizeBytes },
         });
       }
     } else if (model.feature === "text-to-speech") {
@@ -902,9 +907,9 @@ export async function processGeneration(genId: string): Promise<void> {
       const out = await orSpeech(model.key, gen.prompt, voice);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
-      const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+      const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, sizeBytes },
       });
     } else if (model.feature === "text-to-sfx") {
       // ElevenLabs SFX (sync, RAW mp3). duration ixtiyoriy (0.5–22s).
@@ -917,9 +922,9 @@ export async function processGeneration(genId: string): Promise<void> {
       const out = await elSoundEffects(gen.prompt, dur);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
-      const { url, key } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+      const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key },
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, sizeBytes },
       });
     } else if (
       model.feature === "text-to-video" ||
@@ -946,9 +951,9 @@ export async function processGeneration(genId: string): Promise<void> {
       }
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
-      const { url, key } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
+      const { url, key, sizeBytes } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: url, aspectRatio },
+        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: url, aspectRatio, sizeBytes },
       });
       await clearProviderJob(genId);
     } else {
@@ -962,6 +967,10 @@ export async function processGeneration(genId: string): Promise<void> {
     // bo'lsa → count=0 → failed→done QILMAYMIZ (refund saqlanadi; assetlar history'да ko'rinmaydi —
     // "bepul gen" oldini olamiz). Double-refund race fix (audit 2026-06-26).
     await prisma.generation.updateMany({ where: { id: genId, status: "running" }, data: { status: "done" } });
+
+    // Storage retention (Bosqich 4 #4) — yangi asset joylashgach kvotadan oshsa, eng
+    // eski o'z assetlarni o'chirib joy bo'shatadi (best-effort; genni buzmaydi).
+    enforceStorageRetention(gen.userId).catch((e) => console.error("enforceStorageRetention", e));
   } catch (e) {
     await fail(e instanceof Error ? e.message : String(e));
   }

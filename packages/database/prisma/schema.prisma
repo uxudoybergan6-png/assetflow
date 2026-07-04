@@ -463,6 +463,7 @@ model GenAsset {
   width        Int?
   height       Int?
   aspectRatio  String?                      // "16:9"
+  sizeBytes    Int?                         // Bosqich 4 #4: storage kvota hisobi (persist'da buf.length). null = eski/noma'lum.
   createdAt    DateTime   @default(now())
 
   generation   Generation @relation(fields: [generationId], references: [id], onDelete: Cascade)

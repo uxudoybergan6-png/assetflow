@@ -9,6 +9,7 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
+import { isStorageOverQuota } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured } from "../lib/ai/fal.js";
@@ -961,6 +962,19 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(429).json({
       error: "Kunlik generatsiya limiti tugadi — ertaga qayta urinib ko'ring",
       code: "GEN_DAILY_CAP_REACHED",
+    });
+    return;
+  }
+
+  // 4) Storage kvota gate (Bosqich 4 #4) — user ALLAQACHON kvotadan oshgan bo'lsa
+  // toza rad (kredit YECHILMAYDI, chunki consume'dan OLDIN). ADMIN ozod.
+  const storage = await isStorageOverQuota(req.user!.userId, req.user!.role === "ADMIN");
+  if (storage.over) {
+    res.status(413).json({
+      error: "Saqlash hajmi to'ldi — eski generatsiyalarni o'chiring yoki tarifni oshiring",
+      code: "STORAGE_QUOTA_EXCEEDED",
+      usedBytes: storage.usedBytes,
+      quotaBytes: storage.quotaBytes,
     });
     return;
   }
