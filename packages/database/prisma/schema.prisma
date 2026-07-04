@@ -167,6 +167,10 @@ model WebhookEvent {
   @@index([createdAt])
 }
 
+/// DEPRECATED (Bosqich 4 #2) — jonli katalog EMAS. Marketplace'ning yagona haqiqat
+/// manbai `ContributorTemplate`. `Asset` faqat eski demo seed'da yaratiladi (dev),
+/// hech qanday jonli route uni o'qimaydi. Model migratsiya-xavfsizligi uchun saqlanadi
+/// (o'chirish = destructive migratsiya). Yangi kod ContributorTemplate'ni ishlatsin.
 model Asset {
   id          String    @id @default(cuid())
   title       String
@@ -192,6 +196,10 @@ model Asset {
   @@index([published])
 }
 
+/// DEPRECATED (Bosqich 4 #2) — hech qachon yaratilmagan o'lik model (`Asset`'ga
+/// bog'langan). Real yuklab olish tracking'i endi `TemplateDownloadEvent` (Bosqich 4 #1).
+/// Migratsiya-xavfsizligi uchun saqlanadi (o'chirish = destructive). Yangi kod
+/// TemplateDownloadEvent'ni ishlatsin.
 model Download {
   id        String   @id @default(cuid())
   userId    String
