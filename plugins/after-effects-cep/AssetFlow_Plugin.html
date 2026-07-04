@@ -2955,9 +2955,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* FIX4 (live-test): SOZLAMA picker'lari bottom-sheet EMAS — bosilgan pill yonida ochiladigan popover
    (.sheet.pop + positionPopover). Yengil backdrop tashqi-clickni ushlaydi; grab-handle/border-top yo'q
    (qora chiziq artefakti shu edi). Referens-manba/trim sheet'lari bottom-sheet bo'lib qoladi. */
-.axig .sheet.pop{background:rgba(0,0,0,.22);align-items:initial;justify-content:initial}
+/* FIX E: popover ortidagi "uzun soya"/qora polosa olib tashlandi — backdrop shaffof (tashqi-click
+   baribir ushlanadi), karta soyasi ixcham. Popover = toza kompakt karta, katta qora gradient yo'q. */
+.axig .sheet.pop{background:transparent;align-items:initial;justify-content:initial}
 .axig .sheet.pop.on{display:block}
-.axig .sheet.pop .sheetc{position:fixed;left:0;top:0;width:auto;max-width:92vw;background:#161B22;border:1px solid var(--line2);border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.6);padding:13px;max-height:62vh;overflow-y:auto;animation:none}
+.axig .sheet.pop .sheetc{position:fixed;left:0;top:0;width:auto;max-width:92vw;background:#161B22;border:1px solid var(--line2);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:13px;max-height:62vh;overflow-y:auto;animation:none}
 .axig .sheet.pop .sheetc::before{display:none}
 .axig .sheeth{display:flex;align-items:center;margin-bottom:11px}.axig .sheeth b{font-size:14px}.axig .sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center}
 .axig .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}
