@@ -14470,6 +14470,45 @@
   .ff .ffa-appc{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8.5px;padding:3px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   .ff .ffa-appc .d{width:5px;height:5px;border-radius:50%}
   .ff .ffa-tc:hover .ffa-th{outline:1px solid rgba(255,255,255,.16)}
+  .ff .ffa-dur{position:absolute;bottom:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;padding:3px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffa-tplay{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.85);transition:.22s var(--ease,cubic-bezier(.34,1.2,.64,1))}
+  .ff .ffa-tplay>span{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.36);display:grid;place-items:center;color:#fff;font-size:15px}
+  .ff .ffa-tc:hover .ffa-tplay{opacity:1;transform:scale(1)}
+  /* ── marketplace filter rail (mockup tpl1 · 1:1) ── */
+  .ff .ffa-mkt-grid{display:flex;min-height:0;gap:0}
+  .ff .ffa-mkt-rail{width:220px;flex:none;border-right:1px solid var(--hair);padding:4px 22px 4px 0;margin-right:24px;align-self:start;position:sticky;top:78px}
+  .ff .ffa-flab{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--muted2);margin-bottom:8px;display:block}
+  .ff .ffa-ftag{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:inherit;font-weight:500;font-size:11.5px;color:var(--muted);white-space:nowrap;cursor:pointer;transition:background .14s,color .14s}
+  .ff .ffa-ftag:hover{color:var(--text)}
+  .ff .ffa-ftag.on{background:var(--f3);box-shadow:var(--inset);border-color:transparent;font-weight:600;color:var(--text)}
+  .ff .ffa-achip{padding:5px 10px}
+  .ff .ffa-fcat{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;background:none;border:none;font-family:inherit;font-size:12px;color:#B7C0CE;cursor:pointer;text-align:left;width:100%;transition:background .14s}
+  .ff .ffa-fcat:hover{background:var(--f1)}
+  .ff .ffa-fcat.on{background:var(--f2);color:var(--text);font-weight:500}
+  .ff .ffa-chk{width:15px;height:15px;flex:none;border-radius:4px;border:1px solid rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:transparent}
+  .ff .ffa-chk.on{background:var(--lime);border-color:var(--lime);color:#0E1400}
+  .ff .ffa-mkt-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 18px}
+  .ff .ffa-fbtn{display:none;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
+  .ff .ffa-fbadge{min-width:16px;height:16px;border-radius:999px;background:var(--lime);color:var(--onlime);font:700 9px 'IBM Plex Mono',monospace;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+  /* mobile filter drawer (bottom sheet) */
+  .ff .ffa-fdrawer-ovl{position:fixed;inset:0;z-index:88;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:flex-end}
+  .ff .ffa-fdrawer{width:100%;max-height:88vh;overflow-y:auto;background:var(--pop);border-radius:18px 18px 0 0;border-top:1px solid rgba(255,255,255,.12);padding:8px 18px 22px;box-shadow:0 -18px 42px rgba(0,0,0,.5)}
+  .ff .ffa-fdrawer-handle{width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 14px}
+  /* detail modal split (mockup tpl2 · 1:1) */
+  .ff .ffa-dmodal{width:100%;max-width:920px;max-height:min(560px,88vh);display:flex;overflow:hidden;background:var(--pop);border:1px solid rgba(255,255,255,.09);border-radius:16px;box-shadow:0 30px 70px rgba(0,0,0,.6)}
+  .ff .ffa-dpreview{width:440px;flex:none;position:relative;overflow:hidden}
+  .ff .ffa-dbody{flex:1;min-width:0;padding:24px 26px;display:flex;flex-direction:column;overflow-y:auto}
+  @media(max-width:900px){
+    .ff .ffa-mkt-cards{grid-template-columns:repeat(3,1fr)!important}
+    .ff .ffa-dmodal{flex-direction:column;max-height:88vh}
+    .ff .ffa-dpreview{width:100%;aspect-ratio:16/9}
+  }
+  @media(max-width:680px){
+    .ff .ffa-mkt-rail{display:none}
+    .ff .ffa-mkt-grid{display:block}
+    .ff .ffa-fbtn{display:inline-flex}
+    .ff .ffa-mkt-cards{grid-template-columns:1fr 1fr!important;gap:16px 14px}
+  }
   /* dashboard quick-action cards */
   .ff .ffa-qa{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;cursor:pointer;font-family:inherit;text-align:left;transition:transform .18s,border-color .18s}
   .ff .ffa-qa:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.16)}
@@ -14502,10 +14541,13 @@
     .ff .ffa-dash-qa{grid-template-columns:1fr!important}
     .ff .ffa-dash-gens{grid-template-columns:1fr 1fr!important}
     .ff .ffa-dash-rec{grid-template-columns:1fr 1fr!important}
+    .ff .ffa-proj-grid{grid-template-columns:1fr 1fr!important}
   }
   @media(min-width:821px) and (max-width:1120px){
     .ff .ffa-dash-gens{grid-template-columns:repeat(4,1fr)!important}
     .ff .ffa-dash-rec{grid-template-columns:repeat(3,1fr)!important}
+    .ff .ffa-proj-grid{grid-template-columns:repeat(3,1fr)!important}
+    .ff .ffa-mkt-cards{grid-template-columns:repeat(3,1fr)!important}
   }
   @media(max-width:480px){
     .ff .ffa-dash-qa{grid-template-columns:1fr!important}
@@ -14941,65 +14983,85 @@
 
         <!-- TEMPLATES MARKETPLACE -->
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-bottom:22px">
-            <h1 style="font-size:28px;font-weight:600;letter-spacing:-.025em;margin:0 0 6px">Shablonlar</h1>
-            <p style="font-size:15px;color:var(--txt2);margin:0">{{ filtCount }} ta shablon · AE, Premiere va DaVinci uchun</p>
+          <div style="margin-bottom:20px">
+            <div style="font-weight:700;font-size:22px;letter-spacing:-.015em">Shablonlar</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Tasdiqlangan katalog — After Effects, Premiere va DaVinci uchun</div>
           </div>
-          <div class="ff-mkt-grid" style="display:grid;grid-template-columns:248px 1fr;gap:26px;align-items:start">
-            <aside class="ff-mkt-filters" style="position:sticky;top:90px;border-radius:18px;background:var(--card);border:1px solid var(--bd);padding:20px">
-              <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:18px"><i class="ph ph-funnel" style="font-size:17px"></i>Filtrlar</div>
-              <div style="margin-bottom:20px">
-                <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:10px">Dastur</div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onFApp }}" style="padding:7px 13px;border-radius:9px;background:{{ x.bg }};border:1px solid {{ x.bd }};color:{{ x.col }};font-family:inherit;font-size:13px;font-weight:500;cursor:pointer">{{ x.v }}</button></sc-for></div>
-              </div>
-              <div style="margin-bottom:20px">
-                <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:8px">Kategoriya</div>
-                <div style="display:flex;flex-direction:column;gap:2px"><sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="7"><button data-v="{{ x.v }}" onclick="{{ onFCat }}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:9px;background:none;border:none;color:{{ x.col2 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;text-align:left">{{ x.v }}<sc-if value="{{ x.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--acc)"></i></sc-if></button></sc-for></div>
-              </div>
-              <div style="margin-bottom:20px">
-                <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:10px">Narx</div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFPlan }}" style="padding:7px 13px;border-radius:9px;background:{{ x.bg }};border:1px solid {{ x.bd }};color:{{ x.col }};font-family:inherit;font-size:13px;font-weight:500;cursor:pointer">{{ x.v }}</button></sc-for></div>
-              </div>
-              <div style="margin-bottom:20px">
-                <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:10px">Orientatsiya</div>
-                <div style="display:flex;gap:7px"><span style="flex:1;padding:8px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);text-align:center;font-size:12.5px;color:var(--txt2)">Landshaft</span><span style="flex:1;padding:8px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);text-align:center;font-size:12.5px;color:var(--txt2)">Portret</span></div>
-              </div>
-              <div>
-                <div style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:10px">Sifat</div>
-                <div style="display:flex;gap:7px"><span style="flex:1;padding:8px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);text-align:center;font-size:12.5px;color:var(--txt2)">HD</span><span style="flex:1;padding:8px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);text-align:center;font-size:12.5px;color:var(--txt2)">4K</span></div>
-              </div>
+          <div class="ffa-mkt-grid">
+            <!-- FILTER RAIL (desktop) -->
+            <aside class="ffa-mkt-rail">
+              <div style="display:flex;align-items:center;margin-bottom:16px"><span style="font-weight:700;font-size:13px">Filtrlar</span><span style="flex:1"></span><sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ true }}"><span onclick="{{ resetFilters }}" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--lime);cursor:pointer">Tozalash</span></sc-if></div>
+              <div class="ffa-flab">DASTUR</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onFApp }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+              <div class="ffa-flab">KATEGORIYA</div>
+              <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:16px"><sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><button data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><i class="ph-bold ph-check"></i></span>{{ x.v }}</button></sc-for></div>
+              <div class="ffa-flab">NARX</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFPlan }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+              <div class="ffa-flab">ORIENTATSIYA</div>
+              <div style="display:flex;gap:6px;margin-bottom:16px"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+              <div class="ffa-flab">SIFAT</div>
+              <div style="display:flex;gap:6px"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><button data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
             </aside>
-            <div>
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap">
-                <div style="font-size:14px;color:var(--txt2)">{{ filtCount }} ta natija</div>
-                <div style="display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;background:var(--card);border:1px solid var(--bd);font-size:13.5px;color:var(--txt2);cursor:pointer">Saralash: Mashhur<i class="ph ph-caret-down"></i></div>
+            <!-- GRID COLUMN -->
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+                <span style="font-weight:700;font-size:15px">{{ tplHeading }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">{{ filtCount }} natija</span>
+                <span style="flex:1"></span>
+                <button class="ffa-fbtn" onclick="{{ toggleFilterDrawer }}"><i class="ph ph-sliders-horizontal" style="font-size:15px"></i>Filtrlar<sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="ffa-fbadge">{{ filterCountFmt }}</span></sc-if></button>
+                <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="0"><button data-k="{{ c.k }}" onclick="{{ clearChip }}" class="ffa-ftag on ffa-achip"><i class="ph ph-{{ c.ic }}" style="font-size:11px"></i>{{ c.v }}<i class="ph ph-x" style="font-size:11px"></i></button></sc-for>
+                <div style="position:relative">
+                  <button onclick="{{ toggleSort }}" class="ffa-ftag ffa-achip"><i class="ph ph-arrows-down-up" style="font-size:12px"></i>Saralash: {{ sortLabel }}</button>
+                  <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-menu" style="top:36px;right:0;width:180px"><sc-for list="{{ sortView }}" as="s" hint-placeholder-count="3"><button class="ffa-mrow" data-v="{{ s.k }}" onclick="{{ pickSort }}">{{ s.label }}<span style="flex:1"></span><sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--lime)"></i></sc-if></button></sc-for></div></sc-if>
+                </div>
               </div>
               <sc-if value="{{ hasFiltered }}" hint-placeholder-val="{{ true }}">
-                <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px">
-                  <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="9">
-                    <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ff-tcard" style="border-radius:16px;background:var(--card);border:1px solid var(--bd);overflow:hidden;cursor:pointer">
-                      <div style="position:relative;aspect-ratio:16/10;overflow:hidden">
-                        <div class="ff-tprev" style="position:absolute;inset:0;background:{{ t.g }};transition:transform .25s"></div>
-                        <div style="position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:7px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font-size:10.5px;font-weight:600;color:#fff"><span style="width:7px;height:7px;border-radius:2px;background:{{ t.ac }}"></span>{{ t.a }}</div>
-                        <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:7px;background:#C2F04A;font-size:10px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</div></sc-if>
-                        <div class="ff-tplay" style="position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.85);transition:.25s"><div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.4);display:grid;place-items:center"><i class="ph-fill ph-play" style="color:#fff;font-size:17px;margin-left:2px"></i></div></div>
-                        <div style="position:absolute;bottom:10px;right:10px;padding:3px 8px;border-radius:7px;background:rgba(0,0,0,.55);font-size:10.5px;font-weight:600;color:#fff">{{ t.d }}</div>
+                <div class="ffa-mkt-cards">
+                  <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
+                    <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ffa-tc">
+                      <div class="ffa-th" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
+                        <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="ffa-bgpro">PRO</span></sc-if>
+                        <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="ffa-bgfree">BEPUL</span></sc-if>
+                        <span class="ffa-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
+                        <span class="ffa-dur">{{ t.d }}</span>
+                        <div class="ffa-tplay"><span><i class="ph-fill ph-play" style="margin-left:2px"></i></span></div>
                       </div>
-                      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px"><div style="min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.n }}</div><div style="font-size:12px;color:var(--txt3);margin-top:2px">{{ t.c }}</div></div><i class="ph ph-download-simple" style="font-size:17px;color:var(--txt2);flex:none"></i></div>
+                      <div class="ffa-nm">{{ t.n }}</div>
+                      <div class="ffa-mt">{{ t.c }} · {{ t.qual }}</div>
                     </div>
                   </sc-for>
                 </div>
               </sc-if>
               <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
-                <div style="text-align:center;padding:80px 20px;border-radius:18px;background:var(--card);border:1px solid var(--bd)">
-                  <i class="ph ph-magnifying-glass" style="font-size:40px;color:var(--txt3)"></i>
-                  <div style="font-size:18px;font-weight:600;margin:16px 0 6px">Hech narsa topilmadi</div>
-                  <p style="font-size:14px;color:var(--txt2);margin:0 0 18px">Filtrlarni o'zgartirib ko'ring — katalog muntazam to'ldirilmoqda</p>
-                  <button onclick="{{ resetFilters }}" style="padding:11px 20px;border:1px solid var(--bd2);border-radius:11px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer">Filtrlarni tozalash</button>
+                <div style="text-align:center;padding:70px 20px;border:1px dashed rgba(255,255,255,.1);border-radius:14px">
+                  <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)"><i class="ph ph-magnifying-glass"></i></span>
+                  <div style="font-size:15px;font-weight:600;margin:12px 0 5px">Hech narsa topilmadi</div>
+                  <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">Filtrlarni o'zgartirib ko'ring — katalog muntazam to'ldirilmoqda</p>
+                  <button class="ffm-btn2 sm" onclick="{{ resetFilters }}">Filtrlarni tozalash</button>
                 </div>
               </sc-if>
             </div>
           </div>
+          <!-- MOBILE FILTER DRAWER (§5 tuzatish — 680px'dan past) -->
+          <sc-if value="{{ filterDrawerOpen }}" hint-placeholder-val="{{ false }}">
+            <div onclick="{{ closeFilterDrawer }}" class="ffa-fdrawer-ovl">
+              <div onclick="{{ stop }}" class="ffa-fdrawer">
+                <div class="ffa-fdrawer-handle"></div>
+                <div style="display:flex;align-items:center;margin-bottom:16px"><span style="font-weight:700;font-size:15px">Filtrlar</span><span style="flex:1"></span><span onclick="{{ resetFilters }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--lime);cursor:pointer">Tozalash</span></div>
+                <div class="ffa-flab">DASTUR</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onFApp }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+                <div class="ffa-flab">KATEGORIYA</div>
+                <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:16px"><sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><button data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><i class="ph-bold ph-check"></i></span>{{ x.v }}</button></sc-for></div>
+                <div class="ffa-flab">NARX</div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFPlan }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+                <div class="ffa-flab">ORIENTATSIYA</div>
+                <div style="display:flex;gap:7px;margin-bottom:16px"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+                <div class="ffa-flab">SIFAT</div>
+                <div style="display:flex;gap:7px;margin-bottom:20px"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><button data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
+                <button class="ffm-btn full lg" onclick="{{ closeFilterDrawer }}">{{ filtCount }} natijani ko'rsatish</button>
+              </div>
+            </div>
+          </sc-if>
         </sc-if>
 
         <!-- AI STUDIO -->
@@ -15204,14 +15266,22 @@
 
         <!-- PROJECTS -->
         <sc-if value="{{ isProjects }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px"><div><h1 style="font-size:28px;font-weight:600;letter-spacing:-.025em;margin:0 0 6px">Loyihalar</h1><p style="font-size:15px;color:var(--txt2);margin:0">Saqlangan ishlaringiz va kolleksiyalar</p></div><button onclick="{{ newProject }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:none;border-radius:12px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14.5px;cursor:pointer"><i class="ph-bold ph-plus"></i>Yangi loyiha</button></div>
-          <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px">
+            <div><div style="font-weight:700;font-size:22px;letter-spacing:-.015em">Loyihalar</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Generatsiya va shablonlarni loyihalarga guruhlang</div></div>
+            <span style="flex:1"></span>
+            <button class="ffm-btn" onclick="{{ newProject }}"><i class="ph ph-plus" style="font-size:14px"></i>Yangi loyiha</button>
+          </div>
+          <div class="ffa-proj-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
             <sc-for list="{{ projectsView }}" as="p" hint-placeholder-count="4">
-              <div class="ff-feat" style="border-radius:18px;background:var(--card);border:1px solid var(--bd);overflow:hidden;cursor:pointer">
-                <div style="position:relative;aspect-ratio:16/10;background:{{ p.g }};background-size:180% 180%;animation:ffShimmer 9s ease infinite"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.4))"></div><i class="ph-fill ph-folder" style="position:absolute;top:12px;left:12px;color:#fff;font-size:22px;opacity:.9"></i></div>
-                <div style="padding:14px 16px"><div style="font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-size:12.5px;color:var(--txt3);margin-top:3px">{{ p.d }}</div></div>
+              <div onclick="{{ newProject }}" style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;cursor:pointer">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:120px"><div style="background:{{ p.g1 }}"></div><div style="background:{{ p.g2 }}"></div><div style="background:{{ p.g3 }}"></div><div style="background:{{ p.g4 }}"></div></div>
+                <div style="padding:13px 14px"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px">{{ p.d }}</div></div>
               </div>
             </sc-for>
+            <button onclick="{{ newProject }}" style="border:1px dashed rgba(255,255,255,.14);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:190px;color:var(--muted);background:none;font-family:inherit;cursor:pointer">
+              <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-plus"></i></span>
+              <span style="font-size:12px;font-weight:600">Yangi loyiha</span>
+            </button>
           </div>
         </sc-if>
 
@@ -15334,23 +15404,31 @@
 
   <!-- TEMPLATE DETAIL MODAL -->
   <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeDetail }}" style="position:fixed;inset:0;z-index:90;background:rgba(5,5,9,.75);backdrop-filter:blur(7px);display:grid;place-items:start center;padding:32px 24px;overflow:auto">
-      <div onclick="{{ stop }}" style="width:100%;max-width:880px;border-radius:24px;background:var(--panel);border:1px solid var(--bd2);overflow:hidden;box-shadow:0 50px 100px -30px rgba(0,0,0,.85)">
-        <div style="position:relative;aspect-ratio:16/8;background:{{ detail.g }}">
+    <div onclick="{{ closeDetail }}" style="position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);display:grid;place-items:center;padding:32px 24px;overflow:auto">
+      <div onclick="{{ stop }}" class="ffa-dmodal">
+        <!-- LEFT · preview -->
+        <div class="ffa-dpreview" style="background:{{ detail.g }}">
           <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" preload="none" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
-          <button onclick="{{ closeDetail }}" style="position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px"><i class="ph ph-x"></i></button>
-          <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:9px;background:#C2F04A;font-size:11px;font-weight:700;color:#0E1400"><i class="ph-fill ph-crown"></i>PRO</div></sc-if>
+          <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><span class="ffa-bgpro" style="top:14px;left:14px">PRO</span></sc-if>
+          <sc-if value="{{ detail.free }}" hint-placeholder-val="{{ true }}"><span class="ffa-bgfree" style="top:14px;left:14px">BEPUL</span></sc-if>
+          <span class="ffa-appc" style="bottom:14px;left:14px"><span class="d" style="background:{{ detail.ac }}"></span>{{ detail.appFull }}</span>
+          <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;color:rgba(255,255,255,.85)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
         </div>
-        <div style="padding:24px 26px 26px">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:16px">
-            <div><h2 style="font-size:24px;font-weight:600;margin:0 0 6px">{{ detail.n }}</h2><div style="font-size:14px;color:var(--txt2)">{{ detail.c }} · {{ detail.a }} · {{ detail.author }}</div></div>
-            <div style="display:flex;gap:10px"><button onclick="{{ goPlugin }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:1px solid var(--bd2);border-radius:12px;background:var(--card2);color:var(--txt);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer"><i class="ph ph-plugs-connected"></i>Plaginda ochish</button><button onclick="{{ downloadTpl }}" style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:none;border-radius:12px;background:var(--grad);color:#0E1400;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 10px 26px -10px var(--ring)"><i class="ph-bold ph-download-simple"></i>Yuklab olish</button></div>
+        <!-- RIGHT · body -->
+        <div class="ffa-dbody">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:20px;letter-spacing:-.01em">{{ detail.n }}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">{{ detail.c }} · {{ detail.appFull }} · {{ detail.author }}</div></div>
+            <button onclick="{{ closeDetail }}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:19px;display:flex;flex:none;padding:2px"><i class="ph ph-x"></i></button>
           </div>
-          <p style="font-size:15px;color:var(--txt2);line-height:1.6;margin:0 0 18px">{{ detail.descText }}</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--bd);font-size:12.5px;color:var(--txt2)">{{ tg }}</span></sc-for></div>
-          <div style="font-size:14px;font-weight:600;margin-bottom:14px">O'xshash shablonlar</div>
-          <div class="ff-studio-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-            <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4"><div data-id="{{ r.id }}" onclick="{{ openDetail }}" style="cursor:pointer"><div style="position:relative;aspect-ratio:16/10;border-radius:11px;overflow:hidden;background:{{ r.g }}"></div><div style="font-size:12.5px;font-weight:500;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.n }}</div></div></sc-for>
+          <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap"><sc-for list="{{ detail.metaPills }}" as="mp" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:#B7C0CE">{{ mp }}</span></sc-for></div>
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:16px">{{ detail.descText }}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="font-size:11px;padding:5px 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted)">{{ tg }}</span></sc-for></div>
+          <div style="flex:1;min-height:16px"></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);margin-top:16px">O'XSHASH SHABLONLAR</div>
+          <div style="display:flex;gap:10px;margin-top:10px"><sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4"><div data-id="{{ r.id }}" onclick="{{ openDetail }}" style="cursor:pointer;flex:1;min-width:0"><div style="aspect-ratio:5/4;border-radius:8px;background:{{ r.g }}"></div></div></sc-for></div>
+          <div style="display:flex;gap:10px;margin-top:18px">
+            <button class="ffm-btn" style="flex:1" onclick="{{ downloadTpl }}"><i class="ph ph-download-simple" style="font-size:14px"></i>Yuklab olish</button>
+            <button class="ffm-btn2" onclick="{{ goPlugin }}"><i class="ph ph-plugs-connected" style="font-size:15px"></i>Plaginda</button>
           </div>
         </div>
       </div>
@@ -15415,6 +15493,11 @@ class Component extends DCLogic {
     fApp: 'Barchasi',
     fCat: 'Barchasi',
     fPlan: 'Barchasi',
+    fOrient: 'Barchasi',
+    fQual: 'Barchasi',
+    sortKey: 'mos',
+    sortOpen: false,
+    filterDrawerOpen: false,
     toast: null,
     q: '',
     modelOpen: false,
@@ -15679,6 +15762,9 @@ class Component extends DCLogic {
         id: String(it.id), n: it.name || 'Shablon', c: it.catLabel || it.cat || 'Shablon',
         a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6',
         pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
+        ori: it.orient === 'vertical' ? '9:16' : (it.orient === 'square' ? '1:1' : '16:9'),
+        qual: ((it.res || '4k').toUpperCase().indexOf('4K') >= 0) ? '4K' : 'HD',
+        ar: it.orient === 'vertical' ? '9 / 16' : (it.orient === 'square' ? '1 / 1' : '16 / 10'),
         thumbUrl: it.thumbUrl || null, previewUrl: it.previewUrl || null, hasPack: !!it.packUrl,
         desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
         author: it.author || (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
@@ -16109,17 +16195,36 @@ class Component extends DCLogic {
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
-    const filtered = src.filter(t => (this.state.fApp === 'Barchasi' || t.a === this.state.fApp) && (this.state.fCat === 'Barchasi' || t.c === this.state.fCat) && (this.state.fPlan === 'Barchasi' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => ({ ...t, g: media(t.thumbUrl, t.h) }));
-    const fAppsView = ['Barchasi', 'Ae', 'Pr', 'Dr'].map(x => ({ v: x, bg: x === this.state.fApp ? 'var(--card3)' : 'var(--card)', col: x === this.state.fApp ? 'var(--txt)' : 'var(--txt2)', bd: x === this.state.fApp ? 'var(--bd2)' : 'var(--bd)' }));
+    let filtered = src.filter(t => (this.state.fApp === 'Barchasi' || t.a === this.state.fApp) && (this.state.fCat === 'Barchasi' || t.c === this.state.fCat) && (this.state.fPlan === 'Barchasi' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'Barchasi' || t.ori === this.state.fOrient) && (this.state.fQual === 'Barchasi' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => ({ ...t, g: media(t.thumbUrl, t.h), free: !t.pro }));
+    if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
+    else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
+    const sortOpts = [{ k: 'mos', label: 'Mos' }, { k: 'az', label: 'Nomi A→Z' }, { k: 'za', label: 'Nomi Z→A' }];
+    const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
+    const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey }));
+    const fAppsView = ['Barchasi', 'Ae', 'Pr', 'Dr'].map(x => ({ v: x, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag' }));
     const catalogCats = Array.from(new Set(src.map(t => t.c)));
-    const fCatsView = ['Barchasi'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, col2: x === this.state.fCat ? 'var(--txt)' : 'var(--txt2)' }));
-    const fPlansView = ['Barchasi', 'Bepul', 'Pro'].map(x => ({ v: x, bg: x === this.state.fPlan ? 'var(--card3)' : 'var(--card)', col: x === this.state.fPlan ? 'var(--txt)' : 'var(--txt2)', bd: x === this.state.fPlan ? 'var(--bd2)' : 'var(--bd)' }));
+    const fCatsView = ['Barchasi'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk' }));
+    const fPlansView = ['Barchasi', 'Bepul', 'Pro'].map(x => ({ v: x, cls: x === this.state.fPlan ? 'ffa-ftag on' : 'ffa-ftag' }));
+    // Orientatsiya / Sifat — mockup tag chip'lari (toggle: faol chipni bosish → tozalash). Katalog so'roviga real ulangan.
+    const fOrientView = ['16:9', '9:16', '1:1'].map(v => ({ v, cls: v === this.state.fOrient ? 'ffa-ftag on' : 'ffa-ftag' }));
+    const fQualView = ['HD', '4K'].map(v => ({ v, cls: v === this.state.fQual ? 'ffa-ftag on' : 'ffa-ftag' }));
+    // Grid ustidagi faol filter chip'lari (mockup) — bosilsa tozalanadi
+    const activeChips = [];
+    if (this.state.fOrient !== 'Barchasi') activeChips.push({ k: 'orient', v: this.state.fOrient, ic: 'tag' });
+    if (this.state.fQual !== 'Barchasi') activeChips.push({ k: 'qual', v: this.state.fQual, ic: 'tag' });
+    if (this.state.fApp !== 'Barchasi') activeChips.push({ k: 'app', v: this.state.fApp, ic: 'monitor' });
+    if (this.state.fPlan !== 'Barchasi') activeChips.push({ k: 'plan', v: this.state.fPlan, ic: 'tag' });
+    const hasActiveFilters = activeChips.length > 0 || this.state.fCat !== 'Barchasi';
+    const filterCount = activeChips.length + (this.state.fCat !== 'Barchasi' ? 1 : 0);
+    const tplHeading = this.state.fCat === 'Barchasi' ? 'Barcha shablonlar' : this.state.fCat;
     const dRaw = this.state.detail;
     const detail = dRaw ? {
       ...dRaw, g: media(dRaw.thumbUrl, dRaw.h),
       descText: dRaw.desc || (dRaw.real ? 'Professional darajadagi shablon. To\'liq moslashtiriladigan elementlar.' : 'Ko\'rgazma shabloni — real katalog tez orada to\'ldiriladi.'),
       tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
-      hasPreview: !!dRaw.previewUrl,
+      hasPreview: !!dRaw.previewUrl, noPreview: !dRaw.previewUrl, free: !dRaw.pro,
+      appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
+      metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
       related: (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c && t.id !== dRaw.id).slice(0, 4).map(t => ({ ...t, g: media(t.thumbUrl, t.h) })),
     } : null;
     const lb = this.state.lightbox ? { ...this.state.lightbox, g: media(this.state.lightbox.type === 'image' ? (this.state.lightbox.thumb || this.state.lightbox.url) : this.state.lightbox.thumb, this.state.lightbox.h), isVideo: this.state.lightbox.type === 'video' && !!this.state.lightbox.url, isAudio: this.state.lightbox.type === 'audio' && !!this.state.lightbox.url } : null;
@@ -16130,7 +16235,7 @@ class Component extends DCLogic {
     const hasCreditHistory = creditHistoryView.length > 0;
     const downloadHistoryView = [];
     const hasDownloads = false;
-    const projectsView = this.projects.map(p => ({ ...p, g: this.grad(p.h) }));
+    const projectsView = this.projects.map(p => ({ ...p, g: this.grad(p.h), g1: this.grad(p.h), g2: this.grad((p.h + 42) % 360), g3: this.grad((p.h + 96) % 360), g4: this.grad((p.h + 150) % 360) }));
     const recTemplates = src.slice(0, 4).map(t => ({ ...t, g: media(t.thumbUrl, t.h), free: !t.pro }));
     const hasRec = recTemplates.length > 0;
     const dashGens = genView.slice(0, 5);
@@ -16305,7 +16410,10 @@ class Component extends DCLogic {
       q: this.state.q, filtered, filtCount: filtered.length,
       hasFiltered: filtered.length > 0, noFiltered: this.state.catalogReady && filtered.length === 0,
       catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
-      fAppsView, fCatsView, fPlansView,
+      fAppsView, fCatsView, fPlansView, fOrientView, fQualView,
+      activeChips, hasActiveFilters, filterCount, filterCountFmt: String(filterCount), tplHeading,
+      filterDrawerOpen: this.state.filterDrawerOpen,
+      sortLabel, sortView, sortOpen: this.state.sortOpen,
       detail, lb, accView, accountTab: this.state.accountTab,
       accProfile: this.state.accountTab === 'Profil', accObuna: this.state.accountTab === 'Obuna', accKredit: this.state.accountTab === 'Kreditlar', accYuklama: this.state.accountTab === 'Yuklamalar',
       creditHistoryView, hasCreditHistory, noCreditHistory: !hasCreditHistory, downloadHistoryView, hasDownloads, projectsView,
@@ -16334,7 +16442,14 @@ class Component extends DCLogic {
       onFApp: (e) => this.setState({ fApp: e.currentTarget.dataset.v }),
       onFCat: (e) => this.setState({ fCat: e.currentTarget.dataset.v }),
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
-      resetFilters: () => this.setState({ fApp: 'Barchasi', fCat: 'Barchasi', fPlan: 'Barchasi', q: '' }),
+      onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'Barchasi' : v })); },
+      onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'Barchasi' : v })); },
+      clearChip: (e) => { const k = e.currentTarget.dataset.k; const m = { orient: 'fOrient', qual: 'fQual', app: 'fApp', plan: 'fPlan' }; if (m[k]) this.setState({ [m[k]]: 'Barchasi' }); },
+      toggleFilterDrawer: () => this.setState(s => ({ filterDrawerOpen: !s.filterDrawerOpen })),
+      closeFilterDrawer: () => this.setState({ filterDrawerOpen: false }),
+      toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
+      pickSort: (e) => this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }),
+      resetFilters: () => this.setState({ fApp: 'Barchasi', fCat: 'Barchasi', fPlan: 'Barchasi', fOrient: 'Barchasi', fQual: 'Barchasi', q: '' }),
       openDetail: (e) => { const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) this.setState({ detail: t }); },
       closeDetail: () => this.setState({ detail: null }),
       onAccTab: (e) => this.setState({ accountTab: e.currentTarget.dataset.v }),
