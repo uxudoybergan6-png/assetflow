@@ -45,6 +45,7 @@ import {
   modelAcceptsReference,
   firstReferenceModel,
   getRefKind,
+  modelSupportsEndFrame,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import { writeProviderSpend } from "../lib/ledger.js";
@@ -832,6 +833,17 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(400).json({
       error: `«${model.label}» uchun referens majburiy — kamida 1 ta rasm qo'shing`,
       code: "REFERENCE_REQUIRED",
+    });
+    return;
+  }
+  // Yakuniy kadr FAQAT boshlang'ich kadr bilan (Veo SDK: lastFrame i2v-only; processor aks holda
+  // uni indamay tashlab yuborardi — foydalanuvchi to'lab "end"siz video olardi). KREDITDAN OLDIN.
+  const hasStartRef = typeof params.referenceUrl === "string" && params.referenceUrl.length > 0;
+  const hasEndRef = typeof params.referenceEndUrl === "string" && params.referenceEndUrl.length > 0;
+  if (hasEndRef && modelSupportsEndFrame(model) && !hasStartRef) {
+    res.status(400).json({
+      error: "Yakuniy kadr faqat boshlang'ich kadr bilan ishlaydi — boshlang'ich kadr ham qo'shing",
+      code: "END_FRAME_REQUIRES_START",
     });
     return;
   }

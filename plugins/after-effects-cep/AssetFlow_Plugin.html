@@ -1120,14 +1120,24 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .env-sidebar,.account-panel,.lr-box{box-shadow:inset 0 1px 0 var(--rim)}
 
 /* ── Tema almashtirgich (Hisob ekranida) ── */
-.theme-pick{display:flex;gap:8px;flex-wrap:wrap}
-.theme-opt{flex:1;min-width:96px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 8px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:var(--fs-sm);font-weight:600;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,color .15s}
-.theme-opt:hover{border-color:var(--muted-2)}
-.theme-opt.active{border-color:var(--border-accent);background:var(--green-dim);color:var(--accent-cta)}
-.theme-swatch{width:18px;height:18px;border-radius:6px;flex:none;border:1px solid rgba(255,255,255,.18)}
-.theme-sw-standart{background:linear-gradient(135deg,#06080B 40%,#C2F04A)}
-.theme-sw-liquid{background:linear-gradient(135deg,rgba(20,24,18,.85),rgba(163,230,53,.7))}
-.theme-sw-light{background:linear-gradient(135deg,#eef1ea 45%,#5a8f2a)}
+/* Mavzu previewlari — mockup g1 dan 1:1 (literal) */
+.theme-pick{display:flex;gap:8px}
+.theme-opt{flex:1;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.theme-prev{height:56px;border-radius:12px;padding:7px;box-sizing:border-box;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.theme-opt.active .theme-prev{border-color:rgba(194,240,74,.5)}
+.theme-tdot{display:none;position:absolute;right:7px;bottom:7px;width:7px;height:7px;border-radius:50%;background:#C2F04A}
+.theme-opt.active .theme-tdot{display:block}
+.theme-lbl{font-size:10px;text-align:center;margin-top:5px;font-weight:500;color:#8A93A3}
+.theme-opt.active .theme-lbl{color:#F2F5F8;font-weight:600}
+.theme-prev .tl{border-radius:99px;height:5px}
+.theme-prev-standart{background:#06080B}
+.theme-prev-standart .tl-a{width:44%;background:rgba(255,255,255,.14)}
+.theme-prev-standart .tl-b{width:70%;background:rgba(255,255,255,.07);margin-top:5px}
+.theme-prev-liquid{background:linear-gradient(135deg,#1A2233,#242F47)}
+.theme-prev-liquid .tglass{position:absolute;inset:6px;border-radius:8px;background:rgba(255,255,255,.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14)}
+.theme-prev-light{background:#E9ECF1}
+.theme-prev-light .tl-a{width:44%;background:rgba(10,13,18,.22)}
+.theme-prev-light .tl-b{width:70%;background:rgba(10,13,18,.1);margin-top:5px}
 
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:10px}
 .empty-ico{
@@ -1162,16 +1172,67 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 /* FIX H: hisob paneli markazlashgan modal (bottom-slide emas) */
 .account-sheet{
   position:fixed;inset:0;z-index:8000;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.6);padding:18px;box-sizing:border-box;
+  background:rgba(0,0,0,.6);padding:0;box-sizing:border-box;
 }
 .account-sheet.open{display:flex}
 .account-panel{
-  width:100%;max-width:440px;max-height:88vh;overflow-y:auto;
-  background:var(--surface-3);border:1px solid var(--border);
-  border-radius:16px;padding:16px 16px 20px;
-  box-shadow:0 10px 32px rgba(0,0,0,.45);
+  width:100%;max-width:404px;max-height:88vh;box-sizing:border-box;
+  background:#06080B;border:1px solid #222A37;border-radius:16px;
+  padding:0;overflow:hidden;display:flex;flex-direction:column;color:#F2F5F8;
+  box-shadow:0 30px 70px rgba(0,0,0,.5);
   animation:afModalIn .18s cubic-bezier(.22,1,.36,1);
 }
+/* ── Hisob (g1) — mockup g1 dan 1:1 literal; markazlashgan modal, bottom-slide EMAS ── */
+.acs-head{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:rgba(10,13,18,.92);border-bottom:1px solid rgba(255,255,255,.05)}
+.acs-back{display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;margin:0;cursor:pointer;color:#8A93A3;line-height:0}
+.acs-back:hover{color:#E7ECF3}
+.acs-htitle{font-weight:700;font-size:13px}
+.acs-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:14px}
+.acs-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3;margin:16px 0 8px}
+.acs-hint{font-size:11px;color:#8A93A3;line-height:1.45;margin-top:8px}
+/* profil */
+.acs-prof{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:#13161C;border:1px solid rgba(255,255,255,.08)}
+.acs-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);border:1px solid rgba(255,255,255,.16);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px}
+.acs-prof-info{flex:1;min-width:0}
+.acs-prof-name{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acs-prof-mail{font-family:var(--font-mono);font-size:9.5px;color:#5E6675;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* usage */
+.acs-usage{margin-top:10px;padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.acs-usage-top{display:flex;align-items:center;justify-content:space-between}
+.acs-usage-lbl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:#8A93A3}
+.acs-usage-refresh{font-family:var(--font-mono);font-size:9px;color:#8A93A3;display:flex;align-items:center;gap:4px;background:none;border:0;cursor:pointer;padding:0;font-variant-numeric:tabular-nums}
+.acs-usage-refresh:hover{color:#E7ECF3}
+.acs-usage-refresh svg{flex:none}
+.acs-usage-bar{display:flex;align-items:center;gap:10px;margin-top:10px}
+.acs-usage-track{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
+.acs-usage-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:#C2F04A;border-radius:99px}
+.acs-usage-count{font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums}
+.acs-usage-sec{font-family:var(--font-mono);font-size:9px;color:#5E6675;margin-top:8px}
+/* obunani boshqarish pill */
+.acs-pill{height:40px;margin-top:8px;width:100%;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:11.5px;color:#F2F5F8;cursor:pointer;font-family:inherit}
+.acs-pill:hover{background:rgba(255,255,255,.1)}
+.acs-pill svg{flex:none}
+/* yuklab olish papkasi */
+.acs-folder{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.acs-folder svg{flex:none;color:#8A93A3}
+.acs-folder .acc-folder-path{flex:1;min-width:0;font-family:var(--font-mono);font-size:9.5px;color:#B7C0CE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;line-height:1.4}
+.acs-folder .acc-folder-path.empty{color:#5E6675}
+.acs-folder-btns{display:flex;gap:8px;margin-top:8px}
+.acs-fbtn{height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:11px;cursor:pointer;font-family:inherit;color:#F2F5F8;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);padding:0 14px}
+.acs-fbtn:hover{background:rgba(255,255,255,.1)}
+.acs-fbtn.flex{flex:1}
+.acs-fbtn.ghost{background:rgba(255,255,255,.04);border:0;color:#8A93A3;font-weight:500}
+.acs-fbtn svg{flex:none}
+/* contributor / admin qatorlari */
+.acs-row{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);cursor:pointer;font-family:inherit;color:#F2F5F8;width:100%;text-align:left}
+.acs-row:hover{background:rgba(255,255,255,.06)}
+.acs-row-ico{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:#E7ECF3;flex:none}
+.acs-row-txt{flex:1;font-size:11.5px;font-weight:600}
+.acs-row-chev{color:#5E6675;flex:none;display:flex}
+/* chiqish */
+.acs-logout{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:16px;padding:11px;border-radius:999px;border:1px solid rgba(255,107,94,.25);background:none;color:#FF6B5E;font-weight:600;font-size:11.5px;cursor:pointer;font-family:inherit}
+.acs-logout:hover{background:rgba(255,107,94,.08)}
+.acs-logout svg{flex:none}
 .account-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .account-head h3{margin:0;font-size:14px;font-weight:700}
 .account-close{
@@ -1202,9 +1263,9 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .acc-info{flex:1;min-width:0}
 .acc-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acc-email{font-size:var(--fs-xs);color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.badge-plan{display:inline-block;padding:2px 8px;border-radius:99px;font-size:var(--fs-xs);font-weight:700;flex-shrink:0}
-.badge-plan.pro{background:rgba(130,195,65,.2);color:#bbf7d0;border:1px solid rgba(130,195,65,.3)}
-.badge-plan.free{background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border)}
+.badge-plan{display:inline-block;font-family:var(--font-mono);font-weight:700;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:5px;flex-shrink:0}
+.badge-plan.pro{background:#C2F04A;color:#0E1400;border:1px solid transparent}
+.badge-plan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
 /* Usage block */
 .acc-usage-block{margin-top:10px;padding:10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)}
 .acc-usage-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -1234,15 +1295,17 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 /* Plan pick */
 .plan-pick{display:flex;gap:8px}
 .plan-opt{
-  flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);
-  background:var(--surface-2);cursor:pointer;text-align:left;
-  font-family:inherit;color:var(--text);transition:border-color .2s,background .2s;
+  flex:1;position:relative;padding:13px;border-radius:14px;border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.04);cursor:pointer;text-align:left;
+  font-family:inherit;color:#F2F5F8;transition:border-color .2s,background .2s;
 }
-.plan-opt:hover{border-color:rgba(255,255,255,.2)}
-.plan-opt.active{border-color:rgba(130,195,65,.55);background:rgba(130,195,65,.1)}
-.plan-opt:disabled{opacity:.5;cursor:wait}
-.plan-opt strong{display:block;font-size:12px;margin-bottom:4px;pointer-events:none}
-.plan-opt span{font-size:var(--fs-xs);color:var(--muted);line-height:1.35;pointer-events:none}
+.plan-opt:hover{border-color:rgba(255,255,255,.14)}
+.plan-opt.active{border-color:rgba(194,240,74,.4)}
+.plan-opt.active::after{content:'';position:absolute;top:11px;right:11px;width:7px;height:7px;border-radius:50%;background:#C2F04A}
+.plan-opt:disabled{opacity:.6;cursor:wait}
+.acs-plan-name{display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;pointer-events:none}
+.acs-plan-tag{font-family:var(--font-mono);font-weight:700;font-size:7.5px;padding:2px 5px;border-radius:4px;background:#C2F04A;color:#0E1400}
+.acs-plan-desc{font-size:10px;color:#8A93A3;margin-top:5px;line-height:1.55;pointer-events:none}
 /* Buttons */
 .acc-btn-row{display:flex;gap:8px;margin-top:8px}
 .acc-btn{
@@ -4278,10 +4341,12 @@ html.home-mode #homePage{display:block!important}
 <div class="account-sheet" id="accountSheet" onclick="if(event.target===this)closeAccountSheet()">
   <div class="account-panel" onclick="event.stopPropagation()">
 
-    <div class="account-head">
-      <h3>Hisob</h3>
-      <button type="button" class="account-close" onclick="closeAccountSheet()">×</button>
+    <div class="acs-head">
+      <button type="button" class="acs-back" onclick="closeAccountSheet()" aria-label="Yopish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="acs-htitle">Hisob</span>
     </div>
+
+    <div class="acs-body">
 
     <!-- LOGIN (kirish) -->
     <div id="accountLoginBlock" class="account-section">
@@ -4301,94 +4366,107 @@ html.home-mode #homePage{display:block!important}
     </div>
 
     <!-- PROFIL -->
-    <div id="accountProfileBlock" class="account-section" style="display:none">
-      <label>Profil</label>
-      <div class="acc-profile-row">
-        <div class="acc-av" id="accAvatar">?</div>
-        <div class="acc-info">
-          <div class="acc-name" id="accProfileName">—</div>
-          <div class="acc-email" id="accProfileEmail">—</div>
+    <div id="accountProfileBlock" style="display:none">
+      <div class="acs-prof">
+        <div class="acs-av" id="accAvatar">?</div>
+        <div class="acs-prof-info">
+          <div class="acs-prof-name" id="accProfileName">—</div>
+          <div class="acs-prof-mail" id="accProfileEmail">—</div>
         </div>
         <span class="badge-plan free" id="accPlanBadge">Free</span>
       </div>
-      <div class="acc-usage-block">
-        <div class="acc-usage-row">
-          <span class="acc-usage-label">Bu oy</span>
-          <span class="acc-usage-val"><span id="accDlMonth">0</span> / <span id="accDlLimitDisp">—</span></span>
+      <div class="acs-usage">
+        <div class="acs-usage-top">
+          <span class="acs-usage-lbl">BU OY — YUKLAMALAR</span>
+          <button type="button" class="acs-usage-refresh" onclick="refreshAccountAndUi()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Yangilash</button>
         </div>
-        <div class="acc-usage-bar"><div class="acc-usage-fill" id="accUsageFill" style="width:0%"></div></div>
-        <div class="acc-usage-secondary">Jami: <span id="accDlTotal">0</span> · Import: <span id="accImports">0</span></div>
+        <div class="acs-usage-bar">
+          <div class="acs-usage-track"><div class="acs-usage-fill" id="accUsageFill" style="width:0%"></div></div>
+          <span class="acs-usage-count"><span id="accDlMonth">0</span> / <span id="accDlLimitDisp">—</span></span>
+        </div>
+        <div class="acs-usage-sec">Jami: <span id="accDlTotal">0</span> · Import: <span id="accImports">0</span></div>
       </div>
-      <div class="acc-btn-row">
-        <button type="button" class="acc-btn" onclick="refreshAccountAndUi()">↻ Yangilash</button>
+    </div>
+
+    <!-- TARIF -->
+    <div id="accountPlanBlock" style="display:none">
+      <div class="acs-lbl">TARIF</div>
+      <div class="plan-pick">
+        <button type="button" class="plan-opt" id="planOptFree" data-plan="free">
+          <div class="acs-plan-name">Free</div>
+          <div class="acs-plan-desc">15 yuklab olish / oy<br>1080p preview</div>
+        </button>
+        <button type="button" class="plan-opt" id="planOptPro" data-plan="pro">
+          <div class="acs-plan-name">Pro <span class="acs-plan-tag">PRO</span></div>
+          <div class="acs-plan-desc">Cheksiz yuklab olish<br>4K pack fayllari</div>
+        </button>
+      </div>
+      <p class="acs-hint" id="accPlanHint"></p>
+      <div id="accBillingRow" style="display:none">
+        <button type="button" class="acs-pill" onclick="manageBilling()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Obunani boshqarish</button>
       </div>
     </div>
 
     <!-- MAVZU (tema) — har doim ko'rinadi -->
-    <div class="account-section">
-      <label>Mavzu</label>
+    <div>
+      <div class="acs-lbl">MAVZU</div>
       <div class="theme-pick">
-        <button type="button" class="theme-opt" data-theme-val="standart" onclick="setTheme('standart')"><span class="theme-swatch theme-sw-standart"></span>Standart</button>
-        <button type="button" class="theme-opt" data-theme-val="liquid-glass" onclick="setTheme('liquid-glass')"><span class="theme-swatch theme-sw-liquid"></span>Liquid Glass</button>
-        <button type="button" class="theme-opt" data-theme-val="light-glass" onclick="setTheme('light-glass')"><span class="theme-swatch theme-sw-light"></span>Light Glass</button>
-      </div>
-      <p class="account-hint">Panel ko'rinishini almashtiring — tanlov saqlanadi.</p>
-    </div>
-
-    <!-- TARIF -->
-    <div id="accountPlanBlock" class="account-section" style="display:none">
-      <label>Tarif</label>
-      <div class="plan-pick">
-        <button type="button" class="plan-opt" id="planOptFree" data-plan="free">
-          <strong>Free</strong><span>15 yuklab olish / oy · 1080p</span>
+        <button type="button" class="theme-opt" data-theme-val="standart" onclick="setTheme('standart')">
+          <div class="theme-prev theme-prev-standart"><div class="tl tl-a"></div><div class="tl tl-b"></div><span class="theme-tdot"></span></div>
+          <div class="theme-lbl">Standart</div>
         </button>
-        <button type="button" class="plan-opt" id="planOptPro" data-plan="pro">
-          <strong>Pro</strong><span>Cheksiz · 4K pack</span>
+        <button type="button" class="theme-opt" data-theme-val="liquid-glass" onclick="setTheme('liquid-glass')">
+          <div class="theme-prev theme-prev-liquid"><div class="tglass"></div><span class="theme-tdot"></span></div>
+          <div class="theme-lbl">Liquid Glass</div>
         </button>
-      </div>
-      <p class="account-hint" id="accPlanHint"></p>
-      <div class="acc-btn-row" id="accBillingRow" style="display:none">
-        <button type="button" class="acc-btn" onclick="manageBilling()">💳 Obunani boshqarish</button>
+        <button type="button" class="theme-opt" data-theme-val="light-glass" onclick="setTheme('light-glass')">
+          <div class="theme-prev theme-prev-light"><div class="tl tl-a"></div><div class="tl tl-b"></div><span class="theme-tdot"></span></div>
+          <div class="theme-lbl">Light Glass</div>
+        </button>
       </div>
     </div>
 
     <!-- YUKLAB OLISH PAPKASI -->
-    <div id="accountDownloadBlock" class="account-section" style="display:none">
-      <label>Yuklab olish papkasi</label>
-      <div class="acc-folder-box">
+    <div id="accountDownloadBlock" style="display:none">
+      <div class="acs-lbl">YUKLAB OLISH PAPKASI</div>
+      <div class="acs-folder">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2"/><path d="M3 9l1.6 8.2a2 2 0 0 0 2 1.6h10.8a2 2 0 0 0 2-1.6L21.5 10H4"/></svg>
         <div class="acc-folder-path empty" id="accDownloadPath">Standart (vaqtinchalik papka)</div>
-        <div class="acc-btn-row">
-          <button type="button" class="acc-btn" onclick="chooseDownloadFolder()">📁 Papka tanlash</button>
-          <button type="button" class="acc-btn" onclick="resetDownloadFolder()">Standart</button>
-        </div>
-        <button type="button" class="acc-save-btn" id="dlSaveBtn" onclick="saveDownloadFolderSettings()">💾 Saqlash</button>
-        <p class="account-hint" id="dlSaveHint">Shablon fayllari (.aep + footage) shu papkada saqlanadi.</p>
       </div>
+      <div class="acs-folder-btns">
+        <button type="button" class="acs-fbtn flex" onclick="chooseDownloadFolder()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Papka tanlash</button>
+        <button type="button" class="acs-fbtn ghost" onclick="resetDownloadFolder()">Standart</button>
+        <button type="button" class="acs-fbtn" id="dlSaveBtn" onclick="saveDownloadFolderSettings()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>Saqlash</button>
+      </div>
+      <p class="acs-hint" id="dlSaveHint">Shablon fayllari (.aep + footage) shu papkada saqlanadi.</p>
     </div>
 
     <!-- CONTRIBUTOR -->
-    <div id="accountPublishBlock" class="account-section" style="display:none">
-      <label>Contributor</label>
-      <div class="acc-btn-row">
-        <button type="button" class="acc-btn primary" onclick="openPublish()">＋ Shablon Publish qilish</button>
-      </div>
-      <p class="account-hint">Ochiq AE loyihasidan sahnalarni aniqlab, preview bilan marketplace'ga yuklang.</p>
+    <div id="accountPublishBlock" style="display:none">
+      <div class="acs-lbl">CONTRIBUTOR</div>
+      <button type="button" class="acs-row" onclick="openPublish()">
+        <span class="acs-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg></span>
+        <span class="acs-row-txt">Shablon Publish qilish</span>
+        <span class="acs-row-chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
     </div>
 
     <!-- ADMIN -->
-    <div id="accountAdminBlock" class="account-section" style="display:none">
-      <label>Admin</label>
-      <div class="acc-btn-row">
-        <button type="button" class="acc-btn" onclick="AssetFlowAccount.openAdminPanel()">🛠 Admin panelni ochish</button>
-      </div>
-      <p class="account-hint">Obunachilar, tariflar va yuklab olish statistikasi.</p>
+    <div id="accountAdminBlock" style="display:none">
+      <div class="acs-lbl">ADMIN</div>
+      <button type="button" class="acs-row" onclick="AssetFlowAccount.openAdminPanel()">
+        <span class="acs-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a3.5 3.5 0 0 0-4.6 4.6L4 17l3 3 5.9-5.9a3.5 3.5 0 0 0 4.6-4.6l-2.3 2.3-2-.5-.5-2z"/></svg></span>
+        <span class="acs-row-txt">Admin panelni ochish</span>
+        <span class="acs-row-chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
     </div>
 
     <!-- CHIQISH -->
-    <div id="accountActionsBlock" class="acc-btn-row" style="display:none">
-      <button type="button" class="acc-btn danger" onclick="accountLogout()">⎋ Chiqish</button>
+    <div id="accountActionsBlock" style="display:none">
+      <button type="button" class="acs-logout" onclick="accountLogout()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Chiqish</button>
     </div>
 
+    </div>
   </div>
 </div>
 
@@ -13895,6 +13973,9 @@ window.afGallery=(function(){
       if(prompt.length<2){ toast('Prompt yozing','warning'); return; }
       if(vm.startRequired&&(!st.start||!st.start.url)){ toast("Boshlang'ich kadr qo'shing",'warning'); return; }
       if(st.start&&st.start.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
+      if(st.end&&st.end.loading){ toast('Kadr yuklanmoqda — kuting','info'); return; }
+      // Yakuniy kadr FAQAT boshlang'ich kadr bilan (Veo lastFrame i2v-only) — aks holda backend uni tashlab yuborardi
+      if(vm.endFrameOk&&st.end&&st.end.url&&!(st.start&&st.start.url)){ toast("Yakuniy kadr faqat boshlang'ich kadr bilan ishlaydi — boshlang'ich kadr ham qo'shing",'warning'); return; }
       // FIX3: end kadr FAQAT model endFrame qo'llasa yuboriladi (stale ref himoyasi)
       params={referenceUrl:(st.start&&st.start.url)||null,referenceEndUrl:(vm.endFrameOk&&st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
     }
