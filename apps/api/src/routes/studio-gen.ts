@@ -49,6 +49,7 @@ import {
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import { writeProviderSpend } from "../lib/ledger.js";
+import { estimateProviderUsd } from "../lib/provider-cost.js";
 import {
   processGenerationInBackground,
   reconcileStuckGenerations,
@@ -926,12 +927,14 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   await touchSavedReferences(req.user!.userId, { ids: savedRefIds, urls: refUrls }, gen.id).catch(() => {});
 
   // Provayder narx izi (#2.6) — gen provayderga yuborilganda (best-effort, bloklamaydi).
+  // MARJA POYDEVORI (Bosqich 1 #1): real provider USD taxminini ham yozamiz (noma'lum → null).
   await writeProviderSpend({
     generationId: gen.id,
     provider: model.provider || "openrouter",
     modelId: model.id,
     mode: model.mode,
     credits: price,
+    estimatedCostUsd: estimateProviderUsd(model, params),
   });
 
   // Fon rejimida bajariladi (OpenRouter → R2 → GenAsset → status); frontend polling qiladi.
