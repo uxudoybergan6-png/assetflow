@@ -2954,7 +2954,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .recent .more:hover{text-decoration:underline}
 /* FIX H: .pop bo'lmagan .sheet (faqat vgClipSheet — video trim editor, katta surface) endi
    MARKAZLASHGAN modal — bottom-slide idiomi AI tools'da butunlay yo'q. */
-.axig .sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9990;padding:18px;box-sizing:border-box;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
+/* max-width/box-shadow reset SHART: aks holda .axroot .sheet'dan meros 440px klamp + katta soya
+   440px'dan keng panelda popover ortida "shisha panel" (qora soya ustuni) chizardi. */
+.axig .sheet{position:fixed;inset:0;width:auto;max-width:none;background:rgba(0,0,0,.55);box-shadow:none;display:none;align-items:center;justify-content:center;z-index:9990;padding:18px;box-sizing:border-box;border:0;border-radius:0;max-height:none;overflow:visible;animation:none}
 .axig .sheet.on{display:flex}
 .axig .sheetc{width:100%;max-width:440px;box-sizing:border-box;background:#161B22;border:1px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 10px 32px rgba(0,0,0,.45);padding:14px 14px 16px;max-height:88vh;overflow-y:auto;animation:afModalIn .18s cubic-bezier(.22,1,.36,1)}
 /* FIX4 (live-test): SOZLAMA picker'lari bottom-sheet EMAS — bosilgan pill yonida ochiladigan popover
