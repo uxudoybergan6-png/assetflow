@@ -10762,6 +10762,7 @@ async function bootPlugin(){
         var sub=[p.aspectRatio,p.quality||p.resolution,p.duration?(p.duration+'s'):null].filter(Boolean).join(' · ');
         return {id:g.id,t:histType(g.mode),mode:g.mode,url:a.url||'',thumb:a.thumbUrl||a.url||'',
           title:((g.prompt||'').trim()||'Natija').slice(0,60),sub:sub,
+          prompt:(g.prompt||'').trim(),params:p, // FIX G: lightbox meta karta uchun to'liq prompt+params
           cost:(typeof g.cost==='number'?g.cost:0),created:g.createdAt};
       });
       histLoaded=true; histLoading=false; histFlush();
@@ -11054,7 +11055,21 @@ async function bootPlugin(){
       g.appendChild(el);
     });
   }
-  // b1: TARIX strip — real /gen/history thumbnaillari (74×74), bosilsa Tarix
+  // b1: TARIX strip — real /gen/history thumbnaillari (74×74)
+  // FIX G: karta bosilsa O'SHA gen lightbox'da ochiladi (avval Tarix ro'yxatiga olib ketardi)
+  function histLbItem(h){
+    return {id:h.id,cat:h.t,url:h.url,thumb:h.thumb,title:h.title,sub:h.sub,
+      prompt:h.prompt||'',params:h.params||{},cost:h.cost,createdAt:h.created};
+  }
+  function histLbCtx(){
+    var isCep=(typeof window.__adobe_cep__!=='undefined');
+    return {
+      isCEP:isCep,
+      list:function(){ return HIST.slice(0,5).map(histLbItem); },
+      onImport:function(x){ if(typeof aiImportMedia==='function')aiImportMedia(x.url,(x.cat==='video')?'video':(x.cat==='audio'||x.cat==='sfx')?'audio':'image',null); else toast('AE import — faqat After Effects ichida','info'); },
+      onDownload:function(x){ try{ var a=document.createElement('a'); a.href=x.url; a.download=(String(x.title||'frameflow').slice(0,40).replace(/[^\w.-]+/g,'_')||'frameflow'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Yuklab bo\'lmadi','error'); } }
+    };
+  }
   function aiRenderHistStrip(){
     var sec=document.getElementById('aiHistSec'), s=document.getElementById('aiHistStrip');
     if(!sec||!s)return;
@@ -11068,7 +11083,10 @@ async function bootPlugin(){
         if(h.thumb&&!vNoPoster){ d.style.backgroundImage='url("'+h.thumb+'")'; }
         else if(vNoPoster&&typeof window.afVideoThumb==='function'){ var vt=window.afVideoThumb(h.url); if(vt)d.appendChild(vt); }
         if(h.t==='video')d.insertAdjacentHTML('beforeend','<svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>');
-        d.addEventListener('click',function(){ go('history'); });
+        d.addEventListener('click',function(){
+          if(window.afRecent&&typeof window.afRecent.openLightbox==='function'&&h.url)window.afRecent.openLightbox(histLbItem(h),histLbCtx());
+          else go('history'); // fallback — lightbox komponenti bo'lmasa
+        });
         s.appendChild(d);
       });
     };
