@@ -3272,17 +3272,20 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .set-pack .pv .cs{color:#C2F04A}
 .axroot .set-pack .pp{font-family:var(--font-mono);font-size:8.5px;color:#8A93A3;margin-top:3px}
 .axroot .set-seck{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:#8A93A3;margin:16px 0 8px}
-.axroot .set-lrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.axroot #setLedger{border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.02);padding:2px 12px;max-height:270px;overflow-y:auto}
+.axroot .set-lrow{display:flex;align-items:center;gap:10px;min-height:46px;padding:7px 12px;margin:0 -12px;border-bottom:1px solid rgba(255,255,255,.05)}
 .axroot .set-lrow:last-child{border-bottom:0}
+.axroot .set-lrow:hover{background:rgba(255,255,255,.03)}
 .axroot .set-lic{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#8A93A3;flex:none}
 .axroot .set-lic svg{width:13px;height:13px}
 .axroot .set-lrow.plus .set-lic{background:rgba(194,240,74,.08);color:#C2F04A}
 .axroot .set-lt{flex:1;min-width:0}
 .axroot .set-lt b{display:block;font-size:11.5px;font-weight:500;color:#F2F5F8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.axroot .set-lt small{font-family:var(--font-mono);font-size:8.5px;color:#5E6675}
-.axroot .set-lamt{font-family:var(--font-mono);font-size:11px;color:#8A93A3;white-space:nowrap}
-.axroot .set-lrow.plus .set-lamt{color:#C2F04A}
-.axroot .set-lgempty{font-size:11px;color:#5E6675;padding:6px 0}
+.axroot .set-lt small{display:block;font-family:var(--font-mono);font-size:9px;color:#5E6675;margin-top:2px}
+.axroot .set-lamt{font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:#8A93A3;white-space:nowrap}
+.axroot .set-lamt.neg{color:#FF9E8F}
+.axroot .set-lrow.plus .set-lamt,.axroot .set-lamt.pos{color:#C2F04A}
+.axroot .set-lgempty{font-size:11px;color:#5E6675;padding:10px 0}
 .axroot .set-prefrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:11.5px;font-weight:500;color:#F2F5F8}
 .axroot .sw2{width:36px;height:20px;border-radius:99px;background:rgba(255,255,255,.1);position:relative;cursor:pointer;transition:.15s;flex:0 0 auto}
 .axroot .sw2.on{background:#C2F04A}
@@ -10780,12 +10783,14 @@ async function bootPlugin(){
     var draw=function(){
       if(!HIST.length){ w.innerHTML='<div class="set-lgempty">Hozircha xarajat yo\'q — gen qilsangiz shu yerda chiqadi.</div>'; return; }
       w.innerHTML='';
-      HIST.slice(0,8).forEach(function(h){
+      HIST.forEach(function(h){
         var kindLbl=h.t==='video'?'Video':h.t==='audio'?'Ovoz':'Rasm';
-        var row=document.createElement('div'); row.className='set-lrow';
-        row.innerHTML='<div class="set-lic">'+(_ledIC[h.t]||_ledIC.image)+'</div>'
-          +'<div class="set-lt"><b>'+kindLbl+' · '+histEsc(h.title)+'</b><small>'+ledgerWhen(h.created)+'</small></div>'
-          +'<span class="set-lamt">'+(h.cost?('− '+h.cost):'—')+'</span>';
+        var row=document.createElement('div'); row.className='set-lrow'+(h.cost<0?' plus':'');
+        var amt=h.cost>0?('− '+h.cost):h.cost<0?('+ '+(-h.cost)):'—';
+        var cls=h.cost>0?' neg':h.cost<0?' pos':'';
+        row.innerHTML='<div class="set-lic" title="'+kindLbl+'">'+(_ledIC[h.t]||_ledIC.image)+'</div>'
+          +'<div class="set-lt"><b title="'+histEsc(h.title)+'">'+histEsc(h.title)+'</b><small>'+kindLbl+' · '+ledgerWhen(h.created)+'</small></div>'
+          +'<span class="set-lamt'+cls+'">'+amt+'</span>';
         w.appendChild(row);
       });
     };
