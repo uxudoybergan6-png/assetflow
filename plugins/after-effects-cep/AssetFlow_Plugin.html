@@ -10367,14 +10367,16 @@ async function bootPlugin(){
     var vg=document.getElementById('vgCredit'); if(vg)vg.innerHTML=t;
   };
   // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
-  // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 preload=metadata muted> + birinchi kadrga seek.
-  window.afVideoThumb=function(url){
+  // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 muted> + birinchi kadrga seek.
+  // poster bo'lsa u darhol ko'rinadi; preload=auto — CEP CEF preload=metadata bilan kadr chizmaydi.
+  window.afVideoThumb=function(url,poster){
     var v=document.createElement('video');
+    if(poster)v.poster=poster;
     v.src=String(url)+(/#/.test(String(url))?'':'#t=0.1');
-    v.muted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.preload='metadata';
+    v.muted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.preload=poster?'metadata':'auto';
     v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:#000';
     try{ var sk=false; var seek=function(){ if(sk)return; try{v.currentTime=0.1;}catch(e){} };
-      v.addEventListener('loadedmetadata',seek); v.addEventListener('loadeddata',seek); v.addEventListener('seeked',function(){sk=true;}); }catch(e){}
+      v.addEventListener('loadedmetadata',seek); v.addEventListener('loadeddata',seek); v.addEventListener('canplay',seek); v.addEventListener('seeked',function(){sk=true;}); }catch(e){}
     return v;
   };
 
@@ -10505,7 +10507,9 @@ async function bootPlugin(){
       ctx=ctx||{}; var cat=it.cat||'image';
       var d=document.createElement('div'); d.className='rc'+(ctx.isSelected&&ctx.isSelected(it)?' sel':'');
       if(cat==='video'){
-        var vEl=(typeof window.afVideoThumb==='function')?window.afVideoThumb(it.url):null;
+        // haqiqiy poster (thumbUrl ≠ video url) bo'lsa u darhol chiziladi; bo'lmasa birinchi kadr yuklanadi
+        var vPoster=(it.thumb&&it.thumb!==it.url)?it.thumb:null;
+        var vEl=(typeof window.afVideoThumb==='function')?window.afVideoThumb(it.url,vPoster):null;
         if(vEl){ d.appendChild(vEl);
           // HOVER PREVIEW: sichqoncha → JIM (muted) o'ynaydi; ketganда → to'xtab birinchi kadrга qaytadi (ovozsiz)
           d.addEventListener('mouseenter',function(){ try{ vEl.muted=true; var pp=vEl.play(); if(pp&&pp.catch)pp.catch(function(){}); }catch(e){} });
@@ -11059,8 +11063,10 @@ async function bootPlugin(){
       s.innerHTML='';
       HIST.slice(0,5).forEach(function(h){
         var d=document.createElement('div'); d.className='ht';
-        if(h.thumb){ d.style.backgroundImage='url("'+h.thumb+'")'; }
-        if(h.t==='video')d.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>';
+        var vNoPoster=(h.t==='video')&&(!h.thumb||h.thumb===h.url);
+        if(h.thumb&&!vNoPoster){ d.style.backgroundImage='url("'+h.thumb+'")'; }
+        else if(vNoPoster&&typeof window.afVideoThumb==='function'){ var vt=window.afVideoThumb(h.url); if(vt)d.appendChild(vt); }
+        if(h.t==='video')d.insertAdjacentHTML('beforeend','<svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>');
         d.addEventListener('click',function(){ go('history'); });
         s.appendChild(d);
       });
@@ -11251,8 +11257,15 @@ window.afGallery=(function(){
       list.forEach(function(it){
         var card=document.createElement('div'); card.className='gcard'+(st.sel[it.id]?' sel':'');
         var badge=(it.cat==='video')?IC.vid:(it.cat==='audio'||it.cat==='sfx')?IC.aud:IC.img;
-        var th='<div class="gth" style="background-image:url(\''+it.thumb+'\')"><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
+        // video: thumb ko'pincha video url'ning o'zi — CSS background video kadrini chizmaydi (qora tile).
+        // Haqiqiy poster bo'lsa background; bo'lmasa afVideoThumb <video> birinchi kadrni ko'rsatadi.
+        var vNoPoster=(it.cat==='video')&&(!it.thumb||it.thumb===it.url);
+        var th='<div class="gth"'+(vNoPoster?'':' style="background-image:url(\''+it.thumb+'\')"')+'><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
         card.innerHTML=th;
+        if(vNoPoster&&typeof window.afVideoThumb==='function'){
+          var gth=card.querySelector('.gth'); var vv=window.afVideoThumb(it.url);
+          if(gth&&vv)gth.insertBefore(vv,gth.firstChild);
+        }
         if(st.select){
           card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
         }else{
