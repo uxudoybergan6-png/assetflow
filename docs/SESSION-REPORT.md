@@ -1,17 +1,22 @@
 # Sessiya hisoboti — 2026-07-04
 
-**Vazifa:** Platforma redesign BOSQICH 2 — marketing ekranlar (Landing · Narxlar · Plagin) maketdan real web app'ga port (1:1).
+## Landing spacing kompakt (~30% vertikal)
 
-**Manba:** `_platform-redesign-mockup.html` (o'zgarmadi). **Nishon:** `platform/index.html` (CF Pages'ga to'g'ridan-to'g'ri xizmat qiladi — `prepare-cf-pages.mjs` `copyDir(platform→dist)`; artefakt emas).
+**Vazifa:** `packages/assetflow-studio/platform/index.html` — faqat LANDING
+(`isLanding`) ekranidagi vertikal bo'shliqlar ~30% qisqartirildi. Qiymatlar inline
+(har seksiyada), shu bois tabiiy landing-scoped; Pricing/Plugin alohida inline.
 
-**Qilingan:**
-- `ffm-` scoped dizayn-tizim CSS injected (mockup qiymatlari verbatim: tokenlar, display 30/36/44/56, .ffm-btn/plan/tc/tag/seg/credit/mesh/glass/g1..g8).
-- Marketing top-nav qayta qurildi: logo · pill linklar · tepada tekis → scroll'da frosted (navFrost binding, scrollY) · Kirish/Bepul boshlash · mobil hamburger → slide-down drawer.
-- Landing/Narxlar/Plagin markup mockup'ga moslandi; `sc-for`/`{{ }}` bindinglar saqlandi (plansView, faqsView, catTabs/carousel, studioCards, pluginSteps, onBill/onFaq/onCat/download/nav).
-- Footer real huquqiy havolalar bilan: terms.html · privacy.html · refund.html.
+**O'zgargan (vertikal only):**
+- Hero: top `64→44`; headline margin `22→16`, subhead `18→14`, CTA `28→20`,
+  "Karta shart emas" `14→10`, product-shot `44→28`.
+- Seksiyalar: 01 `64→44`; 02/03/04 + FAQ `72→50`. Stats strip `26→18`.
+  CTA band pastki margin `90→62`.
+- Ichki margin: tabs `20→14`, showcase `22→16`, studio4 `26→18`, plans `28→20`,
+  FAQ list `26→18`.
 
-**IA tuzatishlari:** "Blog" olindi · "Hujjatlar" (o'lik → Dashboard) olindi · soxta ishonch (NOVA/PixelHaus logo-strip, 5M+ ijodkor, testimoniallar) → real mahsulot statistikasi (10,000+/4/6/14 kun). billing default `monthly` (mockup bilan mos).
+**O'zgarmadi:** shriftlar (hero 56px), gorizontal padding 80px, grid ustunlar,
+kartalar, ranglar. Pricing (`56px 80px 72px`)/Plugin (`56px 80px 0`) TEGILMADI.
+Mobile media query (32px) TEGILMADI.
 
-**Tekshirildi (preview 1280/960/390):** har uch breakpoint mockup bilan 1:1; frost-on-scroll ✓; mobil drawer ✓; routing (app→auth gate) ✓; download toast ✓; console xato yo'q; app ekranlar (dashboard/aistudio/…) va ff-api TEGILMADI.
-
-**Kutilmoqda:** commit (main, push emas) — foydalanuvchi push qiladi. Keyingi: app ekranlar porti (Bosqich 3).
+**Tekshiruv:** desktop 1280px (hero+stats+showcase fold ichida), mobile 390px OK,
+console xatosiz. Pricing/Plugin padding eski holicha tasdiqlandi.
