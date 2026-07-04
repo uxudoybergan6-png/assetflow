@@ -1,18 +1,32 @@
-# SESSION-REPORT — Bosqich 1 (Himoya · ko'rinuvchanlik · xavfsizlik)
+# SESSION-REPORT — 0 AI kredit bug (yangi FREE foydalanuvchi)
 
-**Sana:** 2026-07-04 · **Ko'lam:** backend-only, 9 item, har biri alohida commit. Pul zonasi TEGILMADI.
+**Sana:** 2026-07-04 · **Ko'lam:** pul-zonasi, minimal diff, 2 alohida commit.
 
-- **#1** provider USD cost: `lib/provider-cost.ts` → `writeProviderSpend.estimatedCostUsd` (best-effort, marja poydevori).
-- **#2** spend himoya: `lib/spend-guard.ts` — GEN_KILL_SWITCH + kunlik/oylik USD ceiling + per-user GEN_DAILY_CAP (charge'dan oldin).
-- **#3** PRO-without-Stripe: gate allaqachon fail-closed; `.env.cloud.example` =false + prod warning.
-- **#4** COST_QUOTE_SECRET: cost-quote imzosi auth JWT_SECRET'dan ajratildi (JWT_SECRET'ga fallback).
-- **#5** fail-closed anti-abuse: Turnstile + email-verify prod'da rad (dev fail-open, grandfather saqlandi).
-- **#6** observability: `lib/sentry.ts` (dinamik, no-op) + real `/health` (DB SELECT 1 + HeadBucket) + `/livez`.
-- **#7** SSRF: `lib/fetch-safe.ts` (data + bizning bucket, private IP blok) → 4 user-URL fetch marshrutlandi.
-- **#8** DR: `scripts/db-backup.mjs` + `.github/workflows/db-backup.yml` + `docs/DR-RUNBOOK.md` + `npm run db:backup`.
-- **#9** email: prod'da resend.dev sandbox LOUD warning + `EMAIL_FROM` DKIM/SPF hujjat.
+**Topilgan sabab:** `ensurePluginProfile` (apps/api/src/lib/plugin-profile.ts:63)
+yangi profil yaratganda `aiCredits`ni ANIQ bermay, faqat DB ustun DEFAULT'iga
+(`@default(50)`) tayangan edi — bu ustun default kod ichidagi yagona haqiqat
+manbai `AI_MONTHLY_CREDITS.FREE` (=50) bilan hech qanday dasturiy bog'liqlikka ega
+emas. Lokal DB/migratsiyada hozircha ikkalasi ham 50 — jonli bug shu holatda
+REPRODUCE bo'lmadi, lekin ikki qiymat kelajakda (konstanta o'zgarsa, migratsiya
+unutilsa) osongina uzoqlashib, aynan shu simptomni (0 kredit) beradi.
 
-**Build:** `npm run build` (api + database) toza. Migratsiya QO'SHILMADI (estimatedCostUsd allaqachon bor).
-**Manual (env/tashqi):** COST_QUOTE_SECRET (prod), PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false, TURNSTILE_SECRET_KEY,
-RESEND domen+DKIM/SPF, SENTRY_DSN (+`npm i @sentry/node`), backup bucket+versioning+BACKUP_GCS_BUCKET.
-**Kutilmoqda:** deploy + AE end-to-end test. ⚠️ #5 prod'da Turnstile/RESEND sozlanmasa register/kredit bloklanadi (kutilgan).
+**Tuzatish (b3b7d87):** `upsert`ning `create` shoxobchasi endi
+`aiCredits: aiMonthlyAllotment(FREE)` va `aiCreditsResetAt: monthStart()`ni ANIQ
+beradi. `update: {}` tegilmagan — mavjud foydalanuvchi balansi buzilmaydi.
+Consume/refund matematikasi, signed cost-quote, ADMIN cheksiz yo'l — TEGILMADI.
+
+**Backfill (ae732fd):** `scripts/backfill-free-credits.mjs`
+(`npm run backfill:free-credits`, DRY_RUN=1 default) — FREE + aiCredits=0 +
+CreditLedger'da hech qanday yozuv yo'q + ledger migratsiyasidan (2026-07-03)
+KEYIN yaratilgan profillarni 50ga tiklaydi. Ledger faoliyati bor (legitim sarf)
+yoki ledgerdan oldingi profillar TEGILMAYDI — qo'lda tekshirish ro'yxatida chiqadi.
+
+**Tekshirildi:** `tsc` build toza; lokal Postgres'da 3 stsenariy (bug qurboni /
+legit sarflab bo'lgan / ledgerdan oldingi profil) qo'lda seed qilindi — script
+faqat bug qurbonini backfill qildi, qolgan ikkitasiga tegmadi. To'liq dev-stack
+E2E (register→credits) preview muhitidagi mavjud PORT konflikti tufayli
+o'tkazilmadi (mening o'zgarishimga aloqasiz, oldindan mavjud muammo).
+
+**Kutilmoqda:** foydalanuvchi productionда avval `DRY_RUN=1 npm run
+backfill:free-credits` bilan hisobotni ko'radi, keyin `DRY_RUN=0` bilan bajaradi.
+Push QILINMADI.
