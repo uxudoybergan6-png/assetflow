@@ -3808,8 +3808,8 @@ html.home-mode #homePage{display:block!important}
                             <div class="minfobox" id="igMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Har model referens qoidasini o'zi belgilaydi</span></div>
                           </div></div>
 
-                          <!-- referens manba menyu (b3) -->
-                          <div class="sheet" id="igAddSheet"><div class="sheetc">
+                          <!-- referens manba menyu (b3) — FIX A: ＋Referens yonida popover (bottom-sheet emas) -->
+                          <div class="sheet pop" id="igAddSheet"><div class="sheetc">
                             <div class="sheeth"><b>+ Referens</b></div>
                             <div class="sheetsub">Manbani tanlang — rasm</div>
                             <div class="opt" id="igSrcFile"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></div><div><b>Fayl yuklash</b><small>PNG · JPG · WEBP · 50MB gacha</small></div><span class="ocar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span></div>
@@ -3817,8 +3817,8 @@ html.home-mode #homePage{display:block!important}
                             <div class="opt" id="igSrcTl"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M2 15h5M17 9h5M17 15h5"/></svg></div><div><b>Timeline'dan</b><small>Faol kompozitsiya kadri</small></div><span class="ocar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span></div>
                           </div></div>
 
-                          <!-- project picker (manba) -->
-                          <div class="sheet" id="igProjSheet"><div class="sheetc">
+                          <!-- project picker (manba) — FIX A: ＋Referens yonida popover -->
+                          <div class="sheet pop" id="igProjSheet"><div class="sheetc">
                             <div class="sheeth"><b>Project footage</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
                             <div id="igProjList"><div class="axighint">Yuklanmoqda…</div></div>
                             <div id="igProjFoot" style="display:none;align-items:center;gap:8px;margin-top:10px">
@@ -11367,16 +11367,24 @@ window.afGallery=(function(){
       else top=Math.max(pad,vh-sh-pad);                     // sig'masa — viewport ichida clamp
       sc.style.left=left+'px'; sc.style.top=top+'px';
     }else{
+      // anchor yo'q — markazda ochiladi (pastdan chiqmaydi)
       var w2=Math.min(380,vw-pad*2);
       sc.style.width=w2+'px'; sc.style.maxHeight=Math.round(vh*0.62)+'px';
-      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.top='auto'; sc.style.bottom=pad+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var sh2=sc.offsetHeight;
+      sc.style.left=Math.round((vw-w2)/2)+'px'; sc.style.bottom='auto';
+      sc.style.top=Math.max(pad,Math.round((vh-sh2)/2))+'px';
     }
   }
   function openSheet(id,anchorEl){
-    closeSheets(); var s=$(id); if(!s)return; s.classList.add('on');
+    closeSheets(); var s=$(id); if(!s)return; s.classList.add('on'); s._anchor=anchorEl||null;
     var sc=s.querySelector('.sheetc'); if(!sc)return;
     if(s.classList.contains('pop'))positionPopover(sc,anchorEl);
     else { sc.style.left='';sc.style.top='';sc.style.bottom='';sc.style.width='';sc.style.maxHeight=''; }
+  }
+  // async kontent (masalan Project ro'yxati) kelgach popover'ni qayta joylash — balandlik o'zgaradi
+  function repositionSheet(id){
+    var s=$(id); if(!s||!s.classList.contains('on')||!s.classList.contains('pop'))return;
+    positionPopover(s.querySelector('.sheetc'),s._anchor);
   }
   document.querySelectorAll('.axig [data-igclose]').forEach(function(x){ x.addEventListener('click',closeSheets); });
   document.querySelectorAll('.axig .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeSheets(); }); });
@@ -11672,9 +11680,9 @@ window.afGallery=(function(){
     $('igProjList').innerHTML='<div class="axighint">Yuklanmoqda…</div>'; openSheet('igProjSheet',$('igRefAdd'));
     hostCall('listProjectFootage').then(function(r){
       if(!$('igProjList'))return;
-      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; return; }
+      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
-      if(!items.length){ $('igProjList').innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; if(foot)foot.style.display='none'; return; }
+      if(!items.length){ $('igProjList').innerHTML='<div class="axighint">Project\'da mos rasm topilmadi. Fayldan yuklang.</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
       $('igProjList').innerHTML='';
       items.forEach(function(it){
         var mp=it.mediaPath||'';
@@ -11689,8 +11697,8 @@ window.afGallery=(function(){
         }); })(mp,o);
         $('igProjList').appendChild(o);
       });
-      refreshFoot();
-    }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; });
+      refreshFoot(); repositionSheet('igProjSheet');
+    }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Project ro\'yxati olinmadi: '+String(e)+'</div>'; repositionSheet('igProjSheet'); });
   });
   // 3) Timeline'dan (joriy kadr → PNG)
   $('igSrcTl').addEventListener('click',function(){
