@@ -23,7 +23,13 @@ import { messagesRouter } from "./routes/messages.js";
 import { auditRouter } from "./routes/audit.js";
 import { aiRouter } from "./routes/ai.js";
 import { studioGenRouter } from "./routes/studio-gen.js";
-import { logS3Diagnostics } from "./lib/s3.js";
+import { logS3Diagnostics, isS3Configured, checkS3Health } from "./lib/s3.js";
+import { prisma } from "@creative-tools/database";
+import { initSentry, captureException } from "./lib/sentry.js";
+
+// Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
+// dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
+void initSentry();
 
 const app = express();
 const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
@@ -70,8 +76,34 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "creative-tools-api" });
+// Liveness — arzon "protsess tirikmi" (platforma restart qarori uchun). Bog'liqlik tekshirmaydi.
+app.get("/livez", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
+// Readiness — HAQIQIY bog'liqlik tekshiruvi: DB (SELECT 1) + storage (HeadBucket).
+// Biror bog'liqlik ishlamasa 503 (degraded) — platforma trafikni yubormaydi.
+app.get("/health", async (_req, res) => {
+  const checks: Record<string, string> = {};
+  let healthy = true;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.db = "ok";
+  } catch (e) {
+    checks.db = "down";
+    healthy = false;
+    captureException(e);
+  }
+  if (isS3Configured()) {
+    const ok = await checkS3Health();
+    checks.storage = ok ? "ok" : "down";
+    if (!ok) healthy = false;
+  } else {
+    checks.storage = "not_configured";
+  }
+  res
+    .status(healthy ? 200 : 503)
+    .json({ status: healthy ? "ok" : "degraded", service: "creative-tools-api", checks });
 });
 
 app.post(
@@ -134,6 +166,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
   console.error("[api] Kutilmagan xato:", err);
+  captureException(err); // Sentry (sozlanmagan → no-op)
   res.status(500).json({ error: "Server xatosi" });
 };
 app.use(errorHandler);

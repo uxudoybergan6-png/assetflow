@@ -8,6 +8,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  HeadBucketCommand,
   ListObjectsV2Command,
   DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
@@ -128,6 +129,23 @@ export async function getSignedUploadUrl(
 
 export function isS3Configured(): boolean {
   return Boolean(bucket && process.env.AWS_ACCESS_KEY_ID);
+}
+
+/**
+ * Yengil ulanish tekshiruvi (/health readiness uchun — Bosqich 1 #6). HeadBucket bilan
+ * bucket'ga TEKKIZAMIZ. 403/401 (ruxsat cheklangan, lekin xizmat javob berdi) → REACHABLE (true) —
+ * false-negative bermaslik uchun. Faqat tarmoq/ulanish/5xx xatosi → down (false).
+ */
+export async function checkS3Health(): Promise<boolean> {
+  if (!isS3Configured()) return false;
+  try {
+    await s3.send(new HeadBucketCommand({ Bucket: bucket }));
+    return true;
+  } catch (e) {
+    const status = (e as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
+    if (status === 403 || status === 401) return true; // xizmat javob berdi → ulanish bor
+    return false;
+  }
 }
 
 export async function s3ObjectExists(key: string): Promise<boolean> {
