@@ -3933,8 +3933,8 @@ html.home-mode #homePage{display:block!important}
                                   <div class="lowcred" id="vgLowBanner" title="Kredit to'ldirish — Sozlamalar" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Kredit yetarli emas</div><div class="ls" id="vgLowNeed"></div></div></div>
                                   <div class="mention" id="vgMention"></div>
                                   <textarea id="vgPrompt" placeholder="Kadrni jonlantir: yomg'ir tomchilari, neon aks, sekin dolly-in…"></textarea>
+                                  <!-- FIX: prompt ichidagi takror ＋Referens olib tashlandi — referens qo'shish faqat tepadagi kanonik hudud (kadr box / +Rasm / +Video) orqali -->
                                   <div class="prow">
-                                    <div class="addbtn" id="vgRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Referens</div>
                                     <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Yaxshilash</span>
                                   </div>
                                 </div>
@@ -12850,8 +12850,6 @@ window.afGallery=(function(){
     var isNone=vm.refKind==='none';
     var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
-    // FIX B: ＋Referens (rasm tool idiomi) — referens qabul qilmaydigan modelda yashirin
-    var ra=$('vgRefAdd'); if(ra)ra.style.display=isNone?'none':'';
     var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
     // b4/b5: Fast|R2V segment-toggle holati modelning refKind'idan sinxron
     var mf=$('vgModeFast'); if(mf)mf.classList.toggle('is-on',!isMedia);
@@ -13453,14 +13451,7 @@ window.afGallery=(function(){
   $('vgSrcTl').addEventListener('click',function(){ if(_vgSrcTarget.kind==='media'){ _vgSrcTarget.type==='image'?pickTlMedia():pickTlSource(_vgSrcTarget.type); } else pickTlFrame(_vgSrcTarget.which); });
   $('vgStartBox').addEventListener('click',function(){ if(!st.start)openFrameSrc('start'); });
   $('vgEndBox').addEventListener('click',function(){ if(!st.end)openFrameSrc('end'); });
-  // FIX B: ＋Referens (rasm tool addbtn idiomi) — Fast: bo'sh kadr slotiga manba menyu (tugma yonida
-  // popover); R2V: rasm referens manba menyu (＋Rasm oqimi bilan bir xil, mavjud handlerlar saqlanadi)
-  var _vgRA=$('vgRefAdd');
-  if(_vgRA)_vgRA.addEventListener('click',function(){
-    if(vm.refKind==='media-refs'){ openMediaSrc('image',_vgRA); return; }
-    var which=(st.start&&!st.start.loading)?'end':'start';
-    openFrameSrc(which,_vgRA);
-  });
+  // (prompt ichidagi ＋Referens tugmasi olib tashlandi — tepadagi kadr box / +Rasm/+Video kanonik)
   // FIX D: doimiy manba chiplari (vgChipFile/Proj/Tl) olib tashlandi — manba tanlash faqat
   // kadr box yoki ＋Referens popover menyusi (vgSrcSheet) orqali, rasm tool bilan bir xil.
   // b4/b5: Fast|R2V toggle — mos refKind'li birinchi modelga o'tadi (switchVgModel tasdiq oqimini saqlaydi)
