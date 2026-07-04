@@ -1,17 +1,23 @@
-# Sessiya hisoboti — 2026-07-04 — AI tools: model-aware boshqaruvlar + 2 UI fix
+# Sessiya hisoboti — 2026-07-04 — a3 shablon detail: 1:1 fidelity + responsivlik (plagin)
 
-**Nima qilindi:** 3 fix, har biri alohida commit (push yo'q):
-1. 879b4a2 — Popover ortidagi "shisha panel" ILDIZI topildi: `.axig .sheet` hit-layer eski
-   `.axroot .sheet`dan 440px max-width + 0.45 box-shadow meros olardi — 440px'dan KENG panelda
-   qora soya ustuni ko'rinardi (392px'da viewport tashqarisida, shu sabab avval topilmagan). Endi
-   width:auto/max-width:none/box-shadow:none — popover toza karta, tashqi-click to'liq enda ishlaydi.
-2. 8760303 — Video tool prompt ichidagi takror ＋Referens olib tashlandi (Fast+R2V); rasm tooldagi qoldi.
-3. 14d14cf — QAT'IY model-aware: vgCapsFor/igModelRefOk — refKind/maxRefs/endFrame/videoInput.imageRequired
-   (faqat /gen/models maydonlari, API o'zgarmadi). End-kadr faqat endFrame modelda; +Rasm/+Video/+Ovoz
-   har biri limit>0 bo'lsa; Fast|R2V toggle faqat model qo'llagan rejim (t2v'da yashirin); model
-   almashganda yaroqli kadr/ref SAQLANADI, mos kelmagani tasdiq bilan o'chadi; rasm t2i (maxRefs 0,
-   Imagen 4) ＋Referens butunlay yashirin; maxRefs kichrayganda ref trim.
+**Nima qilindi:** `AssetFlow_Plugin.html` `#packDetail` (a3 detail). Scaffold allaqachon
+a3 qiymatlariga mos edi (top bar, 210px hero, sarlavha/meta/teglar/tavsif, Import+sevimli,
+O'xshash karusel). Fidelity-fix sifatida FAQAT responsivlik qo'shildi (commit 42dbf5e, push yo'q):
+- `.pd3-hero`: `height:210px` → `aspect-ratio:38/21` + `max-width:420` + markaz.
+- `.pd3-simthumb`: `height:70px` → `aspect-ratio:124/70`.
+- `.pd3-top` + `.pd3-body>*`: `max-width:420` markaz ustun (max-width>panel → 380px ta'sirsiz).
 
-**Tekshiruv:** stub /gen/models (frames S+E · frames start-only · media-refs · pure t2v/t2i · maxRefs 1)
-bilan 392/900px — har model faqat o'z boshqaruvlarini ko'rsatadi; gen/cost-quote/param builder shakllari
-(frames/media/t2v/rasm) stub bilan aynan tekshirildi; 0 konsol xato. **Kutilmoqda:** AE jonli test + push.
+**Nima topildi:** yagona haqiqiy bo'shliq — keng kenglikda (900px) kontent cho'zilardi
+(markaz-cap yo'q edi). a3 elementlari qiymatlari o'zi mos edi.
+
+**Tekshirildi (preview, cep-mode + demo seed):**
+- 380px → a3 AYNAN (hero 380×210, thumb 124×70, top bar to'liq eni).
+- 900px → 420px markaz ustun, cho'zilish yo'q; 6 kartada karusel skroll (789>420).
+- Import: tanlanmaguncha o'chiq → tanlangach yoniq → bosilganda auth gate (login overlay).
+- Back yopadi; O'xshash karta boshqa shablonni ochadi (title almashdi); sevimli WIRED
+  (toggleFav, ikkala yulduz sync, window.favorites). Konsol xato yo'q.
+
+**Manba:** preview real thumb/video (renderPackHero) yoki nom-hashli a3-oila gradient (fallback);
+O'xshash: bir kategoriya/tur, maks 6 (pd3SimilarList) — yangi backend yo'q.
+
+**Kutilmoqda:** AE (real CEP) da end-to-end import testi.
