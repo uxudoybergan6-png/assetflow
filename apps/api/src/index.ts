@@ -13,6 +13,8 @@ import type { ErrorRequestHandler } from "express";
 import cors from "cors";
 import { authRouter } from "./routes/auth.js";
 import { stripeWebhookHandler } from "./routes/stripe.js";
+import { lemonSqueezyWebhookHandler } from "./routes/lemonsqueezy.js";
+import { billingRouter } from "./routes/billing.js";
 import { falWebhookHandler } from "./routes/fal-webhook.js";
 import { pluginRouter } from "./routes/plugin.js";
 import { adminRouter } from "./routes/admin.js";
@@ -112,6 +114,11 @@ app.post(
   stripeWebhookHandler
 );
 app.post(
+  "/api/lemonsqueezy/webhook",
+  express.raw({ type: "application/json" }),
+  lemonSqueezyWebhookHandler
+);
+app.post(
   "/api/studio/gen/fal-webhook",
   express.raw({ type: "application/json" }),
   falWebhookHandler
@@ -126,6 +133,7 @@ app.use("/api/studio/gen/describe", express.json({ limit: "150mb" }));
 // Qolgan API JSON'lari uchun odatdagi limit.
 app.use(express.json({ limit: "14mb" }));
 app.use("/api/auth", authRouter);
+app.use("/api/billing", billingRouter);
 app.use("/api/plugin", pluginRouter);
 app.use("/api/plugin/ai", aiRouter);
 app.use("/api/admin", adminRouter);

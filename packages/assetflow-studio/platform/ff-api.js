@@ -97,6 +97,9 @@
     pluginMe: function () { return req("/api/plugin/me"); },
     packLink: function (templateId) { return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1"); },
 
+    // Billing (Lemon Squeezy — MoR). body: { plan: "pro"|"studio" } yoki { credits: 500 }
+    checkout: function (body) { return req("/api/billing/checkout", { method: "POST", body: body }); },
+
     // Studio Gen
     credits: function () { return req("/api/studio/credits"); },
     models: function (mode) { return req("/api/studio/gen/models?mode=" + encodeURIComponent(mode)); },

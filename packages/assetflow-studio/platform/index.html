@@ -14826,7 +14826,7 @@
               <div style="font-weight:700;font-size:14px">{{ p.name }}</div>
               <div style="display:flex;align-items:baseline;gap:5px;margin-top:10px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:30px;letter-spacing:-.02em">${{ p.price }}</span><span style="font-size:12px;color:var(--muted)">/oy</span></div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:{{ p.crCol }};margin-top:4px">✦ {{ p.cr }}</div>
-              <button class="{{ p.ctaCls }}" onclick="{{ goRegister }}" style="margin:16px 0 6px">{{ p.cta }}</button>
+              <button class="{{ p.ctaCls }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" style="margin:16px 0 6px">{{ p.cta }}</button>
               <sc-for list="{{ p.tf }}" as="f" hint-placeholder-count="3"><div class="ffm-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
             </div>
           </sc-for>
@@ -14870,7 +14870,7 @@
                 <div style="font-size:11.5px;color:var(--muted);margin-top:4px">{{ p.sub }}</div>
                 <div style="display:flex;align-items:baseline;gap:5px;margin-top:14px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:38px;letter-spacing:-.02em">${{ p.price }}</span><span style="font-size:13px;color:var(--muted)">/oy</span></div>
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ p.crCol }};margin-top:5px">✦ {{ p.cr }}</div>
-                <button class="{{ p.ctaCls }}" onclick="{{ goRegister }}" style="margin:18px 0 8px">{{ p.cta }}</button>
+                <button class="{{ p.ctaCls }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" style="margin:18px 0 8px">{{ p.cta }}</button>
                 <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="6"><div class="ffm-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
               </div>
             </sc-for>
@@ -16563,7 +16563,26 @@ class Component extends DCLogic {
       downloadGen: () => { const g = this.state.lightbox || activeGenRaw; if (g) this.downloadGenAsset(g.id); },
       closeCredits: () => this.setState({ showCredits: false }),
       stop: (e) => e.stopPropagation(),
-      onBuyCredits: () => { this.setState({ showCredits: false }); this.toast("To'lov tizimi (Paddle) tez orada ulanadi"); },
+      onBuyCredits: async (e) => {
+        const amt = +((e && e.currentTarget && e.currentTarget.dataset.amt) || 0);
+        if (!(window.FFAPI && FFAPI.getToken())) { this.setState({ showCredits: false }); this.gotoAuth('login'); return; }
+        if (!amt) return;
+        try {
+          const r = await FFAPI.checkout({ credits: amt });
+          if (r && r.url) { window.location.href = r.url; return; }
+          this.toast("To'lov havolasi olinmadi");
+        } catch (err) { this.toast((err && err.message) || "To'lov tizimi hozircha mavjud emas"); }
+      },
+      onChoosePlan: async (e) => {
+        const key = (e && e.currentTarget && e.currentTarget.dataset.plan) || '';
+        if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('register'); return; }
+        if (key !== 'pro' && key !== 'studio') { this.go('dashboard'); return; }
+        try {
+          const r = await FFAPI.checkout({ plan: key });
+          if (r && r.url) { window.location.href = r.url; return; }
+          this.toast("To'lov havolasi olinmadi");
+        } catch (err) { this.toast((err && err.message) || "To'lov tizimi hozircha mavjud emas"); }
+      },
       sidebarMainView, sidebarAccountView, dashQuick, dashGensView, hasDashGens, noDashGens: !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
       sidebarCls, collapseIcon, toggleSidebar: () => this.setState(st => ({ sidebarCollapsed: !st.sidebarCollapsed })),
       avatarOpen: this.state.avatarOpen, toggleAvatar: () => this.setState(st => ({ avatarOpen: !st.avatarOpen })),
