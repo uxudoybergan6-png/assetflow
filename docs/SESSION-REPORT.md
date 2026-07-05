@@ -1,12 +1,21 @@
-# SESSION-REPORT — Landing HERO Variant A + `?hero=` A/B toggle (2026-07-05)
+# SESSION-REPORT — NARX DVIGATELI + drift monitoring (Bosqich 3.4/3.5), backend, 2026-07-05
 
-**Nima qilindi** (faqat `packages/assetflow-studio/platform/index.html`, additive ~147 qator):
-1. **HERO A «Jonli studiya»** — `_landing-rich-mockup.html` Variant A'dan 1:1 port (ffl- scoped): aurora/mesh + gridbg, 64px gradient sarlavha, jonli AI Studio media-panel (JONLI indikator, rail Rasm/Video/Ovoz/SFX + KREDIT, resgrid, playing VIDEO EQ+progress, yozilayotgan composer + chip/cost/send). Verbatim hex/px/keyframe; kolliziya yo'q (yangi klass/keyframe ffl- prefiksli, `fflBlink` mockup `blink` bilan aynan).
-2. **Toggle** — `<head>`da erta skript `?hero=a` → `<html>.ffl-hero-a`. `a`=A ko'rsat/B yashir; `b` yoki parametrsiz = **B (STANDART, o'zgarmagan)**. Faqat hero bloki almashadi; hero-below hammasi umumiy.
-3. **JS** — jonli gen sikli `installLanding()`ga (idempotent `__fflGen`, `?hero=a`+reduced-motion gate, `isConnected` self-clean); typing + reveal mavjud dvigatellardan foydalanadi. reduced-motion kill ro'yxatiga HERO A animatsiyalari qo'shildi.
+**Nima qilindi (4 commit main'da, push YO'Q, no Co-Authored-By):**
+- PART 1: `ModelPricing` + `PricingConfig` + `ProviderInvoice` modellar + additive migratsiya
+  `20260705170000_pricing_engine`. `model-pricing.ts` — cost-quote narxni DB'dan oladi
+  (`resolvePricedModel`), qator yo'q → statik `gen-models.ts` fallback. Seed startup'da
+  create-only (idempotent). `computeGenCost`/consume/refund/imzo TEGILMAGAN.
+- PART 2: `model-margin.ts` — `computeMargins` (per-model + jami marja, maqsad/missing-cost bayroq),
+  `spendByProvider`.
+- PART 3: admin endpointlar — `GET /api/admin/pricing`, `PATCH /pricing/:modelId` (0/manfiy taqiq),
+  `PATCH /pricing/config`; audited + cache bust. (config yo'li :modelId dan OLDIN.)
+- PART 4: `pricing-reconcile.ts` — oylik reconciliation + marja alert (email + webhook env),
+  `GET /pricing/reconcile`, `GET/POST /pricing/invoice`, env-gated scheduler (PRICING_RECON_SCHEDULE=on).
 
-**Topilgani:** dc-runtime = React; statik/binding-siz tugunlar re-render'da tegilmaydi → imperativ mutatsiya (className/textContent) xavfsiz (heroB typing/parallax naqshi).
+**Tekshirildi (lokal Postgres):** migratsiya qo'llandi; seed=38 model, narx BUGUNGI bilan bir xil
+(304 round-trip + jonli parity img/vid); cost-quote DB narx imzolanadi+verify OK, tamper rad;
+PATCH → keyingi quote yangi narx; low-margin fixture → belowTarget (0.356x); invoice \$14 vs est \$8
+→ drift +75%; missing-cost bayroq ishladi. Build + prisma validate green.
 
-**Tekshirildi (preview 1280/960/390):** A=mockup 1:1 (rail@≥820, resgrid 4→2 ustun@≤820); B o'zgarmagan+standart (computed: A=none, B=flex, `<html>` sinfsiz); hero-below ikkalasida bir xil; goRegister/goTemplates + typing ishlaydi; konsol xatosi yo'q; reduced-motion hurmat.
-
-**Kutilmoqda:** commit qilindi (push YO'Q — CF Pages deploy'ni foydalanuvchi qiladi). G'olib tanlangach yutqazgan variant olib tashlanadi.
+**Kutilmoqda:** git push → deploy (migrate:deploy auto). estCostUsd hozir TAXMINIY seed — real
+provider invoice bilan aniqlanadi. Admin UI = keyingi bosqich (backend tayyor).
