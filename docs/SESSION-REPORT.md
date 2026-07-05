@@ -1,23 +1,13 @@
-# SESSION-REPORT — Yakuniy: rebrand + polish + miqyos (3 commit, push kutilmoqda)
+# Sessiya hisoboti — 2026-07-06 (FAZA 2: backend yadro, 8 qism / 8 commit)
 
-**PART A — rebrand (display-only, 438cab2).** Faqat ko'rinadigan matn AssetFlow→FrameFlow:
-manifest ExtensionBundleName + `<Menu>` (Panel/Admin); CEP Admin `<title>`/login-title/topbar-name;
-studio/admin info-banner + xabar mavzulari ("AssetFlow Browse"→"FrameFlow Browse"). Plagin panel
-brendi allaqachon "FrameFlow" edi. SAQLANDI (ichki): ExtensionBundleId/Id `com.assetflow.demo.*`,
-MainPath fayl nomlari, JS identifikator (AssetFlow*), `af_*` kalitlar. Ambigu: local-store `app:"AssetFlow Demo"`
-(export data-marker, hech kim o'qimaydi) — QOLDIRILDI.
+Commitlar (main, push YO'Q): f6d61f1 media (#1 #8 #9) · favorites-sync (#17) ·
+7a2f384 delete (#2 #18) · dbf73c8 storage (#20) · fecea1d vertex (#12) ·
+a61d7ff billing (#25) · plans (#13) · bf630c9 web-sessiya (#14).
 
-**PART B — polish (08eb073).** (1) Gen-media yuklab olish: `getSignedDownloadUrl(...,filename)` →
-`ResponseContentDisposition=attachment`; hydrate alohida `downloadUrl` beradi (inline `url` tegilmadi);
-platform `downloadGenAsset` shuni ishlatadi. Owner-only + signed saqlandi (SDK test: URL'da param + imzo bor).
-(2) Skeleton: `adx-skel` shimmer + `adxSkelList()` → moderatsiya/obunachilar/overview (avval bo'sh miltillardi;
-platform grid'lar `hint-placeholder-count`, biznes markaz `bizLoading()` allaqachon qoplagan). (3) Voice:
-KLARIFIKATSIYA KERAK — ovoz Kokoro TTS bilan ISHLAYDI; hujjatdagi "Google TTS yoki tez orada" = mahsulot qarori, bug emas.
-
-**PART C — miqyos (043f236, additive+env-gated).** N+1: `/plugin-subscribers` ~2+2N→3 so'rov (batched
-reset + boyitilgan findMany, natija bir xil). Redis: `REDIS_URL` bo'lsagina (dinamik ioredis import, hard-dep yo'q,
-fail-open in-memory) — ikkala rejim test qilindi. Neon pooling: ixtiyoriy `DATABASE_CONNECTION_LIMIT` (yo'q=identik),
-`directUrl` schema'ga QO'SHILMADI (migrate-gate buzilmasin) — DR-RUNBOOK §6 hujjatlandi. Pul/consume/refund TEGILMADI.
-
-**Build:** apps/api + @creative-tools/database yashil; studio:sync bajarildi. **Kutilmoqda:** push (user);
-AE'da plagin menyusi "FrameFlow" ekanini test; voice qarori.
+- #1 ildiz (jonli isbot): private GCS bucket + imzosiz public URL → 403. Thumb/preview/sahna endi signed; pack/.mogrt private (5 daq signed).
+- #8/#9: video gen'ga ffmpeg poster (GenAsset.thumbKey, additive), hidratatsiya parallel (HEAD faqat sizeBytes yo'qda), plagin gen-keshlariga 25 daq TTL, history xatosi sabab+Retry.
+- #17: identity allaqachon yagona (web/plagin login = bitta User id, jonli tasdiq); sevimlilar endi DB (UserTemplateFavorite + /api/plugin/favorites).
+- #13: PlanConfig DB + admin GET/PUT + 60s kesh (statik fallback, seed teng) — pul-zonasi (consume/refund/quote/webhook) TEGILMAGAN.
+- #25: plagin paketlari LS checkout (500/$5, 1500/$12, 5000/$35). ⚠️ LS do'konida "N Credits" variantlar hali YO'Q (VARIANT_NOT_FOUND) — yaratish kerak.
+- #14: token localStorage'da edi; muammo kirish oqimida — endi sessiya borida to'g'ridan dashboard; JWT 7d→30d (tokenVersion revoke saqlangan).
+- Kutilmoqda: Cloud Run deploy + `migrate:deploy` (3 yangi migratsiya) + AE jonli test + install-cep; env: GOOGLE_CLOUD_PROJECT_VIDEO (+SA cross-project).
