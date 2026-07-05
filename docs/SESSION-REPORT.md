@@ -1,11 +1,13 @@
-# SESSION-REPORT — Bosqich 4 (zanjir yaxlitligi · payout · storage)
+# Sessiya hisoboti — 2026-07-05
 
-Backend-only, additive, har item alohida commit (5 commit, PUSH YO'Q). Build toza.
+**Vazifa:** FrameFlow landing'ni boyroq/premium qilish — standalone maket (jonli index.html TEGILMAGAN).
 
-- **#1 Real download tracking:** `TemplateDownloadEvent` (atomik, non-blocking) — pack/mogrt/import. Contributor stat forgeable Int emas real hodisadan (transitional fallback).
-- **#2 Konsolidatsiya:** ContributorTemplate = jonli katalog manbai. Asset+Download o'lik → DEPRECATED (destructive migratsiya EMAS); `/api/users/downloads` real hodisaga o'tdi.
-- **#3 Payout/Earnings:** `ContributorEarning`(idempotent downloadEventId UNIQUE) + `ContributorPayout`. DEFAULT: $0.10/download (`CONTRIBUTOR_PAYOUT_PER_DOWNLOAD_CENTS`) — **EGA QARORI** (stavka/formula, "50%"). Endpoint: /earnings, /admin/earnings, /admin/payouts.
-- **#4 Storage kvota:** `GenAsset.sizeBytes`. Kvota FREE 3GB/PRO 50GB/STUDIO 200GB (env, **EGA QARORI**). /gen consume'dan OLDIN 413 rad (charge yo'q) + persist'dan keyin retention (eng eski o'chirish). Privacy tasdiqlandi (ownership + signed URL).
-- **#5 Top-up carry-over (money fix):** `aiCreditsTopup` tracker — reset endi allotment+topup (sarflanmagan top-up yo'qolmaydi). Consume allotment-avval; refund ceiling +topup; lapse/upgrade saqlaydi.
+**Qilindi:** `packages/assetflow-studio/platform/_landing-rich-mockup.html` — 2 hero variant + to'liq boy landing:
+- **Variant A «Jonli studiya» (tavsiya):** katta media-hero — AI Studio jonli simulyatsiyasi (generatsiya sikli, video-play, o'zi yoziladigan prompt), aurora-mesh fon, 64px sarlavha, pog'onali kirish.
+- **Variant B «Kinematik sahna»:** immersiv to'liq ekran — suzuvchi parallax kartalar, markaziy vignette, pastda marquee-lenta.
+- To'liq landing (A asosida): count-up statistika, 2 qatorli marquee shablon-ko'rgazma (hover-play), tilt'li AI Studio kartalari, plagin 3D-panel (jonli sync), glow'li narx tizeri, akkordeon FAQ, nafas oluvchi CTA band.
+- Brend tokenlar/shriftlar 1:1 (tokens.css: #06080B / #13161C / #C2F04A, Hanken Grotesk + IBM Plex Mono); prefers-reduced-motion hurmat qilinadi.
 
-**Money-logic tasdiq:** atomik consume gate, signed cost-quote (0 diff), idempotent refund claim, ADMIN ozodligi — TEGILMAGAN. Migratsiyalar additive (4 ta, DROP yo'q) — `migrate:deploy` ISHLATILMADI.
+**Tekshirildi:** headless Chrome skrinshotlar 1280 va 390 px — konsol xatosiz; mobil overflow (plans grid) tuzatildi. Eslatma: headless Chrome min oyna eni ~500px → 390 uchun iframe-wrapper texnikasi.
+
+**Kutilmoqda:** foydalanuvchi hero variantini tanlaydi → tanlangan variant jonli `index.html` ga port qilinadi.
