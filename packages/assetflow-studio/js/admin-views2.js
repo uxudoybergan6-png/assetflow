@@ -218,10 +218,12 @@ async function loadAdminThreads() {
   }));
 }
 
-VIEWS.messaging = function(){ return `<div id="msgRoot"></div>`; };
+VIEWS.messaging = function(){ return `<div id="msgRoot" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>`; };
 window.afterRender.messaging = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='messaging') tba.innerHTML = `<button class="adx-btn sm" onclick="openBroadcast()"><i class="ph ph-chat-circle-dots"></i>Broadcast e‘lon</button>`;
   const root = document.getElementById("msgRoot");
-  root.innerHTML = `<div class="card card-pad empty"><p class="small">Yuklanmoqda…</p></div>`;
+  root.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center"><span class="adx-spin"><i class="ph ph-arrow-clockwise"></i></span></div>`;
   try {
     ADMIN_THREADS = await loadAdminThreads();
     window._STUDIO_MSG_UNREAD = ADMIN_THREADS.reduce((a, t) => a + (t.unread ? 1 : 0), 0);
@@ -229,7 +231,7 @@ window.afterRender.messaging = async function(){
     MSG_SEL = 0;
     await renderMessaging();
   } catch (e) {
-    root.innerHTML = `<div class="card card-pad empty"><h3>Xatolik</h3><p>${esc(e.message)}</p></div>`;
+    root.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:40px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Xatolik</div><div style="font-size:11px;color:var(--muted2)">${esc(e.message)}</div></div>`;
   }
 };
 
@@ -239,8 +241,10 @@ async function selectAdminThread(i) {
 }
 
 async function renderMessaging(){
+  const root = document.getElementById("msgRoot");
+  if(!root) return;
   if (!ADMIN_THREADS.length) {
-    document.getElementById("msgRoot").innerHTML = `<div class="card card-pad empty"><div class="ico">${ic("inbox")}</div><h3>Suhbat yo\u2018q</h3><p class="body">Contributorlarga xabar yuboring yoki moderatsiya qiling.</p></div>`;
+    root.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:auto"><span class="ei"><i class="ph ph-chat-circle-dots"></i></span><div style="font-weight:600;font-size:13px">Suhbat yo‘q</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Contributorlarga xabar yuboring yoki moderatsiya qiling.</div></div>`;
     return;
   }
   if (MSG_SEL >= ADMIN_THREADS.length) MSG_SEL = 0;
@@ -255,49 +259,37 @@ async function renderMessaging(){
     window._STUDIO_MSG_UNREAD = adminMsgUnread();
     if (typeof renderNav === "function") renderNav();
   } catch (e) {
-    toast("Xato", e.message || "Xabarlar yuklanmadi", "danger");
+    if (typeof toast === "function") toast("Xato", e.message || "Xabarlar yuklanmadi", "danger");
   }
-  document.getElementById('msgRoot').innerHTML = `
-  <div class="row between center mb-16">
-    <div></div>
-    <button class="btn btn-primary" onclick="openBroadcast()">${ic('megaphone')} Broadcast e\u2018lon</button>
-  </div>
-  <div class="card" style="overflow:hidden">
-   <div style="display:grid;grid-template-columns:320px 1fr;height:640px">
-    <div class="col" style="border-right:1px solid var(--line)">
-      <div class="card-head"><h3>Suhbatlar</h3><span class="nav-badge brand">${adminMsgUnread()}</span></div>
-      <div class="col" style="overflow-y:auto">
-        ${ADMIN_THREADS.map((t,i)=>{const cc=cById(t.cid); const nm = t.contributorName || cc.name; return `<div class="mod-item ${i===MSG_SEL?'sel':''}" onclick="selectAdminThread(${i})">
-          ${avatar(nm,38)}
-          <div class="col grow" style="gap:2px;min-width:0">
-            <div class="row between center"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cc.name)}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${esc(t.t)}</span></div>
-            <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${esc(t.sub)}</span>
-          </div>
-          ${t.unread?'<span style="width:8px;height:8px;border-radius:50%;background:var(--violet-bright);flex:0 0 auto"></span>':''}
-        </div>`;}).join('')}
+  const unread = adminMsgUnread();
+  root.innerHTML = `
+    <div style="flex:1;display:flex;min-height:0">
+      <div style="width:320px;flex:none;border-right:1px solid var(--hair);display:flex;flex-direction:column;min-height:0">
+        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)"><span class="adx-h16" style="font-size:13.5px">Suhbatlar</span>${unread?`<span class="adx-nbadge brand" style="margin-left:6px">${unread}</span>`:''}</div>
+        <div style="flex:1;overflow:auto">
+          ${ADMIN_THREADS.map((t,i)=>{const cc=cById(t.cid); const nm = t.contributorName || cc.name; const sel=i===MSG_SEL; return `<button style="display:flex;gap:10px;padding:12px 14px;width:100%;text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:0;border-left:2px solid ${sel?'var(--lime)':'transparent'};background:${sel?'var(--surface2)':'none'}" onclick="selectAdminThread(${i})">
+            ${axAv(nm,t.cid,34)}
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cc.name)}</span>${t.unread?'<span style="width:6px;height:6px;border-radius:50%;background:#C2F04A;margin-left:auto;flex:none"></span>':`<span style="margin-left:auto;font-size:10px;color:#8A93A3;flex:none">${esc(t.t||'')}</span>`}</div>
+              <div style="font-size:11px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.sub||'')}</div>
+              <div style="font-size:10.5px;color:#8A93A3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.last||'')}</div>
+            </div>
+          </button>`;}).join('')}
+        </div>
       </div>
-    </div>
-    <div class="col">
-      <div class="card-head">
-        <div class="row center gap-10">${avatar(c.name,34)}<div class="col" style="gap:1px"><span class="cell-strong">${esc(c.name)}</span><span class="small">${th.tid?'Shablon: '+esc(th.tid):'Umumiy suhbat'}</span></div></div>
-        <button class="btn btn-ghost btn-sm" onclick="route('contributor-detail','${c.id}')">${ic('ext')} Profil</button>
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)">${axAv(c.name,th.cid,32)}<div><div style="font-weight:600;font-size:13px">${esc(c.name)}</div><div class="adx-num" style="font-size:10px;color:#8A93A3">${th.tid?'Shablon: '+esc(shortId(th.tid)):'Umumiy suhbat'}</div></div><span style="flex:1"></span><button class="adx-btn2 sm" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-user"></i>Profil</button></div>
+        <div class="adx-chatwrap">
+          ${ADMIN_THREAD_MESSAGES.length ? ADMIN_THREAD_MESSAGES.map((m) => {
+            const isMe = m.sender?.isMe;
+            const nm = m.sender?.name || c.name;
+            const t = String(m.createdAt || "").slice(0,16).replace("T"," ");
+            return `<div class="adx-msg ${isMe?'me':''}">${isMe?'<span class="adx-av" style="width:28px;height:28px;font-size:10px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,th.cid,28)}<div><div class="adx-bub">${esc(m.body)}</div><div class="adx-msgt">${esc(t)}${isMe?' · Admin':''}</div></div></div>`;
+          }).join("") : `<div class="adx-empty" style="border:0;margin:auto"><span class="ei"><i class="ph ph-chat-circle"></i></span><div style="font-size:11.5px;color:var(--muted2)">Hali xabar yo‘q</div></div>`}
+        </div>
+        <div style="padding:12px 18px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:10px"><input id="adminReplyInput" class="adx-input" placeholder="Xabar yozing…" style="flex:1" onkeydown="if(event.key==='Enter')sendAdminReply()"><button class="adx-btn sm" onclick="sendAdminReply()"><i class="ph ph-arrow-right"></i>Yuborish</button></div>
       </div>
-      <div class="col grow" style="overflow-y:auto;padding:18px;background:var(--bg-0)">
-        ${th.tid?`<div class="text-c mb-16"><span class="pill">${ic('link')} ${esc(th.tid)} ga bog\u2018langan</span></div>`:''}
-        ${ADMIN_THREAD_MESSAGES.map((m) => {
-          const isMe = m.sender?.isMe;
-          const nm = m.sender?.name || c.name;
-          const col = avColor(nm);
-          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,${isMe ? "#7b5cff,#4a2fb0" : col.join(",")})">${isMe ? "AD" : initials(nm)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "Admin" : esc(nm)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${String(m.createdAt || "").slice(0, 16).replace("T", " ")}</div></div></div>`;
-        }).join("")}
-      </div>
-      <div class="row gap-8 center" style="padding:14px;border-top:1px solid var(--line)">
-        <input id="adminReplyInput" class="input" placeholder="Xabar yozing\u2026" style="height:40px">
-        <button class="btn btn-primary" style="height:40px" onclick="sendAdminReply()">${ic('send')} Yuborish</button>
-      </div>
-    </div>
-   </div>
-  </div>`;
+    </div>`;
 }
 
 /* ============================================================
