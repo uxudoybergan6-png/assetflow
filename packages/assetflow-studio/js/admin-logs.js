@@ -3,152 +3,77 @@ let LOG_FILTER = { source: "all", level: "all", q: "" };
 let LOG_POLL = null;
 
 VIEWS.logs = function () {
-  return `<div class="col gap-16" id="logRoot">
-    <div class="toolbar between wrap gap-10">
-      <div class="chips" id="logSourceChips"></div>
-      <div class="toolbar wrap gap-8">
-        <div class="search" style="width:240px;height:34px">
-          ${ic("search")}
-          <input placeholder="Qidirish…" id="logSearch" value="${LOG_FILTER.q.replace(/"/g, "&quot;")}">
-        </div>
-        <select class="select" id="logLevel" style="height:34px">
-          <option value="all">Barcha daraja</option>
-          <option value="error">Error</option>
-          <option value="warn">Warn</option>
-          <option value="info">Info</option>
-          <option value="debug">Debug</option>
-        </select>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="refreshLogs()">${ic("refresh")} Yangilash</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="exportLogs()">${ic("download")} Eksport</button>
-        <button type="button" class="btn btn-danger-ghost btn-sm" onclick="clearLogs()">${ic("trash")} Tozalash</button>
-      </div>
-    </div>
-    <div class="info-banner" id="logServerBanner">${ic("globe")}<span>Server: <b id="logServerStatus">tekshirilmoqda…</b> · Admin + Contributor + AE Plugin loglari shu yerda</span></div>
-    <div class="card"><div id="logTableHost"><div class="empty" style="padding:40px"><p>Yuklanmoqda…</p></div></div></div>
+  return `<div id="logRoot">
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--limedim);border:1px solid rgba(194,240,74,.2);border-radius:10px;margin-bottom:14px"><span style="width:7px;height:7px;border-radius:50%;background:#C2F04A;flex:none"></span><span style="font-size:11.5px;color:#B7C0CE">Server: <b id="logServerStatus" style="color:#C2F04A">tekshirilmoqda…</b> · Admin + Contributor + AE Plugin loglari shu yerda</span></div>
+    <div class="adx-tagrow" id="logSourceChips"></div>
+    <div class="adx-card" style="overflow:hidden"><div id="logTableHost"><div class="adx-empty" style="border:0;padding:40px"><span class="ei"><i class="ph ph-scroll"></i></span><div style="font-size:12px;color:var(--muted2)">Yuklanmoqda…</div></div></div></div>
   </div>`;
 };
 
 window.afterRender.logs = function () {
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='logs') tba.innerHTML =
+    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${LOG_FILTER.level==='all'?'Barcha daraja':LOG_FILTER.level}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="LOG_FILTER.level=this.value;refreshLogs()"><option value="all">Barcha daraja</option><option value="error" ${LOG_FILTER.level==='error'?'selected':''}>Error</option><option value="warn" ${LOG_FILTER.level==='warn'?'selected':''}>Warn</option><option value="info" ${LOG_FILTER.level==='info'?'selected':''}>Info</option><option value="debug" ${LOG_FILTER.level==='debug'?'selected':''}>Debug</option></select></label>`+
+    `<button class="adx-btn2 sm" onclick="refreshLogs(true)"><i class="ph ph-arrow-clockwise"></i>Yangilash</button>`+
+    `<button class="adx-btn2 sm" onclick="exportLogs()"><i class="ph ph-export"></i>Eksport</button>`+
+    `<button class="adx-btn2 sm adx-btn-dghost" onclick="clearLogs()"><i class="ph ph-trash"></i>Tozalash</button>`;
   renderLogSourceChips();
-  const lv = document.getElementById("logLevel");
-  if (lv) {
-    lv.value = LOG_FILTER.level;
-    lv.onchange = () => {
-      LOG_FILTER.level = lv.value;
-      refreshLogs();
-    };
-  }
-  const si = document.getElementById("logSearch");
-  if (si) {
-    si.oninput = () => {
-      LOG_FILTER.q = si.value;
-      refreshLogs(false);
-    };
-  }
   refreshLogs();
   if (LOG_POLL) clearInterval(LOG_POLL);
-  LOG_POLL = setInterval(() => {
-    if (CURRENT === "logs") refreshLogs(false);
-  }, 8000);
+  LOG_POLL = setInterval(() => { if (CURRENT === "logs") refreshLogs(false); }, 8000);
 };
 
 function renderLogSourceChips() {
   const host = document.getElementById("logSourceChips");
   if (!host) return;
   const counts = { all: 0, admin: 0, contributor: 0, ae_plugin: 0 };
-  AssetFlowLog.readLocal().forEach((r) => {
-    counts.all++;
-    if (counts[r.source] != null) counts[r.source]++;
-  });
-  const chips = [
-    ["all", "Barchasi"],
-    ["admin", "Admin"],
-    ["contributor", "Contributor"],
-    ["ae_plugin", "AE Plugin"],
-  ];
-  host.innerHTML = chips
-    .map(
-      ([k, l]) =>
-        `<button type="button" class="chip ${LOG_FILTER.source === k ? "active" : ""}" onclick="setLogSource('${k}')">${l}<span class="cnt">${counts[k] || 0}</span></button>`
-    )
-    .join("");
+  AssetFlowLog.readLocal().forEach((r) => { counts.all++; if (counts[r.source] != null) counts[r.source]++; });
+  const chips = [["all","Barchasi"],["admin","Admin"],["contributor","Contributor"],["ae_plugin","AE Plugin"]];
+  host.innerHTML = chips.map(([k,l])=>`<button class="adx-tag ${LOG_FILTER.source===k?'on':''}" onclick="setLogSource('${k}')">${l} <span class="n">${counts[k]||0}</span></button>`).join("");
 }
 
-function setLogSource(s) {
-  LOG_FILTER.source = s;
-  refreshLogs();
+function setLogSource(s) { LOG_FILTER.source = s; refreshLogs(); }
+
+function axLogLevelBadge(level) {
+  const map = { error:['adx-bdg-hard','Error'], warn:['adx-bdg-soft','Warn'], info:['adx-bdg-approved','Info'], debug:['adx-bdg-draft','Debug'] };
+  const [cls,label]=map[level]||['adx-bdg-draft',level];
+  return `<span class="adx-bdg ${cls}">${label}</span>`;
 }
 
-function levelBadge(level) {
-  const map = {
-    error: ["badge-hard", "Error"],
-    warn: ["badge-soft", "Warn"],
-    info: ["badge-approved", "Info"],
-    debug: ["badge-draft", "Debug"],
-  };
-  const [cls, label] = map[level] || ["badge-draft", level];
-  return `<span class="badge ${cls}"><span class="dot"></span>${label}</span>`;
-}
-
-function sourceBadge(src) {
-  const map = {
-    admin: "violet",
-    contributor: "blue",
-    ae_plugin: "green",
-  };
-  const c = map[src] || "gray";
-  const label = (AssetFlowLog.sources && AssetFlowLog.sources[src]) || src;
-  return `<span class="badge badge-plan" style="background:var(--${c}-dim);color:var(--${c});border-color:var(--${c}-line,var(--line))">${escapeHtml(label)}</span>`;
+function axLogSourceBadge(src) {
+  const label=(AssetFlowLog.sources&&AssetFlowLog.sources[src])||src;
+  if(src==='admin') return `<span class="adx-bdg adx-bdg-info">${escapeHtml(label)}</span>`;
+  if(src==='ae_plugin') return `<span class="adx-bdg" style="color:#7CC4FF;background:rgba(124,196,255,.13)">${escapeHtml(label)}</span>`;
+  if(src==='contributor') return `<span class="adx-bdg" style="color:#b794f6;background:rgba(183,148,246,.14)">${escapeHtml(label)}</span>`;
+  return `<span class="adx-bdg adx-bdg-draft">${escapeHtml(label)}</span>`;
 }
 
 async function refreshLogs(showToast) {
   const host = document.getElementById("logTableHost");
   const status = document.getElementById("logServerStatus");
   if (!host) return;
-
-  let serverOk = false;
   try {
-    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "https://assetflow-api-331762958776.europe-west1.run.app");
+    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "");
     const h = await fetch(`${apiBase}/health`);
-    serverOk = h.ok;
-    if (status) status.textContent = serverOk ? `${apiBase} ulangan` : "server javob bermadi";
-  } catch {
-    if (status) status.textContent = "server o‘chiq — faqat brauzer loglari";
-  }
-
-  const rows = await AssetFlowLog.getAll({
-    source: LOG_FILTER.source,
-    level: LOG_FILTER.level,
-    q: LOG_FILTER.q,
-    includeServer: true,
-    limit: 250,
-  });
-
+    if (status){ status.textContent = h.ok ? "online" : "javob bermadi"; status.style.color = h.ok ? "#C2F04A" : "#FFB27C"; }
+  } catch { if (status){ status.textContent="o‘chiq — faqat brauzer loglari"; status.style.color="#FFB27C"; } }
+  const rows = await AssetFlowLog.getAll({ source: LOG_FILTER.source, level: LOG_FILTER.level, q: LOG_FILTER.q, includeServer: true, limit: 250 });
   renderLogSourceChips();
-
   if (!rows.length) {
-    host.innerHTML = `<div class="empty" style="padding:48px"><div class="ico">${ic("scroll")}</div><h3>Log bo‘sh</h3><p>Admin, Contributor yoki AE plugin harakat qilganda yozuvlar paydo bo‘ladi.</p></div>`;
+    host.innerHTML = `<div class="adx-empty" style="border:0;padding:48px"><span class="ei"><i class="ph ph-scroll"></i></span><div style="font-weight:600;font-size:13px">Log bo‘sh</div><div style="font-size:11px;color:var(--muted2)">Admin, Contributor yoki AE plugin harakat qilganda yozuvlar paydo bo‘ladi.</div></div>`;
     return;
   }
-
-  host.innerHTML = `<div class="table-wrap"><table class="data log-table" style="min-width:920px">
+  host.innerHTML = `<div style="overflow-x:auto"><table class="adx-tbl" style="min-width:960px">
     <thead><tr><th>Vaqt</th><th>Manba</th><th>Daraja</th><th>Xabar</th><th>Amal</th><th>Izoh</th></tr></thead>
-    <tbody>
-      ${rows
-        .map(
-          (r) => `<tr class="log-row log-${r.level}">
-        <td class="cell-muted mono" style="white-space:nowrap">${AssetFlowLog.formatTime(r.ts)}</td>
-        <td>${sourceBadge(r.source)}</td>
-        <td>${levelBadge(r.level)}</td>
-        <td class="cell-strong" style="max-width:320px">${escapeHtml(r.message)}</td>
-        <td class="cell-muted mono">${escapeHtml(r.action || "—")}</td>
-        <td class="small" style="color:var(--tx-2);max-width:280px">${escapeHtml(r.detail || "")}</td>
-      </tr>`
-        )
-        .join("")}
-    </tbody>
+    <tbody>${rows.map((r)=>`<tr>
+      <td class="adx-num" style="font-size:10.5px;color:#8A93A3;white-space:nowrap">${AssetFlowLog.formatTime(r.ts)}</td>
+      <td>${axLogSourceBadge(r.source)}</td>
+      <td>${axLogLevelBadge(r.level)}</td>
+      <td style="color:var(--text);max-width:320px">${escapeHtml(r.message)}</td>
+      <td class="adx-num" style="font-size:10px;color:#8A93A3">${escapeHtml(r.action||"—")}</td>
+      <td style="font-size:10.5px;color:#5E6675;max-width:280px">${escapeHtml(r.detail||"")}</td>
+    </tr>`).join("")}</tbody>
   </table></div>`;
-
   if (showToast) toast("Log yangilandi", `${rows.length} ta yozuv`, "info");
 }
 
