@@ -295,87 +295,87 @@ async function renderMessaging(){
 /* ============================================================
    ANALYTICS (deep)
    ============================================================ */
+window.afterRender.analytics = function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='analytics') tba.innerHTML = `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>So‘nggi 30 kun</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i></span>`;
+};
 VIEWS.analytics = function(){
   const usage = typeof window !== "undefined" ? window._ASSETFLOW_PLUGIN_ANALYTICS?.usage : null;
   const totalDl = usage?.downloadsTotal ?? counts().totalDl;
-  const appr =
-    window._ASSETFLOW_PLUGIN_ANALYTICS?.approvalRatePct ??
-    (typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null);
+  const appr = window._ASSETFLOW_PLUGIN_ANALYTICS?.approvalRatePct ?? (typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null);
   const avgDl = typeof avgDownloadsPerApproved === "function" ? avgDownloadsPerApproved() : 0;
   const contribRank = CONTRIBUTORS.map(c=>{const ts=tByContributor(c.id);const dl=ts.reduce((a,t)=>a+t.dl,0);const ap=ts.filter(t=>t.status==='approved').length;return {c,dl,ap,total:ts.length,rate:ts.length?Math.round(ap/ts.length*100):0};}).sort((a,b)=>b.dl-a.dl);
-  const rejectBlock =
-    REJECT_REASONS.length > 0
-      ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard;const mx=Math.max(...REJECT_REASONS.map(x=>x.soft+x.hard),1);return `<div class="col gap-6">
-            <div class="row between center"><span class="body" style="color:var(--tx-1)">${esc(r.nm)}</span><span class="small">${tot}</span></div>
-            <div class="row gap-2" style="height:8px;border-radius:999px;overflow:hidden;background:var(--bg-4)">
-              <div style="width:${(r.soft/mx)*100}%;background:var(--orange)"></div>
-              <div style="width:${(r.hard/mx)*100}%;background:var(--red)"></div>
-            </div>
-          </div>`;}).join('')
-      : '<div class="empty" style="padding:20px"><p class="small">Rad etilgan shablonlar sababi hali yo\u2018q</p></div>';
+  const maxDl = contribRank[0]?.dl || 1;
+  const rejectBlock = REJECT_REASONS.length > 0
+    ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard; const s=tot?r.soft/tot*100:0; const h=tot?r.hard/tot*100:0; return `<div><div style="display:flex;font-size:11.5px;margin-bottom:5px"><span style="flex:1;color:var(--text)">${esc(r.nm)}</span><span class="adx-num" style="color:#8A93A3">${tot}</span></div><div style="height:7px;border-radius:99px;overflow:hidden;display:flex">${s?`<span style="width:${s}%;background:#FFB27C"></span>`:''}${h?`<span style="width:${h}%;background:#FF6B5E"></span>`:''}</div></div>`;}).join('')
+    : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-size:11px;color:var(--muted2)">Rad etilgan shablonlar sababi hali yo‘q</div></div>`;
   const barMax = typeof chartMax === "function" ? chartMax(DL_30) : Math.max(...DL_30, 1);
-  return `<div class="col gap-20">
-    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      ${kpiCard({label:'Jami yuklab olishlar',val:totalDl >= 1000 ? (totalDl/1000).toFixed(1)+'K' : String(totalDl),ic:'download',c:'green',foot:'plugin hisobi'})}
-      ${kpiCard({label:'O\u2018rtacha / tasdiqlangan',val:counts().approved ? String(avgDl) : '—',ic:'chart',c:'violet',foot:'yuklab olish / shablon'})}
-      ${kpiCard({label:'Approval rate',val:appr != null ? appr+'%' : '—',ic:'checkCircle',c:'blue',foot:'DB bo\u2018yicha'})}
-      ${kpiCard({label:'Audit (30 kun)',val:DL_30.reduce((a,b)=>a+b,0),ic:'clock',c:'yellow',foot:'moderatsiya va tizim'})}
+  const rankColors = ['#C2F04A','#8A93A3','#8A93A3','#8A93A3'];
+  return `
+    <div class="adx-grid4" style="margin-bottom:18px">
+      ${axStat({label:'Jami yuklab olishlar',val:axNum(totalDl),ic:'download-simple',foot:'plugin hisobi'})}
+      ${axStat({label:'O‘rtacha / tasdiqlangan',val:counts().approved?String(avgDl):'—',ic:'chart-bar',foot:'yuklab olish / shablon'})}
+      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'check-circle',icColor:'#C2F04A',foot:'DB bo‘yicha'})}
+      ${axStat({label:'Audit (30 kun)',val:DL_30.reduce((a,b)=>a+b,0),ic:'shield-check',icColor:'#7CC4FF',foot:'moderatsiya va tizim'})}
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-      <div class="card">
-        <div class="card-head"><h3>Contributor leaderboard</h3><span class="label">Downloads bo\u2018yicha</span></div>
-        <div class="card-pad col gap-4">
-          ${contribRank.slice(0,6).map((r,i)=>`<div class="leader-row">
-            <span class="leader-rank">${i+1}</span>${avatar(r.c.name,30)}
-            <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</span>
-            <div class="leader-bar"><span style="width:${contribRank[0].dl?r.dl/contribRank[0].dl*100:0}%"></span></div></div>
-            <div class="col" style="align-items:flex-end;gap:1px"><span class="num" style="font-weight:700">${(r.dl/1000).toFixed(1)}K</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${r.rate}% approval</span></div>
-          </div>`).join('')}
+    <div class="adx-grid2">
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor leaderboard</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">DOWNLOADS BO‘YICHA</span></div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:11px">
+          ${contribRank.length? contribRank.slice(0,6).map((r,i)=>`<div style="display:flex;align-items:center;gap:11px"><span class="adx-num" style="font-size:11px;color:${rankColors[i]||'#8A93A3'};width:16px">${i+1}</span>${axAv(r.c.name,r.c.email,28)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</div><div class="adx-prog" style="margin-top:5px"><div class="pb" style="width:${maxDl?r.dl/maxDl*100:0}%"></div></div></div><span class="adx-num" style="font-size:11.5px;color:#B7C0CE">${axNum(r.dl)}</span><span class="adx-num" style="font-size:9.5px;color:#8A93A3;width:34px;text-align:right">${r.rate}%</span></div>`).join('') : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-size:11px;color:var(--muted2)">Hali ma‘lumot yo‘q</div></div>`}
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-head"><h3>Rad sabablari</h3><span class="label">Soft vs Hard</span></div>
-        <div class="card-pad col gap-12">
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Rad sabablari</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SOFT VS HARD</span></div>
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
           ${rejectBlock}
-          <div class="row gap-16 mt-8"><span class="leg-item"><span class="sw" style="background:var(--orange)"></span>Soft reject</span><span class="leg-item"><span class="sw" style="background:var(--red)"></span>Hard reject</span></div>
+          <div style="display:flex;gap:14px;margin-top:2px"><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#FFB27C"></span>Soft reject</span><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#FF6B5E"></span>Hard reject</span></div>
         </div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-head"><div><h3>Audit trend</h3><span class="small">So\u2018nggi 30 kun · har kun voqealar</span></div></div>
-      <div class="card-pad"><div class="bars">${DL_30.map((v,i)=>`<div class="bar ${i%5===4?'alt':''}" style="height:${(v/barMax)*100}%" title="${v} voqea"></div>`).join('')}</div>
-      <div class="row between mt-12 small"><span>-30 kun</span><span>bugun</span></div></div>
-    </div>
-  </div>`;
+    <div class="adx-card" style="margin-top:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Audit trend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SO‘NGGI 30 KUN · HAR KUN VOQEALAR</span></div>
+      <div style="padding:16px 18px"><div class="adx-bars">${DL_30.map((v,i)=>`<div class="b ${i===DL_30.length-1?'sel':''}" style="height:${Math.max(4,(v/barMax)*100)}%" title="${v} voqea"></div>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px"><span style="font-size:10px;color:#8A93A3">-30 kun</span><span style="font-size:10px;color:#8A93A3">bugun</span></div></div>
+    </div>`;
 };
 
 /* ============================================================
    SETTINGS
    ============================================================ */
+window.afterRender.settings = function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='settings') tba.innerHTML =
+    `<button class="adx-btn2 sm" onclick="route('settings')">Bekor</button>`+
+    `<button class="adx-btn sm" onclick="toast('Saqlandi','Sozlamalar brauzerda saqlandi (server sync keyingi versiyada)','success')"><i class="ph ph-check"></i>Saqlash</button>`;
+};
 VIEWS.settings = function(){
-  return `<div style="max-width:760px" class="col gap-16">
-    <div class="card"><div class="card-head"><h3>Marketplace sozlamalari</h3></div>
-      <div class="card-pad col gap-16">
-        <div class="field"><label>Platforma nomi</label><input class="input" value="AssetFlow"></div>
-        <div class="row gap-16"><div class="field grow"><label>Maks. fayl hajmi (.aep pack)</label><input class="input" value="3 GB"></div>
-        <div class="field grow"><label>Preview maks. davomiylik</label><input class="input" value="60 sekund"></div></div>
-        <div class="field"><label>Avto-arxiv (faolsiz kunlar)</label><input class="input" value="180"><span class="hint">Approved bo\u2018lmagan qoralamalar shu muddatdan keyin arxivlanadi.</span></div>
+  const cats = (typeof CATS!=='undefined'?CATS:[]);
+  const rules = [
+    ['Yangi yuklash uchun majburiy moderatsiya',true],
+    ['Hard reject‘dan keyin qayta yuborishni bloklash',true],
+    ['Approve‘dan keyin AE katalogiga avtomatik push',true],
+    ['Soft reject‘da contributorga email yuborish',false],
+  ];
+  return `
+    <div class="adx-grid2">
+      <div class="adx-card" style="padding:18px 20px">
+        <div class="adx-h16" style="font-size:14px;margin-bottom:14px">Marketplace sozlamalari</div>
+        <div class="adx-flab">PLATFORMA NOMI</div><input class="adx-input" value="FrameFlow" style="margin-bottom:12px">
+        <div class="adx-flab">MAKS. FAYL HAJMI (.aep PACK)</div><input class="adx-input mono" value="200 MB" style="margin-bottom:12px">
+        <div class="adx-flab">PREVIEW MAKS. DAVOMIYLIK</div><input class="adx-input mono" value="30 s" style="margin-bottom:12px">
+        <div class="adx-flab">AVTO-ARXIV (FAOLSIZ KUNLAR)</div><input class="adx-input mono" value="90 kun">
+        <div style="font-size:10.5px;color:#5E6675;margin-top:6px">Approved bo‘lmagan qoralamalar shu muddatdan keyin arxivlanadi. <span style="color:#FFB27C">Server sync keyingi versiyada</span>.</div>
       </div>
-    </div>
-    <div class="card"><div class="card-head"><h3>Kategoriyalar</h3><button class="btn btn-ghost btn-sm">${ic('plus')} Qo\u2018shish</button></div>
-      <div class="card-pad"><div class="row gap-8 wrap">${CATS.map(c=>`<span class="pill" style="height:28px">${ic('folder')}${esc(c)} <span style="color:var(--tx-3);cursor:pointer">${ic('x')}</span></span>`).join('')}</div></div>
-    </div>
-    <div class="card"><div class="card-head"><h3>Moderatsiya qoidalari</h3></div>
-      <div class="card-pad col gap-2">
-        ${[['Yangi yuklash uchun majburiy moderatsiya',true],['Hard reject\u2018dan keyin qayta yuborishni bloklash',true],['Approve\u2018dan keyin AE katalogiga avtomatik push',true],['Soft reject\u2018da contributorga email yuborish',false]].map(([l,on])=>
-          `<div class="row between center" style="padding:11px 0;border-bottom:1px solid var(--line-soft)"><span class="body" style="color:var(--tx-1)">${l}</span><div class="switch ${on?'on':''}" onclick="this.classList.toggle('on')"></div></div>`).join('')}
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="adx-card" style="padding:18px 20px">
+          <div style="display:flex;align-items:center;margin-bottom:12px"><span class="adx-h16" style="font-size:14px">Kategoriyalar</span><span style="flex:1"></span><button class="adx-btn2 sm" onclick="toast('Kategoriya','Kategoriya qo‘shish keyingi versiyada','info')"><i class="ph ph-check"></i>Qo‘shish</button></div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px">${cats.length?cats.map(c=>`<span class="adx-tag">${esc(c)}<i class="ph ph-x" style="font-size:11px;margin-left:2px;cursor:pointer"></i></span>`).join(''):'<span style="font-size:11px;color:var(--muted2)">Kategoriya yo‘q</span>'}</div>
+        </div>
+        <div class="adx-card" style="padding:18px 20px">
+          <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Moderatsiya qoidalari</div>
+          ${rules.map(([l,on],i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:12px;${i?'border-top:1px solid var(--hair)':''}"><span style="flex:1">${l}</span><button class="adx-tog ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')"><i></i></button></div>`).join('')}
+          <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Qoidalar hozircha brauzerda — server tomonlama qo‘llash keyingi versiyada.</div>
+        </div>
       </div>
-    </div>
-    <div class="row gap-8"><button class="btn btn-primary" onclick="toast('Saqlandi','Sozlamalar yangilandi','success')">Saqlash</button><button class="btn btn-ghost">Bekor</button></div>
-  </div>`;
+    </div>`;
 };
 
 /* ============================================================
@@ -388,6 +388,8 @@ VIEWS.audit = function () {
 };
 
 window.afterRender.audit = async function () {
+  const tba = document.getElementById("tbActions");
+  if(tba && CURRENT==="audit") tba.innerHTML = `<button class="adx-btn2 sm" onclick="StudioTemplates.loadAuditLogs().then(renderAuditTable)"><i class="ph ph-arrow-clockwise"></i>Yangilash</button>`;
   const root = document.getElementById("auditRoot");
   root.innerHTML = `<div class="card card-pad empty"><p class="small">Yuklanmoqda…</p></div>`;
   try {
@@ -398,52 +400,47 @@ window.afterRender.audit = async function () {
   }
 };
 
+function axAuditBadge(action){
+  const a = String(action||'');
+  if(a==='approve') return `<span class="adx-bdg adx-bdg-approved"><i class="ph ph-check" style="font-size:10px"></i>Approve</span>`;
+  if(a.includes('hard')) return `<span class="adx-bdg adx-bdg-hard"><i class="ph ph-prohibit" style="font-size:10px"></i>Reject</span>`;
+  if(a.includes('reject')) return `<span class="adx-bdg adx-bdg-soft"><i class="ph ph-arrow-u-up-left" style="font-size:10px"></i>Reject</span>`;
+  if(a.includes('block')||a.includes('remove')) return `<span class="adx-bdg adx-bdg-hard"><i class="ph ph-prohibit" style="font-size:10px"></i>Block</span>`;
+  const m = (typeof AUDIT_META!=='undefined'&&AUDIT_META[a])?AUDIT_META[a]:{label:a};
+  return `<span class="adx-bdg adx-bdg-info">${esc(m.label||a)}</span>`;
+}
+
 function renderAuditTable() {
-  const list =
-    AUDIT_FILTER === "all"
-      ? AUDIT
-      : AUDIT.filter((a) => a.action.includes(AUDIT_FILTER));
-  document.getElementById("auditRoot").innerHTML = `<div class="col gap-16">
-    ${infoBanner("Audit jurnali — moderatsiya va boshqaruv harakatlari (API).")}
-    <div class="toolbar between">
-      <div class="chips">
-        ${[
-          ["all", "Barchasi", AUDIT.length],
-          ["approve", "Approve", AUDIT.filter((a) => a.action === "approve").length],
-          ["reject", "Reject", AUDIT.filter((a) => a.action.includes("reject")).length],
-          ["block", "Block", AUDIT.filter((a) => a.action === "block").length],
-        ]
-          .map(
-            ([k, l, n]) =>
-              `<button class="chip ${AUDIT_FILTER === k ? "active" : ""}" onclick="AUDIT_FILTER='${k}';renderAuditTable()">${l}<span class="cnt">${n}</span></button>`
-          )
-          .join("")}
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="StudioTemplates.loadAuditLogs().then(renderAuditTable)">${ic("refresh")} Yangilash</button>
+  const list = AUDIT_FILTER === "all" ? AUDIT : AUDIT.filter((a) => a.action.includes(AUDIT_FILTER));
+  const tags = [
+    ["all","Barchasi",AUDIT.length],
+    ["approve","Approve",AUDIT.filter((a)=>a.action==="approve").length],
+    ["reject","Reject",AUDIT.filter((a)=>a.action.includes("reject")).length],
+    ["block","Block",AUDIT.filter((a)=>a.action.includes("block")).length],
+  ];
+  document.getElementById("auditRoot").innerHTML = `
+    ${axInfo("Audit jurnali — moderatsiya va boshqaruv harakatlari (API).",'info')}
+    <div class="adx-tagrow">
+      ${tags.map(([k,l,n])=>`<button class="adx-tag ${AUDIT_FILTER===k?'on':''}" onclick="AUDIT_FILTER='${k}';renderAuditTable()">${l} <span class="n">${n}</span></button>`).join('')}
     </div>
-    <div class="card"><div class="table-wrap"><table class="data" style="min-width:880px">
-      <thead><tr><th>Vaqt</th><th>Aktor</th><th>Amal</th><th>Nishon</th></tr></thead>
-      <tbody>${
-        list.length
-          ? list
-              .map((a) => {
-                const m = AUDIT_META[a.action] || {
-                  cls: "gray",
-                  ic: "clock",
-                  label: a.action,
-                };
-                return `<tr>
-        <td class="cell-muted mono" style="white-space:nowrap">${esc(a.t)}</td>
-        <td><div class="row center gap-8">${avatar(a.actor.replace(" (siz)", ""), 24)}<span class="cell-strong">${esc(a.actor)}</span></div></td>
-        <td><span class="badge" style="background:var(--${m.cls}-dim);color:var(--${m.cls})">${ic(m.ic)} ${esc(m.label)}</span></td>
-        <td class="cell-muted">${esc(a.target)}</td>
-      </tr>`;
-              })
-              .join("")
-          : `<tr><td colspan="4" class="cell-muted">Hali yozuv yo'q</td></tr>`
-      }</tbody>
-    </table></div></div>
-  </div>`;
+    <div class="adx-card" style="overflow:hidden">
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:820px">
+        <thead><tr><th>Vaqt</th><th>Aktor</th><th>Amal</th><th>Nishon</th></tr></thead>
+        <tbody>${
+          list.length ? list.map((a)=>{
+            const actor = String(a.actor||'');
+            const isMe = actor.includes('(siz)');
+            const nm = actor.replace(' (siz)','');
+            return `<tr>
+              <td class="adx-num" style="font-size:11px;color:#8A93A3;white-space:nowrap">${esc(a.t)}</td>
+              <td><div class="adx-who">${isMe?'<span class="adx-av" style="width:26px;height:26px;font-size:9px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,nm,26)}<span class="nm" style="font-size:12px">${esc(nm)}${isMe?' <span style="color:#5E6675;font-weight:400">(siz)</span>':''}</span></div></td>
+              <td>${axAuditBadge(a.action)}</td>
+              <td class="adx-num" style="font-size:10.5px;color:#8A93A3">${esc(a.target)}</td>
+            </tr>`;
+          }).join("") : `<tr><td colspan="4"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-clipboard-text"></i></span><div style="font-weight:600;font-size:13px">Hali yozuv yo‘q</div><div style="font-size:11px;color:var(--muted2)">Moderatsiya harakatlari shu yerda ko‘rinadi.</div></div></td></tr>`
+        }</tbody>
+      </table></div>
+    </div>`;
 }
 
 /* ============================================================
