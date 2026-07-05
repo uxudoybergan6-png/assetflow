@@ -353,6 +353,14 @@ body.adx-body{background:#06080B}
 .adx-finp textarea{resize:vertical;padding:2px 0}
 .adx-finp:focus-within{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12)}
 .adx-finp.ta{height:auto;padding:9px 12px;align-items:flex-start}
+/* Standalone editable input/select/textarea (form ekranlari) */
+.adx-input{height:38px;width:100%;padding:0 12px;background:var(--f1);border:1px solid var(--hair2);border-radius:9px;color:var(--text);font-size:12.5px;font-family:inherit;outline:none}
+.adx-input::placeholder{color:var(--muted2)}
+.adx-input:focus{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12)}
+.adx-input.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+select.adx-input{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:none}
+textarea.adx-input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
+.adx-input:disabled{opacity:.5;cursor:not-allowed}
 
 /* ── Responsive: ≤1024px icon-rail · ≤720px drawer (maket r1/r2) ── */
 @media (max-width:1024px){
