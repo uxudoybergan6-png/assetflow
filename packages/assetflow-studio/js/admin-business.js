@@ -378,3 +378,66 @@ async function submitPayoutRecord(contributorId){
     toast('Xato', (e&&e.message)||'To‘lov yozilmadi', 'danger');
   }
 }
+
+/* ============================================================
+   b5 · FAOLIYAT JURNALI — birlashgan foydalanuvchi hodisa oqimi
+   ============================================================ */
+let ACTIVITY_DATA = null;
+let ACTIVITY_FILTER = "all";
+let ACTIVITY_SEARCH = "";
+
+VIEWS.activity = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
+window.afterRender.activity = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='activity') tba.innerHTML =
+    `<div class="adx-inp" style="width:220px;height:34px"><i class="ph ph-magnifying-glass" style="font-size:14px;color:#8A93A3"></i><input placeholder="Foydalanuvchi, ID…" value="${esc(ACTIVITY_SEARCH)}" oninput="ACTIVITY_SEARCH=this.value;renderActivity()"></div>`+
+    `<button class="adx-btn2 sm" onclick="toast('Eksport','Faoliyat jurnali CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>CSV</button>`;
+  await loadActivity();
+};
+
+async function loadActivity(){
+  const root = document.getElementById('bizRoot');
+  try { ACTIVITY_DATA = await StudioApi.getAdminActivity(ACTIVITY_FILTER); renderActivity(); }
+  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+}
+async function setActivityFilter(f){ ACTIVITY_FILTER=f; await loadActivity(); }
+
+function activityEventBadge(ev){
+  if(ev==='gen') return `<span class="adx-bdg adx-bdg-info"><i class="ph ph-gauge" style="font-size:10px"></i>Generatsiya</span>`;
+  if(ev==='import') return `<span class="adx-bdg" style="color:#b794f6;background:rgba(183,148,246,.14)"><i class="ph ph-export" style="font-size:10px"></i>Import</span>`;
+  return `<span class="adx-bdg adx-bdg-approved"><i class="ph ph-download-simple" style="font-size:10px"></i>Yuklab olish</span>`;
+}
+function activitySourceBadge(src){
+  if(src==='web') return `<span class="adx-bdg" style="color:#C2F04A;background:rgba(194,240,74,.1)">Web</span>`;
+  return `<span class="adx-bdg" style="color:#7CC4FF;background:rgba(124,196,255,.12)">AE Plugin</span>`;
+}
+
+function renderActivity(){
+  const root = document.getElementById('bizRoot');
+  if(!root || !ACTIVITY_DATA) return;
+  let items = (ACTIVITY_DATA.items||[]).slice();
+  const q = ACTIVITY_SEARCH.trim().toLowerCase();
+  if(q) items = items.filter(it=>((it.userName||'')+(it.userEmail||'')+(it.detail||'')+(it.id||'')).toLowerCase().includes(q));
+  const all = ACTIVITY_DATA.items||[];
+  const cnt = (ev)=> all.filter(i=>i.event===ev).length;
+  const tags = [['all','Hammasi',all.length,''],['gen','Generatsiya',cnt('gen'),'ph-gauge'],['download','Yuklab olish',cnt('download'),'ph-download-simple'],['import','Import',cnt('import'),'ph-export']];
+  root.innerHTML = `
+    <div class="adx-tagrow">${tags.map(([k,l,n,ic])=>`<button class="adx-tag ${ACTIVITY_FILTER===k?'on':''}" onclick="setActivityFilter('${k}')">${ic?`<i class="ph ${ic}" style="font-size:11px"></i>`:''}${l} <span class="n">${n}</span></button>`).join('')}</div>
+    <div class="adx-card" style="overflow:hidden">
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:940px">
+        <thead><tr><th>Vaqt</th><th>Foydalanuvchi</th><th>Hodisa</th><th>Tafsilot</th><th>Manba</th><th class="r">Kredit / narx</th></tr></thead>
+        <tbody>${items.length ? items.map(it=>{
+          const time = String(it.at||'').slice(11,19) || String(it.at||'').slice(0,10);
+          const cred = it.event==='gen' && it.credits>0 ? `<span style="color:#C2F04A">−✦ ${it.credits}</span>` : '<span style="color:#8A93A3">—</span>';
+          return `<tr>
+            <td class="adx-num" style="font-size:10.5px;color:#8A93A3;white-space:nowrap">${esc(time)}</td>
+            <td><div class="adx-who">${axAv(it.userName||it.userEmail||'?',it.userEmail,26)}<span class="nm" style="font-size:12px">${esc(it.userName||it.userEmail||'—')}</span></div></td>
+            <td>${activityEventBadge(it.event)}</td>
+            <td style="font-size:11.5px;color:#B7C0CE">${esc(it.detail||'—')}</td>
+            <td>${activitySourceBadge(it.source)}</td>
+            <td class="r adx-num">${cred}</td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-list-checks"></i></span><div style="font-weight:600;font-size:13px">Faoliyat topilmadi</div><div style="font-size:11px;color:var(--muted2)">Gen / yuklab olish / import hodisalari shu yerda oqadi.</div></div></td></tr>`}</tbody>
+      </table></div>
+    </div>`;
+}
