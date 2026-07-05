@@ -64,6 +64,22 @@ async function main() {
     });
   }
   console.log("Seeded sample assets");
+
+  // FAZA 2 #13 — PlanConfig: bugungi kod konstantalariga TENG qiymatlar
+  // (xatti-harakat o'zgarmasin). Mavjud qator YANGILANMAYDI (admin tahriri saqlanadi).
+  const planConfigs = [
+    { plan: "FREE", label: "Free", aiMonthlyCredits: 50, downloadLimit: 15, importLimit: 10, maxResolution: "1080p", priceMonthlyCents: 0, priceYearlyCents: 0 },
+    { plan: "PRO", label: "Pro", aiMonthlyCredits: 1000, downloadLimit: null, importLimit: null, maxResolution: "4K", priceMonthlyCents: 1900, priceYearlyCents: 19000 },
+    { plan: "STUDIO", label: "Studio", aiMonthlyCredits: 6000, downloadLimit: null, importLimit: null, maxResolution: "4K", priceMonthlyCents: 5900, priceYearlyCents: 58800 },
+  ] as const;
+  for (const cfg of planConfigs) {
+    await prisma.planConfig.upsert({
+      where: { plan: cfg.plan },
+      update: {},
+      create: { ...cfg },
+    });
+  }
+  console.log("Seeded plan configs");
 }
 
 main()

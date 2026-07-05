@@ -4,6 +4,57 @@
 
 function axFlab(t){ return `<div class="adx-flab">${t}</div>`; }
 
+/* FAZA 2 #13 — limitlar endi SERVER (PlanConfig DB)da. Bu modul serverdan
+   o'qiydi va saqlashda PUT qiladi; localStorage faqat promo/feature-matn
+   kabi display-only qismlar uchun qoladi. */
+let PLAN_CFG_LOADED = false;
+async function syncPlanConfigFromServer() {
+  if (PLAN_CFG_LOADED || typeof StudioApi === "undefined") return;
+  try {
+    const d = await StudioApi.request("/api/admin/plan-config");
+    (d.items || []).forEach((r) => {
+      const p = planById(String(r.plan || "").toLowerCase());
+      if (!p) return;
+      p.aiMonthlyCredits = r.aiMonthlyCredits;
+      p.downloadLimit = r.downloadLimit;
+      p.importLimit = r.importLimit;
+      p.unlimitedDownloads = r.downloadLimit == null;
+      if (r.maxResolution) p.maxResolution = r.maxResolution;
+      if (r.priceMonthlyCents != null) p.priceMonthly = r.priceMonthlyCents / 100;
+      if (r.priceYearlyCents != null) p.priceYearly = r.priceYearlyCents / 100;
+      p.lsVariantMonthly = r.lsVariantMonthly || "";
+      p.lsVariantYearly = r.lsVariantYearly || "";
+    });
+    PLAN_CFG_LOADED = true;
+    savePluginPlans();
+    if (CURRENT === "plans") route("plans");
+  } catch (e) {
+    console.warn("plan-config load", e);
+  }
+}
+
+async function pushPlanConfigToServer() {
+  if (typeof StudioApi === "undefined") throw new Error("API is unavailable");
+  for (const id of ["free", "pro"]) {
+    const p = planById(id);
+    if (!p) continue;
+    await StudioApi.request("/api/admin/plan-config/" + id.toUpperCase(), {
+      method: "PUT",
+      body: {
+        label: p.name,
+        aiMonthlyCredits: Math.max(0, Number(p.aiMonthlyCredits) || 0),
+        downloadLimit: p.unlimitedDownloads ? null : (p.downloadLimit ?? null),
+        importLimit: p.unlimitedDownloads ? null : (p.importLimit ?? null),
+        maxResolution: p.maxResolution || "1080p",
+        priceMonthlyCents: Math.round((Number(p.priceMonthly) || 0) * 100),
+        priceYearlyCents: Math.round((Number(p.priceYearly) || 0) * 100),
+        lsVariantMonthly: p.lsVariantMonthly || null,
+        lsVariantYearly: p.lsVariantYearly || null,
+      },
+    });
+  }
+}
+
 function renderDiscountSection() {
   const pr = getProPrices();
   const promo = PLUGIN_PROMO;
@@ -43,12 +94,15 @@ function renderPlanEditorCard(p) {
     ${isPro
       ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div>${axFlab(`PRICE (MONTHLY) · ${p.currency}`)}<input class="adx-input mono plan-input" data-field="priceMonthly" data-plan="${p.id}" type="number" min="0" step="1" value="${p.priceMonthly}"></div><div>${axFlab(`PRICE (YEARLY) · ${p.currency}`)}<input class="adx-input mono plan-input" data-field="priceYearly" data-plan="${p.id}" type="number" min="0" step="1" value="${p.priceYearly}"></div></div>`
       : `<div style="font-size:11px;color:#8A93A3;margin-bottom:14px">Free — always $0. Only limits are configurable.</div>`}
+    ${axFlab("AI CREDITS / MONTH")}
+    <div style="margin-bottom:12px"><input class="adx-input mono plan-input" data-field="aiMonthlyCredits" data-plan="${p.id}" type="number" min="0" max="1000000" value="${p.aiMonthlyCredits ?? (isPro?1000:50)}"></div>
     ${axFlab("DOWNLOADS / MONTH")}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><input class="adx-input mono plan-input plan-limit-input" data-field="downloadLimit" data-plan="${p.id}" type="number" min="1" max="9999" value="${p.downloadLimit ?? 15}" ${unlim?"disabled":""} style="flex:1"><label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3;cursor:pointer;white-space:nowrap"><button class="adx-tog ${unlim?'on':'off'}" data-plan-unlim="${p.id}" onclick="togglePlanUnlimited('${p.id}')" style="transform:scale(.85)"><i></i></button>Unlimited</label></div>
     ${axFlab("IMPORT LIMIT (AE) / MONTH")}
     <div style="margin-bottom:12px"><input class="adx-input mono plan-input" data-field="importLimit" data-plan="${p.id}" type="number" min="0" placeholder="${unlim?"Unlimited":"10"}" value="${p.importLimit != null ? p.importLimit : ""}" ${unlim?"disabled":""}></div>
     ${axFlab("MAX RESOLUTION")}
     <div style="margin-bottom:12px"><select class="adx-input plan-input" data-field="maxResolution" data-plan="${p.id}">${["1080p","4K","4K + 8K"].map(r=>`<option ${p.maxResolution===r?"selected":""}>${r}</option>`).join("")}</select></div>
+    ${isPro?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div>${axFlab("LS VARIANT (MONTHLY)")}<input class="adx-input mono plan-input" data-field="lsVariantMonthly" data-plan="${p.id}" placeholder="variant id" value="${(p.lsVariantMonthly||"").replace(/"/g,"&quot;")}"></div><div>${axFlab("LS VARIANT (YEARLY)")}<input class="adx-input mono plan-input" data-field="lsVariantYearly" data-plan="${p.id}" placeholder="variant id" value="${(p.lsVariantYearly||"").replace(/"/g,"&quot;")}"></div></div>`:""}
     ${axFlab("CATALOG DESCRIPTION (PLUGIN UI)")}
     <div style="margin-bottom:12px"><input class="adx-input plan-input" data-field="catalog" data-plan="${p.id}" value="${(p.catalog||"").replace(/"/g,"&quot;")}"></div>
     ${axFlab("FEATURES (ONE PER LINE)")}
@@ -63,6 +117,7 @@ window.afterRender.plans = function(){
       `<button class="adx-btn2 sm" onclick="resetPluginPlans()"><i class="ph ph-arrow-clockwise"></i>Reset to default</button>`+
       `<button class="adx-btn sm" onclick="savePlansFromForm()"><i class="ph ph-check"></i>Save plans</button>`;
   }
+  syncPlanConfigFromServer(); // FAZA 2 #13 — DB'dagi haqiqiy limitlar (bir marta)
 };
 
 VIEWS.plans = function () {
@@ -71,7 +126,7 @@ VIEWS.plans = function () {
   const proP = planById("pro");
   const pr = getProPrices();
   return `
-    ${axInfo(`AE Browse only offers Free and Pro. Prices and limits are saved here (currently browser cache; will move to the server once Paddle is connected).`,'amber')}
+    ${axInfo(`Limits (AI credits, downloads, imports, resolution) are stored on the SERVER and enforced by the backend. Prices shown here are display-only — the billing truth lives in Lemon Squeezy (link variant IDs below).`,'amber')}
     <div class="adx-grid5" style="margin-bottom:18px">
       ${axStat({label:'Free subscribers',val:sc.free,foot:formatPlanLimit(freeP)})}
       ${axStat({label:'Pro subscribers',val:sc.pro,foot:planPriceLabel(proP)})}
@@ -124,6 +179,11 @@ function collectPlanFromForm(planId) {
         .filter(Boolean);
       return;
     }
+    if (field === "aiMonthlyCredits") {
+      const n = Number(el.value);
+      if (!Number.isNaN(n) && n >= 0) p.aiMonthlyCredits = Math.floor(n);
+      return;
+    }
     if (field === "priceMonthly" || field === "priceYearly" || field === "downloadLimit" || field === "importLimit") {
       const v = el.value === "" ? null : Number(el.value);
       if (field === "downloadLimit" && p.unlimitedDownloads) p.downloadLimit = null;
@@ -161,26 +221,38 @@ function setPromoType(type) {
   route("plans");
 }
 
-function savePlansFromForm() {
+async function savePlansFromForm() {
   collectPlanFromForm("free");
   collectPlanFromForm("pro");
   collectPromoFromForm();
   savePluginPlans();
+  // FAZA 2 #13 — limitlar SERVERGA yoziladi (backend enforce shu qiymatlardan o'qiydi).
+  let serverOk = true;
+  try {
+    await pushPlanConfigToServer();
+  } catch (e) {
+    serverOk = false;
+    console.error("plan-config save", e);
+  }
   if (typeof AssetFlowLog !== "undefined") {
     AssetFlowLog.info("Plans saved", {
       action: "plans_save",
-      detail: `Free limit ${formatPlanLimit(planById("free"))}, promo ${PLUGIN_PROMO.enabled ? PLUGIN_PROMO.code : "off"}`,
+      detail: `Free limit ${formatPlanLimit(planById("free"))}, promo ${PLUGIN_PROMO.enabled ? PLUGIN_PROMO.code : "off"}, server ${serverOk ? "ok" : "FAILED"}`,
     });
   }
   const pr = getProPrices();
   const promoMsg = pr.hasDiscount
     ? ` · Promo ${PLUGIN_PROMO.code}: $${pr.monthlyFinal}/mo`
     : "";
-  toast(
-    "Plans saved",
-    `Free: ${formatPlanLimit(planById("free"))} · Pro: ${planPriceLabel(planById("pro"))}${promoMsg}`,
-    "success"
-  );
+  if (serverOk) {
+    toast(
+      "Plans saved",
+      `Free: ${formatPlanLimit(planById("free"))} · Pro: ${planPriceLabel(planById("pro"))}${promoMsg} · limits enforced on the server`,
+      "success"
+    );
+  } else {
+    toast("Server save failed", "Limits were NOT saved to the server — check the connection and try again", "warn");
+  }
   if (CURRENT === "plans") route("plans");
   else renderNav();
 }

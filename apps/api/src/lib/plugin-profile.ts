@@ -10,14 +10,64 @@ import { writeCreditLedger } from "./ledger.js";
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
 
-/** Oylik AI kredit ulushi — har oy boshida shu qiymatga tiklanadi. */
+/** Oylik AI kredit ulushi — har oy boshida shu qiymatga tiklanadi.
+ *  FAZA 2 #13: STATIK FALLBACK — haqiqiy qiymat DB (PlanConfig) keshidan. */
 export const AI_MONTHLY_CREDITS = {
   [PluginPlanTier.FREE]: 50,
   [PluginPlanTier.PRO]: 1000,
   [PluginPlanTier.STUDIO]: 6000,
 } as const;
 
+// ── FAZA 2 #13 — PlanConfig DB keshi ────────────────────────────────────────
+// Limitlar admin tomonidan DB'da boshqariladi; bu sync o'quvchilar (money-zone
+// consume oqimlari signaturasi o'zgarmasin) uchun 60s TTL in-memory kesh.
+// DB'da qator bo'lmasa / o'qib bo'lmasa — statik konstantalar (seed bilan teng,
+// xatti-harakat o'zgarmaydi).
+type PlanCfgRow = {
+  label: string;
+  aiMonthlyCredits: number;
+  downloadLimit: number | null;
+  importLimit: number | null;
+  maxResolution: string;
+};
+const planCfgCache = new Map<PluginPlanTier, PlanCfgRow>();
+let planCfgFetchedAt = 0;
+const PLAN_CFG_TTL_MS = 60_000;
+
+/** Keshni yangilaydi (TTL o'tgan bo'lsa). force=true — admin tahriridan keyin darhol. */
+export async function refreshPlanConfigCache(force = false): Promise<void> {
+  if (!force && Date.now() - planCfgFetchedAt < PLAN_CFG_TTL_MS) return;
+  planCfgFetchedAt = Date.now();
+  try {
+    const rows = await prisma.planConfig.findMany();
+    for (const r of rows) {
+      planCfgCache.set(r.plan, {
+        label: r.label,
+        aiMonthlyCredits: r.aiMonthlyCredits,
+        downloadLimit: r.downloadLimit,
+        importLimit: r.importLimit,
+        maxResolution: r.maxResolution,
+      });
+    }
+  } catch (e) {
+    // DB xatosi — statik fallback ishlashda davom etadi (fail-open emas:
+    // qiymatlar bugungi konstantalar bilan bir xil).
+    console.warn("[plan-config] kesh yangilash xatosi:", e);
+  }
+}
+
+function planCfg(plan: PluginPlanTier): PlanCfgRow | null {
+  // Fire-and-forget yangilash — sync o'quvchini bloklamaydi; birinchi chaqiruv
+  // statik qiymat bilan javob beradi (seed bilan teng), keyingilari DB qiymati.
+  void refreshPlanConfigCache();
+  return planCfgCache.get(plan) ?? null;
+}
+
 export function aiMonthlyAllotment(plan: PluginPlanTier) {
+  const cfg = planCfg(plan);
+  if (cfg && Number.isFinite(cfg.aiMonthlyCredits) && cfg.aiMonthlyCredits >= 0) {
+    return cfg.aiMonthlyCredits;
+  }
   return AI_MONTHLY_CREDITS[plan] ?? AI_MONTHLY_CREDITS[PluginPlanTier.FREE];
 }
 
@@ -28,36 +78,26 @@ export function isPaidPlan(plan: PluginPlanTier) {
 }
 
 export function planLimits(plan: PluginPlanTier) {
-  if (plan === PluginPlanTier.STUDIO) {
-    return {
-      plan: "studio" as const,
-      label: "Studio",
-      unlimitedDownloads: true,
-      unlimitedImports: true,
-      downloadLimit: null,
-      importLimit: null,
-      maxResolution: "4K",
-    };
-  }
-  if (plan === PluginPlanTier.PRO) {
-    return {
-      plan: "pro" as const,
-      label: "Pro",
-      unlimitedDownloads: true,
-      unlimitedImports: true,
-      downloadLimit: null,
-      importLimit: null,
-      maxResolution: "4K",
-    };
-  }
+  // FAZA 2 #13 — DB (PlanConfig) qiymati birinchi; yo'q bo'lsa statik default
+  // (seed bilan teng). downloadLimit=null → cheksiz.
+  const cfg = planCfg(plan);
+  const key = plan === PluginPlanTier.STUDIO ? ("studio" as const)
+    : plan === PluginPlanTier.PRO ? ("pro" as const)
+    : ("free" as const);
+  const staticDefaults =
+    plan === PluginPlanTier.FREE
+      ? { label: "Free", downloadLimit: FREE_DOWNLOAD_LIMIT as number | null, importLimit: FREE_IMPORT_LIMIT as number | null, maxResolution: "1080p" }
+      : { label: plan === PluginPlanTier.STUDIO ? "Studio" : "Pro", downloadLimit: null as number | null, importLimit: null as number | null, maxResolution: "4K" };
+  const downloadLimit = cfg ? cfg.downloadLimit : staticDefaults.downloadLimit;
+  const importLimit = cfg ? cfg.importLimit : staticDefaults.importLimit;
   return {
-    plan: "free" as const,
-    label: "Free",
-    unlimitedDownloads: false,
-    unlimitedImports: false,
-    downloadLimit: FREE_DOWNLOAD_LIMIT,
-    importLimit: FREE_IMPORT_LIMIT,
-    maxResolution: "1080p",
+    plan: key,
+    label: cfg?.label || staticDefaults.label,
+    unlimitedDownloads: downloadLimit == null,
+    unlimitedImports: importLimit == null,
+    downloadLimit,
+    importLimit,
+    maxResolution: cfg?.maxResolution || staticDefaults.maxResolution,
   };
 }
 

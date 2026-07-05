@@ -36,6 +36,7 @@ let PLUGIN_PLANS = [
     unlimitedDownloads: false,
     downloadLimit: 15,
     importLimit: 10,
+    aiMonthlyCredits: 50,
     catalog: 'All approved templates (with watermark)',
     maxResolution: '1080p',
     features: [
@@ -56,6 +57,7 @@ let PLUGIN_PLANS = [
     unlimitedDownloads: true,
     downloadLimit: null,
     importLimit: null,
+    aiMonthlyCredits: 1000,
     catalog: 'Full catalog + 4K + early access to new releases',
     maxResolution: '4K',
     features: [

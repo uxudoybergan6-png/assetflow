@@ -586,6 +586,23 @@ model TemplateDownloadEvent {
   @@index([templateId, kind])
 }
 
+// ── FAZA 2 #13 — Tarif limitlari DB'da (admin boshqaradi, backend enforce).
+// Seed bugungi konstantalarga teng — xatti-harakat o'zgarmaydi. Narx maydonlari
+// FAQAT ko'rsatish uchun; to'lov haqiqati Lemon Squeezy'da (lsVariant* bog'lash).
+model PlanConfig {
+  plan              PluginPlanTier @id
+  label             String
+  aiMonthlyCredits  Int
+  downloadLimit     Int?     // null = cheksiz
+  importLimit       Int?     // null = cheksiz
+  maxResolution     String   @default("1080p")
+  priceMonthlyCents Int?     // display-only
+  priceYearlyCents  Int?     // display-only
+  lsVariantMonthly  String?  // Lemon Squeezy variant id (admin bog'laydi)
+  lsVariantYearly   String?
+  updatedAt         DateTime @updatedAt
+}
+
 // ── FAZA 2 #17 — Sevimlilar (plagin↔web umumiy). FK-siz (TemplateDownloadEvent
 // naqshi) — shablon o'chsa yetim qator zararsiz (katalogga filtr bilan ko'rinmaydi).
 model UserTemplateFavorite {

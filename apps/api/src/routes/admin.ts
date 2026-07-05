@@ -10,6 +10,7 @@ import {
   ensurePluginProfile,
   mapSubscriberRow,
   resetExpiredPluginMonths,
+  refreshPlanConfigCache,
 } from "../lib/plugin-profile.js";
 import {
   getSignedUploadUrl,
@@ -63,6 +64,66 @@ adminRouter.post("/upload-url", async (req, res) => {
   const key = `${folder ?? "assets"}/${Date.now()}-${fileName}`;
   const uploadUrl = await getSignedUploadUrl(key, contentType);
   res.json({ uploadUrl, key, publicUrl: getPublicUrl(key) });
+});
+
+// ── FAZA 2 #13 — Tarif limitlari (PlanConfig, DB) ───────────────────────────
+/** GET /api/admin/plan-config — 3 tarif konfiguratsiyasi (DB). */
+adminRouter.get("/plan-config", async (_req, res) => {
+  const rows = await prisma.planConfig.findMany({ orderBy: { plan: "asc" } });
+  res.json({ items: rows });
+});
+
+const planConfigSchema = z.object({
+  label: z.string().min(1).max(40).optional(),
+  aiMonthlyCredits: z.number().int().min(0).max(1_000_000).optional(),
+  downloadLimit: z.number().int().min(1).max(999_999).nullable().optional(),
+  importLimit: z.number().int().min(0).max(999_999).nullable().optional(),
+  maxResolution: z.string().min(1).max(20).optional(),
+  priceMonthlyCents: z.number().int().min(0).nullable().optional(),
+  priceYearlyCents: z.number().int().min(0).nullable().optional(),
+  lsVariantMonthly: z.string().max(64).nullable().optional(),
+  lsVariantYearly: z.string().max(64).nullable().optional(),
+});
+
+/** PUT /api/admin/plan-config/:plan — limit/label/narx-display tahriri.
+ *  Kredit consume/refund mantig'iga TEGMAYDI — faqat qiymat manbai. */
+adminRouter.put("/plan-config/:plan", async (req, res) => {
+  const planRaw = String(req.params.plan || "").toUpperCase();
+  const plan = z.nativeEnum(PluginPlanTier).safeParse(planRaw);
+  if (!plan.success) {
+    res.status(400).json({ error: "Unknown plan (FREE | PRO | STUDIO)" });
+    return;
+  }
+  const body = planConfigSchema.safeParse(req.body ?? {});
+  if (!body.success) {
+    res.status(400).json({ error: "Invalid plan config", detail: body.error.flatten() });
+    return;
+  }
+  const row = await prisma.planConfig.upsert({
+    where: { plan: plan.data },
+    create: {
+      plan: plan.data,
+      label: body.data.label ?? plan.data,
+      aiMonthlyCredits: body.data.aiMonthlyCredits ?? 0,
+      downloadLimit: body.data.downloadLimit ?? null,
+      importLimit: body.data.importLimit ?? null,
+      maxResolution: body.data.maxResolution ?? "1080p",
+      priceMonthlyCents: body.data.priceMonthlyCents ?? null,
+      priceYearlyCents: body.data.priceYearlyCents ?? null,
+      lsVariantMonthly: body.data.lsVariantMonthly ?? null,
+      lsVariantYearly: body.data.lsVariantYearly ?? null,
+    },
+    update: body.data,
+  });
+  await refreshPlanConfigCache(true); // enforce darhol yangi qiymatni ko'rsin
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "plan_config_update",
+    targetType: "plan",
+    targetId: plan.data,
+    detail: JSON.stringify(body.data).slice(0, 500),
+  });
+  res.json(row);
 });
 
 adminRouter.get("/users", async (req, res) => {
