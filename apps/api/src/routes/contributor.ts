@@ -2013,6 +2013,14 @@ contributorRouter.delete(
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
 
+    // Idempotent: DB'da yo'q bo'lsa ham (takroriy delete / yarim tugagan oldingi
+    // urinish) qolgan bulut fayllarini best-effort tozalab 204 qaytaramiz —
+    // avval prisma.delete P2025 bilan 500 berardi.
+    if (!existing) {
+      await deleteTemplateAssets(id).catch(() => {});
+      return res.status(204).send();
+    }
+
     // 1) R2/S3 fayllarini avval tozalaymiz. Bu tashqi bog'liqlik va yagona xato
     //    nuqtasi. Agar bu yerda xato bo'lsa, DB delete'ni DAVOM ETTIRMAYMIZ:
     //    DB yozuvi o'chsa, templateId yo'qoladi va orphan fayllarni keyin
@@ -2037,8 +2045,9 @@ contributorRouter.delete(
       console.error(`[template_delete] Lokal disk tozalash xatosi (id=${id}):`, err);
     }
 
-    // 3) DB yozuvi.
+    // 3) DB yozuvi + yetim sevimlilar (#17 modeli FK-siz — qo'lda tozalanadi).
     await prisma.contributorTemplate.delete({ where: { id } });
+    await prisma.userTemplateFavorite.deleteMany({ where: { templateId: id } }).catch(() => {});
     await writeAuditLog({
       actorId: req.user!.userId,
       action: "template_delete",
