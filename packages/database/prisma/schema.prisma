@@ -461,6 +461,7 @@ model GenAsset {
   url          String                       // R2/CDN URL (signed yoki public)
   resultKey    String?                      // R2 obyekt kaliti (signed URL qayta yaratish uchun)
   thumbUrl     String?
+  thumbKey     String?                      // FAZA 2 #8: video poster (birinchi kadr JPG) obyekt kaliti; null = poster yo'q
   width        Int?
   height       Int?
   aspectRatio  String?                      // "16:9"

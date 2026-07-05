@@ -86,7 +86,7 @@ export async function enforceStorageRetention(userId: string): Promise<{ deleted
     const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
     const stale = await prisma.genAsset.findMany({
       where: { generation: { userId }, createdAt: { lt: cutoff } },
-      select: { id: true, resultKey: true, sizeBytes: true },
+      select: { id: true, resultKey: true, thumbKey: true, sizeBytes: true },
       take: 500,
     });
     if (stale.length) {
@@ -109,7 +109,7 @@ export async function enforceStorageRetention(userId: string): Promise<{ deleted
     const batch = await prisma.genAsset.findMany({
       where: { generation: { userId } },
       orderBy: { createdAt: "asc" },
-      select: { id: true, resultKey: true, sizeBytes: true },
+      select: { id: true, resultKey: true, thumbKey: true, sizeBytes: true },
       take: 20,
     });
     if (batch.length === 0) break;
@@ -129,11 +129,11 @@ export async function enforceStorageRetention(userId: string): Promise<{ deleted
 }
 
 async function deleteAssets(
-  assets: Array<{ id: string; resultKey: string | null; sizeBytes: number | null }>
+  assets: Array<{ id: string; resultKey: string | null; thumbKey?: string | null; sizeBytes: number | null }>
 ): Promise<{ deleted: number; freedBytes: number }> {
   if (assets.length === 0) return { deleted: 0, freedBytes: 0 };
   const keys = assets
-    .map((a) => a.resultKey)
+    .flatMap((a) => [a.resultKey, a.thumbKey])
     .filter((k): k is string => typeof k === "string" && k.length > 0);
   if (keys.length) {
     try {

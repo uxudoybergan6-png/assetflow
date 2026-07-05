@@ -76,24 +76,38 @@ function genDownloadName(mode: string | undefined, resultKey: string, contentTyp
   return `frameflow-${mode || "gen"}.${ext}`;
 }
 
-async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null }> }>(
+async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
   holder: T
 ): Promise<T> {
   if (!isS3Configured()) return holder;
-  for (const a of holder.assets) {
-    if (!a.resultKey) continue;
-    const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
-    a.url = fresh;
-    if (a.thumbUrl) a.thumbUrl = fresh;
-    const meta = await getS3ObjectMeta(a.resultKey);
-    const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string };
-    aa.sizeBytes = meta.sizeBytes;
-    aa.contentType = meta.contentType;
-    // Alohida yuklab-olish URL'i: Content-Disposition: attachment bilan imzolanadi.
-    // `url` inline (preview <img>/<video>) uchun o'zgarishsiz qoladi; `downloadUrl`
-    // faqat yuklab-olish tugmasi uchun — brauzer inline ochmasdan faylni saqlaydi.
-    aa.downloadUrl = await getSignedDownloadUrl(a.resultKey, 3600, genDownloadName(holder.mode, a.resultKey, meta.contentType));
-  }
+  // Parallel: imzolash lokal HMAC (tarmoqsiz); HeadObject faqat sizeBytes DB'da
+  // yo'q (eski yozuv) bo'lsa. Avval har asset uchun 2 ta ketma-ket HEAD tarmoq
+  // so'rovi bo'lardi — 60 gen tarixida bir necha soniya kechikish (#9 sekinlik).
+  await Promise.all(
+    holder.assets.map(async (a) => {
+      if (!a.resultKey) return;
+      const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string };
+      const [fresh, meta] = await Promise.all([
+        getSignedDownloadUrl(a.resultKey, 3600),
+        aa.sizeBytes != null
+          ? Promise.resolve(null)
+          : getS3ObjectMeta(a.resultKey),
+      ]);
+      a.url = fresh;
+      // Haqiqiy poster (video birinchi kadr JPG, #8) bo'lsa — o'z kaliti bilan
+      // imzolanadi; aks holda thumbUrl = asosiy fayl URL (eski xatti-harakat).
+      if (a.thumbKey) a.thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600);
+      else if (a.thumbUrl) a.thumbUrl = fresh;
+      if (meta) {
+        aa.sizeBytes = meta.sizeBytes;
+        aa.contentType = meta.contentType;
+      }
+      // Alohida yuklab-olish URL'i: Content-Disposition: attachment bilan imzolanadi.
+      // `url` inline (preview <img>/<video>) uchun o'zgarishsiz qoladi; `downloadUrl`
+      // faqat yuklab-olish tugmasi uchun — brauzer inline ochmasdan faylni saqlaydi.
+      aa.downloadUrl = await getSignedDownloadUrl(a.resultKey, 3600, genDownloadName(holder.mode, a.resultKey, aa.contentType ?? null));
+    })
+  );
   return holder;
 }
 
@@ -376,7 +390,8 @@ studioGenRouter.get(
           if (a.resultKey) {
             const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
             a.url = fresh;
-            if (a.thumbUrl) a.thumbUrl = fresh;
+            if (a.thumbKey) a.thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600);
+            else if (a.thumbUrl) a.thumbUrl = fresh;
           }
         }
       }
@@ -399,12 +414,15 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
     take: limit,
   });
   // Signed URL eskiradi — har asset uchun yangidan imzolaymiz. Params ref URL'lari ham
-  // ("Qayta gen" tiklashi tirik referens olishi uchun — audit fix).
+  // ("Qayta gen" tiklashi tirik referens olishi uchun — audit fix). Gen'lar bo'ylab
+  // parallel — 60 gen tarixi ketma-ket hidratatsiyada sekin edi (#9).
   if (isS3Configured()) {
-    for (const g of items) {
-      await hydrateGenAssets(g);
-      await hydrateParamsRefUrls(g.params).catch(() => {});
-    }
+    await Promise.all(
+      items.map(async (g) => {
+        await hydrateGenAssets(g);
+        await hydrateParamsRefUrls(g.params).catch(() => {});
+      })
+    );
   }
   res.json({ items });
 });
@@ -1351,9 +1369,9 @@ studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Generation not found" });
     return;
   }
-  // Avval R2'dan asset fayllarni o'chiramiz (resultKey bor bo'lsa).
+  // Avval R2'dan asset fayllarni o'chiramiz (resultKey + video poster thumbKey).
   const keys = gen.assets
-    .map((a) => a.resultKey)
+    .flatMap((a) => [a.resultKey, a.thumbKey])
     .filter((k): k is string => typeof k === "string" && k.length > 0);
   let r2deleted = 0;
   if (keys.length) {

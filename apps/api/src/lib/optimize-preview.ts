@@ -116,6 +116,41 @@ export async function optimizePreviewForStreaming(filePath: string): Promise<boo
   }
 }
 
+/**
+ * Videoning birinchi kadridan poster JPG chiqaradi (FAZA 2 #8 — CEP'da <video>
+ * birinchi-kadr renderi ishonchsiz, haqiqiy poster rasm kerak). Max 720p,
+ * sifat q=4 (~50-150KB). Muvaffaqiyat: true; xato: false (gen oqimini buzmaydi).
+ */
+export async function extractVideoPosterFrame(
+  videoPath: string,
+  posterPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(videoPath)) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y",
+        "-threads", "1",
+        "-ss", "0.1",
+        "-i", videoPath,
+        "-frames:v", "1",
+        "-vf", "scale=-2:'min(720,ih)'",
+        "-q:v", "4",
+        posterPath,
+      ],
+      { timeout: 60_000 }
+    );
+    return fs.existsSync(posterPath);
+  } catch {
+    try {
+      if (fs.existsSync(posterPath)) fs.unlinkSync(posterPath);
+    } catch {
+      /* */
+    }
+    return false;
+  }
+}
+
 type VideoRefPreset = {
   scaleExpr: string;
   fps: string;

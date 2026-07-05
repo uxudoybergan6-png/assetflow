@@ -3,7 +3,7 @@ import path from "path";
 import type { Request, Response } from "express";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
 import {
-  getPublicUrl,
+  getPublicOrSignedUrl,
   getSignedDownloadUrl,
   isS3Configured,
   resolveS3AssetKey,
@@ -25,11 +25,12 @@ export async function serveTemplateAsset(
   const s3Key = await resolveS3AssetKey(templateId, kind);
   if (s3Key) {
     // Pack — qimmatli (pullik) asset: qisqa muddatli signed URL (5 daqiqa),
-    // shunda redirect URL'i ulashib bo'lmaydi. Thumb/preview — ochiq public URL.
+    // shunda redirect URL'i ulashib bo'lmaydi. Thumb/preview — CDN bo'lsa public,
+    // aks holda (private GCS bucket) signed URL — plain public URL 403 berardi (#1).
     const url =
       kind === "pack"
         ? await getSignedDownloadUrl(s3Key, 300)
-        : getPublicUrl(s3Key);
+        : await getPublicOrSignedUrl(s3Key, 3600);
     // ?json=1 — web platforma uchun: brauzer fetch redirect'ni GCS'ga CORS'siz
     // kuzata olmaydi, shu sabab signed URL JSON'da qaytadi va klient unga
     // to'g'ridan (navigatsiya/anchor) o'tadi — navigatsiya CORS'ga tushmaydi.

@@ -10885,7 +10885,8 @@ async function bootPlugin(){
   }
 
   // ===== history (REAL /api/studio/gen/history) =====
-  var HIST=[],histLoaded=false,histLoading=false;
+  var HIST=[],histLoaded=false,histLoading=false,histLoadedAt=0;
+  function histStale(){ return !histLoaded||(Date.now()-histLoadedAt>25*60*1000); } // signed URL eskirmasin (#8)
   function histEsc(s){return String(s==null?'':s).replace(/[<>&"]/g,function(c){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];});}
   function histType(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':'image'; }
   var histCbs=[];
@@ -10904,7 +10905,7 @@ async function bootPlugin(){
           prompt:(g.prompt||'').trim(),params:p, // FIX G: lightbox meta karta uchun to'liq prompt+params
           cost:(typeof g.cost==='number'?g.cost:0),created:g.createdAt};
       });
-      histLoaded=true; histLoading=false; histFlush();
+      histLoaded=true; histLoading=false; histLoadedAt=Date.now(); histFlush();
     }).catch(function(){ histLoading=false; histFlush(); });
   }
   // b11: KREDIT TARIXI — gen xarajatlari (/gen/history cost maydonidan; alohida ledger endpoint yo'q)
@@ -10950,7 +10951,12 @@ async function bootPlugin(){
       el.textContent=plan?('plan — '+String(plan).toUpperCase()):' ';
     }catch(e){ el.textContent=' '; }
   }
-  function renderRecent(){var s=document.getElementById('recentStrip');if(!s)return;if(!HIST.length){s.innerHTML='<div class="rc add" data-go="genimage">+</div>';return;}s.innerHTML='<div class="rc add" data-go="genimage">+</div>';HIST.slice(0,5).forEach(function(h){var d=document.createElement('div');d.className='rc';if(h.thumb){d.style.backgroundImage='url("'+h.thumb+'")';d.style.backgroundSize='cover';d.style.backgroundPosition='center';}d.setAttribute('data-hist',h.id);d.innerHTML='<span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span>';s.appendChild(d);});}
+  function renderRecent(){var s=document.getElementById('recentStrip');if(!s)return;if(!HIST.length){s.innerHTML='<div class="rc add" data-go="genimage">+</div>';return;}s.innerHTML='<div class="rc add" data-go="genimage">+</div>';HIST.slice(0,5).forEach(function(h){var d=document.createElement('div');d.className='rc';d.setAttribute('data-hist',h.id);d.innerHTML='<span class="tb">'+(h.t==='video'?'▶':h.t==='audio'?'♪':'◍')+'</span>';
+    // video: CSS background-image video faylni CHIZMAYDI (qora karta — #8) → afVideoThumb <video> birinchi kadr
+    var vNoPoster=(h.t==='video')&&(!h.thumb||h.thumb===h.url);
+    if(vNoPoster&&typeof window.afVideoThumb==='function'){ var vv=window.afVideoThumb(h.url); if(vv)d.insertBefore(vv,d.firstChild); }
+    else if(h.thumb){d.style.backgroundImage='url("'+h.thumb+'")';d.style.backgroundSize='cover';d.style.backgroundPosition='center';}
+    s.appendChild(d);});}
   // To'liq Tarix view — umumiy galereya komponenti (scope:'all'). Filter+zoom+select galereya ichida.
   function renderHistory(){
     var w=document.getElementById('hgridWrap'); if(!w)return;
@@ -11229,7 +11235,7 @@ async function bootPlugin(){
         s.appendChild(d);
       });
     };
-    if(histLoaded)draw(); else loadHistory(draw);
+    if(histLoaded&&!histStale())draw(); else loadHistory(draw);
   }
   function aiOpenCat(c){
     var ttl=document.getElementById('aiCatTitle'); if(ttl)ttl.textContent=c.name;
@@ -11276,7 +11282,8 @@ async function bootPlugin(){
    Filter (Hammasi/Rasm/Video/Ovoz=voice+music/SFX) + zoom (−/+ ustun 3↔1, localStorage) + select (batch ⬇/🗑).
    Faqat mavjud endpointlar: /gen/history, DELETE /gen/:id, aiImportMedia. SVG ikonalar, .axroot scope. */
 window.afGallery=(function(){
-  var CACHE=null,LOADED=false,LOADING=null;
+  var CACHE=null,LOADED=false,LOADING=null,LOADED_AT=0;
+  var FRESH_MS=25*60*1000; // signed URL 1 soatda eskiradi — kesh undan ancha oldin yangilanadi (#8 stale fix)
   var COLS_KEY='af.gal.cols';
   // SVG ikonalar (emoji emas — CEP)
   var IC={
@@ -11314,11 +11321,11 @@ window.afGallery=(function(){
     return Math.max(1,Math.round(b/(1024*1024)))+' MB';
   }
   function load(force){
-    if(LOADED && !force && CACHE) return Promise.resolve(CACHE);
+    if(LOADED && !force && CACHE && (Date.now()-LOADED_AT<FRESH_MS)) return Promise.resolve(CACHE);
     if(LOADING) return LOADING;
     LOADING=studioGet('/api/studio/gen/history?limit=60').then(function(d){
       try{ console.log('[gal] /gen/history →',((d&&d.items)||[]).length,'gen'); }catch(_){}
-      CACHE=normalize((d&&d.items)||[]); LOADED=true; LOADING=null; return CACHE;
+      CACHE=normalize((d&&d.items)||[]); LOADED=true; LOADED_AT=Date.now(); LOADING=null; return CACHE;
     }).catch(function(e){ LOADING=null; throw e; });
     return LOADING;
   }
@@ -11454,7 +11461,16 @@ window.afGallery=(function(){
     }
 
     applyZoom();
-    load().then(draw).catch(function(){ gridEl.innerHTML='<div class="galempty"><b>Failed to load</b>Check your internet/session.</div>'; });
+    // #9: aniq xato sababi + Retry (avval sababisiz "Failed to load" edi)
+    function attempt(force){
+      load(force).then(draw).catch(function(err){
+        var why=(err&&err.message)?String(err.message):'Check your internet/session.';
+        gridEl.innerHTML='<div class="galempty"><b>Failed to load</b>'+esc(why)+'<br><button type="button" class="galretry" style="margin-top:8px">↻ Retry</button></div>';
+        var rb=gridEl.querySelector('.galretry');
+        if(rb)rb.addEventListener('click',function(){ gridEl.innerHTML='<div class="galempty">Loading…</div>'; attempt(true); });
+      });
+    }
+    attempt(false);
     return { refresh:function(force){ load(force).then(draw).catch(function(){}); }, el:container };
   }
   return { render:render, invalidate:function(){ LOADED=false; CACHE=null; } };
@@ -12269,20 +12285,23 @@ window.afGallery=(function(){
         }); });
     });
   }
-  // dastlabki So'nggi — foydalanuvchining oxirgi gen'lari (bir marta, tool ochilganda). id (jobId) saqlanadi → o'chirish.
-  var recentLoaded=false,recentLoading=false,recentError='';
+  // dastlabki So'nggi — foydalanuvchining oxirgi gen'lari (tool ochilganda; 25 daqiqada
+  // qayta imzolash uchun yangilanadi — signed URL 1 soatda eskiradi, #8 stale fix).
+  var recentLoaded=false,recentLoading=false,recentError='',recentLoadedAt=0;
   function loadRecent(force){
-    if((recentLoaded&&!force)||recentLoading||!$('igRecent'))return;
+    if(recentLoading||!$('igRecent'))return;
+    if(recentLoaded&&!force&&(Date.now()-recentLoadedAt<25*60*1000))return;
     var v=document.getElementById('v-imggen'); if(!v||!v.classList.contains('on'))return; // tool ochiq bo'lsa
     recentLoading=true; recentError=''; renderRecentGrid(); // "Yuklanmoqda…" — bo'sh ko'rinmasin (cold-start sekin)
     studioGet('/api/studio/gen/history?limit=12').then(function(d){
       (((d&&d.items)||[])).forEach(function(g){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
-        if(!st.recent.some(function(x){return x.url===url||x.id===g.id;}))
-          st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
+        var ex=null; st.recent.some(function(x){ if(x.id===g.id||x.url===url){ex=x;return true;} return false;});
+        if(ex){ ex.url=url; ex.thumb=a.thumbUrl||url; } // yangi imzolangan URL — eski (eskirgan) o'rniga
+        else st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
       });
-      recentLoaded=true; recentLoading=false; st.recent=st.recent.slice(0,12); renderRecentGrid();
+      recentLoaded=true; recentLoading=false; recentLoadedAt=Date.now(); st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Check your internet or session.'; renderRecentGrid(); });
   }
   window.afIgRetryRecent=function(){ recentLoaded=false; recentError=''; loadRecent(true); };
@@ -13952,7 +13971,7 @@ window.afGallery=(function(){
   function genCat(mode){ return mode==='video'?'video':(mode==='voice'||mode==='music')?'audio':mode==='sfx'?'sfx':'image'; }
   function loadVgRecent(force){
     if(vgRcState.loading||!$('vgRecent'))return;
-    if(vgRcState.loaded&&!force)return;
+    if(vgRcState.loaded&&!force&&(Date.now()-(vgRcState.loadedAt||0)<25*60*1000))return; // 25 daq — signed URL eskirmasin (#8)
     vgRcState.loading=true; vgRcState.error='';
     if(force)vgRcState.loaded=false;
     renderVgRecent();
@@ -13961,8 +13980,9 @@ window.afGallery=(function(){
       ((d&&d.items)||[]).forEach(function(g){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var cat=genCat(g.mode);
-        if(!vgRcState.items.some(function(x){return x.url===url||x.id===g.id;}))
-          vgRcState.items.push({
+        var ex=null; vgRcState.items.some(function(x){ if(x.id===g.id||x.url===url){ex=x;return true;} return false;});
+        if(ex){ ex.url=url; if(cat==='image')ex.thumb=a.thumbUrl||url; return; } // yangi imzolangan URL
+        vgRcState.items.push({
             id:g.id,
             url:url,
             thumb:(cat==='image'?(a.thumbUrl||url):null),
@@ -13979,7 +13999,7 @@ window.afGallery=(function(){
           });
       });
       vgRcState.items=vgRcState.items.slice(0,12);
-      vgRcState.loaded=true; vgRcState.loading=false; vgRcState.error='';
+      vgRcState.loaded=true; vgRcState.loading=false; vgRcState.error=''; vgRcState.loadedAt=Date.now();
       renderVgRecent();
     }).catch(function(err){
       vgRcState.loaded=false; vgRcState.loading=false;

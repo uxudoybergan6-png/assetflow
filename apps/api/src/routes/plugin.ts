@@ -14,7 +14,7 @@ import {
 import type { Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { isS3Configured, getPublicUrl, s3ObjectExists } from "../lib/s3.js";
+import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 import {
@@ -134,7 +134,7 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Res
     ];
     for (const s3Key of candidates) {
       if (await s3ObjectExists(s3Key)) {
-        res.redirect(302, getPublicUrl(s3Key));
+        res.redirect(302, await getPublicOrSignedUrl(s3Key, 3600));
         return;
       }
     }
@@ -266,7 +266,9 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Req
   if (isS3Configured()) {
     const s3Key = `templates/${templateId}/mogrt/${slug}.mogrt`;
     if (await s3ObjectExists(s3Key)) {
-      res.redirect(302, getPublicUrl(s3Key));
+      // MOGRT — pullik/gated asset (pack qatori): DOIM qisqa muddatli signed URL,
+      // CDN public URL emas — redirect havolasi ulashib bo'lmasin.
+      res.redirect(302, await getSignedDownloadUrl(s3Key, 300));
       return;
     }
     // Bulut sozlangan — diskka tushmaymiz (Cloud Run diski ephemeral).

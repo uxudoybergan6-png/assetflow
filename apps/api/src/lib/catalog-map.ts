@@ -15,8 +15,13 @@ import {
   templateAssetFlags,
   listTemplateS3Keys,
   s3AssetKeyFromSet,
-  getPublicUrl,
+  getPublicOrSignedUrl,
 } from "./s3.js";
+
+// Thumb/preview/sahna ko'rsatish URL muddati. CDN_BASE_URL bo'lsa public URL
+// (muddatsiz), aks holda (GCS private bucket) signed URL — plain public GCS URL
+// 403 qaytarardi (bucket public-read emas) → katalogda qora kartalar (#1).
+const DISPLAY_URL_TTL = 86400; // 24 soat
 
 /**
  * Sahna fayli uchun mavjud R2 kalitini topadi (ext bo'yicha). knownS3Keys
@@ -90,7 +95,7 @@ async function enrichScenesAsync(
         // R2 bo'lsa TO'G'RIDAN CDN public URL — Render orqali stream EMAS
         // (bandwidth = 0). Faqat lokal disk bo'lsa API endpoint (stream).
         s.preview = videoS3
-          ? withCacheBust(getPublicUrl(videoS3), cacheBust)
+          ? withCacheBust(await getPublicOrSignedUrl(videoS3, DISPLAY_URL_TTL), cacheBust)
           : publicSceneUrl(apiBase, templateId, key);
         // Poster thumb (rasm) — mavjud bo'lsa
         const thumbS3 = useS3
@@ -103,7 +108,7 @@ async function enrichScenesAsync(
           : null;
         const imgFile = useS3 ? null : findScenePreview(templateId, key);
         if (thumbS3) {
-          s.thumb = withCacheBust(getPublicUrl(thumbS3), cacheBust);
+          s.thumb = withCacheBust(await getPublicOrSignedUrl(thumbS3, DISPLAY_URL_TTL), cacheBust);
         } else if (imgFile && !sceneFileIsVideo(imgFile)) {
           s.thumb = publicSceneUrl(apiBase, templateId, key + "_thumb");
         }
@@ -114,7 +119,7 @@ async function enrichScenesAsync(
           ? await resolveSceneS3Key(templateId, key, SCENE_IMAGE_EXTS, knownS3Keys)
           : null;
         if (imgS3) {
-          s.preview = withCacheBust(getPublicUrl(imgS3), cacheBust); // to'g'ridan CDN
+          s.preview = withCacheBust(await getPublicOrSignedUrl(imgS3, DISPLAY_URL_TTL), cacheBust); // to'g'ridan CDN yoki signed
           s.previewKind = "image";
         } else if (previewFile) {
           s.preview = publicSceneUrl(apiBase, templateId, key);
@@ -191,12 +196,12 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const thumbS3 = useS3 ? s3AssetKeyFromSet(t.id, "thumb", s3Keys) : null;
   const previewS3 = useS3 ? s3AssetKeyFromSet(t.id, "preview", s3Keys) : null;
   const thumbUrl = thumbS3
-    ? withCacheBust(getPublicUrl(thumbS3), cacheBust)
+    ? withCacheBust(await getPublicOrSignedUrl(thumbS3, DISPLAY_URL_TTL), cacheBust)
     : hasThumb
       ? publicAssetUrl(apiBase, t.id, "thumb")
       : null;
   const previewUrl = previewS3
-    ? withCacheBust(getPublicUrl(previewS3), cacheBust)
+    ? withCacheBust(await getPublicOrSignedUrl(previewS3, DISPLAY_URL_TTL), cacheBust)
     : hasPreview
       ? publicAssetUrl(apiBase, t.id, "preview")
       : null;

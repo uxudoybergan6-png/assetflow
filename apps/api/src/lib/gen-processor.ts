@@ -9,6 +9,10 @@ import {
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import { enforceStorageRetention } from "./storage-quota.js";
+import { extractVideoPosterFrame } from "./optimize-preview.js";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import {
   orImage,
   orImageEdit,
@@ -50,6 +54,38 @@ const ASSET_TYPE = { image: 130, audio: 120, video: 140 } as const;
 
 function tsName() {
   return `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+}
+
+/**
+ * FAZA 2 #8 — video gen uchun HAQIQIY poster (birinchi kadr JPG). CEP CEF'da
+ * <video> birinchi-kadr renderi ishonchsiz → kartalar qora edi. Best-effort:
+ * xato bo'lsa gen oqimini buzmaydi (thumbKey=null, klient video-fallback).
+ */
+async function makeVideoPoster(
+  videoKey: string | null,
+  buf: Buffer
+): Promise<{ thumbKey: string | null; thumbUrl: string | null }> {
+  if (!videoKey || !isS3Configured()) return { thumbKey: null, thumbUrl: null };
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "genposter-"));
+  const vidPath = path.join(tmpDir, "in.mp4");
+  const imgPath = path.join(tmpDir, "poster.jpg");
+  try {
+    fs.writeFileSync(vidPath, buf);
+    const ok = await extractVideoPosterFrame(vidPath, imgPath);
+    if (!ok) return { thumbKey: null, thumbUrl: null };
+    const thumbKey = videoKey.replace(/\.[a-z0-9]+$/i, "") + "-poster.jpg";
+    await uploadBufferToS3(fs.readFileSync(imgPath), thumbKey, "image/jpeg");
+    return { thumbKey, thumbUrl: await getSignedDownloadUrl(thumbKey, 3600) };
+  } catch (e) {
+    console.error("[gen] video poster xato (e'tiborsiz):", e);
+    return { thumbKey: null, thumbUrl: null };
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      /* */
+    }
+  }
 }
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -952,8 +988,9 @@ export async function processGeneration(genId: string): Promise<void> {
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
+      const poster = await makeVideoPoster(key, out.buf);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: url, aspectRatio, sizeBytes },
+        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, aspectRatio, sizeBytes },
       });
       await clearProviderJob(genId);
     } else {
