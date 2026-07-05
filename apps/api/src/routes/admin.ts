@@ -23,7 +23,8 @@ import {
   upsertModelPricing,
   updatePricingConfig,
 } from "../lib/model-pricing.js";
-import { computeMargins } from "../lib/model-margin.js";
+import { computeMargins, spendByProvider } from "../lib/model-margin.js";
+import { payoutPerDownloadCents } from "../lib/earnings.js";
 import {
   runMonthlyReconciliation,
   recordProviderInvoice,
@@ -454,4 +455,182 @@ adminRouter.post("/pricing/invoice", async (req, res) => {
     meta: parsed.data as Record<string, unknown>,
   });
   res.json({ ok: true });
+});
+
+// ── BIZNES MARKAZ — admin-only READ agregatlari (Bosqich 5 biznes ekranlari) ──
+// Hammasi requireAuth+requireAdmin ostida, FAQAT O'QISH. Pul mutatsiyasiga
+// (consume/refund/imzo/pricing-write) TEGMAYDI — mavjud lib funksiyalarini o'raydi.
+
+/** Berilgan oy (YYYY-MM) → [since, until) oraliq. Noto'g'ri bo'lsa null. */
+function monthRange(month?: string): { since?: Date; until?: Date } {
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) return {};
+  const [y, m] = month.split("-").map(Number);
+  const since = new Date(Date.UTC(y, m - 1, 1));
+  const until = new Date(Date.UTC(y, m, 1));
+  return { since, until };
+}
+
+/** GET /api/admin/finance[?month=YYYY-MM] — daromad vs provayder xarajati + margin + payout. */
+adminRouter.get("/finance", async (req, res) => {
+  const range = monthRange(req.query.month ? String(req.query.month) : undefined);
+  const [config, margins, providers, unpaid] = await Promise.all([
+    getPricingConfig(),
+    computeMargins(range),
+    spendByProvider(range),
+    prisma.contributorEarning.aggregate({ where: { payoutId: null }, _sum: { amountCents: true } }),
+  ]);
+  const creditUsd = config.creditUsdValue;
+  const providerRows = providers
+    .map((p) => {
+      const revenueUsd = Math.round(p.credits * creditUsd * 100) / 100;
+      const margin = p.estimatedUsd > 0 ? Math.round((revenueUsd / p.estimatedUsd) * 100) / 100 : null;
+      return { ...p, revenueUsd, margin };
+    })
+    .sort((a, b) => b.estimatedUsd - a.estimatedUsd);
+  res.json({
+    creditUsdValue: creditUsd,
+    marginTarget: config.marginTarget,
+    aggregate: margins.aggregate,
+    providers: providerRows,
+    payoutPendingCents: Math.max(0, unpaid._sum.amountCents ?? 0),
+    perDownloadCents: payoutPerDownloadCents(),
+  });
+});
+
+/** GET /api/admin/gen-spend[?month=YYYY-MM] — per-user AI gen sarfi (Generation × ProviderSpend). */
+adminRouter.get("/gen-spend", async (req, res) => {
+  const { since, until } = monthRange(req.query.month ? String(req.query.month) : undefined);
+  const createdAt = since || until ? { ...(since ? { gte: since } : {}), ...(until ? { lt: until } : {}) } : undefined;
+  const config = await getPricingConfig();
+  const gens = await prisma.generation.findMany({
+    where: createdAt ? { createdAt } : {},
+    select: { id: true, userId: true, cost: true, status: true },
+  });
+  const genUser = new Map<string, string>();
+  const perUser = new Map<string, { gens: number; credits: number; costUsd: number }>();
+  for (const g of gens) {
+    genUser.set(g.id, g.userId);
+    const u = perUser.get(g.userId) ?? { gens: 0, credits: 0, costUsd: 0 };
+    if (g.status === "done") { u.gens += 1; u.credits += g.cost ?? 0; }
+    perUser.set(g.userId, u);
+  }
+  const genIds = [...genUser.keys()];
+  if (genIds.length) {
+    const spends = await prisma.providerSpend.findMany({
+      where: { generationId: { in: genIds }, estimatedCostUsd: { not: null } },
+      select: { generationId: true, estimatedCostUsd: true },
+    });
+    for (const s of spends) {
+      const uid = s.generationId ? genUser.get(s.generationId) : undefined;
+      if (!uid) continue;
+      const u = perUser.get(uid);
+      if (u) u.costUsd += Number(s.estimatedCostUsd ?? 0);
+    }
+  }
+  const ids = [...perUser.keys()];
+  const users = ids.length
+    ? await prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, email: true, name: true, pluginProfile: { select: { plan: true, aiCredits: true } } },
+      })
+    : [];
+  const umap = new Map(users.map((u) => [u.id, u]));
+  const rows = ids
+    .map((id) => {
+      const u = perUser.get(id)!;
+      const info = umap.get(id);
+      const revenueUsd = Math.round(u.credits * config.creditUsdValue * 100) / 100;
+      const costUsd = Math.round(u.costUsd * 100) / 100;
+      const margin = revenueUsd > 0 ? Math.round(((revenueUsd - costUsd) / revenueUsd) * 100) : null;
+      return {
+        userId: id,
+        name: info?.name ?? null,
+        email: info?.email ?? null,
+        plan: info?.pluginProfile?.plan ?? "FREE",
+        creditsRemaining: info?.pluginProfile?.aiCredits ?? null,
+        gens: u.gens,
+        creditsSpent: u.credits,
+        providerCostUsd: costUsd,
+        marginPct: margin,
+      };
+    })
+    .sort((a, b) => b.creditsSpent - a.creditsSpent)
+    .slice(0, 100);
+  const totals = rows.reduce(
+    (acc, r) => {
+      acc.gens += r.gens;
+      acc.credits += r.creditsSpent;
+      acc.costUsd += r.providerCostUsd;
+      if (r.marginPct != null && r.marginPct < 0) acc.negative += 1;
+      return acc;
+    },
+    { gens: 0, credits: 0, costUsd: 0, negative: 0 }
+  );
+  res.json({ creditUsdValue: config.creditUsdValue, rows, totals });
+});
+
+/** GET /api/admin/activity[?type=gen|download|import&limit=] — birlashgan foydalanuvchi faoliyati oqimi. */
+adminRouter.get("/activity", async (req, res) => {
+  const type = String(req.query.type || "all");
+  const limit = Math.min(200, Math.max(10, Number(req.query.limit) || 80));
+  const wantGen = type === "all" || type === "gen";
+  const wantDl = type === "all" || type === "download" || type === "import";
+  const [gens, dls] = await Promise.all([
+    wantGen
+      ? prisma.generation.findMany({
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          select: { id: true, userId: true, mode: true, modelId: true, params: true, cost: true, category: true, createdAt: true, user: { select: { name: true, email: true } } },
+        })
+      : Promise.resolve([]),
+    wantDl
+      ? prisma.templateDownloadEvent.findMany({
+          where: type === "import" ? { kind: "import" } : type === "download" ? { kind: "download" } : {},
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          select: { id: true, userId: true, templateId: true, kind: true, source: true, createdAt: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  // Yuklab olish hodisalari uchun user + shablon nomlarini to'ldiramiz.
+  const dlUserIds = [...new Set(dls.map((d) => d.userId))];
+  const tplIds = [...new Set(dls.map((d) => d.templateId))];
+  const [dlUsers, tpls] = await Promise.all([
+    dlUserIds.length ? prisma.user.findMany({ where: { id: { in: dlUserIds } }, select: { id: true, name: true, email: true } }) : Promise.resolve([]),
+    tplIds.length ? prisma.contributorTemplate.findMany({ where: { id: { in: tplIds } }, select: { id: true, name: true } }) : Promise.resolve([]),
+  ]);
+  const um = new Map(dlUsers.map((u) => [u.id, u]));
+  const tm = new Map(tpls.map((t) => [t.id, t.name]));
+  const genItems = gens.map((g) => {
+    const model = getModelById(g.modelId);
+    const p = (g.params ?? {}) as Record<string, unknown>;
+    const bits = [model?.label ?? `model ${g.modelId}`, p.aspectRatio, p.duration ? `${p.duration}s` : null].filter(Boolean);
+    return {
+      id: g.id,
+      at: g.createdAt.toISOString(),
+      userName: g.user?.name ?? null,
+      userEmail: g.user?.email ?? null,
+      event: "gen" as const,
+      mode: g.mode,
+      detail: bits.join(" · "),
+      source: "plugin",
+      credits: g.cost ?? 0,
+    };
+  });
+  const dlItems = dls.map((d) => {
+    const u = um.get(d.userId);
+    return {
+      id: d.id,
+      at: d.createdAt.toISOString(),
+      userName: u?.name ?? null,
+      userEmail: u?.email ?? null,
+      event: d.kind === "import" ? ("import" as const) : ("download" as const),
+      mode: null,
+      detail: tm.get(d.templateId) ?? d.templateId,
+      source: d.source,
+      credits: 0,
+    };
+  });
+  const items = [...genItems, ...dlItems].sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, limit);
+  res.json({ items });
 });

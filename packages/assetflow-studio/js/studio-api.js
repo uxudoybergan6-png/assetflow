@@ -396,6 +396,32 @@ const StudioApi = (() => {
     });
   }
 
+  /* ── BIZNES MARKAZ (admin-only READ + narx write) ── */
+  async function getAdminPricing() {
+    return request(`/api/admin/pricing`);
+  }
+  async function patchAdminPricing(modelId, body) {
+    return request(`/api/admin/pricing/${encodeURIComponent(modelId)}`, { method: "PATCH", body });
+  }
+  async function patchAdminPricingConfig(body) {
+    return request(`/api/admin/pricing/config`, { method: "PATCH", body });
+  }
+  async function getAdminFinance(month) {
+    return request(`/api/admin/finance${month ? `?month=${encodeURIComponent(month)}` : ""}`);
+  }
+  async function getAdminGenSpend(month) {
+    return request(`/api/admin/gen-spend${month ? `?month=${encodeURIComponent(month)}` : ""}`);
+  }
+  async function getAdminActivity(type) {
+    return request(`/api/admin/activity${type && type !== "all" ? `?type=${encodeURIComponent(type)}` : ""}`);
+  }
+  async function getAdminEarnings() {
+    return request(`/api/contributor/admin/earnings`);
+  }
+  async function createAdminPayout(body) {
+    return request(`/api/contributor/admin/payouts`, { method: "POST", body });
+  }
+
   return {
     baseUrl,
     token,
@@ -425,6 +451,14 @@ const StudioApi = (() => {
     markMessageThreadRead,
     listAuditLogs,
     reindexAi,
+    getAdminPricing,
+    patchAdminPricing,
+    patchAdminPricingConfig,
+    getAdminFinance,
+    getAdminGenSpend,
+    getAdminActivity,
+    getAdminEarnings,
+    createAdminPayout,
     healthCheck,
   };
 })();
