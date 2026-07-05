@@ -400,6 +400,40 @@ pluginRouter.get("/subscription", requireAuth, async (req: Request, res: Respons
   });
 });
 
+// ── FAZA 2 #17 — Sevimlilar: plagin↔web bitta hisob ostida umumiy ──────────
+/** GET /api/plugin/favorites — foydalanuvchining sevimli shablon id'lari. */
+pluginRouter.get("/favorites", requireAuth, async (req: Request, res: Response) => {
+  const rows = await prisma.userTemplateFavorite.findMany({
+    where: { userId: req.user!.userId },
+    select: { templateId: true },
+    orderBy: { createdAt: "desc" },
+    take: 500,
+  });
+  res.json({ items: rows.map((r) => r.templateId) });
+});
+
+/** POST /api/plugin/favorites {templateId, on} — idempotent qo'shish/olib tashlash. */
+pluginRouter.post("/favorites", requireAuth, async (req: Request, res: Response) => {
+  const templateId = String(req.body?.templateId ?? "").trim();
+  const on = Boolean(req.body?.on);
+  if (!/^[a-z0-9]+$/i.test(templateId)) {
+    res.status(400).json({ error: "Invalid template ID" });
+    return;
+  }
+  if (on) {
+    await prisma.userTemplateFavorite.upsert({
+      where: { userId_templateId: { userId: req.user!.userId, templateId } },
+      create: { userId: req.user!.userId, templateId },
+      update: {},
+    });
+  } else {
+    await prisma.userTemplateFavorite.deleteMany({
+      where: { userId: req.user!.userId, templateId },
+    });
+  }
+  res.json({ ok: true, on });
+});
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),

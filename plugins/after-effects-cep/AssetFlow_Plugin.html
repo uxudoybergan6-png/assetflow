@@ -6682,9 +6682,34 @@ window.afLibClose=afLibClose;
 function toggleFav(n){
   window.favorites.has(n)?window.favorites.delete(n):window.favorites.add(n);
   persistUserPrefs();
+  // #17: server shabloni (__srv_<id>) — sevimli holatini hisobga (DB) ham yozamiz,
+  // shunda web'da ham ko'rinadi. Best-effort (offline'da lokal holat yetadi).
+  if(String(n).indexOf('__srv_')===0&&typeof studioPost==='function'){
+    try{ studioPost('/api/plugin/favorites',{templateId:String(n).slice(6),on:window.favorites.has(n)}).catch(function(){}); }catch(e){}
+  }
   showToast(window.favorites.has(n)?'★ Added to Favorites':'Removed from Favorites');
   render();renderFav();
   if(document.documentElement.classList.contains('lib-mode')){(window.__libTab==='downloaded'?renderLibDl:renderLibFav)();}
+}
+
+/** #17: server sevimlilarini lokalga qo'shadi (merge) + lokal server-shablon
+ *  sevimlilarni hisobga ko'chiradi (birinchi sync migratsiyasi). Best-effort. */
+function syncFavoritesFromServer(){
+  try{
+    var h=(typeof pubAuthHeaders==='function')?pubAuthHeaders():{};
+    if(!h||!h.Authorization)return; // login yo'q — sync shart emas
+    studioGet('/api/plugin/favorites').then(function(d){
+      var ids=(d&&d.items)||[]; var changed=false;
+      ids.forEach(function(id){ var key='__srv_'+id; if(!window.favorites.has(key)){ window.favorites.add(key); changed=true; } });
+      [...window.favorites].forEach(function(n){
+        if(String(n).indexOf('__srv_')===0){
+          var id=String(n).slice(6);
+          if(ids.indexOf(id)<0){ try{ studioPost('/api/plugin/favorites',{templateId:id,on:true}).catch(function(){}); }catch(e){} }
+        }
+      });
+      if(changed){ persistUserPrefs(); try{ render(); renderFav(); }catch(e){} }
+    }).catch(function(){});
+  }catch(e){}
 }
 
 const aeColors=['#6eb5ff','#46a046','#f7a028','#e84242','#9d72ff','#46cfcf','#e8428e','#c9a227'];
@@ -9882,6 +9907,7 @@ async function accountLogin(){
   try{
     await AssetFlowAccount.login(email,password);
     refreshAccountUi();
+    try{ syncFavoritesFromServer(); }catch(e){} // #17: login bo'lgach hisob sevimlilari
     showToast('Signed in successfully','success');
     if(typeof AssetFlowCatalog!=='undefined'){
       catalogLoadState='loading';
@@ -9918,6 +9944,7 @@ async function accountLoginWithGoogle(){
         if(btn) btn.disabled=false;
         if(hint) hint.style.display='none';
         refreshAccountUi();
+        try{ syncFavoritesFromServer(); }catch(e){} // #17: Google login bo'lgach hisob sevimlilari
         showToast('Signed in successfully','success');
         if(typeof AssetFlowCatalog!=='undefined'){
           catalogLoadState='loading';
@@ -10383,6 +10410,7 @@ async function bootPlugin(){
     try{ wireHome(); goHome(); }catch(e){}
     if(typeof AssetFlow!=='undefined') await AssetFlow.init();
     loadUserPrefs();
+    try{ syncFavoritesFromServer(); }catch(e){} // #17: hisob sevimlilari (plagin↔web)
     // Retry'lar katalog yuklanishini bloklamasin — parallel ishlaydi
     refreshAccountFromApi();
     if(typeof AssetFlowStore!=='undefined'){

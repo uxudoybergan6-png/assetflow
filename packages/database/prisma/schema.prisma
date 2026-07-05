@@ -586,6 +586,18 @@ model TemplateDownloadEvent {
   @@index([templateId, kind])
 }
 
+// ── FAZA 2 #17 — Sevimlilar (plagin↔web umumiy). FK-siz (TemplateDownloadEvent
+// naqshi) — shablon o'chsa yetim qator zararsiz (katalogga filtr bilan ko'rinmaydi).
+model UserTemplateFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  templateId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, templateId])
+  @@index([userId])
+}
+
 // ── Bosqich 4 #3 — Contributor payout / earnings (50% ulush) ────────────────
 // Shablonlar obunaga kiritilgan (cheksiz yuklab olish) → per-sotuv attribution
 // to'g'ridan qo'llanmaydi. Shu bois DEFAULT (sozlanadigan) formula: HAR download
