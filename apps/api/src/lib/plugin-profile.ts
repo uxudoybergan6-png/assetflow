@@ -78,6 +78,23 @@ async function resetMonthIfNeeded(userId: string) {
   });
 }
 
+/**
+ * Oy o'tgan BARCHA profil uchun downloadsMonth'ni bitta atomik so'rovda tiklaydi.
+ * `resetMonthIfNeeded` bilan aynan bir semantika (bir xil guard, bir xil data) —
+ * lekin ro'yxat endpointlarida har foydalanuvchi uchun alohida so'rov (N+1)
+ * o'rniga BITTA `updateMany`. Ixtiyoriy `userIds` bilan doirasini cheklash mumkin.
+ */
+export async function resetExpiredPluginMonths(userIds?: string[]): Promise<void> {
+  const start = monthStart();
+  await prisma.pluginProfile.updateMany({
+    where: {
+      monthResetAt: { lt: start },
+      ...(userIds ? { userId: { in: userIds } } : {}),
+    },
+    data: { downloadsMonth: 0, monthResetAt: start },
+  });
+}
+
 export async function ensurePluginProfile(userId: string) {
   await resetMonthIfNeeded(userId);
   // `create` ANIQ aiCredits/aiCreditsResetAt beradi — faqat ustun DEFAULT'iga

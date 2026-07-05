@@ -9,6 +9,7 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import {
   ensurePluginProfile,
   mapSubscriberRow,
+  resetExpiredPluginMonths,
 } from "../lib/plugin-profile.js";
 import {
   getSignedUploadUrl,
@@ -97,9 +98,24 @@ adminRouter.patch("/users/:id/role", async (req, res) => {
 
 /** AE Browse obunachilari — haqiqiy DB */
 adminRouter.get("/plugin-subscribers", async (_req, res) => {
+  // N+1 tuzatish: avval har obunachi uchun `ensurePluginProfile` (oy-reset +
+  // upsert + qayta o'qish) alohida chaqirilardi (~3N so'rov). Endi: BITTA batched
+  // oy-reset + BITTA boyitilgan findMany. Semantika bir xil — reset atomik va
+  // profil oldindan mavjud (upsert no-op edi). Reset findMany'dan OLDIN bajariladi,
+  // shu sabab qaytgan downloadsMonth reset'dan keyingi qiymatni aks ettiradi.
+  await resetExpiredPluginMonths();
   const profiles = await prisma.pluginProfile.findMany({
     include: {
-      user: { select: { id: true, email: true, name: true, role: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          emailVerified: true,
+          subscription: true,
+        },
+      },
     },
     orderBy: { lastSeenAt: "desc" },
   });
@@ -111,12 +127,7 @@ adminRouter.get("/plugin-subscribers", async (_req, res) => {
   });
   const tokenOk = new Set(tokens.map((t) => t.userId));
 
-  const items = await Promise.all(
-    profiles.map(async (row) => {
-      const full = await ensurePluginProfile(row.userId);
-      return mapSubscriberRow(full, tokenOk.has(row.userId));
-    })
-  );
+  const items = profiles.map((row) => mapSubscriberRow(row, tokenOk.has(row.userId)));
 
   const active = items.filter((s) => s.status === "active");
   res.json({

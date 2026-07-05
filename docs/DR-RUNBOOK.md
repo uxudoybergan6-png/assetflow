@@ -96,3 +96,46 @@ gcloud storage cp "gs://<AWS_S3_BUCKET>/<key>#<generation>" "gs://<AWS_S3_BUCKET
 - [ ] `BACKUP_GCS_BUCKET` repo var + deployer SA IAM.
 - [ ] Asosiy asset bucket'da versioning yoqish (bo'lim 4).
 - [ ] Kvartalda BIR MARTA restore mashqi (backup haqiqatan tiklanishini tasdiqlash).
+
+## 6. Connection pooling (Neon + Cloud Run — miqyos)
+
+Cloud Run gorizontal scaling'da (min-instances > 1) har instans o'z Prisma pool'ini
+ochadi → Postgres `max_connections`'ni tez tugatishi mumkin. Neon buni **pgbouncer**
+(pooled endpoint) bilan hal qiladi. Hammasi ENV orqali — kod yoki secret o'zgarmaydi.
+
+**6.1 Pooled `DATABASE_URL` (tavsiya, ops-only).**
+Neon konsolida connection string'ning **Pooled** variantini oling (host `-pooler` bilan
+tugaydi) va Cloud Run `DATABASE_URL`'ni shunga o'rnating:
+
+```
+postgresql://user:pass@ep-xxx-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
+```
+
+Runtime so'rovlari pgbouncer orqali multipleks bo'ladi; ko'p instans oz ulanish ishlatadi.
+
+**6.2 Prisma `connection_limit` (ixtiyoriy kod knob — additive).**
+`DATABASE_CONNECTION_LIMIT=<N>` o'rnatilsa, `packages/database/src/index.ts` datasource
+URL'iga `connection_limit=N` qo'shadi (URL'da allaqachon bo'lmasa). pgbouncer ortida
+har instans uchun kichik qiymat tavsiya etiladi (masalan `1`–`5`). **Env yo'q bo'lsa —
+hech narsa o'zgarmaydi** (Prisma DATABASE_URL'ni o'zi o'qiydi, bugungi xatti-harakat).
+
+**6.3 Migratsiyalar uchun `DIRECT_URL` (ixtiyoriy).**
+Prisma Migrate pgbouncer orqali ishlamaydi (prepared statement'lar) — u to'g'ridan-to'g'ri
+(non-pooled) ulanish talab qiladi. Pooled `DATABASE_URL`'ga o'tsangiz, migratsiya uchun
+**non-pooled** string'ni `DIRECT_URL`'ga bering va schema'ga `directUrl` qo'shing:
+
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooled (runtime)
+  directUrl = env("DIRECT_URL")     // non-pooled (migrate/introspect)
+}
+```
+
+> ⚠️ `directUrl`'ni schema'ga qo'shsangiz, `migrate:deploy` `DIRECT_URL`'ni TALAB qiladi
+> (migrate-gate buziladi). Shu sabab hozir schema'ga qo'shilmagan — pooled URL'ga
+> o'tishda IKKALASINI birga qo'shing. Pooled'siz (bugungi holat) o'zgarish shart emas.
+
+**6.4 Cloud Run concurrency.** Har instans `concurrency` (default ~80) so'rovni parallel
+ko'taradi; instans pool hajmi (`connection_limit`) shunga yetarli bo'lsin, lekin
+`max-instances × connection_limit` Neon limitidan oshmasin. pgbouncer bu hisobni yumshatadi.
