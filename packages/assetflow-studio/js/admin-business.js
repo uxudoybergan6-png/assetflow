@@ -166,3 +166,84 @@ async function savePricingConfig(){
     toast('Xato', (e&&e.message)||'Saqlanmadi', 'danger');
   }
 }
+
+/* ============================================================
+   b1 · MOLIYA — daromad vs provayder xarajati + margin + payout
+   ============================================================ */
+let FINANCE_DATA = null;
+
+VIEWS.finance = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
+window.afterRender.finance = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='finance') tba.innerHTML =
+    `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>Butun davr</span></span>`+
+    `<button class="adx-btn2 sm" onclick="toast('Eksport','Moliya hisoboti CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>Eksport</button>`;
+  const root = document.getElementById('bizRoot');
+  try {
+    try { if(typeof refreshSubscribersFromApi==='function') await refreshSubscribersFromApi(); } catch(_){}
+    FINANCE_DATA = await StudioApi.getAdminFinance();
+    renderFinance();
+  } catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+};
+
+function financeDonut(providers){
+  const colors = ['#C2F04A','#7CC4FF','#FFB27C','rgba(255,255,255,.14)','#b794f6'];
+  const total = providers.reduce((a,p)=>a+p.estimatedUsd,0) || 1;
+  let acc=0; const stops=[];
+  providers.forEach((p,i)=>{ const from=acc/total*360; acc+=p.estimatedUsd; const to=acc/total*360; stops.push(`${colors[i%colors.length]} ${from}deg ${to}deg`); });
+  const grad = stops.length ? `conic-gradient(${stops.join(',')})` : 'var(--f2)';
+  return `<div class="adx-donut" style="background:${grad}"><div class="hole"><span class="adx-num" style="font-size:16px;font-weight:600">${bizUsd(total)}</span><span style="font-size:9px;color:#8A93A3">jami</span></div></div>`;
+}
+
+function renderFinance(){
+  const root = document.getElementById('bizRoot');
+  if(!root || !FINANCE_DATA) return;
+  const d = FINANCE_DATA;
+  const agg = d.aggregate || {revenueUsd:0,realCostUsd:0};
+  const providers = (d.providers||[]).slice();
+  const providerCost = providers.reduce((a,p)=>a+p.estimatedUsd,0);
+  const revenue = agg.revenueUsd || providers.reduce((a,p)=>a+p.revenueUsd,0);
+  const grossMarginPct = revenue>0 ? Math.round((revenue - providerCost)/revenue*100) : null;
+  const net = revenue - providerCost;
+  // MRR — faol Pro obunalar × Pro oylik narx (obunachi stats + tarif narxi)
+  const sc = typeof subscriberCounts==='function' ? subscriberCounts() : {pro:0};
+  const proPrice = (typeof planById==='function' && planById('pro')) ? (planById('pro').priceMonthly||0) : 0;
+  const mrr = (sc.pro||0) * proPrice;
+  const colors = ['#C2F04A','#7CC4FF','#FFB27C','rgba(255,255,255,.35)','#b794f6'];
+  const maxBar = Math.max(revenue, providerCost, ...providers.map(p=>Math.max(p.revenueUsd,p.estimatedUsd)), 1);
+  return renderFinanceHtml(root, {d,agg,providers,providerCost,revenue,grossMarginPct,net,mrr,sc,colors,maxBar});
+}
+
+function renderFinanceHtml(root, m){
+  const {d,providers,providerCost,revenue,grossMarginPct,net,mrr,sc,colors,maxBar}=m;
+  root.innerHTML = `
+    <div class="adx-grid4">
+      ${axStat({label:'Oylik daromad (MRR)',val:bizUsd(mrr),ic:'trend-up',icColor:'#C2F04A',foot:`${sc.pro||0} Pro obuna`})}
+      ${axStat({label:'Provayder xarajati',val:bizUsd(providerCost),ic:'coins',icColor:'#7CC4FF',foot:'fal · vertex · elevenlabs'})}
+      ${axStat({label:'Yalpi margin',val:grossMarginPct!=null?grossMarginPct+'%':'—',ic:'chart-bar',icColor:bizMarginColor(grossMarginPct),foot:bizUsd(net)+' sof',footCls:net>=0?'adx-up':'adx-down'})}
+      ${axStat({label:'Payout (kutilmoqda)',val:bizUsdCents(d.payoutPendingCents),ic:'hand-coins',icColor:'#FFB27C',foot:'contributor to‘lovlari'})}
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px" class="biz-fin-grid">
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Daromad vs xarajat</span><span style="flex:1"></span><span style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#C2F04A"></span>Daromad</span><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#7CC4FF"></span>Xarajat</span></span></div>
+        <div style="padding:16px 18px">${providers.length?`<div style="display:flex;align-items:flex-end;gap:12px;height:170px">${providers.slice(0,8).map(p=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%" title="${esc(p.provider)}: daromad ${bizUsd(p.revenueUsd)}, xarajat ${bizUsd(p.estimatedUsd)}"><div style="height:${Math.max(3,p.revenueUsd/maxBar*100)}%;background:linear-gradient(180deg,#C2F04A,rgba(194,240,74,.3));border-radius:4px 4px 0 0"></div><div style="height:${Math.max(2,p.estimatedUsd/maxBar*100)}%;background:linear-gradient(180deg,#7CC4FF,rgba(124,196,255,.3))"></div></div>`).join('')}</div><div style="display:flex;gap:12px;margin-top:8px">${providers.slice(0,8).map(p=>`<span style="flex:1;text-align:center;font-size:9px;color:#5E6675;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.provider)}</span>`).join('')}</div>`:`<div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-chart-bar"></i></span><div style="font-size:11px;color:var(--muted2)">Hali gen sarfi yo‘q</div></div>`}</div>
+      </div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Xarajat taqsimoti</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">PROVAYDER</span></div>
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:16px">${financeDonut(providers)}
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;font-size:11.5px">${providers.length?providers.slice(0,5).map((p,i)=>`<div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:3px;background:${colors[i%colors.length]}"></span>${esc(p.provider)}<span style="flex:1"></span><span class="adx-num" style="color:#B7C0CE">${bizUsd(p.estimatedUsd)}</span></div>`).join(''):'<span style="font-size:11px;color:var(--muted2)">Ma‘lumot yo‘q</span>'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="adx-card" style="margin-top:16px;overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Provayder xarajati (ProviderSpend agregatsiya)</span></div>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:900px">
+        <thead><tr><th>Provayder</th><th class="r">Generatsiyalar</th><th class="r">Sarflangan kredit</th><th class="r">Xarajat (USD)</th><th class="r">Kredit daromadi</th><th class="r">Margin</th></tr></thead>
+        <tbody>${providers.length?providers.map(p=>{ const mp=p.revenueUsd>0?Math.round((p.revenueUsd-p.estimatedUsd)/p.revenueUsd*100):null; return `<tr>
+          <td style="color:var(--text);font-weight:600">${esc(p.provider)}</td>
+          <td class="r adx-num">${(p.gens||0).toLocaleString()}</td>
+          <td class="r adx-num">${(p.credits||0).toLocaleString()}</td>
+          <td class="r adx-num" style="color:#7CC4FF">${bizUsd(p.estimatedUsd)}</td>
+          <td class="r adx-num" style="color:#C2F04A">${bizUsd(p.revenueUsd)}</td>
+          <td class="r adx-num" style="color:${bizMarginColor(mp)}">${mp!=null?mp+'%':'—'}</td>
+        </tr>`;}).join(''):`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-coins"></i></span><div style="font-size:11px;color:var(--muted2)">Hali provayder sarfi yozilmagan</div></div></td></tr>`}</tbody>
+      </table></div>
+    </div>`;
+}
