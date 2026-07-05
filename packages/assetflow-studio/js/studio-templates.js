@@ -100,8 +100,10 @@ const StudioTemplates = (() => {
     if (!hasToken()) return false;
     const { items } = await StudioApi.listTemplates("scope=moderation");
     const pending = items.map(mapApiItem);
+    // scope=moderation faqat PENDING_REVIEW qaytaradi — soft'larni yo'qotmaymiz
+    // (Soft filter tab scope=all yuklagan soft yozuvlarga tayanadi)
     const rest = (typeof TEMPLATES !== "undefined" ? TEMPLATES : []).filter(
-      (t) => !["pending", "soft"].includes(t.status)
+      (t) => t.status !== "pending"
     );
     replaceTemplates([...pending, ...rest.filter((r) => !pending.some((p) => p.id === r.id))]);
     return true;

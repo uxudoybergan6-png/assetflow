@@ -156,14 +156,19 @@ window.afterRender.overview = function(){
 };
 
 /* ============================================================
-   MODERATION QUEUE  (list + split detail)
+   MODERATION QUEUE \u2014 redesign port (maket e2): ikki panel
+   chap: filtrli navbat ro'yxati \u00b7 o'ng: detal + qaror paneli.
+   Logika saqlangan: modApprove/modSoftReject/modHardReject/modDelete/
+   openEditMeta/openMessage/bulkAction \u2014 mavjud handlerlar.
    ============================================================ */
 let MOD_SELECTED = null;
 let MOD_FILTER = 'pending';
 let MOD_CHECKED = new Set();
+let MOD_CAT = 'all';
+let MOD_SORT = 'new';
 
 VIEWS.moderation = function(){
-  return `<div id="modRoot"></div>`;
+  return `<div id="modRoot" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>`;
 };
 window.afterRender.moderation = function(){
   // Real API moderation queue
@@ -180,9 +185,50 @@ window.afterRender.moderation = function(){
 };
 
 function modQueueItems(){
-  if(MOD_FILTER==='new') return tByStatus('pending').filter(t=>t.isNew);
-  if(MOD_FILTER==='all') return TEMPLATES.filter(t=>['pending','soft','hard'].includes(t.status));
-  return tByStatus(MOD_FILTER);
+  let items;
+  if(MOD_FILTER==='new') items = tByStatus('pending').filter(t=>t.isNew);
+  else if(MOD_FILTER==='all') items = TEMPLATES.filter(t=>['pending','soft','hard'].includes(t.status));
+  else items = tByStatus(MOD_FILTER);
+  if(MOD_CAT!=='all') items = items.filter(t=>t.cat===MOD_CAT);
+  return items.slice().sort((a,b)=> MOD_SORT==='new'
+    ? String(b.created||'').localeCompare(String(a.created||''))
+    : String(a.created||'').localeCompare(String(b.created||'')));
+}
+
+/* maket g1\u2013g8 thumb gradienti (app.css g9/g10 \u2192 1/2 ga o'raladi) */
+function adxModGrad(grad){
+  const n = parseInt(String(grad||'g1').replace('g',''),10) || 1;
+  return 'adx-g' + (((n-1)%8)+1);
+}
+function adxModThumb(t){
+  const hasMedia = typeof StudioMedia!=='undefined' && StudioMedia.hasAsset &&
+    (StudioMedia.hasAsset(t,'thumb') || StudioMedia.hasAsset(t,'preview'));
+  if(hasMedia) return StudioMedia.renderThumb(t,'lg');
+  return `<span class="${adxModGrad(t.grad)}" style="display:block;width:100%;height:100%"></span>`;
+}
+function adxModStatusBdg(status, short){
+  if(status==='pending') return `<span class="adx-bdg adx-bdg-pending"><span class="bd"></span>${short?'Kut.':'Kutilmoqda'}</span>`;
+  if(status==='soft') return `<span class="adx-bdg adx-bdg-soft"><span class="bd"></span>Soft</span>`;
+  if(status==='hard') return `<span class="adx-bdg adx-bdg-hard"><span class="bd"></span>Hard</span>`;
+  if(status==='approved') return `<span class="adx-bdg adx-bdg-approved"><span class="bd"></span>Tasdiqlangan</span>`;
+  return `<span class="adx-bdg adx-bdg-draft"><span class="bd"></span>${esc(status||'')}</span>`;
+}
+
+/* Topbar amallari \u2014 kategoriya + sana sort (maket e2 topbar) */
+function modTopbarActions(){
+  const tba = document.getElementById('tbActions');
+  if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='moderation')) return;
+  tba.innerHTML = `
+    <label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${MOD_CAT==='all'?'Barcha kategoriyalar':esc(MOD_CAT)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+      <select onchange="setModCat(this.value)">
+        <option value="all" ${MOD_CAT==='all'?'selected':''}>Barcha kategoriyalar</option>
+        ${CATS.map(c=>`<option value="${esc(c)}" ${MOD_CAT===c?'selected':''}>${esc(c)}</option>`).join('')}
+      </select></label>
+    <label class="adx-sel"><i class="ph ph-sort-descending" style="font-size:13px"></i><span>${MOD_SORT==='new'?'Sana: Yangi \u2192 eski':'Sana: Eski \u2192 yangi'}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+      <select onchange="setModSort(this.value)">
+        <option value="new" ${MOD_SORT==='new'?'selected':''}>Sana: Yangi \u2192 eski</option>
+        <option value="old" ${MOD_SORT==='old'?'selected':''}>Eski \u2192 yangi</option>
+      </select></label>`;
 }
 
 function renderModeration(){
@@ -190,142 +236,138 @@ function renderModeration(){
   if(MOD_SELECTED===null && items.length) MOD_SELECTED = items[0].id;
   const sel = TEMPLATES.find(t=>t.id===MOD_SELECTED);
 
+  modTopbarActions();
+  if (typeof renderNav === 'function') renderNav(); // badge/bell yangilansin (approve/reject'dan keyin)
+
+  const tagRow = [['pending','Kutilmoqda'],['new','Faqat yangi'],['soft','Soft'],['all','Barchasi']].map(([k,l])=>{
+    const n = k==='new'?tByStatus('pending').filter(t=>t.isNew).length : k==='all'?TEMPLATES.filter(t=>['pending','soft','hard'].includes(t.status)).length : tByStatus(k).length;
+    return `<button class="adx-tag ${MOD_FILTER===k?'on':''}" onclick="setModFilter('${k}')">${l} <span class="n">${n}</span></button>`;
+  }).join('');
+
   const root = document.getElementById('modRoot');
+  if(!root) return;
   root.innerHTML = `
-  <div class="col gap-16">
-    <div class="toolbar between">
-      <div class="chips">
-        ${[['pending','Kutilmoqda'],['new','Faqat yangi'],['soft','Soft reject'],['all','Barchasi']].map(([k,l])=>{
-          const n = k==='new'?tByStatus('pending').filter(t=>t.isNew).length : k==='all'?TEMPLATES.filter(t=>['pending','soft','hard'].includes(t.status)).length : tByStatus(k).length;
-          return `<button class="chip ${MOD_FILTER===k?'active':''}" onclick="setModFilter('${k}')">${l}<span class="cnt">${n}</span></button>`;
-        }).join('')}
-      </div>
-      <div class="toolbar">
-        <select class="select"><option>Barcha kategoriyalar</option>${CATS.map(c=>`<option>${c}</option>`).join('')}</select>
-        <select class="select"><option>Sana: Yangi \u2192 eski</option><option>Eski \u2192 yangi</option></select>
-      </div>
-    </div>
-
-    ${MOD_CHECKED.size?`<div class="info-banner" style="background:var(--bg-3);border-color:var(--line-strong)">
-      <div class="row center gap-10 grow"><span class="badge badge-violet">${MOD_CHECKED.size} tanlandi</span>
-      <span class="small">Bulk amal:</span></div>
-      <div class="row gap-8">
-        <button class="btn btn-sm btn-success" onclick="bulkAction('approve')">${ic('check')} Approve</button>
-        <button class="btn btn-sm btn-warn" onclick="bulkAction('soft')">${ic('reply')} Soft reject</button>
-        <button class="btn btn-sm btn-ghost" onclick="bulkAction('export')">${ic('download')} Export</button>
-        <button class="btn btn-sm btn-subtle" onclick="MOD_CHECKED.clear();renderModeration()">Bekor</button>
-      </div></div>`:''}
-
-    <div style="display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start">
-      <!-- queue list -->
-      <div class="card" style="overflow:hidden">
-        <div class="card-head"><h3>Navbat</h3><span class="label">${items.length} ta</span></div>
-        <div class="col" style="max-height:680px;overflow-y:auto">
+    ${MOD_CHECKED.size?`<div class="adx-bulkbar">
+      <span class="adx-bdg adx-bdg-info">${MOD_CHECKED.size} tanlandi</span>
+      <span style="font-size:11.5px;color:var(--muted)">Bulk amal:</span>
+      <span style="flex:1"></span>
+      <button class="adx-btn adx-btn-ok sm" onclick="bulkAction('approve')"><i class="ph ph-check"></i>Approve</button>
+      <button class="adx-btn2 adx-btn-warn sm" onclick="bulkAction('soft')"><i class="ph ph-arrow-u-up-left"></i>Soft reject</button>
+      <button class="adx-btn2 sm" onclick="bulkAction('export')"><i class="ph ph-export"></i>Export</button>
+      <button class="adx-btn2 sm" onclick="MOD_CHECKED.clear();renderModeration()">Bekor</button>
+    </div>`:''}
+    <div class="adx-modwrap">
+      <!-- list panel -->
+      <div class="adx-modlist">
+        <div class="adx-modtags">${tagRow}</div>
+        <div class="adx-modscroll">
           ${items.length? items.map(t=>{
             const con = t._con || cById(t.cid) || { name: "Contributor", email: "" };
-            return `<div class="mod-item ${t.id===MOD_SELECTED?'sel':''}" onclick="selectMod('${t.id}')">
-              <div class="checkbox ${MOD_CHECKED.has(t.id)?'on':''}" onclick="event.stopPropagation();toggleCheck('${t.id}')">${ic('check')}</div>
-              <div class="row-thumb" style="width:64px;height:42px;overflow:hidden;border-radius:var(--r-sm)">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,t.dur,'lg')}</div>
-              <div class="col grow" style="gap:3px;min-width:0">
-                <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span>
-                <span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(con.name)} \u00b7 ${esc(t.cat)}</span>
-                <div class="row center gap-8 mt-4">${badge(t.status)}${t.isNew?'<span class="pill" style="color:var(--violet-bright);border-color:var(--violet-line)">Yangi</span>':''}</div>
+            const isSel = t.id===MOD_SELECTED;
+            const checked = MOD_CHECKED.has(t.id);
+            const meta = [con.name, t.cat, t.res].filter(Boolean).join(' \u00b7 ');
+            return `<div class="adx-moditem ${isSel?'sel':''}" onclick="selectMod('${t.id}')">
+              <span class="adx-modcheck ${checked?'on':''}" onclick="event.stopPropagation();toggleCheck('${t.id}')"><i class="ph-bold ph-check"></i></span>
+              <span class="adx-modthumb">${adxModThumb(t)}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div>
+                <div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meta)}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:none">
+                ${t.isNew?'<span class="adx-bdg adx-bdg-info">Yangi</span>':''}
+                ${adxModStatusBdg(t.status, true)}
               </div>
             </div>`;
-          }).join('') : `<div class="empty"><div class="ico">${ic('checkCircle')}</div><h3>Navbat bo\u2018sh</h3><p>Bu filtrda ko\u2018rib chiqiladigan shablon yo\u2018q.</p></div>`}
+          }).join('') : `<div class="adx-empty" style="margin:14px 4px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-weight:600;font-size:13px">Navbat bo\u2018sh</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Bu filtrda ko\u2018rib chiqiladigan shablon yo\u2018q.</div></div>`}
         </div>
       </div>
-
-      <!-- detail / decision -->
-      <div id="modDetail"></div>
-    </div>
-  </div>`;
+      <!-- detail panel -->
+      <div id="modDetail" class="adx-moddetail"></div>
+    </div>`;
 
   renderModDetail(sel);
 }
 
+function adxFileChips(t){
+  if(typeof StudioMedia==='undefined') return '';
+  const chips = [];
+  if (t.assets?.pack || t.fileName) {
+    chips.push(`<a class="adx-filechip" href="${StudioMedia.escapeAttr(t.packUrl || StudioMedia.assetUrl(t.id,'pack'))}" target="_blank" rel="noopener">${StudioMedia.escapeHtml(t.fileName || 'pack')}${t.size?' '+StudioMedia.escapeHtml(t.size):''}</a>`);
+  }
+  if (t.assets?.preview || t.previewUrl) {
+    chips.push(`<a class="adx-filechip" href="${StudioMedia.escapeAttr(t.previewUrl || StudioMedia.assetUrl(t.id,'preview'))}" target="_blank" rel="noopener">preview${t.dur?' '+StudioMedia.escapeHtml(t.dur):''}</a>`);
+  }
+  if (t.assets?.thumb || t.thumbUrl) {
+    chips.push(`<a class="adx-filechip" href="${StudioMedia.escapeAttr(t.thumbUrl || StudioMedia.assetUrl(t.id,'thumb'))}" target="_blank" rel="noopener">thumb</a>`);
+  }
+  if(!chips.length) chips.push(`<span style="font-size:11px;color:var(--amber)">Fayllar yuklanmagan</span>`);
+  return chips.join('');
+}
+
 function renderModDetail(t){
   const host = document.getElementById('modDetail');
-  if(!t){ host.innerHTML = `<div class="card card-pad empty"><div class="ico">${ic('shield')}</div><h3>Shablon tanlanmagan</h3><p>Chapdagi navbatdan element tanlang.</p></div>`; return; }
+  if(!host) return;
+  if(!t){ host.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:40px auto"><span class="ei"><i class="ph ph-shield-check"></i></span><div style="font-weight:600;font-size:13px">Shablon tanlanmagan</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Chapdagi navbatdan element tanlang.</div></div>`; return; }
   const con = t._con || cById(t.cid) || { name: "Contributor", email: "" };
+  const items = modQueueItems();
+  const idx = items.findIndex(x=>x.id===t.id);
+  const shortId = t.id.length>10 ? t.id.slice(0,4)+'\u2026'+t.id.slice(-4) : t.id;
+  const preview = typeof StudioMedia!=='undefined'
+    ? StudioMedia.renderPreview(t,{aspect:'300/190'})
+    : `<span class="${adxModGrad(t.grad)}" style="display:block;width:100%;height:100%"></span>`;
   host.innerHTML = `
-  <div class="col gap-16">
-    <div class="card" style="overflow:hidden">
-      <div style="display:grid;grid-template-columns:1.3fr 1fr">
-        <!-- preview side -->
-        <div style="border-right:1px solid var(--line)">
-          <div style="position:relative;background:#0a0a0f">
-            ${typeof StudioMedia!=='undefined'?StudioMedia.renderPreview(t):`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"></div>`}
-            <div style="position:absolute;top:10px;left:10px;z-index:2" class="row gap-6">
-              <span class="pill" style="background:rgba(0,0,0,.5);backdrop-filter:blur(4px)">${t.res}</span>
-              <span class="pill" style="background:rgba(0,0,0,.5);backdrop-filter:blur(4px)">${t.orient}</span>
-            </div>
-          </div>
-          <div class="row gap-8 wrap" style="padding:10px;border-bottom:1px solid var(--line)">
-            ${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}
-          </div>
-          <div class="card-pad col gap-12">
-            <div class="row center gap-10">
-              ${avatar(con.name,34)}
-              <div class="col grow" style="gap:1px">
-                <span class="cell-strong">${esc(con.name)}</span>
-                <span class="small">${esc(con.email)}</span>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="route('contributor-detail','${t.cid}')">${ic('ext')} Profil</button>
-            </div>
-            <div class="divider" style="margin:2px 0"></div>
-            <div class="meta-grid">
-              ${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Orientatsiya',t.orient],['Fayl hajmi',t.size],['Yuklangan',t.created]].map(([k,v])=>
-                `<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}
-            </div>
-            <div>
-              <div class="label" style="margin-bottom:6px">Tavsif</div>
-              <p class="body">${esc(t.desc)}</p>
-            </div>
-            <div class="row gap-6 wrap">${t.tags.map(tag=>`<span class="pill">${ic('tag')}${esc(tag)}</span>`).join('')}</div>
-          </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div class="adx-prevbox">${preview}</div>
+      <div style="flex:1;min-width:260px">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="flex:1;min-width:0"><div class="adx-h18">${esc(t.name)}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${esc(t.cat)} \u00b7 After Effects</div></div>
+          ${adxModStatusBdg(t.status)}
+          ${t.isNew?'<span class="adx-bdg adx-bdg-info">Yangi</span>':''}
         </div>
-
-        <!-- decision side -->
-        <div class="col" style="background:var(--bg-1)">
-          <div class="card-pad col gap-14 grow">
-            <div class="row between center">
-              <span class="label">Qaror paneli</span>
-              ${badge(t.status)}
-            </div>
-            ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic(t.status==='hard'?'ban':'reply')}<div><b style="color:var(--tx-0)">Oldingi qaror sababi</b><div class="small mt-4" style="color:var(--tx-1)">${esc(t.reason)}</div></div></div>`:''}
-
-            <div class="col gap-8">
-              <button class="btn btn-success btn-lg" onclick="modApprove('${t.id}')">${ic('checkCircle')} Tasdiqlash \u2014 AE\u2018da nashr</button>
-              <div class="row gap-8">
-                <button class="btn btn-warn grow" onclick="modSoftReject('${t.id}')">${ic('reply')} Soft reject</button>
-                <button class="btn btn-danger grow" onclick="modHardReject('${t.id}')">${ic('ban')} Hard reject</button>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-            <span class="label">Qo\u2018shimcha amallar</span>
-            <div class="col gap-6">
-              <button class="btn btn-ghost" style="justify-content:flex-start" onclick="openEditMeta('${t.id}')">${ic('edit')} Metadata tahrirlash (admin override)</button>
-              <button class="btn btn-ghost" style="justify-content:flex-start" onclick="route('contributor-detail','${t.cid}')">${ic('users')} Contributor profiliga o\u2018tish</button>
-              <button class="btn btn-ghost" style="justify-content:flex-start" onclick="openMessage('${con.id}','${t.id}')">${ic('message')} Contributorga xabar yozish</button>
-              <button class="btn btn-danger-ghost" style="justify-content:flex-start" onclick="modDelete('${t.id}')">${ic('trash')} Shablonni o\u2018chirish</button>
-            </div>
-
-            <div class="grow"></div>
-            ${infoBanner('Tasdiqlangach bu shablon AE katalogiga qo\u2018shiladi.')}
-          </div>
-          <div class="card-head" style="border-top:1px solid var(--line);border-bottom:none">
-            <span class="small">${modQueueItems().findIndex(x=>x.id===t.id)+1} / ${modQueueItems().length}</span>
-            <div class="row gap-6">
-              <button class="btn btn-ghost btn-sm btn-icon" onclick="navMod(-1)">${ic('chevL')}</button>
-              <button class="btn btn-ghost btn-sm btn-icon" onclick="navMod(1)">${ic('chevR')}</button>
-            </div>
-          </div>
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">${adxFileChips(t)}</div>
+        <div style="display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 12px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:11px">
+          <span class="adx-av ${adxModGrad(t.grad)}" style="width:34px;height:34px">${esc(initialsOf(con.name))}</span>
+          <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px">${esc(con.name)}</div><div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(con.email||'')}</div></div>
+          <button class="adx-btn2 sm" onclick="route('contributor-detail','${t.cid}')"><i class="ph ph-user"></i>Profil</button>
         </div>
       </div>
     </div>
-  </div>`;
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px">
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">ID</div><div class="adx-mono" style="font-size:11px;color:#B7C0CE" title="${esc(t.id)}">${esc(shortId)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">KATEGORIYA</div><div style="font-size:12px;color:#B7C0CE">${esc(t.cat)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">RESOLUTION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.res)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">ORIENTATSIYA</div><div style="font-size:12px;color:#B7C0CE">${esc(t.orient)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">FAYL HAJMI</div><div style="font-size:12px;color:#B7C0CE">${esc(t.size||'\u2014')}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">YUKLANGAN</div><div class="adx-mono" style="font-size:11px;color:#B7C0CE">${esc(t.created||'\u2014')}</div></div>
+    </div>
+    <div style="margin-top:16px"><div class="adx-flab">TAVSIF</div><div style="font-size:12.5px;color:#B7C0CE;line-height:1.6">${esc(t.desc)}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${(t.tags||[]).map(tag=>`<span class="adx-tagpill">${esc(tag)}</span>`).join('')}</div></div>
+    ${t.reason?`<div style="margin-top:16px;background:${t.status==='hard'?'var(--reddim)':'var(--amberdim)'};border:1px solid ${t.status==='hard'?'rgba(255,107,94,.3)':'rgba(255,178,124,.32)'};border-radius:11px;padding:10px 12px">
+      <div class="adx-flab" style="margin:0;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">OLDINGI QAROR SABABI</div>
+      <div style="font-size:12px;color:#B7C0CE;margin-top:4px;line-height:1.55">${esc(t.reason)}</div></div>`:''}
+    <!-- decision panel -->
+    <div class="adx-decide">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ph ph-gavel" style="color:#C2F04A;font-size:16px"></i><span class="adx-h16" style="font-size:14px">Qaror paneli</span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="adx-btn adx-btn-ok" onclick="modApprove('${t.id}')"><i class="ph ph-check-circle"></i>Tasdiqlash \u2014 AE\u2018da nashr</button>
+        <button class="adx-btn2 adx-btn-warn" onclick="modSoftReject('${t.id}')"><i class="ph ph-arrow-u-up-left"></i>Soft reject</button>
+        <button class="adx-btn-danger adx-btn-dghost" onclick="modHardReject('${t.id}')"><i class="ph ph-prohibit"></i>Hard reject</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--hair2)">
+        <button class="adx-btn2 sm" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i>Metadata tahrirlash (admin override)</button>
+        <button class="adx-btn2 sm" onclick="openMessage('${con.id}','${t.id}')"><i class="ph ph-chat-circle"></i>Contributorga xabar</button>
+        <button class="adx-btn2 sm adx-btn-dghost" onclick="modDelete('${t.id}')"><i class="ph ph-trash"></i>Shablonni o\u2018chirish</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:16px">
+      <button class="adx-btn2 sm" onclick="navMod(-1)"><i class="ph ph-caret-left"></i>Oldingi</button>
+      <span class="adx-mono" style="font-size:11px;color:#8A93A3">${idx+1} / ${items.length}</span>
+      <button class="adx-btn2 sm" onclick="navMod(1)">Keyingi<i class="ph ph-caret-right"></i></button>
+    </div>`;
+}
+
+function initialsOf(name){
+  return String(name||'').trim().split(/\s+/).map(w=>w[0]||'').join('').toUpperCase().slice(0,2) || '?';
 }
 
 function setModFilter(f){
@@ -338,10 +380,13 @@ function setModFilter(f){
   }
   renderModeration();
 }
+function setModCat(v){ MOD_CAT=v||'all'; renderModeration(); }
+function setModSort(v){ MOD_SORT=v==='old'?'old':'new'; renderModeration(); }
 function selectMod(id){ MOD_SELECTED=id; renderModeration(); }
 function toggleCheck(id){ MOD_CHECKED.has(id)?MOD_CHECKED.delete(id):MOD_CHECKED.add(id); renderModeration(); }
 function navMod(dir){
-  const items=modQueueItems(); const i=items.findIndex(x=>x.id===MOD_SELECTED);
+  const items=modQueueItems(); if(!items.length) return;
+  const i=items.findIndex(x=>x.id===MOD_SELECTED);
   const ni=Math.max(0,Math.min(items.length-1,i+dir)); MOD_SELECTED=items[ni].id; renderModeration();
 }
 async function bulkAction(a){

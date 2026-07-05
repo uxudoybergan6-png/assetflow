@@ -570,10 +570,11 @@ function modSoftReject(id){
 }
 
 async function modRejectConfirm(id, hard) {
-  closeModal();
+  // MUHIM: izohni modal yopilishidan OLDIN o'qiymiz (closeModal DOM'ni o'chiradi)
   const note =
     document.querySelector(".modal-body textarea")?.value?.trim() ||
     "Moderatsiya rad etildi";
+  closeModal();
   if (!StudioApi.token()) {
     toast("API", "Admin sifatida API orqali kiring", "warn");
     return;
