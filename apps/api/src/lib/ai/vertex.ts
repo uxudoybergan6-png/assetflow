@@ -73,10 +73,10 @@ export async function vertexSubmitVideo(
         outputGcsUri: `gs://${OUTPUT_BUCKET}/vertex-video-tmp/`,
       },
     });
-    if (!op.name) return { ok: false, error: "Vertex: operation name qaytmadi" };
+    if (!op.name) return { ok: false, error: "Vertex: operation name was not returned" };
     return { ok: true, data: { operationName: op.name } };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Vertex submit xatosi" };
+    return { ok: false, error: (e as Error).message || "Vertex submit error" };
   }
 }
 
@@ -98,14 +98,14 @@ export async function vertexPollVideo(job: VertexVideoJob): Promise<OrResult<Ver
     const op = await getClient().operations.getVideosOperation({ operation: resumedOp });
     if (!op.done) return { ok: true, data: { state: "pending" } };
     if (op.error) {
-      const msg = typeof op.error.message === "string" ? op.error.message : "Vertex video generatsiya xatosi";
+      const msg = typeof op.error.message === "string" ? op.error.message : "Vertex video generation error";
       return { ok: true, data: { state: "error", error: msg } };
     }
     const uri = op.response?.generatedVideos?.[0]?.video?.uri;
-    if (!uri) return { ok: true, data: { state: "error", error: "Vertex: video URI topilmadi" } };
+    if (!uri) return { ok: true, data: { state: "error", error: "Vertex: video URI not found" } };
     return { ok: true, data: { state: "completed", gcsUri: uri } };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Vertex poll xatosi" };
+    return { ok: false, error: (e as Error).message || "Vertex poll error" };
   }
 }
 

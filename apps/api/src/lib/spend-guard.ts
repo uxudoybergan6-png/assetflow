@@ -96,10 +96,10 @@ export async function checkGlobalSpendCeiling(): Promise<{
       spendCache = { at: now, day, month };
     }
     if (dayCap != null && spendCache.day >= dayCap) {
-      return { exceeded: true, reason: `Kunlik provider xarajat shifti (${dayCap}$) ga yetildi` };
+      return { exceeded: true, reason: `Daily provider spend ceiling (${dayCap}$) reached` };
     }
     if (monthCap != null && spendCache.month >= monthCap) {
-      return { exceeded: true, reason: `Oylik provider xarajat shifti (${monthCap}$) ga yetildi` };
+      return { exceeded: true, reason: `Monthly provider spend ceiling (${monthCap}$) reached` };
     }
     return { exceeded: false };
   } catch (e) {

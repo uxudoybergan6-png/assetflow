@@ -78,13 +78,13 @@ async function notifyContributorReview(
     if (!user?.email) return;
     const studioUrl = `${getWebUrl()}/studio/contributor/`;
     const title = approved
-      ? "Shabloningiz tasdiqlandi ✓"
-      : "Shabloningiz qayta ko'rib chiqishni talab qiladi";
+      ? "Your template was approved ✓"
+      : "Your template needs another look";
     const body = approved
-      ? `<p style="font-size:13px;line-height:1.6"><b>${templateName}</b> tasdiqlandi va endi AE Browse katalogida ko'rinadi.</p>`
-      : `<p style="font-size:13px;line-height:1.6"><b>${templateName}</b> hozircha tasdiqlanmadi.</p>${
+      ? `<p style="font-size:13px;line-height:1.6"><b>${templateName}</b> has been approved and is now visible in the AE Browse catalog.</p>`
+      : `<p style="font-size:13px;line-height:1.6"><b>${templateName}</b> was not approved this time.</p>${
           note
-            ? `<p style="font-size:12px;color:#bbb;background:#222;border-radius:8px;padding:10px;margin-top:8px">Izoh: ${note.replace(/</g, "&lt;")}</p>`
+            ? `<p style="font-size:12px;color:#bbb;background:#222;border-radius:8px;padding:10px;margin-top:8px">Note: ${note.replace(/</g, "&lt;")}</p>`
             : ""
         }`;
     await sendEmail({
@@ -92,7 +92,7 @@ async function notifyContributorReview(
       subject: `FrameFlow — ${title}`,
       html: renderEmailLayout(
         title,
-        `${body}<a href="${studioUrl}" style="display:inline-block;margin-top:14px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Studio'ni ochish</a>`
+        `${body}<a href="${studioUrl}" style="display:inline-block;margin-top:14px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Open Studio</a>`
       ),
     });
   } catch (e) {
@@ -119,7 +119,7 @@ export const contributorRouter = Router();
 const TEMPLATE_ID_RE = /^c[a-z0-9]{20,30}$/;
 contributorRouter.param("id", (req, res, next, id) => {
   if (typeof id !== "string" || !TEMPLATE_ID_RE.test(id)) {
-    res.status(400).json({ error: "Noto'g'ri shablon identifikatori" });
+    res.status(400).json({ error: "Invalid template identifier" });
     return;
   }
   next();
@@ -143,7 +143,7 @@ async function getOrCreateSettings() {
         id: SETTINGS_ID,
         categoriesJson: DEFAULT_CATEGORIES,
         contributorInstructions:
-          "After Effects → FrameFlow Contributor panelida shablon yuklang. Tasdiqlangandan keyin Browse panelda ko‘rinadi.",
+          "Upload your template in the FrameFlow Contributor panel for After Effects. Once approved, it will appear in the Browse panel.",
       },
     });
   }
@@ -245,7 +245,7 @@ contributorRouter.patch(
   async (req, res) => {
     const parsed = settingsPatchSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
       return;
     }
     const data = parsed.data;
@@ -382,7 +382,7 @@ const payoutSchema = z.object({
 contributorRouter.post("/admin/payouts", requireAuth, requireAdmin, async (req, res) => {
   const parsed = payoutSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Noto'g'ri payout ma'lumoti" });
+    res.status(400).json({ error: "Invalid payout data" });
     return;
   }
   const result = await recordContributorPayout({
@@ -472,7 +472,7 @@ const uploadAssets = multer({
     const allowed = ASSET_UPLOAD_EXTS[file.fieldname];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed && allowed.includes(ext)) cb(null, true);
-    else cb(new Error(`ASSET_TYPE:${file.fieldname}:${ext || "kengaytmasiz"}`));
+    else cb(new Error(`ASSET_TYPE:${file.fieldname}:${ext || "no extension"}`));
   },
 });
 
@@ -553,7 +553,7 @@ contributorRouter.post(
         where: { id },
       });
       if (!existing) {
-        res.status(404).json({ error: "Shablon topilmadi", stage });
+        res.status(404).json({ error: "Template not found", stage });
         return;
       }
 
@@ -562,7 +562,7 @@ contributorRouter.post(
       setUploadProgress(id, {
         stage: "download",
         pct: 5,
-        message: "Pack joylashuvi aniqlanmoqda…",
+        message: "Locating pack…",
       });
       let zipPath: string | null = null;
       const diskPack = findAssetPath(id, "pack");
@@ -571,14 +571,14 @@ contributorRouter.post(
       } else if (isS3Configured()) {
         const packKey = await resolveS3AssetKey(id, "pack");
         if (!packKey) {
-          fail(404, "Pack fayli R2 yoki diskda topilmadi");
+          fail(404, "Pack file not found on R2 or disk");
           return;
         }
         // .aep/.mogrt yakka fayldan sahna ajratib bo'lmaydi — faqat ZIP
         if (/\.(aep|mogrt)$/i.test(packKey)) {
           fail(
             400,
-            `Pack ZIP emas (${packKey.split("/").pop()}) — re-extract faqat .zip pack uchun`
+            `Pack is not a ZIP (${packKey.split("/").pop()}) — re-extract only works for .zip packs`
           );
           return;
         }
@@ -586,14 +586,14 @@ contributorRouter.post(
         setUploadProgress(id, {
           stage: "download",
           pct: 15,
-          message: "Pack R2'dan yuklab olinmoqda…",
+          message: "Downloading pack from R2…",
         });
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_reextract_"));
         zipPath = path.join(tmpDir, "pack.zip");
         await downloadS3ToFile(packKey, zipPath);
       }
       if (!zipPath) {
-        fail(404, "Pack fayli topilmadi (disk/R2)");
+        fail(404, "Pack file not found (disk/R2)");
         return;
       }
 
@@ -602,7 +602,7 @@ contributorRouter.post(
       setUploadProgress(id, {
         stage: "extract",
         pct: 40,
-        message: "ZIP ochilmoqda, sahnalar tayyorlanmoqda…",
+        message: "Unpacking ZIP, preparing scenes…",
       });
       const scenesOut = await storeMogrtScenesFromZip(
         id,
@@ -611,7 +611,7 @@ contributorRouter.post(
           setUploadProgress(id, {
             stage: "extract",
             pct: 40 + Math.floor((done / total) * 50),
-            message: `Sahna ${done}/${total} tayyorlanmoqda…`,
+            message: `Preparing scene ${done}/${total}…`,
           });
         }
       );
@@ -621,13 +621,13 @@ contributorRouter.post(
         setUploadProgress(id, {
           stage: "done",
           pct: 100,
-          message: "Pack ichida .mogrt sahna topilmadi",
+          message: "No .mogrt scenes found inside the pack",
           done: true,
         });
         res.json({
           ok: true,
           scenes: 0,
-          message: "Pack ichida .mogrt sahna topilmadi",
+          message: "No .mogrt scenes found inside the pack",
         });
         return;
       }
@@ -637,7 +637,7 @@ contributorRouter.post(
       setUploadProgress(id, {
         stage: "db",
         pct: 95,
-        message: "Sahnalar bazaga yozilmoqda…",
+        message: "Saving scenes to the database…",
       });
       const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
       await prisma.contributorTemplate.update({
@@ -651,7 +651,7 @@ contributorRouter.post(
       setUploadProgress(id, {
         stage: "done",
         pct: 100,
-        message: `Tayyor — ${scenesOut.length} sahna (${withMogrt} ta .mogrt)`,
+        message: `Done — ${scenesOut.length} scene(s) (${withMogrt} with .mogrt)`,
         done: true,
       });
       res.json({
@@ -666,7 +666,7 @@ contributorRouter.post(
       });
     } catch (e) {
       console.error(`[re-extract] xato (stage=${stage}):`, e);
-      fail(500, e instanceof Error ? e.message : "Kutilmagan xato");
+      fail(500, e instanceof Error ? e.message : "Unexpected error");
     } finally {
       if (tmpDir) {
         try {
@@ -698,7 +698,7 @@ contributorRouter.post(
         where: { id },
       });
       if (!existing) {
-        res.status(404).json({ error: "Shablon topilmadi" });
+        res.status(404).json({ error: "Template not found" });
         return;
       }
 
@@ -719,7 +719,7 @@ contributorRouter.post(
         await downloadS3ToFile(srcKey, localPath);
       }
       if (!localPath) {
-        res.status(404).json({ error: "Preview fayli topilmadi (disk/R2)" });
+        res.status(404).json({ error: "Preview file not found (disk/R2)" });
         return;
       }
 
@@ -752,7 +752,7 @@ contributorRouter.post(
       console.error("[re-transcode-preview] xato:", e);
       res
         .status(500)
-        .json({ error: e instanceof Error ? e.message : "Kutilmagan xato" });
+        .json({ error: e instanceof Error ? e.message : "Unexpected error" });
     } finally {
       if (tmpDir) {
         try {
@@ -862,7 +862,7 @@ function handleAssetsUpload(
   setUploadProgress(String(req.params.id), {
     stage: "receive",
     pct: 0,
-    message: "Fayl qabul qilinmoqda…",
+    message: "Receiving file…",
   });
   uploadAssetsFields(req, res, (err: unknown) => {
     if (!err) {
@@ -900,7 +900,7 @@ function handleAssetsUpload(
     if (e.code === "LIMIT_FILE_SIZE") {
       fail(
         413,
-        `Fayl juda katta — maksimal 3 GB${field ? ` (${field})` : ""}. Pack hajmini kichraytirib qayta yuklang.`
+        `File is too large — maximum 3 GB${field ? ` (${field})` : ""}. Reduce the pack size and re-upload.`
       );
       return;
     }
@@ -911,12 +911,12 @@ function handleAssetsUpload(
       const list = (ASSET_UPLOAD_EXTS[f] || []).join(", ");
       fail(
         400,
-        `"${f}" uchun ${ext} fayl qabul qilinmaydi — ruxsat etilgan: ${list}`
+        `"${f}" does not accept ${ext} files — allowed: ${list}`
       );
       return;
     }
     console.error("[upload-assets] multer xato:", err);
-    fail(400, "Fayl yuklashda xato — qayta urinib ko'ring");
+    fail(400, "File upload failed — please try again");
   });
 }
 
@@ -945,20 +945,20 @@ contributorRouter.post(
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
     if (!isS3Configured()) {
-      res.status(503).json({ error: "Bulut xotirasi sozlanmagan" });
+      res.status(503).json({ error: "Cloud storage is not configured" });
       return;
     }
     const p = uploadUrlSchema.safeParse(req.body);
     if (!p.success) {
-      res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
       return;
     }
     const uploads = [];
@@ -967,7 +967,7 @@ contributorRouter.post(
       const allowed = ASSET_UPLOAD_EXTS[f.kind] || [];
       if (!allowed.includes(ext)) {
         res.status(400).json({
-          error: `"${f.kind}" uchun ${ext || "fayl"} qabul qilinmaydi — ruxsat: ${allowed.join(", ")}`,
+          error: `"${f.kind}" does not accept ${ext || "this file type"} — allowed: ${allowed.join(", ")}`,
         });
         return;
       }
@@ -995,11 +995,11 @@ contributorRouter.post(
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
     if (
@@ -1046,11 +1046,11 @@ async function processPackInBackground(
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
     const ext = path.extname(packKey) || ".bin";
     const packPath = path.join(tmpDir, `pack${ext}`);
-    setUploadProgress(id, { stage: "download", pct: 12, message: "Pack yuklab olinmoqda…" });
+    setUploadProgress(id, { stage: "download", pct: 12, message: "Downloading pack…" });
     await downloadS3ToFile(packKey, packPath);
 
     // 1) Content-hash → dedup (boshqa contributor bir xil pack = anti-theft; o'zi = warn).
-    setUploadProgress(id, { stage: "scan", pct: 22, message: "Xavfsizlik tekshiruvi…" });
+    setUploadProgress(id, { stage: "scan", pct: 22, message: "Running security check…" });
     const hash = await sha256File(packPath);
     const dup = await prisma.contributorTemplate.findFirst({
       where: { packHash: hash, id: { not: id } },
@@ -1069,22 +1069,22 @@ async function processPackInBackground(
     if (dup && dup.contributorId !== contributorId) {
       scanStatus = "duplicate";
       quarantine = true;
-      detail = `Boshqa contributor shabloni bilan bir xil pack (${dup.id}) — anti-theft`;
-      userError = "Bu pack allaqachon boshqa shablon sifatida mavjud — nashr bloklandi.";
+      detail = `Same pack as another contributor's template (${dup.id}) — anti-theft`;
+      userError = "This pack already exists as another template — publishing blocked.";
     } else if (scan.verdict === "malicious") {
       scanStatus = "malicious";
       quarantine = true;
       detail = scan.detail;
-      userError = "Pack xavfsizlik tekshiruvidan o'tmadi (zararli dastur aniqlandi) — nashr bloklandi.";
+      userError = "Pack failed the security check (malware detected) — publishing blocked.";
     } else if (scan.verdict === "unknown" && prod) {
       // Fail-closed: prodda noma'lum/skan qilib bo'lmaydigan → karantin, admin ko'rib chiqadi.
       scanStatus = "quarantined";
       quarantine = true;
       detail = scan.detail;
-      userError = "Pack xavfsizlik tekshiruvi kutilmoqda — admin ko'rib chiqadi.";
+      userError = "Pack security check is pending — an admin will review it.";
     } else {
       scanStatus = "clean";
-      detail = dup ? `Toza (o'zingizning oldingi nusxangiz: ${dup.id})` : scan.detail;
+      detail = dup ? `Clean (your own earlier copy: ${dup.id})` : scan.detail;
     }
 
     await prisma.contributorTemplate.update({
@@ -1110,7 +1110,7 @@ async function processPackInBackground(
         stage: "error",
         pct: 0,
         message: "",
-        error: userError || "Pack karantinga olindi.",
+        error: userError || "Pack was quarantined.",
         done: true,
       });
       return; // ekstraktsiya YO'Q — karantin.
@@ -1122,7 +1122,7 @@ async function processPackInBackground(
         setUploadProgress(id, {
           stage: "extract",
           pct: 40 + Math.floor((done / total) * 55),
-          message: `Sahna ${done}/${total} tayyorlanmoqda…`,
+          message: `Preparing scene ${done}/${total}…`,
         });
       });
       if (scenesOut.length > 0) {
@@ -1136,11 +1136,11 @@ async function processPackInBackground(
       setUploadProgress(id, {
         stage: "done",
         pct: 100,
-        message: scenesOut.length ? `Tayyor — ${scenesOut.length} sahna` : "Tayyor!",
+        message: scenesOut.length ? `Done — ${scenesOut.length} scene(s)` : "Done!",
         done: true,
       });
     } else {
-      setUploadProgress(id, { stage: "done", pct: 100, message: "Tayyor!", done: true });
+      setUploadProgress(id, { stage: "done", pct: 100, message: "Done!", done: true });
     }
   } catch (e) {
     console.error("[pack-uploaded] xavfsizlik/ekstraktsiya xato:", e);
@@ -1148,7 +1148,7 @@ async function processPackInBackground(
       stage: "error",
       pct: 0,
       message: "",
-      error: e instanceof Error ? e.message : "Pack ishlashda xato",
+      error: e instanceof Error ? e.message : "Error processing the pack",
       done: true,
     });
   } finally {
@@ -1179,11 +1179,11 @@ contributorRouter.post(
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
     if (
@@ -1194,17 +1194,17 @@ contributorRouter.post(
     }
     const p = packUploadedSchema.safeParse(req.body);
     if (!p.success) {
-      res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
       return;
     }
     if (!isS3Configured()) {
-      res.status(503).json({ error: "Bulut xotirasi sozlanmagan" });
+      res.status(503).json({ error: "Cloud storage is not configured" });
       return;
     }
     const ext = path.extname(p.data.fileName).toLowerCase();
     if (!(ASSET_UPLOAD_EXTS.pack || []).includes(ext)) {
       res.status(400).json({
-        error: `Pack uchun ${ext || "fayl"} qabul qilinmaydi — ruxsat: ${ASSET_UPLOAD_EXTS.pack.join(", ")}`,
+        error: `Pack does not accept ${ext || "this file type"} — allowed: ${ASSET_UPLOAD_EXTS.pack.join(", ")}`,
       });
       return;
     }
@@ -1215,7 +1215,7 @@ contributorRouter.post(
     if (meta.sizeBytes == null) {
       res
         .status(404)
-        .json({ error: "Pack bulutda topilmadi — yuklashni qayta urinib ko'ring" });
+        .json({ error: "Pack not found in cloud storage — please re-upload" });
       return;
     }
     // Yangi pack yuklandi → skan holatini reset (eski 'clean' qolib ketmasin).
@@ -1235,7 +1235,7 @@ contributorRouter.post(
     setUploadProgress(id, {
       stage: "scan",
       pct: 5,
-      message: "Pack qabul qilindi, xavfsizlik tekshiruvi…",
+      message: "Pack received, running security check…",
     });
     processPackInBackground(id, packKey, existing.contributorId, isZip);
     res.json({ ok: true, extracting: isZip, scanning: true });
@@ -1260,14 +1260,14 @@ contributorRouter.post(
       where: { id },
     });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (
       req.user!.role !== "ADMIN" &&
       existing.contributorId !== req.user!.userId
     ) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
@@ -1300,7 +1300,7 @@ contributorRouter.post(
       setUploadProgress(id, {
         stage: "sync",
         pct: 82,
-        message: "Bulut xotirasiga saqlanmoqda…",
+        message: "Saving to cloud storage…",
       });
       const mimeMap: Record<string, string> = {
         thumb: "image/jpeg",
@@ -1322,7 +1322,7 @@ contributorRouter.post(
           } catch {}
           if (kind === "pack") {
             const errText =
-              "Pack faylni bulut xotirasiga yozib bo'lmadi — bir ozdan so'ng qayta urinib ko'ring";
+              "Could not save the pack file to cloud storage — please try again shortly";
             setUploadProgress(id, {
               stage: "sync",
               pct: 84,
@@ -1342,7 +1342,7 @@ contributorRouter.post(
     setUploadProgress(id, {
       stage: "db",
       pct: 88,
-      message: "Ma'lumotlar bazasiga yozilmoqda…",
+      message: "Saving to the database…",
     });
     const update: { fileName?: string; fileSize?: number } = {};
     if (pack) {
@@ -1358,7 +1358,7 @@ contributorRouter.post(
       setUploadProgress(id, {
         stage: "extract",
         pct: 90,
-        message: "ZIP ochilmoqda, sahnalar tayyorlanmoqda…",
+        message: "Unpacking ZIP, preparing scenes…",
       });
       try {
         const scenesOut = await storeMogrtScenesFromZip(
@@ -1368,7 +1368,7 @@ contributorRouter.post(
             setUploadProgress(id, {
               stage: "extract",
               pct: 91 + Math.floor((done / total) * 6),
-              message: `Sahna ${done}/${total} tayyorlanmoqda…`,
+              message: `Preparing scene ${done}/${total}…`,
             });
           }
         );
@@ -1376,7 +1376,7 @@ contributorRouter.post(
           setUploadProgress(id, {
             stage: "db",
             pct: 98,
-            message: "Sahnalar bazaga yozilmoqda…",
+            message: "Saving scenes to the database…",
           });
           const existingMeta = (existing.metaJson ?? {}) as Record<string, unknown>;
           await prisma.contributorTemplate.update({
@@ -1392,7 +1392,7 @@ contributorRouter.post(
     setUploadProgress(id, {
       stage: "done",
       pct: 100,
-      message: "Tayyor!",
+      message: "Done!",
       done: true,
     });
     res.json({
@@ -1405,7 +1405,7 @@ contributorRouter.post(
     });
     } catch (e) {
       console.error("[upload-assets] kutilmagan xato:", e);
-      const errText = "Yuklashda kutilmagan xato — qayta urinib ko'ring";
+      const errText = "Unexpected error during upload — please try again";
       setUploadProgress(String(req.params.id), {
         stage: "error",
         pct: 0,
@@ -1449,14 +1449,14 @@ contributorRouter.post(
       where: { id },
     });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (
       req.user!.role !== "ADMIN" &&
       existing.contributorId !== req.user!.userId
     ) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
@@ -1506,7 +1506,7 @@ contributorRouter.post(
     }
     const parsed = templateBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
       return;
     }
     const d = parsed.data;
@@ -1568,20 +1568,20 @@ contributorRouter.patch(
       where: { id },
     });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (
       req.user!.role !== "ADMIN" &&
       existing.contributorId !== req.user!.userId
     ) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
 
     const parsed = templateBodySchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
       return;
     }
     const d = parsed.data;
@@ -1640,14 +1640,14 @@ contributorRouter.post(
       where: { id },
     });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     if (
       req.user!.role !== "ADMIN" &&
       existing.contributorId !== req.user!.userId
     ) {
-      res.status(403).json({ error: "Ruxsat yo‘q" });
+      res.status(403).json({ error: "Not authorized" });
       return;
     }
 
@@ -1670,7 +1670,7 @@ contributorRouter.post(
   async (req, res) => {
     const parsed = reviewSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
       return;
     }
     const id = String(req.params.id);
@@ -1688,12 +1688,12 @@ contributorRouter.post(
         res.status(409).json({
           error:
             s === "duplicate"
-              ? "Pack nusxa deb belgilangan (dedup) — tasdiqlab bo'lmaydi"
+              ? "Pack was flagged as a duplicate (dedup) — cannot be approved"
               : s === "malicious"
-                ? "Pack malware skanida zararli topilgan — tasdiqlab bo'lmaydi"
+                ? "Pack was flagged as malicious by the malware scan — cannot be approved"
                 : s === "pending"
-                  ? "Pack xavfsizlik tekshiruvi hali tugamagan — biroz kuting"
-                  : "Pack xavfsizlik tekshiruvi kutilmoqda (karantin) — admin ko'rib chiqishi kerak",
+                  ? "Pack security check is still running — please wait a moment"
+                  : "Pack security check is pending (quarantined) — needs admin review",
           code: "PACK_QUARANTINED",
           packScanStatus: s,
         });
@@ -1741,8 +1741,8 @@ contributorRouter.post(
           templateId: template.id,
           templateName: template.name,
           senderId: req.user!.userId,
-          body: noteText || "Shablon tasdiqlandi — AE Browse katalogida ko'rinadi.",
-          subjectPrefix: "Tasdiqlandi",
+          body: noteText || "Template approved — now visible in the AE Browse catalog.",
+          subjectPrefix: "Approved",
         });
       }
 
@@ -1908,13 +1908,13 @@ contributorRouter.post(
       select: { name: true, packScanStatus: true },
     });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     const s = existing.packScanStatus;
     if (s === "malicious" || s === "duplicate") {
       res.status(409).json({
-        error: "Tasdiqlangan zararli/nusxa pack qo'lda tozalanmaydi — o'chirib qayta yuklang",
+        error: "A confirmed malicious/duplicate pack cannot be cleared manually — delete and re-upload",
         code: "PACK_HARD_BLOCKED",
         packScanStatus: s,
       });
@@ -1922,14 +1922,14 @@ contributorRouter.post(
     }
     const template = await prisma.contributorTemplate.update({
       where: { id },
-      data: { packScanStatus: "clean", packScanDetail: "Admin qo'lda ko'rib chiqib tozaladi" },
+      data: { packScanStatus: "clean", packScanDetail: "Manually reviewed and cleared by admin" },
     });
     await writeAuditLog({
       actorId: req.user!.userId,
       action: "template.pack_cleared",
       targetType: "template",
       targetId: id,
-      detail: `${existing.name} (oldingi holat: ${s ?? "null"})`,
+      detail: `${existing.name} (previous status: ${s ?? "null"})`,
     });
     res.json(template);
   }
@@ -1949,12 +1949,12 @@ contributorRouter.post(
     const id = String(req.params.id);
     const parsed = takedownSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message || "Sabab kerak (min 3 belgi)" });
+      res.status(400).json({ error: parsed.error.issues[0]?.message || "A reason is required (min 3 characters)" });
       return;
     }
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     const template = await prisma.contributorTemplate.update({
@@ -1987,7 +1987,7 @@ contributorRouter.post(
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     if (!existing) {
-      res.status(404).json({ error: "Shablon topilmadi" });
+      res.status(404).json({ error: "Template not found" });
       return;
     }
     const template = await prisma.contributorTemplate.update({
@@ -2024,7 +2024,7 @@ contributorRouter.delete(
     } catch (err) {
       console.error(`[template_delete] R2 tozalash xatosi (id=${id}):`, err);
       return res.status(502).json({
-        error: "R2 fayllarini o'chirishda xato. Shablon o'chirilmadi — qayta urinib ko'ring.",
+        error: "Error deleting R2 files. Template was not deleted — please try again.",
       });
     }
 
@@ -2076,7 +2076,7 @@ contributorRouter.patch(
   async (req, res) => {
     const blocked = z.boolean().safeParse(req.body?.blocked);
     if (!blocked.success) {
-      res.status(400).json({ error: "blocked (boolean) kerak" });
+      res.status(400).json({ error: "blocked (boolean) is required" });
       return;
     }
     const user = await prisma.user.update({
@@ -2119,7 +2119,7 @@ async function assertContributorNotBlocked(userId: string, res: ExpressResponse)
   });
   if (u?.contributorBlockedAt && u.role === UserRole.CONTRIBUTOR) {
     res.status(403).json({
-      error: "Contributor hisobi bloklangan",
+      error: "Contributor account is blocked",
       code: "CONTRIBUTOR_BLOCKED",
     });
     return false;

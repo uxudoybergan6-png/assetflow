@@ -90,7 +90,7 @@ async function errorText(res: Response): Promise<string> {
   } catch {
     /* JSON emas */
   }
-  return `Workers AI xatosi (HTTP ${res.status})`;
+  return `Workers AI error (HTTP ${res.status})`;
 }
 
 /**
@@ -110,11 +110,11 @@ export async function aiGenerateImage(
   if (ct.includes("application/json")) {
     const j = (await res.json()) as { result?: { image?: string } };
     const b64 = j?.result?.image;
-    if (!b64) return { ok: false, error: "AI javobida rasm topilmadi" };
+    if (!b64) return { ok: false, error: "No image found in the AI response" };
     return { ok: true, data: Buffer.from(b64, "base64") };
   }
   const buf = Buffer.from(await res.arrayBuffer());
-  if (!buf.length) return { ok: false, error: "AI bo'sh rasm qaytardi" };
+  if (!buf.length) return { ok: false, error: "AI returned an empty image" };
   return { ok: true, data: buf };
 }
 
@@ -161,13 +161,13 @@ export async function aiGenerateSpeech(
     console.log(
       `[ai:tts] model=${AI_MODELS.tts} ct=json keys=${Object.keys(j || {}).join(",")} audioLen=${raw.length}`
     );
-    if (!raw) return { ok: false, error: "AI javobida audio topilmadi" };
+    if (!raw) return { ok: false, error: "No audio found in the AI response" };
     return { ok: true, data: Buffer.from(stripDataUri(raw), "base64") };
   }
 
   const buf = Buffer.from(await res.arrayBuffer());
   console.log(`[ai:tts] model=${AI_MODELS.tts} ct=${ct || "(yo'q)"} bytes=${buf.length}`);
-  if (!buf.length) return { ok: false, error: "AI bo'sh audio qaytardi" };
+  if (!buf.length) return { ok: false, error: "AI returned empty audio" };
   return { ok: true, data: buf };
 }
 
@@ -182,7 +182,7 @@ export async function aiEmbed(text: string): Promise<AiResult<number[]>> {
 
   const j = (await res.json()) as { result?: { data?: number[][] } };
   const vec = j?.result?.data?.[0];
-  if (!Array.isArray(vec)) return { ok: false, error: "AI javobida vektor topilmadi" };
+  if (!Array.isArray(vec)) return { ok: false, error: "No vector found in the AI response" };
   return { ok: true, data: vec };
 }
 
@@ -194,6 +194,6 @@ export async function aiText(prompt: string): Promise<AiResult<string>> {
 
   const j = (await res.json()) as { result?: { response?: string } };
   const out = j?.result?.response;
-  if (typeof out !== "string") return { ok: false, error: "AI javobi bo'sh" };
+  if (typeof out !== "string") return { ok: false, error: "Empty AI response" };
   return { ok: true, data: out };
 }

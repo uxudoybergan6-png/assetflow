@@ -71,7 +71,7 @@ function sourceFromRole(role?: string): string {
 logsRouter.post("/", (req, res) => {
   const entry = req.body;
   if (!entry?.message) {
-    res.status(400).json({ error: "message kerak" });
+    res.status(400).json({ error: "message is required" });
     return;
   }
   const source = sourceFromRole(req.user?.role);

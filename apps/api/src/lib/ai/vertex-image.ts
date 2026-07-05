@@ -70,7 +70,7 @@ export async function vertexImage(
         config: { numberOfImages: 1, aspectRatio: ar, ...(sz ? { imageSize: sz } : {}) },
       });
       const b64 = r.generatedImages?.[0]?.image?.imageBytes;
-      if (!b64) return { ok: false, error: "Imagen: rasm qaytmadi (xavfsizlik filtri bo'lishi mumkin)" };
+      if (!b64) return { ok: false, error: "Imagen: no image was returned (may have been blocked by the safety filter)" };
       return { ok: true, data: Buffer.from(b64, "base64") };
     }
     // Nano Banana (gemini image) — aspectRatio + imageSize imageConfig orqali (SDK ImageConfig)
@@ -82,10 +82,10 @@ export async function vertexImage(
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
-    if (!b64) return { ok: false, error: "Nano Banana: rasm qaytmadi" };
+    if (!b64) return { ok: false, error: "Nano Banana: no image was returned" };
     return { ok: true, data: Buffer.from(b64, "base64") };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Vertex rasm xatosi" };
+    return { ok: false, error: (e as Error).message || "Vertex image error" };
   }
 }
 
@@ -100,12 +100,12 @@ export async function vertexImageEdit(
   if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
     const urls = (Array.isArray(refUrls) ? refUrls : [refUrls]).filter((u) => typeof u === "string" && u.length > 0);
-    if (!urls.length) return { ok: false, error: "Referens rasm yo'q" };
+    if (!urls.length) return { ok: false, error: "No reference image" };
     // Barcha referenslarni inline (base64) ga — TARTIB saqlanadi (@imgN mapping).
     const inlines = await Promise.all(urls.map((u) => refToInline(u)));
     const reqParts: Array<{ inlineData: { data: string; mimeType: string } } | { text: string }> = [];
     for (const inl of inlines) {
-      if (!inl) return { ok: false, error: "Referens rasm yuklanmadi" };
+      if (!inl) return { ok: false, error: "Reference image failed to load" };
       reqParts.push({ inlineData: { data: inl.data, mimeType: inl.mimeType } });
     }
     reqParts.push({ text: prompt });
@@ -119,9 +119,9 @@ export async function vertexImageEdit(
     });
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
-    if (!b64) return { ok: false, error: "Nano Banana Edit: rasm qaytmadi" };
+    if (!b64) return { ok: false, error: "Nano Banana Edit: no image was returned" };
     return { ok: true, data: Buffer.from(b64, "base64") };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Vertex rasm-edit xatosi" };
+    return { ok: false, error: (e as Error).message || "Vertex image-edit error" };
   }
 }

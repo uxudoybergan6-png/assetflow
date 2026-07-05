@@ -144,10 +144,10 @@ export function proSwitchAllowed(hasStripePro: boolean) {
 export async function setPluginPlan(userId: string, plan: PluginPlanTier) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status === PluginAccountStatus.BLOCKED) {
-    return { ok: false as const, error: "Hisob bloklangan" };
+    return { ok: false as const, error: "Account is blocked" };
   }
   if (profile.status === PluginAccountStatus.REMOVED) {
-    return { ok: false as const, error: "Hisob o‘chirilgan" };
+    return { ok: false as const, error: "Account is deleted" };
   }
 
   if (plan === PluginPlanTier.PRO) {
@@ -155,7 +155,7 @@ export async function setPluginPlan(userId: string, plan: PluginPlanTier) {
     if (!proSwitchAllowed(stripePro)) {
       return {
         ok: false as const,
-        error: "PRO uchun Stripe obunasi kerak (yoki admin tasdiqlashi)",
+        error: "PRO requires a Stripe subscription (or admin approval)",
       };
     }
   }
@@ -341,7 +341,7 @@ export function serializePluginUser(
 export async function consumeDownload(userId: string) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
-    return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
+    return { ok: false as const, error: "Account is not active", code: "ACCOUNT_INACTIVE" };
   }
   const limits = planLimits(profile.plan);
   const effectiveLimit = profile.downloadLimitOverride ?? limits.downloadLimit;
@@ -375,7 +375,7 @@ export async function consumeDownload(userId: string) {
   if (res.count === 0) {
     return {
       ok: false as const,
-      error: "Oylik yuklab olish limiti tugadi — Pro tarifga o'ting",
+      error: "Monthly download limit reached — upgrade to Pro",
       code: "LIMIT_REACHED",
     };
   }
@@ -392,7 +392,7 @@ export async function consumeDownload(userId: string) {
 export async function consumeImport(userId: string) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
-    return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
+    return { ok: false as const, error: "Account is not active", code: "ACCOUNT_INACTIVE" };
   }
   const limits = planLimits(profile.plan);
   const effectiveLimit = profile.importLimitOverride ?? limits.importLimit;
@@ -416,7 +416,7 @@ export async function consumeImport(userId: string) {
   if (res.count === 0) {
     return {
       ok: false as const,
-      error: "Import limiti tugadi — Pro tarifga o'ting",
+      error: "Import limit reached — upgrade to Pro",
       code: "LIMIT_REACHED",
     };
   }
@@ -433,7 +433,7 @@ export async function consumeImport(userId: string) {
 export async function consumeAiCredits(userId: string, cost: number) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
-    return { ok: false as const, error: "Hisob faol emas", code: "ACCOUNT_INACTIVE" };
+    return { ok: false as const, error: "Account is not active", code: "ACCOUNT_INACTIVE" };
   }
 
   // ADMIN — cheksiz (ega erkin test qiladi); kredit kamaymaydi.
@@ -451,7 +451,7 @@ export async function consumeAiCredits(userId: string, cost: number) {
   if (requireEmailVerify && !profile.user.emailVerified) {
     return {
       ok: false as const,
-      error: "Emailingizni tasdiqlang — pochtangizga yuborilgan havolani bosing (yoki qayta yuboring).",
+      error: "Please verify your email — click the link sent to your inbox (or resend it).",
       code: "EMAIL_NOT_VERIFIED",
     };
   }
@@ -476,7 +476,7 @@ export async function consumeAiCredits(userId: string, cost: number) {
   if (available < cost) {
     return {
       ok: false as const,
-      error: "AI kreditlari tugadi — keyingi oyni kuting yoki Pro tarifga o'ting",
+      error: "AI credits exhausted — wait for next month or upgrade to Pro",
       code: "AI_CREDITS_EXHAUSTED",
       remaining: available,
     };
@@ -490,7 +490,7 @@ export async function consumeAiCredits(userId: string, cost: number) {
   if (res.count === 0) {
     return {
       ok: false as const,
-      error: "AI kreditlari tugadi — keyingi oyni kuting yoki Pro tarifga o'ting",
+      error: "AI credits exhausted — wait for next month or upgrade to Pro",
       code: "AI_CREDITS_EXHAUSTED",
       remaining: available,
     };

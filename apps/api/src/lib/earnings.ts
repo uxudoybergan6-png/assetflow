@@ -112,7 +112,7 @@ export async function recordContributorPayout(input: {
     });
     const amountCents = unpaid.reduce((a, e) => a + e.amountCents, 0);
     if (amountCents <= 0) {
-      return { ok: false as const, error: "To'lanmagan earning yo'q" };
+      return { ok: false as const, error: "No unpaid earnings" };
     }
     const payout = await tx.contributorPayout.create({
       data: {

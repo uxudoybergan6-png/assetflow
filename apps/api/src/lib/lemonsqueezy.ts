@@ -58,7 +58,7 @@ async function lsFetch(
     if (!res.ok) {
       const detail =
         json?.errors?.[0]?.detail || json?.message || `HTTP ${res.status}`;
-      throw new Error(`Lemon Squeezy API xato: ${detail}`);
+      throw new Error(`Lemon Squeezy API error: ${detail}`);
     }
     return json;
   } finally {

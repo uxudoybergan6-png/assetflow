@@ -108,7 +108,7 @@ async function submitAndPoll(
       const j = (await safeJson(res)) as MgTask | null;
       taskId = j?.data?.task_id ?? "";
       if (taskId) break;
-      return { ok: false, error: "Magnific task_id qaytarmadi" };
+      return { ok: false, error: "Magnific did not return a task_id" };
     }
     if ((res.status === 503 || res.status === 429) && attempt < MAX_SUBMIT_RETRY) {
       await sleep(1000 * (attempt + 1));
@@ -116,7 +116,7 @@ async function submitAndPoll(
     }
     return { ok: false, error: await errText(res), status: res.status };
   }
-  if (!taskId) return { ok: false, error: "Magnific task yaratilmadi" };
+  if (!taskId) return { ok: false, error: "Magnific task was not created" };
   // POLL — COMPLETED/FAILED'gacha; transient (429/5xx) da poll davom etadi.
   for (let i = 0; i < MAX_POLLS; i++) {
     await sleep(POLL_INTERVAL_MS);
@@ -130,15 +130,15 @@ async function submitAndPoll(
     if (d.status === "COMPLETED") {
       const url = (d.generated && d.generated[0]) || d.video_url;
       if (typeof url === "string" && url) return { ok: true, data: url };
-      return { ok: false, error: "Magnific natija URL topilmadi" };
+      return { ok: false, error: "Magnific result URL not found" };
     }
     if (d.status === "FAILED") {
-      return { ok: false, error: "Magnific generatsiya muvaffaqiyatsiz (FAILED)" };
+      return { ok: false, error: "Magnific generation failed (FAILED)" };
     }
     // CREATED / IN_PROGRESS → poll davom etadi
   }
   // TIMEOUT ≠ FAILED: job hali IN_PROGRESS bo'lishi mumkin → sentinel (gen-processor refund QILMAYDI).
-  return { ok: false, error: "MAGNIFIC_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+  return { ok: false, error: "MAGNIFIC_TIMEOUT: job still running — no refund" };
 }
 
 /** Natija URL'ini Buffer'ga yuklab oladi (chaqiruvchi R2'ga saqlaydi). */
@@ -146,12 +146,12 @@ async function mgDownload(url: string): Promise<OrResult<Buffer>> {
   try {
     const res = await fetch(url);
     if (!res.ok) {
-      return { ok: false, error: `Magnific yuklab olish HTTP ${res.status}`, status: res.status };
+      return { ok: false, error: `Magnific download HTTP ${res.status}`, status: res.status };
     }
     const buf = Buffer.from(await res.arrayBuffer());
-    return buf.length ? { ok: true, data: buf } : { ok: false, error: "Magnific bo'sh natija" };
+    return buf.length ? { ok: true, data: buf } : { ok: false, error: "Magnific: empty result" };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Magnific yuklab olish xatosi" };
+    return { ok: false, error: (e as Error).message || "Magnific download error" };
   }
 }
 
@@ -249,7 +249,7 @@ export async function magnificTool(
 ): Promise<OrResult<Buffer>> {
   if (!isMagnificConfigured()) return NOT_CONFIGURED;
   const b64 = await toBase64(refUrl);
-  if (!b64) return { ok: false, error: "Manba rasm o'qilmadi" };
+  if (!b64) return { ok: false, error: "Failed to read the source image" };
   const inputKey = toolSlug.startsWith("video-upscaler") ? "video" : "image";
   const body: Record<string, unknown> = { [inputKey]: b64, ...mfToolBody(toolSlug, params) };
   const r = await submitAndPoll(toolSlug, body);
@@ -277,14 +277,14 @@ export async function magnificRemoveBg(imageUrl: string): Promise<OrResult<Buffe
       signal: AbortSignal.timeout(120000),
     });
   } catch (e) {
-    return { ok: false, error: `Remove BG so'rovi uzildi: ${(e as Error).message || "timeout"}` };
+    return { ok: false, error: `Remove BG request timed out: ${(e as Error).message || "timeout"}` };
   }
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const j = (await safeJson(res)) as { high_resolution?: string; url?: string } | null;
   const url = j?.high_resolution || j?.url;
   // Magnific manba rasmni yuklay olmasa (ko'pincha "Failed to download the image") natija URL bo'lmaydi.
   if (typeof url !== "string" || !url) {
-    return { ok: false, error: "Remove BG natija URL topilmadi (Magnific manba rasmni yuklay olmadi?)" };
+    return { ok: false, error: "Remove BG result URL not found (Magnific may not have been able to load the source image)" };
   }
   return mgDownload(url);
 }
@@ -334,7 +334,7 @@ export async function magnificImageEdit(
 ): Promise<OrResult<Buffer>> {
   if (!isMagnificConfigured()) return NOT_CONFIGURED;
   const styleRef = await toBase64(refImageUrl);
-  if (!styleRef) return { ok: false, error: "Reference rasm o'qilmadi" };
+  if (!styleRef) return { ok: false, error: "Failed to read the reference image" };
   const body: Record<string, unknown> = {
     prompt: stripMentions(prompt),
     model: mysticModel || "realism",

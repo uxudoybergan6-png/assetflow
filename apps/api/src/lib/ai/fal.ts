@@ -89,14 +89,14 @@ export async function falSubmitJob(
       body: JSON.stringify(input),
     });
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "fal submit ulanmadi" };
+    return { ok: false, error: (e as Error).message || "fal: could not connect to submit" };
   }
   if (!sub.ok) return { ok: false, error: await errText(sub), status: sub.status };
   const sj = (await safeJson(sub)) as FalSubmitResp | null;
   const statusUrl = sj?.status_url;
   const responseUrl = sj?.response_url;
   if (!statusUrl || !responseUrl || !sj?.request_id) {
-    return { ok: false, error: "fal: status_url qaytmadi" };
+    return { ok: false, error: "fal: status_url was not returned" };
   }
   return {
     ok: true,
@@ -120,7 +120,7 @@ export async function falPollJob(
     if (!step.ok) return step;
     if (step.data.state === "completed") return { ok: true, data: step.data.data };
   }
-  return { ok: false, error: "FAL_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+  return { ok: false, error: "FAL_TIMEOUT: job still running — no refund" };
 }
 
 export async function falPollStep(
@@ -149,11 +149,11 @@ export async function falPollStep(
   try {
     rr = await fetch(job.responseUrl, { headers: falHeaders() });
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "fal natija ulanmadi" };
+    return { ok: false, error: (e as Error).message || "fal: could not connect for the result" };
   }
   if (!rr.ok) return { ok: false, error: await errText(rr), status: rr.status };
   const out = await safeJson(rr);
-  if (out == null) return { ok: false, error: "fal: bo'sh natija" };
+  if (out == null) return { ok: false, error: "fal: empty result" };
   return { ok: true, data: { state: "completed", data: out } };
 }
 
@@ -186,13 +186,13 @@ async function falRun(
       signal: ctrl.signal,
     });
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "fal sync ulanmadi" };
+    return { ok: false, error: (e as Error).message || "fal: sync connection failed" };
   } finally {
     clearTimeout(t);
   }
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const out = await safeJson(res);
-  if (out == null) return { ok: false, error: "fal: bo'sh natija" };
+  if (out == null) return { ok: false, error: "fal: empty result" };
   return { ok: true, data: out };
 }
 /** Avval SYNC (tez); muvaffaqiyatsiz bo'lsa QUEUE'ga qaytadi — har holda 100% fal'da. */
@@ -211,7 +211,7 @@ async function falRunOrQueue(
  * OLIB TASHLANDI (B9) — endi generic buildFalVideoInput + processor oqimi ishlatiladi.
  */
 export async function falVideoUrlToBuffer(url: string): Promise<OrResult<Buffer>> {
-  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  if (!url) return { ok: false, error: "fal: video URL not found" };
   return falDownload(url);
 }
 
@@ -219,11 +219,11 @@ export async function falVideoUrlToBuffer(url: string): Promise<OrResult<Buffer>
 async function falDownload(url: string): Promise<OrResult<Buffer>> {
   try {
     const res = await fetch(url);
-    if (!res.ok) return { ok: false, error: `fal yuklab olish HTTP ${res.status}`, status: res.status };
+    if (!res.ok) return { ok: false, error: `fal download HTTP ${res.status}`, status: res.status };
     const buf = Buffer.from(await res.arrayBuffer());
-    return buf.length ? { ok: true, data: buf } : { ok: false, error: "fal bo'sh natija" };
+    return buf.length ? { ok: true, data: buf } : { ok: false, error: "fal: empty result" };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "fal yuklab olish xatosi" };
+    return { ok: false, error: (e as Error).message || "fal download error" };
   }
 }
 
@@ -233,7 +233,7 @@ export async function falVideoResultToBuffer(data: unknown): Promise<OrResult<Bu
     typeof box?.video === "string"
       ? box.video
       : box?.video?.url || box?.url;
-  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  if (!url) return { ok: false, error: "fal: video URL not found" };
   return falDownload(url);
 }
 
@@ -315,7 +315,7 @@ export async function falImage(
   if (!r.ok) return r;
   const data = r.data as { images?: { url?: string }[]; image?: { url?: string } };
   const url = data?.images?.[0]?.url || data?.image?.url;
-  if (!url) return { ok: false, error: "fal: natija rasm topilmadi" };
+  if (!url) return { ok: false, error: "fal: result image not found" };
   return falDownload(url);
 }
 
@@ -427,7 +427,7 @@ export async function falEnhancePrompt(
   if (imgRes) {
     if (!imgRes.ok) return imgRes;
     const note = pickText(imgRes.data);
-    if (!note) return { ok: false, error: "fal: image enhance bo'sh javob qaytardi" };
+    if (!note) return { ok: false, error: "fal: image enhance returned an empty response" };
     notes.push(`Image reference analysis:\n${note}`);
   }
   if (vids.length) {
@@ -436,7 +436,7 @@ export async function falEnhancePrompt(
       const vr = vidResults[i];
       if (!vr.ok) return vr;
       const note = pickText(vr.data);
-      if (!note) return { ok: false, error: "fal: video enhance bo'sh javob qaytardi" };
+      if (!note) return { ok: false, error: "fal: video enhance returned an empty response" };
       videoNotes.push(`@video${i + 1}: ${note}`);
     }
     notes.push(`Video reference analysis:\n${videoNotes.join("\n")}`);
@@ -447,7 +447,7 @@ export async function falEnhancePrompt(
       const ar = audResults[i];
       if (!ar.ok) return ar;
       const note = pickText(ar.data);
-      if (!note) return { ok: false, error: "fal: audio enhance bo'sh javob qaytardi" };
+      if (!note) return { ok: false, error: "fal: audio enhance returned an empty response" };
       audioNotes.push(`@audio${i + 1}: ${note}`);
     }
     notes.push(`Audio reference analysis:\n${audioNotes.join("\n")}`);
@@ -470,6 +470,6 @@ export async function falEnhancePrompt(
   });
   if (!r.ok) return r;
   const out = pickText(r.data);
-  if (!out) return { ok: false, error: "fal: bo'sh javob" };
+  if (!out) return { ok: false, error: "fal: empty response" };
   return { ok: true, data: out };
 }

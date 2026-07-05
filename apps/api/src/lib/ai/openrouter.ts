@@ -83,7 +83,7 @@ export async function orChat(model: string, prompt: string): Promise<OrResult<st
     choices?: { message?: { content?: string } }[];
   };
   const txt = j?.choices?.[0]?.message?.content;
-  if (typeof txt !== "string") return { ok: false, error: "Javobda matn topilmadi" };
+  if (typeof txt !== "string") return { ok: false, error: "No text found in the response" };
   return { ok: true, data: txt };
 }
 
@@ -112,7 +112,7 @@ export async function orChatSys(
     choices?: { message?: { content?: string } }[];
   };
   const txt = j?.choices?.[0]?.message?.content;
-  if (typeof txt !== "string") return { ok: false, error: "Javobda matn topilmadi" };
+  if (typeof txt !== "string") return { ok: false, error: "No text found in the response" };
   return { ok: true, data: txt };
 }
 
@@ -227,7 +227,7 @@ export async function orImageToPrompt(
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const txt = j?.choices?.[0]?.message?.content;
   if (typeof txt !== "string" || !txt.trim())
-    return { ok: false, error: "Tavsif olinmadi — qayta urinib ko'ring" };
+    return { ok: false, error: "Could not get a description — please try again" };
   return { ok: true, data: txt.trim() };
 }
 
@@ -257,7 +257,7 @@ export async function orImage(
   };
   if (imageConfig && Object.keys(imageConfig).length) body.image_config = imageConfig;
   // Bo'sh/transient javobga bardosh: 2 marta urinamiz, raw JSON xatosi o'rniga aniq xabar.
-  let lastErr = "Rasm olinmadi";
+  let lastErr = "No image was returned";
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await orPost("/chat/completions", body);
     if (!res.ok) {
@@ -267,14 +267,14 @@ export async function orImage(
     }
     const j = await safeJson(res);
     if (!j) {
-      lastErr = "Model bu so'rovga javob qaytarmadi — qayta urinib ko'ring yoki boshqa model tanlang";
+      lastErr = "The model did not respond to this request — try again or choose a different model";
       if (attempt === 0) continue;
       return { ok: false, error: lastErr };
     }
     const buf = extractImage(j as OrImageJson);
     if (buf) return { ok: true, data: buf };
     // Ko'pincha: video tavsifi (ovoz/kamera/harakat) rasm modeliga berilган → rasm chiqmaydi.
-    lastErr = "Model rasm qaytarmadi — prompt rasmга mos emasligi mumkin (video tavsifi bo'lsa Video rejimini tanlang)";
+    lastErr = "The model did not return an image — the prompt may not match an image (if it describes video, switch to Video mode)";
     if (attempt === 0) continue;
   }
   return { ok: false, error: lastErr };
@@ -303,7 +303,7 @@ export async function orImageEdit(
     modalities,
   };
   if (imageConfig && Object.keys(imageConfig).length) body.image_config = imageConfig;
-  let lastErr = "Tahrirlangan rasm olinmadi";
+  let lastErr = "No edited image was returned";
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await orPost("/chat/completions", body);
     if (!res.ok) {
@@ -313,13 +313,13 @@ export async function orImageEdit(
     }
     const j = await safeJson(res);
     if (!j) {
-      lastErr = "Model bu so'rovga javob qaytarmadi — qayta urinib ko'ring yoki boshqa model tanlang";
+      lastErr = "The model did not respond to this request — try again or choose a different model";
       if (attempt === 0) continue;
       return { ok: false, error: lastErr };
     }
     const buf = extractImage(j as OrImageJson);
     if (buf) return { ok: true, data: buf };
-    lastErr = "Model tahrirlangan rasm qaytarmadi — qayta urinib ko'ring";
+    lastErr = "The model did not return an edited image — please try again";
     if (attempt === 0) continue;
   }
   return { ok: false, error: lastErr };
@@ -339,7 +339,7 @@ export async function orSpeech(
   const res = await orPost("/audio/speech", body);
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = Buffer.from(await res.arrayBuffer()); // RAW audio — JSON EMAS
-  if (!buf.length) return { ok: false, error: "Bo'sh audio" };
+  if (!buf.length) return { ok: false, error: "Empty audio" };
   return { ok: true, data: buf };
 }
 
@@ -350,7 +350,7 @@ export async function orEmbed(model: string, text: string): Promise<OrResult<num
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const j = (await res.json()) as { data?: { embedding?: number[] }[] };
   const vec = j?.data?.[0]?.embedding;
-  if (!Array.isArray(vec)) return { ok: false, error: "Javobda vektor topilmadi" };
+  if (!Array.isArray(vec)) return { ok: false, error: "No vector found in the response" };
   return { ok: true, data: vec };
 }
 
@@ -395,7 +395,7 @@ export async function orVideoCreate(
   const res = await orPost("/videos", body);
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const j = (await res.json()) as { id?: string; status?: string };
-  if (!j?.id) return { ok: false, error: "Video job ID qaytmadi" };
+  if (!j?.id) return { ok: false, error: "Video job ID was not returned" };
   return { ok: true, data: { id: j.id, status: j.status || "pending" } };
 }
 
@@ -417,6 +417,6 @@ export async function orDownload(url: string): Promise<OrResult<Buffer>> {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${KEY}` } });
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = Buffer.from(await res.arrayBuffer());
-  if (!buf.length) return { ok: false, error: "Bo'sh video" };
+  if (!buf.length) return { ok: false, error: "Empty video" };
   return { ok: true, data: buf };
 }

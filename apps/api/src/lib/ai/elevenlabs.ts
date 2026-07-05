@@ -55,6 +55,6 @@ export async function elSoundEffects(
     return { ok: false, error: String(msg), status: res.status };
   }
   const buf = Buffer.from(await res.arrayBuffer());
-  if (!buf.length) return { ok: false, error: "Bo'sh audio" };
+  if (!buf.length) return { ok: false, error: "Empty audio" };
   return { ok: true, data: buf };
 }

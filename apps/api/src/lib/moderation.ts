@@ -126,8 +126,8 @@ export async function moderateContent(opts: {
     const blocked = severe.length > 0 || (moderationStrict() && anyFlagged);
     const reason = blocked
       ? severe.length
-        ? `Kontent taqiqlangan kategoriyada aniqlandi: ${severe.join(", ")}`
-        : `Kontent moderatsiyadan o'tmadi: ${cats.join(", ")}`
+        ? `Content was flagged in a prohibited category: ${severe.join(", ")}`
+        : `Content did not pass moderation: ${cats.join(", ")}`
       : null;
     return {
       ok: true,

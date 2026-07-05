@@ -42,7 +42,7 @@ aiRouter.use(
     windowMs: 60_000,
     max: 20,
     keyPrefix: "plugin-ai",
-    message: "Juda ko'p AI so'rovi — bir daqiqadan keyin qayta urinib ko'ring",
+    message: "Too many AI requests — please try again in a minute",
   })
 );
 
@@ -68,25 +68,25 @@ aiRouter.post("/estimate", (req: Request, res: Response) => {
   const type = String(req.body?.type || "").toLowerCase() as AiToolKey;
   const credits = AI_COST[type];
   if (credits === undefined) {
-    res.status(400).json({ error: "Noma'lum AI tool turi" });
+    res.status(400).json({ error: "Unknown AI tool type" });
     return;
   }
   res.json({ type, credits, configured: isAiConfigured() });
 });
 
 const imageSchema = z.object({
-  prompt: z.string().trim().min(3, "Prompt juda qisqa").max(2000),
+  prompt: z.string().trim().min(3, "Prompt is too short").max(2000),
 });
 
 /** POST /image — Text-to-Image → R2 → signed URL. */
 aiRouter.post("/image", async (req: Request, res: Response) => {
   if (!isAiConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
   const parsed = imageSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const { prompt } = parsed.data;
@@ -127,19 +127,19 @@ aiRouter.post("/image", async (req: Request, res: Response) => {
 });
 
 const voiceSchema = z.object({
-  text: z.string().trim().min(2, "Matn juda qisqa").max(5000),
+  text: z.string().trim().min(2, "Text is too short").max(5000),
   lang: z.string().trim().max(12).optional(),
 });
 
 /** POST /voiceover — Text-to-Speech → R2 → signed URL. */
 aiRouter.post("/voiceover", async (req: Request, res: Response) => {
   if (!isAiConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
   const parsed = voiceSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const { text, lang } = parsed.data;
@@ -179,7 +179,7 @@ aiRouter.post("/voiceover", async (req: Request, res: Response) => {
 });
 
 const searchSchema = z.object({
-  query: z.string().trim().min(2, "So'rov juda qisqa").max(500),
+  query: z.string().trim().min(2, "Query is too short").max(500),
 });
 
 const SEARCH_TOP_N = 12;
@@ -191,12 +191,12 @@ const SEARCH_TOP_N = 12;
  */
 aiRouter.post("/search", async (req: Request, res: Response) => {
   if (!isAiConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
   const parsed = searchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const { query } = parsed.data;
@@ -299,11 +299,11 @@ aiRouter.post("/search", async (req: Request, res: Response) => {
  */
 aiRouter.post("/reindex", async (req: Request, res: Response) => {
   if (req.user!.role !== "ADMIN") {
-    res.status(403).json({ error: "Admin huquqi kerak" });
+    res.status(403).json({ error: "Admin privileges required" });
     return;
   }
   if (!isAiConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
   const force = req.body?.force === true;

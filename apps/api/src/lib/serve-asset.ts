@@ -45,13 +45,13 @@ export async function serveTemplateAsset(
   // ephemeral, "muvaqqat mavjud" fayl chalg'ituvchi bo'lardi). Disk fallback
   // faqat S3 sozlanmagan lokal dev muhitida ishlaydi.
   if (isS3Configured()) {
-    res.status(404).json({ error: "Fayl topilmadi" });
+    res.status(404).json({ error: "File not found" });
     return;
   }
 
   const filePath = findAssetPath(templateId, kind);
   if (!filePath) {
-    res.status(404).json({ error: "Fayl topilmadi" });
+    res.status(404).json({ error: "File not found" });
     return;
   }
 

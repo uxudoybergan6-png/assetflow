@@ -224,9 +224,9 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
   const gore = hasAny(text, GORE_TERMS);
   const warnings: string[] = [];
   const suggestions = [
-    "Ochiq tana urg'usini kamaytiring va kiyimni aniq yozing: `sportswear`, `jersey`, `training outfit`.",
-    "Real odamga juda yaqin tasvir o'rniga `athletic male character` yoki `sports commercial character` kabi neytral ibora ishlating.",
-    "Tana detali o'rniga harakat, kamera, yorug'lik va sport atmosferasiga urg'u bering.",
+    "Reduce the emphasis on exposed body and describe clothing explicitly: `sportswear`, `jersey`, `training outfit`.",
+    "Instead of an image very close to a real person, use a neutral phrase like `athletic male character` or `sports commercial character`.",
+    "Emphasize motion, camera, lighting, and sports atmosphere instead of body detail.",
   ];
 
   // CSAM (audit 1a) — nozik yosh + ISTALGAN jinsiylashtirish/ochiq-tana/ich-kiyim signali → HARD BLOK.
@@ -235,7 +235,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     return {
       blocked: true,
       severity: "high",
-      reason: "Nozik yosh + tana/jinsiy kontekst aniqlandi — bu qat'iy taqiqlangan va bloklanadi",
+      reason: "A minor combined with a body/sexual context was detected — this is strictly forbidden and blocked",
       warnings,
       suggestions,
       category: "csam",
@@ -248,11 +248,11 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
       blocked: true,
       severity: "high",
       reason:
-        "Haqiqiy shaxsning o'xshashligi yoki yuz almashtirish (deepfake) so'ralgan — bu bloklanadi",
+        "A real person's likeness or a face swap (deepfake) was requested — this is blocked",
       warnings,
       suggestions: [
-        "Aniq real shaxs (nom/mashhurlik) o'rniga xayoliy, neytral personaj tasvirlang.",
-        "«deepfake», «face swap», «real person's face» kabi niyatlarni olib tashlang.",
+        "Depict a fictional, neutral character instead of a specific real person (name/celebrity).",
+        "Remove intents like \"deepfake\", \"face swap\", \"real person's face\".",
       ],
       category: "deepfake",
     };
@@ -262,11 +262,11 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     return {
       blocked: true,
       severity: "high",
-      reason: "Promptda grafik zo'ravonlik yoki gore ifodalari bor, bu video modelda bloklanadi",
+      reason: "The prompt contains graphic violence or gore, which the video model will block",
       warnings,
       suggestions: [
-        "Grafik jarohat, ichki a'zo yoki qonli tafsilotlarni olib tashlang.",
-        "Kuchli sahna kerak bo'lsa, `cinematic tension` yoki `dramatic action` kabi yumshoqroq tasvir bering.",
+        "Remove graphic injury, internal organs, or bloody detail.",
+        "If you need a strong scene, use a softer description like `cinematic tension` or `dramatic action`.",
       ],
       category: "gore",
     };
@@ -276,7 +276,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
     return {
       blocked: true,
       severity: "high",
-      reason: "Promptda ochiq jinsiy yoki yalang'ochlikka yaqin iboralar bor, model buni ko'pincha bloklaydi",
+      reason: "The prompt contains explicit sexual or near-nudity phrasing, which the model usually blocks",
       warnings,
       suggestions,
       category: "sexual",
@@ -288,7 +288,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
       blocked: true,
       severity: "medium",
       reason:
-        "Realistik odam + tana urg'usi + vizual referens kombinatsiyasi safety filtrga tushishi mumkin",
+        "The combination of a realistic person + body emphasis + visual reference may trip the safety filter",
       warnings,
       suggestions,
     };
@@ -299,14 +299,14 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
       blocked: true,
       severity: "medium",
       reason:
-        "Tana detali kuchli berilgan va referenslar biriktirilgan — model buni nozik kontent deb ushlashi mumkin",
+        "Strong body detail combined with attached references may be flagged as sensitive content by the model",
       warnings,
       suggestions,
     };
   }
 
   if (input.mode === "video" && hasVisualRefs && genericBody) {
-    warnings.push("Referensli video promptda tana ta'rifi kuchli — harakat va kiyimga ko'proq urg'u bering");
+    warnings.push("The referenced video prompt has strong body description — emphasize motion and clothing more");
     return {
       blocked: false,
       severity: "medium",
@@ -317,7 +317,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
   }
 
   if ((strongBody || genericBody) && real) {
-    warnings.push("Realistik odam va tana detaliga kuchli urg'u safety filtrga yaqinlashishi mumkin");
+    warnings.push("Strong emphasis on a realistic person and body detail may come close to the safety filter");
     return {
       blocked: false,
       severity: "medium",

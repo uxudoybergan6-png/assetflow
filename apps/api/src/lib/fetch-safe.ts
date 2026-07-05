@@ -82,18 +82,18 @@ function isPrivateIpv6(ip: string): boolean {
 /** Host (yoki IP-literal) faqat public IP'ga rezolv bo'lishini tasdiqlaydi. */
 async function assertPublicHost(hostname: string): Promise<void> {
   if (net.isIP(hostname)) {
-    if (isPrivateIp(hostname)) throw new SsrfError(`Xususiy IP bloklandi: ${hostname}`);
+    if (isPrivateIp(hostname)) throw new SsrfError(`Private IP blocked: ${hostname}`);
     return;
   }
   let addrs: { address: string }[];
   try {
     addrs = await dns.lookup(hostname, { all: true });
   } catch {
-    throw new SsrfError(`Host rezolv bo'lmadi: ${hostname}`);
+    throw new SsrfError(`Host did not resolve: ${hostname}`);
   }
-  if (!addrs.length) throw new SsrfError(`Host rezolv bo'lmadi: ${hostname}`);
+  if (!addrs.length) throw new SsrfError(`Host did not resolve: ${hostname}`);
   for (const a of addrs) {
-    if (isPrivateIp(a.address)) throw new SsrfError(`Host xususiy IP'ga rezolv bo'ldi: ${hostname} → ${a.address}`);
+    if (isPrivateIp(a.address)) throw new SsrfError(`Host resolved to a private IP: ${hostname} -> ${a.address}`);
   }
 }
 
@@ -109,13 +109,13 @@ export async function fetchSafe(url: string, init?: RequestInit): Promise<Respon
   try {
     u = new URL(url);
   } catch {
-    throw new SsrfError("URL yaroqsiz");
+    throw new SsrfError("URL is invalid");
   }
   if (u.protocol !== "https:" && u.protocol !== "http:") {
-    throw new SsrfError(`Ruxsat etilmagan protokol: ${u.protocol}`);
+    throw new SsrfError(`Protocol not allowed: ${u.protocol}`);
   }
   if (!allowedHosts().has(u.hostname)) {
-    throw new SsrfError(`Ruxsat etilmagan host (SSRF): ${u.hostname}`);
+    throw new SsrfError(`Host not allowed (SSRF): ${u.hostname}`);
   }
   await assertPublicHost(u.hostname);
   return fetch(url, { ...init, redirect: "error" });

@@ -236,7 +236,7 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   const userId = String(req.params.userId);
   const parsed = subPatchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
 
@@ -350,7 +350,7 @@ const pricingPatchSchema = z
     enabled: z.boolean().optional(),
     notes: z.string().max(2000).nullable().optional(),
   })
-  .refine((o) => Object.keys(o).length > 0, "Kamida bitta maydon kerak");
+  .refine((o) => Object.keys(o).length > 0, "At least one field is required");
 
 const pricingConfigSchema = z
   .object({
@@ -358,7 +358,7 @@ const pricingConfigSchema = z
     creditUsdValue: z.number().gt(0).max(100).optional(),
     marginTarget: z.number().gt(0).max(1000).optional(),
   })
-  .refine((o) => Object.keys(o).length > 0, "Kamida bitta maydon kerak");
+  .refine((o) => Object.keys(o).length > 0, "At least one field is required");
 
 /** PATCH /api/admin/pricing/config — global creditUsdValue / marginTarget.
  *  MUHIM: `/pricing/:modelId` dan OLDIN ro'yxatdan o'tsin — aks holda "config" modelId
@@ -366,7 +366,7 @@ const pricingConfigSchema = z
 adminRouter.patch("/pricing/config", async (req, res) => {
   const parsed = pricingConfigSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const config = await updatePricingConfig(parsed.data, req.user?.userId ?? null);
@@ -384,16 +384,16 @@ adminRouter.patch("/pricing/config", async (req, res) => {
 adminRouter.patch("/pricing/:modelId", async (req, res) => {
   const modelId = Number(req.params.modelId);
   if (!Number.isInteger(modelId)) {
-    res.status(400).json({ error: "Noto'g'ri modelId" });
+    res.status(400).json({ error: "Invalid modelId" });
     return;
   }
   if (!getModelById(modelId)) {
-    res.status(404).json({ error: "Noma'lum model" });
+    res.status(404).json({ error: "Unknown model" });
     return;
   }
   const parsed = pricingPatchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const row = await upsertModelPricing(modelId, parsed.data, req.user?.userId ?? null);
@@ -418,7 +418,7 @@ const monthQuery = z.string().regex(/^\d{4}-\d{2}$/);
 adminRouter.get("/pricing/reconcile", async (req, res) => {
   const monthRaw = req.query.month ? String(req.query.month) : undefined;
   if (monthRaw && !monthQuery.safeParse(monthRaw).success) {
-    res.status(400).json({ error: "month формати YYYY-MM bo'lsin" });
+    res.status(400).json({ error: "month must be in YYYY-MM format" });
     return;
   }
   const dry = req.query.dry === "1" || req.query.dry === "true";
@@ -437,7 +437,7 @@ adminRouter.get("/pricing/reconcile", async (req, res) => {
 adminRouter.get("/pricing/invoices", async (req, res) => {
   const monthRaw = req.query.month ? String(req.query.month) : undefined;
   if (monthRaw && !monthQuery.safeParse(monthRaw).success) {
-    res.status(400).json({ error: "month формати YYYY-MM bo'lsin" });
+    res.status(400).json({ error: "month must be in YYYY-MM format" });
     return;
   }
   res.json({ invoices: await listProviderInvoices(monthRaw) });
@@ -454,7 +454,7 @@ const invoiceSchema = z.object({
 adminRouter.post("/pricing/invoice", async (req, res) => {
   const parsed = invoiceSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
   }
   await recordProviderInvoice({ ...parsed.data, createdById: req.user?.userId ?? null });

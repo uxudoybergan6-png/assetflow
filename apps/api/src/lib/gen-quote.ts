@@ -73,16 +73,16 @@ export function verifyCostQuote(
   try {
     decoded = jwt.verify(signature, QUOTE_SECRET) as jwt.JwtPayload;
   } catch {
-    return { ok: false, reason: "Imzo yaroqsiz yoki muddati o'tgan" };
+    return { ok: false, reason: "Signature is invalid or expired" };
   }
-  if (decoded.k !== QUOTE_KIND) return { ok: false, reason: "Imzo turi noto'g'ri" };
+  if (decoded.k !== QUOTE_KIND) return { ok: false, reason: "Invalid signature type" };
   if (
     decoded.modelId !== expect.modelId ||
     decoded.price !== expect.price ||
     decoded.mode !== expect.mode ||
     decoded.ph !== expect.ph
   ) {
-    return { ok: false, reason: "Narx/parametr imzo bilan mos kelmadi" };
+    return { ok: false, reason: "Price/parameters do not match the signature" };
   }
   return { ok: true };
 }

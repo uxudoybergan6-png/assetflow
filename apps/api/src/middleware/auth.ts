@@ -51,7 +51,7 @@ export async function requireAuth(
 
   if (pluginToken && pluginToken.expiresAt > new Date()) {
     if (isBlocked(pluginToken.user)) {
-      res.status(403).json({ error: "Hisob bloklangan", code: "ACCOUNT_BLOCKED" });
+      res.status(403).json({ error: "Account is blocked", code: "ACCOUNT_BLOCKED" });
       return;
     }
     req.user = {
@@ -80,11 +80,11 @@ export async function requireAuth(
   }
   // Token-version: reset/block tokenVersion'ni oshiradi — eski JWT bekor bo'ladi.
   if ((payload.tokenVersion ?? 0) !== user.tokenVersion) {
-    res.status(401).json({ error: "Sessiya tugadi — qayta kiring", code: "TOKEN_REVOKED" });
+    res.status(401).json({ error: "Session expired — please sign in again", code: "TOKEN_REVOKED" });
     return;
   }
   if (isBlocked(user)) {
-    res.status(403).json({ error: "Hisob bloklangan", code: "ACCOUNT_BLOCKED" });
+    res.status(403).json({ error: "Account is blocked", code: "ACCOUNT_BLOCKED" });
     return;
   }
   req.user = { userId: user.id, email: user.email, role: user.role };

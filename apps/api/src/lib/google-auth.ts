@@ -13,7 +13,7 @@ export type GoogleAuthResult =
  *  allaqachon tasdiqlagani uchun emailVerified darhol o'rnatiladi. */
 export async function verifyGoogleIdTokenAndUpsertUser(credential: string): Promise<GoogleAuthResult> {
   if (!googleClient) {
-    return { ok: false, status: 503, error: "Google kirish sozlanmagan", code: "GOOGLE_NOT_CONFIGURED" };
+    return { ok: false, status: 503, error: "Google sign-in is not configured", code: "GOOGLE_NOT_CONFIGURED" };
   }
 
   let payload;
@@ -24,10 +24,10 @@ export async function verifyGoogleIdTokenAndUpsertUser(credential: string): Prom
     });
     payload = ticket.getPayload();
   } catch {
-    return { ok: false, status: 401, error: "Google tokeni yaroqsiz" };
+    return { ok: false, status: 401, error: "Google token is invalid" };
   }
   if (!payload?.email || payload.email_verified !== true) {
-    return { ok: false, status: 401, error: "Google emailingiz tasdiqlanmagan" };
+    return { ok: false, status: 401, error: "Your Google email is not verified" };
   }
 
   const email = payload.email;
@@ -69,7 +69,7 @@ export async function verifyGoogleIdTokenAndUpsertUser(credential: string): Prom
   }
 
   if (user.role === UserRole.CONTRIBUTOR && user.contributorBlockedAt) {
-    return { ok: false, status: 403, error: "Contributor hisobi bloklangan", code: "CONTRIBUTOR_BLOCKED" };
+    return { ok: false, status: 403, error: "Contributor account is blocked", code: "CONTRIBUTOR_BLOCKED" };
   }
 
   return { ok: true, user: user as any };

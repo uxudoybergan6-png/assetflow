@@ -37,7 +37,7 @@ export async function processPreviewTranscode(id: string): Promise<void> {
     const srcKey = await resolveS3AssetKey(id, "preview");
     if (!srcKey) {
       // Preview hali R2'da ko'rinmayapti (eventual consistency) yoki yo'q — failed.
-      await safeStatus(id, "failed", "Preview R2'da topilmadi");
+      await safeStatus(id, "failed", "Preview not found on R2");
       return;
     }
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_tx_"));

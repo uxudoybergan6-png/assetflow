@@ -148,7 +148,7 @@ app.use("/api/studio", studioGenRouter);
 
 // Topilmagan yo'llar — JSON 404 (hang emas)
 app.use((_req, res) => {
-  res.status(404).json({ error: "Topilmadi" });
+  res.status(404).json({ error: "Not found" });
 });
 
 // Global xato ishlovchi — async handler throw qilsa yoki Prisma xato bersa
@@ -161,23 +161,23 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     (err as { status?: number; statusCode?: number })?.statusCode;
   const type = (err as { type?: string })?.type;
   if (code === "P2025") {
-    res.status(404).json({ error: "Yozuv topilmadi" });
+    res.status(404).json({ error: "Record not found" });
     return;
   }
   if (code === "P2002") {
-    res.status(409).json({ error: "Bunday yozuv allaqachon mavjud" });
+    res.status(409).json({ error: "This record already exists" });
     return;
   }
   if (status === 413 || type === "entity.too.large") {
     res.status(413).json({
-      error: "Referens juda katta — 100MB dan kichikroq fayl tanlang",
+      error: "Reference is too large — choose a file under 100MB",
       code: "PAYLOAD_TOO_LARGE",
     });
     return;
   }
   console.error("[api] Kutilmagan xato:", err);
   captureException(err); // Sentry (sozlanmagan → no-op)
-  res.status(500).json({ error: "Server xatosi" });
+  res.status(500).json({ error: "Server error" });
 };
 app.use(errorHandler);
 

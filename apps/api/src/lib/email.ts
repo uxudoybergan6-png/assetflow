@@ -79,6 +79,6 @@ export function renderEmailLayout(title: string, bodyHtml: string): string {
     <div style="font-size:18px;font-weight:700;color:#C2F04A;margin-bottom:16px">FrameFlow</div>
     <h1 style="font-size:16px;margin:0 0 12px">${title}</h1>
     ${bodyHtml}
-    <p style="font-size:11px;color:#888;margin-top:24px">Agar bu so'rovni siz yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.</p>
+    <p style="font-size:11px;color:#888;margin-top:24px">If you didn't request this, you can safely ignore this email.</p>
   </div></body></html>`;
 }

@@ -25,20 +25,20 @@ const checkoutSchema = z
     credits: z.number().int().positive().optional(),
   })
   .refine((v) => !!v.plan || !!v.credits, {
-    message: "plan (pro/studio) yoki credits (paket miqdori) kerak",
+    message: "plan (pro/studio) or credits (package amount) is required",
   });
 
 billingRouter.post("/checkout", requireAuth, async (req, res) => {
   if (!isLemonSqueezyConfigured()) {
     res.status(503).json({
-      error: "To'lov tizimi hozircha sozlanmagan",
+      error: "Billing is not configured yet",
       code: "BILLING_NOT_CONFIGURED",
     });
     return;
   }
   if (!getLemonSqueezyStoreId()) {
     res.status(503).json({
-      error: "To'lov do'koni sozlanmagan (LEMONSQUEEZY_STORE_ID)",
+      error: "Billing store is not configured (LEMONSQUEEZY_STORE_ID)",
       code: "BILLING_STORE_MISSING",
     });
     return;
@@ -46,13 +46,13 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
 
   const parsed = checkoutSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri so'rov" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid request" });
     return;
   }
 
   const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
   if (!user) {
-    res.status(404).json({ error: "Foydalanuvchi topilmadi" });
+    res.status(404).json({ error: "User not found" });
     return;
   }
 
@@ -67,8 +67,8 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
     if (!variant) {
       res.status(400).json({
         error: parsed.data.plan
-          ? `"${parsed.data.plan}" tarifi uchun variant topilmadi (Lemon Squeezy do'konida mahsulot yarating)`
-          : `${parsed.data.credits} kredit paketi topilmadi`,
+          ? `No variant found for the "${parsed.data.plan}" plan (create a product in the Lemon Squeezy store)`
+          : `Credit package for ${parsed.data.credits} not found`,
         code: "VARIANT_NOT_FOUND",
       });
       return;
@@ -84,8 +84,8 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
 
     res.json({ url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Noma'lum xato";
+    const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[billing/checkout]", message);
-    res.status(502).json({ error: "Checkout yaratib bo'lmadi", code: "CHECKOUT_FAILED" });
+    res.status(502).json({ error: "Could not create checkout", code: "CHECKOUT_FAILED" });
   }
 });

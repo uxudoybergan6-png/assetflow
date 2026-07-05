@@ -23,7 +23,7 @@ export function templateDir(templateId: string) {
     dir !== RESOLVED_UPLOADS_ROOT &&
     !dir.startsWith(RESOLVED_UPLOADS_ROOT + path.sep)
   ) {
-    throw new Error(`Xavfsiz bo'lmagan shablon yo'li: ${templateId}`);
+    throw new Error(`Unsafe template path: ${templateId}`);
   }
   return dir;
 }

@@ -242,7 +242,7 @@ export async function upsertModelPricing(
   updatedBy?: string | null
 ): Promise<ModelPricingRow> {
   const model = getModelById(modelId);
-  if (!model) throw new Error("Noma'lum model");
+  if (!model) throw new Error("Unknown model");
   const fields = patchToData(patch);
   const createData = {
     ...seedRowFromModel(model),

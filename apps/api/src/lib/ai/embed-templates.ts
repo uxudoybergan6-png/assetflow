@@ -12,7 +12,7 @@ import { aiEmbed, isAiConfigured } from "./workers-ai.js";
 export function toVectorLiteral(vec: number[]): string {
   const parts = vec.map((n) => {
     const x = Number(n);
-    if (!Number.isFinite(x)) throw new Error("embedding vektorida noto'g'ri qiymat");
+    if (!Number.isFinite(x)) throw new Error("Invalid value in embedding vector");
     return x;
   });
   return `[${parts.join(",")}]`;
@@ -36,12 +36,12 @@ export function templateEmbedText(t: {
 export async function embedTemplate(
   templateId: string
 ): Promise<{ ok: boolean; reason?: string }> {
-  if (!isAiConfigured()) return { ok: false, reason: "AI sozlanmagan" };
+  if (!isAiConfigured()) return { ok: false, reason: "AI is not configured" };
   const t = await prisma.contributorTemplate.findUnique({
     where: { id: templateId },
     select: { id: true, name: true, description: true, tags: true, catLabel: true },
   });
-  if (!t) return { ok: false, reason: "Shablon topilmadi" };
+  if (!t) return { ok: false, reason: "Template not found" };
   const out = await aiEmbed(templateEmbedText(t));
   if (!out.ok) return { ok: false, reason: out.error };
   // Eski embedding(JSONB) — backward-compat/fallback uchun saqlanadi.

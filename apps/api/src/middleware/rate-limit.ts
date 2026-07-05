@@ -88,7 +88,7 @@ export function rateLimit(opts: RateLimitOptions) {
     const retryAfter = Math.ceil((resetAt - now) / 1000);
     res.setHeader("Retry-After", String(retryAfter));
     res.status(429).json({
-      error: message || "Juda ko'p so'rov — birozdan keyin urinib ko'ring",
+      error: message || "Too many requests — please try again shortly",
       retryAfter,
     });
   };

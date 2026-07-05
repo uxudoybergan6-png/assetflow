@@ -102,15 +102,15 @@ async function postWebhook(text: string, report: ReconReport): Promise<boolean> 
 async function sendMarginAlert(report: ReconReport): Promise<{ sent: boolean; channels: string[]; recipient: string | null }> {
   const channels: string[] = [];
   const margin = report.actualMargin ?? report.realizedMargin;
-  const marginStr = margin == null ? "noma'lum (real narx yo'q)" : `${margin}x`;
-  const subject = `⚠️ FrameFlow marja alerti — ${report.month}: ${marginStr} (maqsad ${report.marginTarget}x)`;
+  const marginStr = margin == null ? "unknown (no real cost yet)" : `${margin}x`;
+  const subject = `⚠️ FrameFlow margin alert — ${report.month}: ${marginStr} (target ${report.marginTarget}x)`;
   const lines = [
-    `Oy: <b>${report.month}</b>`,
-    `Daromad: <b>$${report.revenueUsd}</b> (${report.creditUsdValue}$/kredit)`,
-    `Taxminiy provider narx: <b>$${report.estimatedCostUsd}</b>`,
-    report.actualCostUsd != null ? `Real invoice narx: <b>$${report.actualCostUsd}</b>` : "",
-    `Amaldagi marja: <b>${marginStr}</b> · maqsad: ${report.marginTarget}x`,
-    `Bayroqlangan model: ${report.flaggedModels}`,
+    `Month: <b>${report.month}</b>`,
+    `Revenue: <b>$${report.revenueUsd}</b> (${report.creditUsdValue}$/credit)`,
+    `Estimated provider cost: <b>$${report.estimatedCostUsd}</b>`,
+    report.actualCostUsd != null ? `Actual invoice cost: <b>$${report.actualCostUsd}</b>` : "",
+    `Current margin: <b>${marginStr}</b> · target: ${report.marginTarget}x`,
+    `Flagged models: ${report.flaggedModels}`,
   ].filter(Boolean);
   const providerRows = report.providers
     .map(
@@ -119,14 +119,14 @@ async function sendMarginAlert(report: ReconReport): Promise<{ sent: boolean; ch
     )
     .join("");
   const html = renderEmailLayout(
-    "Marja maqsaddan past",
+    "Margin below target",
     `<p>${lines.join("<br>")}</p>
      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:12px">
-       <tr style="color:#888"><th align="left">Provider</th><th align="left">Taxmin</th><th align="left">Real</th><th align="left">Drift</th></tr>
+       <tr style="color:#888"><th align="left">Provider</th><th align="left">Estimate</th><th align="left">Actual</th><th align="left">Drift</th></tr>
        ${providerRows}
      </table>`
   );
-  const text = `${subject}\nDaromad $${report.revenueUsd} / taxmin $${report.estimatedCostUsd}${report.actualCostUsd != null ? ` / real $${report.actualCostUsd}` : ""} — marja ${marginStr} (maqsad ${report.marginTarget}x)`;
+  const text = `${subject}\nRevenue $${report.revenueUsd} / estimate $${report.estimatedCostUsd}${report.actualCostUsd != null ? ` / actual $${report.actualCostUsd}` : ""} — margin ${marginStr} (target ${report.marginTarget}x)`;
 
   const recipient = await alertRecipient();
   if (recipient && isEmailConfigured()) {
@@ -136,7 +136,7 @@ async function sendMarginAlert(report: ReconReport): Promise<{ sent: boolean; ch
   const hooked = await postWebhook(text, report);
   if (hooked) channels.push("webhook");
   if (!channels.length) {
-    console.warn(`[reconcile] ALERT (yuborilmadi — kanal yo'q): ${text}`);
+    console.warn(`[reconcile] ALERT (not sent — no channel): ${text}`);
   }
   return { sent: channels.length > 0, channels, recipient };
 }

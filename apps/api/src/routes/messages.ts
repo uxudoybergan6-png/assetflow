@@ -93,11 +93,11 @@ messagesRouter.get("/threads/:threadId", requireAuth, async (req, res) => {
   });
 
   if (!thread) {
-    res.status(404).json({ error: "Thread topilmadi" });
+    res.status(404).json({ error: "Thread not found" });
     return;
   }
   if (user.role !== "ADMIN" && thread.contributorId !== user.userId) {
-    res.status(403).json({ error: "Ruxsat yo'q" });
+    res.status(403).json({ error: "Not authorized" });
     return;
   }
 
@@ -190,17 +190,17 @@ messagesRouter.post("/threads/:threadId/reply", requireAuth, async (req, res) =>
     where: { id: threadId },
   });
   if (!thread) {
-    res.status(404).json({ error: "Thread topilmadi" });
+    res.status(404).json({ error: "Thread not found" });
     return;
   }
 
   const user = req.user!;
   if (user.role !== "ADMIN" && thread.contributorId !== user.userId) {
-    res.status(403).json({ error: "Ruxsat yo'q" });
+    res.status(403).json({ error: "Not authorized" });
     return;
   }
   if (thread.isBroadcast && user.role !== "ADMIN") {
-    res.status(403).json({ error: "Broadcast threadga javob berib bo'lmaydi" });
+    res.status(403).json({ error: "Cannot reply to a broadcast thread" });
     return;
   }
 
@@ -283,7 +283,7 @@ messagesRouter.post(
       actorId: req.user!.userId,
       action: "broadcast",
       targetType: "contributors",
-      detail: `${subject} → ${sent} ta`,
+      detail: `${subject} → ${sent} recipient(s)`,
     });
 
     res.json({ ok: true, sent });
@@ -298,11 +298,11 @@ messagesRouter.post("/threads/:threadId/read", requireAuth, async (req, res) => 
     where: { id: threadId },
   });
   if (!thread) {
-    res.status(404).json({ error: "Thread topilmadi" });
+    res.status(404).json({ error: "Thread not found" });
     return;
   }
   if (user.role !== "ADMIN" && thread.contributorId !== user.userId) {
-    res.status(403).json({ error: "Ruxsat yo'q" });
+    res.status(403).json({ error: "Not authorized" });
     return;
   }
 

@@ -11,7 +11,7 @@ export function requireContributorOrAdmin(
   }
   if (req.user.role !== "ADMIN" && req.user.role !== "CONTRIBUTOR") {
     res.status(403).json({
-      error: "Contributor yoki admin huquqi kerak",
+      error: "Contributor or admin role required",
       code: "CONTRIBUTOR_REQUIRED",
     });
     return;

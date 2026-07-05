@@ -208,10 +208,10 @@ export async function vertexEnhancePrompt(
       },
     });
     const out = (r.text || "").trim();
-    if (!out) return { ok: false, error: "Vertex enhance bo'sh javob qaytardi" };
+    if (!out) return { ok: false, error: "Vertex enhance returned an empty response" };
     return { ok: true, data: out };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Vertex enhance xatosi" };
+    return { ok: false, error: (e as Error).message || "Vertex enhance error" };
   }
 }
 
@@ -236,9 +236,9 @@ export async function vertexEnhanceJson(system: string, userIdea: string): Promi
       },
     });
     const out = (r.text || "").trim();
-    if (!out) return { ok: false, error: "Vertex JSON enhance bo'sh javob qaytardi" };
+    if (!out) return { ok: false, error: "Vertex JSON enhance returned an empty response" };
     return { ok: true, data: out };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Vertex JSON enhance xatosi" };
+    return { ok: false, error: (e as Error).message || "Vertex JSON enhance error" };
   }
 }

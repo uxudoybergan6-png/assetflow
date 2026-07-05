@@ -27,7 +27,7 @@ async function getToken(): Promise<string> {
   if (!auth) auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
   const client = await auth.getClient();
   const t = await client.getAccessToken();
-  if (!t.token) throw new Error("Omni: ADC access token olinmadi");
+  if (!t.token) throw new Error("Omni: could not get ADC access token");
   return t.token;
 }
 
@@ -84,7 +84,7 @@ export async function omniGenerateVideo(
       const found = s.content.find((c) => c?.type === "video");
       if (found) { vid = found; break; }
     }
-    if (!vid) return { ok: false, error: "Omni: javobda video topilmadi" };
+    if (!vid) return { ok: false, error: "Omni: no video found in the response" };
 
     if (vid.data) return { ok: true, data: Buffer.from(vid.data, "base64") };
     if (vid.uri) {
@@ -92,11 +92,11 @@ export async function omniGenerateVideo(
       const dl = await fetch(vid.uri, {
         headers: { Authorization: `Bearer ${token}`, "x-goog-user-project": PROJECT },
       });
-      if (!dl.ok) return { ok: false, error: `Omni video yuklab olinmadi: ${dl.status}` };
+      if (!dl.ok) return { ok: false, error: `Failed to download Omni video: ${dl.status}` };
       return { ok: true, data: Buffer.from(await dl.arrayBuffer()) };
     }
-    return { ok: false, error: "Omni: video data/uri yo'q" };
+    return { ok: false, error: "Omni: no video data/uri" };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "Omni xatosi" };
+    return { ok: false, error: (e as Error).message || "Omni error" };
   }
 }

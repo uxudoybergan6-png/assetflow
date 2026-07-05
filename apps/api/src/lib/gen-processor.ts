@@ -60,7 +60,7 @@ function normalizeGenerationError(message: string): string {
   if (
     /output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw)
   ) {
-    return "Video xavfsizlik filtri sabab bloklandi — promptni yumshating yoki kiyim/pozani kamroq ochiq tasvirlab qayta urinib ko‘ring";
+    return "Blocked by the video safety filter — soften the prompt or describe clothing/pose less explicitly and try again";
   }
   return raw;
 }
@@ -200,7 +200,7 @@ async function waitForFalResult(
   for (let i = 0; i < maxPolls; i++) {
     const hook = await readProviderWebhookFresh(genId);
     if (hook?.status === "ERROR") {
-      return { ok: false, error: hook.error || hook.payloadError || "fal webhook xatosi" };
+      return { ok: false, error: hook.error || hook.payloadError || "fal webhook error" };
     }
     if (hook?.status === "OK") {
       return { ok: true, data: hook.payload };
@@ -212,10 +212,10 @@ async function waitForFalResult(
   }
   const finalHook = await readProviderWebhookFresh(genId);
   if (finalHook?.status === "ERROR") {
-    return { ok: false, error: finalHook.error || finalHook.payloadError || "fal webhook xatosi" };
+    return { ok: false, error: finalHook.error || finalHook.payloadError || "fal webhook error" };
   }
   if (finalHook?.status === "OK") return { ok: true, data: finalHook.payload };
-  return { ok: false, error: "FAL_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+  return { ok: false, error: "FAL_TIMEOUT: job still running — no refund" };
 }
 
 function isResumableRunningGeneration(gen: {
@@ -387,16 +387,16 @@ async function runVideo(
     if (st.ok) {
       if (st.data.status === "completed") {
         const url = st.data.urls[0];
-        if (!url) return { ok: false, error: "Video URL qaytmadi" };
+        if (!url) return { ok: false, error: "No video URL was returned" };
         const dl = await orDownload(url);
         if (!dl.ok) return { ok: false, error: dl.error };
         return { ok: true, buf: dl.data };
       }
-      if (st.data.status === "failed") return { ok: false, error: "Video generatsiya muvaffaqiyatsiz" };
+      if (st.data.status === "failed") return { ok: false, error: "Video generation failed" };
     }
     await sleep(3000); // keyingi tekshiruvgacha
   }
-  return { ok: false, error: "OPENROUTER_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+  return { ok: false, error: "OPENROUTER_TIMEOUT: job still running — no refund" };
 }
 
 /** fal video natija javobidan URL'ni model deklaratsiyasi bo'yicha topib (B5) Buffer'ga yuklaydi. */
@@ -405,7 +405,7 @@ async function falVideoOut(
   data: unknown
 ): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
   const url = extractFalVideoUrl(model, data);
-  if (!url) return { ok: false, error: "fal: video URL topilmadi" };
+  if (!url) return { ok: false, error: "fal: video URL not found" };
   const dl = await falVideoUrlToBuffer(url);
   if (!dl.ok) return { ok: false, error: dl.error };
   return { ok: true, buf: dl.data };
@@ -423,7 +423,7 @@ async function runFalVideo(
   const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
   // B2: t2v modellar (videoInput.imageRequired emas) kadrsiz ishlaydi; i2v majbur qiladi.
   if (!refUrl && videoRequiresStartFrame(model))
-    return { ok: false, error: "Video uchun boshlang'ich kadr (referenceUrl) talab qilinadi" };
+    return { ok: false, error: "A start frame (referenceUrl) is required for video" };
   const [startUrl, endUrl] = await Promise.all([
     refUrl ? materializeRefUrl(userId, genId, refUrl) : Promise.resolve(undefined),
     refEndUrl && model.endFrame
@@ -435,7 +435,7 @@ async function runFalVideo(
   const input = buildFalVideoInput(model, prompt, v, { startUrl, endUrl }, userId);
   const savedHook = readProviderWebhook(params);
   if (savedHook?.status === "ERROR") {
-    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook xatosi" };
+    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook error" };
   }
   if (savedHook?.status === "OK") {
     return falVideoOut(model, savedHook.payload);
@@ -492,17 +492,17 @@ async function runFalRefVideo(
   const audioUrls = audioUrlsRaw.slice(0, lim.audio);
   // Schema: audio bo'lsa kamida 1 image/video kerak.
   if (audioUrls.length && imageUrls.length + videoUrls.length === 0) {
-    return { ok: false, error: "Audio referens uchun kamida 1 rasm yoki video referens kerak" };
+    return { ok: false, error: "An audio reference requires at least 1 image or video reference" };
   }
   if (imageUrls.length + videoUrls.length + audioUrls.length > lim.total) {
-    return { ok: false, error: `Jami referens ≤${lim.total}` };
+    return { ok: false, error: `Total references must be ≤${lim.total}` };
   }
   const v = resolveVideoParams(model, params);
   // B1: fal input model deklaratsiyasidan (Seedance R2V uchun natija eski bilan AYNAN bir xil).
   const input = buildFalVideoInput(model, prompt, v, { imageUrls, videoUrls, audioUrls }, userId);
   const savedHook = readProviderWebhook(params);
   if (savedHook?.status === "ERROR") {
-    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook xatosi" };
+    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook error" };
   }
   if (savedHook?.status === "OK") {
     return falVideoOut(model, savedHook.payload);
@@ -519,7 +519,7 @@ async function runFalRefVideo(
       if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(sub.error || ""))) {
         return {
           ok: false,
-          error: "Video referens juda katta — Seedance R2V hozir 50MB dan katta video referensni qabul qilmaydi",
+          error: "Video reference is too large — Seedance R2V currently does not accept video references over 50MB",
         };
       }
       return { ok: false, error: sub.error };
@@ -538,7 +538,7 @@ async function runFalRefVideo(
     if (/maximum allowed size of 52428800 bytes|file size exceeds the maximum allowed size/i.test(String(out.error || ""))) {
       return {
         ok: false,
-        error: "Video referens juda katta — Seedance R2V hozir 50MB dan katta video referensni qabul qilmaydi",
+        error: "Video reference is too large — Seedance R2V currently does not accept video references over 50MB",
       };
     }
     return { ok: false, error: out.error };
@@ -616,11 +616,11 @@ async function runVertexVideo(
     if (poll.data.state === "pending") continue;
     if (poll.data.state === "error") return { ok: false, error: poll.data.error };
     const key = vertexGcsUriToKey(poll.data.gcsUri);
-    if (!key) return { ok: false, error: `Vertex: kutilmagan GCS manzil — ${poll.data.gcsUri}` };
+    if (!key) return { ok: false, error: `Vertex: unexpected GCS location — ${poll.data.gcsUri}` };
     const buf = await downloadS3ToBuffer(key);
     return { ok: true, buf };
   }
-  return { ok: false, error: "VERTEX_TIMEOUT: job hali ishlamoqda — refund yo'q" };
+  return { ok: false, error: "VERTEX_TIMEOUT: job still running — no refund" };
 }
 
 /**
@@ -683,7 +683,7 @@ async function runVertexOmniVideo(
     (x): x is { gsUri?: string; data?: string } => !!x
   );
   if (videoRefs.length && vids.length < videoRefs.length)
-    return { ok: false, error: "Video referens juda katta yoki yuklanmadi (gs:// yoki ≤15MB kerak)" };
+    return { ok: false, error: "Video reference is too large or failed to upload (needs gs:// or ≤15MB)" };
 
   const out = await omniGenerateVideo(model.key, prompt, {
     images: inlines.map((i) => ({ data: i.data, mimeType: i.mimeType })),
@@ -738,7 +738,7 @@ async function moderateGeneratedOutput(gen: {
     detail: result.reason || "output moderation blocked",
     meta: { layer: "ml-output", categories: result.categories, severity: result.severity, mode: gen.mode, modelId: gen.modelId },
   });
-  throw new Error(`MODERATION_OUTPUT_BLOCKED: ${result.reason || "chiqish moderatsiyadan o'tmadi"}`);
+  throw new Error(`MODERATION_OUTPUT_BLOCKED: ${result.reason || "output did not pass moderation"}`);
 }
 
 export async function processGeneration(genId: string): Promise<void> {
@@ -769,7 +769,7 @@ export async function processGeneration(genId: string): Promise<void> {
       if (claimed.count === 0) return;
     }
     const model = getModelById(gen.modelId);
-    if (!model) return void (await fail("Noma'lum model"));
+    if (!model) return void (await fail("Unknown model"));
 
     const params = (gen.params ?? {}) as Record<string, unknown>;
     const aspectRatio = typeof params.aspectRatio === "string" ? params.aspectRatio : null;
@@ -799,8 +799,8 @@ export async function processGeneration(genId: string): Promise<void> {
       // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
       // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
       const mfTool = model.magnificTool;
-      if (mfTool && !useMagnific) return void (await fail("Bu tool faqat Magnific'да (GEN_PROVIDER=magnific)"));
-      if (mfTool && !refUrl) return void (await fail("Manba rasm kerak — AE komp yoki layer tanlang"));
+      if (mfTool && !useMagnific) return void (await fail("This tool is Magnific-only (GEN_PROVIDER=magnific)"));
+      if (mfTool && !refUrl) return void (await fail("A source image is required — select an AE comp or layer"));
       // Remove BG SINXRON + image_url (PUBLIC URL) talab qiladi (base64 EMAS — docs tasdiqlandi).
       // ❗ MUHIM: Magnific serveri AUTH'siz yuklab olishi shart. presigned URL (uzun `X-Amz-*`
       // query + ".png" bilan tugamaydi) Magnific downloaderini adashtiradi → "Failed to download
@@ -833,7 +833,7 @@ export async function processGeneration(genId: string): Promise<void> {
           : refUrl
             ? [refUrl]
             : [];
-        if (!rawRefs.length) return void (await fail("Tahrirlash uchun rasm kerak — ＋ orqali yuklang"));
+        if (!rawRefs.length) return void (await fail("An image is required for editing — upload one via ＋"));
         // PARALLEL — referenslar bir vaqtда R2'ga (odatda plagin allaqachon public R2 URL yuboradi → no-op).
         // Promise.all TARTIBNI saqlaydi → @imgN→image_urls[N-1] mapping buzilmaydi.
         falImageUrls = await Promise.all(
@@ -957,7 +957,7 @@ export async function processGeneration(genId: string): Promise<void> {
       });
       await clearProviderJob(genId);
     } else {
-      return void (await fail(`Qo'llab-quvvatlanmaydigan tur: ${model.feature}`));
+      return void (await fail(`Unsupported type: ${model.feature}`));
     }
 
     // Chiqish moderatsiyasi (env-gated) — done'dan OLDIN. Og'ir kategoriya → throw → catch → fail+refund.
@@ -995,7 +995,7 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
     // Atomik: faqat hali queued/running bo'lsa failed qilamiz (haqiqatan tugagan job'ga tegmaslik).
     const upd = await prisma.generation.updateMany({
       where: { id: g.id, status: { in: ["queued", "running"] } },
-      data: { status: "failed", error: "Vaqt tugadi (avtomatik tiklash) — kredit qaytarildi" },
+      data: { status: "failed", error: "Timed out (auto-recovered) — credits refunded" },
     });
     if (upd.count > 0) await refundAiCredits(g.userId, g.cost, { generationId: g.id });
   }

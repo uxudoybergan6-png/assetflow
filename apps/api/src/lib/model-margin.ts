@@ -93,7 +93,7 @@ export async function computeMargins(opts?: {
     const missingCost = missingCostRows > 0 || realCostUsd <= 0;
     return {
       modelId: g.modelId,
-      label: model?.label ?? (g.modelId == null ? "(noma'lum)" : `model ${g.modelId}`),
+      label: model?.label ?? (g.modelId == null ? "(unknown)" : `model ${g.modelId}`),
       provider: model?.provider ?? null,
       mode: model?.mode ?? null,
       gens: g._count._all,

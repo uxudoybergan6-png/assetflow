@@ -43,7 +43,7 @@ const loginLimiter = rateLimit({
   windowMs: 60_000,
   max: 10,
   keyPrefix: "plugin-login",
-  message: "Juda ko'p urinish — 1 daqiqadan keyin qayta urinib ko'ring",
+  message: "Too many attempts — please try again in 1 minute",
 });
 
 /** Usage/heartbeat: abuse'ni cheklash, lekin normal ishlashga xalal bermaslik */
@@ -139,13 +139,13 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Res
       }
     }
     // Bulut sozlangan — diskka tushmaymiz (Cloud Run diski ephemeral).
-    res.status(404).json({ error: "Sahna preview topilmadi" });
+    res.status(404).json({ error: "Scene preview not found" });
     return;
   }
 
   const filePath = findScenePreview(templateId, key);
   if (!filePath) {
-    res.status(404).json({ error: "Sahna preview topilmadi" });
+    res.status(404).json({ error: "Scene preview not found" });
     return;
   }
 
@@ -201,7 +201,7 @@ async function guardDownloadable(
   templateId: string
 ): Promise<boolean> {
   if (!/^[a-z0-9]+$/i.test(templateId)) {
-    res.status(400).json({ error: "Noto'g'ri shablon ID" });
+    res.status(400).json({ error: "Invalid template ID" });
     return false;
   }
   // Takedown/karantin — HAMMAGA (admin ham) serve bloklanadi (huquqiy/xavfsizlik, fail-closed).
@@ -210,11 +210,11 @@ async function guardDownloadable(
     select: { takedownAt: true, packScanStatus: true },
   });
   if (legal?.takedownAt) {
-    res.status(451).json({ error: "Bu shablon huquqiy sabablarga ko'ra olib tashlangan", code: "TAKEDOWN" });
+    res.status(451).json({ error: "This template was removed for legal reasons", code: "TAKEDOWN" });
     return false;
   }
   if (legal && (legal.packScanStatus === "malicious" || legal.packScanStatus === "quarantined" || legal.packScanStatus === "duplicate")) {
-    res.status(451).json({ error: "Bu shablon xavfsizlik tekshiruvida bloklangan", code: "PACK_QUARANTINED" });
+    res.status(451).json({ error: "This template was blocked by a security check", code: "PACK_QUARANTINED" });
     return false;
   }
   if (req.user?.role === "ADMIN") return true;
@@ -227,7 +227,7 @@ async function guardDownloadable(
     tpl.reviewStatus !== TemplateReviewStatus.APPROVED ||
     !tpl.published
   ) {
-    res.status(404).json({ error: "Pack topilmadi yoki nashr etilmagan" });
+    res.status(404).json({ error: "Pack not found or not published" });
     return false;
   }
   // (#2.5) Server-tomon PRO tier gate — baytlar/redirect'dan OLDIN (fail-closed).
@@ -238,7 +238,7 @@ async function guardDownloadable(
     // PRO va STUDIO ikkalasi ham Pro shablonlarni ochadi (faqat FREE bloklanadi).
     if (!isPaidPlan(profile.plan)) {
       res.status(402).json({
-        error: "Bu shablon Pro tarif uchun — Pro'ga o'ting",
+        error: "This template requires the Pro plan — upgrade to Pro",
         code: "PRO_REQUIRED",
       });
       return false;
@@ -270,13 +270,13 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Req
       return;
     }
     // Bulut sozlangan — diskka tushmaymiz (Cloud Run diski ephemeral).
-    res.status(404).json({ error: "MOGRT fayl topilmadi" });
+    res.status(404).json({ error: "MOGRT file not found" });
     return;
   }
 
   const filePath = findMogrtFile(templateId, slug);
   if (!filePath) {
-    res.status(404).json({ error: "MOGRT fayl topilmadi" });
+    res.status(404).json({ error: "MOGRT file not found" });
     return;
   }
   res.setHeader("Content-Type", "application/octet-stream");
@@ -300,7 +300,7 @@ pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req: Request, r
 pluginRouter.get("/assets/:templateId/:kind", async (req: Request, res: Response) => {
   const kind = req.params.kind as TemplateAssetKind;
   if (!["thumb", "preview"].includes(kind)) {
-    res.status(400).json({ error: "Noto'g'ri tur" });
+    res.status(400).json({ error: "Invalid type" });
     return;
   }
   await serveTemplateAsset(req, res, String(req.params.templateId), kind);
@@ -407,7 +407,7 @@ const loginSchema = z.object({
 pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Email va parol kerak" });
+    res.status(400).json({ error: "Email and password are required" });
     return;
   }
 
@@ -417,20 +417,20 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
   });
 
   if (!user?.passwordHash) {
-    res.status(401).json({ error: "Login yoki parol noto‘g‘ri" });
+    res.status(401).json({ error: "Incorrect email or password" });
     return;
   }
 
   const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
   if (!valid) {
-    res.status(401).json({ error: "Login yoki parol noto‘g‘ri" });
+    res.status(401).json({ error: "Incorrect email or password" });
     return;
   }
 
   const profile = await ensurePluginProfile(user.id);
 
   if (profile.status === PluginAccountStatus.BLOCKED) {
-    res.status(403).json({ error: "Hisob bloklangan — admin bilan bog‘laning" });
+    res.status(403).json({ error: "Account is blocked — contact an admin" });
     return;
   }
 
@@ -473,22 +473,22 @@ const deviceConfirmSchema = z.object({
 pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Response) => {
   const parsed = deviceConfirmSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: "Invalid data" });
     return;
   }
 
   const row = await prisma.pluginDeviceCode.findUnique({ where: { code: parsed.data.code } });
   if (!row) {
-    res.status(404).json({ error: "Kod topilmadi" });
+    res.status(404).json({ error: "Code not found" });
     return;
   }
   if (row.expiresAt < new Date()) {
     await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
-    res.status(410).json({ error: "Kod muddati tugagan — plaginda qaytadan urinib ko'ring" });
+    res.status(410).json({ error: "Code has expired — please try again from the plugin" });
     return;
   }
   if (row.status !== "pending") {
-    res.status(409).json({ error: "Kod allaqachon ishlatilgan" });
+    res.status(409).json({ error: "Code has already been used" });
     return;
   }
 
@@ -503,7 +503,7 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
   const profile = await ensurePluginProfile(user.id);
   if (profile.status === PluginAccountStatus.BLOCKED) {
     await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
-    res.status(403).json({ error: "Hisob bloklangan — admin bilan bog'laning" });
+    res.status(403).json({ error: "Account is blocked — contact an admin" });
     return;
   }
 
@@ -553,7 +553,7 @@ pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: 
 pluginRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
   const profile = await ensurePluginProfile(req.user!.userId);
   if (profile.status === PluginAccountStatus.BLOCKED) {
-    res.status(403).json({ error: "Hisob bloklangan", code: "ACCOUNT_BLOCKED" });
+    res.status(403).json({ error: "Account is blocked", code: "ACCOUNT_BLOCKED" });
     return;
   }
   res.json({
@@ -572,7 +572,7 @@ pluginRouter.post("/heartbeat", usageLimiter, requireAuth, async (req: Request, 
   const body = heartbeatSchema.safeParse(req.body);
   const profile = await ensurePluginProfile(req.user!.userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
-    res.status(403).json({ error: "Hisob faol emas" });
+    res.status(403).json({ error: "Account is not active" });
     return;
   }
   await prisma.pluginProfile.update({
@@ -593,7 +593,7 @@ const planSchema = z.object({
 pluginRouter.patch("/plan", requireAuth, async (req: Request, res: Response) => {
   const parsed = planSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "plan: free yoki pro" });
+    res.status(400).json({ error: "plan: free or pro" });
     return;
   }
   const tier =

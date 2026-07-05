@@ -30,14 +30,14 @@ async function sendVerificationEmail(email: string): Promise<void> {
   const verifyUrl = `${getWebUrl()}/verify-email.html?token=${token}`;
   await sendEmail({
     to: email,
-    subject: "FrameFlow — emailni tasdiqlang",
+    subject: "FrameFlow — verify your email",
     html: renderEmailLayout(
-      "Emailni tasdiqlang",
-      `<p style="font-size:13px;line-height:1.6">FrameFlow'ga xush kelibsiz! AI generatsiyadan foydalanish uchun emailingizni tasdiqlang. Havola 24 soat amal qiladi.</p>
-       <a href="${verifyUrl}" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Emailni tasdiqlash</a>
+      "Verify your email",
+      `<p style="font-size:13px;line-height:1.6">Welcome to FrameFlow! Please verify your email to use AI generation. This link is valid for 24 hours.</p>
+       <a href="${verifyUrl}" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Verify email</a>
        <p style="font-size:11px;color:#888;margin-top:16px;word-break:break-all">${verifyUrl}</p>`
     ),
-    text: `Emailni tasdiqlash: ${verifyUrl}`,
+    text: `Verify your email: ${verifyUrl}`,
   });
   if (!isEmailConfigured()) {
     console.log(`[auth] Email tasdiqlash havolasi (${email}): ${verifyUrl}`);
@@ -49,7 +49,7 @@ const authLimiter = rateLimit({
   windowMs: 60_000,
   max: 10,
   keyPrefix: "auth-login",
-  message: "Juda ko'p urinish — 1 daqiqadan keyin qayta urinib ko'ring",
+  message: "Too many attempts — please try again in 1 minute",
 });
 
 /** Parol tiklash — email-bombing oldini olish uchun qattiqroq limit */
@@ -57,7 +57,7 @@ const forgotLimiter = rateLimit({
   windowMs: 60_000,
   max: 5,
   keyPrefix: "auth-forgot",
-  message: "Juda ko'p so'rov — birozdan keyin urinib ko'ring",
+  message: "Too many requests — please try again shortly",
 });
 
 const registerSchema = z.object({
@@ -76,7 +76,7 @@ const loginSchema = z.object({
 authRouter.post("/register", authLimiter, async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
 
@@ -88,7 +88,7 @@ authRouter.post("/register", authLimiter, async (req, res) => {
     req.ip
   );
   if (!captchaOk) {
-    res.status(400).json({ error: "Bot tekshiruvi o'tmadi — sahifani yangilab qayta urinib ko'ring", code: "CAPTCHA_FAILED" });
+    res.status(400).json({ error: "Bot check failed — please refresh the page and try again", code: "CAPTCHA_FAILED" });
     return;
   }
 
@@ -147,7 +147,7 @@ authRouter.post("/register", authLimiter, async (req, res) => {
 authRouter.post("/login", authLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
 
@@ -161,7 +161,7 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     return;
   }
   if (!user.passwordHash) {
-    res.status(401).json({ error: "Bu hisob Google orqali yaratilgan — 'Google bilan kirish' tugmasidan foydalaning" });
+    res.status(401).json({ error: "This account was created with Google — use the 'Sign in with Google' button" });
     return;
   }
 
@@ -180,7 +180,7 @@ authRouter.post("/login", authLimiter, async (req, res) => {
 
   if (user.role === UserRole.CONTRIBUTOR && user.contributorBlockedAt) {
     res.status(403).json({
-      error: "Contributor hisobi bloklangan",
+      error: "Contributor account is blocked",
       code: "CONTRIBUTOR_BLOCKED",
     });
     return;
@@ -210,7 +210,7 @@ const googleAuthSchema = z.object({ credential: z.string().min(10) });
 authRouter.post("/google", authLimiter, async (req, res) => {
   const parsed = googleAuthSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
 
@@ -254,7 +254,7 @@ const resetSchema = z.object({
 authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
   const parsed = forgotSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
   const { email } = parsed.data;
@@ -274,14 +274,14 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
     const resetUrl = `${getWebUrl()}/reset-password.html?token=${token}`;
     await sendEmail({
       to: email,
-      subject: "FrameFlow — parolni tiklash",
+      subject: "FrameFlow — reset your password",
       html: renderEmailLayout(
-        "Parolni tiklash",
-        `<p style="font-size:13px;line-height:1.6">Parolingizni tiklash uchun quyidagi tugmani bosing. Havola 1 soat amal qiladi.</p>
-         <a href="${resetUrl}" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Parolni tiklash</a>
+        "Reset your password",
+        `<p style="font-size:13px;line-height:1.6">Click the button below to reset your password. This link is valid for 1 hour.</p>
+         <a href="${resetUrl}" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Reset password</a>
          <p style="font-size:11px;color:#888;margin-top:16px;word-break:break-all">${resetUrl}</p>`
       ),
-      text: `Parolni tiklash: ${resetUrl}`,
+      text: `Reset your password: ${resetUrl}`,
     });
     if (!isEmailConfigured()) {
       console.log(`[auth] Parol tiklash havolasi (${email}): ${resetUrl}`);
@@ -290,7 +290,7 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    message: "Agar bu email ro'yxatdan o'tgan bo'lsa, tiklash havolasi yuborildi",
+    message: "If this email is registered, a reset link has been sent",
   });
 });
 
@@ -298,20 +298,20 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
 authRouter.post("/reset-password", async (req, res) => {
   const parsed = resetSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
   const { token, password } = parsed.data;
   const record = await prisma.verificationToken.findUnique({ where: { token } });
   if (!record || record.expires < new Date()) {
-    res.status(400).json({ error: "Havola yaroqsiz yoki muddati tugagan" });
+    res.status(400).json({ error: "Link is invalid or has expired" });
     return;
   }
   const user = await prisma.user.findUnique({
     where: { email: record.identifier },
   });
   if (!user) {
-    res.status(400).json({ error: "Foydalanuvchi topilmadi" });
+    res.status(400).json({ error: "User not found" });
     return;
   }
   const passwordHash = await bcrypt.hash(password, 12);
@@ -325,7 +325,7 @@ authRouter.post("/reset-password", async (req, res) => {
   await prisma.verificationToken.deleteMany({
     where: { identifier: record.identifier },
   });
-  res.json({ ok: true, message: "Parol yangilandi — endi kirishingiz mumkin" });
+  res.json({ ok: true, message: "Password updated — you can now sign in" });
 });
 
 // ── Email tasdiqlash ─────────────────────────────────────────────────────────
@@ -335,7 +335,7 @@ const verifyEmailSchema = z.object({ token: z.string().min(10) });
 authRouter.post("/verify-email", async (req, res) => {
   const parsed = verifyEmailSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
   const record = await prisma.verificationToken.findUnique({
@@ -348,13 +348,13 @@ authRouter.post("/verify-email", async (req, res) => {
     !record.identifier.startsWith(VERIFY_ID_PREFIX) ||
     record.expires < new Date()
   ) {
-    res.status(400).json({ error: "Havola yaroqsiz yoki muddati tugagan" });
+    res.status(400).json({ error: "Link is invalid or has expired" });
     return;
   }
   const email = record.identifier.slice(VERIFY_ID_PREFIX.length);
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    res.status(400).json({ error: "Foydalanuvchi topilmadi" });
+    res.status(400).json({ error: "User not found" });
     return;
   }
   if (!user.emailVerified) {
@@ -364,7 +364,7 @@ authRouter.post("/verify-email", async (req, res) => {
     });
   }
   await prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } });
-  res.json({ ok: true, message: "Email tasdiqlandi — endi AI'dan foydalanishingiz mumkin", role: user.role });
+  res.json({ ok: true, message: "Email verified — you can now use AI features", role: user.role });
 });
 
 /** Tasdiqlash havolasini qayta yuborish — enumeratsiyaga yo'l qo'ymaslik uchun
@@ -372,7 +372,7 @@ authRouter.post("/verify-email", async (req, res) => {
 authRouter.post("/resend-verification", forgotLimiter, async (req, res) => {
   const parsed = forgotSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
@@ -383,7 +383,7 @@ authRouter.post("/resend-verification", forgotLimiter, async (req, res) => {
       console.warn("[auth] tasdiqlash emaili qayta yuborilmadi:", e);
     }
   }
-  res.json({ ok: true, message: "Agar hisob mavjud va tasdiqlanmagan bo'lsa, havola yuborildi" });
+  res.json({ ok: true, message: "If the account exists and is unverified, a link has been sent" });
 });
 
 authRouter.get("/me", requireAuth, async (req, res) => {
@@ -414,7 +414,7 @@ const profilePatchSchema = z.object({
 authRouter.patch("/me", requireAuth, async (req, res) => {
   const parsed = profilePatchSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Noto'g'ri ma'lumot" });
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
   const user = await prisma.user.update({
@@ -440,7 +440,7 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
 authRouter.post("/checkout", requireAuth, async (req, res) => {
   if (!isStripeConfigured()) {
     res.status(503).json({
-      error: "Stripe sozlanmagan — to‘lov hozir mavjud emas (local dev)",
+      error: "Stripe is not configured — payments are unavailable right now (local dev)",
       code: "STRIPE_NOT_CONFIGURED",
     });
     return;
@@ -494,7 +494,7 @@ authRouter.post("/checkout", requireAuth, async (req, res) => {
 authRouter.post("/portal", requireAuth, async (req, res) => {
   if (!isStripeConfigured()) {
     res.status(503).json({
-      error: "Stripe sozlanmagan",
+      error: "Stripe is not configured",
       code: "STRIPE_NOT_CONFIGURED",
     });
     return;

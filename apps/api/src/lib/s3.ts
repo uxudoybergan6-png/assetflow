@@ -434,14 +434,14 @@ export async function downloadS3ToFile(
   destPath: string
 ): Promise<void> {
   const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-  if (!res.Body) throw new Error(`R2 obyekt bo'sh yoki topilmadi: ${key}`);
+  if (!res.Body) throw new Error(`R2 object is empty or not found: ${key}`);
   await pipeline(res.Body as Readable, fs.createWriteStream(destPath));
 }
 
 /** R2/S3 obyektni to'g'ridan-to'g'ri xotiraga (Buffer) yuklab oladi — kichik fayllar uchun. */
 export async function downloadS3ToBuffer(key: string): Promise<Buffer> {
   const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-  if (!res.Body) throw new Error(`R2 obyekt bo'sh yoki topilmadi: ${key}`);
+  if (!res.Body) throw new Error(`R2 object is empty or not found: ${key}`);
   const bytes = await (res.Body as Readable & SdkStreamMixin).transformToByteArray();
   return Buffer.from(bytes);
 }

@@ -128,7 +128,7 @@ studioGenRouter.use(
     windowMs: 60_000,
     max: 40,
     keyPrefix: "studio-gen",
-    message: "Juda ko'p so'rov — bir daqiqadan keyin qayta urinib ko'ring",
+    message: "Too many requests — please try again in a minute",
   })
 );
 
@@ -331,7 +331,7 @@ const sessionSchema = z.object({
 studioGenRouter.post("/gen/sessions", async (req: Request, res: Response) => {
   const p = sessionSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const session = await prisma.genSession.create({
@@ -351,7 +351,7 @@ studioGenRouter.get(
     const id = String(req.params.id);
     const session = await prisma.genSession.findUnique({ where: { id } });
     if (!session || session.userId !== req.user!.userId) {
-      res.status(404).json({ error: "Session topilmadi" });
+      res.status(404).json({ error: "Session not found" });
       return;
     }
     const perPage = Math.min(50, Math.max(1, Number(req.query.perPage) || 25));
@@ -438,7 +438,7 @@ studioGenRouter.get("/gen/references", async (req: Request, res: Response) => {
 studioGenRouter.delete("/gen/references/:id", async (req: Request, res: Response) => {
   const row = await prisma.savedReference.findUnique({ where: { id: String(req.params.id) } });
   if (!row || row.userId !== req.user!.userId) {
-    res.status(404).json({ error: "Referens topilmadi" });
+    res.status(404).json({ error: "Reference not found" });
     return;
   }
   if (row.resultKey) {
@@ -469,7 +469,7 @@ const boundedParams = z
   .record(z.any())
   .refine((p) => {
     try { return JSON.stringify(p).length <= 16384; } catch { return false; }
-  }, "params juda katta")
+  }, "params is too large")
   .optional();
 
 /** POST /gen/cost-quote — imzolangan narx (klient narxni soxtalashtira olmaydi). */
@@ -488,12 +488,12 @@ const preflightSchema = z.object({
 studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
   const p = quoteSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const model = getModelById(p.data.modelId);
   if (!isModelEnabled(model) || model.mode !== p.data.mode) {
-    res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
+    res.status(400).json({ error: "Unknown or disabled model" });
     return;
   }
   const params = (p.data.params ?? {}) as Record<string, unknown>;
@@ -510,7 +510,7 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
 studioGenRouter.post("/gen/preflight-safety", async (req: Request, res: Response) => {
   const p = preflightSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const model = p.data.modelId ? getModelById(p.data.modelId) : null;
@@ -543,7 +543,7 @@ const refUpload = multer({
 });
 studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   if (!isS3Configured()) {
-    res.status(503).json({ error: "Saqlash sozlanmagan", code: "S3_NOT_CONFIGURED" });
+    res.status(503).json({ error: "Storage not configured", code: "S3_NOT_CONFIGURED" });
     return;
   }
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
@@ -556,10 +556,10 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     });
   } catch (err) {
     if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
-      res.status(413).json({ error: "Referens juda katta — 100MB dan kichikroq fayl tanlang", code: "PAYLOAD_TOO_LARGE" });
+      res.status(413).json({ error: "Reference too large — choose a file under 100MB", code: "PAYLOAD_TOO_LARGE" });
       return;
     }
-    res.status(400).json({ error: "Referens faylini qabul qilib bo'lmadi" });
+    res.status(400).json({ error: "Could not accept the reference file" });
     return;
   }
 
@@ -595,21 +595,21 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     if (srcRef.data.srcKey) {
       key = srcRef.data.srcKey;
       if (!key.startsWith(`gen-ref-src/${req.user!.userId}/`)) {
-        res.status(403).json({ error: "Noto'g'ri manba kaliti" });
+        res.status(403).json({ error: "Invalid source key" });
         return;
       }
       tempSrcKey = key;
     } else {
       key = gcsKeyFromUrl(String(srcRef.data.srcUrl)) || "";
       if (!key) {
-        res.status(400).json({ error: "Manba URL bizning saqlashdan emas" });
+        res.status(400).json({ error: "Source URL is not from our storage" });
         return;
       }
       // FAQAT o'z obyektlari: gen natijalari (gen/<userId>/) va referenslar (gen-refs/<userId>/).
       // Aks holda boshqa foydalanuvchi obyektini (key ma'lum bo'lsa) ko'chirib olish mumkin bo'lardi.
       const uid = req.user!.userId;
       if (!key.startsWith(`gen/${uid}/`) && !key.startsWith(`gen-refs/${uid}/`)) {
-        res.status(403).json({ error: "Bu manba sizga tegishli emas" });
+        res.status(403).json({ error: "This source does not belong to you" });
         return;
       }
     }
@@ -622,17 +622,17 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     }
     const meta = await getS3ObjectMeta(key);
     if (meta.sizeBytes == null) {
-      res.status(404).json({ error: "Manba fayl topilmadi — qayta yuklang" });
+      res.status(404).json({ error: "Source file not found — please re-upload" });
       return;
     }
     if (meta.sizeBytes > MAX_REF_UPLOAD_BYTES) {
-      res.status(413).json({ error: "Referens juda katta — 100MB dan kichikroq fayl tanlang", code: "PAYLOAD_TOO_LARGE" });
+      res.status(413).json({ error: "Reference too large — choose a file under 100MB", code: "PAYLOAD_TOO_LARGE" });
       return;
     }
     try {
       buf = await downloadS3ToBuffer(key);
     } catch {
-      res.status(404).json({ error: "Manba faylni o'qib bo'lmadi — qayta yuklang" });
+      res.status(404).json({ error: "Could not read the source file — please re-upload" });
       return;
     }
     contentType = meta.contentType || (/(\.mp4|\.webm|\.mov)(\?|$)/i.test(key) ? "video/mp4" : contentType);
@@ -640,12 +640,12 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   } else {
     const p = refUploadSchema.safeParse(req.body);
     if (!p.success) {
-      res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
       return;
     }
     const m = /^data:([^;]+);base64,([\s\S]+)$/.exec(p.data.dataUrl);
     if (!m) {
-      res.status(400).json({ error: "data-URI yoki multipart fayl kerak" });
+      res.status(400).json({ error: "A data-URI or multipart file is required" });
       return;
     }
     contentType = m[1] || contentType;
@@ -654,11 +654,11 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
 
   // R2V ko'p-modal: rasm + video + ovoz referens qabul qilinadi (Seedance R2V). Boshqa modellar faqat rasm yuboradi.
   if (!/^(image|video|audio)\//.test(contentType)) {
-    res.status(400).json({ error: "Faqat rasm/video/ovoz referens qabul qilinadi" });
+    res.status(400).json({ error: "Only image/video/audio references are accepted" });
     return;
   }
   if (!buf?.length || buf.length > MAX_REF_UPLOAD_BYTES) {
-    res.status(400).json({ error: "Referens bo'sh yoki juda katta (maks 100MB)" });
+    res.status(400).json({ error: "Reference is empty or too large (max 100MB)" });
     return;
   }
   let audioRef:
@@ -685,17 +685,17 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
         clipEnabled ? { startSec: clipStartSec, endSec: clipEndSec } : undefined
       );
       if (!optimized) {
-        res.status(500).json({ error: "Video referens serverda optimizatsiya qilinmadi" });
+        res.status(500).json({ error: "Video reference was not optimized on the server" });
         return;
       }
       const out = fs.readFileSync(localPath);
       if (!out.length) {
-        res.status(500).json({ error: "Video referens optimizatsiyadan keyin bo'sh qoldi" });
+        res.status(500).json({ error: "Video reference ended up empty after optimization" });
         return;
       }
       if (out.length > MAX_VIDEO_REF_TARGET_BYTES) {
         res.status(413).json({
-          error: "Video referens optimizatsiyadan keyin ham 50MB dan katta — qisqaroq joy tanlang",
+          error: "Video reference is still over 50MB after optimization — choose a shorter clip",
           code: "VIDEO_REF_STILL_TOO_LARGE",
         });
         return;
@@ -730,12 +730,12 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
               expiresAt: audioSaved.expiresAt,
             };
           } else if (audioBuf.length > MAX_AUDIO_REF_TARGET_BYTES) {
-            audioError = "Video ichidagi audio referens 15MB limitdan oshdi";
+            audioError = "The audio reference extracted from the video exceeds the 15MB limit";
           } else {
-            audioError = "Video ichidan audio olinmadi";
+            audioError = "Could not extract audio from the video";
           }
         } else {
-          audioError = "Videoda ishlatiladigan audio topilmadi yoki ajratib bo'lmadi";
+          audioError = "No usable audio found in the video, or it could not be extracted";
         }
       }
     } finally {
@@ -781,12 +781,12 @@ const refUploadUrlSchema = z.object({
 });
 studioGenRouter.post("/gen/ref-upload-url", async (req: Request, res: Response) => {
   if (!isS3Configured()) {
-    res.status(503).json({ error: "Saqlash sozlanmagan", code: "S3_NOT_CONFIGURED" });
+    res.status(503).json({ error: "Storage not configured", code: "S3_NOT_CONFIGURED" });
     return;
   }
   const p = refUploadUrlSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const extFromName = /\.([a-z0-9]{2,5})$/i.exec(p.data.name || "")?.[1]?.toLowerCase() || "";
@@ -800,7 +800,7 @@ studioGenRouter.post("/gen/ref-upload-url", async (req: Request, res: Response) 
 const genSchema = z.object({
   sessionId: z.string().min(1),
   mode: z.enum(GEN_MODES),
-  prompt: z.string().trim().min(2, "Prompt juda qisqa").max(5000, "Prompt juda uzun (maks 5000 belgi)"),
+  prompt: z.string().trim().min(2, "Prompt is too short").max(5000, "Prompt is too long (max 5000 characters)"),
   modelId: z.number().int(),
   params: boundedParams,
   price: z.number().int().nonnegative(),
@@ -810,7 +810,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const p = genSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const { sessionId, mode, prompt, modelId, price, costQuoteSignature } = p.data;
@@ -821,13 +821,13 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 
   const session = await prisma.genSession.findUnique({ where: { id: sessionId } });
   if (!session || session.userId !== req.user!.userId) {
-    res.status(404).json({ error: "Session topilmadi" });
+    res.status(404).json({ error: "Session not found" });
     return;
   }
   // Model JONLILIK guard — generatsiyadan OLDIN (kredit yechilmasin).
   const model = getModelById(modelId);
   if (!isModelEnabled(model) || model.mode !== mode) {
-    res.status(400).json({ error: "Noma'lum yoki o'chirilgan model" });
+    res.status(400).json({ error: "Unknown or disabled model" });
     return;
   }
   // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; vertex* → Google ADC;
@@ -846,7 +846,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
               ? isVertexImageConfigured()
               : isOpenRouterConfigured();
   if (!configured) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
 
@@ -858,7 +858,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // refMode='required' — referenssiz gen bloklanadi (KREDITDAN OLDIN; aniq xato).
   if (model.refMode === "required" && !hasRef) {
     res.status(400).json({
-      error: `«${model.label}» uchun referens majburiy — kamida 1 ta rasm qo'shing`,
+      error: `"${model.label}" requires a reference — add at least 1 image`,
       code: "REFERENCE_REQUIRED",
     });
     return;
@@ -869,7 +869,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const hasEndRef = typeof params.referenceEndUrl === "string" && params.referenceEndUrl.length > 0;
   if (hasEndRef && modelSupportsEndFrame(model) && !hasStartRef) {
     res.status(400).json({
-      error: "Yakuniy kadr faqat boshlang'ich kadr bilan ishlaydi — boshlang'ich kadr ham qo'shing",
+      error: "End frame only works together with a start frame — add a start frame too",
       code: "END_FRAME_REQUIRES_START",
     });
     return;
@@ -878,8 +878,8 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     const rec = firstReferenceModel(mode);
     res.status(400).json({
       error: rec
-        ? `«${model.label}» reference qabul qilmaydi — «${rec.label}» modelini tanlang`
-        : `«${model.label}» reference qabul qilmaydi`,
+        ? `"${model.label}" does not accept a reference — choose "${rec.label}" instead`
+        : `"${model.label}" does not accept a reference`,
       code: "REFERENCE_NOT_SUPPORTED",
       referenceMode: getReferenceMode(model),
       recommendedModelId: rec?.id ?? null,
@@ -911,7 +911,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       },
     });
     res.status(400).json({
-      error: preflight.reason || "Prompt safety tekshiruvdan o'tmadi",
+      error: preflight.reason || "Prompt did not pass the safety check",
       code: "PREFLIGHT_BLOCKED",
       severity: preflight.severity,
       suggestions: preflight.suggestions,
@@ -940,7 +940,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       },
     });
     res.status(400).json({
-      error: moderation.reason || "Kontent moderatsiyadan o'tmadi",
+      error: moderation.reason || "Content did not pass moderation",
       code: "MODERATION_BLOCKED",
       severity: moderation.severity,
     });
@@ -951,7 +951,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // 1) Kill-switch: runaway bill / provider incident'da barcha gen'ni to'xtatadi.
   if (isGenKillSwitchOn()) {
     res.status(503).json({
-      error: "AI generatsiya vaqtincha to'xtatilgan — birozdan keyin qayta urinib ko'ring",
+      error: "AI generation is temporarily paused — please try again shortly",
       code: "GEN_KILL_SWITCH",
     });
     return;
@@ -960,7 +960,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const ceil = await checkGlobalSpendCeiling();
   if (ceil.exceeded) {
     res.status(503).json({
-      error: ceil.reason || "Kunlik xarajat chegarasiga yetildi — ertaga qayta urinib ko'ring",
+      error: ceil.reason || "Daily spend limit reached — please try again tomorrow",
       code: "SPEND_CEILING_REACHED",
     });
     return;
@@ -969,7 +969,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const ph = genParamsHash(modelId, mode, params);
   const v = verifyCostQuote(costQuoteSignature, { modelId, mode, price, ph });
   if (!v.ok) {
-    res.status(400).json({ error: v.reason || "Narx imzosi yaroqsiz", code: "BAD_QUOTE" });
+    res.status(400).json({ error: v.reason || "Price signature is invalid", code: "BAD_QUOTE" });
     return;
   }
 
@@ -978,7 +978,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // kredit yechishdan OLDIN (reject → charge yo'q).
   if (!withinGenDailyCap(req.user!.userId, req.user!.role === "ADMIN")) {
     res.status(429).json({
-      error: "Kunlik generatsiya limiti tugadi — ertaga qayta urinib ko'ring",
+      error: "Daily generation limit reached — please try again tomorrow",
       code: "GEN_DAILY_CAP_REACHED",
     });
     return;
@@ -989,7 +989,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const storage = await isStorageOverQuota(req.user!.userId, req.user!.role === "ADMIN");
   if (storage.over) {
     res.status(413).json({
-      error: "Saqlash hajmi to'ldi — eski generatsiyalarni o'chiring yoki tarifni oshiring",
+      error: "Storage is full — delete old generations or upgrade your plan",
       code: "STORAGE_QUOTA_EXCEEDED",
       usedBytes: storage.usedBytes,
       quotaBytes: storage.quotaBytes,
@@ -1094,12 +1094,12 @@ function enhanceJsonSchema(mode: string): string {
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
   // 100% Google: matn ham JSON ham Vertex Gemini (gemini-2.5-flash) ko'p-modal — fal/OpenRouter EMAS.
   if (!isVertexEnhanceConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
   const p = enhanceSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   const mode = p.data.mode || "image";
@@ -1119,7 +1119,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
   if (!withinDailyCap(req.user!.userId)) {
     res.status(429).json({
-      error: "Kunlik AI-yordam limiti tugadi — ertaga qayta urinib ko'ring",
+      error: "Daily AI assist limit reached — please try again tomorrow",
       code: "DAILY_CAP_REACHED",
     });
     return;
@@ -1207,7 +1207,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     }
     if (!json) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
-      res.status(502).json({ error: "JSON prompt olinmadi — qayta urinib ko'ring" });
+      res.status(502).json({ error: "Could not get a JSON prompt — please try again" });
       return;
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
@@ -1263,17 +1263,17 @@ const describeSchema = z.object({
 });
 studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
   if (!isOpenRouterConfigured()) {
-    res.status(503).json({ error: "AI sozlanmagan", code: "AI_NOT_CONFIGURED" });
+    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
   }
   const p = describeSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
   // Uzunlik cheklovi — har rasm ~1024px JPEG (frontend downscale). 1.4MB string ≈ ~1MB rasm.
   if (p.data.images.some((s) => s.length > 1_400_000)) {
-    res.status(413).json({ error: "Reference rasm juda katta — kichikroq kadr tanlang" });
+    res.status(413).json({ error: "Reference image is too large — choose a smaller frame" });
     return;
   }
   const kind = p.data.kind || "image";
@@ -1284,7 +1284,7 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
   // Abuza nazorati + kredit (pulli gemini-2.5-flash vision) — /gen naqshi.
   if (!withinDailyCap(req.user!.userId)) {
     res.status(429).json({
-      error: "Kunlik AI-yordam limiti tugadi — ertaga qayta urinib ko'ring",
+      error: "Daily AI assist limit reached — please try again tomorrow",
       code: "DAILY_CAP_REACHED",
     });
     return;
@@ -1330,7 +1330,7 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
     include: { assets: true },
   });
   if (!gen || gen.userId !== req.user!.userId) {
-    res.status(404).json({ error: "Generatsiya topilmadi" });
+    res.status(404).json({ error: "Generation not found" });
     return;
   }
   if (gen.status === "queued" || gen.status === "running") {
@@ -1348,7 +1348,7 @@ studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
     include: { assets: true },
   });
   if (!gen || gen.userId !== req.user!.userId) {
-    res.status(404).json({ error: "Generatsiya topilmadi" });
+    res.status(404).json({ error: "Generation not found" });
     return;
   }
   // Avval R2'dan asset fayllarni o'chiramiz (resultKey bor bo'lsa).
