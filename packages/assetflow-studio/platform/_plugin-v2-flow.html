@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="uz"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plagin V2 — to'liq oqim (Tuzilgan/ko'k)</title>
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#08080a;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;padding:26px}
+  .title{color:#f0f0f2;font-size:18px;font-weight:600;margin-bottom:2px}
+  .subttl{color:#6a6a72;font-size:12.5px;margin-bottom:22px}
+  .flow{display:flex;gap:22px;flex-wrap:wrap}
+  .screen{width:360px}
+  .scap{color:#c9c9cf;font-size:12.5px;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .scap .n{width:20px;height:20px;border-radius:6px;background:#141b22;display:grid;place-items:center;font-size:11px;color:#5cc0ff}
+  .p{height:580px;border-radius:16px;overflow:hidden;position:relative;background:#0c1116;color:#e9eef2;display:flex;flex-direction:column;border:1px solid #1a2129}
+  .mono{font-variant-numeric:tabular-nums}
+  /* header */
+  .hd{display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid #ffffff0d}
+  .logo{width:26px;height:26px;border-radius:7px;background:#2f8fff;display:grid;place-items:center;color:#04101e;font-size:14px}
+  .hd .nm{font-weight:600;font-size:15px}
+  .hd .cr{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#5cc0ff;background:#2f8fff1a;border:1px solid #2f8fff2e;border-radius:8px;padding:5px 10px}
+  .backc{width:30px;height:30px;border-radius:8px;background:#141b22;display:grid;place-items:center;color:#c4cdd6;font-size:14px}
+  /* LOGIN */
+  .lg{align-items:center;justify-content:center;text-align:center;padding:0 34px}
+  .lg .mark{width:60px;height:60px;border-radius:16px;background:#2f8fff;display:grid;place-items:center;color:#04101e;font-size:28px;box-shadow:0 0 40px #2f8fff40}
+  .lg h1{font-size:22px;font-weight:600;margin-top:22px}
+  .lg p{font-size:12.5px;color:#7d8896;line-height:1.5;margin-top:10px;max-width:250px}
+  .lg .in{width:100%;height:42px;border-radius:10px;background:#121820;border:1px solid #ffffff12;margin-top:22px;display:flex;align-items:center;padding:0 13px;color:#5c6672;font-size:13px;gap:8px}
+  .lg .cta{width:100%;height:44px;border-radius:11px;background:#2f8fff;color:#04101e;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+  .lg .alt{font-size:12px;color:#5c6672;margin-top:16px}
+  .lg .alt b{color:#5cc0ff;font-weight:500}
+  /* TABS */
+  .tabs{display:flex;gap:4px;padding:12px 16px}
+  .t{flex:1;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:10px;background:#141b22;border:1px solid #ffffff0a;color:#7d8896;font-size:10px;font-weight:500}
+  .t i{font-size:16px}
+  .t.on{background:#18232e;border-color:#2f8fff44;color:#fff}
+  .t.on i{color:#5cc0ff}
+  /* HOME cards */
+  .home{padding:4px 16px;overflow:hidden}
+  .hlbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5c6672;margin:14px 0 10px}
+  .hcards{display:flex;flex-direction:column;gap:9px}
+  .hcard{display:flex;align-items:center;gap:13px;padding:14px;border-radius:12px;background:#121820;border:1px solid #ffffff0d}
+  .hcard .ic{width:42px;height:42px;border-radius:11px;background:#18232e;display:grid;place-items:center;color:#5cc0ff;font-size:19px;flex:none}
+  .hcard .nm{font-size:14px;font-weight:600}
+  .hcard .d{font-size:11.5px;color:#5c6672;margin-top:2px}
+  .hcard .ar{margin-left:auto;color:#3d4550;font-size:15px}
+  .hcard.soon{opacity:.5}
+  .hcard.soon .sb{margin-left:auto;font-size:9px;font-weight:600;color:#5c6672;background:#ffffff0d;border-radius:5px;padding:3px 7px}
+  /* GENERATE form */
+  .body{flex:1;overflow:hidden;padding:2px 16px}
+  .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5c6672;margin:14px 0 8px}
+  .promptbox{border-radius:12px;background:#121820;border:1px solid #ffffff0f;padding:12px}
+  .promptbox .txt{font-size:13px;line-height:1.5;color:#aeb8c2;min-height:44px}
+  .promptbox .enh{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:11.5px;font-weight:500;color:#5cc0ff}
+  .field{display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 14px;border-radius:10px;background:#121820;border:1px solid #ffffff0d;margin-bottom:8px;font-size:13px}
+  .field .l{display:inline-flex;align-items:center;gap:9px;color:#c4cdd6}
+  .field .l i{font-size:15px;color:#7d8896}
+  .field .r{color:#7d8896;font-size:12px}
+  .seg{display:flex;gap:6px}
+  .seg .s{flex:1;height:38px;display:grid;place-items:center;border-radius:9px;background:#121820;border:1px solid #ffffff0d;color:#7d8896;font-size:12px;font-weight:500}
+  .seg .s.on{background:#2f8fff;border-color:#2f8fff;color:#04101e}
+  .foot{padding:12px 16px 16px;border-top:1px solid #ffffff0d}
+  .fr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:10px}
+  .fr .k{color:#5c6672}.fr .v{font-weight:600}
+  .genbtn{width:100%;height:46px;border-radius:11px;background:#2f8fff;color:#04101e;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+  /* RESULT */
+  .rbody{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+  .rframe{border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1;background:linear-gradient(150deg,#12283a,#0a141d)}
+  .rframe .ov{position:absolute;left:14px;right:14px;bottom:12px}
+  .rframe .ov .t{font-size:14px;font-weight:600;color:#fff}
+  .rframe .ov .s{font-size:10.5px;color:#ffffff88;margin-top:2px}
+  .rbtns{display:flex;gap:8px}
+  .rbtns .b{flex:1;height:40px;border-radius:10px;background:#141b22;border:1px solid #ffffff0d;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:500;color:#c4cdd6}
+  .rbtns .b.acc{background:#2f8fff;border-color:#2f8fff;color:#04101e;font-weight:600}
+  .rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .rgrid .th{aspect-ratio:1;border-radius:9px;background:#121820;border:1px solid #ffffff0d}
+  .rgrid .th.on{border:1.5px solid #2f8fff}
+  /* progress state */
+  .prog{flex:1;display:grid;place-items:center;padding:20px}
+  .progbox{width:100%;aspect-ratio:1;border-radius:14px;background:#0f151b;border:1px solid #ffffff0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;color:#7d8896}
+  .progspin{width:30px;height:30px;border:2px solid #2f8fff;border-top-color:transparent;border-radius:50%}
+</style></head>
+<body>
+  <div class="title">Plagin — V2 "Tuzilgan forma" · to'liq oqim</div>
+  <div class="subttl">Boshidan oxirigacha 5 ekran. An'anaviy yuqoridan-pastga forma: prompt karta → belgilangan sozlama qatorlari → to'liq enli tugma. Ko'k accent, eng oson tushuniladi.</div>
+  <div class="flow">
+
+    <!-- 1 LOGIN -->
+    <div class="screen">
+      <div class="scap"><span class="n">1</span>Kirish</div>
+      <div class="p lg">
+        <div class="mark"><i class="ph ph-stack"></i></div>
+        <h1>FrameFlow</h1>
+        <p>Hisobingizga kiring — shablon va AI generatsiya tayyor.</p>
+        <div class="in"><i class="ph ph-key"></i>Ulanish kaliti…</div>
+        <div class="cta"><i class="ph ph-sign-in"></i>Kirish</div>
+        <div class="alt">Hisob yo'qmi? <b>Brauzerda oching</b></div>
+      </div>
+    </div>
+
+    <!-- 2 HOME -->
+    <div class="screen">
+      <div class="scap"><span class="n">2</span>Bosh — asboblar</div>
+      <div class="p">
+        <div class="hd"><div class="logo"><i class="ph ph-stack"></i></div><div class="nm">FrameFlow</div><div class="cr"><i class="ph-fill ph-lightning"></i><span class="mono">1,230</span></div></div>
+        <div class="home">
+          <div class="hlbl">AI vositalar</div>
+          <div class="hcards">
+            <div class="hcard"><div class="ic"><i class="ph ph-image"></i></div><div><div class="nm">Rasm yaratish</div><div class="d">Matndan yuqori sifatli vizual</div></div><i class="ph ph-caret-right ar"></i></div>
+            <div class="hcard"><div class="ic"><i class="ph ph-video-camera"></i></div><div><div class="nm">Video yaratish</div><div class="d">Promptdan qisqa klip</div></div><i class="ph ph-caret-right ar"></i></div>
+            <div class="hcard"><div class="ic"><i class="ph ph-microphone"></i></div><div><div class="nm">Voiceover</div><div class="d">Tabiiy ovozli matn</div></div><i class="ph ph-caret-right ar"></i></div>
+            <div class="hcard"><div class="ic"><i class="ph ph-waveform"></i></div><div><div class="nm">SFX</div><div class="d">Tovush effekti</div></div><i class="ph ph-caret-right ar"></i></div>
+            <div class="hcard soon"><div class="ic"><i class="ph ph-magic-wand"></i></div><div><div class="nm">Rasm tahrirlash</div><div class="d">AI bilan o'zgartirish</div></div><span class="sb">Tez orada</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 GENERATE -->
+    <div class="screen">
+      <div class="scap"><span class="n">3</span>Generatsiya</div>
+      <div class="p">
+        <div class="hd"><div class="backc"><i class="ph ph-arrow-left"></i></div><div class="nm">Rasm yaratish</div><div class="cr"><i class="ph-fill ph-lightning"></i><span class="mono">1,230</span></div></div>
+        <div class="body">
+          <div class="lbl">Prompt</div>
+          <div class="promptbox"><div class="txt">Neon shahar, kechqurun yomg'ir, kinematik yorug'lik…</div><div class="enh"><i class="ph ph-sparkle"></i>Yaxshilash</div></div>
+          <div class="lbl">Model</div>
+          <div class="field"><span class="l"><i class="ph ph-cube"></i>FrameFlow Vision 2</span><span class="r"><i class="ph ph-caret-down"></i></span></div>
+          <div class="lbl">O'lcham</div>
+          <div class="seg"><div class="s on">1:1</div><div class="s">16:9</div><div class="s">9:16</div><div class="s">4:3</div></div>
+          <div class="lbl">Soni</div>
+          <div class="seg"><div class="s">1</div><div class="s">2</div><div class="s on">4</div><div class="s">8</div></div>
+        </div>
+        <div class="foot"><div class="fr"><span class="k">5 kredit × 4 rasm</span><span class="v mono">20 kredit</span></div><div class="genbtn"><i class="ph-fill ph-lightning"></i>Yaratish</div></div>
+      </div>
+    </div>
+
+    <!-- 4 PROGRESS -->
+    <div class="screen">
+      <div class="scap"><span class="n">4</span>Ishlanmoqda</div>
+      <div class="p">
+        <div class="hd"><div class="backc"><i class="ph ph-arrow-left"></i></div><div class="nm">Rasm yaratish</div><div class="cr"><i class="ph-fill ph-lightning"></i><span class="mono">1,210</span></div></div>
+        <div class="prog">
+          <div class="progbox"><div class="progspin"></div><div style="font-size:13px;font-weight:600;color:#c4cdd6">Yaratilmoqda…</div><div style="font-size:11px;color:#5c6672" class="mono">Vision 2 · 4/4</div></div>
+        </div>
+        <div class="foot"><div class="fr"><span class="k">Taxminan 8 soniya</span><span class="v" style="color:#5cc0ff">20 kredit yechildi</span></div><div class="genbtn" style="background:#141b22;color:#7d8896"><i class="ph ph-x"></i>Bekor qilish</div></div>
+      </div>
+    </div>
+
+    <!-- 5 RESULT -->
+    <div class="screen">
+      <div class="scap"><span class="n">5</span>Natija</div>
+      <div class="p">
+        <div class="hd"><div class="backc"><i class="ph ph-arrow-left"></i></div><div class="nm">Natija</div><div class="cr"><i class="ph-fill ph-lightning"></i><span class="mono">1,210</span></div></div>
+        <div class="rbody">
+          <div class="rframe"><div class="ov"><div class="t">Neon shahar konsepti</div><div class="s mono">Vision 2 · 1:1 · 4K</div></div></div>
+          <div class="rgrid"><div class="th on"></div><div class="th"></div><div class="th"></div><div class="th"></div></div>
+          <div class="rbtns"><div class="b"><i class="ph ph-image"></i>Referens</div><div class="b"><i class="ph ph-arrow-line-down"></i>Timeline</div><div class="b acc"><i class="ph ph-download-simple"></i>Yuklab olish</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body></html>

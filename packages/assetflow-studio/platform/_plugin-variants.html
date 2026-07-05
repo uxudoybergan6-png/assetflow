@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uz"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FrameFlow plagin — 3 variant</title>
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0a0c;font-family:system-ui,-apple-system,sans-serif;font-size:13px;-webkit-font-smoothing:antialiased;padding:26px;letter-spacing:-.01em}
+  .row{display:flex;gap:26px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  .col{width:392px}
+  .cap{color:#e8e8ea;font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .cap b{font-weight:600}
+  .cap .dot{width:9px;height:9px;border-radius:50%}
+  .capsub{color:#6a6a72;font-size:11.5px;margin-bottom:12px;line-height:1.45}
+  .panel{height:640px;border-radius:16px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .mono{font-family:ui-monospace,'SF Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:0}
+  /* ============ V1: HIGGSFIELD FAITHFUL (lime) ============ */
+  .v1{background:#131416;color:#f7f7f8}
+  .v1 .grid-bg{position:absolute;inset:0;background-image:radial-gradient(circle,#ffffff0f 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
+  .v1 .hd{position:relative;z-index:2;display:flex;align-items:center;gap:8px;padding:14px 16px}
+  .v1 .backc{width:28px;height:28px;border-radius:50%;background:#ffffff0d;display:grid;place-items:center;color:#fff;font-size:14px}
+  .v1 .tabwrap{display:flex;gap:2px;background:#ffffff0d;border-radius:26px;padding:2px;margin:0 auto}
+  .v1 .tab{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:600;color:#737475}
+  .v1 .tab.on{background:#ffffff1a;color:#fff;box-shadow:inset 0 1px 0 #ffffff0f}
+  .v1 .tab i{font-size:14px}
+  .v1 .feed{position:relative;z-index:2;flex:1;overflow:hidden;padding:6px 16px 0}
+  .v1 .gcard{border-radius:12px;overflow:hidden;background:#1c1e20;position:relative;margin-bottom:14px}
+  .v1 .media{aspect-ratio:16/9;background:linear-gradient(150deg,#1a2530,#0d1117);position:relative}
+  .v1 .media .play{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff88;font-size:26px}
+  .v1 .media .ar{position:absolute;top:8px;left:8px;background:#00000073;border-radius:6px;padding:2px 7px;font-size:9px;font-weight:600}
+  .v1 .meta{display:flex;align-items:center;gap:8px;padding:9px 3px 0;font-size:11px;color:#ffffff80}
+  .v1 .meta .d{width:3px;height:3px;border-radius:50%;background:#ffffff40}
+  .v1 .glow{position:absolute;top:0;left:0;right:0;height:60%;background:radial-gradient(at 50% 0,#d1fe1759,#d1fe1724 38%,transparent);filter:blur(14px);pointer-events:none}
+  .v1 .chipstat{position:absolute;top:8px;left:8px;z-index:3;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;background:#ffffff0a;font-size:10px;font-weight:600}
+  .v1 .spin{width:12px;height:12px;border:1.5px solid #d1fe17;border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .v1 .composer{position:relative;z-index:3;margin:0 12px 12px;border-radius:24px;background:#1c1c1eb8;backdrop-filter:blur(50px);border:1px solid #ffffff12;box-shadow:0 18px 42px #00000052;padding:12px 12px 10px}
+  .v1 .refstrip{display:flex;gap:8px;margin-bottom:10px}
+  .v1 .reftile{width:42px;height:42px;border-radius:11px;background:#ffffff0d;border:1px solid #d9d9d90a;display:grid;place-items:center;color:#ffffff55;font-size:15px}
+  .v1 .ta{color:#f7f7f8;font-size:13px;font-weight:500;min-height:34px;padding:2px 4px}
+  .v1 .ta .ph{color:#898a8b}
+  .v1 .crow{display:flex;align-items:center;gap:7px;margin-top:8px}
+  .v1 .chip{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:500;color:#ffffffe6}
+  .v1 .chip i{font-size:14px;color:#ffffff80}
+  .v1 .chip .cv{font-size:14px;color:#ffffff80}
+  .v1 .send{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#d1fe17;display:grid;place-items:center;color:#0b0b0b;font-size:15px;box-shadow:0 0 0 3px #ffffff0d}
+  .v1 .addc{width:32px;height:32px;border-radius:50%;background:#ffffff0d;display:grid;place-items:center;color:#fff;font-size:14px}
+  /* ============ V2: STRUCTURED FORM (cyan/blue) ============ */
+  .v2{background:#0c1116;color:#e9eef2}
+  .v2 .hd{display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid #ffffff0d}
+  .v2 .logo{width:26px;height:26px;border-radius:7px;background:#2f8fff;display:grid;place-items:center;color:#04101e;font-size:14px}
+  .v2 .hd .nm{font-weight:600;font-size:15px}
+  .v2 .hd .cr{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#5cc0ff;background:#2f8fff1a;border:1px solid #2f8fff2e;border-radius:8px;padding:5px 10px}
+  .v2 .tabs{display:flex;gap:4px;padding:12px 16px}
+  .v2 .t{flex:1;height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:10px;background:#141b22;border:1px solid #ffffff0a;color:#7d8896;font-size:10px;font-weight:500}
+  .v2 .t i{font-size:16px}
+  .v2 .t.on{background:#18232e;border-color:#2f8fff44;color:#fff}
+  .v2 .t.on i{color:#5cc0ff}
+  .v2 .body{flex:1;overflow:hidden;padding:4px 16px}
+  .v2 .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#5c6672;margin:16px 0 8px}
+  .v2 .promptbox{border-radius:12px;background:#121820;border:1px solid #ffffff0f;padding:13px}
+  .v2 .promptbox .txt{font-size:13px;line-height:1.5;color:#aeb8c2;min-height:52px}
+  .v2 .promptbox .enh{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11.5px;font-weight:500;color:#5cc0ff}
+  .v2 .promptbox .enh i{font-size:13px}
+  .v2 .field{display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 14px;border-radius:10px;background:#121820;border:1px solid #ffffff0d;margin-bottom:8px;font-size:13px}
+  .v2 .field .l{display:inline-flex;align-items:center;gap:9px;color:#c4cdd6}
+  .v2 .field .l i{font-size:15px;color:#7d8896}
+  .v2 .field .r{color:#7d8896;font-size:12px;display:inline-flex;align-items:center;gap:6px}
+  .v2 .seg{display:flex;gap:6px}
+  .v2 .seg .s{flex:1;height:40px;display:grid;place-items:center;border-radius:9px;background:#121820;border:1px solid #ffffff0d;color:#7d8896;font-size:12.5px;font-weight:500}
+  .v2 .seg .s.on{background:#2f8fff;border-color:#2f8fff;color:#04101e}
+  .v2 .foot{padding:12px 16px 16px;border-top:1px solid #ffffff0d}
+  .v2 .fr{display:flex;justify-content:space-between;font-size:12px;margin-bottom:10px}
+  .v2 .fr .k{color:#5c6672}.v2 .fr .v{font-weight:600}
+  .v2 .genbtn{width:100%;height:46px;border-radius:11px;background:#2f8fff;color:#04101e;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+  /* ============ V3: SPLIT CANVAS + RAIL (amber) ============ */
+  .v3{background:#141210;color:#f0ebe4;display:flex}
+  .v3 .rail{width:56px;flex:none;background:#0f0d0b;border-right:1px solid #ffffff0a;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px}
+  .v3 .rail .logo{width:30px;height:30px;border-radius:8px;background:#ffb020;display:grid;place-items:center;color:#1a1200;font-size:15px;margin-bottom:10px}
+  .v3 .rail button{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:#6b6357;font-size:18px;position:relative}
+  .v3 .rail button.on{background:#ffffff0f;color:#f0ebe4}
+  .v3 .rail button.on::before{content:"";position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:2.5px;height:16px;border-radius:0 2px 2px 0;background:#ffb020}
+  .v3 .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .v3 .top{padding:14px 16px;border-bottom:1px solid #ffffff0a}
+  .v3 .top .t{font-size:15px;font-weight:600}
+  .v3 .top .s{font-size:11px;color:#8a8073;margin-top:2px}
+  .v3 .ctrls{padding:14px 16px;border-bottom:1px solid #ffffff0a}
+  .v3 .ta{border-radius:11px;background:#0f0d0b;border:1px solid #ffffff0d;padding:12px;font-size:13px;color:#a89e8f;min-height:56px;line-height:1.5}
+  .v3 .opts{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+  .v3 .opt{height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 11px;border-radius:8px;background:#1c1915;border:1px solid #ffffff0d;font-size:11.5px;color:#c9c0b2}
+  .v3 .opt i{font-size:13px;color:#8a8073}
+  .v3 .opt.acc{margin-left:auto;background:#ffb020;border-color:#ffb020;color:#1a1200;font-weight:600}
+  .v3 .stage{flex:1;padding:16px;display:grid;place-items:center;position:relative;background:radial-gradient(circle at 50% 35%,#ffffff08,transparent 60%)}
+  .v3 .frame{width:100%;max-width:320px;aspect-ratio:1;border-radius:14px;border:1px solid #ffffff14;overflow:hidden;position:relative;background:linear-gradient(155deg,#2a2016,#14100b)}
+  .v3 .frame .ph{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff33;font-size:28px}
+  .v3 .frame .cap2{position:absolute;left:14px;right:14px;bottom:12px}
+  .v3 .frame .cap2 .t{font-size:13px;font-weight:500;color:#fff}
+  .v3 .frame .cap2 .s{font-size:10px;color:#ffffff88;margin-top:2px}
+  .v3 .strip{padding:11px 16px;border-top:1px solid #ffffff0a;display:flex;gap:8px;align-items:center}
+  .v3 .strip .th{width:52px;height:52px;border-radius:9px;border:1px solid #ffffff12;background:#1c1915;flex:none}
+  .v3 .strip .th.on{border:1.5px solid #ffb020}
+  .v3 .strip .gen2{margin-left:auto;height:40px;padding:0 18px;border-radius:10px;background:#ffb020;color:#1a1200;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:7px}
+</style></head>
+<body>
+<div class="row">
+
+  <!-- ============ VARIANT 1 ============ -->
+  <div class="col">
+    <div class="cap"><span class="dot" style="background:#d1fe17"></span>Variant 1 — <b>Higgsfield sodiq</b></div>
+    <div class="capsub">Immersiv "lenta = natija" oqimi. Pastda muzlagan-shisha kompozer, pill sozlamalar, lime accent. Higgsfield'ga eng yaqin.</div>
+    <div class="panel v1">
+      <div class="grid-bg"></div>
+      <div class="hd">
+        <div class="backc"><i class="ph ph-arrow-left"></i></div>
+        <div class="tabwrap">
+          <div class="tab on"><i class="ph-fill ph-video-camera"></i>Video</div>
+          <div class="tab"><i class="ph ph-image"></i>Rasm</div>
+        </div>
+        <div class="backc"><i class="ph ph-squares-four"></i></div>
+      </div>
+      <div class="feed">
+        <div class="gcard">
+          <div class="glow"></div>
+          <div class="chipstat"><span class="spin"></span>Ishlanmoqda</div>
+          <div class="media" style="background:#1c1e20"></div>
+        </div>
+        <div class="gcard">
+          <div class="media"><div class="ar">16:9</div><div class="play"><i class="ph-fill ph-play-circle"></i></div></div>
+        </div>
+        <div class="meta"><span>Seedance 2.0</span><span class="d"></span><span>16:9</span><span class="d"></span><span>1080p</span><span class="d"></span><span>15s</span></div>
+      </div>
+      <div class="composer">
+        <div class="refstrip">
+          <div class="reftile"><i class="ph ph-plus"></i></div>
+          <div class="reftile" style="background:linear-gradient(135deg,#2b3550,#0d1119)"></div>
+        </div>
+        <div class="ta"><span class="ph">Fikringizni yozing…</span></div>
+        <div class="crow">
+          <div class="addc"><i class="ph ph-plus"></i></div>
+          <div class="chip"><i class="ph ph-cube"></i>Seedance<span class="cv"><i class="ph ph-caret-down" style="font-size:11px"></i></span></div>
+          <div class="chip"><i class="ph ph-crop"></i>16:9</div>
+          <div class="send"><i class="ph-fill ph-arrow-up"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VARIANT 2 ============ -->
+  <div class="col">
+    <div class="cap"><span class="dot" style="background:#2f8fff"></span>Variant 2 — <b>Tuzilgan forma</b></div>
+    <div class="capsub">An'anaviy yuqoridan-pastga forma: prompt karta, belgilangan sozlama qatorlari, to'liq enli tugma. Ko'k accent. Osonroq, aniqroq.</div>
+    <div class="panel v2">
+      <div class="hd">
+        <div class="logo"><i class="ph ph-stack"></i></div>
+        <div class="nm">FrameFlow</div>
+        <div class="cr"><i class="ph-fill ph-lightning"></i><span class="mono">1,230</span></div>
+      </div>
+      <div class="tabs">
+        <div class="t on"><i class="ph ph-image"></i>Rasm</div>
+        <div class="t"><i class="ph ph-video-camera"></i>Video</div>
+        <div class="t"><i class="ph ph-microphone"></i>Ovoz</div>
+        <div class="t"><i class="ph ph-waveform"></i>SFX</div>
+      </div>
+      <div class="body">
+        <div class="lbl">Prompt</div>
+        <div class="promptbox">
+          <div class="txt">Neon shahar, kechqurun yomg'ir, kinematik yorug'lik…</div>
+          <div class="enh"><i class="ph ph-sparkle"></i>Yaxshilash</div>
+        </div>
+        <div class="lbl">Model</div>
+        <div class="field"><span class="l"><i class="ph ph-cube"></i>FrameFlow Vision 2</span><span class="r"><i class="ph ph-caret-down"></i></span></div>
+        <div class="lbl">O'lcham</div>
+        <div class="seg"><div class="s on">1:1</div><div class="s">16:9</div><div class="s">9:16</div><div class="s">4:3</div></div>
+        <div class="lbl">Soni</div>
+        <div class="seg"><div class="s">1</div><div class="s">2</div><div class="s on">4</div><div class="s">8</div></div>
+      </div>
+      <div class="foot">
+        <div class="fr"><span class="k">5 kredit × 4 rasm</span><span class="v mono">20 kredit</span></div>
+        <div class="genbtn"><i class="ph-fill ph-lightning"></i>Yaratish</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VARIANT 3 ============ -->
+  <div class="col">
+    <div class="cap"><span class="dot" style="background:#ffb020"></span>Variant 3 — <b>Rail + katta kanvas</b></div>
+    <div class="capsub">Chapda ikonka-rail, tepada ixcham sozlama, pastda katta natija kanvasi + film-strip. Iliq amber accent. Mini kreativ-suite hissi.</div>
+    <div class="panel v3">
+      <div class="rail">
+        <div class="logo"><i class="ph ph-stack"></i></div>
+        <button class="on"><i class="ph ph-image"></i></button>
+        <button><i class="ph ph-video-camera"></i></button>
+        <button><i class="ph ph-microphone"></i></button>
+        <button><i class="ph ph-waveform"></i></button>
+      </div>
+      <div class="main">
+        <div class="top"><div class="t">Rasm yaratish</div><div class="s mono">FrameFlow Vision 2 · 20 kredit</div></div>
+        <div class="ctrls">
+          <div class="ta">Neon shahar, kechqurun yomg'ir, kinematik…</div>
+          <div class="opts">
+            <div class="opt"><i class="ph ph-crop"></i>1:1</div>
+            <div class="opt"><i class="ph ph-copy"></i>4</div>
+            <div class="opt"><i class="ph ph-sparkle"></i>Yaxshilash</div>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="frame"><div class="ph"><i class="ph ph-image"></i></div><div class="cap2"><div class="t">Neon shahar konsepti</div><div class="s mono">Vision 2 · 4K</div></div></div>
+        </div>
+        <div class="strip">
+          <div class="th on"></div><div class="th"></div><div class="th"></div>
+          <div class="gen2"><i class="ph-fill ph-lightning"></i>Yaratish</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body></html>

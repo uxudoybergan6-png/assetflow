@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="uz"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plagin V3 — to'liq oqim (Rail+kanvas/amber)</title>
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#08080a;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;padding:26px}
+  .title{color:#f0f0f2;font-size:18px;font-weight:600;margin-bottom:2px}
+  .subttl{color:#6a6a72;font-size:12.5px;margin-bottom:22px}
+  .flow{display:flex;gap:22px;flex-wrap:wrap}
+  .screen{width:360px}
+  .scap{color:#c9c9cf;font-size:12.5px;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .scap .n{width:20px;height:20px;border-radius:6px;background:#1c1915;display:grid;place-items:center;font-size:11px;color:#ffb020}
+  .p{height:580px;border-radius:16px;overflow:hidden;position:relative;background:#141210;color:#f0ebe4;display:flex;border:1px solid #221c15}
+  .mono{font-variant-numeric:tabular-nums}
+  /* RAIL */
+  .rail{width:54px;flex:none;background:#0f0d0b;border-right:1px solid #ffffff0a;display:flex;flex-direction:column;align-items:center;padding:11px 0;gap:4px}
+  .rail .logo{width:30px;height:30px;border-radius:8px;background:#ffb020;display:grid;place-items:center;color:#1a1200;font-size:15px;margin-bottom:9px}
+  .rail button{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#6b6357;font-size:17px;position:relative}
+  .rail button.on{background:#ffffff0f;color:#f0ebe4}
+  .rail button.on::before{content:"";position:absolute;left:-7px;top:50%;transform:translateY(-50%);width:2.5px;height:15px;border-radius:0 2px 2px 0;background:#ffb020}
+  .rail .sp{flex:1}
+  .rail .cr{width:38px;border-radius:9px;background:#ffb0201a;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0;color:#ffb020}
+  .rail .cr i{font-size:12px}.rail .cr span{font-size:8.5px;font-weight:700}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  /* LOGIN (full, no rail content) */
+  .lgmain{align-items:center;justify-content:center;text-align:center;padding:0 30px;display:flex;flex-direction:column;height:100%}
+  .lgmain .mark{width:60px;height:60px;border-radius:16px;background:#ffb020;display:grid;place-items:center;color:#1a1200;font-size:28px;box-shadow:0 0 40px #ffb02040}
+  .lgmain h1{font-size:22px;font-weight:600;margin-top:20px}
+  .lgmain p{font-size:12.5px;color:#8a8073;line-height:1.5;margin-top:9px}
+  .lgmain .cta{width:100%;height:44px;border-radius:11px;background:#ffb020;color:#1a1200;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:22px}
+  /* HEADERS */
+  .top{padding:14px 16px;border-bottom:1px solid #ffffff0a}
+  .top .t{font-size:15px;font-weight:600}
+  .top .s{font-size:11px;color:#8a8073;margin-top:2px}
+  /* HOME */
+  .hsec{padding:12px 16px;overflow:hidden}
+  .hlbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#8a8073;margin:6px 0 10px}
+  .recent{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+  .recent .r{aspect-ratio:1;border-radius:10px;position:relative;overflow:hidden}
+  .recent .r.a{background:linear-gradient(150deg,#2a2016,#14100b)}
+  .recent .r.b{background:linear-gradient(150deg,#2a1620,#140b11)}
+  .recent .r.c{background:linear-gradient(150deg,#16222a,#0b1116)}
+  .recent .r .ic{position:absolute;top:5px;left:5px;font-size:9px;color:#fff;background:#00000066;border-radius:5px;padding:2px 4px}
+  .htiles{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .htile{border-radius:13px;background:#1c1915;border:1px solid #ffffff0a;padding:13px}
+  .htile .ic{width:34px;height:34px;border-radius:9px;background:#ffb0201a;display:grid;place-items:center;color:#ffb020;font-size:16px}
+  .htile .t{font-size:13px;font-weight:600;margin-top:11px}
+  .htile .d{font-size:10.5px;color:#8a8073;margin-top:2px}
+  /* GENERATE */
+  .ctrls{padding:13px 16px;border-bottom:1px solid #ffffff0a}
+  .ta{border-radius:11px;background:#0f0d0b;border:1px solid #ffffff0d;padding:11px;font-size:12.5px;color:#a89e8f;min-height:48px;line-height:1.5}
+  .opts{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .opt{height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 11px;border-radius:8px;background:#1c1915;border:1px solid #ffffff0d;font-size:11.5px;color:#c9c0b2}
+  .opt i{font-size:13px;color:#8a8073}
+  .stage{flex:1;padding:16px;display:grid;place-items:center;position:relative;background:radial-gradient(circle at 50% 35%,#ffffff08,transparent 60%)}
+  .frame{width:100%;max-width:280px;aspect-ratio:1;border-radius:14px;border:1px solid #ffffff14;overflow:hidden;position:relative;background:linear-gradient(155deg,#2a2016,#14100b)}
+  .frame .ph{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff2e;font-size:26px}
+  .frame .cap2{position:absolute;left:14px;right:14px;bottom:12px}
+  .frame .cap2 .t{font-size:13px;font-weight:500;color:#fff}
+  .frame .cap2 .s{font-size:10px;color:#ffffff88;margin-top:2px}
+  .frame.empty{background:#161310;border:1.5px dashed #ffffff1a}
+  .frame.empty .eb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:#6b6357;text-align:center;padding:20px}
+  .frame.empty .eb .ec{width:44px;height:44px;border-radius:12px;background:#1c1915;display:grid;place-items:center;color:#ffb020;font-size:20px}
+  .strip{padding:11px 16px;border-top:1px solid #ffffff0a;display:flex;gap:8px;align-items:center}
+  .strip .th{width:46px;height:46px;border-radius:9px;border:1px solid #ffffff12;background:#1c1915;flex:none}
+  .strip .th.on{border:1.5px solid #ffb020}
+  .gen2{margin-left:auto;height:40px;padding:0 17px;border-radius:10px;background:#ffb020;color:#1a1200;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:7px}
+  /* RESULT actions */
+  .racts{padding:0 16px 14px;display:flex;gap:8px}
+  .racts .b{flex:1;height:38px;border-radius:9px;background:#1c1915;border:1px solid #ffffff0d;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:500;color:#f0ebe4}
+  .racts .b.acc{background:#ffb020;border-color:#ffb020;color:#1a1200;font-weight:600}
+</style></head>
+<body>
+  <div class="title">Plagin — V3 "Rail + katta kanvas" · to'liq oqim</div>
+  <div class="subttl">Boshidan oxirigacha 5 ekran. Chapda doimiy ikonka-rail, tepada ixcham sozlama, pastda katta natija kanvasi + film-strip. Iliq amber accent, mini kreativ-suite hissi.</div>
+  <div class="flow">
+
+    <!-- 1 LOGIN -->
+    <div class="screen">
+      <div class="scap"><span class="n">1</span>Kirish</div>
+      <div class="p">
+        <div class="main"><div class="lgmain">
+          <div class="mark"><i class="ph ph-stack"></i></div>
+          <h1>FrameFlow</h1>
+          <p>After Effects ichida ijodiy studiya — kiring va boshlang.</p>
+          <div class="cta"><i class="ph ph-sign-in"></i>Kirish</div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- 2 HOME -->
+    <div class="screen">
+      <div class="scap"><span class="n">2</span>Bosh</div>
+      <div class="p">
+        <div class="rail">
+          <div class="logo"><i class="ph ph-stack"></i></div>
+          <button class="on"><i class="ph ph-house"></i></button>
+          <button><i class="ph ph-image"></i></button>
+          <button><i class="ph ph-video-camera"></i></button>
+          <button><i class="ph ph-microphone"></i></button>
+          <button><i class="ph ph-clock-counter-clockwise"></i></button>
+          <div class="sp"></div>
+          <div class="cr"><i class="ph-fill ph-lightning"></i><span>1230</span></div>
+        </div>
+        <div class="main">
+          <div class="top"><div class="t">Xush kelibsiz</div><div class="s">Bugun nima yaratamiz?</div></div>
+          <div class="hsec">
+            <div class="hlbl">So'nggi generatsiyalar</div>
+            <div class="recent"><div class="r a"><span class="ic"><i class="ph-fill ph-image"></i></span></div><div class="r b"><span class="ic"><i class="ph-fill ph-video-camera"></i></span></div><div class="r c"><span class="ic"><i class="ph-fill ph-image"></i></span></div></div>
+            <div class="hlbl">Asboblar</div>
+            <div class="htiles">
+              <div class="htile"><div class="ic"><i class="ph ph-image"></i></div><div class="t">Rasm</div><div class="d">Matndan vizual</div></div>
+              <div class="htile"><div class="ic"><i class="ph ph-video-camera"></i></div><div class="t">Video</div><div class="d">Promptdan klip</div></div>
+              <div class="htile"><div class="ic"><i class="ph ph-microphone"></i></div><div class="t">Voiceover</div><div class="d">Tabiiy ovoz</div></div>
+              <div class="htile"><div class="ic"><i class="ph ph-waveform"></i></div><div class="t">SFX</div><div class="d">Effekt</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 GENERATE (empty canvas) -->
+    <div class="screen">
+      <div class="scap"><span class="n">3</span>Generatsiya</div>
+      <div class="p">
+        <div class="rail"><div class="logo"><i class="ph ph-stack"></i></div><button><i class="ph ph-house"></i></button><button class="on"><i class="ph ph-image"></i></button><button><i class="ph ph-video-camera"></i></button><button><i class="ph ph-microphone"></i></button><button><i class="ph ph-clock-counter-clockwise"></i></button><div class="sp"></div><div class="cr"><i class="ph-fill ph-lightning"></i><span>1230</span></div></div>
+        <div class="main">
+          <div class="top"><div class="t">Rasm yaratish</div><div class="s mono">Vision 2 · 20 kredit</div></div>
+          <div class="ctrls">
+            <div class="ta">Neon shahar, kechqurun yomg'ir, kinematik…</div>
+            <div class="opts"><div class="opt"><i class="ph ph-cube"></i>Vision 2</div><div class="opt"><i class="ph ph-crop"></i>1:1</div><div class="opt"><i class="ph ph-copy"></i>4</div></div>
+          </div>
+          <div class="stage"><div class="frame empty"><div class="eb"><div class="ec"><i class="ph ph-sparkle"></i></div><div style="font-size:12.5px;font-weight:600;color:#a89e8f">Hali generatsiya yo'q</div><div style="font-size:11px;line-height:1.4">Promptni to'ldiring va Yaratish'ni bosing</div></div></div></div>
+          <div class="strip"><div class="gen2" style="margin:0 auto"><i class="ph-fill ph-lightning"></i>Yaratish · 20 ⚡</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 RESULT -->
+    <div class="screen">
+      <div class="scap"><span class="n">4</span>Natija</div>
+      <div class="p">
+        <div class="rail"><div class="logo"><i class="ph ph-stack"></i></div><button><i class="ph ph-house"></i></button><button class="on"><i class="ph ph-image"></i></button><button><i class="ph ph-video-camera"></i></button><button><i class="ph ph-microphone"></i></button><button><i class="ph ph-clock-counter-clockwise"></i></button><div class="sp"></div><div class="cr"><i class="ph-fill ph-lightning"></i><span>1210</span></div></div>
+        <div class="main">
+          <div class="top"><div class="t">Rasm yaratish</div><div class="s mono">Vision 2 · 20 kredit</div></div>
+          <div class="stage"><div class="frame"><div class="cap2"><div class="t">Neon shahar konsepti</div><div class="s mono">Vision 2 · 4K</div></div></div></div>
+          <div class="racts"><div class="b"><i class="ph ph-arrow-line-down"></i>Timeline</div><div class="b acc"><i class="ph ph-download-simple"></i>Yuklab olish</div></div>
+          <div class="strip"><div class="th on"></div><div class="th"></div><div class="th"></div><div class="th"></div><div class="gen2"><i class="ph-fill ph-lightning"></i>Yana</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 HISTORY -->
+    <div class="screen">
+      <div class="scap"><span class="n">5</span>Tarix</div>
+      <div class="p">
+        <div class="rail"><div class="logo"><i class="ph ph-stack"></i></div><button><i class="ph ph-house"></i></button><button><i class="ph ph-image"></i></button><button><i class="ph ph-video-camera"></i></button><button><i class="ph ph-microphone"></i></button><button class="on"><i class="ph ph-clock-counter-clockwise"></i></button><div class="sp"></div><div class="cr"><i class="ph-fill ph-lightning"></i><span>1210</span></div></div>
+        <div class="main">
+          <div class="top"><div class="t">Tarix</div><div class="s">Barcha generatsiyalaringiz</div></div>
+          <div class="hsec">
+            <div class="recent" style="grid-template-columns:1fr 1fr;gap:9px">
+              <div class="r a" style="aspect-ratio:16/10"><span class="ic"><i class="ph-fill ph-image"></i></span></div>
+              <div class="r b" style="aspect-ratio:16/10"><span class="ic"><i class="ph-fill ph-video-camera"></i></span></div>
+              <div class="r c" style="aspect-ratio:16/10"><span class="ic"><i class="ph-fill ph-image"></i></span></div>
+              <div class="r a" style="aspect-ratio:16/10"><span class="ic"><i class="ph-fill ph-waveform"></i></span></div>
+              <div class="r b" style="aspect-ratio:16/10"><span class="ic"><i class="ph-fill ph-image"></i></span></div>
+              <div class="r c" style="aspect-ratio:16/10"><span class="ic"><i class="ph-fill ph-image"></i></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body></html>

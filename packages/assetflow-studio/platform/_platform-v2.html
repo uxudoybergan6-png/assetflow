@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uz"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platforma V2 — Editorial rails</title>
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0E0B0A;--card:#1A1512;--card2:#221B17;--bd:#2A2119;--bd2:#3A2E23;
+    --txt:#F4EFEA;--txt2:#A69686;--txt3:#6E6055;--acc:#FF6B3D;--acc2:#e85a2e}
+  body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+  .mono{font-variant-numeric:tabular-nums}
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:20;height:62px;display:flex;align-items:center;gap:26px;padding:0 32px;background:#0e0b0ae6;backdrop-filter:blur(14px);border-bottom:1px solid var(--bd)}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:17px;letter-spacing:-.02em}
+  .logo .m{width:26px;height:26px;border-radius:8px;background:var(--acc);display:grid;place-items:center;color:#1a0d07;font-size:14px}
+  .navlinks{display:flex;gap:2px}
+  .navlinks a{padding:8px 14px;font-size:13.5px;font-weight:450;color:var(--txt2);border-bottom:2px solid transparent}
+  .navlinks a.on{color:var(--txt);border-bottom-color:var(--acc)}
+  .navr{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .sbtn{width:40px;height:40px;border-radius:10px;background:var(--card);border:1px solid var(--bd);display:grid;place-items:center;color:var(--txt2);font-size:16px}
+  .btn-acc{padding:9px 18px;border-radius:10px;background:var(--acc);color:#1a0d07;font-weight:600;font-size:13.5px}
+  /* FEATURED HERO */
+  .feat{margin:24px 32px 0;height:300px;border-radius:20px;overflow:hidden;position:relative;background:linear-gradient(120deg,#3a1c12,#1a0f0a)}
+  .feat::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#0e0b0aee 30%,transparent 70%)}
+  .feat .inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:center;padding:0 48px;max-width:560px}
+  .feat .tag{display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:5px 12px;border-radius:999px;background:var(--acc);color:#1a0d07;font-size:11px;font-weight:700;margin-bottom:16px}
+  .feat h1{font-size:38px;font-weight:600;letter-spacing:-.03em;line-height:1.08;margin-bottom:12px}
+  .feat p{font-size:15px;color:var(--txt2);line-height:1.5;margin-bottom:22px}
+  .feat .btns{display:flex;gap:12px}
+  .feat .b1{padding:12px 22px;border-radius:11px;background:var(--acc);color:#1a0d07;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+  .feat .b2{padding:12px 22px;border-radius:11px;background:#ffffff14;border:1px solid #ffffff1f;color:var(--txt);font-weight:500;font-size:14px}
+  /* RAIL */
+  .rail{margin:34px 0 0;padding:0 32px}
+  .railhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+  .railhd h2{font-size:19px;font-weight:600;letter-spacing:-.02em}
+  .railhd .all{font-size:13px;color:var(--acc);font-weight:500;display:inline-flex;align-items:center;gap:5px}
+  .track{display:flex;gap:15px;overflow:hidden}
+  .rcard{flex:0 0 268px;border-radius:13px;overflow:hidden;background:var(--card);border:1px solid var(--bd)}
+  .rthumb{position:relative;aspect-ratio:16/10;overflow:hidden}
+  .rthumb.a{background:linear-gradient(140deg,#44281c,#241209)}
+  .rthumb.b{background:linear-gradient(140deg,#3a1c2c,#1d0f18)}
+  .rthumb.c{background:linear-gradient(140deg,#2c2c1c,#161609)}
+  .rthumb.d{background:linear-gradient(140deg,#1c3040,#0d1820)}
+  .rthumb .pro{position:absolute;top:9px;right:9px;padding:3px 8px;border-radius:6px;background:var(--acc);color:#1a0d07;font-size:9.5px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+  .rthumb .app{position:absolute;top:9px;left:9px;padding:3px 8px;border-radius:6px;background:#000000a6;font-size:9.5px;font-weight:600}
+  .rthumb .dur{position:absolute;bottom:9px;right:9px;padding:2px 7px;border-radius:6px;background:#000000a6;font-size:10px;font-weight:600}
+  .rbody{padding:12px 14px}
+  .rbody .nm{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rbody .meta{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:11.5px;color:var(--txt3)}
+  .rbody .meta .d{width:3px;height:3px;border-radius:50%;background:var(--txt3)}
+  /* CATEGORY PILLS (mini rail) */
+  .catrail{margin:34px 32px 0;display:flex;gap:14px;overflow:hidden}
+  .catcard{flex:0 0 200px;height:96px;border-radius:13px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:14px}
+  .catcard.c1{background:linear-gradient(135deg,#4a2a1a,#2a1810)}
+  .catcard.c2{background:linear-gradient(135deg,#3a1c34,#1f0f1c)}
+  .catcard.c3{background:linear-gradient(135deg,#2a2c18,#16180c)}
+  .catcard.c4{background:linear-gradient(135deg,#1c3038,#0e181c)}
+  .catcard .t{font-size:15px;font-weight:600;position:relative;z-index:2}
+  .catcard .c{font-size:11px;color:var(--txt2);position:relative;z-index:2;margin-top:2px}
+  .catcard i{position:absolute;top:12px;right:14px;font-size:22px;color:#ffffff40}
+</style></head>
+<body>
+  <div class="nav">
+    <div class="logo"><div class="m"><i class="ph ph-stack"></i></div>FrameFlow</div>
+    <div class="navlinks"><a class="on">Kashf et</a><a>Shablonlar</a><a>AI Studio</a><a>Plagin</a><a>Narxlar</a></div>
+    <div class="navr"><div class="sbtn"><i class="ph ph-magnifying-glass"></i></div><a class="btn-acc">Bepul boshlash</a></div>
+  </div>
+
+  <div class="feat">
+    <div class="inner">
+      <div class="tag"><i class="ph-fill ph-sparkle"></i>YANGI KOLLEKSIYA</div>
+      <h1>Kinematik intro paketi</h1>
+      <p>40+ premium After Effects shabloni — neon, glitch va 3D uslublar. Bir bosishda yuklab oling.</p>
+      <div class="btns"><div class="b1"><i class="ph-fill ph-play"></i>Ko'rish</div><div class="b2">Kolleksiya</div></div>
+    </div>
+  </div>
+
+  <div class="catrail">
+    <div class="catcard c1"><i class="ph-fill ph-film-strip"></i><div><div class="t">Video shablon</div><div class="c">4,200+ element</div></div></div>
+    <div class="catcard c2"><i class="ph-fill ph-text-aa"></i><div><div class="t">Lower Thirds</div><div class="c">1,150+ element</div></div></div>
+    <div class="catcard c3"><i class="ph-fill ph-swatches"></i><div><div class="t">LUT & Preset</div><div class="c">640+ element</div></div></div>
+    <div class="catcard c4"><i class="ph-fill ph-waveform"></i><div><div class="t">SFX</div><div class="c">720+ element</div></div></div>
+    <div class="catcard c1"><i class="ph-fill ph-sparkle"></i><div><div class="t">AI Templates</div><div class="c">300+ element</div></div></div>
+  </div>
+
+  <div class="rail">
+    <div class="railhd"><h2>Trendda</h2><span class="all">Barchasi<i class="ph ph-arrow-right"></i></span></div>
+    <div class="track">
+      <div class="rcard"><div class="rthumb a"><div class="app">Ae</div><div class="pro"><i class="ph-fill ph-crown"></i>PRO</div><div class="dur">0:12</div></div><div class="rbody"><div class="nm">Neon Pulse Intro</div><div class="meta"><span>NOVA Studio</span><span class="d"></span><span>4K</span></div></div></div>
+      <div class="rcard"><div class="rthumb b"><div class="app">Pr</div><div class="dur">0:08</div></div><div class="rbody"><div class="nm">Minimal Lower Third</div><div class="meta"><span>Kadr Lab</span><span class="d"></span><span>HD</span></div></div></div>
+      <div class="rcard"><div class="rthumb c"><div class="app">Ae</div><div class="pro"><i class="ph-fill ph-crown"></i>PRO</div><div class="dur">0:05</div></div><div class="rbody"><div class="nm">Glitch Transitions</div><div class="meta"><span>Vizor</span><span class="d"></span><span>4K</span></div></div></div>
+      <div class="rcard"><div class="rthumb d"><div class="app">Dr</div><div class="dur">—</div></div><div class="rbody"><div class="nm">Cinematic LUT — Dune</div><div class="meta"><span>Lumen Co</span></div></div></div>
+    </div>
+  </div>
+
+  <div class="rail">
+    <div class="railhd"><h2>AI bilan yaratilgan</h2><span class="all">Barchasi<i class="ph ph-arrow-right"></i></span></div>
+    <div class="track">
+      <div class="rcard"><div class="rthumb b"><div class="app">Ae</div><div class="pro"><i class="ph-fill ph-crown"></i>PRO</div><div class="dur">0:15</div></div><div class="rbody"><div class="nm">Kinetic Typography</div><div class="meta"><span>Orbit FX</span><span class="d"></span><span>4K</span></div></div></div>
+      <div class="rcard"><div class="rthumb c"><div class="app">Ae</div><div class="dur">0:10</div></div><div class="rbody"><div class="nm">Soft Glass Titles</div><div class="meta"><span>PixelHaus</span></div></div></div>
+      <div class="rcard"><div class="rthumb a"><div class="app">Pr</div><div class="pro"><i class="ph-fill ph-crown"></i>PRO</div><div class="dur">—</div></div><div class="rbody"><div class="nm">Impact SFX Pack</div><div class="meta"><span>Sardor A.</span></div></div></div>
+      <div class="rcard"><div class="rthumb d"><div class="app">Ae</div><div class="dur">0:45</div></div><div class="rbody"><div class="nm">Corporate Slideshow</div><div class="meta"><span>Dilnoza K.</span></div></div></div>
+    </div>
+  </div>
+</body></html>

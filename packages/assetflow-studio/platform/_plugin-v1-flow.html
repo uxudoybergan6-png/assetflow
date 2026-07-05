@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="uz"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plagin V1 — to'liq oqim (Higgsfield/lime)</title>
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#08080a;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;padding:26px}
+  .title{color:#f0f0f2;font-size:18px;font-weight:600;margin-bottom:2px}
+  .subttl{color:#6a6a72;font-size:12.5px;margin-bottom:22px}
+  .flow{display:flex;gap:22px;flex-wrap:wrap}
+  .screen{width:360px}
+  .scap{color:#c9c9cf;font-size:12.5px;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .scap .n{width:20px;height:20px;border-radius:6px;background:#1c1e20;display:grid;place-items:center;font-size:11px;color:#d1fe17}
+  .p{height:580px;border-radius:16px;overflow:hidden;position:relative;background:#131416;color:#f7f7f8;display:flex;flex-direction:column;border:1px solid #1e1e22}
+  .mono{font-variant-numeric:tabular-nums}
+  .gridbg{position:absolute;inset:0;background-image:radial-gradient(circle,#ffffff0d 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
+  /* generic bits */
+  .badge-skew{display:inline-block;transform:skewX(-12deg);background:#d1fe17;box-shadow:0 2px 0 #d1fe1766;border-radius:4px;padding:2px 7px}
+  .badge-skew span{display:inline-block;transform:skewX(12deg);font-size:8px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.02em}
+  /* LOGIN */
+  .lg{align-items:center;justify-content:center;text-align:center;padding:0 34px}
+  .lg .mark{width:64px;height:64px;border-radius:18px;background:#d1fe17;display:grid;place-items:center;color:#0b0b0b;font-size:30px;box-shadow:0 0 44px #d1fe1759;position:relative;z-index:2}
+  .lg h1{position:relative;z-index:2;font-size:22px;font-weight:600;margin-top:22px}
+  .lg p{position:relative;z-index:2;font-size:12.5px;color:#9ea2ad;line-height:1.5;margin-top:10px;max-width:250px}
+  .lg .cta{position:relative;z-index:2;width:100%;height:44px;border-radius:999px;background:#d1fe17;color:#0b0b0b;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:26px}
+  .lg .alt{position:relative;z-index:2;font-size:12px;color:#6a6a72;margin-top:16px}
+  /* HOME */
+  .sh{position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:15px 16px}
+  .sh .lm{width:26px;height:26px;border-radius:7px;background:#d1fe17;display:grid;place-items:center;color:#0b0b0b;font-size:13px}
+  .sh .nm{font-weight:600;font-size:15px}
+  .sh .cr{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#d1fe17}
+  .sh .av{width:26px;height:26px;border-radius:50%;background:#26262c;display:grid;place-items:center;font-size:10px;color:#9a9aa3}
+  .sec{position:relative;z-index:2;padding:6px 16px 0}
+  .seclbl{font-size:11px;font-weight:600;color:#7a7a82;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 10px}
+  .strip{display:flex;gap:9px;overflow:hidden}
+  .strip .t{width:88px;height:88px;border-radius:12px;flex:none;position:relative;overflow:hidden}
+  .strip .t.a{background:linear-gradient(150deg,#1a2530,#0d1117)}
+  .strip .t.b{background:linear-gradient(150deg,#2a1830,#160d1c)}
+  .strip .t.add{background:#ffffff0d;display:grid;place-items:center;color:#ffffff55;font-size:18px;border:1px dashed #ffffff1a}
+  .strip .t .ic{position:absolute;top:5px;left:5px;font-size:10px;color:#fff;background:#00000066;border-radius:5px;padding:2px 4px}
+  .apps{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .app{min-height:82px;border-radius:16px;background:#1c1e20;padding:12px 13px;position:relative}
+  .app .ic{font-size:19px;color:#fff}
+  .app .t{font-size:13.5px;font-weight:600;margin-top:20px}
+  .app .d{font-size:10.5px;color:#828282;margin-top:2px}
+  .app.soon{background:#181a1c}
+  .app.soon .t,.app.soon .ic{color:#5a5a60}
+  .app .soonb{position:absolute;top:11px;right:11px;font-size:8px;font-weight:700;color:#6a6a72;background:#ffffff0d;border-radius:5px;padding:2px 6px}
+  .app.wide{grid-column:span 2;background:linear-gradient(135deg,rgba(209,254,23,.13),rgba(83,204,238,.09) 46%,#1c1e20);border:1px solid rgba(209,254,23,.2)}
+  /* GENERATE + FEED (reuse) */
+  .hd{position:relative;z-index:2;display:flex;align-items:center;gap:8px;padding:13px 16px}
+  .backc{width:28px;height:28px;border-radius:50%;background:#ffffff0d;display:grid;place-items:center;color:#fff;font-size:14px}
+  .tabwrap{display:flex;gap:2px;background:#ffffff0d;border-radius:26px;padding:2px;margin:0 auto}
+  .tab{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:600;color:#737475}
+  .tab.on{background:#ffffff1a;color:#fff}
+  .tab i{font-size:14px}
+  .feed{position:relative;z-index:2;flex:1;overflow:hidden;padding:4px 16px 0}
+  .gcard{border-radius:12px;overflow:hidden;background:#1c1e20;position:relative;margin-bottom:13px}
+  .media{aspect-ratio:16/9;position:relative}
+  .media.done{background:linear-gradient(150deg,#1a2a30,#0d1519)}
+  .media .ar{position:absolute;top:8px;left:8px;background:#00000073;border-radius:6px;padding:2px 7px;font-size:9px;font-weight:600}
+  .media .play{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff88;font-size:24px}
+  .meta{display:flex;align-items:center;gap:7px;padding:8px 3px 0;font-size:10.5px;color:#ffffff80}
+  .meta .d{width:3px;height:3px;border-radius:50%;background:#ffffff40}
+  .glow{position:absolute;top:0;left:0;right:0;height:64%;background:radial-gradient(at 50% 0,#d1fe1759,#d1fe1724 38%,transparent);filter:blur(14px)}
+  .chipstat{position:absolute;top:8px;left:8px;z-index:3;display:inline-flex;align-items:center;gap:5px;height:23px;padding:0 9px;border-radius:999px;background:#ffffff0a;font-size:9.5px;font-weight:600}
+  .spin{width:11px;height:11px;border:1.5px solid #d1fe17;border-top-color:transparent;border-radius:50%}
+  .composer{position:relative;z-index:3;margin:0 12px 12px;border-radius:22px;background:#1c1c1eeb;border:1px solid #ffffff12;box-shadow:0 18px 42px #00000052;padding:11px}
+  .refrow{display:flex;gap:7px;margin-bottom:9px}
+  .reftile{width:38px;height:38px;border-radius:10px;background:#ffffff0d;border:1px solid #d9d9d90a;display:grid;place-items:center;color:#ffffff55;font-size:14px}
+  .ta{color:#f7f7f8;font-size:13px;font-weight:500;min-height:30px;padding:2px 4px}
+  .ta .ph{color:#898a8b}
+  .crow{display:flex;align-items:center;gap:6px;margin-top:6px}
+  .chip{height:30px;display:inline-flex;align-items:center;gap:5px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:500;color:#ffffffe6}
+  .chip i{font-size:13px;color:#ffffff80}
+  .send{margin-left:auto;width:30px;height:30px;border-radius:50%;background:#d1fe17;display:grid;place-items:center;color:#0b0b0b;font-size:14px;box-shadow:0 0 0 3px #ffffff0d}
+  .addc{width:30px;height:30px;border-radius:50%;background:#ffffff0d;display:grid;place-items:center;color:#fff;font-size:13px}
+  /* RESULT stage */
+  .rstage{position:relative;z-index:2;flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .bigresult{border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(150deg,#1a2a30,#0d1519);aspect-ratio:1}
+  .bigresult .ov{position:absolute;left:14px;right:14px;bottom:12px}
+  .bigresult .ov .t{font-size:14px;font-weight:600;color:#fff}
+  .bigresult .ov .s{font-size:10.5px;color:#ffffff88;margin-top:3px}
+  .ractions{display:flex;gap:8px}
+  .ractions .b{flex:1;height:38px;border-radius:10px;background:#ffffff0d;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:500;color:#fff}
+  .ractions .b.acc{background:#d1fe17;color:#0b0b0b;font-weight:600}
+  .rfilm{display:flex;gap:7px}
+  .rfilm .t{width:52px;height:52px;border-radius:9px;background:#14181e;border:1px solid #ffffff12}
+  .rfilm .t.on{border:1.5px solid #d1fe17}
+  /* MODEL SHEET */
+  .sheetdim{position:absolute;inset:0;z-index:4;background:#00000059;display:flex;align-items:flex-end}
+  .sheet{width:100%;background:#1c1e20;border-top:1px solid #ffffff14;border-radius:18px 18px 0 0;padding:14px 12px 16px}
+  .sheet .sh2{display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px}
+  .sheet .sh2 .t{font-size:14px;font-weight:600}
+  .sheet .sh2 .x{width:26px;height:26px;border-radius:50%;background:#ffffff0d;display:grid;place-items:center;color:#fff;font-size:13px}
+  .mitem{display:flex;align-items:center;gap:10px;height:44px;padding:0 12px;border-radius:10px;font-size:13px}
+  .mitem.on{background:#ffffff14}
+  .mitem .ic{width:28px;height:28px;border-radius:8px;background:#ffffff0d;display:grid;place-items:center;font-size:14px;color:#fff}
+  .mitem .nm{font-weight:500}
+  .mitem .sub{font-size:10.5px;color:#7a7a82}
+  .mitem .dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:#d1fe17}
+  .mitem .pr{margin-left:auto;font-size:11px;color:#9a9aa3}
+</style></head>
+<body>
+  <div class="title">Plagin — V1 "Higgsfield sodiq" · to'liq oqim</div>
+  <div class="subttl">Boshidan oxirigacha 5 ekran. Qora fon + nuqtali to'r, lime accent faqat asosiy amalda, pill sozlamalar, muzlagan-shisha kompozer, "lenta = natija".</div>
+  <div class="flow">
+
+    <!-- 1 LOGIN -->
+    <div class="screen">
+      <div class="scap"><span class="n">1</span>Kirish</div>
+      <div class="p lg"><div class="gridbg"></div>
+        <div class="mark"><i class="ph ph-stack"></i></div>
+        <h1>FrameFlow</h1>
+        <p>After Effects ichida shablon va AI generatsiya — hisobingiz bilan ulang.</p>
+        <div class="cta"><i class="ph ph-arrow-square-out"></i>Brauzerda davom etish</div>
+        <div class="alt">yoki kalit bilan kirish</div>
+      </div>
+    </div>
+
+    <!-- 2 HOME / TOOLS -->
+    <div class="screen">
+      <div class="scap"><span class="n">2</span>Bosh — asboblar</div>
+      <div class="p"><div class="gridbg"></div>
+        <div class="sh">
+          <div class="lm"><i class="ph ph-stack"></i></div>
+          <div class="nm">FrameFlow</div>
+          <span class="badge-skew" style="margin-left:2px"><span>Plagin</span></span>
+          <div class="cr"><i class="ph-fill ph-lightning"></i><span class="mono">1,230</span></div>
+          <div class="av">AX</div>
+        </div>
+        <div class="sec">
+          <div class="seclbl">So'nggi generatsiyalar</div>
+          <div class="strip">
+            <div class="t add"><i class="ph ph-plus"></i></div>
+            <div class="t a"><span class="ic"><i class="ph-fill ph-image"></i></span></div>
+            <div class="t b"><span class="ic"><i class="ph-fill ph-video-camera"></i></span></div>
+            <div class="t a"></div>
+          </div>
+          <div class="seclbl">Asboblar</div>
+          <div class="apps">
+            <div class="app"><span class="ic"><i class="ph ph-image"></i></span><div class="t">Rasm yaratish</div><div class="d">Matndan vizual</div></div>
+            <div class="app"><span class="ic"><i class="ph ph-video-camera"></i></span><div class="t">Video yaratish</div><div class="d">Promptdan klip</div></div>
+            <div class="app"><span class="ic"><i class="ph ph-microphone"></i></span><div class="t">Voiceover</div><div class="d">Tabiiy ovoz</div></div>
+            <div class="app"><span class="ic"><i class="ph ph-waveform"></i></span><div class="t">SFX</div><div class="d">Tovush effekt</div></div>
+            <div class="app soon"><span class="soonb">Tez orada</span><span class="ic"><i class="ph ph-magic-wand"></i></span><div class="t">Rasm tahrir</div><div class="d">AI edit</div></div>
+            <div class="app soon"><span class="soonb">Tez orada</span><span class="ic"><i class="ph ph-arrows-out"></i></span><div class="t">Upscale</div><div class="d">4K kattalash</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 GENERATE -->
+    <div class="screen">
+      <div class="scap"><span class="n">3</span>Generatsiya</div>
+      <div class="p"><div class="gridbg"></div>
+        <div class="hd">
+          <div class="backc"><i class="ph ph-arrow-left"></i></div>
+          <div class="tabwrap"><div class="tab on"><i class="ph-fill ph-image"></i>Rasm</div><div class="tab"><i class="ph ph-video-camera"></i>Video</div></div>
+          <div class="backc"><i class="ph ph-squares-four"></i></div>
+        </div>
+        <div class="feed">
+          <div class="gcard"><div class="glow"></div><div class="chipstat"><span class="spin"></span>Ishlanmoqda</div><div class="media" style="background:#1c1e20"></div></div>
+          <div class="gcard"><div class="media done"><div class="ar">1:1</div></div></div>
+          <div class="meta"><span>Vision 2</span><span class="d"></span><span>1:1</span><span class="d"></span><span>4K</span></div>
+        </div>
+        <div class="composer">
+          <div class="refrow"><div class="reftile"><i class="ph ph-plus"></i></div><div class="reftile" style="background:linear-gradient(135deg,#2b3550,#0d1119)"></div></div>
+          <div class="ta"><span class="ph">Fikringizni yozing…</span></div>
+          <div class="crow"><div class="addc"><i class="ph ph-plus"></i></div><div class="chip"><i class="ph ph-cube"></i>Vision 2<i class="ph ph-caret-down" style="font-size:10px"></i></div><div class="chip"><i class="ph ph-crop"></i>1:1</div><div class="send"><i class="ph-fill ph-arrow-up"></i></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 RESULT -->
+    <div class="screen">
+      <div class="scap"><span class="n">4</span>Natija</div>
+      <div class="p"><div class="gridbg"></div>
+        <div class="hd">
+          <div class="backc"><i class="ph ph-arrow-left"></i></div>
+          <div class="tabwrap"><div class="tab on"><i class="ph-fill ph-image"></i>Rasm</div><div class="tab"><i class="ph ph-video-camera"></i>Video</div></div>
+          <div class="backc"><i class="ph ph-squares-four"></i></div>
+        </div>
+        <div class="rstage">
+          <div class="bigresult"><div class="ov"><div class="t">Neon shahar konsepti</div><div class="s mono">Vision 2 · 1:1 · 4K</div></div></div>
+          <div class="ractions"><div class="b"><i class="ph ph-image"></i>Referens</div><div class="b"><i class="ph ph-arrow-line-down"></i>Timeline</div><div class="b acc"><i class="ph ph-download-simple"></i>Yuklab olish</div></div>
+          <div class="rfilm"><div class="t on"></div><div class="t"></div><div class="t"></div><div class="t"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 MODEL SHEET -->
+    <div class="screen">
+      <div class="scap"><span class="n">5</span>Model tanlash</div>
+      <div class="p"><div class="gridbg"></div>
+        <div class="hd"><div class="backc"><i class="ph ph-arrow-left"></i></div><div class="tabwrap"><div class="tab on"><i class="ph-fill ph-image"></i>Rasm</div><div class="tab"><i class="ph ph-video-camera"></i>Video</div></div><div class="backc"><i class="ph ph-squares-four"></i></div></div>
+        <div class="feed"><div class="gcard"><div class="media done"><div class="ar">1:1</div></div></div></div>
+        <div class="sheetdim">
+          <div class="sheet">
+            <div class="sh2"><div class="t">Model tanlang</div><div class="x"><i class="ph ph-x"></i></div></div>
+            <div class="mitem on"><div class="ic"><i class="ph ph-cube"></i></div><div><div class="nm">Vision 2</div><div class="sub">Standart · tez</div></div><div class="dot"></div></div>
+            <div class="mitem"><div class="ic"><i class="ph ph-cube"></i></div><div><div class="nm">Vision Pro</div><div class="sub">Yuqori sifat</div></div><div class="pr mono">8 ⚡</div></div>
+            <div class="mitem"><div class="ic"><i class="ph ph-cube"></i></div><div><div class="nm">Seedream 4.5</div><div class="sub">Realistik</div></div><div class="pr mono">7 ⚡</div></div>
+            <div class="mitem"><div class="ic"><i class="ph ph-cube"></i></div><div><div class="nm">Flux 2.0 Pro</div><div class="sub">Ijodiy</div></div><div class="pr mono">8 ⚡</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body></html>

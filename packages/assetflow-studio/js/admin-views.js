@@ -30,6 +30,72 @@ function infoBanner(text, kind){
 }
 
 /* ============================================================
+   Umumiy adx- yordamchilar (5b/5c/Biznes ekranlari uchun) —
+   maket komponentlariga (av/stat/badge/banner) 1:1.
+   ============================================================ */
+var AX_G = ["adx-g1","adx-g2","adx-g3","adx-g4","adx-g5","adx-g6","adx-g7","adx-g8"];
+function axGrad(seed){
+  var h=0,s=String(seed||"");
+  for(var i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h);
+  return AX_G[Math.abs(h)%AX_G.length];
+}
+function axInit(name){ return initialsOf(name); }
+/** Avatar (gradient fon) — size px. */
+function axAv(name, seed, size){
+  var sz = size||30;
+  return '<span class="adx-av '+axGrad(seed||name)+'" style="width:'+sz+'px;height:'+sz+'px;'+(sz<=26?'font-size:9px':sz>=48?'font-size:16px':'')+'">'+esc(axInit(name))+'</span>';
+}
+/** Info banner — kind: 'info'(ko'k) | 'lime' | 'amber' | 'red'. */
+function axInfo(html, kind){
+  var m = {
+    info:  ['var(--seldim)','rgba(124,196,255,.22)','#7CC4FF','ph-info'],
+    lime:  ['var(--limedim)','rgba(194,240,74,.22)','#C2F04A','ph-info'],
+    amber: ['var(--amberdim)','rgba(255,178,124,.22)','#FFB27C','ph-warning'],
+    red:   ['var(--reddim)','rgba(255,107,94,.25)','#FF6B5E','ph-warning'],
+  }[kind||'info'];
+  return '<div style="display:flex;align-items:center;gap:9px;padding:10px 13px;background:'+m[0]+';border:1px solid '+m[1]+';border-radius:11px;margin-bottom:16px">'+
+    '<i class="ph '+m[3]+'" style="color:'+m[2]+';font-size:16px;flex:none"></i>'+
+    '<span style="font-size:11.5px;color:#B7C0CE;line-height:1.5">'+html+'</span></div>';
+}
+/** Stat karta (maket .stat). o: {label,val,foot,ic,icColor,trend('up'|'down'),footCls}. */
+function axStat(o){
+  var icon = o.ic ? '<i class="ph ph-'+o.ic+'"'+(o.icColor?' style="color:'+o.icColor+'"':'')+'></i>' : '';
+  var foot = o.foot ? '<div class="sf'+(o.footCls?' '+o.footCls:'')+'">'+(o.footIco?'<i class="ph '+o.footIco+'"></i>':'')+esc(o.foot)+'</div>' : '';
+  return '<div class="adx-stat"><div class="sl">'+icon+esc(o.label)+'</div><div class="sv">'+o.val+'</div>'+foot+'</div>';
+}
+/** Plan (PRO/FREE) badge. */
+function axPlan(plan){
+  var label = (typeof normalizePlanLabel==='function') ? normalizePlanLabel(plan) : String(plan||'Free');
+  return label==='Pro'
+    ? '<span class="adx-bdg adx-bdg-pro">PRO</span>'
+    : '<span class="adx-bdg adx-bdg-free">FREE</span>';
+}
+/** Obunachi/contributor status badge (active/blocked/removed). */
+function axStatus(status){
+  if(status==='active')  return '<span class="adx-bdg adx-bdg-active"><span class="bd"></span>Faol</span>';
+  if(status==='blocked') return '<span class="adx-bdg adx-bdg-blocked"><span class="bd"></span>Bloklangan</span>';
+  if(status==='removed') return '<span class="adx-bdg adx-bdg-removed"><span class="bd"></span>Chiqarilgan</span>';
+  return '<span class="adx-bdg adx-bdg-draft"><span class="bd"></span>'+esc(status||'')+'</span>';
+}
+/** Shablon holat badge (maket bdg-*). short=qisqa yozuv. */
+function axTplStatus(status, short){
+  var m = {
+    approved:['adx-bdg-approved', short?'Tasd.':'Tasdiqlangan'],
+    pending: ['adx-bdg-pending',  short?'Kut.':'Kutilmoqda'],
+    soft:    ['adx-bdg-soft','Soft'],
+    hard:    ['adx-bdg-hard','Hard'],
+    draft:   ['adx-bdg-draft','Qoralama'],
+    archived:['adx-bdg-removed','Arxiv'],
+  }[status] || ['adx-bdg-draft', status||''];
+  return '<span class="adx-bdg '+m[0]+'"><span class="bd"></span>'+esc(m[1])+'</span>';
+}
+/** Raqamni qisqartir (12480 → 12.5K). */
+function axNum(n){
+  n = Number(n)||0;
+  return n>=1000 ? (n/1000).toFixed(1).replace(/\.0$/,'')+'K' : String(n);
+}
+
+/* ============================================================
    OVERVIEW
    ============================================================ */
 VIEWS.overview = function(){

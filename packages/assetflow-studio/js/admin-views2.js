@@ -25,67 +25,71 @@ const esc = (s) =>
    ============================================================ */
 let T_FILTER = 'all', T_SEARCH = '';
 VIEWS.templates = function(){ return `<div id="tplRoot"></div>`; };
-window.afterRender.templates = function(){ renderTemplates(); };
+window.afterRender.templates = function(){ tplTopbarActions(); renderTemplates(); };
+
+/* Topbar amallari (maket e3): Filtr + CSV. Qidiruv global topbar orqali. */
+function tplTopbarActions(){
+  const tba = document.getElementById('tbActions');
+  if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='templates')) return;
+  tba.innerHTML =
+    `<button class="adx-btn2 sm" onclick="toast('Filtr','Kengaytirilgan filtr keyingi versiyada','info')"><i class="ph ph-funnel"></i>Filtr</button>`+
+    `<button class="adx-btn2 sm" onclick="toast('Eksport','CSV fayli tayyorlanmoqda\u2026','info')"><i class="ph ph-export"></i>CSV</button>`;
+}
+
+function shortId(id){
+  id = String(id||'');
+  return id.length>10 ? id.slice(0,4)+'\u2026'+id.slice(-4) : id;
+}
 
 function renderTemplates(){
   let rows = TEMPLATES.slice();
   if(T_FILTER!=='all') rows = rows.filter(t=>t.status===T_FILTER);
   if(T_SEARCH) rows = rows.filter(t=>(t.name+t.id+cById(t.cid).email).toLowerCase().includes(T_SEARCH.toLowerCase()));
   const c=counts();
+  const tags = [['all','Barchasi',c.total],['approved','Tasdiqlangan',c.approved],['pending','Kutilmoqda',c.pending],['soft','Soft',c.soft],['hard','Hard',c.hard],['draft','Qoralama',c.draft],['archived','Arxiv',c.archived]];
+  const decision = (t) => {
+    if(t.reason) return `<span style="font-size:11px;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">${esc(t.reason)}</span>`;
+    if(t.status==='approved') return `<span style="color:#5E6675">\u2014</span>`;
+    return `<span style="color:#5E6675">\u2014</span>`;
+  };
   document.getElementById('tplRoot').innerHTML = `
-  <div class="col gap-16">
-    <div class="toolbar between">
-      <div class="chips">
-        ${[['all','Barchasi',c.total],['approved','Tasdiqlangan',c.approved],['pending','Kutilmoqda',c.pending],['soft','Soft',c.soft],['hard','Hard',c.hard],['draft','Qoralama',c.draft],['archived','Arxiv',c.archived]].map(([k,l,n])=>
-          `<button class="chip ${T_FILTER===k?'active':''}" onclick="T_FILTER='${k}';renderTemplates()">${l}<span class="cnt">${n}</span></button>`).join('')}
-      </div>
-      <div class="toolbar">
-        <div class="search" style="width:230px;height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Qidirish\u2026" oninput="T_SEARCH=this.value;renderTemplates()" value="${esc(T_SEARCH)}"></div>
-        <button class="btn btn-ghost btn-sm">${ic('filter')} Filtr</button>
-        <button class="btn btn-ghost btn-sm" onclick="toast('Eksport','CSV fayli yuklab olinmoqda\u2026','info')">${ic('download')} CSV</button>
-      </div>
+    <div class="adx-tagrow">
+      ${tags.map(([k,l,n])=>`<button class="adx-tag ${T_FILTER===k?'on':''}" onclick="T_FILTER='${k}';renderTemplates()">${l} <span class="n">${n}</span></button>`).join('')}
     </div>
-
-    <div class="card">
-      <div class="table-wrap">
-        <table class="data" style="min-width:980px">
+    <div class="adx-card" style="overflow:hidden">
+      <div style="overflow-x:auto">
+        <table class="adx-tbl" style="min-width:1000px">
           <thead><tr>
-            <th style="width:30px"></th>
-            <th class="sortable">Shablon</th>
-            <th>ID</th>
-            <th>Contributor</th>
-            <th>Holat</th>
-            <th class="sortable">Yuklangan</th>
-            <th class="th-num sortable">Downloads</th>
-            <th>Oxirgi qaror</th>
-            <th style="width:96px"></th>
+            <th style="width:24px"></th><th>Shablon</th><th>ID</th><th>Contributor</th><th>Holat</th><th>Yuklangan</th><th class="r">Downloads</th><th>Oxirgi qaror</th><th class="r">Amal</th>
           </tr></thead>
           <tbody>
-          ${rows.map(t=>{ const con=cById(t.cid); return `<tr>
-            <td><div class="checkbox" onclick="this.classList.toggle('on')">${ic('check')}</div></td>
-            <td><div class="tmpl-cell"><div class="row-thumb" style="overflow:hidden">${typeof StudioMedia!=='undefined'?StudioMedia.renderThumb(t,'lg'):thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)} \u00b7 ${esc(t.res)}</span></div></div></td>
-            <td class="cell-muted mono">${t.id}</td>
-            <td><div class="row center gap-8">${avatar(con.name,24)}<span class="cell-muted" style="white-space:nowrap">${esc(con.email.split('@')[0])}</span></div></td>
-            <td>${badge(t.status)}</td>
-            <td class="cell-muted mono">${t.created}</td>
-            <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
-            <td class="cell-muted">${t.reason?'Sabab bilan':t.status==='approved'?'Tasdiqlangan':'\u2014'}</td>
-            <td><div class="row-actions">
-              <button class="badge badge-plan ${t.isPro?'pro':'free'} tier-toggle" title="${t.isPro?'Pro tarif \u2014 bosib Free qiling':'Free tarif \u2014 bosib Pro qiling'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO':'FREE'}</button>
-              <button class="act" title="Ko\u2018rish" onclick="openTplDrawer('${t.id}')">${ic('eye')}</button>
-              <button class="act" title="Tahrir" onclick="openEditMeta('${t.id}')">${ic('edit')}</button>
-              <button class="act danger" title="O\u2018chirish" onclick="modDelete('${t.id}')">${ic('trash')}</button>
+          ${rows.length ? rows.map(t=>{ const con=cById(t.cid); return `<tr>
+            <td><span class="adx-modcheck" onclick="this.classList.toggle('on')"><i class="ph-bold ph-check"></i></span></td>
+            <td><div style="display:flex;align-items:center;gap:10px"><span style="width:44px;height:30px;border-radius:6px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div><div style="font-size:10px;color:#8A93A3">${esc(t.cat)} \u00b7 ${esc(t.res)}</div></div></div></td>
+            <td class="adx-num" style="font-size:10.5px;color:#8A93A3" title="${esc(t.id)}">${esc(shortId(t.id))}</td>
+            <td style="font-size:11px;color:#8A93A3">${esc((con.email||'').split('@')[0])}${con.email?'@\u2026':''}</td>
+            <td>${axTplStatus(t.status)}</td>
+            <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(t.created||'\u2014')}</td>
+            <td class="r adx-num">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
+            <td>${decision(t)}</td>
+            <td class="r"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
+              <span class="adx-bdg ${t.isPro?'adx-bdg-pro':'adx-bdg-free'}" style="cursor:pointer" title="${t.isPro?'Pro \u2014 bosib Free qiling':'Free \u2014 bosib Pro qiling'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO':'FREE'}</span>
+              <button class="adx-iact" title="Ko\u2018rish" onclick="openTplDrawer('${t.id}')"><i class="ph ph-eye"></i></button>
+              <button class="adx-iact" title="Tahrir" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i></button>
+              <button class="adx-iact dg" title="O\u2018chirish" onclick="modDelete('${t.id}')"><i class="ph ph-trash"></i></button>
             </div></td>
-          </tr>`; }).join('')}
+          </tr>`; }).join('') : `<tr><td colspan="9"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">Shablon topilmadi</div><div style="font-size:11px;color:var(--muted2)">Filtr yoki qidiruvni o\u2018zgartiring.</div></div></td></tr>`}
           </tbody>
         </table>
       </div>
-      <div class="card-head" style="border-top:1px solid var(--line);border-bottom:none">
-        <span class="small">${rows.length} ta natija ko\u2018rsatildi</span>
-        <div class="row gap-6"><button class="btn btn-ghost btn-sm" disabled>${ic('chevL')}</button><span class="pill">1 / 1</span><button class="btn btn-ghost btn-sm" disabled>${ic('chevR')}</button></div>
+      <div style="display:flex;align-items:center;padding:12px 16px;border-top:1px solid var(--hair2)">
+        <span class="adx-num" style="font-size:11px;color:#8A93A3">${rows.length} ta natija ko\u2018rsatildi</span>
+        <span style="flex:1"></span>
+        <button class="adx-btn2 sm" disabled><i class="ph ph-caret-left"></i></button>
+        <span class="adx-num" style="font-size:11px;color:#B7C0CE;padding:0 8px">1 / 1</span>
+        <button class="adx-btn2 sm" disabled><i class="ph ph-caret-right"></i></button>
       </div>
-    </div>
-  </div>`;
+    </div>`;
 }
 
 /* ============================================================

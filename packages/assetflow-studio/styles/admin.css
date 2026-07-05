@@ -319,6 +319,41 @@ body.adx-body{background:#06080B}
 /* ── Legacy ko'rinishlar (5b/5c gacha) yangi qobiq ichida to'g'ri siljishi ── */
 .adx-content #view{min-width:0}
 
+/* ── 5b/5c/Biznes qo'shimcha komponentlar (maket s3–s5) ── */
+.adx-num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.adx-tbl td.r,.adx-tbl th.r{text-align:right}
+.adx-tbl td.c,.adx-tbl th.c{text-align:center}
+/* Toggle (maket .tog) */
+.adx-tog{width:36px;height:20px;border-radius:999px;position:relative;flex:none;cursor:pointer;border:0;padding:0;display:inline-block}
+.adx-tog.on{background:var(--lime)}
+.adx-tog.off,.adx-tog:not(.on){background:var(--f3)}
+.adx-tog i{position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.adx-tog.on i{right:2px}
+.adx-tog:not(.on) i{left:2px;background:#8A93A3}
+/* Grid yordamchilar */
+.adx-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.adx-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.adx-grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.adx-tagrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+/* Chat pufakchalari (maket e7) */
+.adx-chatwrap{flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+.adx-msg{display:flex;gap:10px;max-width:72%}
+.adx-msg.me{margin-left:auto;flex-direction:row-reverse}
+.adx-bub{border-radius:4px 12px 12px 12px;padding:10px 13px;font-size:12.5px;color:#B7C0CE;background:var(--surface2);border:1px solid var(--hair2)}
+.adx-msg.me .adx-bub{border-radius:12px 4px 12px 12px;background:var(--limedim);border-color:rgba(194,240,74,.2);color:#DCE7C8}
+.adx-msgt{font:400 9px 'IBM Plex Mono',monospace;color:var(--muted2);margin-top:4px}
+.adx-msg.me .adx-msgt{text-align:right}
+/* Kichik floating edit panel (maket b2 narx tahriri) */
+.adx-editpanel{position:absolute;right:28px;bottom:24px;width:300px;background:var(--pop);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.55);z-index:20}
+/* Meta grid (detal kartalar) */
+.adx-metagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+/* Editable inline field (input ko'rinishidagi field) */
+.adx-finp{height:38px;display:flex;align-items:center;padding:0 12px;background:var(--f1);border:1px solid var(--hair2);border-radius:9px;color:var(--text);font-size:12.5px;width:100%}
+.adx-finp input,.adx-finp textarea,.adx-finp select{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font:inherit;font-size:12.5px}
+.adx-finp textarea{resize:vertical;padding:2px 0}
+.adx-finp:focus-within{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12)}
+.adx-finp.ta{height:auto;padding:9px 12px;align-items:flex-start}
+
 /* ── Responsive: ≤1024px icon-rail · ≤720px drawer (maket r1/r2) ── */
 @media (max-width:1024px){
   .adx-sbar{width:60px;padding:14px 0 12px;align-items:center;gap:4px}
