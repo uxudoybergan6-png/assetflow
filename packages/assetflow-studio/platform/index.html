@@ -14415,6 +14415,183 @@
     .ff .ffm-herocta>*{width:100%}
   }
 
+  /* ═══════════ BOY LANDING — _landing-rich-mockup Variant B «Kinematik sahna» (ffl- scoped) ═══════════ */
+  .ff .ffl-d64{font-weight:800;font-size:clamp(36px,5.7vw,64px);line-height:1.03;letter-spacing:-.04em;color:var(--text)}
+  /* aurora / mesh fon */
+  .ff .ffl-aur{position:absolute;inset:-18% -8%;pointer-events:none;filter:blur(72px);opacity:.8}
+  .ff .ffl-aur i{position:absolute;border-radius:50%;display:block}
+  .ff .ffl-aur .a1{width:46vw;height:46vw;max-width:640px;max-height:640px;left:6%;top:-12%;background:radial-gradient(circle,rgba(194,240,74,.15),transparent 64%);animation:fflDrift1 17s ease-in-out infinite alternate}
+  .ff .ffl-aur .a2{width:42vw;height:42vw;max-width:600px;max-height:600px;right:2%;top:-6%;background:radial-gradient(circle,rgba(124,196,255,.13),transparent 64%);animation:fflDrift2 21s ease-in-out infinite alternate}
+  .ff .ffl-aur .a3{width:38vw;height:38vw;max-width:520px;max-height:520px;left:38%;top:22%;background:radial-gradient(circle,rgba(143,79,209,.11),transparent 66%);animation:fflDrift3 25s ease-in-out infinite alternate}
+  @keyframes fflDrift1{to{transform:translate(9vw,7vh) scale(1.15)}}
+  @keyframes fflDrift2{to{transform:translate(-8vw,9vh) scale(.92)}}
+  @keyframes fflDrift3{to{transform:translate(-6vw,-6vh) scale(1.12)}}
+  /* hero B — kinematik sahna */
+  .ff .ffl-heroB{position:relative;overflow:hidden;min-height:min(92vh,880px);display:flex;flex-direction:column;justify-content:center;text-align:center;padding:80px 32px 0}
+  .ff .ffl-herodot{position:absolute;inset:0;opacity:.6;-webkit-mask-image:radial-gradient(70% 70% at 50% 40%,#000 30%,transparent 100%);mask-image:radial-gradient(70% 70% at 50% 40%,#000 30%,transparent 100%)}
+  .ff .ffl-stage{position:absolute;inset:0;pointer-events:none}
+  .ff .ffl-heroin{position:relative;z-index:5;max-width:880px;margin:0 auto}
+  .ff .ffl-badge{display:inline-flex;align-items:center;gap:9px;padding:7px 15px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-size:12px;color:#B7C0CE;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .ff .ffl-badge .yn{font:700 8.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:2.5px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+  .ff .ffl-herosub{font-size:clamp(14.5px,1.4vw,17px);line-height:1.62;color:var(--muted);max-width:620px;margin:18px auto 0}
+  .ff .ffl-herocta{display:flex;gap:12px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+  .ff .ffl-credline{font:500 11px 'IBM Plex Mono',monospace;color:var(--muted2);margin-top:13px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .ff .ffl-credline i{color:var(--lime);font-size:12px}
+  .ff .ffl-ctaglow{position:relative}
+  .ff .ffl-ctaglow::after{content:"";position:absolute;inset:-3px;border-radius:999px;background:var(--lime);filter:blur(16px);opacity:.28;z-index:-1;animation:fflBreathe 3.4s ease-in-out infinite}
+  @keyframes fflBreathe{0%,100%{opacity:.18;transform:scale(.98)}50%{opacity:.4;transform:scale(1.03)}}
+  /* suzuvchi kartalar */
+  .ff .ffl-fc{position:absolute;border-radius:14px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.09);will-change:transform;animation:fflFloat 9s ease-in-out infinite alternate}
+  .ff .ffl-fc .cap{position:absolute;left:0;right:0;bottom:0;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(4,6,9,.82));display:flex;align-items:center;gap:6px}
+  .ff .ffl-fc .cap b{font-size:10px;font-weight:600;color:#E7ECF3;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .ffl-fc .cap .ad{width:5px;height:5px;border-radius:50%;flex:none}
+  .ff .ffl-fc .rtag{position:absolute;top:8px;left:8px;font:700 7.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:2.5px 6px;border-radius:4px;background:rgba(5,7,10,.6);color:#D8DEE8;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .ff .ffl-fc .protag{position:absolute;top:8px;right:8px;font:700 7.5px 'IBM Plex Mono',monospace;padding:2.5px 6px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+  .ff .ffl-fc.gen .pl{position:absolute;left:0;bottom:0;height:2.5px;background:var(--lime);width:64%;box-shadow:0 0 10px rgba(194,240,74,.8);animation:fflGenline 5s ease-in-out infinite}
+  @keyframes fflGenline{0%{width:8%}55%{width:78%}100%{width:96%}}
+  @keyframes fflFloat{from{transform:translateY(-9px) rotate(var(--rot,0deg))}to{transform:translateY(11px) rotate(var(--rot,0deg))}}
+  .ff .ffl-fc1{width:180px;aspect-ratio:16/11;left:2%;top:17%;--rot:-6deg;animation-duration:10s}
+  .ff .ffl-fc2{width:150px;aspect-ratio:1/1;left:8%;bottom:17%;--rot:4deg;animation-duration:8s;animation-delay:.7s}
+  .ff .ffl-fc3{width:170px;aspect-ratio:16/11;right:2%;top:15%;--rot:5deg;animation-duration:11s;animation-delay:.3s}
+  .ff .ffl-fc4{width:210px;aspect-ratio:16/10;right:5%;bottom:15%;--rot:-4deg;animation-duration:9s;animation-delay:1.1s}
+  .ff .ffl-fc5{width:112px;aspect-ratio:1/1;left:21%;top:7%;--rot:8deg;animation-duration:7.5s;animation-delay:.5s;opacity:.8}
+  .ff .ffl-fc6{width:118px;aspect-ratio:1/1;right:20%;top:5%;--rot:-9deg;animation-duration:8.5s;animation-delay:1.4s;opacity:.8}
+  .ff .ffl-vig{position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(50% 44% at 50% 44%,rgba(6,8,11,.78),rgba(6,8,11,.34) 62%,transparent 78%)}
+  .ff .ffl-scrollhint{position:relative;z-index:5;margin:54px auto 0;width:26px;height:42px;border:1.5px solid rgba(255,255,255,.18);border-radius:999px;display:flex;justify-content:center;padding-top:7px}
+  .ff .ffl-scrollhint b{width:3px;height:8px;border-radius:99px;background:var(--lime);animation:fflWheel 1.8s ease-in-out infinite}
+  @keyframes fflWheel{0%{transform:translateY(0);opacity:1}70%{transform:translateY(12px);opacity:0}100%{opacity:0}}
+  .ff .ffl-bmq{position:relative;z-index:4;margin-top:52px;padding:14px 0 18px;border-top:1px solid var(--hair);background:linear-gradient(rgba(10,13,18,0),rgba(10,13,18,.55))}
+  /* marquee */
+  .ff .ffl-mqwrap{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  .ff .ffl-mq{display:flex;gap:16px;width:max-content;animation:ffMarquee var(--mqd,52s) linear infinite}
+  .ff .ffl-mq.rev{animation-direction:reverse}
+  .ff .ffl-mqwrap:hover .ffl-mq{animation-play-state:paused}
+  .ff .ffl-minith{width:150px;flex:none;aspect-ratio:16/10;border-radius:10px;position:relative;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.4)}
+  .ff .ffl-minith .nm{position:absolute;left:8px;bottom:6px;font:600 8.5px 'IBM Plex Mono',monospace;color:rgba(242,245,248,.85)}
+  /* shablon kartasi (marquee ko'rgazma) */
+  .ff .ffl-tcard{width:264px;flex:none;cursor:pointer}
+  .ff .ffl-tcard .th{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:16/10;box-shadow:0 16px 40px rgba(0,0,0,.42);transition:transform .35s cubic-bezier(.22,.9,.3,1),box-shadow .35s cubic-bezier(.22,.9,.3,1)}
+  .ff .ffl-tcard .th::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.10) 50%,transparent 65%);transform:translateX(-130%);transition:transform .7s cubic-bezier(.22,.9,.3,1)}
+  .ff .ffl-tcard:hover .th{transform:translateY(-7px) scale(1.02);box-shadow:0 26px 60px rgba(0,0,0,.6),0 0 34px rgba(194,240,74,.12)}
+  .ff .ffl-tcard:hover .th::after{transform:translateX(130%)}
+  .ff .ffl-tcard .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s;background:rgba(4,6,9,.24);z-index:2}
+  .ff .ffl-tcard .play b{width:44px;height:44px;border-radius:50%;background:rgba(6,8,11,.72);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;color:var(--lime);font-size:16px;transform:scale(.7);transition:transform .3s cubic-bezier(.22,.9,.3,1)}
+  .ff .ffl-tcard:hover .play{opacity:1}
+  .ff .ffl-tcard:hover .play b{transform:scale(1)}
+  .ff .ffl-bpro{position:absolute;top:9px;left:9px;font:700 8.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--lime);color:var(--onlime);z-index:3}
+  .ff .ffl-bfree{position:absolute;top:9px;left:9px;font:700 8.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:rgba(5,7,10,.62);color:#D8DEE8;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:3}
+  .ff .ffl-appc{position:absolute;top:9px;right:9px;display:inline-flex;align-items:center;gap:5px;font:600 8.5px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:4px;background:rgba(5,7,10,.62);color:#D8DEE8;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:3}
+  .ff .ffl-appc .d{width:5px;height:5px;border-radius:50%}
+  .ff .ffl-tdur{position:absolute;right:9px;bottom:9px;font:600 8.5px 'IBM Plex Mono',monospace;padding:3px 7px;border-radius:4px;background:rgba(5,7,10,.62);color:#D8DEE8;z-index:3}
+  .ff .ffl-tcard .nm{font-weight:600;font-size:13.5px;margin-top:9px;color:var(--text)}
+  .ff .ffl-tcard .mt{font-size:11px;color:var(--muted2);margin-top:2px}
+  /* bo'limlar */
+  .ff .ffl-sect{max-width:1280px;margin:0 auto;padding:76px 32px 0}
+  .ff .ffl-sect.full{max-width:none;padding-left:0;padding-right:0}
+  .ff .ffl-shead{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  .ff .ffl-lnk{font-size:13px;color:#B7C0CE;display:inline-flex;align-items:center;gap:6px;padding-bottom:6px;cursor:pointer;transition:color .15s,gap .2s}
+  .ff .ffl-lnk:hover{color:var(--lime);gap:9px}
+  .ff .ffl-cattabs{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .ff .ffl-cattab{display:inline-flex;align-items:center;padding:7px 15px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font-weight:500;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer;transition:all .15s}
+  .ff .ffl-cattab:hover{color:var(--text);border-color:var(--hair2)}
+  .ff .ffl-cattab.on{background:var(--limedim);border-color:rgba(194,240,74,.32);color:var(--lime);font-weight:600}
+  /* stats — jonli count-up */
+  .ff .ffl-stats{border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);background:rgba(10,13,18,.5);position:relative;overflow:hidden}
+  .ff .ffl-stats::before{content:"";position:absolute;inset:0;background:radial-gradient(50% 120% at 50% 0%,rgba(194,240,74,.045),transparent 70%)}
+  .ff .ffl-statsin{position:relative;max-width:1120px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:26px 40px;gap:20px}
+  .ff .ffl-stat{text-align:center;position:relative}
+  .ff .ffl-stat+.ffl-stat::before{content:"";position:absolute;left:-10px;top:12%;bottom:12%;width:1px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.1),rgba(255,255,255,0))}
+  .ff .ffl-stat .n{font:700 30px 'IBM Plex Mono',monospace;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text)}
+  .ff .ffl-stat .n em{font-style:normal;color:var(--lime)}
+  .ff .ffl-stat .n .u{font-size:19px}
+  .ff .ffl-stat .l{font-size:11.5px;color:var(--muted);margin-top:4px}
+  /* AI Studio kartalari — tilt + glow */
+  .ff .ffl-aigrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px}
+  .ff .ffl-aicard{position:relative;background:var(--surface);border:1px solid var(--hair2);border-radius:18px;padding:22px;overflow:hidden;transform-style:preserve-3d;will-change:transform;transition:transform .3s cubic-bezier(.22,.9,.3,1),border-color .25s,box-shadow .3s cubic-bezier(.22,.9,.3,1)}
+  .ff .ffl-aicard::before{content:"";position:absolute;inset:0 0 auto 0;height:120px;background:var(--cardglow,radial-gradient(80% 100% at 50% -30%,rgba(194,240,74,.1),transparent 70%));opacity:0;transition:opacity .3s}
+  .ff .ffl-aicard:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.14);box-shadow:0 26px 60px rgba(0,0,0,.5)}
+  .ff .ffl-aicard:hover::before{opacity:1}
+  .ff .ffl-aicard .ic{position:relative;width:42px;height:42px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+  .ff .ffl-aicard .t{font-weight:700;font-size:16px;margin-top:15px;position:relative;color:var(--text)}
+  .ff .ffl-aicard .d{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:6px;position:relative}
+  .ff .ffl-aicard .foot{display:flex;align-items:center;margin-top:18px;position:relative}
+  .ff .ffl-try{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--text);transition:color .15s,gap .2s}
+  .ff .ffl-try:hover{color:var(--lime);gap:8px}
+  .ff .ffl-cost{font:600 10px 'IBM Plex Mono',monospace;color:var(--lime);display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;background:var(--limedim);border:1px solid rgba(194,240,74,.22)}
+  .ff .ffl-aiband{position:relative;margin-top:16px;border-radius:18px;border:1px solid var(--hair2);overflow:hidden;padding:18px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(100deg,rgba(194,240,74,.07),rgba(124,196,255,.05) 60%,transparent),var(--surface)}
+  .ff .ffl-aiband .typing{flex:1;min-width:240px;font:500 12.5px 'IBM Plex Mono',monospace;color:#C7CFDB}
+  .ff .ffl-caret{display:inline-block;width:1.5px;height:12px;background:var(--lime);vertical-align:-2px;margin-left:1px;animation:fflBlink 1s step-end infinite}
+  @keyframes fflBlink{0%,100%{opacity:1}50%{opacity:.25}}
+  /* plagin paneli */
+  .ff .ffl-plugpanel{position:relative;border-radius:24px;border:1px solid rgba(255,255,255,.09);overflow:hidden;padding:46px 48px;display:flex;gap:48px;align-items:center;flex-wrap:wrap;background:radial-gradient(60% 90% at 88% 10%,rgba(124,196,255,.08),transparent 60%),radial-gradient(50% 80% at 6% 90%,rgba(194,240,74,.07),transparent 55%),var(--surface)}
+  .ff .ffl-plugpanel .txt{flex:1.1;min-width:300px;position:relative;z-index:2}
+  .ff .ffl-hostchip{font:500 10px 'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:6px;color:var(--muted);padding:5px 11px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2)}
+  .ff .ffl-hostchip .d{width:6px;height:6px;border-radius:50%}
+  .ff .ffl-plugmock{flex:.9;display:flex;justify-content:center;min-width:270px;perspective:900px;position:relative;z-index:2}
+  .ff .ffl-plugmock .win{width:272px;background:var(--bg);border:1px solid #222A37;border-radius:14px;overflow:hidden;box-shadow:0 34px 80px rgba(0,0,0,.6),0 0 50px rgba(194,240,74,.06);transform:rotateY(-7deg) rotateX(3deg);transition:transform .45s cubic-bezier(.22,.9,.3,1)}
+  .ff .ffl-plugpanel:hover .ffl-plugmock .win{transform:rotateY(-2deg) rotateX(1deg)}
+  .ff .ffl-plugmock .wbar{height:42px;display:flex;align-items:center;gap:8px;padding:0 12px;background:rgba(10,13,18,.92);border-bottom:1px solid var(--hair)}
+  .ff .ffl-plugmock .lb{width:19px;height:19px;border-radius:5px;background:var(--lime);display:inline-flex;align-items:center;justify-content:center;color:var(--onlime);font-size:10px}
+  .ff .ffl-plugmock .crx{font:500 9px 'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--text)}
+  .ff .ffl-plugmock .crx em{font-style:normal;color:var(--lime)}
+  .ff .ffl-plugmock .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:11px}
+  .ff .ffl-plugmock .pth{height:60px;border-radius:9px;position:relative;overflow:hidden}
+  .ff .ffl-plugmock .imp{margin:0 11px 11px;position:relative}
+  .ff .ffl-plugmock .impbtn{width:100%;height:36px;border:none;border-radius:999px;background:var(--lime);color:var(--onlime);font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center;gap:7px;font-family:inherit}
+  .ff .ffl-plugmock .impbtn .bc{font:700 8.5px 'IBM Plex Mono',monospace;background:rgba(14,20,0,.18);padding:2px 6px;border-radius:4px}
+  .ff .ffl-plugmock .syncline{display:flex;align-items:center;gap:7px;margin:0 11px 11px;font:500 8.5px 'IBM Plex Mono',monospace;color:var(--muted)}
+  .ff .ffl-plugmock .syncline .sb{flex:1;height:3px;border-radius:99px;background:var(--f2);overflow:hidden}
+  .ff .ffl-plugmock .syncline .sb b{display:block;height:100%;border-radius:99px;background:var(--lime);width:20%;animation:fflSyncp 4.5s ease-in-out infinite}
+  @keyframes fflSyncp{0%{width:6%}60%{width:82%}90%,100%{width:100%}}
+  /* narx kartalari — lime-glow Pro */
+  .ff .ffl-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px;text-align:left;max-width:1040px;margin-left:auto;margin-right:auto}
+  .ff .ffl-plan{position:relative;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;padding:26px 24px;transition:transform .3s cubic-bezier(.22,.9,.3,1),border-color .25s,box-shadow .3s cubic-bezier(.22,.9,.3,1)}
+  .ff .ffl-plan:hover{transform:translateY(-5px);border-color:rgba(255,255,255,.15);box-shadow:0 26px 60px rgba(0,0,0,.5)}
+  .ff .ffl-plan.pop{border-color:rgba(194,240,74,.4);background:linear-gradient(rgba(194,240,74,.045),transparent 46%),var(--surface);box-shadow:0 0 0 1px rgba(194,240,74,.12),0 22px 70px rgba(0,0,0,.5),0 0 60px rgba(194,240,74,.07)}
+  .ff .ffl-plan.pop:hover{box-shadow:0 0 0 1px rgba(194,240,74,.2),0 30px 80px rgba(0,0,0,.6),0 0 80px rgba(194,240,74,.12)}
+  .ff .ffl-plan .popb{font:700 8.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:4px 11px;border-radius:999px;background:var(--lime);color:var(--onlime);box-shadow:0 4px 18px rgba(194,240,74,.35)}
+  .ff .ffl-plan .nm{font-weight:700;font-size:15px;color:var(--text)}
+  .ff .ffl-plan .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .ff .ffl-plan .pr{display:flex;align-items:baseline;gap:5px;margin-top:14px}
+  .ff .ffl-plan .pr b{font:700 36px 'IBM Plex Mono',monospace;letter-spacing:-.02em;color:var(--text)}
+  .ff .ffl-plan .pr span{font-size:12.5px;color:var(--muted)}
+  .ff .ffl-plan .cr{font:500 10.5px 'IBM Plex Mono',monospace;margin-top:5px;color:var(--muted)}
+  .ff .ffl-plan.pop .cr{color:var(--lime)}
+  .ff .ffl-pf{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#B7C0CE;padding:4.5px 0}
+  .ff .ffl-pf i{color:var(--lime);font-size:13px;flex:none}
+  /* FAQ akkordeon */
+  .ff .ffl-faq{max-width:820px;margin:0 auto}
+  .ff .ffl-faqit{background:var(--surface);border:1px solid var(--hair2);border-radius:15px;padding:17px 21px;margin-top:10px;transition:border-color .2s,background .2s}
+  .ff .ffl-faqit.open{border-color:rgba(194,240,74,.3);background:linear-gradient(rgba(194,240,74,.03),transparent 60%),var(--surface)}
+  .ff .ffl-faqit .q{display:flex;align-items:center;gap:12px;cursor:pointer}
+  .ff .ffl-faqit .q b{font-weight:600;font-size:14.5px;flex:1;color:var(--text)}
+  .ff .ffl-faqit.open .q b{color:var(--lime)}
+  .ff .ffl-faqit .q i{color:var(--muted);transition:transform .3s cubic-bezier(.22,.9,.3,1),color .2s}
+  .ff .ffl-faqit.open .q i{transform:rotate(45deg);color:var(--lime)}
+  .ff .ffl-faqit .a{max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.22,.9,.3,1),margin .3s}
+  .ff .ffl-faqit.open .a{max-height:200px;margin-top:10px}
+  .ff .ffl-faqit .a p{font-size:13px;color:var(--muted);line-height:1.65;margin:0}
+  /* CTA band */
+  .ff .ffl-ctaband{position:relative;max-width:1280px;margin:76px auto 90px;padding:0 32px}
+  .ff .ffl-ctaband .in{position:relative;border-radius:26px;border:1px solid rgba(194,240,74,.24);overflow:hidden;padding:clamp(40px,6vw,68px) 32px;text-align:center;background:var(--surface)}
+  .ff .ffl-ctaband .in::before{content:"";position:absolute;inset:0;background:radial-gradient(52% 90% at 24% 0%,rgba(194,240,74,.13),transparent 62%),radial-gradient(52% 90% at 78% 100%,rgba(124,196,255,.1),transparent 62%)}
+  .ff .ffl-ctaband .in::after{content:"";position:absolute;left:50%;top:-46%;width:520px;height:520px;transform:translateX(-50%);background:radial-gradient(circle,rgba(194,240,74,.14),transparent 60%);filter:blur(30px);animation:fflBreathe 5s ease-in-out infinite}
+  .ff .ffl-ctaband .z{position:relative;z-index:2}
+  /* mockup g7/g8 gradientlari (ffm-g7/g8 dan farq qiladi — landing dekori uchun) */
+  .ff .ffl-g7{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.12),transparent 55%),linear-gradient(138deg,#331420,#A8425F 62%,#160810)}
+  .ff .ffl-g8{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.12),transparent 55%),linear-gradient(138deg,#0E2A3A,#2596A8 62%,#06141B)}
+  /* responsive — mockup 1:1 */
+  @media(max-width:1100px){.ff .ffl-fc1,.ff .ffl-fc4{width:150px}.ff .ffl-fc3{width:140px}.ff .ffl-fc2{width:110px}.ff .ffl-fc5,.ff .ffl-fc6{display:none}}
+  @media(max-width:1020px){.ff .ffl-aigrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:900px){.ff .ffl-plans{grid-template-columns:1fr;max-width:440px}}
+  @media(max-width:820px){.ff .ffl-statsin{grid-template-columns:1fr 1fr;padding:20px 22px}.ff .ffl-stat:nth-child(3)::before{display:none}}
+  @media(max-width:760px){.ff .ffl-fc{display:none}.ff .ffl-heroB{min-height:auto;padding:56px 18px 0}.ff .ffl-scrollhint{display:none}.ff .ffl-sect{padding:56px 18px 0}.ff .ffl-sect.full{padding-left:0;padding-right:0}.ff .ffl-plugpanel{padding:30px 22px}.ff .ffl-ctaband{padding:0 18px}}
+  @media(max-width:560px){.ff .ffl-aigrid{grid-template-columns:1fr}}
+  /* reduced motion — barcha ffl harakat to'liq o'chadi (mockup talabi) */
+  @media(prefers-reduced-motion:reduce){
+    .ff .ffl-aur i,.ff .ffl-fc,.ff .ffl-fc.gen .pl,.ff .ffl-mq,.ff .ffl-scrollhint b,.ff .ffl-ctaglow::after,.ff .ffl-ctaband .in::after,.ff .ffl-caret,.ff .ffl-plugmock .syncline .sb b{animation:none!important}
+  }
+
   /* ═══════════ APP REDESIGN — mockup 1:1 (Bosqich 3, ffa- scoped) ═══════════ */
   /* — app shell: sidebar + topbar (mockup .sbar/.sit/.shead/.topbar/.ava) — */
   .ff .ffa-app{display:flex;align-items:stretch;min-height:100vh}
@@ -14685,172 +14862,198 @@
     <!-- ============ LANDING ============ -->
     <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
     <main>
-      <!-- HERO -->
-      <section class="ffm-mesh ffm-hero" style="padding:44px 80px 0;text-align:center;position:relative">
-        <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-size:11.5px;color:#B7C0CE"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:8.5px;letter-spacing:.1em;padding:2px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)">YANGI</span>AI Video 2.0 endi mavjud<i class="ph ph-arrow-right" style="font-size:11px;color:var(--muted)"></i></span>
-        <div class="ffm-d56" style="margin:16px auto 0;max-width:860px">Shablonlar, AI video va ovoz — <span class="ffm-grad">bitta ijodiy makonda</span></div>
-        <div style="font-size:16px;line-height:1.6;color:var(--muted);max-width:640px;margin:14px auto 0">Shablonlarni yuklab oling, AI bilan rasm, video va ovoz yarating — hammasi bitta ijodiy makonda. Brauzerda ishlang yoki After Effects ichida davom eting.</div>
-        <div class="ffm-herocta" style="display:flex;gap:12px;justify-content:center;margin-top:20px">
-          <button class="ffm-btn lg" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Bepul boshlash</button>
-          <button class="ffm-btn2 lg" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>Shablonlarni ko'rish</button>
+      <!-- HERO — Variant B «Kinematik sahna»: aurora + suzuvchi kartalar + parallax + marquee -->
+      <section class="ffl-heroB">
+        <div class="ffl-aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+        <div class="ffm-dotbg ffl-herodot"></div>
+        <div class="ffl-stage">
+          <div class="ffl-fc ffl-fc1 ffm-g1" data-d="0.6"><span class="protag">PRO</span><span class="cap"><span class="ad" style="background:#b794f6"></span><b>Neon Pulse Intro</b></span></div>
+          <div class="ffl-fc ffl-fc2 ffm-g3" data-d="1"><span class="rtag">RASM</span></div>
+          <div class="ffl-fc ffl-fc3 ffm-g6" data-d="0.7"><span class="protag">PRO</span><span class="cap"><span class="ad" style="background:#b794f6"></span><b>Kinetic Typography</b></span></div>
+          <div class="ffl-fc ffl-fc4 ffm-g5 gen" data-d="1.15"><span class="rtag">VIDEO · 62%</span><b class="pl"></b><span class="cap"><span class="ad" style="background:var(--lime)"></span><b>AI generatsiya…</b></span></div>
+          <div class="ffl-fc ffl-fc5 ffl-g8" data-d="0.5"><span class="rtag">SFX</span></div>
+          <div class="ffl-fc ffl-fc6 ffm-g2" data-d="0.8"><span class="rtag">RASM</span></div>
         </div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted2);margin-top:10px">Karta shart emas · 50 AI kredit sovg'a</div>
-        <!-- Product shot -->
-        <div style="max-width:980px;margin:28px auto 0;border-radius:18px 18px 0 0;border:1px solid rgba(255,255,255,.1);border-bottom:0;background:var(--rail);box-shadow:0 -30px 80px rgba(194,240,74,.05),0 30px 70px rgba(0,0,0,.55);overflow:hidden">
-          <div style="height:34px;display:flex;align-items:center;gap:6px;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)"></span><span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)"></span><span style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)"></span><span style="font-family:'IBM Plex Mono',monospace;margin:0 auto;font-size:9px;color:var(--muted2)">FrameFlow — AI Studio</span></div>
-          <div class="ffm-dotbg" style="display:flex;gap:14px;padding:18px;background-color:var(--bg);align-items:flex-start;text-align:left">
-            <div style="width:150px;flex:none;display:flex;flex-direction:column;gap:3px">
-              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:600;color:var(--text);background:var(--f2)"><i class="ph ph-image"></i>Rasm</div>
-              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:500;color:var(--muted)"><i class="ph ph-film-strip"></i>Video</div>
-              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:500;color:var(--muted)"><i class="ph ph-microphone"></i>Ovoz</div>
-              <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-size:11.5px;font-weight:500;color:var(--muted)"><i class="ph ph-waveform"></i>SFX</div>
+        <div class="ffl-vig"></div>
+        <div class="ffl-heroin">
+          <span class="ffl-badge" data-rv=""><span class="yn">YANGI</span>AI Video 2.0 endi mavjud<i class="ph ph-arrow-right" style="font-size:11px;color:var(--muted)"></i></span>
+          <div class="ffl-d64" data-rv="" data-rv-delay="80" style="margin:20px auto 0">Shablonlar, AI video va ovoz — <span class="ffm-grad">bitta ijodiy makonda</span></div>
+          <div class="ffl-herosub" data-rv="" data-rv-delay="160">Shablonlarni yuklab oling, AI bilan rasm, video va ovoz yarating. Brauzerda ishlang yoki After Effects ichida davom eting.</div>
+          <div class="ffl-herocta ffm-herocta" data-rv="" data-rv-delay="240">
+            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Bepul boshlash</button>
+            <button class="ffm-btn2 lg" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>Shablonlarni ko'rish</button>
+          </div>
+          <div class="ffl-credline" data-rv="" data-rv-delay="320"><i class="ph-fill ph-seal-check"></i>Karta shart emas · 50 AI kredit sovg'a</div>
+        </div>
+        <div class="ffl-scrollhint" data-rv="" data-rv-delay="420"><b></b></div>
+        <div class="ffl-bmq">
+          <div class="ffl-mqwrap">
+            <div class="ffl-mq" style="--mqd:44s">
+              <sc-for list="{{ heroMarq }}" as="t" hint-placeholder-count="16"><div class="ffl-minith" style="background:{{ t.g }}"><span class="nm">{{ t.n }}</span></div></sc-for>
             </div>
-            <div style="flex:1;min-width:0">
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-                <div class="ffm-res ffm-g1" style="aspect-ratio:1/1"><span class="rtag">RASM</span></div>
-                <div class="ffm-res ffm-g3" style="aspect-ratio:1/1"><span class="rtag">RASM</span></div>
-                <div class="ffm-res pend" style="aspect-ratio:1/1"><i class="ph ph-circle-notch ffm-spin" style="font-size:18px;color:var(--lime)"></i><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--lime)">62%</span><div style="position:absolute;left:0;bottom:0;height:3px;width:62%;background:var(--lime)"></div></div>
-                <div class="ffm-res ffm-g6" style="aspect-ratio:1/1"><span class="rtag">RASM</span></div>
-              </div>
-              <div class="ffm-glass" style="border-radius:14px;margin-top:12px;padding:11px;text-align:left">
-                <div style="font-size:11.5px;color:var(--muted2);padding:1px 2px 9px">Neon yorug'likdagi shahar, yomg'ir aksi, kinematik kadr…</div>
-                <div style="display:flex;align-items:center;gap:6px">
-                  <span style="font-family:'IBM Plex Mono',monospace;padding:4px 9px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-size:9px;color:#B7C0CE">GPT Image 2</span>
-                  <span style="font-family:'IBM Plex Mono',monospace;padding:4px 9px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-size:9px;color:#B7C0CE">16:9</span>
-                  <span style="font-family:'IBM Plex Mono',monospace;padding:4px 9px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-size:9px;color:#B7C0CE">2K</span>
-                  <span style="flex:1"></span>
-                  <span class="ffm-cost">✦ 5</span>
-                  <span style="width:28px;height:28px;border-radius:50%;background:var(--lime);display:inline-flex;align-items:center;justify-content:center;color:var(--onlime);font-size:12px"><i class="ph-fill ph-arrow-up"></i></span>
+          </div>
+        </div>
+      </section>
+      <!-- STATS — jonli count-up (real mahsulot statistikasi, soxta logo/testimonial YO'Q) -->
+      <section class="ffl-stats" data-rv="" data-stats="">
+        <div class="ffl-statsin">
+          <div class="ffl-stat"><div class="n"><b>{{ landStat1 }}</b><em>+</em></div><div class="l">Tayyor shablon</div></div>
+          <div class="ffl-stat"><div class="n"><b>{{ landStat2 }}</b></div><div class="l">AI vosita — rasm · video · ovoz · SFX</div></div>
+          <div class="ffl-stat"><div class="n"><b>{{ landStat3 }}</b></div><div class="l">Kategoriya — Ae · Pr · DaVinci</div></div>
+          <div class="ffl-stat"><div class="n"><b>{{ landStat4 }}</b> <span class="u">kun</span></div><div class="l">Pulni qaytarish kafolati</div></div>
+        </div>
+      </section>
+      <!-- SHOWCASE — marquee shablon-ko'rgazma -->
+      <section class="ffl-sect full">
+        <div style="max-width:1280px;margin:0 auto;padding:0 32px">
+          <div class="ffl-shead" data-rv="">
+            <div>
+              <div class="ffm-eyebrow">01 — SHABLONLAR</div>
+              <div class="ffm-d44" style="margin-top:10px">Tayyor shablonlar kutubxonasi</div>
+            </div>
+            <span style="flex:1"></span>
+            <a class="ffl-lnk" onclick="{{ goTemplates }}">Barchasini ko'rish<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
+          </div>
+          <div class="ffl-cattabs" data-rv="" data-rv-delay="80">
+            <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}">{{ c.label }}</span></sc-for>
+          </div>
+        </div>
+        <div class="ffl-mqwrap" data-rv="" data-rv-delay="160" style="margin-top:24px;padding:14px 0">
+          <div class="ffl-mq" style="--mqd:64s">
+            <sc-for list="{{ marqRow1 }}" as="t" hint-placeholder-count="16">
+              <div class="ffl-tcard" data-id="{{ t.id }}" onclick="{{ openDetail }}">
+                <div class="th" style="background:{{ t.g }}">
+                  <span class="{{ t.badgeClsL }}">{{ t.badge }}</span>
+                  <span class="ffl-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
+                  <span class="ffl-tdur">{{ t.d }}</span>
+                  <span class="play"><b><i class="ph-fill ph-play"></i></b></span>
                 </div>
+                <div class="nm">{{ t.n }}</div><div class="mt">{{ t.c }}</div>
               </div>
-            </div>
+            </sc-for>
+          </div>
+        </div>
+        <div class="ffl-mqwrap" data-rv="" data-rv-delay="240" style="padding:6px 0 14px">
+          <div class="ffl-mq rev" style="--mqd:74s">
+            <sc-for list="{{ marqRow2 }}" as="t" hint-placeholder-count="16">
+              <div class="ffl-tcard" data-id="{{ t.id }}" onclick="{{ openDetail }}">
+                <div class="th" style="background:{{ t.g }}">
+                  <span class="{{ t.badgeClsL }}">{{ t.badge }}</span>
+                  <span class="ffl-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
+                  <span class="ffl-tdur">{{ t.d }}</span>
+                  <span class="play"><b><i class="ph-fill ph-play"></i></b></span>
+                </div>
+                <div class="nm">{{ t.n }}</div><div class="mt">{{ t.c }}</div>
+              </div>
+            </sc-for>
           </div>
         </div>
       </section>
-      <!-- REAL STATS STRIP — real mahsulot statistikasi (soxta logo/testimonial YO'Q) -->
-      <section style="border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);background:rgba(10,13,18,.5)">
-        <div class="ffm-stats4" style="max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:18px 40px;gap:20px">
-          <div style="text-align:center"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">10,000+</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">Tayyor shablon</div></div>
-          <div style="text-align:center;border-left:1px solid rgba(255,255,255,.06)"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">4</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">AI vosita — rasm · video · ovoz · SFX</div></div>
-          <div style="text-align:center;border-left:1px solid rgba(255,255,255,.06)"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">6</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">Kategoriya — Ae · Pr · DaVinci</div></div>
-          <div style="text-align:center;border-left:1px solid rgba(255,255,255,.06)"><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;letter-spacing:-.02em">14 kun</div><div style="font-size:11.5px;color:var(--muted);margin-top:3px">Pulni qaytarish kafolati</div></div>
-        </div>
-      </section>
-      <!-- SHOWCASE -->
-      <section class="ffm-sect" style="padding:44px 80px 0">
-        <div style="display:flex;align-items:flex-end;gap:20px">
-          <div>
-            <div class="ffm-eyebrow">01 — SHABLONLAR</div>
-            <div class="ffm-d44" style="margin-top:10px">Tayyor shablonlar kutubxonasi</div>
+      <!-- AI STUDIO PROMO — tilt/glow kartalar + yozilayotgan prompt bandi -->
+      <section class="ffl-sect">
+        <div data-rv="">
+          <div class="ffm-eyebrow">02 — AI STUDIO</div>
+          <div style="display:flex;align-items:flex-end;gap:24px;margin-top:10px;flex-wrap:wrap">
+            <div class="ffm-d44" style="max-width:520px">AI Studio — brauzerda yarating</div>
+            <div style="flex:1;font-size:14px;line-height:1.6;color:var(--muted);max-width:420px;padding-bottom:4px;min-width:280px">Rasm, video, ovoz va effektlar — promptdan boshlab bir necha soniyada. Hammasi brauzerda.</div>
           </div>
-          <span style="flex:1"></span>
-          <a onclick="{{ goTemplates }}" style="font-size:13px;color:#B7C0CE;display:inline-flex;align-items:center;gap:6px;padding-bottom:6px;cursor:pointer">Barchasini ko'rish<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
-        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-          <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.cls }}">{{ c.label }}</span></sc-for>
-        </div>
-        <div class="ffm-showcase" style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px 18px;margin-top:16px">
-          <sc-for list="{{ carousel }}" as="t" hint-placeholder-count="8">
-            <div class="ffm-tc" data-id="{{ t.id }}" onclick="{{ openDetail }}" style="cursor:pointer">
-              <div class="ffm-th" style="background:{{ t.g }}">
-                <span class="{{ t.badgeCls }}">{{ t.badge }}</span>
-                <span class="ffm-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
-                <span class="ffm-dur">{{ t.d }}</span>
-              </div>
-              <div class="ffm-nm">{{ t.n }}</div><div class="ffm-mt">{{ t.c }}</div>
-            </div>
-          </sc-for>
-        </div>
-      </section>
-      <!-- AI STUDIO PROMO -->
-      <section class="ffm-sect" style="padding:50px 80px 0">
-        <div class="ffm-eyebrow">02 — AI STUDIO</div>
-        <div style="display:flex;align-items:flex-end;gap:24px;margin-top:10px;flex-wrap:wrap">
-          <div class="ffm-d44" style="max-width:520px">AI Studio — brauzerda yarating</div>
-          <div style="flex:1;font-size:14px;line-height:1.6;color:var(--muted);max-width:420px;padding-bottom:4px;min-width:280px">Rasm, video, ovoz va effektlar — promptdan boshlab bir necha soniyada. Hammasi brauzerda.</div>
-        </div>
-        <div class="ffm-studio4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:18px">
+        <div class="ffl-aigrid">
           <sc-for list="{{ studioCards }}" as="s" hint-placeholder-count="4">
-            <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px">
-              <span style="width:38px;height:38px;border-radius:11px;background:{{ s.ibg }};display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:{{ s.icol }}"><i class="ph ph-{{ s.icon }}"></i></span>
-              <div style="font-weight:700;font-size:15.5px;margin-top:14px">{{ s.t }}</div>
-              <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:6px">{{ s.d }}</div>
-              <div style="display:flex;align-items:center;margin-top:16px"><span class="ffm-cost" style="font-size:11px">✦ {{ s.cost }}</span><span style="flex:1"></span><a data-tool="{{ s.tool }}" onclick="{{ onTryTool }}" style="font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer">Sinab ko'rish<i class="ph ph-arrow-right" style="font-size:11px"></i></a></div>
+            <div class="ffl-aicard" data-rv="" data-rv-delay="{{ s.rd }}" style="--cardglow:{{ s.glow }}">
+              <span class="ic" style="background:{{ s.icbg }};color:{{ s.iccol }}"><i class="ph-fill ph-{{ s.icon }}"></i></span>
+              <div class="t">{{ s.t }}</div>
+              <div class="d">{{ s.d }}</div>
+              <div class="foot"><span class="ffl-cost">✦ {{ s.cost }}</span><span style="flex:1"></span><a class="ffl-try" data-tool="{{ s.tool }}" onclick="{{ onTryTool }}">Sinab ko'rish<i class="ph ph-arrow-right" style="font-size:11px"></i></a></div>
             </div>
           </sc-for>
         </div>
+        <div class="ffl-aiband ffm-dotbg" data-rv="" data-rv-delay="320">
+          <span style="width:34px;height:34px;border-radius:10px;background:var(--limedim);display:inline-flex;align-items:center;justify-content:center;color:var(--lime);font-size:16px;flex:none"><i class="ph-fill ph-sparkle"></i></span>
+          <span class="typing"><span data-ffl-type=""></span><span class="ffl-caret"></span></span>
+          <button class="ffm-btn" style="height:38px;padding:0 18px;font-size:12px" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:13px"></i>50 kredit bilan sinang</button>
+        </div>
       </section>
-      <!-- PLAGIN PROMO -->
-      <section class="ffm-sect" style="padding:50px 80px 0">
-        <div class="ffm-plugin-grid" style="border-radius:20px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(120deg,rgba(194,240,74,.05),rgba(124,196,255,.04) 70%),var(--surface);padding:36px 40px;display:flex;gap:40px;align-items:center;flex-wrap:wrap">
-          <div style="flex:1.1;min-width:300px">
+      <!-- PLAGIN PROMO — kinematik panel + 3D plagin oynasi -->
+      <section class="ffl-sect">
+        <div class="ffl-plugpanel" data-rv="">
+          <div class="txt">
             <div class="ffm-eyebrow">03 — PLAGIN</div>
             <div class="ffm-d36" style="margin-top:10px">FrameFlow plagini — to'g'ridan-to'g'ri After Effects ichida</div>
             <div style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:12px">Katalog, import va AI Studio — panelda. Platformadagi hisobingiz va kreditlaringiz bilan ishlaydi.</div>
-            <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+            <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
               <button class="ffm-btn" onclick="{{ goPlugin }}"><i class="ph ph-download-simple" style="font-size:14px"></i>Plaginni yuklab olish (.zxp)</button>
             </div>
-            <div style="display:flex;gap:14px;margin-top:16px;flex-wrap:wrap">
-              <span style="font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:#b794f6"></span>After Effects</span>
-              <span style="font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted)"><span style="width:6px;height:6px;border-radius:50%;background:#7aa2f7"></span>Premiere Pro</span>
-              <span style="font-family:'IBM Plex Mono',monospace;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--muted2)"><span style="width:6px;height:6px;border-radius:50%;background:#f0907f"></span>DaVinci — tez orada</span>
+            <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+              <span class="ffl-hostchip"><span class="d" style="background:#b794f6"></span>After Effects</span>
+              <span class="ffl-hostchip"><span class="d" style="background:#7aa2f7"></span>Premiere Pro</span>
+              <span class="ffl-hostchip" style="color:var(--muted2)"><span class="d" style="background:#f0907f"></span>DaVinci — tez orada</span>
             </div>
           </div>
-          <div style="flex:.9;display:flex;justify-content:center;min-width:250px">
-            <div style="width:250px;background:var(--bg);border:1px solid #222A37;border-radius:12px;overflow:hidden;box-shadow:0 26px 60px rgba(0,0,0,.5)">
-              <div style="height:40px;display:flex;align-items:center;gap:7px;padding:0 11px;background:rgba(10,13,18,.92);border-bottom:1px solid rgba(255,255,255,.05)">
-                <span style="width:18px;height:18px;border-radius:5px;background:var(--lime);display:inline-flex;align-items:center;justify-content:center;color:var(--onlime);font-size:10px"><i class="ph-fill ph-lightning"></i></span>
+          <div class="ffl-plugmock">
+            <div class="win">
+              <div class="wbar">
+                <span class="lb"><i class="ph-fill ph-lightning"></i></span>
                 <div class="ffm-seg" style="flex:1"><span class="on" style="flex:1;padding:4px 0;font-size:10.5px">Katalog</span><span style="flex:1;padding:4px 0;font-size:10.5px">AI Tools</span></div>
-                <span class="ffm-credit" style="font-size:9px;padding:3px 7px"><em>✦</em>1,230</span>
+                <span class="crx"><em>✦</em>1,230</span>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px">
-                <div class="ffm-tc"><div class="ffm-th ffm-g1" style="height:56px;aspect-ratio:auto;border-radius:8px"><span class="ffm-bgpro" style="font-size:7px;padding:2px 5px">PRO</span></div></div>
-                <div class="ffm-tc"><div class="ffm-th ffm-g2" style="height:56px;aspect-ratio:auto;border-radius:8px"><span class="ffm-bgfree" style="font-size:7px;padding:2px 5px">BEPUL</span></div></div>
-                <div class="ffm-tc"><div class="ffm-th ffm-g6" style="height:56px;aspect-ratio:auto;border-radius:8px"></div></div>
-                <div class="ffm-tc"><div class="ffm-th ffm-g3" style="height:56px;aspect-ratio:auto;border-radius:8px"></div></div>
+              <div class="grid">
+                <div class="pth ffm-g1"><span class="ffl-bpro" style="font-size:7px;padding:2px 5px;top:6px;left:6px">PRO</span></div>
+                <div class="pth ffm-g2"><span class="ffl-bfree" style="font-size:7px;padding:2px 5px;top:6px;left:6px">BEPUL</span></div>
+                <div class="pth ffm-g6"></div>
+                <div class="pth ffm-g3"></div>
               </div>
-              <div style="padding:0 10px 10px"><span class="ffm-btn full" style="height:34px;font-size:11px">Import<span class="bc" style="font-size:9px">AE</span></span></div>
+              <div class="syncline"><i class="ph ph-arrows-clockwise" style="color:var(--lime)"></i>Sinxronlash…<span class="sb"><b></b></span></div>
+              <div class="imp"><span class="impbtn">Import<span class="bc">AE</span></span></div>
             </div>
           </div>
         </div>
       </section>
-      <!-- NARX TEASER -->
-      <section class="ffm-sect" style="padding:50px 80px 0;text-align:center">
-        <div class="ffm-eyebrow">04 — NARXLAR</div>
-        <div class="ffm-d44" style="margin-top:10px">Bepul boshlang, kerak bo'lganda kengaytiring</div>
-        <div style="font-size:14px;color:var(--muted);margin-top:10px">Istalgan vaqtda bekor qiling. Barcha rejalar 14 kunlik pulni qaytarish kafolati bilan.</div>
-        <div class="ffm-plans" style="display:flex;gap:16px;margin-top:20px;text-align:left">
-          <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
-            <div class="{{ p.planCls }}" style="position:relative">
-              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-weight:700;font-size:8.5px;letter-spacing:.08em;padding:3px 9px;border-radius:999px;background:var(--lime);color:var(--onlime)">ENG MASHHUR</span></sc-if>
-              <div style="font-weight:700;font-size:14px">{{ p.name }}</div>
-              <div style="display:flex;align-items:baseline;gap:5px;margin-top:10px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:30px;letter-spacing:-.02em">${{ p.price }}</span><span style="font-size:12px;color:var(--muted)">/oy</span></div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:{{ p.crCol }};margin-top:4px">✦ {{ p.cr }}</div>
-              <button class="{{ p.ctaCls }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" style="margin:16px 0 6px">{{ p.cta }}</button>
-              <sc-for list="{{ p.tf }}" as="f" hint-placeholder-count="3"><div class="ffm-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
+      <!-- NARX TEASER — lime-glow Pro kartasi -->
+      <section class="ffl-sect" style="text-align:center">
+        <div data-rv="">
+          <div class="ffm-eyebrow">04 — NARXLAR</div>
+          <div class="ffm-d44" style="margin-top:10px">Bepul boshlang, kerak bo'lganda kengaytiring</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:10px">Istalgan vaqtda bekor qiling. Barcha rejalar 14 kunlik pulni qaytarish kafolati bilan.</div>
+        </div>
+        <div class="ffl-plans">
+          <sc-for list="{{ plansRv }}" as="p" hint-placeholder-count="3">
+            <div class="{{ p.planClsL }}" data-rv="" data-rv-delay="{{ p.rd }}">
+              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span class="popb">ENG MASHHUR</span></sc-if>
+              <div class="nm">{{ p.name }}</div>
+              <div class="sub">{{ p.sub }}</div>
+              <div class="pr"><b>${{ p.price }}</b><span>/oy</span></div>
+              <div class="cr">✦ {{ p.cr }}</div>
+              <button class="{{ p.ctaCls }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" style="margin:18px 0 8px">{{ p.cta }}</button>
+              <sc-for list="{{ p.tf }}" as="f" hint-placeholder-count="3"><div class="ffl-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
             </div>
           </sc-for>
         </div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:16px">To'liq taqqoslash — <a onclick="{{ goPricing }}" style="color:var(--text);font-weight:600;cursor:pointer">Narxlar sahifasida →</a></div>
+        <div data-rv="" data-rv-delay="320" style="font-size:12.5px;color:var(--muted);margin-top:18px">To'liq taqqoslash — <a onclick="{{ goPricing }}" style="color:var(--text);font-weight:600;cursor:pointer">Narxlar sahifasida →</a></div>
       </section>
-      <!-- FAQ -->
-      <section style="padding:50px 80px;max-width:880px;margin:0 auto" class="ffm-sectx">
-        <div class="ffm-d36" style="text-align:center">Ko'p so'raladigan savollar</div>
-        <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px">
+      <!-- FAQ — akkordeon -->
+      <section class="ffl-sect">
+        <div class="ffm-d36" data-rv="" style="text-align:center">Ko'p so'raladigan savollar</div>
+        <div class="ffl-faq" data-rv="" data-rv-delay="80" style="margin-top:20px">
           <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
-            <div style="background:var(--surface);border:1px solid {{ f.faqBd }};border-radius:14px;padding:16px 20px">
-              <div data-idx="{{ f.idx }}" onclick="{{ onFaq }}" style="display:flex;align-items:center;gap:10px;cursor:pointer"><span style="font-weight:600;font-size:14px;flex:1;color:{{ f.qCol }}">{{ f.q }}</span><i class="ph ph-{{ f.icon }}" style="color:{{ f.iCol }}"></i></div>
-              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:10px">{{ f.a }}</div></sc-if>
+            <div class="{{ f.itCls }}">
+              <div class="q" data-idx="{{ f.idx }}" onclick="{{ onFaq }}"><b>{{ f.q }}</b><i class="ph ph-plus"></i></div>
+              <div class="a"><p>{{ f.a }}</p></div>
             </div>
           </sc-for>
         </div>
       </section>
-      <!-- CTA BAND -->
-      <section class="ffm-sectx" style="margin:0 80px 62px;border-radius:20px;background:linear-gradient(120deg,rgba(194,240,74,.10),rgba(124,196,255,.06)),var(--surface);border:1px solid rgba(194,240,74,.2);padding:44px;text-align:center">
-        <div class="ffm-d36">Bugun bepul boshlang</div>
-        <div style="font-size:14px;color:var(--muted);margin-top:8px">Ro'yxatdan o'ting — 50 AI kredit sovg'a. Karta shart emas.</div>
-        <button class="ffm-btn lg" onclick="{{ goRegister }}" style="margin-top:20px"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Bepul boshlash</button>
-      </section>
+      <!-- CTA BAND — nafas oluvchi glow -->
+      <div class="ffl-ctaband" data-rv="">
+        <div class="in">
+          <div class="z">
+            <div class="ffm-d36">Bugun bepul boshlang</div>
+            <div style="font-size:14px;color:var(--muted);margin-top:8px">Ro'yxatdan o'ting — 50 AI kredit sovg'a. Karta shart emas.</div>
+            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}" style="margin-top:24px"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Bepul boshlash</button>
+            <div class="ffl-credline" style="margin-top:14px"><i class="ph-fill ph-seal-check"></i>14 kunlik pulni qaytarish kafolati</div>
+          </div>
+        </div>
+      </div>
     </main>
     </sc-if>
 
@@ -15713,7 +15916,7 @@ class Component extends DCLogic {
 
   plans = [
     { key: 'free', name: 'Bepul', pm: 0, py: 0, cr: '50 kredit/oy', pop: false, cta: 'Boshlash', sub: 'Sinab ko\'rish uchun', feats: ['50 AI kredit oyiga', 'HD shablonlar kutubxonasi', 'Suvli belgi bilan eksport', '1 ta faol loyiha', 'Community qo\'llab-quvvatlash'], tf: ['HD shablonlar kutubxonasi', 'Suvli belgi bilan eksport', '1 ta faol loyiha'] },
-    { key: 'pro', name: 'Pro', pm: 24, py: 19, cr: '1,500 kredit/oy', pop: true, cta: 'Pro ga o\'tish', sub: 'Professionallar uchun', feats: ['1,500 AI kredit oyiga', 'Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'Cheksiz loyihalar', 'AE / Premiere plagin', 'Tezkor generatsiya', 'Email qo\'llab-quvvatlash'], tf: ['Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'AE / Premiere plagin'] },
+    { key: 'pro', name: 'Pro', pm: 24, py: 19, cr: '1,000 kredit/oy', pop: true, cta: 'Pro ga o\'tish', sub: 'Professionallar uchun', feats: ['1,000 AI kredit oyiga', 'Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'Cheksiz loyihalar', 'AE / Premiere plagin', 'Tezkor generatsiya', 'Email qo\'llab-quvvatlash'], tf: ['Barcha 10,000+ shablon', '4K, suvsiz yuklab olish', 'AE / Premiere plagin'] },
     { key: 'studio', name: 'Studio', pm: 59, py: 49, cr: '6,000 kredit/oy', pop: false, cta: 'Studio tanlash', sub: 'Jamoalar uchun', feats: ['6,000 AI kredit oyiga', 'Pro dagi barcha imkoniyatlar', 'Jamoaviy ish (5 a\'zo)', 'Brand kit va shablonlar', 'API kirish', 'Ustuvor render navbati', 'Shaxsiy menejer'], tf: ['Jamoaviy ish (5 a\'zo)', 'API kirish', 'Shaxsiy menejer'] },
   ];
 
@@ -15841,6 +16044,7 @@ class Component extends DCLogic {
     } catch (e) {}
     this.renderGoogleBtn();
     this.renderTurnstile();
+    this.installLanding();
     try {
       this._io = new IntersectionObserver((es) => {
         es.forEach(e => { if (e.isIntersecting) { const el = e.target; el.style.transitionDelay = (el.getAttribute('data-rv-delay') || 0) + 'ms'; el.classList.add('rv-in'); this._io.unobserve(el); if (el.hasAttribute('data-stats')) this.runStats(); } });
@@ -15862,13 +16066,78 @@ class Component extends DCLogic {
         this._armed = true;
         root.classList.add('rv-arm');
         this.installRv();
-        this._rvSafety = setInterval(() => { try { root.querySelectorAll('[data-rv]:not(.rv-in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) el.classList.add('rv-in'); }); } catch (e) {} }, 1100);
+        this._rvSafety = setInterval(() => { try { root.querySelectorAll('[data-rv]:not(.rv-in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) { el.classList.add('rv-in'); if (el.hasAttribute('data-stats')) this.runStats(); } }); } catch (e) {} }, 1100);
       }));
     } catch (e) {}
   }
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._io) this._io.disconnect(); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.renderGoogleBtn(); this.renderTurnstile(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.renderGoogleBtn(); this.renderTurnstile(); }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
+  // Boy landing (Variant B) imperativ effektlari — idempotent (__ffl* bayroqlar), reduced-motion'da o'chiq
+  installLanding() {
+    try {
+      let rm = this.props.animations === false;
+      try { rm = rm || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) {}
+      let fine = false;
+      try { fine = window.matchMedia && window.matchMedia('(pointer:fine)').matches; } catch (e) {}
+      // Hero parallax — suzuvchi kartalar sichqonchaga ergashadi
+      const hero = document.querySelector('.ff .ffl-heroB');
+      if (hero && !hero.__fflPx && !rm && fine) {
+        hero.__fflPx = 1;
+        hero.addEventListener('mousemove', (ev) => {
+          const st = hero.querySelector('.ffl-stage'); if (!st) return;
+          const r = hero.getBoundingClientRect();
+          const dx = (ev.clientX - r.left) / r.width - .5, dy = (ev.clientY - r.top) / r.height - .5;
+          st.querySelectorAll('.ffl-fc').forEach((c) => {
+            const d = parseFloat(c.getAttribute('data-d')) || .6;
+            c.style.marginLeft = (-dx * 26 * d) + 'px'; c.style.marginTop = (-dy * 18 * d) + 'px';
+          });
+        });
+        hero.addEventListener('mouseleave', () => {
+          const st = hero.querySelector('.ffl-stage'); if (!st) return;
+          st.querySelectorAll('.ffl-fc').forEach((c) => { c.style.marginLeft = ''; c.style.marginTop = ''; });
+        });
+      }
+      // AI band — yozilayotgan prompt
+      const PR = [
+        "Neon yorug'likdagi shahar, yomg'ir aksi, kinematik kadr…",
+        "Tog' ustida quyosh chiqishi, drondan olingan kadr, 4K…",
+        "Zamonaviy logo animatsiyasi uchun toza fon, studiya nuri…",
+        "Sahil bo'yida sekin harakat, golden hour, film grain…",
+      ];
+      document.querySelectorAll('.ff [data-ffl-type]').forEach((el) => {
+        if (el.__fflT) return; el.__fflT = 1;
+        if (rm) { el.textContent = PR[0]; return; }
+        let li = 0, ci = 0, del = false;
+        const tick = () => {
+          if (!el.isConnected) return;
+          const s2 = PR[li];
+          if (!del) {
+            ci++; el.textContent = s2.slice(0, ci);
+            if (ci >= s2.length) { del = true; setTimeout(tick, 2400); return; }
+            setTimeout(tick, 34 + Math.random() * 46);
+          } else {
+            ci -= 3;
+            if (ci <= 0) { ci = 0; del = false; li = (li + 1) % PR.length; }
+            el.textContent = s2.slice(0, ci);
+            setTimeout(tick, del ? 14 : 300);
+          }
+        };
+        tick();
+      });
+      // AI kartalar tilt
+      if (!rm && fine) document.querySelectorAll('.ff .ffl-aicard').forEach((card) => {
+        if (card.__fflTl) return; card.__fflTl = 1;
+        card.addEventListener('mousemove', (ev) => {
+          const r = card.getBoundingClientRect();
+          const rx = ((ev.clientY - r.top) / r.height - .5) * -7;
+          const ry = ((ev.clientX - r.left) / r.width - .5) * 7;
+          card.style.transform = 'translateY(-6px) perspective(700px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+        });
+        card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+      });
+    } catch (e) {}
+  }
   runStats() { if (this._statsRun) return; this._statsRun = true; const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
   _applyEntry() {
     // Hash deep-link ustuvor: boshlang'ich props kechikib kelsa ham uni qayta yozmaydi.
@@ -16255,11 +16524,21 @@ class Component extends DCLogic {
 
     const catTabs = this.categories.map(c => {
       const active = c === this.state.activeCat;
-      return { label: c, col: active ? '#fff' : 'var(--txt2)', bg: active ? 'var(--grad)' : 'var(--card)', bd: active ? 'transparent' : 'var(--bd)', cls: active ? 'ffm-tag on' : 'ffm-tag' };
+      return { label: c, col: active ? '#fff' : 'var(--txt2)', bg: active ? 'var(--grad)' : 'var(--card)', bd: active ? 'transparent' : 'var(--bd)', cls: active ? 'ffm-tag on' : 'ffm-tag', clsL: active ? 'ffl-cattab on' : 'ffl-cattab' };
     });
 
     const carousel = this.templates.filter(t => t.c === this.state.activeCat).map(t => ({ ...t, g: this.grad(t.h), author: this.authors[t.id % this.authors.length], price: t.pro ? 'Pro' : 'Bepul', badge: t.pro ? 'PRO' : 'BEPUL', badgeCls: t.pro ? 'ffm-bgpro' : 'ffm-bgfree' }));
     const categoryTiles = this.categoryTiles.map(c => ({ ...c, g: this.grad(c.h) }));
+    // Boy landing marquee qatorlari: 1-qator faol kategoriya (onCat filtri ISHLAYDI),
+    // 2-qator qolgan shablonlar. Uzluksiz -50% aylanish uchun ro'yxat >=8 ga to'ldirilib 2x lanadi.
+    const tcardL = (t) => ({ ...t, g: this.grad(t.h), badge: t.pro ? 'PRO' : 'BEPUL', badgeClsL: t.pro ? 'ffl-bpro' : 'ffl-bfree' });
+    const repeatTo = (arr, n) => { if (!arr.length) return arr; let out = arr; while (out.length < n) out = out.concat(arr); return out; };
+    const row1base = repeatTo(this.templates.filter(t => t.c === this.state.activeCat), 8).map(tcardL);
+    const row2base = repeatTo(this.templates.filter(t => t.c !== this.state.activeCat).slice(0, 10), 8).map(tcardL);
+    const marqRow1 = row1base.concat(row1base);
+    const marqRow2 = row2base.concat(row2base);
+    const heroMarqBase = this.templates.slice(0, 8).map(t => ({ ...t, g: this.grad(t.h) }));
+    const heroMarq = heroMarqBase.concat(heroMarqBase);
 
     const studioIcon = {
       'Rasm yaratish': { ibg: 'var(--limedim)', icol: 'var(--lime)' },
@@ -16267,7 +16546,14 @@ class Component extends DCLogic {
       'Voiceover': { ibg: 'var(--amberdim)', icol: 'var(--amber)' },
       'SFX': { ibg: 'var(--reddim)', icol: '#FF9C8F' },
     };
-    const studioCards = this.studioCards.map(c => ({ ...c, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)' }));
+    // Boy landing aicard tonlari (mockup 1:1): glow + ikon gradienti har tool uchun
+    const studioGlow = {
+      'Rasm yaratish': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(194,240,74,.12),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(194,240,74,.2),rgba(194,240,74,.06))', iccol: 'var(--lime)' },
+      'Video yaratish': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(124,196,255,.13),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(124,196,255,.2),rgba(124,196,255,.06))', iccol: '#7CC4FF' },
+      'Voiceover': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(183,148,246,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(183,148,246,.2),rgba(183,148,246,.06))', iccol: '#b794f6' },
+      'SFX': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(240,144,127,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(240,144,127,.2),rgba(240,144,127,.06))', iccol: '#f0907f' },
+    };
+    const studioCards = this.studioCards.map((c, i) => ({ ...c, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)', rd: (i % 4) * 80, ...(studioGlow[c.tool] || studioGlow['Rasm yaratish']) }));
 
     const plansView = this.plans.map(p => {
       const price = this.state.billing === 'yearly' ? p.py : p.pm;
@@ -16283,6 +16569,8 @@ class Component extends DCLogic {
         btnBd: p.pop ? 'transparent' : 'var(--bd2)',
         // Mockup (ffm) plan bindings
         planCls: p.pop ? 'ffm-plan rec' : 'ffm-plan',
+        // Boy landing (ffl) teaser kartasi — lime-glow Pro
+        planClsL: p.pop ? 'ffl-plan pop' : 'ffl-plan',
         ctaCls: p.pop ? 'ffm-btn full' : 'ffm-btn2 full',
         crCol: p.pop ? 'var(--lime)' : 'var(--muted)',
       };
@@ -16290,7 +16578,7 @@ class Component extends DCLogic {
 
     const testimonials = this.testimonials.map(t => ({ ...t, g: this.grad(t.h) }));
 
-    const faqsView = this.faqs.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'rgba(194,240,74,.25)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)' }; });
+    const faqsView = this.faqs.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'rgba(194,240,74,.25)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
 
     const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,rgba(194,240,74,.12),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
 
@@ -16434,7 +16722,7 @@ class Component extends DCLogic {
     const isFreePlan = planKey === 'free';
     // Kredit bloki (sidebar/drawer) — reja kvotasiga nisbatan progress
     const planShort = planKey === 'pro' ? 'Pro' : (planKey === 'studio' ? 'Studio' : 'Bepul');
-    const creditMax = planKey === 'pro' ? 1500 : (planKey === 'studio' ? 6000 : 50);
+    const creditMax = planKey === 'pro' ? 1000 : (planKey === 'studio' ? 6000 : 50);
     const creditMaxFmt = creditMax.toLocaleString();
     const creditPct = Math.max(0, Math.min(100, Math.round((this.state.credits / creditMax) * 100))) + '%';
     // App chrome holati
@@ -16467,6 +16755,11 @@ class Component extends DCLogic {
         ? 'Emailingizga havola yuboramiz — bir daqiqada qayta kirasiz.'
         : 'Shablonlar, AI Studio va plagin — bitta hisob bilan. Brauzerda yoki After Effects ichida davom eting.');
     const sp = this._armed ? this.state.statP : 1;
+    // Boy landing stats — count-up (runStats/statP dvigateli; reduced-motion'da sp=1 → darhol to'liq qiymat)
+    const landStat1 = Math.round(10000 * sp).toLocaleString('en-US');
+    const landStat2 = String(Math.round(4 * sp));
+    const landStat3 = String(Math.round(6 * sp));
+    const landStat4 = String(Math.round(14 * sp));
     const statsView = [
       { v: Math.round(10 * sp) + 'K+', l: 'Tayyor shablon' },
       { v: (sp * 5).toFixed(1).replace(/\.0$/, '') + 'M+', l: 'Faol ijodkor' },
@@ -16505,6 +16798,7 @@ class Component extends DCLogic {
     const testsRv = testimonials.map((t, i) => ({ ...t, rd: i * 110 }));
     return {
       navBg, navBorder, navBlur, navPricingCls, navPluginCls,
+      marqRow1, marqRow2, heroMarq, landStat1, landStat2, landStat3, landStat4,
       statsView, tipText, tipAnim, pageAnim, scrollPW, marqA, marqB, heroWords, howSteps,
       catTilesRv, studioRv, plansRv, testsRv,
       accentKey, animKey,

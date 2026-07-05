@@ -1,12 +1,12 @@
-# SESSION-REPORT — Admin redesign PART 5a (2026-07-05)
+# SESSION-REPORT — Boy landing port, Variant B (2026-07-05)
 
-**Nima qilindi:** Tasdiqlangan maket (`admin/_admin-redesign-mockup.html`) dan real adminga port:
-1. **Qobiq** — `styles/admin.css` (adx- prefiks, maket tokenlari 1:1, self-hosted Hanken Grotesk + IBM Plex Mono + Phosphor subset `/assets/fonts` dan, CDN yo'q) + `admin/index.html` yangi sidebar (4 guruh: Ish maydoni · Boshqaruv · Biznes · Tizim) + topbar (qidiruv, bell, mavzu, chiqish). Biznes bo'limlari halol "Tez orada" placeholder (5b).
-2. **Boshqaruv (Overview)** — maket e1: 4 stat karta + tasdiqlash navbati preview + so'nggi obunachilar jadvali, real API (`overview`, `plugin-subscribers`, moderation scope).
-3. **Moderatsiya** — maket e2: ikki panel (filtr taglar + navbat / detal + qaror paneli), kategoriya+sana sort endi ISHLAYDI, approve/soft/hard/delete real API'da jonli tekshirildi.
+**Nima qilindi:** `platform/_landing-rich-mockup.html` dagi **Variant B «Kinematik sahna»** jonli `platform/index.html` landing'iga to'liq port qilindi (CF Pages manbasi ekani `prepare-cf-pages.mjs` orqali tasdiqlandi):
+1. **Hero B** — aurora/mesh fon + dot-grid, 6 suzuvchi karta (parallax, bittasi "AI generatsiya… VIDEO · 62%" holatida), markaziy vignette, d64 gradient sarlavha, cta-glow, pastda uzluksiz shablon-marquee.
+2. **Barcha bo'limlar B estetikasida** (ffl- scoped CSS): stats count-up (mavjud `runStats/statP` dvigateliga ulandi), showcase 2 qatorli marquee (cattab filtri REAL ishlaydi — 1-qator faol kategoriya), AI Studio tilt/glow kartalari + yozilayotgan prompt bandi, plagin 3D panel (syncline), narx tizeri lime-glow Pro, FAQ akkordeon (max-height animatsiya), CTA band (nafas oluvchi glow), footer o'zgarmagan.
+3. **JS** — `installLanding()` (parallax/typing/tilt, idempotent, lifecycle'ga ulangan); `_rvSafety` endi `data-stats` ni ham trigger qiladi.
 
-**Topilgan va tuzatilgan bug'lar:** (a) `modRejectConfirm` izohni modal yopilgach o'qirdi → sabab yo'qolardi; (b) `loadModerationOnly` soft-rejected yozuvlarni TEMPLATES'dan o'chirardi; (c) dev-admin-server endi `/assets` (fontlar) serv qiladi va lokalda production API meta'sini olib tashlaydi (CORS).
+**Saqlangan bindinglar:** goRegister/goTemplates/goPricing/goPlugin/goLogin, onCat/catTabs, carousel ma'lumotlari (marquee tcard → openDetail modal), studioCards/onTryTool, plansView/onChoosePlan, faqsView/onFaq, marketing nav (frost + drawer), footer. App ekranlari/Pricing/Plugin sahifalari va ff-api.js TEGILMADI. Fontlar self-hosted, yangi CDN yo'q.
 
-**Tekshirildi:** desktop 1280+ (Overview/Moderatsiya maketga mos), tablet 900 (icon-rail), mobil 430 (drawer+scrim), konsol xatosiz, eski ekranlar (templates/contributors/…) yangi qobiqda ochiladi (5b/5c'gacha eski uslubda, theme toggle ishlaydi).
+**Tekshirildi:** 1280 to'liq sahifa + 390 mobil (gorizontal overflow YO'Q, docW=390), count-up/typing/marquee jonli, cattab filtri marquee'ni yangilaydi, FAQ toggle, detail modal, #auth routing, reduced-motion'da barcha harakat o'chib to'liq qiymatlar darhol chiqadi. Konsolda yangi xato yo'q (detail.author warning — eskidan mavjud).
 
-**Kutilmoqda:** 5b/5c — qolgan ekranlar (Templates/Contributors/Subscribers/Plans/Messages/Analytics/Settings/Logs) + Biznes markaz ekranlari; push foydalanuvchi tomonidan.
+**Kutilmoqda:** push foydalanuvchi tomonidan (CF Pages deploy shundan keyin).
