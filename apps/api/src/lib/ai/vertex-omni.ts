@@ -89,8 +89,10 @@ export async function omniGenerateVideo(
     if (vid.data) return { ok: true, data: Buffer.from(vid.data, "base64") };
     if (vid.uri) {
       // Katta video (>4MB) uri bilan keladi — bir xil ADC token bilan yuklab olamiz.
+      // FAZA 2 #12 billing fix: yuklab olish ham VIDEO loyihasiga hisoblanadi
+      // (avval PROJECT edi — video egress asosiy/rasm loyihasidan pul yechardi).
       const dl = await fetch(vid.uri, {
-        headers: { Authorization: `Bearer ${token}`, "x-goog-user-project": PROJECT },
+        headers: { Authorization: `Bearer ${token}`, "x-goog-user-project": VIDEO_PROJECT },
       });
       if (!dl.ok) return { ok: false, error: `Failed to download Omni video: ${dl.status}` };
       return { ok: true, data: Buffer.from(await dl.arrayBuffer()) };
