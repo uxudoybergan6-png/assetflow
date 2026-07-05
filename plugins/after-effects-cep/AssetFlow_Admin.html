@@ -382,7 +382,7 @@ select option{background:#222}
       <div class="login-leaf"></div>
       <div class="login-title">FrameFlow Admin</div>
     </div>
-    <div class="login-sub">Faqat ADMIN hisobi uchun · API: Cloud Run</div>
+    <div class="login-sub">ADMIN accounts only · API: Cloud Run</div>
     <div class="login-field">
       <label>API</label>
       <input type="url" id="loginApi" value="https://assetflow-api-331762958776.europe-west1.run.app" autocomplete="off" spellcheck="false">
@@ -392,13 +392,13 @@ select option{background:#222}
       <input type="email" id="loginEmail" placeholder="admin@assetflow.uz" autocomplete="username">
     </div>
     <div class="login-field">
-      <label>Parol</label>
+      <label>Password</label>
       <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
     </div>
-    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Kirish</button>
-    <button type="button" class="btn-secondary" style="width:100%;margin-top:10px" onclick="openWebAdmin()">🌐 Brauzerda Admin ochish (ishonchliroq)</button>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign in</button>
+    <button type="button" class="btn-secondary" style="width:100%;margin-top:10px" onclick="openWebAdmin()">🌐 Open Admin in browser (more reliable)</button>
     <div class="login-err" id="loginErr"></div>
-    <p class="login-sub" style="margin-top:10px;font-size:var(--fs-xs);line-height:1.4">«Failed to fetch» bo‘lsa: CEP panel nozik — yuqoridagi <b>🌐 Brauzer Admin</b> dan foydalaning yoki extension'ni yangilang: <code style="color:var(--green)">install-cep.sh</code></p>
+    <p class="login-sub" style="margin-top:10px;font-size:var(--fs-xs);line-height:1.4">If you see "Failed to fetch": the CEP panel is finicky — use <b>🌐 Browser Admin</b> above, or update the extension: <code style="color:var(--green)">install-cep.sh</code></p>
   </div>
 </div>
 
@@ -411,42 +411,42 @@ select option{background:#222}
       <div class="topbar-badge">ADMIN</div>
     </div>
     <div class="topbar-right">
-      <span class="topbar-user" id="topApi" title="API manzili" style="font-size:var(--fs-xs);color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis"></span>
-      <div class="admin-avatar" id="adminAvatar" onclick="openAdminAccount()" title="Hisob sozlamalari">A</div>
-      <button class="btn-ghost" onclick="doLogout()">Chiqish</button>
+      <span class="topbar-user" id="topApi" title="API address" style="font-size:var(--fs-xs);color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis"></span>
+      <div class="admin-avatar" id="adminAvatar" onclick="openAdminAccount()" title="Account settings">A</div>
+      <button class="btn-ghost" onclick="doLogout()">Sign out</button>
     </div>
   </div>
 
   <div class="tabs">
     <button class="tab active" data-tab="moderation" onclick="switchTab(this,'moderation')">
-      Kutilmoqda <span class="tab-badge" id="pendingBadge">0</span>
+      Pending <span class="tab-badge" id="pendingBadge">0</span>
     </button>
-    <button class="tab" data-tab="all" onclick="switchTab(this,'all')">Barchasi</button>
-    <button class="tab" data-tab="subscribers" onclick="switchTab(this,'subscribers')">Obunachilar</button>
-    <button class="tab" data-tab="downloaded" onclick="switchTab(this,'downloaded')">Yuklangan <span class="tab-badge" id="dlBadge" style="display:none">0</span></button>
+    <button class="tab" data-tab="all" onclick="switchTab(this,'all')">All</button>
+    <button class="tab" data-tab="subscribers" onclick="switchTab(this,'subscribers')">Subscribers</button>
+    <button class="tab" data-tab="downloaded" onclick="switchTab(this,'downloaded')">Downloaded <span class="tab-badge" id="dlBadge" style="display:none">0</span></button>
   </div>
 
   <div class="main" id="main">
 
     <!-- Stats -->
     <div class="stats-row" id="statsRow">
-      <div class="stat-box"><div class="stat-num" id="st0">—</div><div class="stat-lbl">Kutilmoqda</div></div>
-      <div class="stat-box"><div class="stat-num" id="st1">—</div><div class="stat-lbl">Tasdiqlangan</div></div>
-      <div class="stat-box"><div class="stat-num" id="st2">—</div><div class="stat-lbl">Rad etilgan</div></div>
-      <div class="stat-box"><div class="stat-num" id="st3">—</div><div class="stat-lbl">Obunachi</div></div>
+      <div class="stat-box"><div class="stat-num" id="st0">—</div><div class="stat-lbl">Pending</div></div>
+      <div class="stat-box"><div class="stat-num" id="st1">—</div><div class="stat-lbl">Approved</div></div>
+      <div class="stat-box"><div class="stat-num" id="st2">—</div><div class="stat-lbl">Rejected</div></div>
+      <div class="stat-box"><div class="stat-num" id="st3">—</div><div class="stat-lbl">Subscribers</div></div>
     </div>
 
     <!-- Toolbar -->
     <div class="toolbar" id="toolbar">
-      <div class="search-wrap"><input type="text" id="searchInput" placeholder="Qidirish…" oninput="applySearch()"></div>
+      <div class="search-wrap"><input type="text" id="searchInput" placeholder="Search…" oninput="applySearch()"></div>
       <select class="filter-select" id="statusFilter" onchange="loadTemplates()">
-        <option value="">Barchasi</option>
-        <option value="PENDING_REVIEW">Kutilmoqda</option>
-        <option value="APPROVED">Tasdiqlangan</option>
-        <option value="REJECTED">Rad etilgan</option>
+        <option value="">All</option>
+        <option value="PENDING_REVIEW">Pending</option>
+        <option value="APPROVED">Approved</option>
+        <option value="REJECTED">Rejected</option>
         <option value="DRAFT">Draft</option>
       </select>
-      <button class="btn-refresh" onclick="loadTemplates()" title="Yangilash">↻</button>
+      <button class="btn-refresh" onclick="loadTemplates()" title="Refresh">↻</button>
     </div>
 
     <div class="list-area" id="listArea">
@@ -463,13 +463,13 @@ select option{background:#222}
   <div class="admin-sheet" onclick="event.stopPropagation()">
 
     <div class="admin-sheet-head">
-      <h3>Admin hisob</h3>
+      <h3>Admin account</h3>
       <button class="admin-sheet-close" onclick="closeAdminAccount()">×</button>
     </div>
 
     <!-- Profil -->
     <div class="admin-section">
-      <span class="admin-section-label">Profil</span>
+      <span class="admin-section-label">Profile</span>
       <div class="admin-profile-row">
         <div class="admin-profile-av" id="sheetAv">A</div>
         <div class="admin-profile-info">
@@ -482,36 +482,36 @@ select option{background:#222}
 
     <!-- Yuklab olish papkasi -->
     <div class="admin-section" id="adminFolderSection" style="display:none">
-      <span class="admin-section-label">Shablon yuklab olish papkasi</span>
+      <span class="admin-section-label">Template download folder</span>
       <div class="admin-folder-box">
-        <div class="admin-folder-path empty" id="adminFolderPath">Standart (vaqtinchalik papka)</div>
+        <div class="admin-folder-path empty" id="adminFolderPath">Default (temp folder)</div>
         <div class="admin-folder-actions">
-          <button class="btn-ghost" onclick="adminChooseFolder()">📁 Papka tanlash</button>
-          <button class="btn-ghost" onclick="adminResetFolder()">Standart</button>
+          <button class="btn-ghost" onclick="adminChooseFolder()">📁 Choose folder</button>
+          <button class="btn-ghost" onclick="adminResetFolder()">Default</button>
         </div>
-        <button class="admin-folder-save" id="adminFolderSave" onclick="adminSaveFolder()">💾 Saqlash</button>
-        <div class="admin-folder-hint">AE Admin plagindan yuklangan pack (.aep/.mogrt + footage) va kesh shu papkada saqlanadi.</div>
+        <button class="admin-folder-save" id="adminFolderSave" onclick="adminSaveFolder()">💾 Save</button>
+        <div class="admin-folder-hint">Packs (.aep/.mogrt + footage) downloaded from the AE Admin plugin and the cache are stored in this folder.</div>
         <div class="admin-folder-actions" style="margin-top:8px">
-          <button class="btn-ghost" onclick="adminClearCache()">🧹 Keshni tozalash</button>
+          <button class="btn-ghost" onclick="adminClearCache()">🧹 Clear cache</button>
         </div>
-        <div class="admin-folder-hint">Vaqtinchalik render/zip keshini va ro'yxatda yo'q packlarni o'chiradi (yuklab olingan shablonlar saqlanadi).</div>
+        <div class="admin-folder-hint">Deletes the temporary render/zip cache and packs no longer in the list (downloaded templates are kept).</div>
       </div>
     </div>
 
     <!-- API manzili -->
     <div class="admin-section">
-      <span class="admin-section-label">API manzili</span>
+      <span class="admin-section-label">API address</span>
       <div class="admin-api-row">
         <input type="url" id="sheetApiUrl" placeholder="https://assetflow-api-331762958776.europe-west1.run.app" spellcheck="false">
-        <button onclick="adminSaveApi()">Saqlash</button>
-        <button onclick="adminResetApi()">Asl</button>
+        <button onclick="adminSaveApi()">Save</button>
+        <button onclick="adminResetApi()">Default</button>
       </div>
     </div>
 
     <!-- Amallar -->
     <div class="admin-actions-row">
-      <button class="admin-btn" onclick="openWebAdmin();closeAdminAccount()">🌐 Brauzer Admin</button>
-      <button class="admin-btn danger" onclick="doLogout();closeAdminAccount()">⎋ Chiqish</button>
+      <button class="admin-btn" onclick="openWebAdmin();closeAdminAccount()">🌐 Browser Admin</button>
+      <button class="admin-btn danger" onclick="doLogout();closeAdminAccount()">⎋ Sign out</button>
     </div>
 
   </div>
@@ -521,19 +521,19 @@ select option{background:#222}
 <div class="scan-overlay" id="scanOverlay" onclick="if(event.target===this)closeScanModal()">
   <div class="scan-modal">
     <div class="scan-head">
-      <span id="scanTitle">Sahnalarni topish</span>
+      <span id="scanTitle">Find scenes</span>
       <button onclick="closeScanModal()">×</button>
     </div>
     <div class="scan-folder-bar" id="scanFolderBar" style="display:none">
-      <label style="font-size:11px;color:var(--muted);white-space:nowrap">Scene papkasi:</label>
+      <label style="font-size:11px;color:var(--muted);white-space:nowrap">Scene folder:</label>
       <select id="scanFolder" class="scan-folder-select" onchange="onScanFolderChange()"></select>
       <span class="scan-comp-count" id="scanCompCount" style="font-size:11px;color:var(--green);min-width:72px"></span>
-      <button class="scan-btn" id="scanRenderAllBtn" onclick="renderAllScenes()" style="background:var(--select);color:#fff;margin-left:auto" title="Admin Preview preset bilan barcha sahnalar">🎬 All render</button>
+      <button class="scan-btn" id="scanRenderAllBtn" onclick="renderAllScenes()" style="background:var(--select);color:#fff;margin-left:auto" title="All scenes with the Admin Preview preset">🎬 Render all</button>
     </div>
     <div class="scan-list" id="scanList"></div>
     <div class="scan-foot">
       <span class="scan-foot-msg" id="scanFootMsg"></span>
-      <button class="scan-upload-btn" id="scanDoneBtn" onclick="finishScenePrep()" disabled>✓ Tayyor</button>
+      <button class="scan-upload-btn" id="scanDoneBtn" onclick="finishScenePrep()" disabled>✓ Done</button>
     </div>
   </div>
 </div>
@@ -666,8 +666,8 @@ function apiBase() {
  *  odatda sabab: API URL noto'g'ri/localhost, internet yo'q, yoki Render uxlagan).
  *  Tushunarli o'zbekcha sabab + Brauzer Admin muqobilini taklif qiladi. */
 function netErrMsg() {
-  return 'API ga ulanib bo‘lmadi: ' + apiBase() + ' — internet yoki API URL ni tekshiring '
-    + '(localhost AE ichida ishlamaydi). Muqobil: «🌐 Brauzer Admin».';
+  return 'Could not connect to the API: ' + apiBase() + ' — check your internet or the API URL '
+    + '(localhost does not work inside AE). Alternative: "🌐 Browser Admin".';
 }
 function isNetworkErr(msg) {
   return msg === 'Failed to fetch' || /NetworkError|Tarmoq xatosi|Network error/i.test(msg);
@@ -725,7 +725,7 @@ async function api(path, opts = {}, _retried = false) {
     // Tarmoq xatosi — seans o'rtasida Render uxlab qolgan bo'lishi mumkin (cold start).
     // Bir marta uyg'otib qayta urinamiz; uyg'onmasa tushunarli xato qaytaramiz.
     if (!_retried) {
-      toast('Server uyg‘onmoqda… qayta urinilmoqda', false);
+      toast('Server is waking up… retrying', false);
       const ok = await waitForApi(null, 5, 4000);
       if (ok) return api(path, opts, true);
     }
@@ -755,7 +755,7 @@ async function apiForm(path, formData, _retried = false) {
   } catch (netErr) {
     // api() bilan bir xil: cold-start bo'lsa bir marta uyg'otib qayta urinamiz.
     if (!_retried) {
-      toast('Server uyg‘onmoqda… qayta urinilmoqda', false);
+      toast('Server is waking up… retrying', false);
       const ok = await waitForApi(null, 5, 4000);
       if (ok) return apiForm(path, formData, true);
     }
@@ -829,7 +829,7 @@ function handleAuthError(e) {
     clearSession();
     document.getElementById('shell').style.display = 'none';
     document.getElementById('loginView').style.display = 'flex';
-    document.getElementById('loginErr').textContent = 'Sessiya tugadi — qayta kiring';
+    document.getElementById('loginErr').textContent = 'Session expired — please sign in again';
     return true;
   }
   return false;
@@ -840,35 +840,35 @@ async function doLogin() {
   const pass = document.getElementById('loginPass').value;
   const err = document.getElementById('loginErr');
   const btn = document.getElementById('loginBtn');
-  if (!email || !pass) { err.textContent = 'Email va parol kiriting'; return; }
+  if (!email || !pass) { err.textContent = 'Enter email and password'; return; }
   err.textContent = '';
   btn.disabled = true;
-  btn.textContent = 'Kirmoqda…';
+  btn.textContent = 'Signing in…';
   const apiIn = document.getElementById('loginApi').value.trim();
   if (apiIn) localStorage.setItem(API_KEY, apiIn.replace(/\/$/, ''));
   try {
     if (!(await pingApi())) {
-      btn.textContent = 'Server uyg‘onmoqda…';
-      err.textContent = 'Server uyqudan turmoqda (Render cold start) — biroz kuting…';
+      btn.textContent = 'Server is waking up…';
+      err.textContent = 'Server is waking up (Render cold start) — please wait…';
       const ok = await waitForApi((i, n) => {
-        err.textContent = `Server uyg‘onmoqda… (${i}/${n}) — 50 soniyagacha`;
+        err.textContent = `Server is waking up… (${i}/${n}) — up to 50 sec`;
       });
-      if (!ok) throw new Error('API javob bermadi: ' + apiBase() + '/health');
+      if (!ok) throw new Error('No response from API: ' + apiBase() + '/health');
       err.textContent = '';
-      btn.textContent = 'Kirmoqda…';
+      btn.textContent = 'Signing in…';
     }
     const data = await api('/api/auth/login', {
       method: 'POST',
       body: { email, password: pass }
     });
-    if (!data.token) throw new Error(data.error || 'Token kelmadi');
-    if (data.user?.role !== 'ADMIN') throw new Error('Bu hisob ADMIN emas');
+    if (!data.token) throw new Error(data.error || 'No token received');
+    if (data.user?.role !== 'ADMIN') throw new Error('This account is not an ADMIN');
     saveSession(data.token, data.user);
     bootShell();
   } catch(e) {
     err.textContent = formatFetchError(e);
     btn.disabled = false;
-    btn.textContent = 'Kirish';
+    btn.textContent = 'Sign in';
   }
 }
 
@@ -881,7 +881,7 @@ function openWebAdmin() {
       window.open(url, '_blank');
     }
   } catch {
-    toast('Oching: ' + url, true);
+    toast('Open: ' + url, true);
   }
 }
 
@@ -904,7 +904,7 @@ async function bootShell() {
     catch (e) {
       console.warn('host boot', e);
       // Jim o'tkazmaymiz — import/render ishlamasligi mumkinligini bildiramiz
-      toast('AE bog‘lanishi tayyor emas — import/render uchun AE’ni qayta oching', true);
+      toast('AE connection is not ready — restart AE for import/render to work', true);
     }
   }
   const u = getUser();
@@ -915,7 +915,7 @@ async function bootShell() {
   document.getElementById('topUser') && (document.getElementById('topUser').textContent = '');
   document.getElementById('topApi').textContent = apiBase().replace(/^https?:\/\//, '');
   const ok = await pingApi();
-  if (!ok) toast('API ulanmagan: ' + apiBase(), true);
+  if (!ok) toast('API not connected: ' + apiBase(), true);
   loadAdminDownloaded();
   updateDlBadge();
   loadStats();
@@ -953,7 +953,7 @@ function switchTab(el, tab) {
   if (refreshBtn) refreshBtn.onclick = isSubs ? loadSubscribers : isDl ? renderDownloadedTab : loadTemplates;
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
-    searchInput.placeholder = isSubs ? 'Email yoki ism…' : isDl ? 'Shablon nomi…' : 'Qidirish…';
+    searchInput.placeholder = isSubs ? 'Email or name…' : isDl ? 'Template name…' : 'Search…';
     searchInput.oninput = isSubs ? applySubscriberSearch : isDl ? applyDlSearch : applySearch;
     searchInput.value = '';
   }
@@ -1009,10 +1009,10 @@ function renderList(items) {
     el.innerHTML = isPending
       ? `<div class="empty-state">
            <div class="empty-ico">✅</div>
-           <div class="empty-txt">Kutilayotgan shablon yo'q<br>Hammasi ko'rib chiqilgan</div>
-           <button class="btn-ghost" style="margin-top:12px" onclick="switchTab(document.querySelector('.tab[data-tab=all]'),'all')">Barcha shablonlarni ko'rish →</button>
+           <div class="empty-txt">No templates pending<br>Everything has been reviewed</div>
+           <button class="btn-ghost" style="margin-top:12px" onclick="switchTab(document.querySelector('.tab[data-tab=all]'),'all')">View all templates →</button>
          </div>`
-      : `<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">Shablon topilmadi</div></div>`;
+      : `<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">No templates found</div></div>`;
     return;
   }
   const shown = items.slice(0, renderLimit);
@@ -1020,7 +1020,7 @@ function renderList(items) {
   if (items.length > renderLimit) {
     const remaining = items.length - renderLimit;
     html += `<div style="text-align:center;padding:12px">
-      <button class="btn-ghost" onclick="showMoreTemplates()">Yana ${Math.min(PAGE_SIZE, remaining)} ta ko'rsatish (${remaining} qoldi)</button>
+      <button class="btn-ghost" onclick="showMoreTemplates()">Show ${Math.min(PAGE_SIZE, remaining)} more (${remaining} left)</button>
     </div>`;
   }
   el.innerHTML = html;
@@ -1033,17 +1033,17 @@ function showMoreTemplates() {
 window.showMoreTemplates = showMoreTemplates;
 
 function statusLabel(s) {
-  const map = { PENDING_REVIEW: 'Kutilmoqda', APPROVED: 'Tasdiqlangan', REJECTED: 'Rad etilgan', DRAFT: 'Draft' };
+  const map = { PENDING_REVIEW: 'Pending', APPROVED: 'Approved', REJECTED: 'Rejected', DRAFT: 'Draft' };
   return map[s] || s;
 }
 
 function timeAgo(iso) {
   if (!iso) return '';
   const d = new Date(iso), now = Date.now(), diff = now - d;
-  if (diff < 60000) return 'Hozir';
-  if (diff < 3600000) return Math.floor(diff/60000) + ' daq oldin';
-  if (diff < 86400000) return Math.floor(diff/3600000) + ' soat oldin';
-  return Math.floor(diff/86400000) + ' kun oldin';
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + ' min ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + ' hr ago';
+  return Math.floor(diff/86400000) + ' d ago';
 }
 
 /** Server matnini HTML'ga xavfsiz qo'yish (XSS himoyasi — contributor matni ishonchsiz).
@@ -1071,7 +1071,7 @@ function renderCard(t) {
   const scenes = (() => {
     const raw = t.metaJson || {};
     const sc = Array.isArray(raw.scenes) ? raw.scenes : [];
-    return sc.length ? sc.length + ' ta sahna' : (t.assets?.pack ? '.aep/.mogrt bor' : 'sahna yo\'q');
+    return sc.length ? sc.length + ' scenes' : (t.assets?.pack ? '.aep/.mogrt present' : 'no scenes');
   })();
   return `<div class="tpl-card" id="card-${t.id}">
     <div class="tpl-row" onclick="toggleDetail('${t.id}')">
@@ -1121,7 +1121,7 @@ function renderDetail(t) {
   const cacheBust = t.updatedAt ? Date.parse(t.updatedAt) || Date.now() : Date.now();
   const scenesHtml = scenes.length ? `
     <div class="detail-section">
-      <label>Sahnalar (${scenes.length}) <span style="font-size:var(--fs-xs);color:var(--muted);font-weight:400">— har sahna uchun video yukla</span></label>
+      <label>Scenes (${scenes.length}) <span style="font-size:var(--fs-xs);color:var(--muted);font-weight:400">— upload a video for each scene</span></label>
       <div class="scenes-upload-list" id="sul-${t.id}">
         ${scenes.map((s, idx) => {
           const key = s.previewKey || adminSceneKey(s.aeComp || s.n || '');
@@ -1132,18 +1132,18 @@ function renderDetail(t) {
               ${hasVideo
                 ? `<video src="${escHtml(url)}" muted playsinline preload="metadata"
                     onloadedmetadata="this.currentTime=this.duration*0.1||0.3"
-                    onerror="this.style.display='none';var st=document.getElementById('sus-${t.id}-${idx}');if(st){st.textContent='Video yo\\'q';st.style.color='var(--muted)';}"
+                    onerror="this.style.display='none';var st=document.getElementById('sus-${t.id}-${idx}');if(st){st.textContent='No video';st.style.color='var(--muted)';}"
                     style="width:100%;height:100%;object-fit:cover"></video>`
                 : `<span style="font-size:16px;color:#444">✦</span>`}
             </div>
             <div class="scene-upload-info">
-              <div class="scene-upload-name">${escHtml(s.n || s.aeComp || 'Sahna ' + (idx+1))}</div>
+              <div class="scene-upload-name">${escHtml(s.n || s.aeComp || 'Scene ' + (idx+1))}</div>
               <div class="scene-upload-meta">${escHtml(s.meta || '')}</div>
               <div class="scene-upload-status" id="sus-${t.id}-${idx}" style="font-size:var(--fs-xs);color:${hasVideo?'var(--green)':'var(--muted)'}">
-                ${hasVideo ? '✓ Video bor' : 'Video yo\'q'}
+                ${hasVideo ? '✓ Has video' : 'No video'}
               </div>
             </div>
-            <label class="scene-upload-btn" title="Video yuklash">
+            <label class="scene-upload-btn" title="Upload video">
               ↑ Video
               <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                 style="display:none"
@@ -1152,7 +1152,7 @@ function renderDetail(t) {
           </div>`;
         }).join('')}
       </div>
-    </div>` : `<div class="detail-section"><div style="font-size:11px;color:var(--muted)">Sahna ma'lumoti yo'q (eski format)</div></div>`;
+    </div>` : `<div class="detail-section"><div style="font-size:11px;color:var(--muted)">No scene data (old format)</div></div>`;
 
   const approveActive = t.reviewStatus !== 'APPROVED';
   const rejectActive = t.reviewStatus !== 'REJECTED';
@@ -1164,22 +1164,22 @@ function renderDetail(t) {
 
     <!-- Approve / Reject -->
     <div class="detail-section">
-      <label>Moderatsiya</label>
+      <label>Moderation</label>
       <div class="action-row">
-        ${approveActive ? `<button class="btn-approve" onclick="reviewTemplate('${t.id}','approve',this)">✓ Tasdiqlash</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✓ Allaqachon tasdiqlangan</button>`}
-        ${rejectActive ? `<button class="btn-reject" onclick="reviewTemplate('${t.id}','reject',this)">✗ Rad etish</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✗ Rad etilgan</button>`}
+        ${approveActive ? `<button class="btn-approve" onclick="reviewTemplate('${t.id}','approve',this)">✓ Approve</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✓ Already approved</button>`}
+        ${rejectActive ? `<button class="btn-reject" onclick="reviewTemplate('${t.id}','reject',this)">✗ Reject</button>` : `<button class="btn-action" disabled style="opacity:.4;flex:1">✗ Rejected</button>`}
       </div>
       ${isApproved ? `
       <div class="action-row" style="margin-top:7px">
         ${isPublished
-          ? `<button class="btn-action amber" style="flex:1" onclick="togglePublish('${t.id}',false,this)">🔕 Katalogdan yashirish</button>`
-          : `<button class="btn-action blue" style="flex:1" onclick="togglePublish('${t.id}',true,this)">📢 Katalogga chiqarish</button>`}
+          ? `<button class="btn-action amber" style="flex:1" onclick="togglePublish('${t.id}',false,this)">🔕 Hide from catalog</button>`
+          : `<button class="btn-action blue" style="flex:1" onclick="togglePublish('${t.id}',true,this)">📢 Publish to catalog</button>`}
         <span style="font-size:var(--fs-xs);color:${isPublished?'var(--green)':'var(--muted)'};align-self:center;white-space:nowrap">
-          ${isPublished ? '● Katalogda' : '○ Yashirin'}
+          ${isPublished ? '● In catalog' : '○ Hidden'}
         </span>
       </div>` : ''}
       <div class="note-area">
-        <textarea id="note-${t.id}" placeholder="Izoh (ixtiyoriy)…"></textarea>
+        <textarea id="note-${t.id}" placeholder="Note (optional)…"></textarea>
       </div>
       <div class="status-msg" id="msg-${t.id}"></div>
     </div>
@@ -1188,10 +1188,10 @@ function renderDetail(t) {
     <div class="detail-section">
       <div class="wf-box">
         <div class="wf-header">
-          <span class="wf-title">Shablon tekshirish va yuklash</span>
+          <span class="wf-title">Review and upload template</span>
           ${t.assets?.pack
-            ? `<span class="wf-badge has-pack">✓ Pack bor</span>`
-            : `<span class="wf-badge no-pack">Pack yo'q</span>`}
+            ? `<span class="wf-badge has-pack">✓ Has pack</span>`
+            : `<span class="wf-badge no-pack">No pack</span>`}
         </div>
         <div class="wf-steps">
 
@@ -1202,12 +1202,12 @@ function renderDetail(t) {
               <div class="wf-step-bar"></div>
             </div>
             <div class="wf-step-content">
-              <div class="wf-step-label">1 · Pack yuklab olish</div>
-              <div class="wf-step-desc">Pack serverdan yuklanadi va After Effects da ochiladi.</div>
+              <div class="wf-step-label">1 · Download pack</div>
+              <div class="wf-step-desc">The pack is downloaded from the server and opened in After Effects.</div>
               <div class="wf-step-actions">
                 ${t.assets?.pack
-                  ? `<button class="wf-btn blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ Pack yuklab olish</button>`
-                  : `<span class="wf-hint">⚠ Contributor hali pack yuklagan emas</span>`}
+                  ? `<button class="wf-btn blue" id="btn-import-${t.id}" onclick="importPackToAE('${t.id}')">↓ Download pack</button>`
+                  : `<span class="wf-hint">⚠ Contributor hasn't uploaded a pack yet</span>`}
               </div>
             </div>
           </div>
@@ -1219,13 +1219,13 @@ function renderDetail(t) {
               <div class="wf-step-bar"></div>
             </div>
             <div class="wf-step-content">
-              <div class="wf-step-label">2 · Sahnalarni render qilish</div>
-              <div class="wf-step-desc"><b>Scene papkasini</b> qo'lda tanlang — plagin comp'larni topadi. Keyin <b>All render</b> (Admin Preview).</div>
+              <div class="wf-step-label">2 · Render scenes</div>
+              <div class="wf-step-desc">Manually select the <b>scene folder</b> — the plugin will find the comps. Then <b>Render all</b> (Admin Preview).</div>
               <div class="wf-step-actions">
                 ${IS_CEP
-                  ? `<button class="wf-btn blue" id="btn-scan-${t.id}" onclick="openScenePrep('${t.id}')">🎬 Sahnalarni render</button>
-                     <span class="wf-hint" id="prep-hint-${t.id}">Avval pack yuklab oling</span>`
-                  : `<span class="wf-hint">Faqat After Effects ichida ishlaydi</span>`}
+                  ? `<button class="wf-btn blue" id="btn-scan-${t.id}" onclick="openScenePrep('${t.id}')">🎬 Render scenes</button>
+                     <span class="wf-hint" id="prep-hint-${t.id}">Download the pack first</span>`
+                  : `<span class="wf-hint">Only works inside After Effects</span>`}
               </div>
             </div>
           </div>
@@ -1237,13 +1237,13 @@ function renderDetail(t) {
               <div class="wf-step-bar"></div>
             </div>
             <div class="wf-step-content">
-              <div class="wf-step-label">3 · Serverga yuklash</div>
-              <div class="wf-step-desc">O'zgartirishlardan keyin shablon (pack) va preview videolar serverga yuklanadi.</div>
+              <div class="wf-step-label">3 · Upload to server</div>
+              <div class="wf-step-desc">After making changes, the template (pack) and preview videos are uploaded to the server.</div>
               <div class="wf-step-actions">
                 ${IS_CEP
-                  ? `<button class="wf-btn amber" id="btn-upload-${t.id}" onclick="uploadTemplateToServer('${t.id}')" disabled>↑ Serverga yuklash</button>
-                     <span class="wf-hint" id="upload-hint-${t.id}">Avval "Sahnalarni render"</span>`
-                  : `<span class="wf-hint">Faqat After Effects ichida ishlaydi</span>`}
+                  ? `<button class="wf-btn amber" id="btn-upload-${t.id}" onclick="uploadTemplateToServer('${t.id}')" disabled>↑ Upload to server</button>
+                     <span class="wf-hint" id="upload-hint-${t.id}">First run "Render scenes"</span>`
+                  : `<span class="wf-hint">Only works inside After Effects</span>`}
               </div>
               <div class="wf-progress" id="upwrap-${t.id}" style="display:none">
                 <div class="wf-progress-track"><div class="wf-progress-bar" id="upbar-${t.id}"></div></div>
@@ -1258,13 +1258,13 @@ function renderDetail(t) {
               <div class="wf-step-icon ${isApproved ? 'done' : ''}">✓</div>
             </div>
             <div class="wf-step-content">
-              <div class="wf-step-label">4 · Tasdiqlang va katalogga chiqaring</div>
-              <div class="wf-step-desc">Yuqoridagi "Moderatsiya" bo'limida tasdiqlang — shablon plugin katalogida foydalanuvchilarga ko'rinadi.</div>
+              <div class="wf-step-label">4 · Approve and publish to catalog</div>
+              <div class="wf-step-desc">Approve it in the "Moderation" section above — the template will become visible to users in the plugin catalog.</div>
               <div class="wf-step-actions">
                 <span class="wf-hint" style="color:${isApproved ? 'var(--green)' : 'var(--muted)'}">
                   ${isApproved
-                    ? (isPublished ? '● Tasdiqlangan va katalogda' : '● Tasdiqlangan — lekin yashirin')
-                    : '○ Hali tasdiqlanmagan'}
+                    ? (isPublished ? '● Approved and in catalog' : '● Approved — but hidden')
+                    : '○ Not approved yet'}
                 </span>
               </div>
             </div>
@@ -1277,18 +1277,18 @@ function renderDetail(t) {
 
     <!-- Metadata edit -->
     <div class="detail-section">
-      <label>Ma'lumotlarni tahrirlash</label>
+      <label>Edit details</label>
       <div class="edit-grid">
         <div class="full">
-          <span class="edit-label">Nom</span>
+          <span class="edit-label">Name</span>
           <input type="text" id="e-name-${t.id}" value="${escHtml(t.name||'')}">
         </div>
         <div>
-          <span class="edit-label">Kategoriya</span>
+          <span class="edit-label">Category</span>
           <input type="text" id="e-cat-${t.id}" value="${escHtml(t.catLabel||'')}">
         </div>
         <div>
-          <span class="edit-label">Ruxsat</span>
+          <span class="edit-label">Resolution</span>
           <select id="e-res-${t.id}">
             ${['4k','2k','1080p','5k'].map(r => `<option value="${r}" ${t.res===r?'selected':''}>${r.toUpperCase()}</option>`).join('')}
           </select>
@@ -1308,17 +1308,17 @@ function renderDetail(t) {
           </select>
         </div>
         <div>
-          <span class="edit-label">Teglar (vergul bilan)</span>
+          <span class="edit-label">Tags (comma-separated)</span>
           <input type="text" id="e-tags-${t.id}" value="${escHtml((t.tags||[]).join(', '))}">
         </div>
         <div class="full">
-          <span class="edit-label">Tavsif</span>
+          <span class="edit-label">Description</span>
           <textarea id="e-desc-${t.id}" style="height:52px;resize:vertical">${escHtml(t.description||'')}</textarea>
         </div>
       </div>
       <div class="edit-actions" style="margin-top:8px;display:flex;gap:8px">
-        <button class="btn-action" style="flex:1" onclick="saveMetadata('${t.id}',this)">💾 Saqlash</button>
-        <button class="btn-action" onclick="deleteTemplate('${t.id}','${escAttrJs(t.name)}',this)">🗑 O'chirish</button>
+        <button class="btn-action" style="flex:1" onclick="saveMetadata('${t.id}',this)">💾 Save</button>
+        <button class="btn-action" onclick="deleteTemplate('${t.id}','${escAttrJs(t.name)}',this)">🗑 Delete</button>
       </div>
       <div class="status-msg" id="edit-msg-${t.id}"></div>
     </div>`;
@@ -1328,17 +1328,17 @@ function renderDetail(t) {
 async function reviewTemplate(id, action, btn) {
   const note = (document.getElementById('note-' + id)?.value || '').trim();
   const msg = document.getElementById('msg-' + id);
-  msg.textContent = 'Yuborilmoqda…';
+  msg.textContent = 'Submitting…';
   msg.className = 'status-msg';
-  setBtnBusy(btn, true, action === 'approve' ? '⏳ Tasdiqlanmoqda…' : '⏳ Rad etilmoqda…');
+  setBtnBusy(btn, true, action === 'approve' ? '⏳ Approving…' : '⏳ Rejecting…');
   try {
     await api('/api/contributor/templates/' + id + '/review', {
       method: 'POST',
       body: { action, note: note || undefined, published: action === 'approve' }
     });
-    msg.textContent = action === 'approve' ? '✓ Tasdiqlandi' : '✓ Rad etildi';
+    msg.textContent = action === 'approve' ? '✓ Approved' : '✓ Rejected';
     msg.className = 'status-msg ok';
-    toast(action === 'approve' ? '✓ Tasdiqlandi' : '✓ Rad etildi');
+    toast(action === 'approve' ? '✓ Approved' : '✓ Rejected');
     await loadTemplates();
     loadStats();
   } catch(e) {
@@ -1352,14 +1352,14 @@ async function reviewTemplate(id, action, btn) {
 // ── Publish / Unpublish (katalogda ko'rsatish/yashirish) ─────────────────────
 async function togglePublish(id, publish, btn) {
   const msg = document.getElementById('msg-' + id);
-  if (msg) { msg.textContent = publish ? 'Katalogga chiqarilmoqda…' : 'Yashirilmoqda…'; msg.className = 'status-msg'; }
-  setBtnBusy(btn, true, publish ? '⏳ Chiqarilmoqda…' : '⏳ Yashirilmoqda…');
+  if (msg) { msg.textContent = publish ? 'Publishing to catalog…' : 'Hiding…'; msg.className = 'status-msg'; }
+  setBtnBusy(btn, true, publish ? '⏳ Publishing…' : '⏳ Hiding…');
   try {
     await api('/api/contributor/templates/' + id, {
       method: 'PATCH',
       body: { published: publish }
     });
-    toast(publish ? '📢 Katalogga chiqarildi' : '🔕 Katalogdan yashirildi');
+    toast(publish ? '📢 Published to catalog' : '🔕 Hidden from catalog');
     const t = allTemplates.find(x => x.id === id);
     if (t) t.published = publish;
     // Detail panelni yangilab qaytarish (yangi tugma holati bilan)
@@ -1386,17 +1386,17 @@ async function saveMetadata(id, btn) {
   const tags = (document.getElementById('e-tags-' + id)?.value || '').split(',').map(s => s.trim()).filter(Boolean);
   const description = document.getElementById('e-desc-' + id)?.value.trim();
   const cat = (catLabel || '').toLowerCase().replace(/[^a-z0-9]+/g,'') || 'all';
-  msg.textContent = 'Saqlanmoqda…';
+  msg.textContent = 'Saving…';
   msg.className = 'status-msg';
-  setBtnBusy(btn, true, '⏳ Saqlanmoqda…');
+  setBtnBusy(btn, true, '⏳ Saving…');
   try {
     await api('/api/contributor/templates/' + id, {
       method: 'PATCH',
       body: { name, catLabel, cat, res, orient, nav, tags, description }
     });
-    msg.textContent = '✓ Saqlandi';
+    msg.textContent = '✓ Saved';
     msg.className = 'status-msg ok';
-    toast('✓ Ma\'lumotlar saqlandi');
+    toast('✓ Details saved');
     const t = allTemplates.find(x => x.id === id);
     if (t) Object.assign(t, { name, catLabel, cat, res, orient, nav, tags, description });
   } catch(e) {
@@ -1409,11 +1409,11 @@ async function saveMetadata(id, btn) {
 
 // ── Delete ─────────────────────────────────────────────────────────────────
 async function deleteTemplate(id, name, btn) {
-  if (!confirm('"' + name + '" ni o\'chirmoqchimisiz? Bu amalni qaytarib bo\'lmaydi.')) return;
-  setBtnBusy(btn, true, '⏳ O\'chirilmoqda…');
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  setBtnBusy(btn, true, '⏳ Deleting…');
   try {
     await api('/api/contributor/templates/' + id, { method: 'DELETE' });
-    toast('✓ O\'chirildi');
+    toast('✓ Deleted');
     allTemplates = allTemplates.filter(t => t.id !== id);
     applySearch();
     loadStats();
@@ -1433,7 +1433,7 @@ async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
   const preview = document.getElementById('sup-' + rowId);
 
   row?.classList.add('uploading');
-  if (status) { status.textContent = 'Yuklanmoqda… 0%'; status.style.color = 'var(--amber)'; }
+  if (status) { status.textContent = 'Uploading… 0%'; status.style.color = 'var(--amber)'; }
 
   try {
     const fd = new FormData();
@@ -1446,7 +1446,7 @@ async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
       xhr.setRequestHeader('Authorization', 'Bearer ' + token());
       xhr.upload.onprogress = e => {
         if (e.lengthComputable && status) {
-          status.textContent = 'Yuklanmoqda… ' + Math.round(e.loaded / e.total * 100) + '%';
+          status.textContent = 'Uploading… ' + Math.round(e.loaded / e.total * 100) + '%';
         }
       };
       xhr.onload = () => {
@@ -1464,10 +1464,10 @@ async function uploadSceneVideo(input, templateId, sceneKey, rowId) {
         onloadedmetadata="this.currentTime=this.duration*0.1||0.3"
         style="width:100%;height:100%;object-fit:cover"></video>`;
     }
-    if (status) { status.textContent = '✓ Yuklandi'; status.style.color = 'var(--green)'; }
+    if (status) { status.textContent = '✓ Uploaded'; status.style.color = 'var(--green)'; }
     row?.classList.remove('uploading');
     row?.classList.add('done');
-    toast('✓ ' + file.name + ' yuklandi');
+    toast('✓ ' + file.name + ' uploaded');
     input.value = '';
   } catch(e) {
     if (handleAuthError(e)) { row?.classList.remove('uploading'); return; }
@@ -1499,27 +1499,27 @@ async function afCloseCurrentGuarded() {
   let raw = '';
   // Retry bilan — cold bridge transient xatosi soxta abort bermasin
   try { raw = await callHostSimple('afCloseCurrent()'); }
-  catch (e) { throw abort('AE bilan aloqa yo‘q — saqlanmagan ish xavf ostida. Qayta urinib ko‘ring.'); }
+  catch (e) { throw abort('No connection to AE — unsaved work is at risk. Please try again.'); }
   if (!raw || raw === 'EvalScript error.' || raw === 'undefined') {
-    throw abort('AE javobi noaniq — joriy loyiha holati tekshirilmadi. Qayta urinib ko‘ring.');
+    throw abort('Unclear response from AE — could not verify the current project state. Please try again.');
   }
   let d = null;
   try { d = JSON.parse(raw); } catch (e) {
-    throw abort('AE javobi o‘qilmadi — qayta urinib ko‘ring.');
+    throw abort('Could not read AE response — please try again.');
   }
   if (d && d.dirty) {
     const go = confirm(
-      'Joriy AE loyihangizda saqlanmagan o‘zgarishlar bor.\n' +
-      'Davom etsangiz ular YO‘QOLADI (loyiha saqlanmaydi).\n\nDavom etilsinmi?'
+      'Your current AE project has unsaved changes.\n' +
+      'If you continue, they will be LOST (the project will not be saved).\n\nContinue anyway?'
     );
     if (!go) throw abort('AF_USER_ABORT');
     let forced = '';
     try { forced = await callHostSimple('afCloseCurrent(true)'); }
-    catch (e) { throw abort('Loyiha yopilmadi — qayta urinib ko‘ring.'); }
+    catch (e) { throw abort('The project did not close — please try again.'); }
     // Yopish tasdiqlanmasa ham davom etmaymiz (forceOpen ishlamasligi uchun)
     let fd = null;
     try { fd = forced ? JSON.parse(forced) : null; } catch (e) {}
-    if (!fd || fd.ok !== true) throw abort('Loyiha yopilmadi — qayta urinib ko‘ring.');
+    if (!fd || fd.ok !== true) throw abort('The project did not close — please try again.');
   }
 }
 
@@ -1626,11 +1626,11 @@ async function ensureAdminPreviewPreset() {
     let d = null;
     try { d = raw ? JSON.parse(raw) : null; } catch (e) {}
     if (d && d.ok) {
-      if (d.created) toast('✓ "Admin Preview" render preseti yaratildi');
+      if (d.created) toast('✓ "Admin Preview" render preset created');
       // existed → jim (hammasi joyida)
     } else {
-      const msg = (d && d.message) || 'Admin Preview preseti topilmadi';
-      toast('⚠ ' + msg + ' — AE: Edit → Templates → Output Module → "Admin Preview" (.mp4/H.264) yarating', true);
+      const msg = (d && d.message) || 'Admin Preview preset not found';
+      toast('⚠ ' + msg + ' — AE: Edit → Templates → Output Module → create "Admin Preview" (.mp4/H.264)', true);
     }
   } catch (e) {
     console.warn('ensureAdminPreviewPreset', e);
@@ -1679,7 +1679,7 @@ async function openAepInHost(aepPath, onTick) {
   if (bridge !== 'ok') throw new Error('host.jsx bridge: ' + bridge);
 
   const fs = require('fs');
-  if (!fs.existsSync(aepPath)) throw new Error('AEP fayl topilmadi: ' + aepPath);
+  if (!fs.existsSync(aepPath)) throw new Error('AEP file not found: ' + aepPath);
 
   // Hozirgi holat
   let beforeComps = 0;
@@ -1728,8 +1728,8 @@ async function openAepInHost(aepPath, onTick) {
   }
 
   throw new Error(
-    'AE loyiha ochilmadi (90s). AE oynasiga o\'ting — dialog (Save changes? / missing footage) ' +
-    'bo\'lsa yoping. ' + (lastPanel ? '[panel:' + String(lastPanel).slice(0, 160) + ']' : '')
+    'AE project did not open (90s). Switch to the AE window — if there\'s a dialog (Save changes? / missing footage) ' +
+    'close it. ' + (lastPanel ? '[panel:' + String(lastPanel).slice(0, 160) + ']' : '')
   );
 }
 
@@ -1816,14 +1816,14 @@ function packLog(id, steps) {
 
 // ── Pack: 1-qadam — AE da ochish ───────────────────────────────────────────
 async function importPackToAE(id) {
-  if (!IS_CEP || !csInterface) { toast('Faqat After Effects ichida ishlaydi', true); return; }
+  if (!IS_CEP || !csInterface) { toast('Only works inside After Effects', true); return; }
   const btn = document.getElementById('btn-import-' + id);
   if (btn) btn.disabled = true;
 
   const steps = [
-    { state: 'run',  text: 'Pack serverdan yuklanmoqda…' },
+    { state: 'run',  text: 'Downloading pack from server…' },
     { state: 'wait', text: 'Unzip…' },
-    { state: 'wait', text: 'AE da ochilmoqda…' },
+    { state: 'wait', text: 'Opening in AE…' },
   ];
   const log = () => packLog(id, steps);
   log();
@@ -1868,7 +1868,7 @@ async function importPackToAE(id) {
               if (pct !== lastPct && (pct % 2 === 0 || pct === 100)) {
                 lastPct = pct;
                 const mb = (doneBytes / 1048576).toFixed(1) + '/' + (totalBytes / 1048576).toFixed(1) + ' MB';
-                steps[0] = { state: 'run', text: 'Pack yuklanmoqda… ' + pct + '% · ' + mb };
+                steps[0] = { state: 'run', text: 'Downloading pack… ' + pct + '% · ' + mb };
                 packLog(id, steps);
               }
             }
@@ -1883,8 +1883,8 @@ async function importPackToAE(id) {
       doGet(packUrl, 8);
     });
     const fileSize = fs.statSync(zipPath).size;
-    steps[0] = { state: 'ok', text: '✓ Pack yuklandi (' + (fileSize / 1048576).toFixed(1) + ' MB)' };
-    steps[1] = { state: 'run', text: 'Unzip qilinmoqda…' };
+    steps[0] = { state: 'ok', text: '✓ Pack downloaded (' + (fileSize / 1048576).toFixed(1) + ' MB)' };
+    steps[1] = { state: 'run', text: 'Unzipping…' };
     log();
 
     // 1 — Unzip (cross-platform). Xato bo'lsa saqlaymiz — hech narsa chiqmasa ko'rsatamiz
@@ -1915,21 +1915,21 @@ async function importPackToAE(id) {
       // MOGRT pack: birinchi .mogrt'ni .aep ga ochamiz (pack o'zi yakka .mogrt
       // bo'lsa, u allaqachon ochilgan — ichidan .aegraphic chiqqan)
       mogrtPaths.sort();
-      steps[1] = { state: 'run', text: 'MOGRT → .aep ochilmoqda…' };
+      steps[1] = { state: 'run', text: 'Opening MOGRT → .aep…' };
       log();
       if (mogrtPaths.length) {
         aepPath = mogrtToAepIn(fs, path, child, mogrtPaths[0], path.join(tmpDir, 'af_mogrt_0'));
-        mogrtNote = ' · MOGRT pack (' + mogrtPaths.length + ' ta)';
+        mogrtNote = ' · MOGRT pack (' + mogrtPaths.length + ')';
       } else {
         aepPath = aegraphicToAepIn(fs, path, child, tmpDir, aegraphicPath);
         mogrtNote = ' · MOGRT';
       }
     }
     if (!aepPath) throw new Error(unzipErr
-      ? ('ZIP ochilmadi: ' + (unzipErr.message || unzipErr))
-      : '.aep yoki .mogrt topilmadi — zip ichida .aep yoki .mogrt bo\'lishi kerak');
+      ? ('Failed to open ZIP: ' + (unzipErr.message || unzipErr))
+      : 'No .aep or .mogrt found — the zip must contain a .aep or .mogrt');
     steps[1] = { state: 'ok', text: '✓ Unzip: ' + path.basename(aepPath) + mogrtNote };
-    steps[2] = { state: 'run', text: 'AE da loyiha ochilmoqda…' };
+    steps[2] = { state: 'run', text: 'Opening project in AE…' };
     log();
 
     window._adminPackTmp = window._adminPackTmp || {};
@@ -1941,7 +1941,7 @@ async function importPackToAE(id) {
     try { await afCloseCurrentGuarded(); }
     catch (e) {
       // Guard abort/noaniq holat — ochishni to'xtatamiz (data-loss bo'lmasin)
-      const m = (e && e.message) || 'Bekor qilindi — joriy loyiha saqlanmagan';
+      const m = (e && e.message) || 'Canceled — current project not saved';
       steps[2] = { state: 'err', text: m };
       log();
       toast(m, true);
@@ -1973,22 +1973,22 @@ async function importPackToAE(id) {
     }
     // AE tasdiqlamasa — soxta muvaffaqiyat ko'rsatmaymiz, ogohlantiramiz
     steps[2] = opened
-      ? { state: 'ok', text: '✓ AE da ochildi: ' + projName }
-      : { state: 'warn', text: '⚠ Yuklab olindi, lekin AE javob bermadi — AE oynasini qo\'lda tekshiring' };
+      ? { state: 'ok', text: '✓ Opened in AE: ' + projName }
+      : { state: 'warn', text: '⚠ Downloaded, but AE did not respond — check the AE window manually' };
     log();
 
     const tplMeta = allTemplates.find(x => x.id === id);
     const thumbUrl = tplMeta ? apiBase() + '/api/plugin/assets/' + id + '/thumb' : '';
     registerAdminDownload(id, tplMeta?.name || id, thumbUrl, aepPath, tmpDir);
-    if (btn) { btn.disabled = false; btn.textContent = '↓ Qayta yuklab olish'; }
+    if (btn) { btn.disabled = false; btn.textContent = '↓ Download again'; }
 
     const prepHint = document.getElementById('prep-hint-' + id);
     if (prepHint) prepHint.textContent = opened
-      ? '✓ AE da tekshiring — keyin Scene papkasini tanlang'
-      : '⚠ AE javob bermadi — oynani tekshiring, keyin Scene papkasini tanlang';
+      ? '✓ Check it in AE — then select the Scene folder'
+      : '⚠ AE did not respond — check the window, then select the Scene folder';
     toast(opened
-      ? '✓ AE da ochildi — tekshiring, keyin "Sahnalarni render"'
-      : '⚠ Pack tayyor, lekin AE javob bermadi — AE oynasini tekshiring', !opened);
+      ? '✓ Opened in AE — check it, then "Render scenes"'
+      : '⚠ Pack is ready, but AE did not respond — check the AE window', !opened);
 
   } catch(e) {
     const ri = steps.findIndex(s => s.state === 'run');
@@ -2063,7 +2063,7 @@ async function triggerProjectOpen(aepPath, opts) {
     try { await afCloseCurrentGuarded(); }
     catch (e) {
       // Guard abort/noaniq — ochishni to'xtatamiz (saqlanmagan ish o'chmasin)
-      toast((e && e.message) || 'Bekor qilindi — joriy loyiha saqlanmagan', true);
+      toast((e && e.message) || 'Canceled — current project not saved', true);
       return;
     }
     await new Promise(r => setTimeout(r, 150));
@@ -2087,7 +2087,7 @@ async function waitForProjectPanel(aepPath, maxSec, onProgress) {
     // To'g'ri loyiha ochilmoqda — yopmasdan kutamiz (comp/papka yuklanishi)
     if (panel && panel.ok && panelMatchesAep(panel, aepPath)) {
       tick++;
-      if (onProgress) onProgress('Loyiha yuklanmoqda… (' + Math.round(tick * 0.4) + 's)');
+      if (onProgress) onProgress('Loading project… (' + Math.round(tick * 0.4) + 's)');
       await new Promise(r => setTimeout(r, 400));
       continue;
     }
@@ -2095,7 +2095,7 @@ async function waitForProjectPanel(aepPath, maxSec, onProgress) {
     // Boshqa loyiha yoki hech narsa ochiq emas — bir marta ochish
     if (!openTriggered && aepPath) {
       openTriggered = true;
-      if (onProgress) onProgress('AE da loyiha ochilmoqda…');
+      if (onProgress) onProgress('Opening project in AE…');
       const needClose = !!(panel && panel.ok && !panelMatchesAep(panel, aepPath));
       await triggerProjectOpen(aepPath, { forceClose: needClose });
       await new Promise(r => setTimeout(r, 500));
@@ -2107,8 +2107,8 @@ async function waitForProjectPanel(aepPath, maxSec, onProgress) {
     const c = (panel && panel.compCount) || 0;
     if (onProgress) {
       onProgress(c > 0
-        ? 'Loyiha yuklanmoqda… ' + c + ' comp'
-        : 'AE da loyiha ochilmoqda… (' + Math.round(tick * 0.4) + 's)');
+        ? 'Loading project… ' + c + ' comps'
+        : 'Opening project in AE… (' + Math.round(tick * 0.4) + 's)');
     }
     await new Promise(r => setTimeout(r, 400));
   }
@@ -2118,26 +2118,26 @@ async function waitForProjectPanel(aepPath, maxSec, onProgress) {
 
 /** Qadam 2 — FAQAT papka tanlash + render (loyiha 1-qadamda ochilgan bo'lishi kerak) */
 async function openScenePrep(id) {
-  if (!IS_CEP || !csInterface) { toast('Faqat AE ichida ishlaydi', true); return; }
+  if (!IS_CEP || !csInterface) { toast('Only works inside AE', true); return; }
   const btn = document.getElementById('btn-scan-' + id);
   if (btn) btn.disabled = true;
 
   const knownAep = (window._adminPackTmp && window._adminPackTmp[id] && window._adminPackTmp[id].aep)
     || (adminDownloaded[id] && adminDownloaded[id].aepPath) || '';
   if (!knownAep) {
-    toast('Avval "Pack yuklab olish" bosing', true);
+    toast('Click "Download pack" first', true);
     if (btn) btn.disabled = false;
     return;
   }
 
-  document.getElementById('scanTitle').textContent = 'Sahnalarni render qilish';
+  document.getElementById('scanTitle').textContent = 'Render scenes';
   document.getElementById('scanFolderBar').style.display = 'none';
   document.getElementById('scanCompCount').textContent = '';
   document.getElementById('scanDoneBtn').disabled = true;
   document.getElementById('scanFootMsg').textContent = '';
   document.getElementById('scanOverlay').classList.add('open');
 
-  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Folderlar yuklanmoqda…</div>');
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Loading folders…</div>');
 
   try {
     if (!(await hostScriptReady())) { try { await reloadHostScript(true); } catch(e) {} }
@@ -2154,11 +2154,11 @@ async function openScenePrep(id) {
     }
 
     if (!res || !res.ok) {
-      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">AE javob bermadi.<br>AE oynasiga o\'ting — ochiq dialog (missing footage / alert) bo\'lsa yoping, keyin qayta urining.</div>');
+      scanShowMessage('<div class="empty-ico">⚠</div><div class="empty-txt">AE did not respond.<br>Switch to the AE window — if there\'s an open dialog (missing footage / alert), close it, then try again.</div>');
       return;
     }
     if (!res.folders || !res.folders.length) {
-      scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Loyihada folder topilmadi.<br>Sahnalar folder ichida bo\'lishi kerak.</div>');
+      scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">No folders found in the project.<br>Scenes must be inside a folder.</div>');
       return;
     }
 
@@ -2181,15 +2181,15 @@ function setupFolderPicker(id, res, knownAep) {
     folders: res.folders, scenesFolder: '', scenesFolderId: '',
     projectFile: knownAep, knownAep: knownAep, projectName: res.projectName || ''
   };
-  document.getElementById('scanTitle').textContent = res.projectName || 'Sahnalarni render';
+  document.getElementById('scanTitle').textContent = res.projectName || 'Render scenes';
 
   const sel = document.getElementById('scanFolder');
-  sel.innerHTML = '<option value="">— Folderni tanlang —</option>' +
-    res.folders.map(f => `<option value="${escHtml(f.id)}">${escHtml(f.name)} (${f.comps} comp)</option>`).join('');
+  sel.innerHTML = '<option value="">— Select a folder —</option>' +
+    res.folders.map(f => `<option value="${escHtml(f.id)}">${escHtml(f.name)} (${f.comps} comps)</option>`).join('');
   document.getElementById('scanFolderBar').style.display = 'flex';
   document.getElementById('scanCompCount').textContent = '';
 
-  scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Yuqoridan <b>Folderni tanlang</b> — plagin o\'sha folderdagi comp\'larni ko\'rsatadi.</div>');
+  scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt"><b>Select a folder</b> above — the plugin will show the comps in that folder.</div>');
 }
 
 /** Folder tanlanganda — o'sha folderdagi comp'larni yuklaydi */
@@ -2200,13 +2200,13 @@ async function onScanFolderChange() {
   if (!fid) {
     scanState.scenes = [];
     if (countEl) countEl.textContent = '';
-    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Folderni tanlang.</div>');
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Select a folder.</div>');
     updateScanFoot();
     return;
   }
   scanState.scenesFolderId = fid;
   scanState.scenesFolder = sel.options[sel.selectedIndex].text;
-  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Comp\'lar yuklanmoqda…</div>');
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Loading comps…</div>');
 
   let res = null;
   for (let i = 0; i < 5; i++) {
@@ -2219,8 +2219,8 @@ async function onScanFolderChange() {
   }
   if (!res || !res.ok || !res.comps || !res.comps.length) {
     scanState.scenes = [];
-    if (countEl) countEl.textContent = '0 comp';
-    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Bu folderda comp yo\'q.</div>');
+    if (countEl) countEl.textContent = '0 comps';
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">No comps in this folder.</div>');
     updateScanFoot();
     return;
   }
@@ -2231,11 +2231,11 @@ async function onScanFolderChange() {
     videoLocal: '', videoExt: 'mp4', thumbLocal: '', previewDur: 6,
     status: '', statusType: ''
   }));
-  if (countEl) countEl.textContent = res.comps.length + ' comp';
+  if (countEl) countEl.textContent = res.comps.length + ' comps';
   renderScanList();
   updateScanFoot();
   const foot = document.getElementById('scanFootMsg');
-  if (foot) foot.textContent = res.comps.length + ' ta comp — 🎬 All render bosing';
+  if (foot) foot.textContent = res.comps.length + ' comps — click 🎬 Render all';
 }
 
 /** Tanlangan papkadagi comp'larni sanaydi va ro'yxatga chiqaradi */
@@ -2247,12 +2247,12 @@ async function detectScenesInFolder() {
   if (!scanState.scenesFolder) {
     scanState.scenes = [];
     if (countEl) countEl.textContent = '';
-    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Scene papkasini tanlang.</div>');
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Select the scene folder.</div>');
     updateScanFoot();
     return;
   }
 
-  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Comp\'lar sanalmoqda…</div>');
+  scanShowMessage('<div class="spinner"></div><div class="empty-txt" style="margin-top:10px">Counting comps…</div>');
 
   let comps = [];
   try {
@@ -2271,10 +2271,10 @@ async function detectScenesInFolder() {
     status: '', statusType: ''
   }));
 
-  if (countEl) countEl.textContent = comps.length ? comps.length + ' comp' : '0 comp';
+  if (countEl) countEl.textContent = comps.length ? comps.length + ' comps' : '0 comps';
 
   if (!scanState.scenes.length) {
-    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">Bu papkada comp yo\'q.<br>Boshqa papkani tanlang.</div>');
+    scanShowMessage('<div class="empty-ico">📂</div><div class="empty-txt">No comps in this folder.<br>Select a different folder.</div>');
     updateScanFoot();
     return;
   }
@@ -2282,7 +2282,7 @@ async function detectScenesInFolder() {
   renderScanList();
   updateScanFoot();
   const foot = document.getElementById('scanFootMsg');
-  if (foot) foot.textContent = comps.length + ' ta comp — All render bosing (Admin Preview)';
+  if (foot) foot.textContent = comps.length + ' comps — click Render all (Admin Preview)';
 }
 
 function renderScanList() {
@@ -2308,8 +2308,8 @@ function renderScanList() {
             ↑ Video import
             <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" style="display:none" onchange="pickSceneVideo(this,${i})">
           </label>
-          <button class="scan-mini-btn" onclick="renderSceneFromAE(${i})" title="AE dan preview render">🎬 AE dan render</button>
-          <button class="scan-mini-btn" onclick="openSceneInAE(${i})" title="AE da ochish">↗ AE</button>
+          <button class="scan-mini-btn" onclick="renderSceneFromAE(${i})" title="Render preview from AE">🎬 Render from AE</button>
+          <button class="scan-mini-btn" onclick="openSceneInAE(${i})" title="Open in AE">↗ AE</button>
         </div>
       </div>
     </div>`;
@@ -2338,10 +2338,10 @@ function pickSceneVideo(input, i) {
   const s = scanState.scenes[i];
   if (!s) return;
   const localPath = file.path || (file.webkitRelativePath || '');
-  if (!localPath) { toast('Fayl yo\'li aniqlanmadi', true); return; }
+  if (!localPath) { toast('Could not determine file path', true); return; }
   s.videoLocal = localPath;
   s.videoExt = (file.name.split('.').pop() || 'mp4').toLowerCase();
-  s.status = '✓ Video tanlandi'; s.statusType = 'ok';
+  s.status = '✓ Video selected'; s.statusType = 'ok';
   input.value = '';
   renderScanList();
   updateScanFoot();
@@ -2350,7 +2350,7 @@ function pickSceneVideo(input, i) {
 /** AE render natijasini sahnaga yozadi — preview fayl yuklab olish papkasida qoladi */
 function applySceneRenderResult(s, r) {
   const fsM = require('fs');
-  if (!r || !r.ok) throw new Error((r && r.message) || 'render xato');
+  if (!r || !r.ok) throw new Error((r && r.message) || 'render error');
   s.thumbLocal = r.thumbPath || '';
   s.width = r.width; s.height = r.height; s.fps = r.fps;
   s.durationSec = r.durationSec; s.previewDur = r.previewDur;
@@ -2366,7 +2366,7 @@ function applySceneRenderResult(s, r) {
       const ff = findFfmpeg(childM);
       if (!ff) {
         s.videoExt = 'mov';
-        toast("ffmpeg topilmadi — .mov yuklanadi. .mp4 uchun: brew install ffmpeg", true);
+        toast("ffmpeg not found — uploading .mov instead. For .mp4: brew install ffmpeg", true);
       } else {
         try {
           childM.execFileSync(
@@ -2375,17 +2375,17 @@ function applySceneRenderResult(s, r) {
             { timeout: 120000, stdio: 'ignore' }
           );
           if (fsM.existsSync(mp4)) { s.videoLocal = mp4; s.videoExt = 'mp4'; }
-          else { s.videoExt = 'mov'; toast("Konvert amalga oshmadi — .mov yuklanadi", true); }
+          else { s.videoExt = 'mov'; toast("Conversion failed — uploading .mov instead", true); }
         } catch (eConv) {
           s.videoExt = 'mov';
-          toast("ffmpeg konvert xatosi — .mov yuklanadi", true);
+          toast("ffmpeg conversion error — uploading .mov instead", true);
         }
       }
     }
   } else {
-    throw new Error('Preview video fayli topilmadi');
+    throw new Error('Preview video file not found');
   }
-  s.status = r.usedTemplate === 'Admin Preview' ? '✓ Admin Preview' : '✓ Render tayyor';
+  s.status = r.usedTemplate === 'Admin Preview' ? '✓ Admin Preview' : '✓ Render ready';
   s.statusType = 'ok';
 }
 
@@ -2411,7 +2411,7 @@ let _renderAllBusy = false;
 /** Barcha sahnalarni ketma-ket Admin Preview bilan render qiladi */
 async function renderAllScenes() {
   if (_renderAllBusy) return;
-  if (!scanState.scenes.length) { toast('Avval Scene papkasini tanlang', true); return; }
+  if (!scanState.scenes.length) { toast('Select the scene folder first', true); return; }
   _renderAllBusy = true;
   const allBtn = document.getElementById('scanRenderAllBtn');
   const doneBtn = document.getElementById('scanDoneBtn');
@@ -2428,7 +2428,7 @@ async function renderAllScenes() {
   for (let i = 0; i < total; i++) {
     const s = scanState.scenes[i];
     s.status = '⏳ ' + (i + 1) + '/' + total + '…'; s.statusType = 'run';
-    if (foot) foot.textContent = 'All render: ' + (i + 1) + '/' + total + ' — Admin Preview…';
+    if (foot) foot.textContent = 'Render all: ' + (i + 1) + '/' + total + ' — Admin Preview…';
     renderScanList();
 
     try {
@@ -2446,8 +2446,8 @@ async function renderAllScenes() {
 
   _renderAllBusy = false;
   if (allBtn) allBtn.disabled = false;
-  if (foot) foot.textContent = ok + '/' + total + ' preview tayyor' + (fail ? ' · ' + fail + ' xato' : '');
-  toast(fail ? ok + ' tayyor, ' + fail + ' xato' : '✓ ' + ok + ' sahna render (Admin Preview)');
+  if (foot) foot.textContent = ok + '/' + total + ' previews ready' + (fail ? ' · ' + fail + ' failed' : '');
+  toast(fail ? ok + ' ready, ' + fail + ' failed' : '✓ ' + ok + ' scenes rendered (Admin Preview)');
 
   renderScanList();
   if (ok > 0 && fail === 0) {
@@ -2464,7 +2464,7 @@ function updateScanFoot() {
   const msg = document.getElementById('scanFootMsg');
   const doneBtn = document.getElementById('scanDoneBtn');
   if (msg) msg.textContent = total
-    ? `${total} comp · ${withVid} ta preview` + (withVid === total && total > 0 ? ' ✓' : '')
+    ? `${total} comps · ${withVid} previews` + (withVid === total && total > 0 ? ' ✓' : '')
     : '';
   if (doneBtn) doneBtn.disabled = total === 0 || withVid === 0;
 }
@@ -2472,7 +2472,7 @@ function updateScanFoot() {
 /** Tayyorlangan sahnalarni saqlaydi va 3-qadam (yuklash) ni yoqadi */
 function finishScenePrep() {
   const id = scanState.templateId;
-  if (!id || !scanState.scenes.length) { toast('Sahna topilmadi', true); return; }
+  if (!id || !scanState.scenes.length) { toast('No scenes found', true); return; }
   window._adminPreparedScenes[id] = {
     projectFile: scanState.projectFile || scanState.knownAep || '',
     knownAep: scanState.knownAep || '',
@@ -2490,10 +2490,10 @@ function finishScenePrep() {
   const upBtn = document.getElementById('btn-upload-' + id);
   if (upBtn) upBtn.disabled = false;
   const hint = document.getElementById('upload-hint-' + id);
-  if (hint) hint.textContent = `${scanState.scenes.length} sahna tayyor — yuklashga tayyor`;
+  if (hint) hint.textContent = `${scanState.scenes.length} scenes ready — ready to upload`;
   const prepHint = document.getElementById('prep-hint-' + id);
-  if (prepHint) prepHint.textContent = `✓ ${scanState.scenes.length} sahna (${withVid} video)`;
-  toast(`✓ ${scanState.scenes.length} sahna tayyorlandi — endi "Serverga yuklash"`);
+  if (prepHint) prepHint.textContent = `✓ ${scanState.scenes.length} scenes (${withVid} videos)`;
+  toast(`✓ ${scanState.scenes.length} scenes prepared — now "Upload to server"`);
 }
 
 window.openScenePrep = openScenePrep;
@@ -2538,17 +2538,17 @@ function setUploadProgress(id, pct, label) {
 }
 
 async function uploadTemplateToServer(id) {
-  if (!IS_CEP) { toast('Faqat AE ichida ishlaydi', true); return; }
+  if (!IS_CEP) { toast('Only works inside AE', true); return; }
   const prep = window._adminPreparedScenes[id];
   if (!prep || !prep.scenes || !prep.scenes.length) {
-    toast('Avval "Sahnalarni topish" bosing', true); return;
+    toast('Click "Find scenes" first', true); return;
   }
   const upBtn = document.getElementById('btn-upload-' + id);
   if (upBtn) upBtn.disabled = true;
 
   const fsM = require('fs'), pathM = require('path');
   try {
-    setUploadProgress(id, 2, 'Loyiha saqlanmoqda…');
+    setUploadProgress(id, 2, 'Saving project…');
     // .aep yo'li: tayyorlangan / yuklab olingan / hozir AE da ochiq
     let aepPath = prep.projectFile || prep.knownAep
       || (window._adminPackTmp && window._adminPackTmp[id] && window._adminPackTmp[id].aep)
@@ -2560,9 +2560,9 @@ async function uploadTemplateToServer(id) {
       if (saveRes && saveRes.ok && saveRes.projectFile) aepPath = saveRes.projectFile;
     } catch (eSave) {}
     if (!aepPath || !fsM.existsSync(aepPath)) {
-      throw new Error('AEP fayl topilmadi — "1 · AE da ochish" bilan qayta oching va CMD+S');
+      throw new Error('AEP file not found — reopen it with "1 · Open in AE" and CMD+S');
     }
-    setUploadProgress(id, 4, 'Pack ziplanmoqda…');
+    setUploadProgress(id, 4, 'Zipping pack…');
     const aepDir = pathM.dirname(aepPath);
     const aepFile = pathM.basename(aepPath);
     const tmpZip = pathM.join(adminCacheDir(), 'up_' + id + '_' + Date.now() + '.zip');
@@ -2588,7 +2588,7 @@ async function uploadTemplateToServer(id) {
     await xhrUpload('/api/contributor/templates/' + id + '/assets', fd,
       frac => setUploadProgress(id, 5 + frac * 55));
     try { fsM.unlinkSync(tmpZip); } catch(e) {}
-    setUploadProgress(id, 60, 'Preview yuklanmoqda…');
+    setUploadProgress(id, 60, 'Uploading previews…');
 
     // 2) Preview videolar (60% → 92%) — HAR SAHNA ALOHIDA so'rov bilan
     //    (4K MP4 katta bo'ladi; bitta katta so'rov server limitida uziladi —
@@ -2616,7 +2616,7 @@ async function uploadTemplateToServer(id) {
           'Preview ' + (i + 1) + '/' + total + '…'));
       okCount++;
     }
-    setUploadProgress(id, 92, 'Manifest saqlanmoqda…');
+    setUploadProgress(id, 92, 'Saving manifest…');
 
     // 3) Manifest (92% → 100%)
     const scenes = prep.scenes.map(s => ({
@@ -2631,14 +2631,14 @@ async function uploadTemplateToServer(id) {
     });
     setUploadProgress(id, 100, '✓ 100%');
 
-    toast('✓ Shablon va ' + scenes.length + ' sahna serverga yuklandi!');
+    toast('✓ Template and ' + scenes.length + ' scenes uploaded to server!');
     delete window._adminPreparedScenes[id];
     const fresh = await api('/api/contributor/templates?scope=all');
     allTemplates = fresh.items || allTemplates;
     setTimeout(() => applySearch(), 600);
   } catch(e) {
     if (handleAuthError(e)) { if (upBtn) upBtn.disabled = false; return; }
-    setUploadProgress(id, 0, '✗ Xato');
+    setUploadProgress(id, 0, '✗ Error');
     toast(e.message, true);
     if (upBtn) upBtn.disabled = false;
   }
@@ -2672,7 +2672,7 @@ function applySubscriberSearch() {
 function renderSubscribers(items) {
   const el = document.getElementById('listArea');
   if (!items.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-ico">👤</div><div class="empty-txt">Obunachi yo\'q</div></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">👤</div><div class="empty-txt">No subscribers</div></div>';
     return;
   }
   el.innerHTML = items.map(s => {
@@ -2690,7 +2690,7 @@ function renderSubscribers(items) {
         <div class="sub-plan ${(s.plan||'').toLowerCase()}">${escHtml(s.plan || 'Free')}</div>
         <div class="sub-seen">${escHtml(seen)} · ${s.downloads || 0} dl</div>
       </div>
-      ${email ? `<button class="sub-msg-btn" title="Email manzilini nusxalash" onclick="messageSubscriber('${email}')">⧉ Nusxalash</button>` : ''}
+      ${email ? `<button class="sub-msg-btn" title="Copy email address" onclick="messageSubscriber('${email}')">⧉ Copy</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -2725,8 +2725,8 @@ function copyToClipboard(text) {
 
 /** Obunachi email'ini clipboard'ga ko'chiradi (mailto/brauzer/Mail ochilmaydi). */
 function messageSubscriber(email) {
-  if (!email) { toast('Email yo\'q', true); return; }
-  if (copyToClipboard(email)) toast('Email nusxalandi: ' + email);
+  if (!email) { toast('No email', true); return; }
+  if (copyToClipboard(email)) toast('Email copied: ' + email);
   else toast('Email: ' + email, false);
 }
 window.copyToClipboard = copyToClipboard;
@@ -2787,14 +2787,14 @@ function applyDlSearch() {
   const list = q ? allAdminDl.filter(d => (d.name || '').toLowerCase().includes(q)) : allAdminDl;
   const el = document.getElementById('listArea');
   if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">Hali hech narsa yuklab olinmagan<br>Pack bilan ishlash → AE da ochish</div></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-ico">📂</div><div class="empty-txt">Nothing downloaded yet<br>Work with a pack → open in AE</div></div>';
     return;
   }
   el.innerHTML = list.map(d => {
     const thumb = d.thumbUrl
       ? `<img src="${escHtml(d.thumbUrl)}" alt="" onerror="this.style.display='none'">`
       : '📦';
-    const date = d.downloadedAt ? new Date(d.downloadedAt).toLocaleDateString('uz-UZ') : '';
+    const date = d.downloadedAt ? new Date(d.downloadedAt).toLocaleDateString('en-US') : '';
     const pathShort = d.dir ? d.dir.replace(/.*[/\\]([^/\\]+)[/\\][^/\\]+$/, '…/$1/…') : 'tmpdir';
     return `<div class="dl-item">
       <div class="dl-item-row">
@@ -2819,7 +2819,7 @@ async function adminOpenInAE(id) {
   if (!d?.aepPath || !IS_CEP) return;
   try {
     const openRes = await openAepInHost(d.aepPath);
-    toast('✓ AE da ochildi: ' + (openRes.projectName || d.name));
+    toast('✓ Opened in AE: ' + (openRes.projectName || d.name));
   } catch(e) { toast(e.message, true); }
 }
 
@@ -2827,7 +2827,7 @@ async function adminOpenInAE(id) {
 async function adminDeleteDownloaded(id) {
   const d = adminDownloaded[id];
   if (!d) return;
-  if (!confirm('"' + (d.name || id) + '" ni ro\'yxatdan va AE loyihasidan o\'chirmoqchimisiz?')) return;
+  if (!confirm('Remove "' + (d.name || id) + '" from the list and from the AE project?')) return;
 
   // 1) AE loyihasidan olib tashlash
   if (IS_CEP && csInterface) {
@@ -2838,8 +2838,8 @@ async function adminDeleteDownloaded(id) {
         const cfg = JSON.stringify({ folders, comps });
         const raw = await evalP('removeImportedTemplate(' + JSON.stringify(cfg) + ')');
         let res; try { res = JSON.parse(raw); } catch { res = null; }
-        if (res?.ok) toast('✓ AE dan olib tashlandi (' + (res.removed || 0) + ' element)');
-        else toast('AE dan o\'chirishda muammo: ' + (res?.message || '?'), true);
+        if (res?.ok) toast('✓ Removed from AE (' + (res.removed || 0) + ' items)');
+        else toast('Problem removing from AE: ' + (res?.message || '?'), true);
       } catch(e) { console.warn('adminDeleteDownloaded AE', e); }
     }
     // 2) Lokal disk fayllarini tozalash (af_admin_<id> papkasi)
@@ -2860,7 +2860,7 @@ async function adminDeleteDownloaded(id) {
       }
       if (target && fs.existsSync(target)) {
         fs.rmSync(target, { recursive: true, force: true });
-        toast('✓ Lokal fayllar o\'chirildi');
+        toast('✓ Local files deleted');
       }
     } catch(e) { console.warn('adminDeleteDownloaded disk', e); }
   }
@@ -2951,10 +2951,10 @@ function dirSizeBytes(fs, path, dir) {
 
 /** Keshni tozalash: _af_cache + ro'yxatda yo'q (orphan) af_admin_* packlar */
 async function adminClearCache() {
-  if (!IS_CEP) { toast('Faqat AE ichida', true); return; }
+  if (!IS_CEP) { toast('Only works inside AE', true); return; }
   const fs = require('fs'), path = require('path');
   const base = adminBaseDir();
-  if (!base) { toast('Papka topilmadi', true); return; }
+  if (!base) { toast('Folder not found', true); return; }
 
   const registeredDirs = new Set(
     Object.values(adminDownloaded).map(d => d && d.dir).filter(Boolean)
@@ -2980,8 +2980,8 @@ async function adminClearCache() {
     }
   } catch (e) {}
 
-  if (!targets.length) { toast('✓ Kesh allaqachon toza'); return; }
-  if (!confirm(targets.length + ' ta kesh papkasi o\'chiriladi. Davom etamizmi?\n(Ro\'yxatdagi yuklab olingan shablonlar saqlanadi)')) return;
+  if (!targets.length) { toast('✓ Cache is already clean'); return; }
+  if (!confirm(targets.length + ' cache folder(s) will be deleted. Continue?\n(Downloaded templates already in the list are kept)')) return;
 
   for (const t of targets) {
     try {
@@ -2990,7 +2990,7 @@ async function adminClearCache() {
       removed++;
     } catch (e) {}
   }
-  toast('✓ Kesh tozalandi — ' + removed + ' papka, ' + (freed / 1048576).toFixed(1) + ' MB bo\'shatildi');
+  toast('✓ Cache cleared — ' + removed + ' folder(s), ' + (freed / 1048576).toFixed(1) + ' MB freed');
 }
 window.adminClearCache = adminClearCache;
 
@@ -3000,7 +3000,7 @@ function renderAdminFolderUi(dir, staged) {
   const el = document.getElementById('adminFolderPath');
   const saveBtn = document.getElementById('adminFolderSave');
   if (el) {
-    el.textContent = dir || 'Standart (vaqtinchalik papka)';
+    el.textContent = dir || 'Default (temporary folder)';
     el.className = 'admin-folder-path' + (dir ? '' : ' empty');
   }
   if (saveBtn) saveBtn.classList.toggle('visible', !!staged);
@@ -3040,7 +3040,7 @@ function closeAdminAccount() {
 function cepPickFolder() {
   try {
     if (window.cep && window.cep.fs && typeof window.cep.fs.showOpenDialog === 'function') {
-      const r = window.cep.fs.showOpenDialog(false, true, 'Yuklab olish papkasini tanlang', '');
+      const r = window.cep.fs.showOpenDialog(false, true, 'Select download folder', '');
       if (r && r.err === 0 && r.data && r.data.length) {
         return decodeURI(String(r.data[0]).replace(/^file:\/\//, ''));
       }
@@ -3051,7 +3051,7 @@ function cepPickFolder() {
 }
 
 async function adminChooseFolder() {
-  if (!IS_CEP) { toast('Faqat AE ichida'); return; }
+  if (!IS_CEP) { toast('Only works inside AE'); return; }
   // 1) Avval CEP native picker
   let path = cepPickFolder();
   // 2) CEP fs yo'q bo'lsa — ExtendScript fallback
@@ -3060,19 +3060,19 @@ async function adminChooseFolder() {
       const raw = await new Promise(r => csInterface.evalScript('pickDownloadFolder()', res => r(res || '')));
       try { const d = JSON.parse(raw); path = (d && d.ok && d.path) ? d.path : ''; }
       catch { path = ''; }
-    } catch(e) { toast('Xato: ' + e.message, true); return; }
+    } catch(e) { toast('Error: ' + e.message, true); return; }
   }
-  if (path === null) { toast('Papka tanlash imkoni yo\'q', true); return; }
-  if (!path) return; // bekor qilindi
+  if (path === null) { toast('Folder selection is not available', true); return; }
+  if (!path) return; // canceled
   pendingAdminDir = path;
   renderAdminFolderUi(path, true);
-  toast('Papka tanlandi — Saqlash bosing');
+  toast('Folder selected — click Save');
 }
 
 function adminResetFolder() {
   pendingAdminDir = '';
   renderAdminFolderUi('', true);
-  toast('Standart tanlandi — Saqlash bosing');
+  toast('Default selected — click Save');
 }
 
 function adminSaveFolder() {
@@ -3080,21 +3080,21 @@ function adminSaveFolder() {
   adminWriteSettings({ downloadDir: dir });
   pendingAdminDir = undefined;
   renderAdminFolderUi(dir, false);
-  toast('✓ Saqlandi');
+  toast('✓ Saved');
 }
 
 function adminSaveApi() {
   const val = (document.getElementById('sheetApiUrl')?.value || '').trim().replace(/\/$/, '');
-  if (!val) { toast('URL kiriting', true); return; }
+  if (!val) { toast('Enter a URL', true); return; }
   localStorage.setItem(API_KEY, val);
-  toast('✓ API saqlandi — qayta kirish kerak');
+  toast('✓ API saved — sign in again');
 }
 
 function adminResetApi() {
   localStorage.setItem(API_KEY, defaultApiUrl());
   const el = document.getElementById('sheetApiUrl');
   if (el) el.value = defaultApiUrl();
-  toast('✓ Asl API tiklandi');
+  toast('✓ Default API restored');
 }
 
 window.openAdminAccount = openAdminAccount;
