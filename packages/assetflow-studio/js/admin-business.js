@@ -247,3 +247,48 @@ function renderFinanceHtml(root, m){
       </table></div>
     </div>`;
 }
+
+/* ============================================================
+   b3 · GEN SARFI — per-user AI generatsiya sarfi (real agregat)
+   ============================================================ */
+let GENSPEND_DATA = null;
+
+VIEWS.genspend = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
+window.afterRender.genspend = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='genspend') tba.innerHTML =
+    `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>Butun davr</span></span>`+
+    `<button class="adx-btn2 sm" onclick="toast('Eksport','Gen sarfi CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>CSV</button>`;
+  const root = document.getElementById('bizRoot');
+  try { GENSPEND_DATA = await StudioApi.getAdminGenSpend(); renderGenSpend(); }
+  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+};
+
+function renderGenSpend(){
+  const root = document.getElementById('bizRoot');
+  if(!root || !GENSPEND_DATA) return;
+  const d = GENSPEND_DATA;
+  const rows = d.rows||[];
+  const t = d.totals||{gens:0,credits:0,costUsd:0,negative:0};
+  root.innerHTML = `
+    <div class="adx-grid4" style="margin-bottom:16px">
+      ${axStat({label:'Jami generatsiya',val:(t.gens||0).toLocaleString(),ic:'gauge',icColor:'#C2F04A',foot:'tanlangan davr'})}
+      ${axStat({label:'Sarflangan kredit',val:(t.credits||0).toLocaleString(),ic:'coins',foot:'✦ hammasi'})}
+      ${axStat({label:'Provayder xarajati',val:bizUsd(t.costUsd),ic:'coins',icColor:'#7CC4FF',foot:'real cost'})}
+      ${axStat({label:'Zarar keltiruvchi',val:t.negative||0,ic:'warning',icColor:'#FF6B5E',foot:'margin < 0 user'})}
+    </div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Top foydalanuvchilar — AI sarf</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SARF BO‘YICHA</span></div>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:920px">
+        <thead><tr><th>Foydalanuvchi</th><th>Reja</th><th class="r">Generatsiya</th><th class="r">Sarflangan ✦</th><th class="r">Provayder xarajati</th><th class="r">Kredit qoldiq</th><th class="r">Margin</th></tr></thead>
+        <tbody>${rows.length ? rows.map(r=>`<tr>
+          <td><div class="adx-who">${axAv(r.name||r.email||'?',r.email,32)}<div style="min-width:0"><div class="nm">${esc(r.name||r.email||'—')}</div><div class="em">${esc(r.email||'')}</div></div></div></td>
+          <td>${axPlan(r.plan)}</td>
+          <td class="r adx-num">${(r.gens||0).toLocaleString()}</td>
+          <td class="r adx-num">${(r.creditsSpent||0).toLocaleString()}</td>
+          <td class="r adx-num" style="color:#7CC4FF">${bizUsd(r.providerCostUsd)}</td>
+          <td class="r adx-num">${r.creditsRemaining!=null?r.creditsRemaining.toLocaleString():'—'}</td>
+          <td class="r adx-num" style="color:${r.marginPct!=null&&r.marginPct<0?'#FF6B5E':bizMarginColor(r.marginPct)}">${r.marginPct!=null?(r.marginPct<0?'−':'')+Math.abs(r.marginPct)+'%':'—'}</td>
+        </tr>`).join('') : `<tr><td colspan="7"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-gauge"></i></span><div style="font-weight:600;font-size:13px">Hali gen sarfi yo‘q</div><div style="font-size:11px;color:var(--muted2)">Obunachi AI generatsiya qilganda shu yerda ko‘rinadi.</div></div></td></tr>`}</tbody>
+      </table></div>
+    </div>`;
+}
