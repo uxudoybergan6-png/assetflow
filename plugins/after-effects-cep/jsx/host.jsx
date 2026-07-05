@@ -255,7 +255,7 @@ function extractTemplateFromFolders(jsonStr) {
       return JSON.stringify({
         ok: false,
         error: "unsaved",
-        message: "Avval projectni saqlang (File → Save)"
+        message: "Save the project first (File → Save)"
       });
     }
 
@@ -268,7 +268,7 @@ function extractTemplateFromFolders(jsonStr) {
       return JSON.stringify({
         ok: false,
         error: "no_folders",
-        message: "Kamida bitta papka tanlang"
+        message: "Select at least one folder"
       });
     }
 
@@ -277,13 +277,13 @@ function extractTemplateFromFolders(jsonStr) {
     var previewFolder = findFolderByPath(previewPath);
 
     if (scenesPath && !scenesFolder) {
-      return JSON.stringify({ ok: false, error: "not_found", message: "Scenes papkasi topilmadi" });
+      return JSON.stringify({ ok: false, error: "not_found", message: "Scenes folder not found" });
     }
     if (renderPath && !renderFolder) {
-      return JSON.stringify({ ok: false, error: "not_found", message: "Final Render papkasi topilmadi" });
+      return JSON.stringify({ ok: false, error: "not_found", message: "Final Render folder not found" });
     }
     if (previewPath && !previewFolder) {
-      return JSON.stringify({ ok: false, error: "not_found", message: "Preview papkasi topilmadi" });
+      return JSON.stringify({ ok: false, error: "not_found", message: "Preview folder not found" });
     }
 
     var scenes = scenesFolder ? collectScenesFromFolder(scenesFolder) : [];
@@ -315,7 +315,7 @@ function extractTemplateFromFolders(jsonStr) {
       return JSON.stringify({
         ok: false,
         error: "empty",
-        message: "Tanlangan papkalarda comp topilmadi"
+        message: "No comps found in the selected folders"
       });
     }
 
@@ -343,7 +343,7 @@ function listProjectCompositions() {
       return JSON.stringify({
         ok: false,
         error: "unsaved",
-        message: "Avval projectni saqlang (File → Save)"
+        message: "Save the project first (File → Save)"
       });
     }
 
@@ -352,7 +352,7 @@ function listProjectCompositions() {
       return JSON.stringify({
         ok: false,
         error: "no_comps",
-        message: "Projectda kompozitsiya topilmadi"
+        message: "No compositions found in the project"
       });
     }
 
@@ -375,7 +375,7 @@ function scanOpenProjectForTemplate() {
       return JSON.stringify({
         ok: false,
         error: "unsaved",
-        message: "Avval projectni saqlang (File → Save)"
+        message: "Save the project first (File → Save)"
       });
     }
 
@@ -387,7 +387,7 @@ function scanOpenProjectForTemplate() {
       return JSON.stringify({
         ok: false,
         error: "not_found",
-        message: "RENDER yoki Scenes papkasi topilmadi"
+        message: "RENDER or Scenes folder not found"
       });
     }
 
@@ -601,12 +601,12 @@ function createPreviewSceneMarkers(jsonStr) {
     var cfg = JSON.parse(jsonStr);
     var comp = getPreviewCompFromCfg(cfg);
     if (!comp) {
-      return JSON.stringify({ ok: false, message: "Preview comp topilmadi" });
+      return JSON.stringify({ ok: false, message: "Preview comp not found" });
     }
 
     var sceneNames = cfg.sceneNames || [];
     if (!sceneNames.length) {
-      return JSON.stringify({ ok: false, message: "Scene ro'yxati bo'sh" });
+      return JSON.stringify({ ok: false, message: "Scene list is empty" });
     }
 
     comp.openInViewer();
@@ -669,14 +669,14 @@ function renderScenesFromPreviewMarkers(jsonStr) {
     var comp = getPreviewCompFromCfg(cfg);
 
     if (!comp) {
-      return JSON.stringify({ ok: false, message: "Preview comp topilmadi" });
+      return JSON.stringify({ ok: false, message: "Preview comp not found" });
     }
 
     var segments = readPreviewMarkerSegments(comp, sceneNames);
     if (segments.length < sceneNames.length) {
       return JSON.stringify({
         ok: false,
-        message: "Marker yetarli emas — «Markerlar yaratish» va joylashtirish kerak (" + segments.length + "/" + sceneNames.length + ")"
+        message: "Not enough markers — run «Create markers» and position them (" + segments.length + "/" + sceneNames.length + ")"
       });
     }
 
@@ -723,7 +723,7 @@ function renderScenesFromPreviewMarkers(jsonStr) {
           path: existing || renderOutputBase(exportRoot, seg.name) + ".mp4",
           ok: !!existing,
           skipped: false,
-          error: existing ? "" : "Render yakunlanmadi"
+          error: existing ? "" : "Render did not finish"
         });
       }
     }
@@ -821,7 +821,7 @@ function renderCompsBatch(jsonStr) {
             path: outPath,
             skipped: false,
             ok: false,
-            error: "Comp topilmadi"
+            error: "Comp not found"
           });
         } else {
           pending.push({ name: name, path: outPath, comp: comp });
@@ -851,7 +851,7 @@ function renderCompsBatch(jsonStr) {
           path: existing || added[i].target,
           skipped: false,
           ok: !!existing,
-          error: existing ? "" : "Render yakunlanmadi — Output Module ni tekshiring"
+          error: existing ? "" : "Render did not finish — check the Output Module"
         });
       }
     }
@@ -1261,19 +1261,19 @@ function importSingleSceneFromAep(jsonStr) {
     var packLabel = cfg.packLabel || "AssetFlow";
     var scenesFolderHint = cfg.scenesFolder || "Scenes";
     if (!filePath) {
-      return JSON.stringify({ ok: false, message: "Fayl yo‘li kerak" });
+      return JSON.stringify({ ok: false, message: "File path required" });
     }
 
     var file = new File(filePath);
     if (!file.exists) {
-      return JSON.stringify({ ok: false, message: "Fayl topilmadi" });
+      return JSON.stringify({ ok: false, message: "File not found" });
     }
 
     // .mogrt panel (CEP) tomonda .aep ga ochilgan bo'lishi kerak — bu yerga yetib kelsa eski plugin
     if (/\.mogrt$/i.test(filePath)) {
       return JSON.stringify({
         ok: false,
-        message: ".mogrt extract qilinmagan — plugin'ni yangilang (install-cep.sh)"
+        message: ".mogrt was not extracted — update the plugin (install-cep.sh)"
       });
     }
 
@@ -1305,10 +1305,10 @@ function importSingleSceneFromAep(jsonStr) {
     if (!targetComp) {
       removeAllImportedItems(existingIds);
       app.endUndoGroup();
-      var wanted = compName || cfg.sceneLabel || "sahna";
+      var wanted = compName || cfg.sceneLabel || "scene";
       return JSON.stringify({
         ok: false,
-        message: "Comp topilmadi: " + wanted + " (pack ichidagi comp nomi mos emas)"
+        message: "Comp not found: " + wanted + " (comp name inside the pack does not match)"
       });
     }
 
@@ -1331,7 +1331,7 @@ function importSingleSceneFromAep(jsonStr) {
       if (!targetComp) {
         removeAllImportedItems(existingIds);
         app.endUndoGroup();
-        return JSON.stringify({ ok: false, message: "Comp saqlanmadi: " + resolvedName });
+        return JSON.stringify({ ok: false, message: "Comp was not preserved: " + resolvedName });
       }
       keptFolder = renameImportRootForComp(targetComp, folderLabel);
     } else {
@@ -1340,7 +1340,7 @@ function importSingleSceneFromAep(jsonStr) {
       if (!targetComp) {
         removeAllImportedItems(existingIds);
         app.endUndoGroup();
-        return JSON.stringify({ ok: false, message: "Comp saqlanmadi: " + resolvedName });
+        return JSON.stringify({ ok: false, message: "Comp was not preserved: " + resolvedName });
       }
       movedCount = collectAllImportedComps(existingIds).length;
     }
@@ -1428,7 +1428,7 @@ function removeImportedTemplate(jsonStr) {
 /** Foydalanuvchidan yuklab olish papkasini so'raydi */
 function pickDownloadFolder() {
   try {
-    var f = Folder.selectDialog("AssetFlow — yuklab olingan shablonlar saqlanadigan papka");
+    var f = Folder.selectDialog("AssetFlow — folder for downloaded templates");
     if (f) return JSON.stringify({ ok: true, path: f.fsName });
     return JSON.stringify({ ok: false, canceled: true });
   } catch (e) {
@@ -1442,7 +1442,7 @@ function pickDownloadFolder() {
  */
 function ensureProjectSaved(jsonStr) {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha ochiq emas" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project is open" });
     var cfg = {};
     try { cfg = JSON.parse(jsonStr || "{}"); } catch (e) {}
     if (app.project.file) {
@@ -1455,7 +1455,7 @@ function ensureProjectSaved(jsonStr) {
       app.project.save(nf);
       return JSON.stringify({ ok: true, saved: true, projectFile: app.project.file.fsName });
     }
-    return JSON.stringify({ ok: false, message: "Loyiha fayli yo'q — qo'lda CMD+S bosing" });
+    return JSON.stringify({ ok: false, message: "Project has no file — press CMD+S to save manually" });
   } catch (e) {
     return JSON.stringify({ ok: false, message: e.toString() });
   }
@@ -1479,7 +1479,7 @@ function renderSceneStillFrames(jsonStr) {
     if (!app.project) return JSON.stringify({ ok: false, error: "no_project" });
     var cfg = JSON.parse(jsonStr);
     var exportRoot = cfg.exportRoot;
-    if (!exportRoot) return JSON.stringify({ ok: false, message: "exportRoot kerak" });
+    if (!exportRoot) return JSON.stringify({ ok: false, message: "exportRoot required" });
 
     var folder = new Folder(exportRoot);
     if (!folder.exists) folder.create();
@@ -1501,7 +1501,7 @@ function renderSceneStillFrames(jsonStr) {
     }
 
     if (!comps.length) {
-      return JSON.stringify({ ok: false, message: "Sahna comp topilmadi" });
+      return JSON.stringify({ ok: false, message: "Scene comp not found" });
     }
 
     // Sahna raqami bo'yicha tartiblash (Scene_01, Scene_02 ...)
@@ -1565,14 +1565,14 @@ function adminRenderScenePreviews(jsonStr) {
     if (!app.project) return JSON.stringify({ ok: false, error: "no_project" });
     var cfg = JSON.parse(jsonStr);
     var exportRoot = cfg.exportRoot;
-    if (!exportRoot) return JSON.stringify({ ok: false, message: "exportRoot kerak" });
+    if (!exportRoot) return JSON.stringify({ ok: false, message: "exportRoot required" });
     var previewDur = (typeof cfg.previewDuration === "number") ? cfg.previewDuration : 6;
 
     var folder = new Folder(exportRoot);
     if (!folder.exists) folder.create();
 
     var scenesFolder = cfg.scenesFolder ? findFolderByPath(cfg.scenesFolder) : null;
-    if (!scenesFolder) return JSON.stringify({ ok: false, message: "02.Scene papkasi topilmadi" });
+    if (!scenesFolder) return JSON.stringify({ ok: false, message: "02.Scene folder not found" });
 
     var comps = [];
     var i, child;
@@ -1580,7 +1580,7 @@ function adminRenderScenePreviews(jsonStr) {
       child = scenesFolder.item(i);
       if (child instanceof CompItem) comps.push(child);
     }
-    if (!comps.length) return JSON.stringify({ ok: false, message: "Sahna comp topilmadi" });
+    if (!comps.length) return JSON.stringify({ ok: false, message: "Scene comp not found" });
 
     /* Raqam bo'yicha tartiblash */
     var s, j, tmp;
@@ -1707,18 +1707,18 @@ function adminRenderScenePreviews(jsonStr) {
  */
 function adminRenderOneScene(jsonStr) {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project" });
     var cfg = JSON.parse(jsonStr);
     var exportRoot = cfg.exportRoot;
     var compName = cfg.compName;
-    if (!exportRoot || !compName) return JSON.stringify({ ok: false, message: "compName/exportRoot kerak" });
+    if (!exportRoot || !compName) return JSON.stringify({ ok: false, message: "compName/exportRoot required" });
     var previewDur = (typeof cfg.previewDuration === "number") ? cfg.previewDuration : 6;
 
     var folder = new Folder(exportRoot);
     if (!folder.exists) folder.create();
 
     var comp = findCompByName(compName);
-    if (!comp) return JSON.stringify({ ok: false, message: "Comp topilmadi: " + compName });
+    if (!comp) return JSON.stringify({ ok: false, message: "Comp not found: " + compName });
 
     var baseName = sanitizeFileName(comp.name);
     var rq = app.project.renderQueue;
@@ -1753,13 +1753,13 @@ function adminRenderOneScene(jsonStr) {
         for (pi = pending.length - 1; pi >= 0; pi--) { try { pending[pi].remove(); } catch(eRm) {} }
         return JSON.stringify({
           ok: false,
-          message: "Admin Preview preset topilmadi. AE: Edit → Templates → Output Module → Admin Preview yarating."
+          message: "Admin Preview preset not found. In AE: Edit → Templates → Output Module → create Admin Preview."
         });
       }
       omV.file = new File(exportRoot + "/" + baseName + "_preview.mp4");
       pending.push(rqV);
     } catch(eV) {
-      return JSON.stringify({ ok: false, message: "Video render navbati: " + eV.toString() });
+      return JSON.stringify({ ok: false, message: "Video render queue: " + eV.toString() });
     }
 
     try { rq.render(); } catch(eR) {}
@@ -1808,7 +1808,7 @@ function importAssetToProject(filePath) {
     var ext = file.name.replace(/^.*\./, "").toLowerCase();
     if (ext === "mogrt") {
       app.endUndoGroup();
-      return "error: .mogrt extract qilinmagan — plugin'ni yangilang (install-cep.sh)";
+      return "error: .mogrt was not extracted — update the plugin (install-cep.sh)";
     }
     if (ext === "aep") {
       var projectImport = new ImportOptions(file);
@@ -1832,13 +1832,13 @@ function importAssetToProject(filePath) {
 // importAs=FOOTAGE bilan import qiladi. Structured JSON {ok,reason,item} qaytaradi
 // (frontend aniq sabab ko'rsatadi). importAssetToProject kontrakti tegilmaydi.
 function importMediaFromPath(filePath) {
-  if (!filePath) return JSON.stringify({ ok: false, reason: "Fayl yo'li berilmadi" });
+  if (!filePath) return JSON.stringify({ ok: false, reason: "No file path provided" });
   if (typeof app === "undefined" || !app.project) {
-    return JSON.stringify({ ok: false, reason: "Ochiq After Effects loyihasi yo'q" });
+    return JSON.stringify({ ok: false, reason: "No open After Effects project" });
   }
   var file = new File(filePath);
   if (!file.exists) {
-    return JSON.stringify({ ok: false, reason: "Fayl topilmadi: " + filePath });
+    return JSON.stringify({ ok: false, reason: "File not found: " + filePath });
   }
   // MUHIM: ExtendScript (ES3) try/finally ichidagi return qiymatni yutishi mumkin
   // (evalScript bo'sh "" qaytaradi). Shu sabab natijani o'zgaruvchiga yig'ib,
@@ -1848,7 +1848,7 @@ function importMediaFromPath(filePath) {
   try {
     var io = new ImportOptions(file);
     if (!io.canImportAs(ImportAsType.FOOTAGE)) {
-      result = { ok: false, reason: "AE bu faylni footage sifatida qabul qilmaydi: " + file.name };
+      result = { ok: false, reason: "AE cannot import this file as footage: " + file.name };
     } else {
       io.importAs = ImportAsType.FOOTAGE;
       var item = app.project.importFile(io);
@@ -1912,30 +1912,30 @@ function afFail(reason) {
 
 function getActiveTimelineVideoReference() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var active = app.project.activeItem;
-    if (!active || !(active instanceof CompItem)) return afFail("Kompozitsiya ochiq emas — Timeline'ni oching");
+    if (!active || !(active instanceof CompItem)) return afFail("No composition open — open the Timeline");
     var layers = active.selectedLayers;
-    if (!layers || layers.length === 0) return afFail("Layer tanlanmagan — Timeline'da klip tanlang");
+    if (!layers || layers.length === 0) return afFail("No layer selected — select a clip in the Timeline");
 
-    var firstReason = "Tanlangan layer footage emas";
+    var firstReason = "Selected layer is not footage";
     for (var i = 0; i < layers.length; i++) {
       var L = layers[i];
       var src = null;
       try { src = L.source; } catch (e) { src = null; }
       if (!src) {
-        if (i === 0) firstReason = "Tanlangan layer footage emas (matn/shakl/kamera)";
+        if (i === 0) firstReason = "Selected layer is not footage (text/shape/camera)";
         continue;
       }
       if (!(src instanceof FootageItem)) {
         if (i === 0) firstReason = (src instanceof CompItem)
-          ? "Tanlangan layer precomp — footage klip tanlang"
-          : "Tanlangan layer footage emas";
+          ? "Selected layer is a precomp — select a footage clip"
+          : "Selected layer is not footage";
         continue;
       }
       var mediaPath = afLayerSourcePath(src);
       if (!mediaPath) {
-        if (i === 0) firstReason = "Footage faylsiz (solid/placeholder) — disk fayli kerak";
+        if (i === 0) firstReason = "Footage has no file (solid/placeholder) — a disk file is required";
         continue;
       }
       var hasVideo = false, hasAudio = false;
@@ -1953,7 +1953,7 @@ function getActiveTimelineVideoReference() {
     }
     return afFail(firstReason);
   } catch (e) {
-    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Internal error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
@@ -1962,22 +1962,22 @@ function getActiveTimelineVideoReference() {
 // shaklda (mediaPath/mediaType) — frontend ikkala manbani bir xil ishlaydi.
 function getSelectedProjectReference() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var sel = app.project.selection;
-    if (!sel || sel.length === 0) return afFail("Project panelda element tanlanmagan — footage (rasm/video) tanlang");
+    if (!sel || sel.length === 0) return afFail("Nothing selected in the Project panel — select footage (image/video)");
 
-    var firstReason = "Tanlangan element footage emas";
+    var firstReason = "Selected item is not footage";
     for (var i = 0; i < sel.length; i++) {
       var it = sel[i];
       if (!(it instanceof FootageItem)) {
         if (i === 0) firstReason = (it instanceof CompItem)
-          ? "Tanlangan element kompozitsiya — footage (rasm/video) tanlang"
-          : "Tanlangan element footage emas (papka?)";
+          ? "Selected item is a composition — select footage (image/video)"
+          : "Selected item is not footage (a folder?)";
         continue;
       }
       var mediaPath = afLayerSourcePath(it);
       if (!mediaPath) {
-        if (i === 0) firstReason = "Footage faylsiz (solid/placeholder) — disk fayli kerak";
+        if (i === 0) firstReason = "Footage has no file (solid/placeholder) — a disk file is required";
         continue;
       }
       var hasVideo = false, hasAudio = false;
@@ -1997,7 +1997,7 @@ function getSelectedProjectReference() {
     }
     return afFail(firstReason);
   } catch (e) {
-    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Internal error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
@@ -2006,7 +2006,7 @@ function getSelectedProjectReference() {
 // QO'LDA JSON — JSON.stringify'ga bog'lanmaydi (evalFile kontekstida JSON undefined bo'lishi mumkin).
 function listProjectFootage() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
 
     var CAP = 60;
     var json = '{"ok":true,"items":[';
@@ -2052,14 +2052,14 @@ function listProjectFootage() {
     json += '],"count":' + count + ',"truncated":' + (truncated ? "true" : "false") + '}';
     return json;
   } catch (e) {
-    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Internal error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
 // Faol kompozitsiyaning joriy kadrini PNG ga eksport qiladi (Timeline → referens). {ok,path,name}.
 function exportTimelineFrame() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var comp = app.project.activeItem;
     // CEP panel fokusda bo'lsa activeItem null bo'ladi — ochiq comp viewer'ini aktiv qilib qayta o'qiymiz.
     if (!(comp instanceof CompItem)) {
@@ -2076,7 +2076,7 @@ function exportTimelineFrame() {
         if (app.project.item(i) instanceof CompItem) { comp = app.project.item(i); break; }
       }
     }
-    if (!(comp instanceof CompItem)) return afFail("Faol kompozitsiya yo'q — Timeline'da comp oching");
+    if (!(comp instanceof CompItem)) return afFail("No active composition — open a comp in the Timeline");
     var dir = Folder.temp.fsName + "/assetflow-refs";
     var folder = new Folder(dir);
     if (!folder.exists) folder.create();
@@ -2086,12 +2086,12 @@ function exportTimelineFrame() {
       app.purge(PurgeTarget.SNAPSHOT_CACHES);
     } catch (eV) {}
     comp.saveFrameToPng(comp.time, outFile);
-    if (!outFile.exists) return afFail("Kadr saqlanmadi — comp viewer'da ochiq bo'lsin");
+    if (!outFile.exists) return afFail("Frame was not saved — make sure the comp is open in the viewer");
     return '{"ok":true,"path":' + afJStr(outFile.fsName) +
-           ',"name":' + afJStr(comp.name + " · kadr") +
+           ',"name":' + afJStr(comp.name + " · frame") +
            ',"mediaType":"image"}';
   } catch (e) {
-    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Internal error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
@@ -2101,9 +2101,9 @@ function exportTimelineFrame() {
  */
 function getWorkAreaInfo() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var comp = app.project.activeItem;
-    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas");
+    if (!comp || !(comp instanceof CompItem)) return afFail("No composition open");
     var compDur = Math.round(comp.duration * 1000) / 1000;
     var waStart = Math.round((comp.workAreaStart || 0) * 1000) / 1000;
     var waDur = Math.round((comp.workAreaDuration || comp.duration) * 1000) / 1000;
@@ -2113,7 +2113,7 @@ function getWorkAreaInfo() {
            ',"workAreaDuration":' + waDur +
            ',"fps":' + fps + '}';
   } catch (e) {
-    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e));
+    return afFail("Internal error: " + (e && e.toString ? e.toString() : e));
   }
 }
 
@@ -2125,10 +2125,10 @@ function getWorkAreaInfo() {
 function exportWorkAreaForSfx(destPath, maxDur) {
   try {
     // ExtendScript JSON.parse ishonchsiz — argumentlar oddiy parametr (JSON blob emas).
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var comp = app.project.activeItem;
-    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas — Timeline'ni oching");
-    if (!destPath) return afFail("destPath berilmadi");
+    if (!comp || !(comp instanceof CompItem)) return afFail("No composition open — open the Timeline");
+    if (!destPath) return afFail("destPath missing");
 
     var fd = comp.frameDuration;
     var fps = comp.frameRate;
@@ -2138,7 +2138,7 @@ function exportWorkAreaForSfx(destPath, maxDur) {
     var waDur = Math.round(comp.workAreaDuration / fd) * fd;
     var md = (typeof maxDur === "number" && maxDur > 0) ? maxDur : 30;
     if (waDur > md) waDur = Math.round(md / fd) * fd;
-    if (waDur < fd) return afFail("Work area juda qisqa");
+    if (waDur < fd) return afFail("Work area is too short");
 
     var rq = app.project.renderQueue;
     var rqItem = rq.items.add(comp);
@@ -2151,13 +2151,13 @@ function exportWorkAreaForSfx(destPath, maxDur) {
     rq.render();                         // BLOKLAYDI (qisqa klip)
     try { rqItem.remove(); } catch (ig) {}
 
-    if (!outFile.exists) return afFail("Render fayli yaratilmadi");
+    if (!outFile.exists) return afFail("Render file was not created");
     return '{"ok":true,"path":' + afJStr(outFile.fsName) +
            ',"workAreaStart":' + waRel +
            ',"fps":' + fps +
            ',"duration":' + waDur + '}';
   } catch (e) {
-    return afFail("Eksport xatosi: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Export error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
@@ -2168,9 +2168,9 @@ function exportWorkAreaForSfx(destPath, maxDur) {
  */
 function readTimelineForSfx() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var comp = app.project.activeItem;
-    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas — Timeline'ni oching");
+    if (!comp || !(comp instanceof CompItem)) return afFail("No composition open — open the Timeline");
     var fps = comp.frameRate;
     var waStart = comp.workAreaStart, waEnd = waStart + comp.workAreaDuration;
 
@@ -2211,7 +2211,7 @@ function readTimelineForSfx() {
            ',"layers":[' + lay.join(",") + ']' +
            ',"markers":[' + mk.join(",") + ']}';
   } catch (e) {
-    return afFail("Timeline o'qish xatosi: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Timeline read error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
@@ -2222,10 +2222,10 @@ function readTimelineForSfx() {
  */
 function sampleFramesForSfx(timesCsv, destPrefix) {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq loyiha yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open project");
     var comp = app.project.activeItem;
-    if (!comp || !(comp instanceof CompItem)) return afFail("Kompozitsiya ochiq emas");
-    if (!timesCsv || !destPrefix) return afFail("Parametr yo'q");
+    if (!comp || !(comp instanceof CompItem)) return afFail("No composition open");
+    if (!timesCsv || !destPrefix) return afFail("Missing parameters");
     var waStart = comp.workAreaStart;
     var parts = String(timesCsv).split(",");
     var out = [], i, t, ct, f;
@@ -2236,21 +2236,21 @@ function sampleFramesForSfx(timesCsv, destPrefix) {
       try { comp.saveFrameToPng(ct, f); } catch (eS) { continue; }
       if (f.exists) out.push(afJStr(f.fsName));
     }
-    if (!out.length) return afFail("Kadr saqlanmadi");
+    if (!out.length) return afFail("No frames were saved");
     return '{"ok":true,"frames":[' + out.join(",") + ']}';
   } catch (e) {
-    return afFail("Kadr xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Frame error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
 // Tanlangan layer trim/oraliq tafsilotlari — bulletproof (qo'lda JSON, har yo'lda string).
 function getActiveTimelineClipDetails() {
   try {
-    if (typeof app === "undefined" || !app.project) return afFail("Ochiq After Effects loyihasi yo'q");
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
     var active = app.project.activeItem;
-    if (!(active && active instanceof CompItem)) return afFail("Aktiv kompozitsiya yo'q");
+    if (!(active && active instanceof CompItem)) return afFail("No active composition");
     var layers = active.selectedLayers;
-    if (!layers || layers.length === 0) return afFail("Layer tanlanmagan");
+    if (!layers || layers.length === 0) return afFail("No layer selected");
     var L = layers[0];
     var inP = 0, outP = 0, startT = 0, compT = 0, dur = 0;
     try { inP = L.inPoint; } catch (e) {}
@@ -2265,7 +2265,7 @@ function getActiveTimelineClipDetails() {
            ',"compTime":' + Number(compT) +
            ',"sourceDuration":' + Number(dur) + '}';
   } catch (e) {
-    return afFail("Ichki xato: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
+    return afFail("Internal error: " + (e && e.toString ? e.toString() : e) + " @line " + (e && e.line != null ? e.line : "?"));
   }
 }
 
@@ -2307,14 +2307,14 @@ function openProjectFile(jsonStr) {
     var cfg = JSON.parse(jsonStr);
     var filePath = cfg.filePath;
     if (!filePath) {
-      return JSON.stringify({ ok: false, message: "Project yo‘li kerak" });
+      return JSON.stringify({ ok: false, message: "Project path required" });
     }
     var f = new File(filePath);
     if (!f.exists) {
       return JSON.stringify({
         ok: false,
         error: "not_found",
-        message: "Fayl topilmadi: " + filePath
+        message: "File not found: " + filePath
       });
     }
     var target = f.fsName;
@@ -2339,7 +2339,7 @@ function openProjectFile(jsonStr) {
     if (!app.project || !app.project.file) {
       return JSON.stringify({
         ok: false,
-        message: "Project ochildi, lekin fayl aniqlanmadi"
+        message: "Project opened, but the file could not be determined"
       });
     }
     return JSON.stringify({
@@ -2394,13 +2394,13 @@ function queueOpenProjectFile(jsonStr) {
     var cfg = JSON.parse(jsonStr || "{}");
     var filePath = cfg.filePath;
     if (!filePath) {
-      return JSON.stringify({ ok: false, message: "Project yo‘li kerak" });
+      return JSON.stringify({ ok: false, message: "Project path required" });
     }
     var f = new File(filePath);
     if (!f.exists) {
       return JSON.stringify({
         ok: false,
-        message: "Fayl topilmadi: " + filePath
+        message: "File not found: " + filePath
       });
     }
     var target = f.fsName;
@@ -2444,9 +2444,9 @@ var __afOpenState = { state: "idle", path: "", file: "", name: "", err: "" };
 function __afOpenRun() {
   try {
     var p = __afOpenState.path;
-    if (!p) { __afOpenState.state = "error"; __afOpenState.err = "Yo‘l yo‘q"; return; }
+    if (!p) { __afOpenState.state = "error"; __afOpenState.err = "No path"; return; }
     var f = new File(p);
-    if (!f.exists) { __afOpenState.state = "error"; __afOpenState.err = "Fayl topilmadi"; return; }
+    if (!f.exists) { __afOpenState.state = "error"; __afOpenState.err = "File not found"; return; }
     if (app.project && app.project.file && app.project.file.fsName === f.fsName) {
       __afOpenState.state = "done";
       __afOpenState.file = app.project.file.fsName;
@@ -2490,7 +2490,7 @@ function afCloseCurrent(force) {
       var isDirty = false;
       try { isDirty = !!app.project.dirty; } catch (eD) {}
       if (!force && isDirty) {
-        return JSON.stringify({ ok: false, dirty: true, message: "Saqlanmagan o'zgarishlar bor" });
+        return JSON.stringify({ ok: false, dirty: true, message: "There are unsaved changes" });
       }
       try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (e1) {}
     }
@@ -2548,7 +2548,7 @@ function afEnsureAdminPreviewPreset() {
         try { if (tmpComp) tmpComp.remove(); } catch (e2) {}
         return JSON.stringify({
           ok: false,
-          message: "Admin Preview presetini avtomatik yaratib bo'lmadi: " + eSave.toString()
+          message: "Could not auto-create the Admin Preview preset: " + eSave.toString()
         });
       }
     }
@@ -2590,7 +2590,7 @@ function afEnsureSaved(pathStr) {
  *  Har folder uchun id, nom va comp soni. */
 function afListFolders() {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project" });
     var out = [];
     var i, item, j, cc;
     for (i = 1; i <= app.project.numItems; i++) {
@@ -2614,14 +2614,14 @@ function afListFolders() {
 /** Berilgan folder ID dagi comp'lar (id orqali — nom takrorlanishidan himoya) */
 function afCompsInFolder(folderId) {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project" });
     var fid = parseInt(folderId, 10);
     var folder = null, i, it;
     for (i = 1; i <= app.project.numItems; i++) {
       it = app.project.item(i);
       if (it instanceof FolderItem && it.id === fid) { folder = it; break; }
     }
-    if (!folder) return JSON.stringify({ ok: false, message: "Folder topilmadi" });
+    if (!folder) return JSON.stringify({ ok: false, message: "Folder not found" });
     var comps = [], j, c;
     for (j = 1; j <= folder.numItems; j++) {
       c = folder.item(j);
@@ -2644,7 +2644,7 @@ function afCompsInFolder(folderId) {
  *  app.open() faqat loyihani yuklaydi, comp viewerda ko'rinmaydi; shuni tuzatadi. */
 function afShowMainComp() {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project" });
     var i, item, target = null;
     // 1) "RENDER" / "FINAL RENDER" nomli comp (eng asosiy)
     for (i = 1; i <= app.project.numItems; i++) {
@@ -2659,7 +2659,7 @@ function afShowMainComp() {
         if (item instanceof CompItem && item.duration > maxDur) { maxDur = item.duration; target = item; }
       }
     }
-    if (!target) return JSON.stringify({ ok: false, message: "Comp topilmadi" });
+    if (!target) return JSON.stringify({ ok: false, message: "Comp not found" });
     try { target.selected = true; } catch (eSel) {}
     try { target.openInViewer(); } catch (eOpen) {}
     try { app.activate(); } catch (eAct) {}
@@ -2672,9 +2672,9 @@ function afShowMainComp() {
 /** AE project panelda sahna comp'ni ochib/tanlab ko'rsatadi (Admin "Sahnalarni topish") */
 function adminOpenSceneComp(compName) {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project" });
     var comp = findCompByName(String(compName || ""));
-    if (!comp) return JSON.stringify({ ok: false, message: "Comp topilmadi: " + compName });
+    if (!comp) return JSON.stringify({ ok: false, message: "Comp not found: " + compName });
     try { comp.selected = true; } catch (eSel) {}
     try { comp.openInViewer(); } catch (eOpen) {}
     try { app.activate(); } catch (eAct) {}
@@ -2687,7 +2687,7 @@ function adminOpenSceneComp(compName) {
 /** Berilgan papkadagi sahna comp'larini sanab beradi (qo'lda tanlangan Scene folder) */
 function adminListScenesInFolder(jsonStr) {
   try {
-    if (!app.project) return JSON.stringify({ ok: false, message: "Loyiha yo'q" });
+    if (!app.project) return JSON.stringify({ ok: false, message: "No project" });
     var cfg = {};
     try { cfg = JSON.parse(jsonStr || "{}"); } catch (e) {}
     var wantFolder = String(cfg.folder || "");
