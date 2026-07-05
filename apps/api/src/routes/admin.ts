@@ -24,6 +24,11 @@ import {
   updatePricingConfig,
 } from "../lib/model-pricing.js";
 import { computeMargins } from "../lib/model-margin.js";
+import {
+  runMonthlyReconciliation,
+  recordProviderInvoice,
+  listProviderInvoices,
+} from "../lib/pricing-reconcile.js";
 
 export const adminRouter = Router();
 
@@ -390,4 +395,63 @@ adminRouter.patch("/pricing/:modelId", async (req, res) => {
   // Yangi narxni namunaviy so'rov bilan qaytaramiz (admin darhol ko'radi).
   const view = (await listPricingView()).find((v) => v.modelId === modelId) ?? null;
   res.json({ row, view });
+});
+
+// ── NARX-DRIFT MONITORING (Bosqich 3.5) — reconciliation + real invoice ──────
+
+const monthQuery = z.string().regex(/^\d{4}-\d{2}$/);
+
+/** GET /api/admin/pricing/reconcile?month=YYYY-MM[&dry=1] — oylik reconciliation (on-demand).
+ *  Marja maqsaddan past bo'lsa alert yuboradi (dry=1 → yubormaydi, faqat hisob-kitob). */
+adminRouter.get("/pricing/reconcile", async (req, res) => {
+  const monthRaw = req.query.month ? String(req.query.month) : undefined;
+  if (monthRaw && !monthQuery.safeParse(monthRaw).success) {
+    res.status(400).json({ error: "month формати YYYY-MM bo'lsin" });
+    return;
+  }
+  const dry = req.query.dry === "1" || req.query.dry === "true";
+  const report = await runMonthlyReconciliation({ month: monthRaw, sendAlert: !dry });
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.reconcile",
+    targetType: "pricingReconcile",
+    targetId: report.month,
+    meta: { belowTarget: report.belowTarget, alertSent: report.alert.sent, dry },
+  });
+  res.json({ report });
+});
+
+/** GET /api/admin/pricing/invoices?month= — kiritilgan real provider invoice'lar. */
+adminRouter.get("/pricing/invoices", async (req, res) => {
+  const monthRaw = req.query.month ? String(req.query.month) : undefined;
+  if (monthRaw && !monthQuery.safeParse(monthRaw).success) {
+    res.status(400).json({ error: "month формати YYYY-MM bo'lsin" });
+    return;
+  }
+  res.json({ invoices: await listProviderInvoices(monthRaw) });
+});
+
+const invoiceSchema = z.object({
+  provider: z.string().trim().min(1).max(64),
+  periodMonth: z.string().regex(/^\d{4}-\d{2}$/, "YYYY-MM"),
+  actualUsd: z.number().min(0).max(10_000_000),
+  note: z.string().max(2000).nullable().optional(),
+});
+
+/** POST /api/admin/pricing/invoice — real oylik provider invoice USD kiritadi (drift solishtirish). */
+adminRouter.post("/pricing/invoice", async (req, res) => {
+  const parsed = invoiceSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  await recordProviderInvoice({ ...parsed.data, createdById: req.user?.userId ?? null });
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.invoice.record",
+    targetType: "providerInvoice",
+    targetId: `${parsed.data.provider}:${parsed.data.periodMonth}`,
+    meta: parsed.data as Record<string, unknown>,
+  });
+  res.json({ ok: true });
 });

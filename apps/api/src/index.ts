@@ -29,6 +29,7 @@ import { logS3Diagnostics, isS3Configured, checkS3Health } from "./lib/s3.js";
 import { prisma } from "@creative-tools/database";
 import { initSentry, captureException } from "./lib/sentry.js";
 import { seedModelPricing } from "./lib/model-pricing.js";
+import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
 // dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
@@ -261,4 +262,6 @@ app.listen(PORT, "0.0.0.0", () => {
   seedModelPricing()
     .then((r) => console.log(`[model-pricing] seed: ${r.created} yangi / ${r.total} model`))
     .catch((e) => console.error("[model-pricing] seed o'tkazib yuborildi:", e?.message || e));
+  // NARX-DRIFT MONITORING (Bosqich 3.5): oylik reconciliation scheduler (env bilan yoqiladi).
+  startReconciliationScheduler();
 });
