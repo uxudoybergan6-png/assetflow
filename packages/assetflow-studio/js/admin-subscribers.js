@@ -107,211 +107,122 @@ function setSubFilter(f) {
   else if (CURRENT === "subscriber-detail") route("subscriber-detail", SUB_DETAIL_ID);
 }
 
+/** Obunachi limit foydalanish katakchasi (maket e5 — adx-prog). */
+function axUsageCell(s){
+  const label = normalizePlanLabel(s.plan);
+  const p = planById(label.toLowerCase());
+  if(p.unlimitedDownloads){
+    return `<span style="font-size:11px;color:#C2F04A">Cheksiz</span><div class="adx-num" style="font-size:9.5px;color:#8A93A3;margin-top:3px">${s.downloadsMonth ?? 0} bu oy</div>`;
+  }
+  const used = s.downloadsMonth ?? 0;
+  const lim = p.downloadLimit || 0;
+  const pct = subscriberUsagePct(s) ?? 0;
+  const cls = pct>=100 ? 'dan' : pct>=80 ? 'warn' : '';
+  return `<div style="min-width:110px"><div class="adx-prog"><div class="pb ${cls}" style="width:${Math.min(100,pct)}%"></div></div><div class="adx-num" style="font-size:9.5px;color:#8A93A3;margin-top:4px">${used} / ${lim}</div></div>`;
+}
+
+/** Obunachilar topbar amallari (reja filtri + AI reindex + CSV). */
+function axSubTopbar(){
+  const tba = document.getElementById('tbActions');
+  if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='subscribers')) return;
+  tba.innerHTML =
+    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${SUB_PLAN_FILTER==='all'?'Barcha rejalar':SUB_PLAN_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="SUB_PLAN_FILTER=this.value;route('subscribers')"><option value="all">Barcha rejalar</option><option value="Free" ${SUB_PLAN_FILTER==='Free'?'selected':''}>Free</option><option value="Pro" ${SUB_PLAN_FILTER==='Pro'?'selected':''}>Pro</option></select></label>`+
+    `<button class="adx-btn2 sm" id="aiReindexBtn" onclick="aiReindex()" title="Tasdiqlangan shablonlarga AI semantik qidiruv embeddinglarini yaratadi"><i class="ph ph-arrow-clockwise"></i>AI qayta indekslash</button>`+
+    `<button class="adx-btn2 sm" onclick="toast('Eksport','Obunachilar CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>CSV</button>`;
+}
+
 VIEWS.subscribers = function () {
   const sc = subscriberCounts();
   const rows = filteredSubscribers();
-  return `<div class="col gap-16">
-    ${infoBanner(`${ic("plugin")}<span><b>AE Plugin obunachilari</b> — After Effects ichidagi <b>AssetFlow Browse</b> panelidan foydalanadigan haqiqiy mijozlar. Bloklash = plugin kirishini to\u2018xtatadi. Chiqarib tashlash = hisobni tizimdan olib tashlaydi.</span>`)}
-
-    <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr)">
-      ${kpiCard({ label: "Jami obunachilar", val: sc.total, ic: "plugin", c: "violet", foot: "ro\u2018yxatda" })}
-      ${kpiCard({ label: "Faol (AE)", val: sc.active, ic: "checkCircle", c: "green", foot: "pluginda ishlayapti" })}
-      ${kpiCard({ label: "Onlayn (yaqin)", val: sc.online, ic: "globe", c: "blue", foot: "so\u2018nggi 1 soat" })}
-      ${kpiCard({ label: "Bloklangan", val: sc.blocked, ic: "ban", c: "red", foot: "kirish yopiq" })}
-      ${kpiCard({ label: "Chiqarilgan", val: sc.removed, ic: "trash", c: "gray", foot: "tizimdan olib tashlangan" })}
+  return `
+    ${axInfo(`<b style="color:var(--text)">AE Plugin obunachilari</b> — After Effects ichidagi <b style="color:var(--text)">FrameFlow Browse</b> panelidan foydalanadigan haqiqiy mijozlar. Bloklash = plugin kirishini to‘xtatadi. Chiqarib tashlash = hisobni tizimdan olib tashlaydi.`,'info')}
+    <div class="adx-grid5" style="margin-bottom:16px">
+      ${axStat({label:'Jami obunachilar',val:sc.total,ic:'users',foot:'ro‘yxatda'})}
+      ${axStat({label:'Faol (AE)',val:sc.active,ic:'check-circle',icColor:'#C2F04A',foot:'pluginda ishlayapti'})}
+      ${axStat({label:'Onlayn (yaqin)',val:sc.online,ic:'gauge',icColor:'#7CC4FF',foot:'so‘nggi 1 soat'})}
+      ${axStat({label:'Bloklangan',val:sc.blocked,ic:'prohibit',icColor:'#FF6B5E',foot:'kirish yopiq'})}
+      ${axStat({label:'Chiqarilgan',val:sc.removed,ic:'trash',foot:'olib tashlangan'})}
     </div>
-
-    <div class="toolbar between wrap gap-10">
-      <div class="chips">
-        ${[
-          ["all", "Barchasi", sc.total],
-          ["active", "Faol", sc.active],
-          ["online", "Onlayn", sc.online],
-          ["blocked", "Bloklangan", sc.blocked],
-          ["removed", "Chiqarilgan", sc.removed],
-        ]
-          .map(
-            ([k, l, n]) =>
-              `<button class="chip ${SUB_FILTER === k ? "active" : ""}" onclick="setSubFilter('${k}')">${l}<span class="cnt">${n}</span></button>`
-          )
-          .join("")}
-      </div>
-      <div class="toolbar wrap gap-8">
-        <div class="search" style="width:260px;height:34px">
-          ${ic("search")}
-          <input placeholder="Ism, email, qurilma\u2026" value="${esc(SUB_SEARCH)}" oninput="SUB_SEARCH=this.value;route('subscribers')">
-        </div>
-        <select class="select" style="height:34px" onchange="SUB_PLAN_FILTER=this.value;route('subscribers')">
-          <option value="all" ${SUB_PLAN_FILTER==="all"?"selected":""}>Barcha rejalar</option>
-          <option value="Free" ${SUB_PLAN_FILTER==="Free"?"selected":""}>Free</option>
-          <option value="Pro" ${SUB_PLAN_FILTER==="Pro"?"selected":""}>Pro</option>
-        </select>
-        <button class="btn btn-ghost btn-sm" onclick="toast('Eksport','Obunachilar CSV','info')">${ic("download")} CSV</button>
-        <button class="btn btn-ghost btn-sm" id="aiReindexBtn" onclick="aiReindex()" title="Tasdiqlangan shablonlarga AI semantik qidiruv embeddinglarini yaratadi">${ic("refresh")} AI qayta indekslash</button>
-      </div>
+    <div class="adx-tagrow">
+      ${[['all','Barchasi',sc.total],['active','Faol',sc.active],['online','Onlayn',sc.online],['blocked','Bloklangan',sc.blocked],['removed','Chiqarilgan',sc.removed]]
+        .map(([k,l,n])=>`<button class="adx-tag ${SUB_FILTER===k?'on':''}" onclick="setSubFilter('${k}')">${l} <span class="n">${n}</span></button>`).join('')}
     </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div><h3>Obunachilar ro\u2018yxati</h3><span class="small">${rows.length} ta ko\u2018rsatilmoqda · jami yuklab olish: <b>${(sc.totalDownloads / 1000).toFixed(1)}K</b></span></div>
-      </div>
-      <div class="table-wrap">
-        <table class="data" style="min-width:1100px">
-          <thead>
-            <tr>
-              <th>Obunachi</th>
-              <th>Holat</th>
-              <th>Reja</th>
-              <th>AE / qurilma</th>
-              <th class="th-num">Limit (oy)</th>
-              <th class="th-num">Jami yuklab olish</th>
-              <th class="th-num">Import</th>
-              <th>Token</th>
-              <th>Oxirgi faol</th>
-              <th style="width:140px"></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              rows.length
-                ? rows
-                    .map((s) => {
-                      const rowMuted = s.status === "removed" ? "opacity:.55" : "";
-                      return `<tr style="cursor:pointer;${rowMuted}" onclick="route('subscriber-detail','${s.id}')">
-                <td><div class="row center gap-10">${avatar(s.name, 32)}<div class="col" style="gap:1px"><span class="cell-strong">${esc(s.name)}</span><span class="sub" style="font-size:11px;color:var(--tx-3)">${esc(s.email)}</span></div></div></td>
-                <td>${subscriberStatusBadge(s.status)}</td>
-                <td>${planBadge(s.plan)}</td>
-                <td class="cell-muted" style="max-width:200px"><span class="cell-strong" style="font-size:12px">AE ${esc(s.ae)}</span><br><span class="small">${esc(s.device)}</span></td>
-                <td>${usageCell(s)}</td>
-                <td class="cell-num cell-strong">${s.downloads.toLocaleString()}</td>
-                <td class="cell-num">${s.imports}</td>
-                <td>${s.tokenOk ? `<span class="badge badge-approved" style="font-size:10px"><span class="dot"></span>OK</span>` : `<span class="badge badge-blocked" style="font-size:10px"><span class="dot"></span>Yopiq</span>`}</td>
-                <td class="cell-muted mono" style="white-space:nowrap">${s.lastSeen}</td>
-                <td onclick="event.stopPropagation()"><div class="row-actions">
-                  <button class="act" title="Xabar" onclick="openMessageSub('${s.id}')">${ic("message")}</button>
-                  ${subActMenu(s)}
-                  <button class="act" title="Profil" onclick="route('subscriber-detail','${s.id}')">${ic("chevR")}</button>
-                </div></td>
-              </tr>`;
-                    })
-                    .join("")
-                : `<tr><td colspan="10"><div class="empty" style="padding:28px"><div class="ico">${ic("plugin")}</div><h3>Topilmadi</h3><p>Filtr yoki qidiruvni o\u2018zgartiring.</p></div></td></tr>`
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>`;
+    <div class="adx-card" style="overflow:hidden">
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1180px">
+        <thead><tr><th>Obunachi</th><th>Holat</th><th>Reja</th><th>AE / qurilma</th><th>Limit (oy)</th><th class="r">Yuklab olish</th><th class="r">Import</th><th>Token</th><th>Oxirgi faol</th><th class="r">Amal</th></tr></thead>
+        <tbody>
+        ${rows.length ? rows.map(s=>{
+          const rowMuted = s.status==='removed' ? 'opacity:.55' : '';
+          return `<tr style="cursor:pointer;${rowMuted}" onclick="route('subscriber-detail','${s.id}')">
+            <td><div class="adx-who">${axAv(s.name,s.email,32)}<div style="min-width:0"><div class="nm">${esc(s.name)}</div><div class="em">${esc(s.email)}</div></div></div></td>
+            <td>${axStatus(s.status)}</td>
+            <td>${axPlan(s.plan)}</td>
+            <td style="font-size:11px"><div style="color:var(--text)">AE ${esc(s.ae||'—')}</div><div style="color:#8A93A3">${esc(s.device||'—')}</div></td>
+            <td>${axUsageCell(s)}</td>
+            <td class="r adx-num">${(s.downloads||0).toLocaleString()}</td>
+            <td class="r adx-num">${s.imports||0}</td>
+            <td>${s.tokenOk?'<span class="adx-bdg adx-bdg-approved">OK</span>':'<span class="adx-bdg adx-bdg-blocked">Yopiq</span>'}</td>
+            <td class="adx-num" style="font-size:11px;color:#8A93A3;white-space:nowrap">${esc(s.lastSeen||'—')}</td>
+            <td class="r" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
+              <button class="adx-iact" title="Xabar" onclick="openMessageSub('${s.id}')"><i class="ph ph-chat-circle"></i></button>
+              ${subActMenu(s)}
+              <button class="adx-iact" title="Profil" onclick="route('subscriber-detail','${s.id}')"><i class="ph ph-caret-right"></i></button>
+            </div></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="10"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-puzzle-piece"></i></span><div style="font-weight:600;font-size:13px">Obunachi topilmadi</div><div style="font-size:11px;color:var(--muted2)">Filtr yoki qidiruvni o‘zgartiring.</div></div></td></tr>`}
+        </tbody>
+      </table></div>
+    </div>`;
 };
-
 let SUB_DETAIL_ID = null;
 
 VIEWS["subscriber-detail"] = function (id) {
   const s = sById(id) || SUBSCRIBERS[0];
+  if(!s) return `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-puzzle-piece"></i></span><div style="font-weight:600;font-size:13px">Obunachi topilmadi</div></div>`;
   SUB_DETAIL_ID = s.id;
   const blocked = s.status === "blocked";
   const removed = s.status === "removed";
-
-  return `<div class="col gap-16">
-    <button class="btn btn-subtle btn-sm" style="align-self:flex-start" onclick="route('subscribers')">${ic("chevL")} AE obunachilari</button>
-
-    ${
-      blocked
-        ? `<div class="info-banner danger">${ic("ban")}<div><b style="color:var(--tx-0)">Plugin kirishi bloklangan</b> — ${s.blockReason || "Admin tomonidan bloklandi."} <a style="color:var(--red);cursor:pointer;text-decoration:underline" onclick="unblockSub('${s.id}')">Blokdan chiqarish</a></div></div>`
-        : ""
-    }
-    ${
-      removed
-        ? `<div class="info-banner" style="border-color:var(--gray-line);background:var(--gray-dim)">${ic("trash")}<div><b style="color:var(--tx-0)">Tizimdan chiqarilgan</b> — ${s.removeReason || ""} · ${s.removedAt || ""} <a style="color:var(--green);cursor:pointer;text-decoration:underline" onclick="restoreSub('${s.id}')">Qayta tiklash</a></div></div>`
-        : ""
-    }
-
-    <div class="card card-pad">
-      <div class="row between center wrap gap-16">
-        <div class="row center gap-14">
-          ${avatar(s.name, 56)}
-          <div class="col gap-6">
-            <div class="row center gap-10 wrap">
-              <span class="h2">${esc(s.name)}</span>
-              ${subscriberStatusBadge(s.status)}
-              ${planBadge(s.plan)}
-            </div>
-            <span class="body">${esc(s.email)}</span>
-            <span class="small">${esc(s.device) || "—"} · ID: <span class="mono">${s.id}</span></span>
-          </div>
-        </div>
-        <div class="row gap-8 wrap">
-          ${
-            s.status === "active"
-              ? `<button class="btn btn-danger-ghost btn-sm" onclick="openBlockSub('${s.id}')">${ic("ban")} Bloklash</button>
-                 <button class="btn btn-danger btn-sm" onclick="openRemoveSub('${s.id}')">${ic("trash")} Chiqarib tashlash</button>`
-              : ""
-          }
-          ${
-            s.status === "blocked"
-              ? `<button class="btn btn-success btn-sm" onclick="unblockSub('${s.id}')">${ic("checkCircle")} Blokdan chiqarish</button>
-                 <button class="btn btn-danger btn-sm" onclick="openRemoveSub('${s.id}')">${ic("trash")} Chiqarib tashlash</button>`
-              : ""
-          }
-          ${removed ? `<button class="btn btn-success btn-sm" onclick="restoreSub('${s.id}')">${ic("refresh")} Qayta tiklash</button>` : ""}
-          ${!removed ? `<button class="btn ${normalizePlanLabel(s.plan) === "Pro" ? "btn-ghost" : "btn-primary"} btn-sm" onclick="openTogglePlanSub('${s.id}')">${ic(normalizePlanLabel(s.plan) === "Pro" ? "chevD" : "star")} ${normalizePlanLabel(s.plan) === "Pro" ? "Free" : "Pro"} qilish</button>` : ""}
-          <button class="btn btn-ghost btn-sm" onclick="openMessageSub('${s.id}')">${ic("message")} Xabar</button>
-          ${!removed ? `<button class="btn btn-ghost btn-sm" onclick="openAiCreditsSub('${s.id}')">⚡ AI kredit (${typeof s.aiCredits === "number" ? s.aiCredits : "—"})</button>` : ""}
-        </div>
+  const isPro = normalizePlanLabel(s.plan) === "Pro";
+  const pl = planById(normalizePlanLabel(s.plan).toLowerCase());
+  const effDl = s.downloadLimitOverride != null ? s.downloadLimitOverride : (pl.unlimitedDownloads ? null : pl.downloadLimit);
+  const hasOverride = s.downloadLimitOverride != null || s.importLimitOverride != null;
+  const limNote = effDl === null ? "cheksiz yuklab olish · import cheksiz" : `${effDl} yuklab olish / oy`;
+  return `
+    <button class="adx-btn2 sm" style="margin-bottom:16px" onclick="route('subscribers')"><i class="ph ph-caret-left"></i>AE obunachilari</button>
+    ${blocked?axInfo(`<b style="color:var(--text)">Plugin kirishi bloklangan</b> — ${esc(s.blockReason||"Admin tomonidan bloklandi.")} <a style="color:#FF6B5E;text-decoration:underline;cursor:pointer" onclick="unblockSub('${s.id}')">Blokdan chiqarish</a>`,'red'):''}
+    ${removed?axInfo(`<b style="color:var(--text)">Tizimdan chiqarilgan</b> — ${esc(s.removeReason||"")} ${esc(s.removedAt||"")} <a style="color:#C2F04A;text-decoration:underline;cursor:pointer" onclick="restoreSub('${s.id}')">Qayta tiklash</a>`,'amber'):''}
+    <div class="adx-card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      ${axAv(s.name,s.email,56)}
+      <div style="flex:1;min-width:220px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="adx-h18">${esc(s.name)}</span>${axStatus(s.status)}${axPlan(s.plan)}</div>
+        <div style="font-size:11.5px;color:#8A93A3;margin-top:3px">${esc(s.email)}${s.device?' · '+esc(s.device):''} · ID: <span class="adx-num">${esc(shortId(s.id))}</span></div></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:380px">
+        ${!removed?`<button class="adx-btn2 sm" onclick="openTogglePlanSub('${s.id}')"><i class="ph ph-${isPro?'arrow-u-up-left':'crown'}"></i>${isPro?'Free qilish':'Pro qilish'}</button>`:''}
+        ${!removed?`<button class="adx-btn2 sm" onclick="openAiCreditsSub('${s.id}')"><i class="ph ph-coins"></i>AI kredit (${typeof s.aiCredits==='number'?s.aiCredits:'—'})</button>`:''}
+        <button class="adx-btn2 sm" onclick="openMessageSub('${s.id}')"><i class="ph ph-chat-circle"></i>Xabar</button>
+        ${s.status==='active'?`<button class="adx-btn-danger adx-btn-dghost sm" onclick="openBlockSub('${s.id}')">Bloklash</button>`:''}
+        ${blocked?`<button class="adx-btn2 sm adx-btn-ok" onclick="unblockSub('${s.id}')"><i class="ph ph-check-circle"></i>Blokdan chiqarish</button>`:''}
+        ${!removed?`<button class="adx-btn-danger sm" onclick="openRemoveSub('${s.id}')">Chiqarish</button>`:`<button class="adx-btn2 sm adx-btn-ok" onclick="restoreSub('${s.id}')"><i class="ph ph-arrow-clockwise"></i>Qayta tiklash</button>`}
       </div>
     </div>
-
-    ${(() => {
-      const pl = planById(normalizePlanLabel(s.plan).toLowerCase());
-      const effDl = s.downloadLimitOverride != null ? s.downloadLimitOverride : (pl.unlimitedDownloads ? null : pl.downloadLimit);
-      const hasOverride = s.downloadLimitOverride != null || s.importLimitOverride != null;
-      const overrideNote = hasOverride ? ` \xb7 <b style="color:var(--yellow)">shaxsiy limit</b>` : "";
-      const limNote = effDl === null
-        ? "Cheksiz yuklab olish"
-        : `${s.downloadsMonth ?? 0} / ${effDl} oy yuklab olish`;
-      return `<div class="info-banner" style="margin-bottom:4px">${ic("download")}<span>Reja: <b>${normalizePlanLabel(s.plan)}</b> — ${limNote}${overrideNote}. <a href="#" style="color:var(--violet-bright);text-decoration:underline" onclick="event.preventDefault();openLimitOverrideSub('${s.id}')">Limitni tahrirlash</a></span></div>`;
-    })()}
-
-    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      ${kpiCard({ label: "Bu oy yuklab olish", val: s.downloadsMonth ?? 0, ic: "download", c: "green", foot: formatPlanLimit(planById(normalizePlanLabel(s.plan).toLowerCase())) })}
-      ${kpiCard({ label: "Jami yuklab olish", val: s.downloads, ic: "chart", c: "blue" })}
-      ${kpiCard({ label: "AE import", val: s.imports, ic: "layers", c: "violet" })}
-      ${kpiCard({ label: "Oxirgi faol", val: s.lastSeen, ic: "clock", c: "yellow", foot: s.device })}
+    ${!removed?`<div style="display:flex;align-items:center;gap:9px;padding:10px 13px;background:var(--limedim);border:1px solid rgba(194,240,74,.22);border-radius:11px;margin-top:14px"><i class="ph ph-crown" style="color:#C2F04A;font-size:15px"></i><span style="font-size:11.5px;color:#B7C0CE">Reja: <b style="color:var(--text)">${normalizePlanLabel(s.plan)}</b> — ${limNote}${hasOverride?' · <b style="color:#FFB27C">shaxsiy limit</b>':''}.</span><span style="flex:1"></span><span class="adx-num" style="font-size:10.5px;color:#C2F04A;cursor:pointer" onclick="openLimitOverrideSub('${s.id}')">Limitni tahrirlash</span></div>`:''}
+    <div class="adx-grid4" style="margin-top:14px">
+      ${axStat({label:'Bu oy yuklab olish',val:s.downloadsMonth ?? 0,ic:'download-simple',foot:effDl===null?'cheksiz':effDl+' limit'})}
+      ${axStat({label:'Jami yuklab olish',val:(s.downloads||0).toLocaleString(),ic:'download-simple',icColor:'#C2F04A'})}
+      ${axStat({label:'AE import',val:(s.imports||0).toLocaleString(),ic:'export',icColor:'#7CC4FF'})}
+      ${axStat({label:'Oxirgi faol',val:`<span style="font-size:18px">${esc(s.lastSeen||'—')}</span>`,ic:'clock-countdown',foot:s.device||''})}
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="sub-detail-grid">
-      <div class="card card-pad col gap-12">
-        <span class="label">Plugin ulanishi</span>
-        <div class="meta-grid">
-          ${[
-            ["Token", s.tokenOk ? "Faol" : "Bekor qilingan"],
-            ["Qurilma", s.device],
-            ["Mamlakat", s.country],
-            ["Reja", s.plan],
-          ]
-            .map(
-              ([k, v]) =>
-                `<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`
-            )
-            .join("")}
-        </div>
-        ${
-          !s.tokenOk
-            ? `<div class="info-banner warn" style="font-size:12px">${ic("alert")}<span>Token yaroqsiz — Browse paneli katalogni yuklamaydi.</span></div>`
-            : ""
-        }
+    <div class="adx-grid2" style="margin-top:14px">
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Plugin ulanishi</span></div><div style="padding:6px 4px">
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px"><span style="color:#8A93A3">Token</span>${s.tokenOk?'<span class="adx-bdg adx-bdg-approved">Faol</span>':'<span class="adx-bdg adx-bdg-blocked">Bekor</span>'}</div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:#8A93A3">Qurilma</span><span style="color:var(--text)">${esc(s.device||'—')}${s.ae?' · AE '+esc(s.ae):''}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:#8A93A3">Mamlakat</span><span style="color:var(--text)">${esc(s.country||'—')}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:#8A93A3">Reja</span>${axPlan(s.plan)}</div>
+      </div></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">So‘nggi faoliyat</span></div>
+        <div class="adx-empty" style="border:0;padding:22px"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-size:11.5px;color:#B7C0CE;line-height:1.5">Oxirgi ko‘rinish <b style="color:var(--text)">${esc(s.lastSeen||'—')}</b>${s.device?' · '+esc(s.device):''}${s.ae?' · AE '+esc(s.ae):''}</div><div style="font-size:10.5px;color:var(--muted2)">Batafsil event log — Faoliyat jurnali bo‘limida.</div></div>
       </div>
-      <div class="card card-pad col gap-12">
-        <span class="label">So\u2018nggi faoliyat</span>
-        <div class="empty" style="padding:20px">
-          <p class="small">Plugin harakatlari: oxirgi ko\u2018rinish <b>${esc(s.lastSeen) || "—"}</b>${s.device ? ` · ${esc(s.device)}` : ""}${s.ae ? ` · AE ${esc(s.ae)}` : ""}</p>
-          <p class="small mt-8" style="color:var(--tx-3)">Batafsil event log keyingi versiyada qo\u2018shiladi.</p>
-        </div>
-      </div>
-    </div>
-  </div>`;
+    </div>`;
 };
-
 function subActMenu(s) {
   const isPro = normalizePlanLabel(s.plan) === "Pro";
   const isRemoved = s.status === "removed";
@@ -329,7 +240,7 @@ function subActMenu(s) {
   const removeRestore = isRemoved
     ? `<button class="act-item success" onclick="${cl}restoreSub('${s.id}')">${ic("refresh")} Qayta tiklash</button>`
     : `<button class="act-item danger" onclick="${cl}openRemoveSub('${s.id}')">${ic("trash")} Chiqarish</button>`;
-  return `<details class="act-menu"><summary class="act" title="Amallar">${ic("more")}</summary><div class="act-drop">${planItem}${blockUnblock}${removeRestore}</div></details>`;
+  return `<details class="act-menu"><summary class="adx-iact" title="Amallar" style="list-style:none">${ic("more")}</summary><div class="act-drop">${planItem}${blockUnblock}${removeRestore}</div></details>`;
 }
 
 function openTogglePlanSub(id) {
@@ -565,6 +476,7 @@ window.afterRender = window.afterRender || {};
 // qayta ishga tushiradi va cheksiz sikl (auto kirib-chiqish) hosil bo'ladi.
 // Faqat ko'rinish tanasini yangi ma'lumot bilan qayta chizamiz.
 window.afterRender.subscribers = async function () {
+  axSubTopbar();
   const ok = await refreshSubscribersFromApi();
   if (ok && CURRENT === "subscribers") {
     const host = document.getElementById("view");
