@@ -16,6 +16,14 @@ import {
   isS3Configured,
 } from "../lib/s3.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { getModelById } from "../lib/gen-models.js";
+import {
+  getPricingConfig,
+  listPricingView,
+  upsertModelPricing,
+  updatePricingConfig,
+} from "../lib/model-pricing.js";
+import { computeMargins } from "../lib/model-margin.js";
 
 export const adminRouter = Router();
 
@@ -284,4 +292,102 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   });
 
   res.json({ item: mapSubscriberRow(full, !!token) });
+});
+
+// ── NARX DVIGATELI — admin narx boshqaruvi (Bosqich 3.4, backend) ────────────
+// Admin-only (adminRouter.use requireAuth+requireAdmin), audited. Pul mantig'iga
+// (consume/refund/imzo) TEGMAYDI — faqat ModelPricing manba qatorini yozadi.
+
+/** GET /api/admin/pricing — har model: joriy kredit narx + real USD + marja + bayroq. */
+adminRouter.get("/pricing", async (req, res) => {
+  const [config, view, margins] = await Promise.all([
+    getPricingConfig(),
+    listPricingView(),
+    computeMargins(),
+  ]);
+  const marginById = new Map(margins.models.map((m) => [m.modelId, m]));
+  const models = view.map((v) => ({
+    ...v,
+    margin: marginById.get(v.modelId) ?? null,
+    belowTarget: marginById.get(v.modelId)?.belowTarget ?? false,
+    missingCost: marginById.get(v.modelId)?.missingCost ?? true,
+  }));
+  res.json({
+    creditUsdValue: config.creditUsdValue,
+    marginTarget: config.marginTarget,
+    aggregate: margins.aggregate,
+    flaggedCount: margins.flagged.length,
+    models,
+  });
+});
+
+// Narx map (quality/resolution → kredit): kalit qisqa, qiymat butun ≥ 1 (narx buzilmasin).
+const creditMap = z.record(z.string().min(1).max(24), z.number().int().min(1).max(100000));
+const pricingPatchSchema = z
+  .object({
+    cost: z.number().int().min(1).max(100000).optional(), // 0/manfiy narx TAQIQ (tekin/buzilgan gen)
+    pricing: z.enum(["per-second", "per-generation"]).nullable().optional(),
+    qualityCost: creditMap.nullable().optional(),
+    videoPerSec: creditMap.nullable().optional(),
+    estCostUsd: z.number().min(0).max(100000).nullable().optional(),
+    enabled: z.boolean().optional(),
+    notes: z.string().max(2000).nullable().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, "Kamida bitta maydon kerak");
+
+const pricingConfigSchema = z
+  .object({
+    // creditUsdValue: 1 kredit necha $ (0 dan katta, aqlli chegara).
+    creditUsdValue: z.number().gt(0).max(100).optional(),
+    marginTarget: z.number().gt(0).max(1000).optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, "Kamida bitta maydon kerak");
+
+/** PATCH /api/admin/pricing/config — global creditUsdValue / marginTarget.
+ *  MUHIM: `/pricing/:modelId` dan OLDIN ro'yxatdan o'tsin — aks holda "config" modelId
+ *  sifatida ushlanadi (NaN → 400) va bu yo'l hech qachon ishlamaydi. */
+adminRouter.patch("/pricing/config", async (req, res) => {
+  const parsed = pricingConfigSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const config = await updatePricingConfig(parsed.data, req.user?.userId ?? null);
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.config.update",
+    targetType: "pricingConfig",
+    targetId: "singleton",
+    meta: parsed.data as Record<string, unknown>,
+  });
+  res.json({ config });
+});
+
+/** PATCH /api/admin/pricing/:modelId — model kredit narxini yangilaydi (audit + cache bust). */
+adminRouter.patch("/pricing/:modelId", async (req, res) => {
+  const modelId = Number(req.params.modelId);
+  if (!Number.isInteger(modelId)) {
+    res.status(400).json({ error: "Noto'g'ri modelId" });
+    return;
+  }
+  if (!getModelById(modelId)) {
+    res.status(404).json({ error: "Noma'lum model" });
+    return;
+  }
+  const parsed = pricingPatchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Noto'g'ri so'rov" });
+    return;
+  }
+  const row = await upsertModelPricing(modelId, parsed.data, req.user?.userId ?? null);
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.model.update",
+    targetType: "modelPricing",
+    targetId: String(modelId),
+    meta: parsed.data as Record<string, unknown>,
+  });
+  // Yangi narxni namunaviy so'rov bilan qaytaramiz (admin darhol ko'radi).
+  const view = (await listPricingView()).find((v) => v.modelId === modelId) ?? null;
+  res.json({ row, view });
 });

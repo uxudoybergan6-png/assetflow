@@ -16,7 +16,7 @@
  */
 import { prisma, Prisma } from "@creative-tools/database";
 import type { GenModel } from "./gen-models.js";
-import { GEN_MODELS } from "./gen-models.js";
+import { GEN_MODELS, getModelById, computeGenCost } from "./gen-models.js";
 import { estimateProviderUsd } from "./provider-cost.js";
 
 // Kredit qiymat langari: PRO $19 / 1000 kredit = $0.019/kredit (plugin-profile.ts allotment).
@@ -203,4 +203,126 @@ export async function seedModelPricing(): Promise<{ created: number; total: numb
   });
   invalidatePricingCache();
   return { created: result.count, total: data.length };
+}
+
+// ── ADMIN endpoint yordamchilari (Bosqich 3.4) ───────────────────────────────
+
+export type PricingPatch = {
+  cost?: number;
+  pricing?: "per-second" | "per-generation" | null;
+  qualityCost?: Record<string, number> | null;
+  videoPerSec?: Record<string, number> | null;
+  estCostUsd?: number | null;
+  enabled?: boolean;
+  notes?: string | null;
+};
+
+/** Patch'dagi MAVJUD (undefined bo'lmagan) narx maydonlarini Prisma yozuv shakliga o'giradi. */
+function patchToData(patch: PricingPatch): Record<string, unknown> {
+  const d: Record<string, unknown> = {};
+  if (patch.cost != null) d.cost = patch.cost;
+  if (patch.pricing !== undefined) d.pricing = patch.pricing;
+  if (patch.qualityCost !== undefined) d.qualityCost = patch.qualityCost ?? Prisma.DbNull;
+  if (patch.videoPerSec !== undefined) d.videoPerSec = patch.videoPerSec ?? Prisma.DbNull;
+  if (patch.estCostUsd !== undefined)
+    d.estCostUsd = patch.estCostUsd == null ? null : new Prisma.Decimal(patch.estCostUsd);
+  if (patch.enabled !== undefined) d.enabled = patch.enabled;
+  if (patch.notes !== undefined) d.notes = patch.notes;
+  return d;
+}
+
+/**
+ * Model narxini yangilaydi (yo'q bo'lsa statik seed'dan yaratib, patch qo'llaydi). Cache
+ * bekor qilinadi → keyingi cost-quote yangi narxni oladi (imzo yangi narxni qamraydi).
+ * Noma'lum model → xato. cost/qualityCost/videoPerSec validatsiyasi CHAQIRUVCHI (route)da.
+ */
+export async function upsertModelPricing(
+  modelId: number,
+  patch: PricingPatch,
+  updatedBy?: string | null
+): Promise<ModelPricingRow> {
+  const model = getModelById(modelId);
+  if (!model) throw new Error("Noma'lum model");
+  const fields = patchToData(patch);
+  const createData = {
+    ...seedRowFromModel(model),
+    ...fields,
+    updatedBy: updatedBy ?? null,
+  };
+  const row = await prisma.modelPricing.upsert({
+    where: { modelId },
+    create: createData as Prisma.ModelPricingUncheckedCreateInput,
+    update: { ...fields, updatedBy: updatedBy ?? null },
+  });
+  invalidatePricingCache();
+  return toRow(row);
+}
+
+/** Global narx sozlamasini (creditUsdValue / marginTarget) yangilaydi. */
+export async function updatePricingConfig(
+  patch: { creditUsdValue?: number; marginTarget?: number },
+  updatedBy?: string | null
+): Promise<{ creditUsdValue: number; marginTarget: number }> {
+  const data: Record<string, unknown> = { updatedBy: updatedBy ?? null };
+  if (patch.creditUsdValue != null) data.creditUsdValue = new Prisma.Decimal(patch.creditUsdValue);
+  if (patch.marginTarget != null) data.marginTarget = new Prisma.Decimal(patch.marginTarget);
+  const row = await prisma.pricingConfig.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", ...data },
+    update: data,
+  });
+  invalidatePricingCache();
+  return { creditUsdValue: Number(row.creditUsdValue), marginTarget: Number(row.marginTarget) };
+}
+
+export type PricingViewRow = {
+  modelId: number;
+  mode: string;
+  label: string;
+  brand: string | null;
+  provider: string;
+  catalogEnabled: boolean; // gen-models.ts enabled (haqiqiy gen ruxsati)
+  source: "db" | "static";
+  price: {
+    cost: number;
+    pricing: string | null;
+    qualityCost: Record<string, number> | null;
+    videoPerSec: Record<string, number> | null;
+    representative: number; // default param bilan namunaviy narx
+  };
+  estCostUsd: number | null;
+  enabled: boolean;
+  notes: string | null;
+  updatedBy: string | null;
+  updatedAt: Date | null;
+};
+
+/** HAR model uchun joriy narx ko'rinishi (DB qo'llangan) — admin GET /pricing uchun. */
+export async function listPricingView(): Promise<PricingViewRow[]> {
+  const map = await loadCache();
+  return GEN_MODELS.map((m) => {
+    const row = map.get(m.id);
+    const priced = applyRow(m, row);
+    return {
+      modelId: m.id,
+      mode: m.mode,
+      label: m.label,
+      brand: m.brand ?? null,
+      provider: m.provider ?? "openrouter",
+      catalogEnabled: m.enabled !== false,
+      source: row ? "db" : "static",
+      price: {
+        cost: priced.cost,
+        pricing: priced.pricing ?? (m.mode === "video" ? "per-second" : null),
+        qualityCost: priced.imgSettings?.quality?.cost ?? priced.qualityCost ?? null,
+        videoPerSec: priced.videoSettings?.resolution?.perSec ?? null,
+        representative: computeGenCost(priced, {}),
+      },
+      estCostUsd: row?.estCostUsd ?? estimateProviderUsd(m, {}),
+      enabled: row?.enabled ?? m.enabled !== false,
+      notes: row?.notes ?? null,
+      updatedBy: row?.updatedBy ?? null,
+      updatedAt: row?.updatedAt ?? null,
+    };
+  });
 }
