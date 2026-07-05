@@ -858,6 +858,7 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
   width:100%;aspect-ratio:16/10;height:auto;
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
+  background-color:var(--surface-2,#171B22); /* #23: bg bo'sh qolsa qora karta o'rniga surface */
 }
 .thumb::before{
   content:'';position:absolute;inset:0;
@@ -1943,7 +1944,7 @@ html.lib-mode #libPage{display:flex!important}
 /* Yuklab olingan qatorlar */
 .lib-rows{padding:6px 14px}
 .lib-row{display:flex;align-items:center;gap:10px;padding:8px 0}
-.lib-rthumb{width:58px;height:38px;border-radius:8px;flex:none;position:relative}
+.lib-rthumb{width:58px;height:38px;border-radius:8px;flex:none;position:relative;background-color:var(--surface-2,#171B22)}
 .lib-rck{position:absolute;left:4px;bottom:3px;font-family:var(--font-mono);font-size:7px;color:#C2F04A;background:rgba(8,10,14,.72);padding:1px 4px;border-radius:3px}
 .lib-rmid{flex:1;min-width:0}
 .lib-rname{font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -3679,13 +3680,14 @@ html.home-mode #homePage{display:block!important}
                     <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio">AI Tools</button>
                   </div>
                 </div>
+                <!-- #22: qo'l yangilash — yuqori burchakdagi Sync (avval af-tb-hidden ichida edi) -->
+                <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Refresh catalog" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
                 <button type="button" class="af-tb-cred" id="hdrPlanPill" tabindex="0" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span class="cred" id="hdrCred">—</span></button>
                 <button type="button" class="af-tb-ava" id="hdrAva" title="Account" aria-label="Account" onclick="openAccountSheet()"></button>
-                <!-- a1'da yo'q: Downloads/Sevimli/Sync — wiring saqlanadi (keyingi bosqichda joylashtiriladi) -->
+                <!-- a1'da yo'q: Downloads/Sevimli — wiring saqlanadi (keyingi bosqichda joylashtiriladi) -->
                 <span class="af-tb-hidden" aria-hidden="true">
                   <button type="button" class="af-tb-icon" tabindex="-1" onclick="afHeaderPage('downloaded')" title="Downloaded" aria-label="Downloaded"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
                   <button type="button" class="af-tb-icon" tabindex="-1" onclick="afHeaderPage('favorites')" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
-                  <button type="button" class="af-tb-icon" tabindex="-1" onclick="syncServerCatalog()" title="Sync catalog" aria-label="Sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
                 </span>
               </header>
               <!-- a1: bo'lim segmenti header ichida; nav-chiplar + grid sarlavha .env-filter-bar ichida -->
@@ -3867,6 +3869,7 @@ html.home-mode #homePage{display:block!important}
                                 <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('vidgen')" title="Switch to video generation">Video</button>
                               </div>
                             </div>
+                            <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
                             <div class="ai-icon" id="igHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                             <div class="ai-icon" id="igSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                             <div class="ai-cred" id="igCredit"><span class="cs">✦</span> —</div>
@@ -3989,6 +3992,7 @@ html.home-mode #homePage{display:block!important}
                                 <button type="button" class="ai-seg-i is-on">Video</button>
                               </div>
                             </div>
+                            <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
                             <div class="ai-icon" id="vgHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                             <div class="ai-icon" id="vgSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                             <div class="ai-cred" id="vgCredit"><span class="cs">✦</span> —</div>
@@ -4252,6 +4256,7 @@ html.home-mode #homePage{display:block!important}
                   <span class="lib-title">My Library</span>
                   <div style="flex:1"></div>
                   <button type="button" class="lib-sync" onclick="syncServerCatalog()" title="Sync catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Sync</button>
+                  <button type="button" class="lib-sync" onclick="afClearDownloads()" title="Clear download cache"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Clear</button>
                 </div>
                 <div class="lib-segwrap">
                   <div class="lib-seg" role="tablist" aria-label="Library section">
@@ -6250,6 +6255,33 @@ async function deleteDownloadedTemplate(key){
 }
 window.deleteDownloadedTemplate=deleteDownloadedTemplate;
 
+/** #23: yuklab olish keshini TO'LIQ tozalash — disk fayllar + downloaded ro'yxat,
+ *  so'ng UI toza qayta chiziladi (qora karta/xato qolmasin). */
+async function afClearDownloads(){
+  const n=(window.downloaded&&window.downloaded.size)||0;
+  const msg='Clear the download cache?'+(n?('\n'+n+' downloaded item(s) will be removed from the list.'):'')+'\nCached template files on disk will be deleted. Items already imported into AE projects are not affected.';
+  if(!(await window.afConfirm(msg,{ok:'Clear',danger:true})))return;
+  let cacheFails=0;
+  if(IS_CEP){
+    try{
+      const fs=require('fs'),path=require('path'),os=require('os');
+      const base=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir&&AssetFlowCatalog.downloadDir())||os.tmpdir();
+      fs.readdirSync(base).forEach(name=>{
+        if(name.indexOf('assetflow_')!==0)return; // faqat bizning kesh fayllar/papkalar
+        try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){ cacheFails++; }
+      });
+    }catch(e){ cacheFails++; }
+  }
+  window.downloaded.clear();
+  window.downloadedMeta={};
+  if(window.importedScenes&&typeof window.importedScenes.clear==='function')window.importedScenes.clear();
+  persistUserPrefs();
+  render();renderDl();
+  if(document.documentElement.classList.contains('lib-mode')){renderLibDl();afLibSyncCounts();}
+  showToast(cacheFails?('Cache cleared — '+cacheFails+' file(s) could not be removed'):'Download cache cleared',cacheFails?'warning':'success');
+}
+window.afClearDownloads=afClearDownloads;
+
 /** Eski format migratsiyasi: downloaded'da sahna nomlari bo'lsa → template kalitiga ko'chiramiz.
  *  Katalog yuklangandan keyin chaqiriladi (assets/packs tayyor bo'lishi kerak). */
 function reconcileDownloadedFromScenes(){
@@ -6644,7 +6676,7 @@ function afLibDlRow(a){
   return `<div class="lib-row">
     <div class="lib-rthumb" style="background:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
     <div class="lib-rmid"><div class="lib-rname">${escHtml(a.displayName||a.n)}</div><div class="lib-rmeta">${escHtml(afLibDlMeta(a))}</div></div>
-    <button type="button" class="lib-reimp" title="Re-import — open pack" onclick="openPack('${safe}')">${AF_LIB_REIMP}Re-import</button>
+    ${a._orphan?'':`<button type="button" class="lib-reimp" title="Re-import — open pack" onclick="openPack('${safe}')">${AF_LIB_REIMP}Re-import</button>`}
     <button type="button" class="lib-rtrash" title="Remove from project" onclick="deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</button>
   </div>`;
 }
@@ -6664,8 +6696,16 @@ function renderLibFav(){
 function renderLibDl(){
   const rows=document.getElementById('libDlRows'); if(!rows)return;
   const list=assets.filter(a=>window.downloaded.has(a.n));
-  rows.innerHTML=list.map(afLibDlRow).join('');
-  const emp=document.getElementById('libDlEmpty'); if(emp)emp.style.display=list.length?'none':'flex';
+  // #23: katalogda hozircha ko'rinmaydigan (offline/o'chirilgan) yuklab olinganlar ham ro'yxatda
+  // qolsin — meta'dan nom bilan, Re-import'siz. Hech narsa "yo'qolib" qolmaydi.
+  const known=new Set(list.map(a=>a.n));
+  const orphans=[...window.downloaded].filter(k=>!known.has(k)).map(k=>{
+    const m=(window.downloadedMeta&&window.downloadedMeta[k])||{};
+    return {n:k,displayName:m.displayName||k,bg:'',_orphan:true};
+  });
+  rows.innerHTML=list.map(afLibDlRow).join('')+orphans.map(afLibDlRow).join('');
+  const total=list.length+orphans.length;
+  const emp=document.getElementById('libDlEmpty'); if(emp)emp.style.display=total?'none':'flex';
   afLibSyncCounts();
 }
 function afLibTab(tab){
@@ -10085,6 +10125,26 @@ window.accountUploadAvatar=accountUploadAvatar;
   });
 });
 
+// #22: avto-fon yangilanish — har 5 daqiqada katalog jimgina yangilanadi (toast'siz),
+// ochiq AI tool bo'lsa So'nggi genlar ham (signed URL'lar eskirmasin).
+setInterval(function(){
+  try{
+    if(typeof AssetFlowCatalog!=='undefined'&&typeof AssetFlowCatalog.refreshBrowse==='function'){
+      AssetFlowCatalog.refreshBrowse().then(function(){
+        window.__afLastSyncAt=new Date();
+        if(typeof reconcileDownloadedFromScenes==='function')reconcileDownloadedFromScenes();
+        const html=document.documentElement;
+        if(typeof render==='function'&&!html.classList.contains('ai-mode')&&!html.classList.contains('home-mode')&&!html.classList.contains('lib-mode'))render();
+        if(html.classList.contains('lib-mode')&&typeof renderLibDl==='function'){(window.__libTab==='downloaded'?renderLibDl:renderLibFav)();}
+      }).catch(function(){ /* fon rejimida jim — foydalanuvchini bezovta qilmaymiz */ });
+    }
+    const vi=document.getElementById('v-imggen');
+    if(vi&&vi.classList.contains('on')&&typeof window.afIgRetryRecent==='function')window.afIgRetryRecent();
+    const vv=document.getElementById('v-vidgen');
+    if(vv&&vv.classList.contains('on')&&typeof window.retryVgRecent==='function')window.retryVgRecent();
+  }catch(e){}
+},5*60*1000);
+
 async function accountPickPlan(plan){
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
     showToast('Please sign in first');
@@ -11352,7 +11412,13 @@ async function bootPlugin(){
           +'<div class="cat-models">'+c.models+'</div>'
           +'<span class="cat-soonb">COMING SOON</span>';
       }
-      el.addEventListener('click',function(){ if(hasTools)aiOpenCat(c); else aiSoonToast(); });
+      el.addEventListener('click',function(){
+        if(!hasTools){ aiSoonToast(); return; }
+        // #6: bitta tool bo'lsa oradagi ro'yxat ekransiz TO'G'RIDAN tool'ga
+        var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
+        if(live.length===1){ go(live[0].dest); return; }
+        aiOpenCat(c);
+      });
       g.appendChild(el);
     });
   }
@@ -12461,6 +12527,8 @@ window.afGallery=(function(){
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Check your internet or session.'; renderRecentGrid(); });
   }
   window.afIgRetryRecent=function(){ recentLoaded=false; recentError=''; loadRecent(true); };
+  // #22: header ↻ — So'nggi genlar + kredit chip qo'lda yangilash
+  var igRefr=$('igRefreshBtn'); if(igRefr)igRefr.addEventListener('click',function(){ setCreditChip(credits()); window.afIgRetryRecent(); toast('Refreshing…','info'); });
   var igMore=$('igMoreLink'); if(igMore)igMore.addEventListener('click',openHistory);
   // ☑ Tanlash → select rejim toggle
   var igRecentSel=$('igRecentSel'); if(igRecentSel)igRecentSel.addEventListener('click',function(){ st.recentSelect=!st.recentSelect; st.recentSel={}; igRecentSel.classList.toggle('on',st.recentSelect); renderRecentGrid(); });
@@ -12485,7 +12553,7 @@ window.afGallery=(function(){
   });
 
   // ---- ‹ Image kategoriya → imggen orqaga navigatsiya ----
-  $('igBack').addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('aicat'); });
+  $('igBack').addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('launcher'); }); // #6: aicat oraliq ekrani chetlab o'tiladi
 
   refresh(); updRefMeta(); refreshGen();
 })();
@@ -13225,7 +13293,14 @@ window.afGallery=(function(){
     var mf=$('vgModeFast'); var mr2=$('vgModeR2V');
     if(mf){ mf.classList.toggle('is-on',vm.refKind==='frames'); mf.style.display=(vm.refKind==='frames')?'':'none'; }
     if(mr2){ mr2.classList.toggle('is-on',isMedia); mr2.style.display=isMedia?'':'none'; }
-    var segRow=mf&&mf.parentNode; if(segRow&&segRow.classList.contains('vg-modeseg')&&segRow.parentNode&&segRow.parentNode.classList.contains('sect'))segRow.parentNode.style.display=isNone?'none':'';
+    var segRow=mf&&mf.parentNode;
+    if(segRow&&segRow.classList.contains('vg-modeseg')&&segRow.parentNode&&segRow.parentNode.classList.contains('sect')){
+      // #7: boshqa rejimga o'tadigan model bo'lmasa (bitta-rejimli katalog) butun toggle qatori yashirin —
+      // yolg'iz yarim-pill bo'sh joy egallamasin
+      var hasFast=false,hasR2V=false;
+      try{ hasFast=!!vgModelOfKind(false); hasR2V=!!vgModelOfKind(true); }catch(e){}
+      segRow.parentNode.style.display=(isNone||!hasFast||!hasR2V)?'none':'';
+    }
     // Media referens tugmalari — har tur FAQAT limiti >0 bo'lsa (Omni: audio=0 → +Ovoz yo'q; refKind 'image' → +Video yo'q)
     var ai2=$('vgAddImg'); if(ai2)ai2.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.image)?'':'none';
     var av2=$('vgAddVid'); if(av2)av2.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.video)?'':'none';
@@ -14164,6 +14239,8 @@ window.afGallery=(function(){
     });
   }
   window.retryVgRecent=function(){ loadVgRecent(true); };
+  // #22: header ↻ — So'nggi genlar + kredit chip qo'lda yangilash
+  var vgRefr=$('vgRefreshBtn'); if(vgRefr)vgRefr.addEventListener('click',function(){ setCreditChip(credits()); window.retryVgRecent(); toast('Refreshing…','info'); });
   // lightbox
   // (eski #vgLightbox wiring olib tashlandi — umumiy afRecent #afLightbox o'z close/Esc/backdrop'ini boshqaradi)
   // Referens kadr slot menyusi (Boshlang'ich / Yakuniy)
@@ -14250,7 +14327,7 @@ window.afGallery=(function(){
   }
   $('vgGen').addEventListener('click',genVgClick);
   $('vgPrompt').addEventListener('keydown',function(e){ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); if(!$('vgGen').disabled)genVgClick(); } });
-  $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('aicat'); });
+  $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('launcher'); }); // #6: aicat oraliq ekrani chetlab o'tiladi
   // ↺ Tozalash — KIRISH (prompt + referens/kadr) tozalanadi; NATIJA (So'nggi grid) tegmaydi.
   (function(){ var b=$('vgClearBtn'); if(!b)return; b.addEventListener('click',function(){
     var ta=$('vgPrompt'); if(ta){ ta.value=''; if(typeof axGrow==='function')axGrow(ta); }
