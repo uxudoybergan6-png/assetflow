@@ -9,7 +9,7 @@ import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
-import { isStorageOverQuota } from "../lib/storage-quota.js";
+import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured } from "../lib/ai/fal.js";
@@ -324,7 +324,13 @@ studioGenRouter.get("/credits", async (req: Request, res: Response) => {
   await reconcileStuckGenerations(req.user!.userId).catch(() => {});
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const profile = await ensurePluginProfile(req.user!.userId);
-  res.json({ aiCredits: profile.aiCredits, plan: profile.plan.toLowerCase() });
+  // FAZA 2 #20 — additive: storage usage + limit (hisob UI "X / Y GB" bar).
+  const usedBytes = await getUserUsedBytes(req.user!.userId).catch(() => 0);
+  res.json({
+    aiCredits: profile.aiCredits,
+    plan: profile.plan.toLowerCase(),
+    storage: { usedBytes, quotaBytes: storageQuotaBytes(profile.plan) },
+  });
 });
 
 /** GET /gen/health — AI sozlamalari holati (faqat boolean — kalitlar QAYTARILMAYDI). */

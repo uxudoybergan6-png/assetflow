@@ -5,11 +5,12 @@ import { deleteS3Objects } from "./s3.js";
  * Bosqich 4 #4 — Per-tarif storage kvota + retention (user-generated assetlar).
  *
  * Kvota tarifga qarab (sozlanadigan env bilan):
- *   • FREE  — STORAGE_QUOTA_FREE_GB   (default 3 GB)
- *   • PRO   — STORAGE_QUOTA_PRO_GB    (default 50 GB)
- *   • STUDIO— STORAGE_QUOTA_STUDIO_GB (default 200 GB)
+ *   • FREE  — STORAGE_QUOTA_FREE_GB   (default 1 GB)
+ *   • PRO   — STORAGE_QUOTA_PRO_GB    (default 5 GB)
+ *   • STUDIO— STORAGE_QUOTA_STUDIO_GB (default 20 GB)
  *
- * ⚠️ EGA QARORI: aniq GB raqamlari biznes qarori — kod sensible default beradi.
+ * FAZA 2 #20 — tasdiqlangan tier qiymatlari: FREE 1 / PRO 5 / STUDIO 20 GB
+ * (env bilan o'zgartirish mumkin).
  *
  * Enforcement:
  *   1) /gen submission'da: user ALLAQACHON kvotadan oshgan bo'lsa → toza rad
@@ -28,9 +29,9 @@ function envGb(name: string, fallbackGb: number): number {
 }
 
 export function storageQuotaBytes(plan: PluginPlanTier): number {
-  if (plan === PluginPlanTier.STUDIO) return envGb("STORAGE_QUOTA_STUDIO_GB", 200);
-  if (plan === PluginPlanTier.PRO) return envGb("STORAGE_QUOTA_PRO_GB", 50);
-  return envGb("STORAGE_QUOTA_FREE_GB", 3);
+  if (plan === PluginPlanTier.STUDIO) return envGb("STORAGE_QUOTA_STUDIO_GB", 20);
+  if (plan === PluginPlanTier.PRO) return envGb("STORAGE_QUOTA_PRO_GB", 5);
+  return envGb("STORAGE_QUOTA_FREE_GB", 1);
 }
 
 /** Foydalanuvchining ishlatilgan storage (bayt) — GenAsset.sizeBytes yig'indisi. */

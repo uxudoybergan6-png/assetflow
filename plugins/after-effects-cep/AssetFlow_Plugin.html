@@ -4429,6 +4429,16 @@ html.home-mode #homePage{display:block!important}
         </div>
         <div class="acs-usage-sec">Total: <span id="accDlTotal">0</span> · Imports: <span id="accImports">0</span></div>
       </div>
+      <!-- FAZA 2 #20 — storage kvota (AI natijalar) "X / Y GB" bar -->
+      <div class="acs-usage" id="accStorageWrap" style="display:none">
+        <div class="acs-usage-top">
+          <span class="acs-usage-lbl">STORAGE — AI RESULTS</span>
+        </div>
+        <div class="acs-usage-bar">
+          <div class="acs-usage-track"><div class="acs-usage-fill" id="accStoreFill" style="width:0%"></div></div>
+          <span class="acs-usage-count"><span id="accStoreUsed">—</span> / <span id="accStoreQuota">—</span></span>
+        </div>
+      </div>
     </div>
 
     <!-- TARIF -->
@@ -9706,7 +9716,33 @@ function refreshAccountUi(){
   // Billing portal — faqat Stripe obunasi bo'lganlarga
   const billingRow=document.getElementById('accBillingRow');
   if(billingRow) billingRow.style.display=(u.plan==='pro'||u.stripeSubscriptionActive)?'flex':'none';
+  refreshStorageBar(); // FAZA 2 #20 — "X / Y GB" (async, best-effort)
   updateFootUser(u);
+}
+
+/** FAZA 2 #20 — hisob sheet'idagi storage bar (/api/studio/credits .storage). */
+function fmtGB(bytes){
+  var b=Number(bytes)||0; var gb=b/(1024*1024*1024);
+  if(gb>=1)return (Math.round(gb*100)/100)+' GB';
+  var mb=b/(1024*1024);
+  return (mb>=1?Math.round(mb):(b?1:0))+' MB';
+}
+function refreshStorageBar(){
+  var wrap=document.getElementById('accStorageWrap'); if(!wrap)return;
+  try{
+    if(typeof studioGet!=='function'){ wrap.style.display='none'; return; }
+    studioGet('/api/studio/credits').then(function(d){
+      var s=d&&d.storage;
+      if(!s||typeof s.quotaBytes!=='number'){ wrap.style.display='none'; return; }
+      wrap.style.display='';
+      document.getElementById('accStoreUsed').textContent=fmtGB(s.usedBytes||0);
+      document.getElementById('accStoreQuota').textContent=fmtGB(s.quotaBytes);
+      var pct=s.quotaBytes?Math.min(100,Math.round((s.usedBytes||0)/s.quotaBytes*100)):0;
+      var fill=document.getElementById('accStoreFill');
+      fill.style.width=pct+'%';
+      fill.style.background=pct>=90?'#e84242':''; // to'lay deb qolganda ogohlantirish rangi
+    }).catch(function(){ wrap.style.display='none'; });
+  }catch(e){ wrap.style.display='none'; }
 }
 
 function getDownloadDir(){

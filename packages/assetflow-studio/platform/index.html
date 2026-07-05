@@ -15584,6 +15584,11 @@
                   <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Credit balance</div><div style="font-size:24px;font-weight:700;color:var(--lime);font-family:'IBM Plex Mono',monospace">✦ {{ creditsFmt }}</div></div>
                   <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Downloads (month)</div><div style="font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace">{{ downloadsMonth }}</div></div>
                 </div>
+                <!-- FAZA 2 #20 — storage kvota bar -->
+                <div class="ffa-acccard" style="padding:16px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--muted)">Storage (AI results)</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted)">{{ storageUsedFmt }} / {{ storageQuotaFmt }}</span></div>
+                  <div style="height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden"><div style="height:100%;border-radius:999px;width:{{ storagePct }};background:{{ storageBarCol }}"></div></div>
+                </div>
               </div>
             </div>
           </sc-if>
@@ -15871,6 +15876,8 @@ class Component extends DCLogic {
     plan: 'free',
     user: null,
     downloadsMonth: 0,
+    storageUsed: 0,
+    storageQuota: 0,
     aiTool: 'Rasm yaratish',
     aiPrompt: '',
     aiSize: '1:1',
@@ -16250,7 +16257,15 @@ class Component extends DCLogic {
     FFAPI.me().then(u => { FFAPI.setSession(FFAPI.getToken(), u); this.setState({ user: u, accName: (u && u.name) || '' }); }).catch(() => {});
   }
   async refreshCredits() {
-    try { const c = await FFAPI.credits(); this.setState({ credits: c.aiCredits || 0, plan: c.plan || 'free' }); } catch (e) {}
+    try {
+      const c = await FFAPI.credits();
+      const st = (c && c.storage) || null; // FAZA 2 #20 — storage kvota (X / Y GB)
+      this.setState({
+        credits: c.aiCredits || 0, plan: c.plan || 'free',
+        storageUsed: st ? (st.usedBytes || 0) : 0,
+        storageQuota: st ? (st.quotaBytes || 0) : 0,
+      });
+    } catch (e) {}
   }
   async loadPluginMe() {
     try { const r = await FFAPI.pluginMe(); if (r && r.user) this.setState({ downloadsMonth: r.user.downloadsMonth || 0 }); } catch (e) {}
@@ -16645,6 +16660,8 @@ class Component extends DCLogic {
     const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,rgba(194,240,74,.12),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
 
     const bill = this.state.billing;
+    // FAZA 2 #20 — bayt → "X GB" / "X MB" (hisob storage bar)
+    const fmtBytesGB = (b) => { b = Number(b) || 0; const gb = b / 1073741824; if (gb >= 1) return (Math.round(gb * 100) / 100) + ' GB'; const mb = b / 1048576; return (mb >= 1 ? Math.round(mb) : (b ? 1 : 0)) + ' MB'; };
     const sitCls = (it) => ((it.screen === s || (it.screen === 'account' && s === 'account')) ? 'ffa-sit on' : 'ffa-sit');
     const sidebarMainView = this.sidebarMain.map(it => ({ ...it, cls: sitCls(it) }));
     const sidebarAccountView = this.sidebarAccount.map(it => ({ ...it, cls: sitCls(it) }));
@@ -16988,6 +17005,11 @@ class Component extends DCLogic {
       onAccName: (e) => this.setState({ accName: e.target.value }),
       saveAcc: () => this.saveProfile(),
       downloadsMonth: this.state.downloadsMonth,
+      // FAZA 2 #20 — storage kvota (X / Y GB) hisob ekrani uchun
+      storageUsedFmt: fmtBytesGB(this.state.storageUsed),
+      storageQuotaFmt: fmtBytesGB(this.state.storageQuota),
+      storagePct: this.state.storageQuota ? Math.min(100, Math.round(this.state.storageUsed / this.state.storageQuota * 100)) + '%' : '0%',
+      storageBarCol: (this.state.storageQuota && this.state.storageUsed / this.state.storageQuota >= 0.9) ? '#e84242' : 'var(--lime)',
       onSearch: (e) => this.setState({ q: e.target.value }),
       onPickTool: (e) => this.setState({ aiTool: e.currentTarget.dataset.tool, chipPop: null, modelOpen: false }),
       setPrompt: (e) => this.setState({ aiPrompt: e.target.value }),
