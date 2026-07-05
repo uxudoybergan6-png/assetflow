@@ -16080,6 +16080,9 @@ class Component extends DCLogic {
           } else {
             this.setState({ user: savedUser });
             this.bootData();
+            // #14: sessiya tiklandi — landing o'rniga to'g'ridan app (hash deep-link ustuvor).
+            const h0 = (window.location.hash || '').replace('#', '');
+            if (savedUser && (!h0 || h0 === 'landing')) { this._hashApplied = true; this.go('dashboard'); }
           }
         }
         this.loadCatalog();
@@ -16306,7 +16309,11 @@ class Component extends DCLogic {
   }
 
   // ── AUTH ──
-  gotoAuth(mode) { this.setState({ authMode: mode || 'login', authErr: null, authInfo: null }); this.go('auth'); }
+  gotoAuth(mode) {
+    // #14: tirik sessiya bor — login formasi o'rniga to'g'ridan app ("Sign in" bosilsa ham).
+    if (window.FFAPI && FFAPI.getToken() && FFAPI.getUser()) { const dest = this._afterAuth || 'dashboard'; this._afterAuth = null; this.go(dest); return; }
+    this.setState({ authMode: mode || 'login', authErr: null, authInfo: null }); this.go('auth');
+  }
   async doAuth() {
     const st = this.state;
     const email = (st.authEmail || '').trim(), pass = st.authPassword || '';
