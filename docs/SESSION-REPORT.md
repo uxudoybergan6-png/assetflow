@@ -1,21 +1,12 @@
-# SESSION-REPORT — NARX DVIGATELI + drift monitoring (Bosqich 3.4/3.5), backend, 2026-07-05
+# SESSION-REPORT — Admin redesign 5b/5c + Biznes markaz (yakun), 2026-07-05
 
-**Nima qilindi (4 commit main'da, push YO'Q, no Co-Authored-By):**
-- PART 1: `ModelPricing` + `PricingConfig` + `ProviderInvoice` modellar + additive migratsiya
-  `20260705170000_pricing_engine`. `model-pricing.ts` — cost-quote narxni DB'dan oladi
-  (`resolvePricedModel`), qator yo'q → statik `gen-models.ts` fallback. Seed startup'da
-  create-only (idempotent). `computeGenCost`/consume/refund/imzo TEGILMAGAN.
-- PART 2: `model-margin.ts` — `computeMargins` (per-model + jami marja, maqsad/missing-cost bayroq),
-  `spendByProvider`.
-- PART 3: admin endpointlar — `GET /api/admin/pricing`, `PATCH /pricing/:modelId` (0/manfiy taqiq),
-  `PATCH /pricing/config`; audited + cache bust. (config yo'li :modelId dan OLDIN.)
-- PART 4: `pricing-reconcile.ts` — oylik reconciliation + marja alert (email + webhook env),
-  `GET /pricing/reconcile`, `GET/POST /pricing/invoice`, env-gated scheduler (PRICING_RECON_SCHEDULE=on).
+**Nima qilindi (12 commit main'da, push YO'Q, no Co-Authored-By):**
+- **5b reskin (adx-):** Barcha shablonlar (e3), Contributorlar+detail (e4/e4b), Obunachilar+detail (e5/e5b) — barcha handler saqlangan (tier toggle, block, plan/credit/limit/reindex).
+- **5c reskin (adx-):** Tariflar (e6, form data-attribut saqlangan), Xabarlar (e7, full-bleed ikki panel), Analitika (e8), Sozlamalar (e9, honest "keyingi versiya"), Tizim loglari (e10), Audit log (e10b).
+- **Biznes (yangi, REAL backend):** Narx boshqaruvi (b2, GET/PATCH pricing + jonli margin), Moliya (b1), Gen sarfi (b3), Payout (b4, /admin/payouts), Faoliyat jurnali (b5).
+- **Additive admin-only READ endpoint (admin.ts):** `GET /finance`, `GET /gen-spend`, `GET /activity` — pul mutatsiyasiga TEGMAYDI. StudioApi metodlari + yangi `admin-business.js` + index.html registratsiya.
+- Umumiy adx helperlar (axAv/axStat/axInfo/axStatus/axTplStatus) + adx-tog/adx-input/adx-num + biznes responsive CSS.
 
-**Tekshirildi (lokal Postgres):** migratsiya qo'llandi; seed=38 model, narx BUGUNGI bilan bir xil
-(304 round-trip + jonli parity img/vid); cost-quote DB narx imzolanadi+verify OK, tamper rad;
-PATCH → keyingi quote yangi narx; low-margin fixture → belowTarget (0.356x); invoice \$14 vs est \$8
-→ drift +75%; missing-cost bayroq ishladi. Build + prisma validate green.
+**Tekshirilgan:** 16 route xatosiz render (console 0 error); tier-toggle modal ochiladi; 960px icon-rail, body overflow yo'q; API `tsc` toza; har ekran `studio:sync` + alohida commit.
 
-**Kutilmoqda:** git push → deploy (migrate:deploy auto). estCostUsd hozir TAXMINIY seed — real
-provider invoice bilan aniqlanadi. Admin UI = keyingi bosqich (backend tayyor).
+**Kutilmoqda:** Live API+DB'da biznes ekranlar realdatani ko'rsatishini tasdiqlash (lokal API o'chiq — honest error state ishladi); pricing PATCH round-trip live'da; push (user o'zi).
