@@ -292,3 +292,89 @@ function renderGenSpend(){
       </table></div>
     </div>`;
 }
+
+/* ============================================================
+   b4 · PAYOUT — contributor to'lovlari (qo'lda yoziladi, avto-$ YO'Q)
+   ============================================================ */
+let PAYOUT_DATA = null;
+
+VIEWS.payouts = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
+window.afterRender.payouts = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='payouts') tba.innerHTML =
+    `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>Butun davr</span></span>`+
+    `<button class="adx-btn2 sm" onclick="toast('Eksport','Payout hisoboti CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>Eksport</button>`;
+  const root = document.getElementById('bizRoot');
+  try { PAYOUT_DATA = await StudioApi.getAdminEarnings(); renderPayouts(); }
+  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+};
+
+function renderPayouts(){
+  const root = document.getElementById('bizRoot');
+  if(!root || !PAYOUT_DATA) return;
+  const d = PAYOUT_DATA;
+  const rows = (d.contributors||[]).slice().sort((a,b)=>(b.balanceCents||0)-(a.balanceCents||0));
+  const perDl = (d.perDownloadCents||10);
+  const totalEvents = rows.reduce((a,r)=>a+(r.earningEvents||0),0);
+  const pendingCount = rows.filter(r=>(r.balanceCents||0)>0).length;
+  const poolCents = rows.reduce((a,r)=>a+(r.balanceCents||0),0);
+  const paidCents = rows.reduce((a,r)=>a+Math.max(0,(r.totalEarnedCents||0)-(r.balanceCents||0)),0);
+  root.innerHTML = `
+    ${axInfo(`Shablonlar obunaga kiritilgan (cheksiz yuklab olish) — avtomatik $ hisoblanmaydi. Admin yuklab olish sonini ko‘radi va <b style="color:var(--text)">qo‘lda to‘lov yozadi</b>. Stavka va formula (qat‘iy-per-download yoki oylik pool ulushi) — <b style="color:var(--text)">EGA QARORI</b>. Joriy stavka: <b style="color:var(--text)">${bizUsdCents(perDl)} / download</b>.`,'amber')}
+    <div class="adx-grid4" style="margin-bottom:16px">
+      ${axStat({label:'Earning hodisalari',val:totalEvents.toLocaleString(),ic:'download-simple',icColor:'#C2F04A',foot:'TemplateDownloadEvent'})}
+      ${axStat({label:'To‘lovga tayyor',val:pendingCount,ic:'users-three',foot:'contributor'})}
+      ${axStat({label:'To‘lanmagan balans',val:bizUsdCents(poolCents),ic:'hand-coins',icColor:'#FFB27C',foot:bizUsdCents(perDl)+' / download'})}
+      ${axStat({label:'To‘langan (jami)',val:bizUsdCents(paidCents),ic:'check-circle',icColor:'#C2F04A',foot:'yozilgan to‘lovlar'})}
+    </div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Contributor bo‘yicha earning → to‘lov</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">STAVKA: ${bizUsdCents(perDl)} / DOWNLOAD</span></div>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:960px">
+        <thead><tr><th>Contributor</th><th class="r">Earning hodisalari</th><th class="r">Jami topilgan</th><th class="r">Hisoblangan (balans)</th><th class="r">To‘langan</th><th>Holat</th><th class="r">Amal</th></tr></thead>
+        <tbody>${rows.length ? rows.map(r=>{
+          const paid = Math.max(0,(r.totalEarnedCents||0)-(r.balanceCents||0));
+          const pending = (r.balanceCents||0)>0;
+          return `<tr>
+            <td><div class="adx-who">${axAv(r.name||r.email||'?',r.email,32)}<div style="min-width:0"><div class="nm">${esc(r.name||r.email||'—')}</div><div class="em">${esc(r.email||'')}</div></div></div></td>
+            <td class="r adx-num">${(r.earningEvents||0).toLocaleString()}</td>
+            <td class="r adx-num">${bizUsdCents(r.totalEarnedCents)}</td>
+            <td class="r adx-num" style="color:#FFB27C">${bizUsdCents(r.balanceCents)}</td>
+            <td class="r adx-num" style="color:#C2F04A">${bizUsdCents(paid)}</td>
+            <td>${pending?'<span class="adx-bdg adx-bdg-pending"><span class="bd"></span>Kutilmoqda':'<span class="adx-bdg adx-bdg-approved"><span class="bd"></span>To‘langan'}</span></td>
+            <td class="r">${pending?`<button class="adx-btn sm" onclick="openPayoutRecord('${r.contributorId}')"><i class="ph ph-check"></i>To‘lov yozish</button>`:`<button class="adx-btn2 sm" onclick="toast('Kvitansiya','To‘lov tarixida ko‘rish keyingi versiyada','info')"><i class="ph ph-clipboard-text"></i>Kvitansiya</button>`}</td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="7"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-hand-coins"></i></span><div style="font-weight:600;font-size:13px">Hali earning yo‘q</div><div style="font-size:11px;color:var(--muted2)">Approved shablonlar yuklab olinganda contributor earning to‘planadi.</div></div></td></tr>`}</tbody>
+      </table></div>
+    </div>
+    <div id="bizEditPanel"></div>`;
+}
+
+function openPayoutRecord(contributorId){
+  const r = (PAYOUT_DATA.contributors||[]).find(x=>x.contributorId===contributorId);
+  if(!r) return;
+  const host = document.getElementById('bizEditPanel');
+  host.innerHTML = `<div class="adx-editpanel" style="width:340px"><div style="padding:18px 20px">
+    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-hand-coins" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">To‘lov yozish</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
+    <div style="font-size:11.5px;color:#8A93A3;margin-top:6px;line-height:1.5">${esc(r.name||r.email||'')} — to‘lanmagan balans <b style="color:var(--text)">${bizUsdCents(r.balanceCents)}</b>. Bu qo‘lda kiritilgan to‘lov yozuvi (ContributorPayout) — pul transferi tashqarida. Barcha to‘lanmagan earninglar bog‘lanadi.</div>
+    <div class="adx-flab" style="margin-top:12px">SUMMA</div><input class="adx-input mono" value="${bizUsdCents(r.balanceCents)}" disabled>
+    <div class="adx-flab" style="margin-top:10px">USUL</div>
+    <select class="adx-input" id="payoutMethod"><option value="bank">Bank o‘tkazma</option><option value="payme">Payme</option><option value="click">Click</option><option value="manual">Boshqa (qo‘lda)</option></select>
+    <div class="adx-flab" style="margin-top:10px">IZOH / REFERENCE (ixtiyoriy)</div><input class="adx-input" id="payoutNote" placeholder="Bank ref yoki izoh…">
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="adx-btn2" style="flex:1;height:36px" onclick="document.getElementById('bizEditPanel').innerHTML=''">Bekor</button><button class="adx-btn" style="flex:1;height:36px" onclick="submitPayoutRecord('${contributorId}')"><i class="ph ph-check"></i>To‘lovni yozish</button></div>
+  </div></div>`;
+}
+
+async function submitPayoutRecord(contributorId){
+  const method = document.getElementById('payoutMethod')?.value || 'manual';
+  const note = document.getElementById('payoutNote')?.value?.trim() || '';
+  try {
+    const res = await StudioApi.createAdminPayout({ contributorId, method, reference: note, note });
+    document.getElementById('bizEditPanel').innerHTML='';
+    const amt = res && res.payout ? bizUsdCents(res.payout.amountCents) : '';
+    toast('To‘lov yozildi', `${amt} to‘lov qaydi yaratildi (${res && res.linkedEarnings||0} earning bog‘landi)`, 'success');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Contributor payout yozildi',{action:'payout',detail:contributorId});
+    PAYOUT_DATA = await StudioApi.getAdminEarnings();
+    renderPayouts();
+  } catch(e){
+    toast('Xato', (e&&e.message)||'To‘lov yozilmadi', 'danger');
+  }
+}
