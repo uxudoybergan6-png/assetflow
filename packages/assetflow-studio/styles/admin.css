@@ -412,3 +412,10 @@ textarea.adx-input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
   .adx-grid2,.adx-grid4,.adx-grid5{grid-template-columns:1fr}
   .adx-editpanel{right:12px;left:12px;bottom:12px;width:auto}
 }
+/* Skeleton yuklovchi — ro'yxat/grid API kelguncha (katalog/AI tarix uslubi) */
+@keyframes adxshim{to{background-position:-200% 0}}
+.adx-skel{background:linear-gradient(100deg,var(--f1) 32%,var(--f3) 50%,var(--f1) 68%);background-size:200% 100%;animation:adxshim 1.4s linear infinite;border-radius:8px}
+.adx-skel-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--hair);border-radius:12px;margin-bottom:8px}
+.adx-skel-av{width:38px;height:38px;border-radius:10px;flex:none}
+.adx-skel-ln{height:11px;border-radius:6px}
+.adx-skel-list{display:flex;flex-direction:column}

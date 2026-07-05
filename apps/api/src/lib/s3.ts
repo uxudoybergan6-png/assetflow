@@ -89,12 +89,21 @@ export function gcsUriFromUrl(url: string): string | null {
 
 export async function getSignedDownloadUrl(
   key: string,
-  expiresIn = 3600
+  expiresIn = 3600,
+  filename?: string
 ): Promise<string> {
   if (!bucket) {
     return getPublicUrl(key);
   }
-  const command = new GetObjectCommand({ Bucket: bucket, Key: key });
+  // filename berilsa → Content-Disposition: attachment (brauzer inline ochish
+  // o'rniga faylni yuklab oladi). Kross-origin imzolangan URL'da <a download>
+  // atributi e'tiborsiz qoldiriladi, shu sabab disposition serverdan kelishi shart.
+  const safeName = filename ? filename.replace(/[^\w.\- ]+/g, "_").slice(0, 120) : "";
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ...(safeName ? { ResponseContentDisposition: `attachment; filename="${safeName}"` } : {}),
+  });
   return getSignedUrl(s3, command, { expiresIn });
 }
 

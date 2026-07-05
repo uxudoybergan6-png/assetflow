@@ -4,6 +4,24 @@
 window.VIEWS = window.VIEWS || {};
 window.afterRender = window.afterRender || {};
 
+/* Skeleton ro'yxat — API kelguncha bo'sh miltillashni to'sadi (katalog/AI tarix uslubi).
+   n = qator soni; av = chapda avatar/thumb bloki bo'lsin. */
+window.adxSkelList = function (n, av) {
+  n = n || 5;
+  var rows = "";
+  for (var i = 0; i < n; i++) {
+    rows +=
+      '<div class="adx-skel-row">' +
+      (av === false ? "" : '<span class="adx-skel adx-skel-av"></span>') +
+      '<div style="flex:1;min-width:0"><span class="adx-skel adx-skel-ln" style="display:block;width:' +
+      (52 - (i % 3) * 8) + '%;margin-bottom:8px"></span>' +
+      '<span class="adx-skel adx-skel-ln" style="display:block;width:' + (30 + (i % 2) * 8) + '%"></span></div>' +
+      '<span class="adx-skel adx-skel-ln" style="width:48px"></span>' +
+      "</div>";
+  }
+  return '<div class="adx-skel-list">' + rows + "</div>";
+};
+
 /* ---------- shared building blocks ---------- */
 function thumbArt(grad, dur, size){
   const h = size==='lg'?'100%':'30px';
@@ -239,6 +257,11 @@ VIEWS.moderation = function(){
 window.afterRender.moderation = function(){
   // Real API moderation queue
   if (typeof StudioTemplates !== "undefined" && StudioTemplates.loadModerationOnly) {
+    // Ma'lumot kelguncha skeleton (Render cold-start ~50s bo'lishi mumkin — bo'sh miltillamasin).
+    if (!(typeof TEMPLATES !== "undefined" && TEMPLATES.length)) {
+      var mr = document.getElementById("modRoot");
+      if (mr) mr.innerHTML = '<div style="padding:8px 4px">' + adxSkelList(5) + "</div>";
+    }
     StudioTemplates.loadModerationOnly()
       .catch((e) => {
         console.warn("loadModerationOnly", e);

@@ -150,7 +150,7 @@ VIEWS.subscribers = function () {
     <div class="adx-card" style="overflow:hidden">
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1180px">
         <thead><tr><th>Obunachi</th><th>Holat</th><th>Reja</th><th>AE / qurilma</th><th>Limit (oy)</th><th class="r">Yuklab olish</th><th class="r">Import</th><th>Token</th><th>Oxirgi faol</th><th class="r">Amal</th></tr></thead>
-        <tbody>
+        <tbody id="subTbody">
         ${rows.length ? rows.map(s=>{
           const rowMuted = s.status==='removed' ? 'opacity:.55' : '';
           return `<tr style="cursor:pointer;${rowMuted}" onclick="route('subscriber-detail','${s.id}')">
@@ -477,6 +477,11 @@ window.afterRender = window.afterRender || {};
 // Faqat ko'rinish tanasini yangi ma'lumot bilan qayta chizamiz.
 window.afterRender.subscribers = async function () {
   axSubTopbar();
+  // Ma'lumot kelguncha skeleton qatorlar (bo'sh jadval miltillamasin).
+  if (!SUBSCRIBERS.length) {
+    const tb = document.getElementById("subTbody");
+    if (tb) tb.innerHTML = '<tr><td colspan="10" style="padding:6px">' + adxSkelList(6) + "</td></tr>";
+  }
   const ok = await refreshSubscribersFromApi();
   if (ok && CURRENT === "subscribers") {
     const host = document.getElementById("view");

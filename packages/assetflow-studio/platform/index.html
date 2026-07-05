@@ -16536,7 +16536,8 @@ class Component extends DCLogic {
       const asset = (g.assets && g.assets[0]) || null;
       if (!asset || !asset.url) { this.toast('Fayl topilmadi'); return; }
       const a = document.createElement('a');
-      a.href = asset.url; a.download = ''; a.rel = 'noopener';
+      // downloadUrl = Content-Disposition: attachment (brauzer inline ochmaydi, yuklab oladi).
+      a.href = asset.downloadUrl || asset.url; a.download = ''; a.rel = 'noopener';
       document.body.appendChild(a); a.click(); a.remove();
       this.toast('Yuklab olish boshlandi');
     } catch (e) { this.toast(this.errMsg(e)); }

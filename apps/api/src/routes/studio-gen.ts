@@ -67,7 +67,16 @@ import { writeAuditLog } from "../lib/audit-log.js";
 
 export const studioGenRouter = Router();
 
-async function hydrateGenAssets<T extends { assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null }> }>(
+/** Gen natijasi uchun yuklab-olish fayl nomi (Content-Disposition uchun). */
+function genDownloadName(mode: string | undefined, resultKey: string, contentType?: string | null): string {
+  const extFromKey = (resultKey.match(/\.([a-z0-9]{2,5})(?:$|\?)/i) || [])[1];
+  const extFromMime = contentType ? (contentType.split("/")[1] || "").split(";")[0] : "";
+  const fallback = mode === "video" ? "mp4" : (mode === "voice" || mode === "sfx" || mode === "music") ? "mp3" : "png";
+  const ext = (extFromKey || extFromMime || fallback).toLowerCase();
+  return `frameflow-${mode || "gen"}.${ext}`;
+}
+
+async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null }> }>(
   holder: T
 ): Promise<T> {
   if (!isS3Configured()) return holder;
@@ -77,8 +86,13 @@ async function hydrateGenAssets<T extends { assets: Array<{ resultKey: string | 
     a.url = fresh;
     if (a.thumbUrl) a.thumbUrl = fresh;
     const meta = await getS3ObjectMeta(a.resultKey);
-    (a as typeof a & { sizeBytes?: number | null; contentType?: string | null }).sizeBytes = meta.sizeBytes;
-    (a as typeof a & { sizeBytes?: number | null; contentType?: string | null }).contentType = meta.contentType;
+    const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string };
+    aa.sizeBytes = meta.sizeBytes;
+    aa.contentType = meta.contentType;
+    // Alohida yuklab-olish URL'i: Content-Disposition: attachment bilan imzolanadi.
+    // `url` inline (preview <img>/<video>) uchun o'zgarishsiz qoladi; `downloadUrl`
+    // faqat yuklab-olish tugmasi uchun — brauzer inline ochmasdan faylni saqlaydi.
+    aa.downloadUrl = await getSignedDownloadUrl(a.resultKey, 3600, genDownloadName(holder.mode, a.resultKey, meta.contentType));
   }
   return holder;
 }

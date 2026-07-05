@@ -137,6 +137,16 @@
 
   /* ---- afterRender: real ma'lumotni yuklab, bo'limlarni yangilash (loopsiz) ---- */
   window.afterRender.overview = async function () {
+    // API kelguncha skeleton (bo'sh preview miltillamasin).
+    if (typeof adxSkelList === "function") {
+      if (!(typeof TEMPLATES !== "undefined" && TEMPLATES.length)) {
+        var mqS = document.getElementById("ovModQueue"); if (mqS) mqS.innerHTML = adxSkelList(3);
+      }
+      if (!(typeof SUBSCRIBERS !== "undefined" && SUBSCRIBERS.length)) {
+        var suS = document.getElementById("ovSubs");
+        if (suS) suS.innerHTML = '<tr><td colspan="4" style="padding:4px">' + adxSkelList(3, false) + "</td></tr>";
+      }
+    }
     try {
       if (typeof StudioTemplates !== "undefined" && StudioTemplates.loadModerationOnly) {
         await StudioTemplates.loadModerationOnly();
