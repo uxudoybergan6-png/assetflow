@@ -96,55 +96,54 @@ function renderTemplates(){
    CONTRIBUTORS — list
    ============================================================ */
 let C_LIST_SEARCH = "";
+let C_STATUS_FILTER = "all";
+window.afterRender.contributors = function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='contributors'){
+    tba.innerHTML =
+      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${C_STATUS_FILTER==='all'?'Barcha holat':(C_STATUS_FILTER==='active'?'Faol':'Bloklangan')}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="C_STATUS_FILTER=this.value;route('contributors')"><option value="all">Barcha holat</option><option value="active" ${C_STATUS_FILTER==='active'?'selected':''}>Faol</option><option value="blocked" ${C_STATUS_FILTER==='blocked'?'selected':''}>Bloklangan</option></select></label>`+
+      `<button class="adx-btn2 sm" onclick="toast('Eksport','Contributorlar CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>CSV</button>`;
+  }
+};
 VIEWS.contributors = function(){
   const q = (C_LIST_SEARCH || (typeof ADMIN_GLOBAL_SEARCH !== "undefined" ? ADMIN_GLOBAL_SEARCH : "")).toLowerCase();
-  const list = q
+  let list = q
     ? CONTRIBUTORS.filter((c) => (c.name + " " + c.email).toLowerCase().includes(q))
-    : CONTRIBUTORS;
+    : CONTRIBUTORS.slice();
+  if(C_STATUS_FILTER!=='all') list = list.filter(c=>c.status===C_STATUS_FILTER);
   const rows = list.map(c=>{
     const ts=tByContributor(c.id);
     return {c, total:ts.length, ap:ts.filter(t=>t.status==='approved').length, pe:ts.filter(t=>t.status==='pending').length, re:ts.filter(t=>['soft','hard'].includes(t.status)).length};
   });
-  return `<div class="col gap-16">
-    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      ${kpiCard({label:'Jami contributorlar',val:CONTRIBUTORS.length,ic:'users',c:'violet',foot:'ro\u2018yxatdan o\u2018tgan'})}
-      ${kpiCard({label:'Faol',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'checkCircle',c:'green',foot:'kontent yuklamoqda'})}
-      ${kpiCard({label:'Bloklangan',val:CONTRIBUTORS.filter(c=>c.status==='blocked').length,ic:'ban',c:'red',foot:'kirish cheklangan'})}
-      ${(() => {
-        const p = typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null;
-        return kpiCard({
-          label: "Approval rate",
-          val: p != null ? `${p}%` : "—",
-          ic: "star",
-          c: "yellow",
-          foot: p != null ? "tasdiq / rad" : "qaror yo\u2018q",
-        });
-      })()}
+  const appr = typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null;
+  return `
+    <div class="adx-grid4" style="margin-bottom:18px">
+      ${axStat({label:'Jami contributorlar',val:CONTRIBUTORS.length,ic:'users-three',icColor:'#7CC4FF',foot:'ro‘yxatdan o‘tgan'})}
+      ${axStat({label:'Faol',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'check-circle',icColor:'#C2F04A',foot:'kontent yuklamoqda'})}
+      ${axStat({label:'Bloklangan',val:CONTRIBUTORS.filter(c=>c.status==='blocked').length,ic:'prohibit',icColor:'#FF6B5E',foot:'kirish cheklangan'})}
+      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'crown',foot:appr!=null?'tasdiq / rad':'qaror yo‘q'})}
     </div>
-    <div class="toolbar between">
-      <div class="search" style="width:280px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Contributor yoki email\u2026" value="${esc(C_LIST_SEARCH)}" oninput="C_LIST_SEARCH=this.value;route('contributors')"></div>
-      <div class="toolbar"><select class="select"><option>Barcha holat</option><option>Faol</option><option>Bloklangan</option></select><button class="btn btn-ghost btn-sm" onclick="toast('Eksport','CSV yuklab olinmoqda','info')">${ic('download')} CSV</button></div>
-    </div>
-    <div class="card"><div class="table-wrap"><table class="data" style="min-width:1020px">
-      <thead><tr><th>Contributor</th><th>Holat</th><th class="th-num">Jami</th><th class="th-num">Approved</th><th class="th-num">Pending</th><th class="th-num">Rejected</th><th>Oxirgi faoliyat</th><th style="width:120px"></th></tr></thead>
-      <tbody>
-      ${rows.map(({c,total,ap,pe,re})=>`<tr style="cursor:pointer" onclick="route('contributor-detail','${c.id}')">
-        <td><div class="row center gap-10">${avatar(c.name,32)}<div class="col" style="gap:1px"><span class="cell-strong">${esc(c.name)}</span><span class="sub" style="font-size:11px;color:var(--tx-3)">${esc(c.email)}</span></div></div></td>
-        <td><span class="badge ${c.status==='active'?'badge-active':'badge-blocked'}"><span class="dot"></span>${c.status==='active'?'Faol':'Bloklangan'}</span></td>
-        <td class="cell-num cell-strong">${total}</td>
-        <td class="cell-num" style="color:var(--green)">${ap}</td>
-        <td class="cell-num" style="color:var(--yellow)">${pe||'\u2014'}</td>
-        <td class="cell-num" style="color:var(--orange)">${re||'\u2014'}</td>
-        <td class="cell-muted mono">${c.joined}</td>
-        <td onclick="event.stopPropagation()"><div class="row-actions">
-          <button class="act" title="Xabar" onclick="openMessage('${c.id}')">${ic('message')}</button>
-          ${c.status==='active'?`<button class="act danger" title="Bloklash" onclick="openBlock('${c.id}')">${ic('ban')}</button>`:`<button class="act success" title="Blokdan chiqarish" onclick="unblock('${c.id}')">${ic('checkCircle')}</button>`}
-          <button class="act" title="Profil" onclick="route('contributor-detail','${c.id}')">${ic('chevR')}</button>
-        </div></td>
-      </tr>`).join('')}
-      </tbody>
-    </table></div></div>
-  </div>`;
+    <div class="adx-card" style="overflow:hidden">
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1020px">
+        <thead><tr><th>Contributor</th><th>Holat</th><th class="r">Jami</th><th class="r">Approved</th><th class="r">Pending</th><th class="r">Rejected</th><th>Oxirgi faoliyat</th><th class="r">Amal</th></tr></thead>
+        <tbody>
+        ${rows.length ? rows.map(({c,total,ap,pe,re})=>`<tr style="cursor:pointer" onclick="route('contributor-detail','${c.id}')">
+          <td><div class="adx-who">${axAv(c.name,c.email,32)}<div style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email)}</div></div></div></td>
+          <td>${axStatus(c.status==='blocked'?'blocked':'active')}</td>
+          <td class="r adx-num">${total}</td>
+          <td class="r adx-num" style="color:#C2F04A">${ap}</td>
+          <td class="r adx-num" style="color:#FFB27C">${pe||'—'}</td>
+          <td class="r adx-num" style="color:#FF6B5E">${re||'—'}</td>
+          <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(c.joined||'—')}</td>
+          <td class="r" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;justify-content:flex-end">
+            <button class="adx-iact" title="Xabar" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i></button>
+            ${c.status==='active'?`<button class="adx-iact dg" title="Bloklash" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i></button>`:`<button class="adx-iact" title="Blokdan chiqarish" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i></button>`}
+            <button class="adx-iact" title="Profil" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-caret-right"></i></button>
+          </div></td>
+        </tr>`).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-weight:600;font-size:13px">Contributor topilmadi</div><div style="font-size:11px;color:var(--muted2)">Qidiruv yoki filtrni o‘zgartiring.</div></div></td></tr>`}
+        </tbody>
+      </table></div>
+    </div>`;
 };
 
 /* ============================================================
@@ -155,51 +154,41 @@ VIEWS['contributor-detail'] = function(id){
   const ts = tByContributor(c.id);
   const ap=ts.filter(t=>t.status==='approved').length, pe=ts.filter(t=>t.status==='pending').length, re=ts.filter(t=>['soft','hard'].includes(t.status)).length;
   const blocked = c.status==='blocked';
-  return `<div class="col gap-16">
-    <button class="btn btn-subtle btn-sm" style="align-self:flex-start" onclick="route('contributors')">${ic('chevL')} Contributorlar</button>
-    ${blocked?`<div class="info-banner danger">${ic('ban')}<div><b style="color:var(--tx-0)">Bu contributor bloklangan</b> \u2014 kirish cheklangan, yangi yuklash mumkin emas. <a style="color:var(--red);text-decoration:underline;cursor:pointer" onclick="unblock('${c.id}')">Blokdan chiqarish</a></div></div>`:''}
-
-    <div class="card card-pad">
-      <div class="row between center wrap gap-16">
-        <div class="row center gap-14">
-          ${avatar(c.name,56)}
-          <div class="col" style="gap:4px">
-            <div class="row center gap-10"><span class="h2">${esc(c.name)}</span><span class="badge ${blocked?'badge-blocked':'badge-active'}"><span class="dot"></span>${blocked?'Bloklangan':'Faol'}</span></div>
-            <div class="row center gap-12 small"><span>${ic('mail')} ${esc(c.email)}</span><span class="dot-sep">\u00b7</span><span>${ic('globe')} ${esc(c.country)}</span><span class="dot-sep">\u00b7</span><span>${ic('calendar')} ${esc(c.joined)} dan beri</span></div>
-          </div>
-        </div>
-        <div class="row gap-8">
-          <button class="btn btn-ghost" onclick="openMessage('${c.id}')">${ic('message')} Xabar yozish</button>
-          ${blocked?`<button class="btn btn-success" onclick="unblock('${c.id}')">${ic('checkCircle')} Blokdan chiqarish</button>`:`<button class="btn btn-danger-ghost" onclick="openBlock('${c.id}')">${ic('ban')} Bloklash</button>`}
-        </div>
+  return `
+    <button class="adx-btn2 sm" style="margin-bottom:16px" onclick="route('contributors')"><i class="ph ph-caret-left"></i>Contributorlar</button>
+    ${blocked?axInfo(`<b style="color:var(--text)">Bu contributor bloklangan</b> — kirish cheklangan, yangi yuklash mumkin emas. <a style="color:#FF6B5E;text-decoration:underline;cursor:pointer" onclick="unblock('${c.id}')">Blokdan chiqarish</a>`,'red'):''}
+    <div class="adx-card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      ${axAv(c.name,c.email,56)}
+      <div style="flex:1;min-width:220px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="adx-h18">${esc(c.name)}</span>${axStatus(blocked?'blocked':'active')}</div>
+        <div style="font-size:11.5px;color:#8A93A3;margin-top:3px">${esc(c.email)}${c.country?' · '+esc(c.country):''}${c.joined?' · Ro‘yxatdan: '+esc(c.joined):''}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="adx-btn2 sm" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i>Xabar yozish</button>
+        ${blocked?`<button class="adx-btn2 sm adx-btn-ok" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i>Blokdan chiqarish</button>`:`<button class="adx-btn-danger adx-btn-dghost sm" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i>Bloklash</button>`}
       </div>
     </div>
-
-    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      ${kpiCard({label:'Jami shablon',val:ts.length,ic:'layers',c:'violet'})}
-      ${kpiCard({label:'Tasdiqlangan',val:ap,ic:'checkCircle',c:'green',foot:'AE\u2018da live'})}
-      ${kpiCard({label:'Kutilmoqda',val:pe,ic:'clock',c:'yellow'})}
-      ${kpiCard({label:'Rad etilgan',val:re,ic:'xCircle',c:'orange',foot:'soft + hard'})}
+    <div class="adx-grid4" style="margin-top:16px">
+      ${axStat({label:'Jami shablon',val:ts.length,ic:'stack'})}
+      ${axStat({label:'Tasdiqlangan',val:ap,ic:'check-circle',icColor:'#C2F04A',foot:'AE‘da live'})}
+      ${axStat({label:'Kutilmoqda',val:pe,ic:'clock-countdown',icColor:'#FFB27C'})}
+      ${axStat({label:'Rad etilgan',val:re,ic:'x-circle',icColor:'#FF6B5E',foot:'soft + hard'})}
     </div>
-
-    <div class="card">
-      <div class="card-head"><div><h3>${esc(c.name.split(' ')[0])}ning shablonlari</h3><span class="small">${ts.length} ta element</span></div>
-        ${pe?`<button class="btn btn-ghost btn-sm" onclick="route('moderation')">${ic('shield')} ${pe} ta pending\u2018ni ko\u2018rish</button>`:''}</div>
-      <div class="table-wrap"><table class="data" style="min-width:760px">
-        <thead><tr><th>Shablon</th><th>Holat</th><th>Kategoriya</th><th class="th-num">Downloads</th><th>Sana</th><th style="width:70px"></th></tr></thead>
+    <div class="adx-card" style="overflow:hidden;margin-top:16px">
+      <div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Yuklangan shablonlar</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">${ts.length} ta element</span>
+        ${pe?`<button class="adx-btn2 sm" style="margin-left:10px" onclick="route('moderation')"><i class="ph ph-shield-check"></i>${pe} ta pending</button>`:''}</div>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:760px">
+        <thead><tr><th>Shablon</th><th>Holat</th><th>Kategoriya</th><th class="r">Downloads</th><th>Sana</th><th class="r"></th></tr></thead>
         <tbody>
         ${ts.length?ts.map(t=>`<tr>
-          <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'','lg')}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${t.id}</span></div></div></td>
-          <td>${badge(t.status)}</td><td class="cell-muted">${esc(t.cat)}</td>
-          <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
-          <td class="cell-muted mono">${t.created}</td>
-          <td><div class="row-actions"><button class="act" onclick="openTplDrawer('${t.id}')">${ic('eye')}</button></div></td>
+          <td><div style="display:flex;align-items:center;gap:9px"><span style="width:38px;height:26px;border-radius:5px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12px;color:var(--text)">${esc(t.name)}</div><div class="adx-num" style="font-size:9.5px;color:#8A93A3">${esc(shortId(t.id))}</div></div></div></td>
+          <td>${axTplStatus(t.status,true)}</td><td style="font-size:11.5px;color:#B7C0CE">${esc(t.cat)}</td>
+          <td class="r adx-num">${t.dl?t.dl.toLocaleString():'—'}</td>
+          <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(t.created||'—')}</td>
+          <td class="r"><button class="adx-iact" onclick="openTplDrawer('${t.id}')"><i class="ph ph-eye"></i></button></td>
         </tr>`).join('')
-        :`<tr><td colspan="6"><div class="empty" style="padding:30px"><p>Hali shablon yo\u2018q</p></div></td></tr>`}
+        :`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-size:12px;color:var(--muted2)">Hali shablon yo‘q</div></div></td></tr>`}
         </tbody>
       </table></div>
-    </div>
-  </div>`;
+    </div>`;
 };
 
 /* ============================================================
