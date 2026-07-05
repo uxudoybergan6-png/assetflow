@@ -1,13 +1,20 @@
 import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import multer from "multer";
 import { z } from "zod";
 import { prisma, UserRole } from "@creative-tools/database";
 import { signToken, requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
 import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
-import { getWebUrl } from "../lib/app-urls.js";
+import { getWebUrl, avatarPublicUrl } from "../lib/app-urls.js";
+import {
+  isS3Configured,
+  uploadBufferToS3,
+  getSignedDownloadUrl,
+  deleteS3Objects,
+} from "../lib/s3.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 
@@ -193,6 +200,7 @@ authRouter.post("/login", authLimiter, async (req, res) => {
       id: user.id,
       email: user.email,
       name: user.name,
+      avatarUrl: avatarPublicUrl(user.id, user.image),
       role: user.role,
       emailVerified: !!user.emailVerified,
       subscription: user.subscription,
@@ -399,12 +407,83 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     id: user.id,
     email: user.email,
     name: user.name,
+    avatarUrl: avatarPublicUrl(user.id, user.image),
     role: user.role,
     emailVerified: !!user.emailVerified,
     emailVerifyRequired: isEmailConfigured(),
     subscription: user.subscription,
     contributorBlocked: !!user.contributorBlockedAt,
   });
+});
+
+// ── Avatar (profil rasmi) — plagin va web BIR endpoint (bir xil JWT) ─────────
+const AVATAR_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+/** POST /api/auth/avatar — form-data `avatar` fayli; User.image ga GCS key yozadi. */
+authRouter.post("/avatar", requireAuth, avatarUpload.single("avatar"), async (req, res) => {
+  const file = req.file;
+  if (!file || !file.buffer?.length) {
+    res.status(400).json({ error: "No file uploaded (field: avatar)" });
+    return;
+  }
+  const ext = AVATAR_TYPES[file.mimetype];
+  if (!ext) {
+    res.status(400).json({ error: "Unsupported image type — use PNG, JPEG or WebP" });
+    return;
+  }
+  if (!isS3Configured()) {
+    res.status(503).json({ error: "Storage is not configured" });
+    return;
+  }
+  const userId = req.user!.userId;
+  const key = `avatars/${userId}.${ext}`;
+  try {
+    await uploadBufferToS3(file.buffer, key, file.mimetype, "private, max-age=0");
+    // Eski boshqa-kengaytmali avatarni tozalaymiz (png→jpg almashuvida qoldiq qolmasin)
+    const stale = Object.values(AVATAR_TYPES)
+      .filter((e) => e !== ext)
+      .map((e) => `avatars/${userId}.${e}`);
+    deleteS3Objects(stale).catch(() => {});
+    await prisma.user.update({ where: { id: userId }, data: { image: key } });
+    res.json({ ok: true, avatarUrl: avatarPublicUrl(userId, key) });
+  } catch (e) {
+    console.error("[auth/avatar] upload failed:", e);
+    res.status(500).json({ error: "Avatar upload failed" });
+  }
+});
+
+/** GET /api/auth/avatar/:userId — auth'siz redirect (plagin/web <img> uchun).
+ *  Bucket private → qisqa muddatli signed URL'ga 302. */
+authRouter.get("/avatar/:userId", async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.userId },
+    select: { image: true },
+  });
+  const image = user?.image;
+  if (!image) {
+    res.status(404).json({ error: "No avatar" });
+    return;
+  }
+  if (/^https?:\/\//i.test(image)) {
+    res.redirect(302, image);
+    return;
+  }
+  try {
+    const url = await getSignedDownloadUrl(image, 3600);
+    res.setHeader("Cache-Control", "private, max-age=300");
+    res.redirect(302, url);
+  } catch {
+    res.status(404).json({ error: "No avatar" });
+  }
 });
 
 const profilePatchSchema = z.object({

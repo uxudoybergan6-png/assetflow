@@ -15261,11 +15261,11 @@
         <span class="ffa-credit"><em>✦</em>{{ creditsFmt }}</span>
         <button class="ffa-iconbtn" title="Notifications"><i class="ph ph-bell"></i></button>
         <div style="position:relative">
-          <span class="ffa-ava" onclick="{{ toggleAvatar }}">{{ userInitials }}</span>
+          <span class="ffa-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}">{{ avaText }}</span>
           <sc-if value="{{ avatarOpen }}" hint-placeholder-val="{{ false }}">
             <div class="ffa-menu" style="top:44px">
               <div style="display:flex;align-items:center;gap:10px;padding:8px 10px 10px;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span class="ffa-ava" style="cursor:default">{{ userInitials }}</span>
+                <span class="ffa-ava" style="cursor:default;{{ avaStyle }}">{{ avaText }}</span>
                 <div style="min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">{{ planLabel }}</div></div>
               </div>
               <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-user-circle"></i>Account</button>
@@ -15565,7 +15565,7 @@
           <sc-if value="{{ accProfile }}" hint-placeholder-val="{{ true }}">
             <div class="ffa-acc-2col" style="max-width:920px">
               <div class="ffa-acccard" style="padding:24px">
-                <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);display:grid;place-items:center;font-size:22px;font-weight:700;color:#fff;flex:none">{{ userInitials }}</div><div style="min-width:0"><div style="font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userEmail }}</div></div></div>
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="position:relative;flex:none"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);display:grid;place-items:center;font-size:22px;font-weight:700;color:#fff;{{ avaStyle }}">{{ avaText }}</div><button type="button" title="Change photo" onclick="{{ pickAvatarFile }}" style="position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:1px solid var(--hair2);color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0"><i class="ph ph-camera" style="font-size:12px"></i></button><input type="file" id="ffaAvatarFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="{{ onAvatarPick }}"></div><div style="min-width:0"><div style="font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userEmail }}</div></div></div>
                 <div style="display:flex;flex-direction:column;gap:14px">
                   <div><span class="ffa-flab">FULL NAME</span><input value="{{ accName }}" oninput="{{ onAccName }}" placeholder="Your name" class="ffa-field"></div>
                   <div><span class="ffa-flab">EMAIL</span><input value="{{ userEmail }}" readonly="" class="ffa-field" style="color:var(--muted2)"></div>
@@ -15868,6 +15868,7 @@ class Component extends DCLogic {
     appMenuOpen: false,
     sidebarCollapsed: false,
     avatarOpen: false,
+    avatarBust: 0,
     activeCat: 'Video Templates',
     openFaq: 0,
     credits: 0,
@@ -16425,6 +16426,20 @@ class Component extends DCLogic {
     }).catch(e => this.setState({ authErr: this.errMsg(e) }));
   }
   logoutAndGoAuth() { this.logout(); this.gotoAuth('login'); }
+  async uploadAvatar(file) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { this.toast('Image is too large — max 5 MB'); return; }
+    try {
+      this.toast('Uploading photo…');
+      await FFAPI.uploadAvatar(file);
+      const me = await FFAPI.me();
+      FFAPI.setSession(FFAPI.getToken(), me);
+      this.setState({ user: me, avatarBust: Date.now() });
+      this.toast('Profile photo updated');
+    } catch (e) {
+      this.toast(this.errMsg(e) || 'Avatar upload failed');
+    }
+  }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
     this._sess = {};
@@ -16800,6 +16815,10 @@ class Component extends DCLogic {
     const userName = u.name || (u.email ? u.email.split('@')[0] : 'User');
     const userEmail = u.email || '';
     const userInitials = ((userName.match(/\b[\wА-Яа-яЎўҚқҒғҲҳ]/g) || ['F']).slice(0, 2).join('')).toUpperCase();
+    // #21 — avatar rasmi (User.image → /api/auth/avatar/:id redirect); bust = yangilashda kesh chetlab o'tish
+    const userAvatarUrl = u.avatarUrl ? (u.avatarUrl + (u.avatarUrl.indexOf('?') < 0 ? '?' : '&') + 'v=' + (this.state.avatarBust || 0)) : '';
+    const avaStyle = userAvatarUrl ? ("background-image:url('" + userAvatarUrl + "');background-size:cover;background-position:center") : '';
+    const avaText = userAvatarUrl ? '' : userInitials;
     const planKey = this.state.plan || 'free';
     const planLabel = planKey === 'pro' ? 'Pro plan' : (planKey === 'studio' ? 'Studio plan' : 'Free plan');
     const isFreePlan = planKey === 'free';
@@ -16913,7 +16932,9 @@ class Component extends DCLogic {
       switchRegister: () => this.setState({ authMode: 'register', authErr: null, authInfo: null }),
       switchForgot: () => this.setState({ authMode: 'forgot', authErr: null, authInfo: null }),
       // Foydalanuvchi
-      userName, userEmail, userInitials, planLabel, isFreePlan, planNote, plansCur,
+      userName, userEmail, userInitials, avaStyle, avaText, planLabel, isFreePlan, planNote, plansCur,
+      onAvatarPick: (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; this.uploadAvatar(f); },
+      pickAvatarFile: () => { const el = document.getElementById('ffaAvatarFile'); if (el) el.click(); },
       isLoggedIn: !!(window.FFAPI && FFAPI.getToken()),
       doLogout: () => this.logout(),
       // Navigatsiya

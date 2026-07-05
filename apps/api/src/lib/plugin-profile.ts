@@ -5,6 +5,7 @@ import {
   prisma,
 } from "@creative-tools/database";
 import { isEmailConfigured } from "./email.js";
+import { avatarPublicUrl } from "./app-urls.js";
 import { writeCreditLedger } from "./ledger.js";
 
 const FREE_DOWNLOAD_LIMIT = 15;
@@ -155,6 +156,7 @@ export async function ensurePluginProfile(userId: string) {
           id: true,
           email: true,
           name: true,
+          image: true,
           role: true,
           emailVerified: true,
           subscription: true,
@@ -350,6 +352,7 @@ export function serializePluginUser(
     id: profile.user.id,
     email: profile.user.email,
     name: profile.user.name,
+    avatarUrl: avatarPublicUrl(profile.user.id, profile.user.image),
     role: profile.user.role,
     plan: profile.plan.toLowerCase(),
     planLabel: limits.label,

@@ -91,6 +91,26 @@
     resendVerification: function (email) { return req("/api/auth/resend-verification", { method: "POST", body: { email: email }, auth: false }); },
     me: function () { return req("/api/auth/me"); },
     saveName: function (name) { return req("/api/auth/me", { method: "PATCH", body: { name: name } }); },
+    // Avatar — FormData (req() JSON'lashtiradi, shu sabab to'g'ridan fetch)
+    uploadAvatar: function (file) {
+      var fd = new FormData();
+      fd.append("avatar", file);
+      var t = getToken();
+      return fetch(base + "/api/auth/avatar", {
+        method: "POST",
+        headers: t ? { Authorization: "Bearer " + t } : {},
+        body: fd,
+      }).then(function (res) {
+        return res.json().catch(function () { return null; }).then(function (data) {
+          if (!res.ok) {
+            var err = new Error((data && data.error) || "Upload failed (HTTP " + res.status + ")");
+            err.status = res.status;
+            throw err;
+          }
+          return data;
+        });
+      });
+    },
 
     // Katalog / plugin profil
     catalog: function () { return req("/api/plugin/catalog", { auth: false }); },

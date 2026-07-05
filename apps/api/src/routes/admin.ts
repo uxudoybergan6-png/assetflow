@@ -172,6 +172,7 @@ adminRouter.get("/plugin-subscribers", async (_req, res) => {
           id: true,
           email: true,
           name: true,
+          image: true,
           role: true,
           emailVerified: true,
           subscription: true,
