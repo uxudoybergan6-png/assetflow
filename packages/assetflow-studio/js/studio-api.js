@@ -78,8 +78,8 @@ const StudioApi = (() => {
       const isLocal = /localhost|127\.0\.0\.1/.test(baseUrl());
       throw new Error(
         isLocal
-          ? "API ishlamayapti. Terminalda: npm run dev:api (port 4000)"
-          : "Server bilan aloqa uzildi — server uyqudan uyg'onayotgan bo'lishi mumkin, biroz kutib qayta urining"
+          ? "API is not running. In the terminal: npm run dev:api (port 4000)"
+          : "Lost connection to the server — it may be waking up from sleep, please wait and try again"
       );
     }
 
@@ -98,7 +98,7 @@ const StudioApi = (() => {
       }
       const err = new Error(
         res.status === 401
-          ? data?.error || data?.message || "Sessiya tugadi — qayta tizimga kiring"
+          ? data?.error || data?.message || "Session expired — please sign in again"
           : data?.error || data?.message || `HTTP ${res.status}`
       );
       err.status = res.status;
@@ -189,17 +189,17 @@ const StudioApi = (() => {
         }
         const friendly =
           xhr.status === 413
-            ? "Fayl juda katta — maksimal 3 GB"
+            ? "File is too large — maximum 3 GB"
             : xhr.status === 401
-              ? "Sessiya tugagan — qayta tizimga kiring"
-              : `Yuklash xatosi (HTTP ${xhr.status})`;
+              ? "Session expired — please sign in again"
+              : `Upload error (HTTP ${xhr.status})`;
         const err = new Error((data && (data.error || data.message)) || friendly);
         err.status = xhr.status;
         reject(err);
       };
       xhr.onerror = () => {
         if (tryNo < 2) reject({ __retry: true });
-        else reject(new Error("Yuklash uzilib qoldi — internetni tekshirib qayta urinib ko'ring"));
+        else reject(new Error("Upload interrupted — check your internet connection and try again"));
       };
       xhr.send(opts.body);
     });
@@ -249,7 +249,7 @@ const StudioApi = (() => {
         if (onProgress) onProgress(base + loaded);
       };
       const u = urls.find((x) => x.kind === k);
-      if (!u) throw new Error(`${k} uchun yuklash URL olinmadi`);
+      if (!u) throw new Error(`Failed to get upload URL for ${k}`);
       // Bulut presigned PUT — FAQAT Content-Type (Authorization YO'Q, imzo buzilmasin)
       await xhrWithRetry({
         method: "PUT",
@@ -269,7 +269,7 @@ const StudioApi = (() => {
       try {
         await request(`/api/contributor/templates/${id}/preview-uploaded`, { method: "POST" });
       } catch (e) {
-        console.warn("preview-uploaded signali yuborilmadi (transcode keyinroq urinadi):", e);
+        console.warn("preview-uploaded signal not sent (transcode will retry later):", e);
       }
     }
     // Pack presigned PUT tugadi → server signali: DB'ga nom/hajm yozadi va .zip

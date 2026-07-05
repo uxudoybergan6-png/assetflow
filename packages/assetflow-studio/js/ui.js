@@ -96,12 +96,12 @@ function toast(title, msg, kind){
 
 // status meta
 const STATUS = {
-  draft:    {cls:'badge-draft',    label:'Qoralama'},
-  pending:  {cls:'badge-pending',  label:'Kutilmoqda'},
-  approved: {cls:'badge-approved', label:'Tasdiqlangan'},
+  draft:    {cls:'badge-draft',    label:'Draft'},
+  pending:  {cls:'badge-pending',  label:'Pending'},
+  approved: {cls:'badge-approved', label:'Approved'},
   soft:     {cls:'badge-soft',     label:'Soft reject'},
   hard:     {cls:'badge-hard',     label:'Hard reject'},
-  archived: {cls:'badge-archived', label:'Arxivlangan'},
+  archived: {cls:'badge-archived', label:'Archived'},
 };
 function badge(status){ const s=STATUS[status]; return `<span class="badge ${s.cls}"><span class="dot"></span>${s.label}</span>`; }
 

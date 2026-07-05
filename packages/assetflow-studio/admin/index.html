@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,28 +39,28 @@
         <div id="userName" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Admin</div>
         <div style="font-size:10px;color:var(--muted2)">Super Admin</div>
       </div>
-      <button type="button" class="uout" onclick="AssetFlowAuth.logout()" title="Chiqish"><i class="ph ph-sign-out"></i></button>
+      <button type="button" class="uout" onclick="AssetFlowAuth.logout()" title="Log out"><i class="ph ph-sign-out"></i></button>
     </div>
   </aside>
 
   <!-- ===================== MAIN ===================== -->
   <div class="adx-main">
     <header class="adx-topbar">
-      <button type="button" class="adx-ico adx-navtoggle" id="adxNavToggle" aria-label="Menyu"><i class="ph ph-list"></i></button>
+      <button type="button" class="adx-ico adx-navtoggle" id="adxNavToggle" aria-label="Menu"><i class="ph ph-list"></i></button>
       <div style="min-width:0">
         <div class="adx-crumb" id="crumb"></div>
-        <div class="adx-ptitle" id="pageTitle">Boshqaruv</div>
+        <div class="adx-ptitle" id="pageTitle">Overview</div>
       </div>
       <span style="flex:1"></span>
       <div class="adx-tbactions" id="tbActions"></div>
       <div class="adx-inp adx-search" style="width:280px;height:34px">
         <i class="ph ph-magnifying-glass" style="font-size:14px;color:#8A93A3"></i>
-        <input id="adminGlobalSearch" placeholder="Shablon, contributor, ID qidirish&#8230;" oninput="adminGlobalSearch(this.value)">
+        <input id="adminGlobalSearch" placeholder="Search template, contributor, ID&#8230;" oninput="adminGlobalSearch(this.value)">
         <span class="adx-kbd">&#8984;K</span>
       </div>
-      <button type="button" class="adx-ico" id="adxBell" onclick="route('moderation')" title="Moderatsiya navbati"><i class="ph ph-bell"></i><span class="ndot" id="adxBellDot" style="display:none"></span></button>
-      <button type="button" class="adx-ico" id="adxThemeBtn" title="Mavzu"><i class="ph ph-sun" id="adxThemeIco"></i></button>
-      <button type="button" class="adx-ico" onclick="AssetFlowAuth.logout()" title="Chiqish"><i class="ph ph-sign-out"></i></button>
+      <button type="button" class="adx-ico" id="adxBell" onclick="route('moderation')" title="Moderation queue"><i class="ph ph-bell"></i><span class="ndot" id="adxBellDot" style="display:none"></span></button>
+      <button type="button" class="adx-ico" id="adxThemeBtn" title="Theme"><i class="ph ph-sun" id="adxThemeIco"></i></button>
+      <button type="button" class="adx-ico" onclick="AssetFlowAuth.logout()" title="Log out"><i class="ph ph-sign-out"></i></button>
     </header>
 
     <main class="adx-content" id="adxContent"><div id="view"></div></main>
@@ -96,52 +96,52 @@ if (AF_ADMIN) {
   const _av = document.getElementById("userAvatar"); if(_av) _av.textContent = _ini;
 }
 
-/* ── Nav — maket sidebar 4 guruh (Ish maydoni · Boshqaruv · Biznes · Tizim) ── */
+/* ── Nav — layout sidebar has 4 groups (Workspace · Management · Business · System) ── */
 const NAV = [
-  {grp:'ISH MAYDONI'},
-  {id:'overview',     label:'Boshqaruv',          icon:'squares-four'},
-  {id:'moderation',   label:'Moderatsiya',        icon:'shield-check'},
-  {id:'templates',    label:'Barcha shablonlar',  icon:'stack'},
-  {grp:'BOSHQARUV'},
-  {id:'contributors', label:'Contributorlar',     icon:'users-three'},
-  {id:'subscribers',  label:'Obunachilar',        icon:'puzzle-piece'},
-  {id:'plans',        label:'Tariflar',           icon:'tag'},
-  {id:'messaging',    label:'Xabarlar',           icon:'chat-circle-dots'},
-  {id:'analytics',    label:'Analitika',          icon:'chart-bar'},
-  {grp:'BIZNES'},
-  {id:'finance',      label:'Moliya',             icon:'wallet'},
-  {id:'pricing',      label:'Narx boshqaruvi',    icon:'currency-circle-dollar'},
-  {id:'genspend',     label:'Gen sarfi',          icon:'gauge'},
-  {id:'payouts',      label:'Payout',             icon:'hand-coins'},
-  {id:'activity',     label:'Faoliyat jurnali',   icon:'list-checks'},
-  {grp:'TIZIM'},
-  {id:'settings',     label:'Sozlamalar',         icon:'gear-six'},
-  {id:'logs',         label:'Tizim loglari',      icon:'scroll'},
+  {grp:'WORKSPACE'},
+  {id:'overview',     label:'Overview',           icon:'squares-four'},
+  {id:'moderation',   label:'Moderation',         icon:'shield-check'},
+  {id:'templates',    label:'All templates',      icon:'stack'},
+  {grp:'MANAGEMENT'},
+  {id:'contributors', label:'Contributors',       icon:'users-three'},
+  {id:'subscribers',  label:'Subscribers',        icon:'puzzle-piece'},
+  {id:'plans',        label:'Plans',              icon:'tag'},
+  {id:'messaging',    label:'Messages',           icon:'chat-circle-dots'},
+  {id:'analytics',    label:'Analytics',          icon:'chart-bar'},
+  {grp:'BUSINESS'},
+  {id:'finance',      label:'Finance',            icon:'wallet'},
+  {id:'pricing',      label:'Pricing management', icon:'currency-circle-dollar'},
+  {id:'genspend',     label:'Gen spend',          icon:'gauge'},
+  {id:'payouts',      label:'Payouts',            icon:'hand-coins'},
+  {id:'activity',     label:'Activity log',       icon:'list-checks'},
+  {grp:'SYSTEM'},
+  {id:'settings',     label:'Settings',           icon:'gear-six'},
+  {id:'logs',         label:'System logs',        icon:'scroll'},
   {id:'audit',        label:'Audit log',          icon:'clipboard-text'},
 ];
 
 const TITLES = {
-  overview:['Boshqaruv','Platforma holati'],
-  moderation:['Moderatsiya navbati','Yangi shablonlarni ko‘rib chiqish'],
-  templates:['Barcha shablonlar','Global katalog'],
-  contributors:['Contributorlar','Foydalanuvchilar boshqaruvi'],
-  'contributor-detail':['Contributor profili','Contributorlar'],
-  subscribers:['AE Plugin obunachilari','Haqiqiy Browse foydalanuvchilari'],
-  'subscriber-detail':['Obunachi profili','AE Plugin obunachilari'],
-  plans:['Tariflar','Free va Pro — narx va limitlar'],
-  messaging:['Xabarlar','Aloqa markazi'],
-  analytics:['Analitika','Chuqur tahlil'],
-  finance:['Moliya','Provayder xarajati va margin'],
-  pricing:['Narx boshqaruvi','Model narx jadvali'],
-  genspend:['Gen sarfi','Per-user kredit sarfi'],
-  payouts:['Payout','Contributor to‘lovlari'],
-  activity:['Faoliyat jurnali','Yuklab olish voqealari'],
-  settings:['Sozlamalar','Marketplace konfiguratsiyasi'],
-  logs:['Tizim loglari','Admin · Contributor · AE Plugin'],
-  audit:['Audit log','Compliance jurnali'],
+  overview:['Overview','Platform status'],
+  moderation:['Moderation queue','Review new templates'],
+  templates:['All templates','Global catalog'],
+  contributors:['Contributors','User management'],
+  'contributor-detail':['Contributor profile','Contributors'],
+  subscribers:['AE Plugin subscribers','Real Browse users'],
+  'subscriber-detail':['Subscriber profile','AE Plugin subscribers'],
+  plans:['Plans','Free and Pro — pricing and limits'],
+  messaging:['Messages','Contact center'],
+  analytics:['Analytics','In-depth analysis'],
+  finance:['Finance','Provider cost and margin'],
+  pricing:['Pricing management','Model pricing table'],
+  genspend:['Gen spend','Per-user credit spend'],
+  payouts:['Payouts','Contributor payouts'],
+  activity:['Activity log','Download events'],
+  settings:['Settings','Marketplace configuration'],
+  logs:['System logs','Admin · Contributor · AE Plugin'],
+  audit:['Audit log','Compliance log'],
 };
 
-/* Full-bleed (content padding'siz) ekranlar */
+/* Full-bleed (no content padding) screens */
 const FLUSH_VIEWS = { moderation: 1, messaging: 1 };
 
 let CURRENT = 'overview';
@@ -193,7 +193,7 @@ function route(view, arg){
   const fn = VIEWS[view];
   try {
     document.getElementById('view').innerHTML = fn ? fn(arg) :
-      `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-weight:600;font-size:13px">Tez orada</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Bu bo‘lim keyingi bosqichda ulanadi.</div></div>`;
+      `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-weight:600;font-size:13px">Coming soon</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">This section will be connected in the next phase.</div></div>`;
     if (window.afterRender && window.afterRender[view]) {
       const ar = window.afterRender[view](arg);
       if (ar && typeof ar.then === "function") ar.catch((e) => console.error(e));
@@ -202,12 +202,12 @@ function route(view, arg){
   } catch (e) {
     console.error(e);
     AssetFlowLog.error(e.message, { action: "view_error", detail: view });
-    document.getElementById('view').innerHTML = `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Xatolik</div><div style="font-size:11px;color:var(--muted2)">${e.message}</div></div>`;
+    document.getElementById('view').innerHTML = `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Error</div><div style="font-size:11px;color:var(--muted2)">${e.message}</div></div>`;
   }
   document.getElementById('adxContent').scrollTop = 0;
 }
 
-/* ── Mobil drawer (adx qobiq o'zi boshqaradi — theme.js .app ni topmaydi) ── */
+/* ── Mobile drawer (the adx shell handles it itself — theme.js can't find .app) ── */
 document.getElementById('adxNavToggle').addEventListener('click', () => {
   document.body.classList.toggle('adx-nav-open');
 });
@@ -215,8 +215,8 @@ document.getElementById('adxScrim').addEventListener('click', () => {
   document.body.classList.remove('adx-nav-open');
 });
 
-/* ── Mavzu tugmasi (legacy ekranlar uchun; yangi qobiq dark-fixed) ── */
-/* Redesign dark-first: foydalanuvchi aniq tanlamagan bo'lsa admin dark ochiladi */
+/* ── Theme button (for legacy screens; the new shell is dark-fixed) ── */
+/* Redesign dark-first: admin opens in dark mode unless the user explicitly chose otherwise */
 if (!localStorage.getItem('af-theme')) AssetFlowTheme.apply('dark');
 document.getElementById('adxThemeBtn').addEventListener('click', () => AssetFlowTheme.toggle());
 window.addEventListener('af-theme-change', (e) => {

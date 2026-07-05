@@ -1,5 +1,5 @@
 /* ============================================================
-   AssetFlow — UI ma'lumotlari (bo'sh boshlang'ich; API dan to'ldiriladi)
+   AssetFlow — UI data (empty by default; filled from API)
    ============================================================ */
 const CATS = ['Logo Reveal','Title / Intro','Lower Thirds','Transitions','Social Media','Slideshow','Infographics','Backgrounds','YouTube','Instagram Reels'];
 const GRADS = ['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10'];
@@ -22,53 +22,53 @@ function catFromLabel(label) {
 }
 
 /**
- * AE Browse plugin — faqat Free va Pro
- * downloadLimit: oyiga yuklab olish; unlimitedDownloads=true bo‘lsa limit yo‘q
+ * AE Browse plugin — Free and Pro only
+ * downloadLimit: downloads per month; unlimitedDownloads=true means no limit
  */
 let PLUGIN_PLANS = [
   {
     id: 'free',
     name: 'Free',
-    tagline: 'Boshlash uchun',
+    tagline: 'To get started',
     priceMonthly: 0,
     priceYearly: 0,
     currency: 'USD',
     unlimitedDownloads: false,
     downloadLimit: 15,
     importLimit: 10,
-    catalog: 'Barcha tasdiqlangan shablonlar (watermark bilan)',
+    catalog: 'All approved templates (with watermark)',
     maxResolution: '1080p',
     features: [
-      '15 ta yuklab olish / oy',
-      '10 ta AE import / oy',
-      '1080p gacha',
-      'Jamiyat katalogi',
+      '15 downloads / month',
+      '10 AE imports / month',
+      'Up to 1080p',
+      'Community catalog',
     ],
     active: true,
   },
   {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Professional studiya',
+    tagline: 'Professional studio',
     priceMonthly: 19,
     priceYearly: 190,
     currency: 'USD',
     unlimitedDownloads: true,
     downloadLimit: null,
     importLimit: null,
-    catalog: 'To‘liq katalog + 4K + yangiliklar birinchi navbatda',
+    catalog: 'Full catalog + 4K + early access to new releases',
     maxResolution: '4K',
     features: [
-      'Cheksiz yuklab olish',
-      'Cheksiz AE import',
-      '4K va pack fayllar',
-      'Yangi shablonlarga erta kirish',
+      'Unlimited downloads',
+      'Unlimited AE imports',
+      '4K and pack files',
+      'Early access to new templates',
     ],
     active: true,
   },
 ];
 
-/** Pro tarif uchun chegirma / promo kod (admin boshqaradi) */
+/** Discount / promo code for the Pro plan (managed by admin) */
 let PLUGIN_PROMO = {
   enabled: false,
   code: '',
@@ -143,14 +143,14 @@ function formatMoney(n, currency) {
   return `$${Number(n).toFixed(n % 1 ? 2 : 0)}`;
 }
 
-/** Admin + Contributor — Pro/Free narx ko‘rsatish */
+/** Admin + Contributor — show Pro/Free price */
 function planPriceLabel(p) {
-  if (!p || p.id === 'free') return 'Bepul';
+  if (!p || p.id === 'free') return 'Free';
   const pr = getProPrices();
   if (pr.hasDiscount && promoAppliesTo('monthly')) {
-    return `${formatMoney(pr.monthlyFinal)}/oy · chegirma`;
+    return `${formatMoney(pr.monthlyFinal)}/mo · discount`;
   }
-  return `${formatMoney(p.priceMonthly)}/oy`;
+  return `${formatMoney(p.priceMonthly)}/mo`;
 }
 
 function formatProPriceForContributor() {
@@ -159,7 +159,7 @@ function formatProPriceForContributor() {
   if (pr.hasDiscount && PLUGIN_PROMO.enabled) {
     return `<span style="text-decoration:line-through;color:var(--tx-3)">${formatMoney(pr.monthly)}</span> <b style="color:var(--green)">${formatMoney(pr.monthlyFinal)}</b> <span class="pill" style="font-size:10px">${PLUGIN_PROMO.code}</span>`;
   }
-  return `${formatMoney(p.priceMonthly)}/oy`;
+  return `${formatMoney(p.priceMonthly)}/mo`;
 }
 
 function planById(id) {
@@ -169,8 +169,8 @@ function planById(id) {
 
 function formatPlanLimit(plan) {
   if (!plan) return '—';
-  if (plan.unlimitedDownloads) return 'Cheksiz';
-  return `${plan.downloadLimit} / oy`;
+  if (plan.unlimitedDownloads) return 'Unlimited';
+  return `${plan.downloadLimit} / mo`;
 }
 
 function normalizePlanLabel(plan) {
@@ -258,7 +258,7 @@ const CAT_DIST = [];
 function buildCatDist() {
   const counts = {};
   TEMPLATES.forEach((t) => {
-    const k = t.cat || "Boshqa";
+    const k = t.cat || "Other";
     counts[k] = (counts[k] || 0) + 1;
   });
   const total = Math.max(TEMPLATES.length, 1);
@@ -275,16 +275,16 @@ const REJECT_REASONS = [];
 const AUDIT = [];
 
 const AUDIT_META = {
-  approve:{cls:'green', ic:'check', label:'Tasdiqlash'},
+  approve:{cls:'green', ic:'check', label:'Approve'},
   soft_reject:{cls:'orange', ic:'reply', label:'Soft reject'},
   hard_reject:{cls:'red', ic:'ban', label:'Hard reject'},
-  block:{cls:'red', ic:'ban', label:'Bloklash'},
-  unblock:{cls:'green', ic:'check', label:'Blokdan chiqarish'},
+  block:{cls:'red', ic:'ban', label:'Block'},
+  unblock:{cls:'green', ic:'check', label:'Unblock'},
   broadcast:{cls:'yellow', ic:'megaphone', label:'Broadcast'},
-  template_delete:{cls:'gray', ic:'trash', label:'Shablon o\u2018chirish'},
-  sub_block:{cls:'red', ic:'ban', label:'Obunachi bloklandi'},
-  sub_remove:{cls:'gray', ic:'trash', label:'Obunachi chiqarildi'},
-  sub_restore:{cls:'green', ic:'refresh', label:'Obunachi tiklandi'},
-  edit_meta:{cls:'blue', ic:'edit', label:'Metadata tahriri'},
-  auto_archive:{cls:'gray', ic:'archive', label:'Avto-arxiv'},
+  template_delete:{cls:'gray', ic:'trash', label:'Template deleted'},
+  sub_block:{cls:'red', ic:'ban', label:'Subscriber blocked'},
+  sub_remove:{cls:'gray', ic:'trash', label:'Subscriber removed'},
+  sub_restore:{cls:'green', ic:'refresh', label:'Subscriber restored'},
+  edit_meta:{cls:'blue', ic:'edit', label:'Metadata edit'},
+  auto_archive:{cls:'gray', ic:'archive', label:'Auto-archive'},
 };

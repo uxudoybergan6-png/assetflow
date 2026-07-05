@@ -1,11 +1,11 @@
 /**
- * Shablonlar va API dan hisoblangan statistika (demo raqamlar yo'q)
+ * Statistics computed from templates and the API (no demo numbers)
  */
 function buildRejectReasonsFromTemplates() {
   const buckets = {};
   TEMPLATES.filter((t) => t.status === "soft" || t.status === "hard").forEach((t) => {
     const raw = (t.reason || "").trim();
-    const nm = raw ? raw.slice(0, 72) : "Sabab ko'rsatilmagan";
+    const nm = raw ? raw.slice(0, 72) : "No reason given";
     if (!buckets[nm]) buckets[nm] = { nm, soft: 0, hard: 0 };
     if (t.status === "soft") buckets[nm].soft++;
     else buckets[nm].hard++;

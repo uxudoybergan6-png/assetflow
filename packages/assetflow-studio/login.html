@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
 <meta name="turnstile-site-key" content="0x4AAAAAAADvCAW2JrGu92omA">
-<title>FrameFlow — Kirish</title>
+<title>FrameFlow — Sign in</title>
 <link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/studio-config.js"></script>
 <script src="/studio/js/theme.js"></script>
@@ -28,57 +28,57 @@
       <span class="brand-word">Frame<b>Flow</b></span>
     </div>
     <div class="auth-hero">
-      <h1>Kreativ aktivlar va <em>AI generatsiya</em> platformasi</h1>
-      <p>Shablonlarni yuklang, moderatsiyadan o'tkazing va After Effects ichida to'g'ridan-to'g'ri import qiling — bitta oqimda.</p>
+      <h1>Creative assets and <em>AI generation</em> platform</h1>
+      <p>Upload templates, get them through moderation, and import straight into After Effects — all in one flow.</p>
     </div>
     <div class="auth-feats">
       <div class="feat">
         <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
-        <span class="feat-txt"><b>Shablon marketplace</b><span>Contributor → Admin → katalog</span></span>
+        <span class="feat-txt"><b>Template marketplace</b><span>Contributor → Admin → catalog</span></span>
       </div>
       <div class="feat">
         <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 8 16 12 10 16 10 8"/><rect x="3" y="4" width="18" height="16" rx="2.5"/></svg></span>
-        <span class="feat-txt"><b>AE plagin</b><span>Browse paneli, Free/Pro limitlar</span></span>
+        <span class="feat-txt"><b>AE plugin</b><span>Browse panel, Free/Pro limits</span></span>
       </div>
       <div class="feat">
         <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/></svg></span>
-        <span class="feat-txt"><b>AI Gen Studio</b><span>Rasm · video · ovoz · SFX (kredit)</span></span>
+        <span class="feat-txt"><b>AI Gen Studio</b><span>Image · video · voice · SFX (credits)</span></span>
       </div>
     </div>
   </aside>
 
   <main class="auth-main">
     <div class="auth-main-top">
-      <button type="button" class="icon-btn" data-theme-toggle title="Mavzu">
+      <button type="button" class="icon-btn" data-theme-toggle title="Theme">
         <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
       </button>
     </div>
 
     <div class="auth-card">
       <div class="auth-tabs" role="tablist">
-        <button type="button" class="auth-tab active" data-tab="login">Kirish</button>
-        <button type="button" class="auth-tab" data-tab="register">Ro'yxatdan o'tish</button>
+        <button type="button" class="auth-tab active" data-tab="login">Sign in</button>
+        <button type="button" class="auth-tab" data-tab="register">Sign up</button>
       </div>
 
       <div id="panelLogin">
         <div class="form-head">
-          <h1 class="h1">Xush kelibsiz</h1>
-          <p>Hisobingizga kirish uchun ma'lumotlaringizni kiriting.</p>
+          <h1 class="h1">Welcome back</h1>
+          <p>Enter your details to sign in to your account.</p>
         </div>
         <form id="loginForm">
           <div class="field">
             <label for="loginEmail">Email</label>
             <div class="field-wrap">
               <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg></span>
-              <input id="loginEmail" class="input has-lead" type="email" name="email" autocomplete="username" placeholder="siz@email.com" required>
+              <input id="loginEmail" class="input has-lead" type="email" name="email" autocomplete="username" placeholder="you@email.com" required>
             </div>
           </div>
           <div class="field">
-            <label for="loginPass">Parol</label>
+            <label for="loginPass">Password</label>
             <div class="field-wrap">
               <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-              <input id="loginPass" class="input has-lead has-trail" type="password" name="password" autocomplete="current-password" placeholder="Kamida 8 belgi" required>
-              <button type="button" class="toggle-pw" id="loginPwToggle" aria-label="Parolni ko'rsatish" aria-pressed="false">
+              <input id="loginPass" class="input has-lead has-trail" type="password" name="password" autocomplete="current-password" placeholder="At least 8 characters" required>
+              <button type="button" class="toggle-pw" id="loginPwToggle" aria-label="Show password" aria-pressed="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
@@ -86,52 +86,52 @@
           <div class="field-meta">
             <label class="remember">
               <div class="checkbox" id="rememberChk" tabindex="0" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg></div>
-              Meni eslab qol
+              Remember me
             </label>
-            <a href="/reset-password.html" class="forgot">Parolni unutdingizmi?</a>
+            <a href="/reset-password.html" class="forgot">Forgot your password?</a>
           </div>
           <p class="auth-error hidden" id="loginError" role="alert"></p>
-          <button type="submit" class="btn btn-primary btn-block">Kirish</button>
+          <button type="submit" class="btn btn-primary btn-block">Sign in</button>
         </form>
-        <div class="auth-or hidden" id="loginGoogleSep" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">yoki</div>
+        <div class="auth-or hidden" id="loginGoogleSep" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">or</div>
         <div id="loginGoogleBtn" style="display:flex;justify-content:center"></div>
       </div>
 
       <div id="panelRegister" class="hidden">
-        <h1 class="h1" style="margin-bottom:6px">Contributor bo'ling</h1>
-        <p class="body" style="margin-bottom:22px">Hisob yaratiladi — darhol Studio ochiladi</p>
+        <h1 class="h1" style="margin-bottom:6px">Become a contributor</h1>
+        <p class="body" style="margin-bottom:22px">Create an account — Studio opens right away</p>
         <form id="registerForm" class="col gap-14">
           <div class="field">
-            <label>Ism va familiya</label>
-            <input class="input" name="name" placeholder="Ismingiz" required>
+            <label>Full name</label>
+            <input class="input" name="name" placeholder="Your name" required>
           </div>
           <div class="field">
             <label>Email</label>
             <input class="input" type="email" name="email" placeholder="email@example.com" required>
           </div>
           <div class="field">
-            <label>Parol</label>
-            <input class="input" type="password" name="password" minlength="8" placeholder="Kamida 8 belgi" required>
+            <label>Password</label>
+            <input class="input" type="password" name="password" minlength="8" placeholder="At least 8 characters" required>
           </div>
           <div class="field">
-            <label>Parolni tasdiqlang</label>
+            <label>Confirm password</label>
             <input class="input" type="password" name="password2" minlength="8" required>
           </div>
           <label class="row center gap-8" style="cursor:pointer;font-size:13px;color:var(--tx-1)">
             <div class="checkbox" id="termsChk" tabindex="0" role="checkbox"></div>
-            Platforma qoidalariga roziman
+            I agree to the platform rules
           </label>
           <div id="turnstileWidget" style="margin:2px 0"></div>
           <p class="auth-error hidden" id="registerError" role="alert"></p>
-          <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Ro'yxatdan o'tish</button>
+          <button type="submit" class="btn btn-primary" style="width:100%;height:42px">Sign up</button>
         </form>
-        <div class="auth-or hidden" id="registerGoogleSep" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">yoki</div>
+        <div class="auth-or hidden" id="registerGoogleSep" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">or</div>
         <div id="registerGoogleBtn" style="display:flex;justify-content:center"></div>
       </div>
     </div>
 
     <p class="auth-foot small">
-      Admin uchun: SQL da <code style="font-size:11px">UPDATE "User" SET role='ADMIN'</code>
+      For admin access: in SQL <code style="font-size:11px">UPDATE "User" SET role='ADMIN'</code>
     </p>
   </main>
 </div>
@@ -151,7 +151,7 @@
     this.setAttribute("aria-checked", this.classList.contains("on"));
   });
 
-  // Saqlangan email ni qayta to'ldirish
+  // Re-fill the saved email
   const savedEmail = localStorage.getItem(RM_EMAIL);
   if (savedEmail) {
     document.querySelector('#panelLogin input[name="email"]').value = savedEmail;
@@ -159,38 +159,38 @@
     chk.setAttribute("aria-checked", "true");
   }
 
-  // Eski versiyadan qolgan JWT'ni localStorage'dan tozalaymiz (XSS xavfi).
+  // Clear any leftover JWT from an older version's localStorage (XSS risk).
   localStorage.removeItem(RM_SESSION);
 
   const card = document.querySelector(".auth-card");
 
-  // Joriy session tekshirish
+  // Check for an existing session
   const existing = AssetFlowAuth.getSession();
   if (existing?.apiToken) {
     location.href = existing.role === "admin" ? ASSETFLOW_STUDIO.adminUrl : ASSETFLOW_STUDIO.contributorUrl;
     return;
   }
 
-  // Sessiya tugagan bo'lsa banner (global 401 interceptor qo'ygan)
+  // Banner if the session expired (set by the global 401 interceptor)
   if (sessionStorage.getItem("af_session_expired")) {
     sessionStorage.removeItem("af_session_expired");
     if (card) {
       const exp = document.createElement("p");
       exp.className = "auth-error";
       exp.style.marginBottom = "12px";
-      exp.textContent = "Sessiya tugadi — qaytadan tizimga kiring";
+      exp.textContent = "Your session expired — please sign in again";
       card.prepend(exp);
     }
   }
 
-  // API sog'liq tekshiruvi
+  // API health check
   if (card && typeof StudioApi !== "undefined") {
     const ok = await StudioApi.healthCheck();
     if (!ok) {
       const apiBanner = document.createElement("p");
       apiBanner.className = "auth-error";
       apiBanner.style.marginBottom = "12px";
-      apiBanner.textContent = "API ulanmadi. Alohida terminalda: npm run dev:api";
+      apiBanner.textContent = "Could not reach the API. In a separate terminal: npm run dev:api";
       card.prepend(apiBanner);
     }
   }
@@ -210,8 +210,8 @@
     this.setAttribute("aria-checked", this.classList.contains("on"));
   });
 
-  // Turnstile — meta[turnstile-site-key] bo'sh bo'lsa widget chizilmaydi
-  // (backend ham kalit yo'q bo'lsa fail-open, token talab qilinmaydi).
+  // Turnstile — if meta[turnstile-site-key] is empty, the widget is not drawn
+  // (if the backend also has no key, it fails open and no token is required).
   let turnstileToken = "";
   const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.getAttribute("content") || "";
   let turnstileWidgetId = null;
@@ -231,10 +231,10 @@
 
   function afterAuth(r, remember) {
     if (r.session.role === "user") {
-      return "Bu hisob faqat obunachi (USER). Contributor uchun ro'yxatdan o'ting.";
+      return "This account is a subscriber (USER) only. Please sign up as a contributor.";
     }
     if (remember) {
-      // FAQAT email saqlanadi — JWT localStorage'ga yozilmaydi (XSS xavfi).
+      // ONLY the email is saved — the JWT is never written to localStorage (XSS risk).
       localStorage.setItem(RM_EMAIL, r.session.email);
     } else {
       localStorage.removeItem(RM_EMAIL);
@@ -250,9 +250,9 @@
     return null;
   }
 
-  // Google bilan kirish — meta[google-client-id] bo'sh bo'lsa tugma chizilmaydi
-  // (kalit hali sozlanmagan). GIS skript async yuklanadi — window.google tayyor
-  // bo'lguncha kutamiz.
+  // Sign in with Google — if meta[google-client-id] is empty, the button is not drawn
+  // (the key isn't configured yet). The GIS script loads async — we wait until
+  // window.google is ready.
   const googleClientId = document.querySelector('meta[name="google-client-id"]')?.getAttribute("content") || "";
   if (googleClientId) {
     async function onGoogleCredential(resp) {
@@ -297,16 +297,16 @@
     const fd = new FormData(e.target);
     const terms = document.getElementById("termsChk");
     if (!terms.classList.contains("on")) {
-      toast("Qoidalar", "Platforma qoidalariga rozilik belgilang", "warn");
+      toast("Rules", "Please agree to the platform rules", "warn");
       return;
     }
     if (fd.get("password") !== fd.get("password2")) {
-      err.textContent = "Parollar mos kelmaydi";
+      err.textContent = "Passwords do not match";
       err.classList.remove("hidden");
       return;
     }
     if (turnstileSiteKey && !turnstileToken) {
-      err.textContent = "Bot tekshiruvini yakunlang";
+      err.textContent = "Please complete the bot check";
       err.classList.remove("hidden");
       return;
     }
@@ -320,8 +320,8 @@
     turnstileToken = "";
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     err.classList.add("hidden");
-    toast("Tayyor", "Contributor hisobi yaratildi", "success");
-    // Ro'yxatdan o'tishda "meni eslab qol" checkboxini tekshirmaymiz
+    toast("Done", "Contributor account created", "success");
+    // We don't check the "remember me" checkbox during sign-up
     const block = afterAuth(r, false);
     if (block) {
       err.textContent = block;
@@ -332,7 +332,7 @@
 })();
 </script>
 <script>
-/* Parolni ko'rsatish/yashirish — auth logikasiga tegmaydi (faqat input.type) */
+/* Show/hide password — does not touch auth logic (only input.type) */
 (function () {
   var t = document.getElementById('loginPwToggle');
   var i = document.getElementById('loginPass');
@@ -340,7 +340,7 @@
     var show = i.type === 'password';
     i.type = show ? 'text' : 'password';
     t.setAttribute('aria-pressed', String(show));
-    t.setAttribute('aria-label', show ? 'Parolni yashirish' : "Parolni ko'rsatish");
+    t.setAttribute('aria-label', show ? 'Hide password' : "Show password");
   });
 })();
 </script>

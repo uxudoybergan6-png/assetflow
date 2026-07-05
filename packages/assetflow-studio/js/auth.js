@@ -65,7 +65,7 @@ const AssetFlowAuth = (() => {
       apiToken: data.token,
       blocked: !!data.user.contributorBlocked,
       blockReason: data.user.contributorBlocked
-        ? "Admin tomonidan bloklangan"
+        ? "Blocked by admin"
         : "",
       at: Date.now(),
     };
@@ -73,7 +73,7 @@ const AssetFlowAuth = (() => {
 
   async function login(email, password) {
     if (typeof StudioApi === "undefined") {
-      return { ok: false, error: "API ulanishi yo\u2018q" };
+      return { ok: false, error: "API connection unavailable" };
     }
     try {
       const data = await StudioApi.login((email || "").trim(), password);
@@ -81,13 +81,13 @@ const AssetFlowAuth = (() => {
       setSession(session);
       return { ok: true, session };
     } catch (e) {
-      return { ok: false, error: e.message || "Kirish muvaffaqiyatsiz" };
+      return { ok: false, error: e.message || "Sign in failed" };
     }
   }
 
   async function loginWithGoogle(credential) {
     if (typeof StudioApi === "undefined") {
-      return { ok: false, error: "API ulanishi yo‘q" };
+      return { ok: false, error: "API connection unavailable" };
     }
     try {
       const data = await StudioApi.googleLogin(credential);
@@ -95,13 +95,13 @@ const AssetFlowAuth = (() => {
       setSession(session);
       return { ok: true, session };
     } catch (e) {
-      return { ok: false, error: e.message || "Google bilan kirish muvaffaqiyatsiz" };
+      return { ok: false, error: e.message || "Sign in with Google failed" };
     }
   }
 
   async function register(payload) {
     if (typeof StudioApi === "undefined") {
-      return { ok: false, error: "API ulanishi yo\u2018q" };
+      return { ok: false, error: "API connection unavailable" };
     }
     try {
       const data = await StudioApi.register(payload);
@@ -109,7 +109,7 @@ const AssetFlowAuth = (() => {
       setSession(session);
       return { ok: true, session };
     } catch (e) {
-      return { ok: false, error: e.message || "Ro\u2018yxatdan o\u2018tish muvaffaqiyatsiz" };
+      return { ok: false, error: e.message || "Registration failed" };
     }
   }
 
@@ -144,8 +144,8 @@ const AssetFlowAuth = (() => {
     return `<div class="blocked-banner">
       <div class="blocked-banner-ico">${typeof ic === "function" ? ic("ban") : "!"}</div>
       <div class="col grow" style="gap:4px">
-        <b style="color:var(--tx-0)">Hisobingiz bloklangan</b>
-        <span class="small">${s.blockReason || "Yangi yuklash va moderatsiyaga yuborish o\u2018chirilgan. Admin bilan bog\u2018laning."}</span>
+        <b style="color:var(--tx-0)">Your account is blocked</b>
+        <span class="small">${s.blockReason || "New uploads and submissions to moderation are disabled. Please contact admin."}</span>
       </div>
     </div>`;
   }

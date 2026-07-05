@@ -1,5 +1,5 @@
 /**
- * Shablon media — API asset URL va preview HTML
+ * Template media — API asset URL and preview HTML
  */
 const StudioMedia = (() => {
   function apiBase() {
@@ -31,13 +31,13 @@ const StudioMedia = (() => {
     return escapeAttr(s).replace(/>/g, "&gt;");
   }
 
-  /** Katta preview (moderatsiya / drawer) */
+  /** Large preview (moderation / drawer) */
   function renderPreview(t, opts = {}) {
     const h = opts.height || "auto";
     const aspect = opts.aspect || "16/10";
     const style = `width:100%;aspect-ratio:${aspect};object-fit:cover;background:#0f0f14;border-radius:${opts.radius || "0"};display:block;max-height:${opts.maxHeight || "none"}`;
     const grad = t.grad || "g1";
-    const fallback = `<div class="thumb ${grad} grain" style="width:100%;aspect-ratio:${aspect};display:grid;place-items:center"><span class="small" style="color:var(--tx-2);padding:12px;text-align:center">${ic("film")} Preview yuklanmagan</span></div>`;
+    const fallback = `<div class="thumb ${grad} grain" style="width:100%;aspect-ratio:${aspect};display:grid;place-items:center"><span class="small" style="color:var(--tx-2);padding:12px;text-align:center">${ic("film")} Preview not uploaded</span></div>`;
 
     if (t.id && (hasAsset(t, "preview") || t.previewUrl)) {
       const src = escapeAttr(t.previewUrl || assetUrl(t.id, "preview"));
@@ -50,7 +50,7 @@ const StudioMedia = (() => {
     return fallback;
   }
 
-  /** Kichik thumbnail (jadval / navbat) */
+  /** Small thumbnail (table / queue) */
   function renderThumb(t, size) {
     const lg = size === "lg";
     const h = lg ? "100%" : "42px";
@@ -85,7 +85,7 @@ const StudioMedia = (() => {
       );
     }
     if (!parts.length) {
-      parts.push(`<span class="small" style="color:var(--orange)">Fayllar yuklanmagan</span>`);
+      parts.push(`<span class="small" style="color:var(--orange)">Files not uploaded</span>`);
     }
     return parts.join("");
   }

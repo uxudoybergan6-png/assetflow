@@ -1,16 +1,16 @@
 /* ============================================================
    AssetFlow — Contributor Dashboard (Overview) · phase 2a
-   Layout: design-preview/studio-dashboard.html mockup'iga 1:1.
-   Bu fayl contributor-views.js dagi VIEWS.overview ni QAYTA belgilaydi
-   (index.html da contributor-views.js dan KEYIN yuklanadi → ustun).
-   Real ma'lumotga ulangan (TEMPLATES + DL_7). SOXTA raqam yo'q.
+   Layout: 1:1 with design-preview/studio-dashboard.html mockup.
+   This file REDEFINES VIEWS.overview from contributor-views.js
+   (loaded AFTER contributor-views.js in index.html → takes precedence).
+   Connected to real data (TEMPLATES + DL_7). NO fake numbers.
    ============================================================ */
 (function () {
   "use strict";
 
-  /* so'nggi 7 kun (eski->yangi) uchun o'zbekcha qisqa hafta-kun nomlari */
+  /* short weekday names for the last 7 days (old->new) */
   function af7Weekdays() {
-    var NAMES = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
+    var NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     var out = [];
     var now = new Date();
     for (var i = 6; i >= 0; i--) {
@@ -21,12 +21,12 @@
     return out;
   }
 
-  /* Grafik ma'lumoti — REAL.
-     1) Agar kunlik activityByDay (DL_7) to'lgan bo'lsa → so'nggi 7 kun.
-        (Eslatma: bu admin /plugin-analytics dan keladi — contributor init uni
-         yuklamaydi, shuning uchun odatda bo'sh.)
-     2) Aks holda → REAL per-shablon yuklab olishlar (contributor doim ko'radi).
-     3) Hech narsa bo'lmasa → bo'sh holat (soxta ustun YO'Q). */
+  /* Chart data — REAL.
+     1) If daily activityByDay (DL_7) is populated → last 7 days.
+        (Note: this comes from admin /plugin-analytics — contributor init
+         doesn't load it, so it's usually empty.)
+     2) Otherwise → REAL per-template downloads (contributor always sees these).
+     3) If nothing → empty state (NO fake bars). */
   function overviewChartData() {
     var ts = tByContributor(contributorId());
     var daily = (typeof DL_7 !== "undefined" && Array.isArray(DL_7)) ? DL_7 : [];
@@ -34,8 +34,8 @@
     if (dailySum > 0) {
       var labels = af7Weekdays();
       return {
-        title: "Faollik — yuklab olishlar",
-        meta: "So‘nggi 7 kun · jami " + dailySum.toLocaleString(),
+        title: "Activity — downloads",
+        meta: "Last 7 days · total " + dailySum.toLocaleString(),
         bars: daily.map(function (v, i) { return { v: v || 0, label: labels[i] }; }),
       };
     }
@@ -45,19 +45,19 @@
       .slice(0, 7);
     if (top.length) {
       return {
-        title: "Yuklab olishlar — shablon bo‘yicha",
-        meta: "Eng faol " + top.length + " ta · jami " + totalDl.toLocaleString(),
+        title: "Downloads — by template",
+        meta: "Top " + top.length + " · total " + totalDl.toLocaleString(),
         bars: top.map(function (t) { return { v: t.dl || 0, label: t.name || "" }; }),
       };
     }
-    return { title: "Faollik — yuklab olishlar", meta: "Ma‘lumot yo‘q", bars: [] };
+    return { title: "Activity — downloads", meta: "No data", bars: [] };
   }
 
   function overviewChartHtml(ch) {
     if (!ch.bars.length) {
       return '<div class="empty" style="padding:30px 16px"><div class="ico">' + ic("chart") +
-        '</div><p class="small">Hozircha yuklab olish ma‘lumoti yo‘q. Shablonlaringiz AE ' +
-        'pluginida yuklab olingach bu yerda ko‘rinadi.</p></div>';
+        '</div><p class="small">No download data yet. It will appear here once your ' +
+        'templates are downloaded in the AE plugin.</p></div>';
     }
     var max = Math.max.apply(null, ch.bars.map(function (b) { return b.v; }).concat([1]));
     var aria = ch.bars.map(function (b) { return b.label + " " + b.v; }).join(", ");
@@ -84,15 +84,15 @@
 
   function ovTable(ts) {
     return '<div class="card"><div class="table-wrap"><table class="data" id="ovTable" style="min-width:680px">' +
-      '<thead><tr><th style="width:46%">Shablon</th><th>Holat</th><th>Sana</th>' +
-      '<th class="th-num">Yuklab olishlar</th><th style="width:84px"></th></tr></thead><tbody>' +
+      '<thead><tr><th style="width:46%">Template</th><th>Status</th><th>Date</th>' +
+      '<th class="th-num">Downloads</th><th style="width:84px"></th></tr></thead><tbody>' +
       ts.map(function (t) {
         var dl = t.dl ? Number(t.dl).toLocaleString() : "—";
         var actions =
           ((t.status === "draft" || t.status === "soft")
-            ? '<button class="act success" title="Moderatsiyaga yuborish" onclick="event.stopPropagation();submitDraftToModeration(\'' + t.id + '\')">' + ic("upload") + "</button>"
+            ? '<button class="act success" title="Submit for moderation" onclick="event.stopPropagation();submitDraftToModeration(\'' + t.id + '\')">' + ic("upload") + "</button>"
             : "") +
-          '<button class="act" title="Ko‘rish" onclick="event.stopPropagation();openTplDrawer(\'' + t.id + '\')">' + ic("eye") + "</button>";
+          '<button class="act" title="View" onclick="event.stopPropagation();openTplDrawer(\'' + t.id + '\')">' + ic("eye") + "</button>";
         return '<tr data-name="' + esc(((t.name || "") + " " + (t.cat || "")).toLowerCase()) +
           '" style="cursor:pointer" onclick="openTplDrawer(\'' + t.id + '\')">' +
           '<td><div class="tmpl-cell"><div class="row-thumb">' + thumbArt(t.grad, "", true) +
@@ -128,17 +128,17 @@
     var ch = overviewChartData();
 
     return '<div class="col gap-20">' +
-      '<div class="page-head"><div><h1 class="h2">Boshqaruv paneli</h1><div class="lead">' +
-        (first ? "Xush kelibsiz, " + esc(first) + " — " : "") +
-        "bugungi holatingiz va shablonlaringiz.</div></div>" +
+      '<div class="page-head"><div><h1 class="h2">Dashboard</h1><div class="lead">' +
+        (first ? "Welcome, " + esc(first) + " — " : "") +
+        "your status today and your templates.</div></div>" +
         '<button class="btn btn-primary btn-lg" onclick="route(\'upload\')">' + ic("upload") +
-        " Yangi shablon yuklash</button></div>" +
+        " Upload new template</button></div>" +
 
-      '<section class="stat-grid" aria-label="Asosiy ko‘rsatkichlar">' +
-        statCard({ label: "Jami shablonlar", val: ts.length, ic: "layers", foot: "barcha holatlar" }) +
-        statCard({ label: "Tasdiqlangan", val: ap, ic: "checkCircle", foot: reviewed ? rate + "% tasdiq darajasi" : "hali ko‘rilmagan" }) +
-        statCard({ label: "Ko‘rib chiqilmoqda", val: pe, ic: "clock", variant: "amber", foot: pe ? "moderatsiyada" : "navbat bo‘sh" }) +
-        statCard({ label: "Jami yuklab olishlar", val: dl.toLocaleString(), ic: "download", variant: "blue", foot: im.toLocaleString() + " import" }) +
+      '<section class="stat-grid" aria-label="Key metrics">' +
+        statCard({ label: "Total templates", val: ts.length, ic: "layers", foot: "all statuses" }) +
+        statCard({ label: "Approved", val: ap, ic: "checkCircle", foot: reviewed ? rate + "% approval rate" : "not reviewed yet" }) +
+        statCard({ label: "Under review", val: pe, ic: "clock", variant: "amber", foot: pe ? "in moderation" : "queue empty" }) +
+        statCard({ label: "Total downloads", val: dl.toLocaleString(), ic: "download", variant: "blue", foot: im.toLocaleString() + " imports" }) +
       "</section>" +
 
       '<div class="dash-grid">' +
@@ -147,21 +147,21 @@
           '<div class="card-pad" id="ovChart">' + overviewChartHtml(ch) + "</div></div>" +
 
         '<div class="col gap-12"><div class="row between center wrap gap-12">' +
-          "<h3>Shablonlaringiz</h3>" +
+          "<h3>Your templates</h3>" +
           '<div class="search" style="height:34px;width:240px;max-width:100%">' + SEARCH_SVG +
-          '<input id="ovTableSearch" placeholder="Shablon qidirish…" oninput="ovTableFilter(this.value)"></div></div>' +
+          '<input id="ovTableSearch" placeholder="Search templates…" oninput="ovTableFilter(this.value)"></div></div>' +
           (ts.length
             ? ovTable(ts)
             : '<div class="card"><div class="empty"><div class="ico">' + ic("layers") +
-              '</div><h3>Shablon yo‘q</h3><p>Birinchi motion shablonni yuklab boshlang.</p>' +
+              '</div><h3>No templates</h3><p>Upload your first motion template to get started.</p>' +
               '<button class="btn btn-primary" onclick="route(\'upload\')">' + ic("upload") +
-              " Yangi yuklash</button></div></div>") +
+              " Upload new</button></div></div>") +
         "</div>" +
       "</div>" +
     "</div>";
   };
 
-  /* Overview to'liq sinxron real ma'lumotdan render bo'ladi (TEMPLATES + DL_7).
-     Eski xabarlar paneli mockup 1:1 uchun olib tashlandi — qo'shimcha async yo'q. */
+  /* Overview renders fully in sync from real data (TEMPLATES + DL_7).
+     Old messages panel removed for 1:1 mockup match — no extra async. */
   window.afterRender.overview = function () {};
 })();

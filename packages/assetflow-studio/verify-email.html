@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://api.getframeflow.app">
-<title>FrameFlow — Emailni tasdiqlash</title>
+<title>FrameFlow — Verify email</title>
 <link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/theme.js"></script>
 </head>
@@ -18,21 +18,21 @@
       <span class="brand-word">Frame<b>Flow</b></span>
     </div>
 
-    <!-- Token bilan avtomatik tasdiqlash -->
+    <!-- Automatic verification via token -->
     <div id="verifyView">
       <div class="form-head">
-        <h1 class="h1">Emailni tasdiqlash</h1>
-        <p id="verifyStatus">Tekshirilmoqda…</p>
+        <h1 class="h1">Verify email</h1>
+        <p id="verifyStatus">Checking…</p>
       </div>
       <div class="msg" id="verifyMsg"></div>
-      <a class="auth-back" href="/login.html">← Kirishga qaytish</a>
+      <a class="auth-back" href="/login.html">← Back to sign in</a>
     </div>
 
-    <!-- Token yo'q yoki muddati tugagan — qayta yuborish -->
+    <!-- No token or expired — resend view -->
     <div id="resendView" style="display:none">
       <div class="form-head">
-        <h1 class="h1">Tasdiqlash havolasini qayta yuborish</h1>
-        <p>Email manzilingizni kiriting — yangi tasdiqlash havolasi yuboriladi.</p>
+        <h1 class="h1">Resend verification link</h1>
+        <p>Enter your email — a new verification link will be sent.</p>
       </div>
       <div class="field">
         <label for="reEmail">Email</label>
@@ -41,9 +41,9 @@
           <input id="reEmail" class="input has-lead" type="email" placeholder="email@getframeflow.app" autocomplete="username">
         </div>
       </div>
-      <button class="btn btn-primary btn-block" id="reBtn" onclick="doResend()">Havola yuborish</button>
+      <button class="btn btn-primary btn-block" id="reBtn" onclick="doResend()">Send link</button>
       <div class="msg" id="reMsg"></div>
-      <a class="auth-back" href="/login.html">← Kirishga qaytish</a>
+      <a class="auth-back" href="/login.html">← Back to sign in</a>
     </div>
   </div>
 </div>
@@ -72,14 +72,14 @@ async function doVerify(){
   const msg=document.getElementById('verifyMsg');
   try{
     const data=await postJson('/api/auth/verify-email',{token});
-    status.textContent='✓ Email tasdiqlandi!';
+    status.textContent='✓ Email verified!';
     msg.className='msg ok';
-    msg.textContent='Endi AI generatsiyadan foydalanishingiz mumkin. Kirish sahifasiga yo\'naltirilyapsiz…';
-    // CONTRIBUTOR/ADMIN — Studio login (contributor/admin panel); oddiy USER — platforma (getframeflow.app).
+    msg.textContent='You can now use AI generation. Redirecting to the sign-in page…';
+    // CONTRIBUTOR/ADMIN — Studio login (contributor/admin panel); regular USER — platform (getframeflow.app).
     const dest=(data&&(data.role==='CONTRIBUTOR'||data.role==='ADMIN'))?'/login.html?verified=1':'/?verified=1';
     setTimeout(()=>{location.href=dest;},1800);
   }catch(e){
-    // Havola yaroqsiz/muddati tugagan → qayta yuborish ko'rinishi
+    // Invalid/expired link → show the resend view
     document.getElementById('verifyView').style.display='none';
     document.getElementById('resendView').style.display='block';
     document.getElementById('reMsg').className='msg err';
@@ -91,12 +91,12 @@ async function doResend(){
   const email=document.getElementById('reEmail').value.trim();
   const msg=document.getElementById('reMsg');
   const btn=document.getElementById('reBtn');
-  if(!email){ msg.className='msg err'; msg.textContent='Email kiriting'; return; }
-  btn.disabled=true; msg.className='msg'; msg.textContent='Yuborilmoqda…';
+  if(!email){ msg.className='msg err'; msg.textContent='Enter your email'; return; }
+  btn.disabled=true; msg.className='msg'; msg.textContent='Sending…';
   try{
     await postJson('/api/auth/resend-verification',{email});
     msg.className='msg ok';
-    msg.textContent='Agar hisob mavjud va tasdiqlanmagan bo\'lsa, havola yuborildi. Pochtangizni tekshiring.';
+    msg.textContent='If the account exists and is not verified, a link has been sent. Check your inbox.';
   }catch(e){
     msg.className='msg err'; msg.textContent=String(e.message||e);
     btn.disabled=false;

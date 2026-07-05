@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,7 +38,7 @@
 
   <div class="main">
     <header class="topbar">
-      <button type="button" class="icon-btn nav-toggle" data-nav-toggle aria-label="Menyu">
+      <button type="button" class="icon-btn nav-toggle" data-nav-toggle aria-label="Menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="topbar-title">
@@ -48,15 +48,15 @@
       <div style="flex:1"></div>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="contribGlobalSearch" placeholder="Mening shablonlarim&#8230;" oninput="contribGlobalSearch(this.value)">
+        <input id="contribGlobalSearch" placeholder="My templates&#8230;" oninput="contribGlobalSearch(this.value)">
       </div>
-      <button class="btn btn-primary" id="uploadTopBtn" onclick="route('upload')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span>Yangi yuklash</span></button>
+      <button class="btn btn-primary" id="uploadTopBtn" onclick="route('upload')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span>New upload</span></button>
       <div class="topbar-actions">
-        <button type="button" class="icon-btn" data-theme-toggle title="Mavzu">
+        <button type="button" class="icon-btn" data-theme-toggle title="Theme">
           <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
         </button>
         <button type="button" class="icon-btn" onclick="route('messages')"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
-        <button type="button" class="icon-btn" onclick="AssetFlowAuth.logout()" title="Chiqish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
+        <button type="button" class="icon-btn" onclick="AssetFlowAuth.logout()" title="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
       </div>
     </header>
     <main class="content">
@@ -78,11 +78,11 @@
 <script src="/studio/js/contributor-dashboard.js"></script>
 <script>
 const AF_SESSION = AssetFlowAuth.requireAuth(["contributor"]);
-if (!AF_SESSION) { /* login.html ga yo’naltirildi */ }
+if (!AF_SESSION) { /* redirected to login.html */ }
 if (AF_SESSION && AF_SESSION.role !== "contributor") {
   location.href = ASSETFLOW_STUDIO.loginUrl;
 }
-/** contributor-views.js alohida fayl — global kerak */
+/** contributor-views.js is a separate file — needs to be global */
 window.ME = (AF_SESSION && AF_SESSION.userId) || "c1";
 const ME = window.ME;
 AssetFlowLog.init({ source: "contributor" });
@@ -94,19 +94,19 @@ if (AF_SESSION) {
 }
 const NAV = [
   {grp:'Studio'},
-  {id:'overview',  label:'Boshqaruv',          icon:'grid'},
-  {id:'templates', label:'Mening shablonlarim', icon:'layers'},
-  {id:'upload',    label:'Yangi yuklash',       icon:'upload'},
-  {grp:'Aloqa'},
-  {id:'messages',  label:'Xabarlar',            icon:'inbox'},
-  {id:'settings',  label:'Sozlamalar',          icon:'gear'},
+  {id:'overview',  label:'Overview',      icon:'grid'},
+  {id:'templates', label:'My templates',  icon:'layers'},
+  {id:'upload',    label:'New upload',    icon:'upload'},
+  {grp:'Contact'},
+  {id:'messages',  label:'Messages',      icon:'inbox'},
+  {id:'settings',  label:'Settings',      icon:'gear'},
 ];
 const TITLES = {
-  overview:['Boshqaruv','Salom'],
-  templates:['Mening shablonlarim','Studio'],
-  upload:['Yangi shablon yuklash','Studio'],
-  messages:['Xabarlar','Aloqa'],
-  settings:['Sozlamalar','Profil'],
+  overview:['Overview','Hi'],
+  templates:['My templates','Studio'],
+  upload:['Upload new template','Studio'],
+  messages:['Messages','Contact'],
+  settings:['Settings','Profile'],
 };
 let CURRENT='overview';
 function contributorNavBadge(n) {
@@ -121,7 +121,7 @@ function renderNav(){
     if(n.grp) return `<div class="nav-group-label">${n.grp}</div>`;
     const b = contributorNavBadge(n);
     return `<button class="nav-item ${n.id===CURRENT?'active':''}" onclick="route('${n.id}')">${ic(n.icon)}<span>${n.label}</span>${b.badge?`<span class="nav-badge ${b.badgeCls||''}">${b.badge}</span>`:''}</button>`;
-  }).join('') + `<div class="nav-group-label">&nbsp;</div><button class="nav-item" onclick="AssetFlowAuth.logout()">${ic('logout')}<span>Chiqish</span></button>`;
+  }).join('') + `<div class="nav-group-label">&nbsp;</div><button class="nav-item" onclick="AssetFlowAuth.logout()">${ic('logout')}<span>Log out</span></button>`;
 }
 let CONTRIB_SEARCH = "";
 function contribGlobalSearch(q) {
@@ -138,13 +138,13 @@ function route(view, arg){
   renderNav();
   const host = document.getElementById('view');
   try {
-    host.innerHTML = VIEWS[view] ? VIEWS[view](arg) : '<div class="empty"><h3>Tez orada</h3></div>';
+    host.innerHTML = VIEWS[view] ? VIEWS[view](arg) : '<div class="empty"><h3>Coming soon</h3></div>';
     if (window.afterRender && window.afterRender[view]) window.afterRender[view](arg);
     AssetFlowLog.info(`Contributor: ${t[0]}`, { action: "navigate", detail: view });
   } catch (err) {
     console.error(err);
     if (typeof AssetFlowLog !== "undefined") AssetFlowLog.error(err.message, { action: "view_error", detail: view });
-    host.innerHTML = `<div class="card card-pad empty"><div class="ico">${typeof ic==='function'?ic('alert'):'!'}</div><h3>Ko‘rinish yuklanmadi</h3><p class="body" style="margin-top:8px">${err.message}</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="route('overview')">Qayta urinish</button></div>`;
+    host.innerHTML = `<div class="card card-pad empty"><div class="ico">${typeof ic==='function'?ic('alert'):'!'}</div><h3>Failed to load view</h3><p class="body" style="margin-top:8px">${err.message}</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="route('overview')">Retry</button></div>`;
   }
   host.scrollTop = 0;
 }
@@ -153,7 +153,7 @@ function patchContributorUI(){
   if (col && AF_SESSION.name) {
     const spans = col.querySelectorAll("span");
     if (spans[0]) spans[0].textContent = AF_SESSION.name;
-    if (spans[1]) spans[1].textContent = AF_SESSION.blocked ? "Bloklangan" : "Contributor";
+    if (spans[1]) spans[1].textContent = AF_SESSION.blocked ? "Blocked" : "Contributor";
   }
   AssetFlowAuth.mountBlockedBanner('blockedHost');
   AssetFlowAuth.applyBlockedRestrictions();
@@ -167,7 +167,7 @@ function patchContributorUI(){
     }
   } catch (_) {}
   const first = (AF_SESSION.name || "").split(" ")[0];
-  if (first) TITLES.overview[1] = "Salom, " + first;
+  if (first) TITLES.overview[1] = "Hello, " + first;
   renderNav();
   route("overview");
   patchContributorUI();

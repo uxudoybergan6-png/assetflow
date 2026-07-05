@@ -1,5 +1,5 @@
 /**
- * API ↔ Studio UI (TEMPLATES massivi)
+ * API ↔ Studio UI (TEMPLATES array)
  */
 const StudioTemplates = (() => {
   const GRAD_CYCLE = ["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "g9", "g10"];
@@ -39,7 +39,7 @@ const StudioTemplates = (() => {
       status: mapStatus(t),
       created,
       dur: meta.dur || "—",
-      // Haqiqiy hisoblagichlar (AE plugin usage) — eski meta.dl faqat fallback
+      // Real counters (AE plugin usage) — legacy meta.dl is fallback only
       dl: typeof t.downloadsCount === "number" ? t.downloadsCount : meta.dl || 0,
       imports: typeof t.importsCount === "number" ? t.importsCount : 0,
       res: (t.res || "4k").toUpperCase().replace("4K", "4K"),
@@ -54,9 +54,9 @@ const StudioTemplates = (() => {
         meta.size ||
         (t.fileSize ? `${(t.fileSize / 1024 / 1024).toFixed(1)} MB` : "—"),
       isNew: t.reviewStatus === "PENDING_REVIEW",
-      // Per-shablon tier (admin belgilaydi). API include orqali isPro qaytaradi.
+      // Per-template tier (set by admin). API returns isPro via include.
       isPro: !!t.isPro,
-      // #15: preview fon-transcode holati ('pending'|'done'|'failed'|null) — UI badge uchun
+      // #15: preview background-transcode status ('pending'|'done'|'failed'|null) — for UI badge
       previewTranscodeStatus: t.previewTranscodeStatus || null,
       desc: t.description || "",
       tags: t.tags || [],
@@ -100,8 +100,8 @@ const StudioTemplates = (() => {
     if (!hasToken()) return false;
     const { items } = await StudioApi.listTemplates("scope=moderation");
     const pending = items.map(mapApiItem);
-    // scope=moderation faqat PENDING_REVIEW qaytaradi — soft'larni yo'qotmaymiz
-    // (Soft filter tab scope=all yuklagan soft yozuvlarga tayanadi)
+    // scope=moderation only returns PENDING_REVIEW — we don't drop soft entries
+    // (the Soft filter tab relies on soft records loaded by scope=all)
     const rest = (typeof TEMPLATES !== "undefined" ? TEMPLATES : []).filter(
       (t) => t.status !== "pending"
     );
@@ -136,10 +136,10 @@ const StudioTemplates = (() => {
             who: r.contributor?.name || r.contributor?.email || "Contributor",
             verb:
               r.reviewStatus === "APPROVED"
-                ? "tasdiqladi"
+                ? "approved"
                 : r.reviewStatus === "PENDING_REVIEW"
-                  ? "yubordi"
-                  : "yangiladi",
+                  ? "submitted"
+                  : "updated",
             obj: r.name,
             t: (r.updatedAt || "").slice(0, 16).replace("T", " "),
             cls:
@@ -248,7 +248,7 @@ const StudioTemplates = (() => {
     } catch (e) {
       console.warn("StudioTemplates.init", e);
       if (typeof toast === "function") {
-        toast("API", e.message || "Ma'lumot yuklanmadi", "warn");
+        toast("API", e.message || "Failed to load data", "warn");
       }
       return false;
     }

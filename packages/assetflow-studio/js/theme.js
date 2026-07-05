@@ -23,10 +23,10 @@ const AssetFlowTheme = (() => {
     apply(next);
     if (typeof toast === "function") {
       toast(
-        next === "light" ? "Yorug\u2018 rejim" : "Qorong\u2018u rejim",
+        next === "light" ? "Light mode" : "Dark mode",
         next === "light"
-          ? "Yorug\u2018 palitra yoqildi"
-          : "Standart qorong\u2018u palitra",
+          ? "Light palette enabled"
+          : "Default dark palette",
         "info"
       );
     }
@@ -35,7 +35,7 @@ const AssetFlowTheme = (() => {
   function syncThemeButtons() {
     const light = current() === "light";
     document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
-      btn.title = light ? "Qorong\u2018u rejim" : "Yorug\u2018 rejim";
+      btn.title = light ? "Dark mode" : "Light mode";
       btn.setAttribute("aria-label", btn.title);
       const icon = btn.querySelector("[data-theme-icon]");
       if (icon && typeof ic === "function") {

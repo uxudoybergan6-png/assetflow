@@ -141,7 +141,7 @@ const AssetFlowLog = (() => {
     source = opts.source || source;
     if (opts.apiBaseUrl) apiBase = opts.apiBaseUrl;
     if (opts.syncEnabled === false) syncEnabled = false;
-    log("info", `${SOURCES[source] || source} ishga tushdi`, {
+    log("info", `${SOURCES[source] || source} started`, {
       action: "init",
       detail: typeof location !== "undefined" ? location.pathname : "",
     });

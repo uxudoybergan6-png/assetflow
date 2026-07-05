@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
-<title>FrameFlow — Admin kirish</title>
+<title>FrameFlow — Admin sign in</title>
 <script>
 (function () {
   var p = location.pathname;
@@ -33,21 +33,21 @@
       <span class="brand-word">Frame<b>Flow</b> · Admin</span>
     </div>
     <div class="auth-hero">
-      <h1>Moderatsiya va <em>tasdiqlash</em> markazi</h1>
-      <p>Faqat ADMIN roli bilan kirish. Shablonlarni tasdiqlang, obunachilarni boshqaring, AI kredit bering.</p>
+      <h1>Moderation and <em>approval</em> center</h1>
+      <p>Sign in with the ADMIN role only. Approve templates, manage subscribers, grant AI credits.</p>
     </div>
     <div class="auth-feats">
       <div class="feat">
         <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z"/><path d="m9.5 12 1.8 1.8 3.2-3.6"/></svg></span>
-        <span class="feat-txt"><b>Moderatsiya navbati</b><span>Approve / reject + publish</span></span>
+        <span class="feat-txt"><b>Moderation queue</b><span>Approve / reject + publish</span></span>
       </div>
       <div class="feat">
         <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <span class="feat-txt"><b>Obunachilar</b><span>Free/Pro, kredit, status</span></span>
+        <span class="feat-txt"><b>Subscribers</b><span>Free/Pro, credits, status</span></span>
       </div>
       <div class="feat">
         <span class="feat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-5"/></svg></span>
-        <span class="feat-txt"><b>Analitika · Audit</b><span>Yuklab olishlar, loglar</span></span>
+        <span class="feat-txt"><b>Analytics · Audit</b><span>Downloads, logs</span></span>
       </div>
       <a href="/studio/login.html" id="linkContribSide" class="forgot" style="margin-top:4px">← Contributor Studio</a>
     </div>
@@ -55,12 +55,12 @@
 
   <main class="auth-main">
     <div class="auth-main-top">
-      <button type="button" class="icon-btn" data-theme-toggle title="Mavzu"><span data-theme-icon></span></button>
+      <button type="button" class="icon-btn" data-theme-toggle title="Theme"><span data-theme-icon></span></button>
     </div>
     <div class="auth-card">
       <div class="form-head">
-        <h1 class="h1">Admin kirish</h1>
-        <p>Shablonlarni tasdiqlash va platformani boshqarish.</p>
+        <h1 class="h1">Admin sign in</h1>
+        <p>Approve templates and manage the platform.</p>
       </div>
       <form id="loginForm">
         <div class="field">
@@ -69,14 +69,14 @@
             <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg></span>
             <input id="adminEmail" class="input has-lead" type="email" name="email" required autocomplete="username" placeholder="admin@assetflow.uz">
           </div>
-          <p class="hint" style="margin-top:6px"><b>ADMIN</b> emas — ro'yxatdan o'tgan to'liq email (masalan <code>admin@assetflow.uz</code>).</p>
+          <p class="hint" style="margin-top:6px">Not <b>ADMIN</b> — your full registered email (e.g. <code>admin@assetflow.uz</code>).</p>
         </div>
         <div class="field">
           <label for="adminPass">Parol</label>
           <div class="field-wrap">
             <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
             <input id="adminPass" class="input has-lead has-trail" type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
-            <button type="button" class="toggle-pw" id="adminPwToggle" aria-label="Parolni ko'rsatish" aria-pressed="false">
+            <button type="button" class="toggle-pw" id="adminPwToggle" aria-label="Show password" aria-pressed="false">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
@@ -84,14 +84,14 @@
         <div class="field-meta">
           <label class="remember">
             <div class="checkbox" id="rememberChk" tabindex="0" role="checkbox" aria-checked="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg></div>
-            Meni eslab qol
+            Remember me
           </label>
         </div>
         <p class="auth-error hidden" id="loginError" role="alert"></p>
-        <button type="submit" class="btn btn-primary btn-block">Admin sifatida kirish</button>
+        <button type="submit" class="btn btn-primary btn-block">Sign in as admin</button>
       </form>
       <p class="auth-foot" style="font-size:12px">
-        Birinchi marta: avval <a href="/studio/login.html" id="linkContrib">Contributor Studio</a> da ro'yxatdan o'ting, keyin DB da <code>role = ADMIN</code>.
+        First time: sign up at <a href="/studio/login.html" id="linkContrib">Contributor Studio</a> first, then set <code>role = ADMIN</code> in the DB.
       </p>
     </div>
   </main>
@@ -111,7 +111,7 @@
     this.setAttribute("aria-checked", this.classList.contains("on"));
   });
 
-  // Saqlangan email ni qayta to'ldirish
+  // Refill the saved email
   const savedEmail = localStorage.getItem(RM_EMAIL);
   if (savedEmail) {
     document.querySelector('input[name="email"]').value = savedEmail;
@@ -119,28 +119,28 @@
     chk.setAttribute("aria-checked", "true");
   }
 
-  // Eski versiyadan qolgan JWT'ni localStorage'dan tozalaymiz (XSS xavfi).
+  // Clear any leftover JWT from an old version out of localStorage (XSS risk).
   localStorage.removeItem(RM_SESSION);
 
   const card = document.querySelector(".auth-card");
 
-  // Joriy session tekshirish
+  // Check the current session
   const s = AssetFlowAuth.getSession();
   if (s?.apiToken && s.role === "admin") { location.href = ASSETFLOW_STUDIO.adminUrl; return; }
   if (s?.apiToken && s.role !== "admin") AssetFlowAuth.clearSession();
 
-  // Sessiya tugagan bo'lsa banner (global 401 interceptor qo'ygan)
+  // Show a banner if the session expired (set by the global 401 interceptor)
   if (sessionStorage.getItem("af_session_expired")) {
     sessionStorage.removeItem("af_session_expired");
     if (card) {
       const exp = document.createElement("p");
       exp.className = "auth-error";
-      exp.textContent = "Sessiya tugadi — qaytadan tizimga kiring";
+      exp.textContent = "Session expired — please sign in again";
       card.prepend(exp);
     }
   }
 
-  // API sog'liq tekshiruvi
+  // API health check
   if (typeof StudioApi !== "undefined") {
     let ok = await StudioApi.healthCheck();
     if (!ok) {
@@ -149,7 +149,7 @@
     if (!ok && card) {
       const p = document.createElement("p");
       p.className = "auth-error";
-      p.textContent = "API ulanmadi. npm run studio yoki alohida: npm run dev:api (:4000)";
+      p.textContent = "API not reachable. Run npm run studio, or separately: npm run dev:api (:4000)";
       card.prepend(p);
     }
   }
@@ -160,21 +160,21 @@
     const fd = new FormData(e.target);
     const email = String(fd.get("email") || "").trim();
     if (!email.includes("@")) {
-      err.textContent = "Email kiriting (masalan admin@assetflow.uz). \"ADMIN\" — bu rol, login emas.";
+      err.textContent = "Enter an email (e.g. admin@assetflow.uz). \"ADMIN\" is a role, not a login.";
       err.classList.remove("hidden");
       return;
     }
     const r = await AssetFlowAuth.login(email, fd.get("password"));
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     if (r.session.role !== "admin") {
-      err.textContent = "Bu hisob Admin emas (role: " + r.session.role + "). PostgreSQL da ADMIN qiling.";
+      err.textContent = "This account is not Admin (role: " + r.session.role + "). Set it to ADMIN in PostgreSQL.";
       err.classList.remove("hidden");
       AssetFlowAuth.logout(false);
       return;
     }
     const remember = chk.classList.contains("on");
     if (remember) {
-      // FAQAT email saqlanadi — JWT localStorage'ga yozilmaydi (XSS xavfi).
+      // ONLY the email is saved — the JWT is never written to localStorage (XSS risk).
       localStorage.setItem(RM_EMAIL, email);
     } else {
       localStorage.removeItem(RM_EMAIL);
@@ -185,7 +185,7 @@
 })();
 </script>
 <script>
-/* Parolni ko'rsatish/yashirish — auth logikasiga tegmaydi */
+/* Show/hide password — does not touch auth logic */
 (function () {
   var t = document.getElementById('adminPwToggle');
   var i = document.getElementById('adminPass');
@@ -193,7 +193,7 @@
     var show = i.type === 'password';
     i.type = show ? 'text' : 'password';
     t.setAttribute('aria-pressed', String(show));
-    t.setAttribute('aria-label', show ? 'Parolni yashirish' : "Parolni ko'rsatish");
+    t.setAttribute('aria-label', show ? 'Hide password' : "Show password");
   });
 })();
 </script>

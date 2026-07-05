@@ -27,13 +27,13 @@ let T_FILTER = 'all', T_SEARCH = '';
 VIEWS.templates = function(){ return `<div id="tplRoot"></div>`; };
 window.afterRender.templates = function(){ tplTopbarActions(); renderTemplates(); };
 
-/* Topbar amallari (maket e3): Filtr + CSV. Qidiruv global topbar orqali. */
+/* Topbar actions (mockup e3): Filter + CSV. Search via global topbar. */
 function tplTopbarActions(){
   const tba = document.getElementById('tbActions');
   if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='templates')) return;
   tba.innerHTML =
-    `<button class="adx-btn2 sm" onclick="toast('Filtr','Kengaytirilgan filtr keyingi versiyada','info')"><i class="ph ph-funnel"></i>Filtr</button>`+
-    `<button class="adx-btn2 sm" onclick="toast('Eksport','CSV fayli tayyorlanmoqda\u2026','info')"><i class="ph ph-export"></i>CSV</button>`;
+    `<button class="adx-btn2 sm" onclick="toast('Filter','Advanced filter coming soon','info')"><i class="ph ph-funnel"></i>Filter</button>`+
+    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing CSV file\u2026','info')"><i class="ph ph-export"></i>CSV</button>`;
 }
 
 function shortId(id){
@@ -46,7 +46,7 @@ function renderTemplates(){
   if(T_FILTER!=='all') rows = rows.filter(t=>t.status===T_FILTER);
   if(T_SEARCH) rows = rows.filter(t=>(t.name+t.id+cById(t.cid).email).toLowerCase().includes(T_SEARCH.toLowerCase()));
   const c=counts();
-  const tags = [['all','Barchasi',c.total],['approved','Tasdiqlangan',c.approved],['pending','Kutilmoqda',c.pending],['soft','Soft',c.soft],['hard','Hard',c.hard],['draft','Qoralama',c.draft],['archived','Arxiv',c.archived]];
+  const tags = [['all','All',c.total],['approved','Approved',c.approved],['pending','Pending',c.pending],['soft','Soft',c.soft],['hard','Hard',c.hard],['draft','Draft',c.draft],['archived','Archived',c.archived]];
   const decision = (t) => {
     if(t.reason) return `<span style="font-size:11px;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">${esc(t.reason)}</span>`;
     if(t.status==='approved') return `<span style="color:#5E6675">\u2014</span>`;
@@ -60,7 +60,7 @@ function renderTemplates(){
       <div style="overflow-x:auto">
         <table class="adx-tbl" style="min-width:1000px">
           <thead><tr>
-            <th style="width:24px"></th><th>Shablon</th><th>ID</th><th>Contributor</th><th>Holat</th><th>Yuklangan</th><th class="r">Downloads</th><th>Oxirgi qaror</th><th class="r">Amal</th>
+            <th style="width:24px"></th><th>Template</th><th>ID</th><th>Contributor</th><th>Status</th><th>Uploaded</th><th class="r">Downloads</th><th>Last decision</th><th class="r">Action</th>
           </tr></thead>
           <tbody>
           ${rows.length ? rows.map(t=>{ const con=cById(t.cid); return `<tr>
@@ -73,17 +73,17 @@ function renderTemplates(){
             <td class="r adx-num">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
             <td>${decision(t)}</td>
             <td class="r"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
-              <span class="adx-bdg ${t.isPro?'adx-bdg-pro':'adx-bdg-free'}" style="cursor:pointer" title="${t.isPro?'Pro \u2014 bosib Free qiling':'Free \u2014 bosib Pro qiling'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO':'FREE'}</span>
-              <button class="adx-iact" title="Ko\u2018rish" onclick="openTplDrawer('${t.id}')"><i class="ph ph-eye"></i></button>
-              <button class="adx-iact" title="Tahrir" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i></button>
-              <button class="adx-iact dg" title="O\u2018chirish" onclick="modDelete('${t.id}')"><i class="ph ph-trash"></i></button>
+              <span class="adx-bdg ${t.isPro?'adx-bdg-pro':'adx-bdg-free'}" style="cursor:pointer" title="${t.isPro?'Pro \u2014 click to set Free':'Free \u2014 click to set Pro'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO':'FREE'}</span>
+              <button class="adx-iact" title="View" onclick="openTplDrawer('${t.id}')"><i class="ph ph-eye"></i></button>
+              <button class="adx-iact" title="Edit" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i></button>
+              <button class="adx-iact dg" title="Delete" onclick="modDelete('${t.id}')"><i class="ph ph-trash"></i></button>
             </div></td>
-          </tr>`; }).join('') : `<tr><td colspan="9"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">Shablon topilmadi</div><div style="font-size:11px;color:var(--muted2)">Filtr yoki qidiruvni o\u2018zgartiring.</div></div></td></tr>`}
+          </tr>`; }).join('') : `<tr><td colspan="9"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">No templates found</div><div style="font-size:11px;color:var(--muted2)">Change the filter or search.</div></div></td></tr>`}
           </tbody>
         </table>
       </div>
       <div style="display:flex;align-items:center;padding:12px 16px;border-top:1px solid var(--hair2)">
-        <span class="adx-num" style="font-size:11px;color:#8A93A3">${rows.length} ta natija ko\u2018rsatildi</span>
+        <span class="adx-num" style="font-size:11px;color:#8A93A3">${rows.length} results shown</span>
         <span style="flex:1"></span>
         <button class="adx-btn2 sm" disabled><i class="ph ph-caret-left"></i></button>
         <span class="adx-num" style="font-size:11px;color:#B7C0CE;padding:0 8px">1 / 1</span>
@@ -101,8 +101,8 @@ window.afterRender.contributors = function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='contributors'){
     tba.innerHTML =
-      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${C_STATUS_FILTER==='all'?'Barcha holat':(C_STATUS_FILTER==='active'?'Faol':'Bloklangan')}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="C_STATUS_FILTER=this.value;route('contributors')"><option value="all">Barcha holat</option><option value="active" ${C_STATUS_FILTER==='active'?'selected':''}>Faol</option><option value="blocked" ${C_STATUS_FILTER==='blocked'?'selected':''}>Bloklangan</option></select></label>`+
-      `<button class="adx-btn2 sm" onclick="toast('Eksport','Contributorlar CSV tayyorlanmoqda…','info')"><i class="ph ph-export"></i>CSV</button>`;
+      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${C_STATUS_FILTER==='all'?'All statuses':(C_STATUS_FILTER==='active'?'Active':'Blocked')}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="C_STATUS_FILTER=this.value;route('contributors')"><option value="all">All statuses</option><option value="active" ${C_STATUS_FILTER==='active'?'selected':''}>Active</option><option value="blocked" ${C_STATUS_FILTER==='blocked'?'selected':''}>Blocked</option></select></label>`+
+      `<button class="adx-btn2 sm" onclick="toast('Export','Preparing contributors CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
   }
 };
 VIEWS.contributors = function(){
@@ -118,14 +118,14 @@ VIEWS.contributors = function(){
   const appr = typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null;
   return `
     <div class="adx-grid4" style="margin-bottom:18px">
-      ${axStat({label:'Jami contributorlar',val:CONTRIBUTORS.length,ic:'users-three',icColor:'#7CC4FF',foot:'ro‘yxatdan o‘tgan'})}
-      ${axStat({label:'Faol',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'check-circle',icColor:'#C2F04A',foot:'kontent yuklamoqda'})}
-      ${axStat({label:'Bloklangan',val:CONTRIBUTORS.filter(c=>c.status==='blocked').length,ic:'prohibit',icColor:'#FF6B5E',foot:'kirish cheklangan'})}
-      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'crown',foot:appr!=null?'tasdiq / rad':'qaror yo‘q'})}
+      ${axStat({label:'Total contributors',val:CONTRIBUTORS.length,ic:'users-three',icColor:'#7CC4FF',foot:'registered'})}
+      ${axStat({label:'Active',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'check-circle',icColor:'#C2F04A',foot:'uploading content'})}
+      ${axStat({label:'Blocked',val:CONTRIBUTORS.filter(c=>c.status==='blocked').length,ic:'prohibit',icColor:'#FF6B5E',foot:'access restricted'})}
+      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'crown',foot:appr!=null?'approved / rejected':'no decisions yet'})}
     </div>
     <div class="adx-card" style="overflow:hidden">
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1020px">
-        <thead><tr><th>Contributor</th><th>Holat</th><th class="r">Jami</th><th class="r">Approved</th><th class="r">Pending</th><th class="r">Rejected</th><th>Oxirgi faoliyat</th><th class="r">Amal</th></tr></thead>
+        <thead><tr><th>Contributor</th><th>Status</th><th class="r">Total</th><th class="r">Approved</th><th class="r">Pending</th><th class="r">Rejected</th><th>Last activity</th><th class="r">Action</th></tr></thead>
         <tbody>
         ${rows.length ? rows.map(({c,total,ap,pe,re})=>`<tr style="cursor:pointer" onclick="route('contributor-detail','${c.id}')">
           <td><div class="adx-who">${axAv(c.name,c.email,32)}<div style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email)}</div></div></div></td>
@@ -136,11 +136,11 @@ VIEWS.contributors = function(){
           <td class="r adx-num" style="color:#FF6B5E">${re||'—'}</td>
           <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(c.joined||'—')}</td>
           <td class="r" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;justify-content:flex-end">
-            <button class="adx-iact" title="Xabar" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i></button>
-            ${c.status==='active'?`<button class="adx-iact dg" title="Bloklash" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i></button>`:`<button class="adx-iact" title="Blokdan chiqarish" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i></button>`}
-            <button class="adx-iact" title="Profil" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-caret-right"></i></button>
+            <button class="adx-iact" title="Message" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i></button>
+            ${c.status==='active'?`<button class="adx-iact dg" title="Block" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i></button>`:`<button class="adx-iact" title="Unblock" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i></button>`}
+            <button class="adx-iact" title="Profile" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-caret-right"></i></button>
           </div></td>
-        </tr>`).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-weight:600;font-size:13px">Contributor topilmadi</div><div style="font-size:11px;color:var(--muted2)">Qidiruv yoki filtrni o‘zgartiring.</div></div></td></tr>`}
+        </tr>`).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-weight:600;font-size:13px">No contributors found</div><div style="font-size:11px;color:var(--muted2)">Change the search or filter.</div></div></td></tr>`}
         </tbody>
       </table></div>
     </div>`;
@@ -155,28 +155,28 @@ VIEWS['contributor-detail'] = function(id){
   const ap=ts.filter(t=>t.status==='approved').length, pe=ts.filter(t=>t.status==='pending').length, re=ts.filter(t=>['soft','hard'].includes(t.status)).length;
   const blocked = c.status==='blocked';
   return `
-    <button class="adx-btn2 sm" style="margin-bottom:16px" onclick="route('contributors')"><i class="ph ph-caret-left"></i>Contributorlar</button>
-    ${blocked?axInfo(`<b style="color:var(--text)">Bu contributor bloklangan</b> — kirish cheklangan, yangi yuklash mumkin emas. <a style="color:#FF6B5E;text-decoration:underline;cursor:pointer" onclick="unblock('${c.id}')">Blokdan chiqarish</a>`,'red'):''}
+    <button class="adx-btn2 sm" style="margin-bottom:16px" onclick="route('contributors')"><i class="ph ph-caret-left"></i>Contributors</button>
+    ${blocked?axInfo(`<b style="color:var(--text)">This contributor is blocked</b> — access restricted, cannot upload new content. <a style="color:#FF6B5E;text-decoration:underline;cursor:pointer" onclick="unblock('${c.id}')">Unblock</a>`,'red'):''}
     <div class="adx-card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       ${axAv(c.name,c.email,56)}
       <div style="flex:1;min-width:220px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="adx-h18">${esc(c.name)}</span>${axStatus(blocked?'blocked':'active')}</div>
-        <div style="font-size:11.5px;color:#8A93A3;margin-top:3px">${esc(c.email)}${c.country?' · '+esc(c.country):''}${c.joined?' · Ro‘yxatdan: '+esc(c.joined):''}</div></div>
+        <div style="font-size:11.5px;color:#8A93A3;margin-top:3px">${esc(c.email)}${c.country?' · '+esc(c.country):''}${c.joined?' · Registered: '+esc(c.joined):''}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="adx-btn2 sm" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i>Xabar yozish</button>
-        ${blocked?`<button class="adx-btn2 sm adx-btn-ok" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i>Blokdan chiqarish</button>`:`<button class="adx-btn-danger adx-btn-dghost sm" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i>Bloklash</button>`}
+        <button class="adx-btn2 sm" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i>Send message</button>
+        ${blocked?`<button class="adx-btn2 sm adx-btn-ok" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i>Unblock</button>`:`<button class="adx-btn-danger adx-btn-dghost sm" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i>Block</button>`}
       </div>
     </div>
     <div class="adx-grid4" style="margin-top:16px">
-      ${axStat({label:'Jami shablon',val:ts.length,ic:'stack'})}
-      ${axStat({label:'Tasdiqlangan',val:ap,ic:'check-circle',icColor:'#C2F04A',foot:'AE‘da live'})}
-      ${axStat({label:'Kutilmoqda',val:pe,ic:'clock-countdown',icColor:'#FFB27C'})}
-      ${axStat({label:'Rad etilgan',val:re,ic:'x-circle',icColor:'#FF6B5E',foot:'soft + hard'})}
+      ${axStat({label:'Total templates',val:ts.length,ic:'stack'})}
+      ${axStat({label:'Approved',val:ap,ic:'check-circle',icColor:'#C2F04A',foot:'live in AE'})}
+      ${axStat({label:'Pending',val:pe,ic:'clock-countdown',icColor:'#FFB27C'})}
+      ${axStat({label:'Rejected',val:re,ic:'x-circle',icColor:'#FF6B5E',foot:'soft + hard'})}
     </div>
     <div class="adx-card" style="overflow:hidden;margin-top:16px">
-      <div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Yuklangan shablonlar</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">${ts.length} ta element</span>
-        ${pe?`<button class="adx-btn2 sm" style="margin-left:10px" onclick="route('moderation')"><i class="ph ph-shield-check"></i>${pe} ta pending</button>`:''}</div>
+      <div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Uploaded templates</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">${ts.length} item${ts.length===1?"":"s"}</span>
+        ${pe?`<button class="adx-btn2 sm" style="margin-left:10px" onclick="route('moderation')"><i class="ph ph-shield-check"></i>${pe} pending</button>`:''}</div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:760px">
-        <thead><tr><th>Shablon</th><th>Holat</th><th>Kategoriya</th><th class="r">Downloads</th><th>Sana</th><th class="r"></th></tr></thead>
+        <thead><tr><th>Template</th><th>Status</th><th>Category</th><th class="r">Downloads</th><th>Date</th><th class="r"></th></tr></thead>
         <tbody>
         ${ts.length?ts.map(t=>`<tr>
           <td><div style="display:flex;align-items:center;gap:9px"><span style="width:38px;height:26px;border-radius:5px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12px;color:var(--text)">${esc(t.name)}</div><div class="adx-num" style="font-size:9.5px;color:#8A93A3">${esc(shortId(t.id))}</div></div></div></td>
@@ -185,7 +185,7 @@ VIEWS['contributor-detail'] = function(id){
           <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(t.created||'—')}</td>
           <td class="r"><button class="adx-iact" onclick="openTplDrawer('${t.id}')"><i class="ph ph-eye"></i></button></td>
         </tr>`).join('')
-        :`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-size:12px;color:var(--muted2)">Hali shablon yo‘q</div></div></td></tr>`}
+        :`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-size:12px;color:var(--muted2)">No templates yet</div></div></td></tr>`}
         </tbody>
       </table></div>
     </div>`;
@@ -221,7 +221,7 @@ async function loadAdminThreads() {
 VIEWS.messaging = function(){ return `<div id="msgRoot" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>`; };
 window.afterRender.messaging = async function(){
   const tba = document.getElementById('tbActions');
-  if(tba && CURRENT==='messaging') tba.innerHTML = `<button class="adx-btn sm" onclick="openBroadcast()"><i class="ph ph-chat-circle-dots"></i>Broadcast e‘lon</button>`;
+  if(tba && CURRENT==='messaging') tba.innerHTML = `<button class="adx-btn sm" onclick="openBroadcast()"><i class="ph ph-chat-circle-dots"></i>Broadcast announcement</button>`;
   const root = document.getElementById("msgRoot");
   root.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center"><span class="adx-spin"><i class="ph ph-arrow-clockwise"></i></span></div>`;
   try {
@@ -231,7 +231,7 @@ window.afterRender.messaging = async function(){
     MSG_SEL = 0;
     await renderMessaging();
   } catch (e) {
-    root.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:40px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Xatolik</div><div style="font-size:11px;color:var(--muted2)">${esc(e.message)}</div></div>`;
+    root.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:40px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Error</div><div style="font-size:11px;color:var(--muted2)">${esc(e.message)}</div></div>`;
   }
 };
 
@@ -244,7 +244,7 @@ async function renderMessaging(){
   const root = document.getElementById("msgRoot");
   if(!root) return;
   if (!ADMIN_THREADS.length) {
-    root.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:auto"><span class="ei"><i class="ph ph-chat-circle-dots"></i></span><div style="font-weight:600;font-size:13px">Suhbat yo‘q</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Contributorlarga xabar yuboring yoki moderatsiya qiling.</div></div>`;
+    root.innerHTML = `<div class="adx-empty" style="max-width:420px;margin:auto"><span class="ei"><i class="ph ph-chat-circle-dots"></i></span><div style="font-weight:600;font-size:13px">No conversations</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Message contributors or moderate their submissions.</div></div>`;
     return;
   }
   if (MSG_SEL >= ADMIN_THREADS.length) MSG_SEL = 0;
@@ -259,13 +259,13 @@ async function renderMessaging(){
     window._STUDIO_MSG_UNREAD = adminMsgUnread();
     if (typeof renderNav === "function") renderNav();
   } catch (e) {
-    if (typeof toast === "function") toast("Xato", e.message || "Xabarlar yuklanmadi", "danger");
+    if (typeof toast === "function") toast("Error", e.message || "Failed to load messages", "danger");
   }
   const unread = adminMsgUnread();
   root.innerHTML = `
     <div style="flex:1;display:flex;min-height:0">
       <div style="width:320px;flex:none;border-right:1px solid var(--hair);display:flex;flex-direction:column;min-height:0">
-        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)"><span class="adx-h16" style="font-size:13.5px">Suhbatlar</span>${unread?`<span class="adx-nbadge brand" style="margin-left:6px">${unread}</span>`:''}</div>
+        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)"><span class="adx-h16" style="font-size:13.5px">Conversations</span>${unread?`<span class="adx-nbadge brand" style="margin-left:6px">${unread}</span>`:''}</div>
         <div style="flex:1;overflow:auto">
           ${ADMIN_THREADS.map((t,i)=>{const cc=cById(t.cid); const nm = t.contributorName || cc.name; const sel=i===MSG_SEL; return `<button style="display:flex;gap:10px;padding:12px 14px;width:100%;text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:0;border-left:2px solid ${sel?'var(--lime)':'transparent'};background:${sel?'var(--surface2)':'none'}" onclick="selectAdminThread(${i})">
             ${axAv(nm,t.cid,34)}
@@ -278,16 +278,16 @@ async function renderMessaging(){
         </div>
       </div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)">${axAv(c.name,th.cid,32)}<div><div style="font-weight:600;font-size:13px">${esc(c.name)}</div><div class="adx-num" style="font-size:10px;color:#8A93A3">${th.tid?'Shablon: '+esc(shortId(th.tid)):'Umumiy suhbat'}</div></div><span style="flex:1"></span><button class="adx-btn2 sm" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-user"></i>Profil</button></div>
+        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)">${axAv(c.name,th.cid,32)}<div><div style="font-weight:600;font-size:13px">${esc(c.name)}</div><div class="adx-num" style="font-size:10px;color:#8A93A3">${th.tid?'Template: '+esc(shortId(th.tid)):'General conversation'}</div></div><span style="flex:1"></span><button class="adx-btn2 sm" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-user"></i>Profile</button></div>
         <div class="adx-chatwrap">
           ${ADMIN_THREAD_MESSAGES.length ? ADMIN_THREAD_MESSAGES.map((m) => {
             const isMe = m.sender?.isMe;
             const nm = m.sender?.name || c.name;
             const t = String(m.createdAt || "").slice(0,16).replace("T"," ");
             return `<div class="adx-msg ${isMe?'me':''}">${isMe?'<span class="adx-av" style="width:28px;height:28px;font-size:10px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,th.cid,28)}<div><div class="adx-bub">${esc(m.body)}</div><div class="adx-msgt">${esc(t)}${isMe?' · Admin':''}</div></div></div>`;
-          }).join("") : `<div class="adx-empty" style="border:0;margin:auto"><span class="ei"><i class="ph ph-chat-circle"></i></span><div style="font-size:11.5px;color:var(--muted2)">Hali xabar yo‘q</div></div>`}
+          }).join("") : `<div class="adx-empty" style="border:0;margin:auto"><span class="ei"><i class="ph ph-chat-circle"></i></span><div style="font-size:11.5px;color:var(--muted2)">No messages yet</div></div>`}
         </div>
-        <div style="padding:12px 18px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:10px"><input id="adminReplyInput" class="adx-input" placeholder="Xabar yozing…" style="flex:1" onkeydown="if(event.key==='Enter')sendAdminReply()"><button class="adx-btn sm" onclick="sendAdminReply()"><i class="ph ph-arrow-right"></i>Yuborish</button></div>
+        <div style="padding:12px 18px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:10px"><input id="adminReplyInput" class="adx-input" placeholder="Type a message…" style="flex:1" onkeydown="if(event.key==='Enter')sendAdminReply()"><button class="adx-btn sm" onclick="sendAdminReply()"><i class="ph ph-arrow-right"></i>Send</button></div>
       </div>
     </div>`;
 }
@@ -297,7 +297,7 @@ async function renderMessaging(){
    ============================================================ */
 window.afterRender.analytics = function(){
   const tba = document.getElementById('tbActions');
-  if(tba && CURRENT==='analytics') tba.innerHTML = `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>So‘nggi 30 kun</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i></span>`;
+  if(tba && CURRENT==='analytics') tba.innerHTML = `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>Last 30 days</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i></span>`;
 };
 VIEWS.analytics = function(){
   const usage = typeof window !== "undefined" ? window._ASSETFLOW_PLUGIN_ANALYTICS?.usage : null;
@@ -308,32 +308,32 @@ VIEWS.analytics = function(){
   const maxDl = contribRank[0]?.dl || 1;
   const rejectBlock = REJECT_REASONS.length > 0
     ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard; const s=tot?r.soft/tot*100:0; const h=tot?r.hard/tot*100:0; return `<div><div style="display:flex;font-size:11.5px;margin-bottom:5px"><span style="flex:1;color:var(--text)">${esc(r.nm)}</span><span class="adx-num" style="color:#8A93A3">${tot}</span></div><div style="height:7px;border-radius:99px;overflow:hidden;display:flex">${s?`<span style="width:${s}%;background:#FFB27C"></span>`:''}${h?`<span style="width:${h}%;background:#FF6B5E"></span>`:''}</div></div>`;}).join('')
-    : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-size:11px;color:var(--muted2)">Rad etilgan shablonlar sababi hali yo‘q</div></div>`;
+    : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-size:11px;color:var(--muted2)">No rejection reasons yet</div></div>`;
   const barMax = typeof chartMax === "function" ? chartMax(DL_30) : Math.max(...DL_30, 1);
   const rankColors = ['#C2F04A','#8A93A3','#8A93A3','#8A93A3'];
   return `
     <div class="adx-grid4" style="margin-bottom:18px">
-      ${axStat({label:'Jami yuklab olishlar',val:axNum(totalDl),ic:'download-simple',foot:'plugin hisobi'})}
-      ${axStat({label:'O‘rtacha / tasdiqlangan',val:counts().approved?String(avgDl):'—',ic:'chart-bar',foot:'yuklab olish / shablon'})}
-      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'check-circle',icColor:'#C2F04A',foot:'DB bo‘yicha'})}
-      ${axStat({label:'Audit (30 kun)',val:DL_30.reduce((a,b)=>a+b,0),ic:'shield-check',icColor:'#7CC4FF',foot:'moderatsiya va tizim'})}
+      ${axStat({label:'Total downloads',val:axNum(totalDl),ic:'download-simple',foot:'plugin count'})}
+      ${axStat({label:'Average / approved',val:counts().approved?String(avgDl):'—',ic:'chart-bar',foot:'downloads / template'})}
+      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'check-circle',icColor:'#C2F04A',foot:'from DB'})}
+      ${axStat({label:'Audit (30 days)',val:DL_30.reduce((a,b)=>a+b,0),ic:'shield-check',icColor:'#7CC4FF',foot:'moderation and system'})}
     </div>
     <div class="adx-grid2">
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor leaderboard</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">DOWNLOADS BO‘YICHA</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor leaderboard</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">BY DOWNLOADS</span></div>
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:11px">
-          ${contribRank.length? contribRank.slice(0,6).map((r,i)=>`<div style="display:flex;align-items:center;gap:11px"><span class="adx-num" style="font-size:11px;color:${rankColors[i]||'#8A93A3'};width:16px">${i+1}</span>${axAv(r.c.name,r.c.email,28)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</div><div class="adx-prog" style="margin-top:5px"><div class="pb" style="width:${maxDl?r.dl/maxDl*100:0}%"></div></div></div><span class="adx-num" style="font-size:11.5px;color:#B7C0CE">${axNum(r.dl)}</span><span class="adx-num" style="font-size:9.5px;color:#8A93A3;width:34px;text-align:right">${r.rate}%</span></div>`).join('') : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-size:11px;color:var(--muted2)">Hali ma‘lumot yo‘q</div></div>`}
+          ${contribRank.length? contribRank.slice(0,6).map((r,i)=>`<div style="display:flex;align-items:center;gap:11px"><span class="adx-num" style="font-size:11px;color:${rankColors[i]||'#8A93A3'};width:16px">${i+1}</span>${axAv(r.c.name,r.c.email,28)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</div><div class="adx-prog" style="margin-top:5px"><div class="pb" style="width:${maxDl?r.dl/maxDl*100:0}%"></div></div></div><span class="adx-num" style="font-size:11.5px;color:#B7C0CE">${axNum(r.dl)}</span><span class="adx-num" style="font-size:9.5px;color:#8A93A3;width:34px;text-align:right">${r.rate}%</span></div>`).join('') : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-size:11px;color:var(--muted2)">No data yet</div></div>`}
         </div>
       </div>
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Rad sabablari</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SOFT VS HARD</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Rejection reasons</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SOFT VS HARD</span></div>
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
           ${rejectBlock}
           <div style="display:flex;gap:14px;margin-top:2px"><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#FFB27C"></span>Soft reject</span><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#FF6B5E"></span>Hard reject</span></div>
         </div>
       </div>
     </div>
-    <div class="adx-card" style="margin-top:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Audit trend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SO‘NGGI 30 KUN · HAR KUN VOQEALAR</span></div>
-      <div style="padding:16px 18px"><div class="adx-bars">${DL_30.map((v,i)=>`<div class="b ${i===DL_30.length-1?'sel':''}" style="height:${Math.max(4,(v/barMax)*100)}%" title="${v} voqea"></div>`).join('')}</div>
-      <div style="display:flex;justify-content:space-between;margin-top:10px"><span style="font-size:10px;color:#8A93A3">-30 kun</span><span style="font-size:10px;color:#8A93A3">bugun</span></div></div>
+    <div class="adx-card" style="margin-top:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Audit trend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">LAST 30 DAYS · EVENTS PER DAY</span></div>
+      <div style="padding:16px 18px"><div class="adx-bars">${DL_30.map((v,i)=>`<div class="b ${i===DL_30.length-1?'sel':''}" style="height:${Math.max(4,(v/barMax)*100)}%" title="${v} event${v===1?'':'s'}"></div>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px"><span style="font-size:10px;color:#8A93A3">-30 days</span><span style="font-size:10px;color:#8A93A3">today</span></div></div>
     </div>`;
 };
 
@@ -343,36 +343,36 @@ VIEWS.analytics = function(){
 window.afterRender.settings = function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='settings') tba.innerHTML =
-    `<button class="adx-btn2 sm" onclick="route('settings')">Bekor</button>`+
-    `<button class="adx-btn sm" onclick="toast('Saqlandi','Sozlamalar brauzerda saqlandi (server sync keyingi versiyada)','success')"><i class="ph ph-check"></i>Saqlash</button>`;
+    `<button class="adx-btn2 sm" onclick="route('settings')">Cancel</button>`+
+    `<button class="adx-btn sm" onclick="toast('Saved','Settings saved in the browser (server sync in a future version)','success')"><i class="ph ph-check"></i>Save</button>`;
 };
 VIEWS.settings = function(){
   const cats = (typeof CATS!=='undefined'?CATS:[]);
   const rules = [
-    ['Yangi yuklash uchun majburiy moderatsiya',true],
-    ['Hard reject‘dan keyin qayta yuborishni bloklash',true],
-    ['Approve‘dan keyin AE katalogiga avtomatik push',true],
-    ['Soft reject‘da contributorga email yuborish',false],
+    ['Mandatory moderation for new uploads',true],
+    ['Block resubmission after a hard reject',true],
+    ['Auto-push to the AE catalog after approval',true],
+    ['Send email to contributor on soft reject',false],
   ];
   return `
     <div class="adx-grid2">
       <div class="adx-card" style="padding:18px 20px">
-        <div class="adx-h16" style="font-size:14px;margin-bottom:14px">Marketplace sozlamalari</div>
-        <div class="adx-flab">PLATFORMA NOMI</div><input class="adx-input" value="FrameFlow" style="margin-bottom:12px">
-        <div class="adx-flab">MAKS. FAYL HAJMI (.aep PACK)</div><input class="adx-input mono" value="200 MB" style="margin-bottom:12px">
-        <div class="adx-flab">PREVIEW MAKS. DAVOMIYLIK</div><input class="adx-input mono" value="30 s" style="margin-bottom:12px">
-        <div class="adx-flab">AVTO-ARXIV (FAOLSIZ KUNLAR)</div><input class="adx-input mono" value="90 kun">
-        <div style="font-size:10.5px;color:#5E6675;margin-top:6px">Approved bo‘lmagan qoralamalar shu muddatdan keyin arxivlanadi. <span style="color:#FFB27C">Server sync keyingi versiyada</span>.</div>
+        <div class="adx-h16" style="font-size:14px;margin-bottom:14px">Marketplace settings</div>
+        <div class="adx-flab">PLATFORM NAME</div><input class="adx-input" value="FrameFlow" style="margin-bottom:12px">
+        <div class="adx-flab">MAX FILE SIZE (.aep PACK)</div><input class="adx-input mono" value="200 MB" style="margin-bottom:12px">
+        <div class="adx-flab">PREVIEW MAX DURATION</div><input class="adx-input mono" value="30 s" style="margin-bottom:12px">
+        <div class="adx-flab">AUTO-ARCHIVE (INACTIVE DAYS)</div><input class="adx-input mono" value="90 days">
+        <div style="font-size:10.5px;color:#5E6675;margin-top:6px">Drafts that are not approved are archived after this period. <span style="color:#FFB27C">Server sync in a future version</span>.</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="adx-card" style="padding:18px 20px">
-          <div style="display:flex;align-items:center;margin-bottom:12px"><span class="adx-h16" style="font-size:14px">Kategoriyalar</span><span style="flex:1"></span><button class="adx-btn2 sm" onclick="toast('Kategoriya','Kategoriya qo‘shish keyingi versiyada','info')"><i class="ph ph-check"></i>Qo‘shish</button></div>
-          <div style="display:flex;flex-wrap:wrap;gap:7px">${cats.length?cats.map(c=>`<span class="adx-tag">${esc(c)}<i class="ph ph-x" style="font-size:11px;margin-left:2px;cursor:pointer"></i></span>`).join(''):'<span style="font-size:11px;color:var(--muted2)">Kategoriya yo‘q</span>'}</div>
+          <div style="display:flex;align-items:center;margin-bottom:12px"><span class="adx-h16" style="font-size:14px">Categories</span><span style="flex:1"></span><button class="adx-btn2 sm" onclick="toast('Category','Adding categories coming in a future version','info')"><i class="ph ph-check"></i>Add</button></div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px">${cats.length?cats.map(c=>`<span class="adx-tag">${esc(c)}<i class="ph ph-x" style="font-size:11px;margin-left:2px;cursor:pointer"></i></span>`).join(''):'<span style="font-size:11px;color:var(--muted2)">No categories</span>'}</div>
         </div>
         <div class="adx-card" style="padding:18px 20px">
-          <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Moderatsiya qoidalari</div>
+          <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Moderation rules</div>
           ${rules.map(([l,on],i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:12px;${i?'border-top:1px solid var(--hair)':''}"><span style="flex:1">${l}</span><button class="adx-tog ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')"><i></i></button></div>`).join('')}
-          <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Qoidalar hozircha brauzerda — server tomonlama qo‘llash keyingi versiyada.</div>
+          <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Rules are currently browser-only — server-side enforcement in a future version.</div>
         </div>
       </div>
     </div>`;
@@ -389,14 +389,14 @@ VIEWS.audit = function () {
 
 window.afterRender.audit = async function () {
   const tba = document.getElementById("tbActions");
-  if(tba && CURRENT==="audit") tba.innerHTML = `<button class="adx-btn2 sm" onclick="StudioTemplates.loadAuditLogs().then(renderAuditTable)"><i class="ph ph-arrow-clockwise"></i>Yangilash</button>`;
+  if(tba && CURRENT==="audit") tba.innerHTML = `<button class="adx-btn2 sm" onclick="StudioTemplates.loadAuditLogs().then(renderAuditTable)"><i class="ph ph-arrow-clockwise"></i>Refresh</button>`;
   const root = document.getElementById("auditRoot");
-  root.innerHTML = `<div class="card card-pad empty"><p class="small">Yuklanmoqda…</p></div>`;
+  root.innerHTML = `<div class="card card-pad empty"><p class="small">Loading…</p></div>`;
   try {
     await StudioTemplates.loadAuditLogs();
     renderAuditTable();
   } catch (e) {
-    root.innerHTML = `<div class="empty"><h3>Xatolik</h3><p>${esc(e.message)}</p></div>`;
+    root.innerHTML = `<div class="empty"><h3>Error</h3><p>${esc(e.message)}</p></div>`;
   }
 };
 
@@ -413,31 +413,31 @@ function axAuditBadge(action){
 function renderAuditTable() {
   const list = AUDIT_FILTER === "all" ? AUDIT : AUDIT.filter((a) => a.action.includes(AUDIT_FILTER));
   const tags = [
-    ["all","Barchasi",AUDIT.length],
+    ["all","All",AUDIT.length],
     ["approve","Approve",AUDIT.filter((a)=>a.action==="approve").length],
     ["reject","Reject",AUDIT.filter((a)=>a.action.includes("reject")).length],
     ["block","Block",AUDIT.filter((a)=>a.action.includes("block")).length],
   ];
   document.getElementById("auditRoot").innerHTML = `
-    ${axInfo("Audit jurnali — moderatsiya va boshqaruv harakatlari (API).",'info')}
+    ${axInfo("Audit log — moderation and administration actions (API).",'info')}
     <div class="adx-tagrow">
       ${tags.map(([k,l,n])=>`<button class="adx-tag ${AUDIT_FILTER===k?'on':''}" onclick="AUDIT_FILTER='${k}';renderAuditTable()">${l} <span class="n">${n}</span></button>`).join('')}
     </div>
     <div class="adx-card" style="overflow:hidden">
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:820px">
-        <thead><tr><th>Vaqt</th><th>Aktor</th><th>Amal</th><th>Nishon</th></tr></thead>
+        <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead>
         <tbody>${
           list.length ? list.map((a)=>{
             const actor = String(a.actor||'');
-            const isMe = actor.includes('(siz)');
-            const nm = actor.replace(' (siz)','');
+            const isMe = actor.includes('(you)');
+            const nm = actor.replace(' (you)','');
             return `<tr>
               <td class="adx-num" style="font-size:11px;color:#8A93A3;white-space:nowrap">${esc(a.t)}</td>
-              <td><div class="adx-who">${isMe?'<span class="adx-av" style="width:26px;height:26px;font-size:9px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,nm,26)}<span class="nm" style="font-size:12px">${esc(nm)}${isMe?' <span style="color:#5E6675;font-weight:400">(siz)</span>':''}</span></div></td>
+              <td><div class="adx-who">${isMe?'<span class="adx-av" style="width:26px;height:26px;font-size:9px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,nm,26)}<span class="nm" style="font-size:12px">${esc(nm)}${isMe?' <span style="color:#5E6675;font-weight:400">(you)</span>':''}</span></div></td>
               <td>${axAuditBadge(a.action)}</td>
               <td class="adx-num" style="font-size:10.5px;color:#8A93A3">${esc(a.target)}</td>
             </tr>`;
-          }).join("") : `<tr><td colspan="4"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-clipboard-text"></i></span><div style="font-weight:600;font-size:13px">Hali yozuv yo‘q</div><div style="font-size:11px;color:var(--muted2)">Moderatsiya harakatlari shu yerda ko‘rinadi.</div></div></td></tr>`
+          }).join("") : `<tr><td colspan="4"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-clipboard-text"></i></span><div style="font-weight:600;font-size:13px">No entries yet</div><div style="font-size:11px;color:var(--muted2)">Moderation actions will appear here.</div></div></td></tr>`
         }</tbody>
       </table></div>
     </div>`;
@@ -449,21 +449,21 @@ function renderAuditTable() {
 function openTplDrawer(id){
   const t=TEMPLATES.find(x=>x.id===id); const con=cById(t.cid);
   openDrawer(`
-    <div class="drawer-head"><span class="h3 grow">Shablon tafsiloti</span><button class="icon-btn" onclick="closeDrawer()">${ic('x')}</button></div>
+    <div class="drawer-head"><span class="h3 grow">Template details</span><button class="icon-btn" onclick="closeDrawer()">${ic('x')}</button></div>
     <div class="drawer-body col gap-16">
       ${typeof StudioMedia!=='undefined'?`<div style="border-radius:var(--r-md);overflow:hidden">${StudioMedia.renderPreview(t,{aspect:'16/9',radius:'var(--r-md)'})}</div>`:`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/9;border-radius:var(--r-md)"></div>`}
       <div class="row gap-8 wrap">${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}</div>
       <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
-      <div class="row between center"><span class="label">Tarif (tier)</span><button class="badge badge-plan ${t.isPro?'pro':'free'} tier-toggle" title="${t.isPro?'Pro tarif — bosib Free qiling':'Free tarif — bosib Pro qiling'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO — bosib Free':'FREE — bosib Pro'}</button></div>
+      <div class="row between center"><span class="label">Tier</span><button class="badge badge-plan ${t.isPro?'pro':'free'} tier-toggle" title="${t.isPro?'Pro tier — click to make Free':'Free tier — click to make Pro'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO — click for Free':'FREE — click for Pro'}</button></div>
       <p class="body">${esc(t.desc)}</p>
-      <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['Fayl',t.size],['Yuklangan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
+      <div class="meta-grid">${[['ID',t.id],['Category',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['File',t.size],['Uploaded',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
       <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${esc(x)}</span>`).join('')}</div>
       <div class="divider"></div>
-      <div class="row center gap-10">${avatar(con.name,34)}<div class="col grow" style="gap:1px"><span class="cell-strong">${esc(con.name)}</span><span class="small">${esc(con.email)}</span></div><button class="btn btn-ghost btn-sm" onclick="closeDrawer();route('contributor-detail','${con.id}')">Profil</button></div>
-      ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic('alert')}<div><b style="color:var(--tx-0)">Qaror sababi</b><div class="small mt-4" style="color:var(--tx-1)">${esc(t.reason)}</div></div></div>`:''}
+      <div class="row center gap-10">${avatar(con.name,34)}<div class="col grow" style="gap:1px"><span class="cell-strong">${esc(con.name)}</span><span class="small">${esc(con.email)}</span></div><button class="btn btn-ghost btn-sm" onclick="closeDrawer();route('contributor-detail','${con.id}')">Profile</button></div>
+      ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic('alert')}<div><b style="color:var(--tx-0)">Decision reason</b><div class="small mt-4" style="color:var(--tx-1)">${esc(t.reason)}</div></div></div>`:''}
     </div>
     <div class="drawer-foot">
-      ${t.status==='pending'||t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();modApprove('${t.id}')">${ic('check')} Tasdiqlash</button><button class="btn btn-warn grow" onclick="closeDrawer();modSoftReject('${t.id}')">${ic('reply')} Soft reject</button>`:`<button class="btn btn-ghost grow" onclick="openEditMeta('${t.id}')">${ic('edit')} Tahrirlash</button>`}
+      ${t.status==='pending'||t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();modApprove('${t.id}')">${ic('check')} Approve</button><button class="btn btn-warn grow" onclick="closeDrawer();modSoftReject('${t.id}')">${ic('reply')} Soft reject</button>`:`<button class="btn btn-ghost grow" onclick="openEditMeta('${t.id}')">${ic('edit')} Edit</button>`}
     </div>`);
 }
 
@@ -472,9 +472,9 @@ function openTplDrawer(id){
    ============================================================ */
 function tName(id){ return TEMPLATES.find(t=>t.id===id).name; }
 
-/* ---- Per-shablon Pro/Free tier toggle (admin) ----
-   Mavjud PATCH /api/contributor/templates/:id { isPro } ni chaqiradi (isPro
-   server-side faqat ADMIN uchun). Subscriber plan-toggle naqshining aynan o'zi. */
+/* ---- Per-template Pro/Free tier toggle (admin) ----
+   Calls the existing PATCH /api/contributor/templates/:id { isPro } (isPro
+   is server-side ADMIN-only). Same pattern as the subscriber plan toggle. */
 function openToggleTierTpl(id){
   const t = TEMPLATES.find(x=>x.id===id);
   if(!t) return;
@@ -482,83 +482,83 @@ function openToggleTierTpl(id){
   const label = newPro ? 'Pro' : 'Free';
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:${newPro?'var(--violet-dim);color:var(--violet-bright)':'var(--gray-dim);color:var(--gray)'}">${ic('star')}</div>
-      <div><h3>${label} tarifga o‘tkazish</h3><p>${esc(t.name)}</p></div></div>
+      <div><h3>Move to ${label} tier</h3><p>${esc(t.name)}</p></div></div>
     <div class="modal-body"><div class="info-banner">${ic('alert')}<span>${newPro
-        ? `<b>${esc(t.name)}</b> endi faqat <b>Pro</b> obunachilarga ko‘rinadi va import qilinadi.`
-        : `<b>${esc(t.name)}</b> barcha (Free) obunachilarga ochiq bo‘ladi.`}</span></div></div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn ${newPro?'btn-primary':'btn-success'}" onclick="doToggleTierTpl('${id}',${newPro})">${ic('star')} ${label} qilish</button></div>`);
+        ? `<b>${esc(t.name)}</b> will now only be visible to and importable by <b>Pro</b> subscribers.`
+        : `<b>${esc(t.name)}</b> will be available to all (Free) subscribers.`}</span></div></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn ${newPro?'btn-primary':'btn-success'}" onclick="doToggleTierTpl('${id}',${newPro})">${ic('star')} Make ${label}</button></div>`);
 }
 
 async function doToggleTierTpl(id, isPro){
-  if(!StudioApi.token()){ toast('API','Admin sifatida API orqali kiring','warn'); return; }
+  if(!StudioApi.token()){ toast('API','Sign in as admin via the API first','warn'); return; }
   const t = TEMPLATES.find(x=>x.id===id);
   const nm = t ? t.name : id;
   try{
     await StudioApi.patchTemplate(id, { isPro: !!isPro });
     await StudioTemplates.refreshAfterReview();
     closeModal();
-    toast('Yangilandi', `“${esc(nm)}” ${isPro?'Pro':'Free'} tarifga o‘tkazildi`, isPro?'success':'info');
-    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Shablon tarifi o‘zgartirildi',{action:'tier',detail:`${id}:${isPro?'pro':'free'}`});
+    toast('Updated', `“${esc(nm)}” moved to the ${isPro?'Pro':'Free'} tier`, isPro?'success':'info');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Template tier changed',{action:'tier',detail:`${id}:${isPro?'pro':'free'}`});
     if(CURRENT==='templates') renderTemplates();
     else if(CURRENT==='moderation') renderModeration();
   }catch(e){
-    toast('Xato', e.message || 'Tarif o‘zgartirilmadi', 'danger');
+    toast('Error', e.message || 'Failed to change tier', 'danger');
   }
 }
 
 function modApprove(id){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--green-dim);color:var(--green)">${ic('checkCircle')}</div>
-      <div><h3>Shablonni tasdiqlash</h3><p>"${esc(tName(id))}" AE katalogiga qo\u2018shiladi.</p></div></div>
+      <div><h3>Approve template</h3><p>"${esc(tName(id))}" will be added to the AE catalog.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="info-banner">${ic('ext')}<span>Tasdiqlangach bu shablon obunachilar uchun <b>After Effects \u2192 FrameFlow Browse</b> panelida darhol ko\u2018rinadi.</span></div>
-      <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Contributorga tasdiq xabarini yuborish</span></label>
+      <div class="info-banner">${ic('ext')}<span>Once approved, this template is immediately visible to subscribers in the <b>After Effects \u2192 FrameFlow Browse</b> panel.</span></div>
+      <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Send approval message to contributor</span></label>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-success" onclick="modApproveConfirm('${id}')">${ic('check')} Tasdiqlash va nashr</button></div>`);
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" onclick="modApproveConfirm('${id}')">${ic('check')} Approve and publish</button></div>`);
 }
 
 async function modApproveConfirm(id) {
   closeModal();
   if (!StudioApi.token()) {
-    toast("API", "Admin sifatida API orqali kiring", "warn");
+    toast("API", "Sign in as admin via the API first", "warn");
     return;
   }
   try {
     await StudioApi.reviewTemplate(id, "approve");
     await StudioTemplates.refreshAfterReview();
-    toast("Tasdiqlandi", `\u201c${esc(tName(id))}\u201d AE Browse katalogida`, "success");
+    toast("Approved", `\u201c${esc(tName(id))}\u201d is in the AE Browse catalog`, "success");
     if (typeof AssetFlowLog !== "undefined") {
-      AssetFlowLog.info("Shablon tasdiqlandi", { action: "approve", detail: id });
+      AssetFlowLog.info("Template approved", { action: "approve", detail: id });
     }
     MOD_SELECTED = null;
     renderModeration();
   } catch (e) {
-    toast("Xato", e.message || "Tasdiqlash muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Approval failed", "danger");
   }
 }
 
 function modSoftReject(id){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--orange-dim);color:var(--orange)">${ic('reply')}</div>
-      <div><h3>Soft reject</h3><p>Contributor sababni ko\u2018radi va tuzatib qayta yuborishi mumkin.</p></div></div>
+      <div><h3>Soft reject</h3><p>The contributor will see the reason and can fix and resubmit.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="field"><label>Rad sababi <span class="req">*</span></label><textarea class="textarea" id="softRejectReason" placeholder="Aniq, foydali izoh yozing \u2014 contributor nimani tuzatishini bilsin\u2026"></textarea></div>
-      <div class="field"><label>Kategoriya</label><select class="select" style="height:38px;width:100%"><option>Sifat / kompressiya</option><option>Noto\u2018g\u2018ri metadata</option><option>Texnik nosozlik</option><option>Boshqa</option></select></div>
+      <div class="field"><label>Rejection reason <span class="req">*</span></label><textarea class="textarea" id="softRejectReason" placeholder="Write a clear, useful note \u2014 so the contributor knows what to fix\u2026"></textarea></div>
+      <div class="field"><label>Category</label><select class="select" style="height:38px;width:100%"><option>Quality / compression</option><option>Incorrect metadata</option><option>Technical issue</option><option>Other</option></select></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-warn" onclick="modRejectConfirm('${id}',false)">${ic('reply')} Yuborish</button></div>`);
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-warn" onclick="modRejectConfirm('${id}',false)">${ic('reply')} Send</button></div>`);
 }
 
 async function modRejectConfirm(id, hard) {
   // MUHIM: izohni modal yopilishidan OLDIN o'qiymiz (closeModal DOM'ni o'chiradi)
   const note =
     document.querySelector(".modal-body textarea")?.value?.trim() ||
-    "Moderatsiya rad etildi";
+    "Rejected by moderation";
   closeModal();
   if (!StudioApi.token()) {
-    toast("API", "Admin sifatida API orqali kiring", "warn");
+    toast("API", "Sign in as admin via the API first", "warn");
     return;
   }
   try {
@@ -570,52 +570,52 @@ async function modRejectConfirm(id, hard) {
     await StudioTemplates.refreshAfterReview();
     toast(
       hard ? "Hard reject" : "Soft reject",
-      "Reject izohi saqlandi — contributor Xabarlar bo'limida ko'radi",
+      "Rejection note saved — the contributor will see it in Messages",
       hard ? "danger" : "warn"
     );
     MOD_SELECTED = null;
     renderModeration();
   } catch (e) {
-    toast("Xato", e.message || "Rad etish muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Rejection failed", "danger");
   }
 }
 
 function modHardReject(id){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic('ban')}</div>
-      <div><h3>Hard reject</h3><p>Qat\u2018iy rad \u2014 qayta yuborish imkoni yo\u2018q.</p></div></div>
+      <div><h3>Hard reject</h3><p>Permanent rejection \u2014 resubmission is not possible.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="info-banner danger">${ic('alert')}<span>Bu amal qaytarib bo\u2018lmaydi. Shablon butunlay rad etiladi.</span></div>
-      <div class="field"><label>Sabab <span class="req">*</span></label><textarea class="textarea" placeholder="Masalan: litsenziyasiz musiqa, stock qayta sotish, copyright buzilishi\u2026"></textarea></div>
+      <div class="info-banner danger">${ic('alert')}<span>This action cannot be undone. The template is rejected outright.</span></div>
+      <div class="field"><label>Reason <span class="req">*</span></label><textarea class="textarea" placeholder="e.g. unlicensed music, stock resale, copyright violation\u2026"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-danger" onclick="modRejectConfirm('${id}',true)">${ic('ban')} Hard reject</button></div>`);
 }
 
 function modDelete(id){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic('trash')}</div>
-      <div><h3>Shablonni o\u2018chirish</h3><p>"${esc(tName(id))}" butunlay o\u2018chiriladi.</p></div></div>
-    <div class="modal-body"><div class="info-banner danger">${ic('alert')}<span>Bu destructive amal. Fayllar va statistika qaytarilmaydi.</span></div></div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-danger" onclick="modDeleteConfirm('${id}')">${ic('trash')} O\u2018chirish</button></div>`);
+      <div><h3>Delete template</h3><p>"${esc(tName(id))}" will be permanently deleted.</p></div></div>
+    <div class="modal-body"><div class="info-banner danger">${ic('alert')}<span>This is a destructive action. Files and statistics cannot be recovered.</span></div></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="modDeleteConfirm('${id}')">${ic('trash')} Delete</button></div>`);
 }
 
 async function modDeleteConfirm(id) {
   closeModal();
   if (!StudioApi.token()) {
-    toast("API", "Admin sifatida kiring", "warn");
+    toast("API", "Sign in as admin first", "warn");
     return;
   }
   try {
     await StudioApi.deleteTemplate(id);
     await StudioTemplates.refreshAfterReview();
     if (MOD_SELECTED === id) MOD_SELECTED = null;
-    toast("O'chirildi", "Shablon tizimdan olib tashlandi", "danger");
+    toast("Deleted", "Template removed from the system", "danger");
     if (CURRENT === "moderation") renderModeration();
     else if (CURRENT === "templates") renderTemplates();
   } catch (e) {
-    toast("Xato", e.message || "O'chirish muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Deletion failed", "danger");
   }
 }
 
@@ -624,21 +624,21 @@ function openEditMeta(id){
   const { cat, catLabel } = typeof catFromLabel === "function" ? catFromLabel(t.cat) : { cat: "intros", catLabel: t.cat };
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--blue-dim);color:var(--blue)">${ic('edit')}</div>
-      <div><h3>Metadata tahrirlash</h3><p>Admin override \u2014 ${t.id}</p></div></div>
+      <div><h3>Edit metadata</h3><p>Admin override \u2014 ${t.id}</p></div></div>
     <div class="modal-body col gap-12" id="editMetaBody">
-      <div class="field"><label>Nomi</label><input id="emName" class="input" value="${esc(t.name)}"></div>
-      <div class="field"><label>Tavsif</label><textarea id="emDesc" class="textarea">${esc(t.desc||'')}</textarea></div>
-      <div class="row gap-12"><div class="field grow"><label>Kategoriya</label><select id="emCat" class="select" style="height:38px;width:100%">${CATS.map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>Name</label><input id="emName" class="input" value="${esc(t.name)}"></div>
+      <div class="field"><label>Description</label><textarea id="emDesc" class="textarea">${esc(t.desc||'')}</textarea></div>
+      <div class="row gap-12"><div class="field grow"><label>Category</label><select id="emCat" class="select" style="height:38px;width:100%">${CATS.map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="field grow"><label>Resolution</label><input id="emRes" class="input" value="${esc(t.res)}"></div></div>
-      <div class="field"><label>Teglar</label><input id="emTags" class="input" value="${esc(t.tags.join(', '))}"></div>
+      <div class="field"><label>Tags</label><input id="emTags" class="input" value="${esc(t.tags.join(', '))}"></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-primary" onclick="saveEditMeta('${id}')">Saqlash</button></div>`);
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditMeta('${id}')">Save</button></div>`);
 }
 
 async function saveEditMeta(id) {
   if (!StudioApi.token()) {
-    toast("API", "Admin sifatida kiring", "warn");
+    toast("API", "Sign in as admin first", "warn");
     return;
   }
   const name = document.getElementById("emName")?.value?.trim();
@@ -661,11 +661,11 @@ async function saveEditMeta(id) {
     });
     await StudioTemplates.refreshAfterReview();
     closeModal();
-    toast("Saqlandi", "Metadata yangilandi", "success");
+    toast("Saved", "Metadata updated", "success");
     if (CURRENT === "moderation") renderModeration();
     else if (CURRENT === "templates") renderTemplates();
   } catch (e) {
-    toast("Xato", e.message || "Saqlash muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Save failed", "danger");
   }
 }
 
@@ -673,13 +673,13 @@ function openBlock(id){
   const c=cById(id);
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic('ban')}</div>
-      <div><h3>Contributorni bloklash</h3><p>${esc(c.name)} platformaga kira olmaydi.</p></div></div>
+      <div><h3>Block contributor</h3><p>${esc(c.name)} will lose access to the platform.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="info-banner danger">${ic('alert')}<span>Bloklangan contributor yangi shablon yuklay olmaydi. Mavjud approved shablonlar AE\u2018da qoladi (alohida o\u2018chirmaguningizcha).</span></div>
-      <div class="field"><label>Bloklash sababi <span class="req">*</span></label><textarea class="textarea" placeholder="Sabab \u2014 audit logga yoziladi\u2026"></textarea></div>
+      <div class="info-banner danger">${ic('alert')}<span>A blocked contributor cannot upload new templates. Existing approved templates remain in AE (unless separately deleted).</span></div>
+      <div class="field"><label>Reason for blocking <span class="req">*</span></label><textarea class="textarea" placeholder="Reason \u2014 recorded in the audit log\u2026"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-danger" onclick="doBlock('${id}')">${ic('ban')} Bloklash</button></div>`);
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="doBlock('${id}')">${ic('ban')} Block</button></div>`);
 }
 async function doBlock(id){
   const c=cById(id);
@@ -687,12 +687,12 @@ async function doBlock(id){
     await StudioApi.patchContributorStatus(id, true);
     c.status='blocked';
     closeModal();
-    toast('Bloklandi',`${esc(c.name)} bloklandi`,'danger');
-    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor bloklandi',{action:'block',detail:c.email});
+    toast('Blocked',`${esc(c.name)} was blocked`,'danger');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor blocked',{action:'block',detail:c.email});
     await StudioTemplates.loadAdminContributors();
     route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
   } catch (e) {
-    toast('Xato', e.message || 'Bloklash muvaffaqiyatsiz', 'danger');
+    toast('Error', e.message || 'Blocking failed', 'danger');
   }
 }
 async function unblock(id){
@@ -700,33 +700,33 @@ async function unblock(id){
   try {
     await StudioApi.patchContributorStatus(id, false);
     c.status='active';
-    toast('Blokdan chiqarildi',`${esc(c.name)} qayta faollashtirildi`,'success');
+    toast('Unblocked',`${esc(c.name)} was reactivated`,'success');
     await StudioTemplates.loadAdminContributors();
     route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
   } catch (e) {
-    toast('Xato', e.message || 'Blokdan chiqarish muvaffaqiyatsiz', 'danger');
+    toast('Error', e.message || 'Unblocking failed', 'danger');
   }
 }
 
 function openMessage(cid, tid){
   const c=cById(cid);
-  const subj = tid ? (tName(tid) + " \u2014 moderatsiya") : "FrameFlow xabar";
+  const subj = tid ? (tName(tid) + " \u2014 moderation") : "FrameFlow message";
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic('message')}</div>
-      <div><h3>Xabar yozish</h3><p>${esc(c.name)} ga${tid?' \u00b7 '+esc(tid):''}</p></div></div>
+      <div><h3>Write message</h3><p>To ${esc(c.name)}${tid?' \u00b7 '+esc(tid):''}</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="field"><label>Mavzu</label><input id="dmSubject" class="input" value="${esc(subj)}"></div>
-      <div class="field"><label>Xabar</label><textarea id="dmBody" class="textarea" placeholder="Xabaringiz\u2026"></textarea></div>
+      <div class="field"><label>Subject</label><input id="dmSubject" class="input" value="${esc(subj)}"></div>
+      <div class="field"><label>Message</label><textarea id="dmBody" class="textarea" placeholder="Your message\u2026"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-primary" onclick="submitDirectMessage('${cid}','${tid||""}')">${ic('send')} Yuborish</button></div>`);
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitDirectMessage('${cid}','${tid||""}')">${ic('send')} Send</button></div>`);
 }
 
 async function submitDirectMessage(cid, tid) {
   const subject = document.getElementById("dmSubject")?.value?.trim();
   const body = document.getElementById("dmBody")?.value?.trim();
   if (!subject || !body) {
-    toast("Maydonlar", "Mavzu va xabar to'ldiring", "warn");
+    toast("Fields", "Fill in the subject and message", "warn");
     return;
   }
   try {
@@ -737,40 +737,40 @@ async function submitDirectMessage(cid, tid) {
       body,
     });
     closeModal();
-    toast("Yuborildi", "Xabar yetkazildi", "success");
+    toast("Sent", "Message delivered", "success");
     if (CURRENT === "messaging") window.afterRender.messaging();
   } catch (e) {
-    toast("Xato", e.message || "Yuborish muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Sending failed", "danger");
   }
 }
 
 function openBroadcast(){
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--yellow-dim);color:var(--yellow)">${ic('megaphone')}</div>
-      <div><h3>Broadcast e\u2018lon</h3><p>Barcha faol contributorlarga yuboriladi.</p></div></div>
+      <div><h3>Broadcast announcement</h3><p>Sent to all active contributors.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="info-banner warn">${ic('alert')}<span>Bu xabar <b>${CONTRIBUTORS.filter(c=>c.status==='active').length} ta</b> contributorga bir vaqtda boradi. Ehtiyot bo\u2018ling.</span></div>
-      <div class="field"><label>Sarlavha</label><input id="bcSubject" class="input" placeholder="Masalan: Yangi kategoriya ochildi"></div>
-      <div class="field"><label>Xabar</label><textarea id="bcBody" class="textarea"></textarea></div>
+      <div class="info-banner warn">${ic('alert')}<span>This message goes to <b>${CONTRIBUTORS.filter(c=>c.status==='active').length}</b> contributors at once. Be careful.</span></div>
+      <div class="field"><label>Title</label><input id="bcSubject" class="input" placeholder="e.g. New category launched"></div>
+      <div class="field"><label>Message</label><textarea id="bcBody" class="textarea"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
-      <button class="btn btn-warn" onclick="submitBroadcast()">${ic('megaphone')} Yuborish</button></div>`);
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-warn" onclick="submitBroadcast()">${ic('megaphone')} Send</button></div>`);
 }
 
 async function submitBroadcast() {
   const subject = document.getElementById("bcSubject")?.value?.trim();
   const body = document.getElementById("bcBody")?.value?.trim();
   if (!subject || !body) {
-    toast("Maydonlar", "Sarlavha va xabar to'ldiring", "warn");
+    toast("Fields", "Fill in the title and message", "warn");
     return;
   }
   try {
     const res = await StudioApi.broadcastMessage(subject, body);
     closeModal();
-    toast("Broadcast", `${res.sent} ta contributorga yuborildi`, "success");
+    toast("Broadcast", `Sent to ${res.sent} contributors`, "success");
     if (CURRENT === "messaging") window.afterRender.messaging();
   } catch (e) {
-    toast("Xato", e.message || "Broadcast muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Broadcast failed", "danger");
   }
 }
 
@@ -786,8 +786,8 @@ async function sendAdminReply() {
     ADMIN_THREAD_MESSAGES = data.messages || [];
     th.last = body;
     await renderMessaging();
-    toast("Yuborildi", "Xabar yuborildi", "success");
+    toast("Sent", "Message sent", "success");
   } catch (e) {
-    toast("Xato", e.message || "Yuborish muvaffaqiyatsiz", "danger");
+    toast("Error", e.message || "Sending failed", "danger");
   }
 }
