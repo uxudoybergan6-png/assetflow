@@ -8,6 +8,12 @@
       "port": 8975
     },
     {
+      "name": "admin-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["packages/assetflow-studio/scripts/dev-admin-server.mjs"],
+      "port": 3001
+    },
+    {
       "name": "studio-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "studio"],

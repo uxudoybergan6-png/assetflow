@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
-<title>FrameFlow — Admin Dashboard</title>
+<title>FrameFlow — Admin Console</title>
 <script>
 (function () {
   var p = location.pathname;
@@ -15,67 +15,55 @@
 })();
 </script>
 <link rel="stylesheet" href="styles/app.css">
+<link rel="stylesheet" href="styles/admin.css">
 <script src="js/studio-config.js"></script>
 <script src="js/theme.js"></script>
 </head>
-<body>
-<div class="app" data-screen-label="Admin Dashboard">
+<body class="adx-body">
+<div class="adx-app" data-screen-label="Admin Console">
+  <div class="adx-scrim" id="adxScrim"></div>
   <!-- ===================== SIDEBAR ===================== -->
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg>
-      </div>
-      <div class="col" style="gap:0">
-        <span class="brand-name">FrameFlow</span>
-        <span class="brand-sub">Admin Console</span>
+  <aside class="adx-sbar" id="adxSbar">
+    <div class="adx-brand">
+      <span class="adx-bmark"><i class="ph-fill ph-lightning"></i></span>
+      <div>
+        <div class="adx-bname">FrameFlow</div>
+        <div class="adx-bsub">ADMIN CONSOLE</div>
       </div>
     </div>
-
-    <nav class="nav" id="nav"></nav>
-
-    <div class="sidebar-foot">
-      <div class="role-switch" style="width:100%;margin-bottom:10px">
-        <a class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/></svg>Admin</a>
+    <nav id="nav" style="display:contents"></nav>
+    <div class="adx-sgrow"></div>
+    <div class="adx-ucard">
+      <span class="adx-av" id="userAvatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>
+      <div style="min-width:0">
+        <div id="userName" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Admin</div>
+        <div style="font-size:10px;color:var(--muted2)">Super Admin</div>
       </div>
-      <div class="user-chip">
-        <div class="avatar" id="userAvatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</div>
-        <div class="col" style="gap:1px;min-width:0">
-          <span id="userName" style="font-size:12.5px;font-weight:600;white-space:nowrap">Admin</span>
-          <span style="font-size:11px;color:var(--tx-2)">Super Admin</span>
-        </div>
-      </div>
+      <button type="button" class="uout" onclick="AssetFlowAuth.logout()" title="Chiqish"><i class="ph ph-sign-out"></i></button>
     </div>
   </aside>
 
   <!-- ===================== MAIN ===================== -->
-  <div class="main">
-    <header class="topbar">
-      <button type="button" class="icon-btn nav-toggle" data-nav-toggle aria-label="Menyu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-      <div class="topbar-title">
-        <div class="crumb" id="crumb"></div>
-        <h1 id="pageTitle">Overview</h1>
+  <div class="adx-main">
+    <header class="adx-topbar">
+      <button type="button" class="adx-ico adx-navtoggle" id="adxNavToggle" aria-label="Menyu"><i class="ph ph-list"></i></button>
+      <div style="min-width:0">
+        <div class="adx-crumb" id="crumb"></div>
+        <div class="adx-ptitle" id="pageTitle">Boshqaruv</div>
       </div>
-      <div style="flex:1"></div>
-      <div class="search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <span style="flex:1"></span>
+      <div class="adx-tbactions" id="tbActions"></div>
+      <div class="adx-inp adx-search" style="width:280px;height:34px">
+        <i class="ph ph-magnifying-glass" style="font-size:14px;color:#8A93A3"></i>
         <input id="adminGlobalSearch" placeholder="Shablon, contributor, ID qidirish&#8230;" oninput="adminGlobalSearch(this.value)">
-        <kbd>&#8984;K</kbd>
+        <span class="adx-kbd">&#8984;K</span>
       </div>
-      <button class="icon-btn" onclick="route('moderation')" title="Moderatsiya navbati"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
-      <div class="topbar-actions">
-        <button type="button" class="icon-btn" id="themeBtn" data-theme-toggle title="Mavzu">
-          <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
-        </button>
-        <button type="button" class="icon-btn" onclick="AssetFlowAuth.logout()" title="Chiqish">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-        </button>
-      </div>
+      <button type="button" class="adx-ico" id="adxBell" onclick="route('moderation')" title="Moderatsiya navbati"><i class="ph ph-bell"></i><span class="ndot" id="adxBellDot" style="display:none"></span></button>
+      <button type="button" class="adx-ico" id="adxThemeBtn" title="Mavzu"><i class="ph ph-sun" id="adxThemeIco"></i></button>
+      <button type="button" class="adx-ico" onclick="AssetFlowAuth.logout()" title="Chiqish"><i class="ph ph-sign-out"></i></button>
     </header>
 
-    <main class="content" id="view"></main>
+    <main class="adx-content" id="adxContent"><div id="view"></div></main>
   </div>
 </div>
 
@@ -107,26 +95,33 @@ if (AF_ADMIN) {
   const _av = document.getElementById("userAvatar"); if(_av) _av.textContent = _ini;
 }
 
+/* ── Nav — maket sidebar 4 guruh (Ish maydoni · Boshqaruv · Biznes · Tizim) ── */
 const NAV = [
-  {grp:'Workspace'},
-  {id:'overview',     label:'Boshqaruv',         icon:'grid'},
-  {id:'moderation',   label:'Moderatsiya navbati', icon:'shield', badge:'5', badgeCls:'warn'},
-  {id:'templates',    label:'Barcha shablonlar',  icon:'layers'},
-  {grp:'Boshqaruv'},
-  {id:'contributors', label:'Contributorlar',     icon:'users'},
-  {id:'subscribers',  label:'AE Plugin obunachilari', icon:'plugin'},
-  {id:'plans',        label:'Tariflar (Free / Pro)', icon:'dollar'},
-  {id:'messaging',    label:'Xabarlar',           icon:'inbox'},
-  {id:'analytics',    label:'Analitika',          icon:'chart'},
-  {grp:'Tizim'},
-  {id:'settings',     label:'Sozlamalar',         icon:'gear'},
+  {grp:'ISH MAYDONI'},
+  {id:'overview',     label:'Boshqaruv',          icon:'squares-four'},
+  {id:'moderation',   label:'Moderatsiya',        icon:'shield-check'},
+  {id:'templates',    label:'Barcha shablonlar',  icon:'stack'},
+  {grp:'BOSHQARUV'},
+  {id:'contributors', label:'Contributorlar',     icon:'users-three'},
+  {id:'subscribers',  label:'Obunachilar',        icon:'puzzle-piece'},
+  {id:'plans',        label:'Tariflar',           icon:'tag'},
+  {id:'messaging',    label:'Xabarlar',           icon:'chat-circle-dots'},
+  {id:'analytics',    label:'Analitika',          icon:'chart-bar'},
+  {grp:'BIZNES'},
+  {id:'finance',      label:'Moliya',             icon:'wallet'},
+  {id:'pricing',      label:'Narx boshqaruvi',    icon:'currency-circle-dollar'},
+  {id:'genspend',     label:'Gen sarfi',          icon:'gauge'},
+  {id:'payouts',      label:'Payout',             icon:'hand-coins'},
+  {id:'activity',     label:'Faoliyat jurnali',   icon:'list-checks'},
+  {grp:'TIZIM'},
+  {id:'settings',     label:'Sozlamalar',         icon:'gear-six'},
   {id:'logs',         label:'Tizim loglari',      icon:'scroll'},
-  {id:'audit',        label:'Audit log',          icon:'scroll'},
+  {id:'audit',        label:'Audit log',          icon:'clipboard-text'},
 ];
 
 const TITLES = {
   overview:['Boshqaruv','Platforma holati'],
-  moderation:['Moderatsiya navbati','Yangi shablonlarni ko\u2018rib chiqish'],
+  moderation:['Moderatsiya navbati','Yangi shablonlarni ko‘rib chiqish'],
   templates:['Barcha shablonlar','Global katalog'],
   contributors:['Contributorlar','Foydalanuvchilar boshqaruvi'],
   'contributor-detail':['Contributor profili','Contributorlar'],
@@ -135,10 +130,18 @@ const TITLES = {
   plans:['Tariflar','Free va Pro — narx va limitlar'],
   messaging:['Xabarlar','Aloqa markazi'],
   analytics:['Analitika','Chuqur tahlil'],
+  finance:['Moliya','Provayder xarajati va margin'],
+  pricing:['Narx boshqaruvi','Model narx jadvali'],
+  genspend:['Gen sarfi','Per-user kredit sarfi'],
+  payouts:['Payout','Contributor to‘lovlari'],
+  activity:['Faoliyat jurnali','Yuklab olish voqealari'],
   settings:['Sozlamalar','Marketplace konfiguratsiyasi'],
   logs:['Tizim loglari','Admin · Contributor · AE Plugin'],
   audit:['Audit log','Compliance jurnali'],
 };
+
+/* Full-bleed (content padding'siz) ekranlar */
+const FLUSH_VIEWS = { moderation: 1 };
 
 let CURRENT = 'overview';
 let ADMIN_GLOBAL_SEARCH = '';
@@ -165,25 +168,31 @@ function navBadge(n){
 }
 function renderNav(){
   document.getElementById('nav').innerHTML = NAV.map(n=>{
-    if(n.grp) return `<div class="nav-group-label">${n.grp}</div>`;
+    if(n.grp) return `<div class="adx-shead">${n.grp}</div>`;
     const b = navBadge(n);
-    return `<button class="nav-item ${n.id===CURRENT?'active':''}" onclick="route('${n.id}')">
-      ${ic(n.icon)}<span>${n.label}</span>
-      ${b.badge?`<span class="nav-badge ${b.badgeCls||''}">${b.badge}</span>`:''}
+    const showBadge = b.badge && b.badge !== '0';
+    return `<button class="adx-sit ${n.id===CURRENT?'on':''}" onclick="route('${n.id}')">
+      <i class="ph ph-${n.icon}"></i><span class="lbl">${n.label}</span>
+      ${showBadge?`<span class="adx-nbadge ${b.badgeCls||''}">${b.badge}</span>`:''}
     </button>`;
   }).join('');
+  const dot = document.getElementById('adxBellDot');
+  if (dot) dot.style.display = (typeof tByStatus === 'function' && tByStatus('pending').length) ? '' : 'none';
 }
 
 function route(view, arg){
   CURRENT = view;
   const t = TITLES[view] || [view,''];
   document.getElementById('pageTitle').textContent = t[0];
-  document.getElementById('crumb').innerHTML = `<span>FrameFlow</span>${ic('chevR','')} <span>${t[1]}</span>`;
-  document.getElementById('crumb').querySelector('svg').style.width='12px';
+  document.getElementById('crumb').innerHTML = `<span>FrameFlow</span><i class="ph ph-caret-right" style="font-size:9px"></i><span>${t[1]}</span>`;
+  const tba = document.getElementById('tbActions'); if (tba) tba.innerHTML = '';
+  document.getElementById('adxContent').classList.toggle('adx-flush', !!FLUSH_VIEWS[view]);
   renderNav();
+  document.body.classList.remove('adx-nav-open');
   const fn = VIEWS[view];
   try {
-    document.getElementById('view').innerHTML = fn ? fn(arg) : '<div class="empty"><h3>Tez orada</h3></div>';
+    document.getElementById('view').innerHTML = fn ? fn(arg) :
+      `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-weight:600;font-size:13px">Tez orada</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">Bu bo‘lim keyingi bosqichda ulanadi.</div></div>`;
     if (window.afterRender && window.afterRender[view]) {
       const ar = window.afterRender[view](arg);
       if (ar && typeof ar.then === "function") ar.catch((e) => console.error(e));
@@ -192,10 +201,27 @@ function route(view, arg){
   } catch (e) {
     console.error(e);
     AssetFlowLog.error(e.message, { action: "view_error", detail: view });
-    document.getElementById('view').innerHTML = `<div class="empty"><h3>Xatolik</h3><p>${e.message}</p></div>`;
+    document.getElementById('view').innerHTML = `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Xatolik</div><div style="font-size:11px;color:var(--muted2)">${e.message}</div></div>`;
   }
-  document.getElementById('view').scrollTop = 0;
+  document.getElementById('adxContent').scrollTop = 0;
 }
+
+/* ── Mobil drawer (adx qobiq o'zi boshqaradi — theme.js .app ni topmaydi) ── */
+document.getElementById('adxNavToggle').addEventListener('click', () => {
+  document.body.classList.toggle('adx-nav-open');
+});
+document.getElementById('adxScrim').addEventListener('click', () => {
+  document.body.classList.remove('adx-nav-open');
+});
+
+/* ── Mavzu tugmasi (legacy ekranlar uchun; yangi qobiq dark-fixed) ── */
+/* Redesign dark-first: foydalanuvchi aniq tanlamagan bo'lsa admin dark ochiladi */
+if (!localStorage.getItem('af-theme')) AssetFlowTheme.apply('dark');
+document.getElementById('adxThemeBtn').addEventListener('click', () => AssetFlowTheme.toggle());
+window.addEventListener('af-theme-change', (e) => {
+  const i = document.getElementById('adxThemeIco');
+  if (i) i.className = 'ph ' + (e.detail.theme === 'light' ? 'ph-moon' : 'ph-sun');
+});
 
 (async function bootAdmin() {
   await StudioTemplates.init("admin");

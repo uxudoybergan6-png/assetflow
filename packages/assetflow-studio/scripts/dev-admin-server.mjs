@@ -33,13 +33,23 @@ app.use(
 
 app.use("/js", express.static(path.join(ROOT, "js")));
 app.use("/styles", express.static(path.join(ROOT, "styles")));
+// Self-hosted fontlar (admin.css → /assets/fonts) — prod'da platform/ dist root'ga tushadi
+app.use("/assets", express.static(path.join(ROOT, "platform", "assets")));
+
+// Lokalda production API meta'sini olib tashlaymiz — studio-config origin
+// (:3001 proxy → :4000) ga qaytadi. Cloud Run CORS localhost'ga ruxsat bermaydi.
+function sendHtmlLocalApi(res, file) {
+  let html = fs.readFileSync(file, "utf8");
+  html = html.replace(/<meta name="(?:assetflow|frameflow)-api"[^>]*>\s*/g, "");
+  res.type("html").send(html);
+}
 
 app.get("/login.html", (_req, res) => {
-  res.sendFile(path.join(ROOT, "admin-login.html"));
+  sendHtmlLocalApi(res, path.join(ROOT, "admin-login.html"));
 });
 
 app.get("/", (_req, res) => {
-  res.sendFile(path.join(ROOT, "admin", "index.html"));
+  sendHtmlLocalApi(res, path.join(ROOT, "admin", "index.html"));
 });
 
 app.get("/index.html", (_req, res) => {
