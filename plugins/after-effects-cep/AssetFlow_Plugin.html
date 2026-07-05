@@ -4205,14 +4205,14 @@ html.home-mode #homePage{display:block!important}
                             <div class="set-balk">CREDIT BALANCE</div>
                             <div class="set-balv"><span class="cs">✦</span> <span id="balSet">—</span></div>
                             <div class="set-balsub" id="setPlanLine">&nbsp;</div>
-                            <div class="set-topup" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Top up credits</div>
+                            <div class="set-topup" onclick="if(typeof window.startCreditTopup==='function'){window.startCreditTopup(1500);}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Top up credits</div>
                           </div>
                         </div>
                         <!-- b11: kredit paketlari (hammasi mavjud checkout oqimiga boradi) -->
                         <div class="set-packs">
-                          <div class="set-pack" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><div class="pv"><span class="cs">✦</span> 500</div><div class="pp">49,000 UZS</div></div>
-                          <div class="set-pack top" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><span class="set-topb">TOP</span><div class="pv"><span class="cs">✦</span> 1,200</div><div class="pp">99,000 UZS</div></div>
-                          <div class="set-pack" onclick="if(typeof window.startProCheckout==='function'){window.startProCheckout();}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><div class="pv"><span class="cs">✦</span> 3,000</div><div class="pp">219,000 UZS</div></div>
+                          <div class="set-pack" onclick="if(typeof window.startCreditTopup==='function'){window.startCreditTopup(500);}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><div class="pv"><span class="cs">✦</span> 500</div><div class="pp">$5</div></div>
+                          <div class="set-pack top" onclick="if(typeof window.startCreditTopup==='function'){window.startCreditTopup(1500);}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><span class="set-topb">TOP</span><div class="pv"><span class="cs">✦</span> 1,500</div><div class="pp">$12</div></div>
+                          <div class="set-pack" onclick="if(typeof window.startCreditTopup==='function'){window.startCreditTopup(5000);}else if(typeof showToast==='function'){showToast('Payment isn\'t available yet — contact admin','info');}"><div class="pv"><span class="cs">✦</span> 5,000</div><div class="pp">$35</div></div>
                         </div>
                         <!-- b11: kredit tarixi (gen xarajatlari — /gen/history cost) -->
                         <div class="set-seck">CREDIT HISTORY</div>
@@ -10076,6 +10076,28 @@ async function startProCheckout(){
   }
 }
 
+/** FAZA 2 #25 — kredit paketi → Lemon Squeezy checkout (tashqi brauzerda).
+ *  POST /api/billing/checkout {credits} LS hosted checkout URL qaytaradi;
+ *  webhook (order_created) kreditni shu hisobga qo'shadi. */
+async function startCreditTopup(credits){
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
+    showToast('Sign in first to buy credits','info');
+    if(typeof openAccountSheet==='function')openAccountSheet();
+    return;
+  }
+  try{
+    showToast('Opening payment page…');
+    const d=await studioPost('/api/billing/checkout',{credits:Number(credits)||500});
+    if(!d||!d.url) throw new Error('No checkout URL returned');
+    AssetFlowAccount.openExternal(d.url);
+    showToast('Complete payment in your browser, then click "Refresh"');
+  }catch(e){
+    console.error('startCreditTopup',e);
+    showToast((e&&e.message)||"Payment isn't available right now",'error');
+  }
+}
+window.startCreditTopup=startCreditTopup;
+
 async function manageBilling(){
   try{
     const url=await AssetFlowAccount.requestBillingPortal();
@@ -10557,7 +10579,15 @@ async function bootPlugin(){
   function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
   function bal(){ if(lowDemo)return 5; var v=aiCredReal(); if(v!=null)return v; return 606; }
   // Displey: real kredit (yoki '—' yuklanmaguncha) — demo 606 EMAS. bal() (raqam) eski estimate uchun qoladi.
-  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):(lowDemo?'5':'—');var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();}
+  // #25: kesh bo'sh (— ko'rinishi) + login bor → /credits'dan bir marta olamiz (60s guard).
+  var balFetchAt=0;
+  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):(lowDemo?'5':'—');var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
+    if(v==null&&!lowDemo&&(Date.now()-balFetchAt>60000)&&typeof studioGet==='function'&&typeof pubAuthHeaders==='function'){
+      try{ var h=pubAuthHeaders(); if(h&&h.Authorization){ balFetchAt=Date.now();
+        studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){});
+      } }catch(e){}
+    }
+  }
   // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
   function aiLeadSync(){ var v=aiCredReal(); var t='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); var a=document.getElementById('aiLeadCredL'); if(a)a.innerHTML=t; var c=document.getElementById('aiLeadCredA'); if(c)c.innerHTML=t; }
   // UMUMIY kredit sinxron — yagona manba (cached aiCredits) → BARCHA chip (balTop/balSet/aiLead/igCredit/vgCredit).
