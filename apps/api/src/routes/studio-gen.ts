@@ -49,6 +49,7 @@ import {
   modelSupportsEndFrame,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
+import { resolvePricedModel } from "../lib/model-pricing.js";
 import { writeProviderSpend } from "../lib/ledger.js";
 import { estimateProviderUsd } from "../lib/provider-cost.js";
 import {
@@ -470,7 +471,7 @@ const preflightSchema = z.object({
   modelId: z.number().int().optional(),
   params: boundedParams.optional(),
 });
-studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
+studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
   const p = quoteSchema.safeParse(req.body);
   if (!p.success) {
     res.status(400).json({ error: p.error.issues[0]?.message || "Noto'g'ri so'rov" });
@@ -482,7 +483,10 @@ studioGenRouter.post("/gen/cost-quote", (req: Request, res: Response) => {
     return;
   }
   const params = (p.data.params ?? {}) as Record<string, unknown>;
-  const price = computeGenCost(model, params); // video: cost(/s) × duration; boshqa: sobit
+  // NARX DVIGATELI (Bosqich 3.4): narx DB'dan (ModelPricing) — qator yo'q bo'lsa statik
+  // gen-models.ts qiymatiga qaytadi. computeGenCost + imzo O'ZGARMAYDI (nusxaga qo'llanadi).
+  const priced = await resolvePricedModel(model);
+  const price = computeGenCost(priced, params); // video: cost(/s) × duration; boshqa: sobit
   const ph = genParamsHash(model.id, model.mode, params);
   const signature = signCostQuote({ modelId: model.id, mode: model.mode, price, ph });
   res.json({ modelId: model.id, price, signature, feature: model.feature });

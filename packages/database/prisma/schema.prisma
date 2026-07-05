@@ -505,6 +505,62 @@ model ProviderSpend {
   @@index([createdAt])
 }
 
+// ── Bosqich 3.4 — NARX DVIGATELI (admin-managed pricing, DB-backed) ──────────
+// ModelPricing: HAR gen model uchun BITTA qator — kredit narx ta'rifi (gen-models.ts
+// STATIK katalog o'rniga endi HAQIQAT MANBAI). Seed startup'da gen-models.ts joriy
+// qiymatlaridan idempotent create-only upsert bilan to'ldiriladi → narx BUGUNGI bilan
+// AYNAN bir xil. Qator YO'Q bo'lsa computeGenCost statik gen-models.ts qiymatiga qaytadi.
+// PUL ZONASIGA TEGMAYDI: cost-quote imzosi hal qilingan yakuniy narxni qamrab oladi
+// (signCostQuote/verifyCostQuote O'ZGARMAYDI) — bu model faqat narx MANBAINI ko'chiradi.
+model ModelPricing {
+  id          String   @id @default(cuid())
+  modelId     Int      @unique // GenModel.id (gen-models.ts)
+  mode        String   // "image" | "voice" | "video" | "music" | "sfx"
+  label       String?
+  // ── Kredit narx ta'rifi (computeGenCost SHU qiymatlarni o'qiydi) ──
+  cost        Int      // sobit kredit (video: soniya boshiga); fallback baza
+  pricing     String?  // video: "per-second" | "per-generation" (null = per-second default)
+  qualityCost Json?    // rasm: { "1K": 4, "2K": 8, "4K": 16 } — sifat/resolution → kredit
+  videoPerSec Json?    // video: { "720p": 8, "1080p": 8 } — resolution → kredit/soniya
+  // ── Marja uchun (best-effort) ──
+  estCostUsd  Decimal? @db.Decimal(10, 4) // vakil (default param) real provider USD narxi
+  enabled     Boolean  @default(true)
+  notes       String?  @db.Text
+  updatedBy   String? // oxirgi tahrirlagan admin userId
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@index([mode])
+}
+
+// PricingConfig: global narx sozlamalari (singleton). creditUsdValue = 1 kredit necha $
+// (anchor: PRO $19 / 1000 kredit = $0.019). marginTarget = maqsad marja (default 1.8x).
+// Admin PATCH bilan o'zgartiradi (kelajak admin UI). Yagona qator id="singleton".
+model PricingConfig {
+  id             String   @id @default("singleton")
+  creditUsdValue Decimal  @default(0.019) @db.Decimal(12, 6)
+  marginTarget   Decimal  @default(1.8) @db.Decimal(8, 3)
+  updatedBy      String?
+  updatedAt      DateTime @updatedAt
+}
+
+// ProviderInvoice: admin kiritgan REAL oylik provider hisob-fakturasi (USD). Tizim
+// TAXMINI (ProviderSpend.estimatedCostUsd) bilan solishtirish uchun — provider narx
+// oshsa real xarajat estimate'dan yuqori chiqadi → drift ko'rinadi (Bosqich 3.5).
+model ProviderInvoice {
+  id          String   @id @default(cuid())
+  provider    String   // "vertex" | "fal" | "elevenlabs" | ...
+  periodMonth String   // "YYYY-MM"
+  actualUsd   Decimal  @db.Decimal(12, 4)
+  note        String?
+  createdById String? // admin userId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([provider, periodMonth])
+  @@index([periodMonth])
+}
+
 // ── Bosqich 4 #1 — REAL download/import tracking (zanjir yaxlitligi) ─────────
 // TemplateDownloadEvent: HAR haqiqiy pack/mogrt yuklab olish yoki import uchun
 // BITTA atomik qatorlangan hodisa (kim, qaysi katalog shabloni, qaysi contributor).

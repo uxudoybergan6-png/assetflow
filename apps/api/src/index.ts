@@ -28,6 +28,7 @@ import { studioGenRouter } from "./routes/studio-gen.js";
 import { logS3Diagnostics, isS3Configured, checkS3Health } from "./lib/s3.js";
 import { prisma } from "@creative-tools/database";
 import { initSentry, captureException } from "./lib/sentry.js";
+import { seedModelPricing } from "./lib/model-pricing.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
 // dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
@@ -254,4 +255,10 @@ app.listen(PORT, "0.0.0.0", () => {
     : "Stripe: disabled (Contributor/API works without it)";
   console.log(`API running on http://localhost:${PORT} — ${stripeNote}`);
   logS3Diagnostics();
+  // NARX DVIGATELI (Bosqich 3.4): ModelPricing'ni gen-models.ts joriy qiymatlaridan seed
+  // qiladi (create-only, idempotent — mavjud admin tahririga tegmaydi). Best-effort: jadval
+  // hali yo'q yoki DB yiqilsa loglaydi, narx statik fallback'da ishlayveradi.
+  seedModelPricing()
+    .then((r) => console.log(`[model-pricing] seed: ${r.created} yangi / ${r.total} model`))
+    .catch((e) => console.error("[model-pricing] seed o'tkazib yuborildi:", e?.message || e));
 });
