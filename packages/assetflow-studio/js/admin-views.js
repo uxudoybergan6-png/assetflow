@@ -118,7 +118,7 @@ VIEWS.overview = function(){
   ];
   return `
   <div class="col gap-20">
-    ${infoBanner('Tasdiqlangan shablonlar obunachilar After Effects \u2192 <b>AssetFlow Browse</b> panelida avtomatik ko\u2018rinadi.')}
+    ${infoBanner('Tasdiqlangan shablonlar obunachilar After Effects \u2192 <b>FrameFlow Browse</b> panelida avtomatik ko\u2018rinadi.')}
 
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       ${kpis.map(kpiCard).join('')}

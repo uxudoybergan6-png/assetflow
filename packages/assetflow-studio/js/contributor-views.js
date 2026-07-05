@@ -53,7 +53,7 @@ VIEWS.overview = function(){
   const freeP = planById('free');
   const proP = planById('pro');
   return `<div class="col gap-20">
-    ${infoBanner('Obunachilar AE pluginida <b>Free</b> yoki <b>Pro</b> rejimda. Tasdiqlangan shablonlaringiz <b>After Effects \u2192 AssetFlow Browse</b> da ko\u2018rinadi.')}
+    ${infoBanner('Obunachilar AE pluginida <b>Free</b> yoki <b>Pro</b> rejimda. Tasdiqlangan shablonlaringiz <b>After Effects \u2192 FrameFlow Browse</b> da ko\u2018rinadi.')}
 
     <div class="plan-mini-row">
       <div class="plan-mini plan-mini-free">
@@ -577,7 +577,7 @@ function renderUpload(){
           </div>
         </div>
       </div>
-      ${infoBanner('Yuborgach holat <b>PENDING_REVIEW</b> bo\u2018ladi. Admin tasdiqlagach AE \u2192 AssetFlow Browse panelida ko\u2018rinadi.')}
+      ${infoBanner('Yuborgach holat <b>PENDING_REVIEW</b> bo\u2018ladi. Admin tasdiqlagach AE \u2192 FrameFlow Browse panelida ko\u2018rinadi.')}
       <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Platforma qoidalari va litsenziya shartlariga roziman</span></label>
     </div>`:''}
 
@@ -1041,7 +1041,7 @@ async function openTplDrawer(id){
       ${typeof StudioMedia!=='undefined'?`<div style="border-radius:var(--r-md);overflow:hidden">${StudioMedia.renderPreview(t,{aspect:'16/9'})}</div>`:`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/9;border-radius:var(--r-md)"></div>`}
       <div class="row gap-8 wrap">${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}</div>
       <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
-      ${t.status==='approved'?`<div class="info-banner">${ic('ext')}<span>Bu shablon hozir <b>AE \u2192 AssetFlow Browse</b> panelida live. <b>${t.dl.toLocaleString()}</b> marta yuklab olingan.</span></div>`:''}
+      ${t.status==='approved'?`<div class="info-banner">${ic('ext')}<span>Bu shablon hozir <b>AE \u2192 FrameFlow Browse</b> panelida live. <b>${t.dl.toLocaleString()}</b> marta yuklab olingan.</span></div>`:''}
       <p class="body">${esc(t.desc)}</p>
       <div class="meta-grid">${[['ID',t.id],['Kategoriya',t.cat],['Resolution',t.res],['Orientatsiya',t.orient],['Fayl',t.size],['Yaratilgan',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
       <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${esc(x)}</span>`).join('')}</div>

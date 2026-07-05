@@ -512,7 +512,7 @@ function modApprove(id){
     <div class="modal-head"><div class="modal-ico" style="background:var(--green-dim);color:var(--green)">${ic('checkCircle')}</div>
       <div><h3>Shablonni tasdiqlash</h3><p>"${esc(tName(id))}" AE katalogiga qo\u2018shiladi.</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="info-banner">${ic('ext')}<span>Tasdiqlangach bu shablon obunachilar uchun <b>After Effects \u2192 AssetFlow Browse</b> panelida darhol ko\u2018rinadi.</span></div>
+      <div class="info-banner">${ic('ext')}<span>Tasdiqlangach bu shablon obunachilar uchun <b>After Effects \u2192 FrameFlow Browse</b> panelida darhol ko\u2018rinadi.</span></div>
       <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Contributorga tasdiq xabarini yuborish</span></label>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
@@ -710,7 +710,7 @@ async function unblock(id){
 
 function openMessage(cid, tid){
   const c=cById(cid);
-  const subj = tid ? (tName(tid) + " \u2014 moderatsiya") : "AssetFlow xabar";
+  const subj = tid ? (tName(tid) + " \u2014 moderatsiya") : "FrameFlow xabar";
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic('message')}</div>
       <div><h3>Xabar yozish</h3><p>${esc(c.name)} ga${tid?' \u00b7 '+esc(tid):''}</p></div></div>

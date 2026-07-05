@@ -498,7 +498,7 @@ function openMessageSub(id) {
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic("message")}</div>
       <div><h3>Obunachiga xabar</h3><p>${esc(s.name)} · ${esc(s.email)}</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="field"><label>Mavzu</label><input class="input" value="AssetFlow Browse — xabar"></div>
+      <div class="field"><label>Mavzu</label><input class="input" value="FrameFlow Browse — xabar"></div>
       <div class="field"><label>Xabar</label><textarea class="textarea" placeholder="Obunachiga email yoki in-app xabar\u2026"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
