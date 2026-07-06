@@ -20,6 +20,12 @@
       "port": 3000
     },
     {
+      "name": "studio-ui-only",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["packages/assetflow-studio/scripts/dev-studio-server.mjs"],
+      "port": 3000
+    },
+    {
       "name": "cep-plugin-preview",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", "plugins/after-effects-cep", "-p", "8976", "-c-1"],

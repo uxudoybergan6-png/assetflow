@@ -17,9 +17,19 @@
     <div class="auth-card" style="max-width:420px;margin:0 auto">
       <div class="form-head">
         <h1 class="h1">Confirm the AE plugin</h1>
-        <p id="deviceIntro">Confirm with your Google account to sign in to the plugin.</p>
+        <p id="deviceIntro">Sign in to approve the After Effects plugin on this device.</p>
       </div>
       <p class="auth-error hidden" id="deviceError" role="alert"></p>
+      <form id="devicePasswordForm" style="margin-top:8px">
+        <div class="field">
+          <input id="deviceEmailInput" class="input" type="email" name="email" autocomplete="username" placeholder="you@email.com" required>
+        </div>
+        <div class="field">
+          <input id="devicePassInput" class="input" type="password" name="password" autocomplete="current-password" placeholder="Your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="devicePasswordBtn">Sign in &amp; approve</button>
+      </form>
+      <div class="auth-or" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">or</div>
       <div id="deviceGoogleBtn" style="display:flex;justify-content:center;margin-top:8px"></div>
       <div id="deviceDone" class="hidden" style="text-align:center;margin-top:12px">
         <p style="color:var(--tx-1);font-weight:600">✓ Confirmed — <span id="deviceEmail"></span></p>
@@ -50,7 +60,50 @@
   }
 
   const apiBase = (window.ASSETFLOW_STUDIO && window.ASSETFLOW_STUDIO.apiUrl) || "";
+  const formEl = document.getElementById("devicePasswordForm");
+  const orEl = document.querySelector(".auth-or");
+  const pwBtn = document.getElementById("devicePasswordBtn");
 
+  function showConfirmed(email) {
+    introEl.classList.add("hidden");
+    btnEl.classList.add("hidden");
+    errEl.classList.add("hidden");
+    if (formEl) formEl.classList.add("hidden");
+    if (orEl) orEl.classList.add("hidden");
+    document.getElementById("deviceEmail").textContent = email || "";
+    doneEl.classList.remove("hidden");
+  }
+
+  // ── Email + parol bilan tasdiqlash (Google muqobili, ishonchli yo'l) ──────
+  if (formEl) {
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("deviceEmailInput").value.trim();
+      const password = document.getElementById("devicePassInput").value;
+      if (!email || !password) { showError("Enter your email and password"); return; }
+      errEl.classList.add("hidden");
+      if (pwBtn) { pwBtn.disabled = true; pwBtn.textContent = "Signing in…"; }
+      try {
+        const r = await fetch(`${apiBase}/api/plugin/device/confirm-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, email, password }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          showError(data.error || "Could not sign in — please try again");
+          if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve"; }
+          return;
+        }
+        showConfirmed(data.email);
+      } catch {
+        showError("Network error — check your connection and try again");
+        if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve"; }
+      }
+    });
+  }
+
+  // ── Google bilan tasdiqlash ───────────────────────────────────────────────
   async function onGoogleCredential(resp) {
     try {
       const r = await fetch(`${apiBase}/api/plugin/device/confirm`, {
@@ -63,24 +116,31 @@
         showError(data.error || "Could not confirm — please try again");
         return;
       }
-      introEl.classList.add("hidden");
-      btnEl.classList.add("hidden");
-      errEl.classList.add("hidden");
-      document.getElementById("deviceEmail").textContent = data.email || "";
-      doneEl.classList.remove("hidden");
+      showConfirmed(data.email);
     } catch {
       showError("Network error — check your connection and try again");
     }
   }
 
   const googleClientId = document.querySelector('meta[name="google-client-id"]')?.getAttribute("content") || "";
+  // Google ixtiyoriy — kalit yo'q yoki GIS yuklanmasa, email/parol yo'li ishlaydi.
   if (!googleClientId) {
-    showError("Google sign-in is not configured yet");
+    btnEl.classList.add("hidden");
+    if (orEl) orEl.classList.add("hidden");
     return;
   }
 
+  let googleTries = 0;
   function initGoogleButton() {
-    if (!window.google?.accounts?.id) { setTimeout(initGoogleButton, 200); return; }
+    if (!window.google?.accounts?.id) {
+      if (googleTries++ > 25) { // ~5s — GIS yuklanmadi (bloklangan/oflayn): email/parolga tayanamiz
+        btnEl.classList.add("hidden");
+        if (orEl) orEl.classList.add("hidden");
+        return;
+      }
+      setTimeout(initGoogleButton, 200);
+      return;
+    }
     google.accounts.id.initialize({ client_id: googleClientId, callback: onGoogleCredential });
     google.accounts.id.renderButton(btnEl, { theme: "outline", size: "large", width: 280, text: "signin_with" });
   }

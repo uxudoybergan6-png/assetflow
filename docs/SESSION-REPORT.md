@@ -1,26 +1,23 @@
-# Sessiya hisoboti — 2026-07-06 (Google sign-in bug fix — device-code brauzer ochilmasligi)
+# Sessiya hisoboti — 2026-07-06 (Device-code sign-in: web device.html email/parol yo'li + poll + guest toast)
 
-**Bug:** AE plaginda "Sign in with Google" / "Continue with Google" tugmasi bosilganda hech narsa
-bo'lmasdi — brauzer ochilmasdi, xato ham chiqmasdi.
+**Muammo:** Plagin oqimni boshlaydi (link+kod+"Browser opened"), lekin user KIRA OLMASDI.
 
-**Root cause:** `plugins/after-effects-cep/js/CSInterface.js` (minimal shim) — `openURLInDefaultBrowser`
-faqat `window.__adobe_cep__.openURLInDefaultBrowser` to'g'ridan-to'g'ri metodini tekshirardi, lekin
-Adobe'ning haqiqiy CSInterface.js buni ko'pincha `invokeSync('openURLInDefaultBrowser', url)` orqali
-taqdim etadi. To'g'ridan-to'g'ri metod bo'lmaganda shim `require("uxp")` (Photoshop/XD API, CEP'da
-mavjud emas — doim throw) ga, so'ng `window.open()`ga tushardi — bu esa `await` fetch'dan KEYIN
-(click gesture'dan tashqarida) chaqirilgani uchun CEF panelida sukut bilan popup-block bo'ladi.
-Natija: brauzer ochilmaydi, xato chiqmaydi — aynan tasvirlangan simptom. Ikkala tugma
-(`homeGuestGoogle` va `accountLoginWithGoogle`) bir xil `AssetFlowAccount.openExternal` orqali
-shu buzuq shim'ga tayanadi edi.
+**Root cause (brauzerda tasdiqlangan):** `packages/assetflow-studio/device.html` (getframeflow.app/device.html
+→ CF 308 → /device, kod saqlanadi, sahifa 200) FAQAT Google GIS tugmasini ko'rsatardi. Google yangi
+domenda ishlamasa/user tugatolmasa — muqobil yo'q → tiqilib qolardi. Backend (start→confirm→poll) va DB
+sog' edi (run.app va api.getframeflow.app bir xil DB — cross-base poll test bilan tasdiqlandi).
 
-**Tuzatish (`js/CSInterface.js`):** ikkinchi native yo'l — `invokeSync('openURLInDefaultBrowser', url)`
-qo'shildi; manifestda `--enable-nodejs` yoqilgani uchun haqiqiy `child_process` OS-shell fallback
-(`open`/`start`/`xdg-open`) qo'shildi; `window.open()` faqat oxirgi chora sifatida qoldi.
+**Tuzatishlar (additive):**
+1. API `apps/api/src/routes/plugin.ts`: yangi `POST /api/plugin/device/confirm-password` (email+parol,
+   /login bilan bir xil bcrypt; pul mantig'i TEGILMADI). tsc toza.
+2. `device.html`: email+parol formasi + "or" + Google (GIS yuklanmasa ~5s'da jimgina yashiriladi).
+   Ikkala yo'l ham `showConfirmed()` → "✓ Confirmed". Intro matn yangilandi.
+3. Plagin `assetflow-account.js`: `sessionEstablished` — "Session expired" toast/modal FAQAT haqiqiy
+   (fetchMe/login/device-confirm bilan bir marta tasdiqlangan) sessiya tugaganda. Bootdagi eskirgan
+   token 401'i mehmon uchun JIMGINA tozalanadi (PART 3).
 
-**Tekshirildi:** brauzer preview (cep-plugin-preview, 1400px) — ikkala tugma ham to'liq zanjirni
-bosib o'tadi (device/start POST → openExternal chaqiriladi → xato bo'lsa toast/hint to'g'ri
-ishlaydi), 0 konsol xato, syntax OK (`node -c`). Email/parol login o'zgarmadi.
+**Jonli test (lokal API+studio, brauzer):** start→confirm-password(user123)→200→poll→confirmed+token+user.
+Noto'g'ri parol→401. Sahifa 3 yo'lni ham render qiladi. Backend zanjiri to'liq ishladi.
 
-**Bajarildi:** `install-cep.sh` bilan qayta o'rnatildi, AE qayta ishga tushirildi (build ebe1e1e,
-16:35). Real AE'da Google tugmasini bosib yakuniy tasdiq — foydalanuvchi tomonidan kutilmoqda.
-Push YO'Q (user o'zi).
+**Kutilmoqda:** API DEPLOY (endpoint hali productionda yo'q) + CF Pages deploy (device.html) + AE test.
+Google GIS getframeflow.app origin'i Google Console'da avtorizatsiya qilinganini tekshirish tavsiya.

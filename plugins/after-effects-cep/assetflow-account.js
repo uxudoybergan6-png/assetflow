@@ -8,6 +8,11 @@ const AssetFlowAccount = (() => {
 
   let cachedUser = null;
   let adminUrl = DEFAULT_ADMIN;
+  // Haqiqiy sessiya shu ishga tushishda kamida bir marta tasdiqlanganmi?
+  // (fetchMe/login/device-confirm muvaffaqiyati). Faqat shundan KEYIN 401/403
+  // "sessiya tugadi" deb ko'rsatiladi. Bootda qolib ketgan eskirgan token 401'i
+  // mehmon uchun soxta ogohlantirish chiqarmasin — jimgina tozalanadi.
+  let sessionEstablished = false;
 
   function apiBase() {
     if (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) {
@@ -46,13 +51,20 @@ const AssetFlowAccount = (() => {
   function handleAuthFailure(status, hadToken) {
     if ((status === 401 || status === 403) && hadToken) {
       clearToken();
-      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
+      // Faqat HAQIQIY (bir marta tasdiqlangan) sessiya tugaganda UI signal beramiz.
+      // Boot paytidagi eskirgan token 401'i — mehmon holati, ogohlantirish yo'q.
+      if (
+        sessionEstablished &&
+        typeof window !== "undefined" &&
+        typeof window.dispatchEvent === "function"
+      ) {
         try {
           window.dispatchEvent(new CustomEvent("assetflow:session-expired"));
         } catch (e) {
           /* CustomEvent qo'llab-quvvatlanmasa — e'tiborsiz */
         }
       }
+      sessionEstablished = false;
       return true;
     }
     return false;
@@ -221,6 +233,7 @@ const AssetFlowAccount = (() => {
       token: data.token,
     });
     cachedUser = data.user;
+    sessionEstablished = true;
     if (data.adminUrl) adminUrl = data.adminUrl;
     return data;
   }
@@ -262,6 +275,7 @@ const AssetFlowAccount = (() => {
             token: data.token,
           });
           cachedUser = data.user;
+          sessionEstablished = true;
           if (data.adminUrl) adminUrl = data.adminUrl;
           if (onConfirmed) onConfirmed(data);
         } else if (data.status === "expired") {
@@ -283,6 +297,7 @@ const AssetFlowAccount = (() => {
     try {
       const data = await request("/api/plugin/me");
       cachedUser = data.user;
+      sessionEstablished = true;
       if (data.apiBaseUrl || data.adminUrl) {
         persistClient({
           apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),

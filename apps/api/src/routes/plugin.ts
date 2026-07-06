@@ -552,6 +552,64 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
   res.json({ ok: true, email: user.email });
 });
 
+const devicePasswordSchema = z.object({
+  code: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+/** 2b) Brauzer (device.html): email+parol bilan koda bog'laydi (Google muqobili).
+ *  Google GIS mavjud bo'lmagan/bloklangan holatda ham foydalanuvchi kira oladi.
+ *  Autentifikatsiya /login bilan bir xil (bcrypt), pul mantig'i o'zgarmaydi. */
+pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request, res: Response) => {
+  const parsed = devicePasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Email and password are required" });
+    return;
+  }
+
+  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: parsed.data.code } });
+  if (!row) {
+    res.status(404).json({ error: "Code not found" });
+    return;
+  }
+  if (row.expiresAt < new Date()) {
+    await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    res.status(410).json({ error: "Code has expired — please try again from the plugin" });
+    return;
+  }
+  if (row.status !== "pending") {
+    res.status(409).json({ error: "Code has already been used" });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (!user?.passwordHash) {
+    res.status(401).json({ error: "Incorrect email or password" });
+    return;
+  }
+  const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Incorrect email or password" });
+    return;
+  }
+
+  const profile = await ensurePluginProfile(user.id);
+  if (profile.status === PluginAccountStatus.BLOCKED) {
+    await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
+    res.status(403).json({ error: "Account is blocked — contact an admin" });
+    return;
+  }
+
+  const pluginToken = await ensurePluginToken(user.id, true);
+  await prisma.pluginDeviceCode.update({
+    where: { id: row.id },
+    data: { status: "confirmed", userId: user.id, pluginToken },
+  });
+
+  res.json({ ok: true, email: user.email });
+});
+
 /** 3) Plagin: kod holatini pollik qiladi */
 pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: Response) => {
   const code = String(req.query.code || "");
