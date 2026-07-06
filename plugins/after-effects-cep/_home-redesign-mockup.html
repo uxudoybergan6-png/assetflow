@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FrameFlow — Plugin Home Redesign (D1 mockup)</title>
+<!-- MOCKUP ONLY — design board for PHASE 4 / D1 (#5 #10 #11). Not loaded by the plugin.
+     CDN fonts/icons are OK here (review in browser); the real build self-hosts. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+/* ============ BOARD (the review page itself) ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#04060A}
+body{font-family:'Hanken Grotesk',-apple-system,system-ui,sans-serif;color:#F2F5F8;
+  background:radial-gradient(1200px 500px at 70% -10%,rgba(194,240,74,.05),transparent 60%),#04060A;
+  -webkit-font-smoothing:antialiased}
+.board{max-width:1280px;margin:0 auto;padding:56px 36px 140px}
+.b-kick{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;color:#C2F04A;font-weight:600}
+.b-title{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:10px}
+.b-sub{font-size:14px;color:#8A93A3;margin-top:8px;max-width:640px;line-height:1.6}
+.b-meta{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.b-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 11px;border-radius:999px;
+  border:1px solid #232A36;background:#0B0E14;color:#8A93A3}
+.b-chip b{color:#C2F04A;font-weight:600}
+section.bs{margin-top:84px}
+.bs-head{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid #1A202B;padding-bottom:14px;margin-bottom:30px}
+.bs-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#C2F04A;font-weight:700}
+.bs-t{font-size:21px;font-weight:800;letter-spacing:-.015em}
+.bs-d{font-size:12.5px;color:#8A93A3;margin-left:auto;text-align:right;max-width:420px;line-height:1.5}
+.row{display:flex;gap:44px;flex-wrap:wrap;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:14px}
+.frame-label{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:.12em;color:#8A93A3}
+.frame-label i{color:#C2F04A;font-size:13px}
+.frame-label .tag{margin-left:auto;padding:3px 8px;border-radius:4px;background:rgba(194,240,74,.1);
+  border:1px solid rgba(194,240,74,.25);color:#C2F04A;letter-spacing:.08em;font-weight:600}
+/* the 380px CEP panel frame */
+.frame{width:380px;flex:none;border-radius:16px;border:1px solid #242B38;overflow:hidden;position:relative;
+  background:var(--bg);box-shadow:0 50px 90px -40px rgba(0,0,0,.9),0 0 0 6px rgba(255,255,255,.02);
+  color:var(--text);font-size:13px;line-height:1.4}
+.fold{position:absolute;left:0;right:0;top:720px;border-top:1px dashed rgba(194,240,74,.4);z-index:60;pointer-events:none}
+.fold::after{content:"720px — panel fold";position:absolute;right:8px;top:3px;font-family:'IBM Plex Mono',monospace;
+  font-size:8.5px;letter-spacing:.1em;color:rgba(194,240,74,.75);background:rgba(4,6,10,.8);padding:2px 6px;border-radius:4px}
+/* notes next to frames */
+.notes{width:340px;flex:none}
+.notes h4{font-size:13px;font-weight:700;letter-spacing:-.01em;margin-bottom:12px;color:#F2F5F8}
+.note{display:flex;gap:10px;font-size:12px;color:#8A93A3;line-height:1.55;margin-bottom:12px}
+.note .dot{width:18px;height:18px;flex:none;border-radius:50%;background:rgba(194,240,74,.14);
+  border:1px solid rgba(194,240,74,.4);color:#C2F04A;font-family:'IBM Plex Mono',monospace;font-size:9px;
+  font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.note b{color:#DFE5EC;font-weight:600}
+/* annotation callout dot placed on frames */
+.pin{position:absolute;z-index:70;width:20px;height:20px;border-radius:50%;background:#C2F04A;color:#0E1400;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;display:flex;align-items:center;
+  justify-content:center;box-shadow:0 0 0 4px rgba(194,240,74,.18)}
+
+/* ============ PANEL DESIGN TOKENS — css/tokens.css “standart” 1:1 ============ */
+.frame{
+  --bg:#06080B; --surface:#13161C; --surface-2:#171B22; --surface-3:#1A1F28;
+  --sidebar:#0A0D12; --pop:#161B22; --border:#2A3140;
+  --text:#F2F5F8; --muted:#8A93A3; --muted-2:#5E6675;
+  --accent:#C2F04A; --accent-hi:#9CD62B; --on-accent:#0E1400;
+  --select:#7CC4FF; --red:#FF6B5E; --amber:#FFB27C;
+  --green-dim:rgba(194,240,74,.12);
+  --fill-1:rgba(255,255,255,.05); --fill-2:rgba(255,255,255,.06); --fill-3:rgba(255,255,255,.10);
+  --hair:rgba(255,255,255,.07); --scrim:rgba(8,10,14,.72);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+.frame *{font-family:'Hanken Grotesk',-apple-system,system-ui,sans-serif}
+.frame .mono{font-family:var(--mono)}
+
+/* ============ SHARED HEADER (#10 Home + #11 Account — every screen) ============ */
+.hd{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--sidebar);
+  border-bottom:1px solid rgba(255,255,255,.05);position:relative;z-index:5}
+.hd-home{width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);
+  display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;border:0;font-size:16px;
+  transition:box-shadow .2s}
+.hd-home:hover{box-shadow:0 0 0 3px rgba(194,240,74,.25)}
+.hd-back{width:28px;height:28px;border-radius:8px;background:var(--fill-1);border:1px solid var(--hair);
+  color:var(--text);display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;font-size:14px}
+.hd-brand{font-weight:800;font-size:13.5px;letter-spacing:-.02em}
+.hd-title{font-weight:700;font-size:12.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-sub{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--muted-2);display:block;margin-top:1px}
+.hd-sp{flex:1}
+.hd-seg{display:flex;background:var(--fill-1);border:1px solid var(--fill-2);border-radius:999px;padding:3px;flex:1;max-width:172px;min-width:0}
+.hd-seg span{flex:1;text-align:center;padding:5px 4px;border-radius:999px;font-weight:500;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.hd-seg span.on{background:var(--fill-3);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:var(--text)}
+.hd-ic{width:28px;height:28px;border-radius:8px;background:none;border:0;color:var(--muted);display:flex;
+  align-items:center;justify-content:center;flex:none;cursor:pointer;font-size:15px}
+.hd-ic:hover{color:var(--text)}
+.hd-cred{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:500;
+  padding:5px 9px;border-radius:999px;background:var(--fill-1);border:1px solid var(--hair);color:var(--text);
+  cursor:pointer;flex:none}
+.hd-cred .s{color:var(--accent)}
+.hd-cred .plan{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 5px;border-radius:4px;
+  background:var(--accent);color:var(--on-accent)}
+.hd-cred .plan.free{background:var(--fill-3);color:var(--muted)}
+.hd-ava{width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.14);flex:none;cursor:pointer;
+  background:linear-gradient(135deg,#6C3FA8,#33549E);position:relative;padding:0}
+.hd-ava.ring::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--accent);opacity:.85}
+.hd-ava .init{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff}
+.hd-signin{height:28px;display:flex;align-items:center;gap:5px;padding:0 12px;border-radius:999px;
+  background:var(--accent);color:var(--on-accent);font-weight:700;font-size:11px;border:0;cursor:pointer;flex:none}
+
+/* ============ COMMON PANEL PARTS ============ */
+.kick{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--muted);font-weight:600}
+.sec{display:flex;align-items:baseline;justify-content:space-between;padding:18px 14px 10px}
+.sec .kick{padding:0}
+.sec-all{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px;cursor:pointer}
+.sec-all i{font-size:10px}
+.thumb{background-size:cover;background-position:center;position:relative;overflow:hidden}
+.grain::before{content:"";position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px);background-size:16px 16px;opacity:.5}
+.badge{font-family:var(--mono);font-weight:700;font-size:8px;letter-spacing:.06em;padding:2px 6px;border-radius:4px}
+.badge.pro{background:var(--accent);color:var(--on-accent)}
+.badge.free{background:var(--scrim);color:#E7ECF3;font-weight:600}
+.badge.x{background:var(--scrim);color:#E7ECF3;font-weight:600}
+.appdot{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-weight:600;font-size:8px;
+  padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+.appdot i{width:5px;height:5px;border-radius:50%;background:#9A6AFF;display:block}
+.skew{display:inline-block;font-family:var(--mono);font-weight:800;font-size:8.5px;letter-spacing:.1em;
+  padding:4px 8px;background:var(--accent);color:var(--on-accent);transform:skewX(-12deg);
+  box-shadow:0 2px 0 rgba(0,0,0,.55)}
+.imp{height:28px;display:inline-flex;align-items:center;gap:5px;padding:0 12px;border-radius:999px;
+  background:var(--accent);color:var(--on-accent);font-weight:700;font-size:10.5px;cursor:pointer;border:0}
+.imp.ghost{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);color:#fff;
+  backdrop-filter:blur(10px);font-weight:600}
+.imp.soft{background:var(--fill-2);border:1px solid var(--hair);color:var(--text);font-weight:600}
+/* fake thumbnails — pure CSS art */
+.th-sport{background:radial-gradient(120% 100% at 82% 0%,rgba(194,240,74,.32),transparent 52%),
+  radial-gradient(90% 90% at 10% 100%,rgba(20,120,90,.5),transparent 60%),linear-gradient(145deg,#123528,#050D09)}
+.th-neon{background:radial-gradient(110% 90% at 15% 8%,rgba(255,84,180,.4),transparent 55%),
+  radial-gradient(100% 100% at 90% 90%,rgba(120,60,255,.45),transparent 60%),linear-gradient(150deg,#231040,#0A0616)}
+.th-cyber{background:radial-gradient(120% 90% at 85% 12%,rgba(60,220,255,.35),transparent 55%),
+  radial-gradient(90% 110% at 5% 95%,rgba(20,80,190,.55),transparent 60%),linear-gradient(150deg,#0A1E33,#04070E)}
+.th-gold{background:radial-gradient(110% 100% at 80% 0%,rgba(255,190,90,.4),transparent 55%),
+  radial-gradient(80% 90% at 10% 100%,rgba(150,80,20,.4),transparent 60%),linear-gradient(150deg,#2A1B08,#0C0703)}
+.th-urban{background:radial-gradient(110% 100% at 20% 0%,rgba(255,90,80,.35),transparent 50%),
+  radial-gradient(90% 90% at 90% 100%,rgba(120,20,40,.5),transparent 60%),linear-gradient(150deg,#26090E,#0A0305)}
+.th-ocean{background:radial-gradient(120% 100% at 75% 10%,rgba(80,230,200,.3),transparent 55%),
+  radial-gradient(90% 90% at 12% 95%,rgba(20,90,140,.5),transparent 60%),linear-gradient(150deg,#07222B,#03090C)}
+.th-ai{background:radial-gradient(130% 110% at 85% 0%,rgba(194,240,74,.4),transparent 52%),
+  radial-gradient(100% 100% at 0% 100%,rgba(70,120,30,.35),transparent 60%),linear-gradient(150deg,#141B08,#060903)}
+.play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;
+  background:var(--scrim);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px}
+.dur{position:absolute;right:6px;bottom:6px;font-family:var(--mono);font-size:8px;color:#E7ECF3;
+  background:var(--scrim);padding:2px 5px;border-radius:4px}
+
+/* template card (grid) */
+.tcard{display:flex;flex-direction:column;gap:6px;cursor:pointer}
+.tcard .thumb{aspect-ratio:171/96;border-radius:10px}
+.tcard .nm{font-weight:600;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcard .mt{font-size:10px;color:var(--muted-2);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcard .badge{position:absolute;top:7px;left:7px}
+.tcard .badge.x{left:auto;right:7px}
+.tcard .x{position:absolute;top:7px;right:7px}
+.tcard .appdot{position:absolute;bottom:7px;left:7px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;padding:0 14px}
+
+/* ============ VARIANT A — “EDITORIAL STUDIO” ============ */
+.va-hero{position:relative;padding:20px 14px 4px;overflow:hidden}
+.va-hero::before{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,rgba(194,240,74,.16),transparent 65%);pointer-events:none}
+.va-greet{font-size:22px;font-weight:800;letter-spacing:-.025em;line-height:1.15}
+.va-greet .hl{color:var(--accent)}
+.va-greetsub{font-size:12px;color:var(--muted);margin-top:5px}
+.va-pillars{display:flex;gap:10px;padding:16px 14px 0}
+.va-pill{flex:1;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;padding:14px 12px 12px;
+  min-height:118px;display:flex;flex-direction:column;border:1px solid var(--hair)}
+.va-pill .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;z-index:2}
+.va-pill .t{font-weight:800;font-size:14.5px;letter-spacing:-.015em;margin-top:auto;position:relative;z-index:2}
+.va-pill .s{font-size:9.5px;color:var(--muted);margin-top:2px;position:relative;z-index:2}
+.va-pill .go{position:absolute;right:10px;top:12px;width:22px;height:22px;border-radius:50%;background:var(--fill-2);
+  border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text);z-index:2}
+.va-pill.tpl{background:radial-gradient(130% 110% at 100% 0%,rgba(124,196,255,.18),transparent 55%),var(--surface)}
+.va-pill.tpl .ic{background:rgba(124,196,255,.14);color:var(--select)}
+.va-pill.ai{background:radial-gradient(130% 110% at 100% 0%,rgba(194,240,74,.22),transparent 55%),var(--surface)}
+.va-pill.ai .ic{background:var(--green-dim);color:var(--accent)}
+.va-pill .cnt{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--muted-2);margin-top:3px;position:relative;z-index:2}
+/* continue rows */
+.va-cont{display:flex;flex-direction:column;gap:8px;padding:0 14px}
+.va-crow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hair);
+  border-radius:12px;padding:8px;cursor:pointer}
+.va-crow .thumb{width:86px;height:50px;border-radius:8px;flex:none}
+.va-crow .tx{flex:1;min-width:0}
+.va-crow .tx b{font-weight:700;font-size:12px;letter-spacing:-.01em;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.va-crow .tx small{font-size:9.5px;color:var(--muted-2);display:flex;align-items:center;gap:5px;margin-top:3px}
+.va-crow .tx small .st{font-family:var(--mono);font-size:7.5px;font-weight:600;letter-spacing:.06em;
+  padding:1.5px 5px;border-radius:4px;background:var(--green-dim);color:var(--accent)}
+.va-crow .act{flex:none}
+/* footer nudge */
+.va-nudge{margin:18px 14px 16px;display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--green-dim);
+  border:1px solid rgba(194,240,74,.22);border-radius:10px}
+.va-nudge i{color:var(--accent);font-size:14px;flex:none}
+.va-nudge .tx{font-size:11px;font-weight:500;color:#DCE7C8;flex:1}
+.va-nudge .cta{font-size:10.5px;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+
+/* ============ VARIANT B — “COMMAND DECK” ============ */
+.vb-search{display:flex;gap:8px;padding:12px 14px 0}
+.vb-sfield{flex:1;height:38px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--fill-1);
+  border:1px solid var(--hair);border-radius:10px;color:var(--muted-2);font-size:12px;cursor:text}
+.vb-sfield i{font-size:14px;color:var(--muted)}
+.vb-sfield .k{margin-left:auto;font-family:var(--mono);font-size:8.5px;color:var(--muted-2);
+  border:1px solid var(--hair);border-radius:4px;padding:1px 5px}
+.vb-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px 0}
+.vb-q{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:10px 6px 9px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:border-color .2s}
+.vb-q:hover{border-color:rgba(194,240,74,.4)}
+.vb-q .ic{width:28px;height:28px;border-radius:9px;background:var(--green-dim);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:14px}
+.vb-q .ic.blue{background:rgba(124,196,255,.13);color:var(--select)}
+.vb-q .lb{font-size:9px;font-weight:600;color:var(--muted);text-align:center;letter-spacing:.01em}
+/* hero carousel */
+.vb-hero{margin:16px 14px 0;position:relative;aspect-ratio:352/178;border-radius:14px;overflow:hidden;cursor:pointer}
+.vb-hero .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 34%,rgba(6,8,11,.9))}
+.vb-hero .new{position:absolute;top:10px;right:10px}
+.vb-hero .badge{position:absolute;top:10px;left:10px}
+.vb-hero .bot{position:absolute;left:12px;right:12px;bottom:11px;display:flex;align-items:flex-end;gap:10px}
+.vb-hero .bot .tx{flex:1;min-width:0}
+.vb-hero .bot b{font-weight:800;font-size:15.5px;letter-spacing:-.015em;display:block;color:#fff}
+.vb-hero .bot small{font-size:10px;color:#B7C0CE;margin-top:3px;display:block}
+.vb-dots{display:flex;gap:5px;justify-content:center;padding:9px 0 0}
+.vb-dots i{width:5px;height:5px;border-radius:50%;background:var(--fill-3);display:block}
+.vb-dots i.on{background:var(--accent);width:14px;border-radius:99px}
+/* jump back in — horizontal strip */
+.vb-strip{display:flex;gap:9px;padding:0 14px;overflow-x:auto;scrollbar-width:none}
+.vb-strip::-webkit-scrollbar{display:none}
+.vb-j{flex:0 0 168px;background:var(--surface);border:1px solid var(--hair);border-radius:12px;overflow:hidden;cursor:pointer}
+.vb-j .thumb{height:78px}
+.vb-j .st{position:absolute;top:6px;left:6px;font-family:var(--mono);font-size:7.5px;font-weight:700;
+  letter-spacing:.06em;padding:2px 6px;border-radius:4px;background:var(--scrim);color:#E7ECF3;display:flex;align-items:center;gap:4px}
+.vb-j .st i{color:var(--accent);font-size:8px}
+.vb-j .bd{padding:8px 9px 9px}
+.vb-j .bd b{font-weight:700;font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vb-j .bd small{font-size:9px;color:var(--muted-2);display:block;margin-top:2px}
+.vb-j .bd .a{margin-top:7px;height:24px;border-radius:999px;background:var(--fill-2);border:1px solid var(--hair);
+  display:flex;align-items:center;justify-content:center;gap:5px;font-size:9.5px;font-weight:600;color:var(--text)}
+.vb-j .bd .a.lime{background:var(--accent);color:var(--on-accent);border:0;font-weight:700}
+/* AI spotlight */
+.vb-spot{margin:18px 14px 16px;position:relative;border-radius:12px;overflow:hidden;padding:13px 12px;
+  display:flex;align-items:center;gap:11px;cursor:pointer;
+  background:radial-gradient(140% 160% at 100% 0%,rgba(194,240,74,.24),transparent 55%),var(--surface)}
+.vb-spot .ic{width:34px;height:34px;border-radius:10px;background:var(--green-dim);border:1px solid rgba(194,240,74,.3);
+  color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.vb-spot .tx{flex:1;min-width:0}
+.vb-spot .tx b{font-weight:700;font-size:12px;display:block;letter-spacing:-.01em}
+.vb-spot .tx small{font-size:10px;color:var(--muted);display:block;margin-top:2px}
+.vb-spot .go{font-size:12px;color:var(--accent)}
+
+/* ============ GUEST / FIRST-RUN ============ */
+.gu-hero{position:relative;padding:34px 22px 0;text-align:center;overflow:hidden}
+.gu-hero::before{content:"";position:absolute;left:50%;top:-130px;transform:translateX(-50%);width:340px;height:280px;
+  border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.15),transparent 65%);pointer-events:none}
+.gu-logo{width:52px;height:52px;border-radius:15px;background:var(--accent);color:var(--on-accent);
+  display:inline-flex;align-items:center;justify-content:center;font-size:26px;
+  box-shadow:0 12px 34px -8px rgba(194,240,74,.45);position:relative}
+.gu-h1{font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.18;margin-top:18px;position:relative}
+.gu-h1 .hl{color:var(--accent)}
+.gu-sub{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55;position:relative}
+.gu-feats{display:flex;flex-direction:column;gap:9px;padding:22px 20px 0}
+.gu-f{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--hair);
+  border-radius:12px;padding:11px 12px;text-align:left}
+.gu-f .ic{width:30px;height:30px;border-radius:9px;background:var(--green-dim);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.gu-f .ic.blue{background:rgba(124,196,255,.13);color:var(--select)}
+.gu-f .tx b{font-weight:700;font-size:12px;display:block;letter-spacing:-.01em}
+.gu-f .tx small{font-size:10px;color:var(--muted-2);display:block;margin-top:2px;line-height:1.4}
+.gu-ctas{padding:20px 20px 0;display:flex;flex-direction:column;gap:9px}
+.gu-primary{height:44px;border-radius:999px;background:var(--accent);color:var(--on-accent);border:0;
+  font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;width:100%}
+.gu-google{height:40px;border-radius:999px;background:var(--fill-2);border:1px solid var(--hair);color:var(--text);
+  font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;width:100%}
+.gu-mk{text-align:center;font-size:10.5px;color:var(--muted-2);padding:12px 20px 0}
+.gu-mk a{color:var(--muted);font-weight:600;text-decoration:none;border-bottom:1px solid var(--muted-2);cursor:pointer}
+/* locked preview */
+.gu-prevgrid{position:relative;padding:0 14px}
+.gu-lockchip{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;display:flex;
+  align-items:center;gap:7px;background:var(--pop);border:1px solid rgba(255,255,255,.12);border-radius:999px;
+  padding:8px 14px;font-size:11px;font-weight:600;box-shadow:0 18px 42px rgba(0,0,0,.6)}
+.gu-lockchip i{color:var(--accent);font-size:13px}
+.gu-dim{filter:blur(1.5px) saturate(.8);opacity:.55;pointer-events:none}
+.gu-foot{text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--muted-2);
+  padding:18px 0 18px}
+
+/* ============ HEADER PATTERN SECTION helpers ============ */
+.hstack{display:flex;flex-direction:column;gap:22px;width:380px;flex:none}
+.hcase{border:1px solid #242B38;border-radius:14px;background:var(--bg);position:relative;
+  box-shadow:0 24px 50px -30px rgba(0,0,0,.9)}
+.hcase.frame{overflow:visible}
+.hcase .hd{border-radius:13px 13px 0 0}
+.hcase .hcase-cap{border-radius:0 0 13px 13px}
+.hcase-cap{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:#5E6675;
+  padding:8px 12px;background:#080B10;border-top:1px solid #1A202B}
+.hcase-cap b{color:#8A93A3;font-weight:600}
+
+/* solo mode for headless screenshots: open with #solo-<id> */
+body.solo .bs{display:none}
+body.solo .bs.solo-on{display:block;margin-top:24px}
+body.solo .board>header{display:none}
+</style>
+</head>
+<body>
+<div class="board">
+
+<header>
+  <div class="b-kick">FRAMEFLOW · PHASE 4 · D1 — DESIGN BOARD (STEP 1 OF 2)</div>
+  <h1 class="b-title">Plugin Home — redesign mockup</h1>
+  <p class="b-sub">Two directions for the After Effects panel Home screen (issue #5), plus the persistent
+    <b style="color:#DFE5EC">Home button (#10)</b> and <b style="color:#DFE5EC">Account button (#11)</b> pattern
+    shared by every screen, and the guest first-run state. Pick one variant — it will then be built into the live plugin.</p>
+  <div class="b-meta">
+    <span class="b-chip">panel <b>380 × 720</b> CEP</span>
+    <span class="b-chip">theme <b>Standart</b> (tokens.css 1:1)</span>
+    <span class="b-chip">type <b>Hanken Grotesk + IBM Plex Mono</b></span>
+    <span class="b-chip">accent <b>#C2F04A lime</b></span>
+    <span class="b-chip">mockup only — <b>no plugin code touched</b></span>
+  </div>
+</header>
+
+<!-- ================================================================
+     01 · SHARED HEADER — #10 Home + #11 Account on EVERY screen
+     ================================================================ -->
+<section class="bs" id="sec-hdr">
+  <div class="bs-head">
+    <span class="bs-num">01</span>
+    <h2 class="bs-t">Shared header — Home &amp; Account, always one tap</h2>
+    <p class="bs-d">The same 52px bar on every screen. Left edge is always the lime brand block = <b>Home</b>.
+      Right edge is always credits + <b>avatar = Account</b>. Middle adapts per screen.</p>
+  </div>
+  <div class="row">
+    <div class="hstack">
+      <!-- H1: on Home -->
+      <div class="hcase frame">
+        <div class="pin" style="left:6px;top:-10px">1</div>
+        <div class="pin" style="right:2px;top:-10px">2</div>
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <span class="hd-brand">FrameFlow</span>
+          <span class="hd-sp"></span>
+          <button class="hd-cred"><span class="s">✦</span>240<span class="plan">PRO</span></button>
+          <button class="hd-ava ring"></button>
+        </div>
+        <div class="hcase-cap"><b>ON HOME</b> — brand block inert (already home), avatar gets a subtle lime ring = signed in</div>
+      </div>
+      <!-- H2: catalog -->
+      <div class="hcase frame">
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <div class="hd-seg"><span class="on">Catalog</span><span>AI Tools</span></div>
+          <span class="hd-sp"></span>
+          <button class="hd-ic"><i class="ph ph-arrows-clockwise"></i></button>
+          <button class="hd-cred"><span class="s">✦</span>240<span class="plan">PRO</span></button>
+          <button class="hd-ava ring"></button>
+        </div>
+        <div class="hcase-cap"><b>CATALOG / AI TOOLS</b> — pillar segment in the middle, contextual sync icon, Home + Account unchanged</div>
+      </div>
+      <!-- H3: deep tool -->
+      <div class="hcase frame">
+        <div class="pin" style="left:40px;top:-10px">3</div>
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <button class="hd-back"><i class="ph ph-caret-left"></i></button>
+          <div style="min-width:0"><span class="hd-title">Image generation</span><span class="hd-sub">AI TOOLS</span></div>
+          <span class="hd-sp"></span>
+          <button class="hd-cred"><span class="s">✦</span>240<span class="plan">PRO</span></button>
+          <button class="hd-ava ring"></button>
+        </div>
+        <div class="hcase-cap"><b>DEEP SCREEN (any AI tool, template detail…)</b> — back goes one level up, lime block still jumps straight Home</div>
+      </div>
+      <!-- H4: guest -->
+      <div class="hcase frame">
+        <div class="pin" style="right:2px;top:-10px">4</div>
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <span class="hd-brand">FrameFlow</span>
+          <span class="hd-sp"></span>
+          <button class="hd-signin"><i class="ph ph-sign-in"></i>Sign in</button>
+        </div>
+        <div class="hcase-cap"><b>GUEST</b> — credits + avatar collapse into a single lime Sign-in pill</div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>How it behaves</h4>
+      <div class="note"><span class="dot">1</span><span><b>#10 Home:</b> the lime lightning block is pinned to the top-left of <b>every</b> screen — Catalog, every AI tool, history, settings, account. One tap = Home. On hover it glows; on Home itself it’s the logo.</span></div>
+      <div class="note"><span class="dot">2</span><span><b>#11 Account:</b> avatar pinned top-right on <b>every</b> screen, opens the account sheet. The credits pill next to it shows <b>✦ balance + plan</b> (Free / Pro / Studio) and opens the same sheet on its Plan tab.</span></div>
+      <div class="note"><span class="dot">3</span><span><b>Deep screens</b> keep both anchors and add a local ‹ back. You can never get lost more than one tap from Home.</span></div>
+      <div class="note"><span class="dot">4</span><span><b>Guest:</b> the right cluster becomes one clear Sign-in action — same geometry, so nothing jumps after login.</span></div>
+      <div class="note"><span class="dot">✦</span><span>Implementation note: this is the existing <code style="font-family:'IBM Plex Mono',monospace;font-size:10px">af-topbar / ai-hdr</code> pattern unified — same heights, tokens and wiring (openAccountSheet, homeGo), so the build step is low-risk.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     02 · VARIANT A — EDITORIAL STUDIO
+     ================================================================ -->
+<section class="bs" id="sec-va">
+  <div class="bs-head">
+    <span class="bs-num">02</span>
+    <h2 class="bs-t">Variant A — “Editorial Studio”</h2>
+    <p class="bs-d">Warm and personal. Greets the user, puts the two pillars up front as rich doorway cards,
+      then resumes their work. Calm, magazine-like rhythm.</p>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="frame-label"><i class="ph-fill ph-star"></i> VARIANT A · LOGGED-IN · 380px <span class="tag">OPTION 1</span></div>
+      <div class="frame">
+        <div class="fold"></div>
+        <!-- header -->
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <span class="hd-brand">FrameFlow</span>
+          <span class="hd-sp"></span>
+          <button class="hd-cred"><span class="s">✦</span>240<span class="plan">PRO</span></button>
+          <button class="hd-ava ring"></button>
+        </div>
+        <!-- greeting -->
+        <div class="va-hero">
+          <div class="va-greet">Good evening,<br>Dilnoza <span class="hl">—</span> let’s make<br>something move.</div>
+          <div class="va-greetsub">Your panel, your library and your AI studio — all synced.</div>
+        </div>
+        <!-- pillars -->
+        <div class="va-pillars">
+          <div class="va-pill tpl grain">
+            <span class="go"><i class="ph ph-arrow-right"></i></span>
+            <span class="ic"><i class="ph-fill ph-squares-four"></i></span>
+            <span class="t">Templates</span>
+            <span class="s">Drag-and-drop packs for AE</span>
+            <span class="cnt">128 READY · 12 NEW</span>
+          </div>
+          <div class="va-pill ai grain">
+            <span class="go"><i class="ph ph-arrow-right"></i></span>
+            <span class="ic"><i class="ph-fill ph-sparkle"></i></span>
+            <span class="t">AI Tools</span>
+            <span class="s">Image · Video · Voice · SFX</span>
+            <span class="cnt">GENERATE FROM ✦ 2</span>
+          </div>
+        </div>
+        <!-- continue -->
+        <div class="sec"><span class="kick">CONTINUE WHERE YOU LEFT OFF</span></div>
+        <div class="va-cont">
+          <div class="va-crow">
+            <div class="thumb th-neon grain"><span class="dur">0:12</span></div>
+            <div class="tx"><b>Neon Titles Pack</b><small><span class="st">IMPORTED</span>Template · 2h ago</small></div>
+            <button class="imp soft act"><i class="ph ph-arrow-counter-clockwise"></i>Re-import</button>
+          </div>
+          <div class="va-crow">
+            <div class="thumb th-cyber grain"><span class="play"><i class="ph-fill ph-play"></i></span></div>
+            <div class="tx"><b>Cyberpunk alley loop</b><small><span class="st">READY</span>AI Video · Kling · yesterday</small></div>
+            <button class="imp act"><i class="ph ph-download-simple"></i>Import</button>
+          </div>
+        </div>
+        <!-- recommended -->
+        <div class="sec"><span class="kick">RECOMMENDED FOR YOU</span><span class="sec-all">See all <i class="ph ph-caret-right"></i></span></div>
+        <div class="tgrid">
+          <div class="tcard"><div class="thumb th-sport grain"><span class="badge pro">PRO</span><span class="badge x" style="position:absolute;top:7px;right:7px">4K</span><span class="appdot"><i></i>AE</span></div><span class="nm">Football Championship</span><span class="mt">Broadcast pack · 8 comps</span></div>
+          <div class="tcard"><div class="thumb th-gold grain"><span class="badge free">FREE</span><span class="appdot"><i></i>AE</span></div><span class="nm">Luxe Awards Titles</span><span class="mt">Titles · 5 comps</span></div>
+          <div class="tcard"><div class="thumb th-urban grain"><span class="badge pro">PRO</span><span class="appdot"><i></i>AE</span></div><span class="nm">Urban Promo Kit</span><span class="mt">Promo · 12 comps</span></div>
+          <div class="tcard"><div class="thumb th-ocean grain"><span class="badge free">FREE</span><span class="appdot"><i></i>AE</span></div><span class="nm">Deep Waves Openers</span><span class="mt">Openers · 3 comps</span></div>
+        </div>
+        <!-- nudge -->
+        <div class="va-nudge">
+          <i class="ph-fill ph-sparkle"></i>
+          <span class="tx"><b style="font-weight:700">✦ 240 credits</b> — enough for ~12 videos</span>
+          <span class="cta">Top up →</span>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>Why this direction works</h4>
+      <div class="note"><span class="dot">A</span><span><b>Personal, time-aware greeting</b> (“Good evening, Dilnoza”) makes a utility panel feel like a studio, not a file browser. Name comes from the account; falls back to “Good evening — let’s make something move.”</span></div>
+      <div class="note"><span class="dot">B</span><span><b>Two pillar doorway cards</b> answer the only question Home must answer: <i>templates or AI?</i> Blue tint = Catalog, lime tint = AI — matching the select/accent token roles already in the plugin.</span></div>
+      <div class="note"><span class="dot">C</span><span><b>Continue rows</b> resurface the last import (Re-import) and the last generation (Import into comp) with real thumbnails — the fastest path back into work.</span></div>
+      <div class="note"><span class="dot">D</span><span><b>Recommended grid</b> reuses the existing card language 1:1 (PRO/FREE badge, 4K chip, AE dot) — zero new card CSS at build time.</span></div>
+      <div class="note"><span class="dot">E</span><span><b>Credits nudge</b> translates the balance into outcomes (“~12 videos”) — gentle upsell without a paywall feel.</span></div>
+      <div class="note"><span class="dot">◱</span><span><b>Above the fold (720px):</b> greeting, both pillars and the first continue row — the resume action is visible without scrolling.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     03 · VARIANT B — COMMAND DECK
+     ================================================================ -->
+<section class="bs" id="sec-vb">
+  <div class="bs-head">
+    <span class="bs-num">03</span>
+    <h2 class="bs-t">Variant B — “Command Deck”</h2>
+    <p class="bs-d">Dense and content-first. Search on top, one-tap quick actions, a featured hero you can
+      import immediately, then resume + trending. Higgsfield-style energy.</p>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="frame-label"><i class="ph-fill ph-star"></i> VARIANT B · LOGGED-IN · 380px <span class="tag">OPTION 2</span></div>
+      <div class="frame">
+        <div class="fold"></div>
+        <!-- header -->
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <span class="hd-brand">FrameFlow</span>
+          <span class="hd-sp"></span>
+          <button class="hd-cred"><span class="s">✦</span>240<span class="plan">PRO</span></button>
+          <button class="hd-ava ring"></button>
+        </div>
+        <!-- search -->
+        <div class="vb-search">
+          <div class="vb-sfield"><i class="ph ph-magnifying-glass"></i>Search templates, tools…<span class="k">⌘K</span></div>
+        </div>
+        <!-- quick actions -->
+        <div class="vb-quick">
+          <div class="vb-q"><span class="ic blue"><i class="ph-fill ph-squares-four"></i></span><span class="lb">Templates</span></div>
+          <div class="vb-q"><span class="ic"><i class="ph-fill ph-image"></i></span><span class="lb">AI Image</span></div>
+          <div class="vb-q"><span class="ic"><i class="ph-fill ph-film-slate"></i></span><span class="lb">AI Video</span></div>
+          <div class="vb-q"><span class="ic blue"><i class="ph-fill ph-download-simple"></i></span><span class="lb">Downloads</span></div>
+        </div>
+        <!-- featured hero -->
+        <div class="vb-hero thumb th-sport grain">
+          <div class="ov"></div>
+          <span class="badge pro">PRO</span>
+          <span class="new skew">NEW</span>
+          <div class="bot">
+            <div class="tx"><b>Football Championship</b><small>Broadcast pack · 8 comps · 4K</small></div>
+            <button class="imp ghost"><i class="ph ph-download-simple"></i>Import</button>
+          </div>
+        </div>
+        <div class="vb-dots"><i class="on"></i><i></i><i></i></div>
+        <!-- jump back in -->
+        <div class="sec"><span class="kick">JUMP BACK IN</span><span class="sec-all">History <i class="ph ph-caret-right"></i></span></div>
+        <div class="vb-strip">
+          <div class="vb-j"><div class="thumb th-cyber grain" style="position:relative"><span class="st"><i class="ph-fill ph-check-circle"></i>READY</span><span class="play"><i class="ph-fill ph-play"></i></span></div><div class="bd"><b>Cyberpunk alley loop</b><small>AI Video · Kling · yesterday</small><div class="a lime"><i class="ph ph-download-simple"></i>Import</div></div></div>
+          <div class="vb-j"><div class="thumb th-neon grain" style="position:relative"><span class="st"><i class="ph-fill ph-clock-counter-clockwise"></i>IMPORTED</span></div><div class="bd"><b>Neon Titles Pack</b><small>Template · 2h ago</small><div class="a"><i class="ph ph-arrow-counter-clockwise"></i>Re-import</div></div></div>
+          <div class="vb-j"><div class="thumb th-ai grain" style="position:relative"><span class="st"><i class="ph-fill ph-pencil-simple"></i>DRAFT</span></div><div class="bd"><b>“golden hour rooftop…”</b><small>AI Image · draft prompt</small><div class="a"><i class="ph ph-arrow-right"></i>Resume</div></div></div>
+        </div>
+        <!-- trending -->
+        <div class="sec"><span class="kick">TRENDING THIS WEEK</span><span class="sec-all">See all <i class="ph ph-caret-right"></i></span></div>
+        <div class="tgrid">
+          <div class="tcard"><div class="thumb th-gold grain"><span class="badge free">FREE</span><span class="appdot"><i></i>AE</span></div><span class="nm">Luxe Awards Titles</span><span class="mt">Titles · 5 comps</span></div>
+          <div class="tcard"><div class="thumb th-urban grain"><span class="badge pro">PRO</span><span class="appdot"><i></i>AE</span></div><span class="nm">Urban Promo Kit</span><span class="mt">Promo · 12 comps</span></div>
+        </div>
+        <!-- AI spotlight -->
+        <div class="vb-spot">
+          <span class="ic"><i class="ph-fill ph-sparkle"></i></span>
+          <span class="tx"><b>New in AI Tools — Kling 2.1 video</b><small>Sharper motion, image-to-video. From ✦ 20.</small></span>
+          <span class="go"><i class="ph ph-arrow-right"></i></span>
+        </div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>Why this direction works</h4>
+      <div class="note"><span class="dot">A</span><span><b>Search-first:</b> the field editors already look for sits on top, styled like the catalog toolbar (⌘K hint). Tapping it drops into the catalog with focus in the input — existing wiring.</span></div>
+      <div class="note"><span class="dot">B</span><span><b>Quick-action tiles</b> are the two pillars <i>exploded</i> into four one-tap verbs: browse, make an image, make a video, open downloads. Lime = generative, blue = library, consistent with token roles.</span></div>
+      <div class="note"><span class="dot">C</span><span><b>Featured hero carousel</b> gives contributors’ best packs a stage; Import is available right on the card (frosted ghost pill on imagery — matches the built hm-feat pattern).</span></div>
+      <div class="note"><span class="dot">D</span><span><b>Jump back in</b> is a horizontal rail mixing template imports, finished gens and even a <b>draft prompt</b> — resume anything, not just re-open it.</span></div>
+      <div class="note"><span class="dot">E</span><span><b>AI spotlight banner</b> is a slot for model launches / promos — future-proof space the backend can feed later.</span></div>
+      <div class="note"><span class="dot">◱</span><span><b>Above the fold (720px):</b> search, all four quick actions, the full hero and the start of “Jump back in” — everything actionable at first paint.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     04 · GUEST / FIRST-RUN
+     ================================================================ -->
+<section class="bs" id="sec-guest">
+  <div class="bs-head">
+    <span class="bs-num">04</span>
+    <h2 class="bs-t">Guest / first-run — the invitation</h2>
+    <p class="bs-d">Shared by both variants. Not a wall: the value is stated, the catalog is visible
+      (browse open, import locked), and sign-in is one warm action.</p>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="frame-label"><i class="ph-fill ph-hand-waving"></i> GUEST STATE · 380px <span class="tag">BOTH VARIANTS</span></div>
+      <div class="frame">
+        <div class="fold"></div>
+        <!-- header (guest) -->
+        <div class="hd">
+          <button class="hd-home"><i class="ph-fill ph-lightning"></i></button>
+          <span class="hd-brand">FrameFlow</span>
+          <span class="hd-sp"></span>
+          <button class="hd-signin"><i class="ph ph-sign-in"></i>Sign in</button>
+        </div>
+        <!-- hero -->
+        <div class="gu-hero">
+          <span class="gu-logo"><i class="ph-fill ph-lightning"></i></span>
+          <div class="gu-h1">Make After Effects<br><span class="hl">move faster.</span></div>
+          <div class="gu-sub">Drop-in templates and AI generation —<br>right inside your panel, synced with the web.</div>
+        </div>
+        <!-- features -->
+        <div class="gu-feats">
+          <div class="gu-f"><span class="ic blue"><i class="ph-fill ph-squares-four"></i></span><span class="tx"><b>128+ drag-and-drop templates</b><small>Broadcast, titles, promos — import straight into your comp.</small></span></div>
+          <div class="gu-f"><span class="ic"><i class="ph-fill ph-sparkle"></i></span><span class="tx"><b>Generate image, video, voice &amp; SFX</b><small>Credit-based AI studio. Free plan starts with ✦ 50.</small></span></div>
+          <div class="gu-f"><span class="ic blue"><i class="ph-fill ph-arrows-left-right"></i></span><span class="tx"><b>One library, everywhere</b><small>Imports, favorites and gens sync with getframeflow.app.</small></span></div>
+        </div>
+        <!-- CTAs -->
+        <div class="gu-ctas">
+          <button class="gu-primary"><i class="ph ph-sign-in"></i>Sign in</button>
+          <button class="gu-google"><i class="ph-fill ph-google-logo"></i>Continue with Google</button>
+        </div>
+        <div class="gu-mk">New here? <a>Create a free account</a> — takes a minute.</div>
+        <!-- locked preview -->
+        <div class="sec"><span class="kick">A PEEK AT THE CATALOG</span></div>
+        <div class="gu-prevgrid">
+          <div class="gu-lockchip"><i class="ph-fill ph-lock-simple"></i>Sign in to import</div>
+          <div class="tgrid gu-dim" style="padding:0">
+            <div class="tcard"><div class="thumb th-sport grain"><span class="badge pro">PRO</span><span class="appdot"><i></i>AE</span></div><span class="nm">Football Championship</span><span class="mt">Broadcast · 8 comps</span></div>
+            <div class="tcard"><div class="thumb th-neon grain"><span class="badge free">FREE</span><span class="appdot"><i></i>AE</span></div><span class="nm">Neon Titles Pack</span><span class="mt">Titles · 6 comps</span></div>
+          </div>
+        </div>
+        <div class="gu-foot">FREE PLAN · 3 IMPORTS/MO · ✦ 50 CREDITS</div>
+      </div>
+    </div>
+    <div class="notes">
+      <h4>Onboarding logic</h4>
+      <div class="note"><span class="dot">A</span><span><b>Warm, specific promise</b> (“Make After Effects move faster”) instead of a login form. The form itself stays in the existing account sheet (g2) — both CTAs open it; Google uses the shipped device-code flow.</span></div>
+      <div class="note"><span class="dot">B</span><span><b>Three concrete value rows</b> — templates, AI studio, sync — each mapped to a real shipped feature, no vaporware.</span></div>
+      <div class="note"><span class="dot">C</span><span><b>Catalog peek:</b> real cards, blurred, with a single lock chip. Browsing stays open (current behavior); only import is gated — the lock explains why to sign in.</span></div>
+      <div class="note"><span class="dot">D</span><span><b>Free-plan facts</b> in the footer set expectations early (3 imports/mo · ✦ 50) — fewer surprise paywalls later.</span></div>
+    </div>
+  </div>
+</section>
+
+</div>
+<script>
+/* Solo mode for headless verification: file.html#solo-va | #solo-vb | #solo-guest | #solo-hdr */
+(function(){
+  var m={ 'solo-hdr':'sec-hdr','solo-va':'sec-va','solo-vb':'sec-vb','solo-guest':'sec-guest' };
+  var k=(location.hash||'').replace('#','');
+  if(m[k]){ document.body.classList.add('solo'); var s=document.getElementById(m[k]); if(s)s.classList.add('solo-on'); }
+})();
+</script>
+</body>
+</html>
