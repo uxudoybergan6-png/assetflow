@@ -14856,6 +14856,134 @@
   .ff .ffa-lrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--f1)}
   .ff .ffa-acc-2col{display:grid;grid-template-columns:1fr 280px;gap:22px;align-items:start}
   @media(max-width:820px){ .ff .ffa-acc-2col{grid-template-columns:1fr} }
+
+  /* ═══════════ FAZA 5 — WEB APP REDESIGN · VARIANT A (editorial · media-forward, va- scoped) ═══════════ */
+  /* _webapp-redesign-mockup.html Variant A verbatim. Mockup token deltas scoped to .va-app only. */
+  .ff .va-app{
+    --hair:rgba(255,255,255,.06);--hair2:rgba(255,255,255,.09);
+    --f2:rgba(255,255,255,.07);--f3:rgba(255,255,255,.11);
+    --scrim:rgba(6,8,11,.78);--glow:rgba(194,240,74,.28);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    display:flex;flex-direction:column;min-height:100vh;font-size:13.5px;line-height:1.45;color:var(--text);
+  }
+  .ff .va-main{flex:1;width:100%;max-width:1600px;margin:0 auto}
+  /* ── shared bits (mockup .ic/.badge/.btn/.credpill/.ava/.thumb/.playov/.typetag/.kick/.tbl, va- prefixed) ── */
+  .ff .va-ic{width:1em;height:1em;flex:none;display:inline-block;vertical-align:-.14em}
+  .ff .va-badge{font:700 8.5px var(--mono);letter-spacing:.07em;padding:2.5px 6px;border-radius:4px}
+  .ff .va-badge.pro{background:var(--lime);color:var(--onlime)}
+  .ff .va-badge.free{background:rgba(10,13,18,.78);color:#E7ECF3;font-weight:600;border:1px solid rgba(255,255,255,.14)}
+  .ff .va-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;cursor:pointer;border-radius:10px;font:700 12.5px 'Hanken Grotesk',sans-serif;letter-spacing:-.005em;text-decoration:none}
+  .ff .va-btn.lime{background:var(--lime);color:var(--onlime);padding:10px 18px}
+  .ff .va-btn.ghost{background:var(--f1);color:var(--text);border:1px solid var(--hair2);padding:10px 16px;font-weight:600}
+  .ff .va-btn.sm{padding:7px 12px;font-size:11.5px;border-radius:8px}
+  .ff .va-btn:hover{filter:brightness(1.06)}
+  .ff .va-credpill{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font:600 11.5px var(--mono);color:var(--text);cursor:pointer}
+  .ff .va-credpill .s{color:var(--lime)}
+  .ff .va-credpill .pl{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+  .ff .va-ava{width:30px;height:30px;border-radius:50%;flex:none;background:linear-gradient(135deg,#6C3FA8,#33549E);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer}
+  .ff .va-thumb{background-size:cover;background-position:center;position:relative;overflow:hidden;border-radius:12px}
+  .ff .va-thumb::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px) 0 0/14px 14px;opacity:.55}
+  .ff .va-playov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .ff .va-playov span{width:38px;height:38px;border-radius:50%;background:rgba(6,8,11,.62);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .ff .va-typetag{position:absolute;left:8px;bottom:8px;font:600 8px var(--mono);letter-spacing:.1em;padding:3px 7px;border-radius:4px;background:rgba(6,8,11,.72);color:#C9D2DE;border:1px solid rgba(255,255,255,.1);z-index:1}
+  .ff .va-kick{font:600 9px var(--mono);letter-spacing:.15em;color:var(--muted)}
+  .ff .va-tbl{width:100%;border-collapse:collapse;font-size:12px}
+  .ff .va-tbl th{font:600 9.5px var(--mono);letter-spacing:.1em;color:var(--muted2);text-align:left;padding:9px 12px;border-bottom:1px solid var(--hair)}
+  .ff .va-tbl td{padding:11px 12px;border-bottom:1px solid var(--hair);color:#C9D2DE}
+  .ff .va-tbl td.mono{font:500 11.5px var(--mono)}
+  /* placeholder art (mockup g1..g12) */
+  .ff .va-g1{background-image:linear-gradient(135deg,#3E2A78,#0E7A8A)}
+  .ff .va-g2{background-image:linear-gradient(135deg,#7A2E4A,#2A1140)}
+  .ff .va-g3{background-image:linear-gradient(135deg,#0F5A46,#12202C)}
+  .ff .va-g4{background-image:linear-gradient(135deg,#8A5A18,#3A1E10)}
+  .ff .va-g5{background-image:linear-gradient(135deg,#23486B,#0D1B2E)}
+  .ff .va-g6{background-image:linear-gradient(135deg,#5A2AA0,#8A3E6E)}
+  .ff .va-g7{background-image:linear-gradient(135deg,#1F6E5A,#4E8A2E)}
+  .ff .va-g9{background-image:linear-gradient(135deg,#2E4A8A,#6E2A7A)}
+  .ff .va-g11{background-image:linear-gradient(135deg,#3A3F4A,#14181F)}
+  .ff .va-g12{background-image:linear-gradient(135deg,#7A5A2E,#1F2A3A)}
+  /* ── top nav (A1) ── */
+  .ff .va-nav{height:64px;display:flex;align-items:center;gap:26px;padding:0 32px;border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9);position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .ff .va-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15.5px;letter-spacing:-.02em;color:var(--text);cursor:pointer}
+  .ff .va-logo .mk{width:26px;height:26px;border-radius:8px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center}
+  .ff .va-links{display:flex;gap:4px}
+  .ff .va-links a{padding:8px 13px;border-radius:9px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;cursor:pointer;white-space:nowrap}
+  .ff .va-links a:hover{color:var(--text)}
+  .ff .va-links a.on{color:var(--text);background:var(--f1)}
+  .ff .va-search{margin-left:auto;display:flex;align-items:center;gap:8px;width:280px;height:36px;padding:0 13px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2);font-size:12.5px}
+  .ff .va-search input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:12.5px}
+  .ff .va-search input::placeholder{color:var(--muted2)}
+  .ff .va-search .k{margin-left:auto;font:600 9px var(--mono);padding:2px 6px;border-radius:4px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2)}
+  /* ── home hero (A1) ── */
+  .ff .va-hero{position:relative;padding:52px 40px 44px;overflow:hidden}
+  .ff .va-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 340px at 82% -30%,rgba(194,240,74,.1),transparent 60%),radial-gradient(600px 300px at 8% 120%,rgba(62,42,120,.35),transparent 65%)}
+  .ff .va-hero>*{position:relative}
+  .ff .va-hi{font-size:31px;font-weight:800;letter-spacing:-.025em}
+  .ff .va-hi em{font-style:normal;color:var(--lime)}
+  .ff .va-hs{color:var(--muted);font-size:14px;margin-top:8px}
+  .ff .va-credcard{position:absolute;right:40px;top:46px;width:264px;padding:16px 18px;border-radius:16px;background:linear-gradient(160deg,rgba(194,240,74,.1),rgba(255,255,255,.03) 55%),var(--surface);border:1px solid rgba(194,240,74,.22)}
+  .ff .va-credcard .bal{font:700 24px var(--mono);margin-top:4px}
+  .ff .va-credcard .bal .s{color:var(--lime);font-size:17px}
+  .ff .va-credcard .bar{height:5px;border-radius:99px;background:var(--f2);margin:12px 0 7px;overflow:hidden}
+  .ff .va-credcard .bar i{display:block;height:100%;border-radius:99px;background:var(--lime)}
+  .ff .va-qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:34px;max-width:840px}
+  .ff .va-qa .qc{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/7.4;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--hair2);cursor:pointer;background-size:cover;font-family:inherit;text-align:left;color:var(--text)}
+  .ff .va-qa .qc::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(6,8,11,.82))}
+  .ff .va-qa .qc>*{position:relative;z-index:1}
+  .ff .va-qa .qt{font-weight:700;font-size:14.5px}
+  .ff .va-qa .qd{font-size:11px;color:#B9C2CF;margin-top:2px}
+  .ff .va-qa .qi{position:absolute;top:12px;left:13px;z-index:1;width:30px;height:30px;border-radius:9px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:var(--lime)}
+  .ff .va-sec{display:flex;align-items:baseline;gap:14px;padding:34px 40px 14px}
+  .ff .va-sec h3{font-size:17px;font-weight:800;letter-spacing:-.015em;margin:0}
+  .ff .va-sec .all{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:4px;align-items:center;cursor:pointer}
+  .ff .va-sec .all:hover{color:var(--text)}
+  .ff .va-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:14px;padding:0 40px}
+  .ff .va-strip .gt{aspect-ratio:16/10;border-radius:12px;cursor:pointer}
+  .ff .va-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:18px;padding:0 40px 42px}
+  .ff .va-tc{cursor:pointer;min-width:0}
+  .ff .va-tc .th{aspect-ratio:16/10}
+  .ff .va-tc .th .va-badge{position:absolute;top:9px;left:9px;z-index:1}
+  .ff .va-tc .th .dur{position:absolute;right:9px;bottom:9px;font:600 9px var(--mono);padding:2px 6px;border-radius:4px;background:rgba(6,8,11,.7);color:#DFE5EC;z-index:1}
+  .ff .va-tc .meta{display:flex;align-items:center;gap:8px;padding:9px 2px 0}
+  .ff .va-tc .tt{font-weight:600;font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-tc .app{display:flex;align-items:center;gap:5px;font:500 10px var(--mono);color:var(--muted)}
+  .ff .va-tc .app i{width:7px;height:7px;border-radius:50%;background:#B794F6;display:inline-block}
+  .ff .va-empty{border:1px dashed rgba(255,255,255,.1);border-radius:14px;padding:30px 24px;text-align:center;margin:0 40px}
+  /* avatar menu rows shown only on mobile */
+  .ff .va-mobonly{display:none!important}
+  /* ── A responsive: hero credcard reflow + A5 mobile (390) ── */
+  @media(max-width:1100px){
+    .ff .va-credcard{position:static;width:100%;max-width:420px;margin-top:22px}
+  }
+  @media(max-width:820px){
+    .ff .va-nav{height:56px;gap:10px;padding:0 16px}
+    .ff .va-links,.ff .va-search{display:none}
+    .ff .va-credpill{height:28px;font-size:10.5px}
+    .ff .va-nav .va-ava{width:28px;height:28px}
+    .ff .va-mobonly{display:flex!important}
+    .ff .va-hero{padding:22px 16px 4px}
+    .ff .va-hi{font-size:21px}
+    .ff .va-hs{font-size:12.5px}
+    .ff .va-credcard{display:none}
+    .ff .va-qa{gap:11px;margin-top:16px;max-width:none;grid-template-columns:1fr}
+    .ff .va-qa .qc{aspect-ratio:16/6;border-radius:14px;padding:14px}
+    .ff .va-qa .qt{font-size:13.5px}
+    .ff .va-sec{padding:16px 16px 10px}
+    .ff .va-sec h3{font-size:14px}
+    .ff .va-strip{display:flex;gap:10px;overflow-x:auto;padding:0 16px;scrollbar-width:none}
+    .ff .va-strip::-webkit-scrollbar{display:none}
+    .ff .va-strip .gt{width:124px;flex:none;aspect-ratio:1/1;border-radius:10px}
+    .ff .va-cards{grid-template-columns:1fr 1fr;gap:11px;padding:0 16px 20px}
+    .ff .va-tc .tt{font-size:11px}
+    .ff .va-empty{margin:0 16px}
+    .ff .va-main{padding-bottom:78px}
+  }
+  /* mobile bottom tabs (A5 va-mtabs verbatim, fixed) */
+  .ff .va-mtabs{display:none;position:fixed;left:0;right:0;bottom:0;z-index:45;border-top:1px solid var(--hair2);background:rgba(10,13,18,.97);padding:8px 6px 14px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+  .ff .va-mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font:600 9px 'Hanken Grotesk',sans-serif;color:var(--muted2);text-decoration:none;cursor:pointer}
+  .ff .va-mtabs a.on{color:var(--lime)}
+  .ff .va-mtabs .va-ic{width:19px;height:19px}
+  @media(max-width:820px){ .ff .va-mtabs{display:flex} }
 </style>
 </helmet>
 
@@ -15203,123 +15331,119 @@
   </div>
   </sc-if>
 
-  <!-- ============ APP SHELL ============ -->
+  <!-- ============ APP SHELL — FAZA 5 Variant A (editorial · top nav) ============ -->
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
-  <div class="ffa-app">
-    <!-- SIDEBAR (shared app chrome) -->
-    <aside class="ffa-sbar {{ sidebarCls }}">
-      <div class="ffa-sbrand">
-        <span class="ffa-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span><span class="ffa-logotext">FrameFlow</span></span>
-        <span class="ffa-lbl" style="flex:1"></span>
-        <button class="ffa-collapse" onclick="{{ toggleSidebar }}" title="Collapse"><i class="ph ph-{{ collapseIcon }}"></i></button>
-      </div>
-      <nav style="display:flex;flex-direction:column;gap:2px">
-        <sc-for list="{{ sidebarMainView }}" as="it" hint-placeholder-count="4">
-          <button data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}"><i class="ph ph-{{ it.icon }}"></i><span class="ffa-lbl">{{ it.label }}</span></button>
-        </sc-for>
-        <div class="ffa-shead">ACCOUNT</div>
-        <sc-for list="{{ sidebarAccountView }}" as="it" hint-placeholder-count="2">
-          <button data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}"><i class="ph ph-{{ it.icon }}"></i><span class="ffa-lbl">{{ it.label }}</span></button>
-        </sc-for>
+  <div class="va-app">
+    <!-- inline SVG icon set (mockup verbatim) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></symbol>
+        <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z"></path></symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"></rect><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"></rect><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"></rect><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"></rect></symbol>
+        <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.1 6.2L20 10l-5.9 1.8L12 18l-2.1-6.2L4 10l5.9-1.8L12 2zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"></path></symbol>
+        <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"></path></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z"></path></symbol>
+        <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"></path><path d="M4 21h16"></path></symbol>
+        <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"></path><circle cx="16" cy="8" r="2.2"></circle><circle cx="10" cy="16" r="2.2"></circle></symbol>
+        <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"></path></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></symbol>
+        <symbol id="i-img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="m5 18 5-5 3 3 3.5-3.5L20.5 16"></path></symbol>
+        <symbol id="i-vid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"></rect><path d="m16 10.5 5-3v9l-5-3"></path></symbol>
+        <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5"></path></symbol>
+        <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h2m2-4v8m3-11v14m3-10v6m3-9v12m3-8v4m3-2h2"></path></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"></path></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"></path></symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"></path></symbol>
+        <symbol id="i-wand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m5 19 10-10m1.5-1.5L19 5"></path><path d="M17 3l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z" fill="currentColor" stroke="none"></path></symbol>
+        <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 9.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.5 2.8c0 5.8-8.5 11.3-8.5 11.3Z"></path></symbol>
+        <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5.5" width="18" height="13" rx="2"></rect><path d="M3 10h18"></path></symbol>
+        <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4.5a1.8 1.8 0 1 1 3.6 0H16a1 1 0 0 1 1 1v3.4a1.8 1.8 0 1 0 0 3.6V16a1 1 0 0 1-1 1h-3.4a1.8 1.8 0 1 1-3.6 0H5.5a1 1 0 0 1-1-1v-3.4a1.8 1.8 0 1 0 0-3.6V5.5a1 1 0 0 1 1-1H9Z"></path></symbol>
+      </defs>
+    </svg>
+
+    <!-- TOP NAV (A1 · no sidebar) -->
+    <header class="va-nav">
+      <div class="va-logo" onclick="{{ goLanding }}"><span class="mk"><svg class="va-ic"><use href="#i-bolt"></use></svg></span>FrameFlow</div>
+      <nav class="va-links">
+        <sc-for list="{{ navLinksView }}" as="it" hint-placeholder-count="4"><a data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}">{{ it.label }}</a></sc-for>
       </nav>
-      <div style="flex:1"></div>
-      <div class="ffa-credblock">
-        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--muted)">CREDITS</span><span class="ffa-credit"><em>✦</em>{{ creditsFmt }}</span></div>
-        <div class="ffa-prog" style="margin-top:9px"><div class="pb" style="width:{{ creditPct }}"></div></div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--muted2);margin-top:5px">{{ creditsFmt }} / {{ creditMaxFmt }} · {{ planShort }}</div>
-        <button class="ffm-btn2 sm full" onclick="{{ openCredits }}" style="margin-top:9px">Add credits</button>
-      </div>
-    </aside>
-
-    <!-- MOBILE APP DRAWER (same component, same data) -->
-    <sc-if value="{{ appMenuOpen }}" hint-placeholder-val="{{ false }}">
-      <div onclick="{{ toggleAppMenu }}" style="position:fixed;inset:0;z-index:70;background:rgba(5,5,9,.6);backdrop-filter:blur(4px)">
-        <div onclick="{{ stop }}" style="position:absolute;top:0;left:0;bottom:0;width:250px;background:var(--rail);border-right:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;padding:14px 12px;box-shadow:0 0 60px rgba(0,0,0,.6);overflow-y:auto">
-          <div style="display:flex;align-items:center;gap:9px;padding:0 4px 12px">
-            <span class="ffa-logo"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
-            <span style="flex:1"></span>
-            <button onclick="{{ toggleAppMenu }}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;display:flex"><i class="ph ph-x"></i></button>
-          </div>
-          <nav style="display:flex;flex-direction:column;gap:2px">
-            <sc-for list="{{ sidebarMainView }}" as="it" hint-placeholder-count="4"><button data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}"><i class="ph ph-{{ it.icon }}"></i><span class="ffa-lbl">{{ it.label }}</span></button></sc-for>
-            <div class="ffa-shead">ACCOUNT</div>
-            <sc-for list="{{ sidebarAccountView }}" as="it" hint-placeholder-count="2"><button data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}"><i class="ph ph-{{ it.icon }}"></i><span class="ffa-lbl">{{ it.label }}</span></button></sc-for>
-          </nav>
-          <div style="border-top:1px solid rgba(255,255,255,.06);margin:10px 4px 8px"></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px"><span class="ffa-credit"><em>✦</em>{{ creditsFmt }}</span><button class="ffm-btn sm" onclick="{{ openCredits }}">Add credits</button></div>
-          <a onclick="{{ goLanding }}" style="display:flex;align-items:center;gap:10px;padding:13px 4px;margin-top:10px;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;border-top:1px solid rgba(255,255,255,.06)"><i class="ph ph-arrow-left"></i>Back to site</a>
-        </div>
-      </div>
-    </sc-if>
-
-    <!-- MAIN COLUMN -->
-    <div style="display:flex;flex-direction:column;min-width:0;flex:1">
-      <header class="ffa-topbar">
-        <button class="ffa-burger" onclick="{{ toggleAppMenu }}"><i class="ph ph-list"></i></button>
-        <div class="ffa-inp ffa-topbar-search" style="width:300px"><i class="ph ph-magnifying-glass" style="font-size:14px;color:var(--muted)"></i><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search — templates, generations…"><span class="ffa-kbd">⌘K</span></div>
-        <span style="flex:1"></span>
-        <span class="ffa-credit"><em>✦</em>{{ creditsFmt }}</span>
-        <button class="ffa-iconbtn" title="Notifications"><i class="ph ph-bell"></i></button>
-        <div style="position:relative">
-          <span class="ffa-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}">{{ avaText }}</span>
-          <sc-if value="{{ avatarOpen }}" hint-placeholder-val="{{ false }}">
-            <div class="ffa-menu" style="top:44px">
-              <div style="display:flex;align-items:center;gap:10px;padding:8px 10px 10px;border-bottom:1px solid rgba(255,255,255,.06)">
-                <span class="ffa-ava" style="cursor:default;{{ avaStyle }}">{{ avaText }}</span>
-                <div style="min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">{{ planLabel }}</div></div>
-              </div>
-              <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-user-circle"></i>Account</button>
-              <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-download-simple"></i>Downloads</button>
-              <button class="ffa-mrow" onclick="{{ doLogout }}" style="color:#FF6B5E"><i class="ph ph-sign-out" style="color:#FF6B5E"></i>Sign out</button>
+      <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates, generations…"><span class="k">⌘K</span></div>
+      <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
+      <div style="position:relative">
+        <span class="va-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}">{{ avaText }}</span>
+        <sc-if value="{{ avatarOpen }}" hint-placeholder-val="{{ false }}">
+          <div class="ffa-menu" style="top:40px;right:0">
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 10px 10px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <span class="va-ava" style="cursor:default;{{ avaStyle }}">{{ avaText }}</span>
+              <div style="min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">{{ planLabel }}</div></div>
             </div>
-          </sc-if>
-        </div>
-      </header>
-
-      <div class="ffa-content" data-rv="" data-page-wrap="" style="flex:1;padding:28px 32px 64px;max-width:1340px;width:100%">
-
-        <!-- DASHBOARD (mockup d1 · 1:1) -->
-        <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
-          <div style="font-weight:700;font-size:24px;letter-spacing:-.015em">Welcome back, {{ userName }} 👋</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:4px">What are we creating today?</div>
-          <div class="ffa-dash-qa" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:22px">
-            <sc-for list="{{ dashQuick }}" as="a" hint-placeholder-count="3">
-              <button data-screen="{{ a.screen }}" onclick="{{ onNav }}" class="{{ a.cls }}">
-                <span class="ffa-qa-ic" style="background:{{ a.icBg }};color:{{ a.icCol }}"><i class="ph ph-{{ a.icon }}"></i></span>
-                <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;color:var(--text)">{{ a.t }}</div><div style="font-size:11px;color:var(--muted)">{{ a.d }}</div></div>
-              </button>
-            </sc-for>
+            <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-user-circle"></i>Account</button>
+            <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-download-simple"></i>Downloads</button>
+            <button class="ffa-mrow va-mobonly" data-screen="projects" onclick="{{ onNav }}"><i class="ph ph-folder-open"></i>Projects</button>
+            <button class="ffa-mrow" data-screen="plugin" onclick="{{ onNav }}"><i class="ph ph-puzzle-piece"></i>Plugin</button>
+            <button class="ffa-mrow" onclick="{{ doLogout }}" style="color:#FF6B5E"><i class="ph ph-sign-out" style="color:#FF6B5E"></i>Sign out</button>
           </div>
-          <div style="display:flex;align-items:baseline;margin-top:28px"><span style="font-weight:700;font-size:16px">Recent generations</span><span style="flex:1"></span><a onclick="{{ goAistudio }}" style="font-size:12px;color:var(--muted);cursor:pointer">View all →</a></div>
+        </sc-if>
+      </div>
+    </header>
+
+    <div class="va-main" data-rv="" data-page-wrap="">
+
+        <!-- DASHBOARD (Variant A · A1 — hero · credcard · quick actions · rows) -->
+        <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+          <div class="va-hero">
+            <div class="va-kick">{{ heroKick }}</div>
+            <div class="va-hi" style="margin-top:10px">{{ heroGreeting }}, <em>{{ userFirst }}</em>.</div>
+            <div class="va-hs">Pick up where you left off, or start something new.</div>
+            <div class="va-credcard">
+              <div class="va-kick">CREDIT BALANCE</div>
+              <div class="bal"><span class="s">✦</span> {{ creditsFmt }}</div>
+              <div class="bar"><i style="width:{{ creditPct }}"></i></div>
+              <div style="display:flex;align-items:center;font-size:10.5px;color:var(--muted)">{{ creditResetShort }} <a class="va-btn lime sm" style="margin-left:auto" onclick="{{ openCredits }}">Add credits</a></div>
+            </div>
+            <div class="va-qa">
+              <button class="qc va-g5" data-screen="templates" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-grid"></use></svg></span>
+                <div class="qt">Find a template</div><div class="qd">10,000+ AE, Premiere &amp; Resolve packs</div></button>
+              <button class="qc va-g6" data-screen="aistudio" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
+                <div class="qt">Create with AI</div><div class="qd">Image · Video · Voiceover · SFX</div></button>
+              <button class="qc va-g3" data-screen="plugin" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-puzzle"></use></svg></span>
+                <div class="qt">Install the plugin</div><div class="qd">Browse &amp; import inside After Effects</div></button>
+            </div>
+          </div>
+          <div class="va-sec"><h3>Jump back in</h3><span class="all" onclick="{{ goAistudio }}">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
           <sc-if value="{{ hasDashGens }}" hint-placeholder-val="{{ true }}">
-            <div class="ffa-dash-gens" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:14px">
+            <div class="va-strip">
               <sc-for list="{{ dashGensView }}" as="g" hint-placeholder-count="5">
-                <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ffa-res" style="aspect-ratio:1/1;cursor:pointer;background:{{ g.g }}">
-                  <span class="rtag">{{ g.rtag }}</span>
-                  <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:rgba(255,255,255,.85)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
+                <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="va-thumb gt" style="background:{{ g.g }}">
+                  <span class="va-typetag">{{ g.stag }}</span>
+                  <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                 </div>
               </sc-for>
             </div>
           </sc-if>
           <sc-if value="{{ noDashGens }}" hint-placeholder-val="{{ false }}">
-            <div style="border:1px dashed rgba(255,255,255,.1);border-radius:14px;padding:30px 24px;text-align:center;margin-top:14px">
-              <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--lime)"><i class="ph ph-sparkle"></i></span>
+            <div class="va-empty">
+              <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--lime)"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
               <div style="font-size:14px;font-weight:600;margin:10px 0 4px">No generations yet</div>
               <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Create your first image or video in AI Studio</div>
-              <button class="ffm-btn sm" onclick="{{ goAistudio }}">Open AI Studio</button>
+              <button class="va-btn lime" onclick="{{ goAistudio }}">Open AI Studio</button>
             </div>
           </sc-if>
           <sc-if value="{{ hasRec }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex;align-items:baseline;margin-top:24px"><span style="font-weight:700;font-size:16px">Recommended templates</span><span style="flex:1"></span><a onclick="{{ goTemplates }}" style="font-size:12px;color:var(--muted);cursor:pointer">View all →</a></div>
-          <div class="ffa-dash-rec" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:14px">
+          <div class="va-sec"><h3>Recommended for you</h3><span class="all" onclick="{{ goTemplates }}">Browse all templates <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+          <div class="va-cards" style="padding-bottom:36px">
             <sc-for list="{{ recTemplates }}" as="t" hint-placeholder-count="4">
-              <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ffa-tc">
-                <div class="ffa-th" style="background:{{ t.g }}">
-                  <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="ffa-bgpro">PRO</span></sc-if>
-                  <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="ffa-bgfree">FREE</span></sc-if>
-                  <span class="ffa-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
+              <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-tc">
+                <div class="va-thumb th" style="background:{{ t.g }}">
+                  <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
+                  <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+                  <span class="dur">{{ t.d }}</span>
+                  <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                 </div>
-                <div class="ffa-nm">{{ t.n }}</div><div class="ffa-mt">{{ t.c }}</div>
+                <div class="meta"><span class="tt">{{ t.n }}</span><span class="app"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
               </div>
             </sc-for>
           </div>
@@ -15681,15 +15805,14 @@
           </div>
         </sc-if>
 
-      </div>
     </div>
 
-    <!-- MOBILE BOTTOM TAB BAR (app chrome) -->
-    <nav class="ffa-btmnav">
-      <a data-screen="dashboard" onclick="{{ onNav }}" class="{{ btmDashCls }}"><i class="ph-fill ph-squares-four"></i>Home</a>
-      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}"><i class="ph ph-stack"></i>Templates</a>
-      <a data-screen="aistudio" onclick="{{ onNav }}" class="{{ btmAiCls }}"><i class="ph ph-sparkle"></i>AI</a>
-      <a data-screen="account" onclick="{{ onNav }}" class="{{ btmAccCls }}"><i class="ph ph-user-circle"></i>Account</a>
+    <!-- MOBILE BOTTOM TAB BAR (A5 va-mtabs) -->
+    <nav class="va-mtabs">
+      <a data-screen="dashboard" onclick="{{ onNav }}" class="{{ btmDashCls }}"><svg class="va-ic"><use href="#i-home"></use></svg>Home</a>
+      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}"><svg class="va-ic"><use href="#i-grid"></use></svg>Templates</a>
+      <a data-screen="aistudio" onclick="{{ onNav }}" class="{{ btmAiCls }}"><svg class="va-ic"><use href="#i-spark"></use></svg>AI</a>
+      <a data-screen="account" onclick="{{ onNav }}" class="{{ btmAccCls }}"><svg class="va-ic"><use href="#i-user"></use></svg>Account</a>
     </nav>
   </div>
   </sc-if>
@@ -16804,7 +16927,7 @@ class Component extends DCLogic {
     const dashGens = genView.slice(0, 5);
     const hasDashGens = dashGens.length > 0;
     const typeTag = { image: 'IMAGE', video: 'VIDEO', audio: 'VOICE', sfx: 'SFX' };
-    const dashGensView = dashGens.map(g => ({ ...g, rtag: typeTag[g.type] || 'IMAGE', isVideo: g.type === 'video' }));
+    const dashGensView = dashGens.map(g => ({ ...g, rtag: typeTag[g.type] || 'IMAGE', stag: (typeTag[g.type] || 'IMAGE') + (g.cost > 0 ? ' · ✦' + g.cost : ''), isVideo: g.type === 'video' }));
     const dashQuick = [
       { t: 'Find a template', d: '10,000+ video templates', icon: 'magnifying-glass', screen: 'templates', cls: 'ffa-qa hl', icBg: 'var(--limedim)', icCol: 'var(--lime)' },
       { t: 'Create with AI', d: 'Image, video, voice', icon: 'sparkle', screen: 'aistudio', cls: 'ffa-qa', icBg: 'var(--seldim)', icCol: 'var(--select)' },
@@ -16835,6 +16958,16 @@ class Component extends DCLogic {
     const sub = u.subscription || null;
     const planNote = sub && sub.currentPeriodEnd ? ('Next renewal: ' + this.fmtDay(sub.currentPeriodEnd)) : 'With 50 free credits monthly';
     const plansCur = plansView.map(p => ({ ...p, cur: p.key === planKey }));
+    // FAZA 5 Variant A — top nav + hero bindings
+    const navLinksView = this.sidebarMain.map(it => ({ ...it, cls: it.screen === s ? 'on' : '' }));
+    const planPill = planShort.toUpperCase();
+    const nowD = new Date();
+    const heroKick = (nowD.toLocaleDateString('en-US', { weekday: 'long' }) + ' · ' + nowD.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })).toUpperCase();
+    const hh = nowD.getHours();
+    const heroGreeting = hh < 12 ? 'Good morning' : (hh < 18 ? 'Good afternoon' : 'Good evening');
+    const userFirst = userName.split(' ')[0];
+    const resetShortDate = sub && sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
+    const creditResetShort = isFreePlan ? ('Free plan · ✦ ' + creditMaxFmt + '/mo') : (planShort + (resetShortDate ? ' · resets ' + resetShortDate : ' plan'));
     // Hisob — obuna/kredit ko'rsatkichlari (real reja holatidan)
     const curPlanRow = plansCur.find(p => p.cur) || null;
     const planPriceLabel = isFreePlan ? 'Free' : ('$' + (curPlanRow ? curPlanRow.price : 0) + '/month');
@@ -16978,6 +17111,7 @@ class Component extends DCLogic {
         } catch (err) { this.toast((err && err.message) || "Payment isn't available right now"); }
       },
       sidebarMainView, sidebarAccountView, dashQuick, dashGensView, hasDashGens, noDashGens: !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
+      navLinksView, planPill, heroKick, heroGreeting, userFirst, creditResetShort,
       sidebarCls, collapseIcon, toggleSidebar: () => this.setState(st => ({ sidebarCollapsed: !st.sidebarCollapsed })),
       avatarOpen: this.state.avatarOpen, toggleAvatar: () => this.setState(st => ({ avatarOpen: !st.avatarOpen })),
       creditPct, creditMaxFmt, planShort, authBrandTitle, authBrandSub,
