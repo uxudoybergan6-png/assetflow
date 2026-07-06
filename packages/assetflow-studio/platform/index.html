@@ -14984,6 +14984,50 @@
   .ff .va-mtabs a.on{color:var(--lime)}
   .ff .va-mtabs .va-ic{width:19px;height:19px}
   @media(max-width:820px){ .ff .va-mtabs{display:flex} }
+  /* ── catalog (A2 — search hero · chip filters · immersive grid) ── */
+  .ff .va-cathero{padding:44px 40px 6px;text-align:center;position:relative}
+  .ff .va-cathero::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 260px at 50% -40%,rgba(194,240,74,.09),transparent 65%)}
+  .ff .va-cathero>*{position:relative}
+  .ff .va-cathero h2{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0}
+  .ff .va-bigsearch{margin:20px auto 0;max-width:560px;height:48px;display:flex;align-items:center;gap:11px;padding:0 18px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--muted2);font-size:13.5px;box-shadow:0 18px 44px -18px rgba(0,0,0,.7)}
+  .ff .va-bigsearch input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:13.5px}
+  .ff .va-bigsearch input::placeholder{color:var(--muted2)}
+  .ff .va-catchips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+  .ff .va-catchips span{padding:8px 15px;border-radius:999px;font-weight:600;font-size:12px;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;white-space:nowrap}
+  .ff .va-catchips span.on{background:var(--lime);color:var(--onlime);border-color:var(--lime)}
+  .ff .va-fbar{display:flex;align-items:center;gap:8px;padding:22px 40px 4px;flex-wrap:wrap}
+  .ff .va-fchip{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;font-size:11.5px;font-weight:600;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;font-family:inherit;position:relative;white-space:nowrap}
+  .ff .va-fchip:hover{color:var(--text)}
+  .ff .va-fchip.on{color:var(--text);border-color:rgba(194,240,74,.4);background:var(--limedim)}
+  .ff .va-fbar .cnt{margin-left:auto;font:500 11px var(--mono);color:var(--muted2)}
+  .ff .va-fbar .cnt b{color:var(--muted);font-weight:600;cursor:pointer}
+  .ff .va-fpop{position:absolute;top:calc(100% + 8px);left:0;min-width:150px;z-index:60;background:var(--pop);border:1px solid rgba(255,255,255,.09);border-radius:13px;box-shadow:0 18px 44px -12px rgba(0,0,0,.75);padding:6px;font-weight:500}
+  .ff .va-fpop.r{left:auto;right:0}
+  /* ── template detail page (A2b) ── */
+  .ff .va-crumb{display:flex;align-items:center;gap:7px;padding:20px 40px 0;font-size:12px;color:var(--muted2);flex-wrap:wrap}
+  .ff .va-crumb b{color:var(--muted);font-weight:600}
+  .ff .va-crumb a{color:var(--muted2);cursor:pointer}
+  .ff .va-crumb a:hover{color:var(--text)}
+  .ff .va-dwrap{display:grid;grid-template-columns:1fr 384px;gap:28px;padding:18px 40px 44px;align-items:start}
+  .ff .va-dprev{aspect-ratio:16/9;border-radius:16px}
+  .ff .va-dmeta h2{font-size:21px;font-weight:800;letter-spacing:-.02em;margin:2px 0 4px}
+  .ff .va-dmeta .sub{font-size:12.5px;color:var(--muted)}
+  .ff .va-specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:12px;overflow:hidden;margin:18px 0}
+  .ff .va-specs div{background:var(--surface);padding:11px 14px;min-width:0}
+  .ff .va-specs .k{font:600 8.5px var(--mono);letter-spacing:.12em;color:var(--muted2)}
+  .ff .va-specs .v{font-size:12.5px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-gate{display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:11px;margin-top:12px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:#D6E8A8;line-height:1.5}
+  .ff .va-rel4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1100px){ .ff .va-dwrap{grid-template-columns:1fr} }
+  @media(max-width:820px){
+    .ff .va-cathero{padding:26px 16px 0}
+    .ff .va-cathero h2{font-size:20px}
+    .ff .va-fbar{padding:16px 16px 4px}
+    .ff .va-fbar .cnt{margin-left:0;width:100%}
+    .ff .va-crumb{padding:14px 16px 0}
+    .ff .va-dwrap{padding:14px 16px 30px;gap:18px}
+    .ff .va-rel4{grid-template-columns:1fr 1fr;gap:10px}
+  }
 </style>
 </helmet>
 
@@ -15392,6 +15436,42 @@
 
     <div class="va-main" data-rv="" data-page-wrap="">
 
+        <!-- TEMPLATE DETAIL — dedicated page (A2b), shown over any app screen while `detail` is set -->
+        <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
+          <div class="va-crumb"><a onclick="{{ goTemplates }}">Templates</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> {{ detail.c }} <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
+          <div class="va-dwrap">
+            <div style="min-width:0">
+              <div class="va-thumb va-dprev" style="background:{{ detail.g }}">
+                <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" preload="none" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
+                <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span class="va-playov"><span style="width:54px;height:54px"><svg class="va-ic" style="width:22px;height:22px"><use href="#i-play"></use></svg></span></span></sc-if>
+              </div>
+              <div class="va-sec" style="padding:26px 0 12px"><h3>More like this</h3></div>
+              <div class="va-rel4">
+                <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4">
+                  <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-thumb" style="aspect-ratio:16/10;background:{{ r.g }};cursor:pointer"></div>
+                </sc-for>
+              </div>
+            </div>
+            <div class="va-dmeta">
+              <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
+              <sc-if value="{{ detail.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+              <h2>{{ detail.n }}</h2>
+              <div class="sub">by <b style="color:var(--text)">{{ detail.author }}</b> · {{ detail.c }}</div>
+              <div class="va-specs">
+                <div><div class="k">APPLICATION</div><div class="v">{{ detail.appFull }}</div></div>
+                <div><div class="k">CATEGORY</div><div class="v">{{ detail.c }}</div></div>
+                <div><div class="k">RESOLUTION</div><div class="v">{{ detail.resLine }}</div></div>
+                <div><div class="k">AUTHOR</div><div class="v">{{ detail.author }}</div></div>
+              </div>
+              <a class="va-btn lime" style="width:100%;padding:13px" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> Download pack (.zip)</a>
+              <a class="va-btn ghost" style="width:100%;margin-top:9px" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in After Effects</a>
+              <div class="va-gate"><svg class="va-ic" style="margin-top:1px;color:var(--lime)"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
+              <div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:14px">{{ detail.descText }}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="font-size:11px;padding:5px 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted)">{{ tg }}</span></sc-for></div>
+            </div>
+          </div>
+        </sc-if>
+
         <!-- DASHBOARD (Variant A · A1 — hero · credcard · quick actions · rows) -->
         <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
           <div class="va-hero">
@@ -15450,85 +15530,49 @@
           </sc-if>
         </sc-if>
 
-        <!-- TEMPLATES MARKETPLACE -->
+        <!-- TEMPLATES — Variant A A2 (search hero · category chips · filter chip bar) -->
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-bottom:20px">
-            <div style="font-weight:700;font-size:22px;letter-spacing:-.015em">Templates</div>
-            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Approved catalog — for After Effects, Premiere and DaVinci</div>
-          </div>
-          <div class="ffa-mkt-grid">
-            <!-- FILTER RAIL (desktop) -->
-            <aside class="ffa-mkt-rail">
-              <div style="display:flex;align-items:center;margin-bottom:16px"><span style="font-weight:700;font-size:13px">Filters</span><span style="flex:1"></span><sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ true }}"><span onclick="{{ resetFilters }}" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--lime);cursor:pointer">Clear</span></sc-if></div>
-              <div class="ffa-flab">APP</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onFApp }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-              <div class="ffa-flab">CATEGORY</div>
-              <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:16px"><sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><button data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><i class="ph-bold ph-check"></i></span>{{ x.v }}</button></sc-for></div>
-              <div class="ffa-flab">PRICE</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFPlan }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-              <div class="ffa-flab">ORIENTATION</div>
-              <div style="display:flex;gap:6px;margin-bottom:16px"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-              <div class="ffa-flab">QUALITY</div>
-              <div style="display:flex;gap:6px"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><button data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-            </aside>
-            <!-- GRID COLUMN -->
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-                <span style="font-weight:700;font-size:15px">{{ tplHeading }}</span>
-                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">{{ filtCount }} results</span>
-                <span style="flex:1"></span>
-                <button class="ffa-fbtn" onclick="{{ toggleFilterDrawer }}"><i class="ph ph-sliders-horizontal" style="font-size:15px"></i>Filters<sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="ffa-fbadge">{{ filterCountFmt }}</span></sc-if></button>
-                <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="0"><button data-k="{{ c.k }}" onclick="{{ clearChip }}" class="ffa-ftag on ffa-achip"><i class="ph ph-{{ c.ic }}" style="font-size:11px"></i>{{ c.v }}<i class="ph ph-x" style="font-size:11px"></i></button></sc-for>
-                <div style="position:relative">
-                  <button onclick="{{ toggleSort }}" class="ffa-ftag ffa-achip"><i class="ph ph-arrows-down-up" style="font-size:12px"></i>Sort: {{ sortLabel }}</button>
-                  <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-menu" style="top:36px;right:0;width:180px"><sc-for list="{{ sortView }}" as="s" hint-placeholder-count="3"><button class="ffa-mrow" data-v="{{ s.k }}" onclick="{{ pickSort }}">{{ s.label }}<span style="flex:1"></span><sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--lime)"></i></sc-if></button></sc-for></div></sc-if>
-                </div>
-              </div>
-              <sc-if value="{{ hasFiltered }}" hint-placeholder-val="{{ true }}">
-                <div class="ffa-mkt-cards">
-                  <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
-                    <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="ffa-tc">
-                      <div class="ffa-th" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
-                        <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="ffa-bgpro">PRO</span></sc-if>
-                        <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="ffa-bgfree">FREE</span></sc-if>
-                        <span class="ffa-appc"><span class="d" style="background:{{ t.ac }}"></span>{{ t.a }}</span>
-                        <span class="ffa-dur">{{ t.d }}</span>
-                        <div class="ffa-tplay"><span><i class="ph-fill ph-play" style="margin-left:2px"></i></span></div>
-                      </div>
-                      <div class="ffa-nm">{{ t.n }}</div>
-                      <div class="ffa-mt">{{ t.c }} · {{ t.qual }}</div>
-                    </div>
-                  </sc-for>
-                </div>
-              </sc-if>
-              <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
-                <div style="text-align:center;padding:70px 20px;border:1px dashed rgba(255,255,255,.1);border-radius:14px">
-                  <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)"><i class="ph ph-magnifying-glass"></i></span>
-                  <div style="font-size:15px;font-weight:600;margin:12px 0 5px">Nothing found</div>
-                  <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">Try adjusting your filters — the catalog is updated regularly</p>
-                  <button class="ffm-btn2 sm" onclick="{{ resetFilters }}">Clear filters</button>
-                </div>
-              </sc-if>
+          <div class="va-cathero">
+            <h2>Templates that cut your edit time.</h2>
+            <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Try “glitch logo”, “wedding titles”, “lower thirds”…"></div>
+            <div class="va-catchips">
+              <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}">{{ x.v }}</span></sc-for>
             </div>
           </div>
-          <!-- MOBILE FILTER DRAWER (§5 tuzatish — 680px'dan past) -->
-          <sc-if value="{{ filterDrawerOpen }}" hint-placeholder-val="{{ false }}">
-            <div onclick="{{ closeFilterDrawer }}" class="ffa-fdrawer-ovl">
-              <div onclick="{{ stop }}" class="ffa-fdrawer">
-                <div class="ffa-fdrawer-handle"></div>
-                <div style="display:flex;align-items:center;margin-bottom:16px"><span style="font-weight:700;font-size:15px">Filters</span><span style="flex:1"></span><span onclick="{{ resetFilters }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--lime);cursor:pointer">Clear</span></div>
-                <div class="ffa-flab">APP</div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ onFApp }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-                <div class="ffa-flab">CATEGORY</div>
-                <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:16px"><sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><button data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><i class="ph-bold ph-check"></i></span>{{ x.v }}</button></sc-for></div>
-                <div class="ffa-flab">PRICE</div>
-                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFPlan }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-                <div class="ffa-flab">ORIENTATION</div>
-                <div style="display:flex;gap:7px;margin-bottom:16px"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-                <div class="ffa-flab">QUALITY</div>
-                <div style="display:flex;gap:7px;margin-bottom:20px"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><button data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.cls }}">{{ x.v }}</button></sc-for></div>
-                <button class="ffm-btn full lg" onclick="{{ closeFilterDrawer }}">Show {{ filtCount }} results</button>
-              </div>
+          <div class="va-fbar">
+            <span class="{{ fbAppCls }}" data-pop="app" onclick="{{ toggleFbar }}">App: {{ fApp }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+              <sc-if value="{{ fbAppOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ pickFbApp }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
+            </span>
+            <span class="{{ fbPlanCls }}" data-pop="plan" onclick="{{ toggleFbar }}">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+              <sc-if value="{{ fbPlanOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ pickFbPlan }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
+            </span>
+            <sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for>
+            <sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for>
+            <span class="cnt">{{ resultsFmt }} results · sorted by <span style="position:relative"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
+              <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
+            </span></span>
+          </div>
+          <sc-if value="{{ hasFiltered }}" hint-placeholder-val="{{ true }}">
+            <div class="va-cards" style="padding-top:18px">
+              <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
+                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-tc">
+                  <div class="va-thumb th" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
+                    <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
+                    <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+                    <span class="dur">{{ t.d }}</span>
+                    <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
+                  </div>
+                  <div class="meta"><span class="tt">{{ t.n }}</span><span class="app"><i style="background:{{ t.ac }}"></i>{{ t.a }} · {{ t.qual }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
+            <div class="va-empty" style="margin-top:24px;padding:70px 20px">
+              <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)"><svg class="va-ic"><use href="#i-search"></use></svg></span>
+              <div style="font-size:15px;font-weight:600;margin:12px 0 5px">Nothing found</div>
+              <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">Try adjusting your filters — the catalog is updated regularly</p>
+              <button class="va-btn ghost" onclick="{{ resetFilters }}">Clear filters</button>
             </div>
           </sc-if>
         </sc-if>
@@ -15921,39 +15965,6 @@
     </div>
   </sc-if>
 
-  <!-- TEMPLATE DETAIL MODAL -->
-  <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeDetail }}" style="position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);backdrop-filter:blur(7px);display:grid;place-items:center;padding:32px 24px;overflow:auto">
-      <div onclick="{{ stop }}" class="ffa-dmodal">
-        <!-- LEFT · preview -->
-        <div class="ffa-dpreview" style="background:{{ detail.g }}">
-          <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" preload="none" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
-          <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><span class="ffa-bgpro" style="top:14px;left:14px">PRO</span></sc-if>
-          <sc-if value="{{ detail.free }}" hint-placeholder-val="{{ true }}"><span class="ffa-bgfree" style="top:14px;left:14px">FREE</span></sc-if>
-          <span class="ffa-appc" style="bottom:14px;left:14px"><span class="d" style="background:{{ detail.ac }}"></span>{{ detail.appFull }}</span>
-          <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;color:rgba(255,255,255,.85)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
-        </div>
-        <!-- RIGHT · body -->
-        <div class="ffa-dbody">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:20px;letter-spacing:-.01em">{{ detail.n }}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">{{ detail.c }} · {{ detail.appFull }} · {{ detail.author }}</div></div>
-            <button onclick="{{ closeDetail }}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:19px;display:flex;flex:none;padding:2px"><i class="ph ph-x"></i></button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap"><sc-for list="{{ detail.metaPills }}" as="mp" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:#B7C0CE">{{ mp }}</span></sc-for></div>
-          <div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:16px">{{ detail.descText }}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="font-size:11px;padding:5px 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted)">{{ tg }}</span></sc-for></div>
-          <div style="flex:1;min-height:16px"></div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--muted);margin-top:16px">SIMILAR TEMPLATES</div>
-          <div style="display:flex;gap:10px;margin-top:10px"><sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4"><div data-id="{{ r.id }}" onclick="{{ openDetail }}" style="cursor:pointer;flex:1;min-width:0"><div style="aspect-ratio:5/4;border-radius:8px;background:{{ r.g }}"></div></div></sc-for></div>
-          <div style="display:flex;gap:10px;margin-top:18px">
-            <button class="ffm-btn" style="flex:1" onclick="{{ downloadTpl }}"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
-            <button class="ffm-btn2" onclick="{{ goPlugin }}"><i class="ph ph-plugs-connected" style="font-size:15px"></i>In plugin</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </sc-if>
-
   <!-- LIGHTBOX -->
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
@@ -16019,6 +16030,7 @@ class Component extends DCLogic {
     fQual: 'All',
     sortKey: 'mos',
     sortOpen: false,
+    fbarPop: null,
     filterDrawerOpen: false,
     toast: null,
     q: '',
@@ -16882,16 +16894,23 @@ class Component extends DCLogic {
     let filtered = src.filter(t => (this.state.fApp === 'All' || t.a === this.state.fApp) && (this.state.fCat === 'All' || t.c === this.state.fCat) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => ({ ...t, g: media(t.thumbUrl, t.h), free: !t.pro }));
     if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
     else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
-    const sortOpts = [{ k: 'mos', label: 'Relevance' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
+    const sortOpts = [{ k: 'mos', label: 'Most relevant' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
-    const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey }));
-    const fAppsView = ['All', 'Ae', 'Pr', 'Dr'].map(x => ({ v: x, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag' }));
+    const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
+    const fAppsView = ['All', 'Ae', 'Pr', 'Dr'].map(x => ({ v: x, on: x === this.state.fApp, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fApp ? 'ffa-poprow on' : 'ffa-poprow' }));
     const catalogCats = Array.from(new Set(src.map(t => t.c)));
-    const fCatsView = ['All'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk' }));
-    const fPlansView = ['All', 'Free', 'Pro'].map(x => ({ v: x, cls: x === this.state.fPlan ? 'ffa-ftag on' : 'ffa-ftag' }));
-    // Orientatsiya / Sifat — mockup tag chip'lari (toggle: faol chipni bosish → tozalash). Katalog so'roviga real ulangan.
-    const fOrientView = ['16:9', '9:16', '1:1'].map(v => ({ v, cls: v === this.state.fOrient ? 'ffa-ftag on' : 'ffa-ftag' }));
-    const fQualView = ['HD', '4K'].map(v => ({ v, cls: v === this.state.fQual ? 'ffa-ftag on' : 'ffa-ftag' }));
+    const fCatsView = ['All'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
+    const fPlansView = ['All', 'Free', 'Pro'].map(x => ({ v: x, on: x === this.state.fPlan, cls: x === this.state.fPlan ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fPlan ? 'ffa-poprow on' : 'ffa-poprow' }));
+    // Orientatsiya / Sifat — Variant A fbar chip'lari (toggle: faol chipni bosish → tozalash). Katalog so'roviga real ulangan.
+    const fOrientView = ['16:9', '9:16', '1:1'].map(v => ({ v, cls: v === this.state.fOrient ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fOrient ? 'va-fchip on' : 'va-fchip' }));
+    const fQualView = ['HD', '4K'].map(v => ({ v, cls: v === this.state.fQual ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fQual ? 'va-fchip on' : 'va-fchip' }));
+    // A2 fbar dropdown chips (App / Free-Pro) + natija hisoblagichi
+    const resultsFmt = filtered.length.toLocaleString();
+    const fbAppCls = 'va-fchip' + (this.state.fApp !== 'All' ? ' on' : '');
+    const fbPlanCls = 'va-fchip' + (this.state.fPlan !== 'All' ? ' on' : '');
+    const fbPlanLabel = this.state.fPlan === 'All' ? 'Free / Pro' : this.state.fPlan;
+    const fbAppOpen = this.state.fbarPop === 'app';
+    const fbPlanOpen = this.state.fbarPop === 'plan';
     // Grid ustidagi faol filter chip'lari (mockup) — bosilsa tozalanadi
     const activeChips = [];
     if (this.state.fOrient !== 'All') activeChips.push({ k: 'orient', v: this.state.fOrient, ic: 'tag' });
@@ -16907,6 +16926,7 @@ class Component extends DCLogic {
       descText: dRaw.desc || (dRaw.real ? 'A professional-grade template. Fully customizable elements.' : 'A showcase template — the real catalog will fill in soon.'),
       tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
       hasPreview: !!dRaw.previewUrl, noPreview: !dRaw.previewUrl, free: !dRaw.pro,
+      resLine: (dRaw.qual || dRaw.d || '4K') + ' · ' + (dRaw.ori || '16:9'),
       appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
       metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
       related: (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c && t.id !== dRaw.id).slice(0, 4).map(t => ({ ...t, g: media(t.thumbUrl, t.h) })),
@@ -16968,6 +16988,10 @@ class Component extends DCLogic {
     const userFirst = userName.split(' ')[0];
     const resetShortDate = sub && sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
     const creditResetShort = isFreePlan ? ('Free plan · ✦ ' + creditMaxFmt + '/mo') : (planShort + (resetShortDate ? ' · resets ' + resetShortDate : ' plan'));
+    // A2b gating eslatmasi — faqat matn, yuklab olish oqimi (packLink) o'zgarmagan
+    const detailGate = dRaw ? (dRaw.pro
+      ? (isFreePlan ? 'Included with Pro — $19/mo. On the Free plan downloads stay HD + watermarked.' : ('Included with your ' + planShort + ' plan.'))
+      : 'Free template — included on every plan.') : '';
     // Hisob — obuna/kredit ko'rsatkichlari (real reja holatidan)
     const curPlanRow = plansCur.find(p => p.cur) || null;
     const planPriceLabel = isFreePlan ? 'Free' : ('$' + (curPlanRow ? curPlanRow.price : 0) + '/month');
@@ -17039,7 +17063,7 @@ class Component extends DCLogic {
       accentKey, animKey,
       showMarketing: marketing, showApp: app,
       isLanding: s === 'landing', isPricing: s === 'pricing', isPlugin: s === 'plugin',
-      isDashboard: s === 'dashboard', isTemplates: s === 'templates', isAistudio: s === 'aistudio', isAccount: s === 'account', isProjects: s === 'projects',
+      isDashboard: s === 'dashboard' && !dRaw, isTemplates: s === 'templates' && !dRaw, isAistudio: s === 'aistudio' && !dRaw, isAccount: s === 'account' && !dRaw, isProjects: s === 'projects' && !dRaw,
       isAuth: s === 'auth',
       isVerifyEmail: s === 'verify-email',
       verifyEmailAddr: (this.state.user && this.state.user.email) || '',
@@ -17145,7 +17169,11 @@ class Component extends DCLogic {
       waveBars: activeGenRaw ? Array.from({ length: 46 }, (_, i) => ({ h: 18 + Math.abs(Math.sin(this.hueOf(activeGenRaw.id) + i * .7)) * 74 })) : [],
       pickActive: (e) => this.setState({ activeGenId: e.currentTarget.dataset.id }),
       delActive: () => { const cur = activeGenRaw && activeGenRaw.id; if (cur) this.deleteGenById(cur); },
-      q: this.state.q, filtered, filtCount: filtered.length,
+      q: this.state.q, filtered, filtCount: filtered.length, resultsFmt,
+      fApp: this.state.fApp, fbAppCls, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
+      toggleFbar: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ fbarPop: st.fbarPop === p ? null : p, sortOpen: false })); },
+      pickFbApp: (e) => { e.stopPropagation(); this.setState({ fApp: e.currentTarget.dataset.v, fbarPop: null }); },
+      pickFbPlan: (e) => { e.stopPropagation(); this.setState({ fPlan: e.currentTarget.dataset.v, fbarPop: null }); },
       hasFiltered: filtered.length > 0, noFiltered: this.state.catalogReady && filtered.length === 0,
       catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
       fAppsView, fCatsView, fPlansView, fOrientView, fQualView,
@@ -17194,7 +17222,7 @@ class Component extends DCLogic {
       toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
       pickSort: (e) => this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }),
       resetFilters: () => this.setState({ fApp: 'All', fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }),
-      openDetail: (e) => { const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) this.setState({ detail: t }); },
+      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} } },
       closeDetail: () => this.setState({ detail: null }),
       onAccTab: (e) => this.setState({ accountTab: e.currentTarget.dataset.v }),
       openCredits: () => this.setState({ showCredits: true }),
