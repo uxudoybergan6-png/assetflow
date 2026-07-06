@@ -1,13 +1,26 @@
-# Sessiya hisoboti — 2026-07-06 (PHASE 4 2/2: Home redesign Variant A + umumiy header)
+# Sessiya hisoboti — 2026-07-06 (Google sign-in bug fix — device-code brauzer ochilmasligi)
 
-**Ish:** plagin HOME → Variant A "Editorial Studio" (_home-redesign-mockup 1:1) + #10/#11 umumiy header, jonli ma'lumot bilan.
+**Bug:** AE plaginda "Sign in with Google" / "Continue with Google" tugmasi bosilganda hech narsa
+bo'lmasdi — brauzer ochilmasdi, xato ham chiqmasdi.
 
-- Home: vaqtga mos salomlashuv (real ism), 2 pillar karta (Templates→katalog real soni, AI Tools→launcher),
-  "Continue where you left off" — real oxirgi import (`downloadedMeta.at` muhri qo'shildi) + oxirgi gen (`/api/studio/gen/history`),
-  Re-import→downloadAll / Import→aiImportMedia / lightbox=afRecent; Recommended 2×2 (mavjud hm-card 1:1); kredit nudge (✦N→~videolar).
-- Guest: taklif + real Sign in / Google device-code (g2 sheet), real katalog peek (blur+lock), FREE PLAN footer.
-- Header hamma ekranda: lime chaqmoq=Home (chuqur ekranlarda ‹ back yonida, ai-hdr ixcham 24px), o'ngda kredit+plan chip+avatar(ring)=Hisob;
-  guest → bitta "Sign in" pill (afHdrSyncAll, bir xil geometriya). goHome endi lib-mode'dan ham chiqadi.
-- Tekshirildi (brauzer 380px cep-mode, skrinshotlar): guest/logged Home, katalog/launcher/imggen/lib headerlari, Home-dan-har-yerdan,
-  hisob sheet ochilishi, resume tugmalari real handlerlarga, 0 konsol xato. Preview'da tarmoq yopiq — hisob/gen STUB (render yo'llari real).
-- Kutilmoqda: `bash plugins/after-effects-cep/scripts/install-cep.sh` + AE restart, real AE'da jonli test. Push YO'Q (user o'zi).
+**Root cause:** `plugins/after-effects-cep/js/CSInterface.js` (minimal shim) — `openURLInDefaultBrowser`
+faqat `window.__adobe_cep__.openURLInDefaultBrowser` to'g'ridan-to'g'ri metodini tekshirardi, lekin
+Adobe'ning haqiqiy CSInterface.js buni ko'pincha `invokeSync('openURLInDefaultBrowser', url)` orqali
+taqdim etadi. To'g'ridan-to'g'ri metod bo'lmaganda shim `require("uxp")` (Photoshop/XD API, CEP'da
+mavjud emas — doim throw) ga, so'ng `window.open()`ga tushardi — bu esa `await` fetch'dan KEYIN
+(click gesture'dan tashqarida) chaqirilgani uchun CEF panelida sukut bilan popup-block bo'ladi.
+Natija: brauzer ochilmaydi, xato chiqmaydi — aynan tasvirlangan simptom. Ikkala tugma
+(`homeGuestGoogle` va `accountLoginWithGoogle`) bir xil `AssetFlowAccount.openExternal` orqali
+shu buzuq shim'ga tayanadi edi.
+
+**Tuzatish (`js/CSInterface.js`):** ikkinchi native yo'l — `invokeSync('openURLInDefaultBrowser', url)`
+qo'shildi; manifestda `--enable-nodejs` yoqilgani uchun haqiqiy `child_process` OS-shell fallback
+(`open`/`start`/`xdg-open`) qo'shildi; `window.open()` faqat oxirgi chora sifatida qoldi.
+
+**Tekshirildi:** brauzer preview (cep-plugin-preview, 1400px) — ikkala tugma ham to'liq zanjirni
+bosib o'tadi (device/start POST → openExternal chaqiriladi → xato bo'lsa toast/hint to'g'ri
+ishlaydi), 0 konsol xato, syntax OK (`node -c`). Email/parol login o'zgarmadi.
+
+**Bajarildi:** `install-cep.sh` bilan qayta o'rnatildi, AE qayta ishga tushirildi (build ebe1e1e,
+16:35). Real AE'da Google tugmasini bosib yakuniy tasdiq — foydalanuvchi tomonidan kutilmoqda.
+Push YO'Q (user o'zi).
