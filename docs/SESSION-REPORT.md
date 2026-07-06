@@ -1,23 +1,14 @@
-# Sessiya hisoboti — 2026-07-06 (Device-code sign-in: web device.html email/parol yo'li + poll + guest toast)
+# Session report — 2026-07-06
 
-**Muammo:** Plagin oqimni boshlaydi (link+kod+"Browser opened"), lekin user KIRA OLMASDI.
+**Vazifa:** FAZA 5 — logged-in web app (getframeflow.app) redesign MOCKUP (statik flow board).
 
-**Root cause (brauzerda tasdiqlangan):** `packages/assetflow-studio/device.html` (getframeflow.app/device.html
-→ CF 308 → /device, kod saqlanadi, sahifa 200) FAQAT Google GIS tugmasini ko'rsatardi. Google yangi
-domenda ishlamasa/user tugatolmasa — muqobil yo'q → tiqilib qolardi. Backend (start→confirm→poll) va DB
-sog' edi (run.app va api.getframeflow.app bir xil DB — cross-base poll test bilan tasdiqlandi).
+**Qilindi:**
+- `packages/assetflow-studio/platform/_webapp-redesign-mockup.html` yaratildi (commit 71e2d46).
+- 2 yo'nalish × 4 ekran (Home / Catalog / AI Toolkit / Account) + har birida 390px mobil freym:
+  - **Variant A — Editorial:** top nav, katta hero, immersiv kartalar, template detail = alohida SAHIFA, AI = canvas + floating dock.
+  - **Variant B — Workspace:** chap rail + ⌘K command bar, stat tile'lar, facet rail + inspector panel, AI = 3-pane (tools+models / form / history).
+- Real ma'lumotlarga qurilgan: planlar $0/50 · $19/1,000 · $59/6,000; kredit narxlar ✦5/40/8/3; filtrlar App·Category·Plan·Orientation·Quality; packlar 500/1,500/5,000.
+- Headless Chrome skrinshotlar 1440px va 390px — layout buzilmadi (scratchpad: board-1440-full.png, board-390-full.png).
 
-**Tuzatishlar (additive):**
-1. API `apps/api/src/routes/plugin.ts`: yangi `POST /api/plugin/device/confirm-password` (email+parol,
-   /login bilan bir xil bcrypt; pul mantig'i TEGILMADI). tsc toza.
-2. `device.html`: email+parol formasi + "or" + Google (GIS yuklanmasa ~5s'da jimgina yashiriladi).
-   Ikkala yo'l ham `showConfirmed()` → "✓ Confirmed". Intro matn yangilandi.
-3. Plagin `assetflow-account.js`: `sessionEstablished` — "Session expired" toast/modal FAQAT haqiqiy
-   (fetchMe/login/device-confirm bilan bir marta tasdiqlangan) sessiya tugaganda. Bootdagi eskirgan
-   token 401'i mehmon uchun JIMGINA tozalanadi (PART 3).
-
-**Jonli test (lokal API+studio, brauzer):** start→confirm-password(user123)→200→poll→confirmed+token+user.
-Noto'g'ri parol→401. Sahifa 3 yo'lni ham render qiladi. Backend zanjiri to'liq ishladi.
-
-**Kutilmoqda:** API DEPLOY (endpoint hali productionda yo'q) + CF Pages deploy (device.html) + AE test.
-Google GIS getframeflow.app origin'i Google Console'da avtorizatsiya qilinganini tekshirish tavsiya.
+**Tegilmadi:** index.html, js/, styles/, landing — faqat mockup fayl.
+**Kutilmoqda:** foydalanuvchi A/B yo'nalishni tanlaydi; tavsiya — B skelet + A'ning hero/detail-sahifa elementlari. Push qilinmadi.
