@@ -336,18 +336,83 @@ const AssetFlowAccount = (() => {
     return data?.url || "";
   }
 
-  /** URL'ni tashqi brauzerda ochadi (CEP yoki oddiy) */
+  /**
+   * URL'ni tashqi (tizim) brauzerida ochadi va HAQIQIY muvaffaqiyatni QAYTARADI (true/false).
+   * Zanjir tartibi:
+   *   (a) window.cep.util.openURLInDefaultBrowser — AE CEP'ning kanonik API'si (err===0 = muvaffaqiyat)
+   *   (b) Node child_process (manifest'da --enable-nodejs) — OS shell: open / start / xdg-open
+   *   (c) CSInterface shim (invokeSync('openURLInDefaultBrowser')) — oxirgi CEP chorasi
+   *   (d) window.open — brauzer/dev fallback (CEP webview'da bloklanishi mumkin)
+   * Faqat biror metod xatosiz ishga tushsagina true qaytaradi.
+   */
   function openExternal(url) {
-    if (!url) return;
-    if (typeof window.__adobe_cep__ !== "undefined" && window.CSInterface) {
-      try {
-        new CSInterface().openURLInDefaultBrowser(url);
-        return;
-      } catch {
-        /* fallback */
+    if (!url) return false;
+
+    // (a) Kanonik CEP API — window.cep.util.openURLInDefaultBrowser. Natija: {err: <code>}.
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.cep &&
+        window.cep.util &&
+        typeof window.cep.util.openURLInDefaultBrowser === "function"
+      ) {
+        const res = window.cep.util.openURLInDefaultBrowser(url);
+        const errCode = res && typeof res.err !== "undefined" ? res.err : 0;
+        if (errCode === 0) {
+          console.log("[openExternal] opened via cep.util.openURLInDefaultBrowser");
+          return true;
+        }
+        console.log("[openExternal] cep.util.openURLInDefaultBrowser returned err=", errCode);
       }
+    } catch (e) {
+      console.log("[openExternal] cep.util threw:", e && e.message);
     }
-    window.open(url, "_blank");
+
+    // (b) Node fallback — child_process (execSync => haqiqiy muvaffaqiyat aniqlash).
+    try {
+      if (typeof require === "function") {
+        const cp = require("child_process");
+        const plat = (typeof process !== "undefined" && process.platform) || "";
+        // URL'ni qo'shtirnoq ichida uzatamiz; ichki qo'shtirnoqni zararsizlantiramiz.
+        const safe = String(url).replace(/"/g, "%22");
+        let cmd;
+        if (plat === "darwin") cmd = 'open "' + safe + '"';
+        else if (plat === "win32") cmd = 'start "" "' + safe + '"';
+        else cmd = 'xdg-open "' + safe + '"';
+        cp.execSync(cmd, { timeout: 5000 });
+        console.log("[openExternal] opened via child_process (" + plat + ")");
+        return true;
+      }
+    } catch (e2) {
+      console.log("[openExternal] child_process threw:", e2 && e2.message);
+    }
+
+    // (c) CSInterface shim (invokeSync varianti) — CEP mavjud bo'lsa.
+    try {
+      if (typeof window !== "undefined" && window.__adobe_cep__ && window.CSInterface) {
+        new CSInterface().openURLInDefaultBrowser(url);
+        console.log("[openExternal] opened via CSInterface shim");
+        return true;
+      }
+    } catch (e3) {
+      console.log("[openExternal] CSInterface shim threw:", e3 && e3.message);
+    }
+
+    // (d) Oxirgi chora — brauzer/dev muhiti (CEP webview'da popup bloklanishi mumkin).
+    try {
+      if (typeof window !== "undefined" && window.open) {
+        const w = window.open(url, "_blank");
+        if (w) {
+          console.log("[openExternal] opened via window.open");
+          return true;
+        }
+      }
+    } catch (e4) {
+      console.log("[openExternal] window.open threw:", e4 && e4.message);
+    }
+
+    console.log("[openExternal] all methods failed for url");
+    return false;
   }
 
   async function heartbeat(meta = {}) {

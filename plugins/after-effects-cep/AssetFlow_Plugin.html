@@ -8470,25 +8470,41 @@ async function accountLoginWithGoogle(){
   try{
     // Public (token'siz) device/start — global 401 "sessiya tugadi" ushlagichidan ajratilgan
     const {code,verificationUrl,expiresIn}=await AssetFlowAccount.startDeviceLogin();
-    // Tizim brauzerida ochamiz — CSInterface zanjiri: invokeSync → child_process → window.open
-    let opened=true;
-    try{ AssetFlowAccount.openExternal(verificationUrl); }catch(e){ opened=false; }
-    // Auto-open bloklansa ham — havola + kodni NUSXALANADIGAN qilib ko'rsatamiz
-    setStatus(
-      '<span style="display:block;margin-bottom:6px">'+(opened?'Browser opened — confirm with Google to continue…':'Finish sign-in in your browser…')+'</span>'+
-      '<span style="display:block;opacity:.7;font-size:11px;margin-bottom:4px">Can’t open automatically? Copy this link into your browser:</span>'+
-      '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:11px;opacity:.9;margin-bottom:6px"></code>'+
-      '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-        '<button type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Copy link</button>'+
-        '<button type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Open again</button>'+
-        '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
-      '</span>'
-    );
+    // Tizim brauzerida ochamiz — openExternal HAQIQIY muvaffaqiyatni qaytaradi (true/false).
+    let opened=false;
+    try{ opened=AssetFlowAccount.openExternal(verificationUrl); }catch(e){ opened=false; }
+    console.log('[accountLoginWithGoogle] openExternal returned', opened);
+    // Muvaffaqiyat bo'lsa — qisqa status. Aks holda — havolani BIRINCHI DARAJALI qilib ko'rsatamiz.
+    if(opened){
+      setStatus(
+        '<span style="display:block;margin-bottom:6px">Browser opened — confirm with Google to continue…</span>'+
+        '<span style="display:block;opacity:.7;font-size:11px;margin-bottom:4px">Didn’t see it? Copy this link into your browser:</span>'+
+        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:11px;opacity:.9;margin-bottom:6px"></code>'+
+        '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
+          '<button type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Copy link</button>'+
+          '<button type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Open again</button>'+
+          '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
+        '</span>'
+      );
+    } else {
+      setStatus(
+        '<span style="display:block;margin-bottom:8px;font-weight:600">Couldn’t open the browser automatically — copy this link and open it manually:</span>'+
+        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:12px;padding:8px;border-radius:6px;border:1px solid currentColor;margin-bottom:8px"></code>'+
+        '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
+          '<button type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid currentColor;background:currentColor;color:#000">Copy link</button>'+
+          '<button type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Try again</button>'+
+          '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
+        '</span>'
+      );
+    }
     // Qiymatlarni textContent orqali qo'yamiz (HTML injection yo'q)
     const urlEl=document.getElementById('afGsigUrl'); if(urlEl) urlEl.textContent=verificationUrl||'';
     const codeEl=document.getElementById('afGsigCode'); if(codeEl) codeEl.textContent=code||'';
     document.getElementById('afGsigCopyLink')?.addEventListener('click',()=>afCopyText(verificationUrl||''));
-    document.getElementById('afGsigOpen')?.addEventListener('click',()=>{ try{ AssetFlowAccount.openExternal(verificationUrl); }catch(e){} });
+    document.getElementById('afGsigOpen')?.addEventListener('click',()=>{
+      let ok=false; try{ ok=AssetFlowAccount.openExternal(verificationUrl); }catch(e){}
+      if(!ok) showToast('Still couldn’t open the browser — please copy the link','warning');
+    });
 
     const safetyTimeout=setTimeout(()=>{
       AssetFlowAccount.stopDevicePolling();
