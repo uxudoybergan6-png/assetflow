@@ -79,6 +79,82 @@ const AssetFlowAccount = (() => {
       .finally(() => clearTimeout(timer));
   }
 
+  /**
+   * Login/qurilma-kodi kabi PRE-AUTH (public) so'rovlar uchun bazani hisoblaydi.
+   * Foydalanuvchi hali kirmagan bo'lishi mumkin — shu sabab prefs'dagi eskirgan
+   * localhost/onrender baza production login'ni to'sib qo'ymasligi kerak.
+   */
+  function publicApiBase() {
+    let base = apiBase();
+    if (env && typeof env.sanitizeApi === "function") {
+      try {
+        base = env.sanitizeApi(base) || base;
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    // CEP/file:// panelida saqlangan localhost baza productionга yetib bormaydi —
+    // haqiqiy local dev (window.location.hostname localhost) bo'lmasa, prod'ga o'tamiz.
+    try {
+      const isLocalHost =
+        typeof window !== "undefined" &&
+        window.location &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1");
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(base) && !isLocalHost) {
+        base = DEFAULT_API;
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    return String(base || DEFAULT_API).replace(/\/$/, "");
+  }
+
+  /**
+   * PRE-AUTH so'rov: login va qurilma-kodi (device) endpointlari uchun.
+   * MUHIM: (1) Authorization header YUBORMAYDI — bu endpointlar public;
+   * eskirgan token bilan 401 kelib, endigina boshlangan login'ni "sessiya
+   * tugadi" deb uzib qo'ymasligi kerak. (2) handleAuthFailure'ni CHAQIRMAYDI —
+   * bu yerda tugaydigan sessiya yo'q. Global 401 ushlagichdan butunlay ajratilgan.
+   */
+  async function publicRequest(path, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    if (options.body && !(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+    const res = await fetchWithTimeout(
+      `${publicApiBase()}${path}`,
+      {
+        ...options,
+        headers,
+        body:
+          options.body instanceof FormData
+            ? options.body
+            : options.body
+              ? JSON.stringify(options.body)
+              : undefined,
+      },
+      30000
+    );
+
+    const text = await res.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { raw: text };
+    }
+
+    if (!res.ok) {
+      const err = new Error(data?.error || `HTTP ${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      // Ataylab handleAuthFailure CHAQIRILMAYDI — login/device 401'i sessiya emas.
+      throw err;
+    }
+    return data;
+  }
+
   async function request(path, options = {}) {
     const headers = { ...(options.headers || {}) };
     if (options.body && !(options.body instanceof FormData)) {
@@ -135,7 +211,8 @@ const AssetFlowAccount = (() => {
   }
 
   async function login(email, password) {
-    const data = await request("/api/plugin/login", {
+    // Pre-auth: token'siz + global 401 ushlagichdan ajratilgan (publicRequest).
+    const data = await publicRequest("/api/plugin/login", {
       method: "POST",
       body: { email, password },
     });
@@ -160,7 +237,9 @@ const AssetFlowAccount = (() => {
   let devicePollTimer = null;
 
   async function startDeviceLogin() {
-    return request("/api/plugin/device/start", { method: "POST" });
+    // Public endpoint — token YUBORMAYMIZ (eskirgan token 401 → soxta "sessiya
+    // tugadi" bo'lardi). publicRequest global ushlagichni ham chetlab o'tadi.
+    return publicRequest("/api/plugin/device/start", { method: "POST" });
   }
 
   function stopDevicePolling() {
@@ -175,7 +254,7 @@ const AssetFlowAccount = (() => {
     stopDevicePolling();
     devicePollTimer = setInterval(async () => {
       try {
-        const data = await request(`/api/plugin/device/poll?code=${encodeURIComponent(code)}`);
+        const data = await publicRequest(`/api/plugin/device/poll?code=${encodeURIComponent(code)}`);
         if (data.status === "confirmed") {
           stopDevicePolling();
           persistClient({

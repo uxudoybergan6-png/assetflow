@@ -8436,24 +8436,70 @@ async function accountLogin(){
   }
 }
 
+/* Nusxa olish — CEP webview'da navigator.clipboard ba'zan yo'q, execCommand zaxira */
+function afCopyText(text){
+  text=String(text||'');
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>showToast('Copied','success')).catch(()=>afCopyFallback(text));
+      return;
+    }
+  }catch(e){}
+  afCopyFallback(text);
+}
+function afCopyFallback(text){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=String(text||''); ta.style.position='fixed'; ta.style.top='-9999px'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var ok=document.execCommand&&document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(ok?'Copied':'Select the link and copy manually',ok?'success':'warning');
+  }catch(e){ showToast('Select the link and copy manually','warning'); }
+}
+
+/* Google device-code oqimi — har qadamda ko'rinadigan status + qo'lda ochish uchun
+   nusxalanadigan havola/kod. Ikkala Google tugmasi ham shu funksiyaga tushadi. */
 async function accountLoginWithGoogle(){
   const btn=document.getElementById('accGoogleBtn');
   const hint=document.getElementById('accGoogleHint');
+  const setStatus=(html)=>{ if(hint){ hint.style.display='block'; hint.innerHTML=html; } };
+  const hideStatus=()=>{ if(hint){ hint.style.display='none'; hint.innerHTML=''; } };
+  if(btn) btn.disabled=true;
+  setStatus('Starting secure sign-in…');
   try{
+    // Public (token'siz) device/start — global 401 "sessiya tugadi" ushlagichidan ajratilgan
     const {code,verificationUrl,expiresIn}=await AssetFlowAccount.startDeviceLogin();
-    AssetFlowAccount.openExternal(verificationUrl);
-    if(btn) btn.disabled=true;
-    if(hint) hint.style.display='block';
+    // Tizim brauzerida ochamiz — CSInterface zanjiri: invokeSync → child_process → window.open
+    let opened=true;
+    try{ AssetFlowAccount.openExternal(verificationUrl); }catch(e){ opened=false; }
+    // Auto-open bloklansa ham — havola + kodni NUSXALANADIGAN qilib ko'rsatamiz
+    setStatus(
+      '<span style="display:block;margin-bottom:6px">'+(opened?'Browser opened — confirm with Google to continue…':'Finish sign-in in your browser…')+'</span>'+
+      '<span style="display:block;opacity:.7;font-size:11px;margin-bottom:4px">Can’t open automatically? Copy this link into your browser:</span>'+
+      '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:11px;opacity:.9;margin-bottom:6px"></code>'+
+      '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
+        '<button type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Copy link</button>'+
+        '<button type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Open again</button>'+
+        '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
+      '</span>'
+    );
+    // Qiymatlarni textContent orqali qo'yamiz (HTML injection yo'q)
+    const urlEl=document.getElementById('afGsigUrl'); if(urlEl) urlEl.textContent=verificationUrl||'';
+    const codeEl=document.getElementById('afGsigCode'); if(codeEl) codeEl.textContent=code||'';
+    document.getElementById('afGsigCopyLink')?.addEventListener('click',()=>afCopyText(verificationUrl||''));
+    document.getElementById('afGsigOpen')?.addEventListener('click',()=>{ try{ AssetFlowAccount.openExternal(verificationUrl); }catch(e){} });
+
     const safetyTimeout=setTimeout(()=>{
       AssetFlowAccount.stopDevicePolling();
       if(btn) btn.disabled=false;
-      if(hint) hint.style.display='none';
+      hideStatus();
     },(expiresIn||600)*1000+5000);
     AssetFlowAccount.pollDeviceLogin(code,{
       onConfirmed:async ()=>{
         clearTimeout(safetyTimeout);
         if(btn) btn.disabled=false;
-        if(hint) hint.style.display='none';
+        hideStatus();
         refreshAccountUi();
         try{ syncFavoritesFromServer(); }catch(e){} // #17: Google login bo'lgach hisob sevimlilari
         showToast('Signed in successfully','success');
@@ -8472,13 +8518,13 @@ async function accountLoginWithGoogle(){
       onExpired:()=>{
         clearTimeout(safetyTimeout);
         if(btn) btn.disabled=false;
-        if(hint) hint.style.display='none';
+        hideStatus();
         showToast('Timed out — please try again','warning');
       },
       onDenied:()=>{
         clearTimeout(safetyTimeout);
         if(btn) btn.disabled=false;
-        if(hint) hint.style.display='none';
+        hideStatus();
         showToast('Sign-in denied','error');
       },
       onError:(e)=>{
@@ -8487,7 +8533,7 @@ async function accountLoginWithGoogle(){
     });
   }catch(e){
     if(btn) btn.disabled=false;
-    if(hint) hint.style.display='none';
+    hideStatus();
     showToast(friendlyError(e),'error');
   }
 }
