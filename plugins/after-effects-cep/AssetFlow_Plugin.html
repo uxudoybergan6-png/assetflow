@@ -373,8 +373,10 @@ body{
    mantig'i sidebar'da qoladi (faqat ko'rinish qo'shiladi). */
 /* ===== Katalog header/qatorlar — mockup a1 (1:1 @380px, dark palette literal) ===== */
 .af-topbar{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);flex:none;position:relative;z-index:6}
-.af-tb-logo-btn{width:24px;height:24px;flex:none;border:0;padding:0;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);cursor:pointer}
-.af-tb-logo-btn svg{width:14px;height:14px}
+/* #10: Home chaqmoq bloki — umumiy .hd-home geometriyasi (30px, 9px radius, lime glow hover) */
+.af-tb-logo-btn{width:30px;height:30px;flex:none;border:0;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);cursor:pointer;transition:box-shadow .2s}
+.af-tb-logo-btn:hover{box-shadow:0 0 0 3px rgba(194,240,74,.25)}
+.af-tb-logo-btn svg{width:16px;height:16px}
 .af-tb-seg{flex:1;display:flex;justify-content:center;min-width:0}
 .af-tb-seg .ff-seg{display:flex;width:auto;max-width:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px}
 .af-tb-seg .ff-seg__item{flex:none;padding:5px 16px;border-radius:999px;border:0;background:none;font-family:inherit;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;line-height:1}
@@ -1911,7 +1913,11 @@ html.lib-mode .foot,
 html.lib-mode #afFtr{display:none!important}
 html.lib-mode #libPage{display:flex!important}
 #libPage{display:none;flex:1;min-width:0;flex-direction:column;overflow:hidden;background:var(--bg)}
-.lib-top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05)}
+.lib-top{height:48px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05)}
+/* #10/#11: lib headerida umumiy Home + Hisob klasteri (ixcham) */
+.lib-top .hd-home{width:24px;height:24px;border-radius:7px}
+.lib-top .hd-home svg{width:13px;height:13px}
+.lib-top .hd-cred{padding:4px 8px}
 .lib-back{display:flex;align-items:center;justify-content:center;padding:0;background:none;border:0;color:var(--muted);cursor:pointer}
 .lib-back svg{width:16px;height:16px;display:block}
 .lib-title{font-weight:700;font-size:13px;color:var(--text)}
@@ -3213,8 +3219,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .genhint{font-family:var(--font-mono);font-size:8.5px;color:var(--muted-2);text-align:center;margin-top:8px}
 /* per-ekran ai-header (52px, mockup b1/b4) — .scroll padding'ini yorib to'liq kenglik */
 .axroot .ai-hdr{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);margin:-12px -12px 12px;position:sticky;top:0;z-index:8}
-.axroot .ai-hdr .ai-logo{width:24px;height:24px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--on-accent);flex:none;cursor:pointer;border:0;padding:0}
-.axroot .ai-hdr .ai-logo svg{width:13px;height:13px}
+/* #10: ai-hdr ichida umumiy .hd-home (lime chaqmoq = Home) — zich tool headerlarda ixcham 24px.
+   Home tugma qo'shilgani uchun butun qator ixchamlashadi (380px'ga sig'ishi kerak). */
+.axroot .ai-hdr{gap:6px}
+.axroot .ai-hdr .hd-home{width:24px;height:24px;border-radius:7px}
+.axroot .ai-hdr .hd-home svg{width:13px;height:13px}
+.axroot .ai-hdr .ai-back{width:20px}
+.axroot .ai-hdr .ai-seg-i{padding:5px 8px}
+.axroot .ai-hdr .ai-icon{width:26px;height:26px;border-radius:8px}
+.axroot .ai-hdr .ai-cred{padding:4px 8px}
 .axroot .ai-hdr-c{flex:1;display:flex;justify-content:center;min-width:0}
 .axroot .ai-seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px}
 .axroot .ai-seg-i{padding:5px 16px;border-radius:999px;font-weight:500;font-size:12px;color:var(--muted);background:none;border:0;font-family:inherit;cursor:pointer;white-space:nowrap}
@@ -3438,7 +3451,9 @@ html.home-mode #featuredWrap,
 html.home-mode #assetsPage,
 html.home-mode #favPage,
 html.home-mode #dlPage,
-html.home-mode #aiPage{display:none!important}
+html.home-mode #aiPage,
+html.home-mode .foot,
+html.home-mode #afFtr{display:none!important}
 html.home-mode #homePage{display:block!important}
 #homePage{display:none}
 .af-tb-home{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--border);background:var(--surface);color:#cfd4da;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-right:8px;flex:0 0 auto}
@@ -3446,49 +3461,104 @@ html.home-mode #homePage{display:block!important}
 .axhome{--panel:var(--sidebar);--card:var(--surface);--card2:var(--surface-2);--card3:var(--surface-3);--line:var(--border);--line2:var(--border);--txt:var(--text);--mut:var(--muted);--mut2:var(--muted-2);--acc:var(--accent);--acc2:var(--accent-hi);--acc-ink:var(--on-accent);--blue:var(--select);font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--txt);line-height:1.4}
 /* --- Home = design VAR·A / 1b "Editorial stack" (1:1) --- */
 .axhome{display:flex;flex-direction:column;min-height:100%}
-/* header (52px) */
-.axhome .hm-top{height:52px;flex:none;display:flex;align-items:center;gap:9px;padding:0 14px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05)}
-.axhome .hm-logo{width:22px;height:22px;border-radius:6px;background:var(--acc);display:flex;align-items:center;justify-content:center;color:var(--acc-ink);flex:none}
-.axhome .hm-logo svg{width:13px;height:13px}
-.axhome .hm-brand{font-weight:800;font-size:13.5px;letter-spacing:-.02em}
-.axhome .hm-sp{flex:1}
-.axhome .hm-cred{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:var(--txt);font-family:var(--font-mono);cursor:pointer}
-.axhome .hm-cred:hover{background:rgba(255,255,255,.08)}
-.axhome .hm-cred .s{color:var(--acc)}
-.axhome .hm-ava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);border:1px solid rgba(255,255,255,.14);flex:none;cursor:pointer;padding:0}
-/* segment */
-.axhome .hm-seg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px;margin:10px 14px 0;flex:none}
-.axhome .hm-seg-i{flex:1;text-align:center;padding:6px 0;border-radius:999px;font-weight:500;font-size:12px;color:var(--mut);border:0;background:none;font-family:inherit;cursor:pointer}
-.axhome .hm-seg-i.is-on{background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:var(--txt);cursor:default}
-/* search */
-.axhome .hm-search{display:flex;gap:8px;padding:10px 14px 0;flex:none}
-.axhome .hm-sfield{flex:1;height:38px;display:flex;align-items:center;gap:8px;padding:0 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:10px;color:var(--muted-2);font-size:12px;font-family:inherit;cursor:pointer}
-.axhome .hm-sfield svg{width:14px;height:14px;color:var(--mut);flex:none}
-.axhome .hm-sbtn{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:#E7ECF3;cursor:pointer;flex:none;padding:0}
-.axhome .hm-sbtn svg{width:15px;height:15px}
-.axhome .hm-sfield:hover,.axhome .hm-sbtn:hover{border-color:var(--mut2)}
-/* body */
-.axhome .hm-body{flex:1;padding-bottom:20px}
-.axhome .hm-kick{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--mut);padding:16px 14px 8px}
-/* featured hero */
-.axhome .hm-feat{margin:0 14px;position:relative;aspect-ratio:352/184;border-radius:12px;overflow:hidden;background-size:cover;background-position:center;cursor:pointer}
-.axhome .hm-feat-ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 38%,rgba(6,8,11,.88))}
-.axhome .hm-feat-bot{position:absolute;left:12px;right:12px;bottom:10px;display:flex;align-items:flex-end;gap:10px}
-.axhome .hm-feat-bot .tx{flex:1;min-width:0}
-.axhome .hm-feat-bot .tx b{font-weight:700;font-size:15px;letter-spacing:-.01em;display:block;color:#fff} /* rasm ustidagi matn — temadan qat'i nazar oq */
-.axhome .hm-feat-bot .tx small{font-size:10.5px;color:#B7C0CE;margin-top:3px;display:block}
-.axhome .hm-imp{height:28px;display:flex;align-items:center;gap:5px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);font-weight:600;font-size:11px;color:#fff;cursor:pointer;flex:none;font-family:inherit;backdrop-filter:blur(10px)} /* rasm ustida — doim oq */
-.axhome .hm-imp svg{width:12px;height:12px}
-/* badges (shared featured+grid) */
+/* ═══ UMUMIY HEADER (#10 Home + #11 Account) — _home-redesign-mockup.html 01 dan 1:1.
+   .hd Home'da to'liq ishlatiladi; .hd-home/.hd-plan/.hd-signin/.ring boshqa headerlarda ham
+   (af-topbar / ai-hdr / lib-top) qayta ishlatiladi — bir xil geometriya, bir xil wiring. ═══ */
+.hd{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);position:relative;z-index:5;flex:none}
+.hd-home{width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;border:0;padding:0;transition:box-shadow .2s}
+.hd-home svg{width:16px;height:16px}
+.hd-home:hover{box-shadow:0 0 0 3px rgba(194,240,74,.25)}
+.hd-brand{font-weight:800;font-size:13.5px;letter-spacing:-.02em}
+.hd-sp{flex:1}
+.hd-cred{display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10.5px;font-weight:500;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:var(--text);cursor:pointer;flex:none;font-variant-numeric:tabular-nums}
+.hd-cred:hover{background:rgba(255,255,255,.08)}
+.hd-cred .s{color:var(--accent)}
+.hd-plan{font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 5px;border-radius:4px;background:var(--accent);color:var(--on-accent)}
+.hd-plan.free{background:rgba(255,255,255,.10);color:var(--muted)}
+.hd-ava{width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.14);flex:none;cursor:pointer;background:linear-gradient(135deg,#6C3FA8,#33549E);background-size:cover;background-position:center;position:relative;padding:0}
+.af-tb-ava,.ai-ava{position:relative}
+.hd-ava.ring::after,.af-tb-ava.ring::after,.ai-ava.ring::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--accent);opacity:.85;pointer-events:none}
+.hd-signin{height:28px;display:flex;align-items:center;gap:5px;padding:0 12px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:11px;border:0;cursor:pointer;flex:none;font-family:inherit}
+.hd-signin svg{width:13px;height:13px}
+/* ═══ VARIANT A "Editorial Studio" — _home-redesign-mockup.html 02 dan 1:1 ═══ */
+.axhome .kick{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted);font-weight:600}
+.axhome .sec{display:flex;align-items:baseline;justify-content:space-between;padding:18px 14px 10px}
+.axhome .sec-all{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px;cursor:pointer;background:none;border:0;font-family:inherit}
+.axhome .sec-all svg{width:10px;height:10px}
+.axhome .grain{position:relative}
+.axhome .grain::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px);background-size:16px 16px;opacity:.5;pointer-events:none}
+/* greeting hero */
+.axhome .va-hero{position:relative;padding:20px 14px 4px;overflow:hidden}
+.axhome .va-hero::before{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.16),transparent 65%);pointer-events:none}
+.axhome .va-greet{font-size:22px;font-weight:800;letter-spacing:-.025em;line-height:1.15}
+.axhome .va-greet .hl{color:var(--accent)}
+.axhome .va-greetsub{font-size:12px;color:var(--muted);margin-top:5px}
+/* pillar doorway cards */
+.axhome .va-pillars{display:flex;gap:10px;padding:16px 14px 0}
+.axhome .va-pill{flex:1;border-radius:14px;position:relative;overflow:hidden;cursor:pointer;padding:14px 12px 12px;min-height:118px;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.07)}
+.axhome .va-pill .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2}
+.axhome .va-pill .ic svg{width:15px;height:15px}
+.axhome .va-pill .t{font-weight:800;font-size:14.5px;letter-spacing:-.015em;margin-top:auto;position:relative;z-index:2}
+.axhome .va-pill .s{font-size:9.5px;color:var(--muted);margin-top:2px;position:relative;z-index:2}
+.axhome .va-pill .go{position:absolute;right:10px;top:12px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:var(--text);z-index:2}
+.axhome .va-pill .go svg{width:10px;height:10px}
+.axhome .va-pill.tpl{background:radial-gradient(130% 110% at 100% 0%,rgba(124,196,255,.18),transparent 55%),var(--surface)}
+.axhome .va-pill.tpl .ic{background:rgba(124,196,255,.14);color:var(--select)}
+.axhome .va-pill.ai{background:radial-gradient(130% 110% at 100% 0%,rgba(194,240,74,.22),transparent 55%),var(--surface)}
+.axhome .va-pill.ai .ic{background:var(--green-dim);color:var(--accent)}
+.axhome .va-pill .cnt{font-family:var(--font-mono);font-size:8px;letter-spacing:.1em;color:var(--muted-2);margin-top:3px;position:relative;z-index:2}
+/* continue rows (last import + last generation) */
+.axhome .va-cont{display:flex;flex-direction:column;gap:8px;padding:0 14px}
+.axhome .va-crow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:8px;cursor:pointer}
+.axhome .va-crow .cthumb{width:86px;height:50px;border-radius:8px;flex:none;background-size:cover;background-position:center;position:relative;overflow:hidden}
+.axhome .va-crow .tx{flex:1;min-width:0}
+.axhome .va-crow .tx b{font-weight:700;font-size:12px;letter-spacing:-.01em;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axhome .va-crow .tx small{font-size:9.5px;color:var(--muted-2);display:flex;align-items:center;gap:5px;margin-top:3px;white-space:nowrap;overflow:hidden}
+.axhome .va-crow .tx small .st{font-family:var(--font-mono);font-size:7.5px;font-weight:600;letter-spacing:.06em;padding:1.5px 5px;border-radius:4px;background:var(--green-dim);color:var(--accent);flex:none}
+.axhome .va-crow .act{flex:none}
+.axhome .va-crow .dur{position:absolute;right:6px;bottom:6px;font-family:var(--font-mono);font-size:8px;color:#E7ECF3;background:rgba(8,10,14,.72);padding:2px 5px;border-radius:4px}
+.axhome .va-crow .cplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:rgba(8,10,14,.72);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff}
+.axhome .va-crow .cplay svg{width:11px;height:11px}
+.axhome .imp{height:28px;display:inline-flex;align-items:center;gap:5px;padding:0 12px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:10.5px;cursor:pointer;border:0;font-family:inherit}
+.axhome .imp svg{width:13px;height:13px}
+.axhome .imp.soft{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);color:var(--text);font-weight:600}
+/* credits nudge */
+.axhome .va-nudge{margin:18px 14px 16px;display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--green-dim);border:1px solid rgba(194,240,74,.22);border-radius:10px}
+.axhome .va-nudge>svg{color:var(--accent);width:14px;height:14px;flex:none}
+.axhome .va-nudge .tx{font-size:11px;font-weight:500;color:var(--text);flex:1}
+.axhome .va-nudge .cta{font-size:10.5px;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
+/* ═══ GUEST / FIRST-RUN — _home-redesign-mockup.html 04 dan 1:1 ═══ */
+.axhome .gu-hero{position:relative;padding:34px 22px 0;text-align:center;overflow:hidden}
+.axhome .gu-hero::before{content:"";position:absolute;left:50%;top:-130px;transform:translateX(-50%);width:340px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.15),transparent 65%);pointer-events:none}
+.axhome .gu-logo{width:52px;height:52px;border-radius:15px;background:var(--accent);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 34px -8px rgba(194,240,74,.45);position:relative}
+.axhome .gu-logo svg{width:26px;height:26px}
+.axhome .gu-h1{font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.18;margin-top:18px;position:relative}
+.axhome .gu-h1 .hl{color:var(--accent)}
+.axhome .gu-sub{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55;position:relative}
+.axhome .gu-feats{display:flex;flex-direction:column;gap:9px;padding:22px 20px 0}
+.axhome .gu-f{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px;text-align:left}
+.axhome .gu-f .ic{width:30px;height:30px;border-radius:9px;background:var(--green-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.axhome .gu-f .ic svg{width:15px;height:15px}
+.axhome .gu-f .ic.blue{background:rgba(124,196,255,.13);color:var(--select)}
+.axhome .gu-f .tx b{font-weight:700;font-size:12px;display:block;letter-spacing:-.01em}
+.axhome .gu-f .tx small{font-size:10px;color:var(--muted-2);display:block;margin-top:2px;line-height:1.4}
+.axhome .gu-ctas{padding:20px 20px 0;display:flex;flex-direction:column;gap:9px}
+.axhome .gu-primary{height:44px;border-radius:999px;background:var(--accent);color:var(--on-accent);border:0;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;width:100%;font-family:inherit}
+.axhome .gu-primary svg{width:15px;height:15px}
+.axhome .gu-google{height:40px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);color:var(--text);font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;width:100%;font-family:inherit}
+.axhome .gu-google svg{width:14px;height:14px}
+.axhome .gu-mk{text-align:center;font-size:10.5px;color:var(--muted-2);padding:12px 20px 0}
+.axhome .gu-mk a{color:var(--muted);font-weight:600;text-decoration:none;border-bottom:1px solid var(--muted-2);cursor:pointer}
+.axhome .gu-prevgrid{position:relative;padding:0 14px;margin-top:0}
+.axhome .gu-prevgrid .hm-grid{padding:0} /* ota allaqachon 14px beradi — ikkilangan padding 1 ustunga siqardi */
+.axhome .gu-lockchip{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;display:flex;align-items:center;gap:7px;background:var(--pop-bg);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 14px;font-size:11px;font-weight:600;box-shadow:0 18px 42px rgba(0,0,0,.6)}
+.axhome .gu-lockchip svg{width:13px;height:13px;color:var(--accent)}
+.axhome .gu-dim{filter:blur(1.5px) saturate(.8);opacity:.55;pointer-events:none}
+.axhome .gu-foot{text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;color:var(--muted-2);padding:18px 0 18px}
+/* karta badge'lari (recommended/peek gridda qayta ishlatiladi) */
 .axhome .hm-badge{position:absolute;font-family:var(--font-mono);font-weight:700;letter-spacing:.06em}
-.axhome .hm-new{position:absolute;top:10px;right:10px;font-family:var(--font-mono);font-weight:800;font-size:8.5px;letter-spacing:.1em;padding:4px 8px;background:var(--acc);color:var(--acc-ink);transform:skewX(-12deg);box-shadow:0 2px 0 rgba(0,0,0,.55)}
 .axhome .pl-pro{background:var(--acc);color:var(--acc-ink)}
 .axhome .pl-free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
-/* section header */
-.axhome .hm-sec{display:flex;align-items:baseline;justify-content:space-between;padding:16px 14px 10px}
-.axhome .hm-sec-t{font-weight:700;font-size:13.5px;letter-spacing:-.01em}
-.axhome .hm-all{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:3px;background:none;border:0;font-family:inherit;cursor:pointer}
-.axhome .hm-all svg{width:10px;height:10px}
 /* template grid */
 .axhome .hm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:12px 10px;padding:0 14px}
 .axhome .hm-card{display:flex;flex-direction:column;gap:6px;cursor:pointer}
@@ -3498,7 +3568,6 @@ html.home-mode #homePage{display:block!important}
 .axhome .hm-x{position:absolute;top:7px;right:7px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(8,10,14,.72)}
 .axhome .hm-app{position:absolute;bottom:7px;left:7px;display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;background:rgba(8,10,14,.72);border-radius:4px;color:#E7ECF3}
 .axhome .hm-app i{width:5px;height:5px;border-radius:50%}
-.axhome .hm-feat .hm-badge{top:10px;left:10px;font-size:8.5px;padding:3px 7px;border-radius:5px}
 .axhome .hm-cn{font-weight:600;font-size:11.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axhome .hm-cc{font-size:10px;color:var(--mut2);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axhome .hm-empty{grid-column:1/-1;text-align:center;color:var(--mut2);font-size:12px;padding:30px 0}
@@ -3684,7 +3753,7 @@ html.home-mode #homePage{display:block!important}
                 </div>
                 <!-- #22: qo'l yangilash — yuqori burchakdagi Sync (avval af-tb-hidden ichida edi) -->
                 <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Refresh catalog" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
-                <button type="button" class="af-tb-cred" id="hdrPlanPill" tabindex="0" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span class="cred" id="hdrCred">—</span></button>
+                <button type="button" class="af-tb-cred" id="hdrPlanPill" tabindex="0" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span class="cred" id="hdrCred">—</span><span class="hd-plan free" data-hdplan>FREE</span></button>
                 <button type="button" class="af-tb-ava" id="hdrAva" title="Account" aria-label="Account" onclick="openAccountSheet()"></button>
                 <!-- a1'da yo'q: Downloads/Sevimli — wiring saqlanadi (keyingi bosqichda joylashtiriladi) -->
                 <span class="af-tb-hidden" aria-hidden="true">
@@ -3758,35 +3827,74 @@ html.home-mode #homePage{display:block!important}
               </div>
 
               <div class="scroll-area">
-                <!-- ASOSIY (HOME) — login'dan keyin birinchi ochiladi (home-mockup.html 1:1) -->
+                <!-- ASOSIY (HOME) — Variant A "Editorial Studio" (_home-redesign-mockup.html 02+04, D1 #5 #10 #11) -->
                 <div id="homePage">
                   <div class="axhome">
-                    <header class="hm-top">
-                      <span class="hm-logo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></span>
-                      <span class="hm-brand">FrameFlow</span>
-                      <span class="hm-sp"></span>
-                      <button type="button" class="hm-cred" id="homeCred" title="Account · Plan · AI credits"><span class="s">✦</span><span id="homeCredVal">—</span></button>
-                      <button type="button" class="hm-ava" id="homeAva" title="Account" aria-label="Account"></button>
+                    <!-- Umumiy header: chapda lime chaqmoq = Home, o'ngda kredit+plan+avatar = Hisob (guest: Sign in pill — afHdrGuestSync qo'yadi) -->
+                    <header class="hd" id="homeHd">
+                      <button type="button" class="hd-home" onclick="goHome()" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                      <span class="hd-brand">FrameFlow</span>
+                      <span class="hd-sp"></span>
+                      <button type="button" class="hd-cred" id="homeCred" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span id="homeCredVal">—</span><span class="hd-plan free" data-hdplan>FREE</span></button>
+                      <button type="button" class="hd-ava" id="homeAva" title="Account" aria-label="Account" onclick="openAccountSheet()"></button>
                     </header>
-                    <div class="hm-seg" role="tablist" aria-label="Section">
-                      <span class="hm-seg-i is-on" role="tab" aria-selected="true">Catalog</span>
-                      <button type="button" class="hm-seg-i" id="homeSegAi" role="tab" aria-selected="false" onclick="homeGo('ai')">AI Tools</button>
-                    </div>
-                    <div class="hm-search">
-                      <!-- FIX H: qidiruv maydoniga borgach input avtofokus (avval shunchaki ro'yxat ochilardi) -->
-                      <button type="button" class="hm-sfield" id="homeSearch" onclick="homeGo('video');setTimeout(function(){var i=document.getElementById('searchInput');if(i)i.focus();},0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search templates...</button>
-                      <!-- FIX F: filtr tugmasi endi FILTRni ochadi (avval faqat shablonlarga navigatsiya qilardi) —
-                           filtr shablonlar ro'yxatiga tegishli, shu uchun avval o'sha bo'limga o'tib panel ochiladi -->
-                      <button type="button" class="hm-sbtn" id="homeFilter" onclick="homeGo('video');if(typeof openFilterSheet==='function')openFilterSheet()" title="Filter" aria-label="Filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="15" cy="6" r="2.4"/><circle cx="8" cy="12" r="2.4"/><circle cx="16" cy="18" r="2.4"/></svg></button>
-                    </div>
-                    <div class="hm-body">
-                      <div class="hm-kick">FEATURED</div>
-                      <div class="hm-feat" id="homeFeat"></div>
-                      <div class="hm-sec">
-                        <span class="hm-sec-t">Templates 🎬</span>
-                        <button type="button" class="hm-all" onclick="homeGo('video')">All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+
+                    <!-- LOGGED-IN — greeting + 2 pillar + continue + recommended + kredit nudge -->
+                    <div id="homeMain">
+                      <div class="va-hero">
+                        <div class="va-greet" id="homeGreet">Good evening <span class="hl">—</span> let’s make<br>something move.</div>
+                        <div class="va-greetsub">Your panel, your library and your AI studio — all synced.</div>
                       </div>
+                      <div class="va-pillars">
+                        <div class="va-pill tpl grain" role="button" tabindex="0" onclick="homeGo('video')">
+                          <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+                          <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>
+                          <span class="t">Templates</span>
+                          <span class="s">Drag-and-drop packs for AE</span>
+                          <span class="cnt" id="homeTplCnt">SYNCING…</span>
+                        </div>
+                        <div class="va-pill ai grain" role="button" tabindex="0" onclick="homeGo('ai')">
+                          <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+                          <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span>
+                          <span class="t">AI Tools</span>
+                          <span class="s">Image · Video · Voice · SFX</span>
+                          <span class="cnt">GENERATE FROM ✦ 2</span>
+                        </div>
+                      </div>
+                      <div class="sec" id="homeContSec" style="display:none"><span class="kick">CONTINUE WHERE YOU LEFT OFF</span></div>
+                      <div class="va-cont" id="homeCont"></div>
+                      <div class="sec"><span class="kick">RECOMMENDED FOR YOU</span><button type="button" class="sec-all" onclick="homeGo('video')">See all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button></div>
                       <div class="hm-grid" id="homeGrid"></div>
+                      <div class="va-nudge" id="homeNudge" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/></svg>
+                        <span class="tx" id="homeNudgeTx"></span>
+                        <span class="cta" onclick="openAccountSheet()">Top up →</span>
+                      </div>
+                    </div>
+
+                    <!-- GUEST / FIRST-RUN — taklif: qiymat + Sign in / Google (mavjud g2 sheet + device-code oqimi) -->
+                    <div id="homeGuest" style="display:none">
+                      <div class="gu-hero">
+                        <span class="gu-logo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></span>
+                        <div class="gu-h1">Make After Effects<br><span class="hl">move faster.</span></div>
+                        <div class="gu-sub">Drop-in templates and AI generation —<br>right inside your panel, synced with the web.</div>
+                      </div>
+                      <div class="gu-feats">
+                        <div class="gu-f"><span class="ic blue"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span><span class="tx"><b id="homeGuestTplLine">Drag-and-drop templates</b><small>Broadcast, titles, promos — import straight into your comp.</small></span></div>
+                        <div class="gu-f"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/></svg></span><span class="tx"><b>Generate image, video, voice &amp; SFX</b><small>Credit-based AI studio. Free plan starts with ✦ 50.</small></span></div>
+                        <div class="gu-f"><span class="ic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></span><span class="tx"><b>One library, everywhere</b><small>Imports, favorites and gens sync with getframeflow.app.</small></span></div>
+                      </div>
+                      <div class="gu-ctas">
+                        <button type="button" class="gu-primary" onclick="openAccountSheet()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>Sign in</button>
+                        <button type="button" class="gu-google" onclick="homeGuestGoogle()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.98h5.28c-.23 1.48-1.72 4.33-5.28 4.33-3.18 0-5.77-2.63-5.77-5.87s2.59-5.87 5.77-5.87c1.81 0 3.02.77 3.72 1.43l2.53-2.44C16.9 4.04 14.76 3 12.18 3 7.03 3 2.86 7.17 2.86 12.32s4.17 9.32 9.32 9.32c5.38 0 8.94-3.78 8.94-9.11 0-.61-.07-1.08-.17-1.43z"/></svg>Continue with Google</button>
+                      </div>
+                      <div class="gu-mk">New here? <a onclick="openAccountSheet()">Create a free account</a> — takes a minute.</div>
+                      <div class="sec"><span class="kick">A PEEK AT THE CATALOG</span></div>
+                      <div class="gu-prevgrid">
+                        <div class="gu-lockchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Sign in to import</div>
+                        <div class="hm-grid gu-dim" id="homeGuestGrid"></div>
+                      </div>
+                      <div class="gu-foot">FREE PLAN · 3 IMPORTS/MO · ✦ 50 CREDITS</div>
                     </div>
                   </div>
                 </div>
@@ -3822,14 +3930,14 @@ html.home-mode #homePage{display:block!important}
                       <!-- AI LAUNCHER — 4 kategoriya (2×2 grid, JS aiRenderCatGrid() tomonidan) -->
                       <section id="v-launcher" class="view on">
                         <div class="ai-hdr">
-                          <button type="button" class="ai-logo" data-go="main" title="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5h5L9 22l8.5-11.5h-5z"/></svg></button>
+                          <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                           <div class="ai-hdr-c">
                             <div class="ai-seg">
                               <button type="button" class="ai-seg-i" data-go="main">Catalog</button>
                               <button type="button" class="ai-seg-i is-on">AI Tools</button>
                             </div>
                           </div>
-                          <div class="ai-cred" data-go="settings" id="aiLeadCredL"><span class="cs">✦</span> —</div>
+                          <div class="ai-cred" id="aiLeadCredL" title="Account · Plan · AI credits" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"><span class="cs">✦</span> —</div>
                           <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                         </div>
                         <div class="ai-launch-lead">
@@ -3851,10 +3959,11 @@ html.home-mode #homePage{display:block!important}
                       <!-- AI KATEGORIYA ICHI — aiOpenCat() tomonidan to'ldiriladi -->
                       <section id="v-aicat" class="view">
                         <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                           <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                           <span class="ai-ttl" id="aiCatTitle"></span>
                           <div class="ai-hdr-c"></div>
-                          <div class="ai-cred" data-go="settings" id="aiLeadCredA"><span class="cs">✦</span> —</div>
+                          <div class="ai-cred" id="aiLeadCredA" title="Account · Plan · AI credits" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"><span class="cs">✦</span> —</div>
                           <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                         </div>
                         <div id="aiCatTools"></div>
@@ -3864,6 +3973,7 @@ html.home-mode #homePage{display:block!important}
                       <section id="v-imggen" class="view">
                         <div class="axig">
                           <div class="ai-hdr">
+                            <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                             <button type="button" class="ai-back" id="igBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                             <div class="ai-hdr-c">
                               <div class="ai-seg">
@@ -3987,6 +4097,7 @@ html.home-mode #homePage{display:block!important}
                       <section id="v-vidgen" class="view">
                         <div class="axig axvg">
                           <div class="ai-hdr">
+                            <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                             <button type="button" class="ai-back" id="vgBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                             <div class="ai-hdr-c">
                               <div class="ai-seg">
@@ -4198,6 +4309,7 @@ html.home-mode #homePage{display:block!important}
                       <!-- HISTORY -->
                       <section id="v-history" class="view">
                         <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                           <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                           <span class="ai-ttl">History</span>
                           <div class="ai-hdr-c"></div>
@@ -4209,6 +4321,7 @@ html.home-mode #homePage{display:block!important}
                       <!-- SETTINGS -->
                       <section id="v-settings" class="view">
                         <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                           <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                           <span class="ai-ttl">Settings</span>
                           <div class="ai-hdr-c"></div>
@@ -4256,11 +4369,14 @@ html.home-mode #homePage{display:block!important}
               <!-- Katalog a6 — "Kutubxonam" (Sevimli grid + Yuklab olingan qatorlar). lib-mode'da ko'rsatiladi. -->
               <div id="libPage">
                 <div class="lib-top">
+                  <button type="button" class="hd-home lib-hd-home" onclick="goHome()" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                   <button type="button" class="lib-back" onclick="afLibClose()" aria-label="Back to catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                   <span class="lib-title">My Library</span>
                   <div style="flex:1"></div>
                   <button type="button" class="lib-sync" onclick="syncServerCatalog()" title="Sync catalog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Sync</button>
                   <button type="button" class="lib-sync" onclick="afClearDownloads()" title="Clear download cache"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Clear</button>
+                  <button type="button" class="hd-cred lib-cred" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span id="libCredVal">—</span><span class="hd-plan free" data-hdplan>FREE</span></button>
+                  <button type="button" class="hd-ava" title="Account" aria-label="Account" onclick="openAccountSheet()"></button>
                 </div>
                 <div class="lib-segwrap">
                   <div class="lib-seg" role="tablist" aria-label="Library section">
@@ -4899,6 +5015,7 @@ function recordImportedMeta(templateKey,sceneName,data){
   if(data&&data.comp&&m.comps.indexOf(data.comp)<0) m.comps.push(data.comp);
   // Demo (CEP emas) holatda data bo'lmaydi — sahna nomini comp sifatida saqlaymiz
   if(!data&&sceneName&&m.comps.indexOf(sceneName)<0) m.comps.push(sceneName);
+  m.at=Date.now(); // Home "Continue" qatori uchun oxirgi import vaqti
   window.downloadedMeta[templateKey]=m;
 }
 
@@ -6148,6 +6265,11 @@ async function __downloadAllImpl(n){
   const markPackDownloaded=()=>{
     window.downloaded.add(n);
     p.scenes.forEach(s=>window.importedScenes.add(sceneStateKey(n,s)));
+    // Home "Continue" qatori uchun displayName + import vaqti muhri
+    const m=window.downloadedMeta[n]||{folders:[],comps:[],displayName:''};
+    if(p.displayName)m.displayName=p.displayName;
+    m.at=Date.now();
+    window.downloadedMeta[n]=m;
     persistUserPrefs();
   };
 
@@ -6948,44 +7070,207 @@ function hmXBadge(vm){
   return '<span class="hm-x" style="color:'+col+'">'+tx+'</span>';
 }
 function hmPlanCls(p){return p==='PRO'?'pl-pro':'pl-free';}
+/* Home = Variant A "Editorial Studio" (_home-redesign-mockup 02): greeting + 2 pillar +
+   Continue (real oxirgi import + oxirgi gen) + Recommended (real katalog kartalari 1:1) + kredit nudge.
+   Guest (04): taklif + real Sign in / Google device-code + katalog peek. */
 function renderHome(){
   const u=homeCachedUser();
-  const cr=document.getElementById('homeCredVal');
-  if(cr){
-    if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits)) cr.textContent=u.aiCredits.toLocaleString('en-US');
-    else cr.textContent=(u&&u.planLabel)?u.planLabel:'Free';
-  }
-  renderHomeFeatured();
+  const logged=(typeof AssetFlowAccount!=='undefined')&&AssetFlowAccount.isLoggedIn();
+  const main=document.getElementById('homeMain'), guest=document.getElementById('homeGuest');
+  if(main)main.style.display=logged?'':'none';
+  if(guest)guest.style.display=logged?'none':'';
+  if(typeof afHdrSyncAll==='function')afHdrSyncAll();
+  if(!logged){ renderHomeGuest(); return; }
+  renderHomeGreeting(u);
+  renderHomePillars();
+  renderHomeContinue();
+  homeFetchLastGen();
   renderHomeGrid();
+  renderHomeNudge(u);
 }
-function renderHomeFeatured(){
-  var box=document.getElementById('homeFeat'); if(!box)return;
-  var vm=hmList()[0]; if(!vm){box.innerHTML='';return;}
-  box.style.backgroundImage=hmBg(vm);
-  box.innerHTML=''
-    +'<div class="hm-feat-ov"></div>'
+/* Vaqtga mos salomlashuv + hisobdagi real ism (yo'q bo'lsa ismsiz variant) */
+function renderHomeGreeting(u){
+  const el=document.getElementById('homeGreet'); if(!el)return;
+  const h=new Date().getHours();
+  const g=h<5?'Good night':h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+  let name=(u&&u.name)?String(u.name).trim().split(/\s+/)[0]:'';
+  if(!name&&u&&u.email)name=String(u.email).split('@')[0];
+  if(name)name=name.charAt(0).toUpperCase()+name.slice(1);
+  el.innerHTML=name
+    ? hmEsc(g)+',<br>'+hmEsc(name)+' <span class="hl">—</span> let’s make<br>something move.'
+    : hmEsc(g)+' <span class="hl">—</span> let’s make<br>something move.';
+}
+/* Templates pillar hisobi — real katalogdan (a.nw = NEW belgisi) */
+function renderHomePillars(){
+  const el=document.getElementById('homeTplCnt'); if(!el)return;
+  let n=0,nw=0;
+  try{ if(typeof assets!=='undefined'&&assets&&assets.length){ n=assets.length; nw=assets.filter(function(a){return !!a.nw;}).length; } }catch(e){}
+  el.textContent=n?(n+' READY'+(nw?(' · '+nw+' NEW'):'')):'SYNCING…';
+}
+function afTimeAgo(ts){
+  if(!ts)return '';
+  const d=typeof ts==='number'?ts:Date.parse(ts); if(!isFinite(d))return '';
+  const s=Math.max(0,(Date.now()-d)/1000);
+  if(s<90)return 'just now';
+  if(s<3600)return Math.round(s/60)+'m ago';
+  if(s<86400)return Math.round(s/3600)+'h ago';
+  if(s<172800)return 'yesterday';
+  return Math.round(s/86400)+'d ago';
+}
+/* Oxirgi import — downloadedMeta[.at] muhri bo'yicha (eski yozuvlarda muhr yo'q → Set tartibidagi oxirgi) */
+function homeLastImport(){
+  try{
+    if(!window.downloaded||!window.downloaded.size)return null;
+    let best=null,bestAt=-1,last=null;
+    window.downloaded.forEach(function(k){
+      last=k;
+      const at=(window.downloadedMeta&&window.downloadedMeta[k]&&window.downloadedMeta[k].at)||0;
+      if(at>bestAt){bestAt=at;best=k;}
+    });
+    const key=bestAt>0?best:last; if(!key)return null;
+    let a=null; try{ if(typeof assets!=='undefined'&&assets)a=assets.find(function(x){return x.n===key;})||null; }catch(e){}
+    const meta=(window.downloadedMeta&&window.downloadedMeta[key])||{};
+    const name=(a&&(a.displayName||a.n))||meta.displayName||key;
+    return {key:key,asset:a,name:name,at:meta.at||0};
+  }catch(e){ return null; }
+}
+/* Oxirgi gen — real /api/studio/gen/history (60s throttle; home-mode'da qatorni yangilaydi) */
+var __homeGen={it:null,at:0,inflight:false};
+function homeGenItem(g){
+  const a=(g.assets&&g.assets[0])||{}; const p=g.params||{};
+  const cat=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
+  return { id:g.id, mode:g.mode, cat:cat, url:a.url||'', thumb:a.thumbUrl||a.url||'',
+    title:((g.prompt||'').trim()||'Result'), prompt:(g.prompt||'').trim(), params:p,
+    modelLabel:p.modelLabel||'', createdAt:g.createdAt, cost:(typeof g.cost==='number'?g.cost:null) };
+}
+function homeFetchLastGen(){
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
+  if(typeof studioGet!=='function')return;
+  if(__homeGen.inflight||(Date.now()-__homeGen.at<60000))return;
+  __homeGen.inflight=true;
+  studioGet('/api/studio/gen/history?limit=8').then(function(d){
+    __homeGen.inflight=false; __homeGen.at=Date.now();
+    const items=(d&&d.items)||[]; let it=null;
+    for(let i=0;i<items.length;i++){ const c=homeGenItem(items[i]); if(c.url){ it=c; break; } }
+    __homeGen.it=it;
+    if(document.documentElement.classList.contains('home-mode'))renderHomeContinue();
+  }).catch(function(){ __homeGen.inflight=false; __homeGen.at=Date.now(); });
+}
+function homeImportGen(it){
+  if(!it||!it.url)return;
+  if(typeof aiImportMedia==='function'){
+    const kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image';
+    aiImportMedia(it.url,kind,null);
+  }else showToast('Import only works inside After Effects','info');
+}
+function homeGenCtx(){
+  return { isCEP:(typeof IS_CEP!=='undefined'&&IS_CEP),
+    list:function(){ return __homeGen.it?[__homeGen.it]:[]; },
+    onImport:homeImportGen,
+    onDownload:function(it){ try{ const a=document.createElement('a'); a.href=it.url; a.download=(String(it.title||'frameflow').slice(0,40).replace(/[^\w.-]+/g,'_')||'frameflow'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} } };
+}
+/* Re-import: pack keshda bo'lsa to'g'ridan AE'ga (downloadAll), bo'lmasa Yuklab olinganlar ro'yxati */
+function homeReimport(key){
+  if(typeof packs!=='undefined'&&packs&&packs[key]&&typeof downloadAll==='function'){ downloadAll(key); return; }
+  if(typeof afLibOpen==='function')afLibOpen('downloaded');
+}
+function homeOpenImported(li){
+  try{ if(li.asset&&typeof openPack==='function'&&typeof packs!=='undefined'&&packs&&packs[li.key]){ homeGo(li.asset.nav||'video'); openPack(li.key); return; } }catch(e){}
+  if(typeof afLibOpen==='function')afLibOpen('downloaded');
+}
+function renderHomeContinue(){
+  const sec=document.getElementById('homeContSec'), box=document.getElementById('homeCont');
+  if(!sec||!box)return;
+  box.innerHTML='';
+  const li=homeLastImport(); const gen=__homeGen.it;
+  if(!li&&!gen){ sec.style.display='none'; return; }
+  sec.style.display='';
+  if(li){
+    const row=document.createElement('div'); row.className='va-crow';
+    const th=document.createElement('div'); th.className='cthumb grain';
+    const vm=li.asset?hmFromAsset(li.asset):null;
+    th.style.backgroundImage=vm?hmBg(vm):HM_GRAD.steel;
+    row.appendChild(th);
+    const tx=document.createElement('div'); tx.className='tx';
+    const ago=li.at?afTimeAgo(li.at):'';
+    tx.innerHTML='<b>'+hmEsc(li.name)+'</b><small><span class="st">IMPORTED</span>'+hmEsc('Template'+(ago?(' · '+ago):''))+'</small>';
+    row.appendChild(tx);
+    const b=document.createElement('button'); b.type='button'; b.className='imp soft act';
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>Re-import';
+    b.addEventListener('click',function(e){ e.stopPropagation(); homeReimport(li.key); });
+    row.appendChild(b);
+    row.addEventListener('click',function(){ homeOpenImported(li); });
+    box.appendChild(row);
+  }
+  if(gen){
+    const row=document.createElement('div'); row.className='va-crow';
+    const th=document.createElement('div'); th.className='cthumb grain';
+    if(gen.cat==='video'&&typeof window.afVideoThumb==='function'){
+      const v=window.afVideoThumb(gen.url,(gen.thumb&&gen.thumb!==gen.url)?gen.thumb:null);
+      if(v)th.appendChild(v);
+      const pl=document.createElement('span'); pl.className='cplay'; pl.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>'; th.appendChild(pl);
+    }else if(gen.cat==='audio'||gen.cat==='sfx'){
+      th.style.background='linear-gradient(135deg,#1A2A4E,#33549E)';
+      const pl=document.createElement('span'); pl.className='cplay'; pl.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>'; th.appendChild(pl);
+    }else{ th.style.backgroundImage='url("'+gen.thumb+'")'; }
+    row.appendChild(th);
+    const tx=document.createElement('div'); tx.className='tx';
+    const catLb=gen.cat==='video'?'AI Video':gen.cat==='audio'?'AI Voice':gen.cat==='sfx'?'AI SFX':'AI Image';
+    const bits=[catLb]; if(gen.modelLabel)bits.push(gen.modelLabel);
+    const ago2=afTimeAgo(gen.createdAt); if(ago2)bits.push(ago2);
+    tx.innerHTML='<b>'+hmEsc(gen.title)+'</b><small><span class="st">READY</span>'+hmEsc(bits.join(' · '))+'</small>';
+    row.appendChild(tx);
+    const b=document.createElement('button'); b.type='button'; b.className='imp act';
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Import';
+    b.addEventListener('click',function(e){ e.stopPropagation(); homeImportGen(gen); });
+    row.appendChild(b);
+    row.addEventListener('click',function(){ if(window.afRecent&&window.afRecent.openLightbox)window.afRecent.openLightbox(gen,homeGenCtx()); });
+    box.appendChild(row);
+  }
+}
+/* Kredit nudge — real balans natijaga tarjima qilinadi (~20 kredit ≈ 1 qisqa video) */
+function renderHomeNudge(u){
+  const box=document.getElementById('homeNudge'), tx=document.getElementById('homeNudgeTx');
+  if(!box||!tx)return;
+  const cr=(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null;
+  if(cr==null){ box.style.display='none'; return; }
+  const vids=Math.floor(cr/20);
+  tx.innerHTML='<b style="font-weight:700">✦ '+cr.toLocaleString('en-US')+' credits</b> — '+(vids>=1?('enough for ~'+vids+' video'+(vids===1?'':'s')):'top up to keep generating');
+  box.style.display='';
+}
+/* Karta HTML — mavjud hm-card komponenti 1:1 (Recommended + guest peek shundan foydalanadi) */
+function hmCardHTML(vm){
+  return '<div class="hm-card" data-nav="'+hmEsc(vm.nav||'video')+'">'
+    +'<div class="hm-thumb" style="background-image:'+hmBg(vm)+(vm.nopack?';opacity:.5':'')+'">'
     +'<span class="hm-badge '+hmPlanCls(vm.plan)+'">'+hmEsc(vm.plan)+'</span>'
-    +'<span class="hm-new">NEW</span>'
-    +'<div class="hm-feat-bot"><div class="tx"><b>'+hmEsc(vm.n)+'</b><small>'+hmEsc(vm.c)+(vm.a?(' · '+hmEsc(vm.a)):'')+'</small></div>'
-    +'<button type="button" class="hm-imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>Import</button></div>';
-  box.onclick=function(){ homeGo(vm.nav||'video'); };
+    +hmXBadge(vm)
+    +'<span class="hm-app"><i style="background:'+(HM_APPDOT[vm.app]||'#A79BFF')+'"></i>'+hmEsc(vm.app)+'</span>'
+    +'</div><div class="hm-cn">'+hmEsc(vm.n)+'</div>'
+    +'<div class="hm-cc">'+hmEsc(vm.c)+(vm.a?(' · '+hmEsc(vm.a)):'')+'</div></div>';
 }
 function renderHomeGrid(){
   var box=document.getElementById('homeGrid'); if(!box)return;
-  var list=hmList();
+  var list=hmList().slice(0,4); // Recommended 2×2
   if(!list.length){ box.innerHTML='<div class="hm-empty">Templates haven’t loaded yet</div>'; return; }
-  box.innerHTML=list.map(function(vm){
-    return '<div class="hm-card" data-nav="'+hmEsc(vm.nav||'video')+'">'
-      +'<div class="hm-thumb" style="background-image:'+hmBg(vm)+(vm.nopack?';opacity:.5':'')+'">'
-      +'<span class="hm-badge '+hmPlanCls(vm.plan)+'">'+hmEsc(vm.plan)+'</span>'
-      +hmXBadge(vm)
-      +'<span class="hm-app"><i style="background:'+(HM_APPDOT[vm.app]||'#A79BFF')+'"></i>'+hmEsc(vm.app)+'</span>'
-      +'</div><div class="hm-cn">'+hmEsc(vm.n)+'</div>'
-      +'<div class="hm-cc">'+hmEsc(vm.c)+(vm.a?(' · '+hmEsc(vm.a)):'')+'</div></div>';
-  }).join('');
+  box.innerHTML=list.map(hmCardHTML).join('');
   Array.prototype.forEach.call(box.querySelectorAll('.hm-card'),function(c){
     c.addEventListener('click',function(){ homeGo(c.getAttribute('data-nav')||'video'); });
   });
+}
+/* Guest: real katalog peek (2 karta, blur) + shablon soni qatori */
+function renderHomeGuest(){
+  var box=document.getElementById('homeGuestGrid');
+  if(box)box.innerHTML=hmList().slice(0,2).map(hmCardHTML).join('');
+  var line=document.getElementById('homeGuestTplLine');
+  if(line){
+    var n=0; try{ if(typeof assets!=='undefined'&&assets)n=assets.length; }catch(e){}
+    line.textContent=n?(n+'+ drag-and-drop templates'):'Drag-and-drop templates';
+  }
+}
+/* Guest Google CTA — mavjud g2 sheet + device-code oqimi */
+function homeGuestGoogle(){
+  openAccountSheet();
+  if(typeof accountLoginWithGoogle==='function')accountLoginWithGoogle();
 }
 function homeGo(tab){
   const el=document.querySelector('.env-side-link[data-nav="'+tab+'"]')||null;
@@ -6993,17 +7278,14 @@ function homeGo(tab){
 }
 function goHome(){
   document.documentElement.classList.remove('ai-mode');
+  document.documentElement.classList.remove('lib-mode'); // #10: Kutubxonadan ham bir bosishda Home
   document.documentElement.classList.add('home-mode');
   try{ renderHome(); }catch(e){}
   try{ const sa=document.querySelector('.scroll-area'); if(sa)sa.scrollTop=0; }catch(e){}
 }
 window.goHome=goHome;
 function wireHome(){
-  // Segment / qidiruv / filtr / Barchasi — inline onclick=homeGo(...); karta/hero render'da ulanadi.
-  const cred=document.getElementById('homeCred');
-  if(cred&&!cred._wired){cred._wired=1;cred.addEventListener('click',function(){ if(typeof openAccountSheet==='function')openAccountSheet(); });}
-  const ava=document.getElementById('homeAva');
-  if(ava&&!ava._wired){ava._wired=1;ava.addEventListener('click',function(){ if(typeof openAccountSheet==='function')openAccountSheet(); });}
+  // Kredit/avatar/pillar/CTA'lar — inline onclick (markup ichida); bu yerda faqat katalog header chaqmoq tugmasi.
   const back=document.getElementById('afHomeBtn');
   if(back&&!back._wired){back._wired=1;back.addEventListener('click',goHome);}
 }
@@ -7074,11 +7356,47 @@ function updateSidebarUser(u){
 // C2 top-header plan-pill — sidebar user yangilanishi bilan birga (faqat ko'rinish).
 // E1: kredit balansi (displey-only) — sidebar #sbCredit bilan bir manba (u.aiCredits).
 function setHeaderPlan(pro,label,credits){
-  // a1 header: kredit pill (✦ + balans). Tarif (Free/Pro) endi Hisob varag'ida (avatar/pill bosilganda).
-  const cr=document.getElementById('hdrCred');
+  // #10/#11 umumiy header sinxroni: kredit qiymati + plan chip (data-hdplan) + guest almashinuvi.
   const hasCred=typeof credits==='number'&&isFinite(credits);
-  if(cr)cr.textContent=hasCred?credits.toLocaleString('en-US'):'—';
+  const t=hasCred?credits.toLocaleString('en-US'):'—';
+  ['hdrCred','homeCredVal','libCredVal'].forEach(function(id){ const el=document.getElementById(id); if(el)el.textContent=t; });
+  const lb=String(label||'Free').toUpperCase();
+  document.querySelectorAll('[data-hdplan]').forEach(function(el){ el.textContent=lb; el.classList.toggle('free',!pro); });
+  afHdrSyncAll();
 }
+/* Guest ↔ logged-in header almashinuvi: HAR header (Home .hd / katalog .af-topbar / AI .ai-hdr / lib .lib-top)
+   o'ng klasteri — logged: kredit+plan+avatar(ring); guest: bitta lime "Sign in" pill (bir xil geometriya). */
+function afHdrSyncAll(){
+  const logged=typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn();
+  document.querySelectorAll('#homeHd,.af-topbar,.axroot .ai-hdr,.lib-top').forEach(function(h){
+    const cred=h.querySelector('.hd-cred,.af-tb-cred,.ai-cred');
+    const ava=h.querySelector('.hd-ava,.af-tb-ava,.ai-ava');
+    let si=h.querySelector('.hd-signin');
+    if(!logged){
+      if(cred)cred.style.display='none';
+      if(ava)ava.style.display='none';
+      if(!si){
+        si=document.createElement('button'); si.type='button'; si.className='hd-signin';
+        si.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>Sign in';
+        si.addEventListener('click',function(){ if(typeof openAccountSheet==='function')openAccountSheet(); });
+        h.appendChild(si);
+      }
+      si.style.display='';
+    }else{
+      if(cred)cred.style.display='';
+      if(ava)ava.style.display='';
+      if(si)si.style.display='none';
+    }
+    if(ava)ava.classList.toggle('ring',logged);
+  });
+}
+/* AI header kredit pill'lariga plan chip (aiLeadSync/afSyncCredits innerHTML yangilaganda ham saqlanadi) */
+window.afPlanChipHTML=function(){
+  var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
+  if(!u)return '';
+  var pro=u.plan==='pro';
+  return ' <span class="hd-plan'+(pro?'':' free')+'" data-hdplan>'+String(u.planLabel||(pro?'Pro':'Free')).toUpperCase()+'</span>';
+};
 
 function onEnvScopeChange(sel){
   const tab=sel.value;
@@ -8191,9 +8509,10 @@ function afApplyAvatar(u){
     if(url){acc.textContent='';acc.style.backgroundImage='url("'+url+'")';}
     else{acc.style.backgroundImage='';acc.textContent=u?initial:'?';}
   }
-  document.querySelectorAll('.ai-ava,#homeAva,#hdrAva').forEach(function(b){
+  document.querySelectorAll('.ai-ava,.hd-ava,.af-tb-ava').forEach(function(b){
     if(url){b.style.backgroundImage='url("'+url+'")';b.style.backgroundSize='cover';b.style.backgroundPosition='center';}
     else{b.style.backgroundImage='';}
+    b.classList.toggle('ring',!!u); // #11: lime halqa = tizimga kirilgan
   });
 }
 
@@ -8822,7 +9141,7 @@ async function bootPlugin(){
     }
   }
   // AI Tools (launcher/aicat) ixcham header kreditи — real qiymat bilan (faqat shu yagona joyda ko'rsatiladi).
-  function aiLeadSync(){ var v=aiCredReal(); var t='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); var a=document.getElementById('aiLeadCredL'); if(a)a.innerHTML=t; var c=document.getElementById('aiLeadCredA'); if(c)c.innerHTML=t; }
+  function aiLeadSync(){ var v=aiCredReal(); var t='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—')+((typeof window.afPlanChipHTML==='function')?window.afPlanChipHTML():''); var a=document.getElementById('aiLeadCredL'); if(a)a.innerHTML=t; var c=document.getElementById('aiLeadCredA'); if(c)c.innerHTML=t; }
   // UMUMIY kredit sinxron — yagona manba (cached aiCredits) → BARCHA chip (balTop/balSet/aiLead/igCredit/vgCredit).
   // Har tool gen/enhance'dan keyin shuni chaqiradi → chiplar bir-biridan farq qilib qolmaydi (drift fix — audit MEDIUM).
   window.afSyncCredits=function(v){
