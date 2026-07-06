@@ -15018,7 +15018,42 @@
   .ff .va-specs .v{font-size:12.5px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-gate{display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:11px;margin-top:12px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:#D6E8A8;line-height:1.5}
   .ff .va-rel4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  /* ── AI toolkit (A3 picker · A3b composer) ── */
+  .ff .va-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:18px;padding:26px 40px 10px}
+  .ff .va-tool{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/10.5;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--hair2);cursor:pointer;background-size:cover;font-family:inherit;text-align:left;color:var(--text)}
+  .ff .va-tool::after{content:"";position:absolute;inset:0;background:linear-gradient(185deg,transparent 25%,rgba(6,8,11,.88) 78%)}
+  .ff .va-tool>*{position:relative;z-index:1}
+  .ff .va-tool .ti{width:34px;height:34px;border-radius:10px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;color:var(--lime);position:absolute;top:14px;left:15px}
+  .ff .va-tool h4{font-size:16.5px;font-weight:800;letter-spacing:-.015em;margin:0}
+  .ff .va-tool p{font-size:11px;color:#B9C2CF;margin:3px 0 0}
+  .ff .va-tool .cost{position:absolute;top:14px;right:14px;font:600 10px var(--mono);padding:4px 9px;border-radius:999px;background:rgba(6,8,11,.66);border:1px solid rgba(255,255,255,.14);color:#DFE5EC}
+  .ff .va-tool .cost b{color:var(--lime);font-weight:600}
+  .ff .va-canvas{margin:22px 40px 0;border-radius:18px;background:#08090D;border:1px solid var(--hair2);min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:26px}
+  .ff .va-result{width:520px;max-width:88%;aspect-ratio:16/9;border-radius:14px;box-shadow:0 30px 70px -20px rgba(0,0,0,.8)}
+  .ff .va-ract{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+  .ff .va-dock{margin:20px 40px 14px;border-radius:18px;background:rgba(22,27,34,.94);border:1px solid var(--border);box-shadow:0 30px 70px -24px rgba(0,0,0,.85);padding:14px 16px 12px}
+  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:40px;max-height:130px;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
+  .ff .va-dock .prompt::placeholder{color:var(--muted2)}
+  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .ff .va-set{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;font:600 11px 'Hanken Grotesk',sans-serif;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
+  .ff .va-set b{color:var(--text);font-weight:600}
+  .ff .va-set.enh{color:var(--lime);border-color:rgba(194,240,74,.35)}
+  .ff .va-dockrow .sp{flex:1}
+  .ff .va-quote{font:600 11.5px var(--mono);color:var(--muted);white-space:nowrap}
+  .ff .va-quote b{color:var(--lime)}
+  .ff .va-sess{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;padding:6px 40px 38px}
+  .ff .va-sess .st{aspect-ratio:1/1;border-radius:10px;cursor:pointer}
+  .ff .va-sess .st.on{outline:2px solid var(--lime);outline-offset:2px}
+  .ff .va-set .ffa-pop{min-width:170px}
+  /* audio results inside canvas (voice/sfx composer) */
+  .ff .va-audlist{width:100%;max-width:560px;display:flex;flex-direction:column;gap:0;align-self:center}
   @media(max-width:1100px){ .ff .va-dwrap{grid-template-columns:1fr} }
+  @media(max-width:820px){
+    .ff .va-tools{padding:16px 16px 6px;gap:11px}
+    .ff .va-canvas{margin:14px 16px 0;min-height:300px;padding:16px}
+    .ff .va-dock{margin:12px 16px 10px;padding:12px 13px 10px}
+    .ff .va-sess{padding:6px 16px 26px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+  }
   @media(max-width:820px){
     .ff .va-cathero{padding:26px 16px 0}
     .ff .va-cathero h2{font-size:20px}
@@ -15577,134 +15612,77 @@
           </sc-if>
         </sc-if>
 
-        <!-- AI STUDIO — bottom-docked composer (mockup ai1..ai4 · 1:1) -->
+        <!-- AI STUDIO — Variant A (A3 tool picker · A3b canvas + floating dock) -->
         <sc-if value="{{ isAistudio }}" hint-placeholder-val="{{ false }}">
-          <div class="ffa-st">
 
-            <!-- TOP horizontal tool tab bar (Rasm · Video · Ovoz · SFX) + title/model -->
-            <div class="ffa-st-top">
-              <div class="ffa-st-tabs">
-                <sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.ttabCls }}"><i class="ph-fill ph-{{ t.icon }}"></i>{{ t.short }}</button></sc-for>
-              </div>
-              <span style="flex:1"></span>
-              <span class="ffa-st-title">{{ toolName }}</span>
-              <span class="ffa-st-modeltag">{{ modelName }}</span>
+          <!-- A3 · TOOL PICKER -->
+          <sc-if value="{{ aiPicker }}" hint-placeholder-val="{{ true }}">
+            <div class="va-cathero" style="padding-bottom:0">
+              <h2>What are we making today?</h2>
+              <div class="va-hs" style="margin-top:6px">Every generation is quoted in credits before it runs — you approve the price, then it generates.</div>
             </div>
+            <div class="va-tools">
+              <sc-for list="{{ toolCards }}" as="t" hint-placeholder-count="4">
+                <button data-tool="{{ t.key }}" onclick="{{ openTool }}" class="va-tool {{ t.gcls }}">
+                  <span class="ti"><svg class="va-ic"><use href="{{ t.iconRef }}"></use></svg></span>
+                  <span class="cost">from <b>✦ {{ t.fromCost }}</b></span>
+                  <h4>{{ t.title }}</h4><p>{{ t.desc }}</p>
+                </button>
+              </sc-for>
+            </div>
+            <div class="va-sec"><h3>Recent generations</h3><span class="all" style="font:500 10px var(--mono);letter-spacing:.08em;cursor:default">{{ genCountLabel }}</span></div>
+            <sc-if value="{{ hasGens }}" hint-placeholder-val="{{ false }}">
+              <div class="va-strip" style="padding-bottom:38px">
+                <sc-for list="{{ pickerStrip }}" as="g" hint-placeholder-count="5">
+                  <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="va-thumb gt" style="background:{{ g.g }}">
+                    <span class="va-typetag">{{ g.rtag }}</span>
+                    <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noGens }}" hint-placeholder-val="{{ true }}">
+              <div class="va-empty" style="margin-bottom:38px">
+                <div style="font-size:13px;color:var(--muted)">No generations yet — pick a tool above and create your first one</div>
+              </div>
+            </sc-if>
+          </sc-if>
 
-            <!-- ═══ CANVAS branch (Rasm / Video) — hero + filmstrip + docked composer ═══ -->
+          <!-- A3b · COMPOSER -->
+          <sc-if value="{{ aiComposer }}" hint-placeholder-val="{{ false }}">
+            <div class="va-crumb"><a onclick="{{ backToPicker }}">AI Studio</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ toolTitle }}</b><span style="margin-left:auto;font:500 10px var(--mono);color:var(--muted2)">{{ modelName }}</span></div>
+
+            <!-- canvas (image/video) -->
             <sc-if value="{{ aiIsCanvas }}" hint-placeholder-val="{{ true }}">
-              <div class="ffa-st-canvas">
-                <div class="ffa-st-body">
-                  <!-- stage: latest/selected result + pending-glow + cost summary -->
-                  <div class="ffa-st-stage">
-                    <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
-                      <div style="margin:auto;text-align:center;color:var(--muted);max-width:340px;border:1.5px dashed rgba(255,255,255,.14);border-radius:20px;padding:40px 30px">
-                        <div style="width:62px;height:62px;border-radius:18px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 15px"><i class="ph ph-sparkle" style="font-size:26px;color:var(--lime)"></i></div>
-                        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">No generations yet</div>
-                        <div style="font-size:13px;line-height:1.55">Write a prompt and click <strong style="color:var(--lime);font-weight:600">Generate</strong> — the result opens right here</div>
-                      </div>
-                    </sc-if>
-                    <div class="ffa-st-hero">
-                      <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
-                        <div data-id="{{ activeView.id }}" onclick="{{ openLightbox }}" class="ffa-res ffa-st-main" style="aspect-ratio:{{ activeAspect }};background:{{ activeView.g }};cursor:pointer">
-                          <span class="rtag">{{ activeView.rtag }}</span>
-                          <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px;color:rgba(255,255,255,.9)"><i class="ph-fill ph-play-circle"></i></span></sc-if>
-                          <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(6,8,11,.5))"></div>
-                        </div>
-                      </sc-if>
-                      <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
-                        <div class="ffa-res pend ffa-st-main" style="aspect-ratio:{{ pendAspect }};max-width:284px"><i class="ph ph-circle-notch ffm-spin" style="font-size:26px;color:var(--lime)"></i><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lime)">Processing…</div><div class="ffa-pendbar"></div></div>
-                      </sc-if>
-                    </div>
-                    <sc-if value="{{ showPartiya }}" hint-placeholder-val="{{ false }}"><div class="ffa-st-cost">{{ partiyaLine }}</div></sc-if>
+              <div class="va-canvas">
+                <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align:center;color:var(--muted);max-width:340px">
+                    <div style="width:62px;height:62px;border-radius:18px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 15px;color:var(--lime)"><svg class="va-ic" style="width:26px;height:26px"><use href="#i-spark"></use></svg></div>
+                    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">No generations yet</div>
+                    <div style="font-size:13px;line-height:1.55">Write a prompt below and click <strong style="color:var(--lime);font-weight:600">Generate</strong> — the result opens right here</div>
                   </div>
-                  <!-- right filmstrip (Tarix — result thumbs) -->
-                  <sc-if value="{{ hasGens }}" hint-placeholder-val="{{ false }}">
-                    <div class="ffa-st-strip">
-                      <div class="ffa-st-striph">HISTORY</div>
-                      <sc-for list="{{ filmstrip }}" as="g" hint-placeholder-count="4">
-                        <div data-id="{{ g.id }}" onclick="{{ pickActive }}" class="{{ g.stripCls }}" style="background:{{ g.g }}">
-                          <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="pi"><i class="ph-fill ph-play-circle"></i></span></sc-if>
-                          <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><span class="pi"><i class="ph-fill ph-waveform"></i></span></sc-if>
-                        </div>
-                      </sc-for>
-                    </div>
-                  </sc-if>
-                </div>
-
-                <!-- DOCKED frosted composer -->
-                <div class="ffa-st-dock" data-rv="" data-rv-delay="80">
-                  <div class="ffa-st-refs">
-                    <button onclick="{{ addRef }}" class="ffa-st-refadd"><i class="ph ph-plus"></i><span>Reference</span></button>
-                    <span style="font-size:11px;color:var(--muted2)">Add a reference — optional</span>
+                </sc-if>
+                <sc-if value="{{ showActive }}" hint-placeholder-val="{{ false }}">
+                  <div data-id="{{ activeView.id }}" onclick="{{ openLightbox }}" class="va-thumb va-result" style="aspect-ratio:{{ activeAspect }};background:{{ activeView.g }};cursor:pointer">
+                    <span class="va-typetag">{{ activeView.rtag }}</span>
+                    <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span style="width:54px;height:54px"><svg class="va-ic" style="width:22px;height:22px"><use href="#i-play"></use></svg></span></span></sc-if>
                   </div>
-                  <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="What do you want to make? Type @ for references…" class="ffa-st-ta"></textarea>
-                  <div class="ffa-st-ctl">
-                    <div class="ffa-st-chips">
-                      <!-- MODEL chip -->
-                      <div class="{{ chipModelCls }}" data-pop="model" onclick="{{ toggleChip }}"><b>MODEL</b><span>{{ modelName }}</span>
-                        <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="3"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
-                      </div>
-                      <!-- NISBAT chip -->
-                      <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="{{ chipAspectCls }}" data-pop="aspect" onclick="{{ toggleChip }}"><b>RATIO</b><span>{{ aspectVal }}</span>
-                        <sc-if value="{{ popAspect }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
-                      </div></sc-if>
-                      <!-- SIFAT chip -->
-                      <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="{{ chipQualityCls }}" data-pop="quality" onclick="{{ toggleChip }}"><b>QUALITY</b><span>{{ qualityVal }}</span>
-                        <sc-if value="{{ popQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
-                      </div></sc-if>
-                      <!-- REZOLYUTSIYA chip -->
-                      <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="{{ chipResCls }}" data-pop="res" onclick="{{ toggleChip }}"><b>RESOLUTION</b><span>{{ resVal }}</span>
-                        <sc-if value="{{ popRes }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
-                      </div></sc-if>
-                      <!-- DAVOMIYLIK chip -->
-                      <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="{{ chipDurCls }}" data-pop="duration" onclick="{{ toggleChip }}"><b>DURATION</b><span>{{ durVal }}</span>
-                        <sc-if value="{{ popDur }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
-                      </div></sc-if>
-                      <!-- SONI chip -->
-                      <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><div class="{{ chipCountCls }}" data-pop="count" onclick="{{ toggleChip }}"><b>COUNT</b><span>{{ countVal }}</span>
-                        <sc-if value="{{ popCount }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check"></i></sc-if></button></sc-for></div></sc-if>
-                      </div></sc-if>
-                    </div>
-                    <button onclick="{{ improve }}" class="ffa-st-imp"><i class="ph-fill ph-sparkle" style="font-size:12px"></i>Enhance</button>
-                    <span style="flex:1"></span>
-                    <span class="ffa-st-eq">= ✦ {{ costNow }}</span>
-                    <button onclick="{{ doGenerate }}" class="ffm-btn"><i class="ph-fill ph-sparkle" style="font-size:14px"></i>Generate<span class="bc">✦ {{ costNow }}</span></button>
+                  <div class="va-ract">
+                    <a class="va-btn ghost sm" onclick="{{ downloadGen }}"><svg class="va-ic"><use href="#i-down"></use></svg> Download</a>
+                    <a class="va-btn ghost sm" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-arrow"></use></svg> Regenerate</a>
+                    <a class="va-btn ghost sm" onclick="{{ delActive }}" style="color:#FF9C8F">Delete</a>
                   </div>
-                  <div class="ffa-st-bal"><i class="ph ph-wallet" style="font-size:12px"></i>Balance: ✦ {{ creditsFmt }}</div>
-                </div>
-
-                <!-- popover backdrop (click-away to close chips) -->
-                <sc-if value="{{ chipAnyOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-popbd" onclick="{{ closeChip }}"></div></sc-if>
+                </sc-if>
+                <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
+                  <div class="ffa-res pend va-result" style="aspect-ratio:{{ pendAspect }};max-width:320px"><i class="ph ph-circle-notch ffm-spin" style="font-size:26px;color:var(--lime)"></i><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lime)">Processing…</div><div class="ffa-pendbar"></div></div>
+                </sc-if>
               </div>
             </sc-if>
 
-            <!-- ═══ AUDIO branch (Ovoz / SFX) — left panel + right results list (mockup ai3) ═══ -->
+            <!-- canvas (voice/sfx) — recent audio results list -->
             <sc-if value="{{ aiIsAudio }}" hint-placeholder-val="{{ false }}">
-              <div class="ffa-st-aud">
-                <div class="ffa-st-audl">
-                  <div style="font-weight:700;font-size:16px">{{ toolName }}</div>
-                  <div style="font-size:12px;color:var(--muted);margin-top:3px">{{ toolDesc }}</div>
-                  <span class="ffa-flab" style="margin-top:18px">TEXT</span>
-                  <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="Type text — it will be read in a natural voice…" class="ffa-st-audta"></textarea>
-                  <!-- voice list (Ayol/Erkak ovozlar) -->
-                  <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}">
-                    <span class="ffa-flab" style="margin-top:18px">VOICE</span>
-                    <sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoice }}" class="{{ v.vrowCls }}"><span class="av"><i class="ph-fill ph-user"></i></span><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.label }}</div></div><sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><i class="ph-bold ph-check" style="color:var(--lime)"></i></sc-if></button></sc-for>
-                  </sc-if>
-                  <!-- TEZLIK / FORMAT (davomiylik) chip -->
-                  <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}">
-                    <span class="ffa-flab" style="margin-top:16px">DURATION</span>
-                    <div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.optCls }}">{{ z.v }}</button></sc-for></div>
-                  </sc-if>
-                  <div style="display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:20px">
-                    <span class="ffa-st-eq">= ✦ {{ costNow }}</span>
-                    <span style="flex:1"></span>
-                    <button onclick="{{ doGenerate }}" class="ffm-btn"><i class="ph-fill ph-microphone" style="font-size:14px"></i>Generate<span class="bc">✦ {{ costNow }}</span></button>
-                  </div>
-                </div>
-                <div class="ffa-st-audr">
-                  <div class="ffa-flab">RECENT RESULTS</div>
+              <div class="va-canvas" style="justify-content:flex-start">
+                <div class="va-audlist">
                   <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
                     <div class="ffa-audres"><span style="width:32px;height:32px;border-radius:50%;background:var(--limedim);color:var(--lime);display:inline-flex;align-items:center;justify-content:center;flex:none"><i class="ph ph-circle-notch ffm-spin" style="font-size:15px"></i></span><div style="flex:1;min-width:0"><div class="ffa-nm">Processing…</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px">Generation in progress</div></div></div>
                   </sc-if>
@@ -15715,11 +15693,58 @@
                       <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">{{ g.meta }}</span>
                     </div>
                   </sc-for>
-                  <sc-if value="{{ noVoiceResults }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 14px;text-align:center;font-size:12px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:12px;margin-top:2px">No results yet — write some text and generate</div></sc-if>
+                  <sc-if value="{{ noVoiceResults }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 14px;text-align:center;font-size:12px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:12px;margin-top:2px">No results yet — write some text below and generate</div></sc-if>
                 </div>
               </div>
             </sc-if>
-          </div>
+
+            <!-- FLOATING DOCK (A3b — chips are the real gen params; signed quote before generate) -->
+            <div class="va-dock">
+              <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="{{ promptPh }}" class="prompt"></textarea>
+              <div class="va-dockrow">
+                <span class="va-set" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span>
+                <span class="va-set" data-pop="model" onclick="{{ toggleChip }}">Model: <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="3"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span>
+                <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><span class="va-set" data-pop="aspect" onclick="{{ toggleChip }}"><b>{{ aspectVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popAspect }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="quality" onclick="{{ toggleChip }}">Quality: <b>{{ qualityVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="res" onclick="{{ toggleChip }}"><b>{{ resVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popRes }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="duration" onclick="{{ toggleChip }}"><b>{{ durVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popDur }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="voice" onclick="{{ toggleChip }}">Voice: <b>{{ voiceVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popVoice }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoice }}" class="{{ v.rowCls }}">{{ v.label }}<sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><span class="va-set" data-pop="count" onclick="{{ toggleChip }}">× <b>{{ countVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popCount }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <span class="va-set enh" onclick="{{ improve }}"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
+                <span class="sp"></span>
+                <span class="va-quote">{{ quotePrefix }}<b>✦ {{ costNow }}</b></span>
+                <a class="va-btn lime" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Generate</a>
+              </div>
+            </div>
+            <sc-if value="{{ chipAnyOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-popbd" onclick="{{ closeChip }}"></div></sc-if>
+
+            <!-- THIS SESSION strip (canvas modes) -->
+            <sc-if value="{{ showSess }}" hint-placeholder-val="{{ false }}">
+              <div class="va-sec" style="padding-top:10px"><h3 style="font-size:14px">This session</h3>
+                <span class="all" style="font:500 10px var(--mono);letter-spacing:.08em;cursor:default">{{ sessLine }}</span></div>
+              <div class="va-sess">
+                <sc-for list="{{ sessGens }}" as="g" hint-placeholder-count="6">
+                  <div data-id="{{ g.id }}" onclick="{{ pickActive }}" class="{{ g.sessCls }}" style="background:{{ g.g }}"></div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
         </sc-if>
 
         <!-- ACCOUNT (mockup ac1/ac2 · Profil · Obuna · Kreditlar · Yuklamalar) -->
@@ -16012,6 +16037,7 @@ class Component extends DCLogic {
     storageUsed: 0,
     storageQuota: 0,
     aiTool: 'Rasm yaratish',
+    aiView: 'picker',
     aiPrompt: '',
     aiSize: '1:1',
     aiQuality: '',
@@ -16192,7 +16218,7 @@ class Component extends DCLogic {
       this._afterAuth = screen;
       screen = 'verify-email';
     }
-    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, pageFlip: s.pageFlip + 1 }));
+    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
     try { if (window.history && history.replaceState) history.replaceState(null, '', '#' + screen); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     // Replay the app page-wrap entrance via transition (never keyframes): hide -> reflow -> reveal.
@@ -16826,7 +16852,7 @@ class Component extends DCLogic {
     const nSel = genParams.count || 1;
     const costNow = this.estCost(tool, model, genParams);
     const toolDesc = { 'Rasm yaratish': 'Generate high-quality images from text', 'Video yaratish': 'Generate a short video clip from a prompt', 'Voiceover': 'Turn text into a natural-sounding voice', 'SFX': 'Generate a sound effect for your scene' }[tool.key];
-    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab' }; });
+    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab', poprowCls: on ? 'ffa-poprow on' : 'ffa-poprow' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
     // cls=eski option grid, rowCls=popover qatori, optCls=inline option tugma (Ovoz paneli), on=faol
     const chip = (v, on) => ({ v, on, cls: on ? 'ffa-opt on' : 'ffa-opt', rowCls: on ? 'ffa-poprow on' : 'ffa-poprow', optCls: on ? 'ffa-opt on' : 'ffa-opt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
@@ -16877,7 +16903,38 @@ class Component extends DCLogic {
     const resVal = genParams.resolution || '—';
     const durVal = genParams.duration ? (genParams.duration + 's') : '—';
     const cp = this.state.chipPop;
-    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration';
+    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration', popMode = cp === 'mode', popVoice = cp === 'voice';
+    // FAZA 5 Variant A — A3 picker kartalari (from-✦ narxlar real model katalogidan) + A3b composer bindinglari
+    const fromFallback = { image: 5, video: 40, voice: 8, sfx: 3 };
+    const minCostOf = (mode) => {
+      const list = this.state.genModels[mode] || [];
+      let best = null;
+      for (const m of list) {
+        let c = m.cost;
+        if (mode === 'image' && m.imgSettings && m.imgSettings.quality && m.imgSettings.quality.cost) c = Math.min.apply(null, Object.values(m.imgSettings.quality.cost));
+        if (mode === 'video' && m.pricing !== 'per-generation') {
+          const durs = (m.durations && m.durations.length) ? m.durations : [4];
+          const perSec = m.videoSettings && m.videoSettings.resolution && m.videoSettings.resolution.perSec;
+          const rate = perSec ? Math.min.apply(null, Object.values(perSec)) : m.cost;
+          c = rate * Math.min.apply(null, durs);
+        }
+        if (best == null || c < best) best = c;
+      }
+      return best == null ? fromFallback[mode] : best;
+    };
+    const toolMetaA = {
+      'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
+      'Video yaratish': { title: 'Video', desc: 'Text to video, priced per second', gcls: 'va-g9', iconRef: '#i-vid' },
+      'Voiceover': { title: 'Voiceover', desc: 'Natural voices, multi-language narration', gcls: 'va-g3', iconRef: '#i-mic' },
+      'SFX': { title: 'SFX', desc: 'Describe a sound, get broadcast-ready FX', gcls: 'va-g4', iconRef: '#i-wave' },
+    };
+    const toolCards = this.aiTools.map(t => ({ key: t.key, ...(toolMetaA[t.key] || {}), fromCost: minCostOf(t.mode) }));
+    const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
+    const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
+    const promptPh = tool.mode === 'voice' ? 'Type text — it will be read in a natural voice…' : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
+    const unitCost = (tool.multi && nSel > 1) ? Math.round(costNow / nSel) : costNow;
+    const quotePrefix = (tool.multi && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
+    const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
     const chipCls = (open) => open ? 'ffa-chip open' : 'ffa-chip';
     const chipModelCls = chipCls(popModel), chipAspectCls = chipCls(popAspect), chipQualityCls = chipCls(popQuality), chipCountCls = chipCls(popCount), chipResCls = chipCls(popRes), chipDurCls = chipCls(popDur);
     const chipAnyOpen = !!cp;
@@ -16888,6 +16945,11 @@ class Component extends DCLogic {
       bars: Array.from({ length: 9 }, (_, i) => ({ h: 4 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.8)) * 9) })),
     }));
     const noVoiceResults = voiceResults.length === 0 && !this.state.generating;
+    // A3b "This session" strip — joriy rejim natijalari + sarf hisoblagichi
+    const sessGens = aiIsCanvas ? genView.filter(g => g.type === (tool.mode === 'video' ? 'video' : 'image')).slice(0, 12).map(g => ({ ...g, sessCls: (activeGenRaw && g.id === activeGenRaw.id) ? 'va-thumb st on' : 'va-thumb st' })) : [];
+    const sessSpent = sessGens.reduce((a, g) => a + (g.cost || 0), 0);
+    const sessLine = sessGens.length + ' RESULTS · SPENT ✦ ' + sessSpent;
+    const showSess = aiIsCanvas && sessGens.length > 0;
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
@@ -17143,6 +17205,12 @@ class Component extends DCLogic {
       creditsFmt: this.state.credits.toLocaleString(),
       aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow, partiyaLine, canvasCls, pendAspect,
       aiIsCanvas, aiIsAudio, hasGens, showPartiya,
+      aiPicker: this.state.aiView !== 'composer', aiComposer: this.state.aiView === 'composer',
+      toolCards, toolTitle, toolIconRef, promptPh, quotePrefix, voiceVal, popMode, popVoice,
+      pickerStrip: genView.slice(0, 5), genCountLabel: this.state.gens.length ? (this.state.gens.length + ' TOTAL') : '', noGens: this.state.gens.length === 0,
+      sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance',
+      openTool: (e) => { this.setState({ aiTool: e.currentTarget.dataset.tool, aiView: 'composer', chipPop: null, modelOpen: false }); try { window.scrollTo(0, 0); } catch (e2) {} },
+      backToPicker: () => this.setState({ aiView: 'picker', chipPop: null }),
       aspectVal, qualityVal, countVal, resVal, durVal,
       popModel, popAspect, popQuality, popCount, popRes, popDur,
       chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
