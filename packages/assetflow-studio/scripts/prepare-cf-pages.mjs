@@ -123,27 +123,17 @@ const GOOGLE_GSI_ORIGINS = "https://accounts.google.com https://accounts.google.
 // Cloudflare Turnstile (register formadagi bot-himoya widget'i) — widget skripti
 // + challenge iframe shu origin'dan yuklanadi.
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+// YAGONA CSP (platforma darajasida, 'unsafe-eval' + blob: bilan) — INCIDENT:
+// avval 'unsafe-eval' faqat `/` va `/index.html` yo'llariga berilgan edi, lekin
+// platforma SPA'si IXTIYORIY path route'da (masalan /templates) ham index.html
+// bilan xizmat qiladi (CF Pages SPA fallback), `_headers` esa SO'ROV yo'liga
+// mos keladi → bunday yo'llarda dc-runtime'ning new Function() bloklanib butun
+// interaktivlik o'lardi. Path route'lar ochiq to'plam bo'lgani uchun per-path
+// scoping ishonchsiz — endi bitta CSP hamma yo'lga.
+// Xavf bahosi: script-src'da 'unsafe-inline' baribir bor (168+ inline handler),
+// ya'ni script-src XSS'dan deyarli himoya qilmaydi; CSP'ning asl qiymati
+// connect/img-src origin-allowlist (token-exfil to'sish) — u o'zgarmadi.
 const CSP = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `img-src 'self' data: ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `media-src 'self' ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com ${TURNSTILE_ORIGIN}`,
-  `frame-src ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
-  "font-src 'self' https://fonts.gstatic.com",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-].join("; ");
-
-// Platforma (dc-runtime) CSP — runtime `text/x-dc` skriptni eval qiladi, shu
-// sabab FAQAT platforma HTML'iga 'unsafe-eval' beriladi (studio/admin'ga emas).
-// `! Content-Security-Policy` — CF Pages'da umumiy /* qoidasidagi headerni
-// olib tashlash sintaksisi (aks holda ikkala CSP vergul bilan qo'shilib,
-// eng qattig'i amal qilardi va eval bloklanardi).
-const PLATFORM_CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -166,14 +156,6 @@ const headers = `\
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-
-/
-  ! Content-Security-Policy
-  Content-Security-Policy: ${PLATFORM_CSP}
-
-/index.html
-  ! Content-Security-Policy
-  Content-Security-Policy: ${PLATFORM_CSP}
 
 /js/*
   Cache-Control: public, max-age=300, must-revalidate
