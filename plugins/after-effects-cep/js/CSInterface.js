@@ -45,24 +45,36 @@ CSInterface.prototype.removeEventListener = function (name, fn) {
 };
 
 CSInterface.prototype.openURLInDefaultBrowser = function (url) {
-  // CEP: shell open via cep api when possible
+  // CEP: __adobe_cep__ ko'pincha to'g'ridan-to'g'ri openURLInDefaultBrowser metodini
+  // EMAS, balki invokeSync('openURLInDefaultBrowser', url) orqali taqdim etadi (Adobe'ning
+  // haqiqiy CSInterface.js shu yo'lni ishlatadi). To'g'ridan-to'g'ri metod bo'lmasa, keyingi
+  // urinish shu.
   try {
-    if (typeof window !== "undefined" && window.__adobe_cep__ && typeof window.__adobe_cep__.openURLInDefaultBrowser === "function") {
-      return window.__adobe_cep__.openURLInDefaultBrowser(url);
+    if (typeof window !== "undefined" && window.__adobe_cep__) {
+      if (typeof window.__adobe_cep__.openURLInDefaultBrowser === "function") {
+        return window.__adobe_cep__.openURLInDefaultBrowser(url);
+      }
+      if (typeof window.__adobe_cep__.invokeSync === "function") {
+        return window.__adobe_cep__.invokeSync("openURLInDefaultBrowser", url);
+      }
     }
   } catch (e) {
-    /* */
+    /* fallthrough */
   }
-  // Fallbacks
+  // Node fallback (manifest'da --enable-nodejs yoqilgan) — OS shell orqali ochadi.
   try {
     if (typeof require !== "undefined") {
-      try {
-        var shell = require("uxp").shell;
-        shell.openExternal(url);
-        return;
-      } catch (e2) {}
+      var cp = require("child_process");
+      var plat = (typeof process !== "undefined" && process.platform) || "";
+      if (plat === "darwin") cp.exec('open "' + url + '"');
+      else if (plat === "win32") cp.exec('start "" "' + url + '"');
+      else cp.exec('xdg-open "' + url + '"');
+      return;
     }
-  } catch (e3) {}
+  } catch (e2) {
+    /* fallthrough */
+  }
+  // Oxirgi chora — brauzer/dev muhitida ishlaydi, CEP webview'da popup bloklanishi mumkin.
   if (typeof window !== "undefined") window.open(url, "_blank");
 };
 
