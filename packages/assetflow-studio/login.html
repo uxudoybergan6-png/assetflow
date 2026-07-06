@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/studio-config.js"></script>
 <script src="/studio/js/theme.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="auth-page">
@@ -271,8 +271,8 @@
       google.accounts.id.initialize({ client_id: googleClientId, callback: onGoogleCredential });
       document.getElementById("loginGoogleSep").classList.remove("hidden");
       document.getElementById("registerGoogleSep").classList.remove("hidden");
-      google.accounts.id.renderButton(document.getElementById("loginGoogleBtn"), { theme: "outline", size: "large", width: 280, text: "signin_with" });
-      google.accounts.id.renderButton(document.getElementById("registerGoogleBtn"), { theme: "outline", size: "large", width: 280, text: "signup_with" });
+      google.accounts.id.renderButton(document.getElementById("loginGoogleBtn"), { theme: "outline", size: "large", width: 280, text: "signin_with", locale: "en" });
+      google.accounts.id.renderButton(document.getElementById("registerGoogleBtn"), { theme: "outline", size: "large", width: 280, text: "signup_with", locale: "en" });
     }
     initGoogleButtons();
   }

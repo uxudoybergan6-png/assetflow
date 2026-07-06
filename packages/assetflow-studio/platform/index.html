@@ -10,7 +10,7 @@
 <script src="assets/react-dom.production.min.js"></script>
 <script src="assets/dc-runtime.js"></script>
 <script src="ff-api.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -16061,6 +16061,7 @@ class Component extends DCLogic {
     activeCat: 'Video Templates',
     openFaq: 0,
     credits: 0,
+    creditsLoaded: false, // #5: birinchi fetch'gacha "✦ 0" chaqnamasin
     plan: 'free',
     user: null,
     downloadsMonth: 0,
@@ -16102,6 +16103,7 @@ class Component extends DCLogic {
     tipIdx: 0,
     pageFlip: 0,
     gens: [],
+    gensLoaded: false, // #5: tarix kelguncha "No generations yet" ko'rsatilmasin
     catalog: [],
     catalogReady: false,
     genModels: {},
@@ -16282,7 +16284,7 @@ class Component extends DCLogic {
         }
         this.loadCatalog();
         window.addEventListener('ff-auth-expired', this._onExpired = () => {
-          this.setState({ user: null, credits: 0 });
+          this.setState({ user: null, credits: 0, creditsLoaded: false, gensLoaded: false });
           this.toast('Your session has expired — please sign in again');
           this.go('auth');
         });
@@ -16458,7 +16460,7 @@ class Component extends DCLogic {
       const c = await FFAPI.credits();
       const st = (c && c.storage) || null; // FAZA 2 #20 — storage kvota (X / Y GB)
       this.setState({
-        credits: c.aiCredits || 0, plan: c.plan || 'free',
+        credits: c.aiCredits || 0, creditsLoaded: true, plan: c.plan || 'free',
         storageUsed: st ? (st.usedBytes || 0) : 0,
         storageQuota: st ? (st.quotaBytes || 0) : 0,
       });
@@ -16486,7 +16488,7 @@ class Component extends DCLogic {
     try {
       const r = await FFAPI.history(40);
       const gens = (r.items || []).filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
-      this.setState(s => ({ gens, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
+      this.setState(s => ({ gens, gensLoaded: true, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
   }
   mapGen(it) {
@@ -16583,7 +16585,8 @@ class Component extends DCLogic {
       google.accounts.id.initialize({ client_id: id, callback: (r) => this.onGoogleCredential(r) });
       this._giInited = true;
     }
-    google.accounts.id.renderButton(container, { theme: 'outline', size: 'large', width: 280, text: 'continue_with' });
+    // #8: locale 'en' — aks holda GIS tugmasi brauzer tilida ("… sifatida davom etish") chiqadi.
+    google.accounts.id.renderButton(container, { theme: 'outline', size: 'large', width: 280, text: 'continue_with', locale: 'en' });
   }
   /** Turnstile widget — faqat register rejimida, meta[turnstile-site-key] bo'sh
    *  bo'lsa chizilmaydi (backend ham kalit yo'q bo'lsa fail-open, token talab
@@ -16638,7 +16641,7 @@ class Component extends DCLogic {
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
     this._sess = {};
-    this.setState({ user: null, credits: 0, plan: 'free', gens: [], downloadsMonth: 0, selModel: {}, genModels: {} });
+    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {} });
     this.go('landing');
     this.toast('You have been signed out');
   }
@@ -16954,7 +16957,10 @@ class Component extends DCLogic {
         }
         if (best == null || c < best) best = c;
       }
-      return best == null ? fromFallback[mode] : best;
+      // #6: katalog hali yuklanmagan bo'lsa taxminiy fallback KO'RSATMAYMIZ (SFX
+      // "✦3→✦4" sakrashi shundan edi) — neytral "…" chiqadi, yuklangach real min.
+      if (best != null) return best;
+      return this.state.genModels[mode] ? fromFallback[mode] : '…';
     };
     const toolMetaA = {
       'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
@@ -17238,13 +17244,13 @@ class Component extends DCLogic {
           this.toast("Couldn't get the payment link");
         } catch (err) { this.toast((err && err.message) || "Payment isn't available right now"); }
       },
-      sidebarMainView, sidebarAccountView, dashQuick, dashGensView, hasDashGens, noDashGens: !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
+      sidebarMainView, sidebarAccountView, dashQuick, dashGensView, hasDashGens, noDashGens: this.state.gensLoaded && !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
       navLinksView, planPill, heroKick, heroGreeting, userFirst, creditResetShort,
       sidebarCls, collapseIcon, toggleSidebar: () => this.setState(st => ({ sidebarCollapsed: !st.sidebarCollapsed })),
       avatarOpen: this.state.avatarOpen, toggleAvatar: () => this.setState(st => ({ avatarOpen: !st.avatarOpen })),
       creditPct, creditMaxFmt, planShort, authBrandTitle, authBrandSub,
       btmDashCls: btmCls('dashboard'), btmTplCls: btmCls('templates'), btmAiCls: btmCls('aistudio'), btmAccCls: btmCls('account'),
-      creditsFmt: this.state.credits.toLocaleString(),
+      creditsFmt: this.state.creditsLoaded ? this.state.credits.toLocaleString() : '…',
       aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow, partiyaLine, canvasCls, pendAspect,
       aiIsCanvas, aiIsAudio, hasGens, showPartiya,
       aiPicker: this.state.aiView !== 'composer', aiComposer: this.state.aiView === 'composer',

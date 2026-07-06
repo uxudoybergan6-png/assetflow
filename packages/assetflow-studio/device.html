@@ -6,15 +6,40 @@
 <meta name="assetflow-api" content="https://assetflow-api-331762958776.europe-west1.run.app">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
 <title>FrameFlow — Confirm plugin</title>
-<link rel="stylesheet" href="/studio/styles/app.css">
 <script src="/studio/js/studio-config.js"></script>
-<script src="/studio/js/theme.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
+<style>
+  /* #7: platforma (getframeflow.app) dark/lime mavzusi — studio light theme EMAS */
+  :root{
+    --bg:#06080B;--panel:#0E1117;--lime:#C2F04A;--onlime:#0E1400;
+    --tx-1:#F2F5F8;--tx-2:#8A93A3;
+    --f1:rgba(255,255,255,.05);--f2:rgba(255,255,255,.08);--f3:rgba(255,255,255,.14);
+  }
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--tx-1);font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;min-height:100vh}
+  .auth-shell{display:grid;min-height:100vh;align-items:center;padding:24px}
+  .auth-card{background:var(--panel);border:1px solid var(--f2);border-radius:18px;padding:32px 28px}
+  .h1{margin:0 0 8px;font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .form-head p{margin:0 0 6px;color:var(--tx-2);font-size:13.5px;line-height:1.5}
+  .field{margin-bottom:12px}
+  .input{width:100%;box-sizing:border-box;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--f3);background:var(--f1);color:var(--tx-1);font:inherit;font-size:14px;outline:none}
+  .input:focus{border-color:var(--lime)}
+  .input::placeholder{color:var(--tx-2)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 22px;border:none;border-radius:999px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+  .btn-primary{background:var(--lime);color:var(--onlime)}
+  .btn-primary:disabled{opacity:.6;cursor:default}
+  .btn-block{width:100%}
+  .auth-error{background:rgba(255,92,92,.12);border:1px solid rgba(255,92,92,.3);color:#FF8A8A;border-radius:12px;padding:10px 14px;font-size:13px;margin:0 0 12px}
+  .hidden{display:none!important}
+  .ff-logo{display:flex;align-items:center;gap:9px;margin-bottom:22px;font-weight:700;font-size:15px}
+  .ff-logo .lb{width:24px;height:24px;border-radius:7px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center;font-size:13px}
+</style>
 </head>
 <body class="auth-page">
 <div class="auth-shell" style="grid-template-columns:1fr">
   <main class="auth-main">
     <div class="auth-card" style="max-width:420px;margin:0 auto">
+      <div class="ff-logo"><span class="lb">◆</span>FrameFlow</div>
       <div class="form-head">
         <h1 class="h1">Confirm the AE plugin</h1>
         <p id="deviceIntro">Sign in to approve the After Effects plugin on this device.</p>
@@ -142,7 +167,9 @@
       return;
     }
     google.accounts.id.initialize({ client_id: googleClientId, callback: onGoogleCredential });
-    google.accounts.id.renderButton(btnEl, { theme: "outline", size: "large", width: 280, text: "signin_with" });
+    // #7/#8: locale 'en' — GIS tugmasi brauzer tiliga qarab tarjima bo'lmasin;
+    // filled_black — dark mavzuga mos.
+    google.accounts.id.renderButton(btnEl, { theme: "filled_black", size: "large", width: 280, text: "signin_with", locale: "en" });
   }
   initGoogleButton();
 })();
