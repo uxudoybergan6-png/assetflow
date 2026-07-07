@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FrameFlow — Home Enrichment · FAZA C (mockup)</title>
+<!-- MOCKUP ONLY — FAZA C design board: enriched HOME for the logged-in web app
+     (getframeflow.app). Not loaded by the platform. Google Fonts CDN is OK in this
+     board only — the real build must self-host fonts. Icons are inline SVG (no icon CDN).
+     No JS logic, no API calls — every state is rendered statically. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════ BOARD CHROME (the review page itself) ════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#04060A}
+body{font-family:'Hanken Grotesk',-apple-system,system-ui,sans-serif;color:#F2F5F8;
+  background:radial-gradient(1400px 600px at 70% -10%,rgba(194,240,74,.045),transparent 60%),
+  radial-gradient(circle,rgba(255,255,255,.024) 1px,transparent 1px) 0 0/26px 26px,#04060A;
+  -webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.board{max-width:1420px;margin:0 auto;padding:52px 34px 160px}
+.b-kick{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#C2F04A}
+.b-title{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:10px}
+.b-sub{font-size:14px;color:#8A93A3;margin-top:8px;max-width:780px;line-height:1.65}
+.b-meta{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.b-chip{font:500 10px 'IBM Plex Mono',monospace;padding:5px 11px;border-radius:999px;
+  border:1px solid #232A36;background:#0B0E14;color:#8A93A3}
+.b-chip b{color:#C2F04A;font-weight:600}
+section.zone{margin-top:90px}
+.z-head{border-bottom:1px solid #1A202B;padding-bottom:16px;margin-bottom:14px}
+.z-kick{font:700 11px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#C2F04A}
+.z-t{font-size:24px;font-weight:800;letter-spacing:-.015em;margin-top:6px}
+.z-d{font-size:13px;color:#8A93A3;margin-top:6px;max-width:860px;line-height:1.6}
+.scr{margin-top:46px}
+.scr-label{display:flex;align-items:center;gap:10px;font:600 10.5px 'IBM Plex Mono',monospace;
+  letter-spacing:.12em;color:#8A93A3;margin-bottom:12px}
+.scr-label .n{padding:3px 8px;border-radius:4px;background:#C2F04A;color:#0E1400;font-weight:700}
+.scr-label .tag{margin-left:auto;padding:3px 9px;border-radius:4px;background:rgba(194,240,74,.09);
+  border:1px solid rgba(194,240,74,.22);color:#C2F04A;font-weight:600;letter-spacing:.08em}
+.fwrap{overflow-x:auto;padding-bottom:10px}
+.frow{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+.notes{width:320px;flex:none;padding-top:6px}
+.notes h4{font-size:13px;font-weight:700;margin-bottom:12px}
+.note{display:flex;gap:10px;font-size:12px;color:#8A93A3;line-height:1.55;margin-bottom:11px}
+.note .dot{width:18px;height:18px;flex:none;border-radius:50%;background:rgba(194,240,74,.14);
+  border:1px solid rgba(194,240,74,.4);color:#C2F04A;font:700 9px 'IBM Plex Mono',monospace;
+  display:flex;align-items:center;justify-content:center;margin-top:1px}
+.note b{color:#DFE5EC;font-weight:600}
+
+/* ════════ SHARED TOKENS — FrameFlow (verbatim from spec) ════════ */
+:root{
+  --bg:#06080B; --surface:#13161C; --surface2:#171B22; --surface3:#1A1F28;
+  --rail:#0A0D12; --pop:#161B22;
+  --text:#F2F5F8; --muted:#8A93A3; --muted2:#5E6675;
+  --border:#2A3140; --hair:rgba(255,255,255,.06); --hair2:rgba(255,255,255,.09);
+  --lime:#C2F04A; --lime2:#9CD62B; --onlime:#0E1400;
+  --limedim:rgba(194,240,74,.12); --glow:rgba(194,240,74,.28);
+  --red:#FF6B5E; --amber:#FFB27C; --blue:#7CC4FF;
+  --f1:rgba(255,255,255,.05); --f2:rgba(255,255,255,.07); --f3:rgba(255,255,255,.11);
+  --scrim:rgba(6,8,11,.78);
+  --spend-grad:radial-gradient(120% 140% at 30% 20%,#D4F56E,#C2F04A 55%,#A9DE3C);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+
+/* ════════ FRAME (fake browser window) ════════ */
+.frame{width:1280px;flex:none;background:var(--bg);border:1px solid #232B39;border-radius:14px;
+  overflow:hidden;position:relative;color:var(--text);font-size:13.5px;line-height:1.45;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.85),0 0 0 6px rgba(255,255,255,.018)}
+.frame.m{width:390px;display:flex;flex-direction:column;min-height:800px}
+.chrome{height:36px;display:flex;align-items:center;gap:7px;padding:0 14px;background:#0B0E14;
+  border-bottom:1px solid var(--hair)}
+.chrome .d{width:10px;height:10px;border-radius:50%;background:#242C3A}
+.chrome .url{margin-left:12px;flex:none;display:flex;align-items:center;gap:6px;height:22px;padding:0 12px;
+  border-radius:999px;background:var(--f1);border:1px solid var(--hair);
+  font:500 10px var(--mono);color:var(--muted)}
+.chrome .url b{color:#C9D2DE;font-weight:500}
+.ic{width:1em;height:1em;flex:none;display:inline-block;vertical-align:-.14em}
+
+/* ── shared bits (verbatim from Variant A board) ── */
+.badge{font:700 8.5px var(--mono);letter-spacing:.07em;padding:2.5px 6px;border-radius:4px}
+.badge.pro{background:var(--lime);color:var(--onlime)}
+.badge.free{background:rgba(10,13,18,.78);color:#E7ECF3;font-weight:600;border:1px solid rgba(255,255,255,.14)}
+.badge.new{background:rgba(10,13,18,.78);color:var(--lime);font-weight:700;border:1px solid rgba(194,240,74,.45)}
+.badge.q4k{background:rgba(10,13,18,.78);color:#C9D2DE;font-weight:600;border:1px solid rgba(255,255,255,.14)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;cursor:pointer;
+  border-radius:10px;font:700 12.5px 'Hanken Grotesk',sans-serif;letter-spacing:-.005em}
+.btn.lime{background:var(--lime);color:var(--onlime);padding:10px 18px}
+.btn.ghost{background:var(--f1);color:var(--text);border:1px solid var(--hair2);padding:10px 16px;font-weight:600}
+.btn.sm{padding:7px 12px;font-size:11.5px;border-radius:8px}
+.btn.spend{background:var(--spend-grad);color:var(--onlime);border-radius:100px}
+.credpill{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;
+  background:var(--f1);border:1px solid var(--hair2);font:600 11.5px var(--mono)}
+.credpill .s{color:var(--lime)}
+.credpill .pl{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:4px;
+  background:var(--lime);color:var(--onlime)}
+.ava{width:30px;height:30px;border-radius:50%;flex:none;background:linear-gradient(135deg,#6C3FA8,#33549E);
+  border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff}
+.thumb{background-size:cover;position:relative;overflow:hidden;border-radius:12px}
+.thumb::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px) 0 0/14px 14px;opacity:.55}
+.playov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.playov span{width:38px;height:38px;border-radius:50%;background:rgba(6,8,11,.62);border:1px solid rgba(255,255,255,.22);
+  display:flex;align-items:center;justify-content:center;color:#fff;backdrop-filter:blur(4px)}
+.typetag{position:absolute;left:8px;bottom:8px;font:600 8px var(--mono);letter-spacing:.1em;
+  padding:3px 7px;border-radius:4px;background:rgba(6,8,11,.72);color:#C9D2DE;border:1px solid rgba(255,255,255,.1)}
+/* placeholder art */
+.g1{background-image:linear-gradient(135deg,#3E2A78,#0E7A8A)}
+.g2{background-image:linear-gradient(135deg,#7A2E4A,#2A1140)}
+.g3{background-image:linear-gradient(135deg,#0F5A46,#12202C)}
+.g4{background-image:linear-gradient(135deg,#8A5A18,#3A1E10)}
+.g5{background-image:linear-gradient(135deg,#23486B,#0D1B2E)}
+.g6{background-image:linear-gradient(135deg,#5A2AA0,#8A3E6E)}
+.g7{background-image:linear-gradient(135deg,#1F6E5A,#4E8A2E)}
+.g8{background-image:linear-gradient(135deg,#6E2A2A,#8A6E2E)}
+.g9{background-image:linear-gradient(135deg,#2E4A8A,#6E2A7A)}
+.g10{background-image:linear-gradient(135deg,#155E63,#3E2A78)}
+.g11{background-image:linear-gradient(135deg,#3A3F4A,#14181F)}
+.g12{background-image:linear-gradient(135deg,#7A5A2E,#1F2A3A)}
+
+/* ════════ VARIANT A SHELL (verbatim — current live Home) ════════ */
+.va-nav{height:64px;display:flex;align-items:center;gap:26px;padding:0 32px;
+  border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9)}
+.va-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15.5px;letter-spacing:-.02em}
+.va-logo .mk{width:26px;height:26px;border-radius:8px;background:var(--lime);color:var(--onlime);
+  display:flex;align-items:center;justify-content:center}
+.va-links{display:flex;gap:4px}
+.va-links a{padding:8px 13px;border-radius:9px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none}
+.va-links a.on{color:var(--text);background:var(--f1)}
+.va-search{margin-left:auto;display:flex;align-items:center;gap:8px;width:280px;height:36px;padding:0 13px;
+  border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2);font-size:12.5px}
+.va-search .k{margin-left:auto;font:600 9px var(--mono);padding:2px 6px;border-radius:4px;
+  background:var(--f1);border:1px solid var(--hair2);color:var(--muted2)}
+.va-hero{position:relative;padding:52px 40px 44px;overflow:hidden}
+.va-hero::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(800px 340px at 82% -30%,rgba(194,240,74,.1),transparent 60%),
+  radial-gradient(600px 300px at 8% 120%,rgba(62,42,120,.35),transparent 65%)}
+.va-hero>*{position:relative}
+.va-hi{font-size:31px;font-weight:800;letter-spacing:-.025em}
+.va-hi em{font-style:normal;color:var(--lime)}
+.va-hs{color:var(--muted);font-size:14px;margin-top:8px}
+.va-credcard{position:absolute;right:40px;top:46px;width:264px;padding:16px 18px;border-radius:16px;
+  background:linear-gradient(160deg,rgba(194,240,74,.1),rgba(255,255,255,.03) 55%),var(--surface);
+  border:1px solid rgba(194,240,74,.22)}
+.va-credcard .bal{font:700 24px var(--mono);margin-top:4px}
+.va-credcard .bal .s{color:var(--lime);font-size:17px}
+.va-credcard .bar{height:5px;border-radius:99px;background:var(--f2);margin:12px 0 7px;overflow:hidden}
+.va-credcard .bar i{display:block;height:100%;width:64%;border-radius:99px;background:var(--lime)}
+.kick{font:600 9px var(--mono);letter-spacing:.15em;color:var(--muted)}
+.va-qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:34px;max-width:840px}
+.va-qa .qc{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/7.4;padding:16px;display:flex;
+  flex-direction:column;justify-content:flex-end;border:1px solid var(--hair2);cursor:pointer}
+.va-qa .qc::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(6,8,11,.82))}
+.va-qa .qc>*{position:relative;z-index:1}
+.va-qa .qt{font-weight:700;font-size:14.5px}
+.va-qa .qd{font-size:11px;color:#B9C2CF;margin-top:2px}
+.va-qa .qi{position:absolute;top:12px;left:13px;z-index:1;width:30px;height:30px;border-radius:9px;
+  background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;
+  justify-content:center;color:var(--lime)}
+.va-sec{display:flex;align-items:baseline;gap:14px;padding:34px 40px 14px}
+.va-sec h3{font-size:17px;font-weight:800;letter-spacing:-.015em}
+.va-sec .cnt{font:500 10px var(--mono);color:var(--muted2)}
+.va-sec .all{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:4px;align-items:center;cursor:pointer}
+.va-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:14px;padding:0 40px}
+.va-strip .gt{aspect-ratio:16/10;border-radius:12px}
+/* mobile shell */
+.va-mnav{height:56px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--hair)}
+.va-mtabs{margin-top:auto;display:flex;border-top:1px solid var(--hair2);background:rgba(10,13,18,.97);padding:8px 6px 14px}
+.va-mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font:600 9px 'Hanken Grotesk';
+  color:var(--muted2);text-decoration:none}
+.va-mtabs a.on{color:var(--lime)}
+.va-mtabs .ic{width:19px;height:19px}
+.va-mhero{padding:22px 16px 4px}
+.va-mhero h2{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.va-mstrip{display:flex;gap:10px;overflow:hidden;padding:0 16px}
+.va-mstrip .gt{width:124px;flex:none;aspect-ratio:1/1;border-radius:10px}
+
+/* ════════════════════════════════════════════
+   FAZA C — NEW HOME PIECES
+   fm- featured models · sh- collection shelves · rc- rich cards
+   ════════════════════════════════════════════ */
+
+/* ── RICH TEMPLATE CARD (rc) — upgrade of .va-tc ── */
+.rc{cursor:pointer;position:relative}
+.rc .med{aspect-ratio:16/9;border-radius:14px;position:relative;overflow:hidden;
+  transition:transform .25s ease,box-shadow .25s ease}
+.rc:hover .med{transform:scale(1.025) translateY(-2px);box-shadow:0 18px 40px -16px rgba(0,0,0,.75)}
+.rc .med .badges{position:absolute;top:10px;left:10px;display:flex;gap:5px;z-index:2}
+.rc .med .dur{position:absolute;right:10px;bottom:10px;font:600 9px var(--mono);padding:2.5px 7px;
+  border-radius:4px;background:rgba(6,8,11,.72);color:#DFE5EC;z-index:2}
+.rc .med .playov{opacity:0;transition:opacity .22s ease;z-index:2}
+.rc:hover .med .playov{opacity:1}
+.rc .med .rise{position:absolute;inset:auto 0 0 0;padding:26px 11px 9px;z-index:2;
+  background:linear-gradient(180deg,transparent,rgba(6,8,11,.85));
+  display:flex;align-items:flex-end;gap:7px;opacity:0;transform:translateY(6px);
+  transition:opacity .22s ease,transform .22s ease}
+.rc:hover .med .rise{opacity:1;transform:translateY(0)}
+.rc .med .rise .fa{width:26px;height:26px;border-radius:8px;background:rgba(6,8,11,.6);
+  border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff}
+.rc .med .rise .sp{flex:1}
+.rc .meta{display:flex;align-items:center;gap:8px;padding:10px 3px 0}
+.rc .tt{font-weight:600;font-size:13.5px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc .sub{display:flex;align-items:center;gap:6px;font:500 10px var(--mono);color:var(--muted);flex:none}
+.rc .sub i{width:7px;height:7px;border-radius:50%;background:#B794F6;display:inline-block}
+.rc .cat{font-size:10.5px;color:var(--muted2);padding:2px 3px 0}
+@media (prefers-reduced-motion:reduce){
+  .rc .med,.rc .med .playov,.rc .med .rise{transition:none}
+  .rc:hover .med{transform:none;box-shadow:none}
+  .rc .med .rise{opacity:1;transform:none}
+  .rc:hover .med .playov{opacity:0}
+}
+
+/* rich card grid (Recommended) */
+.rc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 40px 8px}
+
+/* ── COLLECTION SHELF (sh) — Artlist-style horizontal row ── */
+.sh{display:flex;gap:16px;padding:2px 40px 12px;overflow:hidden;position:relative}
+.sh .rc{width:296px;flex:none}
+.sh-fade{position:absolute;top:0;right:0;bottom:12px;width:90px;z-index:3;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--bg))}
+.sh-wrap{position:relative}
+.sh-arrow{position:absolute;right:40px;top:50%;transform:translateY(-70%);z-index:4;width:34px;height:34px;
+  border-radius:50%;background:rgba(19,22,28,.92);border:1px solid var(--hair2);display:flex;align-items:center;
+  justify-content:center;color:var(--text);cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.55)}
+
+/* ── FEATURED MODELS · OPTION A — spotlight + rail ── */
+.fm-a{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;padding:0 40px 8px}
+.fm-hero{position:relative;border-radius:20px;overflow:hidden;min-height:316px;padding:22px;display:flex;
+  flex-direction:column;justify-content:flex-end;border:1px solid var(--hair2);cursor:pointer}
+.fm-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,transparent 20%,rgba(6,8,11,.9) 82%)}
+.fm-hero>*{position:relative;z-index:1}
+.fm-hero .spot{position:absolute;top:16px;left:16px;font:700 8.5px var(--mono);letter-spacing:.14em;
+  padding:5px 10px;border-radius:999px;background:rgba(6,8,11,.66);border:1px solid rgba(194,240,74,.4);color:var(--lime)}
+.fm-hero h4{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.fm-hero p{font-size:12px;color:#B9C2CF;margin-top:4px;max-width:420px}
+.fm-hero .row{display:flex;align-items:center;gap:10px;margin-top:14px}
+.fm-tag{font:700 8px var(--mono);letter-spacing:.1em;padding:3px 8px;border-radius:4px;
+  background:rgba(6,8,11,.72);border:1px solid rgba(255,255,255,.14);color:#C9D2DE}
+.fm-cost{font:600 11px var(--mono);color:#DFE5EC}
+.fm-cost b{color:var(--lime);font-weight:600}
+.fm-rail{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fm-mini{position:relative;border-radius:14px;overflow:hidden;padding:12px;display:flex;flex-direction:column;
+  justify-content:flex-end;border:1px solid var(--hair2);cursor:pointer;min-height:150px;
+  transition:transform .22s ease}
+.fm-mini:hover{transform:translateY(-3px)}
+.fm-mini::after{content:"";position:absolute;inset:0;background:linear-gradient(190deg,transparent 25%,rgba(6,8,11,.88))}
+.fm-mini>*{position:relative;z-index:1}
+.fm-mini .nm{font-weight:700;font-size:13px}
+.fm-mini .cm{display:flex;align-items:center;gap:7px;margin-top:4px}
+.fm-mini .try{position:absolute;top:10px;right:10px;z-index:1;font:700 10px 'Hanken Grotesk';
+  padding:5px 12px;border-radius:100px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.22);
+  color:#fff;opacity:0;transition:opacity .2s ease}
+.fm-mini:hover .try,.fm-hero:hover .htry{opacity:1}
+.fm-hero .htry{opacity:0;transition:opacity .2s ease}
+@media (prefers-reduced-motion:reduce){
+  .fm-mini,.fm-mini .try,.fm-hero .htry{transition:none}
+  .fm-mini:hover{transform:none}
+  .fm-mini .try,.fm-hero .htry{opacity:1}
+}
+
+/* ── FEATURED MODELS · OPTION B — uniform shelf ── */
+.fm-b{display:flex;gap:14px;padding:2px 40px 12px;overflow:hidden}
+.fm-card{width:236px;flex:none;border-radius:14px;background:var(--surface);border:1px solid var(--hair2);
+  overflow:hidden;cursor:pointer;transition:transform .22s ease,border-color .22s ease}
+.fm-card:hover{transform:translateY(-3px);border-color:rgba(194,240,74,.35)}
+.fm-card .prev{aspect-ratio:16/9;position:relative;overflow:hidden}
+.fm-card .prev .typetag{left:8px;top:8px;bottom:auto}
+.fm-card .bd{padding:11px 12px 12px}
+.fm-card .nm{font-weight:700;font-size:12.5px}
+.fm-card .ds{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fm-card .ft{display:flex;align-items:center;margin-top:10px}
+.fm-card .ft .fm-cost{font-size:10px}
+.fm-card .ft .btn{margin-left:auto}
+@media (prefers-reduced-motion:reduce){
+  .fm-card{transition:none}
+  .fm-card:hover{transform:none}
+}
+
+/* ── mobile FAZA C bits ── */
+.fm-mstrip{display:flex;gap:10px;overflow:hidden;padding:0 16px}
+.fm-mstrip .fm-card{width:172px}
+.sh-m{display:flex;gap:10px;overflow:hidden;padding:0 16px}
+.sh-m .rc{width:200px;flex:none}
+.sh-m .rc .med{border-radius:11px}
+.sh-m .rc .tt{font-size:11.5px}
+.rc-mgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 16px 8px}
+.rc-mgrid .rc .tt{font-size:11px}
+</style>
+</head>
+<body>
+<!-- inline SVG icon set -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.1 6.2L20 10l-5.9 1.8L12 18l-2.1-6.2L4 10l5.9-1.8L12 2zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-arrowr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 9.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.5 2.8c0 5.8-8.5 11.3-8.5 11.3Z"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4.5a1.8 1.8 0 1 1 3.6 0H16a1 1 0 0 1 1 1v3.4a1.8 1.8 0 1 0 0 3.6V16a1 1 0 0 1-1 1h-3.4a1.8 1.8 0 1 1-3.6 0H5.5a1 1 0 0 1-1-1v-3.4a1.8 1.8 0 1 0 0-3.6V5.5a1 1 0 0 1 1-1H9Z"/></symbol>
+    <symbol id="i-img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 18 5-5 3 3 3.5-3.5L20.5 16"/></symbol>
+    <symbol id="i-vid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h2m2-4v8m3-11v14m3-10v6m3-9v12m3-8v4m3-2h2"/></symbol>
+  </defs>
+</svg>
+
+<div class="board">
+
+<div class="b-kick">FAZA C · HOME ENRICHMENT · MOCKUP FLOW BOARD</div>
+<div class="b-title">FrameFlow — enriched Home, one page + two featured-model treatments</div>
+<p class="b-sub">Static design board for the getframeflow.app <b>Home</b> screen, FAZA C. Everything that exists today
+stays (greeting hero · credit card · quick actions · Jump back in). Three additions: a <b>Featured models</b> row
+(→ AI Studio, FFAPI.models data), Artlist-style <b>collection shelves</b> for templates, and a <b>richer card</b>
+(bigger media, hover reveal, New/Pro/4K badges) used everywhere. Model names &amp; costs below are the real ones
+from gen-models (Kling v3.0, Nano Banana Pro, Veo 3.1 Fast, GPT Image 2, ElevenLabs SFX, Kokoro TTS).
+Nothing here touches the live platform.</p>
+<div class="b-meta">
+  <span class="b-chip">C1 — <b>full enriched Home · desktop</b> (featured = Option A)</span>
+  <span class="b-chip">C2 — <b>featured models · Option B</b> (uniform shelf)</span>
+  <span class="b-chip">C3 — <b>mobile 390</b></span>
+  <span class="b-chip">tokens: page #06080B · lime #C2F04A</span>
+  <span class="b-chip">reduced-motion respected</span>
+</div>
+
+<!-- ═══════════════════ C1 · FULL ENRICHED HOME (DESKTOP) ═══════════════════ -->
+<section class="zone">
+  <div class="z-head">
+    <div class="z-kick">C1 · DESKTOP 1280</div>
+    <div class="z-t">Enriched Home — full page, reading order</div>
+    <p class="z-d">Order: hero + credits + quick actions (unchanged) → <b>Jump back in</b> (unchanged) →
+    <b>Featured models</b> (new, Option A: spotlight + rail) → <b>Recommended for you</b> (same data, richer cards) →
+    <b>Trending this week</b> → <b>Lower Thirds essentials</b> → <b>New this week</b> (three collection shelves).
+    Monetization actions use the spend gradient pill; everything else stays flat/ghost.</p>
+  </div>
+
+  <div class="scr">
+    <div class="scr-label"><span class="n">C1</span> HOME / DASHBOARD — ENRICHED <span class="tag">HERO · MODELS · SHELVES</span></div>
+    <div class="fwrap"><div class="frow">
+      <div class="frame">
+        <div class="chrome"><span class="d"></span><span class="d"></span><span class="d"></span>
+          <span class="url"><svg class="ic"><use href="#i-lock"/></svg> app.<b>getframeflow.app</b>/home</span></div>
+        <div class="va-nav">
+          <div class="va-logo"><span class="mk"><svg class="ic"><use href="#i-bolt"/></svg></span>FrameFlow</div>
+          <nav class="va-links"><a class="on">Home</a><a>Templates</a><a>AI Studio</a><a>Projects</a></nav>
+          <div class="va-search"><svg class="ic"><use href="#i-search"/></svg> Search templates, generations… <span class="k">⌘K</span></div>
+          <span class="credpill"><span class="s">✦</span>1,250 <span class="pl">PRO</span></span>
+          <span class="ava">DK</span>
+        </div>
+
+        <!-- hero — UNCHANGED from live -->
+        <div class="va-hero">
+          <div class="kick">MONDAY · JULY 7</div>
+          <div class="va-hi" style="margin-top:10px">Good evening, <em>Dilnoza</em>.</div>
+          <div class="va-hs">Pick up where you left off, or start something new.</div>
+          <div class="va-credcard">
+            <div class="kick">CREDIT BALANCE</div>
+            <div class="bal"><span class="s">✦</span> 1,250</div>
+            <div class="bar"><i></i></div>
+            <div style="display:flex;align-items:center;font-size:10.5px;color:var(--muted)">
+              Pro · resets Aug 1 <a class="btn spend sm" style="margin-left:auto">Add credits</a></div>
+          </div>
+          <div class="va-qa">
+            <div class="qc g5 thumb" style="border-radius:16px"><span class="qi"><svg class="ic"><use href="#i-grid"/></svg></span>
+              <div class="qt">Find a template</div><div class="qd">10,000+ AE, Premiere &amp; Resolve packs</div></div>
+            <div class="qc g6 thumb" style="border-radius:16px"><span class="qi"><svg class="ic"><use href="#i-spark"/></svg></span>
+              <div class="qt">Create with AI</div><div class="qd">Image · Video · Voiceover · SFX</div></div>
+            <div class="qc g3 thumb" style="border-radius:16px"><span class="qi"><svg class="ic"><use href="#i-puzzle"/></svg></span>
+              <div class="qt">Install the plugin</div><div class="qd">Browse &amp; import inside After Effects</div></div>
+          </div>
+        </div>
+
+        <!-- Jump back in — UNCHANGED from live -->
+        <div class="va-sec"><h3>Jump back in</h3><span class="all">Open AI Studio <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="va-strip">
+          <div class="thumb gt g1"><span class="typetag">IMAGE · ✦8</span></div>
+          <div class="thumb gt g9"><span class="typetag">VIDEO · ✦40</span><span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span></div>
+          <div class="thumb gt g7"><span class="typetag">IMAGE · ✦4</span></div>
+          <div class="thumb gt g11"><span class="typetag">VOICE · ✦8</span></div>
+          <div class="thumb gt g4"><span class="typetag">SFX · ✦3</span></div>
+        </div>
+
+        <!-- ═══ NEW · FEATURED MODELS — OPTION A: spotlight + rail ═══ -->
+        <div class="va-sec"><h3>Featured models</h3><span class="cnt">FFAPI.MODELS · LIVE COSTS</span>
+          <span class="all">Open AI Studio <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="fm-a">
+          <div class="fm-hero thumb g9">
+            <span class="spot">✦ MODEL OF THE WEEK</span>
+            <span class="playov" style="z-index:1"><span style="width:48px;height:48px"><svg class="ic" style="width:19px;height:19px"><use href="#i-play"/></svg></span></span>
+            <h4>Kling v3.0</h4>
+            <p>Cinematic motion with strong prompt adherence — text-to-video and image-to-video, up to 1080p.</p>
+            <div class="row">
+              <span class="fm-tag"><svg class="ic" style="margin-right:4px"><use href="#i-vid"/></svg>VIDEO</span>
+              <span class="fm-cost">from <b>✦35</b> / 5s</span>
+              <a class="btn spend sm htry" style="margin-left:auto">Try Kling v3.0</a>
+            </div>
+          </div>
+          <div class="fm-rail">
+            <div class="fm-mini thumb g6">
+              <span class="try">Try</span>
+              <div class="nm">Nano Banana Pro</div>
+              <div class="cm"><span class="fm-tag">IMAGE</span><span class="fm-cost">from <b>✦8</b></span></div>
+            </div>
+            <div class="fm-mini thumb g5">
+              <span class="try">Try</span>
+              <div class="nm">Veo 3.1 Fast</div>
+              <div class="cm"><span class="fm-tag">VIDEO</span><span class="fm-cost">from <b>✦20</b></span></div>
+            </div>
+            <div class="fm-mini thumb g11">
+              <span class="try">Try</span>
+              <div class="nm">Kokoro TTS</div>
+              <div class="cm"><span class="fm-tag">VOICE</span><span class="fm-cost"><b>✦8</b></span></div>
+            </div>
+            <div class="fm-mini thumb g4">
+              <span class="try">Try</span>
+              <div class="nm">ElevenLabs SFX</div>
+              <div class="cm"><span class="fm-tag">SFX</span><span class="fm-cost"><b>✦3</b></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommended — SAME DATA, RICHER CARDS -->
+        <div class="va-sec"><h3>Recommended for you</h3><span class="all">Browse all templates <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="rc-grid">
+          <div class="rc">
+            <div class="med thumb g2">
+              <span class="badges"><span class="badge pro">PRO</span><span class="badge q4k">4K</span></span>
+              <span class="dur">0:12</span>
+              <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+              <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span>
+            </div>
+            <div class="meta"><span class="tt">Neon Pulse Intro</span><span class="sub"><i></i>Ae</span></div>
+            <div class="cat">Intros · 2.1k downloads</div>
+          </div>
+          <div class="rc">
+            <div class="med thumb g5">
+              <span class="badges"><span class="badge free">FREE</span></span>
+              <span class="dur">0:08</span>
+              <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+              <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span>
+            </div>
+            <div class="meta"><span class="tt">Clean Lower Thirds Kit</span><span class="sub"><i style="background:#7CC4FF"></i>Pr</span></div>
+            <div class="cat">Lower Thirds · 4.8k downloads</div>
+          </div>
+          <div class="rc">
+            <div class="med thumb g10">
+              <span class="badges"><span class="badge pro">PRO</span><span class="badge new">NEW</span></span>
+              <span class="dur">0:15</span>
+              <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+              <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span>
+            </div>
+            <div class="meta"><span class="tt">Glitch Logo Reveal</span><span class="sub"><i></i>Ae</span></div>
+            <div class="cat">Logo · 980 downloads</div>
+          </div>
+          <div class="rc">
+            <div class="med thumb g12">
+              <span class="badges"><span class="badge free">FREE</span><span class="badge q4k">4K</span></span>
+              <span class="dur">0:10</span>
+              <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+              <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span>
+            </div>
+            <div class="meta"><span class="tt">Cinematic Title Pack</span><span class="sub"><i style="background:#FFB27C"></i>Dr</span></div>
+            <div class="cat">Titles · 1.4k downloads</div>
+          </div>
+        </div>
+
+        <!-- ═══ NEW · COLLECTION SHELF 1 — Trending ═══ -->
+        <div class="va-sec" style="padding-top:26px"><h3>Trending this week</h3><span class="cnt">TOP DOWNLOADS · 7 DAYS</span>
+          <span class="all">View all <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="sh-wrap">
+          <div class="sh">
+            <div class="rc"><div class="med thumb g6">
+                <span class="badges"><span class="badge pro">PRO</span></span><span class="dur">0:14</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Retro VHS Opener</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Intros · 3.2k downloads</div></div>
+            <div class="rc"><div class="med thumb g3">
+                <span class="badges"><span class="badge free">FREE</span></span><span class="dur">0:06</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Minimal Slide Titles</span><span class="sub"><i style="background:#7CC4FF"></i>Pr</span></div>
+              <div class="cat">Titles · 2.9k downloads</div></div>
+            <div class="rc"><div class="med thumb g8">
+                <span class="badges"><span class="badge pro">PRO</span><span class="badge q4k">4K</span></span><span class="dur">0:18</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Fire Logo Sting</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Logo · 2.4k downloads</div></div>
+            <div class="rc"><div class="med thumb g1">
+                <span class="badges"><span class="badge free">FREE</span></span><span class="dur">0:09</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Gradient Promo Pack</span><span class="sub"><i style="background:#FFB27C"></i>Dr</span></div>
+              <div class="cat">Promo · 2.2k downloads</div></div>
+            <div class="rc"><div class="med thumb g7">
+                <span class="badges"><span class="badge pro">PRO</span></span><span class="dur">0:11</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Nature Doc Titles</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Titles · 1.9k downloads</div></div>
+          </div>
+          <span class="sh-fade"></span>
+          <span class="sh-arrow"><svg class="ic"><use href="#i-arrowr"/></svg></span>
+        </div>
+
+        <!-- ═══ NEW · COLLECTION SHELF 2 — Lower Thirds ═══ -->
+        <div class="va-sec" style="padding-top:18px"><h3>Lower Thirds essentials</h3><span class="cnt">CURATED · CATEGORY</span>
+          <span class="all">View all <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="sh-wrap">
+          <div class="sh">
+            <div class="rc"><div class="med thumb g5">
+                <span class="badges"><span class="badge free">FREE</span></span><span class="dur">0:07</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Broadcast Lower Thirds</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Lower Thirds · 4.8k downloads</div></div>
+            <div class="rc"><div class="med thumb g11">
+                <span class="badges"><span class="badge pro">PRO</span></span><span class="dur">0:05</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Glass Name Strips</span><span class="sub"><i style="background:#7CC4FF"></i>Pr</span></div>
+              <div class="cat">Lower Thirds · 1.7k downloads</div></div>
+            <div class="rc"><div class="med thumb g9">
+                <span class="badges"><span class="badge free">FREE</span><span class="badge new">NEW</span></span><span class="dur">0:06</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Kinetic Social Tags</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Lower Thirds · 640 downloads</div></div>
+            <div class="rc"><div class="med thumb g4">
+                <span class="badges"><span class="badge pro">PRO</span></span><span class="dur">0:08</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">News Ticker Kit</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Lower Thirds · 1.1k downloads</div></div>
+            <div class="rc"><div class="med thumb g10">
+                <span class="badges"><span class="badge free">FREE</span></span><span class="dur">0:05</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Podcast Name Cards</span><span class="sub"><i style="background:#FFB27C"></i>Dr</span></div>
+              <div class="cat">Lower Thirds · 890 downloads</div></div>
+          </div>
+          <span class="sh-fade"></span>
+          <span class="sh-arrow"><svg class="ic"><use href="#i-arrowr"/></svg></span>
+        </div>
+
+        <!-- ═══ NEW · COLLECTION SHELF 3 — New this week ═══ -->
+        <div class="va-sec" style="padding-top:18px"><h3>New this week</h3><span class="cnt">LATEST APPROVED</span>
+          <span class="all">View all <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="sh-wrap" style="padding-bottom:34px">
+          <div class="sh">
+            <div class="rc"><div class="med thumb g7">
+                <span class="badges"><span class="badge new">NEW</span><span class="badge pro">PRO</span></span><span class="dur">0:13</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Liquid Wipe Transitions</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Transitions · added Jul 6</div></div>
+            <div class="rc"><div class="med thumb g2">
+                <span class="badges"><span class="badge new">NEW</span><span class="badge free">FREE</span></span><span class="dur">0:10</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Y2K Sticker Pack</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Graphics · added Jul 5</div></div>
+            <div class="rc"><div class="med thumb g12">
+                <span class="badges"><span class="badge new">NEW</span><span class="badge q4k">4K</span></span><span class="dur">0:16</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Festival Aftermovie Kit</span><span class="sub"><i style="background:#7CC4FF"></i>Pr</span></div>
+              <div class="cat">Slideshows · added Jul 4</div></div>
+            <div class="rc"><div class="med thumb g8">
+                <span class="badges"><span class="badge new">NEW</span><span class="badge pro">PRO</span></span><span class="dur">0:07</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Sports Score Bug</span><span class="sub"><i></i>Ae</span></div>
+              <div class="cat">Broadcast · added Jul 3</div></div>
+            <div class="rc"><div class="med thumb g1">
+                <span class="badges"><span class="badge new">NEW</span><span class="badge free">FREE</span></span><span class="dur">0:09</span>
+                <span class="playov"><span><svg class="ic"><use href="#i-play"/></svg></span></span>
+                <span class="rise"><span class="fa"><svg class="ic"><use href="#i-heart"/></svg></span><span class="sp"></span><span class="fa"><svg class="ic"><use href="#i-down"/></svg></span></span></div>
+              <div class="meta"><span class="tt">Handwritten Callouts</span><span class="sub"><i style="background:#FFB27C"></i>Dr</span></div>
+              <div class="cat">Callouts · added Jul 2</div></div>
+          </div>
+          <span class="sh-fade"></span>
+          <span class="sh-arrow"><svg class="ic"><use href="#i-arrowr"/></svg></span>
+        </div>
+      </div>
+
+      <div class="notes">
+        <h4>C1 — what to look at</h4>
+        <div class="note"><span class="dot">1</span><div><b>Everything above “Featured models” is untouched</b> — hero, credit card, quick actions and Jump back in are the live screen, byte-for-byte intent.</div></div>
+        <div class="note"><span class="dot">2</span><div><b>Featured models (Option A)</b> — one spotlight “Model of the week” + a 2×2 rail. Real names/costs from FFAPI.models: Kling v3.0 ✦35/5s, Nano Banana Pro ✦8, Veo 3.1 Fast ✦20, Kokoro ✦8, SFX ✦3. “Try” = spend-gradient pill → opens AI Studio with that model pre-selected.</div></div>
+        <div class="note"><span class="dot">3</span><div><b>Richer card (rc-)</b> replaces the old va-tc: 16/9 media, hover = 1.025 scale + play button + heart/download reveal, badges NEW (lime outline) / PRO (lime) / 4K, meta line gains category + download count. With <b>prefers-reduced-motion</b> the reveal bar is simply always visible and nothing moves.</div></div>
+        <div class="note"><span class="dot">4</span><div><b>Collection shelves (sh-)</b> — horizontal scroll rows with right-edge fade + arrow, Artlist style. Real build derives them from the existing catalog: Trending = downloads/7d, Lower Thirds = category filter, New = createdAt. “View all” deep-links to Templates with that filter applied.</div></div>
+        <div class="note"><span class="dot">5</span><div><b>Reading order</b>: your work (Jump back in) → what to try (models) → personalized picks → browse shelves. Monetization stays limited to “Add credits” + model “Try” pills.</div></div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ C2 · FEATURED MODELS — OPTION B ═══════════════════ -->
+<section class="zone">
+  <div class="z-head">
+    <div class="z-kick">C2 · ALTERNATIVE</div>
+    <div class="z-t">Featured models — Option B · uniform shelf</div>
+    <p class="z-d">Same section, different treatment: no spotlight — <b>five equal model cards</b> in one scrollable
+    shelf. Calmer, more scalable (any number of featured models), every card gets name + description + cost + Try.
+    Pick A (editorial, one hero model pushed hard) or B (flat, catalog-like). Everything else on the page is identical.</p>
+  </div>
+
+  <div class="scr">
+    <div class="scr-label"><span class="n">C2</span> FEATURED MODELS ROW — OPTION B <span class="tag">SECTION CROP · 1280</span></div>
+    <div class="fwrap"><div class="frow">
+      <div class="frame" style="min-height:0">
+        <div class="chrome"><span class="d"></span><span class="d"></span><span class="d"></span>
+          <span class="url"><svg class="ic"><use href="#i-lock"/></svg> app.<b>getframeflow.app</b>/home · section crop</span></div>
+        <div class="va-sec" style="padding-top:26px"><h3>Featured models</h3><span class="cnt">FFAPI.MODELS · LIVE COSTS</span>
+          <span class="all">Open AI Studio <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="fm-b" style="padding-bottom:30px">
+          <div class="fm-card">
+            <div class="prev thumb g9"><span class="typetag">VIDEO</span>
+              <span class="playov"><span style="width:32px;height:32px"><svg class="ic" style="width:12px;height:12px"><use href="#i-play"/></svg></span></span></div>
+            <div class="bd"><div class="nm">Kling v3.0</div><div class="ds">Cinematic motion · t2v + i2v · 1080p</div>
+              <div class="ft"><span class="fm-cost">from <b>✦35</b> / 5s</span><a class="btn spend sm">Try</a></div></div>
+          </div>
+          <div class="fm-card">
+            <div class="prev thumb g6"><span class="typetag">IMAGE</span></div>
+            <div class="bd"><div class="nm">Nano Banana Pro</div><div class="ds">Photoreal stills · up to 4K</div>
+              <div class="ft"><span class="fm-cost">from <b>✦8</b></span><a class="btn spend sm">Try</a></div></div>
+          </div>
+          <div class="fm-card">
+            <div class="prev thumb g5"><span class="typetag">VIDEO</span>
+              <span class="playov"><span style="width:32px;height:32px"><svg class="ic" style="width:12px;height:12px"><use href="#i-play"/></svg></span></span></div>
+            <div class="bd"><div class="nm">Veo 3.1 Fast</div><div class="ds">Fast drafts · native audio</div>
+              <div class="ft"><span class="fm-cost">from <b>✦20</b> / 5s</span><a class="btn spend sm">Try</a></div></div>
+          </div>
+          <div class="fm-card">
+            <div class="prev thumb g11"><span class="typetag">VOICE</span></div>
+            <div class="bd"><div class="nm">Kokoro TTS</div><div class="ds">Natural voiceover · 6 voices</div>
+              <div class="ft"><span class="fm-cost"><b>✦8</b> / run</span><a class="btn spend sm">Try</a></div></div>
+          </div>
+          <div class="fm-card">
+            <div class="prev thumb g4"><span class="typetag">SFX</span></div>
+            <div class="bd"><div class="nm">ElevenLabs SFX</div><div class="ds">Text-to-SFX · instant</div>
+              <div class="ft"><span class="fm-cost"><b>✦3</b> / run</span><a class="btn spend sm">Try</a></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="notes">
+        <h4>C2 — A vs B, how to choose</h4>
+        <div class="note"><span class="dot">A</span><div><b>Spotlight + rail</b> (in C1): editorial, gives marketing a weekly “push” slot, big preview sells motion. Costs: the hero card dominates; rail cards carry less info (no description).</div></div>
+        <div class="note"><span class="dot">B</span><div><b>Uniform shelf</b> (this crop): every model equal, each card fits name + one-liner + cost + Try. Scales to N models and matches the collection shelves visually. Less “wow”, more catalog.</div></div>
+        <div class="note"><span class="dot">→</span><div>Both read from <b>FFAPI.models(mode)</b>; the featured set is a small curated list (config or “isFeatured” flag). Try = AI Studio deep-link with the model pre-selected — same handoff the Use ▾ menu already does.</div></div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ C3 · MOBILE ═══════════════════ -->
+<section class="zone">
+  <div class="z-head">
+    <div class="z-kick">C3 · MOBILE 390</div>
+    <div class="z-t">Enriched Home — mobile</div>
+    <p class="z-d">Same order, everything becomes horizontal scroll strips. Featured models collapse to the
+    Option-B card at 172px (even if desktop ships Option A — the spotlight doesn't fit a phone). Shelves keep the
+    right-edge fade as the scroll affordance; reveal actions are hidden on touch (tap opens the detail page instead).</p>
+  </div>
+
+  <div class="scr">
+    <div class="scr-label"><span class="n">C3</span> MOBILE · ENRICHED HOME <span class="tag">390PX · BOTTOM TABS</span></div>
+    <div class="fwrap"><div class="frow">
+      <div class="frame m">
+        <div class="chrome"><span class="d"></span><span class="d"></span><span class="d"></span>
+          <span class="url">app.<b>getframeflow.app</b></span></div>
+        <div class="va-mnav">
+          <div class="va-logo" style="font-size:14px"><span class="mk"><svg class="ic"><use href="#i-bolt"/></svg></span>FrameFlow</div>
+          <span style="margin-left:auto"></span>
+          <span class="credpill" style="height:28px;font-size:10.5px"><span class="s">✦</span>1,250</span>
+          <span class="ava" style="width:28px;height:28px">DK</span>
+        </div>
+        <div class="va-mhero">
+          <div class="kick">MONDAY · JULY 7</div>
+          <h2 style="margin-top:6px">Good evening, <em style="font-style:normal;color:var(--lime)">Dilnoza</em>.</h2>
+        </div>
+        <div class="va-sec" style="padding:14px 16px 10px"><h3 style="font-size:14px">Jump back in</h3></div>
+        <div class="va-mstrip">
+          <div class="thumb gt g1"><span class="typetag">IMAGE</span></div>
+          <div class="thumb gt g9"><span class="typetag">VIDEO</span></div>
+          <div class="thumb gt g7"><span class="typetag">IMAGE</span></div>
+        </div>
+        <div class="va-sec" style="padding:18px 16px 10px"><h3 style="font-size:14px">Featured models</h3>
+          <span class="all" style="font-size:11px">AI Studio <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="fm-mstrip">
+          <div class="fm-card">
+            <div class="prev thumb g9"><span class="typetag">VIDEO</span></div>
+            <div class="bd"><div class="nm" style="font-size:11.5px">Kling v3.0</div>
+              <div class="ft" style="margin-top:7px"><span class="fm-cost">from <b>✦35</b></span><a class="btn spend sm" style="padding:5px 10px;font-size:10px">Try</a></div></div>
+          </div>
+          <div class="fm-card">
+            <div class="prev thumb g6"><span class="typetag">IMAGE</span></div>
+            <div class="bd"><div class="nm" style="font-size:11.5px">Nano Banana Pro</div>
+              <div class="ft" style="margin-top:7px"><span class="fm-cost">from <b>✦8</b></span><a class="btn spend sm" style="padding:5px 10px;font-size:10px">Try</a></div></div>
+          </div>
+          <div class="fm-card">
+            <div class="prev thumb g5"><span class="typetag">VIDEO</span></div>
+            <div class="bd"><div class="nm" style="font-size:11.5px">Veo 3.1 Fast</div>
+              <div class="ft" style="margin-top:7px"><span class="fm-cost">from <b>✦20</b></span><a class="btn spend sm" style="padding:5px 10px;font-size:10px">Try</a></div></div>
+          </div>
+        </div>
+        <div class="va-sec" style="padding:18px 16px 10px"><h3 style="font-size:14px">Recommended</h3></div>
+        <div class="rc-mgrid">
+          <div class="rc"><div class="med thumb g2" style="border-radius:11px">
+              <span class="badges"><span class="badge pro">PRO</span></span></div>
+            <div class="meta" style="padding-top:7px"><span class="tt">Neon Pulse Intro</span></div></div>
+          <div class="rc"><div class="med thumb g5" style="border-radius:11px">
+              <span class="badges"><span class="badge free">FREE</span></span></div>
+            <div class="meta" style="padding-top:7px"><span class="tt">Lower Thirds Kit</span></div></div>
+        </div>
+        <div class="va-sec" style="padding:14px 16px 10px"><h3 style="font-size:14px">Trending this week</h3>
+          <span class="all" style="font-size:11px">View all <svg class="ic"><use href="#i-arrow"/></svg></span></div>
+        <div class="sh-m" style="padding-bottom:16px">
+          <div class="rc"><div class="med thumb g6">
+              <span class="badges"><span class="badge pro">PRO</span></span><span class="dur">0:14</span></div>
+            <div class="meta" style="padding-top:7px"><span class="tt">Retro VHS Opener</span></div></div>
+          <div class="rc"><div class="med thumb g3">
+              <span class="badges"><span class="badge free">FREE</span></span><span class="dur">0:06</span></div>
+            <div class="meta" style="padding-top:7px"><span class="tt">Minimal Slide Titles</span></div></div>
+          <div class="rc"><div class="med thumb g8">
+              <span class="badges"><span class="badge pro">PRO</span></span><span class="dur">0:18</span></div>
+            <div class="meta" style="padding-top:7px"><span class="tt">Fire Logo Sting</span></div></div>
+        </div>
+        <div class="va-mtabs">
+          <a class="on"><svg class="ic"><use href="#i-home"/></svg>Home</a>
+          <a><svg class="ic"><use href="#i-grid"/></svg>Templates</a>
+          <a><svg class="ic"><use href="#i-spark"/></svg>AI</a>
+          <a><svg class="ic"><use href="#i-user"/></svg>Account</a>
+        </div>
+      </div>
+
+      <div class="notes">
+        <h4>C3 — mobile behavior</h4>
+        <div class="note"><span class="dot">1</span><div><b>Quick-action cards are dropped on mobile</b> (they exist as bottom tabs); the page goes straight from greeting to content rows — less scrolling to reach the new sections.</div></div>
+        <div class="note"><span class="dot">2</span><div><b>Featured models = Option-B cards at 172px</b> regardless of the desktop choice; the spotlight card doesn't survive 390px. Try pill stays visible (no hover on touch).</div></div>
+        <div class="note"><span class="dot">3</span><div>Shelves scroll horizontally at 200px cards; hover reveal is disabled on touch — tap goes to the template detail page, where heart/download already live.</div></div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<div style="margin-top:100px;border-top:1px solid #1A202B;padding-top:24px;font:500 11px 'IBM Plex Mono',monospace;color:#5E6675;line-height:1.8">
+  FAZA C · Home enrichment — mockup only, nothing wired. Build step (after approval):<br>
+  · Featured models → FFAPI.models(mode) + curated featured list; Try = AI Studio deep-link with model pre-selected.<br>
+  · Shelves → existing catalog queries (downloads/7d · category=Lower Thirds · createdAt desc); View all = Templates with filter.<br>
+  · rc- card replaces va-tc on Home (Recommended + shelves); Templates grid can adopt it in a later pass.<br>
+  · prefers-reduced-motion: all hover motion off, reveal bar statically visible.
+</div>
+
+</div>
+</body>
+</html>

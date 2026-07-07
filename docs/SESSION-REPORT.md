@@ -1,31 +1,17 @@
-# Session Report — pack-scan "pending" approve blokini tuzatish
+# Session report — 2026-07-07
 
-**Sana:** 2026-07-07
+**Vazifa:** FAZA C — web app Home boyitish MOCKUP (jonli app TEGILMADI).
 
-## Muammo
-Cloud Run javobdan keyin CPU'ni throttle qiladi → `processPackInBackground` (fire-and-forget)
-muzlaydi → `packScanStatus` abadiy `"pending"` → approve gate 409 ("security check still running").
-Admin override endpoint (`pack-clear`) bor edi, lekin UI'ga ULANMAGAN.
+**Qilindi:** `packages/assetflow-studio/platform/_home-enrich-mockup.html` (commit c3baef1) —
+FAZA B board naqshi/tokenlari bilan 3 frame:
+- **C1** desktop 1280 — to'liq boyitilgan Home: mavjud hero/kredit/quick-actions/Jump-back-in
+  saqlangan + Featured models (Variant A: spotlight "Model of the week" + 2×2 rail) +
+  boyroq kartalar (hover reveal, NEW/PRO/4K badge, kategoriya+downloads meta) +
+  3 kolleksiya shelfi (Trending / Lower Thirds / New this week, fade+arrow).
+- **C2** — Featured models Variant B: bir xil 5 karta shelf (nom+tavsif+narx+Try).
+- **C3** mobil 390 — hammasi gorizontal strip, model kartasi 172px, quick-actions olib tashlangan.
+Model nom/narxlari real (gen-models): Kling v3.0 ✦35, Nano Banana Pro ✦8, Veo 3.1 Fast ✦20,
+Kokoro ✦8, SFX ✦3. prefers-reduced-motion hurmat qilinadi. Preview'da tekshirildi (0 console xato).
 
-## Qilingan ish
-- **FIX 1 (backend, PRIMARY):** approve gate'da `pending` bo'lsa skanni SHU YERDA sinxron hal
-  qiladi (`resolvePackScan`) → clean bo'lsa o'tadi. Xato → fail-safe (pending qoladi, Clear pack).
-- **FIX 3 (backend):** upload handler endi quvurni javobdan OLDIN `await` qiladi → status hech
-  qachon "pending" qolmaydi; .zip sahna ekstraktsiyasi ham Cloud Run'da tugaydi. Cloud Run
-  CPU-throttle tuzog'i kod izohiga yozildi.
-- Umumiy helper ajratildi: `classifyPackScan` (verdikt→status, sof) + `resolvePackScan`
-  (download+hash+scan+DB+audit) — upload va approve BIR mantiqni ishlatadi.
-- **FIX 2 (studio UI):** `StudioApi.clearPack` + `modClearPack` handler; Overview navbat,
-  Moderatsiya detali va drawer'ga xavfsizlik-status banneri + "Clear pack (security)" tugmasi.
-  `packScanStatus` mapApiItem'ga qo'shildi.
-
-## Semantika saqlandi
-malicious/duplicate HANUZ bloklaydi (409) va Clear pack ISHLAMAYDI; faqat pending on-demand
-hal bo'ladi, quarantined admin qo'lda tozalaydi. Money-zone (kredit/quote/refund) TEGILMADI.
-
-## Kutilmoqda (USER external)
-- `npm run build -w apps/api` ✅ va `studio:sync` ✅ (lokal green).
-- **Deploy:** API → Cloud Run (GitHub Actions), Studio → CF Pages. Deploydan keyin qotib qolgan
-  shablon: keyingi Approve on-demand hal qiladi YOKI "Clear pack" bosiladi.
-- **Ixtiyoriy infra:** Cloud Run `--no-cpu-throttling` yoki `min-instances≥1` (kod endi bunga
-  bog'liq emas, lekin fon tasklar uchun future-proof).
+**Kutilmoqda:** foydalanuvchi Featured models uchun A yoki B tanlaydi → keyingi task real build
+(FFAPI.models + katalog so'rovlari + AI Studio deep-link).
