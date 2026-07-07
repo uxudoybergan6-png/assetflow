@@ -1261,6 +1261,33 @@ function afAutoscaleSelection(jsonStr) {
   }
 }
 
+// ── Self-tag (Mister Horse "o'z assetini tanish" mexanizmi ekvivalenti) ────────
+// COMPOSER-MECHANISM-ANALYSIS.md §5: MH yashirin marker parametri + nom-regex
+// ishlatadi. FrameFlow'da oddiy, ko'rinmas belgi: layer comment + marker + rang-
+// yorliq. Kelajakda FrameFlow importlarini topish/o'chirish uchun (afIsFrameFlowItem).
+var FF_TAG = "FrameFlow";
+function afIsFrameFlowItem(layer) {
+  try { if (layer && layer.comment && String(layer.comment).indexOf(FF_TAG) >= 0) return true; } catch (e) {}
+  try { return /frameflow/i.test((layer && layer.name) || ""); } catch (e2) {}
+  return false;
+}
+function afTagImportedLayer(layer) {
+  if (!layer) return;
+  var already = afIsFrameFlowItem(layer);
+  try {
+    if (!already) layer.comment = layer.comment ? (String(layer.comment) + " · " + FF_TAG) : FF_TAG;
+  } catch (eC) {}
+  try {
+    var mp = layer.property("ADBE Marker"); // ko'rinmas belgi (regex'siz aniqlash uchun)
+    if (mp) {
+      var t = layer.inPoint;
+      if (!isFinite(t)) t = 0;
+      mp.setValueAtTime(t, new MarkerValue(FF_TAG));
+    }
+  } catch (eM) {}
+  try { layer.label = 9; } catch (eL) {} // rang-yorliq (ko'rinadigan belgi)
+}
+
 function addSceneCompToTimeline(sceneComp, destCompId, cfg) {
   if (!sceneComp) return { ok: false, reason: "no_scene" };
   var destComp = destCompId ? findCompByIdInProject(destCompId) : null;
@@ -1269,16 +1296,49 @@ function addSceneCompToTimeline(sceneComp, destCompId, cfg) {
   }
   cfg = cfg || {};
   try {
-    var newLayer = destComp.layers.add(sceneComp);
-    newLayer.startTime = destComp.time;
-    // Avto-masshtab (Mister Horse ekvivalenti): kontent'ni comp'ga sig'diramiz.
-    // Import undo guruhi (importSingleSceneFromAep) ICHIDA — bitta Undo qaytaradi.
-    // cfg.autoscale === false bilan o'chiriladi; fit rejimi cfg.fitMode (sukut contain).
-    if (cfg.autoscale !== false) {
-      afScaleLayerToComp(newLayer, destComp, cfg.fitMode || "contain", {});
+    // Nishonga joylash (MH mexanizmi 1, ODDIY variant): tanlangan layer bo'lsa uni
+    // "placeholder" sifatida ishlatamiz — inPoint (vaqt) + index (stacking slot). Aks
+    // holda playhead (destComp.time). MUHIM: layers.add() tanlovni almashtiradi, shu
+    // sabab tanlangan layer'ni add'dan OLDIN o'qiymiz. Placeholder OLIB TASHLANMAYDI
+    // (native brick-replace EMAS — task doirasidan tashqari).
+    var target = null;
+    try {
+      var selBefore = destComp.selectedLayers;
+      if (selBefore && selBefore.length) target = selBefore[0];
+    } catch (eSel) { target = null; }
+
+    var insertTime = destComp.time;
+    var placePos = null;
+    if (target) {
+      try { insertTime = target.inPoint; } catch (eIn) { insertTime = destComp.time; }
+      // Placeholder pozitsiyasini o'qib qo'yamiz (autoscale recenter uchun) — ixtiyoriy.
+      if (cfg.inheritPosition === true) {
+        try {
+          var tp = target.property("ADBE Transform Group").property("ADBE Position").value;
+          if (tp && tp.length >= 2 && isFinite(tp[0]) && isFinite(tp[1])) placePos = [tp[0], tp[1]];
+        } catch (ePos) { placePos = null; }
+      }
     }
+
+    var newLayer = destComp.layers.add(sceneComp);
+    newLayer.startTime = insertTime;                       // placeholder inPoint yoki playhead
+    if (target) {
+      try { newLayer.moveBefore(target); } catch (eMove) {} // xuddi shu stacking slot
+    }
+
+    // Avto-masshtab (MH mexanizmi 2): kontent'ni comp'ga sig'diramiz. cfg.autoscale=false o'chiradi.
+    if (cfg.autoscale !== false) {
+      var scaleOpts = {};
+      // Placeholder pozitsiyasiga markazlash (recenter) anchor/position o'zgartiradi →
+      // jonli AE tekshiruvini talab qiladi, shu sabab sukut bo'yicha O'CHIQ (faqat Scale,
+      // past-xavf). cfg.inheritPosition === true bo'lsa "lands in place" markazlash.
+      if (placePos) { scaleOpts.recenter = true; scaleOpts.position = placePos; }
+      afScaleLayerToComp(newLayer, destComp, cfg.fitMode || "contain", scaleOpts);
+    }
+
+    afTagImportedLayer(newLayer);                          // self-tag (MH mexanizmi 5)
     destComp.openInViewer();
-    return { ok: true, reason: "" };
+    return { ok: true, reason: "", placed: target ? "selection" : "playhead" };
   } catch (e) {
     return { ok: false, reason: e.toString() };
   }
