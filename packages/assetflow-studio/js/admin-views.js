@@ -365,6 +365,9 @@ function renderModeration(){
     return `<button class="adx-tag ${MOD_FILTER===k?'on':''}" onclick="setModFilter('${k}')">${l} <span class="n">${n}</span></button>`;
   }).join('');
 
+  // Select-all faqat joriy ko'rinadigan navbat elementlariga ta'sir qiladi.
+  const allChecked = items.length>0 && items.every(t=>MOD_CHECKED.has(t.id));
+
   const root = document.getElementById('modRoot');
   if(!root) return;
   root.innerHTML = `
@@ -372,15 +375,17 @@ function renderModeration(){
       <span class="adx-bdg adx-bdg-info">${MOD_CHECKED.size} selected</span>
       <span style="font-size:11.5px;color:var(--muted)">Bulk action:</span>
       <span style="flex:1"></span>
-      <button class="adx-btn adx-btn-ok sm" onclick="bulkAction('approve')"><i class="ph ph-check"></i>Approve</button>
-      <button class="adx-btn2 adx-btn-warn sm" onclick="bulkAction('soft')"><i class="ph ph-arrow-u-up-left"></i>Soft reject</button>
-      <button class="adx-btn2 sm" onclick="bulkAction('export')"><i class="ph ph-export"></i>Export</button>
+      <button class="adx-btn adx-btn-ok sm" onclick="bulkAction('approve-free')"><i class="ph ph-check"></i>Approve · Free</button>
+      <button class="adx-btn adx-btn-ok sm" onclick="bulkAction('approve-pro')"><i class="ph ph-crown-simple"></i>Approve · Pro</button>
+      <button class="adx-btn2 adx-btn-warn sm" onclick="bulkAction('reject')"><i class="ph ph-arrow-u-up-left"></i>Reject</button>
+      <button class="adx-btn2 sm" onclick="bulkAction('clear-pack')"><i class="ph ph-shield-check"></i>Clear pack</button>
       <button class="adx-btn2 sm" onclick="MOD_CHECKED.clear();renderModeration()">Cancel</button>
     </div>`:''}
     <div class="adx-modwrap">
       <!-- list panel -->
       <div class="adx-modlist">
         <div class="adx-modtags">${tagRow}</div>
+        ${items.length?`<div class="adx-modselall" onclick="toggleCheckAll()"><span class="adx-modcheck ${allChecked?'on':''}"><i class="ph-bold ph-check"></i></span><span style="font-size:11px;color:var(--muted)">${allChecked?'Deselect all':'Select all'} (${items.length})</span></div>`:''}
         <div class="adx-modscroll">
           ${items.length? items.map(t=>{
             const con = t._con || cById(t.cid) || { name: "Contributor", email: "" };
@@ -507,33 +512,56 @@ function setModCat(v){ MOD_CAT=v||'all'; renderModeration(); }
 function setModSort(v){ MOD_SORT=v==='old'?'old':'new'; renderModeration(); }
 function selectMod(id){ MOD_SELECTED=id; renderModeration(); }
 function toggleCheck(id){ MOD_CHECKED.has(id)?MOD_CHECKED.delete(id):MOD_CHECKED.add(id); renderModeration(); }
+function toggleCheckAll(){
+  const items=modQueueItems();
+  const allChecked = items.length>0 && items.every(t=>MOD_CHECKED.has(t.id));
+  if(allChecked) items.forEach(t=>MOD_CHECKED.delete(t.id));
+  else items.forEach(t=>MOD_CHECKED.add(t.id));
+  renderModeration();
+}
 function navMod(dir){
   const items=modQueueItems(); if(!items.length) return;
   const i=items.findIndex(x=>x.id===MOD_SELECTED);
   const ni=Math.max(0,Math.min(items.length-1,i+dir)); MOD_SELECTED=items[ni].id; renderModeration();
 }
+// OMMAVIY moderatsiya — bitta server so'rovi (StudioApi.bulkReview), har element ALOHIDA
+// ishlanadi (bitta yomon element partiyani to'xtatmaydi). a: approve-free | approve-pro |
+// reject | clear-pack. Karantin gate saqlanadi (clear-pack → so'ng approve).
 async function bulkAction(a){
-  const n=MOD_CHECKED.size;
-  if(a==='approve'&&StudioApi.token()){
-    for(const id of MOD_CHECKED){
-      try{ await StudioApi.reviewTemplate(id,'approve'); }catch(e){ console.warn(id,e); }
-    }
-    await StudioTemplates.refreshAfterReview();
-    if (StudioTemplates.loadModerationOnly) await StudioTemplates.loadModerationOnly();
-    toast('Bulk approve', `${n} template${n===1?'':'s'} approved and added to the AE catalog`,'success');
-  }else if(a==='approve'){
-    toast('Bulk approve', 'Sign in as admin first','warn');
+  const ids=[...MOD_CHECKED]; const n=ids.length;
+  if(!n) return;
+  if(!StudioApi.token()){ toast('Bulk action','Sign in as admin first','warn'); return; }
+
+  const map = {
+    'approve-free': { action:'approve', opts:{ published:true, isPro:false }, label:'Bulk approve · Free' },
+    'approve-pro':  { action:'approve', opts:{ published:true, isPro:true },  label:'Bulk approve · Pro' },
+    'reject':       { action:'reject',  opts:{ note:'Bulk reject' },          label:'Bulk reject' },
+    'clear-pack':   { action:'clear-pack', opts:{},                            label:'Bulk clear pack' },
+  };
+  const m = map[a];
+  if(!m) return;
+
+  let resp;
+  try{
+    resp = await StudioApi.bulkReview(ids, m.action, m.opts);
+  }catch(e){
+    console.warn('bulkReview', e);
+    toast(m.label, (e && e.message) || 'Request failed','warn');
+    return;
   }
-  if(a==='soft'&&StudioApi.token()){
-    for(const id of MOD_CHECKED){
-      try{ await StudioApi.reviewTemplate(id,'reject','Bulk soft reject'); }catch(e){ console.warn(id,e); }
-    }
-    await StudioTemplates.refreshAfterReview();
-    if (StudioTemplates.loadModerationOnly) await StudioTemplates.loadModerationOnly();
-    toast('Bulk soft reject', `${n} template${n===1?'':'s'} rejected`,'warn');
-  }else if(a==='soft'){
-    toast('Bulk soft reject', 'Sign in as admin first','warn');
+
+  await StudioTemplates.refreshAfterReview();
+  if (StudioTemplates.loadModerationOnly) await StudioTemplates.loadModerationOnly();
+
+  const ok = resp && typeof resp.okCount==='number' ? resp.okCount : n;
+  const total = resp && typeof resp.total==='number' ? resp.total : n;
+  const failed = total - ok;
+  const firstErr = (resp && Array.isArray(resp.results) ? resp.results.find(r=>!r.ok) : null);
+  if(failed>0){
+    toast(m.label, `${ok}/${total} succeeded · ${failed} failed${firstErr&&firstErr.error?' ('+firstErr.error+')':''}`,'warn');
+  }else{
+    const suffix = a==='approve-pro'?' as Pro' : a==='approve-free'?' as Free' : '';
+    toast(m.label, `${ok} template${ok===1?'':'s'} processed${suffix}`,'success');
   }
-  if(a==='export'){ toast('Export', `${n} record${n===1?'':'s'} exported to CSV`,'info'); }
   MOD_CHECKED.clear(); renderModeration();
 }

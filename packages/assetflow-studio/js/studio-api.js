@@ -378,6 +378,20 @@ const StudioApi = (() => {
     });
   }
 
+  // Admin: OMMAVIY moderatsiya — bir necha shablonga birdan approve (+ Free/Pro), reject yoki
+  // clear-pack. Server har elementни alohida ishlaydi va per-item natija qaytaradi (bitta yomon
+  // element partiyani to'xtatmaydi). action: "approve" | "reject" | "clear-pack".
+  async function bulkReview(ids, action, opts = {}) {
+    const body = { ids, action };
+    if (opts.note != null) body.note = opts.note;
+    if (typeof opts.published === "boolean") body.published = opts.published;
+    if (typeof opts.isPro === "boolean") body.isPro = opts.isPro;
+    return request(`/api/contributor/admin/templates/bulk`, {
+      method: "POST",
+      body,
+    });
+  }
+
   async function adminOverview() {
     return request("/api/contributor/admin/overview");
   }
@@ -505,6 +519,7 @@ const StudioApi = (() => {
     patchTemplate,
     deleteTemplate,
     clearPack,
+    bulkReview,
     adminOverview,
     listPluginSubscribers,
     patchPluginSubscriber,

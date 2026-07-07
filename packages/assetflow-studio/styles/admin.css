@@ -293,6 +293,8 @@ body.adx-body{background:#06080B}
 .adx-modwrap{flex:1;display:flex;min-height:0}
 .adx-modlist{width:400px;flex:none;border-right:1px solid var(--hair);display:flex;flex-direction:column;min-height:0}
 .adx-modtags{padding:14px 16px 10px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--hair)}
+.adx-modselall{display:flex;align-items:center;gap:9px;padding:9px 16px;border-bottom:1px solid var(--hair);cursor:pointer;user-select:none}
+.adx-modselall:hover{background:var(--surface2)}
 .adx-modscroll{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
 .adx-moditem{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px;cursor:pointer;text-align:left;font-family:inherit;color:inherit}
 .adx-moditem.sel{background:var(--surface2);border-color:rgba(194,240,74,.3)}

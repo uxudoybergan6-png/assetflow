@@ -2004,22 +2004,27 @@ contributorRouter.post(
   }
 );
 
-contributorRouter.post(
-  "/templates/:id/review",
-  requireAuth,
-  requireAdmin,
-  async (req, res) => {
-    const parsed = reviewSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
-      return;
-    }
-    const id = String(req.params.id);
-    const { action, note, published } = parsed.data;
+type ReviewOutcome =
+  | { ok: true; template: Awaited<ReturnType<typeof prisma.contributorTemplate.update>> }
+  | { ok: false; status: number; error: string; code?: string; packScanStatus?: string };
 
-    // Karantin gate (Bosqich 2 #2): malware/dedup karantinидаги pack TASDIQLANMAYDI/NASHR
-    // ETILMAYDI. Reject bloklanmaydi (admin baribir rad qila oladi).
-    if (action === "approve") {
+/**
+ * Bitta shablonni approve/reject qiladi (karantin gate + embedding + moderatsiya xabari +
+ * audit + email). /templates/:id/review (yakka) va /admin/templates/bulk (ommaviy) shundan
+ * foydalanadi — mantiq bir joyda. Kutilmagan xatoni THROW qiladi (yakka yo'l 500, bulk yo'li
+ * per-item try/catch bilan ushlaydi); ma'lum holatlar (karantin, stale session) ok:false.
+ */
+async function reviewOneTemplate(
+  id: string,
+  action: "approve" | "reject",
+  opts: { note?: string; published?: boolean },
+  adminId: string
+): Promise<ReviewOutcome> {
+  const { note, published } = opts;
+
+  // Karantin gate (Bosqich 2 #2): malware/dedup karantinидаги pack TASDIQLANMAYDI/NASHR
+  // ETILMAYDI. Reject bloklanmaydi (admin baribir rad qila oladi).
+  if (action === "approve") {
       let pre = await prisma.contributorTemplate.findUnique({
         where: { id },
         select: { packScanStatus: true, fileName: true, contributorId: true },
@@ -2047,7 +2052,9 @@ contributorRouter.post(
       }
       const s = pre?.packScanStatus;
       if (s === "malicious" || s === "quarantined" || s === "duplicate" || s === "pending") {
-        res.status(409).json({
+        return {
+          ok: false,
+          status: 409,
           error:
             s === "duplicate"
               ? "Pack was flagged as a duplicate (dedup) — cannot be approved"
@@ -2058,8 +2065,7 @@ contributorRouter.post(
                   : "Pack security check is pending (quarantined) — needs admin review",
           code: "PACK_QUARANTINED",
           packScanStatus: s,
-        });
-        return;
+        };
       }
     }
 
@@ -2072,7 +2078,7 @@ contributorRouter.post(
               ? TemplateReviewStatus.APPROVED
               : TemplateReviewStatus.REJECTED,
           reviewNote: note ?? null,
-          reviewedById: req.user!.userId,
+          reviewedById: adminId,
           reviewedAt: new Date(),
           published:
             action === "approve" ? (published ?? true) : false,
@@ -2093,7 +2099,7 @@ contributorRouter.post(
           contributorId: template.contributorId,
           templateId: template.id,
           templateName: template.name,
-          senderId: req.user!.userId,
+          senderId: adminId,
           body: noteText,
           subjectPrefix: hard ? "Hard reject" : "Soft reject",
         });
@@ -2102,7 +2108,7 @@ contributorRouter.post(
           contributorId: template.contributorId,
           templateId: template.id,
           templateName: template.name,
-          senderId: req.user!.userId,
+          senderId: adminId,
           body: noteText || "Template approved — now visible in the AE Browse catalog.",
           subjectPrefix: "Approved",
         });
@@ -2112,7 +2118,7 @@ contributorRouter.post(
         noteText.toLowerCase().includes("[hard]") ||
         noteText.toLowerCase().includes("hard reject");
       await writeAuditLog({
-        actorId: req.user!.userId,
+        actorId: adminId,
         action:
           action === "approve"
             ? "approve"
@@ -2132,16 +2138,146 @@ contributorRouter.post(
         noteText
       );
 
-      res.json(template);
+      return { ok: true, template };
     } catch (e: any) {
       // Most common: stale JWT userId after demo clear → FK violation.
       const msg = String(e?.message || "");
       if (msg.includes("ContributorTemplate_reviewedById_fkey")) {
-        res.status(401).json({ error: "Session expired" });
-        return;
+        return { ok: false, status: 401, error: "Session expired" };
       }
       throw e;
     }
+}
+
+contributorRouter.post(
+  "/templates/:id/review",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const parsed = reviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
+      return;
+    }
+    const id = String(req.params.id);
+    const { action, note, published } = parsed.data;
+    const outcome = await reviewOneTemplate(id, action, { note, published }, req.user!.userId);
+    if (!outcome.ok) {
+      const body: Record<string, unknown> = { error: outcome.error };
+      if (outcome.code) body.code = outcome.code;
+      if (outcome.packScanStatus) body.packScanStatus = outcome.packScanStatus;
+      res.status(outcome.status).json(body);
+      return;
+    }
+    res.json(outcome.template);
+  }
+);
+
+/**
+ * KARANTINni qo'lda tozalaydi (bitta shablon) — /admin/templates/:id/pack-clear (yakka)
+ * va /admin/templates/bulk (ommaviy) shundan foydalanadi. TASDIQLANGAN "malicious"/"duplicate"
+ * TOZALANMAYDI (o'chirib qayta yuklash kerak).
+ */
+async function clearPackOne(
+  id: string,
+  adminId: string
+): Promise<
+  | { ok: true; template: Awaited<ReturnType<typeof prisma.contributorTemplate.update>> }
+  | { ok: false; status: number; error: string; code?: string; packScanStatus?: string }
+> {
+  const existing = await prisma.contributorTemplate.findUnique({
+    where: { id },
+    select: { name: true, packScanStatus: true },
+  });
+  if (!existing) {
+    return { ok: false, status: 404, error: "Template not found" };
+  }
+  const s = existing.packScanStatus;
+  if (s === "malicious" || s === "duplicate") {
+    return {
+      ok: false,
+      status: 409,
+      error: "A confirmed malicious/duplicate pack cannot be cleared manually — delete and re-upload",
+      code: "PACK_HARD_BLOCKED",
+      packScanStatus: s ?? undefined,
+    };
+  }
+  const template = await prisma.contributorTemplate.update({
+    where: { id },
+    data: { packScanStatus: "clean", packScanDetail: "Manually reviewed and cleared by admin" },
+  });
+  await writeAuditLog({
+    actorId: adminId,
+    action: "template.pack_cleared",
+    targetType: "template",
+    targetId: id,
+    detail: `${existing.name} (previous status: ${s ?? "null"})`,
+  });
+  return { ok: true, template };
+}
+
+/**
+ * POST /admin/templates/bulk — OMMAVIY moderatsiya (KONTENT-QUVURI-SXEMA.md §7).
+ * Bir necha pending shablonga birdan: approve (+ Free/Pro), reject, yoki clear-pack (xavfsizlik).
+ * Har element ALOHIDA ishlanadi (server tomon loop) — bitta yomon element butun partiyani
+ * to'xtatmaydi; har biriga per-item natija qaytadi. Karantin gate saqlanadi (approve'dan oldin
+ * kerak bo'lsa clear-pack). MONEY-ZONE tegilmaydi — Free/Pro oddiy maydon.
+ */
+const bulkReviewSchema = z.object({
+  ids: z.array(z.string().min(1).max(200)).min(1).max(200),
+  action: z.enum(["approve", "reject", "clear-pack"]),
+  note: z.string().max(2000).optional(),
+  published: z.boolean().optional(),
+  // Free/Pro: per-shablon `isPro` maydoni (mavjud admin PATCH bilan bir xil). Bu ODDIY maydon —
+  // kredit/quote/consume pul dvigeteli EMAS (MONEY-ZONE tegilmaydi).
+  isPro: z.boolean().optional(),
+});
+contributorRouter.post(
+  "/admin/templates/bulk",
+  requireAuth,
+  requireAdmin,
+  async (req, res) => {
+    const parsed = bulkReviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
+      return;
+    }
+    const { ids, action, note, published, isPro } = parsed.data;
+    const adminId = req.user!.userId;
+    const results: Array<{ id: string; ok: boolean; error?: string; code?: string }> = [];
+
+    for (const id of ids) {
+      try {
+        if (action === "clear-pack") {
+          const out = await clearPackOne(id, adminId);
+          results.push(out.ok ? { id, ok: true } : { id, ok: false, error: out.error, code: out.code });
+          continue;
+        }
+        const out = await reviewOneTemplate(id, action, { note, published }, adminId);
+        if (!out.ok) {
+          results.push({ id, ok: false, error: out.error, code: out.code });
+          continue;
+        }
+        // Free/Pro belgisi — approve bilan bir amalda (oddiy maydon, kredit dvigeteli EMAS).
+        if (action === "approve" && typeof isPro === "boolean") {
+          await prisma.contributorTemplate.update({ where: { id }, data: { isPro } });
+        }
+        results.push({ id, ok: true });
+      } catch (e) {
+        console.error("[bulk] item failed:", id, e);
+        results.push({ id, ok: false, error: e instanceof Error ? e.message : "Unexpected error" });
+      }
+    }
+
+    const okCount = results.filter((r) => r.ok).length;
+    await writeAuditLog({
+      actorId: adminId,
+      action: `bulk.${action}`,
+      targetType: "template",
+      targetId: ids[0],
+      detail: `Bulk ${action}: ${okCount}/${ids.length} succeeded`,
+    });
+    res.json({ results, okCount, total: ids.length });
   }
 );
 
@@ -2265,35 +2401,15 @@ contributorRouter.post(
   requireAdmin,
   async (req, res) => {
     const id = String(req.params.id);
-    const existing = await prisma.contributorTemplate.findUnique({
-      where: { id },
-      select: { name: true, packScanStatus: true },
-    });
-    if (!existing) {
-      res.status(404).json({ error: "Template not found" });
+    const out = await clearPackOne(id, req.user!.userId);
+    if (!out.ok) {
+      const body: Record<string, unknown> = { error: out.error };
+      if (out.code) body.code = out.code;
+      if (out.packScanStatus) body.packScanStatus = out.packScanStatus;
+      res.status(out.status).json(body);
       return;
     }
-    const s = existing.packScanStatus;
-    if (s === "malicious" || s === "duplicate") {
-      res.status(409).json({
-        error: "A confirmed malicious/duplicate pack cannot be cleared manually — delete and re-upload",
-        code: "PACK_HARD_BLOCKED",
-        packScanStatus: s,
-      });
-      return;
-    }
-    const template = await prisma.contributorTemplate.update({
-      where: { id },
-      data: { packScanStatus: "clean", packScanDetail: "Manually reviewed and cleared by admin" },
-    });
-    await writeAuditLog({
-      actorId: req.user!.userId,
-      action: "template.pack_cleared",
-      targetType: "template",
-      targetId: id,
-      detail: `${existing.name} (previous status: ${s ?? "null"})`,
-    });
-    res.json(template);
+    res.json(out.template);
   }
 );
 
