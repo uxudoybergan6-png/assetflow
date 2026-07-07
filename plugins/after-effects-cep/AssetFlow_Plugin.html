@@ -3572,6 +3572,13 @@ html.home-mode #homePage{display:block!important}
 .axhome .hm-cc{font-size:10px;color:var(--mut2);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axhome .hm-empty{grid-column:1/-1;text-align:center;color:var(--mut2);font-size:12px;padding:30px 0}
 
+/* Preview poster fix: reduced-motion — video never plays, poster stays static */
+@media (prefers-reduced-motion: reduce){
+  .thumb.has-preview:hover .thumb-poster{opacity:1}
+  .thumb.has-preview:hover .thumb-media{opacity:0}
+  .pd3-hero.playing .pd3-hero-vid{display:none}
+  .pd3-hero.playing .pd3-hero-poster{opacity:1}
+}
 </style>
 </head>
 <body>
@@ -4412,7 +4419,7 @@ html.home-mode #homePage{display:block!important}
                   <div class="av" id="footAv">U</div>
                   <div><div class="uname" id="footName">Guest</div><div class="uplan" id="footSub">Sign in · Free</div></div>
                 </div>
-                <button type="button" class="foot-import" id="footImportBtn" disabled onclick="importSelectedScene()">Import</button>
+                <button type="button" class="foot-import" id="footImportBtn" disabled onclick="pd3ImportAll()">Import</button>
               </div>
               <!-- E4: status qatori — ulanish holati (catalogLoadState) + build versiyasi -->
               <div class="af-ftr" id="afFtr">
@@ -4436,32 +4443,14 @@ html.home-mode #homePage{display:block!important}
             <div class="pd3-body" id="pd3Body">
               <div id="pd3Meta"></div>
               <div class="pd3-cta">
-                <button class="pd3-import" id="importSceneBtn" disabled onclick="importSelectedScene()">
+                <button class="pd3-import" id="importSceneBtn" disabled onclick="pd3ImportAll()">
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
                   <span>Import</span>
                 </button>
                 <button type="button" class="pd3-favbtn" id="pd3StarBtn" onclick="pd3ToggleFav()" aria-label="Favorite"></button>
               </div>
               <div class="pd3-plan" id="pd3PlanLine">Free plan — this month: 0 / 15 downloads</div>
-              <div class="pd3-scenes">
-                <div class="scenes-title">Scenes <span class="scenes-count" id="scenesCount"></span>
-                  <button type="button" class="pd3-importall" id="pd3ImportAll" onclick="pd3ImportAll()">Import all</button>
-                </div>
-                <div class="pd3-scenehint" id="selectedSceneLabel">Select a scene or press ▶ to preview the video</div>
-                <div class="scenes-grid" id="scenesGrid"></div>
-                <div class="pack-dropbar" id="packDropBar">
-                  <div class="pack-drop-zone timeline" data-drop="timeline">
-                    <span>🎬</span>
-                    <strong>Timeline</strong>
-                    Drag and drop
-                  </div>
-                  <div class="pack-drop-zone project" data-drop="project">
-                    <span>📁</span>
-                    <strong>Project panel</strong>
-                    Drag and drop
-                  </div>
-                </div>
-              </div>
+              <div class="pd3-scenehint" id="pd3ImportHint"></div>
               <div class="pd3-simhead" id="pd3SimHead" style="display:none">
                 <span>Similar templates</span>
                 <button type="button" class="pd3-simall" onclick="pd3ShowAllSimilar()">All →</button>
@@ -5085,8 +5074,9 @@ async function importPackFileToAE(pack){
     }
   }
   showProgress(100,'Importing into AE…',true);
+  const packLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
   return new Promise((resolve)=>{
-    csInterface.evalScript(`importAssetToProject(${JSON.stringify(importPath)})`,(result)=>{
+    csInterface.evalScript(`importTemplateProject(${JSON.stringify(JSON.stringify({filePath:importPath,packLabel}))})`,(result)=>{
       hideProgress();
       resolve(result||'');
     });
@@ -5215,7 +5205,8 @@ function renderThumbMedia(a){
   let html = '';
   if(a.thumb) html += `<img class="thumb-poster" src="${escHtml(a.thumb)}" alt="${escHtml(a.n)}" loading="lazy">`;
   if(a.preview){
-    html += `<video class="thumb-media" data-src="${escHtml(a.preview)}" muted loop playsinline></video>`;
+    const posterAttr=a.thumb?` poster="${escHtml(a.thumb)}"`:'';
+    html += `<video class="thumb-media" data-src="${escHtml(a.preview)}"${posterAttr} muted loop playsinline></video>`;
     html += `<span class="thumb-play">▶</span>`;
   }
   return html;
@@ -5583,21 +5574,13 @@ function updateGridLabel(){
 }
 
 function updatePackFooter(){
-  const label=document.getElementById('selectedSceneLabel');
+  const label=document.getElementById('pd3ImportHint');
   const btn=document.getElementById('importSceneBtn');
   const footBtn=document.getElementById('footImportBtn');
-  const dragHint=IS_CEP?' · ⠿ drag to the Timeline or Project panel':'';
-  if(selectedSceneIdx<0){
-    label.textContent=(IS_CEP?'Select a scene or drag it in to import':'Select a scene, then import')+dragHint;
-    btn.disabled=true;
-    if(footBtn) footBtn.disabled=true;
-    return;
-  }
   const pack=packs[currentPackName];
-  const scene=pack.scenes[selectedSceneIdx];
   const canImport=packCanAeImport(pack);
-  label.textContent='Selected: '+scene.n+dragHint+(canImport?'':(pack?.server?' · No pack (.aep)':''));
-  btn.disabled=!canImport;
+  if(label) label.textContent=canImport?'':'No pack (.aep) available for this template yet';
+  if(btn) btn.disabled=!canImport;
   if(footBtn){
     footBtn.disabled=!canImport;
     footBtn.textContent=canImport?'Import':'No pack';
@@ -5777,7 +5760,10 @@ function renderPackHero(name,pack,asset){
   hero.style.background=pd3Grad(name);
   let inner='';
   if(thumb) inner+=`<img class="pd3-hero-poster" src="${escHtml(thumb)}" alt="${escHtml(asset?.displayName||name)}">`;
-  if(heroVid) inner+=`<video class="pd3-hero-vid" src="${escHtml(heroVid)}" muted loop playsinline preload="metadata"></video>`;
+  if(heroVid){
+    const posterAttr=thumb?` poster="${escHtml(thumb)}"`:'';
+    inner+=`<video class="pd3-hero-vid" src="${escHtml(heroVid)}"${posterAttr} muted loop playsinline preload="metadata"></video>`;
+  }
   inner+='<div class="pd3-hero-shade"></div>';
   inner+=`<span class="pd3-hero-plan ${isPro?'pro':'free'}">${isPro?'PRO':'FREE'}</span>`;
   if(isAi) inner+='<span class="pd3-hero-ai">With AI</span>';
@@ -5801,7 +5787,6 @@ function renderPackMeta(name,pack,asset){
   const authorHtml=author?`<span class="pd3-mdot"></span><span class="pd3-av"></span><span class="pd3-by">${escHtml(author)}</span>`:'';
   const bits=[];
   bits.push(packCanAeImport(pack)?'Pack available':'No pack');
-  bits.push(pack.scenes.length+' scenes');
   const res=asset?.res?String(asset.res).toUpperCase():'';
   const ratio=orientLabel(asset?.orient);
   if(res&&ratio)bits.push(res+'·'+ratio); else if(res)bits.push(res); else if(ratio)bits.push(ratio);
@@ -5997,42 +5982,19 @@ function openPack(name){
   }
   const asset=assets.find(x=>x.n===name);
   currentPackName=name;
-  selectedSceneIdx=-1;
   document.getElementById('packDetail').classList.add('open');
   renderPackHero(name,pack,asset);
   document.getElementById('pd3Meta').innerHTML=renderPackMeta(name,pack,asset);
   const planEl=document.getElementById('pd3PlanLine');if(planEl)planEl.textContent=pd3PlanText();
-  const impAll=document.getElementById('pd3ImportAll');
-  if(impAll)impAll.style.display=(pack.scenes.length>1&&packCanAeImport(pack))?'inline-flex':'none';
   renderPackSimilar(name,asset);
   pd3SyncFav();
   const body=document.getElementById('pd3Body');if(body)body.scrollTop=0;
-  document.getElementById('scenesCount').textContent='('+pack.scenes.length+')';
-  const grid=document.getElementById('scenesGrid');
-  const singleCol=pack.scenes.length===1;
-  grid.classList.toggle('single',singleCol);
-  const cols=singleCol?1:2;
-  const slotW=measureSceneSlotWidth(grid,cols);
-  if(!pack.scenes.length){
-    grid.innerHTML=`<div class="empty" style="width:100%;margin:0">No scenes.</div>`;
-    document.getElementById('importSceneBtn').disabled=true;
-    document.getElementById('footImportBtn')&&(document.getElementById('footImportBtn').disabled=true);
-    document.getElementById('selectedSceneLabel').textContent='A scene is required to import';
-  }else{
-    grid.innerHTML=pack.scenes.map((s,i)=>renderSceneCard(s,i,asset,slotW)).join('');
-    if(pack.scenes.length===1) selectScene(0);
-  }
-  initSceneVideoPosters();
-  initSceneDrag();
-  scheduleSceneGridLayout();
-  watchScenesGridLayout();
   updatePackFooter();
 }
 
 function closePack(){
   document.getElementById('packDetail').classList.remove('open');
-  currentPackName='';selectedSceneIdx=-1;
-  if(scenesGridLayoutObs){scenesGridLayoutObs.disconnect();scenesGridLayoutObs=null;}
+  currentPackName='';
 }
 
 function importSceneByIdx(idx){
@@ -6121,7 +6083,11 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
       console.error(err);
       showToast('Import error: '+err.message);
     }
+  }else if(!packCanAeImport(pack)){
+    // Haqiqiy pack (.aep) yo'q — soxta "✓ qo'shildi" ko'rsatmaymiz (C.2)
+    showToast('No pack (.aep) available for this template yet','error');
   }else{
+    // CEP tashqarisida (brauzer preview/test) — demo ko'rinish uchun qoldirilgan
     markDownloaded();
     addLayer(scene.n,scene.ico,false);
     showMonitorPreview(getScenePreviewMedia(scene,pack));
@@ -6285,14 +6251,16 @@ async function __downloadAllImpl(n){
       // Bo'sh natija — bekor qilingan yoki CEP emas: jim chiqamiz
       // (bekor qilish toast'i onAfCancel'da ko'rsatiladi).
       if(!result){ render();renderDl(); return; }
-      // Host "ok:aep" / "ok:<name>" qaytaradi; ehtiyot uchun JSON {ok:true} ham qabul
-      let ok=false;
+      // Host importTemplateProject JSON {ok,folder,movedCount} qaytaradi;
+      // eski "ok:aep"/"ok:<name>" string kontrakti ham ehtiyot uchun qabul qilinadi.
+      let ok=false,folder=null;
       if(typeof result==='string'){
         if(result.indexOf('ok:')===0) ok=true;
-        else { try{ const d=JSON.parse(result); if(d&&d.ok) ok=true; }catch(e){} }
+        else { try{ const d=JSON.parse(result); if(d&&d.ok){ ok=true; folder=d.folder||null; } }catch(e){} }
       }
       if(ok){
         markPackDownloaded();
+        recordImportedMeta(n,null,folder?{folder}:null);
         showToast('✓ "'+(p.displayName||n)+'" imported into the AE project','success',__elapsed());
       }
       else showToast('Import error: '+(result||'unknown'),'error');
@@ -6300,6 +6268,9 @@ async function __downloadAllImpl(n){
       console.error(err);
       showToast('Import error: '+err.message);
     }
+  }else if(!packCanAeImport(p)){
+    // Haqiqiy pack (.aep) yo'q — soxta "✓ qo'shildi" ko'rsatmaymiz (C.2)
+    showToast('No pack (.aep) available for this template yet','error');
   }else if(p.local&&p.fileBlobId&&typeof AssetFlowStore!=='undefined'){
     markPackDownloaded();
     const blob=await AssetFlowStore.getBlob(p.fileBlobId);
@@ -6310,9 +6281,10 @@ async function __downloadAllImpl(n){
       a.click();
       URL.revokeObjectURL(a.href);
     }
-    p.scenes.forEach(s=>addLayer(s.n,s.ico));
     showToast('✓ Pack downloaded');
   }else{
+    // CEP tashqarisida (brauzer preview/test) — AE yo'q, shu sabab haqiqiy import
+    // qilinmaydi; faqat demo ko'rinish uchun qoldirilgan (real foydalanuvchi doim CEP ichida).
     markPackDownloaded();
     p.scenes.forEach(s=>addLayer(s.n,s.ico));
     showToast('✓ All '+p.scenes.length+' scenes imported');
