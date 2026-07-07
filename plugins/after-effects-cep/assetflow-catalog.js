@@ -918,15 +918,10 @@ const AssetFlowCatalog = (() => {
     const result = await extractMogrtFileToAep(
       fs, path, child, NodeBuffer, baseDir, templateId, out
     );
-    // Usage hisobi — faqat muvaffaqiyatli import qilingandan keyin
-    if (_freshDownload && typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
-      try {
-        await AssetFlowAccount.recordDownload(templateId);
-        if (typeof refreshAccountUi === "function") refreshAccountUi();
-      } catch (e) {
-        console.warn("usage/download", e);
-      }
-    }
+    // Hisob endi faqat bitta joyda: AE'ga import muvaffaqiyatli bo'lgach
+    // recordImport (HTML) chaqiriladi — shu yerda recordDownload chaqirilmaydi
+    // (aks holda bitta foydalanuvchi harakati ikki marta hisoblanardi).
+    void _freshDownload;
     return result;
   }
 
@@ -1007,16 +1002,12 @@ const AssetFlowCatalog = (() => {
       _needRecord = true;
     }
 
-    const _record = async () => {
-      if (_needRecord && typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.isLoggedIn()) {
-        try {
-          await AssetFlowAccount.recordDownload(templateId);
-          if (typeof refreshAccountUi === "function") refreshAccountUi();
-        } catch (e) {
-          console.warn("usage/download", e);
-        }
-      }
-    };
+    // Hisob endi faqat bitta joyda: AE'ga import muvaffaqiyatli bo'lgach
+    // recordImport (HTML) chaqiriladi. Bu yerda recordDownload chaqirilmaydi —
+    // aks holda bitta foydalanuvchi harakati (yuklab olib import qilish) ikki
+    // marta hisoblanardi. _needRecord/_record chaqiruv joylari (pastda)
+    // minimal-diff uchun saqlab qolindi, faqat endi hech narsa qilmaydi.
+    const _record = async () => { void _needRecord; };
 
     // AE can’t import .zip directly. If pack is a zip, extract and return first .aep inside.
     if (ext.toLowerCase() === ".zip") {
