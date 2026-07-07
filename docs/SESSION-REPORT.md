@@ -1,16 +1,17 @@
-# Sessiya hisoboti — 2026-07-07 · QA production bugfix (P1 CSP + P2)
+# Sessiya hisoboti — 2026-07-07 · PHASE B mockup: AI Studio depth
 
-**Nima qilindi (2 commit):**
-1. **P1 KRITIK (CSP)** — getframeflow.app'da SPA path route'lar (/templates …) `/*` qoidasidagi
-   'unsafe-eval'SIZ CSP olardi ('unsafe-eval' faqat `/` va `/index.html`da edi) → dc-runtime
-   `new Function` bloklanib butun interaktivlik o'lik. Tuzatish: `prepare-cf-pages.mjs`da BITTA
-   platforma-darajali CSP (eval+blob) hamma yo'lga; connect/img allowlist o'zgarmagan.
-   Bonus: path deep-link (/templates → Templates ekrani) qo'shildi.
-2. **P2** — #5 kredit "✦0"/bo'sh-holat chaqnashi (creditsLoaded/gensLoaded + "…"); #6 "from ✦N"
-   endi deterministik (katalog kelguncha "…", fallback ko'rsatilmaydi); #7 device.html dark/lime
-   tema; #7/#8 GIS tugmalari EN (gsi/client?hl=en + locale:'en' — platform, login, device);
-   #8 admin-login "Parol"→"Password"; #9 email input — #1 kaskadi, kod sog' (tekshirildi).
+**Vazifa:** AI Studio qayta dizayni uchun statik mockup (jonli kodga TEGILMADI).
 
-**Tekshirildi (lokal CF-simulyatsiya: dist + real CSP header + API proxy):** EvalError yo'q,
-login/nav/filtrlar/AI composer/account tablar ishlaydi, kredit "✦…→✦25", SFX barqaror ✦4.
-**Kutilmoqda:** push + CF Pages deploy; deploy'dan keyin production'da /templates smoke-test.
+**Qilindi:** `packages/assetflow-studio/platform/_aistudio-depth-mockup.html` (commit 9ae16f9).
+6 zona: A) Visuals view + ochiq "Use ▾" menyu (Edit image / Generate video from image real,
+Upscale/Variations = SOON disabled); B) Sparky maskot + 48% progress (indeterminate bar o'rniga);
+C) Audio view (waveform ro'yxat, inline gen 32%) + model quick-pick popover; D) to'liq model
+modal (qidiruv + capability guruhlar); E) bo'sh/birinchi holat; F) 390px mobil (rail →
+gorizontal strip, Use = sheet-karta). Tokenlar index.html `.ff` blokidan 1:1; Phase-A til
+(spend-grad CTA, pill-active, borderless kartalar) saqlangan.
+
+**Preview'da topilib tuzatildi:** ax-g* gradientlarni keyingi background'lar yutgan
+(`.frame .ax-g*` spetsifiklik); Use-menyu dock ustiga chiqqan (work 852px); quick-pick
+popover model chipdan uzilgan (anchored); modal scrollbar qoraytirildi.
+
+**Kutilmoqda:** foydalanuvchi tasdiqlashi → real port (index.html ffa-st-* evolyutsiyasi).
