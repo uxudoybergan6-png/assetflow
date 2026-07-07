@@ -232,6 +232,194 @@ const UP_DRAFT = { files: {} };
 let UP_UPLOADED_SIG = "";
 let UP_UPLOADING = false;
 
+/* ============================================================
+   BULK ZIP UPLOAD (cloud ingest) — each .zip = one template
+   (project file + preview image + preview video), auto-processed
+   server-side into a PENDING_REVIEW template. No manual form.
+   ============================================================ */
+let UP_MODE = "single"; // 'single' | 'bulk'
+let BULK_FILES = []; // { file, stage: 'queued'|'uploading'|'processing'|'done'|'error', pct, error, id }
+let BULK_RUNNING = false;
+
+function setUploadMode(mode) {
+  if (BULK_RUNNING) return;
+  UP_MODE = mode;
+  renderUpload();
+}
+
+function bulkAddFiles(fileList) {
+  const incoming = Array.from(fileList || []);
+  const zips = incoming.filter((f) => /\.zip$/i.test(f.name));
+  if (incoming.length && !zips.length) {
+    toast("Bulk upload", "Only .zip files are accepted", "warn");
+  }
+  for (const f of zips) {
+    if (BULK_FILES.some((b) => b.file.name === f.name && b.file.size === f.size)) continue;
+    if (!checkUploadFile(f, "Zip file")) continue;
+    BULK_FILES.push({ file: f, stage: "queued", pct: 0 });
+  }
+  renderUpload();
+}
+
+function bulkRemoveFile(i) {
+  if (BULK_RUNNING) return;
+  BULK_FILES.splice(i, 1);
+  renderUpload();
+}
+
+function bulkClearFinished() {
+  if (BULK_RUNNING) return;
+  BULK_FILES = BULK_FILES.filter((b) => b.stage !== "done");
+  renderUpload();
+}
+
+function bulkStageLabel(b) {
+  if (b.stage === "queued") return "Waiting…";
+  if (b.stage === "uploading") return `Uploading… ${b.pct}%`;
+  if (b.stage === "processing") return "Processing…";
+  if (b.stage === "done") return "✓ Sent to moderation";
+  if (b.stage === "error") return `✗ ${b.error || "Failed"}`;
+  return "";
+}
+function bulkStageColor(b) {
+  if (b.stage === "done") return "var(--green,#82c341)";
+  if (b.stage === "error") return "var(--red,#ef4444)";
+  return "var(--text-dim)";
+}
+
+function bulkRenderRow(b, i) {
+  const removable = b.stage === "queued" || b.stage === "error";
+  return `<div class="up-prog-row" id="bulk-row-${i}" style="display:flex;flex-direction:column;gap:5px;padding:8px 0;border-bottom:1px solid var(--line,#2a2a2a)">
+    <div class="row between center" style="font-size:12px;gap:8px">
+      <span class="trunc" title="${esc(b.file.name)}" style="min-width:0">${ic("file")} ${esc(b.file.name)} · ${fmtMB(b.file.size)}</span>
+      <div class="row gap-8 center">
+        <span class="bulk-stat" style="color:${bulkStageColor(b)};white-space:nowrap">${esc(bulkStageLabel(b))}</span>
+        <button class="btn btn-icon btn-sm btn-ghost" style="${removable ? "" : "visibility:hidden"}" onclick="bulkRemoveFile(${i})">${ic("x")}</button>
+      </div>
+    </div>
+    <div style="height:6px;background:var(--line,#2a2a2a);border-radius:4px;overflow:hidden">
+      <div class="bulk-fill" style="height:100%;width:${b.stage === "done" ? 100 : b.pct}%;background:${b.stage === "error" ? "var(--red,#ef4444)" : "var(--green,#82c341)"};transition:width .15s"></div>
+    </div>
+  </div>`;
+}
+
+function bulkUpdateRow(idx) {
+  const b = BULK_FILES[idx];
+  const row = document.getElementById(`bulk-row-${idx}`);
+  if (!b || !row) return;
+  const fill = row.querySelector(".bulk-fill");
+  const stat = row.querySelector(".bulk-stat");
+  if (fill) {
+    fill.style.width = (b.stage === "done" ? 100 : b.pct) + "%";
+    fill.style.background = b.stage === "error" ? "var(--red,#ef4444)" : "var(--green,#82c341)";
+  }
+  if (stat) {
+    stat.textContent = bulkStageLabel(b);
+    stat.style.color = bulkStageColor(b);
+  }
+}
+
+function bulkDzHandlers() {
+  const dz = document.getElementById("bulkDz");
+  const input = document.getElementById("bulkFileInput");
+  if (!dz || !input) return;
+  dz.onclick = () => input.click();
+  input.onchange = () => {
+    bulkAddFiles(input.files);
+    input.value = "";
+  };
+  ["dragenter", "dragover"].forEach((ev) =>
+    dz.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dz.classList.add("drag");
+    })
+  );
+  ["dragleave", "drop"].forEach((ev) =>
+    dz.addEventListener(ev, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dz.classList.remove("drag");
+    })
+  );
+  dz.addEventListener("drop", (e) => bulkAddFiles(e.dataTransfer && e.dataTransfer.files));
+}
+
+async function startBulkIngest() {
+  if (BULK_RUNNING) return;
+  if (!StudioApi.token()) {
+    toast("API", "Please sign in first", "warn");
+    return;
+  }
+  const queued = BULK_FILES.filter((b) => b.stage === "queued" || b.stage === "error");
+  if (!queued.length) return;
+  queued.forEach((b) => {
+    b.stage = "queued";
+    b.pct = 0;
+    b.error = null;
+  });
+  BULK_RUNNING = true;
+  renderUpload();
+  try {
+    await StudioApi.bulkIngestZips(
+      queued.map((b) => b.file),
+      (qi, p) => {
+        const b = queued[qi];
+        const idx = BULK_FILES.indexOf(b);
+        if (p.stage) b.stage = p.stage;
+        if (typeof p.pct === "number") b.pct = p.pct;
+        if (p.error) b.error = p.error;
+        if (p.id) b.id = p.id;
+        bulkUpdateRow(idx);
+      }
+    );
+    const doneCount = queued.filter((b) => b.stage === "done").length;
+    const errCount = queued.filter((b) => b.stage === "error").length;
+    if (doneCount) {
+      toast("Bulk upload", `${doneCount} template(s) sent to moderation`, "success");
+      await StudioTemplates.refreshAfterUpload();
+    }
+    if (errCount) {
+      toast("Bulk upload", `${errCount} file(s) failed — see the list below`, "warn");
+    }
+  } catch (e) {
+    toast("Error", e.message || "Bulk upload failed", "danger");
+  } finally {
+    BULK_RUNNING = false;
+    renderUpload();
+  }
+}
+
+function uploadModeTabs() {
+  return `<div class="segmented">
+    <button class="${UP_MODE === "single" ? "active" : ""}" onclick="setUploadMode('single')">${ic("file")} Single template</button>
+    <button class="${UP_MODE === "bulk" ? "active" : ""}" onclick="setUploadMode('bulk')">${ic("upload")} Bulk upload (.zip)</button>
+  </div>`;
+}
+
+function renderBulkUpload() {
+  const root = document.getElementById("upRoot");
+  if (!root) return;
+  root.innerHTML = `<div style="max-width:880px;margin:0 auto" class="col gap-20">
+    ${uploadModeTabs()}
+    <div class="card card-pad col gap-16">
+      ${infoBanner("Each .zip is one template: a project file (.aep/.mogrt) plus a preview image and/or preview video. The server unpacks, scans, and queues it for review — no form to fill in.")}
+      <div class="dropzone" id="bulkDz">
+        <input type="file" id="bulkFileInput" accept=".zip,application/zip" multiple style="display:none">
+        <div class="dz-ico">${ic("upload")}</div>
+        <div class="body" style="font-weight:600">Drag & drop .zip files here, or click to choose</div>
+        <span class="small">You can select multiple files at once · Maximum size per file: <b>${MAX_UPLOAD_LABEL}</b></span>
+      </div>
+      ${BULK_FILES.length ? `<div class="col">${BULK_FILES.map((b, i) => bulkRenderRow(b, i)).join("")}</div>` : ""}
+      <div class="row between center">
+        <button class="btn btn-ghost" onclick="bulkClearFinished()" ${BULK_FILES.some((b) => b.stage === "done") && !BULK_RUNNING ? "" : "disabled"}>Clear finished</button>
+        <button class="btn btn-primary" id="bulkStartBtn" onclick="startBulkIngest()" ${BULK_FILES.some((b) => b.stage === "queued" || b.stage === "error") && !BULK_RUNNING ? "" : "disabled"}>${ic("upload")} ${BULK_RUNNING ? "Processing…" : "Upload & process"}</button>
+      </div>
+    </div>
+  </div>`;
+  bulkDzHandlers();
+}
+
 function openEditTemplate(id) {
   const t = TEMPLATES.find((x) => x.id === id);
   if (!t) {
@@ -526,8 +714,10 @@ VIEWS.upload = function(){ return `<div id="upRoot"></div>`; };
 window.afterRender.upload = function(){ renderUpload(); };
 
 function renderUpload(){
+  if (UP_MODE === 'bulk') { renderBulkUpload(); return; }
   const steps=['Basic info','Media files','Submit'];
   document.getElementById('upRoot').innerHTML = `<div style="max-width:880px;margin:0 auto" class="col gap-20">
+    ${uploadModeTabs()}
     <!-- stepper -->
     <div class="row between center" style="gap:8px">
       ${steps.map((s,i)=>{const n=i+1;const st=n<UP_STEP?'done':n===UP_STEP?'active':'';return `

@@ -284,6 +284,65 @@ const StudioApi = (() => {
     return { ok: true };
   }
 
+  /**
+   * FAZA 2 — cloud ingest bulk uploader: har `.zip` (bitta shablon = .aep/.mogrt +
+   * preview rasm + preview video) `incoming/`ga to'g'ridan (presigned PUT) yuklanadi,
+   * so'ng `/ingest` chaqirilib har biri "pending" shablonga aylantiriladi.
+   * onFileProgress(index, {stage,pct,error,id}) har fayl uchun alohida chaqiriladi —
+   * stage: 'uploading'|'processing'|'done'|'error'. Bitta faylning muvaffaqiyatsizligi
+   * qolganlarini to'xtatmaydi.
+   */
+  async function bulkIngestZips(files, onFileProgress) {
+    const resp = await request("/api/contributor/incoming/upload-url", {
+      method: "POST",
+      body: { files: files.map((f) => ({ fileName: f.name })) },
+    });
+    const uploads = (resp && resp.uploads) || [];
+    const uploaded = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const u = uploads[i];
+      if (!u) {
+        if (onFileProgress) onFileProgress(i, { stage: "error", error: "No upload URL returned" });
+        continue;
+      }
+      if (onFileProgress) onFileProgress(i, { stage: "uploading", pct: 0 });
+      try {
+        await xhrWithRetry({
+          method: "PUT",
+          url: u.url,
+          body: f,
+          headers: { "Content-Type": "application/zip" },
+          onProg: (loaded) => {
+            const pct = f.size > 0 ? Math.floor((loaded / f.size) * 100) : 100;
+            if (onFileProgress) onFileProgress(i, { stage: "uploading", pct });
+          },
+        });
+        if (onFileProgress) onFileProgress(i, { stage: "processing", pct: 100 });
+        uploaded.push({ index: i, key: u.key });
+      } catch (e) {
+        if (onFileProgress) onFileProgress(i, { stage: "error", error: e.message || "Upload failed" });
+      }
+    }
+    let results = [];
+    if (uploaded.length) {
+      const ingestResp = await request("/api/contributor/ingest", {
+        method: "POST",
+        body: { keys: uploaded.map((u) => u.key) },
+      });
+      results = (ingestResp && ingestResp.results) || [];
+      for (const { index, key } of uploaded) {
+        const r = results.find((x) => x.key === key);
+        if (r && r.ok) {
+          if (onFileProgress) onFileProgress(index, { stage: "done", id: r.id });
+        } else {
+          if (onFileProgress) onFileProgress(index, { stage: "error", error: (r && r.reason) || "Processing failed" });
+        }
+      }
+    }
+    return results;
+  }
+
   async function listTemplates(query = "") {
     const q = query ? (query.startsWith("?") ? query : `?${query}`) : "";
     return request(`/api/contributor/templates${q}`);
@@ -440,6 +499,7 @@ const StudioApi = (() => {
     createTemplate,
     submitTemplate,
     uploadAssets,
+    bulkIngestZips,
     listTemplates,
     reviewTemplate,
     patchTemplate,
