@@ -54,7 +54,7 @@ import { writeAuditLog } from "../lib/audit-log.js";
 import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
-import { scanFileHash } from "../lib/malware-scan.js";
+import { scanFileHash, type MalwareScanResult } from "../lib/malware-scan.js";
 import { realTemplateCounts, applyRealCounts } from "../lib/download-events.js";
 import {
   getContributorEarningsSummary,
@@ -1029,28 +1029,91 @@ function sha256File(filePath: string): Promise<string> {
 }
 
 /**
- * Pack yuklangач FON xavfsizlik + ekstraktsiya quvuri (Bosqich 2 #2). Bulutdan tmp'ga
- * yuklab: (1) sha256 hash → dedup (anti-theft/anti-spam), (2) malware skan (VirusTotal),
- * (3) natijaga qarab TOZA bo'lsa .zip sahnalarni ajratadi; MALICIOUS/DUPLICATE/prod-UNKNOWN
- * bo'lsa KARANTIN (published=false, ekstraktsiya/serve YO'Q) + audit. FON (fire-and-forget)
- * — /pack-uploaded javobni bloklamaydi. Progress upload-progress SSE orqali oqadi.
+ * Skan verdikti → packScanStatus mapping (Bosqich 2 #2). SOF funksiya (I/O YO'Q).
+ * Upload-path (fon quvuri) VA approve-path (on-demand lazy-resolve) IKKALASI shu funksiyani
+ * ishlatadi — mapping bir joyda bo'lib, ikki yo'l bir xil qaror qabul qiladi.
  */
-async function processPackInBackground(
+function classifyPackScan(
+  scan: MalwareScanResult,
+  dup: { id: string; contributorId: string } | null,
+  contributorId: string,
+  prod: boolean
+): { scanStatus: string; detail: string; quarantine: boolean; userError: string | null } {
+  if (dup && dup.contributorId !== contributorId) {
+    return {
+      scanStatus: "duplicate",
+      quarantine: true,
+      detail: `Same pack as another contributor's template (${dup.id}) — anti-theft`,
+      userError: "This pack already exists as another template — publishing blocked.",
+    };
+  }
+  if (scan.verdict === "malicious") {
+    return {
+      scanStatus: "malicious",
+      quarantine: true,
+      detail: scan.detail,
+      userError: "Pack failed the security check (malware detected) — publishing blocked.",
+    };
+  }
+  if (scan.verdict === "unknown" && prod) {
+    // Fail-closed: prodda noma'lum/skan qilib bo'lmaydigan → karantin, admin ko'rib chiqadi.
+    return {
+      scanStatus: "quarantined",
+      quarantine: true,
+      detail: scan.detail,
+      userError: "Pack security check is pending — an admin will review it.",
+    };
+  }
+  return {
+    scanStatus: "clean",
+    quarantine: false,
+    detail: dup ? `Clean (your own earlier copy: ${dup.id})` : scan.detail,
+    userError: null,
+  };
+}
+
+type PackScanResolution = {
+  scanStatus: string;
+  detail: string;
+  quarantine: boolean;
+  userError: string | null;
+  hash: string;
+  scan: MalwareScanResult;
+  dup: { id: string; contributorId: string } | null;
+  /** Yuklab olingan pack'ning tmp yo'li — chaqiruvchi (masalan sahna ekstraktsiyasi) ishlatishi mumkin. */
+  packPath: string;
+  /** tmp'ni tozalaydi — chaqiruvchi HAR HOLDA (finally) chaqirishi SHART. */
+  cleanup: () => void;
+};
+
+/**
+ * Pack xavfsizlik quvurini bajaradi (Bosqich 2 #2): bulutdan tmp'ga yuklab
+ * (1) sha256 hash → dedup, (2) malware skan (VirusTotal), (3) classify → DB'ga
+ * packScanStatus/detail yozadi (+ karantin bo'lsa audit + published=false). Ekstraktsiya
+ * va SSE progress'ni O'ZI qilMAYDI — chaqiruvchi hal qiladi (upload-path sahna ajratadi,
+ * approve-path faqat statusni yangilaydi). tmp faylni SAQLAYDI — chaqiruvchi `cleanup()`
+ * ni chaqirishi SHART.
+ */
+async function resolvePackScan(
   id: string,
   packKey: string,
   contributorId: string,
-  isZip: boolean
-): Promise<void> {
-  let tmpDir: string | null = null;
+  onProgress?: (p: Parameters<typeof setUploadProgress>[1]) => void
+): Promise<PackScanResolution> {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
+  const cleanup = () => {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {}
+  };
   try {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
     const ext = path.extname(packKey) || ".bin";
     const packPath = path.join(tmpDir, `pack${ext}`);
-    setUploadProgress(id, { stage: "download", pct: 12, message: "Downloading pack…" });
+    onProgress?.({ stage: "download", pct: 12, message: "Downloading pack…" });
     await downloadS3ToFile(packKey, packPath);
 
     // 1) Content-hash → dedup (boshqa contributor bir xil pack = anti-theft; o'zi = warn).
-    setUploadProgress(id, { stage: "scan", pct: 22, message: "Running security check…" });
+    onProgress?.({ stage: "scan", pct: 22, message: "Running security check…" });
     const hash = await sha256File(packPath);
     const dup = await prisma.contributorTemplate.findFirst({
       where: { packHash: hash, id: { not: id } },
@@ -1060,57 +1123,64 @@ async function processPackInBackground(
     // 2) Malware skan (hash-asosli). Sozlanmagan → dev clean / prod unknown.
     const scan = await scanFileHash(hash);
 
-    // 3) Verdikt: karantin sabablarини aniqlash (fail-closed og'ir holatlarда).
+    // 3) Verdikt → status (sof mapping, upload/approve umumiy).
     const prod = process.env.NODE_ENV === "production";
-    let scanStatus = "clean";
-    let detail = scan.detail;
-    let quarantine = false;
-    let userError: string | null = null;
-    if (dup && dup.contributorId !== contributorId) {
-      scanStatus = "duplicate";
-      quarantine = true;
-      detail = `Same pack as another contributor's template (${dup.id}) — anti-theft`;
-      userError = "This pack already exists as another template — publishing blocked.";
-    } else if (scan.verdict === "malicious") {
-      scanStatus = "malicious";
-      quarantine = true;
-      detail = scan.detail;
-      userError = "Pack failed the security check (malware detected) — publishing blocked.";
-    } else if (scan.verdict === "unknown" && prod) {
-      // Fail-closed: prodda noma'lum/skan qilib bo'lmaydigan → karantin, admin ko'rib chiqadi.
-      scanStatus = "quarantined";
-      quarantine = true;
-      detail = scan.detail;
-      userError = "Pack security check is pending — an admin will review it.";
-    } else {
-      scanStatus = "clean";
-      detail = dup ? `Clean (your own earlier copy: ${dup.id})` : scan.detail;
-    }
+    const cls = classifyPackScan(scan, dup, contributorId, prod);
 
     await prisma.contributorTemplate.update({
       where: { id },
       data: {
         packHash: hash,
-        packScanStatus: scanStatus,
-        packScanDetail: detail.slice(0, 480),
-        ...(quarantine ? { published: false } : {}),
+        packScanStatus: cls.scanStatus,
+        packScanDetail: cls.detail.slice(0, 480),
+        ...(cls.quarantine ? { published: false } : {}),
       },
     });
 
-    if (quarantine) {
+    if (cls.quarantine) {
       await writeAuditLog({
         actorId: contributorId,
         action: "template.pack_quarantined",
         targetType: "template",
         targetId: id,
-        detail,
-        meta: { scanStatus, hash, malicious: scan.malicious ?? null, duplicateOf: dup?.id ?? null },
+        detail: cls.detail,
+        meta: { scanStatus: cls.scanStatus, hash, malicious: scan.malicious ?? null, duplicateOf: dup?.id ?? null },
       });
+    }
+
+    return { ...cls, hash, scan, dup, packPath, cleanup };
+  } catch (e) {
+    cleanup();
+    throw e;
+  }
+}
+
+/**
+ * Pack yuklangач xavfsizlik + ekstraktsiya quvuri (Bosqich 2 #2). `resolvePackScan` bilan
+ * skan/status'ni hal qiladi; TOZA + .zip bo'lsa sahnalarni ajratadi; KARANTIN bo'lsa to'xtaydi.
+ *
+ * ⚠️ CLOUD RUN TUZOG'I: bu funksiya HTTP javobi (res.json) YUBORILGACH fon rejimida (fire-and-
+ * forget) chaqirilMASLIGI kerak — Cloud Run javobdan keyin CPU'ni ~0 ga throttle qiladi, shu
+ * bois fon task muzlaydi/o'ladi va packScanStatus abadiy "pending" qolib approve bloklanadi.
+ * Shu sabab /pack-uploaded uni javobdan OLDIN `await` qiladi. Fire-and-forget'ni QAYTA joriy
+ * qilma. (Approve-path'da lazy-resolve — quyida — zaxira himoya.)
+ */
+async function processPackInBackground(
+  id: string,
+  packKey: string,
+  contributorId: string,
+  isZip: boolean
+): Promise<void> {
+  let resolution: PackScanResolution | null = null;
+  try {
+    resolution = await resolvePackScan(id, packKey, contributorId, (p) => setUploadProgress(id, p));
+
+    if (resolution.quarantine) {
       setUploadProgress(id, {
         stage: "error",
         pct: 0,
         message: "",
-        error: userError || "Pack was quarantined.",
+        error: resolution.userError || "Pack was quarantined.",
         done: true,
       });
       return; // ekstraktsiya YO'Q — karantin.
@@ -1118,7 +1188,7 @@ async function processPackInBackground(
 
     // TOZA → .zip bo'lsa sahnalarni ajrat (.aep/.mogrt yakka fayldan ajratilmaydi).
     if (isZip) {
-      const scenesOut = await storeMogrtScenesFromZip(id, packPath, (done, total) => {
+      const scenesOut = await storeMogrtScenesFromZip(id, resolution.packPath, (done, total) => {
         setUploadProgress(id, {
           stage: "extract",
           pct: 40 + Math.floor((done / total) * 55),
@@ -1152,11 +1222,7 @@ async function processPackInBackground(
       done: true,
     });
   } finally {
-    if (tmpDir) {
-      try {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-      } catch {}
-    }
+    resolution?.cleanup();
   }
 }
 
@@ -1229,16 +1295,21 @@ contributorRouter.post(
         packScanDetail: null,
       },
     });
-    // FON xavfsizlik quvuri (hash dedup + malware skan) → TOZA bo'lsa .zip sahnalarni
-    // ajratadi. Barcha pack turlari uchun (javob darrov; progress SSE orqali oqadi).
+    // Xavfsizlik quvuri (hash dedup + malware skan) → TOZA bo'lsa .zip sahnalarni ajratadi.
+    // ⚠️ Cloud Run javobdan keyin CPU'ni throttle qiladi — fire-and-forget fon task muzlab,
+    // packScanStatus abadiy "pending" qolardi (approve bloklanardi). Shu bois skan+status'ni
+    // javobdan OLDIN SINXRON `await` qilamiz: status hech qachon "pending" qolmaydi.
+    // TRADEOFF: juda katta pack (100MB+) download+hash so'rovni cho'zadi — Cloud Run request
+    // timeout (default 300s, max 3600s) odatda yetarli; agar timeout bo'lsa status "pending"
+    // qolib, approve-vaqtidagi lazy-resolve yoki admin "Clear pack" tugmasi zaxira himoya.
     const isZip = /\.zip$/i.test(packKey);
     setUploadProgress(id, {
       stage: "scan",
       pct: 5,
       message: "Pack received, running security check…",
     });
-    processPackInBackground(id, packKey, existing.contributorId, isZip);
-    res.json({ ok: true, extracting: isZip, scanning: true });
+    await processPackInBackground(id, packKey, existing.contributorId, isZip);
+    res.json({ ok: true, extracting: isZip, scanning: false });
   }
 );
 
@@ -1679,10 +1750,31 @@ contributorRouter.post(
     // Karantin gate (Bosqich 2 #2): malware/dedup karantinидаги pack TASDIQLANMAYDI/NASHR
     // ETILMAYDI. Reject bloklanmaydi (admin baribir rad qila oladi).
     if (action === "approve") {
-      const pre = await prisma.contributorTemplate.findUnique({
+      let pre = await prisma.contributorTemplate.findUnique({
         where: { id },
-        select: { packScanStatus: true },
+        select: { packScanStatus: true, fileName: true, contributorId: true },
       });
+      // FIX (Cloud Run): fon skan javobdan keyin muzlab, status "pending" qolib qolishi mumkin.
+      // Shu holda skanni SHU YERDA (on-demand, sinxron) hal qilamiz — approve fon bajarilishiga
+      // bog'liq bo'lmaydi. Skan o'zi xato bersa FAIL-SAFE: status "pending" qoladi (quyidagi
+      // gate 409 beradi), admin "Clear pack" bilan qo'lda hal qiladi. So'rov crash BO'LMAYDI.
+      if (pre?.packScanStatus === "pending" && pre.fileName && isS3Configured()) {
+        try {
+          const packKey = s3UploadKeyForFile(id, "pack", pre.fileName);
+          const meta = await getS3ObjectMeta(packKey);
+          if (meta.sizeBytes != null) {
+            const r = await resolvePackScan(id, packKey, pre.contributorId);
+            r.cleanup();
+            pre = await prisma.contributorTemplate.findUnique({
+              where: { id },
+              select: { packScanStatus: true, fileName: true, contributorId: true },
+            });
+          }
+        } catch (e) {
+          console.error("[review] on-demand pack scan failed:", e);
+          // pre "pending" qoladi → quyidagi gate 409 (Clear pack tavsiyasi bilan).
+        }
+      }
       const s = pre?.packScanStatus;
       if (s === "malicious" || s === "quarantined" || s === "duplicate" || s === "pending") {
         res.status(409).json({
@@ -1692,7 +1784,7 @@ contributorRouter.post(
               : s === "malicious"
                 ? "Pack was flagged as malicious by the malware scan — cannot be approved"
                 : s === "pending"
-                  ? "Pack security check is still running — please wait a moment"
+                  ? "Pack security check could not be completed — use “Clear pack (security)” to review and unblock"
                   : "Pack security check is pending (quarantined) — needs admin review",
           code: "PACK_QUARANTINED",
           packScanStatus: s,
