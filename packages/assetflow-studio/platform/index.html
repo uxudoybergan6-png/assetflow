@@ -15034,13 +15034,16 @@
   .ff .va-canvas{margin:22px 40px 0;border-radius:18px;background:#08090D;border:1px solid var(--hair2);min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:26px}
   .ff .va-result{width:520px;max-width:88%;aspect-ratio:16/9;border-radius:14px;box-shadow:0 30px 70px -20px rgba(0,0,0,.8)}
   .ff .va-ract{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
-  .ff .va-dock{margin:20px 40px 14px;border-radius:18px;background:rgba(22,27,34,.94);border:1px solid var(--border);box-shadow:0 30px 70px -24px rgba(0,0,0,.85);padding:14px 16px 12px}
+  /* PHASE B — dock evolved into the mockup composer (bottom-docked inside the workspace) */
+  .ff .va-dock{position:absolute;left:24px;right:24px;bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
   .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:40px;max-height:130px;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
-  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
-  .ff .va-set{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;font:600 11px 'Hanken Grotesk',sans-serif;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
+  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
+  .ff .va-set:hover{background:var(--f2)}
   .ff .va-set b{color:var(--text);font-weight:600}
-  .ff .va-set.enh{color:var(--lime);border-color:rgba(194,240,74,.35)}
+  .ff .va-set.mode{background:var(--pill-active);border-color:transparent;color:var(--text)}
+  .ff .va-set.enh{color:var(--lime);border-color:rgba(194,240,74,.24);background:rgba(194,240,74,.07)}
   .ff .va-dockrow .sp{flex:1}
   .ff .va-quote{font:600 11.5px var(--mono);color:var(--muted);white-space:nowrap}
   .ff .va-quote b{color:var(--lime)}
@@ -15093,6 +15096,184 @@
     .ff .va-crumb{padding:14px 16px 0}
     .ff .va-dwrap{padding:14px 16px 30px;gap:18px}
     .ff .va-rel4{grid-template-columns:1fr 1fr;gap:10px}
+  }
+  /* ── AI STUDIO PHASE B — session workspace (port of _aistudio-depth-mockup frames A–F) ── */
+  @keyframes axBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
+  @keyframes axTwinkle{0%,100%{opacity:.25;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
+  @keyframes axEqBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+  .ff .va-axmascot{position:relative;display:inline-block;line-height:0}
+  .ff .va-axmascot svg{display:block;overflow:visible}
+  .ff .va-axmascot .body{animation:axBob 2.6s ease-in-out infinite;transform-origin:50% 60%}
+  .ff .va-axmascot .tw1{animation:axTwinkle 1.8s ease-in-out infinite}
+  .ff .va-axmascot .tw2{animation:axTwinkle 1.8s ease-in-out .6s infinite}
+  .ff .va-axmascot .tw3{animation:axTwinkle 1.8s ease-in-out 1.1s infinite}
+  .ff .va-axwork{display:flex;min-height:540px;height:calc(100vh - 102px);margin:16px 40px 20px;border:1px solid var(--hair2);border-radius:24px;overflow:hidden;background:var(--bg)}
+  /* left history rail */
+  .ff .va-axrail{width:84px;flex:none;background:var(--rail);border-right:1px solid var(--hair);display:flex;flex-direction:column;align-items:center;padding:16px 0 14px;gap:10px}
+  .ff .va-axrailh{font:500 8.5px var(--mono);letter-spacing:.14em;color:var(--muted2)}
+  .ff .va-axrth{position:relative;width:56px;height:56px;flex:none;border-radius:12px;cursor:pointer;background-color:var(--media);background-size:cover;background-position:center;outline:1.5px solid transparent;outline-offset:2px;transition:outline-color .15s}
+  .ff .va-axrth:hover{outline-color:rgba(255,255,255,.22)}
+  .ff .va-axrth.on{outline-color:var(--lime)}
+  .ff .va-axrth .vid{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+  .ff .va-axrth.aud{background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .ff .va-axrth.aud svg{width:30px;height:14px}
+  .ff .va-axrth.aud.on{color:var(--lime)}
+  .ff .va-axrth.pend{background:#0D1119;display:grid;place-items:center;outline-color:rgba(194,240,74,.4);cursor:default}
+  .ff .va-axrth[data-tip]::after{content:attr(data-tip);position:absolute;left:64px;top:50%;transform:translateY(-50%);font:500 9px var(--mono);white-space:nowrap;padding:5px 9px;border-radius:7px;background:var(--pop);border:1px solid var(--hair2);color:#C9D2DE;opacity:0;pointer-events:none;transition:opacity .12s;z-index:80}
+  .ff .va-axrth[data-tip]:hover::after{opacity:1}
+  .ff .va-axrail .more{font:500 9px var(--mono);color:var(--muted2);margin-top:2px}
+  .ff .va-axrailempty{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;padding:14px 10px;text-align:center}
+  .ff .va-axrailempty .bx{width:56px;height:56px;border-radius:12px;border:1.5px dashed rgba(255,255,255,.12);display:grid;place-items:center;color:var(--muted2);font-size:16px}
+  .ff .va-axrailempty .t{font-size:8.5px;color:var(--muted2);line-height:1.5;max-width:64px}
+  /* main column */
+  .ff .va-axmainc{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);background-size:20px 20px}
+  .ff .va-axhead{display:flex;align-items:center;gap:14px;padding:16px 24px 12px;flex-wrap:wrap}
+  .ff .va-axhead .smeta{font:500 9.5px var(--mono);color:var(--muted2)}
+  .ff .va-axghost{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 13px;border-radius:999px;background:none;border:1px solid var(--hair2);color:var(--muted);font-family:inherit;font-weight:600;font-size:11.5px;cursor:pointer}
+  .ff .va-axghost:hover{color:var(--text)}
+  .ff .va-axseg{display:inline-flex;background:var(--f1);border:1px solid var(--f2);border-radius:999px;padding:3px}
+  .ff .va-axseg>span{display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:999px;font-weight:500;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer}
+  .ff .va-axseg>span.on{background:var(--pill-active);font-weight:600;color:var(--text)}
+  .ff .va-axseg .ct{font:600 9.5px var(--mono);padding:1px 6px;border-radius:999px;background:var(--f2);color:var(--muted)}
+  .ff .va-axseg>span.on .ct{background:var(--limedim);color:var(--lime)}
+  .ff .va-axstage{flex:1;min-height:0;overflow-y:auto;padding:6px 24px 190px;position:relative}
+  /* visuals grid */
+  .ff .va-axgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .ff .va-axcell{position:relative}
+  .ff .va-axres{position:relative;border-radius:14px;overflow:hidden;background-color:var(--media);background-size:cover;background-position:center;aspect-ratio:16/10;cursor:pointer}
+  .ff .va-axres .rtag{position:absolute;top:9px;left:9px;font:600 8px var(--mono);padding:2.5px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3;letter-spacing:.05em;z-index:1}
+  .ff .va-axres.sel{outline:2px solid var(--lime);outline-offset:-2px}
+  .ff .va-axabar{position:absolute;left:9px;right:9px;bottom:9px;display:flex;align-items:center;gap:6px;z-index:2}
+  .ff .va-axuse{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;background:var(--spend-grad);color:var(--onlime);border:none;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}
+  .ff .va-axaico{width:32px;height:32px;border-radius:50%;background:rgba(10,12,16,.78);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-size:12.5px;color:#DFE5EC;cursor:pointer;flex:none}
+  .ff .va-axaico:hover{border-color:rgba(255,255,255,.3)}
+  /* Sparky pending tile */
+  .ff .va-axres.pend{border:1px solid rgba(194,240,74,.26);background:#0D1119;cursor:default;animation:ffmBreathe 2.4s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
+  .ff .va-axpct{font:700 15px var(--mono);color:var(--lime)}
+  .ff .va-axpst{font-size:11px;color:var(--muted);text-align:center;padding:0 10px}
+  .ff .va-axpbar{width:120px;height:3px;border-radius:99px;background:var(--f2);overflow:hidden}
+  .ff .va-axpbar b{display:block;height:100%;border-radius:99px;background:var(--spend-grad)}
+  /* USE ▾ menu */
+  .ff .va-axmenu{position:absolute;left:9px;top:calc(100% - 4px);width:246px;border-radius:14px;background:var(--pop);border:1px solid var(--hair2);box-shadow:0 24px 60px rgba(0,0,0,.6),var(--inset);padding:6px;z-index:70}
+  .ff .va-axmi{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:9px;font-weight:600;font-size:12.5px;color:var(--text);cursor:pointer;white-space:nowrap}
+  .ff .va-axmi:hover{background:var(--f2)}
+  .ff .va-axmi .mic{width:28px;height:28px;flex:none;border-radius:8px;background:var(--limedim);display:grid;place-items:center;font-size:13px;color:var(--lime)}
+  .ff .va-axmi .sub{display:block;font-weight:400;font-size:10px;color:var(--muted2);margin-top:1px}
+  .ff .va-axmi.plain{padding:7px 11px;font-weight:500;font-size:12px;color:#C9D2DE}
+  .ff .va-axmi.plain .mic{width:22px;height:22px;background:none;color:var(--muted);font-size:13px}
+  .ff .va-axmi.danger,.ff .va-axmi.danger .mic{color:#FF6B5E}
+  .ff .va-axmi.off{opacity:.42;cursor:default}
+  .ff .va-axmi.off:hover{background:none}
+  .ff .va-axmi .soon{margin-left:auto;font:600 8px var(--mono);letter-spacing:.08em;padding:2.5px 7px;border-radius:4px;background:var(--f2);color:var(--muted);border:1px solid var(--hair2)}
+  .ff .va-axmdiv{height:1px;background:var(--hair2);margin:5px 8px}
+  /* audio view */
+  .ff .va-axalist{display:flex;flex-direction:column;gap:9px;max-width:880px;margin:0 auto}
+  .ff .va-axarow{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);cursor:pointer}
+  .ff .va-axarow:hover{background:var(--surface2)}
+  .ff .va-axarow.on{border-color:rgba(194,240,74,.3);background:var(--surface2)}
+  .ff .va-axplay{width:40px;height:40px;flex:none;border-radius:50%;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;font-size:13px;color:var(--text)}
+  .ff .va-axarow.on .va-axplay{background:var(--spend-grad);color:var(--onlime);border-color:transparent}
+  .ff .va-axainfo{width:238px;flex:none;min-width:0}
+  .ff .va-axainfo .t{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-axainfo .m{font:500 9.5px var(--mono);color:var(--muted2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-axwave{flex:1;min-width:0;height:34px;display:flex;align-items:center;gap:2.5px}
+  .ff .va-axwave b{flex:1;border-radius:2px;background:rgba(255,255,255,.16);min-height:3px}
+  .ff .va-axarow.on .va-axwave b{background:rgba(194,240,74,.55)}
+  .ff .va-axarow .cost{font:600 10.5px var(--mono);color:var(--muted2);flex:none}
+  .ff .va-axarow.pend{border:1px solid rgba(194,240,74,.26);background:#0D1119;animation:ffmBreathe 2.4s ease-in-out infinite;cursor:default}
+  .ff .va-axeq{display:flex;align-items:flex-end;gap:2.5px;height:22px;flex:1;min-width:0}
+  .ff .va-axeq b{flex:1;max-width:5px;border-radius:2px;background:rgba(194,240,74,.5);height:100%;transform-origin:bottom;animation:axEqBar 1s ease-in-out infinite}
+  .ff .va-axeq b:nth-child(2n){animation-delay:.15s}.ff .va-axeq b:nth-child(3n){animation-delay:.3s}
+  .ff .va-axeq b:nth-child(5n){animation-delay:.45s}.ff .va-axeq b:nth-child(7n){animation-delay:.6s}
+  .ff .va-axnone{padding:36px 14px;text-align:center;font-size:12.5px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:14px;margin-top:6px}
+  /* dock extras: reference slot · cost · balance strip */
+  .ff .va-axrefs{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .ff .va-axrefadd{width:46px;height:46px;border-radius:10px;border:1px dashed rgba(255,255,255,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:1px;background:none;cursor:pointer;font-family:inherit;flex:none}
+  .ff .va-axrefadd:hover{color:var(--text);border-color:rgba(255,255,255,.28)}
+  .ff .va-axrefadd i{font-style:normal;font-size:14px;line-height:1}
+  .ff .va-axrefadd span{font-size:7px}
+  .ff .va-axrefhint{font-size:10.5px;color:var(--muted2)}
+  .ff .va-axcost{display:inline-flex;align-items:center;gap:5px;font:700 12.5px var(--mono);color:var(--lime);white-space:nowrap}
+  .ff .va-axcost .lbl{font:500 9px var(--mono);color:var(--muted2);letter-spacing:.08em}
+  .ff .va-axbal{display:flex;align-items:center;gap:5px;margin-top:10px;font:500 10px var(--mono);color:var(--muted2)}
+  .ff .va-axbal em{font-style:normal;color:var(--muted)}
+  .ff .va-axbal .top{margin-left:auto;color:var(--lime);cursor:pointer;font-weight:600}
+  .ff .va-btn.lime.off{background:var(--f2);color:var(--muted2)}
+  .ff .va-btn.lime.pending{background:var(--lime2);color:var(--onlime);animation:ffmBreathe 2.2s ease-in-out infinite}
+  /* model quick-pick (step 1) */
+  .ff .va-set .ffa-pop.mdl{min-width:264px;padding:7px}
+  .ff .va-axpoph{font:600 8.5px var(--mono);letter-spacing:.14em;color:var(--muted2);padding:7px 10px 5px;white-space:nowrap}
+  .ff .va-axpm{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;width:100%;background:none;border:none;font-family:inherit;color:var(--text);text-align:left}
+  .ff .va-axpm:hover{background:var(--f2)}
+  .ff .va-axpm.on{background:var(--limedim)}
+  .ff .va-axpm .mid{flex:1;min-width:0}
+  .ff .va-axpm .nm{display:block;font-weight:600;font-size:12.5px;white-space:nowrap}
+  .ff .va-axpm .ds{display:block;font-size:10px;color:var(--muted2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-axpm .pc{margin-left:auto;font:600 10.5px var(--mono);color:var(--lime);white-space:nowrap}
+  .ff .va-axpm .ck{width:16px;height:16px;flex:none;border-radius:50%;background:var(--lime);color:var(--onlime);display:grid;place-items:center;font-size:9px;font-weight:800}
+  .ff .va-axpmore{display:flex;align-items:center;gap:8px;padding:10px;border-radius:9px;font-weight:600;font-size:12px;color:var(--muted);cursor:pointer;border-top:1px solid var(--hair2);margin-top:5px}
+  .ff .va-axpmore:hover{color:var(--text)}
+  .ff .va-axpmore .arr{margin-left:auto;font-size:11px}
+  /* model full modal (step 2) */
+  .ff .va-axscrim{position:fixed;inset:0;background:var(--scrim);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);z-index:120;display:flex;align-items:center;justify-content:center;padding:26px}
+  .ff .va-axmodal{width:780px;max-width:100%;max-height:100%;border-radius:24px;background:var(--surface);border:1px solid var(--hair2);box-shadow:0 40px 100px rgba(0,0,0,.7),var(--inset);display:flex;flex-direction:column;overflow:hidden}
+  .ff .va-axmdh{display:flex;align-items:center;gap:14px;padding:20px 24px 0}
+  .ff .va-axmdh h3{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:0}
+  .ff .va-axmdh .x{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--f1);border:1px solid var(--hair2);display:grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer}
+  .ff .va-axsearch{margin:16px 24px 0;display:flex;align-items:center;gap:9px;height:42px;padding:0 15px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2);font-size:13px}
+  .ff .va-axsearch input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:13px}
+  .ff .va-axsearch input::placeholder{color:var(--muted2)}
+  .ff .va-axftags{display:flex;gap:7px;padding:13px 24px 14px;flex-wrap:wrap;border-bottom:1px solid var(--hair)}
+  .ff .va-axftag{padding:6px 14px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font-weight:500;font-size:11.5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .ff .va-axftag.on{background:var(--pill-active);border-color:transparent;font-weight:600;color:var(--text)}
+  .ff .va-axmbody{overflow-y:auto;padding:6px 12px 16px;flex:1;min-height:120px}
+  .ff .va-axmgh{font:600 9px var(--mono);letter-spacing:.16em;color:var(--muted2);padding:16px 14px 7px;display:flex;align-items:center;gap:8px}
+  .ff .va-axmrow{display:flex;align-items:center;gap:13px;padding:11px 14px;border-radius:12px;cursor:pointer}
+  .ff .va-axmrow:hover{background:var(--f1)}
+  .ff .va-axmrow.on{background:var(--limedim)}
+  .ff .va-axmrow .mic2{width:38px;height:38px;flex:none;border-radius:10px;display:grid;place-items:center;font-size:16px;background:var(--f2);color:var(--lime)}
+  .ff .va-axmrow .mid{flex:1;min-width:0}
+  .ff .va-axmrow .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .ff .va-axmrow .nm .new{font:700 7.5px var(--mono);letter-spacing:.08em;padding:2px 6px;border-radius:4px;background:var(--seldim);color:var(--select)}
+  .ff .va-axmrow .ds{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .ff .va-axmrow .meta{margin-left:auto;text-align:right;flex:none;display:flex;align-items:center;gap:14px}
+  .ff .va-axmrow .pc{font:600 11.5px var(--mono);color:var(--lime);white-space:nowrap}
+  .ff .va-axmrow .pc i{display:block;font-style:normal;font:500 8.5px var(--mono);color:var(--muted2);margin-top:2px}
+  .ff .va-axmsel{height:32px;padding:0 16px;border-radius:999px;border:1px solid var(--hair2);background:var(--f2);color:var(--text);font-family:inherit;font-weight:600;font-size:11.5px;cursor:pointer;white-space:nowrap}
+  .ff .va-axmsel.on{background:var(--spend-grad);color:var(--onlime);border-color:transparent;font-weight:700}
+  /* empty / first-run hero */
+  .ff .va-axhero{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:100%;padding-bottom:30px}
+  .ff .va-axhero h2{font-size:32px;font-weight:500;letter-spacing:-.02em;margin:22px 0 0}
+  .ff .va-axhero h2 em{font-style:normal;color:var(--lime)}
+  .ff .va-axhero p{font-size:14px;color:var(--muted);margin:10px 0 0;max-width:440px;line-height:1.6}
+  .ff .va-axsugg{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;justify-content:center;max-width:640px}
+  .ff .va-axsg{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-weight:500;font-size:12px;color:#C9D2DE;cursor:pointer;white-space:nowrap;font-family:inherit}
+  .ff .va-axsg:hover{background:var(--f2)}
+  .ff .va-axsg i{font-style:normal;font-size:12px}
+  /* mobile (390) — rail → horizontal recents strip, grid → 2 cols, menu → sheet card */
+  .ff .va-axmstrip{display:none}
+  @media(max-width:820px){
+    .ff .va-axwork{flex-direction:column;height:auto;min-height:0;margin:10px 12px 14px;border:none;border-radius:0;background:none;overflow:visible}
+    .ff .va-axrail{display:none}
+    .ff .va-axmstrip{display:flex;gap:8px;padding:2px 2px 10px;overflow-x:auto;scrollbar-width:none}
+    .ff .va-axmstrip::-webkit-scrollbar{display:none}
+    .ff .va-axmstrip .va-axrth{width:48px;height:48px;border-radius:10px}
+    .ff .va-axmstrip .va-axrth[data-tip]::after{display:none}
+    .ff .va-axhead{padding:6px 2px 10px}
+    .ff .va-axhead .smeta,.ff .va-axhead .va-axghost{display:none}
+    .ff .va-axseg{width:100%}
+    .ff .va-axseg>span{flex:1;justify-content:center}
+    .ff .va-axstage{padding:2px 2px 14px;overflow:visible}
+    .ff .va-axgrid{grid-template-columns:1fr 1fr;gap:9px}
+    .ff .va-axres{border-radius:11px}
+    .ff .va-dock{position:static;margin:12px 0 0;border-radius:18px;padding:12px;background:rgba(19,22,28,.9)}
+    .ff .va-axmenu{position:fixed;left:12px;right:12px;bottom:96px;top:auto;width:auto;z-index:96}
+    .ff .va-axainfo{width:auto;flex:1}
+    .ff .va-axwave{display:none}
+    .ff .va-axhero h2{font-size:24px}
+    .ff .va-axscrim{padding:12px}
+    .ff .va-axmodal{border-radius:18px}
+    .ff .va-axmrow .ds{display:none}
   }
 </style>
 </helmet>
@@ -15679,65 +15860,193 @@
             </sc-if>
           </sc-if>
 
-          <!-- A3b · COMPOSER -->
+          <!-- A3b · COMPOSER — PHASE B session workspace (mockup frames A–F port) -->
           <sc-if value="{{ aiComposer }}" hint-placeholder-val="{{ false }}">
-            <div class="va-crumb"><a onclick="{{ backToPicker }}">AI Studio</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ toolTitle }}</b><span style="margin-left:auto;font:500 10px var(--mono);color:var(--muted2)">{{ modelName }}</span></div>
+            <div class="va-axwork">
 
-            <!-- canvas (image/video) -->
-            <sc-if value="{{ aiIsCanvas }}" hint-placeholder-val="{{ true }}">
-              <div class="va-canvas">
-                <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
-                  <div style="text-align:center;color:var(--muted);max-width:340px">
-                    <div style="width:62px;height:62px;border-radius:18px;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;margin:0 auto 15px;color:var(--lime)"><svg class="va-ic" style="width:26px;height:26px"><use href="#i-spark"></use></svg></div>
-                    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">No generations yet</div>
-                    <div style="font-size:13px;line-height:1.55">Write a prompt below and click <strong style="color:var(--lime);font-weight:600">Generate</strong> — the result opens right here</div>
+              <!-- left history rail (frame A) -->
+              <aside class="va-axrail">
+                <span class="va-axrailh">SESSION</span>
+                <sc-if value="{{ axRailPend }}" hint-placeholder-val="{{ false }}">
+                  <div class="va-axrth pend" data-tip="{{ railPendTip }}">
+                    <span class="va-axmascot"><svg width="26" height="26" viewBox="0 0 64 64">
+                      <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                      <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
+                      <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
+                    </svg></span>
                   </div>
                 </sc-if>
-                <sc-if value="{{ showActive }}" hint-placeholder-val="{{ false }}">
-                  <div data-id="{{ activeView.id }}" onclick="{{ openLightbox }}" class="va-thumb va-result" style="aspect-ratio:{{ activeAspect }};background:{{ activeView.g }};cursor:pointer">
-                    <span class="va-typetag">{{ activeView.rtag }}</span>
-                    <sc-if value="{{ activeView.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span style="width:54px;height:54px"><svg class="va-ic" style="width:22px;height:22px"><use href="#i-play"></use></svg></span></span></sc-if>
+                <sc-for list="{{ axRailGens }}" as="g" hint-placeholder-count="5">
+                  <div data-id="{{ g.id }}" onclick="{{ onRailItem }}" class="{{ g.railCls }}" data-tip="{{ g.tip }}" style="background:{{ g.bg }}">
+                    <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="vid"><svg class="va-ic" style="width:15px;height:15px"><use href="#i-play"></use></svg></span></sc-if>
+                    <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></sc-if>
                   </div>
-                  <div class="va-ract">
-                    <a class="va-btn ghost sm" onclick="{{ downloadGen }}"><svg class="va-ic"><use href="#i-down"></use></svg> Download</a>
-                    <a class="va-btn ghost sm" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-arrow"></use></svg> Regenerate</a>
-                    <a class="va-btn ghost sm" onclick="{{ delActive }}" style="color:#FF9C8F">Delete</a>
-                  </div>
+                </sc-for>
+                <sc-if value="{{ axRailMore }}" hint-placeholder-val="{{ false }}"><span class="more">{{ axRailMoreLabel }}</span></sc-if>
+                <sc-if value="{{ axRailEmpty }}" hint-placeholder-val="{{ true }}">
+                  <div class="va-axrailempty"><span class="bx">✦</span><span class="t">Your generations will appear here</span></div>
                 </sc-if>
-                <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
-                  <div class="ffa-res pend va-result" style="aspect-ratio:{{ pendAspect }};max-width:320px"><i class="ph ph-circle-notch ffm-spin" style="font-size:26px;color:var(--lime)"></i><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lime)">Processing…</div><div class="ffa-pendbar"></div></div>
-                </sc-if>
-              </div>
-            </sc-if>
+              </aside>
 
-            <!-- canvas (voice/sfx) — recent audio results list -->
-            <sc-if value="{{ aiIsAudio }}" hint-placeholder-val="{{ false }}">
-              <div class="va-canvas" style="justify-content:flex-start">
-                <div class="va-audlist">
-                  <sc-if value="{{ generating }}" hint-placeholder-val="{{ false }}">
-                    <div class="ffa-audres"><span style="width:32px;height:32px;border-radius:50%;background:var(--limedim);color:var(--lime);display:inline-flex;align-items:center;justify-content:center;flex:none"><i class="ph ph-circle-notch ffm-spin" style="font-size:15px"></i></span><div style="flex:1;min-width:0"><div class="ffa-nm">Processing…</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px">Generation in progress</div></div></div>
+              <!-- main column -->
+              <div class="va-axmainc">
+                <div class="va-axhead">
+                  <div class="va-axseg">
+                    <span class="{{ axSegVisCls }}" data-v="visuals" onclick="{{ onMediaView }}">Visuals <span class="ct">{{ visCount }}</span></span>
+                    <span class="{{ axSegAudCls }}" data-v="audio" onclick="{{ onMediaView }}">Audio <span class="ct">{{ audCount }}</span></span>
+                  </div>
+                  <span style="margin-left:auto"></span>
+                  <span class="smeta">{{ axSessMeta }}</span>
+                  <button class="va-axghost" onclick="{{ backToPicker }}">＋ New session</button>
+                </div>
+
+                <!-- mobile recents strip (frame F) -->
+                <div class="va-axmstrip">
+                  <sc-if value="{{ axRailPend }}" hint-placeholder-val="{{ false }}">
+                    <div class="va-axrth pend">
+                      <span class="va-axmascot"><svg width="22" height="22" viewBox="0 0 64 64">
+                        <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                        <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
+                        <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
+                      </svg></span>
+                    </div>
                   </sc-if>
-                  <sc-for list="{{ voiceResults }}" as="g" hint-placeholder-count="2">
-                    <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="ffa-audres" style="cursor:pointer">
-                      <span style="width:32px;height:32px;border-radius:50%;background:{{ g.avBg }};color:{{ g.avCol }};display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:none"><i class="ph-fill ph-{{ g.avIcon }}"></i></span>
-                      <div style="flex:1;min-width:0"><div class="ffa-nm">{{ g.title }}</div><div class="ffa-wave"><sc-for list="{{ g.bars }}" as="b" hint-placeholder-count="9"><span style="height:{{ b.h }}px"></span></sc-for></div></div>
-                      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted)">{{ g.meta }}</span>
+                  <sc-for list="{{ axRailGens }}" as="g" hint-placeholder-count="5">
+                    <div data-id="{{ g.id }}" onclick="{{ onRailItem }}" class="{{ g.railCls }}" style="background:{{ g.bg }}">
+                      <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="vid"><svg class="va-ic" style="width:13px;height:13px"><use href="#i-play"></use></svg></span></sc-if>
+                      <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></sc-if>
                     </div>
                   </sc-for>
-                  <sc-if value="{{ noVoiceResults }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 14px;text-align:center;font-size:12px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:12px;margin-top:2px">No results yet — write some text below and generate</div></sc-if>
+                  <sc-if value="{{ axRailMore }}" hint-placeholder-val="{{ false }}"><div class="va-axrth" style="display:grid;place-items:center;background:var(--surface2);color:var(--muted2);font:500 9px var(--mono)">{{ axRailMoreShort }}</div></sc-if>
                 </div>
-              </div>
-            </sc-if>
 
-            <!-- FLOATING DOCK (A3b — chips are the real gen params; signed quote before generate) -->
-            <div class="va-dock">
+                <div class="va-axstage">
+                  <!-- empty / first-run (frame E) -->
+                  <sc-if value="{{ axShowHero }}" hint-placeholder-val="{{ true }}">
+                    <div class="va-axhero">
+                      <span class="va-axmascot"><svg width="72" height="72" viewBox="0 0 64 64">
+                        <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                        <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
+                        <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
+                        <circle class="tw1" cx="6" cy="12" r="2.4" fill="#C2F04A"></circle>
+                        <circle class="tw2" cx="59" cy="16" r="1.8" fill="#C2F04A"></circle>
+                        <circle class="tw3" cx="55" cy="55" r="2.1" fill="#C2F04A"></circle>
+                      </svg></span>
+                      <h2>What will we <em>make</em> today?</h2>
+                      <p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p>
+                      <div class="va-axsugg">
+                        <sc-for list="{{ axSuggest }}" as="c" hint-placeholder-count="4">
+                          <button class="va-axsg" data-tool="{{ c.tool }}" data-p="{{ c.t }}" onclick="{{ onSuggest }}"><i>{{ c.i }}</i>{{ c.t }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <!-- visuals view (frames A–B) -->
+                  <sc-if value="{{ axShowVisuals }}" hint-placeholder-val="{{ false }}">
+                    <div class="va-axgrid">
+                      <sc-if value="{{ axPendVis }}" hint-placeholder-val="{{ false }}">
+                        <div class="va-axcell"><div class="va-axres pend">
+                          <span class="va-axmascot"><svg width="58" height="58" viewBox="0 0 64 64">
+                            <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                            <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
+                            <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
+                            <circle class="tw1" cx="7" cy="10" r="2.2" fill="#C2F04A"></circle>
+                            <circle class="tw2" cx="58" cy="14" r="1.7" fill="#C2F04A"></circle>
+                            <circle class="tw3" cx="54" cy="54" r="2" fill="#C2F04A"></circle>
+                          </svg></span>
+                          <span class="va-axpct">{{ genPct }}</span>
+                          <span class="va-axpst">{{ genStatus }}</span>
+                          <span class="va-axpbar"><b style="width:{{ genPct }}"></b></span>
+                        </div></div>
+                      </sc-if>
+                      <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
+                        <div class="va-axcell">
+                          <div data-id="{{ g.id }}" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="background:{{ g.g }}">
+                            <span class="rtag">{{ g.rtag }}</span>
+                            <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
+                            <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ false }}">
+                              <div class="va-axabar">
+                                <button class="va-axuse" onclick="{{ toggleUseMenu }}">Use ▾</button>
+                                <span style="flex:1"></span>
+                                <span class="va-axaico" title="Download" onclick="{{ axTileDownload }}"><svg class="va-ic"><use href="#i-down"></use></svg></span>
+                                <span class="va-axaico" title="Regenerate" onclick="{{ axTileRegen }}">↻</span>
+                              </div>
+                            </sc-if>
+                          </div>
+                          <!-- USE ▾ menu (frame A) — top actions are Step-2 placeholders -->
+                          <sc-if value="{{ g.menuOpen }}" hint-placeholder-val="{{ false }}">
+                            <div class="va-axmenu" onclick="{{ stop }}">
+                              <div class="va-axmi" onclick="{{ axSoon }}"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span><span class="soon">SOON</span></div>
+                              <div class="va-axmi" onclick="{{ axSoon }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span><span class="soon">SOON</span></div>
+                              <div class="va-axmdiv"></div>
+                              <div class="va-axmi plain" onclick="{{ axMenuDownload }}"><span class="mic">⬇</span>Download</div>
+                              <div class="va-axmi plain" onclick="{{ axMenuRegen }}"><span class="mic">↻</span>Regenerate</div>
+                              <div class="va-axmi plain danger" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>Delete</div>
+                              <div class="va-axmdiv"></div>
+                              <div class="va-axmi plain off" onclick="{{ stop }}"><span class="mic">⤢</span>Upscale<span class="soon">SOON</span></div>
+                              <div class="va-axmi plain off" onclick="{{ stop }}"><span class="mic">✦</span>Make variations<span class="soon">SOON</span></div>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ axVisEmpty }}" hint-placeholder-val="{{ false }}"><div class="va-axnone">No visuals in this session yet — generate an image or a video below</div></sc-if>
+                  </sc-if>
+
+                  <!-- audio view (frame C) -->
+                  <sc-if value="{{ axShowAudio }}" hint-placeholder-val="{{ false }}">
+                    <div class="va-axalist">
+                      <sc-if value="{{ axPendAud }}" hint-placeholder-val="{{ false }}">
+                        <div class="va-axarow pend">
+                          <span class="va-axmascot" style="width:40px;flex:none;display:grid;place-items:center"><svg width="34" height="34" viewBox="0 0 64 64">
+                            <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                            <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
+                            <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
+                          </svg></span>
+                          <div class="va-axainfo"><div class="t">{{ genStatus }}</div><div class="m">{{ modelName }} · generating</div></div>
+                          <div class="va-axeq"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+                          <span style="font:700 10.5px var(--mono);color:var(--lime)">{{ genPct }}</span>
+                        </div>
+                      </sc-if>
+                      <sc-for list="{{ axAudGens }}" as="g" hint-placeholder-count="3">
+                        <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="{{ g.arowCls }}">
+                          <span class="va-axplay"><svg class="va-ic"><use href="#i-play"></use></svg></span>
+                          <div class="va-axainfo"><div class="t">{{ g.title }}</div><div class="m">{{ g.metaLine }}</div></div>
+                          <div class="va-axwave"><sc-for list="{{ g.bars }}" as="b" hint-placeholder-count="9"><b style="height:{{ b.h }}"></b></sc-for></div>
+                          <span class="cost">✦ {{ g.cost }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <sc-if value="{{ axAudEmpty }}" hint-placeholder-val="{{ false }}"><div class="va-axnone">No audio in this session yet — generate a voiceover or a sound effect below</div></sc-if>
+                  </sc-if>
+                </div>
+
+                <!-- FLOATING DOCK (A3b — chips are the real gen params; signed quote before generate) -->
+                <div class="va-dock">
+              <sc-if value="{{ showRefs }}" hint-placeholder-val="{{ true }}">
+                <div class="va-axrefs">
+                  <button class="va-axrefadd" onclick="{{ addRef }}"><i>⊞</i><span>Reference</span></button>
+                  <span class="va-axrefhint">{{ refHint }}</span>
+                </div>
+              </sc-if>
               <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="{{ promptPh }}" class="prompt"></textarea>
               <div class="va-dockrow">
-                <span class="va-set" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set mode" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span>
-                <span class="va-set" data-pop="model" onclick="{{ toggleChip }}">Model: <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ modelsView }}" as="m" hint-placeholder-count="3"><button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">{{ m.label }}<sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                <span class="va-set" data-pop="model" onclick="{{ toggleChip }}"><b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl" onclick="{{ stop }}">
+                    <div class="va-axpoph">{{ modePickHead }}</div>
+                    <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">
+                      <button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">
+                        <span class="mid"><span class="nm">{{ m.label }}</span><span class="ds">{{ m.desc }}</span></span>
+                        <span class="pc">{{ m.costLabel }}</span>
+                        <sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><span class="ck">✓</span></sc-if>
+                      </button>
+                    </sc-for>
+                    <div class="va-axpmore" onclick="{{ openModelModal }}">⊞ More models<span class="arr">→</span></div>
+                  </div></sc-if>
                 </span>
                 <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><span class="va-set" data-pop="aspect" onclick="{{ toggleChip }}"><b>{{ aspectVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popAspect }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
@@ -15759,20 +16068,42 @@
                 </span></sc-if>
                 <span class="va-set enh" onclick="{{ improve }}"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
                 <span class="sp"></span>
-                <span class="va-quote">{{ quotePrefix }}<b>✦ {{ costNow }}</b></span>
-                <a class="va-btn lime" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Generate</a>
+                <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>
+                <a class="{{ genBtnCls }}" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }}</a>
               </div>
-            </div>
+              <div class="va-axbal">BALANCE <em>✦ {{ creditsFmt }}</em> · {{ axBalNote }}<span class="top" onclick="{{ openCredits }}">＋ Top up</span></div>
+                </div><!-- /va-dock -->
+              </div><!-- /va-axmainc -->
+            </div><!-- /va-axwork -->
             <sc-if value="{{ chipAnyOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-popbd" onclick="{{ closeChip }}"></div></sc-if>
+            <sc-if value="{{ useMenuOpen }}" hint-placeholder-val="{{ false }}"><div class="ffa-popbd" onclick="{{ closeUseMenu }}"></div></sc-if>
 
-            <!-- THIS SESSION strip (canvas modes) -->
-            <sc-if value="{{ showSess }}" hint-placeholder-val="{{ false }}">
-              <div class="va-sec" style="padding-top:10px"><h3 style="font-size:14px">This session</h3>
-                <span class="all" style="font:500 10px var(--mono);letter-spacing:.08em;cursor:default">{{ sessLine }}</span></div>
-              <div class="va-sess">
-                <sc-for list="{{ sessGens }}" as="g" hint-placeholder-count="6">
-                  <div data-id="{{ g.id }}" onclick="{{ pickActive }}" class="{{ g.sessCls }}" style="background:{{ g.g }}"></div>
-                </sc-for>
+            <!-- MODEL FULL MODAL (frame D — step 2 of the model picker) -->
+            <sc-if value="{{ modelModalOpen }}" hint-placeholder-val="{{ false }}">
+              <div class="va-axscrim" onclick="{{ closeModelModal }}">
+                <div class="va-axmodal" onclick="{{ stop }}">
+                  <div class="va-axmdh"><h3>Choose a model</h3><span class="x" onclick="{{ closeModelModal }}">✕</span></div>
+                  <div class="va-axsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ modelQ }}" oninput="{{ onModelQ }}" placeholder="Search models…"></div>
+                  <div class="va-axftags">
+                    <sc-for list="{{ modelFilterView }}" as="f" hint-placeholder-count="5">
+                      <span data-v="{{ f.v }}" onclick="{{ onModelFilter }}" class="{{ f.cls }}">{{ f.label }}</span>
+                    </sc-for>
+                  </div>
+                  <div class="va-axmbody">
+                    <sc-for list="{{ modelGroupsView }}" as="grp" hint-placeholder-count="2">
+                      <div class="va-axmgh"><svg class="va-ic" style="font-size:11px;color:var(--muted)"><use href="{{ grp.iconRef }}"></use></svg>{{ grp.label }}</div>
+                      <sc-for list="{{ grp.models }}" as="m" hint-placeholder-count="2">
+                        <div class="{{ m.rowCls }}" data-v="{{ m.v }}" data-mode="{{ m.mode }}" onclick="{{ pickModel }}">
+                          <span class="mic2"><svg class="va-ic"><use href="{{ m.iconRef }}"></use></svg></span>
+                          <span class="mid"><span class="nm">{{ m.label }} <sc-if value="{{ m.isDefault }}" hint-placeholder-val="{{ false }}"><span class="new">DEFAULT</span></sc-if></span>
+                          <span class="ds">{{ m.desc }}</span></span>
+                          <span class="meta"><span class="pc">✦ {{ m.costN }}<i>{{ m.unit }}</i></span><button class="{{ m.selCls }}" data-v="{{ m.v }}" data-mode="{{ m.mode }}" onclick="{{ pickModel }}">{{ m.selLabel }}</button></span>
+                        </div>
+                      </sc-for>
+                    </sc-for>
+                    <sc-if value="{{ modelModalEmpty }}" hint-placeholder-val="{{ false }}"><div class="va-axnone" style="margin:14px">No models match your search</div></sc-if>
+                  </div>
+                </div>
               </div>
             </sc-if>
           </sc-if>
@@ -16096,6 +16427,14 @@ class Component extends DCLogic {
     q: '',
     modelOpen: false,
     chipPop: null,
+    // PHASE B — AI Studio session workspace (UI-only holat; gen oqimiga tegmaydi)
+    aiMediaView: null,      // null = joriy tool rejimiga ergashadi; 'visuals' | 'audio'
+    useMenuOpen: false,
+    modelModalOpen: false,
+    modelQ: '',
+    modelFilter: 'All',
+    genProgress: 0,
+    genPhase: 0,
     accountTab: 'Profile',
     aiDuration: '',
     activeGenId: null,
@@ -16253,7 +16592,7 @@ class Component extends DCLogic {
       this._afterAuth = screen;
       screen = 'verify-email';
     }
-    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
+    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
     try { if (window.history && history.replaceState) history.replaceState(null, '', '#' + screen); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     // Replay the app page-wrap entrance via transition (never keyframes): hide -> reflow -> reveal.
@@ -16330,7 +16669,27 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._io) this._io.disconnect(); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.renderGoogleBtn(); this.renderTurnstile(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); }
+
+  /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
+   *  pollJob'dan real % kelmaydi, shu sabab ishonarli indeterminat foiz 93% da
+   *  to'xtab turadi (yakunni SOXTALAMAYDI — done bo'lganda holat o'zi almashadi).
+   *  Gen oqimiga (generate/pollJob) tegmaydi — faqat state.generating'ni kuzatadi. */
+  syncGenAnim() {
+    if (this.state.generating && !this._genAnimT) {
+      this._genAnimStart = Date.now();
+      this._genAnimT = setInterval(() => {
+        this.setState(s => ({
+          genProgress: Math.min(93, (s.genProgress || 0) + Math.max(0.4, (93 - (s.genProgress || 0)) * 0.045)),
+          genPhase: Math.floor((Date.now() - this._genAnimStart) / 4500),
+        }));
+      }, 380);
+      this.setState({ genProgress: 2, genPhase: 0 });
+    } else if (!this.state.generating && this._genAnimT) {
+      clearInterval(this._genAnimT); this._genAnimT = null;
+      this.setState({ genProgress: 0, genPhase: 0 });
+    }
+  }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
   // Boy landing imperativ effektlari — idempotent (__ffl* bayroqlar), reduced-motion'da o'chiq
   installLanding() {
@@ -16504,6 +16863,8 @@ class Component extends DCLogic {
       url: (asset && asset.url) || null,
       thumb: (asset && (asset.thumbUrl || (type === 'image' ? asset.url : null))) || null,
       cost: it.cost || 0, at: it.createdAt || null,
+      // PHASE B rail/audio metadata (additive — render uchun)
+      mode: it.mode || '', modelId: it.modelId != null ? it.modelId : null,
     };
   }
 
@@ -16993,6 +17354,100 @@ class Component extends DCLogic {
     const sessSpent = sessGens.reduce((a, g) => a + (g.cost || 0), 0);
     const sessLine = sessGens.length + ' RESULTS · SPENT ✦ ' + sessSpent;
     const showSess = aiIsCanvas && sessGens.length > 0;
+    // ── PHASE B: AI Studio session workspace bindinglari (mockup frames A–F).
+    //    Faqat render — gen oqimi (generate/buildParams/estCost/pollJob) O'ZGARMAGAN.
+    const modelLabelById = {};
+    Object.keys(this.state.genModels).forEach(k => (this.state.genModels[k] || []).forEach(m => { modelLabelById[m.id] = m.label; }));
+    const fmtAgo = (iso) => { if (!iso) return ''; const sec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000); if (sec < 60) return 'now'; if (sec < 3600) return Math.round(sec / 60) + ' min ago'; if (sec < 86400) return Math.round(sec / 3600) + ' h ago'; return Math.round(sec / 86400) + ' d ago'; };
+    const isAudioType = (g) => g.type === 'audio' || g.type === 'sfx';
+    const axView = this.state.aiMediaView || (aiIsAudio ? 'audio' : 'visuals');
+    const axIsVisuals = axView === 'visuals';
+    const visGensRaw = this.state.gens.filter(g => !isAudioType(g));
+    const audGensRaw = this.state.gens.filter(isAudioType);
+    const axTipOf = (g) => [fmtAgo(g.at), (g.modelId != null && modelLabelById[g.modelId]) || g.tool || ''].filter(Boolean).join(' · ');
+    const RAIL_MAX = 8;
+    const axRailGens = this.state.gens.slice(0, RAIL_MAX).map(g => ({
+      id: g.id, isVideo: g.type === 'video', isAudio: isAudioType(g),
+      railCls: 'va-axrth' + (isAudioType(g) ? ' aud' : '') + (activeGenRaw && g.id === activeGenRaw.id ? ' on' : ''),
+      bg: isAudioType(g) ? 'var(--surface2)' : media(g.thumb, g.h), tip: axTipOf(g),
+    }));
+    const axRailMoreN = Math.max(0, this.state.gens.length - RAIL_MAX);
+    const axVisGens = visGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; return {
+      id: g.id, g: media(g.thumb, g.h), isVideo: g.type === 'video', rtag: rtagOf(g.type),
+      resCls: 'va-axres' + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
+    }; });
+    const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; return {
+      id: g.id, title: g.label || 'Audio', cost: g.cost || 0,
+      metaLine: [(g.tool === 'SFX' || g.mode === 'sfx') ? 'SFX' : 'VOICE', modelLabelById[g.modelId], fmtAgo(g.at)].filter(Boolean).join(' · '),
+      arowCls: 'va-axarow' + (on ? ' on' : ''),
+      bars: Array.from({ length: 28 }, (_, i) => ({ h: (16 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.83)) * 76)) + '%' })),
+    }; });
+    const axShowHero = this.state.gens.length === 0 && !this.state.generating;
+    const axShowVisuals = !axShowHero && axIsVisuals;
+    const axShowAudio = !axShowHero && !axIsVisuals;
+    const axPendVis = axShowVisuals && this.state.generating && aiIsCanvas;
+    const axPendAud = axShowAudio && this.state.generating && aiIsAudio;
+    const axVisEmpty = axShowVisuals && axVisGens.length === 0 && !axPendVis;
+    const axAudEmpty = axShowAudio && axAudGens.length === 0 && !axPendAud;
+    const genPct = Math.round(this.state.genProgress || 0) + '%';
+    const axPhases = {
+      image: ['Warming up the pixels…', 'Mixing light and shadow…', 'Sharpening the details…', 'Adding the finishing touches…'],
+      video: ['Setting the scene…', 'Directing your seconds of fame…', 'Rendering the frames…', 'Color-grading the cut…'],
+      voice: ['Clearing the throat…', 'Finding the right tone…', 'Recording the take…', 'Polishing the audio…'],
+      sfx: ['Listening to the world…', 'Layering the textures…', 'Mixing the effect…', 'Polishing the audio…'],
+    };
+    const axPhl = axPhases[tool.mode] || axPhases.image;
+    const genStatus = axPhl[Math.min(this.state.genPhase || 0, axPhl.length - 1)];
+    const axSuggest = [
+      { i: '🖼', t: 'A neon product shot on wet asphalt', tool: 'Rasm yaratish' },
+      { i: '🎬', t: 'Slow-motion coffee pour, macro', tool: 'Video yaratish' },
+      { i: '🎙', t: 'A warm 10-second podcast intro', tool: 'Voiceover' },
+      { i: '🔊', t: 'Whoosh + impact for a title card', tool: 'SFX' },
+    ];
+    // Model picker (2 bosqich) — bir xil pickModel handler, hech qanday fork yo'q
+    const unitOfMode = { image: 'per image', video: 'per second', voice: 'per 30 s', sfx: 'per effect' };
+    const modelCostBits = (m, mode) => {
+      let c = m.cost, unit = unitOfMode[mode] || '';
+      if (mode === 'image' && m.imgSettings && m.imgSettings.quality && m.imgSettings.quality.cost) c = Math.min.apply(null, Object.values(m.imgSettings.quality.cost));
+      if (mode === 'video') {
+        const perSec = m.videoSettings && m.videoSettings.resolution && m.videoSettings.resolution.perSec;
+        if (perSec) c = Math.min.apply(null, Object.values(perSec));
+        if (m.pricing === 'per-generation') unit = 'per video';
+      }
+      return { c, unit };
+    };
+    const modelPickView = modelList.slice(0, 4).map(m => { const active = !!model && m.id === model.id; const cb = modelCostBits(m, tool.mode); return {
+      v: String(m.id), label: m.label, active, rowCls: 'va-axpm' + (active ? ' on' : ''),
+      desc: m.description || m.desc || (cb.unit ? ('Priced ' + cb.unit) : ''), costLabel: '✦ ' + cb.c,
+    }; });
+    const modePickHead = 'RECOMMENDED FOR ' + (tool.mode === 'sfx' ? 'SFX' : tool.mode.toUpperCase());
+    const axModeMeta = { image: { label: 'IMAGE', iconRef: '#i-img', filter: 'Image' }, video: { label: 'VIDEO', iconRef: '#i-vid', filter: 'Video' }, voice: { label: 'VOICE', iconRef: '#i-mic', filter: 'Voice' }, sfx: { label: 'SFX', iconRef: '#i-wave', filter: 'SFX' } };
+    const axMq = (this.state.modelQ || '').trim().toLowerCase();
+    const axMFilter = this.state.modelFilter || 'All';
+    const modelGroupsView = ['image', 'video', 'voice', 'sfx'].map(mode => {
+      if (axMFilter !== 'All' && axModeMeta[mode].filter !== axMFilter) return null;
+      const list = (this.state.genModels[mode] || []).filter(m => !axMq || (m.label || '').toLowerCase().indexOf(axMq) >= 0);
+      if (!list.length) return null;
+      return { label: axModeMeta[mode].label, iconRef: axModeMeta[mode].iconRef, models: list.map(m => {
+        const active = !!model && tool.mode === mode && m.id === model.id;
+        const cb = modelCostBits(m, mode);
+        return { v: String(m.id), mode, label: m.label, isDefault: !!m.isDefault, iconRef: axModeMeta[mode].iconRef,
+          desc: m.description || m.desc || ('Priced ' + cb.unit), costN: cb.c, unit: cb.unit,
+          rowCls: 'va-axmrow' + (active ? ' on' : ''), selCls: 'va-axmsel' + (active ? ' on' : ''), selLabel: active ? '✓ Selected' : 'Select' };
+      }) };
+    }).filter(Boolean);
+    const modelFilterView = ['All', 'Image', 'Video', 'Voice', 'SFX'].map(v => ({ v, label: v, cls: 'va-axftag' + (v === axMFilter ? ' on' : '') }));
+    // Dock: quote/CTA/balans — qiymatlar mavjud estCost/quote oqimidan, faqat ko'rinish yangi
+    const axQuote = (tool.multi && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
+    const axPromptReady = (this.state.aiPrompt || '').trim().length >= 2;
+    const genBtnCls = 'va-btn lime' + (this.state.generating ? ' pending' : (axPromptReady ? '' : ' off'));
+    const genBtnLabel = this.state.generating ? 'Generating…' : 'Generate';
+    const axBalNote = this.state.generating
+      ? ('✦ ' + costNow + ' reserved for this job — refunded if it fails')
+      : (tool.mode === 'image' ? (unitCost > 0 ? ('~' + Math.floor(this.state.credits / unitCost) + ' image generations left') : 'priced per image')
+        : (tool.mode === 'video' ? 'video is billed per second of output'
+          : (tool.mode === 'voice' ? 'voice is billed per 30 s of output' : 'billed per sound effect')));
+    const refHint = tool.mode === 'video' ? 'Optional — use an image as the start frame (via “Use ▾” soon).' : 'Optional — add an image to edit it or animate it.';
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
@@ -17260,12 +17715,42 @@ class Component extends DCLogic {
       toolCards, toolTitle, toolIconRef, promptPh, quotePrefix, voiceVal, popMode, popVoice,
       pickerStrip: genView.slice(0, 5), genCountLabel: this.state.gens.length ? (this.state.gens.length + ' TOTAL') : '', noGens: this.state.gens.length === 0,
       sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance',
-      openTool: (e) => { this.setState({ aiTool: e.currentTarget.dataset.tool, aiView: 'composer', chipPop: null, modelOpen: false }); try { window.scrollTo(0, 0); } catch (e2) {} },
+      openTool: (e) => { this.setState({ aiTool: e.currentTarget.dataset.tool, aiView: 'composer', chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false, modelModalOpen: false }); try { window.scrollTo(0, 0); } catch (e2) {} },
       backToPicker: () => this.setState({ aiView: 'picker', chipPop: null }),
       aspectVal, qualityVal, countVal, resVal, durVal,
       popModel, popAspect, popQuality, popCount, popRes, popDur,
       chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
       voiceResults, noVoiceResults,
+      // ── PHASE B: session workspace bindinglari ──
+      axRailPend: this.state.generating, railPendTip: 'now · ' + modelName,
+      axRailGens, axRailMore: axRailMoreN > 0, axRailMoreLabel: '+ ' + axRailMoreN + ' more', axRailMoreShort: '+' + axRailMoreN,
+      axRailEmpty: this.state.gens.length === 0 && !this.state.generating,
+      visCount: visGensRaw.length, audCount: audGensRaw.length,
+      axSegVisCls: axIsVisuals ? 'on' : '', axSegAudCls: axIsVisuals ? '' : 'on',
+      axSessMeta: this.state.gens.length ? ('SESSION · ' + this.state.gens.length + ' GENERATIONS') : 'NEW SESSION',
+      axShowHero, axShowVisuals, axShowAudio, axPendVis, axPendAud, axVisEmpty, axAudEmpty,
+      axVisGens, axAudGens, genPct, genStatus, axSuggest,
+      modelPickView, modePickHead, modelGroupsView, modelFilterView,
+      modelModalOpen: this.state.modelModalOpen, modelQ: this.state.modelQ,
+      modelModalEmpty: modelGroupsView.length === 0,
+      axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas,
+      useMenuOpen: this.state.useMenuOpen,
+      onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
+      onRailItem: (e) => { const id = e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (!g) return; this.setState({ activeGenId: id, aiMediaView: (g.type === 'audio' || g.type === 'sfx') ? 'audio' : 'visuals', useMenuOpen: false }); },
+      onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g, useMenuOpen: false }); } else this.setState({ activeGenId: id, useMenuOpen: false }); },
+      toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
+      closeUseMenu: () => this.setState({ useMenuOpen: false }),
+      axSoon: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); this.toast('Coming soon — next update'); },
+      axMenuDownload: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
+      axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); this.generate(); },
+      axMenuDelete: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.deleteGenById(activeGenRaw.id); },
+      axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
+      axTileRegen: (e) => { e.stopPropagation(); this.generate(); },
+      onSuggest: (e) => { const el = e.currentTarget; this.setState({ aiTool: el.dataset.tool, aiPrompt: el.dataset.p, aiMediaView: null, chipPop: null }); },
+      openModelModal: (e) => { if (e) e.stopPropagation(); this.setState({ modelModalOpen: true, chipPop: null, modelQ: '', modelFilter: 'All' }); },
+      closeModelModal: () => this.setState({ modelModalOpen: false }),
+      onModelQ: (e) => this.setState({ modelQ: e.target.value }),
+      onModelFilter: (e) => { e.stopPropagation(); this.setState({ modelFilter: e.currentTarget.dataset.v }); },
       toggleChip: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ chipPop: st.chipPop === p ? null : p, modelOpen: false })); },
       closeChip: () => this.setState({ chipPop: null }),
       showCount: tool.multi && countsView.length > 1,
@@ -17314,12 +17799,14 @@ class Component extends DCLogic {
       storagePct: this.state.storageQuota ? Math.min(100, Math.round(this.state.storageUsed / this.state.storageQuota * 100)) + '%' : '0%',
       storageBarCol: (this.state.storageQuota && this.state.storageUsed / this.state.storageQuota >= 0.9) ? '#e84242' : 'var(--lime)',
       onSearch: (e) => this.setState({ q: e.target.value }),
-      onPickTool: (e) => this.setState({ aiTool: e.currentTarget.dataset.tool, chipPop: null, modelOpen: false }),
+      onPickTool: (e) => this.setState({ aiTool: e.currentTarget.dataset.tool, chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false }),
       setPrompt: (e) => this.setState({ aiPrompt: e.target.value }),
       improve: () => this.doEnhance(),
       addRef: () => this.toast('Reference upload coming soon'),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
-      pickModel: (e) => { const id = +e.currentTarget.dataset.v; this.setState(st => { const sel = Object.assign({}, st.selModel); sel[tool.mode] = id; return { selModel: sel, modelOpen: false, chipPop: null }; }); },
+      // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
+      // modeli tanlansa tool'ni ham o'sha rejimga o'tkazadi) — selection logikasi bitta.
+      pickModel: (e) => { e.stopPropagation(); const id = +e.currentTarget.dataset.v; const mMode = e.currentTarget.dataset.mode || tool.mode; const nt = this.aiTools.find(t => t.mode === mMode); this.setState(st => { const sel = Object.assign({}, st.selModel); sel[mMode] = id; return { selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiMediaView: mMode !== tool.mode ? null : st.aiMediaView, modelOpen: false, chipPop: null, modelModalOpen: false }; }); },
       onSize: (e) => this.setState({ aiSize: e.currentTarget.dataset.v, chipPop: null }),
       onCount: (e) => this.setState({ aiCount: +e.currentTarget.dataset.v, chipPop: null }),
       onDuration: (e) => this.setState({ aiDuration: e.currentTarget.dataset.v, chipPop: null }),
