@@ -1,17 +1,19 @@
-# Sessiya hisoboti — 2026-07-07 · PHASE B build 1/2: AI Studio workspace port
+# Sessiya hisoboti — 2026-07-07 · PHASE B build 2/2: Use ▾ handoff + mobil dock
 
-**Qilindi:** Tasdiqlangan mockup (frames A–F) jonli platformaga port qilindi — commit `2c1b524`,
-faqat `platform/index.html` (+550/−63). Ikki panel workspace (sessiya rail + Visuals|Audio toggle),
-Sparky pending (tile/audio-row/rail-mini, % 93 da to'xtaydi), Use ▾ menyu (Edit image /
-Generate video from image = SOON placeholder + toast; Download/Regenerate/Delete mavjud
-handlerlarda), model quick-pick (tavsif+narx) + to'liq modal (qidiruv/filter/guruhlar, bitta
-`pickModel`), dock evolyutsiyasi (reference slot vizual, COST, balans strip, off/pending CTA),
-bo'sh holat hero + suggestion chiplar, mobil 390 (strip, 2 ustun grid, sheet-menyu).
+**Qilindi:** Use ▾ "Edit image" / "Generate video from image" REAL ulandi (faqat `platform/index.html`).
+Edit: genGet bilan trigger paytida YANGI imzolangan URL → image rejim + edit-qobiliyatli model
+(refKind image / maxRefs>0) → `referenceUrl` + `referenceUrls` (plagin shakli 1:1). i2v: video rejim +
+refKind "frames" model → faqat `referenceUrl` (start), `referenceEndUrl` YUBORILMAYDI. Dock referens
+sloti funksional: thumb + yorliq + ×; rejim qo'lda almashsa yoki model ref qabul qilmasa tozalanadi;
+VIDEO manba/mos model yo'q → tugma off + tooltip. Mobil ≤820: dock = mode+model+cost+Generate,
+ratio/quality/res/duration/count/voice/Enhance mode-popover ichiga yig'ildi (frame F), popover yopilmay
+tanlanadi, buildParams o'sha holatdan o'qiydi.
 
-**Tekshirildi:** headless Chrome + mock API (:4000, fake sessiya) 1280/390px — freymlar mockupga
-mos, voice+image gen end-to-end o'tdi, konsol xatosiz, overflow yo'q, boshqa ekranlar buzilmagan.
+**Pul zonasi:** `generate`/`estCost`/`pollJob` HEAD bilan bayt-ma-bayt BIR XIL (diff tasdiqlangan);
+`buildParams` faqat 2 shartli ref qator oldi; ff-api.js tegilmagan. Imzo refs'siz hash — mock'da
+bir xil signature ref bilan/refsiz qabul qilindi.
 
-**Pul zonasi:** `generate`/`buildParams`/`estCost`/`pollJob` HEAD bilan bayt-ma-bayt BIR XIL
-(diff tasdiqlagan). Gen so'roviga reference param QO'SHILMAGAN.
+**Tekshirildi:** headless + mock API (:4000, gen-quote imzo mexanikasi replikatsiya): 7 ssenariy
+(t2i toza, edit ref, i2v start-only, × dan keyin toza, mode-switch tozalash, off-tooltip, mobil gen) o'tdi, konsol xatosiz.
 
-**Kutilmoqda:** Step 2/2 — Use ▾ ikki amalini real ulash (ref handoff); push foydalanuvchidan.
+**Kutilmoqda:** push foydalanuvchidan; keyin Upscale/Variations (backend-gated).
