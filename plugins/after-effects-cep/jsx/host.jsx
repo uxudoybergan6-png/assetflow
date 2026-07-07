@@ -1,3 +1,9 @@
+if (!String.prototype.trim) {
+  String.prototype.trim = function () {
+    return String(this).replace(/^\s+/, "").replace(/\s+$/, "");
+  };
+}
+
 function pickTemplateFile(filterHint) {
   try {
     var f = File.openDialog("Select file", filterHint || "*.*");
