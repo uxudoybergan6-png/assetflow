@@ -14973,6 +14973,12 @@
   .ff .va-rc .sub i{width:7px;height:7px;border-radius:50%;background:#B794F6;display:inline-block}
   .ff .va-rc .cat{font-size:10.5px;color:var(--muted2);padding:2px 3px 0}
   .ff .va-rcgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 40px 8px}
+  /* FAZA D · Option A — true masonry (CSS columns); har karta o'z aspect'ini (t.ar) saqlaydi.
+     CSS columns sort tartibini ustun bo'ylab o'qiydi (Artlist ham shunday).
+     TODO(FF): chapdan-o'ngga rank kerak bo'lsa JS round-robin bilan N ustun stackiga taqsimlash. */
+  .ff .va-mas{columns:4;column-gap:18px;padding:18px 40px 60px}
+  .ff .va-mas .va-rc{break-inside:avoid;margin-bottom:20px;display:inline-block;width:100%}
+  @media(max-width:1100px){ .ff .va-mas{columns:3} }
   .ff .va-shwrap{position:relative}
   .ff .va-sh{display:flex;gap:16px;padding:2px 40px 12px;overflow-x:auto;scrollbar-width:none}
   .ff .va-sh::-webkit-scrollbar{display:none}
@@ -15032,6 +15038,8 @@
     .ff .va-rc .med{border-radius:11px}
     .ff .va-rc .med .rise,.ff .va-rc .med .va-playov{display:none} /* touch: tap opens detail */
     .ff .va-rc .cat{display:none}
+    .ff .va-mas{columns:2;column-gap:11px;padding:12px 16px 40px}
+    .ff .va-mas .va-rc{margin-bottom:14px}
     .ff .va-sh{gap:10px;padding:2px 16px 12px}
     .ff .va-sh .va-rc{width:200px}
     .ff .va-sh .va-rc .tt{font-size:11.5px}
@@ -15111,6 +15119,26 @@
   .ff .va-specs .v{font-size:12.5px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-gate{display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:11px;margin-top:12px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:#D6E8A8;line-height:1.5}
   .ff .va-rel4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  /* ── FAZA D · detail boyitish — stats qatori · CTA qatori (fav/share) · kolleksiya strip ── */
+  .ff .va-dstats{display:flex;align-items:center;gap:14px;margin-top:10px;font:500 10.5px var(--mono);color:var(--muted);flex-wrap:wrap}
+  .ff .va-dstats span{display:inline-flex;align-items:center;gap:5px}
+  .ff .va-dstats .va-ic{color:var(--muted2)}
+  .ff .va-dact{display:flex;gap:9px;margin-top:9px}
+  .ff .va-dact .fav{width:44px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);cursor:pointer}
+  .ff .va-dact .fav.on{color:var(--lime);border-color:rgba(194,240,74,.4);background:var(--limedim)}
+  .ff .va-col{margin:0 40px 44px;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,rgba(194,240,74,.07),rgba(255,255,255,.02) 45%),var(--surface);border:1px solid var(--hair2);display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:center;padding:22px 24px}
+  .ff .va-col .info .va-kick{color:var(--lime)}
+  .ff .va-col .info h3{font-size:19px;font-weight:800;letter-spacing:-.015em;margin:8px 0 0}
+  .ff .va-col .info p{font-size:12px;color:var(--muted);margin:5px 0 0;line-height:1.55}
+  .ff .va-col .info .va-btn{margin-top:15px}
+  .ff .va-col .peek{display:flex;gap:10px;align-items:center;min-width:0;overflow:hidden;position:relative}
+  .ff .va-col .pk{width:148px;flex:none;aspect-ratio:16/10;border-radius:10px;cursor:pointer}
+  .ff .va-col .pk.this{outline:2px solid var(--lime);outline-offset:2px}
+  .ff .va-col .pk .you{position:absolute;left:7px;top:7px;font:700 7.5px var(--mono);letter-spacing:.1em;padding:2.5px 6px;border-radius:4px;background:var(--lime);color:var(--onlime);z-index:1}
+  .ff .va-col .more{width:148px;flex:none;aspect-ratio:16/10;border-radius:10px;background:var(--f1);border:1px dashed rgba(255,255,255,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);cursor:pointer}
+  .ff .va-col .more b{font:700 15px var(--mono);color:var(--text)}
+  .ff .va-col .more span{font-size:10px}
+  .ff .va-col .pfade{position:absolute;top:0;right:0;bottom:0;width:70px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--surface))}
   /* ── AI toolkit (A3 picker · A3b composer) ── */
   .ff .va-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:18px;padding:26px 40px 10px}
   .ff .va-tool{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/10.5;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;border:none;cursor:pointer;background-size:cover;font-family:inherit;text-align:left;color:var(--text)}
@@ -15167,7 +15195,15 @@
   .ff .va-tbox .hd{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--hair);font-weight:700;font-size:13px}
   .ff .va-tbox .hd .mono{margin-left:auto;font:500 9.5px var(--mono);color:var(--muted2)}
   @media(max-width:900px){ .ff .va-acc{grid-template-columns:1fr} .ff .va-tables{grid-template-columns:1fr} }
-  @media(max-width:1100px){ .ff .va-dwrap{grid-template-columns:1fr} }
+  @media(max-width:1100px){
+    .ff .va-dwrap{grid-template-columns:1fr}
+    /* FAZA D · D3 o'qish tartibi: preview → meta/CTA → related (chap ustun display:contents bilan ochiladi) */
+    .ff .va-dwrap>div:first-child{display:contents}
+    .ff .va-dprev{order:0}
+    .ff .va-dmeta{order:1}
+    .ff .va-dwrap .va-sec{order:2}
+    .ff .va-dwrap .va-rel4{order:3}
+  }
   @media(max-width:820px){
     .ff .va-tools{padding:16px 16px 6px;gap:11px}
     .ff .va-canvas{margin:14px 16px 0;min-height:300px;padding:16px}
@@ -15186,6 +15222,24 @@
     .ff .va-crumb{padding:14px 16px 0}
     .ff .va-dwrap{padding:14px 16px 30px;gap:18px}
     .ff .va-rel4{grid-template-columns:1fr 1fr;gap:10px}
+    /* FAZA D · D3 mobil dmeta tartibi: badges/nom/stats → CTA qatori → gate → specs → desc/tags */
+    .ff .va-dmeta{display:flex;flex-direction:column;align-items:stretch}
+    .ff .va-dmeta .bdg{order:0}
+    .ff .va-dmeta h2{order:1}
+    .ff .va-dmeta .sub{order:2}
+    .ff .va-dstats{order:3}
+    .ff .va-dmeta>.va-btn.lime{order:4;margin-top:14px}
+    .ff .va-dact{order:5}
+    .ff .va-gate{order:6}
+    .ff .va-specs{order:7;margin:14px 0 0}
+    .ff .va-ddesc{order:8}
+    .ff .va-dtags{order:9}
+    /* FAZA D · mobil kolleksiya kartasi — kick/nom/peek/tugma stack (D3 mcol) */
+    .ff .va-col{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:0 16px 30px;padding:16px}
+    .ff .va-col .info{display:contents}
+    .ff .va-col .peek{order:1;margin-top:12px}
+    .ff .va-col .info .va-btn{order:2;width:100%;justify-content:center;margin-top:13px}
+    .ff .va-col .pk,.ff .va-col .more{width:104px;border-radius:8px}
   }
   /* ── AI STUDIO PHASE B — session workspace (port of _aistudio-depth-mockup frames A–F) ── */
   @keyframes axBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
@@ -15756,6 +15810,7 @@
         <symbol id="i-arrowr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></symbol>
         <symbol id="i-wand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m5 19 10-10m1.5-1.5L19 5"></path><path d="M17 3l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z" fill="currentColor" stroke="none"></path></symbol>
         <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20.5S3.5 15 3.5 9.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8.5 2.8c0 5.8-8.5 11.3-8.5 11.3Z"></path></symbol>
+        <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"></circle><circle cx="6" cy="12" r="2.6"></circle><circle cx="18" cy="19" r="2.6"></circle><path d="m8.4 10.7 7.2-4.2m-7.2 6.8 7.2 4.2"></path></symbol>
         <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5.5" width="18" height="13" rx="2"></rect><path d="M3 10h18"></path></symbol>
         <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4.5a1.8 1.8 0 1 1 3.6 0H16a1 1 0 0 1 1 1v3.4a1.8 1.8 0 1 0 0 3.6V16a1 1 0 0 1-1 1h-3.4a1.8 1.8 0 1 1-3.6 0H5.5a1 1 0 0 1-1-1v-3.4a1.8 1.8 0 1 0 0-3.6V5.5a1 1 0 0 1 1-1H9Z"></path></symbol>
       </defs>
@@ -15798,31 +15853,87 @@
                 <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" preload="none" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
                 <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span class="va-playov"><span style="width:54px;height:54px"><svg class="va-ic" style="width:22px;height:22px"><use href="#i-play"></use></svg></span></span></sc-if>
               </div>
-              <div class="va-sec" style="padding:26px 0 12px"><h3>More like this</h3></div>
-              <div class="va-rel4">
-                <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4">
-                  <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-thumb" style="aspect-ratio:16/10;background:{{ r.g }};cursor:pointer"></div>
-                </sc-for>
-              </div>
+              <!-- FAZA D · related = boy karta (bare thumb emas); bo'sh bo'lsa butun seksiya yashirin -->
+              <sc-if value="{{ detail.hasRelated }}" hint-placeholder-val="{{ true }}">
+                <div class="va-sec" style="padding:26px 0 12px"><h3>Related templates</h3><span class="cnt">SAME CATEGORY</span></div>
+                <div class="va-rel4">
+                  <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4">
+                    <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-rc">
+                      <div class="med va-thumb" style="border-radius:12px;background:{{ r.g }}">
+                        <span class="badges">
+                          <sc-if value="{{ r.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
+                          <sc-if value="{{ r.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
+                          <sc-if value="{{ r.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+                          <sc-if value="{{ r.is4k }}" hint-placeholder-val="{{ false }}"><span class="va-badge q4k">4K</span></sc-if>
+                        </span>
+                        <span class="dur">{{ r.d }}</span>
+                        <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
+                        <span class="rise"><span class="fa"><svg class="va-ic"><use href="#i-heart"></use></svg></span><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
+                      </div>
+                      <div class="meta"><span class="tt">{{ r.n }}</span><span class="sub"><i style="background:{{ r.ac }}"></i>{{ r.a }}</span></div>
+                      <div class="cat">{{ r.catMeta }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
             </div>
             <div class="va-dmeta">
-              <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
-              <sc-if value="{{ detail.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+              <div class="bdg">
+                <sc-if value="{{ detail.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
+                <sc-if value="{{ detail.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+                <sc-if value="{{ detail.is4k }}" hint-placeholder-val="{{ false }}"><span class="va-badge q4k">4K</span></sc-if>
+              </div>
               <h2>{{ detail.n }}</h2>
               <div class="sub">by <b style="color:var(--text)">{{ detail.author }}</b> · {{ detail.c }}</div>
+              <!-- FAZA D · stats qatori — faqat real maydonlar.
+                   TODO(FF): downloads · favorites hisoblari (DownloadEvent endpointi, Faza F) kelganda shu qatorga qo'shiladi. -->
+              <div class="va-dstats">
+                <sc-if value="{{ detail.hasSize }}" hint-placeholder-val="{{ false }}"><span><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.sizeFmt }} pack</span></sc-if>
+                <sc-if value="{{ detail.hasUpdated }}" hint-placeholder-val="{{ false }}"><span><svg class="va-ic"><use href="#i-clock"></use></svg> updated {{ detail.updatedFmt }}</span></sc-if>
+                <span><svg class="va-ic"><use href="#i-grid"></use></svg> {{ detail.colCount }} in {{ detail.c }}</span>
+              </div>
+              <!-- FAZA D · spec grid 4 → 6 katak (AUTHOR katagi sub qatoriga ko'chdi).
+                   TODO(FF): UPDATED katagi DOWNLOADS bilan almashadi (DownloadEvent, Faza F). -->
               <div class="va-specs">
                 <div><div class="k">APPLICATION</div><div class="v">{{ detail.appFull }}</div></div>
                 <div><div class="k">CATEGORY</div><div class="v">{{ detail.c }}</div></div>
-                <div><div class="k">RESOLUTION</div><div class="v">{{ detail.resLine }}</div></div>
-                <div><div class="k">AUTHOR</div><div class="v">{{ detail.author }}</div></div>
+                <div><div class="k">RESOLUTION</div><div class="v">{{ detail.resVal }}</div></div>
+                <div><div class="k">ORIENTATION</div><div class="v">{{ detail.oriLabel }}</div></div>
+                <div><div class="k">FORMAT</div><div class="v">{{ detail.formatLine }}</div></div>
+                <div><div class="k">UPDATED</div><div class="v">{{ detail.updatedFmt }}</div></div>
               </div>
               <a class="va-btn lime" style="width:100%;padding:13px" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> Download pack (.zip)</a>
-              <a class="va-btn ghost" style="width:100%;margin-top:9px" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in After Effects</a>
+              <div class="va-dact">
+                <a class="va-btn ghost" style="flex:1" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in After Effects</a>
+                <span class="{{ detail.favCls }}" onclick="{{ toggleFavTpl }}" title="Favorite"><svg class="va-ic"><use href="#i-heart"></use></svg></span>
+                <span class="fav" onclick="{{ shareTpl }}" title="Share"><svg class="va-ic"><use href="#i-share"></use></svg></span>
+              </div>
               <div class="va-gate"><svg class="va-ic" style="margin-top:1px;color:var(--lime)"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
-              <div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:14px">{{ detail.descText }}</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="font-size:11px;padding:5px 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted)">{{ tg }}</span></sc-for></div>
+              <div class="va-ddesc" style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:14px">{{ detail.descText }}</div>
+              <div class="va-dtags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="font-size:11px;padding:5px 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted)">{{ tg }}</span></sc-for></div>
             </div>
           </div>
+          <!-- FAZA D · "Part of collection" — kolleksiya proxy'si = shablon kategoriyasi (formal collection entity hali yo'q).
+               TODO(FF): real collection entity (kuratsiya to'plamlari) kelganda shu strip o'sha manbaga o'tadi. -->
+          <sc-if value="{{ detail.hasCol }}" hint-placeholder-val="{{ false }}">
+            <div class="va-col">
+              <div class="info">
+                <div class="va-kick">PART OF COLLECTION</div>
+                <h3>{{ detail.colTitle }}</h3>
+                <p>{{ detail.colDesc }}</p>
+                <a class="va-btn ghost sm" onclick="{{ openColCat }}">View collection <svg class="va-ic"><use href="#i-arrow"></use></svg></a>
+              </div>
+              <div class="peek">
+                <sc-for list="{{ detail.colPeek }}" as="pk" hint-placeholder-count="5">
+                  <div data-id="{{ pk.id }}" onclick="{{ openDetail }}" class="{{ pk.pkCls }}" style="background:{{ pk.g }}"><sc-if value="{{ pk.isThis }}" hint-placeholder-val="{{ false }}"><span class="you">THIS ITEM</span></sc-if></div>
+                </sc-for>
+                <sc-if value="{{ detail.hasColMore }}" hint-placeholder-val="{{ false }}">
+                  <div class="more" onclick="{{ openColCat }}"><b>+{{ detail.colMoreN }}</b><span>more items</span></div>
+                </sc-if>
+                <span class="pfade"></span>
+              </div>
+            </div>
+          </sc-if>
         </sc-if>
 
         <!-- DASHBOARD (Variant A · A1 — hero · credcard · quick actions · rows) -->
@@ -16033,17 +16144,29 @@
               <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span></span>
           </div>
+          <!-- FAZA D · Option A true masonry — FAZA C boy karta (va-rc), har karta o'z aspect'i (t.ar).
+               CSS columns sort tartibini ustun bo'ylab o'qiydi (Artlist-accepted).
+               TODO(FF): chapdan-o'ngga rank kerak bo'lsa JS round-robin taqsimlash. -->
+          <sc-if value="{{ catalogLoading }}" hint-placeholder-val="{{ false }}">
+            <div class="va-homeload" style="margin:26px 40px"><span class="star">✦</span> Hanging the template wall…</div>
+          </sc-if>
           <sc-if value="{{ hasFiltered }}" hint-placeholder-val="{{ true }}">
-            <div class="va-cards" style="padding-top:18px">
+            <div class="va-mas">
               <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
-                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-tc">
-                  <div class="va-thumb th" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
-                    <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
-                    <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
+                  <div class="med va-thumb" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
+                    <span class="badges">
+                      <sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
+                      <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
+                      <sc-if value="{{ t.free }}" hint-placeholder-val="{{ true }}"><span class="va-badge free">FREE</span></sc-if>
+                      <sc-if value="{{ t.is4k }}" hint-placeholder-val="{{ false }}"><span class="va-badge q4k">4K</span></sc-if>
+                    </span>
                     <span class="dur">{{ t.d }}</span>
                     <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
+                    <span class="rise"><span class="fa"><svg class="va-ic"><use href="#i-heart"></use></svg></span><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                   </div>
-                  <div class="meta"><span class="tt">{{ t.n }}</span><span class="app"><i style="background:{{ t.ac }}"></i>{{ t.a }} · {{ t.qual }}</span></div>
+                  <div class="meta"><span class="tt">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                  <div class="cat">{{ t.catMeta }}</div>
                 </div>
               </sc-for>
             </div>
@@ -16703,6 +16826,8 @@ class Component extends DCLogic {
     gensLoaded: false, // #5: tarix kelguncha "No generations yet" ko'rsatilmasin
     catalog: [],
     catalogReady: false,
+    favTpls: [], // FAZA D — lokal sevimli shablonlar (localStorage). TODO(FF): server-side favorites endpointi
+
     genModels: {},
     genModelsLoaded: false, // FAZA C — featured models yuklandi (bo'sh bo'lsa ham) belgisi
     selModel: {},
@@ -16860,6 +16985,8 @@ class Component extends DCLogic {
   componentDidMount() {
     this._applyEntry();
     this._sess = {};
+    // FAZA D — lokal sevimlilarni tiklash
+    try { const f = JSON.parse(localStorage.getItem('ff_tpl_favs') || '[]'); if (Array.isArray(f)) this.setState({ favTpls: f }); } catch (e) {}
     // Saqlangan sessiya + katalog + hash deep-link
     try {
       const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
@@ -17063,6 +17190,8 @@ class Component extends DCLogic {
         qual: ((it.res || '4k').toUpperCase().indexOf('4K') >= 0) ? '4K' : 'HD',
         ar: it.orient === 'vertical' ? '9 / 16' : (it.orient === 'square' ? '1 / 1' : '16 / 10'),
         thumbUrl: it.thumbUrl || null, previewUrl: it.previewUrl || null, hasPack: !!it.packUrl,
+        // FAZA D — detail spec/stats uchun additive maydonlar (payload'da allaqachon bor)
+        fileName: it.fileName || '', fileSize: it.fileSize || 0,
         desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
         author: it.author || (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
         // FAZA C — Home shelves/badges uchun additive vaqt maydonlari
@@ -17795,7 +17924,15 @@ class Component extends DCLogic {
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
-    let filtered = src.filter(t => (this.state.fApp === 'All' || t.a === this.state.fApp) && (this.state.fCat === 'All' || t.c === this.state.fCat) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => ({ ...t, g: media(t.thumbUrl, t.h), free: !t.pro }));
+    // ── FAZA C · boy karta (va-rc) maydonlari — FAZA D'da katalog masonry + detail related ham shu kartani ishlatadi ──
+    const NEW_MS = 7 * 86400000; // "yangi" = oxirgi 7 kun
+    const rcOf = (t, withDate) => ({
+      ...t, g: media(t.thumbUrl, t.h), free: !t.pro,
+      isNew: !!t.created && (Date.now() - t.created) < NEW_MS,
+      is4k: t.qual === '4K',
+      catMeta: t.c + (withDate && t.created ? ' · added ' + new Date(t.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''),
+    });
+    let filtered = src.filter(t => (this.state.fApp === 'All' || t.a === this.state.fApp) && (this.state.fCat === 'All' || t.c === this.state.fCat) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => rcOf(t));
     if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
     else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
     else if (this.state.sortKey === 'new') filtered = filtered.slice().sort((a, b) => (b.created || 0) - (a.created || 0)); // FAZA C
@@ -17826,6 +17963,12 @@ class Component extends DCLogic {
     const filterCount = activeChips.length + (this.state.fCat !== 'All' ? 1 : 0);
     const tplHeading = this.state.fCat === 'All' ? 'All templates' : this.state.fCat;
     const dRaw = this.state.detail;
+    // FAZA D — kolleksiya proxy'si: bir kategoriya = bir kolleksiya (formal collection entity hali yo'q).
+    // TODO(FF): real collection entity kelganda colAll/colOthers o'sha manbadan olinadi.
+    const colAll = dRaw ? (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c) : [];
+    const colOthers = dRaw ? colAll.filter(t => t.id !== dRaw.id) : [];
+    const colMoreN = Math.max(0, colOthers.length - 4);
+    const fmtSize = (b) => !b ? '' : (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
     const detail = dRaw ? {
       ...dRaw, g: media(dRaw.thumbUrl, dRaw.h),
       descText: dRaw.desc || (dRaw.real ? 'A professional-grade template. Fully customizable elements.' : 'A showcase template — the real catalog will fill in soon.'),
@@ -17834,7 +17977,26 @@ class Component extends DCLogic {
       resLine: (dRaw.qual || dRaw.d || '4K') + ' · ' + (dRaw.ori || '16:9'),
       appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
       metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
-      related: (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c && t.id !== dRaw.id).slice(0, 4).map(t => ({ ...t, g: media(t.thumbUrl, t.h) })),
+      // FAZA D — related endi boy karta (rcOf), bo'sh bo'lsa seksiya yashirin
+      related: colOthers.slice(0, 4).map(t => rcOf(t)),
+      hasRelated: colOthers.length > 0,
+      // FAZA D — stats qatori + 6 katakli spec grid (faqat real maydonlar)
+      is4k: dRaw.qual === '4K',
+      oriLabel: dRaw.ori === '9:16' ? 'Vertical' : (dRaw.ori === '1:1' ? 'Square' : 'Landscape'),
+      resVal: String((dRaw.real ? (dRaw.d || dRaw.qual) : dRaw.qual) || '4K').toUpperCase(),
+      formatLine: dRaw.hasPack ? ('.' + String((dRaw.fileName || 'pack.zip').split('.').pop() || 'zip').toLowerCase() + ' pack') : (dRaw.real ? 'Pack pending' : '.zip pack'),
+      hasSize: !!(dRaw.hasPack && dRaw.fileSize), sizeFmt: fmtSize(dRaw.fileSize),
+      hasUpdated: !!dRaw.updated,
+      updatedFmt: dRaw.updated ? new Date(dRaw.updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—',
+      favCls: 'fav' + (this.state.favTpls.indexOf(String(dRaw.id)) >= 0 ? ' on' : ''),
+      // FAZA D — "Part of collection" strip (kategoriya kesimi)
+      hasCol: colOthers.length > 0,
+      colTitle: dRaw.c + ' essentials',
+      colCount: colAll.length,
+      colDesc: colAll.length + ' items · curated from the ' + dRaw.c + ' category on FrameFlow.',
+      colPeek: [{ id: String(dRaw.id), g: media(dRaw.thumbUrl, dRaw.h), pkCls: 'pk va-thumb this', isThis: true }]
+        .concat(colOthers.slice(0, 4).map(t => ({ id: String(t.id), g: media(t.thumbUrl, t.h), pkCls: 'pk va-thumb', isThis: false }))),
+      hasColMore: colMoreN > 0, colMoreN,
     } : null;
     const lbRaw = this.state.lightbox;
     const lb = lbRaw ? { ...lbRaw, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))) } : null;
@@ -17847,14 +18009,7 @@ class Component extends DCLogic {
     const downloadHistoryView = [];
     const hasDownloads = false;
     const projectsView = this.projects.map(p => ({ ...p, g: this.grad(p.h), g1: this.grad(p.h), g2: this.grad((p.h + 42) % 360), g3: this.grad((p.h + 96) % 360), g4: this.grad((p.h + 150) % 360) }));
-    // ── FAZA C · boy karta (va-rc) maydonlari + kolleksiya tokchalari (real katalogdan kesim) ──
-    const NEW_MS = 7 * 86400000; // "yangi" = oxirgi 7 kun
-    const rcOf = (t, withDate) => ({
-      ...t, g: media(t.thumbUrl, t.h), free: !t.pro,
-      isNew: !!t.created && (Date.now() - t.created) < NEW_MS,
-      is4k: t.qual === '4K',
-      catMeta: t.c + (withDate && t.created ? ' · added ' + new Date(t.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''),
-    });
+    // ── FAZA C · kolleksiya tokchalari (real katalogdan kesim; rcOf yuqorida — FAZA D bilan umumiy) ──
     const recTemplates = src.slice(0, 4).map(t => rcOf(t));
     const hasRec = recTemplates.length > 0;
     // Trending — hozircha proxy: yaqinda yangilangan shablonlar (katalogda download hisobi yo'q).
@@ -18196,6 +18351,27 @@ class Component extends DCLogic {
       pickFbPlan: (e) => { e.stopPropagation(); this.setState({ fPlan: e.currentTarget.dataset.v, fbarPop: null }); },
       hasFiltered: filtered.length > 0, noFiltered: this.state.catalogReady && filtered.length === 0,
       catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
+      // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
+      catalogLoading: !this.state.catalogReady,
+      openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: d.c }); this.go('templates'); },
+      toggleFavTpl: () => {
+        const d = this.state.detail; if (!d) return;
+        const id = String(d.id);
+        const on = this.state.favTpls.indexOf(id) < 0;
+        this.setState(st => {
+          const f = st.favTpls.slice(); const i = f.indexOf(id);
+          if (i >= 0) f.splice(i, 1); else f.push(id);
+          try { localStorage.setItem('ff_tpl_favs', JSON.stringify(f)); } catch (e) {}
+          return { favTpls: f };
+        });
+        this.toast(on ? 'Added to favorites' : 'Removed from favorites');
+      },
+      shareTpl: async () => {
+        const d = this.state.detail; if (!d) return;
+        const url = window.location.href; // TODO(FF): per-shablon deep-link route kelganda shu URL almashadi
+        try { if (navigator.share) { await navigator.share({ title: d.n + ' — FrameFlow', url }); return; } } catch (e) { return; }
+        try { await navigator.clipboard.writeText(url); this.toast('Link copied'); } catch (e) { this.toast(url); }
+      },
       fAppsView, fCatsView, fPlansView, fOrientView, fQualView,
       activeChips, hasActiveFilters, filterCount, filterCountFmt: String(filterCount), tplHeading,
       filterDrawerOpen: this.state.filterDrawerOpen,

@@ -1,13 +1,12 @@
 # Sessiya hisoboti — 2026-07-07
 
-**Vazifa:** FAZA D mockup — Templates katalog (masonry) + asset detail boyitish (faqat dizayn, jonli app TEGILMADI).
+**Vazifa:** FAZA D BUILD — Catalog masonry (Option A) + asset detail boyitish JONLI platformaga qurildi (`platform/index.html`, va- scope).
 
-**Qilindi:** `packages/assetflow-studio/platform/_catalog-detail-mockup.html` yaratildi (FAZA C board uslubi, o'sha tokenlar/va-rc karta):
-- D1 — katalog Option A: haqiqiy masonry (t.ar aspect-ratio, 4 ustun CSS columns), hero/chip/facet bar o'zgarmagan, sort popover ochiq ko'rsatilgan.
-- D1b — Option B: bir xil 16:9 qatorlar + har ~7-karta 2-keng "feature" karta (span 2).
-- D2 — detail sahifa boyitilgan: stats qatori, 6 katakli spec (orientation/format/downloads), spend CTA + heart/share, related = to'liq rich karta, YANGI "Part of collection" strip (THIS ITEM lime outline + peek + View collection).
-- D3 — mobil 390: 2 ustun masonry (hover yo'q, tap=detail) + stacked detail + kompakt collection karta.
+**Qilindi:**
+- Katalog: `.va-cards/.va-tc` → 4-ustun CSS-columns masonry (`.va-mas`), FAZA C boy karta (va-rc), har karta o'z aspect'i (t.ar); mobil 2 ustun; o'ynoqi loader. Hero/chip/facet/sort TEGILMAGAN.
+- Detail: stats qatori (pack hajmi · updated · N in kategoriya), 6 katakli spec grid (+ORIENTATION/FORMAT/UPDATED), spend-gradient Download saqlangan, favorite (localStorage) + share, related = boy karta, "Part of collection" strip (proxy = kategoriya) + View collection → filtrlangan Templates.
+- Mobil D3: dmeta flex-order bilan CTA specs'dan oldin; kolleksiya kartasi stack.
 
-**Tekshirildi:** preview'da render OK (masonry balandliklar to'g'ri, overflow yo'q, konsol xatosiz). Scrolled screenshot qora chiqadi — ma'lum preview gotcha, baland viewport bilan aylanib o'tildi.
+**Tekshirildi:** lokal proxy (localhost:4000 → prod API, sun'iy 9-item katalog) bilan 1280+390; qidiruv/chip/facet/sort/detail/fav ishlaydi — 0 konsol xato, overflow yo'q. Download/checkout logikasi TEGILMAGAN.
 
-**Kutilmoqda:** user A/B grid tanlovi + masonry tartib qoidasi (column-first vs JS round-robin) + feature-karta sloti qoidasi; keyin real build.
+**Kutilmoqda:** push + CF Pages deploy; production'da real katalog bilan ko'rish. TODO(FF): downloads count (Faza F DownloadEvent), real collection entity, per-shablon deep-link, JS round-robin (sort rank).
