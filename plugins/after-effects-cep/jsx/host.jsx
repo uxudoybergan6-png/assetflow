@@ -1159,15 +1159,124 @@ function restoreActiveComp(destCompId) {
   return false;
 }
 
-function addSceneCompToTimeline(sceneComp, destCompId) {
+// ── Avto-masshtab (Mister Horse "AUTOSCALE" mexanizmi ekvivalenti) ─────────────
+// COMPOSER-MECHANISM-ANALYSIS.md §2: import qilingan layer'ni KONTENT chegarasi
+// (sourceRectAtTime — shaffof padding hisobga olinmaydi) bo'yicha faol comp
+// o'lchamiga sig'diradi. Naiv comp/manba nisbati EMAS — haqiqiy kontent bounds.
+// Faqat "ADBE Scale" yoziladi (qaytariladigan, past-xavf); import undo guruhi
+// ICHIDA chaqiriladi (bitta Undo hammasini qaytaradi).
+
+// Sof matematik yordamchi (mustaqil test qilingan): kontent→comp fit koeffitsiyenti
+// (1 = 100%). mode: "contain" (sukut) | "fill" | "width" | "height". Yaroqsiz kirishda null.
+function afComputeFitScale(contentW, contentH, compW, compH, mode) {
+  if (!contentW || !contentH || !compW || !compH) return null;
+  if (!isFinite(contentW) || !isFinite(contentH) || !isFinite(compW) || !isFinite(compH)) return null;
+  if (contentW <= 0 || contentH <= 0 || compW <= 0 || compH <= 0) return null;
+  var sx = compW / contentW, sy = compH / contentH, s;
+  mode = String(mode || "contain");
+  if (mode === "fill") s = Math.max(sx, sy);
+  else if (mode === "width") s = sx;
+  else if (mode === "height") s = sy;
+  else s = Math.min(sx, sy); // contain — uzun tomonni sig'diradi, nisbat saqlanadi
+  if (!isFinite(s) || s <= 0) return null;
+  if (s > 100) s = 100; // 10000% qattiq clamp (patologik kattalashuvdan himoya)
+  return s;
+}
+
+// Import qilingan layer'ni faol comp'ga masshtablaydi. Undo guruhi CHAQIRUVCHIDA
+// ochilgan bo'lishi kerak. Xatoda layer 100% da qoladi — HECH QACHON throw qilmaydi.
+// opts: { mode?, recenter?:bool, position?:[x,y] }. true = qo'llandi.
+function afScaleLayerToComp(layer, comp, mode, opts) {
+  opts = opts || {};
+  try {
+    if (!layer || !comp) return false;
+    var t = comp.time;
+    var r = null;
+    try { r = layer.sourceRectAtTime(t, false); } catch (eRect) { r = null; }
+    var cw, ch, cl, ct, haveRect = false;
+    if (r && r.width > 0 && r.height > 0 && isFinite(r.width) && isFinite(r.height)) {
+      cw = r.width; ch = r.height; cl = r.left; ct = r.top; haveRect = true;
+    } else {
+      // Kontent bounds yo'q — manba frame o'lchamiga qaytamiz (still/precomp)
+      var src = null; try { src = layer.source; } catch (eSrc) { src = null; }
+      cw = (src && src.width) ? src.width : 0;
+      ch = (src && src.height) ? src.height : 0;
+      cl = 0; ct = 0;
+    }
+    if (!cw || !ch) return false; // o'lchab bo'lmadi — 100% da qoldiramiz (graceful skip)
+    // OPTIONAL hint: mavjud metadata base-o'lcham/fit rejimi ustun (agar berilgan bo'lsa).
+    // TODO(FF): contributor upload size/fit hint shu yerdan opts.mode sifatida keladi.
+    var m = opts.mode || mode || "contain";
+    var mult = afComputeFitScale(cw, ch, comp.width, comp.height, m);
+    if (mult == null) return false;
+    var pct = mult * 100;
+    if (!isFinite(pct) || pct <= 0) return false;
+    var tg = layer.property("ADBE Transform Group");
+    if (!tg) return false;
+    var scaleProp = tg.property("ADBE Scale");
+    if (!scaleProp) return false;
+    var cur = null; try { cur = scaleProp.value; } catch (eVal) { cur = null; }
+    if (cur && cur.length >= 3) scaleProp.setValue([pct, pct, cur[2]]); // 3D — Z saqlanadi
+    else scaleProp.setValue([pct, pct]);
+    // Ixtiyoriy kontent-markazlash (partial content uchun; sukut bo'yicha O'CHIQ —
+    // to'liq-frame shablonlar AE sukut markazlashida allaqachon markazda; markazlash
+    // faqat placeholder joylashda yoki aniq so'ralganda). anchor→kontent-markazi.
+    if (opts.recenter === true && haveRect) {
+      try {
+        tg.property("ADBE Anchor Point").setValue([cl + cw / 2, ct + ch / 2]);
+        var px = (opts.position && opts.position.length >= 2) ? opts.position[0] : comp.width / 2;
+        var py = (opts.position && opts.position.length >= 2) ? opts.position[1] : comp.height / 2;
+        tg.property("ADBE Position").setValue([px, py]);
+      } catch (eCenter) {}
+    }
+    return true;
+  } catch (e) {
+    return false; // hech qachon throw qilmaymiz — import bloklanmasin
+  }
+}
+
+// Ommaviy kirish (mustaqil test uchun): faol comp'da TANLANGAN layer(lar)ni fit qiladi.
+// cfg: { mode?: "contain"|"fill"|"width"|"height", recenter?: bool }
+function afAutoscaleSelection(jsonStr) {
+  try {
+    if (typeof app === "undefined" || !app.project) return afFail("No open After Effects project");
+    var comp = app.project.activeItem;
+    if (!(comp instanceof CompItem)) return afFail("No composition open — open the Timeline");
+    var sel = comp.selectedLayers;
+    if (!sel || !sel.length) return afFail("No layer selected — select a layer to autoscale");
+    var cfg = {};
+    try { cfg = JSON.parse(jsonStr || "{}"); } catch (eP) { cfg = {}; }
+    var mode = cfg.mode || "contain";
+    var opts = { recenter: cfg.recenter === true };
+    app.beginUndoGroup("FrameFlow Autoscale");
+    var applied = 0;
+    for (var i = 0; i < sel.length; i++) {
+      if (afScaleLayerToComp(sel[i], comp, mode, opts)) applied++;
+    }
+    app.endUndoGroup();
+    return '{"ok":true,"applied":' + applied + ',"selected":' + sel.length + ',"mode":' + afJStr(mode) + '}';
+  } catch (e) {
+    try { app.endUndoGroup(); } catch (ig) {}
+    return afFail("Autoscale error: " + (e && e.toString ? e.toString() : e));
+  }
+}
+
+function addSceneCompToTimeline(sceneComp, destCompId, cfg) {
   if (!sceneComp) return { ok: false, reason: "no_scene" };
   var destComp = destCompId ? findCompByIdInProject(destCompId) : null;
   if (!destComp) {
     return { ok: false, reason: "no_dest_comp" };
   }
+  cfg = cfg || {};
   try {
     var newLayer = destComp.layers.add(sceneComp);
     newLayer.startTime = destComp.time;
+    // Avto-masshtab (Mister Horse ekvivalenti): kontent'ni comp'ga sig'diramiz.
+    // Import undo guruhi (importSingleSceneFromAep) ICHIDA — bitta Undo qaytaradi.
+    // cfg.autoscale === false bilan o'chiriladi; fit rejimi cfg.fitMode (sukut contain).
+    if (cfg.autoscale !== false) {
+      afScaleLayerToComp(newLayer, destComp, cfg.fitMode || "contain", {});
+    }
     destComp.openInViewer();
     return { ok: true, reason: "" };
   } catch (e) {
@@ -1353,7 +1462,7 @@ function importSingleSceneFromAep(jsonStr) {
       } catch (ignoreOpen) {}
       timelineResult = { ok: true, reason: "project_only" };
     } else {
-      timelineResult = addSceneCompToTimeline(targetComp, destCompId);
+      timelineResult = addSceneCompToTimeline(targetComp, destCompId, cfg);
     }
     app.endUndoGroup();
     return JSON.stringify({
