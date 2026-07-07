@@ -1,12 +1,19 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
+import yazl from "yazl";
 import type { Request, Response } from "express";
+import { prisma } from "@creative-tools/database";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
+import { sanitizeFileBaseName } from "./ingest-zip.js";
 import {
   getPublicOrSignedUrl,
   getSignedDownloadUrl,
   isS3Configured,
   resolveS3AssetKey,
+  s3ObjectExists,
+  downloadS3ToFile,
+  uploadFileToS3,
 } from "./s3.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
@@ -14,6 +21,43 @@ const MIME: Record<TemplateAssetKind, string> = {
   preview: "video/mp4",
   pack: "application/octet-stream",
 };
+
+/**
+ * Raw `.aep` pack'ni (KONTENT-QUVURI-SXEMA.md §9 — har dastur o'z tabiiy
+ * formatida saqlanadi, cross-app aylantirish yo'q) shablon nomidagi `.zip`ga
+ * o'raydi — plagin va veb ikkalasi ham bitta bir xil `.zip`ni oladi (plagin
+ * o'zi ochadi/import qiladi, veb foydalanuvchi o'zi ochadi). Natija
+ * `templates/{id}/pack.dl.zip`da KESHLANADI — qayta so'rovlar qayta
+ * yuklab-zip qilishni talab qilmaydi. `.aep` qayta yuklansa (pack-uploaded)
+ * bu kesh o'chiriladi — pastga qarang.
+ */
+async function getOrBuildAepDownloadZip(
+  templateId: string,
+  aepKey: string
+): Promise<string> {
+  const cacheKey = `templates/${templateId}/pack.dl.zip`;
+  if (await s3ObjectExists(cacheKey)) return cacheKey;
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_packzip_"));
+  try {
+    const aepLocal = path.join(tmpDir, "pack.aep");
+    await downloadS3ToFile(aepKey, aepLocal);
+    const zipLocal = path.join(tmpDir, "pack.zip");
+    await new Promise<void>((resolve, reject) => {
+      const zipfile = new yazl.ZipFile();
+      zipfile.addFile(aepLocal, path.basename(aepKey));
+      const out = fs.createWriteStream(zipLocal);
+      zipfile.outputStream.pipe(out);
+      out.on("close", () => resolve());
+      out.on("error", reject);
+      zipfile.outputStream.on("error", reject);
+      zipfile.end();
+    });
+    await uploadFileToS3(zipLocal, cacheKey, "application/zip");
+    return cacheKey;
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
 
 /** Brauzer video uchun Range (206) va CORS expose */
 export async function serveTemplateAsset(
@@ -24,13 +68,25 @@ export async function serveTemplateAsset(
 ) {
   const s3Key = await resolveS3AssetKey(templateId, kind);
   if (s3Key) {
+    let downloadKey = s3Key;
+    let filename: string | undefined;
+    if (kind === "pack" && /\.aep$/i.test(s3Key)) {
+      // Raw .aep — mijoz (plagin/veb) .zip kutadi; plagin o'zi ochadi (unzip)
+      // → .aep'ni AE loyihasiga import qiladi.
+      downloadKey = await getOrBuildAepDownloadZip(templateId, s3Key);
+      const template = await prisma.contributorTemplate.findUnique({
+        where: { id: templateId },
+        select: { name: true },
+      });
+      filename = `${sanitizeFileBaseName(template?.name || "template")}.zip`;
+    }
     // Pack — qimmatli (pullik) asset: qisqa muddatli signed URL (5 daqiqa),
     // shunda redirect URL'i ulashib bo'lmaydi. Thumb/preview — CDN bo'lsa public,
     // aks holda (private GCS bucket) signed URL — plain public URL 403 berardi (#1).
     const url =
       kind === "pack"
-        ? await getSignedDownloadUrl(s3Key, 300)
-        : await getPublicOrSignedUrl(s3Key, 3600);
+        ? await getSignedDownloadUrl(downloadKey, 300, filename)
+        : await getPublicOrSignedUrl(downloadKey, 3600);
     // ?json=1 — web platforma uchun: brauzer fetch redirect'ni GCS'ga CORS'siz
     // kuzata olmaydi, shu sabab signed URL JSON'da qaytadi va klient unga
     // to'g'ridan (navigatsiya/anchor) o'tadi — navigatsiya CORS'ga tushmaydi.

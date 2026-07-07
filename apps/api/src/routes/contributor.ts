@@ -41,9 +41,10 @@ import {
   downloadS3ToFile,
   deleteS3Objects,
 } from "../lib/s3.js";
-import { optimizePreviewForStreaming } from "../lib/optimize-preview.js";
+import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
 import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
+import { extractIngestZip, titleFromZipFileName, sanitizeFileBaseName } from "../lib/ingest-zip.js";
 import {
   setUploadProgress,
   getUploadProgress,
@@ -1295,6 +1296,9 @@ contributorRouter.post(
         packScanDetail: null,
       },
     });
+    // Eski .aep→.zip kesh (serve-asset.ts) endi ESKI mazmunga ishora qiladi —
+    // o'chiramiz, keyingi yuklab olishda yangi .aep'dan qayta quriladi.
+    await deleteS3Objects([`templates/${id}/pack.dl.zip`]).catch(() => {});
     // Xavfsizlik quvuri (hash dedup + malware skan) → TOZA bo'lsa .zip sahnalarni ajratadi.
     // ⚠️ Cloud Run javobdan keyin CPU'ni throttle qiladi — fire-and-forget fon task muzlab,
     // packScanStatus abadiy "pending" qolardi (approve bloklanardi). Shu bois skan+status'ni
@@ -1310,6 +1314,266 @@ contributorRouter.post(
     });
     await processPackInBackground(id, packKey, existing.contributorId, isZip);
     res.json({ ok: true, extracting: isZip, scanning: false });
+  }
+);
+
+/* ────────────────────────────────────────────────────────────────────────
+ * Cloud ingest (FAZA 2) — muallif ziplarni `incoming/{contributorId}/`ga
+ * to'g'ridan yuklaydi (presigned PUT), so'ng /ingest ularni ochib, skan qilib,
+ * "pending" shablonga aylantiradi. KONTENT-QUVURI-SXEMA.md §4-5.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+function mimeForExt(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  const map: Record<string, string> = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webm": "video/webm",
+  };
+  return map[ext] || "application/octet-stream";
+}
+
+/**
+ * POST /incoming/upload-url — ziplarni `incoming/{contributorId}/{fileName}.zip`
+ * kalitiga to'g'ridan yuklash uchun presigned PUT (brauzer → bulut to'g'ridan,
+ * /templates/:id/upload-url bilan bir xil naqsh). Kalit DETERMINISTIK (contributorId
+ * + tozalangan fayl nomi, timestamp YO'Q) — shu bois bir xil nomdagi zip qayta
+ * yuklansa avvalgisi ustiga yoziladi va /ingest qayta chaqirilsa ham idempotent qoladi.
+ */
+const incomingUploadUrlSchema = z.object({
+  files: z.array(z.object({ fileName: z.string().min(1).max(200) })).min(1).max(50),
+});
+contributorRouter.post(
+  "/incoming/upload-url",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Cloud storage is not configured" });
+      return;
+    }
+    const p = incomingUploadUrlSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
+      return;
+    }
+    const contributorId = req.user!.userId;
+    const uploads = [];
+    for (const f of p.data.files) {
+      if (!/\.zip$/i.test(f.fileName)) {
+        res.status(400).json({ error: `"${f.fileName}" is not a .zip file` });
+        return;
+      }
+      const safeName = sanitizeFileBaseName(f.fileName.replace(/\.zip$/i, ""));
+      const key = `incoming/${contributorId}/${safeName}.zip`;
+      const url = await getSignedUploadUrl(key, "application/zip", 1800);
+      uploads.push({ fileName: f.fileName, key, url });
+    }
+    res.json({ uploads });
+  }
+);
+
+type IngestItemResult = {
+  key: string;
+  ok: boolean;
+  id?: string;
+  reason?: string;
+};
+
+/**
+ * Bitta incoming zipni "pending" shablonga aylantiradi (KONTENT-QUVURI-SXEMA.md §5):
+ * yuklab olish → ochish → pack topish → skan+dedup (classifyPackScan — mavjud siyosat
+ * bilan bir xil) → ContributorTemplate yaratish (PENDING_REVIEW) → asset'larni
+ * kanonik kalitlarga yuklash → preview fon transcode → o'lcham→orient/res →
+ * asl zipni o'chirish. Har xatoda throw QILMAYDI — natija obyektini qaytaradi, shu
+ * bois chaqiruvchi (POST /ingest) bitta yomon zip uchun butun partiyani to'xtatmaydi.
+ */
+async function ingestOneZip(contributorId: string, key: string): Promise<IngestItemResult> {
+  if (!key.startsWith(`incoming/${contributorId}/`)) {
+    return { key, ok: false, reason: "File does not belong to this contributor" };
+  }
+  if (!/\.zip$/i.test(key)) {
+    return { key, ok: false, reason: "Not a .zip file" };
+  }
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_ingest_"));
+  try {
+    const meta = await getS3ObjectMeta(key);
+    if (meta.sizeBytes == null) {
+      return { key, ok: false, reason: "File not found in cloud storage" };
+    }
+    const zipLocalPath = path.join(tmpDir, "incoming.zip");
+    await downloadS3ToFile(key, zipLocalPath);
+
+    const extracted = await extractIngestZip(zipLocalPath, path.join(tmpDir, "extracted"));
+    if (!extracted.packPath || !extracted.packExt) {
+      return { key, ok: false, reason: "No .aep/.mogrt project file found inside the zip" };
+    }
+
+    // Skan + anti-theft dedup — chiqarilgan pack (.aep) hashi ustida, mavjud
+    // upload-yo'li (resolvePackScan) bilan bir xil siyosat (classifyPackScan).
+    const hash = await sha256File(extracted.packPath);
+    const dup = await prisma.contributorTemplate.findFirst({
+      where: { packHash: hash },
+      select: { id: true, contributorId: true },
+    });
+    const scan = await scanFileHash(hash);
+    const prod = process.env.NODE_ENV === "production";
+    const cls = classifyPackScan(scan, dup, contributorId, prod);
+    if (cls.scanStatus === "malicious") {
+      await deleteS3Objects([key]).catch(() => {});
+      return { key, ok: false, reason: cls.userError || "Malicious file detected" };
+    }
+
+    const settings = await getOrCreateSettings();
+    const categories = (settings.categoriesJson as Array<{ value: string; label: string }>) || [];
+    // TODO(FF): Faza 3 — AI zip nomidan nom/kategoriya/20 teg yozadi. Hozircha
+    // sarlavha zip nomidan tozalanadi, kategoriya "Uncategorized" placeholder.
+    const title = titleFromZipFileName(key);
+
+    let dims: { width: number; height: number } | null = null;
+    if (extracted.imagePath) dims = await probeMediaDimensions(extracted.imagePath);
+    if (!dims && extracted.videoPath) dims = await probeMediaDimensions(extracted.videoPath);
+    const orient = !dims
+      ? settings.defaultOrient || "horizontal"
+      : dims.width > dims.height * 1.1
+        ? "horizontal"
+        : dims.height > dims.width * 1.1
+          ? "vertical"
+          : "square";
+    const res = dims && Math.max(dims.width, dims.height) >= 2000 ? "4k" : "1080p";
+
+    const flags: string[] = [];
+    if (!extracted.imagePath) flags.push("Missing preview image");
+    if (!extracted.videoPath) flags.push("Missing preview video");
+
+    let template;
+    try {
+      template = await prisma.contributorTemplate.create({
+        data: {
+          contributorId,
+          externalId: key,
+          name: title,
+          nav: settings.defaultNav || "video",
+          cat: categories[0]?.value || "uncategorized",
+          catLabel: categories[0]?.label || "Uncategorized",
+          orient,
+          res,
+          templateApp: extracted.templateApp,
+          reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
+          published: false,
+          reviewNote: flags.length ? `⚠ ${flags.join("; ")}` : null,
+          packHash: hash,
+          packScanStatus: cls.scanStatus,
+          packScanDetail: cls.detail.slice(0, 480),
+        },
+      });
+    } catch (e) {
+      if ((e as { code?: string })?.code === "P2002") {
+        return { key, ok: false, reason: "Already ingested" };
+      }
+      throw e;
+    }
+
+    const packKey = s3UploadKeyForFile(template.id, "pack", extracted.packPath);
+    await uploadFileToS3(extracted.packPath, packKey, "application/octet-stream");
+    let fileSize: number | null = null;
+    try {
+      fileSize = fs.statSync(extracted.packPath).size;
+    } catch {}
+
+    if (extracted.imagePath) {
+      const thumbKey = s3UploadKeyForFile(template.id, "thumb", extracted.imagePath);
+      await uploadFileToS3(extracted.imagePath, thumbKey, mimeForExt(extracted.imagePath));
+    }
+    if (extracted.videoPath) {
+      const previewKey = s3UploadKeyForFile(template.id, "preview", extracted.videoPath);
+      await uploadFileToS3(extracted.videoPath, previewKey, mimeForExt(extracted.videoPath));
+      await prisma.contributorTemplate.update({
+        where: { id: template.id },
+        data: { previewTranscodeStatus: "pending" },
+      });
+      transcodePreviewInBackground(template.id); // fon — mavjud /preview-uploaded konvensiyasi
+    }
+
+    await prisma.contributorTemplate.update({
+      where: { id: template.id },
+      data: { fileName: path.basename(extracted.packPath), fileSize },
+    });
+
+    await deleteS3Objects([key]).catch(() => {});
+
+    if (cls.quarantine) {
+      await writeAuditLog({
+        actorId: contributorId,
+        action: "template.pack_quarantined",
+        targetType: "template",
+        targetId: template.id,
+        detail: cls.detail,
+        meta: { scanStatus: cls.scanStatus, hash, duplicateOf: dup?.id ?? null },
+      });
+    }
+    await writeAuditLog({
+      actorId: contributorId,
+      action: "template.ingested",
+      targetType: "template",
+      targetId: template.id,
+      detail: `${title} (${key})`,
+    });
+
+    return { key, ok: true, id: template.id };
+  } catch (e) {
+    console.error("[ingest] xato:", key, e);
+    return { key, ok: false, reason: e instanceof Error ? e.message : "Unexpected error" };
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * POST /ingest — yuklangan incoming zip kalitlarini "pending" shablonlarga aylantiradi.
+ * Har biri SINXRON (await) ishlanadi — Cloud Run javobdan keyin CPU'ni throttle qiladi,
+ * shu bois fire-and-forget bu yerda ham QAYTA joriy qilinMAYDI (xuddi /pack-uploaded kabi).
+ */
+const ingestSchema = z.object({
+  keys: z.array(z.string().min(1).max(500)).min(1).max(50),
+});
+contributorRouter.post(
+  "/ingest",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Cloud storage is not configured" });
+      return;
+    }
+    const p = ingestSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
+      return;
+    }
+    const contributorId = req.user!.userId;
+    const results: IngestItemResult[] = [];
+    for (const key of p.data.keys) {
+      results.push(await ingestOneZip(contributorId, key));
+    }
+    res.json({ results });
   }
 );
 

@@ -195,6 +195,11 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const useS3 = isS3Configured();
   const thumbS3 = useS3 ? s3AssetKeyFromSet(t.id, "thumb", s3Keys) : null;
   const previewS3 = useS3 ? s3AssetKeyFromSet(t.id, "preview", s3Keys) : null;
+  // Raw .aep pack — serve-asset.ts uni yuklab olishda .zipga o'raydi (§9),
+  // shu bois klient (ayniqsa AE plagin — fileName kengaytmasidan lokal keshni
+  // nomlaydi) ham .zip kutishi kerak, aks holda zip baytlari .aep deb saqlanadi.
+  const packS3Key = useS3 ? s3AssetKeyFromSet(t.id, "pack", s3Keys) : null;
+  const packIsRawAep = !!packS3Key && /\.aep$/i.test(packS3Key);
   const thumbUrl = thumbS3
     ? withCacheBust(await getPublicOrSignedUrl(thumbS3, DISPLAY_URL_TTL), cacheBust)
     : hasThumb
@@ -227,7 +232,11 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     icon: t.icon,
     bg: t.bg || "linear-gradient(135deg,#312e81,#6366f1)",
     templateApp: t.templateApp,
-    fileName: hasPack ? t.fileName : null,
+    fileName: hasPack
+      ? packIsRawAep
+        ? (t.fileName || "template.aep").replace(/\.aep$/i, ".zip")
+        : t.fileName
+      : null,
     fileSize: hasPack ? t.fileSize : null,
     hasThumb,
     hasPreview,

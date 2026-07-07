@@ -226,6 +226,39 @@ export async function optimizeVideoReferenceForUpload(
 }
 
 /**
+ * Rasm yoki video faylning piksel o'lchamini (width/height) qaytaradi —
+ * ffprobe orqali (ffmpeg apt paketi bilan birga keladi, alohida rasm
+ * kutubxonasi kerak emas). Ingest'da orientatsiya avtomat aniqlash uchun
+ * ishlatiladi (KONTENT-QUVURI-SXEMA.md §6). Topilmasa/xato bo'lsa null.
+ */
+export async function probeMediaDimensions(
+  filePath: string
+): Promise<{ width: number; height: number } | null> {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      [
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "stream=width,height",
+        "-of", "csv=s=x:p=0",
+        filePath,
+      ],
+      { timeout: 30_000 }
+    );
+    const match = /^(\d+)x(\d+)/.exec(stdout.trim());
+    if (!match) return null;
+    const width = parseInt(match[1], 10);
+    const height = parseInt(match[2], 10);
+    if (!width || !height) return null;
+    return { width, height };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Video ichidan audio referens chiqaradi:
  *  - ixtiyoriy start/end oralig'i
  *  - mono, 24kHz, mp3
