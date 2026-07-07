@@ -1996,6 +1996,35 @@ function importAssetToProject(filePath) {
   }
 }
 
+// FAZA 1: shablon = bitta .aep, BUTUN loyiha import qilinadi (sahna tanlash yo'q,
+// prune yo'q). Faqat yangi root papka shablon nomiga o'zgartiriladi — xuddi
+// importSingleSceneFromAep'dagi pruneToScene=false filiali kabi.
+function importTemplateProject(jsonStr) {
+  try {
+    var cfg = JSON.parse(jsonStr);
+    var filePath = cfg.filePath;
+    var packLabel = String(cfg.packLabel || "FrameFlow").trim() || "FrameFlow";
+    if (!filePath) return JSON.stringify({ ok: false, message: "File path required" });
+    var file = new File(filePath);
+    if (!file.exists) return JSON.stringify({ ok: false, message: "File not found" });
+    if (/\.mogrt$/i.test(filePath)) {
+      return JSON.stringify({ ok: false, message: ".mogrt was not extracted — update the plugin (install-cep.sh)" });
+    }
+    app.beginUndoGroup("AssetFlow Import Template");
+    var existingIds = collectProjectItemIds(app.project, {});
+    var io = new ImportOptions(file);
+    io.importAs = ImportAsType.PROJECT;
+    app.project.importFile(io);
+    var keptFolder = renameNewImportRootFolder(existingIds, packLabel);
+    var movedCount = collectAllImportedComps(existingIds).length;
+    app.endUndoGroup();
+    return JSON.stringify({ ok: true, folder: keptFolder || packLabel, movedCount: movedCount });
+  } catch (e) {
+    try { app.endUndoGroup(); } catch (ignore) {}
+    return JSON.stringify({ ok: false, message: e.toString() });
+  }
+}
+
 // AI Tools natijasi (rasm/audio) uchun mustahkam media import (Higgsfield AEFT naqshi):
 // canImportAs(FOOTAGE) guard — AE format'ni qabul qila olishini OLDIN tekshiradi, keyin
 // importAs=FOOTAGE bilan import qiladi. Structured JSON {ok,reason,item} qaytaradi
