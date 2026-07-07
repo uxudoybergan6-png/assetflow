@@ -1,17 +1,17 @@
-# Sessiya hisoboti — 2026-07-07 · PHASE B mockup: AI Studio depth
+# Sessiya hisoboti — 2026-07-07 · PHASE B build 1/2: AI Studio workspace port
 
-**Vazifa:** AI Studio qayta dizayni uchun statik mockup (jonli kodga TEGILMADI).
+**Qilindi:** Tasdiqlangan mockup (frames A–F) jonli platformaga port qilindi — commit `2c1b524`,
+faqat `platform/index.html` (+550/−63). Ikki panel workspace (sessiya rail + Visuals|Audio toggle),
+Sparky pending (tile/audio-row/rail-mini, % 93 da to'xtaydi), Use ▾ menyu (Edit image /
+Generate video from image = SOON placeholder + toast; Download/Regenerate/Delete mavjud
+handlerlarda), model quick-pick (tavsif+narx) + to'liq modal (qidiruv/filter/guruhlar, bitta
+`pickModel`), dock evolyutsiyasi (reference slot vizual, COST, balans strip, off/pending CTA),
+bo'sh holat hero + suggestion chiplar, mobil 390 (strip, 2 ustun grid, sheet-menyu).
 
-**Qilindi:** `packages/assetflow-studio/platform/_aistudio-depth-mockup.html` (commit 9ae16f9).
-6 zona: A) Visuals view + ochiq "Use ▾" menyu (Edit image / Generate video from image real,
-Upscale/Variations = SOON disabled); B) Sparky maskot + 48% progress (indeterminate bar o'rniga);
-C) Audio view (waveform ro'yxat, inline gen 32%) + model quick-pick popover; D) to'liq model
-modal (qidiruv + capability guruhlar); E) bo'sh/birinchi holat; F) 390px mobil (rail →
-gorizontal strip, Use = sheet-karta). Tokenlar index.html `.ff` blokidan 1:1; Phase-A til
-(spend-grad CTA, pill-active, borderless kartalar) saqlangan.
+**Tekshirildi:** headless Chrome + mock API (:4000, fake sessiya) 1280/390px — freymlar mockupga
+mos, voice+image gen end-to-end o'tdi, konsol xatosiz, overflow yo'q, boshqa ekranlar buzilmagan.
 
-**Preview'da topilib tuzatildi:** ax-g* gradientlarni keyingi background'lar yutgan
-(`.frame .ax-g*` spetsifiklik); Use-menyu dock ustiga chiqqan (work 852px); quick-pick
-popover model chipdan uzilgan (anchored); modal scrollbar qoraytirildi.
+**Pul zonasi:** `generate`/`buildParams`/`estCost`/`pollJob` HEAD bilan bayt-ma-bayt BIR XIL
+(diff tasdiqlagan). Gen so'roviga reference param QO'SHILMAGAN.
 
-**Kutilmoqda:** foydalanuvchi tasdiqlashi → real port (index.html ffa-st-* evolyutsiyasi).
+**Kutilmoqda:** Step 2/2 — Use ▾ ikki amalini real ulash (ref handoff); push foydalanuvchidan.
