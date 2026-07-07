@@ -72,6 +72,8 @@
   const introEl = document.getElementById("deviceIntro");
   const btnEl = document.getElementById("deviceGoogleBtn");
   const doneEl = document.getElementById("deviceDone");
+  const formEl = document.getElementById("devicePasswordForm");
+  const orEl = document.querySelector(".auth-or");
 
   function showError(msg) {
     errEl.textContent = msg;
@@ -79,14 +81,17 @@
   }
 
   if (!code) {
+    // Kod yo'q — hech qaysi kirish usuli (parol ham, Google ham) ishlay olmaydi,
+    // shu sabab hammasini yashiramiz (aks holda "or" chiziq osilib qoladi).
     showError("Code not found — try again from the plugin");
     introEl.classList.add("hidden");
+    if (formEl) formEl.classList.add("hidden");
+    if (orEl) orEl.classList.add("hidden");
+    btnEl.classList.add("hidden");
     return;
   }
 
   const apiBase = (window.ASSETFLOW_STUDIO && window.ASSETFLOW_STUDIO.apiUrl) || "";
-  const formEl = document.getElementById("devicePasswordForm");
-  const orEl = document.querySelector(".auth-or");
   const pwBtn = document.getElementById("devicePasswordBtn");
 
   function showConfirmed(email) {
