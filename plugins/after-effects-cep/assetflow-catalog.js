@@ -511,6 +511,7 @@ const AssetFlowCatalog = (() => {
       `assetflow_mogrt_${templateId}_${slug}_${Date.now()}`
     );
     fs.mkdirSync(dir, { recursive: true });
+    if (typeof showToast === "function") showToast("Element ochilmoqda…");
     try {
       child.execFileSync("unzip", ["-o", mogrtPath, "-d", dir], {
         timeout: 120_000,
@@ -518,6 +519,10 @@ const AssetFlowCatalog = (() => {
     } catch (e) {
       throw new Error("MOGRT ochilmadi — fayl buzilgan bo'lishi mumkin.");
     }
+    // Robustlik: unzip nol fayl chiqarsa aniq xato (jimgina davom etmaydi)
+    let __mextract = [];
+    try { __mextract = fs.readdirSync(dir); } catch {}
+    if (!__mextract.length) throw new Error("MOGRT bo'sh yoki ochilmadi.");
     let aep = null;
     const graphic = findFileByExtInDir(fs, path, dir, [".aegraphic"]);
     if (graphic) {
@@ -641,6 +646,88 @@ const AssetFlowCatalog = (() => {
     }
   }
 
+  // ── Yaxlitlik (Mister Horse ishonchli-yuklash mexanizmi ekvivalenti) ──────────
+  // COMPOSER-MECHANISM-ANALYSIS.md §3: og'ir I/O Node'da (host.jsx'da emas). Bu
+  // yerda uni atomik-yozish + sha256 yaxlitlik bilan mustahkamlaymiz.
+
+  const __packHashes = {}; // out yo'li → sha256 (sessiya keshi)
+
+  /** Streaming sha256 (200MB'ni xotiraga yig'masdan — download oqim naqshiga mos). */
+  function sha256FileAsync(filePath) {
+    return new Promise((resolve) => {
+      try {
+        const fs = require("fs");
+        const crypto = require("crypto");
+        const h = crypto.createHash("sha256");
+        const rs = fs.createReadStream(filePath);
+        rs.on("data", (c) => h.update(c));
+        rs.on("end", () => resolve(h.digest("hex")));
+        rs.on("error", () => resolve("")); // hash yo'q — yaxlitlik jimgina o'tkaziladi
+      } catch {
+        resolve("");
+      }
+    });
+  }
+
+  function sha256Sidecar(p) {
+    return p + ".sha256";
+  }
+
+  /** Fayl uchun yozib qo'yilgan hash (sidecar yoki sessiya keshi) — "" agar yo'q. */
+  function recordedHash(fs, p) {
+    try {
+      const sp = sha256Sidecar(p);
+      if (fs.existsSync(sp)) return String(fs.readFileSync(sp, "utf8")).trim();
+    } catch {}
+    return __packHashes[p] || "";
+  }
+
+  function recordHash(fs, p, hash) {
+    if (!hash) return;
+    __packHashes[p] = hash;
+    try {
+      fs.writeFileSync(sha256Sidecar(p), hash, "utf8");
+    } catch {
+      /* sidecar yozib bo'lmadi — sessiya keshida qoladi */
+    }
+  }
+
+  /**
+   * Idempotent kesh tekshiruvi: fayl bor + o'lcham mos + (kutilgan hash bo'lsa)
+   * yozib qo'yilgan hash mos. Kutilgan hash yo'q bo'lsa — o'lcham bo'yicha (hozirgi
+   * xatti-harakat). Mos kelmasa qayta yuklab olinadi (buzuq keshni qayta ishlatmaydi).
+   */
+  function cacheValid(fs, filePath, expectedSize, expectedSha256) {
+    if (!cachedFileOk(fs, filePath, expectedSize)) return false;
+    if (expectedSha256) {
+      const rec = recordedHash(fs, filePath);
+      if (rec && rec.toLowerCase() !== String(expectedSha256).toLowerCase()) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Yuklab olingandan keyin yaxlitlik darvozasi: sha256 hisoblaydi; kutilgan hash
+   * berilgan bo'lsa solishtiradi (mos kelmasa faylni o'chirib, aniq xato beradi —
+   * buzuq/qisman pack import'ni bloklamasin); aks holda hash'ni yozib qo'yadi.
+   * TODO(FF): expected hash from catalog — hozircha faqat opts.expectedSha256.
+   */
+  async function verifyDownloadedFile(fs, filePath, expectedSha256) {
+    const hash = await sha256FileAsync(filePath);
+    if (expectedSha256 && hash) {
+      if (hash.toLowerCase() !== String(expectedSha256).toLowerCase()) {
+        try {
+          fs.rmSync(filePath, { force: true });
+        } catch {}
+        const err = new Error("Pack yaxlitligi buzilgan (sha256 mos kelmadi) — qayta yuklab ko'ring.");
+        err.integrity = true;
+        throw err;
+      }
+    }
+    recordHash(fs, filePath, hash);
+    return hash;
+  }
+
   // Faol (bekor qilinishi mumkin) yuklab olishlar — Bekor tugmasi/panel yopilishi uchun
   const __activeDownloads = new Set();
 
@@ -736,7 +823,12 @@ const AssetFlowCatalog = (() => {
           const total = parseInt(res.headers["content-length"], 10) || 0;
           let done = 0;
           let lastTime = 0;
-          const ws = fs.createWriteStream(destPath);
+          // Atomik yozish: avval temp `.part` faylga oqim, tugagach rename → destPath.
+          // Yarim-yozilgan pack HECH QACHON yakuniy yo'lda ko'rinmaydi (buzuq import'dan
+          // himoya). Bekor qilinsa yoki xato bo'lsa faqat temp o'chadi.
+          const partPath = destPath + ".part";
+          holder.dest = partPath; // cancelDownload temp'ni o'chiradi, yakuniy faylni emas
+          const ws = fs.createWriteStream(partPath);
           holder.ws = ws;
           // Birinchi baytda darhol ko'rsatamiz, keyin har ~250ms (MB hisoblagich jonli bo'lsin)
           if (onProgress) onProgress(0, total);
@@ -751,10 +843,26 @@ const AssetFlowCatalog = (() => {
               }
             }
           });
+          const onFail = (e) => {
+            cleanup();
+            try { fs.rmSync(partPath, { force: true }); } catch {} // qisman temp'ni tozalash
+            holder.cancelled ? failCancelled() : reject(e);
+          };
           res.pipe(ws);
-          ws.on("finish", () => { cleanup(); resolve(destPath); });
-          ws.on("error", (e) => { cleanup(); holder.cancelled ? failCancelled() : reject(e); });
-          res.on("error", (e) => { cleanup(); holder.cancelled ? failCancelled() : reject(e); });
+          ws.on("finish", () => {
+            if (holder.cancelled) { onFail(new Error("cancelled")); return; }
+            try {
+              try { if (fs.existsSync(destPath)) fs.rmSync(destPath, { force: true }); } catch {}
+              fs.renameSync(partPath, destPath); // atomik publish (bir xil fayl tizimi)
+            } catch (e) {
+              onFail(e);
+              return;
+            }
+            cleanup();
+            resolve(destPath);
+          });
+          ws.on("error", onFail);
+          res.on("error", onFail);
         };
         const req = sameOrigin ? lib.get(u, { headers: hdrs }, reqCb) : lib.get(u, reqCb);
         holder.req = req;
@@ -802,6 +910,9 @@ const AssetFlowCatalog = (() => {
         } catch {}
         throw new Error("MOGRT yuklanmadi yoki fayl bo'sh");
       }
+      // Yaxlitlik: sha256 record + kutilgan hash tekshiruvi (opts.expectedSha256)
+      // TODO(FF): expected hash katalog API'sidan (scene-darajali).
+      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || "");
       _freshDownload = true;
     }
     const result = await extractMogrtFileToAep(
@@ -852,15 +963,16 @@ const AssetFlowCatalog = (() => {
           throw mogrtPackError(mogrtItemsFromDir(fs, path, child, cacheDir));
         }
       }
-    } else if (ext.toLowerCase() !== ".mogrt" && cachedFileOk(fs, out, expectedSize)) {
+    } else if (
+      ext.toLowerCase() !== ".mogrt" &&
+      cacheValid(fs, out, expectedSize, opts && opts.expectedSha256)
+    ) {
       // .mogrt bu yerdan o'tmaydi — kesh bo'lsa ham har import yangi extract oladi
       return out;
     }
 
-    const needDownload =
-      ext.toLowerCase() === ".zip"
-        ? !cachedFileOk(fs, out, expectedSize)
-        : !cachedFileOk(fs, out, expectedSize);
+    // Idempotent: yaroqli kesh bo'lsa qayta yuklamaymiz; yo'q/buzuq bo'lsa yuklaymiz
+    const needDownload = !cacheValid(fs, out, expectedSize, opts && opts.expectedSha256);
 
     let _needRecord = false;
     if (needDownload) {
@@ -889,6 +1001,9 @@ const AssetFlowCatalog = (() => {
       if (!cachedFileOk(fs, out, 0)) {
         throw new Error("Pack yuklanmadi yoki fayl bo’sh");
       }
+      // Yaxlitlik: sha256 hisobla + kutilgan hash bo'lsa tekshir (aks holda yozib qo'y).
+      // TODO(FF): expected hash katalog API'sidan — hozircha opts.expectedSha256.
+      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || "");
       _needRecord = true;
     }
 
@@ -911,15 +1026,23 @@ const AssetFlowCatalog = (() => {
       } catch {}
       // zip ichidagi .mogrt yo’llarini o’chirishdan OLDIN olamiz — papka nomi muhim emas
       const zipMogrts = listEntriesInZip(child, out, ".mogrt");
+      if (typeof showToast === "function") showToast("Pack ochilmoqda…");
       try {
-        // macOS ships `unzip` by default.
+        // macOS ships `unzip` by default. execFileSync exit != 0 bo'lsa throw qiladi.
         child.execFileSync("unzip", ["-o", out, "-d", dir], { timeout: 60_000 });
       } catch (e) {
         throw new Error("ZIP ochilmadi. Pack ichida .aep yoki .mogrt bo’lishi kerak.");
       }
-      // Zip endi kerak emas — faqat ochilgan papka qoladi
+      // Robustlik: unzip nol fayl chiqarsa (buzuq/bo'sh arxiv) — jimgina emas, aniq xato
+      let __extracted = [];
+      try { __extracted = fs.readdirSync(dir); } catch {}
+      if (!__extracted.length) {
+        throw new Error("ZIP bo'sh yoki ochilmadi — pack buzilgan bo'lishi mumkin.");
+      }
+      // Zip endi kerak emas — faqat ochilgan papka qoladi (sidecar hash ham)
       try {
         fs.rmSync(out, { force: true });
+        fs.rmSync(sha256Sidecar(out), { force: true });
       } catch {}
       const aep = findAepInDir(fs, path, dir);
       if (aep) { await _record(); return aep; }
