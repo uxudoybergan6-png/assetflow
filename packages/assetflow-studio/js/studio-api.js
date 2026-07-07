@@ -311,6 +311,14 @@ const StudioApi = (() => {
     return request(`/api/contributor/templates/${id}`, { method: "DELETE" });
   }
 
+  // Admin: karantin/pending pack'ni qo'lda TOZALASH — approve blokini ochadi (Bosqich 2 #2).
+  // Tasdiqlangan malicious/duplicate'ni tozalamaydi (server 409 qaytaradi).
+  async function clearPack(id) {
+    return request(`/api/contributor/admin/templates/${id}/pack-clear`, {
+      method: "POST",
+    });
+  }
+
   async function adminOverview() {
     return request("/api/contributor/admin/overview");
   }
@@ -436,6 +444,7 @@ const StudioApi = (() => {
     reviewTemplate,
     patchTemplate,
     deleteTemplate,
+    clearPack,
     adminOverview,
     listPluginSubscribers,
     patchPluginSubscriber,

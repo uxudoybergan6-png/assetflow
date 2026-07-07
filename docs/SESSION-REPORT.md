@@ -1,18 +1,31 @@
-# Sessiya hisoboti — 2026-07-07 · AE plagin: 3 ta Mister Horse import mexanizmi porti
+# Session Report — pack-scan "pending" approve blokini tuzatish
 
-**Qilindi (COMPOSER-MECHANISM-ANALYSIS.md build order, 3 alohida commit, additiv, money-zone'ga tegilmadi):**
-1. **Avto-masshtab** (`jsx/host.jsx`, a565c72): `afComputeFitScale` (sof, test qilingan) + `afScaleLayerToComp`
-   (faqat `ADBE Scale`, kontent bounds = `sourceRectAtTime`, 0/NaN/Inf guard + clamp, throw yo'q) +
-   `afAutoscaleSelection`; `addSceneCompToTimeline` ichida contain fit, import undo guruhida.
-2. **Ishonchli yuklab olish/unzip** (`assetflow-catalog.js`, fe9f0f5): atomik temp→rename, streaming sha256
-   (record + `opts.expectedSha256` tekshiruvi + sidecar), `cacheValid` (idempotent, hash-aware), unzip
-   robustlik (bo'sh-extract guard + status toast). Kutilgan hash katalog maydonisiz — TODO(FF) qoldirildi.
-3. **Oddiy joylash + self-tag** (`jsx/host.jsx`, 6caa5be): tanlangan layer = nishon (inPoint + moveBefore),
-   aks holda playhead; placeholder OLIB TASHLANMAYDI (native replace emas). `afTagImportedLayer`/
-   `afIsFrameFlowItem` (comment+marker+label). Import+joylash+masshtab+tag BITTA Undo'da.
+**Sana:** 2026-07-07
 
-**Tekshirildi:** scratch node testlar (fit math + sha256 + atomik rename), REAL `downloadUrlToFile` integ-test,
-`node --check` ikkala fayl, undo-guruh o'ralishi kod bo'yicha tasdiqlandi.
+## Muammo
+Cloud Run javobdan keyin CPU'ni throttle qiladi → `processPackInBackground` (fire-and-forget)
+muzlaydi → `packScanStatus` abadiy `"pending"` → approve gate 409 ("security check still running").
+Admin override endpoint (`pack-clear`) bor edi, lekin UI'ga ULANMAGAN.
 
-**Kutilmoqda (jonli AE + install-cep.sh + AE restart):** har xil shablonlarda avto-masshtab (ayniqsa qisman
-kontent/lower-third — fit hint kerak), tanlangan-layer vs playhead joylash, download/unzip progress ko'rinishi.
+## Qilingan ish
+- **FIX 1 (backend, PRIMARY):** approve gate'da `pending` bo'lsa skanni SHU YERDA sinxron hal
+  qiladi (`resolvePackScan`) → clean bo'lsa o'tadi. Xato → fail-safe (pending qoladi, Clear pack).
+- **FIX 3 (backend):** upload handler endi quvurni javobdan OLDIN `await` qiladi → status hech
+  qachon "pending" qolmaydi; .zip sahna ekstraktsiyasi ham Cloud Run'da tugaydi. Cloud Run
+  CPU-throttle tuzog'i kod izohiga yozildi.
+- Umumiy helper ajratildi: `classifyPackScan` (verdikt→status, sof) + `resolvePackScan`
+  (download+hash+scan+DB+audit) — upload va approve BIR mantiqni ishlatadi.
+- **FIX 2 (studio UI):** `StudioApi.clearPack` + `modClearPack` handler; Overview navbat,
+  Moderatsiya detali va drawer'ga xavfsizlik-status banneri + "Clear pack (security)" tugmasi.
+  `packScanStatus` mapApiItem'ga qo'shildi.
+
+## Semantika saqlandi
+malicious/duplicate HANUZ bloklaydi (409) va Clear pack ISHLAMAYDI; faqat pending on-demand
+hal bo'ladi, quarantined admin qo'lda tozalaydi. Money-zone (kredit/quote/refund) TEGILMADI.
+
+## Kutilmoqda (USER external)
+- `npm run build -w apps/api` ✅ va `studio:sync` ✅ (lokal green).
+- **Deploy:** API → Cloud Run (GitHub Actions), Studio → CF Pages. Deploydan keyin qotib qolgan
+  shablon: keyingi Approve on-demand hal qiladi YOKI "Clear pack" bosiladi.
+- **Ixtiyoriy infra:** Cloud Run `--no-cpu-throttling` yoki `min-instances≥1` (kod endi bunga
+  bog'liq emas, lekin fon tasklar uchun future-proof).

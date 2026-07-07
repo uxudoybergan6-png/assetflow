@@ -303,6 +303,38 @@ function adxModStatusBdg(status, short){
   return `<span class="adx-bdg adx-bdg-draft"><span class="bd"></span>${esc(status||'')}</span>`;
 }
 
+/* Pack xavfsizlik skani (Bosqich 2 #2) — approve nega bloklanganini ko'rsatadi.
+   hard=true (malicious/duplicate) → Clear pack ISHLAMAYDI (o'chirib qayta yuklash);
+   hard=false (quarantined/pending) → admin "Clear pack" bilan qo'lda ochishi mumkin. */
+function adxPackScanInfo(s){
+  if(s==='malicious')   return {t:'hard', lab:'Malware', msg:'The malware scan flagged this pack as malicious — it cannot be approved. Delete and re-upload.', hard:true};
+  if(s==='duplicate')   return {t:'hard', lab:'Duplicate', msg:'This pack is identical to another contributor’s template (anti-theft) — it cannot be approved. Delete and re-upload.', hard:true};
+  if(s==='quarantined') return {t:'warn', lab:'Quarantined', msg:'The security check was inconclusive and needs a manual review. If you trust this pack, click “Clear pack” to unblock approval.', hard:false};
+  if(s==='pending')     return {t:'warn', lab:'Scan pending', msg:'The security scan hasn’t finished. Approving will resolve it on demand; if it stays stuck, click “Clear pack” to unblock.', hard:false};
+  return null;
+}
+
+/* Skan holati banneri (moderatsiya detali) — problemali status bo'lsagina chiqadi. */
+function adxPackScanBanner(t){
+  const info = adxPackScanInfo(t && t.packScanStatus);
+  if(!info) return '';
+  const isHard = info.t==='hard';
+  const bg = isHard?'var(--reddim)':'var(--amberdim)';
+  const bd = isHard?'rgba(255,107,94,.3)':'rgba(255,178,124,.32)';
+  const fg = isHard?'#FF6B5E':'#FFB27C';
+  const detail = (t.packScanDetail && String(t.packScanDetail).trim()) ? `<div style="font-size:11px;color:#8A93A3;margin-top:4px">${esc(t.packScanDetail)}</div>` : '';
+  return `<div style="margin-top:16px;background:${bg};border:1px solid ${bd};border-radius:11px;padding:10px 12px">
+    <div class="adx-flab" style="margin:0;color:${fg};display:flex;align-items:center;gap:6px"><i class="ph ph-shield-warning"></i>SECURITY: ${esc(info.lab.toUpperCase())}</div>
+    <div style="font-size:12px;color:#B7C0CE;margin-top:4px;line-height:1.55">${esc(info.msg)}</div>${detail}</div>`;
+}
+
+/* "Clear pack (security)" tugmasi — faqat qo'lda ochsa bo'ladigan holatda (pending/quarantined). */
+function adxPackClearBtn(t, cls){
+  const info = adxPackScanInfo(t && t.packScanStatus);
+  if(!info || info.hard) return '';
+  return `<button class="${cls||'adx-btn2 adx-btn-warn'}" onclick="modClearPack('${t.id}')"><i class="ph ph-shield-check"></i>Clear pack (security)</button>`;
+}
+
 /* Topbar actions \u2014 category + date sort (mockup e2 topbar) */
 function modTopbarActions(){
   const tba = document.getElementById('tbActions');
@@ -434,6 +466,7 @@ function renderModDetail(t){
     ${t.reason?`<div style="margin-top:16px;background:${t.status==='hard'?'var(--reddim)':'var(--amberdim)'};border:1px solid ${t.status==='hard'?'rgba(255,107,94,.3)':'rgba(255,178,124,.32)'};border-radius:11px;padding:10px 12px">
       <div class="adx-flab" style="margin:0;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">PREVIOUS DECISION REASON</div>
       <div style="font-size:12px;color:#B7C0CE;margin-top:4px;line-height:1.55">${esc(t.reason)}</div></div>`:''}
+    ${adxPackScanBanner(t)}
     <!-- decision panel -->
     <div class="adx-decide">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ph ph-gavel" style="color:#C2F04A;font-size:16px"></i><span class="adx-h16" style="font-size:14px">Decision panel</span></div>
@@ -441,6 +474,7 @@ function renderModDetail(t){
         <button class="adx-btn adx-btn-ok" onclick="modApprove('${t.id}')"><i class="ph ph-check-circle"></i>Approve \u2014 publish in AE</button>
         <button class="adx-btn2 adx-btn-warn" onclick="modSoftReject('${t.id}')"><i class="ph ph-arrow-u-up-left"></i>Soft reject</button>
         <button class="adx-btn-danger adx-btn-dghost" onclick="modHardReject('${t.id}')"><i class="ph ph-prohibit"></i>Hard reject</button>
+        ${adxPackClearBtn(t, 'adx-btn2 adx-btn-warn')}
       </div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--hair2)">
         <button class="adx-btn2 sm" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i>Edit metadata (admin override)</button>

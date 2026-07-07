@@ -58,6 +58,10 @@ const StudioTemplates = (() => {
       isPro: !!t.isPro,
       // #15: preview background-transcode status ('pending'|'done'|'failed'|null) — for UI badge
       previewTranscodeStatus: t.previewTranscodeStatus || null,
+      // Bosqich 2 #2: pack malware/dedup skan holati — approve blokining sababini ko'rsatadi
+      // ('clean'|'pending'|'quarantined'|'malicious'|'duplicate'|null)
+      packScanStatus: t.packScanStatus || null,
+      packScanDetail: t.packScanDetail || null,
       desc: t.description || "",
       tags: t.tags || [],
       reason: t.reviewNote || "",

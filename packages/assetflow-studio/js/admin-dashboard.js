@@ -57,10 +57,20 @@
     var con = (t._con) || ((typeof CONTRIBUTORS !== "undefined" && CONTRIBUTORS) ? CONTRIBUTORS.find(function (x) { return x.id === t.cid; }) : null);
     var author = (con && con.name) ? con.name : "Contributor";
     var meta = [author].concat([t.cat, t.res].filter(Boolean)).join(" · ");
+    // Bosqich 2 #2: pack skan holati — approve bloklangan bo'lsa sabab badge + Clear pack tugmasi.
+    var scan = (typeof adxPackScanInfo === "function") ? adxPackScanInfo(t.packScanStatus) : null;
+    var scanBdg = scan
+      ? '<span class="adx-bdg ' + (scan.t === "hard" ? "adx-bdg-hard" : "adx-bdg-pending") +
+        '" style="margin-left:7px" title="' + esc(scan.msg) + '"><span class="bd"></span>' + esc(scan.lab) + "</span>"
+      : "";
+    var clearBtn = (scan && !scan.hard)
+      ? '<button class="adx-btn2 adx-btn-warn sm" onclick="modClearPack(\'' + t.id + '\')" title="' + esc(scan.msg) + '"><i class="ph ph-shield-check"></i>Clear pack</button>'
+      : "";
     return '<div class="adx-qrow">' +
       '<span class="adx-qthumb">' + qthumbHtml(t) + "</span>" +
-      '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(t.name) + "</div>" +
+      '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(t.name) + scanBdg + "</div>" +
         '<div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(meta) + "</div></div>" +
+      clearBtn +
       '<button class="adx-btn adx-btn-ok sm" onclick="modApprove(\'' + t.id + '\')"><i class="ph ph-check"></i>Approve</button>' +
       '<button class="adx-btn2 adx-btn-warn sm" onclick="modSoftReject(\'' + t.id + '\')">Reject</button>' +
       '<button class="adx-iact" title="View" onclick="openTplDrawer(\'' + t.id + '\')"><i class="ph ph-eye"></i></button>' +

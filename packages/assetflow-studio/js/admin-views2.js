@@ -448,6 +448,10 @@ function renderAuditTable() {
    ============================================================ */
 function openTplDrawer(id){
   const t=TEMPLATES.find(x=>x.id===id); const con=cById(t.cid);
+  // Bosqich 2 #2: pack skan holati — approve blokining sababi + Clear pack (soft-blok bo'lsa).
+  const scan=(typeof adxPackScanInfo==='function')?adxPackScanInfo(t.packScanStatus):null;
+  const scanBanner=scan?`<div class="info-banner ${scan.t==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic('alert')}<div><b style="color:var(--tx-0)">Security: ${esc(scan.lab)}</b><div class="small mt-4" style="color:var(--tx-1)">${esc(scan.msg)}</div></div></div>`:'';
+  const clearBtn=(scan&&!scan.hard)?`<button class="btn btn-warn grow" onclick="closeDrawer();modClearPack('${t.id}')">${ic('check')} Clear pack</button>`:'';
   openDrawer(`
     <div class="drawer-head"><span class="h3 grow">Template details</span><button class="icon-btn" onclick="closeDrawer()">${ic('x')}</button></div>
     <div class="drawer-body col gap-16">
@@ -461,9 +465,11 @@ function openTplDrawer(id){
       <div class="divider"></div>
       <div class="row center gap-10">${avatar(con.name,34)}<div class="col grow" style="gap:1px"><span class="cell-strong">${esc(con.name)}</span><span class="small">${esc(con.email)}</span></div><button class="btn btn-ghost btn-sm" onclick="closeDrawer();route('contributor-detail','${con.id}')">Profile</button></div>
       ${t.reason?`<div class="info-banner ${t.status==='hard'?'danger':'warn'}" style="align-items:flex-start">${ic('alert')}<div><b style="color:var(--tx-0)">Decision reason</b><div class="small mt-4" style="color:var(--tx-1)">${esc(t.reason)}</div></div></div>`:''}
+      ${scanBanner}
     </div>
     <div class="drawer-foot">
       ${t.status==='pending'||t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();modApprove('${t.id}')">${ic('check')} Approve</button><button class="btn btn-warn grow" onclick="closeDrawer();modSoftReject('${t.id}')">${ic('reply')} Soft reject</button>`:`<button class="btn btn-ghost grow" onclick="openEditMeta('${t.id}')">${ic('edit')} Edit</button>`}
+      ${clearBtn}
     </div>`);
 }
 
@@ -616,6 +622,37 @@ async function modDeleteConfirm(id) {
     else if (CURRENT === "templates") renderTemplates();
   } catch (e) {
     toast("Error", e.message || "Deletion failed", "danger");
+  }
+}
+
+// Bosqich 2 #2: karantin/pending pack'ni qo'lda TOZALASH — approve blokini ochadi.
+function modClearPack(id){
+  openModal(`
+    <div class="modal-head"><div class="modal-ico" style="background:var(--green-dim);color:var(--green)">${ic('checkCircle')}</div>
+      <div><h3>Clear pack (security)</h3><p>Manually mark the pack for "${esc(tName(id))}" as reviewed and safe.</p></div></div>
+    <div class="modal-body"><div class="info-banner">${ic('alert')}<span>Only do this after you have reviewed the pack yourself. It unblocks approval for this template. Confirmed malware/duplicate packs cannot be cleared — delete and re-upload instead.</span></div></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" onclick="modClearPackConfirm('${id}')">${ic('check')} Clear pack</button></div>`);
+}
+
+async function modClearPackConfirm(id) {
+  closeModal();
+  if (!StudioApi.token()) {
+    toast("API", "Sign in as admin first", "warn");
+    return;
+  }
+  try {
+    await StudioApi.clearPack(id);
+    await StudioTemplates.refreshAfterReview();
+    toast("Cleared", "Pack marked safe — approval is now unblocked", "success");
+    if (typeof AssetFlowLog !== "undefined") {
+      AssetFlowLog.info("Pack cleared", { action: "pack-clear", detail: id });
+    }
+    if (typeof CURRENT !== "undefined" && CURRENT === "moderation") renderModeration();
+    else if (typeof CURRENT !== "undefined" && CURRENT === "overview") route("overview");
+    else if (typeof CURRENT !== "undefined" && CURRENT === "templates") renderTemplates();
+  } catch (e) {
+    toast("Error", e.message || "Clear pack failed", "danger");
   }
 }
 
