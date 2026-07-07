@@ -44,7 +44,8 @@ import {
 import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
 import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
-import { extractIngestZip, titleFromZipFileName, sanitizeFileBaseName } from "../lib/ingest-zip.js";
+import { extractIngestZip, sanitizeFileBaseName } from "../lib/ingest-zip.js";
+import { generateTemplateMetadata } from "../lib/ai/template-metadata.js";
 import {
   setUploadProgress,
   getUploadProgress,
@@ -1436,10 +1437,14 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
     }
 
     const settings = await getOrCreateSettings();
-    const categories = (settings.categoriesJson as Array<{ value: string; label: string }>) || [];
-    // TODO(FF): Faza 3 — AI zip nomidan nom/kategoriya/20 teg yozadi. Hozircha
-    // sarlavha zip nomidan tozalanadi, kategoriya "Uncategorized" placeholder.
-    const title = titleFromZipFileName(key);
+    // FAZA 3 (KONTENT-QUVURI-SXEMA.md §6) — AI zip nomidan (+ preview rasmidan) nom /
+    // kategoriya (kanonik ro'yxatdan) / 20 teg yozadi. INTERNAL metadata: kredit yo'li
+    // ISHLATILMAYDI. AI xato bersa fail-safe fallback qaytadi — ingest bloklanmaydi.
+    const aiMeta = await generateTemplateMetadata({
+      zipFileName: key,
+      imagePath: extracted.imagePath,
+    });
+    const title = aiMeta.title;
 
     let dims: { width: number; height: number } | null = null;
     if (extracted.imagePath) dims = await probeMediaDimensions(extracted.imagePath);
@@ -1465,8 +1470,9 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
           externalId: key,
           name: title,
           nav: settings.defaultNav || "video",
-          cat: categories[0]?.value || "uncategorized",
-          catLabel: categories[0]?.label || "Uncategorized",
+          cat: aiMeta.cat,
+          catLabel: aiMeta.catLabel,
+          tags: aiMeta.tags,
           orient,
           res,
           templateApp: extracted.templateApp,

@@ -116,6 +116,38 @@ export async function orChatSys(
   return { ok: true, data: txt };
 }
 
+/**
+ * JSON-mode chat, ixtiyoriy vision bilan — bitta system + user matn, ustiga 0..N rasm
+ * (data-URI yoki URL). Model vision qo'llab-quvvatlasa rasm(lar)ni ham o'qiydi. INTERNAL
+ * tizim metadatasi uchun (kredit yo'li EMAS). `response_format: json_object` majburlanadi.
+ */
+export async function orChatJsonVision(
+  model: string,
+  system: string,
+  user: string,
+  images: string[] = []
+): Promise<OrResult<string>> {
+  if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
+  const content: Array<Record<string, unknown>> = [{ type: "text", text: user }];
+  for (const url of images) content.push({ type: "image_url", image_url: { url } });
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: images.length ? content : user },
+    ],
+    response_format: { type: "json_object" },
+  };
+  const res = await orPost("/chat/completions", body);
+  if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
+  const j = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  const txt = j?.choices?.[0]?.message?.content;
+  if (typeof txt !== "string") return { ok: false, error: "No text found in the response" };
+  return { ok: true, data: txt };
+}
+
 /** Soniyani 00:SS / MM:SS ga formatlaydi (TIMELINE breakdown uchun). */
 function fmtClock(sec: number): string {
   const s = Math.max(0, Math.round(sec));
