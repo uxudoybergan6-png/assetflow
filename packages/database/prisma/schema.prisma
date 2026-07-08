@@ -591,6 +591,11 @@ model TemplateDownloadEvent {
   source        String   @default("plugin")   // "plugin" | "web"
   createdAt     DateTime @default(now())
 
+  // FAZA 2 (H1/M7) — earning DEDUP: attribution per (user, template, kind), NOT per
+  // scene/slug/repeat. Bir foydalanuvchi bir shablonni qayta yuklab olsa ham BITTA
+  // download hodisasi (→ bitta earning). Oylik download LIMITI ALOHIDA (PluginProfile,
+  // consumeDownload) — u har yuklab olishda oshaveradi, bu unique unga TEGMAYDI.
+  @@unique([userId, templateId, kind])
   @@index([templateId])
   @@index([userId])
   @@index([contributorId])

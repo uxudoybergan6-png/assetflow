@@ -1,5 +1,23 @@
 import { prisma } from "@creative-tools/database";
 import { grantContributorEarning } from "./earnings.js";
+import { isEmailConfigured } from "./email.js";
+
+/**
+ * FAZA 2 (H1 sybil) — earning uchun email-verify gate (plugin-profile.ts AI gate'i naqshi):
+ *   • dev → faqat email sozlangan bo'lsa majburlanadi (fail-open);
+ *   • production → sozlanmagan bo'lsa ham majburlanadi (fail-closed).
+ * Tasdiqlanmagan (bot/sybil) hisob download qila oladi, LEKIN earning to'plamaydi.
+ * DIQQAT: bu FAQAT earning'ni bloklaydi — yuklab olishning o'zi (fayl/limit) ta'sirlanmaydi.
+ */
+async function downloaderMayEarn(userId: string): Promise<boolean> {
+  const requireEmailVerify = isEmailConfigured() || process.env.NODE_ENV === "production";
+  if (!requireEmailVerify) return true;
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { emailVerified: true },
+  });
+  return !!u?.emailVerified;
+}
 
 /**
  * Bosqich 4 #1 — REAL download/import event tracking.
@@ -18,6 +36,12 @@ export async function recordTemplateDownloadEvent(input: {
   userId: string;
   kind: "download" | "import";
   source?: "plugin" | "web";
+  /**
+   * FAZA 2 (M7) — earning uchun "haqiqiy, hisoblangan yuklab olish"mi. Admin/uncharged
+   * yuklab olish (consumeDownload chetlab o'tilgan) → false: download hodisasi qaydlanadi,
+   * lekin contributor earning YOZILMAYDI. Default true (odatiy foydalanuvchi oqimi).
+   */
+  earn?: boolean;
 }): Promise<{ id: string; contributorId: string } | null> {
   if (!input.templateId) return null;
   try {
@@ -26,23 +50,53 @@ export async function recordTemplateDownloadEvent(input: {
       select: { contributorId: true },
     });
     if (!tpl) return null;
-    const ev = await prisma.templateDownloadEvent.create({
-      data: {
-        templateId: input.templateId,
-        userId: input.userId,
-        contributorId: tpl.contributorId,
-        kind: input.kind,
-        source: input.source ?? "plugin",
+
+    // DEDUP (H1): (userId, templateId, kind) unique → bir foydalanuvchining bir shablonni
+    // qayta yuklab olishi YANGI hodisa yaratmaydi (→ takroriy earning yo'q). createMany +
+    // skipDuplicates unique konflikt'da THROW qilmaydi (count=0 qaytadi).
+    const created = await prisma.templateDownloadEvent.createMany({
+      data: [
+        {
+          templateId: input.templateId,
+          userId: input.userId,
+          contributorId: tpl.contributorId,
+          kind: input.kind,
+          source: input.source ?? "plugin",
+        },
+      ],
+      skipDuplicates: true,
+    });
+    const ev = await prisma.templateDownloadEvent.findUnique({
+      where: {
+        userId_templateId_kind: {
+          userId: input.userId,
+          templateId: input.templateId,
+          kind: input.kind,
+        },
       },
       select: { id: true, contributorId: true },
     });
-    // Bosqich 4 #3: har download hodisasidan contributor earning (idempotent, best-effort).
-    await grantContributorEarning({
-      downloadEventId: ev.id,
-      templateId: input.templateId,
-      contributorId: ev.contributorId,
-      kind: input.kind,
-    });
+    if (!ev) return null;
+    // Takror yuklab olish (yangi qator yaratilmadi) → yangi earning imkoniyati yo'q.
+    if (created.count === 0) return ev;
+
+    // ── Earning gate'lari — FAQAT earning'ga ta'sir qiladi (download hodisasi allaqachon qaydlandi):
+    //   (M7) admin/uncharged  → earning yo'q;
+    //   (H1) self-exclusion   → o'z shablonini yuklab olsa o'ziga earning yo'q;
+    //   (H1) email-verify gate→ tasdiqlanmagan (sybil) hisob earning to'plamaydi.
+    // grantContributorEarning "import"ni allaqachon o'tkazib yuboradi (faqat "download" earadi).
+    const eligible =
+      input.earn !== false &&
+      input.userId !== ev.contributorId &&
+      (await downloaderMayEarn(input.userId));
+    if (eligible) {
+      await grantContributorEarning({
+        downloadEventId: ev.id,
+        templateId: input.templateId,
+        contributorId: ev.contributorId,
+        kind: input.kind,
+      });
+    }
     return ev;
   } catch (e) {
     console.error("recordTemplateDownloadEvent", e);

@@ -60,6 +60,15 @@ const deviceStatusLimiter = rateLimit({
   keyPrefix: "plugin-device-poll",
 });
 
+/** FAZA 2 (H1/H5) — pack/mogrt yuklab olish throttle: skriptli earning-farming va
+ *  S3 xarajat portlashini to'sadi (normal foydalanish uchun keng — 60/daqiqa/IP). */
+const downloadLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  keyPrefix: "plugin-download",
+  message: "Too many downloads — please slow down and try again shortly",
+});
+
 const DEVICE_CODE_TTL_MS = 10 * 60 * 1000;
 
 function apiPublicBase(req: { protocol: string; get: (h: string) => string | undefined }) {
@@ -265,11 +274,12 @@ async function guardDownloadable(
 }
 
 /** M2: tanlangan sahnaning yakka .mogrt fayli — butun ZIP'siz yuklab olish */
-pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Request, res: Response) => {
+pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   if (!(await guardDownloadable(req, res, templateId))) return;
   // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (non-blocking).
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin" });
+  // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN" });
   const slug = sceneKey(String(req.params.slug));
 
   if (isS3Configured()) {
@@ -298,11 +308,12 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", requireAuth, async (req: Req
 
 /** Pack yuklab olish — auth + published + Free/Pro limit gate (generic
     route'dan OLDIN ro'yxatdan o'tadi, shu sabab "pack" shu yerga tushadi). */
-pluginRouter.get("/assets/:templateId/pack", requireAuth, async (req: Request, res: Response) => {
+pluginRouter.get("/assets/:templateId/pack", downloadLimiter, requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   if (!(await guardDownloadable(req, res, templateId))) return;
   // Bosqich 4 #1: REAL yuklab olish hodisasi (non-blocking — fayl berishni to'smaydi).
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin" });
+  // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN" });
   await serveTemplateAsset(req, res, templateId, "pack");
 });
 
