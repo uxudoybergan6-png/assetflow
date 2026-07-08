@@ -1,8 +1,7 @@
 /**
- * Sentry — xato monitoringi (Bosqich 1 #6). NO-OP agar SENTRY_DSN yo'q YOKI @sentry/node
- * o'rnatilmagan bo'lsa. @sentry/node hozircha DEPENDENCY EMAS — shu sabab DINAMIK import
- * (o'zgaruvchili spec) bilan yuklaymiz: paket bo'lmasa build/runtime yiqilmaydi, shunchaki
- * o'tkazib yuboriladi. Paket qo'shilgach (npm i @sentry/node) va SENTRY_DSN qo'yilgach avtomatik faollashadi.
+ * Sentry — xato monitoringi (Bosqich 1 #6 · FAZA 3 A). @sentry/node endi haqiqiy dependency;
+ * SENTRY_DSN yo'q bo'lsa NO-OP (dev'da hech narsa o'zgarmaydi, crash yo'q). Dinamik import
+ * saqlanadi — init faqat DSN bor bo'lganda paketni yuklaydi (dev boot yengil qoladi).
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,10 +32,11 @@ export async function initSentry(): Promise<void> {
   }
 }
 
-/** Xatoni Sentry'ga yuboradi (Sentry sozlanmagan → no-op). Hech qachon throw qilmaydi. */
-export function captureException(err: unknown): void {
+/** Xatoni Sentry'ga yuboradi (Sentry sozlanmagan → no-op). Hech qachon throw qilmaydi.
+ *  ctx — qo'shimcha kontekst (genId, templateId, area …) event'ga `extra` sifatida biriktiriladi. */
+export function captureException(err: unknown, ctx?: Record<string, unknown>): void {
   try {
-    if (sentry) sentry.captureException(err);
+    if (sentry) sentry.captureException(err, ctx ? { extra: ctx } : undefined);
   } catch {
     /* no-op */
   }

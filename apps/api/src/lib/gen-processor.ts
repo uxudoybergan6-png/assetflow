@@ -48,6 +48,7 @@ import { refundAiCredits } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
 import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
 import { writeAuditLog } from "./audit-log.js";
+import { captureException } from "./sentry.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
 const ASSET_TYPE = { image: 130, audio: 120, video: 140 } as const;
@@ -1009,6 +1010,9 @@ export async function processGeneration(genId: string): Promise<void> {
     // eski o'z assetlarni o'chirib joy bo'shatadi (best-effort; genni buzmaydi).
     enforceStorageRetention(gen.userId).catch((e) => console.error("enforceStorageRetention", e));
   } catch (e) {
+    // Sentry (FAZA 3 A) — gen-processor asosiy async entrypoint: provider/moderatsiya/storage
+    // xatolari kontekst bilan yuboriladi (DSN yo'q → no-op).
+    captureException(e, { area: "gen-processor", genId });
     await fail(e instanceof Error ? e.message : String(e));
   }
 }
@@ -1057,7 +1061,10 @@ function genRunNext(): void {
   genActiveSet.add(genId);
   genActive++;
   processGeneration(genId)
-    .catch((e) => console.error(`[studio-gen] processor xato (${genId}):`, e))
+    .catch((e) => {
+      console.error(`[studio-gen] processor xato (${genId}):`, e);
+      captureException(e, { area: "gen-processor.runNext", genId });
+    })
     .finally(() => {
       genActive--;
       genActiveSet.delete(genId);

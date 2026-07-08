@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import { createHash, createPublicKey, verify } from "crypto";
 import { prisma } from "@creative-tools/database";
 import { processGenerationInBackground } from "../lib/gen-processor.js";
+import { captureException } from "../lib/sentry.js";
 
 const FAL_JWKS_URL = "https://rest.fal.ai/.well-known/jwks.json";
 const FAL_JWKS_TTL_MS = 24 * 60 * 60 * 1000;
@@ -181,6 +182,7 @@ export const falWebhookHandler: RequestHandler = async (req, res) => {
     res.status(200).json({ received: true });
   } catch (error) {
     console.error("[fal-webhook] reject:", error);
+    captureException(error, { area: "fal-webhook" });
     res.status(401).json({ error: "Invalid fal webhook" });
   }
 };

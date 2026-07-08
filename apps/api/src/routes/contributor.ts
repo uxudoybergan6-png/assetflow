@@ -64,6 +64,7 @@ import {
 } from "../lib/upload-progress.js";
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { captureException } from "../lib/sentry.js";
 import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
@@ -1808,6 +1809,11 @@ async function ingestOneZip(
     return { key, ok: true, status: "created", id: template.id };
   } catch (e) {
     console.error("[ingest] xato:", key, e);
+    // Sentry (FAZA 3 A) — kutilmagan ingest xatolari kuzatiladi; IngestZipError
+    // (zip-bomb/slip/limit — kutilgan doimiy rad) shovqin bo'lmasin deb yuborilmaydi.
+    if (!(e instanceof IngestZipError)) {
+      captureException(e, { area: "ingest", key, contributorId });
+    }
     const reason = e instanceof Error ? e.message : "Unexpected error";
     if (e instanceof IngestZipError) {
       // Zip-bomb / zip-slip / limit — DOIMIY rad: zip o'chiriladi, audit yoziladi,

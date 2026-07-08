@@ -47,3 +47,8 @@ STRIPE_SECRET_KEY: ""
 STRIPE_WEBHOOK_SECRET: ""
 STRIPE_PRICE_MONTHLY: ""
 STRIPE_PRICE_YEARLY: ""
+
+# Sentry xato-monitoringi (FAZA 3 A) — DSN qo'yilsa faollashadi, bo'sh bo'lsa NO-OP:
+SENTRY_DSN: ""
+# ADMIN_NOTIFY_EMAIL (FAZA 3 E) — yangi shablon moderatsiyaga tushganda shu manzilga xat:
+ADMIN_NOTIFY_EMAIL: ""

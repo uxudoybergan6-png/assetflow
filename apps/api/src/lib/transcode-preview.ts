@@ -10,6 +10,7 @@ import {
   deleteS3Objects,
 } from "./s3.js";
 import { optimizePreviewForStreaming } from "./optimize-preview.js";
+import { captureException } from "./sentry.js";
 
 /**
  * #15 (C2) — preview transcode'ni FON rejimida bajaradi (HTTP javobni bloklamaydi).
@@ -60,6 +61,7 @@ export async function processPreviewTranscode(id: string): Promise<void> {
     await safeStatus(id, "done", null);
   } catch (e) {
     console.error(`[transcode-preview] xato (id=${id}):`, e);
+    captureException(e, { area: "transcode-preview", templateId: id });
     await safeStatus(id, "failed", e instanceof Error ? e.message : String(e));
   } finally {
     if (tmpDir) {
