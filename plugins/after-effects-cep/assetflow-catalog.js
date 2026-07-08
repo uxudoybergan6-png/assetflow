@@ -132,7 +132,8 @@ const AssetFlowCatalog = (() => {
   }
 
   async function fetchCatalog() {
-    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog`, {
+    // FAZA 5 (§11) — AE plagin FAQAT After Effects shablonlarini oladi (server filtri).
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog?app=ae`, {
       headers: catalogHeaders(),
     });
     if (!res.ok) {

@@ -4856,6 +4856,24 @@ const navSubs={
 
 const NAV_LABELS={video:'Templates',motion:'Motion Videos',graphics:'Graphics',luts:'LUTs'};
 
+// FAZA 5 (§2/§11) — kanonik dastur xaritasi (apps.ts server nusxasining ko'chirmasi).
+// Kod → { lbl, full, dot }. Klient literallari server bilan mos bo'lishi shart.
+const FF_APPS={
+  ae:{lbl:'Ae',full:'After Effects',dot:'#A79BFF'},
+  pr:{lbl:'Pr',full:'Premiere Pro',dot:'#E585FF'},
+  motion:{lbl:'Mn',full:'Apple Motion',dot:'#5CC8B0'},
+  resolve:{lbl:'Dr',full:'DaVinci Resolve',dot:'#FFB27C'}
+};
+/** Dastur kodi(+nav) → {lbl,full,dot}. Belgilanmagan (bo'sh) → AE (DB default);
+ *  eski 'dr' kodi va nav==='luts' → DaVinci; noma'lum kodni AE'ga majburlamaymiz. */
+function ffAppInfo(code,navHint){
+  const c=String(code||'').toLowerCase();
+  if(FF_APPS[c])return FF_APPS[c];
+  if(c==='dr')return FF_APPS.resolve;      // eski alias
+  if(!c&&navHint==='luts')return FF_APPS.resolve; // dastur belgilanmagan LUTs → DaVinci
+  return FF_APPS.ae;                         // faqat bo'sh/noma'lumda AE
+}
+
 const CAT_LABELS={
   all:'All', logos:'Logos', typographytitles:'Typography & Titles',
   slideshows:'Slideshows', lowerthirds:'Lower Thirds', intros:'Intros',
@@ -4927,7 +4945,7 @@ function mergeLocalUploads(){
     const thumb=u.thumbBlobId?AssetFlowStore.getBlobUrl(u.thumbBlobId):'';
     const preview=u.previewBlobId?AssetFlowStore.getBlobUrl(u.previewBlobId):'';
     const resLabel=(u.res||'4k').toUpperCase();
-    const appLabel=u.templateApp==='pr'?'Premiere Pro':u.templateApp==='ae'?'After Effects':'';
+    const appLabel=u.templateApp?ffAppInfo(u.templateApp,u.nav).full:'';
     const extraBits=[];
     if(appLabel) extraBits.push(appLabel);
     if(u.extra?.colorSpace) extraBits.push(String(u.extra.colorSpace).toUpperCase());
@@ -5226,10 +5244,10 @@ function renderCard(a,i,showDl){
   const noPack=!!(pack&&pack.server&&pack.hasPack===false);
   // a.n — ichki pack kaliti (__srv_<id> / lokal kalit), JS-string sifatida ishlatiladi
   const safeName=String(a.n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-  // Ilova rozetkasi (a1 Ae/Dr): LUTs → DaVinci (Dr, sariq nuqta); boshqalar → After Effects (Ae, binafsha)
-  const appRaw=String(a.templateApp||'ae').toLowerCase();
-  const appLbl=appRaw==='pr'?'Pr':(appRaw==='dr'||a.nav==='luts')?'Dr':'Ae';
-  const appDot=appLbl==='Pr'?'#E585FF':appLbl==='Dr'?'#FFB27C':'#A79BFF';
+  // Ilova rozetkasi (Ae/Pr/Mn/Dr) — kanonik FF_APPS xaritasidan (§2/§11).
+  const appInfo=ffAppInfo(a.templateApp,a.nav);
+  const appLbl=appInfo.lbl;
+  const appDot=appInfo.dot;
   // Status rozetkasi (yuqori-o'ng, bitta): ⏳ Pack > ✓ Yuklandi > AI bilan > YANGI
   let stTx='',stCol='';
   if(noPack){stTx='⏳ Pack';stCol='var(--amber)';}
@@ -5500,6 +5518,9 @@ function resMatchesAsset(assetRes,filterRes){
 
 function getFiltered(){
   return assets.filter(a=>{
+    // FAZA 5 (§11) — AE plagin FAQAT After Effects: dasturi belgilangan va AE bo'lmagan shablonlar chiqmaydi
+    // (server ?app=ae filtridan tashqari klient zaxirasi). Belgilanmagan (bo'sh) → AE deb qabul qilinadi.
+    if(a.templateApp&&String(a.templateApp).toLowerCase()!=='ae')return false;
     if(a.nav!==currentNav)return false;
     if(currentSub!=='all'&&a.cat!==currentSub)return false;
     if(currentNav!=='luts'&&currentOrient!=='all'&&a.orient!==currentOrient)return false;
@@ -5740,10 +5761,8 @@ function pd3Grad(key){
   return 'radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)';
 }
 function pd3AppInfo(asset){
-  const raw=String(asset?.templateApp||'ae').toLowerCase();
-  const lbl=raw==='pr'?'Pr':(raw==='dr'||asset?.nav==='luts')?'Dr':'Ae';
-  const dot=lbl==='Pr'?'#E585FF':lbl==='Dr'?'#FFB27C':'#A79BFF';
-  return {lbl,dot};
+  const info=ffAppInfo(asset&&asset.templateApp,asset&&asset.nav);
+  return {lbl:info.lbl,dot:info.dot};
 }
 function pd3AuthorName(asset){ return (asset&&asset.author&&(asset.author.name||asset.author))||''; }
 function pd3Fmt(s){ s=Math.max(0,Math.round(s)); const m=Math.floor(s/60); return m+':'+String(s%60).padStart(2,'0'); }
@@ -7025,8 +7044,7 @@ function hmHash(s){var h=0,i;s=String(s||'');for(i=0;i<s.length;i++)h=(h*31+s.ch
 function hmEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function hmFromAsset(a){
   var nav=a.nav||'video';
-  var appRaw=String(a.templateApp||'ae').toLowerCase();
-  var app=appRaw==='pr'?'Pr':(appRaw==='dr'||nav==='luts')?'Dr':'Ae';
+  var app=ffAppInfo(a.templateApp,nav).lbl; // kanonik FF_APPS (§2/§11)
   var dl=!!(window.downloaded&&window.downloaded.has&&window.downloaded.has(a.n));
   return {
     n:a.displayName||a.n, c:a.catLabel||HM_NAVLBL[nav]||nav,

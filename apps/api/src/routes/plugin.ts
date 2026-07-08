@@ -89,11 +89,20 @@ const CATALOG_SELECT = {
   updatedAt: true,
 } as const;
 
+/** FAZA 5 (§8, §11) — ixtiyoriy `?app=<kod>` filtri: har dastur faqat o'zini ko'radi
+ *  (AE plagin `?app=ae` yuboradi). Param yo'q bo'lsa bugungidek hamma dasturni qaytaradi;
+ *  bo'lsa approvedCatalogWhere ustiga templateApp predikati qo'shiladi (semantika buzilmaydi). */
+function catalogWhere(appParam: unknown) {
+  const code = typeof appParam === "string" ? appParam.trim().toLowerCase() : "";
+  if (!code) return approvedCatalogWhere;
+  return { ...approvedCatalogWhere, templateApp: code };
+}
+
 /** Browse panel — tasdiqlangan shablonlar (server) */
 pluginRouter.get("/catalog", async (req: Request, res: Response) => {
   const base = apiPublicBase(req);
   const items = await prisma.contributorTemplate.findMany({
-    where: approvedCatalogWhere,
+    where: catalogWhere(req.query.app),
     orderBy: { updatedAt: "desc" },
     select: CATALOG_SELECT,
   });
@@ -107,7 +116,7 @@ pluginRouter.get("/featured", async (req: Request, res: Response) => {
   const base = apiPublicBase(req);
   const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 12);
   const items = await prisma.contributorTemplate.findMany({
-    where: approvedCatalogWhere,
+    where: catalogWhere(req.query.app),
     orderBy: { updatedAt: "desc" },
     take: limit,
     select: CATALOG_SELECT,
