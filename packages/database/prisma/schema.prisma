@@ -292,6 +292,12 @@ model ContributorTemplate {
   takedownAt     DateTime?           // Belgilangan bo'lsa — katalogdan/serve'dan olib tashlangan (huquqiy da'vo).
   takedownReason String?             // Takedown sababi (DMCA da'vosi va h.k.).
   takedownById   String?             // Kim belgiladi (admin userId).
+  // ── Contributor rights attestation (FAZA 1b) — ADDITIVE ──
+  // Yuklovchi "bu kontent menga tegishli / tarqatishga haqim bor" tasdig'ini bergan payt +
+  // qaysi shart versiyasida. null = eski shablon (attestatsiyadan oldingi). Frontend har
+  // upload yo'lida MAJBURIY checkbox bilan bloklaydi; backend shu yerda QAYD etadi.
+  rightsAcceptedAt   DateTime?
+  rightsTermsVersion String?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 

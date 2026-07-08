@@ -4821,7 +4821,11 @@ html.home-mode #homePage{display:block!important}
     </div>
 
     <div class="publish-step" id="pubActionStep" style="display:none;margin-bottom:0">
-      <button type="button" class="pub-go" id="pubGoBtn" onclick="publishGo()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>Publish</button>
+      <label id="pubRightsRow" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin-bottom:12px;font-size:11px;line-height:1.45;color:var(--muted-2)">
+        <input type="checkbox" id="pubRights" style="margin-top:2px;flex-shrink:0" onchange="pubRightsSync()">
+        <span>I confirm I own this content or have the necessary rights to distribute it, and it does not infringe third-party rights.</span>
+      </label>
+      <button type="button" class="pub-go" id="pubGoBtn" onclick="publishGo()" disabled style="opacity:.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>Publish</button>
       <p class="pub-modnote">Moderation — 1–2 business days · status: Account → Publish</p>
       <p class="pub-status" id="pubStatus"></p>
     </div>
@@ -8968,10 +8972,22 @@ function openPublish(){
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   document.getElementById('pubStatus').textContent='';
+  var rc=document.getElementById('pubRights'); if(rc){ rc.checked=false; }
+  pubRightsSync();
   if(IS_CEP){ publishScan(); }
   else{ document.getElementById('pubProjectInfo').textContent='Only works inside After Effects'; }
 }
 function closePublish(){ document.getElementById('publishSheet').classList.remove('open'); }
+/** Rights-attestation checkbox → Publish tugmasini yoqadi/o'chiradi (majburiy). */
+function pubRightsSync(){
+  var rc=document.getElementById('pubRights');
+  var btn=document.getElementById('pubGoBtn');
+  if(!btn) return;
+  var ok=!!(rc&&rc.checked);
+  btn.disabled=!ok;
+  btn.style.opacity=ok?'1':'.5';
+}
+window.pubRightsSync=pubRightsSync;
 
 async function publishScan(){
   const info=document.getElementById('pubProjectInfo');
@@ -9035,6 +9051,8 @@ async function publishGo(){
   if(!scenes.length){ status.textContent='No scenes found'; return; }
   const name=document.getElementById('pubName').value.trim();
   if(!name){ status.textContent='Enter a name'; return; }
+  const rightsChk=document.getElementById('pubRights');
+  if(!rightsChk||!rightsChk.checked){ status.textContent='Please confirm you have the rights to distribute this content'; return; }
   const nav=document.getElementById('pubNav').value;
   const catLabel=document.getElementById('pubCat').value.trim()||'Templates';
   const cat=(catLabel.toLowerCase().replace(/[^a-z0-9]+/g,''))||'all';
@@ -9069,7 +9087,8 @@ async function publishGo(){
       name:name, description:description, nav:nav, cat:cat, catLabel:catLabel,
       orient:orient, res:res, tags:tags, templateApp:'ae', externalId:externalId,
       fileName:zip.name||path.basename(zip.path), fileSize:zip.size,
-      metaJson:{ aeScenesFolder:folder }, scenes:manifestScenes
+      metaJson:{ aeScenesFolder:folder }, scenes:manifestScenes,
+      rightsAccepted:true, rightsTermsVersion:'2026-07-08'
     };
 
     setStage('2/6 Checking');

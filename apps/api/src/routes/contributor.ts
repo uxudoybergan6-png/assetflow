@@ -139,6 +139,26 @@ contributorRouter.param("id", (req, res, next, id) => {
 
 const SETTINGS_ID = "platform";
 
+/**
+ * FAZA 1b — Contributor rights attestation. Har upload yo'lida frontend MAJBURIY
+ * checkbox bilan bloklaydi; backend `rightsAccepted:true` kelganda qabul paytini +
+ * shu versiyani ContributorTemplate.rightsAcceptedAt/rightsTermsVersion'ga yozadi.
+ * Versiya o'zgarsa (matn yangilansa) bu yerni bump qiling.
+ */
+const RIGHTS_TERMS_VERSION = "2026-07-08";
+
+/** rightsAccepted:true bo'lganда yoziladigan qiymatlar (aks holda tegilmaydi). */
+function rightsCaptureFields(input?: {
+  rightsAccepted?: boolean;
+  rightsTermsVersion?: string | null;
+}): { rightsAcceptedAt: Date; rightsTermsVersion: string } | undefined {
+  if (!input?.rightsAccepted) return undefined;
+  return {
+    rightsAcceptedAt: new Date(),
+    rightsTermsVersion: (input.rightsTermsVersion || RIGHTS_TERMS_VERSION).slice(0, 40),
+  };
+}
+
 const DEFAULT_CATEGORIES = [
   { value: "intros", label: "Intros" },
   { value: "logos", label: "Logos" },
@@ -196,6 +216,9 @@ const templateBodySchema = z.object({
   // Faqat ADMIN o'zgartira oladi (handler'da himoyalangan)
   published: z.boolean().optional(),
   isPro: z.boolean().optional(), // per-shablon tier (PRO/FREE) — faqat ADMIN
+  // FAZA 1b — rights attestation (frontend MAJBURIY checkbox → shu yerda qayd etiladi)
+  rightsAccepted: z.boolean().optional(),
+  rightsTermsVersion: z.string().max(40).optional(),
 });
 
 const reviewSchema = z.object({
@@ -1449,7 +1472,11 @@ const INGEST_LOCAL_PROBE_MAX_BYTES = (() => {
  * + preview'lar → fon transcode → asl zipni o'chirish. Har xatoda throw QILMAYDI —
  * natija obyektini qaytaradi, chaqiruvchi partiyani to'xtatmaydi.
  */
-async function ingestOneZip(contributorId: string, key: string): Promise<IngestItemResult> {
+async function ingestOneZip(
+  contributorId: string,
+  key: string,
+  rights?: { rightsAcceptedAt: Date; rightsTermsVersion: string }
+): Promise<IngestItemResult> {
   if (!key.startsWith(`incoming/${contributorId}/`)) {
     return { key, ok: false, status: "failed", reason: "File does not belong to this contributor" };
   }
@@ -1598,6 +1625,7 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
           packHash: hash,
           packScanStatus: cls.scanStatus,
           packScanDetail: cls.detail.slice(0, 480),
+          ...(rights ?? {}),
         },
       });
     } catch (e) {
@@ -1746,6 +1774,9 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
  */
 const ingestSchema = z.object({
   keys: z.array(z.string().min(1).max(500)).min(1).max(50),
+  // FAZA 1b — bulk upload rights attestation (butun partiyaga bitta majburiy checkbox)
+  rightsAccepted: z.boolean().optional(),
+  rightsTermsVersion: z.string().max(40).optional(),
 });
 contributorRouter.post(
   "/ingest",
@@ -1768,9 +1799,10 @@ contributorRouter.post(
       return;
     }
     const contributorId = req.user!.userId;
+    const rights = rightsCaptureFields(p.data);
     const results: IngestItemResult[] = [];
     for (const key of p.data.keys) {
-      results.push(await ingestOneZip(contributorId, key));
+      results.push(await ingestOneZip(contributorId, key, rights));
     }
     res.json({ results });
   }
@@ -2074,6 +2106,7 @@ contributorRouter.post(
         fileSize: d.fileSize ?? null,
         reviewStatus: initialStatus,
         published: !settings.requireApproval,
+        ...(rightsCaptureFields(d) ?? {}),
       },
     });
 
@@ -2119,9 +2152,16 @@ contributorRouter.patch(
       return;
     }
     const d = parsed.data;
-    // scenes va metaJson Prisma modelida to'g'ridan field emas —
-    // ularni ...d spread'dan ajratib, metaJson ichiga yig'amiz
-    const { scenes: _scenes, metaJson: _metaJson, ...directFields } = d;
+    // scenes va metaJson Prisma modelida to'g'ridan field emas — ularni ...d spread'dan
+    // ajratamiz. rightsAccepted/rightsTermsVersion ham direct column emas (rightsCaptureFields
+    // orqali yoziladi) — spread'ga tushmasin.
+    const {
+      scenes: _scenes,
+      metaJson: _metaJson,
+      rightsAccepted: _rightsAccepted,
+      rightsTermsVersion: _rightsTermsVersion,
+      ...directFields
+    } = d;
     // `published` va `isPro` (tier) faqat ADMIN uchun — contributor o'zgartira olmaydi
     if (req.user!.role !== "ADMIN") {
       delete (directFields as Record<string, unknown>).published;
@@ -2152,6 +2192,7 @@ contributorRouter.patch(
         ...directFields,
         ...(meta !== undefined ? { metaJson: asMetaJson(meta as Record<string, unknown>) } : {}),
         externalId: d.externalId === undefined ? undefined : d.externalId,
+        ...(rightsCaptureFields(d) ?? {}),
       },
     });
     res.json(template);

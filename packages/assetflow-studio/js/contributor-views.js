@@ -228,6 +228,12 @@ async function resubmit(id) {
 let UP_STEP=1;
 let UP_EDIT_ID = null;
 const UP_DRAFT = { files: {} };
+// FAZA 1b — contributor rights attestation (majburiy). Submit shu true bo'lmaguncha bloklanadi.
+let UP_RIGHTS = false;
+let BULK_RIGHTS = false;
+const RIGHTS_TERMS_VERSION = "2026-07-08";
+const RIGHTS_ATTEST_TEXT =
+  "I confirm I own this content or have the necessary rights to distribute it, and it does not infringe third-party rights.";
 // Signature of files uploaded during the media step (to avoid re-uploading) + status
 let UP_UPLOADED_SIG = "";
 let UP_UPLOADING = false;
@@ -358,6 +364,10 @@ async function startBulkIngest() {
     toast("API", "Please sign in first", "warn");
     return;
   }
+  if (!BULK_RIGHTS) {
+    toast("Rights", "Please confirm you have the rights to distribute this content", "warn");
+    return;
+  }
   const queued = BULK_FILES.filter((b) => b.stage === "queued" || b.stage === "error");
   if (!queued.length) return;
   queued.forEach((b) => {
@@ -378,7 +388,8 @@ async function startBulkIngest() {
         if (p.error) b.error = p.error;
         if (p.id) b.id = p.id;
         bulkUpdateRow(idx);
-      }
+      },
+      { rightsAccepted: true, rightsTermsVersion: RIGHTS_TERMS_VERSION }
     );
     const doneCount = queued.filter((b) => b.stage === "done").length;
     const dupCount = queued.filter((b) => b.stage === "duplicate").length;
@@ -422,9 +433,10 @@ function renderBulkUpload() {
         <span class="small">You can select multiple files at once · Maximum size per file: <b>${MAX_UPLOAD_LABEL}</b></span>
       </div>
       ${BULK_FILES.length ? `<div class="col">${BULK_FILES.map((b, i) => bulkRenderRow(b, i)).join("")}</div>` : ""}
+      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${BULK_RIGHTS?' on':''}" onclick="toggleBulkRights()">${ic('check')}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
       <div class="row between center">
         <button class="btn btn-ghost" onclick="bulkClearFinished()" ${BULK_FILES.some((b) => b.stage === "done") && !BULK_RUNNING ? "" : "disabled"}>Clear finished</button>
-        <button class="btn btn-primary" id="bulkStartBtn" onclick="startBulkIngest()" ${BULK_FILES.some((b) => b.stage === "queued" || b.stage === "error") && !BULK_RUNNING ? "" : "disabled"}>${ic("upload")} ${BULK_RUNNING ? "Processing…" : "Upload & process"}</button>
+        <button class="btn btn-primary" id="bulkStartBtn" onclick="startBulkIngest()" ${BULK_RIGHTS && BULK_FILES.some((b) => b.stage === "queued" || b.stage === "error") && !BULK_RUNNING ? "" : "disabled"}>${ic("upload")} ${BULK_RUNNING ? "Processing…" : "Upload & process"}</button>
       </div>
     </div>
   </div>`;
@@ -779,7 +791,7 @@ function renderUpload(){
         </div>
       </div>
       ${infoBanner('Once submitted, the status becomes <b>PENDING_REVIEW</b>. After admin approval it appears in AE → FrameFlow Browse.')}
-      <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">I agree to the platform rules and license terms</span></label>
+      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${UP_RIGHTS?' on':''}" onclick="toggleUpRights()">${ic('check')}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
     </div>`:''}
 
     <div class="row between center">
@@ -787,7 +799,7 @@ function renderUpload(){
       <div class="row gap-8">
         <button class="btn btn-subtle" onclick="saveDraftOnly()">Save draft</button>
         ${UP_STEP<3?`<button class="btn btn-primary" id="upNextBtn" onclick="uploadStepNext()">Continue ${ic('chevR')}</button>`
-          :`<button class="btn btn-success" id="upSubmitBtn" onclick="submitUpload()">${ic('check')} Submit for moderation</button>`}
+          :`<button class="btn btn-success" id="upSubmitBtn" onclick="submitUpload()" ${UP_RIGHTS?'':'disabled'}>${ic('check')} Submit for moderation</button>`}
       </div>
     </div>
   </div>`;
@@ -836,12 +848,29 @@ async function createUploadTemplateRecord() {
     res: UP_DRAFT.res,
     tags: UP_DRAFT.tags,
     metaJson: { grad: "g1", dur: "0:12" },
+    // FAZA 1b — rights attestation: faqat checkbox belgilanganda qayd etiladi
+    rightsAccepted: UP_RIGHTS === true,
+    rightsTermsVersion: RIGHTS_TERMS_VERSION,
   };
   if (UP_EDIT_ID) {
     return StudioApi.patchTemplate(UP_EDIT_ID, body);
   }
   return StudioApi.createTemplate(body);
 }
+
+/** FAZA 1b — rights-attestation checkbox (single form). Submit shu true bo'lmaguncha bloklangan. */
+function toggleUpRights() {
+  UP_RIGHTS = !UP_RIGHTS;
+  renderUpload();
+}
+window.toggleUpRights = toggleUpRights;
+
+/** FAZA 1b — rights-attestation checkbox (bulk form). */
+function toggleBulkRights() {
+  BULK_RIGHTS = !BULK_RIGHTS;
+  renderUpload();
+}
+window.toggleBulkRights = toggleBulkRights;
 
 /** Server-side stages (80-100%) — real-time via SSE */
 const UPLOAD_STAGE_LABELS = {
@@ -880,6 +909,12 @@ function listenUploadProgress(tid, onUpdate) {
 async function submitUpload(){
   if (!StudioApi.token()) {
     toast('API', 'Please sign in first', 'warn');
+    return;
+  }
+  if (!UP_RIGHTS) {
+    UP_STEP = 3;
+    renderUpload();
+    toast('Rights', 'Please confirm you have the rights to distribute this content', 'warn');
     return;
   }
   if (!validateUploadStep1()) {

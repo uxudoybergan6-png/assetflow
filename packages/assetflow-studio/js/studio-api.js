@@ -292,7 +292,7 @@ const StudioApi = (() => {
    * stage: 'uploading'|'processing'|'done'|'error'. Bitta faylning muvaffaqiyatsizligi
    * qolganlarini to'xtatmaydi.
    */
-  async function bulkIngestZips(files, onFileProgress) {
+  async function bulkIngestZips(files, onFileProgress, rights) {
     const resp = await request("/api/contributor/incoming/upload-url", {
       method: "POST",
       body: { files: files.map((f) => ({ fileName: f.name })) },
@@ -328,7 +328,12 @@ const StudioApi = (() => {
     if (uploaded.length) {
       const ingestResp = await request("/api/contributor/ingest", {
         method: "POST",
-        body: { keys: uploaded.map((u) => u.key) },
+        body: {
+          keys: uploaded.map((u) => u.key),
+          // FAZA 1b — rights attestation (butun partiyaga bitta majburiy checkbox)
+          rightsAccepted: !!(rights && rights.rightsAccepted),
+          rightsTermsVersion: (rights && rights.rightsTermsVersion) || undefined,
+        },
       });
       results = (ingestResp && ingestResp.results) || [];
       for (const { index, key } of uploaded) {
