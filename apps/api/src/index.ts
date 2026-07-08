@@ -11,6 +11,8 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 import express from "express";
 import type { ErrorRequestHandler } from "express";
 import cors from "cors";
+import helmet from "helmet";
+import { rateLimit } from "./middleware/rate-limit.js";
 import { authRouter } from "./routes/auth.js";
 import { stripeWebhookHandler } from "./routes/stripe.js";
 import { lemonSqueezyWebhookHandler } from "./routes/lemonsqueezy.js";
@@ -50,6 +52,19 @@ app.set("trust proxy", 1);
 // Env validatsiyasi — JWT_SECRET kabi xavfsizlik blokerlarini server
 // ishga tushishidan OLDIN tekshiramiz (productionda default = process.exit).
 validateEnv();
+
+// FAZA 3 (C) — xavfsizlik headerlari. Bu JSON API (HTML sahifa yo'q), shu bois:
+// - CSP o'chiq (JSON'ga ma'nosiz; noto'g'ri CSP CEP/embed oqimlarini buzishi mumkin);
+// - COEP o'chiq va CORP=cross-origin — CEP plagin (file:// / null origin), CF Pages
+//   frontendlar va CDN'dan media fetch bloklanmasin (mavjud CORS siyosati o'z o'rnida qoladi).
+// Qolgan default headerlar (nosniff, frameguard, HSTS, referrer-policy…) yoqilgan.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 const defaultOrigins = [
   "http://localhost:3000",
@@ -114,6 +129,19 @@ app.get("/health", async (_req, res) => {
     .status(healthy ? 200 : 503)
     .json({ status: healthy ? "ok" : "degraded", service: "creative-tools-api", checks });
 });
+
+// FAZA 3 (C) — yengil GLOBAL per-IP rate-limit (per-route limiterlarga QO'SHIMCHA
+// shift): autentifikatsiyasiz issiq yo'llar (katalog, serve-asset redirect…) ham
+// shiftga ega bo'lsin. Sog'lom foydalanish (katalog sync + thumb redirectlar +
+// gen polling) uchun keng — flood uchun tor. /health va /livez YUQORIDA (limiterdan
+// oldin) ro'yxatga olingan — Cloud Run probe'lari hech qachon 429 olmaydi.
+const globalLimiter = rateLimit({
+  windowMs: 60_000,
+  max: Math.max(1, Number(process.env.GLOBAL_RATE_LIMIT_MAX) || 600),
+  keyPrefix: "global",
+  message: "Too many requests from this IP — please slow down",
+});
+app.use(globalLimiter);
 
 app.post(
   "/api/stripe/webhook",
