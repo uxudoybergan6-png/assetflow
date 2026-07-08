@@ -17492,7 +17492,11 @@ class Component extends DCLogic {
   buildParams(tool, model) {
     const st = this.state, p = {};
     if (tool.mode === 'image') {
-      p.aspectRatio = st.aiSize || '1:1';
+      // Nisbatni model QO'LLAYDIGAN ro'yxatga klamp (video branch kabi). pickModel st.aiSize'ni
+      // resetlamaydi → model almashganda eski qiymat (masalan Nano'da tanlangan 21:9) Imagen kabi
+      // tor nisbatli modelga yuborilib generatsiya yiqilardi / kredit behuda ketardi.
+      const iAsp = (model.aspects && model.aspects.length) ? model.aspects : ['1:1', '16:9', '9:16', '4:3'];
+      p.aspectRatio = (iAsp.indexOf(st.aiSize) >= 0) ? st.aiSize : iAsp[0];
       const counts = (model.imgSettings && model.imgSettings.num) || model.count || [1];
       p.count = counts.indexOf(st.aiCount) >= 0 ? st.aiCount : counts[0];
       const ql = model.imgSettings && model.imgSettings.quality;
