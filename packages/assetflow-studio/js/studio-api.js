@@ -25,14 +25,11 @@ const StudioApi = (() => {
       localStorage.removeItem("af_remember_email");
       localStorage.removeItem("af_remember_session");
     } catch {}
-    // Login sahifalarida redirect qilmaymiz (loop oldini olish)
+    // Login sahifalarida redirect qilmaymiz (loop oldini olish).
+    // CF Pages clean-URL: /studio/login.html → /studio/login, /admin/login.html
+    // → /admin/login ko'rinishida ham xizmat qilinadi — ikkalasini ham qamraymiz.
     const path = (typeof location !== "undefined" && location.pathname) || "";
-    if (/login\.html$/.test(path)) return;
-    const loginUrl =
-      (typeof AssetFlowAuth !== "undefined" &&
-        AssetFlowAuth.getSession === undefined) // sun'iy emas; aniq URL'ni window konfigdan olamiz
-        ? null
-        : null;
+    if (/\/login(\.html)?\/?$/.test(path)) return;
     const target =
       (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.loginUrl) ||
       "/studio/login.html";

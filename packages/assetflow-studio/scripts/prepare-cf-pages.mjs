@@ -40,8 +40,12 @@ const SRC_STYLES = path.join(root, "styles");
 copyDir(SRC_JS, path.join(dist, "js"));
 copyDir(SRC_STYLES, path.join(dist, "styles"));
 
-// 2) /admin/ — admin/index.html MANBA; js/styles root manbadan regeneratsiya
+// 2) /admin/ — admin/index.html MANBA; js/styles root manbadan regeneratsiya.
+//    Admin login REAL fayl sifatida /admin/login.html'da (root'da EMAS) — CF
+//    clean-URL 308'i uni /admin/login'da qoldiradi, platforma /login'iga
+//    aralashmaydi.
 copyFile(path.join(root, "admin", "index.html"), path.join(dist, "admin", "index.html"));
+copyFile(path.join(root, "admin-login.html"), path.join(dist, "admin", "login.html"));
 copyDir(SRC_JS, path.join(dist, "admin", "js"));
 copyDir(SRC_STYLES, path.join(dist, "admin", "styles"));
 
@@ -62,10 +66,13 @@ copyFile(
   path.join(dist, "contributor", "index.html")
 );
 
+// PORTAL AJRATISH: login.html/admin-login.html endi ROOT'ga KO'CHIRILMAYDI —
+// aks holda CF Pages clean-URL (login.html → /login) platforma SPA'sining
+// /login yo'lini egallab olardi. Studio login /studio/login.html (3-bosqichda
+// real fayl), admin login /admin/login.html (2-bosqichda). Root /login endi
+// SPA fallback orqali PLATFORMA auth ekraniga tushadi.
 const FILES = [
   "hub.html",
-  "login.html",
-  "admin-login.html",
   "reset-password.html",
   "verify-email.html",
   "device.html",
@@ -78,11 +85,13 @@ for (const f of FILES) copyFile(path.join(root, f), path.join(dist, f));
 //    shu sabab eski root index.html endi FILES ro'yxatida EMAS.
 copyDir(path.join(root, "platform"), dist);
 
-// _redirects — Cloudflare Pages routing
+// _redirects — Cloudflare Pages routing.
+// Login sahifalari endi real fayllar (/studio/login.html, /admin/login.html);
+// eski root URL'lar (login.html, admin-login.html — bookmark/email havolalari)
+// 301 bilan yangi joyga. /login rule YO'Q — u platforma SPA'siga (auth ekrani).
 const redirects = `\
 /studio/js/*        /js/:splat                  200
 /studio/styles/*    /styles/:splat              200
-/studio/login.html  /login.html                 200
 /studio/hub.html    /hub.html                   200
 /studio/contributor /contributor/index.html     200
 /studio/contributor/ /contributor/index.html   200
@@ -90,9 +99,11 @@ const redirects = `\
 /contributor/       /contributor/index.html     200
 /admin/js/*         /js/:splat                  200
 /admin/styles/*     /styles/:splat              200
-/admin/login.html   /admin-login.html           200
 /admin              /admin/index.html           200
 /admin/             /admin/index.html           200
+/login.html         /studio/login.html          301
+/admin-login.html   /admin/login.html           301
+/admin-login        /admin/login.html           301
 `;
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 

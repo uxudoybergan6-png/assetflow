@@ -16790,7 +16790,7 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script="" data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Lime&quot;,&quot;options&quot;:[&quot;Lime&quot;,&quot;Cyan&quot;,&quot;Amber&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tema&quot;},&quot;animations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tema&quot;},&quot;entryScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Landing&quot;,&quot;options&quot;:[&quot;Landing&quot;,&quot;Dashboard&quot;,&quot;AI Studio&quot;,&quot;Marketplace&quot;,&quot;Pricing&quot;,&quot;Plugin&quot;,&quot;Account&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Ko'rinish&quot;}}">
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Lime&quot;,&quot;options&quot;:[&quot;Lime&quot;,&quot;Cyan&quot;,&quot;Amber&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;animations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;entryScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Landing&quot;,&quot;options&quot;:[&quot;Landing&quot;,&quot;Dashboard&quot;,&quot;AI Studio&quot;,&quot;Marketplace&quot;,&quot;Pricing&quot;,&quot;Plugin&quot;,&quot;Account&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
 class Component extends DCLogic {
   state = {
     screen: 'landing',
@@ -17027,7 +17027,11 @@ class Component extends DCLogic {
       const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
       // Path deep-link (/templates, /account …) — CF Pages SPA fallback index.html
       // beradi; hash bo'lmasa path segmentini ekran sifatida qabul qilamiz.
-      const seg = ((window.location.pathname || '').replace(/^\/+|\/+$/g, '')).toLowerCase();
+      let seg = ((window.location.pathname || '').replace(/^\/+|\/+$/g, '')).toLowerCase();
+      // /login — platforma USER kirishining doimiy manzili (SPA fallback shu
+      // faylni beradi); auth ekraniga xaritalanadi. Contributor/Admin loginlari
+      // alohida: /studio/login.html va /admin/login.html.
+      if (seg === 'login') seg = 'auth';
       const pathScreen = ALL.indexOf(seg) >= 0 ? seg : '';
       if (window.FFAPI) {
         if (FFAPI.getToken()) {

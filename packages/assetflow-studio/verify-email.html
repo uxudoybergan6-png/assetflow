@@ -75,8 +75,8 @@ async function doVerify(){
     status.textContent='✓ Email verified!';
     msg.className='msg ok';
     msg.textContent='You can now use AI generation. Redirecting to the sign-in page…';
-    // CONTRIBUTOR/ADMIN — Studio login (contributor/admin panel); regular USER — platform (getframeflow.app).
-    const dest=(data&&(data.role==='CONTRIBUTOR'||data.role==='ADMIN'))?'/login.html?verified=1':'/?verified=1';
+    // Rolga qarab O'Z portal loginiga: ADMIN → admin console, CONTRIBUTOR → studio, USER → platforma.
+    const dest=(data&&data.role==='ADMIN')?'/admin/login.html?verified=1':(data&&data.role==='CONTRIBUTOR')?'/studio/login.html?verified=1':'/?verified=1';
     setTimeout(()=>{location.href=dest;},1800);
   }catch(e){
     // Invalid/expired link → show the resend view

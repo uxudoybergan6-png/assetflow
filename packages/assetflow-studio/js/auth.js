@@ -132,7 +132,15 @@ const AssetFlowAuth = (() => {
       return null;
     }
     if (allowedRoles && !allowedRoles.includes(s.role)) {
-      location.href = dashboardUrl(s.role === "admin" ? "admin" : "contributor");
+      // Noto'g'ri rol: admin/contributor O'Z paneliga; USER (panelga ega emas)
+      // sessiyasi tozalanib O'SHA portalning loginiga — redirect loop bo'lmaydi
+      // (login sahifalari requireAuth ishlatmaydi).
+      if (s.role === "admin" || s.role === "contributor") {
+        location.href = dashboardUrl(s.role);
+      } else {
+        clearSession();
+        location.href = loginUrl();
+      }
       return null;
     }
     return s;

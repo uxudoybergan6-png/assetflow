@@ -68,7 +68,10 @@
     base,
     apiUrl: apiUrl.replace(/\/$/, ""),
     mediaUrl: mediaUrl.replace(/\/$/, ""),
-    loginUrl: isAdminHost ? adminLoginUrl : `${studioBase}login.html`.replace("//", "/"),
+    // Har portal O'Z login sahifasiga: admin → /admin/login.html, contributor
+    // (shu jumladan /contributor/ yo'li) → studio login. Platforma /login (SPA)
+    // faqat oddiy USER'lar uchun — bu yerdan unga hech qachon yo'naltirilmaydi.
+    loginUrl: isAdminHost ? adminLoginUrl : contributorLoginUrl,
     adminUrl,
     contributorUrl,
     contributorLoginUrl,
