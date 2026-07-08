@@ -695,6 +695,35 @@ const AssetFlowCatalog = (() => {
     return p + ".sha256";
   }
 
+  /**
+   * QA-FIX #7: unzip kesh papkasi qaysi katalog fileSize bilan yuklab olinganini
+   * eslab qoladi — pack yangilansa (fileSize o'zgaradi) eski keshdan import
+   * qilinmaydi (aks holda footage/audio'siz eski nusxa xizmat qilaverardi).
+   * Marker yo'q (eski avlod kesh) = eskirgan deb hisoblanadi — bir marta qayta
+   * yuklab olinadi, keyin marker yoziladi.
+   */
+  function zipCacheMarker(path, cacheDir) {
+    return path.join(cacheDir, ".assetflow_pack_size");
+  }
+  function zipCacheFresh(fs, path, cacheDir, expectedSize) {
+    if (!(expectedSize > 0)) return true; // hajm noma'lum — keshni saqlaymiz
+    try {
+      const rec = Number(
+        String(fs.readFileSync(zipCacheMarker(path, cacheDir), "utf8")).trim()
+      );
+      return rec === expectedSize;
+    } catch {
+      return false;
+    }
+  }
+  function writeZipCacheMarker(fs, path, cacheDir, expectedSize) {
+    try {
+      fs.writeFileSync(zipCacheMarker(path, cacheDir), String(expectedSize || 0), "utf8");
+    } catch {
+      /* marker yozilmadi — keyingi import qayta yuklab oladi, xolos */
+    }
+  }
+
   /** Fayl uchun yozib qo'yilgan hash (sidecar yoki sessiya keshi) — "" agar yo'q. */
   function recordedHash(fs, p) {
     try {
@@ -966,6 +995,13 @@ const AssetFlowCatalog = (() => {
     // ZIP bo'lsa — unzip papkasini tekshiramiz (kesh)
     if (ext.toLowerCase() === ".zip") {
       const cacheDir = path.join(baseDir, `assetflow_${templateId}_unzipped`);
+      // QA-FIX #7: pack serverда yangilangan bo'lsa (fileSize o'zgargan) eski
+      // ochilgan keshni tashlab, yangisini yuklab olamiz.
+      if (fs.existsSync(cacheDir) && !zipCacheFresh(fs, path, cacheDir, expectedSize)) {
+        try {
+          fs.rmSync(cacheDir, { recursive: true, force: true });
+        } catch {}
+      }
       if (fs.existsSync(cacheDir)) {
         const cached = findAepInDir(fs, path, cacheDir);
         if (cached) return cached;
@@ -1042,7 +1078,10 @@ const AssetFlowCatalog = (() => {
       if (typeof showToast === "function") showToast("Extracting pack…");
       try {
         // macOS ships `unzip` by default. execFileSync exit != 0 bo'lsa throw qiladi.
-        child.execFileSync("unzip", ["-o", out, "-d", dir], { timeout: 60_000 });
+        // -o papka strukturasini SAQLAB ochadi (.aep'ning nisbiy footage/audio
+        // havolalari buzilmaydi). QA-FIX #7: pack endi footage/audio bilan to'liq
+        // keladi — 60s timeout katta arxivlarga yetmasdi, 10 daqiqaga oshirildi.
+        child.execFileSync("unzip", ["-o", out, "-d", dir], { timeout: 600_000 });
       } catch (e) {
         throw new Error("Could not open ZIP. The pack must contain an .aep or .mogrt file.");
       }
@@ -1052,6 +1091,8 @@ const AssetFlowCatalog = (() => {
       if (!__extracted.length) {
         throw new Error("ZIP is empty or could not be opened — the pack may be corrupted.");
       }
+      // QA-FIX #7: kesh markeri — bu papka aynan shu fileSize'li pack'dan ochilgan.
+      writeZipCacheMarker(fs, path, dir, expectedSize);
       // Zip endi kerak emas — faqat ochilgan papka qoladi (sidecar hash ham)
       try {
         fs.rmSync(out, { force: true });
