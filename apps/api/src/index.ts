@@ -34,6 +34,7 @@ import { seedModelPricing } from "./lib/model-pricing.js";
 import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
 import { moderationStartupWarning } from "./lib/moderation.js";
 import { findEnabledModelsWithoutCost, DEFAULT_PROVIDER_USD } from "./lib/provider-cost.js";
+import { startTemplateReconcilers } from "./lib/template-reconcile.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
 // dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
@@ -297,4 +298,7 @@ app.listen(PORT, "0.0.0.0", () => {
     .catch((e) => console.error("[model-pricing] seed o'tkazib yuborildi:", e?.message || e));
   // NARX-DRIFT MONITORING (Bosqich 3.5): oylik reconciliation scheduler (env bilan yoqiladi).
   startReconciliationScheduler();
+  // FAZA 3 (B): qotib qolgan transcode + yetishmagan embedding reconciler'lari
+  // (startup pass + 10 daqiqalik timer, gen-processor resume naqshi).
+  startTemplateReconcilers();
 });
