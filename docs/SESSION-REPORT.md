@@ -1,12 +1,13 @@
-# Sessiya hisoboti — 2026-07-08 (FAZA 6b: rol boshqaruvi + onboarding)
+# Sessiya hisoboti — 2026-07-08 (FAZA 1: Legal / Compliance)
 
-**Nima qilindi (3 commit):**
-1. `96575c1` — login.html/admin-login.html/README'dan "UPDATE User SET role" SQL hint'lari olib tashlandi (grep toza, dist qayta yaratildi).
-2. `69d39a5` — Rol boshqaruvi: `GET /api/admin/users` (qidiruv/rol/pending), `PATCH /api/admin/users/:id/role` (last-admin guard tranzaksiyada, audit `user.role_change`), `DELETE .../contributor-request`; admin "Users & roles" ekrani (adx-, pending so'rovlar kartasi, rol dropdown+confirm modal, nav badge). Eski himoyasiz GET/PATCH /users olib tashlandi (UI chaqirmasdi).
-3. `d3f33e5` — Onboarding: `contributorRequestedAt` (additive migration), `POST /api/users/contributor-request` (idempotent, audit), login.html'da USER kirsa "Request contributor access" paneli.
+**5 commit (A–E), har soha alohida. Push QILINMADI.**
 
-**Topildi:** admin.ts'da eski himoyasiz PATCH /users/:id/role bor edi (auditsiz, guard'siz) — almashtirildi. login.html meta production API'ni hardcode qiladi (lokalda ham) — tegilmadi, mavjud xatti-harakat.
+1. **1a** `71ef842` — terms/privacy/refund: "Stripe" → **Lemon Squeezy (MoR, VAT/soliqni o'zi ushlaydi)**; Pro/Studio + kredit paketlari REAL deb tuzatildi; LEGAL-TODO qayta yozildi ("needs lawyer review" markerlar).
+2. **1b** `b104436` — Contributor **rights attestation**: majburiy checkbox har upload yo'lida (plagin + studio single+bulk) submit'ni bloklaydi; backend qayd etadi (`ContributorTemplate.rightsAcceptedAt/Version`, additive migration); login "I agree" → Terms link.
+3. **1c** `11249af` — GDPR: `POST /api/users/export` (o'z ma'lumoti JSON) + `DELETE /api/account` (typed confirm → PII anonim, tokenVersion++, plugin token/session/OAuth o'chirish, PluginProfile=REMOVED, shablon unpublish, moliyaviy saqlanadi, oxirgi admin himoya, audit; `User.deletedAt` migration); platforma "Data & privacy" karta + delete modal.
+4. **1d** `b730806` — DMCA: public `platform/dmca.html` policy + report form; `InfringementReport` model + `/api/dmca/report` (public) + admin list/resolve; actual takedown = mavjud endpoint.
+5. **1e** `3e28c57` — Moderatsiya prod'da rasm inputi uchun **fail-closed** (API xato / REQUIRE_IMAGE_VERIFICATION) + boot banner; `docs/PROD-ENV-CHECKLIST.md`.
 
-**Tekshirildi (lokal jonli):** request→pending→approve→CONTRIBUTOR, dismiss, last-admin 409, invalid rol 400, 404, non-admin 403, har o'zgarish auditda; admin UI (modal/badge/pending karta) skrinshot bilan.
+**Tekshirildi:** tsc + `npm run build -w apps/api` yashil; legal HTML'da "Stripe" yo'q; platforma SPA + dmca.html preview'da render + form gating ishladi.
 
-**Kutilmoqda:** git push + Cloud Run deploy + production `migrate:deploy`, keyin production smoke-test.
+**Kutilmoqda:** `migrate:deploy` (3 migration: rights, deletedAt, InfringementReport), Render/Cloud Run deploy, `MODERATION_API_KEY`+`VIRUSTOTAL` prod env, AE plagin jonli test, huquqshunos tekshiruvi (LEGAL-TODO).
