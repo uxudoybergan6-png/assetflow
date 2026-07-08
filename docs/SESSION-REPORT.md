@@ -1,12 +1,12 @@
-# Sessiya hisoboti — 2026-07-08
+# Sessiya hisoboti — 2026-07-08 (FAZA 6b: rol boshqaruvi + onboarding)
 
-**Vazifa:** FAZA 6b — streaming ingest (zip hech qachon butunligicha yuklab olinmaydi).
+**Nima qilindi (3 commit):**
+1. `96575c1` — login.html/admin-login.html/README'dan "UPDATE User SET role" SQL hint'lari olib tashlandi (grep toza, dist qayta yaratildi).
+2. `69d39a5` — Rol boshqaruvi: `GET /api/admin/users` (qidiruv/rol/pending), `PATCH /api/admin/users/:id/role` (last-admin guard tranzaksiyada, audit `user.role_change`), `DELETE .../contributor-request`; admin "Users & roles" ekrani (adx-, pending so'rovlar kartasi, rol dropdown+confirm modal, nav badge). Eski himoyasiz GET/PATCH /users olib tashlandi (UI chaqirmasdi).
+3. `d3f33e5` — Onboarding: `contributorRequestedAt` (additive migration), `POST /api/users/contributor-request` (idempotent, audit), login.html'da USER kirsa "Request contributor access" paneli.
 
-**Qilindi:**
-- `s3.ts`: `readS3ObjectRange`, `createS3RangeStream` (ranged GET, fallback'siz), `uploadStreamToS3` (multipart stream, ~32MB cho'qqi).
-- `ingest-zip.ts`: `openStreamingIngestZip` — EOCD/zip64 parse + markaziy katalog xotira keshi (cap 32MB) + yauzl `fromRandomAccessReader`; BARCHA FAZA 6a guardlar (entry soni EOCD'da oldindan, zip-slip, hajm capi, nisbat) katalogda — entry baytlaridan OLDIN. Eski disk-ekstraksiya olib tashlandi.
-- `contributor.ts` ingest: pack 2-o'tish (hash→dedup, keyin stream-upload + hash qayta-tekshiruv), preview rasm/video kichik bo'lsa lokal (AI+ffprobe, cap 64MB env `INGEST_LOCAL_PROBE_MAX_BYTES`), aks holda faqat stream. Kompensatsiya/duplicate/statuslar TEGILMAGAN.
+**Topildi:** admin.ts'da eski himoyasiz PATCH /users/:id/role bor edi (auditsiz, guard'siz) — almashtirildi. login.html meta production API'ni hardcode qiladi (lokalda ham) — tegilmadi, mavjud xatti-harakat.
 
-**Tekshirildi:** 762MB zip → cho'qqi RSS 167MB (eski yo'l ~1.5GB+); bayt-bir-xillik (pack/rasm/video hash); zip-slip/ratio-bomb/5000+entry/oversize/notzip rad; zip64+koment zip o'tdi; JONLI GCS ranged GET + bucket→bucket entry upload bayt-bir-xil. `npm run build -w apps/api` yashil.
+**Tekshirildi (lokal jonli):** request→pending→approve→CONTRIBUTOR, dismiss, last-admin 409, invalid rol 400, 404, non-admin 403, har o'zgarish auditda; admin UI (modal/badge/pending karta) skrinshot bilan.
 
-**Kutilmoqda:** push + Cloud Run deploy; **4Gi xotira bump ENDI SHART EMAS** (default 512Mi–1Gi yetadi, zip hajmidan mustaqil); 900s timeout katta ziplar uchun hali foydali (pack 2 marta stream qilinadi).
+**Kutilmoqda:** git push + Cloud Run deploy + production `migrate:deploy`, keyin production smoke-test.
