@@ -34,7 +34,7 @@ import {
   contributorPoolShare,
   computePoolForMonth,
 } from "../lib/earnings.js";
-import { revenueSummary } from "../lib/revenue.js";
+import { revenueSummary, netSubscriptionRevenueCents } from "../lib/revenue.js";
 import {
   runMonthlyReconciliation,
   recordProviderInvoice,
@@ -543,13 +543,16 @@ adminRouter.get("/finance", async (req, res) => {
   // FAZA 4 (A) — REAL daromad (RevenueEvent). MRR = joriy oy obuna net tushumi;
   // month berilsa o'sha oy. Kredit-qiymat proxy (aggregate) AI-marja tahlili uchun QOLADI.
   const mrrRange = range.since ? range : monthRange(new Date().toISOString().slice(0, 7));
-  const [config, margins, providers, unpaid, revenue, mrrRevenue] = await Promise.all([
+  const [config, margins, providers, unpaid, revenue, mrrCents, poolBaseCents] = await Promise.all([
     getPricingConfig(),
     computeMargins(range),
     spendByProvider(range),
     prisma.contributorEarning.aggregate({ where: { payoutId: null }, _sum: { amountCents: true } }),
     revenueSummary(range),
-    revenueSummary(mrrRange),
+    // MRR = joriy (yoki so'ralgan) oy obuna NET tushumi, obuna refundlari AYIRILGAN.
+    netSubscriptionRevenueCents(mrrRange),
+    // Pool bazasi — tanlangan davr uchun (obuna net − obuna refundlari).
+    netSubscriptionRevenueCents(range),
   ]);
   const creditUsd = config.creditUsdValue;
   const providerRows = providers
@@ -568,7 +571,11 @@ adminRouter.get("/finance", async (req, res) => {
     perDownloadCents: payoutPerDownloadCents(),
     // FAZA 4 (A) — REAL daromad (RevenueEvent'dan, kredit-qiymat proxy EMAS).
     revenue,
-    mrrCents: mrrRevenue.mrrCents,
+    mrrCents,
+    // FAZA 4 (C/D) — pool knob ko'rsatkichi uchun (obuna net − obuna refundlari).
+    poolBaseCents,
+    payoutMode: payoutMode(),
+    poolShare: contributorPoolShare(),
   });
 });
 
@@ -760,6 +767,95 @@ adminRouter.get("/activity", async (req, res) => {
   });
   const items = [...genItems, ...dlItems].sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, limit);
   res.json({ items });
+});
+
+// ── FAZA 4 (D) — biznes metrikalari: churn / conversion / ARPU / LTV ────────
+// PlanChangeEvent + RevenueEvent'dan BASIC hisob-kitob. FAQAT O'QISH.
+// TODO: chuqurroq kohort tahlili (signup-oy bo'yicha retention, plan-daraja LTV).
+/** GET /api/admin/metrics[?month=YYYY-MM] — plan harakati + asosiy iqtisod metrikalari. */
+adminRouter.get("/metrics", async (req, res) => {
+  const month = req.query.month
+    ? String(req.query.month)
+    : new Date().toISOString().slice(0, 7);
+  const range = monthRange(month);
+  if (!range.since || !range.until) {
+    res.status(400).json({ error: "month must be YYYY-MM" });
+    return;
+  }
+  const { since, until } = range;
+  const inPeriod = { gte: since, lt: until };
+  const [plans, upgrades, downgrades, upgradesSince, downgradesSince, revenue, dunning, recent] =
+    await Promise.all([
+      prisma.pluginProfile.groupBy({
+        by: ["plan"],
+        where: { status: PluginAccountStatus.ACTIVE },
+        _count: { _all: true },
+      }),
+      prisma.planChangeEvent.count({
+        where: { createdAt: inPeriod, fromPlan: "FREE", toPlan: { not: "FREE" } },
+      }),
+      prisma.planChangeEvent.count({
+        where: { createdAt: inPeriod, fromPlan: { not: "FREE" }, toPlan: "FREE" },
+      }),
+      // davr boshidan HOZIRGACHA (payingAtStart rekonstruksiyasi uchun)
+      prisma.planChangeEvent.count({
+        where: { createdAt: { gte: since }, fromPlan: "FREE", toPlan: { not: "FREE" } },
+      }),
+      prisma.planChangeEvent.count({
+        where: { createdAt: { gte: since }, fromPlan: { not: "FREE" }, toPlan: "FREE" },
+      }),
+      revenueSummary(range),
+      prisma.pluginProfile.count({ where: { billingIssue: { not: null } } }),
+      prisma.planChangeEvent.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
+    ]);
+  const planCounts: Record<string, number> = {};
+  for (const p of plans) planCounts[String(p.plan)] = p._count._all;
+  const payingNow = Object.entries(planCounts)
+    .filter(([k]) => k !== "FREE")
+    .reduce((a, [, n]) => a + n, 0);
+  const freeNow = planCounts.FREE ?? 0;
+  // payingAtStart ≈ hozirgi paying − (davr boshidan beri net o'zgarish).
+  const payingAtStart = Math.max(0, payingNow - upgradesSince + downgradesSince);
+  const churnPct = payingAtStart > 0 ? Math.round((downgrades / payingAtStart) * 1000) / 10 : null;
+  const conversionPct =
+    freeNow + upgrades > 0 ? Math.round((upgrades / (freeNow + upgrades)) * 1000) / 10 : null;
+  const arpuCents = payingNow > 0 ? Math.round(revenue.netCents / payingNow) : null;
+  const ltvCents =
+    arpuCents != null && churnPct != null && churnPct > 0
+      ? Math.round(arpuCents / (churnPct / 100))
+      : null;
+  // Recent plan-change qatorlariga user email (ko'rsatish uchun).
+  const uids = [...new Set(recent.map((r) => r.userId))];
+  const users = uids.length
+    ? await prisma.user.findMany({
+        where: { id: { in: uids } },
+        select: { id: true, email: true, name: true },
+      })
+    : [];
+  const um = new Map(users.map((u) => [u.id, u]));
+  res.json({
+    month,
+    plans: planCounts,
+    payingNow,
+    freeNow,
+    payingAtStart,
+    upgrades,
+    downgrades,
+    churnPct,
+    conversionPct,
+    arpuCents,
+    ltvCents,
+    dunningCount: dunning,
+    revenue,
+    recentChanges: recent.map((r) => ({
+      at: r.createdAt.toISOString(),
+      userName: um.get(r.userId)?.name ?? null,
+      userEmail: um.get(r.userId)?.email ?? null,
+      fromPlan: r.fromPlan,
+      toPlan: r.toPlan,
+      source: r.source,
+    })),
+  });
 });
 
 // ── FAZA 6b — Foydalanuvchi rollari boshqaruvi (qo'lda SQL o'rniga) ─────────

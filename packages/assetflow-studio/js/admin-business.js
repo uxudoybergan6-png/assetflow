@@ -8,7 +8,7 @@ window.VIEWS = window.VIEWS || {};
 window.afterRender = window.afterRender || {};
 
 /* Shared helpers */
-function bizUsd(n){ n = Number(n)||0; return "$" + (n>=1000 ? n.toLocaleString(undefined,{maximumFractionDigits:0}) : n.toFixed(n<1?3:2)); }
+function bizUsd(n){ n = Number(n)||0; const a=Math.abs(n); return "$" + (a>=1000 ? n.toLocaleString(undefined,{maximumFractionDigits:0}) : n.toFixed(a>0&&a<1?3:2)); }
 function bizUsdCents(c){ return "$" + ((Number(c)||0)/100).toFixed(2); }
 /** Margin percentage color: ≥60 lime · 30–60 amber · <30 red. */
 function bizMarginColor(pct){ if(pct==null) return "#5E6675"; if(pct>=60) return "#C2F04A"; if(pct>=30) return "#FFB27C"; return "#FF6B5E"; }
@@ -168,23 +168,28 @@ async function savePricingConfig(){
 }
 
 /* ============================================================
-   b1 · FINANCE — revenue vs provider cost + margin + payout
+   b1 · FINANCE — REAL revenue (RevenueEvent) vs provider cost + pool
    ============================================================ */
 let FINANCE_DATA = null;
+let FINANCE_MONTH = ""; // "" = all time; "YYYY-MM" = month filter
 
 VIEWS.finance = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
 window.afterRender.finance = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='finance') tba.innerHTML =
-    `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>All time</span></span>`+
+    `<input type="month" class="adx-input" style="width:160px;height:34px" value="${esc(FINANCE_MONTH)}" onchange="FINANCE_MONTH=this.value;loadFinance()" title="Period (empty = all time)">`+
     `<button class="adx-btn2 sm" onclick="toast('Export','Preparing finance report CSV…','info')"><i class="ph ph-export"></i>Export</button>`;
+  await loadFinance();
+};
+
+async function loadFinance(){
   const root = document.getElementById('bizRoot');
+  if(root) root.innerHTML = bizLoading();
   try {
-    try { if(typeof refreshSubscribersFromApi==='function') await refreshSubscribersFromApi(); } catch(_){}
-    FINANCE_DATA = await StudioApi.getAdminFinance();
+    FINANCE_DATA = await StudioApi.getAdminFinance(FINANCE_MONTH || undefined);
     renderFinance();
   } catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
-};
+}
 
 function financeDonut(providers){
   const colors = ['#C2F04A','#7CC4FF','#FFB27C','rgba(255,255,255,.14)','#b794f6'];
@@ -199,32 +204,75 @@ function renderFinance(){
   const root = document.getElementById('bizRoot');
   if(!root || !FINANCE_DATA) return;
   const d = FINANCE_DATA;
-  const agg = d.aggregate || {revenueUsd:0,realCostUsd:0};
   const providers = (d.providers||[]).slice();
   const providerCost = providers.reduce((a,p)=>a+p.estimatedUsd,0);
-  const revenue = agg.revenueUsd || providers.reduce((a,p)=>a+p.revenueUsd,0);
-  const grossMarginPct = revenue>0 ? Math.round((revenue - providerCost)/revenue*100) : null;
-  const net = revenue - providerCost;
-  // MRR — active Pro subscriptions × Pro monthly price (subscriber stats + plan price)
-  const sc = typeof subscriberCounts==='function' ? subscriberCounts() : {pro:0};
-  const proPrice = (typeof planById==='function' && planById('pro')) ? (planById('pro').priceMonthly||0) : 0;
-  const mrr = (sc.pro||0) * proPrice;
+  // FAZA 4 — REAL revenue (RevenueEvent), not the credit-value proxy.
+  const rev = d.revenue || {};
+  const grossUsd = (rev.grossCents||0)/100;
+  const netUsd = (rev.netCents||0)/100;
+  const refundsUsd = (rev.refundsNetCents||0)/100; // negative or 0
+  const mrr = (d.mrrCents||0)/100;                 // real: current-month subscription net
+  const netAfterAi = netUsd - providerCost;
+  const grossMarginPct = netUsd>0 ? Math.round(netAfterAi/netUsd*100) : null;
   const colors = ['#C2F04A','#7CC4FF','#FFB27C','rgba(255,255,255,.35)','#b794f6'];
-  const maxBar = Math.max(revenue, providerCost, ...providers.map(p=>Math.max(p.revenueUsd,p.estimatedUsd)), 1);
-  return renderFinanceHtml(root, {d,agg,providers,providerCost,revenue,grossMarginPct,net,mrr,sc,colors,maxBar});
+  const maxBar = Math.max(netUsd, providerCost, ...providers.map(p=>Math.max(p.revenueUsd,p.estimatedUsd)), 1);
+  return renderFinanceHtml(root, {d,rev,providers,providerCost,grossUsd,netUsd,refundsUsd,grossMarginPct,netAfterAi,mrr,colors,maxBar});
+}
+
+/** Pool preview line inside Finance — recalculates as the share slider moves. */
+function financePoolPreview(){
+  const d = FINANCE_DATA; if(!d) return;
+  const share = Number(document.getElementById('poolShareKnob')?.value||0)/100;
+  const providerCost = (d.providers||[]).reduce((a,p)=>a+p.estimatedUsd,0);
+  const subNet = (d.poolBaseCents||0)/100; // obuna net − obuna refundlari (pool bazasi)
+  const pool = Math.max(0, (subNet - providerCost) * share);
+  const lbl = document.getElementById('poolShareLbl');
+  const out = document.getElementById('poolShareOut');
+  if(lbl) lbl.textContent = Math.round(share*100)+'%';
+  if(out) out.innerHTML = `${bizUsd(pool)} <span style="font-size:10px;color:#8A93A3">= (${bizUsd(subNet)} subscription net − ${bizUsd(providerCost)} AI cost) × ${Math.round(share*100)}%</span>`;
 }
 
 function renderFinanceHtml(root, m){
-  const {d,providers,providerCost,revenue,grossMarginPct,net,mrr,sc,colors,maxBar}=m;
+  const {d,rev,providers,providerCost,grossUsd,netUsd,refundsUsd,grossMarginPct,netAfterAi,mrr,colors,maxBar}=m;
+  const byKind = rev.byKind||{};
+  const kindRow = (key,label)=>{ const k=byKind[key]; if(!k) return ''; return `<div style="display:flex;align-items:center;gap:7px;font-size:11.5px"><span style="color:#B7C0CE">${label}</span><span style="flex:1"></span><span class="adx-num" style="color:${(k.netCents||0)<0?'#FF6B5E':'#B7C0CE'}">${bizUsdCents(k.netCents)}</span><span class="adx-num" style="font-size:10px;color:#5E6675">${k.events}×</span></div>`; };
+  const planRows = (rev.byPlan||[]).map(p=>`<div style="display:flex;align-items:center;gap:7px;font-size:11.5px">${axPlan(p.plan)}<span style="flex:1"></span><span class="adx-num" style="color:#C2F04A">${bizUsdCents(p.netCents)}</span><span class="adx-num" style="font-size:10px;color:#5E6675">${p.events}×</span></div>`).join('');
+  const shareDefault = Math.round(((d.poolShare!=null?d.poolShare:0.5))*100);
   root.innerHTML = `
     <div class="adx-grid4">
-      ${axStat({label:'Monthly revenue (MRR)',val:bizUsd(mrr),ic:'trend-up',icColor:'#C2F04A',foot:`${sc.pro||0} Pro subscriptions`})}
-      ${axStat({label:'Provider cost',val:bizUsd(providerCost),ic:'coins',icColor:'#7CC4FF',foot:'fal · vertex · elevenlabs'})}
-      ${axStat({label:'Gross margin',val:grossMarginPct!=null?grossMarginPct+'%':'—',ic:'chart-bar',icColor:bizMarginColor(grossMarginPct),foot:bizUsd(net)+' net',footCls:net>=0?'adx-up':'adx-down'})}
+      ${axStat({label:'MRR (real, this month)',val:bizUsd(mrr),ic:'trend-up',icColor:'#C2F04A',foot:'subscription net · RevenueEvent'})}
+      ${axStat({label:'Gross revenue',val:bizUsd(grossUsd),ic:'currency-circle-dollar',icColor:'#C2F04A',foot:(rev.events||0)+' payment events'})}
+      ${axStat({label:'Net revenue',val:bizUsd(netUsd),ic:'wallet',icColor:'#7CC4FF',foot:refundsUsd<0?bizUsd(refundsUsd)+' refunds included':'no refunds',footCls:refundsUsd<0?'adx-down':''})}
       ${axStat({label:'Payout (pending)',val:bizUsdCents(d.payoutPendingCents),ic:'hand-coins',icColor:'#FFB27C',foot:'contributor payouts'})}
     </div>
+    <div class="adx-grid4" style="margin-top:12px">
+      ${axStat({label:'AI provider cost',val:bizUsd(providerCost),ic:'coins',icColor:'#7CC4FF',foot:'fal · vertex · elevenlabs'})}
+      ${axStat({label:'Margin (net − AI cost)',val:grossMarginPct!=null?grossMarginPct+'%':'—',ic:'chart-bar',icColor:bizMarginColor(grossMarginPct),foot:bizUsd(netAfterAi)+' after AI cost',footCls:netAfterAi>=0?'adx-up':'adx-down'})}
+      ${axStat({label:'Subscription net (pool base)',val:bizUsdCents(d.poolBaseCents),ic:'arrows-clockwise',icColor:'#C2F04A',foot:'after subscription refunds'})}
+      ${axStat({label:'Credit packs net',val:bizUsdCents(rev.creditPackNetCents),ic:'stack-plus',icColor:'#b794f6',foot:'top-up orders'})}
+    </div>
     <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px" class="biz-fin-grid">
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Revenue vs cost</span><span style="flex:1"></span><span style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#C2F04A"></span>Revenue</span><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#7CC4FF"></span>Cost</span></span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor pool <span class="adx-bdg ${d.payoutMode==='pool'?'adx-bdg-approved':'adx-bdg-draft'}" style="margin-left:6px">${d.payoutMode==='pool'?'POOL mode':'per-download mode'}</span></span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">CONTRIBUTOR_POOL_SHARE</span></div>
+        <div style="padding:14px 18px">
+          <div style="display:flex;align-items:center;gap:12px"><input id="poolShareKnob" type="range" min="0" max="100" step="5" value="${shareDefault}" style="flex:1" oninput="financePoolPreview()"><span id="poolShareLbl" class="adx-num" style="width:38px;text-align:right;color:var(--text);font-weight:600">${shareDefault}%</span></div>
+          <div id="poolShareOut" class="adx-num" style="margin-top:10px;font-size:15px;font-weight:600;color:#C2F04A"></div>
+          <div style="font-size:10px;color:#5E6675;margin-top:8px;line-height:1.5">Pool = (subscription net revenue − AI provider cost) × share, distributed by legitimate-download share. Configured via <b>CONTRIBUTOR_POOL_SHARE</b> env (current ${shareDefault}%) — the slider is a what-if preview only. Compute &amp; write on the Payouts screen.</div>
+        </div>
+      </div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Revenue breakdown</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">NET · ${esc(FINANCE_MONTH||'ALL TIME')}</span></div>
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+          ${kindRow('subscription_initial','New subscriptions')||''}
+          ${kindRow('renewal','Renewals')||''}
+          ${kindRow('credit_pack','Credit packs')||''}
+          ${kindRow('refund','Refunds')||''}
+          ${kindRow('chargeback','Chargebacks')||''}
+          ${planRows?`<div style="border-top:1px solid var(--hair2);margin:4px 0 2px"></div><div style="font-size:9.5px;color:#8A93A3;letter-spacing:.4px">BY PLAN (SUBSCRIPTION NET)</div>${planRows}`:''}
+          ${!(rev.events>0)?'<span style="font-size:11px;color:var(--muted2)">No revenue events yet — they are recorded from Lemon Squeezy webhooks.</span>':''}
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px" class="biz-fin-grid">
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">AI credit revenue vs cost</span><span style="flex:1"></span><span style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#C2F04A"></span>Credit revenue (proxy)</span><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#7CC4FF"></span>Cost</span></span></div>
         <div style="padding:16px 18px">${providers.length?`<div style="display:flex;align-items:flex-end;gap:12px;height:170px">${providers.slice(0,8).map(p=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%" title="${esc(p.provider)}: revenue ${bizUsd(p.revenueUsd)}, cost ${bizUsd(p.estimatedUsd)}"><div style="height:${Math.max(3,p.revenueUsd/maxBar*100)}%;background:linear-gradient(180deg,#C2F04A,rgba(194,240,74,.3));border-radius:4px 4px 0 0"></div><div style="height:${Math.max(2,p.estimatedUsd/maxBar*100)}%;background:linear-gradient(180deg,#7CC4FF,rgba(124,196,255,.3))"></div></div>`).join('')}</div><div style="display:flex;gap:12px;margin-top:8px">${providers.slice(0,8).map(p=>`<span style="flex:1;text-align:center;font-size:9px;color:#5E6675;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.provider)}</span>`).join('')}</div>`:`<div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-chart-bar"></i></span><div style="font-size:11px;color:var(--muted2)">No gen spend yet</div></div>`}</div>
       </div>
       <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Cost breakdown</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">PROVIDER</span></div>
@@ -246,6 +294,7 @@ function renderFinanceHtml(root, m){
         </tr>`;}).join(''):`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-coins"></i></span><div style="font-size:11px;color:var(--muted2)">No provider spend recorded yet</div></div></td></tr>`}</tbody>
       </table></div>
     </div>`;
+  financePoolPreview();
 }
 
 /* ============================================================
@@ -309,25 +358,82 @@ window.afterRender.payouts = async function(){
   catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
 };
 
+/* FAZA 4 (C) — pool compute panel state */
+let POOL_PREVIEW = null;
+function poolDefaultMonth(){
+  const dt = new Date(); dt.setUTCDate(1); dt.setUTCMonth(dt.getUTCMonth()-1); // previous month
+  return dt.toISOString().slice(0,7);
+}
+async function loadPoolPreview(){
+  const month = document.getElementById('poolMonth')?.value || poolDefaultMonth();
+  const box = document.getElementById('poolPanelBody');
+  if(box) box.innerHTML = bizLoading();
+  try { POOL_PREVIEW = await StudioApi.getAdminPoolPreview(month); renderPoolPanel(); }
+  catch(e){ if(box) box.innerHTML = `<div style="padding:12px;font-size:11px;color:#FF6B5E">${esc(e&&e.message||'Failed to compute pool')}</div>`; }
+}
+async function writePoolRows(recompute){
+  const month = document.getElementById('poolMonth')?.value || poolDefaultMonth();
+  try {
+    const res = await StudioApi.computeAdminPool(month, recompute);
+    toast('Pool written', `${bizUsdCents(res.poolCents)} pool for ${month} — ${res.written} earning row(s) written${recompute?' (recomputed)':''}`, 'success');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Pool payout computed',{action:'payout',detail:`${month}:${res.poolCents}`});
+    POOL_PREVIEW = res; renderPoolPanel();
+    PAYOUT_DATA = await StudioApi.getAdminEarnings(); renderPayouts();
+  } catch(e){ toast('Error',(e&&e.message)||'Failed to write pool','danger'); }
+}
+function renderPoolPanel(){
+  const box = document.getElementById('poolPanelBody');
+  if(!box) return;
+  const p = POOL_PREVIEW;
+  if(!p){ box.innerHTML = `<div style="padding:10px 0;font-size:11px;color:#8A93A3">Pick a month and press Preview to compute the pool distribution.</div>`; return; }
+  const rows = (p.contributors||[]);
+  box.innerHTML = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;margin-bottom:10px">
+      <span>Subscription net <b class="adx-num" style="color:#C2F04A">${bizUsdCents(p.netSubscriptionCents)}</b></span>
+      <span>AI cost <b class="adx-num" style="color:#7CC4FF">−${bizUsdCents(p.providerCostCents)}</b></span>
+      <span>× share <b class="adx-num">${Math.round((p.poolShare||0)*100)}%</b></span>
+      <span>= pool <b class="adx-num" style="color:#C2F04A">${bizUsdCents(p.poolCents)}</b></span>
+      <span style="color:#8A93A3">${(p.totalLegitimateDownloads||0).toLocaleString()} legitimate downloads</span>
+      ${p.persisted?`<span class="adx-bdg adx-bdg-approved">written: ${p.written}</span>`:''}
+    </div>
+    ${rows.length?`<table class="adx-tbl"><thead><tr><th>Contributor</th><th class="r">Legit downloads</th><th class="r">Share</th><th class="r">Amount</th></tr></thead>
+      <tbody>${rows.slice(0,50).map(r=>{
+        const who = (PAYOUT_DATA&&(PAYOUT_DATA.contributors||[]).find(c=>c.contributorId===r.contributorId))||{};
+        const sh = p.totalLegitimateDownloads>0?Math.round(r.downloads/p.totalLegitimateDownloads*1000)/10:0;
+        return `<tr><td style="font-size:12px">${esc(who.name||who.email||r.contributorId)}</td><td class="r adx-num">${r.downloads.toLocaleString()}</td><td class="r adx-num">${sh}%</td><td class="r adx-num" style="color:#C2F04A">${bizUsdCents(r.amountCents)}</td></tr>`;
+      }).join('')}</tbody></table>`:`<div style="font-size:11px;color:var(--muted2);padding:6px 0">No legitimate downloads in this period.</div>`}`;
+}
+
 function renderPayouts(){
   const root = document.getElementById('bizRoot');
   if(!root || !PAYOUT_DATA) return;
   const d = PAYOUT_DATA;
   const rows = (d.contributors||[]).slice().sort((a,b)=>(b.balanceCents||0)-(a.balanceCents||0));
   const perDl = (d.perDownloadCents||10);
+  const isPool = d.payoutMode==='pool';
+  const sharePct = Math.round(((d.poolShare!=null?d.poolShare:0.5))*100);
   const totalEvents = rows.reduce((a,r)=>a+(r.earningEvents||0),0);
   const pendingCount = rows.filter(r=>(r.balanceCents||0)>0).length;
   const poolCents = rows.reduce((a,r)=>a+(r.balanceCents||0),0);
   const paidCents = rows.reduce((a,r)=>a+Math.max(0,(r.totalEarnedCents||0)-(r.balanceCents||0)),0);
   root.innerHTML = `
-    ${axInfo(`Templates are included in the subscription (unlimited downloads) — no automatic $ is calculated. Admin sees the download count and <b style="color:var(--text)">records payment manually</b>. The rate and formula (strict per-download or monthly pool share) is an <b style="color:var(--text)">OWNER DECISION</b>. Current rate: <b style="color:var(--text)">${bizUsdCents(perDl)} / download</b>.`,'amber')}
+    ${isPool
+      ? axInfo(`<b style="color:var(--text)">POOL mode</b> (PAYOUT_MODE=pool): monthly pool = (subscription net revenue − AI provider cost) × <b style="color:var(--text)">${sharePct}%</b>, distributed by each contributor's share of legitimate downloads. Compute below writes the period earnings; the money transfer stays <b style="color:var(--text)">manual</b> (record payout per contributor). Switch back with PAYOUT_MODE=per_download.`,'info')
+      : axInfo(`<b style="color:var(--text)">Per-download mode</b> (PAYOUT_MODE=per_download): every legitimate download accrues a flat <b style="color:var(--text)">${bizUsdCents(perDl)}</b>. The revenue-share POOL model is available with PAYOUT_MODE=pool. Payment is recorded manually.`,'amber')}
+    <div class="adx-card" style="margin-bottom:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Pool distribution ${isPool?'':'<span class="adx-bdg adx-bdg-draft" style="margin-left:6px">preview only — per-download mode active</span>'}</span><span style="flex:1"></span>
+        <input type="month" class="adx-input" id="poolMonth" style="width:150px;height:30px" value="${poolDefaultMonth()}">
+        <button class="adx-btn2 sm" onclick="loadPoolPreview()"><i class="ph ph-eye"></i>Preview</button>
+        <button class="adx-btn sm" onclick="writePoolRows(false)" title="Write pool earning rows (idempotent per period+contributor)"><i class="ph ph-check"></i>Compute &amp; write</button>
+        <button class="adx-btn2 sm" onclick="writePoolRows(true)" title="Delete UNPAID pool rows for the period and recompute"><i class="ph ph-arrow-clockwise"></i>Recompute</button></div>
+      <div id="poolPanelBody" style="padding:12px 18px"></div>
+    </div>
     <div class="adx-grid4" style="margin-bottom:16px">
       ${axStat({label:'Earning events',val:totalEvents.toLocaleString(),ic:'download-simple',icColor:'#C2F04A',foot:'TemplateDownloadEvent'})}
       ${axStat({label:'Ready for payout',val:pendingCount,ic:'users-three',foot:'contributor'})}
-      ${axStat({label:'Unpaid balance',val:bizUsdCents(poolCents),ic:'hand-coins',icColor:'#FFB27C',foot:bizUsdCents(perDl)+' / download'})}
+      ${axStat({label:'Unpaid balance',val:bizUsdCents(poolCents),ic:'hand-coins',icColor:'#FFB27C',foot:isPool?'pool + legacy accruals':bizUsdCents(perDl)+' / download'})}
       ${axStat({label:'Paid (total)',val:bizUsdCents(paidCents),ic:'check-circle',icColor:'#C2F04A',foot:'recorded payouts'})}
     </div>
-    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Contributor earning → payout</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">RATE: ${bizUsdCents(perDl)} / DOWNLOAD</span></div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Contributor earning → payout</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">${isPool?`POOL · SHARE ${sharePct}%`:`RATE: ${bizUsdCents(perDl)} / DOWNLOAD`}</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:960px">
         <thead><tr><th>Contributor</th><th class="r">Earning events</th><th class="r">Total earned</th><th class="r">Accrued (balance)</th><th class="r">Paid</th><th>Status</th><th class="r">Action</th></tr></thead>
         <tbody>${rows.length ? rows.map(r=>{
@@ -346,6 +452,7 @@ function renderPayouts(){
       </table></div>
     </div>
     <div id="bizEditPanel"></div>`;
+  renderPoolPanel();
 }
 
 function openPayoutRecord(contributorId){
@@ -410,6 +517,68 @@ function activityEventBadge(ev){
 function activitySourceBadge(src){
   if(src==='web') return `<span class="adx-bdg" style="color:#C2F04A;background:rgba(194,240,74,.1)">Web</span>`;
   return `<span class="adx-bdg" style="color:#7CC4FF;background:rgba(124,196,255,.12)">AE Plugin</span>`;
+}
+
+/* ============================================================
+   b6 · BUSINESS METRICS — churn / conversion / ARPU / LTV (FAZA 4 D)
+   ============================================================ */
+let METRICS_DATA = null;
+let METRICS_MONTH = "";
+
+VIEWS.metrics = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
+window.afterRender.metrics = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='metrics') tba.innerHTML =
+    `<input type="month" class="adx-input" style="width:160px;height:34px" value="${esc(METRICS_MONTH)}" onchange="METRICS_MONTH=this.value;loadMetrics()" title="Period (empty = current month)">`;
+  await loadMetrics();
+};
+
+async function loadMetrics(){
+  const root = document.getElementById('bizRoot');
+  if(root) root.innerHTML = bizLoading();
+  try { METRICS_DATA = await StudioApi.getAdminMetrics(METRICS_MONTH || undefined); renderMetrics(); }
+  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+}
+
+function metricsChangeBadge(from,to){
+  const paidTo = to!=='FREE', paidFrom = from!=='FREE';
+  if(!paidFrom && paidTo) return `<span class="adx-bdg adx-bdg-approved"><i class="ph ph-arrow-up-right" style="font-size:10px"></i>Upgrade</span>`;
+  if(paidFrom && !paidTo) return `<span class="adx-bdg" style="color:#FF6B5E;background:rgba(255,107,94,.12)"><i class="ph ph-arrow-down-right" style="font-size:10px"></i>Downgrade</span>`;
+  return `<span class="adx-bdg adx-bdg-info">Change</span>`;
+}
+
+function renderMetrics(){
+  const root = document.getElementById('bizRoot');
+  if(!root || !METRICS_DATA) return;
+  const d = METRICS_DATA;
+  const rev = d.revenue||{};
+  const pct = (v)=> v!=null ? v+'%' : '—';
+  root.innerHTML = `
+    ${axInfo(`Basic business metrics for <b style="color:var(--text)">${esc(d.month)}</b> from real revenue (RevenueEvent) + plan-change history (PlanChangeEvent). Churn = downgrades ÷ paying at period start; conversion = free→paid upgrades ÷ free users; ARPU = period net revenue ÷ paying users; LTV = ARPU ÷ churn. Deeper cohort analytics is a future iteration.`,'info')}
+    <div class="adx-grid4" style="margin-bottom:12px">
+      ${axStat({label:'Paying subscribers',val:(d.payingNow||0).toLocaleString(),ic:'users-three',icColor:'#C2F04A',foot:`${(d.freeNow||0).toLocaleString()} free`})}
+      ${axStat({label:'Free → paid (period)',val:d.upgrades||0,ic:'arrow-up-right',icColor:'#C2F04A',foot:'conversion '+pct(d.conversionPct),footCls:'adx-up'})}
+      ${axStat({label:'Downgrades (period)',val:d.downgrades||0,ic:'arrow-down-right',icColor:'#FF6B5E',foot:'churn '+pct(d.churnPct),footCls:(d.downgrades||0)>0?'adx-down':''})}
+      ${axStat({label:'Dunning / at-risk',val:d.dunningCount||0,ic:'warning',icColor:'#FFB27C',foot:'billing issue flagged'})}
+    </div>
+    <div class="adx-grid4" style="margin-bottom:16px">
+      ${axStat({label:'Net revenue (period)',val:bizUsdCents(rev.netCents),ic:'wallet',icColor:'#C2F04A',foot:(rev.events||0)+' events'})}
+      ${axStat({label:'MRR (subscription net)',val:bizUsdCents(rev.mrrCents),ic:'trend-up',icColor:'#C2F04A',foot:'this period'})}
+      ${axStat({label:'ARPU',val:d.arpuCents!=null?bizUsdCents(d.arpuCents):'—',ic:'user',icColor:'#7CC4FF',foot:'net ÷ paying users'})}
+      ${axStat({label:'LTV (basic)',val:d.ltvCents!=null?bizUsdCents(d.ltvCents):'—',ic:'chart-line-up',icColor:'#b794f6',foot:'ARPU ÷ churn'})}
+    </div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Recent plan changes</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">LAST ${(d.recentChanges||[]).length}</span></div>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:760px">
+        <thead><tr><th>Time</th><th>User</th><th>Change</th><th>From → To</th><th>Source</th></tr></thead>
+        <tbody>${(d.recentChanges||[]).length ? d.recentChanges.map(c=>`<tr>
+          <td class="adx-num" style="font-size:10.5px;color:#8A93A3;white-space:nowrap">${esc(String(c.at||'').slice(0,16).replace('T',' '))}</td>
+          <td><div class="adx-who">${axAv(c.userName||c.userEmail||'?',c.userEmail,26)}<span class="nm" style="font-size:12px">${esc(c.userName||c.userEmail||'—')}</span></div></td>
+          <td>${metricsChangeBadge(c.fromPlan,c.toPlan)}</td>
+          <td style="font-size:11.5px;color:#B7C0CE">${esc(c.fromPlan)} → <b style="color:var(--text)">${esc(c.toPlan)}</b></td>
+          <td style="font-size:11px;color:#8A93A3">${esc(c.source)}</td>
+        </tr>`).join('') : `<tr><td colspan="5"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-chart-line-up"></i></span><div style="font-size:11px;color:var(--muted2)">No plan changes recorded yet — they are captured from billing webhooks and admin actions.</div></div></td></tr>`}</tbody>
+      </table></div>
+    </div>`;
 }
 
 function renderActivity(){

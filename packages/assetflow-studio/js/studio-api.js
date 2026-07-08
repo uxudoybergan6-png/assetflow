@@ -510,6 +510,16 @@ const StudioApi = (() => {
   async function createAdminPayout(body) {
     return request(`/api/contributor/admin/payouts`, { method: "POST", body });
   }
+  /* FAZA 4 — real daromad metrikalari + pool payout */
+  async function getAdminMetrics(month) {
+    return request(`/api/admin/metrics${month ? `?month=${encodeURIComponent(month)}` : ""}`);
+  }
+  async function getAdminPoolPreview(month) {
+    return request(`/api/admin/payout/pool?month=${encodeURIComponent(month)}`);
+  }
+  async function computeAdminPool(month, recompute) {
+    return request(`/api/admin/payout/pool`, { method: "POST", body: { month, recompute: !!recompute } });
+  }
 
   /* FAZA 6b — rollar boshqaruvi + contributor onboarding */
   async function listAdminUsers({ search, role, pending } = {}) {
@@ -573,6 +583,9 @@ const StudioApi = (() => {
     getAdminActivity,
     getAdminEarnings,
     createAdminPayout,
+    getAdminMetrics,
+    getAdminPoolPreview,
+    computeAdminPool,
     listAdminUsers,
     setUserRole,
     dismissContributorRequest,

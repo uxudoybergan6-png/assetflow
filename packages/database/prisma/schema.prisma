@@ -608,6 +608,22 @@ model RevenueEvent {
   @@index([occurredAt])
 }
 
+// ── FAZA 4 (D) — plan o'zgarishi hodisalari (churn/conversion metrikalari) ───
+// Har PluginProfile.plan o'zgarishi uchun BITTA qator (best-effort yozuv —
+// plan setter'lar bloklanmaydi). FK-siz (ledger naqshi).
+model PlanChangeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  fromPlan  String
+  toPlan    String
+  source    String   @default("billing") // billing (LS) | stripe | manual (admin/self)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([toPlan])
+}
+
 // ── Bosqich 4 #1 — REAL download/import tracking (zanjir yaxlitligi) ─────────
 // TemplateDownloadEvent: HAR haqiqiy pack/mogrt yuklab olish yoki import uchun
 // BITTA atomik qatorlangan hodisa (kim, qaysi katalog shabloni, qaysi contributor).

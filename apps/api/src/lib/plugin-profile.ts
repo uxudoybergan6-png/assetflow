@@ -11,6 +11,26 @@ import { writeCreditLedger } from "./ledger.js";
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
 
+/**
+ * FAZA 4 (D) — plan o'zgarishi hodisasi (churn/conversion metrikalari).
+ * BEST-EFFORT (writeCreditLedger naqshi): xato plan setter'ni BLOKLAMAYDI.
+ */
+async function recordPlanChange(
+  userId: string,
+  fromPlan: PluginPlanTier,
+  toPlan: PluginPlanTier,
+  source: "billing" | "stripe" | "manual"
+): Promise<void> {
+  if (fromPlan === toPlan) return;
+  try {
+    await prisma.planChangeEvent.create({
+      data: { userId, fromPlan: String(fromPlan), toPlan: String(toPlan), source },
+    });
+  } catch (e) {
+    console.error("recordPlanChange", e);
+  }
+}
+
 /** Oylik AI kredit ulushi — har oy boshida shu qiymatga tiklanadi.
  *  FAZA 2 #13: STATIK FALLBACK — haqiqiy qiymat DB (PlanConfig) keshidan. */
 export const AI_MONTHLY_CREDITS = {
@@ -206,6 +226,7 @@ export async function setPluginPlan(userId: string, plan: PluginPlanTier) {
     where: { userId },
     data: { plan },
   });
+  await recordPlanChange(userId, profile.plan, plan, "manual");
   return { ok: true as const, profile: updated };
 }
 
@@ -235,6 +256,7 @@ export async function syncPluginPlanFromStripe(userId: string, isActive: boolean
   }
 
   await prisma.pluginProfile.update({ where: { userId }, data });
+  await recordPlanChange(userId, profile.plan, plan, "stripe");
   return { plan };
 }
 
@@ -273,6 +295,7 @@ export async function applyBillingPlan(userId: string, plan: PluginPlanTier) {
   }
 
   await prisma.pluginProfile.update({ where: { userId }, data });
+  await recordPlanChange(userId, profile.plan, plan, "billing");
   return { plan, changed: changingPlan };
 }
 
