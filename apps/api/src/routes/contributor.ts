@@ -489,18 +489,33 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
     if (status) where.reviewStatus = status;
   }
 
+  // FAZA 5 (A1) — take+cursor pagination (backward-compatible: param'siz birinchi
+  // sahifa, default 100; javobga additive `nextCursor`). Klientlar sahifalab oladi.
+  const takeRaw = Number(req.query.take);
+  const take = Number.isFinite(takeRaw)
+    ? Math.min(Math.max(Math.floor(takeRaw), 1), 200)
+    : 100;
+  const cursor =
+    typeof req.query.cursor === "string" && req.query.cursor ? req.query.cursor : undefined;
   const items = await prisma.contributorTemplate.findMany({
     where,
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: take + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: {
       contributor: { select: { id: true, email: true, name: true } },
     },
   });
+  const hasMore = items.length > take;
+  const page = hasMore ? items.slice(0, take) : items;
 
   // Bosqich 4 #1: download/import sonini REAL hodisalardan olamiz (forgeable Int emas).
-  const rows = await Promise.all(items.map(withAssetFlags));
+  const rows = await Promise.all(page.map(withAssetFlags));
   const counts = await realTemplateCounts(rows.map((r) => r.id));
-  res.json({ items: rows.map((r) => applyRealCounts(r, counts)) });
+  res.json({
+    items: rows.map((r) => applyRealCounts(r, counts)),
+    nextCursor: hasMore ? page[page.length - 1].id : null,
+  });
 });
 
 /** Har maydon uchun ruxsat etilgan kengaytmalar (server-side validatsiya) */

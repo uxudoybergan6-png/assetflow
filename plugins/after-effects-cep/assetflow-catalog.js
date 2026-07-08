@@ -131,9 +131,10 @@ const AssetFlowCatalog = (() => {
     return writeSettings({ downloadDir: dir || "" });
   }
 
-  async function fetchCatalog() {
+  async function fetchCatalogPage(cursor) {
     // FAZA 5 (§11) — AE plagin FAQAT After Effects shablonlarini oladi (server filtri).
-    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog?app=ae`, {
+    const cur = cursor ? `&cursor=${encodeURIComponent(cursor)}` : "";
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog?app=ae${cur}`, {
       headers: catalogHeaders(),
     });
     if (!res.ok) {
@@ -146,6 +147,26 @@ const AssetFlowCatalog = (() => {
       throw err;
     }
     return res.json();
+  }
+
+  /**
+   * FAZA 5 (A1) — server katalogi endi sahifalangan (take+cursor, default 100).
+   * Plagin barcha sahifalarni ketma-ket olib bitta ro'yxatga yig'adi — Browse UI
+   * xulqi (bitta merge) o'zgarmaydi, lekin har bir server javobi chegaralangan.
+   * MAX_PAGES — himoya cap (100 sahifa ≈ 10k shablon), server xatosida cheksiz
+   * sikl bo'lmasin.
+   */
+  async function fetchCatalog() {
+    const MAX_PAGES = 100;
+    let items = [];
+    let cursor = null;
+    for (let i = 0; i < MAX_PAGES; i++) {
+      const data = await fetchCatalogPage(cursor);
+      if (Array.isArray(data.items)) items = items.concat(data.items);
+      cursor = data.nextCursor || null;
+      if (!cursor) break;
+    }
+    return { items };
   }
 
   async function fetchFeatured(limit = 6) {

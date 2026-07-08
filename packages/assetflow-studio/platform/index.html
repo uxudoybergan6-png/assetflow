@@ -17210,11 +17210,25 @@ class Component extends DCLogic {
   // ── DATA LOADERS ──
   async loadCatalog() {
     try {
-      const r = await FFAPI.catalog();
-      // FAZA 5 (§2/§11) — kanonik dastur xaritasi (apps.ts server nusxasi). 'dr' = eski alias.
+      // FAZA 5 (A1) — katalog sahifalangan (server take+cursor, default 100):
+      // birinchi sahifa darhol ko'rsatiladi, qolganlari fonda qo'shib boriladi
+      // (progressiv render). MAX_PAGES — himoya cap (server xatosida cheksiz sikl bo'lmasin).
       const APP_L = { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' };
       const APP_C = { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' };
-      const items = (r.items || []).map((it) => ({
+      const MAX_PAGES = 100;
+      let all = [];
+      let cursor = null;
+      for (let p = 0; p < MAX_PAGES; p++) {
+        const r = await FFAPI.catalog(cursor);
+        all = all.concat(this.mapCatalogItems(r.items || [], APP_L, APP_C));
+        this.setState({ catalog: all, catalogReady: true });
+        cursor = r.nextCursor || null;
+        if (!cursor) break;
+      }
+    } catch (e) { this.setState({ catalogReady: true }); }
+  }
+  mapCatalogItems(raw, APP_L, APP_C) {
+      return raw.map((it) => ({
         id: String(it.id), n: it.name || 'Template', c: it.catLabel || it.cat || 'Template',
         a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6',
         pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
@@ -17229,8 +17243,6 @@ class Component extends DCLogic {
         // FAZA C — Home shelves/badges uchun additive vaqt maydonlari
         created: Date.parse(it.createdAt) || 0, updated: Date.parse(it.updatedAt) || 0,
       }));
-      this.setState({ catalog: items, catalogReady: true });
-    } catch (e) { this.setState({ catalogReady: true }); }
   }
   bootData() {
     this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();

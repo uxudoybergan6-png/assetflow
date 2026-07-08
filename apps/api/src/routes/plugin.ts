@@ -109,16 +109,40 @@ function catalogWhere(appParam: unknown) {
   return { ...approvedCatalogWhere, templateApp: code };
 }
 
-/** Browse panel — tasdiqlangan shablonlar (server) */
+/** FAZA 5 (A1) — katalog pagination chegaralari. Default 100: bugungi kichik katalog
+ *  bitta sahifaga sig'adi (xulq o'zgarmaydi), 5000 ta shablonda esa bitta so'rov
+ *  DB/JSON/xotirani portlatmaydi. Klientlar nextCursor bilan sahifalab oladi. */
+const CATALOG_DEFAULT_TAKE = 100;
+const CATALOG_MAX_TAKE = 200;
+
+function parseTake(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return CATALOG_DEFAULT_TAKE;
+  return Math.min(Math.max(Math.floor(n), 1), CATALOG_MAX_TAKE);
+}
+
+/** Browse panel — tasdiqlangan shablonlar (server).
+ *  FAZA 5 (A1): take+cursor pagination (backward-compatible — param'siz birinchi
+ *  sahifa, javobga additive `nextCursor` qo'shiladi; null = oxirgi sahifa). */
 pluginRouter.get("/catalog", async (req: Request, res: Response) => {
   const base = apiPublicBase(req);
+  const take = parseTake(req.query.take);
+  const cursor =
+    typeof req.query.cursor === "string" && req.query.cursor ? req.query.cursor : undefined;
+  // take+1 — keyingi sahifa borligini bilish uchun; id ikkilamchi tartib kaliti
+  // (updatedAt unique emas — cursor barqaror bo'lishi shart).
   const items = await prisma.contributorTemplate.findMany({
     where: catalogWhere(req.query.app),
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: take + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: CATALOG_SELECT,
   });
+  const hasMore = items.length > take;
+  const page = hasMore ? items.slice(0, take) : items;
   res.json({
-    items: await Promise.all(items.map((t) => mapCatalogItem(t, base))),
+    items: await Promise.all(page.map((t) => mapCatalogItem(t, base))),
+    nextCursor: hasMore ? page[page.length - 1].id : null,
   });
 });
 

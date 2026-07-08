@@ -113,7 +113,11 @@
     },
 
     // Katalog / plugin profil
-    catalog: function () { return req("/api/plugin/catalog", { auth: false }); },
+    // FAZA 5 (A1): katalog sahifalangan (take+cursor) — cursor ixtiyoriy, javobda nextCursor.
+    catalog: function (cursor) {
+      var q = cursor ? "?cursor=" + encodeURIComponent(cursor) : "";
+      return req("/api/plugin/catalog" + q, { auth: false });
+    },
     pluginMe: function () { return req("/api/plugin/me"); },
     packLink: function (templateId) { return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1"); },
 

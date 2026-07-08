@@ -86,23 +86,43 @@ const StudioTemplates = (() => {
     return !!(typeof StudioApi !== "undefined" && StudioApi.token());
   }
 
+  /**
+   * FAZA 5 (A1) — /api/contributor/templates endi sahifalangan (take+cursor,
+   * default 100). Ro'yxatni sahifalab yig'amiz: har server javobi chegaralangan,
+   * in-memory qidiruv/filtr semantikasi esa to'liq ro'yxat ustida saqlanadi.
+   * MAX_PAGES — himoya cap (server xatosida cheksiz sikl bo'lmasin).
+   */
+  async function listAllTemplatePages(query) {
+    const MAX_PAGES = 100;
+    let items = [];
+    let cursor = null;
+    for (let p = 0; p < MAX_PAGES; p++) {
+      const q = cursor ? `${query}&cursor=${encodeURIComponent(cursor)}` : query;
+      const data = await StudioApi.listTemplates(q);
+      if (Array.isArray(data.items)) items = items.concat(data.items);
+      cursor = data.nextCursor || null;
+      if (!cursor) break;
+    }
+    return items;
+  }
+
   async function loadForContributor() {
     if (!hasToken()) return false;
-    const { items } = await StudioApi.listTemplates("scope=mine");
+    const items = await listAllTemplatePages("scope=mine");
     replaceTemplates(items.map(mapApiItem));
     return true;
   }
 
   async function loadForAdmin() {
     if (!hasToken()) return false;
-    const { items } = await StudioApi.listTemplates("scope=all");
+    const items = await listAllTemplatePages("scope=all");
     replaceTemplates(items.map(mapApiItem));
     return true;
   }
 
   async function loadModerationOnly() {
     if (!hasToken()) return false;
-    const { items } = await StudioApi.listTemplates("scope=moderation");
+    const items = await listAllTemplatePages("scope=moderation");
     const pending = items.map(mapApiItem);
     // scope=moderation only returns PENDING_REVIEW — we don't drop soft entries
     // (the Soft filter tab relies on soft records loaded by scope=all)
