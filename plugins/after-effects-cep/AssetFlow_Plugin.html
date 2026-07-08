@@ -5612,124 +5612,6 @@ function updatePackFooter(){
   }
 }
 
-function sceneThumbRatioClass(asset){
-  if(asset?.orient==='vertical')return 'ratio-916 fit-contain';
-  if(asset?.orient==='square')return 'ratio-11';
-  return 'ratio-169';
-}
-
-function scenePreviewHeightRatio(asset){
-  if(asset?.orient==='vertical')return 16/9;
-  if(asset?.orient==='square')return 1;
-  return 9/16;
-}
-
-function measureSceneSlotWidth(grid,cols){
-  if(!grid)return cols===1?280:155;
-  void grid.offsetWidth;
-  const w=grid.clientWidth||grid.getBoundingClientRect().width;
-  if(w>0){
-    const gap=12,pad=24;
-    return Math.max(120,Math.floor((w-pad-gap*(cols-1))/cols));
-  }
-  return cols===1?280:155;
-}
-
-let scenesGridLayoutObs=null;
-function layoutSceneGridHeights(){
-  const grid=document.getElementById('scenesGrid');
-  if(!grid)return;
-  const asset=assets.find(x=>x.n===currentPackName);
-  const ratio=scenePreviewHeightRatio(asset);
-  const cols=grid.classList.contains('single')?1:2;
-  const slotW=measureSceneSlotWidth(grid,cols);
-  const h=Math.max(72,Math.round(slotW*ratio));
-  grid.querySelectorAll('.scene-media-slot').forEach(slot=>{
-    slot.style.height=h+'px';
-    slot.style.minHeight=h+'px';
-    slot.style.maxHeight=h+'px';
-  });
-}
-function scheduleSceneGridLayout(){
-  layoutSceneGridHeights();
-  requestAnimationFrame(layoutSceneGridHeights);
-  setTimeout(layoutSceneGridHeights,30);
-  setTimeout(layoutSceneGridHeights,150);
-  setTimeout(layoutSceneGridHeights,400);
-}
-
-function watchScenesGridLayout(){
-  const grid=document.getElementById('scenesGrid');
-  if(!grid||typeof ResizeObserver==='undefined')return;
-  if(scenesGridLayoutObs)scenesGridLayoutObs.disconnect();
-  scenesGridLayoutObs=new ResizeObserver(()=>layoutSceneGridHeights());
-  scenesGridLayoutObs.observe(grid);
-}
-
-function sceneVideoPosterTime(v){
-  if(!v?.duration||isNaN(v.duration))return 0.06;
-  return Math.min(Math.max(0.05,v.duration*0.08),Math.max(0.05,v.duration-0.05));
-}
-
-function pauseSceneAtMiddle(v,sceneIdx){
-  if(!v)return;
-  const seek=()=>{
-    v.pause();
-    v.currentTime=sceneVideoPosterTime(v);
-  };
-  if(v.readyState>=1&&v.duration)seek();
-  else v.addEventListener('loadedmetadata',seek,{once:true});
-  v.addEventListener('loadeddata',seek,{once:true});
-}
-
-function initSceneVideoPosters(){
-  document.querySelectorAll('.scene-card').forEach((card)=>{
-    const idx=Number(card.dataset.idx);
-    const media=card.querySelector('.scene-vid,.scene-media');
-    if(media&&media.tagName==='VIDEO') pauseSceneAtMiddle(media,idx);
-  });
-}
-
-function playSceneCard(idx){
-  document.querySelectorAll('.scene-card').forEach((el,i)=>{
-    el.classList.toggle('selected',i===idx);
-    const v=el.querySelector('video.scene-vid,video.scene-media');
-    const btn=el.querySelector('.scene-play-btn');
-    if(!v)return;
-    if(i===idx){
-      v.currentTime=0;
-      v.play().catch(()=>{});
-      el.classList.add('playing');
-      if(btn) btn.textContent='⏸';
-    }else{
-      el.classList.remove('playing');
-      if(btn) btn.textContent='▶';
-      pauseSceneAtMiddle(v,i);
-    }
-  });
-  selectedSceneIdx=idx;
-  updatePackFooter();
-  const pack=packs[currentPackName];
-  const scene=pack?.scenes[idx];
-  if(scene) showMonitorPreview(getScenePreviewMedia(scene,pack));
-}
-
-function toggleScenePlay(e,idx){
-  e.stopPropagation();
-  const card=document.querySelector(`.scene-card[data-idx="${idx}"]`);
-  const v=card?.querySelector('video.scene-vid,video.scene-media');
-  if(!v)return;
-  if(card.classList.contains('playing')&&!v.paused){
-    v.pause();
-    card.classList.remove('playing');
-    const btn=card.querySelector('.scene-play-btn');
-    if(btn) btn.textContent='▶';
-    pauseSceneAtMiddle(v,idx);
-    return;
-  }
-  playSceneCard(idx);
-}
-
 /* a3 hero video — glass play tugmasi (poster→video) */
 function pd3ToggleHeroPlay(btn){
   const hero=btn.closest('.pd3-hero');
@@ -5743,15 +5625,6 @@ function pd3ToggleHeroPlay(btn){
   v.play().catch(()=>{});
 }
 window.pd3ToggleHeroPlay=pd3ToggleHeroPlay;
-
-function selectScene(idx){
-  selectedSceneIdx=idx;
-  document.querySelectorAll('.scene-card').forEach((el,i)=>el.classList.toggle('selected',i===idx));
-  updatePackFooter();
-  const pack=packs[currentPackName];
-  const scene=pack?.scenes[idx];
-  if(scene) showMonitorPreview(getScenePreviewMedia(scene,pack));
-}
 
 /* ===== Katalog a3 — shablon detail (mockup 1:1 qobiq; import mantig'i saqlangan) ===== */
 const PD3_STAR='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9L12 3.2z"/></svg>';
@@ -5903,28 +5776,6 @@ function pd3PlanText(){
   return 'Free reja — bu oy: '+used+' / '+lim+' yuklama';
 }
 
-function renderSceneCard(s,i,asset,slotW){
-  const imported=window.importedScenes.has(sceneStateKey(asset?.n||currentPackName,s))?' imported':'';
-  const pack=packs[currentPackName];
-  const previewSrc=s.preview||pack?.preview||'';
-  const fitCls=asset?.orient==='vertical'?' fit-contain':'';
-  const dragHint='<span class="scene-drag-hint">⠿</span>';
-  const num=`<span class="scene-num">${String(i+1).padStart(2,'0')}</span>`;
-  const h=Math.max(72,Math.round((slotW||155)*scenePreviewHeightRatio(asset)));
-  const slotStyle=`height:${h}px;min-height:${h}px;max-height:${h}px`;
-  let mediaHtml=`<span class="ico">${escHtml(s.ico||'✦')}</span>`;
-  if(previewSrc&&s.previewKind==='image'){
-    mediaHtml=`<img class="scene-img" src="${escHtml(previewSrc)}" alt="">`;
-  }else if(previewSrc){
-    mediaHtml=`<video class="scene-vid" src="${escHtml(previewSrc)}" muted loop playsinline preload="metadata"></video>
-      <button type="button" class="scene-play-btn" aria-label="Play" onclick="toggleScenePlay(event,${i})">▶</button>`;
-  }
-  return `<div class="scene-card${imported}" draggable="true" data-idx="${i}" onclick="selectScene(${i})">
-    <div class="scene-media-slot${fitCls}" style="${slotStyle}">${num}${mediaHtml}${dragHint}</div>
-    <div class="scene-info"><div class="scene-name">${escHtml(s.n)}</div><div class="scene-meta">${escHtml(s.meta)}</div></div>
-  </div>`;
-}
-
 /** MOGRT-pack elementlari → sahna kartalari (thumb.png/thumb.mp4 .mogrt ichidan) */
 function mogrtScenesFromItems(pack,items){
   return items.map(it=>({
@@ -6018,26 +5869,6 @@ function openPack(name){
 function closePack(){
   document.getElementById('packDetail').classList.remove('open');
   currentPackName='';
-}
-
-function importSceneByIdx(idx){
-  selectScene(idx);
-  importSelectedScene();
-}
-
-function setDropMode(mode){
-  selectedDropMode=mode==='timeline'?'timeline':'project';
-  document.querySelectorAll('.pack-drop-zone').forEach(z=>{
-    z.classList.toggle('selected',z.dataset.drop===selectedDropMode);
-  });
-}
-
-async function importSelectedScene(){
-  if(selectedSceneIdx<0||!currentPackName)return;
-  const pack=packs[currentPackName];
-  const scene=pack.scenes[selectedSceneIdx];
-  const res=await importSceneWithMode(pack,scene,currentPackName,selectedDropMode);
-  if(selectedDropMode==='timeline'&&res!=='mogrt-picker') closePack();
 }
 
 async function importSceneWithMode(pack,scene,packName,mode){
@@ -6136,103 +5967,6 @@ async function downloadScene(name,ico,mode='timeline'){
   if(mode==='timeline'&&res!=='mogrt-picker') closePack();
 }
 
-function parseSceneDragData(e){
-  const raw=e.dataTransfer.getData('application/x-assetflow-scene')||e.dataTransfer.getData('text/plain');
-  if(!raw)return null;
-  try{
-    const data=JSON.parse(raw);
-    if(data.packName!=null&&data.sceneIdx!=null) return data;
-  }catch(err){}
-  return null;
-}
-
-async function handlePackSceneDrop(e,mode){
-  e.preventDefault();
-  e.stopPropagation();
-  document.querySelectorAll('.pack-drop-zone').forEach(z=>z.classList.remove('dragover'));
-  document.getElementById('packDropBar')?.classList.remove('active');
-  const data=parseSceneDragData(e);
-  if(!data)return;
-  const pack=packs[data.packName];
-  const scene=pack?.scenes[data.sceneIdx];
-  if(!pack||!scene)return;
-  currentPackName=data.packName;
-  selectedSceneIdx=data.sceneIdx;
-  await importSceneWithMode(pack,scene,data.packName,mode);
-  if(mode==='timeline') closePack();
-}
-
-function initSceneDrag(){
-  const bar=document.getElementById('packDropBar');
-  document.querySelectorAll('.scene-card[draggable]').forEach(card=>{
-    card.ondragstart=e=>{
-      if(e.target.closest('.scene-play-btn')){ e.preventDefault(); return; }
-      const idx=Number(card.dataset.idx);
-      const pack=packs[currentPackName];
-      const scene=pack?.scenes[idx];
-      if(!pack||!scene)return;
-      e.stopPropagation();
-      card.classList.add('dragging');
-      const payload=JSON.stringify({packName:currentPackName,sceneIdx:idx,sceneName:scene.n});
-      e.dataTransfer.setData('application/x-assetflow-scene',payload);
-      e.dataTransfer.setData('text/plain',payload);
-      e.dataTransfer.effectAllowed='copy';
-      document.getElementById('ghostName').textContent=scene.n;
-      document.getElementById('dragGhost').classList.add('visible');
-      bar?.classList.add('active');
-    };
-    card.ondragend=()=>{
-      card.classList.remove('dragging');
-      document.getElementById('dragGhost').classList.remove('visible');
-      bar?.classList.remove('active');
-      document.querySelectorAll('.pack-drop-zone').forEach(z=>z.classList.remove('dragover'));
-    };
-  });
-
-  document.querySelectorAll('.pack-drop-zone').forEach(zone=>{
-    const mode=zone.dataset.drop||'timeline';
-    zone.ondragover=e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='copy';
-      zone.classList.add('dragover');
-    };
-    zone.ondragleave=()=>zone.classList.remove('dragover');
-    zone.ondrop=e=>{setDropMode(mode);handlePackSceneDrop(e,mode);};
-    zone.onclick=async()=>{
-      setDropMode(mode);
-      if(selectedSceneIdx<0||!currentPackName)return;
-      const pack=packs[currentPackName];
-      const scene=pack?.scenes[selectedSceneIdx];
-      if(!pack||!scene)return;
-      await importSceneWithMode(pack,scene,currentPackName,mode);
-      if(mode==='timeline') closePack();
-    };
-    zone.classList.toggle('selected',mode===selectedDropMode);
-  });
-
-  if(!IS_CEP){
-    const dz=document.getElementById('dropZone');
-    if(dz&&!dz.dataset.sceneDropBound){
-      dz.dataset.sceneDropBound='1';
-      dz.addEventListener('dragover',e=>{
-        if(parseSceneDragData(e)||e.dataTransfer.types.includes('application/x-assetflow-scene')){
-          e.preventDefault();
-          dz.classList.add('dragover');
-        }
-      });
-      dz.addEventListener('drop',e=>{
-        const data=parseSceneDragData(e);
-        if(!data)return;
-        e.preventDefault();
-        dz.classList.remove('dragover');
-        const pack=packs[data.packName];
-        const scene=pack?.scenes[data.sceneIdx];
-        if(!pack||!scene)return;
-        importSceneWithMode(pack,scene,data.packName,'timeline');
-      });
-    }
-  }
-}
 
 async function downloadAll(n){
   if(!packs[n])return;
@@ -7920,20 +7654,9 @@ document.onmouseup=()=>{
   if(resizing){
     resizing=false;document.body.style.cursor='';
     setTimeout(()=>document.getElementById('sizeHint').textContent='',1200);
-    if(document.getElementById('packDetail')?.classList.contains('open')){
-      layoutSceneGridHeights();
-      initSceneVideoPosters();
-    }
   }
 };
-if(typeof window!=='undefined'){
-  window.addEventListener('resize',()=>{
-    if(document.getElementById('packDetail')?.classList.contains('open')){
-      layoutSceneGridHeights();
-      initSceneVideoPosters();
-    }
-  });
-}
+
 
 let collapsed=false,expanded=false;
 function toggleCollapse(){
