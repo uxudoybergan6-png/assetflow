@@ -104,6 +104,11 @@ model PluginProfile {
   aeVersion      String?
   downloadLimitOverride Int?
   importLimitOverride   Int?
+  // FAZA 4 (B) — dunning/risk holati (additive): "payment_failed" | "past_due" |
+  // "unpaid" | "chargeback". null = sog'lom. Faqat KO'RSATKICH — kirish gate'lari
+  // (plan/status) mavjud oqimlarda hal bo'ladi, bu ustun hech narsani bloklamaydi.
+  billingIssue   String?
+  billingIssueAt DateTime?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 

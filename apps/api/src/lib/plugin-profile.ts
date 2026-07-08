@@ -312,6 +312,53 @@ export async function grantAiCreditsTopup(
 }
 
 /**
+ * FAZA 4 (B) — kredit-paket REFUND clawback: sotib olingan, hali SARFLANMAGAN
+ * top-up kreditlarni qaytarib oladi. Qoidalar:
+ *   • FAQAT top-up ulushidan (aiCreditsTopup) — bepul oylik ulushga (allotment)
+ *     HECH QACHON tegmaydi (claw <= aiCreditsTopup).
+ *   • HECH QACHON manfiy emas — atomik updateMany WHERE gte guard (consumeAiCredits
+ *     naqshi); parallel sarf bilan race'da guard yutqazsa qisqa retry.
+ *   • Idempotentlik CHAQIRUVCHIDA: webhook claim-first dedup (bir refund hodisasi
+ *     bir marta ishlanadi) — grantAiCreditsTopup bilan bir xil shartnoma.
+ * MAVJUD atomik consume/refund mantig'iga TEGILMAGAN — bu alohida qo'shimcha funksiya.
+ */
+export async function clawbackTopupCredits(
+  userId: string,
+  amount: number
+): Promise<{ clawed: number }> {
+  const want = Math.floor(amount);
+  if (!Number.isFinite(want) || want <= 0) return { clawed: 0 };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const prof = await prisma.pluginProfile.findUnique({
+      where: { userId },
+      select: { aiCredits: true, aiCreditsTopup: true },
+    });
+    if (!prof) return { clawed: 0 };
+    const claw = Math.min(want, prof.aiCreditsTopup, prof.aiCredits);
+    if (claw <= 0) return { clawed: 0 }; // sarflab bo'lingan — qaytarib olinmaydi
+    const res = await prisma.pluginProfile.updateMany({
+      where: { userId, aiCredits: { gte: claw }, aiCreditsTopup: { gte: claw } },
+      data: { aiCredits: { decrement: claw }, aiCreditsTopup: { decrement: claw } },
+    });
+    if (res.count === 1) {
+      const after = await prisma.pluginProfile.findUnique({
+        where: { userId },
+        select: { aiCredits: true },
+      });
+      await writeCreditLedger({
+        userId,
+        delta: -claw,
+        reason: "clawback",
+        balanceAfter: after?.aiCredits ?? null,
+      });
+      return { clawed: claw };
+    }
+    // guard yutqazdi (parallel consume balansni o'zgartirdi) → qayta o'qib urinamiz
+  }
+  return { clawed: 0 };
+}
+
+/**
  * Bir martalik reconciliation: barcha PluginProfile'larni joriy Stripe obuna
  * holatiga moslashtiradi (webhook o'tkazib yuborilgan/eski holatlar uchun).
  * `npm run reconcile:plans` orqali chaqiriladi.

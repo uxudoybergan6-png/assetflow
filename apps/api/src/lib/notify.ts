@@ -83,6 +83,36 @@ export function sendPaymentFailedEmail(to: string): void {
   }, `payment-failed (${to})`);
 }
 
+/** FAZA 4 (B) — refund qayta ishlandi (LS order_refunded / subscription_payment_refunded). */
+export function sendRefundProcessedEmail(
+  to: string,
+  opts: { amountLabel?: string; creditsClawed?: number; downgraded?: boolean } = {}
+): void {
+  safe(async () => {
+    const bits: string[] = [
+      `<p style="font-size:13px;line-height:1.6">Your refund${
+        opts.amountLabel ? ` of <b>${opts.amountLabel}</b>` : ""
+      } has been processed by our payment provider.</p>`,
+    ];
+    if (opts.creditsClawed && opts.creditsClawed > 0) {
+      bits.push(
+        `<p style="font-size:13px;line-height:1.6">The <b>${opts.creditsClawed}</b> unused credits from the refunded pack were removed from your balance. Credits you already spent are unaffected.</p>`
+      );
+    }
+    if (opts.downgraded) {
+      bits.push(
+        `<p style="font-size:13px;line-height:1.6">Your subscription has been cancelled and your account moved to the <b>Free</b> plan.</p>`
+      );
+    }
+    await sendEmail({
+      to,
+      subject: "FrameFlow — refund processed",
+      html: renderEmailLayout("Refund processed", bits.join("")),
+      text: `FrameFlow: your refund${opts.amountLabel ? ` (${opts.amountLabel})` : ""} has been processed.`,
+    });
+  }, `refund-processed (${to})`);
+}
+
 /** Kredit paketi xaridi (LS order_created, credit topup). */
 export function sendCreditsToppedUpEmail(to: string, credits: number): void {
   safe(async () => {
