@@ -1,14 +1,12 @@
 # Sessiya hisoboti — 2026-07-08
 
-**Vazifa:** FAZA 6a — Ingest hardening: zip safety + katta fayl + duplicate + retention.
+**Vazifa:** FAZA 6b — streaming ingest (zip hech qachon butunligicha yuklab olinmaydi).
 
 **Qilindi:**
-- `ingest-zip.ts`: zip-bomb (5 GiB cap / ratio>1000 / 5000 entry, env sozlanadi) + zip-slip guard (yauzl parse xatolari ham tasniflanadi), stream-only, faqat kerakli entry'lar; `IngestZipError` = doimiy rad.
-- `ingestOneZip`: asset saqlash+finalize kompensatsiyali blok — yiqilsa shablon+asset o'chadi, incoming zip retry uchun qoladi ("No files" yarim shablon endi imkonsiz); pack GCS hajmi lokal bilan solishtiriladi (fileSize=finalize markeri); yarim-yaratilgan prior retry'da qayta ingest (endi "Already ingested" maskalamaydi).
-- Duplicate (C): o'z packHash mavjud → `status:"duplicate"` + duplicateOf, ikkinchi nusxa yo'q; cross-contributor anti-theft karantin o'zgarmagan. Doimiy radlarda zip o'chadi + `template.ingest_rejected` audit.
-- Per-zip `status: created|duplicate|failed` (additive); Studio UI: duplicate = amber ⊘ alohida holat + toast.
-- `docs/INFRA-INGEST-RETENTION.md`: GCS lifecycle (incoming/ >7 kun) + Cloud Run 4Gi/900s (USER qadamlar; /tmp=tmpfs, cho'qqi ≈2× zip).
+- `s3.ts`: `readS3ObjectRange`, `createS3RangeStream` (ranged GET, fallback'siz), `uploadStreamToS3` (multipart stream, ~32MB cho'qqi).
+- `ingest-zip.ts`: `openStreamingIngestZip` — EOCD/zip64 parse + markaziy katalog xotira keshi (cap 32MB) + yauzl `fromRandomAccessReader`; BARCHA FAZA 6a guardlar (entry soni EOCD'da oldindan, zip-slip, hajm capi, nisbat) katalogda — entry baytlaridan OLDIN. Eski disk-ekstraksiya olib tashlandi.
+- `contributor.ts` ingest: pack 2-o'tish (hash→dedup, keyin stream-upload + hash qayta-tekshiruv), preview rasm/video kichik bo'lsa lokal (AI+ffprobe, cap 64MB env `INGEST_LOCAL_PROBE_MAX_BYTES`), aks holda faqat stream. Kompensatsiya/duplicate/statuslar TEGILMAGAN.
 
-**Tekshirildi:** slip/abs/bomb/oversize/entry-count zip'lar toza rad (temp tashqarisiga yozuv yo'q) ✓ · valid zip pack+img+vid ekstrakt ✓ · api build ✓. Money-zone tegilmadi.
+**Tekshirildi:** 762MB zip → cho'qqi RSS 167MB (eski yo'l ~1.5GB+); bayt-bir-xillik (pack/rasm/video hash); zip-slip/ratio-bomb/5000+entry/oversize/notzip rad; zip64+koment zip o'tdi; JONLI GCS ranged GET + bucket→bucket entry upload bayt-bir-xil. `npm run build -w apps/api` yashil.
 
-**Kutilmoqda (live):** deploy → 753MB zip retry (Cloud Run memory/timeout USER qadamidan keyin), duplicate re-upload UI'da ⊘, lifecycle qoidasi qo'llash. Push qilinmadi.
+**Kutilmoqda:** push + Cloud Run deploy; **4Gi xotira bump ENDI SHART EMAS** (default 512Mi–1Gi yetadi, zip hajmidan mustaqil); 900s timeout katta ziplar uchun hali foydali (pack 2 marta stream qilinadi).

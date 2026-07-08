@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
-import { Readable } from "stream";
+import { PassThrough, Readable } from "stream";
 import type { SdkStreamMixin } from "@smithy/types";
 import {
   S3Client,
@@ -436,6 +436,117 @@ export async function downloadS3ToFile(
   const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
   if (!res.Body) throw new Error(`R2 object is empty or not found: ${key}`);
   await pipeline(res.Body as Readable, fs.createWriteStream(destPath));
+}
+
+/**
+ * Ranged GET → Buffer. KICHIK bo'laklar uchun (zip EOCD/markaziy katalog).
+ * end EXCLUSIVE. Server Range'ni qo'llamasa (butun obyekt yoki noto'g'ri hajm
+ * qaytsa) ANIQ xato otadi — jim to'liq-yuklab-olishga QAYTMAYDI (streaming
+ * ingest'ning xotira maqsadi buzilmasin).
+ */
+export async function readS3ObjectRange(
+  key: string,
+  start: number,
+  endExclusive: number
+): Promise<Buffer> {
+  const expected = endExclusive - start;
+  const res = await s3.send(
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Range: `bytes=${start}-${endExclusive - 1}`,
+    })
+  );
+  if (!res.Body) throw new Error(`R2 object is empty or not found: ${key}`);
+  const bytes = await (res.Body as Readable & SdkStreamMixin).transformToByteArray();
+  const buf = Buffer.from(bytes);
+  if (buf.length !== expected) {
+    throw new Error(
+      `Ranged read not honored for ${key}: requested ${expected}B [${start},${endExclusive}), got ${buf.length}B`
+    );
+  }
+  return buf;
+}
+
+/**
+ * Ranged GET → stream (zip entry baytlarini bufersiz o'qish uchun). end EXCLUSIVE.
+ * Range qo'llanmagani aniqlansa stream xato bilan yopiladi (fallback YO'Q).
+ */
+export function createS3RangeStream(
+  key: string,
+  start: number,
+  endExclusive: number
+): Readable {
+  const out = new PassThrough();
+  const expected = endExclusive - start;
+  s3.send(
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Range: `bytes=${start}-${endExclusive - 1}`,
+    })
+  )
+    .then((res) => {
+      const body = res.Body as Readable | undefined;
+      if (!body) {
+        out.destroy(new Error(`R2 object is empty or not found: ${key}`));
+        return;
+      }
+      if (out.destroyed) {
+        body.destroy();
+        return;
+      }
+      if (typeof res.ContentLength === "number" && res.ContentLength !== expected) {
+        body.destroy();
+        out.destroy(
+          new Error(
+            `Ranged read not honored for ${key}: requested ${expected}B, server sent ${res.ContentLength}B`
+          )
+        );
+        return;
+      }
+      body.on("error", (e) => out.destroy(e));
+      out.on("close", () => {
+        if (!body.destroyed) body.destroy();
+      });
+      body.pipe(out);
+    })
+    .catch((e) => out.destroy(e instanceof Error ? e : new Error(String(e))));
+  return out;
+}
+
+/**
+ * Readable stream'ni S3/R2 ga MULTIPART orqali yuklash — uploadFileToS3'ning
+ * stream varianti (zip entry → bucket, disk/xotiraga to'liq olinmasdan).
+ * Cho'qqi xotira ≈ 8MB×4 = 32MB, stream hajmidan qat'i nazar.
+ */
+export async function uploadStreamToS3(
+  body: Readable,
+  s3Key: string,
+  contentType: string,
+  cacheControl: string = ASSET_CACHE_CONTROL
+): Promise<string> {
+  try {
+    const upload = new Upload({
+      client: s3,
+      params: {
+        Bucket: bucket,
+        Key: s3Key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: cacheControl,
+      },
+      partSize: 8 * 1024 * 1024,
+      queueSize: 4,
+      leavePartsOnError: false, // xatoda yarim bo'laklar tozalanadi
+    });
+    await upload.done();
+  } catch (err) {
+    console.error(`[s3] uploadStreamToS3 muvaffaqiyatsiz — key=${s3Key}:`, err);
+    body.destroy();
+    throw err;
+  }
+  return getPublicUrl(s3Key);
 }
 
 /** R2/S3 obyektni to'g'ridan-to'g'ri xotiraga (Buffer) yuklab oladi — kichik fayllar uchun. */

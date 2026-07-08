@@ -8,6 +8,8 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { Transform } from "stream";
+import { pipeline as streamPipeline } from "stream/promises";
 import { z } from "zod";
 import {
   prisma,
@@ -40,11 +42,19 @@ import {
   resolveS3AssetKey,
   downloadS3ToFile,
   deleteS3Objects,
+  readS3ObjectRange,
+  createS3RangeStream,
+  uploadStreamToS3,
 } from "../lib/s3.js";
 import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
 import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
-import { extractIngestZip, sanitizeFileBaseName, IngestZipError } from "../lib/ingest-zip.js";
+import {
+  openStreamingIngestZip,
+  sanitizeFileBaseName,
+  IngestZipError,
+  type StreamingIngestZip,
+} from "../lib/ingest-zip.js";
 import { generateTemplateMetadata } from "../lib/ai/template-metadata.js";
 import {
   setUploadProgress,
@@ -1030,6 +1040,16 @@ function sha256File(filePath: string): Promise<string> {
   });
 }
 
+/** Stream sha256 (hex) — streaming ingest'da pack hash butun faylni saqlamasdan hisoblanadi. */
+function sha256Stream(stream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash("sha256");
+    stream.on("error", reject);
+    stream.on("data", (chunk) => hash.update(chunk as Buffer));
+    stream.on("end", () => resolve(hash.digest("hex")));
+  });
+}
+
 /**
  * Skan verdikti → packScanStatus mapping (Bosqich 2 #2). SOF funksiya (I/O YO'Q).
  * Upload-path (fon quvuri) VA approve-path (on-demand lazy-resolve) IKKALASI shu funksiyani
@@ -1412,13 +1432,22 @@ async function rejectIncomingZip(
   }).catch(() => {});
 }
 
+/** Preview'ni lokal materializatsiya qilish chegarasi — AI meta + ffprobe lokal fayl
+ *  talab qiladi, lekin Cloud Run /tmp = tmpfs (RAM). Katta preview → faqat stream. */
+const INGEST_LOCAL_PROBE_MAX_BYTES = (() => {
+  const v = Number(process.env.INGEST_LOCAL_PROBE_MAX_BYTES);
+  return Number.isFinite(v) && v > 0 ? v : 64 * 1024 * 1024;
+})();
+
 /**
- * Bitta incoming zipni "pending" shablonga aylantiradi (KONTENT-QUVURI-SXEMA.md §5):
- * yuklab olish → ochish → pack topish → skan+dedup (classifyPackScan — mavjud siyosat
- * bilan bir xil) → ContributorTemplate yaratish (PENDING_REVIEW) → asset'larni
- * kanonik kalitlarga yuklash → preview fon transcode → o'lcham→orient/res →
- * asl zipni o'chirish. Har xatoda throw QILMAYDI — natija obyektini qaytaradi, shu
- * bois chaqiruvchi (POST /ingest) bitta yomon zip uchun butun partiyani to'xtatmaydi.
+ * Bitta incoming zipni "pending" shablonga aylantiradi (KONTENT-QUVURI-SXEMA.md §5).
+ * FAZA 6b: zip BUTUNLIGICHA yuklab olinmaydi — markaziy katalog ranged GET bilan
+ * o'qiladi, faqat kerakli 3 entry bucket→bucket stream qilinadi (cho'qqi xotira
+ * zip hajmidan mustaqil). Oqim: streaming ochish (FAZA 6a guardlar katalogda) →
+ * pack hash 1-o'tish (stream, saqlanmaydi) → skan+dedup → ContributorTemplate
+ * yaratish (PENDING_REVIEW) → pack 2-o'tish stream-upload (hash qayta tekshiriladi)
+ * + preview'lar → fon transcode → asl zipni o'chirish. Har xatoda throw QILMAYDI —
+ * natija obyektini qaytaradi, chaqiruvchi partiyani to'xtatmaydi.
  */
 async function ingestOneZip(contributorId: string, key: string): Promise<IngestItemResult> {
   if (!key.startsWith(`incoming/${contributorId}/`)) {
@@ -1429,16 +1458,21 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
   }
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_ingest_"));
+  let zip: StreamingIngestZip | null = null;
   try {
     const meta = await getS3ObjectMeta(key);
     if (meta.sizeBytes == null) {
       return { key, ok: false, status: "failed", reason: "File not found in cloud storage" };
     }
-    const zipLocalPath = path.join(tmpDir, "incoming.zip");
-    await downloadS3ToFile(key, zipLocalPath);
-
-    const extracted = await extractIngestZip(zipLocalPath, path.join(tmpDir, "extracted"));
-    if (!extracted.packPath || !extracted.packExt) {
+    zip = await openStreamingIngestZip({
+      size: meta.sizeBytes,
+      read: (s, e) => readS3ObjectRange(key, s, e),
+      stream: (s, e) => createS3RangeStream(key, s, e),
+    });
+    const pack = zip.pack;
+    const image = zip.image;
+    const video = zip.video;
+    if (!pack) {
       // Ichida tanilgan dastur loyihasi (ae/pr/motion/resolve) yo'q → DOIMIY rad
       // (retry foyda bermaydi) — zip o'chiriladi, audit yoziladi.
       const reason = "No supported project file (.aep/.mogrt/.motn/.drfx…) found inside the zip";
@@ -1446,9 +1480,12 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
       return { key, ok: false, status: "failed", reason };
     }
 
-    // Skan + anti-theft dedup — chiqarilgan pack (.aep) hashi ustida, mavjud
-    // upload-yo'li (resolvePackScan) bilan bir xil siyosat (classifyPackScan).
-    const hash = await sha256File(extracted.packPath);
+    // Skan + anti-theft dedup — pack hashi ustida, mavjud upload-yo'li
+    // (resolvePackScan) bilan bir xil siyosat (classifyPackScan). 1-O'TISH:
+    // pack entry faqat hash uchun stream qilinadi (hech qayerga yozilmaydi) —
+    // dedup shablon yaratishdan OLDIN kerak, kanonik kalit esa template.id'ga
+    // bog'liq, shu bois pack keyin 2-o'tishda qayta stream qilinadi.
+    const hash = await sha256Stream(await zip.openEntryStream(pack));
     const dup = await prisma.contributorTemplate.findFirst({
       where: { packHash: hash },
       select: { id: true, contributorId: true },
@@ -1501,18 +1538,33 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
     }
 
     const settings = await getOrCreateSettings();
+    // Preview rasm AI meta + ffprobe uchun LOKAL fayl sifatida kerak — kichik
+    // bo'lsa (cap: INGEST_LOCAL_PROBE_MAX_BYTES) tmpfs'ga materializatsiya
+    // qilinadi; katta bo'lsa o'tkaziladi (keyin faqat stream-upload) — xotira
+    // maqsadi buzilmaydi, AI/dims fail-safe fallback bilan davom etadi.
+    let imagePath: string | null = null;
+    if (image && Number(image.entry.uncompressedSize) <= INGEST_LOCAL_PROBE_MAX_BYTES) {
+      imagePath = path.join(tmpDir, `image${image.ext}`);
+      await streamPipeline(await zip.openEntryStream(image), fs.createWriteStream(imagePath));
+    }
     // FAZA 3 (KONTENT-QUVURI-SXEMA.md §6) — AI zip nomidan (+ preview rasmidan) nom /
     // kategoriya (kanonik ro'yxatdan) / 20 teg yozadi. INTERNAL metadata: kredit yo'li
     // ISHLATILMAYDI. AI xato bersa fail-safe fallback qaytadi — ingest bloklanmaydi.
     const aiMeta = await generateTemplateMetadata({
       zipFileName: key,
-      imagePath: extracted.imagePath,
+      imagePath,
     });
     const title = aiMeta.title;
 
     let dims: { width: number; height: number } | null = null;
-    if (extracted.imagePath) dims = await probeMediaDimensions(extracted.imagePath);
-    if (!dims && extracted.videoPath) dims = await probeMediaDimensions(extracted.videoPath);
+    if (imagePath) dims = await probeMediaDimensions(imagePath);
+    // Rasm o'lcham bermasa — video'dan (faqat lokal materializatsiyaga arzisa).
+    let videoPath: string | null = null;
+    if (!dims && video && Number(video.entry.uncompressedSize) <= INGEST_LOCAL_PROBE_MAX_BYTES) {
+      videoPath = path.join(tmpDir, `video${video.ext}`);
+      await streamPipeline(await zip.openEntryStream(video), fs.createWriteStream(videoPath));
+      dims = await probeMediaDimensions(videoPath);
+    }
     const orient = !dims
       ? settings.defaultOrient || "horizontal"
       : dims.width > dims.height * 1.1
@@ -1523,8 +1575,8 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
     const res = dims && Math.max(dims.width, dims.height) >= 2000 ? "4k" : "1080p";
 
     const flags: string[] = [];
-    if (!extracted.imagePath) flags.push("Missing preview image");
-    if (!extracted.videoPath) flags.push("Missing preview video");
+    if (!image) flags.push("Missing preview image");
+    if (!video) flags.push("Missing preview video");
 
     let template;
     try {
@@ -1539,7 +1591,7 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
           tags: aiMeta.tags,
           orient,
           res,
-          templateApp: extracted.templateApp,
+          templateApp: zip.templateApp,
           reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
           published: false,
           reviewNote: flags.length ? `⚠ ${flags.join("; ")}` : null,
@@ -1561,25 +1613,64 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
     // zip SAQLANADI (retry ishlaydi). "No files uploaded" yarim shablon hech qachon qolmaydi.
     let hasVideoPreview = false;
     try {
-      const packKey = s3UploadKeyForFile(template.id, "pack", extracted.packPath);
-      const localPackSize = fs.statSync(extracted.packPath).size;
-      await uploadFileToS3(extracted.packPath, packKey, "application/octet-stream");
-      // Saqlashni TASDIQLASH — bulutdagi hajm lokal bilan mos bo'lishi shart
-      // (hasPack/fileSize flaglari real holatni aks ettirsin).
+      // 2-O'TISH: pack entry to'g'ridan bucket'ga MULTIPART stream bilan yuklanadi
+      // (disk/xotiraga to'liq olinmaydi). Hash QAYTA hisoblanadi va 1-o'tish bilan
+      // solishtiriladi — ikki o'tish orasida incoming zip bir xil kalitga qayta
+      // yuklangan bo'lsa (poyga) noto'g'ri kontent dedup'siz saqlanib qolmaydi.
+      const packKey = s3UploadKeyForFile(template.id, "pack", `pack${pack.ext}`);
+      const rehash = crypto.createHash("sha256");
+      let packBytes = 0;
+      const tap = new Transform({
+        transform(chunk: Buffer, _enc, cb) {
+          rehash.update(chunk);
+          packBytes += chunk.length;
+          cb(null, chunk);
+        },
+      });
+      const packSrc = await zip.openEntryStream(pack);
+      packSrc.on("error", (e) => tap.destroy(e));
+      // Upload xatoda tap'ni destroy qiladi — manba stream'lar ham yopilsin
+      // (ranged GET soketi osilib qolmasin).
+      tap.on("close", () => {
+        if (!packSrc.destroyed) packSrc.destroy();
+      });
+      packSrc.pipe(tap);
+      await uploadStreamToS3(tap, packKey, "application/octet-stream");
+      if (rehash.digest("hex") !== hash) {
+        throw new Error("Pack content changed during ingest (checksum mismatch) — retry");
+      }
+      // Saqlashni TASDIQLASH — bulutdagi hajm stream qilingan hajm bilan mos
+      // bo'lishi shart (hasPack/fileSize flaglari real holatni aks ettirsin).
       const stored = await getS3ObjectMeta(packKey);
-      if (stored.sizeBytes !== localPackSize) {
+      if (stored.sizeBytes !== packBytes) {
         throw new Error(
-          `Pack storage verification failed (local ${localPackSize}B, stored ${stored.sizeBytes ?? "none"}B)`
+          `Pack storage verification failed (streamed ${packBytes}B, stored ${stored.sizeBytes ?? "none"}B)`
         );
       }
 
-      if (extracted.imagePath) {
-        const thumbKey = s3UploadKeyForFile(template.id, "thumb", extracted.imagePath);
-        await uploadFileToS3(extracted.imagePath, thumbKey, mimeForExt(extracted.imagePath));
+      if (image) {
+        const thumbKey = s3UploadKeyForFile(template.id, "thumb", `thumb${image.ext}`);
+        if (imagePath) {
+          await uploadFileToS3(imagePath, thumbKey, mimeForExt(imagePath));
+        } else {
+          await uploadStreamToS3(
+            await zip.openEntryStream(image),
+            thumbKey,
+            mimeForExt(`thumb${image.ext}`)
+          );
+        }
       }
-      if (extracted.videoPath) {
-        const previewKey = s3UploadKeyForFile(template.id, "preview", extracted.videoPath);
-        await uploadFileToS3(extracted.videoPath, previewKey, mimeForExt(extracted.videoPath));
+      if (video) {
+        const previewKey = s3UploadKeyForFile(template.id, "preview", `preview${video.ext}`);
+        if (videoPath) {
+          await uploadFileToS3(videoPath, previewKey, mimeForExt(videoPath));
+        } else {
+          await uploadStreamToS3(
+            await zip.openEntryStream(video),
+            previewKey,
+            mimeForExt(`preview${video.ext}`)
+          );
+        }
         await prisma.contributorTemplate.update({
           where: { id: template.id },
           data: { previewTranscodeStatus: "pending" },
@@ -1591,7 +1682,7 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
       // prior-tekshiruv shu maydonga qaraydi).
       await prisma.contributorTemplate.update({
         where: { id: template.id },
-        data: { fileName: path.basename(extracted.packPath), fileSize: localPackSize },
+        data: { fileName: `pack${pack.ext}`, fileSize: packBytes },
       });
     } catch (e) {
       console.error("[ingest] asset saqlash yiqildi, kompensatsiya:", key, e);
@@ -1641,6 +1732,9 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
     }
     return { key, ok: false, status: "failed", reason };
   } finally {
+    try {
+      zip?.close();
+    } catch {}
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 }
