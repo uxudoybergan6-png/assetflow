@@ -1067,8 +1067,235 @@ const AssetFlowCatalog = (() => {
     return out;
   }
 
+  // ── FAZA 4: yetishmagan shrift hal qiluvchi (3 bosqich) ───────────────────
+  // Import'dan keyin host.jsx aniqlagan missing shriftlar shu yerga keladi.
+  // Har biri uchun: (1) Google Fonts / ochiq manba → yuklab OS font papkasiga
+  // o'rnatamiz; (2) bo'lmasa Adobe Fonts → CC avtomat yoqadi (dasturiy majburlab
+  // yoqib bo'lmaydi — foydalanuvchini xabardor qilamiz); (3) topilmasa → qo'lda.
+  //
+  // LITSENZIYA: faqat Google Fonts / ochiq-manba shriftni YUKLAYMIZ. Pullik
+  // Adobe/maxsus shriftlar hech qachon yuklab tarqatilmaydi (a→CC yoki c→qo'lda).
+  //
+  // Google'ni BIRINCHI tekshiramiz: ochiq-manba bo'lgani uchun uni erkin
+  // o'rnatishimiz mumkin (foydalanuvchi hech narsa qilmaydi). Google'da yo'q
+  // bo'lsa — Adobe'da bormi tekshirib, bor bo'lsa CC yoqishini aytamiz.
+
+  // Platformaga mos foydalanuvchi font papkasi (admin talab qilmaydi).
+  function userFontsDir() {
+    const os = require("os");
+    const path = require("path");
+    const fs = require("fs");
+    let dir;
+    if (process.platform === "darwin") {
+      dir = path.join(os.homedir(), "Library", "Fonts");
+    } else if (process.platform === "win32") {
+      const base =
+        process.env.LOCALAPPDATA ||
+        path.join(os.homedir(), "AppData", "Local");
+      dir = path.join(base, "Microsoft", "Windows", "Fonts");
+    } else {
+      dir = path.join(os.homedir(), ".fonts");
+    }
+    try { fs.mkdirSync(dir, { recursive: true }); } catch (e) {}
+    return dir;
+  }
+
+  // Oddiy GET (kichik javob) — status + tanani qaytaradi. Redirect'ni kuzatadi.
+  function httpGetText(url, extraHeaders, redirectsLeft) {
+    return new Promise((resolve, reject) => {
+      if (redirectsLeft == null) redirectsLeft = 5;
+      if (redirectsLeft <= 0) { reject(new Error("Redirect limit")); return; }
+      const lib = url.indexOf("https") === 0 ? require("https") : require("http");
+      const headers = Object.assign(
+        { "Accept": "*/*" },
+        extraHeaders || {}
+      );
+      const req = lib.get(url, { headers }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          let next = res.headers.location;
+          try { next = new URL(next, url).toString(); } catch (e) {}
+          httpGetText(next, extraHeaders, redirectsLeft - 1).then(resolve, reject);
+          return;
+        }
+        let body = "";
+        res.setEncoding("utf8");
+        res.on("data", (c) => { if (body.length < 65536) body += c; });
+        res.on("end", () => resolve({ status: res.statusCode, body }));
+        res.on("error", reject);
+      });
+      req.setTimeout(12000, () => { req.destroy(new Error("timeout")); });
+      req.on("error", reject);
+    });
+  }
+
+  // Google Fonts KLASSIK /css endpoint — eski/UAsiz so'rovda .ttf URL qaytaradi
+  // (AE .ttf/.otf kutadi, woff2 emas). Family topilmasa 400 qaytadi.
+  async function googleFontTtfUrl(family) {
+    const q = encodeURIComponent(String(family || "").trim()).replace(/%20/g, "+");
+    if (!q) return null;
+    const url = "https://fonts.googleapis.com/css?family=" + q;
+    let res;
+    try {
+      // Google Fonts KLASSIK /css tanilmagan UA'ga TTF beradi (zamonaviy brauzer
+      // UA'siga woff2 — AE uni o'qiy olmaydi). Shu sabab o'z UA'mizni yuboramiz.
+      res = await httpGetText(url, { "User-Agent": "AssetFlow-FontFetcher/1.0" });
+    } catch (e) { return null; }
+    if (!res || res.status !== 200 || !res.body) return null;
+    const m = res.body.match(/url\((https:\/\/[^)]+\.(?:ttf|otf))\)/i);
+    return m ? m[1] : null;
+  }
+
+  // URL faylni to'g'ridan diskka yuklaydi (font — kichik, xotiraga to'g'ri).
+  function downloadBinaryToFile(url, destPath, redirectsLeft) {
+    return new Promise((resolve, reject) => {
+      const fs = require("fs");
+      if (redirectsLeft == null) redirectsLeft = 5;
+      if (redirectsLeft <= 0) { reject(new Error("Redirect limit")); return; }
+      const lib = url.indexOf("https") === 0 ? require("https") : require("http");
+      const req = lib.get(url, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          let next = res.headers.location;
+          try { next = new URL(next, url).toString(); } catch (e) {}
+          downloadBinaryToFile(next, destPath, redirectsLeft - 1).then(resolve, reject);
+          return;
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          reject(new Error("HTTP " + res.statusCode));
+          return;
+        }
+        const partPath = destPath + ".part";
+        const ws = fs.createWriteStream(partPath);
+        res.pipe(ws);
+        ws.on("finish", () => {
+          try {
+            try { if (fs.existsSync(destPath)) fs.rmSync(destPath, { force: true }); } catch (e) {}
+            fs.renameSync(partPath, destPath);
+          } catch (e) { reject(e); return; }
+          resolve(destPath);
+        });
+        ws.on("error", (e) => { try { fs.rmSync(partPath, { force: true }); } catch (x) {} reject(e); });
+        res.on("error", (e) => { try { fs.rmSync(partPath, { force: true }); } catch (x) {} reject(e); });
+      });
+      req.setTimeout(20000, () => { req.destroy(new Error("timeout")); });
+      req.on("error", reject);
+    });
+  }
+
+  function safeFontFileName(family, ext) {
+    const base = String(family || "font").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+    return (base || "font") + (ext || ".ttf");
+  }
+
+  // Windows'da per-user font'ni ro'yxatga qo'shish (restart'siz ham AE ko'rishi
+  // uchun). Best-effort — muvaffaqiyatsiz bo'lsa restart baribir yordam beradi.
+  function registerWindowsUserFont(filePath, family) {
+    if (process.platform !== "win32") return;
+    try {
+      const child = require("child_process");
+      const valueName = String(family || "AssetFlow Font") + " (TrueType)";
+      child.execFileSync("reg", [
+        "add",
+        "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts",
+        "/v", valueName,
+        "/t", "REG_SZ",
+        "/d", filePath,
+        "/f"
+      ], { stdio: "ignore", timeout: 8000 });
+    } catch (e) { /* best-effort */ }
+  }
+
+  // Adobe Fonts'da shu family bormi? (best-effort — public font sahifasi 200 bersa).
+  async function isAdobeFont(family) {
+    const slug = String(family || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (!slug) return false;
+    const url = "https://fonts.adobe.com/fonts/" + slug;
+    try {
+      const res = await httpGetText(url, {
+        "User-Agent": "Mozilla/5.0 (compatible; AssetFlow/1.0)"
+      });
+      return !!res && res.status === 200;
+    } catch (e) { return false; }
+  }
+
+  // Bitta shriftni hal qiladi → { name, status, message }.
+  //   status: "installed" | "adobe" | "manual" | "error"
+  async function resolveOneFont(font) {
+    const family = String((font && (font.family || font.postScript)) || "").trim();
+    if (!family) return { name: "(noma'lum)", status: "manual", message: "Shrift nomi yo'q" };
+
+    // 1) Google Fonts / ochiq manba → yuklab o'rnatamiz.
+    try {
+      const ttfUrl = await googleFontTtfUrl(family);
+      if (ttfUrl) {
+        const path = require("path");
+        const ext = /\.otf($|\?)/i.test(ttfUrl) ? ".otf" : ".ttf";
+        const dir = userFontsDir();
+        const dest = path.join(dir, safeFontFileName(family, ext));
+        await downloadBinaryToFile(ttfUrl, dest);
+        registerWindowsUserFont(dest, family);
+        return {
+          name: family,
+          status: "installed",
+          message: "Google Fonts'dan o'rnatildi — AE'ni qayta ishga tushiring"
+        };
+      }
+    } catch (e) {
+      // yuklab o'rnatishda xato — Adobe/manual bosqichiga o'tamiz
+    }
+
+    // 2) Adobe Fonts → CC avtomat yoqadi (dasturiy majburlab bo'lmaydi).
+    try {
+      if (await isAdobeFont(family)) {
+        return {
+          name: family,
+          status: "adobe",
+          message: "Adobe Font — Creative Cloud avtomat yoqadi (CC ochiq bo'lsin)"
+        };
+      }
+    } catch (e) {}
+
+    // 3) Topilmadi — qo'lda o'rnatish.
+    return {
+      name: family,
+      status: "manual",
+      message: "Topilmadi — qo'lda o'rnating"
+    };
+  }
+
+  // Missing shriftlar ro'yxatini ketma-ket hal qiladi. `onStatus(result, index,
+  // total)` har shrift tugagach chaqiriladi (jonli UI uchun). Faqat AE (Node)
+  // ichida ishlaydi; brauzer preview'da bo'sh qaytaradi.
+  async function resolveMissingFonts(fonts, onStatus) {
+    const list = Array.isArray(fonts) ? fonts : [];
+    const results = [];
+    if (typeof window !== "undefined" && typeof window.__adobe_cep__ === "undefined") {
+      return results; // AE tashqarisida OS font papkasiga yozmaymiz
+    }
+    for (let i = 0; i < list.length; i++) {
+      let r;
+      try {
+        r = await resolveOneFont(list[i]);
+      } catch (e) {
+        const nm = String((list[i] && (list[i].family || list[i].postScript)) || "shrift");
+        r = { name: nm, status: "error", message: String((e && e.message) || e) };
+      }
+      results.push(r);
+      if (typeof onStatus === "function") {
+        try { onStatus(r, i, list.length); } catch (cbErr) {}
+      }
+    }
+    return results;
+  }
+
   return {
     apiBase,
+    resolveMissingFonts,
     fetchCatalog,
     fetchFeatured,
     refreshFeatured,

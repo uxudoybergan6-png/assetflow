@@ -6057,6 +6057,8 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
       try{ data=JSON.parse(raw); }catch{ data=null; }
       if(data?.ok){
         markDownloaded(data);
+        // FAZA 4: sahna comp(lar)idagi yetishmagan shriftlarni hal qilamiz
+        if(data.missingFonts&&data.missingFonts.length) resolveTemplateFonts(data.missingFonts);
         if(mode==='project'){
           const what=data.fullPack?('the full "'+(packName||scene.n)+'" pack'):('the "'+scene.n+'" scene (+ required footage)');
           showToast('✓ Imported '+what+' into the Project panel','success',__elapsed());
@@ -6253,15 +6255,17 @@ async function __downloadAllImpl(n){
       if(!result){ render();renderDl(); return; }
       // Host importTemplateProject JSON {ok,folder,movedCount} qaytaradi;
       // eski "ok:aep"/"ok:<name>" string kontrakti ham ehtiyot uchun qabul qilinadi.
-      let ok=false,folder=null;
+      let ok=false,folder=null,missingFonts=null;
       if(typeof result==='string'){
         if(result.indexOf('ok:')===0) ok=true;
-        else { try{ const d=JSON.parse(result); if(d&&d.ok){ ok=true; folder=d.folder||null; } }catch(e){} }
+        else { try{ const d=JSON.parse(result); if(d&&d.ok){ ok=true; folder=d.folder||null; missingFonts=d.missingFonts||null; } }catch(e){} }
       }
       if(ok){
         markPackDownloaded();
         recordImportedMeta(n,null,folder?{folder}:null);
         showToast('✓ "'+(p.displayName||n)+'" imported into the AE project','success',__elapsed());
+        // FAZA 4: yetishmagan shriftlarni fon rejimida hal qilamiz (import'ni bloklamaydi)
+        if(missingFonts&&missingFonts.length) resolveTemplateFonts(missingFonts);
       }
       else showToast('Import error: '+(result||'unknown'),'error');
     }catch(err){
@@ -8002,6 +8006,108 @@ window.afConfirm=function(msg,opts){
     }
   });
 };
+
+/* ===== FAZA 4: yetishmagan shrift hal qiluvchi paneli =====================
+ * Import'dan keyin host aniqlagan missing shriftlarni AssetFlowCatalog.resolveMissingFonts
+ * (Node) orqali 3 bosqichda hal qiladi va har shriftni jonli holat bilan ko'rsatadi:
+ *   installed → Google Fonts'dan o'rnatildi
+ *   adobe     → CC avtomat yoqadi
+ *   manual    → qo'lda o'rnating
+ * Redizayn yo'q — mavjud afConfirm modal uslubini qayta ishlatadi (inline stil). */
+window.afFontResolver=(function(){
+  var CHIP={
+    checking:{t:'⏳ tekshirilmoqda',c:'var(--muted)'},
+    installed:{t:'✓ o‘rnatildi',c:'#22c55e'},
+    adobe:{t:'☁ CC yoqadi',c:'#60a5fa'},
+    manual:{t:'⚠ qo‘lda',c:'#f59e0b'},
+    error:{t:'✕ xato',c:'var(--red)'}
+  };
+  var ov=null,listEl=null,rows={};
+  function close(){ try{ ov.parentNode.removeChild(ov); }catch(_){ } ov=null;listEl=null;rows={}; document.removeEventListener('keydown',esc,true); }
+  function esc(e){ if(e.key==='Escape'){ e.stopPropagation(); close(); } }
+  function chip(status){
+    var meta=CHIP[status]||CHIP.checking;
+    var s=document.createElement('span');
+    s.style.cssText='flex:0 0 auto;font-size:10.5px;font-weight:700;color:'+meta.c+';white-space:nowrap';
+    s.textContent=meta.t; return s;
+  }
+  function open(fonts){
+    try{ if(ov)close(); }catch(_){}
+    ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+    var card=document.createElement('div');
+    card.style.cssText='width:100%;max-width:340px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit;max-height:80vh;display:flex;flex-direction:column';
+    var tt=document.createElement('div');
+    tt.style.cssText='color:var(--text);font-weight:700;font-size:13.5px;line-height:1.4';
+    tt.textContent='Yetishmagan shriftlar';
+    var sub=document.createElement('div');
+    sub.style.cssText='color:var(--muted);font-size:11px;margin-top:5px;line-height:1.5';
+    sub.textContent='Shablon '+fonts.length+' ta o‘rnatilmagan shriftdan foydalanadi — avtomat hal qilinmoqda.';
+    listEl=document.createElement('div');
+    listEl.style.cssText='margin-top:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px';
+    for(var i=0;i<fonts.length;i++){
+      var nm=String((fonts[i]&&(fonts[i].family||fonts[i].postScript))||'shrift');
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:10px;justify-content:space-between';
+      var left=document.createElement('div');
+      left.style.cssText='min-width:0;flex:1';
+      var name=document.createElement('div');
+      name.style.cssText='color:var(--text);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+      name.textContent=nm;
+      var note=document.createElement('div');
+      note.style.cssText='color:var(--muted);font-size:10px;margin-top:2px;line-height:1.35';
+      note.textContent='';
+      left.appendChild(name);left.appendChild(note);
+      var c=chip('checking');
+      row.appendChild(left);row.appendChild(c);
+      listEl.appendChild(row);
+      rows[i]={row:row,chip:c,note:note};
+    }
+    var closeBtn=document.createElement('button');
+    closeBtn.type='button';closeBtn.textContent='Yopish';
+    closeBtn.style.cssText='margin-top:14px;height:36px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.06);color:var(--text);font-weight:600';
+    closeBtn.addEventListener('click',close);
+    card.appendChild(tt);card.appendChild(sub);card.appendChild(listEl);card.appendChild(closeBtn);
+    ov.appendChild(card);
+    ov.addEventListener('click',function(e){ if(e.target===ov)close(); });
+    document.addEventListener('keydown',esc,true);
+    document.body.appendChild(ov);
+  }
+  function update(index,result){
+    var r=rows[index]; if(!r)return;
+    var st=(result&&result.status)||'error';
+    var newChip=chip(st);
+    try{ r.row.replaceChild(newChip,r.chip); r.chip=newChip; }catch(_){}
+    if(r.note)r.note.textContent=(result&&result.message)||'';
+  }
+  return { open:open, update:update, close:close };
+})();
+
+/** Import natijasidagi missingFonts'ni 3 bosqichda hal qiladi (host → Node → UI).
+ *  Money-zone'ga tegmaydi; xato bo'lsa import muvaffaqiyati BUZILMAYDI. */
+async function resolveTemplateFonts(missingFonts){
+  try{
+    if(!IS_CEP)return;                       // AE tashqarisida OS font papkasiga yozmaymiz
+    if(typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.resolveMissingFonts)return;
+    var fonts=Array.isArray(missingFonts)?missingFonts.filter(function(f){return f&&(f.family||f.postScript);}):[];
+    if(!fonts.length)return;
+    window.afFontResolver.open(fonts);
+    var res=await AssetFlowCatalog.resolveMissingFonts(fonts,function(r,i){
+      window.afFontResolver.update(i,r);
+    });
+    // Yakuniy qisqa xulosa (toast) — nechta o'rnatildi / CC / qo'lda
+    var n={installed:0,adobe:0,manual:0,error:0};
+    (res||[]).forEach(function(r){ if(r&&n[r.status]!=null)n[r.status]++; });
+    var parts=[];
+    if(n.installed)parts.push(n.installed+' o‘rnatildi');
+    if(n.adobe)parts.push(n.adobe+' CC yoqadi');
+    if(n.manual||n.error)parts.push((n.manual+n.error)+' qo‘lda');
+    if(parts.length)showToast('Shriftlar: '+parts.join(', '),(n.manual||n.error)?'warning':'success');
+  }catch(err){
+    try{ console.warn('resolveTemplateFonts',err); }catch(_){}
+    // Font hal qilish xatosi import natijasini o'zgartirmaydi (jim o'tamiz).
+  }
+}
 
 /** Xom xato matnlarini (Failed to fetch, ExtendScript, HTTP) tushunarli qiladi */
 // Enhance natijasini tozalaydi — LLM ba'zan META blok qo'shadi (sarlavha + Target Model/Duration/

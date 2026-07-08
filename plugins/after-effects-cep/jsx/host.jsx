@@ -4,6 +4,99 @@ if (!String.prototype.trim) {
   };
 }
 
+// ── FAZA 4: yetishmagan shrift aniqlash (ES3-safe) ──────────────────────────
+// Import'dan keyin text layerlar qaysi shriftni so'raganini o'qib, o'rnatilmagan
+// (missing/substituted) shriftlarni yig'amiz. AE 2024+ (FontsObject `app.fonts`)
+// bo'lsa aniq ishlaydi; eski AE'da app.fonts yo'q → hech qanday yolg'on
+// "missing" bermaymiz (hasApi=false). ES5-only metodlardan (forEach, Array.*)
+// qochamiz — faqat oddiy for/while ishlatamiz.
+function af_fontKey(s) {
+  return String(s == null ? "" : s).replace(/^\s+/, "").replace(/\s+$/, "").toLowerCase();
+}
+
+// O'rnatilgan shriftlar lug'ati (postScript + family, kichik harf). Substitute
+// (missing font o'rnini bosuvchi) yozuvlarni CHIQARIB tashlaymiz — aks holda
+// yetishmagan shrift "o'rnatilgan" ko'rinib, aniqlanmay qolardi.
+function af_installedFontLookup() {
+  var lk = { ps: {}, fam: {}, hasApi: false };
+  try {
+    if (typeof app !== "undefined" && app.fonts && app.fonts.allFonts) {
+      var all = app.fonts.allFonts;
+      lk.hasApi = true;
+      for (var i = 0; i < all.length; i++) {
+        var fo = all[i];
+        var isSub = false;
+        try { isSub = (fo.isSubstitute === true); } catch (eSub) {}
+        if (isSub) continue;
+        try { if (fo.postScriptName) lk.ps[af_fontKey(fo.postScriptName)] = true; } catch (e1) {}
+        try { if (fo.familyName) lk.fam[af_fontKey(fo.familyName)] = true; } catch (e2) {}
+      }
+    }
+  } catch (e) {}
+  return lk;
+}
+
+// Bitta text layer'ning TextDocument'idan shrift nomlarini o'qiydi.
+// Missing font'da AE `.font`'da ASL (so'ralgan) PostScript nomini saqlaydi —
+// aynan shuni o'rnatilganlar ro'yxati bilan solishtiramiz.
+function af_textDocFont(layer) {
+  try {
+    var prop = layer.property("ADBE Text Properties");
+    if (!prop) return null;
+    var doc = prop.property("ADBE Text Document");
+    if (!doc) return null;
+    var td = doc.value;
+    if (!td) return null;
+    var ps = "", fam = "", style = "";
+    try { ps = td.font ? String(td.font) : ""; } catch (e1) {}
+    try { fam = td.fontFamily ? String(td.fontFamily) : ""; } catch (e2) {}
+    try { style = td.fontStyle ? String(td.fontStyle) : ""; } catch (e3) {}
+    return { ps: ps, family: fam, style: style };
+  } catch (e) { return null; }
+}
+
+// Comp(lar) ro'yxatidagi text layerlarni aylanib, o'rnatilmagan shriftlarni
+// yig'adi. `comps` — CompItem yoki {comp:CompItem} yozuvlari aralash bo'lishi
+// mumkin (collectAllImportedComps / collectCompDependencies ikkalasi ham beriladi).
+// Natija: [{ family, postScript, style }] — postScript/family bo'yicha takrorsiz.
+function af_missingFontsForComps(comps) {
+  var out = [];
+  var seen = {};
+  var lk = af_installedFontLookup();
+  if (!lk.hasApi) return out;
+  if (!comps || comps.length == null) return out;
+  for (var i = 0; i < comps.length; i++) {
+    var comp = (comps[i] && comps[i].comp) ? comps[i].comp : comps[i];
+    if (!comp) continue;
+    var isComp = false;
+    try { isComp = (comp instanceof CompItem); } catch (eC) { isComp = false; }
+    if (!isComp) continue;
+    var n = 0;
+    try { n = comp.numLayers; } catch (eNum) { n = 0; }
+    for (var j = 1; j <= n; j++) {
+      var L = null;
+      try { L = comp.layer(j); } catch (eL) { L = null; }
+      if (!L) continue;
+      var isText = false;
+      try { isText = (L instanceof TextLayer); } catch (eT) { isText = false; }
+      if (!isText) continue;
+      var f = af_textDocFont(L);
+      if (!f) continue;
+      var psKey = af_fontKey(f.ps);
+      var famKey = af_fontKey(f.family);
+      if (!psKey && !famKey) continue;
+      // O'rnatilgan bo'lsa (postScript YOKI family topilsa) — o'tkazamiz.
+      if (psKey && lk.ps[psKey]) continue;
+      if (famKey && lk.fam[famKey]) continue;
+      var dedupe = psKey || famKey;
+      if (seen[dedupe]) continue;
+      seen[dedupe] = true;
+      out.push({ family: f.family || f.ps, postScript: f.ps, style: f.style });
+    }
+  }
+  return out;
+}
+
 function pickTemplateFile(filterHint) {
   try {
     var f = File.openDialog("Select file", filterHint || "*.*");
@@ -1530,6 +1623,12 @@ function importSingleSceneFromAep(jsonStr) {
     } else {
       timelineResult = addSceneCompToTimeline(targetComp, destCompId, cfg);
     }
+    // Yetishmagan shriftlar — faqat foydalanuvchi olgan comp(lar) bo'yicha:
+    // prune bo'lsa targetComp + dependency, aks holda barcha import qilingan comp.
+    var fontComps = pruneToScene
+      ? collectCompDependencies(targetComp, [], {})
+      : collectAllImportedComps(existingIds);
+    var missingFonts = af_missingFontsForComps(fontComps);
     app.endUndoGroup();
     return JSON.stringify({
       ok: true,
@@ -1539,7 +1638,8 @@ function importSingleSceneFromAep(jsonStr) {
       importMode: importMode,
       fullPack: !pruneToScene,
       addedToTimeline: timelineResult.ok,
-      timelineReason: timelineResult.reason || ""
+      timelineReason: timelineResult.reason || "",
+      missingFonts: missingFonts
     });
   } catch (e) {
     try { app.endUndoGroup(); } catch (ignore4) {}
@@ -2022,9 +2122,11 @@ function importTemplateProject(jsonStr) {
     io.importAs = ImportAsType.PROJECT;
     app.project.importFile(io);
     var keptFolder = renameNewImportRootFolder(existingIds, packLabel);
-    var movedCount = collectAllImportedComps(existingIds).length;
+    var importedComps = collectAllImportedComps(existingIds);
+    var movedCount = importedComps.length;
+    var missingFonts = af_missingFontsForComps(importedComps);
     app.endUndoGroup();
-    return JSON.stringify({ ok: true, folder: keptFolder || packLabel, movedCount: movedCount });
+    return JSON.stringify({ ok: true, folder: keptFolder || packLabel, movedCount: movedCount, missingFonts: missingFonts });
   } catch (e) {
     try { app.endUndoGroup(); } catch (ignore) {}
     return JSON.stringify({ ok: false, message: e.toString() });
