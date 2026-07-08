@@ -695,15 +695,21 @@ model ContributorEarning {
   contributorId   String
   templateId      String
   downloadEventId String   @unique // idempotency key — bir download = bir earning
-  amountCents     Int                 // > 0, additive, hech qachon manfiy emas
+  amountCents     Int                 // >= 0, additive, hech qachon manfiy emas
   currency        String   @default("USD")
   payoutId        String?             // admin payout'ga kiritilganda o'rnatiladi
+  // FAZA 4 (C) — pool payout: kind="download" (per-download yoki pool-rejim MARKER,
+  // pool rejimida amount=0) | kind="pool" (davr taqsimoti qatori,
+  // downloadEventId="pool:<YYYY-MM>:<contributorId>" → davr+contributor idempotent).
+  kind            String   @default("download")
+  periodMonth     String?             // pool qatorlari uchun "YYYY-MM"
   createdAt       DateTime @default(now())
 
   @@index([contributorId])
   @@index([payoutId])
   @@index([templateId])
   @@index([createdAt])
+  @@index([kind, periodMonth])
 }
 
 // ContributorPayout: admin tomonidan yozilgan to'lov qaydi (Khamkorbank UZ va h.k.).

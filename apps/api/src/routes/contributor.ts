@@ -75,6 +75,8 @@ import {
   getContributorEarningsSummary,
   recordContributorPayout,
   payoutPerDownloadCents,
+  payoutMode,
+  contributorPoolShare,
 } from "../lib/earnings.js";
 import crypto from "crypto";
 
@@ -388,6 +390,14 @@ contributorRouter.get("/admin/earnings", requireAuth, requireAdmin, async (_req,
     where: { payoutId: null },
     _sum: { amountCents: true },
   });
+  // FAZA 4 (C): earningEvents = faqat LEGITIM download hodisalari (pool taqsimot
+  // qatorlari hodisa emas; pool rejimida download qatori 0-amount MARKER).
+  const dlCounts = await prisma.contributorEarning.groupBy({
+    by: ["contributorId"],
+    where: { kind: "download" },
+    _count: { _all: true },
+  });
+  const dlMap = new Map(dlCounts.map((r) => [r.contributorId, r._count._all]));
   const unpaidMap = new Map(unpaid.map((r) => [r.contributorId, r._sum.amountCents ?? 0]));
   const ids = grouped.map((g) => g.contributorId);
   const users = ids.length
@@ -399,13 +409,15 @@ contributorRouter.get("/admin/earnings", requireAuth, requireAdmin, async (_req,
   const userMap = new Map(users.map((u) => [u.id, u]));
   res.json({
     perDownloadCents: payoutPerDownloadCents(),
+    payoutMode: payoutMode(),
+    poolShare: contributorPoolShare(),
     contributors: grouped.map((g) => ({
       contributorId: g.contributorId,
       email: userMap.get(g.contributorId)?.email ?? null,
       name: userMap.get(g.contributorId)?.name ?? null,
       totalEarnedCents: g._sum.amountCents ?? 0,
       balanceCents: Math.max(0, unpaidMap.get(g.contributorId) ?? 0),
-      earningEvents: g._count._all,
+      earningEvents: dlMap.get(g.contributorId) ?? 0,
     })),
   });
 });

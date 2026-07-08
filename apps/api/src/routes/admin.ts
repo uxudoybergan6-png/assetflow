@@ -28,7 +28,12 @@ import {
   updatePricingConfig,
 } from "../lib/model-pricing.js";
 import { computeMargins, spendByProvider } from "../lib/model-margin.js";
-import { payoutPerDownloadCents } from "../lib/earnings.js";
+import {
+  payoutPerDownloadCents,
+  payoutMode,
+  contributorPoolShare,
+  computePoolForMonth,
+} from "../lib/earnings.js";
 import { revenueSummary } from "../lib/revenue.js";
 import {
   runMonthlyReconciliation,
@@ -565,6 +570,58 @@ adminRouter.get("/finance", async (req, res) => {
     revenue,
     mrrCents: mrrRevenue.mrrCents,
   });
+});
+
+// ── FAZA 4 (C) — revenue-share POOL payout hisoblash (pul KO'CHIRILMAYDI) ────
+const poolMonth = z.string().regex(/^\d{4}-\d{2}$/, "YYYY-MM");
+
+/** GET /api/admin/payout/pool?month=YYYY-MM — pool taqsimoti PREVIEW (yozmaydi). */
+adminRouter.get("/payout/pool", async (req, res) => {
+  const parsed = poolMonth.safeParse(String(req.query.month ?? ""));
+  if (!parsed.success) {
+    res.status(400).json({ error: "month must be YYYY-MM" });
+    return;
+  }
+  const result = await computePoolForMonth(parsed.data);
+  if (!result.ok) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+/** POST /api/admin/payout/pool { month, recompute? } — pool qatorlarini YOZADI
+ *  (ContributorEarning kind="pool", davr+contributor idempotent). recompute=true →
+ *  to'lanmagan pool qatorlari qayta hisoblanadi (payout'ga bog'langanlar tegilmaydi). */
+adminRouter.post("/payout/pool", async (req, res) => {
+  const body = z
+    .object({ month: poolMonth, recompute: z.boolean().optional() })
+    .safeParse(req.body ?? {});
+  if (!body.success) {
+    res.status(400).json({ error: body.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  const result = await computePoolForMonth(body.data.month, {
+    persist: true,
+    recompute: body.data.recompute,
+  });
+  if (!result.ok) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "payout.pool.compute",
+    targetType: "payoutPool",
+    targetId: body.data.month,
+    meta: {
+      poolCents: result.poolCents,
+      contributors: result.contributors.length,
+      written: result.written,
+      recompute: !!body.data.recompute,
+    },
+  });
+  res.json(result);
 });
 
 /** GET /api/admin/gen-spend[?month=YYYY-MM] — per-user AI gen sarfi (Generation × ProviderSpend). */
