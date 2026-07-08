@@ -1,12 +1,16 @@
 import jwt from "jsonwebtoken";
 
-// KALIT AJRATISH (Bosqich 1 #4): cost-quote imzosi AUTH tokenidan ALOHIDA kalit bilan imzolanadi.
-// Ilgari JWT_SECRET ham auth token, ham cost-quote uchun ishlatilardi — u sizib chiqsa hujjatchi
-// SOXTA cost-quote yasab tekin generatsiya olardi. Endi COST_QUOTE_SECRET alohida. In-flight
-// quote'larni buzmaslik uchun COST_QUOTE_SECRET yo'q bo'lsa JWT_SECRET'ga qaytadi (fallback);
-// LEKIN productionда ALOHIDA qiymat SHART (index.ts validateEnv ogohlantiradi).
+// KALIT AJRATISH (Bosqich 1 #4 · FAZA 2 H6): cost-quote imzosi AUTH tokenidan ALOHIDA kalit
+// bilan imzolanadi. Ilgari JWT_SECRET ham auth token, ham cost-quote uchun ishlatilardi — u
+// sizib chiqsa hujjatchi SOXTA cost-quote yasab tekin generatsiya olardi.
+// PRODUCTIONДА JWT_SECRET FALLBACK OLIB TASHLANDI: COST_QUOTE_SECRET yo'q yoki JWT_SECRET'ga
+// teng bo'lsa index.ts validateEnv serverni FATAL to'xtatadi (JWT_SECRET kabi). Dev'da esa
+// qulaylik uchun JWT_SECRET'ga (yoki dev-secret) qaytadi.
 const QUOTE_SECRET =
-  process.env.COST_QUOTE_SECRET?.trim() || process.env.JWT_SECRET || "dev-secret-change-me";
+  process.env.COST_QUOTE_SECRET?.trim() ||
+  (process.env.NODE_ENV === "production"
+    ? "" // prod'da bu holatga yetib bo'lmaydi — validateEnv boot'ni to'xtatadi (fail-closed)
+    : process.env.JWT_SECRET || "dev-secret-change-me");
 const QUOTE_KIND = "studio-gen-quote";
 
 /** Stabil (kalitlar tartiblangan) JSON — params hash uchun. */

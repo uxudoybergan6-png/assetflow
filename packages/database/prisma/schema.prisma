@@ -620,6 +620,20 @@ model PlanConfig {
   updatedAt         DateTime @updatedAt
 }
 
+// ── FAZA 2 (H7) — /gen kunlik cap DB'da (in-memory Map o'rniga). Process restart /
+// multi-instance holatida in-memory hisoblagich nolga qaytib cap'ni chetlab o'tardi.
+// day = UTC kun raqami (Date.now()/86_400_000). kind = "gen" | "helper". Har kuni yangi qator.
+model DailyUsageCounter {
+  userId    String
+  day       Int
+  kind      String
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, day, kind])
+  @@index([day])
+}
+
 // ── FAZA 2 #17 — Sevimlilar (plagin↔web umumiy). FK-siz (TemplateDownloadEvent
 // naqshi) — shablon o'chsa yetim qator zararsiz (katalogga filtr bilan ko'rinmaydi).
 model UserTemplateFavorite {

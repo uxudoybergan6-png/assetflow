@@ -56,6 +56,7 @@ import {
   isGenKillSwitchOn,
   checkGlobalSpendCeiling,
   withinGenDailyCap,
+  incrDailyUsage,
 } from "../lib/spend-guard.js";
 import {
   processGenerationInBackground,
@@ -165,17 +166,10 @@ const SAVED_REF_MAX_LIST = 24;
 // ham) orqali kunlik portlashni to'sadi. In-memory/single-instance (mavjud
 // rate-limit falsafasiga mos); kredit tizimi asosiy oylik cheklov bo'lib qoladi.
 const HELPER_DAILY_CAP = 80;
-const helperDayHits = new Map<string, { day: number; count: number }>();
-function withinDailyCap(userId: string): boolean {
-  const day = Math.floor(Date.now() / 86_400_000); // UTC kun raqami
-  const cur = helperDayHits.get(userId);
-  if (!cur || cur.day !== day) {
-    helperDayHits.set(userId, { day, count: 1 });
-    return true;
-  }
-  if (cur.count >= HELPER_DAILY_CAP) return false;
-  cur.count++;
-  return true;
+/** FAZA 2 (H7) — helper (enhance/describe) kunlik cap ham DB'da (restart/multi-instance
+ *  chidamli), gen cap bilan bir xil DailyUsageCounter jadvalidan (kind "helper"). */
+function withinDailyCap(userId: string): Promise<boolean> {
+  return incrDailyUsage(userId, "helper", HELPER_DAILY_CAP);
 }
 
 /** Minimal spend log (Render konsoliga). TODO: alohida AiSpendLog modeli (#3 audit). */
@@ -571,6 +565,16 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     return;
   }
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
+  // FAZA 2 (M6) — referens yuklamasi ham storage kvotaga kiradi (getUserUsedBytes SavedReference'ni
+  // hisoblaydi). Allaqachon kvotadan oshgan bo'lsa yangi referensni QABUL QILMAYMIZ (baytlardan oldin).
+  const refQuota = await isStorageOverQuota(req.user!.userId, req.user!.role === "ADMIN");
+  if (refQuota.over) {
+    res.status(413).json({
+      error: "Storage quota exceeded — delete some generations or references before uploading more",
+      code: "STORAGE_QUOTA_EXCEEDED",
+    });
+    return;
+  }
   try {
     await new Promise<void>((resolve, reject) => {
       refUpload.single("file")(req as Parameters<ReturnType<typeof refUpload.single>>[0], res as Parameters<ReturnType<typeof refUpload.single>>[1], (err) => {
@@ -1000,7 +1004,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // 3) Per-user kunlik /gen cap (ADMIN ozod) — bitta hisob orqali portlashni to'sadi.
   // Imzo tekshiruvidan KEYIN (muddati o'tgan/soxta quote hisoblagichni oshirmasin), lekin
   // kredit yechishdan OLDIN (reject → charge yo'q).
-  if (!withinGenDailyCap(req.user!.userId, req.user!.role === "ADMIN")) {
+  if (!(await withinGenDailyCap(req.user!.userId, req.user!.role === "ADMIN"))) {
     res.status(429).json({
       error: "Daily generation limit reached — please try again tomorrow",
       code: "GEN_DAILY_CAP_REACHED",
@@ -1141,7 +1145,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   const keepRefs =
     " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
-  if (!withinDailyCap(req.user!.userId)) {
+  if (!(await withinDailyCap(req.user!.userId))) {
     res.status(429).json({
       error: "Daily AI assist limit reached — please try again tomorrow",
       code: "DAILY_CAP_REACHED",
@@ -1306,7 +1310,7 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
   const cost = hasVideo ? DESCRIBE_VIDEO_COST : DESCRIBE_IMAGE_COST;
 
   // Abuza nazorati + kredit (pulli gemini-2.5-flash vision) — /gen naqshi.
-  if (!withinDailyCap(req.user!.userId)) {
+  if (!(await withinDailyCap(req.user!.userId))) {
     res.status(429).json({
       error: "Daily AI assist limit reached — please try again tomorrow",
       code: "DAILY_CAP_REACHED",

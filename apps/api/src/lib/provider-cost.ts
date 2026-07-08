@@ -14,7 +14,16 @@
  * foydalanuvchi geni bloklanmaydi).
  */
 import type { GenModel } from "./gen-models.js";
-import { resolveVideoParams, resolveImageCount } from "./gen-models.js";
+import { GEN_MODELS, resolveVideoParams, resolveImageCount } from "./gen-models.js";
+
+/**
+ * FAZA 2 (H8) — noma'lum/narx-jadvalisiz model uchun KONSERVATIV default USD. Ilgari null
+ * qaytardik → ProviderSpend.estimatedCostUsd null bo'lib global ceiling'да HISOBGA OLINMASdi
+ * (under-count). Endi har model non-null (overestimate → ceiling ertaroq ishlaydi = fail-safe).
+ * Aniq narx qo'shilishi kerak bo'lgan modellar startup check (findEnabledModelsWithoutCost) bilan
+ * flag qilinadi.
+ */
+export const DEFAULT_PROVIDER_USD = 0.5;
 
 /** Rasm: model id → sifat(1K/2K/4K...) bo'yicha bir-dona provider USD (TAXMINIY). */
 const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
@@ -68,31 +77,56 @@ export function estimateProviderUsd(
   params: Record<string, unknown>
 ): number | null {
   try {
+    // FAZA 2 (H8): jadval topilmasa null EMAS, DEFAULT_PROVIDER_USD (ceiling under-count'ni yopadi).
     if (model.mode === "video") {
       if (model.pricing === "per-generation") {
         const flat = VIDEO_USD_FLAT[model.id];
-        return typeof flat === "number" ? round4(flat) : null;
+        return typeof flat === "number" ? round4(flat) : round4(DEFAULT_PROVIDER_USD);
       }
       const table = VIDEO_USD_PER_SEC[model.id];
-      if (!table) return null;
+      if (!table) return round4(DEFAULT_PROVIDER_USD);
       const vp = resolveVideoParams(model, params);
       const perSec = table[vp.resolution] ?? table[Object.keys(table)[0]];
-      if (typeof perSec !== "number") return null;
+      if (typeof perSec !== "number") return round4(DEFAULT_PROVIDER_USD);
       return round4(perSec * vp.duration);
     }
     if (model.mode === "image") {
       const table = IMAGE_USD_PER_UNIT[model.id];
-      if (!table) return null;
+      if (!table) return round4(DEFAULT_PROVIDER_USD);
       const key = imageQualityKey(model, params);
       const unit = (key && table[key]) ?? table[Object.keys(table)[0]];
-      if (typeof unit !== "number") return null;
+      if (typeof unit !== "number") return round4(DEFAULT_PROVIDER_USD);
       return round4(unit * resolveImageCount(model, params));
     }
     const flat = FLAT_USD[model.id];
-    return typeof flat === "number" ? round4(flat) : null;
+    return typeof flat === "number" ? round4(flat) : round4(DEFAULT_PROVIDER_USD);
   } catch {
     return null;
   }
+}
+
+/** Model uchun ANIQ narx jadvali bormi (DEFAULT_PROVIDER_USD'ga tushmaydimi)? */
+function hasProviderCostEntry(model: GenModel): boolean {
+  if (model.mode === "video") {
+    return model.pricing === "per-generation"
+      ? typeof VIDEO_USD_FLAT[model.id] === "number"
+      : !!VIDEO_USD_PER_SEC[model.id];
+  }
+  if (model.mode === "image") return !!IMAGE_USD_PER_UNIT[model.id];
+  return typeof FLAT_USD[model.id] === "number";
+}
+
+/**
+ * FAZA 2 (H8) — startup completeness check: ENABLED bo'lib aniq provider narx jadvalisiz
+ * (ceiling'да default'ga tushadigan) modellar ro'yxati. Bo'sh bo'lsa — hammasi narxlangan.
+ * index.ts validateEnv buni ogohlantirish sifatida chiqaradi (narx qo'shish kerakligini bildiradi).
+ */
+export function findEnabledModelsWithoutCost(): { id: number; name: string; mode: string }[] {
+  return GEN_MODELS.filter((m) => m.enabled && !hasProviderCostEntry(m)).map((m) => ({
+    id: m.id,
+    name: m.label,
+    mode: m.mode,
+  }));
 }
 
 function round4(n: number): number {

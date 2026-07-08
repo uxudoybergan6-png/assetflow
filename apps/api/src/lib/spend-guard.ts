@@ -19,37 +19,70 @@ export function isGenKillSwitchOn(): boolean {
   return process.env.GEN_KILL_SWITCH === "true";
 }
 
-// ── Per-user kunlik /gen cap (in-memory; UTC kun) ────────────────────────────
+// ── Per-user kunlik /gen cap (DB — restart/multi-instance'ga chidamli; UTC kun) ───────
 const DEFAULT_GEN_DAILY_CAP = 200;
 function genDailyCap(): number {
   const raw = Number(process.env.GEN_DAILY_CAP);
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : DEFAULT_GEN_DAILY_CAP;
 }
-const genDayHits = new Map<string, { day: number; count: number }>();
+
+/** UTC kun raqami (in-memory naqsh bilan bir xil kalit). */
+function utcDayNumber(): number {
+  return Math.floor(Date.now() / 86_400_000);
+}
+
+/**
+ * FAZA 2 (H7) — bir foydalanuvchi bir UTC kun ichida limitdan ortiq /gen (yoki helper)
+ * so'rov yubordimi? DailyUsageCounter'ni ATOMIK oshiradi (upsert increment) va yangi
+ * qiymat cap ichidami tekshiradi. Ilgari in-memory Map edi → process restart / multi-instance
+ * cap'ni nolga qaytarib chetlatardi. DB xato bersa FAIL-OPEN (kredit tizimi asosiy to'siq).
+ */
+export async function incrDailyUsage(
+  userId: string,
+  kind: "gen" | "helper",
+  cap: number
+): Promise<boolean> {
+  const day = utcDayNumber();
+  try {
+    const row = await prisma.dailyUsageCounter.upsert({
+      where: { userId_day_kind: { userId, day, kind } },
+      create: { userId, day, kind, count: 1 },
+      update: { count: { increment: 1 } },
+      select: { count: true },
+    });
+    return row.count <= cap;
+  } catch (e) {
+    console.error(`[spend-guard] daily cap DB xato (${kind}, fail-open):`, e);
+    return true; // cap DB blip foydalanuvchini bloklamasin — kill-switch/ceiling qat'iy to'siq.
+  }
+}
 
 /**
  * Foydalanuvchi kunlik /gen limiti ichidami? ADMIN → DOIM true (ozod). Limit ichida bo'lsa
- * hisoblagichni oshiradi va true qaytaradi (HELPER_DAILY_CAP naqshi). Bu FAQAT charge'dan
- * OLDIN, gen haqiqatan boshlanayotganida chaqirilsin (rad etilgan so'rovlar sanalmasin).
+ * hisoblagichni oshiradi va true qaytaradi. Bu FAQAT charge'dan OLDIN, gen haqiqatan
+ * boshlanayotganida chaqirilsin (rad etilgan so'rovlar sanalmasin).
  */
-export function withinGenDailyCap(userId: string, isAdmin: boolean): boolean {
+export async function withinGenDailyCap(userId: string, isAdmin: boolean): Promise<boolean> {
   if (isAdmin) return true;
-  const cap = genDailyCap();
-  const day = Math.floor(Date.now() / 86_400_000); // UTC kun raqami
-  const cur = genDayHits.get(userId);
-  if (!cur || cur.day !== day) {
-    genDayHits.set(userId, { day, count: 1 });
-    return true;
-  }
-  if (cur.count >= cap) return false;
-  cur.count++;
-  return true;
+  return incrDailyUsage(userId, "gen", genDailyCap());
 }
 
 // ── Global spend ceiling (kunlik/oylik provider USD) ─────────────────────────
-function ceiling(envName: string): number | null {
-  const raw = Number(process.env[envName]);
-  return Number.isFinite(raw) && raw > 0 ? raw : null;
+// FAZA 2 (H7) — DEFAULT shift (env unset → o'chiq EMAS, balki xavfsiz default). Runaway
+// bill'ga qarshi himoya doim yoqilgan. Aniq O'CHIRISH: env = "0" | "off" | "none" (opt-out).
+const DEFAULT_DAILY_USD_CEILING = 250;
+const DEFAULT_MONTHLY_USD_CEILING = 4000;
+/** Cache DB xatosi'da fail-closed'ga o'tish chegarasi (shift ulushi). */
+const CEILING_FAIL_CLOSED_FRACTION = 0.9;
+
+function ceiling(envName: string, defaultVal: number): number | null {
+  const raw = process.env[envName];
+  if (raw == null || raw.trim() === "") return defaultVal; // unset → default (yoqilgan)
+  const t = raw.trim();
+  if (/^(off|false|none)$/i.test(t)) return null; // aniq opt-out
+  const n = Number(t);
+  if (!Number.isFinite(n)) return defaultVal;
+  return n > 0 ? n : null; // 0 / manfiy → o'chiq
 }
 
 function startOfUtcDay(): Date {
@@ -83,8 +116,8 @@ export async function checkGlobalSpendCeiling(): Promise<{
   exceeded: boolean;
   reason?: string;
 }> {
-  const dayCap = ceiling("GEN_DAILY_USD_CEILING");
-  const monthCap = ceiling("GEN_MONTHLY_USD_CEILING");
+  const dayCap = ceiling("GEN_DAILY_USD_CEILING", DEFAULT_DAILY_USD_CEILING);
+  const monthCap = ceiling("GEN_MONTHLY_USD_CEILING", DEFAULT_MONTHLY_USD_CEILING);
   if (dayCap == null && monthCap == null) return { exceeded: false };
   try {
     const now = Date.now();
@@ -103,7 +136,17 @@ export async function checkGlobalSpendCeiling(): Promise<{
     }
     return { exceeded: false };
   } catch (e) {
-    console.error("[spend-guard] ceiling so'rovi xatosi (fail-open):", e);
+    console.error("[spend-guard] ceiling so'rovi xatosi:", e);
+    // FAZA 2 (H7) — DB xato'da CHEGARA USTIDA fail-closed: agar oxirgi ma'lum (cached) sarf
+    // allaqachon shift'ning CEILING_FAIL_CLOSED_FRACTION ulushidan oshib turgan bo'lsa va biz
+    // yangilay olmasak — bloklaymiz (runaway bill'ni ko'r-ko'rona o'tkazib yubormaymiz). Chegaradan
+    // pastda (yoki cache yo'q) fail-OPEN (transient blip haqiqiy foydalanuvchini bloklamasin).
+    if (spendCache) {
+      if (dayCap != null && spendCache.day >= dayCap * CEILING_FAIL_CLOSED_FRACTION)
+        return { exceeded: true, reason: "Daily spend ceiling check unavailable while near the limit — blocked (fail-closed)" };
+      if (monthCap != null && spendCache.month >= monthCap * CEILING_FAIL_CLOSED_FRACTION)
+        return { exceeded: true, reason: "Monthly spend ceiling check unavailable while near the limit — blocked (fail-closed)" };
+    }
     return { exceeded: false };
   }
 }

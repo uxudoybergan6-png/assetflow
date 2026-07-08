@@ -33,6 +33,7 @@ import { initSentry, captureException } from "./lib/sentry.js";
 import { seedModelPricing } from "./lib/model-pricing.js";
 import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
 import { moderationStartupWarning } from "./lib/moderation.js";
+import { findEnabledModelsWithoutCost, DEFAULT_PROVIDER_USD } from "./lib/provider-cost.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
 // dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
@@ -223,14 +224,24 @@ function validateEnv() {
       "PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=true — productionда PRO Stripe'siz beriladi (tekin PRO teshigi)! Faqat lokal dev uchun; productga =false qo'ying."
     );
 
-  // COST_QUOTE_SECRET (Bosqich 1 #4): cost-quote imzosi auth tokenidan ALOHIDA kalit bilan
-  // imzolanishi kerak. Yo'q/JWT_SECRET bilan bir xil bo'lsa — JWT_SECRET sizishi = soxta cost-quote
-  // (tekin gen). Fallback bor (buzilmaydi), lekin productionда alohida qiymat SHART.
+  // COST_QUOTE_SECRET (Bosqich 1 #4 · FAZA 2 H6): cost-quote imzosi auth tokenidan ALOHIDA
+  // kalit bilan imzolanishi SHART. Yo'q/JWT_SECRET bilan bir xil bo'lsa — JWT_SECRET sizishi =
+  // soxta cost-quote (tekin gen). PRODUCTIONДА endi FATAL (JWT_SECRET kabi) — fallback OLIB
+  // TASHLANDI; dev'da faqat ogohlantirish.
   const quoteSecret = process.env.COST_QUOTE_SECRET?.trim();
-  if (isProd && (!quoteSecret || quoteSecret === jwt))
+  if (!quoteSecret || quoteSecret === jwt) {
+    if (isProd) {
+      console.error(
+        "[FATAL] COST_QUOTE_SECRET yo'q yoki JWT_SECRET bilan bir xil — cost-quote imzosi auth " +
+          "kalitidan ALOHIDA tasodifiy qiymat bo'lishi SHART (openssl rand -hex 32). Aks holda " +
+          "JWT_SECRET sizishi soxta tekin generatsiyaga olib keladi. Server to'xtatildi."
+      );
+      process.exit(1);
+    }
     warnings.push(
-      "COST_QUOTE_SECRET yo'q yoki JWT_SECRET bilan bir xil — cost-quote imzosi auth kalitidan ALOHIDA bo'lsin (openssl rand -hex 32). Aks holda JWT_SECRET sizishi soxta tekin generatsiyaga olib keladi."
+      "COST_QUOTE_SECRET yo'q yoki JWT_SECRET bilan bir xil — cost-quote imzosi auth kalitidan ALOHIDA bo'lsin (openssl rand -hex 32) (dev)."
     );
+  }
 
   if (!process.env.RESEND_API_KEY?.trim())
     warnings.push("RESEND_API_KEY yo'q — email yuborilmaydi (parol tiklash/bildirishnoma)");
@@ -253,6 +264,16 @@ function validateEnv() {
     warnings.push("VIRUSTOTAL_API_KEY yo'q — pack malware skani faqat hash/dedup (yangi fayl tahlil qilinmaydi). docs/PROD-ENV-CHECKLIST.md");
   if (isProd && !process.env.BACKUP_GCS_BUCKET?.trim())
     warnings.push("BACKUP_GCS_BUCKET yo'q — DB backup GCS'ga yuklanmaydi (ma'lumot yo'qotish xavfi). docs/PROD-ENV-CHECKLIST.md");
+
+  // FAZA 2 (H8) — enabled model narx to'liqligi: aniq provider narxsiz model global spend
+  // ceiling'ni under-count qiladi (default'ga tushadi). Ro'yxatni provider-cost.ts'ga narx
+  // qo'shib yopish kerak.
+  const uncostedModels = findEnabledModelsWithoutCost();
+  if (uncostedModels.length)
+    warnings.push(
+      `Provider narx jadvali TO'LIQ EMAS — quyidagi enabled modellar aniq narxsiz (ceiling ${DEFAULT_PROVIDER_USD}$ default ishlatadi; provider-cost.ts'ga aniq narx qo'shing): ` +
+        uncostedModels.map((m) => `${m.id}:${m.name}`).join(", ")
+    );
 
   if (warnings.length) {
     console.warn("[env] Ogohlantirishlar:\n  - " + warnings.join("\n  - "));

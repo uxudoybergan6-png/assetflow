@@ -34,13 +34,24 @@ export function storageQuotaBytes(plan: PluginPlanTier): number {
   return envGb("STORAGE_QUOTA_FREE_GB", 1);
 }
 
-/** Foydalanuvchining ishlatilgan storage (bayt) — GenAsset.sizeBytes yig'indisi. */
+/**
+ * Foydalanuvchining ishlatilgan storage (bayt) — GenAsset.sizeBytes + SavedReference.sizeBytes
+ * yig'indisi. FAZA 2 (M6): referens yuklamalari (100MB gacha) ilgari kvotaga KIRMASDI → kvota
+ * chetlanardi. Endi ular ham hisoblanadi (SavedReference TTL bilan tozalanadi, lekin faol
+ * referenslar joyni egallaydi).
+ */
 export async function getUserUsedBytes(userId: string): Promise<number> {
-  const agg = await prisma.genAsset.aggregate({
-    where: { generation: { userId } },
-    _sum: { sizeBytes: true },
-  });
-  return agg._sum.sizeBytes ?? 0;
+  const [assets, refs] = await Promise.all([
+    prisma.genAsset.aggregate({
+      where: { generation: { userId } },
+      _sum: { sizeBytes: true },
+    }),
+    prisma.savedReference.aggregate({
+      where: { userId },
+      _sum: { sizeBytes: true },
+    }),
+  ]);
+  return (assets._sum.sizeBytes ?? 0) + (refs._sum.sizeBytes ?? 0);
 }
 
 export async function getUserPlan(userId: string): Promise<PluginPlanTier> {
