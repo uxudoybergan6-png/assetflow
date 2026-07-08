@@ -26,11 +26,9 @@ http://localhost:3000/studio/login.html → **Ro'yxatdan o'tish** (Contributor)
 
 ## Admin
 
-PostgreSQL:
-
-```sql
-UPDATE "User" SET role = 'ADMIN' WHERE email = 'siz@email.com';
-```
+Admin rolini mavjud admin **Admin panel → Users & roles** bo'limidan beradi
+(`PATCH /api/admin/users/:id/role`). Birinchi admin — seed hisob
+(`admin@assetflow.uz`).
 
 Keyin: **http://localhost:3001/login.html** → Kirish → **Moderation**
 
