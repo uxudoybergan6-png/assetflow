@@ -38,10 +38,16 @@ echo "▶ Artifact Registry'ga push…"
 docker push "$IMG"
 
 echo "▶ Cloud Run deploy (no-cpu-throttling + min-instances=1 — fon gen ishlashi uchun SHART)…"
+# FAZA 3 (D) — health-gated rollout: startup probe /health (DB+storage HAQIQIY tekshiruv,
+# 503=degraded) — bog'liqligi buzilgan revision hech qachon trafik OLMAYDI (deploy yiqiladi,
+# eski revision jonli qoladi). Liveness /livez (arzon protsess-tirikmi) — muzlagan
+# konteyner restart qilinadi. Rollback: docs/ROLLBACK-RUNBOOK.md
 gcloud run deploy "$SERVICE" --image "$IMG" \
   --region "$REGION" --allow-unauthenticated \
   --no-cpu-throttling --min-instances 1 --max-instances 2 \
   --memory 1Gi --cpu 1 --timeout 600 \
+  --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
+  --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \
   --env-vars-file cloudrun-env.yaml
 
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"

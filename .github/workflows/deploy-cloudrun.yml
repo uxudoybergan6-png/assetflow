@@ -97,6 +97,10 @@ jobs:
           docker push "$IMG:latest"
           docker push "$IMG:${GITHUB_SHA}"
 
+      # FAZA 3 (D) — health-gated rollout: startup probe /health (DB+storage haqiqiy
+      # tekshiruv) — bog'liqligi buzilgan revision trafik olmaydi, deploy yiqiladi va
+      # ESKI revision jonli qoladi. Liveness /livez — muzlagan konteyner restart.
+      # Rollback tartibi: docs/ROLLBACK-RUNBOOK.md
       - name: Deploy to Cloud Run
         run: |
           IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api:${GITHUB_SHA}"
@@ -104,6 +108,8 @@ jobs:
             --region "$REGION" --allow-unauthenticated \
             --no-cpu-throttling --min-instances 1 --max-instances 2 \
             --memory 1Gi --cpu 1 --timeout 600 \
+            --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
+            --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \
             --env-vars-file cloudrun-env.yaml
 
       - name: Show URL
