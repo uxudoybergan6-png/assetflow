@@ -450,7 +450,7 @@ function renderBulkUpload() {
   root.innerHTML = `<div style="max-width:880px;margin:0 auto" class="col gap-20">
     ${uploadModeTabs()}
     <div class="card card-pad col gap-16">
-      ${infoBanner("Each .zip is one template: a project file (.aep/.mogrt) plus a preview image and/or preview video. The server unpacks, scans, and queues it for review — no form to fill in.")}
+      ${infoBanner(`Each .zip is one template: a project file (.aep/.mogrt) plus a preview image and/or preview video. The server unpacks, scans, and queues it for review — no form to fill in. <a href="https://getframeflow.app/help.html#upload-guidelines" target="_blank" rel="noopener" style="color:var(--violet-bright)">Upload guidelines ↗</a>`)}
       <div class="dropzone" id="bulkDz">
         <input type="file" id="bulkFileInput" accept=".zip,application/zip" multiple style="display:none">
         <div class="dz-ico">${ic("upload")}</div>
