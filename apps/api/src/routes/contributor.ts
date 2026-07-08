@@ -44,7 +44,7 @@ import {
 import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
 import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
-import { extractIngestZip, sanitizeFileBaseName } from "../lib/ingest-zip.js";
+import { extractIngestZip, sanitizeFileBaseName, IngestZipError } from "../lib/ingest-zip.js";
 import { generateTemplateMetadata } from "../lib/ai/template-metadata.js";
 import {
   setUploadProgress,
@@ -1387,9 +1387,30 @@ contributorRouter.post(
 type IngestItemResult = {
   key: string;
   ok: boolean;
+  /** created = yangi shablon; duplicate = mavjud kontent, ikkinchi nusxa yaratilmadi;
+   *  failed = xato (reason bilan) — transient bo'lsa retry qilinadi. */
+  status: "created" | "duplicate" | "failed";
   id?: string;
   reason?: string;
+  /** duplicate bo'lsa — mavjud shablon id'si. */
+  duplicateOf?: string;
 };
+
+/** Doimiy rad etilgan incoming zipni o'chirib, audit yozadi (recorded, not a crash). */
+async function rejectIncomingZip(
+  contributorId: string,
+  key: string,
+  reason: string
+): Promise<void> {
+  await deleteS3Objects([key]).catch(() => {});
+  await writeAuditLog({
+    actorId: contributorId,
+    action: "template.ingest_rejected",
+    targetType: "ingest",
+    targetId: key,
+    detail: reason.slice(0, 480),
+  }).catch(() => {});
+}
 
 /**
  * Bitta incoming zipni "pending" shablonga aylantiradi (KONTENT-QUVURI-SXEMA.md §5):
@@ -1401,25 +1422,28 @@ type IngestItemResult = {
  */
 async function ingestOneZip(contributorId: string, key: string): Promise<IngestItemResult> {
   if (!key.startsWith(`incoming/${contributorId}/`)) {
-    return { key, ok: false, reason: "File does not belong to this contributor" };
+    return { key, ok: false, status: "failed", reason: "File does not belong to this contributor" };
   }
   if (!/\.zip$/i.test(key)) {
-    return { key, ok: false, reason: "Not a .zip file" };
+    return { key, ok: false, status: "failed", reason: "Not a .zip file" };
   }
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_ingest_"));
   try {
     const meta = await getS3ObjectMeta(key);
     if (meta.sizeBytes == null) {
-      return { key, ok: false, reason: "File not found in cloud storage" };
+      return { key, ok: false, status: "failed", reason: "File not found in cloud storage" };
     }
     const zipLocalPath = path.join(tmpDir, "incoming.zip");
     await downloadS3ToFile(key, zipLocalPath);
 
     const extracted = await extractIngestZip(zipLocalPath, path.join(tmpDir, "extracted"));
     if (!extracted.packPath || !extracted.packExt) {
-      // Ichida tanilgan dastur loyihasi (ae/pr/motion/resolve) yo'q → rad etamiz.
-      return { key, ok: false, reason: "No supported project file (.aep/.mogrt/.motn/.drfx…) found inside the zip" };
+      // Ichida tanilgan dastur loyihasi (ae/pr/motion/resolve) yo'q → DOIMIY rad
+      // (retry foyda bermaydi) — zip o'chiriladi, audit yoziladi.
+      const reason = "No supported project file (.aep/.mogrt/.motn/.drfx…) found inside the zip";
+      await rejectIncomingZip(contributorId, key, reason);
+      return { key, ok: false, status: "failed", reason };
     }
 
     // Skan + anti-theft dedup — chiqarilgan pack (.aep) hashi ustida, mavjud
@@ -1429,12 +1453,51 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
       where: { packHash: hash },
       select: { id: true, contributorId: true },
     });
+
+    // FAZA 6a (C): O'ZINING mavjud shabloni bilan bir xil pack → DUPLICATE,
+    // ikkinchi nusxa yaratilmaydi. Boshqa contributor'niki bo'lsa — pastdagi
+    // classifyPackScan anti-theft karantini o'z holicha ishlaydi (admin ko'radi).
+    if (dup && dup.contributorId === contributorId) {
+      await deleteS3Objects([key]).catch(() => {});
+      return {
+        key,
+        ok: false,
+        status: "duplicate",
+        reason: "Duplicate: same pack as your existing template",
+        duplicateOf: dup.id,
+      };
+    }
+
     const scan = await scanFileHash(hash);
     const prod = process.env.NODE_ENV === "production";
     const cls = classifyPackScan(scan, dup, contributorId, prod);
     if (cls.scanStatus === "malicious") {
-      await deleteS3Objects([key]).catch(() => {});
-      return { key, ok: false, reason: cls.userError || "Malicious file detected" };
+      await rejectIncomingZip(contributorId, key, cls.detail || "Malicious file detected");
+      return { key, ok: false, status: "failed", reason: cls.userError || "Malicious file detected" };
+    }
+
+    // Idempotency (FAZA 6a B): shu kalit avval ingest qilinganmi?
+    // - fileSize yozilgan = TO'LIQ ingest → duplicate (qayta yaratmaymiz).
+    // - fileSize null = YARIM yaratilgan (oldingi urinish asset yuklashda yiqilgan,
+    //   masalan Cloud Run timeout) → eski qoldiqni tozalab, QAYTADAN ingest qilamiz —
+    //   "Already ingested" bilan maskalanmaydi.
+    const prior = await prisma.contributorTemplate.findFirst({
+      where: { contributorId, externalId: key },
+      select: { id: true, fileSize: true },
+    });
+    if (prior) {
+      if (prior.fileSize != null) {
+        await deleteS3Objects([key]).catch(() => {});
+        return {
+          key,
+          ok: false,
+          status: "duplicate",
+          reason: "Already ingested",
+          duplicateOf: prior.id,
+        };
+      }
+      await deleteTemplateAssets(prior.id).catch(() => {});
+      await prisma.contributorTemplate.delete({ where: { id: prior.id } }).catch(() => {});
     }
 
     const settings = await getOrCreateSettings();
@@ -1487,36 +1550,65 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
       });
     } catch (e) {
       if ((e as { code?: string })?.code === "P2002") {
-        return { key, ok: false, reason: "Already ingested" };
+        // Poyga (bir xil kalit parallel ingest) — yuqoridagi prior-tekshiruvdan o'tib ketgan.
+        return { key, ok: false, status: "duplicate", reason: "Already ingested" };
       }
       throw e;
     }
 
-    const packKey = s3UploadKeyForFile(template.id, "pack", extracted.packPath);
-    await uploadFileToS3(extracted.packPath, packKey, "application/octet-stream");
-    let fileSize: number | null = null;
+    // FAZA 6a (B): asset saqlash + finalize BITTA blokda. Har qanday bosqich yiqilsa —
+    // KOMPENSATSIYA: shablon yozuvi + yarim yuklangan asset'lar o'chiriladi, incoming
+    // zip SAQLANADI (retry ishlaydi). "No files uploaded" yarim shablon hech qachon qolmaydi.
+    let hasVideoPreview = false;
     try {
-      fileSize = fs.statSync(extracted.packPath).size;
-    } catch {}
+      const packKey = s3UploadKeyForFile(template.id, "pack", extracted.packPath);
+      const localPackSize = fs.statSync(extracted.packPath).size;
+      await uploadFileToS3(extracted.packPath, packKey, "application/octet-stream");
+      // Saqlashni TASDIQLASH — bulutdagi hajm lokal bilan mos bo'lishi shart
+      // (hasPack/fileSize flaglari real holatni aks ettirsin).
+      const stored = await getS3ObjectMeta(packKey);
+      if (stored.sizeBytes !== localPackSize) {
+        throw new Error(
+          `Pack storage verification failed (local ${localPackSize}B, stored ${stored.sizeBytes ?? "none"}B)`
+        );
+      }
 
-    if (extracted.imagePath) {
-      const thumbKey = s3UploadKeyForFile(template.id, "thumb", extracted.imagePath);
-      await uploadFileToS3(extracted.imagePath, thumbKey, mimeForExt(extracted.imagePath));
-    }
-    if (extracted.videoPath) {
-      const previewKey = s3UploadKeyForFile(template.id, "preview", extracted.videoPath);
-      await uploadFileToS3(extracted.videoPath, previewKey, mimeForExt(extracted.videoPath));
+      if (extracted.imagePath) {
+        const thumbKey = s3UploadKeyForFile(template.id, "thumb", extracted.imagePath);
+        await uploadFileToS3(extracted.imagePath, thumbKey, mimeForExt(extracted.imagePath));
+      }
+      if (extracted.videoPath) {
+        const previewKey = s3UploadKeyForFile(template.id, "preview", extracted.videoPath);
+        await uploadFileToS3(extracted.videoPath, previewKey, mimeForExt(extracted.videoPath));
+        await prisma.contributorTemplate.update({
+          where: { id: template.id },
+          data: { previewTranscodeStatus: "pending" },
+        });
+        hasVideoPreview = true;
+      }
+
+      // Finalize — fileSize yozildi = ingest TO'LIQ (idempotency markeri, yuqoridagi
+      // prior-tekshiruv shu maydonga qaraydi).
       await prisma.contributorTemplate.update({
         where: { id: template.id },
-        data: { previewTranscodeStatus: "pending" },
+        data: { fileName: path.basename(extracted.packPath), fileSize: localPackSize },
       });
-      transcodePreviewInBackground(template.id); // fon — mavjud /preview-uploaded konvensiyasi
+    } catch (e) {
+      console.error("[ingest] asset saqlash yiqildi, kompensatsiya:", key, e);
+      await deleteTemplateAssets(template.id).catch(() => {});
+      await prisma.contributorTemplate.delete({ where: { id: template.id } }).catch(() => {});
+      return {
+        key,
+        ok: false,
+        status: "failed",
+        reason: `Storage failed (retry the upload): ${e instanceof Error ? e.message : "unknown error"}`,
+      };
     }
 
-    await prisma.contributorTemplate.update({
-      where: { id: template.id },
-      data: { fileName: path.basename(extracted.packPath), fileSize },
-    });
+    // Fon transcode faqat finalize'dan KEYIN — kompensatsiya o'chirgan yozuvga ishlamasin.
+    if (hasVideoPreview) {
+      transcodePreviewInBackground(template.id); // fon — mavjud /preview-uploaded konvensiyasi
+    }
 
     await deleteS3Objects([key]).catch(() => {});
 
@@ -1538,10 +1630,16 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
       detail: `${title} (${key})`,
     });
 
-    return { key, ok: true, id: template.id };
+    return { key, ok: true, status: "created", id: template.id };
   } catch (e) {
     console.error("[ingest] xato:", key, e);
-    return { key, ok: false, reason: e instanceof Error ? e.message : "Unexpected error" };
+    const reason = e instanceof Error ? e.message : "Unexpected error";
+    if (e instanceof IngestZipError) {
+      // Zip-bomb / zip-slip / limit — DOIMIY rad: zip o'chiriladi, audit yoziladi,
+      // partiya davom etadi (bitta yomon zip qolganlarga ta'sir qilmaydi).
+      await rejectIncomingZip(contributorId, key, reason);
+    }
+    return { key, ok: false, status: "failed", reason };
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
