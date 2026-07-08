@@ -257,12 +257,20 @@ aiRouter.post("/search", async (req: Request, res: Response) => {
 
   // Fallback: embeddingVec hali to'ldirilmagan (backfill oralig'i) yoki pgvector mavjud emas →
   // eski JSON embedding ustidan in-memory cosine.
+  // FAZA 5 (A5): fallback BOUNDED — har satr 1024-float JSON (≈8KB+), chegarasiz
+  // findMany 5000 shablonda ~40MB+ ni har qidiruvda yuklab OOM/latency beradi.
+  // Eng yangi SEARCH_FALLBACK_MAX ta bilan cheklaymiz; asosiy yo'l baribir pgvector.
+  // TODO(FF): pgvector backfill to'liq bo'lgach (embeddingVec hamma satrda) bu
+  // fallback'ni olib tashlash — /reindex + migratsiya holatini tekshirib.
   if (!usedVector) {
+    const SEARCH_FALLBACK_MAX = 2000;
     const rows = await prisma.contributorTemplate.findMany({
       where: {
         reviewStatus: TemplateReviewStatus.APPROVED,
         published: true,
       },
+      orderBy: { updatedAt: "desc" },
+      take: SEARCH_FALLBACK_MAX,
       select: { id: true, name: true, catLabel: true, nav: true, embedding: true },
     });
     results = rows
