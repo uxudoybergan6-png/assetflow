@@ -29,6 +29,7 @@ import {
 } from "../lib/model-pricing.js";
 import { computeMargins, spendByProvider } from "../lib/model-margin.js";
 import { payoutPerDownloadCents } from "../lib/earnings.js";
+import { revenueSummary } from "../lib/revenue.js";
 import {
   runMonthlyReconciliation,
   recordProviderInvoice,
@@ -534,11 +535,16 @@ function monthRange(month?: string): { since?: Date; until?: Date } {
 /** GET /api/admin/finance[?month=YYYY-MM] — daromad vs provayder xarajati + margin + payout. */
 adminRouter.get("/finance", async (req, res) => {
   const range = monthRange(req.query.month ? String(req.query.month) : undefined);
-  const [config, margins, providers, unpaid] = await Promise.all([
+  // FAZA 4 (A) — REAL daromad (RevenueEvent). MRR = joriy oy obuna net tushumi;
+  // month berilsa o'sha oy. Kredit-qiymat proxy (aggregate) AI-marja tahlili uchun QOLADI.
+  const mrrRange = range.since ? range : monthRange(new Date().toISOString().slice(0, 7));
+  const [config, margins, providers, unpaid, revenue, mrrRevenue] = await Promise.all([
     getPricingConfig(),
     computeMargins(range),
     spendByProvider(range),
     prisma.contributorEarning.aggregate({ where: { payoutId: null }, _sum: { amountCents: true } }),
+    revenueSummary(range),
+    revenueSummary(mrrRange),
   ]);
   const creditUsd = config.creditUsdValue;
   const providerRows = providers
@@ -555,6 +561,9 @@ adminRouter.get("/finance", async (req, res) => {
     providers: providerRows,
     payoutPendingCents: Math.max(0, unpaid._sum.amountCents ?? 0),
     perDownloadCents: payoutPerDownloadCents(),
+    // FAZA 4 (A) — REAL daromad (RevenueEvent'dan, kredit-qiymat proxy EMAS).
+    revenue,
+    mrrCents: mrrRevenue.mrrCents,
   });
 });
 

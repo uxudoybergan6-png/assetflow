@@ -574,6 +574,35 @@ model ProviderInvoice {
   @@index([periodMonth])
 }
 
+// ── FAZA 4 (A) — REAL daromad hisobi (Lemon Squeezy webhook'dan) ─────────────
+// RevenueEvent: har haqiqiy pul hodisasi (obuna to'lovi, kredit-paket, refund,
+// chargeback) uchun BITTA qator. Idempotentlik sourceKey @unique bilan
+// (createMany+skipDuplicates → webhook retry IKKINCHI qatorni yaratmaydi).
+// Manfiy summalar = refund/chargeback. FK-siz (CreditLedger/ProviderSpend naqshi).
+// PUL ZONASIGA TEGMAYDI — bu faqat HISOB (accounting), kredit consume/refund emas.
+model RevenueEvent {
+  id               String   @id @default(cuid())
+  sourceKey        String   @unique // rev:order:<id> | rev:invoice:<id> | ...:refund
+  userId           String?
+  kind             String   // subscription_initial | renewal | credit_pack | refund | chargeback
+  plan             String?  // PRO | STUDIO (obuna hodisalari uchun, bilinsa)
+  grossCents       Int      // musbat = tushum, manfiy = refund/chargeback
+  taxCents         Int      @default(0)
+  feeCents         Int      @default(0) // LS webhook fee bermaydi — 0 (kelajak uchun joy)
+  netCents         Int      // gross - tax - fee
+  currency         String   @default("USD")
+  lsOrderId        String?
+  lsSubscriptionId String?
+  lsInvoiceId      String?
+  eventName        String?  // xom LS event nomi (diagnostika)
+  occurredAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([kind])
+  @@index([occurredAt])
+}
+
 // ── Bosqich 4 #1 — REAL download/import tracking (zanjir yaxlitligi) ─────────
 // TemplateDownloadEvent: HAR haqiqiy pack/mogrt yuklab olish yoki import uchun
 // BITTA atomik qatorlangan hodisa (kim, qaysi katalog shabloni, qaysi contributor).

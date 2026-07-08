@@ -6,6 +6,7 @@ import {
   classifyVariant,
 } from "../lib/lemonsqueezy.js";
 import { applyBillingPlan, grantAiCreditsTopup } from "../lib/plugin-profile.js";
+import { lsAmountCents, recordRevenueEvent } from "../lib/revenue.js";
 import {
   sendSubscriptionActiveEmail,
   sendPaymentReceivedEmail,
@@ -94,7 +95,13 @@ async function handleSubscriptionEvent(userId: string, attrs: Record<string, any
   await applyBillingPlan(userId, target);
 }
 
-async function handleOrderCreated(userId: string, attrs: Record<string, any>) {
+/** LS payload'idan hodisa vaqti (created_at) — bo'lmasa hozir. */
+function lsOccurredAt(attrs: Record<string, any>): Date {
+  const t = attrs?.created_at ? Date.parse(String(attrs.created_at)) : NaN;
+  return Number.isFinite(t) ? new Date(t) : new Date();
+}
+
+async function handleOrderCreated(userId: string, orderId: string, attrs: Record<string, any>) {
   // Obuna birinchi to'lovi HAM order_created yaratadi — faqat KREDIT-PAKET
   // orderlarida grant qilamiz (obuna plani subscription_* orqali beriladi).
   if (String(attrs?.status ?? "") !== "paid") return;
@@ -106,7 +113,58 @@ async function handleOrderCreated(userId: string, attrs: Record<string, any>) {
   );
   if (classified?.kind === "credit") {
     await grantAiCreditsTopup(userId, classified.credits, { reason: "topup" });
+    // FAZA 4 (A) — kredit-paket tushumi. Obuna orderlari BU YERDA yozilmaydi
+    // (subscription_payment_success invoice'i yozadi — double-count bo'lmasin).
+    await recordRevenueEvent({
+      sourceKey: `rev:order:${orderId}`,
+      userId,
+      kind: "credit_pack",
+      grossCents: lsAmountCents(attrs, "total"),
+      taxCents: lsAmountCents(attrs, "tax"),
+      currency: String(attrs?.currency ?? "USD"),
+      lsOrderId: orderId,
+      eventName: "order_created",
+      occurredAt: lsOccurredAt(attrs),
+    });
   }
+}
+
+/**
+ * FAZA 4 (A) — obuna to'lovi (subscription-invoice) tushumini yozish.
+ * billing_reason: "initial" → subscription_initial, aks holda renewal.
+ * Plan best-effort: invoice payload'ida mahsulot nomi yo'q — foydalanuvchining
+ * joriy PluginProfile.plan'idan olinadi (subscription_created odatda oldinroq keladi).
+ */
+async function recordSubscriptionInvoiceRevenue(
+  userId: string,
+  invoiceId: string,
+  attrs: Record<string, any>
+) {
+  const gross = lsAmountCents(attrs, "total");
+  if (gross <= 0) return;
+  let plan: string | null = null;
+  try {
+    const prof = await prisma.pluginProfile.findUnique({
+      where: { userId },
+      select: { plan: true },
+    });
+    if (prof && prof.plan !== PluginPlanTier.FREE) plan = String(prof.plan);
+  } catch {
+    /* plan best-effort */
+  }
+  await recordRevenueEvent({
+    sourceKey: `rev:invoice:${invoiceId}`,
+    userId,
+    kind: String(attrs?.billing_reason ?? "") === "initial" ? "subscription_initial" : "renewal",
+    plan,
+    grossCents: gross,
+    taxCents: lsAmountCents(attrs, "tax"),
+    currency: String(attrs?.currency ?? "USD"),
+    lsInvoiceId: invoiceId,
+    lsSubscriptionId: attrs?.subscription_id != null ? String(attrs.subscription_id) : null,
+    eventName: "subscription_payment_success",
+    occurredAt: lsOccurredAt(attrs),
+  });
 }
 
 /**
@@ -219,10 +277,14 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
           await handleSubscriptionEvent(userId, attrs);
           break;
         case "order_created":
-          await handleOrderCreated(userId, attrs);
+          await handleOrderCreated(userId, dataId, attrs);
+          break;
+        case "subscription_payment_success":
+          // FAZA 4 (A) — real tushum yozuvi (holat o'zgarmaydi, faqat accounting).
+          if (dataId) await recordSubscriptionInvoiceRevenue(userId, dataId, attrs);
           break;
         default:
-          // subscription_payment_* holat o'zgartirmaydi — faqat quyidagi bildirishnoma.
+          // qolgan subscription_payment_* holat o'zgartirmaydi — faqat quyidagi bildirishnoma.
           break;
       }
       // FAZA 3 (E) — foydalanuvchiga to'lov emaili (best-effort, ishlovdan KEYIN:
