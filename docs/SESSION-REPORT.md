@@ -1,10 +1,8 @@
-# Sessiya hisoboti — 2026-07-08 (FAZA 4: Money/Finance)
+# Sessiya hisoboti — 2026-07-08 (FAZA 5: Scale + rebrand + UX polish)
 
-**Nima qilindi (4 commit, A–D):**
-1. **A** — `RevenueEvent` modeli: LS webhook endi to'lov SUMMASINI yozadi (obuna initial/renewal + kredit-paket); `/admin/finance` real gross/net/MRR/per-plan.
-2. **B** — refund/chargeback/dunning: manfiy RevenueEvent + obuna refundida FREE downgrade + kredit-paket refundida SARFLANMAGAN top-up clawback (atomik, hech qachon manfiy emas, bepul ulushga tegilmaydi); `billingIssue` belgi + refund emaili.
-3. **C** — POOL payout: `PAYOUT_MODE=pool` (default) | `per_download`; pool = (obuna net − AI xarajat) × `CONTRIBUTOR_POOL_SHARE` (0.50), legitim download ulushi bo'yicha; davr+contributor idempotent; GET/POST `/admin/payout/pool`.
-4. **D** — `PlanChangeEvent` + `/admin/metrics` (churn/conversion/ARPU/LTV); Finance/Payouts ekranlari real raqamlarda + yangi "Business metrics" ekrani; `studio:sync` bajarildi.
+**Qilindi (13 commit, main):**
+- A: katalog/admin take+cursor pagination (3 klient sahifalaydi); assetKeysJson DB keshi — listing S3'siz (migration `20260708190000_asset_keys_cache` + backfill script + yangi `/assets-uploaded` signal); .aep→.zip streaming (~32MB cap); ingest semafori (INGEST_CONCURRENCY=2); search fallback bounded (asosiy yo'l pgvector edi).
+- B: CEP bundle `com.frameflow`/`.panel`/`.admin` (⚠️ qayta o'rnatish shart); legacy run.app/pages.dev → getframeflow.app (eski URL stale-ro'yxatda avto-tuzatiladi); host.jsx dialog/undo/packLabel + placeholder emaillar FrameFlow; npm paket `frameflow-studio`; i18n (legal=o'zbek, UI=ingliz) — TODO(FF), til tanlovi egasida.
+- C: contributor scan-badge (jadval/grid/drawer) + earnings UI (`/earnings` ulandi); web detal poster+preload, download nomi=shablon nomi (server Content-Disposition), label real ext; plagin o'lik legacy sahna-import (−278 qator); AI launcher'da faqat jonli tool'lar; admin Overview hisoblari kelishtirildi (REMOVED chiqarildi, Active(7d), downloads=TemplateDownloadEvent); platform/help.html + footer link + contributor guidelines havolasi.
 
-**Tekshirildi:** lokal API + imzolangan webhook E2E — idempotentlik (replay=duplicate), clawback 500→0, downgrade, pool 2:1 taqsimot ($9.50 → $6.33/$3.16), UI jonli.
-**Kutilmoqda:** git push + Cloud Run deploy + `migrate:deploy` (4 ta additive migratsiya); productionда PAYOUT_MODE/CONTRIBUTOR_POOL_SHARE env qarori; LS jonli webhook sinovi.
+**Kutilmoqda:** push + Cloud Run deploy + `npm run migrate:deploy` (deploydan OLDIN — kod assetKeysJson ustunini so'raydi!); backfill: `node apps/api/dist/scripts/backfill-asset-keys.js`; `bash plugins/after-effects-cep/scripts/install-cep.sh` (yangi bundle id); AE + production jonli test; support@getframeflow.app pochta qutisi.
