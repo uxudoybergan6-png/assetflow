@@ -1634,8 +1634,10 @@ const INGEST_LOCAL_PROBE_MAX_BYTES = (() => {
  * o'qiladi, faqat kerakli 3 entry bucket→bucket stream qilinadi (cho'qqi xotira
  * zip hajmidan mustaqil). Oqim: streaming ochish (FAZA 6a guardlar katalogda) →
  * pack hash 1-o'tish (stream, saqlanmaydi) → skan+dedup → ContributorTemplate
- * yaratish (PENDING_REVIEW) → pack 2-o'tish stream-upload (hash qayta tekshiriladi)
- * + preview'lar → fon transcode → asl zipni o'chirish. Har xatoda throw QILMAYDI —
+ * yaratish (PENDING_REVIEW) → 2-o'tish: ASL ZIP BUTUNLIGICHA kanonik pack sifatida
+ * bucket→bucket ko'chiriladi (QA-FIX #7 — footage/audio/papkalar saqlanadi; saqlangan
+ * zip ichidagi pack entry hash'i qayta tekshiriladi) + preview'lar → fon transcode →
+ * asl zipni o'chirish. Har xatoda throw QILMAYDI —
  * natija obyektini qaytaradi, chaqiruvchi partiyani to'xtatmaydi.
  */
 async function ingestOneZip(
@@ -1807,21 +1809,21 @@ async function ingestOneZip(
     // zip SAQLANADI (retry ishlaydi). "No files uploaded" yarim shablon hech qachon qolmaydi.
     let hasVideoPreview = false;
     try {
-      // 2-O'TISH: pack entry to'g'ridan bucket'ga MULTIPART stream bilan yuklanadi
-      // (disk/xotiraga to'liq olinmaydi). Hash QAYTA hisoblanadi va 1-o'tish bilan
-      // solishtiriladi — ikki o'tish orasida incoming zip bir xil kalitga qayta
-      // yuklangan bo'lsa (poyga) noto'g'ri kontent dedup'siz saqlanib qolmaydi.
-      const packKey = s3UploadKeyForFile(template.id, "pack", `pack${pack.ext}`);
-      const rehash = crypto.createHash("sha256");
+      // 2-O'TISH (QA-FIX #7): ilgari bu yerda FAQAT pack entry (.aep) saqlanardi —
+      // footage/audio/papkalar tashlab yuborilib, yuklab olingan pack AE'da
+      // "N files missing" berardi. Endi ASL ZIP BUTUNLIGICHA (barcha fayllar +
+      // papka strukturasi bayt-bir-xil) kanonik pack sifatida saqlanadi:
+      // bucket→bucket MULTIPART stream (disk/xotiraga to'liq olinmaydi).
+      // Sahna/preview ekstraktsiyasi bunga tegmaydi — u alohida entry'lardan o'qiydi.
+      const packKey = s3UploadKeyForFile(template.id, "pack", "pack.zip");
       let packBytes = 0;
       const tap = new Transform({
         transform(chunk: Buffer, _enc, cb) {
-          rehash.update(chunk);
           packBytes += chunk.length;
           cb(null, chunk);
         },
       });
-      const packSrc = await zip.openEntryStream(pack);
+      const packSrc = createS3RangeStream(key, 0, meta.sizeBytes);
       packSrc.on("error", (e) => tap.destroy(e));
       // Upload xatoda tap'ni destroy qiladi — manba stream'lar ham yopilsin
       // (ranged GET soketi osilib qolmasin).
@@ -1829,17 +1831,34 @@ async function ingestOneZip(
         if (!packSrc.destroyed) packSrc.destroy();
       });
       packSrc.pipe(tap);
-      await uploadStreamToS3(tap, packKey, "application/octet-stream");
-      if (rehash.digest("hex") !== hash) {
-        throw new Error("Pack content changed during ingest (checksum mismatch) — retry");
-      }
-      // Saqlashni TASDIQLASH — bulutdagi hajm stream qilingan hajm bilan mos
+      await uploadStreamToS3(tap, packKey, "application/zip");
+      // Saqlashni TASDIQLASH — bulutdagi hajm manba zip hajmi bilan mos
       // bo'lishi shart (hasPack/fileSize flaglari real holatni aks ettirsin).
       const stored = await getS3ObjectMeta(packKey);
-      if (stored.sizeBytes !== packBytes) {
+      if (packBytes !== meta.sizeBytes || stored.sizeBytes !== packBytes) {
         throw new Error(
-          `Pack storage verification failed (streamed ${packBytes}B, stored ${stored.sizeBytes ?? "none"}B)`
+          `Pack storage verification failed (source ${meta.sizeBytes}B, streamed ${packBytes}B, stored ${stored.sizeBytes ?? "none"}B)`
         );
+      }
+      // Poyga himoyasi (eski 2-o'tish hash tekshiruvining ekvivalenti): SAQLANGAN
+      // zip ichidagi pack entry hash'i 1-o'tish (dedup/skan) hash'i bilan
+      // solishtiriladi — ikki o'tish orasida incoming zip bir xil kalitga qayta
+      // yuklangan bo'lsa noto'g'ri kontent dedup'siz saqlanib qolmaydi.
+      const storedZip = await openStreamingIngestZip({
+        size: packBytes,
+        read: (s, e) => readS3ObjectRange(packKey, s, e),
+        stream: (s, e) => createS3RangeStream(packKey, s, e),
+      });
+      try {
+        const storedPack = storedZip.pack;
+        const rehash = storedPack
+          ? await sha256Stream(await storedZip.openEntryStream(storedPack))
+          : null;
+        if (rehash !== hash) {
+          throw new Error("Pack content changed during ingest (checksum mismatch) — retry");
+        }
+      } finally {
+        storedZip.close();
       }
 
       if (image) {
@@ -1873,10 +1892,11 @@ async function ingestOneZip(
       }
 
       // Finalize — fileSize yozildi = ingest TO'LIQ (idempotency markeri, yuqoridagi
-      // prior-tekshiruv shu maydonga qaraydi).
+      // prior-tekshiruv shu maydonga qaraydi). fileName/fileSize endi TO'LIQ zip'ni
+      // aks ettiradi (plagin .zip kengaytmasidan unzip yo'lini tanlaydi).
       await prisma.contributorTemplate.update({
         where: { id: template.id },
-        data: { fileName: `pack${pack.ext}`, fileSize: packBytes },
+        data: { fileName: "pack.zip", fileSize: packBytes },
       });
 
       // FAZA 5 (A2) — asset kalitlari keshi (hozirgina yozilgan kalitlar ensure bilan).

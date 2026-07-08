@@ -31,6 +31,13 @@ const MIME: Record<TemplateAssetKind, string> = {
  * `templates/{id}/pack.dl.zip`da KESHLANADI — qayta so'rovlar qayta
  * yuklab-zip qilishni talab qilmaydi. `.aep` qayta yuklansa (pack-uploaded)
  * bu kesh o'chiriladi — pastga qarang.
+ *
+ * ⚠️ QA-FIX #7: bu yo'l FAQAT yakka `.aep` yuklangan (asset'siz) pack'lar uchun —
+ * o'rash hech narsani tashlab yubormaydi, chunki .aep'ning o'zi to'liq kontent.
+ * Zip bo'lib kelgan pack'lar (ingest ham endi asl zipni butunligicha
+ * `templates/{id}/pack.zip` sifatida saqlaydi) bu yerdan O'TMAYDI — pastdagi
+ * `/\.aep$/` sharti tufayli bayt-bir-xil xizmat qilinadi. Ingest'da zip'dan
+ * faqat .aep'ni ajratib saqlashni QAYTA joriy qilma — footage/audio yo'qoladi.
  */
 async function getOrBuildAepDownloadZip(
   templateId: string,

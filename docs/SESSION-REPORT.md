@@ -1,17 +1,19 @@
-# Sessiya hisoboti — 2026-07-08 (portal ajratish + admin 2FA)
+# Sessiya hisoboti — 2026-07-09 (QA-FIX #7: pack asset'lari yo'qolishi)
 
-**Qilindi (3 commit: 4b0b788 A, e26b40f B, 5f47ecc C):**
-- A: har portal O'Z loginiga — /contributor/→/studio/login.html, /admin/→/admin/login.html;
-  login.html/admin-login.html CF root'dan olindi (eski URL'lar 301), /login endi platforma SPA auth;
-  requireAuth wrong-role loop fix; verify-email rolga qarab yo'naltiradi.
-- B: vizual identifikatsiya — platforma lime (tegilmadi), Contributor Studio teal + doimiy badge,
-  Admin Console amber + "Admin access only" (dark+light); hub'dan admin havolasi olib tashlandi.
-- C: ADMIN TOTP 2FA — /api/auth/2fa/setup|enable|disable|verify|status, QR + 10 bir martalik backup
-  kod (sha256), sir AES-256-GCM, pending token alohida secret (sessiya emas), kod bosqichi 5/daqiqa
-  limit; Google/plagin bypass yopiq; ADMIN_REQUIRE_2FA (default OFF) setup gate; docs/ADMIN-2FA.md.
+**Ildiz sabab:** bulk ingest (`ingestOneZip`) contributor zip'idan FAQAT .aep entry'ni
+`templates/{id}/pack.aep` sifatida saqlab, asl zipni O'CHIRARDI — footage/audio/papkalar
+abadiy yo'qolardi; serve-asset esa yolg'iz .aep'ni `pack.dl.zip`ga o'rab berardi →
+AE'da "N files missing". (Studio /pack-uploaded va /assets yo'llari sog' edi.)
 
-**Tekshirildi:** API build yashil; lokal E2E (enrol→2-bosqich login→backup kod→reuse rad→429→disable);
-ADMIN_REQUIRE_2FA gate; dist-preview skrinshotlar (teal/amber loginlar, 2FA form); studio:sync bajarildi.
+**Tuzatildi:**
+- contributor.ts: ingest endi ASL ZIPNI BUTUNLIGICHA `templates/{id}/pack.zip` qiladi
+  (bucket→bucket stream, hajm + saqlangan-entry hash tekshiruvi); fileName/fileSize=to'liq zip.
+- serve-asset.ts: .aep→zip o'rash faqat yakka-.aep pack'lar uchun ekani hujjatlandi (xulq bir xil).
+- Plagin: unzip kesh markeri (.assetflow_pack_size — fileSize o'zgarsa kesh tashlanadi),
+  unzip timeout 60s→600s. unzip -o strukturani saqlaydi — nisbiy havolalar ishlaydi.
 
-**Kutilmoqda:** push + deploy; production `migrate:deploy` KODDAN OLDIN; jonli tekshiruv (routing/301,
-2FA enrol); ⚠️ ADMIN_REQUIRE_2FA'ni yoqishdan OLDIN har admin 2FA'ni enrol qilsin (aks holda konsol qulf).
+**Tekshirildi:** to'liq zanjir simulyatsiyasi (real dist ingest kodi bilan): oldin=faqat pack.aep,
+keyin=hamma fayl+papkalar, plagin extract'ida barcha nisbiy havolalar RESOLVES; API build yashil.
+
+**Kutilmoqda:** push+deploy; eski (buruq ingest'dan o'tgan) shablonlar tiklanmaydi — contributor
+qayta yuklashi kerak; jonli AE import testi.
