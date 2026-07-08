@@ -120,6 +120,10 @@
     // Billing (Lemon Squeezy — MoR). body: { plan: "pro"|"studio" } yoki { credits: 500 }
     checkout: function (body) { return req("/api/billing/checkout", { method: "POST", body: body }); },
 
+    // FAZA 1c — GDPR: o'z ma'lumotini eksport / hisobni o'chirish
+    exportData: function () { return req("/api/users/export", { method: "POST" }); },
+    deleteAccount: function () { return req("/api/account", { method: "DELETE", body: { confirm: "DELETE" } }); },
+
     // Studio Gen
     credits: function () { return req("/api/studio/credits"); },
     models: function (mode) { return req("/api/studio/gen/models?mode=" + encodeURIComponent(mode)); },

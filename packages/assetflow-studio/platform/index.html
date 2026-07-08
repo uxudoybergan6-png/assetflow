@@ -16568,6 +16568,15 @@
                   <div style="height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden"><div style="height:100%;border-radius:999px;width:{{ storagePct }};background:{{ storageBarCol }}"></div></div>
                 </div>
               </div>
+            </div>
+            <!-- FAZA 1c — GDPR: data export + account deletion -->
+            <div class="ffa-acccard" style="padding:24px;max-width:920px;margin-top:16px">
+              <div style="font-size:15px;font-weight:700;margin-bottom:4px">Data &amp; privacy</div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Download a copy of your data, or permanently delete your account.</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button onclick="{{ exportMyData }}" class="ffm-btn2 sm"><i class="ph ph-download-simple"></i> Export my data</button>
+                <button onclick="{{ openDeleteAccount }}" class="ffm-btn2 sm" style="border-color:rgba(255,107,94,.4);color:#FF6B5E"><i class="ph ph-trash"></i> Delete account</button>
+              </div>
             </div></div>
           </sc-if>
 
@@ -16729,6 +16738,25 @@
     </div>
   </sc-if>
 
+  <!-- ============ GLOBAL: DELETE ACCOUNT MODAL (FAZA 1c) ============ -->
+  <sc-if value="{{ showDelete }}" hint-placeholder-val="{{ false }}">
+    <div onclick="{{ closeDeleteAccount }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" style="width:100%;max-width:460px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:30px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:inline-flex;align-items:center;gap:9px;font-size:20px;font-weight:600;color:#FF6B5E"><i class="ph-fill ph-warning"></i>Delete account</div>
+          <button onclick="{{ closeDeleteAccount }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
+        </div>
+        <p style="font-size:14px;color:var(--txt2);margin:0 0 10px">This permanently anonymizes your account and revokes access. Your published templates are unpublished; financial records are retained (anonymized). This cannot be undone.</p>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Type <b style="color:var(--txt)">DELETE</b> to confirm:</p>
+        <input value="{{ delConfirm }}" oninput="{{ onDelConfirm }}" placeholder="DELETE" class="ffa-field" style="margin-bottom:18px">
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="{{ closeDeleteAccount }}" class="ffm-btn2 sm">Cancel</button>
+          <button onclick="{{ confirmDeleteAccount }}" class="ffm-btn sm" style="background:#FF6B5E;color:#fff;border-color:#FF6B5E">Delete my account</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- LIGHTBOX -->
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
@@ -16814,6 +16842,9 @@ class Component extends DCLogic {
     genProgress: 0,
     genPhase: 0,
     accountTab: 'Profile',
+    // FAZA 1c — GDPR delete-account modal (typed confirmation)
+    showDelete: false,
+    delConfirm: '',
     aiDuration: '',
     activeGenId: null,
     scrollP: 0,
@@ -17397,6 +17428,35 @@ class Component extends DCLogic {
     this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null });
     this.go('landing');
     this.toast('You have been signed out');
+  }
+
+  // ── FAZA 1c — GDPR: data export + account deletion ──
+  async exportMyData() {
+    if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    this.toast('Preparing your data…');
+    try {
+      const data = await FFAPI.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'frameflow-data-export.json'; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      this.toast('Data exported');
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  openDeleteAccount() { this.setState({ showDelete: true, delConfirm: '' }); }
+  closeDeleteAccount() { this.setState({ showDelete: false, delConfirm: '' }); }
+  async confirmDeleteAccount() {
+    if (String(this.state.delConfirm || '').trim().toUpperCase() !== 'DELETE') { this.toast('Type DELETE to confirm'); return; }
+    if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    try { await FFAPI.deleteAccount(); }
+    catch (e) { this.toast(this.errMsg(e)); return; }
+    if (window.FFAPI) FFAPI.clearSession();
+    this._sess = {};
+    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null });
+    this.go('landing');
+    this.toast('Your account has been deleted');
   }
 
   // ── GEN (real API oqimi: quote → gen → poll) ──
@@ -18385,6 +18445,14 @@ class Component extends DCLogic {
       accName: this.state.accName,
       onAccName: (e) => this.setState({ accName: e.target.value }),
       saveAcc: () => this.saveProfile(),
+      // FAZA 1c — GDPR export/delete
+      exportMyData: () => this.exportMyData(),
+      openDeleteAccount: () => this.openDeleteAccount(),
+      closeDeleteAccount: () => this.closeDeleteAccount(),
+      confirmDeleteAccount: () => this.confirmDeleteAccount(),
+      showDelete: this.state.showDelete,
+      delConfirm: this.state.delConfirm,
+      onDelConfirm: (e) => this.setState({ delConfirm: e.target.value }),
       downloadsMonth: this.state.downloadsMonth,
       // FAZA 2 #20 — storage kvota (X / Y GB) hisob ekrani uchun
       storageUsedFmt: fmtBytesGB(this.state.storageUsed),

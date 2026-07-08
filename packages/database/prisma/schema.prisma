@@ -49,6 +49,9 @@ model User {
   contributorRequestedAt DateTime?
   tokenVersion         Int       @default(0)
   stripeCustomerId     String?   @unique
+  // FAZA 1c — GDPR self-serve o'chirish: belgilangan bo'lsa hisob anonimlashtirilgan
+  // (PII tozalangan, tokenlar bekor qilingan). Moliyaviy yozuvlar (earning/payout) saqlanadi.
+  deletedAt        DateTime?
   emailVerified    DateTime?
   image            String?
   createdAt        DateTime  @default(now())

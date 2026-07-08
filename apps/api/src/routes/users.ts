@@ -75,3 +75,80 @@ usersRouter.post("/contributor-request", requireAuth, async (req: Request, res: 
   });
   res.json({ ok: true, alreadyRequested: false, requestedAt: updated.contributorRequestedAt });
 });
+
+/**
+ * FAZA 1c — GDPR data-portability: foydalanuvchi O'Z ma'lumotini JSON sifatida
+ * yuklab oladi (profil, shablonlar, yuklab olishlar, generatsiyalar, daromadlar, obuna).
+ * Faqat so'rovchining o'z ma'lumoti (requireAuth → userId). Hech qanday PII o'zgarmaydi.
+ */
+usersRouter.post("/export", requireAuth, async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const [user, pluginProfile, subscription, templates, downloads, generations, earnings] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, email: true, name: true, role: true, image: true,
+          emailVerified: true, createdAt: true, updatedAt: true,
+          contributorRequestedAt: true, contributorBlockedAt: true, deletedAt: true,
+        },
+      }),
+      prisma.pluginProfile.findUnique({ where: { userId } }),
+      prisma.subscription.findUnique({
+        where: { userId },
+        select: {
+          status: true, stripePriceId: true, currentPeriodEnd: true,
+          cancelAtPeriodEnd: true, createdAt: true,
+        },
+      }),
+      prisma.contributorTemplate.findMany({
+        where: { contributorId: userId },
+        select: {
+          id: true, name: true, description: true, cat: true, catLabel: true, nav: true,
+          tags: true, reviewStatus: true, published: true, isPro: true,
+          downloadsCount: true, importsCount: true,
+          rightsAcceptedAt: true, rightsTermsVersion: true, createdAt: true,
+        },
+      }),
+      prisma.templateDownloadEvent.findMany({
+        where: { userId },
+        select: { templateId: true, kind: true, source: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.generation.findMany({
+        where: { userId },
+        select: {
+          id: true, mode: true, prompt: true, modelId: true, status: true,
+          cost: true, category: true, createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.contributorEarning.findMany({
+        where: { contributorId: userId },
+        select: {
+          templateId: true, amountCents: true, currency: true, payoutId: true, createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="frameflow-data-export-${userId}.json"`
+  );
+  res.json({
+    exportedAt: new Date().toISOString(),
+    profile: user,
+    pluginProfile,
+    subscription,
+    templates,
+    downloads,
+    generations,
+    earnings,
+  });
+});
