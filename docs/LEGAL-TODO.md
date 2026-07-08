@@ -1,104 +1,73 @@
 # LEGAL-TODO — huquqshunos bilan yakunlanadigan qarorlar
 
-> **Maqsad:** Bosqich 2 #3 (huquqiy hujjatlar) ni joriy KOD holatiga moslab yozdik
-> (Stripe, FREE/PRO). Lekin bir nechta band **biznes/huquqiy qaror** talab qiladi va
-> uni **egasi + huquqshunos** hal qilishi kerak. Bu fayl aynan nimani hal qilish
-> kerakligini va qaysi hujjat bo'limlari har bir qarorga bog'liqligini ro'yxatlaydi.
+> **Maqsad:** Huquqiy hujjatlar (terms/privacy/refund) joriy KOD holatiga faktik jihatdan
+> moslandi. Quyidagi bandlar esa **biznes/huquqiy qaror** talab qiladi va uni **egasi +
+> huquqshunos** hal qilishi kerak. Bu fayl aynan nimani hal qilish kerakligini ro'yxatlaydi.
 >
-> Hujjatlardagi tegishli joylar `<!-- ⚠️ HUQUQIY-TODO... -->` HTML-comment'lari bilan
-> belgilangan (foydalanuvchiga ko'rinmaydi). Qaror qabul qilingач, placeholder matnni
-> haqiqiy jumla bilan almashtiring va bu faylni yangilang.
+> ⚠️ **needs lawyer review:** hujjatlardagi tegishli joylar `<!-- ⚠️ needs lawyer review ... -->`
+> HTML-comment'lari bilan belgilangan (foydalanuvchiga ko'rinmaydi).
 
-Manba fayllar (MANBA — bu yerga edit qiling, `dist/` build artefakti):
+**Yangilangan: 2026-07-08** — faktik holat quyidagi KOD manbalariga tekshirildi:
+- To'lov: `apps/api/src/lib/lemonsqueezy.ts`, `apps/api/src/routes/billing.ts` (FAOL yo'l = Lemon Squeezy).
+- Tariflar: `PluginPlanTier` enum = **FREE | PRO | STUDIO** (`packages/database/prisma/schema.prisma`).
+- Kredit paketlari: `billing.ts` `credits` checkout + `lemonsqueezy.ts` `classifyVariant` "N Credits" + `PluginProfile.aiCreditsTopup` (oylik reset'da saqlanadi).
+
+Manba fayllar (MANBA — bu yerga edit qiling, `dist/` build artefakti; `platform/` to'g'ridan serv qilinadi):
 - `packages/assetflow-studio/platform/terms.html`
 - `packages/assetflow-studio/platform/privacy.html`
 - `packages/assetflow-studio/platform/refund.html`
 
 ---
 
-## 1. Merchant of Record (MoR) — kim va soliqni kim ushlaydi? ⚠️ ENG MUHIM
+## ✅ Kodga moslashtirilgan (faktik holat — bajarildi)
 
-**Joriy kod holati:** to'lovlar **Stripe** orqali (`apps/api/src/lib/stripe.ts`,
-`apps/api/src/routes/stripe.ts`). Stripe — to'lov **protsessori**, u odatda MoR EMAS va
-QQS/soliqni avtomatik ushlab bermaydi (Paddle/LemonSqueezy kabi MoR'lardan farqli).
-
-**Hal qilinishi kerak:**
-- MoR kim bo'ladi? Variantlar:
-  - (a) Haqiqiy MoR (masalan Paddle / LemonSqueezy) — ular soliq/QQSni o'z zimmasiga oladi;
-  - (b) Mahalliy to'lov (Payme / Click, UZS) + soliqni **o'zimiz** hisoblash/deklaratsiya;
-  - (c) Stripe + soliqni o'zimiz (Stripe Tax yoki qo'lda) hisoblash.
-- Har variant uchun: ro'yxatdan o'tish yurisdiksiyasi, soliq raqami, invoice talablari.
-
-**Bog'liq hujjat bo'limlari:**
-- `terms.html` → §3 "Obuna va to'lovlar" (hozir Stripe deb yozilgan + neytral MoR/soliq eslatmasi).
-- `privacy.html` → §1 va §4 (to'lov protsessori "hozircha Stripe").
-- `refund.html` → kirish qatori ("to'lov protsessori (hozircha Stripe)").
-
-> ⚠️ Hozircha hech qaerda "Paddle soliqni hal qiladi" DEB YOZMANG — bu kod bilan mos emas.
+- **To'lov protsessori/MoR:** hamma joyda "Stripe" → **Lemon Squeezy** ga o'zgartirildi. Lemon
+  Squeezy — Merchant of Record: QQS/sotuv solig'ini O'ZI hisoblab, ushlab, to'laydi. (Bu MoR
+  ta'rifi — faktik, `lemonsqueezy.ts` doc-comment bilan mos.)
+- **Tariflar:** terms §3 endi **Pro va Studio** ni tilga oladi; refund "Obuna (Pro / Studio)".
+- **Kredit paketlari:** terms §4 va refund "Kredit paketlari" endi ular MAVJUD deb yozadi (oldingi
+  "kodda YO'Q" da'vosi noto'g'ri edi).
 
 ---
 
-## 2. VAT / soliq — maqsadli bozor
+## ⚠️ Huquqshunos hal qiladigan ochiq qarorlar
 
-**Hal qilinishi kerak:**
-- Asosiy bozor(lar): O'zbekiston (UZS) va/yoki xalqaro (USD)?
-- QQS/sotuv solig'i qo'llaniladimi, kim hisoblaydi (MoR yoki biz)?
-- Narxlar solig'i ichiga oladimi (tax-inclusive) yoki ustiga qo'shiladimi?
+### 1. Soliq yurisdiksiyasi / invoice talablari
+Lemon Squeezy MoR sifatida QQS/sotuv solig'ini ushlaydi — lekin **qaysi hududlarga sotamiz**,
+invoice/kvitansiya talablari, va O'zbekiston (agar UZS sotuv bo'lsa) soliq deklaratsiyasi
+qanday — huquqshunos aniqlasin.
+- Bog'liq: `terms.html` §3, `privacy.html` §4.
 
-**Bog'liq hujjat bo'limlari:**
-- `terms.html` → §3 (soliq eslatmasi placeholder).
-- `refund.html` → summalar soliqli/soliqsiz qaytariladimi.
+### 2. Qaytarish muddati va iste'molchi qonuni
+`refund.html` 14 kun + "kiritilgan kreditlarning muhim qismi sarflanmagan" chegarasi ehtiyotkor
+umumiy matn. Buni **Lemon Squeezy xaridor shartlari** va **maqsadli bozor iste'molchi qonuni**
+bilan moslashtiring; "muhim qism" ni aniq foizga (masalan >20%) aylantirish kerakmi — qaror qiling.
+- Bog'liq: `refund.html` "Obuna (Pro / Studio)", "Kredit paketlari".
 
----
+### 3. Kredit-paket amal qilish muddati / qaytarish
+Sotib olingan top-up kreditlar oylik reset'da **saqlanadi** (kuymaydi — `aiCreditsTopup`
+invariant). Amal qilish muddati (agar bo'lsa) va qaytarish sharti (sarflana boshlagach
+qaytmaydi) huquqiy jihatdan tasdiqlansin.
+- Bog'liq: `terms.html` §4, `refund.html` "Kredit paketlari".
 
-## 3. Qaytarish siyosati — MoR shartlariga moslash
+### 4. Til (i18n) nomuvofiqligi
+Huquqiy hujjatlar **o'zbekcha**, ilova UI **inglizcha**. Huquqshunos bilan: yakuniy huquqiy
+til qaysi bozorga (UZ/EN) mo'ljallanganini hal qiling; kerak bo'lsa ikkala tilda saqlang.
 
-**Joriy holat:** `refund.html` 14 kunlik qaytarish yozilgan (umumiy, ehtiyotkor).
-
-**Hal qilinishi kerak:**
-- 14 kun muddati tanlangan MoR/to'lov provayderi va mahalliy iste'molchi qonuni bilan mosmi?
-- "Kreditlarning muhim qismi sarflangan" chegarasi aniq ta'riflansinmi (masalan >20%)?
-
-**Bog'liq hujjat bo'limlari:**
-- `refund.html` → "Obuna (Pro)" bo'limi.
-
----
-
-## 4. 'Studio' tarifi — sotiladimi?
-
-**Joriy kod holati:** backend faqat **FREE** va **PRO** ni amalga oshiradi
-(`PluginPlanTier` enum: FREE|PRO). "Studio" — marketing sahifasida ko'rsatilgan, lekin
-backend'da YO'Q.
-
-**Hal qilinishi kerak:** Studio tarifi ishga tushiriladimi? Bo'lsa — narx, kreditlar, limit.
-
-**Bog'liq hujjat bo'limlari:**
-- `terms.html` → §3/§4 (hozir faqat "Pro" deb yozilgan).
-- `refund.html` → "Obuna" bo'limi (Studio qo'shilsa faollashtiriladi).
-
----
-
-## 5. Kredit paketlari (bir martalik top-up) — sotiladimi?
-
-**Joriy kod holati:** bir martalik kredit paketi **sotib olish oqimi YO'Q** — faqat
-tarifga kiritilgan **oylik** kredit. Marketing sahifasida paketlar ko'rsatilgan.
-
-**Hal qilinishi kerak:** kredit paketlari ishga tushiriladimi? Bo'lsa — amal qilish
-muddati, qaytarish sharti, sarflangач qaytmasligi.
-
-**Bog'liq hujjat bo'limlari:**
-- `terms.html` → §4 "Kreditlar" (paketlar shartli/placeholder).
-- `refund.html` → "Kredit paketlari" bo'limi (butunlay shartli).
+### 5. Yakuniy tekshiruv
+Iste'molchi/maxfiylik qonuni (O'zbekiston PDD va/yoki GDPR agar EU foydalanuvchilari bor)
+bo'yicha huquqshunosdan yakuniy tekshiruv oling. GDPR self-serve **eksport/o'chirish** endi
+kodda mavjud (`POST /api/users/export`, `DELETE /api/account`) — siyosat matnini shunga
+moslang. DMCA public policy sahifasi qo'shildi (`platform/dmca.html`).
 
 ---
 
 ## Yakunlash tartibi (tavsiya)
 
-1. MoR/soliq qarorini qabul qiling (1 + 2) — bu qolganini belgilaydi.
-2. `terms.html` §3 + `privacy.html` §4 + `refund.html` kirishini yangilang (Stripe/MoR jumlasi).
-3. Studio/kredit-paketlar ishga tushsa (4, 5) — tegishli bo'limlarni faollashtiring.
-4. Barcha `<!-- ⚠️ HUQUQIY-TODO... -->` comment'larini o'chiring (hal bo'lgach).
-5. Iste'molchi/maxfiylik qonuni (masalan O'zbekiston PDD, GDPR agar EU) bo'yicha huquqshunosdan
-   yakuniy tekshiruv oling.
+1. MoR soliq yurisdiksiyasini tasdiqlang (1) — bu invoice/soliq matnini belgilaydi.
+2. Qaytarish shartlarini Lemon Squeezy + iste'molchi qonuni bilan moslang (2, 3).
+3. Til qarorini qabul qiling (4).
+4. Barcha `<!-- ⚠️ needs lawyer review ... -->` comment'larini hal bo'lgach o'chiring.
+5. Huquqshunosdan yakuniy tekshiruv (5).
 
-*Yaratilgan: 2026-07-04 — Bosqich 2 #4.*
+*Dastlab: 2026-07-04 (Bosqich 2) · Yangilandi: 2026-07-08 (FAZA 1 — kodga moslash + GDPR + DMCA).*

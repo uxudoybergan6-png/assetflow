@@ -20,11 +20,12 @@ a{color:var(--acc)}
 <body><div class="wrap">
 <div class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E1400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg></span><a href="/">Frame<b>Flow</b></a></div>
 
-<!-- ⚠️ HUQUQIY-TODO: bu hujjat joriy KOD holatiga moslab yozilgan (Stripe, FREE/PRO). Yakuniy
-     tijoriy/soliq tuzilishi tasdiqlanmagan — quyidagi FLAG'larni docs/LEGAL-TODO.md bilan
-     birga huquqshunos bilan yakunlang. Placeholder matnlarni haqiqiy qaror bilan almashtiring. -->
+<!-- ⚠️ HUQUQIY-TODO: bu hujjat joriy KOD holatiga moslab yozilgan (Lemon Squeezy MoR;
+     FREE/PRO/STUDIO tariflar + bir martalik kredit paketlari — hammasi kodda mavjud).
+     Aniq soliq yurisdiksiyalari, iste'molchi qonuni va yakuniy jumlalar HUQUQSHUNOS
+     tekshiruvidan o'tishi kerak — docs/LEGAL-TODO.md. ⚠️ needs lawyer review. -->
 
-<h1>Foydalanish shartlari</h1><p class="upd">Oxirgi yangilanish: 2026-yil 4-iyul</p>
+<h1>Foydalanish shartlari</h1><p class="upd">Oxirgi yangilanish: 2026-yil 8-iyul</p>
 <p>FrameFlow'ga ("biz", "bizning", "Xizmat"), getframeflow.app manzilida joylashgan xizmatga xush kelibsiz. Hisob yaratish yoki Xizmatdan foydalanish orqali siz ushbu Shartlarga rozilik bildirasiz.</p>
 
 <h2>1. Xizmat</h2>
@@ -34,18 +35,17 @@ a{color:var(--acc)}
 <p>Siz haqiqiy elektron pochta manzilini kiritib, uni tasdiqlashingiz kerak. Hisob ma'lumotlaringiz xavfsizligi uchun o'zingiz javobgarsiz. Hisobni tarifingiz chegarasidan tashqarida boshqalar bilan ulashish taqiqlanadi.</p>
 
 <h2>3. Obuna va to'lovlar</h2>
-<p>Hozircha pullik tarif (Pro) va to'lovlar <b>Stripe</b> to'lov protsessori orqali amalga oshiriladi; karta ma'lumotlaringiz Stripe tomonidan qayta ishlanadi va biz uni saqlamaymiz. Obuna bekor qilinmaguncha avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin; kirish to'langan davr oxirigacha davom etadi.</p>
-<!-- ⚠️ HUQUQIY-TODO(MoR/VAT): Kim "merchant of record" bo'lishini (Stripe / mahalliy Payme·Click /
-     Paddle kabi MoR) va soliq/QQS kim tomonidan ushlanishini huquqshunos bilan aniqlang. Aniqlangач
-     bu bo'limga "MoR kim va soliqni kim hisoblaydi" degan aniq jumlani qo'shing. docs/LEGAL-TODO.md. -->
-<p><i>Eslatma: sotuvchi-yozuvchi (merchant of record) va soliq/QQS bo'yicha yakuniy tartib belgilanmoqda. Aniqlangach, tegishli hududlar uchun soliq qanday hisoblanishi shu yerda ko'rsatiladi.</i></p>
+<p>Pullik tariflar (Pro va Studio) hamda to'lovlar <b>Lemon Squeezy</b> orqali amalga oshiriladi. Lemon Squeezy — bizning sotuvchi-yozuvchimiz (Merchant of Record): u to'lovni qabul qiladi va qo'llaniladigan QQS/sotuv solig'ini o'zi hisoblab, ushlab qoladi hamda tegishli soliq organlariga to'laydi. Karta ma'lumotlaringiz Lemon Squeezy tomonidan qayta ishlanadi va biz uni saqlamaymiz. Obuna bekor qilinmaguncha avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin; kirish to'langan davr oxirigacha davom etadi.</p>
+<!-- ⚠️ needs lawyer review — MoR/soliq: Lemon Squeezy MoR sifatida QQS/sotuv solig'ini hisoblaydi
+     (kod haqiqati: apps/api/src/lib/lemonsqueezy.ts, billing.ts). Aniq soliq yurisdiksiyalari,
+     invoice talablari va iste'molchi qonuni huquqshunos bilan yakunlansin. docs/LEGAL-TODO.md. -->
 
 <h2>4. Kreditlar</h2>
-<p>AI generatsiyalari kredit sarflaydi. Tarifga kiritilgan oylik kreditlar har hisob-kitob davrida yangilanadi va keyingi oyga o'tmaydi.</p>
-<!-- ⚠️ HUQUQIY-TODO(credit-packs): Kod hozir bir martalik "kredit paketi" sotib olishni AMALGA
-     OSHIRMAYDI (faqat oylik tarif krediti). Marketing sahifasida kredit paketlari ko'rsatilgan —
-     ular ishga tushsa, ularning amal qilish muddati/qaytarish shartini shu yerda aniqlang. -->
-<p><i>Alohida kredit paketlari taklif etilgan hollarda ularning shartlari sotib olish paytida ko'rsatiladi.</i></p>
+<p>AI generatsiyalari kredit sarflaydi. Tarifga kiritilgan oylik kreditlar har hisob-kitob davrida yangilanadi va keyingi oyga o'tmaydi. Bundan tashqari, bir martalik kredit paketlarini alohida sotib olishingiz mumkin — ular ham Lemon Squeezy orqali sotiladi va sotib olingan kreditlar hisobingizga qo'shiladi hamda oylik yangilanishda kuymay saqlanadi.</p>
+<!-- ⚠️ needs lawyer review — kredit paketlari kodda mavjud (bir martalik top-up: billing.ts
+     credits checkout; lemonsqueezy.ts "N Credits" variant; PluginProfile.aiCreditsTopup oylik
+     reset'da saqlanadi). Paketning amal qilish muddati/qaytarish sharti huquqshunos bilan
+     yakunlansin — qaytarish siyosatiga qarang. -->
 
 <h2>5. Kontent va litsenziya</h2>
 <ul>

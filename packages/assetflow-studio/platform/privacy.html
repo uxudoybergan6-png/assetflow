@@ -20,17 +20,18 @@ a{color:var(--acc)}
 <body><div class="wrap">
 <div class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E1400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg></span><a href="/">Frame<b>Flow</b></a></div>
 
-<!-- ⚠️ HUQUQIY-TODO: to'lov protsessori sifatida hozir Stripe ishlatiladi (kod bo'yicha). Yakuniy
-     MoR/soliq qarori docs/LEGAL-TODO.md'da; qaror o'zgarsa 4-bo'lim (protsessorlar) yangilanadi. -->
+<!-- ⚠️ needs lawyer review — to'lov protsessori/MoR = Lemon Squeezy (kod haqiqati:
+     apps/api/src/lib/lemonsqueezy.ts). Ishlov beruvchilar ro'yxati va saqlash muddati
+     bandlari huquqshunos bilan yakunlansin. docs/LEGAL-TODO.md. -->
 
-<h1>Maxfiylik siyosati</h1><p class="upd">Oxirgi yangilanish: 2026-yil 4-iyul</p>
+<h1>Maxfiylik siyosati</h1><p class="upd">Oxirgi yangilanish: 2026-yil 8-iyul</p>
 
 <h2>1. Biz nimani yig'amiz</h2>
 <ul>
 <li><b>Hisob ma'lumotlari:</b> elektron pochta manzili, ism, parol xeshi.</li>
 <li><b>Foydalanish ma'lumotlari:</b> shablon yuklab olishlar, importlar, AI generatsiya tarixi, kredit balansi.</li>
 <li><b>Siz taqdim etgan kontent:</b> AI generatsiya uchun yuborgan promptlar va referens fayllar; contributorlar yuklagan shablonlar.</li>
-<li><b>To'lov ma'lumotlari:</b> to'lov protsessori (hozircha Stripe) tomonidan qayta ishlanadi. Biz karta ma'lumotlarini hech qachon saqlamaymiz.</li>
+<li><b>To'lov ma'lumotlari:</b> sotuvchi-yozuvchimiz (Merchant of Record) Lemon Squeezy tomonidan qayta ishlanadi. Biz karta ma'lumotlarini hech qachon saqlamaymiz.</li>
 </ul>
 
 <h2>2. Undan qanday foydalanamiz</h2>
@@ -40,7 +41,7 @@ a{color:var(--acc)}
 <p>Xavfsizlik va huquqiy majburiyatlar uchun promptlar, referens fayllar va generatsiya natijalari avtomatik moderatsiyadan o'tishi mumkin. Qat'iy taqiqlangan kontent (masalan, voyaga yetmaganlarni jinsiylashtirish yoki roziliksiz deepfake) bloklanadi va ko'rib chiqish uchun qayd etiladi.</p>
 
 <h2>4. Ishlov beruvchilar (processors)</h2>
-<p>Biz ishonchli ishlov beruvchilardan foydalanamiz: to'lov protsessori (hozircha Stripe), Google Cloud (hosting, saqlash), Cloudflare (CDN, hosting), Resend (tranzaksion elektron pochta) va promptlaringiz hamda referenslaringizni generatsiya uchun qayta ishlaydigan AI model provayderlari (fal.ai, Google Vertex AI, ElevenLabs). Konfiguratsiyaga qarab kontent moderatsiyasi provayderi ham ishlatilishi mumkin.</p>
+<p>Biz ishonchli ishlov beruvchilardan foydalanamiz: sotuvchi-yozuvchi (Merchant of Record) va to'lov protsessori Lemon Squeezy, Google Cloud (hosting, saqlash), Cloudflare (CDN, hosting), Resend (tranzaksion elektron pochta) va promptlaringiz hamda referenslaringizni generatsiya uchun qayta ishlaydigan AI model provayderlari (fal.ai, Google Vertex AI, ElevenLabs). Konfiguratsiyaga qarab kontent moderatsiyasi provayderi ham ishlatilishi mumkin.</p>
 
 <h2>5. Saqlash muddati</h2>
 <p>Hisob ma'lumotlari hisobingiz mavjud bo'lguncha saqlanadi. Generatsiya tarixi va yuklamalarni hisobingizdan o'chirishingiz mumkin; zaxira nusxalar 30 kun ichida tozalanadi. To'liq o'chirishni support@getframeflow.app orqali so'rashingiz mumkin.</p>
