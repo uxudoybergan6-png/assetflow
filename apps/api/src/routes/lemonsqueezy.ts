@@ -6,6 +6,12 @@ import {
   classifyVariant,
 } from "../lib/lemonsqueezy.js";
 import { applyBillingPlan, grantAiCreditsTopup } from "../lib/plugin-profile.js";
+import {
+  sendSubscriptionActiveEmail,
+  sendPaymentReceivedEmail,
+  sendPaymentFailedEmail,
+  sendCreditsToppedUpEmail,
+} from "../lib/notify.js";
 
 /**
  * Lemon Squeezy webhook — MoR to'lov hodisalarini qayta ishlaydi.
@@ -103,6 +109,54 @@ async function handleOrderCreated(userId: string, attrs: Record<string, any>) {
   }
 }
 
+/**
+ * FAZA 3 (E) — to'lov bildirishnomalari (best-effort): obuna faollashdi / davriy to'lov
+ * o'tdi / to'lov yiqildi / kredit topup. Ichkarida to'liq yutiladi — webhook ishlovini
+ * HECH QACHON yiqitmaydi yoki kechiktirmaydi (email fire-and-forget).
+ * Dedup claim-first bo'lgani uchun LS retry'da takror email ketmaydi.
+ */
+async function notifyPaymentEvent(
+  userId: string,
+  eventName: string,
+  attrs: Record<string, any>
+): Promise<void> {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    if (!u?.email) return;
+    if (
+      (eventName === "subscription_created" || eventName === "subscription_resumed") &&
+      subscriptionActive(attrs)
+    ) {
+      const classified = classifyVariant(
+        String(attrs?.product_name ?? ""),
+        String(attrs?.variant_name ?? ""),
+        String(attrs?.variant_id ?? "")
+      );
+      const label =
+        classified?.kind === "subscription"
+          ? String(classified.plan)
+          : String(attrs?.product_name || "Pro");
+      sendSubscriptionActiveEmail(u.email, label);
+    } else if (eventName === "subscription_payment_success") {
+      const amount =
+        typeof attrs?.total_formatted === "string" ? attrs.total_formatted : undefined;
+      sendPaymentReceivedEmail(u.email, amount);
+    } else if (eventName === "subscription_payment_failed") {
+      sendPaymentFailedEmail(u.email);
+    } else if (eventName === "order_created" && String(attrs?.status ?? "") === "paid") {
+      const item = attrs?.first_order_item ?? {};
+      const classified = classifyVariant(
+        String(item?.product_name ?? ""),
+        String(item?.variant_name ?? ""),
+        String(item?.variant_id ?? "")
+      );
+      if (classified?.kind === "credit") sendCreditsToppedUpEmail(u.email, classified.credits);
+    }
+  } catch (e) {
+    console.warn("[ls-webhook] to'lov bildirishnomasi yuborilmadi:", e);
+  }
+}
+
 export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.trim();
   if (!secret) {
@@ -168,8 +222,12 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
           await handleOrderCreated(userId, attrs);
           break;
         default:
+          // subscription_payment_* holat o'zgartirmaydi — faqat quyidagi bildirishnoma.
           break;
       }
+      // FAZA 3 (E) — foydalanuvchiga to'lov emaili (best-effort, ishlovdan KEYIN:
+      // plan/kredit allaqachon qo'llangan; email xatosi claim'ni bekor qilmaydi).
+      await notifyPaymentEvent(userId, eventName, attrs);
     }
   } catch (err) {
     // Ishlov xato berdi → claim'ni bekor qilamiz (LS retry qayta ishlasin,

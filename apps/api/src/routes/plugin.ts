@@ -17,6 +17,7 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
+import { sendWelcomeEmail } from "../lib/notify.js";
 import {
   ensurePluginProfile,
   consumeDownload,
@@ -565,6 +566,11 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
     return;
   }
   const user = result.user;
+
+  // FAZA 3 (E) — plagin device-code oqimi orqali YANGI Google hisob: welcome email.
+  if (result.isNew) {
+    sendWelcomeEmail(user.email, user.name);
+  }
 
   const profile = await ensurePluginProfile(user.id);
   if (profile.status === PluginAccountStatus.BLOCKED) {

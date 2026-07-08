@@ -65,6 +65,7 @@ import {
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { captureException } from "../lib/sentry.js";
+import { notifyAdminNewSubmission } from "../lib/notify.js";
 import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
@@ -1875,6 +1876,25 @@ contributorRouter.post(
     for (const key of p.data.keys) {
       results.push(await ingestOneZip(contributorId, key, rights));
     }
+
+    // FAZA 3 (E) — admin-notify: butun partiya uchun BITTA jamlama xat (spam emas).
+    // Best-effort: nom-lookup yoki email xatosi javobga ta'sir qilmaydi.
+    const createdIds = results
+      .filter((r) => r.status === "created" && r.id)
+      .map((r) => r.id!);
+    if (createdIds.length) {
+      void prisma.contributorTemplate
+        .findMany({ where: { id: { in: createdIds } }, select: { name: true } })
+        .then((rows) =>
+          notifyAdminNewSubmission({
+            count: createdIds.length,
+            names: rows.map((r) => r.name),
+            contributorEmail: req.user!.email,
+          })
+        )
+        .catch((e) => console.warn("[ingest] admin-notify yuborilmadi:", e));
+    }
+
     res.json({ results });
   }
 );
@@ -2362,6 +2382,15 @@ contributorRouter.post(
         reviewNote: null,
       },
     });
+
+    // FAZA 3 (E) — admin-notify: yangi shablon moderatsiya navbatiga tushdi
+    // (best-effort, fire-and-forget — javobni bloklamaydi).
+    notifyAdminNewSubmission({
+      count: 1,
+      names: [template.name],
+      contributorEmail: req.user!.email,
+    });
+
     res.json(template);
   }
 );

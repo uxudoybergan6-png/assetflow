@@ -17,6 +17,7 @@ import {
 } from "../lib/s3.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
+import { sendWelcomeEmail } from "../lib/notify.js";
 
 export const authRouter = Router();
 
@@ -231,6 +232,11 @@ authRouter.post("/google", authLimiter, async (req, res) => {
   }
   const user = result.user;
 
+  // FAZA 3 (E) — Google orqali YANGI hisob (verify bosqichi yo'q): welcome email darhol.
+  if (result.isNew) {
+    sendWelcomeEmail(user.email, user.name);
+  }
+
   const token = signToken({
     userId: user.id,
     email: user.email,
@@ -372,6 +378,9 @@ authRouter.post("/verify-email", async (req, res) => {
       where: { id: user.id },
       data: { emailVerified: new Date() },
     });
+    // FAZA 3 (E) — ro'yxatdan o'tish yakunlandi (birinchi tasdiqlashda): welcome email
+    // (best-effort, fire-and-forget — javobni bloklamaydi, xato yutiladi).
+    sendWelcomeEmail(user.email, user.name);
   }
   await prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } });
   res.json({ ok: true, message: "Email verified — you can now use AI features", role: user.role });

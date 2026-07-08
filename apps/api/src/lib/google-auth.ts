@@ -5,7 +5,12 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 export const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 export type GoogleAuthResult =
-  | { ok: true; user: Awaited<ReturnType<typeof prisma.user.findUnique>> & { subscription: any } }
+  | {
+      ok: true;
+      user: Awaited<ReturnType<typeof prisma.user.findUnique>> & { subscription: any };
+      /** FAZA 3 (E) — bu chaqiruvda YANGI user yaratildi (welcome email uchun). */
+      isNew?: boolean;
+    }
   | { ok: false; status: number; error: string; code?: string };
 
 /** Google ID token'ni tekshiradi, email bo'yicha find-or-create qiladi
@@ -37,7 +42,9 @@ export async function verifyGoogleIdTokenAndUpsertUser(credential: string): Prom
     include: { subscription: true },
   });
 
+  let isNew = false;
   if (!user) {
+    isNew = true;
     const created = await prisma.user.create({
       data: {
         email,
@@ -72,5 +79,5 @@ export async function verifyGoogleIdTokenAndUpsertUser(credential: string): Prom
     return { ok: false, status: 403, error: "Contributor account is blocked", code: "CONTRIBUTOR_BLOCKED" };
   }
 
-  return { ok: true, user: user as any };
+  return { ok: true, user: user as any, isNew };
 }
