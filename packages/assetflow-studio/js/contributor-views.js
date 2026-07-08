@@ -238,7 +238,7 @@ let UP_UPLOADING = false;
    server-side into a PENDING_REVIEW template. No manual form.
    ============================================================ */
 let UP_MODE = "single"; // 'single' | 'bulk'
-let BULK_FILES = []; // { file, stage: 'queued'|'uploading'|'processing'|'done'|'error', pct, error, id }
+let BULK_FILES = []; // { file, stage: 'queued'|'uploading'|'processing'|'done'|'duplicate'|'error', pct, error, id }
 let BULK_RUNNING = false;
 
 function setUploadMode(mode) {
@@ -269,7 +269,7 @@ function bulkRemoveFile(i) {
 
 function bulkClearFinished() {
   if (BULK_RUNNING) return;
-  BULK_FILES = BULK_FILES.filter((b) => b.stage !== "done");
+  BULK_FILES = BULK_FILES.filter((b) => b.stage !== "done" && b.stage !== "duplicate");
   renderUpload();
 }
 
@@ -278,17 +278,24 @@ function bulkStageLabel(b) {
   if (b.stage === "uploading") return `Uploading… ${b.pct}%`;
   if (b.stage === "processing") return "Processing…";
   if (b.stage === "done") return "✓ Sent to moderation";
+  if (b.stage === "duplicate") return `⊘ ${b.error || "Duplicate — already exists"}`;
   if (b.stage === "error") return `✗ ${b.error || "Failed"}`;
   return "";
 }
 function bulkStageColor(b) {
   if (b.stage === "done") return "var(--green,#82c341)";
+  if (b.stage === "duplicate") return "var(--amber,#f59e0b)";
   if (b.stage === "error") return "var(--red,#ef4444)";
   return "var(--text-dim)";
 }
+function bulkFillColor(b) {
+  if (b.stage === "error") return "var(--red,#ef4444)";
+  if (b.stage === "duplicate") return "var(--amber,#f59e0b)";
+  return "var(--green,#82c341)";
+}
 
 function bulkRenderRow(b, i) {
-  const removable = b.stage === "queued" || b.stage === "error";
+  const removable = b.stage === "queued" || b.stage === "error" || b.stage === "duplicate";
   return `<div class="up-prog-row" id="bulk-row-${i}" style="display:flex;flex-direction:column;gap:5px;padding:8px 0;border-bottom:1px solid var(--line,#2a2a2a)">
     <div class="row between center" style="font-size:12px;gap:8px">
       <span class="trunc" title="${esc(b.file.name)}" style="min-width:0">${ic("file")} ${esc(b.file.name)} · ${fmtMB(b.file.size)}</span>
@@ -298,7 +305,7 @@ function bulkRenderRow(b, i) {
       </div>
     </div>
     <div style="height:6px;background:var(--line,#2a2a2a);border-radius:4px;overflow:hidden">
-      <div class="bulk-fill" style="height:100%;width:${b.stage === "done" ? 100 : b.pct}%;background:${b.stage === "error" ? "var(--red,#ef4444)" : "var(--green,#82c341)"};transition:width .15s"></div>
+      <div class="bulk-fill" style="height:100%;width:${b.stage === "done" || b.stage === "duplicate" ? 100 : b.pct}%;background:${bulkFillColor(b)};transition:width .15s"></div>
     </div>
   </div>`;
 }
@@ -310,8 +317,8 @@ function bulkUpdateRow(idx) {
   const fill = row.querySelector(".bulk-fill");
   const stat = row.querySelector(".bulk-stat");
   if (fill) {
-    fill.style.width = (b.stage === "done" ? 100 : b.pct) + "%";
-    fill.style.background = b.stage === "error" ? "var(--red,#ef4444)" : "var(--green,#82c341)";
+    fill.style.width = (b.stage === "done" || b.stage === "duplicate" ? 100 : b.pct) + "%";
+    fill.style.background = bulkFillColor(b);
   }
   if (stat) {
     stat.textContent = bulkStageLabel(b);
@@ -374,10 +381,14 @@ async function startBulkIngest() {
       }
     );
     const doneCount = queued.filter((b) => b.stage === "done").length;
+    const dupCount = queued.filter((b) => b.stage === "duplicate").length;
     const errCount = queued.filter((b) => b.stage === "error").length;
     if (doneCount) {
       toast("Bulk upload", `${doneCount} template(s) sent to moderation`, "success");
       await StudioTemplates.refreshAfterUpload();
+    }
+    if (dupCount) {
+      toast("Bulk upload", `${dupCount} duplicate(s) skipped — the template already exists`, "warn");
     }
     if (errCount) {
       toast("Bulk upload", `${errCount} file(s) failed — see the list below`, "warn");

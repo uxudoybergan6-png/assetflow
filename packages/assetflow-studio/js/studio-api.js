@@ -335,6 +335,9 @@ const StudioApi = (() => {
         const r = results.find((x) => x.key === key);
         if (r && r.ok) {
           if (onFileProgress) onFileProgress(index, { stage: "done", id: r.id });
+        } else if (r && r.status === "duplicate") {
+          // FAZA 6a: dublikat — xato emas, alohida aniq holat (ikkinchi nusxa yaratilmadi).
+          if (onFileProgress) onFileProgress(index, { stage: "duplicate", error: r.reason || "Duplicate", id: r.duplicateOf });
         } else {
           if (onFileProgress) onFileProgress(index, { stage: "error", error: (r && r.reason) || "Processing failed" });
         }
