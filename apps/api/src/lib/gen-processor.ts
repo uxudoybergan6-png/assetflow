@@ -815,9 +815,25 @@ export async function processGeneration(genId: string): Promise<void> {
     if (model.feature === "text-to-image" || model.feature === "image-edit") {
       // image_config — NATIVE o'lcham/nisbat (promptga qo'shilmaydi).
       const quality = typeof params.quality === "string" ? params.quality : null;
+      // PARAM GIGIYENASI (rasm) — video resolveVideoParams kabi, faqat model QO'LLAYDIGAN nisbat/
+      // o'lchamni provayderga yuboramiz. Klient eski/yaroqsiz qiymat yuborsa (masalan Imagen'ga 21:9
+      // yoki 4K) provayder 400 bermasin / kredit behuda ketmasin. NARXGA TA'SIR QILMAYDI: nisbat narx
+      // formulasida umuman yo'q; o'lcham narxini computeGenCost/imageUnitCost RAW params.quality'dan
+      // (image_size'dan EMAS) hisoblaydi va yaroqsiz qiymatда o'zi def tier'ga tushadi → yuborilgan
+      // tier bilan olingan narx izchil qoladi.
+      const imgAspect =
+        aspectRatio && model.aspects && model.aspects.length
+          ? model.aspects.includes(aspectRatio)
+            ? aspectRatio
+            : model.aspects[0]
+          : aspectRatio;
+      const imgSize =
+        quality && model.resolutions && model.resolutions.length && !model.resolutions.includes(quality)
+          ? null // yaroqsiz o'lcham → yubormaymiz (adapter model default'iga tushadi)
+          : quality;
       const imageConfig: { aspect_ratio?: string; image_size?: string } = {};
-      if (aspectRatio) imageConfig.aspect_ratio = aspectRatio;
-      if (quality) imageConfig.image_size = quality;
+      if (imgAspect) imageConfig.aspect_ratio = imgAspect;
+      if (imgSize) imageConfig.image_size = imgSize;
       // count > 1 → N marta generatsiya, har biri alohida GenAsset (narx base×N).
       // Bittasi xato bo'lsa — butun batch fail + to'liq refund (foydalanuvchi yo hammasini oladi, yo hech narsa to'lamaydi).
       const count = resolveImageCount(model, params);
@@ -933,7 +949,8 @@ export async function processGeneration(genId: string): Promise<void> {
       for (const s of slots) {
         if (!s.ok) continue;
         await prisma.genAsset.create({
-          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.url, aspectRatio, sizeBytes: s.sizeBytes },
+          // aspectRatio = EFEKTIV (klamplangan) nisbat — thumbnail ramka nisbati generatsiya bilan mos bo'lsin.
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.url, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
       }
     } else if (model.feature === "text-to-speech") {
