@@ -23,6 +23,7 @@ function asMetaJson(meta: Record<string, unknown>): Prisma.InputJsonValue {
 }
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { requireContributorOrAdmin } from "../middleware/contributor.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 import {
   ensureTemplateDir,
   ensureScenesDir,
@@ -524,11 +525,26 @@ const uploadAssetsFields = uploadAssets.fields([
  */
 /**
  * SSE — upload bosqichlari real vaqtda (Studio progress bar).
- * Auth: templateId cuid'ning o'zi capability (EventSource header yubora olmaydi);
- * faqat bosqich/foiz/xabar uzatiladi, fayl ma'lumoti emas.
+ * Auth: templateId cuid'ning o'zi capability (EventSource header yubora olmaydi; JWT talab
+ * qilinsa brauzer SSE buziladi) — faqat bosqich/foiz/xabar uzatiladi, fayl ma'lumoti emas.
+ * FAZA 2 (L3): kirish auth o'rniga ABUSE-cheklovlar — ulanish rate-limit + bir vaqtda ochiq
+ * oqimlar CAP'i (resurs tugatishни to'sadi).
  */
-contributorRouter.get("/templates/:id/upload-progress", (req, res) => {
+const MAX_PROGRESS_STREAMS = 200;
+let openProgressStreams = 0;
+const uploadProgressLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  keyPrefix: "upload-progress",
+  message: "Too many progress connections — please slow down",
+});
+contributorRouter.get("/templates/:id/upload-progress", uploadProgressLimiter, (req, res) => {
   const id = String(req.params.id);
+  if (openProgressStreams >= MAX_PROGRESS_STREAMS) {
+    res.status(503).json({ error: "Too many active progress streams — please try again shortly" });
+    return;
+  }
+  openProgressStreams++;
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -550,7 +566,11 @@ contributorRouter.get("/templates/:id/upload-progress", (req, res) => {
   send(getUploadProgress(id));
   const unsub = subscribeUploadProgress(id, send);
   const ping = setInterval(() => res.write(": ping\n\n"), 25_000);
+  let closed = false;
   req.on("close", () => {
+    if (closed) return;
+    closed = true;
+    openProgressStreams = Math.max(0, openProgressStreams - 1);
     clearInterval(ping);
     unsub();
   });

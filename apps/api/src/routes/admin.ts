@@ -39,6 +39,20 @@ export const adminRouter = Router();
 
 adminRouter.use(requireAuth, requireAdmin);
 
+// FAZA 2 (L5) — folder whitelist + fileName sanitizatsiya: aks holda `folder`/`fileName`
+// bevosita S3 kalitiga interpolatsiya qilinib, path-traversal (`../`) yoki ixtiyoriy kalit
+// injeksiyasi (boshqa prefiksga yozish) mumkin edi.
+const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc"]);
+function safeUploadFolder(f?: string): string {
+  const v = (f ?? "assets").trim();
+  return ALLOWED_UPLOAD_FOLDERS.has(v) ? v : "assets";
+}
+function safeUploadFileName(name: string): string {
+  const base = name.split(/[\\/]/).pop() || "file"; // basename (yo'l qismlarini tashla)
+  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/^\.+/, "").slice(0, 200);
+  return cleaned || "file";
+}
+
 adminRouter.post("/upload-url", async (req, res) => {
   const { fileName, contentType, folder } = req.body as {
     fileName?: string;
@@ -51,8 +65,9 @@ adminRouter.post("/upload-url", async (req, res) => {
     return;
   }
 
+  const key = `${safeUploadFolder(folder)}/${Date.now()}-${safeUploadFileName(fileName)}`;
+
   if (!isS3Configured()) {
-    const key = `${folder ?? "assets"}/${Date.now()}-${fileName}`;
     res.json({
       uploadUrl: null,
       key,
@@ -63,7 +78,6 @@ adminRouter.post("/upload-url", async (req, res) => {
     return;
   }
 
-  const key = `${folder ?? "assets"}/${Date.now()}-${fileName}`;
   const uploadUrl = await getSignedUploadUrl(key, contentType);
   res.json({ uploadUrl, key, publicUrl: getPublicUrl(key) });
 });

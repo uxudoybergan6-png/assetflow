@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logsPath = path.join(__dirname, "../../data/system-logs.json");
@@ -68,7 +69,17 @@ function sourceFromRole(role?: string): string {
   return "ae_plugin"; // USER (plugin obunachi)
 }
 
-logsRouter.post("/", (req, res) => {
+// FAZA 2 (L4) — yozuv per-IP rate-limit: har autentifikatsiyalangan manba log yuborishi
+// mumkin, lekin flood (har POST 500-qatorli faylni qayta yozadi = disk write amplifikatsiyasi)
+// cheklanadi. Store allaqachon bounded (MAX_LOGS=500). O'qish/tozalash — faqat admin (yuqorida).
+const logWriteLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  keyPrefix: "logs-write",
+  message: "Too many log writes — please slow down",
+});
+
+logsRouter.post("/", logWriteLimiter, (req, res) => {
   const entry = req.body;
   if (!entry?.message) {
     res.status(400).json({ error: "message is required" });
