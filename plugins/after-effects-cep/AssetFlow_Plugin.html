@@ -9641,23 +9641,20 @@ async function bootPlugin(){
     var g=document.getElementById('aiCatGrid'); if(!g)return;
     g.innerHTML='';
     AI_CATS.forEach(function(c){
+      // FAZA 5 (C5): jonli tool'i yo'q kategoriya (faza-2 Audio/3D) end user'ga
+      // KO'RSATILMAYDI — "COMING SOON" karta o'rniga launcher'da faqat ishlaydigan
+      // bo'limlar qoladi. Faza-2 ulanish tayyor bo'lgach AI_CATS'dagi tools[]
+      // to'ldiriladi va karta o'z-o'zidan qaytadi.
       var hasTools=c.tools.some(function(t){return !t.soon;});
+      if(!hasTools)return;
       var el=document.createElement('div');
-      el.className='cat'+(hasTools?'':' soon');
-      if(hasTools){
-        el.innerHTML='<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
-          +'<div class="cat-in"><span class="cat-ic">'+c.icon+'</span>'
-          +'<div class="cat-nm">'+c.card+'</div>'
-          +'<div class="cat-models">'+c.models+'</div>'
-          +'<div class="cat-live"><span class="dot"></span><span class="lt">LIVE</span></div></div>';
-      } else {
-        el.innerHTML='<span class="cat-ic">'+c.icon+'</span>'
-          +'<div class="cat-nm">'+c.card+'</div>'
-          +'<div class="cat-models">'+c.models+'</div>'
-          +'<span class="cat-soonb">COMING SOON</span>';
-      }
+      el.className='cat';
+      el.innerHTML='<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
+        +'<div class="cat-in"><span class="cat-ic">'+c.icon+'</span>'
+        +'<div class="cat-nm">'+c.card+'</div>'
+        +'<div class="cat-models">'+c.models+'</div>'
+        +'<div class="cat-live"><span class="dot"></span><span class="lt">LIVE</span></div></div>';
       el.addEventListener('click',function(){
-        if(!hasTools){ aiSoonToast(); return; }
         // #6: bitta tool bo'lsa oradagi ro'yxat ekransiz TO'G'RIDAN tool'ga
         var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
         if(live.length===1){ go(live[0].dest); return; }
@@ -9708,13 +9705,15 @@ async function bootPlugin(){
     var d=document.getElementById('aiCatTools'); if(!d)return;
     d.innerHTML='';
     var lbl=document.createElement('div'); lbl.className='aicattools-lbl'; lbl.textContent=c.name+' tools'; d.appendChild(lbl);
-    if(!c.tools.length){
+    // FAZA 5 (C5): soon:true tool'lar end user'ga ko'rsatilmaydi — faqat jonlilari.
+    var liveTools=c.tools.filter(function(t){return !t.soon;});
+    if(!liveTools.length){
       var em=document.createElement('div'); em.className='aicatempty'; em.textContent='No tools yet — coming soon.'; d.appendChild(em);
     } else {
-      c.tools.forEach(function(t){
-        var el=document.createElement('div'); el.className='aicattool'+(t.soon?' soon':'');
+      liveTools.forEach(function(t){
+        var el=document.createElement('div'); el.className='aicattool';
         el.innerHTML='<div class="ic">'+t.icon+'</div><div class="tx"><b>'+t.name+'</b><small>'+t.sub+'</small></div><div style="margin-left:auto;color:var(--acc);font-size:18px">›</div>';
-        if(!t.soon&&t.dest)(function(dest){ el.addEventListener('click',function(){ go(dest); }); })(t.dest);
+        if(t.dest)(function(dest){ el.addEventListener('click',function(){ go(dest); }); })(t.dest);
         d.appendChild(el);
       });
     }
