@@ -1,19 +1,20 @@
-# Sessiya hisoboti — 2026-07-09 (QA-FIX #7: pack asset'lari yo'qolishi)
+# Sessiya hisoboti — QA-FIX #16 (AI model settings → provider mapping)
 
-**Ildiz sabab:** bulk ingest (`ingestOneZip`) contributor zip'idan FAQAT .aep entry'ni
-`templates/{id}/pack.aep` sifatida saqlab, asl zipni O'CHIRARDI — footage/audio/papkalar
-abadiy yo'qolardi; serve-asset esa yolg'iz .aep'ni `pack.dl.zip`ga o'rab berardi →
-AE'da "N files missing". (Studio /pack-uploaded va /assets yo'llari sog' edi.)
+**Nima qilindi:** Enabled modellar bo'yicha per-model param→provayder audit. Faqat
+Google (Vertex Imagen/Nano/Veo/Omni) + Kokoro(TTS) + ElevenLabs(SFX) yoqilgan; fal
+rasm/video va Magnific hammasi `enabled:false`.
 
-**Tuzatildi:**
-- contributor.ts: ingest endi ASL ZIPNI BUTUNLIGICHA `templates/{id}/pack.zip` qiladi
-  (bucket→bucket stream, hajm + saqlangan-entry hash tekshiruvi); fileName/fileSize=to'liq zip.
-- serve-asset.ts: .aep→zip o'rash faqat yakka-.aep pack'lar uchun ekani hujjatlandi (xulq bir xil).
-- Plagin: unzip kesh markeri (.assetflow_pack_size — fileSize o'zgarsa kesh tashlanadi),
-  unzip timeout 60s→600s. unzip -o strukturani saqlaydi — nisbiy havolalar ishlaydi.
+**Topilgan mos-kelmaslik (tuzatildi):**
+1. Web `buildParams` (rasm) — `aspectRatio` model.aspects'ga klamplanmasdi (video branch
+   klamplaydi); pickModel `aiSize`'ni resetlamaydi → stale 21:9 Imagen'ga o'tib gen yiqilardi.
+2. Backend `gen-processor` (rasm) — nisbat/o'lcham model qo'llamaydigan qiymat bilan
+   provayderga borardi (Imagen'ga 4K/21:9). Endi model.aspects/resolutions'ga klamp.
 
-**Tekshirildi:** to'liq zanjir simulyatsiyasi (real dist ingest kodi bilan): oldin=faqat pack.aep,
-keyin=hamma fayl+papkalar, plagin extract'ida barcha nisbiy havolalar RESOLVES; API build yashil.
+**Tekshirilgan (to'g'ri, tegilmadi):** plagin rasm+video (setModel/applyModelSettings
+def'ga reset + model-aware pickerlar), web video (buildParams klamp), Veo/Omni/TTS/SFX
+mapping, referens exposure (guard'lar joyida).
 
-**Kutilmoqda:** push+deploy; eski (buruq ingest'dan o'tgan) shablonlar tiklanmaydi — contributor
-qayta yuklashi kerak; jonli AE import testi.
+**MONEY-ZONE TEGILMAGAN:** gen-quote.ts (HMAC), computeGenCost/imageUnitCost, kredit
+consume/refund — hech biri o'zgarmadi (git bilan tasdiqlandi). Dry-run: charge==delivered tier.
+
+**Holat:** 2 commit (backend + web), push qilinmadi. `npm run build -w apps/api` yashil.
