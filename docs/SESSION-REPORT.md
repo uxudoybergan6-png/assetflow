@@ -1,10 +1,10 @@
-# Sessiya hisoboti — 2026-07-08 · FAZA 3 (operatsion tayyorlik)
+# Sessiya hisoboti — 2026-07-08 (FAZA 4: Money/Finance)
 
-**Qilindi (5 commit, A–E, push YO'Q, pul-zonasi TEGILMAGAN):**
-- **3a Sentry**: `@sentry/node` real dependency; DSN bor→faol, yo'q→no-op; gen-processor/ingest/transcode/fal-webhook kontekst bilan ulandi (errorHandler avvaldan bor edi).
-- **3b Reconciler**: `template-reconcile.ts` — 30 daq+ "pending" transcode qayta ishga tushadi (touch bilan), APPROVED+published embedding'siz shablonlar 5 talik partiyada qayta embed; startup pass + 10 daq timer. Lokal DBda simulyatsiya bilan tekshirildi.
-- **3c Himoya**: helmet (CSP/COEP o'chiq, CORP=cross-origin — CEP buzilmaydi) + global per-IP limit 600/min (`GLOBAL_RATE_LIMIT_MAX`); /health,/livez mustasno. Jonli: headerlar ✓, flood→429 ✓.
-- **3d Health-gated deploy**: startup probe /health + liveness /livez (sh + CI yml) — buzilgan revision trafik olmaydi; `docs/ROLLBACK-RUNBOOK.md` yozildi.
-- **3e Bildirishnoma**: welcome (verify + Google yangi, web/plagin), LS to'lov emaillari (active/renewal/failed/topup), ADMIN_NOTIFY_EMAIL endi ishlatiladi (submit + ingest jamlama). Best-effort.
+**Nima qilindi (4 commit, A–D):**
+1. **A** — `RevenueEvent` modeli: LS webhook endi to'lov SUMMASINI yozadi (obuna initial/renewal + kredit-paket); `/admin/finance` real gross/net/MRR/per-plan.
+2. **B** — refund/chargeback/dunning: manfiy RevenueEvent + obuna refundida FREE downgrade + kredit-paket refundida SARFLANMAGAN top-up clawback (atomik, hech qachon manfiy emas, bepul ulushga tegilmaydi); `billingIssue` belgi + refund emaili.
+3. **C** — POOL payout: `PAYOUT_MODE=pool` (default) | `per_download`; pool = (obuna net − AI xarajat) × `CONTRIBUTOR_POOL_SHARE` (0.50), legitim download ulushi bo'yicha; davr+contributor idempotent; GET/POST `/admin/payout/pool`.
+4. **D** — `PlanChangeEvent` + `/admin/metrics` (churn/conversion/ARPU/LTV); Finance/Payouts ekranlari real raqamlarda + yangi "Business metrics" ekrani; `studio:sync` bajarildi.
 
-**Kutilmoqda (USER):** SENTRY_DSN prod env; backup bucket+IAM+versioning (DR-RUNBOOK §5); cloudrun-env.yaml sirlarini ROTATSIYA (+Secret Manager); Resend DKIM/SPF + ADMIN_NOTIFY_EMAIL; push→deploy; `gh secret set CLOUDRUN_ENV_YAML` (SENTRY_DSN qo'shilsa).
+**Tekshirildi:** lokal API + imzolangan webhook E2E — idempotentlik (replay=duplicate), clawback 500→0, downgrade, pool 2:1 taqsimot ($9.50 → $6.33/$3.16), UI jonli.
+**Kutilmoqda:** git push + Cloud Run deploy + `migrate:deploy` (4 ta additive migratsiya); productionда PAYOUT_MODE/CONTRIBUTOR_POOL_SHARE env qarori; LS jonli webhook sinovi.
