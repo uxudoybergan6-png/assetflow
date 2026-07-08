@@ -44,12 +44,18 @@
     var c = (typeof counts === "function") ? counts() : { pending: 0 };
     var sc = (typeof subscriberCounts === "function") ? subscriberCounts() : { active: 0, total: 0, pro: 0, free: 0, totalDownloads: 0 };
     var usage = (typeof window !== "undefined" && window._ASSETFLOW_PLUGIN_ANALYTICS) ? window._ASSETFLOW_PLUGIN_ANALYTICS.usage : null;
-    var dl = (usage && typeof usage.downloadsTotal === "number") ? usage.downloadsTotal : (sc.totalDownloads || 0);
+    // FAZA 5 (C6): "Total downloads" endi per-shablon jadval bilan BIR MANBA —
+    // TemplateDownloadEvent (unique user·template). Eski profil-hisoblagich fallback.
+    var dl = (usage && typeof usage.eventDownloadsTotal === "number") ? usage.eventDownloadsTotal
+      : (usage && typeof usage.downloadsTotal === "number") ? usage.downloadsTotal
+      : (sc.totalDownloads || 0);
+    var dlFoot = (usage && typeof usage.eventDownloadsTotal === "number") ? "unique user·template" : "plugin count";
     var dlDisp = dl >= 1000 ? (dl / 1000).toFixed(1) + "K" : String(dl);
     return statCard({ label: "In queue", val: c.pending, ic: "clock-countdown", icColor: "#FFB27C", foot: "awaiting review" }) +
-      statCard({ label: "Active subscribers", val: sc.active, ic: "users-three", icColor: "#7CC4FF", foot: sc.total + " total" }) +
-      statCard({ label: "Pro subscriptions", val: sc.pro, ic: "crown", icColor: "#C2F04A", foot: sc.free + " Free" }) +
-      statCard({ label: "Total downloads", val: dlDisp, ic: "download-simple", foot: "plugin count" });
+      // FAZA 5 (C6): "Active" aniqlashtirildi — last-seen 7 kun (status emas)
+      statCard({ label: "Active (7 days)", val: sc.active, ic: "users-three", icColor: "#7CC4FF", foot: sc.total + " total · by last-seen" }) +
+      statCard({ label: "Pro subscriptions", val: sc.pro, ic: "crown", icColor: "#C2F04A", foot: sc.free + " Free · excl. removed" }) +
+      statCard({ label: "Total downloads", val: dlDisp, ic: "download-simple", foot: dlFoot });
   }
 
   /* ---- APPROVAL QUEUE preview (mockup e1 rows — real pending) ---- */

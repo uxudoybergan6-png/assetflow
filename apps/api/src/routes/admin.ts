@@ -206,7 +206,7 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [agg, byPlan, byStatus, total, weekActive, dayActive] =
+  const [agg, byPlan, byStatus, total, weekActive, dayActive, eventDownloads, eventImports] =
     await Promise.all([
       prisma.pluginProfile.aggregate({
         _sum: {
@@ -215,11 +215,22 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
           importsTotal: true,
         },
       }),
-      prisma.pluginProfile.groupBy({ by: ["plan"], _count: { _all: true } }),
+      // FAZA 5 (C6): Free/Pro hisobi REMOVED profillarni chiqarib tashlaydi —
+      // Subscribers sahifasi bilan bir xil (ilgari Overview kattaroq ko'rsatardi).
+      prisma.pluginProfile.groupBy({
+        by: ["plan"],
+        where: { status: { not: PluginAccountStatus.REMOVED } },
+        _count: { _all: true },
+      }),
       prisma.pluginProfile.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.pluginProfile.count(),
       prisma.pluginProfile.count({ where: { lastSeenAt: { gte: weekAgo } } }),
       prisma.pluginProfile.count({ where: { lastSeenAt: { gte: dayAgo } } }),
+      // FAZA 5 (C6): per-shablon jadval bilan BIR MANBA — TemplateDownloadEvent
+      // (unique user·template hodisalar). PluginProfile.downloadsTotal esa har
+      // qayta yuklab olishni sanaydi — ikkalasi additive qaytadi.
+      prisma.templateDownloadEvent.count({ where: { kind: "download" } }),
+      prisma.templateDownloadEvent.count({ where: { kind: "import" } }),
     ]);
 
   const planCounts: Record<string, number> = { free: 0, pro: 0 };
@@ -274,6 +285,9 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
       downloadsTotal: agg._sum.downloadsTotal ?? 0,
       downloadsThisMonth: agg._sum.downloadsMonth ?? 0,
       importsTotal: agg._sum.importsTotal ?? 0,
+      // FAZA 5 (C6) — additive: per-shablon jadval bilan mos keladigan hodisa hisobi
+      eventDownloadsTotal: eventDownloads,
+      eventImportsTotal: eventImports,
     },
     activityByDay,
     approvalRatePct,
