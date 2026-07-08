@@ -30,6 +30,7 @@ import { prisma } from "@creative-tools/database";
 import { initSentry, captureException } from "./lib/sentry.js";
 import { seedModelPricing } from "./lib/model-pricing.js";
 import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
+import { moderationStartupWarning } from "./lib/moderation.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
 // dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
@@ -244,6 +245,11 @@ function validateEnv() {
   else if (isProd && process.env.CORS_ORIGIN?.trim() === "*")
     warnings.push("CORS_ORIGIN=* — barcha originlarga ruxsat (faqat test uchun, productga URL ro'yxati tavsiya)");
 
+  if (isProd && !process.env.VIRUSTOTAL_API_KEY?.trim())
+    warnings.push("VIRUSTOTAL_API_KEY yo'q — pack malware skani faqat hash/dedup (yangi fayl tahlil qilinmaydi). docs/PROD-ENV-CHECKLIST.md");
+  if (isProd && !process.env.BACKUP_GCS_BUCKET?.trim())
+    warnings.push("BACKUP_GCS_BUCKET yo'q — DB backup GCS'ga yuklanmaydi (ma'lumot yo'qotish xavfi). docs/PROD-ENV-CHECKLIST.md");
+
   if (warnings.length) {
     console.warn("[env] Ogohlantirishlar:\n  - " + warnings.join("\n  - "));
   }
@@ -256,6 +262,8 @@ app.listen(PORT, "0.0.0.0", () => {
     : "Stripe: disabled (Contributor/API works without it)";
   console.log(`API running on http://localhost:${PORT} — ${stripeNote}`);
   logS3Diagnostics();
+  // Prod'da ML moderatsiya kaliti yo'q bo'lsa BALAND ogohlantirish (fail-open jimgina o'tmasin).
+  moderationStartupWarning();
   // NARX DVIGATELI (Bosqich 3.4): ModelPricing'ni gen-models.ts joriy qiymatlaridan seed
   // qiladi (create-only, idempotent — mavjud admin tahririga tegmaydi). Best-effort: jadval
   // hali yo'q yoki DB yiqilsa loglaydi, narx statik fallback'da ishlayveradi.

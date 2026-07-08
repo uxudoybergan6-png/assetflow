@@ -18,12 +18,55 @@
  *   • OG'IR kategoriya (CSAM = sexual/minors, self-harm ko'rsatma, zo'ravon-noqonuniy)
  *     aniqlansa — HAR DOIM (dev ham, prod ham) BLOKLANADI. Bypass yo'q.
  *   • Yengilroq flag'lar — WARN (buzmaymiz — soxta pozitiv legitim oqimni to'smasin).
- *   • API xatosi/tarmoq uzilishi — fail-open (LOG) chunki kalit-so'z qatlami og'ir
- *     kategoriyalarni allaqachon gate qiladi; butun trafikni to'smaymiz.
+ *   • API xatosi/tarmoq uzilishi:
+ *       – PRODUKSIYADA va RASM inputi bo'lsa → FAIL-CLOSED (bloklanadi), chunki
+ *         kalit-so'z qatlami MATNni ko'radi lekin RASM piksellarini KO'RMAYDI
+ *         (vizual CSAM/deepfake tekshirilmay o'tib ketmasin). Malware-skan fail-closed
+ *         naqshiga mos. Escape hatch: MODERATION_FAIL_OPEN=true (prodda ataylab fail-open).
+ *       – Dev'da / matn-only → fail-open (LOG).
+ *   • MODERATION_API_KEY YO'Q (prod): boot'da BALAND OGOHLANTIRISH (moderationStartupWarning).
+ *     Rasm inputlarini majburiy tekshirtirish uchun MODERATION_REQUIRE_IMAGE_VERIFICATION=true
+ *     → sozlanmagan holatda ham rasmli generatsiya prodda bloklanadi (fail-closed).
  */
 
 const DEFAULT_URL = "https://api.openai.com/v1/moderations";
 const DEFAULT_MODEL = "omni-moderation-latest";
+
+function isProduction(): boolean {
+  return String(process.env.NODE_ENV || "").trim() === "production";
+}
+
+/** Prodda API xatosi/sozlanmaganda RASM inputini fail-open qilish ATAYLAB tanlanganmi. */
+function moderationFailOpen(): boolean {
+  return /^(1|true|yes|on)$/i.test(String(process.env.MODERATION_FAIL_OPEN || "").trim());
+}
+
+/** Sozlanmagan bo'lsa ham prodda rasm inputini majburiy tekshirtirish (fail-closed). */
+function requireImageVerification(): boolean {
+  return /^(1|true|yes|on)$/i.test(
+    String(process.env.MODERATION_REQUIRE_IMAGE_VERIFICATION || "").trim()
+  );
+}
+
+/**
+ * Boot'da bir marta chaqiriladi (index.ts). Produksiyada moderatsiya ML kaliti
+ * sozlanmagan bo'lsa — BALAND, ko'rinadigan ogohlantirish chiqaradi (fail-open holati
+ * jimgina o'tib ketmasin). Malware-skan/VirusTotal boot ogohlantirishi bilan bir uslub.
+ */
+export function moderationStartupWarning(): void {
+  if (!isProduction()) return;
+  if (isModerationConfigured()) return;
+  console.warn(
+    "\n" +
+      "══════════════════════════════════════════════════════════════════════\n" +
+      " ⚠️  MODERATION_API_KEY sozlanmagan — ML kontent moderatsiyasi O'CHIQ.\n" +
+      "     Matn kalit-so'z qatlami (preflight) ishlaydi, ammo RASM piksellari\n" +
+      "     ML bilan TEKSHIRILMAYDI. Prod uchun MODERATION_API_KEY o'rnating\n" +
+      "     (yoki rasm oqimini bloklash uchun MODERATION_REQUIRE_IMAGE_VERIFICATION=true).\n" +
+      "     Batafsil: docs/PROD-ENV-CHECKLIST.md\n" +
+      "══════════════════════════════════════════════════════════════════════\n"
+  );
+}
 
 /** HAR DOIM bloklanadigan og'ir kategoriyalar (OpenAI omni-moderation nomlari). */
 const SEVERE_CATEGORIES = new Set<string>([
@@ -80,15 +123,26 @@ export async function moderateContent(opts: {
   text?: string;
   imageUrls?: string[];
 }): Promise<ModerationResult> {
-  if (!isModerationConfigured()) return CLEAN;
+  const imageUrls = (opts.imageUrls || []).filter(
+    (u) => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
+  const hasImages = imageUrls.length > 0;
+
+  // Prodda RASM inputi bor va ML tekshiruvi imkonsiz (sozlanmagan) → fail-closed,
+  // FAQAT owner MODERATION_REQUIRE_IMAGE_VERIFICATION=true bilan yoqqanda. Aks holda
+  // (default) mavjud oqim buzilmaydi — boot ogohlantirishi bilan ko'rinadi.
+  if (!isModerationConfigured()) {
+    if (isProduction() && hasImages && requireImageVerification()) {
+      return imageUnverifiedBlock();
+    }
+    return CLEAN;
+  }
 
   const parts: OmniInputPart[] = [];
   const text = String(opts.text || "").trim();
   if (text) parts.push({ type: "text", text: text.slice(0, 4000) });
-  for (const url of (opts.imageUrls || []).slice(0, 8)) {
-    if (typeof url === "string" && /^https?:\/\//i.test(url)) {
-      parts.push({ type: "image_url", image_url: { url } });
-    }
+  for (const url of imageUrls.slice(0, 8)) {
+    parts.push({ type: "image_url", image_url: { url } });
   }
   if (!parts.length) return { ...CLEAN, configured: true };
 
@@ -107,6 +161,10 @@ export async function moderateContent(opts: {
       signal: controller.signal,
     }).finally(() => clearTimeout(timer));
     if (!resp.ok) {
+      if (isProduction() && hasImages && !moderationFailOpen()) {
+        console.warn(`[moderation] API ${resp.status} — FAIL-CLOSED (prod, rasm inputi tekshirilmadi)`);
+        return imageUnverifiedBlock();
+      }
       console.warn(`[moderation] API ${resp.status} — fail-open (kalit-so'z qatlami baribir gate qiladi)`);
       return { ...CLEAN, ok: false, configured: true };
     }
@@ -139,9 +197,26 @@ export async function moderateContent(opts: {
       reason,
     };
   } catch (e) {
+    if (isProduction() && hasImages && !moderationFailOpen()) {
+      console.warn("[moderation] xato — FAIL-CLOSED (prod, rasm inputi tekshirilmadi):", e instanceof Error ? e.message : e);
+      return imageUnverifiedBlock();
+    }
     console.warn("[moderation] xato — fail-open:", e instanceof Error ? e.message : e);
     return { ...CLEAN, ok: false, configured: true };
   }
+}
+
+/** Prodda rasm inputi ML bilan tekshirilmaganida qaytariladigan fail-closed natija. */
+function imageUnverifiedBlock(): ModerationResult {
+  return {
+    ok: false,
+    configured: isModerationConfigured(),
+    flagged: false,
+    blocked: true,
+    severity: "high",
+    categories: ["unverified-image"],
+    reason: "Content could not be verified by moderation and was blocked (fail-closed).",
+  };
 }
 
 /** Params ichidan moderatsiya qilinadigan RASM referens URL'larini yig'adi (public http). */
