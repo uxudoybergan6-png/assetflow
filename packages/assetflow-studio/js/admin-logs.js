@@ -96,7 +96,7 @@ function clearLogs() {
 async function doClearLogs() {
   AssetFlowLog.clear();
   try {
-    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "https://assetflow-api-331762958776.europe-west1.run.app");
+    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "https://api.getframeflow.app");
     await fetch(`${apiBase}/api/logs`, { method: "DELETE" });
   } catch {
     /* */

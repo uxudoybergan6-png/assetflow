@@ -6,7 +6,7 @@ const AssetFlow = (() => {
   const DEFAULT_API =
     typeof ASSETFLOW_ENV !== "undefined"
       ? ASSETFLOW_ENV.defaultApi()
-      : "https://assetflow-api-331762958776.europe-west1.run.app";
+      : "https://api.getframeflow.app";
 
   let apiBaseUrl = DEFAULT_API;
   let token = "";

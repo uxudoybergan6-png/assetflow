@@ -3,8 +3,8 @@
  */
 const AssetFlowAccount = (() => {
   const env = typeof ASSETFLOW_ENV !== "undefined" ? ASSETFLOW_ENV : null;
-  const DEFAULT_API = env ? env.defaultApi() : "https://assetflow-api-331762958776.europe-west1.run.app";
-  const DEFAULT_ADMIN = env ? env.defaultAdmin() : "https://assetflow-20j.pages.dev/admin/";
+  const DEFAULT_API = env ? env.defaultApi() : "https://api.getframeflow.app";
+  const DEFAULT_ADMIN = env ? env.defaultAdmin() : "https://admin.getframeflow.app/";
 
   let cachedUser = null;
   let adminUrl = DEFAULT_ADMIN;

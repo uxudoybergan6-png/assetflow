@@ -385,7 +385,7 @@ select option{background:#222}
     <div class="login-sub">ADMIN accounts only · API: Cloud Run</div>
     <div class="login-field">
       <label>API</label>
-      <input type="url" id="loginApi" value="https://assetflow-api-331762958776.europe-west1.run.app" autocomplete="off" spellcheck="false">
+      <input type="url" id="loginApi" value="https://api.getframeflow.app" autocomplete="off" spellcheck="false">
     </div>
     <div class="login-field">
       <label>Email</label>
@@ -502,7 +502,7 @@ select option{background:#222}
     <div class="admin-section">
       <span class="admin-section-label">API address</span>
       <div class="admin-api-row">
-        <input type="url" id="sheetApiUrl" placeholder="https://assetflow-api-331762958776.europe-west1.run.app" spellcheck="false">
+        <input type="url" id="sheetApiUrl" placeholder="https://api.getframeflow.app" spellcheck="false">
         <button onclick="adminSaveApi()">Save</button>
         <button onclick="adminResetApi()">Default</button>
       </div>
@@ -641,8 +641,8 @@ function openFileInAE(child, aepPath, aeAppName) {
 const API_KEY = 'af_admin_api';
 const TOKEN_KEY = 'af_admin_token';
 const USER_KEY = 'af_admin_user';
-const PROD_API = 'https://assetflow-api-331762958776.europe-west1.run.app';
-const STALE_API_HOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https?:\/\/assetflow-rqbq\.onrender\.com\/?$/i;
+const PROD_API = 'https://api.getframeflow.app';
+const STALE_API_HOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$|^https?:\/\/assetflow-rqbq\.onrender\.com\/?$|^https?:\/\/assetflow-api-331762958776\.europe-west1\.run\.app\/?$/i;
 let allTemplates = [];
 let allSubscribers = [];
 let currentTab = 'moderation';
@@ -873,7 +873,7 @@ async function doLogin() {
 }
 
 function openWebAdmin() {
-  const url = 'https://assetflow-20j.pages.dev/studio/admin-login.html';
+  const url = 'https://admin.getframeflow.app/admin-login.html';
   try {
     if (csInterface && csInterface.openURLInDefaultBrowser) {
       csInterface.openURLInDefaultBrowser(url);

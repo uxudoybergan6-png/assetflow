@@ -2,15 +2,19 @@
  * AssetFlow CEP — production API/admin (file:// panelda ham cloud ishlaydi)
  */
 window.ASSETFLOW_ENV = (function () {
-  const PROD_API = "https://assetflow-api-331762958776.europe-west1.run.app";
-  const PROD_ADMIN = "https://assetflow-20j.pages.dev/admin/";
+  const PROD_API = "https://api.getframeflow.app";
+  const PROD_ADMIN = "https://admin.getframeflow.app/";
   const LOCAL_API = "http://localhost:4000";
   const LOCAL_ADMIN = "http://localhost:3001/";
-  // Render'dan Cloud Run'ga ko'chishdan oldin login qilingan panellarda
-  // prefs.json'da shu eski manzil saqlanib qolgan bo'lishi mumkin — kod
-  // yangilangach ham bu qiymat doimiy ustun kelaveradi. Topilsa joriy
-  // default'ga almashtiriladi (sanitizeApi).
-  const STALE_APIS = ["https://assetflow-rqbq.onrender.com"];
+  // Eski deploy'larda (Render, keyin Cloud Run to'g'ridan URL) login qilingan
+  // panellarda prefs.json'da shu eski manzillar saqlanib qolgan bo'lishi mumkin —
+  // kod yangilangach ham bu qiymat doimiy ustun kelaveradi. Topilsa joriy
+  // default'ga almashtiriladi (sanitizeApi). FAZA 5 (B2): kanonik domen
+  // api.getframeflow.app — eski run.app ham endi stale.
+  const STALE_APIS = [
+    "https://assetflow-rqbq.onrender.com",
+    "https://assetflow-api-331762958776.europe-west1.run.app",
+  ];
 
   function isLocalDev() {
     try {
