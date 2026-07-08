@@ -76,15 +76,22 @@ export async function serveTemplateAsset(
   if (s3Key) {
     let downloadKey = s3Key;
     let filename: string | undefined;
-    if (kind === "pack" && /\.aep$/i.test(s3Key)) {
-      // Raw .aep — mijoz (plagin/veb) .zip kutadi; plagin o'zi ochadi (unzip)
-      // → .aep'ni AE loyihasiga import qiladi.
-      downloadKey = await getOrBuildAepDownloadZip(templateId, s3Key);
+    if (kind === "pack") {
+      if (/\.aep$/i.test(s3Key)) {
+        // Raw .aep — mijoz (plagin/veb) .zip kutadi; plagin o'zi ochadi (unzip)
+        // → .aep'ni AE loyihasiga import qiladi.
+        downloadKey = await getOrBuildAepDownloadZip(templateId, s3Key);
+      }
+      // FAZA 5 (C3): Content-Disposition fayl nomi ENDI HAR DOIM shablon nomi
+      // (ilgari faqat raw .aep yo'lida — to'g'ridan .zip pack'lar brauzerda
+      // "pack.zip" bo'lib tushardi). Plagin o'z fayl nomini o'zi qo'yadi —
+      // bu unga ta'sir qilmaydi.
       const template = await prisma.contributorTemplate.findUnique({
         where: { id: templateId },
         select: { name: true },
       });
-      filename = `${sanitizeFileBaseName(template?.name || "template")}.zip`;
+      const ext = path.extname(downloadKey).toLowerCase() || ".zip";
+      filename = `${sanitizeFileBaseName(template?.name || "template")}${ext}`;
     }
     // Pack — qimmatli (pullik) asset: qisqa muddatli signed URL (5 daqiqa),
     // shunda redirect URL'i ulashib bo'lmaydi. Thumb/preview — CDN bo'lsa public,

@@ -15854,7 +15854,7 @@
           <div class="va-dwrap">
             <div style="min-width:0">
               <div class="va-thumb va-dprev" style="background:{{ detail.g }}">
-                <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" preload="none" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
+                <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" poster="{{ detail.posterUrl }}" preload="metadata" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
                 <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span class="va-playov"><span style="width:54px;height:54px"><svg class="va-ic" style="width:22px;height:22px"><use href="#i-play"></use></svg></span></span></sc-if>
               </div>
               <!-- FAZA D · related = boy karta (bare thumb emas); bo'sh bo'lsa butun seksiya yashirin -->
@@ -15906,7 +15906,7 @@
                 <div><div class="k">FORMAT</div><div class="v">{{ detail.formatLine }}</div></div>
                 <div><div class="k">UPDATED</div><div class="v">{{ detail.updatedFmt }}</div></div>
               </div>
-              <a class="va-btn lime" style="width:100%;padding:13px" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> Download pack (.zip)</a>
+              <a class="va-btn lime" style="width:100%;padding:13px" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a>
               <div class="va-dact">
                 <a class="va-btn ghost" style="flex:1" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a>
                 <span class="{{ detail.favCls }}" onclick="{{ toggleFavTpl }}" title="Favorite"><svg class="va-ic"><use href="#i-heart"></use></svg></span>
@@ -17239,7 +17239,10 @@ class Component extends DCLogic {
         ori: it.orient === 'vertical' ? '9:16' : (it.orient === 'square' ? '1:1' : '16:9'),
         qual: ((it.res || '4k').toUpperCase().indexOf('4K') >= 0) ? '4K' : 'HD',
         ar: it.orient === 'vertical' ? '9 / 16' : (it.orient === 'square' ? '1 / 1' : '16 / 10'),
-        thumbUrl: it.thumbUrl || null, previewUrl: it.previewUrl || null, hasPack: !!it.packUrl,
+        // FAZA 5 (C3) — hasPack plagin bilan bir xil manbadan: server `hasPack`
+        // flagi (A2 DB keshi); packUrl faqat eski javob shakli uchun fallback.
+        thumbUrl: it.thumbUrl || null, previewUrl: it.previewUrl || null,
+        hasPack: it.hasPack != null ? !!it.hasPack : !!it.packUrl,
         // FAZA D — detail spec/stats uchun additive maydonlar (payload'da allaqachon bor)
         fileName: it.fileName || '', fileSize: it.fileSize || 0,
         desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
@@ -18051,6 +18054,10 @@ class Component extends DCLogic {
       descText: dRaw.desc || (dRaw.real ? 'A professional-grade template. Fully customizable elements.' : 'A showcase template — the real catalog will fill in soon.'),
       tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
       hasPreview: !!dRaw.previewUrl, noPreview: !dRaw.previewUrl, free: !dRaw.pro,
+      // FAZA 5 (C3) — hero video poster: thumb bo'lsa qora kadr o'rniga thumb ko'rinadi
+      posterUrl: dRaw.thumbUrl || '',
+      // FAZA 5 (C3) — tugma yorlig'i real pack kengaytmasi bilan (.zip/.mogrt)
+      dlLabel: 'Download pack (' + (dRaw.hasPack ? '.' + String((dRaw.fileName || 'pack.zip').split('.').pop() || 'zip').toLowerCase() : '.zip') + ')',
       resLine: (dRaw.qual || dRaw.d || '4K') + ' · ' + (dRaw.ori || '16:9'),
       appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
       metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
