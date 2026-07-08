@@ -1,6 +1,6 @@
 import fs from "fs";
-import os from "os";
 import path from "path";
+import type { Readable } from "stream";
 import yazl from "yazl";
 import type { Request, Response } from "express";
 import { prisma } from "@creative-tools/database";
@@ -9,11 +9,12 @@ import { sanitizeFileBaseName } from "./ingest-zip.js";
 import {
   getPublicOrSignedUrl,
   getSignedDownloadUrl,
+  getS3ObjectMeta,
   isS3Configured,
   resolveS3AssetKey,
   s3ObjectExists,
-  downloadS3ToFile,
-  uploadFileToS3,
+  createS3RangeStream,
+  uploadStreamToS3,
 } from "./s3.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
@@ -37,26 +38,31 @@ async function getOrBuildAepDownloadZip(
 ): Promise<string> {
   const cacheKey = `templates/${templateId}/pack.dl.zip`;
   if (await s3ObjectExists(cacheKey)) return cacheKey;
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_packzip_"));
-  try {
-    const aepLocal = path.join(tmpDir, "pack.aep");
-    await downloadS3ToFile(aepKey, aepLocal);
-    const zipLocal = path.join(tmpDir, "pack.zip");
-    await new Promise<void>((resolve, reject) => {
-      const zipfile = new yazl.ZipFile();
-      zipfile.addFile(aepLocal, path.basename(aepKey));
-      const out = fs.createWriteStream(zipLocal);
-      zipfile.outputStream.pipe(out);
-      out.on("close", () => resolve());
-      out.on("error", reject);
-      zipfile.outputStream.on("error", reject);
-      zipfile.end();
-    });
-    await uploadFileToS3(zipLocal, cacheKey, "application/zip");
-    return cacheKey;
-  } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+  // FAZA 5 (A3): TO'LIQ STREAMING — ilgari .aep tmpfs'ga (Cloud Run /tmp = RAM)
+  // yuklab olinib, zip ham tmpfs'ga yozilardi (~2× pack hajmi RAM). Endi:
+  // S3 GET stream → yazl (streaming deflate) → multipart PUT stream. Cho'qqi
+  // xotira multipart bufferlari (~32MB) bilan chegaralanadi, pack hajmidan
+  // qat'i nazar. Gate/limit mantiqqa ALOQASI YO'Q — faqat qurish usuli o'zgardi.
+  const meta = await getS3ObjectMeta(aepKey);
+  if (meta.sizeBytes == null) {
+    throw new Error(`Pack not found in cloud storage: ${aepKey}`);
   }
+  const src = createS3RangeStream(aepKey, 0, meta.sizeBytes);
+  const zipfile = new yazl.ZipFile();
+  // Manba stream xatosi yazl chiqishida ham ko'rinsin — upload aniq yiqilsin.
+  src.on("error", (e) => (zipfile.outputStream as unknown as Readable).destroy(e));
+  zipfile.addReadStream(src, path.basename(aepKey));
+  zipfile.end();
+  try {
+    await uploadStreamToS3(
+      zipfile.outputStream as Readable,
+      cacheKey,
+      "application/zip"
+    );
+  } finally {
+    if (!src.destroyed) src.destroy();
+  }
+  return cacheKey;
 }
 
 /** Brauzer video uchun Range (206) va CORS expose */
