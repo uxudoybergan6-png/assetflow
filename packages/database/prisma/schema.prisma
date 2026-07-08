@@ -674,3 +674,28 @@ model ContributorPayout {
   @@index([status])
   @@index([createdAt])
 }
+
+// ── FAZA 1d — DMCA / infringement report (public wrapper on existing takedown) ──
+// Ommaviy "Report infringement" formasi shu qatorni yaratadi (pending). Admin ko'rib,
+// tasdiqlangan da'voni MAVJUD takedown endpoint'i (contributor.ts) orqali amalga oshiradi;
+// bu model faqat da'vo-hujjatini saqlaydi (FK-siz — template o'chsa yetim qator zararsiz).
+// ⚠️ needs lawyer review — designated agent, notice/counter-notice tartibi. docs/LEGAL-TODO.md.
+model InfringementReport {
+  id             String    @id @default(cuid())
+  templateId     String?              // da'vo qilingan shablon (ixtiyoriy — erkin matn ham bo'lishi mumkin)
+  reporterName   String?
+  reporterEmail  String
+  claimantType   String?              // "owner" | "authorized_agent"
+  workDescription String   @db.Text   // egalik qilinadigan asar / huquq tavsifi
+  infringingUrl  String?              // da'vo qilingan joy (URL/ID)
+  goodFaith      Boolean   @default(false) // "good faith" tasdig'i
+  status         String    @default("pending") // pending | actioned | dismissed
+  resolutionNote String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([status])
+  @@index([templateId])
+  @@index([createdAt])
+}
