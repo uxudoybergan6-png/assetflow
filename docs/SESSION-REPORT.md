@@ -1,12 +1,14 @@
-# Sessiya hisoboti — 2026-07-07
+# Sessiya hisoboti — 2026-07-08
 
-**Vazifa:** FAZA D BUILD — Catalog masonry (Option A) + asset detail boyitish JONLI platformaga qurildi (`platform/index.html`, va- scope).
+**Vazifa:** FAZA 6a — Ingest hardening: zip safety + katta fayl + duplicate + retention.
 
 **Qilindi:**
-- Katalog: `.va-cards/.va-tc` → 4-ustun CSS-columns masonry (`.va-mas`), FAZA C boy karta (va-rc), har karta o'z aspect'i (t.ar); mobil 2 ustun; o'ynoqi loader. Hero/chip/facet/sort TEGILMAGAN.
-- Detail: stats qatori (pack hajmi · updated · N in kategoriya), 6 katakli spec grid (+ORIENTATION/FORMAT/UPDATED), spend-gradient Download saqlangan, favorite (localStorage) + share, related = boy karta, "Part of collection" strip (proxy = kategoriya) + View collection → filtrlangan Templates.
-- Mobil D3: dmeta flex-order bilan CTA specs'dan oldin; kolleksiya kartasi stack.
+- `ingest-zip.ts`: zip-bomb (5 GiB cap / ratio>1000 / 5000 entry, env sozlanadi) + zip-slip guard (yauzl parse xatolari ham tasniflanadi), stream-only, faqat kerakli entry'lar; `IngestZipError` = doimiy rad.
+- `ingestOneZip`: asset saqlash+finalize kompensatsiyali blok — yiqilsa shablon+asset o'chadi, incoming zip retry uchun qoladi ("No files" yarim shablon endi imkonsiz); pack GCS hajmi lokal bilan solishtiriladi (fileSize=finalize markeri); yarim-yaratilgan prior retry'da qayta ingest (endi "Already ingested" maskalamaydi).
+- Duplicate (C): o'z packHash mavjud → `status:"duplicate"` + duplicateOf, ikkinchi nusxa yo'q; cross-contributor anti-theft karantin o'zgarmagan. Doimiy radlarda zip o'chadi + `template.ingest_rejected` audit.
+- Per-zip `status: created|duplicate|failed` (additive); Studio UI: duplicate = amber ⊘ alohida holat + toast.
+- `docs/INFRA-INGEST-RETENTION.md`: GCS lifecycle (incoming/ >7 kun) + Cloud Run 4Gi/900s (USER qadamlar; /tmp=tmpfs, cho'qqi ≈2× zip).
 
-**Tekshirildi:** lokal proxy (localhost:4000 → prod API, sun'iy 9-item katalog) bilan 1280+390; qidiruv/chip/facet/sort/detail/fav ishlaydi — 0 konsol xato, overflow yo'q. Download/checkout logikasi TEGILMAGAN.
+**Tekshirildi:** slip/abs/bomb/oversize/entry-count zip'lar toza rad (temp tashqarisiga yozuv yo'q) ✓ · valid zip pack+img+vid ekstrakt ✓ · api build ✓. Money-zone tegilmadi.
 
-**Kutilmoqda:** push + CF Pages deploy; production'da real katalog bilan ko'rish. TODO(FF): downloads count (Faza F DownloadEvent), real collection entity, per-shablon deep-link, JS round-robin (sort rank).
+**Kutilmoqda (live):** deploy → 753MB zip retry (Cloud Run memory/timeout USER qadamidan keyin), duplicate re-upload UI'da ⊘, lifecycle qoidasi qo'llash. Push qilinmadi.
