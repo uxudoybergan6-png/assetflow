@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
+import { writeAuditLog } from "../lib/audit-log.js";
 
 export const usersRouter = Router();
 
@@ -39,4 +40,38 @@ usersRouter.get("/downloads", requireAuth, async (req: Request, res: Response) =
       template: byId.get(e.templateId) ?? null,
     }))
   );
+});
+
+/**
+ * FAZA 6b — contributor onboarding: tizimga kirgan USER "Become a contributor"
+ * so'rovi yuboradi. Admin "Users & roles" bo'limida ko'rib, rolni
+ * PATCH /api/admin/users/:id/role orqali beradi (yoki so'rovni rad etadi).
+ * Idempotent: takror so'rov birinchi sanani saqlaydi.
+ */
+usersRouter.post("/contributor-request", requireAuth, async (req: Request, res: Response) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (user.role !== "USER") {
+    res.status(400).json({ error: "This account already has contributor access" });
+    return;
+  }
+  if (user.contributorRequestedAt) {
+    res.json({ ok: true, alreadyRequested: true, requestedAt: user.contributorRequestedAt });
+    return;
+  }
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: { contributorRequestedAt: new Date() },
+  });
+  await writeAuditLog({
+    actorId: user.id,
+    action: "user.contributor_request",
+    targetType: "user",
+    targetId: user.id,
+    detail: user.email,
+  });
+  res.json({ ok: true, alreadyRequested: false, requestedAt: updated.contributorRequestedAt });
 });

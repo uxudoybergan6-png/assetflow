@@ -226,9 +226,49 @@
   }
   if (turnstileSiteKey) initTurnstile();
 
+  // FAZA 6b — contributor onboarding: USER hisobi kirsa, xato o'rniga
+  // "Request contributor access" taklif qilinadi (admin Users & roles'da tasdiqlaydi).
+  function showContributorRequest(apiToken, email) {
+    if (!card) return;
+    let p = document.getElementById("contribReqPanel");
+    if (!p) {
+      p = document.createElement("div");
+      p.id = "contribReqPanel";
+      p.style.cssText = "margin-bottom:14px;padding:12px 14px;border:1px solid var(--line,rgba(128,128,128,.25));border-radius:12px;font-size:13px;color:var(--tx-1);display:flex;flex-direction:column;gap:10px";
+      card.prepend(p);
+    }
+    const msg = document.createElement("span");
+    const b = document.createElement("b");
+    b.textContent = email;
+    msg.append(b, document.createTextNode(" is a subscriber account — it does not have contributor access yet. You can request access; an admin will review it."));
+    const btn = document.createElement("button");
+    btn.className = "btn btn-primary";
+    btn.style.height = "38px";
+    btn.textContent = "Request contributor access";
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      try {
+        const resp = await StudioApi.requestContributorAccess(apiToken);
+        p.textContent = resp.alreadyRequested
+          ? "Your request is already pending — an admin will review it."
+          : "Request sent — you will get contributor access once an admin approves it.";
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Request contributor access";
+        msg.textContent = e.message || "Could not send the request — please try again.";
+      }
+    });
+    p.replaceChildren(msg, btn);
+  }
+
   function afterAuth(r, remember) {
     if (r.session.role === "user") {
-      return "This account is a subscriber (USER) only. Please sign up as a contributor.";
+      const apiToken = r.session.apiToken;
+      const email = r.session.email;
+      AssetFlowAuth.logout(false); // Studio USER rol uchun emas — sessiya tozalanadi
+      showContributorRequest(apiToken, email);
+      return null;
     }
     if (remember) {
       // ONLY the email is saved — the JWT is never written to localStorage (XSS risk).
