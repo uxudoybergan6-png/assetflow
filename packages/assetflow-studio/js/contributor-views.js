@@ -39,6 +39,31 @@ function transcodeBadge(status){
   return '';
 }
 
+/* FAZA 5 (C1) — pack xavfsizlik skan holati badge'i (contributor ko'rinishi).
+   Admin moderatsiyadagi adxPackScanInfo bilan BIR XIL statuslar; matn contributor
+   tiliga moslangan (admin "Clear pack" harakati bu yerda taklif qilinmaydi).
+   Ilgari karantin/duplicate shablon shunchaki "Pending" bo'lib jim turardi. */
+function scanBadge(status){
+  const M = {
+    pending:     { cls:'badge-pending', lab:'Security check…', tip:'The pack security scan hasn’t finished yet. This usually resolves automatically.' },
+    quarantined: { cls:'badge-soft',    lab:'Security review', tip:'The security check was inconclusive — an admin will review this pack manually.' },
+    duplicate:   { cls:'badge-hard',    lab:'Duplicate pack',  tip:'This pack is identical to another template — it cannot be approved. Delete and upload an original pack.' },
+    malicious:   { cls:'badge-hard',    lab:'Blocked (security)', tip:'The malware scan flagged this pack — it cannot be approved. Delete and re-upload a clean pack.' },
+  };
+  const m = M[status];
+  if (!m) return '';
+  return `<span class="badge ${m.cls}" title="${esc(m.tip)}"><span class="dot"></span>${esc(m.lab)}</span>`;
+}
+
+/* Drawer uchun to'liq banner varianti (badge + tushuntirish matni). */
+function scanNotice(t){
+  const b = scanBadge(t && t.packScanStatus);
+  if (!b) return '';
+  const detail = t.packScanDetail && String(t.packScanDetail).trim()
+    ? `<div class="small" style="margin-top:4px;color:var(--muted)">${esc(t.packScanDetail)}</div>` : '';
+  return `<div style="margin-top:10px">${b}${detail}</div>`;
+}
+
 /* ============================================================
    OVERVIEW
    ============================================================ */
@@ -174,7 +199,7 @@ function myTable(ts){
     <thead><tr><th>Template</th><th>Status</th><th>Created</th><th class="th-num">Downloads / imports</th><th>Admin note</th><th style="width:130px"></th></tr></thead>
     <tbody>${ts.map(t=>`<tr style="cursor:pointer" onclick="openTplDrawer('${t.id}')">
       <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'',true)}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)}</span></div></div></td>
-      <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">Live in AE</div>':''}${transcodeBadge(t.previewTranscodeStatus)?`<div style="margin-top:3px">${transcodeBadge(t.previewTranscodeStatus)}</div>`:''}</td>
+      <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">Live in AE</div>':''}${scanBadge(t.packScanStatus)?`<div style="margin-top:3px">${scanBadge(t.packScanStatus)}</div>`:''}${transcodeBadge(t.previewTranscodeStatus)?`<div style="margin-top:3px">${transcodeBadge(t.previewTranscodeStatus)}</div>`:''}</td>
       <td class="cell-muted mono">${esc(t.created)}</td>
       <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}${t.imports?`<div class="small" style="font-size:10.5px;font-weight:400">${t.imports.toLocaleString()} imports</div>`:''}</td>
       <td class="cell-muted" style="max-width:200px">${t.reason?`<span style="color:var(--orange)">${esc(t.reason.slice(0,46))}\u2026</span>`:'\u2014'}</td>
@@ -190,7 +215,7 @@ function myTable(ts){
 function myGrid(ts){
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px">
     ${ts.map(t=>`<div class="card" style="overflow:hidden;cursor:pointer" onclick="openTplDrawer('${t.id}')">
-      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">${badge(t.status)}${transcodeBadge(t.previewTranscodeStatus)}</div></div>
+      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">${badge(t.status)}${scanBadge(t.packScanStatus)}${transcodeBadge(t.previewTranscodeStatus)}</div></div>
       <div class="card-pad col gap-8">
         <div class="col" style="gap:2px"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span><span class="small">${esc(t.cat)} \u00b7 ${esc(t.created)}</span></div>
         <div class="row between center"><span class="small">${t.dl?t.dl.toLocaleString()+' downloads':'\u2014'}</span>
@@ -1277,6 +1302,7 @@ async function openTplDrawer(id){
       ${typeof StudioMedia!=='undefined'?`<div style="border-radius:var(--r-md);overflow:hidden">${StudioMedia.renderPreview(t,{aspect:'16/9'})}</div>`:`<div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/9;border-radius:var(--r-md)"></div>`}
       <div class="row gap-8 wrap">${typeof StudioMedia!=='undefined'?StudioMedia.filePills(t):''}</div>
       <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
+      ${scanNotice(t)}
       ${t.status==='approved'?`<div class="info-banner">${ic('ext')}<span>This template is currently live in <b>AE → FrameFlow Browse</b>. Downloaded <b>${t.dl.toLocaleString()}</b> times.</span></div>`:''}
       <p class="body">${esc(t.desc)}</p>
       <div class="meta-grid">${[['ID',t.id],['Category',t.cat],['Resolution',t.res],['Orientation',t.orient],['File',t.size],['Created',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
