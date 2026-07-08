@@ -1418,7 +1418,8 @@ async function ingestOneZip(contributorId: string, key: string): Promise<IngestI
 
     const extracted = await extractIngestZip(zipLocalPath, path.join(tmpDir, "extracted"));
     if (!extracted.packPath || !extracted.packExt) {
-      return { key, ok: false, reason: "No .aep/.mogrt project file found inside the zip" };
+      // Ichida tanilgan dastur loyihasi (ae/pr/motion/resolve) yo'q → rad etamiz.
+      return { key, ok: false, reason: "No supported project file (.aep/.mogrt/.motn/.drfx…) found inside the zip" };
     }
 
     // Skan + anti-theft dedup — chiqarilgan pack (.aep) hashi ustida, mavjud
