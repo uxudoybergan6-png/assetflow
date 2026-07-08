@@ -1856,6 +1856,15 @@ contributorRouter.post(
     }
     const contributorId = req.user!.userId;
     const rights = rightsCaptureFields(p.data);
+    // FAZA 2 (F) — server-side rights attestation MAJBURIY: butun partiya uchun tasdiqsiz
+    // ingest RAD ETILADI (ilgari faqat client checkbox edi → tasdiqsiz katalogga tushardi).
+    if (!rights) {
+      res.status(400).json({
+        error: "You must confirm you own the rights to distribute these templates before uploading",
+        code: "RIGHTS_REQUIRED",
+      });
+      return;
+    }
     const results: IngestItemResult[] = [];
     for (const key of p.data.keys) {
       results.push(await ingestOneZip(contributorId, key, rights));
@@ -2177,6 +2186,17 @@ contributorRouter.post(
       ? TemplateReviewStatus.DRAFT
       : TemplateReviewStatus.APPROVED;
 
+    // FAZA 2 (F) — auto-approve (requireApproval=false → darhol APPROVED+published) yo'lida
+    // rights attestation MAJBURIY (draft yo'lida esa submit vaqtida majburlanadi).
+    const rights = rightsCaptureFields(d);
+    if (!settings.requireApproval && !rights) {
+      res.status(400).json({
+        error: "You must confirm you own the rights to distribute this template",
+        code: "RIGHTS_REQUIRED",
+      });
+      return;
+    }
+
     const template = await prisma.contributorTemplate.create({
       data: {
         contributorId: req.user!.userId,
@@ -2197,7 +2217,7 @@ contributorRouter.post(
         fileSize: d.fileSize ?? null,
         reviewStatus: initialStatus,
         published: !settings.requireApproval,
-        ...(rightsCaptureFields(d) ?? {}),
+        ...(rights ?? {}),
       },
     });
 
@@ -2314,6 +2334,17 @@ contributorRouter.post(
       existing.contributorId !== req.user!.userId
     ) {
       res.status(403).json({ error: "Not authorized" });
+      return;
+    }
+
+    // FAZA 2 (F) — server-side rights attestation MAJBURIY: rightsAcceptedAt yozilmagan
+    // shablon submit (→ review → publish) QILINMAYDI. Ilgari faqat client checkbox + capture
+    // edi → tasdiqsiz shablonni to'g'ridan submit qilish mumkin edi.
+    if (!existing.rightsAcceptedAt) {
+      res.status(400).json({
+        error: "You must confirm you own the rights to distribute this template before submitting it",
+        code: "RIGHTS_REQUIRED",
+      });
       return;
     }
 
