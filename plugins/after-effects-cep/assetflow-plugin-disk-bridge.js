@@ -336,7 +336,7 @@ const AssetFlowPluginDisk = (() => {
   }
 
   const PLUGIN_DATA_HINT =
-    "~/Library/Application Support/Adobe/CEP/extensions/com.assetflow.demo/assetflow-data";
+    "~/Library/Application Support/Adobe/CEP/extensions/com.frameflow/assetflow-data";
 
   return {
     PLUGIN_DATA_HINT,

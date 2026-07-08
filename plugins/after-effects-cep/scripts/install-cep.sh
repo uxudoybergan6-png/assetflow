@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
-DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.assetflow.demo"
+DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.frameflow"
 
 # AF_SKIP_AE=1 → AE'ni yopmasdan/ochmasdan faqat fayl + kesh yangilanadi
 # (CI yoki "AE'ga tegma, men o'zim qayta ochaman" holati uchun).

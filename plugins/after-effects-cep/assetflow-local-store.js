@@ -8,7 +8,7 @@ const AssetFlowStore = (() => {
   const META_KEY = "assetflow_contributor_meta";
   const STORAGE_GEN_KEY = "assetflow_storage_gen";
   const STORAGE_GEN = "2";
-  const CEP_EVENT = "com.assetflow.demo.metaUpdated";
+  const CEP_EVENT = "com.frameflow.metaUpdated";
 
   let db = null;
   const blobUrls = new Map();

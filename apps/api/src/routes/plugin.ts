@@ -367,7 +367,7 @@ pluginRouter.get("/assets/:templateId/:kind", async (req: Request, res: Response
 function cepPrefsPath() {
   return path.join(
     os.homedir(),
-    "Library/Application Support/Adobe/CEP/extensions/com.assetflow.demo/assetflow-data/prefs.json"
+    "Library/Application Support/Adobe/CEP/extensions/com.frameflow/assetflow-data/prefs.json"
   );
 }
 

@@ -121,7 +121,7 @@ try {
 // CEP install
 const cep =
   process.env.HOME +
-  "/Library/Application Support/Adobe/CEP/extensions/com.assetflow.demo";
+  "/Library/Application Support/Adobe/CEP/extensions/com.frameflow";
 try {
   const fs = await import("fs");
   const need = ["assetflow-init.js", "assetflow-catalog.js", "AssetFlow_Plugin.html"];

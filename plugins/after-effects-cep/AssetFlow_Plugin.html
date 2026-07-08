@@ -8211,7 +8211,7 @@ window.onAfCancel=onAfCancel;
 
 function setupCepMetaListener(){
   if(!csInterface||window.__afCepMetaListener)return;
-  csInterface.addEventListener(AssetFlowStore?.CEP_EVENT||'com.assetflow.demo.metaUpdated',()=>{
+  csInterface.addEventListener(AssetFlowStore?.CEP_EVENT||'com.frameflow.metaUpdated',()=>{
     if(window.__afBrowseReady) refreshLocalAssets();
   });
   window.__afCepMetaListener=true;

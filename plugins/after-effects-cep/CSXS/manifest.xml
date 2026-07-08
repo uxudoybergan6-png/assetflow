@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ExtensionManifest Version="7.0"
-  ExtensionBundleId="com.assetflow.demo"
+  ExtensionBundleId="com.frameflow"
   ExtensionBundleVersion="1.1.1"
   ExtensionBundleName="FrameFlow">
   <ExtensionList>
-    <Extension Id="com.assetflow.demo.panel" Version="1.1.0"/>
-    <Extension Id="com.assetflow.demo.admin" Version="1.1.0"/>
+    <Extension Id="com.frameflow.panel" Version="1.1.0"/>
+    <Extension Id="com.frameflow.admin" Version="1.1.0"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -19,7 +19,7 @@
     </RequiredRuntimeList>
   </ExecutionEnvironment>
   <DispatchInfoList>
-    <Extension Id="com.assetflow.demo.panel">
+    <Extension Id="com.frameflow.panel">
       <DispatchInfo>
         <Resources>
           <MainPath>./AssetFlow_Plugin.html</MainPath>
@@ -45,7 +45,7 @@
         </UI>
       </DispatchInfo>
     </Extension>
-    <Extension Id="com.assetflow.demo.admin">
+    <Extension Id="com.frameflow.admin">
       <DispatchInfo>
         <Resources>
           <MainPath>./AssetFlow_Admin.html</MainPath>
