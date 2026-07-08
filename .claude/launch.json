@@ -26,6 +26,12 @@
       "port": 3000
     },
     {
+      "name": "dist-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["http-server", "packages/assetflow-studio/dist", "-p", "8977", "-c-1"],
+      "port": 8977
+    },
+    {
       "name": "cep-plugin-preview",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", "plugins/after-effects-cep", "-p", "8976", "-c-1"],

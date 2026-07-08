@@ -131,6 +131,16 @@
   --inset:inset 0 1px 0 rgba(255,255,255,.10); --scrim:rgba(8,10,14,.72);
   --ease:cubic-bezier(.34,1.2,.64,1);
 }
+/* ── PORTAL IDENTITY: Admin Console = AMBER (contributor teal, platforma lime
+   bilan adashtirib bo'lmaydi). body.portal-admin faqat aksent tokenlarini
+   almashtiradi — komponent/logika o'zgarmaydi. ── */
+body.portal-admin .adx-app{
+  --lime:#FFB000; --lime2:#E09A00; --onlime:#1A1200;
+  --glow:rgba(255,176,0,.3); --limedim:rgba(255,176,0,.12);
+}
+body.portal-admin .adx-eyebrow{color:#FFB000}
+.adx-portal-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font:700 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--limedim);color:var(--lime);border:1px solid rgba(255,176,0,.36);white-space:nowrap}
+
 @keyframes adxbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
 @keyframes adxspin{to{transform:rotate(360deg)}}
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="assetflow-api" content="https://api.getframeflow.app">
-<title>FrameFlow — Admin sign in</title>
+<title>FrameFlow Admin Console — Sign in</title>
 <script>
 (function () {
   var p = location.pathname;
@@ -18,7 +18,7 @@
 <script src="js/studio-config.js"></script>
 <script src="js/theme.js"></script>
 </head>
-<body class="auth-page">
+<body class="auth-page portal-admin">
 <div class="auth-shell">
   <aside class="auth-side">
     <div class="auth-deco" aria-hidden="true">
@@ -31,6 +31,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg>
       </span>
       <span class="brand-word">Frame<b>Flow</b> · Admin</span>
+      <span class="portal-badge">Admin Console</span>
     </div>
     <div class="auth-hero">
       <h1>Moderation and <em>approval</em> center</h1>
@@ -55,12 +56,14 @@
 
   <main class="auth-main">
     <div class="auth-main-top">
+      <span class="portal-badge">Admin Console — Admin access only</span>
+      <span style="flex:1"></span>
       <button type="button" class="icon-btn" data-theme-toggle title="Theme"><span data-theme-icon></span></button>
     </div>
     <div class="auth-card">
       <div class="form-head">
         <h1 class="h1">Admin sign in</h1>
-        <p>Approve templates and manage the platform.</p>
+        <p>Admin access only — approve templates and manage the platform.</p>
       </div>
       <form id="loginForm">
         <div class="field">

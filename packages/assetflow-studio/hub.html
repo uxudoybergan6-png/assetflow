@@ -51,20 +51,16 @@
     <span class="brand-name" style="font-size:22px">FrameFlow</span>
   </div>
   <h1 class="hub-title">Which panel?</h1>
-  <p class="hub-sub">Contributor and Admin are separate — bookmark this page to avoid confusion</p>
+  <p class="hub-sub">Bookmark this page to avoid confusion</p>
   <div class="hub-status" id="hubStatus"></div>
-  <div class="hub-grid">
+  <!-- Admin Console havolasi ATAYIN yo'q — admin login ommaviy sahifalardan
+       bog'lanmaydi (adminlar /admin/ manzilini o'zlari biladi). -->
+  <div class="hub-grid" style="grid-template-columns:1fr;max-width:420px;margin:0 auto">
     <a class="hub-card contrib" href="/studio/login.html" id="linkContrib">
       <div class="hub-ico">↑</div>
       <h2>Contributor Studio</h2>
       <p>Upload templates, check status, submit for moderation</p>
       <span class="hub-url" id="urlContrib">/studio/login.html</span>
-    </a>
-    <a class="hub-card admin" href="/admin/login.html" id="linkAdmin">
-      <div class="hub-ico">✓</div>
-      <h2>Admin Console</h2>
-      <p>Approve or reject submitted templates, AE catalog</p>
-      <span class="hub-url" id="urlAdmin">/admin/login.html</span>
     </a>
   </div>
   <p class="hub-foot">Online: Vercel · Local: <code>npm run studio</code></p>
@@ -75,9 +71,7 @@
   const cfg = window.ASSETFLOW_STUDIO;
   if (cfg) {
     document.getElementById("linkContrib").href = cfg.contributorLoginUrl;
-    document.getElementById("linkAdmin").href = cfg.adminLoginUrl;
     document.getElementById("urlContrib").textContent = cfg.contributorLoginUrl.replace(/^https?:\/\//, "");
-    document.getElementById("urlAdmin").textContent = cfg.adminLoginUrl.replace(/^https?:\/\//, "");
   }
   const el = document.getElementById("hubStatus");
   const apiBase = cfg?.apiUrl || "https://api.getframeflow.app";

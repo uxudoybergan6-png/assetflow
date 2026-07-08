@@ -83,6 +83,87 @@
   --ease: cubic-bezier(.4,.14,.3,1);
 }
 
+/* ============================================================
+   PORTAL IDENTITY — har portal bir qarashda ajralib turadi.
+   USER (platforma) = lime (default, o'zgarmaydi);
+   CONTRIBUTOR (studio) = teal; ADMIN (console) = amber.
+   Body'ga .portal-contributor / .portal-admin klassi qo'yiladi —
+   barcha aksent o'zgaruvchilari shu yerda almashadi (logika o'zgarmas).
+   ============================================================ */
+body.portal-contributor {
+  --violet: #14b8a6;        /* teal baza */
+  --violet-bright: #2dd4bf; /* teal yorqin */
+  --violet-dim: rgba(45,212,191,.13);
+  --violet-line: rgba(45,212,191,.34);
+  --on-accent: #032622;
+  --accent-glow: rgba(45,212,191,.26);
+  --bg-0: #070b0b;          /* teal-tusli qorong'i zinapoya */
+  --bg-1: #090e0e;
+  --bg-2: #101616;
+  --bg-3: #172020;
+  --bg-4: #1e2828;
+  --line-strong: #2c3d3a;
+}
+body.portal-admin {
+  --violet: #f59e0b;        /* amber baza */
+  --violet-bright: #fbbf24; /* amber yorqin */
+  --violet-dim: rgba(251,191,36,.13);
+  --violet-line: rgba(251,191,36,.36);
+  --on-accent: #1c1203;
+  --accent-glow: rgba(251,191,36,.24);
+  --bg-0: #0b0906;          /* amber-tusli juda qorong'i zinapoya */
+  --bg-1: #0e0b07;
+  --bg-2: #161209;
+  --bg-3: #1f1a0e;
+  --bg-4: #272113;
+  --line-strong: #3d3320;
+}
+/* Light temada portal aksentlari AA uchun to'qroq, fonlar yorug' tusda qoladi */
+[data-theme="light"] body.portal-contributor {
+  --violet: #0f766e;
+  --violet-bright: #0d9488;
+  --violet-dim: rgba(15,118,110,.12);
+  --violet-line: rgba(15,118,110,.30);
+  --on-accent: #ffffff;
+  --accent-glow: rgba(15,118,110,.18);
+  --bg-0: #f2f6f5;
+  --bg-1: #e9f0ee;
+  --bg-2: #ffffff;
+  --bg-3: #f6faf9;
+  --bg-4: #e5edeb;
+  --line-strong: #c3d2ce;
+}
+[data-theme="light"] body.portal-admin {
+  --violet: #b45309;
+  --violet-bright: #92400e;
+  --violet-dim: rgba(180,83,9,.12);
+  --violet-line: rgba(180,83,9,.30);
+  --on-accent: #ffffff;
+  --accent-glow: rgba(180,83,9,.18);
+  --bg-0: #f7f5f0;
+  --bg-1: #f0ede5;
+  --bg-2: #ffffff;
+  --bg-3: #faf8f4;
+  --bg-4: #ede9df;
+  --line-strong: #d4cdbd;
+}
+/* Doimiy portal yorlig'i (login + panel header) */
+.portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: var(--r-full);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  background: var(--violet-dim);
+  color: var(--violet-bright);
+  border: 1px solid var(--violet-line);
+  white-space: nowrap;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -962,7 +1043,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 48px 32px; background: var(--bg-0); position: relative;
 }
-.auth-main-top { position: absolute; top: 16px; right: 16px; }
+.auth-main-top { position: absolute; top: 16px; right: 16px; left: 16px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.auth-main-top .icon-btn, .auth-main-top .portal-badge { pointer-events: auto; }
 .auth-card { width: 100%; max-width: 380px; }
 .auth-card .form-head { margin-bottom: 24px; }
 .auth-card .form-head h1, .auth-card .form-head h2 { font-size: 23px; letter-spacing: -.01em; margin-bottom: 6px; }
