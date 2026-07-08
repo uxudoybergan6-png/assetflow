@@ -281,6 +281,16 @@ const StudioApi = (() => {
         body: { fileName: files.pack.name },
       });
     }
+    // FAZA 5 (A2): thumb faqat presigned PUT bilan ketganda serverda hech qanday
+    // signal yo'q edi — asset kalitlari keshi (assetKeysJson) eskirib qolardi.
+    // preview/pack o'z signalida sinxronlaydi; thumb-only holat uchun yengil signal.
+    if (files.thumb && !files.preview && !files.pack) {
+      try {
+        await request(`/api/contributor/templates/${id}/assets-uploaded`, { method: "POST" });
+      } catch (e) {
+        console.warn("assets-uploaded signal not sent:", e);
+      }
+    }
     return { ok: true };
   }
 

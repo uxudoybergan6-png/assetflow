@@ -306,6 +306,13 @@ model ContributorTemplate {
   // upload yo'lida MAJBURIY checkbox bilan bloklaydi; backend shu yerda QAYD etadi.
   rightsAcceptedAt   DateTime?
   rightsTermsVersion String?
+  // ── FAZA 5 (A2) — S3 asset kalitlari keshi (ADDITIVE) ──
+  // templates/{id}/ prefiksidagi BARCHA obyekt kalitlari (JSON string[]). Har asset
+  // mutatsiyasidan keyin syncTemplateAssetKeys yozadi (raw SQL — updatedAt'ga TEGMAYDI).
+  // null = hali sinxronlanmagan → listing bir marta live List bilan o'zini to'ldiradi.
+  // Katalog/admin listing shu ustundan hasPack/hasPreview/thumb URL'larni oladi —
+  // har shablon uchun S3 chaqiruv YO'Q (N+1 fix).
+  assetKeysJson  Json?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 

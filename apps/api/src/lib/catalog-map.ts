@@ -17,6 +17,7 @@ import {
   s3AssetKeyFromSet,
   getPublicOrSignedUrl,
 } from "./s3.js";
+import { assetKeySetFromStored, syncTemplateAssetKeys } from "./asset-state.js";
 
 // Thumb/preview/sahna ko'rsatish URL muddati. CDN_BASE_URL bo'lsa public URL
 // (muddatsiz), aks holda (GCS private bucket) signed URL — plain public GCS URL
@@ -153,6 +154,8 @@ type TemplateRow = {
   contributor: { name: string | null; email: string } | null;
   createdAt: Date;
   updatedAt: Date;
+  // FAZA 5 (A2) — S3 kalitlar keshi (string[] | null). Berilsa listing S3'siz.
+  assetKeysJson?: unknown;
 };
 
 /** Contributor display name + bosh harflar (karta avatar uchun). Ism yo'q bo'lsa
@@ -175,15 +178,23 @@ function contributorAuthor(
 export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const rawMeta = (t.metaJson ?? {}) as Record<string, unknown>;
   const { author, authorInitials } = contributorAuthor(t.contributor);
-  // Bitta ListObjectsV2 bilan barcha S3 kalitlarini olish —
-  // N×M HeadObject o'rniga 1 ta List chaqiruvi (N+1 muammo hal).
-  const s3Keys = await listTemplateS3Keys(t.id);
+  // FAZA 5 (A2): kalitlar avval DB keshidan (assetKeysJson — mutatsiya paytida
+  // yoziladi) — listing S3'ga UMUMAN chiqmaydi. Kesh hali yo'q bo'lsa (eski
+  // yozuv) bir marta live List + DB'ga saqlab o'zini to'ldiradi (lazy backfill);
+  // sync yiqilsa ham live List bilan davom etadi.
+  const storedKeys = assetKeySetFromStored(t.assetKeysJson);
+  const s3Keys =
+    storedKeys ??
+    (await syncTemplateAssetKeys(t.id)) ??
+    (await listTemplateS3Keys(t.id));
   // Cache-bust versiyasi: shablon oxirgi yangilangan vaqt (epoch ms). R2 kalitlari
   // versiyalanmagani uchun CDN public URL'lariga ?v=<epoch> qo'shamiz — assetni
   // qayta yuklaganda eski kesh ko'rinmasin.
   const cacheBust = t.updatedAt.getTime();
   const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, cacheBust, s3Keys);
-  const assets = await templateAssetFlags(t.id, s3Keys);
+  const assets = await templateAssetFlags(t.id, s3Keys, {
+    confirmPack: !storedKeys, // DB keshi authoritative — HeadObject re-tasdiq shart emas
+  });
   const hasThumb = assets.thumb;
   const hasPreview = assets.preview;
   const hasPack = assets.pack;

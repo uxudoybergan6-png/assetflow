@@ -10,6 +10,7 @@ import {
   deleteS3Objects,
 } from "./s3.js";
 import { optimizePreviewForStreaming } from "./optimize-preview.js";
+import { syncTemplateAssetKeys } from "./asset-state.js";
 import { captureException } from "./sentry.js";
 
 /**
@@ -58,6 +59,11 @@ export async function processPreviewTranscode(id: string): Promise<void> {
         console.warn(`[transcode-preview] orfan o'chirish xato (${srcKey}):`, e);
       }
     }
+    // FAZA 5 (A2) — kalitlar keshi: preview.mp4 qo'shildi, eski kalit ketdi.
+    await syncTemplateAssetKeys(id, {
+      ensure: [destKey],
+      remove: srcKey !== destKey ? [srcKey] : [],
+    });
     await safeStatus(id, "done", null);
   } catch (e) {
     console.error(`[transcode-preview] xato (id=${id}):`, e);

@@ -97,6 +97,7 @@ const CATALOG_SELECT = {
   contributor: { select: { name: true, email: true } },
   createdAt: true,
   updatedAt: true,
+  assetKeysJson: true, // FAZA 5 (A2) — S3 kalitlar keshi (listing S3'siz)
 } as const;
 
 /** FAZA 5 (§8, §11) — ixtiyoriy `?app=<kod>` filtri: har dastur faqat o'zini ko'radi

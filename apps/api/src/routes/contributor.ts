@@ -47,6 +47,7 @@ import {
   createS3RangeStream,
   uploadStreamToS3,
 } from "../lib/s3.js";
+import { assetKeySetFromStored, syncTemplateAssetKeys } from "../lib/asset-state.js";
 import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
 import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
@@ -117,10 +118,15 @@ async function notifyContributorReview(
   }
 }
 
-async function withAssetFlags<T extends { id: string }>(row: T) {
+async function withAssetFlags<T extends { id: string; assetKeysJson?: unknown }>(row: T) {
+  // FAZA 5 (A2): kalitlar DB keshidan bo'lsa S3'ga chiqmaymiz (admin/contributor
+  // ro'yxati N+1 fix). Kesh yo'q (eski yozuv) — eski xulq: per-kind HeadObject.
+  const stored = assetKeySetFromStored(row.assetKeysJson);
   return {
     ...row,
-    assets: await templateAssetFlags(row.id),
+    assets: await templateAssetFlags(row.id, stored ?? undefined, {
+      confirmPack: !stored,
+    }),
   };
 }
 
@@ -714,6 +720,9 @@ contributorRouter.post(
         data: { metaJson: asMetaJson({ ...existingMeta, scenes: scenesOut }) },
       });
 
+      // FAZA 5 (A2) — yangi sahna/mogrt kalitlari keshga tushsin.
+      await syncTemplateAssetKeys(id);
+
       const withMogrt = scenesOut.filter(
         (s) => (s as { mogrtKey?: string }).mogrtKey
       ).length;
@@ -806,6 +815,11 @@ contributorRouter.post(
         if (srcKey && srcKey !== destKey) {
           removedOldKey = (await deleteS3Objects([srcKey])) > 0;
         }
+        // FAZA 5 (A2) — kalitlar keshi: yangi preview.mp4 qo'shildi, eski kalit ketdi.
+        await syncTemplateAssetKeys(id, {
+          ensure: [destKey],
+          remove: srcKey && srcKey !== destKey ? [srcKey] : [],
+        });
       }
 
       res.json({
@@ -1104,8 +1118,41 @@ contributorRouter.post(
       where: { id },
       data: { previewTranscodeStatus: "pending", previewTranscodeError: null },
     });
+    // FAZA 5 (A2) — presigned PUT bilan kelgan preview kaliti keshga tushsin
+    // (fon transcode tugaganda transcode-preview.ts yana sinxronlaydi).
+    await syncTemplateAssetKeys(id);
     transcodePreviewInBackground(id); // fon — javobni bloklamaydi
     res.json({ ok: true, previewTranscodeStatus: "pending" });
+  }
+);
+
+/**
+ * POST /templates/:id/assets-uploaded — presigned-PUT yo'lida THUMB (yoki boshqa
+ * asset) to'g'ridan bulutga yozilgach keshni yangilovchi YENGIL signal (FAZA 5 A2).
+ * Ilgari thumb PUT'idan keyin server hech narsa bilmasdi — assetKeysJson keshi
+ * eskirib, katalogda hasThumb noto'g'ri chiqishi mumkin edi. Hech qanday gate/limit
+ * mantiqqa tegmaydi — faqat kalitlar ro'yxatini qayta o'qiydi.
+ */
+contributorRouter.post(
+  "/templates/:id/assets-uploaded",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const existing = await prisma.contributorTemplate.findUnique({
+      where: { id },
+      select: { contributorId: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Template not found" });
+      return;
+    }
+    if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
+      res.status(403).json({ error: "Not authorized" });
+      return;
+    }
+    await syncTemplateAssetKeys(id);
+    res.json({ ok: true });
   }
 );
 
@@ -1427,6 +1474,8 @@ contributorRouter.post(
       message: "Pack received, running security check…",
     });
     await processPackInBackground(id, packKey, existing.contributorId, isZip);
+    // FAZA 5 (A2) — pack (+ ekstraktsiya qilingan sahnalar) kalitlari keshini yangilash.
+    await syncTemplateAssetKeys(id, { ensure: [packKey] });
     res.json({ ok: true, extracting: isZip, scanning: false });
   }
 );
@@ -1782,6 +1831,15 @@ async function ingestOneZip(
         where: { id: template.id },
         data: { fileName: `pack${pack.ext}`, fileSize: packBytes },
       });
+
+      // FAZA 5 (A2) — asset kalitlari keshi (hozirgina yozilgan kalitlar ensure bilan).
+      await syncTemplateAssetKeys(template.id, {
+        ensure: [
+          packKey,
+          image ? s3UploadKeyForFile(template.id, "thumb", `thumb${image.ext}`) : null,
+          video ? s3UploadKeyForFile(template.id, "preview", `preview${video.ext}`) : null,
+        ],
+      });
     } catch (e) {
       console.error("[ingest] asset saqlash yiqildi, kompensatsiya:", key, e);
       await deleteTemplateAssets(template.id).catch(() => {});
@@ -2093,6 +2151,20 @@ contributorRouter.post(
       }
     }
 
+    // FAZA 5 (A2) — asset kalitlari keshini yangilash (javobdan OLDIN — Cloud Run
+    // CPU throttle). ensure: hozirgina yozilgan kalitlar (List kechiksa ham tushmasin).
+    await syncTemplateAssetKeys(id, {
+      ensure: (
+        [
+          ["thumb", thumb],
+          ["preview", preview],
+          ["pack", pack],
+        ] as const
+      )
+        .filter(([kind, f]) => f?.path && !cloudSyncFailed.has(kind))
+        .map(([kind, f]) => s3UploadKeyForFile(id, kind, (f as Express.Multer.File).path)),
+    });
+
     setUploadProgress(id, {
       stage: "done",
       pct: 100,
@@ -2188,6 +2260,12 @@ contributorRouter.post(
     }
 
     const okFiles = files.filter((f) => !failedKeys.has(sceneKey(f.fieldname)));
+    // FAZA 5 (A2) — sahna preview kalitlari keshini yangilash.
+    if (isS3Configured() && okFiles.length) {
+      await syncTemplateAssetKeys(id, {
+        ensure: okFiles.map((f) => `templates/${id}/scenes/${f.filename}`),
+      });
+    }
     res.json({
       ok: failedKeys.size === 0,
       count: okFiles.length,

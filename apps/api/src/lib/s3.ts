@@ -263,7 +263,11 @@ export async function listTemplateS3Keys(templateId: string): Promise<Set<string
  *  knownS3Keys berilsa HeadObject chaqirilmaydi (N+1 oldini olish). */
 export async function templateAssetFlags(
   templateId: string,
-  knownS3Keys?: Set<string>
+  knownS3Keys?: Set<string>,
+  // FAZA 5 (A2): kalitlar DB keshidan (mutatsiya paytida yozilgan — authoritative)
+  // kelganda pack HeadObject re-tasdiq KERAK EMAS (confirmPack:false) — listing
+  // to'liq tarmoqsiz bo'ladi. Live List'dan kelganda eski xulq saqlanadi (true).
+  opts?: { confirmPack?: boolean }
 ) {
   const kinds: TemplateAssetKind[] = ["thumb", "preview", "pack"];
   // Bulut sozlangan bo'lsa diskni umuman tekshirmaymiz — serve-asset endi
@@ -292,7 +296,7 @@ export async function templateAssetFlags(
       // qaytarishi mumkin. Shu bois pack borligini serve ishlatadigan AYNAN
       // o'sha manbadan — HeadObject'dan qayta tasdiqlaymiz (bitta qo'shimcha
       // HeadObject, faqat List pack borligini ko'rsatgan shablon uchun).
-      if (assets.pack) {
+      if (assets.pack && (opts?.confirmPack ?? true)) {
         assets.pack = (await resolveS3AssetKey(templateId, "pack")) != null;
       }
     } else {
