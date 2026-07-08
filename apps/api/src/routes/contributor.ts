@@ -1143,19 +1143,32 @@ async function resolvePackScan(
   id: string,
   packKey: string,
   contributorId: string,
-  onProgress?: (p: Parameters<typeof setUploadProgress>[1]) => void
+  onProgress?: (p: Parameters<typeof setUploadProgress>[1]) => void,
+  /**
+   * FAZA 2 (H2) — pack allaqachon lokal diskda bo'lsa (multipart /assets yo'li: multer
+   * faylni yozib qo'ygan) bulutdan QAYTA yuklab olmaymiz — shu yo'lni skan qilamiz.
+   * Berilganda tmp yaratilmaydi va cleanup no-op (chaqiruvchining/multer faylini o'chirmaymiz).
+   */
+  localPackPath?: string
 ): Promise<PackScanResolution> {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
+  const useLocal = !!localPackPath;
+  const tmpDir = useLocal ? "" : fs.mkdtempSync(path.join(os.tmpdir(), "af_pack_"));
   const cleanup = () => {
+    if (useLocal || !tmpDir) return;
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } catch {}
   };
   try {
-    const ext = path.extname(packKey) || ".bin";
-    const packPath = path.join(tmpDir, `pack${ext}`);
-    onProgress?.({ stage: "download", pct: 12, message: "Downloading pack…" });
-    await downloadS3ToFile(packKey, packPath);
+    let packPath: string;
+    if (useLocal) {
+      packPath = localPackPath as string;
+    } else {
+      const ext = path.extname(packKey) || ".bin";
+      packPath = path.join(tmpDir, `pack${ext}`);
+      onProgress?.({ stage: "download", pct: 12, message: "Downloading pack…" });
+      await downloadS3ToFile(packKey, packPath);
+    }
 
     // 1) Content-hash → dedup (boshqa contributor bir xil pack = anti-theft; o'zi = warn).
     onProgress?.({ stage: "scan", pct: 22, message: "Running security check…" });
@@ -1910,17 +1923,52 @@ contributorRouter.post(
       pct: 88,
       message: "Saving to the database…",
     });
-    const update: { fileName?: string; fileSize?: number } = {};
+    const update: {
+      fileName?: string;
+      fileSize?: number;
+      packScanStatus?: string;
+      packScanDetail?: null;
+      packHash?: null;
+    } = {};
     if (pack) {
       update.fileName = pack.originalname;
       update.fileSize = pack.size;
+      // FAZA 2 (H2) — yangi pack skanlanmaguncha "pending" (fail-closed gate bloklaydi).
+      update.packScanStatus = "pending";
+      update.packScanDetail = null;
+      update.packHash = null;
     }
     if (Object.keys(update).length) {
       await prisma.contributorTemplate.update({ where: { id }, data: update });
     }
 
-    // ZIP pack bo'lsa — .mogrt sahna nomlari + thumb preview'lar (disk + R2)
-    if (pack?.path && path.extname(pack.path).toLowerCase() === ".zip") {
+    // FAZA 2 (H2) — pack XAVFSIZLIK SKANI. Ilgari /assets multipart yo'li skanni CHAQIRMASDI
+    // → packScanStatus null qolib download/approve gate'laridan o'tardi (skansiz zararli pack
+    // publish + serve bo'lardi). Endi pack-uploaded yo'lidagi AYNAN o'sha skan ishlaydi:
+    // multer allaqachon diskka yozgani uchun bulutdan qayta yuklab olmaymiz (localPackPath).
+    // Karantin (malware/dedup) → resolvePackScan published=false qiladi va sahna ekstraktsiyasi
+    // O'TKAZIB YUBORILADI. Skan xato bersa status "pending" qoladi (fail-safe — gate bloklaydi).
+    let packQuarantined = false;
+    if (pack?.path) {
+      setUploadProgress(id, { stage: "scan", pct: 86, message: "Running security check…" });
+      try {
+        const scanRes = await resolvePackScan(
+          id,
+          s3UploadKeyForFile(id, "pack", pack.path),
+          existing.contributorId,
+          undefined,
+          pack.path
+        );
+        packQuarantined = scanRes.quarantine;
+        scanRes.cleanup();
+      } catch (scanErr) {
+        console.error("[assets] pack scan failed (fail-safe → pending):", scanErr);
+      }
+    }
+
+    // ZIP pack bo'lsa — .mogrt sahna nomlari + thumb preview'lar (disk + R2).
+    // Karantinда (malware/dedup) ekstraktsiya YO'Q — skansiz mazmun tarqatilmaydi.
+    if (!packQuarantined && pack?.path && path.extname(pack.path).toLowerCase() === ".zip") {
       setUploadProgress(id, {
         stage: "extract",
         pct: 90,
@@ -2264,10 +2312,11 @@ async function reviewOneTemplate(
         select: { packScanStatus: true, fileName: true, contributorId: true },
       });
       // FIX (Cloud Run): fon skan javobdan keyin muzlab, status "pending" qolib qolishi mumkin.
-      // Shu holda skanni SHU YERDA (on-demand, sinxron) hal qilamiz — approve fon bajarilishiga
-      // bog'liq bo'lmaydi. Skan o'zi xato bersa FAIL-SAFE: status "pending" qoladi (quyidagi
-      // gate 409 beradi), admin "Clear pack" bilan qo'lda hal qiladi. So'rov crash BO'LMAYDI.
-      if (pre?.packScanStatus === "pending" && pre.fileName && isS3Configured()) {
+      // FAZA 2 (H2): "null" (eski /assets yo'li — hech skan qilinmagan) uchun ham SHU YERDA
+      // on-demand skan ishga tushadi (self-heal). Approve fon bajarilishiga bog'liq bo'lmaydi.
+      // Skan o'zi xato bersa FAIL-SAFE: status "pending"/"null" qoladi (quyidagi gate 409 beradi),
+      // admin "Clear pack" bilan qo'lda hal qiladi. So'rov crash BO'LMAYDI.
+      if ((pre?.packScanStatus === "pending" || pre?.packScanStatus == null) && pre?.fileName && isS3Configured()) {
         try {
           const packKey = s3UploadKeyForFile(id, "pack", pre.fileName);
           const meta = await getS3ObjectMeta(packKey);
@@ -2285,7 +2334,16 @@ async function reviewOneTemplate(
         }
       }
       const s = pre?.packScanStatus;
-      if (s === "malicious" || s === "quarantined" || s === "duplicate" || s === "pending") {
+      const hasPack = !!pre?.fileName;
+      // FAZA 2 (H2/M4) — null (hech skan qilinmagan) pack, agar u MAVJUD bo'lsa (fileName bor),
+      // FAIL-CLOSED: approve/publish qilinmaydi. Pack-siz shablon (fileName null) approve bo'laveradi.
+      if (
+        s === "malicious" ||
+        s === "quarantined" ||
+        s === "duplicate" ||
+        s === "pending" ||
+        (hasPack && s == null)
+      ) {
         return {
           ok: false,
           status: 409,
@@ -2294,11 +2352,11 @@ async function reviewOneTemplate(
               ? "Pack was flagged as a duplicate (dedup) — cannot be approved"
               : s === "malicious"
                 ? "Pack was flagged as malicious by the malware scan — cannot be approved"
-                : s === "pending"
-                  ? "Pack security check could not be completed — use “Clear pack (security)” to review and unblock"
-                  : "Pack security check is pending (quarantined) — needs admin review",
+                : s === "quarantined"
+                  ? "Pack security check is pending (quarantined) — needs admin review"
+                  : "Pack security check could not be completed — use “Clear pack (security)” to review and unblock",
           code: "PACK_QUARANTINED",
-          packScanStatus: s,
+          packScanStatus: s ?? "unscanned",
         };
       }
     }

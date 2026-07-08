@@ -231,8 +231,18 @@ async function guardDownloadable(
     res.status(451).json({ error: "This template was removed for legal reasons", code: "TAKEDOWN" });
     return false;
   }
-  if (legal && (legal.packScanStatus === "malicious" || legal.packScanStatus === "quarantined" || legal.packScanStatus === "duplicate")) {
+  const scanStatus = legal?.packScanStatus;
+  if (scanStatus === "malicious" || scanStatus === "quarantined" || scanStatus === "duplicate") {
     res.status(451).json({ error: "This template was blocked by a security check", code: "PACK_QUARANTINED" });
+    return false;
+  }
+  // FAZA 2 (H2/H3) — skan tugamagan/hech chaqirilmagan pack (null|pending) FAIL-CLOSED:
+  // skanланмаган (ehtimoliy zararli) packni HECH KIMGA (admin ham) serve qilmaymiz.
+  if (legal && (scanStatus == null || scanStatus === "pending")) {
+    res.status(409).json({
+      error: "This pack has not passed the security check yet — please try again shortly",
+      code: "PACK_SCAN_PENDING",
+    });
     return false;
   }
   if (req.user?.role === "ADMIN") return true;
