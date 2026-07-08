@@ -506,6 +506,28 @@ const StudioApi = (() => {
     return request(`/api/contributor/admin/payouts`, { method: "POST", body });
   }
 
+  /* FAZA 6b — rollar boshqaruvi + contributor onboarding */
+  async function listAdminUsers({ search, role, pending } = {}) {
+    const q = new URLSearchParams();
+    if (search) q.set("search", search);
+    if (role && role !== "all") q.set("role", role);
+    if (pending) q.set("pending", "1");
+    const qs = q.toString();
+    return request(`/api/admin/users${qs ? `?${qs}` : ""}`);
+  }
+  async function setUserRole(id, role) {
+    return request(`/api/admin/users/${id}/role`, { method: "PATCH", body: { role } });
+  }
+  async function dismissContributorRequest(id) {
+    return request(`/api/admin/users/${id}/contributor-request`, { method: "DELETE" });
+  }
+  async function requestContributorAccess(apiToken) {
+    return request(`/api/users/contributor-request`, {
+      method: "POST",
+      headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined,
+    });
+  }
+
   return {
     baseUrl,
     token,
@@ -546,6 +568,10 @@ const StudioApi = (() => {
     getAdminActivity,
     getAdminEarnings,
     createAdminPayout,
+    listAdminUsers,
+    setUserRole,
+    dismissContributorRequest,
+    requestContributorAccess,
     healthCheck,
   };
 })();

@@ -44,6 +44,9 @@ model User {
   passwordHash     String?
   role                 UserRole  @default(USER)
   contributorBlockedAt DateTime?
+  // FAZA 6b — contributor onboarding: USER "Become a contributor" so'rovi.
+  // Admin rol berganda (yoki rad etganda) null'ga qaytadi.
+  contributorRequestedAt DateTime?
   tokenVersion         Int       @default(0)
   stripeCustomerId     String?   @unique
   emailVerified    DateTime?

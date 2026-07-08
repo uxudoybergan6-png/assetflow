@@ -78,6 +78,7 @@
 <script src="js/admin-views.js"></script>
 <script src="js/admin-views2.js"></script>
 <script src="js/admin-subscribers.js"></script>
+<script src="js/admin-users.js"></script>
 <script src="js/admin-plans.js"></script>
 <script src="js/admin-logs.js"></script>
 <script src="js/admin-business.js"></script>
@@ -104,6 +105,7 @@ const NAV = [
   {id:'templates',    label:'All templates',      icon:'stack'},
   {grp:'MANAGEMENT'},
   {id:'contributors', label:'Contributors',       icon:'users-three'},
+  {id:'users',        label:'Users & roles',      icon:'user-gear'},
   {id:'subscribers',  label:'Subscribers',        icon:'puzzle-piece'},
   {id:'plans',        label:'Plans',              icon:'tag'},
   {id:'messaging',    label:'Messages',           icon:'chat-circle-dots'},
@@ -126,6 +128,7 @@ const TITLES = {
   templates:['All templates','Global catalog'],
   contributors:['Contributors','User management'],
   'contributor-detail':['Contributor profile','Contributors'],
+  users:['Users & roles','Grant or revoke access roles'],
   subscribers:['AE Plugin subscribers','Real Browse users'],
   'subscriber-detail':['Subscriber profile','AE Plugin subscribers'],
   plans:['Plans','Free and Pro — pricing and limits'],
@@ -157,6 +160,7 @@ function adminGlobalSearch(q) {
 function navBadge(n){
   if(n.id==='moderation') return {badge:String(tByStatus('pending').length), badgeCls:'warn'};
   if(n.id==='subscribers') return {badge:String(subscriberCounts().active), badgeCls:'brand'};
+  if(n.id==='users' && window._AF_ROLE_PENDING) return {badge:String(window._AF_ROLE_PENDING), badgeCls:'warn'};
   if(n.id==='messaging') {
     const nMsg = window._STUDIO_MSG_UNREAD || 0;
     if (nMsg) return {badge:String(nMsg), badgeCls:'brand'};
@@ -230,6 +234,12 @@ window.addEventListener('af-theme-change', (e) => {
     if (StudioApi.token()) {
       const { items } = await StudioApi.listMessageThreads();
       window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
+    }
+  } catch (_) {}
+  try {
+    if (StudioApi.token() && StudioApi.listAdminUsers) {
+      const p = await StudioApi.listAdminUsers({ pending: true });
+      window._AF_ROLE_PENDING = (p.items || []).length;
     }
   } catch (_) {}
   renderNav();

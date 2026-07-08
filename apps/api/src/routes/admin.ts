@@ -3,7 +3,9 @@ import { z } from "zod";
 import {
   PluginAccountStatus,
   PluginPlanTier,
+  UserRole,
   prisma,
+  Prisma,
 } from "@creative-tools/database";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import {
@@ -126,36 +128,8 @@ adminRouter.put("/plan-config/:plan", async (req, res) => {
   res.json(row);
 });
 
-adminRouter.get("/users", async (req, res) => {
-  const page = Number(req.query.page) || 1;
-  const pageSize = 20;
-  const [items, total] = await Promise.all([
-    prisma.user.findMany({
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-        subscription: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.user.count(),
-  ]);
-  res.json({ items, total, page, pageSize });
-});
-
-adminRouter.patch("/users/:id/role", async (req, res) => {
-  const role = req.body.role === "ADMIN" ? "ADMIN" : "USER";
-  const user = await prisma.user.update({
-    where: { id: String(req.params.id) },
-    data: { role },
-  });
-  res.json({ id: user.id, role: user.role });
-});
+// (Eski soddalashtirilgan GET /users va PATCH /users/:id/role bu yerdan olib
+// tashlandi — FAZA 6b to'liq (guard+audit) versiyalari fayl oxirida.)
 
 /** AE Browse obunachilari — haqiqiy DB */
 adminRouter.get("/plugin-subscribers", async (_req, res) => {
@@ -706,4 +680,147 @@ adminRouter.get("/activity", async (req, res) => {
   });
   const items = [...genItems, ...dlItems].sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, limit);
   res.json({ items });
+});
+
+// ── FAZA 6b — Foydalanuvchi rollari boshqaruvi (qo'lda SQL o'rniga) ─────────
+// Hammasi adminRouter.use(requireAuth, requireAdmin) ostida. Rol o'zgarishi
+// darhol amal qiladi: requireAuth har so'rovda rolni DB'dan qayta o'qiydi,
+// shu bois token bekor qilish shart emas. Har o'zgarish audit-log'ga yoziladi.
+
+/** GET /api/admin/users — ro'yxat (qidiruv, rol filtri, pending contributor so'rovlari). */
+adminRouter.get("/users", async (req, res) => {
+  const search = String(req.query.search ?? "").trim();
+  const roleRaw = String(req.query.role ?? "").toUpperCase();
+  const roleFilter = (Object.values(UserRole) as string[]).includes(roleRaw)
+    ? (roleRaw as UserRole)
+    : undefined;
+  const pendingOnly = req.query.pending === "1";
+
+  const where: Prisma.UserWhereInput = {
+    ...(roleFilter ? { role: roleFilter } : {}),
+    ...(pendingOnly
+      ? { role: UserRole.USER, contributorRequestedAt: { not: null } }
+      : {}),
+    ...(search
+      ? {
+          OR: [
+            { email: { contains: search, mode: "insensitive" } },
+            { name: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, pendingCount] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        emailVerified: true,
+        contributorBlockedAt: true,
+        contributorRequestedAt: true,
+      },
+    }),
+    prisma.user.count({
+      where: { role: UserRole.USER, contributorRequestedAt: { not: null } },
+    }),
+  ]);
+
+  res.json({
+    items: rows.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      createdAt: u.createdAt,
+      emailVerified: !!u.emailVerified,
+      blocked: !!u.contributorBlockedAt,
+      contributorRequestedAt: u.contributorRequestedAt,
+    })),
+    pendingCount,
+  });
+});
+
+const setRoleSchema = z.object({ role: z.nativeEnum(UserRole) });
+
+/** PATCH /api/admin/users/:id/role — rol berish/olish (USER|CONTRIBUTOR|ADMIN). */
+adminRouter.patch("/users/:id/role", async (req, res) => {
+  const parsed = setRoleSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "role must be USER | CONTRIBUTOR | ADMIN" });
+    return;
+  }
+  const newRole = parsed.data.role;
+
+  const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!target) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (target.role === newRole) {
+    res.status(400).json({ error: `User already has the ${newRole} role` });
+    return;
+  }
+
+  // Oxirgi admin himoyasi — tekshiruv+yozish bitta tranzaksiyada (parallel
+  // demote poygasi 0 ta admin qoldirmasin).
+  const updated = await prisma.$transaction(async (tx) => {
+    if (target.role === UserRole.ADMIN && newRole !== UserRole.ADMIN) {
+      const admins = await tx.user.count({ where: { role: UserRole.ADMIN } });
+      if (admins <= 1) return null;
+    }
+    return tx.user.update({
+      where: { id: target.id },
+      // Rol o'zgardi → pending contributor so'rovi (bo'lsa) yopiladi.
+      data: { role: newRole, contributorRequestedAt: null },
+    });
+  });
+  if (!updated) {
+    res.status(409).json({ error: "Cannot remove the last remaining admin" });
+    return;
+  }
+
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "user.role_change",
+    targetType: "user",
+    targetId: target.id,
+    detail: `${target.email}: ${target.role} → ${newRole}`,
+    meta: { oldRole: target.role, newRole },
+  });
+
+  res.json({
+    item: { id: updated.id, email: updated.email, name: updated.name, role: updated.role },
+  });
+});
+
+/** DELETE /api/admin/users/:id/contributor-request — pending so'rovni rad etish. */
+adminRouter.delete("/users/:id/contributor-request", async (req, res) => {
+  const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!target) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (!target.contributorRequestedAt) {
+    res.status(400).json({ error: "No pending contributor request" });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: target.id },
+    data: { contributorRequestedAt: null },
+  });
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "user.contributor_request_dismissed",
+    targetType: "user",
+    targetId: target.id,
+    detail: target.email,
+  });
+  res.json({ ok: true });
 });
