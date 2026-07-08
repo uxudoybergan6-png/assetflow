@@ -67,9 +67,9 @@
           <label for="adminEmail">Email</label>
           <div class="field-wrap">
             <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg></span>
-            <input id="adminEmail" class="input has-lead" type="email" name="email" required autocomplete="username" placeholder="admin@assetflow.uz">
+            <input id="adminEmail" class="input has-lead" type="email" name="email" required autocomplete="username" placeholder="admin@getframeflow.app">
           </div>
-          <p class="hint" style="margin-top:6px">Not <b>ADMIN</b> — your full registered email (e.g. <code>admin@assetflow.uz</code>).</p>
+          <p class="hint" style="margin-top:6px">Not <b>ADMIN</b> — your full registered email (e.g. <code>admin@getframeflow.app</code>).</p>
         </div>
         <div class="field">
           <label for="adminPass">Password</label>
@@ -160,7 +160,7 @@
     const fd = new FormData(e.target);
     const email = String(fd.get("email") || "").trim();
     if (!email.includes("@")) {
-      err.textContent = "Enter an email (e.g. admin@assetflow.uz). \"ADMIN\" is a role, not a login.";
+      err.textContent = "Enter an email (e.g. admin@getframeflow.app). \"ADMIN\" is a role, not a login.";
       err.classList.remove("hidden");
       return;
     }

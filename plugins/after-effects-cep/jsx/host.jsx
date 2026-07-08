@@ -1526,7 +1526,7 @@ function importSingleSceneFromAep(jsonStr) {
     var cfg = JSON.parse(jsonStr);
     var filePath = cfg.filePath;
     var compName = cfg.compName || cfg.sceneLabel || "";
-    var packLabel = cfg.packLabel || "AssetFlow";
+    var packLabel = cfg.packLabel || "FrameFlow";
     var scenesFolderHint = cfg.scenesFolder || "Scenes";
     if (!filePath) {
       return JSON.stringify({ ok: false, message: "File path required" });
@@ -1545,7 +1545,7 @@ function importSingleSceneFromAep(jsonStr) {
       });
     }
 
-    app.beginUndoGroup("AssetFlow Import Scene");
+    app.beginUndoGroup("FrameFlow Import Scene");
     var importMode = cfg.importMode || "timeline";
     var destCompId = null;
     var activeBefore = app.project.activeItem;
@@ -1683,7 +1683,7 @@ function removeImportedTemplate(jsonStr) {
     var cfg = JSON.parse(jsonStr || "{}");
     var folders = cfg.folders || [];
     var comps = cfg.comps || [];
-    app.beginUndoGroup("AssetFlow Remove Template");
+    app.beginUndoGroup("FrameFlow Remove Template");
     var removed = 0;
     var i;
     for (i = 0; i < folders.length; i++) {
@@ -1703,7 +1703,7 @@ function removeImportedTemplate(jsonStr) {
 /** Foydalanuvchidan yuklab olish papkasini so'raydi */
 function pickDownloadFolder() {
   try {
-    var f = Folder.selectDialog("AssetFlow — folder for downloaded templates");
+    var f = Folder.selectDialog("FrameFlow — folder for downloaded templates");
     if (f) return JSON.stringify({ ok: true, path: f.fsName });
     return JSON.stringify({ ok: false, canceled: true });
   } catch (e) {
@@ -2079,7 +2079,7 @@ function importAssetToProject(filePath) {
   var file = new File(filePath);
   if (!file.exists) return "error: file not found";
   try {
-    app.beginUndoGroup("AssetFlow Import");
+    app.beginUndoGroup("FrameFlow Import");
     var ext = file.name.replace(/^.*\./, "").toLowerCase();
     if (ext === "mogrt") {
       app.endUndoGroup();
@@ -2116,7 +2116,7 @@ function importTemplateProject(jsonStr) {
     if (/\.mogrt$/i.test(filePath)) {
       return JSON.stringify({ ok: false, message: ".mogrt was not extracted — update the plugin (install-cep.sh)" });
     }
-    app.beginUndoGroup("AssetFlow Import Template");
+    app.beginUndoGroup("FrameFlow Import Template");
     var existingIds = collectProjectItemIds(app.project, {});
     var io = new ImportOptions(file);
     io.importAs = ImportAsType.PROJECT;
@@ -2149,7 +2149,7 @@ function importMediaFromPath(filePath) {
   // MUHIM: ExtendScript (ES3) try/finally ichidagi return qiymatni yutishi mumkin
   // (evalScript bo'sh "" qaytaradi). Shu sabab natijani o'zgaruvchiga yig'ib,
   // endUndoGroup'ni alohida chaqirib, OXIRIDA bitta return qilamiz.
-  app.beginUndoGroup("AssetFlow AI Import");
+  app.beginUndoGroup("FrameFlow AI Import");
   var result;
   try {
     var io = new ImportOptions(file);
