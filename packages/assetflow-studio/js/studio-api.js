@@ -517,6 +517,10 @@ const StudioApi = (() => {
   async function getAdminEarnings() {
     return request(`/api/contributor/admin/earnings`);
   }
+  /* FAZA 5 (C2) — contributor'ning O'Z daromadi (balans + so'nggi payoutlar). */
+  async function getMyEarnings() {
+    return request(`/api/contributor/earnings`);
+  }
   async function createAdminPayout(body) {
     return request(`/api/contributor/admin/payouts`, { method: "POST", body });
   }
@@ -592,6 +596,7 @@ const StudioApi = (() => {
     getAdminGenSpend,
     getAdminActivity,
     getAdminEarnings,
+    getMyEarnings,
     createAdminPayout,
     getAdminMetrics,
     getAdminPoolPreview,

@@ -1207,10 +1207,9 @@ VIEWS.settings = function(){
         <div class="info-banner" style="font-size:12px">${ic('plugin')}<span>Only the admin can change plans. If you have questions, write via <a href="#" onclick="event.preventDefault();route('messages')" style="color:var(--violet-bright)">messages</a>.</span></div>
       </div>
     </div>
-    <div class="card"><div class="card-head"><h3>Payout / contact (contributor)</h3><span class="badge badge-pending"><span class="dot"></span>Coming soon</span></div>
-      <div class="card-pad col gap-16" style="opacity:.6;pointer-events:none">
-        <div class="field"><label>Payout method</label><select class="select" style="height:38px;width:100%"><option>Bank card</option></select></div>
-        <div class="field"><label>Card number</label><input class="input" placeholder="\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022"></div>
+    <div class="card"><div class="card-head"><h3>Earnings &amp; payouts</h3><span class="small" id="cEarnMode"></span></div>
+      <div class="card-pad col gap-14" id="cEarningsBody">
+        <p class="body" style="color:var(--tx-2)">Loading your earnings\u2026</p>
       </div>
     </div>
     <div class="card"><div class="card-head"><h3>Notifications</h3><span class="badge badge-pending"><span class="dot"></span>Coming soon</span></div>
@@ -1218,6 +1217,50 @@ VIEWS.settings = function(){
     </div>
         <div class="row gap-8"><button class="btn btn-primary" onclick="saveContributorProfile()">Save</button><button class="btn btn-ghost" onclick="route('settings')">Cancel</button></div>
   </div>`;
+};
+
+/* FAZA 5 (C2) — real earnings: GET /api/contributor/earnings ni Settings'dagi
+   "Earnings & payouts" kartasiga ulaydi (ilgari o'chirilgan "Coming soon" payout
+   formasi turardi). Balans/jami/to'langan + so'nggi payoutlar ro'yxati. */
+function fmtUsd(cents){
+  return '$' + ((Number(cents) || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+window.afterRender = window.afterRender || {};
+window.afterRender.settings = async function(){
+  const body = document.getElementById('cEarningsBody');
+  if (!body || typeof StudioApi === 'undefined' || !StudioApi.token()) return;
+  try {
+    const e = await StudioApi.getMyEarnings();
+    const mode = document.getElementById('cEarnMode');
+    if (mode) mode.textContent = e.payoutMode === 'pool'
+      ? 'Revenue-share pool'
+      : `Per download: ${fmtUsd(e.perDownloadCents)}`;
+    const payouts = Array.isArray(e.payouts) ? e.payouts : [];
+    body.innerHTML = `
+      <div class="row gap-16 wrap">
+        ${[['Unpaid balance', fmtUsd(e.balanceCents), 'green'],
+           ['Total earned', fmtUsd(e.totalEarnedCents), ''],
+           ['Paid out', fmtUsd(e.paidOutCents), ''],
+           ['Earning downloads', (e.earningEvents || 0).toLocaleString(), '']].map(([l,v,c]) =>
+          `<div class="col" style="gap:3px;min-width:120px"><span class="label">${l}</span><span class="h3" ${c?`style="color:var(--${c})"`:''}>${v}</span></div>`).join('')}
+      </div>
+      ${payouts.length ? `
+        <div class="divider"></div>
+        <span class="label">Recent payouts</span>
+        <table class="data" style="min-width:auto">
+          <thead><tr><th>Date</th><th>Amount</th><th>Status</th><th>Note</th></tr></thead>
+          <tbody>${payouts.map(p => `<tr>
+            <td class="cell-muted mono">${esc(String(p.createdAt || '').slice(0, 10))}</td>
+            <td class="cell-strong">${fmtUsd(p.amountCents)}</td>
+            <td>${esc(p.status || '—')}</td>
+            <td class="cell-muted">${esc(p.note || '—')}</td>
+          </tr>`).join('')}</tbody>
+        </table>` : ''}
+      <div class="info-banner" style="font-size:12px">${ic('plugin')}<span>Payouts are processed by the admin team. Questions? Write via <a href="#" onclick="event.preventDefault();route('messages')" style="color:var(--violet-bright)">messages</a>.</span></div>`;
+  } catch (err) {
+    body.innerHTML = `<p class="body" style="color:var(--tx-2)">Could not load earnings — please try again later.</p>`;
+    console.warn('earnings load failed:', err);
+  }
 };
 
 /* ============================================================
