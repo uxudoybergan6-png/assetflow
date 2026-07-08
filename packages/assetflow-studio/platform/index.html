@@ -15904,7 +15904,7 @@
               </div>
               <a class="va-btn lime" style="width:100%;padding:13px" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> Download pack (.zip)</a>
               <div class="va-dact">
-                <a class="va-btn ghost" style="flex:1" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in After Effects</a>
+                <a class="va-btn ghost" style="flex:1" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a>
                 <span class="{{ detail.favCls }}" onclick="{{ toggleFavTpl }}" title="Favorite"><svg class="va-ic"><use href="#i-heart"></use></svg></span>
                 <span class="fav" onclick="{{ shareTpl }}" title="Share"><svg class="va-ic"><use href="#i-share"></use></svg></span>
               </div>
@@ -17180,8 +17180,9 @@ class Component extends DCLogic {
   async loadCatalog() {
     try {
       const r = await FFAPI.catalog();
-      const APP_L = { ae: 'Ae', pr: 'Pr', dr: 'Dr' };
-      const APP_C = { ae: '#b794f6', pr: '#7aa2f7', dr: '#f0907f' };
+      // FAZA 5 (§2/§11) — kanonik dastur xaritasi (apps.ts server nusxasi). 'dr' = eski alias.
+      const APP_L = { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' };
+      const APP_C = { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' };
       const items = (r.items || []).map((it) => ({
         id: String(it.id), n: it.name || 'Template', c: it.catLabel || it.cat || 'Template',
         a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6',
@@ -17939,7 +17940,7 @@ class Component extends DCLogic {
     const sortOpts = [{ k: 'mos', label: 'Most relevant' }, { k: 'new', label: 'Newest' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
     const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
-    const fAppsView = ['All', 'Ae', 'Pr', 'Dr'].map(x => ({ v: x, on: x === this.state.fApp, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fApp ? 'ffa-poprow on' : 'ffa-poprow' }));
+    const fAppsView = ['All', 'Ae', 'Pr', 'Mn', 'Dr'].map(x => ({ v: x, on: x === this.state.fApp, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fApp ? 'ffa-poprow on' : 'ffa-poprow' }));
     const catalogCats = Array.from(new Set(src.map(t => t.c)));
     const fCatsView = ['All'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
     const fPlansView = ['All', 'Free', 'Pro'].map(x => ({ v: x, on: x === this.state.fPlan, cls: x === this.state.fPlan ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fPlan ? 'ffa-poprow on' : 'ffa-poprow' }));
@@ -17975,8 +17976,8 @@ class Component extends DCLogic {
       tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
       hasPreview: !!dRaw.previewUrl, noPreview: !dRaw.previewUrl, free: !dRaw.pro,
       resLine: (dRaw.qual || dRaw.d || '4K') + ' · ' + (dRaw.ori || '16:9'),
-      appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
-      metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
+      appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
+      metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
       // FAZA D — related endi boy karta (rcOf), bo'sh bo'lsa seksiya yashirin
       related: colOthers.slice(0, 4).map(t => rcOf(t)),
       hasRelated: colOthers.length > 0,
