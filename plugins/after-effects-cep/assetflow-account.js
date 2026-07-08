@@ -82,7 +82,7 @@ const AssetFlowAccount = (() => {
     return fetch(url, { ...options, signal: ctrl.signal })
       .catch((e) => {
         if (e && (e.name === "AbortError" || e.code === 20)) {
-          const te = new Error("Server javob bermadi (vaqt tugadi)");
+          const te = new Error("Server did not respond (timeout)");
           te.timeout = true;
           throw te;
         }

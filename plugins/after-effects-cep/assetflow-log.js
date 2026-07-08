@@ -101,7 +101,7 @@ const AssetFlowLog = (() => {
     source = opts.source || "ae_plugin";
     if (opts.apiBaseUrl) apiBase = opts.apiBaseUrl;
     if (opts.syncEnabled === false) syncEnabled = false;
-    log("info", "AE Browse panel yuklandi", {
+    log("info", "AE Browse panel loaded", {
       action: "init",
       detail: typeof IS_CEP !== "undefined" && IS_CEP ? "CEP" : "browser",
     });

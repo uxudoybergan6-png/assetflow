@@ -144,19 +144,19 @@ export function notifyAdminNewSubmission(input: {
       .slice(0, 10)
       .map((n) => `<li>${n}</li>`)
       .join("");
-    const more = input.count > 10 ? `<p style="font-size:12px;color:#aaa">…va yana ${input.count - 10} ta</p>` : "";
+    const more = input.count > 10 ? `<p style="font-size:12px;color:#aaa">…and ${input.count - 10} more</p>` : "";
     await sendEmail({
       to: admin,
-      subject: `FrameFlow moderatsiya — ${input.count} ta yangi shablon kutmoqda`,
+      subject: `FrameFlow moderation — ${input.count} new template${input.count > 1 ? "s" : ""} pending`,
       html: renderEmailLayout(
-        "Yangi shablon moderatsiyada",
+        "New template pending moderation",
         `<p style="font-size:13px;line-height:1.6">${
-          input.contributorEmail ? `<b>${input.contributorEmail}</b>` : "Contributor"
-        } ${input.count} ta shablon yubordi:</p>
+          input.contributorEmail ? `<b>${input.contributorEmail}</b>` : "A contributor"
+        } submitted ${input.count} template${input.count > 1 ? "s" : ""}:</p>
          <ul style="font-size:13px;line-height:1.8;padding-left:18px;margin:8px 0">${list}</ul>${more}
-         <a href="${getWebUrl()}/admin/" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Moderatsiyani ochish</a>`
+         <a href="${getWebUrl()}/admin/" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Open moderation</a>`
       ),
-      text: `FrameFlow: ${input.count} ta yangi shablon moderatsiya kutmoqda (${input.names.slice(0, 10).join(", ")}).`,
+      text: `FrameFlow: ${input.count} new template${input.count > 1 ? "s" : ""} pending moderation (${input.names.slice(0, 10).join(", ")}).`,
     });
   }, `admin-new-submission (${input.count})`);
 }

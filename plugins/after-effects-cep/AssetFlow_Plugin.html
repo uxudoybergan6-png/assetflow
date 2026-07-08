@@ -4902,8 +4902,8 @@ const SUB_SLUG={
 
 const FEATURED={
   max:5,
-  noticeTitle:'Yangi shablonlar!',
-  ctaShort:'Sinab ko‘r →'
+  noticeTitle:'New templates!',
+  ctaShort:'Try it →'
 };
 
 const assets=window.assets;
@@ -5193,7 +5193,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     const tid=setTimeout(()=>{
       if(settled)return;
       settled=true;
-      resolve(JSON.stringify({ok:false,error:'timeout',message:'AE skripti 30s ichida javob bermadi — AE oynasini yoping va qayta urinib ko\'ring'}));
+      resolve(JSON.stringify({ok:false,error:'timeout',message:'AE script did not respond within 30s — close the AE window and try again'}));
     },30000);
     csInterface.evalScript(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,(raw)=>{
       if(settled)return;
@@ -5337,7 +5337,7 @@ function showMonitorPreview(asset){
   }
   img.style.display='none';
   body.classList.remove('has-poster');
-  label.textContent=asset?(asset.displayName||asset.n):'Faylni bu yerga tashlang';
+  label.textContent=asset?(asset.displayName||asset.n):'Drop file here';
   label.classList.toggle('active',!!asset);
 }
 
@@ -5383,7 +5383,7 @@ function buildCategoryMenu(nav){
 function updateCategoryPillLabel(){
   const el=document.getElementById('catPillLabel');
   if(!el)return;
-  if(currentSub==='all'){ el.textContent='Kategoriya'; return; }
+  if(currentSub==='all'){ el.textContent='Category'; return; }
   el.textContent=CAT_LABELS[currentSub]||currentSub;
 }
 
@@ -5407,7 +5407,7 @@ function updateOrientResPillLabels(){
   const o=document.getElementById('orientPillLabel');
   const r=document.getElementById('resPillLabel');
   if(o)o.textContent=currentOrient==='all'?'Format':(ORIENT_LABELS[currentOrient]||'Format');
-  if(r)r.textContent=currentRes==='all'?'Sifat':(RES_LABELS[currentRes]||'Sifat');
+  if(r)r.textContent=currentRes==='all'?'Quality':(RES_LABELS[currentRes]||'Quality');
 }
 
 function selectCategory(el,slug){
@@ -5477,7 +5477,7 @@ function applyDensityClass(){
   h.classList.remove('dens-sm','dens-md','dens-lg');
   h.classList.add('dens-'+__density);
   const b=document.getElementById('densityBtn');
-  if(b)b.title='Karta zichligi: '+(__density==='sm'?'Kichik (3 ustun)':__density==='lg'?'Katta (1 ustun)':'O‘rta (2 ustun)');
+  if(b)b.title='Card density: '+(__density==='sm'?'Small (3 columns)':__density==='lg'?'Large (1 column)':'Medium (2 columns)');
 }
 function afCycleDensity(){
   const order=['md','sm','lg'];
@@ -5503,7 +5503,7 @@ function selectResFilter(el,value,label){
   currentRes=value||'all';
   syncFilterDropMenu('resMenu',currentRes);
   const pill=document.getElementById('resPillLabel');
-  if(pill)pill.textContent=value==='all'?'Sifat':(label||RES_LABELS[value]||'Sifat');
+  if(pill)pill.textContent=value==='all'?'Quality':(label||RES_LABELS[value]||'Quality');
   closeAllDropdowns();
   closePack();
   render();
@@ -5768,12 +5768,12 @@ window.pd3ImportAll=pd3ImportAll;
 /* Plan/usage qatori — real reja + bu oygi yuklamalar (account cache'dan) */
 function pd3PlanText(){
   const u=(typeof homeCachedUser==='function')?homeCachedUser():null;
-  if(!u) return 'Free reja — bu oy: 0 / 15 yuklama';
+  if(!u) return 'Free plan — this month: 0 / 15 downloads';
   const pro=u.plan==='pro'||!!(u.limits&&u.limits.unlimitedDownloads);
-  if(pro) return 'Pro reja — cheksiz yuklama';
+  if(pro) return 'Pro plan — unlimited downloads';
   const used=u.downloadsMonth!=null?u.downloadsMonth:0;
   const lim=(u.limits&&u.limits.downloadLimit!=null)?u.limits.downloadLimit:15;
-  return 'Free reja — bu oy: '+used+' / '+lim+' yuklama';
+  return 'Free plan — this month: '+used+' / '+lim+' downloads';
 }
 
 /** MOGRT-pack elementlari → sahna kartalari (thumb.png/thumb.mp4 .mogrt ichidan) */
@@ -5873,7 +5873,7 @@ function closePack(){
 
 async function importSceneWithMode(pack,scene,packName,mode){
   if(!pack||!scene)return;
-  if(__afOpBusy){ showToast('Avvalgi amal tugashini kuting…','warning'); return; }
+  if(__afOpBusy){ showToast('Please wait for the previous action to finish…','warning'); return; }
   if(typeof AssetFlowAccount!=='undefined'&&!AssetFlowAccount.isLoggedIn()){
     showLoginRequired(); return;
   }
@@ -5928,7 +5928,7 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
         return 'mogrt-picker';
       }else{
         const msg=data?.message||raw||'unknown';
-        if(String(msg).indexOf('Comp topilmadi')===0){
+        if(String(msg).indexOf('Comp not found')===0){
           showToast('Comp "'+compName+'" not found — it must match the name in AE');
         }else{
           showToast('Import error: '+msg);
@@ -5970,7 +5970,7 @@ async function downloadScene(name,ico,mode='timeline'){
 
 async function downloadAll(n){
   if(!packs[n])return;
-  if(__afOpBusy){ showToast('Avvalgi amal tugashini kuting…','warning'); return; }
+  if(__afOpBusy){ showToast('Please wait for the previous action to finish…','warning'); return; }
   if(typeof AssetFlowAccount!=='undefined'&&!AssetFlowAccount.isLoggedIn()){
     showLoginRequired(); return;
   }
@@ -6196,7 +6196,7 @@ function dismissFeatured(e){
   e.stopPropagation();
   featuredDismissedByNav[currentNav]=true;
   render();
-  showToast('Bildirishnoma yopildi');
+  showToast('Notification closed');
 }
 
 function playSpotlightPreview(el){
@@ -7761,11 +7761,11 @@ window.afConfirm=function(msg,opts){
  * Redizayn yo'q — mavjud afConfirm modal uslubini qayta ishlatadi (inline stil). */
 window.afFontResolver=(function(){
   var CHIP={
-    checking:{t:'⏳ tekshirilmoqda',c:'var(--muted)'},
-    installed:{t:'✓ o‘rnatildi',c:'#22c55e'},
-    adobe:{t:'☁ CC yoqadi',c:'#60a5fa'},
-    manual:{t:'⚠ qo‘lda',c:'#f59e0b'},
-    error:{t:'✕ xato',c:'var(--red)'}
+    checking:{t:'⏳ checking',c:'var(--muted)'},
+    installed:{t:'✓ installed',c:'#22c55e'},
+    adobe:{t:'☁ via CC',c:'#60a5fa'},
+    manual:{t:'⚠ manual',c:'#f59e0b'},
+    error:{t:'✕ error',c:'var(--red)'}
   };
   var ov=null,listEl=null,rows={};
   function close(){ try{ ov.parentNode.removeChild(ov); }catch(_){ } ov=null;listEl=null;rows={}; document.removeEventListener('keydown',esc,true); }
@@ -7784,14 +7784,14 @@ window.afFontResolver=(function(){
     card.style.cssText='width:100%;max-width:340px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit;max-height:80vh;display:flex;flex-direction:column';
     var tt=document.createElement('div');
     tt.style.cssText='color:var(--text);font-weight:700;font-size:13.5px;line-height:1.4';
-    tt.textContent='Yetishmagan shriftlar';
+    tt.textContent='Missing fonts';
     var sub=document.createElement('div');
     sub.style.cssText='color:var(--muted);font-size:11px;margin-top:5px;line-height:1.5';
-    sub.textContent='Shablon '+fonts.length+' ta o‘rnatilmagan shriftdan foydalanadi — avtomat hal qilinmoqda.';
+    sub.textContent='Template uses '+fonts.length+' missing font(s) — resolving automatically.';
     listEl=document.createElement('div');
     listEl.style.cssText='margin-top:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px';
     for(var i=0;i<fonts.length;i++){
-      var nm=String((fonts[i]&&(fonts[i].family||fonts[i].postScript))||'shrift');
+      var nm=String((fonts[i]&&(fonts[i].family||fonts[i].postScript))||'Font');
       var row=document.createElement('div');
       row.style.cssText='display:flex;align-items:center;gap:10px;justify-content:space-between';
       var left=document.createElement('div');
@@ -7809,7 +7809,7 @@ window.afFontResolver=(function(){
       rows[i]={row:row,chip:c,note:note};
     }
     var closeBtn=document.createElement('button');
-    closeBtn.type='button';closeBtn.textContent='Yopish';
+    closeBtn.type='button';closeBtn.textContent='Close';
     closeBtn.style.cssText='margin-top:14px;height:36px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.06);color:var(--text);font-weight:600';
     closeBtn.addEventListener('click',close);
     card.appendChild(tt);card.appendChild(sub);card.appendChild(listEl);card.appendChild(closeBtn);
@@ -7844,10 +7844,10 @@ async function resolveTemplateFonts(missingFonts){
     var n={installed:0,adobe:0,manual:0,error:0};
     (res||[]).forEach(function(r){ if(r&&n[r.status]!=null)n[r.status]++; });
     var parts=[];
-    if(n.installed)parts.push(n.installed+' o‘rnatildi');
-    if(n.adobe)parts.push(n.adobe+' CC yoqadi');
-    if(n.manual||n.error)parts.push((n.manual+n.error)+' qo‘lda');
-    if(parts.length)showToast('Shriftlar: '+parts.join(', '),(n.manual||n.error)?'warning':'success');
+    if(n.installed)parts.push(n.installed+' installed');
+    if(n.adobe)parts.push(n.adobe+' via CC');
+    if(n.manual||n.error)parts.push((n.manual+n.error)+' manual');
+    if(parts.length)showToast('Fonts: '+parts.join(', '),(n.manual||n.error)?'warning':'success');
   }catch(err){
     try{ console.warn('resolveTemplateFonts',err); }catch(_){}
     // Font hal qilish xatosi import natijasini o'zgartirmaydi (jim o'tamiz).
@@ -9953,7 +9953,7 @@ window.afGallery=(function(){
 
   // model metadata (lazy, cached) — refMode/maxRefs/aspects/resolutions/qualityCost/count backenddan
   var meta={loaded:false,models:[],modelId:null,key:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,refKind:null,refOk:true,
-    ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],qLabel:'Sifat',aspDef:'Auto',qDefault:'high',
+    ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],qLabel:'Quality',aspDef:'Auto',qDefault:'high',
     qcost:{low:3,medium:6,high:12,auto:12},counts:[1,2,3,4]};
   var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
 

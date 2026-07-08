@@ -7,7 +7,7 @@ const AssetFlowStorage = (() => {
   let provider = "browser";
 
   function store() {
-    if (typeof AssetFlowStore === "undefined") throw new Error("AssetFlowStore yo‘q");
+    if (typeof AssetFlowStore === "undefined") throw new Error("AssetFlowStore not found");
     return AssetFlowStore;
   }
 
@@ -20,7 +20,7 @@ const AssetFlowStorage = (() => {
 
   /** Kelajak: POST /api/contributor/... + token */
   async function publishToServer() {
-    return { ok: false, message: "Server chop etish keyin qo‘shiladi" };
+    return { ok: false, message: "Server publishing will be added later" };
   }
 
   return {

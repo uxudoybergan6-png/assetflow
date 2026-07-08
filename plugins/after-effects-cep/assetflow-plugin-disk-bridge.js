@@ -58,7 +58,7 @@ const AssetFlowPluginDisk = (() => {
 
   async function linkPluginFolder() {
     if (!window.showDirectoryPicker) {
-      throw new Error("Chrome/Edge kerak (papka tanlash qo‘llab-quvvatlanmaydi)");
+      throw new Error("Chrome/Edge required (folder selection not supported)");
     }
     const handle = await window.showDirectoryPicker({
       id: "assetflow-plugin-data",
@@ -93,12 +93,12 @@ const AssetFlowPluginDisk = (() => {
   }
 
   async function getFileHandle(name, create = false) {
-    if (!rootHandle) throw new Error("Plugin papkasi ulanmagan");
+    if (!rootHandle) throw new Error("Plugin folder not linked");
     return rootHandle.getFileHandle(name, { create });
   }
 
   async function getBlobsDir(create = true) {
-    if (!rootHandle) throw new Error("Plugin papkasi ulanmagan");
+    if (!rootHandle) throw new Error("Plugin folder not linked");
     return rootHandle.getDirectoryHandle("blobs", { create });
   }
 
@@ -295,7 +295,7 @@ const AssetFlowPluginDisk = (() => {
   async function updateUpload(id, patch, files = {}) {
     const items = await listMeta();
     const idx = items.findIndex((x) => x.id === id);
-    if (idx < 0) throw new Error("Topilmadi");
+    if (idx < 0) throw new Error("Not found");
     const cur = items[idx];
     if (files.thumb) {
       if (cur.thumbBlobId) await deleteBlob(cur.thumbBlobId);

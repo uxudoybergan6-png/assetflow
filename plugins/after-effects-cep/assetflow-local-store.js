@@ -527,9 +527,9 @@ const AssetFlowStore = (() => {
 
   async function exportBlobToPath(blobId, fileName) {
     await openDb();
-    if (!useDisk) throw new Error("Fayl eksporti faqat AE panelida");
+    if (!useDisk) throw new Error("File export is only available in the AE panel");
     const blob = await getBlob(blobId);
-    if (!blob) throw new Error("Fayl topilmadi");
+    if (!blob) throw new Error("File not found");
     const dir = getExportsDir();
     const safe = (fileName || blobId).replace(/[/\\?%*:|"<>]/g, "_");
     const outPath = pathLib.join(dir, safe);
@@ -555,7 +555,7 @@ const AssetFlowStore = (() => {
       return null;
     };
     const aep = findAep(dest);
-    if (!aep) throw new Error("Zip ichida .aep topilmadi");
+    if (!aep) throw new Error(".aep not found inside zip");
     return aep;
   }
 

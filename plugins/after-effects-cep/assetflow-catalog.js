@@ -48,7 +48,7 @@ const AssetFlowCatalog = (() => {
     return fetch(url, { ...options, signal: ctrl.signal })
       .catch((e) => {
         if (e && (e.name === "AbortError" || e.code === 20)) {
-          const te = new Error("Server javob bermadi (vaqt tugadi)");
+          const te = new Error("Server did not respond (timed out)");
           te.timeout = true;
           throw te;
         }
@@ -142,7 +142,7 @@ const AssetFlowCatalog = (() => {
       if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.handleAuthFailure) {
         AssetFlowAccount.handleAuthFailure(res.status, !!AssetFlowAccount.token());
       }
-      const err = new Error(`Katalog HTTP ${res.status}`);
+      const err = new Error(`Catalog HTTP ${res.status}`);
       err.status = res.status;
       throw err;
     }
@@ -533,18 +533,18 @@ const AssetFlowCatalog = (() => {
       `assetflow_mogrt_${templateId}_${slug}_${Date.now()}`
     );
     fs.mkdirSync(dir, { recursive: true });
-    if (typeof showToast === "function") showToast("Element ochilmoqda…");
+    if (typeof showToast === "function") showToast("Opening item…");
     try {
       child.execFileSync("unzip", ["-o", mogrtPath, "-d", dir], {
         timeout: 120_000,
       });
     } catch (e) {
-      throw new Error("MOGRT ochilmadi — fayl buzilgan bo'lishi mumkin.");
+      throw new Error("Could not open MOGRT — the file may be corrupted.");
     }
     // Robustlik: unzip nol fayl chiqarsa aniq xato (jimgina davom etmaydi)
     let __mextract = [];
     try { __mextract = fs.readdirSync(dir); } catch {}
-    if (!__mextract.length) throw new Error("MOGRT bo'sh yoki ochilmadi.");
+    if (!__mextract.length) throw new Error("MOGRT is empty or could not be opened.");
     let aep = null;
     const graphic = findFileByExtInDir(fs, path, dir, [".aegraphic"]);
     if (graphic) {
@@ -558,7 +558,7 @@ const AssetFlowCatalog = (() => {
             timeout: 120_000,
           });
         } catch (e) {
-          throw new Error("MOGRT loyiha qismi (aegraphic) ochilmadi.");
+          throw new Error("Could not open MOGRT project part (aegraphic).");
         }
         aep = findAepInDir(fs, path, dir);
       } else {
@@ -569,7 +569,7 @@ const AssetFlowCatalog = (() => {
       aep = findAepInDir(fs, path, dir);
     }
     if (!aep) {
-      throw new Error("MOGRT ichida .aep loyiha topilmadi.");
+      throw new Error("No .aep project found inside MOGRT.");
     }
     rememberMogrtCompName(dir, aep);
     return aep;
@@ -633,7 +633,7 @@ const AssetFlowCatalog = (() => {
   /** Tanlangan .mogrt elementni import uchun .aep ga tayyorlaydi */
   async function extractMogrtItem(templateId, mogrtPath) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Faqat After Effects ichida import");
+      throw new Error("Import only works inside After Effects");
     }
     const fs = require("fs");
     const path = require("path");
@@ -641,7 +641,7 @@ const AssetFlowCatalog = (() => {
     const child = require("child_process");
     const { Buffer: NodeBuffer } = require("buffer");
     if (!mogrtPath || !fs.existsSync(mogrtPath)) {
-      throw new Error("MOGRT fayl topilmadi — packni qayta yuklab oling.");
+      throw new Error("MOGRT file not found — please re-download the pack.");
     }
     const baseDir = downloadDir() || os.tmpdir();
     return extractMogrtFileToAep(
@@ -741,7 +741,7 @@ const AssetFlowCatalog = (() => {
         try {
           fs.rmSync(filePath, { force: true });
         } catch {}
-        const err = new Error("Pack yaxlitligi buzilgan (sha256 mos kelmadi) — qayta yuklab ko'ring.");
+        const err = new Error("Pack integrity check failed (sha256 mismatch) — please try downloading again.");
         err.integrity = true;
         throw err;
       }
@@ -792,7 +792,7 @@ const AssetFlowCatalog = (() => {
       const cleanup = () => __activeDownloads.delete(holder);
       const failCancelled = () => {
         cleanup();
-        const err = new Error("Yuklab olish bekor qilindi");
+        const err = new Error("Download cancelled");
         err.cancelled = true;
         reject(err);
       };
@@ -904,10 +904,10 @@ const AssetFlowCatalog = (() => {
    */
   async function downloadSceneMogrt(templateId, scene, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Faqat After Effects ichida import");
+      throw new Error("Import only works inside After Effects");
     }
     if (!scene || !scene.mogrtUrl) {
-      throw new Error("Sahnada MOGRT URL yo'q");
+      throw new Error("Scene has no MOGRT URL");
     }
     const fs = require("fs");
     const path = require("path");
@@ -923,14 +923,14 @@ const AssetFlowCatalog = (() => {
     const out = path.join(dir, `${slug}.mogrt`);
     let _freshDownload = false;
     if (!cachedFileOk(fs, out, 0)) {
-      if (typeof showToast === "function") showToast("Sahna yuklanmoqda…");
+      if (typeof showToast === "function") showToast("Loading scene…");
       const onProgress = opts && opts.onProgress;
       await downloadUrlToFile(scene.mogrtUrl, out, onProgress, downloadHeaders());
       if (!cachedFileOk(fs, out, 0)) {
         try {
           fs.rmSync(out, { force: true });
         } catch {}
-        throw new Error("MOGRT yuklanmadi yoki fayl bo'sh");
+        throw new Error("MOGRT failed to download or file is empty");
       }
       // Yaxlitlik: sha256 record + kutilgan hash tekshiruvi (opts.expectedSha256)
       // TODO(FF): expected hash katalog API'sidan (scene-darajali).
@@ -949,7 +949,7 @@ const AssetFlowCatalog = (() => {
 
   async function downloadPackToTemp(templateId, fileName, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Faqat After Effects ichida import");
+      throw new Error("Import only works inside After Effects");
     }
     const fs = require("fs");
     const path = require("path");
@@ -1001,7 +1001,7 @@ const AssetFlowCatalog = (() => {
           expectedSize > 0
             ? (expectedSize / 1048576).toFixed(0)
             : "?";
-        showToast(`Pack yuklanmoqda (~${mb} MB)…`);
+        showToast(`Downloading pack (~${mb} MB)…`);
       }
       try {
         await downloadUrlToFile(url, out, onProgress, downloadHeaders());
@@ -1016,7 +1016,7 @@ const AssetFlowCatalog = (() => {
         }
       }
       if (!cachedFileOk(fs, out, 0)) {
-        throw new Error("Pack yuklanmadi yoki fayl bo’sh");
+        throw new Error("Pack failed to download or file is empty");
       }
       // Yaxlitlik: sha256 hisobla + kutilgan hash bo'lsa tekshir (aks holda yozib qo'y).
       // TODO(FF): expected hash katalog API'sidan — hozircha opts.expectedSha256.
@@ -1039,18 +1039,18 @@ const AssetFlowCatalog = (() => {
       } catch {}
       // zip ichidagi .mogrt yo’llarini o’chirishdan OLDIN olamiz — papka nomi muhim emas
       const zipMogrts = listEntriesInZip(child, out, ".mogrt");
-      if (typeof showToast === "function") showToast("Pack ochilmoqda…");
+      if (typeof showToast === "function") showToast("Extracting pack…");
       try {
         // macOS ships `unzip` by default. execFileSync exit != 0 bo'lsa throw qiladi.
         child.execFileSync("unzip", ["-o", out, "-d", dir], { timeout: 60_000 });
       } catch (e) {
-        throw new Error("ZIP ochilmadi. Pack ichida .aep yoki .mogrt bo’lishi kerak.");
+        throw new Error("Could not open ZIP. The pack must contain an .aep or .mogrt file.");
       }
       // Robustlik: unzip nol fayl chiqarsa (buzuq/bo'sh arxiv) — jimgina emas, aniq xato
       let __extracted = [];
       try { __extracted = fs.readdirSync(dir); } catch {}
       if (!__extracted.length) {
-        throw new Error("ZIP bo'sh yoki ochilmadi — pack buzilgan bo'lishi mumkin.");
+        throw new Error("ZIP is empty or could not be opened — the pack may be corrupted.");
       }
       // Zip endi kerak emas — faqat ochilgan papka qoladi (sidecar hash ham)
       try {
@@ -1072,7 +1072,7 @@ const AssetFlowCatalog = (() => {
       if (mogrts.length > 1) {
         throw mogrtPackError(mogrtItemsFromDir(fs, path, child, dir));
       }
-      throw new Error("ZIP ichida .aep yoki .mogrt topilmadi. Pack fayl noto’g’ri.");
+      throw new Error("No .aep or .mogrt found inside the ZIP. The pack file is invalid.");
     }
 
     // .mogrt — to’g’ridan yuklangan yakka fayl: extract (unikal papka,
@@ -1249,7 +1249,7 @@ const AssetFlowCatalog = (() => {
   //   status: "installed" | "adobe" | "manual" | "error"
   async function resolveOneFont(font) {
     const family = String((font && (font.family || font.postScript)) || "").trim();
-    if (!family) return { name: "(noma'lum)", status: "manual", message: "Shrift nomi yo'q" };
+    if (!family) return { name: "(unknown)", status: "manual", message: "Font name missing" };
 
     // 1) Google Fonts / ochiq manba → yuklab o'rnatamiz.
     try {
@@ -1264,7 +1264,7 @@ const AssetFlowCatalog = (() => {
         return {
           name: family,
           status: "installed",
-          message: "Google Fonts'dan o'rnatildi — AE'ni qayta ishga tushiring"
+          message: "Installed from Google Fonts — restart AE"
         };
       }
     } catch (e) {
@@ -1277,7 +1277,7 @@ const AssetFlowCatalog = (() => {
         return {
           name: family,
           status: "adobe",
-          message: "Adobe Font — Creative Cloud avtomat yoqadi (CC ochiq bo'lsin)"
+          message: "Adobe Font — Creative Cloud will activate it automatically (keep CC open)"
         };
       }
     } catch (e) {}
@@ -1286,7 +1286,7 @@ const AssetFlowCatalog = (() => {
     return {
       name: family,
       status: "manual",
-      message: "Topilmadi — qo'lda o'rnating"
+      message: "Not found — install it manually"
     };
   }
 

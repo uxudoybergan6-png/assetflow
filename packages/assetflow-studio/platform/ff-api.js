@@ -66,7 +66,7 @@
       try { window.dispatchEvent(new CustomEvent("ff-auth-expired")); } catch (e) {}
     }
     if (!res.ok) {
-      var err = new Error((data && data.error) || "Server xatosi (HTTP " + res.status + ")");
+      var err = new Error((data && data.error) || "Server error (HTTP " + res.status + ")");
       err.status = res.status;
       err.code = data && data.code;
       err.data = data;
