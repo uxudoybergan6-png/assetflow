@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
 import yauzl from "yauzl";
+import { PACK_EXT_APP, DEFAULT_APP } from "./apps.js";
 
-/** Zip ichidan qidiriladigan kengaytmalar — papka/joylashuv muhim emas (tolerant). */
-const PACK_EXT_APP: Record<string, string> = { ".aep": "ae", ".mogrt": "pr" };
+/** Zip ichidan qidiriladigan pack kengaytmalari (papka/joylashuv muhim emas — tolerant).
+ *  Kanonik ro'yxat apps.ts'da (ae/pr/motion/resolve). */
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 const VIDEO_EXTS = [".mp4", ".mov", ".webm"];
 
@@ -39,7 +40,7 @@ export async function extractIngestZip(
       }
       let packPath: string | null = null;
       let packExt: string | null = null;
-      let templateApp = "ae";
+      let templateApp = DEFAULT_APP;
       let imagePath: string | null = null;
       let videoPath: string | null = null;
       let finished = false;
