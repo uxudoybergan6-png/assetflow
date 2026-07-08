@@ -889,12 +889,35 @@ async function storeMogrtScenesFromZip(
   }
 }
 
-function handleAssetsUpload(
+async function handleAssetsUpload(
   req: ExpressRequest,
   res: ExpressResponse,
   next: NextFunction
 ) {
-  setUploadProgress(String(req.params.id), {
+  const id = String(req.params.id);
+  // FAZA 2 (M3) — OWNERSHIP tekshiruvi multer'дан OLDIN. Ilgari multer (3.3GB gacha) faylni
+  // diskка YOZGANDAN KEYIN handler ownership'ni tekshirardi → begona contributor templateId'siga
+  // cross-tenant disk yozuv / disk-exhaustion mumkin edi. Endi baytlar diskка tushишидан oldin
+  // egalikni majburlaymiz (DB xato → 500, multer ishga tushmaydi).
+  try {
+    const tpl = await prisma.contributorTemplate.findUnique({
+      where: { id },
+      select: { contributorId: true },
+    });
+    if (!tpl) {
+      res.status(404).json({ error: "Template not found" });
+      return;
+    }
+    if (req.user!.role !== "ADMIN" && tpl.contributorId !== req.user!.userId) {
+      res.status(403).json({ error: "Not authorized" });
+      return;
+    }
+  } catch (e) {
+    console.error("[upload-assets] ownership pre-check xato:", e);
+    res.status(500).json({ error: "Could not verify template ownership — please try again" });
+    return;
+  }
+  setUploadProgress(id, {
     stage: "receive",
     pct: 0,
     message: "Receiving file…",
@@ -2829,24 +2852,10 @@ contributorRouter.delete(
   }
 );
 
-contributorRouter.patch(
-  "/users/:id/role",
-  requireAuth,
-  requireAdmin,
-  async (req, res) => {
-    const role = z.nativeEnum(UserRole).safeParse(req.body?.role);
-    if (!role.success) {
-      res.status(400).json({ error: "Invalid role" });
-      return;
-    }
-    const user = await prisma.user.update({
-      where: { id: String(req.params.id) },
-      data: { role: role.data },
-      select: { id: true, email: true, name: true, role: true },
-    });
-    res.json(user);
-  }
-);
+// FAZA 2 (M2) — LEGACY `PATCH /users/:id/role` OLIB TASHLANDI: unда last-admin himoya YO'Q,
+// audit YO'Q edi (o'zini/oxirgi adminni tushirib qo'yish + izsiz rol o'zgarishi mumkin edi).
+// Barcha rol o'zgarishlari canonical `PATCH /api/admin/users/:id/role` (admin.ts) orqali —
+// u last-admin guard + audit log bilan himoyalangan.
 
 contributorRouter.patch(
   "/users/:userId/status",

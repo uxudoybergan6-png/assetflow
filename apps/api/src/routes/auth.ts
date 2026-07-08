@@ -71,7 +71,8 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().optional(),
-  asContributor: z.boolean().optional(),
+  // FAZA 2 (M1) — `asContributor` self-grant OLIB TASHLANDI: register DOIM USER yaratadi.
+  // Contributor bo'lish faqat request → admin-approve orqali (admin.ts canonical, guarded).
   turnstileToken: z.string().optional(),
 });
 
@@ -111,7 +112,8 @@ authRouter.post("/register", authLimiter, async (req, res) => {
       email,
       passwordHash,
       name,
-      role: parsed.data.asContributor ? UserRole.CONTRIBUTOR : UserRole.USER,
+      // FAZA 2 (M1) — DOIM USER (admin-approval gate'ini chetlab bo'lmasin).
+      role: UserRole.USER,
     },
   });
 
