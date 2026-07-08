@@ -1488,7 +1488,10 @@ contributorRouter.post(
       pct: 5,
       message: "Pack received, running security check…",
     });
-    await processPackInBackground(id, packKey, existing.contributorId, isZip);
+    // FAZA 5 (A4) — og'ir quvur (download+hash+extract) ham ingest semafori ostida.
+    await withIngestSlot(() =>
+      processPackInBackground(id, packKey, existing.contributorId, isZip)
+    );
     // FAZA 5 (A2) — pack (+ ekstraktsiya qilingan sahnalar) kalitlari keshini yangilash.
     await syncTemplateAssetKeys(id, { ensure: [packKey] });
     res.json({ ok: true, extracting: isZip, scanning: false });
@@ -1560,6 +1563,35 @@ contributorRouter.post(
     res.json({ uploads });
   }
 );
+
+/**
+ * FAZA 5 (A4) — ingest/pack-scan konkurensiya cap'i. Bir vaqtda ishlanadigan og'ir
+ * quvurlar soni (zip ochish, hash, ekstraktsiya — CPU + tmpfs RAM) cheklanadi:
+ * parallel so'rovlar portlashi (bir nechta contributor birdan 50 talik partiya
+ * yuborsa) xotira/CPU'ni tugatmasin. Slot navbati FIFO; slot bo'shaganda
+ * to'g'ridan keyingi kutayotganga o'tadi (active hisobi oshib ketmaydi).
+ */
+const INGEST_CONCURRENCY = (() => {
+  const v = Number(process.env.INGEST_CONCURRENCY);
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 2;
+})();
+let ingestActive = 0;
+const ingestWaiters: Array<() => void> = [];
+async function withIngestSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (ingestActive < INGEST_CONCURRENCY) {
+    ingestActive++;
+  } else {
+    await new Promise<void>((resolve) => ingestWaiters.push(resolve));
+    // Slot bo'shatuvchidan meros qilib olindi — active allaqachon hisobda.
+  }
+  try {
+    return await fn();
+  } finally {
+    const next = ingestWaiters.shift();
+    if (next) next();
+    else ingestActive--;
+  }
+}
 
 type IngestItemResult = {
   key: string;
@@ -1959,7 +1991,8 @@ contributorRouter.post(
     }
     const results: IngestItemResult[] = [];
     for (const key of p.data.keys) {
-      results.push(await ingestOneZip(contributorId, key, rights));
+      // FAZA 5 (A4) — global semafor: parallel so'rovlar yig'indisi ham cap ostida.
+      results.push(await withIngestSlot(() => ingestOneZip(contributorId, key, rights)));
     }
 
     // FAZA 3 (E) — admin-notify: butun partiya uchun BITTA jamlama xat (spam emas).
