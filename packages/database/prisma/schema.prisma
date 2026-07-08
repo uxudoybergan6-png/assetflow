@@ -48,6 +48,12 @@ model User {
   // Admin rol berganda (yoki rad etganda) null'ga qaytadi.
   contributorRequestedAt DateTime?
   tokenVersion         Int       @default(0)
+  // ADMIN 2FA (TOTP) — faqat ADMIN hisoblari uchun ishlatiladi.
+  // totpSecret AES-256-GCM shifrlangan (apps/api lib/twofa.ts), totpBackupCodes
+  // sha256-hash'langan bir martalik tiklash kodlari (ishlatilganda o'chiriladi).
+  totpSecret           String?
+  totpEnabled          Boolean   @default(false)
+  totpBackupCodes      String[]  @default([])
   stripeCustomerId     String?   @unique
   // FAZA 1c — GDPR self-serve o'chirish: belgilangan bo'lsa hisob anonimlashtirilgan
   // (PII tozalangan, tokenlar bekor qilingan). Moliyaviy yozuvlar (earning/payout) saqlanadi.

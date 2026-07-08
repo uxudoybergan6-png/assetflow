@@ -1,12 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma, UserRole } from "@creative-tools/database";
+import { adminRequire2fa } from "../lib/twofa.js";
 
 export interface AuthPayload {
   userId: string;
   email: string;
   role: UserRole;
   tokenVersion?: number;
+  /** requireAuth DB'dan to'ldiradi (JWT'da YO'Q) — ADMIN_REQUIRE_2FA gate uchun. */
+  totpEnabled?: boolean;
 }
 
 declare global {
@@ -61,6 +64,7 @@ export async function requireAuth(
       userId: pluginToken.user.id,
       email: pluginToken.user.email,
       role: pluginToken.user.role,
+      totpEnabled: pluginToken.user.totpEnabled,
     };
     next();
     return;
@@ -90,7 +94,12 @@ export async function requireAuth(
     res.status(403).json({ error: "Account is blocked", code: "ACCOUNT_BLOCKED" });
     return;
   }
-  req.user = { userId: user.id, email: user.email, role: user.role };
+  req.user = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    totpEnabled: user.totpEnabled,
+  };
   next();
 }
 
@@ -110,6 +119,16 @@ export function requireAdmin(
 ) {
   if (!req.user || req.user.role !== "ADMIN") {
     res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  // ADMIN_REQUIRE_2FA yoqilgan bo'lsa: 2FA yozilmagan admin admin-endpointlarga
+  // KIRA OLMAYDI (setup gate). Login va /api/auth/2fa/* (requireAuth, requireAdmin
+  // emas) ochiq qoladi — admin avval enrol qiladi, hech kim qulflanib qolmaydi.
+  if (adminRequire2fa() && req.user.totpEnabled !== true) {
+    res.status(403).json({
+      error: "Two-factor authentication is required for admin accounts — set it up in Settings → Security",
+      code: "TWO_FA_SETUP_REQUIRED",
+    });
     return;
   }
   next();

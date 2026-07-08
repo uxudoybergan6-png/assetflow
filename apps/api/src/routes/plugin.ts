@@ -18,6 +18,7 @@ import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExi
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 import { sendWelcomeEmail } from "../lib/notify.js";
+import { decryptTotpSecret, looksLikeBackupCode, verifyTotpCode } from "../lib/twofa.js";
 import {
   ensurePluginProfile,
   consumeDownload,
@@ -493,7 +494,36 @@ pluginRouter.post("/favorites", requireAuth, async (req: Request, res: Response)
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  // ADMIN hisobida TOTP 2FA yoqilgan bo'lsa majburiy (oddiy USER'ga tegmaydi).
+  totpCode: z.string().min(4).max(16).optional(),
 });
+
+/** ADMIN + 2FA yoqilgan: plagin login ham TOTP'siz o'tmasin (bypass yopiq).
+ *  true = davom etsin; false = javob yozildi. Backup kod bu yerda QABUL
+ *  QILINMAYDI (bir martalik kodlar faqat web /2fa/verify orqali sarflanadi). */
+async function checkPluginAdminTotp(
+  user: { role: string; totpEnabled: boolean; totpSecret: string | null },
+  totpCode: string | undefined,
+  res: Response
+): Promise<boolean> {
+  if (user.role !== "ADMIN" || !user.totpEnabled) return true;
+  const secret = user.totpSecret ? decryptTotpSecret(user.totpSecret) : null;
+  if (
+    totpCode &&
+    !looksLikeBackupCode(totpCode) &&
+    secret &&
+    (await verifyTotpCode(totpCode, secret))
+  ) {
+    return true;
+  }
+  res.status(401).json({
+    error: totpCode
+      ? "Incorrect 2FA code"
+      : "This admin account requires a 2FA code — add totpCode, or use the web Admin Console",
+    code: "TWO_FA_REQUIRED",
+  });
+  return false;
+}
 
 /** AE panel — email/parol → plugin token */
 pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) => {
@@ -518,6 +548,8 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
     res.status(401).json({ error: "Incorrect email or password" });
     return;
   }
+
+  if (!(await checkPluginAdminTotp(user, parsed.data.totpCode, res))) return;
 
   const profile = await ensurePluginProfile(user.id);
 
@@ -597,6 +629,17 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
     sendWelcomeEmail(user.email, user.name);
   }
 
+  // ADMIN + 2FA: device-code oqimida TOTP yig'ib bo'lmaydi — bypass ochiq
+  // qolmasin, aniq xabar bilan rad etiladi (web Admin Console'dan kirilsin).
+  if (user.role === "ADMIN" && user.totpEnabled) {
+    await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
+    res.status(401).json({
+      error: "This admin account has 2FA enabled — sign in with email + password + code, or use the web Admin Console",
+      code: "TWO_FA_REQUIRED",
+    });
+    return;
+  }
+
   const profile = await ensurePluginProfile(user.id);
   if (profile.status === PluginAccountStatus.BLOCKED) {
     await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
@@ -617,6 +660,7 @@ const devicePasswordSchema = z.object({
   code: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(1),
+  totpCode: z.string().min(4).max(16).optional(),
 });
 
 /** 2b) Brauzer (device.html): email+parol bilan koda bog'laydi (Google muqobili).
@@ -654,6 +698,8 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
     res.status(401).json({ error: "Incorrect email or password" });
     return;
   }
+
+  if (!(await checkPluginAdminTotp(user, parsed.data.totpCode, res))) return;
 
   const profile = await ensurePluginProfile(user.id);
   if (profile.status === PluginAccountStatus.BLOCKED) {

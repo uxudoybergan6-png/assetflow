@@ -246,7 +246,19 @@ window.addEventListener('af-theme-change', (e) => {
     }
   } catch (_) {}
   renderNav();
-  route("overview");
+  // ADMIN_REQUIRE_2FA setup gate: login 2FA yozilishi shartligini bildirgan
+  // bo'lsa — to'g'ridan Security bo'limiga (Settings) olib boramiz.
+  let need2faSetup = false;
+  try {
+    need2faSetup = sessionStorage.getItem("af_2fa_setup_required") === "1";
+    if (need2faSetup) sessionStorage.removeItem("af_2fa_setup_required");
+  } catch (_) {}
+  if (need2faSetup) {
+    route("settings");
+    toast("Security", "Two-factor authentication is required for admin accounts — set it up below", "warn");
+  } else {
+    route("overview");
+  }
 })();
 </script>
 </body>

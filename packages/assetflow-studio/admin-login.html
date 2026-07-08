@@ -93,6 +93,22 @@
         <p class="auth-error hidden" id="loginError" role="alert"></p>
         <button type="submit" class="btn btn-primary btn-block">Sign in as admin</button>
       </form>
+
+      <!-- 2-bosqich: TOTP / backup kod (parol to'g'ri bo'lgach ko'rinadi) -->
+      <form id="twofaForm" class="hidden">
+        <div class="field">
+          <label for="twofaCode">Two-factor code</label>
+          <div class="field-wrap">
+            <span class="lead-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg></span>
+            <input id="twofaCode" class="input has-lead" name="code" required autocomplete="one-time-code" inputmode="text" placeholder="123456" autofocus>
+          </div>
+          <p class="hint" style="margin-top:6px">Enter the 6-digit code from your authenticator app, or one of your backup codes (<code>XXXX-XXXX</code>).</p>
+        </div>
+        <p class="auth-error hidden" id="twofaError" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-block">Verify code</button>
+        <button type="button" class="btn btn-block" id="twofaBack" style="margin-top:8px">← Back</button>
+      </form>
+
       <p class="auth-foot" style="font-size:12px">
         Admin access is granted by an existing administrator.
       </p>
@@ -157,6 +173,32 @@
     }
   }
 
+  // ADMIN 2FA — parol bosqichidan keyingi qisqa muddatli token (sessiya EMAS)
+  let pending2faToken = null;
+
+  function show2faStep(show) {
+    document.getElementById("loginForm").classList.toggle("hidden", show);
+    document.getElementById("twofaForm").classList.toggle("hidden", !show);
+    const head = document.querySelector(".form-head p");
+    if (head) head.textContent = show
+      ? "Almost there — confirm it's you with your authenticator code."
+      : "Admin access only — approve templates and manage the platform.";
+    if (show) document.getElementById("twofaCode").focus();
+  }
+
+  function finishAdminLogin(email) {
+    const remember = chk.classList.contains("on");
+    if (remember) {
+      // ONLY the email is saved — the JWT is never written to localStorage (XSS risk).
+      localStorage.setItem(RM_EMAIL, email);
+    } else {
+      localStorage.removeItem(RM_EMAIL);
+    }
+    localStorage.removeItem(RM_SESSION);
+    location.href = ASSETFLOW_STUDIO.adminUrl;
+  }
+
+  let loginEmail = "";
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = document.getElementById("loginError");
@@ -169,21 +211,44 @@
     }
     const r = await AssetFlowAuth.login(email, fd.get("password"));
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
+    err.classList.add("hidden");
+    if (r.twoFactorRequired) {
+      // Parol to'g'ri — endi kod bosqichi (sessiya hali OCHILMAGAN).
+      pending2faToken = r.pendingToken;
+      loginEmail = email;
+      show2faStep(true);
+      return;
+    }
     if (r.session.role !== "admin") {
       err.textContent = "This account is not Admin (role: " + r.session.role + "). Set it to ADMIN in PostgreSQL.";
       err.classList.remove("hidden");
       AssetFlowAuth.logout(false);
       return;
     }
-    const remember = chk.classList.contains("on");
-    if (remember) {
-      // ONLY the email is saved — the JWT is never written to localStorage (XSS risk).
-      localStorage.setItem(RM_EMAIL, email);
-    } else {
-      localStorage.removeItem(RM_EMAIL);
+    finishAdminLogin(email);
+  });
+
+  document.getElementById("twofaForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("twofaError");
+    const code = document.getElementById("twofaCode").value.trim();
+    if (!code) return;
+    const r = await AssetFlowAuth.verify2fa(pending2faToken, code);
+    if (!r.ok) {
+      err.textContent = r.error;
+      err.classList.remove("hidden");
+      // Pending token eskirgan bo'lsa parol bosqichiga qaytaramiz
+      if (/expired|password/i.test(r.error || "")) show2faStep(false);
+      return;
     }
-    localStorage.removeItem(RM_SESSION);
-    location.href = ASSETFLOW_STUDIO.adminUrl;
+    err.classList.add("hidden");
+    finishAdminLogin(loginEmail);
+  });
+
+  document.getElementById("twofaBack").addEventListener("click", () => {
+    pending2faToken = null;
+    document.getElementById("twofaCode").value = "";
+    show2faStep(false);
   });
 })();
 </script>

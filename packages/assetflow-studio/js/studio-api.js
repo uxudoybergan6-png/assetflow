@@ -122,6 +122,26 @@ const StudioApi = (() => {
     return data;
   }
 
+  /* ── ADMIN 2FA (TOTP) ── */
+  async function verify2fa(pendingToken, code) {
+    return request("/api/auth/2fa/verify", {
+      method: "POST",
+      body: { pendingToken, code },
+    });
+  }
+  async function get2faStatus() {
+    return request("/api/auth/2fa/status");
+  }
+  async function setup2fa() {
+    return request("/api/auth/2fa/setup", { method: "POST" });
+  }
+  async function enable2fa(code) {
+    return request("/api/auth/2fa/enable", { method: "POST", body: { code } });
+  }
+  async function disable2fa(code) {
+    return request("/api/auth/2fa/disable", { method: "POST", body: { code } });
+  }
+
   async function register({ email, password, name, turnstileToken }) {
     const data = await request("/api/auth/register", {
       method: "POST",
@@ -559,6 +579,11 @@ const StudioApi = (() => {
     token,
     request,
     login,
+    verify2fa,
+    get2faStatus,
+    setup2fa,
+    enable2fa,
+    disable2fa,
     register,
     googleLogin,
     createTemplate,

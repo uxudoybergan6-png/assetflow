@@ -18,6 +18,21 @@ import {
 import { verifyTurnstile } from "../lib/turnstile.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 import { sendWelcomeEmail } from "../lib/notify.js";
+import { writeAuditLog } from "../lib/audit-log.js";
+import {
+  adminRequire2fa,
+  consumeBackupCode,
+  decryptTotpSecret,
+  encryptTotpSecret,
+  generateBackupCodes,
+  generateTotpSecret,
+  looksLikeBackupCode,
+  signPendingToken,
+  totpKeyUri,
+  totpQrDataUrl,
+  verifyPendingToken,
+  verifyTotpCode,
+} from "../lib/twofa.js";
 
 export const authRouter = Router();
 
@@ -66,6 +81,14 @@ const forgotLimiter = rateLimit({
   max: 5,
   keyPrefix: "auth-forgot",
   message: "Too many requests — please try again shortly",
+});
+
+/** 2FA kod bosqichi — brute-force'dan qattiq himoya (TOTP 6 raqam) */
+const twofaLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 5,
+  keyPrefix: "auth-2fa",
+  message: "Too many code attempts — please try again in 1 minute",
 });
 
 const registerSchema = z.object({
@@ -181,6 +204,17 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
+  // ADMIN 2FA: parol TO'G'RI, lekin 2FA yoqilgan — to'liq JWT BERILMAYDI.
+  // Qisqa muddatli (5 daqiqa) pending token qaytadi; sessiya faqat
+  // POST /api/auth/2fa/verify (TOTP yoki backup kod) dan keyin ochiladi.
+  if (user.role === UserRole.ADMIN && user.totpEnabled) {
+    res.json({
+      twoFactorRequired: true,
+      pendingToken: signPendingToken(user.id, user.tokenVersion),
+    });
+    return;
+  }
+
   const token = signToken({
     userId: user.id,
     email: user.email,
@@ -196,6 +230,92 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
+  res.json({
+    token,
+    emailVerifyRequired: isEmailConfigured(),
+    // ADMIN_REQUIRE_2FA yoqilgan-u admin hali yozilmagan: sessiya OCHILADI
+    // (aks holda enrol qilib bo'lmasdi), lekin admin-endpointlar requireAdmin'da
+    // TWO_FA_SETUP_REQUIRED bilan yopiq — UI setup gate ko'rsatadi.
+    ...(user.role === UserRole.ADMIN && adminRequire2fa() && !user.totpEnabled
+      ? { twoFactorSetupRequired: true }
+      : {}),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: avatarPublicUrl(user.id, user.image),
+      role: user.role,
+      emailVerified: !!user.emailVerified,
+      subscription: user.subscription,
+      contributorBlocked: false,
+    },
+  });
+});
+
+/* ── ADMIN 2FA — kod bosqichi (parol → TOTP/backup kod → to'liq sessiya) ── */
+const twofaVerifySchema = z.object({
+  pendingToken: z.string().min(10),
+  code: z.string().min(4).max(16),
+});
+
+authRouter.post("/2fa/verify", twofaLimiter, async (req, res) => {
+  const parsed = twofaVerifySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
+    return;
+  }
+  const pending = verifyPendingToken(parsed.data.pendingToken);
+  if (!pending) {
+    res.status(401).json({ error: "Sign-in step expired — enter your password again", code: "PENDING_EXPIRED" });
+    return;
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: pending.userId },
+    include: { subscription: true },
+  });
+  if (
+    !user ||
+    user.role !== UserRole.ADMIN ||
+    !user.totpEnabled ||
+    user.tokenVersion !== pending.tokenVersion
+  ) {
+    res.status(401).json({ error: "Sign-in step expired — enter your password again", code: "PENDING_EXPIRED" });
+    return;
+  }
+
+  const code = parsed.data.code.trim();
+  let ok = false;
+  if (looksLikeBackupCode(code)) {
+    const remaining = consumeBackupCode(code, user.totpBackupCodes);
+    if (remaining) {
+      ok = true;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { totpBackupCodes: remaining },
+      });
+      writeAuditLog({
+        actorId: user.id,
+        action: "2fa_backup_code_used",
+        targetType: "user",
+        targetId: user.id,
+        detail: `Backup kod ishlatildi (qolgani: ${remaining.length})`,
+      });
+    }
+  } else {
+    const secret = user.totpSecret ? decryptTotpSecret(user.totpSecret) : null;
+    ok = !!secret && (await verifyTotpCode(code, secret));
+  }
+  if (!ok) {
+    res.status(401).json({ error: "Incorrect code — try again", code: "TWO_FA_INVALID" });
+    return;
+  }
+
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  });
   res.json({
     token,
     emailVerifyRequired: isEmailConfigured(),
@@ -237,6 +357,16 @@ authRouter.post("/google", authLimiter, async (req, res) => {
     sendWelcomeEmail(user.email, user.name);
   }
 
+  // ADMIN 2FA: Google orqali kirish ham TOTP bosqichini chetlab O'TMAYDI
+  // (Google hisobi buzilsa ham admin sessiya ochilmasin).
+  if (user.role === UserRole.ADMIN && user.totpEnabled) {
+    res.json({
+      twoFactorRequired: true,
+      pendingToken: signPendingToken(user.id, user.tokenVersion),
+    });
+    return;
+  }
+
   const token = signToken({
     userId: user.id,
     email: user.email,
@@ -247,6 +377,9 @@ authRouter.post("/google", authLimiter, async (req, res) => {
   res.json({
     token,
     emailVerifyRequired: isEmailConfigured(),
+    ...(user.role === UserRole.ADMIN && adminRequire2fa() && !user.totpEnabled
+      ? { twoFactorSetupRequired: true }
+      : {}),
     user: {
       id: user.id,
       email: user.email,
@@ -403,6 +536,142 @@ authRouter.post("/resend-verification", forgotLimiter, async (req, res) => {
     }
   }
   res.json({ ok: true, message: "If the account exists and is unverified, a link has been sent" });
+});
+
+/* ── ADMIN 2FA — enrol/o'chirish (autentifikatsiyalangan ADMIN) ──────────────
+ * setup    → yangi sir + QR + backup kodlar (hali YOQILMAGAN holda saqlanadi)
+ * enable   → authenticator'dagi kod tasdiqlansa totpEnabled=true
+ * disable  → joriy TOTP yoki backup kod bilan o'chiriladi
+ * status   → UI uchun holat (enabled, qolgan backup kodlar soni, majburiylik)
+ * Bu yo'llar requireAdmin EMAS, requireAuth+rol tekshiruvi bilan — chunki
+ * ADMIN_REQUIRE_2FA gate'i requireAdmin'da (aks holda enrol qilib bo'lmasdi). */
+
+function require2faAdmin(req: import("express").Request, res: import("express").Response): boolean {
+  if (!req.user || req.user.role !== "ADMIN") {
+    res.status(403).json({ error: "Admin access required" });
+    return false;
+  }
+  return true;
+}
+
+authRouter.get("/2fa/status", requireAuth, async (req, res) => {
+  if (!require2faAdmin(req, res)) return;
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { totpEnabled: true, totpSecret: true, totpBackupCodes: true },
+  });
+  res.json({
+    enabled: !!user?.totpEnabled,
+    pendingSetup: !!user?.totpSecret && !user?.totpEnabled,
+    backupCodesLeft: user?.totpBackupCodes?.length ?? 0,
+    required: adminRequire2fa(),
+  });
+});
+
+authRouter.post("/2fa/setup", requireAuth, twofaLimiter, async (req, res) => {
+  if (!require2faAdmin(req, res)) return;
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (user.totpEnabled) {
+    res.status(409).json({ error: "2FA is already enabled — disable it first to re-enroll" });
+    return;
+  }
+  const secret = generateTotpSecret();
+  const codes = generateBackupCodes();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      totpSecret: encryptTotpSecret(secret),
+      totpBackupCodes: codes.hashed,
+      totpEnabled: false,
+    },
+  });
+  const otpauthUrl = totpKeyUri(user.email, secret);
+  res.json({
+    otpauthUrl,
+    qrDataUrl: await totpQrDataUrl(otpauthUrl),
+    // Ochiq backup kodlar FAQAT shu javobda — qayta so'rab bo'lmaydi.
+    backupCodes: codes.plain,
+    secret, // QR skanerlab bo'lmasa qo'lda kiritish uchun
+  });
+});
+
+const twofaCodeSchema = z.object({ code: z.string().min(4).max(16) });
+
+authRouter.post("/2fa/enable", requireAuth, twofaLimiter, async (req, res) => {
+  if (!require2faAdmin(req, res)) return;
+  const parsed = twofaCodeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Enter the 6-digit code" });
+    return;
+  }
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user?.totpSecret) {
+    res.status(400).json({ error: "Start setup first (POST /2fa/setup)" });
+    return;
+  }
+  if (user.totpEnabled) {
+    res.status(409).json({ error: "2FA is already enabled" });
+    return;
+  }
+  const secret = decryptTotpSecret(user.totpSecret);
+  if (!secret || !(await verifyTotpCode(parsed.data.code, secret))) {
+    res.status(401).json({ error: "Incorrect code — check your authenticator app", code: "TWO_FA_INVALID" });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpEnabled: true },
+  });
+  writeAuditLog({
+    actorId: user.id,
+    action: "2fa_enabled",
+    targetType: "user",
+    targetId: user.id,
+    detail: "Admin TOTP 2FA yoqildi",
+  });
+  res.json({ ok: true, enabled: true });
+});
+
+authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
+  if (!require2faAdmin(req, res)) return;
+  const parsed = twofaCodeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Enter the current code" });
+    return;
+  }
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user?.totpEnabled) {
+    res.status(400).json({ error: "2FA is not enabled" });
+    return;
+  }
+  const code = parsed.data.code.trim();
+  let ok = false;
+  if (looksLikeBackupCode(code)) {
+    ok = consumeBackupCode(code, user.totpBackupCodes) !== null;
+  } else {
+    const secret = user.totpSecret ? decryptTotpSecret(user.totpSecret) : null;
+    ok = !!secret && (await verifyTotpCode(code, secret));
+  }
+  if (!ok) {
+    res.status(401).json({ error: "Incorrect code — 2FA was not disabled", code: "TWO_FA_INVALID" });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: null, totpEnabled: false, totpBackupCodes: [] },
+  });
+  writeAuditLog({
+    actorId: user.id,
+    action: "2fa_disabled",
+    targetType: "user",
+    targetId: user.id,
+    detail: "Admin TOTP 2FA o'chirildi",
+  });
+  res.json({ ok: true, enabled: false });
 });
 
 authRouter.get("/me", requireAuth, async (req, res) => {

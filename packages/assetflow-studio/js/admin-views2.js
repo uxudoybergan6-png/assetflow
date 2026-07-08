@@ -345,7 +345,110 @@ window.afterRender.settings = function(){
   if(tba && CURRENT==='settings') tba.innerHTML =
     `<button class="adx-btn2 sm" onclick="route('settings')">Cancel</button>`+
     `<button class="adx-btn sm" onclick="toast('Saved','Settings saved in the browser (server sync in a future version)','success')"><i class="ph ph-check"></i>Save</button>`;
+  renderTwofaCard();
 };
+
+/* ── SECURITY — ADMIN 2FA (TOTP) ─────────────────────────────────────────── */
+async function renderTwofaCard(){
+  const el = document.getElementById('twofaCard');
+  if(!el) return;
+  el.innerHTML = `<div style="font-size:12px;color:var(--muted2)">Loading 2FA status…</div>`;
+  try{
+    const st = await StudioApi.get2faStatus();
+    if(st.enabled){
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="adx-h16" style="font-size:14px">Two-factor authentication (2FA)</span>
+          <span class="adx-bdg adx-bdg-approved"><i class="ph ph-check" style="font-size:10px"></i>Enabled</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:10px">
+          Signing in to this admin account requires a code from your authenticator app.
+          Backup codes left: <b style="color:var(--text)">${st.backupCodesLeft}</b>${st.backupCodesLeft<=2?' <span style="color:#FFB27C">— running low, consider re-enrolling</span>':''}.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input class="adx-input mono" id="twofaDisableCode" placeholder="Current code or backup code" style="width:230px">
+          <button class="adx-btn-dghost sm" onclick="afDisableTwofa()" style="height:32px;padding:0 13px;font-size:11.5px;border-radius:999px;display:inline-flex;align-items:center;gap:6px"><i class="ph ph-prohibit"></i>Disable 2FA</button>
+        </div>`;
+    } else {
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="adx-h16" style="font-size:14px">Two-factor authentication (2FA)</span>
+          <span class="adx-bdg adx-bdg-soft"><i class="ph ph-warning" style="font-size:10px"></i>Not enabled</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px">
+          Protect the admin console with an authenticator app (Google Authenticator, 1Password, Authy…).
+          After enabling, sign-in requires your password <b>and</b> a 6-digit code.
+          ${st.required?'<div style="color:#FFB27C;margin-top:6px"><i class="ph ph-warning"></i> 2FA is <b>required</b> for admin accounts on this server — admin screens stay locked until you finish setup.</div>':''}
+        </div>
+        <button class="adx-btn sm" onclick="afStartTwofaSetup()"><i class="ph ph-shield-check"></i>Enable 2FA</button>`;
+    }
+  }catch(e){
+    el.innerHTML = `<div style="font-size:12px;color:#FF6B5E">2FA status unavailable: ${esc(e.message||'error')}</div>`;
+  }
+}
+
+window.afStartTwofaSetup = async function(){
+  const el = document.getElementById('twofaCard');
+  if(!el) return;
+  el.innerHTML = `<div style="font-size:12px;color:var(--muted2)">Generating secret…</div>`;
+  try{
+    const s = await StudioApi.setup2fa();
+    window._AF_2FA_CODES = s.backupCodes;
+    el.innerHTML = `
+      <div class="adx-h16" style="font-size:14px;margin-bottom:10px">Set up 2FA — scan, save codes, confirm</div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div style="flex:none;text-align:center">
+          <img src="${s.qrDataUrl}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px">
+          <div style="font-size:10px;color:var(--muted2);margin-top:6px;max-width:180px;word-break:break-all">Manual key: <span class="adx-mono">${esc(s.secret)}</span></div>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:8px">
+            <b style="color:var(--text)">1.</b> Scan the QR with your authenticator app.<br>
+            <b style="color:var(--text)">2.</b> Save these <b>backup codes</b> — shown only ONCE. Each works one time if you lose the device:
+          </div>
+          <div class="adx-mono" id="twofaBackupList" style="font-size:12px;background:var(--f1);border:1px solid var(--hair2);border-radius:10px;padding:10px 12px;line-height:1.7;columns:2;margin-bottom:8px">${s.backupCodes.map(esc).join('<br>')}</div>
+          <button class="adx-btn2 sm" onclick="navigator.clipboard&&navigator.clipboard.writeText((window._AF_2FA_CODES||[]).join('\\n')).then(()=>toast('Copied','Backup codes copied to clipboard','success'))"><i class="ph ph-copy"></i>Copy codes</button>
+          <div style="font-size:12px;color:var(--muted);margin:12px 0 6px"><b style="color:var(--text)">3.</b> Enter the current 6-digit code to activate:</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="adx-input mono" id="twofaEnableCode" placeholder="123456" maxlength="6" style="width:120px">
+            <button class="adx-btn sm" onclick="afEnableTwofa()"><i class="ph ph-check"></i>Activate</button>
+            <button class="adx-btn2 sm" onclick="renderTwofaCard()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }catch(e){
+    toast('Error', e.message||'Setup failed', 'error');
+    renderTwofaCard();
+  }
+};
+
+window.afEnableTwofa = async function(){
+  const inp = document.getElementById('twofaEnableCode');
+  const code = (inp&&inp.value||'').trim();
+  if(!code){ toast('Code','Enter the 6-digit code from the app','warn'); return; }
+  try{
+    await StudioApi.enable2fa(code);
+    window._AF_2FA_CODES = null;
+    toast('Enabled','2FA is now required when signing in to this admin account','success');
+    renderTwofaCard();
+  }catch(e){
+    toast('Incorrect code', e.message||'Check the authenticator app', 'error');
+  }
+};
+
+window.afDisableTwofa = async function(){
+  const inp = document.getElementById('twofaDisableCode');
+  const code = (inp&&inp.value||'').trim();
+  if(!code){ toast('Code','Enter the current code or a backup code','warn'); return; }
+  try{
+    await StudioApi.disable2fa(code);
+    toast('Disabled','2FA turned off — this admin account is protected by password only','warn');
+    renderTwofaCard();
+  }catch(e){
+    toast('Incorrect code', e.message||'2FA was not disabled', 'error');
+  }
+};
+
 VIEWS.settings = function(){
   const cats = (typeof CATS!=='undefined'?CATS:[]);
   const rules = [
@@ -355,6 +458,7 @@ VIEWS.settings = function(){
     ['Send email to contributor on soft reject',false],
   ];
   return `
+    <div class="adx-card" id="twofaCard" style="padding:18px 20px;margin-bottom:16px"></div>
     <div class="adx-grid2">
       <div class="adx-card" style="padding:18px 20px">
         <div class="adx-h16" style="font-size:14px;margin-bottom:14px">Marketplace settings</div>

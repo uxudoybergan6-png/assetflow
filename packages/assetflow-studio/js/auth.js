@@ -77,11 +77,34 @@ const AssetFlowAuth = (() => {
     }
     try {
       const data = await StudioApi.login((email || "").trim(), password);
+      // ADMIN 2FA: parol to'g'ri, endi kod bosqichi — sessiya HALI ochilmadi.
+      if (data && data.twoFactorRequired) {
+        return { ok: true, twoFactorRequired: true, pendingToken: data.pendingToken };
+      }
       const session = sessionFromUser(data);
+      if (data && data.twoFactorSetupRequired) {
+        // ADMIN_REQUIRE_2FA yoqilgan, admin hali yozilmagan — konsol setup gate ko'rsatadi.
+        try { sessionStorage.setItem("af_2fa_setup_required", "1"); } catch {}
+      }
       setSession(session);
       return { ok: true, session };
     } catch (e) {
       return { ok: false, error: e.message || "Sign in failed" };
+    }
+  }
+
+  /** 2FA kod bosqichi (TOTP yoki backup kod) — muvaffaqiyatda to'liq sessiya ochiladi. */
+  async function verify2fa(pendingToken, code) {
+    if (typeof StudioApi === "undefined") {
+      return { ok: false, error: "API connection unavailable" };
+    }
+    try {
+      const data = await StudioApi.verify2fa(pendingToken, code);
+      const session = sessionFromUser(data);
+      setSession(session);
+      return { ok: true, session };
+    } catch (e) {
+      return { ok: false, error: e.message || "Code verification failed" };
     }
   }
 
@@ -91,7 +114,13 @@ const AssetFlowAuth = (() => {
     }
     try {
       const data = await StudioApi.googleLogin(credential);
+      if (data && data.twoFactorRequired) {
+        return { ok: true, twoFactorRequired: true, pendingToken: data.pendingToken };
+      }
       const session = sessionFromUser(data);
+      if (data && data.twoFactorSetupRequired) {
+        try { sessionStorage.setItem("af_2fa_setup_required", "1"); } catch {}
+      }
       setSession(session);
       return { ok: true, session };
     } catch (e) {
@@ -174,6 +203,7 @@ const AssetFlowAuth = (() => {
     setSession,
     clearSession,
     login,
+    verify2fa,
     register,
     loginWithGoogle,
     logout,

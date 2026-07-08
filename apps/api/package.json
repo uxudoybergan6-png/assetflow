@@ -30,6 +30,8 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
+    "otplib": "^13.4.1",
+    "qrcode": "^1.5.4",
     "stripe": "^18.1.0",
     "typescript": "^5.8.3",
     "yauzl": "^3.4.0",
@@ -37,6 +39,7 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.6",
     "@types/yauzl": "^2.10.3",
     "@types/yazl": "^2.4.6",
     "tsx": "^4.19.4"

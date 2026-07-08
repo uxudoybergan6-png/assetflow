@@ -299,6 +299,11 @@
       const err = document.getElementById("loginError");
       const r = await AssetFlowAuth.loginWithGoogle(resp.credential);
       if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
+      if (r.twoFactorRequired) {
+        err.textContent = "This admin account uses 2FA — please sign in from the Admin Console (/admin/login.html).";
+        err.classList.remove("hidden");
+        return;
+      }
       const block = afterAuth(r, chk.classList.contains("on"));
       if (block) {
         err.textContent = block;
@@ -323,6 +328,11 @@
     const fd = new FormData(e.target);
     const r = await AssetFlowAuth.login(fd.get("email"), fd.get("password"));
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
+    if (r.twoFactorRequired) {
+      err.textContent = "This admin account uses 2FA — please sign in from the Admin Console (/admin/login.html).";
+      err.classList.remove("hidden");
+      return;
+    }
     const block = afterAuth(r, chk.classList.contains("on"));
     if (block) {
       err.textContent = block;
