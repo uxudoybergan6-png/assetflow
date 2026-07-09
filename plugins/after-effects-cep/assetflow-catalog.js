@@ -138,12 +138,17 @@ const AssetFlowCatalog = (() => {
       headers: catalogHeaders(),
     });
     if (!res.ok) {
-      // 401/403 — token eskirgan bo'lsa markaziy ushlagichga beramiz
+      // P20: javob tanasidan `code`ni o'qib markaziy ushlagichga BERAMIZ — faqat auth-bekor
+      // (401 / 403 ACCOUNT_BLOCKED|INACTIVE) sessiyani tugatadi; LIMIT_REACHED va h.k. EMAS.
+      let body = null;
+      try { body = await res.json(); } catch { body = null; }
+      const code = body && body.code;
       if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.handleAuthFailure) {
-        AssetFlowAccount.handleAuthFailure(res.status, !!AssetFlowAccount.token());
+        AssetFlowAccount.handleAuthFailure(res.status, !!AssetFlowAccount.token(), code);
       }
-      const err = new Error(`Catalog HTTP ${res.status}`);
+      const err = new Error((body && body.error) || `Catalog HTTP ${res.status}`);
       err.status = res.status;
+      err.code = code;
       throw err;
     }
     return res.json();
@@ -887,12 +892,15 @@ const AssetFlowCatalog = (() => {
             res.on("end", () => {
               cleanup();
               let msg = `Pack HTTP ${res.statusCode}`;
+              let code; // P20: biznes-kod (LIMIT_REACHED / PRO_REQUIRED / ACCOUNT_BLOCKED) — caller tarmoqlansin
               try {
                 const j = JSON.parse(body);
                 if (j && j.error) msg = j.error;
+                if (j && j.code) code = j.code;
               } catch (ignore) {}
               const err = new Error(msg);
               err.status = res.statusCode;
+              err.code = code;
               reject(err);
             });
             res.on("error", () => { cleanup(); reject(new Error(`Pack HTTP ${res.statusCode}`)); });

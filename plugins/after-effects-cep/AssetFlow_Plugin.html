@@ -8087,8 +8087,21 @@ function friendlyError(e){
     return 'Blocked by the video safety filter — soften the prompt and reduce explicit/sexual content, then try again';
   if(/Failed to fetch|NetworkError|ENOTFOUND|ECONNREFUSED|network/i.test(raw))
     return 'Couldn’t connect to the internet — check your network or the API';
-  if(/\b401\b|\b403\b|unauthorized|forbidden/i.test(raw))
+  // P20: 403 overloaded — biznes-kodni AVVAL hurmat qilamiz, faqat HAQIQIY auth-bekor (401 /
+  // token expired) "Session expired" beradi. LIMIT_REACHED/PRO_REQUIRED odatda o'z modallariga
+  // yo'naladi; bu fallback toast'ga tushsa ham hech qachon soxta "sessiya tugadi" ko'rsatilmaydi.
+  if(code==='LIMIT_REACHED')
+    return 'Monthly limit reached — upgrade to Pro for more';
+  if(code==='PRO_REQUIRED')
+    return 'This is a Pro template — upgrade to Pro to import it';
+  if(code==='ACCOUNT_BLOCKED')
+    return 'Your account was blocked — contact support';
+  if(code==='ACCOUNT_INACTIVE')
+    return 'Your account isn’t active — contact support';
+  if(status===401||/\b401\b|unauthorized/i.test(raw))
     return 'Session expired — please sign in again';
+  if(status===403||/\b403\b|forbidden/i.test(raw))
+    return 'You don’t have access to that';
   if(/\b5\d\d\b|server error|ETIMEDOUT|timeout/i.test(raw))
     return 'Server isn’t responding — try again shortly (it may be waking up from sleep)';
   if(/EvalScript error/i.test(raw))

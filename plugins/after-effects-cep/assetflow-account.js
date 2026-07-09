@@ -48,8 +48,17 @@ const AssetFlowAccount = (() => {
    * so'rovlarda ishlaydi — login (token'siz) 401'i hisobga olinmaydi.
    * catalog.js ham shu funksiyani chaqiradi (yagona xulq).
    */
-  function handleAuthFailure(status, hadToken) {
-    if ((status === 401 || status === 403) && hadToken) {
+  function handleAuthFailure(status, hadToken, code) {
+    // P20: FAQAT haqiqiy auth-bekor qilinish sessiyani tugatadi — 401 (eskirgan/yaroqsiz
+    // token) YOKI 403 ACCOUNT_BLOCKED/ACCOUNT_INACTIVE (admin bloklagan/o'chirilgan). 403 KOD'lari
+    // OVERLOADED: LIMIT_REACHED / PRO_REQUIRED / unpublished / umumiy forbidden ham 403, lekin
+    // ular AUTH emas — ularda token'ni TOZALAMAYMIZ (aks holda limitga yetgan user noto'g'ri
+    // "sessiya tugadi" bilan chiqib ketardi — P20 bug). Kod berilmasa (eski chaqiruv) 403 xavfsiz
+    // tomonga — sign-out QILINMAYDI (faqat 401 chiqaradi).
+    const isAuthInvalidation =
+      status === 401 ||
+      (status === 403 && (code === "ACCOUNT_BLOCKED" || code === "ACCOUNT_INACTIVE"));
+    if (isAuthInvalidation && hadToken) {
       clearToken();
       // Faqat HAQIQIY (bir marta tasdiqlangan) sessiya tugaganda UI signal beramiz.
       // Boot paytidagi eskirgan token 401'i — mehmon holati, ogohlantirish yo'q.
@@ -200,8 +209,9 @@ const AssetFlowAccount = (() => {
       const err = new Error(data?.error || `HTTP ${res.status}`);
       err.status = res.status;
       err.data = data;
-      // Token yuborilgan bo'lsa va 401/403 — sessiyani tozalab signal beramiz
-      handleAuthFailure(res.status, !!t);
+      err.code = data?.code; // P20: caller'lar biznes-kodga qarab tarmoqlansin (LIMIT_REACHED va h.k.)
+      // P20: FAQAT auth-bekor (401 / 403 ACCOUNT_BLOCKED|INACTIVE) sessiyani tozalaydi — kod uzatiladi.
+      handleAuthFailure(res.status, !!t, data?.code);
       throw err;
     }
     return data;
