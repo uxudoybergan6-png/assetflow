@@ -10101,6 +10101,9 @@ window.afGallery=(function(){
     imp:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
     dl:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
     trash:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+    proj:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>',
+    rst:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+    copy:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
     zin:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
     zout:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>',
     sel:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg>',
@@ -10151,6 +10154,14 @@ window.afGallery=(function(){
   function download(it){
     if(isCEP()){ toast('Download — use Import (AE Project panel)','info'); return false; }
     try{ var a=document.createElement('a'); a.href=it.url; a.download=(String(it.title||'assetflow').slice(0,40).replace(/[^\w.-]+/g,'_')||'assetflow'); document.body.appendChild(a); a.click(); document.body.removeChild(a); return true; }catch(e){ toast('Download failed','error'); return false; }
+  }
+  // P15: "Qayta gen" — asl tool'ga o'tib prompt+referenslarni composer'ga tiklaydi (RECENT bilan bir xil global handoff).
+  function galRestore(it){
+    if(!it||!it.prompt){ toast('This result has no saved prompt','info'); return; }
+    var c=it.cat||'image';
+    if(c==='video'&&typeof window.afVgRestoreGen==='function'&&typeof window.axGo==='function'){ window.axGo('vidgen'); setTimeout(function(){ try{window.afVgRestoreGen(it);}catch(e){} },60); return; }
+    if(typeof window.afIgRestoreGen==='function'&&typeof window.axGo==='function'){ window.axGo('imggen'); setTimeout(function(){ try{window.afIgRestoreGen(it);}catch(e){} },60); return; }
+    toast('Regenerate isn’t available here','info');
   }
 
   function render(container,opts){
@@ -10242,6 +10253,16 @@ window.afGallery=(function(){
           var gth=card.querySelector('.gth'); var vv=window.afVideoThumb(it.url);
           if(gth&&vv)gth.insertBefore(vv,gth.firstChild);
         }
+        // P15: My Library kartalari endi TO'LIQ amal panelini oladi (RECENT/sessiya bilan bir xil to'plam:
+        // Import · Add to project · Regenerate · Copy prompt · Delete). Select rejimda .gacts yashiriladi (CSS).
+        var acts=document.createElement('div'); acts.className='gacts';
+        var mkBtn=function(html,title,fn){ var b=document.createElement('div'); b.innerHTML=html; b.title=title; b.addEventListener('click',function(e){ e.stopPropagation(); fn(); }); return b; };
+        acts.appendChild(mkBtn(IC.imp,'Import to AE',function(){ importMedia(it); }));
+        if(it.id)acts.appendChild(mkBtn(IC.proj,'Add to project',function(){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }));
+        if(it.prompt)acts.appendChild(mkBtn(IC.rst,'Regenerate — restore prompt + references',function(){ galRestore(it); }));
+        if(it.prompt)acts.appendChild(mkBtn(IC.copy,'Copy prompt',function(){ window.afCopyText(it.prompt); }));
+        acts.appendChild(mkBtn(IC.trash,'Delete',function(){ galDeleteOne(it); }));
+        card.appendChild(acts);
         if(st.select){
           card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
         }else{
@@ -10268,6 +10289,17 @@ window.afGallery=(function(){
             if(done+fail===total){ st.select=(Object.keys(st.sel).length>0); selBtn.classList.toggle('on',st.select); draw(); toast(done+' deleted'+(fail?(' · '+fail+' failed'):''), fail?'warning':'success'); }
           });
         });
+      });
+    }
+
+    // P15: bitta karta o'chirish (amal panelidagi Delete) — tasdiq + server + kesh + redraw.
+    function galDeleteOne(it){
+      if(!it||!it.id){ toast('This result is still being saved','info'); return; }
+      window.afConfirm('Delete this generation? This can’t be undone. It’s also removed from the server.',{ok:'Delete',danger:true}).then(function(ok){
+        if(!ok)return;
+        studioDelete('/api/studio/gen/'+it.id).then(function(){
+          if(CACHE)CACHE=CACHE.filter(function(x){ return x.id!==it.id; }); delete st.sel[it.id]; draw(); toast('Deleted','success');
+        }).catch(function(){ toast('Delete failed','error'); });
       });
     }
 
