@@ -12,6 +12,10 @@
 
 **PHASE 3 (plugin AssetFlow_Plugin.html) ✅ (9 muammo, per-problem commit):** P16 Regenerate ikonasi viewBox ichida (Feather rotate-ccw); P10 "Publish a template" (CONTRIBUTOR) olib tashlandi (publish handlerlar dormant); P9 header "Catalog" toggle ishlaydi (afNavTab('catalog')+syncPillarSeg); P7 Copy prompt CEP execCommand + real boolean + BITTA toast; P8 Pro→Lemon Squeezy `/billing/checkout {plan:'pro'}`; P5+P6+P14 — gen kartalar HAQIQIY nisbat (card() inline aspect + `.recentgrid` de-scope + masonry), sessiya grid + adaptiv loyiha muqovasi, HISTORY strip scroll+katta+badge; P15 My Library kartalarga to'liq amal paneli (afGallery `.gacts`); P11 Sessions/Projects multi-select + bulk delete (cascade vs project-only semantika). Har biri `node --check` toza (15 blok). install-cep + AE jonli test kutilmoqda.
 
+**PHASE 4 (web platform/index.html) ✅:** P17 — AI Studio kartalar `columns:220px` (qat'iy 3 emas → keng ekranда moslashadi); P18 — Regenerate endi GENERATSIYA QILMAYDI: `restoreGenToComposer` (genGet → asl model + sozlama + referens/kadr composer'ga, buildParams teskarisi, kredit avtomatik sarflanmaydi); plagin allaqachon prefill qiladi. P13 — @mention cascade-delete + orphan (plagin `@imgN` strip+renumber+pre-gen sanitize; web defensive strip). Step 2 (web @-autocomplete) + Step 4 (atomik chip) DEFERRED (flagged). 7 web blok syntax toza.
+
+**PHASE 5 (cross-surface) — P12 ✅ DIAGNOSTIKA (kod o'zgarmadi):** headless (stub-auth) jonli test — web AI Studio mode toggle (Image↔Video↔Voice↔SFX) TO'G'RI ishlaydi (mode chip → popMode popover → onPickTool → composer qayta sozlanadi; skrinshot: Voiceover rejimi). Plaginда mode toggle YO'Q (alohida launcher tool sahifalari — ishlaydi). Xulosa: hech bir yuza buzuq emas (mode toggle oldingi partiyada tabs→chip qayta qurilганда tuzatilgan) → speculative fix qilinmadi (ishlayotgan kodni regress qilmaslik uchun).
+
 ---
 
 # Sessiya hisoboti — FIX-PROMPTS partiyasi (16/16 ✅) · 2026-07-09
