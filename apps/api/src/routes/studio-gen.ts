@@ -77,7 +77,8 @@ function genDownloadName(mode: string | undefined, resultKey: string, contentTyp
   return `frameflow-${mode || "gen"}.${ext}`;
 }
 
-async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
+// QA-FIX #12/#13: projects.ts ham qayta ishlatadi (gen media imzolash bitta joyda)
+export async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
   holder: T
 ): Promise<T> {
   if (!isS3Configured()) return holder;
@@ -356,6 +357,80 @@ studioGenRouter.post("/gen/sessions", async (req: Request, res: Response) => {
     },
   });
   res.status(201).json(session);
+});
+
+/** Gen asset'dan karta cover thumb (imzolangan). Video uchun poster (thumbKey),
+ *  rasm uchun asosiy fayl. QA-FIX #12/#13 — session rail + project cover'lar. */
+export async function genCoverThumbUrl(
+  a: { resultKey: string | null; thumbKey?: string | null; thumbUrl: string | null; url: string } | null | undefined
+): Promise<string | null> {
+  if (!a) return null;
+  const key = a.thumbKey || a.resultKey;
+  if (key && isS3Configured()) {
+    try {
+      return await getSignedDownloadUrl(key, 3600);
+    } catch {
+      return a.thumbUrl || null;
+    }
+  }
+  return a.thumbUrl || a.url || null;
+}
+
+/** GET /gen/sessions — foydalanuvchi sessiyalari ro'yxati (QA-FIX #12: Artlist uslubi rail).
+ *  Faqat kamida bitta tugagan gen'i bor sessiyalar (bo'sh/tashlab ketilganlar chiqmaydi).
+ *  Har biriga done-count, oxirgi faoliyat vaqti va cover thumb qo'shiladi. */
+studioGenRouter.get("/gen/sessions", async (req: Request, res: Response) => {
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 60));
+  const sessions = await prisma.genSession.findMany({
+    where: { userId: req.user!.userId, generations: { some: { status: "done" } } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      _count: { select: { generations: { where: { status: "done" } } } },
+      generations: {
+        where: { status: "done" },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: { assets: { take: 1 } },
+      },
+    },
+  });
+  const items = await Promise.all(
+    sessions.map(async (s) => {
+      const last = s.generations[0] ?? null;
+      return {
+        id: s.id,
+        title: s.title,
+        mode: s.mode,
+        createdAt: s.createdAt,
+        lastAt: last ? last.createdAt : s.createdAt,
+        count: s._count.generations,
+        coverUrl: await genCoverThumbUrl(last?.assets[0]),
+        coverMode: last ? last.mode : s.mode,
+      };
+    })
+  );
+  // Session.updatedAt gen yaratishda yangilanmaydi — faoliyat tartibi oxirgi gen bo'yicha
+  items.sort((x, y) => y.lastAt.getTime() - x.lastAt.getTime());
+  res.json({ items });
+});
+
+/** PATCH /gen/sessions/:id — sessiyani nomlash/qayta nomlash (QA-FIX #12). */
+const sessionPatchSchema = z.object({ title: z.string().trim().min(1).max(200) });
+studioGenRouter.patch("/gen/sessions/:id", async (req: Request, res: Response) => {
+  const p = sessionPatchSchema.safeParse(req.body);
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  const id = String(req.params.id);
+  const session = await prisma.genSession.findUnique({ where: { id } });
+  if (!session || session.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+  const updated = await prisma.genSession.update({ where: { id }, data: { title: p.data.title } });
+  res.json(updated);
 });
 
 /** GET /gen/sessions/:id/generations — sessiya tarixi (paginatsiya + status filtri). */
