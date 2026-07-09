@@ -17756,8 +17756,20 @@ class Component extends DCLogic {
     this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();
     this.loadSessions(); this.loadProjects(); // QA-FIX #12/#13
     FFAPI.me().then(u => { FFAPI.setSession(FFAPI.getToken(), u); this.setState({ user: u, accName: (u && u.name) || '' }); }).catch(() => {});
+    // P16 (SYNC) — oynaga qaytilganda holat yangilanadi (plagin↔web almashganda stale window yo'q).
+    // 20s throttle — API'ni bosmaslik; bir marta o'rnatiladi.
+    if (!this._focusRefWired) {
+      this._focusRefWired = true;
+      window.addEventListener('focus', () => {
+        const now = Date.now();
+        if (now - (this._lastFocusRef || 0) < 20000) return;
+        this._lastFocusRef = now;
+        if (window.FFAPI && FFAPI.getToken()) { this.refreshCredits(); this.loadHistory(); this.loadSessions(); this.loadProjects(); }
+      });
+    }
   }
   async refreshCredits() {
+    if (this._creditsBusy) return; this._creditsBusy = true; // P16 (SPEED) — parallel dublikat so'rov yo'q
     try {
       const c = await FFAPI.credits();
       const st = (c && c.storage) || null; // FAZA 2 #20 — storage kvota (X / Y GB)
@@ -17767,6 +17779,7 @@ class Component extends DCLogic {
         storageQuota: st ? (st.quotaBytes || 0) : 0,
       });
     } catch (e) {}
+    this._creditsBusy = false;
   }
   async loadPluginMe() {
     try { const r = await FFAPI.pluginMe(); if (r && r.user) this.setState({ downloadsMonth: r.user.downloadsMonth || 0 }); } catch (e) {}
@@ -17788,11 +17801,13 @@ class Component extends DCLogic {
     this.setState({ genModelsLoaded: true }); // FAZA C — featured-loader shu bilan o'chadi
   }
   async loadHistory() {
+    if (this._histBusy) return; this._histBusy = true; // P16 (SPEED)
     try {
       const r = await FFAPI.history(40);
       const gens = (r.items || []).filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
       this.setState(s => ({ gens, gensLoaded: true, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
+    this._histBusy = false;
   }
   // ── QA-FIX #12 — sessiyalar (Artlist uslubi rail) ──
   async loadSessions() {
