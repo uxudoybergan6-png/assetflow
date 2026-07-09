@@ -8,6 +8,52 @@ import { PACK_EXT_APP, DEFAULT_APP } from "./apps.js";
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 const VIDEO_EXTS = [".mp4", ".mov", ".webm"];
 
+// P19: preview media tanlash — FIRST-MATCH emas, SKORLASH. Zip'da bir nechta rasm/video bo'lishi
+// mumkin (masalan "Preview Video.mp4" + "Help.mp4" + (Footage)/…). "Preview…" nomli faylni afzal,
+// "Help/Tutorial/…" o'quv kliplarini va (Footage)/assets papka manbalarini pastga tushiramiz.
+type MediaCandidate = { entry: yauzl.Entry; ext: string; name: string };
+// Help/o'quv klipi — bularni HECH QACHON preview qilib olmaymiz (boshqa nomzod bo'lmasa ham bo'sh qoldiramiz).
+const HELP_RE = /\b(help|tutorial|instruction|instructions|guide|readme|read[ _-]?me|howto|how[ _-]?to|manual|tips?)\b/i;
+// (Footage) / footage / assets / sources papkasi — loyiha manbalari, preview emas → pastga.
+const SOURCE_DIR_RE = /(^|\/)\(?\s*(footage|assets?|sources?|src|elements?|media)\s*\)?\//i;
+function scoreMediaCandidate(name: string, isVideo: boolean): number {
+  const base = path.basename(name).toLowerCase();
+  let score = 0;
+  if (SOURCE_DIR_RE.test(name)) score -= 100; // manba papkasi → demote
+  if (HELP_RE.test(base)) score -= 1000; // help/tutorial → deyarli hech qachon
+  // "Preview Video" / "Preview Image" eng kuchli; oddiy "preview" — kuchli.
+  if (isVideo && /preview[ _-]*video|video[ _-]*preview/.test(base)) score += 60;
+  else if (!isVideo && /preview[ _-]*image|image[ _-]*preview/.test(base)) score += 60;
+  else if (/\bpreview\b/.test(base)) score += 40;
+  return score;
+}
+/** Eng yaxshi nomzodni tanlaydi; barcha nomzod help klip bo'lsa → null (preview bo'sh, help EMAS). */
+export function _pickBestMediaName(names: string[], isVideo: boolean): string | null {
+  // Test uchun sof yordamchi (P19): nom ro'yxatidan tanlangan preview nomini qaytaradi.
+  if (!names.length) return null;
+  let best: string | null = null;
+  let bestScore = -Infinity;
+  for (const n of names) {
+    const s = scoreMediaCandidate(n, isVideo);
+    if (s > bestScore) { bestScore = s; best = n; }
+  }
+  if (best && HELP_RE.test(path.basename(best).toLowerCase())) return null;
+  return best;
+}
+function pickBestMedia(cands: MediaCandidate[], isVideo: boolean): ZipEntryRef | null {
+  if (!cands.length) return null;
+  let best: MediaCandidate | null = null;
+  let bestScore = -Infinity;
+  for (const c of cands) {
+    const s = scoreMediaCandidate(c.name, isVideo);
+    if (s > bestScore) { bestScore = s; best = c; }
+  }
+  if (!best) return null;
+  // Eng yaxshi ham help klip bo'lsa (ya'ni hammasi help) → preview bo'sh qoldiramiz.
+  if (HELP_RE.test(path.basename(best.name).toLowerCase())) return null;
+  return { entry: best.entry, ext: best.ext };
+}
+
 /* ── Ishonchsiz-arxiv chegaralari (FAZA 6a). Env orqali sozlanadi. ──
  * Zip-bomb: umumiy ochilgan hajm capi + absurd siqish nisbati + entry soni.
  * Tekshiruvlar markaziy katalog metadata'sida (ekstraktsiyasiz) ishlaydi;
@@ -271,9 +317,11 @@ export async function openStreamingIngestZip(
   try {
     return await new Promise<StreamingIngestZip>((resolve, reject) => {
       let pack: ZipEntryRef | null = null;
-      let image: ZipEntryRef | null = null;
-      let video: ZipEntryRef | null = null;
       let templateApp = DEFAULT_APP;
+      // P19: rasm/video NOMZODLARINI yig'amiz (faqat metadata — extract yo'q), end'da eng yaxshisini
+      // skorlash bilan tanlaymiz. Pack esa avvalgidek first-match.
+      const imageCandidates: MediaCandidate[] = [];
+      const videoCandidates: MediaCandidate[] = [];
       let entryCount = 0;
       let declaredTotal = 0; // markaziy katalogdagi e'lon qilingan ochiq hajm
       let settled = false;
@@ -316,10 +364,10 @@ export async function openStreamingIngestZip(
           if (!pack && PACK_EXT_APP[ext]) {
             pack = { entry, ext };
             templateApp = PACK_EXT_APP[ext];
-          } else if (!image && IMAGE_EXTS.includes(ext)) {
-            image = { entry, ext };
-          } else if (!video && VIDEO_EXTS.includes(ext)) {
-            video = { entry, ext };
+          } else if (IMAGE_EXTS.includes(ext)) {
+            imageCandidates.push({ entry, ext, name });
+          } else if (VIDEO_EXTS.includes(ext)) {
+            videoCandidates.push({ entry, ext, name });
           }
         }
         zip.readEntry();
@@ -327,6 +375,10 @@ export async function openStreamingIngestZip(
       zip.on("end", () => {
         if (settled) return;
         settled = true;
+        // P19: end'da eng yaxshi preview rasm/videoni skorlash bilan tanlaymiz (Help.mp4 emas,
+        // (Footage)/… emas — "Preview Video/Image" afzal). Faqat tanlangan entry keyin stream qilinadi.
+        const image = pickBestMedia(imageCandidates, false);
+        const video = pickBestMedia(videoCandidates, true);
         resolve({
           pack,
           image,
