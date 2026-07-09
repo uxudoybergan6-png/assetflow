@@ -15879,8 +15879,11 @@
           <div class="va-dwrap">
             <div style="min-width:0">
               <div class="va-thumb va-dprev" style="background:{{ detail.g }}">
-                <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" poster="{{ detail.posterUrl }}" preload="metadata" controls="" playsinline="" muted="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
-                <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span class="va-playov"><span style="width:54px;height:54px"><svg class="va-ic" style="width:22px;height:22px"><use href="#i-play"></use></svg></span></span></sc-if>
+                <!-- QA-FIX #1: controls=""/muted="" falsy prop edi → video boshqarib bo'lmasdi, audio ham yo'q edi.
+                     Endi chin controls + muted YO'Q (ovoz o'ynaydi); poster real thumb. -->
+                <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" poster="{{ detail.posterUrl }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
+                <!-- preview yo'q — soxta play tugmasi o'rniga halol yorliq (thumb fonda ko'rinadi) -->
+                <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span class="va-typetag">PREVIEW SOON</span></sc-if>
               </div>
               <!-- FAZA D · related = boy karta (bare thumb emas); bo'sh bo'lsa butun seksiya yashirin -->
               <sc-if value="{{ detail.hasRelated }}" hint-placeholder-val="{{ true }}">
@@ -18223,7 +18226,8 @@ class Component extends DCLogic {
       tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
       hasPreview: !!dRaw.previewUrl, noPreview: !dRaw.previewUrl, free: !dRaw.pro,
       // FAZA 5 (C3) — hero video poster: thumb bo'lsa qora kadr o'rniga thumb ko'rinadi
-      posterUrl: dRaw.thumbUrl || '',
+      // QA-FIX #1: '' emas null — bo'sh poster atributi sahifa URL'iga aylanib buziladi
+      posterUrl: dRaw.thumbUrl || null,
       // FAZA 5 (C3) — tugma yorlig'i real pack kengaytmasi bilan (.zip/.mogrt)
       dlLabel: 'Download pack (' + (dRaw.hasPack ? '.' + String((dRaw.fileName || 'pack.zip').split('.').pop() || 'zip').toLowerCase() : '.zip') + ')',
       resLine: (dRaw.qual || dRaw.d || '4K') + ' · ' + (dRaw.ori || '16:9'),

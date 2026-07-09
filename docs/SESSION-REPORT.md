@@ -1,23 +1,18 @@
-# Sessiya hisoboti — QA-FIX PARTIYA 3 (web core)
+# Sessiya hisoboti — QA-FIX partiya 4 (real media + playback) · 2026-07-09
 
-**Sana:** 2026-07-09 · **Ko'lam:** #4 #6 #11 #2 #9 #10 (pul-zonasi tegilmadi)
+**Nima qilindi:** Platforma (`platform/index.html`) gradient-placeholder kartalari real mediaga o'tkazildi:
+Home "Jump back in" / AI Studio striplari + katalog/related/shelf kartalari endi real `<img>` /
+`<video poster>` / waveform plitka (skeleton yuklanish, gradient faqat media yo'q bo'lsa). Katalog
+kartada hover'da previewUrl video (lazy). AI Studio visuals grid masonry + real aspect (gen params).
+Tool kartalari oxirgi real gen art'i bilan.
 
-## Nima qilindi
-1. **Routing/Back (#4/#6)** — 3 portalda ham brauzer Orqaga/Oldinga endi ilova ichida
-   yuradi (pushState + popstate), yangilash/deep-link mos ekranni ochadi:
-   - platform `go()` replaceState→pushState + popstate; deep-link auth-gate bilan.
-   - admin/contributor `route()` tarix yozuvi + popstate + boot hash o'qish.
-2. **Login gating (#2)** — platforma endi Admin/Contributor hisoblarini oddiy user sifatida
-   qabul qiladi (`_afterLoginSuccess` + sessiya tiklash rol tekshiruvi olindi).
-3. **AI Studio full-width (#11)** — `.va-main:has(.va-axwork/.va-tools){max-width:none}`.
-4. **Templates filtri (#9/#10)** — qat'iy 4 pill (Templates·Motion·Graphics·LUTs), lime faol
-   holat; `catBucket()` kalit so'z klassifikatori real katalogni filtrlaydi; shelf/collection
-   "View all" xom kategoriyani bucket'ga xaritalaydi.
+**Ildiz sabab (video qora/qo'ynalmasdi):** dc-runtime `controls=""`/`muted=""` ni React'ga BO'SH SATR
+prop qilib beradi → falsy → controls umuman chiqmasdi. Lightbox/detail videolar endi `{{ true }}`
+boolean + poster=thumb + preload=metadata; detail'da `muted` olib tashlandi (audio o'ynaydi); audio
+row'da real play/pause (umumiy Audio element).
 
-## Tekshirildi (headless 1280+1920+390)
-Back/Forward 3 portalda, #account/#pricing/#settings deep-link, logout deep-link→auth,
-ADMIN sessiya qabul qilindi, AI Studio 1840px, 4 pill + lime toggle. Konsol xatosisiz.
+**Tekshirildi (headless, stub-harness before/after):** lightbox video kadr+controls bilan o'ynaydi
+(oldin qora quti), audio 2s fayl o'ynaydi, detail video audio-track bilan, masonry 1280(4col)/390(2col)
+overflow'siz, bo'sh katalog toza degradatsiya, landing tegilmagan.
 
-## Holat / kutilmoqda
-4 commit (routing/login/layout/filter), push qilinmadi. studio:sync bajarildi (contributor
-artefakt). Kelajak: push+production test; catBucket kalit so'zlarini real katalog kat.'ga moslash.
+**Kutilmoqda:** push + CF Pages deploy; real gen bilan production tekshiruvi.
