@@ -4801,15 +4801,8 @@ html.home-mode #homePage{display:block!important}
       <p class="acs-hint" id="dlSaveHint">Template files (.aep + footage) are saved to this folder.</p>
     </div>
 
-    <!-- CONTRIBUTOR -->
-    <div id="accountPublishBlock" style="display:none">
-      <div class="acs-lbl">CONTRIBUTOR</div>
-      <button type="button" class="acs-row" onclick="openPublish()">
-        <span class="acs-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg></span>
-        <span class="acs-row-txt">Publish a template</span>
-        <span class="acs-row-chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
-      </button>
-    </div>
+    <!-- P10: CONTRIBUTOR "Publish a template" bo'limi olib tashlandi — publishing web/studio
+         contributor oqimi, plaginда kerak emas. -->
 
     <!-- ADMIN -->
     <div id="accountAdminBlock" style="display:none">
@@ -8186,9 +8179,7 @@ function refreshAccountUi(){
   document.getElementById('accountPlanBlock').style.display=logged?'block':'none';
   document.getElementById('accountAdminBlock').style.display=
     logged&&u?.role==='ADMIN'?'block':'none';
-  const canPublish=logged&&(u?.role==='ADMIN'||u?.role==='CONTRIBUTOR');
-  const pubBlock=document.getElementById('accountPublishBlock');
-  if(pubBlock) pubBlock.style.display=canPublish?'block':'none';
+  // P10: "Publish a template" (CONTRIBUTOR) bo'limi olib tashlandi — bu yerda toggle yo'q.
   document.getElementById('accountActionsBlock').style.display=logged?'flex':'none';
   // Yuklab olish papkasi — lokal sozlama, login shart emas (faqat AE/CEP ichida)
   const dlBlock=document.getElementById('accountDownloadBlock');
