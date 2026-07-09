@@ -18,6 +18,7 @@ import {
   getSignedUploadUrl,
   getPublicUrl,
   isS3Configured,
+  getS3ObjectMeta,
 } from "../lib/s3.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { diagnoseSizeBytes, backfillSizeBytes } from "../lib/backfill-sizebytes.js";
@@ -56,7 +57,7 @@ adminRouter.use(requireAuth, requireAdmin);
 // FAZA 2 (L5) — folder whitelist + fileName sanitizatsiya: aks holda `folder`/`fileName`
 // bevosita S3 kalitiga interpolatsiya qilinib, path-traversal (`../`) yoki ixtiyoriy kalit
 // injeksiyasi (boshqa prefiksga yozish) mumkin edi.
-const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc", "landing"]);
+const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc", "landing", "releases"]); // P11: plagin reliz paketlari
 function safeUploadFolder(f?: string): string {
   const v = (f ?? "assets").trim();
   return ALLOWED_UPLOAD_FOLDERS.has(v) ? v : "assets";
@@ -918,6 +919,78 @@ adminRouter.get("/metrics", async (req, res) => {
       source: r.source,
     })),
   });
+});
+
+// ── P11 — Plagin relizlari (in-panel update kanali) ─────────────────────────
+// Oqim: admin paketni /admin/upload-url (folder=releases) presigned PUT bilan yuklaydi,
+// so'ng shu endpoint reliz yozuvini yaratadi. GET /api/plugin/version (ommaviy) eng
+// so'nggisini qaytaradi — plagin banneri shu bilan ishlaydi.
+const releaseSchema = z.object({
+  version: z.string().regex(/^\d+\.\d+\.\d+$/, "Version must be semver: 1.2.3"),
+  key: z.string().min(1).refine((k) => k.startsWith("releases/"), "Key must be under releases/"),
+  releaseNotes: z.string().max(4000).optional(),
+  mandatory: z.boolean().optional(),
+  minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/).optional().or(z.literal("").transform(() => undefined)),
+  checksum: z.string().max(128).optional(),
+});
+
+adminRouter.get("/plugin-releases", async (_req, res) => {
+  const items = await prisma.pluginRelease.findMany({ orderBy: { publishedAt: "desc" }, take: 50 });
+  res.json({ items });
+});
+
+adminRouter.post("/plugin-releases", async (req, res) => {
+  const p = releaseSchema.safeParse(req.body ?? {});
+  if (!p.success) {
+    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid release" });
+    return;
+  }
+  // Paket haqiqatan yuklanganini tasdiqlaymiz (HeadObject) — bo'sh reliz e'lon qilinmasin.
+  const meta = await getS3ObjectMeta(p.data.key);
+  if (meta.sizeBytes == null) {
+    res.status(400).json({ error: "Package not found in storage — upload it first" });
+    return;
+  }
+  const exists = await prisma.pluginRelease.findUnique({ where: { version: p.data.version } });
+  if (exists) {
+    res.status(409).json({ error: "This version is already published" });
+    return;
+  }
+  const row = await prisma.pluginRelease.create({
+    data: {
+      version: p.data.version,
+      downloadKey: p.data.key,
+      releaseNotes: p.data.releaseNotes ?? null,
+      mandatory: !!p.data.mandatory,
+      minSupportedVersion: p.data.minSupportedVersion ?? null,
+      checksum: p.data.checksum ?? null,
+      createdById: req.user?.userId ?? null,
+    },
+  });
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "plugin_release.publish",
+    targetType: "pluginRelease",
+    targetId: row.version,
+    meta: { sizeBytes: meta.sizeBytes, mandatory: row.mandatory },
+  });
+  res.status(201).json(row);
+});
+
+adminRouter.delete("/plugin-releases/:id", async (req, res) => {
+  const row = await prisma.pluginRelease.findUnique({ where: { id: String(req.params.id) } });
+  if (!row) {
+    res.status(404).json({ error: "Release not found" });
+    return;
+  }
+  await prisma.pluginRelease.delete({ where: { id: row.id } });
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "plugin_release.delete",
+    targetType: "pluginRelease",
+    targetId: row.version,
+  });
+  res.json({ ok: true });
 });
 
 // ── PROBLEM 7 — Storage sizeBytes diagnostika + backfill (maintenance) ──────

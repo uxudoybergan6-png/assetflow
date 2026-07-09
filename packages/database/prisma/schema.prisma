@@ -828,3 +828,20 @@ model LandingConfig {
   updatedById String?
   updatedAt   DateTime @updatedAt
 }
+
+// ── P11 — Plagin relizlari (in-panel update kanali). ADDITIVE: mavjud modellarga
+// tegilmaydi. downloadKey = storage'dagi paket (releases/<v>.zip); mandatory yoki
+// minSupportedVersion ostidagi klient bloklanadi (update majburiy).
+model PluginRelease {
+  id                  String   @id @default(cuid())
+  version             String   @unique // semver: "1.2.0"
+  downloadKey         String   // storage kaliti (releases/...)
+  releaseNotes        String?  @db.Text
+  mandatory           Boolean  @default(false)
+  minSupportedVersion String?  // bundan past klientlar bloklanadi
+  checksum            String?  // sha256 (ixtiyoriy, updater tekshiradi)
+  publishedAt         DateTime @default(now())
+  createdById         String?
+
+  @@index([publishedAt])
+}

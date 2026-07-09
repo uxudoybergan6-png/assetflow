@@ -13248,6 +13248,133 @@ window.afGallery=(function(){
     if(c1)c1.innerHTML=t; if(c2)c2.innerHTML=t;
   };
 })();
+
+/* ===== P11 — PLAGIN UPDATE TIZIMI (in-panel bildirishnoma + o'rnatish) =====
+   Ikki kanal: (1) model/tool/narx = server-driven (reliz kerak emas);
+   (2) plagin KODI = GET /api/plugin/version → markaziy modal → Update.
+   O'rnatish: FAQAT bizning API'ning imzolangan URL'i (first-party), foydalanuvchi
+   tugmani bosgandagina; checksum bo'lsa tekshiriladi. Muvaffaqiyatsizlikda
+   graceful fallback: paketni brauzerda ochish + qo'lda o'rnatish yo'riqnomasi. */
+window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
+(function(){
+  function $(id){return document.getElementById(id);}
+  var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
+  function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
+  var upd={info:null,busy:false,ov:null};
+
+  function dismissKey(v){ return 'af_update_dismissed_'+v; }
+  function isDismissed(v){ try{ return localStorage.getItem(dismissKey(v))==='1'; }catch(e){ return false; } }
+  function setDismissed(v){ try{ localStorage.setItem(dismissKey(v),'1'); }catch(e){} }
+
+  function extensionDir(){
+    try{ if(typeof CSInterface!=='undefined'&&typeof SystemPath!=='undefined'){ var pth=new CSInterface().getSystemPath(SystemPath.EXTENSION); if(pth)return pth; } }catch(e){}
+    try{ if(window.__adobe_cep__&&window.__adobe_cep__.getSystemPath){ var p2=window.__adobe_cep__.getSystemPath('extension'); if(p2)return p2; } }catch(e){}
+    return '';
+  }
+
+  function showUpdateModal(){
+    var info=upd.info; if(!info||!info.latest)return;
+    if(!upd.ov){
+      upd.ov=document.createElement('div'); upd.ov.className='afspov';
+      document.body.appendChild(upd.ov);
+    }
+    var mand=!!info.mandatory;
+    var notes=String(info.latest.releaseNotes||'').split('\n').slice(0,10).map(function(l){ return '<div style="font-size:11px;color:var(--mut);line-height:1.5">• '+String(l).replace(/[<>&]/g,'')+'</div>'; }).join('');
+    upd.ov.innerHTML='<div class="spc">'
+      +'<div class="sph"><b>FrameFlow v'+String(info.latest.version).replace(/[<>&]/g,'')+' available</b>'+(mand?'':'<span class="x" id="afUpdX">✕</span>')+'</div>'
+      +'<div style="font-size:11px;color:var(--mut2);margin:-4px 0 8px">You have v'+window.AF_PLUGIN_VERSION+(mand?' — this update is required to continue':'')+'</div>'
+      +(notes?('<div class="spl" style="margin-bottom:6px">'+notes+'</div>'):'')
+      +'<div id="afUpdStatus" style="font-size:10.5px;color:var(--mut2);min-height:14px"></div>'
+      +'<div class="spb">'
+      +(mand?'':'<button type="button" class="spbtn" id="afUpdLater">Later</button>')
+      +'<button type="button" class="spbtn pri" id="afUpdGo">Update now</button></div></div>';
+    upd.ov.classList.add('on');
+    if(!mand){
+      var x=$('afUpdX'); if(x)x.addEventListener('click',function(){ upd.ov.classList.remove('on'); setDismissed(info.latest.version); });
+      var lt=$('afUpdLater'); if(lt)lt.addEventListener('click',function(){ upd.ov.classList.remove('on'); setDismissed(info.latest.version); });
+    }
+    var go=$('afUpdGo'); if(go)go.addEventListener('click',doUpdate);
+  }
+  function setUpdStatus(t){ var el=$('afUpdStatus'); if(el)el.textContent=t; }
+
+  function fallbackManual(){
+    // Graceful fallback: paketni brauzerda ochamiz + qo'lda o'rnatish yo'li.
+    try{ if(upd.info&&upd.info.downloadUrl){ if(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.openExternal)AssetFlowAccount.openExternal(upd.info.downloadUrl); else window.open(upd.info.downloadUrl,'_blank'); } }catch(e){}
+    setUpdStatus('Automatic install failed — the package opened in your browser. Unzip it and replace the extension folder, then restart After Effects.');
+    toast('Could not self-update — manual install steps shown','warning');
+  }
+
+  function doUpdate(){
+    var info=upd.info; if(!info||upd.busy)return;
+    if(!info.downloadUrl){ toast('Download link unavailable — try again later','error'); return; }
+    if(!IS_CEP){ try{ window.open(info.downloadUrl,'_blank'); }catch(e){} setUpdStatus('Package downloading in the browser.'); return; }
+    upd.busy=true; setUpdStatus('Downloading update…');
+    try{
+      var fs=require('fs'), path=require('path'), os=require('os'), child=require('child_process'), crypto=require('crypto');
+      var tmp=fs.mkdtempSync(path.join(os.tmpdir(),'af-update-'));
+      var zipPath=path.join(tmp,'update.zip');
+      var doInstall=function(){
+        try{
+          // Checksum (bo'lsa) — first-party paket buzilmaganini tasdiqlaydi
+          if(info.latest.checksum){
+            var h=crypto.createHash('sha256').update(fs.readFileSync(zipPath)).digest('hex');
+            if(h.toLowerCase()!==String(info.latest.checksum).toLowerCase()){ upd.busy=false; setUpdStatus('Checksum mismatch — install aborted.'); fallbackManual(); return; }
+          }
+          setUpdStatus('Extracting…');
+          var stage=path.join(tmp,'stage');
+          fs.mkdirSync(stage,{recursive:true});
+          child.execFileSync('unzip',['-o',zipPath,'-d',stage],{timeout:300000});
+          // Paket ildizi: CSXS/manifest.xml turgan papka (to'g'ridan yoki bitta ichki papka)
+          var root=stage;
+          if(!fs.existsSync(path.join(root,'CSXS','manifest.xml'))){
+            var kids=fs.readdirSync(stage).filter(function(k){ return k!=='__MACOSX'&&fs.statSync(path.join(stage,k)).isDirectory(); });
+            var hit=kids.filter(function(k){ return fs.existsSync(path.join(stage,k,'CSXS','manifest.xml')); })[0];
+            if(hit)root=path.join(stage,hit);
+          }
+          if(!fs.existsSync(path.join(root,'CSXS','manifest.xml')))throw new Error('Package has no CSXS/manifest.xml');
+          var dest=extensionDir();
+          if(!dest||!fs.existsSync(dest))throw new Error('Extension folder not found');
+          setUpdStatus('Installing…');
+          // cp -R root/. dest — papka strukturasi saqlanadi, ishlayotgan fayllarni almashtirish macOS'da xavfsiz
+          child.execFileSync('cp',['-R',root+'/.',dest],{timeout:120000});
+          upd.busy=false;
+          setUpdStatus('');
+          upd.ov.innerHTML='<div class="spc"><div class="sph"><b>✅ Updated to v'+String(info.latest.version).replace(/[<>&]/g,'')+'</b></div>'
+            +'<div style="font-size:11.5px;color:var(--mut);line-height:1.6">Restart After Effects (or close and reopen this panel) to finish the update.</div>'
+            +'<div class="spb"><button type="button" class="spbtn pri" id="afUpdDone">Got it</button></div></div>';
+          var dn=$('afUpdDone'); if(dn)dn.addEventListener('click',function(){ upd.ov.classList.remove('on'); });
+          toast('Plugin updated — restart After Effects','success');
+        }catch(e){
+          console.error('[update] install',e);
+          upd.busy=false; fallbackManual();
+        }
+      };
+      if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile){
+        AssetFlowCatalog.downloadUrlToFile(info.downloadUrl,zipPath,function(done,total){ if(total>0)setUpdStatus('Downloading… '+Math.floor(done/total*100)+'%'); }).then(doInstall).catch(function(e){ console.error('[update] download',e); upd.busy=false; fallbackManual(); });
+      }else{
+        fetch(info.downloadUrl).then(function(r){ return r.arrayBuffer(); }).then(function(buf){ fs.writeFileSync(zipPath,Buffer.from(buf)); doInstall(); }).catch(function(e){ console.error('[update] download',e); upd.busy=false; fallbackManual(); });
+      }
+    }catch(e){ console.error('[update]',e); upd.busy=false; fallbackManual(); }
+  }
+
+  function checkForUpdate(silent){
+    pubFetch('/api/plugin/version?current='+encodeURIComponent(window.AF_PLUGIN_VERSION),{headers:{Accept:'application/json'}},15000)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d||!d.updateAvailable)return;
+        upd.info=d;
+        // Majburiy bo'lmagan reliz foydalanuvchi tomonidan yopilgan bo'lsa — qayta bezovta qilmaymiz
+        if(!d.mandatory&&isDismissed(d.latest.version)){ if(!silent)toast('Update v'+d.latest.version+' available — Settings → Update','info'); return; }
+        showUpdateModal();
+      })
+      .catch(function(){ /* offline — jim */ });
+  }
+  window.afCheckForUpdate=function(){ if(upd.info&&upd.info.updateAvailable){ showUpdateModal(); } else { toast('Checking for updates…','info'); checkForUpdate(false); setTimeout(function(){ if(!upd.info||!upd.info.updateAvailable)toast('You are on the latest version (v'+window.AF_PLUGIN_VERSION+')','success'); },2500); } };
+
+  setTimeout(function(){ checkForUpdate(true); },4000);           // panel ochilgach
+  setInterval(function(){ checkForUpdate(true); },6*60*60*1000);  // har 6 soatda
+})();
+
 </script>
 </body>
 </html>

@@ -570,6 +570,17 @@ const StudioApi = (() => {
     });
   }
 
+  /* P11 — plagin relizlari */
+  async function getPluginReleases() {
+    return request("/api/admin/plugin-releases");
+  }
+  async function publishPluginRelease(body) {
+    return request("/api/admin/plugin-releases", { method: "POST", body });
+  }
+  async function deletePluginRelease(id) {
+    return request(`/api/admin/plugin-releases/${encodeURIComponent(id)}`, { method: "DELETE" });
+  }
+
   /* FAZA 6b — rollar boshqaruvi + contributor onboarding */
   async function listAdminUsers({ search, role, pending } = {}) {
     const q = new URLSearchParams();
@@ -644,6 +655,9 @@ const StudioApi = (() => {
     getLandingConfig,
     saveLandingConfig,
     resetLandingConfig,
+    getPluginReleases,
+    publishPluginRelease,
+    deletePluginRelease,
     adminUploadUrl,
     listAdminUsers,
     setUserRole,

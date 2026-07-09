@@ -125,6 +125,53 @@ function parseTake(raw: unknown): number {
 /** Browse panel — tasdiqlangan shablonlar (server).
  *  FAZA 5 (A1): take+cursor pagination (backward-compatible — param'siz birinchi
  *  sahifa, javobga additive `nextCursor` qo'shiladi; null = oxirgi sahifa). */
+// ── P11 — plagin versiya tekshiruvi (OMMAVIY; panel yuklanganda chaqiriladi) ──
+// Ikki kanalli yangilanish: (1) model/tool/narx = server-driven (/gen/models, katalog)
+// — reliz KERAK EMAS; (2) plagin KODI = shu kanal (PluginRelease → in-panel updater).
+function semverParts(v: string): number[] {
+  return String(v || "0").split(".").map((x) => parseInt(x, 10) || 0);
+}
+function semverLt(a: string, b: string): boolean {
+  const pa = semverParts(a), pb = semverParts(b);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return true;
+    if ((pa[i] || 0) > (pb[i] || 0)) return false;
+  }
+  return false;
+}
+pluginRouter.get("/version", async (req: Request, res: Response) => {
+  const current = typeof req.query.current === "string" ? req.query.current : "";
+  const latest = await prisma.pluginRelease.findFirst({ orderBy: { publishedAt: "desc" } });
+  if (!latest) {
+    res.json({ latest: null, updateAvailable: false, mandatory: false });
+    return;
+  }
+  const updateAvailable = !!current && semverLt(current, latest.version);
+  // Majburiy: reliz mandatory deb belgilangan YOKI klient minSupportedVersion'dan past
+  const mandatory =
+    updateAvailable &&
+    (latest.mandatory || (!!latest.minSupportedVersion && !!current && semverLt(current, latest.minSupportedVersion)));
+  let downloadUrl: string | null = null;
+  if (latest.downloadKey && isS3Configured()) {
+    try {
+      downloadUrl = await getSignedDownloadUrl(latest.downloadKey, 3600, `frameflow-plugin-${latest.version}.zip`);
+    } catch {
+      downloadUrl = null;
+    }
+  }
+  res.json({
+    latest: {
+      version: latest.version,
+      releaseNotes: latest.releaseNotes || "",
+      publishedAt: latest.publishedAt,
+      checksum: latest.checksum || null,
+    },
+    updateAvailable,
+    mandatory,
+    downloadUrl,
+  });
+});
+
 pluginRouter.get("/catalog", async (req: Request, res: Response) => {
   const base = apiPublicBase(req);
   const take = parseTake(req.query.take);
