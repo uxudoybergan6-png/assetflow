@@ -129,8 +129,21 @@ function contribGlobalSearch(q) {
   CONTRIB_SEARCH = (q || "").trim().toLowerCase();
   if (CURRENT === "templates") renderMy();
 }
-function route(view, arg){
+/* Tarix boshqaruvi (#4/#6) — brauzer Orqaga/Oldinga ilova ichida yursin,
+   yangilash/deep-link'da mos ekran ochilsin. Deep-link mumkin ekranlar = NAV id'lari. */
+const ROUTE_VIEWS = NAV.filter(n => n.id).map(n => n.id);
+let _routeInited = false;
+
+function route(view, arg, fromHistory){
   CURRENT=view;
+  // Tarix yozuvi: popstate'dan kelmagan bo'lsa — dastlab replaceState, keyin pushState.
+  if (!fromHistory) {
+    try {
+      const h = '#' + view;
+      if (!_routeInited) { history.replaceState({ view: view }, '', h); _routeInited = true; }
+      else if (h !== location.hash || arg != null) { history.pushState({ view: view }, '', h); }
+    } catch (e) {}
+  }
   const t=TITLES[view]||[view,''];
   document.getElementById('pageTitle').textContent=t[0];
   const cr=document.getElementById('crumb');
@@ -170,8 +183,17 @@ function patchContributorUI(){
   const first = (AF_SESSION.name || "").split(" ")[0];
   if (first) TITLES.overview[1] = "Hello, " + first;
   renderNav();
-  route("overview");
+  // Deep-link / yangilash — URL hash'idagi ekranni ochamiz (aks holda Overview).
+  const boot = (location.hash || '').replace('#', '');
+  route(ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview");
   patchContributorUI();
+  // Orqaga/Oldinga (popstate) — tarixdagi ekranni tiklaymiz.
+  window.addEventListener('popstate', (ev) => {
+    const st = (ev && ev.state) || {};
+    let view = st.view || (location.hash || '').replace('#', '') || 'overview';
+    if (ROUTE_VIEWS.indexOf(view) < 0) view = 'overview';
+    route(view, null, true);
+  });
 })();
 </script>
 </body>

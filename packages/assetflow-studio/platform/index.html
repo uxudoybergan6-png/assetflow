@@ -16995,7 +16995,10 @@ class Component extends DCLogic {
     { n: 'Brand kit', d: '24 items', h: 160 },
   ];
 
-  go(screen) {
+  go(screen, opts) {
+    // opts: { replace } — replace=true dastlabki deep-link/sessiya tiklashda
+    // (yangi tarix yozuvi qo'shmaydi), fromPop popstate ichida ishlatiladi.
+    opts = opts || {};
     // App ekranlari login talab qiladi — token yo'q bo'lsa auth ekraniga.
     const APP_SCREENS = ['dashboard', 'templates', 'aistudio', 'account', 'projects'];
     if (APP_SCREENS.indexOf(screen) >= 0 && !(window.FFAPI && FFAPI.getToken())) {
@@ -17008,8 +17011,18 @@ class Component extends DCLogic {
       this._afterAuth = screen;
       screen = 'verify-email';
     }
+    const prev = this.state.screen;
     this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
-    try { if (window.history && history.replaceState) history.replaceState(null, '', '#' + screen); } catch (e) {}
+    // Tarix boshqaruvi — brauzer Orqaga/Oldinga tugmalari ilova ichida yursin (#4/#6):
+    // popstate'dan kelganda faqat URL'ni yechim bilan sinxronlaymiz (yangi yozuv yo'q);
+    // aks holda ekran o'zgargan bo'lsa pushState (yangi yozuv), aks holda replaceState.
+    try {
+      if (window.history) {
+        const url = '#' + screen;
+        if (opts.replace || opts.fromPop || screen === prev) history.replaceState({ screen: screen }, '', url);
+        else history.pushState({ screen: screen }, '', url);
+      }
+    } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     // Replay the app page-wrap entrance via transition (never keyframes): hide -> reflow -> reveal.
     if (this._armed) { try { requestAnimationFrame(() => { const w = document.querySelector('[data-page-wrap]'); if (w) { w.classList.remove('rv-in'); void w.offsetWidth; w.classList.add('rv-in'); } }); } catch (e) {} }
@@ -17054,7 +17067,14 @@ class Component extends DCLogic {
         });
       }
       const h = (window.location.hash || '').replace('#', '') || pathScreen;
-      if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h); }
+      if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h, { replace: true }); }
+      // Orqaga/Oldinga (popstate) — mos ekranni tiklaymiz; go() auth-gate'ni o'zi qiladi.
+      window.addEventListener('popstate', this._onPop = (ev) => {
+        const stt = (ev && ev.state) || {};
+        let scr = stt.screen || (window.location.hash || '').replace('#', '') || 'landing';
+        if (ALL.indexOf(scr) < 0 && scr !== 'verify-email') scr = 'landing';
+        this.go(scr, { fromPop: true });
+      });
       // verify-email.html'dan qaytish (email tasdiqlandi) — auth ekraniga yo'naltirib toast ko'rsatish.
       if (/[?&]verified=1\b/.test(window.location.search)) {
         try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (e2) {}
@@ -17090,7 +17110,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._io) this._io.disconnect(); } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._io) this._io.disconnect(); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.

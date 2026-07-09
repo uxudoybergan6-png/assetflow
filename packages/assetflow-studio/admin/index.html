@@ -188,8 +188,24 @@ function renderNav(){
   if (dot) dot.style.display = (typeof tByStatus === 'function' && tByStatus('pending').length) ? '' : 'none';
 }
 
-function route(view, arg){
+/* Tarix boshqaruvi (#4/#6) — brauzer Orqaga/Oldinga tugmalari ilova ichida yursin,
+   sahifa yangilanganda/deep-link'da mos ekran ochilsin. Deep-link mumkin ekranlar = NAV id'lari;
+   arg talab qiladigan detal ekranlar ota bo'limiga qaytariladi. */
+const ROUTE_VIEWS = NAV.filter(n => n.id).map(n => n.id);
+const DETAIL_PARENT = { 'contributor-detail': 'contributors', 'subscriber-detail': 'subscribers' };
+let _routeInited = false;
+
+function route(view, arg, fromHistory){
   CURRENT = view;
+  // Tarix yozuvi: popstate'dan kelmagan bo'lsa — dastlab replaceState, keyin har o'zgarishda pushState.
+  if (!fromHistory) {
+    try {
+      const hashable = ROUTE_VIEWS.indexOf(view) >= 0;
+      const h = '#' + (hashable ? view : (DETAIL_PARENT[view] || view));
+      if (!_routeInited) { history.replaceState({ view: view }, '', h); _routeInited = true; }
+      else if (h !== location.hash || arg != null) { history.pushState({ view: view }, '', h); }
+    } catch (e) {}
+  }
   const t = TITLES[view] || [view,''];
   document.getElementById('pageTitle').textContent = t[0];
   document.getElementById('crumb').innerHTML = `<span>FrameFlow</span><i class="ph ph-caret-right" style="font-size:9px"></i><span>${t[1]}</span>`;
@@ -213,6 +229,15 @@ function route(view, arg){
   }
   document.getElementById('adxContent').scrollTop = 0;
 }
+
+/* Orqaga/Oldinga (popstate) — tarixdagi ekranni tiklaymiz; detal ekran ota bo'limiga. */
+window.addEventListener('popstate', (ev) => {
+  const st = (ev && ev.state) || {};
+  let view = st.view || (location.hash || '').replace('#', '') || 'overview';
+  if (DETAIL_PARENT[view]) view = DETAIL_PARENT[view];
+  if (ROUTE_VIEWS.indexOf(view) < 0) view = 'overview';
+  route(view, null, true);
+});
 
 /* ── Mobile drawer (the adx shell handles it itself — theme.js can't find .app) ── */
 document.getElementById('adxNavToggle').addEventListener('click', () => {
@@ -257,7 +282,9 @@ window.addEventListener('af-theme-change', (e) => {
     route("settings");
     toast("Security", "Two-factor authentication is required for admin accounts — set it up below", "warn");
   } else {
-    route("overview");
+    // Deep-link / yangilash — URL hash'idagi ekranni ochamiz (aks holda Overview).
+    const boot = (location.hash || '').replace('#', '');
+    route(ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview");
   }
 })();
 </script>
