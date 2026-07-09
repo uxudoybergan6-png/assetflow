@@ -14,6 +14,15 @@
   qator (idempotent); `getUserUsedBytes`=930 ✓; build toza; money-zone TEGILMADI.
 - **Kutilmoqda:** production deploy'dan keyin admin backfill endpointini ishga tushirish.
 
+## PROBLEM 3 — Plagin video R2V olib tashlandi ✅
+
+- Toggle (.vg-modeseg) + #vgMediaSect markup, vgModelOfKind/_mf/_mr handler'lari,
+  +Img/+Vid/+Aud listener'lari, media-refs paste handler'i olib tashlandi; applyVgMeta
+  toggle-display bloki tozalandi. ensureVgMeta endi refKind='media-refs'/reference-to-video
+  modellarni FILTRLAB tashlaydi (3102 selectable emas). Karta matni "Seedance 2.0 · Fast
+  (frame)". Ichki mref funksiyalari guarded/dormant (frames oqimi vgSrcSheet bilan umumiy
+  — xavfsiz). JS sintaksis ✓, R2V markup izlari yo'q ✓, install-cep ✓.
+
 ## PROBLEM 13 — Download nomi prompt'dan ✅
 
 - Backend: `promptFileBase` (60 belgi, sanitizatsiya, chekka nuqtalar yo'q) + `genDownloadName`
