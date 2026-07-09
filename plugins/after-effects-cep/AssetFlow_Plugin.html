@@ -8734,20 +8734,30 @@ async function accountPickPlan(plan){
   }
 }
 
-async function startProCheckout(){
+/** P8 — Pro obuna → Lemon Squeezy checkout (startCreditTopup naqshi). Eski Stripe
+ *  yo'li (requestCheckout → STRIPE_NOT_CONFIGURED) olib tashlandi; backend
+ *  POST /api/billing/checkout {plan:'pro'} allaqachon LS subscription URL beradi. */
+async function startProCheckout(plan){
+  plan=(plan==='studio')?'studio':'pro';
+  if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
+    showToast('Sign in first to upgrade','info');
+    if(typeof openAccountSheet==='function')openAccountSheet();
+    return;
+  }
   setPlanButtonsBusy(true);
   try{
     showToast('Opening payment page…');
-    const url=await AssetFlowAccount.requestCheckout('monthly');
-    if(!url) throw new Error('No checkout URL returned');
-    AssetFlowAccount.openExternal(url);
+    const d=await studioPost('/api/billing/checkout',{plan});
+    if(!d||!d.url) throw new Error('No checkout URL returned');
+    AssetFlowAccount.openExternal(d.url);
     showToast('Complete payment in your browser, then click "Refresh"');
   }catch(e){
     console.error('startProCheckout',e);
-    if(e.code==='STRIPE_NOT_CONFIGURED' || e.data?.code==='STRIPE_NOT_CONFIGURED'){
-      showToast('Payments aren’t available yet — contact an admin');
+    const code=(e&&(e.code||(e.data&&e.data.code)))||'';
+    if(code==='BILLING_NOT_CONFIGURED'||code==='VARIANT_NOT_FOUND'||code==='STRIPE_NOT_CONFIGURED'){
+      showToast('Upgrades aren’t available right now — contact support','info');
     }else{
-      showToast(e.message||'Couldn’t open the payment page');
+      showToast('Couldn’t open the payment page — try again','error');
     }
   }finally{
     setPlanButtonsBusy(false);
