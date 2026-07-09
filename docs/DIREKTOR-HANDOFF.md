@@ -2,6 +2,29 @@
 
 > Yangi chatda davom etish uchun: bu faylni Claude'ga bering + pastdagi ROL bo'limini qo'ying, so'ng "shu joydan davom et" deng.
 
+## ⭐⭐⭐⭐ KEYINGI HISOBDA SHU JOYDAN DAVOM ET (2026-07-09, limit tugadi)
+ROL o'zgarmagan (Direktor — o'zbekcha gaplash, Code'ga inglizcha prompt yoz, model tanla). HOLAT:
+- ✅ KONTENT QUVURI F1–F6 + LAUNCH-READINESS Faza 1–5 + login/2FA/3-portal-dizayn + ingliz-tarjima — HAMMASI QURILDI,
+  commit qilingan, USER PUSH QILDI, deploy JONLI (getframeflow.app eng yangi kod). Batafsil: shu handoff pastda.
+- 👉 KEYINGI ISH: **docs/QA-FIX-PLAN.md** — USER jonli QA (16 muammo) + Direktor QA + Artlist o'rganishdan chiqqan
+  YAGONA fix reja. 16 muammo → **6 PARTIYA** (ketma-ket, bir xil fayllar → parallel emas; pul-zona minimal diff).
+- 👉 **PARTIYA 1 (KRITIK #7 — shablon to'liq paketi) BIRINCHI QILINADI** (USER keyingi hisobda). Prompt tayyor:
+  ingest contributor zipining BUTUN paketini (.aep + footage + audio + papkalar) saqlasin (faqat .aep emas) → download
+  (web+plagin) to'liq bersin (AE "files missing" demasin) → plagin to'liq ochib import. Model Fable5+Extra, lokal Code.
+  (To'liq prompt matni: shu chatда yozilган; QA-FIX-PLAN.md Partiya 1'дан qayta tuzsa bo'ladi.)
+- Keyin PARTIYA 2 (AI model sozlamalari — PUL-ZONA #16) → 3 (web routing/layout/filtr/login) → 4 (media/kartalar/playback)
+  → 5 (AI Studio session + Projects) → 6 (plagin+admin polish). Har biri alohida Code prompt.
+- ARTLIST ANDOZA (shimoliy yulduz): haqiqiy media (gradient EMAS) · masonry · to'liq ekran · inline video/audio play ·
+  bottom-docked composer · sessions+My Library+New Session · Use▾ menyu · model-settings inline (per-model params).
+- ⚠️ O'QISH TARTIBI (yangi hisobda): (1) docs/QA-FIX-PLAN.md (keyingi ish) (2) docs/LAUNCH-READINESS.md (5 faza holati)
+  (3) docs/THREAT-REGISTER.md (xavfsizlik) (4) docs/KONTENT-QUVURI-SXEMA.md (kontent modeli).
+- ⚠️ QOLGAN USER TASHQI QADAMLAR (launch uchun, kod emas): COST_QUOTE_SECRET prod (JWT'dan farqli, aks holda API boot yo'q) ·
+  deploy tartibi migrate:deploy AVVAL (assetKeysJson/totp/RevenueEvent ustunlari) · eski shablon pack RE-SCAN (409 bo'lmasin) ·
+  PAYOUT_MODE(pool)/CONTRIBUTOR_POOL_SHARE(0.50) qaror · SENTRY_DSN · backup bucket+versioning · sir rotatsiya · Resend DKIM ·
+  yurist ko'rigi (legal matn) · Lemon Squeezy identity→LIVE · KONTENT (katalog to'ldirish) · 2FA enrol OLDIN ADMIN_REQUIRE_2FA.
+- ⚠️ ARXITEKTURA QARORI o'zgargan: "zip=faqat .aep" NOTO'G'RI edi (P7) → endi TO'LIQ PAKET (footage bilan). KONTENT-QUVURI-SXEMA
+  shu bo'yicha yangilanishi kerak (Partiya 1'da).
+
 ## ROL (Claude'ga qayta beriladi)
 
 Sen — foydalanuvchi (o'zbek) bilan Claude Code o'rtasidagi "Loyiha Direktori"sisan.
