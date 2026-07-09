@@ -4130,13 +4130,7 @@ html.home-mode #homePage{display:block!important}
                             </div>
 
                             <div class="vpanel compose-panel">
-                              <!-- FIX5: Fast|R2V toggle karta ichida — rasm tool karta idiomi bilan bir xil tuzilish -->
-                              <div class="sect">
-                                <div class="vg-modeseg" style="margin-bottom:0">
-                                  <button type="button" class="vg-mode-i is-on" id="vgModeFast">Fast — frames</button>
-                                  <button type="button" class="vg-mode-i" id="vgModeR2V">R2V — references</button>
-                                </div>
-                              </div>
+                              <!-- PROBLEM 3: Fast|R2V toggle olib tashlandi — plagin video FAQAT Fast (frames) -->
                               <div class="sect">
                                 <div class="guide" id="vgGuide"><b>Fast:</b> Add a start frame, write a prompt, and generate a video.</div>
                               </div>
@@ -4150,21 +4144,7 @@ html.home-mode #homePage{display:block!important}
                                 </div>
                                 <!-- FIX D: doimiy manba chiplari olib tashlandi — manba menyu kadr box / ＋Referens bosilganda popover bo'lib chiqadi (vgSrcSheet) -->
                               </div>
-                              <!-- Ko'p-modal referens (refKind=media-refs — Seedance R2V; IXTIYORIY) -->
-                              <div class="sect" id="vgMediaSect" style="display:none">
-                                <div class="vg-lblrow"><span class="vg-lbl">Active references</span><span class="vg-meta" id="vgRefMeta">—</span></div>
-                                <div class="mrefgrid" id="vgRefGrid"></div>
-                                <div class="mrefadd">
-                                  <div class="maddb" id="vgAddImg"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> + Image</div>
-                                  <div class="maddb" id="vgAddVid"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg> + Video</div>
-                                  <div class="maddb" id="vgAddAud"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 010 8"/></svg> + Audio</div>
-                                </div>
-                                <div id="vgRefLimits" style="font-size:10.5px;color:var(--mut);margin:8px 0 0;line-height:1.5"></div>
-                                <div id="vgSavedWrap" style="display:none">
-                                  <div class="vg-lblrow" style="margin:14px 0 7px"><span class="vg-lbl">Saved References</span><span class="vg-meta" id="vgSavedMeta">Kept for 10 minutes</span></div>
-                                  <div class="savedgrid" id="vgSavedGrid"></div>
-                                </div>
-                              </div>
+                              <!-- PROBLEM 3: #vgMediaSect (R2V ko'p-modal referens bloki) olib tashlandi -->
                               <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Start frame is required — add it with +.</span></div>
                               <!-- Prompt (umumiy — ikkala refKind) — FIX5: rasm tool lbl idiomi -->
                               <div class="sect">
@@ -9634,8 +9614,8 @@ async function bootPlugin(){
     {id:'image',name:'Image',icon:_catImgSVG,card:'Generate image',models:'GPT Image 2 · Nano<br>Flux · Seedream',glow:'rgba(143,79,209,.22)',tools:[
       {name:'Generate image',sub:'GPT Image 2 · Nano · Flux · Seedream',icon:_toolImgSVG,dest:'imggen'}
     ]},
-    {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Seedance 2.0<br>Fast + R2V',glow:'rgba(46,157,192,.2)',tools:[
-      {name:'Generate video',sub:'Seedance 2.0 · Fast (frame) + R2V (multi-modal)',icon:_toolVidSVG,dest:'vidgen'}
+    {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Seedance 2.0<br>Fast',glow:'rgba(46,157,192,.2)',tools:[
+      {name:'Generate video',sub:'Seedance 2.0 · Fast (frame)',icon:_toolVidSVG,dest:'vidgen'}
     ]},
     {id:'audio',name:'Audio',icon:_catAudSVG,card:'Audio',models:'Voice · music · SFX',tools:[]},
     {id:'3d',name:'3D',icon:_cat3dSVG,card:'3D',models:'Model · texture',tools:[]}
@@ -11446,7 +11426,9 @@ window.afGallery=(function(){
     vm._pending=studioGet('/api/studio/gen/models?mode=video').then(function(r){
       // Video modellar: Google to'g'ridan-to'g'ri (Veo=vertex, Omni=vertex-omni) + fal (Seedance).
       // 2026-07-01: Veo/Omni refKind='frames' (i2v-uslub) — pane ularni to'g'ri ko'rsatadi.
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&(x.provider==='fal'||x.provider==='vertex'||x.provider==='vertex-omni')&&x.mode==='video'; });
+      // PROBLEM 3: R2V (media-refs / reference-to-video) modellar PLAGINDA ko'rsatilmaydi —
+      // video composer Fast (frames) only; R2V web'da qoladi.
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&(x.provider==='fal'||x.provider==='vertex'||x.provider==='vertex-omni')&&x.mode==='video'&&x.refKind!=='media-refs'&&x.feature!=='reference-to-video'; });
       if(!fal.length)throw new Error('No video model found');
       vm.models=fal; vm.loaded=true;
       try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}
@@ -11542,23 +11524,8 @@ window.afGallery=(function(){
     // Lightbox/So'nggi "Referens kadr" menyusida Yakuniy varianti ham endFrame'ga bog'liq
     var reOpt=$('vgRefEnd'); if(reOpt)reOpt.style.display=vm.endFrameOk?'':'none';
     var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
-    // b4/b5 + FIX3: Fast|R2V toggle FAQAT joriy model qo'llaydigan rejim(lar)ni ko'rsatadi —
-    // frames model R2V taklif qilmaydi (Veo bug'i), media model Fast taklif qilmaydi; 'none' → butun qator yashirin.
-    var mf=$('vgModeFast'); var mr2=$('vgModeR2V');
-    if(mf){ mf.classList.toggle('is-on',vm.refKind==='frames'); mf.style.display=(vm.refKind==='frames')?'':'none'; }
-    if(mr2){ mr2.classList.toggle('is-on',isMedia); mr2.style.display=isMedia?'':'none'; }
-    var segRow=mf&&mf.parentNode;
-    if(segRow&&segRow.classList.contains('vg-modeseg')&&segRow.parentNode&&segRow.parentNode.classList.contains('sect')){
-      // #7: boshqa rejimga o'tadigan model bo'lmasa (bitta-rejimli katalog) butun toggle qatori yashirin —
-      // yolg'iz yarim-pill bo'sh joy egallamasin
-      var hasFast=false,hasR2V=false;
-      try{ hasFast=!!vgModelOfKind(false); hasR2V=!!vgModelOfKind(true); }catch(e){}
-      segRow.parentNode.style.display=(isNone||!hasFast||!hasR2V)?'none':'';
-    }
-    // Media referens tugmalari — har tur FAQAT limiti >0 bo'lsa (Omni: audio=0 → +Ovoz yo'q; refKind 'image' → +Video yo'q)
-    var ai2=$('vgAddImg'); if(ai2)ai2.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.image)?'':'none';
-    var av2=$('vgAddVid'); if(av2)av2.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.video)?'':'none';
-    var aa=$('vgAddAud'); if(aa)aa.style.display=(isMedia&&vm.mediaRefs&&vm.mediaRefs.audio)?'':'none';
+    // PROBLEM 3: Fast|R2V toggle va media-referens (+Image/+Video/+Audio) UI olib tashlandi —
+    // plagin video Fast-only (media-refs modellar ensureVgMeta filtridan o'tmaydi).
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
     if(isMedia){ renderMediaRefs(); updRefMeta(); loadVgSavedRefs(); }
     else renderVgSavedRefs();
@@ -11969,26 +11936,8 @@ window.afGallery=(function(){
     var pr=$('vgSrcProj'); if(pr){var s2=pr.querySelector('small'); if(s2)s2.textContent='AE project — '+typeLabel(type).toLowerCase();}
     openVgSheet('vgSrcSheet',_vgSrcTarget.anchor);
   }
-  (function(){ var i=$('vgAddImg'),v=$('vgAddVid'),a=$('vgAddAud');
-    if(i)i.addEventListener('click',function(){ openMediaSrc('image'); });
-    if(v)v.addEventListener('click',function(){ openMediaSrc('video'); });
-    if(a)a.addEventListener('click',function(){ openMediaSrc('audio'); }); })();
-  // Copy-paste: clipboarddagi RASM → media-refs (R2V) rasm referens (video tool ko'rinib turganda; matn promptga odatdagidek yopishadi).
-  document.addEventListener('paste',function(e){
-    try{
-      if(vm.refKind!=='media-refs')return;
-      var ta=$('vgPrompt'); if(!ta||ta.offsetParent===null)return; // video tool ko'rinmasa — aralashmaymiz
-      var items=(e.clipboardData&&e.clipboardData.items)||[];
-      var img=null; for(var i=0;i<items.length;i++){ if(items[i].type&&items[i].type.indexOf('image/')===0){ img=items[i]; break; } }
-      if(!img)return;
-      e.preventDefault();
-      if(!mediaAllowed('image'))return;
-      var blob=img.getAsFile(); if(!blob)return;
-      var rd=new FileReader();
-      rd.onload=function(){ uploadMediaRef({path:null,dataUrl:String(rd.result||''),sizeBytes:(blob.size||0)},'image'); toast('Image added from clipboard','success'); };
-      rd.readAsDataURL(blob);
-    }catch(_){}
-  });
+  // PROBLEM 3: +Image/+Video/+Audio tugma listener'lari va media-refs clipboard-paste
+  // handler'i olib tashlandi (R2V UI plaginda yo'q; ichki mref funksiyalari guarded/dormant).
   (function(){
     var full=$('vgClipFull'), part=$('vgClipPart'), cancel=$('vgClipCancel'), apply=$('vgClipApply'), audioTgl=$('vgClipAudioToggle');
     if(full)full.addEventListener('click',function(){
@@ -12157,20 +12106,7 @@ window.afGallery=(function(){
   // (prompt ichidagi ＋Referens tugmasi olib tashlandi — tepadagi kadr box / +Rasm/+Video kanonik)
   // FIX D: doimiy manba chiplari (vgChipFile/Proj/Tl) olib tashlandi — manba tanlash faqat
   // kadr box yoki ＋Referens popover menyusi (vgSrcSheet) orqali, rasm tool bilan bir xil.
-  // b4/b5: Fast|R2V toggle — mos refKind'li birinchi modelga o'tadi (switchVgModel tasdiq oqimini saqlaydi)
-  function vgModelOfKind(wantMedia){
-    var ms=vm.models||[];
-    for(var i=0;i<ms.length;i++){ var k=vgCapsFor(ms[i]).kind; if(wantMedia?(k==='media-refs'):(k!=='media-refs'))return ms[i]; }
-    return null;
-  }
-  var _mf=$('vgModeFast'); if(_mf)_mf.addEventListener('click',function(){
-    if(vm.refKind!=='media-refs')return;
-    var m=vgModelOfKind(false); if(m)switchVgModel(m); else toast('No Fast model found','warning');
-  });
-  var _mr=$('vgModeR2V'); if(_mr)_mr.addEventListener('click',function(){
-    if(vm.refKind==='media-refs')return;
-    var m=vgModelOfKind(true); if(m)switchVgModel(m); else toast('No R2V model found','warning');
-  });
+  // PROBLEM 3: Fast|R2V toggle handler'lari (vgModelOfKind, #vgModeFast/#vgModeR2V) olib tashlandi.
 
   // ── enhance ──
   $('vgEnhance').addEventListener('click',function(){
