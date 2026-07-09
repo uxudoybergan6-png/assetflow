@@ -40,6 +40,13 @@ import {
   recordProviderInvoice,
   listProviderInvoices,
 } from "../lib/pricing-reconcile.js";
+import {
+  DEFAULT_LANDING_CONFIG,
+  landingConfigSchema,
+  getLandingConfig,
+  saveLandingConfig,
+  resetLandingConfig,
+} from "../lib/landing-config.js";
 
 export const adminRouter = Router();
 
@@ -48,7 +55,7 @@ adminRouter.use(requireAuth, requireAdmin);
 // FAZA 2 (L5) — folder whitelist + fileName sanitizatsiya: aks holda `folder`/`fileName`
 // bevosita S3 kalitiga interpolatsiya qilinib, path-traversal (`../`) yoki ixtiyoriy kalit
 // injeksiyasi (boshqa prefiksga yozish) mumkin edi.
-const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc"]);
+const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc", "landing"]);
 function safeUploadFolder(f?: string): string {
   const v = (f ?? "assets").trim();
   return ALLOWED_UPLOAD_FOLDERS.has(v) ? v : "assets";
@@ -86,6 +93,46 @@ adminRouter.post("/upload-url", async (req, res) => {
 
   const uploadUrl = await getSignedUploadUrl(key, contentType);
   res.json({ uploadUrl, key, publicUrl: getPublicUrl(key) });
+});
+
+// ── Landing CMS (admin "Website" tab) ────────────────────────────────────────
+// Faqat o'qish/yozish konfiguratsiya — pul mantig'iga aloqasi yo'q. Ommaviy
+// o'qish /api/landing/config (routes/landing.ts) da; bu yerdagilar admin-guarded.
+
+/** GET /api/admin/landing-config — merged config + defaultlar (editor "reset" ko'rsatishi uchun). */
+adminRouter.get("/landing-config", async (_req, res) => {
+  const { config, updatedAt } = await getLandingConfig();
+  res.json({ config, updatedAt, defaults: DEFAULT_LANDING_CONFIG });
+});
+
+/** PUT /api/admin/landing-config — qisman patch (bo'lim-darajada merge) + audit. */
+adminRouter.put("/landing-config", async (req, res) => {
+  const parsed = landingConfigSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid landing config", detail: parsed.error.flatten() });
+    return;
+  }
+  const config = await saveLandingConfig(parsed.data, req.user?.userId ?? null);
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "landing_config.update",
+    targetType: "landingConfig",
+    targetId: "singleton",
+    detail: JSON.stringify(Object.keys(parsed.data)).slice(0, 200),
+  });
+  res.json({ config });
+});
+
+/** DELETE /api/admin/landing-config — defaultlarga (joriy hardcoded kontent) qaytarish. */
+adminRouter.delete("/landing-config", async (req, res) => {
+  const config = await resetLandingConfig();
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "landing_config.reset",
+    targetType: "landingConfig",
+    targetId: "singleton",
+  });
+  res.json({ config });
 });
 
 // ── FAZA 2 #13 — Tarif limitlari (PlanConfig, DB) ───────────────────────────

@@ -30,6 +30,7 @@ import { auditRouter } from "./routes/audit.js";
 import { aiRouter } from "./routes/ai.js";
 import { studioGenRouter } from "./routes/studio-gen.js";
 import { projectsRouter } from "./routes/projects.js";
+import { landingRouter } from "./routes/landing.js";
 import { logS3Diagnostics, isS3Configured, checkS3Health } from "./lib/s3.js";
 import { prisma } from "@creative-tools/database";
 import { initSentry, captureException } from "./lib/sentry.js";
@@ -181,6 +182,7 @@ app.use("/api/logs", logsRouter);
 app.use("/api/studio/messages", messagesRouter);
 app.use("/api/studio/audit", auditRouter);
 app.use("/api/studio/projects", projectsRouter); // QA-FIX #13 — studioGenRouter'dan OLDIN (o'z auth+limit'i bor)
+app.use("/api/landing", landingRouter); // Landing CMS — ommaviy o'qish (yozish adminRouter'da)
 app.use("/api/studio", studioGenRouter);
 
 // Topilmagan yo'llar — JSON 404 (hang emas)

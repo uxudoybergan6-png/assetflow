@@ -818,3 +818,13 @@ model InfringementReport {
   @@index([templateId])
   @@index([createdAt])
 }
+
+// ── Landing CMS (admin "Website" tab) — bitta qator (id=1), butun landing
+// konfiguratsiyasi JSON blob'da. Default qiymatlar KODDA (apps/api landing-config.ts):
+// qator yo'q/bo'sh bo'lsa landing hozirgi hardcoded kontent bilan bir xil ko'rinadi.
+model LandingConfig {
+  id          Int      @id @default(1)
+  data        Json     @default("{}")
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
