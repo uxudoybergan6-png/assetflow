@@ -358,11 +358,13 @@ const AssetFlowCatalog = (() => {
     try {
       data = await fetchCatalog();
     } catch (e) {
+      // P4: foydalanuvchiga do'stona xabar (URL/xom xato YO'Q) — texnik tafsilot konsolda.
+      try { console.warn("refreshBrowse xatosi · API:", apiBase(), e); } catch (_) {}
       if (typeof showToast === "function") {
         const friendly =
           typeof friendlyError === "function"
             ? friendlyError(e)
-            : ((e && e.message) || String(e)) + " · API: " + apiBase();
+            : "Couldn’t reach the server — try again shortly";
         showToast(friendly, "error");
       }
       throw e;

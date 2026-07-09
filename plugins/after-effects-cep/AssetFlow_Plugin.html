@@ -6965,7 +6965,8 @@ async function syncServerCatalog(){
     const base=AssetFlowCatalog.apiBase();
   if(n>0){
       const where=AssetFlowCatalog.primaryServerNav();
-      showToast(n+' server templates · '+base);
+      console.log('[sync] server templates:',n,'· API:',base); // P4: URL faqat konsolda
+      showToast(n+' template'+(n>1?'s':'')+' synced','success');
       // Faqat foydalanuvchi hali katalog rejimida bo'lsa avto-o'tamiz — Sync await'i (cold-start)
       // davomida AI Tools/Home'ga o'tgan bo'lsa, uни tortib qaytarmaymiz.
       const _inCatalog=!document.documentElement.classList.contains('ai-mode')&&!document.documentElement.classList.contains('home-mode')&&!document.documentElement.classList.contains('lib-mode');
@@ -6973,10 +6974,13 @@ async function syncServerCatalog(){
         switchNavFromSidebar(document.querySelector('.env-side-link[data-nav="'+where+'"]'),where);
       }
     }else{
-      showToast('Server catalog is empty — has the admin approved anything? API: '+base);
+      // P4: bo'sh katalog = NORMAL holat (hali shablon nashr etilmagan) — toast YO'Q, katalog o'zining
+      // toza bo'sh holatini ko'rsatadi. Diagnostika faqat konsolda (URL/admin-jargon foydalanuvchiga emas).
+      console.log('[sync] server catalog empty · API:',base);
     }
   }catch(e){
-    showToast('API: '+(e.message||'not connected'));
+    // P4: xom xato/URL foydalanuvchiga chiqmaydi — qisqa do'stona xabar + konsolda texnik tafsilot.
+    showToast('Couldn’t reach the server — retrying…','info');
     console.warn('syncServerCatalog',e);
   }
 }
