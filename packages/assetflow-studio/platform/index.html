@@ -17049,15 +17049,14 @@ class Component extends DCLogic {
       if (window.FFAPI) {
         if (FFAPI.getToken()) {
           const savedUser = FFAPI.getUser();
-          if (savedUser && savedUser.role && savedUser.role !== 'USER') {
-            FFAPI.clearSession();
-          } else {
-            this.setState({ user: savedUser });
-            this.bootData();
-            // #14: sessiya tiklandi — landing o'rniga to'g'ridan app (hash deep-link ustuvor).
-            const h0 = (window.location.hash || '').replace('#', '') || pathScreen;
-            if (savedUser && (!h0 || h0 === 'landing')) { this._hashApplied = true; this.go('dashboard'); }
-          }
+          // #2: har qanday rol (Admin/Contributor ham) platformaga oddiy foydalanuvchi
+          // sifatida kira oladi — sessiyani rad etmaymiz (admin/kontributor kirishlari
+          // boshqa joyda saqlanib qoladi).
+          this.setState({ user: savedUser });
+          this.bootData();
+          // #14: sessiya tiklandi — landing o'rniga to'g'ridan app (hash deep-link ustuvor).
+          const h0 = (window.location.hash || '').replace('#', '') || pathScreen;
+          if (savedUser && (!h0 || h0 === 'landing')) { this._hashApplied = true; this.go('dashboard', { replace: true }); }
         }
         this.loadCatalog();
         window.addEventListener('ff-auth-expired', this._onExpired = () => {
@@ -17369,13 +17368,9 @@ class Component extends DCLogic {
    *  emailVerifyRequired'ni user obyektiga qo'shib (bir xil shakl — /me bilan
    *  moslashtirish uchun), gate() orqali dashboard yoki verify-email'ga o'tish. */
   _afterLoginSuccess(r, msg) {
-    // Platforma faqat USER roli uchun — Contributor/Admin login.html/admin-login.html
-    // orqali kirsin (o'sha sahifalarda ham teskari yo'nalishda xuddi shu tekshiruv bor).
-    if (r.user && r.user.role && r.user.role !== 'USER') {
-      FFAPI.clearSession();
-      this.setState({ authBusy: false, authErr: "This account belongs to a Contributor/Admin role — please sign in from the Studio panel, not the platform." });
-      return;
-    }
+    // #2: platformaga barcha rollar kira oladi — Admin/Contributor hisoblari ham
+    // oddiy foydalanuvchi sifatida (browse, AI Studio, account) ishlatishi mumkin.
+    // Ularning admin/kontributor kirishi alohida panellarda saqlanib qoladi.
     const user = Object.assign({}, r.user, { emailVerifyRequired: r.emailVerifyRequired });
     FFAPI.setSession(r.token, user);
     this._sess = {}; // eski foydalanuvchi gen-sessiyalari yaroqsiz
