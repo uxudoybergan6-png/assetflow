@@ -18331,6 +18331,54 @@ class Component extends DCLogic {
     });
     setTimeout(() => { try { const el = document.querySelector('.va-dock .prompt'); if (el) el.focus(); } catch (e) {} }, 60);
   }
+  // P18 — "Regenerate" endi GENERATSIYA QILMAYDI: manba gen'ning prompt + model + sozlama +
+  // referenslarini (start/end kadr, media-refs) composer'ga TO'LIQ tiklaydi; foydalanuvchi ko'rib,
+  // tahrirlab, o'zi Generate bosadi (kredit avtomatik sarflanmaydi). buildParams'ning teskarisi.
+  async restoreGenToComposer(genId) {
+    let g;
+    try { g = await FFAPI.genGet(genId); } catch (e) { this.toast(this.errMsg(e)); return; }
+    if (!g) { this.toast('This result could not be loaded'); return; }
+    const params = g.params || {};
+    const mode = (g.mode === 'video') ? 'video' : (g.mode === 'voice' || g.mode === 'music') ? 'voice' : (g.mode === 'sfx') ? 'sfx' : 'image';
+    const tool = this.aiTools.find(t => t.mode === mode);
+    const list = this.state.genModels[mode] || [];
+    const orig = list.find(m => String(m.id) === String(g.modelId));
+    const model = orig || list.find(m => m.id === this.state.selModel[mode]) || list[0] || null;
+    // refResetPatch bilan boshlaymiz (eski referenslar limit/duplikatga to'sqinlik qilmasin), so'ng tiklaymiz.
+    const patch = Object.assign(this.refResetPatch(), {
+      aiPrompt: g.prompt || '', aiTool: tool ? tool.key : this.state.aiTool,
+      aiView: 'composer', aiMediaView: 'visuals', useMenuOpen: false, chipPop: null, modelOpen: false, modelModalOpen: false,
+    });
+    const sel = Object.assign({}, this.state.selModel); if (model) sel[mode] = model.id; patch.selModel = sel;
+    // Sozlamalar — saqlangan qiymatni o'rnatamiz; generate paytida buildParams model bo'yicha KLAMP qiladi
+    // (noto'g'ri kombinatsiya hech qachon provayderga bormaydi). Referens URL'lar best-effort (yo'q bo'lsa
+    // thumbnail chizilmaydi, lekin crash yo'q — foydalanuvchi olib tashlashi mumkin).
+    if (mode === 'image') {
+      if (params.aspectRatio) patch.aiSize = params.aspectRatio;
+      if (params.count) patch.aiCount = params.count;
+      if (params.quality) patch.aiQuality = params.quality;
+      const irefs = Array.isArray(params.referenceUrls) ? params.referenceUrls : (params.referenceUrl ? [params.referenceUrl] : []);
+      const ir = irefs.filter(u => typeof u === 'string' && u); if (ir.length) patch.refImages = ir;
+    } else if (mode === 'video') {
+      if (params.duration != null) patch.aiDuration = params.duration;
+      if (params.resolution) patch.aiRes = params.resolution;
+      if (params.aspectRatio) patch.aiSize = params.aspectRatio;
+      if (params.audio != null) patch.aiAudio = !!params.audio;
+      if (params.bitrateMode) patch.aiBitrate = params.bitrateMode;
+      if (params.referenceUrl) patch.refStartUrl = params.referenceUrl;
+      if (params.referenceEndUrl) patch.refEndUrl = params.referenceEndUrl;
+      if (Array.isArray(params.imageUrls) && params.imageUrls.length) patch.refImages = params.imageUrls.slice();
+      if (Array.isArray(params.videoUrls) && params.videoUrls.length) patch.refVideos = params.videoUrls.slice();
+      if (Array.isArray(params.audioUrls) && params.audioUrls.length) patch.refAudios = params.audioUrls.slice();
+    } else if (mode === 'voice') {
+      if (params.voice) patch.aiVoice = params.voice;
+    } else if (mode === 'sfx') {
+      if (params.duration != null) patch.aiDuration = params.duration;
+    }
+    this.setState(patch);
+    this.toast(orig ? 'Loaded into composer — edit and Generate' : 'Loaded — original model unavailable, using a fallback');
+    setTimeout(() => { try { const el = document.querySelector('.va-dock .prompt'); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } } catch (e) {} }, 60);
+  }
   // P8 — referens faylni yuklash: rasm/kichik fayl dataUrl (/gen/ref-upload), katta
   // video/audio presigned PUT (/gen/ref-upload-url) + {srcKey}. k: img|start|end|vid|aud
   addRefFile(k) {
@@ -19372,7 +19420,7 @@ class Component extends DCLogic {
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       closeUseMenu: () => this.setState({ useMenuOpen: false }),
       axMenuDownload: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
-      axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); this.generate(); },
+      axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.restoreGenToComposer(activeGenRaw.id); }, // P18: prefill, don't generate
       axMenuDelete: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.deleteGenById(activeGenRaw.id); },
       // P2 — Copy prompt: gen'ning TO'LIQ prompti clipboard'ga
       axHasPrompt: !!(activeGenRaw && activeGenRaw.prompt),
@@ -19382,7 +19430,7 @@ class Component extends DCLogic {
           .then(() => this.toast('Prompt copied'))
           .catch(() => { try { const ta = document.createElement('textarea'); ta.value = p; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); this.toast('Prompt copied'); } catch (x) { this.toast('Copy failed'); } }); },
       axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
-      axTileRegen: (e) => { e.stopPropagation(); this.generate(); },
+      axTileRegen: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); const id = el && el.dataset.id; const g = id ? wsGens.find(x => x.id === id) : activeGenRaw; if (g) this.restoreGenToComposer(g.id); }, // P18: prefill, don't generate
       onSuggest: (e) => { const el = e.currentTarget; this.setState(Object.assign({ aiTool: el.dataset.tool, aiPrompt: el.dataset.p, aiMediaView: null, chipPop: null }, refClearIfModeChanged(el.dataset.tool))); },
       openModelModal: (e) => { if (e) e.stopPropagation(); this.setState({ modelModalOpen: true, chipPop: null, modelQ: '', modelFilter: 'All' }); },
       closeModelModal: () => this.setState({ modelModalOpen: false }),
