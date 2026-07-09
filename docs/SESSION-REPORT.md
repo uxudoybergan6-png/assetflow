@@ -13,6 +13,21 @@
 - Mockup: `_aitools-sessions-projects-mockup.html` (4 frame). Brauzer smoke-test: view'lar
   ochiladi, picker modal ishlaydi, konsol xatosiz; AE jonli testi kutilmoqda.
 
+## PROBLEM 2 — Karta amallari + Copy prompt ✅
+
+- Copy prompt IKKALA yuzada: web Use ▾ menyu (axHasPrompt guard, clipboard+execCommand
+  fallback) + plagin karta/lightbox (afCopyText, CEP-xavfsiz). mapGen endi to'liq prompt saqlaydi.
+- Plagin karta ikonlariga hover-label tooltip (CSS attr(title)) — amallar aniq.
+- Paritet: Add-to-project (P1), Regenerate, Download/Import, Delete ikkala yuzada.
+
+## PROBLEM 4 — Real thumbnail + eager load ✅
+
+- Backend: `makeImageThumb` (~512px jpg, ffmpeg semaphore, thumbKey) — thumbUrl endi to'liq
+  rasm EMAS; video posterlar allaqachon bor edi. Delete/retention thumbKey'ni tozalaydi ✓.
+- Web: birinchi 6 karta eager+fetchpriority=high; plagin: birinchi 4 karta eager.
+- Tekshiruv: ffmpeg standalone 1024→512px ✓; lokal S3 yo'q — GCS yo'li production'da
+  (kod faqat isS3Configured'da ishlaydi, fallback eski xatti-harakat).
+
 ## PROBLEM 10 — Add-a-model tizimi ✅
 
 - `gen-models-validate.ts` — har GEN_MODELS entry uchun to'liq validatsiya (id/mode/feature/
