@@ -3,6 +3,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { createHash } from "crypto";
 import { fileURLToPath } from "url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -84,6 +85,20 @@ for (const f of FILES) copyFile(path.join(root, f), path.join(dist, f));
 //    index.html dist ROOT'ga tushadi (CF Pages / ni avtomatik shu faylga beradi),
 //    shu sabab eski root index.html endi FILES ro'yxatida EMAS.
 copyDir(path.join(root, "platform"), dist);
+
+// 5b) ff-api.js cache-bust — manbadagi `ff-api.js?v=dev` dist index.html'da fayl
+//     KONTENT-HASH'i bilan almashtiriladi. Aks holda brauzer/CF keshi eski
+//     ff-api.js beradi ("FFAPI.projectCreate is not a function" jonli incidenti).
+{
+  const apiSrc = path.join(dist, "ff-api.js");
+  const idx = path.join(dist, "index.html");
+  if (fs.existsSync(apiSrc) && fs.existsSync(idx)) {
+    const hash = createHash("sha256").update(fs.readFileSync(apiSrc)).digest("hex").slice(0, 10);
+    const html = fs.readFileSync(idx, "utf8").replace(/ff-api\.js\?v=[\w-]+/g, `ff-api.js?v=${hash}`);
+    fs.writeFileSync(idx, html);
+    console.log(`  ff-api.js cache-bust: ?v=${hash}`);
+  }
+}
 
 // _redirects — Cloudflare Pages routing.
 // Login sahifalari endi real fayllar (/studio/login.html, /admin/login.html);
