@@ -1,12 +1,13 @@
-# Sessiya hisoboti — QA-FIX partiya 5 (sessiyalar + Projects) · 2026-07-09
+# Sessiya hisoboti — AI Studio kirish redizayni (Artlist uslubi) · 2026-07-09
 
-**Vazifa:** AI Studio sessiya modeli (#12) + Projects (#13). 3 commit: ee58a9b, 1eb153a, 6a6d086 (push YO'Q).
+**Vazifa:** Web AI Studio kirishi workspace-first (Artlist AI Toolkit naqshi) + ff-api.js cache-bust.
 
 **Qilindi:**
-- DB: `Project` + `ProjectItem` (kind gen|template, refId polimorf) — additive migratsiya `20260709100000_projects`, lokal DB'da qo'llanildi.
-- API: `GET /gen/sessions` (count+lastAt+cover), `PATCH /gen/sessions/:id` (rename), `/api/studio/projects` CRUD + items (egaga bog'langan; gen media qayta imzolanadi, shablon `mapCatalogItem`). Pul zonasi tegilmagan.
-- Platforma: chap rail = sessiyalar ro'yxati (New session / My Library / nom+vaqt+cover, rename modali); bitta faol sessiya (nomi birinchi promptdan, eski `_sess[mode]` o'rnida); Projects real API'da — ro'yxat covers, detal masonry (gen+shablon, remove), create/rename/2-bosqichli delete; "Add to project" gen Use ▾ / lightbox / shablon detail'da (tanlagich + create-and-add). Mobil sessiya chiplari.
+- "What are we making today?" picker EKRANI olib tashlandi — AI Studio endi to'g'ridan workspace ochadi: chap rail (New session / My Library / sessiyalar), markazda "Start with your idea" bo'sh holati, pastda doimiy composer (MODE pill Image/Video/Voice/SFX + model + sozlamalar + jonli narx + Generate).
+- Rejim endi dock'dagi MODE pill'dan; oxirgi rejim `localStorage.ff_ai_tool`da saqlanadi (mount'da tiklanadi, default Image). Kirish = yangi bo'sh sessiya (`viewSess:'new'`).
+- Pul zonasi (gen/quote/consume/refund) va PARTIYA 4/5 kodiga tegilmagan; olib tashlangan: picker markup, `openTool`/`backToPicker`, `toolCards`/`minCostOf` hisoblari.
+- Cache-bust: manba `ff-api.js?v=dev` → `prepare-cf-pages.mjs` dist index.html'da sha256 kontent-hash (`?v=<hash10>`) bilan almashtiradi ("FFAPI.projectCreate is not a function" incidenti ildizi).
 
-**Tekshirildi (lokal E2E):** sessiya almashish / My Library jamlash / rename; loyiha yaratish → gen+shablon qo'shish → reload'da saqlanish → remove/rename/delete; egalik 404; idempotent add; `npm run build -w apps/api` toza; 1280+390 skrinshotlar OK.
+**Tekshirildi (lokal preview + production API proxy orqali, headless):** kirish workspace'ni ochadi (picker yo'q); MODE pill joyida qayta konfiguratsiya (Image↔SFX↔Voice, chip'lar model-driven); sessiya rail'dan yuklanadi (2 gen), My Library 41 gen; REAL gen end-to-end (Nano Banana 2 Lite ✦2, balans 3→1, GCS rasm, sessiya avtonom nomlandi); reload'da oxirgi rejim tiklandi; 390px chip-rail + dock ishlaydi; konsol xatosiz; dist'da `ff-api.js?v=150bb20839`.
 
-**Kutilmoqda:** push + Cloud Run deploy + `migrate:deploy` (KODDAN OLDIN) + CF Pages; production'da signed cover URL'lar bilan jonli tekshiruv (template engine style'dagi data-URI `;`ni kesadi — faqat lokal seed artefakti).
+**Kutilmoqda:** push + CF Pages deploy, production'da jonli tekshiruv.

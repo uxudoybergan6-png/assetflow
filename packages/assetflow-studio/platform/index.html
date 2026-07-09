@@ -16257,45 +16257,9 @@
         <!-- AI STUDIO — Variant A (A3 tool picker · A3b canvas + floating dock) -->
         <sc-if value="{{ isAistudio }}" hint-placeholder-val="{{ false }}">
 
-          <!-- A3 · TOOL PICKER -->
-          <sc-if value="{{ aiPicker }}" hint-placeholder-val="{{ true }}">
-            <div class="va-cathero" style="padding-bottom:0">
-              <h2>What are we making today?</h2>
-              <div class="va-hs" style="margin-top:6px">Every generation is quoted in credits before it runs — you approve the price, then it generates.</div>
-            </div>
-            <div class="va-tools">
-              <sc-for list="{{ toolCards }}" as="t" hint-placeholder-count="4">
-                <!-- QA-FIX #14: foydalanuvchining shu rejimdagi oxirgi REAL gen'i karta fonida (bo'lmasa gradient qoladi) -->
-                <button data-tool="{{ t.key }}" onclick="{{ openTool }}" class="va-tool {{ t.gcls }}{{ t.artCls }}" style="background:{{ t.art }}">
-                  <span class="ti"><svg class="va-ic"><use href="{{ t.iconRef }}"></use></svg></span>
-                  <span class="cost">from <b>✦ {{ t.fromCost }}</b></span>
-                  <h4>{{ t.title }}</h4><p>{{ t.desc }}</p>
-                </button>
-              </sc-for>
-            </div>
-            <div class="va-sec"><h3>Recent generations</h3><span class="all" style="font:500 10px var(--mono);letter-spacing:.08em;cursor:default">{{ genCountLabel }}</span></div>
-            <sc-if value="{{ hasGens }}" hint-placeholder-val="{{ false }}">
-              <div class="va-strip" style="padding-bottom:38px">
-                <sc-for list="{{ pickerStrip }}" as="g" hint-placeholder-count="5">
-                  <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="va-thumb gt{{ g.mcls }}" style="background:{{ g.g }}">
-                  <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ g.imgSrc }}" alt=""></sc-if>
-                  <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
-                  <sc-if value="{{ g.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
-                    <span class="va-typetag">{{ g.rtag }}</span>
-                    <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
-                  </div>
-                </sc-for>
-              </div>
-            </sc-if>
-            <sc-if value="{{ noGens }}" hint-placeholder-val="{{ true }}">
-              <div class="va-empty" style="margin-bottom:38px">
-                <div style="font-size:13px;color:var(--muted)">No generations yet — pick a tool above and create your first one</div>
-              </div>
-            </sc-if>
-          </sc-if>
-
-          <!-- A3b · COMPOSER — PHASE B session workspace (mockup frames A–F port) -->
-          <sc-if value="{{ aiComposer }}" hint-placeholder-val="{{ false }}">
+          <!-- A3b · WORKSPACE — Artlist uslubi KIRISh: alohida tool-picker YO'Q, rejim dock'dagi
+               MODE pill'dan tanlanadi; "Recent generations" endi My Library'da (rail) -->
+          <sc-if value="{{ aiComposer }}" hint-placeholder-val="{{ true }}">
             <div class="va-axwork">
 
               <!-- left rail — QA-FIX #12: Artlist uslubi SESSIYALAR ro'yxati + My Library -->
@@ -16329,7 +16293,6 @@
                   </div>
                   <span style="margin-left:auto"></span>
                   <span class="smeta">{{ axSessMeta }}</span>
-                  <button class="va-axghost" onclick="{{ backToPicker }}"><svg class="va-ic" style="width:13px;height:13px"><use href="#i-grid"></use></svg> Tools</button>
                 </div>
 
                 <!-- mobile sessions strip (frame F) — QA-FIX #12: sessiya chiplari -->
@@ -16353,7 +16316,7 @@
                         <circle class="tw2" cx="59" cy="16" r="1.8" fill="#C2F04A"></circle>
                         <circle class="tw3" cx="55" cy="55" r="2.1" fill="#C2F04A"></circle>
                       </svg></span>
-                      <h2>What will we <em>make</em> today?</h2>
+                      <h2>Start with your <em>idea</em></h2>
                       <p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p>
                       <div class="va-axsugg">
                         <sc-for list="{{ axSuggest }}" as="c" hint-placeholder-count="4">
@@ -16977,8 +16940,8 @@ class Component extends DCLogic {
     downloadsMonth: 0,
     storageUsed: 0,
     storageQuota: 0,
-    aiTool: 'Rasm yaratish',
-    aiView: 'picker',
+    aiTool: 'Rasm yaratish', // default rejim = Image; oxirgi ishlatilgan rejim mount'da tiklanadi (ff_ai_tool)
+    aiView: 'composer',      // Artlist-uslub kirish: workspace — yagona ko'rinish ('picker' o'chirildi)
     aiPrompt: '',
     aiSize: '1:1',
     aiQuality: '',
@@ -17033,7 +16996,7 @@ class Component extends DCLogic {
     sessions: [],          // GET /gen/sessions — {id,title,mode,count,lastAt,coverUrl,coverMode}
     sessionsLoaded: false,
     curSessId: null,       // yangi gen'lar boradigan sessiya (lazily yaratiladi)
-    viewSess: null,        // null = My Library; 'new' = bo'sh yangi sessiya; aks holda sessiya id
+    viewSess: 'new',       // null = My Library; 'new' = bo'sh yangi sessiya ("Start with your idea"); aks holda sessiya id
     sessGens: [],          // viewSess sessiyasining gen'lari (server: /gen/sessions/:id/generations)
     sessGensLoading: false,
     // QA-FIX #13 — Projects (real ma'lumot)
@@ -17196,7 +17159,7 @@ class Component extends DCLogic {
       screen = 'verify-email';
     }
     const prev = this.state.screen;
-    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, addPick: null, nameModal: null, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
+    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, addPick: null, nameModal: null, pageFlip: s.pageFlip + 1 }));
     // QA-FIX #12/#13 — ekranga kirganda ro'yxatlar yangilanadi (kirish shart: token)
     if (window.FFAPI && FFAPI.getToken()) {
       if (screen === 'projects') this.loadProjects();
@@ -17223,6 +17186,10 @@ class Component extends DCLogic {
     this._applyEntry();
     // FAZA D — lokal sevimlilarni tiklash
     try { const f = JSON.parse(localStorage.getItem('ff_tpl_favs') || '[]'); if (Array.isArray(f)) this.setState({ favTpls: f }); } catch (e) {}
+    // AI Studio kirishi: oxirgi ishlatilgan rejim (MODE pill) tiklanadi — bo'lmasa default Image.
+    // _toolPersistOn tiklashdan KEYIN yoqiladi (renderdagi saqlash mount'gacha yozmasin).
+    try { const lt = localStorage.getItem('ff_ai_tool'); if (lt && this.aiTools.some(t => t.key === lt) && lt !== this.state.aiTool) { this._lastToolSaved = lt; this.setState({ aiTool: lt }); } } catch (e) {}
+    this._toolPersistOn = true;
     // Saqlangan sessiya + katalog + hash deep-link
     try {
       const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
@@ -17706,7 +17673,7 @@ class Component extends DCLogic {
     const user = Object.assign({}, r.user, { emailVerifyRequired: r.emailVerifyRequired });
     FFAPI.setSession(r.token, user);
     // QA-FIX #12/#13: eski foydalanuvchi sessiya/loyiha holati yaroqsiz — tozalab bootData qayta yuklaydi
-    this.setState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null, curSessId: null, viewSess: null, sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.setState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null, curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.bootData();
     const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
     this.go(next);
@@ -17794,7 +17761,7 @@ class Component extends DCLogic {
   }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
-    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: null, sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.go('landing');
     this.toast('You have been signed out');
   }
@@ -17822,7 +17789,7 @@ class Component extends DCLogic {
     try { await FFAPI.deleteAccount(); }
     catch (e) { this.toast(this.errMsg(e)); return; }
     if (window.FFAPI) FFAPI.clearSession();
-    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: null, sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.go('landing');
     this.toast('Your account has been deleted');
   }
@@ -18115,6 +18082,11 @@ class Component extends DCLogic {
     const sidebarMainView = this.sidebarMain.map(it => ({ ...it, cls: sitCls(it) }));
     const sidebarAccountView = this.sidebarAccount.map(it => ({ ...it, cls: sitCls(it) }));
     const tool = this.curTool();
+    // Oxirgi rejimni eslab qolish (keyingi kirishda MODE pill shu rejimdan boshlanadi).
+    // Markaziy nuqta: aiTool'ni o'zgartiruvchi handler ko'p (pill/suggest/model modal/Use ▾) —
+    // hammasi shu renderdan o'tadi; yozish faqat qiymat o'zgarganda va mount'dagi tiklashdan
+    // KEYIN (aks holda birinchi render default 'Image' bilan saqlanganini yozib yuboradi).
+    if (this._toolPersistOn && this._lastToolSaved !== tool.key) { this._lastToolSaved = tool.key; try { localStorage.setItem('ff_ai_tool', tool.key); } catch (e) {} }
     const model = this.curModel();
     const modelList = this.state.genModels[tool.mode] || [];
     const genParams = model ? this.buildParams(tool, model) : {};
@@ -18185,7 +18157,6 @@ class Component extends DCLogic {
     // ── Bottom-docked composer: branch, chip values, popover state ──
     const aiIsCanvas = tool.mode === 'image' || tool.mode === 'video';
     const aiIsAudio = tool.mode === 'voice' || tool.mode === 'sfx';
-    const hasGens = this.state.gens.length > 0;
     const showPartiya = !!activeGenRaw || this.state.generating;
     const aspectVal = genParams.aspectRatio || '—';
     const qualityVal = genParams.quality || '—';
@@ -18194,41 +18165,13 @@ class Component extends DCLogic {
     const durVal = genParams.duration ? (genParams.duration + 's') : '—';
     const cp = this.state.chipPop;
     const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration', popMode = cp === 'mode', popVoice = cp === 'voice';
-    // FAZA 5 Variant A — A3 picker kartalari (from-✦ narxlar real model katalogidan) + A3b composer bindinglari
-    const fromFallback = { image: 5, video: 40, voice: 8, sfx: 3 };
-    const minCostOf = (mode) => {
-      const list = this.state.genModels[mode] || [];
-      let best = null;
-      for (const m of list) {
-        let c = m.cost;
-        if (mode === 'image' && m.imgSettings && m.imgSettings.quality && m.imgSettings.quality.cost) c = Math.min.apply(null, Object.values(m.imgSettings.quality.cost));
-        if (mode === 'video' && m.pricing !== 'per-generation') {
-          const durs = (m.durations && m.durations.length) ? m.durations : [4];
-          const perSec = m.videoSettings && m.videoSettings.resolution && m.videoSettings.resolution.perSec;
-          const rate = perSec ? Math.min.apply(null, Object.values(perSec)) : m.cost;
-          c = rate * Math.min.apply(null, durs);
-        }
-        if (best == null || c < best) best = c;
-      }
-      // #6: katalog hali yuklanmagan bo'lsa taxminiy fallback KO'RSATMAYMIZ (SFX
-      // "✦3→✦4" sakrashi shundan edi) — neytral "…" chiqadi, yuklangach real min.
-      if (best != null) return best;
-      return this.state.genModels[mode] ? fromFallback[mode] : '…';
-    };
+    // Artlist-uslub kirish: picker kartalari olib tashlandi — toolMetaA faqat dock MODE pill uchun
     const toolMetaA = {
       'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
       'Video yaratish': { title: 'Video', desc: 'Text to video, priced per second', gcls: 'va-g9', iconRef: '#i-vid' },
       'Voiceover': { title: 'Voiceover', desc: 'Natural voices, multi-language narration', gcls: 'va-g3', iconRef: '#i-mic' },
       'SFX': { title: 'SFX', desc: 'Describe a sound, get broadcast-ready FX', gcls: 'va-g4', iconRef: '#i-wave' },
     };
-    // QA-FIX #14 — tool kartasi foni: shu rejimdagi OXIRGI real gen thumb'i (bo'lmasa gradient klassi)
-    const lastThumbByMode = {};
-    this.state.gens.forEach(g => { if (g.thumb && g.mode && !lastThumbByMode[g.mode]) lastThumbByMode[g.mode] = g.thumb; });
-    const toolCards = this.aiTools.map(t => {
-      const art = lastThumbByMode[t.mode] || null;
-      return { key: t.key, ...(toolMetaA[t.key] || {}), fromCost: minCostOf(t.mode),
-        art: art ? "url('" + art + "') center/cover no-repeat" : '', artCls: art ? ' hasart' : '' };
-    });
     const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
     const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
     const promptPh = tool.mode === 'voice' ? 'Type text — it will be read in a natural voice…' : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
@@ -18809,13 +18752,11 @@ class Component extends DCLogic {
       btmDashCls: btmCls('dashboard'), btmTplCls: btmCls('templates'), btmAiCls: btmCls('aistudio'), btmAccCls: btmCls('account'),
       creditsFmt: this.state.creditsLoaded ? this.state.credits.toLocaleString() : '…',
       aiToolsView, toolName: tool.key, toolIcon: tool.icon, toolDesc, costNow, partiyaLine, canvasCls, pendAspect,
-      aiIsCanvas, aiIsAudio, hasGens, showPartiya,
-      aiPicker: this.state.aiView !== 'composer', aiComposer: this.state.aiView === 'composer',
-      toolCards, toolTitle, toolIconRef, promptPh, quotePrefix, voiceVal, popMode, popVoice,
-      pickerStrip: genView.slice(0, 5), genCountLabel: this.state.gens.length ? (this.state.gens.length + ' TOTAL') : '', noGens: this.state.gens.length === 0,
+      aiIsCanvas, aiIsAudio, showPartiya,
+      // Artlist-uslub kirish: workspace — yagona ko'rinish (picker o'chirildi)
+      aiComposer: true,
+      toolTitle, toolIconRef, promptPh, quotePrefix, voiceVal, popMode, popVoice,
       sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance',
-      openTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k, aiView: 'composer', chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false, modelModalOpen: false }, refClearIfModeChanged(k))); try { window.scrollTo(0, 0); } catch (e2) {} },
-      backToPicker: () => this.setState({ aiView: 'picker', chipPop: null }),
       aspectVal, qualityVal, countVal, resVal, durVal,
       popModel, popAspect, popQuality, popCount, popRes, popDur,
       chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
