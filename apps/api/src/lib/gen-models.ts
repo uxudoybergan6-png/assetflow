@@ -178,7 +178,7 @@ export const GEN_MODELS: GenModel[] = [
     // imgSettings — plagin "Sifat" selektorini FAQAT quality bo'lsa ko'rsatadi (hasQuality=!!ql). fal naqshi.
     imgSettings: {
       aspect: { param: "aspect_ratio", options: NANO_ASPECTS, def: "1:1" },
-      quality: { label: "Sifat", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 4, "2K": 8, "4K": 16 } },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 4, "2K": 8, "4K": 16 } },
       num: [1, 2, 3, 4],
     },
     imgModalities: ["image", "text"],
@@ -218,7 +218,7 @@ export const GEN_MODELS: GenModel[] = [
     count: [1, 2, 3, 4],
     imgSettings: {
       aspect: { param: "aspect_ratio", options: NANO_ASPECTS, def: "1:1" },
-      quality: { label: "Sifat", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 8, "2K": 14, "4K": 24 } },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 8, "2K": 14, "4K": 24 } },
       num: [1, 2, 3, 4],
     },
     imgModalities: ["image", "text"],
@@ -239,7 +239,7 @@ export const GEN_MODELS: GenModel[] = [
     count: [1, 2, 3, 4], // adapter har chaqiruvda numberOfImages:1 → processor count marta
     imgSettings: {
       aspect: { param: "aspect_ratio", options: IMAGEN_ASPECTS, def: "1:1" },
-      quality: { label: "Sifat", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 4, "2K": 6 } },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 4, "2K": 6 } },
       num: [1, 2, 3, 4],
     },
     imgModalities: ["image"],
@@ -260,7 +260,7 @@ export const GEN_MODELS: GenModel[] = [
     count: [1, 2, 3, 4],
     imgSettings: {
       aspect: { param: "aspect_ratio", options: IMAGEN_ASPECTS, def: "1:1" },
-      quality: { label: "Sifat", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 6, "2K": 10 } },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 6, "2K": 10 } },
       num: [1, 2, 3, 4],
     },
     imgModalities: ["image"],
@@ -385,7 +385,7 @@ export const GEN_MODELS: GenModel[] = [
         map: { Auto: "auto", "1:1": "square_hd", "4:3": "landscape_4_3", "3:4": "portrait_4_3", "16:9": "landscape_16_9", "9:16": "portrait_16_9" },
         def: "Auto",
       },
-      quality: { label: "Sifat", param: "quality", options: ["low", "medium", "high", "auto"], def: "high", cost: { low: 3, medium: 6, high: 12, auto: 12 } },
+      quality: { label: "Quality", param: "quality", options: ["low", "medium", "high", "auto"], def: "high", cost: { low: 3, medium: 6, high: 12, auto: 12 } },
       num: [1, 2, 3, 4],
     },
   },
@@ -415,7 +415,7 @@ export const GEN_MODELS: GenModel[] = [
         map: { Auto: "auto", "1:1": "square_hd", "4:3": "landscape_4_3", "3:4": "portrait_4_3", "16:9": "landscape_16_9", "9:16": "portrait_16_9" },
         def: "Auto",
       },
-      quality: { label: "Sifat", param: "quality", options: ["low", "medium", "high", "auto"], def: "high", cost: { low: 3, medium: 6, high: 12, auto: 12 } },
+      quality: { label: "Quality", param: "quality", options: ["low", "medium", "high", "auto"], def: "high", cost: { low: 3, medium: 6, high: 12, auto: 12 } },
       num: [1, 2, 3, 4],
     },
   },

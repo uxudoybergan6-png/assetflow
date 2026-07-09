@@ -3986,6 +3986,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="ai-seg">
                                 <button type="button" class="ai-seg-i is-on">Image</button>
                                 <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('vidgen')" title="Switch to video generation">Video</button>
+                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('audgen')" title="Switch to audio generation">Audio</button>
                               </div>
                             </div>
                             <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
@@ -4110,6 +4111,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="ai-seg">
                                 <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('imggen')" title="Switch to image generation">Image</button>
                                 <button type="button" class="ai-seg-i is-on">Video</button>
+                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('audgen')" title="Switch to audio generation">Audio</button>
                               </div>
                             </div>
                             <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
@@ -4171,7 +4173,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="pillseg" id="vgResSeg"><div class="plab">Resolution</div><div class="pval" id="vgResVal">720p</div></div>
                                   <div class="pillseg" id="vgDurSeg"><div class="plab">Duration</div><div class="pval" id="vgDurVal">Auto</div></div>
                                   <div class="pillseg" id="vgBitSeg" style="display:none"><div class="plab">Bitrate</div><div class="pval" id="vgBitVal">standard</div></div>
-                                  <div class="pillseg tgl on" id="vgAudToggle"><div><div class="plab">Audio</div><div class="pval" id="vgAudVal">On</div></div><div class="ptr"></div></div>
+                                  <div class="pillseg tgl" id="vgAudToggle" style="display:none"><div><div class="plab">Audio</div><div class="pval" id="vgAudVal">Off</div></div><div class="ptr"></div></div>
                                 </div>
                                 <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate video<span class="costtag" id="vgCost">✦—</span></button>
                                 <div class="genhint">≈ 1–2 min · credits refunded on error</div>
@@ -4290,6 +4292,75 @@ html.home-mode #homePage{display:block!important}
                             <div class="opt" id="vgRefStart"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div><div><b>As start frame</b><small>start frame</small></div></div>
                             <div class="opt" id="vgRefEnd"><div class="oi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg></div><div><b>As end frame</b><small>end frame</small></div></div>
                           </div></div>
+                        </div>
+                      </section>
+
+                      <!-- AUDIO GEN — P8 Step C: Voice (Kokoro TTS) + SFX (ElevenLabs), katalog-driven -->
+                      <section id="v-audgen" class="view">
+                        <div class="axig">
+                          <div class="ai-hdr">
+                            <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                            <button type="button" class="ai-back" id="agBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                            <div class="ai-hdr-c">
+                              <div class="ai-seg">
+                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('imggen')" title="Switch to image generation">Image</button>
+                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('vidgen')" title="Switch to video generation">Video</button>
+                                <button type="button" class="ai-seg-i is-on">Audio</button>
+                              </div>
+                            </div>
+                            <div class="ai-icon" id="agHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ai-cred" id="agCredit"><span class="cs">✦</span> —</div>
+                            <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                          </div>
+
+                          <div class="igscroll" id="agScroll">
+                            <!-- progress -->
+                            <div class="prog" id="agProg"></div>
+                            <!-- natija -->
+                            <div class="res" id="agRes">
+                              <div class="lbl">Result <span class="meta" id="agResMeta"></span></div>
+                              <div id="agResults"></div>
+                            </div>
+
+                            <!-- PROMPT -->
+                            <div class="vpanel compose-panel">
+                            <div class="sect">
+                              <div class="ai-seg" style="margin-bottom:10px">
+                                <button type="button" class="ai-seg-i is-on" id="agModeVoice">Voice over</button>
+                                <button type="button" class="ai-seg-i" id="agModeSfx">Sound FX</button>
+                              </div>
+                              <div class="guide" id="agGuide"><b>Voice:</b> type the text — it will be read aloud in a natural voice.</div>
+                              <div class="pbox">
+                                <div class="lowcred" id="agLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="agLowNeed"></div></div></div>
+                                <textarea id="agPrompt" placeholder="Type the narration text…"></textarea>
+                              </div>
+                            </div>
+                            </div>
+
+                            <!-- SOZLAMALAR -->
+                            <div class="vpanel settings-panel">
+                            <div class="sect">
+                              <div class="lbl">Settings <span class="meta" id="agModelName"></span></div>
+                              <div id="agVoiceRow">
+                                <div class="lbl" style="margin-top:8px">Voice</div>
+                                <div class="pillrow" id="agVoicePills"></div>
+                              </div>
+                              <div id="agDurRow" style="display:none">
+                                <div class="lbl" style="margin-top:8px">Duration</div>
+                                <div class="pillrow" id="agDurPills"></div>
+                              </div>
+                              <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate audio<span class="costtag" id="agCost">✦—</span></button>
+                            </div>
+                            </div>
+
+                            <!-- SO'NGGI -->
+                            <div class="vpanel recent-panel">
+                            <div class="sect">
+                              <div class="lbl">Recent <span class="morelink" id="agMoreLink" style="margin-left:auto">All →</span></div>
+                              <div class="recentgrid" id="agRecent"></div>
+                            </div>
+                            </div>
+                          </div>
                         </div>
                       </section>
 
@@ -9030,6 +9101,7 @@ async function bootPlugin(){
     var rv=aiCredReal(); var t='<span class="cs">✦</span> '+((rv!=null)?Number(rv).toLocaleString('en-US'):'—');
     var ig=document.getElementById('igCredit'); if(ig)ig.innerHTML=t;
     var vg=document.getElementById('vgCredit'); if(vg)vg.innerHTML=t;
+    var ag=document.getElementById('agCredit'); if(ag)ag.innerHTML=t; // P8: audio tool chip'i ham sinxron
   };
   // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
   // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 muted> + birinchi kadrga seek.
@@ -9262,6 +9334,7 @@ async function bootPlugin(){
     // Har view almashganda Rasm/Video tool poll/progress timerlari + inline pleyer ovozini tozalaymiz (leak fix — audit).
     if(typeof window.axIGTeardown==='function'){ try{ window.axIGTeardown(); }catch(e){} }
     if(typeof window.axVGTeardown==='function'){ try{ window.axVGTeardown(); }catch(e){} }
+    if(typeof window.axAGTeardown==='function'){ try{ window.axAGTeardown(); }catch(e){} }
     if(id==='main'||id==='home'){ if(typeof window.goHome==='function')window.goHome(); return; } // ‹ Asosiy → Home
     closeSheet();
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
@@ -9274,10 +9347,11 @@ async function bootPlugin(){
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
-    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings')?'none':'';
+    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='audgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings')?'none':'';
     syncBal(); // kredit yagona manba (real aiCredits) — balTop + AI Tools ixcham header sinxron
     if(id==='imggen'&&typeof window.axIGRefresh==='function'){try{window.axIGRefresh();}catch(e){}}
     if(id==='vidgen'&&typeof window.axVGRefresh==='function'){try{window.axVGRefresh();}catch(e){}} // FIX H: video ham view ochilганда retry
+    if(id==='audgen'&&typeof window.axAGRefresh==='function'){try{window.axAGRefresh();}catch(e){}} // P8: audio tool
   }
 
   // ===== price / send =====
@@ -9611,15 +9685,18 @@ async function bootPlugin(){
   var _toolImgSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
   var _toolVidSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>';
   var AI_CATS=[
-    {id:'image',name:'Image',icon:_catImgSVG,card:'Generate image',models:'GPT Image 2 · Nano<br>Flux · Seedream',glow:'rgba(143,79,209,.22)',tools:[
-      {name:'Generate image',sub:'GPT Image 2 · Nano · Flux · Seedream',icon:_toolImgSVG,dest:'imggen'}
+    {id:'image',name:'Image',icon:_catImgSVG,card:'Generate image',models:'Nano Banana 2 · Pro<br>Imagen 4',glow:'rgba(143,79,209,.22)',tools:[
+      {name:'Generate image',sub:'Nano Banana 2 · Pro · Imagen 4',icon:_toolImgSVG,dest:'imggen'}
     ]},
-    {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Seedance 2.0<br>Fast',glow:'rgba(46,157,192,.2)',tools:[
-      {name:'Generate video',sub:'Seedance 2.0 · Fast (frame)',icon:_toolVidSVG,dest:'vidgen'}
+    {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Veo 3.1<br>Seedance 2.0',glow:'rgba(46,157,192,.2)',tools:[
+      {name:'Generate video',sub:'Veo 3.1 · Seedance 2.0 Fast',icon:_toolVidSVG,dest:'vidgen'}
     ]},
-    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Audio',models:'Voice · music · SFX',tools:[]},
-    {id:'3d',name:'3D',icon:_cat3dSVG,card:'3D',models:'Model · texture',tools:[]}
+    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Generate audio',models:'Kokoro TTS<br>ElevenLabs SFX',glow:'rgba(230,179,53,.2)',tools:[
+      {name:'Generate audio',sub:'Voice over (Kokoro) · Sound FX (ElevenLabs)',icon:_catAudSVG,dest:'audgen'}
+    ]}
   ];
+  // P8: "3D" karta olib tashlandi (backend'da 3D yo'q — halol tool to'plami);
+  // Audio endi JONLI (Voice/Kokoro + SFX/ElevenLabs → v-audgen).
   // b1: pastki info-toast — bo'sh kategoriya bosilganda (mockup)
   var _soonToastT=null;
   function aiSoonToast(){
@@ -9942,10 +10019,12 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model metadata (lazy, cached) — refMode/maxRefs/aspects/resolutions/qualityCost/count backenddan
-  var meta={loaded:false,models:[],modelId:null,key:null,label:'GPT Image 2 Edit',refMode:'optional',maxRefs:10,refKind:null,refOk:true,
-    ars:['Auto','1:1','4:3','3:4','16:9','9:16'],quals:['low','medium','high','auto'],qLabel:'Quality',aspDef:'Auto',qDefault:'high',
-    qcost:{low:3,medium:6,high:12,auto:12},counts:[1,2,3,4]};
-  var st={ar:'Auto',q:'high',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
+  // P8: pre-load defaultlar joriy default katalog modeliga (Nano Banana 2, id 1010) mos —
+  // ensureMeta yuklangach baribir katalogdan yangilanadi.
+  var meta={loaded:false,models:[],modelId:null,key:null,label:'Nano Banana 2',refMode:'image-edit',maxRefs:10,refKind:null,refOk:true,
+    ars:['1:1','2:3','3:2','3:4','4:3','16:9','9:16','21:9'],quals:['1K','2K','4K'],qLabel:'Quality',aspDef:'1:1',qDefault:'1K',
+    qcost:{'1K':4,'2K':8,'4K':16},counts:[1,2,3,4]};
+  var st={ar:'1:1',q:'1K',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
 
   function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
   function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
@@ -10800,12 +10879,13 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
 
   // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
-  var vm={loaded:false,model:null,res:'480p',dur:'Auto',ar:'Auto',audio:false,bitrate:'standard',refKind:'frames',
+  // P8: pre-load defaultlar joriy default video modelga (Veo 3.1 Lite, id 3001) mos.
+  var vm={loaded:false,model:null,res:'720p',dur:'8',ar:'16:9',audio:false,bitrate:'standard',refKind:'frames',
     mediaRefs:{image:9,video:3,audio:3,total:12},
     mediaRefFormats:null,mediaRefMaxTotalBytes:null,videoInputCostMult:0,pricing:'per-second',flatCost:0,
-    resOpts:['480p','720p'],durOpts:['Auto','4','5','6','7','8','9','10','11','12','13','14','15'],bitOpts:['standard','high'],
-    arOpts:['Auto','21:9','16:9','4:3','1:1','3:4','9:16'],
-    perSec:{'480p':8,'720p':12},autoSec:4,sessionId:null};
+    resOpts:['720p'],durOpts:['4','6','8'],bitOpts:['standard','high'],
+    arOpts:['16:9','9:16'],audioSupported:false,
+    perSec:{'720p':3},autoSec:8,sessionId:null};
   // kadr holati (refKind=frames) + ko'p-modal referens (refKind=media-refs)
   var st={start:null,end:null}; // {dataUrl, url, loading}
   var mref=[]; // [{type:'image'|'video'|'audio', dataUrl, url, loading}]
@@ -11377,6 +11457,9 @@ window.afGallery=(function(){
     vm.audioLocked=!!(vs&&vs.audioLocked);
     vm.arLockVideoRef=!!(vs&&vs.aspectIgnoredWithVideoRef);
     if(vm.audioLocked)vm.audio=(vs&&typeof vs.audioDefault==='boolean')?vs.audioDefault:true;
+    // P8 (P2 gap): model audio QO'LLAMASA (Veo Lite/Fast audio:false) toggle yashirinadi va false yuboriladi.
+    vm.audioSupported=((vs&&vs.audio!=null)?vs.audio:m.audio)===true;
+    if(!vm.audioSupported)vm.audio=false;
     // So'nggi grid kartalari model-aware (Referens tugmasi refKind'ga bog'liq) — model almashganda
     // QAYTA chiziladi, aks holda eski model bilan chizilgan kartada tugma yo'qolib/ortib qoladi.
     try{ if(typeof renderVgRecent==='function')renderVgRecent(); }catch(_){}
@@ -11432,7 +11515,8 @@ window.afGallery=(function(){
       if(!fal.length)throw new Error('No video model found');
       vm.models=fal; vm.loaded=true;
       try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}
-      applyModelSettings(fal[0]); // default — birinchi fal video model (Seedance Fast)
+      // P8: katalog isDefault hurmat qilinadi (image tool bilan bir xil); bo'lmasa birinchi model.
+      applyModelSettings(fal.filter(function(x){return x.isDefault;})[0]||fal[0]);
       applyVgMeta(); return vm;
     }).catch(function(err){
       vm._pending=null; var g=$('vgGen'); if(g)g.disabled=true;
@@ -11508,7 +11592,7 @@ window.afGallery=(function(){
     var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
     var av=$('vgArVal'); if(av)av.textContent=vm.ar;
     var bv=$('vgBitVal'); if(bv)bv.textContent=vm.bitrate;
-    var at=$('vgAudToggle'); if(at){ at.classList.toggle('on',!!vm.audio); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Audio is always on for this model — model feature':''; }
+    var at=$('vgAudToggle'); if(at){ at.style.display=vm.audioSupported?'':'none'; at.classList.toggle('on',!!vm.audio); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Audio is always on for this model — model feature':''; }
     var avv=$('vgAudVal'); if(avv)avv.textContent=vm.audio?'On':'Off';
     applyVgArLock(); // model almashdi — nisbat chipi qulfi qayta hisoblansin
     var bs=$('vgBitSeg'); if(bs)bs.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
@@ -12549,6 +12633,185 @@ window.afGallery=(function(){
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
   loadVgRecent(); renderVgRecent(); renderVgSavedRefs();
+})();
+
+/* ===== AUDIO GEN TOOL — P8 Step C: Voice (Kokoro TTS 2001) + SFX (ElevenLabs 4001) =====
+   Katalog-driven: voices/durations/cost /gen/models'dan; gen oqimi = imzolangan cost-quote →
+   /gen → poll (money-zone'ga tegilmagan, mavjud yo'l qayta ishlatiladi). */
+(function(){
+  function $(id){return document.getElementById(id);}
+  if(!$('v-audgen'))return;
+  var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
+  function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
+  var ag={mode:'voice',models:{voice:null,sfx:null},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{}};
+
+  function ensureAgMeta(){
+    if(ag.loaded)return Promise.resolve(ag);
+    if(ag._pending)return ag._pending;
+    ag._pending=Promise.all([
+      studioGet('/api/studio/gen/models?mode=voice'),
+      studioGet('/api/studio/gen/models?mode=sfx')
+    ]).then(function(rs){
+      var vs=(rs[0]&&rs[0].models)||[], ss=(rs[1]&&rs[1].models)||[];
+      ag.models.voice=vs.filter(function(x){return x.isDefault;})[0]||vs[0]||null;
+      ag.models.sfx=ss.filter(function(x){return x.isDefault;})[0]||ss[0]||null;
+      if(!ag.models.voice&&!ag.models.sfx)throw new Error('No audio model found');
+      var vm0=ag.models.voice;
+      if(vm0&&Array.isArray(vm0.voices)&&vm0.voices.length)ag.voice=vm0.voices[0].id;
+      var sm0=ag.models.sfx;
+      if(sm0&&Array.isArray(sm0.durations)&&sm0.durations.length)ag.dur=sm0.durations[0];
+      ag.loaded=true; applyAg(); return ag;
+    }).catch(function(err){
+      ag._pending=null; var g=$('agGen'); if(g)g.disabled=true;
+      toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Failed to load audio models','error'); throw err;
+    });
+    return ag._pending;
+  }
+  // Kredit chip sinxroni — /credits'dan yangi qiymat olib umumiy afSyncCredits'ga beradi.
+  function agSyncCredits(){ try{ studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){}); }catch(e){} }
+  function curAgModel(){ return ag.mode==='voice'?ag.models.voice:ag.models.sfx; }
+  function agCost(){ var m=curAgModel(); return m?(m.cost||0):0; }
+
+  function pill(txt,on,fn){ var b=document.createElement('button'); b.type='button'; b.className='cchip'+(on?' on':''); b.style.cssText='padding:7px 12px;border-radius:999px;border:1px solid '+(on?'var(--acc)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(163,230,53,.14)':'rgba(255,255,255,.04)')+';color:'+(on?'var(--acc)':'var(--mut)')+';font-size:11.5px;font-weight:600;cursor:pointer'; b.textContent=txt; b.addEventListener('click',fn); return b; }
+  function applyAg(){
+    var m=curAgModel();
+    var mv=$('agModeVoice'), ms=$('agModeSfx');
+    if(mv)mv.classList.toggle('is-on',ag.mode==='voice');
+    if(ms)ms.classList.toggle('is-on',ag.mode==='sfx');
+    var g=$('agGuide'); if(g)g.innerHTML=ag.mode==='voice'?'<b>Voice:</b> type the text — it will be read aloud in a natural voice.':'<b>SFX:</b> describe a sound — e.g. “deep cinematic whoosh with metallic tail”.';
+    var ta=$('agPrompt'); if(ta)ta.placeholder=ag.mode==='voice'?'Type the narration text…':'Describe the sound effect…';
+    var mn=$('agModelName'); if(mn)mn.textContent=m?(m.label+' · ✦'+(m.cost||0)):'';
+    // Voice pills (katalog voices) — faqat voice rejimida
+    var vr=$('agVoiceRow'), vp=$('agVoicePills');
+    var showV=ag.mode==='voice'&&m&&Array.isArray(m.voices)&&m.voices.length>0;
+    if(vr)vr.style.display=showV?'':'none';
+    if(vp&&showV){ vp.innerHTML=''; m.voices.forEach(function(v){ vp.appendChild(pill(v.label,v.id===ag.voice,function(){ ag.voice=v.id; applyAg(); })); }); }
+    // Duration pills (katalog durations) — faqat sfx rejimida
+    var dr=$('agDurRow'), dp=$('agDurPills');
+    var showD=ag.mode==='sfx'&&m&&Array.isArray(m.durations)&&m.durations.length>0;
+    if(dr)dr.style.display=showD?'':'none';
+    if(dp&&showD){ dp.innerHTML=''; m.durations.forEach(function(d){ dp.appendChild(pill(d+'s',d===ag.dur,function(){ ag.dur=d; applyAg(); })); }); }
+    var c=$('agCost'); if(c)c.textContent='✦'+agCost();
+    refreshAgBtn();
+  }
+  function refreshAgBtn(){
+    var b=$('agGen'); if(!b)return;
+    var ta=$('agPrompt');
+    b.disabled=!(ag.loaded&&curAgModel()&&ta&&ta.value.trim().length>=2);
+  }
+  var _ta=$('agPrompt'); if(_ta)_ta.addEventListener('input',refreshAgBtn);
+  var _mv=$('agModeVoice'); if(_mv)_mv.addEventListener('click',function(){ if(ag.mode!=='voice'){ ag.mode='voice'; applyAg(); } });
+  var _ms2=$('agModeSfx'); if(_ms2)_ms2.addEventListener('click',function(){ if(ag.mode!=='sfx'){ ag.mode='sfx'; applyAg(); } });
+
+  function agSession(mode){
+    if(ag.sessions[mode])return Promise.resolve(ag.sessions[mode]);
+    return studioPost('/api/studio/gen/sessions',{mode:mode}).then(function(s){ ag.sessions[mode]=s.id; return s.id; });
+  }
+  function agParams(){
+    var m=curAgModel(); var p={};
+    if(ag.mode==='voice'&&m&&Array.isArray(m.voices)&&m.voices.length){ p.voice=m.voices.some(function(v){return v.id===ag.voice;})?ag.voice:m.voices[0].id; }
+    if(ag.mode==='sfx'&&m&&Array.isArray(m.durations)&&m.durations.length){ p.duration=(m.durations.indexOf(ag.dur)>=0?ag.dur:m.durations[0]); }
+    return p;
+  }
+  function renderAgResult(assets,prompt){
+    var res=$('agRes'), wrap=$('agResults'); if(!res||!wrap)return;
+    var a0=(assets&&assets[0])||{}; var url=a0.url; if(!url){ toast('Empty result','warning'); return; }
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;flex-direction:column;gap:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-bottom:8px';
+    var cap=document.createElement('div'); cap.style.cssText='font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap'; cap.textContent=prompt||''; row.appendChild(cap);
+    var au=document.createElement('audio'); au.controls=true; au.src=url; au.style.width='100%'; row.appendChild(au);
+    var acts=document.createElement('div'); acts.style.cssText='display:flex;gap:8px';
+    var bImp=document.createElement('div'); bImp.className='vact'; bImp.textContent='⤓ AE import';
+    bImp.addEventListener('click',function(){ if(typeof aiImportMedia==='function')aiImportMedia(url,'audio',null); else toast('Only works inside After Effects','info'); });
+    acts.appendChild(bImp);
+    if(!IS_CEP){
+      var bDl=document.createElement('div'); bDl.className='vact'; bDl.textContent='⬇ Download';
+      bDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=a0.downloadUrl||url; a.download=window.afGenDlName(prompt,url,ag.mode==='sfx'?'sfx':'audio'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
+      acts.appendChild(bDl);
+    }
+    row.appendChild(acts);
+    wrap.insertBefore(row,wrap.firstChild);
+    res.classList.add('on'); res.style.display='';
+    var meta=$('agResMeta'); if(meta)meta.textContent=wrap.children.length+' result'+(wrap.children.length>1?'s':'');
+  }
+  function pollAg(jobId,prompt,tries){
+    tries=tries||0;
+    if(tries>90){ toast('Audio is taking too long — check History later','warning'); return; }
+    ag.pollTimers[jobId]=setTimeout(function(){
+      studioGet('/api/studio/gen/'+jobId).then(function(gn){
+        if(!gn){ pollAg(jobId,prompt,tries+1); return; }
+        if(gn.status==='done'){ delete ag.pollTimers[jobId]; setAgBusy(false); renderAgResult(gn.assets,prompt); loadAgRecent(true); agSyncCredits(); toast('Audio ready','success'); }
+        else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; setAgBusy(false); toast(gn.error||'Audio failed — credits refunded','error'); agSyncCredits(); }
+        else pollAg(jobId,prompt,tries+1);
+      }).catch(function(){ pollAg(jobId,prompt,tries+1); });
+    },2000);
+  }
+  function setAgBusy(b){ var g=$('agGen'); if(g){ g.classList.toggle('busy',b); g.disabled=b?true:!(($('agPrompt')||{}).value||'').trim(); } }
+  var _gen=$('agGen'); if(_gen)_gen.addEventListener('click',function(){
+    var m=curAgModel(); if(!m){ toast('Model not loaded yet','warning'); return; }
+    var ta=$('agPrompt'); var prompt=(ta&&ta.value||'').trim();
+    if(prompt.length<2){ toast('Write the text first','warning'); return; }
+    var params=agParams(); var mode=ag.mode;
+    setAgBusy(true);
+    Promise.all([
+      studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:mode,params:params}),
+      agSession(mode)
+    ]).then(function(rs){
+      var quote=rs[0], sid=rs[1];
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:m.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},60000);
+    }).then(function(r){
+      agSyncCredits();
+      pollAg(r.jobId,prompt,0);
+    }).catch(function(e){
+      setAgBusy(false);
+      var msg=(typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Failed to start';
+      toast(msg,'error');
+      var lb=$('agLowBanner'); if(lb&&/credit/i.test(String(msg))){ lb.classList.add('on'); var ln=$('agLowNeed'); if(ln)ln.textContent='This run needs ✦'+agCost(); }
+    });
+  });
+
+  // So'nggi — voice+sfx tarixi birga (umumiy afRecent kartasi bilan)
+  function agRecentCtx(){ return {
+    isCEP:IS_CEP,
+    list:function(){ return ag.recent; },
+    selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
+    onImport:function(it){ if(typeof aiImportMedia==='function')aiImportMedia(it.url,'audio',null); else toast('Only works inside After Effects','info'); },
+    onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
+    onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ ag.recent=ag.recent.filter(function(x){return x.id!==it.id;}); renderAgRecent(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
+    refAllowed:function(){ return false; }, onRef:function(){}
+  }; }
+  function loadAgRecent(force){
+    if(ag.recentLoading)return;
+    if(ag.recentLoaded&&!force){ renderAgRecent(); return; }
+    ag.recentLoading=true;
+    Promise.all([
+      studioGet('/api/studio/gen/history?limit=8&mode=voice').catch(function(){return null;}),
+      studioGet('/api/studio/gen/history?limit=8&mode=sfx').catch(function(){return null;})
+    ]).then(function(rs){
+      var items=[];
+      rs.forEach(function(r){ (r&&(r.items||r.generations)||[]).forEach(function(g){
+        var a=(g.assets&&g.assets[0])||{}; if(!a.url)return;
+        items.push({id:g.id,url:a.url,thumb:null,downloadUrl:a.downloadUrl||null,cat:(g.mode==='sfx'?'sfx':'audio'),title:(g.prompt||'').trim()||'Audio',prompt:(g.prompt||'').trim(),params:g.params||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
+      }); });
+      items.sort(function(x,y){ return String(y.createdAt||'').localeCompare(String(x.createdAt||'')); });
+      ag.recent=items.slice(0,10); ag.recentLoaded=true; ag.recentLoading=false; renderAgRecent();
+    }).catch(function(){ ag.recentLoading=false; });
+  }
+  function renderAgRecent(){
+    var grid=$('agRecent'); if(!grid)return; grid.innerHTML='';
+    if(!ag.recent.length){ var e=document.createElement('div'); e.style.cssText='font-size:11px;color:var(--mut2);padding:6px 2px'; e.textContent='No audio generations yet.'; grid.appendChild(e); return; }
+    var ctx=agRecentCtx();
+    ag.recent.forEach(function(it){ if(window.afRecent&&window.afRecent.card)grid.appendChild(window.afRecent.card(it,ctx)); });
+  }
+  var _ml=$('agMoreLink'); if(_ml)_ml.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('history'); });
+  var _hb=$('agHist'); if(_hb)_hb.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('history'); });
+  var _bk=$('agBack'); if(_bk)_bk.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('launcher'); });
+
+  window.axAGTeardown=function(){ Object.keys(ag.pollTimers).forEach(function(k){ clearTimeout(ag.pollTimers[k]); delete ag.pollTimers[k]; }); };
+  window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
+
+  ensureAgMeta().catch(function(){});
+  loadAgRecent();
 })();
 </script>
 </body>
