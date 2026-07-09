@@ -13,3 +13,9 @@
 - **Tekshirildi:** dev DB'da 5 null qator → 186 B ×5 to'ldirildi, qayta ishga tushirish 0
   qator (idempotent); `getUserUsedBytes`=930 ✓; build toza; money-zone TEGILMADI.
 - **Kutilmoqda:** production deploy'dan keyin admin backfill endpointini ishga tushirish.
+
+## PROBLEM 14 — Yangi user'da admin email ✅
+
+- `notifyAdminNewUser` (notify.ts, ADMIN_NOTIFY_EMAIL yo'q→no-op, safe fire-and-forget);
+  3 yaratish nuqtasiga ulandi: register (web), Google web isNew, Google plugin device-code
+  isNew. E2E: register→1 xabar, takroriy login→0, mail xatosi signup'ni buzmaydi ✓.
