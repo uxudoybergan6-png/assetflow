@@ -106,10 +106,22 @@ video applyModelSettings/vgCapsFor videoSettings+refKind+endFrame+audioLocked da
 | P6 | Image meta pre-load defaults GPT-era (label 'GPT Image 2 Edit') | 9945-9947 |
 | P7 | HTML boshlang'ich qiymatlar defaultlarga zid (vgResVal 720p vs 480p...) — birinchi load'da tuzatiladi, kosmetik | 4171 |
 
-## 6. Gap/tuzatishlar jurnali (2026-07-09 P8 fix)
+## 6. Gap/tuzatishlar jurnali (2026-07-09 P8 fix) — BAJARILDI ✅
 
-- Backend: C1 audio-klamp, C2 Omni total, C3 maxRefs kesish, C6 voice validatsiya (pastda).
-- A (rasm): W5+W6 (web ko'p-ref + real yuklash), W7 (Imagen ref yashirish); plagin P4/P5/P6.
-- B (video): W1 (end frame), W2 (audio toggle), W4 (required-start gate), W8 (Auto/def/bitrate),
-  W3 (media-refs UI — Omni + R2V, web'da); plagin P2, P3g.
-- C (audio): plagin P1 (Voice + SFX tool'lari quriladi); web voice/sfx allaqachon katalog-mos.
+- **Backend** (d3897c4): C1 audio-klamp (resolveVideoParams), C2 Omni total slice, C3 maxRefs
+  server-side kesish (vertex+fal), C6 voice validatsiya. Narx regressiya testi: cost'lar
+  o'zgarmagan; gen-quote.ts BYTE-FOR-BYTE tegilmagan.
+- **A rasm** (57e5adb): W5 web multi-ref (refImages[], maxRefs'gacha, ＋Add (n/max)), W6 real
+  diskdan yuklash (FFAPI.refUpload dataUrl ≤20MB / presigned srcKey katta fayl), W7 Imagen'da
+  ref panel yashirin (refCaps 'none'). Plagin: P4 launcher matni, P5 Quality EN, P6 defaults.
+- **B video** (57e5adb): W1 Start+End kadr slotlari (endFrame modellari), W2 Audio chip
+  (audio-capable; Omni 🔒 locked), W4 "Start frame (required)" + generate gate (Seedance),
+  W8 Auto duration (videoSettings.options/def; def 8s Veo), bitrate chip (R2V), W3 media-refs
+  UI (Omni +Img/+Vid ≤3/2; R2V +Img/+Vid/+Aud ≤9/3/3) → imageUrls/videoUrls/audioUrls.
+  Plagin: P2 audio toggle gating (audioSupported), P3g isDefault.
+- **C audio** (c24be71): plagin YANGI v-audgen tool — Voice (Kokoro, 6 voice pill) + SFX
+  (ElevenLabs, 3/5/10s), imzolangan quote→gen→poll, Recent (afRecent kartasi), kredit chip
+  sinxron; launcher Audio JONLI, "3D" karta olib tashlandi; Image/Video header seg'ida Audio.
+- **Tekshirildi**: headless brauzerda barcha 6 video + 5 rasm model UI holati; dry-run fal
+  input'lar hujjat sxemasiga aynan mos (image_url/end_image_url/…/bitrate_mode/end_user_id);
+  cost-quote 8 stsenariyda muvaffaqiyatli; web/plagin JS sintaksis toza; API build toza.

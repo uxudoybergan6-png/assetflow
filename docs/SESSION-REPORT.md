@@ -1,5 +1,17 @@
 # Sessiya hisoboti — FIX-PROMPTS partiyasi · 2026-07-09
 
+## PROBLEM 8 — Per-model gen UX (KATTA) ✅
+
+- `docs/GEN-MODEL-MATRIX.md` — 13 yoqilgan model uchun avtoritativ imkoniyat+mapping jadvali
+  (3 parallel kod-audit agenti bilan qurildi), 12 backend mismatch hujjatlandi.
+- Backend klamplar: audio capability, Omni total, maxRefs, voice validatsiya (money-zone
+  BYTE-FOR-BYTE tegilmagan — narx regressiya testi bilan isbotlandi).
+- Web: to'liq model-driven referens tizimi (multi-ref yuklash, start/end kadr, Omni/R2V
+  media-refs, audio/bitrate chip, Auto duration, majburiy-ref gate) — headless'da 11 model
+  UI holati + 8 cost-quote stsenariysi tekshirildi.
+- Plagin: YANGI Voice/SFX tool (v-audgen), audio toggle gating, isDefault, launcher yangilandi.
+- Kutilmoqda: push+deploy, AE'da plagin jonli testi.
+
 ## PROBLEM 7 — Storage (AI results) kam ko'rsatilishi ✅
 
 - **Ildiz sabab:** `GenAsset.sizeBytes` ustuni 2026-07-05 migratsiyada qo'shilgan —
