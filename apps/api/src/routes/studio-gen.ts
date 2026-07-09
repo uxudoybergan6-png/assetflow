@@ -78,7 +78,7 @@ function genDownloadName(mode: string | undefined, resultKey: string, contentTyp
 }
 
 // QA-FIX #12/#13: projects.ts ham qayta ishlatadi (gen media imzolash bitta joyda)
-export async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
+export async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
   holder: T
 ): Promise<T> {
   if (!isS3Configured()) return holder;
@@ -103,6 +103,15 @@ export async function hydrateGenAssets<T extends { mode?: string; assets: Array<
       if (meta) {
         aa.sizeBytes = meta.sizeBytes;
         aa.contentType = meta.contentType;
+        // PROBLEM 7 — lazy self-heal: DB'da sizeBytes null (2026-07-05'dan eski
+        // qator) va HeadObject haqiqiy hajmni qaytardi → DB'ga yozib qo'yamiz,
+        // storage kvota yig'indisi (getUserUsedBytes) to'g'rilanadi. Fire-and-
+        // forget — javobni sekinlashtirmaydi, xato e'tiborsiz (backfill bor).
+        if (meta.sizeBytes != null && a.id) {
+          void prisma.genAsset
+            .updateMany({ where: { id: a.id, sizeBytes: null }, data: { sizeBytes: meta.sizeBytes } })
+            .catch(() => {});
+        }
       }
       // Alohida yuklab-olish URL'i: Content-Disposition: attachment bilan imzolanadi.
       // `url` inline (preview <img>/<video>) uchun o'zgarishsiz qoladi; `downloadUrl`
