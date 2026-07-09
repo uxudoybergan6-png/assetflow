@@ -10458,7 +10458,7 @@ window.afGallery=(function(){
     if(!igModelRefOk(m) && st.refs.length>0){
       window.afConfirm('"'+(m.label||'This model')+'" doesn\'t use references — attached images will be removed. Continue?',{ok:'Continue',danger:true}).then(function(ok){
         if(!ok)return;
-        st.refs=[]; renderRefs(); updRefMeta(); hideMention();
+        st.refs=[]; igStripAllMentions(); renderRefs(); updRefMeta(); hideMention();
         if(setModel(m)!==false){ renderModelSheet(); toast((m.label||'Model')+' selected','info'); }
       });
       return false; // hozircha almashtirilmadi — tasdiqdan keyin async davom etadi
@@ -10488,7 +10488,7 @@ window.afGallery=(function(){
     meta.qDefault=(ql&&ql.def)||((meta.quals.indexOf('high')>=0)?'high':meta.quals[0]);
     meta.counts=(s&&s.num&&s.num.length)?s.num:((m.count&&m.count.length)?m.count:meta.counts);
     st.ar=meta.aspDef; st.q=meta.qDefault; st.n=meta.counts[0]||1;
-    if(!meta.refOk){ st.refs=[]; renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
+    if(!meta.refOk){ st.refs=[]; igStripAllMentions(); renderRefs(); updRefMeta(); hideMention(); } // referenssiz → refs tozalansin
     applyMeta();
     return true;
   }
@@ -10588,6 +10588,27 @@ window.afGallery=(function(){
     try{ var pos=(pre+sep+tok+' ').length; p.setSelectionRange(pos,pos); }catch(e2){}
     p.dispatchEvent(new Event('input'));
   }
+  // P13 (Artlist paritet): referens o'chirilganda dangling @imgN qolmasin — tokenni olib tashlab,
+  // qolgan @img(k) (k>n) larni bir pastga surib qayta raqamlaymiz (referens tartibi bilan mos).
+  function igStripMention(removedIdx){
+    var ta=$('igPrompt'); if(!ta)return; var n=removedIdx+1;
+    var s=ta.value.replace(new RegExp('\\s*@img'+n+'(?![0-9])','g'),'');
+    s=s.replace(/@img(\d+)/g,function(m,d){ var k=parseInt(d,10); return k>n?('@img'+(k-1)):m; });
+    if(s!==ta.value){ ta.value=s; try{ta.dispatchEvent(new Event('input'));}catch(e){} }
+  }
+  // Barcha @imgN'ni olib tashlash (model referens qabul qilmaganda / hammasi tozalanganda).
+  function igStripAllMentions(){
+    var ta=$('igPrompt'); if(!ta)return;
+    var s=ta.value.replace(/\s*@img\d+/g,'');
+    if(s!==ta.value){ ta.value=s; try{ta.dispatchEvent(new Event('input'));}catch(e){} }
+  }
+  // Generate OLDIDAN orphan mention (st.refs.length'dan katta @imgN — o'chirilgan/renumber qolgan)
+  // tozalash — provayderga buzuq referens ketmasin.
+  function igSanitizeMentions(){
+    var ta=$('igPrompt'); if(!ta)return; var cnt=st.refs.length;
+    var s=ta.value.replace(/@img(\d+)/g,function(m,d){ return (parseInt(d,10)>cnt)?'':m; }).replace(/[ \t]{2,}/g,' ').trim();
+    if(s!==ta.value){ ta.value=s; }
+  }
 
   // ---- referens tile'lar (@img1.. tartibda, × renumber) ----
   function renderRefs(){
@@ -10599,7 +10620,7 @@ window.afGallery=(function(){
       var tag=document.createElement('div'); tag.className='tag'; tag.textContent='@img'+(i+1); t.appendChild(tag);
       if(ref.loading){ var sp=document.createElement('div'); sp.className='spin'; sp.innerHTML='<i></i>'; t.appendChild(sp); }
       var x=document.createElement('div'); x.className='rx'; x.textContent='✕';
-      x.addEventListener('click',function(ev){ ev.stopPropagation(); var idx=st.refs.indexOf(ref); if(idx>=0)st.refs.splice(idx,1); renderRefs(); updRefMeta(); refreshGen(); });
+      x.addEventListener('click',function(ev){ ev.stopPropagation(); var idx=st.refs.indexOf(ref); if(idx>=0){ igStripMention(idx); st.refs.splice(idx,1); } renderRefs(); updRefMeta(); refreshGen(); }); // P13: @imgN cascade-strip
       t.appendChild(x);
       t.addEventListener('click',function(){ if(!ref.loading)insertToken('@img'+(st.refs.indexOf(ref)+1)); });
       g.appendChild(t); // igRefAdd endi prow'da — grid faqat reftile'lar (bo'sh bo'lsa CSS yashiradi)
@@ -10878,6 +10899,7 @@ window.afGallery=(function(){
   // ---- generatsiya (REAL, parallel) ----
   function genClick(){
     if(activeJobs.length>=MAX_JOBS){ toast('Max '+MAX_JOBS+' active gens — wait for one to finish','info'); return; }
+    igSanitizeMentions(); // P13: orphan @imgN (mavjud referensdan katta) provayderga ketmasin
     var prompt=ta.value.trim();
     if(prompt.length<2){ toast('Write a prompt','warning'); return; }
     if(meta.refMode==='required'&&st.refs.length===0){ toast('Upload a reference','warning'); return; }
@@ -11106,7 +11128,7 @@ window.afGallery=(function(){
       if(tgt&&String(meta.modelId)!==tgt){
         var m=(meta.models||[]).filter(function(x){return String(x.id)===tgt;})[0];
         if(m){
-          st.refs=[]; renderRefs(); updRefMeta(); hideMention(); // refs bo'sh → setModel tasdiq so'ramaydi
+          st.refs=[]; igStripAllMentions(); renderRefs(); updRefMeta(); hideMention(); // refs bo'sh → setModel tasdiq so'ramaydi
           if(setModel(m)!==false){ renderModelSheet(); toast((m.label||'Model')+' — switched to the original generation model','info'); }
         } else toast('Original model is not available right now — restoring on the current model','info');
       }
@@ -11195,7 +11217,7 @@ window.afGallery=(function(){
   var igClear=$('igClearBtn');
   if(igClear)igClear.addEventListener('click',function(){
     ta.value=''; grow();                 // prompt bo'sh + auto-grow reset
-    st.refs=[]; renderRefs(); updRefMeta(); // barcha referens o'chiriladi, strip qayta render
+    st.refs=[]; igStripAllMentions(); renderRefs(); updRefMeta(); // barcha referens o'chiriladi, strip qayta render
     hideMention(); refreshGen();           // @ dropdown yopiladi; ogohlantirish/disabled yangilanadi
     toast('Cleared','info');
   });

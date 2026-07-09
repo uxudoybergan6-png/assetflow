@@ -19401,7 +19401,12 @@ class Component extends DCLogic {
           if (k === 'end') return { refEndUrl: null };
           if (k === 'vid') return { refVideos: st.refVideos.filter((_, x) => x !== i) };
           if (k === 'aud') return { refAudios: st.refAudios.filter((_, x) => x !== i) };
-          return { refImages: st.refImages.filter((_, x) => x !== i) };
+          // P13: rasm referens (@imgN chip) o'chsa — promptdagi @imgN tokenini olib tashlab qolganlarini
+          // qayta raqamlaymiz (dangling mention bo'lmasin, Artlist paritet).
+          const n = i + 1;
+          let p = String(st.aiPrompt || '').replace(new RegExp('\\s*@img' + n + '(?![0-9])', 'g'), '');
+          p = p.replace(/@img(\d+)/g, (m, d) => { const kk = parseInt(d, 10); return kk > n ? ('@img' + (kk - 1)) : m; });
+          return { refImages: st.refImages.filter((_, x) => x !== i), aiPrompt: p };
         }); },
       addRefK: (e) => { e.stopPropagation(); this.addRefFile(e.currentTarget.dataset.k); },
       showAudio, audioVal, toggleAudio: (e) => { e.stopPropagation();
