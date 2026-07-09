@@ -6,7 +6,9 @@
 - **P21 (import limit):** ildiz — consumeImport admin limitini umrlik `importsTotal`ga tekshirardi → bir martalik lifetime-cap. Fix: additive migratsiya `importsMonth` + guard `importsMonth<limit` + oylik reset; `importsTotal` stat uchun qoladi. Atomik naqsh saqlangan. Dev DB'da 4 stsenariy ✅ (stuck user ochildi, limit bloklaydi, rollover reset, admin override). Plagin sheet: download/import ajratildi + oylik import kvota ko'rsatiladi.
 - **P20 (auto-signout):** ildiz — handleAuthFailure HAR 401/403'da token tozalardi → limit (403 LIMIT_REACHED) userni chiqarardi. Fix: kod-aware — faqat 401 / 403 ACCOUNT_BLOCKED|INACTIVE chiqaradi; request()+catalog+pack `code` uzatadi; friendlyError biznes-kodlarni hurmat qiladi. handleAuthFailure 7 case unit ✅.
 
-**Kutilmoqda:** push (foydalanuvchi) → Cloud Run deploy + `migrate:deploy` (imports_month) + CF Pages; AE'da plagin jonli test (install-cep); P1 startup backfill prod'da bir marta ishlaydi. PHASE 2–5 (P19,P2,P4–P17 va h.k.) hali BAJARILMAGAN — user reviewdan keyin davom.
+**Kutilmoqda:** push (foydalanuvchi) → Cloud Run deploy + `migrate:deploy` (imports_month) + CF Pages; AE'da plagin jonli test (install-cep); P1 startup backfill prod'da bir marta ishlaydi.
+
+**PHASE 2 (backend & admin) ✅:** P19 — ingest preview media FIRST-MATCH→SKORLASH (Help.mp4/(Footage) demote, "Preview Video/Image" afzal; help-only→bo'sh preview); picker unit-test ✅. P2 — `GET /admin/users/:id/generations` (read-only, cursor, hydrateGenAssets media + summary) + admin subscriber-detail "Generations" karta (status badge/refund/cost/prompt/thumb+preview). API build + JS syntax ✅; headless admin E2E stack kutilmoqda.
 
 ---
 
