@@ -16387,6 +16387,7 @@
                               <div class="va-axmi plain" onclick="{{ axMenuAddProj }}"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
                               <div class="va-axmi plain" onclick="{{ axMenuDownload }}"><span class="mic">⬇</span>Download</div>
                               <div class="va-axmi plain" onclick="{{ axMenuRegen }}"><span class="mic">↻</span>Regenerate</div>
+                              <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}"><span class="mic">⧉</span>Copy prompt</div></sc-if>
                               <div class="va-axmi plain danger" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>Delete</div>
                               <div class="va-axmdiv"></div>
                               <div class="va-axmi plain off" onclick="{{ stop }}"><span class="mic">⤢</span>Upscale<span class="soon">SOON</span></div>
@@ -17737,6 +17738,7 @@ class Component extends DCLogic {
       id: String(it.id), type, h: this.hueOf(it.id),
       sid: it.sessionId || '', // QA-FIX #12 — gen qaysi sessiyaga tegishli (rail/grid filtri)
       label: (it.prompt || 'Generation').slice(0, 34),
+      prompt: it.prompt || '', // P2 — Copy prompt uchun TO'LIQ prompt
       tool: this.toolByMode[it.mode] || it.mode,
       url: (asset && asset.url) || null,
       thumb: (asset && (asset.thumbUrl || (type === 'image' ? asset.url : null))) || null,
@@ -19110,6 +19112,13 @@ class Component extends DCLogic {
       axMenuDownload: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); this.generate(); },
       axMenuDelete: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.deleteGenById(activeGenRaw.id); },
+      // P2 — Copy prompt: gen'ning TO'LIQ prompti clipboard'ga
+      axHasPrompt: !!(activeGenRaw && activeGenRaw.prompt),
+      axMenuCopyPrompt: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false });
+        const p = activeGenRaw && activeGenRaw.prompt; if (!p) return;
+        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(p) : Promise.reject())
+          .then(() => this.toast('Prompt copied'))
+          .catch(() => { try { const ta = document.createElement('textarea'); ta.value = p; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); this.toast('Prompt copied'); } catch (x) { this.toast('Copy failed'); } }); },
       axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axTileRegen: (e) => { e.stopPropagation(); this.generate(); },
       onSuggest: (e) => { const el = e.currentTarget; this.setState(Object.assign({ aiTool: el.dataset.tool, aiPrompt: el.dataset.p, aiMediaView: null, chipPop: null }, refClearIfModeChanged(el.dataset.tool))); },
