@@ -552,6 +552,24 @@ const StudioApi = (() => {
     return request(`/api/admin/payout/pool`, { method: "POST", body: { month, recompute: !!recompute } });
   }
 
+  /* ── Landing CMS (admin "Website" tab) — ommaviy landing kontenti/teması ── */
+  async function getLandingConfig() {
+    return request("/api/admin/landing-config");
+  }
+  async function saveLandingConfig(body) {
+    return request("/api/admin/landing-config", { method: "PUT", body });
+  }
+  async function resetLandingConfig() {
+    return request("/api/admin/landing-config", { method: "DELETE" });
+  }
+  /** Admin media upload: presigned PUT URL (folder whitelist serverda). */
+  async function adminUploadUrl(fileName, contentType, folder) {
+    return request("/api/admin/upload-url", {
+      method: "POST",
+      body: { fileName, contentType, folder },
+    });
+  }
+
   /* FAZA 6b — rollar boshqaruvi + contributor onboarding */
   async function listAdminUsers({ search, role, pending } = {}) {
     const q = new URLSearchParams();
@@ -623,6 +641,10 @@ const StudioApi = (() => {
     getAdminMetrics,
     getAdminPoolPreview,
     computeAdminPool,
+    getLandingConfig,
+    saveLandingConfig,
+    resetLandingConfig,
+    adminUploadUrl,
     listAdminUsers,
     setUserRole,
     dismissContributorRequest,

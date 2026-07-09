@@ -112,6 +112,9 @@
       });
     },
 
+    // Landing CMS — ommaviy konfiguratsiya (admin "Website" tab'da tahrirlanadi)
+    landingConfig: function () { return req("/api/landing/config", { auth: false }); },
+
     // Katalog / plugin profil
     // FAZA 5 (A1): katalog sahifalangan (take+cursor) — cursor ixtiyoriy, javobda nextCursor.
     catalog: function (cursor) {
