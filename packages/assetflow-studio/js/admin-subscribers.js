@@ -221,8 +221,57 @@ VIEWS["subscriber-detail"] = function (id) {
       <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Recent activity</span></div>
         <div class="adx-empty" style="border:0;padding:22px"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-size:11.5px;color:#B7C0CE;line-height:1.5">Last seen <b style="color:var(--text)">${esc(s.lastSeen||'—')}</b>${s.device?' · '+esc(s.device):''}${s.ae?' · AE '+esc(s.ae):''}</div><div style="font-size:10.5px;color:var(--muted2)">Detailed event log — in the Activity log section.</div>
       </div>
+    </div>
+    <div class="adx-card" id="subGenSection" style="margin-top:14px">
+      <div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Generations</span><span id="subGenSummary" style="font-size:11px;color:#8A93A3"></span></div>
+      <div id="subGenBody" style="padding:8px 4px"><div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">Loading generations…</div></div>
     </div>`;
 };
+
+/* P2: bitta userning generatsiyalari (done/FAILED/running) — status badge + refund + cost + prompt
+   + media thumb. FAQAT O'QISH. afterRender'da yuklanadi (view sinxron; media imzo async). */
+function subGenStatusBadge(st) {
+  if (st === "done") return `<span class="adx-bdg adx-bdg-approved">Done</span>`;
+  if (st === "failed") return `<span class="adx-bdg adx-bdg-blocked">Failed</span>`;
+  return `<span class="adx-bdg" style="background:rgba(255,178,124,.16);color:#FFB27C">${esc((st||"running").replace(/^\w/,c=>c.toUpperCase()))}</span>`;
+}
+function subGenCard(g) {
+  const a = (g.assets && g.assets[0]) || null;
+  const thumb = a ? (a.thumbUrl || a.url) : null;
+  const isVideo = a && a.type === "video";
+  const media = thumb
+    ? `<div style="position:relative;width:52px;height:52px;flex:none;border-radius:8px;overflow:hidden;background:#0c0f14;cursor:pointer" onclick="subGenPreview('${esc(a.url)}',${isVideo?'true':'false'})"><img src="${esc(thumb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none'">${isVideo?'<i class="ph ph-play-circle" style="position:absolute;inset:0;margin:auto;width:18px;height:18px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px rgba(0,0,0,.6)"></i>':''}</div>`
+    : `<div style="width:52px;height:52px;flex:none;border-radius:8px;background:#0c0f14;display:flex;align-items:center;justify-content:center;color:#3a4150"><i class="ph ph-${g.mode==='audio'?'waveform':(g.mode==='video'?'film-slate':'image')}"></i></div>`;
+  const when = g.createdAt ? new Date(g.createdAt).toLocaleString() : "";
+  return `<div style="display:flex;gap:11px;padding:9px 10px;border-top:1px solid var(--hair);align-items:flex-start">
+    ${media}
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${subGenStatusBadge(g.status)}<span style="font-size:10.5px;color:#8A93A3">${esc(g.model||'')}</span><span style="font-size:10.5px;color:#6b7280">· ${g.cost||0} cr</span>${g.refunded?'<span class="adx-bdg" style="background:rgba(124,196,255,.14);color:#7CC4FF">Refunded</span>':''}</div>
+      <div style="font-size:11.5px;color:#B7C0CE;margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(g.prompt||'—')}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">${esc(when)}</div>
+    </div>
+  </div>`;
+}
+function subGenPreview(url, isVideo) {
+  if (!url) return;
+  openModal(`<div class="modal-body" style="padding:8px"><div style="max-width:640px;margin:0 auto">${isVideo?`<video src="${esc(url)}" controls autoplay style="width:100%;border-radius:10px"></video>`:`<img src="${esc(url)}" style="width:100%;border-radius:10px">`}</div></div><div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>`);
+}
+async function loadSubGenerations(userId) {
+  const body = document.getElementById("subGenBody");
+  const sumEl = document.getElementById("subGenSummary");
+  if (!body) return;
+  try {
+    const d = await StudioApi.getUserGenerations(userId, { take: 40 });
+    const items = d.items || [];
+    const su = d.summary || {};
+    if (sumEl) sumEl.textContent = `${su.total||0} total · ${su.failed||0} failed · ${su.refunded||0} refunded · ${su.creditsNet||0} cr net`;
+    body.innerHTML = items.length
+      ? items.map(subGenCard).join("")
+      : `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">No generations yet.</div>`;
+  } catch (e) {
+    body.innerHTML = `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">Couldn’t load generations${e&&e.message?` — ${esc(e.message)}`:''}.</div>`;
+  }
+}
 function subActMenu(s) {
   const isPro = normalizePlanLabel(s.plan) === "Pro";
   const isRemoved = s.status === "removed";
@@ -494,6 +543,8 @@ window.afterRender["subscriber-detail"] = async function (id) {
   if (CURRENT === "subscriber-detail") {
     const host = document.getElementById("view");
     if (host) host.innerHTML = VIEWS["subscriber-detail"](SUB_DETAIL_ID || id);
+    // P2: generatsiyalarni async yuklaymiz (view sinxron render bo'lgach).
+    loadSubGenerations(SUB_DETAIL_ID || id);
   }
 };
 

@@ -23,6 +23,7 @@ import {
 import { writeAuditLog } from "../lib/audit-log.js";
 import { diagnoseSizeBytes, backfillSizeBytes } from "../lib/backfill-sizebytes.js";
 import { getModelById } from "../lib/gen-models.js";
+import { hydrateGenAssets } from "./studio-gen.js";
 import {
   getPricingConfig,
   listPricingView,
@@ -764,6 +765,68 @@ adminRouter.get("/gen-spend", async (req, res) => {
     { gens: 0, credits: 0, costUsd: 0, negative: 0 }
   );
   res.json({ creditUsdValue: config.creditUsdValue, rows, totals });
+});
+
+/** P2: GET /api/admin/users/:id/generations[?cursor=&take=] — bitta userning BARCHA AI
+ *  generatsiyalari (done/FAILED/running), status + refund + cost + prompt + imzolangan media
+ *  thumb/url (hydrateGenAssets). FAQAT O'QISH (mutatsiya yo'q). Sahifalangan (cursor). */
+adminRouter.get("/users/:id/generations", async (req, res) => {
+  const userId = String(req.params.id);
+  const take = Math.min(60, Math.max(10, Number(req.query.take) || 30));
+  const cursor = req.query.cursor ? String(req.query.cursor) : null;
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const gens = await prisma.generation.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: take + 1, // +1 → hasMore aniqlash
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    select: {
+      id: true, createdAt: true, mode: true, modelId: true, status: true,
+      refunded: true, cost: true, prompt: true,
+      assets: { select: { id: true, type: true, url: true, resultKey: true, thumbUrl: true, thumbKey: true } },
+    },
+  });
+  const hasMore = gens.length > take;
+  const page = hasMore ? gens.slice(0, take) : gens;
+  // Media imzolash — /gen/history bilan bir xil (hydrateGenAssets reuse). Xato bitta genni buzmasin.
+  await Promise.all(page.map((g) => hydrateGenAssets(g).catch(() => g)));
+  const items = page.map((g) => ({
+    id: g.id,
+    createdAt: g.createdAt,
+    mode: g.mode,
+    modelId: g.modelId,
+    model: getModelById(g.modelId)?.label ?? String(g.modelId),
+    status: g.status, // "done" | "failed" | "running" | "queued"
+    refunded: g.refunded,
+    cost: g.cost,
+    prompt: g.prompt,
+    assets: g.assets.map((a) => ({ type: a.type, url: a.url, thumbUrl: a.thumbUrl })),
+  }));
+
+  // Xulosa — BARCHA gens uchun (sahifadan qat'i nazar). Kredit sarfi vs refund.
+  const [total, failedCount, refundedAgg, consumedAgg] = await Promise.all([
+    prisma.generation.count({ where: { userId } }),
+    prisma.generation.count({ where: { userId, status: "failed" } }),
+    prisma.generation.aggregate({ where: { userId, refunded: true }, _count: true, _sum: { cost: true } }),
+    prisma.generation.aggregate({ where: { userId }, _sum: { cost: true } }),
+  ]);
+  const creditsConsumed = consumedAgg._sum.cost ?? 0;
+  const creditsRefunded = refundedAgg._sum.cost ?? 0;
+  res.json({
+    items,
+    nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+    summary: {
+      total,
+      failed: failedCount,
+      refunded: refundedAgg._count,
+      creditsConsumed,
+      creditsRefunded,
+      creditsNet: creditsConsumed - creditsRefunded,
+    },
+  });
 });
 
 /** GET /api/admin/activity[?type=gen|download|import&limit=] — birlashgan foydalanuvchi faoliyati oqimi. */

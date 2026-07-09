@@ -536,6 +536,13 @@ const StudioApi = (() => {
   async function getAdminGenSpend(month) {
     return request(`/api/admin/gen-spend${month ? `?month=${encodeURIComponent(month)}` : ""}`);
   }
+  /** P2 — bitta userning BARCHA generatsiyalari (done/FAILED/running) + xulosa. Sahifalangan. */
+  async function getUserGenerations(userId, { cursor, take } = {}) {
+    const qs = [];
+    if (cursor) qs.push(`cursor=${encodeURIComponent(cursor)}`);
+    if (take) qs.push(`take=${encodeURIComponent(take)}`);
+    return request(`/api/admin/users/${encodeURIComponent(userId)}/generations${qs.length ? `?${qs.join("&")}` : ""}`);
+  }
   async function getAdminActivity(type) {
     return request(`/api/admin/activity${type && type !== "all" ? `?type=${encodeURIComponent(type)}` : ""}`);
   }
@@ -654,6 +661,7 @@ const StudioApi = (() => {
     patchAdminPricingConfig,
     getAdminFinance,
     getAdminGenSpend,
+    getUserGenerations,
     getAdminActivity,
     getAdminEarnings,
     getMyEarnings,
