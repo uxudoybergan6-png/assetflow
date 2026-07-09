@@ -14329,6 +14329,10 @@
   .ff .ffm-d44{font-weight:700;font-size:44px;line-height:1.08;letter-spacing:-.03em}
   .ff .ffm-d36{font-weight:600;font-size:36px;line-height:1.1;letter-spacing:-.025em}
   .ff .ffm-d30{font-weight:600;font-size:30px;line-height:1.15;letter-spacing:-.02em}
+  /* Sayt CMS: bo'lim tartibi flex order bilan — min-width:0 marquee (max-content)
+     kabi keng kontent flex item'ni gorizontal shishirmasligi uchun SHART */
+  .ff .ffl-mainflex{display:flex;flex-direction:column}
+  .ff .ffl-mainflex>*{min-width:0;width:100%}
   /* Landing CMS: accent var'dan — default var(--lime)=#C2F04A, admin accent tanlasa shu rangda */
   .ff .ffm-grad{background:linear-gradient(92deg,var(--lime) 10%,#7CC4FF 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
   .ff .ffm-eyebrow{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:var(--lime)}
@@ -15527,9 +15531,10 @@
 
     <!-- ============ LANDING ============ -->
     <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
-    <main>
+    <!-- Sayt CMS: flex column + har bo'limda order/display — admin tartib/ko'rinishni boshqaradi -->
+    <main class="ffl-mainflex">
       <!-- HERO — «Jonli studiya»: aurora/mesh + katta jonli AI Studio media-panel -->
-      <section class="ffl-heroA">
+      <section class="ffl-heroA" style="order:0">
         <div class="ffl-aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
         <div class="ffl-gridbg" style="position:absolute;inset:0"></div>
         <div class="ffl-hain">
@@ -15590,7 +15595,7 @@
         </div>
       </section>
       <!-- STATS — jonli count-up (real mahsulot statistikasi, soxta logo/testimonial YO'Q) -->
-      <section class="ffl-stats" data-rv="" data-stats="">
+      <section class="ffl-stats" data-rv="" data-stats="" style="{{ lsStats }}">
         <div class="ffl-statsin">
           <sc-for list="{{ landStatsView }}" as="st" hint-placeholder-count="4">
             <div class="ffl-stat"><div class="n"><b>{{ st.v }}</b><em>{{ st.plus }}</em><span class="u">{{ st.unit }}</span></div><div class="l">{{ st.label }}</div></div>
@@ -15598,15 +15603,15 @@
         </div>
       </section>
       <!-- SHOWCASE — marquee shablon-ko'rgazma -->
-      <section class="ffl-sect full">
+      <section class="ffl-sect full" style="{{ lsShowcase }}">
         <div style="max-width:1280px;margin:0 auto;padding:0 32px">
           <div class="ffl-shead" data-rv="">
             <div>
-              <div class="ffm-eyebrow">01 — TEMPLATES</div>
-              <div class="ffm-d44" style="margin-top:10px">A library of ready-made templates</div>
+              <div class="ffm-eyebrow">{{ lcShowEyebrow }}</div>
+              <div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div>
             </div>
             <span style="flex:1"></span>
-            <a class="ffl-lnk" onclick="{{ goTemplates }}">View all<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
+            <a class="ffl-lnk" onclick="{{ goTemplates }}">{{ lcShowLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
           </div>
           <div class="ffl-cattabs" data-rv="" data-rv-delay="80">
             <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}">{{ c.label }}</span></sc-for>
@@ -15644,12 +15649,12 @@
         </div>
       </section>
       <!-- AI STUDIO PROMO — tilt/glow kartalar + yozilayotgan prompt bandi -->
-      <section class="ffl-sect">
+      <section class="ffl-sect" style="{{ lsAiPromo }}">
         <div data-rv="">
-          <div class="ffm-eyebrow">02 — AI STUDIO</div>
+          <div class="ffm-eyebrow">{{ lcAiEyebrow }}</div>
           <div style="display:flex;align-items:flex-end;gap:24px;margin-top:10px;flex-wrap:wrap">
-            <div class="ffm-d44" style="max-width:520px">AI Studio — create in your browser</div>
-            <div style="flex:1;font-size:14px;line-height:1.6;color:var(--muted);max-width:420px;padding-bottom:4px;min-width:280px">Images, video, voice and effects — from prompt to result in seconds. All in the browser.</div>
+            <div class="ffm-d44" style="max-width:520px">{{ lcAiTitle }}</div>
+            <div style="flex:1;font-size:14px;line-height:1.6;color:var(--muted);max-width:420px;padding-bottom:4px;min-width:280px">{{ lcAiDesc }}</div>
           </div>
         </div>
         <div class="ffl-aigrid">
@@ -15665,23 +15670,21 @@
         <div class="ffl-aiband ffm-dotbg" data-rv="" data-rv-delay="320">
           <span style="width:34px;height:34px;border-radius:10px;background:var(--limedim);display:inline-flex;align-items:center;justify-content:center;color:var(--lime);font-size:16px;flex:none"><i class="ph-fill ph-sparkle"></i></span>
           <span class="typing"><span data-ffl-type=""></span><span class="ffl-caret"></span></span>
-          <button class="ffm-btn" style="height:38px;padding:0 18px;font-size:12px" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:13px"></i>Try it with 50 credits</button>
+          <button class="ffm-btn" style="height:38px;padding:0 18px;font-size:12px" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:13px"></i>{{ lcAiCta }}</button>
         </div>
       </section>
       <!-- PLAGIN PROMO — kinematik panel + 3D plagin oynasi -->
-      <section class="ffl-sect">
+      <section class="ffl-sect" style="{{ lsPluginPromo }}">
         <div class="ffl-plugpanel" data-rv="">
           <div class="txt">
-            <div class="ffm-eyebrow">03 — PLUGIN</div>
-            <div class="ffm-d36" style="margin-top:10px">The FrameFlow plugin — right inside After Effects</div>
-            <div style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:12px">Catalog, import and AI Studio — in the panel. Works with your platform account and credits.</div>
+            <div class="ffm-eyebrow">{{ lcPpEyebrow }}</div>
+            <div class="ffm-d36" style="margin-top:10px">{{ lcPpTitle }}</div>
+            <div style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:12px">{{ lcPpDesc }}</div>
             <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
-              <button class="ffm-btn" onclick="{{ goPlugin }}"><i class="ph ph-download-simple" style="font-size:14px"></i>Download the plugin (.zxp)</button>
+              <button class="ffm-btn" onclick="{{ goPlugin }}"><i class="ph ph-download-simple" style="font-size:14px"></i>{{ lcPpCta }}</button>
             </div>
             <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
-              <span class="ffl-hostchip"><span class="d" style="background:#b794f6"></span>After Effects</span>
-              <span class="ffl-hostchip"><span class="d" style="background:#7aa2f7"></span>Premiere Pro</span>
-              <span class="ffl-hostchip" style="color:var(--muted2)"><span class="d" style="background:#f0907f"></span>DaVinci — coming soon</span>
+              <sc-for list="{{ lcPpChips }}" as="ch" hint-placeholder-count="3"><span class="ffl-hostchip" style="{{ ch.extra }}"><span class="d" style="background:{{ ch.dot }}"></span>{{ ch.label }}</span></sc-for>
             </div>
           </div>
           <div class="ffl-plugmock">
@@ -15704,11 +15707,11 @@
         </div>
       </section>
       <!-- NARX TEASER — lime-glow Pro kartasi -->
-      <section class="ffl-sect" style="text-align:center">
+      <section class="ffl-sect" style="text-align:center;{{ lsPricingTeaser }}">
         <div data-rv="">
-          <div class="ffm-eyebrow">04 — PRICING</div>
-          <div class="ffm-d44" style="margin-top:10px">Start free, scale up when you need to</div>
-          <div style="font-size:14px;color:var(--muted);margin-top:10px">Cancel anytime. All plans come with a 14-day money-back guarantee.</div>
+          <div class="ffm-eyebrow">{{ lcPtEyebrow }}</div>
+          <div class="ffm-d44" style="margin-top:10px">{{ lcPtTitle }}</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:10px">{{ lcPtSub }}</div>
         </div>
         <div class="ffl-plans">
           <sc-for list="{{ plansRv }}" as="p" hint-placeholder-count="3">
@@ -15723,11 +15726,11 @@
             </div>
           </sc-for>
         </div>
-        <div data-rv="" data-rv-delay="320" style="font-size:12.5px;color:var(--muted);margin-top:18px">Full comparison — <a onclick="{{ goPricing }}" style="color:var(--text);font-weight:600;cursor:pointer">on the Pricing page →</a></div>
+        <div data-rv="" data-rv-delay="320" style="font-size:12.5px;color:var(--muted);margin-top:18px">{{ lcPtNote }} <a onclick="{{ goPricing }}" style="color:var(--text);font-weight:600;cursor:pointer">{{ lcPtNoteLink }}</a></div>
       </section>
       <!-- FAQ — akkordeon -->
-      <section class="ffl-sect">
-        <div class="ffm-d36" data-rv="" style="text-align:center">Frequently asked questions</div>
+      <section class="ffl-sect" style="{{ lsFaq }}">
+        <div class="ffm-d36" data-rv="" style="text-align:center">{{ lcFaqTitle }}</div>
         <div class="ffl-faq" data-rv="" data-rv-delay="80" style="margin-top:20px">
           <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
             <div class="{{ f.itCls }}">
@@ -15738,13 +15741,13 @@
         </div>
       </section>
       <!-- CTA BAND — nafas oluvchi glow -->
-      <div class="ffl-ctaband" data-rv="">
+      <div class="ffl-ctaband" data-rv="" style="{{ lsFinalCta }}">
         <div class="in">
           <div class="z">
-            <div class="ffm-d36">Start free today</div>
-            <div style="font-size:14px;color:var(--muted);margin-top:8px">Sign up — get 50 AI credits on us. No card required.</div>
-            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}" style="margin-top:24px"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Start for free</button>
-            <div class="ffl-credline" style="margin-top:14px"><i class="ph-fill ph-seal-check"></i>14-day money-back guarantee</div>
+            <div class="ffm-d36">{{ lcFcTitle }}</div>
+            <div style="font-size:14px;color:var(--muted);margin-top:8px">{{ lcFcSub }}</div>
+            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}" style="margin-top:24px"><i class="ph-fill ph-lightning" style="font-size:15px"></i>{{ lcFcCta }}</button>
+            <div class="ffl-credline" style="margin-top:14px"><i class="ph-fill ph-seal-check"></i>{{ lcFcCredline }}</div>
           </div>
         </div>
       </div>
@@ -15755,9 +15758,9 @@
     <sc-if value="{{ isPricing }}" hint-placeholder-val="{{ false }}">
       <main class="ffm-mesh">
         <section class="ffm-sect" style="padding:56px 80px 72px;text-align:center">
-          <div class="ffm-eyebrow">PRICING</div>
-          <div class="ffm-d44" style="margin-top:12px">Choose the plan that fits you</div>
-          <div style="font-size:14px;color:var(--muted);margin-top:10px">Start free, scale up when you need to. Cancel anytime.</div>
+          <div class="ffm-eyebrow">{{ lcPrEyebrow }}</div>
+          <div class="ffm-d44" style="margin-top:12px">{{ lcPrTitle }}</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:10px">{{ lcPrSub }}</div>
           <div class="ffm-plans" style="display:flex;gap:20px;margin-top:32px;text-align:left;max-width:1040px;margin-left:auto;margin-right:auto">
             <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
               <div class="{{ p.planCls }}" style="position:relative;padding:24px 22px">
@@ -15772,7 +15775,7 @@
             </sc-for>
           </div>
           <div style="max-width:760px;margin:56px auto 0;text-align:left">
-            <div class="ffm-d30" style="text-align:center">Questions</div>
+            <div class="ffm-d30" style="text-align:center">{{ lcPrFaqTitle }}</div>
             <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
               <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
                 <div style="background:var(--surface);border:1px solid {{ f.faqBd }};border-radius:14px;padding:16px 20px">
@@ -15790,17 +15793,17 @@
     <sc-if value="{{ isPlugin }}" hint-placeholder-val="{{ false }}">
       <main>
         <section class="ffm-mesh ffm-hero" style="padding:56px 80px 0;text-align:center">
-          <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>After Effects · Premiere Pro</span>
-          <div class="ffm-d44" style="margin:20px auto 0;max-width:640px">Install the FrameFlow plugin in one click</div>
-          <div style="font-size:15px;color:var(--muted);max-width:520px;margin:14px auto 0;line-height:1.6">Catalog, import and AI Studio — right inside your NLE. With your account and credits.</div>
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>{{ lcPgBadge }}</span>
+          <div class="ffm-d44" style="margin:20px auto 0;max-width:640px">{{ lcPgTitle }}</div>
+          <div style="font-size:15px;color:var(--muted);max-width:520px;margin:14px auto 0;line-height:1.6">{{ lcPgSub }}</div>
           <div class="ffm-herocta" style="display:flex;gap:12px;justify-content:center;margin-top:26px">
-            <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>Download the plugin (.zxp)</button>
+            <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
           </div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:12px">v2.4.1 · ~18 MB · ZXP Installer or Creative Cloud</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:12px">{{ lcPgVersion }}</div>
         </section>
         <section class="ffm-sect" style="padding:56px 80px 0">
           <div class="ffm-steps3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
-            <sc-for list="{{ pluginSteps }}" as="s" hint-placeholder-count="3">
+            <sc-for list="{{ pluginStepsView }}" as="s" hint-placeholder-count="3">
               <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px">
                 <div style="font-family:'IBM Plex Mono',monospace;width:34px;height:34px;border-radius:10px;background:var(--limedim);color:var(--lime);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">{{ s.n }}</div>
                 <div style="font-weight:700;font-size:15px;margin-top:14px">{{ s.t }}</div>
@@ -15808,7 +15811,7 @@
               </div>
             </sc-for>
           </div>
-          <div style="display:flex;align-items:center;gap:9px;justify-content:center;margin:28px 0 90px;font-size:12px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:14px"></i>All plans come with a 14-day money-back guarantee</div>
+          <div style="display:flex;align-items:center;gap:9px;justify-content:center;margin:28px 0 90px;font-size:12px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:14px"></i>{{ lcPgGuarantee }}</div>
         </section>
       </main>
     </sc-if>
@@ -15819,32 +15822,32 @@
         <div class="ffm-foot" style="display:flex;gap:60px">
           <div style="width:260px">
             <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
-            <div style="font-size:12px;color:var(--muted2);line-height:1.6;margin-top:12px">Templates and an AI studio for motion designers and video creators.</div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">support@getframeflow.app</div>
+            <div style="font-size:12px;color:var(--muted2);line-height:1.6;margin-top:12px">{{ lcFtTagline }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">{{ lcFtEmail }}</div>
           </div>
           <div class="ffm-footcols" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
             <div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">PRODUCT</div>
-              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Templates</a><a class="ff-link" onclick="{{ goAistudio }}" style="cursor:pointer">AI Studio</a><a class="ff-link" onclick="{{ goPlugin }}" style="cursor:pointer">Plugin</a><a class="ff-link" onclick="{{ goPricing }}" style="cursor:pointer">Pricing</a></div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT1 }}</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtProdLinks }}" as="l" hint-placeholder-count="4"><a class="ff-link" data-screen="{{ l.screen }}" onclick="{{ onNav }}" style="cursor:pointer">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">CATEGORIES</div>
-              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Video templates</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Lower Thirds</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">Transitions</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">LUTs &amp; Presets</a><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">SFX</a></div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT2 }}</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtCatLinks }}" as="l" hint-placeholder-count="5"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">LEGAL</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT3 }}</div>
               <!-- TODO(FF) i18n (FAZA 5 B4): UI ingliz tilida, lekin terms/privacy/refund/dmca
                    sahifalari O'ZBEK tilida. Rasmiy (authoritative) tilni EGASI tanlashi kerak:
                    yoki legal sahifalarni inglizchaga tarjima qilish, yoki UI'ni o'zbekchaga.
                    Majburan o'zgartirilmadi — foydalanuvchi qarori. -->
-              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><a class="ff-link" href="help.html">Help &amp; FAQ</a><a class="ff-link" href="terms.html">Terms of Service</a><a class="ff-link" href="privacy.html">Privacy Policy</a><a class="ff-link" href="refund.html">Refund Policy</a></div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtLegalLinks }}" as="l" hint-placeholder-count="4"><a class="ff-link" href="{{ l.href }}">{{ l.label }}</a></sc-for></div>
             </div>
           </div>
         </div>
         <div style="display:flex;align-items:center;margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.05);flex-wrap:wrap;gap:12px">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)">© 2026 FrameFlow</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)">{{ lcFtCopyright }}</span>
           <span style="flex:1"></span>
-          <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:13px"></i>All plans come with a 14-day money-back guarantee</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:13px"></i>{{ lcFtGuarantee }}</span>
         </div>
       </div>
     </footer>
@@ -17162,6 +17165,91 @@ class Component extends DCLogic {
       { value: 6, suffix: '', label: 'Categories — Ae · Pr · DaVinci' },
       { value: 14, suffix: 'days', label: 'Money-back guarantee' },
     ],
+    // ── To'liq sayt CMS — pastki bo'limlar + pricing/plugin sahifalar (server defaultlari bilan AYNI) ──
+    landingSections: [
+      { key: 'stats', visible: true }, { key: 'showcase', visible: true }, { key: 'aiPromo', visible: true },
+      { key: 'pluginPromo', visible: true }, { key: 'pricingTeaser', visible: true },
+      { key: 'faq', visible: true }, { key: 'finalCta', visible: true },
+    ],
+    showcase: { eyebrow: '01 — TEMPLATES', title: 'A library of ready-made templates', linkLabel: 'View all' },
+    aiPromo: {
+      eyebrow: '02 — AI STUDIO', title: 'AI Studio — create in your browser',
+      desc: 'Images, video, voice and effects — from prompt to result in seconds. All in the browser.',
+      ctaLabel: 'Try it with 50 credits',
+      cards: [
+        { title: 'Image generation', desc: 'High-quality visuals from text. In seconds.', cost: '5 credits' },
+        { title: 'Video generation', desc: 'Moving scenes and clips from a prompt.', cost: '40 credits' },
+        { title: 'Voice (Voiceover)', desc: 'Natural-sounding voice from text — 30+ languages.', cost: '8 credits' },
+        { title: 'SFX', desc: 'Generate effects and sounds that match your scene.', cost: '3 credits' },
+      ],
+      typingPrompts: [
+        'A neon-lit city, rain reflections, cinematic shot…',
+        'Sunrise over a mountain, drone shot, 4K…',
+        'Clean backdrop for a modern logo animation, studio lighting…',
+        'Slow motion on the shore, golden hour, film grain…',
+      ],
+    },
+    pluginPromo: {
+      eyebrow: '03 — PLUGIN', title: 'The FrameFlow plugin — right inside After Effects',
+      desc: 'Catalog, import and AI Studio — in the panel. Works with your platform account and credits.',
+      ctaLabel: 'Download the plugin (.zxp)',
+      chips: ['After Effects', 'Premiere Pro', 'DaVinci — coming soon'],
+    },
+    pricingTeaser: {
+      eyebrow: '04 — PRICING', title: 'Start free, scale up when you need to',
+      sub: 'Cancel anytime. All plans come with a 14-day money-back guarantee.',
+      note: 'Full comparison —', noteLink: 'on the Pricing page →',
+    },
+    faqSection: {
+      title: 'Frequently asked questions',
+      items: [
+        { q: 'How does FrameFlow work?', a: 'Pick a template in your browser or create content in AI Studio, then download it directly or continue in the After Effects plugin.' },
+        { q: 'What are credits and how are they spent?', a: 'Credits are used for AI generations. Each image, video, or voice generation spends a set amount of credits. Downloading templates does not require credits.' },
+        { q: "What's included in the Free plan?", a: '50 monthly credits, the HD template library, and core AI tools. The Pro plan unlocks watermark-free 4K export and unlimited templates.' },
+        { q: 'How do I install the plugin?', a: 'Download the .zxp file from the Plugin page, install it with the installer, and connect it to your account on the platform. Ready in minutes.' },
+        { q: 'Can I cancel my subscription anytime?', a: 'Yes, you can cancel your subscription anytime. Access remains until the end of the current billing period.' },
+      ],
+    },
+    finalCta: {
+      title: 'Start free today', sub: 'Sign up — get 50 AI credits on us. No card required.',
+      ctaLabel: 'Start for free', credline: '14-day money-back guarantee',
+    },
+    footer: {
+      tagline: 'Templates and an AI studio for motion designers and video creators.',
+      email: 'support@getframeflow.app', copyright: '© 2026 FrameFlow',
+      guarantee: 'All plans come with a 14-day money-back guarantee',
+      cols: [
+        { title: 'PRODUCT', links: ['Templates', 'AI Studio', 'Plugin', 'Pricing'] },
+        { title: 'CATEGORIES', links: ['Video templates', 'Lower Thirds', 'Transitions', 'LUTs & Presets', 'SFX'] },
+        { title: 'LEGAL', links: ['Help & FAQ', 'Terms of Service', 'Privacy Policy', 'Refund Policy'] },
+      ],
+    },
+    pricingPage: {
+      eyebrow: 'PRICING', title: 'Choose the plan that fits you',
+      sub: 'Start free, scale up when you need to. Cancel anytime.', faqTitle: 'Questions',
+    },
+    plans: [
+      { name: 'Free', price: 0, credits: '50 credits/mo', sub: 'For trying it out', cta: 'Get started',
+        feats: ['50 AI credits per month', 'HD template library', 'Watermarked export', '1 active project', 'Community support'],
+        teaserFeats: ['HD template library', 'Watermarked export', '1 active project'] },
+      { name: 'Pro', price: 19, credits: '1,000 credits/mo', sub: 'For professionals', cta: 'Upgrade to Pro',
+        feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Priority generation', 'Email support'],
+        teaserFeats: ['All 10,000+ templates', '4K, watermark-free downloads', 'AE / Premiere plugin'] },
+      { name: 'Studio', price: 59, credits: '6,000 credits/mo', sub: 'For teams', cta: 'Choose Studio',
+        feats: ['6,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'API access', 'Priority render queue', 'Dedicated account manager'],
+        teaserFeats: ['Team workspace (5 seats)', 'API access', 'Dedicated account manager'] },
+    ],
+    pluginPage: {
+      badge: 'After Effects · Premiere Pro', title: 'Install the FrameFlow plugin in one click',
+      sub: 'Catalog, import and AI Studio — right inside your NLE. With your account and credits.',
+      ctaLabel: 'Download the plugin (.zxp)', versionNote: 'v2.4.1 · ~18 MB · ZXP Installer or Creative Cloud',
+      guarantee: 'All plans come with a 14-day money-back guarantee',
+      steps: [
+        { t: 'Download the .zxp file', d: 'Get the latest version from the platform in one click.' },
+        { t: 'Install with the installer', d: 'Install quickly via ZXP Installer or Creative Cloud.' },
+        { t: 'Connect your account', d: 'Enter your platform key — templates and credits are ready.' },
+      ],
+    },
   };
   // Kuratsiyalangan, o'z-serverda turadigan font to'plami (CDN'siz) — admin "Website" tanlovi.
   landingFontStacks = {
@@ -17170,7 +17258,8 @@ class Component extends DCLogic {
     'plex-mono': "'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace",
     georgia: "Georgia,'Times New Roman',serif",
   };
-  /** Merged landing config: state.landCfg (server/kesh) defaultlar ustiga — bo'lim-darajada. */
+  /** Merged landing config: state.landCfg (server/kesh) defaultlar ustiga — bo'lim-darajada.
+   *  Server ham merged qaytaradi; bu merge ofline/eski kesh uchun himoya. */
   landingCfg() {
     const d = this.landingDefaults;
     const s = this.state.landCfg || {};
@@ -17179,6 +17268,14 @@ class Component extends DCLogic {
       if (over && typeof over === 'object') Object.keys(base).forEach(k => { if (over[k] != null) out[k] = over[k]; });
       return out;
     };
+    const oArr = (base, over) => base.map((el, i) => o(el, Array.isArray(over) ? over[i] : null));
+    const sArr = (base, over) => (Array.isArray(over) && over.length && over.every(v => typeof v === 'string') ? over.slice(0, 12) : base);
+    // Bo'lim tartibi: saqlangan tartib ustun, noma'lum kalit tushadi, yetishmagani oxiriga
+    const known = {}; d.landingSections.forEach(x => { known[x.key] = 1; });
+    const secs = (Array.isArray(s.landingSections) ? s.landingSections : [])
+      .filter(x => x && known[x.key]).map(x => ({ key: x.key, visible: x.visible !== false }));
+    const seen = {}; secs.forEach(x => { seen[x.key] = 1; });
+    const landingSections = secs.concat(d.landingSections.filter(x => !seen[x.key]));
     return {
       theme: o(d.theme, s.theme),
       nav: o(d.nav, s.nav),
@@ -17186,9 +17283,41 @@ class Component extends DCLogic {
       mockup: {
         title: (s.mockup && s.mockup.title) || d.mockup.title,
         badge: (s.mockup && s.mockup.badge) || d.mockup.badge,
-        cards: d.mockup.cards.map((c, i) => o(c, s.mockup && s.mockup.cards && s.mockup.cards[i])),
+        cards: oArr(d.mockup.cards, s.mockup && s.mockup.cards),
       },
-      stats: d.stats.map((st, i) => o(st, s.stats && s.stats[i])),
+      stats: oArr(d.stats, s.stats),
+      landingSections,
+      showcase: o(d.showcase, s.showcase),
+      aiPromo: Object.assign(o(d.aiPromo, s.aiPromo), {
+        cards: oArr(d.aiPromo.cards, s.aiPromo && s.aiPromo.cards),
+        typingPrompts: sArr(d.aiPromo.typingPrompts, s.aiPromo && s.aiPromo.typingPrompts),
+      }),
+      pluginPromo: Object.assign(o(d.pluginPromo, s.pluginPromo), {
+        chips: sArr(d.pluginPromo.chips, s.pluginPromo && s.pluginPromo.chips),
+      }),
+      pricingTeaser: o(d.pricingTeaser, s.pricingTeaser),
+      faqSection: {
+        title: (s.faqSection && s.faqSection.title) || d.faqSection.title,
+        items: oArr(d.faqSection.items, s.faqSection && s.faqSection.items),
+      },
+      finalCta: o(d.finalCta, s.finalCta),
+      footer: Object.assign(o(d.footer, s.footer), {
+        cols: d.footer.cols.map((c, i) => {
+          const ov = s.footer && Array.isArray(s.footer.cols) ? s.footer.cols[i] : null;
+          return { title: (ov && ov.title) || c.title, links: sArr(c.links, ov && ov.links) };
+        }),
+      }),
+      pricingPage: o(d.pricingPage, s.pricingPage),
+      plans: d.plans.map((p, i) => {
+        const ov = Array.isArray(s.plans) ? s.plans[i] : null;
+        return Object.assign(o(p, ov), {
+          feats: sArr(p.feats, ov && ov.feats),
+          teaserFeats: sArr(p.teaserFeats, ov && ov.teaserFeats),
+        });
+      }),
+      pluginPage: Object.assign(o(d.pluginPage, s.pluginPage), {
+        steps: oArr(d.pluginPage.steps, s.pluginPage && s.pluginPage.steps),
+      }),
     };
   }
   /** Custom accent HEX → landing CSS o'zgaruvchilari (inline style, data-accent ustidan
@@ -17475,26 +17604,23 @@ class Component extends DCLogic {
         });
       }
       // AI band — yozilayotgan prompt
-      const PR = [
-        "A neon-lit city, rain reflections, cinematic shot…",
-        "Sunrise over a mountain, drone shot, 4K…",
-        "Clean backdrop for a modern logo animation, studio lighting…",
-        "Slow motion on the shore, golden hour, film grain…",
-      ];
+      // Sayt CMS: prompt matnlari config'dan (renderVals this._fflPrompts stash) — har tick
+      // dinamik o'qiladi, admin tahriri navbatdagi qatorda darhol aks etadi.
+      const PR = () => (this._fflPrompts && this._fflPrompts.length ? this._fflPrompts : this.landingDefaults.aiPromo.typingPrompts);
       document.querySelectorAll('.ff [data-ffl-type]').forEach((el) => {
         if (el.__fflT) return; el.__fflT = 1;
-        if (rm) { el.textContent = PR[0]; return; }
+        if (rm) { el.textContent = PR()[0]; return; }
         let li = 0, ci = 0, del = false;
         const tick = () => {
           if (!el.isConnected) return;
-          const s2 = PR[li];
+          const s2 = PR()[li % PR().length];
           if (!del) {
             ci++; el.textContent = s2.slice(0, ci);
             if (ci >= s2.length) { del = true; setTimeout(tick, 2400); return; }
             setTimeout(tick, 34 + Math.random() * 46);
           } else {
             ci -= 3;
-            if (ci <= 0) { ci = 0; del = false; li = (li + 1) % PR.length; }
+            if (ci <= 0) { ci = 0; del = false; li = (li + 1) % PR().length; }
             el.textContent = s2.slice(0, ci);
             setTimeout(tick, del ? 14 : 300);
           }
@@ -18124,6 +18250,10 @@ class Component extends DCLogic {
     const acc = this.props.accent || 'Lime';
     const accentKey = /cyan/i.test(acc) ? 'cyan' : (/amber/i.test(acc) ? 'amber' : 'lime');
     const animKey = this.props.animations === false ? 'off' : 'on';
+    // Sayt CMS — merged konfiguratsiya (barcha marketing bo'lim/sahifa bindinglari shundan)
+    const lc = this.landingCfg();
+    // Typing-animatsiya matnlari installLanding'da dinamik o'qiladi
+    this._fflPrompts = lc.aiPromo.typingPrompts;
 
     const catTabs = this.categories.map(c => {
       const active = c === this.state.activeCat;
@@ -18154,9 +18284,17 @@ class Component extends DCLogic {
       'Voiceover': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(183,148,246,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(183,148,246,.2),rgba(183,148,246,.06))', iccol: '#b794f6' },
       'SFX': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(240,144,127,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(240,144,127,.2),rgba(240,144,127,.06))', iccol: '#f0907f' },
     };
-    const studioCards = this.studioCards.map((c, i) => ({ ...c, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)', rd: (i % 4) * 80, ...(studioGlow[c.tool] || studioGlow['Rasm yaratish']) }));
+    // Sayt CMS: aicard matnlari (title/desc/cost) config'dan; tool kaliti/ikon/ranglar kodda.
+    const studioCards = this.studioCards.map((c, i) => ({ ...c, t: lc.aiPromo.cards[i].title, d: lc.aiPromo.cards[i].desc, cost: lc.aiPromo.cards[i].cost, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)', rd: (i % 4) * 80, ...(studioGlow[c.tool] || studioGlow['Rasm yaratish']) }));
 
-    const plansView = this.plans.map(p => {
+    // Sayt CMS: tarif DISPLAY nusxasi config'dan (nom/narx/kredit/CTA/ro'yxatlar);
+    // key/pop va checkout oqimi (onChoosePlan) KODDA — pul mantig'iga tegilmaydi.
+    const plansSrc = this.plans.map((p, i) => ({
+      ...p,
+      name: lc.plans[i].name, pm: lc.plans[i].price, cr: lc.plans[i].credits,
+      sub: lc.plans[i].sub, cta: lc.plans[i].cta, feats: lc.plans[i].feats, tf: lc.plans[i].teaserFeats,
+    }));
+    const plansView = plansSrc.map(p => {
       const price = p.pm;
       const note = 'billed monthly';
       return {
@@ -18179,7 +18317,8 @@ class Component extends DCLogic {
 
     const testimonials = this.testimonials.map(t => ({ ...t, g: this.grad(t.h) }));
 
-    const faqsView = this.faqs.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'rgba(194,240,74,.25)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
+    // Sayt CMS: FAQ savol-javoblari config'dan (landing + pricing sahifada bitta manba)
+    const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'rgba(194,240,74,.25)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
 
     const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,rgba(194,240,74,.12),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
 
@@ -18690,7 +18829,6 @@ class Component extends DCLogic {
         : 'Templates, AI Studio and the plugin — one account. Continue in the browser or right inside After Effects.');
     const sp = this._armed ? this.state.statP : 1;
     // ── Landing CMS — hero/nav/mockup/stats/theme bindinglari (admin "Website" tab) ──
-    const lc = this.landingCfg();
     // Stats — count-up (runStats/statP dvigateli; reduced-motion'da sp=1 → darhol to'liq qiymat).
     // suffix: harfsiz belgi ('+') accent <em>ga, so'z ('days') <span class="u">ga tushadi.
     const landStatsView = lc.stats.map((st) => {
@@ -18728,6 +18866,23 @@ class Component extends DCLogic {
     const lcFontStack = this.landingFontStacks[lc.theme.font] || this.landingFontStacks.hanken;
     const pageFontStack = marketing ? lcFontStack : this.landingFontStacks.hanken;
     const themeVarsCss = marketing ? this.landingAccentVars(lc.theme.accent) : '';
+    // ── Sayt CMS: bo'lim tartibi + ko'rinishi (landing main = flex column, order bilan) ──
+    const secStyles = {};
+    lc.landingSections.forEach((sec, i) => {
+      secStyles[sec.key] = 'order:' + (i + 1) + (sec.visible ? '' : ';display:none');
+    });
+    const secStyle = (k) => secStyles[k] || '';
+    // Footer havolalari: yorliq config'dan, manzil/handler KODDA (zip; ortiqcha yorliq tushadi)
+    const ftScreens = ['templates', 'aistudio', 'plugin', 'pricing'];
+    const lcFtProdLinks = lc.footer.cols[0].links.slice(0, 4).map((label, i) => ({ label, screen: ftScreens[i] }));
+    const lcFtCatLinks = lc.footer.cols[1].links.map((label) => ({ label }));
+    const ftHrefs = ['help.html', 'terms.html', 'privacy.html', 'refund.html'];
+    const lcFtLegalLinks = lc.footer.cols[2].links.slice(0, 4).map((label, i) => ({ label, href: ftHrefs[i] }));
+    // Plugin promo chip'lari (3 ta, ranglar kodda)
+    const ppChipDots = ['#b794f6', '#7aa2f7', '#f0907f'];
+    const lcPpChips = lc.pluginPromo.chips.slice(0, 3).map((label, i) => ({ label, dot: ppChipDots[i], extra: i === 2 ? 'color:var(--muted2)' : '' }));
+    // Plugin sahifa qadamlari (raqam kodda)
+    const pluginStepsView = lc.pluginPage.steps.map((st, i) => ({ n: String(i + 1), t: st.t, d: st.d }));
     const statsView = [
       { v: Math.round(10 * sp) + 'K+', l: 'Ready-made templates' },
       { v: (sp * 5).toFixed(1).replace(/\.0$/, '') + 'M+', l: 'Active creators' },
@@ -18776,6 +18931,30 @@ class Component extends DCLogic {
       lcHeroCtaPrimary: lc.hero.ctaPrimary, lcHeroCtaSecondary: lc.hero.ctaSecondary,
       lcHeroCredline: lc.hero.credline,
       lcMockTitle: lc.mockup.title, lcMockBadge: lc.mockup.badge,
+      // Sayt CMS — bo'lim tartibi/ko'rinishi
+      lsStats: secStyle('stats'), lsShowcase: secStyle('showcase'), lsAiPromo: secStyle('aiPromo'),
+      lsPluginPromo: secStyle('pluginPromo'), lsPricingTeaser: secStyle('pricingTeaser'),
+      lsFaq: secStyle('faq'), lsFinalCta: secStyle('finalCta'),
+      // Sayt CMS — pastki bo'limlar
+      lcShowEyebrow: lc.showcase.eyebrow, lcShowTitle: lc.showcase.title, lcShowLink: lc.showcase.linkLabel,
+      lcAiEyebrow: lc.aiPromo.eyebrow, lcAiTitle: lc.aiPromo.title, lcAiDesc: lc.aiPromo.desc, lcAiCta: lc.aiPromo.ctaLabel,
+      lcPpEyebrow: lc.pluginPromo.eyebrow, lcPpTitle: lc.pluginPromo.title, lcPpDesc: lc.pluginPromo.desc,
+      lcPpCta: lc.pluginPromo.ctaLabel, lcPpChips,
+      lcPtEyebrow: lc.pricingTeaser.eyebrow, lcPtTitle: lc.pricingTeaser.title, lcPtSub: lc.pricingTeaser.sub,
+      lcPtNote: lc.pricingTeaser.note, lcPtNoteLink: lc.pricingTeaser.noteLink,
+      lcFaqTitle: lc.faqSection.title,
+      lcFcTitle: lc.finalCta.title, lcFcSub: lc.finalCta.sub, lcFcCta: lc.finalCta.ctaLabel, lcFcCredline: lc.finalCta.credline,
+      // Sayt CMS — footer
+      lcFtTagline: lc.footer.tagline, lcFtEmail: lc.footer.email, lcFtCopyright: lc.footer.copyright,
+      lcFtGuarantee: lc.footer.guarantee,
+      lcFtColT1: lc.footer.cols[0].title, lcFtColT2: lc.footer.cols[1].title, lcFtColT3: lc.footer.cols[2].title,
+      lcFtProdLinks, lcFtCatLinks, lcFtLegalLinks,
+      // Sayt CMS — pricing/plugin sahifalar
+      lcPrEyebrow: lc.pricingPage.eyebrow, lcPrTitle: lc.pricingPage.title, lcPrSub: lc.pricingPage.sub,
+      lcPrFaqTitle: lc.pricingPage.faqTitle,
+      lcPgBadge: lc.pluginPage.badge, lcPgTitle: lc.pluginPage.title, lcPgSub: lc.pluginPage.sub,
+      lcPgCta: lc.pluginPage.ctaLabel, lcPgVersion: lc.pluginPage.versionNote, lcPgGuarantee: lc.pluginPage.guarantee,
+      pluginStepsView,
       statsView, tipText, tipAnim, pageAnim, scrollPW, marqA, marqB, heroWords, howSteps,
       catTilesRv, studioRv, plansRv, testsRv,
       accentKey, animKey,
