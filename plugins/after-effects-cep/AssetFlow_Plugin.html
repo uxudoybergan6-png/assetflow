@@ -3796,7 +3796,7 @@ html.home-mode #homePage{display:block!important}
                 </button>
                 <div class="af-tb-seg">
                   <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Section">
-                    <span class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true">Catalog</span>
+                    <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Catalog — templates">Catalog</button>
                     <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio">AI Tools</button>
                   </div>
                 </div>
@@ -5622,10 +5622,29 @@ function syncCategoryChips(slug){
 // E6.1: katalog top-tab → yashirin sidebar tugmasini .click() qiladi (mavjud onclick ishlaydi,
 // handler tahrirlanmaydi, guard refs o'zgarmaydi). Aktiv holat render() funnelida syncTopNav bilan.
 function afNavTab(tab){
+  if(tab==='catalog'){
+    // P9: AI Tools'dan KATALOGGA qaytish. `[data-nav="catalog"]` yo'q — joriy (yoki default
+    // "video"=Templates) katalog nav linkini bosamiz → applyNavSwitch ai-mode'ni olib tashlaydi.
+    const cur=(typeof currentNav!=='undefined' && ['video','motion','graphics','luts'].indexOf(currentNav)>=0)?currentNav:'video';
+    const el=document.querySelector('.env-side-link[data-nav="'+cur+'"]');
+    if(el) el.click();
+    else if(typeof applyNavSwitch==='function') applyNavSwitch(cur);
+    if(typeof syncTopNav==='function') syncTopNav();
+    syncPillarSeg();
+    return;
+  }
   const el=document.querySelector('.env-side-link[data-nav="'+tab+'"]');
   if(el) el.click();
   // AI yo'li render() chaqirmaydi (alohida sahifa) — tab aktiv holatini shu yerda moslaymiz
   if(typeof syncTopNav==='function') syncTopNav();
+  syncPillarSeg();
+}
+// P9: header "Catalog | AI Tools" segment aktiv holatini joriy ko'rinishga moslaydi (ikkala yo'nalish).
+function syncPillarSeg(){
+  const isAi=document.documentElement.classList.contains('ai-mode');
+  const k=document.getElementById('afSegKatalog'), a=document.getElementById('afSegAi');
+  if(k){ k.classList.toggle('is-on',!isAi); k.setAttribute('aria-selected',(!isAi)?'true':'false'); }
+  if(a){ a.classList.toggle('is-on',isAi); a.setAttribute('aria-selected',isAi?'true':'false'); }
 }
 // E6.2: header ixcham ikonalar (Downloads/Favorites) → yashirin sidebar .env-side-link[data-page]
 // tugmasini .click() qiladi → mavjud onclick ishlaydi (handler tahrirlanmaydi).
@@ -6844,6 +6863,7 @@ function applyNavSwitch(tab){
   document.documentElement.classList.remove('home-mode'); // har nav Home'dan chiqadi
   const isAi=tab==='ai';
   document.documentElement.classList.toggle('ai-mode',isAi);
+  if(typeof syncPillarSeg==='function') syncPillarSeg(); // P9: header segment holatini ham yangilaymiz
   if(isAi){
     currentNav=tab;
     window.currentNav=tab;
