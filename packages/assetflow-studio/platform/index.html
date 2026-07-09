@@ -18213,7 +18213,8 @@ class Component extends DCLogic {
     const aspectOpts = model ? (model.aspects || (tool.mode === 'image' ? ['1:1', '16:9', '9:16', '4:3'] : [])) : [];
     const sizesView = aspectOpts.map(z => chip(z, z === genParams.aspectRatio));
     const showSize = aspectOpts.length > 1;
-    const countOpts = (tool.multi && model) ? ((model.imgSettings && model.imgSettings.num) || model.count || [1]) : [];
+    // P10: count katalogdan (imgSettings.num/count e'lon qilgan model → chip; tool.multi hardcode emas)
+    const countOpts = model ? ((model.imgSettings && model.imgSettings.num) || model.count || []) : [];
     const countsView = countOpts.map(z => chip(z, z === nSel));
     // P8 — video duration videoSettings deskriptoridan ('Auto' bilan); sfx flat durations
     const durOpts = (tool.mode === 'video' && model) ? (((model.videoSettings || {}).duration || {}).options || model.durations || [])
@@ -18236,7 +18237,7 @@ class Component extends DCLogic {
     if (genParams.quality) partiyaBits.push(genParams.quality);
     else if (genParams.resolution) partiyaBits.push(genParams.resolution);
     if (genParams.duration) partiyaBits.push(genParams.duration + 's');
-    if (tool.multi) partiyaBits.push(nSel + 'x');
+    if (countOpts.length > 1) partiyaBits.push(nSel + 'x');
     const partiyaLine = partiyaBits.join(' · ') + ' · ✦ ' + costNow + ' — this batch';
     const canvasCls = 'ffa-ai-canvas' + (tool.mode === 'video' ? ' vid' : ((tool.mode === 'voice' || tool.mode === 'sfx') ? ' aud' : ''));
     const pendAspect = tool.mode === 'video' ? '16 / 9' : ((tool.mode === 'voice' || tool.mode === 'sfx') ? '16 / 6' : '1 / 1');
@@ -18301,8 +18302,8 @@ class Component extends DCLogic {
     const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
     const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
     const promptPh = tool.mode === 'voice' ? 'Type text — it will be read in a natural voice…' : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
-    const unitCost = (tool.multi && nSel > 1) ? Math.round(costNow / nSel) : costNow;
-    const quotePrefix = (tool.multi && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
+    const unitCost = (countOpts.length > 1 && nSel > 1) ? Math.round(costNow / nSel) : costNow;
+    const quotePrefix = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
     const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
     const chipCls = (open) => open ? 'ffa-chip open' : 'ffa-chip';
     const chipModelCls = chipCls(popModel), chipAspectCls = chipCls(popAspect), chipQualityCls = chipCls(popQuality), chipCountCls = chipCls(popCount), chipResCls = chipCls(popRes), chipDurCls = chipCls(popDur), chipBitrateCls = chipCls(popBitrate);
@@ -18456,7 +18457,7 @@ class Component extends DCLogic {
     }).filter(Boolean);
     const modelFilterView = ['All', 'Image', 'Video', 'Voice', 'SFX'].map(v => ({ v, label: v, cls: 'va-axftag' + (v === axMFilter ? ' on' : '') }));
     // Dock: quote/CTA/balans — qiymatlar mavjud estCost/quote oqimidan, faqat ko'rinish yangi
-    const axQuote = (tool.multi && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
+    const axQuote = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
     const axPromptReady = (this.state.aiPrompt || '').trim().length >= 2;
     const genBtnCls = 'va-btn lime' + (this.state.generating ? ' pending' : (axPromptReady ? '' : ' off'));
     const genBtnLabel = this.state.generating ? 'Generating…' : 'Generate';
@@ -18970,7 +18971,7 @@ class Component extends DCLogic {
       onModelFilter: (e) => { e.stopPropagation(); this.setState({ modelFilter: e.currentTarget.dataset.v }); },
       toggleChip: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ chipPop: st.chipPop === p ? null : p, modelOpen: false })); },
       closeChip: () => this.setState({ chipPop: null }),
-      showCount: tool.multi && countsView.length > 1,
+      showCount: countsView.length > 1,
       showActive: !!activeGenRaw && !this.state.generating, canvasEmpty: !activeGenRaw && !this.state.generating,
       aiPrompt: this.state.aiPrompt, modelName, modelOpen: this.state.modelOpen, modelsView,
       sizesView, showSize, countsView, durationsView, showDuration: durOpts.length > 1,

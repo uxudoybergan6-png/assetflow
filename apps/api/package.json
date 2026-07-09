@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "check:models": "node dist/lib/gen-models-validate.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.812.0",

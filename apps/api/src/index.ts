@@ -37,6 +37,7 @@ import { seedModelPricing } from "./lib/model-pricing.js";
 import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
 import { moderationStartupWarning } from "./lib/moderation.js";
 import { findEnabledModelsWithoutCost, DEFAULT_PROVIDER_USD } from "./lib/provider-cost.js";
+import { validateGenModelsOrThrow } from "./lib/gen-models-validate.js";
 import { startTemplateReconcilers } from "./lib/template-reconcile.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
@@ -310,6 +311,11 @@ function validateEnv() {
     console.warn("[env] Ogohlantirishlar:\n  - " + warnings.join("\n  - "));
   }
 }
+
+// PROBLEM 10 — GEN_MODELS katalog validatsiyasi: noto'g'ri/chala model entry server
+// ko'tarilishini BLOKLAYDI (aniq xato: model id + maydon). Health-gated deploy buni
+// production'ga chiqarmaydi. Money-zone o'qish-faqat (narx maydonlari borligini tekshiradi).
+validateGenModelsOrThrow();
 
 app.listen(PORT, "0.0.0.0", () => {
   const stripe = process.env.STRIPE_SECRET_KEY?.trim();

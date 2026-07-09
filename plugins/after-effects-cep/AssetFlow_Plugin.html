@@ -10194,9 +10194,9 @@ window.afGallery=(function(){
     if(meta.loaded)return Promise.resolve(meta);
     if(meta._pending)return meta._pending;
     meta._pending=studioGet('/api/studio/gen/models?mode=image').then(function(r){
-      // Rasm gen modellari: Google to'g'ridan-to'g'ri (vertex-image) + fal (agar qolgan bo'lsa).
-      // magnific/openrouter TOOL'lar emas (ular provider boshqa). 2026-07-01: to'liq-Google.
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&(x.provider==='vertex-image'||x.provider==='fal')&&x.id!=null; });
+      // P10: provider allowlist OLIB TASHLANDI — server faqat enabled modellarni qaytaradi;
+      // yangi provider'li model katalogga qo'shilsa UI kodi o'zgarmasdan ko'rinadi (katalog-driven).
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.id!=null&&x.mode==='image'; });
       if(!fal.length)throw new Error('No model found');
       meta.models=fal;
       // default: isDefault belgilangani (Nano Banana), aks holда 1-chi
@@ -11511,7 +11511,9 @@ window.afGallery=(function(){
       // 2026-07-01: Veo/Omni refKind='frames' (i2v-uslub) — pane ularni to'g'ri ko'rsatadi.
       // PROBLEM 3: R2V (media-refs / reference-to-video) modellar PLAGINDA ko'rsatilmaydi —
       // video composer Fast (frames) only; R2V web'da qoladi.
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&(x.provider==='fal'||x.provider==='vertex'||x.provider==='vertex-omni')&&x.mode==='video'&&x.refKind!=='media-refs'&&x.feature!=='reference-to-video'; });
+      // P10: provider allowlist olib tashlandi (katalog-driven; server enabled'ni qaytaradi).
+      // PROBLEM 3 sharti SAQLANADI: media-refs / reference-to-video plaginda ko'rsatilmaydi.
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.mode==='video'&&x.refKind!=='media-refs'&&x.feature!=='reference-to-video'; });
       if(!fal.length)throw new Error('No video model found');
       vm.models=fal; vm.loaded=true;
       try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}
