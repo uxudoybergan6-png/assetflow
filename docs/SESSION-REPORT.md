@@ -13,6 +13,28 @@
 - Mockup: `_aitools-sessions-projects-mockup.html` (4 frame). Brauzer smoke-test: view'lar
   ochiladi, picker modal ishlaydi, konsol xatosiz; AE jonli testi kutilmoqda.
 
+## PROBLEM 9 — Shablon download ✅
+
+- Plagin detali endi pack hajmini ko'rsatadi ("20.1 MB pack", web bilan bir xil).
+- Ekstraksiya papkasi SHABLON NOMI bilan: `unzipDirName` → "Fast Light Leaks (af-zla3mz)";
+  eski id-kesh bir marta qayta yuklab olinadi (QA-FIX #7 marker bilan birga stale kesh yo'q).
+- Serve fayl nomi allaqachon shablon nomi (C3), to'liq pack.zip (QA-FIX #7) — kod tasdiqlandi.
+
+## PROBLEM 6 — Bulk sessiya amallari ✅
+
+- `DELETE /gen/sessions/:id`: owner 404, GCS tozalash (asset+poster+linked ref), cascade;
+  refund YO'Q. Web: Select rejim (checkbox, bulk bar N selected · Download · Delete · Cancel),
+  tasdiqli delete; download = ketma-ket downloadUrl (40 fayl cap). Jonli test: 2 sessiya
+  o'chirildi, cascade DB'da tasdiqlandi, rail yangilandi.
+
+## PROBLEM 12 — Prompt auto-grow ✅ · PROBLEM 5 — Pills fix ✅ · PROBLEM 17 — Toast ✅
+
+- P12: web setPrompt scrollHeight (max 240px) + plagin axGrow 150→240 (jonli: 41→162px).
+- P5: qo'sh kontur ILDIZI — engine `sc-interp` ichki span'i `.va-catchips span` selektoriga
+  ilinardi → `>` selektor + ichki neytrallash; idle pill yorqinroq; filtr regressiyasiz (skrinshot).
+- P17: plagin toast endi YUQORIDA (top:52px) ixcham 330px karta, barcha turlar ikonka+aksent
+  bilan (jonli tekshirildi); showToast API o'zgarmagan.
+
 ## PROBLEM 2 — Karta amallari + Copy prompt ✅
 
 - Copy prompt IKKALA yuzada: web Use ▾ menyu (axHasPrompt guard, clipboard+execCommand
