@@ -713,13 +713,17 @@ async function runVertexOmniVideo(
     ? (params.videoUrls as unknown[]).filter((u): u is string => typeof u === "string" && u.length > 0)
     : [];
 
-  const inlines = (await Promise.all(imageRefs.slice(0, lim.image).map((u) => refUrlToInlineImage(u)))).filter(
+  // P8 C2: mediaRefs.total ham enforce qilinadi (oldin img≤3 + vid≤2 = 5 ketishi mumkin edi).
+  const cappedImages = imageRefs.slice(0, lim.image);
+  const totalCap = typeof lim.total === "number" && lim.total > 0 ? lim.total : lim.image + lim.video;
+  const cappedVideos = videoRefs.slice(0, Math.max(0, Math.min(lim.video, totalCap - cappedImages.length)));
+  const inlines = (await Promise.all(cappedImages.map((u) => refUrlToInlineImage(u)))).filter(
     (x): x is { data: string; mimeType: string } => !!x
   );
-  const vids = (await Promise.all(videoRefs.slice(0, lim.video).map((u) => videoRefToOmniInput(u)))).filter(
+  const vids = (await Promise.all(cappedVideos.map((u) => videoRefToOmniInput(u)))).filter(
     (x): x is { gsUri?: string; data?: string } => !!x
   );
-  if (videoRefs.length && vids.length < videoRefs.length)
+  if (cappedVideos.length && vids.length < cappedVideos.length)
     return { ok: false, error: "Video reference is too large or failed to upload (needs gs:// or ≤15MB)" };
 
   const out = await omniGenerateVideo(model.key, prompt, {
@@ -881,11 +885,15 @@ export async function processGeneration(genId: string): Promise<void> {
       let falImageUrls: string[] = [];
       const falNeedsRef = useFal && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
       if (falNeedsRef) {
-        const rawRefs: string[] = Array.isArray(params.referenceUrls)
-          ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
-          : refUrl
-            ? [refUrl]
-            : [];
+        // P8 C3: fal yo'lida ham maxRefs server-side kesiladi.
+        const falRefCap = typeof model.maxRefs === "number" && model.maxRefs > 0 ? model.maxRefs : undefined;
+        const rawRefs: string[] = (
+          Array.isArray(params.referenceUrls)
+            ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+            : refUrl
+              ? [refUrl]
+              : []
+        ).slice(0, falRefCap);
         if (!rawRefs.length) return void (await fail("An image is required for editing — upload one via ＋"));
         // PARALLEL — referenslar bir vaqtда R2'ga (odatda plagin allaqachon public R2 URL yuboradi → no-op).
         // Promise.all TARTIBNI saqlaydi → @imgN→image_urls[N-1] mapping buzilmaydi.
@@ -907,11 +915,15 @@ export async function processGeneration(genId: string): Promise<void> {
       // chiqadi → xotira ozod). mapLimit eng ko'pi IMG_CONCURRENCY ta bir vaqtda → tezlik + cheklangan
       // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
       // Vertex edit uchun BARCHA referenslar (Gemini ko'p rasmni birlashtiradi) — TARTIB saqlanadi.
-      const vertexRefUrls: string[] = Array.isArray(params.referenceUrls)
-        ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
-        : refUrl
-          ? [refUrl]
-          : [];
+      // P8 C3: katalog maxRefs endi SERVER'da ham kesiladi (oldin faqat UI cheklardi).
+      const refCap = typeof model.maxRefs === "number" && model.maxRefs > 0 ? model.maxRefs : Infinity;
+      const vertexRefUrls: string[] = (
+        Array.isArray(params.referenceUrls)
+          ? (params.referenceUrls as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+          : refUrl
+            ? [refUrl]
+            : []
+      ).slice(0, refCap === Infinity ? undefined : refCap);
       const genOne = (): Promise<OrResult<Buffer>> =>
         useVertexImg
           ? useEdit
@@ -954,10 +966,13 @@ export async function processGeneration(genId: string): Promise<void> {
         });
       }
     } else if (model.feature === "text-to-speech") {
-      // Kokoro voice MAJBURIY (bo'sh → "expected string" xatosi). Yo'q/bo'sh bo'lsa
-      // tasdiqlangan default voice'ga tushamiz — audio doim chiqsin (jonli test bilan tekshirilgan).
-      const voice =
-        typeof params.voice === "string" && params.voice ? params.voice : "af_bella";
+      // Kokoro voice MAJBURIY (bo'sh → "expected string" xatosi). P8 C6: katalog `voices`
+      // ro'yxatiga qarshi VALIDATSIYA — noma'lum voice → birinchi katalog voice (af_bella).
+      const requestedVoice = typeof params.voice === "string" ? params.voice : "";
+      const knownVoices = Array.isArray(model.voices) ? model.voices.map((v) => v.id) : [];
+      const voice = knownVoices.includes(requestedVoice)
+        ? requestedVoice
+        : knownVoices[0] || "af_bella";
       const out = await orSpeech(model.key, gen.prompt, voice);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });

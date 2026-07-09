@@ -1088,12 +1088,17 @@ export function resolveVideoParams(
     duration,
     resolution: pickStr(model.resolutions, params.resolution, ["720p", "1080p"]),
     aspectRatio: pickStr(model.aspects, params.aspectRatio, ["auto", "16:9", "9:16"]),
+    // P8 C1: model audio QO'LLAMASA (videoSettings.audio/audio=false) client true yubora
+    // olmaydi — Veo Lite/Fast'da audio-on so'rab audio-off narxida olish yopildi.
+    // (Narx hisobiga ta'sir yo'q — computeGenCost generateAudio'ni ishlatmaydi.)
     generateAudio:
-      typeof params.audio === "boolean"
-        ? params.audio
-        : typeof model.videoSettings?.audioDefault === "boolean"
-          ? model.videoSettings.audioDefault
-          : Boolean(model.audio),
+      (model.videoSettings?.audio ?? model.audio ?? false) === false
+        ? false
+        : typeof params.audio === "boolean"
+          ? params.audio
+          : typeof model.videoSettings?.audioDefault === "boolean"
+            ? model.videoSettings.audioDefault
+            : Boolean(model.audio),
     bitrateMode: model.videoSettings?.bitrate
       ? pickStr(model.videoSettings.bitrate.options, params.bitrateMode, [model.videoSettings.bitrate.def, "standard"])
       : undefined,
