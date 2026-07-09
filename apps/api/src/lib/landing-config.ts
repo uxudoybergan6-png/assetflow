@@ -282,7 +282,7 @@ const planCopySchema = z.object({
   sub: shortText.optional(),
   cta: shortText.optional(),
   feats: featsList.optional(),
-  teaserFeats: z.array(z.string().max(90)).length(3).optional(),
+  teaserFeats: z.array(z.string().max(90)).min(1).max(3).optional(),
 });
 
 export const landingConfigSchema = z
@@ -339,7 +339,7 @@ export const landingConfigSchema = z
         desc: longText.optional(),
         ctaLabel: shortText.optional(),
         cards: z.array(z.object({ title: shortText.optional(), desc: longText.optional(), cost: z.string().max(24).optional() })).length(4).optional(),
-        typingPrompts: z.array(z.string().max(120)).length(4).optional(),
+        typingPrompts: z.array(z.string().max(120)).min(1).max(6).optional(),
       })
       .optional(),
     pluginPromo: z
