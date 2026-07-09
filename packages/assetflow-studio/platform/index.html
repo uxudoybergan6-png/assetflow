@@ -15182,7 +15182,7 @@
   .ff .va-ract{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
   /* PHASE B — dock evolved into the mockup composer (bottom-docked inside the workspace) */
   .ff .va-dock{position:absolute;left:24px;right:24px;bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
-  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:40px;max-height:130px;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
+  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:40px;max-height:240px;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
   .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
   .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
@@ -19266,7 +19266,9 @@ class Component extends DCLogic {
       storageBarCol: (this.state.storageQuota && this.state.storageUsed / this.state.storageQuota >= 0.9) ? '#e84242' : 'var(--lime)',
       onSearch: (e) => this.setState({ q: e.target.value }),
       onPickTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k, chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false }, refClearIfModeChanged(k))); },
-      setPrompt: (e) => this.setState({ aiPrompt: e.target.value }),
+      // P12 — prompt auto-grow: scrollHeight'gacha (max-height 240px CSS'da klamplaydi);
+      // dock pastga o'rnatilgan — box yuqoriga qarab kengayadi (flex oqimi).
+      setPrompt: (e) => { const ta = e.target; try { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 240) + 'px'; } catch (x) {} this.setState({ aiPrompt: ta.value }); },
       improve: () => this.doEnhance(),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim

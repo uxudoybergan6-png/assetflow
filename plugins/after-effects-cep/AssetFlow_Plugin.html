@@ -2735,7 +2735,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .modeseg .s{flex:1;text-align:center;font-size:11px;color:var(--mut);padding:7px;border-radius:6px;font-weight:600;cursor:pointer}
 .axroot .modeseg .s.on{background:var(--blue);color:#04101f}
 .axroot .pin{border:1px solid var(--line2);border-radius:12px;background:var(--card);padding:11px;margin-bottom:11px}
-.axroot .pin textarea{width:100%;background:transparent;border:0;color:var(--txt);font-size:12.5px;line-height:1.45;resize:none;outline:none;font-family:inherit;min-height:38px;max-height:150px;overflow-y:auto;box-sizing:border-box}
+.axroot .pin textarea{width:100%;background:transparent;border:0;color:var(--txt);font-size:12.5px;line-height:1.45;resize:none;outline:none;font-family:inherit;min-height:38px;max-height:240px;overflow-y:auto;box-sizing:border-box}
 .axroot .pin textarea::-webkit-scrollbar{width:7px}
 .axroot .pin textarea::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
 .axroot .pin textarea::placeholder{color:var(--mut2)}
@@ -9953,7 +9953,7 @@ async function bootPlugin(){
   window.axRenderHistory=function(f){ try{ renderHistory(f||'all'); }catch(e){ try{console.error('[ax] axRenderHistory error:',e);}catch(_){} } }; // for imggen fallback
 
   // textarea auto-grow: yozilgan matnga qarab balandlashadi (max ~8 qator), keyin ichki scroll
-  function axGrow(ta){if(!ta||ta.tagName!=='TEXTAREA')return;ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,150)+'px';}
+  function axGrow(ta){if(!ta||ta.tagName!=='TEXTAREA')return;ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,240)+'px';} // P12: uzun prompt qulay (150→240)
   document.addEventListener('input',function(e){var ta=e.target;if(ta&&ta.tagName==='TEXTAREA'&&ta.closest&&ta.closest('.axroot'))axGrow(ta);});
   // Esc → ochiq sheet yopiladi · Cmd/Ctrl+Enter → yuborish
   document.addEventListener('keydown',function(e){
