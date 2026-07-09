@@ -1,5 +1,16 @@
 # Sessiya hisoboti — FIX-PROMPTS partiyasi · 2026-07-09
 
+## PROBLEM 10 — Add-a-model tizimi ✅
+
+- `gen-models-validate.ts` — har GEN_MODELS entry uchun to'liq validatsiya (id/mode/feature/
+  provider-dispatch/aspects/durations/perSec/mediaRefs/voices + narx dry-run); startup'da
+  throw (health-gate deployni to'xtatadi) + `npm run check:models -w apps/api` guard-CLI.
+  Salbiy test: 11 muammo topdi; ijobiy yangi entry: 0. Joriy katalog: 38 entry, 0 muammo.
+- UI hardcode'lar tozalandi: plagin provider allowlist'lari olib tashlandi (katalog-driven,
+  P3 media-refs sharti saqlandi); web `tool.multi` → katalog count mavjudligi.
+- `docs/ADD-A-MODEL.md` — maydon→UI→provider mapping jadvali, adapter kontrakti, 3 shablon,
+  kreditsiz test retsepti, checklist.
+
 ## PROBLEM 8 — Per-model gen UX (KATTA) ✅
 
 - `docs/GEN-MODEL-MATRIX.md` — 13 yoqilgan model uchun avtoritativ imkoniyat+mapping jadvali
