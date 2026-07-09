@@ -160,3 +160,40 @@ export function notifyAdminNewSubmission(input: {
     });
   }, `admin-new-submission (${input.count})`);
 }
+
+/**
+ * PROBLEM 14 — Admin-notify: YANGI foydalanuvchi ro'yxatdan o'tdi. Faqat User
+ * qatori YARATILGANDA chaqiriladi (returning-login'da EMAS). ADMIN_NOTIFY_EMAIL
+ * yo'q bo'lsa — jim no-op. Fire-and-forget (safe) — signup'ni hech qachon buzmaydi.
+ */
+export function notifyAdminNewUser(input: {
+  email: string;
+  name?: string | null;
+  source: "web" | "google-web" | "google-plugin";
+}): void {
+  const admin = process.env.ADMIN_NOTIFY_EMAIL?.trim();
+  if (!admin || !input.email) return;
+  safe(async () => {
+    const sourceLabel =
+      input.source === "google-web"
+        ? "Google sign-in (web)"
+        : input.source === "google-plugin"
+          ? "Google sign-in (plugin)"
+          : "Email registration (web)";
+    await sendEmail({
+      to: admin,
+      subject: `FrameFlow — new user: ${input.email}`,
+      html: renderEmailLayout(
+        "New user signed up",
+        `<p style="font-size:13px;line-height:1.6">A new user just joined FrameFlow:</p>
+         <ul style="font-size:13px;line-height:1.8;padding-left:18px;margin:8px 0">
+           <li><b>${input.email}</b>${input.name ? ` (${input.name})` : ""}</li>
+           <li>Source: ${sourceLabel}</li>
+           <li>Time: ${new Date().toISOString()}</li>
+         </ul>
+         <a href="${getWebUrl()}/admin/" style="display:inline-block;margin-top:12px;background:#82c341;color:#111;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px">Open admin</a>`
+      ),
+      text: `FrameFlow: new user ${input.email}${input.name ? ` (${input.name})` : ""} via ${sourceLabel}.`,
+    });
+  }, `admin-new-user (${input.email})`);
+}

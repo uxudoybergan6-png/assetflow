@@ -17,7 +17,7 @@ import {
 } from "../lib/s3.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
-import { sendWelcomeEmail } from "../lib/notify.js";
+import { sendWelcomeEmail, notifyAdminNewUser } from "../lib/notify.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import {
   adminRequire2fa,
@@ -144,6 +144,9 @@ authRouter.post("/register", authLimiter, async (req, res) => {
   await prisma.subscription.create({
     data: { userId: user.id, status: "INCOMPLETE" },
   });
+
+  // PROBLEM 14 — admin xabardor qilinadi (faqat CREATE'da; fire-and-forget).
+  notifyAdminNewUser({ email: user.email, name: user.name, source: "web" });
 
   // Email-tasdiqlash havolasini yuboramiz (email sozlanmagan bo'lsa log'ga).
   // Xatoga chidamli — tasdiqlash yuborilmasa ham ro'yxatdan o'tish muvaffaqiyatli
@@ -355,6 +358,8 @@ authRouter.post("/google", authLimiter, async (req, res) => {
   // FAZA 3 (E) — Google orqali YANGI hisob (verify bosqichi yo'q): welcome email darhol.
   if (result.isNew) {
     sendWelcomeEmail(user.email, user.name);
+    // PROBLEM 14 — faqat YANGI hisob yaratilganda (returning-login'da emas).
+    notifyAdminNewUser({ email: user.email, name: user.name, source: "google-web" });
   }
 
   // ADMIN 2FA: Google orqali kirish ham TOTP bosqichini chetlab O'TMAYDI

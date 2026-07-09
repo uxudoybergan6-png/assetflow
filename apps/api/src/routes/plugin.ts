@@ -17,7 +17,7 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
-import { sendWelcomeEmail } from "../lib/notify.js";
+import { sendWelcomeEmail, notifyAdminNewUser } from "../lib/notify.js";
 import { decryptTotpSecret, looksLikeBackupCode, verifyTotpCode } from "../lib/twofa.js";
 import {
   ensurePluginProfile,
@@ -627,6 +627,8 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
   // FAZA 3 (E) — plagin device-code oqimi orqali YANGI Google hisob: welcome email.
   if (result.isNew) {
     sendWelcomeEmail(user.email, user.name);
+    // PROBLEM 14 — faqat YANGI hisob yaratilganda (returning-login'da emas).
+    notifyAdminNewUser({ email: user.email, name: user.name, source: "google-plugin" });
   }
 
   // ADMIN + 2FA: device-code oqimida TOTP yig'ib bo'lmaydi — bypass ochiq
