@@ -1,5 +1,18 @@
 # Sessiya hisoboti — FIX-PROMPTS partiyasi · 2026-07-09
 
+## PROBLEM 1 — Plagin Sessions + Projects ✅
+
+- 4 yangi view (v-sessions/v-session/v-projects/v-project) — web terminologiyasi 1:1,
+  tor panel: seg qator (launcher: Tools|Sessions|Projects), ro'yxat qatorlari, 2-ustun
+  loyiha kartalari (4-cover mozaika); My Library → history view (barcha genlar).
+- `afProjectPicker` (markaziy modal: mavjud loyihalar + Create&add) + `afNameModal`
+  (yaratish/rename); Add-to-project BARCHA gen ctx'larida (rasm/video/audio/hist/home
+  recent kartalar + lightbox) va katalog shablon detalida (pd3AddToProject).
+- "New session" → tool sessiya keshlari reset (axIG/VG/AGNewSession hook'lari).
+- Backend PARTIYA 5 endpointlari qayta ishlatildi (rebuild YO'Q); studioPatch helper qo'shildi.
+- Mockup: `_aitools-sessions-projects-mockup.html` (4 frame). Brauzer smoke-test: view'lar
+  ochiladi, picker modal ishlaydi, konsol xatosiz; AE jonli testi kutilmoqda.
+
 ## PROBLEM 10 — Add-a-model tizimi ✅
 
 - `gen-models-validate.ts` — har GEN_MODELS entry uchun to'liq validatsiya (id/mode/feature/
