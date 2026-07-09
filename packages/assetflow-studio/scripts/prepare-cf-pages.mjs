@@ -100,6 +100,44 @@ copyDir(path.join(root, "platform"), dist);
   }
 }
 
+// 5c) Umumiy JS cache-bust — BARCHA dist HTML'lardagi lokal `js/<nom>.js`
+//     havolalariga fayl KONTENT-HASH'i (?v=) qo'shiladi (ff-api.js naqshi).
+//     Aks holda deploy'dan keyin eski studio-api.js/admin-*.js keshdan kelib
+//     "undefined is not a function" beradi (admin Website editori jonli incidenti).
+{
+  const jsDir = path.join(dist, "js");
+  const jsHash = new Map(); // nom → kontent-hash (js/ dist nusxasidan — hamma joyda bir xil)
+  if (fs.existsSync(jsDir)) {
+    for (const name of fs.readdirSync(jsDir)) {
+      if (!name.endsWith(".js")) continue;
+      jsHash.set(name, createHash("sha256").update(fs.readFileSync(path.join(jsDir, name))).digest("hex").slice(0, 10));
+    }
+  }
+  const bustHtml = (file) => {
+    let html = fs.readFileSync(file, "utf8");
+    let n = 0;
+    // "js/x.js", "/js/x.js", "/studio/js/x.js", "/admin/js/x.js" — hammasi bitta manba nusxasi
+    html = html.replace(/(src|href)="((?:\/(?:studio|admin))?\/?js\/)([\w.-]+\.js)(?:\?v=[\w-]*)?"/g, (m, attr, prefix, name) => {
+      const h = jsHash.get(name);
+      if (!h) return m;
+      n++;
+      return `${attr}="${prefix}${name}?v=${h}"`;
+    });
+    if (n) fs.writeFileSync(file, html);
+    return n;
+  };
+  const walk = (dir) => {
+    let total = 0;
+    for (const name of fs.readdirSync(dir)) {
+      const p = path.join(dir, name);
+      if (fs.statSync(p).isDirectory()) total += walk(p);
+      else if (name.endsWith(".html")) total += bustHtml(p);
+    }
+    return total;
+  };
+  console.log(`  js cache-bust: ${walk(dist)} ta havola (${jsHash.size} fayl hash'landi)`);
+}
+
 // _redirects — Cloudflare Pages routing.
 // Login sahifalari endi real fayllar (/studio/login.html, /admin/login.html);
 // eski root URL'lar (login.html, admin-login.html — bookmark/email havolalari)
