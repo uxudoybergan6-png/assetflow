@@ -14921,6 +14921,11 @@
   /* AI tool kartada real so'nggi gen art — matn o'qilishi uchun scrim */
   .ff .va-tool.hasart::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,.30),rgba(6,8,11,.84));z-index:0;pointer-events:none}
   .ff .va-tool.hasart>*{position:relative;z-index:1}
+  /* audio row real playback holati */
+  .ff .va-axarow.playing .va-axwave b{animation:vaEq .9s ease-in-out infinite alternate}
+  .ff .va-axarow.playing .va-axwave b:nth-child(2n){animation-delay:.18s}
+  .ff .va-axarow.playing .va-axwave b:nth-child(3n){animation-delay:.32s}
+  @keyframes vaEq{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
   /* ── top nav (A1) ── */
   .ff .va-nav{height:64px;display:flex;align-items:center;gap:26px;padding:0 32px;border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9);position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   .ff .va-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15.5px;letter-spacing:-.02em;color:var(--text);cursor:pointer}
@@ -16413,7 +16418,10 @@
                       </sc-if>
                       <sc-for list="{{ axAudGens }}" as="g" hint-placeholder-count="3">
                         <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="{{ g.arowCls }}">
-                          <span class="va-axplay"><svg class="va-ic"><use href="#i-play"></use></svg></span>
+                          <span class="va-axplay" onclick="{{ toggleAudioRow }}" title="Play / pause">
+                            <sc-if value="{{ g.playing }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 16 16" fill="currentColor" style="width:11px;height:11px"><rect x="3" y="2" width="3.4" height="12" rx="1"></rect><rect x="9.6" y="2" width="3.4" height="12" rx="1"></rect></svg></sc-if>
+                            <sc-if value="{{ g.notPlaying }}" hint-placeholder-val="{{ true }}"><svg class="va-ic"><use href="#i-play"></use></svg></sc-if>
+                          </span>
                           <div class="va-axainfo"><div class="t">{{ g.title }}</div><div class="m">{{ g.metaLine }}</div></div>
                           <div class="va-axwave"><sc-for list="{{ g.bars }}" as="b" hint-placeholder-count="9"><b style="height:{{ b.h }}"></b></sc-for></div>
                           <span class="cost">✦ {{ g.cost }}</span>
@@ -16807,8 +16815,11 @@
     <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
       <div onclick="{{ stop }}" style="width:100%;max-width:620px">
         <div style="position:relative;aspect-ratio:{{ lb.asp }};border-radius:20px;overflow:hidden;background:{{ lb.g }};border:1px solid var(--hair2);box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
-          <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" preload="none" controls="" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
-          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><audio src="{{ lb.url }}" preload="none" controls="" style="position:absolute;left:14px;right:14px;bottom:14px;width:calc(100% - 28px)"></audio></sc-if>
+          <!-- QA-FIX #3: controls=""/playsinline="" React'da FALSY prop edi (video boshqaruvsiz qora quti) —
+               endi {{ true }} bilan chin boolean; poster=thumb (qora kadr o'rniga), poster yo'q bo'lsa
+               preload=metadata birinchi kadrni chizadi. -->
+          <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
+          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><audio src="{{ lb.url }}" preload="metadata" controls="{{ true }}" style="position:absolute;left:14px;right:14px;bottom:14px;width:calc(100% - 28px)"></audio></sc-if>
           <button onclick="{{ closeLightbox }}" style="position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px"><i class="ph ph-x"></i></button>
           <div style="position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tag }}</div>
         </div>
@@ -16861,6 +16872,7 @@ class Component extends DCLogic {
     enhBusy: false,
     showCredits: false,
     lightbox: null,
+    audioPlayingId: null, // QA-FIX #3 — audio row real playback holati
     detail: null,
     fApp: 'All',
     fCat: 'All',
@@ -17154,7 +17166,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._io) this._io.disconnect(); } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
@@ -17177,6 +17189,24 @@ class Component extends DCLogic {
     }
   }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
+  /** QA-FIX #3 — audio natijani REAL o'ynatish (bitta umumiy Audio element, play/pause toggle). */
+  playAudio(id) {
+    const g = this.state.gens.find(x => x.id === id);
+    if (!g || !g.url) return;
+    if (!this._audioEl) {
+      this._audioEl = new Audio();
+      this._audioEl.addEventListener('ended', () => this.setState({ audioPlayingId: null }));
+    }
+    if (this.state.audioPlayingId === id) {
+      try { this._audioEl.pause(); } catch (e) {}
+      this.setState({ audioPlayingId: null });
+      return;
+    }
+    this._audioEl.src = g.url;
+    const p = this._audioEl.play();
+    if (p && p.catch) p.catch(() => this.setState({ audioPlayingId: null }));
+    this.setState({ audioPlayingId: id });
+  }
   /** QA-FIX #14/#3 — karta video'lari hover'da jonli o'ynaydi (muted), chiqilganda to'xtaydi.
    *  Katalog preview'lari data-src bilan dangasa: birinchi hover'da yuklanadi (bandwidth tejash).
    *  React ro'yxat elementni boshqa item uchun qayta ishlatsa data-src o'zgaradi — har hover'da tekshiramiz. */
@@ -18005,10 +18035,12 @@ class Component extends DCLogic {
       id: g.id, isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
       resCls: 'va-axres' + (md.mcls ? ' va-skel' : '') + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
     }; });
-    const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; return {
+    const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const playing = this.state.audioPlayingId === g.id; return {
       id: g.id, title: g.label || 'Audio', cost: g.cost || 0,
       metaLine: [(g.tool === 'SFX' || g.mode === 'sfx') ? 'SFX' : 'VOICE', modelLabelById[g.modelId], fmtAgo(g.at)].filter(Boolean).join(' · '),
-      arowCls: 'va-axarow' + (on ? ' on' : ''),
+      // QA-FIX #3 — real audio playback holati (play/pause tugma + waveform animatsiya)
+      playing, notPlaying: !playing,
+      arowCls: 'va-axarow' + (on ? ' on' : '') + (playing ? ' playing' : ''),
       bars: Array.from({ length: 28 }, (_, i) => ({ h: (16 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.83)) * 76)) + '%' })),
     }; });
     const axShowHero = this.state.gens.length === 0 && !this.state.generating;
@@ -18219,7 +18251,8 @@ class Component extends DCLogic {
       hasColMore: colMoreN > 0, colMoreN,
     } : null;
     const lbRaw = this.state.lightbox;
-    const lb = lbRaw ? { ...lbRaw, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))) } : null;
+    // QA-FIX #3 — lightbox video poster: thumb bo'lsa poster, bo'lmasa null (preload=metadata birinchi kadrni chizadi)
+    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))) } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
@@ -18650,6 +18683,8 @@ class Component extends DCLogic {
       doGenerate: () => this.generate(),
       openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
       closeLightbox: () => this.setState({ lightbox: null }),
+      // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
+      toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
       useAsRef: () => { this.setState({ lightbox: null }); this.toast('Use as reference coming soon'); },
       onFApp: (e) => this.setState({ fApp: e.currentTarget.dataset.v }),
