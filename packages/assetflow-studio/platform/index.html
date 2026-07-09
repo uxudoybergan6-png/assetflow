@@ -14329,7 +14329,8 @@
   .ff .ffm-d44{font-weight:700;font-size:44px;line-height:1.08;letter-spacing:-.03em}
   .ff .ffm-d36{font-weight:600;font-size:36px;line-height:1.1;letter-spacing:-.025em}
   .ff .ffm-d30{font-weight:600;font-size:30px;line-height:1.15;letter-spacing:-.02em}
-  .ff .ffm-grad{background:linear-gradient(92deg,#C2F04A 10%,#7CC4FF 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* Landing CMS: accent var'dan — default var(--lime)=#C2F04A, admin accent tanlasa shu rangda */
+  .ff .ffm-grad{background:linear-gradient(92deg,var(--lime) 10%,#7CC4FF 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
   .ff .ffm-eyebrow{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:var(--lime)}
   /* buttons */
   .ff .ffm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border:none;border-radius:100px;background:var(--spend-grad);color:var(--onlime);font-family:inherit;font-weight:700;font-size:13.5px;white-space:nowrap;cursor:pointer;text-decoration:none}
@@ -14466,6 +14467,7 @@
   .ff .ffl-show .resgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
   .ff .ffl-show .res{position:relative;border-radius:13px;overflow:hidden;aspect-ratio:1/1;box-shadow:0 14px 34px rgba(0,0,0,.4);transition:transform .5s cubic-bezier(.22,.9,.3,1)}
   .ff .ffl-show .res.wide{grid-column:span 2;aspect-ratio:auto}
+  .ff .ffl-show .res .cmedia{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .ff .ffl-show .res .rtag{position:absolute;top:9px;left:9px;font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;padding:3px 7px;border-radius:4px;background:rgba(5,7,10,.62);color:#D8DEE8;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:2}
   .ff .ffl-show .res .rdur{position:absolute;right:9px;bottom:9px;font:600 8.5px 'IBM Plex Mono',monospace;padding:3px 7px;border-radius:4px;background:rgba(5,7,10,.62);color:#D8DEE8;z-index:2}
   .ff .ffl-show .res .sheen{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.09) 48%,transparent 62%);transform:translateX(-120%);animation:fflSheenA 6.5s ease-in-out infinite}
@@ -15489,7 +15491,7 @@
 </style>
 </helmet>
 
-<div class="ff" data-accent="{{ accentKey }}" data-anim="{{ animKey }}" style="min-height:100vh;background:radial-gradient(1200px 620px at 50% -8%,#0B0F15,#06080B 62%);color:var(--txt);font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.005em">
+<div class="ff" data-accent="{{ accentKey }}" data-anim="{{ animKey }}" style="min-height:100vh;background:radial-gradient(1200px 620px at 50% -8%,#0B0F15,#06080B 62%);color:var(--txt);font-family:{{ pageFontStack }};-webkit-font-smoothing:antialiased;letter-spacing:-.005em{{ themeVarsCss }}">
 
   <!-- ============ MARKETING CHROME ============ -->
   <sc-if value="{{ showMarketing }}" hint-placeholder-val="{{ true }}">
@@ -15500,25 +15502,25 @@
         <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
         <span style="flex:1"></span>
         <span class="ffm-navlinks" style="display:flex;align-items:center;gap:6px">
-          <a class="ffm-link" onclick="{{ goTemplates }}">Templates</a>
-          <a class="ffm-link" onclick="{{ goAistudio }}">AI Studio</a>
-          <a class="{{ navPricingCls }}" onclick="{{ goPricing }}">Pricing</a>
-          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}">Plugin</a>
+          <a class="ffm-link" onclick="{{ goTemplates }}">{{ lcNavTemplates }}</a>
+          <a class="ffm-link" onclick="{{ goAistudio }}">{{ lcNavAistudio }}</a>
+          <a class="{{ navPricingCls }}" onclick="{{ goPricing }}">{{ lcNavPricing }}</a>
+          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}">{{ lcNavPlugin }}</a>
         </span>
         <span class="ffm-navcta" style="width:14px"></span>
-        <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}">Sign in</a>
-        <button class="ffm-btn sm ffm-navcta" onclick="{{ goRegister }}">Start for free</button>
+        <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}">{{ lcNavSignIn }}</a>
+        <button class="ffm-btn sm ffm-navcta" onclick="{{ goRegister }}">{{ lcNavCta }}</button>
         <span class="ffm-burger" onclick="{{ toggleNav }}"><i class="ph ph-list"></i></span>
       </div>
       <sc-if value="{{ navOpen }}" hint-placeholder-val="{{ false }}">
         <div style="padding:10px 16px 18px;border-top:1px solid var(--hair2);display:flex;flex-direction:column;gap:4px;background:rgba(10,13,18,.96);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px)">
-          <a class="ffm-link" onclick="{{ goTemplates }}" style="padding:12px 13px;font-size:15px">Templates</a>
-          <a class="ffm-link" onclick="{{ goAistudio }}" style="padding:12px 13px;font-size:15px">AI Studio</a>
-          <a class="ffm-link" onclick="{{ goPricing }}" style="padding:12px 13px;font-size:15px">Pricing</a>
-          <a class="ffm-link" onclick="{{ goPlugin }}" style="padding:12px 13px;font-size:15px">Plugin</a>
+          <a class="ffm-link" onclick="{{ goTemplates }}" style="padding:12px 13px;font-size:15px">{{ lcNavTemplates }}</a>
+          <a class="ffm-link" onclick="{{ goAistudio }}" style="padding:12px 13px;font-size:15px">{{ lcNavAistudio }}</a>
+          <a class="ffm-link" onclick="{{ goPricing }}" style="padding:12px 13px;font-size:15px">{{ lcNavPricing }}</a>
+          <a class="ffm-link" onclick="{{ goPlugin }}" style="padding:12px 13px;font-size:15px">{{ lcNavPlugin }}</a>
           <div style="height:1px;background:var(--hair2);margin:6px 0"></div>
-          <a class="ffm-btn2 full" onclick="{{ goLogin }}" style="margin-bottom:8px">Sign in</a>
-          <button class="ffm-btn full" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:14px"></i>Start for free</button>
+          <a class="ffm-btn2 full" onclick="{{ goLogin }}" style="margin-bottom:8px">{{ lcNavSignIn }}</a>
+          <button class="ffm-btn full" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:14px"></i>{{ lcNavCta }}</button>
         </div>
       </sc-if>
     </header>
@@ -15531,17 +15533,17 @@
         <div class="ffl-aur"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
         <div class="ffl-gridbg" style="position:absolute;inset:0"></div>
         <div class="ffl-hain">
-          <span class="ffl-badge" data-rv=""><span class="yn">NEW</span>AI Video 2.0 is here<i class="ph ph-arrow-right" style="font-size:11px;color:var(--muted)"></i></span>
-          <div class="ffl-d64" data-rv="" data-rv-delay="80" style="margin:18px auto 0;max-width:900px">Templates, AI video and audio — <span class="ffm-grad">one creative space</span></div>
-          <div class="ffl-herosub" data-rv="" data-rv-delay="160" style="max-width:660px">Download templates, generate images, video and audio with AI — all in one creative space. Work in the browser or keep going inside After Effects.</div>
+          <span class="ffl-badge" data-rv=""><span class="yn">{{ lcHeroBadgeTag }}</span>{{ lcHeroBadgeText }}<i class="ph ph-arrow-right" style="font-size:11px;color:var(--muted)"></i></span>
+          <div class="ffl-d64" data-rv="" data-rv-delay="80" style="margin:18px auto 0;max-width:900px">{{ lcHeroTitle }} <span class="ffm-grad">{{ lcHeroTitleAccent }}</span></div>
+          <div class="ffl-herosub" data-rv="" data-rv-delay="160" style="max-width:660px">{{ lcHeroSub }}</div>
           <div class="ffl-herocta ffm-herocta" data-rv="" data-rv-delay="240">
-            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>Start for free</button>
-            <button class="ffm-btn2 lg" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>Browse templates</button>
+            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>{{ lcHeroCtaPrimary }}</button>
+            <button class="ffm-btn2 lg" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>{{ lcHeroCtaSecondary }}</button>
           </div>
-          <div class="ffl-credline" data-rv="" data-rv-delay="320"><i class="ph-fill ph-seal-check"></i>No card required · 50 AI credits on us</div>
+          <div class="ffl-credline" data-rv="" data-rv-delay="320"><i class="ph-fill ph-seal-check"></i>{{ lcHeroCredline }}</div>
           <!-- KATTA MEDIA: jonli AI Studio -->
           <div class="ffl-showfr" data-rv="" data-rv-delay="420">
-            <div class="bar"><b></b><b></b><b></b><span class="ttl">FrameFlow — AI Studio</span><span class="lv">LIVE</span></div>
+            <div class="bar"><b></b><b></b><b></b><span class="ttl">{{ lcMockTitle }}</span><span class="lv">{{ lcMockBadge }}</span></div>
             <div class="ffl-show">
               <div class="railL">
                 <div class="ri on"><i class="ph-fill ph-image"></i>Image</div>
@@ -15552,13 +15554,26 @@
               </div>
               <div class="main">
                 <div class="resgrid">
-                  <div class="res ffm-g1"><span class="rtag">IMAGE</span><span class="sheen"></span></div>
-                  <div class="res ffm-g3"><span class="rtag">IMAGE</span><span class="sheen" style="animation-delay:1.2s"></span></div>
+                  <sc-for list="{{ heroCardsA }}" as="c" hint-placeholder-count="2">
+                    <div class="{{ c.cls }}" style="{{ c.style }}">
+                      <sc-if value="{{ c.hasImg }}" hint-placeholder-val="{{ false }}"><img class="cmedia" src="{{ c.media }}" alt="" loading="lazy"></sc-if>
+                      <sc-if value="{{ c.isVideo }}" hint-placeholder-val="{{ false }}"><video class="cmedia" src="{{ c.media }}" autoplay="{{ true }}" muted="{{ true }}" loop="{{ true }}" playsinline="{{ true }}" preload="metadata"></video></sc-if>
+                      <span class="rtag">{{ c.tag }}</span>
+                      <sc-if value="{{ c.hasDur }}" hint-placeholder-val="{{ false }}"><span class="rdur">{{ c.dur }}</span></sc-if>
+                      <sc-if value="{{ c.hasSheen }}" hint-placeholder-val="{{ true }}"><span class="sheen" style="animation-delay:{{ c.sheen }}"></span></sc-if>
+                    </div>
+                  </sc-for>
                   <div class="res pend genslot"><span class="shim"></span><i class="ph ph-circle-notch spin"></i><span class="pct">0%</span><b class="pline"></b></div>
-                  <div class="res ffm-g6"><span class="rtag">IMAGE</span><span class="sheen" style="animation-delay:2.4s"></span></div>
-                  <div class="res wide ffm-g5 playing" style="aspect-ratio:32/10"><span class="rtag">VIDEO</span><span class="rdur">0:08</span><span class="eq"><b></b><b></b><b></b></span><span class="pbar"><b></b></span></div>
-                  <div class="res ffm-g2"><span class="rtag">TEMPLATE</span><span class="rdur">0:12</span><span class="sheen" style="animation-delay:3.1s"></span></div>
-                  <div class="res ffl-g8"><span class="rtag">TEMPLATE</span><span class="rdur">0:05</span><span class="sheen" style="animation-delay:4s"></span></div>
+                  <sc-for list="{{ heroCardsB }}" as="c" hint-placeholder-count="4">
+                    <div class="{{ c.cls }}" style="{{ c.style }}">
+                      <sc-if value="{{ c.hasImg }}" hint-placeholder-val="{{ false }}"><img class="cmedia" src="{{ c.media }}" alt="" loading="lazy"></sc-if>
+                      <sc-if value="{{ c.isVideo }}" hint-placeholder-val="{{ false }}"><video class="cmedia" src="{{ c.media }}" autoplay="{{ true }}" muted="{{ true }}" loop="{{ true }}" playsinline="{{ true }}" preload="metadata"></video></sc-if>
+                      <span class="rtag">{{ c.tag }}</span>
+                      <sc-if value="{{ c.hasDur }}" hint-placeholder-val="{{ false }}"><span class="rdur">{{ c.dur }}</span></sc-if>
+                      <sc-if value="{{ c.hasSheen }}" hint-placeholder-val="{{ true }}"><span class="sheen" style="animation-delay:{{ c.sheen }}"></span></sc-if>
+                      <sc-if value="{{ c.isWide }}" hint-placeholder-val="{{ false }}"><span class="eq"><b></b><b></b><b></b></span><span class="pbar"><b></b></span></sc-if>
+                    </div>
+                  </sc-for>
                 </div>
                 <div class="composer">
                   <div class="pline"><span data-ffl-type=""></span><span class="caret"></span></div>
@@ -15577,10 +15592,9 @@
       <!-- STATS — jonli count-up (real mahsulot statistikasi, soxta logo/testimonial YO'Q) -->
       <section class="ffl-stats" data-rv="" data-stats="">
         <div class="ffl-statsin">
-          <div class="ffl-stat"><div class="n"><b>{{ landStat1 }}</b><em>+</em></div><div class="l">Ready-made templates</div></div>
-          <div class="ffl-stat"><div class="n"><b>{{ landStat2 }}</b></div><div class="l">AI tools — image · video · voice · SFX</div></div>
-          <div class="ffl-stat"><div class="n"><b>{{ landStat3 }}</b></div><div class="l">Categories — Ae · Pr · DaVinci</div></div>
-          <div class="ffl-stat"><div class="n"><b>{{ landStat4 }}</b> <span class="u">days</span></div><div class="l">Money-back guarantee</div></div>
+          <sc-for list="{{ landStatsView }}" as="st" hint-placeholder-count="4">
+            <div class="ffl-stat"><div class="n"><b>{{ st.v }}</b><em>{{ st.plus }}</em><span class="u">{{ st.unit }}</span></div><div class="l">{{ st.label }}</div></div>
+          </sc-for>
         </div>
       </section>
       <!-- SHOWCASE — marquee shablon-ko'rgazma -->
@@ -17012,6 +17026,8 @@ class Component extends DCLogic {
     nameModal: null,       // umumiy nom modali: {kind, title, cta, value, ctx}
     catalog: [],
     catalogReady: false,
+    landCfg: null, // Landing CMS — serverdagi (yoki localStorage keshidagi) konfiguratsiya
+
     favTpls: [], // FAZA D — lokal sevimli shablonlar (localStorage). TODO(FF): server-side favorites endpointi
 
     genModels: {},
@@ -17117,6 +17133,94 @@ class Component extends DCLogic {
   ];
   toolByMode = { image: 'Rasm yaratish', video: 'Video yaratish', voice: 'Voiceover', sfx: 'SFX', music: 'SFX' };
 
+  // ── Landing CMS — defaultlar API'dagi DEFAULT_LANDING_CONFIG bilan AYNI (offline/birinchi
+  // renderda ham landing hozirgi ko'rinishda qoladi; server merged config qaytaradi).
+  landingDefaults = {
+    theme: { accent: '#C2F04A', font: 'hanken' },
+    nav: { templates: 'Templates', aiStudio: 'AI Studio', pricing: 'Pricing', plugin: 'Plugin', signIn: 'Sign in', cta: 'Start for free' },
+    hero: {
+      badgeTag: 'NEW', badgeText: 'AI Video 2.0 is here',
+      title: 'Templates, AI video and audio —', titleAccent: 'one creative space',
+      sub: 'Download templates, generate images, video and audio with AI — all in one creative space. Work in the browser or keep going inside After Effects.',
+      ctaPrimary: 'Start for free', ctaSecondary: 'Browse templates',
+      credline: 'No card required · 50 AI credits on us',
+    },
+    mockup: {
+      title: 'FrameFlow — AI Studio', badge: 'LIVE',
+      cards: [
+        { label: 'IMAGE', dur: '', mediaUrl: '', mediaType: '' },
+        { label: 'IMAGE', dur: '', mediaUrl: '', mediaType: '' },
+        { label: 'IMAGE', dur: '', mediaUrl: '', mediaType: '' },
+        { label: 'VIDEO', dur: '0:08', mediaUrl: '', mediaType: '' },
+        { label: 'TEMPLATE', dur: '0:12', mediaUrl: '', mediaType: '' },
+        { label: 'TEMPLATE', dur: '0:05', mediaUrl: '', mediaType: '' },
+      ],
+    },
+    stats: [
+      { value: 10000, suffix: '+', label: 'Ready-made templates' },
+      { value: 4, suffix: '', label: 'AI tools — image · video · voice · SFX' },
+      { value: 6, suffix: '', label: 'Categories — Ae · Pr · DaVinci' },
+      { value: 14, suffix: 'days', label: 'Money-back guarantee' },
+    ],
+  };
+  // Kuratsiyalangan, o'z-serverda turadigan font to'plami (CDN'siz) — admin "Website" tanlovi.
+  landingFontStacks = {
+    hanken: "'Hanken Grotesk',system-ui,sans-serif",
+    system: "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",
+    'plex-mono': "'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace",
+    georgia: "Georgia,'Times New Roman',serif",
+  };
+  /** Merged landing config: state.landCfg (server/kesh) defaultlar ustiga — bo'lim-darajada. */
+  landingCfg() {
+    const d = this.landingDefaults;
+    const s = this.state.landCfg || {};
+    const o = (base, over) => {
+      const out = Object.assign({}, base);
+      if (over && typeof over === 'object') Object.keys(base).forEach(k => { if (over[k] != null) out[k] = over[k]; });
+      return out;
+    };
+    return {
+      theme: o(d.theme, s.theme),
+      nav: o(d.nav, s.nav),
+      hero: o(d.hero, s.hero),
+      mockup: {
+        title: (s.mockup && s.mockup.title) || d.mockup.title,
+        badge: (s.mockup && s.mockup.badge) || d.mockup.badge,
+        cards: d.mockup.cards.map((c, i) => o(c, s.mockup && s.mockup.cards && s.mockup.cards[i])),
+      },
+      stats: d.stats.map((st, i) => o(st, s.stats && s.stats[i])),
+    };
+  }
+  /** Custom accent HEX → landing CSS o'zgaruvchilari (inline style, data-accent ustidan
+   *  yozadi). Default lime bo'lsa bo'sh satr — mavjud stylesheet qiymatlari qoladi. */
+  landingAccentVars(hex) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex || '') || hex.toUpperCase() === '#C2F04A') return '';
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    const mix = (c, t, p) => Math.round(c + (t - c) * p);
+    const toHex = (rr, gg, bb) => '#' + [rr, gg, bb].map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
+    const dark = toHex(mix(r, 0, .22), mix(g, 0, .22), mix(b, 0, .22));
+    const light = toHex(mix(r, 255, .2), mix(g, 255, .2), mix(b, 255, .2));
+    // YIQ yorqinlik — accent ustidagi matn rangi (och accent → to'q matn)
+    const onAcc = ((.299 * r + .587 * g + .114 * b) / 255) > .55 ? '#0E1400' : '#FFFFFF';
+    return ';--lime:' + hex + ';--lime2:' + dark + ';--onlime:' + onAcc +
+      ';--limedim:rgba(' + r + ',' + g + ',' + b + ',.12)' +
+      ';--spend-grad:radial-gradient(120% 140% at 30% 20%,' + light + ',' + hex + ' 55%,' + dark + ')' +
+      ';--grad:linear-gradient(155deg,' + hex + ',' + dark + ')' +
+      ';--grad-h:linear-gradient(155deg,' + light + ',' + hex + ')' +
+      ';--acc:' + hex + ';--acc-ind:' + dark + ';--glow1:' + hex + ';--on:' + onAcc +
+      ';--ring:rgba(' + r + ',' + g + ',' + b + ',.4)';
+  }
+  /** Landing CMS konfiguratsiyasini yuklaydi: avval localStorage keshi (tez birinchi
+   *  bo'yoq), so'ng server (60s HTTP kesh) — javob keshga yoziladi. */
+  loadLandingConfig() {
+    try { const c = JSON.parse(localStorage.getItem('ff_landing_cfg') || 'null'); if (c) this.setState({ landCfg: c }); } catch (e) {}
+    FFAPI.landingConfig().then((r) => {
+      if (!r || !r.config) return;
+      this.setState({ landCfg: r.config });
+      try { localStorage.setItem('ff_landing_cfg', JSON.stringify(r.config)); } catch (e) {}
+    }).catch(() => {}); // ofline/xato — defaultlar/kesh bilan qolamiz
+  }
+
   creditPacks = [
     { c: 500, label: '500', p: 5, sub: 'For small projects', pop: false },
     { c: 1500, label: '1,500', p: 12, sub: 'Most popular — save 20%', pop: true },
@@ -17216,6 +17320,7 @@ class Component extends DCLogic {
           if (savedUser && (!h0 || h0 === 'landing')) { this._hashApplied = true; this.go('dashboard', { replace: true }); }
         }
         this.loadCatalog();
+        this.loadLandingConfig(); // Landing CMS — kesh + server
         window.addEventListener('ff-auth-expired', this._onExpired = () => {
           this.setState({ user: null, credits: 0, creditsLoaded: false, gensLoaded: false });
           this.toast('Your session has expired — please sign in again');
@@ -18584,11 +18689,45 @@ class Component extends DCLogic {
         ? 'We\'ll send a link to your email — you\'ll be back in a minute.'
         : 'Templates, AI Studio and the plugin — one account. Continue in the browser or right inside After Effects.');
     const sp = this._armed ? this.state.statP : 1;
-    // Boy landing stats — count-up (runStats/statP dvigateli; reduced-motion'da sp=1 → darhol to'liq qiymat)
-    const landStat1 = Math.round(10000 * sp).toLocaleString('en-US');
-    const landStat2 = String(Math.round(4 * sp));
-    const landStat3 = String(Math.round(6 * sp));
-    const landStat4 = String(Math.round(14 * sp));
+    // ── Landing CMS — hero/nav/mockup/stats/theme bindinglari (admin "Website" tab) ──
+    const lc = this.landingCfg();
+    // Stats — count-up (runStats/statP dvigateli; reduced-motion'da sp=1 → darhol to'liq qiymat).
+    // suffix: harfsiz belgi ('+') accent <em>ga, so'z ('days') <span class="u">ga tushadi.
+    const landStatsView = lc.stats.map((st) => {
+      const n = Math.round((Number(st.value) || 0) * sp);
+      const isWord = /[a-zA-Z]/.test(st.suffix || '');
+      return {
+        v: n >= 1000 ? n.toLocaleString('en-US') : String(n),
+        plus: isWord ? '' : (st.suffix || ''),
+        unit: isWord ? ' ' + st.suffix : '',
+        label: st.label,
+      };
+    });
+    // Mockup preview kartalari — media bo'lsa gradient ustiga to'ldiradi, bo'lmasa gradient qoladi.
+    const CARD_STATIC = [
+      { cls: 'res ffm-g1', sheen: '0s' },
+      { cls: 'res ffm-g3', sheen: '1.2s' },
+      { cls: 'res ffm-g6', sheen: '2.4s' },
+      { cls: 'res wide ffm-g5 playing', sheen: '', style: 'aspect-ratio:32/10' },
+      { cls: 'res ffm-g2', sheen: '3.1s' },
+      { cls: 'res ffl-g8', sheen: '4s' },
+    ];
+    const heroCardsAll = lc.mockup.cards.map((c, i) => {
+      const st = CARD_STATIC[i] || CARD_STATIC[0];
+      const url = c.mediaUrl || '';
+      const isVideo = !!url && (c.mediaType === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(url));
+      return {
+        cls: st.cls, style: st.style || '', tag: c.label, dur: c.dur || '',
+        hasDur: !!c.dur, media: url, hasImg: !!url && !isVideo, isVideo,
+        sheen: st.sheen, hasSheen: !!st.sheen, isWide: st.cls.indexOf('wide') >= 0,
+      };
+    });
+    const heroCardsA = heroCardsAll.slice(0, 2); // genslot'dan oldingi 2 karta
+    const heroCardsB = heroCardsAll.slice(2);    // genslot'dan keyingi 4 karta
+    // Theme — faqat marketing ekranlarda (app UI default accent/fontda qoladi).
+    const lcFontStack = this.landingFontStacks[lc.theme.font] || this.landingFontStacks.hanken;
+    const pageFontStack = marketing ? lcFontStack : this.landingFontStacks.hanken;
+    const themeVarsCss = marketing ? this.landingAccentVars(lc.theme.accent) : '';
     const statsView = [
       { v: Math.round(10 * sp) + 'K+', l: 'Ready-made templates' },
       { v: (sp * 5).toFixed(1).replace(/\.0$/, '') + 'M+', l: 'Active creators' },
@@ -18627,7 +18766,16 @@ class Component extends DCLogic {
     const testsRv = testimonials.map((t, i) => ({ ...t, rd: i * 110 }));
     return {
       navBg, navBorder, navBlur, navPricingCls, navPluginCls,
-      marqRow1, marqRow2, landStat1, landStat2, landStat3, landStat4,
+      marqRow1, marqRow2,
+      // Landing CMS bindinglari (admin "Website" tab)
+      landStatsView, heroCardsA, heroCardsB, pageFontStack, themeVarsCss,
+      lcNavTemplates: lc.nav.templates, lcNavAistudio: lc.nav.aiStudio, lcNavPricing: lc.nav.pricing,
+      lcNavPlugin: lc.nav.plugin, lcNavSignIn: lc.nav.signIn, lcNavCta: lc.nav.cta,
+      lcHeroBadgeTag: lc.hero.badgeTag, lcHeroBadgeText: lc.hero.badgeText,
+      lcHeroTitle: lc.hero.title, lcHeroTitleAccent: lc.hero.titleAccent, lcHeroSub: lc.hero.sub,
+      lcHeroCtaPrimary: lc.hero.ctaPrimary, lcHeroCtaSecondary: lc.hero.ctaSecondary,
+      lcHeroCredline: lc.hero.credline,
+      lcMockTitle: lc.mockup.title, lcMockBadge: lc.mockup.badge,
       statsView, tipText, tipAnim, pageAnim, scrollPW, marqA, marqB, heroWords, howSteps,
       catTilesRv, studioRv, plansRv, testsRv,
       accentKey, animKey,
