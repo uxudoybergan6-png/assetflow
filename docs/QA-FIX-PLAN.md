@@ -1,5 +1,10 @@
 # FrameFlow — QA Fix Plan (jonli QA + Artlist o'rganish → 16 muammo, partiyalarga)
 
+> ✅ **2026-07-09 YAKUN:** FIX-PROMPTS-2026-07-09.md (16 muammo P1-P17) + Site CMS (P15) TO'LIQ
+> bajarildi — har biri main'da commit (push USER). Pul-zona hech qayerda o'zgarmagan. 2 migratsiya
+> (plugin_release, landing_config) deploy'da migrate:deploy bilan. USER: (1) git push, (2) prod'da
+> bir marta POST /api/admin/maintenance/gen-sizebytes/backfill (P7 storage), (3) AE plagin jonli test.
+
 *2026-07-09 · USER jonli QA (16 muammo) + Direktor jonli QA + Artlist AI Toolkit o'rganish. Deploy jonli (eng yangi kod).*
 
 ## ⭐ Artlist shimoliy-yulduzi (dizayn andozasi)
