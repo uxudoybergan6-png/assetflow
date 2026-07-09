@@ -1109,6 +1109,58 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
 }
 
 /**
+ * P1 (money-zone refund TRIGGER — 2026-07-10): stuck gen refund'ini foydalanuvchi panelni QAYTA
+ * ochishiga bog'lamay, FON JADVALIDA hal qiladi. Yuqoridagi `reconcileStuckGenerations` faqat
+ * /credits + POST /gen'da (ya'ni panel ochilganda, per-user) ishlaydi — foydalanuvchi panelni qayta
+ * ochmasa timeout'da qotган video refund QILINMASdi (real money bug). Bu GLOBAL variant BARCHA
+ * userlarning cutoff'dan oshган queued/running genlarini fail+refund qiladi. Atomik naqsh
+ * `reconcileStuckGenerations` bilan BAYT-BAYT bir xil (guard WHERE'da, count>0 → idempotent refund)
+ * — money math o'zgarmaydi, faqat TRIGGER/jadval qo'shildi.
+ */
+export async function reconcileAllStuckGenerations(): Promise<number> {
+  const stuck = await prisma.generation.findMany({
+    where: { status: { in: ["queued", "running"] } },
+    select: { id: true, userId: true, cost: true, mode: true, modelId: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+    take: 500,
+  });
+  let refunded = 0;
+  for (const g of stuck) {
+    const cutoff = new Date(Date.now() - stuckTimeoutMs(g));
+    if (g.createdAt >= cutoff) continue;
+    const upd = await prisma.generation.updateMany({
+      where: { id: g.id, status: { in: ["queued", "running"] } },
+      data: { status: "failed", error: "Timed out (auto-recovered) — credits refunded" },
+    });
+    if (upd.count > 0) {
+      await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+      refunded++;
+    }
+  }
+  if (refunded > 0) console.log(`[studio-gen] P1 reconcile: ${refunded} qotган gen fail+refund qilindi`);
+  return refunded;
+}
+
+/**
+ * P1 backfill (bir martalik, startup'da): ALLAQACHON failed bo'lган lekin refund QILINMAGAN
+ * (refunded=false, cost>0) genlar — eski edge/timeout tufayli kredit qaytmaган bo'lsa — idempotent
+ * refund qilinadi. `refundAiCredits`ning atomik `refunded=false→true` claim'i double-refund'ni
+ * to'sadi (admin/ cost<=0 → o'zi no-op). Yo'qolган kreditlarni affected userlarga qaytaradi.
+ */
+export async function backfillUnrefundedFailures(): Promise<number> {
+  const failed = await prisma.generation.findMany({
+    where: { status: "failed", refunded: false, cost: { gt: 0 } },
+    select: { id: true, userId: true, cost: true },
+    take: 1000,
+  });
+  for (const g of failed) {
+    await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+  }
+  if (failed.length) console.log(`[studio-gen] P1 backfill: ${failed.length} refund-siz failed gen ko'rib chiqildi (idempotent refund)`);
+  return failed.length;
+}
+
+/**
  * Fon rejimida ishga tushirish — POST /gen javobini bloklamaydi.
  * CONCURRENCY CHEKLOVI: bir vaqtda faqat N gen ishlaydi (video/rasm buferlari RAM'ni to'ldirib
  * OOM qilmasin — Render kichik instance). Ortiqchasi navbatda kutadi (status="queued").
@@ -1168,3 +1220,18 @@ setTimeout(() => {
     console.error("[studio-gen] initial resume xato:", e);
   });
 }, 1000);
+
+// P1: stuck gen refund'i endi panel ochilishiga bog'liq EMAS — global reconcile FON JADVALIDA
+// (60s). Har o'tishda cutoff'dan (20 daq) oshган queued/running genlar fail+refund bo'ladi →
+// foydalanuvchi panelni qayta ochmasa ham krediti bounded vaqtda (cutoff + ~60s) qaytadi.
+const genReconcileTimer = setInterval(() => {
+  reconcileAllStuckGenerations().catch((e) => {
+    console.error("[studio-gen] global reconcile xato:", e);
+  });
+}, 60_000);
+if (typeof genReconcileTimer.unref === "function") genReconcileTimer.unref();
+// Startup: bir martalik backfill (eski refund-siz failed genlar) + darhol bir global reconcile.
+setTimeout(() => {
+  backfillUnrefundedFailures().catch((e) => console.error("[studio-gen] P1 backfill xato:", e));
+  reconcileAllStuckGenerations().catch((e) => console.error("[studio-gen] initial reconcile xato:", e));
+}, 2000);
