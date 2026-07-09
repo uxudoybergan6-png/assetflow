@@ -84,6 +84,7 @@
 <script src="js/admin-logs.js"></script>
 <script src="js/admin-business.js"></script>
 <script src="js/admin-dashboard.js"></script>
+<script src="js/admin-website.js"></script>
 <script>
 const AF_ADMIN = AssetFlowAuth.requireAuth(["admin"]);
 if (!AF_ADMIN) { /* /login.html */ }
@@ -104,6 +105,7 @@ const NAV = [
   {id:'overview',     label:'Overview',           icon:'squares-four'},
   {id:'moderation',   label:'Moderation',         icon:'shield-check'},
   {id:'templates',    label:'All templates',      icon:'stack'},
+  {id:'website',      label:'Website',            icon:'globe'},
   {grp:'MANAGEMENT'},
   {id:'contributors', label:'Contributors',       icon:'users-three'},
   {id:'users',        label:'Users & roles',      icon:'user-gear'},
@@ -128,6 +130,7 @@ const TITLES = {
   overview:['Overview','Platform status'],
   moderation:['Moderation queue','Review new templates'],
   templates:['All templates','Global catalog'],
+  website:['Website / Landing','Public landing content & theme'],
   contributors:['Contributors','User management'],
   'contributor-detail':['Contributor profile','Contributors'],
   users:['Users & roles','Grant or revoke access roles'],
