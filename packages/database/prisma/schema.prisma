@@ -102,6 +102,7 @@ model PluginProfile {
   downloadsTotal Int                  @default(0)
   downloadsMonth Int                  @default(0)
   importsTotal   Int                  @default(0)
+  importsMonth   Int                  @default(0)  // P21: import limiti endi OYLIK (downloadsMonth kabi monthResetAt'da reset). importsTotal umrlik STATISTIKA uchun qoladi.
   monthResetAt   DateTime             @default(now())
   aiCredits      Int                  @default(50)
   aiCreditsTopup Int                  @default(0)  // Bosqich 4 #5: aiCredits ichidagi sotib olingan TOP-UP ulushi (oylik reset'da SAQLANADI). Invariant: 0 <= aiCreditsTopup <= aiCredits.

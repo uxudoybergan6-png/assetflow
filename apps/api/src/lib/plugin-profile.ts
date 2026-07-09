@@ -130,12 +130,12 @@ async function resetMonthIfNeeded(userId: string) {
   // ATOMIK: guard WHERE'da (monthResetAt < oy boshi). Avvalgi find->check->update
   // TOCTOU oynasini yopadi — parallel so'rovlarda faqat BITTA reset o'tadi
   // (count===0 bo'lsa hech narsa qilinmaydi). consumeDownload kabi (#1 naqsh).
-  // Semantika o'zgarmaydi: faqat downloadsMonth tiklanadi (aiCredits emas —
-  // u consumeAiCredits ichida alohida reset bo'ladi).
+  // Semantika o'zgarmaydi: downloadsMonth + (P21) importsMonth tiklanadi (aiCredits
+  // emas — u consumeAiCredits ichida alohida reset bo'ladi).
   const start = monthStart();
   await prisma.pluginProfile.updateMany({
     where: { userId, monthResetAt: { lt: start } },
-    data: { downloadsMonth: 0, monthResetAt: start },
+    data: { downloadsMonth: 0, importsMonth: 0, monthResetAt: start },
   });
 }
 
@@ -152,7 +152,7 @@ export async function resetExpiredPluginMonths(userIds?: string[]): Promise<void
       monthResetAt: { lt: start },
       ...(userIds ? { userId: { in: userIds } } : {}),
     },
-    data: { downloadsMonth: 0, monthResetAt: start },
+    data: { downloadsMonth: 0, importsMonth: 0, monthResetAt: start },
   });
 }
 
@@ -430,6 +430,7 @@ export function serializePluginUser(
     downloadsTotal: profile.downloadsTotal,
     downloadsMonth: profile.downloadsMonth,
     importsTotal: profile.importsTotal,
+    importsMonth: profile.importsMonth, // P21: oylik import hisoblagichi (limit shu bo'yicha)
     aiCredits: profile.aiCredits,
     aiCreditsMonthly: aiMonthlyAllotment(profile.plan),
     aiCreditsTopup: profile.aiCreditsTopup, // Bosqich 4 #5: sotib olingan carry-over top-up
@@ -499,8 +500,15 @@ export async function consumeDownload(userId: string) {
  * Importni ATOMIK hisoblaydi + import limitini MAJBURLAYDI. Plagin AE ga
  * import qilishdan OLDIN /usage/import orqali shu funksiyani chaqiradi
  * (kesh'langan qayta-import ham — fayl lokal bo'lsa ham gate'dan o'tadi);
- * limit tugagan bo'lsa LIMIT_REACHED qaytadi va import bloklanadi. Import
- * limiti `importsTotal` (umrlik) bo'yicha — mavjud semantika saqlanadi.
+ * limit tugagan bo'lsa LIMIT_REACHED qaytadi va import bloklanadi.
+ *
+ * P21 (money-zone limit — 2026-07-10): import limiti endi OYLIK `importsMonth`
+ * bo'yicha (downloadsMonth kabi, monthResetAt'da reset) — eski `importsTotal`
+ * (umrlik, hech qachon reset bo'lmaydigan) hisoblagich admin limitini bir martalik
+ * umrlik-cap'ga aylantirib foydalanuvchini abadiy bloklagan edi. `importsTotal`
+ * umrlik STATISTIKA uchun oshirilishda davom etadi. Atomik naqsh (guard WHERE'da,
+ * count===0 → LIMIT_REACHED) BAYT-BAYT saqlangan: faqat guard O'QIYDIGAN maydon
+ * (importsTotal → importsMonth) o'zgardi + importsMonth increment qo'shildi.
  */
 export async function consumeImport(userId: string) {
   const profile = await ensurePluginProfile(userId);
@@ -513,7 +521,7 @@ export async function consumeImport(userId: string) {
   if (effectiveLimit === null) {
     await prisma.pluginProfile.update({
       where: { userId },
-      data: { importsTotal: { increment: 1 }, lastSeenAt: new Date() },
+      data: { importsTotal: { increment: 1 }, importsMonth: { increment: 1 }, lastSeenAt: new Date() },
     });
     return { ok: true as const };
   }
@@ -522,14 +530,14 @@ export async function consumeImport(userId: string) {
     where: {
       userId,
       status: PluginAccountStatus.ACTIVE,
-      importsTotal: { lt: effectiveLimit },
+      importsMonth: { lt: effectiveLimit },
     },
-    data: { importsTotal: { increment: 1 }, lastSeenAt: new Date() },
+    data: { importsTotal: { increment: 1 }, importsMonth: { increment: 1 }, lastSeenAt: new Date() },
   });
   if (res.count === 0) {
     return {
       ok: false as const,
-      error: "Import limit reached — upgrade to Pro",
+      error: "Monthly import limit reached — upgrade to Pro",
       code: "LIMIT_REACHED",
     };
   }
