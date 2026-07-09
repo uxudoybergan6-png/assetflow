@@ -14,6 +14,14 @@
   qator (idempotent); `getUserUsedBytes`=930 ✓; build toza; money-zone TEGILMADI.
 - **Kutilmoqda:** production deploy'dan keyin admin backfill endpointini ishga tushirish.
 
+## PROBLEM 13 — Download nomi prompt'dan ✅
+
+- Backend: `promptFileBase` (60 belgi, sanitizatsiya, chekka nuqtalar yo'q) + `genDownloadName`
+  prompt qabul qiladi → `downloadUrl` Content-Disposition prompt nomi bilan imzolanadi.
+  Web o'zgarishsiz (downloadUrl'ga tayanadi). Plagin: `afGenDlName` global + 7 gen-download
+  joyi yangilandi + history/recent mapping'lariga `downloadUrl` passthrough. Unit test +
+  build + inline-JS sintaksis ✓.
+
 ## PROBLEM 14 — Yangi user'da admin email ✅
 
 - `notifyAdminNewUser` (notify.ts, ADMIN_NOTIFY_EMAIL yo'q→no-op, safe fire-and-forget);
