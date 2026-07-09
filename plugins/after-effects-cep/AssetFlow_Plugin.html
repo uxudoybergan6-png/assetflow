@@ -2616,9 +2616,16 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .ai-hist-k{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted)}
 .axroot .ai-hist-all{font-size:10.5px;color:var(--muted);cursor:pointer}
 .axroot .ai-hist-all:hover{color:var(--text)}
-.axroot .ai-hist-strip{display:flex;gap:8px;overflow:hidden}
-.axroot .ai-hist-strip .ht{width:74px;height:74px;border-radius:10px;flex:none;position:relative;overflow:hidden;background-size:cover;background-position:center;background-color:var(--surface);cursor:pointer}
-.axroot .ai-hist-strip .ht svg{position:absolute;left:6px;bottom:5px}
+/* P14: HISTORY strip endi gorizontal SCROLL (clip emas) + KATTAROQ, haqiqiy-nisbatli thumbnaillar. */
+.axroot .ai-hist-strip{display:flex;gap:9px;overflow-x:auto;overflow-y:hidden;padding-bottom:5px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.axroot .ai-hist-strip::-webkit-scrollbar{height:6px}
+.axroot .ai-hist-strip::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
+.axroot .ai-hist-strip::-webkit-scrollbar-track{background:transparent}
+.axroot .ai-hist-strip .ht{height:92px;width:auto;aspect-ratio:1/1;border-radius:11px;flex:none;position:relative;overflow:hidden;background-size:cover;background-position:center;background-color:var(--surface);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+.axroot .ai-hist-strip .ht:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.axroot .ai-hist-strip .ht video,.axroot .ai-hist-strip .ht img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.axroot .ai-hist-strip .ht .htbadge{position:absolute;top:5px;left:5px;font-size:8px;font-weight:700;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.62);padding:2px 5px;border-radius:5px;text-transform:uppercase;z-index:2}
+.axroot .ai-hist-strip .ht svg{position:absolute;left:6px;bottom:5px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 /* pastki info-toast (b1) */
 .axroot .ai-soontoast{position:fixed;left:12px;right:12px;bottom:12px;display:none;align-items:center;gap:9px;padding:11px 12px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.5);z-index:70;max-width:416px;margin:0 auto}
 .axroot .ai-soontoast.on{display:flex}
@@ -2965,11 +2972,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .gen:hover{background:var(--acc2)}.axig .gen:disabled{opacity:.4;cursor:not-allowed}
 /* So'nggi — katta kartali 2-ustun grid (oddiy scroll) */
 .axig .morelink{cursor:pointer;color:var(--blue)}.axig .morelink:hover{text-decoration:underline}
-.axig .recentgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* P5: RECENT grid endi IXCHAM MASONRY (CSS columns) — kartalar turli nisbatda (16:9/1:1/9:16)
+   bo'lgani uchun turli balandliklar zich joylanadi, katta bo'shliqsiz. Nisbat card() ichida
+   INLINE (it.params.aspectRatio) beriladi; bu CSS aspect-ratio:1/1 DEFAULT'ini per-karta yengadi.
+   Ikkala tool (image .axig + video .axvg) bir xil. */
+.recentgrid{display:block;columns:2;column-gap:10px}
 /* width:100%/height:auto/flex:none — .axroot .rc{flex:0 0 60px;height:60px} (home strip) LEAK'ini yengadi:
-   aks holda karta 60×60 kichik bo'lib qolardi. Endi har karta ustun katagini TO'LIQ to'ldiradi (kvadrat). */
-.axig .recentgrid .rc{width:100%;height:auto;flex:none;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
-.axig .recentgrid .rc:hover{border-color:var(--mut2)}
+   aks holda karta 60×60 kichik bo'lib qolardi. aspect-ratio:1/1 = DEFAULT (pending + nisbatsiz gen). */
+.recentgrid .rc{width:100%;height:auto;flex:none;break-inside:avoid;margin:0 0 10px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
+.recentgrid .rc:hover{border-color:var(--mut2)}
 /* ── PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala (rasm+video umumiy) ── */
 .recentgrid .rc-pend{cursor:default;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:12px 10px;background:var(--card3);border:1px solid var(--line2)!important}
 .recentgrid .rc-pend .rc-cat{position:absolute;top:6px;left:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:6px}
@@ -2981,28 +2992,28 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid .rc-pend .rc-pprompt{font-size:9.5px;color:var(--mut);line-height:1.4;text-align:center;max-height:26px;overflow:hidden;width:100%}
 .recentgrid .rc-pend .rc-pcancel{font-size:10px;font-weight:600;color:var(--mut2);cursor:pointer;padding:2px 8px;border-radius:7px;border:1px solid var(--line2)}
 .recentgrid .rc-pend .rc-pcancel:hover{color:var(--red);border-color:rgba(255,107,94,.4)}
-.axig .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.axig .recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
-.axig .recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
-.axig .recentgrid .empt{grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center}
-.axig .recentgrid .empt b{display:block;color:var(--txt);margin-bottom:5px;font-size:13px}
-.axig .recentgrid .empt button{margin-top:10px;font-size:11.5px;font-weight:700;background:transparent;border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:7px 11px;cursor:pointer}
-.axig .recentgrid .empt button:hover{border-color:var(--mut2)}
+.recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
+.recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
+.recentgrid .empt{column-span:all;grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center}
+.recentgrid .empt b{display:block;color:var(--txt);margin-bottom:5px;font-size:13px}
+.recentgrid .empt button{margin-top:10px;font-size:11.5px;font-weight:700;background:transparent;border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:7px 11px;cursor:pointer}
+.recentgrid .empt button:hover{border-color:var(--mut2)}
 /* hover amallar (yuqori-o'ng) + select checkbox (yuqori-chap) + batch bar */
-.axig .recentgrid .rc .racts{position:absolute;top:5px;right:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;z-index:3}
-.axig .recentgrid .rc:hover .racts{opacity:1}
-.axig .recentgrid .rc .racts b{width:25px;height:25px;border-radius:7px;background:rgba(0,0,0,.62);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer}
-.axig .recentgrid .rc .racts b:hover{background:rgba(0,0,0,.85)}
-.axig .recentgrid .rc .racts b.del:hover{background:rgba(255,107,107,.8);border-color:var(--red)}
+.recentgrid .rc .racts{position:absolute;top:5px;right:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;z-index:3}
+.recentgrid .rc:hover .racts{opacity:1}
+.recentgrid .rc .racts b{width:25px;height:25px;border-radius:7px;background:rgba(0,0,0,.62);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer}
+.recentgrid .rc .racts b:hover{background:rgba(0,0,0,.85)}
+.recentgrid .rc .racts b.del:hover{background:rgba(255,107,107,.8);border-color:var(--red)}
 /* P2 — karta amal ikonlariga ANIQ hover-label (title'dan; ikonka nima qilishi darhol ko'rinadi) */
-.axig .recentgrid .rc .racts b{position:relative}
-.axig .recentgrid .rc .racts b:hover::after{content:attr(title);position:absolute;top:calc(100% + 5px);right:0;background:#0c1017;border:1px solid rgba(255,255,255,.14);color:#e7ecf3;font-size:9.5px;font-weight:600;line-height:1;padding:5px 8px;border-radius:7px;white-space:nowrap;z-index:30;pointer-events:none;max-width:180px;overflow:hidden;text-overflow:ellipsis}
-.axig .recentgrid .rc .rcb{position:absolute;top:5px;left:5px;width:25px;height:25px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:4;color:transparent}
-.axig .recentgrid .rc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
-.axig .recentgrid .rc.sel .rcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
-.axig .recentgrid.selmode .rc .racts{display:none}
-.axig .recentgrid.selmode .rc .tg{left:34px}
-.axig .recentgrid:not(.selmode) .rc .rcb{display:none}
+.recentgrid .rc .racts b{position:relative}
+.recentgrid .rc .racts b:hover::after{content:attr(title);position:absolute;top:calc(100% + 5px);right:0;background:#0c1017;border:1px solid rgba(255,255,255,.14);color:#e7ecf3;font-size:9.5px;font-weight:600;line-height:1;padding:5px 8px;border-radius:7px;white-space:nowrap;z-index:30;pointer-events:none;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.recentgrid .rc .rcb{position:absolute;top:5px;left:5px;width:25px;height:25px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:4;color:transparent}
+.recentgrid .rc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.recentgrid .rc.sel .rcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.recentgrid.selmode .rc .racts{display:none}
+.recentgrid.selmode .rc .tg{left:34px}
+.recentgrid:not(.selmode) .rc .rcb{display:none}
 .axig .recsel{cursor:pointer;display:inline-flex;align-items:center;gap:4px}.axig .recsel.on{color:var(--acc)}
 .axig .recbatch{display:none;align-items:center;gap:8px;margin-top:9px;background:var(--card2);border:1px solid var(--line2);border-radius:11px;padding:8px 10px}
 .axig .recbatch.on{display:flex}
@@ -3124,8 +3135,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axsp .sp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
 .axsp .sp-card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:13px;overflow:hidden;cursor:pointer}
 .axsp .sp-card:hover{background:rgba(255,255,255,.06)}
-.axsp .sp-card .cv{height:84px;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#10151d}
-.axsp .sp-card .cv i{background:#141a24 center/cover no-repeat;display:block}
+/* P6: loyiha muqovasi endi element soniga MOSLASHADI — bo'sh qora katak yo'q. */
+.axsp .sp-card .cv{height:84px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:2px;background:#10151d}
+.axsp .sp-card .cv.cv-n0{display:flex;align-items:center;justify-content:center;color:#33404f}
+.axsp .sp-card .cv.cv-n1{grid-template-columns:1fr}
+.axsp .sp-card .cv.cv-n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr}
+.axsp .sp-card .cv.cv-n3{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.axsp .sp-card .cv.cv-n3 i:first-child{grid-column:1 / -1}
+.axsp .sp-card .cv.cv-n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.axsp .sp-card .cv i{background:#141a24 center/cover no-repeat;display:block;min-height:0}
 .axsp .sp-card .nm{padding:8px 10px 2px;font-size:12px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .axsp .sp-card .ct{padding:0 10px 9px;font-size:10px;color:var(--mut2);display:flex;align-items:center;gap:6px}
 .axsp .sp-empty{font-size:11px;color:var(--mut2);padding:14px 4px;text-align:center}
@@ -3372,7 +3390,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .lowcred .ls{font-family:var(--font-mono);font-size:8.5px;color:#D99790;margin-top:1px}
 .axroot .ai-cred.low{background:rgba(255,107,94,.12);border-color:rgba(255,107,94,.3);color:var(--red)}
 .axroot .ai-cred.low .cs{color:var(--red)}
-.axig .recentgrid .empt.emptyhero{display:flex;flex-direction:column;align-items:center;gap:9px;padding:34px 40px;text-align:center}
+.recentgrid .empt.emptyhero{display:flex;flex-direction:column;align-items:center;gap:9px;padding:34px 40px;text-align:center}
 .axig .emptyhero .eh-ic{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .axig .emptyhero b{font-weight:600;font-size:12px;color:var(--text);margin:0;display:block}
 .axig .emptyhero .eh-s{font-size:10.5px;color:var(--muted-2);line-height:1.5}
@@ -9489,9 +9507,17 @@ async function bootPlugin(){
 
     // ---- UMUMIY karta ----
     function actBtn(svg,title,fn,cls){ var b=document.createElement('b'); if(cls)b.className=cls; b.title=title; b.innerHTML=svg; b.addEventListener('click',fn); return b; }
+    // P5/P14: gen'ning HAQIQIY nisbatini CSS qiymatiga aylantiradi ("16:9"→"16 / 9"). Manba:
+    // it.aspect / it.aspectRatio / it.params.aspectRatio. Topilmasa null (default 1/1 qoladi).
+    function genAspectCss(it){
+      var ar=it&&(it.aspect||it.aspectRatio||(it.params&&it.params.aspectRatio));
+      if(ar){ var m=String(ar).trim().match(/^(\d+(?:\.\d+)?)\s*[:\/x]\s*(\d+(?:\.\d+)?)$/i); if(m) return m[1]+' / '+m[2]; }
+      return null;
+    }
     function card(it,ctx){
       ctx=ctx||{}; var cat=it.cat||'image';
       var d=document.createElement('div'); d.className='rc'+(ctx.isSelected&&ctx.isSelected(it)?' sel':'');
+      var arCss=genAspectCss(it); if(arCss) d.style.aspectRatio=arCss; // P5: haqiqiy nisbat (1/1 default'ni yengadi)
       if(cat==='video'){
         // haqiqiy poster (thumbUrl ≠ video url) bo'lsa u darhol chiziladi; bo'lmasa birinchi kadr yuklanadi
         var vPoster=(it.thumb&&it.thumb!==it.url)?it.thumb:null;
@@ -10000,12 +10026,17 @@ async function bootPlugin(){
       if(!HIST.length){ sec.style.display='none'; return; }
       sec.style.display='';
       s.innerHTML='';
-      HIST.slice(0,5).forEach(function(h){
+      // P14: ko'proq element (scroll ochadi) + haqiqiy nisbat + tur belgisi.
+      HIST.slice(0,24).forEach(function(h){
         var d=document.createElement('div'); d.className='ht';
+        var p=h.params||{}; var ar=p.aspectRatio; // haqiqiy nisbat (bo'lmasa 1/1 default CSS)
+        if(ar){ var m=String(ar).trim().match(/^(\d+(?:\.\d+)?)\s*[:\/x]\s*(\d+(?:\.\d+)?)$/i); if(m)d.style.aspectRatio=m[1]+' / '+m[2]; }
         var vNoPoster=(h.t==='video')&&(!h.thumb||h.thumb===h.url);
         if(h.thumb&&!vNoPoster){ d.style.backgroundImage='url("'+h.thumb+'")'; }
         else if(vNoPoster&&typeof window.afVideoThumb==='function'){ var vt=window.afVideoThumb(h.url); if(vt)d.appendChild(vt); }
-        if(h.t==='video')d.insertAdjacentHTML('beforeend','<svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>');
+        var tlab=(h.t==='video')?'Video':(h.t==='audio'||h.t==='sfx')?'Audio':'Image';
+        d.insertAdjacentHTML('beforeend','<span class="htbadge">'+tlab+'</span>');
+        if(h.t==='video')d.insertAdjacentHTML('beforeend','<svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>');
         d.addEventListener('click',function(){
           if(window.afRecent&&typeof window.afRecent.openLightbox==='function'&&h.url)window.afRecent.openLightbox(histLbItem(h),histLbCtx());
           else go('history'); // fallback — lightbox komponenti bo'lmasa
@@ -13243,8 +13274,11 @@ window.afGallery=(function(){
     sp.projects.forEach(function(p){
       var card=document.createElement('div'); card.className='sp-card';
       var cv=document.createElement('div'); cv.className='cv';
-      var covers=(p.covers||[]).slice(0,4);
-      for(var i=0;i<4;i++){ var cell=document.createElement('i'); var c=covers[i]; if(c&&c.thumb)cell.style.backgroundImage='url("'+c.thumb+'")'; cv.appendChild(cell); }
+      // P6: faqat HAQIQIY muqovalar (thumb bor) — soniga qarab 1/2/3/4 layout, bo'sh katak yo'q.
+      var covers=(p.covers||[]).filter(function(c){return c&&c.thumb;}).slice(0,4);
+      cv.className='cv cv-n'+covers.length;
+      if(!covers.length){ cv.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'; }
+      else covers.forEach(function(c){ var cell=document.createElement('i'); cell.style.backgroundImage='url("'+c.thumb+'")'; cv.appendChild(cell); });
       card.appendChild(cv);
       var nm=document.createElement('div'); nm.className='nm'; nm.textContent=p.name||'Project'; card.appendChild(nm);
       var ct=document.createElement('div'); ct.className='ct'; ct.textContent=(p.count||0)+' items';
