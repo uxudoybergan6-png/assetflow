@@ -16365,7 +16365,7 @@
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell">
                           <div data-id="{{ g.id }}" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
-                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ g.imgSrc }}" alt=""></sc-if>
+                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" alt=""></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                             <span class="rtag">{{ g.rtag }}</span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
@@ -18457,8 +18457,10 @@ class Component extends DCLogic {
     // Boshqa sessiya ko'rilayotganda pending plitka u yerda ko'rinmasin
     const pendInView = this.state.generating && (inLibrary || this.state.viewSess === 'new' || this.state.viewSess === this.state.curSessId);
     // QA-FIX #14/#3 — grid plitkasi real <img>/<video> bilan (genMediaOf), masonry aspect ham real
-    const axVisGens = visGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const md = genMediaOf(g); return {
+    const axVisGens = visGensRaw.map((g, gi) => { const on = activeGenRaw && g.id === activeGenRaw.id; const md = genMediaOf(g); return {
       id: g.id, isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
+      // P4 — birinchi qator (ko'rinadigan) kartalar EAGER + yuqori prioritet; pastdagilar lazy
+      imLoad: gi < 6 ? 'eager' : 'lazy', imPri: gi < 6 ? 'high' : 'auto',
       resCls: 'va-axres' + (md.mcls ? ' va-skel' : '') + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
     }; });
     const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const playing = this.state.audioPlayingId === g.id; return {

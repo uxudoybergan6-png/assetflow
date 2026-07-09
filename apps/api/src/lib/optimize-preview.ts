@@ -121,6 +121,26 @@ export async function optimizePreviewForStreaming(filePath: string): Promise<boo
  * birinchi-kadr renderi ishonchsiz, haqiqiy poster rasm kerak). Max 720p,
  * sifat q=4 (~50-150KB). Muvaffaqiyat: true; xato: false (gen oqimini buzmaydi).
  */
+/** P4 — rasm faylidan ~512px kichik JPG thumbnail (karta grid'lari uchun).
+ *  Kichik rasm (≤512px) bo'lsa ham qayta siqiladi (jpg q5) — 4K PNG →~30-60KB.
+ *  ffmpeg semaphore ostida (sharp dependency YO'Q — mavjud ffmpeg ishlatiladi). */
+export async function makeImageThumbFile(
+  inputPath: string,
+  outPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath)) return false;
+  try {
+    await runFfmpeg(
+      ["-y", "-threads", "1", "-i", inputPath, "-vf", "scale='min(512,iw)':-2", "-frames:v", "1", "-q:v", "5", outPath],
+      { timeout: 30_000 }
+    );
+    return fs.existsSync(outPath);
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
 export async function extractVideoPosterFrame(
   videoPath: string,
   posterPath: string

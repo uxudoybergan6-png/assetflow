@@ -9,7 +9,7 @@ import {
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import { enforceStorageRetention } from "./storage-quota.js";
-import { extractVideoPosterFrame } from "./optimize-preview.js";
+import { extractVideoPosterFrame, makeImageThumbFile } from "./optimize-preview.js";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -88,6 +88,36 @@ async function makeVideoPoster(
     }
   }
 }
+/** P4 — rasm gen uchun HAQIQIY kichik thumbnail (~512px jpg). Oldin thumbUrl = to'liq
+ *  rasm URL edi → har karta 1K/2K/4K faylni yuklab olardi (sekin grid). Best-effort:
+ *  xatoda {null,null} — karta to'liq rasmga tushadi (eski xatti-harakat). */
+async function makeImageThumb(
+  imageKey: string | null,
+  buf: Buffer
+): Promise<{ thumbKey: string | null; thumbUrl: string | null }> {
+  if (!imageKey || !isS3Configured()) return { thumbKey: null, thumbUrl: null };
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "genthumb-"));
+  const inPath = path.join(tmpDir, "in.img");
+  const outPath = path.join(tmpDir, "thumb.jpg");
+  try {
+    fs.writeFileSync(inPath, buf);
+    const ok = await makeImageThumbFile(inPath, outPath);
+    if (!ok) return { thumbKey: null, thumbUrl: null };
+    const thumbKey = imageKey.replace(/\.[a-z0-9]+$/i, "") + "-thumb.jpg";
+    await uploadBufferToS3(fs.readFileSync(outPath), thumbKey, "image/jpeg");
+    return { thumbKey, thumbUrl: await getSignedDownloadUrl(thumbKey, 3600) };
+  } catch (e) {
+    console.error("[gen] image thumb xato (e'tiborsiz):", e);
+    return { thumbKey: null, thumbUrl: null };
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      /* */
+    }
+  }
+}
+
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -942,13 +972,15 @@ export async function processGeneration(genId: string): Promise<void> {
             : useMagnific
               ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number } | { ok: false; error: string };
+      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null } | { ok: false; error: string };
       const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
         const out = await genOne();
         if (!out.ok) return { ok: false, error: out.error };
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const p = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
-        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes };
+        // P4: bufer scope'da ekan HAQIQIY kichik thumb (ffmpeg semaphore ichida) — grid tez ochiladi.
+        const th = await makeImageThumb(p.key, out.data);
+        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl };
       });
       // ❗ TIMEOUT ≠ REFUND: birortasi poll-timeout sentinel bo'lsa → "running" qoldiramiz, KREDIT
       // QAYTARMAYMIZ (reconcile 10 daq hal qiladi). Tekshiruv refund/asset YARATISHDAN OLDIN.
@@ -962,7 +994,8 @@ export async function processGeneration(genId: string): Promise<void> {
         if (!s.ok) continue;
         await prisma.genAsset.create({
           // aspectRatio = EFEKTIV (klamplangan) nisbat — thumbnail ramka nisbati generatsiya bilan mos bo'lsin.
-          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.url, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
+          // P4: thumbUrl endi HAQIQIY kichik thumb (bo'lmasa to'liq rasm — eski xatti-harakat).
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
       }
     } else if (model.feature === "text-to-speech") {
