@@ -4912,7 +4912,7 @@ html.home-mode #homePage{display:block!important}
   <div class="lim-panel lim-panel--c" onclick="event.stopPropagation()" role="dialog" aria-label="Download limit" aria-modal="true">
     <div class="fsheet-grip"></div>
     <div class="lim-ico"><svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200 75.64V40a16 16 0 0 0-16-16H72a16 16 0 0 0-16 16v35.64a16 16 0 0 0 6.09 12.57L109.44 128l-47.35 39.79A16 16 0 0 0 56 180.36V216a16 16 0 0 0 16 16h112a16 16 0 0 0 16-16v-35.64a16 16 0 0 0-6.09-12.57L146.56 128l47.35-39.79A16 16 0 0 0 200 75.64ZM72 40h112v35.64l-4.51 3.79A8 8 0 0 1 176 80H80a8 8 0 0 1-3.49-.57L72 75.64Zm112 140.36V216H72v-35.64l56-47.06Z"/></svg></div>
-    <div class="lim-title">Monthly download limit reached</div>
+    <div class="lim-title" id="limitTitle">Monthly download limit reached</div>
     <div class="lim-sub" id="limitSub">The Free plan includes 15 downloads per month.</div>
     <div class="lim-prog">
       <div class="lim-track"><div class="lim-fill" id="limitFill" style="width:100%"></div></div>
@@ -5251,7 +5251,7 @@ async function importPackFileToAE(pack){
       }
       // Server gate (pack download): 402 PRO_REQUIRED → PRO sheet, 403 → oylik limit sheet (a5)
       if(e&&(e.status===402||e.code==='PRO_REQUIRED')){ openProSheet(pack?.displayName||pack?.name||''); return 'limit'; }
-      if(e&&e.status===403){ openLimitSheet(); return 'limit'; }
+      if(e&&e.status===403){ openLimitSheet('download'); return 'limit'; }
       showToast(friendlyError(e),'error');
       return '';
     }
@@ -5268,7 +5268,7 @@ async function importPackFileToAE(pack){
     }catch(usageErr){
       if(usageErr&&usageErr.status===403){
         hideProgress();
-        openLimitSheet();   // Free oylik limit tugadi — a5 sheet (toast o'rniga)
+        openLimitSheet('import');   // P21: Free oylik IMPORT limiti tugadi — import sheet (download emas)
         return 'limit';
       }
       // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
@@ -5315,7 +5315,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
       }
       // Server gate (pack/mogrt download): 402 PRO_REQUIRED → PRO sheet, 403 → oylik limit sheet (a5)
       if(e&&(e.status===402||e.code==='PRO_REQUIRED')){ openProSheet(pack?.displayName||pack?.name||packLabel||''); return 'limit'; }
-      if(e&&e.status===403){ openLimitSheet(); return 'limit'; }
+      if(e&&e.status===403){ openLimitSheet('download'); return 'limit'; }
       showToast(friendlyError(e),'error');
       return '';
     }
@@ -5332,7 +5332,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     }catch(usageErr){
       if(usageErr&&usageErr.status===403){
         hideProgress();
-        openLimitSheet();   // Free oylik limit tugadi — a5 sheet (toast o'rniga)
+        openLimitSheet('import');   // P21: Free oylik IMPORT limiti tugadi — import sheet (download emas)
         return 'limit';
       }
       // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
@@ -7573,13 +7573,22 @@ function afDaysToMonthReset(){
     return Math.max(1,Math.ceil((next-now)/86400000));
   }catch(e){ return null; }
 }
-function openLimitSheet(){
+function openLimitSheet(kind){
+  // P21: sheet endi DOWNLOAD yoki IMPORT limitini aniq ko'rsatadi (ikkalasi ham
+  // 403 LIMIT_REACHED, lekin qaysi call 403 qildi — shu kontekst kind'ni belgilaydi).
+  const isImport=kind==='import';
   const u=(typeof homeCachedUser==='function')?homeCachedUser():null;
-  const lim=(u&&u.limits&&u.limits.downloadLimit!=null)?u.limits.downloadLimit:15;
-  const used=(u&&u.downloadsMonth!=null)?u.downloadsMonth:lim;
+  const lim=isImport
+    ? ((u&&u.limits&&u.limits.importLimit!=null)?u.limits.importLimit:10)
+    : ((u&&u.limits&&u.limits.downloadLimit!=null)?u.limits.downloadLimit:15);
+  const used=isImport
+    ? ((u&&u.importsMonth!=null)?u.importsMonth:lim)
+    : ((u&&u.downloadsMonth!=null)?u.downloadsMonth:lim);
+  const titleEl=document.getElementById('limitTitle');
+  if(titleEl)titleEl.textContent=isImport?'Monthly import limit reached':'Monthly download limit reached';
   const subEl=document.getElementById('limitSub');
   if(subEl){
-    let html='The Free plan includes '+lim+' downloads per month.';
+    let html='The Free plan includes '+lim+(isImport?' imports':' downloads')+' per month.';
     const days=afDaysToMonthReset();
     if(days!=null) html+='<br>'+days+' days until it resets.';
     subEl.innerHTML=html;
@@ -8197,7 +8206,10 @@ function refreshAccountUi(){
   const _dlM=u.downloadsMonth??0,_dlLim=u.limits?.downloadLimit,_unlim=u.limits?.unlimitedDownloads;
   document.getElementById('accDlMonth').textContent=String(_dlM);
   document.getElementById('accDlTotal').textContent=String(u.downloadsTotal??0);
-  document.getElementById('accImports').textContent=String(u.importsTotal??0);
+  // P21: import kvotasi endi OYLIK va limitni belgilaydi — importsMonth/importLimit ko'rsatiladi
+  // (unlimited bo'lsa faqat oylik son). Umrlik importsTotal endi sarlavhada emas.
+  const _imM=u.importsMonth??0,_imLim=u.limits?.importLimit,_imUnlim=u.limits?.unlimitedImports;
+  document.getElementById('accImports').textContent=_imUnlim?String(_imM):(String(_imM)+'/'+(_imLim??'—'));
   document.getElementById('accDlLimitDisp').textContent=_unlim?'Unlimited':String(_dlLim??'—');
   document.getElementById('accUsageFill').style.width=(!_unlim&&_dlLim)?Math.min(100,Math.round(_dlM/_dlLim*100))+'%':'0%';
   document.getElementById('planOptFree').classList.toggle('active',u.plan!=='pro');
