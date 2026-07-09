@@ -10,6 +10,8 @@
 
 **PHASE 2 (backend & admin) ✅:** P19 — ingest preview media FIRST-MATCH→SKORLASH (Help.mp4/(Footage) demote, "Preview Video/Image" afzal; help-only→bo'sh preview); picker unit-test ✅. P2 — `GET /admin/users/:id/generations` (read-only, cursor, hydrateGenAssets media + summary) + admin subscriber-detail "Generations" karta (status badge/refund/cost/prompt/thumb+preview). API build + JS syntax ✅; headless admin E2E stack kutilmoqda.
 
+**PHASE 3 (plugin AssetFlow_Plugin.html) ✅ (9 muammo, per-problem commit):** P16 Regenerate ikonasi viewBox ichida (Feather rotate-ccw); P10 "Publish a template" (CONTRIBUTOR) olib tashlandi (publish handlerlar dormant); P9 header "Catalog" toggle ishlaydi (afNavTab('catalog')+syncPillarSeg); P7 Copy prompt CEP execCommand + real boolean + BITTA toast; P8 Pro→Lemon Squeezy `/billing/checkout {plan:'pro'}`; P5+P6+P14 — gen kartalar HAQIQIY nisbat (card() inline aspect + `.recentgrid` de-scope + masonry), sessiya grid + adaptiv loyiha muqovasi, HISTORY strip scroll+katta+badge; P15 My Library kartalarga to'liq amal paneli (afGallery `.gacts`); P11 Sessions/Projects multi-select + bulk delete (cascade vs project-only semantika). Har biri `node --check` toza (15 blok). install-cep + AE jonli test kutilmoqda.
+
 ---
 
 # Sessiya hisoboti — FIX-PROMPTS partiyasi (16/16 ✅) · 2026-07-09
