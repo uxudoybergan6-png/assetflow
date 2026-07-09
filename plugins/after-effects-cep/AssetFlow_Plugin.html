@@ -6871,7 +6871,7 @@ var __homeGen={it:null,at:0,inflight:false};
 function homeGenItem(g){
   const a=(g.assets&&g.assets[0])||{}; const p=g.params||{};
   const cat=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
-  return { id:g.id, mode:g.mode, cat:cat, url:a.url||'', thumb:a.thumbUrl||a.url||'',
+  return { id:g.id, mode:g.mode, cat:cat, url:a.url||'', thumb:a.thumbUrl||a.url||'', downloadUrl:a.downloadUrl||null,
     title:((g.prompt||'').trim()||'Result'), prompt:(g.prompt||'').trim(), params:p,
     modelLabel:p.modelLabel||'', createdAt:g.createdAt, cost:(typeof g.cost==='number'?g.cost:null) };
 }
@@ -6899,7 +6899,7 @@ function homeGenCtx(){
   return { isCEP:(typeof IS_CEP!=='undefined'&&IS_CEP),
     list:function(){ return __homeGen.it?[__homeGen.it]:[]; },
     onImport:homeImportGen,
-    onDownload:function(it){ try{ const a=document.createElement('a'); a.href=it.url; a.download=(String(it.title||'frameflow').slice(0,40).replace(/[^\w.-]+/g,'_')||'frameflow'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} } };
+    onDownload:function(it){ try{ const a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} } };
 }
 /* Re-import: pack keshda bo'lsa to'g'ridan AE'ga (downloadAll), bo'lmasa Yuklab olinganlar ro'yxati */
 function homeReimport(key){
@@ -9065,6 +9065,16 @@ async function bootPlugin(){
     return v;
   };
 
+  // PROBLEM 13 — UMUMIY yuklab-olish fayl nomi: PROMPT'dan (backend genDownloadName bilan
+  // BIR XIL qoida: xavfli belgilar → bo'shliq, ~60 belgi, chekka nuqtalar olib tashlanadi;
+  // bo'sh prompt → frameflow-<cat>). Kengaytma URL'dan, bo'lmasa cat bo'yicha.
+  window.afGenDlName=function(prompt,url,cat){
+    var ext=(String(url||'').match(/\.(\w{2,5})(?:\?|#|$)/)||[])[1];
+    if(!ext)ext=(cat==='video')?'mp4':(cat==='audio'||cat==='sfx'||cat==='voice'||cat==='music')?'mp3':'png';
+    var base=String(prompt||'').replace(/[\\/:*?"<>|\x00-\x1f]+/g,' ').replace(/\s+/g,' ').trim().slice(0,60).trim().replace(/[. ]+$/,'').replace(/^[. ]+/,'');
+    return (base||('frameflow-'+(cat||'gen')))+'.'+ext.toLowerCase();
+  };
+
   // ===== UMUMIY So'nggi-grid komponenti (rasm tool + video tool BIR XIL ishlatadi) =====
   // ctx: {isCEP, selecting():bool, isSelected(it):bool, onToggleSelect(it,cardEl), onImport(it),
   //       onDownload(it), onDelete(it), refAllowed(it):bool, onRef(it)}
@@ -9366,7 +9376,7 @@ async function bootPlugin(){
         var a=(g.assets&&g.assets[0])||{};
         var p=(g.params||{});
         var sub=[p.aspectRatio,p.quality||p.resolution,p.duration?(p.duration+'s'):null].filter(Boolean).join(' · ');
-        return {id:g.id,t:histType(g.mode),mode:g.mode,url:a.url||'',thumb:a.thumbUrl||a.url||'',
+        return {id:g.id,t:histType(g.mode),mode:g.mode,url:a.url||'',thumb:a.thumbUrl||a.url||'',downloadUrl:a.downloadUrl||null,
           title:((g.prompt||'').trim()||'Result').slice(0,60),sub:sub,
           prompt:(g.prompt||'').trim(),params:p, // FIX G: lightbox meta karta uchun to'liq prompt+params
           cost:(typeof g.cost==='number'?g.cost:0),created:g.createdAt};
@@ -9432,7 +9442,7 @@ async function bootPlugin(){
       +'<div style="font-size:12px;color:var(--mut);margin:4px 2px 10px;line-height:1.4">'+histEsc(h.title)+(h.sub?(' · '+histEsc(h.sub)):'')+'</div>'
       +'<div class="resbtns"><div class="rb pri" id="histImp" data-close>⤓ Import</div><div class="rb" id="histDl" data-close>⬇ Download</div></div>');
     var imp=document.getElementById('histImp'); if(imp)imp.onclick=function(){ if(typeof aiImportMedia==='function')aiImportMedia(h.url,h.t,null); };
-    var dl=document.getElementById('histDl'); if(dl)dl.onclick=function(){ if(typeof window.__adobe_cep__!=='undefined'){toast('Download — use Import (AE Project panel)');} else { try{var a=document.createElement('a');a.href=h.url;a.download='assetflow';document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){toast('Download failed');} } };
+    var dl=document.getElementById('histDl'); if(dl)dl.onclick=function(){ if(typeof window.__adobe_cep__!=='undefined'){toast('Download — use Import (AE Project panel)');} else { try{var a=document.createElement('a');a.href=h.downloadUrl||h.url;a.download=window.afGenDlName(h.prompt||h.title,h.url,h.cat||h.t);document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){toast('Download failed');} } };
   }
 
   // ===== modal / picker =====
@@ -9666,7 +9676,7 @@ async function bootPlugin(){
   // b1: TARIX strip — real /gen/history thumbnaillari (74×74)
   // FIX G: karta bosilsa O'SHA gen lightbox'da ochiladi (avval Tarix ro'yxatiga olib ketardi)
   function histLbItem(h){
-    return {id:h.id,cat:h.t,url:h.url,thumb:h.thumb,title:h.title,sub:h.sub,
+    return {id:h.id,cat:h.t,url:h.url,thumb:h.thumb,downloadUrl:h.downloadUrl||null,title:h.title,sub:h.sub,
       prompt:h.prompt||'',params:h.params||{},cost:h.cost,createdAt:h.created};
   }
   function histLbCtx(){
@@ -9675,7 +9685,7 @@ async function bootPlugin(){
       isCEP:isCep,
       list:function(){ return HIST.slice(0,5).map(histLbItem); },
       onImport:function(x){ if(typeof aiImportMedia==='function')aiImportMedia(x.url,(x.cat==='video')?'video':(x.cat==='audio'||x.cat==='sfx')?'audio':'image',null); else toast('AE import — only works inside After Effects','info'); },
-      onDownload:function(x){ try{ var a=document.createElement('a'); a.href=x.url; a.download=(String(x.title||'frameflow').slice(0,40).replace(/[^\w.-]+/g,'_')||'frameflow'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Download failed','error'); } }
+      onDownload:function(x){ try{ var a=document.createElement('a'); a.href=x.downloadUrl||x.url; a.download=window.afGenDlName(x.prompt||x.title,x.url,x.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Download failed','error'); } }
     };
   }
   function aiRenderHistStrip(){
@@ -10562,9 +10572,10 @@ window.afGallery=(function(){
   var IC_SAVE='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
   var IC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
   var IC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
-  function downloadUrl(url){
+  function downloadUrl(url,name){
     if(IS_CEP){ toast('Download — import into the AE Project panel instead','info'); return; }
-    try{ var a=document.createElement('a'); a.href=url; a.download='assetflow.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Download failed','error'); }
+    // PROBLEM 13 — nom prompt'dan (afGenDlName); berilmasa URL kengaytmasi bilan fallback.
+    try{ var a=document.createElement('a'); a.href=url; a.download=name||window.afGenDlName('',url,'image'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Download failed','error'); }
   }
   function importOne(url){ if(typeof aiImportMedia==='function')aiImportMedia(url,'image','png'); else toast('AE import only works inside After Effects','info'); }
   function renderResults(assets,jobId,j){
@@ -10588,7 +10599,7 @@ window.afGallery=(function(){
       ra.appendChild(mkAct(IC_IMP,'Import',function(){ importOne(url); }));
       ra.appendChild(mkAct(IC_REF,'To reference',function(){ addRefReady(url); }));
       // "Yuklab olish" AE (CEP) ichida ishlamaydi (faqat Import) → tugmani ko'rsatmaymiz.
-      if(typeof IS_CEP==='undefined'||!IS_CEP)ra.appendChild(mkAct(IC_DL,'Download',function(){ downloadUrl(url); }));
+      if(typeof IS_CEP==='undefined'||!IS_CEP)ra.appendChild(mkAct(IC_DL,'Download',function(){ downloadUrl(url,window.afGenDlName((j&&j.prompt)||'',url,'image')); }));
       card.appendChild(ra); grid.insertBefore(card,grid.firstChild); // yangi natijalar tepada
     });
     var jAr=(j&&j.ar)||st.ar; var jQ=(j&&j.q)||st.q;
@@ -10656,7 +10667,7 @@ window.afGallery=(function(){
     isSelected: function(it){ return !!(it.id&&st.recentSel[it.id]); },
     onToggleSelect: function(it,d){ if(!it.id){ toast('This result is still being saved','info'); return; } if(st.recentSel[it.id])delete st.recentSel[it.id]; else st.recentSel[it.id]=it; d.classList.toggle('sel',!!st.recentSel[it.id]); updRecentBatch(); },
     onImport: function(it){ importMediaCat(it.url,it.cat); },
-    onDownload: function(it){ downloadUrl(it.url); },
+    onDownload: function(it){ downloadUrl(it.downloadUrl||it.url,window.afGenDlName(it.prompt||it.title,it.url,it.cat)); },
     onDelete: function(it){ recentDelete(it); },
     refAllowed: function(it){ return igRefKind()==='image' && (it.cat||'image')==='image'; },
     onRef: function(it){ addRefReady(it.url); }, // image tool: @imgN referens stripга qo'shadi
@@ -10764,7 +10775,7 @@ window.afGallery=(function(){
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
         var ex=null; st.recent.some(function(x){ if(x.id===g.id||x.url===url){ex=x;return true;} return false;});
         if(ex){ ex.url=url; ex.thumb=a.thumbUrl||url; } // yangi imzolangan URL — eski (eskirgan) o'rniga
-        else st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
+        else st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,downloadUrl:a.downloadUrl||null,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
       });
       recentLoaded=true; recentLoading=false; recentLoadedAt=Date.now(); st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Check your internet or session.'; renderRecentGrid(); });
@@ -10777,7 +10788,7 @@ window.afGallery=(function(){
   var igRecentSel=$('igRecentSel'); if(igRecentSel)igRecentSel.addEventListener('click',function(){ st.recentSelect=!st.recentSelect; st.recentSel={}; igRecentSel.classList.toggle('on',st.recentSelect); renderRecentGrid(); });
   // batch bar tugmalari
   (function(){
-    var dl=$('igRecentDl'); if(dl)dl.addEventListener('click',function(){ var items=Object.keys(st.recentSel).map(function(k){return st.recentSel[k];}); if(!items.length){toast('Select something first','warning');return;} if(IS_CEP){ toast('Download — import into the AE Project panel instead','info'); return; } items.forEach(function(it){ downloadUrl(it.url); }); toast(items.length+' downloaded','success'); });
+    var dl=$('igRecentDl'); if(dl)dl.addEventListener('click',function(){ var items=Object.keys(st.recentSel).map(function(k){return st.recentSel[k];}); if(!items.length){toast('Select something first','warning');return;} if(IS_CEP){ toast('Download — import into the AE Project panel instead','info'); return; } items.forEach(function(it){ downloadUrl(it.downloadUrl||it.url,window.afGenDlName(it.prompt||it.title,it.url,it.cat)); }); toast(items.length+' downloaded','success'); });
     var del=$('igRecentDel'); if(del)del.addEventListener('click',recentBatchDelete);
     var can=$('igRecentCancel'); if(can)can.addEventListener('click',function(){ st.recentSelect=false; st.recentSel={}; if(igRecentSel)igRecentSel.classList.remove('on'); renderRecentGrid(); });
   })();
@@ -12237,6 +12248,7 @@ window.afGallery=(function(){
       vgRcState.items.unshift({
         id:(j&&j.jobId)||null,
         url:url,
+        downloadUrl:(a0&&a0.downloadUrl)||null,
         thumb:null,
         title:(j&&j.prompt)||'Video',
         cat:'video',
@@ -12255,7 +12267,7 @@ window.afGallery=(function(){
     if(!IS_CEP){
       var btnDl=document.createElement('div'); btnDl.className='vact';
       btnDl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Download';
-      btnDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=url; a.download='video.mp4'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
+      btnDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=a0.downloadUrl||url; a.download=window.afGenDlName((j&&j.prompt)||'',url,'video'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
       acts.appendChild(btnDl);
     }
   }
@@ -12278,7 +12290,7 @@ window.afGallery=(function(){
   }
   function vgDownload(it){
     if(IS_CEP){ toast('Download — import into the AE Project panel instead','info'); return; }
-    try{ var a=document.createElement('a'); a.href=it.url; a.download=(it.cat==='video'?'video.mp4':it.cat==='audio'||it.cat==='sfx'?'audio.mp3':'image.'+(urlExt(it.url)||'png')); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){}
+    try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){}
   }
 
   // So'nggi-grid ctx — umumiy afRecent.card/openLightbox shundan foydalanadi (model-aware Referens shu yerda).
@@ -12459,6 +12471,7 @@ window.afGallery=(function(){
         vgRcState.items.push({
             id:g.id,
             url:url,
+            downloadUrl:a.downloadUrl||null,
             thumb:(cat==='image'?(a.thumbUrl||url):null),
             title:(g.prompt||'').trim()||catLabel(cat),
             prompt:(g.prompt||'').trim(),      // Qayta gen: to'liq prompt tiklash uchun
