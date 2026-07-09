@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FrameFlow plugin — Sessions + Projects mockup (P1)</title>
+<style>
+  /* FrameFlow plagin tokenlari: dark + lime, lokal font (system fallback), CDN YO'Q */
+  :root{--bg:#0d1117;--panel:#141a24;--txt:#e7ecf3;--mut:#8b94a3;--mut2:#5f6875;--acc:#a3e635;--acc-ink:#111a05;--hair:rgba(255,255,255,.08)}
+  *{box-sizing:border-box;margin:0}
+  body{background:#05070a;color:var(--txt);font:13px/1.45 -apple-system,"Segoe UI",Roboto,sans-serif;display:flex;gap:26px;flex-wrap:wrap;padding:26px}
+  .frame{width:340px;background:var(--bg);border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+  .frame h6{font-size:10px;letter-spacing:.1em;color:var(--mut2);padding:8px 12px;background:#090d13;text-transform:uppercase}
+  .hdr{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--hair)}
+  .hdr .bk{color:var(--mut);cursor:pointer}
+  .hdr b{font-size:13px}
+  .hdr .cr{margin-left:auto;font-size:11px;color:var(--acc)}
+  .seg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--hair);border-radius:999px;padding:3px;margin:10px 12px}
+  .seg i{flex:1;text-align:center;font-style:normal;font-size:11px;padding:6px 0;border-radius:999px;color:var(--mut);cursor:pointer}
+  .seg i.on{background:var(--acc);color:var(--acc-ink);font-weight:700}
+  .body{padding:0 12px 14px}
+  .lead{display:flex;align-items:center;gap:8px;margin:10px 0}
+  .lead b{font-size:14px}.lead small{color:var(--mut2)}
+  .newb{margin-left:auto;background:var(--acc);color:var(--acc-ink);border-radius:999px;padding:6px 12px;font-size:10.5px;font-weight:800;cursor:pointer}
+  .row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.035);border:1px solid var(--hair);border-radius:12px;padding:8px 10px;margin-bottom:7px;cursor:pointer}
+  .cov{width:44px;height:44px;border-radius:9px;background:linear-gradient(135deg,#2c3a4f,#1a2230);flex:none;display:grid;place-items:center;color:var(--mut2)}
+  .cov.g1{background:linear-gradient(135deg,#4f2c8f,#1a2230)}.cov.g2{background:linear-gradient(135deg,#2c8f6f,#1a2230)}
+  .tx{flex:1;min-width:0}.tx b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tx small{font-size:10px;color:var(--mut2)}
+  .pen{color:var(--mut2);font-size:12px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .pcard{background:rgba(255,255,255,.035);border:1px solid var(--hair);border-radius:13px;overflow:hidden;cursor:pointer}
+  .pcard .cv{height:78px;display:grid;grid-template-columns:1fr 1fr;gap:1px}
+  .pcard .cv i{background:linear-gradient(135deg,#233046,#161d29)}
+  .pcard .cv i:nth-child(2){background:linear-gradient(135deg,#46232f,#161d29)}
+  .pcard .cv i:nth-child(3){background:linear-gradient(135deg,#234636,#161d29)}
+  .pcard .nm{padding:7px 10px 1px;font-size:12px;font-weight:700}
+  .pcard .ct{padding:0 10px 8px;font-size:10px;color:var(--mut2)}
+  .rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .rc{position:relative;aspect-ratio:1;border-radius:11px;background:linear-gradient(160deg,#2b3950,#151b26);overflow:hidden}
+  .rc .tg{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.55);font-size:8.5px;padding:2px 6px;border-radius:6px}
+  .rc .ra{position:absolute;right:6px;top:6px;display:flex;gap:4px}
+  .rc .ra b{width:20px;height:20px;border-radius:6px;background:rgba(0,0,0,.6);display:grid;place-items:center;font-size:10px;cursor:pointer}
+  .rc .bd{position:absolute;left:0;right:0;bottom:0;padding:14px 8px 6px;font-size:9.5px;color:#cfd6e0;background:linear-gradient(transparent,rgba(0,0,0,.75))}
+  .ov{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
+  .modal{width:262px;background:#161b25;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:13px}
+  .modal b{font-size:12.5px}
+  .modal .pr{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;font-size:11.5px;cursor:pointer}
+  .modal .pr:hover{background:rgba(255,255,255,.06)}
+  .modal .pr small{margin-left:auto;color:var(--mut2)}
+  .modal input{width:100%;background:#0f141c;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--txt);padding:8px;font-size:11.5px;margin-top:8px}
+  .modal .go{margin-top:9px;text-align:right}
+  .modal .go span{background:var(--acc);color:var(--acc-ink);border-radius:8px;padding:7px 12px;font-size:10.5px;font-weight:800;cursor:pointer}
+  .note{font-size:10px;color:var(--mut2);padding:8px 12px 12px}
+</style>
+</head>
+<body>
+
+<!-- FRAME 1: AI Tools kirish — seg bilan Sessions/Projects -->
+<div class="frame">
+  <h6>Frame 1 — AI Tools kirish (launcher)</h6>
+  <div class="hdr"><b>✦ AI Tools</b><span class="cr">✦ 1,000</span></div>
+  <div class="seg"><i class="on">Tools</i><i>Sessions</i><i>Projects</i></div>
+  <div class="body">
+    <div class="row"><span class="cov g1">🖼</span><span class="tx"><b>Generate image</b><small>Nano Banana 2 · Imagen 4</small></span><span class="pen">›</span></div>
+    <div class="row"><span class="cov">🎬</span><span class="tx"><b>Generate video</b><small>Veo 3.1 · Seedance 2.0</small></span><span class="pen">›</span></div>
+    <div class="row"><span class="cov g2">🔊</span><span class="tx"><b>Generate audio</b><small>Kokoro TTS · ElevenLabs SFX</small></span><span class="pen">›</span></div>
+  </div>
+  <div class="note">Seg qator — web'dagi chap rail o'rnini bosadi (tor panelga moslashuv).</div>
+</div>
+
+<!-- FRAME 2: Sessions ro'yxati -->
+<div class="frame">
+  <h6>Frame 2 — Sessions (v-sessions)</h6>
+  <div class="hdr"><span class="bk">‹</span><b>Sessions</b><span class="cr">✦ 1,000</span></div>
+  <div class="body">
+    <div class="lead"><b>Sessions</b><small>4 sessions</small><span class="newb">＋ New session</span></div>
+    <div class="row"><span class="cov">▦</span><span class="tx"><b>My Library</b><small>All generations</small></span><span class="pen">›</span></div>
+    <div class="row"><span class="cov g1"></span><span class="tx"><b>Coffee brand visuals</b><small>6 generations · image · 2h ago</small></span><span class="pen">✎</span></div>
+    <div class="row"><span class="cov g2"></span><span class="tx"><b>Neon opener frames</b><small>3 generations · video · 1d ago</small></span><span class="pen">✎</span></div>
+    <div class="row"><span class="cov"></span><span class="tx"><b>Podcast intro voice</b><small>2 generations · voice · 3d ago</small></span><span class="pen">✎</span></div>
+  </div>
+  <div class="note">Qator = cover + nom + hisob/rejim/vaqt; ✎ rename (markaziy modal). Bosish → sessiya gen'lari.</div>
+</div>
+
+<!-- FRAME 3: Projects + detail + picker -->
+<div class="frame">
+  <h6>Frame 3 — Projects (v-projects)</h6>
+  <div class="hdr"><span class="bk">‹</span><b>Projects</b><span class="cr">✦ 1,000</span></div>
+  <div class="body">
+    <div class="lead"><b>Projects</b><small>2 projects</small><span class="newb">＋ New project</span></div>
+    <div class="grid">
+      <div class="pcard"><div class="cv"><i></i><i></i><i></i><i></i></div><div class="nm">Client — Aurora</div><div class="ct">7 items</div></div>
+      <div class="pcard"><div class="cv"><i></i><i></i><i></i><i></i></div><div class="nm">Reel assets</div><div class="ct">3 items</div></div>
+    </div>
+  </div>
+  <div class="note">2-ustun karta: 4-cover mozaika + nom + son. Bosish → loyiha detali (gen + shablonlar, har item ✕ olib tashlash).</div>
+</div>
+
+<!-- FRAME 4: Session detail + Add-to-project picker -->
+<div class="frame" style="position:relative">
+  <h6>Frame 4 — Sessiya detali + "Add to project" picker</h6>
+  <div class="hdr"><span class="bk">‹</span><b>Coffee brand visuals</b><span class="pen" style="margin-left:auto">✎</span></div>
+  <div class="body">
+    <div class="lead"><small>6 generations · image</small></div>
+    <div class="rgrid">
+      <div class="rc"><span class="tg">Image</span><span class="ra"><b>⤓</b><b>🗀</b><b>⬇</b><b>✕</b></span><span class="bd">latte art splash, macro</span></div>
+      <div class="rc"><span class="tg">Image</span><span class="ra"><b>⤓</b><b>🗀</b><b>⬇</b><b>✕</b></span><span class="bd">beans on slate, 4K</span></div>
+    </div>
+  </div>
+  <div class="ov">
+    <div class="modal">
+      <b>Add to project</b>
+      <div class="pr" style="margin-top:8px">🗀 Client — Aurora<small>7 items</small></div>
+      <div class="pr">🗀 Reel assets<small>3 items</small></div>
+      <input placeholder="New project name…">
+      <div class="go"><span>Create &amp; add</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

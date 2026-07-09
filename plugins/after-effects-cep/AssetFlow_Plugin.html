@@ -3103,6 +3103,45 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
 /* ===== Video yaratish tool — .axvg scope ===== */
 .axroot #v-vidgen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
+/* ===== P1 — Sessions + Projects (tor panel: ro'yxat qatorlari + karta grid) ===== */
+.axsp{padding:0 14px 20px}
+.axsp .sp-lead{display:flex;align-items:center;gap:8px;margin:12px 2px 10px}
+.axsp .sp-lead .t{font-size:15px;font-weight:800;color:var(--txt)}
+.axsp .sp-lead .meta{font-size:10.5px;color:var(--mut2)}
+.axsp .sp-new{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:var(--acc);color:var(--acc-ink);border:0;border-radius:999px;padding:7px 13px;font-weight:800;font-size:11px;cursor:pointer}
+.axsp .sp-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:8px 10px;margin-bottom:7px;cursor:pointer}
+.axsp .sp-row:hover{background:rgba(255,255,255,.06)}
+.axsp .sp-cov{width:44px;height:44px;border-radius:9px;background:#141a24 center/cover no-repeat;flex:none;display:grid;place-items:center;color:var(--mut2);overflow:hidden}
+.axsp .sp-tx{flex:1;min-width:0}
+.axsp .sp-tx b{display:block;font-size:12px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.axsp .sp-tx small{font-size:10px;color:var(--mut2)}
+.axsp .sp-act{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--mut2);cursor:pointer;flex:none}
+.axsp .sp-act:hover{background:rgba(255,255,255,.08);color:var(--txt)}
+.axsp .sp-act.del:hover{color:#ff7a7a}
+.axsp .sp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.axsp .sp-card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:13px;overflow:hidden;cursor:pointer}
+.axsp .sp-card:hover{background:rgba(255,255,255,.06)}
+.axsp .sp-card .cv{height:84px;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#10151d}
+.axsp .sp-card .cv i{background:#141a24 center/cover no-repeat;display:block}
+.axsp .sp-card .nm{padding:8px 10px 2px;font-size:12px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.axsp .sp-card .ct{padding:0 10px 9px;font-size:10px;color:var(--mut2);display:flex;align-items:center;gap:6px}
+.axsp .sp-empty{font-size:11px;color:var(--mut2);padding:14px 4px;text-align:center}
+.axsp .recentgrid{margin-top:4px}
+/* P1 — loyiha tanlash / nom modallari (markaziy, bottom-sheet EMAS — redesign qoidasi) */
+.afspov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;display:none;align-items:center;justify-content:center}
+.afspov.on{display:flex}
+.afspov .spc{width:min(320px,88vw);background:#161b25;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;max-height:76vh;display:flex;flex-direction:column}
+.afspov .sph{display:flex;align-items:center;margin-bottom:10px}
+.afspov .sph b{font-size:13px;color:var(--txt)}
+.afspov .sph .x{margin-left:auto;cursor:pointer;color:var(--mut2);padding:4px}
+.afspov .spl{overflow:auto;min-height:40px}
+.afspov .spr{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:9px;cursor:pointer;font-size:12px;color:var(--txt)}
+.afspov .spr:hover{background:rgba(255,255,255,.06)}
+.afspov .spr small{color:var(--mut2);margin-left:auto}
+.afspov input{width:100%;background:#0f141c;border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--txt);padding:9px 10px;font-size:12px;font-family:inherit;margin-top:8px}
+.afspov .spb{margin-top:10px;display:flex;gap:8px;justify-content:flex-end}
+.afspov .spbtn{border:0;border-radius:9px;padding:8px 14px;font-weight:700;font-size:11.5px;cursor:pointer;background:rgba(255,255,255,.08);color:var(--txt)}
+.afspov .spbtn.pri{background:var(--acc);color:var(--acc-ink)}
 .axvg .frames{display:flex;gap:8px;margin-bottom:10px}
 /* FIX C: kadr box kompakt — 78px ustun emas, 44px qator (ikon+matn yonma-yon), tool'ni bosib yubormaydi */
 .axvg .frame{flex:1}.axvg .fbox{height:44px;width:100%;border:1.5px dashed #2E3644;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;background:var(--panel)}.axvg .fcap{font-size:9.5px;color:var(--mut2);text-align:center;margin-top:4px}
@@ -3955,6 +3994,12 @@ html.home-mode #homePage{display:block!important}
                           </div>
                         </div>
                         <div class="ai-launch-sub">Prompt → result → import directly into AE</div>
+                        <!-- P1: Sessions/Library/Projects — web bilan bir xil tushunchalar (tor panel: seg qator) -->
+                        <div class="ai-seg" style="margin:0 14px 12px;max-width:calc(100% - 28px)">
+                          <button type="button" class="ai-seg-i is-on">Tools</button>
+                          <button type="button" class="ai-seg-i" data-go="sessions">Sessions</button>
+                          <button type="button" class="ai-seg-i" data-go="projects">Projects</button>
+                        </div>
                         <div class="cats" id="aiCatGrid"></div>
                         <div id="aiHistSec" style="display:none">
                           <div class="ai-hist-head"><span class="ai-hist-k">HISTORY</span><span class="ai-hist-all" data-go="history">All →</span></div>
@@ -4364,6 +4409,77 @@ html.home-mode #homePage{display:block!important}
                         </div>
                       </section>
 
+                      <!-- P1 — SESSIONS ro'yxati -->
+                      <section id="v-sessions" class="view">
+                        <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl">Sessions</span>
+                          <div class="ai-hdr-c"></div>
+                          <div class="ai-cred" id="spCredS"><span class="cs">✦</span> —</div>
+                          <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                        </div>
+                        <div class="axsp">
+                          <div class="sp-lead"><span class="t">Sessions</span><span class="meta" id="spSessMeta"></span><button type="button" class="sp-new" id="spNewSess">＋ New session</button></div>
+                          <div class="sp-row" id="spLibRow">
+                            <span class="sp-cov"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+                            <span class="sp-tx"><b>My Library</b><small id="spLibCount">All generations</small></span>
+                            <span class="sp-act" title="Open"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+                          </div>
+                          <div id="spSessList"><div class="sp-empty">Loading…</div></div>
+                        </div>
+                      </section>
+
+                      <!-- P1 — SESSION detali (gen'lari) -->
+                      <section id="v-session" class="view">
+                        <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                          <button type="button" class="ai-back" data-go="sessions" title="Sessions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl" id="spSessTitle">Session</span>
+                          <div class="ai-hdr-c"></div>
+                          <div class="ai-icon" id="spSessRename" title="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
+                          <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                        </div>
+                        <div class="axsp">
+                          <div class="sp-lead"><span class="meta" id="spSessDetMeta"></span></div>
+                          <div class="recentgrid" id="spSessGrid"></div>
+                        </div>
+                      </section>
+
+                      <!-- P1 — PROJECTS ro'yxati -->
+                      <section id="v-projects" class="view">
+                        <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl">Projects</span>
+                          <div class="ai-hdr-c"></div>
+                          <div class="ai-cred" id="spCredP"><span class="cs">✦</span> —</div>
+                          <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                        </div>
+                        <div class="axsp">
+                          <div class="sp-lead"><span class="t">Projects</span><span class="meta" id="spProjMeta"></span><button type="button" class="sp-new" id="spNewProj">＋ New project</button></div>
+                          <div class="sp-grid" id="spProjGrid"></div>
+                          <div class="sp-empty" id="spProjEmpty" style="display:none">No projects yet — create one and collect generations & templates.</div>
+                        </div>
+                      </section>
+
+                      <!-- P1 — PROJECT detali (gen + shablonlar) -->
+                      <section id="v-project" class="view">
+                        <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                          <button type="button" class="ai-back" data-go="projects" title="Projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl" id="spProjTitle">Project</span>
+                          <div class="ai-hdr-c"></div>
+                          <div class="ai-icon" id="spProjRename" title="Rename"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
+                          <div class="ai-icon" id="spProjDelete" title="Delete project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></div>
+                          <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                        </div>
+                        <div class="axsp">
+                          <div class="sp-lead"><span class="meta" id="spProjDetMeta"></span></div>
+                          <div class="recentgrid" id="spProjGridDet"></div>
+                        </div>
+                      </section>
+
                       <!-- HISTORY -->
                       <section id="v-history" class="view">
                         <div class="ai-hdr">
@@ -4499,6 +4615,7 @@ html.home-mode #homePage{display:block!important}
                   <span>Import</span>
                 </button>
                 <button type="button" class="pd3-favbtn" id="pd3StarBtn" onclick="pd3ToggleFav()" aria-label="Favorite"></button>
+                <button type="button" class="pd3-favbtn" id="pd3ProjBtn" onclick="pd3AddToProject()" aria-label="Add to project" title="Add to project"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg></button>
               </div>
               <div class="pd3-plan" id="pd3PlanLine">Free plan — this month: 0 / 15 downloads</div>
               <div class="pd3-scenehint" id="pd3ImportHint"></div>
@@ -5816,6 +5933,15 @@ window.pd3ToggleFav=pd3ToggleFav;
 function pd3ImportAll(){ if(currentPackName) downloadAll(currentPackName); }
 window.pd3ImportAll=pd3ImportAll;
 
+/* P1: katalog shabloni → loyihaga qo'shish (server shablon idsi kerak — lokal demo'da yo'q) */
+function pd3AddToProject(){
+  const pack=currentPackName?packs[currentPackName]:null;
+  const tid=pack&&pack.serverTemplateId;
+  if(!tid){ showToast('Only catalog templates can be added to a project','info'); return; }
+  if(typeof window.afProjectPicker==='function')window.afProjectPicker('template',tid);
+}
+window.pd3AddToProject=pd3AddToProject;
+
 /* Plan/usage qatori — real reja + bu oygi yuklamalar (account cache'dan) */
 function pd3PlanText(){
   const u=(typeof homeCachedUser==='function')?homeCachedUser():null;
@@ -6950,6 +7076,7 @@ function homeGenCtx(){
   return { isCEP:(typeof IS_CEP!=='undefined'&&IS_CEP),
     list:function(){ return __homeGen.it?[__homeGen.it]:[]; },
     onImport:homeImportGen,
+    onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
     onDownload:function(it){ try{ const a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} } };
 }
 /* Re-import: pack keshda bo'lsa to'g'ridan AE'ga (downloadAll), bo'lmasa Yuklab olinganlar ro'yxati */
@@ -7238,6 +7365,13 @@ async function studioPostForm(path,form,ms){
 /** /api/studio DELETE — auth bilan (gen natijani o'chirish). */
 async function studioDelete(path){
   const res=await pubFetch(path,{method:'DELETE',headers:pubAuthHeaders()},20000);
+  const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
+  return d;
+}
+/* P1: PATCH helper (sessiya/loyiha rename) — studioPost naqshida. */
+async function studioPatch(path,body){
+  const res=await pubFetch(path,{method:'PATCH',headers:Object.assign({'Content-Type':'application/json'},pubAuthHeaders()),body:JSON.stringify(body||{})},20000);
   const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
   if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
   return d;
@@ -9241,6 +9375,8 @@ async function bootPlugin(){
       imp.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Import';
       imp.addEventListener('click',function(){ ctx.onImport&&ctx.onImport(it); });
       acts.appendChild(imp); cap.push('Import');
+      // P1: lightbox'da ham Add to project (ctx bergan bo'lsa)
+      if(ctx.onAddProject&&it.id){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(){ ctx.onAddProject(it); })); cap.push('Add to project'); }
       if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
       if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>','Regenerate',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Regenerate'); }
       if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
@@ -9274,6 +9410,8 @@ async function bootPlugin(){
       var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
       var ra=document.createElement('div'); ra.className='racts';
       ra.appendChild(actBtn(IC.imp,'Import to AE',function(e){ e.stopPropagation(); ctx.onImport&&ctx.onImport(it); }));
+      // P1: Add to project — ctx bergan tool'larda (gen natijasi loyihaga yig'iladi)
+      if(ctx.onAddProject&&it.id) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(e){ e.stopPropagation(); ctx.onAddProject(it); }));
       if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Use as reference',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
       if(ctx.onRestore&&it.prompt) ra.appendChild(actBtn(IC.rst,'Regenerate — restore prompt + references',function(e){ e.stopPropagation(); ctx.onRestore(it); }));
       if(!ctx.isCEP) ra.appendChild(actBtn(IC.dl,'Download',function(e){ e.stopPropagation(); ctx.onDownload&&ctx.onDownload(it); }));
@@ -9347,11 +9485,12 @@ async function bootPlugin(){
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
-    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='audgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings')?'none':'';
+    var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='audgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings'||id==='sessions'||id==='session'||id==='projects'||id==='project')?'none':'';
     syncBal(); // kredit yagona manba (real aiCredits) — balTop + AI Tools ixcham header sinxron
     if(id==='imggen'&&typeof window.axIGRefresh==='function'){try{window.axIGRefresh();}catch(e){}}
     if(id==='vidgen'&&typeof window.axVGRefresh==='function'){try{window.axVGRefresh();}catch(e){}} // FIX H: video ham view ochilганда retry
     if(id==='audgen'&&typeof window.axAGRefresh==='function'){try{window.axAGRefresh();}catch(e){}} // P8: audio tool
+    if((id==='sessions'||id==='projects')&&typeof window.axSPRefresh==='function'){try{window.axSPRefresh(id);}catch(e){}} // P1
   }
 
   // ===== price / send =====
@@ -9742,6 +9881,7 @@ async function bootPlugin(){
       isCEP:isCep,
       list:function(){ return HIST.slice(0,5).map(histLbItem); },
       onImport:function(x){ if(typeof aiImportMedia==='function')aiImportMedia(x.url,(x.cat==='video')?'video':(x.cat==='audio'||x.cat==='sfx')?'audio':'image',null); else toast('AE import — only works inside After Effects','info'); },
+      onAddProject:function(x){ if(window.afProjectPicker)window.afProjectPicker('gen',x.id); }, // P1
       onDownload:function(x){ try{ var a=document.createElement('a'); a.href=x.downloadUrl||x.url; a.download=window.afGenDlName(x.prompt||x.title,x.url,x.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Download failed','error'); } }
     };
   }
@@ -10050,6 +10190,7 @@ window.afGallery=(function(){
     var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
   }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
+  window.axIGNewSession=function(){ st.sessionId=null; }; // P1: New session
   window.axIGRefresh=refresh;
 
   // ---- "Yaratish" disabled holatini qayta hisoblash ----
@@ -10726,6 +10867,7 @@ window.afGallery=(function(){
     isSelected: function(it){ return !!(it.id&&st.recentSel[it.id]); },
     onToggleSelect: function(it,d){ if(!it.id){ toast('This result is still being saved','info'); return; } if(st.recentSel[it.id])delete st.recentSel[it.id]; else st.recentSel[it.id]=it; d.classList.toggle('sel',!!st.recentSel[it.id]); updRecentBatch(); },
     onImport: function(it){ importMediaCat(it.url,it.cat); },
+    onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
     onDownload: function(it){ downloadUrl(it.downloadUrl||it.url,window.afGenDlName(it.prompt||it.title,it.url,it.cat)); },
     onDelete: function(it){ recentDelete(it); },
     refAllowed: function(it){ return igRefKind()==='image' && (it.cat||'image')==='image'; },
@@ -12323,6 +12465,7 @@ window.afGallery=(function(){
     isSelected: function(it){ return !!(it.id&&vgRcState.sel[it.id]); },
     onToggleSelect: function(it,d){ if(!it.id){ toast('This result is still being saved','info'); return; } if(vgRcState.sel[it.id])delete vgRcState.sel[it.id]; else vgRcState.sel[it.id]=it; d.classList.toggle('sel',!!vgRcState.sel[it.id]); updVgRcBatch(); },
     onImport: function(it){ vgImport(it); },
+    onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
     onDownload: function(it){ vgDownload(it); },
     onDelete: function(it){ vgRcDelete(it); },
     refAllowed: function(it){ return vgRefAllowed(it); },
@@ -12630,6 +12773,7 @@ window.afGallery=(function(){
   window.axVGTeardown=teardownVg;
   // FIX H: rasm tool (axIGRefresh) bilan bir xil — view har ochilganda kredit sinxron + model
   // yuklanmagan bo'lsa QAYTA uriniladi (avval birinchi fetch xatosi tool'ni butunlay o'chirib qo'yardi)
+  window.axVGNewSession=function(){ vm.sessionId=null; }; // P1: New session
   window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); };
 
   ensureVgMeta().catch(function(){});
@@ -12778,6 +12922,7 @@ window.afGallery=(function(){
     list:function(){ return ag.recent; },
     selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
     onImport:function(it){ if(typeof aiImportMedia==='function')aiImportMedia(it.url,'audio',null); else toast('Only works inside After Effects','info'); },
+    onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
     onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
     onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ ag.recent=ag.recent.filter(function(x){return x.id!==it.id;}); renderAgRecent(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
     refAllowed:function(){ return false; }, onRef:function(){}
@@ -12810,10 +12955,276 @@ window.afGallery=(function(){
   var _bk=$('agBack'); if(_bk)_bk.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('launcher'); });
 
   window.axAGTeardown=function(){ Object.keys(ag.pollTimers).forEach(function(k){ clearTimeout(ag.pollTimers[k]); delete ag.pollTimers[k]; }); };
+  window.axAGNewSession=function(){ ag.sessions={}; }; // P1: New session
   window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
 
   ensureAgMeta().catch(function(){});
   loadAgRecent();
+})();
+
+/* ===== P1 — SESSIONS + PROJECTS (web bilan paritet, tor panelga moslangan) =====
+   Backend TAYYOR (PARTIYA 5) — /gen/sessions*, /api/studio/projects* qayta ishlatiladi.
+   UI: ro'yxat qatorlari (sessiyalar) + 2-ustun karta grid (loyihalar) + markaziy modallar
+   (bottom-sheet TAQIQ — redesign qoidasi). Gen kartalar UMUMIY afRecent bilan chiziladi. */
+(function(){
+  function $(id){return document.getElementById(id);}
+  if(!$('v-sessions'))return;
+  var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
+  function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
+  var sp={sessions:[],sLoaded:false,sLoading:false,projects:[],pLoaded:false,pLoading:false,
+          sess:null,sessItems:[],proj:null};
+
+  // ── API mini-klient (ff-api.js project/session metodlari bilan 1:1) ──
+  var api={
+    sessions:function(){ return studioGet('/api/studio/gen/sessions'); },
+    sessionRename:function(id,title){ return studioPatch('/api/studio/gen/sessions/'+encodeURIComponent(id),{title:title}); },
+    sessionGens:function(id){ return studioGet('/api/studio/gen/sessions/'+encodeURIComponent(id)+'/generations?perPage=50&status=done'); },
+    projects:function(){ return studioGet('/api/studio/projects'); },
+    projectCreate:function(name){ return studioPost('/api/studio/projects',{name:name}); },
+    projectGet:function(id){ return studioGet('/api/studio/projects/'+encodeURIComponent(id)); },
+    projectRename:function(id,name){ return studioPatch('/api/studio/projects/'+encodeURIComponent(id),{name:name}); },
+    projectDelete:function(id){ return studioDelete('/api/studio/projects/'+encodeURIComponent(id)); },
+    projectAddItem:function(id,kind,refId){ return studioPost('/api/studio/projects/'+encodeURIComponent(id)+'/items',{kind:kind,refId:refId}); },
+    projectRemoveItem:function(id,itemId){ return studioDelete('/api/studio/projects/'+encodeURIComponent(id)+'/items/'+encodeURIComponent(itemId)); }
+  };
+
+  // ── Markaziy modal: nom kiritish (yaratish/rename) ──
+  var nameOv=null;
+  window.afNameModal=function(title,initial,cb){
+    if(!nameOv){
+      nameOv=document.createElement('div'); nameOv.className='afspov';
+      nameOv.innerHTML='<div class="spc"><div class="sph"><b id="afNmT"></b><span class="x" id="afNmX">✕</span></div>'
+        +'<input id="afNmI" maxlength="80" placeholder="Name…">'
+        +'<div class="spb"><button type="button" class="spbtn" id="afNmC">Cancel</button><button type="button" class="spbtn pri" id="afNmOk">Save</button></div></div>';
+      document.body.appendChild(nameOv);
+      nameOv.addEventListener('click',function(e){ if(e.target===nameOv)nameOv.classList.remove('on'); });
+      nameOv.querySelector('#afNmX').addEventListener('click',function(){ nameOv.classList.remove('on'); });
+      nameOv.querySelector('#afNmC').addEventListener('click',function(){ nameOv.classList.remove('on'); });
+    }
+    nameOv.querySelector('#afNmT').textContent=title;
+    var inp=nameOv.querySelector('#afNmI'); inp.value=initial||'';
+    var ok=nameOv.querySelector('#afNmOk');
+    var nok=ok.cloneNode(true); ok.parentNode.replaceChild(nok,ok); // eski listener'lar tozalansin
+    nok.addEventListener('click',function(){ var v=inp.value.trim(); if(!v){ toast('Enter a name','warning'); return; } nameOv.classList.remove('on'); cb(v); });
+    inp.onkeydown=function(e){ if(e.key==='Enter')nok.click(); };
+    nameOv.classList.add('on'); setTimeout(function(){ try{inp.focus();inp.select();}catch(e){} },50);
+  };
+
+  // ── Markaziy modal: loyiha tanlash ("Add to project" picker; yangi loyiha ham) ──
+  var pickOv=null;
+  window.afProjectPicker=function(kind,refId){
+    if(!refId){ toast('This item is still saving — try again shortly','info'); return; }
+    if(!pickOv){
+      pickOv=document.createElement('div'); pickOv.className='afspov';
+      pickOv.innerHTML='<div class="spc"><div class="sph"><b>Add to project</b><span class="x" id="afPpX">✕</span></div>'
+        +'<div class="spl" id="afPpL"><div class="sp-empty">Loading…</div></div>'
+        +'<input id="afPpNew" maxlength="80" placeholder="New project name…">'
+        +'<div class="spb"><button type="button" class="spbtn pri" id="afPpCreate">Create & add</button></div></div>';
+      document.body.appendChild(pickOv);
+      pickOv.addEventListener('click',function(e){ if(e.target===pickOv)pickOv.classList.remove('on'); });
+      pickOv.querySelector('#afPpX').addEventListener('click',function(){ pickOv.classList.remove('on'); });
+    }
+    var doAdd=function(pid){
+      api.projectAddItem(pid,kind,refId).then(function(){ pickOv.classList.remove('on'); sp.pLoaded=false; toast('Added to project','success'); })
+        .catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Failed to add','error'); });
+    };
+    var list=pickOv.querySelector('#afPpL'); list.innerHTML='<div class="sp-empty">Loading…</div>';
+    api.projects().then(function(r){
+      var items=(r&&r.items)||[];
+      list.innerHTML='';
+      if(!items.length){ var e=document.createElement('div'); e.className='sp-empty'; e.textContent='No projects yet — create one below.'; list.appendChild(e); }
+      items.forEach(function(p){
+        var row=document.createElement('div'); row.className='spr';
+        row.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
+          +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(p.name||'Project').replace(/[<>&]/g,'')+'</span><small>'+(p.count||0)+' items</small>';
+        row.addEventListener('click',function(){ doAdd(p.id); });
+        list.appendChild(row);
+      });
+    }).catch(function(){ list.innerHTML='<div class="sp-empty">Could not load projects.</div>'; });
+    var inp=pickOv.querySelector('#afPpNew'); inp.value='';
+    var cr=pickOv.querySelector('#afPpCreate');
+    var ncr=cr.cloneNode(true); cr.parentNode.replaceChild(ncr,cr);
+    ncr.addEventListener('click',function(){ var v=inp.value.trim(); if(!v){ toast('Enter a project name','warning'); return; }
+      api.projectCreate(v).then(function(p){ doAdd(p.id); }).catch(function(e){ toast('Failed to create project','error'); }); });
+    pickOv.classList.add('on');
+  };
+
+  // ── Sessiyalar ro'yxati ──
+  function loadSessions(force){
+    if(sp.sLoading)return;
+    if(sp.sLoaded&&!force){ renderSessions(); return; }
+    sp.sLoading=true;
+    api.sessions().then(function(r){ sp.sessions=(r&&r.items)||[]; sp.sLoaded=true; sp.sLoading=false; renderSessions(); })
+      .catch(function(){ sp.sLoading=false; var l=$('spSessList'); if(l)l.innerHTML='<div class="sp-empty">Could not load sessions — sign in and try again.</div>'; });
+  }
+  function fmtAgo(iso){ try{ var d=new Date(iso); var s=(Date.now()-d.getTime())/1000; if(s<3600)return Math.max(1,Math.round(s/60))+'m ago'; if(s<86400)return Math.round(s/3600)+'h ago'; return Math.round(s/86400)+'d ago'; }catch(e){ return ''; } }
+  function renderSessions(){
+    var l=$('spSessList'); if(!l)return; l.innerHTML='';
+    var meta=$('spSessMeta'); if(meta)meta.textContent=sp.sessions.length?(sp.sessions.length+' sessions'):'';
+    if(!sp.sessions.length){ l.innerHTML='<div class="sp-empty">No sessions yet — generate something and it will appear here.</div>'; return; }
+    sp.sessions.forEach(function(s){
+      var row=document.createElement('div'); row.className='sp-row';
+      var cov=document.createElement('span'); cov.className='sp-cov';
+      if(s.coverUrl)cov.style.backgroundImage='url("'+s.coverUrl+'")';
+      else cov.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>';
+      row.appendChild(cov);
+      var tx=document.createElement('span'); tx.className='sp-tx';
+      tx.innerHTML='<b></b><small></small>';
+      tx.querySelector('b').textContent=s.title||('Session · '+(s.mode||''));
+      tx.querySelector('small').textContent=(s.count||0)+' generations · '+(s.mode||'')+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
+      row.appendChild(tx);
+      var rn=document.createElement('span'); rn.className='sp-act'; rn.title='Rename';
+      rn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+      rn.addEventListener('click',function(e){ e.stopPropagation();
+        window.afNameModal('Rename session',s.title||'',function(v){ api.sessionRename(s.id,v).then(function(){ s.title=v; renderSessions(); toast('Renamed','success'); }).catch(function(){ toast('Rename failed','error'); }); }); });
+      row.appendChild(rn);
+      row.addEventListener('click',function(){ openSession(s); });
+      l.appendChild(row);
+    });
+  }
+
+  // ── Sessiya detali — gen'lar (umumiy afRecent kartalari) ──
+  function genToItem(g){
+    var a=(g.assets&&g.assets[0])||{};
+    var cat=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
+    return {id:g.id,url:a.url||'',thumb:a.thumbUrl||a.url||'',downloadUrl:a.downloadUrl||null,cat:cat,
+      title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,
+      cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null};
+  }
+  function spGridCtx(items,afterDelete){ return {
+    isCEP:IS_CEP,
+    list:function(){ return items.filter(function(x){return x&&x.url;}); },
+    selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
+    onImport:function(it){ if(typeof aiImportMedia==='function'){ var kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image'; aiImportMedia(it.url,kind,null); } else toast('AE import only works inside After Effects','info'); },
+    onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
+    onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ var i=items.indexOf(it); if(i>=0)items.splice(i,1); afterDelete&&afterDelete(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
+    onAddProject:function(it){ window.afProjectPicker('gen',it.id); },
+    refAllowed:function(){ return false; }, onRef:function(){}
+  }; }
+  function openSession(s){
+    sp.sess=s; sp.sessItems=[];
+    if(typeof window.axGo==='function')window.axGo('session');
+    var t=$('spSessTitle'); if(t)t.textContent=s.title||'Session';
+    var m=$('spSessDetMeta'); if(m)m.textContent='Loading…';
+    var g=$('spSessGrid'); if(g)g.innerHTML='';
+    api.sessionGens(s.id).then(function(r){
+      var items=((r&&r.items)||[]).map(genToItem).filter(function(x){return x.url;});
+      sp.sessItems=items; renderSessionGrid();
+    }).catch(function(){ if(m)m.textContent='Could not load this session.'; });
+  }
+  function renderSessionGrid(){
+    var g=$('spSessGrid'), m=$('spSessDetMeta'); if(!g)return; g.innerHTML='';
+    if(m)m.textContent=sp.sessItems.length+' generations'+(sp.sess&&sp.sess.mode?(' · '+sp.sess.mode):'');
+    if(!sp.sessItems.length){ g.innerHTML='<div class="sp-empty">This session has no finished generations.</div>'; return; }
+    var ctx=spGridCtx(sp.sessItems,renderSessionGrid);
+    sp.sessItems.forEach(function(it){ if(window.afRecent&&window.afRecent.card)g.appendChild(window.afRecent.card(it,ctx)); });
+  }
+
+  // ── Loyihalar ──
+  function loadProjects(force){
+    if(sp.pLoading)return;
+    if(sp.pLoaded&&!force){ renderProjects(); return; }
+    sp.pLoading=true;
+    api.projects().then(function(r){ sp.projects=(r&&r.items)||[]; sp.pLoaded=true; sp.pLoading=false; renderProjects(); })
+      .catch(function(){ sp.pLoading=false; var g=$('spProjGrid'); if(g)g.innerHTML='<div class="sp-empty">Could not load projects — sign in and try again.</div>'; });
+  }
+  function renderProjects(){
+    var g=$('spProjGrid'), em=$('spProjEmpty'), meta=$('spProjMeta'); if(!g)return; g.innerHTML='';
+    if(meta)meta.textContent=sp.projects.length?(sp.projects.length+' projects'):'';
+    if(em)em.style.display=sp.projects.length?'none':'';
+    sp.projects.forEach(function(p){
+      var card=document.createElement('div'); card.className='sp-card';
+      var cv=document.createElement('div'); cv.className='cv';
+      var covers=(p.covers||[]).slice(0,4);
+      for(var i=0;i<4;i++){ var cell=document.createElement('i'); var c=covers[i]; if(c&&c.thumb)cell.style.backgroundImage='url("'+c.thumb+'")'; cv.appendChild(cell); }
+      card.appendChild(cv);
+      var nm=document.createElement('div'); nm.className='nm'; nm.textContent=p.name||'Project'; card.appendChild(nm);
+      var ct=document.createElement('div'); ct.className='ct'; ct.textContent=(p.count||0)+' items';
+      card.appendChild(ct);
+      card.addEventListener('click',function(){ openProject(p.id,p.name); });
+      g.appendChild(card);
+    });
+  }
+  function projItemToCard(it){
+    if(it.kind==='gen'&&it.gen){ var x=genToItem(it.gen); x._itemId=it.id; return x; }
+    if(it.kind==='template'&&it.template){
+      var t=it.template;
+      return {id:t.id,_itemId:it.id,_tpl:true,url:t.previewUrl||t.thumbUrl||'',thumb:t.thumbUrl||'',cat:(t.previewUrl?'video':'image'),
+        title:t.title||t.name||'Template',prompt:'',params:null,cost:null,createdAt:it.addedAt};
+    }
+    return null;
+  }
+  function openProject(id,name){
+    sp.proj={id:id,name:name,items:[]};
+    if(typeof window.axGo==='function')window.axGo('project');
+    var t=$('spProjTitle'); if(t)t.textContent=name||'Project';
+    var m=$('spProjDetMeta'); if(m)m.textContent='Loading…';
+    var g=$('spProjGridDet'); if(g)g.innerHTML='';
+    api.projectGet(id).then(function(r){
+      sp.proj={id:r.id,name:r.name,items:(r.items||[]).map(projItemToCard).filter(Boolean)};
+      var tt=$('spProjTitle'); if(tt)tt.textContent=r.name||'Project';
+      renderProjectGrid();
+    }).catch(function(){ if(m)m.textContent='Could not load this project.'; });
+  }
+  function renderProjectGrid(){
+    var g=$('spProjGridDet'), m=$('spProjDetMeta'); if(!g||!sp.proj)return; g.innerHTML='';
+    var items=sp.proj.items;
+    if(m)m.textContent=items.length+' items · generations & templates';
+    if(!items.length){ g.innerHTML='<div class="sp-empty">Empty project — add results via the folder button on any generation.</div>'; return; }
+    var ctx={
+      isCEP:IS_CEP,
+      list:function(){ return items.filter(function(x){return x&&x.url;}); },
+      selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
+      onImport:function(it){ if(it._tpl){ toast('Open the template in Catalog to import its pack','info'); return; } if(typeof aiImportMedia==='function'){ var kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image'; aiImportMedia(it.url,kind,null); } else toast('AE import only works inside After Effects','info'); },
+      onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
+      // Loyihada Delete = loyihadan OLIB TASHLASH (gen o'zi o'chmaydi)
+      onDelete:function(it){ if(!it._itemId)return; api.projectRemoveItem(sp.proj.id,it._itemId).then(function(){ var i=items.indexOf(it); if(i>=0)items.splice(i,1); sp.pLoaded=false; renderProjectGrid(); toast('Removed from project','info'); }).catch(function(){ toast('Remove failed','error'); }); },
+      refAllowed:function(){ return false; }, onRef:function(){}
+    };
+    items.forEach(function(it){ if(window.afRecent&&window.afRecent.card)g.appendChild(window.afRecent.card(it,ctx)); });
+  }
+
+  // ── Tugmalar ──
+  window.afResetToolSessions=function(){
+    try{ if(typeof window.axIGNewSession==='function')window.axIGNewSession(); }catch(e){}
+    try{ if(typeof window.axVGNewSession==='function')window.axVGNewSession(); }catch(e){}
+    try{ if(typeof window.axAGNewSession==='function')window.axAGNewSession(); }catch(e){}
+    sp.sLoaded=false;
+  };
+  var nb=$('spNewSess'); if(nb)nb.addEventListener('click',function(){
+    // Yangi sessiya: tool sessiya keshlari tozalanadi — keyingi gen yangi sessiyada boshlanadi.
+    try{ if(typeof window.afResetToolSessions==='function')window.afResetToolSessions(); }catch(e){}
+    toast('New session — your next generation starts fresh','success');
+    if(typeof window.axGo==='function')window.axGo('imggen');
+  });
+  var lr=$('spLibRow'); if(lr)lr.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('history'); });
+  var np=$('spNewProj'); if(np)np.addEventListener('click',function(){
+    window.afNameModal('New project','',function(v){ api.projectCreate(v).then(function(){ sp.pLoaded=false; loadProjects(true); toast('Project created','success'); }).catch(function(){ toast('Failed to create project','error'); }); });
+  });
+  var sr=$('spSessRename'); if(sr)sr.addEventListener('click',function(){
+    if(!sp.sess)return;
+    window.afNameModal('Rename session',sp.sess.title||'',function(v){ api.sessionRename(sp.sess.id,v).then(function(){ sp.sess.title=v; var t=$('spSessTitle'); if(t)t.textContent=v; sp.sLoaded=false; toast('Renamed','success'); }).catch(function(){ toast('Rename failed','error'); }); });
+  });
+  var pr=$('spProjRename'); if(pr)pr.addEventListener('click',function(){
+    if(!sp.proj)return;
+    window.afNameModal('Rename project',sp.proj.name||'',function(v){ api.projectRename(sp.proj.id,v).then(function(){ sp.proj.name=v; var t=$('spProjTitle'); if(t)t.textContent=v; sp.pLoaded=false; toast('Renamed','success'); }).catch(function(){ toast('Rename failed','error'); }); });
+  });
+  var pd=$('spProjDelete'); if(pd)pd.addEventListener('click',function(){
+    if(!sp.proj)return;
+    var doDel=function(){ api.projectDelete(sp.proj.id).then(function(){ sp.pLoaded=false; toast('Project deleted','info'); if(typeof window.axGo==='function')window.axGo('projects'); }).catch(function(){ toast('Delete failed','error'); }); };
+    if(typeof window.afConfirm==='function')window.afConfirm('Delete "'+(sp.proj.name||'this project')+'"? Items stay in your library.',{ok:'Delete',danger:true}).then(function(ok){ if(ok)doDel(); });
+    else if(confirm('Delete this project?'))doDel();
+  });
+
+  window.axSPRefresh=function(view){
+    if(view==='sessions')loadSessions(true);
+    if(view==='projects')loadProjects(true);
+    try{ if(typeof window.afSyncCredits==='function')window.afSyncCredits(); }catch(e){}
+    var c1=$('spCredS'),c2=$('spCredP');
+    var v=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?(AssetFlowAccount.getCachedUser()||{}).aiCredits:null;
+    var t='<span class="cs">✦</span> '+((typeof v==='number')?Number(v).toLocaleString('en-US'):'—');
+    if(c1)c1.innerHTML=t; if(c2)c2.innerHTML=t;
+  };
 })();
 </script>
 </body>
