@@ -55,6 +55,10 @@ jobs:
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
           sudo apt-get update
           sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
+          # Runner'da eski pg_dump (16) /usr/bin'da bor; yangi versiya /usr/lib/postgresql/<ver>/bin'da.
+          # PATH'ni majburan yangi versiyaga yo'naltiramiz (server version mismatch oldini oladi).
+          echo "/usr/lib/postgresql/${PG_MAJOR}/bin" >> "$GITHUB_PATH"
+          "/usr/lib/postgresql/${PG_MAJOR}/bin/pg_dump" --version
 
       - name: Extract DATABASE_URL from deploy secret
         env:
