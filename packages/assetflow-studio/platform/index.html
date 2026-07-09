@@ -15099,8 +15099,11 @@
   .ff .va-bigsearch input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:13.5px}
   .ff .va-bigsearch input::placeholder{color:var(--muted2)}
   .ff .va-catchips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px}
-  .ff .va-catchips span{padding:8px 15px;border-radius:999px;font-weight:600;font-size:12px;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;white-space:nowrap}
-  .ff .va-catchips span.on{background:var(--pill-active);color:var(--text);border-color:transparent}
+  /* #10 — kategoriya pill'lari plagin uslubida (yumaloq, faol holat lime bilan yoritilgan) */
+  .ff .va-catchips span{padding:8px 16px;border-radius:999px;font-weight:600;font-size:12px;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+  .ff .va-catchips span:hover{color:var(--text);border-color:var(--hair2)}
+  .ff .va-catchips span.on{background:var(--lime);color:var(--onlime);border-color:transparent}
+  .ff .va-catchips span.on:hover{color:var(--onlime)}
   .ff .va-fbar{display:flex;align-items:center;gap:8px;padding:22px 40px 4px;flex-wrap:wrap}
   .ff .va-fchip{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;font-size:11.5px;font-weight:600;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;font-family:inherit;position:relative;white-space:nowrap}
   .ff .va-fchip:hover{color:var(--text)}
@@ -16906,6 +16909,9 @@ class Component extends DCLogic {
 
   categories = ['Video Templates', 'Lower Thirds', 'AI Templates', 'Graphics', 'LUT', 'SFX'];
 
+  // #9/#10 — katalog kategoriya filtri: qat'iy 4 pill (plagin pill uslubi).
+  fixedCats = ['Templates', 'Motion', 'Graphics', 'LUTs'];
+
   brands = ['NOVA', 'PixelHaus', 'Lumen', 'ORBIT', 'Kadr', 'Vizor'];
 
   authors = ['NOVA Studio', 'Kadr Lab', 'Vizor', 'PixelHaus', 'Lumen Co', 'Orbit FX', 'Sardor A.', 'Dilnoza K.'];
@@ -17216,6 +17222,16 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   runStats() { if (this._statsRun) return; this._statsRun = true; const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+  // #9/#10 — shablonni qat'iy 4 kategoriyadan biriga solishtiradi (real katalog
+  // kategoriya matni/teglari kalit so'zlariga qarab). Eng aniqdan (LUTs) umumiyga (Templates):
+  // shu tartib muhim — masalan "logo reveal" → Motion, oddiy "logo" → Graphics.
+  catBucket(t) {
+    const hay = ((t && t.c || '') + ' ' + ((t && t.tags || []).join(' '))).toLowerCase();
+    if (/\blut\b|luts|color grade|colour grade|grading|\.cube/.test(hay)) return 'LUTs';
+    if (/motion|lower.?third|\btitle|transition|element|animat|kinetic|\bintro|\boutro|reveal|overlay/.test(hay)) return 'Motion';
+    if (/graphic|\blogo|infographic|badge|\bicon|poster|thumbnail|social|banner/.test(hay)) return 'Graphics';
+    return 'Templates';
+  }
   _applyEntry() {
     // Hash deep-link ustuvor: boshlang'ich props kechikib kelsa ham uni qayta yozmaydi.
     if (this._hashApplied) return;
@@ -18040,7 +18056,7 @@ class Component extends DCLogic {
       is4k: t.qual === '4K',
       catMeta: t.c + (withDate && t.created ? ' · added ' + new Date(t.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''),
     });
-    let filtered = src.filter(t => (this.state.fApp === 'All' || t.a === this.state.fApp) && (this.state.fCat === 'All' || t.c === this.state.fCat) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => rcOf(t));
+    let filtered = src.filter(t => (this.state.fApp === 'All' || t.a === this.state.fApp) && (this.state.fCat === 'All' || this.catBucket(t) === this.state.fCat) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => rcOf(t));
     if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
     else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
     else if (this.state.sortKey === 'new') filtered = filtered.slice().sort((a, b) => (b.created || 0) - (a.created || 0)); // FAZA C
@@ -18048,8 +18064,9 @@ class Component extends DCLogic {
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
     const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
     const fAppsView = ['All', 'Ae', 'Pr', 'Mn', 'Dr'].map(x => ({ v: x, on: x === this.state.fApp, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fApp ? 'ffa-poprow on' : 'ffa-poprow' }));
-    const catalogCats = Array.from(new Set(src.map(t => t.c)));
-    const fCatsView = ['All'].concat(catalogCats.length ? catalogCats : this.categories).map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
+    // #9/#10 — kategoriya filtri qat'iy 4 ta pill: Templates · Motion · Graphics · LUTs
+    // (dinamik katalog kategoriyalari o'rniga). Har pill catBucket() orqali real katalogni filtrlaydi.
+    const fCatsView = this.fixedCats.map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
     const fPlansView = ['All', 'Free', 'Pro'].map(x => ({ v: x, on: x === this.state.fPlan, cls: x === this.state.fPlan ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fPlan ? 'ffa-poprow on' : 'ffa-poprow' }));
     // Orientatsiya / Sifat — Variant A fbar chip'lari (toggle: faol chipni bosish → tozalash). Katalog so'roviga real ulangan.
     const fOrientView = ['16:9', '9:16', '1:1'].map(v => ({ v, cls: v === this.state.fOrient ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fOrient ? 'va-fchip on' : 'va-fchip' }));
@@ -18378,7 +18395,8 @@ class Component extends DCLogic {
         // rAF fon tabda muzlashi mumkin (throttle) — kadr kelmasa darhol sakraymiz
         setTimeout(() => { if (!started) { fell = true; sh.scrollLeft = to; } }, 120);
       },
-      openShelfCat: () => { if (shelfCatName) this.setState({ fCat: shelfCatName }); this.go('templates'); },
+      // #9/#10 — xom kategoriya nomini qat'iy pill bucket'iga xaritalab filtrlaymiz (aks holda mos kelmaydi).
+      openShelfCat: () => { if (shelfCatName) this.setState({ fCat: this.catBucket({ c: shelfCatName }) }); this.go('templates'); },
       openShelfNew: () => { this.setState({ sortKey: 'new' }); this.go('templates'); },
       navLinksView, planPill, heroKick, heroGreeting, userFirst, creditResetShort,
       sidebarCls, collapseIcon, toggleSidebar: () => this.setState(st => ({ sidebarCollapsed: !st.sidebarCollapsed })),
@@ -18465,7 +18483,7 @@ class Component extends DCLogic {
       catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
       // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
       catalogLoading: !this.state.catalogReady,
-      openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: d.c }); this.go('templates'); },
+      openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: this.catBucket(d) }); this.go('templates'); },
       toggleFavTpl: () => {
         const d = this.state.detail; if (!d) return;
         const id = String(d.id);
@@ -18544,7 +18562,7 @@ class Component extends DCLogic {
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
       useAsRef: () => { this.setState({ lightbox: null }); this.toast('Use as reference coming soon'); },
       onFApp: (e) => this.setState({ fApp: e.currentTarget.dataset.v }),
-      onFCat: (e) => this.setState({ fCat: e.currentTarget.dataset.v }),
+      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); },
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); },
       onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'All' : v })); },
