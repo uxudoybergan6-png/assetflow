@@ -15311,6 +15311,16 @@
   .ff .va-sessrow .nm{min-width:0;flex:1;font-weight:600;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-sessrow .nm .sub{display:block;font:500 9px var(--mono);color:var(--muted2);margin-top:2px;font-weight:400}
   .ff .va-sessrow .ren{width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;color:var(--muted2);font-size:12px}
+  /* P6 — sessiya multi-select */
+  .ff .va-sessselbtn{margin-left:auto;font:600 9.5px var(--mono);color:var(--muted);cursor:pointer;padding:2px 7px;border:1px solid var(--hair2);border-radius:999px}
+  .ff .va-sessselbtn:hover{color:var(--text);border-color:var(--muted)}
+  .ff .va-sesscheck{width:17px;height:17px;flex:none;border-radius:5px;border:1.5px solid var(--hair2);display:grid;place-items:center;font-size:10px;color:transparent}
+  .ff .va-sesscheck.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
+  .ff .va-sessbulk{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:var(--f1);border:1px solid var(--hair2);border-radius:11px;padding:7px 9px;margin-top:6px}
+  .ff .va-sessbulk .n{font:600 10px var(--mono);color:var(--muted)}
+  .ff .va-sessbulk b{font-size:10.5px;font-weight:700;color:var(--text);cursor:pointer;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.06)}
+  .ff .va-sessbulk b:hover{background:rgba(255,255,255,.12)}
+  .ff .va-sessbulk b.danger{color:#ff8484}
   .ff .va-sessrow .ren:hover{background:var(--f2);color:var(--text)}
   /* mobil sessiya chiplari (frame F strip o'rnida) */
   .ff .va-sesschip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;white-space:nowrap;flex:none}
@@ -16287,15 +16297,24 @@
                   <span class="cv lib"><i class="ph ph-squares-four"></i></span>
                   <span class="nm">My Library<span class="sub">{{ libCountLabel }}</span></span>
                 </div>
-                <span class="va-axrailh" style="align-self:flex-start;padding:8px 6px 2px">SESSIONS</span>
+                <span class="va-axrailh" style="align-self:stretch;display:flex;align-items:center;padding:8px 6px 2px">SESSIONS<b class="va-sessselbtn" onclick="{{ axSessSelectToggle }}">{{ sessSelectLabel }}</b></span>
                 <div class="va-sesslist">
                   <sc-for list="{{ sessListView }}" as="s" hint-placeholder-count="5">
                     <div data-id="{{ s.id }}" onclick="{{ axOpenSession }}" class="{{ s.cls }}">
+                      <sc-if value="{{ sessSelectOn }}" hint-placeholder-val="{{ false }}"><span class="{{ s.ckCls }}">✓</span></sc-if>
                       <span class="cv" style="background:{{ s.cv }}"><sc-if value="{{ s.noCv }}" hint-placeholder-val="{{ false }}"><i class="ph ph-{{ s.icon }}"></i></sc-if></span>
                       <span class="nm">{{ s.name }}<span class="sub">{{ s.meta }}</span></span>
                       <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session"><i class="ph ph-pencil-simple"></i></span></sc-if>
                     </div>
                   </sc-for>
+                  <sc-if value="{{ sessBulkOn }}" hint-placeholder-val="{{ false }}">
+                    <div class="va-sessbulk">
+                      <span class="n">{{ sessBulkCount }} selected</span>
+                      <b onclick="{{ axBulkDownload }}">⬇ Download</b>
+                      <b class="danger" onclick="{{ axBulkDelete }}">🗑 Delete</b>
+                      <b onclick="{{ axSessSelectToggle }}">Cancel</b>
+                    </div>
+                  </sc-if>
                   <sc-if value="{{ sessEmpty }}" hint-placeholder-val="{{ true }}">
                     <div class="va-axrailempty" style="align-self:center"><span class="bx">✦</span><span class="t">Your sessions will appear here</span></div>
                   </sc-if>
@@ -16992,6 +17011,8 @@ class Component extends DCLogic {
     chipPop: null,
     // PHASE B — AI Studio session workspace (UI-only holat; gen oqimiga tegmaydi)
     aiMediaView: null,      // null = joriy tool rejimiga ergashadi; 'visuals' | 'audio'
+    sessSelect: false,      // P6 — sessiya rail select-rejimi
+    sessSel: {},            // P6 — tanlangan sessiya id'lari
     useMenuOpen: false,
     modelModalOpen: false,
     modelQ: '',
@@ -18445,6 +18466,7 @@ class Component extends DCLogic {
       return {
         id: s.id, on, name,
         shortName: name.length > 14 ? name.slice(0, 14) + '…' : name,
+        ckCls: 'va-sesscheck' + (this.state.sessSel[s.id] ? ' on' : ''), // P6
         cls: 'va-sessrow' + (on ? ' on' : ''),
         chipCls: 'va-sesschip' + (on ? ' on' : ''),
         cv: (!isAudCv && s.coverUrl) ? media(s.coverUrl, 0) : this.grad(this.hueOf(s.id)),
@@ -19070,7 +19092,45 @@ class Component extends DCLogic {
       libCountLabel: this.state.gens.length + ' generation' + (this.state.gens.length === 1 ? '' : 's'),
       axNewSession: () => this.setState({ viewSess: 'new', curSessId: null, sessGens: [], activeGenId: null, useMenuOpen: false, aiMediaView: null }),
       axOpenLibrary: () => this.setState({ viewSess: null, activeGenId: null, useMenuOpen: false }),
-      axOpenSession: (e) => { const id = e.currentTarget.dataset.id; if (id && this.state.viewSess !== id) this.openSessionById(id); },
+      axOpenSession: (e) => { const id = e.currentTarget.dataset.id; if (!id) return;
+        // P6 — select rejimida bosish = belgilash (ochish emas)
+        if (this.state.sessSelect) { this.setState(st => { const sel = Object.assign({}, st.sessSel); if (sel[id]) delete sel[id]; else sel[id] = true; return { sessSel: sel }; }); return; }
+        if (this.state.viewSess !== id) this.openSessionById(id); },
+      // P6 — sessiya multi-select bulk amallar
+      sessSelectOn: this.state.sessSelect,
+      sessSelectLabel: this.state.sessSelect ? 'Done' : 'Select',
+      sessBulkOn: this.state.sessSelect && Object.keys(this.state.sessSel).length > 0,
+      sessBulkCount: Object.keys(this.state.sessSel).length,
+      axSessSelectToggle: (e) => { if (e) e.stopPropagation(); this.setState(st => ({ sessSelect: !st.sessSelect, sessSel: {} })); },
+      axBulkDelete: async (e) => { e.stopPropagation();
+        const ids = Object.keys(this.state.sessSel); if (!ids.length) return;
+        if (!confirm('Delete ' + ids.length + ' session' + (ids.length > 1 ? 's' : '') + ' and ALL their generations?\nThis cannot be undone.')) return;
+        this.toast('Deleting ' + ids.length + ' session' + (ids.length > 1 ? 's' : '') + '…');
+        let done = 0;
+        for (const id of ids) { try { await FFAPI.sessionDelete(id); done++; } catch (x) { this.toast(this.errMsg(x)); } }
+        this.setState(st => ({ sessSelect: false, sessSel: {}, viewSess: ids.includes(st.viewSess) ? 'new' : st.viewSess, curSessId: ids.includes(st.curSessId) ? null : st.curSessId }));
+        this.loadSessions(); this.loadHistory(); this.refreshCredits();
+        this.toast(done + ' session' + (done > 1 ? 's' : '') + ' deleted'); },
+      axBulkDownload: async (e) => { e.stopPropagation();
+        const ids = Object.keys(this.state.sessSel); if (!ids.length) return;
+        this.toast('Preparing downloads…');
+        let n = 0;
+        for (const id of ids) {
+          try {
+            const r = await FFAPI.sessionGens(id);
+            const items = (r && r.items) || [];
+            for (const g of items) {
+              const a0 = (g.assets && g.assets[0]) || null; if (!a0) continue;
+              const href = a0.downloadUrl || a0.url; if (!href) continue;
+              const a = document.createElement('a'); a.href = href; a.download = ''; a.rel = 'noopener';
+              document.body.appendChild(a); a.click(); a.remove(); n++;
+              if (n >= 40) break; // himoya: juda katta to'plamda brauzerni bosmaslik
+              await new Promise(r2 => setTimeout(r2, 450)); // brauzer ketma-ket yuklab olishga ulgursin
+            }
+          } catch (x) { this.toast(this.errMsg(x)); }
+          if (n >= 40) { this.toast('Downloaded the first 40 files — open a session for the rest'); break; }
+        }
+        this.toast(n + ' file' + (n === 1 ? '' : 's') + ' downloading'); },
       axRenameSession: (e) => { e.stopPropagation(); this.renameSessionById(e.currentTarget.dataset.id); },
       visCount: visGensRaw.length, audCount: audGensRaw.length,
       axSegVisCls: axIsVisuals ? 'on' : '', axSegAudCls: axIsVisuals ? '' : 'on',

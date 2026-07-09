@@ -139,6 +139,7 @@
     sessions: function () { return req("/api/studio/gen/sessions"); },
     sessionRename: function (id, title) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id), { method: "PATCH", body: { title: title } }); },
     sessionGens: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id) + "/generations?perPage=50&status=done"); },
+    sessionDelete: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id), { method: "DELETE" }); }, // P6
     quote: function (modelId, mode, params) { return req("/api/studio/gen/cost-quote", { method: "POST", body: { modelId: modelId, mode: mode, params: params || {} } }); },
     gen: function (payload) { return req("/api/studio/gen", { method: "POST", body: payload }); },
     genGet: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id)); },

@@ -457,6 +457,51 @@ studioGenRouter.patch("/gen/sessions/:id", async (req: Request, res: Response) =
   res.json(updated);
 });
 
+/** P6 — DELETE /gen/sessions/:id: sessiya + BARCHA gen'lari o'chadi (schema cascade).
+ *  Avval GCS obyektlar (asset resultKey/thumbKey + bog'langan saved ref'lar) tozalanadi —
+ *  yetim fayl qolmasin. MONEY-ZONE: kredit refund/charge YO'Q (sarflangan kredit tarixi
+ *  CreditLedger'da qoladi — u FK'siz). Egalik: boshqa user → 404 (PATCH bilan bir xil). */
+studioGenRouter.delete("/gen/sessions/:id", async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const session = await prisma.genSession.findUnique({ where: { id } });
+  if (!session || session.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+  const gens = await prisma.generation.findMany({
+    where: { sessionId: id },
+    include: { assets: true },
+  });
+  const genIds = gens.map((g) => g.id);
+  // Storage tozalash — single-gen delete bilan bir xil qamrov (asset + poster + linked ref)
+  const keys = gens
+    .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey]))
+    .filter((k): k is string => typeof k === "string" && k.length > 0);
+  let r2deleted = 0;
+  if (keys.length) {
+    try {
+      r2deleted = await deleteS3Objects(keys);
+    } catch (e) {
+      console.error("[studio-gen] session delete: R2 xato:", e);
+    }
+  }
+  try {
+    if (genIds.length) {
+      const linkedRefs = await prisma.savedReference.findMany({
+        where: { generationId: { in: genIds }, userId: session.userId },
+      });
+      const refKeys = linkedRefs.map((r) => r.resultKey).filter((k): k is string => typeof k === "string" && k.length > 0);
+      if (refKeys.length) await deleteS3Objects(refKeys).catch(() => {});
+      if (linkedRefs.length) await prisma.savedReference.deleteMany({ where: { id: { in: linkedRefs.map((r) => r.id) } } });
+    }
+  } catch (e) {
+    console.error("[studio-gen] session delete: linked refs xato:", e);
+  }
+  // DB: sessiya o'chishi Generation+GenAsset'ni CASCADE o'chiradi (schema onDelete: Cascade)
+  await prisma.genSession.delete({ where: { id } });
+  res.json({ ok: true, deletedGenerations: genIds.length, r2deleted });
+});
+
 /** GET /gen/sessions/:id/generations — sessiya tarixi (paginatsiya + status filtri). */
 studioGenRouter.get(
   "/gen/sessions/:id/generations",
