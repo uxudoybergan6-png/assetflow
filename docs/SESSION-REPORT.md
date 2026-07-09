@@ -1,3 +1,15 @@
+# Sessiya hisoboti — BATCH2 PHASE 1 (money/auth 3/3 ✅) · 2026-07-10
+
+**Vazifa:** `docs/FIX-PROMPTS-BATCH2-2026-07-09.md` — PHASE 1 (kritik money & auth). P3 avval bajarilgan (skip). PUSH QILINMAGAN.
+
+- **P1 (refund):** ildiz — real fail() atomik refund qiladi, lekin TIMEOUT yo'li genni "running" qoldirib refundni panel-ochilishga bog'liq reconcile'ga tashlaydi → panel qayta ochilmasa refund yo'q. Fix: `reconcileAllStuckGenerations()` (global, 60s fon timer) + startup `backfillUnrefundedFailures()`. Money-zone (refundAiCredits/quote/consume) BYTE-FOR-BYTE; idempotent `refunded`-claim double-refundni to'sadi. API build ✅.
+- **P21 (import limit):** ildiz — consumeImport admin limitini umrlik `importsTotal`ga tekshirardi → bir martalik lifetime-cap. Fix: additive migratsiya `importsMonth` + guard `importsMonth<limit` + oylik reset; `importsTotal` stat uchun qoladi. Atomik naqsh saqlangan. Dev DB'da 4 stsenariy ✅ (stuck user ochildi, limit bloklaydi, rollover reset, admin override). Plagin sheet: download/import ajratildi + oylik import kvota ko'rsatiladi.
+- **P20 (auto-signout):** ildiz — handleAuthFailure HAR 401/403'da token tozalardi → limit (403 LIMIT_REACHED) userni chiqarardi. Fix: kod-aware — faqat 401 / 403 ACCOUNT_BLOCKED|INACTIVE chiqaradi; request()+catalog+pack `code` uzatadi; friendlyError biznes-kodlarni hurmat qiladi. handleAuthFailure 7 case unit ✅.
+
+**Kutilmoqda:** push (foydalanuvchi) → Cloud Run deploy + `migrate:deploy` (imports_month) + CF Pages; AE'da plagin jonli test (install-cep); P1 startup backfill prod'da bir marta ishlaydi. PHASE 2–5 (P19,P2,P4–P17 va h.k.) hali BAJARILMAGAN — user reviewdan keyin davom.
+
+---
+
 # Sessiya hisoboti — FIX-PROMPTS partiyasi (16/16 ✅) · 2026-07-09
 
 **Vazifa:** `docs/FIX-PROMPTS-2026-07-09.md` — 16 muammo, execution order bo'yicha, har biri o'z commit(lar)i bilan. PUSH QILINMAGAN — foydalanuvchi push qiladi.
