@@ -1,18 +1,12 @@
-# Sessiya hisoboti — QA-FIX partiya 4 (real media + playback) · 2026-07-09
+# Sessiya hisoboti — QA-FIX partiya 5 (sessiyalar + Projects) · 2026-07-09
 
-**Nima qilindi:** Platforma (`platform/index.html`) gradient-placeholder kartalari real mediaga o'tkazildi:
-Home "Jump back in" / AI Studio striplari + katalog/related/shelf kartalari endi real `<img>` /
-`<video poster>` / waveform plitka (skeleton yuklanish, gradient faqat media yo'q bo'lsa). Katalog
-kartada hover'da previewUrl video (lazy). AI Studio visuals grid masonry + real aspect (gen params).
-Tool kartalari oxirgi real gen art'i bilan.
+**Vazifa:** AI Studio sessiya modeli (#12) + Projects (#13). 3 commit: ee58a9b, 1eb153a, 6a6d086 (push YO'Q).
 
-**Ildiz sabab (video qora/qo'ynalmasdi):** dc-runtime `controls=""`/`muted=""` ni React'ga BO'SH SATR
-prop qilib beradi → falsy → controls umuman chiqmasdi. Lightbox/detail videolar endi `{{ true }}`
-boolean + poster=thumb + preload=metadata; detail'da `muted` olib tashlandi (audio o'ynaydi); audio
-row'da real play/pause (umumiy Audio element).
+**Qilindi:**
+- DB: `Project` + `ProjectItem` (kind gen|template, refId polimorf) — additive migratsiya `20260709100000_projects`, lokal DB'da qo'llanildi.
+- API: `GET /gen/sessions` (count+lastAt+cover), `PATCH /gen/sessions/:id` (rename), `/api/studio/projects` CRUD + items (egaga bog'langan; gen media qayta imzolanadi, shablon `mapCatalogItem`). Pul zonasi tegilmagan.
+- Platforma: chap rail = sessiyalar ro'yxati (New session / My Library / nom+vaqt+cover, rename modali); bitta faol sessiya (nomi birinchi promptdan, eski `_sess[mode]` o'rnida); Projects real API'da — ro'yxat covers, detal masonry (gen+shablon, remove), create/rename/2-bosqichli delete; "Add to project" gen Use ▾ / lightbox / shablon detail'da (tanlagich + create-and-add). Mobil sessiya chiplari.
 
-**Tekshirildi (headless, stub-harness before/after):** lightbox video kadr+controls bilan o'ynaydi
-(oldin qora quti), audio 2s fayl o'ynaydi, detail video audio-track bilan, masonry 1280(4col)/390(2col)
-overflow'siz, bo'sh katalog toza degradatsiya, landing tegilmagan.
+**Tekshirildi (lokal E2E):** sessiya almashish / My Library jamlash / rename; loyiha yaratish → gen+shablon qo'shish → reload'da saqlanish → remove/rename/delete; egalik 404; idempotent add; `npm run build -w apps/api` toza; 1280+390 skrinshotlar OK.
 
-**Kutilmoqda:** push + CF Pages deploy; real gen bilan production tekshiruvi.
+**Kutilmoqda:** push + Cloud Run deploy + `migrate:deploy` (KODDAN OLDIN) + CF Pages; production'da signed cover URL'lar bilan jonli tekshiruv (template engine style'dagi data-URI `;`ni kesadi — faqat lokal seed artefakti).
