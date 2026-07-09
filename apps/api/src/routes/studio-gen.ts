@@ -68,17 +68,32 @@ import { writeAuditLog } from "../lib/audit-log.js";
 
 export const studioGenRouter = Router();
 
-/** Gen natijasi uchun yuklab-olish fayl nomi (Content-Disposition uchun). */
-function genDownloadName(mode: string | undefined, resultKey: string, contentType?: string | null): string {
+/** PROBLEM 13 — prompt'dan xavfsiz fayl nomi: notoza belgilar olib tashlanadi,
+ *  bo'shliqlar yig'iladi, ~60 belgiga qisqartiriladi. Bo'sh bo'lsa "" (fallback caller'da). */
+export function promptFileBase(prompt: string | null | undefined): string {
+  return String(prompt || "")
+    .replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ") // fayl tizimi uchun xavfli belgilar
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60)
+    .trim()
+    .replace(/[. ]+$/g, "") // oxiridagi nuqta/bo'shliq (Windows) olib tashlanadi
+    .replace(/^[. ]+/, ""); // boshidagi nuqta (yashirin fayl / "..") olib tashlanadi
+}
+
+/** Gen natijasi uchun yuklab-olish fayl nomi (Content-Disposition uchun).
+ *  PROBLEM 13: nom generatsiya PROMPT'idan; prompt bo'sh bo'lsa frameflow-<mode>. */
+function genDownloadName(mode: string | undefined, resultKey: string, contentType?: string | null, prompt?: string | null): string {
   const extFromKey = (resultKey.match(/\.([a-z0-9]{2,5})(?:$|\?)/i) || [])[1];
   const extFromMime = contentType ? (contentType.split("/")[1] || "").split(";")[0] : "";
   const fallback = mode === "video" ? "mp4" : (mode === "voice" || mode === "sfx" || mode === "music") ? "mp3" : "png";
   const ext = (extFromKey || extFromMime || fallback).toLowerCase();
-  return `frameflow-${mode || "gen"}.${ext}`;
+  const base = promptFileBase(prompt);
+  return `${base || `frameflow-${mode || "gen"}`}.${ext}`;
 }
 
 // QA-FIX #12/#13: projects.ts ham qayta ishlatadi (gen media imzolash bitta joyda)
-export async function hydrateGenAssets<T extends { mode?: string; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
+export async function hydrateGenAssets<T extends { mode?: string; prompt?: string | null; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
   holder: T
 ): Promise<T> {
   if (!isS3Configured()) return holder;
@@ -116,7 +131,7 @@ export async function hydrateGenAssets<T extends { mode?: string; assets: Array<
       // Alohida yuklab-olish URL'i: Content-Disposition: attachment bilan imzolanadi.
       // `url` inline (preview <img>/<video>) uchun o'zgarishsiz qoladi; `downloadUrl`
       // faqat yuklab-olish tugmasi uchun — brauzer inline ochmasdan faylni saqlaydi.
-      aa.downloadUrl = await getSignedDownloadUrl(a.resultKey, 3600, genDownloadName(holder.mode, a.resultKey, aa.contentType ?? null));
+      aa.downloadUrl = await getSignedDownloadUrl(a.resultKey, 3600, genDownloadName(holder.mode, a.resultKey, aa.contentType ?? null, holder.prompt));
     })
   );
   return holder;
