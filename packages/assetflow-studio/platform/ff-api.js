@@ -131,7 +131,11 @@
     // Studio Gen
     credits: function () { return req("/api/studio/credits"); },
     models: function (mode) { return req("/api/studio/gen/models?mode=" + encodeURIComponent(mode)); },
-    session: function (mode) { return req("/api/studio/gen/sessions", { method: "POST", body: { mode: mode } }); },
+    // QA-FIX #12 — sessiya modeli: yaratishda title (birinchi prompt) ham ketadi
+    session: function (mode, title) { return req("/api/studio/gen/sessions", { method: "POST", body: { mode: mode, title: title || undefined } }); },
+    sessions: function () { return req("/api/studio/gen/sessions"); },
+    sessionRename: function (id, title) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id), { method: "PATCH", body: { title: title } }); },
+    sessionGens: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id) + "/generations?perPage=50&status=done"); },
     quote: function (modelId, mode, params) { return req("/api/studio/gen/cost-quote", { method: "POST", body: { modelId: modelId, mode: mode, params: params || {} } }); },
     gen: function (payload) { return req("/api/studio/gen", { method: "POST", body: payload }); },
     genGet: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id)); },
@@ -140,5 +144,14 @@
     enhance: function (prompt, mode, modelId) {
       return req("/api/studio/gen/prompt/enhance", { method: "POST", body: { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined } });
     },
+
+    // Projects (QA-FIX #13) — gen + shablonlarni loyihaga yig'ish
+    projects: function () { return req("/api/studio/projects"); },
+    projectCreate: function (name) { return req("/api/studio/projects", { method: "POST", body: { name: name } }); },
+    projectGet: function (id) { return req("/api/studio/projects/" + encodeURIComponent(id)); },
+    projectRename: function (id, name) { return req("/api/studio/projects/" + encodeURIComponent(id), { method: "PATCH", body: { name: name } }); },
+    projectDelete: function (id) { return req("/api/studio/projects/" + encodeURIComponent(id), { method: "DELETE" }); },
+    projectAddItem: function (id, kind, refId) { return req("/api/studio/projects/" + encodeURIComponent(id) + "/items", { method: "POST", body: { kind: kind, refId: refId } }); },
+    projectRemoveItem: function (id, itemId) { return req("/api/studio/projects/" + encodeURIComponent(id) + "/items/" + encodeURIComponent(itemId), { method: "DELETE" }); },
   };
 })();

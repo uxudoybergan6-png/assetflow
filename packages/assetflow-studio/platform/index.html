@@ -15293,6 +15293,31 @@
   .ff .va-axrailempty{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px;padding:14px 10px;text-align:center}
   .ff .va-axrailempty .bx{width:56px;height:56px;border-radius:12px;border:1.5px dashed rgba(255,255,255,.12);display:grid;place-items:center;color:var(--muted2);font-size:16px}
   .ff .va-axrailempty .t{font-size:8.5px;color:var(--muted2);line-height:1.5;max-width:64px}
+  /* QA-FIX #12 — sessiyalar rail'i (Artlist uslubi): nom + vaqt + cover */
+  .ff .va-axrail.sess{width:216px;align-items:stretch;padding:14px 10px;gap:6px;overflow-y:auto;scrollbar-width:none}
+  .ff .va-axrail.sess::-webkit-scrollbar{display:none}
+  .ff .va-sessnew{display:flex;align-items:center;justify-content:center;gap:7px;height:36px;border-radius:11px;background:var(--limedim);border:1px dashed rgba(194,240,74,.4);color:var(--lime);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;flex:none}
+  .ff .va-sessnew:hover{border-style:solid}
+  .ff .va-sesslist{display:flex;flex-direction:column;gap:4px;min-height:0}
+  .ff .va-sessrow{position:relative;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:11px;cursor:pointer;border:1px solid transparent}
+  .ff .va-sessrow:hover{background:var(--f1)}
+  .ff .va-sessrow.on{background:var(--f1);border-color:rgba(194,240,74,.35)}
+  .ff .va-sessrow .cv{width:38px;height:38px;flex:none;border-radius:9px;background:var(--surface2);background-size:cover !important;background-position:center !important;display:grid;place-items:center;color:var(--muted);font-size:15px;overflow:hidden}
+  .ff .va-sessrow .cv.lib{background:var(--limedim);color:var(--lime)}
+  .ff .va-sessrow .nm{min-width:0;flex:1;font-weight:600;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-sessrow .nm .sub{display:block;font:500 9px var(--mono);color:var(--muted2);margin-top:2px;font-weight:400}
+  .ff .va-sessrow .ren{width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;color:var(--muted2);font-size:12px}
+  .ff .va-sessrow .ren:hover{background:var(--f2);color:var(--text)}
+  /* mobil sessiya chiplari (frame F strip o'rnida) */
+  .ff .va-sesschip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;white-space:nowrap;flex:none}
+  .ff .va-sesschip.on{border-color:rgba(194,240,74,.4);color:var(--text)}
+  .ff .va-sesschip.new{background:var(--limedim);border-color:rgba(194,240,74,.3);color:var(--lime)}
+  .ff .va-sesschip .cv{width:16px;height:16px;border-radius:5px;background-size:cover !important;background-position:center !important;flex:none}
+  /* QA-FIX #13 — loyiha detal kartasida "olib tashlash" tugmasi */
+  .ff .va-projrm{position:absolute;top:9px;right:9px;width:26px;height:26px;border-radius:8px;background:rgba(10,12,16,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;color:#DFE5EC;font-size:13px;cursor:pointer;opacity:0;transition:opacity .15s;z-index:3}
+  .ff .va-rc:hover .va-projrm{opacity:1}
+  .ff .va-projrm:hover{border-color:#FF6B5E;color:#FF6B5E}
+  @media(max-width:760px){ .ff .va-projrm{opacity:1} }
   /* main column */
   .ff .va-axmainc{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);background-size:20px 20px}
   .ff .va-axhead{display:flex;align-items:center;gap:14px;padding:16px 24px 12px;flex-wrap:wrap}
@@ -15940,6 +15965,7 @@
               <div class="va-dact">
                 <a class="va-btn ghost" style="flex:1" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a>
                 <span class="{{ detail.favCls }}" onclick="{{ toggleFavTpl }}" title="Favorite"><svg class="va-ic"><use href="#i-heart"></use></svg></span>
+                <span class="fav" onclick="{{ addTplToProject }}" title="Add to project"><i class="ph ph-folder-plus" style="font-size:16px"></i></span>
                 <span class="fav" onclick="{{ shareTpl }}" title="Share"><svg class="va-ic"><use href="#i-share"></use></svg></span>
               </div>
               <div class="va-gate"><svg class="va-ic" style="margin-top:1px;color:var(--lime)"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
@@ -16272,28 +16298,26 @@
           <sc-if value="{{ aiComposer }}" hint-placeholder-val="{{ false }}">
             <div class="va-axwork">
 
-              <!-- left history rail (frame A) -->
-              <aside class="va-axrail">
-                <span class="va-axrailh">SESSION</span>
-                <sc-if value="{{ axRailPend }}" hint-placeholder-val="{{ false }}">
-                  <div class="va-axrth pend" data-tip="{{ railPendTip }}">
-                    <span class="va-axmascot"><svg width="26" height="26" viewBox="0 0 64 64">
-                      <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
-                      <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
-                      <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
-                    </svg></span>
-                  </div>
-                </sc-if>
-                <sc-for list="{{ axRailGens }}" as="g" hint-placeholder-count="5">
-                  <div data-id="{{ g.id }}" onclick="{{ onRailItem }}" class="{{ g.railCls }}" data-tip="{{ g.tip }}" style="background:{{ g.bg }}">
-                    <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="vid"><svg class="va-ic" style="width:15px;height:15px"><use href="#i-play"></use></svg></span></sc-if>
-                    <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></sc-if>
-                  </div>
-                </sc-for>
-                <sc-if value="{{ axRailMore }}" hint-placeholder-val="{{ false }}"><span class="more">{{ axRailMoreLabel }}</span></sc-if>
-                <sc-if value="{{ axRailEmpty }}" hint-placeholder-val="{{ true }}">
-                  <div class="va-axrailempty"><span class="bx">✦</span><span class="t">Your generations will appear here</span></div>
-                </sc-if>
+              <!-- left rail — QA-FIX #12: Artlist uslubi SESSIYALAR ro'yxati + My Library -->
+              <aside class="va-axrail sess">
+                <button class="va-sessnew" onclick="{{ axNewSession }}"><i class="ph ph-plus" style="font-size:13px"></i>New session</button>
+                <div class="{{ libRowCls }}" onclick="{{ axOpenLibrary }}">
+                  <span class="cv lib"><i class="ph ph-squares-four"></i></span>
+                  <span class="nm">My Library<span class="sub">{{ libCountLabel }}</span></span>
+                </div>
+                <span class="va-axrailh" style="align-self:flex-start;padding:8px 6px 2px">SESSIONS</span>
+                <div class="va-sesslist">
+                  <sc-for list="{{ sessListView }}" as="s" hint-placeholder-count="5">
+                    <div data-id="{{ s.id }}" onclick="{{ axOpenSession }}" class="{{ s.cls }}">
+                      <span class="cv" style="background:{{ s.cv }}"><sc-if value="{{ s.noCv }}" hint-placeholder-val="{{ false }}"><i class="ph ph-{{ s.icon }}"></i></sc-if></span>
+                      <span class="nm">{{ s.name }}<span class="sub">{{ s.meta }}</span></span>
+                      <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session"><i class="ph ph-pencil-simple"></i></span></sc-if>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ sessEmpty }}" hint-placeholder-val="{{ true }}">
+                    <div class="va-axrailempty" style="align-self:center"><span class="bx">✦</span><span class="t">Your sessions will appear here</span></div>
+                  </sc-if>
+                </div>
               </aside>
 
               <!-- main column -->
@@ -16305,27 +16329,16 @@
                   </div>
                   <span style="margin-left:auto"></span>
                   <span class="smeta">{{ axSessMeta }}</span>
-                  <button class="va-axghost" onclick="{{ backToPicker }}">＋ New session</button>
+                  <button class="va-axghost" onclick="{{ backToPicker }}"><svg class="va-ic" style="width:13px;height:13px"><use href="#i-grid"></use></svg> Tools</button>
                 </div>
 
-                <!-- mobile recents strip (frame F) -->
+                <!-- mobile sessions strip (frame F) — QA-FIX #12: sessiya chiplari -->
                 <div class="va-axmstrip">
-                  <sc-if value="{{ axRailPend }}" hint-placeholder-val="{{ false }}">
-                    <div class="va-axrth pend">
-                      <span class="va-axmascot"><svg width="22" height="22" viewBox="0 0 64 64">
-                        <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
-                        <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
-                        <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
-                      </svg></span>
-                    </div>
-                  </sc-if>
-                  <sc-for list="{{ axRailGens }}" as="g" hint-placeholder-count="5">
-                    <div data-id="{{ g.id }}" onclick="{{ onRailItem }}" class="{{ g.railCls }}" style="background:{{ g.bg }}">
-                      <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="vid"><svg class="va-ic" style="width:13px;height:13px"><use href="#i-play"></use></svg></span></sc-if>
-                      <sc-if value="{{ g.isAudio }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></sc-if>
-                    </div>
+                  <button class="va-sesschip new" onclick="{{ axNewSession }}"><i class="ph ph-plus"></i> New</button>
+                  <button class="{{ libChipCls }}" onclick="{{ axOpenLibrary }}"><i class="ph ph-squares-four"></i> Library</button>
+                  <sc-for list="{{ sessListView }}" as="s" hint-placeholder-count="4">
+                    <button data-id="{{ s.id }}" onclick="{{ axOpenSession }}" class="{{ s.chipCls }}"><span class="cv" style="background:{{ s.cv }}"></span>{{ s.shortName }}</button>
                   </sc-for>
-                  <sc-if value="{{ axRailMore }}" hint-placeholder-val="{{ false }}"><div class="va-axrth" style="display:grid;place-items:center;background:var(--surface2);color:var(--muted2);font:500 9px var(--mono)">{{ axRailMoreShort }}</div></sc-if>
                 </div>
 
                 <div class="va-axstage">
@@ -16390,6 +16403,7 @@
                               <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
                               <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
                               <div class="va-axmdiv"></div>
+                              <div class="va-axmi plain" onclick="{{ axMenuAddProj }}"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
                               <div class="va-axmi plain" onclick="{{ axMenuDownload }}"><span class="mic">⬇</span>Download</div>
                               <div class="va-axmi plain" onclick="{{ axMenuRegen }}"><span class="mic">↻</span>Regenerate</div>
                               <div class="va-axmi plain danger" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>Delete</div>
@@ -16655,18 +16669,31 @@
           </sc-if>
         </sc-if>
 
-        <!-- PROJECTS -->
+        <!-- PROJECTS (QA-FIX #13 — real API: ro'yxat + detal) -->
         <sc-if value="{{ isProjects }}" hint-placeholder-val="{{ false }}">
+
+          <!-- ro'yxat -->
+          <sc-if value="{{ projList }}" hint-placeholder-val="{{ true }}">
           <div class="va-accpad" style="padding-top:28px">
           <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px">
             <div><div style="font-weight:700;font-size:22px;letter-spacing:-.015em">Projects</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Group generations and templates into projects</div></div>
             <span style="flex:1"></span>
             <button class="ffm-btn" onclick="{{ newProject }}"><i class="ph ph-plus" style="font-size:14px"></i>New project</button>
           </div>
+          <sc-if value="{{ projListLoading }}" hint-placeholder-val="{{ false }}">
+            <div class="va-homeload" style="margin:26px 0"><span class="star">✦</span> Opening your projects…</div>
+          </sc-if>
+          <sc-if value="{{ projListReady }}" hint-placeholder-val="{{ true }}">
           <div class="ffa-proj-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
             <sc-for list="{{ projectsView }}" as="p" hint-placeholder-count="4">
-              <div onclick="{{ newProject }}" style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;cursor:pointer">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:120px"><div style="background:{{ p.g1 }}"></div><div style="background:{{ p.g2 }}"></div><div style="background:{{ p.g3 }}"></div><div style="background:{{ p.g4 }}"></div></div>
+              <div data-id="{{ p.id }}" onclick="{{ openProject }}" style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;cursor:pointer">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:120px">
+                  <sc-for list="{{ p.cells }}" as="cv" hint-placeholder-count="4">
+                    <div style="background:{{ cv.bg }};background-size:cover;background-position:center;display:grid;place-items:center">
+                      <sc-if value="{{ cv.isAud }}" hint-placeholder-val="{{ false }}"><i class="ph ph-waveform" style="font-size:18px;color:rgba(255,255,255,.55)"></i></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
                 <div style="padding:13px 14px"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px">{{ p.d }}</div></div>
               </div>
             </sc-for>
@@ -16675,7 +16702,48 @@
               <span style="font-size:12px;font-weight:600">New project</span>
             </button>
           </div>
+          </sc-if>
           </div>
+          </sc-if>
+
+          <!-- detal — item'lar masonry (gen + shablon, real media) -->
+          <sc-if value="{{ projDetail }}" hint-placeholder-val="{{ false }}">
+          <div class="va-accpad" style="padding-top:24px">
+            <div class="va-crumb" style="padding:0 0 14px"><a onclick="{{ backToProjects }}">Projects</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ projDetail.name }}</b></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+              <div><div style="font-weight:700;font-size:22px;letter-spacing:-.015em">{{ projDetail.name }}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-family:'IBM Plex Mono',monospace">{{ projDetail.metaLine }}</div></div>
+              <span style="flex:1"></span>
+              <button class="ffm-btn2 sm" onclick="{{ renameProject }}"><i class="ph ph-pencil-simple" style="font-size:13px"></i>Rename</button>
+              <button class="ffm-btn2 sm" onclick="{{ deleteProject }}" style="color:#FF6B5E">{{ projDelLabel }}</button>
+            </div>
+            <sc-if value="{{ projDetailLoading }}" hint-placeholder-val="{{ false }}">
+              <div class="va-homeload" style="margin:26px 0"><span class="star">✦</span> Gathering the pieces…</div>
+            </sc-if>
+            <sc-if value="{{ projDetailEmpty }}" hint-placeholder-val="{{ false }}">
+              <div class="va-empty" style="margin-top:14px;padding:60px 20px">
+                <div style="font-size:14px;font-weight:600;margin-bottom:5px">Nothing here yet</div>
+                <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">Add generations from AI Studio or templates from the catalog using “Add to project”.</p>
+                <div style="display:flex;gap:9px;justify-content:center"><button class="va-btn ghost" onclick="{{ goAistudio }}">Open AI Studio</button><button class="va-btn ghost" onclick="{{ goTemplates }}">Browse templates</button></div>
+              </div>
+            </sc-if>
+            <div class="va-mas" style="padding:4px 0 60px">
+              <sc-for list="{{ projItemsView }}" as="t" hint-placeholder-count="6">
+                <div data-id="{{ t.refId }}" data-item="{{ t.itemId }}" data-kind="{{ t.kindStr }}" onclick="{{ openProjItem }}" class="va-rc">
+                  <div class="med va-thumb{{ t.mcls }}" style="aspect-ratio:{{ t.asp }};background:{{ t.g }}">
+                    <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
+                    <sc-if value="{{ t.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ t.vidSrc }}" poster="{{ t.vidPoster }}" preload="{{ t.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                    <sc-if value="{{ t.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
+                    <span class="va-typetag">{{ t.kindTag }}</span>
+                    <sc-if value="{{ t.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
+                    <span data-item="{{ t.itemId }}" onclick="{{ removeProjItem }}" class="va-projrm" title="Remove from project"><i class="ph ph-x"></i></span>
+                  </div>
+                  <div class="meta"><span class="tt">{{ t.title }}</span><span class="sub">{{ t.sub }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
         </sc-if>
 
     </div>
@@ -16813,6 +16881,51 @@
     </div>
   </sc-if>
 
+  <!-- ============ GLOBAL: NAME MODAL (QA-FIX #12/#13 — sessiya/loyiha nomlash) ============ -->
+  <sc-if value="{{ nameModal }}" hint-placeholder-val="{{ false }}">
+    <div onclick="{{ closeNameModal }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" style="width:100%;max-width:400px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-{{ nameModal.icon }}" style="color:var(--teal)"></i>{{ nameModal.title }}</div>
+          <button onclick="{{ closeNameModal }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
+        </div>
+        <input value="{{ nameModal.value }}" oninput="{{ onNameModal }}" onkeydown="{{ onNameModalKey }}" placeholder="{{ nameModal.ph }}" class="ffa-field" style="margin-bottom:18px">
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onclick="{{ closeNameModal }}" class="ffm-btn2 sm">Cancel</button>
+          <button onclick="{{ confirmNameModal }}" class="ffm-btn sm">{{ nameModal.cta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ GLOBAL: ADD TO PROJECT PICKER (QA-FIX #13) ============ -->
+  <sc-if value="{{ addPick }}" hint-placeholder-val="{{ false }}">
+    <div onclick="{{ closeAddPick }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" style="width:100%;max-width:420px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-folder-plus" style="color:var(--teal)"></i>Add to project</div>
+          <button onclick="{{ closeAddPick }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
+        </div>
+        <p style="font-size:13px;color:var(--txt2);margin:0 0 16px">Choose a project — or create a new one below.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto">
+          <sc-for list="{{ addPickProjects }}" as="p" hint-placeholder-count="3">
+            <button data-id="{{ p.id }}" onclick="{{ doAddToProject }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card2);border:1px solid var(--bd);cursor:pointer;font-family:inherit;text-align:left">
+              <span style="width:34px;height:34px;flex:none;border-radius:9px;background:{{ p.cv }};background-size:cover;background-position:center;display:grid;place-items:center;color:var(--txt3)"><sc-if value="{{ p.noCv }}" hint-placeholder-val="{{ false }}"><i class="ph ph-folder-open"></i></sc-if></span>
+              <span style="min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</span><span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt3);margin-top:2px">{{ p.d }}</span></span>
+            </button>
+          </sc-for>
+          <sc-if value="{{ addPickEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;color:var(--muted);text-align:center;padding:14px 8px">No projects yet — create your first one:</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:14px">
+          <input value="{{ addPickName }}" oninput="{{ onAddPickName }}" onkeydown="{{ onAddPickKey }}" placeholder="New project name" class="ffa-field" style="flex:1;margin:0">
+          <button onclick="{{ createAndAdd }}" class="ffm-btn sm" style="flex:none">Create</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- LIGHTBOX -->
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
@@ -16830,8 +16943,9 @@
           <div style="min-width:0"><div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lb.label }}</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace">{{ lb.tool }}</div></div>
           <div style="display:flex;gap:9px">
             <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
+            <sc-if value="{{ lb.canProject }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbAddProj }}" class="ffm-btn2 sm"><i class="ph ph-folder-plus" style="font-size:14px"></i>Project</button></sc-if>
             <button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button>
-            <button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:#FF6B5E"></i></button>
+            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:#FF6B5E"></i></button></sc-if>
           </div>
         </div>
       </div>
@@ -16915,6 +17029,22 @@ class Component extends DCLogic {
     pageFlip: 0,
     gens: [],
     gensLoaded: false, // #5: tarix kelguncha "No generations yet" ko'rsatilmasin
+    // QA-FIX #12 — Artlist uslubi sessiya modeli (rail = sessiyalar ro'yxati)
+    sessions: [],          // GET /gen/sessions — {id,title,mode,count,lastAt,coverUrl,coverMode}
+    sessionsLoaded: false,
+    curSessId: null,       // yangi gen'lar boradigan sessiya (lazily yaratiladi)
+    viewSess: null,        // null = My Library; 'new' = bo'sh yangi sessiya; aks holda sessiya id
+    sessGens: [],          // viewSess sessiyasining gen'lari (server: /gen/sessions/:id/generations)
+    sessGensLoading: false,
+    // QA-FIX #13 — Projects (real ma'lumot)
+    projects: [],          // GET /api/studio/projects — {id,name,count,covers,updatedAt}
+    projectsLoaded: false,
+    projOpen: null,        // ochilgan loyiha detali: {id,name,items:[...]}
+    projLoading: false,
+    projDelArm: false,     // o'chirish tugmasi ikki bosqichli tasdiq
+    addPick: null,         // "Add to project" tanlagichi: {kind:'gen'|'template', refId}
+    addPickName: '',       // tanlagich ichida yangi loyiha nomi
+    nameModal: null,       // umumiy nom modali: {kind, title, cta, value, ctx}
     catalog: [],
     catalogReady: false,
     favTpls: [], // FAZA D — lokal sevimli shablonlar (localStorage). TODO(FF): server-side favorites endpointi
@@ -17047,12 +17177,7 @@ class Component extends DCLogic {
   ];
   // creditHistory/downloadHistory endi real ma'lumotdan hisoblanadi (renderVals):
   // kredit tarixi — gen tarixidagi cost'lardan; yuklamalar — Faza C'da (endpoint hali yo'q).
-  projects = [
-    { n: 'Instagram Reels — July', d: '12 items', h: 262 },
-    { n: 'Product ad', d: '6 items', h: 190 },
-    { n: 'YouTube intro v3', d: '3 items', h: 330 },
-    { n: 'Brand kit', d: '24 items', h: 160 },
-  ];
+  // QA-FIX #13: projects endi state'da (real API — /api/studio/projects).
 
   go(screen, opts) {
     // opts: { replace } — replace=true dastlabki deep-link/sessiya tiklashda
@@ -17071,7 +17196,12 @@ class Component extends DCLogic {
       screen = 'verify-email';
     }
     const prev = this.state.screen;
-    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
+    this.setState(s => ({ screen, navOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, addPick: null, nameModal: null, aiView: screen === 'aistudio' ? 'picker' : s.aiView, pageFlip: s.pageFlip + 1 }));
+    // QA-FIX #12/#13 — ekranga kirganda ro'yxatlar yangilanadi (kirish shart: token)
+    if (window.FFAPI && FFAPI.getToken()) {
+      if (screen === 'projects') this.loadProjects();
+      if (screen === 'aistudio') this.loadSessions();
+    }
     // Tarix boshqaruvi — brauzer Orqaga/Oldinga tugmalari ilova ichida yursin (#4/#6):
     // popstate'dan kelganda faqat URL'ni yechim bilan sinxronlaymiz (yangi yozuv yo'q);
     // aks holda ekran o'zgargan bo'lsa pushState (yangi yozuv), aks holda replaceState.
@@ -17091,7 +17221,6 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this._applyEntry();
-    this._sess = {};
     // FAZA D — lokal sevimlilarni tiklash
     try { const f = JSON.parse(localStorage.getItem('ff_tpl_favs') || '[]'); if (Array.isArray(f)) this.setState({ favTpls: f }); } catch (e) {}
     // Saqlangan sessiya + katalog + hash deep-link
@@ -17387,6 +17516,7 @@ class Component extends DCLogic {
   }
   bootData() {
     this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();
+    this.loadSessions(); this.loadProjects(); // QA-FIX #12/#13
     FFAPI.me().then(u => { FFAPI.setSession(FFAPI.getToken(), u); this.setState({ user: u, accName: (u && u.name) || '' }); }).catch(() => {});
   }
   async refreshCredits() {
@@ -17426,11 +17556,100 @@ class Component extends DCLogic {
       this.setState(s => ({ gens, gensLoaded: true, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
   }
+  // ── QA-FIX #12 — sessiyalar (Artlist uslubi rail) ──
+  async loadSessions() {
+    try { const r = await FFAPI.sessions(); this.setState({ sessions: r.items || [], sessionsLoaded: true }); } catch (e) {}
+  }
+  async openSessionById(id) {
+    // Sessiyani ko'rish + davom ettirish: keyingi gen'lar ham shu sessiyaga boradi
+    this.setState({ viewSess: id, curSessId: id, sessGens: [], sessGensLoading: true, activeGenId: null, useMenuOpen: false });
+    try {
+      const r = await FFAPI.sessionGens(id);
+      const gens = (r.items || []).filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
+      this.setState(s => s.viewSess === id ? { sessGens: gens, sessGensLoading: false, activeGenId: gens[0] ? gens[0].id : null } : { sessGensLoading: false });
+    } catch (e) { this.setState({ sessGensLoading: false }); this.toast(this.errMsg(e)); }
+  }
+  renameSessionById(id) {
+    const s = this.state.sessions.find(x => x.id === id); if (!s) return;
+    this.setState({ nameModal: { kind: 'session', ctx: id, icon: 'pencil-simple', title: 'Rename session', cta: 'Save', ph: 'Session name', value: s.title || '' } });
+  }
+  // ── QA-FIX #13 — loyihalar ──
+  async loadProjects() {
+    try { const r = await FFAPI.projects(); this.setState({ projects: r.items || [], projectsLoaded: true }); } catch (e) {}
+  }
+  async openProjectById(id) {
+    this.setState({ projLoading: true, projDelArm: false });
+    try { const p = await FFAPI.projectGet(id); this.setState({ projOpen: p, projLoading: false }); try { window.scrollTo(0, 0); } catch (e2) {} }
+    catch (e) { this.setState({ projLoading: false }); this.toast(this.errMsg(e)); }
+  }
+  async confirmNameModal() {
+    const m = this.state.nameModal; if (!m) return;
+    const v = (m.value || '').trim();
+    if (!v) { this.toast('Enter a name'); return; }
+    try {
+      if (m.kind === 'session') {
+        await FFAPI.sessionRename(m.ctx, v);
+        this.setState(s => ({ nameModal: null, sessions: s.sessions.map(x => x.id === m.ctx ? { ...x, title: v } : x) }));
+        this.toast('Session renamed');
+      } else if (m.kind === 'newProject') {
+        const p = await FFAPI.projectCreate(v);
+        this.setState(s => ({ nameModal: null, projects: [{ id: p.id, name: p.name, count: 0, covers: [], updatedAt: p.updatedAt }].concat(s.projects) }));
+        this.toast('Project created');
+      } else if (m.kind === 'renameProject') {
+        await FFAPI.projectRename(m.ctx, v);
+        this.setState(s => ({
+          nameModal: null,
+          projects: s.projects.map(x => x.id === m.ctx ? { ...x, name: v } : x),
+          projOpen: s.projOpen && s.projOpen.id === m.ctx ? { ...s.projOpen, name: v } : s.projOpen,
+        }));
+        this.toast('Project renamed');
+      }
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  async deleteProjectArmed() {
+    // Ikki bosqichli tasdiq: birinchi bosishda qurollanadi, ikkinchisida o'chadi
+    if (!this.state.projDelArm) { this.setState({ projDelArm: true }); setTimeout(() => this.setState({ projDelArm: false }), 3500); return; }
+    const p = this.state.projOpen; if (!p) return;
+    try {
+      await FFAPI.projectDelete(p.id);
+      this.setState(s => ({ projOpen: null, projDelArm: false, projects: s.projects.filter(x => x.id !== p.id) }));
+      this.toast('Project deleted');
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  async addToProject(projId) {
+    const ap = this.state.addPick; if (!ap) return;
+    try {
+      await FFAPI.projectAddItem(projId, ap.kind, ap.refId);
+      this.setState({ addPick: null, addPickName: '' });
+      this.toast('Added to project');
+      this.loadProjects(); // cover/count yangilansin
+      if (this.state.projOpen && this.state.projOpen.id === projId) this.openProjectById(projId);
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  async createProjectAndAdd() {
+    const name = (this.state.addPickName || '').trim();
+    if (!name) { this.toast('Enter a project name'); return; }
+    try {
+      const p = await FFAPI.projectCreate(name);
+      this.setState(s => ({ projects: [{ id: p.id, name: p.name, count: 0, covers: [], updatedAt: p.updatedAt }].concat(s.projects) }));
+      await this.addToProject(p.id);
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  async removeProjItemById(itemId) {
+    const p = this.state.projOpen; if (!p) return;
+    try {
+      await FFAPI.projectRemoveItem(p.id, itemId);
+      this.setState(s => ({ projOpen: s.projOpen ? { ...s.projOpen, items: (s.projOpen.items || []).filter(it => it.id !== itemId) } : null }));
+      this.toast('Removed from project');
+      this.loadProjects();
+    } catch (e) { this.toast(this.errMsg(e)); }
+  }
   mapGen(it) {
     const asset = (it.assets && it.assets[0]) || null;
     const type = it.mode === 'video' ? 'video' : ((it.mode === 'voice' || it.mode === 'sfx' || it.mode === 'music') ? 'audio' : 'image');
     return {
       id: String(it.id), type, h: this.hueOf(it.id),
+      sid: it.sessionId || '', // QA-FIX #12 — gen qaysi sessiyaga tegishli (rail/grid filtri)
       label: (it.prompt || 'Generation').slice(0, 34),
       tool: this.toolByMode[it.mode] || it.mode,
       url: (asset && asset.url) || null,
@@ -17486,8 +17705,8 @@ class Component extends DCLogic {
     // Ularning admin/kontributor kirishi alohida panellarda saqlanib qoladi.
     const user = Object.assign({}, r.user, { emailVerifyRequired: r.emailVerifyRequired });
     FFAPI.setSession(r.token, user);
-    this._sess = {}; // eski foydalanuvchi gen-sessiyalari yaroqsiz
-    this.setState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null });
+    // QA-FIX #12/#13: eski foydalanuvchi sessiya/loyiha holati yaroqsiz — tozalab bootData qayta yuklaydi
+    this.setState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null, curSessId: null, viewSess: null, sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.bootData();
     const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
     this.go(next);
@@ -17575,8 +17794,7 @@ class Component extends DCLogic {
   }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
-    this._sess = {};
-    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null });
+    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: null, sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.go('landing');
     this.toast('You have been signed out');
   }
@@ -17604,8 +17822,7 @@ class Component extends DCLogic {
     try { await FFAPI.deleteAccount(); }
     catch (e) { this.toast(this.errMsg(e)); return; }
     if (window.FFAPI) FFAPI.clearSession();
-    this._sess = {};
-    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null });
+    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: null, sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.go('landing');
     this.toast('Your account has been deleted');
   }
@@ -17675,16 +17892,22 @@ class Component extends DCLogic {
     try {
       const q = await FFAPI.quote(model.id, tool.mode, params);
       if (q.price > this.state.credits) { this.setState({ generating: false, showCredits: true }); return; }
-      if (!this._sess) this._sess = {};
-      let sid = this._sess[tool.mode];
-      if (!sid) { const s = await FFAPI.session(tool.mode); sid = s.id; this._sess[tool.mode] = sid; }
+      // QA-FIX #12: rejim-boshi yashirin sessiya o'rniga BITTA faol sessiya (rail'da ko'rinadi).
+      // Sessiya birinchi gen'da lazily yaratiladi — nomi birinchi promptdan.
+      let sid = this.state.curSessId;
+      if (!sid) {
+        const s = await FFAPI.session(tool.mode, prompt.slice(0, 60));
+        sid = s.id;
+        this.setState({ curSessId: sid, viewSess: sid, sessGens: [] });
+      }
       let r;
       try {
         r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
       } catch (ge) {
         // Eskirgan/begona session (404) — yangi session bilan BIR marta qayta urinish
         if (ge && ge.status === 404) {
-          const s2 = await FFAPI.session(tool.mode); this._sess[tool.mode] = s2.id;
+          const s2 = await FFAPI.session(tool.mode, prompt.slice(0, 60));
+          this.setState(st => ({ curSessId: s2.id, viewSess: st.viewSess === sid || st.viewSess === 'new' ? s2.id : st.viewSess, sessGens: st.viewSess === sid ? [] : st.sessGens }));
           r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
         } else { throw ge; }
       }
@@ -17704,9 +17927,15 @@ class Component extends DCLogic {
       try { g = await FFAPI.genGet(jobId); } catch (e) { /* vaqtinchalik — davom */ }
       if (g && g.status === 'done') {
         const m = this.mapGen(g);
-        this.setState(s => ({ gens: [m].concat(s.gens.filter(x => x.id !== m.id)), generating: false, activeGenId: m.id }));
+        this.setState(s => ({
+          gens: [m].concat(s.gens.filter(x => x.id !== m.id)),
+          // QA-FIX #12: ko'rilayotgan sessiyaga tegishli bo'lsa sessiya gridiga ham qo'shiladi
+          sessGens: s.viewSess && s.viewSess === m.sid ? [m].concat(s.sessGens.filter(x => x.id !== m.id)) : s.sessGens,
+          generating: false, activeGenId: m.id,
+        }));
         this.toast('Generation ready!');
         this.refreshCredits();
+        this.loadSessions(); // rail count/cover yangilansin
         return;
       }
       if (g && g.status === 'failed') {
@@ -17751,8 +17980,11 @@ class Component extends DCLogic {
     try { await FFAPI.genDelete(id); } catch (e) { this.toast(this.errMsg(e)); return; }
     this.setState(st => {
       const gens = st.gens.filter(x => x.id !== id);
-      return { gens, activeGenId: st.activeGenId === id ? (gens[0] ? gens[0].id : null) : st.activeGenId, lightbox: st.lightbox && st.lightbox.id === id ? null : st.lightbox };
+      const sessGens = st.sessGens.filter(x => x.id !== id); // QA-FIX #12
+      const pool = st.viewSess ? sessGens : gens;
+      return { gens, sessGens, activeGenId: st.activeGenId === id ? (pool[0] ? pool[0].id : null) : st.activeGenId, lightbox: st.lightbox && st.lightbox.id === id ? null : st.lightbox };
     });
+    this.loadSessions();
     this.toast("Deleted");
   }
   // Use ▾ handoff: natijani keyingi gen'ga referens qilish. Trigger paytida YANGI imzolangan
@@ -17943,7 +18175,10 @@ class Component extends DCLogic {
       };
     };
     const genView = this.state.gens.map(g => ({ ...g, g: media(g.thumb, g.h), tIcon: g.type === 'video' ? 'play-circle' : (g.type === 'audio' ? 'waveform' : 'image'), asp: g.type === 'video' ? '16 / 9' : (g.type === 'audio' ? '16 / 6' : '1 / 1'), rtag: rtagOf(g.type) + (g.model ? ' · ' + g.model : ''), isVideo: g.type === 'video', isAudio: g.type === 'audio' || g.type === 'sfx', ...genMediaOf(g) }));
-    const activeGenRaw = this.state.gens.find(g => g.id === this.state.activeGenId) || this.state.gens[0] || null;
+    // QA-FIX #12 — ish maydoni manbasi: My Library (hamma gen) yoki tanlangan sessiya gen'lari
+    const inLibrary = !this.state.viewSess;
+    const wsGens = inLibrary ? this.state.gens : (this.state.viewSess === 'new' ? [] : this.state.sessGens);
+    const activeGenRaw = wsGens.find(g => g.id === this.state.activeGenId) || wsGens[0] || null;
     const activeView = activeGenRaw ? { ...activeGenRaw, g: media(activeGenRaw.type === 'image' ? (activeGenRaw.thumb || activeGenRaw.url) : activeGenRaw.thumb, activeGenRaw.h), rtag: rtagOf(activeGenRaw.type), tIcon: activeGenRaw.type === 'video' ? 'play-circle' : (activeGenRaw.type === 'audio' ? 'waveform' : 'image'), isVideo: activeGenRaw.type === 'video' && !!activeGenRaw.url } : null;
     const filmstrip = genView.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; return { ...g, active: on, ring: on ? 'var(--acc)' : 'transparent', stripCls: on ? 'ffa-st-sthumb on' : 'ffa-st-sthumb' }; });
     const skeletons = Array.from({ length: nSel }, (_, i) => ({ i }));
@@ -18023,16 +18258,27 @@ class Component extends DCLogic {
     const isAudioType = (g) => g.type === 'audio' || g.type === 'sfx';
     const axView = this.state.aiMediaView || (aiIsAudio ? 'audio' : 'visuals');
     const axIsVisuals = axView === 'visuals';
-    const visGensRaw = this.state.gens.filter(g => !isAudioType(g));
-    const audGensRaw = this.state.gens.filter(isAudioType);
-    const axTipOf = (g) => [fmtAgo(g.at), (g.modelId != null && modelLabelById[g.modelId]) || g.tool || ''].filter(Boolean).join(' · ');
-    const RAIL_MAX = 8;
-    const axRailGens = this.state.gens.slice(0, RAIL_MAX).map(g => ({
-      id: g.id, isVideo: g.type === 'video', isAudio: isAudioType(g),
-      railCls: 'va-axrth' + (isAudioType(g) ? ' aud' : '') + (activeGenRaw && g.id === activeGenRaw.id ? ' on' : ''),
-      bg: isAudioType(g) ? 'var(--surface2)' : media(g.thumb, g.h), tip: axTipOf(g),
-    }));
-    const axRailMoreN = Math.max(0, this.state.gens.length - RAIL_MAX);
+    const visGensRaw = wsGens.filter(g => !isAudioType(g));
+    const audGensRaw = wsGens.filter(isAudioType);
+    // QA-FIX #12 — rail endi SESSIYALAR ro'yxati (gen thumb'lari emas)
+    const sessListView = this.state.sessions.map(s => {
+      const on = this.state.viewSess === s.id;
+      const name = (s.title || '').trim() || 'Session';
+      const isAudCv = s.coverMode === 'voice' || s.coverMode === 'sfx' || s.coverMode === 'music';
+      return {
+        id: s.id, on, name,
+        shortName: name.length > 14 ? name.slice(0, 14) + '…' : name,
+        cls: 'va-sessrow' + (on ? ' on' : ''),
+        chipCls: 'va-sesschip' + (on ? ' on' : ''),
+        cv: (!isAudCv && s.coverUrl) ? media(s.coverUrl, 0) : this.grad(this.hueOf(s.id)),
+        noCv: isAudCv || !s.coverUrl,
+        icon: isAudCv ? 'waveform' : (s.coverMode === 'video' ? 'play' : 'image'),
+        meta: (s.count || 0) + ' gen' + (s.count === 1 ? '' : 's') + (s.lastAt ? ' · ' + fmtAgo(s.lastAt) : ''),
+      };
+    });
+    const viewSessObj = (this.state.viewSess && this.state.viewSess !== 'new') ? this.state.sessions.find(x => x.id === this.state.viewSess) : null;
+    // Boshqa sessiya ko'rilayotganda pending plitka u yerda ko'rinmasin
+    const pendInView = this.state.generating && (inLibrary || this.state.viewSess === 'new' || this.state.viewSess === this.state.curSessId);
     // QA-FIX #14/#3 — grid plitkasi real <img>/<video> bilan (genMediaOf), masonry aspect ham real
     const axVisGens = visGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const md = genMediaOf(g); return {
       id: g.id, isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
@@ -18046,13 +18292,13 @@ class Component extends DCLogic {
       arowCls: 'va-axarow' + (on ? ' on' : '') + (playing ? ' playing' : ''),
       bars: Array.from({ length: 28 }, (_, i) => ({ h: (16 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.83)) * 76)) + '%' })),
     }; });
-    const axShowHero = this.state.gens.length === 0 && !this.state.generating;
+    const axShowHero = wsGens.length === 0 && !pendInView && !this.state.sessGensLoading;
     const axShowVisuals = !axShowHero && axIsVisuals;
     const axShowAudio = !axShowHero && !axIsVisuals;
-    const axPendVis = axShowVisuals && this.state.generating && aiIsCanvas;
-    const axPendAud = axShowAudio && this.state.generating && aiIsAudio;
-    const axVisEmpty = axShowVisuals && axVisGens.length === 0 && !axPendVis;
-    const axAudEmpty = axShowAudio && axAudGens.length === 0 && !axPendAud;
+    const axPendVis = axShowVisuals && pendInView && aiIsCanvas;
+    const axPendAud = axShowAudio && pendInView && aiIsAudio;
+    const axVisEmpty = axShowVisuals && axVisGens.length === 0 && !axPendVis && !this.state.sessGensLoading;
+    const axAudEmpty = axShowAudio && axAudGens.length === 0 && !axPendAud && !this.state.sessGensLoading;
     const genPct = Math.round(this.state.genProgress || 0) + '%';
     const axPhases = {
       image: ['Warming up the pixels…', 'Mixing light and shadow…', 'Sharpening the details…', 'Adding the finishing touches…'],
@@ -18256,7 +18502,7 @@ class Component extends DCLogic {
     } : null;
     const lbRaw = this.state.lightbox;
     // QA-FIX #3 — lightbox video poster: thumb bo'lsa poster, bo'lmasa null (preload=metadata birinchi kadrni chizadi)
-    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))) } : null;
+    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
@@ -18265,7 +18511,37 @@ class Component extends DCLogic {
     const hasCreditHistory = creditHistoryView.length > 0;
     const downloadHistoryView = [];
     const hasDownloads = false;
-    const projectsView = this.projects.map(p => ({ ...p, g: this.grad(p.h), g1: this.grad(p.h), g2: this.grad((p.h + 42) % 360), g3: this.grad((p.h + 96) % 360), g4: this.grad((p.h + 150) % 360) }));
+    // QA-FIX #13 — real loyihalar: cover = item media (gen thumb / shablon thumb), bo'sh slot gradient
+    const projectsView = this.state.projects.map(p => {
+      const cvs = (p.covers || []).slice(0, 4);
+      const cells = Array.from({ length: 4 }, (_, i) => {
+        const c = cvs[i] || null;
+        const isAud = !!c && (c.mode === 'voice' || c.mode === 'sfx' || c.mode === 'music');
+        return { bg: c && c.thumb && !isAud ? media(c.thumb, 0) : this.grad((this.hueOf(p.id) + i * 42) % 360), isAud };
+      });
+      return { id: p.id, n: p.name, d: (p.count || 0) + ' item' + (p.count === 1 ? '' : 's') + (p.updatedAt ? ' · ' + fmtAgo(p.updatedAt) : ''), cells };
+    });
+    // Ochilgan loyiha detali — gen'lar mapGen orqali (lightbox mos), shablonlar katalog kartasi (rcOf)
+    const projOpen = this.state.projOpen;
+    const projItemsView = (projOpen ? projOpen.items : []).map(it => {
+      if (it.kind === 'gen' && it.gen) {
+        const g = this.mapGen(it.gen);
+        const md = genMediaOf(g);
+        return { itemId: it.id, isGen: true, isTpl: false, kindStr: 'gen', refId: g.id, kindTag: rtagOf(g.type), title: g.label || 'Generation', sub: fmtAgo(g.at), ...md, isVideo: g.type === 'video' };
+      }
+      const t = it.template || {};
+      const cat = this.state.catalog.find(x => x.id === String(t.id)) ||
+        this.mapCatalogItems([t], { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' }, { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' })[0];
+      return {
+        itemId: it.id, isGen: false, isTpl: true, kindStr: 'tpl', refId: String(t.id), kindTag: 'TEMPLATE',
+        title: cat.n, sub: cat.c,
+        imgSrc: cat.thumbUrl || null, hasImg: !!cat.thumbUrl,
+        isVidMedia: false, vidSrc: null, vidPoster: null, vidPre: 'none', isAud: false, isVideo: false,
+        mcls: cat.thumbUrl ? ' va-skel' : '',
+        g: cat.thumbUrl ? '' : this.grad(cat.h || this.hueOf(String(t.id))),
+        asp: cat.ar || '16 / 10',
+      };
+    });
     // ── FAZA C · kolleksiya tokchalari (real katalogdan kesim; rcOf yuqorida — FAZA D bilan umumiy) ──
     const recTemplates = src.slice(0, 4).map(t => rcOf(t));
     const hasRec = recTemplates.length > 0;
@@ -18544,13 +18820,23 @@ class Component extends DCLogic {
       popModel, popAspect, popQuality, popCount, popRes, popDur,
       chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
       voiceResults, noVoiceResults,
-      // ── PHASE B: session workspace bindinglari ──
-      axRailPend: this.state.generating, railPendTip: 'now · ' + modelName,
-      axRailGens, axRailMore: axRailMoreN > 0, axRailMoreLabel: '+ ' + axRailMoreN + ' more', axRailMoreShort: '+' + axRailMoreN,
-      axRailEmpty: this.state.gens.length === 0 && !this.state.generating,
+      // ── PHASE B: session workspace bindinglari (QA-FIX #12 — rail = sessiyalar) ──
+      sessListView,
+      sessEmpty: this.state.sessionsLoaded && sessListView.length === 0,
+      libRowCls: 'va-sessrow' + (inLibrary ? ' on' : ''),
+      libChipCls: 'va-sesschip' + (inLibrary ? ' on' : ''),
+      libCountLabel: this.state.gens.length + ' generation' + (this.state.gens.length === 1 ? '' : 's'),
+      axNewSession: () => this.setState({ viewSess: 'new', curSessId: null, sessGens: [], activeGenId: null, useMenuOpen: false, aiMediaView: null }),
+      axOpenLibrary: () => this.setState({ viewSess: null, activeGenId: null, useMenuOpen: false }),
+      axOpenSession: (e) => { const id = e.currentTarget.dataset.id; if (id && this.state.viewSess !== id) this.openSessionById(id); },
+      axRenameSession: (e) => { e.stopPropagation(); this.renameSessionById(e.currentTarget.dataset.id); },
       visCount: visGensRaw.length, audCount: audGensRaw.length,
       axSegVisCls: axIsVisuals ? 'on' : '', axSegAudCls: axIsVisuals ? '' : 'on',
-      axSessMeta: this.state.gens.length ? ('SESSION · ' + this.state.gens.length + ' GENERATIONS') : 'NEW SESSION',
+      axSessMeta: inLibrary
+        ? ('MY LIBRARY · ' + this.state.gens.length + ' GENERATIONS')
+        : (this.state.viewSess === 'new'
+          ? 'NEW SESSION'
+          : (((viewSessObj && viewSessObj.title ? viewSessObj.title.slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
       axShowHero, axShowVisuals, axShowAudio, axPendVis, axPendAud, axVisEmpty, axAudEmpty,
       axVisGens, axAudGens, genPct, genStatus, axSuggest,
       modelPickView, modePickHead, modelGroupsView, modelFilterView,
@@ -18566,9 +18852,9 @@ class Component extends DCLogic {
       axUseI2V: (e) => { e.stopPropagation(); if (!axI2vOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('i2v', activeGenRaw.id); },
       useMenuOpen: this.state.useMenuOpen,
       onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
-      onRailItem: (e) => { const id = e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (!g) return; this.setState({ activeGenId: id, aiMediaView: (g.type === 'audio' || g.type === 'sfx') ? 'audio' : 'visuals', useMenuOpen: false }); },
-      onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g, useMenuOpen: false }); } else this.setState({ activeGenId: id, useMenuOpen: false }); },
+      onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) this.setState({ lightbox: g, useMenuOpen: false }); } else this.setState({ activeGenId: id, useMenuOpen: false }); },
       toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
+      axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       closeUseMenu: () => this.setState({ useMenuOpen: false }),
       axMenuDownload: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); this.generate(); },
@@ -18685,7 +18971,7 @@ class Component extends DCLogic {
       onResM: (e) => { e.stopPropagation(); this.setState({ aiRes: e.currentTarget.dataset.v }); },
       onVoiceM: (e) => { e.stopPropagation(); this.setState({ aiVoice: e.currentTarget.dataset.v }); },
       doGenerate: () => this.generate(),
-      openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
+      openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = wsGens.find(x => x.id === id) || this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
       closeLightbox: () => this.setState({ lightbox: null }),
       // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
@@ -18708,7 +18994,57 @@ class Component extends DCLogic {
       openCredits: () => this.setState({ showCredits: true }),
       appMenuOpen: this.state.appMenuOpen,
       toggleAppMenu: () => this.setState(st => ({ appMenuOpen: !st.appMenuOpen })),
-      newProject: () => this.toast('Projects coming soon'),
+      // ── QA-FIX #13 — Projects (real API) ──
+      projList: !projOpen,
+      projListLoading: !this.state.projectsLoaded,
+      projListReady: this.state.projectsLoaded,
+      projDetail: projOpen ? { name: projOpen.name, metaLine: projItemsView.length + ' item' + (projItemsView.length === 1 ? '' : 's') + (projOpen.updatedAt ? ' · updated ' + fmtAgo(projOpen.updatedAt) : '') } : null,
+      projDetailLoading: this.state.projLoading,
+      projDetailEmpty: !!projOpen && !this.state.projLoading && projItemsView.length === 0,
+      projItemsView,
+      projDelLabel: this.state.projDelArm ? 'Click again to delete' : 'Delete',
+      newProject: () => this.setState({ nameModal: { kind: 'newProject', icon: 'folder-plus', title: 'New project', cta: 'Create', ph: 'Project name', value: '' } }),
+      openProject: (e) => { const id = e.currentTarget.dataset.id; if (id) this.openProjectById(id); },
+      backToProjects: () => this.setState({ projOpen: null, projDelArm: false }),
+      renameProject: () => { const p = this.state.projOpen; if (p) this.setState({ nameModal: { kind: 'renameProject', ctx: p.id, icon: 'pencil-simple', title: 'Rename project', cta: 'Save', ph: 'Project name', value: p.name } }); },
+      deleteProject: () => this.deleteProjectArmed(),
+      goAistudio: () => this.go('aistudio'),
+      openProjItem: (e) => {
+        if (e.target && e.target.closest && e.target.closest('.va-projrm')) return; // remove tugmasi ustidan
+        const el = e.currentTarget;
+        if (el.dataset.kind === 'gen') {
+          const p = this.state.projOpen; const it = ((p && p.items) || []).find(x => x.id === el.dataset.item);
+          if (it && it.gen) this.setState({ lightbox: this.mapGen(it.gen) });
+        } else {
+          const t = this.state.catalog.find(x => x.id === el.dataset.id);
+          if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} }
+          else this.toast('Template is no longer available');
+        }
+      },
+      removeProjItem: (e) => { e.stopPropagation(); this.removeProjItemById(e.currentTarget.dataset.item); },
+      // "Add to project" tanlagichi (gen + shablon)
+      addPick: this.state.addPick,
+      addPickProjects: this.state.projects.map(p => { const cv = p.covers && p.covers[0] && p.covers[0].thumb; return { id: p.id, n: p.name, d: (p.count || 0) + ' item' + (p.count === 1 ? '' : 's'), cv: cv ? media(cv, 0) : this.grad(this.hueOf(p.id)), noCv: !cv }; }),
+      addPickEmpty: this.state.projectsLoaded && this.state.projects.length === 0,
+      addPickName: this.state.addPickName,
+      onAddPickName: (e) => this.setState({ addPickName: e.target.value }),
+      onAddPickKey: (e) => { if (e.key === 'Enter') this.createProjectAndAdd(); },
+      createAndAdd: () => this.createProjectAndAdd(),
+      doAddToProject: (e) => { const id = e.currentTarget.dataset.id; if (id) this.addToProject(id); },
+      closeAddPick: () => this.setState({ addPick: null, addPickName: '' }),
+      lbAddProj: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.setState({ addPick: { kind: 'gen', refId: id }, lightbox: null }); },
+      addTplToProject: () => {
+        const d = this.state.detail; if (!d) return;
+        if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+        if (!d.real) { this.toast('Demo template — not available for projects'); return; }
+        this.setState({ addPick: { kind: 'template', refId: String(d.id) } });
+      },
+      // Umumiy nom modali (sessiya/loyiha)
+      nameModal: this.state.nameModal,
+      onNameModal: (e) => { const v = e.target.value; this.setState(s => ({ nameModal: s.nameModal ? { ...s.nameModal, value: v } : null })); },
+      onNameModalKey: (e) => { if (e.key === 'Enter') this.confirmNameModal(); },
+      confirmNameModal: () => this.confirmNameModal(),
+      closeNameModal: () => this.setState({ nameModal: null }),
     };
   }
 }
