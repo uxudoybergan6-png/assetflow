@@ -392,17 +392,44 @@ const AssetFlowCatalog = (() => {
 
   function findServerPackMeta(templateId) {
     const packs = browsePacks();
-    if (!packs) return { url: null, fileSize: 0 };
+    if (!packs) return { url: null, fileSize: 0, name: "" };
     for (const key of Object.keys(packs)) {
       const p = packs[key];
       if (p.serverTemplateId === templateId) {
         return {
           url: p.serverPackUrl || null,
           fileSize: p.fileSize || 0,
+          name: p.displayName || key || "", // P9: papka nomi shablon NOMIdan
         };
       }
     }
-    return { url: null, fileSize: 0 };
+    return { url: null, fileSize: 0, name: "" };
+  }
+
+  /**
+   * P9 — ekstraksiya papkasi endi SHABLON NOMI bilan: "Fast Light Leaks (af-zla3mz)".
+   * Inson o'qiy oladigan nom yetakchi; qisqa id-suffiks kolliziyadan saqlaydi.
+   * Nom topilmasa eski `assetflow_<id>_unzipped` shakli (orqaga moslik).
+   * Eski id-nomli kesh topilmay qolsa — bir marta qayta yuklab olinadi (QA-FIX #7
+   * marker baribir yangi paketni majburlaydi), import esa yangi papkada ishlayveradi.
+   */
+  function unzipDirName(templateId, name) {
+    const base = String(name || "")
+      .replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 60)
+      .trim()
+      .replace(/^[. ]+|[. ]+$/g, "");
+    if (!base) return `assetflow_${templateId}_unzipped`;
+    const sid = String(templateId || "").slice(-6) || "x";
+    return `${base} (af-${sid})`;
+  }
+  function unzipDirFor(fs, path, baseDir, templateId, name) {
+    // Eski `assetflow_<id>_unzipped` kesh endi ISHLATILMAYDI — nomli papka topilmasa
+    // pack bir marta qayta yuklab olinadi (doc: eski .aep-only kesh baribir yangilanishi kerak);
+    // eski papka diskda qoladi, foydalanuvchi xohlasa o'zi o'chiradi.
+    return path.join(baseDir, unzipDirName(templateId, name));
   }
 
   /** macOS zip axlati: __MACOSX papkasi va AppleDouble ._fayllar */
@@ -622,7 +649,7 @@ const AssetFlowCatalog = (() => {
       const os = require("os");
       const child = require("child_process");
       const baseDir = downloadDir() || os.tmpdir();
-      const cacheDir = path.join(baseDir, `assetflow_${templateId}_unzipped`);
+      const cacheDir = unzipDirFor(fs, path, baseDir, templateId, findServerPackMeta(templateId).name); // P9
       if (!fs.existsSync(cacheDir)) return [];
       return mogrtItemsFromDir(fs, path, child, cacheDir);
     } catch {
@@ -994,7 +1021,7 @@ const AssetFlowCatalog = (() => {
 
     // ZIP bo'lsa — unzip papkasini tekshiramiz (kesh)
     if (ext.toLowerCase() === ".zip") {
-      const cacheDir = path.join(baseDir, `assetflow_${templateId}_unzipped`);
+      const cacheDir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
       // QA-FIX #7: pack serverда yangilangan bo'lsa (fileSize o'zgargan) eski
       // ochilgan keshni tashlab, yangisini yuklab olamiz.
       if (fs.existsSync(cacheDir) && !zipCacheFresh(fs, path, cacheDir, expectedSize)) {
@@ -1069,7 +1096,7 @@ const AssetFlowCatalog = (() => {
 
     // AE can’t import .zip directly. If pack is a zip, extract and return first .aep inside.
     if (ext.toLowerCase() === ".zip") {
-      const dir = path.join(baseDir, `assetflow_${templateId}_unzipped`);
+      const dir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
       try {
         fs.mkdirSync(dir, { recursive: true });
       } catch {}

@@ -5853,7 +5853,9 @@ function renderPackMeta(name,pack,asset){
   const author=pd3AuthorName(asset);
   const authorHtml=author?`<span class="pd3-mdot"></span><span class="pd3-av"></span><span class="pd3-by">${escHtml(author)}</span>`:'';
   const bits=[];
-  bits.push(packCanAeImport(pack)?'Pack available':'No pack');
+  // P9: pack hajmi web bilan bir xil ko'rsatiladi ("20.1 MB pack")
+  const fsz=Number(pack?.fileSize||asset?.fileSize||0);
+  bits.push(packCanAeImport(pack)?(fsz>0?((fsz/1048576).toFixed(1)+' MB pack'):'Pack available'):'No pack');
   const res=asset?.res?String(asset.res).toUpperCase():'';
   const ratio=orientLabel(asset?.orient);
   if(res&&ratio)bits.push(res+'·'+ratio); else if(res)bits.push(res); else if(ratio)bits.push(ratio);
