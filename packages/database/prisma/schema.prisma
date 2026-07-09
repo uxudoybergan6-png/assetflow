@@ -78,6 +78,7 @@ model User {
   genSessions           GenSession[]
   generations           Generation[]
   savedReferences       SavedReference[]
+  projects              Project[]
 
   @@index([role])
 }
@@ -482,6 +483,36 @@ model SavedReference {
   @@index([userId, createdAt])
   @@index([userId, expiresAt])
   @@index([generationId])
+}
+
+// ── QA-FIX #13 — Projects: gen + shablonlarni loyihaga yig'ish (ADDITIVE) ────
+// ProjectItem.refId polimorf (kind bo'yicha Generation.id yoki
+// ContributorTemplate.id) — FK yo'q, o'chirilgan manba read paytida filtrlanadi.
+
+model Project {
+  id        String   @id @default(cuid())
+  ownerId   String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items ProjectItem[]
+
+  @@index([ownerId, updatedAt])
+}
+
+model ProjectItem {
+  id        String   @id @default(cuid())
+  projectId String
+  kind      String // 'gen' | 'template'
+  refId     String
+  addedAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, kind, refId]) // bir element bir loyihaga bir marta (idempotent add)
+  @@index([projectId, addedAt])
 }
 
 model GenAsset {
