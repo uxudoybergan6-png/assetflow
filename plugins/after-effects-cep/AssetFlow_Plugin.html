@@ -8497,26 +8497,37 @@ async function accountLogin(){
 }
 
 /* Nusxa olish — CEP webview'da navigator.clipboard ba'zan yo'q, execCommand zaxira */
-function afCopyText(text){
-  text=String(text||'');
-  try{
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(()=>showToast('Copied','success')).catch(()=>afCopyFallback(text));
-      return;
-    }
-  }catch(e){}
-  afCopyFallback(text);
-}
-function afCopyFallback(text){
+// P7: CEP webview file://'dan yuklanadi — XAVFSIZ kontekst EMAS, shu sabab navigator.clipboard
+// ko'pincha yo'q/bloklangan. AVVAL sinxron execCommand('copy') (haqiqiy true/false qaytaradi va
+// file://'da ishlaydi); faqat u ishlamasa — best-effort clipboard API. afCopyText BITTA toast
+// ko'rsatadi (yagona manba) va HAQIQIY boolean qaytaradi — caller'lar qo'shimcha toast QILMASIN.
+function afCopyExec(text){
   try{
     var ta=document.createElement('textarea');
     ta.value=String(text||''); ta.style.position='fixed'; ta.style.top='-9999px'; ta.style.opacity='0';
     document.body.appendChild(ta); ta.focus(); ta.select();
-    var ok=document.execCommand&&document.execCommand('copy');
+    var ok=!!(document.execCommand&&document.execCommand('copy'));
     document.body.removeChild(ta);
-    showToast(ok?'Copied':'Select the link and copy manually',ok?'success':'warning');
-  }catch(e){ showToast('Select the link and copy manually','warning'); }
+    return ok;
+  }catch(e){ return false; }
 }
+function afCopyText(text){
+  text=String(text||'');
+  var ok=afCopyExec(text);
+  if(!ok){
+    // Xavfsiz kontekstда (masalan http(s) preview) — async clipboard best-effort.
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){},function(){});
+        ok=true; // optimistik: writeText odatda muvaffaqiyat (rad etilса ham toast bir marta)
+      }
+    }catch(e){}
+  }
+  if(typeof showToast==='function') showToast(ok?'Copied':'Copy failed',ok?'success':'error');
+  return ok;
+}
+// Eski nom bilan uyg'unlik (dormant caller'lar bo'lsa) — endi afCopyText'ga yo'naltiradi.
+function afCopyFallback(text){ return afCopyText(text); }
 
 /* Google device-code oqimi — har qadamda ko'rinadigan status + qo'lda ochish uchun
    nusxalanadigan havola/kod. Ikkala Google tugmasi ham shu funksiyaga tushadi. */
@@ -9460,7 +9471,7 @@ async function bootPlugin(){
       if(ctx.onAddProject&&it.id){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(){ ctx.onAddProject(it); })); cap.push('Add to project'); }
       if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
       if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>','Regenerate',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Regenerate'); }
-      if(it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(){ if(window.afCopyText(it.prompt)){ if(typeof showToast==='function')showToast('Prompt copied','success'); } })); cap.push('Copy prompt'); } // P2
+      if(it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(){ window.afCopyText(it.prompt); })); cap.push('Copy prompt'); } // P2/P7: afCopyText o'zi toast qiladi
       if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
       document.getElementById('afLbCap').textContent=cap.join(' · ');
       lb.classList.add('on');
@@ -9500,7 +9511,7 @@ async function bootPlugin(){
       if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Use as reference',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
       if(ctx.onRestore&&it.prompt) ra.appendChild(actBtn(IC.rst,'Regenerate — restore prompt + references',function(e){ e.stopPropagation(); ctx.onRestore(it); }));
       // P2: Copy prompt — prompt bor har gen kartada (barcha tool'lar)
-      if(it.prompt) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(e){ e.stopPropagation(); if(window.afCopyText(it.prompt)){ if(typeof showToast==='function')showToast('Prompt copied','success'); } else if(typeof showToast==='function')showToast('Copy failed','error'); }));
+      if(it.prompt) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(e){ e.stopPropagation(); window.afCopyText(it.prompt); })); // P7: afCopyText yagona toast manbai
       if(!ctx.isCEP) ra.appendChild(actBtn(IC.dl,'Download',function(e){ e.stopPropagation(); ctx.onDownload&&ctx.onDownload(it); }));
       ra.appendChild(actBtn(IC.x,'Delete',function(e){ e.stopPropagation(); ctx.onDelete&&ctx.onDelete(it); },'del'));
       d.appendChild(ra);
