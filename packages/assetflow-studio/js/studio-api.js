@@ -512,6 +512,14 @@ const StudioApi = (() => {
     });
   }
 
+  /** P7 — GenAsset/SavedReference sizeBytes backfill (ADMIN, idempotent). */
+  async function recomputeStorage(opts = {}) {
+    return request(`/api/admin/maintenance/gen-sizebytes/backfill`, {
+      method: "POST",
+      body: opts,
+    });
+  }
+
   /* ── BIZNES MARKAZ (admin-only READ + narx write) ── */
   async function getAdminPricing() {
     return request(`/api/admin/pricing`);
@@ -640,6 +648,7 @@ const StudioApi = (() => {
     markMessageThreadRead,
     listAuditLogs,
     reindexAi,
+    recomputeStorage,
     getAdminPricing,
     patchAdminPricing,
     patchAdminPricingConfig,

@@ -478,9 +478,40 @@ VIEWS.settings = function(){
           ${rules.map(([l,on],i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:12px;${i?'border-top:1px solid var(--hair)':''}"><span style="flex:1">${l}</span><button class="adx-tog ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')"><i></i></button></div>`).join('')}
           <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Rules are currently browser-only — server-side enforcement in a future version.</div>
         </div>
+        <div class="adx-card" style="padding:18px 20px">
+          <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Maintenance</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="adx-btn2 sm" id="recomputeStorageBtn" onclick="recomputeStorage()"><i class="ph ph-arrow-clockwise"></i>Recompute storage</button>
+            <span style="font-size:10.5px;color:#5E6675">Backfills missing sizeBytes on generated assets/references from real object storage.</span>
+          </div>
+        </div>
       </div>
     </div>`;
 };
+
+/** P7 — storage sizeBytes backfill, one click (admin Settings). */
+async function recomputeStorage() {
+  const btn = document.getElementById("recomputeStorageBtn");
+  if (btn) btn.disabled = true;
+  toast("Storage", "Recomputing…", "info");
+  try {
+    const r = await StudioApi.recomputeStorage({});
+    const updated = (r && r.updated) || 0;
+    const estimated = (r && r.estimated) || 0;
+    const remaining = (r && r.remaining) || 0;
+    const filled = updated + estimated;
+    toast(
+      "Done",
+      `${filled} row${filled===1?"":"s"} filled${remaining ? ` (${remaining} remaining — run again)` : ""}`,
+      "success"
+    );
+  } catch (e) {
+    const msg = e && e.status === 403 ? "Admin only" : (e && e.message) || "Error";
+    toast("Error", msg, "danger");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
 
 /* ============================================================
    AUDIT LOG
