@@ -20,6 +20,7 @@ import {
   isS3Configured,
 } from "../lib/s3.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { diagnoseSizeBytes, backfillSizeBytes } from "../lib/backfill-sizebytes.js";
 import { getModelById } from "../lib/gen-models.js";
 import {
   getPricingConfig,
@@ -870,6 +871,41 @@ adminRouter.get("/metrics", async (req, res) => {
       source: r.source,
     })),
   });
+});
+
+// ── PROBLEM 7 — Storage sizeBytes diagnostika + backfill (maintenance) ──────
+// Tarixiy GenAsset/SavedReference qatorlarida sizeBytes null (ustun 2026-07-05
+// da qo'shilgan) → "Storage (AI results)" kam ko'rsatiladi. Bu ikki endpoint
+// production'da (Cloud Run ichida — storage HeadObject + prod DB) ishga
+// tushiriladi. Kredit/billing'ga ALOQASIZ — faqat storage hisobi ustuni.
+
+/** GET /api/admin/maintenance/gen-sizebytes — faqat o'qish: null/0 taqsimoti. */
+adminRouter.get("/maintenance/gen-sizebytes", async (_req, res) => {
+  res.json(await diagnoseSizeBytes());
+});
+
+const backfillSchema = z.object({
+  limit: z.number().int().min(1).max(5000).optional(),
+  dryRun: z.boolean().optional(),
+});
+
+/** POST /api/admin/maintenance/gen-sizebytes/backfill — idempotent backfill (limit'lab). */
+adminRouter.post("/maintenance/gen-sizebytes/backfill", async (req, res) => {
+  const parsed = backfillSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  const result = await backfillSizeBytes(parsed.data);
+  if (!result.dryRun && (result.updated > 0 || result.estimated > 0)) {
+    await writeAuditLog({
+      actorId: req.user?.userId ?? null,
+      action: "maintenance.sizebytes.backfill",
+      targetType: "genAsset",
+      meta: result as unknown as Record<string, unknown>,
+    });
+  }
+  res.json(result);
 });
 
 // ── FAZA 6b — Foydalanuvchi rollari boshqaruvi (qo'lda SQL o'rniga) ─────────
