@@ -144,6 +144,11 @@
     enhance: function (prompt, mode, modelId) {
       return req("/api/studio/gen/prompt/enhance", { method: "POST", body: { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined } });
     },
+    // P8 — referens yuklash: kichik fayl dataUrl bilan (JSON), katta video/audio presigned PUT + srcKey
+    refUpload: function (body) { return req("/api/studio/gen/ref-upload", { method: "POST", body: body }); },
+    refUploadUrl: function (contentType, sizeBytes, name) {
+      return req("/api/studio/gen/ref-upload-url", { method: "POST", body: { contentType: contentType, sizeBytes: sizeBytes, name: name || undefined } });
+    },
 
     // Projects (QA-FIX #13) — gen + shablonlarni loyihaga yig'ish
     projects: function () { return req("/api/studio/projects"); },

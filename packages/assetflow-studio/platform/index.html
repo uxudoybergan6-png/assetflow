@@ -15382,11 +15382,13 @@
   .ff .va-axeq b:nth-child(5n){animation-delay:.45s}.ff .va-axeq b:nth-child(7n){animation-delay:.6s}
   .ff .va-axnone{padding:36px 14px;text-align:center;font-size:12.5px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:14px;margin-top:6px}
   /* dock extras: reference slot · cost · balance strip */
-  .ff .va-axrefs{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-  .ff .va-axrefadd{width:46px;height:46px;border-radius:10px;border:1px dashed rgba(255,255,255,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:1px;background:none;cursor:pointer;font-family:inherit;flex:none}
+  .ff .va-axrefs{display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+  .ff .va-axrefadd{min-width:46px;height:46px;padding:0 10px;border-radius:10px;border:1px dashed rgba(255,255,255,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:1px;background:none;cursor:pointer;font-family:inherit;flex:none}
   .ff .va-axrefadd:hover{color:var(--text);border-color:rgba(255,255,255,.28)}
   .ff .va-axrefadd i{font-style:normal;font-size:14px;line-height:1}
-  .ff .va-axrefadd span{font-size:7px}
+  .ff .va-axrefadd span{font-size:8.5px;white-space:nowrap}
+  /* P8 — referens chip yorlig'i (Start/End/@imgN/Video n) + rasm bo'lmagan chip ko'rinishi */
+  .ff .va-axrefthumb .rk{position:absolute;left:3px;bottom:3px;right:auto;font-style:normal;font-size:7.5px;font-weight:700;letter-spacing:.02em;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;padding:1.5px 4px;max-width:38px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
   .ff .va-axrefhint{font-size:10.5px;color:var(--muted2)}
   .ff .va-axrefhint.lit{color:var(--muted)}
   .ff .va-axrefthumb{position:relative;width:46px;height:46px;border-radius:10px;flex:none;background-color:var(--media);background-size:cover;background-position:center;outline:1.5px solid rgba(194,240,74,.5)}
@@ -16418,14 +16420,14 @@
                 <div class="va-dock">
               <sc-if value="{{ showRefs }}" hint-placeholder-val="{{ true }}">
                 <div class="va-axrefs">
-                  <sc-if value="{{ hasRefSet }}" hint-placeholder-val="{{ false }}">
-                    <span class="va-axrefthumb" style="background-image:url('{{ refUrl }}')"><b class="x" title="Remove reference" onclick="{{ clearRef }}">✕</b></span>
-                    <span class="va-axrefhint lit">{{ refLabel }}</span>
-                  </sc-if>
-                  <sc-if value="{{ noRefSet }}" hint-placeholder-val="{{ true }}">
-                    <button class="va-axrefadd" onclick="{{ addRef }}"><i>⊞</i><span>Reference</span></button>
-                    <span class="va-axrefhint">{{ refHint }}</span>
-                  </sc-if>
+                  <!-- P8 — model-driven referens paneli: yuklangan chips + model imkoniyatiga mos qo'shish tugmalari -->
+                  <sc-for list="{{ refChipsView }}" as="rc" hint-placeholder-count="0">
+                    <span class="va-axrefthumb" style="{{ rc.thumbStyle }}"><i class="rk">{{ rc.label }}</i><b class="x" title="Remove reference" data-k="{{ rc.k }}" data-i="{{ rc.i }}" onclick="{{ removeRef }}">✕</b></span>
+                  </sc-for>
+                  <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="1">
+                    <button class="va-axrefadd" data-k="{{ ra.k }}" onclick="{{ addRefK }}"><i>⊞</i><span>{{ ra.label }}</span></button>
+                  </sc-for>
+                  <span class="{{ refHintCls }}">{{ refHint }}</span>
                 </div>
               </sc-if>
               <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="{{ promptPh }}" class="prompt"></textarea>
@@ -16469,6 +16471,10 @@
                 </span></sc-if>
                 <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="duration" onclick="{{ toggleChip }}"><b>{{ durVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popDur }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                </span></sc-if>
+                <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><span class="va-set" onclick="{{ toggleAudio }}">Audio: <b>{{ audioVal }}</b></span></sc-if>
+                <sc-if value="{{ showBitrate }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="bitrate" onclick="{{ toggleChip }}">Bitrate: <b>{{ bitVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popBitrate }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ bitrateView }}" as="z" hint-placeholder-count="2"><button data-v="{{ z.v }}" onclick="{{ onBitrate }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span></sc-if>
                 <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="voice" onclick="{{ toggleChip }}">Voice: <b>{{ voiceVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popVoice }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoice }}" class="{{ v.rowCls }}">{{ v.label }}<sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
@@ -16975,9 +16981,15 @@ class Component extends DCLogic {
     modelModalOpen: false,
     modelQ: '',
     modelFilter: 'All',
-    // PHASE B step 2 — Use ▾ handoff referenslari (imzolangan URL; rejim almashsa tozalanadi)
-    refImageUrl: null,      // "Edit image" → image rejimida referenceUrl/referenceUrls
-    refStartUrl: null,      // "Generate video from image" → video rejimida referenceUrl (start kadr)
+    // P8 — model-driven referens tizimi (diskdan yuklash + Use ▾ handoff; rejim almashsa tozalanadi)
+    refImages: [],          // image-edit referenslar (maxRefs gacha) YOKI media-refs rasm ro'yxati
+    refStartUrl: null,      // video frames: start kadr (referenceUrl)
+    refEndUrl: null,        // video frames: end kadr (referenceEndUrl, model.endFrame bo'lsa)
+    refVideos: [],          // media-refs video URL'lar (Omni ≤2 / R2V ≤3)
+    refAudios: [],          // media-refs audio URL'lar (R2V ≤3)
+    aiAudio: null,          // video audio toggle (null = model default)
+    aiBitrate: '',          // R2V bitrate ('' = model default)
+    refBusy: false,         // referens yuklanmoqda
     genProgress: 0,
     genPhase: 0,
     accountTab: 'Profile',
@@ -17763,7 +17775,7 @@ class Component extends DCLogic {
   }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
-    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [], aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.go('landing');
     this.toast('You have been signed out');
   }
@@ -17791,7 +17803,7 @@ class Component extends DCLogic {
     try { await FFAPI.deleteAccount(); }
     catch (e) { this.toast(this.errMsg(e)); return; }
     if (window.FFAPI) FFAPI.clearSession();
-    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImageUrl: null, refStartUrl: null, curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [], aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
     this.go('landing');
     this.toast('Your account has been deleted');
   }
@@ -17815,16 +17827,38 @@ class Component extends DCLogic {
       p.count = counts.indexOf(st.aiCount) >= 0 ? st.aiCount : counts[0];
       const ql = model.imgSettings && model.imgSettings.quality;
       if (ql) p.quality = (ql.options.indexOf(st.aiQuality) >= 0 ? st.aiQuality : ql.def);
-      // Use ▾ "Edit image" — plagin shakli 1:1 (referenceUrl + referenceUrls); quote hash refs'siz
-      if (st.refImageUrl) { p.referenceUrl = st.refImageUrl; p.referenceUrls = [st.refImageUrl]; }
+      // P8 — ko'p-referens (maxRefs gacha); plagin shakli 1:1 (referenceUrl + referenceUrls)
+      const icaps = this.refCaps('image', model);
+      const irefs = icaps.kind === 'image' ? st.refImages.slice(0, icaps.max) : [];
+      if (irefs.length) { p.referenceUrl = irefs[0]; p.referenceUrls = irefs; }
     } else if (tool.mode === 'video') {
-      const durs = model.durations || [4, 6, 8];
-      const d = parseInt(st.aiDuration, 10);
-      p.duration = durs.indexOf(d) >= 0 ? d : durs[0];
-      if (model.resolutions && model.resolutions.length) p.resolution = (model.resolutions.indexOf(st.aiRes) >= 0 ? st.aiRes : model.resolutions[0]);
-      if (model.aspects && model.aspects.length) p.aspectRatio = (model.aspects.indexOf(st.aiSize) >= 0 ? st.aiSize : model.aspects[0]);
-      // Use ▾ i2v — faqat start kadr (referenceEndUrl YUBORILMAYDI: END_FRAME_REQUIRES_START)
-      if (st.refStartUrl) p.referenceUrl = st.refStartUrl;
+      // P8 — duration videoSettings deskriptoridan ('Auto' qo'llab-quvvatlanadi), def bilan
+      const vs = model.videoSettings || {};
+      const dOpts = (vs.duration && vs.duration.options) || model.durations || [4, 6, 8];
+      const dRaw = String(st.aiDuration == null ? '' : st.aiDuration).replace(/s$/, ''); // chip '8s' → '8'
+      const dSel = dRaw !== '' && dOpts.some(o => String(o) === dRaw) ? dRaw : ((vs.duration && vs.duration.def) != null ? vs.duration.def : dOpts[0]);
+      p.duration = /^\d+$/.test(String(dSel)) ? parseInt(dSel, 10) : dSel; // raqam yoki 'Auto'
+      if (model.resolutions && model.resolutions.length) p.resolution = (model.resolutions.indexOf(st.aiRes) >= 0 ? st.aiRes : ((vs.resolution && vs.resolution.def) || model.resolutions[0]));
+      if (model.aspects && model.aspects.length) p.aspectRatio = (model.aspects.indexOf(st.aiSize) >= 0 ? st.aiSize : ((vs.aspect && vs.aspect.def) || model.aspects[0]));
+      // P8 — audio toggle: faqat model audio qo'llasa yuboriladi (audioLocked → default qoladi)
+      const audioCap = (vs.audio != null ? vs.audio : model.audio) === true;
+      if (audioCap && !vs.audioLocked && !model.audioLocked) {
+        p.audio = st.aiAudio != null ? !!st.aiAudio : ((typeof vs.audioDefault === 'boolean') ? vs.audioDefault : !!model.audio);
+      }
+      // P8 — bitrate (R2V): deskriptor bo'lsa
+      if (vs.bitrate) p.bitrateMode = (vs.bitrate.options || []).indexOf(st.aiBitrate) >= 0 ? st.aiBitrate : vs.bitrate.def;
+      // P8 — referenslar model turiga qarab: frames (start/end) yoki media-refs (rasm/video/audio)
+      const vcaps = this.refCaps('video', model);
+      if (vcaps.kind === 'frames') {
+        if (st.refStartUrl) p.referenceUrl = st.refStartUrl;
+        // END_FRAME_REQUIRES_START: end faqat start bilan
+        if (vcaps.end && st.refStartUrl && st.refEndUrl) p.referenceEndUrl = st.refEndUrl;
+      } else if (vcaps.kind === 'media') {
+        const L = vcaps.lim;
+        if (st.refImages.length && L.image) p.imageUrls = st.refImages.slice(0, L.image);
+        if (st.refVideos.length && L.video) p.videoUrls = st.refVideos.slice(0, L.video);
+        if (st.refAudios.length && L.audio) p.audioUrls = st.refAudios.slice(0, L.audio);
+      }
     } else if (tool.mode === 'voice') {
       const voices = model.voices || [];
       if (voices.length) p.voice = (voices.some(v => v.id === st.aiVoice) ? st.aiVoice : voices[0].id);
@@ -17842,10 +17876,17 @@ class Component extends DCLogic {
       return unit * (params.count || 1);
     }
     if (tool.mode === 'video') {
-      const perSec = model.videoSettings && model.videoSettings.resolution && model.videoSettings.resolution.perSec;
-      const rate = (perSec && params.resolution && perSec[params.resolution] != null) ? perSec[params.resolution] : model.cost;
       if (model.pricing === 'per-generation') return model.cost;
-      return rate * (params.duration || 5);
+      const vs = model.videoSettings || {};
+      const perSec = vs.resolution && vs.resolution.perSec;
+      let rate = (perSec && params.resolution && perSec[params.resolution] != null) ? perSec[params.resolution] : model.cost;
+      // P8 — video-input chegirmasi (R2V ×0.6) preview'da ham aks etadi (backend bilan mos)
+      if (params.videoUrls && params.videoUrls.length && model.videoInputPerSecMultiplier > 0) {
+        rate = Math.max(1, Math.round(rate * model.videoInputPerSecMultiplier));
+      }
+      // P8 — 'Auto' duration → autoSec (backend resolveVideoParams bilan mos)
+      const durSec = /^\d+$/.test(String(params.duration)) ? parseInt(params.duration, 10) : ((vs.duration && vs.duration.autoSec) || 5);
+      return rate * (durSec || 5);
     }
     return model.cost;
   }
@@ -17856,6 +17897,10 @@ class Component extends DCLogic {
     const prompt = (this.state.aiPrompt || '').trim();
     if (prompt.length < 2) { this.toast('Write a prompt'); return; }
     if (this.state.generating) return;
+    // P8 — majburiy referens gate (Seedance Fast: start kadr SHART) — kredit behuda ketmasin
+    const gcaps = this.refCaps(tool.mode, model);
+    if (gcaps.kind === 'frames' && gcaps.startRequired && !this.state.refStartUrl) { this.toast('This model requires a start frame — add one next to the prompt'); return; }
+    if (tool.mode === 'image' && model.refMode === 'required' && !this.state.refImages.length) { this.toast('This model requires a reference image — add one next to the prompt'); return; }
     const params = this.buildParams(tool, model);
     this.setState({ generating: true });
     try {
@@ -17958,8 +18003,31 @@ class Component extends DCLogic {
   }
   // Use ▾ handoff: natijani keyingi gen'ga referens qilish. Trigger paytida YANGI imzolangan
   // URL olinadi (eski signed URL ~1h da eskiradi). kind: 'edit' (image) | 'i2v' (video start kadr).
+  // P8 — modelning referens imkoniyati (katalogdan): image='image' (maxRefs gacha),
+  // video='frames' (start/end kadr) yoki 'media' (Omni/R2V ko'p-modal), aks holda 'none'.
+  refCaps(mode, m) {
+    if (!m) return { kind: 'none' };
+    if (mode === 'image') {
+      const max = (m.refKind === 'image' || (m.maxRefs || 0) > 0) ? (m.maxRefs || 1) : 0;
+      return max > 0 ? { kind: 'image', max } : { kind: 'none' };
+    }
+    if (mode === 'video') {
+      if (m.refKind === 'frames') {
+        return { kind: 'frames', end: !!m.endFrame, startRequired: m.refMode === 'required' || m.feature === 'image-to-video' };
+      }
+      if (m.refKind === 'media-refs') {
+        const lim = m.mediaRefs || { image: 9, video: 3, audio: 3, total: 12 };
+        return { kind: 'media', lim };
+      }
+    }
+    return { kind: 'none' };
+  }
   refModelOk(mode, m) {
-    return mode === 'video' ? (m && m.refKind === 'frames') : (m && (m.refKind === 'image' || (m.maxRefs || 0) > 0));
+    return this.refCaps(mode, m).kind !== 'none';
+  }
+  // P8 — barcha referens holatini tozalash patch'i (rejim/model almashganda)
+  refResetPatch() {
+    return { refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [], aiAudio: null, aiBitrate: '' };
   }
   async useGenAsRef(kind, genId) {
     const mode = kind === 'i2v' ? 'video' : 'image';
@@ -17974,15 +18042,58 @@ class Component extends DCLogic {
     } catch (e) { this.toast(this.errMsg(e)); return; }
     if (!url) { this.toast('Source file not found'); return; }
     const nt = this.aiTools.find(t => t.mode === mode);
+    const caps = this.refCaps(mode, target);
     this.setState(st => {
       const sel = Object.assign({}, st.selModel); sel[mode] = target.id;
-      return {
+      const patch = Object.assign(this.refResetPatch(), {
         selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiView: 'composer', aiMediaView: 'visuals',
-        refImageUrl: mode === 'image' ? url : null, refStartUrl: mode === 'video' ? url : null,
         useMenuOpen: false, chipPop: null, modelOpen: false, modelModalOpen: false,
-      };
+      });
+      // Model turiga qarab joylash: image-edit/media → rasm ref, frames → start kadr
+      if (mode === 'image' || caps.kind === 'media') patch.refImages = [url];
+      else patch.refStartUrl = url;
+      return patch;
     });
     setTimeout(() => { try { const el = document.querySelector('.va-dock .prompt'); if (el) el.focus(); } catch (e) {} }, 60);
+  }
+  // P8 — referens faylni yuklash: rasm/kichik fayl dataUrl (/gen/ref-upload), katta
+  // video/audio presigned PUT (/gen/ref-upload-url) + {srcKey}. k: img|start|end|vid|aud
+  addRefFile(k) {
+    if (this.state.refBusy) { this.toast('Upload in progress…'); return; }
+    const accept = (k === 'vid') ? 'video/*' : (k === 'aud') ? 'audio/*' : 'image/*';
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = accept;
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      if (f.size > 100 * 1024 * 1024) { this.toast('File is too large — max 100MB'); return; }
+      this.setState({ refBusy: true });
+      try {
+        let r;
+        if (f.size <= 20 * 1024 * 1024) {
+          // Kichik fayl: dataUrl JSON bilan (Cloud Run body ~32MB — 20MB fayl xavfsiz)
+          const dataUrl = await new Promise((res, rej) => { const rd = new FileReader(); rd.onload = () => res(String(rd.result || '')); rd.onerror = rej; rd.readAsDataURL(f); });
+          r = await FFAPI.refUpload({ dataUrl });
+        } else {
+          // Katta fayl: presigned PUT → srcKey
+          const pre = await FFAPI.refUploadUrl(f.type || 'application/octet-stream', f.size, f.name);
+          const put = await fetch(pre.url, { method: 'PUT', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+          if (!put.ok) throw new Error('Upload failed (' + put.status + ')');
+          r = await FFAPI.refUpload({ srcKey: pre.key });
+        }
+        if (!r || !r.url) throw new Error('Upload failed');
+        this.setState(st => {
+          if (k === 'start') return { refStartUrl: r.url };
+          if (k === 'end') return { refEndUrl: r.url };
+          if (k === 'vid') return { refVideos: st.refVideos.concat([r.url]) };
+          if (k === 'aud') return { refAudios: st.refAudios.concat([r.url]) };
+          return { refImages: st.refImages.concat([r.url]) };
+        });
+        this.toast('Reference added');
+      } catch (e) { this.toast(this.errMsg(e)); }
+      finally { this.setState({ refBusy: false }); }
+    };
+    inp.click();
   }
   async downloadTemplate() {
     const d = this.state.detail;
@@ -18104,8 +18215,10 @@ class Component extends DCLogic {
     const showSize = aspectOpts.length > 1;
     const countOpts = (tool.multi && model) ? ((model.imgSettings && model.imgSettings.num) || model.count || [1]) : [];
     const countsView = countOpts.map(z => chip(z, z === nSel));
-    const durOpts = ((tool.mode === 'video' || tool.mode === 'sfx') && model) ? (model.durations || []) : [];
-    const durationsView = durOpts.map(z => chip(z + 's', z === genParams.duration));
+    // P8 — video duration videoSettings deskriptoridan ('Auto' bilan); sfx flat durations
+    const durOpts = (tool.mode === 'video' && model) ? (((model.videoSettings || {}).duration || {}).options || model.durations || [])
+      : ((tool.mode === 'sfx' && model) ? (model.durations || []) : []);
+    const durationsView = durOpts.map(z => chip(/^\d+$/.test(String(z)) ? z + 's' : String(z), String(z) === String(genParams.duration)));
     const qualityOpts = (tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality) ? model.imgSettings.quality.options : [];
     const qualityView = qualityOpts.map(z => chip(z, z === genParams.quality));
     const showQuality = qualityOpts.length > 1;
@@ -18164,9 +18277,20 @@ class Component extends DCLogic {
     const qualityVal = genParams.quality || '—';
     const countVal = nSel;
     const resVal = genParams.resolution || '—';
-    const durVal = genParams.duration ? (genParams.duration + 's') : '—';
+    const durVal = genParams.duration ? (/^\d+$/.test(String(genParams.duration)) ? genParams.duration + 's' : String(genParams.duration)) : '—';
+    // P8 — audio toggle (video, model audio qo'llasa) + bitrate (R2V deskriptori bo'lsa)
+    const vsA = (tool.mode === 'video' && model) ? (model.videoSettings || {}) : null;
+    const audioCap = !!vsA && ((vsA.audio != null ? vsA.audio : model.audio) === true);
+    const audioLockedCap = !!vsA && !!(vsA.audioLocked || (model && model.audioLocked));
+    const showAudio = audioCap;
+    const audioOn = ('audio' in genParams) ? !!genParams.audio : (audioCap && ((typeof (vsA || {}).audioDefault === 'boolean') ? vsA.audioDefault : true));
+    const audioVal = (audioOn ? 'On' : 'Off') + (audioLockedCap ? ' 🔒' : '');
+    const bitOpts = (vsA && vsA.bitrate && vsA.bitrate.options) || [];
+    const showBitrate = bitOpts.length > 1;
+    const bitVal = genParams.bitrateMode || '—';
+    const bitrateView = bitOpts.map(z => chip(z, z === genParams.bitrateMode));
     const cp = this.state.chipPop;
-    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration', popMode = cp === 'mode', popVoice = cp === 'voice';
+    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration', popMode = cp === 'mode', popVoice = cp === 'voice', popBitrate = cp === 'bitrate';
     // Artlist-uslub kirish: picker kartalari olib tashlandi — toolMetaA faqat dock MODE pill uchun
     const toolMetaA = {
       'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
@@ -18181,7 +18305,7 @@ class Component extends DCLogic {
     const quotePrefix = (tool.multi && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
     const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
     const chipCls = (open) => open ? 'ffa-chip open' : 'ffa-chip';
-    const chipModelCls = chipCls(popModel), chipAspectCls = chipCls(popAspect), chipQualityCls = chipCls(popQuality), chipCountCls = chipCls(popCount), chipResCls = chipCls(popRes), chipDurCls = chipCls(popDur);
+    const chipModelCls = chipCls(popModel), chipAspectCls = chipCls(popAspect), chipQualityCls = chipCls(popQuality), chipCountCls = chipCls(popCount), chipResCls = chipCls(popRes), chipDurCls = chipCls(popDur), chipBitrateCls = chipCls(popBitrate);
     const chipAnyOpen = !!cp;
     // Ovoz/SFX o'ng panel — audio natijalar (waveform bilan)
     const voiceResults = this.state.gens.filter(g => g.type === 'audio' || g.type === 'sfx').slice(0, 12).map(g => ({
@@ -18341,11 +18465,33 @@ class Component extends DCLogic {
       : (tool.mode === 'image' ? (unitCost > 0 ? ('~' + Math.floor(this.state.credits / unitCost) + ' image generations left') : 'priced per image')
         : (tool.mode === 'video' ? 'video is billed per second of output'
           : (tool.mode === 'voice' ? 'voice is billed per 30 s of output' : 'billed per sound effect')));
-    const refHint = tool.mode === 'video' ? 'Optional — use an image as the start frame (via “Use ▾” on a result).' : 'Optional — add an image to edit it or animate it (via “Use ▾” on a result).';
-    // Use ▾ handoff holati: joriy rejimga tegishli referens (image=edit manbasi, video=start kadr)
-    const refUrl = tool.mode === 'image' ? this.state.refImageUrl : (tool.mode === 'video' ? this.state.refStartUrl : null);
-    const hasRefSet = !!refUrl;
-    const refLabel = tool.mode === 'video' ? 'Start frame — the video begins from this image' : 'Editing this image';
+    // ── P8 — model-driven referens paneli: chips (yuklangan) + adds (qo'shish tugmalari) ──
+    const rCaps = this.refCaps(tool.mode, model);
+    const refChipsView = [];
+    const refAddsView = [];
+    if (rCaps.kind === 'image') {
+      this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: '@img' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
+      if (this.state.refImages.length < rCaps.max) refAddsView.push({ k: 'img', label: this.state.refImages.length ? '＋ Add (' + this.state.refImages.length + '/' + rCaps.max + ')' : '＋ Reference' });
+    } else if (rCaps.kind === 'frames') {
+      if (this.state.refStartUrl) refChipsView.push({ k: 'start', i: '0', url: this.state.refStartUrl, isImg: true, label: 'Start', thumbStyle: "background-image:url('" + this.state.refStartUrl + "')" });
+      else refAddsView.push({ k: 'start', label: rCaps.startRequired ? '＋ Start frame (required)' : '＋ Start frame' });
+      if (rCaps.end) {
+        if (this.state.refEndUrl) refChipsView.push({ k: 'end', i: '0', url: this.state.refEndUrl, isImg: true, label: 'End', thumbStyle: "background-image:url('" + this.state.refEndUrl + "')" });
+        else refAddsView.push({ k: 'end', label: '＋ End frame' });
+      }
+    } else if (rCaps.kind === 'media') {
+      this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: 'Img ' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
+      this.state.refVideos.forEach((u, i) => refChipsView.push({ k: 'vid', i: String(i), url: u, isImg: false, label: 'Video ' + (i + 1), thumbStyle: '' }));
+      this.state.refAudios.forEach((u, i) => refChipsView.push({ k: 'aud', i: String(i), url: u, isImg: false, label: 'Audio ' + (i + 1), thumbStyle: '' }));
+      if (rCaps.lim.image && this.state.refImages.length < rCaps.lim.image) refAddsView.push({ k: 'img', label: '＋ Image' });
+      if (rCaps.lim.video && this.state.refVideos.length < rCaps.lim.video) refAddsView.push({ k: 'vid', label: '＋ Video' });
+      if (rCaps.lim.audio && this.state.refAudios.length < rCaps.lim.audio) refAddsView.push({ k: 'aud', label: '＋ Audio' });
+    }
+    const refHint = this.state.refBusy ? 'Uploading…'
+      : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
+        : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
+          : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).'));
+    const hasRefSet = refChipsView.length > 0;
     // Use ▾ menyu qobiliyati: manba faqat RASM natija + katalogda mos model bo'lishi shart
     const axSrcIsImage = !!activeGenRaw && activeGenRaw.type === 'image';
     const axHasEditModel = (this.state.genModels.image || []).some(m => this.refModelOk('image', m));
@@ -18355,7 +18501,7 @@ class Component extends DCLogic {
     const axEditTip = axEditOk ? '' : (axSrcIsImage ? 'No edit-capable image model available' : 'Available for image results');
     const axI2vTip = axI2vOk ? '' : (axSrcIsImage ? 'No image-to-video model available' : 'Available for image results');
     // Rejim QO'LDA almashsa referens tozalanadi (start-kadr voice/SFX da ma'nosiz)
-    const refClearIfModeChanged = (toolKey) => { const nt = this.aiTools.find(t => t.key === toolKey); return (nt && nt.mode !== tool.mode) ? { refImageUrl: null, refStartUrl: null } : {}; };
+    const refClearIfModeChanged = (toolKey) => { const nt = this.aiTools.find(t => t.key === toolKey); return (nt && nt.mode !== tool.mode) ? this.refResetPatch() : {}; };
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
@@ -18717,7 +18863,7 @@ class Component extends DCLogic {
         this.go('aistudio');
         this.setState(st => {
           const sel = Object.assign({}, st.selModel); sel[mMode] = id;
-          return { selModel: sel, aiTool: nt.key, aiView: 'composer', aiMediaView: null, refImageUrl: null, refStartUrl: null };
+          return Object.assign(this.refResetPatch(), { selModel: sel, aiTool: nt.key, aiView: 'composer', aiMediaView: null });
         });
       },
       shelfNext: (e) => {
@@ -18785,10 +18931,23 @@ class Component extends DCLogic {
       modelPickView, modePickHead, modelGroupsView, modelFilterView,
       modelModalOpen: this.state.modelModalOpen, modelQ: this.state.modelQ,
       modelModalEmpty: modelGroupsView.length === 0,
-      axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas,
-      // Use ▾ handoff + dock referens sloti (step 2)
-      refUrl, hasRefSet, noRefSet: !hasRefSet, refLabel,
-      clearRef: (e) => { if (e) e.stopPropagation(); this.setState({ refImageUrl: null, refStartUrl: null }); },
+      axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && rCaps.kind !== 'none',
+      // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
+      refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
+      removeRef: (e) => { e.stopPropagation(); const k = e.currentTarget.dataset.k, i = +e.currentTarget.dataset.i;
+        this.setState(st => {
+          if (k === 'start') return { refStartUrl: null, refEndUrl: null }; // end startsiz yashamaydi
+          if (k === 'end') return { refEndUrl: null };
+          if (k === 'vid') return { refVideos: st.refVideos.filter((_, x) => x !== i) };
+          if (k === 'aud') return { refAudios: st.refAudios.filter((_, x) => x !== i) };
+          return { refImages: st.refImages.filter((_, x) => x !== i) };
+        }); },
+      addRefK: (e) => { e.stopPropagation(); this.addRefFile(e.currentTarget.dataset.k); },
+      showAudio, audioVal, toggleAudio: (e) => { e.stopPropagation();
+        if (audioLockedCap) { this.toast('Audio is always on for this model'); return; }
+        this.setState({ aiAudio: !audioOn }); },
+      showBitrate, bitVal, popBitrate, chipBitrateCls, bitrateView,
+      onBitrate: (e) => this.setState({ aiBitrate: e.currentTarget.dataset.v, chipPop: null }),
       axEditCls: axEditOk ? 'va-axmi' : 'va-axmi off', axEditTip,
       axI2vCls: axI2vOk ? 'va-axmi' : 'va-axmi off', axI2vTip,
       axUseEdit: (e) => { e.stopPropagation(); if (!axEditOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('edit', activeGenRaw.id); },
@@ -18889,16 +19048,26 @@ class Component extends DCLogic {
       onPickTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k, chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false }, refClearIfModeChanged(k))); },
       setPrompt: (e) => this.setState({ aiPrompt: e.target.value }),
       improve: () => this.doEnhance(),
-      addRef: () => this.toast('Reference upload coming soon'),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
       // modeli tanlansa tool'ni ham o'sha rejimga o'tkazadi) — selection logikasi bitta.
       pickModel: (e) => { e.stopPropagation(); const id = +e.currentTarget.dataset.v; const mMode = e.currentTarget.dataset.mode || tool.mode; const nt = this.aiTools.find(t => t.mode === mMode); this.setState(st => { const sel = Object.assign({}, st.selModel); sel[mMode] = id; const upd = { selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiMediaView: mMode !== tool.mode ? null : st.aiMediaView, modelOpen: false, chipPop: null, modelModalOpen: false };
-        // Use ▾ referensi: rejim almashsa — tozalash; yangi model referens qabul qilmasa ham tozalash (backend 400 o'rniga)
-        if (mMode !== tool.mode) { upd.refImageUrl = null; upd.refStartUrl = null; }
+        // P8 — referens klampi: rejim almashsa hammasi tozalanadi; model almashsa yangi
+        // modelning imkoniyatiga MOSLAB kesiladi (backend 400 o'rniga)
+        if (mMode !== tool.mode) { Object.assign(upd, this.refResetPatch()); }
         else { const nm = (st.genModels[mMode] || []).find(m => m.id === id);
-          if (mMode === 'image' && st.refImageUrl && nm && !this.refModelOk('image', nm)) upd.refImageUrl = null;
-          if (mMode === 'video' && st.refStartUrl && nm && !this.refModelOk('video', nm)) upd.refStartUrl = null; }
+          if (nm) { const nc = this.refCaps(mMode, nm);
+            if (mMode === 'image') { upd.refImages = nc.kind === 'image' ? st.refImages.slice(0, nc.max) : []; }
+            else if (mMode === 'video') {
+              if (nc.kind === 'frames') { upd.refImages = []; upd.refVideos = []; upd.refAudios = [];
+                if (!nc.end) upd.refEndUrl = null; }
+              else if (nc.kind === 'media') { upd.refStartUrl = null; upd.refEndUrl = null;
+                upd.refImages = st.refImages.slice(0, nc.lim.image || 0);
+                upd.refVideos = st.refVideos.slice(0, nc.lim.video || 0);
+                upd.refAudios = st.refAudios.slice(0, nc.lim.audio || 0); }
+              else { Object.assign(upd, this.refResetPatch()); }
+              upd.aiAudio = null; upd.aiBitrate = ''; // model almashdi — model defaultiga qaytadi
+            } } }
         return upd; }); },
       onSize: (e) => this.setState({ aiSize: e.currentTarget.dataset.v, chipPop: null }),
       onCount: (e) => this.setState({ aiCount: +e.currentTarget.dataset.v, chipPop: null }),
