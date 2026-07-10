@@ -23,6 +23,7 @@ import { genProvider } from "./ai/magnific.js";
 export type GenFeature =
   | "text-to-image"
   | "image-edit"
+  | "image-upscale"
   | "text-to-speech"
   | "text-to-video"
   | "image-to-video"
@@ -265,6 +266,36 @@ export const GEN_MODELS: GenModel[] = [
     },
     imgModalities: ["image"],
   },
+  // ── RASM UPSCALE (BATCH4 #1) — Vertex Imagen imagegeneration@002 mode:"upscale" (GA, allowlist'siz).
+  // Narx: provider $0.003/rasm (USER-tasdiqlangan, 2026-07) — x2→2K=4kr, x4→4K=8kr (imgSettings.quality
+  // orqali MAVJUD imageUnitCost yo'lidan o'qiladi; formula O'ZGARMAGAN). Prompt ishlatilmaydi (manba
+  // rasm + faktor yetarli); referens MAJBURIY (manba rasm) — maxRefs 1.
+  {
+    id: 1015,
+    mode: "image",
+    key: "imagegeneration@002", // Imagen 1/2 upscale endpoint (us-central1)
+    label: "Imagen Upscale",
+    brand: "google",
+    provider: "vertex-image",
+    enabled: true,
+    feature: "image-upscale",
+    cost: 4, // fallback (x2); imgSettings.quality.cost ustun
+    qualityCost: { x2: 4, x4: 8 },
+    referenceMode: "image-ref", // manba rasm (edit emas — prompt o'qilmaydi)
+    refMode: "required",
+    refKind: "image",
+    maxRefs: 1,
+    inputs: ["image-ref"],
+    aspects: ["Auto"], // nisbat manba rasmdan — UI chip yashirin (1 option)
+    resolutions: ["x2", "x4"],
+    count: [1],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: ["Auto"], map: { Auto: "auto" }, def: "Auto" },
+      quality: { label: "Factor", param: "quality", options: ["x2", "x4"], def: "x2", cost: { x2: 4, x4: 8 } },
+      num: [1],
+    },
+  },
+
   // ── RASM (text-to-image) — ESKI fal/openrouter avlod: to'liq-Google qaroriga ko'ra HAMMASI enabled:false ──
   {
     id: 1001,

@@ -89,6 +89,32 @@ export async function vertexImage(
   }
 }
 
+/** Rasm UPSCALE (BATCH4 #1) — imagegeneration@002 `mode:"upscale"` (SDK models.upscaleImage →
+ * :predict + upscaleConfig). Manba rasm data-URI yoki bizning bucket URL; prompt YO'Q.
+ * factor "x2" (→2K) | "x4" (→4K). Bitta rasm qaytaradi — count doim 1 (katalog num:[1]). */
+export async function vertexImageUpscale(
+  modelId: string,
+  refUrl: string,
+  factor: "x2" | "x4"
+): Promise<OrResult<Buffer>> {
+  if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
+  try {
+    const inl = await refToInline(refUrl);
+    if (!inl) return { ok: false, error: "Source image failed to load" };
+    const r = await getClient(locationFor(modelId)).models.upscaleImage({
+      model: modelId,
+      image: { imageBytes: inl.data, mimeType: inl.mimeType },
+      upscaleFactor: factor,
+      config: { includeRaiReason: true },
+    });
+    const b64 = r.generatedImages?.[0]?.image?.imageBytes;
+    if (!b64) return { ok: false, error: "Upscale: no image was returned (may have been blocked by the safety filter)" };
+    return { ok: true, data: Buffer.from(b64, "base64") };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "Vertex upscale error" };
+  }
+}
+
 /** Referens rasm(lar) bilan tahrirlash (Nano Banana / Gemini image). BIR YOKI KO'P referens
  * (Gemini bir necha rasmni birlashtira oladi — @img1/@img2). Imagen edit BU YO'LDA EMAS (t2i only). */
 export async function vertexImageEdit(

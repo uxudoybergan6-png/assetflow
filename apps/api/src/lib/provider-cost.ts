@@ -32,6 +32,7 @@ const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
   1014: { "1K": 0.1, "2K": 0.15, "4K": 0.24 }, // Nano Banana Pro (premium)
   1011: { "1K": 0.04, "2K": 0.06 }, // Imagen 4
   1012: { "1K": 0.06, "2K": 0.08 }, // Imagen 4 Ultra
+  1015: { x2: 0.003, x4: 0.003 }, // Imagen Upscale (imagegeneration@002) — $0.003/rasm (USER-tasdiqlangan 2026-07)
 };
 
 /** Video (per-second): model id → resolution bo'yicha soniya USD (TAXMINIY). */

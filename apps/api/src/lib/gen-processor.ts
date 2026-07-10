@@ -43,7 +43,7 @@ import type { OrResult } from "./ai/openrouter.js";
 import { elSoundEffects } from "./ai/elevenlabs.js";
 import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vertex.js";
 import { omniGenerateVideo } from "./ai/vertex-omni.js";
-import { vertexImage, vertexImageEdit } from "./ai/vertex-image.js";
+import { vertexImage, vertexImageEdit, vertexImageUpscale } from "./ai/vertex-image.js";
 import { refundAiCredits } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
 import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
@@ -846,7 +846,11 @@ export async function processGeneration(genId: string): Promise<void> {
     const aspectRatio = typeof params.aspectRatio === "string" ? params.aspectRatio : null;
     const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
 
-    if (model.feature === "text-to-image" || model.feature === "image-edit") {
+    if (
+      model.feature === "text-to-image" ||
+      model.feature === "image-edit" ||
+      model.feature === "image-upscale"
+    ) {
       // image_config — NATIVE o'lcham/nisbat (promptga qo'shilmaydi).
       const quality = typeof params.quality === "string" ? params.quality : null;
       // PARAM GIGIYENASI (rasm) — video resolveVideoParams kabi, faqat model QO'LLAYDIGAN nisbat/
@@ -954,9 +958,16 @@ export async function processGeneration(genId: string): Promise<void> {
             ? [refUrl]
             : []
       ).slice(0, refCap === Infinity ? undefined : refCap);
+      // BATCH4 #1 — upscale: manba rasm MAJBURIY (route refMode gate ham bor; bu ikkinchi to'siq).
+      const isUpscale = model.feature === "image-upscale";
+      if (isUpscale && !vertexRefUrls.length)
+        return void (await fail("A source image is required for upscaling"));
+      const upFactor: "x2" | "x4" = params.quality === "x4" ? "x4" : "x2"; // imageUnitCost def bilan mos (x2)
       const genOne = (): Promise<OrResult<Buffer>> =>
         useVertexImg
-          ? useEdit
+          ? isUpscale
+            ? vertexImageUpscale(model.key, vertexRefUrls[0], upFactor)
+            : useEdit
             ? vertexImageEdit(model.key, gen.prompt, vertexRefUrls, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
             : vertexImage(model.key, gen.prompt, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
           : useFal
