@@ -1,24 +1,62 @@
 /* ============================================================
    AssetFlow — UI data (empty by default; filled from API)
    ============================================================ */
-const CATS = ['Logo Reveal','Title / Intro','Lower Thirds','Transitions','Social Media','Slideshow','Infographics','Backgrounds','YouTube','Instagram Reels'];
+// Stock S1 — TEMPLATE_CATEGORIES (apps/api/src/lib/ai/template-metadata.ts) bilan AYNAN
+// sinxron ('Uncategorized' bundan mustasno). Backend ro'yxati o'zgarsa, shu yerni ham yangila.
+const CATS = ['Titles','Lower Thirds','Transitions','Intros','Logo Reveal','Openers','Slideshows','Backgrounds','LUTs','Overlays','Infographics','Social Media','Logos','Mockups'];
 const GRADS = ['g1','g2','g3','g4','g5','g6','g7','g8','g9','g10'];
 
 const CAT_SLUGS = {
-  "Logo Reveal": { cat: "logos", catLabel: "Logo Reveal" },
-  "Title / Intro": { cat: "intros", catLabel: "Title / Intro" },
-  "Lower Thirds": { cat: "lowerthirds", catLabel: "Lower Thirds" },
+  Titles: { cat: "titles", catLabel: "Titles" },
+  "Lower Thirds": { cat: "lower-thirds", catLabel: "Lower Thirds" },
   Transitions: { cat: "transitions", catLabel: "Transitions" },
-  "Social Media": { cat: "social", catLabel: "Social Media" },
-  Slideshow: { cat: "slideshows", catLabel: "Slideshow" },
-  Infographics: { cat: "infographics", catLabel: "Infographics" },
+  Intros: { cat: "intros", catLabel: "Intros" },
+  "Logo Reveal": { cat: "logo-reveal", catLabel: "Logo Reveal" },
+  Openers: { cat: "openers", catLabel: "Openers" },
+  Slideshows: { cat: "slideshows", catLabel: "Slideshows" },
   Backgrounds: { cat: "backgrounds", catLabel: "Backgrounds" },
-  YouTube: { cat: "intros", catLabel: "YouTube" },
-  "Instagram Reels": { cat: "social", catLabel: "Instagram Reels" },
+  LUTs: { cat: "luts", catLabel: "LUTs" },
+  Overlays: { cat: "overlays", catLabel: "Overlays" },
+  Infographics: { cat: "infographics", catLabel: "Infographics" },
+  "Social Media": { cat: "social-media", catLabel: "Social Media" },
+  Logos: { cat: "logos", catLabel: "Logos" },
+  Mockups: { cat: "mockups", catLabel: "Mockups" },
+  // Legacy yorliqlar (eski draft'lar) → kanonik kategoriyalar
+  "Title / Intro": { cat: "titles", catLabel: "Titles" },
+  Slideshow: { cat: "slideshows", catLabel: "Slideshows" },
+  YouTube: { cat: "intros", catLabel: "Intros" },
+  "Instagram Reels": { cat: "social-media", catLabel: "Social Media" },
 };
 
 function catFromLabel(label) {
-  return CAT_SLUGS[label] || { cat: "intros", catLabel: label || "Other" };
+  return CAT_SLUGS[label] || { cat: "uncategorized", catLabel: label || "Uncategorized" };
+}
+
+/* ── Stock S1 — mahsulot turi konstantalari (contributor upload + admin edit) ── */
+// Keng Type (web'dagi 4 pill bilan 1:1)
+const TEMPLATE_TYPES = [
+  { value: "video-templates", label: "Video Templates" },
+  { value: "motion-graphics", label: "Motion Graphics" },
+  { value: "graphics", label: "Graphics" },
+  { value: "luts", label: "LUTs" },
+];
+
+// Stock kategoriyalari (S1 sodda ro'yxat; S2'da AI-assisted kengayadi)
+const STOCK_CATS = {
+  video: ["Nature","People","City","Business","Technology","Abstract","Food","Sports","Travel","Animals"],
+  music: ["Cinematic","Corporate","Ambient","Electronic","Hip-Hop","Rock","Pop","Folk","Jazz","Classical"],
+  sfx: ["Whoosh","Impact","UI / Interface","Ambience","Foley","Transitions","Glitch","Nature","Mechanical","Voice"],
+  photo: ["Nature","People","City","Business","Technology","Abstract","Food","Travel","Animals","Textures"],
+};
+
+/** Stock kategoriya yorlig'i → {cat, catLabel} (slug avtomatik). */
+function stockCatFromLabel(label) {
+  const l = String(label || "").trim();
+  if (!l) return { cat: "uncategorized", catLabel: "Uncategorized" };
+  return {
+    cat: l.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+    catLabel: l,
+  };
 }
 
 /**

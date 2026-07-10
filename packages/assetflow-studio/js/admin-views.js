@@ -446,7 +446,7 @@ function renderModDetail(t){
       <div class="adx-prevbox">${preview}</div>
       <div style="flex:1;min-width:260px">
         <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="flex:1;min-width:0"><div class="adx-h18">${esc(t.name)}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${esc(t.cat)} \u00b7 After Effects</div></div>
+          <div style="flex:1;min-width:0"><div class="adx-h18">${esc(t.name)}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${esc(t.cat)} \u00b7 ${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'After Effects')}</div></div>
           ${adxModStatusBdg(t.status)}
           ${t.isNew?'<span class="adx-bdg adx-bdg-info">New</span>':''}
         </div>
@@ -460,6 +460,7 @@ function renderModDetail(t){
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px">
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">ID</div><div class="adx-mono" style="font-size:11px;color:#B7C0CE" title="${esc(t.id)}">${esc(shortId)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">KIND</div><div style="font-size:12px;color:#B7C0CE">${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'Template')}</div></div>
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">CATEGORY</div><div style="font-size:12px;color:#B7C0CE">${esc(t.cat)}</div></div>
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">RESOLUTION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.res)}</div></div>
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">ORIENTATION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.orient)}</div></div>

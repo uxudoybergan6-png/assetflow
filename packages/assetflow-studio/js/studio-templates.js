@@ -54,6 +54,11 @@ const StudioTemplates = (() => {
         meta.size ||
         (t.fileSize ? `${(t.fileSize / 1024 / 1024).toFixed(1)} MB` : "—"),
       isNew: t.reviewStatus === "PENDING_REVIEW",
+      // Stock S1 — mahsulot turi maydonlari (admin/moderation ko'rsatadi)
+      kind: t.kind || "template",
+      stockType: t.stockType || null,
+      templateApp: t.templateApp || "ae",
+      templateType: t.templateType || "video-templates",
       // Per-template tier (set by admin). API returns isPro via include.
       isPro: !!t.isPro,
       // #15: preview background-transcode status ('pending'|'done'|'failed'|null) — for UI badge

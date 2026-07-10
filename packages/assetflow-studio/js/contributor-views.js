@@ -264,6 +264,107 @@ let UP_UPLOADED_SIG = "";
 let UP_UPLOADING = false;
 
 /* ============================================================
+   Stock S1 — mahsulot turi (kind) tanlovi (docs/STOCK-EXPANSION-PLAN.md)
+   Tanlangan karta kind/stockType/templateApp + qabul formatlar +
+   Step-1 maydonlarini belgilaydi. TEMPLATE_TYPES/STOCK_CATS — data.js.
+   ============================================================ */
+const PRODUCT_KIND_GROUPS = [
+  {
+    kind: "template",
+    label: "Template",
+    options: [
+      { sub: "ae", label: "After Effects", exts: [".aep", ".ffx", ".zip"] },
+      { sub: "pr", label: "Premiere Pro", exts: [".mogrt", ".zip"] },
+      { sub: "motion", label: "Apple Motion", exts: [".motn", ".zip"] },
+      { sub: "resolve", label: "DaVinci Resolve", exts: [".drfx", ".setting", ".zip"] },
+    ],
+  },
+  {
+    kind: "stock",
+    label: "Stock",
+    options: [
+      { sub: "video", label: "Video", exts: [".mp4", ".mov"] },
+      { sub: "music", label: "Music", exts: [".wav", ".mp3", ".aiff"] },
+      { sub: "sfx", label: "Sound FX", exts: [".wav", ".aiff"] },
+      { sub: "photo", label: "Photo", exts: [".jpg", ".jpeg", ".png", ".webp"] },
+    ],
+  },
+];
+
+/** Joriy tanlov (kind + sub) uchun option konfiguratsiyasi; tanlanmagan bo'lsa null. */
+function upKindOption() {
+  const grp = PRODUCT_KIND_GROUPS.find((g) => g.kind === UP_DRAFT.kind);
+  if (!grp) return null;
+  const sub = UP_DRAFT.kind === "stock" ? UP_DRAFT.stockType : UP_DRAFT.templateApp;
+  return grp.options.find((o) => o.sub === sub) || null;
+}
+
+/** Granular kategoriya → keng Type taklifi (foydalanuvchi o'zgartira oladi). */
+function typeForCatLabel(label) {
+  const l = String(label || "").toLowerCase();
+  if (l === "luts") return "luts";
+  if (["infographics", "social media", "logos", "mockups", "backgrounds"].includes(l)) return "graphics";
+  if (["titles", "lower thirds", "transitions", "intros", "openers", "overlays", "slideshows"].includes(l)) return "motion-graphics";
+  return "video-templates";
+}
+
+function selectProductKind(kind, sub) {
+  saveUploadStep1(); // yozilgan name/desc yo'qolmasin
+  const branchChanged =
+    UP_DRAFT.kind !== kind || (kind === "stock" && UP_DRAFT.stockType !== sub);
+  UP_DRAFT.kind = kind;
+  if (kind === "stock") {
+    UP_DRAFT.stockType = sub;
+  } else {
+    UP_DRAFT.templateApp = sub;
+    UP_DRAFT.stockType = null;
+  }
+  // Boshqa taksonomiyaga o'tildi — eski kategoriya endi mos emas
+  if (branchChanged) UP_DRAFT.catLabel = "";
+  renderUpload();
+}
+window.selectProductKind = selectProductKind;
+
+/** Step-3 xulosa pill matni: "Stock · Music" yoki "After Effects · Motion Graphics". */
+function upKindSummary() {
+  const o = upKindOption();
+  if (UP_DRAFT.kind === "stock") return "Stock · " + (o ? o.label : "");
+  const tt = TEMPLATE_TYPES.find((t) => t.value === (UP_DRAFT.templateType || "video-templates"));
+  return (o ? o.label : "After Effects") + (tt ? " · " + tt.label : "");
+}
+
+/** Kategoriya o'zgarganda keng Type taklifini sinxronlash (faqat template branch). */
+function onUpCatChange() {
+  const cat = document.getElementById("upCat")?.value;
+  const typeEl = document.getElementById("upType");
+  if (cat && typeEl) typeEl.value = typeForCatLabel(cat);
+}
+window.onUpCatChange = onUpCatChange;
+
+/** Motion-Elements uslubidagi guruhlangan kind-picker kartasi (Step 1 tepasi). */
+function kindPickerCard() {
+  const groups = PRODUCT_KIND_GROUPS.map((g) => `
+    <div class="col gap-8 grow" style="min-width:230px">
+      <span class="small" style="font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-dim)">${g.label}</span>
+      ${g.options.map((o) => {
+        const active =
+          UP_DRAFT.kind === g.kind &&
+          (g.kind === "stock" ? UP_DRAFT.stockType : UP_DRAFT.templateApp) === o.sub;
+        return `<button type="button" onclick="selectProductKind('${g.kind}','${o.sub}')"
+          style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;cursor:pointer;padding:10px 12px;border-radius:10px;border:1px solid ${active ? "var(--green,#82c341)" : "var(--line,#2a2a2a)"};background:${active ? "rgba(130,195,65,.08)" : "transparent"};color:inherit;font:inherit;width:100%">
+          <span class="body" style="font-weight:600">${o.label}</span>
+          <span class="small" style="color:var(--text-dim)">${o.exts.join(" · ")}</span>
+        </button>`;
+      }).join("")}
+    </div>`).join("");
+  return `<div class="card card-pad col gap-12">
+    <div class="col" style="gap:2px"><span class="h3">What are you uploading?</span>
+    <span class="small" style="color:var(--text-dim)">Pick a product type — it sets the accepted file formats and the fields below.</span></div>
+    <div class="row gap-16 wrap" style="align-items:flex-start">${groups}</div>
+  </div>`;
+}
+
+/* ============================================================
    BULK ZIP UPLOAD (cloud ingest) — each .zip = one template
    (project file + preview image + preview video), auto-processed
    server-side into a PENDING_REVIEW template. No manual form.
@@ -489,6 +590,12 @@ function openEditTemplate(id) {
         : "horizontal";
   UP_DRAFT.res = (t.res || "4K").toLowerCase().includes("1080") ? "1080p" : "4k";
   UP_DRAFT.tags = t.tags || [];
+  // Stock S1 — mavjud yozuvdan mahsulot turini tiklash (API xom qatori _api'da)
+  const api = t._api || {};
+  UP_DRAFT.kind = api.kind || "template";
+  UP_DRAFT.stockType = api.stockType || null;
+  UP_DRAFT.templateApp = api.templateApp || "ae";
+  UP_DRAFT.templateType = api.templateType || "video-templates";
   UP_DRAFT.files = {};
   route("upload");
   toast("Editing", "Update the details and files, then submit", "info");
@@ -503,6 +610,9 @@ function saveUploadStep1() {
   if (descEl) UP_DRAFT.desc = descEl.value.trim();
   const catEl = root.querySelector("#upCat");
   if (catEl) UP_DRAFT.catLabel = catEl.value;
+  // Stock S1 — keng Type (faqat template branch'da mavjud)
+  const typeEl = root.querySelector("#upType");
+  if (typeEl) UP_DRAFT.templateType = typeEl.value || "video-templates";
   const navEl = root.querySelector("#upNav");
   if (navEl) UP_DRAFT.nav = navEl.value || "video";
   const orientEl = root.querySelector("#upOrient");
@@ -530,6 +640,11 @@ function saveUploadStep1() {
 
 function validateUploadStep1() {
   saveUploadStep1();
+  // Stock S1 — avval mahsulot turi tanlanishi shart (formatlar + maydonlar shunga bog'liq)
+  if (!upKindOption()) {
+    toast("Product type", "Choose what you're uploading first", "warn");
+    return false;
+  }
   if (!UP_DRAFT.name || !UP_DRAFT.desc || !UP_DRAFT.catLabel) {
     toast("Fields", "Fill in the name, description, and category", "warn");
     return false;
@@ -559,25 +674,23 @@ function checkUploadFile(file, label) {
 }
 
 function validateUploadPackFile() {
+  // Stock S1 — qabul kengaytmalar tanlangan mahsulot turidan olinadi
+  const opt = upKindOption();
+  const isStock = UP_DRAFT.kind === "stock";
+  const label = isStock ? "Media file" : "Project file";
+  const exts = opt ? opt.exts : [".mogrt", ".zip"];
   const pack = UP_DRAFT.files?.pack;
   if (!pack) {
-    toast(
-      "Project file",
-      "Upload a .mogrt (or a .zip containing .mogrt files) for After Effects import",
-      "warn"
-    );
+    toast(label, `Upload the ${isStock ? "media" : "project"} file (${exts.join(" / ")})`, "warn");
     return false;
   }
   const name = (pack.name || "").toLowerCase();
-  if (!/\.(mogrt|zip)$/i.test(name)) {
-    toast(
-      "Project file",
-      "Only .mogrt or .zip (containing .mogrt) is accepted",
-      "warn"
-    );
+  const extRe = new RegExp(`\\.(${exts.map((e) => e.slice(1)).join("|")})$`, "i");
+  if (!extRe.test(name)) {
+    toast(label, `Only ${exts.join(" / ")} is accepted for ${opt ? opt.label : "this product"}`, "warn");
     return false;
   }
-  if (!checkUploadFile(pack, "Project file")) return false;
+  if (!checkUploadFile(pack, label)) return false;
   if (!checkUploadFile(UP_DRAFT.files?.preview, "Preview video")) return false;
   return true;
 }
@@ -776,17 +889,34 @@ function renderUpload(){
         </div>`;}).join('')}
     </div>
 
-    ${UP_STEP===1?`<div class="card card-pad col gap-16">
-      <div class="field"><label>Template name <span class="req">*</span></label><input id="upName" class="input" value="${esc(UP_DRAFT.name||'')}" placeholder="e.g. Neon Glitch Logo Reveal"></div>
-      <div class="field"><label>Description <span class="req">*</span></label><textarea id="upDesc" class="textarea" placeholder="What the template is, how it's used\u2026">${esc(UP_DRAFT.desc||'')}</textarea><span class="hint">A clear description helps moderation go faster.</span></div>
-      <div class="row gap-16"><div class="field grow"><label>Category <span class="req">*</span></label><select id="upCat" class="select" style="height:38px;width:100%"><option value="">Select\u2026</option>${CATS.map(c=>`<option ${UP_DRAFT.catLabel===c?'selected':''}>${c}</option>`).join('')}</select></div>
-      <div class="field grow"><label>Section</label><select id="upNav" class="select" style="height:38px;width:100%"><option value="video" ${UP_DRAFT.nav==='video'?'selected':''}>Video / Broadcast</option><option value="social" ${UP_DRAFT.nav==='social'?'selected':''}>Social Media</option><option value="corp" ${UP_DRAFT.nav==='corp'?'selected':''}>Corporate</option></select></div></div>
-      <div class="row gap-16"><div class="field grow"><label>Orientation</label><select id="upOrient" class="select" style="height:38px;width:100%"><option>Landscape (16:9)</option><option>Portrait (9:16)</option><option>Square (1:1)</option></select></div>
-      <div class="field grow"><label>Resolution</label><select id="upRes" class="select" style="height:38px;width:100%"><option>4K (3840\u00d72160)</option><option>1080p</option><option>1080\u00d71920</option></select></div></div>
+    ${UP_STEP===1?kindPickerCard():''}
+    ${UP_STEP===1&&upKindOption()?`<div class="card card-pad col gap-16">
+      <div class="field"><label>${UP_DRAFT.kind==='stock'?'Product name':'Template name'} <span class="req">*</span></label><input id="upName" class="input" value="${esc(UP_DRAFT.name||'')}" placeholder="${UP_DRAFT.kind==='stock'?'e.g. Cinematic Sunset Timelapse':'e.g. Neon Glitch Logo Reveal'}"></div>
+      <div class="field"><label>Description <span class="req">*</span></label><textarea id="upDesc" class="textarea" placeholder="What it is, how it's used\u2026">${esc(UP_DRAFT.desc||'')}</textarea><span class="hint">A clear description helps moderation go faster.</span></div>
+      ${UP_DRAFT.kind==='stock'?`
+      <div class="row gap-16"><div class="field grow"><label>Category <span class="req">*</span></label><select id="upCat" class="select" style="height:38px;width:100%"><option value="">Select\u2026</option>${(STOCK_CATS[UP_DRAFT.stockType]||[]).map(c=>`<option ${UP_DRAFT.catLabel===c?'selected':''}>${c}</option>`).join('')}</select></div>
+      ${(UP_DRAFT.stockType==='video'||UP_DRAFT.stockType==='photo')?`<div class="field grow"><label>Orientation</label><select id="upOrient" class="select" style="height:38px;width:100%"><option ${!UP_DRAFT.orient||UP_DRAFT.orient==='horizontal'?'selected':''}>Landscape (16:9)</option><option ${UP_DRAFT.orient==='vertical'?'selected':''}>Portrait (9:16)</option><option ${UP_DRAFT.orient==='square'?'selected':''}>Square (1:1)</option></select></div>
+      <div class="field grow"><label>Resolution</label><select id="upRes" class="select" style="height:38px;width:100%"><option ${UP_DRAFT.res!=='1080p'?'selected':''}>4K (3840\u00d72160)</option><option ${UP_DRAFT.res==='1080p'?'selected':''}>1080p</option><option>1080\u00d71920</option></select></div>`:''}</div>
+      `:`
+      <div class="row gap-16"><div class="field grow"><label>Type <span class="req">*</span></label><select id="upType" class="select" style="height:38px;width:100%">${TEMPLATE_TYPES.map(t=>`<option value="${t.value}" ${(UP_DRAFT.templateType||'video-templates')===t.value?'selected':''}>${t.label}</option>`).join('')}</select></div>
+      <div class="field grow"><label>Category <span class="req">*</span></label><select id="upCat" class="select" style="height:38px;width:100%" onchange="onUpCatChange()"><option value="">Select\u2026</option>${CATS.map(c=>`<option ${UP_DRAFT.catLabel===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
+      <div class="row gap-16"><div class="field grow"><label>Section</label><select id="upNav" class="select" style="height:38px;width:100%"><option value="video" ${UP_DRAFT.nav==='video'?'selected':''}>Video / Broadcast</option><option value="social" ${UP_DRAFT.nav==='social'?'selected':''}>Social Media</option><option value="corp" ${UP_DRAFT.nav==='corp'?'selected':''}>Corporate</option></select></div>
+      <div class="field grow"><label>Orientation</label><select id="upOrient" class="select" style="height:38px;width:100%"><option ${!UP_DRAFT.orient||UP_DRAFT.orient==='horizontal'?'selected':''}>Landscape (16:9)</option><option ${UP_DRAFT.orient==='vertical'?'selected':''}>Portrait (9:16)</option><option ${UP_DRAFT.orient==='square'?'selected':''}>Square (1:1)</option></select></div>
+      <div class="field grow"><label>Resolution</label><select id="upRes" class="select" style="height:38px;width:100%"><option ${UP_DRAFT.res!=='1080p'?'selected':''}>4K (3840\u00d72160)</option><option ${UP_DRAFT.res==='1080p'?'selected':''}>1080p</option><option>1080\u00d71920</option></select></div></div>
+      `}
       <div class="field"><label>Tags</label><input id="upTags" class="input" value="${esc((UP_DRAFT.tags||[]).join(', '))}" placeholder="comma-separated: glitch, neon, logo"></div>
     </div>`:''}
 
-    ${UP_STEP===2?`<div class="card card-pad col gap-16">
+    ${UP_STEP===2?(()=>{const opt=upKindOption();const isStock=UP_DRAFT.kind==='stock';const exts=opt?opt.exts:['.mogrt','.zip'];const accept=exts.join(',')+(exts.includes('.zip')?',application/zip':'');
+    return `<div class="card card-pad col gap-16">
+      ${isStock?`
+      <div class="field"><label>Media file (${exts.join(' / ')}) <span class="req">*</span></label>
+        <input type="file" id="upPack" accept="${accept}" class="input" style="padding:8px">
+        <span class="small">This file <b>is the product</b> (${opt?opt.label:''} stock) · Maximum size: <b>3 GB</b></span></div>
+      ${UP_DRAFT.stockType==='video'?`<div class="field"><label>Thumbnail (optional)</label>
+        <input type="file" id="upThumb" accept="image/*" class="input" style="padding:8px">
+        <span class="small">JPG / PNG poster frame</span></div>`:''}
+      `:`
       <div class="row gap-16">
         <div class="field grow"><label>Preview video</label>
           <input type="file" id="upPreview" accept="video/*" class="input" style="padding:8px">
@@ -795,27 +925,30 @@ function renderUpload(){
           <input type="file" id="upThumb" accept="image/*" class="input" style="padding:8px">
           <span class="small">JPG / PNG</span></div>
       </div>
-      <div class="field"><label>Project file (.mogrt or .zip)</label>
-        <input type="file" id="upPack" accept=".mogrt,.zip,application/zip" class="input" style="padding:8px">
-        <span class="small">Motion Graphics Template (.mogrt) or a .zip containing multiple .mogrt files · Maximum size: <b>3 GB</b></span></div>
+      <div class="field"><label>Project file (${exts.join(' / ')})</label>
+        <input type="file" id="upPack" accept="${accept}" class="input" style="padding:8px">
+        <span class="small">${opt?opt.label:'After Effects'} project (${exts.join(' / ')}) or a .zip pack · Maximum size: <b>3 GB</b></span></div>
+      `}
       <div id="upProgress"></div>
-    </div>`:''}
+    </div>`})():''}
 
     ${UP_STEP===3?`<div class="card card-pad col gap-16">
       <div class="row gap-16">
         <div class="thumb g1 grain" style="width:200px;aspect-ratio:16/10;border-radius:var(--r-md);flex:0 0 auto"><div class="play"><span>${ic('play')}</span></div></div>
         <div class="col gap-8 grow" style="min-width:0">
           <span class="h3">${esc(UP_DRAFT.name||'Template')}</span>
-          <div class="row gap-6 wrap"><span class="pill">${esc(UP_DRAFT.catLabel||'—')}</span><span class="pill">${(UP_DRAFT.res||'4k').toUpperCase()}</span><span class="pill">${UP_DRAFT.orient==='vertical'?'Portrait':UP_DRAFT.orient==='square'?'Square':'Landscape'}</span></div>
+          <div class="row gap-6 wrap"><span class="pill">${esc(upKindSummary())}</span><span class="pill">${esc(UP_DRAFT.catLabel||'—')}</span>${(UP_DRAFT.kind!=='stock'||UP_DRAFT.stockType==='video'||UP_DRAFT.stockType==='photo')?`<span class="pill">${(UP_DRAFT.res||'4k').toUpperCase()}</span><span class="pill">${UP_DRAFT.orient==='vertical'?'Portrait':UP_DRAFT.orient==='square'?'Square':'Landscape'}</span>`:''}</div>
           <p class="body" style="max-width:100%;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden">${esc(UP_DRAFT.desc||'')}</p>
           <div class="row gap-8 wrap" style="min-width:0">
             ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${esc(UP_DRAFT.files.preview.name)}">${ic('film')} ${esc(UP_DRAFT.files.preview.name)} · ${fmtMB(UP_DRAFT.files.preview.size)}</span>`:''}
             ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${esc(UP_DRAFT.files.thumb.name)}">${ic('image')} ${esc(UP_DRAFT.files.thumb.name)}</span>`:''}
-            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${esc(UP_DRAFT.files.pack.name)}">${ic('file')} ${esc(UP_DRAFT.files.pack.name)} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:'<span class="small" style="color:var(--orange)">Pack (.mogrt/.zip) is required for AE import</span>'}
+            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${esc(UP_DRAFT.files.pack.name)}">${ic('file')} ${esc(UP_DRAFT.files.pack.name)} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:`<span class="small" style="color:var(--orange)">${UP_DRAFT.kind==='stock'?'Media file is required — it is the product itself':'Project file is required for import'}</span>`}
           </div>
         </div>
       </div>
-      ${infoBanner('Once submitted, the status becomes <b>PENDING_REVIEW</b>. After admin approval it appears in AE → FrameFlow Browse.')}
+      ${infoBanner(UP_DRAFT.kind==='stock'
+        ?'Once submitted, the status becomes <b>PENDING_REVIEW</b>. Stock browsing surfaces launch in an upcoming phase — approved stock is stored and will appear there automatically.'
+        :'Once submitted, the status becomes <b>PENDING_REVIEW</b>. After admin approval it appears in AE → FrameFlow Browse.')}
       <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${UP_RIGHTS?' on':''}" onclick="toggleUpRights()">${ic('check')}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
     </div>`:''}
 
@@ -862,7 +995,11 @@ async function saveDraftOnly() {
 }
 
 async function createUploadTemplateRecord() {
-  const { cat, catLabel } = catFromLabel(UP_DRAFT.catLabel);
+  // Stock S1 — stock kategoriyasi slug'i alohida (stockCatFromLabel, data.js)
+  const isStock = UP_DRAFT.kind === "stock";
+  const { cat, catLabel } = isStock
+    ? stockCatFromLabel(UP_DRAFT.catLabel)
+    : catFromLabel(UP_DRAFT.catLabel);
   const body = {
     name: UP_DRAFT.name,
     description: UP_DRAFT.desc,
@@ -872,6 +1009,14 @@ async function createUploadTemplateRecord() {
     orient: UP_DRAFT.orient,
     res: UP_DRAFT.res,
     tags: UP_DRAFT.tags,
+    // Stock S1 — mahsulot turi maydonlari
+    kind: UP_DRAFT.kind || "template",
+    ...(isStock
+      ? { stockType: UP_DRAFT.stockType }
+      : {
+          templateApp: UP_DRAFT.templateApp || "ae",
+          templateType: UP_DRAFT.templateType || "video-templates",
+        }),
     metaJson: { grad: "g1", dur: "0:12" },
     // FAZA 1b — rights attestation: faqat checkbox belgilanganda qayd etiladi
     rightsAccepted: UP_RIGHTS === true,

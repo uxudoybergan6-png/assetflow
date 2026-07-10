@@ -595,7 +595,7 @@ function openTplDrawer(id){
       <div class="row between center"><span class="h3">${esc(t.name)}</span>${badge(t.status)}</div>
       <div class="row between center"><span class="label">Tier</span><button class="badge badge-plan ${t.isPro?'pro':'free'} tier-toggle" title="${t.isPro?'Pro tier — click to make Free':'Free tier — click to make Pro'}" onclick="openToggleTierTpl('${t.id}')">${t.isPro?'PRO — click for Free':'FREE — click for Pro'}</button></div>
       <p class="body">${esc(t.desc)}</p>
-      <div class="meta-grid">${[['ID',t.id],['Category',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['File',t.size],['Uploaded',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
+      <div class="meta-grid">${[['ID',t.id],['Kind',kindTypeLabel(t)],['Category',t.cat],['Resolution',t.res],['Downloads',t.dl?t.dl.toLocaleString():'\u2014'],['File',t.size],['Uploaded',t.created]].map(([k,v])=>`<div><div class="label" style="margin-bottom:3px">${k}</div><div class="cell-strong">${esc(v)}</div></div>`).join('')}</div>
       <div class="row gap-6 wrap">${t.tags.map(x=>`<span class="pill">${ic('tag')}${esc(x)}</span>`).join('')}</div>
       <div class="divider"></div>
       <div class="row center gap-10">${avatar(con.name,34)}<div class="col grow" style="gap:1px"><span class="cell-strong">${esc(con.name)}</span><span class="small">${esc(con.email)}</span></div><button class="btn btn-ghost btn-sm" onclick="closeDrawer();route('contributor-detail','${con.id}')">Profile</button></div>
@@ -791,15 +791,29 @@ async function modClearPackConfirm(id) {
   }
 }
 
+/** Stock S1 — kind/Type xulosasi (moderation meta-grid + edit modal). */
+function kindTypeLabel(t){
+  if ((t.kind || "template") === "stock") {
+    const st = { video: "Video", music: "Music", sfx: "Sound FX", photo: "Photo" }[t.stockType] || t.stockType || "—";
+    return "Stock · " + st;
+  }
+  const types = typeof TEMPLATE_TYPES !== "undefined" ? TEMPLATE_TYPES : [];
+  const tt = types.find((x) => x.value === (t.templateType || "video-templates"));
+  return "Template · " + (tt ? tt.label : "Video Templates");
+}
+
 function openEditMeta(id){
   const t=TEMPLATES.find(x=>x.id===id);
   const { cat, catLabel } = typeof catFromLabel === "function" ? catFromLabel(t.cat) : { cat: "intros", catLabel: t.cat };
+  const isStock = (t.kind || "template") === "stock";
   openModal(`
     <div class="modal-head"><div class="modal-ico" style="background:var(--blue-dim);color:var(--blue)">${ic('edit')}</div>
       <div><h3>Edit metadata</h3><p>Admin override \u2014 ${t.id}</p></div></div>
     <div class="modal-body col gap-12" id="editMetaBody">
       <div class="field"><label>Name</label><input id="emName" class="input" value="${esc(t.name)}"></div>
       <div class="field"><label>Description</label><textarea id="emDesc" class="textarea">${esc(t.desc||'')}</textarea></div>
+      <div class="row gap-12"><div class="field grow"><label>Kind</label><input class="input" value="${esc(kindTypeLabel(t))}" disabled></div>
+      ${isStock?'':`<div class="field grow"><label>Type</label><select id="emType" class="select" style="height:38px;width:100%">${(typeof TEMPLATE_TYPES!=='undefined'?TEMPLATE_TYPES:[]).map(x=>`<option value="${x.value}" ${x.value===(t.templateType||'video-templates')?'selected':''}>${esc(x.label)}</option>`).join('')}</select></div>`}</div>
       <div class="row gap-12"><div class="field grow"><label>Category</label><select id="emCat" class="select" style="height:38px;width:100%">${CATS.map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="field grow"><label>Resolution</label><input id="emRes" class="input" value="${esc(t.res)}"></div></div>
       <div class="field"><label>Tags</label><input id="emTags" class="input" value="${esc(t.tags.join(', '))}"></div>
@@ -822,6 +836,8 @@ async function saveEditMeta(id) {
     .map((s) => s.trim())
     .filter(Boolean);
   const mapped = typeof catFromLabel === "function" ? catFromLabel(catLabel) : { cat: "intros", catLabel };
+  // Stock S1 — template branch'da Type select mavjud bo'lsa uni ham yuboramiz
+  const typeEl = document.getElementById("emType");
   try {
     await StudioApi.patchTemplate(id, {
       name,
@@ -830,6 +846,7 @@ async function saveEditMeta(id) {
       catLabel: mapped.catLabel,
       res: resRaw.toLowerCase().includes("1080") ? "1080p" : "4k",
       tags,
+      ...(typeEl ? { templateType: typeEl.value } : {}),
     });
     await StudioTemplates.refreshAfterReview();
     closeModal();
