@@ -15189,7 +15189,8 @@
   .ff .va-result{width:520px;max-width:88%;aspect-ratio:16/9;border-radius:14px;box-shadow:0 30px 70px -20px rgba(0,0,0,.8)}
   .ff .va-ract{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
   /* PHASE B — dock evolved into the mockup composer (bottom-docked inside the workspace) */
-  .ff .va-dock{position:absolute;left:24px;right:24px;bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
+  /* #7 — kompakt, markazlashgan suzuvchi kompozer (chetdan-chetga emas; Artlist ilhomi) */
+  .ff .va-dock{position:absolute;left:0;right:0;margin-inline:auto;width:min(920px,calc(100% - 48px));bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
   .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:40px;max-height:240px;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
   .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
@@ -15499,7 +15500,7 @@
     .ff .va-axgrid,.ff .va-axgrid.compact{columns:2;column-gap:9px}
     .ff .va-axcell{margin-bottom:9px}
     .ff .va-axres{border-radius:11px}
-    .ff .va-dock{position:static;margin:12px 0 0;border-radius:18px;padding:12px;background:rgba(19,22,28,.9)}
+    .ff .va-dock{position:static;margin:12px 0 0;width:auto;border-radius:18px;padding:12px;background:rgba(19,22,28,.9)}
     .ff .va-axmenu{position:fixed;left:12px;right:12px;bottom:96px;top:auto;width:auto;z-index:96}
     /* frame F: dock = mode + model + cost + Generate; qolgan param chiplar mode-popover ichiga yig'iladi */
     .ff .va-dockrow .va-set[data-pop="aspect"],.ff .va-dockrow .va-set[data-pop="quality"],.ff .va-dockrow .va-set[data-pop="res"],.ff .va-dockrow .va-set[data-pop="duration"],.ff .va-dockrow .va-set[data-pop="count"],.ff .va-dockrow .va-set[data-pop="voice"],.ff .va-dockrow .va-set.enh{display:none}
