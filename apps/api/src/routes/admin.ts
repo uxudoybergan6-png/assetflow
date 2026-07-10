@@ -13,6 +13,7 @@ import {
   mapSubscriberRow,
   resetExpiredPluginMonths,
   refreshPlanConfigCache,
+  recordPlanChange,
 } from "../lib/plugin-profile.js";
 import {
   getSignedUploadUrl,
@@ -21,6 +22,7 @@ import {
   getS3ObjectMeta,
 } from "../lib/s3.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { diagnoseSizeBytes, backfillSizeBytes } from "../lib/backfill-sizebytes.js";
 import { getModelById } from "../lib/gen-models.js";
 import { hydrateGenAssets } from "./studio-gen.js";
@@ -147,6 +149,7 @@ adminRouter.get("/plan-config", async (_req, res) => {
 
 const planConfigSchema = z.object({
   label: z.string().min(1).max(40).optional(),
+  active: z.boolean().optional(), // Audit §C — admin toggle endi saqlanadi (display)
   aiMonthlyCredits: z.number().int().min(0).max(1_000_000).optional(),
   downloadLimit: z.number().int().min(1).max(999_999).nullable().optional(),
   importLimit: z.number().int().min(0).max(999_999).nullable().optional(),
@@ -176,6 +179,7 @@ adminRouter.put("/plan-config/:plan", async (req, res) => {
     create: {
       plan: plan.data,
       label: body.data.label ?? plan.data,
+      active: body.data.active ?? true,
       aiMonthlyCredits: body.data.aiMonthlyCredits ?? 0,
       downloadLimit: body.data.downloadLimit ?? null,
       importLimit: body.data.importLimit ?? null,
@@ -243,10 +247,14 @@ adminRouter.get("/plugin-subscribers", async (_req, res) => {
       active: active.length,
       blocked: items.filter((s) => s.status === "blocked").length,
       removed: items.filter((s) => s.status === "removed").length,
-      online: active.filter((s) => /Hozir|daq|Bugun/i.test(s.lastSeen)).length,
+      // Audit §C (P1) — onlayn endi yagona predikat (mapSubscriberRow.online, 60 daqiqa);
+      // avvalgi humanized-label regex "Hozir"ni (eng yaqinlarini) tushirib qoldirardi.
+      online: active.filter((s) => s.online).length,
       totalDownloads: items.reduce((a, s) => a + s.downloads, 0),
       free: items.filter((s) => s.plan === "Free" && s.status !== "removed").length,
-      pro: items.filter((s) => s.plan === "Pro" && s.status !== "removed").length,
+      // Audit §C (P2) — STUDIO ham pullik: free+pro < total bo'lib qolmasin (UI Studio'ni Pro deb ko'rsatadi)
+      pro: items.filter((s) => s.plan !== "Free" && s.status !== "removed").length,
+      studio: items.filter((s) => s.plan === "Studio" && s.status !== "removed").length,
     },
   });
 });
@@ -283,10 +291,12 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
       prisma.templateDownloadEvent.count({ where: { kind: "import" } }),
     ]);
 
-  const planCounts: Record<string, number> = { free: 0, pro: 0 };
+  const planCounts: Record<string, number> = { free: 0, pro: 0, studio: 0 };
   byPlan.forEach((g) => {
     planCounts[g.plan.toLowerCase()] = g._count._all;
   });
+  // Audit §C (P2) — `paid` = Pro + Studio (frontend free+pro < total chalg'itmasin)
+  planCounts.paid = planCounts.pro + planCounts.studio;
 
   const statusCounts: Record<string, number> = {
     active: 0,
@@ -360,7 +370,7 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
     return;
   }
 
-  await ensurePluginProfile(userId);
+  const preProfile = await ensurePluginProfile(userId);
   const data: {
     status?: PluginAccountStatus;
     plan?: PluginPlanTier;
@@ -397,6 +407,12 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
 
   await prisma.pluginProfile.update({ where: { userId }, data });
 
+  // Audit §C (P2) — admin plan o'zgarishi ham PlanChangeEvent yozadi (churn/conversion/ARPU
+  // metrikalari LS-billing bilan bir manbada bo'lsin). Best-effort — so'rovni bloklamaydi.
+  if (data.plan && data.plan !== preProfile.plan) {
+    await recordPlanChange(userId, preProfile.plan, data.plan, "manual");
+  }
+
   if (data.status === PluginAccountStatus.BLOCKED || data.status === PluginAccountStatus.REMOVED) {
     // Plugin tokenlarni o'chiramiz + JWT'ni bekor qilish uchun tokenVersion oshiramiz.
     await prisma.pluginToken.deleteMany({ where: { userId } });
@@ -429,6 +445,51 @@ adminRouter.patch("/plugin-subscribers/:userId", async (req, res) => {
   });
 
   res.json({ item: mapSubscriberRow(full, !!token) });
+});
+
+/** Audit §C (P1) — "Message subscriber" endi REAL: email yuboradi (Resend) + audit.
+ *  Avval frontend faqat toast ko'rsatib hech narsa yubormasdi (silent no-op). */
+const subMessageSchema = z.object({
+  subject: z.string().trim().min(1).max(200),
+  message: z.string().trim().min(1).max(5000),
+});
+adminRouter.post("/plugin-subscribers/:userId/message", async (req, res) => {
+  const userId = String(req.params.userId);
+  const parsed = subMessageSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Subject and message are required" });
+    return;
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true },
+  });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  // sendEmail throw qilmaydi — false = yuborilmadi (RESEND_API_KEY yo'q va h.k.).
+  // Halol javob qaytaramiz: frontend "sent"ga qarab to'g'ri toast ko'rsatadi.
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const sent = await sendEmail({
+    to: user.email,
+    subject: parsed.data.subject,
+    html: renderEmailLayout(
+      parsed.data.subject,
+      `<p style="font-size:13px;line-height:1.7;white-space:pre-wrap">${esc(parsed.data.message)}</p>
+       <p style="font-size:11px;color:#8A93A3;margin-top:16px">— FrameFlow team</p>`
+    ),
+    text: parsed.data.message,
+  });
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "plugin-subscriber.message",
+    targetType: "pluginSubscriber",
+    targetId: userId,
+    detail: parsed.data.subject,
+    meta: { sent },
+  });
+  res.json({ ok: true, sent });
 });
 
 // ── NARX DVIGATELI — admin narx boshqaruvi (Bosqich 3.4, backend) ────────────
@@ -702,14 +763,18 @@ adminRouter.get("/gen-spend", async (req, res) => {
   const config = await getPricingConfig();
   const gens = await prisma.generation.findMany({
     where: createdAt ? { createdAt } : {},
-    select: { id: true, userId: true, cost: true, status: true },
+    select: { id: true, userId: true, cost: true, status: true, refunded: true },
   });
   const genUser = new Map<string, string>();
   const perUser = new Map<string, { gens: number; credits: number; costUsd: number }>();
   for (const g of gens) {
     genUser.set(g.id, g.userId);
     const u = perUser.get(g.userId) ?? { gens: 0, credits: 0, costUsd: 0 };
-    if (g.status === "done") { u.gens += 1; u.credits += g.cost ?? 0; }
+    if (g.status === "done") u.gens += 1;
+    // Audit §C (P2) — kredit sarfi endi BIR ta'rif: yechilgan va QAYTARILMAGAN kreditlar
+    // (users/:id/generations summary'dagi creditsNet bilan mos). Avval faqat status=done
+    // sanardi — failed-lekin-refund-qilinmagan sarf tushib qolib, marja noto'g'ri chiqardi.
+    if (!g.refunded) u.credits += g.cost ?? 0;
     perUser.set(g.userId, u);
   }
   const genIds = [...genUser.keys()];

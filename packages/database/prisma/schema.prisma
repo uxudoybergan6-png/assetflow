@@ -710,6 +710,7 @@ model TemplateDownloadEvent {
 model PlanConfig {
   plan              PluginPlanTier @id
   label             String
+  active            Boolean  @default(true) // Audit §C — admin "Active" toggle endi saqlanadi (hozircha display; enforcement keyin)
   aiMonthlyCredits  Int
   downloadLimit     Int?     // null = cheksiz
   importLimit       Int?     // null = cheksiz

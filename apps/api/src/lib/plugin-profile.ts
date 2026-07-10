@@ -15,7 +15,7 @@ const FREE_IMPORT_LIMIT = 10;
  * FAZA 4 (D) — plan o'zgarishi hodisasi (churn/conversion metrikalari).
  * BEST-EFFORT (writeCreditLedger naqshi): xato plan setter'ni BLOKLAMAYDI.
  */
-async function recordPlanChange(
+export async function recordPlanChange(
   userId: string,
   fromPlan: PluginPlanTier,
   toPlan: PluginPlanTier,
@@ -724,6 +724,9 @@ export function mapSubscriberRow(
     tokenOk,
     lastSeen: formatLastSeen(profile.lastSeenAt),
     lastSeenAt: profile.lastSeenAt ? new Date(profile.lastSeenAt).toISOString() : null,
+    // Audit §C (P1) — YAGONA onlayn predikati (oxirgi 60 daqiqa): UI regex bilan
+    // humanized labelni parse qilmasin (u "Hozir"ni tushirib qoldirardi).
+    online: !!profile.lastSeenAt && Date.now() - new Date(profile.lastSeenAt).getTime() < 3_600_000,
     device: profile.deviceLabel || "—",
     ae: profile.aeVersion || "—",
     downloadLimit: limits.downloadLimit,

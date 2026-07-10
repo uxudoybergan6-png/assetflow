@@ -2597,6 +2597,19 @@ contributorRouter.patch(
           }
         : undefined;
 
+    // Audit §C (P2) — post-approval tahrir re-moderatsiyadan qochirmasin: egasi (admin emas)
+    // JONLI (APPROVED) shablonning kontent maydonlarini o'zgartirsa, u qayta PENDING bo'ladi
+    // va nashrdan tushadi (admin qayta ko'radi). Faqat texnik maydonlar (fileName/fileSize)
+    // bunga kirmaydi.
+    const contentKeys = ["name", "description", "cat", "catLabel", "tags", "nav", "orient", "res", "templateType", "icon", "bg"];
+    const touchesContent =
+      contentKeys.some((k) => (directFields as Record<string, unknown>)[k] !== undefined) ||
+      meta !== undefined;
+    const needsRemoderation =
+      req.user!.role !== "ADMIN" &&
+      existing.reviewStatus === TemplateReviewStatus.APPROVED &&
+      touchesContent;
+
     const template = await prisma.contributorTemplate.update({
       where: { id },
       data: {
@@ -2604,8 +2617,24 @@ contributorRouter.patch(
         ...(meta !== undefined ? { metaJson: asMetaJson(meta as Record<string, unknown>) } : {}),
         externalId: d.externalId === undefined ? undefined : d.externalId,
         ...(rightsCaptureFields(d) ?? {}),
+        ...(needsRemoderation
+          ? {
+              reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
+              published: false,
+              reviewNote: "Re-review: contributor edited a live template",
+            }
+          : {}),
       },
     });
+    if (needsRemoderation) {
+      await writeAuditLog({
+        actorId: req.user!.userId,
+        action: "template.remoderation",
+        targetType: "template",
+        targetId: id,
+        detail: `Live template edited by owner → back to PENDING_REVIEW (${template.name})`,
+      });
+    }
     res.json(template);
   }
 );
@@ -3241,8 +3270,31 @@ contributorRouter.patch(
       res.status(400).json({ error: "blocked (boolean) is required" });
       return;
     }
+    // Audit §C (P2 · security) — nishon tekshiruvi: yo'q id avval unhandled 500 berardi;
+    // endpoint CONTRIBUTOR blokiga mo'ljallangan — o'zini yoki boshqa ADMIN'ni bloklash
+    // (tokenVersion bump = majburiy logout) mumkin edi.
+    const targetId = String(req.params.userId);
+    const target = await prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, role: true },
+    });
+    if (!target) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    if (target.id === req.user!.userId) {
+      res.status(400).json({ error: "You cannot block your own account" });
+      return;
+    }
+    if (target.role !== UserRole.CONTRIBUTOR) {
+      res.status(400).json({
+        error: "This endpoint only blocks contributor accounts",
+        code: "NOT_A_CONTRIBUTOR",
+      });
+      return;
+    }
     const user = await prisma.user.update({
-      where: { id: String(req.params.userId) },
+      where: { id: targetId },
       data: {
         contributorBlockedAt: blocked.data ? new Date() : null,
         // Blok qilinganda eski JWT'larni bekor qilamiz (unblock'da o'zgarmaydi).
