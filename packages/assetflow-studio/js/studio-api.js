@@ -543,6 +543,14 @@ const StudioApi = (() => {
   async function patchAdminPricingConfig(body) {
     return request(`/api/admin/pricing/config`, { method: "PATCH", body });
   }
+  /** BATCH4 #3 — auto-marja: barcha enabled model narxi = ceil(providerUsd×margin÷creditUsd). */
+  async function applyAdminPricingMargin(body) {
+    return request(`/api/admin/pricing/apply-margin`, { method: "POST", body: body || {} });
+  }
+  /** BATCH4 #3 — bitta model uchun auto-marja (per-row "auto" tugmasi). */
+  async function autoAdminPricingModel(modelId) {
+    return request(`/api/admin/pricing/${encodeURIComponent(modelId)}/auto`, { method: "POST", body: {} });
+  }
   async function getAdminFinance(month) {
     return request(`/api/admin/finance${month ? `?month=${encodeURIComponent(month)}` : ""}`);
   }
@@ -673,6 +681,8 @@ const StudioApi = (() => {
     getAdminPricing,
     patchAdminPricing,
     patchAdminPricingConfig,
+    applyAdminPricingMargin,
+    autoAdminPricingModel,
     getAdminFinance,
     getAdminGenSpend,
     getUserGenerations,

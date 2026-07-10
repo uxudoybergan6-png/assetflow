@@ -28,15 +28,43 @@ function bizModeBadge(mode){
    ============================================================ */
 let PRICING_DATA = null;
 let PRICING_FILTER = "all";
+let PRICING_SHOW_ALL = false; // BATCH4 #3 — default: faqat enabled (o'chirilgan zaxiralar yashirin)
 
 VIEWS.pricing = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
 window.afterRender.pricing = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='pricing') tba.innerHTML =
-    `<button class="adx-btn2 sm" onclick="toast('Standart','Reset to default price — cancel the model edit','info')"><i class="ph ph-arrow-clockwise"></i>Default</button>`+
-    `<button class="adx-btn sm" onclick="openPricingConfig()"><i class="ph ph-currency-circle-dollar"></i>Credit value</button>`;
+    `<button class="adx-btn sm" onclick="applyMarginAll()" title="Every enabled model: credits = ceil(provider cost × target margin ÷ credit value)"><i class="ph ph-magic-wand"></i>Apply target margin</button>`+
+    `<button class="adx-btn2 sm" onclick="openPricingConfig()"><i class="ph ph-currency-circle-dollar"></i>Credit &amp; margin</button>`;
   await loadPricing();
 };
+
+/** BATCH4 #3 — "Apply target margin": maqsad so'raladi (default 2.0×, DB hali 1.8 bo'lsa ham)
+ *  → POST apply-margin (marginTarget'ni config'ga YOZADI + barcha enabled narxni derive qiladi). */
+async function applyMarginAll(){
+  const cur = PRICING_DATA ? PRICING_DATA.marginTarget : 2;
+  const raw = prompt('Target margin (×) — applied to EVERY enabled model as ceil(provider cost × margin ÷ credit value).\nPinned (product-priced) models are skipped. Prices can go DOWN as well as up.', String(cur >= 2 ? cur : 2));
+  if(raw==null) return;
+  const mt = Number(raw);
+  if(!(mt>0)){ toast('Error','Enter a positive margin (e.g. 2)','danger'); return; }
+  try {
+    const res = await StudioApi.applyAdminPricingMargin({ marginTarget: mt });
+    const r = res && res.report;
+    toast('Margin applied', `${r?r.applied.length:0} model(s) repriced at ${r?r.marginTarget:mt}× · ${r?r.skippedPinned.length:0} pinned skipped`, 'success');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Auto-margin applied',{action:'pricing',detail:`x${r?r.marginTarget:mt}`});
+    await loadPricing();
+  } catch(e){ toast('Error',(e&&e.message)||'Failed to apply margin','danger'); }
+}
+
+/** BATCH4 #3 — per-row "auto": bitta modelni maqsad marjaga keltirish. */
+async function autoPriceRow(modelId){
+  try {
+    const res = await StudioApi.autoAdminPricingModel(modelId);
+    const t = (res&&res.derived&&res.derived.tiers||[]).map(x=>`${x.key}→✦${x.credits}`).join(' · ');
+    toast('Auto-priced', t || 'Price recalculated at the target margin', 'success');
+    await loadPricing();
+  } catch(e){ toast('Error',(e&&e.message)||'No provider cost table — set the price manually','danger'); }
+}
 
 async function loadPricing(){
   const root = document.getElementById('bizRoot');
@@ -51,6 +79,8 @@ async function loadPricing(){
 function pricingRows(){
   if(!PRICING_DATA) return [];
   let rows = PRICING_DATA.models.slice();
+  // BATCH4 #3 — default faqat ENABLED (katalog haqiqati); "Show all" zaxiralarni ochadi
+  if(!PRICING_SHOW_ALL) rows = rows.filter(m=>m.catalogEnabled!==false);
   if(PRICING_FILTER!=='all') rows = rows.filter(m=>m.mode===PRICING_FILTER);
   return rows;
 }
@@ -59,16 +89,23 @@ function renderPricing(){
   const root = document.getElementById('bizRoot');
   if(!root || !PRICING_DATA) return;
   const creditUsd = PRICING_DATA.creditUsdValue;
-  const modeCount = (mode)=> PRICING_DATA.models.filter(m=>m.mode===mode).length;
-  const tags = [['all','All',PRICING_DATA.models.length],['image','Image',modeCount('image')],['video','Video',modeCount('video')],['voice','Voice',modeCount('voice')],['sfx','SFX',modeCount('sfx')],['music','Music',modeCount('music')]].filter(t=>t[0]==='all'||t[2]>0);
+  const marginT = PRICING_DATA.marginTarget;
+  const pool = PRICING_DATA.models.filter(m=>PRICING_SHOW_ALL || m.catalogEnabled!==false);
+  const modeCount = (mode)=> pool.filter(m=>m.mode===mode).length;
+  const disabledCount = PRICING_DATA.models.filter(m=>m.catalogEnabled===false).length;
+  const tags = [['all','All',pool.length],['image','Image',modeCount('image')],['video','Video',modeCount('video')],['voice','Voice',modeCount('voice')],['sfx','SFX',modeCount('sfx')],['music','Music',modeCount('music')]].filter(t=>t[0]==='all'||t[2]>0);
   const rows = pricingRows();
   root.innerHTML = `
-    ${axInfo(`Every AI tool shows the subscriber a credit (✦) price. You manage the credit price here — margin is calculated automatically based on provider cost. Video price = seconds × credit. Current credit value: <b style="color:var(--text)">1 ✦ = ${bizUsd(creditUsd)}</b>.`,'info')}
-    <div class="adx-tagrow">${tags.map(([k,l,n])=>`<button class="adx-tag ${PRICING_FILTER===k?'on':''}" onclick="PRICING_FILTER='${k}';renderPricing()">${l} <span class="n">${n}</span></button>`).join('')}</div>
+    ${axInfo(`Every AI tool shows the subscriber a credit (✦) price. <b style="color:var(--text)">Apply target margin</b> derives every enabled model's price as ceil(provider cost × margin ÷ credit value) — no hand math, no silent losses. Current: <b style="color:var(--text)">1 ✦ = ${bizUsd(creditUsd)}</b> · target margin <b style="color:var(--text)">${marginT}×</b>.`,'info')}
+    <div class="adx-tagrow">${tags.map(([k,l,n])=>`<button class="adx-tag ${PRICING_FILTER===k?'on':''}" onclick="PRICING_FILTER='${k}';renderPricing()">${l} <span class="n">${n}</span></button>`).join('')}
+      <span style="flex:1"></span>
+      <button class="adx-tag ${PRICING_SHOW_ALL?'on':''}" onclick="PRICING_SHOW_ALL=!PRICING_SHOW_ALL;renderPricing()" title="Disabled openrouter/fal backups are hidden by default — they are never charged"><i class="ph ph-eye${PRICING_SHOW_ALL?'':'-slash'}" style="font-size:11px"></i>${PRICING_SHOW_ALL?'Enabled only':'Show all'} <span class="n">${disabledCount}</span></button>
+    </div>
     <div class="adx-card" style="overflow:hidden">
-      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1080px">
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1120px">
         <thead><tr><th>Model</th><th>Type</th><th>Provider</th><th class="r">Provider cost</th><th class="r">Credit price (✦)</th><th class="r">Subscriber price</th><th class="r">Margin</th><th class="r">Action</th></tr></thead>
         <tbody>${rows.length ? rows.map(m=>{
+          const off = m.catalogEnabled===false; // BATCH4 #3 — o'chirilgan zaxira: xira + marja "—"
           const rep = m.price.representative;
           const perSec = m.mode==='video' && (m.price.pricing==='per-second' || m.price.pricing==null);
           const cost = m.estCostUsd;
@@ -79,15 +116,17 @@ function renderPricing(){
           const credStr = rep!=null ? '✦ '+rep : '—';
           const subStr = subUsd!=null ? bizUsd(subUsd) : '—';
           const perSecHint = perSec ? '<div style="font-size:9px;color:#5E6675">per second</div>' : '';
-          return `<tr ${m.belowTarget?'style="background:rgba(255,107,94,.05)"':''}>
-            <td style="color:var(--text);font-weight:600">${esc(m.label)}${m.belowTarget?' <i class="ph ph-warning" style="color:#FF6B5E;font-size:12px" title="Margin below target"></i>':''}</td>
+          const badges = (off?' <span class="adx-bdg adx-bdg-draft" style="margin-left:5px">Disabled</span>':'')
+            + (m.pinned?' <span class="adx-bdg adx-bdg-info" style="margin-left:5px" title="Product-priced — Apply target margin skips this row">Pinned</span>':'');
+          return `<tr ${off?'style="opacity:.45"':(m.belowTarget?'style="background:rgba(255,107,94,.05)"':'')}>
+            <td style="color:var(--text);font-weight:600">${esc(m.label)}${!off&&m.belowTarget?' <i class="ph ph-warning" style="color:#FF6B5E;font-size:12px" title="Margin below target"></i>':''}${badges}</td>
             <td>${bizModeBadge(m.mode)}</td>
             <td style="font-size:11.5px;color:#B7C0CE">${esc(m.provider)}</td>
-            <td class="r adx-num" style="color:#7CC4FF">${costStr}</td>
+            <td class="r adx-num" style="color:#7CC4FF">${off?'—':costStr}</td>
             <td class="r adx-num" style="color:var(--text)">${credStr}${perSecHint}</td>
-            <td class="r adx-num">${subStr}</td>
-            <td class="r adx-num" style="color:${bizMarginColor(marginPct)}">${marginPct!=null?marginPct+'%':'—'}</td>
-            <td class="r"><button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
+            <td class="r adx-num">${off?'—':subStr}</td>
+            <td class="r adx-num" style="color:${off?'#5E6675':bizMarginColor(marginPct)}">${off?'not charged':(marginPct!=null?marginPct+'%':'—')}</td>
+            <td class="r" style="white-space:nowrap">${off?'':`<button class="adx-iact" title="Auto — set to target margin (${marginT}×)" onclick="autoPriceRow(${m.modelId})"><i class="ph ph-magic-wand"></i></button> `}<button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
           </tr>`;
         }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-currency-circle-dollar"></i></span><div style="font-size:12px;color:var(--muted2)">No models of this type</div></div></td></tr>`}</tbody>
       </table></div>
@@ -144,23 +183,28 @@ async function savePriceEdit(modelId){
 
 function openPricingConfig(){
   const cur = PRICING_DATA ? PRICING_DATA.creditUsdValue : 0.019;
+  const curM = PRICING_DATA ? PRICING_DATA.marginTarget : 2;
   const host = document.getElementById('bizEditPanel');
   host.innerHTML = `<div class="adx-editpanel"><div style="padding:16px 18px">
-    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-currency-circle-dollar" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">Credit value (USD)</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
-    <div style="font-size:10.5px;color:#8A93A3;margin-top:6px;line-height:1.5">How many $ one credit (✦) is worth. All model margin calculations rely on this.</div>
+    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-currency-circle-dollar" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">Credit value &amp; target margin</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
+    <div style="font-size:10.5px;color:#8A93A3;margin-top:6px;line-height:1.5">Credit value = how many $ one credit (✦) is worth. Target margin drives "Apply target margin" and the below-target warnings.</div>
     <div class="adx-flab" style="margin-top:12px">1 ✦ = $</div>
     <input class="adx-input mono" id="creditUsdVal" type="number" min="0.001" step="0.001" value="${cur}">
+    <div class="adx-flab" style="margin-top:10px">TARGET MARGIN (×)</div>
+    <input class="adx-input mono" id="marginTargetVal" type="number" min="1" step="0.1" value="${curM}">
     <div style="display:flex;gap:8px;margin-top:12px"><button class="adx-btn2" style="flex:1;height:34px" onclick="document.getElementById('bizEditPanel').innerHTML=''">Cancel</button><button class="adx-btn" style="flex:1;height:34px" onclick="savePricingConfig()">Save</button></div>
   </div></div>`;
 }
 
 async function savePricingConfig(){
   const val = Number(document.getElementById('creditUsdVal')?.value);
-  if(!(val>0)){ toast('Error','Enter a positive value','danger'); return; }
+  const mv = Number(document.getElementById('marginTargetVal')?.value);
+  if(!(val>0)){ toast('Error','Enter a positive credit value','danger'); return; }
+  if(!(mv>0)){ toast('Error','Enter a positive target margin','danger'); return; }
   try {
-    await StudioApi.patchAdminPricingConfig({ creditUsdValue: val });
+    await StudioApi.patchAdminPricingConfig({ creditUsdValue: val, marginTarget: mv });
     document.getElementById('bizEditPanel').innerHTML='';
-    toast('Saved','Credit value updated','success');
+    toast('Saved','Credit value & target margin updated','success');
     await loadPricing();
   } catch(e){
     toast('Error', (e&&e.message)||'Failed to save', 'danger');
