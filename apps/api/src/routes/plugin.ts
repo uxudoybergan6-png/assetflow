@@ -101,6 +101,8 @@ const CATALOG_SELECT = {
   contributor: { select: { name: true, email: true } },
   createdAt: true,
   updatedAt: true,
+  reviewedAt: true, // §B — publishedAt proksisi
+
   assetKeysJson: true, // FAZA 5 (A2) — S3 kalitlar keshi (listing S3'siz)
 } as const;
 

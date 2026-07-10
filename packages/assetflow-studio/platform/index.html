@@ -15955,7 +15955,7 @@
                     <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-rc">
                       <div class="{{ r.medCls }}" style="border-radius:12px;background:{{ r.g }}">
                         <sc-if value="{{ r.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ r.imgSrc }}" alt=""></sc-if>
-                        <sc-if value="{{ r.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ r.pv }}" poster="{{ r.imgSrc }}" preload="none" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                        <sc-if value="{{ r.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ r.pv }}" poster="{{ r.imgSrc }}" preload="{{ r.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                         <span class="badges">
                           <sc-if value="{{ r.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
                           <sc-if value="{{ r.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
@@ -16122,7 +16122,7 @@
               <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
                 <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
-                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="none" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                   <span class="badges">
                     <sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
                     <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
@@ -16151,7 +16151,7 @@
                   <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
                     <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
-                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="none" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                       <span class="badges">
                         <sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
                         <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
@@ -16179,7 +16179,7 @@
                   <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
                     <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
-                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="none" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                       <span class="badges">
                         <sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
                         <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
@@ -16207,7 +16207,7 @@
                   <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
                     <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
-                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="none" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                      <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                       <span class="badges">
                         <sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
                         <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
@@ -16269,8 +16269,8 @@
               <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
                 <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
                   <div class="{{ t.medCls }}" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
-                    <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
-                    <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="none" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                    <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt="{{ t.n }}"></sc-if>
+                    <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                     <span class="badges">
                       <sc-if value="{{ t.isNew }}" hint-placeholder-val="{{ false }}"><span class="va-badge new">NEW</span></sc-if>
                       <sc-if value="{{ t.pro }}" hint-placeholder-val="{{ false }}"><span class="va-badge pro">PRO</span></sc-if>
@@ -16286,6 +16286,13 @@
                 </div>
               </sc-for>
             </div>
+          </sc-if>
+          <!-- §B (P1/P2) — progressiv yuklash indikatori + grid cap yozuvi (jim kesish yo'q) -->
+          <sc-if value="{{ catalogLoadingMore }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:18px 0;font-size:12px;color:var(--muted)"><span class="star">✦</span> Loading more templates…</div>
+          </sc-if>
+          <sc-if value="{{ gridCapped }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted)">Showing the first 400 of {{ gridTotalFmt }} results — narrow the filters or search to see the rest.</div>
           </sc-if>
           <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
             <div class="va-empty" style="margin-top:24px;padding:70px 20px">
@@ -17076,6 +17083,7 @@ class Component extends DCLogic {
     nameModal: null,       // umumiy nom modali: {kind, title, cta, value, ctx}
     catalog: [],
     catalogReady: false,
+    catalogFullyLoaded: false, // §B (P1) — barcha sahifalar yuklangach true (bo'sh holat shunda chiqadi)
     landCfg: null, // Landing CMS — serverdagi (yoki localStorage keshidagi) konfiguratsiya
 
     favTpls: [], // FAZA D — lokal sevimli shablonlar (localStorage). TODO(FF): server-side favorites endpointi
@@ -17755,14 +17763,18 @@ class Component extends DCLogic {
       const MAX_PAGES = 100;
       let all = [];
       let cursor = null;
+      // §B (P1) — progressiv yuklashda bo'sh holat erta chiqmasin: to'liq yuklanish
+      // alohida flag (catalogFullyLoaded). Yuklash boshida flag reset (focus-refetch ham).
+      this.setState({ catalogFullyLoaded: false });
       for (let p = 0; p < MAX_PAGES; p++) {
         const r = await FFAPI.catalog(cursor);
         all = all.concat(this.mapCatalogItems(r.items || [], APP_L, APP_C));
-        this.setState({ catalog: all, catalogReady: true });
         cursor = r.nextCursor || null;
+        this.setState({ catalog: all, catalogReady: true, catalogFullyLoaded: !cursor });
         if (!cursor) break;
       }
-    } catch (e) { this.setState({ catalogReady: true }); }
+      this._catalogAt = Date.now(); // §B (P2) — signed URL eskirishi uchun focus-refetch belgisi
+    } catch (e) { this.setState({ catalogReady: true, catalogFullyLoaded: true }); }
   }
   mapCatalogItems(raw, APP_L, APP_C) {
       return raw.map((it) => ({
@@ -17770,7 +17782,9 @@ class Component extends DCLogic {
         a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6',
         pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
         ori: it.orient === 'vertical' ? '9:16' : (it.orient === 'square' ? '1:1' : '16:9'),
-        qual: ((it.res || '4k').toUpperCase().indexOf('4K') >= 0) ? '4K' : 'HD',
+        // §B (P2) — sifat klassifikatsiyasi endi mustahkam: "2160p"/"UHD"/"4096"/"8K" ham 4K
+        // (avval faqat aynan "4K" matni sanardi → noto'g'ri HD badge + 4K filtrdan tushib qolish)
+        qual: /4k|uhd|2160|4096|8k|4320/i.test(String(it.res || '4k')) ? '4K' : 'HD',
         ar: it.orient === 'vertical' ? '9 / 16' : (it.orient === 'square' ? '1 / 1' : '16 / 10'),
         // FAZA 5 (C3) — hasPack plagin bilan bir xil manbadan: server `hasPack`
         // flagi (A2 DB keshi); packUrl faqat eski javob shakli uchun fallback.
@@ -17783,7 +17797,10 @@ class Component extends DCLogic {
         type: it.type || null,
         author: it.author || (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
         // FAZA C — Home shelves/badges uchun additive vaqt maydonlari
-        created: Date.parse(it.createdAt) || 0, updated: Date.parse(it.updatedAt) || 0,
+        // §B (P2) — NEW badge/"Newest" endi nashr (approve) vaqtiga tayanadi: uzoq oldin
+        // yuklangan-u endigina tasdiqlangan shablon ham NEW oladi. publishedAt eski
+        // javobda bo'lmasa createdAt fallback.
+        created: Date.parse(it.publishedAt || it.createdAt) || 0, updated: Date.parse(it.updatedAt) || 0,
       }));
   }
   bootData() {
@@ -17799,6 +17816,9 @@ class Component extends DCLogic {
         if (now - (this._lastFocusRef || 0) < 20000) return;
         this._lastFocusRef = now;
         if (window.FFAPI && FFAPI.getToken()) { this.refreshCredits(); this.loadHistory(); this.loadSessions(); this.loadProjects(); }
+        // §B (P2) — katalogdagi 24h signed display URL'lar ochiq tabda eskiradi;
+        // 6 soatdan keyin fokusda katalogni qayta olamiz (yangi imzolar).
+        if (this._catalogAt && now - this._catalogAt > 6 * 3600 * 1000) { this._catalogAt = now; this.loadCatalog(); }
       });
     }
   }
@@ -18887,6 +18907,8 @@ class Component extends DCLogic {
       medCls: 'med va-thumb' + (t.thumbUrl ? ' va-skel' : ''),
       imgSrc: t.thumbUrl || null, hasImg: !!t.thumbUrl,
       pv: t.previewUrl || null, hasPv: !!t.previewUrl,
+      // §B (P2) — thumbnail'siz preview kartada bo'sh poster o'rniga birinchi kadr chizilsin
+      pvPre: t.thumbUrl ? 'none' : 'metadata',
       isNew: !!t.created && (Date.now() - t.created) < NEW_MS,
       is4k: t.qual === '4K',
       catMeta: t.c + (withDate && t.created ? ' · added ' + new Date(t.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''),
@@ -18895,10 +18917,24 @@ class Component extends DCLogic {
     // Apps/Categories multi-select: bo'sh = toraytirish yo'q, OR ichida, AND filtrlar orasida.
     const fAppsSel = this.state.fApps || [];
     const fCatsSel = (this.state.fCats || []).map(c => c.toLowerCase());
-    let filtered = src.filter(t => (!fAppsSel.length || fAppsSel.indexOf(t.a) >= 0) && (this.state.fCat === 'All' || this.typeOf(t) === this.pillTypes[this.state.fCat]) && (!fCatsSel.length || fCatsSel.indexOf(String(t.c || '').toLowerCase()) >= 0) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => rcOf(t));
+    // §B (P1) — qidiruv endi nom + kategoriya + teglar + tavsif + muallif bo'ylab
+    // (avval FAQAT nom edi — "glitch" tegli shablon topilmasdi).
+    const hayOf = (t) => (t.n + ' ' + (t.c || '') + ' ' + ((t.tags || []).join(' ')) + ' ' + (t.desc || '') + ' ' + (t.author || '')).toLowerCase();
+    // §B (P2) — "Most relevant": so'rov bor bo'lsa haqiqiy moslik reytingi (nom-boshi >
+    // nom-ichi > teg/kategoriya > tavsif); so'rovsiz mavjud tartib (featured) qoladi.
+    const relScore = (t) => { const n = t.n.toLowerCase(); if (n.indexOf(q) === 0) return 4; if (n.indexOf(q) >= 0) return 3; if (((t.tags || []).join(' ') + ' ' + (t.c || '')).toLowerCase().indexOf(q) >= 0) return 2; return 1; };
+    let filtered = src.filter(t => (!fAppsSel.length || fAppsSel.indexOf(t.a) >= 0) && (this.state.fCat === 'All' || this.typeOf(t) === this.pillTypes[this.state.fCat]) && (!fCatsSel.length || fCatsSel.indexOf(String(t.c || '').toLowerCase()) >= 0) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || hayOf(t).indexOf(q) >= 0)).map(t => rcOf(t));
     if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
     else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
     else if (this.state.sortKey === 'new') filtered = filtered.slice().sort((a, b) => (b.created || 0) - (a.created || 0)); // FAZA C
+    else if (q !== '') filtered = filtered.slice().sort((a, b) => relScore(b) - relScore(a)); // §B — 'mos' + so'rov
+    // §B (P2) — grid cap: masonry virtualizatsiyasiz, juda katta natijada DOM portlamasin.
+    // Hisoblagich TO'LIQ sonni ko'rsatadi; kesilgani haqida grid ostida ochiq yozuv chiqadi.
+    const GRID_CAP = 400;
+    const gridTotal = filtered.length;
+    const gridCapped = gridTotal > GRID_CAP;
+    const gridTotalFmt = gridTotal.toLocaleString();
+    if (gridCapped) filtered = filtered.slice(0, GRID_CAP);
     const sortOpts = [{ k: 'mos', label: 'Most relevant' }, { k: 'new', label: 'Newest' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
     const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
@@ -18915,8 +18951,8 @@ class Component extends DCLogic {
     // Orientatsiya / Sifat — Variant A fbar chip'lari (toggle: faol chipni bosish → tozalash). Katalog so'roviga real ulangan.
     const fOrientView = ['16:9', '9:16', '1:1'].map(v => ({ v, cls: v === this.state.fOrient ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fOrient ? 'va-fchip on' : 'va-fchip' }));
     const fQualView = ['HD', '4K'].map(v => ({ v, cls: v === this.state.fQual ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fQual ? 'va-fchip on' : 'va-fchip' }));
-    // A2 fbar dropdown chips (App / Free-Pro) + natija hisoblagichi
-    const resultsFmt = filtered.length.toLocaleString();
+    // A2 fbar dropdown chips (App / Free-Pro) + natija hisoblagichi (§B — cap'dan oldingi TO'LIQ son)
+    const resultsFmt = gridTotalFmt;
     const fbAppCls = 'va-fchip' + (hasFbApps ? ' on' : '');
     const fbAppLabel = hasFbApps ? ('Apps · ' + fAppsSel.length) : 'All apps';
     const fbCatCls = 'va-fchip' + (hasFbCats ? ' on' : '');
@@ -18937,9 +18973,11 @@ class Component extends DCLogic {
     const filterCount = activeChips.length + (this.state.fCat !== 'All' ? 1 : 0);
     const tplHeading = this.state.fCat === 'All' ? 'All templates' : this.state.fCat;
     const dRaw = this.state.detail;
-    // FAZA D — kolleksiya proxy'si: bir kategoriya = bir kolleksiya (formal collection entity hali yo'q).
+    // FAZA D — kolleksiya proxy'si: §B (P2) endi PILL bilan BIR XIL taksonomiya (pillOf) —
+    // avval granular `t.c` tengligi ishlatilib, yakka kategoriyali shablonda Related bo'sh
+    // qolar va ko'rsatilgan son pill manziliga mos kelmasdi.
     // TODO(FF): real collection entity kelganda colAll/colOthers o'sha manbadan olinadi.
-    const colAll = dRaw ? (dRaw.real ? src : this.templates).filter(t => t.c === dRaw.c) : [];
+    const colAll = dRaw ? (dRaw.real ? src : this.templates).filter(t => this.pillOf(t) === this.pillOf(dRaw)) : [];
     const colOthers = dRaw ? colAll.filter(t => t.id !== dRaw.id) : [];
     const colMoreN = Math.max(0, colOthers.length - 4);
     const fmtSize = (b) => !b ? '' : (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
@@ -18970,9 +19008,9 @@ class Component extends DCLogic {
       favCls: 'fav' + (this.state.favTpls.indexOf(String(dRaw.id)) >= 0 ? ' on' : ''),
       // FAZA D — "Part of collection" strip (kategoriya kesimi)
       hasCol: colOthers.length > 0,
-      colTitle: dRaw.c + ' essentials',
+      colTitle: this.pillOf(dRaw) + ' essentials',
       colCount: colAll.length,
-      colDesc: colAll.length + ' items · curated from the ' + dRaw.c + ' category on FrameFlow.',
+      colDesc: colAll.length + ' items · curated from the ' + this.pillOf(dRaw) + ' section on FrameFlow.',
       colPeek: [{ id: String(dRaw.id), g: media(dRaw.thumbUrl, dRaw.h), pkCls: 'pk va-thumb this', isThis: true }]
         .concat(colOthers.slice(0, 4).map(t => ({ id: String(t.id), g: media(t.thumbUrl, t.h), pkCls: 'pk va-thumb', isThis: false }))),
       hasColMore: colMoreN > 0, colMoreN,
@@ -19518,8 +19556,12 @@ class Component extends DCLogic {
       pickFbCat: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fCats: (st.fCats || []).indexOf(v) >= 0 ? (st.fCats || []).filter(x => x !== v) : (st.fCats || []).concat([v]) })); },
       clearFbCats: (e) => { e.stopPropagation(); this.setState({ fCats: [] }); },
       pickFbPlan: (e) => { e.stopPropagation(); this.setState({ fPlan: e.currentTarget.dataset.v, fbarPop: null }); },
-      hasFiltered: filtered.length > 0, noFiltered: this.state.catalogReady && filtered.length === 0,
-      catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
+      // §B (P1) — bo'sh holat faqat BARCHA sahifalar yuklangach (progressiv yuklashda
+      // "Nothing found" chaqnamaydi); yuklanish davomida "loading more" indikatori.
+      hasFiltered: filtered.length > 0, noFiltered: this.state.catalogFullyLoaded && filtered.length === 0,
+      catalogLoadingMore: this.state.catalogReady && !this.state.catalogFullyLoaded,
+      gridCapped, gridTotalFmt,
+      catalogEmpty: this.state.catalogFullyLoaded && this.state.catalog.length === 0,
       // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
       catalogLoading: !this.state.catalogReady,
       openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: this.pillOf(d) }); this.go('templates'); },

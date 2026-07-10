@@ -158,6 +158,8 @@ type TemplateRow = {
   contributor: { name: string | null; email: string } | null;
   createdAt: Date;
   updatedAt: Date;
+  // §B (P2) — nashr vaqti proksisi (approve paytı); eski so'rovlar uchun optional
+  reviewedAt?: Date | null;
   // FAZA 5 (A2) — S3 kalitlar keshi (string[] | null). Berilsa listing S3'siz.
   assetKeysJson?: unknown;
 };
@@ -270,6 +272,8 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     isPro: t.isPro,    // per-shablon tier (false = FREE)
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
+    // §B (P2) — NEW badge / "Newest" uchun nashr vaqti (approve = reviewedAt; fallback createdAt)
+    publishedAt: (t.reviewedAt ?? t.createdAt).toISOString(),
   };
 }
 

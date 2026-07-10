@@ -51,6 +51,8 @@ const PROJECT_TPL_SELECT = {
   contributor: { select: { name: true, email: true } },
   createdAt: true,
   updatedAt: true,
+  reviewedAt: true, // §B — publishedAt proksisi
+
   assetKeysJson: true,
 } as const;
 
