@@ -237,11 +237,18 @@ function subGenStatusBadge(st) {
 }
 function subGenCard(g) {
   const a = (g.assets && g.assets[0]) || null;
-  const thumb = a ? (a.thumbUrl || a.url) : null;
-  const isVideo = a && a.type === "video";
+  // #2 — backend endi normalized `kind` ("image"|"video"|"audio") beradi; eski raqamli
+  // `type` (140/120) bilan solishtirish har doim false edi → video <img>da sinardi.
+  const kind = (a && a.kind) || "image";
+  const isVideo = kind === "video";
+  const isAudio = kind === "audio";
+  // Thumb sifatida faqat RASM manba: thumbUrl, yoki (rasm asset bo'lsa) url'ning o'zi.
+  // Video/audio url'ini <img>ga solmaymiz — aynan shu singan preview'ning ildizi edi.
+  const thumb = a ? (a.thumbUrl || (kind === "image" ? a.url : null)) : null;
+  const openClick = a && a.url ? ` onclick="subGenPreview('${esc(a.url)}','${esc(kind)}','${esc(a.downloadUrl||a.url)}')"` : "";
   const media = thumb
-    ? `<div style="position:relative;width:52px;height:52px;flex:none;border-radius:8px;overflow:hidden;background:#0c0f14;cursor:pointer" onclick="subGenPreview('${esc(a.url)}',${isVideo?'true':'false'})"><img src="${esc(thumb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none'">${isVideo?'<i class="ph ph-play-circle" style="position:absolute;inset:0;margin:auto;width:18px;height:18px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px rgba(0,0,0,.6)"></i>':''}</div>`
-    : `<div style="width:52px;height:52px;flex:none;border-radius:8px;background:#0c0f14;display:flex;align-items:center;justify-content:center;color:#3a4150"><i class="ph ph-${g.mode==='audio'?'waveform':(g.mode==='video'?'film-slate':'image')}"></i></div>`;
+    ? `<div style="position:relative;width:52px;height:52px;flex:none;border-radius:8px;overflow:hidden;background:#0c0f14;cursor:pointer"${openClick}><img src="${esc(thumb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none'">${isVideo?'<i class="ph ph-play-circle" style="position:absolute;inset:0;margin:auto;width:18px;height:18px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px rgba(0,0,0,.6)"></i>':''}</div>`
+    : `<div style="width:52px;height:52px;flex:none;border-radius:8px;background:#0c0f14;display:flex;align-items:center;justify-content:center;color:${a&&a.url?'#7CC4FF;cursor:pointer':'#3a4150'}"${openClick}><i class="ph ph-${isAudio||g.mode==='audio'?'waveform':(isVideo||g.mode==='video'?'film-slate':'image')}"></i></div>`;
   const when = g.createdAt ? new Date(g.createdAt).toLocaleString() : "";
   return `<div style="display:flex;gap:11px;padding:9px 10px;border-top:1px solid var(--hair);align-items:flex-start">
     ${media}
@@ -252,9 +259,23 @@ function subGenCard(g) {
     </div>
   </div>`;
 }
-function subGenPreview(url, isVideo) {
+function subGenPreview(url, kind, downloadUrl) {
   if (!url) return;
-  openModal(`<div class="modal-body" style="padding:8px"><div style="max-width:640px;margin:0 auto">${isVideo?`<video src="${esc(url)}" controls autoplay style="width:100%;border-radius:10px"></video>`:`<img src="${esc(url)}" style="width:100%;border-radius:10px">`}</div></div><div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>`);
+  // #2 — kind bo'yicha render (video/audio/image) + Download (attachment signed URL) +
+  // inline embed yiqilsa "Open in new tab" zaxira havolasi.
+  const body =
+    kind === "video"
+      ? `<video src="${esc(url)}" controls autoplay style="width:100%;border-radius:10px"></video>`
+      : kind === "audio"
+        ? `<audio src="${esc(url)}" controls autoplay style="width:100%"></audio>`
+        : `<img src="${esc(url)}" style="width:100%;border-radius:10px" onerror="this.outerHTML='<div style=&quot;padding:28px;text-align:center;font-size:12px;color:#8A93A3&quot;>Preview unavailable — use “Open in new tab”.</div>'">`;
+  openModal(`<div class="modal-body" style="padding:8px"><div style="max-width:640px;margin:0 auto">${body}</div></div>
+    <div class="modal-foot" style="gap:8px">
+      <a class="btn btn-ghost" href="${esc(url)}" target="_blank" rel="noopener">Open in new tab</a>
+      <span style="flex:1"></span>
+      <a class="btn btn-primary" href="${esc(downloadUrl || url)}" target="_blank" rel="noopener" download>Download</a>
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+    </div>`);
 }
 async function loadSubGenerations(userId) {
   const body = document.getElementById("subGenBody");

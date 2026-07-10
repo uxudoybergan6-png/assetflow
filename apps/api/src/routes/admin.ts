@@ -803,7 +803,16 @@ adminRouter.get("/users/:id/generations", async (req, res) => {
     refunded: g.refunded,
     cost: g.cost,
     prompt: g.prompt,
-    assets: g.assets.map((a) => ({ type: a.type, url: a.url, thumbUrl: a.thumbUrl })),
+    // #2 — GenAsset.type RAQAMLI kod (image=130, audio=120, video=140, gen-processor.ts)
+    // — UI string kutib video'ni <img>ga solardi (singan preview). Normalized `kind` +
+    // hydrateGenAssets allaqachon hisoblagan downloadUrl (attachment) ADDITIVE qaytariladi.
+    assets: g.assets.map((a) => ({
+      type: a.type,
+      kind: a.type === 140 ? "video" : a.type === 120 ? "audio" : "image",
+      url: a.url,
+      thumbUrl: a.thumbUrl,
+      downloadUrl: (a as { downloadUrl?: string }).downloadUrl ?? a.url,
+    })),
   }));
 
   // Xulosa — BARCHA gens uchun (sahifadan qat'i nazar). Kredit sarfi vs refund.
