@@ -229,6 +229,14 @@ async function submitDraftToModeration(id) {
     toast("API", "Please sign in again", "warn");
     return;
   }
+  // Audit §D (P1) — rights dead-end: wizard'dan oldin saqlangan draft'da rightsAcceptedAt
+  // bo'lmaydi; ro'yxat/drawer submit'i 400 RIGHTS_REQUIRED bilan abadiy bloklanardi.
+  // Endi attestatsiya shu yerda modal bilan so'raladi va submit body'da yuboriladi.
+  const t = TEMPLATES.find((x) => x.id === id);
+  if (t && t._api && !t._api.rightsAcceptedAt) {
+    openRightsSubmitModal(id);
+    return;
+  }
   try {
     await StudioApi.submitTemplate(id);
     await StudioTemplates.refreshAfterUpload();
@@ -246,6 +254,47 @@ async function submitDraftToModeration(id) {
 async function resubmit(id) {
   await submitDraftToModeration(id);
 }
+
+/** Audit §D — ro'yxat/drawer submit'ida rights-attestatsiya modali (wizard Step 3 muqobili). */
+let RIGHTS_MODAL_CHECKED = false;
+function openRightsSubmitModal(id) {
+  RIGHTS_MODAL_CHECKED = false;
+  openModal(`
+    <div class="modal-head"><div class="modal-ico" style="background:var(--green-dim,rgba(130,195,65,.12));color:var(--green,#82c341)">${ic("check")}</div>
+      <div><h3>Confirm your rights</h3><p>Required once before this product can be submitted</p></div></div>
+    <div class="modal-body col gap-12">
+      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div id="rightsModalCheck" class="checkbox" onclick="toggleRightsModal()">${ic("check")}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" id="rightsModalSubmit" disabled onclick="confirmRightsSubmit('${id}')">${ic("check")} Submit for moderation</button></div>`);
+}
+function toggleRightsModal() {
+  RIGHTS_MODAL_CHECKED = !RIGHTS_MODAL_CHECKED;
+  const box = document.getElementById("rightsModalCheck");
+  const btn = document.getElementById("rightsModalSubmit");
+  if (box) box.classList.toggle("on", RIGHTS_MODAL_CHECKED);
+  if (btn) btn.disabled = !RIGHTS_MODAL_CHECKED;
+}
+async function confirmRightsSubmit(id) {
+  if (!RIGHTS_MODAL_CHECKED) return;
+  closeModal();
+  try {
+    await StudioApi.submitTemplate(id, {
+      rightsAccepted: true,
+      rightsTermsVersion: RIGHTS_TERMS_VERSION,
+    });
+    await StudioTemplates.refreshAfterUpload();
+    toast("Submitted", "Sent to the moderation queue — the admin will review it", "success");
+    if (CURRENT === "overview") route("overview");
+    else if (CURRENT === "templates") renderMy();
+    closeDrawer();
+  } catch (e) {
+    toast("Error", e.message || "Submission failed", "danger");
+  }
+}
+window.openRightsSubmitModal = openRightsSubmitModal;
+window.toggleRightsModal = toggleRightsModal;
+window.confirmRightsSubmit = confirmRightsSubmit;
 
 /* ============================================================
    UPLOAD WIZARD
@@ -673,6 +722,14 @@ function checkUploadFile(file, label) {
   return true;
 }
 
+/** Audit §D (P2) — edit rejimida serverda allaqachon pack bor bo'lsa, uni qayta
+ *  yuklashga majburlamaymiz (3 GB'gacha faylni qayta yuklash shart emas edi). */
+function serverPackSatisfies() {
+  if (!UP_EDIT_ID) return false;
+  const t = (typeof TEMPLATES !== "undefined" ? TEMPLATES : []).find((x) => x.id === UP_EDIT_ID);
+  return !!(t && (t.assets?.pack || t.fileName));
+}
+
 function validateUploadPackFile() {
   // Stock S1 — qabul kengaytmalar tanlangan mahsulot turidan olinadi
   const opt = upKindOption();
@@ -681,6 +738,10 @@ function validateUploadPackFile() {
   const exts = opt ? opt.exts : [".mogrt", ".zip"];
   const pack = UP_DRAFT.files?.pack;
   if (!pack) {
+    // Edit rejimi: mavjud server pack yetarli — faqat preview hajmi tekshiriladi
+    if (serverPackSatisfies()) {
+      return checkUploadFile(UP_DRAFT.files?.preview, "Preview video");
+    }
     toast(label, `Upload the ${isStock ? "media" : "project"} file (${exts.join(" / ")})`, "warn");
     return false;
   }
@@ -942,7 +1003,7 @@ function renderUpload(){
           <div class="row gap-8 wrap" style="min-width:0">
             ${UP_DRAFT.files.preview?`<span class="pill trunc" title="${esc(UP_DRAFT.files.preview.name)}">${ic('film')} ${esc(UP_DRAFT.files.preview.name)} · ${fmtMB(UP_DRAFT.files.preview.size)}</span>`:''}
             ${UP_DRAFT.files.thumb?`<span class="pill trunc" title="${esc(UP_DRAFT.files.thumb.name)}">${ic('image')} ${esc(UP_DRAFT.files.thumb.name)}</span>`:''}
-            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${esc(UP_DRAFT.files.pack.name)}">${ic('file')} ${esc(UP_DRAFT.files.pack.name)} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:`<span class="small" style="color:var(--orange)">${UP_DRAFT.kind==='stock'?'Media file is required — it is the product itself':'Project file is required for import'}</span>`}
+            ${UP_DRAFT.files.pack?`<span class="pill trunc" title="${esc(UP_DRAFT.files.pack.name)}">${ic('file')} ${esc(UP_DRAFT.files.pack.name)} · ${fmtMB(UP_DRAFT.files.pack.size)}</span>`:serverPackSatisfies()?`<span class="small" style="color:var(--text-dim)">${ic('file')} Existing uploaded file will be kept</span>`:`<span class="small" style="color:var(--orange)">${UP_DRAFT.kind==='stock'?'Media file is required — it is the product itself':'Project file is required for import'}</span>`}
           </div>
         </div>
       </div>

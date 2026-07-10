@@ -170,8 +170,13 @@ const StudioApi = (() => {
     });
   }
 
-  async function submitTemplate(id) {
-    return request(`/api/contributor/templates/${id}/submit`, { method: "POST" });
+  async function submitTemplate(id, body) {
+    // Audit §D — ixtiyoriy body: {rightsAccepted, rightsTermsVersion} (ro'yxat/drawer
+    // submit'ida attestatsiya shu yerda yuboriladi)
+    return request(`/api/contributor/templates/${id}/submit`, {
+      method: "POST",
+      ...(body ? { body } : {}),
+    });
   }
 
   /**
