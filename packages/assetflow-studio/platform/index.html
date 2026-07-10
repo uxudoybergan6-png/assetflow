@@ -18343,6 +18343,8 @@ class Component extends DCLogic {
     const isUp = model.feature === 'image-upscale';
     if (isUp && prompt.length < 2) prompt = 'Upscale ' + ((this.buildParams(tool, model) || {}).quality || 'x2');
     if (prompt.length < 2) { this.toast('Write a prompt'); return; }
+    // BATCH4 #4 — Chirp maxChars: server 400 (kreditsiz) qaytaradi; bu yerda aniq UX xabari
+    if (tool.mode === 'voice' && model.maxChars && prompt.length > model.maxChars) { this.toast('Max ' + model.maxChars + ' characters per voice generation (yours: ' + prompt.length + ') — split the text'); return; }
     if (this.state.generating) return;
     // P8 — majburiy referens gate (Seedance Fast: start kadr SHART) — kredit behuda ketmasin
     const gcaps = this.refCaps(tool.mode, model);
@@ -18911,7 +18913,7 @@ class Component extends DCLogic {
     const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
     const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
     const promptPh = axIsUpscaleTool ? 'Optional note — pick an image via ＋ and choose the factor (x2 → 2K, x4 → 4K)…'
-      : tool.mode === 'voice' ? 'Type text — it will be read in a natural voice…' : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
+      : tool.mode === 'voice' ? ('Type text — it will be read in a natural voice' + (model && model.maxChars ? ' (up to ' + model.maxChars + ' characters)' : '') + '…') : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
     const unitCost = (countOpts.length > 1 && nSel > 1) ? Math.round(costNow / nSel) : costNow;
     const quotePrefix = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
     const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
@@ -19079,7 +19081,7 @@ class Component extends DCLogic {
       ? ('✦ ' + costNow + ' reserved for this job — refunded if it fails')
       : (tool.mode === 'image' ? (unitCost > 0 ? ('~' + Math.floor(this.state.credits / unitCost) + ' image generations left') : 'priced per image')
         : (tool.mode === 'video' ? 'video is billed per second of output'
-          : (tool.mode === 'voice' ? 'voice is billed per 30 s of output' : 'billed per sound effect')));
+          : (tool.mode === 'voice' ? ('voice is billed per generation' + (model && model.maxChars ? ' (up to ' + model.maxChars + ' chars)' : '')) : 'billed per sound effect')));
     // ── P8 — model-driven referens paneli: chips (yuklangan) + adds (qo'shish tugmalari) ──
     const rCaps = this.refCaps(tool.mode, model);
     const refChipsView = [];

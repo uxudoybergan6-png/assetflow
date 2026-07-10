@@ -10009,8 +10009,8 @@ async function bootPlugin(){
     {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Veo 3.1<br>Seedance 2.0',glow:'rgba(46,157,192,.2)',tools:[
       {name:'Generate video',sub:'Veo 3.1 · Seedance 2.0 Fast',icon:_toolVidSVG,dest:'vidgen'}
     ]},
-    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Generate audio',models:'Kokoro TTS<br>ElevenLabs SFX',glow:'rgba(230,179,53,.2)',tools:[
-      {name:'Generate audio',sub:'Voice over (Kokoro) · Sound FX (ElevenLabs)',icon:_catAudSVG,dest:'audgen'}
+    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Generate audio',models:'Chirp 3 HD<br>ElevenLabs SFX',glow:'rgba(230,179,53,.2)',tools:[
+      {name:'Generate audio',sub:'Voice over (Chirp 3 HD) · Sound FX (ElevenLabs)',icon:_catAudSVG,dest:'audgen'}
     ]}
   ];
   // P8: "3D" karta olib tashlandi (backend'da 3D yo'q — halol tool to'plami);
@@ -13164,7 +13164,9 @@ window.afGallery=(function(){
     var mv=$('agModeVoice'), ms=$('agModeSfx');
     if(mv)mv.classList.toggle('is-on',ag.mode==='voice');
     if(ms)ms.classList.toggle('is-on',ag.mode==='sfx');
-    var g=$('agGuide'); if(g)g.innerHTML=ag.mode==='voice'?'<b>Voice:</b> type the text — it will be read aloud in a natural voice.':'<b>SFX:</b> describe a sound — e.g. “deep cinematic whoosh with metallic tail”.';
+    // BATCH4 #4 — Chirp maxChars cap ko'rsatiladi (server 400 VOICE_TEXT_TOO_LONG dan oldin UX)
+    var vCap=(ag.mode==='voice'&&m&&typeof m.maxChars==='number'&&m.maxChars>0)?m.maxChars:0;
+    var g=$('agGuide'); if(g)g.innerHTML=ag.mode==='voice'?('<b>Voice:</b> type the text — it will be read aloud in a natural voice.'+(vCap?' Up to '+vCap+' characters per generation.':'')):'<b>SFX:</b> describe a sound — e.g. “deep cinematic whoosh with metallic tail”.';
     var ta=$('agPrompt'); if(ta)ta.placeholder=ag.mode==='voice'?'Type the narration text…':'Describe the sound effect…';
     var mn=$('agModelName'); if(mn)mn.textContent=m?(m.label+' · ✦'+(m.cost||0)):'';
     // Voice pills (katalog voices) — faqat voice rejimida
@@ -13237,6 +13239,8 @@ window.afGallery=(function(){
     var m=curAgModel(); if(!m){ toast('Model not loaded yet','warning'); return; }
     var ta=$('agPrompt'); var prompt=(ta&&ta.value||'').trim();
     if(prompt.length<2){ toast('Write the text first','warning'); return; }
+    // BATCH4 #4 — Chirp cap: kredit yechilmasdan oldin server 400 beradi; bu yerda aniq UX toast
+    if(ag.mode==='voice'&&typeof m.maxChars==='number'&&m.maxChars>0&&prompt.length>m.maxChars){ toast('Max '+m.maxChars+' characters for '+m.label+' (yours: '+prompt.length+') — split the text','warning'); return; }
     var params=agParams(); var mode=ag.mode;
     setAgBusy(true);
     Promise.all([
