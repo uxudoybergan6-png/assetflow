@@ -13,8 +13,12 @@ async function syncPlanConfigFromServer() {
   try {
     const d = await StudioApi.request("/api/admin/plan-config");
     (d.items || []).forEach((r) => {
-      const p = planById(String(r.plan || "").toLowerCase());
+      // Audit §C — ANIQ moslik: planById fallback'i noma'lum planlarni (STUDIO) FREE
+      // kartasiga yozib yuborardi (Free limitlari Studio qiymatlari bilan buzilardi).
+      const key = String(r.plan || "").toLowerCase();
+      const p = PLUGIN_PLANS.find((x) => x.id === key);
       if (!p) return;
+      if (typeof r.active === "boolean") p.active = r.active;
       p.aiMonthlyCredits = r.aiMonthlyCredits;
       p.downloadLimit = r.downloadLimit;
       p.importLimit = r.importLimit;
@@ -35,13 +39,15 @@ async function syncPlanConfigFromServer() {
 
 async function pushPlanConfigToServer() {
   if (typeof StudioApi === "undefined") throw new Error("API is unavailable");
-  for (const id of ["free", "pro"]) {
-    const p = planById(id);
+  // Audit §C — STUDIO ham push qilinadi + Active toggle endi serverda saqlanadi
+  for (const id of ["free", "pro", "studio"]) {
+    const p = PLUGIN_PLANS.find((x) => x.id === id);
     if (!p) continue;
     await StudioApi.request("/api/admin/plan-config/" + id.toUpperCase(), {
       method: "PUT",
       body: {
         label: p.name,
+        active: p.active !== false,
         aiMonthlyCredits: Math.max(0, Number(p.aiMonthlyCredits) || 0),
         downloadLimit: p.unlimitedDownloads ? null : (p.downloadLimit ?? null),
         importLimit: p.unlimitedDownloads ? null : (p.importLimit ?? null),
@@ -88,10 +94,17 @@ function renderDiscountSection() {
 
 function renderPlanEditorCard(p) {
   const unlim = !!p.unlimitedDownloads;
+  // Audit §C — STUDIO ham to'liq kartaga ega (narx/LS variant maydonlari barcha pullik planlar uchun)
+  const isPaid = p.id !== "free";
   const isPro = p.id === "pro";
-  return `<div class="adx-card" style="padding:18px 20px${isPro?';border-color:rgba(194,240,74,.3)':''}" data-plan-id="${p.id}">
-    <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">${isPro?'<span class="adx-bdg adx-bdg-pro">PRO PLAN</span>':'<span class="adx-bdg adx-bdg-free">FREE PLAN</span>'}<span style="flex:1"></span><button class="adx-tog ${p.active?'on':'off'}" data-plan-active="${p.id}" onclick="togglePlanActive('${p.id}')" title="Active"><i></i></button></div>
-    ${isPro
+  const badge = isPro
+    ? '<span class="adx-bdg adx-bdg-pro">PRO PLAN</span>'
+    : p.id === "studio"
+      ? '<span class="adx-bdg adx-bdg-pro" style="background:rgba(124,196,255,.16);color:#7CC4FF">STUDIO PLAN</span>'
+      : '<span class="adx-bdg adx-bdg-free">FREE PLAN</span>';
+  return `<div class="adx-card" style="padding:18px 20px${isPaid?';border-color:rgba(194,240,74,.3)':''}" data-plan-id="${p.id}">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">${badge}<span style="flex:1"></span><button class="adx-tog ${p.active!==false?'on':'off'}" data-plan-active="${p.id}" onclick="togglePlanActive('${p.id}')" title="Active"><i></i></button></div>
+    ${isPaid
       ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div>${axFlab(`PRICE (MONTHLY) · ${p.currency}`)}<input class="adx-input mono plan-input" data-field="priceMonthly" data-plan="${p.id}" type="number" min="0" step="1" value="${p.priceMonthly}"></div><div>${axFlab(`PRICE (YEARLY) · ${p.currency}`)}<input class="adx-input mono plan-input" data-field="priceYearly" data-plan="${p.id}" type="number" min="0" step="1" value="${p.priceYearly}"></div></div>`
       : `<div style="font-size:11px;color:#8A93A3;margin-bottom:14px">Free — always $0. Only limits are configurable.</div>`}
     ${axFlab("AI CREDITS / MONTH")}
@@ -102,7 +115,7 @@ function renderPlanEditorCard(p) {
     <div style="margin-bottom:12px"><input class="adx-input mono plan-input" data-field="importLimit" data-plan="${p.id}" type="number" min="0" placeholder="${unlim?"Unlimited":"10"}" value="${p.importLimit != null ? p.importLimit : ""}" ${unlim?"disabled":""}></div>
     ${axFlab("MAX RESOLUTION")}
     <div style="margin-bottom:12px"><select class="adx-input plan-input" data-field="maxResolution" data-plan="${p.id}">${["1080p","4K","4K + 8K"].map(r=>`<option ${p.maxResolution===r?"selected":""}>${r}</option>`).join("")}</select></div>
-    ${isPro?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div>${axFlab("LS VARIANT (MONTHLY)")}<input class="adx-input mono plan-input" data-field="lsVariantMonthly" data-plan="${p.id}" placeholder="variant id" value="${(p.lsVariantMonthly||"").replace(/"/g,"&quot;")}"></div><div>${axFlab("LS VARIANT (YEARLY)")}<input class="adx-input mono plan-input" data-field="lsVariantYearly" data-plan="${p.id}" placeholder="variant id" value="${(p.lsVariantYearly||"").replace(/"/g,"&quot;")}"></div></div>`:""}
+    ${isPaid?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div>${axFlab("LS VARIANT (MONTHLY)")}<input class="adx-input mono plan-input" data-field="lsVariantMonthly" data-plan="${p.id}" placeholder="variant id" value="${(p.lsVariantMonthly||"").replace(/"/g,"&quot;")}"></div><div>${axFlab("LS VARIANT (YEARLY)")}<input class="adx-input mono plan-input" data-field="lsVariantYearly" data-plan="${p.id}" placeholder="variant id" value="${(p.lsVariantYearly||"").replace(/"/g,"&quot;")}"></div></div>`:""}
     ${axFlab("CATALOG DESCRIPTION (PLUGIN UI)")}
     <div style="margin-bottom:12px"><input class="adx-input plan-input" data-field="catalog" data-plan="${p.id}" value="${(p.catalog||"").replace(/"/g,"&quot;")}"></div>
     ${axFlab("FEATURES (ONE PER LINE)")}
@@ -137,6 +150,7 @@ VIEWS.plans = function () {
     <div class="adx-grid2">
       ${renderPlanEditorCard(freeP)}
       ${renderPlanEditorCard(proP)}
+      ${PLUGIN_PLANS.some(x=>x.id==='studio')?renderPlanEditorCard(PLUGIN_PLANS.find(x=>x.id==='studio')):''}
     </div>
     ${renderDiscountSection()}`;
 };
@@ -158,10 +172,10 @@ function togglePlanUnlimited(planId) {
 
 function togglePlanActive(planId) {
   const p = planById(planId);
-  p.active = !p.active;
+  p.active = p.active === false; // §C — endi "Save plans" bilan serverga (PlanConfig.active) yoziladi
   toast(
     p.active ? "Active" : "Inactive",
-    `${p.name} plan ${p.active ? "enabled" : "disabled"}`,
+    `${p.name} plan ${p.active ? "enabled" : "disabled"} — click “Save plans” to persist`,
     p.active ? "success" : "warn"
   );
   route("plans");
@@ -224,6 +238,7 @@ function setPromoType(type) {
 async function savePlansFromForm() {
   collectPlanFromForm("free");
   collectPlanFromForm("pro");
+  if (PLUGIN_PLANS.some((x) => x.id === "studio")) collectPlanFromForm("studio"); // §C — Studio ham
   collectPromoFromForm();
   savePluginPlans();
   // FAZA 2 #13 — limitlar SERVERGA yoziladi (backend enforce shu qiymatlardan o'qiydi).

@@ -262,9 +262,14 @@ window.afterRender.moderation = function(){
       var mr = document.getElementById("modRoot");
       if (mr) mr.innerHTML = '<div style="padding:8px 4px">' + adxSkelList(5) + "</div>";
     }
-    StudioTemplates.loadModerationOnly()
+    // Audit §C (P1) — Soft/All filtrida scope=all yuklanadi (loadModerationOnly faqat
+    // pending'ni oladi — Moderation'ga to'g'ridan kirilganda Soft/All 0/stale chiqardi).
+    const loader = (MOD_FILTER === "soft" || MOD_FILTER === "all") && StudioTemplates.loadForAdmin
+      ? StudioTemplates.loadForAdmin
+      : StudioTemplates.loadModerationOnly;
+    loader()
       .catch((e) => {
-        console.warn("loadModerationOnly", e);
+        console.warn("moderation load", e);
         if (typeof toast === "function") toast("API", e.message || "Failed to load data", "warn");
       })
       .finally(() => renderModeration());
@@ -501,9 +506,12 @@ function initialsOf(name){
 
 function setModFilter(f){
   MOD_FILTER=f; MOD_SELECTED=null;
-  if (f === "pending" || f === "new") {
-    if (typeof StudioTemplates !== "undefined" && StudioTemplates.loadModerationOnly) {
-      StudioTemplates.loadModerationOnly().finally(() => renderModeration());
+  if (typeof StudioTemplates !== "undefined") {
+    // Audit §C (P1) — Soft/All rad etilganlarni scope=all bilan oladi (avval bu
+    // filtrlar hech qachon yangilanmasdan bo'sh/stale ma'lumot ko'rsatardi).
+    const loader = (f === "soft" || f === "all") ? StudioTemplates.loadForAdmin : StudioTemplates.loadModerationOnly;
+    if (loader) {
+      loader().finally(() => renderModeration());
       return;
     }
   }

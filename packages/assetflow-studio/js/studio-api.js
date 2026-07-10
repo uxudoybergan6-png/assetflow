@@ -454,6 +454,14 @@ const StudioApi = (() => {
     });
   }
 
+  /** Audit §C — obunachiga email xabar (admin). */
+  async function messagePluginSubscriber(userId, body) {
+    return request(`/api/admin/plugin-subscribers/${userId}/message`, {
+      method: "POST",
+      body,
+    });
+  }
+
   async function patchContributorStatus(userId, blocked) {
     return request(`/api/contributor/users/${userId}/status`, {
       method: "PATCH",
@@ -648,6 +656,7 @@ const StudioApi = (() => {
     adminOverview,
     listPluginSubscribers,
     patchPluginSubscriber,
+    messagePluginSubscriber,
     updateSubscriber,
     patchContributorStatus,
     patchProfile,

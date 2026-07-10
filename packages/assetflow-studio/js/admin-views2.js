@@ -686,7 +686,7 @@ function modSoftReject(id){
       <div><h3>Soft reject</h3><p>The contributor will see the reason and can fix and resubmit.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="field"><label>Rejection reason <span class="req">*</span></label><textarea class="textarea" id="softRejectReason" placeholder="Write a clear, useful note \u2014 so the contributor knows what to fix\u2026"></textarea></div>
-      <div class="field"><label>Category</label><select class="select" style="height:38px;width:100%"><option>Quality / compression</option><option>Incorrect metadata</option><option>Technical issue</option><option>Other</option></select></div>
+      <div class="field"><label>Category</label><select class="select" id="softRejectCat" style="height:38px;width:100%"><option>Quality / compression</option><option>Incorrect metadata</option><option>Technical issue</option><option>Other</option></select></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-warn" onclick="modRejectConfirm('${id}',false)">${ic('reply')} Send</button></div>`);
@@ -694,9 +694,17 @@ function modSoftReject(id){
 
 async function modRejectConfirm(id, hard) {
   // MUHIM: izohni modal yopilishidan OLDIN o'qiymiz (closeModal DOM'ni o'chiradi)
-  const note =
-    document.querySelector(".modal-body textarea")?.value?.trim() ||
-    "Rejected by moderation";
+  const noteEl = document.querySelector(".modal-body textarea");
+  const note = noteEl?.value?.trim() || "";
+  // Audit §C (P2) — sabab MAJBURIY: bo'sh "Rejected by moderation" bilan jim ketmaydi
+  if (!note) {
+    toast("Reason required", "Write a short reason — the contributor will see it", "warn");
+    if (noteEl) noteEl.focus();
+    return;
+  }
+  // Audit §C (P2) — soft-reject kategoriyasi endi izohga kiradi (avval umuman o'qilmasdi)
+  const catSel = document.getElementById("softRejectCat");
+  const cat = !hard && catSel ? String(catSel.value || "").trim() : "";
   closeModal();
   if (!StudioApi.token()) {
     toast("API", "Sign in as admin via the API first", "warn");
@@ -706,7 +714,7 @@ async function modRejectConfirm(id, hard) {
     await StudioApi.reviewTemplate(
       id,
       "reject",
-      hard ? `[hard] ${note}` : note
+      (hard ? "[hard] " : "") + (cat ? `[${cat}] ` : "") + note
     );
     await StudioTemplates.refreshAfterReview();
     toast(

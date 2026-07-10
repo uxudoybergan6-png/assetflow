@@ -53,7 +53,11 @@ const StudioTemplates = (() => {
       size:
         meta.size ||
         (t.fileSize ? `${(t.fileSize / 1024 / 1024).toFixed(1)} MB` : "—"),
-      isNew: t.reviewStatus === "PENDING_REVIEW",
+      // Audit §C (P2) — "New only" endi haqiqiy yangilik signali: oxirgi 48 soatda
+      // kelgan pending'lar (avval HAR pending "new" edi — filtr Pending bilan bir xil).
+      isNew:
+        t.reviewStatus === "PENDING_REVIEW" &&
+        Date.now() - (Date.parse(t.createdAt || "") || 0) < 48 * 3600000,
       // Stock S1 — mahsulot turi maydonlari (admin/moderation ko'rsatadi)
       kind: t.kind || "template",
       stockType: t.stockType || null,
@@ -243,15 +247,19 @@ const StudioTemplates = (() => {
         } else if (typeof applyActivityByDay === "function") {
           applyActivityByDay([]);
         }
-        window._ASSETFLOW_SUBSCRIBER_STATS = {
+        // Audit §C (P1) — DRIFT FIX: analytics endi ASOSIY statni QAYTA YOZMAYDI
+        // (ikkala manba ta'riflari farq qiladi: activeLast7d ≠ account-status active).
+        // Bu faqat FALLBACK — Subscribers sahifasi hali yuklanmagan bo'lsa ishlatiladi.
+        window._ASSETFLOW_SUBSCRIBER_STATS_FALLBACK = {
           total: data?.subscribers?.total ?? 0,
-          active: data?.subscribers?.activeLast7d ?? 0,
+          active: (data?.subscribers?.byStatus?.active ?? 0),
           blocked: data?.subscribers?.byStatus?.blocked ?? 0,
           removed: data?.subscribers?.byStatus?.removed ?? 0,
           online: data?.subscribers?.activeLast24h ?? 0,
           totalDownloads: data?.usage?.downloadsTotal ?? 0,
           free: data?.subscribers?.byPlan?.free ?? 0,
-          pro: data?.subscribers?.byPlan?.pro ?? 0,
+          // paid = pro + studio (§C — STUDIO ham pullik)
+          pro: data?.subscribers?.byPlan?.paid ?? data?.subscribers?.byPlan?.pro ?? 0,
         };
       }
       return true;

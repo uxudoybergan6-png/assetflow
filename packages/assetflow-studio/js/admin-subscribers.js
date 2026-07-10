@@ -61,13 +61,15 @@ function planBadge(plan) {
 }
 
 function usageCell(s) {
+  // Audit §C (P2) — per-obunachi downloadLimitOverride hisobga olinadi (detail bilan mos)
   const label = normalizePlanLabel(s.plan);
   const p = planById(label.toLowerCase());
-  if (p.unlimitedDownloads) {
+  const effLim = s.downloadLimitOverride != null ? s.downloadLimitOverride : (p.unlimitedDownloads ? null : p.downloadLimit);
+  if (effLim == null) {
     return `<span class="small" style="color:var(--green)">Unlimited</span><br><span class="cell-muted mono">${s.downloadsMonth ?? 0} this month</span>`;
   }
   const used = s.downloadsMonth ?? 0;
-  const lim = p.downloadLimit || 0;
+  const lim = effLim || 0;
   const pct = subscriberUsagePct(s) ?? 0;
   const over = used >= lim;
   return `<div class="col gap-4" style="min-width:88px">
@@ -82,8 +84,10 @@ function filteredSubscribers() {
   else if (SUB_FILTER === "blocked") list = list.filter((s) => s.status === "blocked");
   else if (SUB_FILTER === "removed") list = list.filter((s) => s.status === "removed");
   else if (SUB_FILTER === "online")
+    // Audit §C (P1) — server `online` predikati (60 daqiqa) — KPI badge bilan BIR manba;
+    // eski regex "Hozir"ni (eng onlaynlarni) tushirib qoldirardi.
     list = list.filter(
-      (s) => s.status === "active" && /daq|Bugun|minut/i.test(s.lastSeen)
+      (s) => s.status === "active" && (s.online != null ? !!s.online : /daq|Bugun|minut|Hozir/i.test(s.lastSeen))
     );
   if (SUB_PLAN_FILTER !== "all") {
     list = list.filter((s) => normalizePlanLabel(s.plan) === SUB_PLAN_FILTER);
@@ -109,13 +113,15 @@ function setSubFilter(f) {
 
 /** Obunachi limit foydalanish katakchasi (maket e5 — adx-prog). */
 function axUsageCell(s){
+  // Audit §C (P2) — override-aware (usageCell bilan bir xil qoida)
   const label = normalizePlanLabel(s.plan);
   const p = planById(label.toLowerCase());
-  if(p.unlimitedDownloads){
+  const effLim = s.downloadLimitOverride != null ? s.downloadLimitOverride : (p.unlimitedDownloads ? null : p.downloadLimit);
+  if(effLim == null){
     return `<span style="font-size:11px;color:#C2F04A">Unlimited</span><div class="adx-num" style="font-size:9.5px;color:#8A93A3;margin-top:3px">${s.downloadsMonth ?? 0} this month</div>`;
   }
   const used = s.downloadsMonth ?? 0;
-  const lim = p.downloadLimit || 0;
+  const lim = effLim || 0;
   const pct = subscriberUsagePct(s) ?? 0;
   const cls = pct>=100 ? 'dan' : pct>=80 ? 'warn' : '';
   return `<div style="min-width:110px"><div class="adx-prog"><div class="pb ${cls}" style="width:${Math.min(100,pct)}%"></div></div><div class="adx-num" style="font-size:9.5px;color:#8A93A3;margin-top:4px">${used} / ${lim}</div></div>`;
@@ -138,8 +144,8 @@ VIEWS.subscribers = function () {
     ${axInfo(`<b style="color:var(--text)">AE Plugin subscribers</b> — real customers using the <b style="color:var(--text)">FrameFlow Browse</b> panel inside After Effects. Blocking = stops plugin access. Removing = takes the account out of the system.`,'info')}
     <div class="adx-grid5" style="margin-bottom:16px">
       ${axStat({label:'Total subscribers',val:sc.total,ic:'users',foot:'registered'})}
-      ${axStat({label:'Active (AE)',val:sc.active,ic:'check-circle',icColor:'#C2F04A',foot:'using the plugin'})}
-      ${axStat({label:'Online (recent)',val:sc.online,ic:'gauge',icColor:'#7CC4FF',foot:'last 1 hour'})}
+      ${axStat({label:'Active',val:sc.active,ic:'check-circle',icColor:'#C2F04A',foot:'account status'})}
+      ${axStat({label:'Online',val:sc.online,ic:'gauge',icColor:'#7CC4FF',foot:'seen in last hour'})}
       ${axStat({label:'Blocked',val:sc.blocked,ic:'prohibit',icColor:'#FF6B5E',foot:'access closed'})}
       ${axStat({label:'Removed',val:sc.removed,ic:'trash',foot:'removed'})}
     </div>
@@ -575,14 +581,32 @@ function openMessageSub(id) {
     <div class="modal-head"><div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic("message")}</div>
       <div><h3>Message subscriber</h3><p>${esc(s.name)} · ${esc(s.email)}</p></div></div>
     <div class="modal-body col gap-12">
-      <div class="field"><label>Subject</label><input class="input" value="FrameFlow Browse — message"></div>
-      <div class="field"><label>Message</label><textarea class="textarea" placeholder="Email or in-app message to the subscriber…"></textarea></div>
+      <div class="field"><label>Subject</label><input class="input" id="subMsgSubject" value="FrameFlow — a message from the team"></div>
+      <div class="field"><label>Message</label><textarea class="textarea" id="subMsgBody" placeholder="Email message to the subscriber…"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="closeModal();notifyMessageSent('${id}')">${ic("send")} Send</button></div>`);
+      <button class="btn btn-primary" id="subMsgSend" onclick="sendMessageSub('${id}')">${ic("send")} Send</button></div>`);
 }
 
-function notifyMessageSent(id) {
-  const s = sById(id);
-  toast("Sent", `Message sent to ${s ? s.name : "subscriber"}`, "success");
+/** Audit §C (P1) — endi REAL yuboradi (POST /plugin-subscribers/:id/message → email). */
+async function sendMessageSub(id) {
+  const subject = document.getElementById("subMsgSubject")?.value?.trim();
+  const message = document.getElementById("subMsgBody")?.value?.trim();
+  if (!subject || !message) {
+    toast("Message", "Write a subject and a message first", "warn");
+    return;
+  }
+  const btn = document.getElementById("subMsgSend");
+  if (btn) btn.disabled = true;
+  try {
+    const r = await StudioApi.messagePluginSubscriber(id, { subject, message });
+    closeModal();
+    const s = sById(id);
+    if (r && r.sent) toast("Sent", `Email sent to ${s ? s.name : "subscriber"}`, "success");
+    else toast("Not sent", "Email service is not configured (RESEND_API_KEY) — message was NOT delivered", "warn");
+  } catch (e) {
+    toast("Error", e.message || "Message failed to send", "danger");
+    if (btn) btn.disabled = false;
+  }
 }
+window.sendMessageSub = sendMessageSub;

@@ -106,6 +106,28 @@ let PLUGIN_PLANS = [
     ],
     active: true,
   },
+  // Audit §C (P2) — STUDIO tarifi endi admin Plans ekranida boshqariladi (avval
+  // sync/push'dan butunlay tushib qolardi va soni hech qayerda ko'rinmasdi).
+  {
+    id: 'studio',
+    name: 'Studio',
+    tagline: 'Teams & heavy AI usage',
+    priceMonthly: 49,
+    priceYearly: 490,
+    currency: 'USD',
+    unlimitedDownloads: true,
+    downloadLimit: null,
+    importLimit: null,
+    aiMonthlyCredits: 6000,
+    catalog: 'Everything in Pro + highest AI credit allotment',
+    maxResolution: '4K',
+    features: [
+      'Everything in Pro',
+      '6000 AI credits / month',
+      'Priority support',
+    ],
+    active: true,
+  },
 ];
 
 /** Discount / promo code for the Pro plan (managed by admin) */
@@ -124,6 +146,7 @@ let PLUGIN_PROMO = {
 };
 
 function loadPluginPlans() {
+  const defaults = PLUGIN_PLANS.slice();
   try {
     const raw = localStorage.getItem('af_plugin_plans');
     if (!raw) return PLUGIN_PLANS;
@@ -133,6 +156,10 @@ function loadPluginPlans() {
     } else {
       if (data.plans) PLUGIN_PLANS = data.plans;
       if (data.promo) PLUGIN_PROMO = { ...PLUGIN_PROMO, ...data.promo };
+    }
+    // §C — eski localStorage'da studio bo'lmasa default'dan qo'shamiz (yo'qolib qolmasin)
+    for (const d of defaults) {
+      if (!PLUGIN_PLANS.some((p) => p.id === d.id)) PLUGIN_PLANS.push(d);
     }
   } catch (e) {
     console.warn('af_plugin_plans', e);
@@ -238,8 +265,13 @@ function cById(id) {
 }
 function sById(id){ return SUBSCRIBERS.find(s=>s.id===id); }
 function subscriberCounts(){
+  // Audit §C (P1) — manba ustuvorligi: /plugin-subscribers stats (holat-asosli, avtoritativ)
+  // → analytics FALLBACK (Subscribers sahifasi hali ochilmagan bo'lsa) → lokal hisob.
   if (typeof window !== "undefined" && window._ASSETFLOW_SUBSCRIBER_STATS) {
     return { ...window._ASSETFLOW_SUBSCRIBER_STATS };
+  }
+  if (typeof window !== "undefined" && window._ASSETFLOW_SUBSCRIBER_STATS_FALLBACK) {
+    return { ...window._ASSETFLOW_SUBSCRIBER_STATS_FALLBACK };
   }
   const active = SUBSCRIBERS.filter(s=>s.status==='active');
   return {
@@ -247,7 +279,8 @@ function subscriberCounts(){
     active: active.length,
     blocked: SUBSCRIBERS.filter(s=>s.status==='blocked').length,
     removed: SUBSCRIBERS.filter(s=>s.status==='removed').length,
-    online: active.filter(s=>/daq|Bugun|minut|Hozir/i.test(s.lastSeen)).length,
+    // §C — server `online` predikati (60 daqiqa); eski regex faqat serverga ulanmagan demo uchun
+    online: active.filter(s=> s.online != null ? !!s.online : /daq|Bugun|minut|Hozir/i.test(s.lastSeen)).length,
     totalDownloads: SUBSCRIBERS.reduce((a,s)=>a+s.downloads,0),
     free: SUBSCRIBERS.filter(s=>normalizePlanLabel(s.plan)==='Free' && s.status!=='removed').length,
     pro: SUBSCRIBERS.filter(s=>normalizePlanLabel(s.plan)==='Pro' && s.status!=='removed').length,
@@ -255,11 +288,14 @@ function subscriberCounts(){
 }
 
 function subscriberUsagePct(s) {
+  // Audit §C (P2) — per-obunachi override (downloadLimitOverride) endi hisobga olinadi
   const plan = planById(normalizePlanLabel(s.plan).toLowerCase());
-  if (plan.unlimitedDownloads) return null;
+  const lim = s.downloadLimitOverride != null
+    ? s.downloadLimitOverride
+    : (plan.unlimitedDownloads ? null : plan.downloadLimit);
+  if (lim == null) return null;
   const used = s.downloadsMonth ?? 0;
-  const lim = plan.downloadLimit || 1;
-  return Math.min(100, Math.round((used / lim) * 100));
+  return Math.min(100, Math.round((used / Math.max(1, lim)) * 100));
 }
 function tByStatus(s){ return TEMPLATES.filter(t=>t.status===s); }
 function tByContributor(id){ return TEMPLATES.filter(t=>t.cid===id); }
