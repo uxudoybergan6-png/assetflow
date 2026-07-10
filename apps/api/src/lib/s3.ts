@@ -186,7 +186,15 @@ export async function getS3ObjectMeta(
 export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): string[] {
   const base = `templates/${templateId}/${kind}`;
   if (kind === "pack") {
-    return [base, `${base}.mogrt`, `${base}.zip`, `${base}.aep`];
+    // Stock S1 — pack endi barcha template app formatlari + stock media kengaytmalarida
+    // saqlanishi mumkin (eski tartib saqlangan — mavjud kalitlar avval topiladi).
+    return [
+      base, `${base}.mogrt`, `${base}.zip`, `${base}.aep`,
+      `${base}.aet`, `${base}.ffx`, `${base}.prproj`, `${base}.motn`, `${base}.moti`,
+      `${base}.drfx`, `${base}.dra`, `${base}.setting`,
+      `${base}.mp4`, `${base}.mov`, `${base}.wav`, `${base}.mp3`, `${base}.aiff`,
+      `${base}.jpg`, `${base}.jpeg`, `${base}.png`, `${base}.webp`,
+    ];
   }
   if (kind === "preview") {
     return [base, `${base}.mp4`, `${base}.mov`, `${base}.webm`];

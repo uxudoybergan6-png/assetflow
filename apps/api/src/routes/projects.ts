@@ -41,6 +41,9 @@ const PROJECT_TPL_SELECT = {
   icon: true,
   bg: true,
   templateApp: true,
+  kind: true, // Stock S1 — CATALOG_SELECT bilan sinxron
+  stockType: true,
+  templateType: true,
   metaJson: true,
   fileName: true,
   fileSize: true,

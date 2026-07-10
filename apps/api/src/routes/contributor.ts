@@ -220,6 +220,12 @@ const templateBodySchema = z.object({
   icon: z.string().optional(),
   bg: z.string().optional(),
   templateApp: z.string().optional(),
+  // Stock S1 (STOCK-EXPANSION-PLAN.md) — mahsulot turi (kanonik qiymatlargagina ruxsat)
+  kind: z.enum(["template", "stock"]).optional(),
+  stockType: z.enum(["video", "music", "sfx", "photo"]).optional().nullable(),
+  templateType: z
+    .enum(["video-templates", "motion-graphics", "graphics", "luts"])
+    .optional(),
   metaJson: z.record(z.unknown()).optional(),
   fileName: z.string().optional().nullable(),
   fileSize: z.number().int().optional().nullable(),
@@ -522,7 +528,13 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
 const ASSET_UPLOAD_EXTS: Record<string, string[]> = {
   thumb: [".jpg", ".jpeg", ".png", ".webp"],
   preview: [".mp4", ".mov", ".webm"],
-  pack: [".aep", ".zip", ".mogrt"],
+  // Stock S1 — pack maydoni endi barcha template app formatlari (apps.ts packExts + .ffx)
+  // hamda stock media fayllarini (video/music/sfx/photo) qabul qiladi.
+  pack: [
+    ".aep", ".aet", ".ffx", ".zip", ".mogrt", ".prproj", ".motn", ".moti",
+    ".drfx", ".dra", ".setting",
+    ".mp4", ".mov", ".wav", ".mp3", ".aiff", ".jpg", ".jpeg", ".png", ".webp",
+  ],
 };
 
 const uploadAssets = multer({
@@ -2365,6 +2377,16 @@ contributorRouter.post(
       ...(d.scenes ? { scenes: d.scenes } : {}),
     };
 
+    // Stock S1 — stock mahsulot uchun stockType MAJBURIY (template'da esa null saqlanadi)
+    const kind = d.kind ?? "template";
+    if (kind === "stock" && !d.stockType) {
+      res.status(400).json({
+        error: "Stock type is required for a stock product",
+        code: "STOCK_TYPE_REQUIRED",
+      });
+      return;
+    }
+
     const settings = await getOrCreateSettings();
     const initialStatus = settings.requireApproval
       ? TemplateReviewStatus.DRAFT
@@ -2396,6 +2418,9 @@ contributorRouter.post(
         icon: d.icon ?? "✦",
         bg: d.bg ?? "",
         templateApp: d.templateApp ?? "ae",
+        kind,
+        stockType: kind === "stock" ? d.stockType : null,
+        templateType: d.templateType ?? "video-templates",
         metaJson: asMetaJson(meta),
         fileName: d.fileName ?? null,
         fileSize: d.fileSize ?? null,
@@ -2461,6 +2486,22 @@ contributorRouter.patch(
     if (req.user!.role !== "ADMIN") {
       delete (directFields as Record<string, unknown>).published;
       delete (directFields as Record<string, unknown>).isPro;
+    }
+    // Stock S1 — kind/stockType izchilligi: stock → stockType shart (body yoki mavjud
+    // qiymat), template → stockType tozalanadi.
+    if (directFields.kind === "stock") {
+      const st = directFields.stockType ?? existing.stockType;
+      if (!st) {
+        res.status(400).json({
+          error: "Stock type is required for a stock product",
+          code: "STOCK_TYPE_REQUIRED",
+        });
+        return;
+      }
+      // existing.stockType DB'da tekshirilgan kanonik qiymat — enum'ga xavfsiz toraytiriladi
+      directFields.stockType = st as "video" | "music" | "sfx" | "photo";
+    } else if (directFields.kind === "template") {
+      directFields.stockType = null;
     }
 
     const existingMetaObj = (existing.metaJson ?? {}) as Record<string, unknown>;
@@ -2861,6 +2902,9 @@ contributorRouter.get("/catalog", async (_req, res) => {
       icon: true,
       bg: true,
       templateApp: true,
+      kind: true,
+      stockType: true,
+      templateType: true,
       metaJson: true,
       fileName: true,
       fileSize: true,

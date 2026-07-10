@@ -91,6 +91,9 @@ const CATALOG_SELECT = {
   icon: true,
   bg: true,
   templateApp: true,
+  kind: true, // Stock S1 — mahsulot turi maydonlari (katalog itemlarida expose qilinadi)
+  stockType: true,
+  templateType: true,
   metaJson: true,
   fileName: true,
   fileSize: true,

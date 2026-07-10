@@ -147,6 +147,10 @@ type TemplateRow = {
   icon: string;
   bg: string;
   templateApp: string;
+  // Stock S1 — mahsulot turi maydonlari (eski so'rovlar uchun optional)
+  kind?: string;
+  stockType?: string | null;
+  templateType?: string;
   metaJson: unknown;
   fileName: string | null;
   fileSize: number | null;
@@ -243,6 +247,10 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     icon: t.icon,
     bg: t.bg || "linear-gradient(135deg,#312e81,#6366f1)",
     templateApp: t.templateApp,
+    // Stock S1 — additive maydonlar: keng tur (web pill filtri #3 o'qiydi) + kind/stockType
+    kind: t.kind ?? "template",
+    stockType: t.stockType ?? null,
+    type: t.templateType ?? "video-templates",
     fileName: hasPack
       ? packIsRawAep
         ? (t.fileName || "template.aep").replace(/\.aep$/i, ".zip")
@@ -269,4 +277,7 @@ export const approvedCatalogWhere = {
   reviewStatus: TemplateReviewStatus.APPROVED,
   published: true,
   takedownAt: null, // DMCA/takedown belgilangan shablonlar katalogda ko'rinmaydi (Bosqich 2 #2)
+  // Stock S1 — template katalogi faqat template'larni beradi; stock mahsulotlar
+  // S3 fazasida o'z surface'lari orqali chiqadi (TODO(S3)).
+  kind: "template",
 };
