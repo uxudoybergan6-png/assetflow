@@ -16447,7 +16447,9 @@
                               <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}"><span class="mic">⧉</span>Copy prompt</div></sc-if>
                               <div class="va-axmi plain danger" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>Delete</div>
                               <div class="va-axmdiv"></div>
-                              <div class="va-axmi plain off" onclick="{{ stop }}"><span class="mic">⤢</span>Upscale<span class="soon">SOON</span></div>
+                              <!-- BATCH4 #1 — Upscale JONLI (Imagen imagegeneration@002); ✦ narx imzolangan quote'dan composer'da tasdiqlanadi -->
+                              <div class="{{ axUpCls }}" title="{{ axUpTip }}" onclick="{{ axUseUpX2 }}"><span class="mic">⤢</span><span>Upscale x2 → 2K<span class="sub">{{ axUpCostX2 }}</span></span></div>
+                              <div class="{{ axUpCls }}" title="{{ axUpTip }}" onclick="{{ axUseUpX4 }}"><span class="mic">⤢</span><span>Upscale x4 → 4K<span class="sub">{{ axUpCostX4 }}</span></span></div>
                               <div class="va-axmi plain off" onclick="{{ stop }}"><span class="mic">✦</span>Make variations<span class="soon">SOON</span></div>
                             </div>
                           </sc-if>
@@ -16530,7 +16532,7 @@
                          M-handlerlar popoverni yopmaydi; buildParams o'zgarmagan (o'sha aiSize/aiQuality/... holat). -->
                     <div class="va-mmore">
                       <sc-if value="{{ showSize }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Ratio</span><span class="ops"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><b data-v="{{ z.v }}" onclick="{{ onSizeM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
-                      <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Quality</span><span class="ops"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><b data-v="{{ z.v }}" onclick="{{ onQualityM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
+                      <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">{{ qualityLabel }}</span><span class="ops"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><b data-v="{{ z.v }}" onclick="{{ onQualityM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
                       <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Res</span><span class="ops"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><b data-v="{{ z.v }}" onclick="{{ onResM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
                       <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Length</span><span class="ops"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><b data-v="{{ z.v }}" onclick="{{ onDurationM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
                       <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Count</span><span class="ops"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><b data-v="{{ z.v }}" onclick="{{ onCountM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
@@ -16555,7 +16557,7 @@
                 <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><span class="va-set" data-pop="aspect" onclick="{{ toggleChip }}"><b>{{ aspectVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popAspect }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span></sc-if>
-                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="quality" onclick="{{ toggleChip }}">Quality: <b>{{ qualityVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="quality" onclick="{{ toggleChip }}">{{ qualityLabel }}: <b>{{ qualityVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span></sc-if>
                 <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="res" onclick="{{ toggleChip }}"><b>{{ resVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
@@ -17008,6 +17010,8 @@
             <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
             <sc-if value="{{ lb.canProject }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbAddProj }}" class="ffm-btn2 sm"><i class="ph ph-folder-plus" style="font-size:14px"></i>Project</button></sc-if>
             <sc-if value="{{ lb.canRef }}" hint-placeholder-val="{{ false }}"><button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button></sc-if>
+            <!-- BATCH4 #1 — lightbox'dan Upscale (x2 default; faktor composer'da o'zgartiriladi) -->
+            <sc-if value="{{ lb.canUpscale }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbUpscale }}" class="ffm-btn2 sm"><i class="ph ph-frame-corners" style="font-size:14px"></i>Upscale</button></sc-if>
             <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:#FF6B5E"></i></button></sc-if>
           </div>
         </div>
@@ -17254,10 +17258,14 @@ class Component extends DCLogic {
   aiTools = [
     { key: 'Rasm yaratish', short: 'Image', icon: 'image', mode: 'image', unit: 'image', multi: true },
     { key: 'Video yaratish', short: 'Video', icon: 'video-camera', mode: 'video', unit: 'video', multi: false },
+    // BATCH4 #1 — Upscale: mode=image (backend katalog mode), mkey=alohida model ro'yxati (genModels.upscale)
+    { key: 'Upscale', short: 'Upscale', icon: 'frame-corners', mode: 'image', mkey: 'upscale', unit: 'image', multi: false },
     { key: 'Voiceover', short: 'Voice', icon: 'microphone', mode: 'voice', unit: 'voice', multi: false },
     { key: 'SFX', short: 'SFX', icon: 'waveform', mode: 'sfx', unit: 'effect', multi: false },
   ];
   toolByMode = { image: 'Rasm yaratish', video: 'Video yaratish', voice: 'Voiceover', sfx: 'SFX', music: 'SFX' };
+  // BATCH4 #1 — tool'ning model ro'yxati kaliti: mkey (Upscale=upscale) yoki mode
+  toolModelKey(tool) { return (tool && tool.mkey) || (tool && tool.mode) || 'image'; }
 
   // ── Landing CMS — defaultlar API'dagi DEFAULT_LANDING_CONFIG bilan AYNI (offline/birinchi
   // renderda ham landing hozirgi ko'rinishda qoladi; server merged config qaytaradi).
@@ -17936,12 +17944,17 @@ class Component extends DCLogic {
     for (const m of modes) {
       try {
         const r = await FFAPI.models(m);
-        const list = (r.models || []).filter(x => x.enabled !== false);
+        let list = (r.models || []).filter(x => x.enabled !== false);
+        // BATCH4 #1 — upscale modellari ALOHIDA pseudo-ro'yxatga (Upscale tool'i uchun);
+        // oddiy Image composer picker'ida ko'rinmaydi (u alohida MODE).
+        let upList = null;
+        if (m === 'image') { upList = list.filter(x => x.feature === 'image-upscale'); list = list.filter(x => x.feature !== 'image-upscale'); }
         okAny = true;
         this.setState(s => {
           const gm = Object.assign({}, s.genModels); gm[m] = list;
           const sel = Object.assign({}, s.selModel);
           if (!sel[m] && list.length) { const d = list.find(x => x.isDefault) || list[0]; sel[m] = d.id; }
+          if (upList) { gm.upscale = upList; if (!sel.upscale && upList.length) sel.upscale = (upList.find(x => x.isDefault) || upList[0]).id; }
           return { genModels: gm, selModel: sel };
         });
       } catch (e) {}
@@ -18242,8 +18255,9 @@ class Component extends DCLogic {
   curTool() { return this.aiTools.find(t => t.key === this.state.aiTool) || this.aiTools[0]; }
   curModel() {
     const tool = this.curTool();
-    const list = this.state.genModels[tool.mode] || [];
-    return list.find(m => m.id === this.state.selModel[tool.mode]) || list[0] || null;
+    const mk = this.toolModelKey(tool); // BATCH4 #1 — Upscale o'z ro'yxati (genModels.upscale)
+    const list = this.state.genModels[mk] || [];
+    return list.find(m => m.id === this.state.selModel[mk]) || list[0] || null;
   }
   buildParams(tool, model) {
     const st = this.state, p = {};
@@ -18324,7 +18338,10 @@ class Component extends DCLogic {
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
     const tool = this.curTool(), model = this.curModel();
     if (!model) { this.toast("Model failed to load — refresh the page"); return; }
-    const prompt = (this.state.aiPrompt || '').trim();
+    let prompt = (this.state.aiPrompt || '').trim();
+    // BATCH4 #1 — Upscale prompt ishlatmaydi: bo'sh bo'lsa avto-nom (fayl nomi ham shundan)
+    const isUp = model.feature === 'image-upscale';
+    if (isUp && prompt.length < 2) prompt = 'Upscale ' + ((this.buildParams(tool, model) || {}).quality || 'x2');
     if (prompt.length < 2) { this.toast('Write a prompt'); return; }
     if (this.state.generating) return;
     // P8 — majburiy referens gate (Seedance Fast: start kadr SHART) — kredit behuda ketmasin
@@ -18525,6 +18542,29 @@ class Component extends DCLogic {
     });
     setTimeout(() => { try { const el = document.querySelector('.va-dock .prompt'); if (el) el.focus(); } catch (e) {} }, 60);
   }
+  // BATCH4 #1 — Use ▾ → Upscale: natijani Upscale tool'iga manba qilib o'tkazadi (faktor oldindan
+  // tanlangan). Kredit BU YERDA sarflanmaydi — composer imzolangan quote'ni ko'rsatadi, foydalanuvchi
+  // Generate bilan tasdiqlaydi (balans darvozasi generate() ichida).
+  async useGenAsUpscale(factor, genId) {
+    const target = (this.state.genModels.upscale || [])[0] || null;
+    if (!target) { this.toast('Upscale model is not available right now'); return; }
+    let url = null;
+    try {
+      const g = await FFAPI.genGet(genId);
+      url = (g.assets && g.assets[0] && g.assets[0].url) || null;
+    } catch (e) { this.toast(this.errMsg(e)); return; }
+    if (!url) { this.toast('Source file not found'); return; }
+    const nt = this.aiTools.find(t => t.mkey === 'upscale');
+    this.setState(st => {
+      const sel = Object.assign({}, st.selModel); sel.upscale = target.id;
+      return Object.assign(this.refResetPatch(), {
+        selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiView: 'composer', aiMediaView: 'visuals',
+        useMenuOpen: false, chipPop: null, modelOpen: false, modelModalOpen: false,
+        refImages: [url], aiQuality: factor,
+      });
+    });
+    this.toast('Upscale ' + factor + ' ready — check the ✦ cost and press Generate');
+  }
   // #8 — My Library'dagi gen'ni JORIY modelning k-slotiga referens qiladi (model almashmaydi;
   // addRefFile'ning upload'dan keyingi yozuvi bilan AYNAN bir xil slotlar). URL FFAPI.genGet
   // orqali YANGI imzo bilan olinadi. Kredit/narxga ta'sir yo'q — quote referenslarni imzolamaydi.
@@ -18566,16 +18606,19 @@ class Component extends DCLogic {
     if (!g) { this.toast('This result could not be loaded'); return; }
     const params = g.params || {};
     const mode = (g.mode === 'video') ? 'video' : (g.mode === 'voice' || g.mode === 'music') ? 'voice' : (g.mode === 'sfx') ? 'sfx' : 'image';
-    const tool = this.aiTools.find(t => t.mode === mode);
-    const list = this.state.genModels[mode] || [];
-    const orig = list.find(m => String(m.id) === String(g.modelId));
-    const model = orig || list.find(m => m.id === this.state.selModel[mode]) || list[0] || null;
+    // BATCH4 #1 — upscale geni Upscale tool'iga tiklanadi (model image ro'yxatida emas)
+    const upOrig = (this.state.genModels.upscale || []).find(m => String(m.id) === String(g.modelId)) || null;
+    const mk = upOrig ? 'upscale' : mode;
+    const tool = upOrig ? this.aiTools.find(t => t.mkey === 'upscale') : this.aiTools.find(t => t.mode === mode);
+    const list = this.state.genModels[mk] || [];
+    const orig = upOrig || list.find(m => String(m.id) === String(g.modelId));
+    const model = orig || list.find(m => m.id === this.state.selModel[mk]) || list[0] || null;
     // refResetPatch bilan boshlaymiz (eski referenslar limit/duplikatga to'sqinlik qilmasin), so'ng tiklaymiz.
     const patch = Object.assign(this.refResetPatch(), {
       aiPrompt: g.prompt || '', aiTool: tool ? tool.key : this.state.aiTool,
       aiView: 'composer', aiMediaView: 'visuals', useMenuOpen: false, chipPop: null, modelOpen: false, modelModalOpen: false,
     });
-    const sel = Object.assign({}, this.state.selModel); if (model) sel[mode] = model.id; patch.selModel = sel;
+    const sel = Object.assign({}, this.state.selModel); if (model) sel[mk] = model.id; patch.selModel = sel;
     // Sozlamalar — saqlangan qiymatni o'rnatamiz; generate paytida buildParams model bo'yicha KLAMP qiladi
     // (noto'g'ri kombinatsiya hech qachon provayderga bormaydi). Referens URL'lar best-effort (yo'q bo'lsa
     // thumbnail chizilmaydi, lekin crash yo'q — foydalanuvchi olib tashlashi mumkin).
@@ -18763,11 +18806,12 @@ class Component extends DCLogic {
     // KEYIN (aks holda birinchi render default 'Image' bilan saqlanganini yozib yuboradi).
     if (this._toolPersistOn && this._lastToolSaved !== tool.key) { this._lastToolSaved = tool.key; try { localStorage.setItem('ff_ai_tool', tool.key); } catch (e) {} }
     const model = this.curModel();
-    const modelList = this.state.genModels[tool.mode] || [];
+    const modelList = this.state.genModels[this.toolModelKey(tool)] || []; // BATCH4 #1
+    const axIsUpscaleTool = !!model && model.feature === 'image-upscale'; // BATCH4 #1 — Upscale rejimi
     const genParams = model ? this.buildParams(tool, model) : {};
     const nSel = genParams.count || 1;
     const costNow = this.estCost(tool, model, genParams);
-    const toolDesc = { 'Rasm yaratish': 'Generate high-quality images from text', 'Video yaratish': 'Generate a short video clip from a prompt', 'Voiceover': 'Turn text into a natural-sounding voice', 'SFX': 'Generate a sound effect for your scene' }[tool.key];
+    const toolDesc = { 'Rasm yaratish': 'Generate high-quality images from text', 'Video yaratish': 'Generate a short video clip from a prompt', 'Upscale': 'Upscale a generated or uploaded image to 2K / 4K', 'Voiceover': 'Turn text into a natural-sounding voice', 'SFX': 'Generate a sound effect for your scene' }[tool.key];
     const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab', poprowCls: on ? 'ffa-poprow on' : 'ffa-poprow' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
     // cls=eski option grid, rowCls=popover qatori, optCls=inline option tugma (Ovoz paneli), on=faol
@@ -18785,6 +18829,8 @@ class Component extends DCLogic {
     const qualityOpts = (tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality) ? model.imgSettings.quality.options : [];
     const qualityView = qualityOpts.map(z => chip(z, z === genParams.quality));
     const showQuality = qualityOpts.length > 1;
+    // BATCH4 #1 — chip label model deskriptoridan (Upscale → "Factor")
+    const qualityLabel = (tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality && model.imgSettings.quality.label) || 'Quality';
     const resOpts = (tool.mode === 'video' && model && model.resolutions && model.resolutions.length > 1) ? model.resolutions : [];
     const resView = resOpts.map(z => chip(z, z === genParams.resolution));
     const showRes = resOpts.length > 1;
@@ -18858,12 +18904,14 @@ class Component extends DCLogic {
     const toolMetaA = {
       'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
       'Video yaratish': { title: 'Video', desc: 'Text to video, priced per second', gcls: 'va-g9', iconRef: '#i-vid' },
+      'Upscale': { title: 'Upscale', desc: 'Upscale an image to 2K or 4K', gcls: 'va-g1', iconRef: '#i-img' },
       'Voiceover': { title: 'Voiceover', desc: 'Natural voices, multi-language narration', gcls: 'va-g3', iconRef: '#i-mic' },
       'SFX': { title: 'SFX', desc: 'Describe a sound, get broadcast-ready FX', gcls: 'va-g4', iconRef: '#i-wave' },
     };
     const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
     const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
-    const promptPh = tool.mode === 'voice' ? 'Type text — it will be read in a natural voice…' : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
+    const promptPh = axIsUpscaleTool ? 'Optional note — pick an image via ＋ and choose the factor (x2 → 2K, x4 → 4K)…'
+      : tool.mode === 'voice' ? 'Type text — it will be read in a natural voice…' : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
     const unitCost = (countOpts.length > 1 && nSel > 1) ? Math.round(costNow / nSel) : costNow;
     const quotePrefix = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
     const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
@@ -19023,7 +19071,8 @@ class Component extends DCLogic {
     const modelFilterView = ['All', 'Image', 'Video', 'Voice', 'SFX'].map(v => ({ v, label: v, cls: 'va-axftag' + (v === axMFilter ? ' on' : '') }));
     // Dock: quote/CTA/balans — qiymatlar mavjud estCost/quote oqimidan, faqat ko'rinish yangi
     const axQuote = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
-    const axPromptReady = (this.state.aiPrompt || '').trim().length >= 2;
+    // BATCH4 #1 — Upscale'da prompt ixtiyoriy: manba rasm tanlangan bo'lsa Generate yoqiladi
+    const axPromptReady = axIsUpscaleTool ? this.state.refImages.length > 0 : (this.state.aiPrompt || '').trim().length >= 2;
     const genBtnCls = 'va-btn lime' + (this.state.generating ? ' pending' : (axPromptReady ? '' : ' off'));
     const genBtnLabel = this.state.generating ? 'Generating…' : 'Generate';
     const axBalNote = this.state.generating
@@ -19038,8 +19087,8 @@ class Component extends DCLogic {
     // #5 — add-amallar endi YOZILGAN "+" menyu qatorlari (menuLabel+icon); imkoniyat mantiqu
     // (rCaps) va addRefFile O'ZGARMAGAN — faqat affordance dashed-tugmalardan menyuga ko'chdi.
     if (rCaps.kind === 'image') {
-      this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: '@img' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
-      if (this.state.refImages.length < rCaps.max) refAddsView.push({ k: 'img', icon: 'image', menuLabel: this.state.refImages.length ? ('Image Reference (' + this.state.refImages.length + '/' + rCaps.max + ')') : 'Image Reference' });
+      this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: axIsUpscaleTool ? 'Source' : '@img' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
+      if (this.state.refImages.length < rCaps.max) refAddsView.push({ k: 'img', icon: 'image', menuLabel: axIsUpscaleTool ? 'Source image · required' : (this.state.refImages.length ? ('Image Reference (' + this.state.refImages.length + '/' + rCaps.max + ')') : 'Image Reference') });
     } else if (rCaps.kind === 'frames') {
       if (this.state.refStartUrl) refChipsView.push({ k: 'start', i: '0', url: this.state.refStartUrl, isImg: true, label: 'Start', thumbStyle: "background-image:url('" + this.state.refStartUrl + "')" });
       else refAddsView.push({ k: 'start', icon: 'image', menuLabel: rCaps.startRequired ? 'Start frame · required' : 'Start frame' });
@@ -19070,9 +19119,10 @@ class Component extends DCLogic {
       icon: g.type === 'video' ? 'film-slate' : (g.type === 'audio' ? 'waveform' : 'image'),
     })) : [];
     const refHint = this.state.refBusy ? 'Uploading…'
-      : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
-        : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
-          : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).'));
+      : (axIsUpscaleTool ? 'Required — pick the image to upscale (upload, My Library, or “Use ▾ → Upscale” on a result).'
+        : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
+          : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
+            : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).')));
     const hasRefSet = refChipsView.length > 0;
     // Use ▾ menyu qobiliyati: manba faqat RASM natija + katalogda mos model bo'lishi shart
     const axSrcIsImage = !!activeGenRaw && activeGenRaw.type === 'image';
@@ -19082,8 +19132,17 @@ class Component extends DCLogic {
     const axI2vOk = axSrcIsImage && axHasI2vModel;
     const axEditTip = axEditOk ? '' : (axSrcIsImage ? 'No edit-capable image model available' : 'Available for image results');
     const axI2vTip = axI2vOk ? '' : (axSrcIsImage ? 'No image-to-video model available' : 'Available for image results');
+    // BATCH4 #1 — Use ▾ Upscale: rasm natija + katalogda upscale model bo'lsa jonli; ✦ narx katalogdan
+    // (ko'rsatma), yakuniy narx composer'dagi imzolangan quote'da tasdiqlanadi.
+    const axUpModel = (this.state.genModels.upscale || [])[0] || null;
+    const axUpOk = axSrcIsImage && !!axUpModel;
+    const axUpTip = axUpOk ? '' : (axSrcIsImage ? 'Upscale model is not available right now' : 'Available for image results');
+    const axUpQc = (axUpModel && axUpModel.imgSettings && axUpModel.imgSettings.quality && axUpModel.imgSettings.quality.cost) || axUpModel && axUpModel.qualityCost || {};
+    const axUpCostX2 = '✦ ' + (axUpQc.x2 != null ? axUpQc.x2 : '—');
+    const axUpCostX4 = '✦ ' + (axUpQc.x4 != null ? axUpQc.x4 : '—');
     // Rejim QO'LDA almashsa referens tozalanadi (start-kadr voice/SFX da ma'nosiz)
-    const refClearIfModeChanged = (toolKey) => { const nt = this.aiTools.find(t => t.key === toolKey); return (nt && nt.mode !== tool.mode) ? this.refResetPatch() : {}; };
+    // BATCH4 #1 — taqqos model-KALIT bo'yicha: Image↔Upscale ham tozalaydi (limitlar farqli)
+    const refClearIfModeChanged = (toolKey) => { const nt = this.aiTools.find(t => t.key === toolKey); return (nt && this.toolModelKey(nt) !== this.toolModelKey(tool)) ? this.refResetPatch() : {}; };
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
     const src = this.state.catalog;
@@ -19208,7 +19267,7 @@ class Component extends DCLogic {
     const lbRaw = this.state.lightbox;
     // QA-FIX #3 — lightbox video poster: thumb bo'lsa poster, bo'lmasa null (preload=metadata birinchi kadrni chizadi)
     // §A (P1) — canRef: "Reference" tugmasi faqat RASM natijalarda (video/ovoz/SFX uchun ma'nosiz edi)
-    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true, canRef: lbRaw.type === 'image' } : null;
+    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true, canRef: lbRaw.type === 'image', canUpscale: lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0] } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
@@ -19718,8 +19777,11 @@ class Component extends DCLogic {
       onBitrate: (e) => this.setState({ aiBitrate: e.currentTarget.dataset.v, chipPop: null }),
       axEditCls: axEditOk ? 'va-axmi' : 'va-axmi off', axEditTip,
       axI2vCls: axI2vOk ? 'va-axmi' : 'va-axmi off', axI2vTip,
+      axUpCls: axUpOk ? 'va-axmi' : 'va-axmi off', axUpTip, axUpCostX2, axUpCostX4,
       axUseEdit: (e) => { e.stopPropagation(); if (!axEditOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('edit', activeGenRaw.id); },
       axUseI2V: (e) => { e.stopPropagation(); if (!axI2vOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('i2v', activeGenRaw.id); },
+      axUseUpX2: (e) => { e.stopPropagation(); if (!axUpOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsUpscale('x2', activeGenRaw.id); },
+      axUseUpX4: (e) => { e.stopPropagation(); if (!axUpOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsUpscale('x4', activeGenRaw.id); },
       useMenuOpen: this.state.useMenuOpen,
       onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
       onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) { this.setState({ lightbox: g, useMenuOpen: false }); this.refreshLightboxUrl(id); } } else this.setState({ activeGenId: id, useMenuOpen: false }); },
@@ -19749,7 +19811,7 @@ class Component extends DCLogic {
       showActive: !!activeGenRaw && !this.state.generating, canvasEmpty: !activeGenRaw && !this.state.generating,
       aiPrompt: this.state.aiPrompt, modelName, modelOpen: this.state.modelOpen, modelsView,
       sizesView, showSize, countsView, durationsView, showDuration: durOpts.length > 1,
-      qualityView, showQuality, resView, showRes, voicesView, showVoices,
+      qualityView, showQuality, qualityLabel, resView, showRes, voicesView, showVoices,
       generating: this.state.generating, skeletons,
       genView, genCount: this.state.gens.length,
       activeView, hasActive: !!activeGenRaw, noActive: !activeGenRaw, filmstrip,
@@ -19837,14 +19899,16 @@ class Component extends DCLogic {
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
       // modeli tanlansa tool'ni ham o'sha rejimga o'tkazadi) — selection logikasi bitta.
-      pickModel: (e) => { e.stopPropagation(); const id = +e.currentTarget.dataset.v; const mMode = e.currentTarget.dataset.mode || tool.mode; const nt = this.aiTools.find(t => t.mode === mMode); this.setState(st => { const sel = Object.assign({}, st.selModel); sel[mMode] = id; const upd = { selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiMediaView: mMode !== tool.mode ? null : st.aiMediaView, modelOpen: false, chipPop: null, modelModalOpen: false };
+      pickModel: (e) => { e.stopPropagation(); const id = +e.currentTarget.dataset.v; const mMode = e.currentTarget.dataset.mode || this.toolModelKey(tool); const nt = this.aiTools.find(t => this.toolModelKey(t) === mMode); this.setState(st => { const sel = Object.assign({}, st.selModel); sel[mMode] = id; const upd = { selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiMediaView: mMode !== tool.mode ? null : st.aiMediaView, modelOpen: false, chipPop: null, modelModalOpen: false };
         // P8 — referens klampi: rejim almashsa hammasi tozalanadi; model almashsa yangi
         // modelning imkoniyatiga MOSLAB kesiladi (backend 400 o'rniga)
-        if (mMode !== tool.mode) { Object.assign(upd, this.refResetPatch()); }
+        // BATCH4 #1 — taqqos model-KALIT bo'yicha (Upscale=upscale); refCaps esa katalog mode oladi
+        const catMode = mMode === 'upscale' ? 'image' : mMode;
+        if (mMode !== this.toolModelKey(tool)) { Object.assign(upd, this.refResetPatch()); }
         else { const nm = (st.genModels[mMode] || []).find(m => m.id === id);
-          if (nm) { const nc = this.refCaps(mMode, nm);
-            if (mMode === 'image') { upd.refImages = nc.kind === 'image' ? st.refImages.slice(0, nc.max) : []; }
-            else if (mMode === 'video') {
+          if (nm) { const nc = this.refCaps(catMode, nm);
+            if (catMode === 'image') { upd.refImages = nc.kind === 'image' ? st.refImages.slice(0, nc.max) : []; }
+            else if (catMode === 'video') {
               if (nc.kind === 'frames') { upd.refImages = []; upd.refVideos = []; upd.refAudios = [];
                 if (!nc.end) upd.refEndUrl = null; }
               else if (nc.kind === 'media') { upd.refStartUrl = null; upd.refEndUrl = null;
@@ -19877,6 +19941,7 @@ class Component extends DCLogic {
       // §A (P1) — "Reference" endi REAL: mavjud useGenAsRef('edit') handoff'iga ulandi
       // (avval faqat "coming soon" toast edi — o'lik stub)
       useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
+      lbUpscale: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsUpscale('x2', cur.id); },
       onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); },
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); },
