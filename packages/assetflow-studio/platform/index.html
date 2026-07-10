@@ -16496,13 +16496,22 @@
                        qo'shilganlar chip bo'lib yonida turadi (removeRef/addRefFile o'zgarmagan) -->
                   <sc-if value="{{ showRefPlus }}" hint-placeholder-val="{{ true }}">
                   <span style="position:relative;flex:none">
-                    <button class="va-axrefplus" data-pop="ref" onclick="{{ toggleChip }}" title="Add reference">＋</button>
+                    <button class="va-axrefplus" onclick="{{ toggleRefMenu }}" title="Add reference">＋</button>
                     <sc-if value="{{ popRef }}" hint-placeholder-val="{{ false }}">
                       <div class="ffa-pop" onclick="{{ stop }}" style="min-width:215px">
-                        <sc-if value="{{ refMenuHasCap }}" hint-placeholder-val="{{ false }}"><div class="va-refmenucap">{{ refMenuCap }}</div></sc-if>
-                        <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="2">
-                          <button class="va-refmenurow" data-k="{{ ra.k }}" onclick="{{ addRefKMenu }}"><i class="ph ph-{{ ra.icon }}"></i>{{ ra.menuLabel }}</button>
-                        </sc-for>
+                        <!-- #8 — tur tanlangach manba tanlovi: Upload / My Library -->
+                        <sc-if value="{{ refSrcOn }}" hint-placeholder-val="{{ false }}">
+                          <div class="va-refmenucap">{{ refSrcCap }}</div>
+                          <button class="va-refmenurow" onclick="{{ refSrcUpload }}"><i class="ph ph-upload-simple"></i>Upload</button>
+                          <button class="va-refmenurow" onclick="{{ refSrcLibrary }}"><i class="ph ph-squares-four"></i>My Library</button>
+                          <button class="va-refmenurow" onclick="{{ refSrcBack }}" style="color:var(--muted)"><i class="ph ph-caret-left"></i>Back</button>
+                        </sc-if>
+                        <sc-if value="{{ refSrcOff }}" hint-placeholder-val="{{ true }}">
+                          <sc-if value="{{ refMenuHasCap }}" hint-placeholder-val="{{ false }}"><div class="va-refmenucap">{{ refMenuCap }}</div></sc-if>
+                          <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="2">
+                            <button class="va-refmenurow" data-k="{{ ra.k }}" onclick="{{ addRefKMenu }}"><i class="ph ph-{{ ra.icon }}"></i>{{ ra.menuLabel }}</button>
+                          </sc-for>
+                        </sc-if>
                       </div>
                     </sc-if>
                   </span>
@@ -17006,6 +17015,33 @@
     </div>
   </sc-if>
 
+  <!-- #8 — My Library referens tanlagichi (Upload'ga muqobil manba) -->
+  <sc-if value="{{ refLibOpen }}" hint-placeholder-val="{{ false }}">
+    <div onclick="{{ refLibClose }}" style="position:fixed;inset:0;z-index:96;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
+      <div onclick="{{ stop }}" style="width:100%;max-width:640px;max-height:76vh;display:flex;flex-direction:column;background:var(--pop,#14161c);border:1px solid var(--hair2);border-radius:20px;padding:18px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="font-size:15px;font-weight:600">Pick from My Library</div>
+          <span style="font-size:11px;color:var(--muted)">{{ refLibSub }}</span>
+          <span style="flex:1"></span>
+          <button onclick="{{ refLibClose }}" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);border:none;color:#fff;cursor:pointer;display:grid;place-items:center"><i class="ph ph-x"></i></button>
+        </div>
+        <sc-if value="{{ refLibEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:40px 16px;text-align:center;color:var(--muted);font-size:12.5px">No generations yet — generate something first.</div>
+        </sc-if>
+        <div style="overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+          <sc-for list="{{ refLibItems }}" as="g" hint-placeholder-count="6">
+            <div data-id="{{ g.id }}" onclick="{{ refLibPickItem }}" style="cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid var(--hair2)">
+              <div style="aspect-ratio:1/1;background-image:{{ g.bgi }};background-size:cover;background-position:center;display:grid;place-items:center">
+                <sc-if value="{{ g.noThumb }}" hint-placeholder-val="{{ false }}"><i class="ph ph-{{ g.icon }}" style="font-size:20px;color:var(--muted)"></i></sc-if>
+              </div>
+              <div style="padding:6px 8px;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- TOAST -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:13px;background:rgba(20,20,30,.95);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt);animation:ffRise .25s ease"><i class="ph-fill ph-check-circle" style="color:var(--teal);font-size:18px"></i>{{ toast }}</div>
@@ -17113,6 +17149,9 @@ class Component extends DCLogic {
     catalogFullyLoaded: false, // §B (P1) — barcha sahifalar yuklangach true (bo'sh holat shunda chiqadi)
     // #6 — natijalar gridi ko'rinishi ('full' | 'compact'); localStorage'dan tiklanadi
     axGridView: (typeof localStorage !== 'undefined' && localStorage.getItem('ff_ax_grid')) || 'full',
+    // #5/#8 — "+" referens menyusi ichidagi manba bosqichi (k) + My Library tanlagichi ({k})
+    refSrcK: null,
+    refLibPick: null,
     landCfg: null, // Landing CMS — serverdagi (yoki localStorage keshidagi) konfiguratsiya
 
     favTpls: [], // FAZA D — lokal sevimli shablonlar (localStorage). TODO(FF): server-side favorites endpointi
@@ -18424,6 +18463,38 @@ class Component extends DCLogic {
     });
     setTimeout(() => { try { const el = document.querySelector('.va-dock .prompt'); if (el) el.focus(); } catch (e) {} }, 60);
   }
+  // #8 — My Library'dagi gen'ni JORIY modelning k-slotiga referens qiladi (model almashmaydi;
+  // addRefFile'ning upload'dan keyingi yozuvi bilan AYNAN bir xil slotlar). URL FFAPI.genGet
+  // orqali YANGI imzo bilan olinadi. Kredit/narxga ta'sir yo'q — quote referenslarni imzolamaydi.
+  async addRefFromLibrary(k, genId) {
+    let url = null;
+    try {
+      const g = await FFAPI.genGet(genId);
+      url = (g.assets && g.assets[0] && g.assets[0].url) || null;
+    } catch (e) { this.toast(this.errMsg(e)); return; }
+    if (!url) { this.toast('Source file not found'); return; }
+    const tool = this.curTool(); const model = this.curModel();
+    const caps = this.refCaps(tool.mode, model);
+    let added = true;
+    this.setState(st => {
+      const patch = { refLibPick: null };
+      if (k === 'start') patch.refStartUrl = url;
+      else if (k === 'end') patch.refEndUrl = url;
+      else if (k === 'vid') {
+        if (caps.lim && caps.lim.video && st.refVideos.length >= caps.lim.video) { added = false; return { refLibPick: null }; }
+        patch.refVideos = st.refVideos.concat([url]);
+      } else if (k === 'aud') {
+        if (caps.lim && caps.lim.audio && st.refAudios.length >= caps.lim.audio) { added = false; return { refLibPick: null }; }
+        patch.refAudios = st.refAudios.concat([url]);
+      } else {
+        const max = caps.kind === 'image' ? caps.max : ((caps.lim && caps.lim.image) || 0);
+        if (max && st.refImages.length >= max) { added = false; return { refLibPick: null }; }
+        patch.refImages = st.refImages.concat([url]);
+      }
+      return patch;
+    });
+    this.toast(added ? 'Reference added' : 'Reference limit reached for this model');
+  }
   // P18 — "Regenerate" endi GENERATSIYA QILMAYDI: manba gen'ning prompt + model + sozlama +
   // referenslarini (start/end kadr, media-refs) composer'ga TO'LIQ tiklaydi; foydalanuvchi ko'rib,
   // tahrirlab, o'zi Generate bosadi (kredit avtomatik sarflanmaydi). buildParams'ning teskarisi.
@@ -18925,6 +18996,17 @@ class Component extends DCLogic {
     // #5 — menyu sarlavhasi: frames modeli Artlist'dagidek "Start & End Frame" guruh nomi bilan
     const refMenuCap = rCaps.kind === 'frames' ? 'Start & End Frame' : (rCaps.kind === 'media' ? 'References' : '');
     const showRefPlus = refAddsView.length > 0;
+    // #8 — manba bosqichi (Upload / My Library) + Library tanlagichi ma'lumotlari
+    const refSrcK = this.state.refSrcK;
+    const refSrcEntry = refSrcK ? refAddsView.find(r => r.k === refSrcK) : null;
+    const refLibK = this.state.refLibPick ? this.state.refLibPick.k : null;
+    const refLibType = refLibK === 'vid' ? 'video' : refLibK === 'aud' ? 'audio' : 'image';
+    const refLibItems = refLibK ? this.state.gens.filter(g => g.type === refLibType).map(g => ({
+      id: g.id, label: g.label || 'Generation',
+      bgi: g.thumb ? ("url('" + g.thumb + "')") : this.grad(g.h),
+      noThumb: !g.thumb,
+      icon: g.type === 'video' ? 'film-slate' : (g.type === 'audio' ? 'waveform' : 'image'),
+    })) : [];
     const refHint = this.state.refBusy ? 'Uploading…'
       : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
         : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
@@ -19536,7 +19618,20 @@ class Component extends DCLogic {
       refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
       // #5 — "+" typed menyu holati
       popRef, showRefPlus, refMenuCap, refMenuHasCap: !!refMenuCap,
-      addRefKMenu: (e) => { e.stopPropagation(); const k = e.currentTarget.dataset.k; this.setState({ chipPop: null }); this.addRefFile(k); },
+      toggleRefMenu: (e) => { e.stopPropagation(); this.setState(st => ({ chipPop: st.chipPop === 'ref' ? null : 'ref', refSrcK: null, modelOpen: false })); },
+      // #8 — tur tanlandi → manba bosqichi (Upload / My Library)
+      addRefKMenu: (e) => { e.stopPropagation(); this.setState({ refSrcK: e.currentTarget.dataset.k }); },
+      refSrcOn: popRef && !!refSrcK, refSrcOff: !refSrcK,
+      refSrcCap: refSrcEntry ? refSrcEntry.menuLabel : 'Source',
+      refSrcUpload: (e) => { e.stopPropagation(); const k = this.state.refSrcK; this.setState({ chipPop: null, refSrcK: null }); if (k) this.addRefFile(k); },
+      refSrcLibrary: (e) => { e.stopPropagation(); const k = this.state.refSrcK; this.setState({ chipPop: null, refSrcK: null, refLibPick: k ? { k } : null }); },
+      refSrcBack: (e) => { e.stopPropagation(); this.setState({ refSrcK: null }); },
+      // #8 — My Library tanlagichi
+      refLibOpen: !!this.state.refLibPick,
+      refLibItems, refLibEmpty: !!refLibK && refLibItems.length === 0,
+      refLibSub: refLibType === 'video' ? 'video generations' : (refLibType === 'audio' ? 'audio generations' : 'image generations'),
+      refLibClose: () => this.setState({ refLibPick: null }),
+      refLibPickItem: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const k = this.state.refLibPick && this.state.refLibPick.k; if (k && id) this.addRefFromLibrary(k, id); },
       removeRef: (e) => { e.stopPropagation(); const k = e.currentTarget.dataset.k, i = +e.currentTarget.dataset.i;
         this.setState(st => {
           if (k === 'start') return { refStartUrl: null, refEndUrl: null }; // end startsiz yashamaydi
