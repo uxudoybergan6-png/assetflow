@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FrameFlow — Platform redesign MIX mockup (Higgsfield × Artlist)</title>
+<style>
+/* ── fontlar: index.html bilan bir xil self-hosted fayllar ── */
+@font-face{font-family:'Hanken Grotesk';font-style:normal;font-weight:400 800;font-display:swap;src:url("assets/fonts/9a5c604f.woff2") format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/280b622a.woff2") format('woff2')}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url("assets/fonts/97d6f528.woff2") format('woff2')}
+
+/* ── real app tokenlari + redesign kengaytmalari (rx- scope) ── */
+:root{
+  --bg:#06080B;--bg2:#0A0D12;--panel:#0E1117;--panel2:#13161C;
+  --bd:#20262F;--bd2:#2A3140;
+  --txt:#F2F5F8;--txt2:#8A93A3;--txt3:#5E6675;
+  --lime:#C2F04A;--onlime:#0E1400;
+  --hair:rgba(255,255,255,.07);--hair2:rgba(255,255,255,.11);
+  --f1:rgba(255,255,255,.05);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --r:16px;--r2:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.5 'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(194,240,74,.3);color:#0E1400}
+img{max-width:100%}
+
+/* ── kirish paneli (mockup meta) ── */
+.intro{position:sticky;top:0;z-index:80;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 26px;background:rgba(6,8,11,.92);border-bottom:1px solid var(--bd);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.intro h1{margin:0;font-size:13.5px;font-weight:800;letter-spacing:-.01em}
+.intro p{margin:0;font-size:11px;color:var(--txt2)}
+.intro .jump{margin-left:auto;display:flex;gap:6px}
+.intro .jump a{font:600 10.5px var(--mono);color:var(--txt2);border:1px solid var(--hair2);background:var(--f1);border-radius:6px;padding:4px 9px;text-decoration:none;cursor:pointer}
+.intro .jump a.on{color:var(--onlime);background:var(--lime);border-color:transparent}
+
+/* ══════════ AMBIENT FON — A (aurora) + D (grain) kombo, #2 mockupdan ══════════ */
+.rx-app{position:relative;min-height:100vh;overflow:hidden}
+.rx-amb{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+   radial-gradient(1300px 640px at 50% -16%,rgba(194,240,74,.15),transparent 64%),
+   radial-gradient(1100px 560px at 88% -4%,rgba(86,58,172,.40),transparent 68%),
+   radial-gradient(900px 540px at 0% 34%,rgba(18,116,132,.26),transparent 70%),
+   radial-gradient(1000px 560px at 72% 112%,rgba(86,58,172,.26),transparent 70%),
+   radial-gradient(640px 360px at 18% 100%,rgba(194,240,74,.09),transparent 70%),
+   linear-gradient(180deg,#0B0E15 0%,var(--bg) 34%,var(--bg) 66%,#05070A 100%)}
+.rx-amb::after{content:"";position:absolute;inset:0;opacity:.10;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat}
+.rx-wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 30px 60px}
+
+/* ══════════ SHELL NAV — shisha bar, segment pill markazda ══════════ */
+.rx-nav{position:sticky;top:47px;z-index:60;display:flex;align-items:center;gap:16px;height:62px;padding:0 18px;margin:14px 0 0;border:1px solid var(--hair2);border-radius:18px;background:rgba(10,13,18,.62);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 12px 34px rgba(0,0,0,.35)}
+.rx-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;letter-spacing:-.02em}
+.rx-logo .mk{width:26px;height:26px;border-radius:8px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(194,240,74,.35)}
+.rx-links{display:flex;gap:3px;margin:0 auto;padding:4px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--hair)}
+.rx-links a{padding:7px 15px;border-radius:100px;font-weight:600;font-size:12.5px;color:var(--txt2);white-space:nowrap;text-decoration:none;cursor:pointer;transition:color .16s}
+.rx-links a:hover{color:var(--txt)}
+.rx-links a.on{color:var(--onlime);background:var(--lime)}
+.rx-search{display:flex;align-items:center;gap:8px;width:250px;height:36px;padding:0 13px;border-radius:100px;background:var(--f1);border:1px solid var(--hair2);color:var(--txt3);font-size:11.5px;white-space:nowrap;overflow:hidden}
+.rx-search .k{margin-left:auto;font:600 9px var(--mono);padding:2px 6px;border-radius:4px;background:var(--f1);border:1px solid var(--hair2)}
+.rx-cred{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:100px;background:var(--f1);border:1px solid var(--hair2);font:600 11.5px var(--mono)}
+.rx-cred .s{color:var(--lime)}
+.rx-cred .pl{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+.rx-ava{width:32px;height:32px;border-radius:50%;flex:none;background:linear-gradient(135deg,#6C3FA8,#33549E);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+
+/* ══════════ UMUMIY primitivlar ══════════ */
+.rx-kick{font:600 9.5px var(--mono);letter-spacing:.16em;color:var(--txt3);text-transform:uppercase}
+.rx-kick b{color:var(--lime);font-weight:600}
+.rx-h2{margin:6px 0 0;font-size:21px;font-weight:800;letter-spacing:-.02em}
+.rx-rowhead{display:flex;align-items:baseline;gap:14px;margin:34px 0 14px}
+.rx-more{margin-left:auto;font-size:12px;font-weight:600;color:var(--txt2);text-decoration:none;white-space:nowrap;cursor:pointer}
+.rx-more:hover{color:var(--lime)}
+.rx-chip{display:inline-flex;align-items:center;gap:5px;font:600 9.5px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:5px;background:rgba(6,8,11,.7);border:1px solid rgba(255,255,255,.12);color:#C9D2DE;backdrop-filter:blur(4px)}
+.rx-chip.lime{background:var(--lime);color:var(--onlime);border-color:transparent}
+.rx-chip.new{background:#2A1140;color:#E7B7FF;border-color:rgba(231,183,255,.25)}
+
+/* media stand-in gradientlar (hech qanday tashqi asset yo'q) */
+.m1{background:linear-gradient(135deg,#3E2A78 0%,#0E7A8A 100%)}
+.m2{background:linear-gradient(150deg,#7A2E4A 0%,#2A1140 100%)}
+.m3{background:linear-gradient(135deg,#23486B 0%,#0D1B2E 100%)}
+.m4{background:linear-gradient(140deg,#5A2AA0 0%,#8A3E6E 100%)}
+.m5{background:linear-gradient(140deg,#0E5A38 0%,#123840 100%)}
+.m6{background:linear-gradient(135deg,#8A6E1E 0%,#5A2A16 100%)}
+.m7{background:linear-gradient(160deg,#16324E 0%,#4A1E5E 100%)}
+.m8{background:linear-gradient(135deg,#0E4A5E 0%,#1E1A4E 100%)}
+.mtex{position:relative;overflow:hidden}
+.mtex::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px) 0 0/16px 16px;opacity:.5}
+.mtex::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,transparent 55%,rgba(0,0,0,.42) 100%)}
+
+/* ══════════ HOME — billboard + AI launcher + media qatorlar ══════════ */
+.rx-bill{display:grid;grid-template-columns:1.9fr 1fr;gap:14px;margin-top:18px}
+.rx-hero{position:relative;min-height:400px;border-radius:22px;overflow:hidden;border:1px solid var(--hair2);display:flex;align-items:flex-end}
+.rx-hero .med{position:absolute;inset:0;background:
+  radial-gradient(900px 400px at 80% 0%,rgba(194,240,74,.20),transparent 60%),
+  linear-gradient(160deg,#243B10 0%,#0E3A44 46%,#1E1436 100%)}
+.rx-hero .med::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.07) 1px,transparent 1px) 0 0/20px 20px;opacity:.5}
+.rx-hero .med i{position:absolute;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:rgba(6,8,11,.35);backdrop-filter:blur(3px)}
+.rx-hero .med i:nth-child(1){width:200px;height:118px;right:11%;top:14%;transform:rotate(6deg)}
+.rx-hero .med i:nth-child(2){width:150px;height:88px;right:26%;top:44%;transform:rotate(-7deg)}
+.rx-hero .med i:nth-child(3){width:110px;height:64px;right:8%;top:56%;transform:rotate(3deg)}
+.rx-hero .med.kb{animation:rxKB 26s ease-in-out infinite alternate}
+@keyframes rxKB{to{transform:scale(1.06) translate(-1.2%,-1%)}}
+@media(prefers-reduced-motion:reduce){.rx-hero .med.kb{animation:none}}
+.rx-hero .in{position:relative;z-index:1;padding:30px;width:100%;background:linear-gradient(180deg,transparent,rgba(4,6,9,.82) 70%)}
+.rx-hero h2{margin:8px 0 6px;font-size:min(40px,3.1vw + 16px);line-height:1.02;font-weight:800;letter-spacing:-.03em}
+.rx-hero p{margin:0 0 16px;color:var(--txt2);font-size:13px;max-width:520px}
+.rx-btn{display:inline-flex;align-items:center;gap:8px;border-radius:100px;padding:11px 20px;background:linear-gradient(155deg,#C2F04A,#9cd62b);color:var(--onlime);font-weight:700;font-size:13px;border:0;cursor:pointer;box-shadow:0 8px 26px rgba(194,240,74,.22)}
+.rx-btn.gh{background:rgba(255,255,255,.07);color:var(--txt);border:1px solid var(--hair2);box-shadow:none}
+.rx-btn:hover{filter:brightness(1.06)}
+.rx-side{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+.rx-mini{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--hair2);display:flex;align-items:flex-end;min-height:150px}
+.rx-mini .in{position:relative;z-index:1;padding:16px;width:100%;background:linear-gradient(180deg,transparent,rgba(4,6,9,.8) 76%)}
+.rx-mini b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.015em;margin-top:6px}
+.rx-mini i{font-style:normal;font-size:11px;color:var(--txt2)}
+.rx-mini .tr{position:absolute;top:12px;right:12px}
+
+.rx-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.rx-tool{position:relative;border-radius:var(--r);border:1px solid var(--hair);background:linear-gradient(180deg,rgba(19,22,28,.72),rgba(14,17,23,.6));backdrop-filter:blur(10px);padding:15px 15px 13px;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.rx-tool:hover{transform:translateY(-2px);border-color:rgba(194,240,74,.4);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.rx-tool .top{display:flex;align-items:center;gap:10px}
+.rx-tool .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(194,240,74,.12);color:var(--lime)}
+.rx-tool .ic.v{background:rgba(120,84,255,.16);color:#B9A3FF}
+.rx-tool .ic.a{background:rgba(38,176,196,.14);color:#7BDCEC}
+.rx-tool .ic.s{background:rgba(240,150,58,.14);color:#F6B87C}
+.rx-tool b{font-size:13.5px;font-weight:700;letter-spacing:-.01em;display:block}
+.rx-tool .sub{font-size:11px;color:var(--txt3);margin-top:1px}
+.rx-tool .tag{margin-left:auto}
+.rx-tool .strip{display:flex;gap:5px;margin-top:12px}
+.rx-tool .strip span{flex:1;height:34px;border-radius:7px;opacity:.85}
+.rx-tool .foot{display:flex;align-items:center;gap:6px;margin-top:11px;font:400 10px var(--mono);color:var(--txt3)}
+
+.rx-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.rx-card{position:relative;border-radius:var(--r2);overflow:hidden;border:1px solid var(--hair);aspect-ratio:16/10;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.rx-card:hover{transform:translateY(-2px);border-color:rgba(194,240,74,.45);box-shadow:0 16px 36px rgba(0,0,0,.45)}
+.rx-card .bd{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;background:linear-gradient(180deg,transparent,rgba(4,6,9,.88));display:flex;align-items:flex-end;gap:8px;opacity:0;transform:translateY(4px);transition:opacity .18s ease,transform .18s ease}
+.rx-card:hover .bd,.rx-card.hovered .bd{opacity:1;transform:none}
+.rx-card .bd b{font-size:12.5px;font-weight:700;letter-spacing:-.005em;display:block}
+.rx-card .bd i{font-style:normal;font:400 9.5px var(--mono);color:var(--txt2);display:block;margin-top:2px}
+.rx-card .act{margin-left:auto;display:flex;gap:6px}
+.rx-card .act span{width:28px;height:28px;border-radius:8px;background:rgba(6,8,11,.7);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.rx-card .tl{position:absolute;top:9px;left:9px;display:flex;gap:5px}
+.rx-card .tr{position:absolute;top:9px;right:9px;display:flex;gap:5px}
+.rx-card .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s ease}
+.rx-card:hover .play,.rx-card.hovered .play{opacity:1}
+.rx-card .play span{width:40px;height:40px;border-radius:50%;background:rgba(6,8,11,.62);border:1px solid rgba(255,255,255,.24);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+
+.rx-gens{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.rx-gen{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--hair);aspect-ratio:1/1;cursor:pointer;transition:border-color .16s}
+.rx-gen:hover{border-color:rgba(194,240,74,.4)}
+.rx-gen .tl{position:absolute;top:7px;left:7px}
+.rx-gen .cost{position:absolute;right:7px;bottom:6px;font:600 9px var(--mono);color:rgba(242,245,248,.85);text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.rx-gen.vid{aspect-ratio:auto;grid-row:span 1}
+
+/* ══════════ TEMPLATES — filtr paneli + masonry ══════════ */
+.rx-cathead{display:flex;align-items:flex-end;gap:18px;margin-top:30px}
+.rx-cathead .n{font:400 11px var(--mono);color:var(--txt3);padding-bottom:5px}
+.rx-filters{position:sticky;top:124px;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 18px;padding:10px 12px;border-radius:14px;border:1px solid var(--hair2);background:rgba(10,13,18,.68);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.rx-pill{padding:7px 13px;border-radius:100px;font-weight:600;font-size:11.5px;color:var(--txt2);border:1px solid var(--hair2);background:var(--f1);cursor:pointer;white-space:nowrap;transition:color .14s,border-color .14s}
+.rx-pill:hover{color:var(--txt)}
+.rx-pill.on{background:var(--lime);color:var(--onlime);border-color:transparent}
+.rx-pill.dd::after{content:"▾";margin-left:6px;font-size:9px;opacity:.7}
+.rx-filters .sp{flex:1}
+.rx-sort{font:600 10.5px var(--mono);color:var(--txt2);display:flex;align-items:center;gap:7px}
+.rx-sort b{color:var(--txt);font-weight:600}
+.rx-mas{columns:4 260px;column-gap:14px}
+.rx-mas .rx-card{display:block;margin:0 0 14px;aspect-ratio:auto}
+.rx-mas .ar169{aspect-ratio:16/9}.rx-mas .ar11{aspect-ratio:1/1}.rx-mas .ar916{aspect-ratio:9/14}.rx-mas .ar43{aspect-ratio:4/3}
+.rx-mas .rx-card .bigT{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;letter-spacing:-.03em;color:rgba(255,255,255,.9);text-shadow:0 4px 24px rgba(0,0,0,.5)}
+.rx-ghost{border:1px dashed var(--bd2);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;color:var(--txt3);font:600 10px var(--mono);letter-spacing:.1em;min-height:120px;margin-bottom:14px;background:rgba(255,255,255,.015)}
+
+/* ══════════ AI STUDIO — rail + kanvas + dock composer ══════════ */
+.rx-studio{display:grid;grid-template-columns:64px 1fr;gap:14px;margin-top:18px}
+.rx-rail{display:flex;flex-direction:column;gap:8px;align-items:center;padding:12px 0;border:1px solid var(--hair);border-radius:var(--r);background:rgba(14,17,23,.55);backdrop-filter:blur(10px);height:fit-content;position:sticky;top:126px}
+.rx-rail .nb{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--lime);color:var(--onlime);cursor:pointer;box-shadow:0 0 16px rgba(194,240,74,.25)}
+.rx-rail .it{width:40px;height:40px;border-radius:12px;border:1px solid var(--hair);overflow:hidden;cursor:pointer;opacity:.85;transition:opacity .14s,border-color .14s}
+.rx-rail .it:hover{opacity:1;border-color:var(--bd2)}
+.rx-rail .it.on{border-color:rgba(194,240,74,.6);opacity:1}
+.rx-rail .lb{width:40px;height:40px;border-radius:12px;border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;color:var(--txt2);cursor:pointer;margin-top:auto}
+.rx-canvas{position:relative;border:1px solid var(--hair2);border-radius:22px;min-height:640px;overflow:hidden;background:rgba(8,10,14,.4);backdrop-filter:blur(6px);display:flex;flex-direction:column}
+.rx-canhead{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--hair)}
+.rx-mode{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:100px;background:var(--f1);border:1px solid var(--hair2);font-weight:700;font-size:12px;cursor:pointer}
+.rx-mode .dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.rx-canhead .sess{font:400 11px var(--mono);color:var(--txt3)}
+.rx-canhead .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.rx-results{flex:1;padding:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-content:start;padding-bottom:150px}
+.rx-res{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--hair);aspect-ratio:1/1;cursor:pointer;transition:border-color .16s,transform .16s}
+.rx-res:hover{border-color:rgba(194,240,74,.45);transform:translateY(-2px)}
+.rx-res .bd{position:absolute;left:0;right:0;bottom:0;padding:20px 10px 8px;background:linear-gradient(180deg,transparent,rgba(4,6,9,.85));font:400 9.5px var(--mono);color:var(--txt2);opacity:0;transition:opacity .16s}
+.rx-res:hover .bd{opacity:1}
+.rx-res.gen .sh{position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.08) 50%,transparent 70%) 0 0/220% 100%;animation:rxSh 1.6s linear infinite}
+@keyframes rxSh{to{background-position:-120% 0}}
+@media(prefers-reduced-motion:reduce){.rx-res.gen .sh{animation:none}}
+.rx-res.gen .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--txt2);font:600 10px var(--mono);letter-spacing:.1em}
+.rx-res.gen .bar{width:56%;height:3px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.rx-res.gen .bar i{display:block;width:64%;height:100%;background:var(--lime);border-radius:2px}
+.rx-hint{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--txt3);font-size:11.5px;padding:4px 2px}
+.rx-hint span{font:600 10px var(--mono);color:var(--txt2);border:1px solid var(--hair);background:var(--f1);border-radius:6px;padding:4px 9px;cursor:pointer}
+.rx-hint span:hover{color:var(--lime);border-color:rgba(194,240,74,.35)}
+.rx-dock{position:absolute;left:18px;right:18px;bottom:16px;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.78);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.12);box-shadow:0 22px 54px rgba(0,0,0,.55)}
+.rx-dock .line{display:flex;align-items:center;gap:10px}
+.rx-dock .plus{width:34px;height:34px;flex:none;border-radius:10px;border:1px solid var(--hair2);background:var(--f1);display:flex;align-items:center;justify-content:center;color:var(--txt2);cursor:pointer}
+.rx-dock .ta{flex:1;font-size:13px;color:var(--txt);padding:8px 2px;min-width:0}
+.rx-dock .ta .cur{display:inline-block;width:1px;height:14px;background:var(--lime);vertical-align:-2px;animation:rxCur 1.1s steps(2) infinite}
+@keyframes rxCur{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.rx-dock .ta .cur{animation:none}}
+.rx-dock .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.rx-dchip{display:inline-flex;align-items:center;gap:6px;font:600 10px var(--mono);color:var(--txt2);border:1px solid var(--hair2);background:var(--f1);border-radius:7px;padding:5px 10px;cursor:pointer;transition:color .14s,border-color .14s}
+.rx-dchip:hover{color:var(--txt);border-color:var(--bd2)}
+.rx-dchip::after{content:"▾";font-size:8px;opacity:.6}
+.rx-dchip.st::after{content:""}
+.rx-dchip .d{width:6px;height:6px;border-radius:50%;background:#B9A3FF}
+.rx-cost{margin-left:auto;font:600 10.5px var(--mono);color:var(--txt2)}
+.rx-cost b{color:var(--lime);font-weight:600}
+
+/* ── screen switch (mockup shell) ── */
+.rx-screen{display:none}
+.rx-screen.on{display:block}
+.rx-note{margin:44px 0 0;padding:14px 16px;border:1px dashed var(--bd2);border-radius:12px;color:var(--txt3);font-size:11px}
+.rx-note b{color:var(--txt2)}
+
+/* ── responsiv (390px) ── */
+@media(max-width:860px){
+  .rx-wrap{padding:0 12px 40px}
+  .rx-nav{top:88px;height:56px;gap:10px;padding:0 12px;border-radius:14px}
+  .rx-links{display:none}
+  .rx-search{display:none}
+  .rx-cred{margin-left:auto}
+  .rx-bill{grid-template-columns:1fr}
+  .rx-hero{min-height:330px}
+  .rx-side{grid-template-rows:none;grid-template-columns:1fr 1fr}
+  .rx-mini{min-height:130px}
+  .rx-tools{grid-template-columns:1fr 1fr}
+  .rx-cards{grid-template-columns:1fr 1fr}
+  .rx-cards .rx-card:nth-child(n+5){display:none}
+  .rx-gens{grid-template-columns:repeat(3,1fr)}
+  .rx-gens .rx-gen:nth-child(n+7){display:none}
+  .rx-filters{top:150px;padding:8px;gap:6px;overflow-x:auto;flex-wrap:nowrap}
+  .rx-sort{display:none}
+  .rx-mas{columns:2 140px;column-gap:10px}
+  .rx-studio{grid-template-columns:1fr}
+  .rx-rail{flex-direction:row;position:static;width:100%;padding:8px 10px}
+  .rx-rail .lb{margin-top:0;margin-left:auto}
+  .rx-canvas{min-height:560px}
+  .rx-canhead .sess{display:none}
+  .rx-results{grid-template-columns:1fr 1fr;padding-bottom:170px}
+  .rx-dock{left:10px;right:10px;bottom:10px;border-radius:16px}
+  .rx-cost{width:100%;margin-left:0;order:9}
+}
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <h1>Platform redesign — MIX mockup</h1>
+  <p>Higgsfield (cinematic drama) × Artlist (media-first density) on FrameFlow lime/dark. Ambience = A+D combo. Isolate: <code style="font-family:var(--mono)">?s=home|tpl|studio</code></p>
+  <nav class="jump"><a data-s="home" class="on">Home</a><a data-s="tpl">Templates</a><a data-s="studio">AI Studio</a></nav>
+</header>
+
+<div class="rx-app">
+  <div class="rx-amb"></div>
+  <div class="rx-wrap">
+
+    <!-- shell nav (hamma ekranda umumiy) -->
+    <nav class="rx-nav">
+      <div class="rx-logo"><span class="mk"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></span>FrameFlow</div>
+      <div class="rx-links">
+        <a data-s="home" class="on">Home</a><a data-s="tpl">Templates</a><a data-s="studio">AI Studio</a><a>Projects</a>
+      </div>
+      <div class="rx-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Search templates, generations…<span class="k">⌘K</span></div>
+      <div class="rx-cred"><span style="color:#C2F04A">✦</span><b class="s">1,240</b><span class="pl">PRO</span></div>
+      <div class="rx-ava">DK</div>
+    </nav>
+
+    <!-- ══════════ HOME ══════════ -->
+    <section class="rx-screen on" id="s-home">
+
+      <!-- billboard -->
+      <div class="rx-bill">
+        <div class="rx-hero">
+          <div class="med kb"><i></i><i></i><i></i></div>
+          <div class="in">
+            <span class="rx-kick">GOOD MORNING, DILNOZA · <b>FEATURED</b> THIS WEEK</span>
+            <h2>Neon Sports<br>Broadcast Pack</h2>
+            <p>12 compositions · 4K · After Effects — lower thirds, transitions and score bugs for match-day edits.</p>
+            <button class="rx-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>Preview pack</button>
+            <button class="rx-btn gh">Import to AE</button>
+          </div>
+        </div>
+        <div class="rx-side">
+          <div class="rx-mini mtex m7">
+            <span class="rx-chip new tr">NEW MODEL</span>
+            <div class="in"><span class="rx-kick">AI STUDIO</span><b>Veo Fast is live</b><i>Cinematic text-to-video · from 20 cr</i></div>
+          </div>
+          <div class="rx-mini mtex m5">
+            <span class="rx-chip tr">JULY</span>
+            <div class="in"><span class="rx-kick">YOUR MONTH</span><b>386 credits spent · 41 renders</b><i>Top tool: Image → 62%</i></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI tool launcher -->
+      <div class="rx-rowhead"><div><span class="rx-kick">AI STUDIO</span><h3 class="rx-h2">Create with AI</h3></div><a class="rx-more" data-s="studio">Open AI Studio →</a></div>
+      <div class="rx-tools">
+        <div class="rx-tool">
+          <div class="top"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-9 11"/></svg></span><div><b>Image</b><div class="sub">Text or reference → stills</div></div><span class="rx-chip tag">IMAGE</span></div>
+          <div class="strip"><span class="m1"></span><span class="m4"></span><span class="m6"></span></div>
+          <div class="foot">NANO BANANA · GPT IMAGE · from 6 cr</div>
+        </div>
+        <div class="rx-tool">
+          <div class="top"><span class="ic v"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M16 10l6-3v10l-6-3z"/></svg></span><div><b>Video</b><div class="sub">Text / frame → motion</div></div><span class="rx-chip new tag">NEW</span></div>
+          <div class="strip"><span class="m7"></span><span class="m3"></span><span class="m8"></span></div>
+          <div class="foot">SEEDANCE · VEO FAST · from 20 cr</div>
+        </div>
+        <div class="rx-tool">
+          <div class="top"><span class="ic a"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M7 8v8M17 8v8M2 11v2M22 11v2"/></svg></span><div><b>Voice</b><div class="sub">Script → voiceover</div></div><span class="rx-chip tag">AUDIO</span></div>
+          <div class="strip"><span class="m8"></span><span class="m5"></span><span class="m3"></span></div>
+          <div class="foot">11LABS VOICES · from 4 cr</div>
+        </div>
+        <div class="rx-tool">
+          <div class="top"><span class="ic s"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 14h4l3 6 4-16 3 10h2"/></svg></span><div><b>SFX</b><div class="sub">Describe → sound effect</div></div><span class="rx-chip tag">AUDIO</span></div>
+          <div class="strip"><span class="m6"></span><span class="m2"></span><span class="m5"></span></div>
+          <div class="foot">TEXT-TO-SFX · from 2 cr</div>
+        </div>
+      </div>
+
+      <!-- trending templates -->
+      <div class="rx-rowhead"><div><span class="rx-kick">TEMPLATES</span><h3 class="rx-h2">Trending this week</h3></div><a class="rx-more" data-s="tpl">Explore all →</a></div>
+      <div class="rx-cards">
+        <div class="rx-card mtex m1"><div class="tl"><span class="rx-chip">MOGRT</span></div><div class="tr"><span class="rx-chip lime">PRO</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Neon Title Reveal</b><i><em style="font-style:normal;color:#B9A3FF">●</em> Dilnoza K. · 0:08 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m2"><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Bold Sports Intro</b><i><em style="font-style:normal;color:#7BDCEC">●</em> MotionLab · 0:15 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m3"><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Minimal Lower Third</b><i>0:06 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m4"><div class="tl"><span class="rx-chip">MOGRT</span></div><div class="tr"><span class="rx-chip lime">PRO</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Glitch Logo Sting</b><i>0:05 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+      </div>
+
+      <!-- recent generations -->
+      <div class="rx-rowhead"><div><span class="rx-kick">MY LIBRARY</span><h3 class="rx-h2">Recent generations</h3></div><a class="rx-more">My Library →</a></div>
+      <div class="rx-gens">
+        <div class="rx-gen mtex m4"><span class="rx-chip tl">IMG</span><span class="cost">6 cr</span></div>
+        <div class="rx-gen mtex m7"><span class="rx-chip tl">VID</span><span class="cost">40 cr</span></div>
+        <div class="rx-gen mtex m5"><span class="rx-chip tl">IMG</span><span class="cost">6 cr</span></div>
+        <div class="rx-gen mtex m6"><span class="rx-chip tl">SFX</span><span class="cost">2 cr</span></div>
+        <div class="rx-gen mtex m8"><span class="rx-chip tl">VID</span><span class="cost">28 cr</span></div>
+        <div class="rx-gen mtex m2"><span class="rx-chip tl">IMG</span><span class="cost">9 cr</span></div>
+      </div>
+
+      <div class="rx-note"><b>Ambience note:</b> the background behind everything is the A+D combo from the background exploration (aurora bloom + film grain + bottom falloff) — no flat void anywhere. Billboard media has a slow Ken-Burns drift; it stops under reduced-motion.</div>
+    </section>
+
+    <!-- ══════════ TEMPLATES ══════════ -->
+    <section class="rx-screen" id="s-tpl">
+      <div class="rx-cathead">
+        <div><span class="rx-kick">MARKETPLACE</span><h2 class="rx-h2" style="font-size:30px">Templates</h2></div>
+        <span class="n">2,148 templates · AE · PR · Motion · Resolve</span>
+      </div>
+      <div class="rx-filters">
+        <span class="rx-pill on">All</span><span class="rx-pill">Intros</span><span class="rx-pill">Lower thirds</span><span class="rx-pill">Titles</span><span class="rx-pill">Transitions</span><span class="rx-pill">Logo</span>
+        <span class="rx-pill dd">App · AE</span><span class="rx-pill dd">Orientation</span><span class="rx-pill dd">Quality · 4K</span><span class="rx-pill dd">Free / Pro</span>
+        <span class="sp"></span>
+        <span class="rx-sort">2,148 RESULTS · SORT <b>Most relevant</b> ▾</span>
+      </div>
+      <div class="rx-mas">
+        <div class="rx-card mtex m1 ar169"><span class="bigT" style="font-size:26px">TITLES</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="tr"><span class="rx-chip lime">PRO</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Kinetic Titles Vol. 2</b><i>0:10 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m7 ar916 hovered"><span class="bigT" style="font-size:20px">REELS</span><div class="tl"><span class="rx-chip">MOGRT</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Vertical Story Frames</b><i>0:12 · 1080×1920 · PR</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m5 ar43"><span class="bigT" style="font-size:22px">eco.</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Organic Slides</b><i>0:20 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m2 ar11"><span class="bigT" style="font-size:24px">GLITCH</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="tr"><span class="rx-chip lime">PRO</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Glitch Logo Sting</b><i>0:05 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m3 ar169"><span class="bigT" style="font-size:18px">LOWER THIRD</span><div class="tl"><span class="rx-chip">MOGRT</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Minimal Lower Third</b><i>0:06 · 4K · PR</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m6 ar43"><span class="bigT" style="font-size:24px">RETRO</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Retro Film Pack</b><i>0:30 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m4 ar169"><span class="bigT" style="font-size:26px">HYPE</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Hype Opener</b><i>0:18 · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m8 ar916"><span class="bigT" style="font-size:19px">PROMO</span><div class="tl"><span class="rx-chip">MOGRT</span></div><div class="tr"><span class="rx-chip lime">PRO</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Vertical Promo Kit</b><i>0:15 · 1080×1920 · PR</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m5 ar11"><span class="bigT" style="font-size:21px">CLEAN</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Clean Slideshow</b><i>0:25 · 4K · Motion</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-card mtex m1 ar43"><span class="bigT" style="font-size:22px">SCORE</span><div class="tl"><span class="rx-chip">AEP</span></div><div class="play"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></span></div><div class="bd"><div><b>Score Bug Kit</b><i>Loop · 4K · AE</i></div><div class="act"><span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg></span></div></div></div>
+        <div class="rx-ghost">LOADING MORE…</div>
+      </div>
+      <div class="rx-note"><b>Card grammar (Artlist-style):</b> tiles are pure media — chrome (title, meta, actions, play) appears on hover; the second tile shows the hover state frozen for review. Badges: format (AEP/MOGRT) top-left, PRO top-right. Masonry keeps true aspect ratios; the grid ends in a "loading more" ghost, never a void.</div>
+    </section>
+
+    <!-- ══════════ AI STUDIO ══════════ -->
+    <section class="rx-screen" id="s-studio">
+      <div class="rx-studio">
+        <div class="rx-rail">
+          <span class="nb" title="New session"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="it on m7"></span>
+          <span class="it m4"></span>
+          <span class="it m5"></span>
+          <span class="it m2"></span>
+          <span class="lb" title="My Library"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 4v16"/></svg></span>
+        </div>
+        <div class="rx-canvas">
+          <div class="rx-canhead">
+            <span class="rx-mode"><span class="dot"></span>Visuals</span>
+            <span class="rx-mode" style="background:transparent;border-color:transparent;color:var(--txt3);font-weight:600">Audio</span>
+            <span class="sess">session · match-day teasers · 4 results · ✦46 spent</span>
+            <div class="r"><span class="rx-chip">GRID</span><span class="rx-chip">SELECT</span></div>
+          </div>
+          <div class="rx-results">
+            <div class="rx-hint">Try:<span>neon stadium tunnel, fog</span><span>scoreboard close-up, bokeh</span><span>fans wall, confetti burst</span></div>
+            <div class="rx-res mtex m1"><div class="bd">USE ▾ &nbsp;·&nbsp; DOWNLOAD &nbsp;·&nbsp; REGEN &nbsp;&nbsp;✦6</div></div>
+            <div class="rx-res mtex m7"><div class="bd">USE ▾ &nbsp;·&nbsp; DOWNLOAD &nbsp;·&nbsp; REGEN &nbsp;&nbsp;✦6</div></div>
+            <div class="rx-res mtex m4"><div class="bd">USE ▾ &nbsp;·&nbsp; DOWNLOAD &nbsp;·&nbsp; REGEN &nbsp;&nbsp;✦6</div></div>
+            <div class="rx-res gen"><span class="sh"></span><div class="in">GENERATING<div class="bar"><i></i></div>00:12</div></div>
+          </div>
+          <div class="rx-dock">
+            <div class="line">
+              <span class="plus"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span>
+              <div class="ta">Neon stadium tunnel, wet asphalt reflections, cinematic haze<span class="cur"></span></div>
+              <button class="rx-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>Generate</button>
+            </div>
+            <div class="chips">
+              <span class="rx-dchip st"><span class="d" style="background:var(--lime)"></span>IMAGE</span>
+              <span class="rx-dchip"><span class="d"></span>NANO BANANA</span>
+              <span class="rx-dchip">16:9</span>
+              <span class="rx-dchip">2×</span>
+              <span class="rx-dchip st">＋ REF</span>
+              <span class="rx-dchip st">✦ IMPROVE</span>
+              <span class="rx-cost">COST <b>✦12</b> · BALANCE ✦1,240 · <u style="cursor:pointer">TOP UP</u></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rx-note"><b>Money zone untouched:</b> this is a reskin of the existing workspace — composer semantics (mode/model/ratio/count/ref chips, signed cost quote, Generate) are the same bindings, restyled. Left rail = sessions + My Library (existing features). Empty sessions get prompt-idea chips instead of a dead void; the generating tile shimmer stops under reduced-motion.</div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+// ekranlar orasida almashish (mockup shell) + ?s= izolyatsiya
+(function(){
+  var map={home:'s-home',tpl:'s-tpl',studio:'s-studio'};
+  function show(k){
+    Object.keys(map).forEach(function(x){
+      document.getElementById(map[x]).classList.toggle('on',x===k);
+    });
+    document.querySelectorAll('[data-s]').forEach(function(a){a.classList.toggle('on',a.dataset.s===k)});
+    try{history.replaceState(null,'',location.pathname+(k==='home'?'':'?s='+k))}catch(e){}
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('[data-s]').forEach(function(a){a.addEventListener('click',function(){show(a.dataset.s)})});
+  // paramlarni show() URL'ni almashtirishidan OLDIN o'qish
+  var p0=new URLSearchParams(location.search),q=p0.get('s'),bare=p0.get('bare')==='1';
+  if(bare){var i=document.querySelector('.intro');if(i)i.remove();document.querySelector('.rx-nav').style.top='14px';var f=document.querySelector('.rx-filters');if(f)f.style.top='92px';}
+  if(q&&map[q]){show(q);}
+})();
+</script>
+</body>
+</html>
