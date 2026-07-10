@@ -21,6 +21,7 @@ import {
 import { isVertexConfigured } from "../lib/ai/vertex.js";
 import { isVertexOmniConfigured } from "../lib/ai/vertex-omni.js";
 import { isVertexImageConfigured } from "../lib/ai/vertex-image.js";
+import { isGoogleTtsConfigured } from "../lib/ai/google-tts.js";
 import {
   optimizeVideoReferenceForUpload,
   extractAudioReferenceForUpload,
@@ -1016,9 +1017,28 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
             ? isVertexOmniConfigured()
             : model.provider === "vertex-image"
               ? isVertexImageConfigured()
-              : isOpenRouterConfigured();
+              : model.provider === "google-tts"
+                ? isGoogleTtsConfigured()
+                : isOpenRouterConfigured();
   if (!configured) {
     res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
+    return;
+  }
+
+  // BATCH4 #4 — per-belgi narxli voice (Chirp) uchun QAT'IY matn cap — KREDITDAN OLDIN.
+  // Flat kredit narxi maxChars worst-case'idan ≥2× marja bilan tanlangan; cap'siz uzun matn
+  // narxdan past sotilardi. Formula/HMAC/consume'ga tegilmaydi — bu faqat kirish validatsiyasi.
+  if (
+    model.mode === "voice" &&
+    typeof model.maxChars === "number" &&
+    model.maxChars > 0 &&
+    prompt.length > model.maxChars
+  ) {
+    res.status(400).json({
+      error: `Text is too long for "${model.label}" — max ${model.maxChars} characters per generation (yours: ${prompt.length}). Split it into parts.`,
+      code: "VOICE_TEXT_TOO_LONG",
+      maxChars: model.maxChars,
+    });
     return;
   }
 

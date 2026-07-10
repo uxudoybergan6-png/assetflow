@@ -46,7 +46,7 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
   qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
@@ -139,6 +139,10 @@ export type GenModel = {
   voices?: { id: string; label: string }[];
   languages?: string[];
   effects?: string[];
+  // BATCH4 #4 — voice: per-belgi narxli provayder (Chirp $0.00003/belgi) uchun QAT'IY matn cap.
+  // Flat kredit shu cap'dagi worst-case narxdan ≥2× marja bilan tanlanadi; route /gen prompt
+  // uzunligini KREDIT YECHISHDAN OLDIN tekshiradi (money-zone formulaga tegilmaydi).
+  maxChars?: number;
 };
 
 const IMG_QUALITY = ["1K", "2K", "4K"]; // OpenRouter image_config.image_size qiymatlari
@@ -154,6 +158,29 @@ const KOKORO_VOICES = [
   { id: "am_adam", label: "Adam" },
   { id: "am_onyx", label: "Onyx" },
   { id: "bf_emma", label: "Emma" },
+];
+// BATCH4 #4 — Google Chirp 3 HD ovozlari (Cloud Text-to-Speech). Nomlash naqshi:
+// <locale>-Chirp3-HD-<Persona>; adapter locale'ni nomdan o'zi oladi. 8 en-US persona
+// (4 ayol + 4 erkak) + asosiy lokalizatsiyalar bittadan persona bilan.
+const CHIRP3_VOICES = [
+  { id: "en-US-Chirp3-HD-Aoede", label: "Aoede — EN·US (F)" },
+  { id: "en-US-Chirp3-HD-Kore", label: "Kore — EN·US (F)" },
+  { id: "en-US-Chirp3-HD-Leda", label: "Leda — EN·US (F)" },
+  { id: "en-US-Chirp3-HD-Zephyr", label: "Zephyr — EN·US (F)" },
+  { id: "en-US-Chirp3-HD-Puck", label: "Puck — EN·US (M)" },
+  { id: "en-US-Chirp3-HD-Charon", label: "Charon — EN·US (M)" },
+  { id: "en-US-Chirp3-HD-Fenrir", label: "Fenrir — EN·US (M)" },
+  { id: "en-US-Chirp3-HD-Orus", label: "Orus — EN·US (M)" },
+  { id: "en-GB-Chirp3-HD-Aoede", label: "Aoede — EN·GB (F)" },
+  { id: "de-DE-Chirp3-HD-Aoede", label: "Aoede — Deutsch (F)" },
+  { id: "es-ES-Chirp3-HD-Puck", label: "Puck — Español (M)" },
+  { id: "fr-FR-Chirp3-HD-Aoede", label: "Aoede — Français (F)" },
+  { id: "it-IT-Chirp3-HD-Kore", label: "Kore — Italiano (F)" },
+  { id: "hi-IN-Chirp3-HD-Puck", label: "Puck — हिन्दी (M)" },
+  { id: "ja-JP-Chirp3-HD-Aoede", label: "Aoede — 日本語 (F)" },
+  { id: "ko-KR-Chirp3-HD-Kore", label: "Kore — 한국어 (F)" },
+  { id: "pt-BR-Chirp3-HD-Aoede", label: "Aoede — Português·BR (F)" },
+  { id: "ru-RU-Chirp3-HD-Charon", label: "Charon — Русский (M)" },
 ];
 
 export const GEN_MODELS: GenModel[] = [
@@ -723,15 +750,34 @@ export const GEN_MODELS: GenModel[] = [
   },
 
   // ── OVOZ (TTS) ──
+  // BATCH4 #4 — Chirp 3 HD (Google Cloud Text-to-Speech): Kokoro/OpenRouter o'rniga.
+  // Narx: provider $0.00003/belgi → maxChars=1000 cap'da worst-case $0.03; flat 4 kredit
+  // ($0.076) = cap'da ham ≥2.5× marja. Uzun matn: route /gen KREDITDAN OLDIN 400 qaytaradi.
+  {
+    id: 2002,
+    mode: "voice",
+    key: "chirp3-hd",
+    label: "Chirp 3 HD",
+    brand: "google",
+    provider: "google-tts",
+    enabled: true,
+    feature: "text-to-speech",
+    cost: 4,
+    maxChars: 1000,
+    referenceMode: "none",
+    isDefault: true,
+    voices: CHIRP3_VOICES,
+    languages: ["English (US/GB)", "Deutsch", "Español", "Français", "Italiano", "हिन्दी", "日本語", "한국어", "Português (BR)", "Русский"],
+  },
   {
     id: 2001,
     mode: "voice",
     key: "hexgrad/kokoro-82m",
     label: "Kokoro TTS",
+    enabled: false, // BATCH4 #4 — OpenRouter o'chirildi (ovoz endi Chirp 3 HD / Google)
     feature: "text-to-speech",
     cost: 3,
     referenceMode: "none", // text→speech (input_modalities=[text])
-    isDefault: true,
     voices: KOKORO_VOICES,
     languages: ["English"],
   },

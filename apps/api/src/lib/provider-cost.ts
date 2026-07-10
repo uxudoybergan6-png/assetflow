@@ -51,7 +51,8 @@ const VIDEO_USD_FLAT: Record<number, number> = {
 
 /** Boshqa rejimlar (ovoz/sfx): model id → sobit USD (TAXMINIY). */
 const FLAT_USD: Record<number, number> = {
-  2001: 0.005, // Kokoro TTS (OpenRouter, arzon OSS)
+  2001: 0.005, // Kokoro TTS (OpenRouter, arzon OSS) — o'chirilgan (BATCH4 #4)
+  2002: 0.03, // Chirp 3 HD — worst-case maxChars=1000 × $0.00003/belgi (odatda ancha kam)
   4001: 0.08, // ElevenLabs SFX (sound-generation)
 };
 

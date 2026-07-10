@@ -44,6 +44,7 @@ import { elSoundEffects } from "./ai/elevenlabs.js";
 import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vertex.js";
 import { omniGenerateVideo } from "./ai/vertex-omni.js";
 import { vertexImage, vertexImageEdit, vertexImageUpscale } from "./ai/vertex-image.js";
+import { googleTtsSynthesize } from "./ai/google-tts.js";
 import { refundAiCredits } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
 import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
@@ -1010,14 +1011,24 @@ export async function processGeneration(genId: string): Promise<void> {
         });
       }
     } else if (model.feature === "text-to-speech") {
-      // Kokoro voice MAJBURIY (bo'sh → "expected string" xatosi). P8 C6: katalog `voices`
-      // ro'yxatiga qarshi VALIDATSIYA — noma'lum voice → birinchi katalog voice (af_bella).
+      // Voice MAJBURIY (bo'sh → "expected string" xatosi). P8 C6: katalog `voices`
+      // ro'yxatiga qarshi VALIDATSIYA — noma'lum voice → birinchi katalog voice.
       const requestedVoice = typeof params.voice === "string" ? params.voice : "";
       const knownVoices = Array.isArray(model.voices) ? model.voices.map((v) => v.id) : [];
       const voice = knownVoices.includes(requestedVoice)
         ? requestedVoice
         : knownVoices[0] || "af_bella";
-      const out = await orSpeech(model.key, gen.prompt, voice);
+      // BATCH4 #4 — provider'ga qarab: google-tts (Chirp 3 HD) yoki eski OpenRouter yo'li.
+      // maxChars himoya kamari: route /gen kreditdan OLDIN 400 qaytaradi; bu yerda defensiv kesim
+      // (narx flat — kesim foydalanuvchini ORTIQCHA to'lashdan emas, bizni ortiqcha sarfdan saqlaydi).
+      const speechText =
+        typeof model.maxChars === "number" && model.maxChars > 0
+          ? gen.prompt.slice(0, model.maxChars)
+          : gen.prompt;
+      const out =
+        model.provider === "google-tts"
+          ? await googleTtsSynthesize(voice, speechText)
+          : await orSpeech(model.key, speechText, voice);
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
