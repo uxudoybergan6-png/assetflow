@@ -1,13 +1,16 @@
-# Sessiya hisoboti — 2026-07-10 (BATCH3: 13/13 bajarildi)
+# Sessiya hisoboti — 2026-07-10 (BATCH4 #2 + #3)
 
-- **#10 S1**: kind-picker (Stock+Template) + `kind/stockType/templateType` migratsiya (lokal DB'da qo'llandi) + katalogda `type` (0dad5df, df67021, 61398b3).
-- **#11 §D**: templateApp pack-kengaytmadan, rights modal (list/drawer submit), orient/res saqlanadi, auto-publish skan'dan keyin, takedown filtri, bulk-key hash, transcode stall-guard (16e6e80, 1d2bc26).
-- **#3**: pill'lar `typeOf(t)` bilan + Categories/Apps multi-select filter bar (7489dab). **#12 §B**: to'liq-yuklanish bo'sh-holat gate, ko'p-maydonli qidiruv+relevance, pill-taksonomiyali Related, 4K klassifikatsiya, publishedAt NEW, poster/preload, grid cap (b46483b).
-- **#2**: admin gen preview raqamli `kind` + Download (199067d). **#14 §C**: real obunachi-xabar (email), soft/all moderatsiya yuklash, stat-manba birlashuvi, online predikati, block-endpoint guard, re-moderatsiya, Studio plan kartasi (b688dfd, e10d833).
-- **AI Studio**: #6 tile+Full/Compact (89ff43d) · #7 markazlashgan kompozer (705ce72) · #1 prompt 60vh panel (078a4c2) · #5 "+" typed menyu (adcaf4c) · #8 My Library manba (66ea117) · #13 §A tuzatishlar (ba639d8).
-- **#9 plagin**: My Library ref manbasi ig+vg sheet'larda (2d1719f); install-cep bajarildi.
-- Money-zone TEGILMAGAN; 2 flag TEKSHIRILDI: quote-replay xavfsiz (404 consume'dan oldin), web download kvotasi link-gen'da yechiladi (o'zgartirilmadi).
+**#2 (d75bcb8):** `_app-bg-variants-mockup.html` reviziya — variantlar 2–4× kuchaytirildi (endi bir
+qarashda ko'rinadi), "Current — flat" baseline + "A+D grain" kombo panel qo'shildi; `?v=FLAT|A|B|C|D|AD`.
+1280+390 da 6 panel skrinshot bilan tekshirildi — hammasi flat'dan yaqqol farq qiladi, matn o'qiladi.
 
-**USER qiladi**: `git push` → API deploy (GitHub Actions) → productionda `migrate:deploy`
-(2 yangi migratsiya: stock_kind_columns, plan_config_active) → AE'ni to'liq qayta ochib
-plagin #9'ni jonli test → #3 pill'larni production katalogda tekshirish (deploy'dan keyin).
+**#3 (5d32b3a):** To'liq redesign MIX mockup. Higgsfield + Artlist JONLI o'rganildi (Claude-in-Chrome:
+home/catalog/AI sahifalar), index.html rekon qilindi (agent: token 3-qatlam, o'lik ffa-st-*/va-tc,
+yalang'och .va-axwork L15293). Yangi `_platform-redesign-mix-mockup.html` (rx- scope, ishlaydigan
+tab-shell): Home billboard hero + AI launcher + media qatorlar; Templates masonry (hover-chrome,
+ghost loader); AI Studio (icon rail, try-chip, generating tile, shisha dock composer — pul zonasi
+semantikasi o'zgarmagan). A+D ambience butun shell'da. 1280+390 barcha 3 ekran tekshirildi, konsol toza.
+Dizayn yo'nalish hujjati: `docs/PLATFORM-REDESIGN-MIX-2026-07-10.md` (nima olindi/olinmadi + port rejasi).
+
+**Kutilmoqda:** USER (a) #2 dan fon variantini tanlaydi, (b) #3 MIX yo'nalishini tasdiqlaydi →
+keyingi prompt mockupni real `index.html` (.va- tizimi) ga port qiladi. Push USER zimmasida.
