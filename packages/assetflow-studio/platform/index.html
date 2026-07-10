@@ -17104,6 +17104,8 @@ class Component extends DCLogic {
     sessSelect: false,      // P6 — sessiya rail select-rejimi
     sessSel: {},            // P6 — tanlangan sessiya id'lari
     useMenuOpen: false,
+    upKind: 'image',        // BATCH4 #2 — Upscale tool manba turi (image|video)
+    upVQuote: null,         // BATCH4 #2 — video-upscale server narxi ({price,signature,params,info,key})
     modelModalOpen: false,
     modelQ: '',
     modelFilter: 'All',
@@ -17945,16 +17947,18 @@ class Component extends DCLogic {
       try {
         const r = await FFAPI.models(m);
         let list = (r.models || []).filter(x => x.enabled !== false);
-        // BATCH4 #1 — upscale modellari ALOHIDA pseudo-ro'yxatga (Upscale tool'i uchun);
-        // oddiy Image composer picker'ida ko'rinmaydi (u alohida MODE).
-        let upList = null;
+        // BATCH4 #1/#2 — upscale modellari ALOHIDA pseudo-ro'yxatlarga (Upscale tool'i uchun);
+        // oddiy Image/Video composer picker'larida ko'rinmaydi (u alohida MODE).
+        let upList = null, vupList = null;
         if (m === 'image') { upList = list.filter(x => x.feature === 'image-upscale'); list = list.filter(x => x.feature !== 'image-upscale'); }
+        if (m === 'video') { vupList = list.filter(x => x.feature === 'video-upscale'); list = list.filter(x => x.feature !== 'video-upscale'); }
         okAny = true;
         this.setState(s => {
           const gm = Object.assign({}, s.genModels); gm[m] = list;
           const sel = Object.assign({}, s.selModel);
           if (!sel[m] && list.length) { const d = list.find(x => x.isDefault) || list[0]; sel[m] = d.id; }
           if (upList) { gm.upscale = upList; if (!sel.upscale && upList.length) sel.upscale = (upList.find(x => x.isDefault) || upList[0]).id; }
+          if (vupList) { gm.vupscale = vupList; if (!sel.vupscale && vupList.length) sel.vupscale = (vupList.find(x => x.isDefault) || vupList[0]).id; }
           return { genModels: gm, selModel: sel };
         });
       } catch (e) {}
@@ -18252,7 +18256,12 @@ class Component extends DCLogic {
   }
 
   // ── GEN (real API oqimi: quote → gen → poll) ──
-  curTool() { return this.aiTools.find(t => t.key === this.state.aiTool) || this.aiTools[0]; }
+  curTool() {
+    const t = this.aiTools.find(x => x.key === this.state.aiTool) || this.aiTools[0];
+    // BATCH4 #2 — Upscale tool ikki turli: manba VIDEO bo'lsa mode/model-kalit video'ga o'tadi
+    if (t.key === 'Upscale' && this.state.upKind === 'video') return Object.assign({}, t, { mode: 'video', mkey: 'vupscale' });
+    return t;
+  }
   curModel() {
     const tool = this.curTool();
     const mk = this.toolModelKey(tool); // BATCH4 #1 — Upscale o'z ro'yxati (genModels.upscale)
@@ -18261,6 +18270,12 @@ class Component extends DCLogic {
   }
   buildParams(tool, model) {
     const st = this.state, p = {};
+    // BATCH4 #2 — video-upscale: faktor + manba; tier/soniya SERVER quote'da yoziladi (pricedParams)
+    if (model && model.feature === 'video-upscale') {
+      p.factor = (st.aiQuality === 'x4') ? 4 : 2;
+      if (st.refVideos[0]) p.sourceUrl = st.refVideos[0];
+      return p;
+    }
     if (tool.mode === 'image') {
       // Nisbatni model QO'LLAYDIGAN ro'yxatga klamp (video branch kabi). pickModel st.aiSize'ni
       // resetlamaydi → model almashganda eski qiymat (masalan Nano'da tanlangan 21:9) Imagen kabi
@@ -18312,8 +18327,31 @@ class Component extends DCLogic {
     }
     return p;
   }
+  // BATCH4 #2 — video-upscale narxi lokal hisoblanmaydi (tier = manba meta × faktor, server probe).
+  // Manba/faktor o'zgarganda imzolangan quote olinadi va dock ✦ shu qiymatni ko'rsatadi.
+  maybeQuoteVideoUpscale(model) {
+    if (!(window.FFAPI && FFAPI.getToken())) return;
+    const src = this.state.refVideos[0] || null;
+    const factor = (this.state.aiQuality === 'x4') ? 4 : 2;
+    const key = (model && src) ? (model.id + '|' + factor + '|' + src) : null;
+    if (this._upqKey === key) return;
+    this._upqKey = key;
+    if (!key) { setTimeout(() => { if (this._upqKey === key && this.state.upVQuote) this.setState({ upVQuote: null }); }, 0); return; }
+    FFAPI.quote(model.id, 'video', { factor, sourceUrl: src }).then(q => {
+      if (this._upqKey !== key) return; // eskirgan javob
+      this.setState({ upVQuote: { price: q.price, signature: q.signature, params: q.pricedParams || null, info: q.upscale || null, key } });
+    }).catch(e => {
+      if (this._upqKey !== key) return;
+      this.setState({ upVQuote: { error: this.errMsg(e), key } });
+    });
+  }
   estCost(tool, model, params) {
     if (!model) return 0;
+    // BATCH4 #2 — video-upscale: narx faqat serverdan (tier probe) — upVQuote'dan olinadi
+    if (model.feature === 'video-upscale') {
+      const uq = this.state.upVQuote;
+      return (uq && !uq.error && typeof uq.price === 'number') ? uq.price : 0;
+    }
     if (tool.mode === 'image') {
       const ql = model.imgSettings && model.imgSettings.quality;
       const unit = (ql && ql.cost && ql.cost[params.quality] != null) ? ql.cost[params.quality] : model.cost;
@@ -18339,9 +18377,11 @@ class Component extends DCLogic {
     const tool = this.curTool(), model = this.curModel();
     if (!model) { this.toast("Model failed to load — refresh the page"); return; }
     let prompt = (this.state.aiPrompt || '').trim();
-    // BATCH4 #1 — Upscale prompt ishlatmaydi: bo'sh bo'lsa avto-nom (fayl nomi ham shundan)
-    const isUp = model.feature === 'image-upscale';
-    if (isUp && prompt.length < 2) prompt = 'Upscale ' + ((this.buildParams(tool, model) || {}).quality || 'x2');
+    // BATCH4 #1/#2 — Upscale prompt ishlatmaydi: bo'sh bo'lsa avto-nom (fayl nomi ham shundan)
+    const isUp = model.feature === 'image-upscale' || model.feature === 'video-upscale';
+    if (isUp && prompt.length < 2) prompt = 'Upscale ' + ((this.state.aiQuality === 'x4') ? 'x4' : 'x2') + (model.feature === 'video-upscale' ? ' video' : '');
+    // BATCH4 #2 — manba video majburiy
+    if (model.feature === 'video-upscale' && !this.state.refVideos.length) { this.toast('Add the source video first — via ＋ or “Use ▾ → Upscale” on a video result'); return; }
     if (prompt.length < 2) { this.toast('Write a prompt'); return; }
     // BATCH4 #4 — Chirp maxChars: server 400 (kreditsiz) qaytaradi; bu yerda aniq UX xabari
     if (tool.mode === 'voice' && model.maxChars && prompt.length > model.maxChars) { this.toast('Max ' + model.maxChars + ' characters per voice generation (yours: ' + prompt.length + ') — split the text'); return; }
@@ -18354,6 +18394,8 @@ class Component extends DCLogic {
     this.setState({ generating: true });
     try {
       const q = await FFAPI.quote(model.id, tool.mode, params);
+      // BATCH4 #2 — video-upscale: imzo SERVER yozgan canonical params ustidan — /gen'ga AYNAN o'sha ketadi
+      const genParams = q.pricedParams || params;
       if (q.price > this.state.credits) { this.setState({ generating: false, showCredits: true }); return; }
       // QA-FIX #12: rejim-boshi yashirin sessiya o'rniga BITTA faol sessiya (rail'da ko'rinadi).
       // Sessiya birinchi gen'da lazily yaratiladi — nomi birinchi promptdan.
@@ -18365,13 +18407,13 @@ class Component extends DCLogic {
       }
       let r;
       try {
-        r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
+        r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature });
       } catch (ge) {
         // Eskirgan/begona session (404) — yangi session bilan BIR marta qayta urinish
         if (ge && ge.status === 404) {
           const s2 = await FFAPI.session(tool.mode, prompt.slice(0, 60));
           this.setState(st => ({ curSessId: s2.id, viewSess: st.viewSess === sid || st.viewSess === 'new' ? s2.id : st.viewSess, sessGens: st.viewSess === sid ? [] : st.sessGens }));
-          r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params, price: q.price, costQuoteSignature: q.signature });
+          r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature });
         } else { throw ge; }
       }
       if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
@@ -18493,6 +18535,8 @@ class Component extends DCLogic {
   // video='frames' (start/end kadr) yoki 'media' (Omni/R2V ko'p-modal), aks holda 'none'.
   refCaps(mode, m) {
     if (!m) return { kind: 'none' };
+    // BATCH4 #2 — video-upscale: manba = bitta video (mavjud media-picker oqimi orqali)
+    if (m.feature === 'video-upscale') return { kind: 'media', lim: { image: 0, video: 1, audio: 0 } };
     if (mode === 'image') {
       const max = (m.refKind === 'image' || (m.maxRefs || 0) > 0) ? (m.maxRefs || 1) : 0;
       return max > 0 ? { kind: 'image', max } : { kind: 'none' };
@@ -18548,22 +18592,24 @@ class Component extends DCLogic {
   // tanlangan). Kredit BU YERDA sarflanmaydi — composer imzolangan quote'ni ko'rsatadi, foydalanuvchi
   // Generate bilan tasdiqlaydi (balans darvozasi generate() ichida).
   async useGenAsUpscale(factor, genId) {
-    const target = (this.state.genModels.upscale || [])[0] || null;
-    if (!target) { this.toast('Upscale model is not available right now'); return; }
-    let url = null;
-    try {
-      const g = await FFAPI.genGet(genId);
-      url = (g.assets && g.assets[0] && g.assets[0].url) || null;
-    } catch (e) { this.toast(this.errMsg(e)); return; }
+    let g = null;
+    try { g = await FFAPI.genGet(genId); } catch (e) { this.toast(this.errMsg(e)); return; }
+    const url = (g && g.assets && g.assets[0] && g.assets[0].url) || null;
     if (!url) { this.toast('Source file not found'); return; }
+    // BATCH4 #2 — manba turi bo'yicha: video → Topaz (vupscale), rasm → Imagen (upscale)
+    const isVideo = g.mode === 'video';
+    const target = (this.state.genModels[isVideo ? 'vupscale' : 'upscale'] || [])[0] || null;
+    if (!target) { this.toast('Upscale model is not available right now'); return; }
     const nt = this.aiTools.find(t => t.mkey === 'upscale');
     this.setState(st => {
-      const sel = Object.assign({}, st.selModel); sel.upscale = target.id;
-      return Object.assign(this.refResetPatch(), {
+      const sel = Object.assign({}, st.selModel); sel[isVideo ? 'vupscale' : 'upscale'] = target.id;
+      const patch = Object.assign(this.refResetPatch(), {
         selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiView: 'composer', aiMediaView: 'visuals',
         useMenuOpen: false, chipPop: null, modelOpen: false, modelModalOpen: false,
-        refImages: [url], aiQuality: factor,
+        aiQuality: factor, upKind: isVideo ? 'video' : 'image', upVQuote: null,
       });
+      if (isVideo) patch.refVideos = [url]; else patch.refImages = [url];
+      return patch;
     });
     this.toast('Upscale ' + factor + ' ready — check the ✦ cost and press Generate');
   }
@@ -18608,9 +18654,11 @@ class Component extends DCLogic {
     if (!g) { this.toast('This result could not be loaded'); return; }
     const params = g.params || {};
     const mode = (g.mode === 'video') ? 'video' : (g.mode === 'voice' || g.mode === 'music') ? 'voice' : (g.mode === 'sfx') ? 'sfx' : 'image';
-    // BATCH4 #1 — upscale geni Upscale tool'iga tiklanadi (model image ro'yxatida emas)
-    const upOrig = (this.state.genModels.upscale || []).find(m => String(m.id) === String(g.modelId)) || null;
-    const mk = upOrig ? 'upscale' : mode;
+    // BATCH4 #1/#2 — upscale geni Upscale tool'iga tiklanadi (model image/video ro'yxatida emas)
+    const upOrigI = (this.state.genModels.upscale || []).find(m => String(m.id) === String(g.modelId)) || null;
+    const upOrigV = (this.state.genModels.vupscale || []).find(m => String(m.id) === String(g.modelId)) || null;
+    const upOrig = upOrigI || upOrigV;
+    const mk = upOrigI ? 'upscale' : (upOrigV ? 'vupscale' : mode);
     const tool = upOrig ? this.aiTools.find(t => t.mkey === 'upscale') : this.aiTools.find(t => t.mode === mode);
     const list = this.state.genModels[mk] || [];
     const orig = upOrig || list.find(m => String(m.id) === String(g.modelId));
@@ -18621,6 +18669,9 @@ class Component extends DCLogic {
       aiView: 'composer', aiMediaView: 'visuals', useMenuOpen: false, chipPop: null, modelOpen: false, modelModalOpen: false,
     });
     const sel = Object.assign({}, this.state.selModel); if (model) sel[mk] = model.id; patch.selModel = sel;
+    // BATCH4 #2 — Upscale kind + faktor tiklanadi (video-upscale manbasi qayta tanlanadi)
+    if (upOrigV) { patch.upKind = 'video'; patch.upVQuote = null; if (params.factor) patch.aiQuality = (Number(params.factor) === 4) ? 'x4' : 'x2'; }
+    else if (upOrigI) patch.upKind = 'image';
     // Sozlamalar — saqlangan qiymatni o'rnatamiz; generate paytida buildParams model bo'yicha KLAMP qiladi
     // (noto'g'ri kombinatsiya hech qachon provayderga bormaydi). Referens URL'lar best-effort (yo'q bo'lsa
     // thumbnail chizilmaydi, lekin crash yo'q — foydalanuvchi olib tashlashi mumkin).
@@ -18809,11 +18860,13 @@ class Component extends DCLogic {
     if (this._toolPersistOn && this._lastToolSaved !== tool.key) { this._lastToolSaved = tool.key; try { localStorage.setItem('ff_ai_tool', tool.key); } catch (e) {} }
     const model = this.curModel();
     const modelList = this.state.genModels[this.toolModelKey(tool)] || []; // BATCH4 #1
-    const axIsUpscaleTool = !!model && model.feature === 'image-upscale'; // BATCH4 #1 — Upscale rejimi
+    const axIsUpscaleTool = !!model && (model.feature === 'image-upscale' || model.feature === 'video-upscale'); // BATCH4 #1/#2
+    const axIsVUp = !!model && model.feature === 'video-upscale'; // video-upscale kind
+    if (axIsVUp) this.maybeQuoteVideoUpscale(model); // guarded/idempotent — faqat manba/faktor o'zgarsa fetch
     const genParams = model ? this.buildParams(tool, model) : {};
     const nSel = genParams.count || 1;
     const costNow = this.estCost(tool, model, genParams);
-    const toolDesc = { 'Rasm yaratish': 'Generate high-quality images from text', 'Video yaratish': 'Generate a short video clip from a prompt', 'Upscale': 'Upscale a generated or uploaded image to 2K / 4K', 'Voiceover': 'Turn text into a natural-sounding voice', 'SFX': 'Generate a sound effect for your scene' }[tool.key];
+    const toolDesc = { 'Rasm yaratish': 'Generate high-quality images from text', 'Video yaratish': 'Generate a short video clip from a prompt', 'Upscale': 'Upscale a generated or uploaded image / video (x2 / x4)', 'Voiceover': 'Turn text into a natural-sounding voice', 'SFX': 'Generate a sound effect for your scene' }[tool.key];
     const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab', poprowCls: on ? 'ffa-poprow on' : 'ffa-poprow' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
     // cls=eski option grid, rowCls=popover qatori, optCls=inline option tugma (Ovoz paneli), on=faol
@@ -18828,12 +18881,14 @@ class Component extends DCLogic {
     const durOpts = (tool.mode === 'video' && model) ? (((model.videoSettings || {}).duration || {}).options || model.durations || [])
       : ((tool.mode === 'sfx' && model) ? (model.durations || []) : []);
     const durationsView = durOpts.map(z => chip(/^\d+$/.test(String(z)) ? z + 's' : String(z), String(z) === String(genParams.duration)));
-    const qualityOpts = (tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality) ? model.imgSettings.quality.options : [];
-    const qualityView = qualityOpts.map(z => chip(z, z === genParams.quality));
+    // BATCH4 #2 — video-upscale faktor chip'i ham "quality" UI'sini qayta ishlatadi (x2/x4)
+    const axUpFactorVal = (this.state.aiQuality === 'x4') ? 'x4' : 'x2';
+    const qualityOpts = axIsVUp ? ['x2', 'x4'] : ((tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality) ? model.imgSettings.quality.options : []);
+    const qualityView = qualityOpts.map(z => chip(z, z === (axIsVUp ? axUpFactorVal : genParams.quality)));
     const showQuality = qualityOpts.length > 1;
     // BATCH4 #1 — chip label model deskriptoridan (Upscale → "Factor")
-    const qualityLabel = (tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality && model.imgSettings.quality.label) || 'Quality';
-    const resOpts = (tool.mode === 'video' && model && model.resolutions && model.resolutions.length > 1) ? model.resolutions : [];
+    const qualityLabel = axIsVUp ? 'Factor' : ((tool.mode === 'image' && model && model.imgSettings && model.imgSettings.quality && model.imgSettings.quality.label) || 'Quality');
+    const resOpts = (tool.mode === 'video' && model && !axIsVUp && model.resolutions && model.resolutions.length > 1) ? model.resolutions : []; // BATCH4 #2 — upscale tier'i derived (chip yo'q)
     const resView = resOpts.map(z => chip(z, z === genParams.resolution));
     const showRes = resOpts.length > 1;
     const voiceOpts = (tool.mode === 'voice' && model) ? (model.voices || []) : [];
@@ -18885,7 +18940,7 @@ class Component extends DCLogic {
     const aiIsAudio = tool.mode === 'voice' || tool.mode === 'sfx';
     const showPartiya = !!activeGenRaw || this.state.generating;
     const aspectVal = genParams.aspectRatio || '—';
-    const qualityVal = genParams.quality || '—';
+    const qualityVal = axIsVUp ? axUpFactorVal : (genParams.quality || '—'); // BATCH4 #2
     const countVal = nSel;
     const resVal = genParams.resolution || '—';
     const durVal = genParams.duration ? (/^\d+$/.test(String(genParams.duration)) ? genParams.duration + 's' : String(genParams.duration)) : '—';
@@ -18906,13 +18961,13 @@ class Component extends DCLogic {
     const toolMetaA = {
       'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
       'Video yaratish': { title: 'Video', desc: 'Text to video, priced per second', gcls: 'va-g9', iconRef: '#i-vid' },
-      'Upscale': { title: 'Upscale', desc: 'Upscale an image to 2K or 4K', gcls: 'va-g1', iconRef: '#i-img' },
+      'Upscale': { title: 'Upscale', desc: 'Upscale an image or video (x2 / x4)', gcls: 'va-g1', iconRef: '#i-img' },
       'Voiceover': { title: 'Voiceover', desc: 'Natural voices, multi-language narration', gcls: 'va-g3', iconRef: '#i-mic' },
       'SFX': { title: 'SFX', desc: 'Describe a sound, get broadcast-ready FX', gcls: 'va-g4', iconRef: '#i-wave' },
     };
     const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
     const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
-    const promptPh = axIsUpscaleTool ? 'Optional note — pick an image via ＋ and choose the factor (x2 → 2K, x4 → 4K)…'
+    const promptPh = axIsUpscaleTool ? 'Optional note — pick a source via ＋ and choose the factor (x2 / x4)…'
       : tool.mode === 'voice' ? ('Type text — it will be read in a natural voice' + (model && model.maxChars ? ' (up to ' + model.maxChars + ' characters)' : '') + '…') : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
     const unitCost = (countOpts.length > 1 && nSel > 1) ? Math.round(costNow / nSel) : costNow;
     const quotePrefix = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
@@ -19072,9 +19127,17 @@ class Component extends DCLogic {
     }).filter(Boolean);
     const modelFilterView = ['All', 'Image', 'Video', 'Voice', 'SFX'].map(v => ({ v, label: v, cls: 'va-axftag' + (v === axMFilter ? ' on' : '') }));
     // Dock: quote/CTA/balans — qiymatlar mavjud estCost/quote oqimidan, faqat ko'rinish yangi
-    const axQuote = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
-    // BATCH4 #1 — Upscale'da prompt ixtiyoriy: manba rasm tanlangan bo'lsa Generate yoqiladi
-    const axPromptReady = axIsUpscaleTool ? this.state.refImages.length > 0 : (this.state.aiPrompt || '').trim().length >= 2;
+    // BATCH4 #2 — video-upscale ✦ narxi imzolangan quote'dan (tier · billing soniya · 60fps belgisi)
+    const uqV = this.state.upVQuote;
+    const axQuote = axIsVUp
+      ? ((uqV && !uqV.error && typeof uqV.price === 'number')
+          ? ('✦ ' + uqV.price + (uqV.info ? ' · ' + uqV.info.resolution + ' · ' + uqV.info.duration + 's' + (uqV.info.fpsDoubled ? ' (60fps ×2)' : '') : ''))
+          : (this.state.refVideos.length ? (uqV && uqV.error ? '✦ — (' + String(uqV.error).slice(0, 40) + ')' : 'pricing…') : '✦ —'))
+      : (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
+    // BATCH4 #1/#2 — Upscale'da prompt ixtiyoriy: manba tanlangan bo'lsa Generate yoqiladi
+    const axPromptReady = axIsUpscaleTool
+      ? (axIsVUp ? (this.state.refVideos.length > 0 && !!(uqV && !uqV.error && typeof uqV.price === 'number')) : this.state.refImages.length > 0)
+      : (this.state.aiPrompt || '').trim().length >= 2;
     const genBtnCls = 'va-btn lime' + (this.state.generating ? ' pending' : (axPromptReady ? '' : ' off'));
     const genBtnLabel = this.state.generating ? 'Generating…' : 'Generate';
     const axBalNote = this.state.generating
@@ -19106,8 +19169,15 @@ class Component extends DCLogic {
       if (rCaps.lim.video && this.state.refVideos.length < rCaps.lim.video) refAddsView.push({ k: 'vid', icon: 'film-slate', menuLabel: 'Video Reference' });
       if (rCaps.lim.audio && this.state.refAudios.length < rCaps.lim.audio) refAddsView.push({ k: 'aud', icon: 'waveform', menuLabel: 'Audio File' });
     }
+    // BATCH4 #2 — Upscale tool'ida manba hali tanlanmagan bo'lsa IKKI tur taklif qilinadi
+    // (rasm ↔ video); tanlov addRefKMenu'da upKind'ni ham belgilaydi.
+    if (tool.key === 'Upscale' && !this.state.refImages.length && !this.state.refVideos.length) {
+      refAddsView.length = 0;
+      refAddsView.push({ k: 'img', icon: 'image', menuLabel: 'Source image (x2 → 2K / x4 → 4K)' });
+      refAddsView.push({ k: 'vid', icon: 'film-slate', menuLabel: 'Source video (Topaz, per second)' });
+    }
     // #5 — menyu sarlavhasi: frames modeli Artlist'dagidek "Start & End Frame" guruh nomi bilan
-    const refMenuCap = rCaps.kind === 'frames' ? 'Start & End Frame' : (rCaps.kind === 'media' ? 'References' : '');
+    const refMenuCap = tool.key === 'Upscale' ? 'Source to upscale' : (rCaps.kind === 'frames' ? 'Start & End Frame' : (rCaps.kind === 'media' ? 'References' : ''));
     const showRefPlus = refAddsView.length > 0;
     // #8 — manba bosqichi (Upload / My Library) + Library tanlagichi ma'lumotlari
     const refSrcK = this.state.refSrcK;
@@ -19121,7 +19191,7 @@ class Component extends DCLogic {
       icon: g.type === 'video' ? 'film-slate' : (g.type === 'audio' ? 'waveform' : 'image'),
     })) : [];
     const refHint = this.state.refBusy ? 'Uploading…'
-      : (axIsUpscaleTool ? 'Required — pick the image to upscale (upload, My Library, or “Use ▾ → Upscale” on a result).'
+      : (axIsUpscaleTool ? ('Required — pick the ' + (axIsVUp ? 'video' : 'image or video') + ' to upscale (upload, My Library, or “Use ▾ → Upscale” on a result).')
         : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
           : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
             : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).')));
@@ -19134,14 +19204,18 @@ class Component extends DCLogic {
     const axI2vOk = axSrcIsImage && axHasI2vModel;
     const axEditTip = axEditOk ? '' : (axSrcIsImage ? 'No edit-capable image model available' : 'Available for image results');
     const axI2vTip = axI2vOk ? '' : (axSrcIsImage ? 'No image-to-video model available' : 'Available for image results');
-    // BATCH4 #1 — Use ▾ Upscale: rasm natija + katalogda upscale model bo'lsa jonli; ✦ narx katalogdan
-    // (ko'rsatma), yakuniy narx composer'dagi imzolangan quote'da tasdiqlanadi.
+    // BATCH4 #1/#2 — Use ▾ Upscale: rasm (Imagen, sobit ✦) YOKI video (Topaz, soniyasiga) natija;
+    // ✦ ko'rsatma katalogdan, yakuniy narx composer'dagi imzolangan quote'da tasdiqlanadi.
+    const axSrcIsVideo = !!activeGenRaw && activeGenRaw.type === 'video';
     const axUpModel = (this.state.genModels.upscale || [])[0] || null;
-    const axUpOk = axSrcIsImage && !!axUpModel;
-    const axUpTip = axUpOk ? '' : (axSrcIsImage ? 'Upscale model is not available right now' : 'Available for image results');
-    const axUpQc = (axUpModel && axUpModel.imgSettings && axUpModel.imgSettings.quality && axUpModel.imgSettings.quality.cost) || axUpModel && axUpModel.qualityCost || {};
-    const axUpCostX2 = '✦ ' + (axUpQc.x2 != null ? axUpQc.x2 : '—');
-    const axUpCostX4 = '✦ ' + (axUpQc.x4 != null ? axUpQc.x4 : '—');
+    const axVUpModel = (this.state.genModels.vupscale || [])[0] || null;
+    const axUpOk = (axSrcIsImage && !!axUpModel) || (axSrcIsVideo && !!axVUpModel);
+    const axUpTip = axUpOk ? '' : ((axSrcIsImage || axSrcIsVideo) ? 'Upscale model is not available right now' : 'Available for image and video results');
+    const axUpQc = (axUpModel && axUpModel.imgSettings && axUpModel.imgSettings.quality && axUpModel.imgSettings.quality.cost) || (axUpModel && axUpModel.qualityCost) || {};
+    const axVUpPs = (axVUpModel && axVUpModel.videoSettings && axVUpModel.videoSettings.resolution && axVUpModel.videoSettings.resolution.perSec) || {};
+    const axVUpFrom = axVUpPs['720p'] != null ? axVUpPs['720p'] : (axVUpModel ? axVUpModel.cost : null);
+    const axUpCostX2 = axSrcIsVideo ? ('from ✦ ' + (axVUpFrom != null ? axVUpFrom : '—') + '/s') : ('✦ ' + (axUpQc.x2 != null ? axUpQc.x2 : '—'));
+    const axUpCostX4 = axSrcIsVideo ? ('from ✦ ' + (axVUpFrom != null ? axVUpFrom : '—') + '/s') : ('✦ ' + (axUpQc.x4 != null ? axUpQc.x4 : '—'));
     // Rejim QO'LDA almashsa referens tozalanadi (start-kadr voice/SFX da ma'nosiz)
     // BATCH4 #1 — taqqos model-KALIT bo'yicha: Image↔Upscale ham tozalaydi (limitlar farqli)
     const refClearIfModeChanged = (toolKey) => { const nt = this.aiTools.find(t => t.key === toolKey); return (nt && this.toolModelKey(nt) !== this.toolModelKey(tool)) ? this.refResetPatch() : {}; };
@@ -19269,7 +19343,7 @@ class Component extends DCLogic {
     const lbRaw = this.state.lightbox;
     // QA-FIX #3 — lightbox video poster: thumb bo'lsa poster, bo'lmasa null (preload=metadata birinchi kadrni chizadi)
     // §A (P1) — canRef: "Reference" tugmasi faqat RASM natijalarda (video/ovoz/SFX uchun ma'nosiz edi)
-    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true, canRef: lbRaw.type === 'image', canUpscale: lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0] } : null;
+    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true, canRef: lbRaw.type === 'image', canUpscale: (lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0]) || (lbRaw.type === 'video' && !!(this.state.genModels.vupscale || [])[0]) } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
@@ -19746,7 +19820,8 @@ class Component extends DCLogic {
       popRef, showRefPlus, refMenuCap, refMenuHasCap: !!refMenuCap,
       toggleRefMenu: (e) => { e.stopPropagation(); this.setState(st => ({ chipPop: st.chipPop === 'ref' ? null : 'ref', refSrcK: null, modelOpen: false })); },
       // #8 — tur tanlandi → manba bosqichi (Upload / My Library)
-      addRefKMenu: (e) => { e.stopPropagation(); this.setState({ refSrcK: e.currentTarget.dataset.k }); },
+      // BATCH4 #2 — Upscale tool'ida tur tanlovi upKind'ni ham belgilaydi (img↔vid model konteksti)
+      addRefKMenu: (e) => { e.stopPropagation(); const k = e.currentTarget.dataset.k; const patch = { refSrcK: k }; if (tool.key === 'Upscale') patch.upKind = (k === 'vid') ? 'video' : 'image'; this.setState(patch); },
       refSrcOn: popRef && !!refSrcK, refSrcOff: !refSrcK,
       refSrcCap: refSrcEntry ? refSrcEntry.menuLabel : 'Source',
       refSrcUpload: (e) => { e.stopPropagation(); const k = this.state.refSrcK; this.setState({ chipPop: null, refSrcK: null }); if (k) this.addRefFile(k); },
@@ -19904,8 +19979,8 @@ class Component extends DCLogic {
       pickModel: (e) => { e.stopPropagation(); const id = +e.currentTarget.dataset.v; const mMode = e.currentTarget.dataset.mode || this.toolModelKey(tool); const nt = this.aiTools.find(t => this.toolModelKey(t) === mMode); this.setState(st => { const sel = Object.assign({}, st.selModel); sel[mMode] = id; const upd = { selModel: sel, aiTool: nt ? nt.key : st.aiTool, aiMediaView: mMode !== tool.mode ? null : st.aiMediaView, modelOpen: false, chipPop: null, modelModalOpen: false };
         // P8 — referens klampi: rejim almashsa hammasi tozalanadi; model almashsa yangi
         // modelning imkoniyatiga MOSLAB kesiladi (backend 400 o'rniga)
-        // BATCH4 #1 — taqqos model-KALIT bo'yicha (Upscale=upscale); refCaps esa katalog mode oladi
-        const catMode = mMode === 'upscale' ? 'image' : mMode;
+        // BATCH4 #1/#2 — taqqos model-KALIT bo'yicha (Upscale=upscale|vupscale); refCaps katalog mode oladi
+        const catMode = mMode === 'upscale' ? 'image' : (mMode === 'vupscale' ? 'video' : mMode);
         if (mMode !== this.toolModelKey(tool)) { Object.assign(upd, this.refResetPatch()); }
         else { const nm = (st.genModels[mMode] || []).find(m => m.id === id);
           if (nm) { const nc = this.refCaps(catMode, nm);
@@ -19943,7 +20018,7 @@ class Component extends DCLogic {
       // §A (P1) — "Reference" endi REAL: mavjud useGenAsRef('edit') handoff'iga ulandi
       // (avval faqat "coming soon" toast edi — o'lik stub)
       useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
-      lbUpscale: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsUpscale('x2', cur.id); },
+      lbUpscale: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image' || cur.type === 'video') this.useGenAsUpscale('x2', cur.id); },
       onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); },
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); },
