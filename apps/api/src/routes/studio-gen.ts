@@ -1510,6 +1510,9 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
   }
   // Signed URL 1 soatda eskiradi — resultKey bo'lsa har so'rovda yangidan imzolaymiz.
   await hydrateGenAssets(gen);
+  // Audit §A (P2) — params ichidagi referens URL'lar ham qayta imzolanadi (/gen/history bilan
+  // bir xil): "Regenerate" restore eskirgan ref bilan mahkum pullik yugurish boshlamasin.
+  await hydrateParamsRefUrls(gen.params).catch(() => {});
   res.json(gen);
 });
 

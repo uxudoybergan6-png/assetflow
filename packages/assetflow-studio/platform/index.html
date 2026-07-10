@@ -16422,7 +16422,7 @@
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell">
                           <div data-id="{{ g.id }}" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
-                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" alt=""></sc-if>
+                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" alt="{{ g.label }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                             <span class="rtag">{{ g.rtag }}</span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
@@ -17007,7 +17007,7 @@
           <div style="display:flex;gap:9px">
             <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
             <sc-if value="{{ lb.canProject }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbAddProj }}" class="ffm-btn2 sm"><i class="ph ph-folder-plus" style="font-size:14px"></i>Project</button></sc-if>
-            <button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button>
+            <sc-if value="{{ lb.canRef }}" hint-placeholder-val="{{ false }}"><button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button></sc-if>
             <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:#FF6B5E"></i></button></sc-if>
           </div>
         </div>
@@ -17574,13 +17574,23 @@ class Component extends DCLogic {
         this.loadCatalog();
         this.loadLandingConfig(); // Landing CMS — kesh + server
         window.addEventListener('ff-auth-expired', this._onExpired = () => {
-          this.setState({ user: null, credits: 0, creditsLoaded: false, gensLoaded: false });
+          // §A (P2) — gen davomida sessiya tugasa: poll'ni to'xtatamiz va busy holatni
+          // tozalaymiz (aks holda har poll 401 olib, hodisa qayta-qayta otilib toast spami bo'lardi).
+          try { clearTimeout(this._pt); } catch (e) {}
+          this.setState({ user: null, credits: 0, creditsLoaded: false, gensLoaded: false, generating: false });
           this.toast('Your session has expired — please sign in again');
           this.go('auth');
         });
       }
       const h = (window.location.hash || '').replace('#', '') || pathScreen;
       if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h, { replace: true }); }
+      // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y)
+      window.addEventListener('keydown', this._onEsc = (ev) => {
+        if (ev.key !== 'Escape') return;
+        if (this.state.lightbox) { this.setState({ lightbox: null }); return; }
+        if (this.state.refLibPick) { this.setState({ refLibPick: null }); return; }
+        if (this.state.chipPop) this.setState({ chipPop: null, refSrcK: null });
+      });
       // Orqaga/Oldinga (popstate) — mos ekranni tiklaymiz; go() auth-gate'ni o'zi qiladi.
       window.addEventListener('popstate', this._onPop = (ev) => {
         const stt = (ev && ev.state) || {};
@@ -17624,7 +17634,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
@@ -17906,12 +17916,28 @@ class Component extends DCLogic {
   async loadPluginMe() {
     try { const r = await FFAPI.pluginMe(); if (r && r.user) this.setState({ downloadsMonth: r.user.downloadsMonth || 0 }); } catch (e) {}
   }
-  async loadModels() {
+  // §A (P2) — lightbox ochilganda signed URL YANGI imzo bilan yangilanadi (grid'dagi 1 soatlik
+  // imzo tab ochiq turganda eskirib 403 bo'lishi mumkin edi); gens ro'yxatidagi nusxa ham yangilanadi.
+  refreshLightboxUrl(genId) {
+    if (!(window.FFAPI && FFAPI.getToken())) return;
+    FFAPI.genGet(genId).then(g => {
+      if (!g) return;
+      const m = this.mapGen(g);
+      this.setState(s => {
+        const patch = { gens: s.gens.map(x => x.id === m.id ? Object.assign({}, x, { url: m.url, thumb: m.thumb }) : x) };
+        if (s.lightbox && s.lightbox.id === m.id) patch.lightbox = Object.assign({}, s.lightbox, { url: m.url, thumb: m.thumb });
+        return patch;
+      });
+    }).catch(() => {});
+  }
+  async loadModels(attempt) {
     const modes = ['image', 'video', 'voice', 'sfx'];
+    let okAny = false;
     for (const m of modes) {
       try {
         const r = await FFAPI.models(m);
         const list = (r.models || []).filter(x => x.enabled !== false);
+        okAny = true;
         this.setState(s => {
           const gm = Object.assign({}, s.genModels); gm[m] = list;
           const sel = Object.assign({}, s.selModel);
@@ -17921,13 +17947,22 @@ class Component extends DCLogic {
       } catch (e) {}
     }
     this.setState({ genModelsLoaded: true }); // FAZA C — featured-loader shu bilan o'chadi
+    // §A (P2) — model ro'yxati umuman kelmasa: doimiy "Loading…" o'rniga avto-retry
+    // (2 marta, o'sib boruvchi kutish), so'ng halol xabar.
+    if (!okAny) {
+      const a = attempt || 0;
+      if (a < 2) setTimeout(() => this.loadModels(a + 1), 4000 * (a + 1));
+      else this.toast("Couldn't load AI models — check your connection and reload the page");
+    }
   }
   async loadHistory() {
     if (this._histBusy) return; this._histBusy = true; // P16 (SPEED)
     try {
-      const r = await FFAPI.history(40);
-      const gens = (r.items || []).filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
-      this.setState(s => ({ gens, gensLoaded: true, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
+      // §A (P2) — server cap 60; kesilgan bo'lsa gensCapped bilan halol "recent" yorlig'i
+      const r = await FFAPI.history(60);
+      const raw = r.items || [];
+      const gens = raw.filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
+      this.setState(s => ({ gens, gensLoaded: true, gensCapped: raw.length >= 60, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
     this._histBusy = false;
   }
@@ -18331,16 +18366,34 @@ class Component extends DCLogic {
   pollJob(jobId) {
     clearTimeout(this._pt);
     let delay = 1800;
+    // §A (P1) — poll endi TAQDIRLI: ketma-ket 8 xato YOKI 12 daqiqa deadline'dan keyin
+    // taslim bo'ladi (avval 404/tarmoq xatosi ham abadiy "Generating…" aylantirardi).
+    const startedAt = Date.now();
+    let misses = 0;
+    const POLL_MAX_MS = 12 * 60 * 1000;
     const tick = async () => {
+      // §A (P2) — sessiya tugagan bo'lsa poll o'zi to'xtaydi (401 loop + toast spami yo'q)
+      if (!(window.FFAPI && FFAPI.getToken())) { this.setState({ generating: false }); return; }
       let g = null;
-      try { g = await FFAPI.genGet(jobId); } catch (e) { /* vaqtinchalik — davom */ }
+      try { g = await FFAPI.genGet(jobId); misses = 0; } catch (e) {
+        misses++;
+        if (misses >= 8) {
+          this.setState({ generating: false });
+          this.toast('Lost track of this job — it may still finish; check My Library shortly');
+          this.loadHistory();
+          return;
+        }
+      }
       if (g && g.status === 'done') {
         const m = this.mapGen(g);
         this.setState(s => ({
           gens: [m].concat(s.gens.filter(x => x.id !== m.id)),
           // QA-FIX #12: ko'rilayotgan sessiyaga tegishli bo'lsa sessiya gridiga ham qo'shiladi
           sessGens: s.viewSess && s.viewSess === m.sid ? [m].concat(s.sessGens.filter(x => x.id !== m.id)) : s.sessGens,
-          generating: false, activeGenId: m.id,
+          generating: false,
+          // §A (P2) — natija faqat KO'RINADIGAN hovuzda bo'lsa faollashadi (boshqa sessiyaga
+          // o'tilgan bo'lsa activeGenId'ni tortib olib natijani "ko'rinmas" qilmasin)
+          activeGenId: (s.viewSess == null || s.viewSess === m.sid) ? m.id : s.activeGenId,
         }));
         this.toast('Generation ready!');
         this.refreshCredits();
@@ -18351,6 +18404,11 @@ class Component extends DCLogic {
         this.setState({ generating: false });
         this.toast(g.error || 'Generation failed — credits refunded');
         this.refreshCredits();
+        return;
+      }
+      if (Date.now() - startedAt > POLL_MAX_MS) {
+        this.setState({ generating: false });
+        this.toast('Still processing in the background — the result will appear in My Library');
         return;
       }
       delay = Math.min(Math.round(delay * 1.25), 6000);
@@ -18375,6 +18433,8 @@ class Component extends DCLogic {
     if (prompt.length < 2) { this.toast('Write a prompt first'); return; }
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
     if (this.state.enhBusy) return;
+    // §A (P1) — balans darvozasi: Enhance ✦1 kredit sarflaydi (UI-only gate; server o'zi ham hisoblaydi)
+    if (this.state.creditsLoaded && this.state.credits < 1) { this.setState({ showCredits: true }); this.toast('Enhance costs ✦1 — you are out of credits'); return; }
     const tool = this.curTool(), model = this.curModel();
     this.setState({ enhBusy: true });
     try {
@@ -18442,6 +18502,8 @@ class Component extends DCLogic {
     const cur = list.find(m => m.id === this.state.selModel[mode]);
     const target = this.refModelOk(mode, cur) ? cur : list.find(m => this.refModelOk(mode, m));
     if (!target) { this.toast(mode === 'video' ? 'No image-to-video model available' : 'No edit-capable image model available'); return; }
+    // §A (P2) — jim model almashuvi yo'q: boshqa (boshqa narxli) modelga o'tilsa aytamiz
+    if (cur && target.id !== cur.id) this.toast('Switched to ' + (target.label || 'a compatible model') + ' — it supports references');
     let url = null;
     try {
       const g = await FFAPI.genGet(genId);
@@ -19145,7 +19207,8 @@ class Component extends DCLogic {
     } : null;
     const lbRaw = this.state.lightbox;
     // QA-FIX #3 — lightbox video poster: thumb bo'lsa poster, bo'lmasa null (preload=metadata birinchi kadrni chizadi)
-    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true } : null;
+    // §A (P1) — canRef: "Reference" tugmasi faqat RASM natijalarda (video/ovoz/SFX uchun ma'nosiz edi)
+    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true, canRef: lbRaw.type === 'image' } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
@@ -19539,7 +19602,8 @@ class Component extends DCLogic {
       // Artlist-uslub kirish: workspace — yagona ko'rinish (picker o'chirildi)
       aiComposer: true,
       toolTitle, toolIconRef, promptPh, quotePrefix, voiceVal, popMode, popVoice,
-      sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance',
+      // §A (P1) — Enhance narxi endi ko'rinadi (✦1) — jim kredit kuyishi yo'q
+      sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance · ✦1',
       aspectVal, qualityVal, countVal, resVal, durVal,
       popModel, popAspect, popQuality, popCount, popRes, popDur,
       chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
@@ -19549,7 +19613,8 @@ class Component extends DCLogic {
       sessEmpty: this.state.sessionsLoaded && sessListView.length === 0,
       libRowCls: 'va-sessrow' + (inLibrary ? ' on' : ''),
       libChipCls: 'va-sesschip' + (inLibrary ? ' on' : ''),
-      libCountLabel: this.state.gens.length + ' generation' + (this.state.gens.length === 1 ? '' : 's'),
+      // §A (P2) — cap'langanda "recent" deb halol yozamiz (jami son emas)
+      libCountLabel: this.state.gensCapped ? (this.state.gens.length + ' recent') : (this.state.gens.length + ' generation' + (this.state.gens.length === 1 ? '' : 's')),
       axNewSession: () => this.setState({ viewSess: 'new', curSessId: null, sessGens: [], activeGenId: null, useMenuOpen: false, aiMediaView: null }),
       axOpenLibrary: () => this.setState({ viewSess: null, activeGenId: null, useMenuOpen: false }),
       axOpenSession: (e) => { const id = e.currentTarget.dataset.id; if (!id) return;
@@ -19657,7 +19722,7 @@ class Component extends DCLogic {
       axUseI2V: (e) => { e.stopPropagation(); if (!axI2vOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('i2v', activeGenRaw.id); },
       useMenuOpen: this.state.useMenuOpen,
       onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
-      onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) this.setState({ lightbox: g, useMenuOpen: false }); } else this.setState({ activeGenId: id, useMenuOpen: false }); },
+      onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) { this.setState({ lightbox: g, useMenuOpen: false }); this.refreshLightboxUrl(id); } } else this.setState({ activeGenId: id, useMenuOpen: false }); },
       toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       closeUseMenu: () => this.setState({ useMenuOpen: false }),
@@ -19809,7 +19874,9 @@ class Component extends DCLogic {
       // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
-      useAsRef: () => { this.setState({ lightbox: null }); this.toast('Use as reference coming soon'); },
+      // §A (P1) — "Reference" endi REAL: mavjud useGenAsRef('edit') handoff'iga ulandi
+      // (avval faqat "coming soon" toast edi — o'lik stub)
+      useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
       onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); },
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); },
