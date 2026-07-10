@@ -25,38 +25,45 @@ import { GEN_MODELS, resolveVideoParams, resolveImageCount } from "./gen-models.
  */
 export const DEFAULT_PROVIDER_USD = 0.5;
 
-/** Rasm: model id → sifat(1K/2K/4K...) bo'yicha bir-dona provider USD (TAXMINIY). */
-const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
-  1010: { "1K": 0.04, "2K": 0.06, "4K": 0.12 }, // Nano Banana 2 (Gemini Flash Image)
-  1013: { "1K": 0.02 }, // Nano Banana 2 Lite
-  1014: { "1K": 0.1, "2K": 0.15, "4K": 0.24 }, // Nano Banana Pro (premium)
-  1011: { "1K": 0.04, "2K": 0.06 }, // Imagen 4
-  1012: { "1K": 0.06, "2K": 0.08 }, // Imagen 4 Ultra
-  1015: { x2: 0.003, x4: 0.003 }, // Imagen Upscale (imagegeneration@002) — $0.003/rasm (USER-tasdiqlangan 2026-07)
+/** Rasm: model id → sifat(1K/2K/4K...) bo'yicha bir-dona provider USD.
+ *  BATCH4 #3 — bazaviy tier'lar RASMIY sahifadan USER-tasdiqlangan (2026-07); yuqori
+ *  tier'lar (2K/4K) hali TAXMINIY (rasmiy per-tier narx e'lon qilinmagan) — konservativ. */
+export const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
+  1010: { "1K": 0.04, "2K": 0.06, "4K": 0.12 }, // Nano Banana 2 — 1K $0.040 ✅; 2K/4K taxminiy
+  1013: { "1K": 0.02 }, // Nano Banana 2 Lite — $0.020 ✅
+  1014: { "1K": 0.1, "2K": 0.15, "4K": 0.24 }, // Nano Banana Pro — 1K $0.100 ✅; 2K/4K taxminiy
+  1011: { "1K": 0.04, "2K": 0.06 }, // Imagen 4 — 1K $0.040 ✅; 2K taxminiy
+  1012: { "1K": 0.06, "2K": 0.08 }, // Imagen 4 Ultra — 1K $0.060 ✅; 2K taxminiy
+  1015: { x2: 0.003, x4: 0.003 }, // Imagen Upscale (imagegeneration@002) — $0.003/rasm ✅
 };
 
-/** Video (per-second): model id → resolution bo'yicha soniya USD (TAXMINIY). */
-const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
-  3001: { "720p": 0.04 }, // Veo 3.1 Lite (~$0.03-0.05/s)
-  3002: { "720p": 0.1, "1080p": 0.1 }, // Veo 3.1 Fast (~$0.10/s)
-  3003: { "720p": 0.38, "1080p": 0.38 }, // Veo 3.1 (~$0.35-0.40/s)
-  3101: { "480p": 0.03, "720p": 0.05 }, // Seedance 2.0 Fast (fal)
-  3102: { "480p": 0.03, "720p": 0.05, "1080p": 0.11, "4k": 0.2 }, // Seedance 2.0 R2V (fal)
-  // Topaz video upscale (fal, RASMIY tarif 2026-07): $/s CHIQISH bo'yicha; 60fps ×2 billing
+/** Video (per-second): model id → resolution bo'yicha soniya USD.
+ *  BATCH4 #3 — Veo/Omni/Topaz/Seedance 720p·1080p USER-tasdiqlangan (2026-07). Seedance 480p
+ *  va R2V 4k tier'lari PIKSEL-nisbatda masshtablangan taxmin (fal token-narxi ∝ piksel):
+ *  480p≈0.445×720p; 4k≈4×1080p — 4k og'ir ishlatishdan oldin fal sahifasida qayta tasdiqlansin. */
+export const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
+  3001: { "720p": 0.03 }, // Veo 3.1 Lite ✅ (720p, audiosiz)
+  3002: { "720p": 0.08, "1080p": 0.1 }, // Veo 3.1 Fast ✅ (audiosiz)
+  3003: { "720p": 0.4, "1080p": 0.4 }, // Veo 3.1 Standard ✅ (audio bilan)
+  3101: { "480p": 0.108, "720p": 0.2419 }, // Seedance 2.0 Fast — 720p ✅; 480p scaled
+  3102: { "480p": 0.135, "720p": 0.3034, "1080p": 0.682, "4k": 2.728 }, // Seedance R2V — 720p/1080p ✅; 480p/4k scaled
+  // Topaz video upscale (fal, RASMIY tarif ✅): $/s CHIQISH bo'yicha; 60fps ×2 billing
   // duration'ga kiritilgan (derive), shu sabab bu jadval sof tier stavkasi.
   3201: { "720p": 0.01, "1080p": 0.02, "4k": 0.08 },
 };
 
-/** Video (per-generation): model id → sobit USD (TAXMINIY). */
-const VIDEO_USD_FLAT: Record<number, number> = {
-  3010: 1.0, // Gemini Omni Flash — har chaqiruv ~10s ≈ $1.00
+/** Video (per-generation): model id → sobit USD. */
+export const VIDEO_USD_FLAT: Record<number, number> = {
+  3010: 1.0, // Gemini Omni Flash ✅ — har chaqiruv ~10s ≈ $1.00
 };
 
-/** Boshqa rejimlar (ovoz/sfx): model id → sobit USD (TAXMINIY). */
-const FLAT_USD: Record<number, number> = {
+/** Boshqa rejimlar (ovoz/sfx): model id → sobit USD. */
+export const FLAT_USD: Record<number, number> = {
   2001: 0.005, // Kokoro TTS (OpenRouter, arzon OSS) — o'chirilgan (BATCH4 #4)
-  2002: 0.03, // Chirp 3 HD — worst-case maxChars=1000 × $0.00003/belgi (odatda ancha kam)
-  4001: 0.08, // ElevenLabs SFX (sound-generation)
+  2002: 0.03, // Chirp 3 HD ✅ — worst-case maxChars=1000 × $0.00003/belgi
+  // ElevenLabs SFX — rasmiy docs ✅: 40 EL-kredit/soniya; bizning max 10s = 400 EL-kredit
+  // ≈ $0.088 (Creator $22/100k). Flat kredit worst-case'ga langarlangan (Chirp naqshi).
+  4001: 0.088,
 };
 
 /** imageUnitCost'dagi kabi tanlangan sifat kalitini aniqlaydi (1K/2K/4K...). */

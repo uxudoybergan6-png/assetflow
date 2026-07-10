@@ -21,7 +21,9 @@ import { estimateProviderUsd } from "./provider-cost.js";
 
 // Kredit qiymat langari: PRO $19 / 1000 kredit = $0.019/kredit (plugin-profile.ts allotment).
 const DEFAULT_CREDIT_USD = 0.019;
-const DEFAULT_MARGIN_TARGET = 1.8;
+// BATCH4 #3 — maqsad marja 2.0× (avval 1.8). DB singleton mavjud bo'lsa admin
+// "Apply target margin" tugmasi updatePricingConfig bilan 2.0 ga ko'taradi.
+const DEFAULT_MARGIN_TARGET = 2.0;
 
 function envNum(name: string, def: number): number {
   const raw = Number(process.env[name]);

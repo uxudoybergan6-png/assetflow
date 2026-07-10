@@ -32,6 +32,7 @@ import {
   upsertModelPricing,
   updatePricingConfig,
 } from "../lib/model-pricing.js";
+import { applyAutoMarginAll, deriveAutoPricing, PINNED_MODEL_IDS } from "../lib/pricing-automargin.js";
 import { computeMargins, spendByProvider } from "../lib/model-margin.js";
 import {
   payoutPerDownloadCents,
@@ -506,6 +507,7 @@ adminRouter.get("/pricing", async (req, res) => {
   const marginById = new Map(margins.models.map((m) => [m.modelId, m]));
   const models = view.map((v) => ({
     ...v,
+    pinned: PINNED_MODEL_IDS.has(v.modelId), // BATCH4 #3 — mahsulot-narxi (auto-apply tegmaydi)
     margin: marginById.get(v.modelId) ?? null,
     belowTarget: marginById.get(v.modelId)?.belowTarget ?? false,
     missingCost: marginById.get(v.modelId)?.missingCost ?? true,
@@ -559,6 +561,64 @@ adminRouter.patch("/pricing/config", async (req, res) => {
     meta: parsed.data as Record<string, unknown>,
   });
   res.json({ config });
+});
+
+/** BATCH4 #3 — POST /api/admin/pricing/apply-margin: maqsad marjani (ixtiyoriy body bilan)
+ *  yangilab, BARCHA enabled model narxini kredit=ceil(providerUsd×margin÷creditUsd) bilan
+ *  qayta yozadi (har tier alohida, upsertModelPricing orqali — money-zone o'zgarmaydi).
+ *  Pinned modellar (mahsulot-narxi) chetlab o'tiladi va javobda ko'rsatiladi. */
+adminRouter.post("/pricing/apply-margin", async (req, res) => {
+  const parsed = z
+    .object({ marginTarget: z.number().gt(0).max(1000).optional() })
+    .safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  if (parsed.data.marginTarget != null) {
+    await updatePricingConfig({ marginTarget: parsed.data.marginTarget }, req.user?.userId ?? null);
+  }
+  const report = await applyAutoMarginAll(req.user?.userId ?? null);
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.margin.apply",
+    targetType: "modelPricing",
+    targetId: "all-enabled",
+    meta: {
+      marginTarget: report.marginTarget,
+      applied: report.applied.map((a) => ({ id: a.modelId, tiers: a.tiers })),
+      skippedPinned: report.skippedPinned.map((a) => a.modelId),
+      skippedNoCost: report.skippedNoCost,
+    },
+  });
+  res.json({ report });
+});
+
+/** BATCH4 #3 — POST /api/admin/pricing/:modelId/auto: bitta model uchun auto-marja
+ *  (pinned bo'lsa ham — admin aniq shu qatorda bosgan, ongli qaror). */
+adminRouter.post("/pricing/:modelId/auto", async (req, res) => {
+  const modelId = Number(req.params.modelId);
+  const model = Number.isInteger(modelId) ? getModelById(modelId) : undefined;
+  if (!model) {
+    res.status(404).json({ error: "Unknown model" });
+    return;
+  }
+  const config = await getPricingConfig();
+  const d = deriveAutoPricing(model, config.marginTarget, config.creditUsdValue);
+  if (!d.patch) {
+    res.status(400).json({ error: "No provider cost table for this model — set the price manually", code: "NO_COST_TABLE" });
+    return;
+  }
+  const row = await upsertModelPricing(modelId, d.patch, req.user?.userId ?? null);
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.margin.apply",
+    targetType: "modelPricing",
+    targetId: String(modelId),
+    meta: { marginTarget: config.marginTarget, tiers: d.tiers, pinnedOverride: d.pinned },
+  });
+  const view = (await listPricingView()).find((v) => v.modelId === modelId) ?? null;
+  res.json({ derived: d, row, view });
 });
 
 /** PATCH /api/admin/pricing/:modelId — model kredit narxini yangilaydi (audit + cache bust). */
