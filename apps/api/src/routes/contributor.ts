@@ -49,7 +49,10 @@ import {
 } from "../lib/s3.js";
 import { assetKeySetFromStored, syncTemplateAssetKeys } from "../lib/asset-state.js";
 import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
-import { transcodePreviewInBackground } from "../lib/transcode-preview.js";
+import {
+  transcodePreviewInBackground,
+  processPreviewTranscode,
+} from "../lib/transcode-preview.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
 import {
   openStreamingIngestZip,
@@ -68,6 +71,8 @@ import { writeAuditLog } from "../lib/audit-log.js";
 import { captureException } from "../lib/sentry.js";
 import { notifyAdminNewSubmission } from "../lib/notify.js";
 import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
+import { appForPackExt } from "../lib/apps.js";
+import { approvedCatalogWhere } from "../lib/catalog-map.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
 import { scanFileHash, type MalwareScanResult } from "../lib/malware-scan.js";
@@ -493,6 +498,26 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
   } else {
     where.contributorId = user.userId;
     if (status) where.reviewStatus = status;
+  }
+
+  // Audit §D (P2) — stale transcode sweep: fon transcode (Cloud Run throttle) muzlab
+  // qolsa status abadiy "pending" ko'rinardi ("Compressing…" badge hech ketmasdi).
+  // 20 daqiqadan oshgan pending'lar halol "failed" bo'ladi — original preview baribir
+  // xizmat qilinadi; contributor preview'ni qayta yuklab retry qila oladi.
+  try {
+    await prisma.contributorTemplate.updateMany({
+      where: {
+        previewTranscodeStatus: "pending",
+        updatedAt: { lt: new Date(Date.now() - 20 * 60 * 1000) },
+      },
+      data: {
+        previewTranscodeStatus: "failed",
+        previewTranscodeError:
+          "Background transcode stalled — original preview is served; re-upload the preview to retry",
+      },
+    });
+  } catch (e) {
+    console.warn("[templates] stale transcode sweep xato (fail-safe):", e);
   }
 
   // FAZA 5 (A1) — take+cursor pagination (backward-compatible: param'siz birinchi
@@ -1148,8 +1173,22 @@ contributorRouter.post(
     // FAZA 5 (A2) — presigned PUT bilan kelgan preview kaliti keshga tushsin
     // (fon transcode tugaganda transcode-preview.ts yana sinxronlaydi).
     await syncTemplateAssetKeys(id);
-    transcodePreviewInBackground(id); // fon — javobni bloklamaydi
-    res.json({ ok: true, previewTranscodeStatus: "pending" });
+    // Audit §D (P2) — Cloud Run fire-and-forget tuzog'i: javobdan keyin CPU throttle
+    // bo'lib fon transcode muzlab, status abadiy "pending" qolardi. Endi so'rov ichida
+    // CHEGARALANGAN kutamiz (120s): odatiy preview shu vaqtda tugaydi. Ulgurmasa
+    // javob "pending" bilan qaytadi — GET /templates dagi stale-sweep keyin "failed"ga
+    // o'giradi (original preview baribir xizmat qilinadi).
+    const finished = await Promise.race([
+      processPreviewTranscode(id).then(() => true).catch(() => true),
+      new Promise<boolean>((r) => setTimeout(() => r(false), 120_000)),
+    ]);
+    const fresh = finished
+      ? await prisma.contributorTemplate.findUnique({
+          where: { id },
+          select: { previewTranscodeStatus: true },
+        })
+      : null;
+    res.json({ ok: true, previewTranscodeStatus: fresh?.previewTranscodeStatus ?? "pending" });
   }
 );
 
@@ -1326,6 +1365,27 @@ async function resolvePackScan(
       },
     });
 
+    // Audit §D (P2) — auto-approve rejimi (requireApproval=false): create endi nashrni
+    // kechiktiradi (published:false). TOZA skan tugagach shu yerda yakunlanadi — faqat
+    // APPROVED + hali nashr etilmagan + takedown'siz yozuvlar (admin approve yo'liga tegmaydi).
+    if (!cls.quarantine) {
+      try {
+        const settings = await getOrCreateSettings();
+        if (!settings.requireApproval) {
+          const t = await prisma.contributorTemplate.findUnique({
+            where: { id },
+            select: { reviewStatus: true, published: true, takedownAt: true },
+          });
+          if (t && t.reviewStatus === TemplateReviewStatus.APPROVED && !t.published && !t.takedownAt) {
+            await prisma.contributorTemplate.update({ where: { id }, data: { published: true } });
+            embedTemplateInBackground(id);
+          }
+        }
+      } catch (e) {
+        console.error("[pack-scan] auto-publish tekshiruvi xato (fail-safe):", e);
+      }
+    }
+
     if (cls.quarantine) {
       await writeAuditLog({
         actorId: contributorId,
@@ -1473,6 +1533,10 @@ contributorRouter.post(
         .json({ error: "Pack not found in cloud storage — please re-upload" });
       return;
     }
+    // Audit §D (P1) — templateApp'ni haqiqiy pack kengaytmasidan aniqlaymiz: .mogrt→pr,
+    // .motn→motion, .drfx→resolve va h.k. (.zip → noaniq, mavjud qiymat qoladi).
+    // Faqat template mahsulotlar uchun (stock media kengaytmalari null qaytaradi).
+    const derivedApp = existing.kind === "template" ? appForPackExt(ext) : null;
     // Yangi pack yuklandi → skan holatini reset (eski 'clean' qolib ketmasin).
     await prisma.contributorTemplate.update({
       where: { id },
@@ -1482,6 +1546,7 @@ contributorRouter.post(
         packHash: null,
         packScanStatus: "pending",
         packScanDetail: null,
+        ...(derivedApp ? { templateApp: derivedApp } : {}),
       },
     });
     // Eski .aep→.zip kesh (serve-asset.ts) endi ESKI mazmunga ishora qiladi —
@@ -1568,7 +1633,12 @@ contributorRouter.post(
         return;
       }
       const safeName = sanitizeFileBaseName(f.fileName.replace(/\.zip$/i, ""));
-      const key = `incoming/${contributorId}/${safeName}.zip`;
+      // Audit §D (P2) — bir xil bazaga tozalanadigan nomlar ("My Pack.zip" va "My-Pack.zip")
+      // bir kalitga tushib ikkinchisi birinchisini ustidan yozardi. ASL fayl nomidan qisqa
+      // deterministik hash qo'shamiz: bir xil asl nom → bir xil kalit (idempotentlik saqlanadi),
+      // faqat sanitize'da to'qnashgan farqli nomlar endi ajratiladi.
+      const nameDisc = crypto.createHash("sha256").update(f.fileName).digest("hex").slice(0, 8);
+      const key = `incoming/${contributorId}/${safeName}-${nameDisc}.zip`;
       const url = await getSignedUploadUrl(key, "application/zip", 1800);
       uploads.push({ fileName: f.fileName, key, url });
     }
@@ -1758,7 +1828,8 @@ async function ingestOneZip(
     // kategoriya (kanonik ro'yxatdan) / 20 teg yozadi. INTERNAL metadata: kredit yo'li
     // ISHLATILMAYDI. AI xato bersa fail-safe fallback qaytadi — ingest bloklanmaydi.
     const aiMeta = await generateTemplateMetadata({
-      zipFileName: key,
+      // Kalitdagi hash diskriminatorini (-a1b2c3d4.zip) AI nom-taklifiga o'tkazmaymiz
+      zipFileName: key.replace(/-[0-9a-f]{8}(\.zip)$/i, "$1"),
       imagePath,
     });
     const title = aiMeta.title;
@@ -2157,6 +2228,7 @@ contributorRouter.post(
       packScanStatus?: string;
       packScanDetail?: null;
       packHash?: null;
+      templateApp?: string;
     } = {};
     if (pack) {
       update.fileName = pack.originalname;
@@ -2165,6 +2237,12 @@ contributorRouter.post(
       update.packScanStatus = "pending";
       update.packScanDetail = null;
       update.packHash = null;
+      // Audit §D (P1) — templateApp haqiqiy pack kengaytmasidan (.zip → mavjud qiymat qoladi)
+      const derivedApp =
+        existing.kind === "template"
+          ? appForPackExt(path.extname(pack.originalname).toLowerCase())
+          : null;
+      if (derivedApp) update.templateApp = derivedApp;
     }
     if (Object.keys(update).length) {
       await prisma.contributorTemplate.update({ where: { id }, data: update });
@@ -2391,6 +2469,8 @@ contributorRouter.post(
     const initialStatus = settings.requireApproval
       ? TemplateReviewStatus.DRAFT
       : TemplateReviewStatus.APPROVED;
+    // Audit §D (P2) — auto-approve rejimida ham yaratishda DARHOL nashr QILINMAYDI:
+    // hali pack yo'q/skan qilinmagan. TOZA skan tugagach resolvePackScan nashrni yakunlaydi.
 
     // FAZA 2 (F) — auto-approve (requireApproval=false → darhol APPROVED+published) yo'lida
     // rights attestation MAJBURIY (draft yo'lida esa submit vaqtida majburlanadi).
@@ -2425,15 +2505,10 @@ contributorRouter.post(
         fileName: d.fileName ?? null,
         fileSize: d.fileSize ?? null,
         reviewStatus: initialStatus,
-        published: !settings.requireApproval,
+        published: false,
         ...(rights ?? {}),
       },
     });
-
-    // Auto-approve (moderatsiya o'chiq) — semantik qidiruv uchun embedding (fon).
-    if (template.reviewStatus === TemplateReviewStatus.APPROVED && template.published) {
-      embedTemplateInBackground(template.id);
-    }
 
     res.status(201).json(template);
   }
@@ -2562,10 +2637,21 @@ contributorRouter.post(
       return;
     }
 
+    // Audit §D (P1) — rights dead-end fix: submit body'da attestatsiyani qabul qilamiz
+    // (ro'yxat/drawer'dan submit qilganda ham checkbox ko'rsatiladi — wizard Step 3'ga
+    // qaytishga majburlamaymiz). rightsAcceptedAt allaqachon yozilgan bo'lsa tegilmaydi.
+    const rightsBody = z
+      .object({
+        rightsAccepted: z.boolean().optional(),
+        rightsTermsVersion: z.string().max(40).optional(),
+      })
+      .safeParse(req.body ?? {});
+    const submitRights = rightsBody.success ? rightsCaptureFields(rightsBody.data) : undefined;
+
     // FAZA 2 (F) — server-side rights attestation MAJBURIY: rightsAcceptedAt yozilmagan
     // shablon submit (→ review → publish) QILINMAYDI. Ilgari faqat client checkbox + capture
     // edi → tasdiqsiz shablonni to'g'ridan submit qilish mumkin edi.
-    if (!existing.rightsAcceptedAt) {
+    if (!existing.rightsAcceptedAt && !submitRights) {
       res.status(400).json({
         error: "You must confirm you own the rights to distribute this template before submitting it",
         code: "RIGHTS_REQUIRED",
@@ -2579,6 +2665,7 @@ contributorRouter.post(
         reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
         published: false,
         reviewNote: null,
+        ...(existing.rightsAcceptedAt ? {} : (submitRights ?? {})),
       },
     });
 
@@ -2883,10 +2970,9 @@ contributorRouter.post(
 
 contributorRouter.get("/catalog", async (_req, res) => {
   const items = await prisma.contributorTemplate.findMany({
-    where: {
-      reviewStatus: TemplateReviewStatus.APPROVED,
-      published: true,
-    },
+    // Audit §D (P2) — plugin katalogi bilan BIR XIL predikat (takedownAt:null ham):
+    // takedown qilingan shablon bu ochiq ro'yxatda ham ko'rinmasin.
+    where: approvedCatalogWhere,
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,

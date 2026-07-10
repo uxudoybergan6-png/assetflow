@@ -27,7 +27,7 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG: Record<string, AppConfig> = {
-  ae: { label: "Ae", fullName: "After Effects", packExts: [".aep", ".aet"], colorHint: "#b794f6" },
+  ae: { label: "Ae", fullName: "After Effects", packExts: [".aep", ".aet", ".ffx"], colorHint: "#b794f6" },
   pr: { label: "Pr", fullName: "Premiere Pro", packExts: [".mogrt", ".prproj"], colorHint: "#7aa2f7" },
   motion: { label: "Mn", fullName: "Apple Motion", packExts: [".motn", ".moti"], colorHint: "#5cc8b0" },
   resolve: { label: "Dr", fullName: "DaVinci Resolve", packExts: [".drfx", ".dra", ".setting"], colorHint: "#f0907f" },
