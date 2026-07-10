@@ -15355,7 +15355,9 @@
   /* visuals grid — QA-FIX P4: Artlist uslubi masonry (har natija o'z aspect'i bilan) */
   /* P17: AI Studio to'liq kenglikda — qat'iy 3 ustun keng ekranда kartani ulkan qiladi.
      column-width bilan ustunlar soni kenglikка moslashadi (har karta ~220px atrofida qoladi). */
-  .ff .va-axgrid{columns:220px;column-gap:14px}
+  /* #6 — default = Full view (yirik, immersiv plitkalar); .compact = zich rejim */
+  .ff .va-axgrid{columns:340px;column-gap:16px}
+  .ff .va-axgrid.compact{columns:200px;column-gap:12px}
   .ff .va-axcell{position:relative;break-inside:avoid;margin-bottom:14px}
   .ff .va-axres{position:relative;border-radius:14px;overflow:hidden;background-color:var(--media);background-size:cover;background-position:center;aspect-ratio:16/10;cursor:pointer}
   .ff .va-axres .rtag{position:absolute;top:9px;left:9px;font:600 8px var(--mono);padding:2.5px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3;letter-spacing:.05em;z-index:1}
@@ -15494,7 +15496,7 @@
     .ff .va-axseg{width:100%}
     .ff .va-axseg>span{flex:1;justify-content:center}
     .ff .va-axstage{padding:2px 2px 14px;overflow:visible}
-    .ff .va-axgrid{columns:2;column-gap:9px}
+    .ff .va-axgrid,.ff .va-axgrid.compact{columns:2;column-gap:9px}
     .ff .va-axcell{margin-bottom:9px}
     .ff .va-axres{border-radius:11px}
     .ff .va-dock{position:static;margin:12px 0 0;border-radius:18px;padding:12px;background:rgba(19,22,28,.9)}
@@ -16351,6 +16353,8 @@
                     <span class="{{ axSegAudCls }}" data-v="audio" onclick="{{ onMediaView }}">Audio <span class="ct">{{ audCount }}</span></span>
                   </div>
                   <span style="margin-left:auto"></span>
+                  <!-- #6 — Full/Compact ko'rinish toggle (tanlov localStorage'da saqlanadi) -->
+                  <button class="va-axghost" title="{{ axGridViewTip }}" onclick="{{ toggleAxGridView }}" style="padding:0 10px"><i class="ph ph-{{ axGridViewIcon }}" style="font-size:14px"></i></button>
                   <span class="smeta">{{ axSessMeta }}</span>
                 </div>
 
@@ -16387,7 +16391,7 @@
 
                   <!-- visuals view (frames A–B) -->
                   <sc-if value="{{ axShowVisuals }}" hint-placeholder-val="{{ false }}">
-                    <div class="va-axgrid">
+                    <div class="{{ axGridCls }}">
                       <sc-if value="{{ axPendVis }}" hint-placeholder-val="{{ false }}">
                         <div class="va-axcell"><div class="va-axres pend">
                           <span class="va-axmascot"><svg width="58" height="58" viewBox="0 0 64 64">
@@ -17084,6 +17088,8 @@ class Component extends DCLogic {
     catalog: [],
     catalogReady: false,
     catalogFullyLoaded: false, // §B (P1) — barcha sahifalar yuklangach true (bo'sh holat shunda chiqadi)
+    // #6 — natijalar gridi ko'rinishi ('full' | 'compact'); localStorage'dan tiklanadi
+    axGridView: (typeof localStorage !== 'undefined' && localStorage.getItem('ff_ax_grid')) || 'full',
     landCfg: null, // Landing CMS — serverdagi (yoki localStorage keshidagi) konfiguratsiya
 
     favTpls: [], // FAZA D — lokal sevimli shablonlar (localStorage). TODO(FF): server-side favorites endpointi
@@ -19473,6 +19479,15 @@ class Component extends DCLogic {
           : (((viewSessObj && viewSessObj.title ? viewSessObj.title.slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
       axShowHero, axShowVisuals, axShowAudio, axPendVis, axPendAud, axVisEmpty, axAudEmpty,
       axVisGens, axAudGens, genPct, genStatus, axSuggest,
+      // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)
+      axGridCls: 'va-axgrid' + (this.state.axGridView === 'compact' ? ' compact' : ''),
+      axGridViewTip: this.state.axGridView === 'compact' ? 'Full view' : 'Compact view',
+      axGridViewIcon: this.state.axGridView === 'compact' ? 'grid-four' : 'grid-nine',
+      toggleAxGridView: () => {
+        const v = this.state.axGridView === 'compact' ? 'full' : 'compact';
+        try { localStorage.setItem('ff_ax_grid', v); } catch (e) {}
+        this.setState({ axGridView: v });
+      },
       modelPickView, modePickHead, modelGroupsView, modelFilterView,
       modelModalOpen: this.state.modelModalOpen, modelQ: this.state.modelQ,
       modelModalEmpty: modelGroupsView.length === 0,
