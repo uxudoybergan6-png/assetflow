@@ -42,6 +42,9 @@ const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
   3003: { "720p": 0.38, "1080p": 0.38 }, // Veo 3.1 (~$0.35-0.40/s)
   3101: { "480p": 0.03, "720p": 0.05 }, // Seedance 2.0 Fast (fal)
   3102: { "480p": 0.03, "720p": 0.05, "1080p": 0.11, "4k": 0.2 }, // Seedance 2.0 R2V (fal)
+  // Topaz video upscale (fal, RASMIY tarif 2026-07): $/s CHIQISH bo'yicha; 60fps ×2 billing
+  // duration'ga kiritilgan (derive), shu sabab bu jadval sof tier stavkasi.
+  3201: { "720p": 0.01, "1080p": 0.02, "4k": 0.08 },
 };
 
 /** Video (per-generation): model id → sobit USD (TAXMINIY). */

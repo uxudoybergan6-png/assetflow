@@ -279,6 +279,49 @@ export async function probeMediaDimensions(
 }
 
 /**
+ * BATCH4 #2 — video METAsi (o'lcham + davomiylik + fps) URL'dan (signed GCS) — ffprobe http
+ * kirishni range-so'rovlar bilan o'qiydi (to'liq yuklab olinmaydi). Video-upscale narx
+ * derivatsiyasi uchun: chiqish tier = manba o'lcham × faktor; billing soniya = ceil(duration).
+ * Xato/topilmasa null (chaqiruvchi aniq xato beradi — kredit yechilmaydi).
+ */
+export async function probeVideoMetaUrl(
+  url: string
+): Promise<{ width: number; height: number; durationSec: number; fps: number } | null> {
+  if (!/^https?:\/\//i.test(String(url || ""))) return null;
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      [
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "stream=width,height,r_frame_rate,duration",
+        "-show_entries", "format=duration",
+        "-of", "json",
+        url,
+      ],
+      { timeout: 45_000 }
+    );
+    const j = JSON.parse(stdout) as {
+      streams?: Array<{ width?: number; height?: number; r_frame_rate?: string; duration?: string }>;
+      format?: { duration?: string };
+    };
+    const s = j.streams?.[0];
+    const width = Number(s?.width), height = Number(s?.height);
+    if (!width || !height) return null;
+    // fps "30000/1001" ko'rinishida
+    let fps = 30;
+    const fr = /^(\d+)\/(\d+)$/.exec(String(s?.r_frame_rate || ""));
+    if (fr && Number(fr[2]) > 0) fps = Number(fr[1]) / Number(fr[2]);
+    else if (Number(s?.r_frame_rate) > 0) fps = Number(s?.r_frame_rate);
+    const durationSec = Number(s?.duration) || Number(j.format?.duration) || 0;
+    if (!Number.isFinite(durationSec) || durationSec <= 0) return null;
+    return { width, height, durationSec, fps: Number.isFinite(fps) && fps > 0 ? fps : 30 };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Video ichidan audio referens chiqaradi:
  *  - ixtiyoriy start/end oralig'i
  *  - mono, 24kHz, mp3

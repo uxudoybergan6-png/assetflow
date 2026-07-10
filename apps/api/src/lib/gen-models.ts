@@ -28,6 +28,7 @@ export type GenFeature =
   | "text-to-video"
   | "image-to-video"
   | "reference-to-video"
+  | "video-upscale"
   | "text-to-sfx";
 
 /**
@@ -1009,6 +1010,42 @@ export const GEN_MODELS: GenModel[] = [
       audioDefault: false,
     },
   },
+  // ── VIDEO UPSCALE (BATCH4 #2) — fal.ai Topaz `fal-ai/topaz/upscale/video` (video-to-video).
+  // NARX: fal $/s CHIQISH videoga, tier'li: ≤720p $0.01/s · ≤1080p $0.02/s · >1080p $0.08/s
+  // (60fps chiqish ×2 — derivatsiya billing-soniyani ikkilaydi, stavka emas). Kredit/s (2×,
+  // $0.019/kr): 720p=ceil(0.02/0.019)=2 · 1080p=ceil(0.04/0.019)=3 · 4k=ceil(0.16/0.019)=9.
+  // Chiqish tier = manba o'lcham × faktor — SERVER cost-quote'da ffprobe bilan aniqlaydi va
+  // params.resolution/duration'ni O'ZI yozadi (lib/video-upscale.ts) → MAVJUD computeGenCost
+  // perSec[res]×duration formulasi O'ZGARISHSIZ ishlaydi. Referens oqimi YO'Q (maxsus manba:
+  // params.sourceKey — o'z gen natijasi yoki yuklangan video). Topaz "Gaia 2" (mograph, ×0.5)
+  // v1'da OCHILMAGAN — kerak bo'lsa alohida (yarim-stavkali) katalog entry sifatida qo'shiladi.
+  {
+    id: 3201,
+    mode: "video",
+    key: "fal-ai/topaz/upscale/video",
+    label: "Video Upscale (Topaz)",
+    brand: "topaz",
+    provider: "fal",
+    falModel: "fal-ai/topaz/upscale/video",
+    enabled: true,
+    feature: "video-upscale",
+    cost: 2, // fallback = ≤720p kredit/soniya; videoSettings.perSec ustun
+    referenceMode: "none",
+    refMode: "none",
+    refKind: "none",
+    maxRefs: 0,
+    aspects: ["auto"], // nisbat manbadan — o'zgarmaydi
+    resolutions: ["720p", "1080p", "4k"], // CHIQISH tier'lari (server derive qiladi)
+    durations: Array.from({ length: 300 }, (_, i) => i + 1), // billing soniya 1..300 (server yozadi)
+    audio: false,
+    videoSettings: {
+      aspect: { options: ["Auto"], def: "Auto" },
+      resolution: { options: ["720p", "1080p", "4k"], def: "720p", perSec: { "720p": 2, "1080p": 3, "4k": 9 } },
+      duration: { options: ["Auto"], def: "Auto", autoSec: 5 }, // ishlatilmaydi — server aniq soniya yozadi
+      audio: false,
+    },
+  },
+
   // Seedance 2.0 R2V — ko'p-modal referens (image≤9 + video≤3 + audio≤3, jami≤12, IXTIYORIY) + prompt.
   // @Image/@Video/@Audio prompt'да o'zicha qoladi (model tushunadi). Narx soniyaga, resolutionга qarab.
   {

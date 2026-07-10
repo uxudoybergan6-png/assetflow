@@ -22,6 +22,7 @@ import { isVertexConfigured } from "../lib/ai/vertex.js";
 import { isVertexOmniConfigured } from "../lib/ai/vertex-omni.js";
 import { isVertexImageConfigured } from "../lib/ai/vertex-image.js";
 import { isGoogleTtsConfigured } from "../lib/ai/google-tts.js";
+import { deriveVideoUpscaleParams, canonicalizeUpscaleParams } from "../lib/video-upscale.js";
 import {
   optimizeVideoReferenceForUpload,
   extractAudioReferenceForUpload,
@@ -660,13 +661,33 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
     return;
   }
   const params = (p.data.params ?? {}) as Record<string, unknown>;
+  // BATCH4 #2 — video-upscale: tier/soniya SERVER'da aniqlanadi (manba meta × faktor) va params'ga
+  // yoziladi → imzo shu qiymatlarni qamraydi; klient narx-belgilovchi paramni soxtalay olmaydi.
+  // computeGenCost formulasi O'ZGARMAGAN (perSec[resolution] × duration mavjud yo'li).
+  let upscaleInfo: { resolution: string; duration: number; fpsDoubled: boolean; source: { width: number; height: number; durationSec: number; fps: number } } | null = null;
+  if (model.feature === "video-upscale") {
+    const d = await deriveVideoUpscaleParams(req.user!.userId, params);
+    if (!d.ok) {
+      res.status(d.status).json({ error: d.error, code: d.code });
+      return;
+    }
+    canonicalizeUpscaleParams(params, d);
+    upscaleInfo = { resolution: d.resolution, duration: d.duration, fpsDoubled: d.fpsDoubled, source: d.meta };
+  }
   // NARX DVIGATELI (Bosqich 3.4): narx DB'dan (ModelPricing) — qator yo'q bo'lsa statik
   // gen-models.ts qiymatiga qaytadi. computeGenCost + imzo O'ZGARMAYDI (nusxaga qo'llanadi).
   const priced = await resolvePricedModel(model);
   const price = computeGenCost(priced, params); // video: cost(/s) × duration; boshqa: sobit
   const ph = genParamsHash(model.id, model.mode, params);
   const signature = signCostQuote({ modelId: model.id, mode: model.mode, price, ph });
-  res.json({ modelId: model.id, price, signature, feature: model.feature });
+  res.json({
+    modelId: model.id,
+    price,
+    signature,
+    feature: model.feature,
+    // video-upscale: klient /gen'ga AYNAN shu paramsni qaytaradi (imzo mosligi) + UI ma'lumoti
+    ...(upscaleInfo ? { pricedParams: params, upscale: upscaleInfo } : {}),
+  });
 });
 
 /** POST /gen/preflight-safety — yuborishdan oldin tezkor safety tekshiruv. */
@@ -1023,6 +1044,18 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   if (!configured) {
     res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;
+  }
+
+  // BATCH4 #2 — video-upscale: quote'dagi kabi SERVER derivatsiyasi (kesh tufayli arzon).
+  // canonicalize server qiymatlarini yozadi → tampered params ph'ni buzadi → BAD_QUOTE;
+  // xato holatlar (egalik/uzunlik/probe) KREDITDAN OLDIN aniq 4xx bilan qaytadi.
+  if (model.feature === "video-upscale") {
+    const d = await deriveVideoUpscaleParams(req.user!.userId, params);
+    if (!d.ok) {
+      res.status(d.status).json({ error: d.error, code: d.code });
+      return;
+    }
+    canonicalizeUpscaleParams(params, d);
   }
 
   // BATCH4 #4 — per-belgi narxli voice (Chirp) uchun QAT'IY matn cap — KREDITDAN OLDIN.

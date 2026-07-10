@@ -532,6 +532,58 @@ async function runFalVideo(
 }
 
 /**
+ * BATCH4 #2 — fal.ai Topaz video upscale (`fal-ai/topaz/upscale/video`). Manba = params.sourceKey
+ * (route derivatsiyasi yozgan, egalik tekshirilgan). Narx allaqachon imzolangan quote'da
+ * (perSec[tier] × billed soniya) — bu yerda faqat ish bajariladi. Webhook + poll + resume
+ * naqshi runFalVideo bilan bir xil ('fal-video' provider-job qayta ishlatiladi).
+ */
+async function runFalVideoUpscale(
+  model: GenModel,
+  params: Record<string, unknown>,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const sourceKey = typeof params.sourceKey === "string" ? params.sourceKey : "";
+  if (!sourceKey) return { ok: false, error: "Source video not found (sourceKey)" };
+  const factor = Number(params.factor) === 4 ? 4 : 2;
+  const savedHook = readProviderWebhook(params);
+  if (savedHook?.status === "ERROR") {
+    return { ok: false, error: savedHook.error || savedHook.payloadError || "fal webhook error" };
+  }
+  if (savedHook?.status === "OK") {
+    return falVideoOut(model, savedHook.payload);
+  }
+  const saved = readProviderJob(params);
+  let job: FalQueueJob;
+  if (saved?.provider === "fal-video") {
+    job = { requestId: saved.requestId, statusUrl: saved.statusUrl, responseUrl: saved.responseUrl };
+  } else {
+    // fal manbani TASHQARIDAN yuklab oladi — public/signed URL (2 soat; Topaz uzun ishlashi mumkin).
+    const videoUrl = await getPublicOrSignedUrl(sourceKey, 7200);
+    const input: Record<string, unknown> = {
+      video_url: videoUrl,
+      upscale_factor: factor,
+      model: "Proteus", // universal default (Gaia 2 v1'da ochilmagan — narx tier'i Proteus bo'yicha)
+    };
+    const sub = await falSubmitJob(model.falModel ?? model.key, input, {
+      webhookUrl: falWebhookUrl() || undefined,
+    });
+    if (!sub.ok) return { ok: false, error: sub.error };
+    job = sub.data;
+    await persistProviderJob(genId, params, {
+      provider: "fal-video",
+      requestId: job.requestId,
+      statusUrl: job.statusUrl,
+      responseUrl: job.responseUrl,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  // Topaz uzoq video/4K'da sekin — keng poll oynasi (R2V bilan teng, ~10 daq).
+  const out = await waitForFalResult(genId, job, 360);
+  if (!out.ok) return { ok: false, error: out.error };
+  return falVideoOut(model, out.data);
+}
+
+/**
  * fal.ai reference-to-video (Seedance 2.0 R2V). Ko'p-modal referens: params.imageUrls/videoUrls/audioUrls
  * (data-URI yoki URL) → R2 public URL, TARTIBDA. Referens IXTIYORIY (referenssiz ham ishlaydi).
  * Schema invariant: audio bo'lsa kamida 1 image/video; jami ≤12.
@@ -1053,10 +1105,13 @@ export async function processGeneration(genId: string): Promise<void> {
     } else if (
       model.feature === "text-to-video" ||
       model.feature === "image-to-video" ||
-      model.feature === "reference-to-video"
+      model.feature === "reference-to-video" ||
+      model.feature === "video-upscale"
     ) {
       const out =
-        model.feature === "reference-to-video"
+        model.feature === "video-upscale"
+          ? await runFalVideoUpscale(model, params, genId) // BATCH4 #2 — Topaz (manba sourceKey)
+          : model.feature === "reference-to-video"
           ? await runFalRefVideo(model, gen.prompt, params, gen.userId, genId) // R2V — ko'p-modal referens
           : model.provider === "fal"
             ? await runFalVideo(model, gen.prompt, params, gen.userId, genId)
