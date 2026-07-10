@@ -22,13 +22,18 @@ import {
  *   CLI/guard-test: `node apps/api/dist/lib/gen-models-validate.js` — exit 1.
  */
 
+// DIQQAT: bu ro'yxatlar gen-models.ts'dagi GenFeature/provider type union'larining RUNTIME
+// nusxasi — union'ga yangi qiymat qo'shilsa BU YERGA ham qo'shilishi SHART, aks holda server
+// boot'da yiqiladi (HOTFIX 2026-07-11: BATCH4 image-upscale/video-upscale/google-tts shu
+// sabab Cloud Run startup probe'ni yiqitdi). Build skripti endi validatorni tsc'dan keyin
+// ishga tushiradi — drift deploy'gacha yetmaydi.
 const MODES = new Set(["image", "voice", "video", "music", "sfx"]);
 const FEATURES = new Set([
-  "text-to-image", "image-edit", "text-to-speech", "text-to-video",
-  "image-to-video", "reference-to-video", "text-to-sfx",
+  "text-to-image", "image-edit", "image-upscale", "text-to-speech", "text-to-video",
+  "image-to-video", "reference-to-video", "video-upscale", "text-to-sfx",
 ]);
 const PROVIDERS = new Set([
-  "openrouter", "freepik", "elevenlabs", "magnific", "fal", "vertex", "vertex-omni", "vertex-image", undefined,
+  "openrouter", "freepik", "elevenlabs", "magnific", "fal", "vertex", "vertex-omni", "vertex-image", "google-tts", undefined,
 ]);
 // gen-processor dispatch'ida REAL branch bor provider+feature juftliklari (yangi provider →
 // yangi adapter branch SHART; ro'yxatga qo'shishdan oldin gen-processor.ts'ga branch yozing).
@@ -55,8 +60,8 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
 
   // mode ↔ feature mosligi
   const featureByMode: Record<string, string[]> = {
-    image: ["text-to-image", "image-edit"],
-    video: ["text-to-video", "image-to-video", "reference-to-video"],
+    image: ["text-to-image", "image-edit", "image-upscale"],
+    video: ["text-to-video", "image-to-video", "reference-to-video", "video-upscale"],
     voice: ["text-to-speech"],
     sfx: ["text-to-sfx"],
     music: ["text-to-speech"],

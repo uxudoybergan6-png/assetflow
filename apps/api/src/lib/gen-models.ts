@@ -20,6 +20,9 @@
  */
 import { genProvider } from "./ai/magnific.js";
 
+// DIQQAT: yangi feature/provider qiymati qo'shsang gen-models-validate.ts'dagi
+// FEATURES/PROVIDERS/featureByMode runtime ro'yxatlariga HAM qo'sh — aks holda
+// server boot'da yiqiladi (validator startup gate; build ham endi shuni tekshiradi).
 export type GenFeature =
   | "text-to-image"
   | "image-edit"
