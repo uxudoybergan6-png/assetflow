@@ -15414,6 +15414,13 @@
   .ff .va-axrefadd:hover{color:var(--text);border-color:rgba(255,255,255,.28)}
   .ff .va-axrefadd i{font-style:normal;font-size:14px;line-height:1}
   .ff .va-axrefadd span{font-size:8.5px;white-space:nowrap}
+  /* #5 — Artlist-uslub yagona "+" referens tugmasi + yozilgan (typed) menyu */
+  .ff .va-axrefplus{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:none;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;font-family:inherit;flex:none;display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s}
+  .ff .va-axrefplus:hover{color:var(--lime);border-color:var(--lime)}
+  .ff .va-refmenucap{font:600 9px var(--mono);letter-spacing:.6px;color:var(--muted2);padding:6px 10px 4px;text-transform:uppercase}
+  .ff .va-refmenurow{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border-radius:9px;background:none;border:none;font-family:inherit;font-size:12px;color:var(--txt2,#c8cfda);cursor:pointer;text-align:left}
+  .ff .va-refmenurow:hover{background:rgba(255,255,255,.06);color:var(--text)}
+  .ff .va-refmenurow i{font-size:14px;color:var(--muted)}
   /* P8 — referens chip yorlig'i (Start/End/@imgN/Video n) + rasm bo'lmagan chip ko'rinishi */
   .ff .va-axrefthumb .rk{position:absolute;left:3px;bottom:3px;right:auto;font-style:normal;font-size:7.5px;font-weight:700;letter-spacing:.02em;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;padding:1.5px 4px;max-width:38px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
   .ff .va-axrefhint{font-size:10.5px;color:var(--muted2)}
@@ -16485,12 +16492,23 @@
                 <div class="va-dock">
               <sc-if value="{{ showRefs }}" hint-placeholder-val="{{ true }}">
                 <div class="va-axrefs">
-                  <!-- P8 — model-driven referens paneli: yuklangan chips + model imkoniyatiga mos qo'shish tugmalari -->
+                  <!-- #5 — Artlist ilhomi: BITTA doira "+" → model imkoniyatiga mos YOZILGAN menyu;
+                       qo'shilganlar chip bo'lib yonida turadi (removeRef/addRefFile o'zgarmagan) -->
+                  <sc-if value="{{ showRefPlus }}" hint-placeholder-val="{{ true }}">
+                  <span style="position:relative;flex:none">
+                    <button class="va-axrefplus" data-pop="ref" onclick="{{ toggleChip }}" title="Add reference">＋</button>
+                    <sc-if value="{{ popRef }}" hint-placeholder-val="{{ false }}">
+                      <div class="ffa-pop" onclick="{{ stop }}" style="min-width:215px">
+                        <sc-if value="{{ refMenuHasCap }}" hint-placeholder-val="{{ false }}"><div class="va-refmenucap">{{ refMenuCap }}</div></sc-if>
+                        <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="2">
+                          <button class="va-refmenurow" data-k="{{ ra.k }}" onclick="{{ addRefKMenu }}"><i class="ph ph-{{ ra.icon }}"></i>{{ ra.menuLabel }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </span>
+                  </sc-if>
                   <sc-for list="{{ refChipsView }}" as="rc" hint-placeholder-count="0">
                     <span class="va-axrefthumb" style="{{ rc.thumbStyle }}"><i class="rk">{{ rc.label }}</i><b class="x" title="Remove reference" data-k="{{ rc.k }}" data-i="{{ rc.i }}" onclick="{{ removeRef }}">✕</b></span>
-                  </sc-for>
-                  <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="1">
-                    <button class="va-axrefadd" data-k="{{ ra.k }}" onclick="{{ addRefK }}"><i>⊞</i><span>{{ ra.label }}</span></button>
                   </sc-for>
                   <span class="{{ refHintCls }}">{{ refHint }}</span>
                 </div>
@@ -18702,7 +18720,7 @@ class Component extends DCLogic {
     const bitVal = genParams.bitrateMode || '—';
     const bitrateView = bitOpts.map(z => chip(z, z === genParams.bitrateMode));
     const cp = this.state.chipPop;
-    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration', popMode = cp === 'mode', popVoice = cp === 'voice', popBitrate = cp === 'bitrate';
+    const popModel = cp === 'model', popAspect = cp === 'aspect', popQuality = cp === 'quality', popCount = cp === 'count', popRes = cp === 'res', popDur = cp === 'duration', popMode = cp === 'mode', popVoice = cp === 'voice', popBitrate = cp === 'bitrate', popRef = cp === 'ref'; // #5 — "+" referens menyusi
     // Artlist-uslub kirish: picker kartalari olib tashlandi — toolMetaA faqat dock MODE pill uchun
     const toolMetaA = {
       'Rasm yaratish': { title: 'Image', desc: 'Text to image, quality tiers, up to 4 per run', gcls: 'va-g1', iconRef: '#i-img' },
@@ -18884,24 +18902,29 @@ class Component extends DCLogic {
     const rCaps = this.refCaps(tool.mode, model);
     const refChipsView = [];
     const refAddsView = [];
+    // #5 — add-amallar endi YOZILGAN "+" menyu qatorlari (menuLabel+icon); imkoniyat mantiqu
+    // (rCaps) va addRefFile O'ZGARMAGAN — faqat affordance dashed-tugmalardan menyuga ko'chdi.
     if (rCaps.kind === 'image') {
       this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: '@img' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
-      if (this.state.refImages.length < rCaps.max) refAddsView.push({ k: 'img', label: this.state.refImages.length ? '＋ Add (' + this.state.refImages.length + '/' + rCaps.max + ')' : '＋ Reference' });
+      if (this.state.refImages.length < rCaps.max) refAddsView.push({ k: 'img', icon: 'image', menuLabel: this.state.refImages.length ? ('Image Reference (' + this.state.refImages.length + '/' + rCaps.max + ')') : 'Image Reference' });
     } else if (rCaps.kind === 'frames') {
       if (this.state.refStartUrl) refChipsView.push({ k: 'start', i: '0', url: this.state.refStartUrl, isImg: true, label: 'Start', thumbStyle: "background-image:url('" + this.state.refStartUrl + "')" });
-      else refAddsView.push({ k: 'start', label: rCaps.startRequired ? '＋ Start frame (required)' : '＋ Start frame' });
+      else refAddsView.push({ k: 'start', icon: 'image', menuLabel: rCaps.startRequired ? 'Start frame · required' : 'Start frame' });
       if (rCaps.end) {
         if (this.state.refEndUrl) refChipsView.push({ k: 'end', i: '0', url: this.state.refEndUrl, isImg: true, label: 'End', thumbStyle: "background-image:url('" + this.state.refEndUrl + "')" });
-        else refAddsView.push({ k: 'end', label: '＋ End frame' });
+        else refAddsView.push({ k: 'end', icon: 'image', menuLabel: 'End frame' });
       }
     } else if (rCaps.kind === 'media') {
       this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: 'Img ' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
       this.state.refVideos.forEach((u, i) => refChipsView.push({ k: 'vid', i: String(i), url: u, isImg: false, label: 'Video ' + (i + 1), thumbStyle: '' }));
       this.state.refAudios.forEach((u, i) => refChipsView.push({ k: 'aud', i: String(i), url: u, isImg: false, label: 'Audio ' + (i + 1), thumbStyle: '' }));
-      if (rCaps.lim.image && this.state.refImages.length < rCaps.lim.image) refAddsView.push({ k: 'img', label: '＋ Image' });
-      if (rCaps.lim.video && this.state.refVideos.length < rCaps.lim.video) refAddsView.push({ k: 'vid', label: '＋ Video' });
-      if (rCaps.lim.audio && this.state.refAudios.length < rCaps.lim.audio) refAddsView.push({ k: 'aud', label: '＋ Audio' });
+      if (rCaps.lim.image && this.state.refImages.length < rCaps.lim.image) refAddsView.push({ k: 'img', icon: 'image', menuLabel: 'Image Reference' });
+      if (rCaps.lim.video && this.state.refVideos.length < rCaps.lim.video) refAddsView.push({ k: 'vid', icon: 'film-slate', menuLabel: 'Video Reference' });
+      if (rCaps.lim.audio && this.state.refAudios.length < rCaps.lim.audio) refAddsView.push({ k: 'aud', icon: 'waveform', menuLabel: 'Audio File' });
     }
+    // #5 — menyu sarlavhasi: frames modeli Artlist'dagidek "Start & End Frame" guruh nomi bilan
+    const refMenuCap = rCaps.kind === 'frames' ? 'Start & End Frame' : (rCaps.kind === 'media' ? 'References' : '');
+    const showRefPlus = refAddsView.length > 0;
     const refHint = this.state.refBusy ? 'Uploading…'
       : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
         : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
@@ -19511,6 +19534,9 @@ class Component extends DCLogic {
       axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && rCaps.kind !== 'none',
       // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
       refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
+      // #5 — "+" typed menyu holati
+      popRef, showRefPlus, refMenuCap, refMenuHasCap: !!refMenuCap,
+      addRefKMenu: (e) => { e.stopPropagation(); const k = e.currentTarget.dataset.k; this.setState({ chipPop: null }); this.addRefFile(k); },
       removeRef: (e) => { e.stopPropagation(); const k = e.currentTarget.dataset.k, i = +e.currentTarget.dataset.i;
         this.setState(st => {
           if (k === 'start') return { refStartUrl: null, refEndUrl: null }; // end startsiz yashamaydi
