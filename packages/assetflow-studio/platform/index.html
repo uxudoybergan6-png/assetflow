@@ -16240,14 +16240,20 @@
             </div>
           </div>
           <div class="va-fbar">
-            <span class="{{ fbAppCls }}" data-pop="app" onclick="{{ toggleFbar }}">App: {{ fApp }} <svg class="va-ic"><use href="#i-chev"></use></svg>
-              <sc-if value="{{ fbAppOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ pickFbApp }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
+            <!-- #3 — Categories multi-select (granular, pill bilan kompozitsiya) -->
+            <span class="{{ fbCatCls }}" data-pop="cats" onclick="{{ toggleFbar }}">{{ fbCatLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+              <sc-if value="{{ fbCatOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="max-height:320px;overflow-y:auto;min-width:190px"><sc-for list="{{ fGranView }}" as="x" hint-placeholder-count="14"><button data-v="{{ x.v }}" onclick="{{ pickFbCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.v }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbCats }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
+            </span>
+            <!-- #3 — Applications Supported multi-select (Ae/Pr/Mn/Dr) -->
+            <span class="{{ fbAppCls }}" data-pop="app" onclick="{{ toggleFbar }}">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+              <sc-if value="{{ fbAppOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="min-width:180px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ pickFbApp }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.label }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbApps }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
             </span>
             <span class="{{ fbPlanCls }}" data-pop="plan" onclick="{{ toggleFbar }}">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbPlanOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ pickFbPlan }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span>
             <sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for>
             <sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for>
+            <sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="va-fchip" onclick="{{ resetFilters }}" style="color:var(--muted)">Clear all ✕</span></sc-if>
             <span class="cnt">{{ resultsFmt }} results · sorted by <span style="position:relative"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
               <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span></span>
@@ -17005,7 +17011,8 @@ class Component extends DCLogic {
     lightbox: null,
     audioPlayingId: null, // QA-FIX #3 — audio row real playback holati
     detail: null,
-    fApp: 'All',
+    fApps: [], // #3 — Applications Supported multi-select (bo'sh = hammasi)
+    fCats: [], // #3 — granular Categories multi-select (bo'sh = hammasi)
     fCat: 'All',
     fPlan: 'All',
     fOrient: 'All',
@@ -17691,6 +17698,29 @@ class Component extends DCLogic {
     if (/graphic|\blogo|infographic|badge|\bicon|poster|thumbnail|social|banner/.test(hay)) return 'Graphics';
     return 'Templates';
   }
+  // #3 (S1) — pill → keng tur mapping (4 pill = 4 templateType, 1:1)
+  pillTypes = { Templates: 'video-templates', Motion: 'motion-graphics', Graphics: 'graphics', LUTs: 'luts' };
+  // #3 — item'ning keng turi: S1 `t.type` ustuvor; type'siz eski itemlar granular kategoriya
+  // mapping'i bilan, u ham bo'lmasa eski keyword-heuristika (catBucket) bilan aniqlanadi —
+  // hech narsa yo'qolmaydi ("Logo Reveal" endi Templates ostida, Motion emas).
+  typeOf(t) {
+    if (t && t.type) return t.type;
+    const l = String((t && t.c) || '').toLowerCase();
+    if (l === 'luts') return 'luts';
+    if (['infographics', 'social media', 'logos', 'mockups', 'backgrounds'].indexOf(l) >= 0) return 'graphics';
+    if (['titles', 'lower thirds', 'transitions', 'intros', 'openers', 'overlays', 'slideshows'].indexOf(l) >= 0) return 'motion-graphics';
+    if (l === 'logo reveal' || l === 'uncategorized') return 'video-templates';
+    const b = this.catBucket(t);
+    return b === 'LUTs' ? 'luts' : b === 'Motion' ? 'motion-graphics' : b === 'Graphics' ? 'graphics' : 'video-templates';
+  }
+  pillOf(t) {
+    const ty = this.typeOf(t);
+    return ty === 'luts' ? 'LUTs' : ty === 'motion-graphics' ? 'Motion' : ty === 'graphics' ? 'Graphics' : 'Templates';
+  }
+  // #3 — granular kategoriyalar (backend TEMPLATE_CATEGORIES ko'zgusi, 'Uncategorized'siz)
+  granularCats = ['Titles', 'Lower Thirds', 'Transitions', 'Intros', 'Logo Reveal', 'Openers', 'Slideshows', 'Backgrounds', 'LUTs', 'Overlays', 'Infographics', 'Social Media', 'Logos', 'Mockups'];
+  // #3 — Applications Supported (Final Cut Pro YO'Q — apps.ts bilan mos)
+  appOptions = [{ v: 'Ae', label: 'After Effects' }, { v: 'Pr', label: 'Premiere Pro' }, { v: 'Mn', label: 'Apple Motion' }, { v: 'Dr', label: 'DaVinci Resolve' }];
   _applyEntry() {
     // Hash deep-link ustuvor: boshlang'ich props kechikib kelsa ham uni qayta yozmaydi.
     if (this._hashApplied) return;
@@ -17749,6 +17779,8 @@ class Component extends DCLogic {
         // FAZA D — detail spec/stats uchun additive maydonlar (payload'da allaqachon bor)
         fileName: it.fileName || '', fileSize: it.fileSize || 0,
         desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
+        // #3 (S1) — keng tur (video-templates|motion-graphics|graphics|luts); eski javobda null
+        type: it.type || null,
         author: it.author || (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
         // FAZA C — Home shelves/badges uchun additive vaqt maydonlari
         created: Date.parse(it.createdAt) || 0, updated: Date.parse(it.updatedAt) || 0,
@@ -18859,14 +18891,23 @@ class Component extends DCLogic {
       is4k: t.qual === '4K',
       catMeta: t.c + (withDate && t.created ? ' · added ' + new Date(t.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''),
     });
-    let filtered = src.filter(t => (this.state.fApp === 'All' || t.a === this.state.fApp) && (this.state.fCat === 'All' || this.catBucket(t) === this.state.fCat) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => rcOf(t));
+    // #3 — pill endi typeOf(t) (S1 templateType) bilan filtrlaydi (keyword-guessing emas);
+    // Apps/Categories multi-select: bo'sh = toraytirish yo'q, OR ichida, AND filtrlar orasida.
+    const fAppsSel = this.state.fApps || [];
+    const fCatsSel = (this.state.fCats || []).map(c => c.toLowerCase());
+    let filtered = src.filter(t => (!fAppsSel.length || fAppsSel.indexOf(t.a) >= 0) && (this.state.fCat === 'All' || this.typeOf(t) === this.pillTypes[this.state.fCat]) && (!fCatsSel.length || fCatsSel.indexOf(String(t.c || '').toLowerCase()) >= 0) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || t.n.toLowerCase().indexOf(q) >= 0)).map(t => rcOf(t));
     if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
     else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
     else if (this.state.sortKey === 'new') filtered = filtered.slice().sort((a, b) => (b.created || 0) - (a.created || 0)); // FAZA C
     const sortOpts = [{ k: 'mos', label: 'Most relevant' }, { k: 'new', label: 'Newest' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
     const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
-    const fAppsView = ['All', 'Ae', 'Pr', 'Mn', 'Dr'].map(x => ({ v: x, on: x === this.state.fApp, cls: x === this.state.fApp ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fApp ? 'ffa-poprow on' : 'ffa-poprow' }));
+    // #3 — Applications Supported multi-select (checkbox qatorlar, Final Cut Pro yo'q)
+    const fAppsView = this.appOptions.map(o => { const on = fAppsSel.indexOf(o.v) >= 0; return { v: o.v, label: o.label, on, rowCls: on ? 'ffa-fcat on' : 'ffa-fcat', chkCls: on ? 'ffa-chk on' : 'ffa-chk' }; });
+    // #3 — granular Categories multi-select (pill bilan KOMPOZITSIYA: pill=keng tur, bu=granular)
+    const fGranView = this.granularCats.map(c => { const on = (this.state.fCats || []).indexOf(c) >= 0; return { v: c, on, rowCls: on ? 'ffa-fcat on' : 'ffa-fcat', chkCls: on ? 'ffa-chk on' : 'ffa-chk' }; });
+    const hasFbApps = fAppsSel.length > 0;
+    const hasFbCats = (this.state.fCats || []).length > 0;
     // #9/#10 — kategoriya filtri qat'iy 4 ta pill: Templates · Motion · Graphics · LUTs
     // (dinamik katalog kategoriyalari o'rniga). Har pill catBucket() orqali real katalogni filtrlaydi.
     const fCatsView = this.fixedCats.map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
@@ -18876,16 +18917,21 @@ class Component extends DCLogic {
     const fQualView = ['HD', '4K'].map(v => ({ v, cls: v === this.state.fQual ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fQual ? 'va-fchip on' : 'va-fchip' }));
     // A2 fbar dropdown chips (App / Free-Pro) + natija hisoblagichi
     const resultsFmt = filtered.length.toLocaleString();
-    const fbAppCls = 'va-fchip' + (this.state.fApp !== 'All' ? ' on' : '');
+    const fbAppCls = 'va-fchip' + (hasFbApps ? ' on' : '');
+    const fbAppLabel = hasFbApps ? ('Apps · ' + fAppsSel.length) : 'All apps';
+    const fbCatCls = 'va-fchip' + (hasFbCats ? ' on' : '');
+    const fbCatLabel = hasFbCats ? ('Categories · ' + (this.state.fCats || []).length) : 'Categories';
     const fbPlanCls = 'va-fchip' + (this.state.fPlan !== 'All' ? ' on' : '');
     const fbPlanLabel = this.state.fPlan === 'All' ? 'Free / Pro' : this.state.fPlan;
     const fbAppOpen = this.state.fbarPop === 'app';
+    const fbCatOpen = this.state.fbarPop === 'cats';
     const fbPlanOpen = this.state.fbarPop === 'plan';
     // Grid ustidagi faol filter chip'lari (mockup) — bosilsa tozalanadi
     const activeChips = [];
     if (this.state.fOrient !== 'All') activeChips.push({ k: 'orient', v: this.state.fOrient, ic: 'tag' });
     if (this.state.fQual !== 'All') activeChips.push({ k: 'qual', v: this.state.fQual, ic: 'tag' });
-    if (this.state.fApp !== 'All') activeChips.push({ k: 'app', v: this.state.fApp, ic: 'monitor' });
+    fAppsSel.forEach(a => activeChips.push({ k: 'app', v: a, ic: 'monitor' }));
+    (this.state.fCats || []).forEach(c => activeChips.push({ k: 'cat', v: c, ic: 'tag' }));
     if (this.state.fPlan !== 'All') activeChips.push({ k: 'plan', v: this.state.fPlan, ic: 'tag' });
     const hasActiveFilters = activeChips.length > 0 || this.state.fCat !== 'All';
     const filterCount = activeChips.length + (this.state.fCat !== 'All' ? 1 : 0);
@@ -19314,7 +19360,7 @@ class Component extends DCLogic {
         setTimeout(() => { if (!started) { fell = true; sh.scrollLeft = to; } }, 120);
       },
       // #9/#10 — xom kategoriya nomini qat'iy pill bucket'iga xaritalab filtrlaymiz (aks holda mos kelmaydi).
-      openShelfCat: () => { if (shelfCatName) this.setState({ fCat: this.catBucket({ c: shelfCatName }) }); this.go('templates'); },
+      openShelfCat: () => { if (shelfCatName) this.setState({ fCat: this.pillOf({ c: shelfCatName }) }); this.go('templates'); },
       openShelfNew: () => { this.setState({ sortKey: 'new' }); this.go('templates'); },
       navLinksView, planPill, heroKick, heroGreeting, userFirst, creditResetShort,
       sidebarCls, collapseIcon, toggleSidebar: () => this.setState(st => ({ sidebarCollapsed: !st.sidebarCollapsed })),
@@ -19464,15 +19510,19 @@ class Component extends DCLogic {
       pickActive: (e) => this.setState({ activeGenId: e.currentTarget.dataset.id }),
       delActive: () => { const cur = activeGenRaw && activeGenRaw.id; if (cur) this.deleteGenById(cur); },
       q: this.state.q, filtered, filtCount: filtered.length, resultsFmt,
-      fApp: this.state.fApp, fbAppCls, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
+      fbAppCls, fbAppLabel, fbCatCls, fbCatLabel, fbCatOpen, fGranView, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
       toggleFbar: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ fbarPop: st.fbarPop === p ? null : p, sortOpen: false })); },
-      pickFbApp: (e) => { e.stopPropagation(); this.setState({ fApp: e.currentTarget.dataset.v, fbarPop: null }); },
+      // #3 — multi-select toggle'lar: popover ochiq qoladi (bir nechta belgilash qulay)
+      pickFbApp: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fApps: (st.fApps || []).indexOf(v) >= 0 ? (st.fApps || []).filter(x => x !== v) : (st.fApps || []).concat([v]) })); },
+      clearFbApps: (e) => { e.stopPropagation(); this.setState({ fApps: [] }); },
+      pickFbCat: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fCats: (st.fCats || []).indexOf(v) >= 0 ? (st.fCats || []).filter(x => x !== v) : (st.fCats || []).concat([v]) })); },
+      clearFbCats: (e) => { e.stopPropagation(); this.setState({ fCats: [] }); },
       pickFbPlan: (e) => { e.stopPropagation(); this.setState({ fPlan: e.currentTarget.dataset.v, fbarPop: null }); },
       hasFiltered: filtered.length > 0, noFiltered: this.state.catalogReady && filtered.length === 0,
       catalogEmpty: this.state.catalogReady && this.state.catalog.length === 0,
       // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
       catalogLoading: !this.state.catalogReady,
-      openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: this.catBucket(d) }); this.go('templates'); },
+      openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: this.pillOf(d) }); this.go('templates'); },
       toggleFavTpl: () => {
         const d = this.state.detail; if (!d) return;
         const id = String(d.id);
@@ -19564,17 +19614,16 @@ class Component extends DCLogic {
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
       useAsRef: () => { this.setState({ lightbox: null }); this.toast('Use as reference coming soon'); },
-      onFApp: (e) => this.setState({ fApp: e.currentTarget.dataset.v }),
       onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); },
       onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); },
       onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'All' : v })); },
-      clearChip: (e) => { const k = e.currentTarget.dataset.k; const m = { orient: 'fOrient', qual: 'fQual', app: 'fApp', plan: 'fPlan' }; if (m[k]) this.setState({ [m[k]]: 'All' }); },
+      clearChip: (e) => { const k = e.currentTarget.dataset.k; if (k === 'app') { this.setState({ fApps: [] }); return; } if (k === 'cat') { this.setState({ fCats: [] }); return; } const m = { orient: 'fOrient', qual: 'fQual', plan: 'fPlan' }; if (m[k]) this.setState({ [m[k]]: 'All' }); },
       toggleFilterDrawer: () => this.setState(s => ({ filterDrawerOpen: !s.filterDrawerOpen })),
       closeFilterDrawer: () => this.setState({ filterDrawerOpen: false }),
       toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
       pickSort: (e) => this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }),
-      resetFilters: () => this.setState({ fApp: 'All', fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }),
+      resetFilters: () => this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }),
       openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} } },
       closeDetail: () => this.setState({ detail: null }),
       onAccTab: (e) => this.setState({ accountTab: e.currentTarget.dataset.v }),
