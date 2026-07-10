@@ -15191,7 +15191,9 @@
   /* PHASE B — dock evolved into the mockup composer (bottom-docked inside the workspace) */
   /* #7 — kompakt, markazlashgan suzuvchi kompozer (chetdan-chetga emas; Artlist ilhomi) */
   .ff .va-dock{position:absolute;left:0;right:0;margin-inline:auto;width:min(920px,calc(100% - 48px));bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
-  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:40px;max-height:240px;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
+  /* #1 — Artlist-uslub katta prompt paneli: default ~4-5 qator, uzun prompt 60vh gacha
+     kengayadi, undan keyin ICHKI scroll (tepasi hech qachon kesilmaydi) */
+  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:92px;max-height:60vh;overflow-y:auto;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
   .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
   .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
@@ -15501,6 +15503,8 @@
     .ff .va-axcell{margin-bottom:9px}
     .ff .va-axres{border-radius:11px}
     .ff .va-dock{position:static;margin:12px 0 0;width:auto;border-radius:18px;padding:12px;background:rgba(19,22,28,.9)}
+    /* #1 — mobil: uzun prompt to'liq o'qiladi, Generate klaviatura ustida qoladi */
+    .ff .va-dock .prompt{min-height:72px;max-height:50vh}
     .ff .va-axmenu{position:fixed;left:12px;right:12px;bottom:96px;top:auto;width:auto;z-index:96}
     /* frame F: dock = mode + model + cost + Generate; qolgan param chiplar mode-popover ichiga yig'iladi */
     .ff .va-dockrow .va-set[data-pop="aspect"],.ff .va-dockrow .va-set[data-pop="quality"],.ff .va-dockrow .va-set[data-pop="res"],.ff .va-dockrow .va-set[data-pop="duration"],.ff .va-dockrow .va-set[data-pop="count"],.ff .va-dockrow .va-set[data-pop="voice"],.ff .va-dockrow .va-set.enh{display:none}
@@ -18297,6 +18301,18 @@ class Component extends DCLogic {
     };
     this._pt = setTimeout(tick, delay);
   }
+  // #1 — ROOT CAUSE fix: prompt DASTURIY o'rnatilganda (Enhance/chip/suggestion/restore)
+  // balandlik qayta hisoblanmasdi — uzun matn min-height'da qisilib tepasi kesilardi.
+  // Har dasturiy set'dan keyin (re-render'ni kutib, mavjud setTimeout 60ms naqshida) chaqiriladi.
+  afSizePromptTa() {
+    try {
+      const el = document.querySelector('.va-dock .prompt');
+      if (!el) return;
+      const CAP = Math.round(window.innerHeight * 0.6); // CSS 60vh bilan mos
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, CAP) + 'px';
+    } catch (e) {}
+  }
   async doEnhance() {
     const prompt = (this.state.aiPrompt || '').trim();
     if (prompt.length < 2) { this.toast('Write a prompt first'); return; }
@@ -18306,7 +18322,7 @@ class Component extends DCLogic {
     this.setState({ enhBusy: true });
     try {
       const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined);
-      if (r && r.prompt) this.setState({ aiPrompt: r.prompt });
+      if (r && r.prompt) { this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60); } // #1
       this.toast('Prompt enhanced');
       if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
     } catch (e) { this.toast(this.errMsg(e)); }
@@ -18436,7 +18452,7 @@ class Component extends DCLogic {
     }
     this.setState(patch);
     this.toast(orig ? 'Loaded into composer — edit and Generate' : 'Loaded — original model unavailable, using a fallback');
-    setTimeout(() => { try { const el = document.querySelector('.va-dock .prompt'); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } } catch (e) {} }, 60);
+    setTimeout(() => { try { this.afSizePromptTa(); const el = document.querySelector('.va-dock .prompt'); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } } catch (e) {} }, 60); // #1 — restore'da ham to'liq ko'rinsin
   }
   // P8 — referens faylni yuklash: rasm/kichik fayl dataUrl (/gen/ref-upload), katta
   // video/audio presigned PUT (/gen/ref-upload-url) + {srcKey}. k: img|start|end|vid|aud
@@ -19536,7 +19552,7 @@ class Component extends DCLogic {
           .catch(() => { try { const ta = document.createElement('textarea'); ta.value = p; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); this.toast('Prompt copied'); } catch (x) { this.toast('Copy failed'); } }); },
       axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axTileRegen: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); const id = el && el.dataset.id; const g = id ? wsGens.find(x => x.id === id) : activeGenRaw; if (g) this.restoreGenToComposer(g.id); }, // P18: prefill, don't generate
-      onSuggest: (e) => { const el = e.currentTarget; this.setState(Object.assign({ aiTool: el.dataset.tool, aiPrompt: el.dataset.p, aiMediaView: null, chipPop: null }, refClearIfModeChanged(el.dataset.tool))); },
+      onSuggest: (e) => { const el = e.currentTarget; this.setState(Object.assign({ aiTool: el.dataset.tool, aiPrompt: el.dataset.p, aiMediaView: null, chipPop: null }, refClearIfModeChanged(el.dataset.tool))); setTimeout(() => this.afSizePromptTa(), 60); },
       openModelModal: (e) => { if (e) e.stopPropagation(); this.setState({ modelModalOpen: true, chipPop: null, modelQ: '', modelFilter: 'All' }); },
       closeModelModal: () => this.setState({ modelModalOpen: false }),
       onModelQ: (e) => this.setState({ modelQ: e.target.value }),
@@ -19553,7 +19569,7 @@ class Component extends DCLogic {
       activeView, hasActive: !!activeGenRaw, noActive: !activeGenRaw, filmstrip,
       promptLen: (this.state.aiPrompt || '').length,
       promptChips: ['Neon city, rain', 'Minimal product studio', 'Cinematic mountain landscape'],
-      onChip: (e) => this.setState({ aiPrompt: e.currentTarget.dataset.v }),
+      onChip: (e) => { this.setState({ aiPrompt: e.currentTarget.dataset.v }); setTimeout(() => this.afSizePromptTa(), 60); },
       costLine: model ? (tool.mode === 'video' ? (genParams.duration || '') + 's video' : (tool.mode === 'image' ? nSel + ' ' + tool.unit + (genParams.quality ? ' · ' + genParams.quality : '') : '1 ' + tool.unit)) : '—',
       enhBusy: this.state.enhBusy,
       activeAspect: activeGenRaw ? (activeGenRaw.type === 'video' ? '16/9' : (activeGenRaw.type === 'audio' ? '16/6' : '1/1')) : '1/1',
@@ -19629,7 +19645,8 @@ class Component extends DCLogic {
       onPickTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k, chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false }, refClearIfModeChanged(k))); },
       // P12 — prompt auto-grow: scrollHeight'gacha (max-height 240px CSS'da klamplaydi);
       // dock pastga o'rnatilgan — box yuqoriga qarab kengayadi (flex oqimi).
-      setPrompt: (e) => { const ta = e.target; try { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 240) + 'px'; } catch (x) {} this.setState({ aiPrompt: ta.value }); },
+      // #1 — yozish yo'li ham CSS 60vh bilan bir xil viewport-nisbiy CAP ishlatadi
+      setPrompt: (e) => { const ta = e.target; try { const CAP = Math.round(window.innerHeight * 0.6); ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, CAP) + 'px'; } catch (x) {} this.setState({ aiPrompt: ta.value }); },
       improve: () => this.doEnhance(),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
