@@ -45,45 +45,62 @@ body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.45 'Hanken
 .vmeta b{color:var(--txt2);font-weight:600}
 
 /* ══════════ FON VARIANTLARI ══════════ */
+/* REVIZIYA: birinchi tur juda xira chiqdi — barcha variantlar ~2–4× kuchaytirildi,
+   FLAT baseline va A+D kombo qo'shildi. Matn/karta o'qilishi saqlangan (AA). */
 
-/* A — Aurora glow: yumshoq radial lime + chuqur indigo, statik */
+/* FLAT — joriy holat: yalang'och #06080B (taqqoslash bazasi) */
+.bg-flat{background:var(--bg)}
+
+/* A — Aurora glow: yaqqol lime bloom tepada + to'yingan indigo/teal maydonlar, statik */
 .bg-a{background:
-  radial-gradient(1100px 520px at 50% -14%,rgba(194,240,74,.07),transparent 62%),
-  radial-gradient(950px 480px at 88% 4%,rgba(62,42,120,.22),transparent 66%),
-  radial-gradient(760px 460px at 4% 44%,rgba(14,84,96,.14),transparent 70%),
-  radial-gradient(900px 480px at 70% 108%,rgba(62,42,120,.14),transparent 70%),
+  radial-gradient(1300px 640px at 50% -16%,rgba(194,240,74,.17),transparent 64%),
+  radial-gradient(1100px 560px at 88% -4%,rgba(86,58,172,.44),transparent 68%),
+  radial-gradient(900px 540px at 0% 40%,rgba(18,116,132,.30),transparent 70%),
+  radial-gradient(1000px 560px at 72% 110%,rgba(86,58,172,.30),transparent 70%),
+  radial-gradient(640px 360px at 20% 98%,rgba(194,240,74,.10),transparent 70%),
   var(--bg)}
 
-/* B — Dot-grid + vignette: xira texnik nuqta-to'r + tepa yorug'lik + burchak vignette, statik */
-.bg-b{background:radial-gradient(1000px 420px at 50% -12%,rgba(255,255,255,.05),transparent 60%),var(--bg)}
+/* B — Dot-grid + vignette: aniq ko'rinadigan texnik to'r + kuchli vignette + lime tepa nur, statik */
+.bg-b{background:radial-gradient(1100px 480px at 50% -12%,rgba(255,255,255,.10),transparent 62%),var(--bg)}
 .bg-b::before{content:"";position:absolute;inset:0;
-  background:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1.5px) 0 0/24px 24px;
-  -webkit-mask-image:radial-gradient(130% 100% at 50% 0%,#000 0%,transparent 78%);
-          mask-image:radial-gradient(130% 100% at 50% 0%,#000 0%,transparent 78%)}
+  background:radial-gradient(circle,rgba(255,255,255,.17) 1.2px,transparent 1.9px) 0 0/26px 26px;
+  -webkit-mask-image:radial-gradient(140% 120% at 50% 0%,#000 0%,rgba(0,0,0,.3) 68%,transparent 96%);
+          mask-image:radial-gradient(140% 120% at 50% 0%,#000 0%,rgba(0,0,0,.3) 68%,transparent 96%)}
 .bg-b::after{content:"";position:absolute;inset:0;
-  background:radial-gradient(150% 130% at 50% 42%,transparent 52%,rgba(0,0,0,.5) 100%),
-             radial-gradient(680px 200px at 50% 0%,rgba(194,240,74,.04),transparent 70%)}
+  background:radial-gradient(150% 130% at 50% 40%,transparent 44%,rgba(0,0,0,.68) 100%),
+             radial-gradient(780px 250px at 50% 0%,rgba(194,240,74,.11),transparent 70%)}
 
-/* C — Mesh ambience: 2-3 katta blur blob (lime+indigo+teal), juda sekin drift */
+/* C — Mesh ambience: 3 katta YAQQOL rang maydoni (lime+indigo+teal), sekin drift */
 .bg-c{background:var(--bg)}
 .bg-c .blob{position:absolute;border-radius:50%;filter:blur(90px);will-change:transform}
-.bg-c .b1{width:52vw;height:52vw;min-width:420px;min-height:420px;top:-24vw;left:-10vw;opacity:.15;
-  background:radial-gradient(circle at 38% 38%,#C2F04A,transparent 66%);animation:bgcD1 80s ease-in-out infinite alternate}
-.bg-c .b2{width:58vw;height:58vw;min-width:460px;min-height:460px;top:-16vw;right:-20vw;opacity:.30;
-  background:radial-gradient(circle at 55% 45%,#3E2A78,transparent 66%);animation:bgcD2 95s ease-in-out infinite alternate}
-.bg-c .b3{width:48vw;height:48vw;min-width:400px;min-height:400px;bottom:-22vw;left:16vw;opacity:.22;
-  background:radial-gradient(circle at 50% 50%,#0E5A66,transparent 66%);animation:bgcD3 110s ease-in-out infinite alternate}
+.bg-c .b1{width:58vw;height:58vw;min-width:480px;min-height:480px;top:-24vw;left:-12vw;opacity:.34;
+  background:radial-gradient(circle at 38% 38%,#C2F04A,transparent 64%);animation:bgcD1 80s ease-in-out infinite alternate}
+.bg-c .b2{width:64vw;height:64vw;min-width:520px;min-height:520px;top:-16vw;right:-22vw;opacity:.55;
+  background:radial-gradient(circle at 55% 45%,#4A32A8,transparent 64%);animation:bgcD2 95s ease-in-out infinite alternate}
+.bg-c .b3{width:54vw;height:54vw;min-width:460px;min-height:460px;bottom:-22vw;left:14vw;opacity:.44;
+  background:radial-gradient(circle at 50% 50%,#10808F,transparent 64%);animation:bgcD3 110s ease-in-out infinite alternate}
 @keyframes bgcD1{to{transform:translate3d(8vw,7vh,0) scale(1.07)}}
 @keyframes bgcD2{to{transform:translate3d(-7vw,9vh,0) scale(1.05)}}
 @keyframes bgcD3{to{transform:translate3d(6vw,-6vh,0) scale(1.09)}}
 @media(prefers-reduced-motion:reduce){.bg-c .blob{animation:none!important}}
 
-/* D — Layered depth: vertikal gradient + xira plyonka doni + burchak nurlari, statik */
+/* D — Layered depth: yorug' tepa → tubsiz past vertikal gradient + ko'rinadigan mayda don + porlab turgan pastki burchaklar, statik */
 .bg-d{background:
-  radial-gradient(720px 380px at 0% 100%,rgba(194,240,74,.045),transparent 68%),
-  radial-gradient(820px 420px at 100% 100%,rgba(62,42,120,.16),transparent 68%),
-  linear-gradient(180deg,#0B0E14 0%,var(--bg) 30%,var(--bg) 68%,#090C11 100%)}
-.bg-d::before{content:"";position:absolute;inset:0;opacity:.05;mix-blend-mode:overlay;
+  radial-gradient(840px 470px at 0% 104%,rgba(194,240,74,.13),transparent 68%),
+  radial-gradient(960px 520px at 100% 104%,rgba(86,58,172,.38),transparent 68%),
+  linear-gradient(180deg,#12161F 0%,#0A0D12 26%,var(--bg) 58%,#04060A 100%)}
+.bg-d::before{content:"";position:absolute;inset:0;opacity:.11;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat}
+
+/* AD — kombo: A'ning aurora bloom'i + D'ning plyonka doni (Direktor taklifi) */
+.bg-ad{background:
+  radial-gradient(1300px 640px at 50% -16%,rgba(194,240,74,.17),transparent 64%),
+  radial-gradient(1100px 560px at 88% -4%,rgba(86,58,172,.44),transparent 68%),
+  radial-gradient(900px 540px at 0% 40%,rgba(18,116,132,.30),transparent 70%),
+  radial-gradient(1000px 560px at 72% 110%,rgba(86,58,172,.30),transparent 70%),
+  radial-gradient(640px 360px at 20% 98%,rgba(194,240,74,.10),transparent 70%),
+  var(--bg)}
+.bg-ad::before{content:"";position:absolute;inset:0;opacity:.11;mix-blend-mode:overlay;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat}
 
 /* ══════════ DEMO EKRAN (va- shell'ning soddalashtirilgan stand-in'i, fon shaffof) ══════════ */
@@ -163,9 +180,9 @@ body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.45 'Hanken
 <body>
 
 <header class="intro">
-  <h1>App background — 4 variants</h1>
-  <p>Same app screen, four subtle ambient backgrounds. Pick one (or mix). Isolate with <code style="font-family:var(--mono)">?v=A|B|C|D</code>.</p>
-  <nav class="jump"><a href="#v-a">A</a><a href="#v-b">B</a><a href="#v-c">C</a><a href="#v-d">D</a></nav>
+  <h1>App background — flat baseline + 5 variants (v2, boosted)</h1>
+  <p>Same app screen. First the CURRENT flat background, then five clearly-visible ambient options. Pick one (or mix). Isolate with <code style="font-family:var(--mono)">?v=FLAT|A|B|C|D|AD</code>.</p>
+  <nav class="jump"><a href="#v-flat">Flat</a><a href="#v-a">A</a><a href="#v-b">B</a><a href="#v-c">C</a><a href="#v-d">D</a><a href="#v-ad">A+D</a></nav>
 </header>
 
 <!-- demo ekran shabloni — har variantga JS bilan klonlanadi (DRY) -->
@@ -212,11 +229,21 @@ body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.45 'Hanken
   </div>
 </template>
 
+<!-- ══ FLAT (baseline) ══ -->
+<section class="variant" id="v-flat" data-v="FLAT">
+  <div class="bglayer bg-flat"></div>
+  <div class="vwrap">
+    <div class="vhead"><span class="tag" style="background:#2A3140;color:#C9D2DE">CURRENT</span><h2>Flat — today's app</h2><span class="desc">Solid #06080B, no ambience. This is the baseline every variant below should clearly beat.</span></div>
+    <div class="vmeta"><span><b>Perf:</b> zero</span><span><b>Animates:</b> no</span><span><b>Reduced motion:</b> n/a</span></div>
+    <div class="slot"></div>
+  </div>
+</section>
+
 <!-- ══ A ══ -->
 <section class="variant" id="v-a" data-v="A">
   <div class="bglayer bg-a"></div>
   <div class="vwrap">
-    <div class="vhead"><span class="tag">A</span><h2>Aurora glow</h2><span class="desc">Soft radial lime glow top-center + deep indigo/teal corners, fading into the base.</span></div>
+    <div class="vhead"><span class="tag">A</span><h2>Aurora glow</h2><span class="desc">Clear lime bloom top-center + saturated indigo/teal color fields, fading toward mid-screen.</span></div>
     <div class="vmeta"><span><b>Perf:</b> negligible — static CSS gradients</span><span><b>Animates:</b> no</span><span><b>Reduced motion:</b> n/a (static)</span></div>
     <div class="slot"></div>
   </div>
@@ -226,7 +253,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.45 'Hanken
 <section class="variant" id="v-b" data-v="B">
   <div class="bglayer bg-b"></div>
   <div class="vwrap">
-    <div class="vhead"><span class="tag">B</span><h2>Dot-grid + vignette</h2><span class="desc">Faint technical dot grid (fades away from the top) + soft top-light + corner vignette.</span></div>
+    <div class="vhead"><span class="tag">B</span><h2>Dot-grid + vignette</h2><span class="desc">Visible technical dot grid (fading away from the top) + strong corner vignette + lime top light — the "engineered" look.</span></div>
     <div class="vmeta"><span><b>Perf:</b> negligible — static tiled gradient + mask</span><span><b>Animates:</b> no</span><span><b>Reduced motion:</b> n/a (static)</span></div>
     <div class="slot"></div>
   </div>
@@ -236,7 +263,7 @@ body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.45 'Hanken
 <section class="variant" id="v-c" data-v="C">
   <div class="bglayer bg-c"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
   <div class="vwrap">
-    <div class="vhead"><span class="tag">C</span><h2>Mesh ambience</h2><span class="desc">Three large heavily-blurred color blobs (lime · indigo · teal) drifting very slowly.</span></div>
+    <div class="vhead"><span class="tag">C</span><h2>Mesh ambience</h2><span class="desc">Three large, clearly-visible color fields (lime · indigo · teal) drifting slowly — the most colorful option.</span></div>
     <div class="vmeta"><span><b>Perf:</b> moderate — 3 blurred layers, transform-only drift (GPU-composited)</span><span><b>Animates:</b> yes — 80–110s alternate drift</span><span><b>Reduced motion:</b> drift disabled, blobs freeze in place</span></div>
     <div class="slot"></div>
   </div>
@@ -246,7 +273,17 @@ body{margin:0;background:var(--bg);color:var(--txt);font:400 13.5px/1.45 'Hanken
 <section class="variant" id="v-d" data-v="D">
   <div class="bglayer bg-d"></div>
   <div class="vwrap">
-    <div class="vhead"><span class="tag">D</span><h2>Layered depth</h2><span class="desc">Gentle vertical gradient (bg2 → bg) + faint film grain + soft lime/indigo corner glows.</span></div>
+    <div class="vhead"><span class="tag">D</span><h2>Layered depth</h2><span class="desc">Lit top → deep-black bottom vertical falloff + visible fine film grain + glowing lime/indigo bottom corners.</span></div>
+    <div class="vmeta"><span><b>Perf:</b> low — static gradients + tiled SVG grain texture</span><span><b>Animates:</b> no</span><span><b>Reduced motion:</b> n/a (static)</span></div>
+    <div class="slot"></div>
+  </div>
+</section>
+
+<!-- ══ A+D kombo ══ -->
+<section class="variant" id="v-ad" data-v="AD">
+  <div class="bglayer bg-ad"></div>
+  <div class="vwrap">
+    <div class="vhead"><span class="tag">A+D</span><h2>Aurora glow + film grain (combo)</h2><span class="desc">A's lime/indigo aurora bloom with D's fine grain laid over it — color ambience plus texture.</span></div>
     <div class="vmeta"><span><b>Perf:</b> low — static gradients + tiled SVG grain texture</span><span><b>Animates:</b> no</span><span><b>Reduced motion:</b> n/a (static)</span></div>
     <div class="slot"></div>
   </div>
