@@ -1,73 +1,13 @@
-# ⭐ DAVOM ETISH (handoff) · 2026-07-10
+# Sessiya hisoboti — 2026-07-10 (BATCH3: 13/13 bajarildi)
 
-**HOLAT:** BATCH2 (`docs/FIX-PROMPTS-BATCH2-2026-07-09.md`) — **21/21 muammо BAJARILDI** (bu sessiyada 18 commit). P3 avval bajarilgan edi. **PUSH QILINMAGAN** — git HEAD hali P4 committida (mahalliy).
+- **#10 S1**: kind-picker (Stock+Template) + `kind/stockType/templateType` migratsiya (lokal DB'da qo'llandi) + katalogda `type` (0dad5df, df67021, 61398b3).
+- **#11 §D**: templateApp pack-kengaytmadan, rights modal (list/drawer submit), orient/res saqlanadi, auto-publish skan'dan keyin, takedown filtri, bulk-key hash, transcode stall-guard (16e6e80, 1d2bc26).
+- **#3**: pill'lar `typeOf(t)` bilan + Categories/Apps multi-select filter bar (7489dab). **#12 §B**: to'liq-yuklanish bo'sh-holat gate, ko'p-maydonli qidiruv+relevance, pill-taksonomiyali Related, 4K klassifikatsiya, publishedAt NEW, poster/preload, grid cap (b46483b).
+- **#2**: admin gen preview raqamli `kind` + Download (199067d). **#14 §C**: real obunachi-xabar (email), soft/all moderatsiya yuklash, stat-manba birlashuvi, online predikati, block-endpoint guard, re-moderatsiya, Studio plan kartasi (b688dfd, e10d833).
+- **AI Studio**: #6 tile+Full/Compact (89ff43d) · #7 markazlashgan kompozer (705ce72) · #1 prompt 60vh panel (078a4c2) · #5 "+" typed menyu (adcaf4c) · #8 My Library manba (66ea117) · #13 §A tuzatishlar (ba639d8).
+- **#9 plagin**: My Library ref manbasi ig+vg sheet'larda (2d1719f); install-cep bajarildi.
+- Money-zone TEGILMAGAN; 2 flag TEKSHIRILDI: quote-replay xavfsiz (404 consume'dan oldin), web download kvotasi link-gen'da yechiladi (o'zgartirilmadi).
 
-**KEYINGI QADAMLAR (boshqa hisobda / shu joydan davom):**
-1. `cd ~/Projects/creative-tools-saas && git push` — 18 commit.
-2. Deploy: Cloud Run + `migrate:deploy` (additive `imports_month` migratsiya) + CF Pages. Prod 1-bootda P1 `backfillUnrefundedFailures()` bir marta ishlaydi (zararlangan userga refund).
-3. Plagin JONLI test: `bash plugins/after-effects-cep/scripts/install-cep.sh` + AE'ni TO'LIQ restart. (⚠️ hozir panel eski build `ea759d9` ko'rsatyapti — qayta o'rnatilmagan; `com.assetflow.demo` o'chirildi.)
-4. Test ro'yxati: gen yiqit→refund qaytdimi · limitda CHIQMAydimi + "Upgrade to Pro" · download kvota bilan import · Copy prompt · Catalog toggle · Pro→brauzer · karta aspect · multi-select delete.
-
-**QOLGAN/DEFERRED (muammo emas, kelajak):** P13 Step 2 (web @-autocomplete) + Step 4 (atomik chip editor) — flagged. P2 headless admin E2E stack kutilmoqda. P12 — kod o'zgarmadi (jonli test: ishlaydi).
-
-**PUL-ZONA:** refundAiCredits/consumeAiCredits/quote/gen-models har joyda BYTE-FOR-BYTE; P21 atomik guard naqshi saqlangan (diff-proven, dev DB test).
-
----
-
-# Sessiya hisoboti — BATCH2 PHASE 1 (money/auth 3/3 ✅) · 2026-07-10
-
-**Vazifa:** `docs/FIX-PROMPTS-BATCH2-2026-07-09.md` — PHASE 1 (kritik money & auth). P3 avval bajarilgan (skip). PUSH QILINMAGAN.
-
-- **P1 (refund):** ildiz — real fail() atomik refund qiladi, lekin TIMEOUT yo'li genni "running" qoldirib refundni panel-ochilishga bog'liq reconcile'ga tashlaydi → panel qayta ochilmasa refund yo'q. Fix: `reconcileAllStuckGenerations()` (global, 60s fon timer) + startup `backfillUnrefundedFailures()`. Money-zone (refundAiCredits/quote/consume) BYTE-FOR-BYTE; idempotent `refunded`-claim double-refundni to'sadi. API build ✅.
-- **P21 (import limit):** ildiz — consumeImport admin limitini umrlik `importsTotal`ga tekshirardi → bir martalik lifetime-cap. Fix: additive migratsiya `importsMonth` + guard `importsMonth<limit` + oylik reset; `importsTotal` stat uchun qoladi. Atomik naqsh saqlangan. Dev DB'da 4 stsenariy ✅ (stuck user ochildi, limit bloklaydi, rollover reset, admin override). Plagin sheet: download/import ajratildi + oylik import kvota ko'rsatiladi.
-- **P20 (auto-signout):** ildiz — handleAuthFailure HAR 401/403'da token tozalardi → limit (403 LIMIT_REACHED) userni chiqarardi. Fix: kod-aware — faqat 401 / 403 ACCOUNT_BLOCKED|INACTIVE chiqaradi; request()+catalog+pack `code` uzatadi; friendlyError biznes-kodlarni hurmat qiladi. handleAuthFailure 7 case unit ✅.
-
-**Kutilmoqda:** push (foydalanuvchi) → Cloud Run deploy + `migrate:deploy` (imports_month) + CF Pages; AE'da plagin jonli test (install-cep); P1 startup backfill prod'da bir marta ishlaydi.
-
-**PHASE 2 (backend & admin) ✅:** P19 — ingest preview media FIRST-MATCH→SKORLASH (Help.mp4/(Footage) demote, "Preview Video/Image" afzal; help-only→bo'sh preview); picker unit-test ✅. P2 — `GET /admin/users/:id/generations` (read-only, cursor, hydrateGenAssets media + summary) + admin subscriber-detail "Generations" karta (status badge/refund/cost/prompt/thumb+preview). API build + JS syntax ✅; headless admin E2E stack kutilmoqda.
-
-**PHASE 3 (plugin AssetFlow_Plugin.html) ✅ (9 muammo, per-problem commit):** P16 Regenerate ikonasi viewBox ichida (Feather rotate-ccw); P10 "Publish a template" (CONTRIBUTOR) olib tashlandi (publish handlerlar dormant); P9 header "Catalog" toggle ishlaydi (afNavTab('catalog')+syncPillarSeg); P7 Copy prompt CEP execCommand + real boolean + BITTA toast; P8 Pro→Lemon Squeezy `/billing/checkout {plan:'pro'}`; P5+P6+P14 — gen kartalar HAQIQIY nisbat (card() inline aspect + `.recentgrid` de-scope + masonry), sessiya grid + adaptiv loyiha muqovasi, HISTORY strip scroll+katta+badge; P15 My Library kartalarga to'liq amal paneli (afGallery `.gacts`); P11 Sessions/Projects multi-select + bulk delete (cascade vs project-only semantika). Har biri `node --check` toza (15 blok). install-cep + AE jonli test kutilmoqda.
-
-**PHASE 4 (web platform/index.html) ✅:** P17 — AI Studio kartalar `columns:220px` (qat'iy 3 emas → keng ekranда moslashadi); P18 — Regenerate endi GENERATSIYA QILMAYDI: `restoreGenToComposer` (genGet → asl model + sozlama + referens/kadr composer'ga, buildParams teskarisi, kredit avtomatik sarflanmaydi); plagin allaqachon prefill qiladi. P13 — @mention cascade-delete + orphan (plagin `@imgN` strip+renumber+pre-gen sanitize; web defensive strip). Step 2 (web @-autocomplete) + Step 4 (atomik chip) DEFERRED (flagged). 7 web blok syntax toza.
-
-**PHASE 5 (cross-surface) — P12 ✅ DIAGNOSTIKA (kod o'zgarmadi):** headless (stub-auth) jonli test — web AI Studio mode toggle (Image↔Video↔Voice↔SFX) TO'G'RI ishlaydi (mode chip → popMode popover → onPickTool → composer qayta sozlanadi; skrinshot: Voiceover rejimi). Plaginда mode toggle YO'Q (alohida launcher tool sahifalari — ishlaydi). Xulosa: hech bir yuza buzuq emas (mode toggle oldingi partiyada tabs→chip qayta qurilганда tuzatilgan) → speculative fix qilinmadi (ishlayotgan kodni regress qilmaslik uchun).
-
----
-
-# Sessiya hisoboti — FIX-PROMPTS partiyasi (16/16 ✅) · 2026-07-09
-
-**Vazifa:** `docs/FIX-PROMPTS-2026-07-09.md` — 16 muammo, execution order bo'yicha, har biri o'z commit(lar)i bilan. PUSH QILINMAGAN — foydalanuvchi push qiladi.
-
-**Bajarildi (tartibda):**
-- **P7 storage:** sizeBytes ildiz sabab (2026-07-05'dan eski qatorlar null) → hydrate lazy self-heal + idempotent backfill lib + admin `GET/POST /api/admin/maintenance/gen-sizebytes[/backfill]` + dev skript. Dev DB'da tekshirildi.
-- **P14 admin email:** `notifyAdminNewUser` 3 yaratish nuqtasida (register/Google web/Google plugin); E2E: create→1 xabar, login→0.
-- **P13 download nomi:** backend `genDownloadName` prompt'dan (Content-Disposition); plagin `afGenDlName` + downloadUrl passthrough.
-- **P3 R2V:** plagin video Fast-only (toggle/media-sect/handler'lar o'chdi, media-refs modellar filtrlanadi).
-- **P8 per-model UX (KATTA):** `docs/GEN-MODEL-MATRIX.md` (13 model, 3 parallel audit-agent); backend klamplar (audio/maxRefs/Omni total/voice) — money-zone BYTE-FOR-BYTE; web to'liq model-driven ref tizimi (yuklash, start/end kadr, Omni/R2V media-refs, audio/bitrate/Auto, required gate); plagin YANGI Voice/SFX tool (v-audgen). Headless + dry-run payload + 8 quote stsenariysi tekshirildi.
-- **P10 add-a-model:** `gen-models-validate.ts` startup guard + `check:models` CLI; UI provider-allowlist/tool.multi hardcode'lar olib tashlandi; `docs/ADD-A-MODEL.md`.
-- **P1 Sessions+Projects (plagin):** 4 view + afProjectPicker/afNameModal + Add-to-project hamma gen ctx + katalog detali + mockup.
-- **P2 karta amallari:** Copy prompt ikkala yuzada (CEP execCommand fallback), hover-label tooltip'lar, paritet.
-- **P4 thumbnails:** rasm gen ~512px real thumb (ffmpeg, thumbKey) + eager load (web 6 / plagin 4 karta).
-- **P9 shablon download:** plagin detalda pack hajmi; ekstraksiya papkasi SHABLON NOMI bilan (`unzipDirName`).
-- **P6 bulk sessiya:** `DELETE /gen/sessions/:id` (GCS tozalash+cascade+owner 404) + web multi-select/bulk bar (jonli tekshirildi).
-- **P12 auto-grow** (240px, ikkala yuza) · **P5 pills** (sc-interp qo'sh kontur ildizi, `>` selektor) · **P17 toast** (yuqorida ixcham karta, tur-ikonka).
-- **P11 update tizimi:** PluginRelease model+migratsiya, `GET /api/plugin/version` (semver/mandatory — jonli tekshirildi), in-panel updater (checksum, cp -R, graceful fallback), admin Releases bo'limi, `docs/PLUGIN-UPDATE-CHAIN.md`.
-- **P16 integratsiya:** plagin `afRefreshAll` + ↻ HAR view'da (8 header), ikkala yuzada focus-refresh (20s throttle), in-flight dedupe.
-
-**Kutilmoqda:** push (foydalanuvchi) → Cloud Run deploy + `migrate:deploy` (plugin_release) + CF Pages; AE'da plagin jonli testi (install-cep har safar yangilangan); production'da P7 backfill endpointini bir marta chaqirish. P15 (Landing CMS) alohida sessiyada bajarildi (pastda).
-
----
-
-# Sessiya hisoboti — TO'LIQ marketing-sayt CMS · 2026-07-09
-
-**Vazifa:** FIXPROMPT SITECMSFULL — landing CMS'ni butun marketing saytga kengaytirish: landing barcha bo'limlari + pricing + plugin sahifalari, bo'lim show/hide + reorder, admin editor kengaytmasi, admin/umumiy JS cache-bust.
-
-**Qilindi (4 commit, oldingi 4 ustiga):**
-- Config: `landing-config.ts` blob kengaydi — showcase/aiPromo(kartalar+typing)/pluginPromo/pricingTeaser/faqSection/finalCta/footer + `landingSections` (tartib+ko'rinish) + pricingPage/pluginPage + plans DISPLAY nusxasi. Migratsiya KERAK EMAS (JSON blob). Zod + element-darajali merge; defaultlar = joriy kontent.
-- Platforma: barcha marketing matn/bo'limlar bindinglarda; landing main = `ffl-mainflex` (flex order → reorder, display:none → hide; min-width:0 marquee-overflow tuzatildi); pricing/plugin sahifalar + footer config'dan; plans copy markazlashgan (checkout/key/pop kodda).
-- Admin: Website tab 5 sub-tab (Hero & theme · Landing sections · Pricing · Plugin · Footer); ↑/↓ reorder + show/hide toggle; generik data-ws kollektor — tab almashsa tahrir yo'qolmaydi, Save hammasini bitta PUT'da; preview'da bo'lim-tartib lentasi.
-- Build: `prepare-cf-pages.mjs` endi BARCHA dist HTML'lardagi js/*.js (jamlangan 61 havola, /studio/js va /admin/js shakllari ham) kontent-hash `?v=` bilan chiqaradi.
-
-**Tekshirildi (headless):** defaultlar 1:1; cross-tab edit→Save→landing/pricing/plugin aks etadi; hide (pluginPromo display:none), reorder (FAQ hero'dan keyin), Reset; 401/403; app UI (auth ekrani) default theme'da qoladi (marketing cyan/Georgia bo'lganda ham); API build'da landing xatosi 0 (109 pre-existing prisma-drift xato muhitniki).
-
-**Kutilmoqda:** push (foydalanuvchi), CF Pages + Render deploy. Prod migratsiya kerak emas.
+**USER qiladi**: `git push` → API deploy (GitHub Actions) → productionda `migrate:deploy`
+(2 yangi migratsiya: stock_kind_columns, plan_config_active) → AE'ni to'liq qayta ochib
+plagin #9'ni jonli test → #3 pill'larni production katalogda tekshirish (deploy'dan keyin).
