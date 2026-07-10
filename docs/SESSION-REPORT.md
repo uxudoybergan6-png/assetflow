@@ -1,3 +1,19 @@
+# ⭐ DAVOM ETISH (handoff) · 2026-07-10
+
+**HOLAT:** BATCH2 (`docs/FIX-PROMPTS-BATCH2-2026-07-09.md`) — **21/21 muammо BAJARILDI** (bu sessiyada 18 commit). P3 avval bajarilgan edi. **PUSH QILINMAGAN** — git HEAD hali P4 committida (mahalliy).
+
+**KEYINGI QADAMLAR (boshqa hisobda / shu joydan davom):**
+1. `cd ~/Projects/creative-tools-saas && git push` — 18 commit.
+2. Deploy: Cloud Run + `migrate:deploy` (additive `imports_month` migratsiya) + CF Pages. Prod 1-bootda P1 `backfillUnrefundedFailures()` bir marta ishlaydi (zararlangan userga refund).
+3. Plagin JONLI test: `bash plugins/after-effects-cep/scripts/install-cep.sh` + AE'ni TO'LIQ restart. (⚠️ hozir panel eski build `ea759d9` ko'rsatyapti — qayta o'rnatilmagan; `com.assetflow.demo` o'chirildi.)
+4. Test ro'yxati: gen yiqit→refund qaytdimi · limitda CHIQMAydimi + "Upgrade to Pro" · download kvota bilan import · Copy prompt · Catalog toggle · Pro→brauzer · karta aspect · multi-select delete.
+
+**QOLGAN/DEFERRED (muammo emas, kelajak):** P13 Step 2 (web @-autocomplete) + Step 4 (atomik chip editor) — flagged. P2 headless admin E2E stack kutilmoqda. P12 — kod o'zgarmadi (jonli test: ishlaydi).
+
+**PUL-ZONA:** refundAiCredits/consumeAiCredits/quote/gen-models har joyda BYTE-FOR-BYTE; P21 atomik guard naqshi saqlangan (diff-proven, dev DB test).
+
+---
+
 # Sessiya hisoboti — BATCH2 PHASE 1 (money/auth 3/3 ✅) · 2026-07-10
 
 **Vazifa:** `docs/FIX-PROMPTS-BATCH2-2026-07-09.md` — PHASE 1 (kritik money & auth). P3 avval bajarilgan (skip). PUSH QILINMAGAN.
