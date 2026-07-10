@@ -285,6 +285,12 @@ model ContributorTemplate {
   icon          String               @default("✦")
   bg            String               @default("")
   templateApp   String               @default("ae")
+  // ── Stock kengayishi S1 (STOCK-EXPANSION-PLAN.md) — ADDITIVE ──
+  // kind: 'template' | 'stock'. stockType faqat kind='stock' uchun ('video'|'music'|'sfx'|'photo').
+  // templateType — 4 keng tur (web pill'lari): 'video-templates'|'motion-graphics'|'graphics'|'luts'.
+  kind          String               @default("template")
+  stockType     String?
+  templateType  String               @default("video-templates")
   metaJson      Json                 @default("{}")
   fileName      String?
   fileSize      Int?
