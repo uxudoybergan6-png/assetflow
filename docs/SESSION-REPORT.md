@@ -1,13 +1,20 @@
-# Sessiya hisoboti — 2026-07-11 (BATCH5 Prompt #2: Seedream rasm BytePlus'da)
+# Sessiya hisoboti — 2026-07-12 (BATCH5 Prompt #4: mention dialekt + video-edit presetlar)
 
 **Nima qilindi:**
-- `byteplus.ts` → `byteplusImage()` (sinxron `POST /images/generations`, url→Buffer, 429 backoff, watermark:false, usage log).
-- Katalog: 1020 Seedream 5.0 Lite (2K/4K, ref≤14, `enabled:false` — narx tasdiqlanmagan) va 1021 Seedream 5.0 Pro (1K/2K, ref≤10, `enabled:true`). Vertex rasm modellari TEGILMAGAN.
-- `gen-processor` rasm dispatch'iga byteplus branch (referens=fal public-URL yo'li, Seedream'da ixtiyoriy); validator `IMAGE_DISPATCH`+byteplusModel check; `provider-cost` 1021 = 1K $0.045 / 2K $0.09 (konsol-tasdiq); 1020 ataylab yo'q → DEFAULT_PROVIDER_USD.
+- `byteplus.ts` → sof `rewriteMentionTokens(prompt, counts)` ajratildi: `@image/@img/@video/@vid/@audio/@aud`
+  (case-insensitive, `@` chegara) → "Image/Video/Audio n". KADR OFFSET: start/end kadr bo'lsa `@img1`
+  "Image 2"/"Image 3" bo'ladi (offset = referensdan oldingi image_url yozuvlari soni, builder O'ZIDAN
+  sanaydi). `buildByteplusVideoBody` yagona chaqiruvchi.
+- Build-time test jadvali (`mentionTokenSelfTest`) — 12 case (aralash reg, yondosh tinish, ko'p raqamli,
+  mos ref yo'q, start-frame offset, video+audio birga); `gen-models-validate` CLI ishga tushiradi.
+- Video-edit preset chiplari (UI-only, ikkala composer): ≥1 VIDEO referens biriktirilganda 3 chip
+  ("Replace subject" · "Edit objects" · "Inpaint / Fix") prompt tepasida; bosilsa EN shablon kursorga.
+  Plagin `.stag`+`insertVgTok`; web `.va-editpreset`+`insertEditPreset`. Bir xil 3-shablon konstanta
+  IKKALA faylda `SD2-EDIT-PRESETS v1` marker izohi bilan (qo'lda sync).
 
-**Jonli test (real API):** Lite 2K — OK 32s (16384 token); Pro 1K — OK 115s (4056 token); natija GCS'ga yuklandi (`gen/live-test/...`). Rasm sifati tekshirildi.
+**Nima topildi:** BytePlus "Image n" first_frame/last_frame rollarini HAM sanaydi — eski rewrite offset
+qo'ymasdi. Joriy katalog aralashmaydi (3101=kadr, 3102=media-ref) → fix future-proofing, katalog TEGILMADI.
 
-**Kutilmoqda:**
-- Lite rasmiy narxi (konsol/invoice) → provider-cost qatori + yoqish.
-- Push + Cloud Run deploy; AE plagin/webda Pro'ni Vertex bilan solishtirish.
-- Kelajak: sequential/batch, interactive editing (Draw), Seedream→Seedance trusted-chain.
+**Tekshirildi:** `npm run build -w apps/api` yashil (validator 0), mention testlari o'tdi; `node --check`
+plagin+web OK; dry-run start-frame+@img1 → "Image 2" tasdiqlandi. Money-zone TEGILMADI.
+**Kutilmoqda:** push + deploy + AE test. Live sanity O'TKAZILMADI (BYTEPLUS_API_KEY lokalda yo'q, paid pack).

@@ -15492,6 +15492,10 @@
   .ff .va-axsg{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-weight:500;font-size:12px;color:#C9D2DE;cursor:pointer;white-space:nowrap;font-family:inherit}
   .ff .va-axsg:hover{background:var(--f2)}
   .ff .va-axsg i{font-style:normal;font-size:12px}
+  /* SD2 video-edit preset chips — only shown when a video reference is attached */
+  .ff .va-editpresets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .ff .va-editpreset{display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-weight:500;font-size:11px;color:#C9D2DE;cursor:pointer;white-space:nowrap;font-family:inherit;transition:border-color .15s,color .15s}
+  .ff .va-editpreset:hover{border-color:rgba(194,240,74,.5);color:var(--text)}
   /* mobile (390) — rail → horizontal recents strip, grid → 2 cols, menu → sheet card */
   .ff .va-axmstrip{display:none}
   @media(max-width:820px){
@@ -16524,6 +16528,14 @@
                   <span class="{{ refHintCls }}">{{ refHint }}</span>
                 </div>
               </sc-if>
+              <!-- Video-edit preset chips — only when ≥1 VIDEO reference attached (SD2-EDIT-PRESETS) -->
+              <sc-if value="{{ showEditPresets }}" hint-placeholder-val="{{ false }}">
+                <div class="va-editpresets">
+                  <sc-for list="{{ editPresetsView }}" as="ep" hint-placeholder-count="3">
+                    <button class="va-editpreset" data-i="{{ ep.i }}" onclick="{{ insertEditPreset }}" title="Insert an edit template into the prompt">{{ ep.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
               <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="{{ promptPh }}" class="prompt"></textarea>
               <div class="va-dockrow">
                 <span class="va-set mode" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
@@ -17054,6 +17066,12 @@
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Lime&quot;,&quot;options&quot;:[&quot;Lime&quot;,&quot;Cyan&quot;,&quot;Amber&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;animations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;entryScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Landing&quot;,&quot;options&quot;:[&quot;Landing&quot;,&quot;Dashboard&quot;,&quot;AI Studio&quot;,&quot;Marketplace&quot;,&quot;Pricing&quot;,&quot;Plugin&quot;,&quot;Account&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+/* SD2-EDIT-PRESETS v1 — sync manually with plugins/after-effects-cep/AssetFlow_Plugin.html */
+const SD2_EDIT_PRESETS = [
+  { label: 'Replace subject', tpl: 'Replace the <subject> in @video1 with the one from @img1. Keep camera movement, lighting, background, pacing and all other elements completely unchanged.' },
+  { label: 'Edit objects', tpl: 'Insert <object> from @img1 into @video1 at <where/when>. Match position, scale, perspective, lighting and shadows; keep everything else unchanged.' },
+  { label: 'Inpaint / Fix', tpl: 'Make <element> in @video1 <desired change>. Do not modify the background, lighting, camera motion, or any other element.' },
+];
 class Component extends DCLogic {
   state = {
     screen: 'landing',
@@ -18489,6 +18507,23 @@ class Component extends DCLogic {
       el.style.height = Math.min(el.scrollHeight, CAP) + 'px';
     } catch (e) {}
   }
+  // Video-edit preset chip → English shablonni prompt kursoriga qo'yadi (Enhance/chip naqshi: setState + afSizePromptTa).
+  insertEditPreset(tpl) {
+    if (!tpl) return;
+    const cur = String(this.state.aiPrompt || '');
+    const el = document.querySelector('.va-dock .prompt');
+    let next;
+    if (el && typeof el.selectionStart === 'number') {
+      const pre = cur.slice(0, el.selectionStart), post = cur.slice(el.selectionEnd);
+      const sep = (pre && !/\s$/.test(pre)) ? ' ' : '';
+      next = pre + sep + tpl + ' ' + post;
+    } else {
+      const sep = (cur && !/\s$/.test(cur)) ? ' ' : '';
+      next = cur + sep + tpl + ' ';
+    }
+    this.setState({ aiPrompt: next });
+    setTimeout(() => { this.afSizePromptTa(); try { const t = document.querySelector('.va-dock .prompt'); if (t) t.focus(); } catch (x) {} }, 60);
+  }
   async doEnhance() {
     const prompt = (this.state.aiPrompt || '').trim();
     if (prompt.length < 2) { this.toast('Write a prompt first'); return; }
@@ -19196,6 +19231,9 @@ class Component extends DCLogic {
           : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
             : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).')));
     const hasRefSet = refChipsView.length > 0;
+    // Video-edit preset chiplari — faqat ≥1 VIDEO referens biriktirilganda (media refKind).
+    const showEditPresets = rCaps.kind === 'media' && this.state.refVideos.length > 0;
+    const editPresetsView = showEditPresets ? SD2_EDIT_PRESETS.map((p, i) => ({ i: String(i), label: p.label })) : [];
     // Use ▾ menyu qobiliyati: manba faqat RASM natija + katalogda mos model bo'lishi shart
     const axSrcIsImage = !!activeGenRaw && activeGenRaw.type === 'image';
     const axHasEditModel = (this.state.genModels.image || []).some(m => this.refModelOk('image', m));
@@ -19816,6 +19854,8 @@ class Component extends DCLogic {
       axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && rCaps.kind !== 'none',
       // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
       refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
+      showEditPresets, editPresetsView,
+      insertEditPreset: (e) => { const i = +e.currentTarget.dataset.i; const p = SD2_EDIT_PRESETS[i]; if (p) this.insertEditPreset(p.tpl); },
       // #5 — "+" typed menyu holati
       popRef, showRefPlus, refMenuCap, refMenuHasCap: !!refMenuCap,
       toggleRefMenu: (e) => { e.stopPropagation(); this.setState(st => ({ chipPop: st.chipPop === 'ref' ? null : 'ref', refSrcK: null, modelOpen: false })); },

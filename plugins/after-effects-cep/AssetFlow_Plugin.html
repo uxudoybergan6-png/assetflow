@@ -4244,6 +4244,8 @@ html.home-mode #homePage{display:block!important}
                                 <div class="lbl">Prompt <span class="req">*</span></div>
                                 <div class="pbox">
                                   <div class="lowcred" id="vgLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="vgLowNeed"></div></div></div>
+                                  <!-- Video-edit tayyor shablon chiplari — faqat ≥1 VIDEO referens biriktirilganda ko'rinadi (renderVgEditPresets) -->
+                                  <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                                   <div class="mention" id="vgMention"></div>
                                   <textarea id="vgPrompt" placeholder="Animate the frame: raindrops, neon reflection, slow dolly-in…"></textarea>
                                   <!-- FIX: prompt ichidagi takror ＋Referens olib tashlandi — referens qo'shish faqat tepadagi kanonik hudud (kadr box / +Rasm / +Video) orqali -->
@@ -12284,6 +12286,26 @@ window.afGallery=(function(){
     seg.title=locked?'Video reference attached — the model sets the aspect ratio itself':'';
     seg.setAttribute('data-arlock',locked?'1':'0');
   }
+  /* SD2-EDIT-PRESETS v1 — sync manually with packages/assetflow-studio/platform/index.html */
+  var VG_EDIT_PRESETS=[
+    {label:'Replace subject',tpl:'Replace the <subject> in @video1 with the one from @img1. Keep camera movement, lighting, background, pacing and all other elements completely unchanged.'},
+    {label:'Edit objects',tpl:'Insert <object> from @img1 into @video1 at <where/when>. Match position, scale, perspective, lighting and shadows; keep everything else unchanged.'},
+    {label:'Inpaint / Fix',tpl:'Make <element> in @video1 <desired change>. Do not modify the background, lighting, camera motion, or any other element.'}
+  ];
+  // ≥1 VIDEO referens biriktirilganda video-edit shablon chiplarini ko'rsatadi; bosilsa kursorga andoza qo'yadi.
+  function renderVgEditPresets(){
+    var bar=$('vgEditPresets'); if(!bar)return;
+    if(!hasVideoRefs()){ bar.style.display='none'; bar.innerHTML=''; return; }
+    if(!bar.childNodes.length){
+      VG_EDIT_PRESETS.forEach(function(p){
+        var b=document.createElement('button'); b.type='button'; b.className='stag'; b.textContent=p.label;
+        b.title='Insert an edit template into the prompt';
+        b.addEventListener('click',function(){ insertVgTok(p.tpl); });
+        bar.appendChild(b);
+      });
+    }
+    bar.style.display='flex';
+  }
   function renderMediaRefs(){
     var g=$('vgRefGrid'); if(!g)return; g.innerHTML='';
     mref.forEach(function(r,i){
@@ -12310,6 +12332,7 @@ window.afGallery=(function(){
       d.title='Add '+tag+' to prompt'; d.addEventListener('click',function(){ insertVgTok(tag); });
       g.appendChild(d);
     });
+    renderVgEditPresets(); // referens o'zgargach edit-preset chiplarini yangilash
   }
   function renderVgSavedRefs(){
     var wrap=$('vgSavedWrap'), grid=$('vgSavedGrid'), meta=$('vgSavedMeta');

@@ -6,7 +6,7 @@ import {
   computeGenCost,
   resolveImageCount,
 } from "./gen-models.js";
-import { buildByteplusVideoBody } from "./ai/byteplus.js";
+import { buildByteplusVideoBody, mentionTokenSelfTest } from "./ai/byteplus.js";
 
 /**
  * PROBLEM 10 — GEN_MODELS katalog validatori.
@@ -223,10 +223,19 @@ const isCli = process.argv[1] && /gen-models-validate\.(js|ts)$/.test(process.ar
 if (isCli) {
   const issues = validateGenModels();
   const enabled = GEN_MODELS.filter((m) => m.enabled !== false).length;
-  if (issues.length) {
-    console.error(`✗ GEN_MODELS: ${issues.length} muammo topildi:`);
-    for (const i of issues) console.error(`  • model ${i.modelId} — ${i.field}: ${i.message}`);
+  // BytePlus mention-dialekt (@img→"Image n" + kadr-offset) build-time testi.
+  const mentionFails = mentionTokenSelfTest();
+  if (issues.length || mentionFails.length) {
+    if (issues.length) {
+      console.error(`✗ GEN_MODELS: ${issues.length} muammo topildi:`);
+      for (const i of issues) console.error(`  • model ${i.modelId} — ${i.field}: ${i.message}`);
+    }
+    if (mentionFails.length) {
+      console.error(`✗ BytePlus mention-dialekt: ${mentionFails.length} test yiqildi:`);
+      for (const f of mentionFails) console.error(`  • ${f}`);
+    }
     process.exit(1);
   }
   console.log(`✓ GEN_MODELS OK — ${GEN_MODELS.length} entry (${enabled} yoqilgan), 0 muammo.`);
+  console.log(`✓ BytePlus mention-dialekt OK — mention token testlari o'tdi.`);
 }

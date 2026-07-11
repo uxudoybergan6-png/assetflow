@@ -104,6 +104,59 @@ export type ByteplusPollStepResult =
   | { state: "completed"; data: { videoUrl: string; usage?: ByteplusUsage } };
 
 /**
+ * @-mention referens tokenlarini BytePlus "Image n"/"Video n"/"Audio n" dialektiga aylantiradi.
+ *
+ * BytePlus qoidasi: "n" — content massividagi O'SHA TUR asseti orasidagi 1-based tartib raqami,
+ * `first_frame`/`last_frame` rollarini HAM sanaydi. Bizning `@img1` esa "birinchi REFERENS rasm"
+ * degani — shu bois start/end kadr bo'lsa `@img1` "Image 2" (yoki 3) bo'lishi kerak. Offset =
+ * referens rasmlardan OLDIN content'ga qo'yiladigan image_url yozuvlari soni (0/1/2).
+ *
+ * Sof funksiya (I/O yo'q) — build-time dry-run bilan test qilinadi. Foydalanuvchilar `@vid2`/`@aud1`
+ * qisqa shakllarini ham yozadi → ularni ham qabul qilamiz (case-insensitive, `@` chap chegara).
+ * Mos referens bo'lmagan token (masalan `@img9`) zararsiz raqam bilan qoladi — crash YO'Q.
+ */
+export type MentionCounts = { imageOffset: number; videoOffset: number; audioOffset: number };
+export function rewriteMentionTokens(prompt: string, counts: MentionCounts): string {
+  const io = Math.max(0, Math.trunc(counts.imageOffset || 0));
+  const vo = Math.max(0, Math.trunc(counts.videoOffset || 0));
+  const ao = Math.max(0, Math.trunc(counts.audioOffset || 0));
+  return String(prompt)
+    .replace(/@(?:image|img)(\d+)/gi, (_m, n: string) => `Image ${Number(n) + io}`)
+    .replace(/@(?:video|vid)(\d+)/gi, (_m, n: string) => `Video ${Number(n) + vo}`)
+    .replace(/@(?:audio|aud)(\d+)/gi, (_m, n: string) => `Audio ${Number(n) + ao}`);
+}
+
+/**
+ * Mention-dialekt build-time dry-run testi — gen-models-validate CLI'dan chaqiriladi.
+ * Xato topilsa satrlar ro'yxatini qaytaradi (bo'sh = OK). Har case: [prompt, counts, kutilgan].
+ */
+export function mentionTokenSelfTest(): string[] {
+  const Z: MentionCounts = { imageOffset: 0, videoOffset: 0, audioOffset: 0 };
+  const F1: MentionCounts = { imageOffset: 1, videoOffset: 0, audioOffset: 0 }; // start-frame bor
+  const F2: MentionCounts = { imageOffset: 2, videoOffset: 0, audioOffset: 0 }; // start+end frame
+  const cases: Array<[string, MentionCounts, string]> = [
+    ["Use @img1 here", Z, "Use Image 1 here"], // oddiy
+    ["@IMG1 and @Image2", Z, "Image 1 and Image 2"], // aralash reg (case-insensitive)
+    ["look at @img1,", Z, "look at Image 1,"], // yondosh tinish belgisi
+    ["ref @img12 now", Z, "ref Image 12 now"], // ko'p raqamli
+    ["@img9 missing", Z, "Image 9 missing"], // mos ref yo'q → zararsiz qoladi
+    ["@img1 with start", F1, "Image 2 with start"], // start-frame offset
+    ["@img1 and @img2", F2, "Image 3 and Image 4"], // start+end frame offset (2)
+    ["@vid2 and @aud1", Z, "Video 2 and Audio 1"], // video+audio qisqa shakl birga
+    ["@video1 + @audio1", Z, "Video 1 + Audio 1"], // to'liq shakl
+    ["@vid1 unshifted", F2, "Video 1 unshifted"], // video offset yo'q (kadr-rol video yo'q)
+    ["no tokens at all", Z, "no tokens at all"], // token yo'q → o'zgarmaydi
+    ["email me@x.com", Z, "email me@x.com"], // @word raqamsiz → tegilmaydi
+  ];
+  const fails: string[] = [];
+  for (const [inp, counts, want] of cases) {
+    const got = rewriteMentionTokens(inp, counts);
+    if (got !== want) fails.push(`rewriteMentionTokens("${inp}") = "${got}" (kutilgan "${want}")`);
+  }
+  return fails;
+}
+
+/**
  * ModelArk task body'sini MODEL DEKLARATSIYASIDAN quradi (buildFalVideoInput ekvivalenti).
  * content massivi: text + first/last_frame (qat'iy i2v) + reference_image/video/audio (erkin referens).
  * bizning "auto" nisbat → "adaptive"; duration 4–15 int; watermark HAR DOIM false (demo default true!).
@@ -115,21 +168,21 @@ export function buildByteplusVideoBody(
   resolved: ResolvedVideoParams,
   refs: VideoRefUrls
 ): Record<string, unknown> {
-  // Bizning @Image1/@Video1/@Audio1 UX tokenlari → BytePlus "Image 1" (content'dagi TUR bo'yicha tartib raqami).
-  const text = String(prompt)
-    .replace(/@image(\d+)/gi, "Image $1")
-    .replace(/@img(\d+)/gi, "Image $1")
-    .replace(/@video(\d+)/gi, "Video $1")
-    .replace(/@audio(\d+)/gi, "Audio $1");
-  const content: Record<string, unknown>[] = [{ type: "text", text }];
-  if (refs.startUrl) {
-    content.push({ type: "image_url", image_url: { url: refs.startUrl }, role: "first_frame" });
-  }
-  if (model.endFrame && refs.endUrl) {
-    content.push({ type: "image_url", image_url: { url: refs.endUrl }, role: "last_frame" });
-  }
   const arr = (a?: string[]) =>
     Array.isArray(a) ? a.filter((u) => typeof u === "string" && u.length > 0) : [];
+  // Kadr-rolli rasmlar referens rasmlardan OLDIN chiqadi → @imgN raqamini surib qo'yadi.
+  const frameImages: Record<string, unknown>[] = [];
+  if (refs.startUrl) {
+    frameImages.push({ type: "image_url", image_url: { url: refs.startUrl }, role: "first_frame" });
+  }
+  if (model.endFrame && refs.endUrl) {
+    frameImages.push({ type: "image_url", image_url: { url: refs.endUrl }, role: "last_frame" });
+  }
+  // Offsetlarni builder'ning O'ZIDAN sanaymiz (taxmin qilmaymiz): bugun faqat rasmda kadr-rol bor,
+  // video/audio uchun referensdan oldin hech narsa yo'q → 0. Kelajakda kadr-rol qo'shilsa shu yerga.
+  const counts: MentionCounts = { imageOffset: frameImages.length, videoOffset: 0, audioOffset: 0 };
+  const text = rewriteMentionTokens(String(prompt), counts);
+  const content: Record<string, unknown>[] = [{ type: "text", text }, ...frameImages];
   for (const u of arr(refs.imageUrls)) {
     content.push({ type: "image_url", image_url: { url: u }, role: "reference_image" });
   }
