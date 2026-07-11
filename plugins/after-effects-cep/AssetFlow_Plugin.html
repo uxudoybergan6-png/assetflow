@@ -11900,7 +11900,7 @@ window.afGallery=(function(){
     if(kind==='frames'){
       // KADR MAJBURIY: videoInput.imageRequired deklaratsiyasi; bo'lmasa feature fallback (Seedance i2v).
       var req=(m.videoInput&&typeof m.videoInput.imageRequired==='boolean')?m.videoInput.imageRequired:(m.feature==='image-to-video');
-      return {kind:'frames',end:!!m.endFrame,startRequired:req,limits:{image:0,video:0,audio:0,total:0}};
+      return {kind:'frames',frames:true,end:!!m.endFrame,startRequired:req,limits:{image:0,video:0,audio:0,total:0}};
     }
     if(kind==='media-refs'||kind==='imagevideo'||kind==='image'||kind==='video'){
       var mr=m.mediaRefs||(kind==='media-refs'?{image:9,video:3,audio:3,total:12}:null);
@@ -11909,9 +11909,11 @@ window.afGallery=(function(){
       var vid=(kind==='image')?0:(mr?(mr.video||0):mx);
       var aud=(kind==='media-refs')?(mr?(mr.audio||0):0):0;
       var tot=Math.min(mr?(mr.total||(img+vid+aud)):(mx||(img+vid+aud)),img+vid+aud);
-      if(tot>0)return {kind:'media-refs',end:false,startRequired:false,limits:{image:img,video:vid,audio:aud,total:tot}};
+      // BATCH5 #5 — Seedance 2.0 (BytePlus): media-refs model kadr HAM qo'llashi mumkin (flag'lardan)
+      var fr=((m.inputs||[]).indexOf('start-end-frame')>=0)||!!m.endFrame;
+      if(tot>0)return {kind:'media-refs',frames:fr,end:fr&&!!m.endFrame,startRequired:false,limits:{image:img,video:vid,audio:aud,total:tot}};
     }
-    return {kind:'none',end:false,startRequired:false,limits:{image:0,video:0,audio:0,total:0}};
+    return {kind:'none',frames:false,end:false,startRequired:false,limits:{image:0,video:0,audio:0,total:0}};
   }
   // ── model sozlamalarini qo'llash (videoSettings deskriptoridan; joriy tanlov mos kelmasa def'ga klamp) ──
   function applyModelSettings(m){
@@ -11919,6 +11921,7 @@ window.afGallery=(function(){
     // FIX3: refKind/limitlar imkoniyat xaritasidan (B4 'none' default saqlangan — kadr talab qilib bloklamaydi).
     var caps=vgCapsFor(m);
     vm.refKind=caps.kind;
+    vm.framesOk=!!caps.frames; // BATCH5 #5: kadr slotlari refKind'dan mustaqil flag
     vm.endFrameOk=caps.end;
     vm.startRequired=caps.startRequired;
     vm.mediaRefs=caps.limits;
@@ -12033,8 +12036,8 @@ window.afGallery=(function(){
     var caps=vgCapsFor(m);
     var pr=vgPruneMrefFor(caps);
     var willDiscard=pr.removedToks.length>0||(mref.length>pr.kept.length)
-      ||(caps.kind!=='frames'&&!!(st.start||st.end))
-      ||(caps.kind==='frames'&&!caps.end&&!!st.end);
+      ||(!caps.frames&&!!(st.start||st.end))
+      ||(caps.frames&&!caps.end&&!!st.end);
     if(willDiscard){
       // Plagin ichki modal (OS "JavaScript Confirm" EMAS) — tasdiqdan keyin davom.
       window.afConfirm('Switching to "'+String(m.label||'Model')+'" will remove attached references that are not compatible. Continue?',{ok:'Continue',danger:true}).then(function(ok){
@@ -12052,7 +12055,9 @@ window.afGallery=(function(){
       mref=pr.kept;
       if(pr.removedToks.length)stripPromptTokens(pr.removedToks);
       syncMediaRefTokens(); hideVgMention(); renderMediaRefs(); updRefMeta();
-      clearFrameState();
+      // BATCH5 #5: kadr qo'llaydigan media model kadrlarni SAQLAYDI (Seedance 2.0)
+      if(caps.frames){ if(!caps.end)st.end=null; renderFrameBoxes(); }
+      else clearFrameState();
     } else {
       if(mref.length){
         var toks=mref.map(function(r){ return r&&r.token; }).filter(Boolean);
@@ -12090,13 +12095,14 @@ window.afGallery=(function(){
     // FIX3: referens hudud TO'LIQ model imkoniyatidan: frames=Kadrlar ↔ media-refs=ko'p-modal ↔ none=hech biri
     var isMedia=vm.refKind==='media-refs';
     var isNone=vm.refKind==='none';
-    var fs=$('vgFrameSect'); if(fs)fs.style.display=(isMedia||isNone)?'none':'';
+    // BATCH5 #5: kadr bo'limi framesOk flag'idan (media-refs model ham kadr qo'llashi mumkin)
+    var fs=$('vgFrameSect'); if(fs)fs.style.display=(isNone||(isMedia&&!vm.framesOk))?'none':'';
     var ms=$('vgMediaSect'); if(ms)ms.style.display=isMedia?'':'none';
     // Yakuniy kadr qutisi — FAQAT model endFrame qo'llasa (Veo: bor; StartOnly modellar: yo'q)
-    var eb=$('vgEndBox'); if(eb&&eb.parentNode)eb.parentNode.style.display=(vm.refKind==='frames'&&vm.endFrameOk)?'':'none';
+    var eb=$('vgEndBox'); if(eb&&eb.parentNode)eb.parentNode.style.display=(vm.framesOk&&vm.endFrameOk)?'':'none';
     // Lightbox/So'nggi "Referens kadr" menyusida Yakuniy varianti ham endFrame'ga bog'liq
     var reOpt=$('vgRefEnd'); if(reOpt)reOpt.style.display=vm.endFrameOk?'':'none';
-    var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.refKind==='frames')?'inline-flex':'none';
+    var kt=$('vgKadrTag'); if(kt)kt.style.display=vm.framesOk?'inline-flex':'none';
     // PROBLEM 3: Fast|R2V toggle va media-referens (+Image/+Video/+Audio) UI olib tashlandi —
     // plagin video Fast-only (media-refs modellar ensureVgMeta filtridan o'tmaydi).
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
@@ -13093,8 +13099,14 @@ window.afGallery=(function(){
       var pick=function(t){ return mref.filter(function(r){return r.type===t&&r.url;}).map(function(r){return r.url;}); };
       var savedIds=mref.map(function(r){ return r&&r.savedRefId; }).filter(function(id){ return !!id; });
       var auds=pick('audio'), imgs=pick('image'), vids=pick('video');
-      if(auds.length&&imgs.length+vids.length===0){ toast('Audio needs at least 1 image or video reference','warning'); return; }
+      if(auds.length&&imgs.length+vids.length===0&&!(vm.framesOk&&st.start&&st.start.url)){ toast('Audio needs at least 1 image or video reference','warning'); return; }
       params={imageUrls:imgs,videoUrls:vids,audioUrls:auds,savedReferenceIds:savedIds,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      // BATCH5 #5: kadr qo'llaydigan media model (Seedance 2.0) — start/end kadr referenslar BILAN birga
+      if(vm.framesOk){
+        if((st.start&&st.start.loading)||(st.end&&st.end.loading)){ toast('Frame is uploading — please wait','info'); return; }
+        if(vm.endFrameOk&&st.end&&st.end.url&&!(st.start&&st.start.url)){ toast("End frame only works together with a start frame — add a start frame too",'warning'); return; }
+        if(st.start&&st.start.url){ params.referenceUrl=st.start.url; if(vm.endFrameOk&&st.end&&st.end.url)params.referenceEndUrl=st.end.url; }
+      }
     } else if(vm.refKind==='none'){
       if(prompt.length<2){ toast('Write a prompt','warning'); return; }
       params={resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};

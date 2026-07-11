@@ -180,6 +180,15 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
       if (m.provider === "byteplus") {
         const body = buildByteplusVideoBody(m, "validator", rv, { startUrl: "https://x/i.png", imageUrls: ["https://x/i.png"] });
         if (!Array.isArray(body.content) || !body.content.length) issue(out, m, "videoInput", "buildByteplusVideoBody content qaytarmadi");
+        // BATCH5 #5 — aralash rejim (kadr + media-refs bitta modelda): start-kadr @imgN raqamini
+        // surishi shart — start + 1 rasm-referens bilan "@img1" → "Image 2" bo'lmasa offset buzilgan.
+        if (m.endFrame && m.refKind === "media-refs") {
+          const mixed = buildByteplusVideoBody(m, "use @img1", rv, { startUrl: "https://x/s.png", imageUrls: ["https://x/i.png"] });
+          const first = Array.isArray(mixed.content) ? (mixed.content[0] as { text?: string }) : null;
+          if (first?.text !== "use Image 2") {
+            issue(out, m, "videoInput", `aralash kadr+referens mention-offset xato: "${first?.text}" (kutilgan "use Image 2")`);
+          }
+        }
       }
       const c = computeGenCost(m, params);
       if (!(c > 0)) issue(out, m, "cost", `computeGenCost ${c} qaytardi (musbat kutiladi)`);

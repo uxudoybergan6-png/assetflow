@@ -1125,6 +1125,9 @@ export const GEN_MODELS: GenModel[] = [
     cost: 15,
     referenceMode: "video-ref",
     refMode: "optional", // referenssiz ham ishlaydi (faqat prompt)
+    // BATCH5 #5: BytePlus'da BITTA model ham qat'iy kadr (first/last_frame) ham erkin referens
+    // qo'llaydi (fal'da alohida endpointlar edi) — refKind media-refs QOLADI, kadr faqat flag.
+    endFrame: true,
     refKind: "media-refs",
     mediaRefs: { image: 9, video: 3, audio: 3, total: 12 },
     mediaRefMaxBytes: { image: 30 * 1024 * 1024, audio: 15 * 1024 * 1024 },
@@ -1135,7 +1138,7 @@ export const GEN_MODELS: GenModel[] = [
       audio: ["mp3", "wav"],
     },
     videoInputPerSecMultiplier: 0.6,
-    inputs: ["image-ref", "video-ref", "audio-file"],
+    inputs: ["start-end-frame", "image-ref", "video-ref", "audio-file"],
     aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
     resolutions: ["480p", "720p", "1080p", "4k"],
     durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],

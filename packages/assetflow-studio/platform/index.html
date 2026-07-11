@@ -18331,6 +18331,12 @@ class Component extends DCLogic {
         // END_FRAME_REQUIRES_START: end faqat start bilan
         if (vcaps.end && st.refStartUrl && st.refEndUrl) p.referenceEndUrl = st.refEndUrl;
       } else if (vcaps.kind === 'media') {
+        // BATCH5 #5 — media model kadr ham qo'llasa: start/end kadr media-refs BILAN birga ketadi
+        // (END_FRAME_REQUIRES_START: end faqat start bilan — server 400 bermasin)
+        if (vcaps.frames && st.refStartUrl) {
+          p.referenceUrl = st.refStartUrl;
+          if (vcaps.end && st.refEndUrl) p.referenceEndUrl = st.refEndUrl;
+        }
         const L = vcaps.lim;
         if (st.refImages.length && L.image) p.imageUrls = st.refImages.slice(0, L.image);
         if (st.refVideos.length && L.video) p.videoUrls = st.refVideos.slice(0, L.video);
@@ -18582,7 +18588,9 @@ class Component extends DCLogic {
       }
       if (m.refKind === 'media-refs') {
         const lim = m.mediaRefs || { image: 9, video: 3, audio: 3, total: 12 };
-        return { kind: 'media', lim };
+        // BATCH5 #5 — Seedance 2.0 (BytePlus): media-refs BILAN birga start/end kadr ham (flag'lardan)
+        const frames = (m.inputs || []).indexOf('start-end-frame') >= 0 || !!m.endFrame;
+        return { kind: 'media', lim, frames, end: frames && !!m.endFrame };
       }
     }
     return { kind: 'none' };
@@ -19197,6 +19205,15 @@ class Component extends DCLogic {
         else refAddsView.push({ k: 'end', icon: 'image', menuLabel: 'End frame' });
       }
     } else if (rCaps.kind === 'media') {
+      // BATCH5 #5 — kadr qo'llaydigan media model (Seedance 2.0): start/end slotlari referenslardan OLDIN
+      if (rCaps.frames) {
+        if (this.state.refStartUrl) refChipsView.push({ k: 'start', i: '0', url: this.state.refStartUrl, isImg: true, label: 'Start', thumbStyle: "background-image:url('" + this.state.refStartUrl + "')" });
+        else refAddsView.push({ k: 'start', icon: 'image', menuLabel: 'Start frame' });
+        if (rCaps.end) {
+          if (this.state.refEndUrl) refChipsView.push({ k: 'end', i: '0', url: this.state.refEndUrl, isImg: true, label: 'End', thumbStyle: "background-image:url('" + this.state.refEndUrl + "')" });
+          else refAddsView.push({ k: 'end', icon: 'image', menuLabel: 'End frame' });
+        }
+      }
       this.state.refImages.forEach((u, i) => refChipsView.push({ k: 'img', i: String(i), url: u, isImg: true, label: 'Img ' + (i + 1), thumbStyle: "background-image:url('" + u + "')" }));
       this.state.refVideos.forEach((u, i) => refChipsView.push({ k: 'vid', i: String(i), url: u, isImg: false, label: 'Video ' + (i + 1), thumbStyle: '' }));
       this.state.refAudios.forEach((u, i) => refChipsView.push({ k: 'aud', i: String(i), url: u, isImg: false, label: 'Audio ' + (i + 1), thumbStyle: '' }));
@@ -19228,7 +19245,7 @@ class Component extends DCLogic {
     const refHint = this.state.refBusy ? 'Uploading…'
       : (axIsUpscaleTool ? ('Required — pick the ' + (axIsVUp ? 'video' : 'image or video') + ' to upscale (upload, My Library, or “Use ▾ → Upscale” on a result).')
         : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
-          : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.')
+          : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.' + (rCaps.frames ? (' Optional start' + (rCaps.end ? '/end' : '') + ' frame pins the exact first' + (rCaps.end ? ' and last' : '') + ' image.') : ''))
             : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).')));
     const hasRefSet = refChipsView.length > 0;
     // Video-edit preset chiplari — faqat ≥1 VIDEO referens biriktirilganda (media refKind).
@@ -20028,7 +20045,10 @@ class Component extends DCLogic {
             else if (catMode === 'video') {
               if (nc.kind === 'frames') { upd.refImages = []; upd.refVideos = []; upd.refAudios = [];
                 if (!nc.end) upd.refEndUrl = null; }
-              else if (nc.kind === 'media') { upd.refStartUrl = null; upd.refEndUrl = null;
+              else if (nc.kind === 'media') {
+                // BATCH5 #5 — kadr qo'llaydigan media model (Seedance 2.0): start/end kadr SAQLANADI
+                upd.refStartUrl = nc.frames ? st.refStartUrl : null;
+                upd.refEndUrl = (nc.frames && nc.end) ? st.refEndUrl : null;
                 upd.refImages = st.refImages.slice(0, nc.lim.image || 0);
                 upd.refVideos = st.refVideos.slice(0, nc.lim.video || 0);
                 upd.refAudios = st.refAudios.slice(0, nc.lim.audio || 0); }
