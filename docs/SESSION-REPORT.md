@@ -1,12 +1,19 @@
-# Sessiya hisoboti — 2026-07-11 (BATCH5 Prompt #5: Seedance 2.0 start/end kadr)
+# Sessiya hisoboti — 2026-07-12 (BATCH5 #7 nisbat + #6 mention pill)
 
-**Nima qilindi:** 3102 endi start/end kadr qo'llaydi — media-refs BILAN birga (bitta BytePlus model).
-- `gen-models.ts` 3102: `endFrame:true` + `inputs`ga `"start-end-frame"` (refKind media-refs QOLDI; cost/perSec/durations TEGILMADI).
-- Validator: byteplus dry-run'ga aralash case (start-kadr + 1 rasm-ref + `@img1` → "Image 2") qo'shildi.
-- Web (`platform/index.html`): `refCaps` media modeliga `frames/end` flag; start/end chip/add slotlari media branch'da (referenslardan oldin); `buildParams` kadrni media-refs bilan yuboradi (end faqat start bilan); model-switch prune kadrni saqlaydi; hint yangilandi.
-- Plagin (`AssetFlow_Plugin.html`): `vgCapsFor` frames flag, `vm.framesOk`, kadr bo'limi/switch/submit capability-flag'dan. DORMANT: PROBLEM 3 filtri (media-refs modellar plaginda ko'rsatilmaydi) SAQLANDI — 3102 plagin composer'ida yo'q, media-refs markup (#vgRefGrid) ham yo'q.
+**#7 Seedream nisbat tanlagichi (96ab7c5):** 1020/1021 endi 8 nisbat (`SEEDREAM_ASPECTS`, def 1:1);
+`byteplus.ts seedreamSize()` nisbat+tier → §8 rasmiy ANIQ piksel `size` (noma'lum kombinatsiya →
+tier fallback, piksel taxmin qilinmaydi); validator'ga `seedreamSizeSelfTest` (9 case: Pro 1K
+16:9→1424x800, Lite 4K 21:9→6240x2656 ...). Narx/kredit qiymatlari TEGILMADI.
 
-**Nima topildi:** server yo'l allaqachon tayyor edi — byteplus runner `referenceUrl/referenceEndUrl`ni faqat `model.endFrame` bilan gate qiladi, adapter aralash body + mention-offset P4'da test qilingan; `videoRequiresStartFrame(3102)`=false (kadr IXTIYORIY qoladi).
+**#6 Dreamina-uslub atom mention pill:** ikkala composer textarea → contenteditable chip-editor
+(plagin `window.afChipEditor`, web `ffChipEditor` — `SD2-CHIP-EDITOR v1` marker, qo'lda sync).
+`.value`/`.placeholder` PROPERTY meros → string-level kod (renumber/enhance/restore/clear)
+o'zgarishsiz. Pill: thumb + lime "@Image 1", Backspace atom o'chirish, copy/paste plain-token,
+IME guard. Plagin: ikkala pane dropdown keyboard-nav (↑/↓/Enter/Esc). WEB: dropdown YANGI
+yaratildi (body-fixed singleton — React re-render o'chirmaydi); removeRef endi video/audio
+tokenlarini ham strip/renumber; generate() orphan-sanitize; fokusda state→editor sinxron o'chiq
+(pollJob keystroke clobber himoyasi). Headless linkedom: parse/serialize 7/7 PASS; `node --check`
+8/8 skript OK; API build + validator yashil. Money-zone TEGILMADI.
 
-**Tekshirildi:** `npm run build -w apps/api` yashil (validator 0 muammo, aralash-case o'tdi); plagin+web script bloklari sintaksis OK. Money-zone TEGILMADI.
-**Kutilmoqda:** push + Cloud Run deploy; web'da jonli test (3102 + start/end kadr). Plaginda 3102'ni ochish = PROBLEM 3 qarorini qayta ko'rish (alohida).
+**Kutilmoqda:** push + CF Pages deploy + AE jonli test (checklist: @ → pick → pill; Backspace;
+ref o'chirish → renumber; Enhance round-trip; Generate serializatsiya — dev console log).

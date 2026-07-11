@@ -2950,6 +2950,13 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .mitem:hover,.axig .mitem.sel{background:var(--card2)}
 .axig .mitem .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;flex:0 0 auto;border:1px solid var(--line2)}
 .axig .mitem b{font-size:12.5px;display:block}.axig .mitem small{font-size:10.5px;color:var(--mut)}
+/* ===== #6 — Dreamina-uslub chip editor (textarea o'rniga contenteditable + atom pill) ===== */
+.axig .pbox .chipedit{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;outline:none;min-height:170px;max-height:300px;overflow-y:auto;line-height:1.6;box-sizing:border-box;white-space:pre-wrap;word-break:break-word;cursor:text}
+.axig .pbox .chipedit:empty::before{content:attr(data-ph);color:var(--mut2);pointer-events:none}
+.axvg .vpanel .pbox .chipedit{min-height:150px;max-height:280px}
+.axroot .mchip{display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:var(--green-dim);border:1px solid var(--accent-glow);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
+.axroot .mchip .ct{width:17px;height:17px;border-radius:5px;background-size:cover;background-position:center;background-color:var(--card2);display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);flex:none;overflow:hidden}
+.axroot .mchip .cl{font-size:12px;font-weight:700;color:var(--accent-cta)}
 .axig .prow{display:flex;align-items:center;margin-top:8px}
 .axig .enhance{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:6px 8px;border-radius:8px}
 .axig .enhance:hover{background:rgba(90,169,255,.12)}.axig .enhance.busy{opacity:.6;pointer-events:none}
@@ -4097,7 +4104,7 @@ html.home-mode #homePage{display:block!important}
                                 <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
                                 <div class="mention" id="igMention"></div>
                                 <div class="refgrid" id="igRefgrid"></div>
-                                <textarea id="igPrompt" placeholder="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></textarea>
+                                <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
                                 <div class="prow">
                                   <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Reference</div>
                                   <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance</span>
@@ -4247,7 +4254,7 @@ html.home-mode #homePage{display:block!important}
                                   <!-- Video-edit tayyor shablon chiplari — faqat ≥1 VIDEO referens biriktirilganda ko'rinadi (renderVgEditPresets) -->
                                   <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                                   <div class="mention" id="vgMention"></div>
-                                  <textarea id="vgPrompt" placeholder="Animate the frame: raindrops, neon reflection, slow dolly-in…"></textarea>
+                                  <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Animate the frame: raindrops, neon reflection, slow dolly-in…"></div>
                                   <!-- FIX: prompt ichidagi takror ＋Referens olib tashlandi — referens qo'shish faqat tepadagi kanonik hudud (kadr box / +Rasm / +Video) orqali -->
                                   <div class="prow">
                                     <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance</span>
@@ -9416,6 +9423,192 @@ async function bootPlugin(){
     return v;
   };
 
+  /* SD2-CHIP-EDITOR v1 — sync manually with packages/assetflow-studio/platform/index.html (ffChipEditor) */
+  // ===== #6 — UMUMIY chip-editor (Dreamina-uslub atom mention pill; rasm + video tool BIR XIL) =====
+  // textarea o'rniga contenteditable div. DOM FLAT invariant: bolalar faqat Text / <br> / .mchip span
+  // (Enter intercept + paste plain-text → brauzer <div> blok yaratmaydi, serializatsiya sodda qoladi).
+  // `.value` va `.placeholder` PROPERTY sifatida beriladi (defineProperty) — mavjud string-level kod
+  // (strip/renumber/enhance/restore/clear) O'ZGARISHSIZ ishlaydi: o'qish=serializatsiya (pill→token),
+  // yozish=parse (token→pill; mos referens bo'lmagan token oddiy matn bo'lib qoladi — crash yo'q).
+  // opts: refs() → {image:[thumb...],video:[...],audio:[...]} (joriy biriktirilganlar);
+  //       token(kind,n) → serializatsiya shakli (rasm tool '@imgN', video tool '@ImageN');
+  //       interceptEnter() → true bo'lsa Enter yangi qator QO'YMAYDI (mention dropdown tanlovi).
+  window.afChipEditor=function(el,opts){
+    opts=opts||{};
+    var KIND={img:'image',image:'image',vid:'video',video:'video',aud:'audio',audio:'audio'};
+    var GLYPH={image:'⊞',video:'▶',audio:'♪'};
+    var TOKEN_RE=/@(image|img|video|vid|audio|aud)(\d+)/gi;
+    var composing=false;
+    function refThumb(kind,n){
+      var lists=(opts.refs&&opts.refs())||{}; var arr=lists[kind]||[];
+      return (n>=1&&n<=arr.length)?{thumb:arr[n-1]||null}:null; // null = mos referens yo'q
+    }
+    function tokenOf(kind,n){ return opts.token?opts.token(kind,n):('@'+(kind==='image'?'img':kind)+n); }
+    function labelOf(kind,n){ return '@'+(kind==='image'?'Image':kind==='video'?'Video':'Audio')+' '+n; }
+    function isPill(node){ return !!(node&&node.nodeType===1&&node.classList&&node.classList.contains('mchip')); }
+    function makePill(kind,n){
+      var info=refThumb(kind,n); if(!info)return null;
+      var s=document.createElement('span'); s.className='mchip'; s.setAttribute('contenteditable','false');
+      s.setAttribute('data-kind',kind); s.setAttribute('data-n',String(n));
+      var t=document.createElement('span'); t.className='ct';
+      if(kind==='image'&&info.thumb)t.style.backgroundImage='url("'+info.thumb+'")'; else t.textContent=GLYPH[kind]||'⊞';
+      var l=document.createElement('span'); l.className='cl'; l.textContent=labelOf(kind,n);
+      s.appendChild(t); s.appendChild(l);
+      return s;
+    }
+    // mask=true → pill \u0001 belgisi bo'lib chiqadi (mention regex "@(\w*)$" pill tokenini matn deb adashmasin)
+    function serializeNode(node,mask){
+      if(node.nodeType===3)return node.nodeValue||'';
+      if(isPill(node))return mask?'\u0001':tokenOf(node.getAttribute('data-kind'),parseInt(node.getAttribute('data-n'),10)||0);
+      if(node.nodeType!==1)return '';
+      if(node.tagName==='BR')return '\n';
+      var out=''; for(var c=node.firstChild;c;c=c.nextSibling)out+=serializeNode(c,mask);
+      if(node.tagName==='DIV'||node.tagName==='P')out='\n'+out; // himoya: brauzer blok qo'ygan bo'lsa ham yo'qolmasin
+      return out;
+    }
+    function getValue(){ var out=''; for(var c=el.firstChild;c;c=c.nextSibling)out+=serializeNode(c,false); return out.replace(/[\u200B\u0001]/g,''); }
+    // matn → fragment: tokenlar pill (mos referens bo'lsa), '\n' → <br>, qolgani Text
+    function appendPlain(frag,s){
+      var parts=String(s).split('\n');
+      for(var i=0;i<parts.length;i++){
+        if(i>0)frag.appendChild(document.createElement('br'));
+        if(parts[i])frag.appendChild(document.createTextNode(parts[i]));
+      }
+    }
+    function buildFragment(text){
+      var frag=document.createDocumentFragment(); var s=String(text==null?'':text);
+      var last=0,m; TOKEN_RE.lastIndex=0;
+      while((m=TOKEN_RE.exec(s))){
+        if(m.index>last)appendPlain(frag,s.slice(last,m.index));
+        var pill=makePill(KIND[m[1].toLowerCase()],parseInt(m[2],10));
+        if(pill)frag.appendChild(pill); else frag.appendChild(document.createTextNode(m[0]));
+        last=m.index+m[0].length;
+      }
+      if(last<s.length)appendPlain(frag,s.slice(last));
+      return frag;
+    }
+    function setValue(text){ el.textContent=''; el.appendChild(buildFragment(text)); }
+    // ---- caret utilitalari ----
+    function caretRange(){
+      var s=window.getSelection(); if(!s||!s.rangeCount)return null;
+      var r=s.getRangeAt(0); if(!el.contains(r.startContainer))return null;
+      return r;
+    }
+    function setCaret(node,offset){
+      var r=document.createRange();
+      try{ r.setStart(node,offset); }catch(_){ r.selectNodeContents(el); r.collapse(false); }
+      r.collapse(true);
+      var s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+    function placeCaretAfter(node){
+      var r=document.createRange(); r.setStartAfter(node); r.collapse(true);
+      var s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+    function textBeforeCaret(){
+      var r=caretRange(); if(!r)return null;
+      var pre=r.cloneRange(); pre.selectNodeContents(el); pre.setEnd(r.startContainer,r.startOffset);
+      var frag=pre.cloneContents(); var out='';
+      for(var c=frag.firstChild;c;c=c.nextSibling)out+=serializeNode(c,true);
+      return out;
+    }
+    function fireInput(){ try{ el.dispatchEvent(new Event('input')); }catch(_){ } }
+    function insertFragAtCaret(frag){
+      var lastNode=frag.lastChild;
+      var r=caretRange();
+      if(!r){ el.appendChild(frag); } else { r.deleteContents(); r.insertNode(frag); }
+      if(lastNode)placeCaretAfter(lastNode); else setCaret(el,el.childNodes.length);
+      fireInput();
+    }
+    // token/shablon qo'shish (kursor joyiga); smartSpace — oldingi belgi bo'shliq bo'lmasa ' ' qo'yiladi
+    function insertText(text,smartSpace){
+      try{ el.focus(); }catch(_){ }
+      var sep='';
+      if(smartSpace){ var pre=textBeforeCaret(); if(pre&&!/\s$/.test(pre))sep=' '; }
+      insertFragAtCaret(buildFragment(sep+String(text)));
+    }
+    // mention tanlovi: caret oldidagi len belgini ("@so'z") o'chirib o'rniga parse qilingan matn qo'yish
+    function replaceBeforeCaret(len,insertStr){
+      var r=caretRange(); if(!r){ insertText(insertStr,false); return; }
+      var node=r.startContainer, off=r.startOffset, remain=len;
+      while(remain>0&&node&&node.nodeType===3){
+        var take=Math.min(off,remain);
+        node.nodeValue=node.nodeValue.slice(0,off-take)+node.nodeValue.slice(off);
+        remain-=take; off-=take;
+        if(remain>0){ var prev=node.previousSibling; if(prev&&prev.nodeType===3){ node=prev; off=node.nodeValue.length; } else break; }
+      }
+      if(node&&node.nodeType===3)setCaret(node,off);
+      insertFragAtCaret(buildFragment(insertStr));
+    }
+    // caret yonidagi pill (Backspace/Delete atom o'chirish uchun)
+    function pillNextTo(r,dir){
+      if(!r||!r.collapsed)return null;
+      var node=r.startContainer, off=r.startOffset;
+      if(node.nodeType===3){
+        if(dir<0&&off>0)return null; if(dir>0&&off<(node.nodeValue||'').length)return null;
+        var sib=dir<0?node.previousSibling:node.nextSibling;
+        return isPill(sib)?sib:null;
+      }
+      if(node===el){
+        var ch=dir<0?el.childNodes[off-1]:el.childNodes[off];
+        return isPill(ch)?ch:null;
+      }
+      return null;
+    }
+    // ---- hodisalar ----
+    el.addEventListener('compositionstart',function(){ composing=true; });
+    el.addEventListener('compositionend',function(){ composing=false; });
+    el.addEventListener('keydown',function(e){
+      if(composing)return;
+      if(e.key==='Enter'&&!e.metaKey&&!e.ctrlKey){
+        if(opts.interceptEnter&&opts.interceptEnter()){ e.preventDefault(); return; } // mention tanlovi
+        e.preventDefault();
+        var br=document.createElement('br'); var frag=document.createDocumentFragment(); frag.appendChild(br);
+        var r=caretRange();
+        if(!r){ el.appendChild(frag); } else { r.deleteContents(); r.insertNode(frag); }
+        // oxirgi <br> ko'rinmaydi (Chromium collapse) → yakunda bo'lsa ikkinchi <br>, caret orasiga
+        if(!br.nextSibling)el.appendChild(document.createElement('br'));
+        placeCaretAfter(br); fireInput();
+        return;
+      }
+      if(e.key==='Backspace'||e.key==='Delete'){
+        var p=pillNextTo(caretRange(),e.key==='Backspace'?-1:1);
+        if(p){ e.preventDefault(); p.parentNode.removeChild(p); fireInput(); }
+      }
+    });
+    function serializeRangeText(r){
+      var frag=r.cloneContents(); var out='';
+      for(var c=frag.firstChild;c;c=c.nextSibling)out+=serializeNode(c,false);
+      return out;
+    }
+    el.addEventListener('copy',function(e){
+      var r=caretRange(); if(!r||r.collapsed)return;
+      try{ e.clipboardData.setData('text/plain',serializeRangeText(r)); e.preventDefault(); }catch(_){ }
+    });
+    el.addEventListener('cut',function(e){
+      var r=caretRange(); if(!r||r.collapsed)return;
+      try{ e.clipboardData.setData('text/plain',serializeRangeText(r)); e.preventDefault(); r.deleteContents(); fireInput(); }catch(_){ }
+    });
+    el.addEventListener('paste',function(e){
+      var t=''; try{ t=(e.clipboardData||window.clipboardData).getData('text/plain')||''; }catch(_){ }
+      if(!t)return; // rasm-paste (document-level handler) o'z yo'lida ishlayveradi
+      e.preventDefault();
+      insertFragAtCaret(buildFragment(t.replace(/\r\n?/g,'\n')));
+    });
+    // bo'shagan editor'ni chinakam :empty qilish (placeholder ko'rinsin) — qoldiq <br> tozalanadi
+    el.addEventListener('input',function(){
+      if(el.firstChild&&!el.textContent&&!el.querySelector('.mchip')&&!el.querySelector('br+br'))el.textContent='';
+    });
+    try{
+      Object.defineProperty(el,'value',{get:getValue,set:function(v){setValue(v);},configurable:true});
+      Object.defineProperty(el,'placeholder',{
+        get:function(){ return el.getAttribute('data-ph')||''; },
+        set:function(v){ el.setAttribute('data-ph',v==null?'':String(v)); },
+        configurable:true
+      });
+    }catch(_){ }
+    return {el:el,getValue:getValue,setValue:setValue,insertText:insertText,textBeforeCaret:textBeforeCaret,replaceBeforeCaret:replaceBeforeCaret};
+  };
+
   // P2 — CEP-xavfsiz clipboard: navigator.clipboard CEP'da ishonchsiz → yashirin textarea
   // + execCommand('copy') fallback. Muvaffaqiyatda true.
   window.afCopyText=function(text){
@@ -10677,16 +10870,9 @@ window.afGallery=(function(){
   function buildN(){ buildPills($('igNPills'),meta.counts,st.n,function(v){ st.n=v; $('igNVal').textContent=String(v); recost(); buildN(); }); }
   $('igNSeg').addEventListener('click',function(){ buildN(); openSheet('igNSheet',$('igNSeg')); });
 
-  // ---- @imgN token promptga (kursor joyiga) ----
+  // ---- @imgN token promptga (kursor joyiga) — #6: chip-editor pill sifatida ----
   function insertToken(tok){
-    var p=$('igPrompt');
-    var s=(p.selectionStart!=null)?p.selectionStart:p.value.length;
-    var e=(p.selectionEnd!=null)?p.selectionEnd:p.value.length;
-    var pre=p.value.slice(0,s),post=p.value.slice(e);
-    var sep=(pre&&!/\s$/.test(pre))?' ':'';
-    p.value=pre+sep+tok+' '+post; p.focus();
-    try{ var pos=(pre+sep+tok+' ').length; p.setSelectionRange(pos,pos); }catch(e2){}
-    p.dispatchEvent(new Event('input'));
+    igEd.insertText(tok+' ',true); // parse: mos referens bo'lsa atom pill, bo'lmasa oddiy matn
   }
   // P13 (Artlist paritet): referens o'chirilganda dangling @imgN qolmasin — tokenni olib tashlab,
   // qolgan @img(k) (k>n) larni bir pastga surib qayta raqamlaymiz (referens tartibi bilan mos).
@@ -10720,7 +10906,7 @@ window.afGallery=(function(){
       var tag=document.createElement('div'); tag.className='tag'; tag.textContent='@img'+(i+1); t.appendChild(tag);
       if(ref.loading){ var sp=document.createElement('div'); sp.className='spin'; sp.innerHTML='<i></i>'; t.appendChild(sp); }
       var x=document.createElement('div'); x.className='rx'; x.textContent='✕';
-      x.addEventListener('click',function(ev){ ev.stopPropagation(); var idx=st.refs.indexOf(ref); if(idx>=0){ igStripMention(idx); st.refs.splice(idx,1); } renderRefs(); updRefMeta(); refreshGen(); }); // P13: @imgN cascade-strip
+      x.addEventListener('click',function(ev){ ev.stopPropagation(); var idx=st.refs.indexOf(ref); if(idx>=0){ st.refs.splice(idx,1); igStripMention(idx); } renderRefs(); updRefMeta(); refreshGen(); }); // P13: @imgN cascade-strip (#6: AVVAL splice — pill'lar yangi ro'yxatdan thumb oladi)
       t.appendChild(x);
       t.addEventListener('click',function(){ if(!ref.loading)insertToken('@img'+(st.refs.indexOf(ref)+1)); });
       g.appendChild(t); // igRefAdd endi prow'da — grid faqat reftile'lar (bo'sh bo'lsa CSS yashiradi)
@@ -10928,16 +11114,41 @@ window.afGallery=(function(){
   // ---- prompt auto-grow + validatsiya + @ mention ----
   var ta=$('igPrompt');
   var mention=$('igMention');
-  function grow(){ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,160)+'px'; }
-  ta.addEventListener('input',function(){ grow(); refreshGen(); checkMention(); });
-  ta.addEventListener('keydown',function(e){ if(e.key==='Escape'&&mention.classList.contains('on')){ e.stopPropagation(); hideMention(); } });
+  // #6 — chip-editor: pill (thumb + "@Image 1") atom token; .value get/set meros (string kod o'zgarmagan)
+  var igEd=window.afChipEditor(ta,{
+    refs:function(){ return { image: st.refs.map(function(r){ return r.dataUrl||r.url||null; }) }; },
+    token:function(kind,n){ return kind==='image'?('@img'+n):('@'+kind+n); }, // rasm tool kanonik: @imgN
+    interceptEnter:function(){ return mention.classList.contains('on')?pickMentionActive():false; }
+  });
+  function grow(){} // #6: chipedit balandligi CSS max-height bilan — JS o'lchash kerak emas
+  ta.addEventListener('input',function(){ refreshGen(); checkMention(); });
+  ta.addEventListener('keydown',function(e){
+    if(!mention.classList.contains('on'))return;
+    if(e.key==='Escape'){ e.stopPropagation(); e.preventDefault(); hideMention(); return; }
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); moveMention(e.key==='ArrowDown'?1:-1); }
+  });
+  ta.addEventListener('keyup',checkMention); // caret strelka bilan siljiganda ham dropdown holati yangilansin
   ta.addEventListener('blur',function(){ setTimeout(hideMention,150); });
 
   // @ yozilsa referenslar ro'yxati (autocomplete) — kursordan oldingi @<so'z> ni ushlaydi
   function checkMention(){
     if(!meta.refOk){ hideMention(); return; } // t2i (referenssiz) → @dropdown yo'q (FIX3: maxRefs=0 ham)
-    var caret=ta.selectionStart; var pre=ta.value.slice(0,caret); var m=pre.match(/@(\w*)$/);
+    var pre=igEd.textBeforeCaret(); if(pre==null){ hideMention(); return; }
+    var m=pre.match(/@(\w*)$/);
     if(m)showMention(m[1]); else hideMention();
+  }
+  var menIdx=0;
+  function menItems(){ return mention.querySelectorAll('.mitem'); }
+  function moveMention(d){
+    var its=menItems(); if(!its.length)return;
+    menIdx=(menIdx+d+its.length)%its.length;
+    Array.prototype.forEach.call(its,function(x,ix){ x.classList.toggle('sel',ix===menIdx); });
+  }
+  function pickMentionActive(){ // Enter — faol (sel) qatorni tanlash; dropdown ochiq bo'lsa true
+    var its=menItems(); if(!its.length)return false;
+    var ix=Math.min(menIdx,its.length-1);
+    pickMention(parseInt(its[ix].getAttribute('data-i'),10));
+    return true;
   }
   function showMention(q){
     if(!mention)return;
@@ -10945,18 +11156,21 @@ window.afGallery=(function(){
     q=(q||'').toLowerCase();
     var html='<div class="mh">References</div>',shown=0;
     st.refs.forEach(function(r,i){
-      var name='img'+(i+1); if(q&&name.indexOf(q)!==0&&String(i+1)!==q)return; shown++;
-      html+='<div class="mitem" data-i="'+i+'"><div class="mt" style="background-image:url(\''+(r.dataUrl||r.url||'')+'\')"></div><div><b>@'+name+'</b><small>reference</small></div></div>';
+      var name='img'+(i+1); // filtr: "img1"/"image1"/"1" prefikslari mos kelsin
+      if(q&&name.indexOf(q)!==0&&('image'+(i+1)).indexOf(q)!==0&&String(i+1)!==q)return; shown++;
+      html+='<div class="mitem" data-i="'+i+'"><div class="mt" style="background-image:url(\''+(r.dataUrl||r.url||'')+'\')"></div><div><b>@Image '+(i+1)+'</b><small>Image</small></div></div>';
     });
     if(!shown){ hideMention(); return; }
     mention.innerHTML=html; mention.classList.add('on');
-    Array.prototype.forEach.call(mention.querySelectorAll('.mitem'),function(el){ el.addEventListener('mousedown',function(ev){ ev.preventDefault(); pickMention(parseInt(el.getAttribute('data-i'),10)); }); });
+    menIdx=0; var its=menItems(); if(its.length)its[0].classList.add('sel'); // klaviatura navigatsiya boshi
+    Array.prototype.forEach.call(its,function(el){ el.addEventListener('mousedown',function(ev){ ev.preventDefault(); pickMention(parseInt(el.getAttribute('data-i'),10)); }); });
   }
   function hideMention(){ if(mention)mention.classList.remove('on'); }
   function pickMention(i){
-    var caret=ta.selectionStart; var val=ta.value; var pre=val.slice(0,caret); var m=pre.match(/@(\w*)$/);
-    if(m){ var s=caret-m[0].length; var tok='@img'+(i+1)+' '; ta.value=val.slice(0,s)+tok+val.slice(caret); var np=s+tok.length; ta.focus(); try{ta.setSelectionRange(np,np);}catch(e){} }
-    hideMention(); ta.dispatchEvent(new Event('input'));
+    var pre=igEd.textBeforeCaret(); var m=pre?pre.match(/@(\w*)$/):null;
+    if(m)igEd.replaceBeforeCaret(m[0].length,'@img'+(i+1)+' '); // "@so'z" → pill + bo'shliq
+    else igEd.insertText('@img'+(i+1)+' ',true);
+    hideMention();
   }
 
   // ---- ✨ Yaxshilash (REAL /gen/prompt/enhance) ----
@@ -11425,6 +11639,21 @@ window.afGallery=(function(){
     w.style.display=msg?'':'none';
   }
   function vgPromptValue(){ return (($('vgPrompt')&&$('vgPrompt').value)||'').trim(); }
+  // #6 — chip-editor (rasm tool bilan UMUMIY window.afChipEditor): pill = thumb + "@Image 1".
+  // Video tool kanonik tokenlari tokFor bilan bir xil: @ImageN/@VideoN/@AudioN (strip/renumber mos).
+  var vgEd=window.afChipEditor($('vgPrompt'),{
+    refs:function(){
+      var im=[],vd=[],au=[];
+      mref.forEach(function(r){
+        if(r.type==='image')im.push(r.dataUrl||r.url||null);
+        else if(r.type==='video')vd.push(null); // poster yo'q → glyph fallback
+        else au.push(null);
+      });
+      return {image:im,video:vd,audio:au};
+    },
+    token:function(kind,n){ return '@'+(kind==='image'?'Image':kind==='video'?'Video':'Audio')+n; },
+    interceptEnter:function(){ var m=$('vgMention'); return (m&&m.classList.contains('on'))?pickVgMentionActive():false; }
+  });
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
   function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
@@ -12372,7 +12601,8 @@ window.afGallery=(function(){
       renderVgSavedRefs();
     });
   }
-  function insertVgTok(tok){ var p=$('vgPrompt'); if(!p)return; var c=p.selectionStart||p.value.length; var pre=p.value.slice(0,c),post=p.value.slice(c); var sep=(pre&&!/\s$/.test(pre))?' ':''; p.value=pre+sep+tok+' '+post; p.focus(); refreshVgBtn(); }
+  // #6: chip-editor orqali — token(lar) mos referens bo'lsa atom pill bo'lib kiradi (preset shablonlar ham)
+  function insertVgTok(tok){ vgEd.insertText(tok+' ',true); refreshVgBtn(); }
   function uploadMediaRef(src,type){
     var sizeBytes=(src&&src.sizeBytes)||0, lim=mediaRefLimitBytes(type), totalLim=mediaRefTotalLimitBytes(type);
     if(lim&&sizeBytes&&sizeBytes>lim){ toast(mediaRefLimitMsg(type,lim),'warning'); return; }
@@ -12586,25 +12816,45 @@ window.afGallery=(function(){
       prepAndUploadMediaRef(uploadSrc,'video');
     });
   })();
-  // @ mention (faqat media-refs; referens token'larini promptga qo'shadi)
+  // @ mention (faqat media-refs; referens token'larini promptga PILL sifatida qo'shadi — #6)
   function hideVgMention(){ var m=$('vgMention'); if(m)m.classList.remove('on'); }
   function checkVgMention(){
     if(vm.refKind!=='media-refs'||!mref.length){ hideVgMention(); return; }
-    var ta=$('vgPrompt'); var c=ta.selectionStart; var pre=ta.value.slice(0,c); var m=pre.match(/@(\w*)$/);
+    var pre=vgEd.textBeforeCaret(); if(pre==null){ hideVgMention(); return; }
+    var m=pre.match(/@(\w*)$/);
     if(m)showVgMention(m[1]); else hideVgMention();
+  }
+  var vgMenIdx=0;
+  function vgMenItems(){ var m=$('vgMention'); return m?m.querySelectorAll('.mitem'):[]; }
+  function moveVgMention(d){
+    var its=vgMenItems(); if(!its.length)return;
+    vgMenIdx=(vgMenIdx+d+its.length)%its.length;
+    Array.prototype.forEach.call(its,function(x,ix){ x.classList.toggle('sel',ix===vgMenIdx); });
+  }
+  function pickVgTok(tok){ // "@so'z" → pill + bo'shliq (chip-editor caret almashtiruvi)
+    var pre=vgEd.textBeforeCaret(); var m=pre?pre.match(/@(\w*)$/):null;
+    if(m)vgEd.replaceBeforeCaret(m[0].length,tok+' ');
+    else vgEd.insertText(tok+' ',true);
+    hideVgMention(); refreshVgBtn();
+  }
+  function pickVgMentionActive(){ // Enter — faol (sel) qatorni tanlash; dropdown ochiq bo'lsa true
+    var its=vgMenItems(); if(!its.length)return false;
+    var ix=Math.min(vgMenIdx,its.length-1);
+    pickVgTok(its[ix].getAttribute('data-t'));
+    return true;
   }
   function showVgMention(q){
     var men=$('vgMention'); if(!men)return; q=(q||'').toLowerCase();
+    var GL={image:'⊞',video:'▶',audio:'♪'};
     var html='<div class="mh">References</div>',n=0,ci={image:0,video:0,audio:0};
     mref.forEach(function(r){ ci[r.type]++; var nm=r.token||tokFor(r.type,ci[r.type]); if(q&&nm.toLowerCase().indexOf('@'+q)!==0)return; n++;
-      var bg=r.type==='image'?(r.dataUrl?'background-image:url(\''+r.dataUrl+'\')':'background:#222'):(r.type==='video'?'background:#2a1f40':'background:#0f3030');
-      html+='<div class="mitem" data-t="'+nm+'"><div class="mt" style="'+bg+'"></div><div><b>'+nm+'</b><small>'+typeLabel(r.type)+'</small></div></div>'; });
+      var bg=r.type==='image'&&r.dataUrl?('background-image:url(\''+r.dataUrl+'\')'):(r.type==='video'?'background:#2a1f40':r.type==='audio'?'background:#0f3030':'background:#222');
+      var glyph=(r.type==='image'&&r.dataUrl)?'':GL[r.type]||''; // thumb bo'lmasa tur belgisi (Dreamina uslubi)
+      html+='<div class="mitem" data-t="'+nm+'"><div class="mt" style="'+bg+';display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--mut)">'+glyph+'</div><div><b>'+nm.replace(/^@(\D+)(\d+)$/,'@$1 $2')+'</b><small>'+typeLabel(r.type)+'</small></div></div>'; });
     if(!n){ hideVgMention(); return; }
     men.innerHTML=html; men.classList.add('on');
-    Array.prototype.forEach.call(men.querySelectorAll('.mitem'),function(el){ el.addEventListener('mousedown',function(ev){ ev.preventDefault();
-      var ta=$('vgPrompt'); var c=ta.selectionStart; var v=ta.value; var pre=v.slice(0,c); var m=pre.match(/@(\w*)$/);
-      if(m){ var s=c-m[0].length; var tok=el.getAttribute('data-t')+' '; ta.value=v.slice(0,s)+tok+v.slice(c); ta.focus(); var np=s+tok.length; try{ta.setSelectionRange(np,np);}catch(_){} }
-      hideVgMention(); refreshVgBtn(); }); });
+    vgMenIdx=0; var its=vgMenItems(); if(its.length)its[0].classList.add('sel');
+    Array.prototype.forEach.call(its,function(el){ el.addEventListener('mousedown',function(ev){ ev.preventDefault(); pickVgTok(el.getAttribute('data-t')); }); });
   }
 
   // ── kadr render (fbox ichiga thumb/spinner/× qo'yadi) ──
@@ -13163,7 +13413,12 @@ window.afGallery=(function(){
     });
   }
   $('vgGen').addEventListener('click',genVgClick);
-  $('vgPrompt').addEventListener('keydown',function(e){ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); if(!$('vgGen').disabled)genVgClick(); } });
+  $('vgPrompt').addEventListener('keydown',function(e){
+    if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); if(!$('vgGen').disabled)genVgClick(); return; }
+    var men=$('vgMention'); if(!men||!men.classList.contains('on'))return; // #6: dropdown klaviatura navigatsiyasi
+    if(e.key==='Escape'){ e.stopPropagation(); e.preventDefault(); hideVgMention(); return; }
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); moveVgMention(e.key==='ArrowDown'?1:-1); }
+  });
   $('vgBack').addEventListener('click',function(){ closeVgSheets(); if(typeof axGo==='function')axGo('launcher'); }); // #6: aicat oraliq ekrani chetlab o'tiladi
   // ↺ Tozalash — KIRISH (prompt + referens/kadr) tozalanadi; NATIJA (So'nggi grid) tegmaydi.
   (function(){ var b=$('vgClearBtn'); if(!b)return; b.addEventListener('click',function(){

@@ -15193,8 +15193,23 @@
   .ff .va-dock{position:absolute;left:0;right:0;margin-inline:auto;width:min(920px,calc(100% - 48px));bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
   /* #1 — Artlist-uslub katta prompt paneli: default ~4-5 qator, uzun prompt 60vh gacha
      kengayadi, undan keyin ICHKI scroll (tepasi hech qachon kesilmaydi) */
-  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.5;min-height:92px;max-height:60vh;overflow-y:auto;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
+  .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.6;min-height:92px;max-height:60vh;overflow-y:auto;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
+  /* ===== BATCH5 #6 — Dreamina-uslub chip editor (contenteditable + atom mention pill) ===== */
+  .ff .va-dock .prompt.chipedit{white-space:pre-wrap;word-break:break-word;cursor:text}
+  .ff .va-dock .prompt.chipedit:empty::before{content:attr(data-ph);color:var(--muted2);pointer-events:none}
+  .ff .mchip{display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:rgba(163,230,53,.10);border:1px solid rgba(163,230,53,.32);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
+  .ff .mchip .ct{width:17px;height:17px;border-radius:5px;background-size:cover;background-position:center;background-color:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted2);flex:none;overflow:hidden}
+  .ff .mchip .cl{font-size:12px;font-weight:700;color:var(--lime)}
+  /* @ mention dropdown — composer ustida (ffa-pop uslubi) */
+  .ff .va-mention{position:absolute;left:10px;right:10px;bottom:calc(100% + 8px);z-index:60;background:var(--pop);border:1px solid rgba(255,255,255,.09);border-radius:13px;box-shadow:0 18px 44px -12px rgba(0,0,0,.75);padding:6px;max-height:244px;overflow-y:auto;display:none}
+  .ff .va-mention.on{display:block}
+  .ff .va-mention .mh{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);padding:6px 8px}
+  .ff .va-mention .mi{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;cursor:pointer}
+  .ff .va-mention .mi:hover,.ff .va-mention .mi.sel{background:rgba(255,255,255,.06)}
+  .ff .va-mention .mi .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;background-color:rgba(255,255,255,.05);flex:0 0 auto;border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted2)}
+  .ff .va-mention .mi b{font-size:12.5px;display:block;color:var(--text)}
+  .ff .va-mention .mi small{font-size:10.5px;color:var(--muted2)}
   .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
   .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
   .ff .va-set:hover{background:var(--f2)}
@@ -16536,7 +16551,9 @@
                   </sc-for>
                 </div>
               </sc-if>
-              <textarea value="{{ aiPrompt }}" oninput="{{ setPrompt }}" placeholder="{{ promptPh }}" class="prompt"></textarea>
+              <!-- BATCH5 #6: textarea → chip-editor HOST (contenteditable/listeners installChipEditor'da
+                   imperativ o'rnatiladi; engine bu div BOLALARINI boshqarmaydi — pill DOM saqlanadi) -->
+              <div class="prompt chipedit" data-ph="{{ promptPh }}"></div>
               <div class="va-dockrow">
                 <span class="va-set mode" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for>
@@ -17072,6 +17089,176 @@ const SD2_EDIT_PRESETS = [
   { label: 'Edit objects', tpl: 'Insert <object> from @img1 into @video1 at <where/when>. Match position, scale, perspective, lighting and shadows; keep everything else unchanged.' },
   { label: 'Inpaint / Fix', tpl: 'Make <element> in @video1 <desired change>. Do not modify the background, lighting, camera motion, or any other element.' },
 ];
+/* SD2-CHIP-EDITOR v1 — sync manually with plugins/after-effects-cep/AssetFlow_Plugin.html (window.afChipEditor) */
+// BATCH5 #6 — Dreamina-uslub chip editor: contenteditable div, DOM FLAT invariant (Text/<br>/.mchip).
+// `.value`/`.placeholder` property meros — string-level kod (renumber/enhance/restore) o'zgarishsiz.
+function ffChipEditor(el, opts) {
+  opts = opts || {};
+  const KIND = { img: 'image', image: 'image', vid: 'video', video: 'video', aud: 'audio', audio: 'audio' };
+  const GLYPH = { image: '⊞', video: '▶', audio: '♪' };
+  const TOKEN_RE = /@(image|img|video|vid|audio|aud)(\d+)/gi;
+  let composing = false;
+  function refThumb(kind, n) {
+    const lists = (opts.refs && opts.refs()) || {}; const arr = lists[kind] || [];
+    return (n >= 1 && n <= arr.length) ? { thumb: arr[n - 1] || null } : null; // null = mos referens yo'q
+  }
+  function tokenOf(kind, n) { return opts.token ? opts.token(kind, n) : ('@' + (kind === 'image' ? 'img' : kind) + n); }
+  function labelOf(kind, n) { return '@' + (kind === 'image' ? 'Image' : kind === 'video' ? 'Video' : 'Audio') + ' ' + n; }
+  function isPill(node) { return !!(node && node.nodeType === 1 && node.classList && node.classList.contains('mchip')); }
+  function makePill(kind, n) {
+    const info = refThumb(kind, n); if (!info) return null;
+    const s = document.createElement('span'); s.className = 'mchip'; s.setAttribute('contenteditable', 'false');
+    s.setAttribute('data-kind', kind); s.setAttribute('data-n', String(n));
+    const t = document.createElement('span'); t.className = 'ct';
+    if (kind === 'image' && info.thumb) t.style.backgroundImage = 'url("' + info.thumb + '")'; else t.textContent = GLYPH[kind] || '⊞';
+    const l = document.createElement('span'); l.className = 'cl'; l.textContent = labelOf(kind, n);
+    s.appendChild(t); s.appendChild(l);
+    return s;
+  }
+  // mask=true → pill \u0001 belgisi (mention "@(\w*)$" regexi pill tokenini matn deb adashmasin)
+  function serializeNode(node, mask) {
+    if (node.nodeType === 3) return node.nodeValue || '';
+    if (isPill(node)) return mask ? '\u0001' : tokenOf(node.getAttribute('data-kind'), parseInt(node.getAttribute('data-n'), 10) || 0);
+    if (node.nodeType !== 1) return '';
+    if (node.tagName === 'BR') return '\n';
+    let out = ''; for (let c = node.firstChild; c; c = c.nextSibling) out += serializeNode(c, mask);
+    if (node.tagName === 'DIV' || node.tagName === 'P') out = '\n' + out; // himoya: brauzer blok qo'ygan bo'lsa
+    return out;
+  }
+  function getValue() { let out = ''; for (let c = el.firstChild; c; c = c.nextSibling) out += serializeNode(c, false); return out.replace(/[\u200B\u0001]/g, ''); }
+  function appendPlain(frag, s) {
+    const parts = String(s).split('\n');
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) frag.appendChild(document.createElement('br'));
+      if (parts[i]) frag.appendChild(document.createTextNode(parts[i]));
+    }
+  }
+  function buildFragment(text) {
+    const frag = document.createDocumentFragment(); const s = String(text == null ? '' : text);
+    let last = 0, m; TOKEN_RE.lastIndex = 0;
+    while ((m = TOKEN_RE.exec(s))) {
+      if (m.index > last) appendPlain(frag, s.slice(last, m.index));
+      const pill = makePill(KIND[m[1].toLowerCase()], parseInt(m[2], 10));
+      if (pill) frag.appendChild(pill); else frag.appendChild(document.createTextNode(m[0]));
+      last = m.index + m[0].length;
+    }
+    if (last < s.length) appendPlain(frag, s.slice(last));
+    return frag;
+  }
+  function setValue(text) { el.textContent = ''; el.appendChild(buildFragment(text)); }
+  function caretRange() {
+    const s = window.getSelection(); if (!s || !s.rangeCount) return null;
+    const r = s.getRangeAt(0); if (!el.contains(r.startContainer)) return null;
+    return r;
+  }
+  function setCaret(node, offset) {
+    const r = document.createRange();
+    try { r.setStart(node, offset); } catch (_) { r.selectNodeContents(el); r.collapse(false); }
+    r.collapse(true);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function placeCaretAfter(node) {
+    const r = document.createRange(); r.setStartAfter(node); r.collapse(true);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function textBeforeCaret() {
+    const r = caretRange(); if (!r) return null;
+    const pre = r.cloneRange(); pre.selectNodeContents(el); pre.setEnd(r.startContainer, r.startOffset);
+    const frag = pre.cloneContents(); let out = '';
+    for (let c = frag.firstChild; c; c = c.nextSibling) out += serializeNode(c, true);
+    return out;
+  }
+  function fireInput() { try { el.dispatchEvent(new Event('input')); } catch (_) {} }
+  function insertFragAtCaret(frag) {
+    const lastNode = frag.lastChild;
+    const r = caretRange();
+    if (!r) { el.appendChild(frag); } else { r.deleteContents(); r.insertNode(frag); }
+    if (lastNode) placeCaretAfter(lastNode); else setCaret(el, el.childNodes.length);
+    fireInput();
+  }
+  function insertText(text, smartSpace) {
+    try { el.focus(); } catch (_) {}
+    let sep = '';
+    if (smartSpace) { const pre = textBeforeCaret(); if (pre && !/\s$/.test(pre)) sep = ' '; }
+    insertFragAtCaret(buildFragment(sep + String(text)));
+  }
+  function replaceBeforeCaret(len, insertStr) {
+    const r = caretRange(); if (!r) { insertText(insertStr, false); return; }
+    let node = r.startContainer, off = r.startOffset, remain = len;
+    while (remain > 0 && node && node.nodeType === 3) {
+      const take = Math.min(off, remain);
+      node.nodeValue = node.nodeValue.slice(0, off - take) + node.nodeValue.slice(off);
+      remain -= take; off -= take;
+      if (remain > 0) { const prev = node.previousSibling; if (prev && prev.nodeType === 3) { node = prev; off = node.nodeValue.length; } else break; }
+    }
+    if (node && node.nodeType === 3) setCaret(node, off);
+    insertFragAtCaret(buildFragment(insertStr));
+  }
+  function pillNextTo(r, dir) {
+    if (!r || !r.collapsed) return null;
+    const node = r.startContainer, off = r.startOffset;
+    if (node.nodeType === 3) {
+      if (dir < 0 && off > 0) return null; if (dir > 0 && off < (node.nodeValue || '').length) return null;
+      const sib = dir < 0 ? node.previousSibling : node.nextSibling;
+      return isPill(sib) ? sib : null;
+    }
+    if (node === el) {
+      const ch = dir < 0 ? el.childNodes[off - 1] : el.childNodes[off];
+      return isPill(ch) ? ch : null;
+    }
+    return null;
+  }
+  el.addEventListener('compositionstart', () => { composing = true; });
+  el.addEventListener('compositionend', () => { composing = false; });
+  el.addEventListener('keydown', (e) => {
+    if (composing) return;
+    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
+      if (opts.interceptEnter && opts.interceptEnter()) { e.preventDefault(); return; } // mention tanlovi
+      e.preventDefault();
+      const br = document.createElement('br'); const frag = document.createDocumentFragment(); frag.appendChild(br);
+      const r = caretRange();
+      if (!r) { el.appendChild(frag); } else { r.deleteContents(); r.insertNode(frag); }
+      if (!br.nextSibling) el.appendChild(document.createElement('br')); // oxirgi <br> collapse fix
+      placeCaretAfter(br); fireInput();
+      return;
+    }
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      const p = pillNextTo(caretRange(), e.key === 'Backspace' ? -1 : 1);
+      if (p) { e.preventDefault(); p.parentNode.removeChild(p); fireInput(); }
+    }
+  });
+  function serializeRangeText(r) {
+    const frag = r.cloneContents(); let out = '';
+    for (let c = frag.firstChild; c; c = c.nextSibling) out += serializeNode(c, false);
+    return out;
+  }
+  el.addEventListener('copy', (e) => {
+    const r = caretRange(); if (!r || r.collapsed) return;
+    try { e.clipboardData.setData('text/plain', serializeRangeText(r)); e.preventDefault(); } catch (_) {}
+  });
+  el.addEventListener('cut', (e) => {
+    const r = caretRange(); if (!r || r.collapsed) return;
+    try { e.clipboardData.setData('text/plain', serializeRangeText(r)); e.preventDefault(); r.deleteContents(); fireInput(); } catch (_) {}
+  });
+  el.addEventListener('paste', (e) => {
+    let t = ''; try { t = (e.clipboardData || window.clipboardData).getData('text/plain') || ''; } catch (_) {}
+    if (!t) return;
+    e.preventDefault();
+    insertFragAtCaret(buildFragment(t.replace(/\r\n?/g, '\n')));
+  });
+  el.addEventListener('input', () => {
+    if (el.firstChild && !el.textContent && !el.querySelector('.mchip') && !el.querySelector('br+br')) el.textContent = '';
+  });
+  try {
+    Object.defineProperty(el, 'value', { get: getValue, set: (v) => setValue(v), configurable: true });
+    Object.defineProperty(el, 'placeholder', {
+      get: () => el.getAttribute('data-ph') || '',
+      set: (v) => el.setAttribute('data-ph', v == null ? '' : String(v)),
+      configurable: true,
+    });
+  } catch (_) {}
+  return { el, getValue, setValue, insertText, textBeforeCaret, replaceBeforeCaret };
+}
 class Component extends DCLogic {
   state = {
     screen: 'landing',
@@ -17576,6 +17763,7 @@ class Component extends DCLogic {
     // _toolPersistOn tiklashdan KEYIN yoqiladi (renderdagi saqlash mount'gacha yozmasin).
     try { const lt = localStorage.getItem('ff_ai_tool'); if (lt && this.aiTools.some(t => t.key === lt) && lt !== this.state.aiTool) { this._lastToolSaved = lt; this.setState({ aiTool: lt }); } } catch (e) {}
     this._toolPersistOn = true;
+    this.installChipEditor(); // #6 — birinchi render'dan keyin chip-editor mount (didUpdate ham chaqiradi)
     // Saqlangan sessiya + katalog + hash deep-link
     try {
       const ALL = ['landing', 'pricing', 'plugin', 'dashboard', 'templates', 'aistudio', 'account', 'projects', 'auth'];
@@ -17663,7 +17851,7 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); clearTimeout(this._pt); if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
    *  pollJob'dan real % kelmaydi, shu sabab ishonarli indeterminat foiz 93% da
@@ -18401,6 +18589,12 @@ class Component extends DCLogic {
     const tool = this.curTool(), model = this.curModel();
     if (!model) { this.toast("Model failed to load — refresh the page"); return; }
     let prompt = (this.state.aiPrompt || '').trim();
+    // #6 — orphan mention tozalash: mavjud bo'lmagan referens tokeni provayderga ketmasin (plagin igSanitizeMentions pariteti)
+    prompt = prompt.replace(/@(image|img|video|vid|audio|aud)(\d+)/gi, (m, w, d) => {
+      const kind = /im/i.test(w) ? 'image' : (/^v/i.test(w) ? 'video' : 'audio');
+      const cnt = kind === 'image' ? (this.state.refImages || []).length : kind === 'video' ? (this.state.refVideos || []).length : (this.state.refAudios || []).length;
+      return (parseInt(d, 10) > cnt) ? '' : m;
+    }).replace(/[ \t]{2,}/g, ' ').trim();
     // BATCH4 #1/#2 — Upscale prompt ishlatmaydi: bo'sh bo'lsa avto-nom (fayl nomi ham shundan)
     const isUp = model.feature === 'image-upscale' || model.feature === 'video-upscale';
     if (isUp && prompt.length < 2) prompt = 'Upscale ' + ((this.state.aiQuality === 'x4') ? 'x4' : 'x2') + (model.feature === 'video-upscale' ? ' video' : '');
@@ -18507,27 +18701,132 @@ class Component extends DCLogic {
   afSizePromptTa() {
     try {
       const el = document.querySelector('.va-dock .prompt');
-      if (!el) return;
+      if (!el || el.isContentEditable) return; // #6: chip-editor balandligi CSS bilan (min/max-height)
       const CAP = Math.round(window.innerHeight * 0.6); // CSS 60vh bilan mos
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, CAP) + 'px';
     } catch (e) {}
   }
-  // Video-edit preset chip → English shablonni prompt kursoriga qo'yadi (Enhance/chip naqshi: setState + afSizePromptTa).
+  // BATCH5 #6 — chip-editor o'rnatish/sinxron (HAR render'da idempotent — installLanding naqshi).
+  // Engine `.prompt.chipedit` div'ni bo'sh yaratadi (bolalarini boshqarmaydi) — contenteditable,
+  // listener'lar va pill DOM shu yerda. Re-mount bo'lsa (el._ffChipEd yo'q) qayta init + setValue.
+  installChipEditor() {
+    try {
+      const el = document.querySelector('.va-dock .prompt.chipedit');
+      if (!el) { this._chipEd = null; this.hideMention(); return; }
+      if (el._ffChipEd) {
+        this._chipEd = el._ffChipEd;
+        // dasturiy setState (Enhance/restore/suggestion/chip) → editorga sinxron; teng bo'lsa tegmaymiz.
+        // FOKUS PAYTIDA sinxron YO'Q — tez terishda state bir keystroke orqada qolishi mumkin
+        // (batching) va fon setState (pollJob) yozilayotgan matnni o'chirib yuborardi.
+        if (document.activeElement !== el && el._ffChipEd.getValue() !== (this.state.aiPrompt || '')) el._ffChipEd.setValue(this.state.aiPrompt || '');
+        return;
+      }
+      el.setAttribute('contenteditable', 'true');
+      el.setAttribute('role', 'textbox'); el.setAttribute('aria-multiline', 'true');
+      const ed = ffChipEditor(el, {
+        refs: () => ({
+          image: (this.state.refImages || []).slice(),                 // thumb = URL o'zi
+          video: (this.state.refVideos || []).map(() => null),         // poster yo'q → glyph
+          audio: (this.state.refAudios || []).map(() => null),
+        }),
+        token: (kind, n) => kind === 'image' ? ('@img' + n) : ('@' + kind + n), // web kanonik: @imgN/@videoN/@audioN
+        interceptEnter: () => this.pickMentionActive(),
+      });
+      el._ffChipEd = ed; this._chipEd = ed;
+      el.addEventListener('input', () => {
+        const v = ed.getValue();
+        if (v !== this.state.aiPrompt) this.setState({ aiPrompt: v });
+        this.checkMention();
+      });
+      el.addEventListener('keydown', (e) => this.mentionKeydown(e));
+      el.addEventListener('keyup', () => this.checkMention());
+      el.addEventListener('blur', () => setTimeout(() => this.hideMention(), 150));
+      ed.setValue(this.state.aiPrompt || '');
+    } catch (e) {}
+  }
+  // #6 — @ mention dropdown (webda YANGI): body'ga fixed singleton (React daraxtidan TASHQARIDA —
+  // re-render uni o'chirmaydi); ko'rsatishda prompt rect'idan pozitsiya olinadi.
+  mentionEl() {
+    if (this._menEl && document.body.contains(this._menEl)) return this._menEl;
+    const d = document.createElement('div'); d.className = 'ff';
+    const men = document.createElement('div'); men.className = 'va-mention';
+    d.style.cssText = 'position:fixed;z-index:210;left:0;top:0';
+    d.appendChild(men);
+    document.body.appendChild(d);
+    this._menEl = men;
+    return men;
+  }
+  mentionRefs() { // dropdown qatorlari — joriy biriktirilgan referenslar (rasm/video/audio)
+    const out = [];
+    (this.state.refImages || []).forEach((u, i) => out.push({ tok: '@img' + (i + 1), label: '@Image ' + (i + 1), small: 'Image', thumb: u, glyph: '' }));
+    (this.state.refVideos || []).forEach((u, i) => out.push({ tok: '@video' + (i + 1), label: '@Video ' + (i + 1), small: 'Video', thumb: null, glyph: '▶' }));
+    (this.state.refAudios || []).forEach((u, i) => out.push({ tok: '@audio' + (i + 1), label: '@Audio ' + (i + 1), small: 'Audio', thumb: null, glyph: '♪' }));
+    return out;
+  }
+  checkMention() {
+    const ed = this._chipEd; if (!ed) return;
+    if (!this.mentionRefs().length) { this.hideMention(); return; }
+    const pre = ed.textBeforeCaret(); if (pre == null) { this.hideMention(); return; }
+    const m = pre.match(/@(\w*)$/);
+    if (m) this.showMention(m[1]); else this.hideMention();
+  }
+  showMention(q) {
+    const ed = this._chipEd; if (!ed) return;
+    q = (q || '').toLowerCase();
+    // filtr: "img1"/"image1"/"video2"… prefiks yoki raqamning o'zi
+    const items = this.mentionRefs().filter(r => {
+      if (!q) return true;
+      const raw = r.tok.slice(1).toLowerCase(), full = r.label.slice(1).toLowerCase().replace(' ', '');
+      return raw.indexOf(q) === 0 || full.indexOf(q) === 0 || raw.replace(/\D+/, '') === q;
+    });
+    if (!items.length) { this.hideMention(); return; }
+    const men = this.mentionEl();
+    men.innerHTML = '<div class="mh">References</div>' + items.map((r, ix) =>
+      '<div class="mi' + (ix === 0 ? ' sel' : '') + '" data-t="' + r.tok + '"><div class="mt"' +
+      (r.thumb ? ' style="background-image:url(&quot;' + String(r.thumb).replace(/"/g, '&quot;') + '&quot;)"' : '') + '>' +
+      (r.thumb ? '' : r.glyph) + '</div><div><b>' + r.label + '</b><small>' + r.small + '</small></div></div>').join('');
+    this._menIdx = 0;
+    men.querySelectorAll('.mi').forEach(mi => mi.addEventListener('mousedown', (ev) => { ev.preventDefault(); this.pickMentionTok(mi.dataset.t); }));
+    // pozitsiya: prompt ustida (fixed — body singleton)
+    const r = ed.el.getBoundingClientRect();
+    men.style.position = 'fixed';
+    men.style.left = r.left + 'px'; men.style.width = Math.min(Math.max(r.width, 230), 430) + 'px'; men.style.right = 'auto';
+    men.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+    men.classList.add('on');
+  }
+  hideMention() { if (this._menEl) this._menEl.classList.remove('on'); }
+  mentionOpen() { return !!(this._menEl && this._menEl.classList.contains('on')); }
+  moveMention(d) {
+    const its = this._menEl ? this._menEl.querySelectorAll('.mi') : []; if (!its.length) return;
+    this._menIdx = ((this._menIdx || 0) + d + its.length) % its.length;
+    its.forEach((x, ix) => x.classList.toggle('sel', ix === this._menIdx));
+  }
+  pickMentionActive() { // Enter — faol qatorni tanlash; dropdown ochiq bo'lsa true (Enter yangi qator qo'ymaydi)
+    if (!this.mentionOpen()) return false;
+    const its = this._menEl.querySelectorAll('.mi'); if (!its.length) return false;
+    const ix = Math.min(this._menIdx || 0, its.length - 1);
+    this.pickMentionTok(its[ix].dataset.t);
+    return true;
+  }
+  pickMentionTok(tok) { // "@so'z" → pill + bo'shliq (input event state'ni sinxronlaydi)
+    const ed = this._chipEd; if (!ed || !tok) return;
+    const pre = ed.textBeforeCaret(); const m = pre ? pre.match(/@(\w*)$/) : null;
+    if (m) ed.replaceBeforeCaret(m[0].length, tok + ' '); else ed.insertText(tok + ' ', true);
+    this.hideMention();
+  }
+  mentionKeydown(e) {
+    if (!this.mentionOpen()) return;
+    if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); this.hideMention(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); this.moveMention(e.key === 'ArrowDown' ? 1 : -1); }
+  }
+  // Video-edit preset chip → English shablonni prompt kursoriga PILL bilan qo'yadi (#6: chip-editor).
   insertEditPreset(tpl) {
     if (!tpl) return;
-    const cur = String(this.state.aiPrompt || '');
-    const el = document.querySelector('.va-dock .prompt');
-    let next;
-    if (el && typeof el.selectionStart === 'number') {
-      const pre = cur.slice(0, el.selectionStart), post = cur.slice(el.selectionEnd);
-      const sep = (pre && !/\s$/.test(pre)) ? ' ' : '';
-      next = pre + sep + tpl + ' ' + post;
-    } else {
-      const sep = (cur && !/\s$/.test(cur)) ? ' ' : '';
-      next = cur + sep + tpl + ' ';
-    }
-    this.setState({ aiPrompt: next });
+    if (this._chipEd) { this._chipEd.insertText(tpl + ' ', true); return; } // input event state'ni yangilaydi
+    const cur = String(this.state.aiPrompt || ''); // fallback — editor hali mount bo'lmagan
+    const sep = (cur && !/\s$/.test(cur)) ? ' ' : '';
+    this.setState({ aiPrompt: cur + sep + tpl + ' ' });
     setTimeout(() => { this.afSizePromptTa(); try { const t = document.querySelector('.va-dock .prompt'); if (t) t.focus(); } catch (x) {} }, 60);
   }
   async doEnhance() {
@@ -19894,13 +20193,21 @@ class Component extends DCLogic {
         this.setState(st => {
           if (k === 'start') return { refStartUrl: null, refEndUrl: null }; // end startsiz yashamaydi
           if (k === 'end') return { refEndUrl: null };
-          if (k === 'vid') return { refVideos: st.refVideos.filter((_, x) => x !== i) };
-          if (k === 'aud') return { refAudios: st.refAudios.filter((_, x) => x !== i) };
-          // P13: rasm referens (@imgN chip) o'chsa — promptdagi @imgN tokenini olib tashlab qolganlarini
-          // qayta raqamlaymiz (dangling mention bo'lmasin, Artlist paritet).
+          // P13/#6: referens o'chsa — promptdagi tokenini olib tashlab qolganlarini qayta
+          // raqamlaymiz (dangling mention bo'lmasin); pill'lar aiPrompt sinxronida qayta quriladi.
           const n = i + 1;
-          let p = String(st.aiPrompt || '').replace(new RegExp('\\s*@img' + n + '(?![0-9])', 'g'), '');
-          p = p.replace(/@img(\d+)/g, (m, d) => { const kk = parseInt(d, 10); return kk > n ? ('@img' + (kk - 1)) : m; });
+          if (k === 'vid') {
+            let pv = String(st.aiPrompt || '').replace(new RegExp('\\s*@(?:video|vid)' + n + '(?![0-9])', 'gi'), '');
+            pv = pv.replace(/@(video|vid)(\d+)/gi, (m, w, d) => { const kk = parseInt(d, 10); return kk > n ? ('@' + w + (kk - 1)) : m; });
+            return { refVideos: st.refVideos.filter((_, x) => x !== i), aiPrompt: pv };
+          }
+          if (k === 'aud') {
+            let pa = String(st.aiPrompt || '').replace(new RegExp('\\s*@(?:audio|aud)' + n + '(?![0-9])', 'gi'), '');
+            pa = pa.replace(/@(audio|aud)(\d+)/gi, (m, w, d) => { const kk = parseInt(d, 10); return kk > n ? ('@' + w + (kk - 1)) : m; });
+            return { refAudios: st.refAudios.filter((_, x) => x !== i), aiPrompt: pa };
+          }
+          let p = String(st.aiPrompt || '').replace(new RegExp('\\s*@(?:image|img)' + n + '(?![0-9])', 'gi'), '');
+          p = p.replace(/@(image|img)(\d+)/gi, (m, w, d) => { const kk = parseInt(d, 10); return kk > n ? ('@' + w + (kk - 1)) : m; });
           return { refImages: st.refImages.filter((_, x) => x !== i), aiPrompt: p };
         }); },
       addRefK: (e) => { e.stopPropagation(); this.addRefFile(e.currentTarget.dataset.k); },
@@ -20028,7 +20335,7 @@ class Component extends DCLogic {
       // P12 — prompt auto-grow: scrollHeight'gacha (max-height 240px CSS'da klamplaydi);
       // dock pastga o'rnatilgan — box yuqoriga qarab kengayadi (flex oqimi).
       // #1 — yozish yo'li ham CSS 60vh bilan bir xil viewport-nisbiy CAP ishlatadi
-      setPrompt: (e) => { const ta = e.target; try { const CAP = Math.round(window.innerHeight * 0.6); ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, CAP) + 'px'; } catch (x) {} this.setState({ aiPrompt: ta.value }); },
+      // #6: setPrompt binding olib tashlandi — prompt endi chip-editor (installChipEditor input listener'i)
       improve: () => this.doEnhance(),
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
