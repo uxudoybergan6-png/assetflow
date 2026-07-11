@@ -125,11 +125,14 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
   (Vertex `imagegeneration@002` — ✦4/✦8) · #2 video Upscale (fal Topaz, tier ✦/s, server ffprobe imzoда) ·
   #4 ovoz Kokoro/OpenRouter → **Chirp 3 HD** (Cloud TTS, jonli ishladi; 0 enabled OpenRouter) · #3 **narx
   dvigateli** ("Apply 2× margin" tugma + enabled-only + sarf-chegараси). Kredit langari $0.019 (Pro 1000).
-- 👉 **HOZIRGI ISH — USER qadamlari:** (1) `git push` (BATCH3 18 + BATCH4 11 commit) → (2) prod'da
-  `migrate:deploy` (BATCH3'ning 2 yangi; BATCH4 = migratsiya YO'Q) keyin API deploy → (3) AE **Cmd+Q**
-  restart → (4) BATCH3 #3 pill test + **Admin → Pricing → "Apply target margin" (2.0)** bos (BATCH4 #3).
-  ⚠️ Seedance R2V 4k Apply'gача zararда — deploy'дан keyin darhol Apply bos yoki Seedance 4k ishlatма
-  (sarf-chegараси $250/kun himoya).
+- ✅ **PUSH+DEPLOY TASDIQLANDI (2026-07-11, Direktor jonli tekshiruvi):** git 0 ahead/clean; prod
+  `/health` ok (db+storage); katalog `kind`/`stockType` qaytaryapti → BATCH3 kod+migratsiya jonli;
+  API boot bo'lgan → `COST_QUOTE_SECRET` o'rnatilgan; legal sahifalar LS; attestation server-enforce;
+  bundle `com.frameflow`. ⚠️ Tashqaridan tekshirib BO'LMADI: **Apply target margin bosilganmi** (Admin →
+  Pricing'da tasdiqla — Seedance 4k Apply'gача zararда!) · AE plagin jonli test · SENTRY/BACKUP/
+  MODERATION/LS-LIVE env'lар prod'да o'rnatilganmi.
+- 🔴 **ENG KATTA BLOKER — KONTENT:** prod katalogда FAQAT 1 shablon published (landing esa "5000+"
+  deydi — nomuvofiqlik). Launch'дан oldин katalog to'ldirish yoki landing raqamlarини moslash SHART.
 - 👉 **KEYINGI:** Stock **S2** (ingest quvuri) — `docs/STOCK-EXPANSION-PLAN.md` (S2→S6 hali yozilmagan).
 - ⏳ **Deferred:** web @-mention autocomplete · atomik chip editor · headless admin E2E.
 

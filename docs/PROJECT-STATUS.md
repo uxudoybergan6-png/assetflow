@@ -1,4 +1,17 @@
-> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval pastdagi **«§-1 · 2026-07-03 YANGILANISH»** blokini o'qing (u eski faktlarni bekor qiladi).
+> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+
+---
+
+## §-2. 2026-07-11 JONLI TEKSHIRUV (Direktor — prod'ga qarshi tasdiqlangan)
+
+> Hujjat da'volariga ishonmasdan git + kod + jonli prod API tekshirildi. Bu blok §-1'dan yangi.
+
+- **Deploy holati:** BATCH3 (13 fix) + BATCH4 (4 fix) + barcha 5 launch-faza — **push qilingan VA prod'da jonli** (git 0 ahead; `/health` db+storage ok; katalog javobida `kind`/`stockType` → `stock_kind_columns`/`plan_config_active` migratsiyalari qo'llangan).
+- **Prod:** `api.getframeflow.app` (Cloud Run) · `getframeflow.app` (CF Pages) · landing CMS jonli (`/api/landing/config`).
+- **Kodda tasdiqlangan:** `COST_QUOTE_SECRET` FATAL-check (API boot bo'lgani = o'rnatilgan) · Sentry real dep · `db-backup.yml` · legal HTML Lemon Squeezy · attestation server-enforce (`RIGHTS_REQUIRED` ×3) · `RevenueEvent` + refund/clawback/dunning · plagin bundle `com.frameflow`.
+- **🔴 Asosiy amaliy bloker:** prod katalogda **faqat 1 published shablon** ("Football Championship Logo Reveal"); landing "5000+ templates" / Pro "10,000+" deydi — kontent to'ldirish yoki raqamlarni moslash SHART.
+- **Tashqaridan tekshirib bo'lmagan (USER tasdig'i kerak):** prod env — `SENTRY_DSN`, `BACKUP_GCS_BUCKET`+versioning, `MODERATION_API_KEY`, `VIRUSTOTAL_API_KEY`, Lemon Squeezy LIVE · Admin → Pricing "Apply target margin" bosilgan-bosilmagani · AE plagin jonli E2E.
+- Batafsil: `docs/LAUNCH-READINESS.md` (⭐ HOLAT) · `docs/SESSION-REPORT.md` · `docs/DIREKTOR-HANDOFF.md` §5.
 
 # AssetFlow — Loyiha holati (yangi dasturchi uchun onboarding)
 

@@ -144,7 +144,12 @@ yashirildi; admin count kelishtirildi; platform/help.html FAQ+guidelines. API bu
 (2) API deploy → (3) backfill: node apps/api/dist/scripts/backfill-asset-keys.js. (4) install-cep.sh reinstall (bundle-id).
 (5) support@getframeflow.app mailbox. FOLLOW-UP: legal+o'zbek UI → INGLIZ (kichik, alohida).
 
-## ⭐ HOLAT: BARCHA 5 FAZA TUGADI (F1 huquqiy · F2 abuse · F3 ops · F4 moliya · F5 miqyos/rebrand/UX) — push+deploy+jonli test qoldi.
+## ⭐ HOLAT (2026-07-11, Direktor jonli tekshiruvi): BARCHA 5 FAZA TUGADI va **PUSH+DEPLOY BO'LGAN** —
+git 0 ahead; prod `/health` ok; BATCH3 maydonlari (`kind`/`stockType`) katalogda jonli → migratsiyalar qo'llangan;
+`COST_QUOTE_SECRET` o'rnatilgan (API boot fakti). **QOLDI:** (a) prod env tasdig'i — SENTRY_DSN · BACKUP_GCS_BUCKET+
+versioning · MODERATION_API_KEY · VIRUSTOTAL · LS LIVE (tashqaridan tekshirib bo'lmaydi); (b) Admin → Pricing
+"Apply target margin" bosilganini tasdiqlash; (c) AE plagin jonli E2E; (d) 🔴 **KONTENT: prod katalogda FAQAT 1
+published shablon, landing "5000+" deydi** — eng katta amaliy bloker; (e) yurist ko'rigi (LEGAL-TODO).
 
 ### FAZA 5 (asl reja) — Miqyos + Rebrand + Product/UX polish 🟡/🟢
 Miqyos: katalog+admin paginatsiya + N+1 (S3 flag→DB) + streaming .aep download + ingest concurrency + CDN + search vector-index.
