@@ -156,6 +156,8 @@ const IMG_ASPECTS = ["1:1", "2:3", "3:2", "3:4", "16:9", "4:3", "4:5", "5:4", "9
 // Imagen 4/Ultra faqat 5 ta; Nano Banana (Gemini image ImageConfig) 8 ta (4:5, 5:4 YO'Q).
 const IMAGEN_ASPECTS = ["1:1", "3:4", "4:3", "16:9", "9:16"];
 const NANO_ASPECTS = ["1:1", "2:3", "3:2", "3:4", "4:3", "16:9", "9:16", "21:9"];
+// Seedream (BytePlus §8 jadval tartibida) — nisbat tier bilan aniq piksel size'ga aylanadi (byteplus.ts)
+const SEEDREAM_ASPECTS = ["1:1", "4:3", "3:4", "16:9", "9:16", "3:2", "2:3", "21:9"];
 const KOKORO_VOICES = [
   { id: "af_bella", label: "Bella" },
   { id: "af_nova", label: "Nova" },
@@ -330,9 +332,9 @@ export const GEN_MODELS: GenModel[] = [
 
   // ── RASM — BYTEPLUS SEEDREAM (ModelArk, SINXRON /images/generations; docs/BYTEPLUS-DOCS-MODELS.md §8) ──
   // Vertex rasm modellari YOQIQ QOLADI — Seedream YONIGA qo'shildi (foydalanuvchi solishtirib qaror qiladi).
-  // Nisbat: Seedream `size` faqat tier ("2K") qabul qiladi — v1'da aniq piksel o'lcham yuborilmaydi,
-  // shu sabab nisbat chipi yashirin (1 option "Auto"). Kredit narxlari eng yaqin Vertex tier nusxasi —
-  // narx birinchi invoice + Apply margin bilan aniqlanadi.
+  // Nisbat: tanlangan nisbat + tier → §8 rasmiy jadvaldan ANIQ piksel `size` yuboriladi
+  // (byteplus.ts seedreamSize); nisbat NARXGA ta'sir qilmaydi (bir xil tier). Kredit narxlari
+  // eng yaqin Vertex tier nusxasi — narx birinchi invoice + Apply margin bilan aniqlanadi.
   {
     id: 1020,
     mode: "image",
@@ -349,11 +351,11 @@ export const GEN_MODELS: GenModel[] = [
     refMode: "optional",
     maxRefs: 14, // docs §8: ref rasm ≤14 (lite)
     inputs: ["image-ref"],
-    aspects: ["Auto"], // nisbat model ixtiyorida (size=tier) — UI chip yashirin (1 option)
+    aspects: SEEDREAM_ASPECTS, // nisbat + tier → aniq piksel size (§8 jadval, narxga ta'sir yo'q)
     resolutions: ["2K", "4K"],
     count: [1, 2, 3, 4], // processor har rasm uchun alohida sinxron chaqiruv qiladi (mavjud mapLimit yo'li)
     imgSettings: {
-      aspect: { param: "aspect_ratio", options: ["Auto"], map: { Auto: "auto" }, def: "Auto" },
+      aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
       quality: { label: "Quality", param: "quality", options: ["2K", "4K"], def: "2K", cost: { "2K": 8, "4K": 16 } },
       num: [1, 2, 3, 4],
     },
@@ -375,11 +377,11 @@ export const GEN_MODELS: GenModel[] = [
     refMode: "optional",
     maxRefs: 10, // docs §8: ref rasm ≤10 (5-0-pro)
     inputs: ["image-ref"],
-    aspects: ["Auto"],
+    aspects: SEEDREAM_ASPECTS, // nisbat + tier → aniq piksel size (§8 jadval, narxga ta'sir yo'q)
     resolutions: ["1K", "2K"],
     count: [1, 2, 3, 4],
     imgSettings: {
-      aspect: { param: "aspect_ratio", options: ["Auto"], map: { Auto: "auto" }, def: "Auto" },
+      aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
       quality: { label: "Quality", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 4, "2K": 8 } },
       num: [1, 2, 3, 4],
     },

@@ -6,7 +6,7 @@ import {
   computeGenCost,
   resolveImageCount,
 } from "./gen-models.js";
-import { buildByteplusVideoBody, mentionTokenSelfTest } from "./ai/byteplus.js";
+import { buildByteplusVideoBody, mentionTokenSelfTest, seedreamSizeSelfTest } from "./ai/byteplus.js";
 
 /**
  * PROBLEM 10 — GEN_MODELS katalog validatori.
@@ -234,7 +234,9 @@ if (isCli) {
   const enabled = GEN_MODELS.filter((m) => m.enabled !== false).length;
   // BytePlus mention-dialekt (@img→"Image n" + kadr-offset) build-time testi.
   const mentionFails = mentionTokenSelfTest();
-  if (issues.length || mentionFails.length) {
+  // BATCH5 #7 — Seedream nisbat→aniq piksel `size` jadvali build-time testi.
+  const sizeFails = seedreamSizeSelfTest();
+  if (issues.length || mentionFails.length || sizeFails.length) {
     if (issues.length) {
       console.error(`✗ GEN_MODELS: ${issues.length} muammo topildi:`);
       for (const i of issues) console.error(`  • model ${i.modelId} — ${i.field}: ${i.message}`);
@@ -243,8 +245,13 @@ if (isCli) {
       console.error(`✗ BytePlus mention-dialekt: ${mentionFails.length} test yiqildi:`);
       for (const f of mentionFails) console.error(`  • ${f}`);
     }
+    if (sizeFails.length) {
+      console.error(`✗ Seedream size jadvali: ${sizeFails.length} test yiqildi:`);
+      for (const f of sizeFails) console.error(`  • ${f}`);
+    }
     process.exit(1);
   }
   console.log(`✓ GEN_MODELS OK — ${GEN_MODELS.length} entry (${enabled} yoqilgan), 0 muammo.`);
   console.log(`✓ BytePlus mention-dialekt OK — mention token testlari o'tdi.`);
+  console.log(`✓ Seedream size jadvali OK — nisbat→piksel testlari o'tdi.`);
 }

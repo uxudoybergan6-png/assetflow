@@ -1144,11 +1144,12 @@ export async function processGeneration(genId: string): Promise<void> {
       const genOne = (): Promise<OrResult<Buffer>> =>
         useByteplusImg
           ? // Seedream — sinxron, bitta rasm/chaqiruv (count>1 = mapLimit N ta alohida chaqiruv).
-            // size = tier ("1K"/"2K"/"4K"); nisbat yuborilmaydi (v1 — model ixtiyorida).
+            // size: tier + nisbat → adapter §8 jadvaldan aniq piksel tanlaydi (nisbat narxga ta'sir qilmaydi).
             byteplusImage(model.byteplusModel ?? model.key, {
               prompt: gen.prompt,
               imageUrls: falImageUrls,
               size: imageConfig.image_size,
+              aspect: imageConfig.aspect_ratio,
             }).then(
               (r): OrResult<Buffer> =>
                 r.ok

@@ -296,10 +296,73 @@ export async function byteplusVideoUrlToBuffer(url: string): Promise<OrResult<Bu
 
 // ── SEEDREAM (rasm) — SINXRON endpoint: POST {base}/images/generations (OpenAI-images-mos).
 // Video task/poll'dan farqli — bitta so'rov natijani darhol qaytaradi (docs §8).
+
+// Rasmiy nisbat→piksel jadvali (docs/BYTEPLUS-DOCS-MODELS.md §8) — aspect nazorati uchun
+// `size` sifatida ANIQ piksel yuboriladi ("2048x2048"); jadvalda yo'q kombinatsiya → tier
+// string fallback (hech qachon piksel taxmin qilinmaydi). Kalit: byteplusModel → tier → nisbat.
+const SEEDREAM_PIXEL_SIZES: Record<string, Record<string, Record<string, string>>> = {
+  // Dola-Seedream 5.0 Pro
+  "dola-seedream-5-0-pro-260628": {
+    "1K": {
+      "1:1": "1024x1024", "4:3": "1152x864", "3:4": "864x1152", "16:9": "1424x800",
+      "9:16": "800x1424", "3:2": "1248x832", "2:3": "832x1248", "21:9": "1568x672",
+    },
+    "2K": {
+      "1:1": "2048x2048", "4:3": "2368x1776", "3:4": "1776x2368", "16:9": "2816x1584",
+      "9:16": "1584x2816", "3:2": "2496x1664", "2:3": "1664x2496", "21:9": "3136x1344",
+    },
+  },
+  // Seedream 5.0 Lite
+  "seedream-5-0-260128": {
+    "2K": {
+      "1:1": "2048x2048", "4:3": "2304x1728", "3:4": "1728x2304", "16:9": "2848x1600",
+      "9:16": "1600x2848", "3:2": "2496x1664", "2:3": "1664x2496", "21:9": "3136x1344",
+    },
+    "4K": {
+      "1:1": "4096x4096", "4:3": "4704x3520", "3:4": "3520x4704", "16:9": "5504x3040",
+      "9:16": "3040x5504", "3:2": "4992x3328", "2:3": "3328x4992", "21:9": "6240x2656",
+    },
+  },
+};
+
+/**
+ * (model, tier, nisbat) → yuboriladigan `size` qiymati. Nisbat berilgan va jadvalda mavjud
+ * bo'lsa aniq piksel; aks holda tier string o'zgarishsiz. Sof funksiya — build-time test.
+ */
+export function seedreamSize(model: string, tier?: string, aspect?: string): string | undefined {
+  if (aspect && tier) {
+    const px = SEEDREAM_PIXEL_SIZES[model]?.[tier]?.[aspect];
+    if (px) return px;
+  }
+  return tier;
+}
+
+/** Seedream nisbat→piksel build-time dry-run testi (mentionTokenSelfTest naqshi; bo'sh = OK). */
+export function seedreamSizeSelfTest(): string[] {
+  const cases: Array<[string, string | undefined, string | undefined, string | undefined]> = [
+    ["dola-seedream-5-0-pro-260628", "1K", "16:9", "1424x800"], // Pro 1K 16:9
+    ["seedream-5-0-260128", "4K", "21:9", "6240x2656"], // Lite 4K 21:9
+    ["seedream-5-0-260128", "2K", "1:1", "2048x2048"],
+    ["dola-seedream-5-0-pro-260628", "2K", "9:16", "1584x2816"],
+    ["dola-seedream-5-0-pro-260628", "1K", undefined, "1K"], // nisbatsiz → tier
+    ["dola-seedream-5-0-pro-260628", "1K", "Auto", "1K"], // noma'lum kombinatsiya → tier fallback
+    ["dola-seedream-5-0-pro-260628", "4K", "16:9", "4K"], // Pro'da 4K tier yo'q → tier fallback
+    ["boshqa-model", "2K", "16:9", "2K"], // jadvalda yo'q model → tier fallback
+    ["seedream-5-0-260128", undefined, "16:9", undefined], // tier'siz → undefined (body'ga qo'shilmaydi)
+  ];
+  const fails: string[] = [];
+  for (const [m, t, a, want] of cases) {
+    const got = seedreamSize(m, t, a);
+    if (got !== want) fails.push(`seedreamSize("${m}","${t}","${a}") = "${got}" (kutilgan "${want}")`);
+  }
+  return fails;
+}
+
 export type ByteplusImageParams = {
   prompt: string;
   imageUrls?: string[]; // referens rasmlar (PUBLIC URL) — Seedream ko'p-referens qo'llaydi
   size?: string; // tier: "1K" | "2K" | "4K" (model qo'llasa)
+  aspect?: string; // nisbat ("16:9" ...) — tier bilan birga aniq piksel size'ga aylanadi (§8 jadval)
 };
 
 /**
@@ -321,7 +384,8 @@ export async function byteplusImage(
   };
   const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
   if (refs.length) body.image = refs.length === 1 ? refs[0] : refs; // string | string[] (docs §8)
-  if (p.size) body.size = p.size;
+  const size = seedreamSize(model, p.size, p.aspect); // nisbat bo'lsa aniq piksel, aks holda tier
+  if (size) body.size = size;
   const backoffMs = [0, 2000, 5000];
   for (let attempt = 0; attempt < backoffMs.length; attempt++) {
     if (backoffMs[attempt]) await sleep(backoffMs[attempt]);
