@@ -35,6 +35,11 @@ export const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
   1011: { "1K": 0.04, "2K": 0.06 }, // Imagen 4 — 1K $0.040 ✅; 2K taxminiy
   1012: { "1K": 0.06, "2K": 0.08 }, // Imagen 4 Ultra — 1K $0.060 ✅; 2K taxminiy
   1015: { x2: 0.003, x4: 0.003 }, // Imagen Upscale (imagegeneration@002) — $0.003/rasm ✅
+  // Seedream (BytePlus ModelArk, per-rasm postpaid) — Pro narxi KONSOLDA TASDIQLANGAN (2026-07-11):
+  // output 1K $0.045 · 2K $0.090; input ref $0.003/dona (birinchisi bepul) — ref narxi jadvalga
+  // kirmaydi (kichik; kredit narxi konservativ qoplaydi). 1020 Lite ATAYIN YO'Q — rasmiy narxi
+  // tasdiqlanmagan → DEFAULT_PROVIDER_USD (overestimate fail-safe); taxminiy PAST raqam yozilmaydi.
+  1021: { "1K": 0.045, "2K": 0.09 }, // Seedream 5.0 Pro ✅
 };
 
 /** Video (per-second): model id → resolution bo'yicha soniya USD.

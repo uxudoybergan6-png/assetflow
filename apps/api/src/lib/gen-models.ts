@@ -328,6 +328,64 @@ export const GEN_MODELS: GenModel[] = [
     },
   },
 
+  // ── RASM — BYTEPLUS SEEDREAM (ModelArk, SINXRON /images/generations; docs/BYTEPLUS-DOCS-MODELS.md §8) ──
+  // Vertex rasm modellari YOQIQ QOLADI — Seedream YONIGA qo'shildi (foydalanuvchi solishtirib qaror qiladi).
+  // Nisbat: Seedream `size` faqat tier ("2K") qabul qiladi — v1'da aniq piksel o'lcham yuborilmaydi,
+  // shu sabab nisbat chipi yashirin (1 option "Auto"). Kredit narxlari eng yaqin Vertex tier nusxasi —
+  // narx birinchi invoice + Apply margin bilan aniqlanadi.
+  {
+    id: 1020,
+    mode: "image",
+    key: "seedream-5-0-260128", // Seedream 5.0 Lite — batch/streaming imkonlari v1'da ishlatilmaydi
+    label: "Seedream 5.0 Lite",
+    brand: "bytedance",
+    provider: "byteplus",
+    byteplusModel: "seedream-5-0-260128",
+    enabled: false, // jonli test OK (2026-07-11, 2K/32s) LEKIN rasmiy USD narxi tasdiqlanmagan — narx aniqlangach yoqiladi
+    feature: "text-to-image",
+    cost: 8, // fallback (2K); imgSettings.quality.cost ustun (Nano Banana 2 tier nusxasi — placeholder)
+    qualityCost: { "2K": 8, "4K": 16 },
+    referenceMode: "image-edit", // referens bo'lsa i2i (Seedream multi-ref); referenssiz sof t2i
+    refMode: "optional",
+    maxRefs: 14, // docs §8: ref rasm ≤14 (lite)
+    inputs: ["image-ref"],
+    aspects: ["Auto"], // nisbat model ixtiyorida (size=tier) — UI chip yashirin (1 option)
+    resolutions: ["2K", "4K"],
+    count: [1, 2, 3, 4], // processor har rasm uchun alohida sinxron chaqiruv qiladi (mavjud mapLimit yo'li)
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: ["Auto"], map: { Auto: "auto" }, def: "Auto" },
+      quality: { label: "Quality", param: "quality", options: ["2K", "4K"], def: "2K", cost: { "2K": 8, "4K": 16 } },
+      num: [1, 2, 3, 4],
+    },
+    imgModalities: ["image"],
+  },
+  {
+    id: 1021,
+    mode: "image",
+    key: "dola-seedream-5-0-pro-260628", // Dola-Seedream 5.0 Pro — konsolda aktivlashtirilgan (per-rasm postpaid, pack shart emas)
+    label: "Seedream 5.0 Pro",
+    brand: "bytedance",
+    provider: "byteplus",
+    byteplusModel: "dola-seedream-5-0-pro-260628",
+    enabled: true, // narx konsolda TASDIQLANGAN (1K $0.045 / 2K $0.090) + jonli test OK (2026-07-11, 1K/115s)
+    feature: "text-to-image",
+    cost: 4, // fallback (1K); narx birinchi invoice + Apply margin bilan aniqlanadi (Nano Banana 2 tier nusxasi)
+    qualityCost: { "1K": 4, "2K": 8 },
+    referenceMode: "image-edit",
+    refMode: "optional",
+    maxRefs: 10, // docs §8: ref rasm ≤10 (5-0-pro)
+    inputs: ["image-ref"],
+    aspects: ["Auto"],
+    resolutions: ["1K", "2K"],
+    count: [1, 2, 3, 4],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: ["Auto"], map: { Auto: "auto" }, def: "Auto" },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 4, "2K": 8 } },
+      num: [1, 2, 3, 4],
+    },
+    imgModalities: ["image"],
+  },
+
   // ── RASM (text-to-image) — ESKI fal/openrouter avlod: to'liq-Google qaroriga ko'ra HAMMASI enabled:false ──
   {
     id: 1001,

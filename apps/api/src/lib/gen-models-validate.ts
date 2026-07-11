@@ -39,7 +39,7 @@ const PROVIDERS = new Set([
 // gen-processor dispatch'ida REAL branch bor provider+feature juftliklari (yangi provider →
 // yangi adapter branch SHART; ro'yxatga qo'shishdan oldin gen-processor.ts'ga branch yozing).
 const VIDEO_DISPATCH = new Set(["fal", "vertex", "vertex-omni", "openrouter", "byteplus", undefined]);
-const IMAGE_DISPATCH = new Set(["fal", "vertex-image", "magnific", "openrouter", undefined]);
+const IMAGE_DISPATCH = new Set(["fal", "vertex-image", "magnific", "openrouter", "byteplus", undefined]);
 
 export type ModelIssue = { modelId: number | string; field: string; message: string };
 
@@ -105,6 +105,7 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
       issue(out, m, "imgSettings.aspect.def", `def='${asp.def}' options ichida emas`);
     }
     if (m.provider === "fal" && !m.falModel && !m.key) issue(out, m, "falModel", "fal modeli falModel yoki key e'lon qilishi shart");
+    if (m.provider === "byteplus" && !m.byteplusModel) issue(out, m, "byteplusModel", "byteplus rasm modeli byteplusModel (ModelArk ID) e'lon qilishi shart");
   }
 
   if (m.mode === "video") {

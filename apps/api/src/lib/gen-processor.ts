@@ -31,6 +31,7 @@ import {
 } from "./ai/fal.js";
 import {
   buildByteplusVideoBody,
+  byteplusImage,
   byteplusPollStep,
   byteplusSubmitVideoTask,
   byteplusVideoUrlToBuffer,
@@ -1059,6 +1060,7 @@ export async function processGeneration(genId: string): Promise<void> {
       const useMagnific = genProvider() === "magnific";
       const useFal = model.provider === "fal"; // openai/gpt-image-2/edit (image-edit)
       const useVertexImg = model.provider === "vertex-image"; // Imagen/Nano Banana — Google to'g'ridan-to'g'ri
+      const useByteplusImg = model.provider === "byteplus"; // Seedream (ModelArk, sinxron /images/generations)
       const mModel = model.magnificModel ?? "realism";
       // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
       // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
@@ -1090,7 +1092,9 @@ export async function processGeneration(genId: string): Promise<void> {
       // → file_download_error). data-URI'ni R2'ga yuklab TOZA public URL beramiz (remove-bg naqshi).
       // t2i (referenceMode 'none') → referens YO'Q: falImageUrls bo'sh qoladi (falImage image_urls yubormaydi).
       let falImageUrls: string[] = [];
-      const falNeedsRef = useFal && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
+      // byteplus (Seedream) ham referensni PUBLIC URL sifatida oladi — fal bilan bir xil yo'l;
+      // farqi: Seedream'da referens IXTIYORIY (refMode 'optional') — bo'sh bo'lsa sof t2i.
+      const falNeedsRef = (useFal || useByteplusImg) && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
       if (falNeedsRef) {
         // P8 C3: fal yo'lida ham maxRefs server-side kesiladi.
         const falRefCap = typeof model.maxRefs === "number" && model.maxRefs > 0 ? model.maxRefs : undefined;
@@ -1101,7 +1105,8 @@ export async function processGeneration(genId: string): Promise<void> {
               ? [refUrl]
               : []
         ).slice(0, falRefCap);
-        if (!rawRefs.length) return void (await fail("An image is required for editing — upload one via ＋"));
+        if (!rawRefs.length && !(useByteplusImg && model.refMode !== "required"))
+          return void (await fail("An image is required for editing — upload one via ＋"));
         // PARALLEL — referenslar bir vaqtда R2'ga (odatda plagin allaqachon public R2 URL yuboradi → no-op).
         // Promise.all TARTIBNI saqlaydi → @imgN→image_urls[N-1] mapping buzilmaydi.
         falImageUrls = await Promise.all(
@@ -1137,7 +1142,22 @@ export async function processGeneration(genId: string): Promise<void> {
         return void (await fail("A source image is required for upscaling"));
       const upFactor: "x2" | "x4" = params.quality === "x4" ? "x4" : "x2"; // imageUnitCost def bilan mos (x2)
       const genOne = (): Promise<OrResult<Buffer>> =>
-        useVertexImg
+        useByteplusImg
+          ? // Seedream — sinxron, bitta rasm/chaqiruv (count>1 = mapLimit N ta alohida chaqiruv).
+            // size = tier ("1K"/"2K"/"4K"); nisbat yuborilmaydi (v1 — model ixtiyorida).
+            byteplusImage(model.byteplusModel ?? model.key, {
+              prompt: gen.prompt,
+              imageUrls: falImageUrls,
+              size: imageConfig.image_size,
+            }).then(
+              (r): OrResult<Buffer> =>
+                r.ok
+                  ? r.data[0]
+                    ? { ok: true, data: r.data[0] }
+                    : { ok: false, error: "byteplus: empty result" }
+                  : r
+            )
+          : useVertexImg
           ? isUpscale
             ? vertexImageUpscale(model.key, vertexRefUrls[0], upFactor)
             : useEdit

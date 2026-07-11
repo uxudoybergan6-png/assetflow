@@ -221,9 +221,9 @@ export async function byteplusPollStep(taskId: string): Promise<OrResult<Byteplu
   return { ok: true, data: { state: "pending" } }; // queued|running
 }
 
-/** Natija URL (24 soat amal qiladi!) → Buffer — caller darhol GCS'ga persist qiladi (falVideoUrlToBuffer ekvivalenti). */
-export async function byteplusVideoUrlToBuffer(url: string): Promise<OrResult<Buffer>> {
-  if (!url) return { ok: false, error: "byteplus: video URL not found" };
+/** Natija URL (24 soat amal qiladi!) → Buffer — caller darhol GCS'ga persist qiladi. */
+async function byteplusDownloadUrl(url: string, kind: string): Promise<OrResult<Buffer>> {
+  if (!url) return { ok: false, error: `byteplus: ${kind} URL not found` };
   try {
     const res = await fetch(url);
     if (!res.ok) {
@@ -234,4 +234,81 @@ export async function byteplusVideoUrlToBuffer(url: string): Promise<OrResult<Bu
   } catch (e) {
     return { ok: false, error: (e as Error).message || "byteplus download error" };
   }
+}
+
+/** falVideoUrlToBuffer ekvivalenti (video natija). */
+export async function byteplusVideoUrlToBuffer(url: string): Promise<OrResult<Buffer>> {
+  return byteplusDownloadUrl(url, "video");
+}
+
+// ── SEEDREAM (rasm) — SINXRON endpoint: POST {base}/images/generations (OpenAI-images-mos).
+// Video task/poll'dan farqli — bitta so'rov natijani darhol qaytaradi (docs §8).
+export type ByteplusImageParams = {
+  prompt: string;
+  imageUrls?: string[]; // referens rasmlar (PUBLIC URL) — Seedream ko'p-referens qo'llaydi
+  size?: string; // tier: "1K" | "2K" | "4K" (model qo'llasa)
+};
+
+/**
+ * Seedream rasm generatsiyasi. v1: bitta rasm chiqishi (sequential_image_generation
+ * ISHLATILMAYDI — kelajak faza). 429 → qisqa backoff bilan qayta urinish; baribir limit
+ * bo'lsa oddiy xato (sinxron oqim — refund yo'li ishlaydi, video sentinel semantikasi EMAS).
+ */
+export async function byteplusImage(
+  model: string,
+  p: ByteplusImageParams
+): Promise<OrResult<Buffer[]>> {
+  if (!isByteplusConfigured()) return NOT_CONFIGURED;
+  const body: Record<string, unknown> = {
+    model,
+    prompt: p.prompt,
+    output_format: "png",
+    response_format: "url",
+    watermark: false, // ⚠️ BIZDA HAR DOIM false
+  };
+  const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
+  if (refs.length) body.image = refs.length === 1 ? refs[0] : refs; // string | string[] (docs §8)
+  if (p.size) body.size = p.size;
+  const backoffMs = [0, 2000, 5000];
+  for (let attempt = 0; attempt < backoffMs.length; attempt++) {
+    if (backoffMs[attempt]) await sleep(backoffMs[attempt]);
+    let res: Response;
+    try {
+      res = await fetch(`${ARK_BASE}/images/generations`, {
+        method: "POST",
+        headers: bpHeaders(),
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      return { ok: false, error: (e as Error).message || "byteplus: could not connect to image endpoint" };
+    }
+    if (!res.ok) {
+      const msg = await errText(res);
+      if (res.status === 429 || isRateLimitError(msg)) continue; // retryable — keyingi backoff
+      return { ok: false, error: mapByteplusError(msg), status: res.status };
+    }
+    const j = (await safeJson(res)) as {
+      data?: Array<{ url?: string; b64_json?: string }>;
+      usage?: ByteplusUsage;
+    } | null;
+    const items = Array.isArray(j?.data) ? j.data : [];
+    const bufs: Buffer[] = [];
+    for (const it of items) {
+      if (it?.url) {
+        const dl = await byteplusDownloadUrl(it.url, "image");
+        if (!dl.ok) return dl;
+        bufs.push(dl.data);
+      } else if (it?.b64_json) {
+        bufs.push(Buffer.from(it.b64_json, "base64"));
+      }
+    }
+    if (!bufs.length) return { ok: false, error: "byteplus: image URL not found" };
+    if (j?.usage) {
+      console.log(
+        `[byteplus] image usage total_tokens=${j.usage.total_tokens ?? "?"} (model=${model})`
+      );
+    }
+    return { ok: true, data: bufs };
+  }
+  return { ok: false, error: "byteplus: image rate limit — please try again shortly" };
 }

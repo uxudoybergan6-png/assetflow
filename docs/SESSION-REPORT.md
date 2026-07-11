@@ -1,15 +1,13 @@
-# Sessiya hisoboti — 2026-07-11 (BATCH5 Prompt #1)
+# Sessiya hisoboti — 2026-07-11 (BATCH5 Prompt #2: Seedream rasm BytePlus'da)
 
-**Nima qilindi:** BytePlus ModelArk adapter (`apps/api/src/lib/ai/byteplus.ts`) yozildi va
-Seedance 3101/3102 fal'dan BytePlus'ga ko'chirildi (Topaz 3201 fal'da qoldi).
-- Adapter: Bearer auth, task submit/poll, semafor (3 parallel / 4k=1), 429 backoff (refund YO'Q,
-  job queued'ga qaytadi), input-moderation (real yuz) → aniq English xato + oddiy refund yo'li.
-- gen-processor: `byteplus-video` provider-job (restart resume), BYTEPLUS_TIMEOUT = FAL_TIMEOUT semantika.
-- 3101 Fast `enabled:false` (pack olinmagan); 3102 label "Seedance 2.0 R2V" → "Seedance 2.0".
-- provider-cost: 3101/3102 BytePlus tarifiga yangilandi (birinchi invoice bilan tasdiqlansin).
-- `/gen/health`ga fal+byteplus boolean qo'shildi; `.env.example` BYTEPLUS_* qo'shildi.
+**Nima qilindi:**
+- `byteplus.ts` → `byteplusImage()` (sinxron `POST /images/generations`, url→Buffer, 429 backoff, watermark:false, usage log).
+- Katalog: 1020 Seedream 5.0 Lite (2K/4K, ref≤14, `enabled:false` — narx tasdiqlanmagan) va 1021 Seedream 5.0 Pro (1K/2K, ref≤10, `enabled:true`). Vertex rasm modellari TEGILMAGAN.
+- `gen-processor` rasm dispatch'iga byteplus branch (referens=fal public-URL yo'li, Seedream'da ixtiyoriy); validator `IMAGE_DISPATCH`+byteplusModel check; `provider-cost` 1021 = 1K $0.045 / 2K $0.09 (konsol-tasdiq); 1020 ataylab yo'q → DEFAULT_PROVIDER_USD.
 
-**Tekshirildi:** `npm run build -w apps/api` yashil (validator 0 muammo). JONLI test: 3102 t2v
-480p/4s → task `cgt-20260712010818-d6w72` SUCCEEDED (~70s), usage 40 594 token, video yuklab olindi.
+**Jonli test (real API):** Lite 2K — OK 32s (16384 token); Pro 1K — OK 115s (4056 token); natija GCS'ga yuklandi (`gen/live-test/...`). Rasm sifati tekshirildi.
 
-**Kutilmoqda:** push + Cloud Run deploy (BYTEPLUS_API_KEY env), AE/platforma E2E, Fast pack olingach 3101 yoqish.
+**Kutilmoqda:**
+- Lite rasmiy narxi (konsol/invoice) → provider-cost qatori + yoqish.
+- Push + Cloud Run deploy; AE plagin/webda Pro'ni Vertex bilan solishtirish.
+- Kelajak: sequential/batch, interactive editing (Draw), Seedream→Seedance trusted-chain.
