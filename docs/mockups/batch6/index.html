@@ -1,0 +1,320 @@
+<!--
+BATCH 6 COVERAGE INVENTORY — source: platform/index.html + standalone platform pages + gen-models.ts
+
+Real screen/state                         Mockup section id
+Landing / all marketing sections          home
+Landing / mega-menu open                  home-mega (redesign concept — live nav is a flat 4-link bar; pattern from BATCH6 brief §2)
+Authenticated dashboard                   dashboard
+Templates catalog + filters               templates
+Template detail + Pro/download gate       template-detail
+AI Studio / image composer                ai-image
+AI Studio / video + open selectors        ai-video
+AI Studio / draw canvas overlay            ai-draw (redesign concept — no draw tool in the live platform; pattern from BATCH6 brief §7)
+AI Studio / voice composer                ai-voice
+AI Studio / image + video upscale          ai-upscale
+AI Studio / sessions + history            ai-history
+AI Studio / audio library                  ai-audio
+AI Studio / model picker modal             ai-models
+Projects list                              projects
+Project detail / populated                 project-detail
+Project detail / empty                     state-project-empty
+Account / profile                          account-profile
+Account / subscription & credits           account-billing
+Account / downloads                        account-downloads
+Auth / login                               login
+Auth / register + Google + Turnstile       register
+Auth / forgot password                     forgot
+Auth / verify email                        verify-email
+Pricing                                    pricing
+Plugin download flow                       plugin
+Help / FAQ (help.html)                     help
+Terms of Service (terms.html)              legal-terms
+Privacy Policy (privacy.html)              legal-privacy
+Refund Policy (refund.html)                legal-refund
+DMCA (dmca.html)                           legal-dmca
+Generation / empty gallery                 state-empty
+Generation / progress                      state-generating
+Generation / generic error toast           state-error
+Generation / moderation refund             state-moderation
+Credits / low balance + top up             state-low-credits
+Templates / no results                     state-no-results
+Media lightbox                              state-lightbox
+Add to project + project-name modal         state-project-modal
+Reference library picker                    state-reference-library
+Avatar / account menu open                  state-avatar-menu
+Account / delete confirmation               state-delete
+
+Excluded:
+- Contributor Studio and Admin console — internal operational products, not the public USER platform.
+- Files prefixed `_` in platform/ — historical design mockups, not live screens.
+- ff-api.js — support code, not a user-facing screen.
+- AE/Premiere plugin UI — explicitly out of scope for this batch; the public plugin download page is included.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FrameFlow · Batch 6 full-platform palette mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="screens.css">
+</head>
+<body>
+  <aside class="mockbar" aria-label="Mockup controls">
+    <div class="mockbar__head">
+      <div><span class="eyebrow">BATCH 6</span><strong>Full platform</strong></div>
+      <button class="mockbar__collapse" type="button" aria-label="Collapse controls">×</button>
+    </div>
+    <div class="theme-switch" role="group" aria-label="Theme">
+      <button type="button" data-theme-pick="noir" class="active" aria-pressed="true"><b>A</b><span>Noir</span></button>
+      <button type="button" data-theme-pick="neon" aria-pressed="false"><b>B</b><span>Neon</span></button>
+      <button type="button" data-theme-pick="cold" aria-pressed="false"><b>C</b><span>Cold</span></button>
+    </div>
+    <label class="nav-search"><span aria-hidden="true">⌕</span><input id="screenSearch" aria-label="Find a screen" placeholder="Find a screen…"></label>
+    <nav id="screenNav" class="screen-nav" aria-label="Screens"></nav>
+    <div class="mockbar__foot"><span id="coverageCount">— screens</span><i></i><span>1280 pitch</span></div>
+  </aside>
+
+  <button class="mockbar-open" type="button">Open navigator</button>
+
+  <main id="mockup" class="mockup-shell">
+    <section class="screen active" id="home" data-title="Landing · Complete">
+      <div class="promo">NEW · Seedance 2.0 is now in FrameFlow <button data-go="ai-video">Try it →</button></div>
+      <header class="site-head wide">
+        <a class="brand" href="#"><span class="brand-mark">ϟ</span>FrameFlow</a>
+        <nav><button data-go="templates">Templates</button><button data-go="ai-image">AI Studio</button><button data-go="pricing">Pricing</button><button data-go="plugin">Plugin</button></nav>
+        <div class="head-actions"><button class="text-btn" data-go="login">Sign in</button><button class="primary" data-go="register">Start for free</button></div>
+      </header>
+      <div class="landing">
+        <section class="landing-hero">
+          <div class="hero-copy">
+            <span class="kicker"><i></i>THE CREATIVE OPERATING SYSTEM</span>
+            <h1>Make the frame<br><em>impossible to skip.</em></h1>
+            <p>Templates, AI images, video and audio in one focused workspace—built for editors who ship.</p>
+            <div class="hero-actions"><button class="primary xl" data-go="register">Start creating <span>↗</span></button><button class="secondary xl" data-go="templates">Explore the feed</button></div>
+            <small>No card required · 50 AI credits on us</small>
+          </div>
+          <div class="hero-billboard media-card media-hero">
+            <div class="media-art art-aurora"><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="grid-floor"></span></div>
+            <span class="media-label">AI VIDEO · SEEDANCE 2.0</span><span class="media-time">00:08</span>
+            <div class="billboard-caption"><strong>Light Study No. 08</strong><span>4K · cinematic motion</span></div>
+          </div>
+        </section>
+
+        <section class="ticker"><span>FRAMEFLOW SELECTS</span><div>TYPOGRAPHY ↗ &nbsp; · &nbsp; PRODUCT FILMS ↗ &nbsp; · &nbsp; SOCIAL CUTS ↗ &nbsp; · &nbsp; TITLE SYSTEMS ↗</div></section>
+
+        <section class="stats-strip" aria-label="FrameFlow platform statistics">
+          <div><strong>10,000+</strong><span>READY-MADE TEMPLATES</span></div>
+          <div><strong>4</strong><span>AI TOOLS · IMAGE · VIDEO · VOICE · SFX</span></div>
+          <div><strong>6</strong><span>CREATIVE CATEGORIES</span></div>
+          <div><strong>14 days</strong><span>MONEY-BACK GUARANTEE</span></div>
+        </section>
+
+        <section class="cinema-section">
+          <div class="section-head"><div><span class="kicker">THE WEEKLY BILLBOARD</span><h2>One idea. Full-screen impact.</h2></div><button class="text-btn" data-go="ai-video">Build a scene →</button></div>
+          <div class="cinema-frame">
+            <div class="cinema-bar"><span>FRAMEFLOW PREMIERE · 07/12</span><i></i><span>SEEDANCE 2.0 · 4K</span></div>
+            <div class="cinema-media media-art art-sunset"><span class="sun"></span><span class="horizon"></span><div class="cinema-word">AFTER<br>LIGHT</div><button class="play" aria-label="Play billboard preview">▶</button></div>
+            <div class="cinema-foot"><div><b>After Light — product film study</b><span>Start/end frames · native audio · 8 seconds</span></div><strong>✦ 480</strong></div>
+          </div>
+        </section>
+
+        <section class="feed-section">
+          <div class="section-head"><div><span class="kicker">CURATED DAILY</span><h2>Made with FrameFlow</h2></div><div class="filter-pills"><button class="active">All</button><button>Video</button><button>Image</button><button>Templates</button></div></div>
+          <div class="masonry">
+            <article class="feed-card tall"><div class="media-art art-red"><span class="type-massive">FORM</span></div><div class="card-meta"><strong>Editorial Motion Study</strong><span>Seedance 2.0 · 720p · 4s · ✦ 60</span></div></article>
+            <article class="feed-card square"><div class="media-art art-glass"><span class="glass-sphere"></span></div><div class="card-meta"><strong>Liquid Chrome</strong><span>Nano Banana Pro · ✦ 14</span></div></article>
+            <article class="feed-card wide-card"><div class="media-art art-sunset"><span class="sun"></span><span class="horizon"></span></div><div class="card-meta"><strong>Desert Product Film</strong><span>Veo 3.1 · 8s · ✦ 240</span></div></article>
+            <article class="feed-card portrait"><div class="media-art art-blue"><span class="poster-type">NO<br>STATIC<br>IDEAS</span></div><div class="card-meta"><strong>Signal Poster</strong><span>Imagen 4 Ultra · ✦ 10</span></div></article>
+            <article class="feed-card tall"><div class="media-art art-mono"><span class="rings"></span></div><div class="card-meta"><strong>Monolith Titles</strong><span>After Effects · Pro</span></div></article>
+            <article class="feed-card square"><div class="media-art art-green"><span class="capsule"></span></div><div class="card-meta"><strong>New Matter</strong><span>Nano Banana 2 · ✦ 8</span></div></article>
+            <article class="feed-card portrait"><div class="media-art art-purple"><span class="template-title">FUTURE<br>IS A VERB</span></div><div class="card-meta"><strong>Future Signal</strong><span>Seedream 5.0 Pro · 2K · ✦ 8</span></div></article>
+            <article class="feed-card wide-card"><div class="media-art art-aurora"><span class="orb orb-a"></span><span class="orb orb-b"></span></div><div class="card-meta"><strong>Chromatic Field</strong><span>Veo 3.1 Lite · 8s · ✦ 24</span></div></article>
+            <article class="feed-card square"><div class="media-art art-red"><span class="rings"></span></div><div class="card-meta"><strong>Broadcast Rings</strong><span>After Effects · Pro · 4K</span></div></article>
+            <article class="feed-card tall"><div class="media-art art-blue"><span class="capsule"></span></div><div class="card-meta"><strong>Cold Glass Study</strong><span>Imagen 4 · 2K · ✦ 6</span></div></article>
+          </div>
+        </section>
+
+        <section class="preset-section">
+          <div class="section-head"><div><span class="kicker">START FASTER</span><h2>One-click creative presets</h2></div><button class="text-btn" data-go="ai-image">View all presets →</button></div>
+          <div class="preset-rail">
+            <article><span class="preset-no">01</span><div class="mini-art art-red"></div><strong>Editorial portrait</strong><small>Nano Banana Pro · ✦ 8</small></article>
+            <article><span class="preset-no">02</span><div class="mini-art art-sunset"></div><strong>Cinematic dolly</strong><small>Veo 3.1 Lite · ✦ 24+</small></article>
+            <article><span class="preset-no">03</span><div class="mini-art art-glass"></div><strong>Product refraction</strong><small>Imagen 4 Ultra · ✦ 6+</small></article>
+            <article><span class="preset-no">04</span><div class="mini-art art-blue"></div><strong>Type explosion</strong><small>FrameFlow template · Pro</small></article>
+          </div>
+        </section>
+
+        <section class="ai-showcase">
+          <div class="ai-showcase__copy"><span class="kicker">02 — AI STUDIO</span><h2>From a sentence<br>to a usable frame.</h2><p>Generate images, video, voice and sound effects in one browser workspace. Every choice shows its real credit cost before you create.</p><button class="primary xl" data-go="ai-image">Open AI Studio →</button></div>
+          <div class="ai-showcase__stage">
+            <div class="ai-result-stack"><div class="ai-result back art-blue"></div><div class="ai-result mid art-red"></div><div class="ai-result front art-glass"><span>NANO BANANA PRO · 2K</span></div></div>
+            <div class="mini-composer"><p>Translucent cobalt glass on warm paper, hard editorial light…</p><div><span>✦ Image</span><span>Nano Banana Pro</span><span>2K</span><b>✦ 14</b><button>Generate ↗</button></div></div>
+          </div>
+          <div class="tool-rail"><article><i>◇</i><b>Image generation</b><span>from ✦ 2</span></article><article><i>▶</i><b>Video generation</b><span>from ✦ 3/sec</span></article><article><i>◉</i><b>Voiceover</b><span>✦ 4</span></article><article><i>≋</i><b>Sound effects</b><span>✦ 4</span></article></div>
+        </section>
+
+        <section class="plugin-band">
+          <div class="plugin-band__window"><div class="window-bar"><i></i><i></i><i></i><span>FrameFlow · After Effects</span></div><div class="plugin-band__body"><aside><b>ϟ</b><span>⌂</span><span>□</span><span>✦</span></aside><div><div class="plugin-search">⌕ Search the catalog…</div><div class="plugin-band__grid"><i class="art-red"></i><i class="art-glass"></i><i class="art-green"></i></div><button>Import to project</button></div></div></div>
+          <div><span class="kicker">03 — CREATIVE PLUGIN</span><h2>Stay in the edit.<br>Bring FrameFlow in.</h2><p>Browse, sync and import directly inside After Effects. Your plan, projects and credits follow your account.</p><div class="model-tags"><span>After Effects</span><span>Premiere Pro</span><span>DaVinci · soon</span></div><button class="secondary xl" data-go="plugin">See the plugin →</button></div>
+        </section>
+
+        <section class="home-plans">
+          <div><span class="kicker">SIMPLE BY DESIGN</span><h2>Start free.<br>Scale when it matters.</h2><p>Credits move with your ambition. Templates never consume them.</p></div>
+          <div class="mini-plan"><span>FREE</span><b>$0</b><small>50 credits/mo</small></div><div class="mini-plan featured"><span>PRO</span><b>$19</b><small>1,000 credits/mo</small></div><div class="mini-plan"><span>STUDIO</span><b>$59</b><small>6,000 credits/mo</small></div>
+        </section>
+
+        <section class="faq-section"><span class="kicker">ANSWERS, WITHOUT THE FRICTION</span><h2>Frequently asked questions</h2><div class="faq-grid"><details open><summary>How does FrameFlow work?<b>−</b></summary><p>Choose a template or generate in AI Studio, then download in the browser or continue inside the After Effects plugin.</p></details><details><summary>What are credits?<b>+</b></summary><p>Credits power AI generations. Template downloads do not consume credits.</p></details><details><summary>What is included in Free?<b>+</b></summary><p>50 monthly credits, the HD library, watermarked export and one active project.</p></details><details><summary>Can I cancel anytime?<b>+</b></summary><p>Yes. Access continues through the end of your current billing period.</p></details></div></section>
+
+        <section class="final-cta"><span class="kicker">YOUR NEXT FRAME IS WAITING</span><h2>Start free today.<br><em>Make something worth replaying.</em></h2><p>50 AI credits on us · no card required · 14-day money-back guarantee</p><div><button class="primary xl" data-go="register">Start creating →</button><button class="secondary xl" data-go="templates">Browse templates</button></div></section>
+      </div>
+      <footer class="site-footer"><div><a class="brand" data-go="home"><span class="brand-mark">ϟ</span>FrameFlow</a><p>Templates and an AI studio for motion designers and video creators.</p><small>support@getframeflow.app<br>All plans include a 14-day money-back guarantee.</small></div><div><b>PRODUCT</b><a data-go="templates">Templates</a><a data-go="ai-image">AI Studio</a><a data-go="plugin">Plugin</a><a data-go="pricing">Pricing</a><a>Changelog</a></div><div><b>CATEGORIES</b><a data-go="templates">Video Templates</a><a data-go="templates">Lower Thirds</a><a data-go="templates">Transitions</a><a data-go="templates">LUT &amp; Presets</a><a data-go="ai-audio">SFX</a></div><div><b>PLUGINS</b><a data-go="plugin">After Effects</a><a data-go="plugin">Premiere Pro</a><a data-go="plugin">DaVinci Resolve</a><a data-go="plugin">Final Cut</a><a data-go="plugin">Installation</a></div><div><b>COMPANY</b><a>About us</a><a>Careers</a><a>Blog</a><a data-go="help">Contact</a><a>Partnerships</a></div><div class="footer-cta"><span>© 2026 FRAMEFLOW</span><div class="footer-legal"><a data-go="legal-terms">Terms</a><a data-go="legal-privacy">Privacy</a><a data-go="legal-refund">Refunds</a><a data-go="legal-dmca">DMCA</a></div><button class="primary" data-go="register">Start creating →</button></div></footer>
+    </section>
+
+    <section class="screen" id="home-mega" data-title="Landing · Mega-menu open">
+      <header class="site-head wide"><a class="brand"><span class="brand-mark">ϟ</span>FrameFlow</a><nav><button class="active">Templates</button><button>AI Studio</button><button>Pricing</button><button>Plugin</button></nav><button class="primary">Start for free</button></header>
+      <div class="mega-wrap"><div class="mega-menu mega-two">
+        <div class="mega-panel"><div class="mega-panel__head"><span class="kicker">FEATURES</span><small>Everything in the FrameFlow workspace</small></div><div class="mega-rows">
+          <button data-go="templates"><i>□</i><span><b>Template marketplace</b><small>10,000+ motion-ready packs for Ae, Pr and DaVinci</small></span><em>TOP</em><strong>→</strong></button>
+          <button data-go="ai-image"><i>✦</i><span><b>AI Studio</b><small>Image, video, voice and SFX in one session</small></span><em>NEW</em><strong>→</strong></button>
+          <button data-go="projects"><i>⌑</i><span><b>Creative projects</b><small>Keep generations and templates together</small></span><strong>→</strong></button>
+          <button data-go="plugin"><i>↧</i><span><b>Creative plugin</b><small>Browse and import without leaving the timeline</small></span><em>AE</em><strong>→</strong></button>
+        </div></div>
+        <div class="mega-panel"><div class="mega-panel__head"><span class="kicker">LIVE MODELS</span><small>Production-ready engines and utilities</small></div><div class="mega-rows models">
+          <button data-go="ai-video"><i>S2</i><span><b>Seedance 2.0</b><small>Reference-led video · 480p—4K · 4—15s</small></span><em>TOP</em><strong>✦8–60/s</strong></button>
+          <button data-go="ai-image"><i>NB</i><span><b>Nano Banana 2</b><small>Fast multi-reference image creation · 1K—4K</small></span><em>NEW</em><strong>✦4–16</strong></button>
+          <button data-go="ai-video"><i>V3</i><span><b>Veo 3.1</b><small>Premium video with start/end frames and audio</small></span><em>PREMIUM</em><strong>✦30/s</strong></button>
+          <button data-go="ai-models"><i>UP</i><span><b>Video Upscale (Topaz)</b><small>Resolution-aware 720p, 1080p and 4K enhancement</small></span><strong>✦2/3/9/s</strong></button>
+        </div></div>
+      </div><div class="mega-under"><span class="kicker">OPEN THE WHOLE CREATIVE SYSTEM</span><h1>A better starting point<br>for every <em>timeline.</em></h1></div></div>
+    </section>
+
+    <section class="screen app-screen" id="dashboard" data-title="App · Dashboard">
+      <div data-app-shell="dashboard"></div>
+      <div class="app-content dashboard-content">
+        <section class="dash-hero"><div><span class="kicker">MONDAY · 09:42</span><h1>Good morning, <em>Alex.</em></h1><p>Pick up where you left off, or begin with a sharper idea.</p></div><div class="credit-orbit"><span>BALANCE</span><strong>✦ 742</strong><small>Renews Aug 12</small><button class="text-btn" data-go="state-low-credits">Top up →</button></div></section>
+        <div class="quick-grid"><button data-go="templates"><i>⌕</i><strong>Find a template</strong><span>10,000+ motion assets</span></button><button data-go="ai-image"><i>✦</i><strong>Create with AI</strong><span>Image, video, voice</span></button><button data-go="plugin"><i>↧</i><strong>Install plugin</strong><span>After Effects & Premiere</span></button></div>
+        <div class="section-head compact"><div><span class="kicker">RECENT</span><h2>Jump back in</h2></div><button class="text-btn" data-go="ai-history">View library →</button></div>
+        <div class="asset-row"><article class="asset-tile tall"><div class="media-art art-sunset"></div><b>Desert campaign</b><span>Veo 3.1 · 18 min ago</span></article><article class="asset-tile"><div class="media-art art-glass"></div><b>Chrome object study</b><span>Nano Banana Pro</span></article><article class="asset-tile"><div class="media-art art-blue"></div><b>Kinetic poster</b><span>Imagen 4 Ultra</span></article><article class="asset-tile"><div class="media-art art-green"></div><b>Beauty pack</b><span>After Effects · Pro</span></article></div>
+        <div class="section-head compact"><div><span class="kicker">CURATED FOR YOU</span><h2>Featured models</h2></div></div>
+        <div class="model-feature"><div class="model-feature__art art-red"></div><div><span class="model-icon">S2</span><span class="kicker">MODEL OF THE WEEK</span><h3>Seedance 2.0</h3><p>Reference-led video generation with start/end frames, media mentions and native audio.</p><div class="model-tags"><span>480p—4K</span><span>4—15s</span><span>✦ 8–60/sec</span></div><button class="primary" data-go="ai-video">Try Seedance</button></div></div>
+      </div>
+    </section>
+
+    <section class="screen app-screen" id="templates" data-title="Templates · Catalog">
+      <div data-app-shell="templates"></div>
+      <div class="app-content catalog-content">
+        <section class="catalog-hero"><span class="kicker">FRAMEFLOW MARKETPLACE</span><h1>Templates that cut<br>your edit time.</h1><label class="big-search">⌕<input value="" placeholder="Try “glitch logo”, “wedding titles”, “lower thirds”…"><kbd>⌘ K</kbd></label><div class="category-row"><button class="active">All</button><button>Openers</button><button>Titles</button><button>Transitions</button><button>Logo reveals</button><button>Social</button><button>Product</button></div></section>
+        <div class="catalog-toolbar"><div><button>Categories⌄</button><button>Applications⌄</button><button>Free & Pro⌄</button><button>Landscape</button><button>4K</button></div><span>2,418 results · <b>Trending⌄</b></span></div>
+        <div class="catalog-masonry">
+          <article class="template-card v-tall" data-go="template-detail"><div class="media-art art-red"><span class="template-title">FOOTBALL<br>CHAMPIONSHIP</span></div><div><b>Football Championship Logo Reveal</b><span><i>PRO</i> After Effects · 4K</span></div></article>
+          <article class="template-card v-square"><div class="media-art art-glass"></div><div><b>Chrome Identity Kit</b><span><i>PRO</i> After Effects · 4K</span></div></article>
+          <article class="template-card v-wide"><div class="media-art art-sunset"></div><div><b>Golden Hour Product Opener</b><span><i class="free">FREE</i> Premiere Pro · HD</span></div></article>
+          <article class="template-card v-portrait"><div class="media-art art-blue"><span class="poster-type small">TYPE<br>IS<br>MOTION</span></div><div><b>Editorial Type System</b><span><i>PRO</i> After Effects · 4K</span></div></article>
+          <article class="template-card v-tall"><div class="media-art art-mono"><span class="rings"></span></div><div><b>Minimal Black Titles</b><span><i class="free">FREE</i> DaVinci · HD</span></div></article>
+          <article class="template-card v-square"><div class="media-art art-green"></div><div><b>Organic Shapes Pack</b><span><i>PRO</i> After Effects · 4K</span></div></article>
+          <article class="template-card v-wide"><div class="media-art art-purple"><span class="capsule"></span></div><div><b>Future Sports Broadcast</b><span><i>PRO</i> Premiere Pro · 4K</span></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen app-screen" id="template-detail" data-title="Templates · Detail & Pro gate">
+      <div data-app-shell="templates"></div>
+      <div class="app-content detail-content">
+        <div class="breadcrumbs">Templates <span>→</span> Openers <span>→</span> Football Championship Logo Reveal</div>
+        <div class="detail-grid"><div><div class="preview-player"><div class="media-art art-red"><span class="template-title huge">FOOTBALL<br>CHAMPIONSHIP</span><button class="play">▶</button></div><div class="player-bar"><span>00:00</span><i><b></b></i><span>00:12</span><button>⛶</button></div></div><div class="related"><div class="section-head compact"><h3>Related templates</h3><span class="kicker">SAME CATEGORY</span></div><div class="asset-row small"><article><div class="mini-art art-green"></div><b>Champions Pack</b></article><article><div class="mini-art art-blue"></div><b>Matchday Titles</b></article><article><div class="mini-art art-mono"></div><b>Sports Lower Thirds</b></article></div></div></div>
+          <aside class="detail-meta"><div class="badge-row"><span class="badge pro">PRO</span><span class="badge">4K</span><span class="badge">NEW</span></div><h1>Football Championship Logo Reveal</h1><p>A high-energy title package for match openers, club announcements and sports campaigns.</p><div class="author"><span>DK</span><div><b>Dilnoza Karimova</b><small>FrameFlow contributor</small></div></div><div class="spec-list"><div><span>Application</span><b>After Effects</b></div><div><span>Category</span><b>Logo reveals</b></div><div><span>Orientation</span><b>Landscape · 16:9</b></div><div><span>Resolution</span><b>3840 × 2160</b></div><div><span>Format</span><b>.aep project pack</b></div><div><span>Duration</span><b>00:12</b></div><div><span>Pack size</span><b>48.6 MB</b></div><div><span>Updated</span><b>July 11, 2026</b></div></div><button class="primary full">Upgrade to Pro · $19/mo</button><button class="secondary full">Open in After Effects</button><div class="detail-actions"><button aria-label="Add to favorites">♡ Favorite</button><button data-go="state-project-modal">＋ Project</button><button aria-label="Share template">↗ Share</button></div><div class="detail-tags"><span>football</span><span>sports</span><span>logo reveal</span><span>broadcast</span></div><div class="gate-note"><i>✓</i><span>Unlimited downloads, 4K, no watermark and the AE/Premiere plugin.</span></div><div class="inline-alert"><b>PRO DOWNLOAD</b><span>Your Free plan can preview this template. Upgrade to download the production pack.</span></div></aside></div>
+        <section class="collection-strip"><div><span class="kicker">PART OF COLLECTION</span><h3>Matchday Broadcast System</h3><p>Six coordinated openers, titles and lower thirds.</p></div><div class="collection-thumbs"><i class="art-red"></i><i class="art-blue"></i><i class="art-green"></i><i class="art-mono"></i><b>＋2</b></div><button class="secondary">View collection →</button></section>
+      </div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-image" data-title="AI Studio · Image composer">
+      <div data-app-shell="ai-image"></div>
+      <div class="studio-layout"><div data-session-rail></div><div class="studio-main"><div class="studio-top"><div class="segmented"><button class="active">Visuals <span>12</span></button><button>Audio <span>4</span></button></div><span>Campaign explorations · 16 items</span></div><div class="studio-canvas image-grid"><article class="gen-card g-tall"><div class="media-art art-red"></div><span>1:1</span></article><article class="gen-card"><div class="media-art art-glass"></div><span>1:1</span></article><article class="gen-card g-wide"><div class="media-art art-sunset"></div><span>16:9</span></article><article class="gen-card"><div class="media-art art-green"></div><span>4:3</span></article><article class="gen-card g-tall"><div class="media-art art-blue"></div><span>3:4</span></article><article class="gen-card"><div class="media-art art-mono"></div><span>1:1</span></article></div><div class="composer image-composer"><div class="reference-row"><button class="add-ref" aria-label="Add image reference">＋</button><button class="ref-library-link" data-go="state-reference-library">Choose from My Library</button><span>or drop an image reference here</span></div><div class="preset-chips"><button>Editorial portrait</button><button>Product photography</button><button>Typography poster</button><button>Film still</button></div><div class="prompt">Create a tactile editorial still life with translucent cobalt glass, sharp hard light and a warm paper background.</div><div class="composer-row"><button class="chip active">✦ Image⌄</button><button class="chip">Nano Banana 2⌄</button><button class="chip">1:1⌄</button><button class="chip">Quality: 2K⌄</button><span class="count-stepper" aria-label="Image count"><button aria-label="Decrease count">−</button><b>1 / 4</b><button aria-label="Increase count">＋</button></span><button class="chip" data-go="ai-draw">⌁ Draw</button><button class="chip magic">✦ Improve</button><span></span><span class="cost">COST <b>✦ 8</b></span><button class="primary">Generate ↗</button></div><div class="balance">BALANCE <b>✦ 742</b> · Pro plan renews Aug 12 <button data-go="state-low-credits">＋ Top up</button></div></div></div></div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-video" data-title="AI Studio · Video + open selectors">
+      <div data-app-shell="ai-video"></div>
+      <div class="studio-layout"><div data-session-rail></div><div class="studio-main"><div class="studio-top"><div class="segmented"><button class="active">Visuals <span>8</span></button><button>Audio <span>2</span></button></div><span>Brand film · Video workspace</span></div><div class="video-stage"><div class="video-stage__media media-art art-sunset"><span class="play">▶</span><div class="timeline"><b></b><i></i></div></div><aside class="video-notes"><span class="kicker">ACTIVE RESULT</span><h3>Golden hour product film</h3><p>Seedance 2.0 · 16:9 · 1080p · 8s</p><div class="note-actions"><button>Use ▾</button><button aria-label="Download result">↓</button><button aria-label="Regenerate result">↻</button></div></aside></div><div class="composer video-composer selectors-open"><div class="reference-row frames"><button class="frame-slot" aria-label="Choose start frame"><i>START</i><span class="mini-art art-glass"></span></button><button class="frame-slot" aria-label="Choose end frame"><i>END</i><span class="mini-art art-red"></span></button><button class="add-ref" aria-label="Add media reference">＋</button><span class="mention-pill">@video1 · product_spin.mp4 ×</span><span class="mention-pill">@audio1 · soft_riser.wav ×</span></div><div class="preset-chips"><button>Cut on motion</button><button>Slow push-in</button><button>Seamless loop</button><button>Product orbit</button></div><div class="selector-showcase">
+        <div class="selector-panel model-selector"><span class="selector-title">MODEL · OPEN</span><label>⌕<input aria-label="Search video models" placeholder="Search models…"></label><button class="selected"><i>S2</i><span><b>Seedance 2.0</b><small>Reference video · 480p—4K</small></span><em>✦8/15/34/60s</em><strong>✓</strong></button><button><i>V3L</i><span><b>Veo 3.1 Lite</b><small>Fast text or frame to video</small></span><em>✦3/s</em></button><button><i>OM</i><span><b>Gemini Omni Flash</b><small>10s · native audio · per generation</small></span><em>✦80/gen</em></button><button class="more" data-go="ai-models">⊞ More live models →</button></div>
+        <div class="selector-panel aspect-selector"><span class="selector-title">ASPECT · OPEN</span><button><i class="ratio auto"></i>Auto</button><button class="selected"><i class="ratio landscape"></i>16:9 <strong>✓</strong></button><button><i class="ratio portrait"></i>9:16</button><button><i class="ratio square"></i>1:1</button><button><i class="ratio classic"></i>4:3</button><button><i class="ratio p34"></i>3:4</button><button><i class="ratio cinema"></i>21:9</button></div>
+        <div class="selector-panel quality-selector"><span class="selector-title">RESOLUTION · OPEN</span><button><span>480p</span><em>✦ 8/sec</em></button><button><span>720p</span><em>✦ 15/sec</em></button><button class="selected"><span>1080p</span><em>✦ 34/sec</em><strong>✓</strong></button><button><span>4K <i>PREMIUM</i></span><em>✦ 60/sec</em></button><small>Video reference discount applied at quote.</small></div>
+      </div><div class="prompt">Use <mark>@video1</mark> for the motion language. Orbit the glass object at golden hour, then land exactly on the end frame.</div><div class="composer-row"><button class="chip active">▶ Video⌄</button><button class="chip">Seedance 2.0⌃</button><button class="chip">16:9⌃</button><button class="chip">1080p⌃</button><button class="chip">8 seconds⌄</button><button class="chip">Audio: On</button><span></span><span class="cost">COST <b>✦ 160</b></span><button class="primary">Generate ↗</button></div><div class="balance">BALANCE <b>✦ 742</b> · @video1 quote: effective ✦ 20/sec × 8s <button>＋ Top up</button></div></div></div></div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-draw" data-title="AI Studio · Draw canvas">
+      <div data-app-shell="ai-draw"></div><div class="draw-workspace" role="dialog" aria-modal="true" aria-labelledby="drawTitle"><header><div class="segmented"><button class="active">Sketch</button><button>Draw to Video</button><button>Draw to Edit</button></div><h2 id="drawTitle">Draw the direction, not every detail.</h2><button class="modal-x" data-go="ai-image" aria-label="Close draw canvas">×</button></header><div class="draw-body"><aside><span class="kicker">LAYERS</span><button class="active"><i class="art-glass"></i><b>Reference image<small>Base layer</small></b></button><button><i class="draw-thumb"></i><b>Sketch marks<small>Vector layer</small></b></button><button class="add-layer">＋ Add image</button></aside><div class="draw-canvas"><div class="draw-image art-glass"><span class="sketch-line one"></span><span class="sketch-line two"></span><span class="sketch-arrow">↗</span><b class="draw-note">rotate product<br>toward light</b></div><div class="draw-toolbar"><button class="active">✎ Pen</button><button>◯ Shape</button><button>⌫ Erase</button><i></i><button aria-label="Undo">↶</button><button aria-label="Redo">↷</button><label>SIZE <input type="range" min="1" max="20" value="8"></label></div></div><aside class="draw-settings"><span class="kicker">OUTPUT</span><div><small>MODEL</small><b>Nano Banana 2</b></div><div><small>ASPECT</small><b>1:1</b></div><div><small>QUALITY</small><b>1K</b></div><p>Your sketch and note become structured edit guidance.</p></aside></div><footer><button class="secondary" data-go="ai-image">Cancel</button><span>1 reference · 1 sketch layer</span><button class="primary">Generate image · ✦ 4 →</button></footer></div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-history" data-title="AI Studio · Sessions & history">
+      <div data-app-shell="ai-history"></div><div class="studio-layout"><div data-session-rail="history"></div><div class="studio-main"><div class="library-head"><div><span class="kicker">MY LIBRARY</span><h1>Every useful frame,<br>still in reach.</h1></div><div><label class="small-search">⌕ <input placeholder="Search prompts, models…"></label><button class="secondary">Select</button></div></div><div class="history-filters"><button class="active">All 48</button><button>Images 27</button><button>Videos 12</button><button>Voice 6</button><button>SFX 3</button><span></span><button>Newest first⌄</button></div><div class="history-date"><span>JULY 12</span><i></i></div><div class="history-grid"><article class="gen-card g-tall"><div class="media-art art-red"></div><div><b>Editorial portrait study</b><small>Nano Banana Pro · ✦ 14</small></div></article><article class="gen-card"><div class="media-art art-glass"></div><div><b>Translucent object</b><small>Seedream 5.0 Pro · ✦ 8</small></div></article><article class="gen-card g-wide"><div class="media-art art-sunset"><span class="play">▶</span></div><div><b>Desert product film</b><small>Veo 3.1 Lite · ✦ 24</small></div></article><article class="gen-card"><div class="media-art art-green"></div><div><b>Botanical packaging</b><small>Imagen 4 · ✦ 6</small></div></article><article class="gen-card"><div class="media-art art-blue"></div><div><b>Signal poster</b><small>Nano Banana 2 · ✦ 8</small></div></article><article class="gen-card g-tall"><div class="media-art art-mono"></div><div><b>Monolith sequence</b><small>Seedance 2.0 · ✦ 120</small></div></article></div></div></div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-audio" data-title="AI Studio · Audio library">
+      <div data-app-shell="ai-audio"></div><div class="studio-layout"><div data-session-rail></div><div class="studio-main"><div class="studio-top"><div class="segmented"><button>Visuals <span>8</span></button><button class="active">Audio <span>4</span></button></div><span>Campaign explorations</span></div><div class="audio-list"><article><button aria-label="Play voice result">▶</button><div><b>“Move with confidence. Build without limits.”</b><span>Chirp 3 HD · Aoede — EN·US · 00:06</span></div><div class="wave"></div><em>✦ 4</em></article><article><button aria-label="Play sound effect">▶</button><div><b>Cinematic soft riser with glass texture</b><span>ElevenLabs SFX · 00:05</span></div><div class="wave alt"></div><em>✦ 4</em></article><article><button aria-label="Play voice result">▶</button><div><b>“A new frame for a new idea.”</b><span>Chirp 3 HD · Puck — EN·US · 00:04</span></div><div class="wave"></div><em>✦ 4</em></article></div><div class="composer audio-composer"><div class="prompt">A crisp cinematic riser made from glass taps, low sub pressure and a clean impact.</div><div class="composer-row"><button class="chip active">◖ SFX⌄</button><button class="chip">ElevenLabs SFX⌄</button><button class="chip">5 seconds⌄</button><button class="chip magic">✦ Improve</button><span></span><span class="cost">COST <b>✦ 4</b></span><button class="primary">Generate ↗</button></div><div class="balance">BALANCE <b>✦ 742</b> · Pro plan renews Aug 12</div></div></div></div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-voice" data-title="AI Studio · Voice composer">
+      <div data-app-shell="ai-voice"></div><div class="studio-layout"><div data-session-rail></div><div class="studio-main"><div class="studio-top"><div class="segmented"><button>Visuals <span>8</span></button><button class="active">Audio <span>4</span></button></div><span>Voiceover session · 3 results</span></div><div class="voice-stage"><div class="voice-copy"><span class="kicker">CHIRP 3 HD · GOOGLE CLOUD</span><h1>Give the words<br>a human rhythm.</h1><p>18 voices across English, Deutsch, Español, Français, Italiano, हिन्दी, 日本語, 한국어, Português and Русский.</p><div class="voice-preview"><button aria-label="Play voice preview">▶</button><div><b>Aoede — EN·US (F)</b><span>Warm · articulate · editorial</span></div><div class="wave"></div></div></div><div class="voice-picker"><span class="selector-title">VOICE · OPEN</span><label>⌕<input aria-label="Search voices" placeholder="Search voice or language…"></label><button class="selected"><span class="voice-avatar">AO</span><b>Aoede <small>English · US · Female</small></b><strong>✓</strong></button><button><span class="voice-avatar">PU</span><b>Puck <small>English · US · Male</small></b></button><button><span class="voice-avatar">KO</span><b>Kore <small>English · GB · Female</small></b></button><button><span class="voice-avatar">CH</span><b>Charon <small>Русский · Male</small></b></button><small>14 more voices</small></div></div><div class="composer audio-composer"><div class="prompt voice-prompt">Move with confidence. Build without limits. FrameFlow keeps every part of the process in motion.<span>96 / 1,000 characters</span></div><div class="composer-row"><button class="chip active">◉ Voice⌄</button><button class="chip">Chirp 3 HD⌄</button><button class="chip">Aoede — EN·US⌃</button><button class="chip magic">✦ Improve</button><span></span><span class="cost">COST <b>✦ 4</b></span><button class="primary">Generate voice →</button></div><div class="balance">BALANCE <b>✦ 742</b> · Flat cost up to 1,000 characters</div></div></div></div>
+    </section>
+
+    <section class="screen app-screen studio-screen" id="ai-upscale" data-title="AI Studio · Upscale tools">
+      <div data-app-shell="ai-upscale"></div><div class="studio-layout"><div data-session-rail></div><div class="studio-main"><div class="studio-top"><div class="segmented"><button class="active">Upscale</button><button>History <span>5</span></button></div><span>Utilities · real source-derived quotes</span></div><div class="upscale-stage"><div class="upscale-intro"><span class="kicker">LIVE UTILITIES</span><h1>Keep the frame.<br>Raise the finish.</h1><p>Upscale uses the source file itself. Resolution and duration are derived before the signed quote.</p></div><div class="upscale-tools"><article class="active"><div class="upscale-preview"><span class="mini-art art-glass"></span><i>2K</i><b>→</b><span class="mini-art art-glass sharpen"></span><i>4K</i></div><span class="kicker">IMAGE</span><h3>Imagen Upscale</h3><p>Required image source · aspect stays automatic.</p><div class="price-tiers"><span>x2 <b>✦4</b></span><span>x4 <b>✦8</b></span></div><button class="primary">Choose image</button></article><article><div class="upscale-preview video"><span class="mini-art art-sunset"></span><i>1080p</i><b>→</b><span class="mini-art art-sunset sharpen"></span><i>4K</i></div><span class="kicker">VIDEO</span><h3>Video Upscale (Topaz)</h3><p>Source-derived tier · up to 300 seconds.</p><div class="price-tiers"><span>720p <b>✦2/s</b></span><span>1080p <b>✦3/s</b></span><span>4K <b>✦9/s</b></span></div><button class="secondary">Choose video</button></article></div></div><div class="composer upscale-composer"><div class="reference-row"><button class="frame-slot" aria-label="Choose source"><i>SOURCE</i><span class="mini-art art-glass"></span></button><span>glass_study_2k.png · 2048 × 2048</span></div><div class="composer-row"><button class="chip active">⤢ Upscale⌄</button><button class="chip">Imagen Upscale⌄</button><button class="chip">Factor: x2⌄</button><span></span><span class="cost">COST <b>✦ 4</b></span><button class="primary">Upscale image →</button></div></div></div></div>
+    </section>
+
+    <section class="screen app-screen modal-demo" id="ai-models" data-title="AI Studio · Model picker">
+      <div data-app-shell="ai-models"></div><div class="scrim"><div class="model-modal" role="dialog" aria-modal="true" aria-labelledby="modelModalTitle"><div class="modal-head"><div><span class="kicker">MODEL LIBRARY</span><h2 id="modelModalTitle">Choose the engine<br>for this idea.</h2></div><button aria-label="Close model picker">×</button></div><label class="modal-search">⌕<input aria-label="Search live models" placeholder="Search all live models…"></label><div class="modal-tabs"><button class="active">All</button><button>Image</button><button>Video</button><button>Voice</button><button>SFX</button></div><div id="modelList" class="model-list"></div></div></div>
+    </section>
+
+    <section class="screen app-screen" id="projects" data-title="Projects · List">
+      <div data-app-shell="projects"></div><div class="app-content project-content"><div class="page-title"><div><span class="kicker">ORGANIZE THE WORK</span><h1>Projects</h1><p>Keep generations and templates together by client, campaign or idea.</p></div><button class="primary">＋ New project</button></div><div class="project-grid"><article data-go="project-detail"><div class="project-cover four"><span class="art-red"></span><span class="art-glass"></span><span class="art-sunset"></span><span class="art-blue"></span></div><div><b>Northstar Launch</b><span>18 items · updated today</span></div></article><article><div class="project-cover four"><span class="art-green"></span><span class="art-mono"></span><span class="art-purple"></span><span class="art-red"></span></div><div><b>FrameFlow Social</b><span>27 items · Jul 10</span></div></article><article><div class="project-cover"><span class="art-sunset"></span></div><div><b>Desert Campaign</b><span>8 items · Jul 8</span></div></article><article><div class="project-cover empty"><b>＋</b></div><div><b>Product explorations</b><span>0 items · just created</span></div></article></div></div>
+    </section>
+
+    <section class="screen app-screen" id="project-detail" data-title="Projects · Populated detail">
+      <div data-app-shell="projects"></div><div class="app-content project-content"><div class="breadcrumbs">Projects <span>→</span> Northstar Launch</div><div class="page-title"><div><span class="kicker">PROJECT · UPDATED TODAY</span><h1>Northstar Launch</h1><p>18 items · 12 generations · 6 templates</p></div><div><button class="secondary">Rename</button><button class="danger-btn">Delete</button></div></div><div class="project-summary"><div><span>CREATIVE MIX</span><b>12 AI / 6 templates</b></div><div><span>PRIMARY MODEL</span><b>Seedance 2.0</b></div><div><span>TOTAL AI SPEND</span><b>✦ 624</b></div><button class="primary" data-go="ai-image">＋ Create for this project</button></div><div class="project-assets"><article class="gen-card g-tall"><div class="media-art art-red"></div><span>IMAGE</span></article><article class="gen-card"><div class="media-art art-glass"></div><span>IMAGE</span></article><article class="gen-card g-wide"><div class="media-art art-sunset"><button class="play" aria-label="Play project video">▶</button></div><span>VIDEO · ✦24</span></article><article class="gen-card"><div class="media-art art-blue"></div><span>TEMPLATE · PRO</span></article><article class="gen-card"><div class="media-art art-green"></div><span>IMAGE</span></article><article class="gen-card g-tall"><div class="media-art art-mono"></div><span>TEMPLATE · PRO</span></article></div></div>
+    </section>
+
+    <section class="screen app-screen" id="account-profile" data-title="Account · Profile">
+      <div data-app-shell="account-profile"></div><div data-account-shell="profile"></div>
+    </section>
+    <section class="screen app-screen" id="account-billing" data-title="Account · Subscription & credits">
+      <div data-app-shell="account-billing"></div><div data-account-shell="billing"></div>
+    </section>
+    <section class="screen app-screen" id="account-downloads" data-title="Account · Downloads">
+      <div data-app-shell="account-downloads"></div><div data-account-shell="downloads"></div>
+    </section>
+
+    <section class="screen auth-screen" id="login" data-title="Auth · Login"><div data-auth-shell="login"></div></section>
+    <section class="screen auth-screen" id="register" data-title="Auth · Register"><div data-auth-shell="register"></div></section>
+    <section class="screen auth-screen" id="forgot" data-title="Auth · Forgot password"><div data-auth-shell="forgot"></div></section>
+    <section class="screen auth-screen" id="verify-email" data-title="Auth · Verify email"><div data-auth-shell="verify"></div></section>
+
+    <section class="screen" id="pricing" data-title="Page · Pricing"><div data-marketing-head="pricing"></div><div class="marketing-page pricing-page"><div class="page-hero"><span class="kicker">PRICING · NO SURPRISES</span><h1>Choose the plan<br>that keeps you <em>moving.</em></h1><p>Start free, scale up when you need to. Cancel anytime.</p><div class="billing-note"><span>MONTHLY PLANS</span><b>14-day money-back guarantee</b></div></div><div data-pricing-grid></div><div class="compare-strip"><span>ALL PLANS INCLUDE</span><div><b>✓ Browser AI Studio</b><b>✓ Template previews</b><b>✓ Commercial license</b><b>✓ 14-day money-back guarantee</b></div></div><section class="faq-section"><h2>Questions, answered.</h2><div class="faq-grid"><details open><summary>Do unused credits roll over?<b>−</b></summary><p>Plan credits renew monthly. One-time credit packs stay in your balance until used.</p></details><details><summary>Can I change plans?<b>+</b></summary><p>Yes. Compare plans at any time and choose the tier that fits your current workload.</p></details><details><summary>Are templates credit-based?<b>+</b></summary><p>No. Credits are used only for AI generations; template access follows your plan.</p></details></div></section></div><div data-marketing-footer></div></section>
+
+    <section class="screen" id="plugin" data-title="Page · Plugin download"><div data-marketing-head="plugin"></div><div class="marketing-page plugin-page"><div class="plugin-hero"><div><span class="kicker">AFTER EFFECTS · PREMIERE PRO</span><h1>Your creative library,<br><em>inside the timeline.</em></h1><p>Browse templates, import packs and continue AI work without leaving your edit.</p><button class="primary xl">Get plugin access →</button><small>COMING SOON · v2.4.1 · ~18 MB · ZXP Installer or Creative Cloud</small></div><div class="plugin-window"><div class="window-bar"><i></i><i></i><i></i><span>FrameFlow</span></div><div class="plugin-ui"><aside><b>ϟ</b><i>⌂</i><i>□</i><i>✦</i><i>↓</i></aside><div class="plugin-main"><div class="plugin-search">⌕ Search templates</div><div class="plugin-cards"><span class="art-red"></span><span class="art-glass"></span><span class="art-green"></span><span class="art-sunset"></span></div><div class="plugin-import"><b>Football Championship</b><button>Import</button></div></div></div></div></div><div class="steps"><article><b>01</b><h3>Get the .zxp package</h3><p>Request access when the signed package opens.</p></article><article><b>02</b><h3>Install in one click</h3><p>Use ZXP Installer or Creative Cloud.</p></article><article><b>03</b><h3>Connect your account</h3><p>Your templates, plan and credits appear instantly.</p></article></div></div><div data-marketing-footer></div></section>
+
+    <section class="screen" id="help" data-title="Page · Help & FAQ"><div data-marketing-head="help"></div><div class="support-page"><div class="support-hero"><span class="kicker">FRAMEFLOW SUPPORT · UPDATED JULY 8, 2026</span><h1>What can we<br>help you <em>make?</em></h1><label class="big-search">⌕<input aria-label="Search help" placeholder="Search setup, imports, plans or payouts…"></label></div><div class="support-grid rich"><article><i>01</i><h3>Getting started</h3><p>Create and verify your account, understand FrameFlow and enter the workspace.</p><span>Account & verification →</span></article><article><i>02</i><h3>Plugin & imports</h3><p>Install the extension, sign in, press Sync and troubleshoot preview-only packs.</p><span>Install / Sync / Import →</span></article><article><i>03</i><h3>Plans & credits</h3><p>Free vs Pro, signed AI quotes, monthly resets, top-ups and Lemon Squeezy billing.</p><span>Plans / Credits / Refunds →</span></article><article><i>04</i><h3>AI Studio</h3><p>Model settings, references, generation history, moderation and automatic refunds.</p><span>Images / Video / Audio →</span></article><article><i>05</i><h3>For contributors</h3><p>Applications, pack guidelines, moderation, earnings and payout tracking.</p><span>Apply / Upload / Payouts →</span></article><article><i>06</i><h3>Rights & safety</h3><p>Commercial use, consent-safe references, copyright claims and DMCA reporting.</p><span>License / Safety / DMCA →</span></article></div><section class="faq-section"><span class="kicker">POPULAR ANSWERS</span><h2>Frequently asked</h2><div class="faq-grid"><details open><summary>How do credits work?<b>−</b></summary><p>Every AI generation shows its signed cost first. Monthly plan credits reset each billing cycle; purchased credit packs stay until used.</p></details><details><summary>Why was my generation refunded?<b>+</b></summary><p>Eligible provider failures and blocked references restore the charged credits automatically.</p></details><details><summary>Why can’t I import a template?<b>+</b></summary><p>The pack may still be preview-only, your Free download limit may be reached, or the plugin account may need a fresh Sync.</p></details><details><summary>How do contributor payouts work?<b>+</b></summary><p>Earnings accrue from unique subscriber downloads and are tracked in Contributor Studio under Earnings & payouts.</p></details></div></section><div class="contact-card"><div><span class="kicker">STILL STUCK?</span><h2>Talk to a human.</h2><p>Contributors can use Studio Messages. Everyone else can email support@getframeflow.app.</p></div><button class="primary">Email support →</button></div></div><div data-marketing-footer></div></section>
+
+    <section class="screen legal-screen" id="legal-terms" data-title="Legal · Terms"><div data-legal="terms"></div></section>
+    <section class="screen legal-screen" id="legal-privacy" data-title="Legal · Privacy"><div data-legal="privacy"></div></section>
+    <section class="screen legal-screen" id="legal-refund" data-title="Legal · Refund"><div data-legal="refund"></div></section>
+    <section class="screen legal-screen" id="legal-dmca" data-title="Legal · DMCA"><div data-legal="dmca"></div></section>
+
+    <section class="screen app-screen state-demo" id="state-empty" data-title="State · Empty gallery"><div data-app-shell="ai-image"></div><div class="state-stage"><div class="empty-state large"><span>✦</span><h1>Start with your idea.</h1><p>No generations in this session yet. Describe an image, video, voiceover or sound effect below.</p><div class="suggestions"><button>Editorial product still</button><button>Cinematic camera move</button><button>Natural voiceover</button></div></div><div class="composer mini"><div class="prompt">Describe what you want to create…</div><div class="composer-row"><button class="chip active">✦ Image⌄</button><button class="chip">Nano Banana 2⌄</button><span></span><label class="cost">COST <b>✦ 4</b></label><button class="primary">Generate ↗</button></div></div></div></section>
+    <section class="screen app-screen state-demo" id="state-generating" data-title="State · Generating"><div data-app-shell="ai-video"></div><div class="state-stage"><div class="progress-card"><div class="media-art art-dark"><span class="spark-loader">✦</span><strong>64%</strong><p>Rendering motion and native audio…</p><i><b></b></i></div><div class="progress-meta"><span>Seedance 2.0 · 16:9 · 1080p · 8s · no video reference</span><button>Cancel</button></div></div><div class="composer mini disabled"><div class="prompt">Orbit the glass product in warm sunset light…</div><div class="composer-row"><button class="chip">▶ Video</button><button class="chip">Seedance 2.0</button><span></span><span class="cost">CHARGED <b>✦ 272</b></span><button class="primary">Generating…</button></div></div></div></section>
+    <section class="screen app-screen state-demo" id="state-error" data-title="State · Error toast"><div data-app-shell="dashboard"></div><div class="state-stage"><div class="feed-card square center-card"><div class="media-art art-glass"></div><div class="card-meta"><b>Chrome object study</b><span>Nano Banana Pro</span></div></div><div class="toast error"><i>!</i><div><b>Generation failed</b><span>The provider did not return an asset. Your ✦ 14 credits were refunded.</span></div><button>×</button></div></div></section>
+    <section class="screen app-screen state-demo" id="state-moderation" data-title="State · Moderation refund"><div data-app-shell="ai-image"></div><div class="state-stage"><div class="moderation-card"><span class="shield">◇</span><span class="kicker">REFERENCE CHECK</span><h2>We couldn’t use this reference.</h2><p>Reference contains a real human face. FrameFlow only supports consent-safe identity workflows.</p><div class="refund-line"><i>↶</i><span><b>✦ 8 refunded</b>Your balance has already been restored.</span></div><div><button class="primary">Replace reference</button><button class="secondary">Read policy</button></div></div></div></section>
+    <section class="screen app-screen state-demo" id="state-low-credits" data-title="State · Low credits & top up"><div data-app-shell="account-billing"></div><div class="state-stage"><div class="credit-modal" role="dialog" aria-modal="true" aria-labelledby="creditModalTitle"><button class="modal-x" aria-label="Close credit top-up">×</button><span class="kicker">CREDIT BALANCE</span><div class="balance-hero"><span>AVAILABLE</span><strong>✦ 6</strong><small>Not enough for Seedance 2.0 · 8s · 1080p (✦ 272)</small></div><h2 id="creditModalTitle">Top up and keep the session moving.</h2><div class="credit-packs"><button><span><b>✦ 500</b><small>For small projects</small></span><strong>$5</strong></button><button class="popular"><i>MOST POPULAR · SAVE 20%</i><span><b>✦ 1,500</b><small>One-time pack</small></span><strong>$12</strong></button><button><span><b>✦ 5,000</b><small>For professional work</small></span><strong>$35</strong></button></div><button class="primary full">Continue to secure checkout →</button><p>Purchased credits do not expire. Plan credits are used first.</p></div></div></section>
+    <section class="screen app-screen state-demo" id="state-no-results" data-title="State · No template results"><div data-app-shell="templates"></div><div class="state-stage catalog-empty"><div class="active-filter-row"><button>Application: DaVinci ×</button><button>4K ×</button><button>Vertical ×</button></div><div class="empty-state large"><span>⌕</span><h1>No templates match that mix.</h1><p>Try removing a filter or searching for a broader style. New work lands every week.</p><button class="primary">Clear all filters</button></div></div></section>
+    <section class="screen app-screen state-demo" id="state-lightbox" data-title="State · Media lightbox"><div data-app-shell="ai-history"></div><div class="scrim"><div class="lightbox" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle"><div class="lightbox-media media-art art-sunset"><button class="play" aria-label="Play video result">▶</button><span class="media-time">00:08</span></div><aside><button class="modal-x" aria-label="Close media lightbox">×</button><span class="kicker">VIDEO RESULT</span><h2 id="lightboxTitle">Golden hour product film</h2><p>Orbit the translucent glass object, keep the warm horizon stable and land on the final frame.</p><div class="spec-list"><div><span>Model</span><b>Veo 3.1 Lite</b></div><div><span>Format</span><b>16:9 · 720p · 8s</b></div><div><span>Cost</span><b>✦ 24</b></div></div><button class="primary full">Download MP4 ↓</button><button class="secondary full">Use as reference</button><button class="secondary full">Add to project</button></aside></div></div></section>
+    <section class="screen app-screen state-demo" id="state-project-modal" data-title="State · Add to project"><div data-app-shell="ai-history"></div><div class="scrim"><div class="small-modal" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle"><div class="modal-head"><div><span class="kicker">ORGANIZE</span><h2 id="projectModalTitle">Add to project</h2></div><button aria-label="Close add-to-project dialog">×</button></div><label class="modal-search">⌕<input aria-label="Search projects" placeholder="Search projects…"></label><div class="project-picks"><button><span class="mini-art art-red"></span><b>Northstar Launch<small>18 items</small></b><i>→</i></button><button><span class="mini-art art-green"></span><b>FrameFlow Social<small>27 items</small></b><i>→</i></button></div><div class="new-project-row"><input aria-label="New project name" value="New campaign"><button class="primary">Create & add</button></div></div></div></section>
+    <section class="screen app-screen state-demo" id="state-project-empty" data-title="State · Empty project"><div data-app-shell="projects"></div><div class="app-content project-content"><div class="breadcrumbs">Projects <span>→</span> Product explorations</div><div class="page-title"><div><span class="kicker">PROJECT</span><h1>Product explorations</h1><p>0 items · created today</p></div><div><button class="secondary">Rename</button><button class="danger-btn">Delete</button></div></div><div class="empty-state large"><span>□</span><h2>Nothing here yet.</h2><p>Add a generation from AI Studio or save a template to this project.</p><div><button class="primary" data-go="ai-image">Open AI Studio</button><button class="secondary" data-go="templates">Browse templates</button></div></div></div></section>
+    <section class="screen app-screen state-demo" id="state-reference-library" data-title="State · Reference library"><div data-app-shell="ai-image"></div><div class="scrim"><div class="reference-modal" role="dialog" aria-modal="true" aria-labelledby="referenceModalTitle"><div class="modal-head"><div><span class="kicker">MY LIBRARY</span><h2 id="referenceModalTitle">Choose a reference</h2></div><button aria-label="Close reference library">×</button></div><div class="reference-toolbar"><label class="modal-search">⌕<input aria-label="Search library" placeholder="Search generations…"></label><div class="modal-tabs"><button class="active">Images</button><button>Videos</button></div></div><div class="reference-grid"><button class="selected"><span class="mini-art art-glass"></span><b>Chrome object study<small>Nano Banana Pro · 2K</small></b><i>✓</i></button><button><span class="mini-art art-red"></span><b>Editorial portrait<small>Seedream 5.0 Pro · 2K</small></b></button><button><span class="mini-art art-green"></span><b>Botanical pack<small>Imagen 4 · 2K</small></b></button><button><span class="mini-art art-blue"></span><b>Signal poster<small>Nano Banana 2 · 2K</small></b></button><button><span class="mini-art art-sunset"></span><b>Desert frame<small>Veo 3.1 Lite · 720p</small></b></button><button><span class="mini-art art-mono"></span><b>Monolith study<small>Nano Banana Pro · 1K</small></b></button></div><footer><span>1 selected · image reference</span><button class="primary">Use reference →</button></footer></div></div></section>
+    <section class="screen app-screen state-demo" id="state-avatar-menu" data-title="State · Avatar menu open"><div data-app-shell="dashboard"></div><div class="avatar-demo"><div class="avatar-menu" role="menu"><div><span class="avatar">AK</span><b>Alex Kim<small>alex@example.com · Pro</small></b></div><button role="menuitem" data-go="account-profile">◎ Account</button><button role="menuitem" data-go="account-downloads">↓ Downloads</button><button role="menuitem" data-go="projects">□ Projects</button><button role="menuitem" data-go="plugin">↧ Plugin</button><button role="menuitem" class="signout">↗ Sign out</button></div><div class="dashboard-ghost"><span class="kicker">ACCOUNT MENU · OPEN STATE</span><h1>Every route stays<br>one click away.</h1></div></div></section>
+    <section class="screen app-screen state-demo" id="state-delete" data-title="State · Delete account"><div data-app-shell="account-profile"></div><div class="scrim"><div class="small-modal danger-modal" role="dialog" aria-modal="true" aria-labelledby="deleteTitle"><span class="danger-icon">!</span><span class="kicker">IRREVERSIBLE ACTION</span><h2 id="deleteTitle">Delete your account?</h2><p>Your access is revoked, personal content is removed, and published templates are unpublished. Financial records may be retained in anonymized form where legally required.</p><label>TYPE DELETE TO CONFIRM<input aria-label="Type DELETE to confirm" placeholder="DELETE"></label><div><button class="secondary">Cancel</button><button class="danger-btn" disabled>Delete account</button></div></div></div></section>
+  </main>
+  <script src="screens.js"></script>
+</body>
+</html>
