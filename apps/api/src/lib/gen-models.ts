@@ -50,8 +50,9 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts" | "byteplus";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
+  byteplusModel?: string; // provider=byteplus: ModelArk model ID (masalan dreamina-seedance-2-0-260128)
   qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
   magnificTool?: string; // dedicated Magnific tool endpoint slug (image-upscaler, image-relight, ...) — provider=magnific only
@@ -983,8 +984,10 @@ export const GEN_MODELS: GenModel[] = [
     key: "bytedance/seedance-2.0/fast/image-to-video",
     label: "Seedance 2.0 Fast",
     brand: "bytedance",
-    provider: "fal",
-    falModel: "bytedance/seedance-2.0/fast/image-to-video",
+    provider: "byteplus", // BATCH5: fal → BytePlus ModelArk (~2-3x arzon, o'sha Seedance)
+    byteplusModel: "dreamina-seedance-2-0-fast-260128", // faqat 480p/720p — katalog mos
+    // falModel: "bytedance/seedance-2.0/fast/image-to-video", // fal zaxira
+    enabled: false, // BytePlus Fast pack hali olinmagan (2026-07-11) — pack olingach yoqiladi
     feature: "image-to-video",
     cost: 12,
     referenceMode: "video-ref",
@@ -1055,10 +1058,11 @@ export const GEN_MODELS: GenModel[] = [
     id: 3102,
     mode: "video",
     key: "bytedance/seedance-2.0/reference-to-video",
-    label: "Seedance 2.0 R2V",
+    label: "Seedance 2.0", // fal-davri "R2V" suffiksi olib tashlandi — universal standard tier
     brand: "bytedance",
-    provider: "fal",
-    falModel: "bytedance/seedance-2.0/reference-to-video",
+    provider: "byteplus", // BATCH5: fal → BytePlus ModelArk (~2-3x arzon, o'sha Seedance)
+    byteplusModel: "dreamina-seedance-2-0-260128",
+    // falModel: "bytedance/seedance-2.0/reference-to-video", // fal zaxira
     feature: "reference-to-video",
     cost: 15,
     referenceMode: "video-ref",

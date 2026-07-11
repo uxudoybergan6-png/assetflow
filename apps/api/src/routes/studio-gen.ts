@@ -13,6 +13,7 @@ import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured } from "../lib/ai/fal.js";
+import { isByteplusConfigured } from "../lib/ai/byteplus.js";
 import {
   isVertexEnhanceConfigured,
   vertexEnhancePrompt,
@@ -361,6 +362,8 @@ studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
     s3: isS3Configured(),
     freepik: Boolean(process.env.FREEPIK_API_KEY),
     elevenlabs: isElevenLabsConfigured(),
+    fal: isFalConfigured(),
+    byteplus: isByteplusConfigured(), // BATCH5 — ModelArk (Seedance)
   });
 });
 
@@ -1032,7 +1035,9 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       ? isElevenLabsConfigured()
       : model.provider === "fal"
         ? isFalConfigured()
-        : model.provider === "vertex"
+        : model.provider === "byteplus"
+          ? isByteplusConfigured()
+          : model.provider === "vertex"
           ? isVertexConfigured()
           : model.provider === "vertex-omni"
             ? isVertexOmniConfigured()

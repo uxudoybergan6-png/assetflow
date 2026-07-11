@@ -30,6 +30,15 @@ import {
   type FalQueueJob,
 } from "./ai/fal.js";
 import {
+  buildByteplusVideoBody,
+  byteplusPollStep,
+  byteplusSubmitVideoTask,
+  byteplusVideoUrlToBuffer,
+  withByteplusVideoSlot,
+  BYTEPLUS_INPUT_MODERATION_PREFIX,
+  BYTEPLUS_TIMEOUT_ERROR,
+} from "./ai/byteplus.js";
+import {
   getModelById,
   resolveVideoParams,
   resolveImageCount,
@@ -125,6 +134,10 @@ function sleep(ms: number) {
 
 function normalizeGenerationError(message: string): string {
   const raw = String(message || "");
+  // BytePlus input moderation — sentinel prefiksni klientga ko'rsatmaymiz, faqat amaliy xabar qoladi.
+  if (raw.startsWith(BYTEPLUS_INPUT_MODERATION_PREFIX)) {
+    return raw.slice(BYTEPLUS_INPUT_MODERATION_PREFIX.length).trim();
+  }
   if (
     /output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw)
   ) {
@@ -136,6 +149,7 @@ function normalizeGenerationError(message: string): string {
 type StoredProviderJob =
   | { provider: "openrouter-video"; jobId: string; submittedAt: string }
   | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob)
+  | { provider: "byteplus-video"; taskId: string; submittedAt: string }
   | { provider: "vertex-video"; operationName: string; submittedAt: string };
 type StoredProviderWebhook = {
   provider: "fal";
@@ -170,6 +184,13 @@ function readProviderJob(params: Record<string, unknown>): StoredProviderJob | n
       requestId: job.requestId,
       statusUrl: job.statusUrl,
       responseUrl: job.responseUrl,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  if (provider === "byteplus-video" && typeof job.taskId === "string" && job.taskId) {
+    return {
+      provider,
+      taskId: job.taskId,
       submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
     };
   }
@@ -666,6 +687,105 @@ async function runFalRefVideo(
   return falVideoOut(model, out.data);
 }
 
+// BytePlus poll ramp — docs tavsiyasi (5–10s interval; 600ms fal rampi status API'ni ortiqcha uradi).
+// 3×2s + 9×5s + qolgani 10s. maxPolls=100 → oyna ≈ 15.5 daqiqa (15s video/4k ham sig'adi,
+// reconcile cutoff'i 20 daqiqadan kichik qoladi).
+function byteplusWaitMs(i: number): number {
+  return i < 3 ? 2000 : i < 12 ? 5000 : 10000;
+}
+
+/**
+ * BATCH5 — BytePlus ModelArk Seedance video (3101 i2v Fast + 3102 r2v). fal'dagi ikkita runner'ning
+ * provider-aware birlashmasi: i2v kadrlar (referenceUrl/referenceEndUrl) HAM ko'p-modal referens
+ * (imageUrls/videoUrls/audioUrls) bitta content massiviga tushadi. Webhook YO'Q (v1 polling-only);
+ * taskId persist qilinadi — server restart poll'ni davom ettiradi (FalQueueJob naqshi). Butun task
+ * semafor slotida (Individual account: parallel 3 / 4k 1).
+ */
+async function runByteplusVideo(
+  model: GenModel,
+  prompt: string,
+  params: Record<string, unknown>,
+  userId: string,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
+  if (!refUrl && videoRequiresStartFrame(model)) {
+    return { ok: false, error: "A start frame (referenceUrl) is required for video" };
+  }
+  const matAll = async (val: unknown): Promise<string[]> => {
+    const list = Array.isArray(val)
+      ? (val as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+      : [];
+    return Promise.all(list.map((u) => materializeRefUrl(userId, genId, u)));
+  };
+  const lim = model.mediaRefs ?? { image: 9, video: 3, audio: 3, total: 12 };
+  const [startUrl, endUrl, imageUrlsRaw, videoUrlsRaw, audioUrlsRaw] = await Promise.all([
+    refUrl ? materializeRefUrl(userId, genId, refUrl) : Promise.resolve(undefined),
+    refEndUrl && model.endFrame
+      ? materializeRefUrl(userId, genId, refEndUrl)
+      : Promise.resolve(undefined),
+    matAll(params.imageUrls),
+    matAll(params.videoUrls),
+    matAll(params.audioUrls),
+  ]);
+  const imageUrls = imageUrlsRaw.slice(0, lim.image);
+  const videoUrls = videoUrlsRaw.slice(0, lim.video);
+  const audioUrls = audioUrlsRaw.slice(0, lim.audio);
+  // Schema (docs §3): "text+audio" / "faqat audio" qo'llanmaydi — audio bo'lsa kamida 1 rasm/video.
+  if (audioUrls.length && !startUrl && imageUrls.length + videoUrls.length === 0) {
+    return { ok: false, error: "An audio reference requires at least 1 image or video reference" };
+  }
+  if (imageUrls.length + videoUrls.length + audioUrls.length > lim.total) {
+    return { ok: false, error: `Total references must be ≤${lim.total}` };
+  }
+  const v = resolveVideoParams(model, params);
+  const body = buildByteplusVideoBody(model, prompt, v, {
+    startUrl,
+    endUrl,
+    imageUrls,
+    videoUrls,
+    audioUrls,
+  });
+  const is4k = v.resolution === "4k";
+  return withByteplusVideoSlot(is4k, async () => {
+    const saved = readProviderJob(params);
+    let taskId: string;
+    if (saved?.provider === "byteplus-video") {
+      taskId = saved.taskId; // restart'dan keyin resume — qayta submit YO'Q
+    } else {
+      const sub = await byteplusSubmitVideoTask(model.byteplusModel ?? model.key, body);
+      if (!sub.ok) return { ok: false, error: sub.error };
+      taskId = sub.data.taskId;
+      console.log(`[byteplus] task yaratildi — model=${model.id} ${v.resolution}/${v.duration}s task=${taskId}`);
+      await persistProviderJob(genId, params, {
+        provider: "byteplus-video",
+        taskId,
+        submittedAt: new Date().toISOString(),
+      });
+    }
+    for (let i = 0; i < 100; i++) {
+      await sleep(byteplusWaitMs(i));
+      const step = await byteplusPollStep(taskId);
+      if (!step.ok) return { ok: false, error: step.error };
+      if (step.data.state === "completed") {
+        const { videoUrl, usage } = step.data.data;
+        // Real provider token sarfi — ProviderSpend post-hoc hook yo'q (estimator gen'da yoziladi),
+        // hozircha faqat log (birinchi invoice bilan provider-cost jadvalini tasdiqlash uchun).
+        if (usage) {
+          console.log(
+            `[byteplus] task=${taskId} usage completion_tokens=${usage.completion_tokens ?? "?"} total_tokens=${usage.total_tokens ?? "?"}`
+          );
+        }
+        const dl = await byteplusVideoUrlToBuffer(videoUrl);
+        if (!dl.ok) return { ok: false, error: dl.error };
+        return { ok: true, buf: dl.data };
+      }
+    }
+    return { ok: false, error: BYTEPLUS_TIMEOUT_ERROR };
+  });
+}
+
 /** data:URI yoki http(s) URL'ni Vertex kutgan inline base64 rasmga aylantiradi. */
 async function refUrlToInlineImage(
   refUrl: string
@@ -1109,7 +1229,9 @@ export async function processGeneration(genId: string): Promise<void> {
       model.feature === "video-upscale"
     ) {
       const out =
-        model.feature === "video-upscale"
+        model.provider === "byteplus"
+          ? await runByteplusVideo(model, gen.prompt, params, gen.userId, genId) // BATCH5 — Seedance (i2v + r2v)
+          : model.feature === "video-upscale"
           ? await runFalVideoUpscale(model, params, genId) // BATCH4 #2 — Topaz (manba sourceKey)
           : model.feature === "reference-to-video"
           ? await runFalRefVideo(model, gen.prompt, params, gen.userId, genId) // R2V — ko'p-modal referens
@@ -1120,9 +1242,19 @@ export async function processGeneration(genId: string): Promise<void> {
               : model.provider === "vertex-omni"
                 ? await runVertexOmniVideo(model, gen.prompt, params, gen.userId, genId)
                 : await runVideo(model, gen.prompt, params, gen.userId, genId);
+      // BytePlus rate-limit (backoff ham yetmadi): FAILURE EMAS — refund yo'q, job queued'ga qaytadi;
+      // resume jadvali (30s) qayta uradi, 20-daq reconcile cutoff'i baribir chegaralaydi.
+      if (!out.ok && out.error.startsWith("BYTEPLUS_RATE_LIMITED")) {
+        await prisma.generation.updateMany({
+          where: { id: genId, status: "running" },
+          data: { status: "queued" },
+        });
+        return;
+      }
       if (
         !out.ok &&
         (out.error.startsWith("FAL_TIMEOUT") ||
+          out.error.startsWith("BYTEPLUS_TIMEOUT") ||
           out.error.startsWith("OPENROUTER_TIMEOUT") ||
           out.error.startsWith("VERTEX_TIMEOUT"))
       ) {

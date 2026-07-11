@@ -6,6 +6,7 @@ import {
   computeGenCost,
   resolveImageCount,
 } from "./gen-models.js";
+import { buildByteplusVideoBody } from "./ai/byteplus.js";
 
 /**
  * PROBLEM 10 — GEN_MODELS katalog validatori.
@@ -33,11 +34,11 @@ const FEATURES = new Set([
   "image-to-video", "reference-to-video", "video-upscale", "text-to-sfx",
 ]);
 const PROVIDERS = new Set([
-  "openrouter", "freepik", "elevenlabs", "magnific", "fal", "vertex", "vertex-omni", "vertex-image", "google-tts", undefined,
+  "openrouter", "freepik", "elevenlabs", "magnific", "fal", "vertex", "vertex-omni", "vertex-image", "google-tts", "byteplus", undefined,
 ]);
 // gen-processor dispatch'ida REAL branch bor provider+feature juftliklari (yangi provider →
 // yangi adapter branch SHART; ro'yxatga qo'shishdan oldin gen-processor.ts'ga branch yozing).
-const VIDEO_DISPATCH = new Set(["fal", "vertex", "vertex-omni", "openrouter", undefined]);
+const VIDEO_DISPATCH = new Set(["fal", "vertex", "vertex-omni", "openrouter", "byteplus", undefined]);
 const IMAGE_DISPATCH = new Set(["fal", "vertex-image", "magnific", "openrouter", undefined]);
 
 export type ModelIssue = { modelId: number | string; field: string; message: string };
@@ -150,6 +151,7 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
       issue(out, m, "mediaRefs", "reference-to-video model mediaRefs limitlarini e'lon qilishi shart");
     }
     if (m.provider === "fal" && !m.falModel && !m.key) issue(out, m, "falModel", "fal video modeli falModel/key e'lon qilishi shart");
+    if (m.provider === "byteplus" && !m.byteplusModel) issue(out, m, "byteplusModel", "byteplus video modeli byteplusModel (ModelArk ID) e'lon qilishi shart");
   }
 
   if (m.mode === "voice" || m.mode === "music") {
@@ -173,6 +175,10 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
       if (m.provider === "fal") {
         const input = buildFalVideoInput(m, "validator", rv, { startUrl: "https://x/i.png", imageUrls: ["https://x/i.png"] });
         if (!input.prompt) issue(out, m, "videoInput", "buildFalVideoInput prompt qaytarmadi");
+      }
+      if (m.provider === "byteplus") {
+        const body = buildByteplusVideoBody(m, "validator", rv, { startUrl: "https://x/i.png", imageUrls: ["https://x/i.png"] });
+        if (!Array.isArray(body.content) || !body.content.length) issue(out, m, "videoInput", "buildByteplusVideoBody content qaytarmadi");
       }
       const c = computeGenCost(m, params);
       if (!(c > 0)) issue(out, m, "cost", `computeGenCost ${c} qaytardi (musbat kutiladi)`);

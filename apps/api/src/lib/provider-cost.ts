@@ -45,8 +45,11 @@ export const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
   3001: { "720p": 0.03 }, // Veo 3.1 Lite ✅ (720p, audiosiz)
   3002: { "720p": 0.08, "1080p": 0.1 }, // Veo 3.1 Fast ✅ (audiosiz)
   3003: { "720p": 0.4, "1080p": 0.4 }, // Veo 3.1 Standard ✅ (audio bilan)
-  3101: { "480p": 0.108, "720p": 0.2419 }, // Seedance 2.0 Fast — 720p ✅; 480p scaled
-  3102: { "480p": 0.135, "720p": 0.3034, "1080p": 0.682, "4k": 2.728 }, // Seedance R2V — 720p/1080p ✅; 480p/4k scaled
+  // Seedance 3101/3102 — BATCH5: fal → BytePlus ModelArk. BytePlus resource-pack tarifi, birinchi
+  // invoice bilan tasdiqlansin (2026-07). $/1M-token stavkadan 24fps'da derivatsiya
+  // (token/s ≈ width·height·24/1024): fast video-input $3.3/1M; standard (r2v) $4.3/1M.
+  3101: { "480p": 0.032, "720p": 0.071 }, // Seedance 2.0 Fast (BytePlus)
+  3102: { "480p": 0.042, "720p": 0.093, "1080p": 0.209, "4k": 0.836 }, // Seedance 2.0 (BytePlus)
   // Topaz video upscale (fal, RASMIY tarif ✅): $/s CHIQISH bo'yicha; 60fps ×2 billing
   // duration'ga kiritilgan (derive), shu sabab bu jadval sof tier stavkasi.
   3201: { "720p": 0.01, "1080p": 0.02, "4k": 0.08 },
