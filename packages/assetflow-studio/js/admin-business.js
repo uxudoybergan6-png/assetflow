@@ -42,11 +42,17 @@ window.afterRender.pricing = async function(){
 /** BATCH4 #3 — "Apply target margin": maqsad so'raladi (default 2.0×, DB hali 1.8 bo'lsa ham)
  *  → POST apply-margin (marginTarget'ni config'ga YOZADI + barcha enabled narxni derive qiladi). */
 async function applyMarginAll(){
+  // P25 — prefill ACTUAL current margin (avval `cur>=2?cur:2` bilan 2 gacha ko'tarilardi → minimum
+  // kabi ko'rinardi). Vergul (1,5) ham qabul qilinadi — ko'p klaviatura/lokalda o'nlik ajratkich
+  // vergul; avval `Number("1,5")→NaN` edi (owner'ni bloklagan asosiy bug).
   const cur = PRICING_DATA ? PRICING_DATA.marginTarget : 2;
-  const raw = prompt('Target margin (×) — applied to EVERY enabled model as ceil(provider cost × margin ÷ credit value).\nPinned (product-priced) models are skipped. Prices can go DOWN as well as up.', String(cur >= 2 ? cur : 2));
+  const raw = prompt('Target margin (×) — applied to EVERY enabled model as ceil(provider cost × margin ÷ credit value).\nPinned (product-priced) models are skipped. Prices can go DOWN as well as up. You can enter e.g. 1.5 or 1,5.', String(cur));
   if(raw==null) return;
-  const mt = Number(raw);
-  if(!(mt>0)){ toast('Error','Enter a positive margin (e.g. 2)','danger'); return; }
+  const mt = Number(String(raw).trim().replace(',', '.'));
+  if(!(mt>0)){ toast('Error','Enter a positive margin, e.g. 1.5 or 2','danger'); return; }
+  // P25 — 1.0× dan past = provider cost'dan ARZON sotish (loss-leader). Bloklamaymiz, lekin
+  // ANIQ tasdiq so'raymiz (owner ataylab xohlashi mumkin).
+  if(mt < 1.0 && !confirm(`At ${mt}× you will LOSE money on every generation (selling below provider cost). Continue?`)) return;
   try {
     const res = await StudioApi.applyAdminPricingMargin({ marginTarget: mt });
     const r = res && res.report;
