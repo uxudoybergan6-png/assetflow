@@ -1273,6 +1273,26 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
+  // P20 #5 — per-user PARALLEL cheklov (money-zona EMAS: faqat konkurensiya darvozasi). Klient
+  // bir vaqtda 5 ishgacha ruxsat beradi (kurtuazi); bu SERVER kafolati (P20.2 abuz oldini oladi:
+  // 20 video navbatga qo'yib provayder rate-limit / spend-guard'ni portlatmasin). Imzo va daily-cap'dan
+  // KEYIN, lekin consume'dan OLDIN — reject → charge yo'q. ADMIN ozod. Faol = queued|running.
+  const MAX_ACTIVE_GENERATIONS = Math.max(1, Number(process.env.MAX_ACTIVE_GENERATIONS) || 5);
+  if (req.user!.role !== "ADMIN") {
+    const activeCount = await prisma.generation.count({
+      where: { userId: req.user!.userId, status: { in: ["queued", "running"] } },
+    });
+    if (activeCount >= MAX_ACTIVE_GENERATIONS) {
+      res.status(429).json({
+        error: `Too many generations running at once (max ${MAX_ACTIVE_GENERATIONS}) — wait for one to finish`,
+        code: "TOO_MANY_ACTIVE_GENERATIONS",
+        active: activeCount,
+        max: MAX_ACTIVE_GENERATIONS,
+      });
+      return;
+    }
+  }
+
   // Kredit zaxiraga olinadi (atomik). failed bo'lsa 1c qaytaradi.
   const gate = await consumeAiCredits(req.user!.userId, price);
   if (!gate.ok) {
