@@ -93,6 +93,36 @@ app.use(
   })
 );
 
+// Bosqich 1 #1 / P8 #7 — yengil access-log + metrik signali. Har so'rov uchun BITTA
+// strukturaviy JSON qatori (Cloud Run log'larni maydonlarga parse qiladi) → log-asosli
+// metrika/alert: 5xx darajasi, sekin so'rovlar (latency). Health/livez probe'lari
+// o'tkazib yuboriladi (Cloud Run ularni tez-tez uradi — shovqin bo'lmasin).
+app.use((req, res, next) => {
+  const p = req.path;
+  if (p === "/health" || p === "/livez" || p === "/") return next();
+  const started = Date.now();
+  res.on("finish", () => {
+    const durMs = Date.now() - started;
+    // slow = 1s dan sekin; 5xx = server xatosi. Ikkalasi ham alert'ga arziydi.
+    const slow = durMs >= 1000;
+    const err5xx = res.statusCode >= 500;
+    if (slow || err5xx || process.env.LOG_ALL_REQUESTS === "1") {
+      const rec = {
+        t: "req",
+        method: req.method,
+        path: p,
+        status: res.statusCode,
+        durMs,
+        ...(slow ? { slow: true } : {}),
+        ...(err5xx ? { err5xx: true } : {}),
+      };
+      // 5xx → error kanali (Cloud Run "error" severity), aks holda oddiy log.
+      (err5xx ? console.error : console.log)(JSON.stringify(rec));
+    }
+  });
+  next();
+});
+
 app.get("/", (_req, res) => {
   res.json({
     service: "creative-tools-api",
