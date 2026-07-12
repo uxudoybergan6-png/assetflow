@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "batch6-mockup",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["http-server", "docs/mockups/batch6", "-p", "8978", "-c-1"],
+      "port": 8978
+    },
+    {
       "name": "platform-preview",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", "packages/assetflow-studio/platform", "-p", "8975", "-c-1"],

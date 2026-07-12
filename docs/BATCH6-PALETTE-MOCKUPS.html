@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FrameFlow — BATCH6 palitra-mockuplar (A/B/C)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#161618;font-family:Inter,sans-serif;color:#fff;padding:40px 20px}
+  .intro{max-width:1080px;margin:0 auto 48px}
+  .intro h1{font-family:'Space Grotesk';font-size:28px;margin-bottom:8px}
+  .intro p{color:#9a9aa2;font-size:14px;line-height:1.6;max-width:720px}
+  .variant{max-width:1080px;margin:0 auto 72px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .vlabel{padding:14px 24px;font-family:'JetBrains Mono';font-size:12px;letter-spacing:.14em;text-transform:uppercase;background:#1d1d21;color:#8b8b93;display:flex;justify-content:space-between}
+  .stage{padding:36px 32px 44px}
+
+  /* ===== A · NOIR PREMIUM ===== */
+  .vA .stage{background:#0a0a0b}
+  .vA .nav{display:flex;align-items:center;gap:26px;margin-bottom:40px}
+  .vA .logo{font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff}
+  .vA .nl{font-size:13.5px;color:#7e7e86;font-weight:500}
+  .vA .nl.on{color:#fff}
+  .vA .h1{font-family:'Space Grotesk';font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1.05;margin-bottom:10px}
+  .vA .sub{color:#8f8f97;font-size:15px;margin-bottom:30px}
+  .vA .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+  .vA .card{aspect-ratio:16/10;border-radius:14px;border:1px solid rgba(255,255,255,.07);position:relative;overflow:hidden;transition:.2s}
+  .vA .card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.25)}
+  .vA .c1{background:linear-gradient(140deg,#2c2c34,#141417)}
+  .vA .c2{background:linear-gradient(140deg,#3a3230,#141417)}
+  .vA .c3{background:linear-gradient(140deg,#26303a,#141417)}
+  .vA .ct{position:absolute;left:14px;bottom:12px;font-size:13px;font-weight:600}
+  .vA .cb{position:absolute;right:12px;top:12px;font-family:'JetBrains Mono';font-size:10px;background:rgba(255,255,255,.92);color:#000;padding:3px 8px;border-radius:99px;font-weight:500}
+  .vA .composer{background:#131316;border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:18px 18px 14px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .vA .ph{color:#5d5d66;font-size:14.5px;margin-bottom:16px}
+  .vA .row{display:flex;align-items:center;gap:8px}
+  .vA .chip{border:1px solid rgba(255,255,255,.12);background:#1b1b1f;color:#c9c9cf;font-size:13px;padding:8px 14px;border-radius:99px;font-weight:500}
+  .vA .gen{margin-left:auto;background:#fff;color:#000;font-weight:600;font-size:14px;padding:11px 26px;border-radius:12px}
+  /* ===== B · NEON PULSE ===== */
+  .vB .stage{background:#050505}
+  .vB .nav{display:flex;align-items:center;gap:26px;margin-bottom:40px}
+  .vB .logo{font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#D8FF3E}
+  .vB .nl{font-size:13.5px;color:#6d6d70;font-weight:500}
+  .vB .nl.on{color:#fff}
+  .vB .badge{font-family:'JetBrains Mono';font-size:9px;background:#D8FF3E;color:#000;padding:2px 5px;border-radius:4px;margin-left:5px;vertical-align:2px}
+  .vB .h1{font-family:'Space Grotesk';font-size:46px;font-weight:700;text-transform:uppercase;letter-spacing:-.01em;line-height:1.02;margin-bottom:10px}
+  .vB .h1 em{font-style:normal;color:#D8FF3E}
+  .vB .sub{color:#87878c;font-size:15px;margin-bottom:30px}
+  .vB .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+  .vB .card{aspect-ratio:16/10;border-radius:12px;position:relative;overflow:hidden;border:1px solid #1c1c1c;transition:.2s}
+  .vB .card:hover{border-color:#D8FF3E;box-shadow:0 0 32px rgba(216,255,62,.18)}
+  .vB .c1{background:linear-gradient(140deg,#232a12,#0a0a08)}
+  .vB .c2{background:linear-gradient(140deg,#2a1a2e,#0a0a08)}
+  .vB .c3{background:linear-gradient(140deg,#132a2a,#0a0a08)}
+  .vB .ct{position:absolute;left:14px;bottom:12px;font-size:13px;font-weight:600}
+  .vB .cb{position:absolute;right:12px;top:12px;font-family:'JetBrains Mono';font-size:10px;background:#D8FF3E;color:#000;padding:3px 8px;border-radius:5px;font-weight:600}
+  .vB .composer{background:#0d0d0e;border:1px solid #212121;border-radius:16px;padding:18px 18px 14px;box-shadow:0 0 0 1px rgba(216,255,62,.06),0 24px 70px rgba(0,0,0,.7)}
+  .vB .ph{color:#5a5a5e;font-size:14.5px;margin-bottom:16px}
+  .vB .row{display:flex;align-items:center;gap:8px}
+  .vB .chip{border:1px solid #262626;background:#151517;color:#cfcfd2;font-size:13px;padding:8px 14px;border-radius:10px;font-weight:500}
+  .vB .chip.m{color:#D8FF3E;border-color:rgba(216,255,62,.35)}
+  .vB .gen{margin-left:auto;background:#D8FF3E;color:#000;font-weight:700;font-size:14px;padding:11px 26px;border-radius:12px;box-shadow:0 0 28px rgba(216,255,62,.35)}
+  /* ===== C · COLD SIGNAL ===== */
+  .vC .stage{background:#0b0e14}
+  .vC .nav{display:flex;align-items:center;gap:26px;margin-bottom:40px}
+  .vC .logo{font-family:'Space Grotesk';font-weight:700;font-size:17px;color:#fff}
+  .vC .logo b{color:#7C8CFF}
+  .vC .nl{font-size:13.5px;color:#6f7686;font-weight:500}
+  .vC .nl.on{color:#e8ebf5}
+  .vC .h1{font-family:'Space Grotesk';font-size:44px;font-weight:600;letter-spacing:-.02em;line-height:1.06;margin-bottom:10px;color:#eef1f8}
+  .vC .h1 span{background:linear-gradient(90deg,#7C8CFF,#4FD8EB);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .vC .sub{color:#8992a6;font-size:15px;margin-bottom:30px}
+  .vC .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:30px}
+  .vC .card{aspect-ratio:16/10;border-radius:14px;position:relative;overflow:hidden;border:1px solid rgba(124,140,255,.14);transition:.2s}
+  .vC .card:hover{border-color:rgba(124,140,255,.5);box-shadow:0 12px 40px rgba(124,140,255,.15)}
+  .vC .c1{background:linear-gradient(140deg,#1c2340,#0d1018)}
+  .vC .c2{background:linear-gradient(140deg,#15303a,#0d1018)}
+  .vC .c3{background:linear-gradient(140deg,#251c40,#0d1018)}
+  .vC .ct{position:absolute;left:14px;bottom:12px;font-size:13px;font-weight:600;color:#e8ebf5}
+  .vC .cb{position:absolute;right:12px;top:12px;font-family:'JetBrains Mono';font-size:10px;background:#7C8CFF;color:#0b0e14;padding:3px 8px;border-radius:99px;font-weight:600}
+  .vC .composer{background:#10141d;border:1px solid rgba(124,140,255,.18);border-radius:18px;padding:18px 18px 14px;box-shadow:0 24px 60px rgba(4,6,12,.6)}
+  .vC .ph{color:#5c6478;font-size:14.5px;margin-bottom:16px}
+  .vC .row{display:flex;align-items:center;gap:8px}
+  .vC .chip{border:1px solid rgba(124,140,255,.2);background:#161b28;color:#c3cade;font-size:13px;padding:8px 14px;border-radius:99px;font-weight:500}
+  .vC .gen{margin-left:auto;background:linear-gradient(90deg,#7C8CFF,#4FD8EB);color:#0b0e14;font-weight:700;font-size:14px;padding:11px 26px;border-radius:12px}
+</style>
+</head>
+<body>
+  <div class="intro">
+    <h1>FrameFlow · BATCH6 — 3 palitra varianti</h1>
+    <p>Har variantda bir xil elementlar: nav, sarlavha (yangi tipografiya — Space Grotesk display + Inter matn + JetBrains Mono texnik yorliqlar), media-kartalar (hover-jonlilik bilan) va Higgsfield-uslub qadalgan kompozer. Bittasini tanlang — to'liq token-spec shu asosda chiqadi.</p>
+  </div>
+
+  <!-- A -->
+  <div class="variant vA">
+    <div class="vlabel"><span>VARIANT A · NOIR PREMIUM</span><span>kontent-urg'u · oq accent · eng xavfsiz premium</span></div>
+    <div class="stage">
+      <div class="nav"><span class="logo">frameflow</span><span class="nl on">Explore</span><span class="nl">Image</span><span class="nl">Video</span><span class="nl">Templates</span><span class="nl">Pricing</span></div>
+      <div class="h1">Create beyond<br>the timeline.</div>
+      <div class="sub">Templates, AI video &amp; audio — one creative space.</div>
+      <div class="cards">
+        <div class="card c1"><span class="cb">SEEDANCE 2.0</span><span class="ct">Neon city loop</span></div>
+        <div class="card c2"><span class="cb">SEEDREAM PRO</span><span class="ct">Editorial poster</span></div>
+        <div class="card c3"><span class="cb">TEMPLATE</span><span class="ct">Logo reveal</span></div>
+      </div>
+      <div class="composer">
+        <div class="ph">Describe the scene you imagine…</div>
+        <div class="row">
+          <span class="chip">◉ Seedance 2.0</span><span class="chip">16:9</span><span class="chip">720p</span><span class="chip">✦ 24</span>
+          <span class="gen">Generate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="variant vB">
+    <div class="vlabel"><span>VARIANT B · NEON PULSE</span><span>Higgsfield-ruh · neon chartreuse · energiya</span></div>
+    <div class="stage">
+      <div class="nav"><span class="logo">frameflow</span><span class="nl on">Explore</span><span class="nl">Image</span><span class="nl">Video<span class="badge">NEW</span></span><span class="nl">Templates</span><span class="nl">Pricing</span></div>
+      <div class="h1">Make it<br><em>impossible.</em></div>
+      <div class="sub">Templates, AI video &amp; audio — one creative space.</div>
+      <div class="cards">
+        <div class="card c1"><span class="cb">SEEDANCE 2.0</span><span class="ct">Neon city loop</span></div>
+        <div class="card c2"><span class="cb">SEEDREAM PRO</span><span class="ct">Editorial poster</span></div>
+        <div class="card c3"><span class="cb">TEMPLATE</span><span class="ct">Logo reveal</span></div>
+      </div>
+      <div class="composer">
+        <div class="ph">Describe the scene you imagine…</div>
+        <div class="row">
+          <span class="chip m">◉ Seedance 2.0</span><span class="chip">16:9</span><span class="chip">720p</span><span class="chip">✦ 24</span>
+          <span class="gen">Generate ✦</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="variant vC">
+    <div class="vlabel"><span>VARIANT C · COLD SIGNAL</span><span>sovuq elektrik-ko'k/cyan · texnologik</span></div>
+    <div class="stage">
+      <div class="nav"><span class="logo">frame<b>flow</b></span><span class="nl on">Explore</span><span class="nl">Image</span><span class="nl">Video</span><span class="nl">Templates</span><span class="nl">Pricing</span></div>
+      <div class="h1">Direct the <span>future</span><br>of motion.</div>
+      <div class="sub">Templates, AI video &amp; audio — one creative space.</div>
+      <div class="cards">
+        <div class="card c1"><span class="cb">SEEDANCE 2.0</span><span class="ct">Neon city loop</span></div>
+        <div class="card c2"><span class="cb">SEEDREAM PRO</span><span class="ct">Editorial poster</span></div>
+        <div class="card c3"><span class="cb">TEMPLATE</span><span class="ct">Logo reveal</span></div>
+      </div>
+      <div class="composer">
+        <div class="ph">Describe the scene you imagine…</div>
+        <div class="row">
+          <span class="chip">◉ Seedance 2.0</span><span class="chip">16:9</span><span class="chip">720p</span><span class="chip">✦ 24</span>
+          <span class="gen">Generate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

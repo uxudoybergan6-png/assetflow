@@ -49,6 +49,10 @@ Sen — o'zbek foydalanuvchi bilan **Claude Code** (alohida kod-agent) o'rtasida
 7. Direktor Code natijаsини o'zbekcha sodda tushuntiradi, so'ng bu daftардаги "JORIY HOLAT"ни
    qisqa yangilaydi (faqat asosiy — qayerга yetdik; eski tafsilotни saqlamaydi).
 
+**Prompt topshirish qoidasi:** Direktor har promptni foydalanuvchiga berganда (a) prompt OSTIDA
+qaysi modelда ishlatishни aniq aytadi (Sonnet 5 / Fable 5 / Opus 4.8 — 1-bo'limdagi mezon bo'yicha),
+(b) Code oldiда turgan ishни o'zbekча sodda 3-6 bandда tushuntiradi (foydalanuvchi nima kutishни bilsin).
+
 **2 rejim** (foydalanuvchi tanlaydi):
 - **Birma-bir:** har muammо kelганда darhol alohida prompt (tez, jonli test uchun).
 - **Jamlash:** foydalanuvchi bir nechta muammoни ketma-ket aytadi → Direktor oxирида ularни
@@ -57,7 +61,7 @@ Sen — o'zbek foydalanuvchi bilan **Claude Code** (alohida kod-agent) o'rtasida
 **Batch fayl:** bir "davra"/kun uchun bitta fayl — `docs/FIX-PROMPTS-BATCH<N>-<sana>.md`.
 Yangi davra boshlанганда yangi fayl ochiladi (eskиси tarix bo'lib qoladi).
 Batch fayl **TO'LIQ ingliz tilида** yoziladi (header, izoh, prompt — hammasi English).
-Joriy aktiv: `docs/FIX-PROMPTS-BATCH3-2026-07-10.md`.
+Joriy aktiv: `docs/FIX-PROMPTS-BATCH5-2026-07-11.md` (Seedance fal→BytePlus migratsiya).
 
 ### Yangi chatда davom etish (kontekst tugаганда)
 Foydalanuvchi yangi chat ochганда: bu faylни Claude'ga beradi → Claude **ROL (1-bo'lim)ни qabul
@@ -105,9 +109,10 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
   AE'да internet YO'Q (shrift self-host, inline SVG). `node --check` + DOM/handler bilan tasdiqla.
 - **Commit** aniq xabar bilan, **`Co-Authored-By` YO'Q** (deploy bloklaydi). **PUSH QILMA.**
 - **Minimal, tor diff.** Mavjudni qayta ishlat, regress qilma. Har prompt self-contained (`/clear`).
-- **Artlist = ILHOM, 1:1 nusxa EMAS.** Artlist (yoki boshqa referens) UX/pattern'idan g'oya olamiz, lekin
-  FrameFlow o'z identikligини (lime accent, qora tokenlar, mavjud komponentlar) saqlaydi — piksel/rang
-  nusxa qilinmaydi. Maqsad: FrameFlow'ning o'z xatolarини tuzatish, ilhomlanган holda.
+- **Referens (Artlist/Higgsfield) = ILHOM, 1:1 nusxa EMAS.** Naqsh/oqim/kayfiyat olinadi; kod,
+  asset, piksel-klon TAQIQ. ⚠️ YANGILANDI (2026-07-12, USER so'rovnomasi): eski "lime accent
+  saqlanadi" qoidasi BEKOR — USER hozirgi identikadan voz kechdi; yangi identika BATCH6'da
+  tanlanadi (`docs/BATCH6-REDESIGN-BRIEF.md` — brif + so'rovnoma natijalari shu yerda).
 
 ---
 
@@ -134,7 +139,61 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 - 🔴 **ENG KATTA BLOKER — KONTENT:** prod katalogда FAQAT 1 shablon published (landing esa "5000+"
   deydi — nomuvofiqlik). Launch'дан oldин katalog to'ldirish yoki landing raqamlarини moslash SHART.
 - 👉 **KEYINGI:** Stock **S2** (ingest quvuri) — `docs/STOCK-EXPANSION-PLAN.md` (S2→S6 hali yozilmagan).
-- ⏳ **Deferred:** web @-mention autocomplete · atomik chip editor · headless admin E2E.
+- 🚧 **AKTIV — BytePlus/Seedance migratsiya** (`docs/FIX-PROMPTS-BATCH5-2026-07-11.md` + API sxema:
+  `docs/BYTEPLUS-DOCS-MODELS.md` TO'LIQ tasdiqlangan): USER hisob ochdi, ModelArk ishlaydi, narx
+  2-3.3× arzon. **USER QARORI: Seedance FAQAT BytePlus — fal-fallback YO'Q** (fal qimmat); yuzli
+  referens → aniq xato + refund (BytePlus real yuzni bloklaydi; keyingi faza: Seedream zanjiri
+  AI-yuzni ochadi). **Topaz 3201 fal'да QOLADI.** ⚠️ Seedance aktivatsiya = prepaid resource pack
+  SHART (bepul token yo'q). Scope kengaydi: **video (Prompt #1) + RASM Seedream (Prompt #2)** —
+  plagin+web ikkalasi bitta katalogdan avtomatik oladi; Vertex rasm modellari parallel qoladi.
+  Region: **Johor (ap-southeast-1)** — Dublin EMAS (API key ham shu regionда).
+  ✅ Bosqich 0 TUGADI (2026-07-11): pack olindi ($30.10, 7M token, 90 kun!) · Dreamina-Seedance-2.0
+  + Dola-Seedream-5.0-Pro AKTIV (5.0-lite: 50 bepul rasm — activate qilinsin) · API key lokal .env'да.
+  Eslatma: bulk-activate oynasi ishlamaydi (mini pack yo'q) — har modelni QATORIDAN yakka activate.
+  ✅ **Prompt #1 BAJARILDI** (commit 17ece57, push YO'Q): byteplus.ts adapter · 3102→BytePlus
+  ("Seedance 2.0" nom) · 3101 Fast disabled (pack yo'q) · JONLI TEST PASS (t2v 480p/4s, 70s,
+  40,594 token — formula mos, pack'дан ≈$0.17). Token sarfida multiplier YO'Q — $4.30/1M pack
+  narxi amal qiladi, jadval to'g'ri (birinchi invoice bilan yakuniy tasdiq).
+  ✅ **Prompt #2 BAJARILDI** (commit 06f7bc7): byteplusImage() · 1020 Seedream 5.0 Lite
+  (enabled:false — narx tasdiqlanmagan) · 1021 Seedream 5.0 Pro (enabled:true, 1K $0.045/2K $0.09) ·
+  jonli test PASS ikkalasida (Lite 2K 32s / Pro 1K 115s, GCS'га tushdi). ⚠️ Lite'ni yoqish = kod
+  o'zgarishi (admin toggle /gen gate'га ta'sir qilmaydi) — Lite rasmiy narxi topilгач.
+  ✅ **Prompt #4 BAJARILDI:** rewriteMentionTokens (kadr-OFFSET fix: @img1+start-frame→"Image 2",
+  BytePlus frame'ларни ham sanaydi!) + 12-case build-test + edit-preset chiplari (Replace/Edit/
+  Inpaint, ikkala composer, SD2-EDIT-PRESETS marker bilan qo'lda sync).
+  ✅ **BATCH5 KOD TO'LIQ TUGADI** — #1 adapter (17ece57) · #2 Seedream (06f7bc7) · #4 mention+preset ·
+  #5 start/end kadr (c6abc9f) · #7 nisbat/piksel (96ab7c5) · #6 Dreamina pill-editor (34114f4).
+  Faqat #3 cleanup qoldi (prod'да 1-2 hafta barqarorlikdan keyin). ⚠️ PROBLEM 3 kuchda: Seedance 2.0
+  plaginда ko'rinmaydi (web-only) — ochish alohida qaror. 👉 **HOZIR: USER push** (7+ commit) →
+  Actions deploy → WEB jonli E2E checklist: Seedance 2.0 video (kadr+@pill+preset chip) · Seedream
+  ✅ **BATCH5 RASMAN YOPILDI (2026-07-12):** push+deploy OK · Apply target margin BOSILDI ·
+  **web E2E PASS** (USER tasdig'i: Seedream nisbat, Seedance kadr, @ pill, preset-chiplar, video
+  generatsiya — hammasi ishladi). Qoldiq: Fast pack (xohlaganda) · #3 cleanup (1-2 hafta keyin).
+- 🚧 **BATCH6 — Higgsfield-ilhom redizayn** (`docs/BATCH6-REDESIGN-BRIEF.md` + promptlar:
+  `docs/FIX-PROMPTS-BATCH6-2026-07-12.md`): ✅ Prompt #0 TUGADI (916c148) — TO'LIQ-sayt mockup
+  `docs/mockups/batch6/index.html`: ✅ Prompt #0.5 vizual QA ham TUGADI (63b46dd) —
+  **46 ekran × 3 tema (noir/neon/cold)**, real katalog verifikatsiya, kritik buglar tuzatilgan
+  (qora katalog / ko'rinmas kompozer / footer), 25+ hover, 3 temada skrinshot-tasdiq.
+  ✅ **USER QARORLARI:** 3 tema HAMMA JOYDA foydalanuvchi tanlovida · **default = A NOIR** ·
+  token-first majburiy (hardcode rang = defekt, har prompt 3-temada tekshiriladi).
+  ✅ Prompt #1 BAJARILDI (b216fab): PRODUCTION'да 3-tema tokenlar + compat-shim (lime→theme,
+  hech narsa buzilmadi) + Space Grotesk/Inter/JetBrains Mono + nav/footer yangi chrome + tema-
+  tanlagich (localStorage ff-theme, FOUC'siz). Qoldiq: 103 bo'lim-lime literal (keyingi
+  promptlar hal qiladi) · mega-menyu Home promptiда · footer 4-ustun = CMS qarori.
+  ✅ Prompt #2 (50ff85c) Home/landing 1:1 + mega-menyu, landing lime 103→0.
+  ✅ Prompt #3 (c3b9cab) Templates katalog+detal+Pro-gate 1:1 (hero+⌘K qidiruv, All-pill, yopishqoq
+  toolbar, player-bar, spec-list, inline gate→#pricing); scope lime 5→0; 1-element/empty holatlar halol.
+  ✅ Prompt #4 (90a4971+6ffca7b): Dashboard+Projects+Credit-modal 1:1; app yuzasida 65 lime literal→
+  token (3 tema ilova ichida ham to'g'ri); Sparky mascot tema-mos; BATCH5 chip-editor TEKSHIRILDI sog'.
+  ⚠️ Kompozer/model-picker/history: tema-mos lekin 1:1 tasdiq REAL data bilan qilinmadi (lokal backend
+  yo'q) — USER jonli saytда ko'radi, kamchilik chiqsa #4c mini-prompt.
+  👉 KEYINGI: **USER PUSH (5 commit!)** + jonli ko'rik (ayniqsa Studio real data bilan) →
+  Prompt #5 Auth/Account → #6 qoldiq sahifalar+yakuniy tozalash → BATCH7 CMS → BATCH8 plagin.
+- ⏳ **Deferred:** headless admin E2E · BATCH5 Prompt #3 (fal Seedance cleanup — prod'да 1-2 hafta
+  barqarorlikdan KEYIN) · **BATCH7 = Site CMS kengaytmasi** (BATCH6'dan KEYIN: help/legal(versiyali)/
+  promo-strip/SEO-OG/ticker/cinema/presets/mega-model-ro'yxat admin'дан; page-builder EMAS) ·
+  **BATCH8 = AE plagin redizayni web'ga moslash** (USER niyati 2026-07-12: BATCH6 tokenlar/naqshlar
+  plaginга ko'chiriladi — 3 tema + Higgsfield-uslub composer; BATCH7'dan keyin).
 
 ---
 

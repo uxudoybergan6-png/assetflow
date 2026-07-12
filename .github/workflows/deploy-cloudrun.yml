@@ -87,7 +87,9 @@ jobs:
           # P8 #2 — migratsiya DIRECT (poolsiz) endpoint'dan yurishi kerak (pgbouncer DDL'ni
           # qo'llab-quvvatlamaydi). DIRECT_DATABASE_URL yaml'da bo'lsa uni, aks holda
           # DATABASE_URL'ni ishlatamiz (fallback — pooler'ga o'tishdan oldin buzilmaydi).
-          DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//')"
+          # `|| true` SHART: DIRECT_DATABASE_URL yaml'da yo'q bo'lsa grep exit 1 qaytaradi va
+          # `set -euo pipefail` butun bosqichni o'ldiradi (fallback'gacha yetib bormaydi).
+          DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
           export DIRECT_DATABASE_URL="${DIRECT_URL:-$DB_URL}"
           npm run migrate:deploy -w @creative-tools/database
 
