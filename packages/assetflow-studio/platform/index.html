@@ -14352,7 +14352,7 @@
   @keyframes ffmBreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 transparent}50%{opacity:.85;box-shadow:0 0 26px 2px var(--th-glow)}}
   @keyframes ffmSpin{to{transform:rotate(360deg)}}
   /* textures */
-  .ff .ffm-mesh{background:radial-gradient(58% 46% at 72% 6%,rgba(124,196,255,.09),transparent 62%),radial-gradient(46% 38% at 16% 14%,rgba(194,240,74,.07),transparent 60%)}
+  .ff .ffm-mesh{background:radial-gradient(58% 46% at 72% 6%,rgba(124,196,255,.09),transparent 62%),radial-gradient(46% 38% at 16% 14%,color-mix(in srgb,var(--lime) 7%,transparent),transparent 60%)}
   .ff .ffm-dotbg{background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:18px 18px}
   .ff .ffm-glass{background:rgba(19,22,28,.72);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
   .ff .ffm-g1{background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)}
@@ -14414,7 +14414,7 @@
   .ff .ffm-cost{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--lime);white-space:nowrap}
   /* plan */
   .ff .ffm-plan{flex:1;min-width:0;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px 22px;display:flex;flex-direction:column;gap:0}
-  .ff .ffm-plan.rec{border-color:rgba(194,240,74,.35);background:linear-gradient(180deg,rgba(194,240,74,.045),rgba(194,240,74,0) 40%),var(--surface)}
+  .ff .ffm-plan.rec{border-color:color-mix(in srgb,var(--lime) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--lime) 4.5%,transparent),color-mix(in srgb,var(--lime) 0%,transparent) 40%),var(--surface)}
   .ff .ffm-pf{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted);padding:5px 0}
   .ff .ffm-pf i{color:var(--lime);font-size:13px;flex:none}
   /* template card */
@@ -14431,7 +14431,7 @@
   /* AI result tile */
   .ff .ffm-res{position:relative;border-radius:14px;overflow:hidden;background:var(--media)}
   .ff .ffm-res .rtag{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
-  .ff .ffm-res.pend{background:#0D1119;border:1px solid rgba(194,240,74,.28);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  .ff .ffm-res.pend{background:#0D1119;border:1px solid color-mix(in srgb,var(--lime) 28%,transparent);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
   .ff .ffm-spin{animation:ffmSpin 1.1s linear infinite;display:inline-flex}
   /* marketing responsive */
   .ff .ffm-hide-960{display:inline-flex}
@@ -14783,7 +14783,7 @@
   /* result + template cards (app) */
   .ff .ffa-res{position:relative;border-radius:14px;overflow:hidden;background:var(--media)}
   .ff .ffa-res .rtag{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
-  .ff .ffa-res.pend{background:#0D1119;border:1px solid rgba(194,240,74,.28);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  .ff .ffa-res.pend{background:#0D1119;border:1px solid color-mix(in srgb,var(--lime) 28%,transparent);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
   .ff .ffa-tc{display:flex;flex-direction:column;gap:7px;min-width:0;cursor:pointer}
   .ff .ffa-th{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/10;background:var(--surface2);transition:outline .18s}
   .ff .ffa-nm{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
@@ -14835,7 +14835,7 @@
   /* dashboard quick-action cards */
   .ff .ffa-qa{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;cursor:pointer;font-family:inherit;text-align:left;transition:transform .18s,border-color .18s}
   .ff .ffa-qa:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.16)}
-  .ff .ffa-qa.hl{background:linear-gradient(120deg,rgba(194,240,74,.08),transparent 70%),var(--surface);border-color:rgba(194,240,74,.18)}
+  .ff .ffa-qa.hl{background:linear-gradient(120deg,color-mix(in srgb,var(--lime) 8%,transparent),transparent 70%),var(--surface);border-color:color-mix(in srgb,var(--lime) 18%,transparent)}
   .ff .ffa-qa-ic{width:40px;height:40px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-size:19px;flex:none}
   /* auth split composition */
   .ff .ffa-auth{display:flex;min-height:100vh}
@@ -14843,7 +14843,7 @@
   .ff .ffa-auth-form{width:460px;flex:none;padding:56px 48px;display:flex;flex-direction:column;justify-content:center}
   .ff .ffa-flab{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--muted2);margin-bottom:6px;display:block}
   .ff .ffa-field{width:100%;height:42px;padding:0 13px;background:var(--f1);border:1px solid var(--hair2);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .18s,box-shadow .18s}
-  .ff .ffa-field:focus{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12)}
+  .ff .ffa-field:focus{background:var(--f2);border-color:color-mix(in srgb,var(--lime) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 12%,transparent)}
   .ff .ffa-divider{display:flex;align-items:center;gap:12px;margin:18px 0}
   .ff .ffa-divider .ln{flex:1;height:1px;background:rgba(255,255,255,.08)}
   .ff .ffa-divider span{font-size:11px;color:var(--muted2)}
@@ -14916,7 +14916,7 @@
   /* compact setting chip — click opens popover */
   .ff .ffa-chip{position:relative;display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:11px;background:var(--f2);border:1px solid var(--hair2);line-height:1.15;white-space:nowrap;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s}
   .ff .ffa-chip:hover{border-color:var(--f3)}
-  .ff .ffa-chip.open{border-color:rgba(194,240,74,.5)}
+  .ff .ffa-chip.open{border-color:color-mix(in srgb,var(--lime) 50%,transparent)}
   .ff .ffa-chip b{font:400 7px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted2)}
   .ff .ffa-chip>span{font-weight:600;font-size:11px;color:var(--text);display:flex;align-items:center;gap:5px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
   .ff .ffa-chip.open>span::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex:none}
@@ -14926,8 +14926,8 @@
   .ff .ffa-poprow:hover{background:var(--f1)}
   .ff .ffa-poprow.on{color:var(--lime)}
   .ff .ffa-popbd{position:fixed;inset:0;z-index:15}
-  .ff .ffa-st-imp{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid rgba(194,240,74,.28);border-radius:10px;background:rgba(194,240,74,.08);color:var(--lime);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s}
-  .ff .ffa-st-imp:hover{background:rgba(194,240,74,.15)}
+  .ff .ffa-st-imp{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid color-mix(in srgb,var(--lime) 28%,transparent);border-radius:10px;background:color-mix(in srgb,var(--lime) 8%,transparent);color:var(--lime);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s}
+  .ff .ffa-st-imp:hover{background:color-mix(in srgb,var(--lime) 15%,transparent)}
   .ff .ffa-st-eq{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--lime);white-space:nowrap}
   .ff .ffa-st-bal{display:flex;align-items:center;gap:5px;margin-top:9px;font-size:10px;color:var(--muted2);font-family:'IBM Plex Mono',monospace}
   /* indeterminate progress bar inside the breathing pending tile */
@@ -14938,10 +14938,10 @@
   .ff .ffa-st-audl{flex:1;min-width:0;display:flex;flex-direction:column;padding:22px 24px;overflow-y:auto}
   .ff .ffa-st-audr{width:340px;flex:none;border-left:1px solid var(--hair);padding:20px;overflow-y:auto;background:rgba(10,13,18,.4)}
   .ff .ffa-st-audta{width:100%;min-height:118px;resize:vertical;padding:13px 15px;border-radius:12px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-size:13px;line-height:1.6;outline:none;transition:border-color .18s}
-  .ff .ffa-st-audta:focus{border-color:rgba(194,240,74,.45)}
+  .ff .ffa-st-audta:focus{border-color:color-mix(in srgb,var(--lime) 45%,transparent)}
   .ff .ffa-vrow{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:11px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);font-family:inherit;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;margin-bottom:8px}
   .ff .ffa-vrow:hover{border-color:var(--f3)}
-  .ff .ffa-vrow.on{border-color:rgba(194,240,74,.5);background:rgba(194,240,74,.06)}
+  .ff .ffa-vrow.on{border-color:color-mix(in srgb,var(--lime) 50%,transparent);background:color-mix(in srgb,var(--lime) 6%,transparent)}
   .ff .ffa-vrow .av{width:34px;height:34px;border-radius:50%;background:var(--f3);display:grid;place-items:center;font-size:14px;flex:none;color:var(--muted)}
   .ff .ffa-vrow.on .av{background:var(--lime);color:var(--onlime)}
   .ff .ffa-audres{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px;margin-bottom:10px}
@@ -14974,7 +14974,7 @@
   .ff .va-app{
     --hair:rgba(255,255,255,.06);--hair2:rgba(255,255,255,.09);
     --f2:rgba(255,255,255,.07);--f3:rgba(255,255,255,.11);
-    --scrim:rgba(6,8,11,.78);--glow:rgba(194,240,74,.28);
+    --scrim:rgba(6,8,11,.78);--glow:color-mix(in srgb,var(--lime) 28%,transparent);
     --mono:'IBM Plex Mono',ui-monospace,monospace;
     display:flex;flex-direction:column;min-height:100vh;font-size:13.5px;line-height:1.45;color:var(--text);
   }
@@ -15027,7 +15027,7 @@
   .ff .va-skel{background:linear-gradient(110deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.11) 45%,rgba(255,255,255,.05) 60%) 0 0/220% 100%,#12161E;animation:vaSkel 1.5s linear infinite}
   @keyframes vaSkel{to{background-position:-220% 0}}
   /* audio natija plitkasi (strip/grid) — waveform belgisi, real pleer lightbox/row'da */
-  .ff .va-audtile{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,rgba(194,240,74,.09),rgba(255,255,255,.02) 60%),#10141B;color:var(--lime)}
+  .ff .va-audtile{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,color-mix(in srgb,var(--lime) 9%,transparent),rgba(255,255,255,.02) 60%),#10141B;color:var(--lime)}
   .ff .va-audtile svg{width:44%;max-width:76px;opacity:.9}
   /* AI tool kartada real so'nggi gen art — matn o'qilishi uchun scrim */
   .ff .va-tool.hasart::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,.30),rgba(6,8,11,.84));z-index:0;pointer-events:none}
@@ -15049,25 +15049,24 @@
   .ff .va-search input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:12.5px}
   .ff .va-search input::placeholder{color:var(--muted2)}
   .ff .va-search .k{margin-left:auto;font:600 9px var(--mono);padding:2px 6px;border-radius:4px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2)}
-  /* ── home hero (A1) ── */
-  .ff .va-hero{position:relative;padding:52px 40px 44px;overflow:hidden}
-  .ff .va-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 340px at 82% -30%,rgba(194,240,74,.1),transparent 60%),radial-gradient(600px 300px at 8% 120%,rgba(62,42,120,.35),transparent 65%)}
+  /* ── home hero (BATCH6 mockup: bordered card = greeting + credit orbit) ── */
+  .ff .va-hero{position:relative;display:grid;grid-template-columns:1fr 272px;gap:30px;align-items:center;margin:34px 40px 0;padding:34px 38px;border:1px solid var(--hair2);border-radius:18px;overflow:hidden;background:radial-gradient(560px 300px at 88% 12%,var(--limedim),transparent 30%),var(--surface)}
   .ff .va-hero>*{position:relative}
-  .ff .va-hi{font-size:31px;font-weight:600;letter-spacing:-.025em}
+  .ff .va-hi{font-size:clamp(34px,3.4vw,50px);font-weight:600;letter-spacing:-.03em;line-height:1.02;margin-top:8px}
   .ff .va-hi em{font-style:normal;color:var(--lime)}
-  .ff .va-hs{color:var(--muted);font-size:14px;margin-top:8px}
-  .ff .va-credcard{position:absolute;right:40px;top:46px;width:264px;padding:16px 18px;border-radius:16px;background:linear-gradient(160deg,rgba(194,240,74,.1),rgba(255,255,255,.03) 55%),var(--surface);border:1px solid rgba(194,240,74,.22)}
-  .ff .va-credcard .bal{font:700 24px var(--mono);margin-top:4px}
-  .ff .va-credcard .bal .s{color:var(--lime);font-size:17px}
-  .ff .va-credcard .bar{height:5px;border-radius:99px;background:var(--f2);margin:12px 0 7px;overflow:hidden}
+  .ff .va-hs{color:var(--muted);font-size:14px;margin-top:10px}
+  .ff .va-credcard{align-self:stretch;display:flex;flex-direction:column;justify-content:center;min-height:150px;padding:18px;border-radius:14px;background:var(--bg2);border:1px solid var(--hair2)}
+  .ff .va-credcard .va-kick{color:var(--muted)}
+  .ff .va-credcard .bal{font:600 32px var(--mono);margin-top:8px;letter-spacing:-.02em;color:var(--lime)}
+  .ff .va-credcard .bal .s{font-size:20px}
+  .ff .va-credcard .bar{height:5px;border-radius:99px;background:var(--f2);margin:12px 0 9px;overflow:hidden}
   .ff .va-credcard .bar i{display:block;height:100%;border-radius:99px;background:var(--lime)}
-  .ff .va-qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:34px;max-width:840px}
-  .ff .va-qa .qc{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/7.4;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;border:none;cursor:pointer;background-size:cover;font-family:inherit;text-align:left;color:var(--text)}
-  .ff .va-qa .qc::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(6,8,11,.82))}
-  .ff .va-qa .qc>*{position:relative;z-index:1}
+  .ff .va-qa{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 40px 0}
+  .ff .va-qa .qc{position:relative;border:1px solid var(--hair2);background:var(--surface);border-radius:14px;padding:17px 17px 17px 71px;min-height:80px;display:flex;flex-direction:column;justify-content:center;cursor:pointer;font-family:inherit;text-align:left;color:var(--text);transition:border-color .18s ease,transform .18s ease}
+  .ff .va-qa .qc:hover{border-color:var(--lime);transform:translateY(-2px)}
   .ff .va-qa .qt{font-weight:700;font-size:14.5px}
-  .ff .va-qa .qd{font-size:11px;color:#B9C2CF;margin-top:2px}
-  .ff .va-qa .qi{position:absolute;top:12px;left:13px;z-index:1;width:30px;height:30px;border-radius:9px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:var(--lime)}
+  .ff .va-qa .qd{font-size:11px;color:var(--muted);margin-top:3px}
+  .ff .va-qa .qi{position:absolute;top:50%;left:17px;transform:translateY(-50%);width:42px;height:42px;border-radius:10px;background:var(--limedim);border:0;display:flex;align-items:center;justify-content:center;color:var(--lime);font-size:19px}
   .ff .va-sec{display:flex;align-items:baseline;gap:14px;padding:34px 40px 14px}
   .ff .va-sec h3{font-size:17px;font-weight:600;letter-spacing:-.015em;margin:0}
   .ff .va-sec .all{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:4px;align-items:center;cursor:pointer}
@@ -15086,7 +15085,7 @@
   .ff .va-empty{border:1px dashed rgba(255,255,255,.1);border-radius:14px;padding:30px 24px;text-align:center;margin:0 40px}
   /* ── FAZA C · Home enrichment — rich card (va-rc) · shelves (va-sh) · featured models (va-fm) ── */
   .ff .va-sec .cnt{font:500 10px var(--mono);color:var(--muted2)}
-  .ff .va-badge.new{background:rgba(10,13,18,.78);color:var(--lime);font-weight:700;border:1px solid rgba(194,240,74,.45)}
+  .ff .va-badge.new{background:rgba(10,13,18,.78);color:var(--lime);font-weight:700;border:1px solid color-mix(in srgb,var(--lime) 45%,transparent)}
   .ff .va-badge.q4k{background:rgba(10,13,18,.78);color:#C9D2DE;font-weight:600;border:1px solid rgba(255,255,255,.14)}
   .ff .va-rc{cursor:pointer;position:relative;min-width:0}
   .ff .va-rc .med{aspect-ratio:16/9;border-radius:14px;position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease}
@@ -15122,7 +15121,7 @@
   .ff .va-fmhero{position:relative;border-radius:20px;overflow:hidden;min-height:316px;padding:22px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--hair2);cursor:pointer}
   .ff .va-fmhero::after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,transparent 20%,rgba(6,8,11,.9) 82%)}
   .ff .va-fmhero>*{position:relative;z-index:1}
-  .ff .va-fmhero .spot{position:absolute;top:16px;left:16px;font:700 8.5px var(--mono);letter-spacing:.14em;padding:5px 10px;border-radius:999px;background:rgba(6,8,11,.66);border:1px solid rgba(194,240,74,.4);color:var(--lime)}
+  .ff .va-fmhero .spot{position:absolute;top:16px;left:16px;font:700 8.5px var(--mono);letter-spacing:.14em;padding:5px 10px;border-radius:999px;background:rgba(6,8,11,.66);border:1px solid color-mix(in srgb,var(--lime) 40%,transparent);color:var(--lime)}
   .ff .va-fmhero h4{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0}
   .ff .va-fmhero p{font-size:12px;color:#B9C2CF;margin:4px 0 0;max-width:420px}
   .ff .va-fmhero .row{display:flex;align-items:center;gap:10px;margin-top:14px}
@@ -15296,6 +15295,13 @@
   .ff .va-col .more b{font:700 15px var(--mono);color:var(--text)}
   .ff .va-col .more span{font-size:10px}
   .ff .va-col .pfade{position:absolute;top:0;right:0;bottom:0;width:70px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--surface))}
+  /* ── projects (BATCH6 mockup: editorial header · taller covers · hover lift) ── */
+  .ff .va-ptitle{display:flex;align-items:flex-end;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+  .ff .va-ph1{font-size:clamp(30px,3vw,44px);font-weight:600;letter-spacing:-.03em;margin:9px 0 0;line-height:1}
+  .ff .va-psub{font-size:12.5px;color:var(--muted);margin:8px 0 0;max-width:460px}
+  .ff .va-projcard{background:var(--surface);border:1px solid var(--hair2);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .18s ease,transform .18s ease}
+  .ff .va-projcard:hover{border-color:var(--lime);transform:translateY(-3px)}
+  .ff .va-projnew:hover{border-color:var(--lime);color:var(--text)}
   /* ── AI toolkit (A3 picker · A3b composer) ── */
   .ff .va-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:18px;padding:26px 40px 10px}
   .ff .va-tool{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/10.5;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;border:none;cursor:pointer;background-size:cover;font-family:inherit;text-align:left;color:var(--text)}
@@ -15336,7 +15342,7 @@
   .ff .va-set:hover{background:var(--f2)}
   .ff .va-set b{color:var(--text);font-weight:600}
   .ff .va-set.mode{background:var(--pill-active);border-color:transparent;color:var(--text)}
-  .ff .va-set.enh{color:var(--lime);border-color:rgba(194,240,74,.24);background:rgba(194,240,74,.07)}
+  .ff .va-set.enh{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 24%,transparent);background:color-mix(in srgb,var(--lime) 7%,transparent)}
   .ff .va-dockrow .sp{flex:1}
   .ff .va-quote{font:600 11.5px var(--mono);color:var(--muted);white-space:nowrap}
   .ff .va-quote b{color:var(--lime)}
@@ -15350,7 +15356,7 @@
   .ff .va-acctabs{display:flex;gap:6px;padding:0 40px 6px;flex-wrap:wrap}
   .ff .va-accpad{padding:8px 40px 44px}
   .ff .va-acc{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:8px 40px 20px}
-  .ff .va-plan{border-radius:18px;padding:22px;background:linear-gradient(150deg,rgba(194,240,74,.12),rgba(255,255,255,.02) 55%),var(--surface);border:1px solid rgba(194,240,74,.26);position:relative}
+  .ff .va-plan{border-radius:18px;padding:22px;background:linear-gradient(150deg,color-mix(in srgb,var(--lime) 12%,transparent),rgba(255,255,255,.02) 55%),var(--surface);border:1px solid color-mix(in srgb,var(--lime) 26%,transparent);position:relative}
   .ff .va-plan h3{font-size:20px;font-weight:600;margin:8px 0 0}
   .ff .va-plan .pr{font:700 15px var(--mono);color:var(--lime)}
   .ff .va-plan ul{list-style:none;margin:14px 0 18px;padding:0;display:grid;gap:8px;font-size:12.5px;color:#C9D2DE}
@@ -15361,7 +15367,7 @@
   .ff .va-credbig .bal .s{color:var(--lime);font-size:22px}
   .ff .va-packs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
   .ff .va-pack{border-radius:12px;padding:13px 12px;background:var(--f1);border:1px solid var(--hair2);text-align:center;cursor:pointer;font-family:inherit;color:var(--text)}
-  .ff .va-pack.hot{border-color:rgba(194,240,74,.45);background:var(--limedim)}
+  .ff .va-pack.hot{border-color:color-mix(in srgb,var(--lime) 45%,transparent);background:var(--limedim)}
   .ff .va-pack .a{font:700 15px var(--mono)}
   .ff .va-pack .a .s{color:var(--lime);font-size:11px}
   .ff .va-pack .p{font-size:10.5px;color:var(--muted);margin-top:3px}
@@ -15426,7 +15432,7 @@
   .ff .va-axrth.aud{background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--muted)}
   .ff .va-axrth.aud svg{width:30px;height:14px}
   .ff .va-axrth.aud.on{color:var(--lime)}
-  .ff .va-axrth.pend{background:#0D1119;display:grid;place-items:center;outline-color:rgba(194,240,74,.4);cursor:default}
+  .ff .va-axrth.pend{background:#0D1119;display:grid;place-items:center;outline-color:color-mix(in srgb,var(--lime) 40%,transparent);cursor:default}
   .ff .va-axrth[data-tip]::after{content:attr(data-tip);position:absolute;left:64px;top:50%;transform:translateY(-50%);font:500 9px var(--mono);white-space:nowrap;padding:5px 9px;border-radius:7px;background:var(--pop);border:1px solid var(--hair2);color:#C9D2DE;opacity:0;pointer-events:none;transition:opacity .12s;z-index:80}
   .ff .va-axrth[data-tip]:hover::after{opacity:1}
   .ff .va-axrail .more{font:500 9px var(--mono);color:var(--muted2);margin-top:2px}
@@ -15436,12 +15442,12 @@
   /* QA-FIX #12 — sessiyalar rail'i (Artlist uslubi): nom + vaqt + cover */
   .ff .va-axrail.sess{width:216px;align-items:stretch;padding:14px 10px;gap:6px;overflow-y:auto;scrollbar-width:none}
   .ff .va-axrail.sess::-webkit-scrollbar{display:none}
-  .ff .va-sessnew{display:flex;align-items:center;justify-content:center;gap:7px;height:36px;border-radius:11px;background:var(--limedim);border:1px dashed rgba(194,240,74,.4);color:var(--lime);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;flex:none}
+  .ff .va-sessnew{display:flex;align-items:center;justify-content:center;gap:7px;height:36px;border-radius:11px;background:var(--limedim);border:1px dashed color-mix(in srgb,var(--lime) 40%,transparent);color:var(--lime);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;flex:none}
   .ff .va-sessnew:hover{border-style:solid}
   .ff .va-sesslist{display:flex;flex-direction:column;gap:4px;min-height:0}
   .ff .va-sessrow{position:relative;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:11px;cursor:pointer;border:1px solid transparent}
   .ff .va-sessrow:hover{background:var(--f1)}
-  .ff .va-sessrow.on{background:var(--f1);border-color:rgba(194,240,74,.35)}
+  .ff .va-sessrow.on{background:var(--f1);border-color:color-mix(in srgb,var(--lime) 35%,transparent)}
   .ff .va-sessrow .cv{width:38px;height:38px;flex:none;border-radius:9px;background:var(--surface2);background-size:cover !important;background-position:center !important;display:grid;place-items:center;color:var(--muted);font-size:15px;overflow:hidden}
   .ff .va-sessrow .cv.lib{background:var(--limedim);color:var(--lime)}
   .ff .va-sessrow .nm{min-width:0;flex:1;font-weight:600;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -15460,13 +15466,13 @@
   .ff .va-sessrow .ren:hover{background:var(--f2);color:var(--text)}
   /* mobil sessiya chiplari (frame F strip o'rnida) */
   .ff .va-sesschip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);color:var(--muted);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;white-space:nowrap;flex:none}
-  .ff .va-sesschip.on{border-color:rgba(194,240,74,.4);color:var(--text)}
-  .ff .va-sesschip.new{background:var(--limedim);border-color:rgba(194,240,74,.3);color:var(--lime)}
+  .ff .va-sesschip.on{border-color:color-mix(in srgb,var(--lime) 40%,transparent);color:var(--text)}
+  .ff .va-sesschip.new{background:var(--limedim);border-color:color-mix(in srgb,var(--lime) 30%,transparent);color:var(--lime)}
   .ff .va-sesschip .cv{width:16px;height:16px;border-radius:5px;background-size:cover !important;background-position:center !important;flex:none}
   /* QA-FIX #13 — loyiha detal kartasida "olib tashlash" tugmasi */
   .ff .va-projrm{position:absolute;top:9px;right:9px;width:26px;height:26px;border-radius:8px;background:rgba(10,12,16,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;color:#DFE5EC;font-size:13px;cursor:pointer;opacity:0;transition:opacity .15s;z-index:3}
   .ff .va-rc:hover .va-projrm{opacity:1}
-  .ff .va-projrm:hover{border-color:#FF6B5E;color:#FF6B5E}
+  .ff .va-projrm:hover{border-color:var(--th-danger);color:var(--th-danger)}
   @media(max-width:760px){ .ff .va-projrm{opacity:1} }
   /* main column */
   .ff .va-axmainc{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);background-size:20px 20px}
@@ -15495,7 +15501,7 @@
   .ff .va-axaico{width:32px;height:32px;border-radius:50%;background:rgba(10,12,16,.78);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-size:12.5px;color:#DFE5EC;cursor:pointer;flex:none}
   .ff .va-axaico:hover{border-color:rgba(255,255,255,.3)}
   /* Sparky pending tile */
-  .ff .va-axres.pend{border:1px solid rgba(194,240,74,.26);background:#0D1119;cursor:default;animation:ffmBreathe 2.4s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
+  .ff .va-axres.pend{border:1px solid color-mix(in srgb,var(--lime) 26%,transparent);background:#0D1119;cursor:default;animation:ffmBreathe 2.4s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
   .ff .va-axpct{font:700 15px var(--mono);color:var(--lime)}
   .ff .va-axpst{font-size:11px;color:var(--muted);text-align:center;padding:0 10px}
   .ff .va-axpbar{width:120px;height:3px;border-radius:99px;background:var(--f2);overflow:hidden}
@@ -15508,7 +15514,7 @@
   .ff .va-axmi .sub{display:block;font-weight:400;font-size:10px;color:var(--muted2);margin-top:1px}
   .ff .va-axmi.plain{padding:7px 11px;font-weight:500;font-size:12px;color:#C9D2DE}
   .ff .va-axmi.plain .mic{width:22px;height:22px;background:none;color:var(--muted);font-size:13px}
-  .ff .va-axmi.danger,.ff .va-axmi.danger .mic{color:#FF6B5E}
+  .ff .va-axmi.danger,.ff .va-axmi.danger .mic{color:var(--th-danger)}
   .ff .va-axmi.off{opacity:.42;cursor:default}
   .ff .va-axmi.off:hover{background:none}
   .ff .va-axmi .soon{margin-left:auto;font:600 8px var(--mono);letter-spacing:.08em;padding:2.5px 7px;border-radius:4px;background:var(--f2);color:var(--muted);border:1px solid var(--hair2)}
@@ -15517,7 +15523,7 @@
   .ff .va-axalist{display:flex;flex-direction:column;gap:9px;max-width:880px;margin:0 auto}
   .ff .va-axarow{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--hair);cursor:pointer}
   .ff .va-axarow:hover{background:var(--surface2)}
-  .ff .va-axarow.on{border-color:rgba(194,240,74,.3);background:var(--surface2)}
+  .ff .va-axarow.on{border-color:color-mix(in srgb,var(--lime) 30%,transparent);background:var(--surface2)}
   .ff .va-axplay{width:40px;height:40px;flex:none;border-radius:50%;background:var(--f2);border:1px solid var(--hair2);display:grid;place-items:center;font-size:13px;color:var(--text)}
   .ff .va-axarow.on .va-axplay{background:var(--spend-grad);color:var(--onlime);border-color:transparent}
   .ff .va-axainfo{width:238px;flex:none;min-width:0}
@@ -15525,11 +15531,11 @@
   .ff .va-axainfo .m{font:500 9.5px var(--mono);color:var(--muted2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-axwave{flex:1;min-width:0;height:34px;display:flex;align-items:center;gap:2.5px}
   .ff .va-axwave b{flex:1;border-radius:2px;background:rgba(255,255,255,.16);min-height:3px}
-  .ff .va-axarow.on .va-axwave b{background:rgba(194,240,74,.55)}
+  .ff .va-axarow.on .va-axwave b{background:color-mix(in srgb,var(--lime) 55%,transparent)}
   .ff .va-axarow .cost{font:600 10.5px var(--mono);color:var(--muted2);flex:none}
-  .ff .va-axarow.pend{border:1px solid rgba(194,240,74,.26);background:#0D1119;animation:ffmBreathe 2.4s ease-in-out infinite;cursor:default}
+  .ff .va-axarow.pend{border:1px solid color-mix(in srgb,var(--lime) 26%,transparent);background:#0D1119;animation:ffmBreathe 2.4s ease-in-out infinite;cursor:default}
   .ff .va-axeq{display:flex;align-items:flex-end;gap:2.5px;height:22px;flex:1;min-width:0}
-  .ff .va-axeq b{flex:1;max-width:5px;border-radius:2px;background:rgba(194,240,74,.5);height:100%;transform-origin:bottom;animation:axEqBar 1s ease-in-out infinite}
+  .ff .va-axeq b{flex:1;max-width:5px;border-radius:2px;background:color-mix(in srgb,var(--lime) 50%,transparent);height:100%;transform-origin:bottom;animation:axEqBar 1s ease-in-out infinite}
   .ff .va-axeq b:nth-child(2n){animation-delay:.15s}.ff .va-axeq b:nth-child(3n){animation-delay:.3s}
   .ff .va-axeq b:nth-child(5n){animation-delay:.45s}.ff .va-axeq b:nth-child(7n){animation-delay:.6s}
   .ff .va-axnone{padding:36px 14px;text-align:center;font-size:12.5px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:14px;margin-top:6px}
@@ -15550,7 +15556,7 @@
   .ff .va-axrefthumb .rk{position:absolute;left:3px;bottom:3px;right:auto;font-style:normal;font-size:7.5px;font-weight:700;letter-spacing:.02em;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;padding:1.5px 4px;max-width:38px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
   .ff .va-axrefhint{font-size:10.5px;color:var(--muted2)}
   .ff .va-axrefhint.lit{color:var(--muted)}
-  .ff .va-axrefthumb{position:relative;width:46px;height:46px;border-radius:10px;flex:none;background-color:var(--media);background-size:cover;background-position:center;outline:1.5px solid rgba(194,240,74,.5)}
+  .ff .va-axrefthumb{position:relative;width:46px;height:46px;border-radius:10px;flex:none;background-color:var(--media);background-size:cover;background-position:center;outline:1.5px solid color-mix(in srgb,var(--lime) 50%,transparent)}
   .ff .va-axrefthumb .x{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--pop);border:1px solid var(--hair2);color:var(--muted);display:grid;place-items:center;font:700 9px var(--mono);cursor:pointer}
   .ff .va-axrefthumb .x:hover{color:var(--text)}
   /* mobil dock fold (frame F) — param qatorlari mode-popover ichida, faqat ≤820px da ko'rinadi */
@@ -15620,7 +15626,7 @@
   /* SD2 video-edit preset chips — only shown when a video reference is attached */
   .ff .va-editpresets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
   .ff .va-editpreset{display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-weight:500;font-size:11px;color:#C9D2DE;cursor:pointer;white-space:nowrap;font-family:inherit;transition:border-color .15s,color .15s}
-  .ff .va-editpreset:hover{border-color:rgba(194,240,74,.5);color:var(--text)}
+  .ff .va-editpreset:hover{border-color:color-mix(in srgb,var(--lime) 50%,transparent);color:var(--text)}
   /* mobile (390) — rail → horizontal recents strip, grid → 2 cols, menu → sheet card */
   .ff .va-axmstrip{display:none}
   @media(max-width:820px){
@@ -15957,7 +15963,7 @@
     <sc-if value="{{ isPlugin }}" hint-placeholder-val="{{ false }}">
       <main>
         <section class="ffm-mesh ffm-hero" style="padding:56px 80px 0;text-align:center">
-          <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>{{ lcPgBadge }}</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 25%,transparent);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>{{ lcPgBadge }}</span>
           <div class="ffm-d44" style="margin:20px auto 0;max-width:640px">{{ lcPgTitle }}</div>
           <div style="font-size:15px;color:var(--muted);max-width:520px;margin:14px auto 0;line-height:1.6">{{ lcPgSub }}</div>
           <div class="ffm-herocta" style="display:flex;gap:12px;justify-content:center;margin-top:26px">
@@ -16073,7 +16079,7 @@
             <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-download-simple"></i>Downloads</button>
             <button class="ffa-mrow va-mobonly" data-screen="projects" onclick="{{ onNav }}"><i class="ph ph-folder-open"></i>Projects</button>
             <button class="ffa-mrow" data-screen="plugin" onclick="{{ onNav }}"><i class="ph ph-puzzle-piece"></i>Plugin</button>
-            <button class="ffa-mrow" onclick="{{ doLogout }}" style="color:#FF6B5E"><i class="ph ph-sign-out" style="color:#FF6B5E"></i>Sign out</button>
+            <button class="ffa-mrow" onclick="{{ doLogout }}" style="color:var(--th-danger)"><i class="ph ph-sign-out" style="color:var(--th-danger)"></i>Sign out</button>
           </div>
         </sc-if>
       </div>
@@ -16187,23 +16193,25 @@
         <!-- DASHBOARD (Variant A · A1 — hero · credcard · quick actions · rows) -->
         <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
           <div class="va-hero">
-            <div class="va-kick">{{ heroKick }}</div>
-            <div class="va-hi" style="margin-top:10px">{{ heroGreeting }}, <em>{{ userFirst }}</em>.</div>
-            <div class="va-hs">Pick up where you left off, or start something new.</div>
+            <div class="hcopy">
+              <div class="va-kick">{{ heroKick }}</div>
+              <div class="va-hi" style="margin-top:10px">{{ heroGreeting }}, <em>{{ userFirst }}</em>.</div>
+              <div class="va-hs">Pick up where you left off, or start something new.</div>
+            </div>
             <div class="va-credcard">
               <div class="va-kick">CREDIT BALANCE</div>
               <div class="bal"><span class="s">✦</span> {{ creditsFmt }}</div>
               <div class="bar"><i style="width:{{ creditPct }}"></i></div>
               <div style="display:flex;align-items:center;font-size:10.5px;color:var(--muted)">{{ creditResetShort }} <a class="va-btn lime sm" style="margin-left:auto" onclick="{{ openCredits }}">Add credits</a></div>
             </div>
-            <div class="va-qa">
-              <button class="qc va-g5" data-screen="templates" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-grid"></use></svg></span>
-                <div class="qt">Find a template</div><div class="qd">10,000+ AE, Premiere &amp; Resolve packs</div></button>
-              <button class="qc va-g6" data-screen="aistudio" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
-                <div class="qt">Create with AI</div><div class="qd">Image · Video · Voiceover · SFX</div></button>
-              <button class="qc va-g3" data-screen="plugin" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-puzzle"></use></svg></span>
-                <div class="qt">Install the plugin</div><div class="qd">Browse &amp; import inside After Effects</div></button>
-            </div>
+          </div>
+          <div class="va-qa">
+            <button class="qc" data-screen="templates" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-grid"></use></svg></span>
+              <div class="qt">Find a template</div><div class="qd">10,000+ AE, Premiere &amp; Resolve packs</div></button>
+            <button class="qc" data-screen="aistudio" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
+              <div class="qt">Create with AI</div><div class="qd">Image · Video · Voiceover · SFX</div></button>
+            <button class="qc" data-screen="plugin" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-puzzle"></use></svg></span>
+              <div class="qt">Install the plugin</div><div class="qd">Browse &amp; import inside After Effects</div></button>
           </div>
           <div class="va-sec"><h3>Jump back in</h3><span class="all" onclick="{{ goAistudio }}">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
           <sc-if value="{{ hasDashGens }}" hint-placeholder-val="{{ true }}">
@@ -16835,7 +16843,7 @@
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:14px">
-                <div style="border-radius:14px;background:linear-gradient(120deg,rgba(194,240,74,.1),transparent 65%),var(--surface);border:1px solid rgba(194,240,74,.2);padding:20px">
+                <div style="border-radius:14px;background:linear-gradient(120deg,color-mix(in srgb,var(--lime) 10%,transparent),transparent 65%),var(--surface);border:1px solid color-mix(in srgb,var(--lime) 20%,transparent);padding:20px">
                   <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);margin-bottom:8px"><i class="ph-fill ph-crown" style="color:var(--lime)"></i>Current plan</div>
                   <div style="font-size:22px;font-weight:700;margin-bottom:3px">{{ planLabel }}</div>
                   <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">{{ planNote }}</div>
@@ -16858,7 +16866,7 @@
               <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Download a copy of your data, or permanently delete your account.</div>
               <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <button onclick="{{ exportMyData }}" class="ffm-btn2 sm"><i class="ph ph-download-simple"></i> Export my data</button>
-                <button onclick="{{ openDeleteAccount }}" class="ffm-btn2 sm" style="border-color:rgba(255,107,94,.4);color:#FF6B5E"><i class="ph ph-trash"></i> Delete account</button>
+                <button onclick="{{ openDeleteAccount }}" class="ffm-btn2 sm" style="border-color:rgba(255,107,94,.4);color:var(--th-danger)"><i class="ph ph-trash"></i> Delete account</button>
               </div>
             </div></div>
           </sc-if>
@@ -16887,11 +16895,11 @@
 
           <!-- ro'yxat -->
           <sc-if value="{{ projList }}" hint-placeholder-val="{{ true }}">
-          <div class="va-accpad" style="padding-top:28px">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px">
-            <div><div style="font-weight:700;font-size:22px;letter-spacing:-.015em">Projects</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Group generations and templates into projects</div></div>
+          <div class="va-accpad" style="padding-top:34px">
+          <div class="va-ptitle">
+            <div><div class="va-kick">ORGANIZE THE WORK</div><h1 class="va-ph1">Projects</h1><p class="va-psub">Keep generations and templates together by client, campaign or idea.</p></div>
             <span style="flex:1"></span>
-            <button class="ffm-btn" onclick="{{ newProject }}"><i class="ph ph-plus" style="font-size:14px"></i>New project</button>
+            <button class="va-btn lime" onclick="{{ newProject }}"><svg class="va-ic"><use href="#i-plus"></use></svg>New project</button>
           </div>
           <sc-if value="{{ projListLoading }}" hint-placeholder-val="{{ false }}">
             <div class="va-homeload" style="margin:26px 0"><span class="star">✦</span> Opening your projects…</div>
@@ -16899,8 +16907,8 @@
           <sc-if value="{{ projListReady }}" hint-placeholder-val="{{ true }}">
           <div class="ffa-proj-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
             <sc-for list="{{ projectsView }}" as="p" hint-placeholder-count="4">
-              <div data-id="{{ p.id }}" onclick="{{ openProject }}" style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;cursor:pointer">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:120px">
+              <div data-id="{{ p.id }}" onclick="{{ openProject }}" class="va-projcard">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:200px">
                   <sc-for list="{{ p.cells }}" as="cv" hint-placeholder-count="4">
                     <div style="background:{{ cv.bg }};background-size:cover;background-position:center;display:grid;place-items:center">
                       <sc-if value="{{ cv.isAud }}" hint-placeholder-val="{{ false }}"><i class="ph ph-waveform" style="font-size:18px;color:rgba(255,255,255,.55)"></i></sc-if>
@@ -16910,7 +16918,7 @@
                 <div style="padding:13px 14px"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px">{{ p.d }}</div></div>
               </div>
             </sc-for>
-            <button onclick="{{ newProject }}" style="border:1px dashed rgba(255,255,255,.14);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:190px;color:var(--muted);background:none;font-family:inherit;cursor:pointer">
+            <button onclick="{{ newProject }}" class="va-projnew" style="border:1px dashed var(--hair2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:248px;color:var(--muted);background:none;font-family:inherit;cursor:pointer">
               <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-plus"></i></span>
               <span style="font-size:12px;font-weight:600">New project</span>
             </button>
@@ -16922,12 +16930,12 @@
           <!-- detal — item'lar masonry (gen + shablon, real media) -->
           <sc-if value="{{ projDetail }}" hint-placeholder-val="{{ false }}">
           <div class="va-accpad" style="padding-top:24px">
-            <div class="va-crumb" style="padding:0 0 14px"><a onclick="{{ backToProjects }}">Projects</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ projDetail.name }}</b></div>
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-              <div><div style="font-weight:700;font-size:22px;letter-spacing:-.015em">{{ projDetail.name }}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;font-family:'IBM Plex Mono',monospace">{{ projDetail.metaLine }}</div></div>
+            <div class="va-crumb" style="padding:0 0 16px"><a onclick="{{ backToProjects }}">Projects</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ projDetail.name }}</b></div>
+            <div class="va-ptitle">
+              <div><div class="va-kick">PROJECT</div><h1 class="va-ph1">{{ projDetail.name }}</h1><p class="va-psub" style="font-family:'IBM Plex Mono',monospace">{{ projDetail.metaLine }}</p></div>
               <span style="flex:1"></span>
-              <button class="ffm-btn2 sm" onclick="{{ renameProject }}"><i class="ph ph-pencil-simple" style="font-size:13px"></i>Rename</button>
-              <button class="ffm-btn2 sm" onclick="{{ deleteProject }}" style="color:#FF6B5E">{{ projDelLabel }}</button>
+              <button class="va-btn ghost sm" onclick="{{ renameProject }}"><i class="ph ph-pencil-simple" style="font-size:13px"></i>Rename</button>
+              <button class="va-btn ghost sm" onclick="{{ deleteProject }}" style="color:var(--th-danger)">{{ projDelLabel }}</button>
             </div>
             <sc-if value="{{ projDetailLoading }}" hint-placeholder-val="{{ false }}">
               <div class="va-homeload" style="margin:26px 0"><span class="star">✦</span> Gathering the pieces…</div>
@@ -16996,7 +17004,7 @@
           <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--reddim);border:1px solid rgba(255,107,94,.3);font-size:13px;color:#FF9C8F;margin-top:18px"><i class="ph-fill ph-warning-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authErr }}</div>
         </sc-if>
         <sc-if value="{{ authInfo }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--limedim);border:1px solid rgba(194,240,74,.3);font-size:13px;color:var(--lime);margin-top:18px"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
+          <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 30%,transparent);font-size:13px;color:var(--lime);margin-top:18px"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
         </sc-if>
         <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
           <div style="margin-top:22px"><span class="ffa-flab">NAME</span><input value="{{ authName }}" oninput="{{ onAuthName }}" placeholder="Your name" class="ffa-field"></div>
@@ -17030,18 +17038,18 @@
   <!-- ============ VERIFY EMAIL GATE ============ -->
   <sc-if value="{{ isVerifyEmail }}" hint-placeholder-val="{{ false }}">
     <div style="min-height:100vh;display:grid;place-items:center;padding:32px 20px;position:relative">
-      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(50% 40% at 50% 30%,rgba(194,240,74,.07),transparent 70%);pointer-events:none"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(50% 40% at 50% 30%,color-mix(in srgb,var(--lime) 7%,transparent),transparent 70%);pointer-events:none"></div>
       <div style="width:100%;max-width:420px">
         <a onclick="{{ goLanding }}" class="ffa-logo" style="justify-content:center;font-size:18px;margin-bottom:26px"><span class="lb" style="width:30px;height:30px;font-size:16px"><i class="ph-fill ph-lightning"></i></span>FrameFlow</a>
         <div style="border-radius:16px;background:var(--pop);border:1px solid rgba(255,255,255,.09);padding:36px 28px;box-shadow:0 30px 70px rgba(0,0,0,.6);text-align:center">
-          <span style="width:56px;height:56px;border-radius:16px;background:var(--limedim);border:1px solid rgba(194,240,74,.25);display:inline-flex;align-items:center;justify-content:center;font-size:26px;color:var(--lime)"><i class="ph ph-envelope-simple-open"></i></span>
+          <span style="width:56px;height:56px;border-radius:16px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 25%,transparent);display:inline-flex;align-items:center;justify-content:center;font-size:26px;color:var(--lime)"><i class="ph ph-envelope-simple-open"></i></span>
           <div style="font-weight:700;font-size:21px;letter-spacing:-.015em;margin-top:20px">Verify your email</div>
           <p style="font-size:13px;color:var(--muted);margin:12px 0 0;line-height:1.65">A verification link has been sent to <b style="color:var(--text)">{{ verifyEmailAddr }}</b>. Click the link, then press "Check".</p>
           <sc-if value="{{ authErr }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--reddim);border:1px solid rgba(255,107,94,.3);font-size:13px;color:#FF9C8F;margin-top:16px;text-align:left"><i class="ph-fill ph-warning-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authErr }}</div>
           </sc-if>
           <sc-if value="{{ authInfo }}" hint-placeholder-val="{{ false }}">
-            <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--limedim);border:1px solid rgba(194,240,74,.3);font-size:13px;color:var(--lime);margin-top:16px;text-align:left"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
+            <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 30%,transparent);font-size:13px;color:var(--lime);margin-top:16px;text-align:left"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
           </sc-if>
           <button onclick="{{ recheckVerification }}" class="ffm-btn full lg" style="margin-top:24px">Check</button>
           <div style="font-size:12.5px;color:var(--muted);margin-top:16px">Didn't get the link? <a onclick="{{ resendVerification }}" style="color:var(--lime);font-weight:600;cursor:pointer">Resend the link</a></div>
@@ -17080,7 +17088,7 @@
     <div onclick="{{ closeDeleteAccount }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
       <div onclick="{{ stop }}" style="width:100%;max-width:460px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:30px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="display:inline-flex;align-items:center;gap:9px;font-size:20px;font-weight:600;color:#FF6B5E"><i class="ph-fill ph-warning"></i>Delete account</div>
+          <div style="display:inline-flex;align-items:center;gap:9px;font-size:20px;font-weight:600;color:var(--th-danger)"><i class="ph-fill ph-warning"></i>Delete account</div>
           <button onclick="{{ closeDeleteAccount }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
         </div>
         <p style="font-size:14px;color:var(--txt2);margin:0 0 10px">This permanently anonymizes your account and revokes access. Your published templates are unpublished; financial records are retained (anonymized). This cannot be undone.</p>
@@ -17088,7 +17096,7 @@
         <input value="{{ delConfirm }}" oninput="{{ onDelConfirm }}" placeholder="DELETE" class="ffa-field" style="margin-bottom:18px">
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <button onclick="{{ closeDeleteAccount }}" class="ffm-btn2 sm">Cancel</button>
-          <button onclick="{{ confirmDeleteAccount }}" class="ffm-btn sm" style="background:#FF6B5E;color:#fff;border-color:#FF6B5E">Delete my account</button>
+          <button onclick="{{ confirmDeleteAccount }}" class="ffm-btn sm" style="background:var(--th-danger);color:#fff;border-color:var(--th-danger)">Delete my account</button>
         </div>
       </div>
     </div>
@@ -17160,7 +17168,7 @@
             <sc-if value="{{ lb.canRef }}" hint-placeholder-val="{{ false }}"><button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button></sc-if>
             <!-- BATCH4 #1 — lightbox'dan Upscale (x2 default; faktor composer'da o'zgartiriladi) -->
             <sc-if value="{{ lb.canUpscale }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbUpscale }}" class="ffm-btn2 sm"><i class="ph ph-frame-corners" style="font-size:14px"></i>Upscale</button></sc-if>
-            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:#FF6B5E"></i></button></sc-if>
+            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:var(--th-danger)"></i></button></sc-if>
           </div>
         </div>
       </div>
@@ -19276,7 +19284,7 @@ class Component extends DCLogic {
     };
     // Boy landing aicard tonlari (mockup 1:1): glow + ikon gradienti har tool uchun
     const studioGlow = {
-      'Rasm yaratish': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(194,240,74,.12),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(194,240,74,.2),rgba(194,240,74,.06))', iccol: 'var(--lime)' },
+      'Rasm yaratish': { glow: 'radial-gradient(80% 100% at 50% -30%,color-mix(in srgb,var(--lime) 12%,transparent),transparent 70%)', icbg: 'linear-gradient(135deg,color-mix(in srgb,var(--lime) 20%,transparent),color-mix(in srgb,var(--lime) 6%,transparent))', iccol: 'var(--lime)' },
       'Video yaratish': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(124,196,255,.13),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(124,196,255,.2),rgba(124,196,255,.06))', iccol: '#7CC4FF' },
       'Voiceover': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(183,148,246,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(183,148,246,.2),rgba(183,148,246,.06))', iccol: '#b794f6' },
       'SFX': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(240,144,127,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(240,144,127,.2),rgba(240,144,127,.06))', iccol: '#f0907f' },
@@ -19296,7 +19304,7 @@ class Component extends DCLogic {
       const note = 'billed monthly';
       return {
         ...p, price, note,
-        cardBg: p.pop ? 'linear-gradient(180deg,rgba(194,240,74,.12),var(--card))' : 'var(--card)',
+        cardBg: p.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card))' : 'var(--card)',
         cardBd: p.pop ? 'var(--ring)' : 'var(--bd)',
         cardExtra: p.pop ? 'box-shadow:0 24px 60px -24px var(--ring)' : '',
         nameCol: p.pop ? 'var(--acc)' : 'var(--txt)',
@@ -19317,9 +19325,9 @@ class Component extends DCLogic {
     const testimonials = this.testimonials.map(t => ({ ...t, g: this.grad(t.h) }));
 
     // Sayt CMS: FAQ savol-javoblari config'dan (landing + pricing sahifada bitta manba)
-    const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'rgba(194,240,74,.25)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
+    const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'color-mix(in srgb,var(--lime) 25%,transparent)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
 
-    const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,rgba(194,240,74,.12),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
+    const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
 
     // FAZA 2 #20 — bayt → "X GB" / "X MB" (hisob storage bar)
     const fmtBytesGB = (b) => { b = Number(b) || 0; const gb = b / 1073741824; if (gb >= 1) return (Math.round(gb * 100) / 100) + ' GB'; const mb = b / 1048576; return (mb >= 1 ? Math.round(mb) : (b ? 1 : 0)) + ' MB'; };
@@ -19841,7 +19849,7 @@ class Component extends DCLogic {
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
     const histTone = { image: { ibg: 'var(--reddim)', icol: '#FF9C8F' }, video: { ibg: 'var(--seldim)', icol: '#7CC4FF' }, audio: { ibg: 'var(--limedim)', icol: 'var(--lime)' }, sfx: { ibg: 'var(--amberdim)', icol: 'var(--amber)' } };
-    const creditHistoryView = this.state.gens.filter(g => g.cost > 0).slice(0, 12).map(g => { const tone = histTone[g.type] || histTone.image; return { t: g.tool, d: this.fmtDate(g.at), a: -g.cost, icon: toolIcon[g.type] || 'image', amt: '−' + g.cost, col: '#FF6B5E', ibg: tone.ibg, icol: tone.icol }; });
+    const creditHistoryView = this.state.gens.filter(g => g.cost > 0).slice(0, 12).map(g => { const tone = histTone[g.type] || histTone.image; return { t: g.tool, d: this.fmtDate(g.at), a: -g.cost, icon: toolIcon[g.type] || 'image', amt: '−' + g.cost, col: 'var(--th-danger)', ibg: tone.ibg, icol: tone.icol }; });
     const hasCreditHistory = creditHistoryView.length > 0;
     const downloadHistoryView = [];
     const hasDownloads = false;
@@ -19949,7 +19957,7 @@ class Component extends DCLogic {
     const creditRefreshNote = isFreePlan ? ('Free plan · ' + creditMaxFmt + ' credits every month') : (planShort + ' plan · ' + creditMaxFmt + ' renews every month');
     const downloadsLimitLabel = isFreePlan ? '10 / mo' : 'Unlimited';
     const exportLabel = isFreePlan ? '1080p' : '4K';
-    const creditPacksAcc = this.creditPacks.map(c => ({ ...c, cardBd: c.pop ? 'rgba(194,240,74,.3)' : 'var(--hair2)', cardBg: c.pop ? 'linear-gradient(120deg,rgba(194,240,74,.08),transparent),var(--surface)' : 'var(--surface)', subCol: c.pop ? 'var(--lime)' : 'var(--muted)', btnCls: c.pop ? 'ffm-btn sm' : 'ffm-btn2 sm', packCls: c.pop ? 'va-pack hot' : 'va-pack', hotNote: c.pop ? ' · popular' : '' }));
+    const creditPacksAcc = this.creditPacks.map(c => ({ ...c, cardBd: c.pop ? 'color-mix(in srgb,var(--lime) 30%,transparent)' : 'var(--hair2)', cardBg: c.pop ? 'linear-gradient(120deg,color-mix(in srgb,var(--lime) 8%,transparent),transparent),var(--surface)' : 'var(--surface)', subCol: c.pop ? 'var(--lime)' : 'var(--muted)', btnCls: c.pop ? 'ffm-btn sm' : 'ffm-btn2 sm', packCls: c.pop ? 'va-pack hot' : 'va-pack', hotNote: c.pop ? ' · popular' : '' }));
     // FAZA 5 Variant A — A4 hisob bindinglari
     const accEmailLine = userEmail + (u.emailVerified ? ' · EMAIL VERIFIED ✓' : (userEmail ? ' · EMAIL NOT VERIFIED' : ''));
     const planPr = isFreePlan ? '$0/mo' : ('$' + (curPlanRow ? curPlanRow.price : 0) + '/mo');
