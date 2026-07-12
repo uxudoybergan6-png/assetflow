@@ -9,6 +9,7 @@ import {
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import { enforceStorageRetention } from "./storage-quota.js";
+import { byteplusTokensToUsd, recordMeasuredProviderCost } from "./ledger.js"; // P24 — o'lchangan token→USD
 import { extractVideoPosterFrame, makeImageThumbFile } from "./optimize-preview.js";
 import fs from "fs";
 import os from "os";
@@ -771,12 +772,14 @@ async function runByteplusVideo(
       if (!step.ok) return { ok: false, error: step.error };
       if (step.data.state === "completed") {
         const { videoUrl, usage } = step.data.data;
-        // Real provider token sarfi — ProviderSpend post-hoc hook yo'q (estimator gen'da yoziladi),
-        // hozircha faqat log (birinchi invoice bilan provider-cost jadvalini tasdiqlash uchun).
+        // P24 Tier 2 — BytePlus real token sarfini O'LCHANGAN USD sifatida ProviderSpend'ga yozamiz
+        // (estimator gen yaratilishida yozgan; bu measured bilan yangilaydi). Analitika — money zone emas.
         if (usage) {
+          const usd = byteplusTokensToUsd(usage.total_tokens);
           console.log(
-            `[byteplus] task=${taskId} usage completion_tokens=${usage.completion_tokens ?? "?"} total_tokens=${usage.total_tokens ?? "?"}`
+            `[byteplus] task=${taskId} usage total_tokens=${usage.total_tokens ?? "?"} → measured $${usd.toFixed(4)}`
           );
+          if (usd > 0) await recordMeasuredProviderCost(genId, usd);
         }
         const dl = await byteplusVideoUrlToBuffer(videoUrl);
         if (!dl.ok) return { ok: false, error: dl.error };

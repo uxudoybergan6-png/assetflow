@@ -585,6 +585,11 @@ model ProviderSpend {
   mode             String?
   credits          Int?
   estimatedCostUsd Decimal? @db.Decimal(10, 4)
+  // P24 — real (o'lchangan) provider USD. BytePlus token count (Tier 2) yoki invoice (Tier 1)
+  // dan yoziladi. null = faqat estimate. confidence: "measured" | "estimated" | "official".
+  // ANALITIKA — kredit matematikasiga TEGMAYDI (money zone emas).
+  measuredCostUsd  Decimal? @db.Decimal(10, 4)
+  confidence       String?
   createdAt        DateTime @default(now())
 
   @@index([generationId])

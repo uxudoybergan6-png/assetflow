@@ -55,3 +55,34 @@ export async function writeProviderSpend(entry: {
     console.error("writeProviderSpend", e);
   }
 }
+
+// P24 Tier 2 — BytePlus har javobda token count qaytaradi; sotib olingan pack rate ma'lum
+// ($4.30 / 1M token). tokens × rate = O'SHA generatsiyaning ANIQ USD'i (invoice kutmasdan).
+// Env bilan override (rate o'zgarsa). BATCH5 jonli test formulani tasdiqlagan.
+export const BYTEPLUS_USD_PER_1M_TOKENS = Number(process.env.BYTEPLUS_USD_PER_1M_TOKENS || 4.3);
+export function byteplusTokensToUsd(tokens: number | null | undefined): number {
+  const t = Number(tokens);
+  if (!Number.isFinite(t) || t <= 0) return 0;
+  return (t / 1_000_000) * BYTEPLUS_USD_PER_1M_TOKENS;
+}
+
+/**
+ * P24 — real (o'lchangan) provider USD'ni gen'ning MAVJUD ProviderSpend qatoriga yozadi.
+ * BEST-EFFORT, ANALITIKA: kredit/refund matematikasiga TEGMAYDI (money zone emas). confidence
+ * "measured" (token/invoice'dan) — estimate ustidan yozadi, admin narx jadvali (P24 Step 4) uchun.
+ */
+export async function recordMeasuredProviderCost(
+  generationId: string,
+  measuredUsd: number,
+  confidence: "measured" | "official" = "measured"
+): Promise<void> {
+  if (!generationId || !(measuredUsd > 0)) return;
+  try {
+    await prisma.providerSpend.updateMany({
+      where: { generationId },
+      data: { measuredCostUsd: measuredUsd, confidence },
+    });
+  } catch (e) {
+    console.error("recordMeasuredProviderCost", e);
+  }
+}
