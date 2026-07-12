@@ -7415,12 +7415,41 @@ async function studioGet(path){
   if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
   return d;
 }
-/** /api/studio POST — auth bilan. */
+/** UUID (idempotency kaliti) — crypto.randomUUID bo'lsa o'sha, aks holda zaxira. */
+function afUuid(){
+  try{ if(window.crypto&&window.crypto.randomUUID) return window.crypto.randomUUID(); }catch(e){}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=(Math.random()*16)|0,v=c==='x'?r:(r&0x3)|0x8;return v.toString(16);});
+}
+function afBackoff(a){ return [1500,3500,7000,10000][a]||10000; }
+function afSleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+/** /api/studio POST — auth bilan.
+ *  P18: body.idempotencyKey bo'lsa (masalan /gen) — Idempotency-Key header yuboriladi VA
+ *  o'tkinchi xatolarda (tarmoq/timeout, 502/503/504/429) SABR bilan qayta uriniladi (server
+ *  shu kalit bo'yicha dedup qiladi → ikkinchi charge YO'Q). Kalitsiz POST bitta urinish (avvalgidek)
+ *  — himoyasiz POST'ni ko'r-ko'rona qayta yuborish DOUBLE-CHARGE'ga olib keladi. */
 async function studioPost(path,body,ms){
-  const res=await pubFetch(path,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},pubAuthHeaders()),body:JSON.stringify(body||{})},ms||60000);
-  const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
-  if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
-  return d;
+  body=body||{};
+  var idem=body.idempotencyKey||null;
+  var headers=Object.assign({'Content-Type':'application/json'},pubAuthHeaders());
+  if(idem)headers['Idempotency-Key']=idem;
+  var maxAttempts=idem?4:1;
+  var lastErr=null;
+  for(var a=0;a<maxAttempts;a++){
+    try{
+      var res=await pubFetch(path,{method:'POST',headers:headers,body:JSON.stringify(body)},ms||60000);
+      var t=await res.text();var d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+      if(!res.ok){
+        if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
+        var e2=new Error((d&&d.error)||('HTTP '+res.status));e2.status=res.status;e2.code=d&&d.code;throw e2;
+      }
+      return d;
+    }catch(err){
+      // status yo'q = tarmoq/timeout throw → idempotent bo'lsa qayta uramiz; HTTP xato (status bor) re-throw.
+      if(idem&&(typeof err.status==='undefined')&&a<maxAttempts-1){ lastErr=err; await afSleep(afBackoff(a)); continue; }
+      throw err;
+    }
+  }
+  throw lastErr||new Error('Request failed');
 }
 /** /api/studio POST multipart/file — auth bilan. */
 async function studioPostForm(path,form,ms){
@@ -11270,7 +11299,7 @@ window.afGallery=(function(){
     }).then(function(arr){
       if(j.cancelled)throw new Error('CANCELLED');
       quote=arr[0]; var sid=arr[1];
-      return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},60000);
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
@@ -13399,7 +13428,7 @@ window.afGallery=(function(){
         throw er;
       }
       if(pre&&pre.warnings&&pre.warnings.length)toast(pre.warnings[0],'warning');
-      return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:vm.model.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},300000);
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:vm.model.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},300000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
@@ -13472,7 +13501,7 @@ window.afGallery=(function(){
     vgRcState.items.unshift(j.pit); renderVgRecent(); refreshVgBtn();
     ensureVgSession().then(function(sid){
       if(j.cancelled)throw new Error('CANCELLED');
-      return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:m.id,prompt:prompt,params:params,price:q.price,costQuoteSignature:q.signature},300000);
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:m.id,prompt:prompt,params:params,price:q.price,costQuoteSignature:q.signature,idempotencyKey:afUuid()},300000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
@@ -13632,7 +13661,7 @@ window.afGallery=(function(){
       agSession(mode)
     ]).then(function(rs){
       var quote=rs[0], sid=rs[1];
-      return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:m.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature},60000);
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:m.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
     }).then(function(r){
       agSyncCredits();
       pollAg(r.jobId,prompt,0);

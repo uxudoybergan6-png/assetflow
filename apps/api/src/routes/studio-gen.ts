@@ -1002,19 +1002,41 @@ const genSchema = z.object({
   params: boundedParams,
   price: z.number().int().nonnegative(),
   costQuoteSignature: z.string().min(10),
+  // Idempotentlik (P18) — klient job yaratishning har URINISHI uchun bitta UUID yuboradi.
+  // Javob yo'qolib qayta yuborilsa, server shu kalit bo'yicha mavjud job'ni qaytaradi.
+  idempotencyKey: z.string().trim().min(8).max(80).optional(),
 });
 studioGenRouter.post("/gen", async (req: Request, res: Response) => {
-  await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
+  // Eslatma (P18 #3): cleanupExpiredSavedReferences va reconcileStuckGenerations shu yerdan
+  // OLIB TASHLANDI — ikkalasi ham GLOBAL fon jadvalida ishlaydi (savedRefCleanupTimer 2 daq +
+  // genReconcileTimer 60s). Ular Atlantika-osha DB round-trip edi va foydalanuvchining "Generate"
+  // bosishini boshqa job'lar tozalashiga majburlardi. So'rov yo'lidan chiqarildi.
   const p = genSchema.safeParse(req.body);
   if (!p.success) {
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
-  const { sessionId, mode, prompt, modelId, price, costQuoteSignature } = p.data;
+  const { sessionId, mode, prompt, modelId, price, costQuoteSignature, idempotencyKey } = p.data;
   const params = (p.data.params ?? {}) as Record<string, unknown>;
 
-  // Qotib qolgan oldingi job'larni tiklash (yangi gen'dan oldin yo'qolган kredit qaytadi).
-  await reconcileStuckGenerations(req.user!.userId).catch(() => {});
+  // Idempotent QAYTA-URINISH: shu kalit bilan job ALLAQACHON yaratilган bo'lsa — o'shani qaytaramiz
+  // (yangi job YO'Q, kredit IKKINCHI marta yechilMAYDI). Ketma-ket retry (javob yo'qolgan) shu yerda
+  // qamrab olinadi; genuine parallel poyga esa create'dagi P2002-catch bilan (pastda).
+  if (idempotencyKey) {
+    const existing = await prisma.generation.findFirst({
+      where: { userId: req.user!.userId, idempotencyKey },
+    });
+    if (existing) {
+      const prof = await ensurePluginProfile(req.user!.userId);
+      res.status(200).json({
+        jobId: existing.id,
+        status: existing.status,
+        creditsLeft: prof.aiCredits,
+        idempotentReplay: true,
+      });
+      return;
+    }
+  }
 
   const session = await prisma.genSession.findUnique({ where: { id: sessionId } });
   if (!session || session.userId !== req.user!.userId) {
@@ -1234,18 +1256,44 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
-  const gen = await prisma.generation.create({
-    data: {
-      sessionId,
-      userId: req.user!.userId,
-      mode,
-      prompt,
-      modelId,
-      params: params as object,
-      status: "queued",
-      cost: price,
-    },
-  });
+  let gen;
+  try {
+    gen = await prisma.generation.create({
+      data: {
+        sessionId,
+        userId: req.user!.userId,
+        mode,
+        prompt,
+        modelId,
+        params: params as object,
+        status: "queued",
+        cost: price,
+        idempotencyKey: idempotencyKey ?? null,
+      },
+    });
+  } catch (e) {
+    // Genuine PARALLEL poyga: bir vaqtda kelgan bir xil kalitli so'rov job'ni bir necha
+    // mikrosoniya oldin yaratdi (unique (userId, idempotencyKey) → P2002). Biz endigina
+    // yechgan kreditni QAYTARAMIZ (mavjud refund primitivi) va yutgan job'ni qaytaramiz —
+    // ikkinchi charge/job bo'lmasin. Money math o'zgarmaydi (aynan yechilган miqdor qaytadi).
+    if ((e as { code?: string })?.code === "P2002" && idempotencyKey) {
+      await refundAiCredits(req.user!.userId, price).catch(() => {});
+      const existing = await prisma.generation.findFirst({
+        where: { userId: req.user!.userId, idempotencyKey },
+      });
+      if (existing) {
+        const prof = await ensurePluginProfile(req.user!.userId);
+        res.status(200).json({
+          jobId: existing.id,
+          status: existing.status,
+          creditsLeft: prof.aiCredits,
+          idempotentReplay: true,
+        });
+        return;
+      }
+    }
+    throw e;
+  }
 
   const refUrls = Array.from(
     new Set(

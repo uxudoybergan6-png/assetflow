@@ -34,30 +34,66 @@
     } catch (e) {}
   }
 
+  // UUID (idempotency kaliti) — crypto.randomUUID bo'lsa o'sha, aks holda zaxira generator.
+  function uuid() {
+    try { if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID(); } catch (e) {}
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0, v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  // Qayta-uriniladigan server holatlari — Cloud Run cold-start / instance rotation / deploy.
+  function isRetryableStatus(s) { return s === 502 || s === 503 || s === 504 || s === 429; }
+  // Cold-start uchun sabrli backoff (ms) — jami ~12s + har urinishda timeout.
+  function backoffMs(a) { return [1500, 3500, 7000, 10000][a] || 10000; }
+
   /**
-   * So'rov. opts: { method, body(obyekt), auth:false — token yubormaslik }.
-   * Muvaffaqiyatsiz HTTP → Error{status, code, data}. Tarmoq uzilishi → Error('NETWORK')
-   * (3 urinish, Cloud Run cold-start uchun kutish bilan).
+   * So'rov. opts: { method, body(obyekt), auth:false, idempotencyKey, idempotent, timeout }.
+   * Muvaffaqiyatsiz HTTP → Error{status, code, data}. Tarmoq uzilishi/timeout → Error('NETWORK').
+   *
+   * QAYTA-URINISH FAQAT idempotent so'rovlarda (GET/HEAD, yoki opts.idempotencyKey/opts.idempotent):
+   * himoyasiz POST'ni ko'r-ko'rona qayta yuborish DOUBLE-CHARGE'ga olib keladi (P18). Server
+   * idempotencyKey bo'yicha dedup qiladi, shu sabab kalitli POST xavfsiz qayta uriniladi.
+   * Har urinishda AbortController timeout (~20s) — Cloud Run osilib qolsa cheksiz spin bo'lmaydi.
    */
   async function req(path, opts) {
     opts = opts || {};
     var headers = Object.assign({}, opts.headers || {});
     var t = getToken();
     if (t && opts.auth !== false) headers.Authorization = "Bearer " + t;
+    var method = (opts.method || "GET").toUpperCase();
+    if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
     var body = opts.body;
     if (body !== undefined && typeof body !== "string") {
       headers["Content-Type"] = "application/json";
       body = JSON.stringify(body);
     }
+    var idempotent = method === "GET" || method === "HEAD" || opts.idempotent === true || !!opts.idempotencyKey;
+    var maxAttempts = idempotent ? 4 : 1;
+    var timeoutMs = opts.timeout || 20000;
     var res = null;
-    for (var a = 0; a < 3; a++) {
+    for (var a = 0; a < maxAttempts; a++) {
+      var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      var timer = ctrl ? setTimeout((function (c) { return function () { try { c.abort(); } catch (e) {} }; })(ctrl), timeoutMs) : null;
       try {
-        res = await fetch(base + path, { method: opts.method || "GET", headers: headers, body: body });
-        break;
+        res = await fetch(base + path, { method: method, headers: headers, body: body, signal: ctrl ? ctrl.signal : undefined });
+        if (timer) clearTimeout(timer);
       } catch (e) {
-        if (a === 2) { var ne = new Error("NETWORK"); ne.cause = e; throw ne; }
-        await new Promise(function (r) { setTimeout(r, 1200 * (a + 1)); });
+        if (timer) clearTimeout(timer);
+        // tarmoq uzilishi yoki timeout(abort). Idempotent bo'lmasa YOKI oxirgi urinish → NETWORK.
+        if (!idempotent || a === maxAttempts - 1) { var ne = new Error("NETWORK"); ne.cause = e; throw ne; }
+        await new Promise(function (r) { setTimeout(r, backoffMs(a)); });
+        continue;
       }
+      // 502/503/504/429 → idempotent bo'lsa sabr bilan qayta uramiz (429 Retry-After'ga rioya).
+      if (idempotent && isRetryableStatus(res.status) && a < maxAttempts - 1) {
+        var ra = parseInt((res.headers && res.headers.get && res.headers.get("Retry-After")) || "", 10);
+        var wait = (res.status === 429 && ra > 0) ? Math.min(ra * 1000, 15000) : backoffMs(a);
+        await new Promise(function (r) { setTimeout(r, wait); });
+        continue;
+      }
+      break;
     }
     var data = null;
     try { data = await res.json(); } catch (e) { data = null; }
@@ -141,7 +177,15 @@
     sessionGens: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id) + "/generations?perPage=50&status=done"); },
     sessionDelete: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id), { method: "DELETE" }); }, // P6
     quote: function (modelId, mode, params) { return req("/api/studio/gen/cost-quote", { method: "POST", body: { modelId: modelId, mode: mode, params: params || {} } }); },
-    gen: function (payload) { return req("/api/studio/gen", { method: "POST", body: payload }); },
+    // P18 — har job-yaratish urinishi uchun BITTA idempotency kaliti: req() ichki qayta
+    // urinishlari (cold-start) shu kalitni qayta ishlatadi → server dedup qiladi, IKKINCHI
+    // charge YO'Q. 404-session qayta urinishi FFAPI.gen'ni qaytadan chaqiradi → yangi kalit
+    // (u haqiqatan boshqa job). caller idempotencyKey bersa — o'sha ishlatiladi.
+    gen: function (payload) {
+      var key = (payload && payload.idempotencyKey) || uuid();
+      var body = Object.assign({}, payload, { idempotencyKey: key });
+      return req("/api/studio/gen", { method: "POST", body: body, idempotencyKey: key });
+    },
     genGet: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id)); },
     genDelete: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id), { method: "DELETE" }); },
     history: function (limit) { return req("/api/studio/gen/history?limit=" + (limit || 30)); },

@@ -467,6 +467,11 @@ model Generation {
   category  String?
   cost      Int        @default(0)
   refunded  Boolean    @default(false)       // idempotent refund guard — bir job IKKI marta refund qilinmasin (additive, default false)
+  // Idempotentlik (P18) — klient job yaratish urinishi uchun bitta UUID yuboradi. Javob
+  // yo'qolib klient POST /gen'ni QAYTA yuborsa, server shu kalit bo'yicha MAVJUD job'ni
+  // qaytaradi (yangi job yaratmaydi, kredit IKKINCHI marta yechilmaydi). null = eski/kalit-siz
+  // so'rov (bir nechta NULL — Postgres unique NULL'ni distinct sanaydi). Additive, money-zone TEGMAYDI.
+  idempotencyKey String?
   error     String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -476,6 +481,7 @@ model Generation {
   assets    GenAsset[]
   savedReferences SavedReference[]
 
+  @@unique([userId, idempotencyKey])
   @@index([sessionId])
   @@index([userId])
   @@index([status])
