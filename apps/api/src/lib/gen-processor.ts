@@ -10,7 +10,13 @@ import {
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import { enforceStorageRetention } from "./storage-quota.js";
 import { byteplusTokensToUsd, recordMeasuredProviderCost } from "./ledger.js"; // P24 — o'lchangan token→USD
-import { extractVideoPosterFrame, makeImageThumbFile } from "./optimize-preview.js";
+import {
+  extractVideoPosterFrame,
+  makeImageThumbFile,
+  makeImageDisplayFile,
+  makeVideoPreviewFile,
+  probeMediaDimensions,
+} from "./optimize-preview.js";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -74,24 +80,48 @@ function tsName() {
  * <video> birinchi-kadr renderi ishonchsiz → kartalar qora edi. Best-effort:
  * xato bo'lsa gen oqimini buzmaydi (thumbKey=null, klient video-fallback).
  */
+type VideoAssetDerivs = {
+  thumbKey: string | null;
+  thumbUrl: string | null;
+  previewKey: string | null; // P9.2 — 720p hover-preview (asl fayl saqlanadi)
+  width: number | null;
+  height: number | null;
+};
 async function makeVideoPoster(
   videoKey: string | null,
   buf: Buffer
-): Promise<{ thumbKey: string | null; thumbUrl: string | null }> {
-  if (!videoKey || !isS3Configured()) return { thumbKey: null, thumbUrl: null };
+): Promise<VideoAssetDerivs> {
+  const none: VideoAssetDerivs = { thumbKey: null, thumbUrl: null, previewKey: null, width: null, height: null };
+  if (!videoKey || !isS3Configured()) return none;
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "genposter-"));
   const vidPath = path.join(tmpDir, "in.mp4");
   const imgPath = path.join(tmpDir, "poster.jpg");
+  const prevPath = path.join(tmpDir, "preview.mp4");
+  const base = videoKey.replace(/\.[a-z0-9]+$/i, "");
+  const out: VideoAssetDerivs = { ...none };
   try {
     fs.writeFileSync(vidPath, buf);
-    const ok = await extractVideoPosterFrame(vidPath, imgPath);
-    if (!ok) return { thumbKey: null, thumbUrl: null };
-    const thumbKey = videoKey.replace(/\.[a-z0-9]+$/i, "") + "-poster.jpg";
-    await uploadBufferToS3(fs.readFileSync(imgPath), thumbKey, "image/jpeg");
-    return { thumbKey, thumbUrl: await getSignedDownloadUrl(thumbKey, 3600) };
+    // P11.2 — asl (provider qaytargan) o'lchamni saqlaymiz (lightbox "Size" qatori uchun ishonchli manba)
+    const dim = await probeMediaDimensions(vidPath);
+    if (dim) { out.width = dim.width; out.height = dim.height; }
+    const okPoster = await extractVideoPosterFrame(vidPath, imgPath);
+    if (okPoster) {
+      const thumbKey = base + "-poster.jpg";
+      await uploadBufferToS3(fs.readFileSync(imgPath), thumbKey, "image/jpeg");
+      out.thumbKey = thumbKey;
+      out.thumbUrl = await getSignedDownloadUrl(thumbKey, 3600);
+    }
+    // P9.2 — 720p hover-preview (best-effort; xato bo'lsa hover asl'ga tushadi)
+    const okPrev = await makeVideoPreviewFile(vidPath, prevPath);
+    if (okPrev) {
+      const previewKey = base + "-preview.mp4";
+      await uploadBufferToS3(fs.readFileSync(prevPath), previewKey, "video/mp4");
+      out.previewKey = previewKey;
+    }
+    return out;
   } catch (e) {
-    console.error("[gen] video poster xato (e'tiborsiz):", e);
-    return { thumbKey: null, thumbUrl: null };
+    console.error("[gen] video poster/preview xato (e'tiborsiz):", e);
+    return out;
   } finally {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -103,24 +133,48 @@ async function makeVideoPoster(
 /** P4 — rasm gen uchun HAQIQIY kichik thumbnail (~512px jpg). Oldin thumbUrl = to'liq
  *  rasm URL edi → har karta 1K/2K/4K faylni yuklab olardi (sekin grid). Best-effort:
  *  xatoda {null,null} — karta to'liq rasmga tushadi (eski xatti-harakat). */
+type ImageAssetDerivs = {
+  thumbKey: string | null;
+  thumbUrl: string | null;
+  displayKey: string | null; // P9 — 1280px WebP (Retina karta + alfa)
+  width: number | null;
+  height: number | null;
+};
 async function makeImageThumb(
   imageKey: string | null,
   buf: Buffer
-): Promise<{ thumbKey: string | null; thumbUrl: string | null }> {
-  if (!imageKey || !isS3Configured()) return { thumbKey: null, thumbUrl: null };
+): Promise<ImageAssetDerivs> {
+  const none: ImageAssetDerivs = { thumbKey: null, thumbUrl: null, displayKey: null, width: null, height: null };
+  if (!imageKey || !isS3Configured()) return none;
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "genthumb-"));
   const inPath = path.join(tmpDir, "in.img");
   const outPath = path.join(tmpDir, "thumb.jpg");
+  const dispBase = path.join(tmpDir, "disp");
+  const base = imageKey.replace(/\.[a-z0-9]+$/i, "");
+  const out: ImageAssetDerivs = { ...none };
   try {
     fs.writeFileSync(inPath, buf);
-    const ok = await makeImageThumbFile(inPath, outPath);
-    if (!ok) return { thumbKey: null, thumbUrl: null };
-    const thumbKey = imageKey.replace(/\.[a-z0-9]+$/i, "") + "-thumb.jpg";
-    await uploadBufferToS3(fs.readFileSync(outPath), thumbKey, "image/jpeg");
-    return { thumbKey, thumbUrl: await getSignedDownloadUrl(thumbKey, 3600) };
+    // P11.2 — asl piksellar (srcset "1280×720" qatori + srcset kengligi uchun ishonchli manba)
+    const dim = await probeMediaDimensions(inPath);
+    if (dim) { out.width = dim.width; out.height = dim.height; }
+    const okThumb = await makeImageThumbFile(inPath, outPath);
+    if (okThumb) {
+      const thumbKey = base + "-thumb.jpg";
+      await uploadBufferToS3(fs.readFileSync(outPath), thumbKey, "image/jpeg");
+      out.thumbKey = thumbKey;
+      out.thumbUrl = await getSignedDownloadUrl(thumbKey, 3600);
+    }
+    // P9 — 1280px display derivativ (WebP; libwebp yo'q bo'lsa PNG/JPEG — xatoda thumb/asl fallback)
+    const disp = await makeImageDisplayFile(inPath, dispBase);
+    if (disp) {
+      const displayKey = base + "-disp." + disp.ext;
+      await uploadBufferToS3(fs.readFileSync(disp.path), displayKey, disp.contentType);
+      out.displayKey = displayKey;
+    }
+    return out;
   } catch (e) {
-    console.error("[gen] image thumb xato (e'tiborsiz):", e);
-    return { thumbKey: null, thumbUrl: null };
+    console.error("[gen] image thumb/display xato (e'tiborsiz):", e);
+    return out;
   } finally {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -1180,15 +1234,15 @@ export async function processGeneration(genId: string): Promise<void> {
             : useMagnific
               ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null } | { ok: false; error: string };
+      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null; displayKey: string | null; width: number | null; height: number | null } | { ok: false; error: string };
       const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
         const out = await genOne();
         if (!out.ok) return { ok: false, error: out.error };
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });
         const p = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
-        // P4: bufer scope'da ekan HAQIQIY kichik thumb (ffmpeg semaphore ichida) — grid tez ochiladi.
+        // P4/P9: bufer scope'da ekan thumb (512) + display (1280 WebP) + o'lcham — grid tez + Retina aniq.
         const th = await makeImageThumb(p.key, out.data);
-        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl };
+        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl, displayKey: th.displayKey, width: th.width, height: th.height };
       });
       // ❗ TIMEOUT ≠ REFUND: birortasi poll-timeout sentinel bo'lsa → "running" qoldiramiz, KREDIT
       // QAYTARMAYMIZ (reconcile 10 daq hal qiladi). Tekshiruv refund/asset YARATISHDAN OLDIN.
@@ -1203,7 +1257,8 @@ export async function processGeneration(genId: string): Promise<void> {
         await prisma.genAsset.create({
           // aspectRatio = EFEKTIV (klamplangan) nisbat — thumbnail ramka nisbati generatsiya bilan mos bo'lsin.
           // P4: thumbUrl endi HAQIQIY kichik thumb (bo'lmasa to'liq rasm — eski xatti-harakat).
-          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
+          // P9: displayKey (1280 WebP) + width/height (haqiqiy piksellar) qo'shildi.
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
       }
     } else if (model.feature === "text-to-speech") {
@@ -1289,7 +1344,8 @@ export async function processGeneration(genId: string): Promise<void> {
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
       const poster = await makeVideoPoster(key, out.buf);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, aspectRatio, sizeBytes },
+        // P9.2: previewKey (720p hover) + width/height qo'shildi.
+        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, previewKey: poster.previewKey, width: poster.width, height: poster.height, aspectRatio, sizeBytes },
       });
       await clearProviderJob(genId);
     } else {

@@ -171,6 +171,109 @@ export async function extractVideoPosterFrame(
   }
 }
 
+// P9 — manba alfa kanaliga egami (JPEG shaffoflikni yo'qotadi; fallback PNG kerak bo'lsa aniqlaymiz)
+const ALPHA_PIX_FMTS = new Set([
+  "rgba", "bgra", "argb", "abgr", "rgba64be", "rgba64le", "bgra64be", "bgra64le",
+  "yuva420p", "yuva422p", "yuva444p", "yuva420p9be", "yuva420p9le", "yuva444p10be",
+  "yuva444p10le", "ya8", "ya16be", "ya16le", "gbrap", "gbrap10be", "gbrap10le", "pal8",
+]);
+async function probeHasAlpha(filePath: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=pix_fmt", "-of", "csv=p=0", filePath],
+      { timeout: 20_000 }
+    );
+    return ALPHA_PIX_FMTS.has(stdout.trim());
+  } catch {
+    return false;
+  }
+}
+
+// uzun chekkani 1280 ga cheklaydi (landshaft → kenglik, portret → balandlik); ikkinchisi -2 (juft son)
+const DISPLAY_SCALE = "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))'";
+
+async function tryEncodeDisplay(inputPath: string, outPath: string, codecArgs: string[]): Promise<boolean> {
+  try {
+    await runFfmpeg(["-y", "-threads", "1", "-i", inputPath, "-vf", DISPLAY_SCALE, "-frames:v", "1", ...codecArgs, outPath], { timeout: 45_000 });
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
+/**
+ * P9 — karta grid'i uchun "display" derivativ: ~1280px UZUN chekka, YUQORI sifat.
+ *  Retina kartada aniq (2×) rasm; 512px thumb kichik/list uchun qoladi.
+ *  Format tanlash (chidamli — ffmpeg build'ida libwebp bo'lmasligi mumkin):
+ *    1) WebP (libwebp) — alfa saqlanadi, kichik. AGAR encoder yo'q → fallback:
+ *    2) alfa bor manba → PNG (alfa saqlanadi), 3) aks holda JPEG q2 (yuqori sifat).
+ *  outBasePath = kengaytmasiz yo'l; chiqish <outBasePath>.<ext> ga yoziladi.
+ *  Qaytaradi: { path, ext, contentType } yoki null (thumb/asl fallback).
+ *  ffmpeg semaphore ostida (tryEncodeDisplay → runFfmpeg).
+ */
+export async function makeImageDisplayFile(
+  inputPath: string,
+  outBasePath: string
+): Promise<{ path: string; ext: string; contentType: string } | null> {
+  if (!fs.existsSync(inputPath)) return null;
+  // 1) WebP (alfani avtomat kodlaydi — pix_fmt MAJBURLANMAYDI)
+  const webpPath = outBasePath + ".webp";
+  if (await tryEncodeDisplay(inputPath, webpPath, ["-c:v", "libwebp", "-quality", "82", "-compression_level", "4"])) {
+    return { path: webpPath, ext: "webp", contentType: "image/webp" };
+  }
+  // 2/3) libwebp yo'q — alfaga qarab PNG yoki JPEG
+  const hasAlpha = await probeHasAlpha(inputPath);
+  if (hasAlpha) {
+    const pngPath = outBasePath + ".png";
+    if (await tryEncodeDisplay(inputPath, pngPath, ["-c:v", "png"])) {
+      return { path: pngPath, ext: "png", contentType: "image/png" };
+    }
+  }
+  const jpgPath = outBasePath + ".jpg";
+  if (await tryEncodeDisplay(inputPath, jpgPath, ["-c:v", "mjpeg", "-q:v", "2"])) {
+    return { path: jpgPath, ext: "jpg", contentType: "image/jpeg" };
+  }
+  return null;
+}
+
+/**
+ * P9.2 — generatsiya videosi uchun 720p HOVER-preview transcode'i, ALOHIDA faylga
+ *  (in-place EMAS — asl fayl saqlanadi, lightbox/download asl'ni ishlatadi).
+ *  optimizePreviewForStreaming shablonlar uchun (o'z ustiga yozadi) — gen'da
+ *  asl'ni yo'qotmaslik uchun bu variant kerak. 720p, H.264 CRF 28, 30fps, ovozsiz,
+ *  +faststart. ffmpeg semaphore ostida. Xato: false (hover asl'ga fallback qiladi).
+ */
+export async function makeVideoPreviewFile(
+  inputPath: string,
+  outPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath)) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y", "-threads", "1",
+        "-i", inputPath,
+        "-vf", "scale=-2:'min(720,ih)'",
+        "-r", "30",
+        "-c:v", "libx264",
+        "-crf", "28",
+        "-preset", "fast",
+        "-pix_fmt", "yuv420p",
+        "-an",
+        "-movflags", "+faststart",
+        outPath,
+      ],
+      { timeout: 300_000 }
+    );
+    return fs.existsSync(outPath);
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
 type VideoRefPreset = {
   scaleExpr: string;
   fps: string;

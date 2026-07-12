@@ -96,7 +96,7 @@ function genDownloadName(mode: string | undefined, resultKey: string, contentTyp
 }
 
 // QA-FIX #12/#13: projects.ts ham qayta ishlatadi (gen media imzolash bitta joyda)
-export async function hydrateGenAssets<T extends { mode?: string; prompt?: string | null; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null }> }>(
+export async function hydrateGenAssets<T extends { mode?: string; prompt?: string | null; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null; displayKey?: string | null; previewKey?: string | null }> }>(
   holder: T
 ): Promise<T> {
   if (!isS3Configured()) return holder;
@@ -106,7 +106,7 @@ export async function hydrateGenAssets<T extends { mode?: string; prompt?: strin
   await Promise.all(
     holder.assets.map(async (a) => {
       if (!a.resultKey) return;
-      const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string };
+      const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string; displayUrl?: string | null; previewUrl?: string | null };
       const [fresh, meta] = await Promise.all([
         getSignedDownloadUrl(a.resultKey, 3600),
         aa.sizeBytes != null
@@ -118,6 +118,10 @@ export async function hydrateGenAssets<T extends { mode?: string; prompt?: strin
       // imzolanadi; aks holda thumbUrl = asosiy fayl URL (eski xatti-harakat).
       if (a.thumbKey) a.thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600);
       else if (a.thumbUrl) a.thumbUrl = fresh;
+      // P9 — display (1280 WebP) + preview (720p) derivativlari BIR imzo-o'tishda (srcset uchun
+      // hamma variant bir vaqt imzolanishi shart; CDN yoqilmagani sabab signed URL ishlatiladi).
+      aa.displayUrl = a.displayKey ? await getSignedDownloadUrl(a.displayKey, 3600) : null;
+      aa.previewUrl = a.previewKey ? await getSignedDownloadUrl(a.previewKey, 3600) : null;
       if (meta) {
         aa.sizeBytes = meta.sizeBytes;
         aa.contentType = meta.contentType;
@@ -537,10 +541,14 @@ studioGenRouter.get(
       for (const g of items) {
         for (const a of g.assets) {
           if (a.resultKey) {
+            const aa = a as typeof a & { displayUrl?: string | null; previewUrl?: string | null };
             const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
             a.url = fresh;
             if (a.thumbKey) a.thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600);
             else if (a.thumbUrl) a.thumbUrl = fresh;
+            // P9 — display/preview derivativlarini ham qayta imzolaymiz (grid srcset + hover)
+            aa.displayUrl = a.displayKey ? await getSignedDownloadUrl(a.displayKey, 3600) : null;
+            aa.previewUrl = a.previewKey ? await getSignedDownloadUrl(a.previewKey, 3600) : null;
           }
         }
       }
