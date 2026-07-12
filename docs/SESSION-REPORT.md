@@ -1,9 +1,10 @@
-# Sessiya hisoboti — 2026-07-12 (BATCH6 Prompt #2 — PRODUCTION Home/landing 1:1 + mega-menyu)
+# Sessiya hisoboti — 2026-07-12 (BATCH6 Prompt #3 — PRODUCTION Templates katalog + detal + Pro gate)
 
-- Manba: docs/mockups/batch6 (home + home-mega) → PRODUCTION platform/index.html (CF Pages direct-source).
-- **Landing markup** to'liq qayta qurildi (mockup tartibi): promo-strip → hero (2-ustun + billboard) → ticker → stats → cinema billboard → feed masonry (REAL shablon) → viral presets → AI Studio vitrina (result-stack + mini-composer + tool-rail) → plagin lenta → narx teaser (home-plans) → FAQ → yakuniy CTA. HAMMA CMS `{{ lc* }}` bindingi saqlandi (hero/stats/showcase/aiPromo/pluginPromo/pricing/faq/finalCta).
-- **CSS**: eski ffl- blok (14474-14684) mockup metrikasi bilan token-only qayta yozildi. Landing ffl- CSS'da lime literal **103 → 0**; `.ffm-grad` ham accent→accent-2 tokeniga o'tdi. Dekorativ media-gradientlar (aurora/sunset/ffm-g*) ataylab ko'p-rang.
-- **Mega-menyu** (home-mega): nav "Explore ▾" — hover(CSS)+klik(state), Escape/tashqi yopilish, layout-shift yo'q; 2 ustun Features | Live Models (gen-models bilan qo'lda sinxron, BATCH7: CMS).
-- **Yangi state/handler**: megaOpen/promoOpen + toggleMega/closeMega/dismissPromo; go() va Esc mega'ni yopadi. secStyle ×10 (statik bo'limlar order 5/15/25). feedCards = REAL row1base+row2base.
-- Tekshirildi (1280px, 3 tema): hero/cinema/feed/presets/ai-showcase/plugin/plans/faq/CTA + mega — mockup bilan mos; node --check 3 skript OK; konsol xatosiz; CMS defaultlar render bo'ladi. Preview skrinshot uchun transform-workaround (backdrop-filter kesh tuzog'i).
-- Qoldiq: 72 lime literal (ffm pricing/plugin sahifa + ffa app + JS gradient massivlar) — Prompt #2 ko'lamidan tashqarida. studio:sync SHART EMAS (platform direct-source). Push qilinmadi.
+- Manba: docs/mockups/batch6 (templates + template-detail) → PRODUCTION platform/index.html. Markup+CSS 1:1 portlandi; `sc-if`/`sc-for`/`{{}}` bindingi va data-flow (katalog, filter, sort, download) tegilmadi.
+- **Katalog**: markazlashgan hero (kicker "FRAMEFLOW MARKETPLACE" + katta display sarlavha + ⌘K rounded-rect qidiruv), "All"-faol pill qatori (fixedCats'ga 'All' qo'shildi, BATCH3 tur-pill semantikasi saqlandi), yopishqoq filter-bar (border-block + blur, top:64px), masonry — 3 temada.
+- **Detal**: preview-player ramka (#000, radius) + player-bar (real sifat, soxta davomiylik YO'Q), sirtli meta-karta (badge-row + NEW, muallif qatori avatar+rol bilan, 1-ustunli spec-list 7 qator), CTA'lar.
+- **Pro darvozasi (mockup uslubi, inline — alohida modal yo'q)**: Free reja + Pro shablon → "Upgrade to Pro · $19/mo" (→#pricing) + inline-alert "PRO DOWNLOAD"; boshqa holatda "Download pack (.zip)" (alertsiz). Trigger = mavjud logika (isFreePlan + dRaw.pro). gate-note tema tokeniga o'tdi.
+- **Tozalash**: templates/detail CSS'da hardcode lime literal **5 → 0** (radial glow/gate/dact/col → tema tokenlari). `.va-fchip` global holicha qoldirildi (account tab'lari), toolbar ko'rinishi `.va-fbar .va-fchip`'ga qamaldi.
+- Topildi: katalog CORS tufayli localhost'dan real API'ga ulanmaydi → lokal mock API (:4000) bilan 7/1/0 shablon holatlari tekshirildi.
+- Tekshirildi: 3 tema (noir/neon/cold) katalog+detal 1280px mockup bilan mos; pro-gate Upgrade→#pricing navigatsiya; Free download smoke (crash yo'q); 1-element grid + no-results empty state halol; `node --check` OK; konsol xatosiz.
+- Qoldiq: push qilinmadi; real productionda (thumbnail'lar bilan) parity qayta ko'rish. Katalog karta (va-rc) ataylab saqlandi (prompt karta xususiyatlari ro'yxati: duration/author/hover — dashboard bilan umumiy komponent).
