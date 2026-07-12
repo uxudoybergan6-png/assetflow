@@ -986,6 +986,22 @@ studioGenRouter.post("/gen/ref-upload-url", async (req: Request, res: Response) 
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
+  // (P23.6) Storage kvota — presigned PUT kvotani CHETLAB o'tmasin. /gen/ref-upload va /gen
+  // kvotani tekshiradi, lekin bu YO'L to'g'ridan GCS'ga yozadi (server tanasi orqali EMAS), shu
+  // sabab bu yerda tekshirmasak FREE foydalanuvchi cheksiz katta fayl yuklab bepul bulut-xotira
+  // oladi. PROYEKTSIYA bilan: joriy sarf + so'ralган hajm kvotadan oshsa — rad. ADMIN ozod.
+  if (req.user!.role !== "ADMIN") {
+    const q = await isStorageOverQuota(req.user!.userId, false);
+    if (q.over || q.usedBytes + p.data.sizeBytes > q.quotaBytes) {
+      res.status(413).json({
+        error: "Storage is full — delete old files or upgrade your plan",
+        code: "STORAGE_QUOTA_EXCEEDED",
+        usedBytes: q.usedBytes,
+        quotaBytes: q.quotaBytes,
+      });
+      return;
+    }
+  }
   const extFromName = /\.([a-z0-9]{2,5})$/i.exec(p.data.name || "")?.[1]?.toLowerCase() || "";
   const ext = extFromName || (p.data.contentType.startsWith("video/") ? "mp4" : p.data.contentType.startsWith("audio/") ? "mp3" : "png");
   const key = `gen-ref-src/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
