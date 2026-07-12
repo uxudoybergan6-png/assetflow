@@ -1,19 +1,10 @@
-# Sessiya hisoboti — 2026-07-12 (BATCH5 #7 nisbat + #6 mention pill)
+# Sessiya hisoboti — 2026-07-12 (BATCH6 Prompt #1 — PRODUCTION tema poydevori)
 
-**#7 Seedream nisbat tanlagichi (96ab7c5):** 1020/1021 endi 8 nisbat (`SEEDREAM_ASPECTS`, def 1:1);
-`byteplus.ts seedreamSize()` nisbat+tier → §8 rasmiy ANIQ piksel `size` (noma'lum kombinatsiya →
-tier fallback, piksel taxmin qilinmaydi); validator'ga `seedreamSizeSelfTest` (9 case: Pro 1K
-16:9→1424x800, Lite 4K 21:9→6240x2656 ...). Narx/kredit qiymatlari TEGILMADI.
-
-**#6 Dreamina-uslub atom mention pill:** ikkala composer textarea → contenteditable chip-editor
-(plagin `window.afChipEditor`, web `ffChipEditor` — `SD2-CHIP-EDITOR v1` marker, qo'lda sync).
-`.value`/`.placeholder` PROPERTY meros → string-level kod (renumber/enhance/restore/clear)
-o'zgarishsiz. Pill: thumb + lime "@Image 1", Backspace atom o'chirish, copy/paste plain-token,
-IME guard. Plagin: ikkala pane dropdown keyboard-nav (↑/↓/Enter/Esc). WEB: dropdown YANGI
-yaratildi (body-fixed singleton — React re-render o'chirmaydi); removeRef endi video/audio
-tokenlarini ham strip/renumber; generate() orphan-sanitize; fokusda state→editor sinxron o'chiq
-(pollJob keystroke clobber himoyasi). Headless linkedom: parse/serialize 7/7 PASS; `node --check`
-8/8 skript OK; API build + validator yashil. Money-zone TEGILMADI.
-
-**Kutilmoqda:** push + CF Pages deploy + AE jonli test (checklist: @ → pick → pill; Backspace;
-ref o'chirish → renumber; Enhance round-trip; Generate serializatsiya — dev console log).
+- Manba: docs/mockups/batch6 → PRODUCTION packages/assetflow-studio/platform/index.html (CF Pages direct-source).
+- **3-tema token qatlami**: `:root[data-theme="noir|neon|cold"]` (rang/surface/border/accent/grad/danger + radius/space/motion shkala). Default noir.
+- **Compat shim**: eski lime `.ff` o'zgaruvchilari (`--acc/--lime/--txt/--bd/--grad/--surface/--text/--muted/--border`…) → theme tokenlariga bog'landi; hech bir sahifa buzilmadi. Eski Cyan/Amber accent-picker neytrallandi; `landingAccentVars` inline override o'chirildi.
+- **Tipografiya**: Space Grotesk (display h1-h4) · Inter (body) · JetBrains Mono (label); Google Fonts link (CSP allaqachon ruxsat — audit #17); hanken font-stack → Inter.
+- **Global chrome**: ffm-nav brand-mark gradient + Space Grotesk, Plugin'da NEW badge (JetBrains Mono), footer bg → bg-deep. Nav/footer chrome'da hardcode lime = **0**.
+- **Tema almashtirgich**: html[data-theme], localStorage `ff-theme`, FOUC-siz (head snippet), header swatch picker (dc re-render'dan MutationObserver bilan omon qoladi), reload'siz oniy almashish.
+- Tekshirildi: node --check (dc/switcher/fouc OK); 3 tema landing skrinshot (oniy almashadi, persist); konsol xatosiz; footer/brand/NEW/link computed-style theme-aware.
+- Qoldiq: 103 bo'lim-darajali lime literal (ffl-/ffm-plan/AI karta/kredit-pack) — keyingi bo'lim redizayn promptlarida. studio:sync SHART EMAS (platform direct-source).

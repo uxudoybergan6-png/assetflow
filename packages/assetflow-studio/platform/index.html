@@ -6,6 +6,9 @@
 <meta name="turnstile-site-key" content="0x4AAAAAAADvCAW2JrGu92omA">
 <title>FrameFlow — Creative Assets & AI Generation Platform</title>
 
+<!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi -->
+<script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
+
 <script src="assets/react.production.min.js"></script>
 <script src="assets/react-dom.production.min.js"></script>
 <script src="assets/dc-runtime.js"></script>
@@ -20,6 +23,8 @@
 <helmet data-dc-atomics="">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<!-- BATCH6 tema: Space Grotesk (display) · Inter (body) · JetBrains Mono (label) — CSP style-src/font-src ruxsat berilgan (audit #17) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>/* cyrillic-ext */
 @font-face {
   font-family: 'Hanken Grotesk';
@@ -14214,25 +14219,58 @@
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
-  body{background:#06080B;font-family:'Hanken Grotesk',system-ui,sans-serif}
+  body{background:var(--th-bg);font-family:'Inter',system-ui,sans-serif}
+  /* ═══════════ BATCH6 · 3-TEMA TOKEN QATLAMI (noir · neon · cold) — manba: docs/mockups/batch6 ═══════════ */
+  :root,:root[data-theme="noir"]{
+    --th-bg:#0a0a0b;--th-bg-deep:#050506;--th-surface:#131316;--th-surface-2:#1b1b1f;--th-surface-3:#232329;
+    --th-text:#fff;--th-text-2:#d0d0d5;--th-muted:#a2a2aa;--th-faint:#85858e;--th-border:rgba(255,255,255,.12);
+    --th-accent:#fff;--th-accent-2:#d7d7dc;--th-on-accent:#09090a;--th-accent-soft:rgba(255,255,255,.09);
+    --th-glow:rgba(255,255,255,.11);--th-danger:#ff675f;--th-success:#9be36c;--th-warning:#f7c967;
+    --th-grad:linear-gradient(135deg,#fff 0%,#a6a6ae 100%);--th-shadow:0 28px 80px rgba(0,0,0,.45);
+  }
+  :root[data-theme="neon"]{
+    --th-bg:#050505;--th-bg-deep:#020202;--th-surface:#0d0d0e;--th-surface-2:#151517;--th-surface-3:#1d1d20;
+    --th-text:#f8f8f5;--th-text-2:#d0d1ca;--th-muted:#a0a39a;--th-faint:#82867c;--th-border:rgba(216,255,62,.18);
+    --th-accent:#d8ff3e;--th-accent-2:#baf02c;--th-on-accent:#0a0d02;--th-accent-soft:rgba(216,255,62,.1);
+    --th-glow:rgba(216,255,62,.35);--th-danger:#ff635c;--th-success:#d8ff3e;--th-warning:#ffd45c;
+    --th-grad:linear-gradient(135deg,#d8ff3e 0%,#9fe622 100%);--th-shadow:0 28px 90px rgba(0,0,0,.6);
+  }
+  :root[data-theme="cold"]{
+    --th-bg:#0b0e14;--th-bg-deep:#070910;--th-surface:#10141d;--th-surface-2:#161b28;--th-surface-3:#1d2434;
+    --th-text:#f7f9ff;--th-text-2:#d1d7e8;--th-muted:#9da7c0;--th-faint:#7f8aa4;--th-border:rgba(124,140,255,.22);
+    --th-accent:#7c8cff;--th-accent-2:#4fd8eb;--th-on-accent:#080b16;--th-accent-soft:rgba(124,140,255,.12);
+    --th-glow:rgba(79,216,235,.24);--th-danger:#ff6c7d;--th-success:#66e8b3;--th-warning:#ffc96c;
+    --th-grad:linear-gradient(135deg,#7c8cff 0%,#4fd8eb 100%);--th-shadow:0 28px 90px rgba(0,0,0,.5);
+  }
+  :root{
+    /* radius / spacing / motion shkalasi — kelajak bo'lim redizaynlari uchun poydevor */
+    --th-r-xs:6px;--th-r-sm:8px;--th-r-md:10px;--th-r-lg:14px;--th-r-xl:18px;--th-r-pill:999px;
+    --th-sp-1:6px;--th-sp-2:10px;--th-sp-3:14px;--th-sp-4:20px;--th-sp-5:28px;--th-sp-6:40px;
+    --th-dur-fast:.16s;--th-dur:.2s;--th-dur-slow:.32s;--th-ease:cubic-bezier(.2,.7,.2,1);
+  }
   a{text-decoration:none}
-  ::selection{background:rgba(194,240,74,.3);color:#0E1400}
+  ::selection{background:var(--th-accent-soft);color:var(--th-text)}
+  /* BATCH6 tipografiya bazasi: Space Grotesk (display) · Inter (body) · JetBrains Mono (label) — bo'lim redizaynisiz faqat baza elementlar */
+  .ff h1,.ff h2,.ff h3,.ff h4{font-family:'Space Grotesk','Inter',system-ui,sans-serif;letter-spacing:-.035em}
+  .ff h1{letter-spacing:-.05em;line-height:1}
+  .th-mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;letter-spacing:.04em}
   ::-webkit-scrollbar{width:11px;height:11px}
   ::-webkit-scrollbar-thumb{background:#20262F;border-radius:7px;border:3px solid transparent;background-clip:padding-box}
   ::-webkit-scrollbar-thumb:hover{background:#2A3140;background-clip:padding-box}
   ::-webkit-scrollbar-track{background:transparent}
+  /* BATCH6 shim: eski lime .ff o'zgaruvchilari → 3-tema tokenlariga bog'landi (hardcode rang yo'q) */
   .ff{
-    --bg:#06080B;--bg2:#0A0D12;--panel:#0E1117;--panel2:#13161C;
-    --card:#0A0D12;--card2:#13161C;--card3:#1A2029;
-    --bd:#20262F;--bd2:#2A3140;
-    --txt:#F2F5F8;--txt2:#8A93A3;--txt3:#5E6675;
-    --grad:linear-gradient(155deg,#C2F04A,#9cd62b);
-    --grad-h:linear-gradient(155deg,#cbf563,#a6e034);
-    --acc:#C2F04A;--acc-ind:#9cd62b;--teal:#C2F04A;--teal2:#C2F04A;
-    --glow1:#C2F04A;--glow2:#33420f;--ring:rgba(194,240,74,.4);--on:#0E1400;
+    --bg:var(--th-bg);--bg2:var(--th-bg-deep);--panel:var(--th-surface);--panel2:var(--th-surface-2);
+    --card:var(--th-surface);--card2:var(--th-surface-2);--card3:var(--th-surface-3);
+    --bd:var(--th-border);--bd2:var(--th-border);
+    --txt:var(--th-text);--txt2:var(--th-muted);--txt3:var(--th-faint);
+    --grad:var(--th-grad);
+    --grad-h:var(--th-grad);
+    --acc:var(--th-accent);--acc-ind:var(--th-accent-2);--teal:var(--th-accent);--teal2:var(--th-accent);
+    --glow1:var(--th-accent);--glow2:var(--th-accent-soft);--ring:var(--th-glow);--on:var(--th-on-accent);
   }
-  .ff[data-accent="cyan"]{--grad:linear-gradient(155deg,#5BE8E0,#2bbcd6);--grad-h:linear-gradient(155deg,#74efe7,#3fcfe6);--acc:#5BE8E0;--acc-ind:#2bbcd6;--teal:#5BE8E0;--teal2:#5BE8E0;--glow1:#5BE8E0;--glow2:#123036;--ring:rgba(91,232,224,.4)}
-  .ff[data-accent="amber"]{--grad:linear-gradient(155deg,#F5B54A,#e0922b);--grad-h:linear-gradient(155deg,#f8c468,#eaa23f);--acc:#F5B54A;--acc-ind:#e0922b;--teal:#F5B54A;--teal2:#F5B54A;--glow1:#F5B54A;--glow2:#3a2a10;--ring:rgba(245,181,74,.4)}
+  /* eski accent-picker (Cyan/Amber) neytrallandi — tema endi yagona rang manbai */
+  .ff[data-accent="cyan"],.ff[data-accent="amber"]{--grad:var(--th-grad);--grad-h:var(--th-grad);--acc:var(--th-accent);--acc-ind:var(--th-accent-2);--teal:var(--th-accent);--teal2:var(--th-accent);--glow1:var(--th-accent);--glow2:var(--th-accent-soft);--ring:var(--th-glow)}
   .ff[data-anim="off"] *{animation:none!important}
   .ff [data-rv]{transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1)}
   .ff.rv-arm [data-rv]:not(.rv-in){opacity:0;transform:translateY(28px) scale(.985)}
@@ -14296,21 +14334,22 @@
   }
 
   /* ═══════════ MARKETING REDESIGN — mockup 1:1 (Bosqich 2, ffm- scoped) ═══════════ */
+  /* BATCH6 shim: marketing (ffm-) o'zgaruvchilari → 3-tema tokenlari; neytral overlaylar (hair/f1-f3/scrim) va semantik ranglar (select/red/amber) o'z holicha */
   .ff{
-    --lime:#C2F04A;--lime2:#9CD62B;--onlime:#0E1400;
-    --surface:#13161C;--surface2:#171B22;--surface3:#1A1F28;
-    --rail:#0A0D12;--pop:#161B22;--media:#0A0A0A;
-    --text:#F2F5F8;--muted:#8A93A3;--muted2:#5E6675;
-    --border:#2A3140;--hair:rgba(255,255,255,.05);--hair2:rgba(255,255,255,.07);
+    --lime:var(--th-accent);--lime2:var(--th-accent-2);--onlime:var(--th-on-accent);
+    --surface:var(--th-surface);--surface2:var(--th-surface-2);--surface3:var(--th-surface-3);
+    --rail:var(--th-bg-deep);--pop:var(--th-surface-2);--media:var(--th-bg-deep);
+    --text:var(--th-text);--muted:var(--th-muted);--muted2:var(--th-faint);
+    --border:var(--th-border);--hair:rgba(255,255,255,.05);--hair2:rgba(255,255,255,.07);
     --f1:rgba(255,255,255,.05);--f2:rgba(255,255,255,.06);--f3:rgba(255,255,255,.10);
     --inset:inset 0 1px 0 rgba(255,255,255,.10);--scrim:rgba(8,10,14,.72);
-    --limedim:rgba(194,240,74,.12);--seldim:rgba(124,196,255,.16);--select:#7CC4FF;
+    --limedim:var(--th-accent-soft);--seldim:rgba(124,196,255,.16);--select:#7CC4FF;
     --reddim:rgba(255,107,94,.14);--amberdim:rgba(255,178,124,.14);--amber:#FFB27C;
     /* PHASE A — shared visual language (Artlist-adapted) */
-    --spend-grad:radial-gradient(120% 140% at 30% 20%,#D4F56E,#C2F04A 55%,#A9DE3C);
+    --spend-grad:var(--th-grad);
     --pill-active:rgba(255,255,255,.09);
   }
-  @keyframes ffmBreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
+  @keyframes ffmBreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 transparent}50%{opacity:.85;box-shadow:0 0 26px 2px var(--th-glow)}}
   @keyframes ffmSpin{to{transform:rotate(360deg)}}
   /* textures */
   .ff .ffm-mesh{background:radial-gradient(58% 46% at 72% 6%,rgba(124,196,255,.09),transparent 62%),radial-gradient(46% 38% at 16% 14%,rgba(194,240,74,.07),transparent 60%)}
@@ -14351,12 +14390,19 @@
   .ff .ffm-btn:hover,.ff .ffm-btn2:hover{filter:brightness(1.06)}
   /* nav */
   .ff .ffm-nav{height:64px;display:flex;align-items:center;gap:6px;max-width:1280px;margin:0 auto;padding:0 40px}
-  .ff .ffm-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;letter-spacing:-.02em;color:var(--text);cursor:pointer}
-  .ff .ffm-logo .lb{width:24px;height:24px;border-radius:7px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
-  .ff .ffm-link{padding:7px 13px;border-radius:999px;font-weight:500;font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none}
+  .ff .ffm-logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk','Inter',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.03em;color:var(--text);cursor:pointer}
+  .ff .ffm-logo .lb{width:27px;height:27px;border-radius:8px;background:var(--th-grad);color:var(--th-on-accent);display:grid;place-items:center;font-size:15px;flex:none}
+  .ff .ffm-link{position:relative;padding:7px 13px;border-radius:999px;font-weight:500;font-size:13px;color:var(--muted);cursor:pointer;text-decoration:none}
   .ff .ffm-link:hover{color:var(--text)}
   .ff .ffm-link.on{background:var(--pill-active);color:var(--text);font-weight:600}
-  .ff .ffm-burger{display:none;width:38px;height:38px;border-radius:9px;background:var(--f1);border:1px solid var(--hair2);align-items:center;justify-content:center;font-size:18px;color:#E7ECF3;cursor:pointer}
+  /* BATCH6 NEW badge (mockup .badge — JetBrains Mono) */
+  .ff .ffm-new{margin-left:6px;padding:2px 6px;border-radius:5px;background:var(--th-accent);color:var(--th-on-accent);font:700 8px/1 'JetBrains Mono',monospace;letter-spacing:.08em;vertical-align:1px}
+  /* BATCH6 tema almashtirgich (3 swatch — noir/neon/cold) */
+  .ff .ff-theme{display:inline-flex;gap:5px;align-items:center;padding:4px 5px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2)}
+  .ff .ff-theme button{width:17px;height:17px;border-radius:50%;border:1px solid var(--border);padding:0;cursor:pointer;background:var(--sw,#888);transition:box-shadow .15s,transform .15s}
+  .ff .ff-theme button:hover{transform:scale(1.12)}
+  .ff .ff-theme button.on{box-shadow:0 0 0 2px var(--th-accent);border-color:transparent}
+  .ff .ffm-burger{display:none;width:38px;height:38px;border-radius:9px;background:var(--f1);border:1px solid var(--hair2);align-items:center;justify-content:center;font-size:18px;color:var(--text);cursor:pointer}
   /* segment / tag */
   .ff .ffm-seg{display:inline-flex;background:var(--f1);border:1px solid var(--f2);border-radius:999px;padding:3px}
   .ff .ffm-seg>span{padding:6px 16px;border-radius:999px;font-weight:500;font-size:12.5px;color:var(--muted);text-align:center;white-space:nowrap;cursor:pointer}
@@ -15546,7 +15592,7 @@
 </style>
 </helmet>
 
-<div class="ff" data-accent="{{ accentKey }}" data-anim="{{ animKey }}" style="min-height:100vh;background:radial-gradient(1200px 620px at 50% -8%,#0B0F15,#06080B 62%);color:var(--txt);font-family:{{ pageFontStack }};-webkit-font-smoothing:antialiased;letter-spacing:-.005em{{ themeVarsCss }}">
+<div class="ff" data-accent="{{ accentKey }}" data-anim="{{ animKey }}" style="min-height:100vh;background:radial-gradient(1200px 620px at 50% -8%,var(--th-surface),var(--th-bg) 62%);color:var(--txt);font-family:{{ pageFontStack }};-webkit-font-smoothing:antialiased;letter-spacing:-.005em{{ themeVarsCss }}">
 
   <!-- ============ MARKETING CHROME ============ -->
   <sc-if value="{{ showMarketing }}" hint-placeholder-val="{{ true }}">
@@ -15560,7 +15606,7 @@
           <a class="ffm-link" onclick="{{ goTemplates }}">{{ lcNavTemplates }}</a>
           <a class="ffm-link" onclick="{{ goAistudio }}">{{ lcNavAistudio }}</a>
           <a class="{{ navPricingCls }}" onclick="{{ goPricing }}">{{ lcNavPricing }}</a>
-          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}">{{ lcNavPlugin }}</a>
+          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}">{{ lcNavPlugin }}<span class="ffm-new">NEW</span></a>
         </span>
         <span class="ffm-navcta" style="width:14px"></span>
         <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}">{{ lcNavSignIn }}</a>
@@ -15868,7 +15914,7 @@
     </sc-if>
 
     <!-- ============ FOOTER — faqat REAL havolalar ============ -->
-    <footer style="border-top:1px solid rgba(255,255,255,.06);background:var(--bg)">
+    <footer style="border-top:1px solid var(--border);background:var(--th-bg-deep)">
       <div class="ffm-sect" style="max-width:1280px;margin:0 auto;padding:56px 80px 34px">
         <div class="ffm-foot" style="display:flex;gap:60px">
           <div style="width:260px">
@@ -17591,9 +17637,10 @@ class Component extends DCLogic {
   };
   // Kuratsiyalangan, o'z-serverda turadigan font to'plami (CDN'siz) — admin "Website" tanlovi.
   landingFontStacks = {
-    hanken: "'Hanken Grotesk',system-ui,sans-serif",
+    // BATCH6 tipografiya: 'hanken' default endi Inter (body) beradi — display=Space Grotesk (CSS base qoidasi)
+    hanken: "'Inter',system-ui,sans-serif",
     system: "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",
-    'plex-mono': "'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace",
+    'plex-mono': "'JetBrains Mono',ui-monospace,SFMono-Regular,monospace",
     georgia: "Georgia,'Times New Roman',serif",
   };
   /** Merged landing config: state.landCfg (server/kesh) defaultlar ustiga — bo'lim-darajada.
@@ -17661,6 +17708,9 @@ class Component extends DCLogic {
   /** Custom accent HEX → landing CSS o'zgaruvchilari (inline style, data-accent ustidan
    *  yozadi). Default lime bo'lsa bo'sh satr — mavjud stylesheet qiymatlari qoladi. */
   landingAccentVars(hex) {
+    // BATCH6: 3-tema tizimi accent'ni to'liq boshqaradi — CMS custom-accent inline override o'chirildi
+    return '';
+    // eslint-disable-next-line no-unreachable
     if (!/^#[0-9a-fA-F]{6}$/.test(hex || '') || hex.toUpperCase() === '#C2F04A') return '';
     const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
     const mix = (c, t, p) => Math.round(c + (t - c) * p);
@@ -20459,4 +20509,59 @@ class Component extends DCLogic {
 </script>
 
 
+<script>
+/* ═══ BATCH6 · 3-tema almashtirgich ═══
+   html[data-theme] (default noir) · localStorage 'ff-theme' · FOUC yo'q (head snippet oldindan o'rnatadi)
+   · dc-runtime .ff subtree'ni qayta render qilganda swatch'lar o'chadi → MutationObserver qayta joylaydi. */
+(function(){
+  var THEMES=[
+    {k:'noir',label:'Noir',sw:'linear-gradient(135deg,#fff,#a6a6ae)'},
+    {k:'neon',label:'Neon',sw:'#d8ff3e'},
+    {k:'cold',label:'Cold',sw:'linear-gradient(135deg,#7c8cff,#4fd8eb)'}
+  ];
+  function current(){var t=document.documentElement.getAttribute('data-theme');return (t==='noir'||t==='neon'||t==='cold')?t:'noir';}
+  window.ffSetTheme=function(t){
+    if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';
+    document.documentElement.setAttribute('data-theme',t);
+    try{localStorage.setItem('ff-theme',t);}catch(e){}
+    syncActive();
+  };
+  function syncActive(){
+    var t=current();
+    document.querySelectorAll('.ff-theme button').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-th')===t);
+    });
+  }
+  function build(){
+    var wrap=document.createElement('span');
+    wrap.className='ff-theme';wrap.setAttribute('role','group');wrap.setAttribute('aria-label','Theme');
+    THEMES.forEach(function(th){
+      var b=document.createElement('button');
+      b.type='button';b.setAttribute('data-th',th.k);
+      b.title=th.label+' theme';b.setAttribute('aria-label',th.label+' theme');
+      b.style.setProperty('--sw',th.sw);
+      b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.ffSetTheme(th.k);});
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+  function inject(){
+    document.querySelectorAll('.ffm-nav').forEach(function(nav){
+      if(nav.querySelector('.ff-theme'))return;
+      var ref=nav.querySelector('.ffm-navcta')||nav.querySelector('.ffm-burger');
+      nav.insertBefore(build(), ref||null);
+    });
+    document.querySelectorAll('.va-nav').forEach(function(nav){
+      if(nav.querySelector('.ff-theme'))return;
+      var ref=nav.querySelector('.va-credpill')||nav.querySelector('.va-ava');
+      if(ref&&ref.parentNode===nav){nav.insertBefore(build(), ref);}else{nav.appendChild(build());}
+    });
+    syncActive();
+  }
+  var scheduled=false;
+  function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(function(){scheduled=false;inject();});}
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',schedule);}else{schedule();}
+  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
 </body></html>
