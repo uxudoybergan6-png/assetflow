@@ -14389,6 +14389,10 @@
   .ff .ffm-btn2.full{width:100%}
   .ff .ffm-btn:hover,.ff .ffm-btn2:hover{filter:brightness(1.06)}
   /* nav */
+  /* P10 — top-nav frost sof CSS bilan: landing tepada tekis, html.ffscrolled bo'lsa muzli;
+     .nf = pricing/plugin doim muzli. Scroll handler faqat html.ffscrolled klassini almashadi (setState YO'Q). */
+  .ff .ffm-topnav{position:sticky;top:0;z-index:60;background:transparent;backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);border-bottom:1px solid transparent;transition:background .2s,border-color .2s,backdrop-filter .2s}
+  .ff .ffm-topnav.nf,html.ffscrolled .ff .ffm-topnav{background:rgba(10,13,18,.72);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border-bottom:1px solid rgba(255,255,255,.08)}
   .ff .ffm-nav{height:64px;display:flex;align-items:center;gap:6px;max-width:1280px;margin:0 auto;padding:0 40px}
   .ff .ffm-logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk','Inter',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.03em;color:var(--text);cursor:pointer}
   .ff .ffm-logo .lb{width:27px;height:27px;border-radius:8px;background:var(--th-grad);color:var(--th-on-accent);display:grid;place-items:center;font-size:15px;flex:none}
@@ -15703,7 +15707,7 @@
     </sc-if>
     </sc-if>
     <!-- MARKETING TOP-NAV — flat at top, frosted on scroll -->
-    <header style="position:sticky;top:0;z-index:60;background:{{ navBg }};backdrop-filter:{{ navBlur }};-webkit-backdrop-filter:{{ navBlur }};border-bottom:{{ navBorder }};transition:background .2s,border-color .2s">
+    <header class="{{ navCls }}">
       <div class="ffm-nav">
         <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
         <span style="flex:1"></span>
@@ -16592,8 +16596,8 @@
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell">
                           <div data-id="{{ g.id }}" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
-                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" alt="{{ g.label }}"></sc-if>
-                            <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" alt="{{ g.label }}" onload="{{ axMediaLoaded }}"></sc-if>
+                            <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}"></video></sc-if>
                             <span class="rtag">{{ g.rtag }}</span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                             <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ false }}">
@@ -16641,7 +16645,7 @@
                           </svg></span>
                           <div class="va-axainfo"><div class="t">{{ genStatus }}</div><div class="m">{{ modelName }} · generating</div></div>
                           <div class="va-axeq"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
-                          <span style="font:700 10.5px var(--mono);color:var(--lime)">{{ genPct }}</span>
+                          <span class="va-axpctm" style="font:700 10.5px var(--mono);color:var(--lime)">{{ genPct }}</span>
                         </div>
                       </sc-if>
                       <sc-for list="{{ axAudGens }}" as="g" hint-placeholder-count="3">
@@ -17995,9 +17999,19 @@ class Component extends DCLogic {
         es.forEach(e => { if (e.isIntersecting) { const el = e.target; el.style.transitionDelay = (el.getAttribute('data-rv-delay') || 0) + 'ms'; el.classList.add('rv-in'); this._io.unobserve(el); if (el.hasAttribute('data-stats')) this.runStats(); } });
       }, { rootMargin: '0px 0px -7% 0px', threshold: 0.06 });
     } catch (e) { this._io = null; }
-    this._onScroll = () => { try { const d = document.documentElement; const y = d.scrollTop || document.body.scrollTop; const p = d.scrollHeight > innerHeight ? y / (d.scrollHeight - innerHeight) : 0; this.setState({ scrollP: Math.max(0, Math.min(1, p)), scrollY: y }); } catch (e) {} };
+    // P10 — scroll endi GLOBAL setState QILMAYDI. rAF ichida faqat html.ffscrolled klassini
+    //       almashtiradi (nav frost sof CSS bilan). scrollP/scrollY state'dan chiqarildi —
+    //       sof-vizual qiymat global state'da yashamasin (P10 qoidasi).
+    this._onScroll = () => {
+      if (this._scrollRaf) return;
+      this._scrollRaf = requestAnimationFrame(() => {
+        this._scrollRaf = 0;
+        try { const d = document.documentElement; const y = d.scrollTop || document.body.scrollTop; const on = y > 8; if (on !== this._scrolled) { this._scrolled = on; d.classList.toggle('ffscrolled', on); } } catch (e) {}
+      });
+    };
     window.addEventListener('scroll', this._onScroll, { passive: true });
-    this._tipT = setInterval(() => this.setState(s => ({ tipIdx: s.tipIdx + 1 })), 3400);
+    // P10 — 3.4s "maslahat" taymeri OLIB TASHLANDI: tipText DOM'da hech qayerda bind qilinmagan,
+    //       shu sabab bu interval faqat butun ilovani 3.4s'da bir qayta render qilardi (soxta flash).
     // Arm reveal choreography ONLY once live rendering frames are confirmed (double rAF).
     // In throttled/stalled contexts nothing is ever hidden — the page stays fully visible.
     try {
@@ -18011,7 +18025,10 @@ class Component extends DCLogic {
         this._armed = true;
         root.classList.add('rv-arm');
         this.installRv();
-        this._rvSafety = setInterval(() => { try { root.querySelectorAll('[data-rv]:not(.rv-in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) { el.classList.add('rv-in'); if (el.hasAttribute('data-stats')) this.runStats(); } }); } catch (e) {} }, 1100);
+        // P10 — 1.1s querySelectorAll sweep OLIB TASHLANDI: yuqoridagi IntersectionObserver
+        //       (installRv har componentDidUpdate'da yangi [data-rv]'ni kuzatadi) shu ishni bajaradi.
+        //       Ilk bo'yoqdagi ko'rinadigan elementlar uchun bir MARTALIK rAF sweep yetarli (takrorlanmaydi).
+        requestAnimationFrame(() => { try { root.querySelectorAll('[data-rv]:not(.rv-in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) { el.classList.add('rv-in'); if (el.hasAttribute('data-stats')) this.runStats(); } }); } catch (e) {} });
       }));
     } catch (e) {}
   }
@@ -18025,17 +18042,40 @@ class Component extends DCLogic {
   syncGenAnim() {
     if (this.state.generating && !this._genAnimT) {
       this._genAnimStart = Date.now();
+      this._genProg = 2; this._genPhaseIdx = 0;
+      this._genMode = (this.curTool() || {}).mode || 'image';
+      this._paintGenAnim();
       this._genAnimT = setInterval(() => {
-        this.setState(s => ({
-          genProgress: Math.min(93, (s.genProgress || 0) + Math.max(0.4, (93 - (s.genProgress || 0)) * 0.045)),
-          genPhase: Math.floor((Date.now() - this._genAnimStart) / 4500),
-        }));
+        // P10 — endi setState YO'Q: soxta % faqat pending plitka DOM tugunlarini yangilaydi,
+        //       butun ilova qayta render qilinmaydi (grid/chip-editor tegilmaydi → caret sakramaydi).
+        this._genProg = Math.min(93, this._genProg + Math.max(0.4, (93 - this._genProg) * 0.045));
+        this._genPhaseIdx = Math.floor((Date.now() - this._genAnimStart) / 4500);
+        this._paintGenAnim();
       }, 380);
-      this.setState({ genProgress: 2, genPhase: 0 });
     } else if (!this.state.generating && this._genAnimT) {
       clearInterval(this._genAnimT); this._genAnimT = null;
-      this.setState({ genProgress: 0, genPhase: 0 });
+      this._genProg = 0; this._genPhaseIdx = 0;
     }
+  }
+  /** P10 — pending plitka progressini to'g'ridan-to'g'ri DOM'ga yozadi (global re-render EMAS). */
+  _paintGenAnim() {
+    try {
+      const pct = Math.round(this._genProg || 0) + '%';
+      const phl = this.axGenPhases()[this._genMode] || this.axGenPhases().image;
+      const status = phl[Math.min(this._genPhaseIdx || 0, phl.length - 1)];
+      document.querySelectorAll('.va-axpct, .va-axpctm').forEach(el => { if (el.textContent !== pct) el.textContent = pct; });
+      document.querySelectorAll('.va-axpbar > b').forEach(el => { if (el.style.width !== pct) el.style.width = pct; });
+      document.querySelectorAll('.va-axpst, .va-axainfo > .t').forEach(el => { if (el.textContent !== status) el.textContent = status; });
+    } catch (e) {}
+  }
+  /** Sparky pending fazalari — render VA _paintGenAnim bitta manbadan o'qishi uchun (P10). */
+  axGenPhases() {
+    return {
+      image: ['Warming up the pixels…', 'Mixing light and shadow…', 'Sharpening the details…', 'Adding the finishing touches…'],
+      video: ['Setting the scene…', 'Directing your seconds of fame…', 'Rendering the frames…', 'Color-grading the cut…'],
+      voice: ['Clearing the throat…', 'Finding the right tone…', 'Recording the take…', 'Polishing the audio…'],
+      sfx: ['Listening to the world…', 'Layering the textures…', 'Mixing the effect…', 'Polishing the audio…'],
+    };
   }
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
   /** QA-FIX #3 — audio natijani REAL o'ynatish (bitta umumiy Audio element, play/pause toggle). */
@@ -19531,11 +19571,14 @@ class Component extends DCLogic {
     // Boshqa sessiya ko'rilayotganda pending plitka u yerda ko'rinmasin
     const pendInView = this.state.generating && (inLibrary || this.state.viewSess === 'new' || this.state.viewSess === this.state.curSessId);
     // QA-FIX #14/#3 — grid plitkasi real <img>/<video> bilan (genMediaOf), masonry aspect ham real
+    const loadedSet = this._mediaLoaded || (this._mediaLoaded = new Set());
     const axVisGens = visGensRaw.map((g, gi) => { const on = activeGenRaw && g.id === activeGenRaw.id; const md = genMediaOf(g); return {
       id: g.id, isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
       // P4 — birinchi qator (ko'rinadigan) kartalar EAGER + yuqori prioritet; pastdagilar lazy
       imLoad: gi < 6 ? 'eager' : 'lazy', imPri: gi < 6 ? 'high' : 'auto',
-      resCls: 'va-axres' + (md.mcls ? ' va-skel' : '') + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
+      // P10#5 — skeleton faqat media YUKLANGUNCHA; onload'da _mediaLoaded'ga qo'shiladi va klass olib tashlanadi
+      //         (reconciler ham keyingi render'da qayta qo'ymaydi, chunki bu yerdan '' qaytadi).
+      resCls: 'va-axres' + ((md.mcls && !loadedSet.has(g.id)) ? ' va-skel' : '') + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
     }; });
     const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const playing = this.state.audioPlayingId === g.id; return {
       id: g.id, title: g.label || 'Audio', cost: g.cost || 0,
@@ -19552,15 +19595,11 @@ class Component extends DCLogic {
     const axPendAud = axShowAudio && pendInView && aiIsAudio;
     const axVisEmpty = axShowVisuals && axVisGens.length === 0 && !axPendVis && !this.state.sessGensLoading;
     const axAudEmpty = axShowAudio && axAudGens.length === 0 && !axPendAud && !this.state.sessGensLoading;
-    const genPct = Math.round(this.state.genProgress || 0) + '%';
-    const axPhases = {
-      image: ['Warming up the pixels…', 'Mixing light and shadow…', 'Sharpening the details…', 'Adding the finishing touches…'],
-      video: ['Setting the scene…', 'Directing your seconds of fame…', 'Rendering the frames…', 'Color-grading the cut…'],
-      voice: ['Clearing the throat…', 'Finding the right tone…', 'Recording the take…', 'Polishing the audio…'],
-      sfx: ['Listening to the world…', 'Layering the textures…', 'Mixing the effect…', 'Polishing the audio…'],
-    };
-    const axPhl = axPhases[tool.mode] || axPhases.image;
-    const genStatus = axPhl[Math.min(this.state.genPhase || 0, axPhl.length - 1)];
+    // P10 — pending % / faza matni endi INSTANCE maydonlaridan (_genProg/_genPhaseIdx) o'qiladi;
+    //       ularni _paintGenAnim to'g'ridan DOM'ga yozadi, shu bois qo'shimcha render'da ham qiymat mos keladi.
+    const genPct = Math.round(this._genProg || 0) + '%';
+    const axPhl = this.axGenPhases()[tool.mode] || this.axGenPhases().image;
+    const genStatus = axPhl[Math.min(this._genPhaseIdx || 0, axPhl.length - 1)];
     const axSuggest = [
       { i: '🖼', t: 'A neon product shot on wet asphalt', tool: 'Rasm yaratish' },
       { i: '🎬', t: 'Slow-motion coffee pour, macro', tool: 'Video yaratish' },
@@ -20084,12 +20123,9 @@ class Component extends DCLogic {
     const tipText = tips[this.state.tipIdx % tips.length];
     const tipAnim = 'none';
     const pageAnim = 'none';
-    const scrollPW = (this.state.scrollP * 100).toFixed(2) + '%';
-    // Marketing nav: landing = flat at top, frosted on scroll; pricing/plugin = always frosted.
-    const navFrost = (s !== 'landing') || (this.state.scrollY > 8);
-    const navBg = navFrost ? 'rgba(10,13,18,.72)' : 'transparent';
-    const navBorder = navFrost ? '1px solid rgba(255,255,255,.08)' : '1px solid transparent';
-    const navBlur = navFrost ? 'blur(44px)' : 'blur(0px)';
+    // P10 — Marketing nav frost'i endi CSS klass bilan (scroll'da html.ffscrolled almashadi, setState EMAS).
+    //       landing = tepada tekis, scroll'da muzli; pricing/plugin = doim muzli (.nf klass).
+    const navCls = 'ffm-topnav' + (s !== 'landing' ? ' nf' : '');
     const navPricingCls = s === 'pricing' ? 'ffm-link on' : 'ffm-link';
     const navPluginCls = s === 'plugin' ? 'ffm-link on' : 'ffm-link';
     const mq = this.templates.map(t => ({ ...t, g: this.grad(t.h) }));
@@ -20106,7 +20142,7 @@ class Component extends DCLogic {
     const plansRv = plansView.map((p, i) => ({ ...p, rd: i * 110 }));
     const testsRv = testimonials.map((t, i) => ({ ...t, rd: i * 110 }));
     return {
-      navBg, navBorder, navBlur, navPricingCls, navPluginCls,
+      navCls, navPricingCls, navPluginCls,
       marqRow1, marqRow2, feedCards,
       // BATCH6 — nav mega-menyu + promo-strip holati
       megaCls: this.state.megaOpen ? 'ffl-mega on' : 'ffl-mega',
@@ -20145,7 +20181,7 @@ class Component extends DCLogic {
       lcPgBadge: lc.pluginPage.badge, lcPgTitle: lc.pluginPage.title, lcPgSub: lc.pluginPage.sub,
       lcPgCta: lc.pluginPage.ctaLabel, lcPgVersion: lc.pluginPage.versionNote, lcPgGuarantee: lc.pluginPage.guarantee,
       pluginStepsView,
-      statsView, tipText, tipAnim, pageAnim, scrollPW, marqA, marqB, heroWords, howSteps,
+      statsView, tipText, tipAnim, pageAnim, marqA, marqB, heroWords, howSteps,
       catTilesRv, studioRv, plansRv, testsRv,
       accentKey, animKey,
       showMarketing: marketing, showApp: app,
@@ -20413,6 +20449,8 @@ class Component extends DCLogic {
       useMenuOpen: this.state.useMenuOpen,
       onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
       onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) { this.setState({ lightbox: g, useMenuOpen: false }); this.refreshLightboxUrl(id); } } else this.setState({ activeGenId: id, useMenuOpen: false }); },
+      // P10#5 — media yuklandi: skeletonni darhol olib tashla + _mediaLoaded'ga belgila (setState YO'Q).
+      axMediaLoaded: (e) => { try { const el = e.currentTarget; const host = el && el.closest ? el.closest('.va-axres') : null; if (host) { host.classList.remove('va-skel'); const id = host.getAttribute('data-id'); if (id) (this._mediaLoaded || (this._mediaLoaded = new Set())).add(id); } } catch (er) {} },
       toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       closeUseMenu: () => this.setState({ useMenuOpen: false }),
