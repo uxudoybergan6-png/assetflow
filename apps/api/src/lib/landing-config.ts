@@ -224,14 +224,19 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       teaserFeats: ["HD template library", "Watermarked export", "1 active project"],
     },
     {
+      // P27 D4 — "Priority generation" olib tashlandi (gen-processor'da priority queue YO'Q, sotilib
+      // bajarilmayotgan xususiyat = huquqiy xavf). "Watermarked/4K watermark-free" QOLADI — u
+      // yagona real Free↔Pro farqi (P4/P23 GAP1 — watermark QURILISHI kerak, step 14).
       name: "Pro", price: 19, credits: "1,000 credits/mo", sub: "For professionals", cta: "Upgrade to Pro",
-      feats: ["1,000 AI credits per month", "All 10,000+ templates", "4K, watermark-free downloads", "Unlimited projects", "AE / Premiere plugin", "Priority generation", "Email support"],
+      feats: ["1,000 AI credits per month", "All 10,000+ templates", "4K, watermark-free downloads", "Unlimited projects", "AE / Premiere plugin", "Email support"],
       teaserFeats: ["All 10,000+ templates", "4K, watermark-free downloads", "AE / Premiere plugin"],
     },
     {
-      name: "Studio", price: 59, credits: "6,000 credits/mo", sub: "For teams", cta: "Choose Studio",
-      feats: ["6,000 AI credits per month", "Everything in Pro", "Team workspace (5 seats)", "Brand kit and templates", "API access", "Priority render queue", "Dedicated account manager"],
-      teaserFeats: ["Team workspace (5 seats)", "API access", "Dedicated account manager"],
+      // P27 D2 — Studio 6,000 → 3,000 kredit (og'ir tarifda ~2× marja tiklandi). D4 — "API access"
+      // (public API YO'Q) va "Priority render queue" (priority queue YO'Q) olib tashlandi.
+      name: "Studio", price: 59, credits: "3,000 credits/mo", sub: "For teams", cta: "Choose Studio",
+      feats: ["3,000 AI credits per month", "Everything in Pro", "Team workspace (5 seats)", "Brand kit and templates", "Dedicated account manager"],
+      teaserFeats: ["Team workspace (5 seats)", "Brand kit and templates", "Dedicated account manager"],
     },
   ],
   pluginPage: {

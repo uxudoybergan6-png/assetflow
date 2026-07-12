@@ -36,7 +36,9 @@ export async function recordPlanChange(
 export const AI_MONTHLY_CREDITS = {
   [PluginPlanTier.FREE]: 50,
   [PluginPlanTier.PRO]: 1000,
-  [PluginPlanTier.STUDIO]: 6000,
+  // P27 D2 — Studio 6000 → 3000 (og'ir tarifda ~2× marja). ⚠️ Bu STATIK FALLBACK; jonli grant
+  // PlanConfig DB qatoridan keladi — owner admin'da STUDIO aiMonthlyCredits'ni 3000 qilishi SHART.
+  [PluginPlanTier.STUDIO]: 3000,
 } as const;
 
 // ── FAZA 2 #13 — PlanConfig DB keshi ────────────────────────────────────────

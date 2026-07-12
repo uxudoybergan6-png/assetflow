@@ -39,6 +39,7 @@ import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
 import { moderationStartupWarning } from "./lib/moderation.js";
 import { findEnabledModelsWithoutCost, DEFAULT_PROVIDER_USD } from "./lib/provider-cost.js";
 import { validateGenModelsOrThrow } from "./lib/gen-models-validate.js";
+import { assertPricingFloorsOrThrow } from "./lib/assert-pricing-floors.js";
 import { startTemplateReconcilers } from "./lib/template-reconcile.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
@@ -348,6 +349,10 @@ function validateEnv() {
 // ko'tarilishini BLOKLAYDI (aniq xato: model id + maydon). Health-gated deploy buni
 // production'ga chiqarmaydi. Money-zone o'qish-faqat (narx maydonlari borligini tekshiradi).
 validateGenModelsOrThrow();
+
+// P27 D6 — narx pol tekshiruvi: biror plan/paket kredit'ni cost'dan past sotsa boot yiqiladi
+// (regressiya jimgina qaytmaydi). Money-zone o'qish-faqat — hech narsa o'zgartirmaydi.
+assertPricingFloorsOrThrow();
 
 app.listen(PORT, "0.0.0.0", () => {
   const stripe = process.env.STRIPE_SECRET_KEY?.trim();

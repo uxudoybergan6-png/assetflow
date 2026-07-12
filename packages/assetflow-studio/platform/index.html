@@ -17586,8 +17586,8 @@ class Component extends DCLogic {
 
   plans = [
     { key: 'free', name: 'Free', pm: 0, cr: '50 credits/mo', pop: false, cta: 'Get started', sub: 'For trying it out', feats: ['50 AI credits per month', 'HD template library', 'Watermarked export', '1 active project', 'Community support'], tf: ['HD template library', 'Watermarked export', '1 active project'] },
-    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Priority generation', 'Email support'], tf: ['All 10,000+ templates', '4K, watermark-free downloads', 'AE / Premiere plugin'] },
-    { key: 'studio', name: 'Studio', pm: 59, cr: '6,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For teams', feats: ['6,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'API access', 'Priority render queue', 'Dedicated account manager'], tf: ['Team workspace (5 seats)', 'API access', 'Dedicated account manager'] },
+    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'], tf: ['All 10,000+ templates', '4K, watermark-free downloads', 'AE / Premiere plugin'] },
+    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For teams', feats: ['3,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'Dedicated account manager'], tf: ['Team workspace (5 seats)', 'Dedicated account manager'] },
   ];
 
   testimonials = [
@@ -17727,11 +17727,11 @@ class Component extends DCLogic {
         feats: ['50 AI credits per month', 'HD template library', 'Watermarked export', '1 active project', 'Community support'],
         teaserFeats: ['HD template library', 'Watermarked export', '1 active project'] },
       { name: 'Pro', price: 19, credits: '1,000 credits/mo', sub: 'For professionals', cta: 'Upgrade to Pro',
-        feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Priority generation', 'Email support'],
+        feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'],
         teaserFeats: ['All 10,000+ templates', '4K, watermark-free downloads', 'AE / Premiere plugin'] },
-      { name: 'Studio', price: 59, credits: '6,000 credits/mo', sub: 'For teams', cta: 'Choose Studio',
-        feats: ['6,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'API access', 'Priority render queue', 'Dedicated account manager'],
-        teaserFeats: ['Team workspace (5 seats)', 'API access', 'Dedicated account manager'] },
+      { name: 'Studio', price: 59, credits: '3,000 credits/mo', sub: 'For teams', cta: 'Choose Studio',
+        feats: ['3,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'Dedicated account manager'],
+        teaserFeats: ['Team workspace (5 seats)', 'Dedicated account manager'] },
     ],
     pluginPage: {
       badge: 'After Effects · Premiere Pro', title: 'Install the FrameFlow plugin in one click',
@@ -17848,10 +17848,14 @@ class Component extends DCLogic {
     }).catch(() => {}); // ofline/xato — defaultlar/kesh bilan qolamiz
   }
 
+  // P27 D1 (owner-approved 2026-07-12) — narx saqlanadi, kredit qirqiladi: har paket $/kredit >=
+  // anchor ($0.020). Eski 500/1500/5000 zararli edi (1500 "save 20%" = anchordan ARZON → LOSS).
+  // ⚠️ Lemon Squeezy variant kreditlari SHU raqamlarga yangilanishi SHART (findCreditVariant
+  // credits bo'yicha map qiladi) — aks holda checkout buziladi.
   creditPacks = [
-    { c: 500, label: '500', p: 5, sub: 'For small projects', pop: false },
-    { c: 1500, label: '1,500', p: 12, sub: 'Most popular — save 20%', pop: true },
-    { c: 5000, label: '5,000', p: 35, sub: 'For professional work', pop: false },
+    { c: 250, label: '250', p: 5, sub: 'For small projects', pop: false },
+    { c: 600, label: '600', p: 12, sub: 'Most popular', pop: true },
+    { c: 1800, label: '1,800', p: 35, sub: 'For professional work', pop: false },
   ];
 
   // Yagona nav — mockup s6/d1: asosiy nav + HISOB bo'limi (bitta komponent, ikki kontekst)
