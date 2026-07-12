@@ -2986,8 +2986,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid{display:block;columns:2;column-gap:10px}
 /* width:100%/height:auto/flex:none — .axroot .rc{flex:0 0 60px;height:60px} (home strip) LEAK'ini yengadi:
    aks holda karta 60×60 kichik bo'lib qolardi. aspect-ratio:1/1 = DEFAULT (pending + nisbatsiz gen). */
-.recentgrid .rc{width:100%;height:auto;flex:none;break-inside:avoid;margin:0 0 10px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative}
+/* P17 — gen kartasi endi elevation (soft soya) + hover'da ko'tariladi; yuza/chegara=token (3 tema).
+   Soya=rgba qora (drop-shadow — och temada ham to'g'ri). Pending plitka ko'tarilmaydi. */
+.recentgrid .rc{width:100%;height:auto;flex:none;break-inside:avoid;margin:0 0 10px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25),0 6px 16px -8px rgba(0,0,0,.38);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
 .recentgrid .rc:hover{border-color:var(--mut2)}
+.recentgrid .rc:hover:not(.rc-pend){transform:translateY(-2px);box-shadow:0 2px 4px rgba(0,0,0,.3),0 12px 26px -10px rgba(0,0,0,.5)}
 /* ── PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala (rasm+video umumiy) ── */
 .recentgrid .rc-pend{cursor:default;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:12px 10px;background:var(--card3);border:1px solid var(--line2)!important}
 .recentgrid .rc-pend .rc-cat{position:absolute;top:6px;left:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:6px}
@@ -7140,6 +7143,8 @@ function homeGenItem(g){
   const a=(g.assets&&g.assets[0])||{}; const p=g.params||{};
   const cat=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
   return { id:g.id, mode:g.mode, cat:cat, url:a.url||'', thumb:a.thumbUrl||a.url||'', downloadUrl:a.downloadUrl||null,
+    // P9 — 1280 display (Retina karta) + 720p hover preview + haqiqiy piksellar
+    display:a.displayUrl||null, preview:a.previewUrl||null, width:a.width||null, height:a.height||null,
     title:((g.prompt||'').trim()||'Result'), prompt:(g.prompt||'').trim(), params:p,
     modelLabel:p.modelLabel||'', createdAt:g.createdAt, cost:(typeof g.cost==='number'?g.cost:null) };
 }
@@ -9782,6 +9787,7 @@ async function bootPlugin(){
       var pp=it.params||{};
       addChip(it.modelLabel||pp.modelLabel||'');
       addChip([pp.aspectRatio,pp.resolution||pp.quality].filter(Boolean).join(' · ')||it.sub||'');
+      if(it.width&&it.height)addChip(it.width+'×'+it.height); // P11 — haqiqiy o'lcham
       if(typeof it.cost==='number'&&it.cost>0)addChip('✦ '+it.cost);
       if(it.createdAt){ try{ var d=new Date(it.createdAt); if(!isNaN(d.getTime())){ var now=new Date(); var same=d.toDateString()===now.toDateString(); addChip((same?'today':String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0'))+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); } }catch(e){} }
       pr.textContent=prompt;
@@ -9819,8 +9825,9 @@ async function bootPlugin(){
       var arCss=genAspectCss(it); if(arCss) d.style.aspectRatio=arCss; // P5: haqiqiy nisbat (1/1 default'ni yengadi)
       if(cat==='video'){
         // haqiqiy poster (thumbUrl ≠ video url) bo'lsa u darhol chiziladi; bo'lmasa birinchi kadr yuklanadi
+        // P9.2: hover 720p preview (bo'lsa) — asl to'liq faylni oqizmaydi
         var vPoster=(it.thumb&&it.thumb!==it.url)?it.thumb:null;
-        var vEl=(typeof window.afVideoThumb==='function')?window.afVideoThumb(it.url,vPoster):null;
+        var vEl=(typeof window.afVideoThumb==='function')?window.afVideoThumb(it.preview||it.url,vPoster):null;
         if(vEl){ d.appendChild(vEl);
           // HOVER PREVIEW: sichqoncha → JIM (muted) o'ynaydi; ketganда → to'xtab birinchi kadrга qaytadi (ovozsiz)
           d.addEventListener('mouseenter',function(){ try{ vEl.muted=true; var pp=vEl.play(); if(pp&&pp.catch)pp.catch(function(){}); }catch(e){} });
@@ -9829,11 +9836,12 @@ async function bootPlugin(){
         var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML=IC.play; d.appendChild(pv); }
       else if(cat==='audio'||cat==='sfx'){ var pa=document.createElement('div'); pa.className='pv'; pa.innerHTML=IC.aud; d.appendChild(pa); }
       else {
-        // P4: birinchi ko'rinadigan kartalar EAGER (grid darhol chiziladi), qolganlar lazy;
-        // src endi HAQIQIY kichik thumb (backend P4) — to'liq rasm faqat lightbox'da.
+        // P4/P9: birinchi ko'rinadigan kartalar EAGER (grid darhol chiziladi), qolganlar lazy;
+        // src endi 1280 display derivativini afzal ko'radi (Retina'da aniq); srcset 512/1280.
         var im=document.createElement('img');
         var _li=(ctx.list&&typeof ctx.list==='function')?(ctx.list()||[]).indexOf(it):-1;
-        im.loading=(_li>-1&&_li<4)?'eager':'lazy'; im.decoding='async'; im.alt=''; im.src=(it.thumb||it.url);
+        im.loading=(_li>-1&&_li<4)?'eager':'lazy'; im.decoding='async'; im.alt=''; im.src=(it.display||it.thumb||it.url);
+        if(it.display&&it.thumb){ im.srcset=it.thumb+' 512w, '+it.display+' 1280w'; im.sizes='(max-width:520px) 50vw, 240px'; }
         im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
         d.appendChild(im);
       }
@@ -10005,6 +10013,7 @@ async function bootPlugin(){
         var p=(g.params||{});
         var sub=[p.aspectRatio,p.quality||p.resolution,p.duration?(p.duration+'s'):null].filter(Boolean).join(' · ');
         return {id:g.id,t:histType(g.mode),mode:g.mode,url:a.url||'',thumb:a.thumbUrl||a.url||'',downloadUrl:a.downloadUrl||null,
+          display:a.displayUrl||null,preview:a.previewUrl||null,width:a.width||null,height:a.height||null, // P9
           title:((g.prompt||'').trim()||'Result').slice(0,60),sub:sub,
           prompt:(g.prompt||'').trim(),params:p, // FIX G: lightbox meta karta uchun to'liq prompt+params
           cost:(typeof g.cost==='number'?g.cost:0),created:g.createdAt};
@@ -10432,6 +10441,7 @@ window.afGallery=(function(){
       var a=(g.assets&&g.assets[0])||{}; var p=g.params||{};
       var sub=[p.aspectRatio,p.quality||p.resolution,(p.duration?(p.duration+'s'):null)].filter(Boolean).join(' · ');
       return { id:g.id, mode:g.mode, cat:cat(g.mode), url:a.url||'', thumb:a.thumbUrl||a.url||'',
+        display:a.displayUrl||null, preview:a.previewUrl||null, width:a.width||null, height:a.height||null, // P9
         title:((g.prompt||'').trim()||'Result'), sub:sub, createdAt:g.createdAt,
         prompt:(g.prompt||'').trim(), params:p,
         cost:(typeof g.cost==='number'?g.cost:null), size:(a&&a.sizeBytes)||0 };
@@ -11562,8 +11572,8 @@ window.afGallery=(function(){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
         var ex=null; st.recent.some(function(x){ if(x.id===g.id||x.url===url){ex=x;return true;} return false;});
-        if(ex){ ex.url=url; ex.thumb=a.thumbUrl||url; } // yangi imzolangan URL — eski (eskirgan) o'rniga
-        else st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,downloadUrl:a.downloadUrl||null,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
+        if(ex){ ex.url=url; ex.thumb=a.thumbUrl||url; ex.display=a.displayUrl||null; ex.preview=a.previewUrl||null; ex.width=a.width||null; ex.height=a.height||null; } // P9: qayta imzolangan URL'lar
+        else st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,display:a.displayUrl||null,preview:a.previewUrl||null,width:a.width||null,height:a.height||null,downloadUrl:a.downloadUrl||null,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
       });
       recentLoaded=true; recentLoading=false; recentLoadedAt=Date.now(); st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Check your internet or session.'; renderRecentGrid(); });
