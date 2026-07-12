@@ -1454,14 +1454,21 @@ setTimeout(() => {
   });
 }, 1000);
 
-// P1: stuck gen refund'i endi panel ochilishiga bog'liq EMAS — global reconcile FON JADVALIDA
-// (60s). Har o'tishda cutoff'dan (20 daq) oshган queued/running genlar fail+refund bo'ladi →
-// foydalanuvchi panelni qayta ochmasa ham krediti bounded vaqtda (cutoff + ~60s) qaytadi.
+// P1: stuck gen refund'i endi panel ochilishiga bog'liq EMAS — global reconcile FON JADVALIDA.
+// Har o'tishda cutoff'dan (20 daq) oshган queued/running genlar fail+refund bo'ladi →
+// foydalanuvchi panelni qayta ochmasa ham krediti bounded vaqtda (cutoff + interval) qaytadi.
+// Interval env orqali sozlanadi (default 10 daq). Neon compute-soatlarini tejash uchun uzoq
+// tanlangan: cutoff (20 daq) yonida 10 daq detektsiya kechikishi ahamiyatsiz, lekin bo'sh
+// bazani soatiga 60 marta emas 6 marta uyg'otadi.
+const GEN_RECONCILE_INTERVAL_MS = Math.max(
+  60_000,
+  Number(process.env.GEN_RECONCILE_INTERVAL_MS) || 600_000,
+);
 const genReconcileTimer = setInterval(() => {
   reconcileAllStuckGenerations().catch((e) => {
     console.error("[studio-gen] global reconcile xato:", e);
   });
-}, 60_000);
+}, GEN_RECONCILE_INTERVAL_MS);
 if (typeof genReconcileTimer.unref === "function") genReconcileTimer.unref();
 // Startup: bir martalik backfill (eski refund-siz failed genlar) + darhol bir global reconcile.
 setTimeout(() => {
