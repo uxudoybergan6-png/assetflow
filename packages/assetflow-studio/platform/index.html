@@ -15473,8 +15473,9 @@
   .ff .va-sessnew{display:flex;align-items:center;justify-content:center;gap:7px;height:36px;border-radius:11px;background:var(--limedim);border:1px dashed color-mix(in srgb,var(--lime) 40%,transparent);color:var(--lime);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;flex:none}
   .ff .va-sessnew:hover{border-style:solid}
   .ff .va-sesslist{display:flex;flex-direction:column;gap:4px;min-height:0}
-  .ff .va-sessrow{position:relative;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:11px;cursor:pointer;border:1px solid transparent}
-  .ff .va-sessrow:hover{background:var(--f1)}
+  /* P17 — sessiya qatorlari endi nozik yuza + hairline (avval faqat transparent chegara → "tugallanmagan") */
+  .ff .va-sessrow{position:relative;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:11px;cursor:pointer;border:1px solid var(--hair);background:var(--surface);transition:background .14s ease,border-color .14s ease}
+  .ff .va-sessrow:hover{background:var(--surface2);border-color:var(--hair2)}
   .ff .va-sessrow.on{background:var(--f1);border-color:color-mix(in srgb,var(--lime) 35%,transparent)}
   .ff .va-sessrow .cv{width:38px;height:38px;flex:none;border-radius:9px;background:var(--surface2);background-size:cover !important;background-position:center !important;display:grid;place-items:center;color:var(--muted);font-size:15px;overflow:hidden}
   .ff .va-sessrow .cv.lib{background:var(--limedim);color:var(--lime)}
@@ -15521,7 +15522,48 @@
   .ff .va-axgrid{columns:340px;column-gap:16px}
   .ff .va-axgrid.compact{columns:200px;column-gap:12px}
   .ff .va-axcell{position:relative;break-inside:avoid;margin-bottom:14px}
-  .ff .va-axres{position:relative;border-radius:14px;overflow:hidden;background-color:var(--media);background-size:cover;background-position:center;aspect-ratio:16/10;cursor:pointer}
+  /* P17 — gen kartasi endi HAQIQIY yuza: token yuza + hairline + elevation; hover'da ko'tariladi.
+     Ranglar SOF token (noir/neon/cold da to'g'ri); soya = rgba(0,0,0) (temaga bog'liq emas). */
+  .ff .va-axres{position:relative;border-radius:14px;overflow:hidden;background-color:var(--surface);border:1px solid var(--hair2);box-shadow:0 1px 2px rgba(0,0,0,.4),0 10px 26px -14px rgba(0,0,0,.65);background-size:cover;background-position:center;aspect-ratio:16/10;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+  .ff .va-axres:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--text) 20%,transparent);box-shadow:0 2px 4px rgba(0,0,0,.45),0 18px 40px -16px rgba(0,0,0,.75)}
+  /* qorong'i media chekkasi ko'rinsin (P17.4) — ichki nozik halqa */
+  .ff .va-axres .va-media{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  /* P11 — LIGHTBOX qayta qurish: full-viewport, katta media + o'ng detal paneli, ←/→ nav.
+     Yuza/hairline = token (3 tema); scrim/tag/strelka = qora rgba (temaga bog'liq emas). */
+  .ff .va-lb-scrim{position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;place-items:center;padding:3vh 3vw}
+  .ff .va-lb-x{position:fixed;top:18px;right:20px;z-index:2;width:40px;height:40px;border-radius:12px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px}
+  .ff .va-lb-x:hover{background:rgba(0,0,0,.72)}
+  .ff .va-lb-shell{display:flex;width:100%;max-width:1400px;max-height:94vh;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.85)}
+  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:24px;background:var(--media)}
+  .ff .va-lb-el{display:block;max-width:100%;max-height:88vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:#000}
+  .ff .va-lb-aud{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(520px,82%)}
+  .ff .va-lb-aud>i{font-size:64px;color:var(--acc)}
+  .ff .va-lb-tag{position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font:600 10px var(--mono);color:#fff;letter-spacing:.05em}
+  .ff .va-lb-arw{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:19px;transition:background .15s}
+  .ff .va-lb-arw:hover{background:rgba(0,0,0,.75)}
+  .ff .va-lb-arw.prev{left:14px}
+  .ff .va-lb-arw.next{right:14px}
+  .ff .va-lb-panel{flex:none;width:328px;display:flex;flex-direction:column;gap:18px;padding:22px 20px;border-left:1px solid var(--hair);overflow-y:auto;background:var(--surface)}
+  .ff .va-lb-author{display:flex;align-items:center;gap:11px}
+  .ff .va-lb-avt{width:38px;height:38px;flex:none;border-radius:50%;background:var(--limedim);color:var(--lime);display:grid;place-items:center;font-size:17px}
+  .ff .va-lb-nm{font-weight:600;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-lb-sub{font:500 11px var(--mono);color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-lb-sect{display:flex;flex-direction:column;gap:8px}
+  .ff .va-lb-lbl{display:flex;align-items:center;justify-content:space-between;font:700 10px var(--mono);letter-spacing:.08em;color:var(--muted)}
+  .ff .va-lb-copy{display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:var(--acc);font:600 11px inherit;cursor:pointer;padding:0}
+  .ff .va-lb-prompt{font-size:13px;line-height:1.55;color:var(--text-2);max-height:190px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+  .ff .va-lb-rows{display:flex;flex-direction:column;gap:1px;border-radius:10px;overflow:hidden;border:1px solid var(--hair)}
+  .ff .va-lb-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--surface2);font-size:12.5px}
+  .ff .va-lb-row>span{color:var(--muted)}
+  .ff .va-lb-row>b{color:var(--text);font-weight:600;text-align:right;word-break:break-word}
+  .ff .va-lb-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
+  .ff .va-lb-del{width:38px;padding:0}
+  @media (max-width:820px){
+    .ff .va-lb-shell{flex-direction:column}
+    .ff .va-lb-stage{max-height:54vh}
+    .ff .va-lb-el{max-height:50vh}
+    .ff .va-lb-panel{width:auto;border-left:none;border-top:1px solid var(--hair)}
+  }
   .ff .va-axres .rtag{position:absolute;top:9px;left:9px;font:600 8px var(--mono);padding:2.5px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3;letter-spacing:.05em;z-index:1}
   .ff .va-axres.sel{outline:2px solid var(--lime);outline-offset:-2px}
   .ff .va-axabar{position:absolute;left:9px;right:9px;bottom:9px;display:flex;align-items:center;gap:6px;z-index:2}
@@ -16596,7 +16638,7 @@
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell">
                           <div data-id="{{ g.id }}" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
-                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" alt="{{ g.label }}" onload="{{ axMediaLoaded }}"></sc-if>
+                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}"></video></sc-if>
                             <span class="rtag">{{ g.rtag }}</span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
@@ -17178,30 +17220,50 @@
     </div>
   </sc-if>
 
-  <!-- LIGHTBOX -->
+  <!-- LIGHTBOX (P11 — katta ko'rinish, haqiqiy nisbat, o'ng detal paneli, ←/→ nav) -->
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeLightbox }}" style="position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
-      <div onclick="{{ stop }}" style="width:100%;max-width:620px">
-        <div style="position:relative;aspect-ratio:{{ lb.asp }};border-radius:20px;overflow:hidden;background:{{ lb.g }};border:1px solid var(--hair2);box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
-          <!-- QA-FIX #3: controls=""/playsinline="" React'da FALSY prop edi (video boshqaruvsiz qora quti) —
-               endi {{ true }} bilan chin boolean; poster=thumb (qora kadr o'rniga), poster yo'q bo'lsa
-               preload=metadata birinchi kadrni chizadi. -->
-          <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video></sc-if>
-          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><audio src="{{ lb.url }}" preload="metadata" controls="{{ true }}" style="position:absolute;left:14px;right:14px;bottom:14px;width:calc(100% - 28px)"></audio></sc-if>
-          <button onclick="{{ closeLightbox }}" style="position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:none;color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px"><i class="ph ph-x"></i></button>
-          <div style="position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#fff"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tag }}</div>
+    <div onclick="{{ closeLightbox }}" class="va-lb-scrim">
+      <button onclick="{{ closeLightbox }}" class="va-lb-x" title="Close (Esc)"><i class="ph ph-x"></i></button>
+      <div onclick="{{ stop }}" class="va-lb-shell">
+        <div class="va-lb-stage">
+          <sc-if value="{{ lb.hasPrev }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw prev" onclick="{{ lbPrev }}" title="Previous (←)"><i class="ph ph-caret-left"></i></button></sc-if>
+          <!-- QA-FIX #3: controls/playsinline chin boolean; poster=thumb (blur-up), asl src to'liq sifat. -->
+          <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
+          <sc-if value="{{ lb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ lb.imgSrc }}" alt="{{ lb.label }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></sc-if>
+          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><i class="ph-fill ph-waveform"></i><audio src="{{ lb.url }}" preload="metadata" controls="{{ true }}" style="width:100%"></audio></div></sc-if>
+          <span class="va-lb-tag"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tag }}</span>
+          <sc-if value="{{ lb.hasNext }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw next" onclick="{{ lbNext }}" title="Next (→)"><i class="ph ph-caret-right"></i></button></sc-if>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;flex-wrap:wrap">
-          <div style="min-width:0"><div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lb.label }}</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace">{{ lb.tool }}</div></div>
-          <div style="display:flex;gap:9px">
+        <aside class="va-lb-panel">
+          <div class="va-lb-author">
+            <span class="va-lb-avt"><i class="ph-fill ph-user"></i></span>
+            <div style="min-width:0"><div class="va-lb-nm">{{ lb.author }}</div><div class="va-lb-sub">{{ lb.tool }}<sc-if value="{{ lb.posLabel }}" hint-placeholder-val="{{ false }}"> · {{ lb.posLabel }}</sc-if></div></div>
+          </div>
+          <sc-if value="{{ lb.hasPrompt }}" hint-placeholder-val="{{ true }}">
+            <div class="va-lb-sect">
+              <div class="va-lb-lbl">PROMPT<button class="va-lb-copy" onclick="{{ lbCopyPrompt }}"><i class="ph ph-copy"></i>Copy</button></div>
+              <div class="va-lb-prompt">{{ lb.prompt }}</div>
+            </div>
+          </sc-if>
+          <div class="va-lb-sect">
+            <div class="va-lb-lbl">DETAILS</div>
+            <div class="va-lb-rows">
+              <div class="va-lb-row"><span>Model</span><b>{{ lb.dModel }}</b></div>
+              <div class="va-lb-row"><span>Quality</span><b>{{ lb.dQuality }}</b></div>
+              <div class="va-lb-row"><span>Size</span><b>{{ lb.dSize }}</b></div>
+              <sc-if value="{{ lb.showDur }}" hint-placeholder-val="{{ false }}"><div class="va-lb-row"><span>Duration</span><b>{{ lb.dDur }}</b></div></sc-if>
+              <div class="va-lb-row"><span>Created</span><b>{{ lb.dCreated }}</b></div>
+            </div>
+          </div>
+          <div class="va-lb-acts">
             <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
             <sc-if value="{{ lb.canProject }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbAddProj }}" class="ffm-btn2 sm"><i class="ph ph-folder-plus" style="font-size:14px"></i>Project</button></sc-if>
             <sc-if value="{{ lb.canRef }}" hint-placeholder-val="{{ false }}"><button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button></sc-if>
             <!-- BATCH4 #1 — lightbox'dan Upscale (x2 default; faktor composer'da o'zgartiriladi) -->
             <sc-if value="{{ lb.canUpscale }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbUpscale }}" class="ffm-btn2 sm"><i class="ph ph-frame-corners" style="font-size:14px"></i>Upscale</button></sc-if>
-            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm" style="width:38px;padding:0" title="Delete"><i class="ph ph-trash" style="font-size:15px;color:var(--th-danger)"></i></button></sc-if>
+            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm va-lb-del" title="Delete"><i class="ph ph-trash" style="font-size:15px"></i></button></sc-if>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   </sc-if>
@@ -17968,8 +18030,9 @@ class Component extends DCLogic {
       }
       const h = (window.location.hash || '').replace('#', '') || pathScreen;
       if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h, { replace: true }); }
-      // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y)
+      // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
+        if (this.state.lightbox && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) { ev.preventDefault(); this._lbGo(ev.key === 'ArrowLeft' ? -1 : 1); return; }
         if (ev.key !== 'Escape') return;
         if (this.state.megaOpen) { this.setState({ megaOpen: false }); return; }
         if (this.state.lightbox) { this.setState({ lightbox: null }); return; }
@@ -18344,12 +18407,28 @@ class Component extends DCLogic {
     FFAPI.genGet(genId).then(g => {
       if (!g) return;
       const m = this.mapGen(g);
+      // P9/P11 — qayta imzolangan display/preview URL'larini ham yangilaymiz (aks holda lightbox 403)
+      const fresh = { url: m.url, thumb: m.thumb, display: m.display, preview: m.preview, w: m.w, hgt: m.hgt };
       this.setState(s => {
-        const patch = { gens: s.gens.map(x => x.id === m.id ? Object.assign({}, x, { url: m.url, thumb: m.thumb }) : x) };
-        if (s.lightbox && s.lightbox.id === m.id) patch.lightbox = Object.assign({}, s.lightbox, { url: m.url, thumb: m.thumb });
+        const patch = { gens: s.gens.map(x => x.id === m.id ? Object.assign({}, x, fresh) : x) };
+        if (s.lightbox && s.lightbox.id === m.id) patch.lightbox = Object.assign({}, s.lightbox, fresh);
         return patch;
       });
     }).catch(() => {});
+  }
+  /** P11 — lightbox'da oldingi/keyingi generatsiyaga o'tish (grid tartibida). */
+  _lbGo(dir) {
+    const st = this.state; if (!st.lightbox) return;
+    const inLib = !st.viewSess;
+    const base = inLib ? st.gens : (st.viewSess === 'new' ? [] : st.sessGens);
+    const arr = (base && base.length) ? base : st.gens;
+    const i = arr.findIndex(x => x.id === st.lightbox.id);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    const g = arr[j];
+    this.setState({ lightbox: g, activeGenId: g.id });
+    this.refreshLightboxUrl(g.id);
   }
   async loadModels(attempt) {
     const modes = ['image', 'video', 'voice', 'sfx'];
@@ -18493,11 +18572,18 @@ class Component extends DCLogic {
       tool: this.toolByMode[it.mode] || it.mode,
       url: (asset && asset.url) || null,
       thumb: (asset && (asset.thumbUrl || (type === 'image' ? asset.url : null))) || null,
+      // P9/P11 — 1280 display derivativ (karta srcset + lightbox), 720p hover preview, haqiqiy piksellar
+      display: (asset && asset.displayUrl) || null,
+      preview: (asset && asset.previewUrl) || null,
+      w: (asset && asset.width) || null, hgt: (asset && asset.height) || null,
       cost: it.cost || 0, at: it.createdAt || null,
       // PHASE B rail/audio metadata (additive — render uchun)
       mode: it.mode || '', modelId: it.modelId != null ? it.modelId : null,
       // QA-FIX #14 — real aspect (masonry uchun): gen params'dagi so'ralgan nisbat
       ar: (it.params && (it.params.aspectRatio || it.params.aspect_ratio)) || '',
+      // P11 — lightbox detal paneli uchun: sifat/o'lcham + davomiylik
+      q: (it.params && (it.params.quality || it.params.resolution)) || '',
+      dur: (it.params && it.params.duration) || '',
     };
   }
 
@@ -19468,13 +19554,19 @@ class Component extends DCLogic {
     //    media chindan yo'q bo'lsagina gradient fallback qoladi.
     const arCss = (r) => { const m = /^(\d+):(\d+)$/.exec(String(r || '').trim()); return m ? (m[1] + ' / ' + m[2]) : null; };
     const genMediaOf = (g) => {
-      const imgSrc = g.type === 'image' ? (g.thumb || g.url) : null;
+      // P9 — karta rasmi endi 1280px "display" derivativini afzal ko'radi (Retina'da aniq);
+      //      srcset = 512 thumb + 1280 display → 1× kichik ekran 512, 2× ekran 1280 tanlaydi.
+      const imgSrc = g.type === 'image' ? (g.display || g.thumb || g.url) : null;
+      const srcParts = [];
+      if (g.type === 'image') { if (g.thumb) srcParts.push(g.thumb + ' 512w'); if (g.display) srcParts.push(g.display + ' 1280w'); }
+      const imgSrcset = srcParts.length > 1 ? srcParts.join(', ') : '';
       const isVidMedia = g.type === 'video' && !!g.url;
       const isAud = g.type === 'audio' || g.type === 'sfx';
       const hasMedia = !!imgSrc || isVidMedia || isAud;
       return {
-        imgSrc: imgSrc || null, hasImg: !!imgSrc,
-        isVidMedia, vidSrc: g.url || null, vidPoster: g.thumb || null, vidPre: g.thumb ? 'none' : 'metadata',
+        imgSrc: imgSrc || null, hasImg: !!imgSrc, imgSrcset,
+        // P9.2 — hover 720p preview (bo'lsa), aks holda asl fayl
+        isVidMedia, vidSrc: g.type === 'video' ? (g.preview || g.url || null) : null, vidPoster: g.thumb || null, vidPre: g.thumb ? 'none' : 'metadata',
         isAud, mcls: (imgSrc || isVidMedia) ? ' va-skel' : '',
         g: hasMedia ? '' : this.grad(g.h),
         asp: arCss(g.ar) || (g.type === 'video' ? '16 / 9' : (isAud ? '16 / 6' : '1 / 1')),
@@ -19912,9 +20004,39 @@ class Component extends DCLogic {
       hasColMore: colMoreN > 0, colMoreN,
     } : null;
     const lbRaw = this.state.lightbox;
-    // QA-FIX #3 — lightbox video poster: thumb bo'lsa poster, bo'lmasa null (preload=metadata birinchi kadrni chizadi)
-    // §A (P1) — canRef: "Reference" tugmasi faqat RASM natijalarda (video/ovoz/SFX uchun ma'nosiz edi)
-    const lb = lbRaw ? { ...lbRaw, poster: lbRaw.thumb || null, g: media(lbRaw.type === 'image' ? (lbRaw.thumb || lbRaw.url) : lbRaw.thumb, lbRaw.h), isVideo: lbRaw.type === 'video' && !!lbRaw.url, isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url, asp: lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'), tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))), canProject: true, canDelete: true, canRef: lbRaw.type === 'image', canUpscale: (lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0]) || (lbRaw.type === 'video' && !!(this.state.genModels.vupscale || [])[0]) } : null;
+    // P11 — lightbox qayta qurildi: rasm endi HAQIQIY <img> (display||asl, thumb EMAS), haqiqiy nisbat
+    //        (params.ar → w/h), katta ko'rinish, o'ng detal paneli, ←/→ navigatsiya.
+    const lbList = (wsGens && wsGens.length) ? wsGens : this.state.gens;
+    const lbIdx = lbRaw ? lbList.findIndex(x => x.id === lbRaw.id) : -1;
+    const lbW = lbRaw && lbRaw.w, lbH = lbRaw && lbRaw.hgt;
+    const lb = lbRaw ? {
+      ...lbRaw,
+      isImage: lbRaw.type === 'image',
+      isVideo: lbRaw.type === 'video' && !!lbRaw.url,
+      isAudio: (lbRaw.type === 'audio' || lbRaw.type === 'sfx') && !!lbRaw.url,
+      // rasm src = 1280 display (bo'lsa) yoki asl; thumb faqat poster/blur-up
+      imgSrc: lbRaw.type === 'image' ? (lbRaw.display || lbRaw.url || lbRaw.thumb) : null,
+      poster: lbRaw.thumb || null,
+      // haqiqiy nisbat: params.ar → haqiqiy piksellar → tur bo'yicha zaxira (hard-code EMAS)
+      asp: arCss(lbRaw.ar) || ((lbW && lbH) ? (lbW + ' / ' + lbH) : (lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'))),
+      // hech qachon natural'dan katta cho'zilmasin (P11 #3): max-width = min(konteyner, haqiqiy kenglik)
+      maxW: (lbW && lbW > 0) ? ('min(100%, ' + lbW + 'px)') : '100%',
+      tIcon: lbRaw.type === 'video' ? 'play-circle' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? 'waveform' : 'image'),
+      tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))),
+      // detal panel
+      author: (this.state.user && (this.state.user.name || this.state.user.email)) || 'You',
+      dModel: modelLabelById[lbRaw.modelId] || '—',
+      dQuality: lbRaw.q || '—',
+      dSize: (lbW && lbH) ? (lbW + '×' + lbH) : '—',
+      dCreated: lbRaw.at ? fmtAgo(lbRaw.at) : '—',
+      dDur: lbRaw.dur ? (String(lbRaw.dur).replace(/s$/i, '') + 's') : '',
+      showDur: !!lbRaw.dur && lbRaw.type === 'video',
+      hasPrompt: !!(lbRaw.prompt && String(lbRaw.prompt).trim()),
+      hasPrev: lbIdx > 0, hasNext: lbIdx >= 0 && lbIdx < lbList.length - 1,
+      posLabel: lbIdx >= 0 ? ((lbIdx + 1) + ' / ' + lbList.length) : '',
+      canProject: true, canDelete: true, canRef: lbRaw.type === 'image',
+      canUpscale: (lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0]) || (lbRaw.type === 'video' && !!(this.state.genModels.vupscale || [])[0]),
+    } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
     const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
@@ -20604,6 +20726,10 @@ class Component extends DCLogic {
       doGenerate: () => this.generate(),
       openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = wsGens.find(x => x.id === id) || this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
       closeLightbox: () => this.setState({ lightbox: null }),
+      // P11 — lightbox oldingi/keyingi generatsiya + prompt nusxa
+      lbPrev: (e) => { if (e) e.stopPropagation(); this._lbGo(-1); },
+      lbNext: (e) => { if (e) e.stopPropagation(); this._lbGo(1); },
+      lbCopyPrompt: (e) => { if (e) e.stopPropagation(); const g = this.state.lightbox; if (g && g.prompt) { try { navigator.clipboard.writeText(g.prompt); this.toast('Prompt copied'); } catch (er) {} } },
       // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
