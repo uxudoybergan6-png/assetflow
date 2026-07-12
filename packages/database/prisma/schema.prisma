@@ -4,7 +4,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Runtime client — Neon POOLED endpoint (-pooler, pgbouncer=true) ishlatilsin (P8 #2).
   url      = env("DATABASE_URL")
+  // Migratsiya/introspeksiya — DIRECT (poolsiz) endpoint. pgbouncer migratsiya DDL'ni
+  // qo'llab-quvvatlamaydi, shuning uchun migrate:deploy shu URL'dan foydalanadi.
+  // DIRECT_DATABASE_URL o'rnatilmagan bo'lsa CI uni DATABASE_URL'ga tenglashtiradi (fallback).
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 enum UserRole {
