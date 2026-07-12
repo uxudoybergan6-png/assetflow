@@ -4124,11 +4124,10 @@ html.home-mode #homePage{display:block!important}
                             <div class="vpanel settings-panel">
                             <div class="sect">
                               <div class="lbl">Settings <span class="meta clearbtn" id="igClearBtn" title="Clear prompt and references"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</span></div>
+                              <!-- P16 — BITTA sozlama chipi (tor panelda MAJBURIY): Ratio/Quality/Count bitta ⚙ chip + guruhlangan sheet'ga yig'ildi -->
                               <div class="pillbar">
                                 <div class="pillseg" id="igModelSeg"><div class="plab">Model</div><div class="pval" id="igMName">…</div></div>
-                                <div class="pillseg" id="igArSeg"><div class="plab">Ratio</div><div class="pval" id="igArVal">Auto</div></div>
-                                <div class="pillseg" id="igQSeg"><div class="plab" id="igQLab">Quality</div><div class="pval" id="igQVal">High</div></div>
-                                <div class="pillseg" id="igNSeg"><div class="plab">Count</div><div class="pval" id="igNVal">1</div></div>
+                                <div class="pillseg" id="igSetSeg"><div class="plab">Settings</div><div class="pval" id="igSetVal">Auto</div></div>
                               </div>
                               <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate image<span class="costtag" id="igCost">✦—</span></button>
                             </div>
@@ -4183,23 +4182,12 @@ html.home-mode #homePage{display:block!important}
                             </div>
                           </div></div>
 
-                          <!-- o'lcham -->
-                          <div class="sheet pop" id="igArSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Ratio</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="igArPills"></div>
-                            <div class="axighint" style="text-align:left">Auto — taken from the input image.</div>
-                          </div></div>
-
-                          <!-- sifat -->
-                          <div class="sheet pop" id="igQSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Quality</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="igQPills"></div>
-                          </div></div>
-
-                          <!-- soni -->
-                          <div class="sheet pop" id="igNSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Count</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="pillrow" id="igNPills"></div>
+                          <!-- P16 — GURUHLANGAN sozlama sheet'i: Aspect Ratio / Quality / Count bitta popover'da -->
+                          <div class="sheet pop" id="igSetSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Settings</b><span class="x" data-igclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="ai-set-sec"><h5>Aspect Ratio</h5><div class="pillrow" id="igArPills"></div></div>
+                            <div class="ai-set-sec" id="igQSec"><h5 id="igQLab">Quality</h5><div class="pillrow" id="igQPills"></div></div>
+                            <div class="ai-set-sec"><h5>Count</h5><div class="pillrow" id="igNPills"></div></div>
                           </div></div>
 
                           <!-- lightbox: umumiy #afLightbox (afRecent) ishlatiladi — eski #igLightbox olib tashlandi -->
@@ -4274,12 +4262,11 @@ html.home-mode #homePage{display:block!important}
                               <!-- Sozlamalar (pill qatori) — FIX5: rasm tool lbl + Tozalash idiomi -->
                               <div class="sect">
                                 <div class="lbl">Settings <span class="meta clearbtn" id="vgClearBtn" title="Clear prompt and references"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</span></div>
+                                <!-- P16 — BITTA sozlama chipi: Ratio/Resolution/Duration/Bitrate bitta ⚙ chip + guruhlangan sheet;
+                                     Audio esa alohida toggle (target layout: mode · model · sozlama · toggle) -->
                                 <div class="pillbar">
                                   <div class="pillseg" id="vgModelSeg"><div class="plab">Model</div><div class="pval" id="vgMName">…</div></div>
-                                  <div class="pillseg" id="vgArSeg"><div class="plab">Ratio</div><div class="pval" id="vgArVal">Auto</div></div>
-                                  <div class="pillseg" id="vgResSeg"><div class="plab">Resolution</div><div class="pval" id="vgResVal">720p</div></div>
-                                  <div class="pillseg" id="vgDurSeg"><div class="plab">Duration</div><div class="pval" id="vgDurVal">Auto</div></div>
-                                  <div class="pillseg" id="vgBitSeg" style="display:none"><div class="plab">Bitrate</div><div class="pval" id="vgBitVal">standard</div></div>
+                                  <div class="pillseg" id="vgSetSeg"><div class="plab">Settings</div><div class="pval" id="vgSetVal">720p · Auto</div></div>
                                   <div class="pillseg tgl" id="vgAudToggle" style="display:none"><div><div class="plab">Audio</div><div class="pval" id="vgAudVal">Off</div></div><div class="ptr"></div></div>
                                 </div>
                                 <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate video<span class="costtag" id="vgCost">✦—</span></button>
@@ -4363,32 +4350,14 @@ html.home-mode #homePage{display:block!important}
                             </div>
                           </div></div>
 
-                          <!-- Sifat (resolution) — FIX4/5: pill yonida popover (b7 birlashgan sheet o'rniga) -->
-                          <div class="sheet pop" id="vgResSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Resolution</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="vg-chiprow" id="vgResPills"></div>
-                            <div class="axighint" id="vgResHint" style="text-align:left"></div>
-                          </div></div>
-
-                          <!-- Davomiylik (duration) -->
-                          <div class="sheet pop" id="vgDurSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Duration (seconds)</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="vg-chiprow" id="vgDurPills"></div>
-                            <div class="axighint" id="vgDurHint" style="text-align:left">Auto ≈ 5 seconds</div>
-                          </div></div>
-
-                          <!-- Nisbat (aspect ratio) -->
-                          <div class="sheet pop" id="vgArSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Ratio</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="vg-chiprow" id="vgArPills"></div>
-                            <div class="axighint" style="text-align:left">Auto — taken from the input frame.</div>
-                          </div></div>
-
-                          <!-- Bitrate -->
-                          <div class="sheet pop" id="vgBitSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Bitrate</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
-                            <div class="vg-chiprow" id="vgBitPills"></div>
-                            <div class="axighint" style="text-align:left">High = larger, higher-quality file. Standard = default output.</div>
+                          <!-- P16 — GURUHLANGAN video sozlamalari sheet'i: Ratio / Resolution / Duration / Bitrate bitta popover'da.
+                               Model qo'llamaydigan sektsiya JS'da yashiriladi (vgBitSec). -->
+                          <div class="sheet pop" id="vgSetSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Settings</b><span class="x" data-vgclose><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></span></div>
+                            <div class="ai-set-sec"><h5>Aspect Ratio</h5><div class="vg-chiprow" id="vgArPills"></div><div class="axighint" id="vgArHint" style="text-align:left">Auto — taken from the input frame.</div></div>
+                            <div class="ai-set-sec"><h5>Resolution</h5><div class="vg-chiprow" id="vgResPills"></div><div class="axighint" id="vgResHint" style="text-align:left"></div></div>
+                            <div class="ai-set-sec"><h5>Duration (seconds)</h5><div class="vg-chiprow" id="vgDurPills"></div><div class="axighint" id="vgDurHint" style="text-align:left">Auto ≈ 5 seconds</div></div>
+                            <div class="ai-set-sec" id="vgBitSec" style="display:none"><h5>Bitrate</h5><div class="vg-chiprow" id="vgBitPills"></div><div class="axighint" style="text-align:left">High = larger, higher-quality file. Standard = default output.</div></div>
                           </div></div>
 
                           <!-- Model sheet (b2) — FIX4: pill yonida popover -->
@@ -10875,8 +10844,9 @@ window.afGallery=(function(){
     // P13 — hovuzda referens bo'lsa "N kept (unused)" hisoblagichi ko'rinsin (model qo'llamasa ham)
     $('igRefMeta').style.display=(noRef && st.refs.length===0)?'none':'';
     var qlEl=$('igQLab'); if(qlEl)qlEl.textContent=meta.qLabel||'Quality'; // gpt→"Sifat", nano→"Resolution"
-    var qseg=$('igQSeg'); if(qseg)qseg.style.display=meta.hasQuality?'':'none'; // quality yo'q → chip yashirin
-    $('igArVal').textContent=st.ar; $('igQVal').textContent=cap(st.q); $('igNVal').textContent=String(st.n);
+    var qsec=$('igQSec'); if(qsec)qsec.style.display=meta.hasQuality?'':'none'; // quality yo'q → sektsiya yashirin
+    // P16 — bitta sozlama chipi xulosasi (Ratio · Quality · ×N)
+    var sv=$('igSetVal'); if(sv)sv.textContent=igSummary();
     // BATCH4 #1 — upscale rejimi matnlari (prompt ixtiyoriy, tugma nomi)
     var isUp=meta.feature==='image-upscale';
     var taUp=$('igPrompt'); if(taUp)taUp.placeholder=isUp?'Prompt not needed — add the source image below and pick the factor (x2 → 2K, x4 → 4K)':'What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape';
@@ -10897,11 +10867,16 @@ window.afGallery=(function(){
 
   // ---- chip openerlar ----
   $('igModelSeg').addEventListener('click',function(){ renderModelSheet(); openSheet('igMSheet',$('igModelSeg')); });
-  $('igArSeg').addEventListener('click',function(){ buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; $('igArVal').textContent=v; closeSheets(); }); openSheet('igArSheet',$('igArSeg')); });
-  function buildQ(){ var arr=meta.quals.map(function(q){ return {val:q,label:cap(q)}; }); buildPills($('igQPills'),arr,st.q,function(v){ st.q=v; $('igQVal').textContent=cap(v); recost(); buildQ(); }); }
-  $('igQSeg').addEventListener('click',function(){ buildQ(); openSheet('igQSheet',$('igQSeg')); });
-  function buildN(){ buildPills($('igNPills'),meta.counts,st.n,function(v){ st.n=v; $('igNVal').textContent=String(v); recost(); buildN(); }); }
-  $('igNSeg').addEventListener('click',function(){ buildN(); openSheet('igNSheet',$('igNSeg')); });
+  // P16 — bitta sozlama chipi xulosasi + guruhlangan sheet (Ratio · Quality · ×N bitta popover'da)
+  function igSummary(){ var b=[st.ar]; if(meta.hasQuality)b.push(cap(st.q)); b.push('×'+st.n); return b.join(' · '); }
+  function afterIgSet(){ var sv=$('igSetVal'); if(sv)sv.textContent=igSummary(); buildIgSettings(); } // tanlovdan keyin: xulosa + pill'lar qayta belgilansin (sheet OCHIQ qoladi)
+  function buildIgSettings(){
+    buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; afterIgSet(); });
+    var qsec=$('igQSec'); if(qsec)qsec.style.display=meta.hasQuality?'':'none';
+    if(meta.hasQuality){ var qArr=meta.quals.map(function(q){ return {val:q,label:cap(q)}; }); buildPills($('igQPills'),qArr,st.q,function(v){ st.q=v; recost(); afterIgSet(); }); }
+    buildPills($('igNPills'),meta.counts,st.n,function(v){ st.n=v; recost(); afterIgSet(); });
+  }
+  $('igSetSeg').addEventListener('click',function(){ buildIgSettings(); openSheet('igSetSheet',$('igSetSeg')); });
 
   // ---- @imgN token promptga (kursor joyiga) — #6: chip-editor pill sifatida ----
   function insertToken(tok){
@@ -12344,14 +12319,12 @@ window.afGallery=(function(){
   }
   function applyVgMeta(){
     var mn=$('vgMName'); if(mn&&vm.model)mn.textContent=vm.model.label||'Model';
-    var rv=$('vgResVal'); if(rv)rv.textContent=vm.res;
-    var dv=$('vgDurVal'); if(dv)dv.textContent=vm.dur;
-    var av=$('vgArVal'); if(av)av.textContent=vm.ar;
-    var bv=$('vgBitVal'); if(bv)bv.textContent=vm.bitrate;
+    // P16 — bitta sozlama chipi xulosasi (Ratio · Res · Duration · Bitrate)
+    var sv=$('vgSetVal'); if(sv)sv.textContent=vgSummary();
     var at=$('vgAudToggle'); if(at){ at.style.display=vm.audioSupported?'':'none'; at.classList.toggle('on',!!vm.audio); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Audio is always on for this model — model feature':''; }
     var avv=$('vgAudVal'); if(avv)avv.textContent=vm.audio?'On':'Off';
-    applyVgArLock(); // model almashdi — nisbat chipi qulfi qayta hisoblansin
-    var bs=$('vgBitSeg'); if(bs)bs.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
+    applyVgArLock(); // model almashdi — nisbat qulfi qayta hisoblansin
+    var bsec=$('vgBitSec'); if(bsec)bsec.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
     var rh=$('vgResHint'); if(rh)rh.textContent=vm.resOpts.map(function(k){ return k+' = ✦'+(vm.perSec[k]||vm.perSec[vm.resOpts[0]]||0)+'/s'; }).join(' · ');
     var dh=$('vgDurHint'); if(dh)dh.textContent='Auto ≈ '+vm.autoSec+' seconds';
     // FIX3: referens hudud TO'LIQ model imkoniyatidan: frames=Kadrlar ↔ media-refs=ko'p-modal ↔ none=hech biri
@@ -12436,25 +12409,22 @@ window.afGallery=(function(){
   // FIX4/5: b7 birlashgan sheet o'rniga — har pill O'Z popover'ini ochadi (rasm tool bilan bir xil).
   // Qiymat/apply/recost mantiqлари vgSetChips'dagi bilan aynan bir xil saqlangan.
   $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); openVgSheet('vgMSheet',$('vgModelSeg')); });
-  $('vgResSeg').addEventListener('click',function(){
-    vgSetChips($('vgResPills'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; var rv=$('vgResVal'); if(rv)rv.textContent=v; recost(); closeVgSheets(); });
-    openVgSheet('vgResSheet',$('vgResSeg'));
-  });
-  $('vgDurSeg').addEventListener('click',function(){
-    vgSetChips($('vgDurPills'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; var dv=$('vgDurVal'); if(dv)dv.textContent=v; recost(); closeVgSheets(); });
-    openVgSheet('vgDurSheet',$('vgDurSeg'));
-  });
-  $('vgArSeg').addEventListener('click',function(){
-    var seg=$('vgArSeg');
-    if(seg&&seg.getAttribute('data-arlock')==='1'){ toast('Video reference attached — the model sets the aspect ratio itself','info'); return; }
-    vgSetChips($('vgArPills'),vm.arOpts,vm.ar,null,false,function(v){ vm.ar=v; var av=$('vgArVal'); if(av)av.textContent=v; closeVgSheets(); });
-    openVgSheet('vgArSheet',seg);
-  });
-  var bitSeg=$('vgBitSeg');
-  if(bitSeg)bitSeg.addEventListener('click',function(){
-    vgSetChips($('vgBitPills'),vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; var bv=$('vgBitVal'); if(bv)bv.textContent=v; closeVgSheets(); });
-    openVgSheet('vgBitSheet',bitSeg);
-  });
+  // P16 — BITTA sozlama chipi: Ratio/Resolution/Duration/Bitrate bitta guruhlangan sheet'da.
+  //   Tanlovdan keyin sheet OCHIQ qoladi (afterVgSet: xulosa + pill'lar qayta belgilanadi).
+  function vgDurShort(v){ return /^auto$/i.test(String(v))?'Auto':(String(v)+(/^\d+$/.test(String(v))?'s':'')); }
+  function vgSummary(){ var b=[]; if(vm.ar&&!/^auto$/i.test(vm.ar))b.push(vm.ar); if(vm.res)b.push(vm.res); b.push(vgDurShort(vm.dur)); if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate&&vm.bitrate&&!/^standard$/i.test(vm.bitrate))b.push(vm.bitrate); return b.join(' · '); }
+  function afterVgSet(){ var sv=$('vgSetVal'); if(sv)sv.textContent=vgSummary(); buildVgSettings(); }
+  function buildVgSettings(){
+    var arLocked=!!(vm.arLockVideoRef&&hasVideoRefs());
+    vgSetChips($('vgArPills'),vm.arOpts,vm.ar,null,arLocked,function(v){ if(arLocked){ toast('Video reference attached — the model sets the aspect ratio itself','info'); return; } vm.ar=v; afterVgSet(); });
+    var ah=$('vgArHint'); if(ah)ah.textContent=arLocked?'Locked — the video reference sets the ratio.':'Auto — taken from the input frame.';
+    vgSetChips($('vgResPills'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; recost(); afterVgSet(); });
+    vgSetChips($('vgDurPills'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; recost(); afterVgSet(); });
+    var bitOn=!!(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate);
+    var bsec=$('vgBitSec'); if(bsec)bsec.style.display=bitOn?'':'none';
+    if(bitOn)vgSetChips($('vgBitPills'),vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; recost(); afterVgSet(); });
+  }
+  $('vgSetSeg').addEventListener('click',function(){ buildVgSettings(); openVgSheet('vgSetSheet',$('vgSetSeg')); });
   var audTgl=$('vgAudToggle');
   if(audTgl)audTgl.addEventListener('click',function(){
     if(vm.audioLocked){ toast('Audio is always on for this model — cannot be turned off (model feature)','info'); return; }
@@ -12553,11 +12523,8 @@ window.afGallery=(function(){
   // Nisbat chipi qulfi: model video-referens bilan nisbatni e'tiborga olmasa (Omni: API 400 bermasligi
   // uchun adapter aspect'ni tashlab yuboradi) — chip xira + tushuntirish, foydalanuvchi aldanmaydi.
   function applyVgArLock(){
-    var seg=$('vgArSeg'); if(!seg)return;
-    var locked=!!(vm.arLockVideoRef&&hasVideoRefs());
-    seg.style.opacity=locked?'.45':'';
-    seg.title=locked?'Video reference attached — the model sets the aspect ratio itself':'';
-    seg.setAttribute('data-arlock',locked?'1':'0');
+    // P16 — vgArSeg endi yo'q (guruhlangan sozlama sheet'i); qulf holati sheet ochilganda
+    //   buildVgSettings ichida qo'llanadi (vgArPills dis + hint). Bu funksiya endi no-op qoldi.
   }
   /* SD2-EDIT-PRESETS v1 — sync manually with packages/assetflow-studio/platform/index.html */
   var VG_EDIT_PRESETS=[

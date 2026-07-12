@@ -15361,12 +15361,38 @@
   .ff .va-mention .mi .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;background-color:rgba(255,255,255,.05);flex:0 0 auto;border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted2)}
   .ff .va-mention .mi b{font-size:12.5px;display:block;color:var(--text)}
   .ff .va-mention .mi small{font-size:10.5px;color:var(--muted2)}
-  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
-  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap}
+  /* P16 — pastki qator DOIM bir qatorda: chap chiplar guruhi (kerak bo'lsa scroll) + o'ngga MAHKAMLANGAN COST+Generate (hech qachon wrap bo'lmaydi) */
+  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:nowrap;min-width:0}
+  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
+  .ff .va-setgroup::-webkit-scrollbar{display:none}
+  .ff .va-genwrap{display:flex;align-items:center;gap:9px;flex:0 0 auto;margin-left:auto}
+  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:none}
   .ff .va-set:hover{background:var(--f2)}
   .ff .va-set b{color:var(--text);font-weight:600}
   .ff .va-set.mode{background:var(--pill-active);border-color:transparent;color:var(--text)}
-  .ff .va-set.enh{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 24%,transparent);background:color-mix(in srgb,var(--lime) 7%,transparent)}
+  .ff .va-set.enh{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 24%,transparent);background:color-mix(in srgb,var(--lime) 7%,transparent);padding:0 11px}
+  .ff .va-setgear b{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+  /* P16 — guruhlangan sozlama popover'i: sektsiyalar (Aspect/Res/Quality/Duration/Count/Voice/Bitrate/Audio) */
+  .ff .va-setpop{min-width:238px;max-width:min(340px,calc(100vw - 40px));max-height:min(66vh,440px);padding:4px 4px 8px}
+  .ff .va-sgrp{padding:8px 8px 4px}
+  .ff .va-sgrp + .va-sgrp{border-top:1px solid var(--hair)}
+  .ff .va-sgh{font:600 8.5px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);margin:0 2px 7px}
+  .ff .va-sgops{display:flex;flex-wrap:wrap;gap:5px}
+  .ff .va-setopt{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font:500 11.5px 'Hanken Grotesk',sans-serif;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .ff .va-setopt:hover{border-color:var(--hair2);color:var(--text)}
+  .ff .va-setopt.on{background:var(--pill-active);border-color:transparent;color:var(--text);font-weight:600}
+  .ff .va-setopt .arg{display:inline-block;border:1.4px solid currentColor;border-radius:2px;opacity:.75;flex:none}
+  .ff .va-sgrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 8px 5px;border-top:1px solid var(--hair)}
+  .ff .va-swt{width:38px;height:22px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);position:relative;cursor:pointer;flex:none;padding:0}
+  .ff .va-swt::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:left .15s,background .15s}
+  .ff .va-swt.on{background:var(--lime);border-color:transparent}
+  .ff .va-swt.on::after{left:18px;background:var(--onlime)}
+  .ff .va-swt.lock{opacity:.65;cursor:not-allowed}
+  /* P22 — inline "kredit yetmaydi / shart bajarilmadi" darvoza qatori (modal EMAS) */
+  .ff .va-gengate{display:flex;align-items:center;gap:8px;margin-top:9px;padding:8px 11px;border-radius:11px;background:color-mix(in srgb,var(--amber,#f0a840) 12%,transparent);border:1px solid color-mix(in srgb,var(--amber,#f0a840) 30%,transparent);font-size:11.5px;color:var(--text);line-height:1.4}
+  .ff .va-gengate>.va-ic{color:var(--amber,#f0a840);flex:none}
+  .ff .va-gengate span{flex:1;min-width:0}
+  .ff .va-gategtu{display:inline-flex;align-items:center;gap:4px;flex:none;height:28px;padding:0 12px;border-radius:999px;background:var(--lime);color:var(--onlime);border:0;font:700 11px 'Hanken Grotesk',sans-serif;cursor:pointer}
   .ff .va-dockrow .sp{flex:1}
   .ff .va-quote{font:600 11.5px var(--mono);color:var(--muted);white-space:nowrap}
   .ff .va-quote b{color:var(--lime)}
@@ -15610,7 +15636,16 @@
   .ff .va-axeq b:nth-child(5n){animation-delay:.45s}.ff .va-axeq b:nth-child(7n){animation-delay:.6s}
   .ff .va-axnone{padding:36px 14px;text-align:center;font-size:12.5px;color:var(--muted2);border:1px dashed var(--hair2);border-radius:14px;margin-top:6px}
   /* dock extras: reference slot · cost · balance strip */
-  .ff .va-axrefs{display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+  /* P16 #5/#7 — referens paneli BITTA qatorda: ＋ mahkam, thumblar gorizontal scroll (balandligi oshmaydi) */
+  .ff .va-axrefs{display:flex;align-items:center;gap:9px;margin-bottom:6px;flex-wrap:nowrap;min-width:0}
+  .ff .va-axrefplusw{position:relative;flex:none}
+  .ff .va-axreftrack{display:flex;align-items:center;gap:9px;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:2px 0;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 18px),transparent)}
+  .ff .va-axreftrack::-webkit-scrollbar{display:none}
+  .ff .va-axrefmeta{display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+  .ff .va-axrefcounts{display:inline-flex;align-items:center;gap:9px;font:600 10.5px var(--mono);color:var(--muted);flex:none}
+  .ff .va-axrefcounts .rc-i{display:inline-flex;align-items:center;gap:3px}
+  .ff .va-axrefcounts .rc-i .va-ic{width:13px;height:13px}
+  .ff .va-axrefcounts .rc-i.zero{opacity:.42}
   .ff .va-axrefadd{min-width:46px;height:46px;padding:0 10px;border-radius:10px;border:1px dashed rgba(255,255,255,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:1px;background:none;cursor:pointer;font-family:inherit;flex:none}
   .ff .va-axrefadd:hover{color:var(--text);border-color:rgba(255,255,255,.28)}
   .ff .va-axrefadd i{font-style:normal;font-size:14px;line-height:1}
@@ -15722,10 +15757,10 @@
     /* #1 — mobil: uzun prompt to'liq o'qiladi, Generate klaviatura ustida qoladi */
     .ff .va-dock .prompt{min-height:72px;max-height:50vh}
     .ff .va-axmenu{position:fixed;left:12px;right:12px;bottom:96px;top:auto;width:auto;z-index:96}
-    /* frame F: dock = mode + model + cost + Generate; qolgan param chiplar mode-popover ichiga yig'iladi */
-    .ff .va-dockrow .va-set[data-pop="aspect"],.ff .va-dockrow .va-set[data-pop="quality"],.ff .va-dockrow .va-set[data-pop="res"],.ff .va-dockrow .va-set[data-pop="duration"],.ff .va-dockrow .va-set[data-pop="count"],.ff .va-dockrow .va-set[data-pop="voice"],.ff .va-dockrow .va-set.enh{display:none}
-    .ff .va-mmore{display:block}
+    /* P16 — mobil dock ham DOIM bir qatorda (mode·model·⚙sozlama·enh + mahkam COST+Generate);
+       sozlama chipi guruhlangan popover'i mobilda ham ishlaydi (eski frame-F fold olib tashlandi) */
     .ff .va-set.mode .ffa-pop{min-width:min(300px,calc(100vw - 56px));max-height:min(380px,60vh)}
+    .ff .va-setgear b{max-width:110px}
     .ff .va-axainfo{width:auto;flex:1}
     .ff .va-axwave{display:none}
     .ff .va-axhero h2{font-size:24px}
@@ -16713,11 +16748,11 @@
                 <!-- FLOATING DOCK (A3b — chips are the real gen params; signed quote before generate) -->
                 <div class="va-dock">
               <sc-if value="{{ showRefs }}" hint-placeholder-val="{{ true }}">
+                <!-- P16 #5/#7 — referens paneli BITTA qatorda (gorizontal scroll); ＋ chapda mahkam,
+                     thumblar scroll. Ostidagi meta qatori = ixcham used/allowed ikonkalari + hint. -->
                 <div class="va-axrefs">
-                  <!-- #5 — Artlist ilhomi: BITTA doira "+" → model imkoniyatiga mos YOZILGAN menyu;
-                       qo'shilganlar chip bo'lib yonida turadi (removeRef/addRefFile o'zgarmagan) -->
                   <sc-if value="{{ showRefPlus }}" hint-placeholder-val="{{ true }}">
-                  <span style="position:relative;flex:none">
+                  <span class="va-axrefplusw">
                     <button class="va-axrefplus" onclick="{{ toggleRefMenu }}" title="Add reference">＋</button>
                     <sc-if value="{{ popRef }}" hint-placeholder-val="{{ false }}">
                       <div class="ffa-pop" onclick="{{ stop }}" style="min-width:215px">
@@ -16738,10 +16773,15 @@
                     </sc-if>
                   </span>
                   </sc-if>
-                  <sc-for list="{{ refChipsView }}" as="rc" hint-placeholder-count="0">
-                    <span class="{{ rc.cls }}" style="{{ rc.thumbStyle }}" title="{{ rc.reason }}"><i class="rk">{{ rc.label }}</i><b class="x" title="Remove reference" data-k="{{ rc.k }}" data-i="{{ rc.i }}" onclick="{{ removeRef }}">✕</b></span>
-                  </sc-for>
-                  <span class="{{ refHintCls }}">{{ refHint }}</span>
+                  <div class="va-axreftrack">
+                    <sc-for list="{{ refChipsView }}" as="rc" hint-placeholder-count="0">
+                      <span class="{{ rc.cls }}" style="{{ rc.thumbStyle }}" title="{{ rc.reason }}" draggable="false"><i class="rk">{{ rc.label }}</i><b class="x" title="Remove reference" data-k="{{ rc.k }}" data-i="{{ rc.i }}" onclick="{{ removeRef }}">✕</b></span>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="va-axrefmeta">
+                  <sc-if value="{{ hasRefCounts }}" hint-placeholder-val="{{ false }}"><span class="va-axrefcounts"><sc-for list="{{ refCountsView }}" as="rc" hint-placeholder-count="1"><span class="{{ rc.cls }}"><svg class="va-ic"><use href="{{ rc.ic }}"></use></svg>{{ rc.label }}</span></sc-for></span></sc-if>
+                  <span class="{{ refHintCls }}" title="{{ refHint }}">{{ refHint }}</span>
                 </div>
               </sc-if>
               <!-- Video-edit preset chips — only when ≥1 VIDEO reference attached (SD2-EDIT-PRESETS) -->
@@ -16756,22 +16796,11 @@
                    imperativ o'rnatiladi; engine bu div BOLALARINI boshqarmaydi — pill DOM saqlanadi) -->
               <div class="prompt chipedit" data-ph="{{ promptPh }}"></div>
               <div class="va-dockrow">
+                <div class="va-setgroup">
                 <span class="va-set mode" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for>
-                    <!-- Mobil (frame F): dock'dan yig'ilgan param'lar — HAMMASI shu yerdan tanlanadi.
-                         M-handlerlar popoverni yopmaydi; buildParams o'zgarmagan (o'sha aiSize/aiQuality/... holat). -->
-                    <div class="va-mmore">
-                      <sc-if value="{{ showSize }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Ratio</span><span class="ops"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><b data-v="{{ z.v }}" onclick="{{ onSizeM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
-                      <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">{{ qualityLabel }}</span><span class="ops"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><b data-v="{{ z.v }}" onclick="{{ onQualityM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
-                      <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Res</span><span class="ops"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><b data-v="{{ z.v }}" onclick="{{ onResM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
-                      <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Length</span><span class="ops"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><b data-v="{{ z.v }}" onclick="{{ onDurationM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
-                      <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Count</span><span class="ops"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><b data-v="{{ z.v }}" onclick="{{ onCountM }}" class="{{ z.moptCls }}">{{ z.v }}</b></sc-for></span></div></sc-if>
-                      <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="va-mrow"><span class="lb">Voice</span><span class="ops"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><b data-v="{{ v.v }}" onclick="{{ onVoiceM }}" class="{{ v.moptCls }}">{{ v.label }}</b></sc-for></span></div></sc-if>
-                      <div class="va-mrow"><span class="lb">Prompt</span><span class="ops"><b class="va-mopt" onclick="{{ improve }}">✦ {{ enhLabel }}</b></span></div>
-                    </div>
-                  </div></sc-if>
+                  <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span>
-                <span class="va-set" data-pop="model" onclick="{{ toggleChip }}"><b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set" data-pop="model" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl" onclick="{{ stop }}">
                     <div class="va-axpoph">{{ modePickHead }}</div>
                     <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">
@@ -16784,33 +16813,28 @@
                     <div class="va-axpmore" onclick="{{ openModelModal }}">⊞ More models<span class="arr">→</span></div>
                   </div></sc-if>
                 </span>
-                <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><span class="va-set" data-pop="aspect" onclick="{{ toggleChip }}"><b>{{ aspectVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popAspect }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ sizesView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSize }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+                <!-- P16 — BITTA sozlama chipi: barcha per-model sozlamalar guruhlangan popover'da.
+                     Model qo'llamaydigan qatorlar UMUMAN render bo'lmaydi (show* darvozalari). -->
+                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear" data-pop="settings" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popSettings }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop va-setpop" onclick="{{ stop }}">
+                    <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="va-sgrp"><div class="va-sgh">Aspect Ratio</div><div class="va-sgops"><sc-for list="{{ aspectsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSizeM }}" class="{{ z.setoptCls }}"><i class="arg" style="width:{{ z.gw }};height:{{ z.gh }}"></i>{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Resolution</div><div class="va-sgops"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onResM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">{{ qualityLabel }}</div><div class="va-sgops"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQualityM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Duration</div><div class="va-sgops"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDurationM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Count</div><div class="va-sgops"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCountM }}" class="{{ z.setoptCls }}">×{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Voice</div><div class="va-sgops"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoiceM }}" class="{{ v.setoptCls }}">{{ v.label }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showBitrate }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Bitrate</div><div class="va-sgops"><sc-for list="{{ bitrateView }}" as="z" hint-placeholder-count="2"><button data-v="{{ z.v }}" onclick="{{ onBitrateM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
+                  </div></sc-if>
                 </span></sc-if>
-                <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="quality" onclick="{{ toggleChip }}">{{ qualityLabel }}: <b>{{ qualityVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popQuality }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQuality }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
-                </span></sc-if>
-                <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="res" onclick="{{ toggleChip }}"><b>{{ resVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popRes }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onRes }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
-                </span></sc-if>
-                <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="duration" onclick="{{ toggleChip }}"><b>{{ durVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popDur }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDuration }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
-                </span></sc-if>
-                <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><span class="va-set" onclick="{{ toggleAudio }}">Audio: <b>{{ audioVal }}</b></span></sc-if>
-                <sc-if value="{{ showBitrate }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="bitrate" onclick="{{ toggleChip }}">Bitrate: <b>{{ bitVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popBitrate }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ bitrateView }}" as="z" hint-placeholder-count="2"><button data-v="{{ z.v }}" onclick="{{ onBitrate }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
-                </span></sc-if>
-                <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><span class="va-set" data-pop="voice" onclick="{{ toggleChip }}">Voice: <b>{{ voiceVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popVoice }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoice }}" class="{{ v.rowCls }}">{{ v.label }}<sc-if value="{{ v.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
-                </span></sc-if>
-                <sc-if value="{{ showCount }}" hint-placeholder-val="{{ true }}"><span class="va-set" data-pop="count" onclick="{{ toggleChip }}">× <b>{{ countVal }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popCount }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCount }}" class="{{ z.rowCls }}">{{ z.v }}<sc-if value="{{ z.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
-                </span></sc-if>
-                <span class="va-set enh" onclick="{{ improve }}"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
-                <span class="sp"></span>
-                <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>
-                <a class="{{ genBtnCls }}" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }}</a>
+                <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}"><svg class="va-ic"><use href="#i-wand"></use></svg></span>
+                </div>
+                <div class="va-genwrap">
+                  <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>
+                  <a class="{{ genBtnCls }}" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }}</a>
+                </div>
               </div>
+              <sc-if value="{{ genGateOn }}" hint-placeholder-val="{{ false }}"><div class="va-gengate"><svg class="va-ic"><use href="#i-bolt"></use></svg><span>{{ genGateMsg }}</span><sc-if value="{{ genGateTopup }}" hint-placeholder-val="{{ false }}"><button class="va-gategtu" onclick="{{ openCredits }}"><svg class="va-ic"><use href="#i-plus"></use></svg>Top up</button></sc-if></div></sc-if>
               <div class="va-axbal">BALANCE <em>✦ {{ creditsFmt }}</em> · {{ axBalNote }}<span class="top" onclick="{{ openCredits }}">＋ Top up</span></div>
                 </div><!-- /va-dock -->
               </div><!-- /va-axmainc -->
@@ -19589,7 +19613,7 @@ class Component extends DCLogic {
     const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab', poprowCls: on ? 'ffa-poprow on' : 'ffa-poprow' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
     // cls=eski option grid, rowCls=popover qatori, optCls=inline option tugma (Ovoz paneli), on=faol
-    const chip = (v, on) => ({ v, on, cls: on ? 'ffa-opt on' : 'ffa-opt', rowCls: on ? 'ffa-poprow on' : 'ffa-poprow', optCls: on ? 'ffa-opt on' : 'ffa-opt', moptCls: on ? 'va-mopt on' : 'va-mopt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
+    const chip = (v, on) => ({ v, on, cls: on ? 'ffa-opt on' : 'ffa-opt', rowCls: on ? 'ffa-poprow on' : 'ffa-poprow', optCls: on ? 'ffa-opt on' : 'ffa-opt', moptCls: on ? 'va-mopt on' : 'va-mopt', setoptCls: on ? 'va-setopt on' : 'va-setopt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
     const aspectOpts = model ? (model.aspects || (tool.mode === 'image' ? ['1:1', '16:9', '9:16', '4:3'] : [])) : [];
     const sizesView = aspectOpts.map(z => chip(z, z === genParams.aspectRatio));
     const showSize = aspectOpts.length > 1;
@@ -19698,6 +19722,25 @@ class Component extends DCLogic {
     const unitCost = (countOpts.length > 1 && nSel > 1) ? Math.round(costNow / nSel) : costNow;
     const quotePrefix = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
     const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
+    // ── P16 — BITTA sozlama chipi: barcha per-model sozlamalar bitta ⚙ chip + guruhlangan popover'ga yig'iladi.
+    //   Xulosa yorlig'i EFFEKTIV qiymatlardan (genParams/audioOn) — chip yolg'on gapirmaydi (model majbur qilsa,
+    //   haqiqatda yuboriladigan qiymat ko'rinadi; popover'da "qulflangan" deb belgilanadi — P16.6).
+    const popSettings = cp === 'settings';
+    // Nisbat kichik ramka-belgisi (glyph o'lchamlari nisbatga proporsional)
+    const ratioGlyph = (v) => { const m = /^(\d+):(\d+)$/.exec(String(v || '').trim()); if (!m) return { gw: '13px', gh: '13px' }; const a = +m[1], b = +m[2], base = 15; return (a >= b) ? { gw: base + 'px', gh: Math.max(6, Math.round(base * b / a)) + 'px' } : { gw: Math.max(6, Math.round(base * a / b)) + 'px', gh: base + 'px' }; };
+    const aspectsView = aspectOpts.map(z => Object.assign(chip(z, z === genParams.aspectRatio), ratioGlyph(z)));
+    const settingsBits = [];
+    if (showSize && aspectVal !== '—') settingsBits.push(aspectVal);
+    if (showRes && resVal !== '—') settingsBits.push(resVal);
+    if (showQuality && qualityVal !== '—') settingsBits.push(qualityVal);
+    if ((durOpts.length > 1) && durVal !== '—') settingsBits.push(durVal);
+    if ((countsView.length > 1) && nSel > 1) settingsBits.push('×' + nSel);
+    if (showVoices && voiceVal !== '—') settingsBits.push(voiceVal);
+    if (showAudio) settingsBits.push('Audio ' + (audioOn ? 'On' : 'Off'));
+    const showSettings = showSize || showRes || showQuality || (durOpts.length > 1) || (countsView.length > 1) || showVoices || showAudio || showBitrate;
+    const settingsSummary = settingsBits.length ? settingsBits.join(' / ') : 'Settings';
+    const audioToggleCls = 'va-swt' + (audioOn ? ' on' : '') + (audioLockedCap ? ' lock' : '');
+    const audioLockNote = audioLockedCap ? ' (locked)' : '';
     const chipCls = (open) => open ? 'ffa-chip open' : 'ffa-chip';
     const chipModelCls = chipCls(popModel), chipAspectCls = chipCls(popAspect), chipQualityCls = chipCls(popQuality), chipCountCls = chipCls(popCount), chipResCls = chipCls(popRes), chipDurCls = chipCls(popDur), chipBitrateCls = chipCls(popBitrate);
     const chipAnyOpen = !!cp;
@@ -19881,10 +19924,41 @@ class Component extends DCLogic {
       : (this.state.aiPrompt || '').trim().length >= 2;
     // P20 — parallel: tugma FAOL qoladi (yana ish yuborish mumkin), faqat cap'ga yetganda o'chadi.
     const genAtCap = (this.state.activeJobs || []).length >= 5;
-    const genBtnCls = 'va-btn lime' + ((axPromptReady && !genAtCap) ? '' : ' off');
-    const genBtnLabel = genAtCap ? 'Max 5 running' : 'Generate';
     // P20/P22.2 — uchayotgan ishlarga komitilgan kreditlar (balans "ayni damda" ni ko'rsatadi)
     const committedCredits = (this.state.activeJobs || []).reduce((a, j) => a + (j.cost || 0), 0);
+    // ── P22 — DARVOZALAR BOSISHDAN OLDIN: kredit yetmasa / model sharti bajarilmasa Generate O'CHADI
+    //    (bosgandan keyin toast/modal EMAS). Narx: reaktiv imzolangan quote (step 27) bo'lsa undan, aks
+    //    holda lokal taxmin (costNow). SERVER baribir atomik tekshiradi — bu faqat UX darvozasi (P22.1).
+    const gcapsG = this.refCaps(tool.mode, model);
+    const needStart = !axIsUpscaleTool && gcapsG.kind === 'frames' && gcapsG.startRequired && !this.state.refStartUrl;
+    const needRefImg = tool.mode === 'image' && !axIsUpscaleTool && model && model.refMode === 'required' && !this.state.refImages.length;
+    const needSrcVideo = axIsVUp && !this.state.refVideos.length;
+    const promptLenG = (this.state.aiPrompt || '').trim().length;
+    const overChars = tool.mode === 'voice' && model && model.maxChars && promptLenG > model.maxChars;
+    // Reaktiv imzolangan quote (step 27) — joriy model+param+referens kalitiga mos bo'lsa narx shundan
+    const gqKey = model && !axIsUpscaleTool ? (model.id + '|' + tool.mode + '|' + JSON.stringify(genParams) + '|' + [this.state.refStartUrl ? 1 : 0, this.state.refEndUrl ? 1 : 0, (this.state.refImages || []).length, (this.state.refVideos || []).length, (this.state.refAudios || []).length].join(',')) : null;
+    const gqObj = this.state.genQuote;
+    const gqFresh = !!(gqObj && gqObj.key === gqKey && typeof gqObj.price === 'number' && !gqObj.error);
+    const gqLoading = !axIsUpscaleTool && !!(gqObj && gqObj.key === gqKey && gqObj.loading && typeof gqObj.price !== 'number');
+    const effPrice = axIsVUp
+      ? ((uqV && !uqV.error && typeof uqV.price === 'number') ? uqV.price : null)
+      : (gqFresh ? gqObj.price : (typeof costNow === 'number' ? costNow : null));
+    const availCredits = this.state.credits - committedCredits;
+    const notEnough = this.state.creditsLoaded && effPrice != null && effPrice > availCredits;
+    // Narx noma'lum bo'lsa (quote yuklanyapti va lokal taxmin ham yo'q) tugma yoqilmaydi — P22 qoidasi.
+    const priceUnknown = effPrice == null || gqLoading;
+    const genBlocked = !axPromptReady || genAtCap || needStart || needRefImg || needSrcVideo || overChars || notEnough || priceUnknown;
+    const genBtnCls = 'va-btn lime' + (genBlocked ? ' off' : '');
+    const genBtnLabel = genAtCap ? 'Max 5 running' : (gqLoading ? 'Pricing…' : 'Generate');
+    // Inline sabab qatori (modal EMAS): faqat tushuntirishga arziydigan holatlarda
+    const genGateOn = axPromptReady && !genAtCap && (notEnough || needStart || needRefImg || needSrcVideo || overChars);
+    const genGateTopup = notEnough;
+    const genGateMsg = notEnough ? ('Not enough credits · ✦' + effPrice + ' needed, ✦' + Math.max(0, availCredits) + ' left')
+      : needStart ? 'This model needs a start frame — add one above'
+      : needRefImg ? 'This model needs a reference image — add one above'
+      : needSrcVideo ? 'Add the source video to upscale'
+      : overChars ? ('Too long — max ' + model.maxChars + ' characters (yours: ' + promptLenG + ')')
+      : '';
     const axBalNote = anyActive
       ? ('✦ ' + committedCredits + ' reserved for ' + this.state.activeJobs.length + ' running job' + (this.state.activeJobs.length > 1 ? 's' : '') + ' — refunded if they fail')
       : (tool.mode === 'image' ? (unitCost > 0 ? ('~' + Math.floor(this.state.credits / unitCost) + ' image generations left') : 'priced per image')
@@ -19938,6 +20012,13 @@ class Component extends DCLogic {
     })) : [];
     // P13 — nofaol (xira) referens soni: hovuz saqlanadi, lekin joriy model yubormaydi
     const refInactiveN = axIsUpscaleTool ? 0 : refChipsView.filter(c => !c.active).length;
+    // P16 #4 — referens "used/allowed" ixcham ikonka qatori (quruq jumla o'rniga; to'liq matn tooltipда)
+    const refCountsView = [];
+    if (!axIsUpscaleTool) {
+      if (refProj.imgLim > 0) refCountsView.push({ ic: '#i-img', label: Math.min(this.state.refImages.length, refProj.imgLim) + '/' + refProj.imgLim, cls: 'rc-i' + (this.state.refImages.length ? '' : ' zero') });
+      if (refProj.vidLim > 0) refCountsView.push({ ic: '#i-vid', label: Math.min(this.state.refVideos.length, refProj.vidLim) + '/' + refProj.vidLim, cls: 'rc-i' + (this.state.refVideos.length ? '' : ' zero') });
+      if (refProj.audLim > 0) refCountsView.push({ ic: '#i-wave', label: Math.min(this.state.refAudios.length, refProj.audLim) + '/' + refProj.audLim, cls: 'rc-i' + (this.state.refAudios.length ? '' : ' zero') });
+    }
     const refHint = this.state.refBusy ? 'Uploading…'
       : (axIsUpscaleTool ? ('Required — pick the ' + (axIsVUp ? 'video' : 'image or video') + ' to upscale (upload, My Library, or “Use ▾ → Upscale” on a result).')
         : (rCaps.kind === 'none' ? (refInactiveN ? (refInactiveN + ' reference' + (refInactiveN > 1 ? 's' : '') + ' kept — this model uses none; they return on a model that does.') : 'This model uses no references.')
@@ -20537,6 +20618,10 @@ class Component extends DCLogic {
       // §A (P1) — Enhance narxi endi ko'rinadi (✦1) — jim kredit kuyishi yo'q
       sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance · ✦1',
       aspectVal, qualityVal, countVal, resVal, durVal,
+      // P16 — bitta sozlama chipi + guruhlangan popover (onSizeM/onResM/… allaqachon mavjud —
+      //   qiymat o'zgarganda popover OCHIQ qoladi; onBitrateM shu maqsadda qo'shildi)
+      popSettings, showSettings, settingsSummary, aspectsView, audioToggleCls, audioLockNote, refCountsView,
+      onBitrateM: (e) => { e.stopPropagation(); this.setState({ aiBitrate: e.currentTarget.dataset.v }); },
       popModel, popAspect, popQuality, popCount, popRes, popDur,
       chipModelCls, chipAspectCls, chipQualityCls, chipCountCls, chipResCls, chipDurCls, chipAnyOpen,
       voiceResults, noVoiceResults,
@@ -20611,8 +20696,12 @@ class Component extends DCLogic {
       modelModalOpen: this.state.modelModalOpen, modelQ: this.state.modelQ,
       modelModalEmpty: modelGroupsView.length === 0,
       axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && (rCaps.kind !== 'none' || refChipsView.length > 0),
+      // P22 — inline "kredit yetmaydi / shart bajarilmadi" darvoza qatori (modal EMAS)
+      genGateOn, genGateMsg, genGateTopup,
       // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
       refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
+      // P16 #4 — referens used/allowed ikonka qatori
+      refCountsView, hasRefCounts: refCountsView.length > 0,
       showEditPresets, editPresetsView,
       insertEditPreset: (e) => { const i = +e.currentTarget.dataset.i; const p = SD2_EDIT_PRESETS[i]; if (p) this.insertEditPreset(p.tpl); },
       // #5 — "+" typed menyu holati
