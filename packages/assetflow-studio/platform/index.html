@@ -14809,7 +14809,7 @@
   .ff .ffa-fcat:hover{background:var(--f1)}
   .ff .ffa-fcat.on{background:var(--f2);color:var(--text);font-weight:500}
   .ff .ffa-chk{width:15px;height:15px;flex:none;border-radius:4px;border:1px solid rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:transparent}
-  .ff .ffa-chk.on{background:var(--lime);border-color:var(--lime);color:#0E1400}
+  .ff .ffa-chk.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
   .ff .ffa-mkt-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 18px}
   .ff .ffa-fbtn{display:none;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
   .ff .ffa-fbadge{min-width:16px;height:16px;border-radius:999px;background:var(--lime);color:var(--onlime);font:700 9px 'IBM Plex Mono',monospace;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
@@ -15302,6 +15302,26 @@
   .ff .va-projcard{background:var(--surface);border:1px solid var(--hair2);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .18s ease,transform .18s ease}
   .ff .va-projcard:hover{border-color:var(--lime);transform:translateY(-3px)}
   .ff .va-projnew:hover{border-color:var(--lime);color:var(--text)}
+  /* ── credits modal (BATCH6 mockup: balance hero + 3-ustun paket kartalari + siyosat izohi) ── */
+  .ff .va-credmodal{position:relative;width:100%;max-width:560px;border-radius:20px;background:var(--surface);border:1px solid var(--hair2);padding:26px 26px 22px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)}
+  .ff .va-credx{position:absolute;right:18px;top:16px;width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:16px}
+  .ff .va-credx:hover{color:var(--text);border-color:var(--lime)}
+  .ff .va-credhero{padding:20px;border:1px solid var(--hair2);background:var(--bg2);border-radius:13px;margin:12px 0 20px}
+  .ff .va-credhero>span,.ff .va-credhero>small{display:block;font:600 8px var(--mono);letter-spacing:.12em;color:var(--muted)}
+  .ff .va-credhero>strong{display:block;font:700 44px var(--mono);color:var(--lime);letter-spacing:-.02em;margin:7px 0 6px}
+  .ff .va-credhero .s{font-size:26px}
+  .ff .va-credh2{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:0 0 16px}
+  .ff .va-credpacks{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .ff .va-cpack{position:relative;border:1px solid var(--border);background:var(--card2);color:var(--text);border-radius:12px;padding:17px 13px 15px;display:flex;flex-direction:column;gap:7px;text-align:left;cursor:pointer;font-family:inherit;transition:border-color .16s ease,transform .16s ease}
+  .ff .va-cpack:hover{border-color:var(--lime);transform:translateY(-2px)}
+  .ff .va-cpack .am{font:700 18px var(--mono)}
+  .ff .va-cpack .am .s{color:var(--lime)}
+  .ff .va-cpack .sub{font-size:10px;color:var(--muted);line-height:1.35;min-height:26px}
+  .ff .va-cpack>strong{font:700 19px 'Hanken Grotesk',sans-serif;margin-top:auto}
+  .ff .va-cpack.hot{border-color:color-mix(in srgb,var(--lime) 45%,transparent)}
+  .ff .va-credtag{position:absolute;top:-8px;left:10px;right:10px;padding:4px 5px;border-radius:5px;background:var(--lime);color:var(--onlime);font:700 6.5px var(--mono);letter-spacing:.05em;text-align:center;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-cpack:not(.hot) .va-credtag{display:none}
+  .ff .va-crednote{text-align:center;color:var(--muted2);font-size:10px;margin:14px 0 0}
   /* ── AI toolkit (A3 picker · A3b composer) ── */
   .ff .va-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(256px,1fr));gap:18px;padding:26px 40px 10px}
   .ff .va-tool{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/10.5;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;border:none;cursor:pointer;background-size:cover;font-family:inherit;text-align:left;color:var(--text)}
@@ -15417,6 +15437,10 @@
   @keyframes axEqBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
   .ff .va-axmascot{position:relative;display:inline-block;line-height:0}
   .ff .va-axmascot svg{display:block;overflow:visible}
+  /* BATCH6: Sparky mascot fill'lari tema-tokeniga (CSS fill/stroke presentation-attribute'dan ustun) */
+  .ff .va-axmascot [fill="#C2F04A"]{fill:var(--lime)}
+  .ff .va-axmascot [fill="#0E1400"]{fill:var(--onlime)}
+  .ff .va-axmascot [stroke="#0E1400"]{stroke:var(--onlime)}
   .ff .va-axmascot .body{animation:axBob 2.6s ease-in-out infinite;transform-origin:50% 60%}
   .ff .va-axmascot .tw1{animation:axTwinkle 1.8s ease-in-out infinite}
   .ff .va-axmascot .tw2{animation:axTwinkle 1.8s ease-in-out .6s infinite}
@@ -17062,23 +17086,26 @@
   <!-- ============ GLOBAL: CREDITS MODAL ============ -->
   <sc-if value="{{ showCredits }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeCredits }}" style="position:fixed;inset:0;z-index:100;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
-      <div onclick="{{ stop }}" style="width:100%;max-width:460px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:30px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="display:inline-flex;align-items:center;gap:9px;font-size:20px;font-weight:600"><i class="ph-fill ph-lightning" style="color:var(--teal)"></i>Add credits</div>
-          <button onclick="{{ closeCredits }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
+      <div onclick="{{ stop }}" class="va-credmodal">
+        <button onclick="{{ closeCredits }}" class="va-credx" aria-label="Close"><i class="ph ph-x"></i></button>
+        <div class="va-kick">CREDIT BALANCE</div>
+        <div class="va-credhero">
+          <span>AVAILABLE</span>
+          <strong><span class="s">✦</span> {{ creditsFmt }}</strong>
+          <small>{{ creditResetShort }}</small>
         </div>
-        <p style="font-size:14px;color:var(--txt2);margin:0 0 22px">Credits are used for AI generations. Choose a pack:</p>
-        <div style="display:flex;flex-direction:column;gap:11px">
+        <h2 class="va-credh2">Top up and keep creating.</h2>
+        <div class="va-credpacks">
           <sc-for list="{{ creditPacks }}" as="c" hint-placeholder-count="3">
-            <button data-amt="{{ c.c }}" onclick="{{ onBuyCredits }}" style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-radius:14px;background:{{ c.bg }};border:1px solid {{ c.bd }};cursor:pointer;font-family:inherit;text-align:left">
-              <div style="display:flex;align-items:center;gap:12px">
-                <div style="width:42px;height:42px;border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#0E1400;font-size:18px"><i class="ph-fill ph-lightning"></i></div>
-                <div><div style="font-size:16px;font-weight:600;color:var(--txt)">{{ c.label }} credits</div><div style="font-size:12.5px;color:var(--txt3)">{{ c.sub }}</div></div>
-              </div>
-              <div style="font-size:18px;font-weight:700;color:var(--txt)">${{ c.p }}</div>
+            <button data-amt="{{ c.c }}" onclick="{{ onBuyCredits }}" class="{{ c.packCls }}" style="border-color:{{ c.bd }}">
+              <i class="va-credtag">{{ c.badge }}</i>
+              <span class="am"><span class="s">✦</span> {{ c.label }}</span>
+              <span class="sub">{{ c.sub }}</span>
+              <strong>${{ c.p }}</strong>
             </button>
           </sc-for>
         </div>
+        <p class="va-crednote">Purchased credits never expire. Plan credits are used first.</p>
       </div>
     </div>
   </sc-if>
@@ -19327,7 +19354,7 @@ class Component extends DCLogic {
     // Sayt CMS: FAQ savol-javoblari config'dan (landing + pricing sahifada bitta manba)
     const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'color-mix(in srgb,var(--lime) 25%,transparent)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
 
-    const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card2))' : 'var(--card2)', bd: c.pop ? 'var(--ring)' : 'var(--bd)' }));
+    const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card2))' : 'var(--card2)', bd: c.pop ? 'color-mix(in srgb,var(--lime) 45%,transparent)' : 'var(--border)', packCls: c.pop ? 'va-cpack hot' : 'va-cpack', badge: c.pop ? 'MOST POPULAR' : '' }));
 
     // FAZA 2 #20 — bayt → "X GB" / "X MB" (hisob storage bar)
     const fmtBytesGB = (b) => { b = Number(b) || 0; const gb = b / 1073741824; if (gb >= 1) return (Math.round(gb * 100) / 100) + ' GB'; const mb = b / 1048576; return (mb >= 1 ? Math.round(mb) : (b ? 1 : 0)) + ' MB'; };
