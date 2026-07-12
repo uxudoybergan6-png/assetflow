@@ -44,7 +44,7 @@ echo "▶ Cloud Run deploy (no-cpu-throttling + min-instances=1 — fon gen ishl
 # konteyner restart qilinadi. Rollback: docs/ROLLBACK-RUNBOOK.md
 gcloud run deploy "$SERVICE" --image "$IMG" \
   --region "$REGION" --allow-unauthenticated \
-  --no-cpu-throttling --min-instances 1 --max-instances 2 \
+  --no-cpu-throttling --min-instances 1 --max-instances 10 \
   --memory 1Gi --cpu 1 --timeout 600 \
   --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
   --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \
