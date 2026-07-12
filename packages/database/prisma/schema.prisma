@@ -346,6 +346,13 @@ model ContributorTemplate {
   @@index([reviewStatus, published, updatedAt])
   @@index([packHash])
   @@index([takedownAt])
+  // ── Katalog filtri indekslari (P7 #4 / P6 #6) — ADDITIVE ──
+  // Server-side filter (step 15) yozilishidan OLDIN kerak: bularsiz har filtrlangan
+  // so'rov ketma-ket skan bo'ladi. Prefiks (published, reviewStatus) barcha katalog
+  // so'rovlarida bir xil; keyin pill o'lchovlari, oxirida updatedAt (kursor tartibi).
+  @@index([published, reviewStatus, kind, templateType, updatedAt], map: "ct_pub_rev_kind_type_upd_idx")
+  @@index([published, reviewStatus, stockType, updatedAt], map: "ct_pub_rev_stock_upd_idx")
+  @@index([published, reviewStatus, templateApp, updatedAt], map: "ct_pub_rev_app_upd_idx")
 }
 
 model StudioMessageThread {
