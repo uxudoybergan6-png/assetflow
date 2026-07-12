@@ -55,8 +55,12 @@ const AssetFlowAccount = (() => {
     // ular AUTH emas — ularda token'ni TOZALAMAYMIZ (aks holda limitga yetgan user noto'g'ri
     // "sessiya tugadi" bilan chiqib ketardi — P20 bug). Kod berilmasa (eski chaqiruv) 403 xavfsiz
     // tomonga — sign-out QILINMAYDI (faqat 401 chiqaradi).
+    // P8 #4 — 401 ham endi kod bilan: FAQAT sessiya o'lgan kodlar (yoki kodsiz eski 401) tozalaydi.
+    // TWO_FA_INVALID / PENDING_EXPIRED kabi 401'lar ish o'rtasida logout QILMAYDI.
+    const deadCode =
+      !code || code === "TOKEN_EXPIRED" || code === "TOKEN_INVALID" || code === "TOKEN_REVOKED" || code === "NO_TOKEN";
     const isAuthInvalidation =
-      status === 401 ||
+      (status === 401 && deadCode) ||
       (status === 403 && (code === "ACCOUNT_BLOCKED" || code === "ACCOUNT_INACTIVE"));
     if (isAuthInvalidation && hadToken) {
       clearToken();

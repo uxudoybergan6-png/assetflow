@@ -46,7 +46,7 @@ export async function requireAuth(
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
 
   if (!token) {
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized", code: "NO_TOKEN" });
     return;
   }
 
@@ -70,9 +70,18 @@ export async function requireAuth(
     return;
   }
 
-  const payload = verifyToken(token);
-  if (!payload) {
-    res.status(401).json({ error: "Invalid token" });
+  // P8 #4 — muddati o'tgan (EXPIRED) vs buzuq (INVALID) tokenni AJRATAMIZ, ikkalasiga ham aniq
+  // `code` beramiz. Klient faqat SESSIYA O'LGAN kodlarda (TOKEN_EXPIRED/INVALID/REVOKED/NO_TOKEN)
+  // sessiyani tozalaydi — TWO_FA_INVALID kabi boshqa 401'lar sessiyani NUKE qilmaydi.
+  let payload: AuthPayload;
+  try {
+    payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
+  } catch (e) {
+    const expired = e instanceof jwt.TokenExpiredError;
+    res.status(401).json({
+      error: expired ? "Session expired — please sign in again" : "Invalid token",
+      code: expired ? "TOKEN_EXPIRED" : "TOKEN_INVALID",
+    });
     return;
   }
 
@@ -82,7 +91,7 @@ export async function requireAuth(
     include: { pluginProfile: true },
   });
   if (!user) {
-    res.status(401).json({ error: "Session expired" });
+    res.status(401).json({ error: "Session expired", code: "TOKEN_INVALID" });
     return;
   }
   // Token-version: reset/block tokenVersion'ni oshiradi — eski JWT bekor bo'ladi.
