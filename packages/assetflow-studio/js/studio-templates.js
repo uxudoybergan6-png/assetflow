@@ -61,6 +61,9 @@ const StudioTemplates = (() => {
       // Stock S1 — mahsulot turi maydonlari (admin/moderation ko'rsatadi)
       kind: t.kind || "template",
       stockType: t.stockType || null,
+      // P3 (step 34) — AI Stock: admin navbati GENERATSIYA PROMPTINI ko'rsin (moderatsiya uchun).
+      aiSource: meta.aiSource || null,
+      aiPrompt: meta.prompt || null,
       templateApp: t.templateApp || "ae",
       templateType: t.templateType || "video-templates",
       // Per-template tier (set by admin). API returns isPro via include.

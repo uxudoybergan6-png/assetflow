@@ -525,6 +525,9 @@ function renderModDetail(t){
     </div>
     <div style="margin-top:16px"><div class="adx-flab">DESCRIPTION</div><div style="font-size:12.5px;color:#B7C0CE;line-height:1.6">${esc(t.desc)}</div>
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${(t.tags||[]).map(tag=>`<span class="adx-tagpill">${esc(tag)}</span>`).join('')}</div></div>
+    ${t.aiSource==='ai'||t.templateType==='ai-stock'?`<div style="margin-top:16px;background:var(--limedim,rgba(194,240,74,.08));border:1px solid rgba(194,240,74,.28);border-radius:11px;padding:10px 12px">
+      <div class="adx-flab" style="margin:0;color:#C2F04A;display:flex;align-items:center;gap:6px"><i class="ph ph-sparkle"></i>AI GENERATION PROMPT</div>
+      <div style="font-size:12px;color:#B7C0CE;margin-top:5px;line-height:1.55">${t.aiPrompt?esc(t.aiPrompt):'<span style="color:#8A93A3">(no prompt captured)</span>'}</div></div>`:''}
     ${t.reason?`<div style="margin-top:16px;background:${t.status==='hard'?'var(--reddim)':'var(--amberdim)'};border:1px solid ${t.status==='hard'?'rgba(255,107,94,.3)':'rgba(255,178,124,.32)'};border-radius:11px;padding:10px 12px">
       <div class="adx-flab" style="margin:0;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">PREVIOUS DECISION REASON</div>
       <div style="font-size:12px;color:#B7C0CE;margin-top:4px;line-height:1.55">${esc(t.reason)}</div></div>`:''}
