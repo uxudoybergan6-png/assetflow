@@ -6,6 +6,7 @@ import {
   getPublicOrSignedUrl,
   downloadS3ToBuffer,
   gcsKeyFromUrl,
+  deleteGenObjectsByPrefix,
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import { enforceStorageRetention } from "./storage-quota.js";
@@ -38,6 +39,7 @@ import {
   falSubmitJob,
   falVideoUrlToBuffer,
   type FalQueueJob,
+  type FalImageSettings,
 } from "./ai/fal.js";
 import {
   buildByteplusVideoBody,
@@ -1017,6 +1019,60 @@ async function runVertexOmniVideo(
  * Natija R2'ga → GenAsset → status=done. Xato → status=failed + KREDIT QAYTARILADI.
  */
 /**
+ * P19.1/P19.5 — fal RASM generatsiyasi RESUME bilan (video `runFalVideo` naqshi bilan bir xil).
+ * fal queue jobi (`requestId/statusUrl/responseUrl`) `__providerJob`ga saqlanadi. Agar jarayon
+ * o'lsa (Cloud Run restart) natija YO'QOLMAYDI:
+ *   1) `settleStuckGeneration` refunddan OLDIN shu job'ni provayderdan so'raydi (probe);
+ *   2) 30s resume-jadval processGeneration'ni qayta uradi → biz saqlangan job'ni QAYTA poll qilib
+ *      responseUrl'dagi natijani olamiz — QAYTA SUBMIT / QAYTA TO'LOV YO'Q (provayder allaqachon
+ *      to'langan; foydalanuvchi to'lagan narsasini oladi).
+ * FAQAT count===1'da ishlaydi (bitta `__providerJob` sloti bor; count>1 bir nechta parallel job =
+ * mavjud xatti-harakat, resume YO'Q → qisman tugash + qayta to'lovdan xoli). Money-zone: bu yerda
+ * kredit/quote/refund YO'Q — faqat yetkazish yo'li.
+ */
+async function runFalImage(
+  modelId: string,
+  prompt: string,
+  opts: {
+    imageUrls?: string[];
+    aspect?: string | null;
+    quality?: string | null;
+    settings?: FalImageSettings;
+    noNumParam?: boolean;
+    outputFormat?: string;
+  },
+  params: Record<string, unknown>,
+  genId: string
+): Promise<OrResult<Buffer>> {
+  const saved = readProviderJob(params);
+  if (saved?.provider === "fal-image") {
+    // RESUME — provayder allaqachon to'langan: natijani QAYTA olamiz (submit YO'Q).
+    const step = await falPollStep({
+      requestId: saved.requestId,
+      statusUrl: saved.statusUrl,
+      responseUrl: saved.responseUrl,
+    });
+    if (!step.ok) return step; // provayder ANIQ yiqildi/rad etdi → fail+refund (mavjud yo'l)
+    if (step.data.state !== "completed")
+      // hali ishlayapti → FAL_TIMEOUT sentinel: "running" qoladi, KREDIT QAYTMAYDI (reconcile/resume hal qiladi)
+      return { ok: false, error: "FAL_TIMEOUT: job still running — no refund" };
+    return falImageResultToBuffer(step.data.data);
+  }
+  // Yangi topshiriq — job'ni DARHOL saqlaymiz (onJob), so'ng falImage ichki poll qiladi. Jarayon
+  // poll paytida o'lsa job saqlangan → yuqoridagi resume yo'li tiklaydi.
+  return falImage(modelId, prompt, {
+    ...opts,
+    onJob: (job) =>
+      persistProviderJob(genId, params, {
+        provider: "fal-image",
+        requestId: job.requestId,
+        statusUrl: job.statusUrl,
+        responseUrl: job.responseUrl,
+        submittedAt: new Date().toISOString(),
+      }),
+  });
+}
+/**
  * Chiqish moderatsiyasi (Bosqich 2 #1, env-gated MODERATION_MODERATE_OUTPUTS) — generatsiya
  * NATIJASIDAGI rasm assetlarini ML klassifikatorga yuboradi. Og'ir kategoriya aniqlansa
  * assetlar o'chiriladi va Error otiladi → processGeneration catch → fail()=failed+refund
@@ -1076,6 +1132,12 @@ export async function processGeneration(genId: string): Promise<void> {
     await clearProviderJob(genId);
     if (upd.count > 0) {
       await refundAiCredits(gen.userId, gen.cost, { generationId: genId });
+      // P19.6 — YETIM FAYL: provayder yetkazgan bo'lishi mumkin (case C / moderation-block: asset
+      // yaratilib keyin o'chirilgan) — bu obyektlar hech ko'rsatilmaydi, ammo omborni band qiladi.
+      // Terminal refunddan KEYIN prefiks bo'yicha tozalaymiz. Best-effort — gen'ni bloklamaydi.
+      await deleteGenObjectsByPrefix(gen.userId, genId).catch((e) =>
+        console.warn(`[studio-gen] P19.6 yetim fayl tozalash xato (${genId}):`, e instanceof Error ? e.message : e)
+      );
       // P30.5 — provayder KONTENT rad etsa: LOGGA yoz (provayder/model/kategoriya/son) + P30.4
       // rate-limit sanog'i (refund-farming). Tasnif ASL xato matnidan (normalize'dan oldingi signal).
       const rej = classifyGenRejection(reason);
@@ -1254,7 +1316,11 @@ export async function processGeneration(genId: string): Promise<void> {
             ? vertexImageEdit(model.key, gen.prompt, vertexRefUrls, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
             : vertexImage(model.key, gen.prompt, { aspectRatio: imageConfig.aspect_ratio, imageSize: imageConfig.image_size })
           : useFal
-          ? falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat })
+          ? // P19.1: count===1 → RESUME bilan (job saqlanadi, jarayon o'lsa responseUrl'dan qayta olinadi).
+            // count>1 → bir nechta parallel job (bitta slot sig'maydi) → mavjud, resume-siz yo'l.
+            count === 1
+            ? runFalImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat }, params, genId)
+            : falImage(model.falModel ?? model.key, gen.prompt, { imageUrls: falImageUrls, aspect: aspectRatio, quality, settings: model.imgSettings, noNumParam: model.noNumParam, outputFormat: model.outputFormat })
           : mfRemoveBg
           ? magnificRemoveBg(mfRbgUrl)
           : mfTool
@@ -1296,6 +1362,9 @@ export async function processGeneration(genId: string): Promise<void> {
           data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, watermarkKey: s.watermarkKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
       }
+      // P19.1 — muvaffaqiyatli tugadi: saqlangan fal-image job'ni tozalaymiz (no-op agar yo'q) →
+      // reconcile/resume endi bu (done) gen'ga tegmaydi.
+      await clearProviderJob(genId);
     } else if (model.feature === "text-to-speech") {
       // Voice MAJBURIY (bo'sh → "expected string" xatosi). P8 C6: katalog `voices`
       // ro'yxatiga qarshi VALIDATSIYA — noma'lum voice → birinchi katalog voice.
@@ -1426,14 +1495,29 @@ function stuckTimeoutMs(g: { mode: string; modelId: number }): number {
   return 20 * 60 * 1000;
 }
 
-// P19.5 — QATTIQ SHIFT (hard ceiling): provayder javob bermasa ham ish abadiy osilmasin. Bundan
-// oshsa provayder "ishlayapti" desa ham fail+refund. Per-model (6s Seedance ≠ uzun videoning Topaz
-// upscale'i): standart 2 soat, video-upscale (Topaz, uzoq) uchun 4 soat.
-const HARD_CEILING_DEFAULT_MS = 2 * 60 * 60 * 1000;
-const HARD_CEILING_UPSCALE_MS = 4 * 60 * 60 * 1000;
+// P19.5 — QATTIQ SHIFT (hard ceiling): provayder umuman javob bermasa (probe har safar unreachable)
+// ish abadiy osilmasin. Bundan oshsa provayder "ishlayapti" desa ham fail+refund. Bu GUESS emas —
+// BACKSTOP: shuning uchun har model uchun KUTILGAN davomiylikdan ANCHA kengroq (hali ishlаётган
+// jobni noto'g'ri refund qilmaslik uchun). Per-model (6s Seedance ≠ uzun videoning Topaz upscale'i):
+// rasm/audio tez → 1 soat; video → 2 soat; video-upscale (Topaz, uzun 4K) → 4 soat.
+const HOUR_MS = 60 * 60 * 1000;
 function hardCeilingMs(model: GenModel | null | undefined): number {
-  if (model?.feature === "video-upscale") return HARD_CEILING_UPSCALE_MS;
-  return HARD_CEILING_DEFAULT_MS;
+  switch (model?.feature) {
+    case "video-upscale":
+      return 4 * HOUR_MS;
+    case "text-to-video":
+    case "image-to-video":
+    case "reference-to-video":
+      return 2 * HOUR_MS;
+    case "text-to-speech":
+    case "text-to-sfx":
+    case "text-to-image":
+    case "image-edit":
+    case "image-upscale":
+      return 1 * HOUR_MS;
+    default:
+      return 2 * HOUR_MS;
+  }
 }
 
 /** Provayderga topshirilгan payt (ms) — job.submittedAt bo'lsa undan, aks holda gen.createdAt. */
@@ -1481,6 +1565,27 @@ async function probeProviderJob(job: StoredProviderJob): Promise<"alive" | "fail
 }
 
 /**
+ * P19.5 — SOF (side-effect'siz) refund QARORI. `settleStuckGeneration` provayderdan so'ragach shuni
+ * chaqiradi. Bu yerda kredit/DB YO'Q → birlik-testlarda to'liq isbotlanadi (money-zone qaror izchilligi).
+ * Direktor qarori (majburiy):
+ *   still running / done / javobsiz (ceiling ichida) → refund YO'Q (kutamiz, resume yetkazadi)
+ *   provayder ANIQ yiqildi                          → refund (provider failure)
+ *   qattiq shift (hard ceiling) o'tdi               → refund (provayder abadiy javob bermasa backstop)
+ *   job umuman yo'q (sinxron/eski)                  → refund (mavjud xatti-harakat)
+ */
+function decideStuckRefund(input: {
+  hasJob: boolean;
+  withinCeiling: boolean;
+  probe: "alive" | "failed" | "unreachable" | null; // faqat (hasJob && withinCeiling) da so'raladi
+}): { refund: boolean; reason: string } {
+  if (!input.hasJob) return { refund: true, reason: "Timed out (auto-recovered) — credits refunded" };
+  if (!input.withinCeiling) return { refund: true, reason: "Timed out past hard limit — credits refunded" };
+  if (input.probe === "failed") return { refund: true, reason: "Provider reported failure — credits refunded" };
+  // "alive" (ishlayapti/tayyor) yoki "unreachable" (transient) → kutamiz, refund YO'Q.
+  return { refund: false, reason: "" };
+}
+
+/**
  * P19.5 — bitta qotган gen uchun QAROR: provayderdan so'rab, so'ng (kerak bo'lsa) atomik fail+refund.
  * 🔴 MONEY ZONE: atomik guard (`updateMany ... where status in (queued,running)` + count>0 → refund)
  * BAYT-BAYT saqlangan (audit 2026-06-26). Provayder-tekshiruvi FAQAT refund QARORIDAN OLDIN qo'shildi.
@@ -1502,19 +1607,16 @@ async function settleStuckGeneration(g: {
   const model = getModelById(g.modelId);
   const withinCeiling = Date.now() - providerJobStartMs(job, g.createdAt) < hardCeilingMs(model);
 
-  let reason = "Timed out (auto-recovered) — credits refunded";
-  if (job && withinCeiling) {
-    const probe = await probeProviderJob(job);
-    if (probe !== "failed") {
-      // Provayder tugatmagan/hali ishlayapti/javob bermadi → PUL QAYTARMAYMIZ (sekin 4K video
-      // nosozlik EMAS). 30s resume-jadval (resumePendingGenerations) uni haydaydi/yetkazadi.
-      console.log(`[studio-gen] P19.5 provayder-tekshiruvi: gen ${g.id} (${job.provider}) → ${probe} → REFUND YO'Q, kutamiz`);
-      return "skipped";
-    }
-    reason = "Provider reported failure — credits refunded";
-  } else if (job && !withinCeiling) {
-    reason = "Timed out past hard limit — credits refunded";
+  // Provayderdan FAQAT (job bor + ceiling ichida) so'raymiz — aks holda so'rovga hojat yo'q.
+  const probe = job && withinCeiling ? await probeProviderJob(job) : null;
+  const decision = decideStuckRefund({ hasJob: !!job, withinCeiling, probe });
+  if (!decision.refund) {
+    // Provayder tugatmagan/hali ishlayapti/javob bermadi → PUL QAYTARMAYMIZ (sekin 4K video
+    // nosozlik EMAS). 30s resume-jadval (resumePendingGenerations) uni haydaydi/yetkazadi.
+    console.log(`[studio-gen] P19.5 provayder-tekshiruvi: gen ${g.id} (${job?.provider}) → ${probe} → REFUND YO'Q, kutamiz`);
+    return "skipped";
   }
+  const reason = decision.reason;
 
   // 🔴 Atomik fail+refund — MAVJUD naqsh, O'ZGARMAYDI (double-refund race fix, audit 2026-06-26).
   const upd = await prisma.generation.updateMany({
@@ -1523,6 +1625,12 @@ async function settleStuckGeneration(g: {
   });
   if (upd.count > 0) {
     await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    // P19.6 — YETIM FAYL: provayder yetkazib, biz saqlagan bo'lsak-da gen refund bo'ldi → hech
+    // ko'rsatilmaydigan obyektlar omborni band qiladi. Terminal refunddan KEYIN prefiks bo'yicha
+    // tozalaymiz (resume tugadi — status=failed). Best-effort.
+    await deleteGenObjectsByPrefix(g.userId, g.id).catch((e) =>
+      console.warn(`[studio-gen] P19.6 yetim fayl tozalash xato (${g.id}):`, e instanceof Error ? e.message : e)
+    );
     return "refunded";
   }
   return "skipped";
@@ -1667,3 +1775,16 @@ setTimeout(() => {
   backfillUnrefundedFailures().catch((e) => console.error("[studio-gen] P1 backfill xato:", e));
   reconcileAllStuckGenerations().catch((e) => console.error("[studio-gen] initial reconcile xato:", e));
 }, 2000);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P19.5 — BIRLIK-TEST seami (money-zone qaror izchilligi + resume yetkazish yo'li).
+// Ishlab chiqarish mantig'iga TA'SIR QILMAYDI: faqat SOF/REAL funksiyalarni tashqariga ochadi
+// (isbot: docs/ P19 proof skripti). Atomik refund guard settleStuckGeneration ichida qoladi.
+export const __p19Testing = {
+  decideStuckRefund,
+  probeProviderJob,
+  runFalImage,
+  readProviderJob,
+  hardCeilingMs,
+  providerJobStartMs,
+} as const;

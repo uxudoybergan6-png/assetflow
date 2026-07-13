@@ -380,6 +380,43 @@ export async function deleteTemplateAssets(templateId: string): Promise<number> 
   return deleted;
 }
 
+/**
+ * P19.6 — bitta generatsiyaning BARCHA obyektlarini prefiks bo'yicha o'chiradi
+ * (`gen/<userId>/<genId>-...` = natija + thumb/display/preview + suv belgili nusxa). YETIM
+ * FAYLLAR: provayder yetkazgan, biz saqlagan, lekin gen keyin fail+refund bo'lgan bo'lsa
+ * (case C / moderation-block) — bu obyektlar hech qachon ko'rsatilmaydi, ammo omborni band
+ * qiladi. Terminal refund'dan KEYIN chaqiriladi (resume tugagach — status=failed). `<genId>-`
+ * ajratuvchisi tufayli boshqa gen kalitlariga tegmaydi. Best-effort (chaqiruvchi try/catch).
+ */
+export async function deleteGenObjectsByPrefix(userId: string, genId: string): Promise<number> {
+  if (!isS3Configured()) return 0;
+  const uid = String(userId).trim();
+  const gid = String(genId).trim();
+  if (!uid || !gid) return 0;
+  const prefix = `gen/${uid}/${gid}-`;
+  let deleted = 0;
+  let continuationToken: string | undefined;
+  do {
+    const listed = await s3.send(
+      new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: continuationToken })
+    );
+    const keys = (listed.Contents ?? [])
+      .map((o) => o.Key)
+      .filter((k): k is string => typeof k === "string" && k.startsWith(prefix));
+    if (keys.length) {
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+        })
+      );
+      deleted += keys.length;
+    }
+    continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+  } while (continuationToken);
+  return deleted;
+}
+
 /** Berilgan kalitlarni R2'dan o'chiradi (gen natijalarini o'chirish uchun). */
 export async function deleteS3Objects(keys: string[]): Promise<number> {
   if (!isS3Configured()) return 0;
