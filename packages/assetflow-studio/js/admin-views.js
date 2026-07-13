@@ -250,6 +250,9 @@ let MOD_FILTER = 'pending';
 let MOD_CHECKED = new Set();
 let MOD_CAT = 'all';
 let MOD_SORT = 'new';
+// P1 (step 32 / P5.4) — 200 klipli navbat uchun tur (taksonomiya pill) + contributor filtri.
+let MOD_TYPE = 'all';
+let MOD_CON = 'all';
 
 VIEWS.moderation = function(){
   return `<div id="modRoot" style="flex:1;display:flex;flex-direction:column;min-height:0"></div>`;
@@ -284,9 +287,26 @@ function modQueueItems(){
   else if(MOD_FILTER==='all') items = TEMPLATES.filter(t=>['pending','soft','hard'].includes(t.status));
   else items = tByStatus(MOD_FILTER);
   if(MOD_CAT!=='all') items = items.filter(t=>t.cat===MOD_CAT);
+  // P5.4 — tur (taksonomiya pill: video-templates|luts|graphics|motion-graphics|music|sfx)
+  if(MOD_TYPE!=='all') items = items.filter(t=>(t.templateType||'video-templates')===MOD_TYPE);
+  // P5.4 — contributor bo'yicha (cid = contributor id)
+  if(MOD_CON!=='all') items = items.filter(t=>(t.cid||(t._con&&t._con.id))===MOD_CON);
   return items.slice().sort((a,b)=> MOD_SORT==='new'
     ? String(b.created||'').localeCompare(String(a.created||''))
     : String(a.created||'').localeCompare(String(b.created||'')));
+}
+
+/** Navbatdagi contributor'lar ro'yxati (filter selecti uchun) — {id, name}. */
+function modContributors(){
+  const seen = new Map();
+  for(const t of TEMPLATES){
+    if(!['pending','soft','hard'].includes(t.status)) continue;
+    const id = t.cid || (t._con && t._con.id);
+    if(!id || seen.has(id)) continue;
+    const c = t._con || (typeof cById==='function' ? cById(id) : null);
+    seen.set(id, (c && (c.name||c.email)) || id);
+  }
+  return [...seen.entries()].map(([id,name])=>({id,name}));
 }
 
 /* mockup g1\u2013g8 thumb gradient (app.css g9/g10 \u2192 wraps to 1/2) */
@@ -344,11 +364,21 @@ function adxPackClearBtn(t, cls){
 function modTopbarActions(){
   const tba = document.getElementById('tbActions');
   if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='moderation')) return;
+  // P5.4 \u2014 tur (taksonomiya pill) yorliqlari (UPLOAD_TAXONOMY data.js'dan)
+  const typeList = (typeof UPLOAD_TAXONOMY!=='undefined') ? UPLOAD_TAXONOMY : [];
+  const typeLabel = MOD_TYPE==='all' ? 'All types' : ((typeList.find(x=>x.key===MOD_TYPE)||{}).label || MOD_TYPE);
+  const cons = modContributors();
+  const conLabel = MOD_CON==='all' ? 'All contributors' : ((cons.find(c=>c.id===MOD_CON)||{}).name || 'Contributor');
   tba.innerHTML = `
-    <label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${MOD_CAT==='all'?'All categories':esc(MOD_CAT)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
-      <select onchange="setModCat(this.value)">
-        <option value="all" ${MOD_CAT==='all'?'selected':''}>All categories</option>
-        ${CATS.map(c=>`<option value="${esc(c)}" ${MOD_CAT===c?'selected':''}>${esc(c)}</option>`).join('')}
+    <label class="adx-sel"><i class="ph ph-stack" style="font-size:13px"></i><span>${esc(typeLabel)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+      <select onchange="setModType(this.value)">
+        <option value="all" ${MOD_TYPE==='all'?'selected':''}>All types</option>
+        ${typeList.map(x=>`<option value="${esc(x.key)}" ${MOD_TYPE===x.key?'selected':''}>${esc(x.label)}</option>`).join('')}
+      </select></label>
+    <label class="adx-sel"><i class="ph ph-user" style="font-size:13px"></i><span>${esc(conLabel)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+      <select onchange="setModCon(this.value)">
+        <option value="all" ${MOD_CON==='all'?'selected':''}>All contributors</option>
+        ${cons.map(c=>`<option value="${esc(c.id)}" ${MOD_CON===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
       </select></label>
     <label class="adx-sel"><i class="ph ph-sort-descending" style="font-size:13px"></i><span>${MOD_SORT==='new'?'Date: Newest \u2192 oldest':'Date: Oldest \u2192 newest'}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
       <select onchange="setModSort(this.value)">
@@ -356,6 +386,9 @@ function modTopbarActions(){
         <option value="old" ${MOD_SORT==='old'?'selected':''}>Oldest \u2192 newest</option>
       </select></label>`;
 }
+function setModType(v){ MOD_TYPE=v; MOD_SELECTED=null; MOD_CHECKED=new Set(); renderModeration(); }
+function setModCon(v){ MOD_CON=v; MOD_SELECTED=null; MOD_CHECKED=new Set(); renderModeration(); }
+window.setModType = setModType; window.setModCon = setModCon;
 
 function renderModeration(){
   const items = modQueueItems();
@@ -435,6 +468,23 @@ function adxFileChips(t){
   return chips.join('');
 }
 
+/** P5.4 — ffprobe spec metaboxlari (t._api xom qatoridan). Faqat NULL bo'lmagan qatorlar
+ *  chiqadi (eski shablonlar bo'sh). Reja: Length/Resolution/FPS/Alpha/Looped/Codec/Orientation. */
+function adxSpecBoxes(t){
+  const a = (t && t._api) || {};
+  const box = (lab, val) => `<div class="adx-metabox"><div class="adx-flab" style="margin:0">${lab}</div><div style="font-size:12px;color:#B7C0CE">${esc(val)}</div></div>`;
+  const out = [];
+  if(a.width && a.height) out.push(box('DIMENSIONS', `${a.width} × ${a.height}`));
+  if(a.durationSec!=null && a.durationSec>0){ const s=Math.round(a.durationSec); out.push(box('LENGTH', `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`)); }
+  if(a.fps) out.push(box('FRAME RATE', `${a.fps} fps`));
+  if(a.hasAlpha!=null) out.push(box('ALPHA', a.hasAlpha?'Yes':'No'));
+  if(a.looped!=null) out.push(box('LOOPED', a.looped?'Yes':'No'));
+  if(a.videoCodec) out.push(box('VIDEO CODEC', String(a.videoCodec).toUpperCase()));
+  if(a.audioCodec){ const parts=[String(a.audioCodec).toUpperCase()]; if(a.sampleRate) parts.push(`${Math.round(a.sampleRate/1000)} kHz`); if(a.audioBitrate) parts.push(`${Math.round(a.audioBitrate/1000)} kbps`); out.push(box('AUDIO', parts.join(' · '))); }
+  if(Array.isArray(a.orientations) && a.orientations.length>1) out.push(box('ORIENTATIONS', a.orientations.join(' + ')));
+  return out.join('');
+}
+
 function renderModDetail(t){
   const host = document.getElementById('modDetail');
   if(!host) return;
@@ -469,6 +519,7 @@ function renderModDetail(t){
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">CATEGORY</div><div style="font-size:12px;color:#B7C0CE">${esc(t.cat)}</div></div>
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">RESOLUTION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.res)}</div></div>
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">ORIENTATION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.orient)}</div></div>
+      ${adxSpecBoxes(t)}
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">FILE SIZE</div><div style="font-size:12px;color:#B7C0CE">${esc(t.size||'\u2014')}</div></div>
       <div class="adx-metabox"><div class="adx-flab" style="margin:0">UPLOADED</div><div class="adx-mono" style="font-size:11px;color:#B7C0CE">${esc(t.created||'\u2014')}</div></div>
     </div>

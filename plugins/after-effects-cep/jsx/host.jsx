@@ -2192,6 +2192,21 @@ function importMediaFromPath(filePath) {
   return JSON.stringify(result);
 }
 
+// P5.2 (step 32) — LUT'ni AE footage sifatida import qilib BO'LMAYDI. Faylni yuklab
+// olgach OS fayl brauzerida (Finder/Explorer) ko'rsatamiz — foydalanuvchi Lumetri Color
+// → Creative → Look yoki "Apply Color LUT" effektida qo'lda qo'llaydi. Dead-button emas.
+function revealFileInOS(filePath) {
+  try {
+    var f = new File(filePath);
+    if (!f.exists) return JSON.stringify({ ok: false, reason: "file not found" });
+    var folder = f.parent;
+    if (folder && folder.execute) { folder.execute(); return JSON.stringify({ ok: true }); }
+    return JSON.stringify({ ok: true, revealed: false });
+  } catch (e) {
+    return JSON.stringify({ ok: false, reason: String(e && e.toString ? e.toString() : e) });
+  }
+}
+
 // ── Timeline live-link (Higgsfield AEFT naqshi) ─────────────────────────────
 // Aktiv comp'dagi tanlangan layer manbasining fayl yo'lini qaytaradi (footage).
 function afLayerSourcePath(source) {

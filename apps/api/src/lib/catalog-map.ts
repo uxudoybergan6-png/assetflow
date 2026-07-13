@@ -310,7 +310,7 @@ export const approvedCatalogWhere = {
   reviewStatus: TemplateReviewStatus.APPROVED,
   published: true,
   takedownAt: null, // DMCA/takedown belgilangan shablonlar katalogda ko'rinmaydi (Bosqich 2 #2)
-  // Stock S1 — template katalogi faqat template'larni beradi; stock mahsulotlar
-  // S3 fazasida o'z surface'lari orqali chiqadi (TODO(S3)).
-  kind: "template",
+  // P1 (step 32) — endi STOCK ham katalogda (kind cheklovi OLIB TASHLANDI). Har asset
+  // O'Z pillida chiqadi (templateType = birlashgan pill kaliti); klient templateType/
+  // stockType/kind bilan filtrlaydi. AI Stock (kind=stock, ai kelib chiqishi) P3 chizig'ida.
 };

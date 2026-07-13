@@ -799,15 +799,13 @@ async function modClearPackConfirm(id) {
   }
 }
 
-/** Stock S1 — kind/Type xulosasi (moderation meta-grid + edit modal). */
+/** P1 (step 32) — kind/Type xulosasi (BIRLASHGAN taksonomiya kaliti = templateType). */
 function kindTypeLabel(t){
-  if ((t.kind || "template") === "stock") {
-    const st = { video: "Video", music: "Music", sfx: "Sound FX", photo: "Photo" }[t.stockType] || t.stockType || "—";
-    return "Stock · " + st;
-  }
-  const types = typeof TEMPLATE_TYPES !== "undefined" ? TEMPLATE_TYPES : [];
-  const tt = types.find((x) => x.value === (t.templateType || "video-templates"));
-  return "Template · " + (tt ? tt.label : "Video Templates");
+  const key = t.templateType || "video-templates";
+  const taxon = (typeof taxonByKey === "function") ? taxonByKey(key) : null;
+  const label = taxon ? taxon.label
+    : ({ video: "Video", photo: "Photo", music: "Music", sfx: "Sound FX" }[t.stockType] || key);
+  return ((t.kind || "template") === "stock" ? "Stock · " : "Template · ") + label;
 }
 
 function openEditMeta(id){
@@ -822,7 +820,7 @@ function openEditMeta(id){
       <div class="field"><label>Description</label><textarea id="emDesc" class="textarea">${esc(t.desc||'')}</textarea></div>
       <div class="row gap-12"><div class="field grow"><label>Kind</label><input class="input" value="${esc(kindTypeLabel(t))}" disabled></div>
       ${isStock?'':`<div class="field grow"><label>Type</label><select id="emType" class="select" style="height:38px;width:100%">${(typeof TEMPLATE_TYPES!=='undefined'?TEMPLATE_TYPES:[]).map(x=>`<option value="${x.value}" ${x.value===(t.templateType||'video-templates')?'selected':''}>${esc(x.label)}</option>`).join('')}</select></div>`}</div>
-      <div class="row gap-12"><div class="field grow"><label>Category</label><select id="emCat" class="select" style="height:38px;width:100%">${CATS.map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+      <div class="row gap-12"><div class="field grow"><label>Category</label><select id="emCat" class="select" style="height:38px;width:100%">${((typeof categoriesForType==='function'?categoriesForType(t.templateType||'video-templates'):CATS)||CATS).map(c=>`<option ${c===t.cat||c===t.catLabel?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="field grow"><label>Resolution</label><input id="emRes" class="input" value="${esc(t.res)}"></div></div>
       <div class="field"><label>Tags</label><input id="emTags" class="input" value="${esc(t.tags.join(', '))}"></div>
     </div>
@@ -843,7 +841,10 @@ async function saveEditMeta(id) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const mapped = typeof catFromLabel === "function" ? catFromLabel(catLabel) : { cat: "intros", catLabel };
+  // Per-kind kategoriya slug: shablon kategoriyasi bo'lsa CAT_SLUGS, aks holda stock auto-slug.
+  const mapped = (typeof CAT_SLUGS !== "undefined" && CAT_SLUGS[catLabel])
+    ? catFromLabel(catLabel)
+    : (typeof stockCatFromLabel === "function" ? stockCatFromLabel(catLabel) : { cat: String(catLabel||'').toLowerCase().replace(/[^a-z0-9]+/g,'-'), catLabel });
   // Stock S1 — template branch'da Type select mavjud bo'lsa uni ham yuboramiz
   const typeEl = document.getElementById("emType");
   try {

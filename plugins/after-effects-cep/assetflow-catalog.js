@@ -6,7 +6,7 @@ const AssetFlowCatalog = (() => {
     typeof ASSETFLOW_ENV !== "undefined"
       ? ASSETFLOW_ENV.defaultApi()
       : "https://api.getframeflow.app";
-  let countByNav = { video: 0, motion: 0, graphics: 0, luts: 0 };
+  let countByNav = { video: 0, motion: 0, graphics: 0, luts: 0, music: 0, sfx: 0 };
 
   function apiBase() {
     if (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) {
@@ -308,14 +308,14 @@ const AssetFlowCatalog = (() => {
       return 0;
     }
     if (!append) {
-      countByNav = { video: 0, motion: 0, graphics: 0, luts: 0 };
+      countByNav = { video: 0, motion: 0, graphics: 0, luts: 0, music: 0, sfx: 0 };
       clearServerFromBrowse(); // reset — eski server itemlarini oldin o'chiramiz
     }
     if (!items?.length) return 0;
     const NAV_LABELS_REF =
       typeof NAV_LABELS !== "undefined"
         ? NAV_LABELS
-        : { video: "Templates", motion: "Motion", graphics: "Graphics", luts: "LUTs" };
+        : { video: "Templates", motion: "Motion Graphics", graphics: "Graphics", luts: "LUTs", music: "Music", sfx: "Sound FX" };
 
     items.forEach((u) => {
       const packKey = "__srv_" + u.id;
@@ -392,7 +392,7 @@ const AssetFlowCatalog = (() => {
 
   /** Birinchi server shablonlari bor bo'lim */
   function primaryServerNav() {
-    for (const key of ["video", "motion", "graphics", "luts"]) {
+    for (const key of ["video", "motion", "graphics", "luts", "music", "sfx"]) {
       if (countByNav[key] > 0) return key;
     }
     return "video";

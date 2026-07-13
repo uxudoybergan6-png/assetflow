@@ -31,23 +31,52 @@ const StudioMedia = (() => {
     return escapeAttr(s).replace(/>/g, "&gt;");
   }
 
-  /** Large preview (moderation / drawer) */
-  function renderPreview(t, opts = {}) {
-    const h = opts.height || "auto";
-    const aspect = opts.aspect || "16/10";
-    const style = `width:100%;aspect-ratio:${aspect};object-fit:cover;background:#0f0f14;border-radius:${opts.radius || "0"};display:block;max-height:${opts.maxHeight || "none"}`;
-    const grad = t.grad || "g1";
-    const fallback = `<div class="thumb ${grad} grain" style="width:100%;aspect-ratio:${aspect};display:grid;place-items:center"><span class="small" style="color:var(--tx-2);padding:12px;text-align:center">${ic("film")} Preview not uploaded</span></div>`;
+  /** P1 (step 32) — asset media sinfini aniqlaydi (moderatsiya pleyeri uchun). */
+  function mediaClassOf(t) {
+    const st = t.stockType || "";
+    const tt = t.templateType || "";
+    if (st === "music" || st === "sfx" || tt === "music" || tt === "sfx") return "audio";
+    if (st === "graphics" || tt === "graphics") return "image";
+    if (st === "motion-graphics" || tt === "motion-graphics") return "video";
+    if (tt === "luts") return "lut";
+    return "video"; // video-templates (preview = render video)
+  }
 
-    if (t.id && (hasAsset(t, "preview") || t.previewUrl)) {
-      const src = escapeAttr(t.previewUrl || assetUrl(t.id, "preview"));
-      return `<video class="studio-preview-video" controls playsinline preload="auto" src="${src}" style="${style}"></video>`;
+  /** Large preview (moderation / drawer) — kind-aware: video/audio pleyer, image, LUT. */
+  function renderPreview(t, opts = {}) {
+    const aspect = opts.aspect || "16/10";
+    const style = `width:100%;aspect-ratio:${aspect};object-fit:${opts.fit || "cover"};background:#0f0f14;border-radius:${opts.radius || "0"};display:block;max-height:${opts.maxHeight || "none"}`;
+    const grad = t.grad || "g1";
+    const mc = mediaClassOf(t);
+    const previewSrc = escapeAttr(t.previewUrl || assetUrl(t.id, "preview"));
+    const thumbSrc = escapeAttr(t.thumbUrl || assetUrl(t.id, "thumb"));
+    const hasPreview = t.id && (hasAsset(t, "preview") || t.previewUrl);
+    const hasThumb = t.id && (hasAsset(t, "thumb") || t.thumbUrl);
+
+    // AUDIO (Music / SFX) — inline audio pleyer (video EMAS). Suv belgili preview.mp3.
+    if (mc === "audio" && hasPreview) {
+      return `<div style="width:100%;aspect-ratio:${aspect};background:#0f0f14;border-radius:${opts.radius || "0"};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px">
+        <div style="font-size:26px;color:var(--tx-2)">${ic("play")}</div>
+        <audio controls preload="metadata" src="${previewSrc}" style="width:100%;max-width:420px"></audio>
+        <span class="small" style="color:var(--tx-2)">Watermarked preview — original is clean</span>
+      </div>`;
     }
-    if (t.id && (hasAsset(t, "thumb") || t.thumbUrl)) {
-      const src = escapeAttr(t.thumbUrl || assetUrl(t.id, "thumb"));
-      return `<img class="studio-preview-img" alt="" src="${src}" style="${style}" />`;
+    // IMAGE (Graphics) — suv belgili thumb'ni to'liq ko'rsatamiz (contain, kesilmasin).
+    if (mc === "image" && hasThumb) {
+      return `<img class="studio-preview-img" alt="" src="${thumbSrc}" style="${style.replace("object-fit:cover", "object-fit:contain")}" />`;
     }
-    return fallback;
+    // LUT — vizual media yo'q; toza fayl pack'da.
+    if (mc === "lut") {
+      return `<div class="thumb ${grad} grain" style="width:100%;aspect-ratio:${aspect};display:grid;place-items:center"><span class="small" style="color:var(--tx-2);padding:12px;text-align:center">${ic("sliders")} LUT file — download to preview in your grading tool</span></div>`;
+    }
+    // VIDEO (video-templates render + motion-graphics stock).
+    if (hasPreview) {
+      return `<video class="studio-preview-video" controls playsinline preload="auto" src="${previewSrc}" style="${style}"></video>`;
+    }
+    if (hasThumb) {
+      return `<img class="studio-preview-img" alt="" src="${thumbSrc}" style="${style}" />`;
+    }
+    return `<div class="thumb ${grad} grain" style="width:100%;aspect-ratio:${aspect};display:grid;place-items:center"><span class="small" style="color:var(--tx-2);padding:12px;text-align:center">${ic("film")} Preview not uploaded</span></div>`;
   }
 
   /** Small thumbnail (table / queue) */
@@ -99,6 +128,7 @@ const StudioMedia = (() => {
     renderPreview,
     renderThumb,
     filePills,
+    mediaClassOf,
   };
 })();
 

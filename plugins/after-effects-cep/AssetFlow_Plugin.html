@@ -3830,6 +3830,8 @@ html.home-mode #homePage{display:block!important}
                   <button type="button" class="env-side-link sb-link sb-child" data-nav="motion" title="Motion Videos" onclick="switchNavFromSidebar(this,'motion')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/><path d="M19.5 13.5l.7 2.1 2.1.7-2.1.7-.7 2.1-.7-2.1-2.1-.7 2.1-.7z" opacity=".75"/><path d="M5.5 16.5l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".55"/></svg></span><span class="sb-dot"></span><span class="sb-label">Motion Videos</span></button>
                   <button type="button" class="env-side-link sb-link sb-child" data-nav="graphics" title="Graphics" onclick="switchNavFromSidebar(this,'graphics')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/><path d="M15 5l4 4"/></svg></span><span class="sb-dot"></span><span class="sb-label">Graphics</span></button>
                   <button type="button" class="env-side-link sb-link sb-child" data-nav="luts" title="LUTs" onclick="switchNavFromSidebar(this,'luts')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg></span><span class="sb-dot"></span><span class="sb-label">LUTs</span></button>
+                  <button type="button" class="env-side-link sb-link sb-child" data-nav="music" title="Music" onclick="switchNavFromSidebar(this,'music')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span class="sb-dot"></span><span class="sb-label">Music</span></button>
+                  <button type="button" class="env-side-link sb-link sb-child" data-nav="sfx" title="Sound FX" onclick="switchNavFromSidebar(this,'sfx')"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14" opacity=".6"/></svg></span><span class="sb-dot"></span><span class="sb-label">Sound FX</span></button>
                 </div>
 
                 <div class="sb-divider"></div>
@@ -3903,6 +3905,8 @@ html.home-mode #homePage{display:block!important}
                   <button type="button" class="af-tab" data-nav="motion" role="tab" aria-selected="false" onclick="afNavTab('motion')">Motion</button>
                   <button type="button" class="af-tab" data-nav="graphics" role="tab" aria-selected="false" onclick="afNavTab('graphics')">Graphics</button>
                   <button type="button" class="af-tab" data-nav="luts" role="tab" aria-selected="false" onclick="afNavTab('luts')">LUTs</button>
+                  <button type="button" class="af-tab" data-nav="music" role="tab" aria-selected="false" onclick="afNavTab('music')">Music</button>
+                  <button type="button" class="af-tab" data-nav="sfx" role="tab" aria-selected="false" onclick="afNavTab('sfx')">Sound FX</button>
                 </nav>
                 <!-- a1 grid sarlavha qatori: hisob + saralash. sortDrop .env-filter-bar ichida qoladi (initEnvFilterUi delegatsiyasi ishlaydi). -->
                 <div class="af-cathead">
@@ -5079,12 +5083,15 @@ const packs=window.packs;
 
 const navSubs={
   video:['All','Logos','Typography & Titles','Slideshows','Lower Thirds','Intros','Transitions','Overlays & Icons'],
-  motion:['All','Stock Footage','Transitions','Overlays','VFX','Lower Thirds','Green Screen'],
-  graphics:['All','Backgrounds','Mockups','Illustrations','Icons','Infographics'],
-  luts:['All','Creative','Cinematic','Retro']
+  motion:['All','Backgrounds','Overlays','Transitions','Elements','Light Leaks','Particles','Loops'],
+  graphics:['All','Backgrounds','Textures','Patterns','Icons','Illustrations','Mockups'],
+  luts:['All','Cinematic','Vintage','Film Emulation','Warm','Cool','Moody'],
+  // P1 (step 32) — Stock audio tablari
+  music:['All','Cinematic','Corporate','Ambient','Electronic','Hip-Hop','Rock','Pop'],
+  sfx:['All','Whoosh','Impact','UI / Interface','Ambience','Foley','Transitions','Nature']
 };
 
-const NAV_LABELS={video:'Templates',motion:'Motion Videos',graphics:'Graphics',luts:'LUTs'};
+const NAV_LABELS={video:'Templates',motion:'Motion Graphics',graphics:'Graphics',luts:'LUTs',music:'Music',sfx:'Sound FX'};
 
 // FAZA 5 (§2/§11) — kanonik dastur xaritasi (apps.ts server nusxasining ko'chirmasi).
 // Kod → { lbl, full, dot }. Klient literallari server bilan mos bo'lishi shart.
@@ -5139,6 +5146,23 @@ function packCanAeImport(pack){
   if(pack.serverTemplateId) return pack.hasPack!==false;
   return !!pack.fileBlobId;
 }
+
+/** P5.2 (step 32) — pack media SINFI (import mantiqi shunga qarab). nav (server
+ *  taksonomiyasi) ISHONCHLI — fileName default "template.aep" bo'lishi mumkin, shu bois
+ *  nav BIRINCHI; nav bo'lmasa (lokal upload) fayl kengaytmasi. */
+function packMediaKind(pack){
+  const nav=pack&&pack.nav;
+  const fn=String((pack&&pack.fileName)||'').toLowerCase();
+  if(nav==='luts'||/\.(cube|3dl|look)$/.test(fn)) return 'lut';
+  if(nav==='music'||nav==='sfx') return 'audio';
+  if(nav==='motion') return 'video';
+  if(nav==='graphics') return 'image';
+  if(/\.(mp4|mov|webm|m4v)$/.test(fn)) return 'video';
+  if(/\.(wav|mp3|aiff|aif|m4a|aac|ogg|flac)$/.test(fn)) return 'audio';
+  if(/\.(png|jpg|jpeg|webp|svg|gif|tif|tiff)$/.test(fn)) return 'image';
+  return 'project'; // video-templates (.aep/.mogrt zip)
+}
+function packIsRawMedia(pack){ const k=packMediaKind(pack); return k==='video'||k==='image'||k==='audio'; }
 
 function mapPackScenes(u){
   if(u.scenes&&u.scenes.length){
@@ -5323,7 +5347,34 @@ async function importPackFileToAE(pack){
   }
   showProgress(100,'Importing into AE…',true);
   const packLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
+  const mediaKind=packMediaKind(pack);
   return new Promise((resolve)=>{
+    // P5.2 — LUT: AE footage sifatida import qilib bo'lmaydi → faylni OS'da ko'rsatamiz + ko'rsatma.
+    if(mediaKind==='lut'){
+      csInterface.evalScript(`revealFileInOS(${JSON.stringify(importPath)})`,()=>{
+        hideProgress();
+        showToast('LUT downloaded and revealed in your file browser. Apply it via Lumetri Color → Creative → Look, or the “Apply Color LUT” effect.','info');
+        resolve('lut:downloaded');
+      });
+      return;
+    }
+    // P5.2 — Stock xom media (video/rasm/audio): FOOTAGE sifatida import + aktiv comp'ga qat'lam
+    // (host importMediaFromPath — canImportAs(FOOTAGE) guard bilan). importTemplateProject EMAS.
+    if(mediaKind==='video'||mediaKind==='image'||mediaKind==='audio'){
+      csInterface.evalScript(`importMediaFromPath(${JSON.stringify(importPath)})`,(result)=>{
+        hideProgress();
+        let r=null;try{r=result?JSON.parse(result):null;}catch(e){r=(String(result).indexOf('ok')===0)?{ok:true}:null;}
+        if(r&&r.ok){
+          showToast(r.addedToComp?('Imported — added to '+(r.compName?('"'+r.compName+'" '):'')+'composition'):'Imported to AE (Project panel)','success');
+          resolve('media:ok');
+        }else{
+          showToast('Import error: '+((r&&r.reason)||(result?String(result):'no result')),'error');
+          resolve('');
+        }
+      });
+      return;
+    }
+    // Default — .aep/.mogrt loyiha (video-templates).
     csInterface.evalScript(`importTemplateProject(${JSON.stringify(JSON.stringify({filePath:importPath,packLabel}))})`,(result)=>{
       hideProgress();
       resolve(result||'');
@@ -5769,7 +5820,7 @@ function resMatchesAsset(assetRes,filterRes){
 // nav→templateType, sub→cat, orient/res, qidiruv→q, sort→server sort. Server BUTUN
 // baza bo'yicha filtrlaydi (grid endi "birinchi sahifa ichidan" qidirmaydi — P5.1).
 function catalogFilters(){
-  const navToType={video:'video-templates',motion:'motion-graphics',graphics:'graphics',luts:'luts'};
+  const navToType={video:'video-templates',motion:'motion-graphics',graphics:'graphics',luts:'luts',music:'music',sfx:'sfx'};
   const sortMap={relevant:'mos',newest:'new',name:'az'};
   const f={ templateType: navToType[currentNav]||'' };
   const sv=sortMap[currentSort]; if(sv&&sv!=='mos') f.sort=sv;

@@ -184,9 +184,18 @@ function buildCatalogWhere(query: Request["query"]): Prisma.ContributorTemplateW
   if (apps.length === 1) and.push({ templateApp: apps[0] });
   else if (apps.length > 1) and.push({ templateApp: { in: apps } });
 
-  // templateType — keng tur pill (video-templates | motion-graphics | graphics | luts)
+  // templateType — BIRLASHGAN pill kaliti (video-templates | luts | graphics |
+  // motion-graphics | music | sfx). Har asset O'Z pillida (P1 step 30/32).
   const types = csvParam(query.templateType);
   if (types.length) and.push({ templateType: { in: types } });
+
+  // kind — 'template' | 'stock' (ixtiyoriy — masalan barcha stockni ko'rsatish).
+  const kinds = csvParam(query.kind);
+  if (kinds.length) and.push({ kind: { in: kinds } });
+
+  // stockType — graphics | motion-graphics | music | sfx (stock sub-turi).
+  const stockTypes = csvParam(query.stockType);
+  if (stockTypes.length) and.push({ stockType: { in: stockTypes } });
 
   // cat — granular kategoriya. Web `catLabel` ('Lower Thirds') yuboradi, plagin `cat`
   // slug ('lower-thirds') yuboradi → ikkalasiga ham case-insensitive mos kelamiz.

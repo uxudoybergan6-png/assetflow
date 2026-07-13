@@ -2294,7 +2294,11 @@ async function ingestOneAsset(
           orientations: orient ? [orient] : [],
           res,
           kind: taxon.kind,
-          templateType: taxon.templateType || "video-templates",
+          // templateType = BIRLASHGAN pill kaliti (video-templates|luts|graphics|
+          // motion-graphics|music|sfx) — har asset O'Z pillida chiqadi, stock hech
+          // qachon "Video Templates"ga sizmaydi (P1 owner decision 4). kind + stockType
+          // qo'shimcha o'lchov. taxon.key AYNAN pill kaliti.
+          templateType: taxon.key,
           stockType: taxon.stockType,
           // LUTs/stock uchun templateApp ma'nosiz — default "ae" (ustun default'i bilan mos).
           templateApp: "ae",
