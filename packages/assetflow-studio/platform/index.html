@@ -17829,7 +17829,7 @@ class Component extends DCLogic {
   categories = ['Video Templates', 'Lower Thirds', 'AI Templates', 'Graphics', 'LUT', 'SFX'];
 
   // #9/#10 — katalog kategoriya filtri: qat'iy 4 pill (plagin pill uslubi).
-  fixedCats = ['All', 'Templates', 'Motion', 'Graphics', 'LUTs'];
+  fixedCats = ['All', 'Templates', 'Motion', 'Graphics', 'LUTs', 'Music', 'SFX'];
 
   brands = ['NOVA', 'PixelHaus', 'Lumen', 'ORBIT', 'Kadr', 'Vizor'];
 
@@ -18495,7 +18495,7 @@ class Component extends DCLogic {
     return 'Templates';
   }
   // #3 (S1) — pill → keng tur mapping (4 pill = 4 templateType, 1:1)
-  pillTypes = { Templates: 'video-templates', Motion: 'motion-graphics', Graphics: 'graphics', LUTs: 'luts' };
+  pillTypes = { Templates: 'video-templates', Motion: 'motion-graphics', Graphics: 'graphics', LUTs: 'luts', Music: 'music', SFX: 'sfx' };
   // #3 — item'ning keng turi: S1 `t.type` ustuvor; type'siz eski itemlar granular kategoriya
   // mapping'i bilan, u ham bo'lmasa eski keyword-heuristika (catBucket) bilan aniqlanadi —
   // hech narsa yo'qolmaydi ("Logo Reveal" endi Templates ostida, Motion emas).
@@ -18511,7 +18511,8 @@ class Component extends DCLogic {
   }
   pillOf(t) {
     const ty = this.typeOf(t);
-    return ty === 'luts' ? 'LUTs' : ty === 'motion-graphics' ? 'Motion' : ty === 'graphics' ? 'Graphics' : 'Templates';
+    return ty === 'luts' ? 'LUTs' : ty === 'motion-graphics' ? 'Motion' : ty === 'graphics' ? 'Graphics'
+      : ty === 'music' ? 'Music' : ty === 'sfx' ? 'SFX' : 'Templates';
   }
   // #3 — granular kategoriyalar (backend TEMPLATE_CATEGORIES ko'zgusi, 'Uncategorized'siz)
   granularCats = ['Titles', 'Lower Thirds', 'Transitions', 'Intros', 'Logo Reveal', 'Openers', 'Slideshows', 'Backgrounds', 'LUTs', 'Overlays', 'Infographics', 'Social Media', 'Logos', 'Mockups'];
