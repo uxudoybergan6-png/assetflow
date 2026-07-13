@@ -160,10 +160,19 @@ export async function falPollStep(
 async function falSubmit(
   modelId: string,
   input: Record<string, unknown>,
-  opts?: { maxPolls?: number }
+  opts?: { maxPolls?: number; onJob?: (job: FalQueueJob) => void | Promise<void> }
 ): Promise<OrResult<unknown>> {
   const sub = await falSubmitJob(modelId, input);
   if (!sub.ok) return sub;
+  // P19.1 — queue jobi (requestId/statusUrl/responseUrl) chaqiruvchiga beriladi: DB'ga saqlab,
+  // jarayon o'lsa reconcile provayderdan so'raydi / natijani responseUrl'dan qayta oladi (resume).
+  if (opts?.onJob) {
+    try {
+      await opts.onJob(sub.data);
+    } catch {
+      /* best-effort — saqlash muvaffaqiyatsiz bo'lsa gen buzilmaydi, faqat resume yo'qoladi */
+    }
+  }
   return falPollJob(sub.data, opts);
 }
 
@@ -265,7 +274,7 @@ export type FalImageSettings = {
 export async function falImage(
   modelKey: string,
   prompt: string,
-  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null; settings?: FalImageSettings; noNumParam?: boolean; outputFormat?: string }
+  opts?: { imageUrls?: string[]; aspect?: string | null; quality?: string | null; settings?: FalImageSettings; noNumParam?: boolean; outputFormat?: string; onJob?: (job: FalQueueJob) => void | Promise<void> }
 ): Promise<OrResult<Buffer>> {
   if (!isFalConfigured()) return NOT_CONFIGURED;
   const imageUrls = (opts?.imageUrls || []).filter(
@@ -311,10 +320,19 @@ export async function falImage(
   } catch {
     /* ignore */
   }
-  const r = await falSubmit(modelKey, input);
+  const r = await falSubmit(modelKey, input, { onJob: opts?.onJob });
   if (!r.ok) return r;
-  const data = r.data as { images?: { url?: string }[]; image?: { url?: string } };
-  const url = data?.images?.[0]?.url || data?.image?.url;
+  return falImageResultToBuffer(r.data);
+}
+
+/**
+ * P19.1 — fal RASM natijasidan (queue response yoki poll data) rasm URL'ini topib Buffer'ga
+ * yuklaydi. Resume yo'lida (`gen-processor` saqlangan job'ni qayta poll qilgach) ishlatiladi:
+ * provayder allaqachon to'langan → responseUrl'dagi natijani QAYTA olib saqlaymiz (qayta to'lov YO'Q).
+ */
+export async function falImageResultToBuffer(data: unknown): Promise<OrResult<Buffer>> {
+  const box = data as { images?: { url?: string }[]; image?: { url?: string } };
+  const url = box?.images?.[0]?.url || box?.image?.url;
   if (!url) return { ok: false, error: "fal: result image not found" };
   return falDownload(url);
 }

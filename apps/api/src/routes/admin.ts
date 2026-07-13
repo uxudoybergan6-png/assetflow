@@ -917,7 +917,10 @@ adminRouter.get("/users/:id/generations", async (req, res) => {
   const hasMore = gens.length > take;
   const page = hasMore ? gens.slice(0, take) : gens;
   // Media imzolash — /gen/history bilan bir xil (hydrateGenAssets reuse). Xato bitta genni buzmasin.
-  await Promise.all(page.map((g) => hydrateGenAssets(g).catch(() => g)));
+  // P4 (14b): admin MODERATSIYA ko'rinishi — obunachi kontentini ASL holida ko'rishi kerak
+  // (suv belgisiz), shu bois viewerIsPaid=true (ishonchli xodim). Bu obunachining o'z yuklab
+  // olishiga TA'SIR QILMAYDI — u FREE bo'lsa o'z sessiyasida baribir suv belgili nusxa oladi.
+  await Promise.all(page.map((g) => hydrateGenAssets(g, { viewerIsPaid: true }).catch(() => g)));
   const items = page.map((g) => ({
     id: g.id,
     createdAt: g.createdAt,

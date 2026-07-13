@@ -17,6 +17,7 @@ import {
   makeVideoPreviewFile,
   probeMediaDimensions,
 } from "./optimize-preview.js";
+import { makeGenWatermarkFromBuffer } from "./gen-watermark.js"; // P4 (14b) — FREE reja SUV BELGILI nusxa
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -32,6 +33,8 @@ import { magnificImage, magnificImageEdit, magnificTool, magnificRemoveBg, genPr
 import {
   falImage,
   falPollStep,
+  falPollJob,
+  falImageResultToBuffer,
   falSubmitJob,
   falVideoUrlToBuffer,
   type FalQueueJob,
@@ -209,6 +212,9 @@ function normalizeGenerationError(message: string): string {
 type StoredProviderJob =
   | { provider: "openrouter-video"; jobId: string; submittedAt: string }
   | ({ provider: "fal-video" | "fal-ref-video"; submittedAt: string } & FalQueueJob)
+  // P19.1 — fal RASM jobi ham qayta-ulanadigan (resumable): provayder natijani yetkazgan,
+  // biz saqlay olmagan bo'lsak, responseUrl'dan qayta olib saqlaymiz (qayta to'lov YO'Q).
+  | ({ provider: "fal-image"; submittedAt: string } & FalQueueJob)
   | { provider: "byteplus-video"; taskId: string; submittedAt: string }
   | { provider: "vertex-video"; operationName: string; submittedAt: string };
 type StoredProviderWebhook = {
@@ -234,7 +240,7 @@ function readProviderJob(params: Record<string, unknown>): StoredProviderJob | n
     };
   }
   if (
-    (provider === "fal-video" || provider === "fal-ref-video") &&
+    (provider === "fal-video" || provider === "fal-ref-video" || provider === "fal-image") &&
     typeof job.requestId === "string" &&
     typeof job.statusUrl === "string" &&
     typeof job.responseUrl === "string"
@@ -372,11 +378,16 @@ function isResumableRunningGeneration(gen: {
   status: string;
   params: unknown;
 }): boolean {
-  if (gen.status !== "running" || gen.mode !== "video" || !gen.params || typeof gen.params !== "object") {
-    return false;
-  }
+  if (gen.status !== "running" || !gen.params || typeof gen.params !== "object") return false;
   const params = gen.params as Record<string, unknown>;
-  return Boolean(readProviderJob(params) || readProviderWebhook(params));
+  if (gen.mode === "video") return Boolean(readProviderJob(params) || readProviderWebhook(params));
+  // P19.1 — fal RASM jobi saqlangan bo'lsa rasm ham qayta-ulanadigan (resume). Boshqa rasm
+  // provayderlari (byteplus/vertex-image) sinxron — job saqlanmaydi → resume yo'q (mavjud xatti-harakat).
+  if (gen.mode === "image") {
+    const job = readProviderJob(params);
+    return Boolean(job && job.provider === "fal-image");
+  }
+  return false;
 }
 
 /**
@@ -1255,7 +1266,7 @@ export async function processGeneration(genId: string): Promise<void> {
             : useMagnific
               ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null; displayKey: string | null; width: number | null; height: number | null } | { ok: false; error: string };
+      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null; displayKey: string | null; watermarkKey: string | null; width: number | null; height: number | null } | { ok: false; error: string };
       const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
         const out = await genOne();
         if (!out.ok) return { ok: false, error: out.error };
@@ -1263,7 +1274,9 @@ export async function processGeneration(genId: string): Promise<void> {
         const p = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
         // P4/P9: bufer scope'da ekan thumb (512) + display (1280 WebP) + o'lcham — grid tez + Retina aniq.
         const th = await makeImageThumb(p.key, out.data);
-        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl, displayKey: th.displayKey, width: th.width, height: th.height };
+        // P4 (14b): bufer scope'da SUV BELGILI nusxa (FREE yuklab olish/import) — bir marta, keshlanadi.
+        const watermarkKey = await makeGenWatermarkFromBuffer(p.key, out.data, "image");
+        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl, displayKey: th.displayKey, watermarkKey, width: th.width, height: th.height };
       });
       // ❗ TIMEOUT ≠ REFUND: birortasi poll-timeout sentinel bo'lsa → "running" qoldiramiz, KREDIT
       // QAYTARMAYMIZ (reconcile 10 daq hal qiladi). Tekshiruv refund/asset YARATISHDAN OLDIN.
@@ -1279,7 +1292,8 @@ export async function processGeneration(genId: string): Promise<void> {
           // aspectRatio = EFEKTIV (klamplangan) nisbat — thumbnail ramka nisbati generatsiya bilan mos bo'lsin.
           // P4: thumbUrl endi HAQIQIY kichik thumb (bo'lmasa to'liq rasm — eski xatti-harakat).
           // P9: displayKey (1280 WebP) + width/height (haqiqiy piksellar) qo'shildi.
-          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
+          // P4 (14b): watermarkKey — FREE reja yuklab olish/import shu suv belgili nusxani oladi.
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, watermarkKey: s.watermarkKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
       }
     } else if (model.feature === "text-to-speech") {
@@ -1304,8 +1318,10 @@ export async function processGeneration(genId: string): Promise<void> {
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+      // P4 (14b): FREE reja yuklab olish uchun sting-tegli suv belgili nusxa (bir marta, keshlanadi).
+      const watermarkKey = await makeGenWatermarkFromBuffer(key, out.data, gen.mode);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, sizeBytes },
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, watermarkKey, sizeBytes },
       });
     } else if (model.feature === "text-to-sfx") {
       // ElevenLabs SFX (sync, RAW mp3). duration ixtiyoriy (0.5–22s).
@@ -1319,8 +1335,10 @@ export async function processGeneration(genId: string): Promise<void> {
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
+      // P4 (14b): FREE reja yuklab olish uchun sting-tegli suv belgili nusxa (bir marta, keshlanadi).
+      const watermarkKey = await makeGenWatermarkFromBuffer(key, out.data, gen.mode);
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, sizeBytes },
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, watermarkKey, sizeBytes },
       });
     } else if (
       model.feature === "text-to-video" ||
@@ -1364,9 +1382,12 @@ export async function processGeneration(genId: string): Promise<void> {
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
       const poster = await makeVideoPoster(key, out.buf);
+      // P4 (14b): FREE reja yuklab olish/import uchun 720p+markaziy suv belgili nusxa (bir marta, keshlanadi).
+      const watermarkKey = await makeGenWatermarkFromBuffer(key, out.buf, "video");
       await prisma.genAsset.create({
         // P9.2: previewKey (720p hover) + width/height qo'shildi.
-        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, previewKey: poster.previewKey, width: poster.width, height: poster.height, aspectRatio, sizeBytes },
+        // P4 (14b): watermarkKey — FREE reja yuklab olish/import shu suv belgili nusxani oladi.
+        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, previewKey: poster.previewKey, watermarkKey, width: poster.width, height: poster.height, aspectRatio, sizeBytes },
       });
       await clearProviderJob(genId);
     } else {
@@ -1393,14 +1414,120 @@ export async function processGeneration(genId: string): Promise<void> {
 }
 
 /**
- * Qotib qolgan generatsiyalarni tiklaydi (Render restart fon jarayonni o'ldirsa job "running"da
- * qoladi → kredit qaytmaydi). Belgilangan vaqtdan oshган queued/running → failed + refund.
- * /credits va POST /gen'da chaqiriladi — foydalanuvchi keyingi amalida yo'qolган krediti qaytadi.
+ * Qotib qolgan generatsiyalarni tiklaydi (Render/Cloud Run restart fon jarayonni o'ldirsa job
+ * "running"da qoladi). ASK-TRIGGER = 20 daqiqa (owner qarori 2026-07-01 — TEGMA). P19.5 (Direktor
+ * qarori, majburiy): 20 daqiqada REFUND QILMAYMIZ — avval PROVAYDERDAN SO'RAYMIZ (job raqami
+ * `__providerJob`da saqlangan). Provayder "ishlayapti/tayyor" desa → refund YO'Q (30s resume-jadval
+ * uni haydaydi/yetkazadi); "yiqildim" desa YOKI qattiq shift (hard ceiling) o'tsa → SHUNDAGINA
+ * fail+refund. /credits + POST /gen (per-user) va global fon jadvali chaqiradi.
  */
 function stuckTimeoutMs(g: { mode: string; modelId: number }): number {
-  // Foydalanuvchi so'rovi (2026-07-01): kutish 20 daqiqa — sekin 4K/Pro rasm ham, video ham.
+  // ASK-TRIGGER (refund EMAS) — owner so'rovi (2026-07-01): 20 daqiqa. P19.5 keyin provayderdan so'raydi.
   return 20 * 60 * 1000;
 }
+
+// P19.5 — QATTIQ SHIFT (hard ceiling): provayder javob bermasa ham ish abadiy osilmasin. Bundan
+// oshsa provayder "ishlayapti" desa ham fail+refund. Per-model (6s Seedance ≠ uzun videoning Topaz
+// upscale'i): standart 2 soat, video-upscale (Topaz, uzoq) uchun 4 soat.
+const HARD_CEILING_DEFAULT_MS = 2 * 60 * 60 * 1000;
+const HARD_CEILING_UPSCALE_MS = 4 * 60 * 60 * 1000;
+function hardCeilingMs(model: GenModel | null | undefined): number {
+  if (model?.feature === "video-upscale") return HARD_CEILING_UPSCALE_MS;
+  return HARD_CEILING_DEFAULT_MS;
+}
+
+/** Provayderga topshirilгan payt (ms) — job.submittedAt bo'lsa undan, aks holda gen.createdAt. */
+function providerJobStartMs(job: StoredProviderJob | null, createdAt: Date): number {
+  const s = job && typeof (job as { submittedAt?: string }).submittedAt === "string"
+    ? Date.parse((job as { submittedAt?: string }).submittedAt as string)
+    : NaN;
+  return Number.isFinite(s) ? s : createdAt.getTime();
+}
+
+/**
+ * P19.5 — provayderdan job holatini SO'RAYDI (refund qarorIDAN OLDIN). Video jobs va (P19.1)
+ * fal-image jobs uchun. Qaytaradi:
+ *   "alive"       — hali ishlayapti YOKI tayyor (yetkazish resume yo'lida) → REFUND YO'Q
+ *   "failed"      — provayder ANIQ yiqilibdi/rad etibdi → refund
+ *   "unreachable" — provayderga so'rov o'tmadi (transient) → refund YO'Q, keyingi tsiklда qayta so'raymiz
+ * Money-zone: bu FAQAT o'qish/so'rov; kredit matematikasiga TEGMAYDI.
+ */
+async function probeProviderJob(job: StoredProviderJob): Promise<"alive" | "failed" | "unreachable"> {
+  try {
+    if (job.provider === "fal-video" || job.provider === "fal-ref-video" || job.provider === "fal-image") {
+      // falPollStep: ok:true (pending|completed) = alive; transient(429/5xx/throw) ham pending; ok:false = failed.
+      const r = await falPollStep({ requestId: job.requestId, statusUrl: job.statusUrl, responseUrl: job.responseUrl });
+      return r.ok ? "alive" : "failed";
+    }
+    if (job.provider === "byteplus-video") {
+      const r = await byteplusPollStep(job.taskId);
+      return r.ok ? "alive" : "failed";
+    }
+    if (job.provider === "vertex-video") {
+      const r = await vertexPollVideo({ operationName: job.operationName });
+      if (!r.ok) return "unreachable"; // SDK istisnosi — transient bo'lishi mumkin
+      return r.data.state === "error" ? "failed" : "alive";
+    }
+    if (job.provider === "openrouter-video") {
+      const r = await orVideoStatus(job.jobId);
+      if (!r.ok) return "unreachable";
+      const s = (r.data.status || "").toLowerCase();
+      return /fail|error|cancel|reject/.test(s) ? "failed" : "alive";
+    }
+  } catch {
+    return "unreachable";
+  }
+  return "unreachable";
+}
+
+/**
+ * P19.5 — bitta qotган gen uchun QAROR: provayderdan so'rab, so'ng (kerak bo'lsa) atomik fail+refund.
+ * 🔴 MONEY ZONE: atomik guard (`updateMany ... where status in (queued,running)` + count>0 → refund)
+ * BAYT-BAYT saqlangan (audit 2026-06-26). Provayder-tekshiruvi FAQAT refund QARORIDAN OLDIN qo'shildi.
+ * Qaytaradi: "refunded" | "skipped".
+ *   - job bor + ceiling ichida + provayder "yiqilmagan" → SKIP (refund yo'q; resume-jadval haydaydi).
+ *   - job yo'q / provayder failed / ceiling o'tgan → fail+refund (mavjud xatti-harakat).
+ */
+async function settleStuckGeneration(g: {
+  id: string;
+  userId: string;
+  cost: number;
+  modelId: number;
+  createdAt: Date;
+  params: unknown;
+}): Promise<"refunded" | "skipped"> {
+  const params =
+    g.params && typeof g.params === "object" ? (g.params as Record<string, unknown>) : {};
+  const job = readProviderJob(params);
+  const model = getModelById(g.modelId);
+  const withinCeiling = Date.now() - providerJobStartMs(job, g.createdAt) < hardCeilingMs(model);
+
+  let reason = "Timed out (auto-recovered) — credits refunded";
+  if (job && withinCeiling) {
+    const probe = await probeProviderJob(job);
+    if (probe !== "failed") {
+      // Provayder tugatmagan/hali ishlayapti/javob bermadi → PUL QAYTARMAYMIZ (sekin 4K video
+      // nosozlik EMAS). 30s resume-jadval (resumePendingGenerations) uni haydaydi/yetkazadi.
+      console.log(`[studio-gen] P19.5 provayder-tekshiruvi: gen ${g.id} (${job.provider}) → ${probe} → REFUND YO'Q, kutamiz`);
+      return "skipped";
+    }
+    reason = "Provider reported failure — credits refunded";
+  } else if (job && !withinCeiling) {
+    reason = "Timed out past hard limit — credits refunded";
+  }
+
+  // 🔴 Atomik fail+refund — MAVJUD naqsh, O'ZGARMAYDI (double-refund race fix, audit 2026-06-26).
+  const upd = await prisma.generation.updateMany({
+    where: { id: g.id, status: { in: ["queued", "running"] } },
+    data: { status: "failed", error: reason },
+  });
+  if (upd.count > 0) {
+    await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    return "refunded";
+  }
+  return "skipped";
+}
+
 export async function reconcileStuckGenerations(userId: string): Promise<number> {
   const stuck = await prisma.generation.findMany({
     where: { userId, status: { in: ["queued", "running"] } },
@@ -1408,12 +1535,8 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
   for (const g of stuck) {
     const cutoff = new Date(Date.now() - stuckTimeoutMs(g));
     if (g.createdAt >= cutoff) continue;
-    // Atomik: faqat hali queued/running bo'lsa failed qilamiz (haqiqatan tugagan job'ga tegmaslik).
-    const upd = await prisma.generation.updateMany({
-      where: { id: g.id, status: { in: ["queued", "running"] } },
-      data: { status: "failed", error: "Timed out (auto-recovered) — credits refunded" },
-    });
-    if (upd.count > 0) await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    // P19.5 — provayderdan so'rab, so'ng (kerak bo'lsa) atomik fail+refund.
+    await settleStuckGeneration(g);
   }
   return stuck.length;
 }
@@ -1421,16 +1544,14 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
 /**
  * P1 (money-zone refund TRIGGER — 2026-07-10): stuck gen refund'ini foydalanuvchi panelni QAYTA
  * ochishiga bog'lamay, FON JADVALIDA hal qiladi. Yuqoridagi `reconcileStuckGenerations` faqat
- * /credits + POST /gen'da (ya'ni panel ochilganda, per-user) ishlaydi — foydalanuvchi panelni qayta
- * ochmasa timeout'da qotган video refund QILINMASdi (real money bug). Bu GLOBAL variant BARCHA
- * userlarning cutoff'dan oshган queued/running genlarini fail+refund qiladi. Atomik naqsh
- * `reconcileStuckGenerations` bilan BAYT-BAYT bir xil (guard WHERE'da, count>0 → idempotent refund)
- * — money math o'zgarmaydi, faqat TRIGGER/jadval qo'shildi.
+ * /credits + POST /gen'da (ya'ni panel ochilganda, per-user) ishlaydi. Bu GLOBAL variant BARCHA
+ * userlarning cutoff'dan oshган queued/running genlarini ko'rib chiqadi. P19.5: avval provayderdan
+ * so'raydi (settleStuckGeneration), atomik naqsh BAYT-BAYT bir xil — money math o'zgarmaydi.
  */
 export async function reconcileAllStuckGenerations(): Promise<number> {
   const stuck = await prisma.generation.findMany({
     where: { status: { in: ["queued", "running"] } },
-    select: { id: true, userId: true, cost: true, mode: true, modelId: true, createdAt: true },
+    select: { id: true, userId: true, cost: true, mode: true, modelId: true, createdAt: true, params: true },
     orderBy: { createdAt: "asc" },
     take: 500,
   });
@@ -1438,14 +1559,8 @@ export async function reconcileAllStuckGenerations(): Promise<number> {
   for (const g of stuck) {
     const cutoff = new Date(Date.now() - stuckTimeoutMs(g));
     if (g.createdAt >= cutoff) continue;
-    const upd = await prisma.generation.updateMany({
-      where: { id: g.id, status: { in: ["queued", "running"] } },
-      data: { status: "failed", error: "Timed out (auto-recovered) — credits refunded" },
-    });
-    if (upd.count > 0) {
-      await refundAiCredits(g.userId, g.cost, { generationId: g.id });
-      refunded++;
-    }
+    const outcome = await settleStuckGeneration(g);
+    if (outcome === "refunded") refunded++;
   }
   if (refunded > 0) console.log(`[studio-gen] P1 reconcile: ${refunded} qotган gen fail+refund qilindi`);
   return refunded;

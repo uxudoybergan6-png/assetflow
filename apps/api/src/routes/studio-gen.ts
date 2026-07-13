@@ -8,7 +8,7 @@ import { z } from "zod";
 import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { consumeAiCredits, refundAiCredits, ensurePluginProfile } from "../lib/plugin-profile.js";
+import { consumeAiCredits, refundAiCredits, ensurePluginProfile, isPaidPlan } from "../lib/plugin-profile.js";
 import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
@@ -102,52 +102,87 @@ function genDownloadName(mode: string | undefined, resultKey: string, contentTyp
 }
 
 // QA-FIX #12/#13: projects.ts ham qayta ishlatadi (gen media imzolash bitta joyda)
-export async function hydrateGenAssets<T extends { mode?: string; prompt?: string | null; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null; displayKey?: string | null; previewKey?: string | null }> }>(
-  holder: T
+//
+// 🔴 P4 (14b) — REJA-ASOSLI SUV BELGISI (owner qarori 2026-07-13, A varianti). Bu funksiya
+// gen media URL'larini imzolashda YAGONA darvoza. Invariantlar:
+//   1) `url` + `downloadUrl` (asosiy fayl / yuklab olish / import) — TOZA asl `resultKey`ni
+//      FAQAT pullik reja (PRO/STUDIO) oladi. FREE reja SUV BELGILI nusxani (`watermarkKey`)
+//      oladi; wm hali yo'q (eski qator) bo'lsa — kichik display derivativi (4K toza HECH QACHON).
+//   2) `thumbUrl`/`displayUrl`/`previewUrl` (ko'rsatish derivativlari) — HAMMAGA toza, LEKIN
+//      hech qachon `resultKey`ni imzolamaydi (kichik derivativ yoki null). Bu bilan FREE hech
+//      qanday yo'l bilan toza asl havolasini ololmaydi (owner talabi).
+//   3) `viewerIsPaid` SERVERDA hisoblanadi (ensurePluginProfile + isPaidPlan) — klientga ishonmaydi.
+// Money-zone (kredit/quote/refund) TEGILMAYDI — faqat yetkazish (yuklab olish) yo'li.
+export async function hydrateGenAssets<T extends { mode?: string; prompt?: string | null; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null; displayKey?: string | null; previewKey?: string | null; watermarkKey?: string | null }> }>(
+  holder: T,
+  opts: { viewerIsPaid: boolean }
 ): Promise<T> {
   if (!isS3Configured()) return holder;
-  // Parallel: imzolash lokal HMAC (tarmoqsiz); HeadObject faqat sizeBytes DB'da
-  // yo'q (eski yozuv) bo'lsa. Avval har asset uchun 2 ta ketma-ket HEAD tarmoq
-  // so'rovi bo'lardi — 60 gen tarixida bir necha soniya kechikish (#9 sekinlik).
+  const paid = opts.viewerIsPaid;
+  const sign = (key: string, name?: string) => getSignedDownloadUrl(key, 3600, name);
   await Promise.all(
     holder.assets.map(async (a) => {
       if (!a.resultKey) return;
-      const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string; displayUrl?: string | null; previewUrl?: string | null };
-      const [fresh, meta] = await Promise.all([
-        getSignedDownloadUrl(a.resultKey, 3600),
-        aa.sizeBytes != null
-          ? Promise.resolve(null)
-          : getS3ObjectMeta(a.resultKey),
-      ]);
-      a.url = fresh;
-      // Haqiqiy poster (video birinchi kadr JPG, #8) bo'lsa — o'z kaliti bilan
-      // imzolanadi; aks holda thumbUrl = asosiy fayl URL (eski xatti-harakat).
-      if (a.thumbKey) a.thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600);
-      else if (a.thumbUrl) a.thumbUrl = fresh;
-      // P9 — display (1280 WebP) + preview (720p) derivativlari BIR imzo-o'tishda (srcset uchun
-      // hamma variant bir vaqt imzolanishi shart; CDN yoqilmagani sabab signed URL ishlatiladi).
-      aa.displayUrl = a.displayKey ? await getSignedDownloadUrl(a.displayKey, 3600) : null;
-      aa.previewUrl = a.previewKey ? await getSignedDownloadUrl(a.previewKey, 3600) : null;
+      const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string | null; displayUrl?: string | null; previewUrl?: string | null };
+      // HeadObject faqat sizeBytes DB'da yo'q (eski yozuv) bo'lsa — imzolash lokal HMAC (tarmoqsiz).
+      const meta = aa.sizeBytes != null ? null : await getS3ObjectMeta(a.resultKey);
+      // (2) KO'RSATISH derivativlari — TOZA, kichik; `resultKey`ga HECH QACHON fallback QILMAYDI.
+      aa.displayUrl = a.displayKey ? await sign(a.displayKey) : null;
+      aa.previewUrl = a.previewKey ? await sign(a.previewKey) : null;
+      if (a.thumbKey) a.thumbUrl = await sign(a.thumbKey);
+      else if (a.displayKey) a.thumbUrl = aa.displayUrl;
+      else a.thumbUrl = null; // eski: fresh(resultKey) — endi toza asl thumb sifatida chiqmaydi
+      // (1) ASOSIY fayl + yuklab olish — REJA DARVOZASI.
+      const contentType = meta?.contentType ?? aa.contentType ?? null;
+      if (paid) {
+        // Pullik — TOZA asl (mavjud xatti-harakat). `url` inline preview, `downloadUrl` attachment.
+        const fresh = await sign(a.resultKey);
+        a.url = fresh;
+        aa.downloadUrl = await sign(a.resultKey, genDownloadName(holder.mode, a.resultKey, contentType, holder.prompt));
+      } else if (a.watermarkKey) {
+        // FREE — SUV BELGILI nusxa (private; qisqa muddatli signed havola). Fayl nomi/kengaytmasi
+        // wm kalitidan (video mp4, audio mp3, rasm jpg) olinadi.
+        const wm = await sign(a.watermarkKey);
+        a.url = wm;
+        aa.downloadUrl = await sign(a.watermarkKey, genDownloadName(holder.mode, a.watermarkKey, null, holder.prompt));
+      } else {
+        // FREE + wm hali yo'q (backfill'gacha eski qator): TOZA 4K asl BERILMAYDI. Kichik display
+        // derivativi (displayKey→previewKey→thumbKey) — inline ko'rish + yuklab olish; 4K toza chiqmaydi.
+        const smallKey = a.displayKey || a.previewKey || a.thumbKey || null;
+        if (smallKey) {
+          a.url = await sign(smallKey);
+          aa.downloadUrl = await sign(smallKey, genDownloadName(holder.mode, smallKey, null, holder.prompt));
+        } else {
+          // Xavfsiz derivativ yo'q — toza asl'ni bermaslik uchun url/download bo'sh (klient placeholder).
+          a.url = a.thumbUrl || "";
+          aa.downloadUrl = null;
+        }
+      }
       if (meta) {
         aa.sizeBytes = meta.sizeBytes;
         aa.contentType = meta.contentType;
-        // PROBLEM 7 — lazy self-heal: DB'da sizeBytes null (2026-07-05'dan eski
-        // qator) va HeadObject haqiqiy hajmni qaytardi → DB'ga yozib qo'yamiz,
-        // storage kvota yig'indisi (getUserUsedBytes) to'g'rilanadi. Fire-and-
-        // forget — javobni sekinlashtirmaydi, xato e'tiborsiz (backfill bor).
+        // PROBLEM 7 — lazy self-heal: DB'da sizeBytes null bo'lsa haqiqiy hajmni yozib qo'yamiz
+        // (storage kvota yig'indisi to'g'rilanadi). Fire-and-forget; xato e'tiborsiz.
         if (meta.sizeBytes != null && a.id) {
           void prisma.genAsset
             .updateMany({ where: { id: a.id, sizeBytes: null }, data: { sizeBytes: meta.sizeBytes } })
             .catch(() => {});
         }
       }
-      // Alohida yuklab-olish URL'i: Content-Disposition: attachment bilan imzolanadi.
-      // `url` inline (preview <img>/<video>) uchun o'zgarishsiz qoladi; `downloadUrl`
-      // faqat yuklab-olish tugmasi uchun — brauzer inline ochmasdan faylni saqlaydi.
-      aa.downloadUrl = await getSignedDownloadUrl(a.resultKey, 3600, genDownloadName(holder.mode, a.resultKey, aa.contentType ?? null, holder.prompt));
     })
   );
   return holder;
+}
+
+/** Berilgan userId pullik (PRO/STUDIO) rejadami — SERVER tomonda (klientga ishonmaymiz). */
+export async function viewerIsPaidPlan(userId: string): Promise<boolean> {
+  try {
+    const profile = await ensurePluginProfile(userId);
+    return isPaidPlan(profile.plan);
+  } catch {
+    // Xatoda ENG XAVFSIZ tomonga: FREE deb hisoblaymiz (toza asl bermaymiz).
+    return false;
+  }
 }
 
 /** Gen params ichidagi referens URL'larini QAYTA imzolaydi (o'qish payti, DB'ga yozilmaydi).
@@ -436,9 +471,10 @@ studioGenRouter.get("/credits/ledger", async (req: Request, res: Response) => {
       const a = g.assets[0] || null;
       let thumbUrl: string | null = null;
       if (a && isS3Configured()) {
-        if (a.thumbKey) thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600).catch(() => null);
-        else if (a.resultKey && g.mode !== "video")
-          thumbUrl = await getSignedDownloadUrl(a.resultKey, 3600).catch(() => null);
+        // P4 (14b): faqat kichik ko'rsatish derivativi (thumbKey→displayKey) — `resultKey` (toza
+        // asl) fallback OLIB TASHLANDI (ledger thumbi orqali FREE toza asl havolasini olmasin).
+        const tk = a.thumbKey || a.displayKey || null;
+        if (tk) thumbUrl = await getSignedDownloadUrl(tk, 3600).catch(() => null);
       }
       const params = (g.params ?? {}) as Record<string, unknown>;
       genMap.set(g.id, {
@@ -559,13 +595,14 @@ studioGenRouter.post("/gen/sessions", async (req: Request, res: Response) => {
   res.status(201).json(session);
 });
 
-/** Gen asset'dan karta cover thumb (imzolangan). Video uchun poster (thumbKey),
- *  rasm uchun asosiy fayl. QA-FIX #12/#13 — session rail + project cover'lar. */
+/** Gen asset'dan karta cover thumb (imzolangan). QA-FIX #12/#13 — session rail + project cover'lar.
+ *  P4 (14b): FAQAT kichik ko'rsatish derivativi (thumbKey→displayKey) imzolanadi — `resultKey`ga
+ *  (toza asl) HECH QACHON fallback qilmaydi, aks holda FREE cover orqali toza asl havolasini olardi. */
 export async function genCoverThumbUrl(
-  a: { resultKey: string | null; thumbKey?: string | null; thumbUrl: string | null; url: string } | null | undefined
+  a: { thumbKey?: string | null; displayKey?: string | null; thumbUrl: string | null } | null | undefined
 ): Promise<string | null> {
   if (!a) return null;
-  const key = a.thumbKey || a.resultKey;
+  const key = a.thumbKey || a.displayKey || null;
   if (key && isS3Configured()) {
     try {
       return await getSignedDownloadUrl(key, 3600);
@@ -573,7 +610,7 @@ export async function genCoverThumbUrl(
       return a.thumbUrl || null;
     }
   }
-  return a.thumbUrl || a.url || null;
+  return a.thumbUrl || null;
 }
 
 /** GET /gen/sessions — foydalanuvchi sessiyalari ro'yxati (QA-FIX #12: Artlist uslubi rail).
@@ -649,9 +686,9 @@ studioGenRouter.delete("/gen/sessions/:id", async (req: Request, res: Response) 
     include: { assets: true },
   });
   const genIds = gens.map((g) => g.id);
-  // Storage tozalash — single-gen delete bilan bir xil qamrov (asset + poster + linked ref)
+  // Storage tozalash — single-gen delete bilan bir xil qamrov (asset + poster + wm + linked ref)
   const keys = gens
-    .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey]))
+    .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey, a.watermarkKey]))
     .filter((k): k is string => typeof k === "string" && k.length > 0);
   let r2deleted = 0;
   if (keys.length) {
@@ -702,23 +739,12 @@ studioGenRouter.get(
       }),
       prisma.generation.count({ where }),
     ]);
-    // Signed URL 1 soatda eskiradi — /gen/:jobId va /gen/history kabi qayta imzolaymiz
-    // (aks holda tarix grid'idagi thumb/asset'lar 403 bo'ladi).
+    // Signed URL 1 soatda eskiradi — /gen/:jobId va /gen/history bilan BIR XIL darvozadan
+    // (hydrateGenAssets) qayta imzolaymiz. P4 (14b): reja darvozasi — FREE suv belgili nusxa,
+    // pullik toza asl. (Ilgari bu yerda `a.url = resultKey` toza asl'ni FREE'ga sizdirar edi.)
     if (isS3Configured()) {
-      for (const g of items) {
-        for (const a of g.assets) {
-          if (a.resultKey) {
-            const aa = a as typeof a & { displayUrl?: string | null; previewUrl?: string | null };
-            const fresh = await getSignedDownloadUrl(a.resultKey, 3600);
-            a.url = fresh;
-            if (a.thumbKey) a.thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600);
-            else if (a.thumbUrl) a.thumbUrl = fresh;
-            // P9 — display/preview derivativlarini ham qayta imzolaymiz (grid srcset + hover)
-            aa.displayUrl = a.displayKey ? await getSignedDownloadUrl(a.displayKey, 3600) : null;
-            aa.previewUrl = a.previewKey ? await getSignedDownloadUrl(a.previewKey, 3600) : null;
-          }
-        }
-      }
+      const viewerIsPaid = await viewerIsPaidPlan(req.user!.userId);
+      await Promise.all(items.map((g) => hydrateGenAssets(g, { viewerIsPaid })));
     }
     res.json({ items, page, perPage, total, hasMore: page * perPage < total });
   }
@@ -741,9 +767,10 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   // ("Qayta gen" tiklashi tirik referens olishi uchun — audit fix). Gen'lar bo'ylab
   // parallel — 60 gen tarixi ketma-ket hidratatsiyada sekin edi (#9).
   if (isS3Configured()) {
+    const viewerIsPaid = await viewerIsPaidPlan(req.user!.userId); // P4 (14b) — reja darvozasi (server)
     await Promise.all(
       items.map(async (g) => {
-        await hydrateGenAssets(g);
+        await hydrateGenAssets(g, { viewerIsPaid });
         await hydrateParamsRefUrls(g.params).catch(() => {});
       })
     );
@@ -1828,7 +1855,8 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
     processGenerationInBackground(gen.id);
   }
   // Signed URL 1 soatda eskiradi — resultKey bo'lsa har so'rovda yangidan imzolaymiz.
-  await hydrateGenAssets(gen);
+  // P4 (14b): reja darvozasi (egasi o'zi ko'radi) — FREE suv belgili, pullik toza.
+  await hydrateGenAssets(gen, { viewerIsPaid: await viewerIsPaidPlan(req.user!.userId) });
   // Audit §A (P2) — params ichidagi referens URL'lar ham qayta imzolanadi (/gen/history bilan
   // bir xil): "Regenerate" restore eskirgan ref bilan mahkum pullik yugurish boshlamasin.
   await hydrateParamsRefUrls(gen.params).catch(() => {});
@@ -1866,9 +1894,9 @@ studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
     res.status(404).json({ error: "Generation not found" });
     return;
   }
-  // Avval R2'dan asset fayllarni o'chiramiz (resultKey + video poster thumbKey).
+  // Avval R2'dan asset fayllarni o'chiramiz (resultKey + video poster thumbKey + P4 wm nusxa).
   const keys = gen.assets
-    .flatMap((a) => [a.resultKey, a.thumbKey])
+    .flatMap((a) => [a.resultKey, a.thumbKey, a.watermarkKey])
     .filter((k): k is string => typeof k === "string" && k.length > 0);
   let r2deleted = 0;
   if (keys.length) {

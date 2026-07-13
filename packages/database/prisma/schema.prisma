@@ -550,6 +550,7 @@ model GenAsset {
   thumbKey     String?                      // FAZA 2 #8: video poster (birinchi kadr JPG) obyekt kaliti; null = poster yo'q
   displayKey   String?                      // P9: 1280px WebP display derivativ kaliti (Retina karta + alfa); null = eski/yo'q
   previewKey   String?                      // P9.2: 720p video hover-preview kaliti (asl saqlanadi); null = eski/yo'q
+  watermarkKey String?                      // P4 (14b): FREE reja yuklab olish/import uchun SUV BELGILI nusxa kaliti (`<base>-wm.<ext>`, private); null = eski/yo'q. Pullik reja TOZA asl'ni oladi (bu kalit ishlatilmaydi).
   width        Int?
   height       Int?
   aspectRatio  String?                      // "16:9"

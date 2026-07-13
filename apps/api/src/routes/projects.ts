@@ -6,7 +6,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
 import { getPublicApiUrl } from "../lib/app-urls.js";
-import { hydrateGenAssets, genCoverThumbUrl } from "./studio-gen.js";
+import { hydrateGenAssets, genCoverThumbUrl, viewerIsPaidPlan } from "./studio-gen.js";
 
 /**
  * QA-FIX #13 — Projects: foydalanuvchi gen natijalari va katalog shablonlarini
@@ -179,7 +179,9 @@ projectsRouter.get("/:id", async (req: Request, res: Response) => {
         })
       : Promise.resolve([]),
   ]);
-  await Promise.all(gens.map((g) => hydrateGenAssets(g)));
+  // P4 (14b): reja darvozasi (egasi o'z loyihasini ko'radi) — FREE suv belgili, pullik toza.
+  const viewerIsPaid = await viewerIsPaidPlan(req.user!.userId);
+  await Promise.all(gens.map((g) => hydrateGenAssets(g, { viewerIsPaid })));
   const tplMapped = await Promise.all(tplRows.map((t) => mapCatalogItem(t, base)));
   const genById = new Map(gens.map((g) => [g.id, g]));
   const tplById = new Map(tplMapped.map((t) => [t.id, t]));
