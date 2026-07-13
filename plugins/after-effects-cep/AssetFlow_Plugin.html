@@ -5641,7 +5641,7 @@ function selectCategory(el,slug){
   buildCategoryMenu(currentNav);
   closeAllDropdowns();
   closePack();
-  render();
+  reloadServerBrowse(); // P1 #15 — kategoriya server tomonda filtrlanadi
 }
 
 function selectOrientFilter(el,value,label){
@@ -5651,7 +5651,7 @@ function selectOrientFilter(el,value,label){
   if(pill)pill.textContent=value==='all'?'Format':(label||ORIENT_LABELS[value]||'Format');
   closeAllDropdowns();
   closePack();
-  render();
+  reloadServerBrowse(); // P1 #15 — orientatsiya server tomonda
 }
 // E2: KATEGORIYA chiplari — katalogdan dinamik (navSubs), mavjud selectCategory ga
 // ulanadi. Orientatsiya filtri Filtrlar panelidagi dropdown'da qoladi (o'zgarmaydi).
@@ -5751,7 +5751,7 @@ function selectResFilter(el,value,label){
   if(pill)pill.textContent=value==='all'?'Quality':(label||RES_LABELS[value]||'Quality');
   closeAllDropdowns();
   closePack();
-  render();
+  reloadServerBrowse(); // P1 #15 — sifat server tomonda
 }
 
 function resMatchesAsset(assetRes,filterRes){
@@ -5765,11 +5765,39 @@ function resMatchesAsset(assetRes,filterRes){
   return r===filterRes;
 }
 
+// P1 #15 — plagin joriy filtr holatidan SERVER katalog paramlarini quradi.
+// nav→templateType, sub→cat, orient/res, qidiruv→q, sort→server sort. Server BUTUN
+// baza bo'yicha filtrlaydi (grid endi "birinchi sahifa ichidan" qidirmaydi — P5.1).
+function catalogFilters(){
+  const navToType={video:'video-templates',motion:'motion-graphics',graphics:'graphics',luts:'luts'};
+  const sortMap={relevant:'mos',newest:'new',name:'az'};
+  const f={ templateType: navToType[currentNav]||'' };
+  const sv=sortMap[currentSort]; if(sv&&sv!=='mos') f.sort=sv;
+  if(currentSub&&currentSub!=='all') f.cat=currentSub;
+  if(currentNav!=='luts'){
+    if(currentOrient&&currentOrient!=='all') f.orient=currentOrient;
+    if(currentRes&&currentRes!=='all') f.res=currentRes;
+  }
+  if(currentSearch) f.q=currentSearch;
+  return f;
+}
+// Filtr/nav/qidiruv/sort o'zgarganda serverdan 1-sahifani qayta oladi (refreshBrowse
+// ichida render() chaqiriladi). AI nav'da server so'rov shart emas.
+function reloadServerBrowse(){
+  if(currentNav==='ai'||typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.refreshBrowse){ render(); return; }
+  AssetFlowCatalog.refreshBrowse(catalogFilters(),{reset:true}).catch(()=>{ render(); });
+}
+
 function getFiltered(){
   return assets.filter(a=>{
     // FAZA 5 (§11) — AE plagin FAQAT After Effects: dasturi belgilangan va AE bo'lmagan shablonlar chiqmaydi
     // (server ?app=ae filtridan tashqari klient zaxirasi). Belgilanmagan (bo'sh) → AE deb qabul qilinadi.
     if(a.templateApp&&String(a.templateApp).toLowerCase()!=='ae')return false;
+    // P1 #15 — SERVER itemlari allaqachon server tomonda filtrlangan (nav/cat/orient/
+    // res/qidiruv, BUTUN baza bo'yicha) → qayta filtrlamaymiz. Aks holda serverning
+    // description-mos yoki boshqa-mezon natijasi bu yerda yo'qolardi. Faqat LOKAL
+    // (upload/downloaded) itemlar mijoz tomonida filtrlanadi (ular sahifalanmaydi).
+    if(a.server) return true;
     if(a.nav!==currentNav)return false;
     if(currentSub!=='all'&&a.cat!==currentSub)return false;
     if(currentNav!=='luts'&&currentOrient!=='all'&&a.orient!==currentOrient)return false;
@@ -6097,9 +6125,26 @@ function applyMogrtItems(packKey,items){
   else showToast('This pack has '+items.length+' MOGRT files — select a scene to import');
 }
 
-function openPack(name){
+// P1 #16 — SLIM ro'yxat metaJson (sahnalar) bermaydi. Server pack ochilganda
+// sahnalarni DETAL endpointdan (loadPackScenes) yuklaymiz — import va sahna ro'yxati
+// to'g'ri bo'lishi uchun. Xato bo'lsa placeholder saqlanadi (import baribir ishlaydi).
+async function ensurePackScenes(pack){
+  if(!pack||!pack.server||!pack.serverTemplateId)return;
+  if(pack.detailScenesLoaded||pack.mogrtScenesLoaded)return; // allaqachon real sahnalar bor
+  if(typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.loadPackScenes)return;
+  try{
+    const det=await AssetFlowCatalog.loadPackScenes(pack.serverTemplateId);
+    if(det&&Array.isArray(det.scenes)&&det.scenes.length) pack.scenes=det.scenes;
+    if(det&&det.aeScenesFolder) pack.aeScenesFolder=det.aeScenesFolder;
+    pack.detailScenesLoaded=true;
+  }catch(e){ try{console.warn('loadPackScenes',e);}catch(_){}}
+}
+
+async function openPack(name){
   const pack=packs[name];
   if(!pack){showToast('Pack not found');return;}
+  // Sahnalarni detaldan yuklaymiz (mogrt overlay'idan OLDIN — detal sahnalar asos).
+  await ensurePackScenes(pack);
   if(pack.server&&!packCanAeImport(pack)){
     showToast('No pack (.aep) — the contributor needs to upload the project file in Studio');
   }
@@ -6660,7 +6705,7 @@ async function retryCatalog(){
   catalogLoadState='loading';
   render();
   try{
-    await AssetFlowCatalog.refreshBrowse();
+    await AssetFlowCatalog.refreshBrowse(catalogFilters());
     catalogLoadState='ready';
     window.__afLastSyncAt=new Date();
   }catch(e){
@@ -6682,6 +6727,82 @@ function clearAllFilters(){
 }
 window.clearAllFilters=clearAllFilters;
 
+// ── P1 #18 — GRID VIRTUALIZATSIYASI ──
+// 5000 karta DOM'ga chizilsa CEP (Chromium) AE'ni MUZLATADI. Endi faqat KO'RINADIGAN
+// kartalar (+buffer) chiziladi; qolgan balandlik top/bottom spacer bilan saqlanadi.
+// Kichik ro'yxatda (<= VIRT_THRESHOLD) hammasi chiziladi (xavfsiz oddiy yo'l).
+// Thumbnail loading="lazy" (renderThumbMedia) va preview video FAQAT hover'da
+// (playCardPreview) allaqachon bor — bu virtualizatsiya karta SONINI ham cheklaydi.
+const VIRT_THRESHOLD=120;
+const VIRT_BUFFER_ROWS=4;
+let __gridList=[];
+let __gridCardH=0, __gridCols=0, __gridWinKey='';
+
+function measureGridMetrics(grid){
+  const cards=grid.querySelectorAll('.card');
+  if(!cards.length){ __gridCols=0; __gridCardH=0; return; }
+  const top0=cards[0].offsetTop;
+  let cols=0;
+  for(const c of cards){ if(c.offsetTop===top0)cols++; else break; }
+  __gridCols=Math.max(1,cols);
+  let rowH=0;
+  for(const c of cards){ if(c.offsetTop>top0){ rowH=c.offsetTop-top0; break; } }
+  if(!rowH){ const r=cards[0].getBoundingClientRect(); rowH=(r.height||180)+16; }
+  __gridCardH=rowH;
+}
+
+function renderGrid(){
+  const grid=document.getElementById('grid');
+  if(!grid) return;
+  const list=__gridList;
+  if(!list.length){ grid.innerHTML=catalogEmptyStateHtml(); __gridWinKey=''; return; }
+  // Kichik ro'yxat — hammasini chizamiz (virtualizatsiya shart emas).
+  if(list.length<=VIRT_THRESHOLD){
+    grid.innerHTML=list.map((a,i)=>renderCard(a,i,false)).join('');
+    initDrag(); __gridWinKey='all'; return;
+  }
+  try{
+    // Metrikalar noma'lum — kichik probe chizib o'lchaymiz.
+    if(!__gridCardH||!__gridCols){
+      grid.innerHTML=list.slice(0,24).map((a,i)=>renderCard(a,i,false)).join('');
+      measureGridMetrics(grid);
+    }
+    const sc=document.querySelector('.scroll-area');
+    const viewH=sc?sc.clientHeight:0;
+    // O'lchov muvaffaqiyatsiz (0 viewport / metrikasiz) — hammasini chizamiz (fallback).
+    if(!__gridCardH||!__gridCols||viewH<=0){
+      grid.innerHTML=list.map((a,i)=>renderCard(a,i,false)).join('');
+      initDrag(); __gridWinKey='all'; return;
+    }
+    const rows=Math.ceil(list.length/__gridCols);
+    const gridTopInSc=grid.getBoundingClientRect().top-sc.getBoundingClientRect().top+sc.scrollTop;
+    const viewTop=Math.max(0,sc.scrollTop-gridTopInSc);
+    let startRow=Math.max(0,Math.floor(viewTop/__gridCardH)-VIRT_BUFFER_ROWS);
+    let endRow=Math.min(rows,Math.ceil((viewTop+viewH)/__gridCardH)+VIRT_BUFFER_ROWS);
+    const key=startRow+':'+endRow+':'+list.length;
+    if(key===__gridWinKey) return; // oyna o'zgarmadi
+    __gridWinKey=key;
+    const startIdx=startRow*__gridCols, endIdx=Math.min(list.length,endRow*__gridCols);
+    const topH=Math.round(startRow*__gridCardH), botH=Math.round(Math.max(0,rows-endRow)*__gridCardH);
+    let html='';
+    if(topH>0) html+='<div class="grid-spacer" style="grid-column:1/-1;height:'+topH+'px"></div>';
+    for(let i=startIdx;i<endIdx;i++) html+=renderCard(list[i],i,false);
+    if(botH>0) html+='<div class="grid-spacer" style="grid-column:1/-1;height:'+botH+'px"></div>';
+    grid.innerHTML=html;
+    initDrag();
+  }catch(e){
+    try{ console.warn('grid virt fallback',e); }catch(_){}
+    grid.innerHTML=list.map((a,i)=>renderCard(a,i,false)).join('');
+    initDrag(); __gridWinKey='all';
+  }
+}
+
+// Scroll paytida oynani yangilaydi (metrikalar cache'dan — probe qayta chizilmaydi).
+function updateGridWindow(){
+  if(!__gridList.length||__gridList.length<=VIRT_THRESHOLD||!__gridCardH||!__gridCols) return;
+  renderGrid();
+}
+
 function render(){
   // E5: featured karusel olib tashlandi (funksiya saqlangan, lekin chaqirilmaydi — kompakt panel)
   if(__chipNav!==currentNav){buildCategoryChips();__chipNav=currentNav;}
@@ -6689,15 +6810,11 @@ function render(){
   syncTopNav();
   applyDensityClass();
   updateConnStatus();
-  const list=getGridAssets();
-  const grid=document.getElementById('grid');
-  if(!list.length){
-    grid.innerHTML=catalogEmptyStateHtml();
-  }else{
-    grid.innerHTML=list.map((a,i)=>renderCard(a,i,false)).join('');
-    initDrag();
-  }
-  document.getElementById('assetCount').textContent=list.length;
+  __gridList=getGridAssets();
+  // Ro'yxat/zichlik o'zgargan bo'lishi mumkin — metrikalarni qayta o'lchaymiz.
+  __gridCardH=0; __gridCols=0; __gridWinKey='';
+  renderGrid();
+  document.getElementById('assetCount').textContent=__gridList.length;
   updateGridLabel();
   updateFilterIndicator();
   if(typeof syncFilterSheet==='function')syncFilterSheet();
@@ -6940,14 +7057,10 @@ function applyNavSwitch(tab){
   buildCategoryMenu(tab);
   const hideFmt=tab==='luts'||tab==='graphics';
   closePack();
-  render();
-  if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.totalServerCount()>0){
-    const onTab=AssetFlowCatalog.serverCountForNav(tab);
-    if(onTab===0){
-      const target=AssetFlowCatalog.primaryServerNav();
-      showToast('Server: in "'+AssetFlowCatalog.navHint(target)+'" ('+AssetFlowCatalog.serverCountForNav(target)+')');
-    }
-  }
+  // P1 #15 — nav almashsa server o'sha bo'lim (templateType) uchun 1-sahifani oladi.
+  // Eski "server kontenti boshqa nav'da" toast'i OLIB TASHLANDI — u BUTUN katalog
+  // sanog'iga tayanardi (endi nav server tomonda filtrlanadi, to'liq sanoq yo'q).
+  reloadServerBrowse();
 }
 
 function updateServerNavBadges(){
@@ -6975,7 +7088,7 @@ async function syncServerCatalog(){
     return;
   }
   try{
-    const n=await AssetFlowCatalog.refreshBrowse();
+    const n=await AssetFlowCatalog.refreshBrowse(catalogFilters());
     window.__afLastSyncAt=new Date();
     reconcileDownloadedFromScenes();
     // Kutubxonam ochiq bo'lsa (a6) — yangilangan katalogdan sevimli/yuklab olingan qayta chiziladi
@@ -7834,7 +7947,8 @@ let __searchDebounce=null;
 document.getElementById('searchInput').addEventListener('input',function(){
   const val=this.value.toLowerCase();
   if(__searchDebounce)clearTimeout(__searchDebounce);
-  __searchDebounce=setTimeout(function(){currentSearch=val;render();},300);
+  // P1 #15 — qidiruv SERVER tomonda (butun baza); 300ms debounce spam'ni to'sadi
+  __searchDebounce=setTimeout(function(){currentSearch=val;reloadServerBrowse();},300);
 });
 
 function runSearch(){
@@ -7843,8 +7957,31 @@ function runSearch(){
   if(__searchDebounce){clearTimeout(__searchDebounce);__searchDebounce=null;}
   currentSearch=si.value.toLowerCase();
   si.focus();
-  render();
+  reloadServerBrowse();
 }
+
+// P1 #15/#18 — grid scroll: (1) virtualizatsiya oynasini yangilaydi (faqat ko'rinadigan
+// kartalar DOM'da), (2) pastga yaqinlashganda server keyingi sahifasini qo'shadi
+// (loadMoreBrowse — bitta faol so'rov, done bo'lsa to'xtaydi). rAF bilan throttle.
+(function(){
+  const sc=document.querySelector('.scroll-area');
+  if(!sc)return;
+  let __scRaf=0;
+  sc.addEventListener('scroll',function(){
+    if(__scRaf)return;
+    __scRaf=requestAnimationFrame(function(){
+      __scRaf=0;
+      try{ if(typeof updateGridWindow==='function') updateGridWindow(); }catch(e){}
+      // Load-more faqat assets browse'da (favorites/downloaded/AI emas)
+      if(currentPage!=='assets'||currentNav==='ai')return;
+      if(typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.browseHasMore)return;
+      if(!AssetFlowCatalog.browseHasMore()||AssetFlowCatalog.isBrowseLoading())return;
+      if((sc.scrollHeight-(sc.scrollTop+sc.clientHeight))<700){
+        AssetFlowCatalog.loadMoreBrowse(catalogFilters()).catch(function(){});
+      }
+    });
+  },{passive:true});
+})();
 
 function closeAllDropdowns(){
   document.querySelectorAll('.env-filter-bar .dd-menu').forEach(x=>x.classList.remove('open'));
@@ -7925,7 +8062,7 @@ function selectSort(el,key,label){
     item.classList.toggle('selected',item===el);
   });
   closeAllDropdowns();
-  render();
+  reloadServerBrowse(); // P1 #15 — saralash server tomonda
 }
 function initDrag(){
   document.querySelectorAll('.card[draggable]').forEach(card=>{
@@ -8624,7 +8761,7 @@ async function accountLogin(){
       catalogLoadState='loading';
       render();
       try{
-        await AssetFlowCatalog.refreshBrowse();
+        await AssetFlowCatalog.refreshBrowse(catalogFilters());
         catalogLoadState='ready';
       }catch(e){
         catalogLoadState='error';
@@ -8734,7 +8871,7 @@ async function accountLoginWithGoogle(){
           catalogLoadState='loading';
           render();
           try{
-            await AssetFlowCatalog.refreshBrowse();
+            await AssetFlowCatalog.refreshBrowse(catalogFilters());
             catalogLoadState='ready';
           }catch(e){
             catalogLoadState='error';
@@ -8826,7 +8963,7 @@ window.accountUploadAvatar=accountUploadAvatar;
 setInterval(function(){
   try{
     if(typeof AssetFlowCatalog!=='undefined'&&typeof AssetFlowCatalog.refreshBrowse==='function'){
-      AssetFlowCatalog.refreshBrowse().then(function(){
+      AssetFlowCatalog.refreshBrowse(catalogFilters()).then(function(){
         window.__afLastSyncAt=new Date();
         if(typeof reconcileDownloadedFromScenes==='function')reconcileDownloadedFromScenes();
         const html=document.documentElement;
@@ -9264,7 +9401,7 @@ async function publishGo(){
     showToast('✓ "'+name+'" '+(existing?'updated':'published')+(isAdmin?' and approved':' — waiting for admin approval'),'success');
     closePublish();
     if(isAdmin&&typeof AssetFlowCatalog!=='undefined'){
-      try{ await AssetFlowCatalog.refreshBrowse(); }catch(e){}
+      try{ await AssetFlowCatalog.refreshBrowse(catalogFilters()); }catch(e){}
     }
   }catch(e){
     console.error('publishGo',e);
@@ -9330,7 +9467,7 @@ async function bootPlugin(){
       let serverN=0;
       if(typeof AssetFlowCatalog!=='undefined'){
         try{
-          serverN=await AssetFlowCatalog.refreshBrowse();
+          serverN=await AssetFlowCatalog.refreshBrowse(catalogFilters());
           catalogLoadState='ready';
         }catch(catErr){
           catalogLoadState='error';   // grid'da «Qayta urinish» tugmasi chiqadi

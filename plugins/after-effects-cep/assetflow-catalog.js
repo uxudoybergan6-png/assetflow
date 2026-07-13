@@ -131,12 +131,39 @@ const AssetFlowCatalog = (() => {
     return writeSettings({ downloadDir: dir || "" });
   }
 
-  async function fetchCatalogPage(cursor) {
-    // FAZA 5 (§11) — AE plagin FAQAT After Effects shablonlarini oladi (server filtri).
-    const cur = cursor ? `&cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog?app=ae${cur}`, {
-      headers: catalogHeaders(),
+  // ── P1 #15 — server-side browse sahifalash holati (filtr bilan) ──
+  // Ilgari fetchCatalog MAX_PAGES sikli BUTUN katalogni yuklardi (5000 assetda ~50
+  // ketma-ket so'rov + AE muzlashi) va filtr/qidiruv BRAUZERDA ishlardi (P5.1 —
+  // "LUTs" faqat birinchi sahifa ichidan qidirar edi). Endi filtr/qidiruv/sort SERVER
+  // tomonda (butun baza), bir vaqtda BITTA sahifa (48) olinadi, scroll bilan qo'shiladi.
+  let browseCursor = null;
+  let browseDone = false;
+  let browseLoading = false;
+  let browseSig = "";
+
+  const BROWSE_FILTER_KEYS = ["templateType", "cat", "orient", "res", "q", "sort"];
+  function browseQueryStr(filters, cursor) {
+    const p = new URLSearchParams();
+    p.set("app", "ae"); // AE plagin FAQAT After Effects shablonlari (§11)
+    p.set("take", "48");
+    const f = filters || {};
+    BROWSE_FILTER_KEYS.forEach((k) => {
+      const v = f[k];
+      if (v != null && v !== "" && v !== "all" && v !== "All") p.set(k, String(v));
     });
+    if (cursor) p.set("cursor", cursor);
+    return p.toString();
+  }
+  function filtersSig(filters) {
+    const f = filters || {};
+    return BROWSE_FILTER_KEYS.map((k) => String(f[k] || "")).join("|");
+  }
+
+  async function fetchCatalogPage(cursor, filters) {
+    const res = await fetchWithTimeout(
+      `${apiBase()}/api/plugin/catalog?${browseQueryStr(filters, cursor)}`,
+      { headers: catalogHeaders() }
+    );
     if (!res.ok) {
       // P20: javob tanasidan `code`ni o'qib markaziy ushlagichga BERAMIZ — faqat auth-bekor
       // (401 / 403 ACCOUNT_BLOCKED|INACTIVE) sessiyani tugatadi; LIMIT_REACHED va h.k. EMAS.
@@ -155,23 +182,63 @@ const AssetFlowCatalog = (() => {
   }
 
   /**
-   * FAZA 5 (A1) — server katalogi endi sahifalangan (take+cursor, default 100).
-   * Plagin barcha sahifalarni ketma-ket olib bitta ro'yxatga yig'adi — Browse UI
-   * xulqi (bitta merge) o'zgarmaydi, lekin har bir server javobi chegaralangan.
-   * MAX_PAGES — himoya cap (100 sahifa ≈ 10k shablon), server xatosida cheksiz
-   * sikl bo'lmasin.
+   * P1 #15 — "hamma sahifani yuklab ol" sikli O'CHIRILDI. Endi bitta sahifa olinadi
+   * (ixtiyoriy filtrlar bilan). Qo'shimcha sahifalar loadMoreBrowse orqali scroll'da.
    */
-  async function fetchCatalog() {
-    const MAX_PAGES = 100;
-    let items = [];
-    let cursor = null;
-    for (let i = 0; i < MAX_PAGES; i++) {
-      const data = await fetchCatalogPage(cursor);
-      if (Array.isArray(data.items)) items = items.concat(data.items);
-      cursor = data.nextCursor || null;
-      if (!cursor) break;
-    }
-    return { items };
+  async function fetchCatalog(filters) {
+    const data = await fetchCatalogPage(null, filters);
+    return { items: Array.isArray(data.items) ? data.items : [], nextCursor: data.nextCursor || null };
+  }
+
+  /** P1 #16 — bitta shablonning to'liq detali (enriched sahnalar + metaJson). SLIM
+   *  ro'yxat sahnalarni bermaydi — pack ochilganda shundan lazy olinadi. */
+  async function fetchTemplateDetail(id) {
+    const res = await fetchWithTimeout(
+      `${apiBase()}/api/plugin/catalog/${encodeURIComponent(id)}`,
+      { headers: catalogHeaders() }
+    );
+    if (!res.ok) throw new Error(`Detail HTTP ${res.status}`);
+    return res.json();
+  }
+
+  /** Katalog itemidan (u) sahnalar ro'yxatini quradi (merge va lazy-load umumiy). */
+  function scenesFromItem(u) {
+    const meta =
+      u && u.metaJson && typeof u.metaJson === "object" && !Array.isArray(u.metaJson)
+        ? u.metaJson
+        : {};
+    const preview = (u && u.previewUrl) || "";
+    const resLabel = ((u && u.res) || "4k").toUpperCase();
+    const metaScenes = Array.isArray(meta.scenes) ? meta.scenes : [];
+    const scenes = metaScenes.length
+      ? metaScenes.map((s) => ({
+          n: s.n || s.name || (u && u.name),
+          aeComp: s.aeComp || s.compName || s.name || s.n || "",
+          slug: s.slug || s.previewKey || undefined,
+          mogrtUrl: s.mogrtUrl || undefined,
+          meta: s.meta || resLabel,
+          ico: s.ico || (u && u.icon) || "✦",
+          bg: s.bg || (u && u.bg),
+          preview: s.preview || preview || undefined,
+          previewKind: s.previewKind || undefined,
+        }))
+      : [
+          {
+            n: u && u.name,
+            aeComp: "",
+            meta: resLabel,
+            ico: (u && u.icon) || "✦",
+            bg: u && u.bg,
+            preview: preview || undefined,
+          },
+        ];
+    return { scenes, aeScenesFolder: meta.scenesFolder || meta.aeScenesFolder || "Scenes" };
+  }
+
+  /** P1 #16 — pack sahnalarini detaldan lazy yuklaydi (openPack chaqiradi). */
+  async function loadPackScenes(templateId) {
+    const u = await fetchTemplateDetail(templateId);
+    return scenesFromItem(u);
   }
 
   async function fetchFeatured(limit = 6) {
@@ -225,7 +292,11 @@ const AssetFlowCatalog = (() => {
     });
   }
 
-  function mergeIntoBrowse(items) {
+  // P1 #15 — opts.append: true bo'lsa server itemlari TOZALANMAYDI (keyingi sahifa
+  // qo'shiladi); false/undefined (reset) bo'lsa eski server itemlar o'chiriladi (bo'sh
+  // natijada ham — filtr hech narsaga mos kelmasa grid bo'shab qolsin).
+  function mergeIntoBrowse(items, opts) {
+    const append = !!(opts && opts.append);
     if (!window.__afBrowseReady) {
       console.warn("AssetFlow: browse init kutilmoqda");
       return 0;
@@ -236,9 +307,11 @@ const AssetFlowCatalog = (() => {
       console.warn("AssetFlow: assets/packs yo'q");
       return 0;
     }
-    countByNav = { video: 0, motion: 0, graphics: 0, luts: 0 };
+    if (!append) {
+      countByNav = { video: 0, motion: 0, graphics: 0, luts: 0 };
+      clearServerFromBrowse(); // reset — eski server itemlarini oldin o'chiramiz
+    }
     if (!items?.length) return 0;
-    clearServerFromBrowse();
     const NAV_LABELS_REF =
       typeof NAV_LABELS !== "undefined"
         ? NAV_LABELS
@@ -252,41 +325,21 @@ const AssetFlowCatalog = (() => {
       const thumb = u.thumbUrl || "";
       const preview = u.previewUrl || "";
       const resLabel = (u.res || "4k").toUpperCase();
-      const meta =
-        u.metaJson && typeof u.metaJson === "object" && !Array.isArray(u.metaJson)
-          ? u.metaJson
-          : {};
-      const metaScenes = Array.isArray(meta.scenes) ? meta.scenes : [];
-      const scenes = metaScenes.length
-        ? metaScenes.map((s) => ({
-            n: s.n || s.name || u.name,
-            aeComp: s.aeComp || s.compName || s.name || s.n || "",
-            slug: s.slug || s.previewKey || undefined,
-            mogrtUrl: s.mogrtUrl || undefined,
-            meta: s.meta || resLabel,
-            ico: s.ico || u.icon || "✦",
-            bg: s.bg || u.bg,
-            preview: s.preview || preview || undefined,
-            previewKind: s.previewKind || undefined,
-          }))
-        : [
-            {
-              n: u.name,
-              aeComp: "",
-              meta: resLabel,
-              ico: u.icon || "✦",
-              bg: u.bg,
-              preview: preview || undefined,
-            },
-          ];
+      // P1 #16 — SLIM ro'yxatda metaJson YO'Q → scenesFromItem placeholder beradi;
+      // sahnalar pack ochilganda detaldan (loadPackScenes) lazy yuklanadi.
+      const hasRealScenes =
+        !!(u.metaJson && typeof u.metaJson === "object" && Array.isArray(u.metaJson.scenes) && u.metaJson.scenes.length);
+      const built = scenesFromItem(u);
       packs[packKey] = {
         ico: u.icon || "✦",
         bg: u.bg,
         displayName: u.name,
         sub: `${NAV_LABELS_REF[u.nav] || u.nav} · ${u.catLabel} · ${resLabel}`,
         preview: preview || undefined,
-        scenes,
-        aeScenesFolder: meta.scenesFolder || meta.aeScenesFolder || "Scenes",
+        scenes: built.scenes,
+        // detalScenesLoaded: to'liq sahnalar bormi (openPack lazy fetch qaror qiladi)
+        detailScenesLoaded: hasRealScenes,
+        aeScenesFolder: built.aeScenesFolder,
         server: true,
         serverTemplateId: u.id,
         hasPack: u.hasPack !== false,
@@ -353,11 +406,28 @@ const AssetFlowCatalog = (() => {
     return labels[nav] || nav;
   }
 
-  async function refreshBrowse() {
+  /**
+   * P1 #15 — server-driven, SAHIFALANGAN browse. filters = { templateType, cat,
+   * orient, res, q, sort } (plagin joriy nav/qidiruv/filtrlaridan quriladi). reset=true
+   * (default): yangi filtr — 1-sahifa, server itemlari o'rnini bosadi. reset=false:
+   * keyingi sahifa (append, scroll'da). Filtr BUTUN baza bo'yicha SERVER tomonda —
+   * grid endi "birinchi sahifa ichidan" qidirmaydi (P5.1 tuzatildi).
+   *
+   * Eslatma: eski "server'dan o'chirilgan downloaded'ni tozalash" mantig'i OLIB
+   * TASHLANDI — u BUTUN katalog ro'yxatiga tayanardi; sahifalanganda bitta sahifa
+   * yetarli emas (noto'g'ri o'chirib yuborardi).
+   */
+  async function refreshBrowse(filters, opts) {
+    const reset = !opts || opts.reset !== false;
+    const sig = filtersSig(filters);
+    if (browseLoading) return 0;
+    if (!reset && (browseDone || sig !== browseSig)) return 0;
+    browseLoading = true;
     let data;
     try {
-      data = await fetchCatalog();
+      data = await fetchCatalogPage(reset ? null : browseCursor, filters);
     } catch (e) {
+      browseLoading = false;
       // P4: foydalanuvchiga do'stona xabar (URL/xom xato YO'Q) — texnik tafsilot konsolda.
       try { console.warn("refreshBrowse xatosi · API:", apiBase(), e); } catch (_) {}
       if (typeof showToast === "function") {
@@ -369,33 +439,31 @@ const AssetFlowCatalog = (() => {
       }
       throw e;
     }
-    const n = mergeIntoBrowse(data.items || []);
-    // Server'dan o'chirilgan shablonlarni downloaded/importedScenes dan tozalash
-    const serverIds = new Set((data.items || []).map((i) => i.id));
-    if (typeof window !== "undefined" && window.downloaded instanceof Set) {
-      for (const key of [...window.downloaded]) {
-        if (!key.startsWith("__srv_")) continue;
-        const id = key.slice(6);
-        if (!serverIds.has(id)) {
-          window.downloaded.delete(key);
-          if (window.importedScenes instanceof Set) {
-            const prefix = key + "::";
-            for (const sk of [...window.importedScenes]) {
-              if (sk === key || sk.startsWith(prefix)) window.importedScenes.delete(sk);
-            }
-          }
-        }
-      }
-      if (typeof savePrefs === "function") savePrefs();
+    const items = Array.isArray(data.items) ? data.items : [];
+    const n = mergeIntoBrowse(items, { append: !reset });
+    browseCursor = data.nextCursor || null;
+    browseDone = !browseCursor;
+    browseSig = sig;
+    browseLoading = false;
+    if (reset && typeof window !== "undefined" && typeof buildCategoryMenu === "function") {
+      buildCategoryMenu(window.currentNav || "video");
     }
-    if (n > 0) await refreshFeatured();
-    if (n > 0 && typeof window !== "undefined") {
-      if (typeof buildCategoryMenu === "function") buildCategoryMenu(window.currentNav || "video");
+    if (reset && n > 0) await refreshFeatured();
+    if (typeof window !== "undefined") {
       if (typeof render === "function") render();
       if (typeof updateServerNavBadges === "function") updateServerNavBadges();
     }
     return n;
   }
+
+  /** P1 #15 — keyingi sahifa (scroll load-more). Filtr o'zgargan bo'lsa reset qiladi. */
+  async function loadMoreBrowse(filters) {
+    if (filtersSig(filters) !== browseSig) return refreshBrowse(filters, { reset: true });
+    if (browseDone || browseLoading) return 0;
+    return refreshBrowse(filters, { reset: false });
+  }
+  function browseHasMore() { return !browseDone; }
+  function isBrowseLoading() { return browseLoading; }
 
   function findServerPackMeta(templateId) {
     const packs = browsePacks();
@@ -1400,6 +1468,11 @@ const AssetFlowCatalog = (() => {
     fetchFeatured,
     refreshFeatured,
     refreshBrowse,
+    loadMoreBrowse,
+    browseHasMore,
+    isBrowseLoading,
+    loadPackScenes,
+    fetchTemplateDetail,
     mergeIntoBrowse,
     downloadPackToTemp,
     downloadSceneMogrt,

@@ -154,18 +154,24 @@ function orientValue(v: unknown): string | null {
   return null;
 }
 
-// 4K sifat qatori: `res` matnida shulardan bittasi bo'lsa 4K deb hisoblanadi
-// (klient mapCatalogItems dagi /4k|uhd|2160|4096|8k|4320/ regex bilan bir xil mantiq).
+// Sifat guruhlari. Web 'HD'/'4K' (2 chelak); plagin '2k'/'4k'/'5k' (3 chelak) yuboradi.
+// '4k' = web mapCatalogItems dagi /4k|uhd|2160|4096|8k|4320/ regex bilan bir xil (8K ham
+// 4K deb sanaladi — web yorlig'iga mos). '5k' = plagin "5K+" (8K'ni ham qamraydi).
 const RES_4K_TOKENS = ["4k", "uhd", "2160", "4096", "8k", "4320"];
+const RES_GROUPS: Record<string, string[]> = {
+  "4k": RES_4K_TOKENS,
+  "5k": ["5k", "6k", "7k", "8k", "4320"],
+  "2k": ["2k", "1440", "qhd"],
+};
+function resContains(tokens: string[]): Prisma.ContributorTemplateWhereInput {
+  return { OR: tokens.map((t) => ({ res: { contains: t, mode: "insensitive" as const } })) };
+}
 function resWhere(v: unknown): Prisma.ContributorTemplateWhereInput | null {
   const s = typeof v === "string" ? v.trim().toLowerCase() : "";
   if (!s || s === "all") return null;
-  const is4k: Prisma.ContributorTemplateWhereInput = {
-    OR: RES_4K_TOKENS.map((t) => ({ res: { contains: t, mode: "insensitive" as const } })),
-  };
-  if (s === "4k") return is4k;
-  if (s === "hd" || s === "2k") return { NOT: is4k };
-  return null;
+  if (s === "hd") return { NOT: resContains(RES_4K_TOKENS) }; // web 'HD' = 4K emas
+  if (RES_GROUPS[s]) return resContains(RES_GROUPS[s]);
+  return { res: { contains: s, mode: "insensitive" } }; // boshqa aniq token (masalan 1080)
 }
 
 /** Katalog `where` — approvedCatalogWhere + ixtiyoriy filtrlar (hammasi additive).
