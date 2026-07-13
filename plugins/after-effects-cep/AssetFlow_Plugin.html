@@ -7329,6 +7329,7 @@ function homeGenCtx(){
     list:function(){ return __homeGen.it?[__homeGen.it]:[]; },
     onImport:homeImportGen,
     onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
+    onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     onDownload:function(it){ try{ const a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} } };
 }
 /* Re-import: pack keshda bo'lsa to'g'ridan AE'ga (downloadAll), bo'lmasa Yuklab olinganlar ro'yxati */
@@ -9625,6 +9626,8 @@ async function bootPlugin(){
     if(v==null&&!lowDemo&&(Date.now()-balFetchAt>60000)&&typeof studioGet==='function'&&typeof pubAuthHeaders==='function'){
       try{ var h=pubAuthHeaders(); if(h&&h.Authorization){ balFetchAt=Date.now();
         studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){});
+        // P3 (step 34) — AI Stock topshiriq holatlarini bir marta yuklaymiz (kartada "yuborilgan").
+        if(!window._afExploreLoaded && typeof window.afLoadExploreSubs==='function'){ window._afExploreLoaded=true; window.afLoadExploreSubs(); }
       } }catch(e){}
     }
   }
@@ -9923,7 +9926,57 @@ async function bootPlugin(){
     try{ if(typeof window.axVGRefresh==='function')window.axVGRefresh(); }catch(e){}
     try{ if(typeof window.axAGRefresh==='function')window.axAGRefresh(); }catch(e){}
     try{ if(typeof window.axSPInvalidate==='function')window.axSPInvalidate(); }catch(e){}
+    try{ if(typeof window.afLoadExploreSubs==='function')window.afLoadExploreSubs(); }catch(e){}
     try{ if(typeof showToast==='function')showToast('Refreshing…','info'); }catch(e){}
+  };
+
+  // ── P3 (step 34) — "Add to Explore": generatsiya → ommaviy AI Stock katalogi ──
+  // Web bilan bir xil zanjir: yuborish → admin moderatsiya → AI Stock pill. Huquq attestatsiyasi
+  // SHART (afConfirm ichida — tor panel; server rightsAccepted'ni majburlaydi). Pul-zonasi TEGILMAYDI.
+  window.afExploreSubs = window.afExploreSubs || {};
+  window.afExploreState = function(genId){
+    var s = window.afExploreSubs[genId];
+    if(!s) return { submitted:false, label:'Add to Explore', status:'' };
+    var st = s.reviewStatus;
+    var label = st==='APPROVED' ? (s.published?'Published in Explore':'Approved — Explore')
+      : st==='REJECTED' ? 'Not approved · Explore' : 'In review · Explore';
+    return { submitted:true, label:label, status:st };
+  };
+  window.afLoadExploreSubs = function(){
+    return studioGet('/api/studio/gen/explore/submissions').then(function(r){
+      var subs = {};
+      ((r&&r.submissions)||[]).forEach(function(s){ if(s.generationId) subs[s.generationId]={reviewStatus:s.reviewStatus, published:s.published}; });
+      window.afExploreSubs = subs;
+    }).catch(function(){});
+  };
+  window.afAddToExplore = async function(it){
+    if(!it || !it.id){ toast('This result is still being saved','info'); return; }
+    var cur = window.afExploreState(it.id);
+    if(cur.submitted){ toast('Already submitted — '+cur.label,'info'); return; }
+    var ok = false;
+    try{
+      ok = await window.afConfirm(
+        'Publish this to the public AI Stock catalog?\n\nBy publishing you confirm you OWN THE RIGHTS to this content and may share it publicly. An admin reviews it before it goes live. Free for everyone by default.',
+        {ok:'Publish to Explore', cancel:'Cancel'});
+    }catch(e){ ok=false; }
+    if(!ok) return;
+    try{
+      var r = await studioPost('/api/studio/gen/'+encodeURIComponent(it.id)+'/explore', {rightsAccepted:true, promptPublic:false});
+      var st = (r&&r.submission&&r.submission.reviewStatus)||'PENDING_REVIEW';
+      window.afExploreSubs[it.id] = {reviewStatus:st, published:false};
+      toast((r&&r.alreadySubmitted)?'Already submitted — in review':'Submitted to Explore — pending review','success');
+      // Kartani yangilash (holat matni o'zgarsin)
+      try{ if(typeof window.afIgRetryRecent==='function')window.afIgRetryRecent(); }catch(e){}
+    }catch(e){
+      var code = e && (e.code || (e.data&&e.data.code));
+      var msg = code==='RIGHTS_REQUIRED' ? 'Rights confirmation required'
+        : code==='DAILY_CAP' ? (e.message||'Daily submission limit reached — try again tomorrow')
+        : code==='MODERATION_BLOCKED' ? "This content can't be published (didn't pass moderation)"
+        : code==='GEN_NOT_READY' ? 'This generation is not finished yet'
+        : code==='NO_ASSET' ? 'This generation has no asset to publish'
+        : (e && e.message) || 'Could not submit — please try again';
+      toast(msg,'error');
+    }
   };
   // P16 — panelga fokus qaytganda avto-yangilash (web bilan almashganda stale window yo'q; 20s throttle)
   (function(){
@@ -10063,6 +10116,8 @@ async function bootPlugin(){
       acts.appendChild(imp); cap.push('Import');
       // P1: lightbox'da ham Add to project (ctx bergan bo'lsa)
       if(ctx.onAddProject&&it.id){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(){ ctx.onAddProject(it); })); cap.push('Add to project'); }
+      // P3 (step 34) — lightbox'da Add to Explore
+      if(ctx.onAddExplore&&it.id){ var exLbl=window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'; acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',exLbl,function(){ ctx.onAddExplore(it); })); cap.push(exLbl); }
       if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
       // BATCH4 #1/#2 — lightbox'da Upscale (rasm: Imagen · video: Topaz)
       if(ctx.onUpscale&&(cat==='image'||cat==='video')){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>','Upscale — ×2 / ×4',function(){ closeLb(); ctx.onUpscale(it); })); cap.push('Upscale'); }
@@ -10114,6 +10169,8 @@ async function bootPlugin(){
       ra.appendChild(actBtn(IC.imp,'Import to AE',function(e){ e.stopPropagation(); ctx.onImport&&ctx.onImport(it); }));
       // P1: Add to project — ctx bergan tool'larda (gen natijasi loyihaga yig'iladi)
       if(ctx.onAddProject&&it.id) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(e){ e.stopPropagation(); ctx.onAddProject(it); }));
+      // P3 (step 34) — Add to Explore (ommaviy AI Stock katalogiga). Yuborilgan bo'lsa holat.
+      if(ctx.onAddExplore&&it.id) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),function(e){ e.stopPropagation(); ctx.onAddExplore(it); }));
       if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Use as reference',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
       // BATCH4 #1/#2 — Upscale (rasm: Imagen x2/x4 · video: Topaz, ctx bergan tool'larda)
       if(ctx.onUpscale&&(cat==='image'||cat==='video')) ra.appendChild(actBtn(IC.up,cat==='video'?'Upscale — Topaz ×2 / ×4':'Upscale — x2 (2K) / x4 (4K)',function(e){ e.stopPropagation(); ctx.onUpscale(it); }));
@@ -10867,6 +10924,8 @@ window.afGallery=(function(){
         var mkBtn=function(html,title,fn){ var b=document.createElement('div'); b.innerHTML=html; b.title=title; b.addEventListener('click',function(e){ e.stopPropagation(); fn(); }); return b; };
         acts.appendChild(mkBtn(IC.imp,'Import to AE',function(){ importMedia(it); }));
         if(it.id)acts.appendChild(mkBtn(IC.proj,'Add to project',function(){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }));
+        // P3 (step 34) — Add to Explore (My Library'dan ham)
+        if(it.id)acts.appendChild(mkBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),function(){ window.afAddToExplore(it); }));
         if(it.prompt)acts.appendChild(mkBtn(IC.rst,'Regenerate — restore prompt + references',function(){ galRestore(it); }));
         if(it.prompt)acts.appendChild(mkBtn(IC.copy,'Copy prompt',function(){ window.afCopyText(it.prompt); }));
         acts.appendChild(mkBtn(IC.trash,'Delete',function(){ galDeleteOne(it); }));
@@ -11785,6 +11844,7 @@ window.afGallery=(function(){
     onToggleSelect: function(it,d){ if(!it.id){ toast('This result is still being saved','info'); return; } if(st.recentSel[it.id])delete st.recentSel[it.id]; else st.recentSel[it.id]=it; d.classList.toggle('sel',!!st.recentSel[it.id]); updRecentBatch(); },
     onImport: function(it){ importMediaCat(it.url,it.cat); },
     onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
+    onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     onDownload: function(it){ downloadUrl(it.downloadUrl||it.url,window.afGenDlName(it.prompt||it.title,it.url,it.cat)); },
     onDelete: function(it){ recentDelete(it); },
     refAllowed: function(it){ return igRefKind()==='image' && (it.cat||'image')==='image'; },
@@ -13538,6 +13598,7 @@ window.afGallery=(function(){
     onToggleSelect: function(it,d){ if(!it.id){ toast('This result is still being saved','info'); return; } if(vgRcState.sel[it.id])delete vgRcState.sel[it.id]; else vgRcState.sel[it.id]=it; d.classList.toggle('sel',!!vgRcState.sel[it.id]); updVgRcBatch(); },
     onImport: function(it){ vgImport(it); },
     onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
+    onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     onDownload: function(it){ vgDownload(it); },
     onDelete: function(it){ vgRcDelete(it); },
     refAllowed: function(it){ return vgRefAllowed(it); },
@@ -14072,6 +14133,7 @@ window.afGallery=(function(){
     selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
     onImport:function(it){ if(typeof aiImportMedia==='function')aiImportMedia(it.url,'audio',null); else toast('Only works inside After Effects','info'); },
     onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
+    onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
     onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ ag.recent=ag.recent.filter(function(x){return x.id!==it.id;}); renderAgRecent(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
     refAllowed:function(){ return false; }, onRef:function(){}
@@ -14285,6 +14347,7 @@ window.afGallery=(function(){
     onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
     onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ var i=items.indexOf(it); if(i>=0)items.splice(i,1); afterDelete&&afterDelete(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
     onAddProject:function(it){ window.afProjectPicker('gen',it.id); },
+    onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     refAllowed:function(){ return false; }, onRef:function(){}
   }; }
   function openSession(s){
