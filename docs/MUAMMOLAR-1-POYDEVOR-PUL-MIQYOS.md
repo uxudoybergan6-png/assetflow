@@ -13,6 +13,84 @@
 
 ---
 
+---
+
+## 📍 STATUS (updated 2026-07-13 — read this first)
+
+### ✅ DONE (10 commits, pushed, deployed)
+1 Sentry access-log · 2 Prisma `directUrl` (code side) · 4 DB indexes · 5 max-instances 2→10 ·
+**6 ledger audit — NO double-charge losses found** · 7 idempotency on `POST /gen` (web+plugin) ·
+9 BytePlus token capture (core) · 10 pricing D1/D2/D4 + boot floor assertion ·
+11 margin input fix · 12 security verify (**found + fixed: presigned upload bypassed the storage
+quota**) · 13 session security (a mistyped 2FA code no longer logs you out).
+Owner-side done: Lemon Squeezy packs 250/600/1800 · Admin Plans (Pro 1000 / Studio 3000) ·
+Website CMS copy in sync.
+
+### 🔴 PENDING — IN THIS ORDER
+
+| # | What | Why it matters | Notes |
+|---|---|---|---|
+| **DB move** | Neon `us-east-1` → **`eu-central-1` (Frankfurt)** | Cloud Run is in `europe-west1`. **~100 ms of Atlantic latency on every SQL query.** | New project `assetflow-eu` created. Migration in progress. Keep the old DB for a week. |
+| **3 (CDN)** | Turn on `CDN_BASE_URL` | Removes ~10 000 signings per catalog load; fixes expiring thumbs + the gradient flash | ⚠️ **READ P7.CDN FIRST — the naive "make the bucket public" LEAKS EVERY PAID PACK.** |
+| **8** | 🔴 **Ask the provider before refunding** (P19.5) + **resumable IMAGE jobs** | **The owner's silent money leak:** provider paid → our side failed → asset discarded → user refunded. Owner eats the cost. | **Its own focused session. Model: Fable 5. Money path — no rushing.** Deliberately deferred by Code, approved by the Director. |
+| **14** | **Build the watermark** | Advertised on the pricing page, **absent from the code**. The only real Free↔Pro differentiator. | |
+| **15–22** | Server-side catalog · slim payload · edge cache · plugin virtualization · bulk-ingest worker · sybil defences · profit dashboard · measure 50→500 | Must land **before** 5 000 assets are imported | |
+| **Neon paid plan** | Free tier "scales to zero when inactive" | This is the **second** cause of "it randomly stops working" — the region move does **not** fix it | ~$19/mo. Do it when real users arrive. |
+| **Password rotation** | The new Neon password was pasted into a chat | Rotate it in the Neon console after the migration | 1 minute |
+
+---
+
+## 🗺️ THE WHOLE REMAINING ROAD — BLOCKS A → J
+
+> One block = one Claude Code session. **The owner verifies live after each block, then the next
+> block starts.** Blocks are ordered by dependency; do not reorder.
+> `P1` = this file · `P2` = `MUAMMOLAR-2-MAHSULOT.md`.
+
+| Block | What | Steps | Model | Why here |
+|---|---|---|---|---|
+| **A** | **AI Studio — media** · stop the global re-render · real `<img>`/`<video>` · 1280 px display derivative · lightbox rebuild (true aspect) · card surface | P2: **23 + 24** | Fable 5 | 👉 **Current.** Everything else in the composer is built on this. |
+| **B** | **Reference pool + parallel generations** — references survive a model switch (dimmed, never deleted, tokens never renumbered); several jobs at once | P2: **25** | Fable 5 | 🔒 Every remaining composer step depends on this state model. |
+| **C** | **Composer complete** — one settings chip · Generate disabled when credits are short · drag & drop · paste · pill ✕ · Clear · ⌘Z | P2: **26 + 27 + 28** | Opus | 🔒 after B. |
+| **D** | **Credits + AI honesty** — real ledger (refunds visible) · **Enhance actually sees the reference images** · landing logout · provider content rejections (warn, refund, suggest a permitted model) | P2: **29 + 29a + 29b + 29c** | Opus | Closes AI Studio. |
+| ~~**E**~~ | ✅ **DONE & LIVE (2026-07-13)** — **CDN via a Cloudflare Worker proxy** (`cdn.getframeflow.app`). Per-object public was **impossible**: the GCP org policy (`storage.uniformBucketLevelAccess` + `publicAccessPrevention`) is enforced at project level and `roles/orgpolicy.policyAdmin` is not grantable there. **Plan B is better:** the bucket stays **fully closed**; the Worker gates every request on the same `isPublicReadKey()` allow-list (single source, imported by both API and Worker). Proof test live: thumb/preview/gen-display **200** · pack.zip / mogrt / gen-refs / gen-originals **403** · bucket-direct **403** · Pro pack download still **302 → 5-min signed URL**. | P1: **3** | — | Worker source: `workers/cdn-proxy/`. |
+| **F** | 🔴 **MONEY** — build the **watermark** (Free↔Pro differentiator, currently advertised but absent) · **ask the provider before refunding** + resumable image jobs | P1: **14 + 8** | Fable 5 | **Without the watermark there is no reason to buy Pro.** Step 8 is the owner's silent loss. **Money path — its own session, no rushing.** |
+| **G** | 🔴 **SCALE** — server-side catalog (filter/search/sort/paginate) · slim list payload + detail endpoint · edge cache · plugin list virtualization | P1: **15 + 16 + 17 + 18** | Fable 5 | 🔒 needs E. **Must land BEFORE content is imported** — otherwise the catalog silently lies and the plugin freezes AE. |
+| **H** | **Content pipeline** — resumable bulk-ingest worker · contributor upload rebuild (bulk-only, 5-category taxonomy, **raw-file ingest**, ffprobe spec, AI metadata) · admin moderation at scale · semantic search · plugin import for raw media · stock watermarking | P1: **19** · P2: **30 + 32 + 33** | Fable 5 | 🔒 needs F + G. The biggest block — split it if it gets too large. |
+| **I** | **Catalog links + AI Stock** — "Stock Catalog" naming · **a real deep link per asset** · **OG link previews with the image** · context-aware filters · **"Add to Explore" → admin → AI Stock** | P2: **31 + 34** | Fable 5 | 🔒 needs G (detail endpoint) + E (stable thumb URLs for `og:image`). **AI Stock is the fastest way to fill an empty catalog — it needs no contributors.** |
+| **J** | **Business + LAUNCH** — sybil defences + payout safety (pool base, 30 %, credit expiry) · profit dashboard · measure 50 → 500 → 5 000 · **then import the content and launch** | P1: **20 + 21 + 22** · P2: **35** | Opus | 🔒 payouts must NOT be enabled before the sybil defences. |
+
+**Owner-side, in parallel (not a Code block):**
+Neon → **Launch plan** (🔴 the free 100 compute-hours run out in days — the site dies) ·
+switch `DATABASE_URL`/`DIRECT_DATABASE_URL` to Frankfurt + deploy ·
+rotate the Neon password · keep the old US DB for one week · plugin reinstall
+(`install-cep.sh`) after any PLUGIN-scope block.
+
+**After block D → `MUAMMOLAR-2-MAHSULOT.md` Phase 4 is still blocked until G.**
+
+---
+
+---
+
+## 🔴 OWNER DECISION (2026-07-13) — WATERMARK APPLIES TO **BOTH** SURFACES
+
+There are **two different** watermark surfaces, and they are built in different places:
+
+1. **Stock catalog previews** (P4, Envato-style) — ✅ **BUILT** in block F step 14.
+   Applies to `kind: "stock"` only; video **templates** stay clean. *(Note: there is almost no
+   stock content yet, so this changes nothing user-visible until block H ships the stock ingest.)*
+
+2. **AI generations** (P23 GAP 1) — 🔴 **STILL OPEN. This is the actual money hole.**
+   The pricing page promises **Free: "Watermarked export"** and **Pro: "4K, watermark-free
+   downloads"** — but `hydrateGenAssets` (`studio-gen.ts:105`) signs `url`/`downloadUrl` to the
+   **clean original** for everyone. **A Free user downloads a clean, unwatermarked 4K AI file
+   today.** The single advertised Free↔Pro differentiator does not exist.
+
+**OWNER'S DECISION: option A — implement it.** Do NOT remove the promise from the pricing copy.
+A **FREE-plan user downloading their own AI generation gets a WATERMARKED file; paid plans get the
+clean original.** See "Block F — step 14b" below.
+
+---
+
 ## GLOBAL RULES (apply to every step)
 
 - **🔴 MONEY ZONE IS FROZEN.** Never change credit consume/refund, the signed cost-quote / HMAC
@@ -54,7 +132,7 @@ API client and the same composer — so **most bugs in this file exist twice.**
 |---|---|---|---|---|
 | **1** | **Turn on error tracking + metrics** (Sentry DSN; Cloud Run 5xx / latency alerts) | P8.1 | API | Everything below is currently diagnosed **by feel**. Make it a number **first**, so the fixes can be proven. |
 | **2** | **Move the DB into the API's region** (Cloud Run `europe-west1` ↔ Neon `us-east-1`) **and switch to the Neon pooled connection string** | P8 #1–#2 | API | **~100 ms of Atlantic latency on EVERY SQL query.** Biggest single win in the whole document — and it is a config change. |
-| **3** | **Turn on `CDN_BASE_URL`** — thumbs/previews become stable, public, cacheable URLs | P7 #1 | API·WEB·PLUGIN | Removes ~10 000 URL signings per catalog load, makes responses cacheable, **and fixes the expiring-thumbnail and gradient-flash failure modes** (P8 #5, P10 #3 in Part 2). |
+| **3** | **Turn on `CDN_BASE_URL`** — thumbs/previews become stable, public, cacheable URLs. ⚠️ **READ P7.CDN BELOW FIRST — a naive "make the bucket public" LEAKS EVERY PAID PACK.** | P7 #1 | API·WEB·PLUGIN | Removes ~10 000 URL signings per catalog load, makes responses cacheable, **and fixes the expiring-thumbnail and gradient-flash failure modes** (P8 #5, P10 #3 in Part 2). |
 | **4** | **Add the DB indexes** for the filter columns (`kind`, `templateType`, `stockType`, `cat`, …) | P6 #6 / P7 #4 | API | Additive migration. Required before server-side filtering (step 16). |
 | **5** | **Raise Cloud Run `max-instances`** (currently **2**) | P7 #9 / P8 #6 | API | Do this **after** 2–4, so you are not paying to serve an inefficiency. |
 
@@ -203,6 +281,61 @@ there is nowhere for requests to go → 429/503 → with #3 (no retry) the user 
 
 ---
 
+
+# P7.CDN — 🔴 STOP: turning on the CDN the naive way LEAKS EVERY PAID PACK
+
+> **Director's catch (2026-07-13), before step 3 is executed. Read this in full.**
+
+**The trap.** Step 3 says "set `CDN_BASE_URL` and make thumb/preview objects public". The obvious
+way to do that is to grant `allUsers → Storage Object Viewer` on the bucket. **That would make the
+ENTIRE bucket world-readable — including every paid pack.**
+
+Everything lives in **one** bucket (`AWS_S3_BUCKET: assetflow-assets-2026`):
+
+```
+assetflow-assets-2026/
+  templates/<id>/thumb.jpg      ← must be public
+  templates/<id>/preview.mp4    ← must be public
+  templates/<id>/pack.zip       ← 🔴 PAID. Must stay private.
+  templates/<id>/mogrt/<slug>.mogrt   ← 🔴 PAID.
+  gen-ref-src/...               ← user uploads. Private.
+  users/<id>/generations/...    ← user content. Private.
+```
+
+Pack keys are **predictable** (`templates/<id>/pack.zip`) and the **template ids are public in the
+catalog API**. A bucket-wide public grant therefore hands out the entire paid library:
+`https://storage.googleapis.com/assetflow-assets-2026/templates/<id>/pack.zip`
+— bypassing `guardDownloadable()` (the Pro gate, the download limit, the malware gate) completely.
+**It would nullify P23's entire download-security chain in one click.**
+
+## What must be done instead (this is a CODE task, not an owner click)
+
+1. **Do NOT grant `allUsers` at the bucket level. Do not enable uniform public access.**
+2. Make **only** the display objects public, **per object**:
+   - `templates/*/thumb.*` · `templates/*/preview.*` · `templates/*/scenes/*` ·
+     generation **display/thumb** derivatives (Part 2 P9).
+   - **Never**: `pack.*`, `mogrt/*`, `gen-ref-src/*`, raw generation originals, incoming uploads.
+3. Implement it in the upload path (`lib/s3.ts`): the thumb/preview/scene upload functions set the
+   object public-read at write time; the pack/mogrt upload functions **must not**. Add an explicit
+   allow-list of public prefixes in one place — never a "make public" flag passed by callers.
+   (Bucket must therefore use **fine-grained** access, not uniform bucket-level access.)
+4. **Backfill** the existing objects: a one-off script that walks the bucket and sets public-read on
+   the allowed prefixes **only**.
+5. **Then** set `CDN_BASE_URL=https://storage.googleapis.com/assetflow-assets-2026`.
+6. **Prove it — this is the acceptance test, and it is not optional:**
+   - `curl -I https://storage.googleapis.com/<bucket>/templates/<id>/thumb.jpg` → **200**
+   - `curl -I https://storage.googleapis.com/<bucket>/templates/<id>/pack.zip` → **403**
+   - `curl -I https://storage.googleapis.com/<bucket>/templates/<id>/mogrt/<slug>.mogrt` → **403**
+   - The API pack route still works for an authorised Pro user (302 → 5-minute signed URL).
+   - Repeat for a generation original vs its display derivative.
+7. If a safe per-object public grant turns out to be impossible on this bucket, the fallback is a
+   **separate public bucket** for display assets (thumbs/previews/derivatives) with the private
+   bucket untouched — more work, same guarantee. **Never compromise on #6.**
+
+**Alternative rejected:** proxying everything through a CDN in front of the API keeps the bucket
+private but leaves the API in the bandwidth path — which is the cost P7 #1 exists to remove.
+
+---
 
 # P7 — PERFORMANCE PLAN: exactly what to change so web + plugin stay fast at 5 000+ assets
 

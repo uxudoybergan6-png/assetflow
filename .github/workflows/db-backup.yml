@@ -66,13 +66,23 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' "$CLOUDRUN_ENV_YAML" > cloudrun-env.yaml
-          DB_URL="$(grep -E '^DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//')"
-          if [ -z "$DB_URL" ]; then
-            echo "::error::DATABASE_URL cloudrun-env.yaml'da topilmadi" >&2
+          # pg_dump POOLED (pgbouncer) URL bilan ISHLAMAYDI — "invalid URI query
+          # parameter: pgbouncer" xatosi beradi. Shu sabab zaxira DIRECT (poolsiz)
+          # endpoint'dan olinadi. `|| true` SHART: grep topa olmasa pipefail bosqichni
+          # o'ldiradi va fallback'ga yetib bormaydi.
+          DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
+          DB_URL="$(grep -E '^DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
+          if [ -n "$DIRECT_URL" ]; then
+            DUMP_URL="$DIRECT_URL"
+          elif [ -n "$DB_URL" ]; then
+            # DIRECT yo'q — pooled URL'dan pgbouncer/connection_limit parametrlarini olib tashlaymiz
+            DUMP_URL="$(printf '%s' "$DB_URL" | sed -E 's/([?&])pgbouncer=[^&]*//g; s/([?&])connection_limit=[^&]*//g; s/\?&/?/; s/[?&]$//')"
+          else
+            echo "::error::Na DIRECT_DATABASE_URL, na DATABASE_URL cloudrun-env.yaml'da topilmadi" >&2
             exit 1
           fi
-          echo "::add-mask::$DB_URL"
-          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+          echo "::add-mask::$DUMP_URL"
+          echo "DATABASE_URL=$DUMP_URL" >> "$GITHUB_ENV"
           rm -f cloudrun-env.yaml
 
       - name: Run backup
