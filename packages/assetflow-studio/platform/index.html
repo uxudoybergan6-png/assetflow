@@ -16254,7 +16254,7 @@
 
         <!-- TEMPLATE DETAIL — dedicated page (A2b), shown over any app screen while `detail` is set -->
         <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
-          <div class="va-crumb"><a onclick="{{ goTemplates }}">Stock Catalog</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <a onclick="{{ openColCat }}">{{ detailPillLabel }}</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
+          <div class="va-crumb"><a onclick="{{ goStockRoot }}">Stock Catalog</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <a onclick="{{ openColCat }}">{{ detailPillLabel }}</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
           <div class="va-dwrap">
             <div style="min-width:0">
               <!-- BATCH6 · preview-player: ramka (border/radius/#000) + media + player-bar (poster holatida) -->
@@ -16554,6 +16554,19 @@
           <div style="height:34px"></div>
         </sc-if>
 
+        <!-- P2 — deep-link cold-load: asset yechilmoqda -->
+        <sc-if value="{{ detailLoading }}" hint-placeholder-val="{{ false }}">
+          <div class="va-homeload" style="margin:60px 40px"><span class="star">✦</span> Loading…</div>
+        </sc-if>
+        <!-- P2 — 404: noma'lum/o'chirilgan/published-emas asset. Oq sahifa/crash EMAS. -->
+        <sc-if value="{{ detailNF }}" hint-placeholder-val="{{ false }}">
+          <div class="va-nf" style="max-width:520px;margin:80px auto;text-align:center;padding:0 24px">
+            <div style="font-size:44px;line-height:1;margin-bottom:14px">🔍</div>
+            <h2 style="margin:0 0 8px;font-size:22px">Asset not found</h2>
+            <p style="color:var(--muted);margin:0 0 22px;font-size:14px">This item may have been removed or is no longer published. Browse the full catalog instead.</p>
+            <button class="va-btn" onclick="{{ goStockRoot }}"><svg class="va-ic"><use href="#i-grid"></use></svg> Back to Stock Catalog</button>
+          </div>
+        </sc-if>
         <!-- TEMPLATES — Variant A A2 (search hero · category chips · filter chip bar) -->
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
           <div class="va-cathero">
@@ -17852,6 +17865,71 @@ class Component extends DCLogic {
   pillSlug(v) { return this.catalogTypes[v] ? this.catalogTypes[v].slug : ''; }
   slugToPill(slug) { const k = Object.keys(this.catalogTypes).find(k => this.catalogTypes[k].slug === slug); return k || 'All'; }
 
+  // ── P2 (step 31) — HAQIQIY manzil (path) routingi + per-asset deep-link ────────────
+  // ⚠️ Hash (#) serverga YUBORILMAYDI → Telegram/Google uni ko'rmaydi. Shuning uchun
+  //   katalog/detal HAQIQIY path bo'lishi SHART (OG preview funksiyasi shuni o'qiydi).
+  // BITTA yordamchi juftlik: assetPath(t) / parseStockPath(pathname). Hamma chaqiruvchi
+  //   (karta, tavsiya, trend, breadcrumb, share, cold-load) SHU YERDAN foydalanadi.
+  _slugify(s) {
+    return String(s || '').toLowerCase().trim()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'asset';
+  }
+  // shortId = cuid'ning oxirgi 8 belgisi (barqaror, to'qnashuvsiz — public endpoint
+  //   avval to'liq id, keyin endsWith bilan yechadi). BITTA joyda — takrorlama.
+  _shortId(id) { return String(id || '').slice(-8); }
+  // /stock/<type>/<slug>-<shortId> — asset kanonik URL'i.
+  assetPath(t) {
+    if (!t) return '/stock';
+    const slug = this.pillSlug(this.pillOf(t)) || 'video-templates';
+    return '/stock/' + slug + '/' + this._slugify(t.n) + '-' + this._shortId(t.id);
+  }
+  // Pill VALUE → katalog path (/stock yoki /stock/<slug>).
+  _stockPath(pill) {
+    const p = pill || this.state.fCat;
+    const slug = (p && p !== 'All') ? this.pillSlug(p) : '';
+    return slug ? '/stock/' + slug : '/stock';
+  }
+  // pathname → { pill, sub, assetSeg, shortId } yoki null (agar /stock yo'nalishi bo'lmasa).
+  // Ajratish: 3-segment DEFIS tutsa → asset (slug har doim `-<shortId>` bilan tugaydi);
+  //   defissiz so'z (ai-stock image|video) → sub-filtr. Bu ikkovini aniq ajratadi.
+  parseStockPath(pathname) {
+    const parts = String(pathname || '').replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+    if (parts[0] !== 'stock') return null;
+    const typeSlug = parts[1] || '';
+    const pill = typeSlug ? this.slugToPill(typeSlug) : 'All';
+    const seg3 = parts[2] || '';
+    if (seg3 && seg3.indexOf('-') >= 0) {
+      return { pill, sub: '', assetSeg: seg3, shortId: seg3.split('-').pop() };
+    }
+    const sub = (typeSlug === 'ai-stock' && (seg3 === 'image' || seg3 === 'video')) ? seg3 : '';
+    return { pill, sub, assetSeg: '', shortId: '' };
+  }
+  // /stock URL'ni joriy pill bilan sinxronlaydi (yangi tarix yozuvisiz).
+  _syncStockUrl() {
+    if (this.state.screen !== 'templates' || this.state.detail) return;
+    try { history.replaceState({ screen: 'templates' }, '', this._stockPath()); } catch (e) {}
+  }
+  // Cold-load / deep-link: shortId bo'yicha assetni yechadi (public endpoint), detail ochadi.
+  //   Topilmasa — toza "Asset not found" (404) holati; oq sahifa/crash BO'LMAYDI.
+  async loadStockAsset(shortId, expectSlug) {
+    if (!(window.FFAPI && FFAPI.publicAsset)) { this.setState({ screen: 'templates', detail: null, detailNF: true }); return; }
+    this.setState({ screen: 'templates', detailLoading: true, detailNF: false });
+    try {
+      const raw = await FFAPI.publicAsset(shortId);
+      const it = raw && (raw.item || raw);
+      if (!it || !it.id) throw new Error('NF');
+      const mapped = this.mapCatalogItems([it], { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' }, { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' })[0];
+      this._detailFromApp = false;
+      this.setState({ screen: 'templates', detail: mapped, detailLoading: false, detailNF: false, fCat: this.pillOf(mapped) });
+      // Slug mos kelmasa (nom o'zgargan) — kanonik URL'ga replaceState (404 EMAS)
+      const canon = this.assetPath(mapped);
+      try { if (window.location.pathname !== canon) history.replaceState({ screen: 'templates', detail: 1, id: mapped.id }, '', canon); } catch (e) {}
+      this.ensureBrowse();
+    } catch (e) {
+      this.setState({ screen: 'templates', detail: null, detailLoading: false, detailNF: true });
+    }
+  }
+
   brands = ['NOVA', 'PixelHaus', 'Lumen', 'ORBIT', 'Kadr', 'Vizor'];
 
   authors = ['NOVA Studio', 'Kadr Lab', 'Vizor', 'PixelHaus', 'Lumen Co', 'Orbit FX', 'Sardor A.', 'Dilnoza K.'];
@@ -18184,7 +18262,7 @@ class Component extends DCLogic {
       screen = 'verify-email';
     }
     const prev = this.state.screen;
-    this.setState(s => ({ screen, navOpen: false, megaOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, addPick: null, nameModal: null, pageFlip: s.pageFlip + 1 }));
+    this.setState(s => ({ screen, navOpen: false, megaOpen: false, appMenuOpen: false, avatarOpen: false, detail: null, detailNF: false, lightbox: null, chipPop: null, modelOpen: false, fbarPop: null, useMenuOpen: false, modelModalOpen: false, addPick: null, nameModal: null, pageFlip: s.pageFlip + 1 }));
     // QA-FIX #12/#13 — ekranga kirganda ro'yxatlar yangilanadi (kirish shart: token)
     if (window.FFAPI && FFAPI.getToken()) {
       if (screen === 'projects') this.loadProjects();
@@ -18199,7 +18277,9 @@ class Component extends DCLogic {
     // aks holda ekran o'zgargan bo'lsa pushState (yangi yozuv), aks holda replaceState.
     try {
       if (window.history) {
-        const url = '#' + screen;
+        // P2 — templates ekrani HAQIQIY path (/stock[/<pill>]); qolganlari '/#screen'
+        // (bosh path'ni tozalaydi — eski /stock path hash bilan aralashib qolmasin).
+        const url = (screen === 'templates') ? this._stockPath() : ('/#' + screen);
         if (opts.replace || opts.fromPop || screen === prev) history.replaceState({ screen: screen }, '', url);
         else history.pushState({ screen: screen }, '', url);
       }
@@ -18234,6 +18314,9 @@ class Component extends DCLogic {
       // alohida: /studio/login.html va /admin/login.html.
       if (seg === 'login') seg = 'auth';
       const pathScreen = ALL.indexOf(seg) >= 0 ? seg : '';
+      // P2 — /stock[/type[/asset]] path routingi + eski /templates|#templates → /stock redirect.
+      const stockLoc = this.parseStockPath(window.location.pathname);
+      const legacyTpl = (seg === 'templates') || ((window.location.hash || '').replace('#', '') === 'templates');
       if (window.FFAPI) {
         if (FFAPI.getToken()) {
           const savedUser = FFAPI.getUser();
@@ -18243,8 +18326,9 @@ class Component extends DCLogic {
           this.setState({ user: savedUser });
           this.bootData();
           // #14: sessiya tiklandi — landing o'rniga to'g'ridan app (hash deep-link ustuvor).
+          // P2 — /stock deep-link bo'lsa dashboard'ga sakramaymiz (katalogda qolamiz).
           const h0 = (window.location.hash || '').replace('#', '') || pathScreen;
-          if (savedUser && (!h0 || h0 === 'landing')) { this._hashApplied = true; this.go('dashboard', { replace: true }); }
+          if (savedUser && !stockLoc && !legacyTpl && (!h0 || h0 === 'landing')) { this._hashApplied = true; this.go('dashboard', { replace: true }); }
         }
         this.loadCatalog();
         this.loadLandingConfig(); // Landing CMS — kesh + server
@@ -18257,8 +18341,26 @@ class Component extends DCLogic {
           this.go('auth');
         });
       }
-      const h = (window.location.hash || '').replace('#', '') || pathScreen;
-      if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h, { replace: true }); }
+      // P2 — /stock yo'nalishi (path) HAMMA hash/pathScreen'dan ustun (haqiqiy deep-link).
+      if (stockLoc) {
+        this._hashApplied = true;
+        if (stockLoc.assetSeg) {
+          // Detal deep-link: assetni shortId bilan yechamiz (public endpoint), pill'ni oldindan qo'yamiz.
+          this.setState({ screen: 'templates', fCat: stockLoc.pill });
+          this.loadStockAsset(stockLoc.shortId, stockLoc.assetSeg);
+        } else {
+          this.setState({ screen: 'templates', fCat: stockLoc.pill, aiStockKind: stockLoc.sub || 'All' });
+          this._syncStockUrl();
+        }
+      } else if (legacyTpl) {
+        // Eski /templates | #templates → /stock (301-ga teng client redirect).
+        this._hashApplied = true;
+        this.setState({ screen: 'templates', fCat: 'All' });
+        try { history.replaceState({ screen: 'templates' }, '', '/stock'); } catch (e) {}
+      } else {
+        const h = (window.location.hash || '').replace('#', '') || pathScreen;
+        if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h, { replace: true }); }
+      }
       // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
         if (this.state.lightbox && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) { ev.preventDefault(); this._lbGo(ev.key === 'ArrowLeft' ? -1 : 1); return; }
@@ -18270,6 +18372,23 @@ class Component extends DCLogic {
       });
       // Orqaga/Oldinga (popstate) — mos ekranni tiklaymiz; go() auth-gate'ni o'zi qiladi.
       window.addEventListener('popstate', this._onPop = (ev) => {
+        // P2 — avval /stock path'ni tekshiramiz: detaldan Orqaga → /stock/<type> (detal yopiladi,
+        //   butun katalogdan chiqib ketilmaydi); asset URL'ga Oldinga → detal qayta ochiladi.
+        const sLoc = this.parseStockPath(window.location.pathname);
+        if (sLoc) {
+          this._detailFromApp = false;
+          if (sLoc.assetSeg) {
+            const cur = this.state.detail;
+            if (cur && this._shortId(cur.id) === sLoc.shortId) return; // allaqachon shu detal
+            this.setState({ screen: 'templates', fCat: sLoc.pill });
+            this.loadStockAsset(sLoc.shortId, sLoc.assetSeg);
+          } else {
+            this.setState({ screen: 'templates', detail: null, detailNF: false, fCat: sLoc.pill, aiStockKind: sLoc.sub || 'All' });
+            this.ensureBrowse();
+            try { window.scrollTo(0, 0); } catch (e) {}
+          }
+          return;
+        }
         const stt = (ev && ev.state) || {};
         let scr = stt.screen || (window.location.hash || '').replace('#', '') || 'landing';
         if (ALL.indexOf(scr) < 0 && scr !== 'verify-email') scr = 'landing';
@@ -21066,7 +21185,10 @@ class Component extends DCLogic {
       accentKey, animKey,
       showMarketing: marketing, showApp: app,
       isLanding: s === 'landing', isPricing: s === 'pricing', isPlugin: s === 'plugin',
-      isDashboard: s === 'dashboard' && !dRaw, isTemplates: s === 'templates' && !dRaw, isAistudio: s === 'aistudio' && !dRaw, isAccount: s === 'account' && !dRaw, isProjects: s === 'projects' && !dRaw,
+      isDashboard: s === 'dashboard' && !dRaw, isTemplates: s === 'templates' && !dRaw && !this.state.detailNF && !this.state.detailLoading, isAistudio: s === 'aistudio' && !dRaw, isAccount: s === 'account' && !dRaw, isProjects: s === 'projects' && !dRaw,
+      // P2 — deep-link cold-load holatlari (asset yechilmoqda / topilmadi)
+      detailNF: !dRaw && this.state.screen === 'templates' && !!this.state.detailNF,
+      detailLoading: !dRaw && this.state.screen === 'templates' && !!this.state.detailLoading,
       isAuth: s === 'auth',
       isVerifyEmail: s === 'verify-email',
       verifyEmailAddr: (this.state.user && this.state.user.email) || '',
@@ -21409,7 +21531,9 @@ class Component extends DCLogic {
       catalogEmpty: browseEmpty,
       // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
       catalogLoading: browseInitLoading,
-      openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: this.pillOf(d) }); this.go('templates'); },
+      openColCat: () => { const d = this.state.detail; const pill = d ? this.pillOf(d) : this.state.fCat; this.setState({ fCat: pill, detail: null, detailNF: false }); this.go('templates'); setTimeout(() => this._syncStockUrl(), 0); },
+      // P2 — breadcrumb "Stock Catalog" (root) → hamma turlar (/stock)
+      goStockRoot: () => { this.setState({ fCat: 'All', detail: null, detailNF: false }); this.go('templates'); setTimeout(() => this._syncStockUrl(), 0); },
       toggleFavTpl: () => {
         const d = this.state.detail; if (!d) return;
         const id = String(d.id);
@@ -21424,7 +21548,9 @@ class Component extends DCLogic {
       },
       shareTpl: async () => {
         const d = this.state.detail; if (!d) return;
-        const url = window.location.href; // TODO(FF): per-shablon deep-link route kelganda shu URL almashadi
+        // P2 — KANONIK deep-link (origin + /stock/<type>/<slug>-<shortId>). Ulashilganda OG
+        //   preview funksiyasi shu URL uchun asetning rasm/sarlavha/tavsifini beradi.
+        const url = window.location.origin + this.assetPath(d);
         try { if (navigator.share) { await navigator.share({ title: d.n + ' — FrameFlow', url }); return; } } catch (e) { return; }
         try { await navigator.clipboard.writeText(url); this.toast('Link copied'); } catch (e) { this.toast(url); }
       },
@@ -21524,7 +21650,7 @@ class Component extends DCLogic {
       // (avval faqat "coming soon" toast edi — o'lik stub)
       useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
       lbUpscale: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image' || cur.type === 'video') this.useGenAsUpscale('x2', cur.id); },
-      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); this.scheduleBrowse(); },
+      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); this.scheduleBrowse(); setTimeout(() => this._syncStockUrl(), 0); },
       onFPlan: (e) => { this.setState({ fPlan: e.currentTarget.dataset.v }); this.scheduleBrowse(); },
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); this.scheduleBrowse(); },
       onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'All' : v })); this.scheduleBrowse(); },
@@ -21534,8 +21660,18 @@ class Component extends DCLogic {
       toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
       pickSort: (e) => { this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }); this.scheduleBrowse(); },
       resetFilters: () => { this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }); this.scheduleBrowse(); },
-      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const bi = (this.state.browse && this.state.browse.items) || []; const t = bi.find(x => x.id === id) || this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} } },
-      closeDetail: () => this.setState({ detail: null }),
+      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const bi = (this.state.browse && this.state.browse.items) || []; const t = bi.find(x => x.id === id) || this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t, detailNF: false }); try { window.scrollTo(0, 0); } catch (e2) {}
+        // P2 — detal HAQIQIY URL: /stock/<type>/<slug>-<shortId>. pushState → Orqaga detalni yopadi.
+        try { this._detailFromApp = true; history.pushState({ screen: 'templates', detail: 1, id: t.id }, '', this.assetPath(t)); } catch (er) {} } },
+      // P2 — Yopish: ilova ichidan kelsak Orqaga (URL /stock/<pill> ga qaytadi, popstate yopadi);
+      //   to'g'ridan-to'g'ri deep-link bo'lsa katalogga o'tamiz (saytdan chiqib ketmaymiz).
+      closeDetail: () => {
+        const pill = this.state.detail ? this.pillOf(this.state.detail) : this.state.fCat;
+        if (this._detailFromApp && history.state && history.state.detail) { this._detailFromApp = false; history.back(); return; }
+        this.setState({ detail: null, detailNF: false, fCat: pill && this.catalogTypes[pill] ? pill : this.state.fCat });
+        try { history.replaceState({ screen: 'templates' }, '', this._stockPath(pill)); } catch (e) {}
+        this.ensureBrowse();
+      },
       onAccTab: (e) => { const v = e.currentTarget.dataset.v; this.setState({ accountTab: v }); this.accTabLoad(v); },
       openCredits: () => this.setState({ showCredits: true }),
       appMenuOpen: this.state.appMenuOpen,

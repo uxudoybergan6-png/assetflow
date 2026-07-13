@@ -157,6 +157,8 @@ const redirects = `\
 /login.html         /studio/login.html          301
 /admin-login.html   /admin/login.html           301
 /admin-login        /admin/login.html           301
+/templates          /stock                      301
+/templates/*        /stock                      301
 `;
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 

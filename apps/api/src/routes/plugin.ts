@@ -78,7 +78,8 @@ function apiPublicBase(req: { protocol: string; get: (h: string) => string | und
   return getPublicApiUrl(req);
 }
 
-const CATALOG_SELECT = {
+// P2 (step 31) — public.ts (og-preview/deep-link endpoint) ham shu SELECT'ni ishlatadi (drift yo'q).
+export const CATALOG_SELECT = {
   id: true,
   externalId: true,
   name: true,

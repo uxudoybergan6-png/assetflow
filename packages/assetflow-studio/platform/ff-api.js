@@ -167,7 +167,7 @@
     catalog: function (opts) {
       if (typeof opts === "string" || opts == null) opts = { cursor: opts || undefined };
       var p = new URLSearchParams();
-      ["cursor", "take", "app", "templateType", "cat", "pro", "orient", "res", "q", "sort"].forEach(function (k) {
+      ["cursor", "take", "app", "templateType", "kind", "stockType", "cat", "pro", "orient", "res", "q", "sort"].forEach(function (k) {
         var v = opts[k];
         if (v != null && v !== "" && v !== "All") p.set(k, v);
       });
@@ -177,6 +177,11 @@
     // P1 #16 — bitta shablonning to'liq detali (enriched sahnalar + metaJson).
     catalogItem: function (id) {
       return req("/api/plugin/catalog/" + encodeURIComponent(id), { auth: false });
+    },
+    // P2 (step 31) — ochiq per-asset endpoint (deep-link/cold-load). id = to'liq cuid yoki
+    //   oxirgi 8-belgi shortId. Faqat published — moderatsiya navbatini oshkor qilmaydi.
+    publicAsset: function (id) {
+      return req("/api/public/asset/" + encodeURIComponent(id), { auth: false });
     },
     pluginMe: function () { return req("/api/plugin/me"); },
     packLink: function (templateId) { return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1"); },
