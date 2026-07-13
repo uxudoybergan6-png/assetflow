@@ -77,6 +77,11 @@ export type GenModel = {
   // Video referens bo'lsa ayrim model arzonroq tarif qo'llaydi (fal Seedance R2V docs: ×0.6).
   videoInputPerSecMultiplier?: number;
   brand?: string; // model egasi: "openai" | "google" | "bytedance" | "bfl"
+  // P30 (29c) — provayder KONTENT SIYOSATI qattiqligi (READ-ONLY hint). Rad etilganda "boshqa
+  // model'da urinib ko'ring" taklifi VA "bu prompt rad etilishi mumkin" ogohlantirishi uchun.
+  // Berilmasa modelPolicyStrictness() provider'dan chiqaradi (Google=strict, BytePlus=moderate).
+  // ⚠️ Bu FILTER-EVASION uchun EMAS — foydalanuvchini qonuniy ravishda mos provayderga yo'naltiradi.
+  policyStrictness?: "strict" | "moderate" | "lenient";
   endFrame?: boolean; // video: last_frame (End kadr) qo'llaydimi — /videos/models supported_frame_images bilan tasdiqlangan (2026-06-18)
   isDefault?: boolean;
   enabled?: boolean; // false → generatsiya bloklanadi (kredit yechilmaydi)
@@ -1178,6 +1183,51 @@ export function getModelById(id: number): GenModel | undefined {
 /** Model generatsiyaga ruxsat berilganmi (registrda bor + enabled). */
 export function isModelEnabled(model: GenModel | undefined): model is GenModel {
   return Boolean(model && model.enabled !== false);
+}
+
+// ── P30 (29c) — provayder kontent siyosati qattiqligi ────────────────────────
+// Explicit policyStrictness bo'lsa o'sha; aks holda provider'dan chiqariladi. Google
+// (Vertex/Imagen/Veo/Omni/Chirp) qattiq siyosatli; BytePlus (Seedream/Seedance) mo''tadil.
+const STRICTNESS_RANK: Record<string, number> = { strict: 2, moderate: 1, lenient: 0 };
+export function modelPolicyStrictness(model: GenModel): "strict" | "moderate" | "lenient" {
+  if (model.policyStrictness) return model.policyStrictness;
+  const p = model.provider || "";
+  if (p === "vertex" || p === "vertex-image" || p === "vertex-omni" || p === "google-tts") return "strict";
+  if (p === "byteplus") return "moderate";
+  return "moderate";
+}
+
+/**
+ * P30 §4 — rad etilgan modelga NISBATAN mo'''tadilroq (kamroq qattiq) QONUNIY alternativa.
+ * Bir xil mode, yoqilgan, siyosati qattiqligi PASTROQ; bir xil "oila" (t2i/edit yoki t2v) afzal.
+ * Alternativa bo'lmasa null (klient "boshqa model yo'q" deb halol aytadi). FILTER-EVASION EMAS —
+ * provayderlar siyosati HAR XIL, mos provayderni tanlash o'rinli.
+ */
+export function suggestLenientAlternative(model: GenModel): GenModel | undefined {
+  const rank = STRICTNESS_RANK[modelPolicyStrictness(model)];
+  const isImageish = (f: GenFeature) => f === "text-to-image" || f === "image-edit";
+  const isVideoish = (f: GenFeature) => f === "text-to-video" || f === "image-to-video" || f === "reference-to-video";
+  const sameFamily = (a: GenFeature, b: GenFeature) =>
+    (isImageish(a) && isImageish(b)) || (isVideoish(a) && isVideoish(b)) || a === b;
+  // Upscale tool'lar (kontent GENERATORI emas) alternativa sifatida taklif qilinmaydi.
+  const isTool = (f: GenFeature) => f === "image-upscale" || f === "video-upscale";
+  const candidates = GEN_MODELS.filter(
+    (m) =>
+      m.enabled !== false &&
+      m.mode === model.mode &&
+      m.id !== model.id &&
+      !isTool(m.feature) &&
+      STRICTNESS_RANK[modelPolicyStrictness(m)] < rank
+  );
+  if (!candidates.length) return undefined;
+  // Bir xil feature-oila afzal; so'ng eng mo''tadil (past rank).
+  candidates.sort((a, b) => {
+    const fa = sameFamily(a.feature, model.feature) ? 0 : 1;
+    const fb = sameFamily(b.feature, model.feature) ? 0 : 1;
+    if (fa !== fb) return fa - fb;
+    return STRICTNESS_RANK[modelPolicyStrictness(a)] - STRICTNESS_RANK[modelPolicyStrictness(b)];
+  });
+  return candidates[0];
 }
 
 /** Reference rejimi — deklaratsiya bo'lmasa mode'dan default (eski modellar uchun ham xavfsiz). */

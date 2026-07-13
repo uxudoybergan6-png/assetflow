@@ -3313,6 +3313,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .gensend.busy .costtag{visibility:hidden}
 .axig .gensend.busy::after{content:"";position:absolute;width:18px;height:18px;border:2.5px solid rgba(12,20,0,.3);border-top-color:var(--on-accent);border-radius:50%;animation:spin .7s linear infinite}
 .axig .genhint{font-family:var(--font-mono);font-size:8.5px;color:var(--muted-2);text-align:center;margin-top:8px}
+/* P30 §2 (29c) — qattiq siyosat ogohlantirishi (bloklamaydi, faqat xabar) */
+.axig .ai-polnote{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--muted);line-height:1.35}
+.axig .ai-polnote svg{color:var(--muted-2);flex:none}
 /* per-ekran ai-header (52px, mockup b1/b4) — .scroll padding'ini yorib to'liq kenglik */
 .axroot .ai-hdr{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);margin:-12px -12px 12px;position:sticky;top:0;z-index:8}
 /* #10: ai-hdr ichida umumiy .hd-home (lime chaqmoq = Home) — zich tool headerlarda ixcham 24px.
@@ -4141,6 +4144,7 @@ html.home-mode #homePage{display:block!important}
                                 <div class="pillseg" id="igModelSeg"><div class="plab">Model</div><div class="pval" id="igMName">…</div></div>
                                 <div class="pillseg" id="igSetSeg"><div class="plab">Settings</div><div class="pval" id="igSetVal">Auto</div></div>
                               </div>
+                              <div class="ai-polnote" id="igPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
                               <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate image<span class="costtag" id="igCost">✦—</span></button>
                             </div>
                             </div>
@@ -4281,6 +4285,7 @@ html.home-mode #homePage{display:block!important}
                                   <div class="pillseg" id="vgSetSeg"><div class="plab">Settings</div><div class="pval" id="vgSetVal">720p · Auto</div></div>
                                   <div class="pillseg tgl" id="vgAudToggle" style="display:none"><div><div class="plab">Audio</div><div class="pval" id="vgAudVal">Off</div></div><div class="ptr"></div></div>
                                 </div>
+                                <div class="ai-polnote" id="vgPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
                                 <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate video<span class="costtag" id="vgCost">✦—</span></button>
                                 <div class="genhint">≈ 1–2 min · credits refunded on error</div>
                               </div>
@@ -8204,6 +8209,21 @@ function afCleanEnhancedPrompt(t){
   s=s.replace(/(?:\n\s*\**\s*(?:target model|duration|aspect ratio|resolution\s*\/?\s*quality|resolution|quality|native audio|audio)\s*:\**[^\n]*)+\s*$/i,''); // oxiridagi meta bloki
   return s.trim();
 }
+// P30 (29c) — provayder KONTENT rad etilishini birxil ishlash: halol xato (✕, ✓ EMAS) +
+// haqiqiy sabab + "✦N qaytarildi" + boshqa (mo''tadil siyosatli) MODEL taklifi (afConfirm).
+// gn = /gen/:jobId javobi (rejection maydoni bilan). switchFn(id,label) tool'ga xos almashtiradi.
+// Rad etilishni ishlagan bo'lsa true qaytaradi (chaqiruvchi success toast'ni O'TKAZIB YUBORADI).
+function handleGenRejection(gn, switchFn){
+  var rej = gn && gn.rejection;
+  if(!(rej && rej.isContent)) return false;
+  var refNote = rej.refunded ? (' · ✦'+rej.refunded+' refunded') : '';
+  if(typeof showToast==='function') showToast((rej.reason||'The provider rejected this content')+refNote, 'error');
+  if(rej.suggestModelId && rej.suggestModelLabel && typeof switchFn==='function' && typeof window.afConfirm==='function'){
+    var prov = ({'vertex-image':'Google','vertex':'Google','vertex-omni':'Google','google-tts':'Google','byteplus':'BytePlus','fal':'fal','elevenlabs':'ElevenLabs'})[rej.provider]||'';
+    window.afConfirm((rej.modelLabel||'This model')+(prov?(' ('+prov+')'):'')+' refused this content.\nTry '+rej.suggestModelLabel+' — a model with a different content policy?', {ok:'Switch model', cancel:'Not now'}).then(function(ok){ if(ok) try{ switchFn(rej.suggestModelId, rej.suggestModelLabel); }catch(e){} });
+  }
+  return true;
+}
 function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
   const code=(e&&e.code)||'', status=(e&&e.status)||0;
@@ -8214,8 +8234,10 @@ function friendlyError(e){
   if(code==='AI_NOT_CONFIGURED')return 'AI isn’t configured yet — contact an administrator';
   if(status===429||code==='RATE_LIMITED'||/too many requests|rate.?limit/i.test(raw))
     return 'Too many requests — wait a moment and try again';
-  if(/output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw))
-    return 'Blocked by the video safety filter — soften the prompt and reduce explicit/sexual content, then try again';
+  // P30 §3 (29c) — HALOL xato, "soften the prompt" (evasion maslahati) OLIB TASHLANDI. Kredit
+  // qaytariladi; rad etilishida handleGenRejection() boshqa-model taklifini ko'rsatadi.
+  if(/output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system|no image was returned/i.test(raw))
+    return 'The model’s content filter rejected this request — your credits were refunded';
   if(/Failed to fetch|NetworkError|ENOTFOUND|ECONNREFUSED|network/i.test(raw))
     return 'Couldn’t connect to the internet — check your network or the API';
   // P20: 403 overloaded — biznes-kodni AVVAL hurmat qilamiz, faqat HAQIQIY auth-bekor (401 /
@@ -10805,6 +10827,8 @@ window.afGallery=(function(){
     var ok=meta.loaded && (!needPrompt || $('igPrompt').value.trim().length>=2) && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS && !low;
     var g=$('igGen'); if(g)g.disabled=!ok;
     $('igRefWarn').classList.toggle('on', needRef && st.refs.length===0);
+    // P30 §2 — qattiq siyosatli model + prompt bor → "rad etilsa hisobdan yechilmaydi" ogohlantirish
+    var pn=$('igPolNote'); if(pn)pn.style.display=(meta.strict && $('igPrompt').value.trim().length>=2)?'flex':'none';
   }
 
   // ---- sheet'lar (backdrop + Esc + ✕) ----
@@ -10869,6 +10893,7 @@ window.afGallery=(function(){
     //   Model imkoniyati faqat PROYEKSIYA beradi — renderRefs faol/nofaol (xira) qiladi, genClick FAQAT
     //   faollarini yuboradi, @raqamlash hovuzga bog'liq (qayta raqamlanmaydi). Orqaga qaytsa hammasi qaytadi.
     meta.modelId=m.id; meta.key=m.key; meta.label=m.label||meta.label;
+    meta.strict=(m.policyStrictness==='strict'); // P30 §2 — qattiq siyosat ogohlantirishi uchun
     meta.refMode=m.refMode||'optional'; meta.maxRefs=m.maxRefs||0;
     meta.refKind=m.refKind||null; meta.refOk=igModelRefOk(m);
     meta.feature=m.feature||null; // BATCH4 #1 — image-upscale: prompt ixtiyoriy, tugma "Upscale image"
@@ -11428,6 +11453,15 @@ window.afGallery=(function(){
         setTimeout(function(){
           var assets=(gn&&gn.assets)||[]; var first=null;
           for(var fi=0;fi<assets.length;fi++){ if(assets[fi]&&assets[fi].url){ first=assets[fi]; break; } }
+          // P30 (29c) — status=done LEKIN natija yo'q = provayder kontent rad etdi (success-shaklda!).
+          // HALOL ishlaymiz: "Done! charged" ✓ EMAS. Kredit qaytariladi; boshqa-model taklifi.
+          if(!first){
+            removeJob(j); setCreditChip(credits());
+            if(!handleGenRejection(gn, function(id){ var m=(meta.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof setModel==='function'){ if(setModel(m)!==false&&typeof renderModelSheet==='function')renderModelSheet(); } }))
+              toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No result was returned — your credits were refunded','error');
+            if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },1500);
+            return;
+          }
           if(j.pit&&first){
             // pending kartani O'SHA JOYDA natijaga aylantiramiz (So'nggi grid)
             j.pit.pending=false; j.pit.url=first.url; j.pit.thumb=first.thumbUrl||first.url; j.pit.id=(gn&&gn.id)||first.id||null; j.pit.cat='image';
@@ -11444,7 +11478,10 @@ window.afGallery=(function(){
           if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },2000); // history bilan id/thumb sinxron
         },200);
       }else if(s==='failed'){
-        removeJob(j); setCreditChip(credits()); toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Generation failed — credits refunded'),'error');
+        removeJob(j); setCreditChip(credits());
+        // P30 §3+§4 — kontent rad etilishi bo'lsa halol xato + ✦N qaytarildi + boshqa-model taklifi.
+        if(!handleGenRejection(gn, function(id){ var m=(meta.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof setModel==='function'){ if(setModel(m)!==false&&typeof renderModelSheet==='function')renderModelSheet(); } }))
+          toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Generation failed — credits refunded'),'error');
       }else{
         j.pollTimer=setTimeout(function(){ pollJob(j,tries+1); },pollDelay(tries));
       }
@@ -12233,6 +12270,8 @@ window.afGallery=(function(){
       else setVgWarn('');
     }
     var g=$('vgGen'); if(g)g.disabled=!ok;
+    // P30 §2 — qattiq siyosatli model + prompt bor → "rad etilsa hisobdan yechilmaydi" ogohlantirish
+    var pn=$('vgPolNote'); if(pn)pn.style.display=(vm.strict && pr.length>=2)?'flex':'none';
     setCreditChip(credits()); recost();
   }
 
@@ -12313,6 +12352,7 @@ window.afGallery=(function(){
   // ── model sozlamalarini qo'llash (videoSettings deskriptoridan; joriy tanlov mos kelmasa def'ga klamp) ──
   function applyModelSettings(m){
     vm.model=m;
+    vm.strict=(m&&m.policyStrictness==='strict'); // P30 §2 — qattiq siyosat ogohlantirishi
     // FIX3: refKind/limitlar imkoniyat xaritasidan (B4 'none' default saqlangan — kadr talab qilib bloklamaydi).
     var caps=vgCapsFor(m);
     vm.refKind=caps.kind;
@@ -13215,6 +13255,14 @@ window.afGallery=(function(){
         if(j.pit&&window.afRecent)window.afRecent.updatePending($('vgRecent'),j.seq,100);
         setTimeout(function(){
           var a0=((gn&&gn.assets)||[])[0]||{};
+          // P30 (29c) — status=done LEKIN natija yo'q = provayder kontent rad etdi (success-shaklda).
+          // "Done! charged" ✓ EMAS: kredit qaytariladi; halol xato + boshqa-model taklifi.
+          if(!a0.url){
+            removeVgJob(j); setCreditChip(credits());
+            if(!handleGenRejection(gn, function(id){ var m=(vm.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof switchVgModel==='function')switchVgModel(m); }))
+              toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No video was returned — your credits were refunded','error');
+            return;
+          }
           if(j.pit&&a0.url){ // pending kartani O'SHA JOYDA natijaga aylantiramiz
             j.pit.pending=false; j.pit.url=a0.url; j.pit.thumb=a0.thumbUrl||null; j.pit.id=(gn&&gn.id)||j.jobId||null; j.pit.cat='video';
             // Qayta gen: yangi tugagan kartada ham params/modelId bo'lsin (aks holda restore faqat prompt tiklaydi — bug fix)
@@ -13228,7 +13276,10 @@ window.afGallery=(function(){
           renderVgRecent(); refreshVgBtn(); setCreditChip(credits()); toast('Done! ✦'+j.jcost+' charged','success');
         },200);
       } else if(s==='failed'){
-        removeVgJob(j); setCreditChip(credits()); toast((gn&&gn.error)||'Video failed — credits refunded','error');
+        removeVgJob(j); setCreditChip(credits());
+        // P30 §3+§4 — kontent rad etilishi: halol xato + ✦N qaytarildi + boshqa-model taklifi.
+        if(!handleGenRejection(gn, function(id){ var m=(vm.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof switchVgModel==='function')switchVgModel(m); }))
+          toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Video failed — credits refunded'),'error');
       } else {
         j.pollTimer=setTimeout(function(){ pollVgJob(j,tries+1); },vgPollDelay(tries));
       }
@@ -13786,8 +13837,14 @@ window.afGallery=(function(){
     ag.pollTimers[jobId]=setTimeout(function(){
       studioGet('/api/studio/gen/'+jobId).then(function(gn){
         if(!gn){ pollAg(jobId,prompt,tries+1); return; }
-        if(gn.status==='done'){ delete ag.pollTimers[jobId]; setAgBusy(false); renderAgResult(gn.assets,prompt); loadAgRecent(true); agSyncCredits(); toast('Audio ready','success'); }
-        else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; setAgBusy(false); toast(gn.error||'Audio failed — credits refunded','error'); agSyncCredits(); }
+        if(gn.status==='done'){
+          delete ag.pollTimers[jobId]; setAgBusy(false);
+          var au0=((gn.assets||[])[0]||{});
+          // P30 (29c) — done LEKIN natija yo'q = provayder rad etdi (success-shaklda). Halol ishlaymiz.
+          if(!au0.url){ if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No audio was returned — your credits were refunded','error'); agSyncCredits(); return; }
+          renderAgResult(gn.assets,prompt); loadAgRecent(true); agSyncCredits(); toast('Audio ready','success');
+        }
+        else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; setAgBusy(false); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):(gn.error||'Audio failed — credits refunded'),'error'); agSyncCredits(); }
         else pollAg(jobId,prompt,tries+1);
       }).catch(function(){ pollAg(jobId,prompt,tries+1); });
     },2000);

@@ -50,6 +50,8 @@ import {
   firstReferenceModel,
   getRefKind,
   modelSupportsEndFrame,
+  modelPolicyStrictness,
+  suggestLenientAlternative,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import { resolvePricedModel } from "../lib/model-pricing.js";
@@ -60,7 +62,10 @@ import {
   checkGlobalSpendCeiling,
   withinGenDailyCap,
   incrDailyUsage,
+  isOverBlockedCap,
+  noteBlockedAttempt,
 } from "../lib/spend-guard.js";
+import { classifyGenRejection } from "../lib/gen-rejection.js";
 import {
   processGenerationInBackground,
   reconcileStuckGenerations,
@@ -795,7 +800,8 @@ studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   const base = mode ? getModelsByMode(mode) : GEN_MODELS;
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
-    models: base.map((m) => ({ ...m, refKind: getRefKind(m) })),
+    // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).
+    models: base.map((m) => ({ ...m, refKind: getRefKind(m), policyStrictness: modelPolicyStrictness(m) })),
     configured: isOpenRouterConfigured(),
   });
 });
@@ -1325,6 +1331,17 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
+  // P30.4 (29c) — kuniga N martadan ortiq BLOKLANGAN urinish (moderatsiya/provayder-rad) →
+  // to'xtat (refund-farming: bloklangan urinish kredit olmaydi lekin provayder kvota/xarajat oladi).
+  // Preflight'dan OLDIN: hammer qiluvchi foydalanuvchi shu yerda to'xtaydi. ADMIN ozod.
+  if (req.user!.role !== "ADMIN" && (await isOverBlockedCap(req.user!.userId))) {
+    res.status(429).json({
+      error: "Too many blocked prompts today — please try again tomorrow",
+      code: "BLOCKED_ATTEMPTS_CAP",
+    });
+    return;
+  }
+
   // ── MODERATSIYA (Bosqich 2 #1) — KREDIT YECHISHDAN OLDIN (bloklangan gen'ga charge YO'Q) ──
   // 1) Kalit-so'z (heuristik) qatlami — og'ir kategoriyalar (CSAM/deepfake/gore/jinsiy) FAIL-CLOSED.
   const preflight = preflightSafetyCheck({
@@ -1334,6 +1351,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     modelLabel: model.label,
   });
   if (preflight.blocked) {
+    await noteBlockedAttempt(req.user!.userId).catch(() => {}); // P30.4 rate-limit sanog'i
     await writeAuditLog({
       actorId: req.user!.userId,
       action: "moderation.blocked",
@@ -1363,6 +1381,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     imageUrls: collectImageRefUrls(params),
   });
   if (moderation.blocked) {
+    await noteBlockedAttempt(req.user!.userId).catch(() => {}); // P30.4 rate-limit sanog'i
     await writeAuditLog({
       actorId: req.user!.userId,
       action: "moderation.blocked",
@@ -1813,7 +1832,28 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
   // Audit §A (P2) — params ichidagi referens URL'lar ham qayta imzolanadi (/gen/history bilan
   // bir xil): "Regenerate" restore eskirgan ref bilan mahkum pullik yugurish boshlamasin.
   await hydrateParamsRefUrls(gen.params).catch(() => {});
-  res.json(gen);
+  // P30 §3+§4 (29c) — muvaffaqiyatsiz gen KONTENT rad etilishi bo'lsa: klientga HALOL signal
+  // (✓ EMAS), haqiqiy sabab, qaytarilgan kredit VA mo''tadilroq model taklifi. Refund gen-processor'da
+  // fires; refunded=true bo'lsa qaytarilgan summa = gen.cost. Money-zona TEGILMAYDI (faqat o'qish).
+  let rejection: unknown = undefined;
+  if (gen.status === "failed") {
+    const rej = classifyGenRejection(gen.error);
+    if (rej.isContent) {
+      const model = getModelById(gen.modelId);
+      const alt = model ? suggestLenientAlternative(model) : undefined;
+      rejection = {
+        isContent: true,
+        category: rej.category,
+        reason: rej.reason || "The provider's content filter rejected this request.",
+        refunded: gen.refunded ? gen.cost : 0,
+        modelLabel: model?.label ?? null,
+        provider: model?.provider ?? null,
+        suggestModelId: alt ? alt.id : null,
+        suggestModelLabel: alt ? alt.label : null,
+      };
+    }
+  }
+  res.json(rejection ? { ...gen, rejection } : gen);
 });
 
 /** DELETE /gen/:jobId — gen natijani o'chiradi (R2 obyektlari ham). Faqat egasi. */

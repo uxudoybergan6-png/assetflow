@@ -39,7 +39,7 @@ function utcDayNumber(): number {
  */
 export async function incrDailyUsage(
   userId: string,
-  kind: "gen" | "helper",
+  kind: "gen" | "helper" | "blocked",
   cap: number
 ): Promise<boolean> {
   const day = utcDayNumber();
@@ -65,6 +65,32 @@ export async function incrDailyUsage(
 export async function withinGenDailyCap(userId: string, isAdmin: boolean): Promise<boolean> {
   if (isAdmin) return true;
   return incrDailyUsage(userId, "gen", genDailyCap());
+}
+
+// ── P30.4 (29c) — bloklangan (moderatsiya/provayder-rad) urinishlar kunlik cap ──
+// Refund-farming himoyasi: bloklangan urinish KREDIT olmaydi (refund/pre-block), lekin
+// provayder kvota/xarajat oladi. Kuniga N martadan ortiq bloklangach — barcha yangi urinish
+// to'xtatiladi (aniq hammer). Default 20, env bilan override.
+const BLOCKED_DAILY_CAP = Math.max(1, Number(process.env.BLOCKED_ATTEMPTS_DAILY_CAP) || 20);
+
+/** Bitta bloklangan urinishni sanaydi. overCap=true → foydalanuvchi bugungi cheklovdan oshdi. */
+export async function noteBlockedAttempt(userId: string): Promise<{ overCap: boolean; cap: number }> {
+  const within = await incrDailyUsage(userId, "blocked", BLOCKED_DAILY_CAP);
+  return { overCap: !within, cap: BLOCKED_DAILY_CAP };
+}
+
+/** READ-ONLY: foydalanuvchi bugun bloklangan-urinish cap'iga yetganmi (sanashni OSHIRMAYDI). */
+export async function isOverBlockedCap(userId: string): Promise<boolean> {
+  const day = utcDayNumber();
+  try {
+    const row = await prisma.dailyUsageCounter.findUnique({
+      where: { userId_day_kind: { userId, day, kind: "blocked" } },
+      select: { count: true },
+    });
+    return !!row && row.count >= BLOCKED_DAILY_CAP;
+  } catch {
+    return false; // DB blip → fail-open (asosiy to'siq kredit/ceiling)
+  }
 }
 
 // ── Global spend ceiling (kunlik/oylik provider USD) ─────────────────────────

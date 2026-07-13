@@ -15407,6 +15407,9 @@
   .ff .va-gengate{display:flex;align-items:center;gap:8px;margin-top:9px;padding:8px 11px;border-radius:11px;background:color-mix(in srgb,var(--amber,#f0a840) 12%,transparent);border:1px solid color-mix(in srgb,var(--amber,#f0a840) 30%,transparent);font-size:11.5px;color:var(--text);line-height:1.4}
   .ff .va-gengate>.va-ic{color:var(--amber,#f0a840);flex:none}
   .ff .va-gengate span{flex:1;min-width:0}
+  /* P30 §2 (29c) — qattiq siyosat ogohlantirishi (bloklamaydi, faqat xabar) */
+  .ff .va-policynote{display:flex;align-items:center;gap:7px;margin-top:8px;padding:6px 10px;border-radius:9px;font-size:11px;color:var(--muted);line-height:1.4}
+  .ff .va-policynote i{color:var(--muted2);flex:none;font-size:13px}
   .ff .va-gategtu{display:inline-flex;align-items:center;gap:4px;flex:none;height:28px;padding:0 12px;border-radius:999px;background:var(--lime);color:var(--onlime);border:0;font:700 11px 'Hanken Grotesk',sans-serif;cursor:pointer}
   .ff .va-dockrow .sp{flex:1}
   .ff .va-quote{font:600 11.5px var(--mono);color:var(--muted);white-space:nowrap}
@@ -15468,6 +15471,16 @@
   .ff .va-ledtot .t .k{font:600 8.5px var(--mono);letter-spacing:.08em;color:var(--muted2)}
   .ff .va-ledtot .t .v{font:700 14px var(--mono);color:var(--text)}
   .ff .va-ledtot .t .v.ref{color:var(--lime)}
+  /* P30 (29c) — provayder kontent rad etilishi banneri (halol) */
+  .ff .va-rejbanner{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);z-index:201;display:flex;align-items:center;gap:12px;max-width:min(620px,94vw);padding:13px 16px;border-radius:14px;background:var(--surface);border:1px solid color-mix(in srgb,var(--th-danger) 40%,var(--hair2));box-shadow:0 18px 44px -12px rgba(0,0,0,.6);animation:ffRise .25s ease}
+  .ff .va-rejbanner>i.lead{color:var(--th-danger);font-size:20px;flex:none}
+  .ff .va-rejbanner .rb-body{min-width:0;flex:1}
+  .ff .va-rejbanner .rb-body b{display:block;font-size:13px;font-weight:700;color:var(--text)}
+  .ff .va-rejbanner .rb-body small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .ff .va-rbtry{flex:none;padding:8px 13px;border-radius:9px;background:var(--pill-active);border:1px solid var(--th-accent);color:var(--text);font:600 12px inherit;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .ff .va-rbtry:hover{background:var(--th-accent);color:#fff}
+  .ff .va-rbx{flex:none;width:28px;height:28px;border-radius:8px;background:transparent;border:0;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+  .ff .va-rbx:hover{color:var(--text);background:var(--f1)}
   @media(max-width:900px){ .ff .va-acc{grid-template-columns:1fr} .ff .va-tables{grid-template-columns:1fr} }
   @media(max-width:1100px){
     .ff .va-dwrap{grid-template-columns:1fr}
@@ -16879,6 +16892,7 @@
                 </div>
               </div>
               <sc-if value="{{ genGateOn }}" hint-placeholder-val="{{ false }}"><div class="va-gengate"><svg class="va-ic"><use href="#i-bolt"></use></svg><span>{{ genGateMsg }}</span><sc-if value="{{ genGateTopup }}" hint-placeholder-val="{{ false }}"><button class="va-gategtu" onclick="{{ openCredits }}"><svg class="va-ic"><use href="#i-plus"></use></svg>Top up</button></sc-if></div></sc-if>
+              <sc-if value="{{ strictPolicyNote }}" hint-placeholder-val="{{ false }}"><div class="va-policynote"><i class="ph ph-shield-check"></i><span>Strict content policy — you won't be charged if it's refused.</span></div></sc-if>
               <div class="va-axbal">BALANCE <em>✦ {{ creditsFmt }}</em> · {{ axBalNote }}<span class="top" onclick="{{ openCredits }}">＋ Top up</span></div>
                 </div><!-- /va-dock -->
               </div><!-- /va-axmainc -->
@@ -17382,7 +17396,15 @@
 
   <!-- TOAST -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:13px;background:rgba(20,20,30,.95);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt);animation:ffRise .25s ease"><i class="ph-fill ph-check-circle" style="color:var(--teal);font-size:18px"></i>{{ toast }}</div>
+    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:13px;background:rgba(20,20,30,.95);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt);animation:ffRise .25s ease;max-width:min(560px,92vw)"><i class="{{ toastIcon }}" style="color:{{ toastIconColor }};font-size:18px;flex:none"></i>{{ toast }}</div>
+  </sc-if>
+  <!-- P30 (29c) — provayder kontent rad etilishi banneri: halol sabab + ✦N qaytarildi + boshqa model taklifi -->
+  <sc-if value="{{ rejectBannerOn }}" hint-placeholder-val="{{ false }}">
+    <div class="va-rejbanner"><i class="ph ph-shield-warning lead"></i>
+      <div class="rb-body"><b>{{ rejectBannerTitle }}</b><small>{{ rejectBannerMsg }}</small></div>
+      <sc-if value="{{ rejectBannerHasAlt }}" hint-placeholder-val="{{ false }}"><button class="va-rbtry" onclick="{{ tryRejectModel }}">Try {{ rejectBannerAltLabel }}</button></sc-if>
+      <button class="va-rbx" onclick="{{ dismissRejectBanner }}" aria-label="Dismiss"><i class="ph ph-x"></i></button>
+    </div>
   </sc-if>
 
 </div>
@@ -17733,6 +17755,8 @@ class Component extends DCLogic {
     downloadsLoaded: false,
     downloadsCursor: null,
     downloadsHasMore: false,
+    // P30 (29c) — provayder kontent rad etilganda ko'rsatiladigan banner (halol sabab + boshqa model taklifi)
+    rejectBanner: null,      // {reason, refunded, modelLabel, provider, suggestModelId, suggestModelLabel, mode}
     // QA-FIX #12 — Artlist uslubi sessiya modeli (rail = sessiyalar ro'yxati)
     sessions: [],          // GET /gen/sessions — {id,title,mode,count,lastAt,coverUrl,coverMode}
     sessionsLoaded: false,
@@ -18156,7 +18180,10 @@ class Component extends DCLogic {
     if (this._armed) { try { requestAnimationFrame(() => { const w = document.querySelector('[data-page-wrap]'); if (w) { w.classList.remove('rv-in'); void w.offsetWidth; w.classList.add('rv-in'); } }); } catch (e) {} }
   }
 
-  toast(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 2600); }
+  // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
+  // Orqaga moslik: tipsiz chaqiruvlar 'success' (mavjud ✓ xatti-harakati saqlanadi). Xato oqimlari
+  // (masalan generatsiya rad etilishi) endi 'error' beradi → ✓ EMAS, halol ✕ ikonka.
+  toast(msg, type) { const t = type || 'success'; this.setState({ toast: msg, toastType: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), t === 'error' ? 4600 : 2600); }
 
   componentDidMount() {
     this._applyEntry();
@@ -18699,6 +18726,19 @@ class Component extends DCLogic {
     } catch (e) { this.setState({ downloadsLoaded: true }); }
     this._dlBusy = false;
   }
+  // P30 §4 (29c) — rad etilgan modeldan mo''tadilroq (qonuniy) modelga o'tib qayta urinish.
+  tryRejectModel() {
+    const b = this.state.rejectBanner; if (!b || !b.suggestModelId) return;
+    let mk = null, target = null;
+    for (const k in this.state.genModels) { const f = (this.state.genModels[k] || []).find(m => m.id === b.suggestModelId); if (f) { mk = k; target = f; break; } }
+    if (!target) { this.toast('That model is not available', 'warning'); return; }
+    const sel = Object.assign({}, this.state.selModel); sel[mk] = b.suggestModelId;
+    // Tegishli tool'ga ham o'tamiz (model o'sha tool ostida ko'rinsin).
+    const nt = this.aiTools.find(t => this.toolModelKey(t) === mk);
+    this.setState({ selModel: sel, aiTool: nt ? nt.key : this.state.aiTool, rejectBanner: null });
+    this.toast('Switched to ' + (target.label || 'the suggested model') + ' — try generating again', 'info');
+  }
+  dismissRejectBanner() { this.setState({ rejectBanner: null }); }
   // Ledger qatoridan generatsiyani lightbox'da ochish. Recent 60'da bo'lmasa (eski gen) —
   // id bo'yicha serverdan tortib olamiz; o'chirilgan bo'lsa halol xabar (crash emas, P21.1).
   async openLedgerGen(genId, deleted) {
@@ -19279,7 +19319,16 @@ class Component extends DCLogic {
       }
       if (g && g.status === 'failed') {
         finish();
-        this.toast(g.error || 'Generation failed — credits refunded');
+        // P30 §3+§4 (29c) — KONTENT rad etilishi: HALOL xato (✓ EMAS), haqiqiy sabab, ✦N qaytarildi,
+        // va boshqa (mo''tadil siyosatli) MODEL taklifi (banner). Oddiy xato → oddiy error toast.
+        const rej = g.rejection;
+        if (rej && rej.isContent) {
+          const refNote = rej.refunded ? (' · ✦' + rej.refunded + ' refunded') : '';
+          this.toast((rej.reason || 'The provider rejected this content') + refNote, 'error');
+          this.setState({ rejectBanner: { reason: rej.reason || 'The provider rejected this content', refunded: rej.refunded || 0, modelLabel: rej.modelLabel || '', provider: rej.provider || '', suggestModelId: rej.suggestModelId || null, suggestModelLabel: rej.suggestModelLabel || '', mode: g.mode } });
+        } else {
+          this.toast(g.error || 'Generation failed — credits refunded', 'error');
+        }
         this.refreshCredits();
         return;
       }
@@ -20345,6 +20394,9 @@ class Component extends DCLogic {
       : needSrcVideo ? 'Add the source video to upscale'
       : overChars ? ('Too long — max ' + model.maxChars + ' characters (yours: ' + promptLenG + ')')
       : '';
+    // P30 §2 (29c) — qattiq siyosatli model tanlangan bo'lsa: KREDIT SARFLANISHIDAN OLDIN halol
+    // ogohlantirish (bloklamaydi). Rad etilsa server refund qiladi (money-zona TEGILMAYDI).
+    const strictPolicyNote = axPromptReady && !genGateOn && !!(model && model.policyStrictness === 'strict');
     const axBalNote = anyActive
       ? ('✦ ' + committedCredits + ' reserved for ' + this.state.activeJobs.length + ' running job' + (this.state.activeJobs.length > 1 ? 's' : '') + ' — refunded if they fail')
       : (tool.mode === 'image' ? (unitCost > 0 ? ('~' + Math.floor(this.state.credits / unitCost) + ' image generations left') : 'priced per image')
@@ -20923,6 +20975,15 @@ class Component extends DCLogic {
       catTabs, carousel, categoryTiles, studioCards, plansView, testimonials, faqsView, footerCols: this.footerCols, pluginSteps: this.pluginSteps, creditPacks,
       showCredits: this.state.showCredits,
       toast: this.state.toast,
+      // P30 (29c) — toast ikonka/rang TIPGA qarab (halol xato ✕, ✓ EMAS)
+      toastIcon: (function (tt) { return tt === 'error' ? 'ph-fill ph-x-circle' : tt === 'warning' ? 'ph-fill ph-warning-circle' : tt === 'info' ? 'ph-fill ph-info' : 'ph-fill ph-check-circle'; })(this.state.toastType),
+      toastIconColor: (function (tt) { return tt === 'error' ? 'var(--th-danger)' : tt === 'warning' ? 'var(--amber)' : 'var(--teal)'; })(this.state.toastType),
+      // P30 (29c) — rad etilish banneri
+      rejectBannerOn: !!this.state.rejectBanner,
+      rejectBannerTitle: (function (b) { if (!b) return ''; var prov = { 'vertex-image': 'Google', 'vertex': 'Google', 'vertex-omni': 'Google', 'google-tts': 'Google', 'byteplus': 'BytePlus', 'fal': 'fal', 'elevenlabs': 'ElevenLabs' }[b.provider] || ''; return (b.modelLabel || 'This model') + (prov ? (' (' + prov + ')') : '') + ' refused this content'; })(this.state.rejectBanner),
+      rejectBannerMsg: (function (b) { if (!b) return ''; var r = b.reason || 'The provider rejected this content'; var ref = b.refunded ? (' · ✦' + b.refunded + ' refunded') : ''; var alt = b.suggestModelId ? '' : ' · No other enabled model allows this — try rephrasing.'; return r + ref + alt; })(this.state.rejectBanner),
+      rejectBannerHasAlt: !!(this.state.rejectBanner && this.state.rejectBanner.suggestModelId),
+      rejectBannerAltLabel: (this.state.rejectBanner && this.state.rejectBanner.suggestModelLabel) || '',
       // Auth
       authTitle, authSub, authBtn, authIsRegister, authIsForgot, authShowPassword, authShowLoginLinks: am === 'login', authNotRegister: am !== 'register',
       authShowGoogle: am !== 'forgot',
@@ -21124,7 +21185,7 @@ class Component extends DCLogic {
       modelModalEmpty: modelGroupsView.length === 0,
       axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && (rCaps.kind !== 'none' || refChipsView.length > 0),
       // P22 — inline "kredit yetmaydi / shart bajarilmadi" darvoza qatori (modal EMAS)
-      genGateOn, genGateMsg, genGateTopup,
+      genGateOn, genGateMsg, genGateTopup, strictPolicyNote,
       // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
       refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
       // P16 #4 — referens used/allowed ikonka qatori
@@ -21281,6 +21342,9 @@ class Component extends DCLogic {
       accName: this.state.accName,
       onAccName: (e) => this.setState({ accName: e.target.value }),
       saveAcc: () => this.saveProfile(),
+      // P30 (29c) — rad etilish banneri handlerlari
+      tryRejectModel: () => this.tryRejectModel(),
+      dismissRejectBanner: () => this.dismissRejectBanner(),
       // P21 (29) — kredit ledger handlerlari
       onLedgerFilter: (e) => this.setLedgerFilter(e.currentTarget.dataset.f),
       onLedgerRow: (e) => this.openLedgerGen(e.currentTarget.dataset.id, e.currentTarget.dataset.del === '1'),

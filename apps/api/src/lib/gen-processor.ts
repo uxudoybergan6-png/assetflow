@@ -66,6 +66,8 @@ import { refundAiCredits } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
 import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
 import { writeAuditLog } from "./audit-log.js";
+import { classifyGenRejection } from "./gen-rejection.js";
+import { noteBlockedAttempt } from "./spend-guard.js";
 import { captureException } from "./sentry.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
@@ -194,10 +196,12 @@ function normalizeGenerationError(message: string): string {
   if (raw.startsWith(BYTEPLUS_INPUT_MODERATION_PREFIX)) {
     return raw.slice(BYTEPLUS_INPUT_MODERATION_PREFIX.length).trim();
   }
+  // P30 §3 — HALOL xato, "soften the prompt" (evasion maslahati) OLIB TASHLANDI. Klient
+  // (/gen/:jobId rejection) refund summasi + "boshqa model'da urinib ko'ring" taklifini qo'shadi.
   if (
     /output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system/i.test(raw)
   ) {
-    return "Blocked by the video safety filter — soften the prompt or describe clothing/pose less explicitly and try again";
+    return "The model's content safety filter rejected this request.";
   }
   return raw;
 }
@@ -1059,7 +1063,24 @@ export async function processGeneration(genId: string): Promise<void> {
       data: { status: "failed", error: safeReason },
     });
     await clearProviderJob(genId);
-    if (upd.count > 0) await refundAiCredits(gen.userId, gen.cost, { generationId: genId });
+    if (upd.count > 0) {
+      await refundAiCredits(gen.userId, gen.cost, { generationId: genId });
+      // P30.5 — provayder KONTENT rad etsa: LOGGA yoz (provayder/model/kategoriya/son) + P30.4
+      // rate-limit sanog'i (refund-farming). Tasnif ASL xato matnidan (normalize'dan oldingi signal).
+      const rej = classifyGenRejection(reason);
+      if (rej.isContent) {
+        const model = getModelById(gen.modelId);
+        await writeAuditLog({
+          actorId: gen.userId,
+          action: "provider.content_rejected",
+          targetType: "generation",
+          targetId: genId,
+          detail: rej.reason.slice(0, 240),
+          meta: { provider: model?.provider || null, modelId: gen.modelId, mode: gen.mode, category: rej.category },
+        }).catch(() => {});
+        await noteBlockedAttempt(gen.userId).catch(() => {});
+      }
+    }
   };
 
   try {
