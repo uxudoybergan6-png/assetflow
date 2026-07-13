@@ -97,12 +97,14 @@
     }
     var data = null;
     try { data = await res.json(); } catch (e) { data = null; }
-    // P8 #4 — sessiyani FAQAT token o'lganda tozalaymiz. Avval HAR 401 clearSession qilardi →
-    // masalan noto'g'ri 2FA kodi (TWO_FA_INVALID, 401) ish o'rtasida logout qilardi. Endi faqat
-    // SESSIYA O'LGAN kodlar (yoki kodsiz eski 401) sessiyani tugatadi; boshqa 401'lar oddiy xato.
+    // P8 #4 + P29 (29b) — sessiyani FAQAT server token O'LGANINI AYTGANDA tozalaymiz.
+    // requireAuth (yagona sessiya-o'lim manbai) HAR DOIM aniq `code` yuboradi (TOKEN_EXPIRED/
+    // INVALID/REVOKED/NO_TOKEN). Ilgari KODSIZ 401 ham "sessiya o'lgan" deb sanardi → marshrut/
+    // ruxsat 401'i (masalan kodsiz `Unauthorized`) foydalanuvchini #landing'da ham logout qilardi.
+    // Endi FAQAT aniq token-o'lim kodlari tozalaydi; boshqa 401'lar (kodsiz yoki ruxsat) oddiy xato.
     if (res.status === 401 && t && opts.auth !== false) {
       var code401 = data && data.code;
-      var sessionDead = !code401 || code401 === "TOKEN_EXPIRED" || code401 === "TOKEN_INVALID" || code401 === "TOKEN_REVOKED" || code401 === "NO_TOKEN";
+      var sessionDead = code401 === "TOKEN_EXPIRED" || code401 === "TOKEN_INVALID" || code401 === "TOKEN_REVOKED" || code401 === "NO_TOKEN";
       if (sessionDead) {
         clearSession();
         try { window.dispatchEvent(new CustomEvent("ff-auth-expired")); } catch (e) {}
