@@ -16582,15 +16582,17 @@
             <span class="{{ fbCatCls }}" data-pop="cats" onclick="{{ toggleFbar }}">{{ fbCatLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbCatOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="max-height:320px;overflow-y:auto;min-width:190px"><sc-for list="{{ fGranView }}" as="x" hint-placeholder-count="14"><button data-v="{{ x.v }}" onclick="{{ pickFbCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.v }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbCats }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
             </span>
-            <!-- #3 — Applications Supported multi-select (Ae/Pr/Mn/Dr) -->
-            <span class="{{ fbAppCls }}" data-pop="app" onclick="{{ toggleFbar }}">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <!-- P2 — AI Stock: Type (Image|Video). Faqat AI Stock pill'da. -->
+            <sc-if value="{{ showAiKind }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ fAiKindView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFAiKind }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
+            <!-- #3 — Applications Supported multi-select (Ae/Pr/Mn/Dr) — P2: faqat qo'llasa -->
+            <sc-if value="{{ showAppFilter }}" hint-placeholder-val="{{ true }}"><span class="{{ fbAppCls }}" data-pop="app" onclick="{{ toggleFbar }}">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbAppOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="min-width:180px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ pickFbApp }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.label }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbApps }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
-            </span>
+            </span></sc-if>
             <span class="{{ fbPlanCls }}" data-pop="plan" onclick="{{ toggleFbar }}">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbPlanOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ pickFbPlan }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span>
-            <sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for>
-            <sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for>
+            <sc-if value="{{ showOrientFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
+            <sc-if value="{{ showQualFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
             <sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="va-fchip" onclick="{{ resetFilters }}" style="color:var(--muted)">Clear all ✕</span></sc-if>
             <span class="cnt">{{ resultsFmt }} results · sorted by <span style="position:relative"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
               <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
@@ -18656,6 +18658,49 @@ class Component extends DCLogic {
   }
   // #3 — granular kategoriyalar (backend TEMPLATE_CATEGORIES ko'zgusi, 'Uncategorized'siz)
   granularCats = ['Titles', 'Lower Thirds', 'Transitions', 'Intros', 'Logo Reveal', 'Openers', 'Slideshows', 'Backgrounds', 'LUTs', 'Overlays', 'Infographics', 'Social Media', 'Logos', 'Mockups'];
+  // P2 (step 31) — HAR pill uchun granular kategoriyalar (backend lib/taxonomy.ts
+  //   CATEGORIES_BY_TYPE NUSXASI — SINXRON tut, aks holda filtr 0 natija beradi).
+  //   Kategoriya `cat` param sifatida LABEL yuboriladi (server catLabel'ga mos qiladi).
+  catalogCatsByType = {
+    Templates: ['Titles', 'Lower Thirds', 'Transitions', 'Intros', 'Logo Reveal', 'Openers', 'Slideshows', 'Backgrounds', 'Overlays', 'Infographics', 'Social Media', 'Logos', 'Mockups'],
+    Motion:    ['Backgrounds', 'Overlays', 'Transitions', 'Elements', 'Light Leaks', 'Particles', 'Abstract', 'Loops', 'Social Media'],
+    Graphics:  ['Backgrounds', 'Textures', 'Patterns', 'Icons', 'Illustrations', 'Mockups', 'Abstract', 'Gradients', 'Shapes', 'Social Media'],
+    LUTs:      ['Cinematic', 'Vintage', 'Film Emulation', 'Black & White', 'Warm', 'Cool', 'Teal & Orange', 'Moody', 'Vibrant', 'Natural'],
+    Music:     ['Cinematic', 'Corporate', 'Ambient', 'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Folk', 'Jazz', 'Classical'],
+    SFX:       ['Whoosh', 'Impact', 'UI / Interface', 'Ambience', 'Foley', 'Transitions', 'Glitch', 'Nature', 'Mechanical', 'Voice'],
+    AIStock:   ['Abstract', 'Nature', 'People', 'Business', 'Technology', 'Food', 'Travel', 'Sports', 'Backgrounds'],
+  };
+  // P2 — KONTEKSTGA QARAB FILTRLAR: har pill qaysi filtrlarni KO'RSATADI (deklarativ, BITTA obyekt).
+  //   Mos kelmaydigan filtr KO'RSATILMAYDI (0 natija dead-end oldini oladi). Populatsiya bo'lmagan
+  //   spec-filtr (Alpha/Loop/FPS/Duration/Mood/BPM) hozircha YO'Q — server qo'llagach qo'shiladi.
+  catalogFilters = {
+    All:       { cat: 1, app: 1, plan: 1, orient: 1, qual: 1 },
+    Templates: { cat: 1, app: 1, plan: 1, orient: 1, qual: 1 },
+    Motion:    { cat: 1, plan: 1, orient: 1, qual: 1 },
+    Graphics:  { cat: 1, plan: 1, orient: 1, qual: 1 },
+    LUTs:      { cat: 1, plan: 1 },
+    Music:     { cat: 1, plan: 1 },
+    SFX:       { cat: 1, plan: 1 },
+    AIStock:   { aikind: 1, cat: 1, plan: 1, orient: 1, qual: 1 },
+  };
+  // Joriy pill uchun filtr yoqilganmi? (aikind — AI Stock Type: Image|Video)
+  _filterOn(name) { const f = this.catalogFilters[this.state.fCat] || this.catalogFilters.All; return !!f[name]; }
+  // Joriy pill kategoriyalari (All → keng video ro'yxati; qolgani → o'z turi).
+  _catsForPill(pill) { const p = pill || this.state.fCat; return (p && p !== 'All') ? (this.catalogCatsByType[p] || []) : this.granularCats; }
+  // Pill almashganda MOS KELMAYDIGAN filtr tanlovini TOZALASH (stale 4K LUTs'ni 0 qilib qo'ymasin).
+  _resetInapplicableFilters(pill) {
+    const f = this.catalogFilters[pill] || this.catalogFilters.All;
+    const patch = {};
+    if (!f.app) patch.fApps = [];
+    if (!f.orient) patch.fOrient = 'All';
+    if (!f.qual) patch.fQual = 'All';
+    if (!f.aikind) patch.aiStockKind = 'All';
+    const valid = this._catsForPill(pill);
+    const cur = (this.state.fCats || []);
+    const kept = cur.filter(c => valid.indexOf(c) >= 0);
+    if (kept.length !== cur.length) patch.fCats = kept;
+    return patch;
+  }
   // #3 — Applications Supported (Final Cut Pro YO'Q — apps.ts bilan mos)
   appOptions = [{ v: 'Ae', label: 'After Effects' }, { v: 'Pr', label: 'Premiere Pro' }, { v: 'Mn', label: 'Apple Motion' }, { v: 'Dr', label: 'DaVinci Resolve' }];
   _applyEntry() {
@@ -20758,7 +20803,14 @@ class Component extends DCLogic {
     // #3 — Applications Supported multi-select (checkbox qatorlar, Final Cut Pro yo'q)
     const fAppsView = this.appOptions.map(o => { const on = fAppsSel.indexOf(o.v) >= 0; return { v: o.v, label: o.label, on, rowCls: on ? 'ffa-fcat on' : 'ffa-fcat', chkCls: on ? 'ffa-chk on' : 'ffa-chk' }; });
     // #3 — granular Categories multi-select (pill bilan KOMPOZITSIYA: pill=keng tur, bu=granular)
-    const fGranView = this.granularCats.map(c => { const on = (this.state.fCats || []).indexOf(c) >= 0; return { v: c, on, rowCls: on ? 'ffa-fcat on' : 'ffa-fcat', chkCls: on ? 'ffa-chk on' : 'ffa-chk' }; });
+    const fGranView = this._catsForPill(this.state.fCat).map(c => { const on = (this.state.fCats || []).indexOf(c) >= 0; return { v: c, on, rowCls: on ? 'ffa-fcat on' : 'ffa-fcat', chkCls: on ? 'ffa-chk on' : 'ffa-chk' }; });
+    // P2 — kontekstga qarab filtr ko'rinishi (joriy pill catalogFilters'idan)
+    const showAppFilter = this._filterOn('app');
+    const showOrientFilter = this._filterOn('orient');
+    const showQualFilter = this._filterOn('qual');
+    const showAiKind = this._filterOn('aikind');
+    const aiKind = this.state.aiStockKind || 'All';
+    const fAiKindView = ['Image', 'Video'].map(v => ({ v, fchipCls: v === aiKind ? 'va-fchip on' : 'va-fchip' }));
     const hasFbApps = fAppsSel.length > 0;
     const hasFbCats = (this.state.fCats || []).length > 0;
     // #9/#10 — kategoriya filtri qat'iy 4 ta pill: Templates · Motion · Graphics · LUTs
@@ -21555,6 +21607,9 @@ class Component extends DCLogic {
         try { await navigator.clipboard.writeText(url); this.toast('Link copied'); } catch (e) { this.toast(url); }
       },
       fAppsView, fCatsView, fPlansView, fOrientView, fQualView,
+      // P2 — kontekstga qarab filtr ko'rinishi bayroqlari + AI Stock Type (Image|Video)
+      showAppFilter, showOrientFilter, showQualFilter, showAiKind, fAiKindView,
+      onFAiKind: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ aiStockKind: s.aiStockKind === v ? 'All' : v })); this.scheduleBrowse(); },
       activeChips, hasActiveFilters, filterCount, filterCountFmt: String(filterCount), tplHeading,
       filterDrawerOpen: this.state.filterDrawerOpen,
       sortLabel, sortView, sortOpen: this.state.sortOpen,
@@ -21650,7 +21705,7 @@ class Component extends DCLogic {
       // (avval faqat "coming soon" toast edi — o'lik stub)
       useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
       lbUpscale: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image' || cur.type === 'video') this.useGenAsUpscale('x2', cur.id); },
-      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); this.scheduleBrowse(); setTimeout(() => this._syncStockUrl(), 0); },
+      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => { const nf = s.fCat === v ? 'All' : v; return Object.assign({ fCat: nf, fbarPop: null }, this._resetInapplicableFilters(nf)); }); this.scheduleBrowse(); setTimeout(() => this._syncStockUrl(), 0); },
       onFPlan: (e) => { this.setState({ fPlan: e.currentTarget.dataset.v }); this.scheduleBrowse(); },
       onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); this.scheduleBrowse(); },
       onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'All' : v })); this.scheduleBrowse(); },
