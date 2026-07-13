@@ -227,6 +227,19 @@ export const CATEGORIES_BY_TYPE: Record<string, Category[]> = {
     { value: "mechanical", label: "Mechanical" },
     { value: "voice", label: "Voice" },
   ],
+  // P3 (step 34) — AI Stock (foydalanuvchi generatsiyasi → "Add to Explore"). Metadata
+  // generatori shu ro'yxatdan kategoriya tanlaydi; platform katalog filtri AYNAN shu labellar.
+  "ai-stock": [
+    { value: "abstract", label: "Abstract" },
+    { value: "nature", label: "Nature" },
+    { value: "people", label: "People" },
+    { value: "business", label: "Business" },
+    { value: "technology", label: "Technology" },
+    { value: "food", label: "Food" },
+    { value: "travel", label: "Travel" },
+    { value: "sports", label: "Sports" },
+    { value: "backgrounds", label: "Backgrounds" },
+  ],
 };
 
 const UNCATEGORIZED: Category = { value: "uncategorized", label: "Uncategorized" };

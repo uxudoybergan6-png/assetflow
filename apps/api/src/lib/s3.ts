@@ -11,6 +11,7 @@ import {
   HeadBucketCommand,
   ListObjectsV2Command,
   DeleteObjectsCommand,
+  CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
@@ -641,4 +642,23 @@ export async function uploadBufferToS3(
     })
   );
   return getPublicUrl(s3Key);
+}
+
+/**
+ * P3 (step 34) — server-tomon obyekt KO'CHIRMASI (kalit→kalit; ilova orqali stream QILMAYDI).
+ * AI Stock "Add to Explore": generatsiya fayli katalog kalit tartibiga NUSXALANADI (havola EMAS —
+ * gen retention/o'chirish katalog asetini 404 qilib qo'ymasin). srcKey mavjud bo'lmasa xato.
+ */
+export async function copyS3Object(srcKey: string, destKey: string): Promise<boolean> {
+  if (!isS3Configured() || !srcKey || !destKey) return false;
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket: bucket,
+      // x-amz-copy-source — bucket + kalit (GCS S3-mos ham qo'llaydi). URL-encode kalit.
+      CopySource: `/${bucket}/${srcKey.split("/").map(encodeURIComponent).join("/")}`,
+      Key: destKey,
+      MetadataDirective: "COPY",
+    })
+  );
+  return true;
 }

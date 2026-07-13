@@ -8,6 +8,12 @@ import { z } from "zod";
 import { prisma } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
+import {
+  submitGenerationToExplore,
+  listExploreSubmissions,
+  ExploreError,
+  RIGHTS_TERMS_VERSION,
+} from "../lib/explore-submit.js";
 import { consumeAiCredits, refundAiCredits, ensurePluginProfile, isPaidPlan } from "../lib/plugin-profile.js";
 import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
@@ -1842,6 +1848,56 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
 });
 
 /** GET /gen/:jobId — job holati (polling). MUHIM: aniq yo'llardan KEYIN ro'yxatdan o'tadi. */
+/**
+ * P3 (step 34) — GET /gen/explore/submissions — foydalanuvchining AI Stock topshiriqlari
+ * (kartada "yuborilgan/tasdiqlangan/rad etilgan" holatini ko'rsatish uchun). generationId → status.
+ * ⚠️ `/gen/:jobId` dan OLDIN (literal yo'l).
+ */
+studioGenRouter.get("/gen/explore/submissions", async (req: Request, res: Response) => {
+  const rows = await listExploreSubmissions(req.user!.userId);
+  res.json({ submissions: rows, rightsTermsVersion: RIGHTS_TERMS_VERSION });
+});
+
+/**
+ * P3 (step 34) — POST /gen/:jobId/explore — "Add to Explore": generatsiyani ommaviy
+ * AI Stock asetiga aylantiradi (admin moderatsiya navbatiga). Huquq attestatsiyasi SHART.
+ * ⚠️ Pul-zonasi TEGILMAYDI (faqat yetkazish + katalog).
+ */
+const exploreBodySchema = z.object({
+  rightsAccepted: z.boolean().optional(),
+  rightsTermsVersion: z.string().max(40).optional(),
+  promptPublic: z.boolean().optional(),
+});
+studioGenRouter.post("/gen/:jobId/explore", async (req: Request, res: Response) => {
+  const body = exploreBodySchema.safeParse(req.body ?? {});
+  if (!body.success) {
+    res.status(400).json({ error: "Bad request" });
+    return;
+  }
+  try {
+    const out = await submitGenerationToExplore({
+      userId: req.user!.userId,
+      jobId: String(req.params.jobId),
+      isAdmin: req.user!.role === "ADMIN",
+      rightsAccepted: body.data.rightsAccepted,
+      rightsTermsVersion: body.data.rightsTermsVersion,
+      promptPublic: body.data.promptPublic,
+    });
+    res.status(out.alreadySubmitted ? 200 : 201).json({
+      ok: true,
+      submission: { templateId: out.id, reviewStatus: out.reviewStatus },
+      alreadySubmitted: out.alreadySubmitted,
+    });
+  } catch (e) {
+    if (e instanceof ExploreError) {
+      res.status(e.status).json({ error: e.message, code: e.code });
+      return;
+    }
+    console.error("[studio-gen] explore submit xato:", e);
+    res.status(500).json({ error: "Could not submit this generation" });
+  }
+});
+
 studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
   const gen = await prisma.generation.findUnique({
     where: { id: String(req.params.jobId) },
