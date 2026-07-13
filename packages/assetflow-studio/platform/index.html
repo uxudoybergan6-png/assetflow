@@ -9,12 +9,17 @@
 <!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi -->
 <script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
 
-<script src="assets/react.production.min.js"></script>
-<script src="assets/react-dom.production.min.js"></script>
-<script src="assets/dc-runtime.js"></script>
+<!-- ⚠️ ROOT-ABSOLUTE yo'llar (SHART): /stock/<type>/<slug>-<id> kabi CHUQUR deep-link'da
+     sahifa /index.html qobig'i bilan xizmat qilinadi, lekin brauzer NISBIY src'ni joriy
+     path'ga (/stock/<type>/) nisbatan yechardi → "/stock/<type>/assets/dc-runtime.js" →
+     CF SPA fallback HTML qaytarar → skriptlar YUKLANMAY dc-runtime BUTUNLAY yuklanmasdi
+     (xom {{ }} ko'rinardi). Leading `/` bilan yo'l har qanday path chuqurligida to'g'ri. -->
+<script src="/assets/react.production.min.js"></script>
+<script src="/assets/react-dom.production.min.js"></script>
+<script src="/assets/dc-runtime.js"></script>
 <!-- ?v= — cache-bust: prepare-cf-pages.mjs build'da buni fayl kontent-hash'i bilan almashtiradi
      (aks holda CF/browser keshi eski ff-api.js beradi — "FFAPI.x is not a function") -->
-<script src="ff-api.js?v=dev"></script>
+<script src="/ff-api.js?v=dev"></script>
 <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
@@ -17921,16 +17926,23 @@ class Component extends DCLogic {
   // Ajratish: 3-segment DEFIS tutsa → asset (slug har doim `-<shortId>` bilan tugaydi);
   //   defissiz so'z (ai-stock image|video) → sub-filtr. Bu ikkovini aniq ajratadi.
   parseStockPath(pathname) {
-    const parts = String(pathname || '').replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
-    if (parts[0] !== 'stock') return null;
-    const typeSlug = parts[1] || '';
-    const pill = typeSlug ? this.slugToPill(typeSlug) : 'All';
-    const seg3 = parts[2] || '';
-    if (seg3 && seg3.indexOf('-') >= 0) {
-      return { pill, sub: '', assetSeg: seg3, shortId: seg3.split('-').pop() };
+    // Deep-link boot yo'lida chaqiriladi — HECH QACHON otmasin (aks holda mount yiqilib
+    // xom {{ }} ko'rinardi). Kutilmagan holatda null qaytadi (chaqiruvchilar buni katalog
+    // fallback sifatida qabul qiladi).
+    try {
+      const parts = String(pathname || '').replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+      if (parts[0] !== 'stock') return null;
+      const typeSlug = parts[1] || '';
+      const pill = typeSlug ? this.slugToPill(typeSlug) : 'All';
+      const seg3 = parts[2] || '';
+      if (seg3 && seg3.indexOf('-') >= 0) {
+        return { pill, sub: '', assetSeg: seg3, shortId: seg3.split('-').pop() };
+      }
+      const sub = (typeSlug === 'ai-stock' && (seg3 === 'image' || seg3 === 'video')) ? seg3 : '';
+      return { pill, sub, assetSeg: '', shortId: '' };
+    } catch (e) {
+      return null;
     }
-    const sub = (typeSlug === 'ai-stock' && (seg3 === 'image' || seg3 === 'video')) ? seg3 : '';
-    return { pill, sub, assetSeg: '', shortId: '' };
   }
   // /stock URL'ni joriy pill bilan sinxronlaydi (yangi tarix yozuvisiz).
   _syncStockUrl() {
@@ -18372,13 +18384,19 @@ class Component extends DCLogic {
       // P2 — /stock yo'nalishi (path) HAMMA hash/pathScreen'dan ustun (haqiqiy deep-link).
       if (stockLoc) {
         this._hashApplied = true;
-        if (stockLoc.assetSeg) {
-          // Detal deep-link: assetni shortId bilan yechamiz (public endpoint), pill'ni oldindan qo'yamiz.
-          this.setState({ screen: 'templates', fCat: stockLoc.pill });
-          this.loadStockAsset(stockLoc.shortId, stockLoc.assetSeg);
-        } else {
-          this.setState({ screen: 'templates', fCat: stockLoc.pill, aiStockKind: stockLoc.sub || 'All' });
-          this._syncStockUrl();
+        // Himoya: deep-link yechishda kutilmagan xato bo'lsa ham sahifa RENDER bo'lsin
+        // (oq/xom {{ }} sahifa EMAS) — hech bo'lmaganda katalogni ko'rsatamiz.
+        try {
+          if (stockLoc.assetSeg) {
+            // Detal deep-link: assetni shortId bilan yechamiz (public endpoint), pill'ni oldindan qo'yamiz.
+            this.setState({ screen: 'templates', fCat: stockLoc.pill });
+            this.loadStockAsset(stockLoc.shortId, stockLoc.assetSeg);
+          } else {
+            this.setState({ screen: 'templates', fCat: stockLoc.pill, aiStockKind: stockLoc.sub || 'All' });
+            this._syncStockUrl();
+          }
+        } catch (e) {
+          try { this.setState({ screen: 'templates', detail: null, detailNF: false, fCat: 'All' }); this.ensureBrowse(); } catch (_) {}
         }
       } else if (legacyTpl) {
         // Eski /templates | #templates → /stock (301-ga teng client redirect).
