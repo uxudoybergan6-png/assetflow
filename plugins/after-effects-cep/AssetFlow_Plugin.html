@@ -10649,10 +10649,18 @@ window.afGallery=(function(){
         ? ('Price ≈ ✦'+(meta.qcost[st.q]||12)+'/image × '+st.n+' = ✦'+c)
         : ('Fixed price: ✦'+(meta.flatCost||4)+'/image × '+st.n+' = ✦'+c); }
     var g=$('igGen'); if(g)g.title='Generate (✦'+c+')';
-    // b12: low credits — red banner in composer + red credit chip
-    var cr=credits(); var low=(cr!=null)&&(c>cr);
-    var b=$('igLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('igLowNeed'); if(nn)nn.textContent='need ✦ '+c+' · you have ✦ '+cr; }
+    refreshGen(); // P22 — narx o'zgardi → banner + tugma holatini qayta hisobla
+  }
+  // P22 — "kredit yetmaydi" darvozasi: BOSISHDAN OLDIN. Balans uchayotgan (parallel) ishlarga
+  //   komitilgan kreditni hisobga oladi (P22.2). Money-zona: faqat ko'rsatish/darvoza — server atomik.
+  function igCreditGate(){
+    var cr=credits(), c=cost();
+    var committed=(activeJobs||[]).reduce(function(a,j){ return a+(j.jcost||0); },0);
+    var avail=(cr!=null)?(cr-committed):null;
+    var low=(avail!=null)&&(c>avail);
+    var b=$('igLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('igLowNeed'); if(nn)nn.textContent='need ✦ '+c+' · you have ✦ '+((avail!=null)?avail:'—'); }
     var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
+    return low;
   }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
   window.axIGNewSession=function(){ st.sessionId=null; }; // P1: New session
@@ -10690,7 +10698,8 @@ window.afGallery=(function(){
     var needRef=meta.refMode==='required';
     // BATCH4 #1 — upscale: prompt IXTIYORIY (manba rasm + faktor yetarli; genClick avto-nom beradi)
     var needPrompt=meta.feature!=='image-upscale';
-    var ok=meta.loaded && (!needPrompt || $('igPrompt').value.trim().length>=2) && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS;
+    var low=igCreditGate(); // P22 — kredit yetmasa (komitilgan bilan) tugma O'CHADI (bosishdan oldin)
+    var ok=meta.loaded && (!needPrompt || $('igPrompt').value.trim().length>=2) && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS && !low;
     var g=$('igGen'); if(g)g.disabled=!ok;
     $('igRefWarn').classList.toggle('on', needRef && st.refs.length===0);
   }
@@ -11689,10 +11698,18 @@ window.afGallery=(function(){
       var hasMult=(vm.refKind==='media-refs'&&hasVideoRefs()&&vm.videoInputCostMult&&vm.videoInputCostMult>1);
       c.title='Price ≈ ✦'+ratePerSec()+'/s × '+durSec()+'s'+(auto?' (Auto)':'')+(hasMult?' · video reference increases the price':'');
     }
-    // b12: kam kredit — compose'da qizil banner + kredit chip qizil
-    var cr=credits(); var need=cost(); var low=(cr!=null)&&(need>cr);
-    var b=$('vgLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('vgLowNeed'); if(nn)nn.textContent='need ✦ '+need+' · you have ✦ '+cr; }
+    vgCreditGate(); // P22 — banner + kredit chip (komitilgan kreditni hisobga olib). Tugma refreshVgBtn'da.
+  }
+  // P22 — video "kredit yetmaydi" darvozasi: BOSISHDAN OLDIN; balans uchayotgan ishlarga komitilgan
+  //   kreditni hisobga oladi (P22.2). Money-zona: faqat ko'rsatish/darvoza — server atomik.
+  function vgCreditGate(){
+    var cr=credits(), need=cost();
+    var committed=(activeJobs||[]).reduce(function(a,j){ return a+(j.jcost||0); },0);
+    var avail=(cr!=null)?(cr-committed):null;
+    var low=(avail!=null)&&(need>avail);
+    var b=$('vgLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('vgLowNeed'); if(nn)nn.textContent='need ✦ '+need+' · you have ✦ '+((avail!=null)?avail:'—'); }
     var chip=$('vgCredit'); if(chip)chip.classList.toggle('low',low);
+    return low;
   }
   function fmtMb(n){ return Math.round((Number(n||0)/(1024*1024))*10)/10; }
   function fmtClockSec(sec){
@@ -12058,22 +12075,23 @@ window.afGallery=(function(){
 
   function refreshVgBtn(){
     var ok, pr=vgPromptValue();
+    var low=vgCreditGate(); // P22 — kredit yetmasa (komitilgan bilan) tugma O'CHADI (bosishdan oldin)
     if(vm.refKind==='media-refs'){
       // R2V: referens IXTIYORIY → prompt majburiy (≥2 belgi); referens yuklanayotgan bo'lsa bloklanadi
       var refLoading=mref.some(function(r){return r.loading;});
-      ok=vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<MAX_VG_JOBS;
+      ok=vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<MAX_VG_JOBS&&!low;
       if(!pr.length)setVgWarn('Prompt is required — describe what the video should do.');
       else if(refLoading)setVgWarn('Reference is uploading — please wait.');
       else setVgWarn('');
     } else if(vm.refKind==='none'){
-      ok=vm.loaded&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS;
+      ok=vm.loaded&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS&&!low;
       if(!pr.length)setVgWarn('Prompt is required — describe what the video should do.');
       else setVgWarn('');
     } else {
       // frames: image-to-video (Seedance) → boshlang'ich kadr MAJBURIY; matndan-video (Veo/Omni) → IXTIYORIY.
       var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
       var frameLoading=!!(st.start&&st.start.loading)||!!(st.end&&st.end.loading);
-      ok=vm.loaded&&pr.length>=2&&!frameLoading&&(!vm.startRequired||hasStart)&&activeJobs.length<MAX_VG_JOBS;
+      ok=vm.loaded&&pr.length>=2&&!frameLoading&&(!vm.startRequired||hasStart)&&activeJobs.length<MAX_VG_JOBS&&!low;
       if(vm.startRequired&&!hasStart)setVgWarn("Start frame is required — add it with +.");
       else if(!pr.length)setVgWarn('Prompt is required — describe what the video should do.');
       else if(frameLoading)setVgWarn('Frame is uploading — please wait.');
@@ -12418,11 +12436,11 @@ window.afGallery=(function(){
     var arLocked=!!(vm.arLockVideoRef&&hasVideoRefs());
     vgSetChips($('vgArPills'),vm.arOpts,vm.ar,null,arLocked,function(v){ if(arLocked){ toast('Video reference attached — the model sets the aspect ratio itself','info'); return; } vm.ar=v; afterVgSet(); });
     var ah=$('vgArHint'); if(ah)ah.textContent=arLocked?'Locked — the video reference sets the ratio.':'Auto — taken from the input frame.';
-    vgSetChips($('vgResPills'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; recost(); afterVgSet(); });
-    vgSetChips($('vgDurPills'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; recost(); afterVgSet(); });
+    vgSetChips($('vgResPills'),vm.resOpts,vm.res,null,false,function(v){ vm.res=v; refreshVgBtn(); afterVgSet(); }); // narx o'zgardi → tugma darvozasi (P22)
+    vgSetChips($('vgDurPills'),vm.durOpts,vm.dur,vgDurChipLabel,false,function(v){ vm.dur=v; refreshVgBtn(); afterVgSet(); });
     var bitOn=!!(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate);
     var bsec=$('vgBitSec'); if(bsec)bsec.style.display=bitOn?'':'none';
-    if(bitOn)vgSetChips($('vgBitPills'),vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; recost(); afterVgSet(); });
+    if(bitOn)vgSetChips($('vgBitPills'),vm.bitOpts,vm.bitrate,null,false,function(v){ vm.bitrate=v; refreshVgBtn(); afterVgSet(); });
   }
   $('vgSetSeg').addEventListener('click',function(){ buildVgSettings(); openVgSheet('vgSetSheet',$('vgSetSeg')); });
   var audTgl=$('vgAudToggle');

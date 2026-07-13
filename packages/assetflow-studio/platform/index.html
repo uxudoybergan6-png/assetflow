@@ -17621,6 +17621,7 @@ class Component extends DCLogic {
 
     genModels: {},
     genModelsLoaded: false, // FAZA C — featured models yuklandi (bo'sh bo'lsa ham) belgisi
+    genQuote: null, // P22 — reaktiv imzolangan cost-quote {key, price, signature, params, loading}
     selModel: {},
     authMode: 'login',
     authEmail: '',
@@ -18127,8 +18128,8 @@ class Component extends DCLogic {
   }
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
-  _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); }
+  _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.syncGenQuote(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
    *  pollJob'dan real % kelmaydi, shu sabab ishonarli indeterminat foiz 93% da
@@ -18887,6 +18888,40 @@ class Component extends DCLogic {
       this.setState({ upVQuote: { error: this.errMsg(e), key } });
     });
   }
+  // ── P22 — REAKTIV IMZOLANGAN QUOTE: model/param/referens o'zgarganda (prompt matni EMAS — narxga ta'sir
+  //   qilmaydi) debounce bilan /gen/cost-quote olinadi va state.genQuote'ga yoziladi. COST chip + Generate
+  //   darvozasi shu narxdan ishlaydi; bosishda qayta round-trip bo'lmaydi. Money-zona: faqat ko'rsatish/darvoza.
+  syncGenQuote() {
+    try {
+      if (!(window.FFAPI && FFAPI.getToken())) return;
+      if (this.state.screen !== 'aistudio') return; // faqat AI Studio composer ko'rinadigan joyda
+      if (this.state.aiView && this.state.aiView !== 'composer') return;
+      const tool = this.curTool(), model = this.curModel();
+      if (!model) return;
+      // video-upscale/image-upscale alohida oqim (maybeQuoteVideoUpscale / lokal) — bu yerda emas
+      if (model.feature === 'video-upscale' || model.feature === 'image-upscale') return;
+      const params = this.buildParams(tool, model);
+      const refSig = [this.state.refStartUrl ? 1 : 0, this.state.refEndUrl ? 1 : 0, (this.state.refImages || []).length, (this.state.refVideos || []).length, (this.state.refAudios || []).length].join(',');
+      const key = model.id + '|' + tool.mode + '|' + JSON.stringify(params) + '|' + refSig;
+      // Allaqachon shu kalit uchun so'ralgan (yoki natija bor) — qayta yubormaymiz (setState loop yo'q)
+      const gq = this.state.genQuote;
+      if (this._gqKey === key && gq && gq.key === key) return;
+      this._gqKey = key;
+      clearTimeout(this._gqT);
+      // Darhol "loading" belgisi (oldingi narx ko'rinib turaveradi — tugma sakramasin)
+      if (!gq || gq.key !== key) this.setState({ genQuote: { key, loading: true, price: (gq && gq.key ? gq.price : undefined) } });
+      this._gqT = setTimeout(() => {
+        if (this._gqKey !== key) return; // eskirgan
+        FFAPI.quote(model.id, tool.mode, params).then(q => {
+          if (this._gqKey !== key) return;
+          this.setState({ genQuote: { key, price: q.price, signature: q.signature, params: q.pricedParams || params, loading: false } });
+        }).catch(e => {
+          if (this._gqKey !== key) return;
+          this.setState({ genQuote: { key, error: this.errMsg(e), loading: false } });
+        });
+      }, 260);
+    } catch (e) {}
+  }
   estCost(tool, model, params) {
     if (!model) return 0;
     // BATCH4 #2 — video-upscale: narx faqat serverdan (tier probe) — upVQuote'dan olinadi
@@ -18947,7 +18982,18 @@ class Component extends DCLogic {
     const params = this.buildParams(tool, model);
     this._genSubmitting = true;
     try {
-      const q = await FFAPI.quote(model.id, tool.mode, params);
+      // P22 #4 — REAKTIV imzolangan quote (state.genQuote) joriy so'rovga mos bo'lsa uni yuboramiz —
+      //   bosishda qayta round-trip YO'Q (narx allaqachon COST chipida ko'rsatilgan). Mos emas/upscale
+      //   bo'lsa darhol olamiz. Server baribir imzoni tekshiradi (money-zona TEGILMAGAN).
+      let q;
+      const refSigG = [this.state.refStartUrl ? 1 : 0, this.state.refEndUrl ? 1 : 0, (this.state.refImages || []).length, (this.state.refVideos || []).length, (this.state.refAudios || []).length].join(',');
+      const wantKey = model.id + '|' + tool.mode + '|' + JSON.stringify(params) + '|' + refSigG;
+      const gqNow = this.state.genQuote;
+      if (!isUp && gqNow && gqNow.key === wantKey && typeof gqNow.price === 'number' && gqNow.signature && !gqNow.error) {
+        q = { price: gqNow.price, signature: gqNow.signature, pricedParams: gqNow.params };
+      } else {
+        q = await FFAPI.quote(model.id, tool.mode, params);
+      }
       // BATCH4 #2 — video-upscale: imzo SERVER yozgan canonical params ustidan — /gen'ga AYNAN o'sha ketadi
       const genParams = q.pricedParams || params;
       // P20/P22.2 — balans FAOL (uchayotgan) ishlarga komitilgan kreditlarni hisobga oladi (aks holda
@@ -19913,11 +19959,25 @@ class Component extends DCLogic {
     // Dock: quote/CTA/balans — qiymatlar mavjud estCost/quote oqimidan, faqat ko'rinish yangi
     // BATCH4 #2 — video-upscale ✦ narxi imzolangan quote'dan (tier · billing soniya · 60fps belgisi)
     const uqV = this.state.upVQuote;
+    // ── P22 — REAKTIV IMZOLANGAN QUOTE: model/param/referens o'zgarganda debounce bilan olinadi
+    //   (syncGenQuote → state.genQuote). COST chip va Generate darvozasi shu SERVER IMZOLAGAN narxdan
+    //   ishlaydi; bosishda qayta quote round-trip yo'q. Narx faqat KO'RSATILADI — yechish/rad SERVERDA
+    //   atomik (money-zona TEGILMAGAN). Kalit param+referens to'plamiga bog'liq (narx shularga bog'liq).
+    const gqKey = (model && !axIsUpscaleTool) ? (model.id + '|' + tool.mode + '|' + JSON.stringify(genParams) + '|' + [this.state.refStartUrl ? 1 : 0, this.state.refEndUrl ? 1 : 0, (this.state.refImages || []).length, (this.state.refVideos || []).length, (this.state.refAudios || []).length].join(',')) : null;
+    const gqObj = this.state.genQuote;
+    const gqFresh = !!(gqObj && gqObj.key === gqKey && typeof gqObj.price === 'number' && !gqObj.error);
+    const gqLoading = !axIsUpscaleTool && !!(gqObj && gqObj.key === gqKey && gqObj.loading && typeof gqObj.price !== 'number');
+    // Effektiv narx: video-upscale=upVQuote; boshqasi=imzolangan quote (yangi bo'lsa) yoki lokal taxmin (costNow)
+    const effPrice = axIsVUp
+      ? ((uqV && !uqV.error && typeof uqV.price === 'number') ? uqV.price : null)
+      : (gqFresh ? gqObj.price : (typeof costNow === 'number' ? costNow : null));
+    const dispPrice = (effPrice != null ? effPrice : costNow);
     const axQuote = axIsVUp
       ? ((uqV && !uqV.error && typeof uqV.price === 'number')
           ? ('✦ ' + uqV.price + (uqV.info ? ' · ' + uqV.info.resolution + ' · ' + uqV.info.duration + 's' + (uqV.info.fpsDoubled ? ' (60fps ×2)' : '') : ''))
           : (this.state.refVideos.length ? (uqV && uqV.error ? '✦ — (' + String(uqV.error).slice(0, 40) + ')' : 'pricing…') : '✦ —'))
-      : (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ✦ ' + costNow) : ('✦ ' + costNow);
+      : gqLoading ? 'pricing…'
+      : (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + Math.round(dispPrice / nSel) + ' = ✦ ' + dispPrice) : ('✦ ' + dispPrice);
     // BATCH4 #1/#2 — Upscale'da prompt ixtiyoriy: manba tanlangan bo'lsa Generate yoqiladi
     const axPromptReady = axIsUpscaleTool
       ? (axIsVUp ? (this.state.refVideos.length > 0 && !!(uqV && !uqV.error && typeof uqV.price === 'number')) : this.state.refImages.length > 0)
@@ -19935,14 +19995,7 @@ class Component extends DCLogic {
     const needSrcVideo = axIsVUp && !this.state.refVideos.length;
     const promptLenG = (this.state.aiPrompt || '').trim().length;
     const overChars = tool.mode === 'voice' && model && model.maxChars && promptLenG > model.maxChars;
-    // Reaktiv imzolangan quote (step 27) — joriy model+param+referens kalitiga mos bo'lsa narx shundan
-    const gqKey = model && !axIsUpscaleTool ? (model.id + '|' + tool.mode + '|' + JSON.stringify(genParams) + '|' + [this.state.refStartUrl ? 1 : 0, this.state.refEndUrl ? 1 : 0, (this.state.refImages || []).length, (this.state.refVideos || []).length, (this.state.refAudios || []).length].join(',')) : null;
-    const gqObj = this.state.genQuote;
-    const gqFresh = !!(gqObj && gqObj.key === gqKey && typeof gqObj.price === 'number' && !gqObj.error);
-    const gqLoading = !axIsUpscaleTool && !!(gqObj && gqObj.key === gqKey && gqObj.loading && typeof gqObj.price !== 'number');
-    const effPrice = axIsVUp
-      ? ((uqV && !uqV.error && typeof uqV.price === 'number') ? uqV.price : null)
-      : (gqFresh ? gqObj.price : (typeof costNow === 'number' ? costNow : null));
+    // effPrice / gqLoading — REAKTIV IMZOLANGAN quote'dan (yuqorida hisoblangan)
     const availCredits = this.state.credits - committedCredits;
     const notEnough = this.state.creditsLoaded && effPrice != null && effPrice > availCredits;
     // Narx noma'lum bo'lsa (quote yuklanyapti va lokal taxmin ham yo'q) tugma yoqilmaydi — P22 qoidasi.
