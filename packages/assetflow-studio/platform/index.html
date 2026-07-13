@@ -15365,12 +15365,16 @@
   .ff .va-mention .mi .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;background-color:rgba(255,255,255,.05);flex:0 0 auto;border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted2)}
   .ff .va-mention .mi b{font-size:12.5px;display:block;color:var(--text)}
   .ff .va-mention .mi small{font-size:10.5px;color:var(--muted2)}
-  /* P16 — pastki qator DOIM bir qatorda: chap chiplar guruhi (kerak bo'lsa scroll) + o'ngga MAHKAMLANGAN COST+Generate (hech qachon wrap bo'lmaydi) */
+  /* P16 — pastki qator DOIM bir qatorda: chap chiplar guruhi + o'ngga MAHKAMLANGAN COST+Generate (hech qachon wrap bo'lmaydi).
+     MUHIM: guruhda overflow YO'Q — `overflow-x:auto` `overflow-y`ni ham `auto` qiladi va TEPAGA ochiladigan popover'ni QIRQADI
+     (chip popover'lari bo'sh ko'rinardi). O'rniga chiplar torlashsa qisqaradi (ellipsis), popover'lar to'liq ko'rinadi. */
   .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:nowrap;min-width:0}
-  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
-  .ff .va-setgroup::-webkit-scrollbar{display:none}
+  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto}
   .ff .va-genwrap{display:flex;align-items:center;gap:9px;flex:0 0 auto;margin-left:auto}
-  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:none}
+  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:0 1 auto;min-width:0}
+  /* mode/model/settings chip yorlig'i tor joyda qisqaradi (popover buzilmasin) */
+  .ff .va-setgroup .va-set>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .ff .va-set.mode,.ff .va-set.enh{flex:none}
   .ff .va-set:hover{background:var(--f2)}
   .ff .va-set b{color:var(--text);font-weight:600}
   .ff .va-set.mode{background:var(--pill-active);border-color:transparent;color:var(--text)}
@@ -16838,7 +16842,7 @@
                     <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
                   </div></sc-if>
                 </span></sc-if>
-                <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}"><svg class="va-ic"><use href="#i-wand"></use></svg></span>
+                <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
                 <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)">✕ Clear</span></sc-if>
                 </div>
                 <div class="va-genwrap">
