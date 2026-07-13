@@ -359,6 +359,167 @@ studioGenRouter.get("/credits", async (req: Request, res: Response) => {
   });
 });
 
+// ── P21 (qadam 29) — HAQIQIY kredit ledger + yuklab olish tarixi ─────────────
+// Ilgari "Credit activity" jadvali klientda state.gens'dan yasalardi → QAYTARILGAN
+// KREDITLAR KO'RINMAYDI (foydalanuvchi "pulimni yeb qo'ydi" deb o'ylardi). Endi
+// bevosita CreditLedger o'qiladi (consume/refund/topup/clawback) + agregatlar.
+// READ-ONLY: money-zona (consume/refund/qiymatlar) TEGILMAYDI — faqat mavjud yozuvlar.
+const LEDGER_PAGE = 25;
+const DOWNLOADS_PAGE = 25;
+
+// Keyset kursor: "<createdAtMillis>_<id>" (createdAt desc, id tie-break). Offset
+// paginatsiyaning yangi qator qo'shilganda dublikat/o'tkazib yuborish muammosi yo'q.
+function keysetCursorWhere(raw: string): Record<string, unknown> {
+  const m = /^(\d+)_(.+)$/.exec(String(raw || ""));
+  if (!m) return {};
+  const at = new Date(Number(m[1]));
+  if (Number.isNaN(at.getTime())) return {};
+  return { OR: [{ createdAt: { lt: at } }, { AND: [{ createdAt: at }, { id: { lt: m[2] } }] }] };
+}
+function nextKeysetCursor(rows: Array<{ id: string; createdAt: Date }>): string | null {
+  const last = rows[rows.length - 1];
+  return last ? `${last.createdAt.getTime()}_${last.id}` : null;
+}
+
+/**
+ * GET /credits/ledger?cursor=&filter= — sahifalangan CreditLedger + agregatlar.
+ * filter: all | spent(consume) | refunded(refund) | purchased(topup).
+ * Har qator bog'langan generatsiya bilan boyitiladi (mode, model label, prompt, thumb,
+ * holat). O'chirilgan gen (FK yo'q) — { deleted:true } (crash emas, P21.1).
+ */
+studioGenRouter.get("/credits/ledger", async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  // Ledger ochilganда qotgan job'lar tiklanadi → yo'qolgan refund ko'rinadi (/credits naqshi).
+  await reconcileStuckGenerations(userId).catch(() => {});
+  const filter = String(req.query.filter || "all");
+  const reasonFilter =
+    filter === "spent"
+      ? ["consume"]
+      : filter === "refunded"
+      ? ["refund"]
+      : filter === "purchased"
+      ? ["topup", "clawback"]
+      : null;
+  const where = {
+    userId,
+    ...(reasonFilter ? { reason: { in: reasonFilter } } : {}),
+    ...keysetCursorWhere(String(req.query.cursor || "")),
+  };
+  const rows = await prisma.creditLedger.findMany({
+    where,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: LEDGER_PAGE + 1,
+  });
+  const hasMore = rows.length > LEDGER_PAGE;
+  const page = rows.slice(0, LEDGER_PAGE);
+
+  // Bog'langan genlar (FK yo'q — qo'lda join). Faqat egasinikini olamiz (xavfsizlik).
+  const genIds = Array.from(
+    new Set(page.map((r) => r.generationId).filter((x): x is string => !!x))
+  );
+  const genMap = new Map<
+    string,
+    { mode: string; modelLabel: string | null; prompt: string; status: string; thumbUrl: string | null; duration: unknown }
+  >();
+  if (genIds.length) {
+    const gens = await prisma.generation.findMany({
+      where: { id: { in: genIds }, userId },
+      include: { assets: true },
+    });
+    for (const g of gens) {
+      const a = g.assets[0] || null;
+      let thumbUrl: string | null = null;
+      if (a && isS3Configured()) {
+        if (a.thumbKey) thumbUrl = await getSignedDownloadUrl(a.thumbKey, 3600).catch(() => null);
+        else if (a.resultKey && g.mode !== "video")
+          thumbUrl = await getSignedDownloadUrl(a.resultKey, 3600).catch(() => null);
+      }
+      const params = (g.params ?? {}) as Record<string, unknown>;
+      genMap.set(g.id, {
+        mode: g.mode,
+        modelLabel: getModelById(g.modelId)?.label ?? null,
+        prompt: (g.prompt || "").slice(0, 140),
+        status: g.status,
+        thumbUrl,
+        duration: params.duration ?? null,
+      });
+    }
+  }
+
+  const items = page.map((r) => ({
+    id: r.id,
+    reason: r.reason, // consume | refund | topup | clawback
+    delta: r.delta, // imzoli: manfiy=consume/clawback, musbat=refund/topup
+    balanceAfter: r.balanceAfter,
+    createdAt: r.createdAt,
+    generationId: r.generationId,
+    gen: r.generationId ? genMap.get(r.generationId) ?? { deleted: true } : null,
+  }));
+
+  // Agregatlar — BUTUN tarix bo'yicha (sahifadan qat'i nazar), READ-ONLY.
+  const agg = await prisma.creditLedger.groupBy({
+    by: ["reason"],
+    where: { userId },
+    _sum: { delta: true },
+  });
+  let totalSpent = 0;
+  let totalRefunded = 0;
+  let totalPurchased = 0;
+  for (const a of agg) {
+    const s = a._sum.delta || 0;
+    if (a.reason === "consume") totalSpent += -s; // consume delta manfiy → sarf musbat
+    else if (a.reason === "refund") totalRefunded += s;
+    else if (a.reason === "topup") totalPurchased += s;
+    else if (a.reason === "clawback") totalPurchased += s; // clawback manfiy → sof sotib olingan
+  }
+  const netSpent = totalSpent - totalRefunded;
+
+  res.json({
+    items,
+    hasMore,
+    nextCursor: hasMore ? nextKeysetCursor(page) : null,
+    totals: { totalSpent, totalRefunded, netSpent, totalPurchased },
+  });
+});
+
+/**
+ * GET /downloads?cursor= — foydalanuvchining REAL yuklab olish/import tarixi
+ * (TemplateDownloadEvent). Panel endi "coming soon" stub EMAS (P21.4). READ-ONLY.
+ */
+studioGenRouter.get("/downloads", async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const rows = await prisma.templateDownloadEvent.findMany({
+    where: { userId, ...keysetCursorWhere(String(req.query.cursor || "")) },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: DOWNLOADS_PAGE + 1,
+  });
+  const hasMore = rows.length > DOWNLOADS_PAGE;
+  const page = rows.slice(0, DOWNLOADS_PAGE);
+  const tplIds = Array.from(new Set(page.map((r) => r.templateId)));
+  const tplMap = new Map<string, { name: string; type: string | null }>();
+  if (tplIds.length) {
+    const tpls = await prisma.contributorTemplate.findMany({
+      where: { id: { in: tplIds } },
+      select: { id: true, name: true, templateType: true, stockType: true },
+    });
+    for (const t of tpls) tplMap.set(t.id, { name: t.name, type: t.stockType || t.templateType });
+  }
+  const items = page.map((r) => {
+    const t = tplMap.get(r.templateId);
+    return {
+      id: r.id,
+      name: t ? t.name : "Deleted template",
+      type: t ? t.type : null,
+      kind: r.kind, // download | import
+      source: r.source, // plugin | web
+      when: r.createdAt,
+      templateId: r.templateId,
+      deleted: !t,
+    };
+  });
+  res.json({ items, hasMore, nextCursor: hasMore ? nextKeysetCursor(page) : null });
+});
+
 /** GET /gen/health — AI sozlamalari holati (faqat boolean — kalitlar QAYTARILMAYDI). */
 studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
   res.json({

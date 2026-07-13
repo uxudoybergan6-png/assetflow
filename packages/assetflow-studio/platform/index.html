@@ -15440,6 +15440,34 @@
   .ff .va-tbox{border-radius:16px;background:var(--surface);border:1px solid var(--hair2);overflow:hidden}
   .ff .va-tbox .hd{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--hair);font-weight:700;font-size:13px}
   .ff .va-tbox .hd .mono{margin-left:auto;font:500 9.5px var(--mono);color:var(--muted2)}
+  /* P21 (29) — HAQIQIY kredit ledger qatorlari (token-first, 3 tema) */
+  .ff .va-ledfilters{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+  .ff .va-ledchip{padding:5px 11px;border-radius:8px;font:600 11px inherit;color:var(--muted);background:var(--f1);border:1px solid var(--hair2);cursor:pointer;font-family:inherit}
+  .ff .va-ledchip:hover{color:var(--text)}
+  .ff .va-ledchip.on{color:var(--text);border-color:transparent;background:var(--pill-active)}
+  .ff .va-ledlist{display:flex;flex-direction:column}
+  .ff .va-ledrow{display:flex;align-items:center;gap:11px;padding:10px 14px;border-bottom:1px solid var(--hair);cursor:pointer;transition:background .12s}
+  .ff .va-ledrow:hover{background:var(--f1)}
+  .ff .va-ledrow.plain{cursor:default}
+  .ff .va-ledrow.plain:hover{background:transparent}
+  .ff .va-ledthumb{width:38px;height:38px;border-radius:8px;flex:none;background:var(--f1);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+  .ff .va-ledthumb img{width:100%;height:100%;object-fit:cover}
+  .ff .va-ledthumb i{font-size:16px}
+  .ff .va-ledmeta{min-width:0;flex:1}
+  .ff .va-ledmeta b{display:block;font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-ledmeta small{display:block;font:500 10px var(--mono);color:var(--muted2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-ledamt{text-align:right;flex:none;font:700 13px var(--mono)}
+  .ff .va-ledamt small{display:block;font:500 9.5px var(--mono);color:var(--muted2);margin-top:2px}
+  .ff .va-ledamt.neg{color:var(--th-danger)}
+  .ff .va-ledamt.ref{color:var(--lime)}
+  .ff .va-ledamt.buy{color:var(--teal)}
+  .ff .va-ledmore{width:100%;padding:11px;background:transparent;border:0;border-top:1px solid var(--hair);color:var(--muted);font:600 11.5px inherit;cursor:pointer;font-family:inherit}
+  .ff .va-ledmore:hover{color:var(--text)}
+  .ff .va-ledtot{display:flex;gap:14px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--hair)}
+  .ff .va-ledtot .t{display:flex;flex-direction:column;gap:1px}
+  .ff .va-ledtot .t .k{font:600 8.5px var(--mono);letter-spacing:.08em;color:var(--muted2)}
+  .ff .va-ledtot .t .v{font:700 14px var(--mono);color:var(--text)}
+  .ff .va-ledtot .t .v.ref{color:var(--lime)}
   @media(max-width:900px){ .ff .va-acc{grid-template-columns:1fr} .ff .va-tables{grid-template-columns:1fr} }
   @media(max-width:1100px){
     .ff .va-dwrap{grid-template-columns:1fr}
@@ -16924,23 +16952,35 @@
             </div>
             <div class="va-tables">
               <div class="va-tbox">
-                <div class="hd">Credit activity <span class="mono">RECENT GENERATIONS</span></div>
-                <sc-if value="{{ hasCreditHistory }}" hint-placeholder-val="{{ false }}">
-                  <table class="va-tbl">
-                    <tr><th>ACTIVITY</th><th>WHEN</th><th style="text-align:right">CREDITS</th></tr>
-                    <sc-for list="{{ creditActivityView }}" as="h" hint-placeholder-count="4"><tr><td>{{ h.t }}</td><td class="mono">{{ h.d }}</td><td class="mono" style="text-align:right;color:#FF9C8F">{{ h.amt }}</td></tr></sc-for>
-                  </table>
+                <div class="hd">Credit activity <span class="mono">NET {{ ledgerTotNet }}</span></div>
+                <div class="va-ledtot">
+                  <div class="t"><span class="k">SPENT</span><span class="v">{{ ledgerTotSpent }}</span></div>
+                  <div class="t"><span class="k">REFUNDED</span><span class="v ref">{{ ledgerTotRefunded }}</span></div>
+                  <div class="t"><span class="k">NET SPENT</span><span class="v">{{ ledgerTotNet }}</span></div>
+                  <div class="t"><span class="k">PURCHASED</span><span class="v">{{ ledgerTotPurchased }}</span></div>
+                </div>
+                <div class="va-ledfilters"><sc-for list="{{ ledgerFilterView }}" as="f" hint-placeholder-count="4"><span data-f="{{ f.f }}" onclick="{{ onLedgerFilter }}" class="{{ f.cls }}">{{ f.label }}</span></sc-for></div>
+                <sc-if value="{{ hasLedger }}" hint-placeholder-val="{{ true }}">
+                  <div class="va-ledlist"><sc-for list="{{ ledgerView }}" as="h" hint-placeholder-count="5">
+                    <div class="{{ h.rowCls }}" data-id="{{ h.gid }}" data-del="{{ h.delFlag }}" onclick="{{ onLedgerRow }}">
+                      <div class="va-ledthumb"><sc-if value="{{ h.hasThumb }}" hint-placeholder-val="{{ false }}"><img src="{{ h.thumbUrl }}" alt="" loading="lazy"></sc-if><sc-if value="{{ h.noThumb }}" hint-placeholder-val="{{ true }}"><i class="{{ h.ficon }}"></i></sc-if></div>
+                      <div class="va-ledmeta"><b>{{ h.title }}</b><small>{{ h.sub }} · {{ h.when }}</small></div>
+                      <div class="{{ h.amtCls }}">{{ h.amt }}<small>{{ h.balance }}</small></div>
+                    </div>
+                  </sc-for></div>
+                  <sc-if value="{{ ledgerHasMore }}" hint-placeholder-val="{{ false }}"><button class="va-ledmore" onclick="{{ loadMoreLedger }}">Load more</button></sc-if>
                 </sc-if>
-                <sc-if value="{{ noCreditHistory }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 16px;text-align:center;font-size:12px;color:var(--muted2)">No transactions yet — generate something in AI Studio</div></sc-if>
+                <sc-if value="{{ noLedger }}" hint-placeholder-val="{{ false }}"><div style="padding:26px 16px;text-align:center;font-size:12px;color:var(--muted2)">{{ ledgerEmptyMsg }}</div></sc-if>
               </div>
               <div class="va-tbox">
                 <div class="hd">Downloads <span class="mono">THIS MONTH · {{ downloadsMonth }}</span></div>
                 <sc-if value="{{ hasDownloads }}" hint-placeholder-val="{{ false }}">
-                  <table class="va-tbl">
-                    <sc-for list="{{ downloadHistoryView }}" as="d" hint-placeholder-count="3"><tr><td>{{ d.n }}</td><td class="mono" style="text-align:right">{{ d.when }}</td></tr></sc-for>
-                  </table>
+                  <div class="va-ledlist"><sc-for list="{{ downloadsView }}" as="d" hint-placeholder-count="3">
+                    <div class="va-ledrow plain"><div class="va-ledthumb"><i class="ph ph-download-simple"></i></div><div class="va-ledmeta"><b>{{ d.name }}</b><small>{{ d.sub }} · {{ d.when }}</small></div></div>
+                  </sc-for></div>
+                  <sc-if value="{{ downloadsHasMore }}" hint-placeholder-val="{{ false }}"><button class="va-ledmore" onclick="{{ loadMoreDownloads }}">Load more</button></sc-if>
                 </sc-if>
-                <sc-if value="{{ noDownloads }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 16px;text-align:center;font-size:12px;color:var(--muted2)">Download history is coming soon — this month's count is live</div></sc-if>
+                <sc-if value="{{ noDownloads }}" hint-placeholder-val="{{ true }}"><div style="padding:26px 16px;text-align:center;font-size:12px;color:var(--muted2)">{{ downloadsEmptyMsg }}</div></sc-if>
               </div>
             </div>
           </sc-if>
@@ -16991,7 +17031,8 @@
               <div style="display:flex;align-items:baseline;margin-bottom:14px"><span style="font-weight:600;font-size:15px">Downloaded templates</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-left:8px">This month: {{ downloadsMonth }}</span></div>
               <sc-if value="{{ hasDownloads }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;flex-direction:column;gap:2px">
-                  <sc-for list="{{ downloadHistoryView }}" as="d" hint-placeholder-count="3"><div class="ffa-lrow"><div style="width:52px;height:34px;border-radius:6px;background:{{ d.g }};flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ d.meta }}</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ d.when }}</span><i class="ph ph-download-simple" style="font-size:15px;color:var(--muted)"></i></div></sc-for>
+                  <sc-for list="{{ downloadsView }}" as="d" hint-placeholder-count="3"><div class="ffa-lrow"><div style="width:52px;height:34px;border-radius:6px;background:var(--f2);flex:none;display:grid;place-items:center"><i class="ph ph-download-simple" style="color:var(--muted)"></i></div><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.name }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ d.sub }}</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)">{{ d.when }}</span></div></sc-for>
+                  <sc-if value="{{ downloadsHasMore }}" hint-placeholder-val="{{ false }}"><button class="va-ledmore" onclick="{{ loadMoreDownloads }}" style="margin-top:8px;border-top:0">Load more</button></sc-if>
                 </div>
               </sc-if>
               <sc-if value="{{ noDownloads }}" hint-placeholder-val="{{ true }}"><div style="padding:40px 20px;text-align:center;border:1px dashed var(--hair2);border-radius:14px;background:var(--surface)">
@@ -17680,6 +17721,18 @@ class Component extends DCLogic {
     pageFlip: 0,
     gens: [],
     gensLoaded: false, // #5: tarix kelguncha "No generations yet" ko'rsatilmasin
+    // P21 (29) — HAQIQIY kredit ledger (CreditLedger): consume/refund/topup KO'RINADI.
+    ledger: [],              // [{id, reason, delta, balanceAfter, createdAt, generationId, gen}]
+    ledgerTotals: null,      // {totalSpent, totalRefunded, netSpent, totalPurchased}
+    ledgerLoaded: false,
+    ledgerLoading: false,
+    ledgerFilter: 'all',     // all | spent | refunded | purchased
+    ledgerCursor: null,      // keyingi sahifa uchun keyset kursor
+    ledgerHasMore: false,
+    downloads: [],           // P21.4 — REAL yuklab olish tarixi (TemplateDownloadEvent)
+    downloadsLoaded: false,
+    downloadsCursor: null,
+    downloadsHasMore: false,
     // QA-FIX #12 — Artlist uslubi sessiya modeli (rail = sessiyalar ro'yxati)
     sessions: [],          // GET /gen/sessions — {id,title,mode,count,lastAt,coverUrl,coverMode}
     sessionsLoaded: false,
@@ -18599,6 +18652,65 @@ class Component extends DCLogic {
       this.setState(s => ({ gens, gensLoaded: true, gensCapped: raw.length >= 60, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
     this._histBusy = false;
+  }
+  // ── P21 (29) — HAQIQIY kredit ledger (refunds ko'rinadi) + REAL yuklab olish tarixi ──
+  async loadCreditLedger(reset) {
+    if (this.state.ledgerLoading) return;
+    if (!(window.FFAPI && FFAPI.getToken())) return;
+    const filter = this.state.ledgerFilter || 'all';
+    const cursor = reset ? null : this.state.ledgerCursor;
+    this.setState({ ledgerLoading: true });
+    try {
+      const r = await FFAPI.creditLedger(cursor, filter);
+      const rows = r.items || [];
+      this.setState(s => ({
+        ledger: (reset || !cursor) ? rows : s.ledger.concat(rows),
+        ledgerTotals: r.totals || s.ledgerTotals,
+        ledgerCursor: r.nextCursor || null,
+        ledgerHasMore: !!r.hasMore,
+        ledgerLoaded: true,
+        ledgerLoading: false,
+      }));
+    } catch (e) { this.setState({ ledgerLoaded: true, ledgerLoading: false }); }
+  }
+  // Account tab ochilганда tegishli ma'lumotni (bir marta) yuklaydi.
+  accTabLoad(tab) {
+    if (tab === 'Subscription & credits') { if (!this.state.ledgerLoaded && !this.state.ledgerLoading) this.loadCreditLedger(true); }
+    else if (tab === 'Downloads') { if (!this.state.downloadsLoaded && !this._dlBusy) this.loadDownloads(true); }
+  }
+  setLedgerFilter(f) {
+    if (this.state.ledgerFilter === f) return;
+    this.setState({ ledgerFilter: f, ledger: [], ledgerCursor: null, ledgerHasMore: false, ledgerLoaded: false }, () => this.loadCreditLedger(true));
+  }
+  async loadDownloads(reset) {
+    if (this._dlBusy) return;
+    if (!(window.FFAPI && FFAPI.getToken())) return;
+    this._dlBusy = true;
+    const cursor = reset ? null : this.state.downloadsCursor;
+    try {
+      const r = await FFAPI.downloads(cursor);
+      const rows = r.items || [];
+      this.setState(s => ({
+        downloads: (reset || !cursor) ? rows : s.downloads.concat(rows),
+        downloadsCursor: r.nextCursor || null,
+        downloadsHasMore: !!r.hasMore,
+        downloadsLoaded: true,
+      }));
+    } catch (e) { this.setState({ downloadsLoaded: true }); }
+    this._dlBusy = false;
+  }
+  // Ledger qatoridan generatsiyani lightbox'da ochish. Recent 60'da bo'lmasa (eski gen) —
+  // id bo'yicha serverdan tortib olamiz; o'chirilgan bo'lsa halol xabar (crash emas, P21.1).
+  async openLedgerGen(genId, deleted) {
+    if (deleted) { this.toast('This generation was deleted'); return; }
+    if (!genId) return; // topup / clawback — bog'langan generatsiya yo'q
+    const local = this.state.gens.find(x => x.id === genId) || (this.state.sessGens || []).find(x => x.id === genId);
+    if (local) { this.setState({ lightbox: local }); return; }
+    try {
+      const g = await FFAPI.genGet(genId);
+      if (g && g.assets && g.assets.length) this.setState({ lightbox: this.mapGen(g) });
+      else this.toast('This generation is no longer available');
+    } catch (e) { this.toast('This generation was deleted'); }
   }
   // ── QA-FIX #12 — sessiyalar (Artlist uslubi rail) ──
   async loadSessions() {
@@ -20479,13 +20591,54 @@ class Component extends DCLogic {
       canUpscale: (lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0]) || (lbRaw.type === 'video' && !!(this.state.genModels.vupscale || [])[0]),
     } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
-    // Kredit tarixi — real gen tarixidan (CreditLedger Faza C'da keladi)
-    const toolIcon = { image: 'image', video: 'video-camera', audio: 'waveform' };
-    const histTone = { image: { ibg: 'var(--reddim)', icol: '#FF9C8F' }, video: { ibg: 'var(--seldim)', icol: '#7CC4FF' }, audio: { ibg: 'var(--limedim)', icol: 'var(--lime)' }, sfx: { ibg: 'var(--amberdim)', icol: 'var(--amber)' } };
-    const creditHistoryView = this.state.gens.filter(g => g.cost > 0).slice(0, 12).map(g => { const tone = histTone[g.type] || histTone.image; return { t: g.tool, d: this.fmtDate(g.at), a: -g.cost, icon: toolIcon[g.type] || 'image', amt: '−' + g.cost, col: 'var(--th-danger)', ibg: tone.ibg, icol: tone.icol }; });
-    const hasCreditHistory = creditHistoryView.length > 0;
-    const downloadHistoryView = [];
-    const hasDownloads = false;
+    // P21 (29) — HAQIQIY kredit ledger (CreditLedger endpoint): consume/refund/topup/clawback KO'RINADI.
+    // Har qator: tur ikonkasi/thumb · sarlavha · sana · IMZOLI summa (yechim QIZIL, refund YASHIL) · balans.
+    const _ledLabelByMode = { image: 'Image generation', video: 'Video generation', voice: 'Voice generation', music: 'Music generation', sfx: 'SFX generation' };
+    const _reasonMeta = {
+      consume: { amtCls: 'neg', sign: '−', ficon: '' },
+      refund: { amtCls: 'ref', sign: '+', ficon: 'arrow-counter-clockwise' },
+      topup: { amtCls: 'buy', sign: '+', ficon: 'coins' },
+      clawback: { amtCls: 'neg', sign: '−', ficon: 'arrow-u-up-left' },
+    };
+    const _typeIcon = { image: 'image', video: 'video-camera', voice: 'waveform', music: 'music-notes', sfx: 'waveform', audio: 'waveform' };
+    const ledgerView = (this.state.ledger || []).map(r => {
+      const rm = _reasonMeta[r.reason] || _reasonMeta.consume;
+      const g = (r.gen && !r.gen.deleted) ? r.gen : null;
+      const deleted = !!(r.gen && r.gen.deleted);
+      let title, sub;
+      if (r.reason === 'topup') { title = 'Credit pack'; sub = 'Purchase'; }
+      else if (r.reason === 'clawback') { title = 'Credit pack reversal'; sub = 'Refunded'; }
+      else if (g) { title = (g.prompt && g.prompt.trim()) || (_ledLabelByMode[g.mode] || 'Generation'); sub = (g.modelLabel || '') + (g.duration ? (' · ' + String(g.duration).replace(/s$/i, '') + 's') : ''); }
+      else if (deleted) { title = (r.reason === 'refund' ? 'Refund' : 'Generation') + ' (deleted)'; sub = r.reason === 'refund' ? 'Credits returned' : ''; }
+      else { title = (r.reason === 'refund' ? 'Refund' : 'Generation'); sub = ''; }
+      const ficon = rm.ficon || _typeIcon[g ? g.mode : 'image'] || 'image';
+      return {
+        id: r.id, gid: r.generationId || '', delFlag: deleted ? '1' : '',
+        rowCls: (r.generationId && !deleted) ? 'va-ledrow' : 'va-ledrow plain',
+        thumbUrl: g ? (g.thumbUrl || '') : '', hasThumb: !!(g && g.thumbUrl), noThumb: !(g && g.thumbUrl),
+        ficon: 'ph ph-' + ficon,
+        title, sub, when: this.fmtDate(r.createdAt),
+        amt: rm.sign + Math.abs(r.delta || 0), amtCls: 'va-ledamt ' + rm.amtCls,
+        balance: (typeof r.balanceAfter === 'number') ? ('✦' + r.balanceAfter) : '',
+      };
+    });
+    const hasLedger = ledgerView.length > 0;
+    const _lt = this.state.ledgerTotals || { totalSpent: 0, totalRefunded: 0, netSpent: 0, totalPurchased: 0 };
+    const _lfmt = (n) => '✦' + (Number(n) || 0).toLocaleString();
+    const ledgerTotSpent = _lfmt(_lt.totalSpent);
+    const ledgerTotRefunded = _lfmt(_lt.totalRefunded);
+    const ledgerTotNet = _lfmt(_lt.netSpent);
+    const ledgerTotPurchased = _lfmt(_lt.totalPurchased);
+    const ledgerFilterView = [['all', 'All'], ['spent', 'Spent'], ['refunded', 'Refunded'], ['purchased', 'Purchased']].map(p => ({ f: p[0], label: p[1], cls: this.state.ledgerFilter === p[0] ? 'va-ledchip on' : 'va-ledchip' }));
+    // P21.4 (29) — REAL yuklab olish tarixi (TemplateDownloadEvent)
+    const downloadsView = (this.state.downloads || []).map(d => ({
+      id: d.id, name: d.name, deleted: !!d.deleted,
+      sub: (d.kind === 'import' ? 'Imported' : 'Downloaded') + (d.type ? (' · ' + d.type) : '') + (d.source ? (' · ' + d.source) : ''),
+      when: this.fmtDate(d.when),
+    }));
+    const hasDownloads = downloadsView.length > 0;
+    const ledgerEmptyMsg = (this.state.ledgerLoading && !this.state.ledgerLoaded) ? 'Loading…' : (this.state.ledgerFilter === 'all' ? 'No transactions yet — generate something in AI Studio' : 'Nothing here for this filter');
+    const downloadsEmptyMsg = (!this.state.downloadsLoaded && this._dlBusy) ? 'Loading…' : 'No downloads yet — import a template from the catalog';
     // QA-FIX #13 — real loyihalar: cover = item media (gen thumb / shablon thumb), bo'sh slot gradient
     const projectsView = this.state.projects.map(p => {
       const cvs = (p.covers || []).slice(0, 4);
@@ -20787,7 +20940,7 @@ class Component extends DCLogic {
       goAistudio: () => this.go('aistudio'),
       goPricing: () => this.go('pricing'),
       goPlugin: () => this.go('plugin'),
-      goAccount: () => this.go('account'),
+      goAccount: () => { this.go('account'); this.accTabLoad(this.state.accountTab); },
       goLogin: () => this.gotoAuth('login'),
       goRegister: () => this.gotoAuth('register'),
       toggleNav: () => this.setState(st => ({ navOpen: !st.navOpen })),
@@ -21106,12 +21259,21 @@ class Component extends DCLogic {
       sortLabel, sortView, sortOpen: this.state.sortOpen,
       detail, lb, accView, accountTab: this.state.accountTab,
       accProfile: this.state.accountTab === 'Profile', accBilling: this.state.accountTab === 'Subscription & credits', accYuklama: this.state.accountTab === 'Downloads',
-      accEmailLine, planPr, planFeats, creditResetKick, creditActivityView,
-      creditHistoryView, hasCreditHistory, noCreditHistory: !hasCreditHistory, downloadHistoryView, hasDownloads, projectsView,
-      planPriceLabel, creditRefreshNote, downloadsLimitLabel, exportLabel, creditPacksAcc, noDownloads: !hasDownloads,
+      accEmailLine, planPr, planFeats, creditResetKick,
+      // P21 (29) — HAQIQIY kredit ledger + REAL downloads
+      ledgerView, hasLedger, noLedger: !hasLedger, ledgerEmptyMsg, ledgerFilterView,
+      ledgerTotSpent, ledgerTotRefunded, ledgerTotNet, ledgerTotPurchased,
+      ledgerHasMore: this.state.ledgerHasMore, downloadsHasMore: this.state.downloadsHasMore,
+      downloadsView, hasDownloads, noDownloads: !hasDownloads, downloadsEmptyMsg, projectsView,
+      planPriceLabel, creditRefreshNote, downloadsLimitLabel, exportLabel, creditPacksAcc,
       accName: this.state.accName,
       onAccName: (e) => this.setState({ accName: e.target.value }),
       saveAcc: () => this.saveProfile(),
+      // P21 (29) — kredit ledger handlerlari
+      onLedgerFilter: (e) => this.setLedgerFilter(e.currentTarget.dataset.f),
+      onLedgerRow: (e) => this.openLedgerGen(e.currentTarget.dataset.id, e.currentTarget.dataset.del === '1'),
+      loadMoreLedger: () => this.loadCreditLedger(false),
+      loadMoreDownloads: () => this.loadDownloads(false),
       // FAZA 1c — GDPR export/delete
       exportMyData: () => this.exportMyData(),
       openDeleteAccount: () => this.openDeleteAccount(),
@@ -21196,7 +21358,7 @@ class Component extends DCLogic {
       resetFilters: () => this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }),
       openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} } },
       closeDetail: () => this.setState({ detail: null }),
-      onAccTab: (e) => this.setState({ accountTab: e.currentTarget.dataset.v }),
+      onAccTab: (e) => { const v = e.currentTarget.dataset.v; this.setState({ accountTab: v }); this.accTabLoad(v); },
       openCredits: () => this.setState({ showCredits: true }),
       appMenuOpen: this.state.appMenuOpen,
       toggleAppMenu: () => this.setState(st => ({ appMenuOpen: !st.appMenuOpen })),

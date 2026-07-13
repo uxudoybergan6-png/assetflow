@@ -196,8 +196,26 @@
     genGet: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id)); },
     genDelete: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id), { method: "DELETE" }); },
     history: function (limit) { return req("/api/studio/gen/history?limit=" + (limit || 30)); },
-    enhance: function (prompt, mode, modelId) {
-      return req("/api/studio/gen/prompt/enhance", { method: "POST", body: { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined } });
+    // P21 (29) — HAQIQIY kredit ledger (refunds ko'rinadi) + agregatlar. cursor=keyset, filter=all|spent|refunded|purchased
+    creditLedger: function (cursor, filter) {
+      var q = [];
+      if (cursor) q.push("cursor=" + encodeURIComponent(cursor));
+      if (filter && filter !== "all") q.push("filter=" + encodeURIComponent(filter));
+      return req("/api/studio/credits/ledger" + (q.length ? "?" + q.join("&") : ""));
+    },
+    // P21.4 (29) — REAL yuklab olish/import tarixi (TemplateDownloadEvent)
+    downloads: function (cursor) {
+      return req("/api/studio/downloads" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""));
+    },
+    // P28 (29a) — enhance endi REFERENSlarni ko'radi (image/video/audio URL massivlari).
+    // opts: { imageUrls, videoUrls, audioUrls }. Orqaga moslik: opts berilmasa faqat matn.
+    enhance: function (prompt, mode, modelId, opts) {
+      opts = opts || {};
+      var body = { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined };
+      if (opts.imageUrls && opts.imageUrls.length) body.image_urls = opts.imageUrls;
+      if (opts.videoUrls && opts.videoUrls.length) body.video_urls = opts.videoUrls;
+      if (opts.audioUrls && opts.audioUrls.length) body.audio_urls = opts.audioUrls;
+      return req("/api/studio/gen/prompt/enhance", { method: "POST", body: body });
     },
     // P8 — referens yuklash: kichik fayl dataUrl bilan (JSON), katta video/audio presigned PUT + srcKey
     refUpload: function (body) { return req("/api/studio/gen/ref-upload", { method: "POST", body: body }); },

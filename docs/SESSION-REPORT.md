@@ -1,25 +1,10 @@
-# Sessiya hisoboti — 2026-07-13 (MUAMMOLAR-2 · qadam 25 = P13 + P20)
+# Sessiya hisoboti — MUAMMOLAR-2 qadam 29 (P21) (2026-07-13)
 
-Nima qilindi (WEB + PLUGIN + API — pul zonasi TEGILMADI):
-- **P13 — Referens hovuzi model-mustaqil.** `pickModel`/`setModel`/`switchVgModel` endi referenslardan
-  HECH NARSA o'chirmaydi. Model faqat PROYEKSIYA: `projectRefs` (web) / `vgActiveFlags`+`igActiveRefLimit`
-  (plagin) qaysi referens FAOL (yuboriladi) ekanini belgilaydi; nofaollari XIRA holda TURADI (hover'da
-  sabab), @raqamlash qayta raqamlanmaydi, orqaga qaytsa hammasi qaytadi. `buildParams`/`genClick` faqat
-  faollarini yuboradi. Generate oldidan nofaol @eslatma bo'lsa ogohlantiradi. Model picker'da referens
-  imkoniyati ko'rinadi. (Restore/Upscale/Clear ataylab-reset yo'llari saqlandi.)
-- **P20 — Parallel generatsiya (web).** `state.generating` → `state.activeJobs[]`; per-job poll taymer +
-  per-job pending karta + per-job progress; kompozer ochiq qoladi; balans komitilgan kreditlarni hisobga
-  oladi. Plaginda parallel allaqachon bor edi (MAX_JOBS 5/3).
-- **API:** `POST /gen` ga per-user parallel cheklov (queued+running ≥ `MAX_ACTIVE_GENERATIONS`=5 → 429,
-  consume'dan OLDIN). consume/refund/quote/HMAC TEGILMADI.
-- Tekshirildi: `npm run build -w apps/api` ✓; ikkala mijoz konsol xatosisiz yuklandi; P13 acceptance
-  (9 rasm → Veo → Omni → Nano; video start/end kadr) real KOD ajratib olinib node testda o'tdi ✓✓.
+**Bajarildi (API + web `platform/index.html`/`ff-api.js` + plagin `AssetFlow_Plugin.html`), PUSH QILINMADI:**
 
-Men NIMANI jonli tekshirishim kerak:
-- AE plaginida (install-cep bajarildi, AE qayta ishga tushdi): 9 rasm biriktir → modelni referenssiz/kam-limitli
-  modelga o'zgartir → thumbnaillar XIRA holda TURSIN → qaytsang qaytsin; video start+end kadr → start-only modelga
-  o't → end kadr xira, saqlangan.
-- Web AI Studio (login kerak): bir vaqtda 2-3 gen ishga tushir → har biri o'z pending kartasi + progressi;
-  kompozer ochiq; model almashganda referens yo'qolmaydi.
+- **29 (P21) — KREDITLAR EKRANI.** Ilgari "Credit activity" `state.gens`'dan yasalardi → QAYTARILGAN KREDITLAR KO'RINMASDI. Endi:
+  - **API** (`studio-gen.ts`): `GET /credits/ledger?cursor=&filter=` — HAQIQIY `CreditLedger` (consume/refund/topup/clawback), keyset paginatsiya + agregatlar (Spent/Refunded/Net/Purchased); har qator bog'langan gen bilan boyitiladi (mode/model/prompt/thumb/holat), o'chirilgan gen `{deleted:true}` (crash yo'q). `GET /downloads` — REAL `TemplateDownloadEvent` (panel endi "coming soon" stub emas). READ-ONLY, money-zona TEGILMADI.
+  - **Web**: `FFAPI.creditLedger`/`downloads`; Account→Subscription&credits: totals (Spent·Refunded YASHIL·Net·Purchased) + filter chiplar (All/Spent/Refunded/Purchased) + qatorlar (tur ikonkasi/thumb · IMZOLI summa: yechim QIZIL, refund YASHIL · balans) · qator→gen lightbox'da (eski gen id bilan tortiladi, o'chirilgan=halol xabar) · "Load more"; Downloads tab real ro'yxat.
+  - **Plagin**: `renderLedger` endi `/credits/ledger`'dan (refunds ko'rinadi) + Spent/Refunded/Net totals header.
 
-Kutilmoqda: git push → deploy; `MAX_ACTIVE_GENERATIONS` env (ixtiyoriy).
+**Tekshirilgan:** `npm run build -w apps/api` (OK), node inline-syntax (web+plagin, 0 xato), web boot toza (landing/handlerlar renderVals ishladi — brauzer smoke test). **Kutilmoqda:** push→deploy; jonli auth-li kreditlar ekrani + AE test.
