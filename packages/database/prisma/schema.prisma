@@ -879,3 +879,46 @@ model PluginRelease {
 
   @@index([publishedAt])
 }
+
+// ── P1 #19 (P6 §4 / P7 §8) — QAYTA TIKLANADIGAN BULK-INGEST NAVBATI ──────────
+// Ingest endi HTTP so'rov yo'lida EMAS: POST /ingest incoming kalitlarni shu
+// navbatga QO'SHADI va darhol qaytadi; alohida fon ishchisi (ingest-worker.ts,
+// o'zining Cloud Run job'i yoki inline poller) elementlarni birma-bir claim qilib
+// ishlaydi. 5000 klip ≈ 42–83 soat ffmpeg — bu foydalanuvchi trafigi bilan CPU
+// uchun raqobatlashmasligi kerak. Har element uchun retry (attempts/maxAttempts),
+// progress (status), restartdan keyin davom etish (claimedAt eskirsa → queued).
+//
+// FK-siz (ledger/download-event naqshi): shablon/contributor o'chsa yetim job
+// zararsiz (worker key topilmasa "failed" qiladi). sourceType='zip' → ingestOneZip
+// (Video Templates), 'asset' → ingestOneAsset (raw LUTs/Stock — P1.9).
+model IngestJob {
+  id            String   @id @default(cuid())
+  batchId       String   // bitta upload seansi — progress polling grouping
+  contributorId String
+  sourceType    String   // 'zip' | 'asset'
+  key           String   // incoming/<contributorId>/<file> storage kaliti
+  fileName      String   // asl fayl nomi (UI/log uchun)
+  // Taksonomiya — raw asset ingest'i uchun (zip'da AI/zip-parse aniqlaydi, null qoladi).
+  kind          String?  // 'template' | 'stock'
+  templateType  String?  // 'video-templates' | 'luts'
+  stockType     String?  // 'graphics'|'motion-graphics'|'music'|'sfx'
+  templateApp   String?  // ae|pr|motion|resolve (video-templates uchun)
+  contentType   String?  // asl fayl MIME (raw asset uchun)
+  // Rights attestation (butun partiyaga bir marta — server-side MAJBURIY, contributor.ts).
+  rightsAcceptedAt   DateTime?
+  rightsTermsVersion String?
+  status        String   @default("queued") // queued|processing|done|duplicate|failed
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  lastError     String?
+  resultTemplateId String? // done bo'lsa yaratilgan shablon id'si (duplicate = mavjud id)
+  claimedAt     DateTime?   // processing'ga o'tgan payt (stuck-reclaim uchun)
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([batchId])
+  @@index([contributorId, createdAt])
+}

@@ -356,31 +356,72 @@ const StudioApi = (() => {
         if (onFileProgress) onFileProgress(i, { stage: "error", error: e.message || "Upload failed" });
       }
     }
-    let results = [];
-    if (uploaded.length) {
-      const ingestResp = await request("/api/contributor/ingest", {
-        method: "POST",
-        body: {
-          keys: uploaded.map((u) => u.key),
-          // FAZA 1b — rights attestation (butun partiyaga bitta majburiy checkbox)
-          rightsAccepted: !!(rights && rights.rightsAccepted),
-          rightsTermsVersion: (rights && rights.rightsTermsVersion) || undefined,
-        },
-      });
-      results = (ingestResp && ingestResp.results) || [];
-      for (const { index, key } of uploaded) {
-        const r = results.find((x) => x.key === key);
-        if (r && r.ok) {
-          if (onFileProgress) onFileProgress(index, { stage: "done", id: r.id });
-        } else if (r && r.status === "duplicate") {
-          // FAZA 6a: dublikat — xato emas, alohida aniq holat (ikkinchi nusxa yaratilmadi).
-          if (onFileProgress) onFileProgress(index, { stage: "duplicate", error: r.reason || "Duplicate", id: r.duplicateOf });
-        } else {
-          if (onFileProgress) onFileProgress(index, { stage: "error", error: (r && r.reason) || "Processing failed" });
-        }
-      }
+    if (!uploaded.length) return [];
+    // P1 #19 — /ingest endi SINXRON ishlamaydi: navbatga qo'shadi va {batchId} qaytaradi.
+    // Fon ishchisi (ingest-worker) navbatni ishlaydi; klient batchId bilan pollaydi.
+    const ingestResp = await request("/api/contributor/ingest", {
+      method: "POST",
+      body: {
+        keys: uploaded.map((u) => u.key),
+        // FAZA 1b — rights attestation (butun partiyaga bitta majburiy checkbox)
+        rightsAccepted: !!(rights && rights.rightsAccepted),
+        rightsTermsVersion: (rights && rights.rightsTermsVersion) || undefined,
+      },
+    });
+    const batchId = ingestResp && ingestResp.batchId;
+    if (!batchId) {
+      for (const { index } of uploaded)
+        if (onFileProgress) onFileProgress(index, { stage: "error", error: "Ingest queue error" });
+      return [];
     }
-    return results;
+    return pollIngestBatch(batchId, uploaded, onFileProgress);
+  }
+
+  /**
+   * P1 #19 — ingest navbat progress polling (bulkIngestZips + bulkIngestAssets umumiy).
+   * `uploaded` = [{index, key}]; batch elementlarini key bo'yicha fayl indeksiga bog'laydi.
+   * Barcha elementlar terminal (done/duplicate/failed) bo'lgunча GET /ingest/progress'ni
+   * pollaydi va onFileProgress(index, {stage,id,error}) chaqiradi. Timeout ~30 daqiqa.
+   */
+  async function pollIngestBatch(batchId, uploaded, onFileProgress) {
+    const byKey = new Map(uploaded.map((u) => [u.key, u.index]));
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const deadline = Date.now() + 30 * 60 * 1000;
+    let last = [];
+    // Klientga darhol "processing" ko'rsatamiz (navbatda kutmoqda).
+    for (const { index } of uploaded)
+      if (onFileProgress) onFileProgress(index, { stage: "processing", pct: 100 });
+    while (Date.now() < deadline) {
+      let prog;
+      try {
+        prog = await request(`/api/contributor/ingest/progress?batchId=${encodeURIComponent(batchId)}`);
+      } catch (e) {
+        await sleep(3000);
+        continue;
+      }
+      last = (prog && prog.items) || [];
+      for (const it of last) {
+        const index = byKey.get(it.key);
+        if (index == null || !onFileProgress) continue;
+        if (it.status === "done") onFileProgress(index, { stage: "done", id: it.resultTemplateId });
+        else if (it.status === "duplicate")
+          onFileProgress(index, { stage: "duplicate", error: it.lastError || "Duplicate", id: it.resultTemplateId });
+        else if (it.status === "failed")
+          onFileProgress(index, { stage: "error", error: it.lastError || "Processing failed" });
+        else onFileProgress(index, { stage: "processing", pct: 100 });
+      }
+      if (prog && prog.done) break;
+      await sleep(2500);
+    }
+    // Progress → eski `results[]` shakliga o'giramiz (startBulkIngest done/dup/err sanaydi).
+    return last.map((it) => ({
+      key: it.key,
+      ok: it.status === "done",
+      status: it.status === "done" ? "created" : it.status === "duplicate" ? "duplicate" : "failed",
+      id: it.resultTemplateId,
+      duplicateOf: it.status === "duplicate" ? it.resultTemplateId : undefined,
+      reason: it.lastError || undefined,
+    }));
   }
 
   async function listTemplates(query = "") {

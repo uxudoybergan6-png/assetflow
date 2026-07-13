@@ -41,6 +41,7 @@ import { findEnabledModelsWithoutCost, DEFAULT_PROVIDER_USD } from "./lib/provid
 import { validateGenModelsOrThrow } from "./lib/gen-models-validate.js";
 import { assertPricingFloorsOrThrow } from "./lib/assert-pricing-floors.js";
 import { startTemplateReconcilers } from "./lib/template-reconcile.js";
+import { runIngestWorkerLoop } from "./lib/ingest-worker.js";
 
 // Sentry — SENTRY_DSN bor bo'lsa erta ishga tushadi (yo'q → no-op). Fire-and-forget:
 // dinamik import; keyingi xatolar paket yuklangach qamrab olinadi.
@@ -374,4 +375,16 @@ app.listen(PORT, "0.0.0.0", () => {
   // FAZA 3 (B): qotib qolgan transcode + yetishmagan embedding reconciler'lari
   // (startup pass + 10 daqiqalik timer, gen-processor resume naqshi).
   startTemplateReconcilers();
+  // P1 #19 — INLINE bulk-ingest ishchisi. Ideal holatda alohida Cloud Run job
+  // (scripts/ingest-worker.ts + deploy-ingest-worker.sh) ishlaydi va bu API'da
+  // INGEST_WORKER_INLINE=0 qilinadi (ingest CPU foydalanuvchi trafigi bilan
+  // raqobatlashmasin). Lekin default YONIQ — kichik/bitta-servis deploylarda
+  // navbat baribir ishlashi uchun (aks holda joblar abadiy 'queued' qoladi).
+  if (process.env.INGEST_WORKER_INLINE !== "0") {
+    void runIngestWorkerLoop().catch((e) =>
+      console.error("[ingest-worker] inline loop yiqildi:", e)
+    );
+  } else {
+    console.log("[ingest-worker] inline poller o'chirilgan (INGEST_WORKER_INLINE=0) — alohida job kutilmoqda");
+  }
 });

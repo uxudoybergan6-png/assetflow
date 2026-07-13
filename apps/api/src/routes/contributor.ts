@@ -63,6 +63,13 @@ import {
 } from "../lib/ingest-zip.js";
 import { generateTemplateMetadata } from "../lib/ai/template-metadata.js";
 import {
+  registerIngestProcessor,
+  enqueueIngestJobs,
+  getBatchProgress,
+  type IngestItemResult,
+  type IngestJobRow,
+} from "../lib/ingest-worker.js";
+import {
   setUploadProgress,
   getUploadProgress,
   subscribeUploadProgress,
@@ -1694,17 +1701,8 @@ async function withIngestSlot<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-type IngestItemResult = {
-  key: string;
-  ok: boolean;
-  /** created = yangi shablon; duplicate = mavjud kontent, ikkinchi nusxa yaratilmadi;
-   *  failed = xato (reason bilan) — transient bo'lsa retry qilinadi. */
-  status: "created" | "duplicate" | "failed";
-  id?: string;
-  reason?: string;
-  /** duplicate bo'lsa — mavjud shablon id'si. */
-  duplicateOf?: string;
-};
+// IngestItemResult endi ../lib/ingest-worker.js dan import qilinadi (worker bilan
+// umumiy; `retryable` bayrog'i qo'shildi — transient xatolarni retry qilish uchun).
 
 /** Doimiy rad etilgan incoming zipni o'chirib, audit yozadi (recorded, not a crash). */
 async function rejectIncomingZip(
@@ -2017,6 +2015,8 @@ async function ingestOneZip(
         key,
         ok: false,
         status: "failed",
+        // Transient (storage/tarmoq) — worker qayta urinadi (incoming zip saqlanadi).
+        retryable: true,
         reason: `Storage failed (retry the upload): ${e instanceof Error ? e.message : "unknown error"}`,
       };
     }
@@ -2059,8 +2059,10 @@ async function ingestOneZip(
       // Zip-bomb / zip-slip / limit — DOIMIY rad: zip o'chiriladi, audit yoziladi,
       // partiya davom etadi (bitta yomon zip qolganlarga ta'sir qilmaydi).
       await rejectIncomingZip(contributorId, key, reason);
+      return { key, ok: false, status: "failed", reason };
     }
-    return { key, ok: false, status: "failed", reason };
+    // Boshqa kutilmagan xatolar transient deb hisoblanadi — worker qayta urinadi.
+    return { key, ok: false, status: "failed", reason, retryable: true };
   } finally {
     try {
       zip?.close();
@@ -2069,10 +2071,28 @@ async function ingestOneZip(
   }
 }
 
+// ── P1.9 — RAW-FAYL INGEST QUVURI (step 30da to'liq yoziladi) ─────────────────
+// zip EMAS: LUTs (.cube/.3dl/.look) va Stock (Graphics/Motion Graphics/Music/SFX)
+// xom fayllari. Fayl = pack (unzip yo'q); ffprobe spec + AI metadata + suv belgili
+// derivativlar. Hozircha stub — step 30da real quvur qo'yiladi. STUB permanent-fail
+// (retryable=false) qaytaradi, chunki hali hech qanday 'asset' job enqueue qilinmaydi.
+async function ingestOneAsset(
+  job: IngestJobRow,
+  _rights?: { rightsAcceptedAt: Date; rightsTermsVersion: string }
+): Promise<IngestItemResult> {
+  return {
+    key: job.key,
+    ok: false,
+    status: "failed",
+    reason: "Raw-file ingest is not enabled yet (P1.9 — step 30)",
+    retryable: false,
+  };
+}
+
 /**
- * POST /ingest — yuklangan incoming zip kalitlarini "pending" shablonlarga aylantiradi.
- * Har biri SINXRON (await) ishlanadi — Cloud Run javobdan keyin CPU'ni throttle qiladi,
- * shu bois fire-and-forget bu yerda ham QAYTA joriy qilinMAYDI (xuddi /pack-uploaded kabi).
+ * POST /ingest — yuklangan incoming kalitlarni IngestJob navbatiga QO'SHADI (P1 #19).
+ * Ilgari har birini sinxron ishlardi (Cloud Run 600s timeout xavfi); endi darhol
+ * qaytadi va fon ishchisi (ingest-worker) navbatni ishlaydi.
  */
 const ingestSchema = z.object({
   keys: z.array(z.string().min(1).max(500)).min(1).max(50),
@@ -2111,33 +2131,67 @@ contributorRouter.post(
       });
       return;
     }
-    const results: IngestItemResult[] = [];
-    for (const key of p.data.keys) {
-      // FAZA 5 (A4) — global semafor: parallel so'rovlar yig'indisi ham cap ostida.
-      results.push(await withIngestSlot(() => ingestOneZip(contributorId, key, rights)));
-    }
-
-    // FAZA 3 (E) — admin-notify: butun partiya uchun BITTA jamlama xat (spam emas).
-    // Best-effort: nom-lookup yoki email xatosi javobga ta'sir qilmaydi.
-    const createdIds = results
-      .filter((r) => r.status === "created" && r.id)
-      .map((r) => r.id!);
-    if (createdIds.length) {
-      void prisma.contributorTemplate
-        .findMany({ where: { id: { in: createdIds } }, select: { name: true } })
-        .then((rows) =>
-          notifyAdminNewSubmission({
-            count: createdIds.length,
-            names: rows.map((r) => r.name),
-            contributorEmail: req.user!.email,
-          })
-        )
-        .catch((e) => console.warn("[ingest] admin-notify yuborilmadi:", e));
-    }
-
-    res.json({ results });
+    // P1 #19 — ingest endi HTTP so'rov yo'lida ISHLAMAYDI (5000 klip = soatlab ffmpeg,
+    // Cloud Run 600s timeout beradi). Kalitlar IngestJob navbatiga QO'SHILADI; alohida
+    // fon ishchisi (ingest-worker) birma-bir claim qilib ishlaydi. Klient qaytarilgan
+    // batchId bilan GET /ingest/progress ni pollaydi. Admin-notify endi worker
+    // done qilganda emas — bu yerda yubormaymiz (partiya tugagach klient ko'radi;
+    // per-item admin-notify template-reconcile / worker mas'uliyatida qoladi).
+    const batchId = crypto.randomUUID();
+    await enqueueIngestJobs(
+      p.data.keys.map((key) => ({
+        batchId,
+        contributorId,
+        sourceType: "zip" as const,
+        key,
+        fileName: (key.split("/").pop() || key).replace(/-[0-9a-f]{8}(\.zip)$/i, "$1"),
+        kind: "template",
+        templateType: "video-templates",
+        rightsAcceptedAt: rights.rightsAcceptedAt,
+        rightsTermsVersion: rights.rightsTermsVersion,
+      }))
+    );
+    res.json({ batchId, queued: p.data.keys.length });
   }
 );
+
+/**
+ * P1 #19 — GET /ingest/progress?batchId=… — navbatdagi partiyaning holati (klient
+ * polling). Faqat o'z partiyasi (contributorId bilan cheklangan). done=true bo'lsa
+ * klient pollingni to'xtatadi va natijalarni ko'rsatadi.
+ */
+contributorRouter.get(
+  "/ingest/progress",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    const batchId = String(req.query.batchId || "");
+    if (!batchId) {
+      res.status(400).json({ error: "batchId is required" });
+      return;
+    }
+    const scopeCon = req.user!.role === UserRole.ADMIN ? undefined : req.user!.userId;
+    const prog = await getBatchProgress(batchId, scopeCon);
+    res.json(prog);
+  }
+);
+
+/**
+ * P1 #19 — INGEST PROCESSOR ro'yxatga olish. ingest-worker moduldan chaqiriladi
+ * (sirkular import yo'q: worker faqat registerIngestProcessor'ni chaqiradi, ishlash
+ * mantiqi shu yerda qoladi). sourceType='zip' → ingestOneZip; 'asset' → ingestOneAsset
+ * (P1.9 raw-file quvuri — step 30). withIngestSlot bilan global konkurensiya cap ostida.
+ */
+registerIngestProcessor(async (job: IngestJobRow): Promise<IngestItemResult> => {
+  const rights =
+    job.rightsAcceptedAt && job.rightsTermsVersion
+      ? { rightsAcceptedAt: job.rightsAcceptedAt, rightsTermsVersion: job.rightsTermsVersion }
+      : undefined;
+  if (job.sourceType === "asset") {
+    return withIngestSlot(() => ingestOneAsset(job, rights));
+  }
+  return withIngestSlot(() => ingestOneZip(job.contributorId, job.key, rights));
+});
 
 contributorRouter.post(
   "/templates/:id/assets",
