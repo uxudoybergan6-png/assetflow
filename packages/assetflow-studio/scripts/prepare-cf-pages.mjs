@@ -181,6 +181,9 @@ const API_ORIGINS =
 // host-source moslashuvi ANIQ, bucket-subdomain bare hostga kirmaydi. Bare host
 // ham qoldiriladi — wildcard apex hostni qoplamaydi.
 const GCS_ORIGIN = "https://storage.googleapis.com https://*.storage.googleapis.com";
+// P1 #3 (CDN, Plan B) — thumb/preview/scene/gen-derivativ Worker-proksi orqali
+// (bucket yopiq). CDN_BASE_URL=https://cdn.getframeflow.app → img/media-src ruxsat.
+const CDN_ORIGIN = "https://cdn.getframeflow.app";
 // Google Identity Services (Studio login "Google bilan kirish" tugmasi) —
 // gsi/client skripti + hisob tanlash popup/iframe shu origin'lardan yuklanadi.
 const GOOGLE_GSI_ORIGINS = "https://accounts.google.com https://accounts.google.com/gsi/";
@@ -201,8 +204,8 @@ const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `img-src 'self' data: blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
-  `media-src 'self' blob: ${API_ORIGINS} ${GCS_ORIGIN}`,
+  `img-src 'self' data: blob: ${API_ORIGINS} ${GCS_ORIGIN} ${CDN_ORIGIN}`,
+  `media-src 'self' blob: ${API_ORIGINS} ${GCS_ORIGIN} ${CDN_ORIGIN}`,
   `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com ${TURNSTILE_ORIGIN}`,
   `frame-src ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "font-src 'self' https://fonts.gstatic.com",

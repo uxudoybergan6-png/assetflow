@@ -1,0 +1,18 @@
+# FrameFlow CDN proksi — cdn.getframeflow.app (P1 #3, Plan B)
+# Bucket YOPIQ; bu Worker ko'rsatish assetlarini isPublicReadKey() darvozasi
+# orqali beradi. Maxfiylar (toml'da EMAS) `wrangler secret put` bilan qo'yiladi:
+#   AWS_ACCESS_KEY_ID · AWS_SECRET_ACCESS_KEY  (mavjud GCS HMAC kalitlari)
+name = "frameflow-cdn-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+[vars]
+AWS_S3_BUCKET = "assetflow-assets-2026"
+S3_ENDPOINT = "https://storage.googleapis.com"
+AWS_REGION = "auto"
+
+# Maxsus domen — zona (getframeflow.app) Cloudflare hisobida bo'lsa wrangler
+# cdn.getframeflow.app DNS/route'ini avtomatik yaratadi.
+[[routes]]
+pattern = "cdn.getframeflow.app"
+custom_domain = true
