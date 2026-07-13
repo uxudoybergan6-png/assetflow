@@ -16769,6 +16769,8 @@
                               <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
                               <div class="va-axmdiv"></div>
                               <div class="va-axmi plain" onclick="{{ axMenuAddProj }}"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
+                              <!-- P3 (step 34) — Add to Explore (yuborilgan bo'lsa holat ko'rsatadi) -->
+                              <div class="{{ axExploreCls }}" onclick="{{ axMenuAddExplore }}"><span class="mic"><i class="ph ph-compass"></i></span>{{ axExploreLabel }}</div>
                               <div class="va-axmi plain" onclick="{{ axMenuDownload }}"><span class="mic">⬇</span>Download</div>
                               <div class="va-axmi plain" onclick="{{ axMenuRegen }}"><span class="mic">↻</span>Regenerate</div>
                               <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}"><span class="mic">⧉</span>Copy prompt</div></sc-if>
@@ -17335,6 +17337,28 @@
     </div>
   </sc-if>
 
+  <!-- ============ P3 (step 34): ADD TO EXPLORE — huquq attestatsiyasi ============ -->
+  <sc-if value="{{ exploreModal }}" hint-placeholder-val="{{ false }}">
+    <div onclick="{{ closeExplore }}" style="position:fixed;inset:0;z-index:130;background:rgba(5,5,9,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" style="width:100%;max-width:440px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-compass" style="color:var(--lime)"></i>Add to Explore</div>
+          <button onclick="{{ closeExplore }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
+        </div>
+        <p style="font-size:13px;color:var(--txt2);margin:0 0 4px">Publish this generation to the public <b>AI Stock</b> catalog. An admin reviews it before it goes live.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 16px">It will be free for everyone by default. The prompt is used to generate the title, description and tags.</p>
+        <label style="display:flex;gap:10px;align-items:flex-start;padding:13px 14px;border-radius:12px;background:var(--card2);border:1px solid {{ exploreRightsBd }};cursor:pointer">
+          <input type="checkbox" checked="{{ exploreRights }}" onclick="{{ toggleExploreRights }}" style="margin-top:2px;width:16px;height:16px;flex:none;accent-color:var(--lime)">
+          <span style="font-size:12.5px;color:var(--txt2);line-height:1.5">I confirm I own the rights to this content and may publish it publicly, and I grant FrameFlow a license to distribute it in the catalog.</span>
+        </label>
+        <div style="display:flex;gap:9px;margin-top:16px;justify-content:flex-end">
+          <button onclick="{{ closeExplore }}" class="ffm-btn2 sm">Cancel</button>
+          <button onclick="{{ confirmExplore }}" class="ffm-btn sm" disabled="{{ exploreCantSubmit }}"><i class="ph ph-paper-plane-tilt" style="font-size:13px"></i>{{ exploreSubmitLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- LIGHTBOX (P11 — katta ko'rinish, haqiqiy nisbat, o'ng detal paneli, ←/→ nav) -->
   <sc-if value="{{ lb }}" hint-placeholder-val="{{ false }}">
     <div onclick="{{ closeLightbox }}" class="va-lb-scrim">
@@ -17373,6 +17397,8 @@
           <div class="va-lb-acts">
             <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
             <sc-if value="{{ lb.canProject }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbAddProj }}" class="ffm-btn2 sm"><i class="ph ph-folder-plus" style="font-size:14px"></i>Project</button></sc-if>
+            <!-- P3 (step 34) — Explore (yuborilgan bo'lsa holat, disabled) -->
+            <button onclick="{{ lbAddExplore }}" class="ffm-btn2 sm" disabled="{{ lb.exDone }}"><i class="ph ph-compass" style="font-size:14px"></i>{{ lb.exLabel }}</button>
             <sc-if value="{{ lb.canRef }}" hint-placeholder-val="{{ false }}"><button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button></sc-if>
             <!-- BATCH4 #1 — lightbox'dan Upscale (x2 default; faktor composer'da o'zgartiriladi) -->
             <sc-if value="{{ lb.canUpscale }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbUpscale }}" class="ffm-btn2 sm"><i class="ph ph-frame-corners" style="font-size:14px"></i>Upscale</button></sc-if>
@@ -18656,6 +18682,16 @@ class Component extends DCLogic {
     return ty === 'luts' ? 'LUTs' : ty === 'motion-graphics' ? 'Motion' : ty === 'graphics' ? 'Graphics'
       : ty === 'music' ? 'Music' : ty === 'sfx' ? 'SFX' : ty === 'ai-stock' ? 'AIStock' : 'Templates';
   }
+  // P3 (step 34) — generatsiya "Add to Explore" holati (yuborilgan/tekshiruvda/nashr/rad).
+  exploreStateOf(genId) {
+    const s = (this.state.exploreSubs || {})[genId];
+    if (!s) return { submitted: false, label: 'Add to Explore', status: '' };
+    const st = s.reviewStatus;
+    const label = st === 'APPROVED'
+      ? (s.published ? 'Published in Explore' : 'Approved — publishing')
+      : st === 'REJECTED' ? 'Not approved for Explore' : 'In review · Explore';
+    return { submitted: true, label, status: st };
+  }
   // #3 — granular kategoriyalar (backend TEMPLATE_CATEGORIES ko'zgusi, 'Uncategorized'siz)
   granularCats = ['Titles', 'Lower Thirds', 'Transitions', 'Intros', 'Logo Reveal', 'Openers', 'Slideshows', 'Backgrounds', 'LUTs', 'Overlays', 'Infographics', 'Social Media', 'Logos', 'Mockups'];
   // P2 (step 31) — HAR pill uchun granular kategoriyalar (backend lib/taxonomy.ts
@@ -18749,6 +18785,11 @@ class Component extends DCLogic {
     const s = this.state;
     const p = { take: 48 };
     if (s.fCat && s.fCat !== 'All' && this.pillTypes[s.fCat]) p.templateType = this.pillTypes[s.fCat];
+    // P3 (step 34) — AI Stock "Image|Video" sub-filtri → stockType (server AI itemlarni
+    //   templateType='ai-stock' bilan izolyatsiya qiladi; graphics/motion-graphics = AI rasm/video).
+    if (s.fCat === 'AIStock' && s.aiStockKind && s.aiStockKind !== 'All') {
+      p.stockType = s.aiStockKind === 'Image' ? 'graphics' : 'motion-graphics';
+    }
     // fApps display harflari (Ae/Pr/Mn/Dr) → server app kodi
     const appMap = { Ae: 'ae', Pr: 'pr', Mn: 'motion', Dr: 'resolve' };
     const apps = (s.fApps || []).map(a => appMap[a] || String(a).toLowerCase()).filter(Boolean);
@@ -18834,6 +18875,7 @@ class Component extends DCLogic {
   bootData() {
     this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();
     this.loadSessions(); this.loadProjects(); // QA-FIX #12/#13
+    this.loadExploreSubs(); // P3 (step 34) — AI Stock topshiriq holatlari
     FFAPI.me().then(u => { FFAPI.setSession(FFAPI.getToken(), u); this.setState({ user: u, accName: (u && u.name) || '' }); }).catch(() => {});
     // P16 (SYNC) — oynaga qaytilganda holat yangilanadi (plagin↔web almashganda stale window yo'q).
     // 20s throttle — API'ni bosmaslik; bir marta o'rnatiladi.
@@ -18865,6 +18907,40 @@ class Component extends DCLogic {
   }
   async loadPluginMe() {
     try { const r = await FFAPI.pluginMe(); if (r && r.user) this.setState({ downloadsMonth: r.user.downloadsMonth || 0 }); } catch (e) {}
+  }
+  // P3 (step 34) — foydalanuvchining AI Stock topshiriqlari holati (generationId → status).
+  async loadExploreSubs() {
+    if (!(window.FFAPI && FFAPI.getToken())) return;
+    try {
+      const r = await FFAPI.genExploreSubmissions();
+      const subs = {};
+      (r.submissions || []).forEach(s => { if (s.generationId) subs[s.generationId] = { reviewStatus: s.reviewStatus, published: s.published, templateId: s.templateId }; });
+      this.setState({ exploreSubs: subs });
+    } catch (e) {}
+  }
+  // P3 (step 34) — "Add to Explore" tasdiqlash: huquq + POST + holat yangilash + halol xato.
+  async confirmExplore() {
+    const g = this.state.exploreModal;
+    if (!g || this.state.exploreBusy) return;
+    if (!this.state.exploreRights) { this.toast('Please confirm the rights checkbox'); return; }
+    this.setState({ exploreBusy: true });
+    try {
+      const r = await FFAPI.genExplore(g.id, { rightsAccepted: true, promptPublic: false });
+      const st = (r.submission && r.submission.reviewStatus) || 'PENDING_REVIEW';
+      const tid = r.submission && r.submission.templateId;
+      this.setState(s => { const subs = Object.assign({}, s.exploreSubs || {}); subs[g.id] = { reviewStatus: st, published: false, templateId: tid }; return { exploreSubs: subs, exploreModal: null, exploreBusy: false, exploreRights: false }; });
+      this.toast(r.alreadySubmitted ? 'Already submitted — in review' : 'Submitted to Explore — pending review');
+    } catch (e) {
+      this.setState({ exploreBusy: false });
+      const code = e && e.code;
+      const msg = code === 'RIGHTS_REQUIRED' ? 'Please confirm the rights checkbox'
+        : code === 'DAILY_CAP' ? (e.message || 'Daily submission limit reached — try again tomorrow')
+        : code === 'MODERATION_BLOCKED' ? "This content can't be published (didn't pass moderation)"
+        : code === 'GEN_NOT_READY' ? 'This generation is not finished yet'
+        : code === 'NO_ASSET' ? 'This generation has no asset to publish'
+        : (e && e.message) || 'Could not submit — please try again';
+      this.toast(msg, 'error');
+    }
   }
   // §A (P2) — lightbox ochilganda signed URL YANGI imzo bilan yangilanadi (grid'dagi 1 soatlik
   // imzo tab ochiq turganda eskirib 403 bo'lishi mumkin edi); gens ro'yxatidagi nusxa ham yangilanadi.
@@ -20924,6 +21000,8 @@ class Component extends DCLogic {
       posLabel: lbIdx >= 0 ? ((lbIdx + 1) + ' / ' + lbList.length) : '',
       canProject: true, canDelete: true, canRef: lbRaw.type === 'image',
       canUpscale: (lbRaw.type === 'image' && !!(this.state.genModels.upscale || [])[0]) || (lbRaw.type === 'video' && !!(this.state.genModels.vupscale || [])[0]),
+      // P3 (step 34) — Explore holati (yuborilgan bo'lsa tugma disabled + holat matni)
+      exDone: this.exploreStateOf(lbRaw.id).submitted, exLabel: this.exploreStateOf(lbRaw.id).label,
     } : null;
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
     // P21 (29) — HAQIQIY kredit ledger (CreditLedger endpoint): consume/refund/topup/clawback KO'RINADI.
@@ -21524,6 +21602,10 @@ class Component extends DCLogic {
       axMediaLoaded: (e) => { try { const el = e.currentTarget; const host = el && el.closest ? el.closest('.va-axres') : null; if (host) { host.classList.remove('va-skel'); const id = host.getAttribute('data-id'); if (id) (this._mediaLoaded || (this._mediaLoaded = new Set())).add(id); } } catch (er) {} },
       toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
+      // P3 (step 34) — Use ▾ menyudan "Add to Explore"
+      axExploreCls: 'va-axmi plain' + (activeGenRaw && this.exploreStateOf(activeGenRaw.id).submitted ? ' off' : ''),
+      axExploreLabel: activeGenRaw ? this.exploreStateOf(activeGenRaw.id).label : 'Add to Explore',
+      axMenuAddExplore: (e) => { e.stopPropagation(); if (!activeGenRaw) return; if (this.exploreStateOf(activeGenRaw.id).submitted) { this.toast(this.exploreStateOf(activeGenRaw.id).label); return; } this.setState({ useMenuOpen: false, exploreModal: activeGenRaw, exploreRights: false, exploreBusy: false }); },
       closeUseMenu: () => this.setState({ useMenuOpen: false }),
       axMenuDownload: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.restoreGenToComposer(activeGenRaw.id); }, // P18: prefill, don't generate
@@ -21771,6 +21853,17 @@ class Component extends DCLogic {
       doAddToProject: (e) => { const id = e.currentTarget.dataset.id; if (id) this.addToProject(id); },
       closeAddPick: () => this.setState({ addPick: null, addPickName: '' }),
       lbAddProj: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.setState({ addPick: { kind: 'gen', refId: id }, lightbox: null }); },
+      // P3 (step 34) — lightbox'dan "Add to Explore"
+      lbAddExplore: () => { const g = this.state.lightbox; if (!g) return; if (this.exploreStateOf(g.id).submitted) { this.toast(this.exploreStateOf(g.id).label); return; } this.setState({ exploreModal: g, exploreRights: false, exploreBusy: false, lightbox: null }); },
+      // P3 (step 34) — huquq attestatsiya modal handlerlari
+      exploreModal: this.state.exploreModal,
+      exploreRights: this.state.exploreRights,
+      exploreRightsBd: this.state.exploreRights ? 'var(--lime)' : 'var(--bd)',
+      exploreCantSubmit: !this.state.exploreRights || !!this.state.exploreBusy,
+      exploreSubmitLabel: this.state.exploreBusy ? 'Submitting…' : 'Add to Explore',
+      toggleExploreRights: (e) => { if (e) e.stopPropagation(); this.setState(s => ({ exploreRights: !s.exploreRights })); },
+      closeExplore: () => this.setState({ exploreModal: null }),
+      confirmExplore: () => this.confirmExplore(),
       addTplToProject: () => {
         const d = this.state.detail; if (!d) return;
         if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }

@@ -213,6 +213,11 @@
       return req("/api/studio/gen", { method: "POST", body: body, idempotencyKey: key });
     },
     genGet: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id)); },
+    // P3 (step 34) — "Add to Explore": generatsiyani ommaviy AI Stock asetiga yuborish.
+    genExplore: function (id, body) {
+      return req("/api/studio/gen/" + encodeURIComponent(id) + "/explore", { method: "POST", body: body || {} });
+    },
+    genExploreSubmissions: function () { return req("/api/studio/gen/explore/submissions"); },
     genDelete: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id), { method: "DELETE" }); },
     history: function (limit) { return req("/api/studio/gen/history?limit=" + (limit || 30)); },
     // P21 (29) — HAQIQIY kredit ledger (refunds ko'rinadi) + agregatlar. cursor=keyset, filter=all|spent|refunded|purchased
