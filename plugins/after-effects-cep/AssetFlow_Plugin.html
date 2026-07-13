@@ -2958,9 +2958,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .pbox .chipedit{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;outline:none;min-height:170px;max-height:300px;overflow-y:auto;line-height:1.6;box-sizing:border-box;white-space:pre-wrap;word-break:break-word;cursor:text}
 .axig .pbox .chipedit:empty::before{content:attr(data-ph);color:var(--mut2);pointer-events:none}
 .axvg .vpanel .pbox .chipedit{min-height:150px;max-height:280px}
-.axroot .mchip{display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:var(--green-dim);border:1px solid var(--accent-glow);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
+.axroot .mchip{position:relative;display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:var(--green-dim);border:1px solid var(--accent-glow);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
 .axroot .mchip .ct{width:17px;height:17px;border-radius:5px;background-size:cover;background-position:center;background-color:var(--card2);display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);flex:none;overflow:hidden}
 .axroot .mchip .cl{font-size:12px;font-weight:700;color:var(--accent-cta)}
+/* P12 — hover'da pill burchagida ✕: FAQAT eslatmani o'chiradi (referens qoladi) */
+.axroot .mchip .mx{position:absolute;top:-7px;right:-6px;display:none;width:15px;height:15px;border-radius:50%;background:var(--panel);border:1px solid var(--line2);color:var(--mut);font-size:8px;line-height:1;align-items:center;justify-content:center;cursor:pointer;z-index:3}
+.axroot .mchip:hover .mx{display:inline-flex}
+.axroot .mchip .mx:hover{color:var(--txt);border-color:var(--accent)}
+/* P14 — CEP OS fayl drop zonasi belgisi */
+.axig .pbox.af-dropon{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .axig .prow{display:flex;align-items:center;margin-top:8px}
 .axig .enhance{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:6px 8px;border-radius:8px}
 .axig .enhance:hover{background:rgba(90,169,255,.12)}.axig .enhance.busy{opacity:.6;pointer-events:none}
@@ -9446,8 +9452,9 @@ async function bootPlugin(){
     var GLYPH={image:'⊞',video:'▶',audio:'♪'};
     var TOKEN_RE=/@(image|img|video|vid|audio|aud)(\d+)/gi;
     var composing=false;
+    var _refOverride=null; // P15 — undo/redo tiklashda pill'lar snapshot hovuzidan qurilsin
     function refThumb(kind,n){
-      var lists=(opts.refs&&opts.refs())||{}; var arr=lists[kind]||[];
+      var lists=_refOverride||(opts.refs&&opts.refs())||{}; var arr=lists[kind]||[];
       return (n>=1&&n<=arr.length)?{thumb:arr[n-1]||null}:null; // null = mos referens yo'q
     }
     function tokenOf(kind,n){ return opts.token?opts.token(kind,n):('@'+(kind==='image'?'img':kind)+n); }
@@ -9460,7 +9467,10 @@ async function bootPlugin(){
       var t=document.createElement('span'); t.className='ct';
       if(kind==='image'&&info.thumb)t.style.backgroundImage='url("'+info.thumb+'")'; else t.textContent=GLYPH[kind]||'⊞';
       var l=document.createElement('span'); l.className='cl'; l.textContent=labelOf(kind,n);
-      s.appendChild(t); s.appendChild(l);
+      // P12 — pill burchagida ✕: FAQAT promptdagi eslatmani o'chiradi (referens hovuzda QOLADI, qayta raqamlash YO'Q)
+      var x=document.createElement('span'); x.className='mx'; x.textContent='✕'; x.setAttribute('contenteditable','false'); x.title='Remove mention (keeps the reference)';
+      x.addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); commit(); if(s.parentNode)s.parentNode.removeChild(s); fireInput(); commit(); });
+      s.appendChild(t); s.appendChild(l); s.appendChild(x);
       return s;
     }
     // mask=true → pill \u0001 belgisi bo'lib chiqadi (mention regex "@(\w*)$" pill tokenini matn deb adashmasin)
@@ -9494,7 +9504,53 @@ async function bootPlugin(){
       if(last<s.length)appendPlain(frag,s.slice(last));
       return frag;
     }
-    function setValue(text){ el.textContent=''; el.appendChild(buildFragment(text)); }
+    // Tashqi setValue (enhance/restore/suggestion/clear) — o'zgarishni tarixga checkpoint qiladi (before+after)
+    function setValue(text){ commit(); el.textContent=''; el.appendChild(buildFragment(text)); commit(); }
+    // ── P15 — UNDO/REDO tarixi (web ffChipEditor bilan mos). Snapshot = token-matni + kursor (token-offset)
+    //   + REFERENS HOVUZI (opts.snapshotRefs). Yozish ~500ms birlashadi; pill/paste/clear ALOHIDA yozuv. ──
+    var undoStack=[], redoStack=[], restoring=false, _typeT=null, _typeDirty=false;
+    function refsEq(a,b){ if(a===b)return true; if(!a||!b)return false; try{ return JSON.stringify(a)===JSON.stringify(b); }catch(e){ return false; } }
+    function snapshot(){ return { text:getValue(), caret:caretTokenOffset(), refs:opts.snapshotRefs?opts.snapshotRefs():null }; }
+    function commit(){
+      if(restoring)return; _typeDirty=false;
+      var s=snapshot(), top=undoStack[undoStack.length-1];
+      if(top&&top.text===s.text&&refsEq(top.refs,s.refs))return;
+      undoStack.push(s); if(undoStack.length>120)undoStack.shift(); redoStack.length=0;
+    }
+    function commitTypingSoon(){ if(restoring)return; _typeDirty=true; clearTimeout(_typeT); _typeT=setTimeout(commit,500); }
+    function flushTyping(){ clearTimeout(_typeT); if(_typeDirty)commit(); } // faqat kutilayotgan yozish bo'lsa
+    function applySnapshot(s){
+      if(!s)return; restoring=true;
+      try{
+        if(opts.restoreRefs&&s.refs)opts.restoreRefs(s.refs);
+        _refOverride=s.refs||null;
+        el.textContent=''; el.appendChild(buildFragment(s.text||''));
+        _refOverride=null;
+        setCaretByTokenOffset(s.caret);
+        if(opts.syncText)opts.syncText(s.text||'');
+        fireInput();
+      }catch(e){}
+      restoring=false;
+    }
+    function undo(){ flushTyping(); if(undoStack.length<2)return; redoStack.push(undoStack.pop()); applySnapshot(undoStack[undoStack.length-1]); }
+    function redo(){ if(!redoStack.length)return; var s=redoStack.pop(); undoStack.push(s); applySnapshot(s); }
+    function caretTokenOffset(){
+      var r=caretRange(); if(!r)return null;
+      var pre=r.cloneRange(); pre.selectNodeContents(el); pre.setEnd(r.startContainer,r.startOffset);
+      var frag=pre.cloneContents(); var out='';
+      for(var c=frag.firstChild;c;c=c.nextSibling)out+=serializeNode(c,false);
+      return out.replace(/[​]/g,'').length;
+    }
+    function setCaretByTokenOffset(off){
+      if(off==null){ setCaret(el,el.childNodes.length); return; }
+      var rem=off;
+      for(var c=el.firstChild;c;c=c.nextSibling){
+        if(c.nodeType===3){ var len=(c.nodeValue||'').length; if(rem<=len){ setCaret(c,rem); return; } rem-=len; }
+        else if(isPill(c)){ var tl=tokenOf(c.getAttribute('data-kind'),parseInt(c.getAttribute('data-n'),10)||0).length; if(rem<tl){ placeCaretAfter(c); return; } rem-=tl; }
+        else if(c.tagName==='BR'){ if(rem<1){ placeCaretAfter(c); return; } rem-=1; }
+      }
+      setCaret(el,el.childNodes.length);
+    }
     // ---- caret utilitalari ----
     function caretRange(){
       var s=window.getSelection(); if(!s||!s.rangeCount)return null;
@@ -9531,7 +9587,7 @@ async function bootPlugin(){
       try{ el.focus(); }catch(_){ }
       var sep='';
       if(smartSpace){ var pre=textBeforeCaret(); if(pre&&!/\s$/.test(pre))sep=' '; }
-      insertFragAtCaret(buildFragment(sep+String(text)));
+      commit(); insertFragAtCaret(buildFragment(sep+String(text))); commit(); // mention/preset = alohida yozuv
     }
     // mention tanlovi: caret oldidagi len belgini ("@so'z") o'chirib o'rniga parse qilingan matn qo'yish
     function replaceBeforeCaret(len,insertStr){
@@ -9566,20 +9622,25 @@ async function bootPlugin(){
     el.addEventListener('compositionend',function(){ composing=false; });
     el.addEventListener('keydown',function(e){
       if(composing)return;
+      // P15 — undo/redo: ⌘Z / Ctrl+Z → undo; ⌘⇧Z / Ctrl+Y → redo
+      var mod=e.metaKey||e.ctrlKey;
+      if(mod&&(e.key==='z'||e.key==='Z')){ e.preventDefault(); if(e.shiftKey)redo(); else undo(); return; }
+      if(mod&&(e.key==='y'||e.key==='Y')){ e.preventDefault(); redo(); return; }
       if(e.key==='Enter'&&!e.metaKey&&!e.ctrlKey){
         if(opts.interceptEnter&&opts.interceptEnter()){ e.preventDefault(); return; } // mention tanlovi
         e.preventDefault();
+        flushTyping();
         var br=document.createElement('br'); var frag=document.createDocumentFragment(); frag.appendChild(br);
         var r=caretRange();
         if(!r){ el.appendChild(frag); } else { r.deleteContents(); r.insertNode(frag); }
         // oxirgi <br> ko'rinmaydi (Chromium collapse) → yakunda bo'lsa ikkinchi <br>, caret orasiga
         if(!br.nextSibling)el.appendChild(document.createElement('br'));
-        placeCaretAfter(br); fireInput();
+        placeCaretAfter(br); fireInput(); commit();
         return;
       }
       if(e.key==='Backspace'||e.key==='Delete'){
         var p=pillNextTo(caretRange(),e.key==='Backspace'?-1:1);
-        if(p){ e.preventDefault(); p.parentNode.removeChild(p); fireInput(); }
+        if(p){ e.preventDefault(); commit(); p.parentNode.removeChild(p); fireInput(); commit(); }
       }
     });
     function serializeRangeText(r){
@@ -9596,14 +9657,24 @@ async function bootPlugin(){
       try{ e.clipboardData.setData('text/plain',serializeRangeText(r)); e.preventDefault(); r.deleteContents(); fireInput(); }catch(_){ }
     });
     el.addEventListener('paste',function(e){
-      var t=''; try{ t=(e.clipboardData||window.clipboardData).getData('text/plain')||''; }catch(_){ }
-      if(!t)return; // rasm-paste (document-level handler) o'z yo'lida ishlayveradi
+      // P14 — bufer MEDIASI (rasm/video/audio) → referens (CEP'da cheklangan, lekin brauzer/HTML paste ishlaydi)
+      var cd=e.clipboardData||window.clipboardData;
+      var files=[];
+      try{
+        if(cd&&cd.files&&cd.files.length)files=Array.prototype.slice.call(cd.files);
+        else if(cd&&cd.items)files=Array.prototype.slice.call(cd.items).filter(function(it){return it.kind==='file';}).map(function(it){return it.getAsFile();}).filter(Boolean);
+      }catch(_){ }
+      var media=files.filter(function(f){return f&&/^(image|video|audio)\//.test(f.type||'');});
+      if(media.length&&opts.onFiles){ e.preventDefault(); opts.onFiles(media,{atCaret:true}); return; }
+      var t=''; try{ t=cd.getData('text/plain')||''; }catch(_){ }
+      if(!t)return;
       e.preventDefault();
-      insertFragAtCaret(buildFragment(t.replace(/\r\n?/g,'\n')));
+      commit(); insertFragAtCaret(buildFragment(t.replace(/\r\n?/g,'\n'))); commit();
     });
     // bo'shagan editor'ni chinakam :empty qilish (placeholder ko'rinsin) — qoldiq <br> tozalanadi
     el.addEventListener('input',function(){
       if(el.firstChild&&!el.textContent&&!el.querySelector('.mchip')&&!el.querySelector('br+br'))el.textContent='';
+      commitTypingSoon(); // P15 — yozish ~500ms birlashadi
     });
     try{
       Object.defineProperty(el,'value',{get:getValue,set:function(v){setValue(v);},configurable:true});
@@ -9613,7 +9684,8 @@ async function bootPlugin(){
         configurable:true
       });
     }catch(_){ }
-    return {el:el,getValue:getValue,setValue:setValue,insertText:insertText,textBeforeCaret:textBeforeCaret,replaceBeforeCaret:replaceBeforeCaret};
+    commit(); // boshlang'ich holat (undo poydevori)
+    return {el:el,getValue:getValue,setValue:setValue,insertText:insertText,textBeforeCaret:textBeforeCaret,replaceBeforeCaret:replaceBeforeCaret,undo:undo,redo:redo,commit:commit,flushTyping:flushTyping};
   };
 
   // P2 — CEP-xavfsiz clipboard: navigator.clipboard CEP'da ishonchsiz → yashirin textarea
@@ -11138,7 +11210,12 @@ window.afGallery=(function(){
   var igEd=window.afChipEditor(ta,{
     refs:function(){ return { image: st.refs.map(function(r){ return r.dataUrl||r.url||null; }) }; },
     token:function(kind,n){ return kind==='image'?('@img'+n):('@'+kind+n); }, // rasm tool kanonik: @imgN
-    interceptEnter:function(){ return mention.classList.contains('on')?pickMentionActive():false; }
+    interceptEnter:function(){ return mention.classList.contains('on')?pickMentionActive():false; },
+    // P15 — undo snapshoti REFERENS HOVUZINI ham saqlaydi/tiklaydi (raw = st.refs obyektlari)
+    snapshotRefs:function(){ return { image: st.refs.map(function(r){ return r.dataUrl||r.url||null; }), raw: st.refs.slice() }; },
+    restoreRefs:function(rs){ st.refs=(rs&&rs.raw)?rs.raw.slice():[]; try{ renderRefs(); updRefMeta(); refreshGen(); }catch(e){} },
+    // P14 — paste'dagi rasm fayllar (screenshot ham) → referens; atCaret bo'lsa kursorga @img pill
+    onFiles:function(files,o){ (files||[]).forEach(function(f){ if(!/^image\//.test(f.type||'')){ toast('Only image references are supported here','warning'); return; } var rd=new FileReader(); rd.onload=function(){ if(igEd)igEd.commit(); addRef(String(rd.result||'')); if(o&&o.atCaret&&igEd)setTimeout(function(){ igEd.insertText('@img'+st.refs.length+' ',true); },0); }; rd.readAsDataURL(f); }); }
   });
   function grow(){} // #6: chipedit balandligi CSS max-height bilan — JS o'lchash kerak emas
   ta.addEventListener('input',function(){ refreshGen(); checkMention(); });
@@ -11587,6 +11664,27 @@ window.afGallery=(function(){
     toast('Cleared','info');
   });
 
+  // ---- P14 — CEP OS fayl drop → rasm referens. Promptga tashlansa @img pill, referens paneliga faqat referens.
+  //   CEP drop File obyektida `.path` (native yo'l) YOKI oddiy File bo'lishi mumkin — ikkovini ham qo'llaymiz.
+  (function(){
+    var box=(ta.closest&&ta.closest('.pbox'))||ta;
+    box.addEventListener('dragover',function(e){ if(e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>=0){ e.preventDefault(); box.classList.add('af-dropon'); } });
+    box.addEventListener('dragleave',function(e){ if(!box.contains(e.relatedTarget))box.classList.remove('af-dropon'); });
+    box.addEventListener('drop',function(e){
+      if(!e.dataTransfer||!e.dataTransfer.files||!e.dataTransfer.files.length)return;
+      e.preventDefault(); box.classList.remove('af-dropon');
+      var atCaret=!!(e.target&&e.target.closest&&e.target.closest('.chipedit'));
+      var files=Array.prototype.slice.call(e.dataTransfer.files);
+      files.forEach(function(f){
+        var isImg=/^image\//.test(f.type||'')||/\.(png|jpe?g|webp|gif|bmp|tiff?)$/i.test(f.name||f.path||'');
+        if(!isImg){ toast('Only image references are supported here','warning'); return; }
+        function afterAdd(){ if(atCaret&&igEd)setTimeout(function(){ igEd.insertText('@img'+st.refs.length+' ',true); },0); }
+        if(f.path&&typeof readDataUrl==='function'){ var d=readDataUrl(f.path); if(d){ if(igEd)igEd.commit(); addRef(d); afterAdd(); } else toast('Could not read '+base(f.path),'error'); }
+        else { var rd=new FileReader(); rd.onload=function(){ if(igEd)igEd.commit(); addRef(String(rd.result||'')); afterAdd(); }; rd.readAsDataURL(f); }
+      });
+    });
+  })();
+
   // ---- ‹ Image kategoriya → imggen orqaga navigatsiya ----
   $('igBack').addEventListener('click',function(){ closeSheets(); if(typeof window.axGo==='function')window.axGo('launcher'); }); // #6: aicat oraliq ekrani chetlab o'tiladi
 
@@ -11674,7 +11772,10 @@ window.afGallery=(function(){
       return {image:im,video:vd,audio:au};
     },
     token:function(kind,n){ return '@'+(kind==='image'?'Image':kind==='video'?'Video':'Audio')+n; },
-    interceptEnter:function(){ var m=$('vgMention'); return (m&&m.classList.contains('on'))?pickVgMentionActive():false; }
+    interceptEnter:function(){ var m=$('vgMention'); return (m&&m.classList.contains('on'))?pickVgMentionActive():false; },
+    // P15 — undo snapshoti media-referens hovuzi (mref) + start/end kadrni ham saqlaydi/tiklaydi
+    snapshotRefs:function(){ var im=[],vd=[],au=[]; mref.forEach(function(r){ if(r.type==='image')im.push(r.dataUrl||r.url||null); else if(r.type==='video')vd.push(null); else au.push(null); }); return {image:im,video:vd,audio:au,raw:mref.slice(),start:st.start,end:st.end}; },
+    restoreRefs:function(rs){ mref=(rs&&rs.raw)?rs.raw.slice():[]; st.start=(rs&&rs.start)||null; st.end=(rs&&rs.end)||null; try{ renderMediaRefs(); renderFrameBoxes(); updRefMeta(); refreshVgBtn(); }catch(e){} }
   });
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }

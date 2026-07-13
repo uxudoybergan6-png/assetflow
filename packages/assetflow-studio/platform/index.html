@@ -15349,9 +15349,13 @@
   /* ===== BATCH5 #6 — Dreamina-uslub chip editor (contenteditable + atom mention pill) ===== */
   .ff .va-dock .prompt.chipedit{white-space:pre-wrap;word-break:break-word;cursor:text}
   .ff .va-dock .prompt.chipedit:empty::before{content:attr(data-ph);color:var(--muted2);pointer-events:none}
-  .ff .mchip{display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:rgba(163,230,53,.10);border:1px solid rgba(163,230,53,.32);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
+  .ff .mchip{position:relative;display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:rgba(163,230,53,.10);border:1px solid rgba(163,230,53,.32);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
   .ff .mchip .ct{width:17px;height:17px;border-radius:5px;background-size:cover;background-position:center;background-color:rgba(255,255,255,.06);display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted2);flex:none;overflow:hidden}
   .ff .mchip .cl{font-size:12px;font-weight:700;color:var(--lime)}
+  /* P12 — hover'da pill burchagida ✕: FAQAT eslatmani o'chiradi (referens qoladi) */
+  .ff .mchip .mx{position:absolute;top:-7px;right:-6px;display:none;width:15px;height:15px;border-radius:50%;background:var(--pop);border:1px solid var(--hair2);color:var(--muted);font-size:8px;line-height:1;align-items:center;justify-content:center;cursor:pointer;z-index:3}
+  .ff .mchip:hover .mx{display:inline-flex}
+  .ff .mchip .mx:hover{color:var(--text);border-color:var(--lime)}
   /* @ mention dropdown — composer ustida (ffa-pop uslubi) */
   .ff .va-mention{position:absolute;left:10px;right:10px;bottom:calc(100% + 8px);z-index:60;background:var(--pop);border:1px solid rgba(255,255,255,.09);border-radius:13px;box-shadow:0 18px 44px -12px rgba(0,0,0,.75);padding:6px;max-height:244px;overflow-y:auto;display:none}
   .ff .va-mention.on{display:block}
@@ -15372,6 +15376,13 @@
   .ff .va-set.mode{background:var(--pill-active);border-color:transparent;color:var(--text)}
   .ff .va-set.enh{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 24%,transparent);background:color-mix(in srgb,var(--lime) 7%,transparent);padding:0 11px}
   .ff .va-setgear b{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+  /* P12 — Clear chipi (kontent bo'lsa ko'rinadi) */
+  .ff .va-clearchip{color:var(--muted2);font-weight:600}
+  .ff .va-clearchip:hover{color:var(--text);border-color:var(--hair2)}
+  /* P14 — drop zonasi belgisi + gen kartasi drag affordansi */
+  .ff .va-dock.va-dropon{outline:2px dashed var(--lime);outline-offset:3px;background:rgba(163,230,53,.06)}
+  .ff .va-axres[draggable="true"]{cursor:grab}
+  .ff .va-axres[draggable="true"]:active{cursor:grabbing}
   /* P16 — guruhlangan sozlama popover'i: sektsiyalar (Aspect/Res/Quality/Duration/Count/Voice/Bitrate/Audio) */
   .ff .va-setpop{min-width:238px;max-width:min(340px,calc(100vw - 40px));max-height:min(66vh,440px);padding:4px 4px 8px}
   .ff .va-sgrp{padding:8px 8px 4px}
@@ -16676,7 +16687,7 @@
                       </sc-for>
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell">
-                          <div data-id="{{ g.id }}" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
+                          <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
                             <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}"></video></sc-if>
                             <span class="rtag">{{ g.rtag }}</span>
@@ -16730,7 +16741,7 @@
                         </div>
                       </sc-for>
                       <sc-for list="{{ axAudGens }}" as="g" hint-placeholder-count="3">
-                        <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="{{ g.arowCls }}">
+                        <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ openLightbox }}" class="{{ g.arowCls }}">
                           <span class="va-axplay" onclick="{{ toggleAudioRow }}" title="Play / pause">
                             <sc-if value="{{ g.playing }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 16 16" fill="currentColor" style="width:11px;height:11px"><rect x="3" y="2" width="3.4" height="12" rx="1"></rect><rect x="9.6" y="2" width="3.4" height="12" rx="1"></rect></svg></sc-if>
                             <sc-if value="{{ g.notPlaying }}" hint-placeholder-val="{{ true }}"><svg class="va-ic"><use href="#i-play"></use></svg></sc-if>
@@ -16828,6 +16839,7 @@
                   </div></sc-if>
                 </span></sc-if>
                 <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}"><svg class="va-ic"><use href="#i-wand"></use></svg></span>
+                <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)">✕ Clear</span></sc-if>
                 </div>
                 <div class="va-genwrap">
                   <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>
@@ -17346,8 +17358,9 @@ function ffChipEditor(el, opts) {
   const GLYPH = { image: '⊞', video: '▶', audio: '♪' };
   const TOKEN_RE = /@(image|img|video|vid|audio|aud)(\d+)/gi;
   let composing = false;
+  let _refOverride = null; // P15 — undo/redo tiklashda pill'lar shu snapshot hovuzidan qurilsin (state async)
   function refThumb(kind, n) {
-    const lists = (opts.refs && opts.refs()) || {}; const arr = lists[kind] || [];
+    const lists = _refOverride || (opts.refs && opts.refs()) || {}; const arr = lists[kind] || [];
     return (n >= 1 && n <= arr.length) ? { thumb: arr[n - 1] || null } : null; // null = mos referens yo'q
   }
   function tokenOf(kind, n) { return opts.token ? opts.token(kind, n) : ('@' + (kind === 'image' ? 'img' : kind) + n); }
@@ -17360,7 +17373,11 @@ function ffChipEditor(el, opts) {
     const t = document.createElement('span'); t.className = 'ct';
     if (kind === 'image' && info.thumb) t.style.backgroundImage = 'url("' + info.thumb + '")'; else t.textContent = GLYPH[kind] || '⊞';
     const l = document.createElement('span'); l.className = 'cl'; l.textContent = labelOf(kind, n);
-    s.appendChild(t); s.appendChild(l);
+    // P12 — pill burchagida ✕: FAQAT promptdagi eslatmani o'chiradi (referens hovuzda QOLADI,
+    //   qayta raqamlash YO'Q). mousedown+preventDefault: kursor sakramasin/blur bo'lmasin.
+    const x = document.createElement('span'); x.className = 'mx'; x.textContent = '✕'; x.setAttribute('contenteditable', 'false'); x.title = 'Remove mention (keeps the reference)';
+    x.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); commit(); if (s.parentNode) s.parentNode.removeChild(s); fireInput(); commit(); });
+    s.appendChild(t); s.appendChild(l); s.appendChild(x);
     return s;
   }
   // mask=true → pill \u0001 belgisi (mention "@(\w*)$" regexi pill tokenini matn deb adashmasin)
@@ -17393,7 +17410,58 @@ function ffChipEditor(el, opts) {
     if (last < s.length) appendPlain(frag, s.slice(last));
     return frag;
   }
-  function setValue(text) { el.textContent = ''; el.appendChild(buildFragment(text)); }
+  // Tashqi setValue (Enhance/restore/suggestion/Clear) — o'zgarishni tarixga checkpoint qiladi (before+after)
+  function setValue(text) { commit(); el.textContent = ''; el.appendChild(buildFragment(text)); commit(); }
+  // ── P15 — UNDO/REDO tarixi. Snapshot = token-matni + kursor (token-offset) + REFERENS HOVUZI (P15.2a).
+  //   Yozish ~500ms bo'laklarga birlashadi; pill add/del/paste/drop/Clear ALOHIDA yozuv (commit before+after).
+  //   undoStack.top = joriy commit qilingan holat. Native undo mumkin emas (DOM to'g'ridan o'zgartiriladi). ──
+  let undoStack = [], redoStack = [], restoring = false, _typeT = null, _typeDirty = false;
+  function refsEq(a, b) { if (a === b) return true; if (!a || !b) return false; try { return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return false; } }
+  function snapshot() { return { text: getValue(), caret: caretTokenOffset(), refs: opts.snapshotRefs ? opts.snapshotRefs() : null }; }
+  function commit() {
+    if (restoring) return;
+    _typeDirty = false; // commit — kutilayotgan yozishni yopadi
+    const s = snapshot(), top = undoStack[undoStack.length - 1];
+    if (top && top.text === s.text && refsEq(top.refs, s.refs)) return; // o'zgarish yo'q
+    undoStack.push(s); if (undoStack.length > 120) undoStack.shift(); redoStack.length = 0;
+  }
+  function commitTypingSoon() { if (restoring) return; _typeDirty = true; clearTimeout(_typeT); _typeT = setTimeout(commit, 500); }
+  // FAQAT kutilayotgan yozish bo'lsa commit qiladi — aks holda "commit qilingan holatga" spurious
+  //   checkpoint qo'shmaydi (aks holda undo matnni emas, faqat referensni tiklardi — bug).
+  function flushTyping() { clearTimeout(_typeT); if (_typeDirty) commit(); }
+  function applySnapshot(s) {
+    if (!s) return;
+    restoring = true;
+    try {
+      if (opts.restoreRefs && s.refs) opts.restoreRefs(s.refs); // hovuzni tikla (setState — async)
+      _refOverride = s.refs || null;                            // setValue pill'larini AYNI snapshot hovuzidan qursin
+      el.textContent = ''; el.appendChild(buildFragment(s.text || ''));
+      _refOverride = null;
+      setCaretByTokenOffset(s.caret);
+      if (opts.syncText) opts.syncText(s.text || '');           // aiPrompt state'ini sinxronla
+      fireInput();
+    } catch (e) {}
+    restoring = false;
+  }
+  function undo() { flushTyping(); if (undoStack.length < 2) return; redoStack.push(undoStack.pop()); applySnapshot(undoStack[undoStack.length - 1]); }
+  function redo() { if (!redoStack.length) return; const s = redoStack.pop(); undoStack.push(s); applySnapshot(s); }
+  function caretTokenOffset() {
+    const r = caretRange(); if (!r) return null;
+    const pre = r.cloneRange(); pre.selectNodeContents(el); pre.setEnd(r.startContainer, r.startOffset);
+    const frag = pre.cloneContents(); let out = '';
+    for (let c = frag.firstChild; c; c = c.nextSibling) out += serializeNode(c, false); // token TO'LIQ
+    return out.replace(/[​]/g, '').length;
+  }
+  function setCaretByTokenOffset(off) {
+    if (off == null) { setCaret(el, el.childNodes.length); return; }
+    let rem = off;
+    for (let c = el.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) { const len = (c.nodeValue || '').length; if (rem <= len) { setCaret(c, rem); return; } rem -= len; }
+      else if (isPill(c)) { const tl = tokenOf(c.getAttribute('data-kind'), parseInt(c.getAttribute('data-n'), 10) || 0).length; if (rem < tl) { placeCaretAfter(c); return; } rem -= tl; }
+      else if (c.tagName === 'BR') { if (rem < 1) { placeCaretAfter(c); return; } rem -= 1; }
+    }
+    setCaret(el, el.childNodes.length);
+  }
   function caretRange() {
     const s = window.getSelection(); if (!s || !s.rangeCount) return null;
     const r = s.getRangeAt(0); if (!el.contains(r.startContainer)) return null;
@@ -17428,7 +17496,7 @@ function ffChipEditor(el, opts) {
     try { el.focus(); } catch (_) {}
     let sep = '';
     if (smartSpace) { const pre = textBeforeCaret(); if (pre && !/\s$/.test(pre)) sep = ' '; }
-    insertFragAtCaret(buildFragment(sep + String(text)));
+    commit(); insertFragAtCaret(buildFragment(sep + String(text))); commit(); // mention/preset qo'shish = alohida yozuv
   }
   function replaceBeforeCaret(len, insertStr) {
     const r = caretRange(); if (!r) { insertText(insertStr, false); return; }
@@ -17460,19 +17528,24 @@ function ffChipEditor(el, opts) {
   el.addEventListener('compositionend', () => { composing = false; });
   el.addEventListener('keydown', (e) => {
     if (composing) return;
+    // P15 — undo/redo: ⌘Z / Ctrl+Z → undo; ⌘⇧Z / Ctrl+Y → redo (o'z tarixi bilan)
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+    if (mod && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
     if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
       if (opts.interceptEnter && opts.interceptEnter()) { e.preventDefault(); return; } // mention tanlovi
       e.preventDefault();
+      flushTyping(); // oldingi yozish bo'lagini yopib, Enter alohida yozuv bo'lsin
       const br = document.createElement('br'); const frag = document.createDocumentFragment(); frag.appendChild(br);
       const r = caretRange();
       if (!r) { el.appendChild(frag); } else { r.deleteContents(); r.insertNode(frag); }
       if (!br.nextSibling) el.appendChild(document.createElement('br')); // oxirgi <br> collapse fix
-      placeCaretAfter(br); fireInput();
+      placeCaretAfter(br); fireInput(); commit();
       return;
     }
     if (e.key === 'Backspace' || e.key === 'Delete') {
       const p = pillNextTo(caretRange(), e.key === 'Backspace' ? -1 : 1);
-      if (p) { e.preventDefault(); p.parentNode.removeChild(p); fireInput(); }
+      if (p) { e.preventDefault(); commit(); p.parentNode.removeChild(p); fireInput(); commit(); } // pill o'chirish = alohida yozuv
     }
   });
   function serializeRangeText(r) {
@@ -17489,13 +17562,23 @@ function ffChipEditor(el, opts) {
     try { e.clipboardData.setData('text/plain', serializeRangeText(r)); e.preventDefault(); r.deleteContents(); fireInput(); } catch (_) {}
   });
   el.addEventListener('paste', (e) => {
-    let t = ''; try { t = (e.clipboardData || window.clipboardData).getData('text/plain') || ''; } catch (_) {}
+    // P14 — bufer MEDIASI (rasm/video/audio, screenshot ham) → referens; matn eski holicha.
+    const cd = e.clipboardData || window.clipboardData;
+    let files = [];
+    try {
+      if (cd && cd.files && cd.files.length) files = Array.prototype.slice.call(cd.files);
+      else if (cd && cd.items) files = Array.prototype.slice.call(cd.items).filter(it => it.kind === 'file').map(it => it.getAsFile()).filter(Boolean);
+    } catch (_) {}
+    const media = files.filter(f => f && /^(image|video|audio)\//.test(f.type || ''));
+    if (media.length && opts.onFiles) { e.preventDefault(); opts.onFiles(media, { atCaret: true }); return; }
+    let t = ''; try { t = cd.getData('text/plain') || ''; } catch (_) {}
     if (!t) return;
     e.preventDefault();
-    insertFragAtCaret(buildFragment(t.replace(/\r\n?/g, '\n')));
+    commit(); insertFragAtCaret(buildFragment(t.replace(/\r\n?/g, '\n'))); commit(); // paste = alohida yozuv
   });
   el.addEventListener('input', () => {
     if (el.firstChild && !el.textContent && !el.querySelector('.mchip') && !el.querySelector('br+br')) el.textContent = '';
+    commitTypingSoon(); // P15 — yozish ~500ms bo'laklarga birlashadi
   });
   try {
     Object.defineProperty(el, 'value', { get: getValue, set: (v) => setValue(v), configurable: true });
@@ -17505,7 +17588,9 @@ function ffChipEditor(el, opts) {
       configurable: true,
     });
   } catch (_) {}
-  return { el, getValue, setValue, insertText, textBeforeCaret, replaceBeforeCaret };
+  // Boshlang'ich holatni tarixga qo'y (undo poydevori)
+  commit();
+  return { el, getValue, setValue, insertText, textBeforeCaret, replaceBeforeCaret, undo, redo, commit, flushTyping };
 }
 class Component extends DCLogic {
   state = {
@@ -18129,7 +18214,7 @@ class Component extends DCLogic {
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.syncGenQuote(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
    *  pollJob'dan real % kelmaydi, shu sabab ishonarli indeterminat foiz 93% da
@@ -19129,6 +19214,12 @@ class Component extends DCLogic {
         }),
         token: (kind, n) => kind === 'image' ? ('@img' + n) : ('@' + kind + n), // web kanonik: @imgN/@videoN/@audioN
         interceptEnter: () => this.pickMentionActive(),
+        // P15 — undo snapshoti REFERENS HOVUZINI ham saqlaydi/tiklaydi (faqat matn yetarli emas)
+        snapshotRefs: () => ({ image: (this.state.refImages || []).slice(), video: (this.state.refVideos || []).slice(), audio: (this.state.refAudios || []).slice(), start: this.state.refStartUrl || null, end: this.state.refEndUrl || null }),
+        restoreRefs: (r) => this.setState({ refImages: (r.image || []).slice(), refVideos: (r.video || []).slice(), refAudios: (r.audio || []).slice(), refStartUrl: r.start || null, refEndUrl: r.end || null }),
+        syncText: (t) => { if (t !== this.state.aiPrompt) this.setState({ aiPrompt: t }); },
+        // P14 — paste'dagi media fayllar (screenshot ham) → referens + kursorga @pill
+        onFiles: (files, o) => this.addFilesAsRefs(files, o),
       });
       el._ffChipEd = ed; this._chipEd = ed;
       el.addEventListener('input', () => {
@@ -19484,44 +19575,158 @@ class Component extends DCLogic {
     this.toast(orig ? 'Loaded into composer — edit and Generate' : 'Loaded — original model unavailable, using a fallback');
     setTimeout(() => { try { this.afSizePromptTa(); const el = document.querySelector('.va-dock .prompt'); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } } catch (e) {} }, 60); // #1 — restore'da ham to'liq ko'rinsin
   }
-  // P8 — referens faylni yuklash: rasm/kichik fayl dataUrl (/gen/ref-upload), katta
-  // video/audio presigned PUT (/gen/ref-upload-url) + {srcKey}. k: img|start|end|vid|aud
+  // P8 — referens faylni R2'ga yuklash: kichik fayl dataUrl (/gen/ref-upload), katta fayl presigned
+  //   PUT (/gen/ref-upload-url) + {srcKey}. Yagona upload yo'li — drop/paste/menyu shuni qayta ishlatadi.
+  async uploadOneRef(f) {
+    if (f.size <= 20 * 1024 * 1024) {
+      const dataUrl = await new Promise((res, rej) => { const rd = new FileReader(); rd.onload = () => res(String(rd.result || '')); rd.onerror = rej; rd.readAsDataURL(f); });
+      const r = await FFAPI.refUpload({ dataUrl });
+      return (r && r.url) || null;
+    }
+    const pre = await FFAPI.refUploadUrl(f.type || 'application/octet-stream', f.size, f.name);
+    const put = await fetch(pre.url, { method: 'PUT', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+    if (!put.ok) throw new Error('Upload failed (' + put.status + ')');
+    const r = await FFAPI.refUpload({ srcKey: pre.key });
+    return (r && r.url) || null;
+  }
+  // ＋ menyu: k slotiga yuklash (start/end=bitta kadr; img/vid/aud=multiple). P14.3 — multi-file.
   addRefFile(k) {
-    if (this.state.refBusy) { this.toast('Upload in progress…'); return; }
     const accept = (k === 'vid') ? 'video/*' : (k === 'aud') ? 'audio/*' : 'image/*';
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = accept;
+    if (k !== 'start' && k !== 'end') inp.multiple = true; // P14 — bir vaqtda ko'p fayl
     inp.onchange = async () => {
-      const f = inp.files && inp.files[0];
-      if (!f) return;
-      if (f.size > 100 * 1024 * 1024) { this.toast('File is too large — max 100MB'); return; }
-      this.setState({ refBusy: true });
-      try {
-        let r;
-        if (f.size <= 20 * 1024 * 1024) {
-          // Kichik fayl: dataUrl JSON bilan (Cloud Run body ~32MB — 20MB fayl xavfsiz)
-          const dataUrl = await new Promise((res, rej) => { const rd = new FileReader(); rd.onload = () => res(String(rd.result || '')); rd.onerror = rej; rd.readAsDataURL(f); });
-          r = await FFAPI.refUpload({ dataUrl });
-        } else {
-          // Katta fayl: presigned PUT → srcKey
-          const pre = await FFAPI.refUploadUrl(f.type || 'application/octet-stream', f.size, f.name);
-          const put = await fetch(pre.url, { method: 'PUT', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
-          if (!put.ok) throw new Error('Upload failed (' + put.status + ')');
-          r = await FFAPI.refUpload({ srcKey: pre.key });
-        }
-        if (!r || !r.url) throw new Error('Upload failed');
+      const files = Array.prototype.slice.call(inp.files || []);
+      let added = 0;
+      for (const f of files) {
+        if (f.size > 100 * 1024 * 1024) { this.toast((f.name || 'A file') + ' is too large — max 100MB'); continue; }
+        this.setState({ refBusy: true });
+        let url = null;
+        try { url = await this.uploadOneRef(f); } catch (e) { this.toast(this.errMsg(e)); this.setState({ refBusy: false }); continue; }
+        this.setState({ refBusy: false });
+        if (!url) continue;
+        if (this._chipEd) this._chipEd.commit(); // referens qo'shish = undo yozuvi (P15)
         this.setState(st => {
-          if (k === 'start') return { refStartUrl: r.url };
-          if (k === 'end') return { refEndUrl: r.url };
-          if (k === 'vid') return { refVideos: st.refVideos.concat([r.url]) };
-          if (k === 'aud') return { refAudios: st.refAudios.concat([r.url]) };
-          return { refImages: st.refImages.concat([r.url]) };
+          if (k === 'start') return { refStartUrl: url };
+          if (k === 'end') return { refEndUrl: url };
+          if (k === 'vid') return { refVideos: st.refVideos.concat([url]) };
+          if (k === 'aud') return { refAudios: st.refAudios.concat([url]) };
+          return { refImages: st.refImages.concat([url]) };
         });
-        this.toast('Reference added');
-      } catch (e) { this.toast(this.errMsg(e)); }
-      finally { this.setState({ refBusy: false }); }
+        added++;
+        if (k === 'start' || k === 'end') break; // start/end — bitta kadr
+      }
+      if (added) this.toast(added > 1 ? (added + ' references added') : 'Reference added');
     };
     inp.click();
+  }
+  // P14 — drop/paste orqali kelgan fayllarni (MIME bo'yicha) hovuzga qo'shadi (multi). atCaret=true bo'lsa
+  //   promptning kursor joyiga @Image N pill'ini ham qo'yadi (foydalanuvchi jumlaga tashlaganда). Yagona
+  //   upload yo'li (uploadOneRef) — QAYTA yuklash yo'q. Money-zonaga tegmaydi.
+  async addFilesAsRefs(files, o) {
+    o = o || {};
+    const arr = Array.prototype.slice.call(files || []).filter(Boolean);
+    if (!arr.length) return;
+    let added = 0;
+    for (const f of arr) {
+      const mt = f.type || '';
+      if (!/^(image|video|audio)\//.test(mt)) { this.toast('Unsupported file: ' + (f.name || mt || 'file')); continue; }
+      if (f.size > 100 * 1024 * 1024) { this.toast((f.name || 'A file') + ' is too large — max 100MB'); continue; }
+      this.setState({ refBusy: true });
+      let url = null;
+      try { url = await this.uploadOneRef(f); } catch (e) { this.toast(this.errMsg(e)); this.setState({ refBusy: false }); continue; }
+      this.setState({ refBusy: false });
+      if (!url) continue;
+      const kind = /^image\//.test(mt) ? 'img' : /^video\//.test(mt) ? 'vid' : 'aud';
+      const idx = kind === 'vid' ? this.state.refVideos.length : kind === 'aud' ? this.state.refAudios.length : this.state.refImages.length;
+      if (this._chipEd) this._chipEd.commit(); // referens qo'shish = undo yozuvi (P15)
+      this.setState(st => {
+        if (kind === 'vid') return { refVideos: st.refVideos.concat([url]) };
+        if (kind === 'aud') return { refAudios: st.refAudios.concat([url]) };
+        return { refImages: st.refImages.concat([url]) };
+      });
+      added++;
+      if (o.atCaret && this._chipEd) {
+        // state flush bo'lsin (refs() yangi URL'ni ko'rsin) → pill DOM chizilsin (aks holda oddiy matn)
+        await new Promise(r => setTimeout(r, 0));
+        const tok = kind === 'img' ? ('@img' + (idx + 1)) : kind === 'vid' ? ('@video' + (idx + 1)) : ('@audio' + (idx + 1));
+        this._chipEd.insertText(tok + ' ', true);
+      }
+    }
+    if (added) this.toast(added > 1 ? (added + ' references added') : 'Reference added');
+  }
+  // P12 — Clear: prompt + BARCHA referenslar. ⌘Z bilan qaytariladi (chip-editor tarixi hovuzni ham saqlaydi).
+  clearComposer() {
+    const hasAny = (this.state.aiPrompt || '').length > 0 || this.state.refImages.length || this.state.refVideos.length || this.state.refAudios.length || this.state.refStartUrl || this.state.refEndUrl;
+    if (!hasAny) return;
+    if (this._chipEd) this._chipEd.commit(); // Clear'dan OLDINGI holat undo yozuvi bo'lsin
+    this.setState({ aiPrompt: '', refImages: [], refVideos: [], refAudios: [], refStartUrl: null, refEndUrl: null, chipPop: null });
+    if (this._chipEd) this._chipEd.setValue(''); // editor fokusda bo'lsa ham DOM tozalansin (+ tarixga after)
+    this.toast('Cleared · press ⌘Z to undo');
+  }
+  // P14 — kompozerga drag & drop: TASHQI (Finder fayllari) va ICHKI (gen kartasi) + gen kartalari drag-manba.
+  //   componentDidUpdate'dan chaqiriladi; dock/document node'iga bir marta (guard) o'rnatiladi.
+  installComposerDnd() {
+    try {
+      // Gen kartalari = drag manbasi (delegatsiya, bir marta document'ga)
+      if (!this._dragInstalled) {
+        this._dragInstalled = true;
+        document.addEventListener('dragstart', (e) => {
+          const host = e.target && e.target.closest ? e.target.closest('[data-id][data-gtype][draggable]') : null;
+          if (!host || !e.dataTransfer) return;
+          const id = host.getAttribute('data-id'), type = host.getAttribute('data-gtype') || 'image';
+          try {
+            e.dataTransfer.setData('application/x-frameflow-gen', JSON.stringify({ id, type })); // ICHKI: serverda bor
+            e.dataTransfer.setData('text/plain', '@' + type + ':' + id); // fallback
+            e.dataTransfer.effectAllowed = 'copy';
+          } catch (_) {}
+        });
+      }
+      const dock = document.querySelector('.va-dock');
+      if (!dock || dock._ffDnd) return;
+      dock._ffDnd = true;
+      const inPrompt = (t) => !!(t && t.closest && t.closest('.prompt.chipedit'));
+      dock.addEventListener('dragover', (e) => {
+        const dt = e.dataTransfer; if (!dt) return;
+        const types = Array.prototype.slice.call(dt.types || []);
+        if (types.indexOf('application/x-frameflow-gen') < 0 && types.indexOf('Files') < 0) return;
+        e.preventDefault(); try { dt.dropEffect = 'copy'; } catch (_) {}
+        dock.classList.add('va-dropon');
+      });
+      dock.addEventListener('dragleave', (e) => { if (!dock.contains(e.relatedTarget)) dock.classList.remove('va-dropon'); });
+      dock.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer; if (!dt) return;
+        const types = Array.prototype.slice.call(dt.types || []);
+        const atCaret = inPrompt(e.target); // promptga tashlansa @pill; referens paneliga tashlansa faqat referens
+        if (types.indexOf('application/x-frameflow-gen') >= 0) { // ICHKI — qayta yuklanmaydi
+          e.preventDefault(); dock.classList.remove('va-dropon');
+          this.dropGenRef(dt.getData('application/x-frameflow-gen'), atCaret); return;
+        }
+        if (dt.files && dt.files.length) { // TASHQI — Finder/ish stoli
+          e.preventDefault(); dock.classList.remove('va-dropon');
+          this.addFilesAsRefs(dt.files, { atCaret }); return;
+        }
+        // P14.4 — tashqi tab'dan sudralган URL (fayl emas) — bugungi xatti-harakat: matn sifatida qoladi.
+      });
+    } catch (e) {}
+  }
+  // P14 (b) — ICHKI gen kartasi drop: serverda bor → QAYTA yuklamaymiz, faqat yangi imzolangan URL olamiz.
+  async dropGenRef(raw, atCaret) {
+    let obj = null; try { obj = JSON.parse(raw); } catch (_) { obj = null; }
+    if (!obj || !obj.id) return;
+    let url = null;
+    try { const g = await FFAPI.genGet(obj.id); url = (g.assets && g.assets[0] && g.assets[0].url) || null; } catch (e) { this.toast(this.errMsg(e)); return; }
+    if (!url) { this.toast('Source file not found'); return; }
+    const k = obj.type === 'video' ? 'vid' : (obj.type === 'audio' || obj.type === 'sfx') ? 'aud' : 'img';
+    const idx = k === 'vid' ? this.state.refVideos.length : k === 'aud' ? this.state.refAudios.length : this.state.refImages.length;
+    if (this._chipEd) this._chipEd.commit();
+    this.setState(st => { if (k === 'vid') return { refVideos: st.refVideos.concat([url]) }; if (k === 'aud') return { refAudios: st.refAudios.concat([url]) }; return { refImages: st.refImages.concat([url]) }; });
+    this.toast('Reference added');
+    if (atCaret && this._chipEd) {
+      await new Promise(r => setTimeout(r, 0));
+      const tok = k === 'img' ? ('@img' + (idx + 1)) : k === 'vid' ? ('@video' + (idx + 1)) : ('@audio' + (idx + 1));
+      this._chipEd.insertText(tok + ' ', true);
+    }
   }
   async downloadTemplate() {
     const d = this.state.detail;
@@ -19846,7 +20051,7 @@ class Component extends DCLogic {
     // QA-FIX #14/#3 — grid plitkasi real <img>/<video> bilan (genMediaOf), masonry aspect ham real
     const loadedSet = this._mediaLoaded || (this._mediaLoaded = new Set());
     const axVisGens = visGensRaw.map((g, gi) => { const on = activeGenRaw && g.id === activeGenRaw.id; const md = genMediaOf(g); return {
-      id: g.id, isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
+      id: g.id, gtype: g.type || 'image', isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
       // P4 — birinchi qator (ko'rinadigan) kartalar EAGER + yuqori prioritet; pastdagilar lazy
       imLoad: gi < 6 ? 'eager' : 'lazy', imPri: gi < 6 ? 'high' : 'auto',
       // P10#5 — skeleton faqat media YUKLANGUNCHA; onload'da _mediaLoaded'ga qo'shiladi va klass olib tashlanadi
@@ -19854,7 +20059,7 @@ class Component extends DCLogic {
       resCls: 'va-axres' + ((md.mcls && !loadedSet.has(g.id)) ? ' va-skel' : '') + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
     }; });
     const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const playing = this.state.audioPlayingId === g.id; return {
-      id: g.id, title: g.label || 'Audio', cost: g.cost || 0,
+      id: g.id, gtype: g.type || 'audio', title: g.label || 'Audio', cost: g.cost || 0,
       metaLine: [(g.tool === 'SFX' || g.mode === 'sfx') ? 'SFX' : 'VOICE', modelLabelById[g.modelId], fmtAgo(g.at)].filter(Boolean).join(' · '),
       // QA-FIX #3 — real audio playback holati (play/pause tugma + waveform animatsiya)
       playing, notPlaying: !playing,
@@ -20924,6 +21129,9 @@ class Component extends DCLogic {
       // #1 — yozish yo'li ham CSS 60vh bilan bir xil viewport-nisbiy CAP ishlatadi
       // #6: setPrompt binding olib tashlandi — prompt endi chip-editor (installChipEditor input listener'i)
       improve: () => this.doEnhance(),
+      // P12 — Clear: prompt + barcha referens (⌘Z bilan qaytariladi)
+      hasComposerContent: (this.state.aiPrompt || '').trim().length > 0 || this.state.refImages.length > 0 || this.state.refVideos.length > 0 || this.state.refAudios.length > 0 || !!this.state.refStartUrl || !!this.state.refEndUrl,
+      clearComposer: (e) => { if (e) e.stopPropagation(); this.clearComposer(); },
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
       // modeli tanlansa tool'ni ham o'sha rejimga o'tkazadi) — selection logikasi bitta.
