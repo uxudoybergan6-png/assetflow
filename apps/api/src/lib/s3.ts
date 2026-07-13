@@ -60,6 +60,66 @@ export function getPublicUrl(key: string): string {
   return `/placeholder/${key}`;
 }
 
+/**
+ * 🔴 OMMAVIY ("ko'rsatish") obyektlar allow-list'i — YAGONA HAQIQAT MANBAI.
+ *
+ * Hamma fayl BITTA bucket'da (thumb, preview, pack.zip, mogrt, gen asl, refs…).
+ * Bucket'ni butunlay ochiq qilish (allUsers → Object Viewer) BARCHA PULLIK
+ * pack/mogrt'ni bepul qilib qo'yadi — pack yo'li oldindan ma'lum
+ * (templates/<id>/pack.zip), ID esa katalogda ochiq. Shu bois OCHIQLIK
+ * OBYEKT DARAJASIDA, faqat shu naqshlarga MOS kalitlarga beriladi.
+ *
+ * Chaqiruvchi HECH QANDAY "public qil" bayrog'i uzatmaydi — qaror faqat KALIT
+ * bo'yicha, aynan shu joyda. (Bucket "fine-grained" rejimida bo'lishi shart —
+ * uniform bucket-level access EMAS.)
+ *
+ * OMMAVIY (true):
+ *   templates/<id>/thumb[.ext]     — shablon karta rasmi
+ *   templates/<id>/preview[.ext]   — shablon hover preview
+ *   templates/<id>/scenes/**       — sahna preview/thumb
+ *   gen/<uid>/*-thumb.jpg          — gen rasm/video thumb (derivativ)
+ *   gen/<uid>/*-poster.jpg         — gen video poster (derivativ)
+ *   gen/<uid>/*-preview.mp4        — gen video hover-preview (derivativ)
+ *   gen/<uid>/*-disp.<ext>         — gen rasm 1280px display (derivativ)
+ *
+ * HECH QACHON OMMAVIY (false → private qoladi):
+ *   templates/<id>/pack.*  ·  templates/<id>/mogrt/*      🔴 PULLIK
+ *   gen/<uid>/<id>-<ts>.<ext>  — generatsiya ASL fayli (suffikssiz; tsName
+ *                                raqamli, shu bois hech qachon -thumb/-disp… bilan tugamaydi)
+ *   gen-refs/*  ·  gen-ref-src/*  — foydalanuvchi referenslari/manba (shaxsiy)
+ *   avatars/*  ·  incoming/*  ·  templates/<id>/pack.dl.zip  ·  qolgan HAMMASI
+ */
+export function isPublicReadKey(key: string): boolean {
+  if (!key || typeof key !== "string") return false;
+  // Shablon: thumb/preview ANIQ segment — pack.*/pack.dl.zip'ga TEGMAYDI.
+  if (/^templates\/[^/]+\/(thumb|preview)(\.[A-Za-z0-9]+)?$/.test(key)) return true;
+  // Shablon sahna fayllari (preview/thumb) — scenes/ ostidagi hammasi.
+  if (/^templates\/[^/]+\/scenes\/.+$/.test(key)) return true;
+  // Generatsiya KO'RSATISH derivativlari (asl fayl EMAS). Asl fayl
+  // `gen/<uid>/<id>-<ts>.<ext>` bu suffikslar bilan TUGAMAYDI → private qoladi.
+  if (/^gen\/[^/]+\/.+-(thumb\.jpg|poster\.jpg|preview\.mp4|disp\.[A-Za-z0-9]+)$/.test(key))
+    return true;
+  return false;
+}
+
+/**
+ * Yuklash paytida qo'llanadigan ACL — faqat allow-list kalitlari `public-read`
+ * (GCS S3-mos interop `x-amz-acl` ni `publicRead` predefined ACL'ga xaritalaydi;
+ * R2/AWS ham `public-read` cannedni qo'llaydi). Aks holda undefined → obyekt
+ * private (bucket default). Chaqiruvchi bu qarorni O'ZGARTIRA olmaydi.
+ *
+ * 🔴 ACL FAQAT CDN yoqilganda (CDN_BASE_URL set) beriladi — ya'ni biz haqiqatan
+ * public serv qilayotganimizda. Sabab: GCS bucket UNIFORM bucket-level access'da
+ * bo'lsa obyekt-ACL so'rovini RAD etadi (PutObject xato). CDN o'chiq holatda
+ * (joriy prod, bucket hali uniform) ACL umuman yuborilmaydi → upload buzilmaydi,
+ * xulq bugungidek. Ega bucket'ni fine-grained + public-access-prevention=inherited
+ * qilib, so'ng CDN_BASE_URL'ni o'rnatgach — ACL avtomat faollashadi
+ * (getPublicOrSignedUrl ham aynan shu shart bilan public URL'ga o'tadi).
+ */
+function aclFor(key: string): "public-read" | undefined {
+  return cdnBase && isPublicReadKey(key) ? "public-read" : undefined;
+}
+
 /** Bizning GCS bucket URL'idan (public/signed/CDN) obyekt KEY'ini ajratadi. Boshqa host → null.
  *  Vertex Omni video input `gs://` talab qiladi — shu key'dan gs:// yasaladi. */
 export function gcsKeyFromUrl(url: string): string | null {
@@ -119,7 +179,13 @@ export async function getPublicOrSignedUrl(
   key: string,
   expiresIn = 3600
 ): Promise<string> {
-  if (cdnBase) return getPublicUrl(key);
+  // 🔴 CDN yoqilgan bo'lsa ham FAQAT ommaviy allow-list kalitlari toza public
+  // URL oladi. Private obyektlar (gen asl fayli, gen-refs/audio — tashqi
+  // provayder yuklab oladigan manbalar) uchun signed URL qaytadi: obyekt
+  // private qoladi (403 to'g'ridan), lekin imzo bilan provayder/mijoz kira
+  // oladi. Aks holda CDN yoqilishi bu private manbalarni ochib qo'yardi (leak)
+  // yoki (agar ochilmasa) provayder yuklab olishini buzardi.
+  if (cdnBase && isPublicReadKey(key)) return getPublicUrl(key);
   return getSignedDownloadUrl(key, expiresIn);
 }
 
@@ -419,6 +485,7 @@ export async function uploadFileToS3(
         Body: body,
         ContentType: contentType,
         CacheControl: cacheControl,
+        ACL: aclFor(s3Key), // ko'rsatish assetlari public-read; pack/private — undefined
       },
       partSize: 8 * 1024 * 1024, // 8MB bo'laklar
       queueSize: 4, // bir vaqtda 4 bo'lak → ~32MB cho'qqi
@@ -547,6 +614,7 @@ export async function uploadStreamToS3(
         Body: body,
         ContentType: contentType,
         CacheControl: cacheControl,
+        ACL: aclFor(s3Key), // ko'rsatish assetlari public-read; pack/private — undefined
       },
       partSize: 8 * 1024 * 1024,
       queueSize: 4,
@@ -583,6 +651,7 @@ export async function uploadBufferToS3(
       Body: buffer,
       ContentType: contentType,
       CacheControl: cacheControl,
+      ACL: aclFor(s3Key), // ko'rsatish assetlari public-read; pack/private — undefined
     })
   );
   return getPublicUrl(s3Key);

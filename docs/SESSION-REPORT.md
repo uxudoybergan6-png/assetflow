@@ -1,10 +1,20 @@
-# Sessiya hisoboti — MUAMMOLAR-2 qadam 29 / 29a / 29b / 29c (2026-07-13)
+# SESSION REPORT — P1 #3 (CDN, Block E) · per-object public, NOT bucket-wide
 
-**Bajarildi (API + web + plagin), PUSH QILINMADI. 🔴 Money-zona (consume/refund/qiymatlar) TEGILMADI.**
+**Bajarildi (API), PUSH QILINMADI. Bucket-wide `allUsers` BERILMADI (pack-leak oldi olindi).**
 
-- **29 (P21) KREDITLAR EKRANI** — API `GET /credits/ledger` (HAQIQIY CreditLedger, keyset paginatsiya + Spent/Refunded/Net/Purchased) + `GET /downloads`. Web Account: totals + filtr + imzoli summa (yechim QIZIL/refund YASHIL) + balans + thumb + qator→lightbox + Load more; real Downloads. Plagin `renderLedger` real ledger'dan + totals.
-- **29a (P28) ENHANCE RASMLARNI KO'RADI** — web/plagin enhance referens pool yuboradi; API mention-butunlik (renumber/ixtiro→RAD, `mentionMismatch`); FAITHFUL prompt. **Filter-evasion OLIB TASHLANDI** (`softenPromptForSafety` o'chdi, safetyHint→faithfulness).
-- **29b (P29) LANDING LOGOUT** — ff-api.js endi FAQAT token-o'lim kodlarida (TOKEN_EXPIRED/INVALID/REVOKED/NO_TOKEN) session'ni tozalaydi; kodsiz/ruxsat/2FA 401 = oddiy xato (avval `!code401` fallback logout qilardi).
-- **29c (P30) PROVAYDER RAD ETISHLARI** — 🔴 Director ruling: EVASION QURILMADI. `policyStrictness` katalog maydoni + `suggestLenientAlternative` (rasm→Seedream, video→Seedance; yo'q bo'lsa halol aytiladi). Web toast TIPGA ega (rad=✕ QIZIL, ✓ EMAS) + rad banneri (halol sabab + ✦N qaytarildi + "Try <model>"). Plagin: empty-done guard + failed→`handleGenRejection` (afConfirm boshqa-model) + honest `friendlyError`. §2 "qattiq siyosat, rad etilsa hisobdan yechilmaydi" ogohlantirishi (web+plagin). Rad etishlar LOGGA (`provider.content_rejected`) + kunlik blok-cap (refund-farming). Refund mavjud yo'l orqali (qiymat o'zgarmadi).
+- `lib/s3.ts`: `isPublicReadKey()` — YAGONA allow-list (thumb/preview/scenes + gen display
+  derivativlari `-thumb/-poster/-preview/-disp`). `aclFor()` → 3 upload funksiyaga ulandi; ACL FAQAT
+  `CDN_BASE_URL` set bo'lganda beriladi (uniform bucket'ga ACL yuborilmaydi → upload buzilmaydi).
+- `getPublicOrSignedUrl()`: CDN'da ham PRIVATE kalitlar SIGNED qoladi → gen asl/refs provayderga
+  yetadi, LEAK bo'lmaydi. Pack/mogrt DOIM gated route → 5-daq signed (o'zgarmadi).
+- `scripts/backfill-public-acl.ts` — mavjud obyektlarga public-read (faqat allow-list; dry-run default).
+- `cloudrun-env.yaml`: `CDN_BASE_URL=https://storage.googleapis.com/assetflow-assets-2026`
+  (gitignored → owner `gh secret set CLOUDRUN_ENV_YAML`). CSP `_headers` allaqachon GCS'ni ruxsat etadi.
 
-**Tekshirilgan:** API build + validator; mention 8/8 + policy/rejection 12/13 (1 test-taxmin xato edi, kod to'g'ri); web boot toza (compiles+logicBound, 0 konsol xato); banner/toast VM alohida test. **Kutilmoqda:** push→deploy; jonli auth-li web + AE `install-cep.sh` test.
+**Isbot (jonli bucket, 201 obyekt):** dry-run → 51 public / 150 private; pack.zip · gen asl · gen-refs
+HAMMASI private. curl HOZIR: pack.zip=403 ✅ gen-original=403 ✅ gen-refs=403 ✅ (money-critical isbot
+o'tdi). thumb/preview/display=403 hozir (bucket hali uniform) → owner qadamidan keyin 200.
+
+**Kutilmoqda (owner):** bucket fine-grained (UBLA lock 2026-09-28gача OCHIQ) + PAP=inherited →
+backfill `--apply` → `gh secret` + deploy → to'liq isbot. WEB/PLUGIN KOD O'ZGARMAYDI (thumbUrl kontrakti
+bir xil; plagin expired-thumb qora-karta bug'i ham tuzaladi).
