@@ -161,10 +161,22 @@
     landingConfig: function () { return req("/api/landing/config", { auth: false }); },
 
     // Katalog / plugin profil
-    // FAZA 5 (A1): katalog sahifalangan (take+cursor) — cursor ixtiyoriy, javobda nextCursor.
-    catalog: function (cursor) {
-      var q = cursor ? "?cursor=" + encodeURIComponent(cursor) : "";
-      return req("/api/plugin/catalog" + q, { auth: false });
+    // P1 #15: server-side katalog — filtr/qidiruv/saralash/sahifalash. opts obyekti:
+    // { cursor, take, app, templateType, cat, pro, orient, res, q, sort }. Eski
+    // string argument (faqat cursor) ham qo'llab-quvvatlanadi (orqaga moslik).
+    catalog: function (opts) {
+      if (typeof opts === "string" || opts == null) opts = { cursor: opts || undefined };
+      var p = new URLSearchParams();
+      ["cursor", "take", "app", "templateType", "cat", "pro", "orient", "res", "q", "sort"].forEach(function (k) {
+        var v = opts[k];
+        if (v != null && v !== "" && v !== "All") p.set(k, v);
+      });
+      var qs = p.toString();
+      return req("/api/plugin/catalog" + (qs ? "?" + qs : ""), { auth: false });
+    },
+    // P1 #16 — bitta shablonning to'liq detali (enriched sahnalar + metaJson).
+    catalogItem: function (id) {
+      return req("/api/plugin/catalog/" + encodeURIComponent(id), { auth: false });
     },
     pluginMe: function () { return req("/api/plugin/me"); },
     packLink: function (templateId) { return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1"); },

@@ -16616,8 +16616,9 @@
           <sc-if value="{{ catalogLoadingMore }}" hint-placeholder-val="{{ false }}">
             <div style="text-align:center;padding:18px 0;font-size:12px;color:var(--muted)"><span class="star">✦</span> Loading more templates…</div>
           </sc-if>
-          <sc-if value="{{ gridCapped }}" hint-placeholder-val="{{ false }}">
-            <div style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted)">Showing the first 400 of {{ gridTotalFmt }} results — narrow the filters or search to see the rest.</div>
+          <!-- P1 #15 — "Load more" (infinite scroll'ga zaxira): server keyingi sahifasi bor -->
+          <sc-if value="{{ browseHasMore }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:20px 0"><button class="va-btn ghost" onclick="{{ loadMoreBrowse }}">Load more</button></div>
           </sc-if>
           <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
             <div class="va-empty" style="margin-top:24px;padding:70px 20px">
@@ -17696,6 +17697,9 @@ class Component extends DCLogic {
     detail: null,
     fApps: [], // #3 — Applications Supported multi-select (bo'sh = hammasi)
     fCats: [], // #3 — granular Categories multi-select (bo'sh = hammasi)
+    // P1 #15 — server-driven browse gridi holati (filtr/qidiruv/sort server tomonda,
+    // sahifalab yuklanadi). null = hali yuklanmagan. { items, cursor, loading, done, key }.
+    browse: null,
     fCat: 'All',
     fPlan: 'All',
     fOrient: 'All',
@@ -18165,6 +18169,10 @@ class Component extends DCLogic {
       if (screen === 'projects') this.loadProjects();
       if (screen === 'aistudio') this.loadSessions();
     }
+    // P1 #15 — Templates ekraniga kirilganda browse gridi joriy filtrlar bilan
+    // (kerak bo'lsa) yuklanadi. setTimeout(0) — setState o'rnashib bo'lgach o'qish
+    // (openShelfCat/openShelfNew filtrni endigina o'zgartirgan bo'lishi mumkin).
+    if (screen === 'templates') setTimeout(() => this.ensureBrowse(), 0);
     // Tarix boshqaruvi — brauzer Orqaga/Oldinga tugmalari ilova ichida yursin (#4/#6):
     // popstate'dan kelganda faqat URL'ni yechim bilan sinxronlaymiz (yangi yozuv yo'q);
     // aks holda ekran o'zgargan bo'lsa pushState (yangi yozuv), aks holda replaceState.
@@ -18270,6 +18278,17 @@ class Component extends DCLogic {
       this._scrollRaf = requestAnimationFrame(() => {
         this._scrollRaf = 0;
         try { const d = document.documentElement; const y = d.scrollTop || document.body.scrollTop; const on = y > 8; if (on !== this._scrolled) { this._scrolled = on; d.classList.toggle('ffscrolled', on); } } catch (e) {}
+        // P1 #15 — infinite scroll: Templates ekranida grid pastiga yaqinlashganda
+        // server keyingi sahifasini qo'shadi (bitta so'rov; loadBrowse guard: bitta faol).
+        try {
+          if (this.state.screen === 'templates' && !this.state.detail) {
+            const b = this.state.browse;
+            if (b && !b.loading && !b.done && b.items && b.items.length) {
+              const d = document.documentElement;
+              if ((d.scrollHeight - (d.scrollTop + window.innerHeight)) < 900) this.loadBrowse(false);
+            }
+          }
+        } catch (e) {}
       });
     };
     window.addEventListener('scroll', this._onScroll, { passive: true });
@@ -18522,28 +18541,82 @@ class Component extends DCLogic {
   }
 
   // ── DATA LOADERS ──
+  // P1 #15 — "hamma sahifani yuklab ol" sikli O'CHIRILDI. loadCatalog endi FAQAT
+  // birinchi sahifani oladi (Home javonlari + detail "related" + openDetail izlash
+  // uchun). Browse gridi alohida SERVER-driven quvur (loadBrowse) — filtr/qidiruv/
+  // saralash server tomonda, bitta sahifa so'raladi, scroll bilan qo'shiladi.
   async loadCatalog() {
     try {
-      // FAZA 5 (A1) — katalog sahifalangan (server take+cursor, default 100):
-      // birinchi sahifa darhol ko'rsatiladi, qolganlari fonda qo'shib boriladi
-      // (progressiv render). MAX_PAGES — himoya cap (server xatosida cheksiz sikl bo'lmasin).
       const APP_L = { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' };
       const APP_C = { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' };
-      const MAX_PAGES = 100;
-      let all = [];
-      let cursor = null;
-      // §B (P1) — progressiv yuklashda bo'sh holat erta chiqmasin: to'liq yuklanish
-      // alohida flag (catalogFullyLoaded). Yuklash boshida flag reset (focus-refetch ham).
-      this.setState({ catalogFullyLoaded: false });
-      for (let p = 0; p < MAX_PAGES; p++) {
-        const r = await FFAPI.catalog(cursor);
-        all = all.concat(this.mapCatalogItems(r.items || [], APP_L, APP_C));
-        cursor = r.nextCursor || null;
-        this.setState({ catalog: all, catalogReady: true, catalogFullyLoaded: !cursor });
-        if (!cursor) break;
-      }
-      this._catalogAt = Date.now(); // §B (P2) — signed URL eskirishi uchun focus-refetch belgisi
+      // Home javonlari uchun bitta sahifa (60) — 5000 assetda ham BITTA so'rov.
+      const r = await FFAPI.catalog({ take: 60 });
+      const all = this.mapCatalogItems(r.items || [], APP_L, APP_C);
+      this.setState({ catalog: all, catalogReady: true, catalogFullyLoaded: true });
+      this._catalogAt = Date.now(); // §B (P2) — display URL eskirishi uchun focus-refetch belgisi
     } catch (e) { this.setState({ catalogReady: true, catalogFullyLoaded: true }); }
+  }
+  // P1 #15 — joriy filtr holatidan server katalog paramlarini quradi (butun baza
+  // bo'yicha filtrlash uchun; brauzerda emas). fCat→templateType, fApps→app kodi,
+  // fCats→cat, fPlan→pro, fOrient→orient, fQual→res, q→q, sortKey→sort.
+  _browseParams() {
+    const s = this.state;
+    const p = { take: 48 };
+    if (s.fCat && s.fCat !== 'All' && this.pillTypes[s.fCat]) p.templateType = this.pillTypes[s.fCat];
+    // fApps display harflari (Ae/Pr/Mn/Dr) → server app kodi
+    const appMap = { Ae: 'ae', Pr: 'pr', Mn: 'motion', Dr: 'resolve' };
+    const apps = (s.fApps || []).map(a => appMap[a] || String(a).toLowerCase()).filter(Boolean);
+    if (apps.length) p.app = apps.join(',');
+    const cats = (s.fCats || []).filter(Boolean);
+    if (cats.length) p.cat = cats.join(',');
+    if (s.fPlan && s.fPlan !== 'All') p.pro = s.fPlan === 'Pro' ? '1' : '0';
+    if (s.fOrient && s.fOrient !== 'All') p.orient = s.fOrient;
+    if (s.fQual && s.fQual !== 'All') p.res = s.fQual;
+    const q = (s.q || '').trim();
+    if (q) p.q = q;
+    if (s.sortKey && s.sortKey !== 'mos') p.sort = s.sortKey;
+    return p;
+  }
+  _browseKey() { const p = this._browseParams(); delete p.take; return JSON.stringify(p); }
+  // P1 #15 — server-driven browse yuklash. reset=true → yangi filtr (1-sahifa, o'rnini
+  // bosadi); reset=false → keyingi sahifa (scroll bilan qo'shadi). Filtr/qidiruv/sort
+  // SERVER tomonda — natija BUTUN baza bo'yicha to'g'ri (birinchi sahifa ichidan emas).
+  async loadBrowse(reset) {
+    const APP_L = { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' };
+    const APP_C = { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' };
+    const key = this._browseKey();
+    const cur = this.state.browse || { items: [], cursor: null, loading: false, done: false, key: '' };
+    if (cur.loading) return;                       // bir vaqtda bitta so'rov
+    if (!reset && cur.done) return;                // oxirgi sahifa
+    const params = this._browseParams();
+    if (!reset) params.cursor = cur.cursor || undefined;
+    this._browseKey0 = key;
+    this.setState({ browse: { items: reset ? [] : cur.items, cursor: reset ? null : cur.cursor, loading: true, done: false, key } });
+    try {
+      const r = await FFAPI.catalog(params);
+      // Poyga: yuklash tugaguncha filtr o'zgargan bo'lsa — bu javobni tashlaymiz
+      if (this._browseKey0 !== key) return;
+      const mapped = this.mapCatalogItems(r.items || [], APP_L, APP_C);
+      this.setState(st => {
+        const prev = (st.browse && !reset) ? st.browse.items : [];
+        // id bo'yicha dedup (kursor chegarasida takror bo'lmasin)
+        const seen = new Set(prev.map(x => x.id));
+        const merged = prev.concat(mapped.filter(x => !seen.has(x.id)));
+        return { browse: { items: merged, cursor: r.nextCursor || null, loading: false, done: !r.nextCursor, key } };
+      });
+    } catch (e) {
+      this.setState(st => ({ browse: Object.assign({}, st.browse, { loading: false, done: true }) }));
+    }
+  }
+  // Templates ekrani ko'rinsa yoki filtr o'zgarsa — kerak bo'lsa qayta yuklaydi.
+  ensureBrowse() {
+    const b = this.state.browse;
+    if (!b || b.key !== this._browseKey()) this.loadBrowse(true);
+  }
+  // Filtr/qidiruv o'zgarganda debounce bilan qayta yuklash (tez yozishda spam yo'q).
+  scheduleBrowse() {
+    clearTimeout(this._browseT);
+    this._browseT = setTimeout(() => this.loadBrowse(true), 200);
   }
   mapCatalogItems(raw, APP_L, APP_C) {
       return raw.map((it) => ({
@@ -20521,18 +20594,23 @@ class Component extends DCLogic {
     // §B (P2) — "Most relevant": so'rov bor bo'lsa haqiqiy moslik reytingi (nom-boshi >
     // nom-ichi > teg/kategoriya > tavsif); so'rovsiz mavjud tartib (featured) qoladi.
     const relScore = (t) => { const n = t.n.toLowerCase(); if (n.indexOf(q) === 0) return 4; if (n.indexOf(q) >= 0) return 3; if (((t.tags || []).join(' ') + ' ' + (t.c || '')).toLowerCase().indexOf(q) >= 0) return 2; return 1; };
-    let filtered = src.filter(t => (!fAppsSel.length || fAppsSel.indexOf(t.a) >= 0) && (this.state.fCat === 'All' || this.typeOf(t) === this.pillTypes[this.state.fCat]) && (!fCatsSel.length || fCatsSel.indexOf(String(t.c || '').toLowerCase()) >= 0) && (this.state.fPlan === 'All' || (this.state.fPlan === 'Pro' ? t.pro : !t.pro)) && (this.state.fOrient === 'All' || t.ori === this.state.fOrient) && (this.state.fQual === 'All' || t.qual === this.state.fQual) && (q === '' || hayOf(t).indexOf(q) >= 0)).map(t => rcOf(t));
-    if (this.state.sortKey === 'az') filtered = filtered.slice().sort((a, b) => a.n.localeCompare(b.n));
-    else if (this.state.sortKey === 'za') filtered = filtered.slice().sort((a, b) => b.n.localeCompare(a.n));
-    else if (this.state.sortKey === 'new') filtered = filtered.slice().sort((a, b) => (b.created || 0) - (a.created || 0)); // FAZA C
-    else if (q !== '') filtered = filtered.slice().sort((a, b) => relScore(b) - relScore(a)); // §B — 'mos' + so'rov
-    // §B (P2) — grid cap: masonry virtualizatsiyasiz, juda katta natijada DOM portlamasin.
-    // Hisoblagich TO'LIQ sonni ko'rsatadi; kesilgani haqida grid ostida ochiq yozuv chiqadi.
-    const GRID_CAP = 400;
+    // P1 #15 — grid endi SERVER-driven browse quvuridan (state.browse): filtr/qidiruv/
+    // saralash SERVER tomonda (BUTUN baza bo'yicha) — brauzerda EMAS (P5.1 tuzatildi:
+    // "LUTs" endi butun bazadan qidiradi, birinchi sahifa ichidan emas). hayOf/relScore/
+    // fAppsSel/fCatsSel endi faqat filter-chip UI uchun; grid ularni ishlatmaydi.
+    // src (state.catalog, 1-sahifa) faqat Home javonlari + detail related uchun qoladi.
+    void hayOf; void relScore;
+    const browseSt = this.state.browse || { items: [], cursor: null, loading: false, done: false, key: '' };
+    let filtered = (browseSt.items || []).map(t => rcOf(t));
+    // Server sahifalaydi — client cap YO'Q. Hisoblagich yuklangan sonni ko'rsatadi;
+    // yana sahifa bo'lsa "+" (aniq umumiy son server javobida yo'q).
+    const gridCapped = false;
     const gridTotal = filtered.length;
-    const gridCapped = gridTotal > GRID_CAP;
-    const gridTotalFmt = gridTotal.toLocaleString();
-    if (gridCapped) filtered = filtered.slice(0, GRID_CAP);
+    const gridTotalFmt = gridTotal.toLocaleString() + (browseSt.done ? '' : '+');
+    const browseLoadingMore = browseSt.loading && filtered.length > 0;
+    const browseHasMore = !browseSt.done && !browseSt.loading && filtered.length > 0;
+    const browseInitLoading = (!this.state.browse) || (browseSt.loading && filtered.length === 0);
+    const browseEmpty = browseSt.done && filtered.length === 0;
     const sortOpts = [{ k: 'mos', label: 'Most relevant' }, { k: 'new', label: 'Newest' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
     const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
@@ -21294,19 +21372,21 @@ class Component extends DCLogic {
       fbAppCls, fbAppLabel, fbCatCls, fbCatLabel, fbCatOpen, fGranView, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
       toggleFbar: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ fbarPop: st.fbarPop === p ? null : p, sortOpen: false })); },
       // #3 — multi-select toggle'lar: popover ochiq qoladi (bir nechta belgilash qulay)
-      pickFbApp: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fApps: (st.fApps || []).indexOf(v) >= 0 ? (st.fApps || []).filter(x => x !== v) : (st.fApps || []).concat([v]) })); },
-      clearFbApps: (e) => { e.stopPropagation(); this.setState({ fApps: [] }); },
-      pickFbCat: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fCats: (st.fCats || []).indexOf(v) >= 0 ? (st.fCats || []).filter(x => x !== v) : (st.fCats || []).concat([v]) })); },
-      clearFbCats: (e) => { e.stopPropagation(); this.setState({ fCats: [] }); },
-      pickFbPlan: (e) => { e.stopPropagation(); this.setState({ fPlan: e.currentTarget.dataset.v, fbarPop: null }); },
-      // §B (P1) — bo'sh holat faqat BARCHA sahifalar yuklangach (progressiv yuklashda
-      // "Nothing found" chaqnamaydi); yuklanish davomida "loading more" indikatori.
-      hasFiltered: filtered.length > 0, noFiltered: this.state.catalogFullyLoaded && filtered.length === 0,
-      catalogLoadingMore: this.state.catalogReady && !this.state.catalogFullyLoaded,
+      pickFbApp: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fApps: (st.fApps || []).indexOf(v) >= 0 ? (st.fApps || []).filter(x => x !== v) : (st.fApps || []).concat([v]) })); this.scheduleBrowse(); },
+      clearFbApps: (e) => { e.stopPropagation(); this.setState({ fApps: [] }); this.scheduleBrowse(); },
+      pickFbCat: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; this.setState(st => ({ fCats: (st.fCats || []).indexOf(v) >= 0 ? (st.fCats || []).filter(x => x !== v) : (st.fCats || []).concat([v]) })); this.scheduleBrowse(); },
+      clearFbCats: (e) => { e.stopPropagation(); this.setState({ fCats: [] }); this.scheduleBrowse(); },
+      pickFbPlan: (e) => { e.stopPropagation(); this.setState({ fPlan: e.currentTarget.dataset.v, fbarPop: null }); this.scheduleBrowse(); },
+      // P1 #15 — holat bayroqlari endi SERVER browse quvuridan (state.browse):
+      // yuklanish/bo'sh/yana-bor. "Nothing found" faqat server oxirgi sahifani bergach.
+      hasFiltered: filtered.length > 0, noFiltered: browseEmpty,
+      catalogLoadingMore: browseLoadingMore,
       gridCapped, gridTotalFmt,
-      catalogEmpty: this.state.catalogFullyLoaded && this.state.catalog.length === 0,
+      // "Load more" — server sahifasi yana bo'lsa (infinite scroll ham _onScroll'da)
+      browseHasMore, loadMoreBrowse: () => this.loadBrowse(false),
+      catalogEmpty: browseEmpty,
       // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
-      catalogLoading: !this.state.catalogReady,
+      catalogLoading: browseInitLoading,
       openColCat: () => { const d = this.state.detail; if (d) this.setState({ fCat: this.pillOf(d) }); this.go('templates'); },
       toggleFavTpl: () => {
         const d = this.state.detail; if (!d) return;
@@ -21364,7 +21444,7 @@ class Component extends DCLogic {
       storageQuotaFmt: fmtBytesGB(this.state.storageQuota),
       storagePct: this.state.storageQuota ? Math.min(100, Math.round(this.state.storageUsed / this.state.storageQuota * 100)) + '%' : '0%',
       storageBarCol: (this.state.storageQuota && this.state.storageUsed / this.state.storageQuota >= 0.9) ? '#e84242' : 'var(--lime)',
-      onSearch: (e) => this.setState({ q: e.target.value }),
+      onSearch: (e) => { this.setState({ q: e.target.value }); this.scheduleBrowse(); },
       onPickTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k, chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false }, refClearIfModeChanged(k))); },
       // P12 — prompt auto-grow: scrollHeight'gacha (max-height 240px CSS'da klamplaydi);
       // dock pastga o'rnatilgan — box yuqoriga qarab kengayadi (flex oqimi).
@@ -21422,17 +21502,17 @@ class Component extends DCLogic {
       // (avval faqat "coming soon" toast edi — o'lik stub)
       useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
       lbUpscale: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image' || cur.type === 'video') this.useGenAsUpscale('x2', cur.id); },
-      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); },
-      onFPlan: (e) => this.setState({ fPlan: e.currentTarget.dataset.v }),
-      onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); },
-      onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'All' : v })); },
-      clearChip: (e) => { const k = e.currentTarget.dataset.k; if (k === 'app') { this.setState({ fApps: [] }); return; } if (k === 'cat') { this.setState({ fCats: [] }); return; } const m = { orient: 'fOrient', qual: 'fQual', plan: 'fPlan' }; if (m[k]) this.setState({ [m[k]]: 'All' }); },
+      onFCat: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fCat: s.fCat === v ? 'All' : v })); this.scheduleBrowse(); },
+      onFPlan: (e) => { this.setState({ fPlan: e.currentTarget.dataset.v }); this.scheduleBrowse(); },
+      onFOrient: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fOrient: s.fOrient === v ? 'All' : v })); this.scheduleBrowse(); },
+      onFQual: (e) => { const v = e.currentTarget.dataset.v; this.setState(s => ({ fQual: s.fQual === v ? 'All' : v })); this.scheduleBrowse(); },
+      clearChip: (e) => { const k = e.currentTarget.dataset.k; if (k === 'app') { this.setState({ fApps: [] }); this.scheduleBrowse(); return; } if (k === 'cat') { this.setState({ fCats: [] }); this.scheduleBrowse(); return; } const m = { orient: 'fOrient', qual: 'fQual', plan: 'fPlan' }; if (m[k]) { this.setState({ [m[k]]: 'All' }); this.scheduleBrowse(); } },
       toggleFilterDrawer: () => this.setState(s => ({ filterDrawerOpen: !s.filterDrawerOpen })),
       closeFilterDrawer: () => this.setState({ filterDrawerOpen: false }),
       toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
-      pickSort: (e) => this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }),
-      resetFilters: () => this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }),
-      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const t = this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} } },
+      pickSort: (e) => { this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }); this.scheduleBrowse(); },
+      resetFilters: () => { this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }); this.scheduleBrowse(); },
+      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const bi = (this.state.browse && this.state.browse.items) || []; const t = bi.find(x => x.id === id) || this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} } },
       closeDetail: () => this.setState({ detail: null }),
       onAccTab: (e) => { const v = e.currentTarget.dataset.v; this.setState({ accountTab: v }); this.accTabLoad(v); },
       openCredits: () => this.setState({ showCredits: true }),
@@ -21460,7 +21540,8 @@ class Component extends DCLogic {
           const p = this.state.projOpen; const it = ((p && p.items) || []).find(x => x.id === el.dataset.item);
           if (it && it.gen) this.setState({ lightbox: this.mapGen(it.gen) });
         } else {
-          const t = this.state.catalog.find(x => x.id === el.dataset.id);
+          const bi = (this.state.browse && this.state.browse.items) || [];
+          const t = bi.find(x => x.id === el.dataset.id) || this.state.catalog.find(x => x.id === el.dataset.id);
           if (t) { this.setState({ detail: t }); try { window.scrollTo(0, 0); } catch (e2) {} }
           else this.toast('Template is no longer available');
         }
