@@ -193,6 +193,42 @@ export async function extractVideoPosterFrame(
   }
 }
 
+/**
+ * P1 (step 30) — AI vision uchun bitta kadr chiqaradi (`tsSec` nuqtasidan). `source`
+ * lokal fayl YOKI http(s) URL (katta videoni yuklamasdan — ffmpeg seek range bilan).
+ * ~640px, JPEG. Xato → false (AI fallback name'ga o'tadi, ingest bloklanmaydi). */
+export async function extractFrameAt(
+  source: string,
+  outPath: string,
+  tsSec: number
+): Promise<boolean> {
+  const isUrl = /^https?:\/\//i.test(source);
+  if (!isUrl && !fs.existsSync(source)) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y",
+        "-threads", "1",
+        "-ss", Math.max(0, tsSec).toFixed(3),
+        "-i", source,
+        "-frames:v", "1",
+        "-vf", "scale=-2:'min(640,ih)'",
+        "-q:v", "4",
+        outPath,
+      ],
+      { timeout: 60_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try {
+      if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
+    } catch {
+      /* */
+    }
+    return false;
+  }
+}
+
 // P9 — manba alfa kanaliga egami (JPEG shaffoflikni yo'qotadi; fallback PNG kerak bo'lsa aniqlaymiz)
 const ALPHA_PIX_FMTS = new Set([
   "rgba", "bgra", "argb", "abgr", "rgba64be", "rgba64le", "bgra64be", "bgra64le",
@@ -398,6 +434,145 @@ export async function probeMediaDimensions(
     const height = parseInt(match[2], 10);
     if (!width || !height) return null;
     return { width, height };
+  } catch {
+    return null;
+  }
+}
+
+// ── P1 (step 30) — TO'LIQ ffprobe SPEC (fayl-o'zidan, hech qachon taxmin emas) ──
+export type MediaSpec = {
+  width: number | null;
+  height: number | null;
+  durationSec: number | null;
+  fps: number | null;
+  hasAlpha: boolean | null;
+  videoCodec: string | null;
+  audioCodec: string | null;
+  audioBitrate: number | null;
+  sampleRate: number | null;
+  orient: "horizontal" | "vertical" | "square" | null;
+};
+
+/** Alfa-qodir piksel formatlari (ffprobe pix_fmt) — .mov ProRes 4444 / QT RLE / webm VP9. */
+const SPEC_ALPHA_PIX_FMTS = new Set([
+  "yuva420p", "yuva422p", "yuva444p", "yuva420p10le", "yuva444p10le",
+  "rgba", "argb", "abgr", "bgra", "ya8", "ya16le", "gbrap", "gbrap10le", "gbrap12le",
+]);
+
+/**
+ * Bitta media faylning to'liq specini o'qiydi (video/rasm/audio). `source` lokal fayl
+ * yo'li YOKI http(s) URL (katta videoni yuklab OLMASDAN — ffprobe range-so'rovlar bilan
+ * o'qiydi). ffprobe JSON — hech narsa taxmin qilinmaydi; o'qib bo'lmasa mos maydon null.
+ * HECH QACHON throw qilmaydi (ingest bloklanmasin) — xatoda hamma maydon null. */
+export async function probeMediaSpec(source: string): Promise<MediaSpec> {
+  const empty: MediaSpec = {
+    width: null, height: null, durationSec: null, fps: null, hasAlpha: null,
+    videoCodec: null, audioCodec: null, audioBitrate: null, sampleRate: null, orient: null,
+  };
+  const isUrl = /^https?:\/\//i.test(source);
+  if (!isUrl && !fs.existsSync(source)) return empty;
+  const filePath = source;
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      [
+        "-v", "error",
+        "-show_entries",
+        "stream=codec_type,codec_name,width,height,r_frame_rate,pix_fmt,sample_rate,channels,bit_rate:format=duration,bit_rate",
+        "-of", "json",
+        filePath,
+      ],
+      { timeout: 45_000 }
+    );
+    const j = JSON.parse(stdout) as {
+      streams?: Array<Record<string, unknown>>;
+      format?: Record<string, unknown>;
+    };
+    const streams = j.streams || [];
+    const v = streams.find((s) => s.codec_type === "video");
+    const a = streams.find((s) => s.codec_type === "audio");
+    const out: MediaSpec = { ...empty };
+
+    if (v) {
+      const w = Number(v.width), h = Number(v.height);
+      if (w > 0 && h > 0) {
+        out.width = w;
+        out.height = h;
+        out.orient = w > h * 1.1 ? "horizontal" : h > w * 1.1 ? "vertical" : "square";
+      }
+      out.videoCodec = typeof v.codec_name === "string" ? v.codec_name : null;
+      // fps "30000/1001" → 29.97
+      const fr = /^(\d+)\/(\d+)$/.exec(String(v.r_frame_rate || ""));
+      if (fr && Number(fr[2]) > 0) out.fps = round2(Number(fr[1]) / Number(fr[2]));
+      else if (Number(v.r_frame_rate) > 0) out.fps = round2(Number(v.r_frame_rate));
+      const pf = String(v.pix_fmt || "").toLowerCase();
+      if (pf) out.hasAlpha = SPEC_ALPHA_PIX_FMTS.has(pf);
+    }
+    if (a) {
+      out.audioCodec = typeof a.codec_name === "string" ? a.codec_name : null;
+      const sr = Number(a.sample_rate);
+      if (sr > 0) out.sampleRate = sr;
+      const abr = Number(a.bit_rate) || Number(j.format?.bit_rate);
+      if (abr > 0) out.audioBitrate = Math.round(abr);
+    }
+    const dur = Number(j.format?.duration) || Number(v?.duration) || Number(a?.duration);
+    if (Number.isFinite(dur) && dur > 0) out.durationSec = round2(dur);
+    return out;
+  } catch {
+    return empty;
+  }
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * P1.10 — LOOPED taxmini (heuristik; EGA QARORI: algoritm taxmin qilsin). Birinchi va
+ * OXIRGI kadrni kichik (32px) ko'rinishga tushirib, o'rtacha piksel farqini hisoblaydi;
+ * chegaradan past → seamless loop. ffmpeg `blend=difference` + `signalstats` YAVGni beradi.
+ * HECH QACHON throw QILMAYDI / uploadni to'xtatmaydi — xato/aniqlanmasa null (P1.10).
+ * MUHIM: bu heuristik va ba'zan xato bo'ladi; admin edit wizardda tuzatishi mumkin.
+ */
+export async function detectLoopedFromVideo(
+  filePath: string,
+  durationSec: number | null
+): Promise<boolean | null> {
+  if (!fs.existsSync(filePath)) return null;
+  const dur = Number(durationSec);
+  if (!Number.isFinite(dur) || dur < 0.5) return null; // juda qisqa → ishonchsiz
+  try {
+    // Oxirgi kadrga yaqin nuqta (dur - kichik epsilon). Ikkala kadrni 32x32 ga
+    // scale qilib difference blend → signalstats YAVG (o'rtacha yorqinlik farqi 0..255).
+    const lastTs = Math.max(0, dur - 0.08).toFixed(3);
+    const { stdout, stderr } = await execFileAsync(
+      "ffmpeg",
+      [
+        "-v", "info",
+        "-i", filePath,
+        "-filter_complex",
+        // [0] birinchi kadr (ts=0), [1] oxirgi kadr — ikkalasini 32x32 gray, difference, signalstats
+        `[0:v]trim=start=0:end=0.04,scale=32:32,format=gray[a];` +
+          `[0:v]trim=start=${lastTs},setpts=PTS-STARTPTS,scale=32:32,format=gray[b];` +
+          `[a][b]blend=all_mode=difference,signalstats,metadata=print:file=-[out]`,
+        "-map", "[out]",
+        "-f", "null",
+        "-",
+      ],
+      { timeout: 30_000, maxBuffer: 4 * 1024 * 1024 }
+    ).catch((e: unknown) => {
+      // ffmpeg metadata'ni stderr'ga yozishi mumkin — chiqishni baribir tekshiramiz.
+      const err = e as { stdout?: string; stderr?: string };
+      return { stdout: err.stdout || "", stderr: err.stderr || "" };
+    });
+    const blob = String(stdout || "") + "\n" + String(stderr || "");
+    // signalstats YAVG (o'rtacha) qiymatini o'qiymiz.
+    const m = /lavfi\.signalstats\.YAVG=([0-9.]+)/i.exec(blob) || /YAVG=([0-9.]+)/i.exec(blob);
+    if (!m) return null;
+    const yavg = Number(m[1]);
+    if (!Number.isFinite(yavg)) return null;
+    // Chegara: o'rtacha farq < 12/255 (~4.7%) → seamless loop deb hisoblanadi.
+    return yavg < 12;
   } catch {
     return null;
   }

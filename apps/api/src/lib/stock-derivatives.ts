@@ -55,7 +55,10 @@ export async function generateStockWatermarkedDerivatives(id: string): Promise<b
     console.warn(`[stock-wm] pack (toza asl) topilmadi — ${id}`);
     return false;
   }
-  const stockType = row.stockType || inferStockTypeFromExt(packKey);
+  // P1 (step 30) — yangi taksonomiya stockType'larini derivativ SINFIGA bog'laymiz:
+  // graphics→photo (rasm overlay), motion-graphics→video (video overlay), music/sfx→audio sting.
+  // Eski qiymatlar (video/photo/music/sfx) o'zgarmaydi; noma'lum → ext'dan taxmin.
+  const stockType = derivativeKindForStockType(row.stockType, packKey);
 
   let tmpDir: string | null = null;
   try {
@@ -137,6 +140,24 @@ async function staleCleanSiblings(id: string, wroteKeys: string[]): Promise<stri
     if (await s3ObjectExists(key)) stale.push(key);
   }
   return stale;
+}
+
+/** Yangi/eski stockType → derivativ sinfi (video|photo|music|sfx). Noma'lum → ext'dan. */
+function derivativeKindForStockType(stockType: string | null | undefined, packKey: string): string {
+  switch (String(stockType || "")) {
+    case "motion-graphics":
+    case "video":
+      return "video";
+    case "graphics":
+    case "photo":
+      return "photo";
+    case "music":
+      return "music";
+    case "sfx":
+      return "sfx";
+    default:
+      return inferStockTypeFromExt(packKey);
+  }
 }
 
 function inferStockTypeFromExt(key: string): string {

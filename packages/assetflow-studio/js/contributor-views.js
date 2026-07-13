@@ -111,7 +111,7 @@ VIEWS.overview = function(){
         <div class="card" style="background:linear-gradient(120deg,var(--violet-dim),transparent);border-color:var(--violet-line)">
           <div class="card-pad row between center gap-16 wrap">
             <div class="col gap-4"><span class="h3">Next step</span><span class="small" style="max-width:380px">Upload a new motion template \u2014 once it passes moderation it goes live in the AE catalog.</span></div>
-            <button class="btn btn-primary btn-lg" onclick="route('upload')">${ic('upload')} Upload new template</button>
+            <button class="btn btn-primary btn-lg" onclick="startNewUpload()">${ic('upload')} Upload new template</button>
           </div>
         </div>
 
@@ -191,7 +191,7 @@ function renderMy(){
         <button class="${MY_VIEW==='grid'?'active':''}" onclick="MY_VIEW='grid';renderMy()">${ic('grid')} Grid</button>
       </div>
     </div>
-    ${ts.length? (MY_VIEW==='table'?myTable(ts):myGrid(ts)) : `<div class="card"><div class="empty"><div class="ico">${ic('layers')}</div><h3>No templates</h3><p>No templates match this filter. Upload a new template to get started.</p><button class="btn btn-primary" onclick="route('upload')">${ic('upload')} Upload new</button></div></div>`}
+    ${ts.length? (MY_VIEW==='table'?myTable(ts):myGrid(ts)) : `<div class="card"><div class="empty"><div class="ico">${ic('layers')}</div><h3>No templates</h3><p>No templates match this filter. Upload a new template to get started.</p><button class="btn btn-primary" onclick="startNewUpload()">${ic('upload')} Upload new</button></div></div>`}
   </div>`;
 }
 function myTable(ts){
@@ -418,25 +418,55 @@ function kindPickerCard() {
    (project file + preview image + preview video), auto-processed
    server-side into a PENDING_REVIEW template. No manual form.
    ============================================================ */
-let UP_MODE = "single"; // 'single' | 'bulk'
+// P1 (step 30) — YUKLASH endi FAQAT bulk (kategoriya-asosli). Wizard (single) faqat
+// TAHRIRLASH uchun qoladi (openEditTemplate uni ishlatadi). UP_MODE 'single' = edit wizard.
+let UP_MODE = "bulk"; // 'bulk' (yangi yuklash) | 'single' (faqat edit — openEditTemplate)
+let BULK_CAT = null; // tanlangan taxon key (video-templates|luts|graphics|motion-graphics|music|sfx)
 let BULK_FILES = []; // { file, stage: 'queued'|'uploading'|'processing'|'done'|'duplicate'|'error', pct, error, id }
 let BULK_RUNNING = false;
 
-function setUploadMode(mode) {
+/** Yangi bulk yuklashni boshlaydi (edit holatini tozalaydi). "Upload" tugmalari chaqiradi. */
+function startNewUpload() {
+  UP_EDIT_ID = null;
+  UP_MODE = "bulk";
+  BULK_FILES = [];
+  BULK_RIGHTS = false;
+  route("upload");
+}
+window.startNewUpload = startNewUpload;
+
+/** Kategoriyani tanlaydi (top-level yoki stock sub). Fayllarni tozalaydi (ext o'zgaradi). */
+function selectBulkCat(key) {
   if (BULK_RUNNING) return;
-  UP_MODE = mode;
+  if (!taxonByKey(key)) return;
+  BULK_CAT = key;
+  BULK_FILES = [];
   renderUpload();
+}
+window.selectBulkCat = selectBulkCat;
+
+/** Tanlangan kategoriya ruxsat etgan kengaytmalar (dropzone accept + filtr). */
+function bulkAcceptExts() {
+  const t = taxonByKey(BULK_CAT);
+  return t ? t.exts : [];
 }
 
 function bulkAddFiles(fileList) {
-  const incoming = Array.from(fileList || []);
-  const zips = incoming.filter((f) => /\.zip$/i.test(f.name));
-  if (incoming.length && !zips.length) {
-    toast("Bulk upload", "Only .zip files are accepted", "warn");
+  const t = taxonByKey(BULK_CAT);
+  if (!t) {
+    toast("Upload", "Choose a category first", "warn");
+    return;
   }
-  for (const f of zips) {
+  const incoming = Array.from(fileList || []);
+  const exts = t.exts;
+  const extRe = new RegExp("(" + exts.map((e) => e.replace(".", "\\.")).join("|") + ")$", "i");
+  const ok = incoming.filter((f) => extRe.test(f.name));
+  if (incoming.length && !ok.length) {
+    toast("Upload", `${t.label} accepts: ${exts.join(", ")}`, "warn");
+  }
+  for (const f of ok) {
     if (BULK_FILES.some((b) => b.file.name === f.name && b.file.size === f.size)) continue;
-    if (!checkUploadFile(f, "Zip file")) continue;
+    if (!checkUploadFile(f, t.label)) continue;
     BULK_FILES.push({ file: f, stage: "queued", pct: 0 });
   }
   renderUpload();
@@ -535,6 +565,11 @@ function bulkDzHandlers() {
 
 async function startBulkIngest() {
   if (BULK_RUNNING) return;
+  const t = taxonByKey(BULK_CAT);
+  if (!t) {
+    toast("Upload", "Choose a category first", "warn");
+    return;
+  }
   if (!StudioApi.token()) {
     toast("API", "Please sign in first", "warn");
     return;
@@ -552,70 +587,92 @@ async function startBulkIngest() {
   });
   BULK_RUNNING = true;
   renderUpload();
+  const onProg = (qi, p) => {
+    const b = queued[qi];
+    const idx = BULK_FILES.indexOf(b);
+    if (p.stage) b.stage = p.stage;
+    if (typeof p.pct === "number") b.pct = p.pct;
+    if (p.error) b.error = p.error;
+    if (p.id) b.id = p.id;
+    bulkUpdateRow(idx);
+  };
+  const rights = { rightsAccepted: true, rightsTermsVersion: RIGHTS_TERMS_VERSION };
+  const files = queued.map((b) => b.file);
+  const noun = t.kind === "stock" ? "asset" : t.key === "luts" ? "LUT" : "template";
   try {
-    await StudioApi.bulkIngestZips(
-      queued.map((b) => b.file),
-      (qi, p) => {
-        const b = queued[qi];
-        const idx = BULK_FILES.indexOf(b);
-        if (p.stage) b.stage = p.stage;
-        if (typeof p.pct === "number") b.pct = p.pct;
-        if (p.error) b.error = p.error;
-        if (p.id) b.id = p.id;
-        bulkUpdateRow(idx);
-      },
-      { rightsAccepted: true, rightsTermsVersion: RIGHTS_TERMS_VERSION }
-    );
+    // Video Templates → zip quvuri; LUTs/Stock → xom-fayl quvuri (fayl = pack).
+    if (t.source === "zip") {
+      await StudioApi.bulkIngestZips(files, onProg, rights);
+    } else {
+      await StudioApi.bulkIngestAssets(t.key, files, onProg, rights);
+    }
     const doneCount = queued.filter((b) => b.stage === "done").length;
     const dupCount = queued.filter((b) => b.stage === "duplicate").length;
     const errCount = queued.filter((b) => b.stage === "error").length;
     if (doneCount) {
-      toast("Bulk upload", `${doneCount} template(s) sent to moderation`, "success");
+      toast("Upload", `${doneCount} ${noun}(s) sent to moderation`, "success");
       await StudioTemplates.refreshAfterUpload();
     }
     if (dupCount) {
-      toast("Bulk upload", `${dupCount} duplicate(s) skipped — the template already exists`, "warn");
+      toast("Upload", `${dupCount} duplicate(s) skipped — already exists`, "warn");
     }
     if (errCount) {
-      toast("Bulk upload", `${errCount} file(s) failed — see the list below`, "warn");
+      toast("Upload", `${errCount} file(s) failed — see the list below`, "warn");
     }
   } catch (e) {
-    toast("Error", e.message || "Bulk upload failed", "danger");
+    toast("Error", e.message || "Upload failed", "danger");
   } finally {
     BULK_RUNNING = false;
     renderUpload();
   }
 }
 
-function uploadModeTabs() {
-  return `<div class="segmented">
-    <button class="${UP_MODE === "single" ? "active" : ""}" onclick="setUploadMode('single')">${ic("file")} Single template</button>
-    <button class="${UP_MODE === "bulk" ? "active" : ""}" onclick="setUploadMode('bulk')">${ic("upload")} Bulk upload (.zip)</button>
+/** Kategoriya tanlash kartalari (top-level + Stock sub). */
+function bulkCatPicker() {
+  const card = (key, label, icon, active) =>
+    `<button class="up-cat${active ? " active" : ""}" onclick="selectBulkCat('${key}')"
+       style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border:1px solid ${active ? "var(--violet-bright,#8b5cf6)" : "var(--line,#2a2a2a)"};border-radius:12px;background:${active ? "var(--violet-dim,rgba(139,92,246,.12))" : "transparent"};cursor:pointer;min-width:0">
+       <span style="font-size:20px">${ic(icon)}</span>
+       <span class="body" style="font-weight:600;text-align:center">${esc(label)}</span>
+     </button>`;
+  const cards = UPLOAD_TAXONOMY.map((t) => card(t.key, t.label, t.icon, BULK_CAT === t.key)).join("");
+  return `<div class="col gap-8">
+    <div class="small" style="color:var(--text-dim)">What are you uploading?</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px">${cards}</div>
   </div>`;
 }
 
 function renderBulkUpload() {
   const root = document.getElementById("upRoot");
   if (!root) return;
+  const t = taxonByKey(BULK_CAT);
+  const acceptAttr = t ? t.exts.join(",") : "";
+  const dzBody = t
+    ? `<div class="dz-ico">${ic(t.icon || "upload")}</div>
+       <div class="body" style="font-weight:600">Drag & drop ${esc(t.label)} files here, or click to choose</div>
+       <span class="small">Accepts: <b>${t.exts.join(" · ")}</b> · Multiple at once · Max per file: <b>${MAX_UPLOAD_LABEL}</b></span>`
+    : `<div class="dz-ico">${ic("upload")}</div>
+       <div class="body" style="font-weight:600">Choose a category above to start</div>`;
   root.innerHTML = `<div style="max-width:880px;margin:0 auto" class="col gap-20">
-    ${uploadModeTabs()}
+    <div class="row between center">
+      <h2 class="h2" style="margin:0">Upload</h2>
+    </div>
     <div class="card card-pad col gap-16">
-      ${infoBanner(`Each .zip is one template: a project file (.aep/.mogrt) plus a preview image and/or preview video. The server unpacks, scans, and queues it for review — no form to fill in. <a href="https://getframeflow.app/help.html#upload-guidelines" target="_blank" rel="noopener" style="color:var(--violet-bright)">Upload guidelines ↗</a>`)}
-      <div class="dropzone" id="bulkDz">
-        <input type="file" id="bulkFileInput" accept=".zip,application/zip" multiple style="display:none">
-        <div class="dz-ico">${ic("upload")}</div>
-        <div class="body" style="font-weight:600">Drag & drop .zip files here, or click to choose</div>
-        <span class="small">You can select multiple files at once · Maximum size per file: <b>${MAX_UPLOAD_LABEL}</b></span>
+      ${bulkCatPicker()}
+      ${t ? infoBanner(t.hint) : ""}
+      <div class="dropzone${t ? "" : " disabled"}" id="bulkDz" style="${t ? "" : "opacity:.55;pointer-events:none"}">
+        <input type="file" id="bulkFileInput" accept="${acceptAttr}" multiple style="display:none">
+        ${dzBody}
       </div>
       ${BULK_FILES.length ? `<div class="col">${BULK_FILES.map((b, i) => bulkRenderRow(b, i)).join("")}</div>` : ""}
-      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${BULK_RIGHTS?' on':''}" onclick="toggleBulkRights()">${ic('check')}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
+      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${BULK_RIGHTS ? " on" : ""}" onclick="toggleBulkRights()">${ic("check")}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
       <div class="row between center">
         <button class="btn btn-ghost" onclick="bulkClearFinished()" ${BULK_FILES.some((b) => b.stage === "done") && !BULK_RUNNING ? "" : "disabled"}>Clear finished</button>
-        <button class="btn btn-primary" id="bulkStartBtn" onclick="startBulkIngest()" ${BULK_RIGHTS && BULK_FILES.some((b) => b.stage === "queued" || b.stage === "error") && !BULK_RUNNING ? "" : "disabled"}>${ic("upload")} ${BULK_RUNNING ? "Processing…" : "Upload & process"}</button>
+        <button class="btn btn-primary" id="bulkStartBtn" onclick="startBulkIngest()" ${BULK_CAT && BULK_RIGHTS && BULK_FILES.some((b) => b.stage === "queued" || b.stage === "error") && !BULK_RUNNING ? "" : "disabled"}>${ic("upload")} ${BULK_RUNNING ? "Processing…" : "Upload & process"}</button>
       </div>
     </div>
   </div>`;
-  bulkDzHandlers();
+  if (t) bulkDzHandlers();
 }
 
 function openEditTemplate(id) {
@@ -625,6 +682,7 @@ function openEditTemplate(id) {
     return;
   }
   UP_EDIT_ID = id;
+  UP_MODE = "single"; // edit = wizard (bulk faqat yangi yuklash)
   UP_STEP = 1;
   UP_UPLOADED_SIG = ""; // editing context — files must be re-uploaded
   UP_DRAFT.name = t.name;
@@ -936,10 +994,12 @@ VIEWS.upload = function(){ return `<div id="upRoot"></div>`; };
 window.afterRender.upload = function(){ renderUpload(); };
 
 function renderUpload(){
-  if (UP_MODE === 'bulk') { renderBulkUpload(); return; }
+  // P1 (step 30) — yangi yuklash FAQAT bulk. Wizard faqat TAHRIRLASH uchun (UP_EDIT_ID).
+  // Xavfsizlik: edit id yo'q bo'lsa har doim bulk (eski single-create yo'li o'chirilgan).
+  if (UP_MODE !== 'single' || !UP_EDIT_ID) { renderBulkUpload(); return; }
   const steps=['Basic info','Media files','Submit'];
   document.getElementById('upRoot').innerHTML = `<div style="max-width:880px;margin:0 auto" class="col gap-20">
-    ${uploadModeTabs()}
+    <div class="row between center"><h2 class="h2" style="margin:0">${ic('edit')} Edit template</h2><button class="btn btn-ghost btn-sm" onclick="startNewUpload()">${ic('x')} Cancel edit</button></div>
     <!-- stepper -->
     <div class="row between center" style="gap:8px">
       ${steps.map((s,i)=>{const n=i+1;const st=n<UP_STEP?'done':n===UP_STEP?'active':'';return `

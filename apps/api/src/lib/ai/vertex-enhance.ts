@@ -223,6 +223,42 @@ export async function vertexEnhancePrompt(
  * ILGARI OpenRouter gpt-4o-mini (orChatSys jsonMode) ishlatardi — endi Gemini responseMimeType JSON.
  * `system` — to'liq ko'rsatma (schema bilan), `userIdea` — (kerak bo'lsa avval enhance qilingan) g'oya.
  */
+/**
+ * P1 (step 30) — Vertex Gemini VISION → JSON. Lokal rasm(lar) (video kadrlari / rasmning
+ * o'zi / preview) + matn hint bilan strukturalangan JSON qaytaradi. Ingest metadatasi
+ * uchun (title/description/category/tags). thinking OFF (tezlik). isVertexEnhanceConfigured
+ * bo'lmasa xato — chaqiruvchi OpenRouter/fallback'ga o'tadi. */
+export async function vertexJsonVision(
+  system: string,
+  userText: string,
+  images: Array<{ data: string; mimeType: string }>
+): Promise<OrResult<string>> {
+  if (!isVertexEnhanceConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
+  const parts: Array<
+    { inlineData: { data: string; mimeType: string } } | { text: string }
+  > = [];
+  for (const img of images) parts.push({ inlineData: { data: img.data, mimeType: img.mimeType } });
+  parts.push({ text: userText });
+  try {
+    const r = await getClient().models.generateContent({
+      model: ENHANCE_MODEL,
+      contents: [{ role: "user", parts }],
+      config: {
+        systemInstruction: system,
+        responseMimeType: "application/json",
+        temperature: 0.4,
+        maxOutputTokens: 900,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    });
+    const out = (r.text || "").trim();
+    if (!out) return { ok: false, error: "Vertex vision returned an empty response" };
+    return { ok: true, data: out };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "Vertex vision error" };
+  }
+}
+
 export async function vertexEnhanceJson(system: string, userIdea: string): Promise<OrResult<string>> {
   if (!isVertexEnhanceConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {

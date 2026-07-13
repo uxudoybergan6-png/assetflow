@@ -46,9 +46,18 @@ import {
   readS3ObjectRange,
   createS3RangeStream,
   uploadStreamToS3,
+  getSignedDownloadUrl,
 } from "../lib/s3.js";
 import { assetKeySetFromStored, syncTemplateAssetKeys } from "../lib/asset-state.js";
-import { optimizePreviewForStreaming, probeMediaDimensions } from "../lib/optimize-preview.js";
+import {
+  optimizePreviewForStreaming,
+  probeMediaDimensions,
+  probeMediaSpec,
+  detectLoopedFromVideo,
+  extractFrameAt,
+} from "../lib/optimize-preview.js";
+import { generateAssetMetadata } from "../lib/ai/asset-metadata.js";
+import { taxonForRow, navForAsset, extAllowedForTaxon, taxonByKey } from "../lib/taxonomy.js";
 import {
   transcodePreviewInBackground,
   processPreviewTranscode,
@@ -1614,9 +1623,18 @@ function mimeForExt(filePath: string): string {
     ".jpeg": "image/jpeg",
     ".png": "image/png",
     ".webp": "image/webp",
+    ".svg": "image/svg+xml",
     ".mp4": "video/mp4",
     ".mov": "video/quicktime",
     ".webm": "video/webm",
+    // P1 (step 30) — raw stock audio + LUTs
+    ".wav": "audio/wav",
+    ".mp3": "audio/mpeg",
+    ".aiff": "audio/aiff",
+    ".aif": "audio/aiff",
+    ".cube": "text/plain",
+    ".3dl": "text/plain",
+    ".look": "application/xml",
   };
   return map[ext] || "application/octet-stream";
 }
@@ -1844,10 +1862,13 @@ async function ingestOneZip(
     // FAZA 3 (KONTENT-QUVURI-SXEMA.md §6) — AI zip nomidan (+ preview rasmidan) nom /
     // kategoriya (kanonik ro'yxatdan) / 20 teg yozadi. INTERNAL metadata: kredit yo'li
     // ISHLATILMAYDI. AI xato bersa fail-safe fallback qaytadi — ingest bloklanmaydi.
+    const cleanZipName = key.replace(/-[0-9a-f]{8}(\.zip)$/i, "$1");
     const aiMeta = await generateTemplateMetadata({
       // Kalitdagi hash diskriminatorini (-a1b2c3d4.zip) AI nom-taklifiga o'tkazmaymiz
-      zipFileName: key.replace(/-[0-9a-f]{8}(\.zip)$/i, "$1"),
+      zipFileName: cleanZipName,
       imagePath,
+      contributorId,
+      isAdmin: await isAdminUser(contributorId),
     });
     const title = aiMeta.title;
 
@@ -1860,14 +1881,21 @@ async function ingestOneZip(
       await streamPipeline(await zip.openEntryStream(video), fs.createWriteStream(videoPath));
       dims = await probeMediaDimensions(videoPath);
     }
-    const orient = !dims
+    // Piksel-taxmini (preview'dan) — P1.5: preview 1080p bo'lsa 4K loyihani noto'g'ri
+    // filerlaydi, shu bois NOM yutadi (parseOrientationsAndRes).
+    const pxOrient = !dims
       ? settings.defaultOrient || "horizontal"
       : dims.width > dims.height * 1.1
         ? "horizontal"
         : dims.height > dims.width * 1.1
           ? "vertical"
           : "square";
-    const res = dims && Math.max(dims.width, dims.height) >= 2000 ? "4k" : "1080p";
+    const pxRes = dims && Math.max(dims.width, dims.height) >= 2000 ? "4k" : "1080p";
+    // Owner decision 1 (P1.6) — nom "vertical and horizontal" desa orientations[] ikkalasi.
+    const oz = parseOrientationsAndRes(cleanZipName, pxOrient, pxRes);
+    const orient = oz.orient;
+    const orientations = oz.orientations;
+    const res = oz.res;
 
     const flags: string[] = [];
     if (!image) flags.push("Missing preview image");
@@ -1880,11 +1908,16 @@ async function ingestOneZip(
           contributorId,
           externalId: key,
           name: title,
-          nav: settings.defaultNav || "video",
+          description: aiMeta.description,
+          // P1.2 — kind/templateType/nav MAJBURIY yoziladi (default'ga tashlab qo'ymaymiz).
+          kind: "template",
+          templateType: "video-templates",
+          nav: "video",
           cat: aiMeta.cat,
           catLabel: aiMeta.catLabel,
           tags: aiMeta.tags,
           orient,
+          orientations,
           res,
           templateApp: zip.templateApp,
           reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
@@ -2071,22 +2104,321 @@ async function ingestOneZip(
   }
 }
 
-// ── P1.9 — RAW-FAYL INGEST QUVURI (step 30da to'liq yoziladi) ─────────────────
-// zip EMAS: LUTs (.cube/.3dl/.look) va Stock (Graphics/Motion Graphics/Music/SFX)
-// xom fayllari. Fayl = pack (unzip yo'q); ffprobe spec + AI metadata + suv belgili
-// derivativlar. Hozircha stub — step 30da real quvur qo'yiladi. STUB permanent-fail
-// (retryable=false) qaytaradi, chunki hali hech qanday 'asset' job enqueue qilinmaydi.
+/**
+ * P1.5/P1.6 (owner decision 1) — zip NOMIDAN orientatsiya(lar) + res. Nom YUTADI
+ * (piksel-taxminidan ustun). "vertical and horizontal" → ikkalasi (orientations[]),
+ * orient = asosiy (birinchi topilgan / horizontal). Nom hech narsa demasa → fallback.
+ */
+function parseOrientationsAndRes(
+  name: string,
+  fallbackOrient: string,
+  fallbackRes: string
+): { orient: string; orientations: string[]; res: string } {
+  const n = String(name || "").toLowerCase();
+  const hasH = /\b(horizontal|landscape|16[:x]9|1920|2560|3840)\b/.test(n);
+  const hasV = /\b(vertical|portrait|9[:x]16|1080\s*x\s*1920)\b/.test(n);
+  const hasSq = /\b(square|1[:x]1)\b/.test(n);
+  const orientations: string[] = [];
+  if (hasH) orientations.push("horizontal");
+  if (hasV) orientations.push("vertical");
+  if (hasSq && !orientations.length) orientations.push("square");
+  // Res — nomda 4K/2160 bo'lsa 4k, aks holda fallback.
+  const res = /\b(4k|2160|uhd|3840)\b/.test(n) ? "4k" : fallbackRes;
+  if (!orientations.length) {
+    return { orient: fallbackOrient, orientations: [], res };
+  }
+  return { orient: orientations[0], orientations: orientations.length > 1 ? orientations : [], res };
+}
+
+/** userId ADMIN rolimi (worker'da req.user yo'q — DB'dan). AI cap ceiling uchun (P6.2). */
+async function isAdminUser(userId: string): Promise<boolean> {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    return u?.role === UserRole.ADMIN;
+  } catch {
+    return false;
+  }
+}
+
+/** P5.7 — per-media-sinf hajm shipi (bayt). Video katta (3GB), audio/rasm/lut kichik. */
+const ASSET_MAX_BYTES: Record<string, number> = {
+  video: 3 * 1024 * 1024 * 1024,
+  image: 64 * 1024 * 1024,
+  audio: 256 * 1024 * 1024,
+  lut: 16 * 1024 * 1024,
+  project: 3 * 1024 * 1024 * 1024,
+};
+
+/** Raw asset uchun lokal-materializatsiya chegarasi — kichik (rasm/audio/lut/kichik video)
+ *  tmpfs'ga tushadi (probe+AI+watermark lokal); katta video signed-URL bilan ishlanadi. */
+const INGEST_ASSET_LOCAL_MAX_BYTES = (() => {
+  const v = Number(process.env.INGEST_ASSET_LOCAL_MAX_BYTES);
+  return Number.isFinite(v) && v > 0 ? v : 256 * 1024 * 1024;
+})();
+
+/**
+ * P1.9 — RAW-FAYL INGEST QUVURI (zip EMAS). LUTs (.cube/.3dl/.look) va Stock
+ * (Graphics/Motion Graphics/Music/Sound Effects) xom fayllari uchun IKKINCHI quvur.
+ *
+ * Fayl = pack (unzip yo'q, loyiha-fayl tekshiruvi yo'q). Oqim: dedup/malware skan
+ * (packHash = fayl sha256 — o'zgarmaydi) → ffprobe SPEC (fayl-o'zidan) → AI metadata
+ * (video: 1+o'rta kadr; rasm: o'zi; audio/lut: nom) → ContributorTemplate (PENDING_REVIEW,
+ * kind/templateType/stockType/nav YOZILADI) → pack (toza asl) saqlanadi → SUV BELGILI
+ * preview/thumb derivativlar (P4 — pack'dan, alohida obyekt) → incoming o'chiriladi.
+ * Har xatoda throw QILMAYDI — natija obyektini qaytaradi (worker retry qaror qiladi).
+ */
 async function ingestOneAsset(
   job: IngestJobRow,
-  _rights?: { rightsAcceptedAt: Date; rightsTermsVersion: string }
+  rights?: { rightsAcceptedAt: Date; rightsTermsVersion: string }
 ): Promise<IngestItemResult> {
-  return {
-    key: job.key,
-    ok: false,
-    status: "failed",
-    reason: "Raw-file ingest is not enabled yet (P1.9 — step 30)",
-    retryable: false,
-  };
+  const { key, contributorId } = job;
+  if (!key.startsWith(`incoming/${contributorId}/`)) {
+    return { key, ok: false, status: "failed", reason: "File does not belong to this contributor", retryable: false };
+  }
+  const taxon = taxonForRow({ kind: job.kind, templateType: job.templateType, stockType: job.stockType });
+  if (!taxon || taxon.sourceType !== "asset") {
+    return { key, ok: false, status: "failed", reason: "Unknown or non-raw category", retryable: false };
+  }
+  if (!extAllowedForTaxon(taxon, key)) {
+    return { key, ok: false, status: "failed", reason: `Invalid file type for ${taxon.label}`, retryable: false };
+  }
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_asset_"));
+  try {
+    const meta = await getS3ObjectMeta(key);
+    if (meta.sizeBytes == null) {
+      return { key, ok: false, status: "failed", reason: "File not found in cloud storage", retryable: false };
+    }
+    // P5.7 — per-kind hajm shipi (xom 4K stock GCS bilini portlatmasin; .wav SFX'ga 3GB shart emas).
+    const cap = ASSET_MAX_BYTES[taxon.mediaClass] ?? 3 * 1024 * 1024 * 1024;
+    if (meta.sizeBytes > cap) {
+      await rejectIncomingZip(contributorId, key, `File too large for ${taxon.label} (${Math.round(meta.sizeBytes / 1048576)}MB > ${Math.round(cap / 1048576)}MB)`);
+      return { key, ok: false, status: "failed", reason: `File exceeds the ${taxon.label} size limit`, retryable: false };
+    }
+    const ext = (path.extname(key) || "").toLowerCase();
+    const isImage = taxon.mediaClass === "image";
+    const isVideo = taxon.mediaClass === "video";
+
+    // Kichik (rasm/audio/lut/kichik video) → lokal materializatsiya; katta video → signed URL.
+    const wantLocal = !isVideo || meta.sizeBytes <= INGEST_ASSET_LOCAL_MAX_BYTES;
+    let localPath: string | null = null;
+    if (wantLocal) {
+      localPath = path.join(tmpDir, `asset${ext}`);
+      await downloadS3ToFile(key, localPath);
+    }
+    // Probe/AI uchun manba: lokal fayl yoki signed URL (katta video).
+    const probeSource = localPath || (await getSignedDownloadUrl(key, 1800));
+
+    // 1) Dedup / malware skan — fayl sha256 ustida (o'zgarmaydi).
+    const hash = localPath
+      ? await sha256File(localPath)
+      : await sha256Stream(createS3RangeStream(key, 0, meta.sizeBytes));
+    const dup = await prisma.contributorTemplate.findFirst({
+      where: { packHash: hash },
+      select: { id: true, contributorId: true },
+    });
+    if (dup && dup.contributorId === contributorId) {
+      await deleteS3Objects([key]).catch(() => {});
+      return { key, ok: false, status: "duplicate", reason: "Duplicate: same file as your existing asset", duplicateOf: dup.id };
+    }
+    const scan = await scanFileHash(hash);
+    const prod = process.env.NODE_ENV === "production";
+    const cls = classifyPackScan(scan, dup, contributorId, prod);
+    if (cls.scanStatus === "malicious") {
+      await rejectIncomingZip(contributorId, key, cls.detail || "Malicious file detected");
+      return { key, ok: false, status: "failed", reason: cls.userError || "Malicious file detected", retryable: false };
+    }
+
+    // Idempotency: shu kalit avval ingest qilinganmi (fileSize=to'liq marker).
+    const prior = await prisma.contributorTemplate.findFirst({
+      where: { contributorId, externalId: key },
+      select: { id: true, fileSize: true },
+    });
+    if (prior) {
+      if (prior.fileSize != null) {
+        await deleteS3Objects([key]).catch(() => {});
+        return { key, ok: false, status: "duplicate", reason: "Already ingested", duplicateOf: prior.id };
+      }
+      await deleteTemplateAssets(prior.id).catch(() => {});
+      await prisma.contributorTemplate.delete({ where: { id: prior.id } }).catch(() => {});
+    }
+
+    // 2) ffprobe SPEC (fayl-o'zidan; hech qachon taxmin emas). LUT'da media yo'q → skip.
+    const spec = taxon.mediaClass === "lut" ? null : await probeMediaSpec(probeSource);
+    const orient = spec?.orient ?? null;
+    const res = spec && spec.width && spec.height && Math.max(spec.width, spec.height) >= 2000 ? "4k" : "1080p";
+    // Looped — faqat video (heuristik; xato bo'lsa null, uploadni to'xtatmaydi — P1.10).
+    const looped = isVideo ? await detectLoopedFromVideo(probeSource, spec?.durationSec ?? null) : null;
+
+    // 3) AI metadata (INGEST paytida — P1.12). Video: 1+o'rta kadr; rasm: o'zi; audio/lut: nom.
+    const framePaths: string[] = [];
+    if (isVideo) {
+      const dur = spec?.durationSec ?? null;
+      const f0 = path.join(tmpDir, "f0.jpg");
+      if (await extractFrameAt(probeSource, f0, 0.1)) framePaths.push(f0);
+      if (dur && dur > 1) {
+        const fMid = path.join(tmpDir, "fmid.jpg");
+        if (await extractFrameAt(probeSource, fMid, dur / 2)) framePaths.push(fMid);
+      }
+    } else if (isImage && localPath) {
+      framePaths.push(localPath);
+    }
+    const isAdmin = await isAdminUser(contributorId);
+    const aiMeta = await generateAssetMetadata({
+      typeKey: taxon.stockType || taxon.templateType || taxon.key,
+      mediaClass: taxon.mediaClass,
+      displayName: job.fileName || key,
+      imagePaths: framePaths,
+      durationSec: spec?.durationSec ?? null,
+      contributorId,
+      isAdmin,
+    });
+
+    const flags: string[] = [];
+    if (spec && !spec.width && (isImage || isVideo)) flags.push("Could not read dimensions");
+
+    // 4) Shablon yozuvi (PENDING_REVIEW) — kind/templateType/stockType/nav MAJBURIY yoziladi.
+    let template;
+    try {
+      template = await prisma.contributorTemplate.create({
+        data: {
+          contributorId,
+          externalId: key,
+          name: aiMeta.title,
+          description: aiMeta.description,
+          nav: navForAsset({ kind: taxon.kind, templateType: taxon.templateType, stockType: taxon.stockType }),
+          cat: aiMeta.cat,
+          catLabel: aiMeta.catLabel,
+          tags: aiMeta.tags,
+          orient: orient || "horizontal",
+          orientations: orient ? [orient] : [],
+          res,
+          kind: taxon.kind,
+          templateType: taxon.templateType || "video-templates",
+          stockType: taxon.stockType,
+          // LUTs/stock uchun templateApp ma'nosiz — default "ae" (ustun default'i bilan mos).
+          templateApp: "ae",
+          // ffprobe spec (nullable — UI bo'sh qatorlarni ko'rsatmaydi).
+          durationSec: spec?.durationSec ?? null,
+          width: spec?.width ?? null,
+          height: spec?.height ?? null,
+          fps: spec?.fps ?? null,
+          hasAlpha: spec?.hasAlpha ?? null,
+          looped,
+          videoCodec: spec?.videoCodec ?? null,
+          audioCodec: spec?.audioCodec ?? null,
+          audioBitrate: spec?.audioBitrate ?? null,
+          sampleRate: spec?.sampleRate ?? null,
+          reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
+          published: false,
+          reviewNote: flags.length ? `⚠ ${flags.join("; ")}` : null,
+          packHash: hash,
+          packScanStatus: cls.scanStatus,
+          packScanDetail: cls.detail.slice(0, 480),
+          ...(rights ?? {}),
+        },
+      });
+    } catch (e) {
+      if ((e as { code?: string })?.code === "P2002") {
+        return { key, ok: false, status: "duplicate", reason: "Already ingested" };
+      }
+      throw e;
+    }
+
+    // 5) Pack (TOZA asl) saqlash — fayl = pack. s3UploadKeyForFile xom kengaytmani
+    // tozalaydi (faqat loyiha formatlari) → kalitni QO'LDA quramiz (asl ext saqlanadi).
+    let packBytes = 0;
+    try {
+      const packKey = `templates/${template.id}/pack${ext}`;
+      if (localPath) {
+        await uploadFileToS3(localPath, packKey, meta.contentType || mimeForExt(localPath));
+        packBytes = fs.statSync(localPath).size;
+      } else {
+        // Katta video — bucket→bucket stream (disk/xotiraga to'liq olinmaydi).
+        const tap = new Transform({
+          transform(chunk: Buffer, _enc, cb) {
+            packBytes += chunk.length;
+            cb(null, chunk);
+          },
+        });
+        const src = createS3RangeStream(key, 0, meta.sizeBytes);
+        src.on("error", (er) => tap.destroy(er));
+        tap.on("close", () => {
+          if (!src.destroyed) src.destroy();
+        });
+        src.pipe(tap);
+        await uploadStreamToS3(tap, packKey, meta.contentType || "application/octet-stream");
+      }
+      const stored = await getS3ObjectMeta(packKey);
+      if (stored.sizeBytes == null || (packBytes && stored.sizeBytes !== packBytes)) {
+        throw new Error(`Pack storage verification failed (stored ${stored.sizeBytes ?? "none"}B, streamed ${packBytes}B)`);
+      }
+      packBytes = stored.sizeBytes;
+
+      // assetKeysJson — pack kaliti (derivativlar keyin generateStock… tomonidan qo'shiladi).
+      await syncTemplateAssetKeys(template.id, { ensure: [packKey] });
+      // Finalize (idempotency markeri).
+      await prisma.contributorTemplate.update({
+        where: { id: template.id },
+        data: { fileName: `pack${ext}`, fileSize: packBytes },
+      });
+    } catch (e) {
+      console.error("[ingest-asset] pack saqlash yiqildi, kompensatsiya:", key, e);
+      await deleteTemplateAssets(template.id).catch(() => {});
+      await prisma.contributorTemplate.delete({ where: { id: template.id } }).catch(() => {});
+      return {
+        key,
+        ok: false,
+        status: "failed",
+        retryable: true,
+        reason: `Storage failed (retry): ${e instanceof Error ? e.message : "unknown error"}`,
+      };
+    }
+
+    // 6) P4 — SUV BELGILI preview/thumb derivativlar (TOZA pack'dan; alohida obyekt).
+    //    Stock (graphics/motion-graphics/music/sfx) → suv belgili. LUT (kind=template) →
+    //    suv belgisi YO'Q (media emas); katalog karta gradient bilan chiqadi. AWAITED
+    //    (worker konteksti — CPU bor; fire-and-forget Cloud Run throttle tuzog'i yo'q).
+    if (taxon.kind === "stock") {
+      try {
+        await generateStockWatermarkedDerivatives(template.id);
+      } catch (e) {
+        console.error("[ingest-asset] suv belgili derivativ xato (davom etamiz):", template.id, e);
+      }
+    }
+
+    await deleteS3Objects([key]).catch(() => {});
+    if (cls.quarantine) {
+      await writeAuditLog({
+        actorId: contributorId,
+        action: "template.pack_quarantined",
+        targetType: "template",
+        targetId: template.id,
+        detail: cls.detail,
+        meta: { scanStatus: cls.scanStatus, hash, duplicateOf: dup?.id ?? null },
+      });
+    }
+    await writeAuditLog({
+      actorId: contributorId,
+      action: "template.ingested",
+      targetType: "template",
+      targetId: template.id,
+      detail: `${aiMeta.title} (${taxon.label}, ${key})`,
+    });
+    return { key, ok: true, status: "created", id: template.id };
+  } catch (e) {
+    console.error("[ingest-asset] xato:", key, e);
+    captureException(e, { area: "ingest-asset", key, contributorId });
+    return {
+      key,
+      ok: false,
+      status: "failed",
+      retryable: true,
+      reason: e instanceof Error ? e.message : "Unexpected error",
+    };
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 /**
@@ -2173,6 +2505,136 @@ contributorRouter.get(
     const scopeCon = req.user!.role === UserRole.ADMIN ? undefined : req.user!.userId;
     const prog = await getBatchProgress(batchId, scopeCon);
     res.json(prog);
+  }
+);
+
+// ── P1.9 (step 30) — RAW-FAYL bulk upload endpointlari (LUTs + Stock) ─────────
+// Zip flow'dan alohida: fayl = pack (unzip yo'q). Klient kategoriyani (taxon key)
+// tanlaydi, presigned PUT bilan `incoming/`ga yuklaydi (asl kengaytma saqlanadi),
+// so'ng /ingest-assets ularni sourceType='asset' bilan NAVBATGA qo'shadi.
+
+const RAW_ASSET_CATEGORIES = ["luts", "graphics", "motion-graphics", "music", "sfx"] as const;
+const assetUploadUrlSchema = z.object({
+  category: z.enum(RAW_ASSET_CATEGORIES),
+  files: z
+    .array(z.object({ fileName: z.string().min(1).max(200), contentType: z.string().max(120).optional() }))
+    .min(1)
+    .max(50),
+});
+
+/**
+ * POST /incoming/asset-upload-url — xom fayl(lar) uchun presigned PUT. Kalit DETERMINISTIK
+ * (contributorId + tozalangan nom + asl-nom hash + ASL kengaytma) — idempotent. Kengaytma
+ * kategoriyaga (taxon.exts) qarab tekshiriladi (Music dropzone .zip qabul qilmaydi).
+ */
+contributorRouter.post(
+  "/incoming/asset-upload-url",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Cloud storage is not configured" });
+      return;
+    }
+    const p = assetUploadUrlSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
+      return;
+    }
+    const taxon = taxonByKey(p.data.category);
+    if (!taxon || taxon.sourceType !== "asset") {
+      res.status(400).json({ error: "Invalid category" });
+      return;
+    }
+    const contributorId = req.user!.userId;
+    const uploads = [];
+    for (const f of p.data.files) {
+      if (!extAllowedForTaxon(taxon, f.fileName)) {
+        res.status(400).json({
+          error: `"${f.fileName}" is not a valid ${taxon.label} file (allowed: ${taxon.exts.join(", ")})`,
+        });
+        return;
+      }
+      const ext = (path.extname(f.fileName) || "").toLowerCase();
+      const safeName = sanitizeFileBaseName(f.fileName.replace(/\.[a-z0-9]+$/i, ""));
+      const nameDisc = crypto.createHash("sha256").update(f.fileName).digest("hex").slice(0, 8);
+      const key = `incoming/${contributorId}/${safeName}-${nameDisc}${ext}`;
+      const ct = f.contentType || mimeForExt(f.fileName);
+      const url = await getSignedUploadUrl(key, ct, 1800);
+      uploads.push({ fileName: f.fileName, key, url, contentType: ct });
+    }
+    res.json({ uploads });
+  }
+);
+
+const ingestAssetsSchema = z.object({
+  category: z.enum(RAW_ASSET_CATEGORIES),
+  keys: z.array(z.string().min(1).max(500)).min(1).max(50),
+  rightsAccepted: z.boolean().optional(),
+  rightsTermsVersion: z.string().max(40).optional(),
+});
+
+/**
+ * POST /ingest-assets — yuklangan xom fayl kalitlarini IngestJob navbatiga (sourceType='asset')
+ * QO'SHADI (P1 #19 + P1.9). Taksonomiya (kind/templateType/stockType) job'ga yoziladi —
+ * ingestOneAsset uni o'qiydi. Darhol {batchId} qaytadi; klient /ingest/progress'ni pollaydi.
+ */
+contributorRouter.post(
+  "/ingest-assets",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    if (
+      req.user!.role === UserRole.CONTRIBUTOR &&
+      !(await assertContributorNotBlocked(req.user!.userId, res))
+    ) {
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Cloud storage is not configured" });
+      return;
+    }
+    const p = ingestAssetsSchema.safeParse(req.body);
+    if (!p.success) {
+      res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
+      return;
+    }
+    const taxon = taxonByKey(p.data.category);
+    if (!taxon || taxon.sourceType !== "asset") {
+      res.status(400).json({ error: "Invalid category" });
+      return;
+    }
+    const rights = rightsCaptureFields(p.data);
+    if (!rights) {
+      res.status(400).json({
+        error: "You must confirm you own the rights to distribute these assets before uploading",
+        code: "RIGHTS_REQUIRED",
+      });
+      return;
+    }
+    const contributorId = req.user!.userId;
+    const batchId = crypto.randomUUID();
+    await enqueueIngestJobs(
+      p.data.keys.map((key) => ({
+        batchId,
+        contributorId,
+        sourceType: "asset" as const,
+        key,
+        fileName: (key.split("/").pop() || key).replace(/-[0-9a-f]{8}(\.[a-z0-9]+)$/i, "$1"),
+        kind: taxon.kind,
+        templateType: taxon.templateType,
+        stockType: taxon.stockType,
+        rightsAcceptedAt: rights.rightsAcceptedAt,
+        rightsTermsVersion: rights.rightsTermsVersion,
+      }))
+    );
+    res.json({ batchId, queued: p.data.keys.length });
   }
 );
 

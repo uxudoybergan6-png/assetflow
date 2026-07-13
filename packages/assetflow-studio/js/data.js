@@ -59,6 +59,54 @@ function stockCatFromLabel(label) {
   };
 }
 
+/* ── P1 (step 30) — KANONIK UPLOAD TAKSONOMIYASI ───────────────────────────────
+   YAGONA MANBA (server lib/taxonomy.ts nusxasi). Upload picker, dropzone kengaytmalari
+   va kategoriya ro'yxatlari SHU YERDAN. Uchta alohida ro'yxat BO'LMASIN (P1 talabi). */
+const UPLOAD_TAXONOMY = [
+  { key: "video-templates", label: "Video Templates", kind: "template", source: "zip",
+    icon: "layers", exts: [".zip"],
+    hint: "One .zip per template — a project file (.aep / .mogrt / .motn / .drfx) plus a preview image and/or video. The host app is detected automatically." },
+  { key: "luts", label: "LUTs", kind: "template", source: "asset",
+    icon: "sliders", exts: [".cube", ".3dl", ".look"],
+    hint: "Raw LUT files — .cube, .3dl or .look. Each file is one product." },
+  { key: "graphics", label: "Graphics", kind: "stock", stockType: "graphics", source: "asset",
+    icon: "image", exts: [".jpg", ".jpeg", ".png", ".webp", ".svg"],
+    hint: "Images — JPG, PNG, WebP or SVG. Each file is one product." },
+  { key: "motion-graphics", label: "Motion Graphics", kind: "stock", stockType: "motion-graphics", source: "asset",
+    icon: "film", exts: [".mp4", ".mov"],
+    hint: "Video clips — MP4, or MOV (ProRes) for transparency/alpha. Each file is one product." },
+  { key: "music", label: "Music", kind: "stock", stockType: "music", source: "asset",
+    icon: "play", exts: [".wav", ".mp3", ".aiff", ".aif"],
+    hint: "Music tracks — WAV, MP3 or AIFF. Each file is one product." },
+  { key: "sfx", label: "Sound Effects", kind: "stock", stockType: "sfx", source: "asset",
+    icon: "megaphone", exts: [".wav", ".aiff", ".aif", ".mp3"],
+    hint: "Sound effects — WAV, AIFF or MP3. Each file is one product." },
+];
+
+// Top-level guruhlar (Stock 4 sub-turga yoyiladi).
+const UPLOAD_TOP_GROUPS = [
+  { key: "video-templates", label: "Video Templates" },
+  { key: "luts", label: "LUTs" },
+  { key: "stock", label: "Stock", subs: ["graphics", "motion-graphics", "music", "sfx"] },
+];
+
+// Kategoriya ro'yxatlari — HAR type uchun (server CATEGORIES_BY_TYPE nusxasi).
+const CATEGORIES_BY_TYPE = {
+  "video-templates": ["Titles", "Lower Thirds", "Transitions", "Intros", "Logo Reveal", "Openers", "Slideshows", "Backgrounds", "Overlays", "Infographics", "Social Media", "Logos", "Mockups"],
+  "luts": ["Cinematic", "Vintage", "Film Emulation", "Black & White", "Warm", "Cool", "Teal & Orange", "Moody", "Vibrant", "Natural"],
+  "graphics": ["Backgrounds", "Textures", "Patterns", "Icons", "Illustrations", "Mockups", "Abstract", "Gradients", "Shapes", "Social Media"],
+  "motion-graphics": ["Backgrounds", "Overlays", "Transitions", "Elements", "Light Leaks", "Particles", "Abstract", "Loops", "Social Media"],
+  "music": ["Cinematic", "Corporate", "Ambient", "Electronic", "Hip-Hop", "Rock", "Pop", "Folk", "Jazz", "Classical"],
+  "sfx": ["Whoosh", "Impact", "UI / Interface", "Ambience", "Foley", "Transitions", "Glitch", "Nature", "Mechanical", "Voice"],
+};
+
+function taxonByKey(key) {
+  return UPLOAD_TAXONOMY.find((t) => t.key === key) || null;
+}
+function categoriesForType(typeKey) {
+  return CATEGORIES_BY_TYPE[typeKey] || [];
+}
+
 /**
  * AE Browse plugin — Free and Pro only
  * downloadLimit: downloads per month; unlimitedDownloads=true means no limit

@@ -424,6 +424,66 @@ const StudioApi = (() => {
     }));
   }
 
+  /**
+   * P1.9 (step 30) — RAW-FAYL bulk uploader (LUTs + Stock: Graphics/Motion Graphics/Music/SFX).
+   * bulkIngestZips bilan bir xil naqsh, lekin fayl = pack (zip emas): `category` (taxon key)
+   * bo'yicha presigned PUT → /ingest-assets navbatga qo'shadi → pollIngestBatch.
+   * onFileProgress(index, {stage,pct,error,id}) — bulk UI bilan bir xil kontrakt.
+   */
+  async function bulkIngestAssets(category, files, onFileProgress, rights) {
+    const resp = await request("/api/contributor/incoming/asset-upload-url", {
+      method: "POST",
+      body: {
+        category,
+        files: files.map((f) => ({ fileName: f.name, contentType: f.type || undefined })),
+      },
+    });
+    const uploads = (resp && resp.uploads) || [];
+    const uploaded = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const u = uploads[i];
+      if (!u) {
+        if (onFileProgress) onFileProgress(i, { stage: "error", error: "No upload URL returned" });
+        continue;
+      }
+      if (onFileProgress) onFileProgress(i, { stage: "uploading", pct: 0 });
+      try {
+        await xhrWithRetry({
+          method: "PUT",
+          url: u.url,
+          body: f,
+          headers: { "Content-Type": u.contentType || f.type || "application/octet-stream" },
+          onProg: (loaded) => {
+            const pct = f.size > 0 ? Math.floor((loaded / f.size) * 100) : 100;
+            if (onFileProgress) onFileProgress(i, { stage: "uploading", pct });
+          },
+        });
+        if (onFileProgress) onFileProgress(i, { stage: "processing", pct: 100 });
+        uploaded.push({ index: i, key: u.key });
+      } catch (e) {
+        if (onFileProgress) onFileProgress(i, { stage: "error", error: e.message || "Upload failed" });
+      }
+    }
+    if (!uploaded.length) return [];
+    const ingestResp = await request("/api/contributor/ingest-assets", {
+      method: "POST",
+      body: {
+        category,
+        keys: uploaded.map((u) => u.key),
+        rightsAccepted: !!(rights && rights.rightsAccepted),
+        rightsTermsVersion: (rights && rights.rightsTermsVersion) || undefined,
+      },
+    });
+    const batchId = ingestResp && ingestResp.batchId;
+    if (!batchId) {
+      for (const { index } of uploaded)
+        if (onFileProgress) onFileProgress(index, { stage: "error", error: "Ingest queue error" });
+      return [];
+    }
+    return pollIngestBatch(batchId, uploaded, onFileProgress);
+  }
+
   async function listTemplates(query = "") {
     const q = query ? (query.startsWith("?") ? query : `?${query}`) : "";
     return request(`/api/contributor/templates${q}`);
@@ -696,6 +756,7 @@ const StudioApi = (() => {
     submitTemplate,
     uploadAssets,
     bulkIngestZips,
+    bulkIngestAssets,
     listTemplates,
     reviewTemplate,
     patchTemplate,

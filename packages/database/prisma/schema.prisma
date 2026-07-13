@@ -296,6 +296,22 @@ model ContributorTemplate {
   kind          String               @default("template")
   stockType     String?
   templateType  String               @default("video-templates")
+  // ── P1 (step 30) — ko'p orientatsiya + ffprobe spec (ADDITIVE, hammasi nullable) ──
+  // orientations: "vertical and horizontal" → ["horizontal","vertical"]; `orient` esa
+  // asosiy qiymatni saqlaydi (katalog/plagin filtri buzilmasin). Bo'sh = bitta orient.
+  orientations  String[]             @default([])
+  // ffprobe'dan (fayl-o'zidan, hech qachon taxmin emas). Eski qatorlar NULL → UI qatorni
+  // ko'rsatmaydi. Looped = algoritmik taxmin (birinchi/oxirgi kadr); xato bo'lsa null (P1.10).
+  durationSec   Float?               // video/audio davomiyligi (soniya)
+  width         Int?                 // piksel kengligi (video/rasm)
+  height        Int?                 // piksel balandligi (video/rasm)
+  fps           Float?               // kadr tezligi (video)
+  hasAlpha      Boolean?             // alfa kanal (yuva420p/rgba/argb/ProRes 4444) — .mov/.webm
+  looped        Boolean?             // seamless loop taxmini (heuristic; null = aniqlanmadi)
+  videoCodec    String?              // h264 | hevc | prores | ...
+  audioCodec    String?              // mp3 | aac | pcm_s16le | ...
+  audioBitrate  Int?                 // audio bitrate (bps)
+  sampleRate    Int?                 // audio sample rate (Hz)
   metaJson      Json                 @default("{}")
   fileName      String?
   fileSize      Int?

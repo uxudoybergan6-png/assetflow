@@ -206,8 +206,10 @@ export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): str
       base, `${base}.mogrt`, `${base}.zip`, `${base}.aep`,
       `${base}.aet`, `${base}.ffx`, `${base}.prproj`, `${base}.motn`, `${base}.moti`,
       `${base}.drfx`, `${base}.dra`, `${base}.setting`,
-      `${base}.mp4`, `${base}.mov`, `${base}.wav`, `${base}.mp3`, `${base}.aiff`,
-      `${base}.jpg`, `${base}.jpeg`, `${base}.png`, `${base}.webp`,
+      `${base}.mp4`, `${base}.mov`, `${base}.wav`, `${base}.mp3`, `${base}.aiff`, `${base}.aif`,
+      `${base}.jpg`, `${base}.jpeg`, `${base}.png`, `${base}.webp`, `${base}.svg`,
+      // P1 (step 30) — LUTs xom pack kengaytmalari (kind=template, templateType=luts)
+      `${base}.cube`, `${base}.3dl`, `${base}.look`,
     ];
   }
   if (kind === "preview") {

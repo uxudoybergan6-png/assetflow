@@ -39,7 +39,7 @@ function utcDayNumber(): number {
  */
 export async function incrDailyUsage(
   userId: string,
-  kind: "gen" | "helper" | "blocked",
+  kind: "gen" | "helper" | "blocked" | "ai-metadata",
   cap: number
 ): Promise<boolean> {
   const day = utcDayNumber();
