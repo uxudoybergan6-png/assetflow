@@ -1,17 +1,15 @@
 # SESSION REPORT — 2026-07-13
-- Vazifa: MUAMMOLAR-1 8-qadam (P19 / P19.5) — "refund oldidan provayderdan so'ra" + resumable RASM jobs.
-- P19.5 SETTLE: 20-daq cutoff endi TRIGGER-TO-ASK. `settleStuckGeneration` → `probeProviderJob`
-  (fal/byteplus/vertex/openrouter) → decideStuckRefund: alive/unreachable=kut, failed=refund,
-  hard-ceiling o'tsa=refund, job-yo'q=refund. Atomik guard (updateMany queued/running + count>0)
-  BAYT-BAYT o'zgarmadi; provayder-tekshiruvi faqat refund QARORIDAN OLDIN.
-- RESUMABLE IMAGE: fal-image jobi `__providerJob`ga saqlanadi (onJob), jarayon o'lsa `runFalImage`
-  responseUrl'dan natijani QAYTA oladi — qayta submit/to'lov YO'Q. Faqat count===1 (bitta slot);
-  count>1 mavjud, resume-siz (qayta to'lovdan xoli).
-- HARD CEILING per-model: rasm/audio 1s · video 2s · video-upscale 4s (backstop, guess emas).
-- P19.6 YETIM FAYL: terminal refunddan keyin `deleteGenObjectsByPrefix(gen/<uid>/<gid>-)` — case C /
-  moderation orfan obyektlarini tozalaydi (gen-refs prefiksiga tegmaydi).
-- ProviderSpend allaqachon submit'da (fail'da ham) yoziladi — item bajarilgan.
-- Money-zone TEGILMADI: refundAiCredits/consumeAiCredits/HMAC/kredit qiymatlari o'zgarmadi.
-- Isbot: p19-proof.mjs (real kod + fal fetch stub) — 28/28 pass: done→yetkaz, working→kut, failed→refund,
-  resume'da submit=0, ceiling backstop. `npm run build -w apps/api` OK. DB migratsiya SHART EMAS.
-- Commit qilindi (main), PUSH QILINMADI. Kutilmoqda: Render deploy + AE jonli test.
+- Vazifa: MUAMMOLAR-1 Block G (SCALE) — 15/16/17/18 (server-side katalog). 4 commit, PUSH YO'Q.
+- #15 (API·WEB·PLUGIN): server-side filtr/qidiruv/saralash/sahifalash. GET /api/plugin/catalog ga
+  app/templateType/cat/pro/orient/res/q/sort + take/cursor (buildCatalogWhere + catalogOrderBy,
+  4-qadam indekslari). IKKALA klientdagi "hamma sahifani yuklab ol" sikli O'CHIRILDI.
+- #16 (API): SLIM ro'yxat (mapCatalogCard, metaJson yo'q, scene-enrich yo'q) + detal endpoint
+  GET /api/plugin/catalog/:id (mapCatalogItem). Plagin sahnalarni openPack'da detaldan lazy oladi.
+- #17 (API): Cache-Control public,max-age=60,s-maxage=300 + ETag + 304 (E'dagi CDN barqaror URL).
+- WEB: server-driven browse quvuri (state.browse), infinite scroll + Load more; Home javonlari
+  1-sahifadan. PLUGIN: refreshBrowse/loadMoreBrowse + getFiltered server pass-through + grid
+  VIRTUALIZATSIYASI (faqat ko'rinadigan kartalar + spacer; #18). res filtri 2K/4K/5K guruhlari.
+- Money-zone TEGILMADI. Isbot: lokal 500-asset API — API 26/26 assertion (filtr BUTUN baza bo'yicha
+  to'g'ri, ETag→304, slim/detail). WEB brauzerda: ochilish 2 so'rov, q="zqxwv42"→7, LUTs→faqat LUTs,
+  Load more 48→96. PLUGIN brauzerda: 48 karta, load-more 48→125, virtualizatsiya DOM 14-22 karta+spacer.
+- Kutilmoqda (foydalanuvchi): git push + Cloud Run deploy; AE'da jonli test (install-cep bajarildi).
