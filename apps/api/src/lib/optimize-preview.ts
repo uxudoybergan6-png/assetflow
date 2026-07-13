@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execFile } from "child_process";
@@ -517,6 +518,8 @@ export async function probeMediaSpec(source: string): Promise<MediaSpec> {
     }
     const dur = Number(j.format?.duration) || Number(v?.duration) || Number(a?.duration);
     if (Number.isFinite(dur) && dur > 0) out.durationSec = round2(dur);
+    // Still rasm (png/mjpeg/webp/bmp/gif) — ffprobe soxta fps (25) beradi → null.
+    if (out.videoCodec && /^(png|mjpeg|webp|bmp|gif|tiff)$/i.test(out.videoCodec)) out.fps = null;
     return out;
   } catch {
     return empty;
@@ -529,52 +532,56 @@ function round2(n: number): number {
 
 /**
  * P1.10 — LOOPED taxmini (heuristik; EGA QARORI: algoritm taxmin qilsin). Birinchi va
- * OXIRGI kadrni kichik (32px) ko'rinishga tushirib, o'rtacha piksel farqini hisoblaydi;
- * chegaradan past → seamless loop. ffmpeg `blend=difference` + `signalstats` YAVGni beradi.
- * HECH QACHON throw QILMAYDI / uploadni to'xtatmaydi — xato/aniqlanmasa null (P1.10).
- * MUHIM: bu heuristik va ba'zan xato bo'ladi; admin edit wizardda tuzatishi mumkin.
+ * OXIRGI kadrni ALOHIDA fayl sifatida chiqarib (-ss input-seek — ishonchli), difference
+ * blend + signalstats YAVG (o'rtacha yorqinlik farqi 0..255) hisoblaydi; chegaradan past
+ * → seamless loop. `source` lokal fayl yoki URL. HECH QACHON throw QILMAYDI / uploadni
+ * to'xtatmaydi — xato/aniqlanmasa null (P1.10). MUHIM: heuristik, ba'zan xato — admin
+ * edit wizardda tuzatishi mumkin. Chegara ehtiyotkor (past false-positive): faqat juda
+ * o'xshash kadrlar loop deb belgilanadi.
  */
 export async function detectLoopedFromVideo(
-  filePath: string,
+  source: string,
   durationSec: number | null
 ): Promise<boolean | null> {
-  if (!fs.existsSync(filePath)) return null;
+  const isUrl = /^https?:\/\//i.test(source);
+  if (!isUrl && !fs.existsSync(source)) return null;
   const dur = Number(durationSec);
-  if (!Number.isFinite(dur) || dur < 0.5) return null; // juda qisqa → ishonchsiz
+  if (!Number.isFinite(dur) || dur < 0.6) return null; // juda qisqa → ishonchsiz
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_loop_"));
   try {
-    // Oxirgi kadrga yaqin nuqta (dur - kichik epsilon). Ikkala kadrni 32x32 ga
-    // scale qilib difference blend → signalstats YAVG (o'rtacha yorqinlik farqi 0..255).
-    const lastTs = Math.max(0, dur - 0.08).toFixed(3);
+    const first = path.join(tmpDir, "first.jpg");
+    const last = path.join(tmpDir, "last.jpg");
+    const okA = await extractFrameAt(source, first, 0.05);
+    const okB = await extractFrameAt(source, last, Math.max(0.1, dur - 0.06));
+    if (!okA || !okB) return null;
+    // Ikki ALOHIDA rasm kirishi → toza difference blend (in-graph double-trim ishonchsiz edi).
     const { stdout, stderr } = await execFileAsync(
       "ffmpeg",
       [
         "-v", "info",
-        "-i", filePath,
+        "-i", first,
+        "-i", last,
         "-filter_complex",
-        // [0] birinchi kadr (ts=0), [1] oxirgi kadr — ikkalasini 32x32 gray, difference, signalstats
-        `[0:v]trim=start=0:end=0.04,scale=32:32,format=gray[a];` +
-          `[0:v]trim=start=${lastTs},setpts=PTS-STARTPTS,scale=32:32,format=gray[b];` +
-          `[a][b]blend=all_mode=difference,signalstats,metadata=print:file=-[out]`,
-        "-map", "[out]",
-        "-f", "null",
-        "-",
+        "[0:v]scale=64:64,format=gray[a];[1:v]scale=64:64,format=gray[b];" +
+          "[a][b]blend=all_mode=difference,signalstats,metadata=print:file=-[out]",
+        "-map", "[out]", "-f", "null", "-",
       ],
-      { timeout: 30_000, maxBuffer: 4 * 1024 * 1024 }
+      { timeout: 20_000, maxBuffer: 4 * 1024 * 1024 }
     ).catch((e: unknown) => {
-      // ffmpeg metadata'ni stderr'ga yozishi mumkin — chiqishni baribir tekshiramiz.
       const err = e as { stdout?: string; stderr?: string };
       return { stdout: err.stdout || "", stderr: err.stderr || "" };
     });
     const blob = String(stdout || "") + "\n" + String(stderr || "");
-    // signalstats YAVG (o'rtacha) qiymatini o'qiymiz.
-    const m = /lavfi\.signalstats\.YAVG=([0-9.]+)/i.exec(blob) || /YAVG=([0-9.]+)/i.exec(blob);
+    const m = /lavfi\.signalstats\.YAVG=([0-9.]+)/i.exec(blob);
     if (!m) return null;
     const yavg = Number(m[1]);
     if (!Number.isFinite(yavg)) return null;
-    // Chegara: o'rtacha farq < 12/255 (~4.7%) → seamless loop deb hisoblanadi.
-    return yavg < 12;
+    // Ehtiyot chegara: YAVG < 5/255 (~2%) → seamless loop. Yuqori = false-positive kam.
+    return yavg < 5;
   } catch {
     return null;
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
   }
 }
 
