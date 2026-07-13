@@ -18,6 +18,10 @@ darajasida MAJBURIY — per-obyekt public IMKONSIZ. Bucket YOPIQ qoladi; ko'rsat
 (thumb/preview/scene/gen-derivativ→200; pack/pack.dl/mogrt/gen-asl/gen-refs/gen-ref-src/avatars/
 incoming→403). WEB/PLUGIN kod O'ZGARMAYDI (thumbUrl kontrakti bir xil).
 
-**Kutilmoqda (owner):** Worker deploy (secretlar + cdn.getframeflow.app domen) → `gh secret set
-CLOUDRUN_ENV_YAML` → API deploy → jonli isbot: CDN thumb/preview 200 · pack/gen-refs 403 · GCS
-to'g'ridan 403 · Pro pack 302→signed. So'ng men push+deploy qilaman.
+**✅ JONLI (deploy qilindi 2026-07-13, 33d13ae push→Cloud Run deploy OK).** To'liq isbot o'tdi:
+- CDN display: templates/thumb·preview, gen -disp/-thumb/-poster → **200**
+- CDN pullik/shaxsiy: pack.zip · gen-refs · gen ASL fayli → **403**
+- GCS to'g'ridan thumb → **403** (bucket yopiq)
+- Katalog thumbUrl/previewUrl endi `cdn.getframeflow.app` (jonli 200)
+- Pack: gated route → **302 → signed storage.googleapis.com, 5-min** (206 resolve); token'siz → **401**
+(Deploydan keyingi dastlabki daqiqalarda HEAD flaky edi — warmup; GET 100% barqaror, browser <img>/<video>=GET.)
