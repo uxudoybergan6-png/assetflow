@@ -151,7 +151,9 @@ type TemplateRow = {
   kind?: string;
   stockType?: string | null;
   templateType?: string;
-  metaJson: unknown;
+  // P1 #16 — SLIM ro'yxat SELECT metaJson'ni chiqarib tashlaydi (karta uni o'qimaydi);
+  // to'liq detal SELECT'da bor. mapCatalogItem `?? {}` bilan yo'qligini boshqaradi.
+  metaJson?: unknown;
   fileName: string | null;
   fileSize: number | null;
   isPro: boolean;
@@ -181,23 +183,19 @@ function contributorAuthor(
   return { author: display || null, authorInitials: initials };
 }
 
-export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
-  const rawMeta = (t.metaJson ?? {}) as Record<string, unknown>;
-  const { author, authorInitials } = contributorAuthor(t.contributor);
-  // FAZA 5 (A2): kalitlar avval DB keshidan (assetKeysJson — mutatsiya paytida
-  // yoziladi) — listing S3'ga UMUMAN chiqmaydi. Kesh hali yo'q bo'lsa (eski
-  // yozuv) bir marta live List + DB'ga saqlab o'zini to'ldiradi (lazy backfill);
-  // sync yiqilsa ham live List bilan davom etadi.
+/** Asset URL/bayroqlarini yechish — mapCatalogItem (to'liq) va mapCatalogCard (slim)
+ *  o'rtasida umumiy. Kalitlar avval DB keshidan (assetKeysJson); kesh yo'q bo'lsa
+ *  bir marta live List + DB'ga saqlab o'zini to'ldiradi (lazy backfill, eski yozuvlar
+ *  uchun). Ingest endi assetKeysJson yozadi (P1 #16) — yangi yozuvlarda List CHAQIRILMAYDI. */
+async function resolveCatalogAssets(t: TemplateRow, apiBase: string) {
   const storedKeys = assetKeySetFromStored(t.assetKeysJson);
   const s3Keys =
     storedKeys ??
     (await syncTemplateAssetKeys(t.id)) ??
     (await listTemplateS3Keys(t.id));
   // Cache-bust versiyasi: shablon oxirgi yangilangan vaqt (epoch ms). R2 kalitlari
-  // versiyalanmagani uchun CDN public URL'lariga ?v=<epoch> qo'shamiz — assetni
-  // qayta yuklaganda eski kesh ko'rinmasin.
+  // versiyalanmagani uchun CDN public URL'lariga ?v=<epoch> qo'shamiz.
   const cacheBust = t.updatedAt.getTime();
-  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, cacheBust, s3Keys);
   const assets = await templateAssetFlags(t.id, s3Keys, {
     confirmPack: !storedKeys, // DB keshi authoritative — HeadObject re-tasdiq shart emas
   });
@@ -205,16 +203,11 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const hasPreview = assets.preview;
   const hasPack = assets.pack;
 
-  // Thumb/preview — ochiq assetlar. R2'da bo'lsa TO'G'RIDAN CDN public URL
-  // qaytaramiz, shunda brauzer Cloudflare'dan oladi va Render bandwidth = 0
-  // (avval har bir asset Render API → 302 redirect orqali o'tardi). Faqat
-  // lokal disk (dev, R2 yo'q) holatida API endpoint orqali stream qilinadi.
   const useS3 = isS3Configured();
   const thumbS3 = useS3 ? s3AssetKeyFromSet(t.id, "thumb", s3Keys) : null;
   const previewS3 = useS3 ? s3AssetKeyFromSet(t.id, "preview", s3Keys) : null;
-  // Raw .aep pack — serve-asset.ts uni yuklab olishda .zipga o'raydi (§9),
-  // shu bois klient (ayniqsa AE plagin — fileName kengaytmasidan lokal keshni
-  // nomlaydi) ham .zip kutishi kerak, aks holda zip baytlari .aep deb saqlanadi.
+  // Raw .aep pack — serve-asset.ts uni yuklab olishda .zipga o'raydi (§9), shu bois
+  // klient (ayniqsa AE plagin) ham .zip kutishi kerak.
   const packS3Key = useS3 ? s3AssetKeyFromSet(t.id, "pack", s3Keys) : null;
   const packIsRawAep = !!packS3Key && /\.aep$/i.test(packS3Key);
   const thumbUrl = thumbS3
@@ -227,14 +220,32 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     : hasPreview
       ? publicAssetUrl(apiBase, t.id, "preview")
       : null;
-
-  // Pack URL — DOIM API endpoint orqali (to'g'ridan R2 public URL EMAS).
-  // Shu sabab pack yuklab olish auth + published + Free/Pro limit gate'idan
-  // o'tadi; route esa qisqa muddatli signed R2 URL'ga redirect qiladi.
-  const packUrl: string | null = hasPack
-    ? publicAssetUrl(apiBase, t.id, "pack")
+  // Pack URL — DOIM API endpoint orqali (auth + published + Free/Pro gate).
+  const packUrl: string | null = hasPack ? publicAssetUrl(apiBase, t.id, "pack") : null;
+  const fileName = hasPack
+    ? packIsRawAep
+      ? (t.fileName || "template.aep").replace(/\.aep$/i, ".zip")
+      : t.fileName
     : null;
 
+  const { author, authorInitials } = contributorAuthor(t.contributor);
+  return {
+    s3Keys,
+    cacheBust,
+    hasThumb,
+    hasPreview,
+    hasPack,
+    thumbUrl,
+    previewUrl,
+    packUrl,
+    fileName,
+    author,
+    authorInitials,
+  };
+}
+
+/** Karta uchun umumiy maydonlar (list + detail bir xil karta ko'rsatadi). */
+function cardBase(t: TemplateRow, a: Awaited<ReturnType<typeof resolveCatalogAssets>>) {
   return {
     id: t.id,
     externalId: t.externalId,
@@ -253,27 +264,45 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
     kind: t.kind ?? "template",
     stockType: t.stockType ?? null,
     type: t.templateType ?? "video-templates",
-    fileName: hasPack
-      ? packIsRawAep
-        ? (t.fileName || "template.aep").replace(/\.aep$/i, ".zip")
-        : t.fileName
-      : null,
-    fileSize: hasPack ? t.fileSize : null,
-    hasThumb,
-    hasPreview,
-    hasPack,
-    thumbUrl,
-    previewUrl,
-    packUrl,
-    metaJson: meta,
-    // AE redesign uchun additive maydonlar (mavjud kontrakt o'zgarmaydi):
-    author,            // contributor display name (yo'q bo'lsa null)
-    authorInitials,    // avatar bosh harflar ("Dilnoza K." → "DK")
-    isPro: t.isPro,    // per-shablon tier (false = FREE)
+    fileName: a.fileName,
+    fileSize: a.hasPack ? t.fileSize : null,
+    hasThumb: a.hasThumb,
+    hasPreview: a.hasPreview,
+    hasPack: a.hasPack,
+    thumbUrl: a.thumbUrl,
+    previewUrl: a.previewUrl,
+    packUrl: a.packUrl,
+    author: a.author, // contributor display name (yo'q bo'lsa null)
+    authorInitials: a.authorInitials, // avatar bosh harflar ("Dilnoza K." → "DK")
+    isPro: t.isPro, // per-shablon tier (false = FREE)
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
     // §B (P2) — NEW badge / "Newest" uchun nashr vaqti (approve = reviewedAt; fallback createdAt)
     publishedAt: (t.reviewedAt ?? t.createdAt).toISOString(),
+  };
+}
+
+/**
+ * P1 #16 — SLIM ro'yxat payload'i (KARTA uchun). `metaJson` (sahnalar) va scene
+ * enrichment (per-row storage lookup) YO'Q — ular DETAL endpointida (mapCatalogItem,
+ * GET /api/plugin/catalog/:id). Ro'yxat javobi order-of-magnitude kichikroq va
+ * har qator uchun sahna storage round-trip'i qilinmaydi. Web karta hech qachon
+ * metaJson o'qimaydi; plagin sahnalarni pack ochilganda detaldan lazy oladi.
+ */
+export async function mapCatalogCard(t: TemplateRow, apiBase: string) {
+  const a = await resolveCatalogAssets(t, apiBase);
+  return cardBase(t, a);
+}
+
+/** To'liq katalog element — karta + enriched sahnalar (metaJson). Detal endpointi
+ *  va deep-link (P2) uchun; plagin pack sahnalarini shundan oladi. */
+export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
+  const rawMeta = (t.metaJson ?? {}) as Record<string, unknown>;
+  const a = await resolveCatalogAssets(t, apiBase);
+  const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, a.cacheBust, a.s3Keys);
+  return {
+    ...cardBase(t, a),
+    metaJson: meta,
   };
 }
 

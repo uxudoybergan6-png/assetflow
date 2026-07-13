@@ -9,6 +9,7 @@ import {
   PluginAccountStatus,
   PluginPlanTier,
   TemplateReviewStatus,
+  Prisma,
   prisma,
 } from "@creative-tools/database";
 import type { Request, Response } from "express";
@@ -27,7 +28,7 @@ import {
   setPluginPlan,
   isPaidPlan,
 } from "../lib/plugin-profile.js";
-import { approvedCatalogWhere, mapCatalogItem } from "../lib/catalog-map.js";
+import { approvedCatalogWhere, mapCatalogItem, mapCatalogCard } from "../lib/catalog-map.js";
 import { recordTemplateDownloadEvent } from "../lib/download-events.js";
 import {
   type TemplateAssetKind,
@@ -106,6 +107,16 @@ const CATALOG_SELECT = {
   assetKeysJson: true, // FAZA 5 (A2) — S3 kalitlar keshi (listing S3'siz)
 } as const;
 
+/** P1 #16 — SLIM ro'yxat SELECT: CATALOG_SELECT dan `metaJson`ni chiqarib tashlaydi.
+ *  metaJson (sahnalar) ba'zan katta JSON — ro'yxatda hech qachon o'qilmaydi (karta
+ *  uni ko'rsatmaydi). Sahnalar DETAL endpointida (mapCatalogItem). Bu DB o'qish va
+ *  transfer hajmini kamaytiradi. */
+const CATALOG_CARD_SELECT = (() => {
+  const { metaJson, ...rest } = CATALOG_SELECT;
+  void metaJson;
+  return rest;
+})();
+
 /** FAZA 5 (§8, §11) — ixtiyoriy `?app=<kod>` filtri: har dastur faqat o'zini ko'radi
  *  (AE plagin `?app=ae` yuboradi). Param yo'q bo'lsa bugungidek hamma dasturni qaytaradi;
  *  bo'lsa approvedCatalogWhere ustiga templateApp predikati qo'shiladi (semantika buzilmaydi). */
@@ -113,6 +124,114 @@ function catalogWhere(appParam: unknown) {
   const code = typeof appParam === "string" ? appParam.trim().toLowerCase() : "";
   if (!code) return approvedCatalogWhere;
   return { ...approvedCatalogWhere, templateApp: code };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P1 #15 — SERVER-SIDE KATALOG: filtr · qidiruv · saralash · sahifalash.
+// Ilgari IKKALA klient (web + plagin) BUTUN katalogni yuklab olib brauzerda
+// filtrlardi (P5.1) → 5000 assetda birinchi sahifa ichidan qidirish + AE muzlashi.
+// Endi filtr/qidiruv/saralash SERVER tomonda (approvedCatalogWhere ustiga additive
+// predikatlar), indekslar (4-qadam: ct_pub_rev_* ) ishlatiladi. Param'siz so'rov
+// bugungidek: approvedCatalogWhere + updatedAt desc.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Vergul bilan ajratilgan ko'p qiymatni tozalangan (lowercase) massivga aylantiradi. */
+function csvParam(v: unknown): string[] {
+  if (typeof v !== "string") return [];
+  return v
+    .split(",")
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** Orient tokeni → DB enum: web '16:9'/'9:16'/'1:1' YOKI xom qiymat qabul qilinadi. */
+function orientValue(v: unknown): string | null {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  if (!s || s === "all") return null;
+  if (s === "16:9" || s === "horizontal" || s === "landscape") return "horizontal";
+  if (s === "9:16" || s === "vertical" || s === "portrait") return "vertical";
+  if (s === "1:1" || s === "square") return "square";
+  return null;
+}
+
+// 4K sifat qatori: `res` matnida shulardan bittasi bo'lsa 4K deb hisoblanadi
+// (klient mapCatalogItems dagi /4k|uhd|2160|4096|8k|4320/ regex bilan bir xil mantiq).
+const RES_4K_TOKENS = ["4k", "uhd", "2160", "4096", "8k", "4320"];
+function resWhere(v: unknown): Prisma.ContributorTemplateWhereInput | null {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  if (!s || s === "all") return null;
+  const is4k: Prisma.ContributorTemplateWhereInput = {
+    OR: RES_4K_TOKENS.map((t) => ({ res: { contains: t, mode: "insensitive" as const } })),
+  };
+  if (s === "4k") return is4k;
+  if (s === "hd" || s === "2k") return { NOT: is4k };
+  return null;
+}
+
+/** Katalog `where` — approvedCatalogWhere + ixtiyoriy filtrlar (hammasi additive).
+ *  Qo'llab-quvvatlanadigan param: app, templateType, cat, pro, orient, res(qual), q. */
+function buildCatalogWhere(query: Request["query"]): Prisma.ContributorTemplateWhereInput {
+  const and: Prisma.ContributorTemplateWhereInput[] = [];
+
+  // app (single yoki csv) — templateApp. AE plagin `?app=ae` yuboradi.
+  const apps = csvParam(query.app);
+  if (apps.length === 1) and.push({ templateApp: apps[0] });
+  else if (apps.length > 1) and.push({ templateApp: { in: apps } });
+
+  // templateType — keng tur pill (video-templates | motion-graphics | graphics | luts)
+  const types = csvParam(query.templateType);
+  if (types.length) and.push({ templateType: { in: types } });
+
+  // cat — granular kategoriya. Web `catLabel` ('Lower Thirds') yuboradi, plagin `cat`
+  // slug ('lower-thirds') yuboradi → ikkalasiga ham case-insensitive mos kelamiz.
+  const cats = csvParam(query.cat);
+  if (cats.length)
+    and.push({
+      OR: cats.flatMap((c) => [
+        { cat: { equals: c, mode: "insensitive" as const } },
+        { catLabel: { equals: c, mode: "insensitive" as const } },
+      ]),
+    });
+
+  // pro — isPro (pro=1|pro / free=0)
+  if (typeof query.pro === "string" && query.pro !== "" && query.pro.toLowerCase() !== "all") {
+    const p = query.pro.toLowerCase();
+    and.push({ isPro: p === "1" || p === "pro" || p === "true" });
+  }
+
+  // orient — 16:9 / 9:16 / 1:1
+  const ori = orientValue(query.orient);
+  if (ori) and.push({ orient: ori });
+
+  // res / qual — 4K vs HD
+  const rf = resWhere(query.res ?? query.qual);
+  if (rf) and.push(rf);
+
+  // q — qidiruv: nom + tavsif + kategoriya yorlig'i + aniq teg (butun baza bo'yicha)
+  const q = typeof query.q === "string" ? query.q.trim() : "";
+  if (q) {
+    and.push({
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { catLabel: { contains: q, mode: "insensitive" } },
+        { tags: { has: q.toLowerCase() } },
+      ],
+    });
+  }
+
+  return and.length ? { ...approvedCatalogWhere, AND: and } : approvedCatalogWhere;
+}
+
+/** Saralash → cursor-mos orderBy (oxiri id tiebreaker — barqaror kursor). */
+function catalogOrderBy(sort: unknown): Prisma.ContributorTemplateOrderByWithRelationInput[] {
+  const s = typeof sort === "string" ? sort.trim().toLowerCase() : "";
+  if (s === "az") return [{ name: "asc" }, { id: "asc" }];
+  if (s === "za") return [{ name: "desc" }, { id: "desc" }];
+  if (s === "new")
+    return [{ reviewedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }, { id: "desc" }];
+  // default / 'mos' / featured — bugungi tartib (updatedAt desc)
+  return [{ updatedAt: "desc" }, { id: "desc" }];
 }
 
 /** FAZA 5 (A1) — katalog pagination chegaralari. Default 100: bugungi kichik katalog
@@ -184,19 +303,57 @@ pluginRouter.get("/catalog", async (req: Request, res: Response) => {
     typeof req.query.cursor === "string" && req.query.cursor ? req.query.cursor : undefined;
   // take+1 — keyingi sahifa borligini bilish uchun; id ikkilamchi tartib kaliti
   // (updatedAt unique emas — cursor barqaror bo'lishi shart).
+  // P1 #16 — SLIM select (metaJson yo'q) + karta mapper: har qator uchun sahna
+  // storage round-trip'i qilinmaydi, javob order-of-magnitude kichikroq.
   const items = await prisma.contributorTemplate.findMany({
-    where: catalogWhere(req.query.app),
-    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    where: buildCatalogWhere(req.query),
+    orderBy: catalogOrderBy(req.query.sort),
     take: take + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: CATALOG_SELECT,
+    select: CATALOG_CARD_SELECT,
   });
   const hasMore = items.length > take;
   const page = hasMore ? items.slice(0, take) : items;
-  res.json({
-    items: await Promise.all(page.map((t) => mapCatalogItem(t, base))),
+  const body = {
+    items: await Promise.all(page.map((t) => mapCatalogCard(t, base))),
     nextCursor: hasMore ? page[page.length - 1].id : null,
+  };
+  // P1 #17 — EDGE KESH: E bo'lagida CDN yoqilgach URL'lar imzosiz va barqaror →
+  // javob keshlanishi mumkin. Cache-Control (brauzer 60s, edge 300s) + ETag:
+  // ko'p katalog ochilishi bazaga UMUMAN bormaydi. Katalog ommaviy (auth:false,
+  // per-user ma'lumot yo'q) → public kesh xavfsiz. Har filtr/sahifa alohida URL =
+  // alohida kesh kaliti. If-None-Match mos kelsa 304 (nol body).
+  const serialized = JSON.stringify(body);
+  const etag = `W/"${crypto.createHash("sha1").update(serialized).digest("base64url")}"`;
+  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300");
+  res.setHeader("ETag", etag);
+  res.setHeader("Vary", "Accept-Encoding");
+  if (req.headers["if-none-match"] === etag) {
+    res.status(304).end();
+    return;
+  }
+  res.type("application/json").send(serialized);
+});
+
+/** P1 #16 — DETAL endpoint: bitta shablonning to'liq ma'lumoti (enriched sahnalar +
+ *  metaJson). Ro'yxat (SLIM karta) sahnalarni bermaydi — plagin pack ochilganda va
+ *  P2 deep-link shundan oladi. OMMAVIY (katalog kabi auth:false). */
+pluginRouter.get("/catalog/:id", async (req: Request, res: Response) => {
+  const base = apiPublicBase(req);
+  const id = String(req.params.id);
+  if (!/^[a-z0-9]+$/i.test(id)) {
+    res.status(400).json({ error: "Bad id" });
+    return;
+  }
+  const t = await prisma.contributorTemplate.findFirst({
+    where: { ...approvedCatalogWhere, id },
+    select: CATALOG_SELECT,
   });
+  if (!t) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(await mapCatalogItem(t, base));
 });
 
 /** Browse notice-bar — eng yangi tasdiqlangan shablonlar */
