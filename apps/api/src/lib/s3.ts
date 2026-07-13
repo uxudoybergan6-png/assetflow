@@ -211,7 +211,9 @@ export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): str
     ];
   }
   if (kind === "preview") {
-    return [base, `${base}.mp4`, `${base}.mov`, `${base}.webm`];
+    // Video preview (asosiy) + P4 STOCK audio preview (music/sfx suv belgili preview
+    // shu kalitda beriladi). Video avval — video templatelar/stock uchun tartib o'zgarmaydi.
+    return [base, `${base}.mp4`, `${base}.mov`, `${base}.webm`, `${base}.mp3`, `${base}.m4a`, `${base}.aac`, `${base}.ogg`, `${base}.wav`];
   }
   return [base, `${base}.jpg`, `${base}.jpeg`, `${base}.png`, `${base}.webp`];
 }

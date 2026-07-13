@@ -1,8 +1,30 @@
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
+
+// ── P4 — STOCK SUV BELGISI assetlari (YAGONA MANBA) ──────────────────────────
+// Suv belgisi fayllari `apps/api/assets/` da SAQLANADI (src EMAS): `tsc` src'dagi
+// PNG'ni dist'ga KO'CHIRMAYDI, lekin Dockerfile `COPY . .` bilan butun repo'ni
+// (apps/api/assets ham) image'ga oladi. Runtime yo'l = dist/lib'dan ikki bo'g'in
+// yuqoriga (template-files.ts UPLOADS_ROOT naqshi bilan bir xil). Klientda EMAS —
+// server tomonda ffmpeg overlay bilan qo'yiladi (klient-side suv belgisi osongina
+// aylanib o'tiladi — P23 GAP1/P4). BITTA joydan o'qiladi: shu ikki konstanta.
+const __wmDir = path.dirname(fileURLToPath(import.meta.url));
+export const WATERMARK_PNG = path.join(__wmDir, "../../assets/watermark.png");
+export const WATERMARK_STING = path.join(__wmDir, "../../assets/watermark-sting.mp3");
+/** Suv belgisi rasmi runtime'da mavjudmi (yo'q → suv belgili derivativ YARATILMAYDI —
+ *  toza previewni OMMAVIY qilib qo'ymaslik uchun; asl fayl baribir pack'da xavfsiz). */
+export function watermarkAssetAvailable(): boolean {
+  try {
+    return fs.existsSync(WATERMARK_PNG);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Global ffmpeg concurrency cap (semaphore). 512MB Render instance'da bir
@@ -466,6 +488,140 @@ export async function extractAudioReferenceForUpload(
     } catch {
       /* */
     }
+    return false;
+  }
+}
+
+// ── P4 — STOCK SUV BELGISI ffmpeg quvurlari ──────────────────────────────────
+// Hammasi shu fayldagi `runFfmpeg` semaphore'i ostida (yangi quvur/semaphore YO'Q —
+// P4 talabi). Suv belgisi = markazda, yarim-shaffof `WATERMARK_PNG` overlay'i,
+// `scale2ref` bilan asos kengligining ~40% ga o'lchanadi (nisbat saqlanadi). Manba
+// (pack.*) HECH QACHON bu yerga tushmaydi — faqat suv belgili preview/thumb
+// derivativlari yaratiladi; asl toza fayl pack'da (private, gated) qoladi (P4.1).
+const WM_OVERLAY_VIDEO =
+  "[0:v]scale=-2:'min(720,ih)'[base];" +
+  "[1:v]format=rgba,colorchannelmixer=aa=0.55[wmc];" +
+  "[wmc][base]scale2ref=w='main_w*0.40':h='main_w*0.40*ih/iw'[wm][base2];" +
+  "[base2][wm]overlay=(W-w)/2:(H-h)/2[o]";
+const WM_OVERLAY_IMAGE =
+  "[1:v]format=rgba,colorchannelmixer=aa=0.60[wmc];" +
+  "[wmc][0:v]scale2ref=w='main_w*0.40':h='main_w*0.40*ih/iw'[wm][base];" +
+  "[base][wm]overlay=(W-w)/2:(H-h)/2[o]";
+
+/**
+ * P4 — STOCK video previewi: 720p ga kichraytiradi + markaziy suv belgisi overlay'i
+ * + H.264 CRF28, 30fps, ovozsiz, +faststart. `outPath` ALOHIDA fayl (asl saqlanadi).
+ * Suv belgisi rasmi bo'lmasa (watermarkAssetAvailable=false) → false (toza previewni
+ * OMMAVIY qilib qo'ymaymiz). Preview ataylab past-sifat — bu esa (logotipdan ko'ra)
+ * asosiy himoya (P4.7). Video shablonlar (kind='template') bu yo'ldan O'TMAYDI.
+ */
+export async function watermarkVideoToPreview(
+  inputPath: string,
+  outPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath) || !watermarkAssetAvailable()) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y", "-threads", "1",
+        "-i", inputPath,
+        "-i", WATERMARK_PNG,
+        "-filter_complex", WM_OVERLAY_VIDEO,
+        "-map", "[o]",
+        "-r", "30",
+        "-c:v", "libx264",
+        "-crf", "28",
+        "-preset", "fast",
+        "-pix_fmt", "yuv420p",
+        "-an",
+        "-movflags", "+faststart",
+        outPath,
+      ],
+      { timeout: 300_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
+/**
+ * P4 — STOCK rasm (photo/graphics) previewi/thumbi: markaziy suv belgisi overlay'i.
+ * `maxLong` berilsa uzun chekka shu piksel bilan cheklanadi (thumb = kichik, preview =
+ * kattaroq). JPEG q=4 (~preview-grade). Asl toza rasm pack'da qoladi.
+ */
+export async function watermarkImageFile(
+  inputPath: string,
+  outPath: string,
+  maxLong?: number
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath) || !watermarkAssetAvailable()) return false;
+  const scalePre =
+    maxLong && maxLong > 0
+      ? `[0:v]scale='if(gt(iw,ih),min(${maxLong},iw),-2)':'if(gt(iw,ih),-2,min(${maxLong},ih))'[s0];`
+      : "";
+  const imgInput = scalePre ? "[s0]" : "[0:v]";
+  const fc =
+    scalePre +
+    "[1:v]format=rgba,colorchannelmixer=aa=0.60[wmc];" +
+    `[wmc]${imgInput}scale2ref=w='main_w*0.40':h='main_w*0.40*ih/iw'[wm][base];` +
+    "[base][wm]overlay=(W-w)/2:(H-h)/2[o]";
+  try {
+    await runFfmpeg(
+      [
+        "-y", "-threads", "1",
+        "-i", inputPath,
+        "-i", WATERMARK_PNG,
+        "-filter_complex", maxLong && maxLong > 0 ? fc : WM_OVERLAY_IMAGE,
+        "-map", "[o]",
+        "-frames:v", "1",
+        "-q:v", "4",
+        outPath,
+      ],
+      { timeout: 45_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
+/**
+ * P4 — STOCK audio (music/sfx) previewi: eshitiladigan "sting" tegini har ~12s
+ * qo'shadi (Envato/Artlist uslubi) + bitrate'ni kamaytiradi. Sting = WATERMARK_STING
+ * (12s slotga sukut bilan to'ldirilib, davomiylik bo'ylab takrorlanadi). Asl toza
+ * audio pack'da qoladi. Sting fayli yo'q bo'lsa → false (toza previewni bermaymiz).
+ */
+export async function watermarkAudioToPreview(
+  inputPath: string,
+  outPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath) || !fs.existsSync(WATERMARK_STING)) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y", "-threads", "1",
+        "-i", inputPath,
+        "-i", WATERMARK_STING,
+        // sting: 12s slotga sukut bilan cho'ziladi, cheksiz loop, manba davomiyligiga kesiladi;
+        // amix manba (og'irlik 1) + sting (0.55) — normalize=0 (manba balandligi tushmaydi).
+        "-filter_complex",
+        "[1:a]apad=whole_dur=12,aloop=loop=-1:size=2000000000[stg];" +
+          "[0:a][stg]amix=inputs=2:duration=first:weights='1 0.55':normalize=0[a]",
+        "-map", "[a]",
+        "-ar", "44100",
+        "-ac", "2",
+        "-c:a", "libmp3lame",
+        "-b:a", "128k",
+        outPath,
+      ],
+      { timeout: 180_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
     return false;
   }
 }

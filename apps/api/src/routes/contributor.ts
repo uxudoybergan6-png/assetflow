@@ -53,6 +53,7 @@ import {
   transcodePreviewInBackground,
   processPreviewTranscode,
 } from "../lib/transcode-preview.js";
+import { generateStockWatermarkedDerivatives } from "../lib/stock-derivatives.js";
 import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
 import {
   openStreamingIngestZip,
@@ -1433,6 +1434,24 @@ async function processPackInBackground(
         done: true,
       });
       return; // ekstraktsiya YO'Q — karantin.
+    }
+
+    // P4 — STOCK suv belgili derivativlar: TOZA pack tasdiqlangач, kind='stock'
+    // photo/music/sfx uchun suv belgili preview/thumb'ni PACK'dan (toza asl, private
+    // qoladi) yaratamiz. VIDEO stock bu yerda EMAS — u /preview-uploaded transcode'ida
+    // (yengil uploaded preview) + backfill (pack'dan) ishlanadi; to'liq 4K pack
+    // transcode'i request'ni 600s Cloud Run timeout'iga surmasligi uchun. AWAITED
+    // (fire-and-forget CPU-throttle tuzog'i — yuqoridagi izohga qara).
+    try {
+      const meta = await prisma.contributorTemplate.findUnique({
+        where: { id },
+        select: { kind: true, stockType: true },
+      });
+      if (meta?.kind === "stock" && meta.stockType && meta.stockType !== "video") {
+        await generateStockWatermarkedDerivatives(id);
+      }
+    } catch (e) {
+      console.error("[pack-uploaded] stock suv belgisi derivativ xato:", e);
     }
 
     // TOZA → .zip bo'lsa sahnalarni ajrat (.aep/.mogrt yakka fayldan ajratilmaydi).

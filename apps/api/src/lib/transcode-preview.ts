@@ -9,7 +9,7 @@ import {
   uploadFileToS3,
   deleteS3Objects,
 } from "./s3.js";
-import { optimizePreviewForStreaming } from "./optimize-preview.js";
+import { optimizePreviewForStreaming, watermarkVideoToPreview } from "./optimize-preview.js";
 import { syncTemplateAssetKeys } from "./asset-state.js";
 import { captureException } from "./sentry.js";
 
@@ -47,10 +47,34 @@ export async function processPreviewTranscode(id: string): Promise<void> {
     const localPath = path.join(tmpDir, `preview${ext}`);
     await downloadS3ToFile(srcKey, localPath);
 
-    await optimizePreviewForStreaming(localPath); // #15 semaphore ostida (false = faststart-only fallback)
-
     const destKey = `templates/${id}/preview.mp4`;
-    await uploadFileToS3(localPath, destKey, "video/mp4");
+    // P4 — STOCK video previewiga SUV BELGISI (kind='stock'). Video shablonlar
+    // (kind='template') previewi TOZA qoladi (owner qarori — ular render, mahsulot emas).
+    const row = await prisma.contributorTemplate.findUnique({
+      where: { id },
+      select: { kind: true },
+    });
+    let uploadPath = localPath;
+    if (row?.kind === "stock") {
+      const wmPath = path.join(tmpDir, "preview.wm.mp4");
+      if (await watermarkVideoToPreview(localPath, wmPath)) {
+        uploadPath = wmPath;
+      } else {
+        // 🔴 Suv belgisi muvaffaqiyatsiz — TOZA previewni OMMAVIY qoldirmaymiz.
+        // Yuklangan (toza) preview obyektini o'chiramiz va failed belgilaymiz.
+        try {
+          await deleteS3Objects([srcKey]);
+        } catch {
+          /* */
+        }
+        await syncTemplateAssetKeys(id, { remove: [srcKey] });
+        await safeStatus(id, "failed", "Stock watermark failed — preview withheld to avoid leaking a clean copy");
+        return;
+      }
+    } else {
+      await optimizePreviewForStreaming(localPath); // #15 semaphore ostida (false = faststart-only fallback)
+    }
+    await uploadFileToS3(uploadPath, destKey, "video/mp4");
     // Eski katta nusxa boshqa kalitda bo'lsa (preview.mov/.webm/kengaytmasiz) — orfan tozalash.
     if (srcKey !== destKey) {
       try {
