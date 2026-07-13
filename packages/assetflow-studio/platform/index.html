@@ -15857,7 +15857,7 @@
                 <div class="ffl-mega-col">
                   <div class="ffl-mega-head"><span class="ffm-eyebrow">FEATURES</span><small>Everything in the FrameFlow workspace</small></div>
                   <div class="ffl-mega-rows">
-                    <button role="menuitem" onclick="{{ goTemplates }}"><i class="ph ph-squares-four"></i><span><b>Template marketplace</b><small>Published packs for production-ready workflows</small></span><em>LIVE</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
+                    <button role="menuitem" onclick="{{ goTemplates }}"><i class="ph ph-squares-four"></i><span><b>Stock Catalog</b><small>Templates, motion, graphics, LUTs, music &amp; SFX</small></span><em>LIVE</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
                     <button role="menuitem" onclick="{{ goAistudio }}"><i class="ph ph-sparkle"></i><span><b>AI Studio</b><small>Image, video, voice and SFX in one session</small></span><em>NEW</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
                     <button role="menuitem" onclick="{{ goAistudio }}"><i class="ph ph-stack"></i><span><b>Creative projects</b><small>Keep generations and templates together</small></span><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
                     <button role="menuitem" onclick="{{ goPlugin }}"><i class="ph ph-download-simple"></i><span><b>Creative plugin</b><small>Browse and import without leaving the timeline</small></span><em>AE</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
@@ -16254,7 +16254,7 @@
 
         <!-- TEMPLATE DETAIL — dedicated page (A2b), shown over any app screen while `detail` is set -->
         <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
-          <div class="va-crumb"><a onclick="{{ goTemplates }}">Templates</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> {{ detail.c }} <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
+          <div class="va-crumb"><a onclick="{{ goTemplates }}">Stock Catalog</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <a onclick="{{ openColCat }}">{{ detailPillLabel }}</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
           <div class="va-dwrap">
             <div style="min-width:0">
               <!-- BATCH6 · preview-player: ramka (border/radius/#000) + media + player-bar (poster holatida) -->
@@ -16558,10 +16558,10 @@
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
           <div class="va-cathero">
             <div class="va-kick">FRAMEFLOW MARKETPLACE</div>
-            <h2>Templates that cut<br>your edit time.</h2>
+            <h2>A stock catalog that cuts<br>your edit time.</h2>
             <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Try “glitch logo”, “wedding titles”, “lower thirds”…"><kbd>⌘ K</kbd></div>
             <div class="va-catchips">
-              <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}">{{ x.v }}</span></sc-for>
+              <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}">{{ x.label }}</span></sc-for>
             </div>
           </div>
           <div class="va-fbar">
@@ -17142,7 +17142,7 @@
     <!-- MOBILE BOTTOM TAB BAR (A5 va-mtabs) -->
     <nav class="va-mtabs">
       <a data-screen="dashboard" onclick="{{ onNav }}" class="{{ btmDashCls }}"><svg class="va-ic"><use href="#i-home"></use></svg>Home</a>
-      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}"><svg class="va-ic"><use href="#i-grid"></use></svg>Templates</a>
+      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}"><svg class="va-ic"><use href="#i-grid"></use></svg>Catalog</a>
       <a data-screen="aistudio" onclick="{{ onNav }}" class="{{ btmAiCls }}"><svg class="va-ic"><use href="#i-spark"></use></svg>AI</a>
       <a data-screen="account" onclick="{{ onNav }}" class="{{ btmAccCls }}"><svg class="va-ic"><use href="#i-user"></use></svg>Account</a>
     </nav>
@@ -17828,8 +17828,29 @@ class Component extends DCLogic {
 
   categories = ['Video Templates', 'Lower Thirds', 'AI Templates', 'Graphics', 'LUT', 'SFX'];
 
-  // #9/#10 — katalog kategoriya filtri: qat'iy 4 pill (plagin pill uslubi).
-  fixedCats = ['All', 'Templates', 'Motion', 'Graphics', 'LUTs', 'Music', 'SFX'];
+  // P2 (step 31) — YAGONA katalog taksonomiyasi. Pill VALUE (state.fCat kaliti) → { label, slug, type }.
+  //   label = ko'rinadigan matn (BITTA joyda — nav-pill matni shu yerdan) ·
+  //   slug  = /stock/<slug> URL segmenti (havola/OG uchun) ·
+  //   type  = server browse `templateType` param (DB qiymati — TEGMAYDI, faqat UI qatlami).
+  // ⚠️ "Sound Effects" ko'rinsa ham DB stockType = "sfx"; slug "sound-effects" ≠ type "sfx" (ataylab).
+  // ⚠️ "AI Stock" (pill) = kind:"stock" AI kelib chiqishi (P3/step 34) — kind:"stock" DB qiymatini
+  //    o'zgartirmaydi. "Stock Catalog" (sahifa/nav nomi) ≠ bu pill.
+  catalogTypes = {
+    Templates: { label: 'Video Templates', slug: 'video-templates', type: 'video-templates' },
+    Motion:    { label: 'Motion Graphics', slug: 'motion-graphics', type: 'motion-graphics' },
+    Graphics:  { label: 'Graphics',        slug: 'graphics',        type: 'graphics' },
+    LUTs:      { label: 'LUTs',            slug: 'luts',            type: 'luts' },
+    Music:     { label: 'Music',           slug: 'music',           type: 'music' },
+    SFX:       { label: 'Sound Effects',   slug: 'sound-effects',   type: 'sfx' },
+    AIStock:   { label: 'AI Stock',        slug: 'ai-stock',        type: 'ai-stock' },
+  };
+  // Pill qatori (qat'iy tartib). Label/slug/type YUQORIDAGI yagona manbadan.
+  fixedCats = ['All', 'Templates', 'Motion', 'Graphics', 'LUTs', 'Music', 'SFX', 'AIStock'];
+  // Pill VALUE → ko'rinadigan label (All bundan mustasno).
+  pillLabel(v) { return v === 'All' ? 'All' : (this.catalogTypes[v] ? this.catalogTypes[v].label : v); }
+  // Pill VALUE → URL slug; slug → pill VALUE (routing uchun ikki tomonlama).
+  pillSlug(v) { return this.catalogTypes[v] ? this.catalogTypes[v].slug : ''; }
+  slugToPill(slug) { const k = Object.keys(this.catalogTypes).find(k => this.catalogTypes[k].slug === slug); return k || 'All'; }
 
   brands = ['NOVA', 'PixelHaus', 'Lumen', 'ORBIT', 'Kadr', 'Vizor'];
 
@@ -17872,7 +17893,7 @@ class Component extends DCLogic {
   ];
 
   footerCols = [
-    { h: 'Product', items: ['Templates', 'AI Studio', 'Plugin', 'Pricing', 'Changelog'] },
+    { h: 'Product', items: ['Stock Catalog', 'AI Studio', 'Plugin', 'Pricing', 'Changelog'] },
     { h: 'Categories', items: ['Video Templates', 'Lower Thirds', 'Transitions', 'LUT & Presets', 'SFX'] },
     { h: 'Plugins', items: ['After Effects', 'Premiere Pro', 'DaVinci Resolve', 'Final Cut', 'Installation'] },
     { h: 'Company', items: ['About us', 'Careers', 'Blog', 'Contact', 'Partnerships'] },
@@ -17901,7 +17922,7 @@ class Component extends DCLogic {
   // renderda ham landing hozirgi ko'rinishda qoladi; server merged config qaytaradi).
   landingDefaults = {
     theme: { accent: '#C2F04A', font: 'hanken' },
-    nav: { templates: 'Templates', aiStudio: 'AI Studio', pricing: 'Pricing', plugin: 'Plugin', signIn: 'Sign in', cta: 'Start for free' },
+    nav: { templates: 'Stock Catalog', aiStudio: 'AI Studio', pricing: 'Pricing', plugin: 'Plugin', signIn: 'Sign in', cta: 'Start for free' },
     hero: {
       badgeTag: 'NEW', badgeText: 'AI Video 2.0 is here',
       title: 'Templates, AI video and audio —', titleAccent: 'one creative space',
@@ -17980,7 +18001,7 @@ class Component extends DCLogic {
       email: 'support@getframeflow.app', copyright: '© 2026 FrameFlow',
       guarantee: 'All plans come with a 14-day money-back guarantee',
       cols: [
-        { title: 'PRODUCT', links: ['Templates', 'AI Studio', 'Plugin', 'Pricing'] },
+        { title: 'PRODUCT', links: ['Stock Catalog', 'AI Studio', 'Plugin', 'Pricing'] },
         { title: 'CATEGORIES', links: ['Video templates', 'Lower Thirds', 'Transitions', 'LUTs & Presets', 'SFX'] },
         { title: 'LEGAL', links: ['Help & FAQ', 'Terms of Service', 'Privacy Policy', 'Refund Policy'] },
       ],
@@ -18128,7 +18149,7 @@ class Component extends DCLogic {
   // Yagona nav — mockup s6/d1: asosiy nav + HISOB bo'limi (bitta komponent, ikki kontekst)
   sidebarMain = [
     { label: 'Home', icon: 'squares-four', screen: 'dashboard' },
-    { label: 'Templates', icon: 'stack', screen: 'templates' },
+    { label: 'Stock Catalog', icon: 'stack', screen: 'templates' },
     { label: 'AI Studio', icon: 'sparkle', screen: 'aistudio' },
     { label: 'Projects', icon: 'folder-open', screen: 'projects' },
   ];
@@ -18494,8 +18515,8 @@ class Component extends DCLogic {
     if (/graphic|\blogo|infographic|badge|\bicon|poster|thumbnail|social|banner/.test(hay)) return 'Graphics';
     return 'Templates';
   }
-  // #3 (S1) — pill → keng tur mapping (4 pill = 4 templateType, 1:1)
-  pillTypes = { Templates: 'video-templates', Motion: 'motion-graphics', Graphics: 'graphics', LUTs: 'luts', Music: 'music', SFX: 'sfx' };
+  // #3 (S1) — pill → keng tur (server templateType). P2: catalogTypes yagona manbadan derivatsiya.
+  get pillTypes() { const m = {}; for (const k of Object.keys(this.catalogTypes)) m[k] = this.catalogTypes[k].type; return m; }
   // #3 — item'ning keng turi: S1 `t.type` ustuvor; type'siz eski itemlar granular kategoriya
   // mapping'i bilan, u ham bo'lmasa eski keyword-heuristika (catBucket) bilan aniqlanadi —
   // hech narsa yo'qolmaydi ("Logo Reveal" endi Templates ostida, Motion emas).
@@ -18512,7 +18533,7 @@ class Component extends DCLogic {
   pillOf(t) {
     const ty = this.typeOf(t);
     return ty === 'luts' ? 'LUTs' : ty === 'motion-graphics' ? 'Motion' : ty === 'graphics' ? 'Graphics'
-      : ty === 'music' ? 'Music' : ty === 'sfx' ? 'SFX' : 'Templates';
+      : ty === 'music' ? 'Music' : ty === 'sfx' ? 'SFX' : ty === 'ai-stock' ? 'AIStock' : 'Templates';
   }
   // #3 — granular kategoriyalar (backend TEMPLATE_CATEGORIES ko'zgusi, 'Uncategorized'siz)
   granularCats = ['Titles', 'Lower Thirds', 'Transitions', 'Intros', 'Logo Reveal', 'Openers', 'Slideshows', 'Backgrounds', 'LUTs', 'Overlays', 'Infographics', 'Social Media', 'Logos', 'Mockups'];
@@ -20623,7 +20644,7 @@ class Component extends DCLogic {
     const hasFbCats = (this.state.fCats || []).length > 0;
     // #9/#10 — kategoriya filtri qat'iy 4 ta pill: Templates · Motion · Graphics · LUTs
     // (dinamik katalog kategoriyalari o'rniga). Har pill catBucket() orqali real katalogni filtrlaydi.
-    const fCatsView = this.fixedCats.map(x => ({ v: x, active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
+    const fCatsView = this.fixedCats.map(x => ({ v: x, label: this.pillLabel(x), active: x === this.state.fCat, rowCls: x === this.state.fCat ? 'ffa-fcat on' : 'ffa-fcat', chkCls: x === this.state.fCat ? 'ffa-chk on' : 'ffa-chk', chipCls: x === this.state.fCat ? 'on' : '' }));
     const fPlansView = ['All', 'Free', 'Pro'].map(x => ({ v: x, on: x === this.state.fPlan, cls: x === this.state.fPlan ? 'ffa-ftag on' : 'ffa-ftag', rowCls: x === this.state.fPlan ? 'ffa-poprow on' : 'ffa-poprow' }));
     // Orientatsiya / Sifat — Variant A fbar chip'lari (toggle: faol chipni bosish → tozalash). Katalog so'roviga real ulangan.
     const fOrientView = ['16:9', '9:16', '1:1'].map(v => ({ v, cls: v === this.state.fOrient ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fOrient ? 'va-fchip on' : 'va-fchip' }));
@@ -20648,7 +20669,7 @@ class Component extends DCLogic {
     if (this.state.fPlan !== 'All') activeChips.push({ k: 'plan', v: this.state.fPlan, ic: 'tag' });
     const hasActiveFilters = activeChips.length > 0 || this.state.fCat !== 'All';
     const filterCount = activeChips.length + (this.state.fCat !== 'All' ? 1 : 0);
-    const tplHeading = this.state.fCat === 'All' ? 'All templates' : this.state.fCat;
+    const tplHeading = this.state.fCat === 'All' ? 'All stock' : this.pillLabel(this.state.fCat);
     const dRaw = this.state.detail;
     // FAZA D — kolleksiya proxy'si: §B (P2) endi PILL bilan BIR XIL taksonomiya (pillOf) —
     // avval granular `t.c` tengligi ishlatilib, yakka kategoriyali shablonda Related bo'sh
@@ -21411,7 +21432,7 @@ class Component extends DCLogic {
       activeChips, hasActiveFilters, filterCount, filterCountFmt: String(filterCount), tplHeading,
       filterDrawerOpen: this.state.filterDrawerOpen,
       sortLabel, sortView, sortOpen: this.state.sortOpen,
-      detail, lb, accView, accountTab: this.state.accountTab,
+      detail, detailPillLabel: dRaw ? this.pillLabel(this.pillOf(dRaw)) : '', lb, accView, accountTab: this.state.accountTab,
       accProfile: this.state.accountTab === 'Profile', accBilling: this.state.accountTab === 'Subscription & credits', accYuklama: this.state.accountTab === 'Downloads',
       accEmailLine, planPr, planFeats, creditResetKick,
       // P21 (29) — HAQIQIY kredit ledger + REAL downloads

@@ -315,7 +315,7 @@ const AssetFlowCatalog = (() => {
     const NAV_LABELS_REF =
       typeof NAV_LABELS !== "undefined"
         ? NAV_LABELS
-        : { video: "Templates", motion: "Motion Graphics", graphics: "Graphics", luts: "LUTs", music: "Music", sfx: "Sound FX" };
+        : { video: "Video Templates", motion: "Motion Graphics", graphics: "Graphics", luts: "LUTs", music: "Music", sfx: "Sound Effects" };
 
     items.forEach((u) => {
       const packKey = "__srv_" + u.id;
@@ -402,7 +402,7 @@ const AssetFlowCatalog = (() => {
     const labels =
       typeof NAV_LABELS !== "undefined"
         ? NAV_LABELS
-        : { video: "Video Templates", motion: "Motion", graphics: "Graphics", luts: "LUTs" };
+        : { video: "Video Templates", motion: "Motion Graphics", graphics: "Graphics", luts: "LUTs", music: "Music", sfx: "Sound Effects" };
     return labels[nav] || nav;
   }
 

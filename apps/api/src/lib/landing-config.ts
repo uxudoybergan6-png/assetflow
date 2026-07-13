@@ -107,7 +107,10 @@ export interface LandingConfigData {
 export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
   theme: { accent: "#C2F04A", font: "hanken" },
   nav: {
-    templates: "Templates",
+    // P2 (step 31) — nav "Templates" → "Stock Catalog". ⚠️ Bu DEFAULT; agar prod DB'da
+    // (LandingConfig id=1) nav.templates SAQLANGAN bo'lsa, u ustun turadi (mergeConfig) →
+    // admin panel orqali ham yangilash SHART, aks holda sayt eskisini ko'rsatadi.
+    templates: "Stock Catalog",
     aiStudio: "AI Studio",
     pricing: "Pricing",
     plugin: "Plugin",
