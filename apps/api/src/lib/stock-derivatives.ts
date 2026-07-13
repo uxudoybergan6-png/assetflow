@@ -16,6 +16,7 @@ import {
   watermarkImageFile,
   watermarkAudioToPreview,
   extractVideoPosterFrame,
+  makeAudioWaveformThumb,
   watermarkAssetAvailable,
 } from "./optimize-preview.js";
 import { syncTemplateAssetKeys } from "./asset-state.js";
@@ -90,11 +91,19 @@ export async function generateStockWatermarkedDerivatives(id: string): Promise<b
       await uploadFileToS3(th, thumbKey, "image/jpeg");
       ensure.push(thumbKey);
     } else if (stockType === "music" || stockType === "sfx") {
+      // Eshitiladigan teg (sting) bilan suv belgili preview (P4). Asl toza pack'da qoladi.
       const previewKey = `templates/${id}/preview.mp3`;
       const prev = path.join(tmpDir, "preview.mp3");
       if (!(await watermarkAudioToPreview(srcPath, prev))) throw new Error("audio watermark failed");
       await uploadFileToS3(prev, previewKey, "audio/mpeg");
       ensure.push(previewKey);
+      // P1.9 — waveform thumb (grid karta rasmi; audio'da vizual media yo'q). Xato → o'tkazamiz.
+      const wf = path.join(tmpDir, "thumb.jpg");
+      if (await makeAudioWaveformThumb(srcPath, wf)) {
+        const thumbKey = `templates/${id}/thumb.jpg`;
+        await uploadFileToS3(wf, thumbKey, "image/jpeg");
+        ensure.push(thumbKey);
+      }
     } else {
       console.warn(`[stock-wm] noma'lum stockType (${id}): ${String(stockType)}`);
       return false;

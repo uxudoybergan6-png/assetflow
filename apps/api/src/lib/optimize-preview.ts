@@ -667,6 +667,36 @@ export async function extractAudioReferenceForUpload(
   }
 }
 
+/**
+ * P1.9 / P4 (step 33) — audio (Music/SFX) uchun WAVEFORM thumb (grid karta rasmi).
+ * Audio'da vizual media yo'q → showwavespic bilan to'lqin shakli chiziladi. Xato → false
+ * (karta gradient bilan chiqadi, ingest bloklanmaydi). Suv belgisi shart emas (waveform
+ * asl audio'ni oshkor qilmaydi — faqat amplituda shakli).
+ */
+export async function makeAudioWaveformThumb(
+  inputPath: string,
+  outPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath)) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y", "-threads", "1",
+        "-i", inputPath,
+        "-filter_complex",
+        "showwavespic=s=1280x400:colors=#8b5cf6|#a78bfa:split_channels=0",
+        "-frames:v", "1",
+        outPath,
+      ],
+      { timeout: 60_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
 // ── P4 — STOCK SUV BELGISI ffmpeg quvurlari ──────────────────────────────────
 // Hammasi shu fayldagi `runFfmpeg` semaphore'i ostida (yangi quvur/semaphore YO'Q —
 // P4 talabi). Suv belgisi = markazda, yarim-shaffof `WATERMARK_PNG` overlay'i,

@@ -2331,6 +2331,9 @@ async function ingestOneAsset(
 
     // 5) Pack (TOZA asl) saqlash — fayl = pack. s3UploadKeyForFile xom kengaytmani
     // tozalaydi (faqat loyiha formatlari) → kalitni QO'LDA quramiz (asl ext saqlanadi).
+    // 🔴 P4.1: pack (pack.mp4/.wav/.png/.cube) `isPublicReadKey` allow-list'ida YO'Q →
+    // PRIVATE qoladi (faqat guardDownloadable orqali beriladi). Suv belgili preview/thumb
+    // esa ALOHIDA obyekt (preview.*/thumb.*) — pack HECH QACHON preview sifatida ishlatilmaydi.
     let packBytes = 0;
     try {
       const packKey = `templates/${template.id}/pack${ext}`;
