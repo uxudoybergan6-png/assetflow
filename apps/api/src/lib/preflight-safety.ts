@@ -63,34 +63,11 @@ const GENERIC_BODY_TERMS = [
   "body parts",
 ];
 
-export function softenPromptForSafety(prompt: string, mode = "video"): string {
-  let text = String(prompt || "");
-  if (!text) return text;
-  const swaps: Array<[RegExp, string]> = [
-    [/\bshirtless\b/gi, "in sportswear"],
-    [/\btopless\b/gi, "fully clothed"],
-    [/\bbare chest\b/gi, "upper-body silhouette"],
-    [/\bfull body\b/gi, "full figure"],
-    [/\bbody parts\b/gi, "appearance details"],
-    [/\bmuscular\b/gi, "athletic"],
-    [/\btorso\b/gi, "upper silhouette"],
-    [/\bchest\b/gi, "upper frame"],
-    [/to'liq tanasini/gi, "obrazini"],
-    [/to'liq tana/gi, "to'liq figura"],
-    [/tana qismlari/gi, "tashqi ko'rinishi"],
-    [/qo'l va oyoqlarini qo'y/gi, "pozasi va harakatini moslashtir"],
-    [/qo'l va oyoq/gi, "poza va harakat"],
-    [/\btana\b/gi, "figura"],
-  ];
-  swaps.forEach(([from, to]) => {
-    text = text.replace(from, to);
-  });
-  if (mode === "video") {
-    text +=
-      " Subject remains fully clothed in sportswear. Focus on motion, composition, lighting, and athletic performance rather than exposed body details.";
-  }
-  return text.trim();
-}
+// P30 (Director's ruling) — `softenPromptForSafety` OLIB TASHLANDI: u foydalanuvchi so'zlarini
+// (shirtless→in sportswear, chest→upper frame ...) provayder filtridan sirg'alib o'tish uchun
+// almashtirar — bu ATAYLAB filter-evasion + ma'noni buzish, provayder shartnomasini buzardi.
+// Enhance endi FAITHFUL (aytilmagan tafsilotni qo'shmaydi) → yumshatishning o'zi keraksiz.
+// preflightSafetyCheck (quyida) HARD-BLOK sifatida qoladi (CSAM/deepfake/gore/jinsiy taqiqlangan).
 
 // Umumiy "realistik uslub / rol" — o'zi BLOK EMAS (warn). Legitim mahsulot (realistik sport
 // personaji) buzilmasin. Aniq REAL SHAXS uchun pastdagi NAMED_REAL_PEOPLE/DEEPFAKE_INTENT ishlaydi.

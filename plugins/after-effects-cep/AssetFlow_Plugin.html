@@ -11314,7 +11314,10 @@ window.afGallery=(function(){
     try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
-      if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast((e&&e.safetyAdjusted?'Prompt enhanced and softened for safety ✨':'Prompt enhanced ✨')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
+      // P28.3 (29a) — API mos kelmagan @mention sabab qayta yozishni RAD ETsa (mentionMismatch),
+      // asl prompt qaytadi (o'zgarmaydi) → jimgina "softened" DEMAYMIZ (evasion olib tashlandi).
+      if(e&&e.mentionMismatch){ if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Kept your prompt — the rewrite pointed a reference at the wrong image','info'); }
+      else if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt enhanced ✨'+(refUrls.length?(' · saw '+refUrls.length+' reference'+(refUrls.length>1?'s':'')):'')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Could not enhance','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance error','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
@@ -13164,8 +13167,13 @@ window.afGallery=(function(){
     if(!txt){ toast('Write a prompt first','warning'); return; }
     var enh=$('vgEnhance'); if(enh)enh.style.opacity='0.4';
     var imgRefs=mref.filter(function(r){ return r.type==='image'&&r.url; }).map(function(r){ return r.url; });
+    // P28 (29a) — kadr (start/end) rasmlarini ham enhance KO'RSIN. Frames↔media-refs model bo'yicha
+    // o'zaro istisno → mref bilan numbering to'qnashmaydi (kadr modelida mref bo'sh).
+    if(st.end&&st.end.url)imgRefs.unshift(st.end.url);
+    if(st.start&&st.start.url)imgRefs.unshift(st.start.url);
     var vidRefs=mref.filter(function(r){ return r.type==='video'&&r.url; }).map(function(r){ return r.url; });
     var audRefs=mref.filter(function(r){ return r.type==='audio'&&r.url; }).map(function(r){ return r.url; });
+    var nref=imgRefs.length+vidRefs.length+audRefs.length;
     studioPost('/api/studio/gen/prompt/enhance',{
       prompt:txt,
       mode:'video',
@@ -13174,7 +13182,8 @@ window.afGallery=(function(){
       video_urls:vidRefs,
       audio_urls:audRefs
     }).then(function(r){
-      if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast((r&&r.safetyAdjusted?'Prompt enhanced and softened for safety ✨':'Prompt enhanced ✨')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
+      if(r&&r.mentionMismatch){ if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Kept your prompt — the rewrite pointed a reference at the wrong clip','info'); }
+      else if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt enhanced ✨'+(nref?(' · saw '+nref+' reference'+(nref>1?'s':'')):'')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Could not enhance','warning');
     }).catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance error','error');
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });

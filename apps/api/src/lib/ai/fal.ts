@@ -357,10 +357,10 @@ export async function falEnhancePrompt(
       : "Qisqa g'oyani bitta boy, tafsilotli promptga aylantir (kompozitsiya, yorug'lik, uslub, detal).";
   const tokenHint =
     " @img/@image/@video/@audio tokenlarini bo'lsa XUDDI O'ZICHA saqla, nomini o'zgartirma va olib tashlama.";
+  // P30 §1 (Director ruling) — FILTER-EVASION euphemism ro'yxati OLIB TASHLANDI (dormant fal enhance
+  // ham). Faqat faithfulness: foydalanuvchi AYTMAGAN ochiqlik/sexual/keskinlikni QO'SHMA (evasion emas).
   const safetyHint =
-    mode === "video"
-      ? " Safety: referenslarda odam bo'lsa ham promptni xavfsiz tut. Yalang'ochlik, shirtless/topless, bare chest, tana qismlariga ortiqcha urg'u, sexual yoki erotik iboralar yozma. `full body` o'rniga `full figure`, `body parts` o'rniga `appearance details`, `muscular` o'rniga `athletic`, `torso/chest` o'rniga `upper silhouette/frame` kabi xavfsizroq til ishlat. Kiyim, harakat, kamera va atmosfera ustun bo'lsin."
-      : "";
+    " Faithfulness: foydalanuvchi so'ramagan yalang'ochlik, sexual/erotik iboralar yoki tana-ochilishi tafsilotini QO'SHMA; ortiqcha rekvizit, harakat yoki keskinlik bilan bezama. Neytral, tavsifiy til ishlat; kiyim, harakat, kamera va atmosfera sahnani olib borsin.";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
   const pickText = (data: unknown): string => {
     if (typeof data === "string") return data.trim();

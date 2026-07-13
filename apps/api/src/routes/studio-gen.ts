@@ -65,7 +65,8 @@ import {
   processGenerationInBackground,
   reconcileStuckGenerations,
 } from "../lib/gen-processor.js";
-import { preflightSafetyCheck, softenPromptForSafety } from "../lib/preflight-safety.js";
+import { preflightSafetyCheck } from "../lib/preflight-safety.js";
+import { validateMentionIntegrity } from "../lib/enhance-mentions.js";
 import { moderateContent, collectImageRefUrls } from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 
@@ -1624,31 +1625,16 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   const spendModel = "vertex/gemini-2.5-flash";
   logAiSpend(req.user!.userId, "enhance", enhanceCost.cost, spendModel);
 
-  const settleEnhancedPrompt = (rawPrompt: string) => {
+  // P28.3 + P30 §1 — qayta yozilgan promptni BAHOLASH. Director's ruling: enhance NA embellish,
+  // NA "xavfsizlik uchun" so'z almashtirib evasion qiladi (softenPromptForSafety OLIB TASHLANDI).
+  //  · Mention butunligi: chiqishda kirishda YO'Q @mention bo'lsa (renumber/ixtiro) → RAD ET,
+  //    asl promptni qoldiramiz (jimgina "tuzatish" boshqa rasmga ishora qilardi — P28.3).
+  const finalizeEnhanced = (rawPrompt: string, originalPrompt: string) => {
     const trimmed = String(rawPrompt || "").trim();
-    const safetyParams = {
-      imageUrls: refUrls,
-      videoUrls: videoRefUrls,
-      audioUrls: audioRefUrls,
-    };
-    const firstPass = preflightSafetyCheck({
-      mode,
-      prompt: trimmed,
-      params: safetyParams as unknown as Record<string, unknown>,
-      modelLabel: model?.label,
-    });
-    if (!firstPass.blocked) return { prompt: trimmed, safetyAdjusted: false };
-    const softened = softenPromptForSafety(trimmed, mode);
-    const secondPass = preflightSafetyCheck({
-      mode,
-      prompt: softened,
-      params: safetyParams as unknown as Record<string, unknown>,
-      modelLabel: model?.label,
-    });
-    return {
-      prompt: secondPass.blocked ? trimmed : softened,
-      safetyAdjusted: !secondPass.blocked,
-    };
+    if (!trimmed) return { prompt: originalPrompt, mentionMismatch: false };
+    const integrity = validateMentionIntegrity(originalPrompt, trimmed);
+    if (!integrity.ok) return { prompt: originalPrompt, mentionMismatch: true };
+    return { prompt: trimmed, mentionMismatch: false };
   };
 
   if (format === "json") {
@@ -1670,9 +1656,12 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     }
     const system =
       `You are an expert ${mode} prompt engineer for AI generation. Rewrite the user's idea into a ` +
-      `rich, production-quality prompt and return it ONLY as a JSON object matching exactly this schema:\n` +
+      `clear, well-structured prompt that FAITHFULLY expresses their intent, and return it ONLY as a JSON ` +
+      `object matching exactly this schema:\n` +
       `${enhanceJsonSchema(mode)}\n` +
-      `Be concrete and cinematic. No markdown, no commentary. The "prompt" field must be a ` +
+      // P30 §1 — FAITHFUL, NOT EMBELLISHING: kirishda YO'Q subyekt/rekvizit/harakat/kiyim/ochiqlik/keskinlikni QO'SHMA.
+      `Be precise and descriptive but DO NOT invent details the user did not describe — no new subjects, props, ` +
+      `actions, clothing/nudity, or added intensity. No markdown, no commentary. The "prompt" field must be a ` +
       `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters. ` +
       `Write ALL output text in fluent natural ENGLISH regardless of the input language.${keepRefs}${ctx}`;
     const out = await vertexEnhanceJson(system, ideaForJson);
@@ -1694,12 +1683,12 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       return;
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
-    const settled = settleEnhancedPrompt(promptStr);
+    const settled = finalizeEnhanced(promptStr, p.data.prompt);
     json.prompt = settled.prompt;
     res.json({
       prompt: settled.prompt,
       json,
-      safetyAdjusted: settled.safetyAdjusted,
+      mentionMismatch: settled.mentionMismatch,
       creditsLeft: gate.remaining,
       creditsCharged: enhanceCost.cost,
     });
@@ -1720,10 +1709,10 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     res.status(502).json({ error: out.error });
     return;
   }
-  const settled = settleEnhancedPrompt(out.data);
+  const settled = finalizeEnhanced(out.data, p.data.prompt);
   res.json({
     prompt: settled.prompt,
-    safetyAdjusted: settled.safetyAdjusted,
+    mentionMismatch: settled.mentionMismatch,
     creditsLeft: gate.remaining,
     creditsCharged: enhanceCost.cost,
   });

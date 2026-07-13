@@ -19441,11 +19441,23 @@ class Component extends DCLogic {
     // §A (P1) — balans darvozasi: Enhance ✦1 kredit sarflaydi (UI-only gate; server o'zi ham hisoblaydi)
     if (this.state.creditsLoaded && this.state.credits < 1) { this.setState({ showCredits: true }); this.toast('Enhance costs ✦1 — you are out of credits'); return; }
     const tool = this.curTool(), model = this.curModel();
+    // P28 (29a) — REFERENSlarni yubor: enhance ularni haqiqatan KO'RSIN (vision), @Image N ni
+    // taxmin qilmasin. Pool = start/end frame + rasm/video/audio (frames↔media model bo'yicha
+    // o'zaro istisno → @imgN numbering to'qnashmaydi). URL'lar = poolddagi HAQIQIY signed ref URL'lari.
+    const imgs = [this.state.refStartUrl, this.state.refEndUrl].concat(this.state.refImages || []).filter(Boolean).slice(0, 10);
+    const refOpts = { imageUrls: imgs, videoUrls: (this.state.refVideos || []).filter(Boolean).slice(0, 10), audioUrls: (this.state.refAudios || []).filter(Boolean).slice(0, 10) };
+    const nref = imgs.length + refOpts.videoUrls.length + refOpts.audioUrls.length;
+    const undoKey = (navigator.platform && /Mac/i.test(navigator.platform)) ? '⌘Z' : 'Ctrl+Z';
     this.setState({ enhBusy: true });
     try {
-      const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined);
-      if (r && r.prompt) { this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60); } // #1
-      this.toast('Prompt enhanced');
+      const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined, refOpts);
+      if (r && r.mentionMismatch) {
+        // API mos kelmagan @mention (renumber/ixtiro) sabab qayta yozishni RAD ETdi → asl prompt qaytdi.
+        this.toast('Kept your prompt — the rewrite pointed a reference at the wrong image, so it was discarded');
+      } else if (r && r.prompt) {
+        this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60); // #1 (chip-editor setValue = ⌘Z undo checkpoint)
+        this.toast('Prompt enhanced ✨' + (nref ? (' · saw ' + nref + ' reference' + (nref > 1 ? 's' : '')) : '') + ' · ' + undoKey + ' to undo');
+      }
       if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
     } catch (e) { this.toast(this.errMsg(e)); }
     this.setState({ enhBusy: false });

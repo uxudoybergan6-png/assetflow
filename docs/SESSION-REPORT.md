@@ -1,10 +1,8 @@
-# Sessiya hisoboti — MUAMMOLAR-2 qadam 29 (P21) (2026-07-13)
+# Sessiya hisoboti — MUAMMOLAR-2 qadam 29 + 29a (2026-07-13)
 
-**Bajarildi (API + web `platform/index.html`/`ff-api.js` + plagin `AssetFlow_Plugin.html`), PUSH QILINMADI:**
+**Bajarildi (API + web + plagin), PUSH QILINMADI. Money-zona TEGILMADI.**
 
-- **29 (P21) — KREDITLAR EKRANI.** Ilgari "Credit activity" `state.gens`'dan yasalardi → QAYTARILGAN KREDITLAR KO'RINMASDI. Endi:
-  - **API** (`studio-gen.ts`): `GET /credits/ledger?cursor=&filter=` — HAQIQIY `CreditLedger` (consume/refund/topup/clawback), keyset paginatsiya + agregatlar (Spent/Refunded/Net/Purchased); har qator bog'langan gen bilan boyitiladi (mode/model/prompt/thumb/holat), o'chirilgan gen `{deleted:true}` (crash yo'q). `GET /downloads` — REAL `TemplateDownloadEvent` (panel endi "coming soon" stub emas). READ-ONLY, money-zona TEGILMADI.
-  - **Web**: `FFAPI.creditLedger`/`downloads`; Account→Subscription&credits: totals (Spent·Refunded YASHIL·Net·Purchased) + filter chiplar (All/Spent/Refunded/Purchased) + qatorlar (tur ikonkasi/thumb · IMZOLI summa: yechim QIZIL, refund YASHIL · balans) · qator→gen lightbox'da (eski gen id bilan tortiladi, o'chirilgan=halol xabar) · "Load more"; Downloads tab real ro'yxat.
-  - **Plagin**: `renderLedger` endi `/credits/ledger`'dan (refunds ko'rinadi) + Spent/Refunded/Net totals header.
+- **29 (P21) — KREDITLAR EKRANI.** API: `GET /credits/ledger` (HAQIQIY CreditLedger, keyset paginatsiya + Spent/Refunded/Net/Purchased agregatlar, gen-boyitilgan qatorlar, o'chirilgan-gen xavfsiz) + `GET /downloads` (real TemplateDownloadEvent). Web: totals + filter chiplar + imzoli summalar (yechim QIZIL / refund YASHIL) + balans + thumb + qator→lightbox + Load more; real Downloads panel. Plagin: `renderLedger` real ledger'dan + totals. READ-ONLY.
+- **29a (P28) — ENHANCE RASMLARNI KO'RADI.** Web `doEnhance` endi referens poolni yuboradi (start/end frame + rasm/video/audio → `image_urls`/`video_urls`/`audio_urls`); plagin image allaqachon yuborardi, video enhance'ga frames qo'shildi. API: **mention-butunligi** validatsiya (`enhance-mentions.ts`) — chiqishda kirishda YO'Q @mention bo'lsa (renumber/ixtiro) qayta yozish RAD ETILADI, asl prompt qoladi (`mentionMismatch`). **FAITHFUL enhance** (P30 §1): system prompt endi aytilmagan tafsilot/rekvizit/ochiqlikni QO'SHMAYDI. **Filter-evasion OLIB TASHLANDI** (Director ruling): `softenPromptForSafety` (so'z-almashtirish) o'chirildi, vertex/fal `safetyHint` euphemism ro'yxati faithfulness'ga almashtirildi, "softened for safety" toast yo'q. Preview/undo: chip-editor ⌘Z (P15) + undo eslatmasi.
 
-**Tekshirilgan:** `npm run build -w apps/api` (OK), node inline-syntax (web+plagin, 0 xato), web boot toza (landing/handlerlar renderVals ishladi — brauzer smoke test). **Kutilmoqda:** push→deploy; jonli auth-li kreditlar ekrani + AE test.
+**Tekshirilgan:** `npm run build -w apps/api` (OK, validator gate), mention testlari 8/8, web boot toza (compiles+logicBound, 0 konsol xato), node inline-syntax (web+plagin). **Kutilmoqda:** push→deploy; jonli auth-li enhance/kreditlar + AE test.

@@ -120,16 +120,19 @@ export async function vertexEnhancePrompt(
     mode === "video"
       ? "You are an expert AI video-generation prompt engineer."
       : "You are an expert AI image-generation prompt engineer.";
+  // P30 §1 — FAITHFUL, NOT EMBELLISHING: "rich/detailed" o'rniga aniq-tavsifiy (foydalanuvchi
+  // aytmagan tafsilotni QO'SHMA). Bu spurious provayder rad etishlarining asosiy sababini oldini oladi.
   const detailHint =
     mode === "video"
-      ? "Turn the user's idea into ONE rich, precise video prompt (subject, action, camera movement, composition, lighting, atmosphere, detail)."
-      : "Turn the user's idea into ONE rich, detailed image prompt (subject, composition, lighting, style, detail).";
+      ? "Turn the user's idea into ONE clear, precise video prompt (subject, action, camera movement, composition, lighting, atmosphere) that stays faithful to what the user described."
+      : "Turn the user's idea into ONE clear, precise image prompt (subject, composition, lighting, style) that stays faithful to what the user described.";
   const tokenHint =
     " If the text contains @img/@image/@video/@audio tokens, keep them EXACTLY as written — never rename or remove them.";
+  // FAITHFULNESS hint — "don't ADD explicit content the user didn't ask for". Bu FILTER-EVASION EMAS
+  // (Director ruling): euphemism-almashtirish (full body→full figure) OLIB TASHLANDI — u ma'noni
+  // o'zgartirar va shartnomani buzardi. Faqat "aytilmagan ochiqlik/keskinlikni qo'shma" qoladi.
   const safetyHint =
-    mode === "video"
-      ? " Safety: even if references contain people, keep the prompt safe. Never write nudity, shirtless/topless, bare chest, undue focus on body parts, or sexual/erotic phrasing. Prefer safer wording: `full figure` instead of `full body`, `appearance details` instead of `body parts`, `athletic` instead of `muscular`, `upper silhouette/frame` instead of `torso/chest`. Let clothing, action, camera and atmosphere dominate."
-      : "";
+    " Faithfulness: express ONLY what the user asked for — do NOT add nudity, sexual/erotic phrasing, or body-exposure detail the user did not request, and do NOT embellish with extra props, actions, or intensity. Prefer neutral, descriptive wording and let clothing, action, camera and atmosphere carry the scene.";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
 
   // ASSISTENT uslubi: referens + matnni birga o'qib foydalanuvchi NIYATINI tushunadi; yakuniy prompt
