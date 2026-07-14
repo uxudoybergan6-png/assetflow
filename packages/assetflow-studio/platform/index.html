@@ -15046,6 +15046,8 @@
   /* media yuklanguncha skeleton shimmer (media bor kartada gradient o'rniga) */
   .ff .va-skel{background:linear-gradient(110deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.11) 45%,rgba(255,255,255,.05) 60%) 0 0/220% 100%,#12161E;animation:vaSkel 1.5s linear infinite}
   @keyframes vaSkel{to{background-position:-220% 0}}
+  /* P9 — media yuklanmasa (derivativ yo'q / xato): jimgina gradient emas, aniq qoplama */
+  .ff .va-mediaerr{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.55);background:#12161E;border-radius:inherit;padding:6px;text-align:center}
   /* audio natija plitkasi (strip/grid) — waveform belgisi, real pleer lightbox/row'da */
   .ff .va-audtile{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,color-mix(in srgb,var(--lime) 9%,transparent),rgba(255,255,255,.02) 60%),#10141B;color:var(--lime)}
   .ff .va-audtile svg{width:44%;max-width:76px;opacity:.9}
@@ -16860,8 +16862,8 @@
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell">
                           <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
-                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}"></sc-if>
-                            <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}"></video></sc-if>
+                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}" onerror="{{ axMediaError }}"></sc-if>
+                            <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}" onerror="{{ axMediaError }}"></video></sc-if>
                             <span class="va-typeicon"><i class="ph-fill ph-{{ g.tIcon }}"></i></span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                             <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ false }}">
@@ -19156,10 +19158,17 @@ class Component extends DCLogic {
   }
   async loadHistory() {
     if (this._histBusy) return; this._histBusy = true; // P16 (SPEED)
+    // P9 — issiq boot: keshlangan tarixni DARHOL chizamiz (barqaror CDN URL → flash yo'q),
+    // keyin fon so'rovi ustiga yozadi.
+    if (!this.state.gensLoaded) {
+      const c = this._cacheGet('hist');
+      if (c && c.length) { try { const cg = c.filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g)); if (cg.length) this.setState(s => ({ gens: cg, activeGenId: s.activeGenId || cg[0].id })); } catch (e) {} }
+    }
     try {
       // §A (P2) — server cap 60; kesilgan bo'lsa gensCapped bilan halol "recent" yorlig'i
       const r = await FFAPI.history(60);
       const raw = r.items || [];
+      this._cacheSet('hist', raw); // P9 — keyingi boot uchun
       const gens = raw.filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
       this.setState(s => ({ gens, gensLoaded: true, gensCapped: raw.length >= 60, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
@@ -19239,7 +19248,9 @@ class Component extends DCLogic {
   }
   // ── QA-FIX #12 — sessiyalar (Artlist uslubi rail) ──
   async loadSessions() {
-    try { const r = await FFAPI.sessions(); this.setState({ sessions: r.items || [], sessionsLoaded: true }); } catch (e) {}
+    // P9 — issiq boot: keshlangan sessiyalarni darhol ko'rsat, so'ng fon so'rovi ustiga yozadi.
+    if (!this.state.sessionsLoaded) { const c = this._cacheGet('sess'); if (c && c.length) this.setState({ sessions: c }); }
+    try { const r = await FFAPI.sessions(); const items = r.items || []; this._cacheSet('sess', items); this.setState({ sessions: items, sessionsLoaded: true }); } catch (e) {}
   }
   async openSessionById(id) {
     // Sessiyani ko'rish + davom ettirish: keyingi gen'lar ham shu sessiyaga boradi
@@ -19256,7 +19267,9 @@ class Component extends DCLogic {
   }
   // ── QA-FIX #13 — loyihalar ──
   async loadProjects() {
-    try { const r = await FFAPI.projects(); this.setState({ projects: r.items || [], projectsLoaded: true }); } catch (e) {}
+    // P9 — issiq boot: keshlangan loyihalarni darhol ko'rsat, so'ng fon so'rovi ustiga yozadi.
+    if (!this.state.projectsLoaded) { const c = this._cacheGet('proj'); if (c && c.length) this.setState({ projects: c }); }
+    try { const r = await FFAPI.projects(); const items = r.items || []; this._cacheSet('proj', items); this.setState({ projects: items, projectsLoaded: true }); } catch (e) {}
   }
   async openProjectById(id) {
     this.setState({ projLoading: true, projDelArm: false });
@@ -19487,8 +19500,16 @@ class Component extends DCLogic {
   // P25 — 4 chaqiruv nuqtasi (logout/delete/expiry/login) BIR XIL maydon ro'yxatidan
   // foydalanadi; avval qisman edi (masalan expiry/login refs/sessions/projects'ni
   // tozalamasdi) — eski foydalanuvchi holati keyingi foydalanuvchiga oqib o'tardi.
+  // ── P9 — instant-paint keshi (sessionStorage, per-user). Barqaror CDN URL'lari (Section B)
+  //    bilan keshlangan rasm havolalari yaroqli qoladi → issiq refresh'da gradient flash yo'q.
+  //    Cap ~200KB/kalit; ff-auth-expired + logout/login → _clearUserCache (resetUserState ichida).
+  _ucKey(kind) { try { const u = (window.FFAPI && FFAPI.getUser && FFAPI.getUser()) || {}; const id = u.id || u.email || 'anon'; return 'ff_cache_' + kind + '_' + id; } catch (e) { return 'ff_cache_' + kind + '_anon'; } }
+  _cacheGet(kind) { try { const s = sessionStorage.getItem(this._ucKey(kind)); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  _cacheSet(kind, data) { try { const s = JSON.stringify(data); if (s.length > 200000) return; sessionStorage.setItem(this._ucKey(kind), s); } catch (e) {} }
+  _clearUserCache() { try { const rm = []; for (let i = 0; i < sessionStorage.length; i++) { const k = sessionStorage.key(i); if (k && k.indexOf('ff_cache_') === 0) rm.push(k); } rm.forEach(k => sessionStorage.removeItem(k)); } catch (e) {} }
   resetUserState(extra) {
     this._clearPollTimers();
+    this._clearUserCache(); // P9 — sessiya keshi yaroqsiz (logout/expiry/login)
     this.setState(Object.assign({
       credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false,
       downloadsMonth: 0, selModel: {}, genModels: {}, activeJobs: [],
@@ -21767,6 +21788,22 @@ class Component extends DCLogic {
       onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) { this.setState({ lightbox: g, useMenuOpen: false }); this.refreshLightboxUrl(id); } } else this.setState({ activeGenId: id, useMenuOpen: false }); },
       // P10#5 — media yuklandi: skeletonni darhol olib tashla + _mediaLoaded'ga belgila (setState YO'Q).
       axMediaLoaded: (e) => { try { const el = e.currentTarget; const host = el && el.closest ? el.closest('.va-axres') : null; if (host) { host.classList.remove('va-skel'); const id = host.getAttribute('data-id'); if (id) (this._mediaLoaded || (this._mediaLoaded = new Set())).add(id); } } catch (er) {} },
+      // P9 — media xatosi: BIR marta cache-bust bilan qayta urin; keyin "Media unavailable" qoplama
+      // (gradient jimgina qolib ketmasin). Barqaror CDN URL'da bu deyarli hech chiqmaydi (B).
+      axMediaError: (e) => { try {
+        const el = e.currentTarget; if (!el) return;
+        if (!el.__ffRetried) {
+          el.__ffRetried = 1;
+          const src = el.getAttribute('src') || el.src || '';
+          if (src && src.indexOf('data:') !== 0) { el.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now(); return; }
+        }
+        const host = (el.closest ? (el.closest('.va-axres') || el.parentElement) : el.parentElement);
+        if (host) {
+          host.classList.remove('va-skel');
+          if (!host.querySelector('.va-mediaerr')) { const ov = document.createElement('div'); ov.className = 'va-mediaerr'; ov.textContent = 'Media unavailable'; host.appendChild(ov); }
+        }
+        el.style.display = 'none';
+      } catch (er) {} },
       toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       // P3 (step 34) — Use ▾ menyudan "Add to Explore"

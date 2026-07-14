@@ -129,16 +129,22 @@ export async function hydrateGenAssets<T extends { mode?: string; prompt?: strin
   if (!isS3Configured()) return holder;
   void opts.viewerIsPaid; // P1 (owner 2026-07-14): AI-gen yetkazish endi rejaga bog'liq emas (saqlanadi)
   const sign = (key: string, name?: string) => getSignedDownloadUrl(key, 3600, name);
+  // 🔵 P9 — KO'RSATISH derivativlari (thumb/display/preview) allow-list'da OMMAVIY (public-keys.ts).
+  // getPublicOrSignedUrl → CDN yoqilgan bo'lsa BARQAROR cdn.getframeflow.app URL (1 soatlik imzo emas):
+  // brauzer keshi ishlaydi (gradient flash yo'q), URL tab ochiq turganda eskirmaydi (karta qoraymaydi).
+  // Allow-list'da BO'LMAGAN kalit → avtomatik signed fallback (xavfsiz). url/downloadUrl (resultKey)
+  // O'ZGARMAYDI — u private/signed (reja darvozasi).
+  const signDisplay = (key: string) => getPublicOrSignedUrl(key, 3600);
   await Promise.all(
     holder.assets.map(async (a) => {
       if (!a.resultKey) return;
       const aa = a as typeof a & { sizeBytes?: number | null; contentType?: string | null; downloadUrl?: string | null; displayUrl?: string | null; previewUrl?: string | null };
       // HeadObject faqat sizeBytes DB'da yo'q (eski yozuv) bo'lsa — imzolash lokal HMAC (tarmoqsiz).
       const meta = aa.sizeBytes != null ? null : await getS3ObjectMeta(a.resultKey);
-      // (2) KO'RSATISH derivativlari — TOZA, kichik; `resultKey`ga HECH QACHON fallback QILMAYDI.
-      aa.displayUrl = a.displayKey ? await sign(a.displayKey) : null;
-      aa.previewUrl = a.previewKey ? await sign(a.previewKey) : null;
-      if (a.thumbKey) a.thumbUrl = await sign(a.thumbKey);
+      // (2) KO'RSATISH derivativlari — TOZA, kichik, BARQAROR CDN; `resultKey`ga HECH QACHON fallback QILMAYDI.
+      aa.displayUrl = a.displayKey ? await signDisplay(a.displayKey) : null;
+      aa.previewUrl = a.previewKey ? await signDisplay(a.previewKey) : null;
+      if (a.thumbKey) a.thumbUrl = await signDisplay(a.thumbKey);
       else if (a.displayKey) a.thumbUrl = aa.displayUrl;
       else a.thumbUrl = null; // eski: fresh(resultKey) — endi toza asl thumb sifatida chiqmaydi
       // (1) ASOSIY fayl + yuklab olish.
@@ -463,8 +469,9 @@ studioGenRouter.get("/credits/ledger", async (req: Request, res: Response) => {
       if (a && isS3Configured()) {
         // P4 (14b): faqat kichik ko'rsatish derivativi (thumbKey→displayKey) — `resultKey` (toza
         // asl) fallback OLIB TASHLANDI (ledger thumbi orqali FREE toza asl havolasini olmasin).
+        // P9: ko'rsatish derivativi — barqaror CDN (allow-list) yoki signed fallback.
         const tk = a.thumbKey || a.displayKey || null;
-        if (tk) thumbUrl = await getSignedDownloadUrl(tk, 3600).catch(() => null);
+        if (tk) thumbUrl = await getPublicOrSignedUrl(tk, 3600).catch(() => null);
       }
       const params = (g.params ?? {}) as Record<string, unknown>;
       genMap.set(g.id, {
@@ -595,7 +602,8 @@ export async function genCoverThumbUrl(
   const key = a.thumbKey || a.displayKey || null;
   if (key && isS3Configured()) {
     try {
-      return await getSignedDownloadUrl(key, 3600);
+      // P9: cover thumb — barqaror CDN (allow-list) yoki signed fallback (flash yo'q).
+      return await getPublicOrSignedUrl(key, 3600);
     } catch {
       return a.thumbUrl || null;
     }
