@@ -1,13 +1,19 @@
-# SESSION REPORT — MUAMMOLAR-2 steps 31 (catalog routing/OG) + 34 (AI Stock chain)
+# SESSION REPORT — MUAMMOLAR-1 steps 20 + 21 + 22 (2026-07-14)
 
-Done (8 commits on main, NOT pushed):
-- **31a** "Stock Catalog" naming: one `catalogTypes` map (label/slug/type) in `platform/index.html`; nav/sidebar/footer/mega/breadcrumb/mobile → "Stock Catalog"; pills → "Video Templates"/"Motion Graphics"/"Sound Effects"; AI Stock pill. CMS default `landing-config.ts` too. Plugin: 4 label maps consolidated.
-- **31b/c** REAL path routing `/stock[/<type>[/<slug>-<id8>]]` (no hash) — `assetPath`/`parseStockPath`, deep-link cold-load, Back closes detail, canonical `shareTpl`, 404 state, `#templates`→/stock. New `GET /api/public/asset/:id` (`routes/public.ts`). CF Pages `functions/stock/[[path]].js` injects OG/twitter/canonical (stable CDN thumb). `_redirects` 301.
-- **31d** Context-aware filters: `catalogFilters`+`catalogCatsByType` (mirror `lib/taxonomy.ts`). LUTs=Category+Free/Pro; Music/SFX no aspect/res; pill switch resets stale filters. Verified live.
-- **34a** AI Stock "Add to Explore" (`lib/explore-submit.ts`): Generation→ContributorTemplate (kind=stock, templateType=ai-stock, PENDING_REVIEW), rights attest, idempotent, daily cap, moderation, AI metadata from prompt, FILE COPIED (private pack + watermarked preview), compensation. `POST /gen/:jobId/explore`. No migration. **Owner: Free default (admin picks Pro), no payout. Money zone untouched.**
-- **34b/c/d** Web + plugin "Add to Explore" button + rights modal + submitted status; admin moderation shows AI prompt.
+**Bajarildi (3 commit, push EMAS): sybil himoya + pool asosi (D3) + foyda paneli + perf o'lchov.**
 
-Verified locally: no console errors, routing helpers round-trip, 404 graceful, filter visibility per pill, explore modal + rights gate. API `npm run build` green.
+**Step 20 — sybil + pool + kredit muddati (D3/D5):**
+- `TemplateDownloadEvent`ga ip/ipPrefix/userAgent/asn (ADDITIVE) — 3 download/import route'da yozildi (web+plagin bir xil route → plagin qamrovi avtomatik).
+- `lib/sybil.ts` (FAQAT O'QISH): eksklyuzivlik + IP-subnet tarmoq + hisob-yosh yaqinligi + yangi-hisob signallari → xavf bali + sabab. Pul matematikasiga TEGMAYDI (majburiy qo'lda ko'rib chiqish).
+- D3: `contributorPoolShare` 0.50→0.30 (ega qarori); pool bazasidan INFRA ayiriladi (yangi `InfraCost` jadval, admin kiritadi); manfiy pool → 0 ga qisiladi + ogohlantirish. Payout HOLD (30 kun) held/payable sifatida ko'rsatiladi.
+- Admin: `/sybil`, `/infra-cost` endpointlar; Payouts'da "Trust & safety" paneli.
 
-⚠️ **LIVE VERIFY PENDING (needs deploy):** push → API + CF Pages deploy + `install-cep.sh`. Then: `curl -A Twitterbot .../stock/<type>/<slug>-<id>` → og:image; share link shows image; Back detail→catalog; AI Studio gen → Add to Explore → admin approve → AI Stock pill.
-Details: `docs/MUAMMOLAR-2-MAHSULOT.md` P2/P3.
+**D5 TEKSHIRUV NATIJASI:** kreditlar ALLAQACHON to'g'ri — reja krediti oy oxirida KUYADI (consumeAiCredits reset), sotib olingan top-up SAQLANADI va `aiCreditsTopup` ustunida ALOHIDA kuzatiladi. P26.2 "haqiqiy xato" ALLAQACHON tuzatilgan (clawback shu ustunni ishlatadi). O'zgartirish KERAK EMAS — faqat hisobot.
+
+**Step 21 — foyda paneli:** `lib/profit.ts` + `/profit` + yangi admin "Profit" ekran: daromad − AI − LS − infra − contributor = foyda; bepul kredit = CAC (daromad emas); zararli modellar qizil; confidence; tannarxdan-past kanal banneri.
+
+**Step 22 — perf (RAQAM):** katalog 50→500→5000: javob hajmi FLAT 38.2KB/sahifa, list TTFB p50 ~5ms, filtr/qidiruv <10ms, 50 parallel 50/50 ok, RSS +42MB (100× data). `docs/PERF-BASELINE.md`. Topilma: qidiruv indekssiz ILIKE (5ms@5000 lekin chiziqli — ~15-25k'dan keyin pg_trgm); asosiy production xarajat = Atlantika DB kechikishi (Frankfurt ko'chishigача).
+
+**Tekshirildi (lokal API+DB):** sybil fixture ball 100 (4 signal), infra/pool/profit endpoint + admin ekranlar jonli render, perf 3 bosqich o'lchandi. Money zone (consume/refund/HMAC/computeGenCost) TEGILMADI. Migratsiya additive.
+
+⚠️ **Kutilmoqda:** git push + deploy + `migrate:deploy` (sybil_infra_tracking) → productionda live verify.
