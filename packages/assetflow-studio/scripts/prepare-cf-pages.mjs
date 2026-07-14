@@ -138,6 +138,44 @@ copyDir(path.join(root, "platform"), dist);
   console.log(`  js cache-bust: ${walk(dist)} ta havola (${jsHash.size} fayl hash'landi)`);
 }
 
+// 5d) CSS cache-bust — js bilan bir xil naqsh (5c): BARCHA dist HTML'lardagi
+//     lokal `styles/<nom>.css` havolalariga fayl KONTENT-HASH'i (?v=) qo'shiladi.
+//     Aks holda deploy'dan keyin eski app.css/admin.css keshdan kelib stilsiz UI
+//     ko'rinishi mumkin.
+{
+  const stylesDir = path.join(dist, "styles");
+  const cssHash = new Map(); // nom → kontent-hash (styles/ dist nusxasidan — hamma joyda bir xil)
+  if (fs.existsSync(stylesDir)) {
+    for (const name of fs.readdirSync(stylesDir)) {
+      if (!name.endsWith(".css")) continue;
+      cssHash.set(name, createHash("sha256").update(fs.readFileSync(path.join(stylesDir, name))).digest("hex").slice(0, 10));
+    }
+  }
+  const bustHtml = (file) => {
+    let html = fs.readFileSync(file, "utf8");
+    let n = 0;
+    // "styles/x.css", "/styles/x.css", "/studio/styles/x.css", "/admin/styles/x.css" — hammasi bitta manba nusxasi
+    html = html.replace(/(src|href)="((?:\/(?:studio|admin))?\/?styles\/)([\w.-]+\.css)(?:\?v=[\w-]*)?"/g, (m, attr, prefix, name) => {
+      const h = cssHash.get(name);
+      if (!h) return m;
+      n++;
+      return `${attr}="${prefix}${name}?v=${h}"`;
+    });
+    if (n) fs.writeFileSync(file, html);
+    return n;
+  };
+  const walk = (dir) => {
+    let total = 0;
+    for (const name of fs.readdirSync(dir)) {
+      const p = path.join(dir, name);
+      if (fs.statSync(p).isDirectory()) total += walk(p);
+      else if (name.endsWith(".html")) total += bustHtml(p);
+    }
+    return total;
+  };
+  console.log(`  css cache-bust: ${walk(dist)} ta havola (${cssHash.size} fayl hash'landi)`);
+}
+
 // _redirects — Cloudflare Pages routing.
 // Login sahifalari endi real fayllar (/studio/login.html, /admin/login.html);
 // eski root URL'lar (login.html, admin-login.html — bookmark/email havolalari)

@@ -9545,6 +9545,8 @@ async function bootPlugin(){
     try{ wireHome(); goHome(); }catch(e){}
     if(typeof AssetFlow!=='undefined') await AssetFlow.init();
     loadUserPrefs();
+    // P34 — 14+ kunlik eski extract papkalari (assetflow_mogrt_*/extract_*): fon rejimida, xatolar e'tiborsiz
+    if(IS_CEP&&typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.pruneOldTempDirs){ try{ AssetFlowCatalog.pruneOldTempDirs(); }catch(e){} }
     try{ syncFavoritesFromServer(); }catch(e){} // #17: hisob sevimlilari (plagin↔web)
     // Retry'lar katalog yuklanishini bloklamasin — parallel ishlaydi
     refreshAccountFromApi();

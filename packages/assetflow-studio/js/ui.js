@@ -91,6 +91,8 @@ function toast(title, msg, kind){
   el.innerHTML=`<div class="t-ico" style="background:var(--${c}-dim);color:var(--${c})">${ic(i)}</div>
     <div class="t-body"><div class="t-title">${esc(title)}</div>${msg?`<div class="t-msg">${esc(msg)}</div>`:''}</div>`;
   wrap.appendChild(el);
+  // P34: bir vaqtda 3 tadan ortiq toast yig'ilib qolmasin — eng eskisi darhol yopiladi
+  while (wrap.children.length > 3) wrap.children[0].remove();
   setTimeout(()=>{ el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); }, 3200);
 }
 

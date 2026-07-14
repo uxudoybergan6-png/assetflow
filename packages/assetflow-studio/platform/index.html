@@ -19924,6 +19924,7 @@ class Component extends DCLogic {
     const m = pre.match(/@(\w*)$/);
     if (m) this.showMention(m[1]); else this.hideMention();
   }
+  _escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
   showMention(q) {
     const ed = this._chipEd; if (!ed) return;
     q = (q || '').toLowerCase();
@@ -19935,10 +19936,11 @@ class Component extends DCLogic {
     });
     if (!items.length) { this.hideMention(); return; }
     const men = this.mentionEl();
+    // P34 — tok/label/small avval xom interpolatsiya edi (faqat thumb URL quote-escape qilinardi)
     men.innerHTML = '<div class="mh">References</div>' + items.map((r, ix) =>
-      '<div class="mi' + (ix === 0 ? ' sel' : '') + '" data-t="' + r.tok + '"><div class="mt"' +
+      '<div class="mi' + (ix === 0 ? ' sel' : '') + '" data-t="' + this._escHtml(r.tok) + '"><div class="mt"' +
       (r.thumb ? ' style="background-image:url(&quot;' + String(r.thumb).replace(/"/g, '&quot;') + '&quot;)"' : '') + '>' +
-      (r.thumb ? '' : r.glyph) + '</div><div><b>' + r.label + '</b><small>' + r.small + '</small></div></div>').join('');
+      (r.thumb ? '' : this._escHtml(r.glyph)) + '</div><div><b>' + this._escHtml(r.label) + '</b><small>' + this._escHtml(r.small) + '</small></div></div>').join('');
     this._menIdx = 0;
     men.querySelectorAll('.mi').forEach(mi => mi.addEventListener('mousedown', (ev) => { ev.preventDefault(); this.pickMentionTok(mi.dataset.t); }));
     // pozitsiya: prompt ustida (fixed — body singleton)

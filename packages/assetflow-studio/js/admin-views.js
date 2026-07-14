@@ -199,21 +199,6 @@ VIEWS.overview = function(){
           })()}
         </div>
       </div>
-
-      <!-- recent activity -->
-      <div class="card">
-        <div class="card-head"><div><h3>Recent activity</h3><span class="small">Actions across the system</span></div><button class="btn btn-subtle btn-sm" onclick="route('audit')">Audit log ${ic('chevR')}</button></div>
-        <div class="card-pad">
-          <div class="timeline">
-            ${(ACTIVITY.length ? ACTIVITY : [{who:'—', verb:'activity', obj:'none yet', t:'', cls:'gray', ic:'clock'}]).map(a=>`
-              <div class="tl-item">
-                <div class="tl-dot" style="background:var(--${a.cls})">${ic(a.ic)}</div>
-                <div class="tl-title"><b>${a.who}</b> ${a.verb} <span style="color:var(--violet-bright)">${a.obj}</span></div>
-                <div class="tl-meta">${a.t}</div>
-              </div>`).join('')}
-          </div>
-        </div>
-      </div>
     </div>
   </div>`;
 };

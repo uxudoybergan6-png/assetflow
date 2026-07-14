@@ -131,6 +131,42 @@ const AssetFlowCatalog = (() => {
     return writeSettings({ downloadDir: dir || "" });
   }
 
+  /**
+   * P34 — .mogrt/.zip extraction'dan qolgan eski papkalarni (14+ kun) boot'da
+   * fon rejimida tozalaydi (assetflow_mogrt_* — downloadDir/tmpdir; extract_* —
+   * AssetFlowStore export papkasi). Xatolar e'tiborsiz — foreground'ni bloklamaydi.
+   */
+  function pruneOldTempDirs() {
+    if (typeof window === "undefined" || typeof window.__adobe_cep__ === "undefined") return;
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const CUTOFF_MS = 14 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const pruneDir = (dir, prefix) => {
+        if (!dir) return;
+        let entries = [];
+        try {
+          entries = fs.readdirSync(dir);
+        } catch {
+          return;
+        }
+        entries.forEach((name) => {
+          if (name.indexOf(prefix) !== 0) return;
+          const p = path.join(dir, name);
+          try {
+            const st = fs.statSync(p);
+            if (st.isDirectory() && now - st.mtimeMs > CUTOFF_MS) fs.rmSync(p, { recursive: true, force: true });
+          } catch {}
+        });
+      };
+      pruneDir(downloadDir(), "assetflow_mogrt_");
+      if (typeof AssetFlowStore !== "undefined" && AssetFlowStore.getExportsDir) {
+        pruneDir(AssetFlowStore.getExportsDir(), "extract_");
+      }
+    } catch {}
+  }
+
   // ── P1 #15 — server-side browse sahifalash holati (filtr bilan) ──
   // Ilgari fetchCatalog MAX_PAGES sikli BUTUN katalogni yuklardi (5000 assetda ~50
   // ketma-ket so'rov + AE muzlashi) va filtr/qidiruv BRAUZERDA ishlardi (P5.1 —
@@ -1485,6 +1521,7 @@ const AssetFlowCatalog = (() => {
     downloadDir,
     configuredDownloadDir,
     saveDownloadDir,
+    pruneOldTempDirs,
     serverCountForNav,
     totalServerCount,
     primaryServerNav,

@@ -983,6 +983,14 @@ async function sendAdminReply() {
     const data = await StudioApi.getMessageThread(th.id);
     ADMIN_THREAD_MESSAGES = data.messages || [];
     th.last = body;
+    th.t = new Date().toISOString().slice(0, 10);
+    // P34 — javob yuborilgan thread ro'yxat boshiga ko'chsin (eng so'nggi faollik yuqorida)
+    const idx = ADMIN_THREADS.indexOf(th);
+    if (idx > 0) {
+      ADMIN_THREADS.splice(idx, 1);
+      ADMIN_THREADS.unshift(th);
+    }
+    MSG_SEL = 0;
     await renderMessaging();
     toast("Sent", "Message sent", "success");
   } catch (e) {
