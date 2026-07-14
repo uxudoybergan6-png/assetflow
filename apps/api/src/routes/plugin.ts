@@ -29,7 +29,7 @@ import {
   isPaidPlan,
 } from "../lib/plugin-profile.js";
 import { approvedCatalogWhere, mapCatalogItem, mapCatalogCard } from "../lib/catalog-map.js";
-import { recordTemplateDownloadEvent } from "../lib/download-events.js";
+import { recordTemplateDownloadEvent, downloadAuditFromReq } from "../lib/download-events.js";
 import {
   type TemplateAssetKind,
   findScenePreview,
@@ -541,7 +541,7 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth
   if (!(await guardDownloadable(req, res, templateId))) return;
   // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (non-blocking).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN" });
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
   const slug = sceneKey(String(req.params.slug));
 
   if (isS3Configured()) {
@@ -575,7 +575,7 @@ pluginRouter.get("/assets/:templateId/pack", downloadLimiter, requireAuth, async
   if (!(await guardDownloadable(req, res, templateId))) return;
   // Bosqich 4 #1: REAL yuklab olish hodisasi (non-blocking — fayl berishni to'smaydi).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN" });
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
   await serveTemplateAsset(req, res, templateId, "pack");
 });
 
@@ -1078,7 +1078,7 @@ pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Reques
   }
   await bumpTemplateCounter(templateId, "importsCount");
   // Bosqich 4 #1: REAL import hodisasi (non-blocking).
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin" });
+  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req) });
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });

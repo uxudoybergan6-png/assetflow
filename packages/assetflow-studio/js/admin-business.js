@@ -269,17 +269,19 @@ function renderFinance(){
   return renderFinanceHtml(root, {d,rev,providers,providerCost,grossUsd,netUsd,refundsUsd,grossMarginPct,netAfterAi,mrr,colors,maxBar});
 }
 
-/** Pool preview line inside Finance — recalculates as the share slider moves. */
+/** Pool preview line inside Finance — recalculates as the share slider moves.
+ *  Step 20 (D3): infra bazadan ayiriladi (obuna net − AI − infra) × share. */
 function financePoolPreview(){
   const d = FINANCE_DATA; if(!d) return;
   const share = Number(document.getElementById('poolShareKnob')?.value||0)/100;
   const providerCost = (d.providers||[]).reduce((a,p)=>a+p.estimatedUsd,0);
   const subNet = (d.poolBaseCents||0)/100; // obuna net − obuna refundlari (pool bazasi)
-  const pool = Math.max(0, (subNet - providerCost) * share);
+  const infra = (d.infraCents||0)/100;      // Step 20 (D3) — admin kiritgan oylik infra
+  const pool = Math.max(0, (subNet - providerCost - infra) * share);
   const lbl = document.getElementById('poolShareLbl');
   const out = document.getElementById('poolShareOut');
   if(lbl) lbl.textContent = Math.round(share*100)+'%';
-  if(out) out.innerHTML = `${bizUsd(pool)} <span style="font-size:10px;color:#8A93A3">= (${bizUsd(subNet)} subscription net − ${bizUsd(providerCost)} AI cost) × ${Math.round(share*100)}%</span>`;
+  if(out) out.innerHTML = `${bizUsd(pool)} <span style="font-size:10px;color:#8A93A3">= (${bizUsd(subNet)} subscription net − ${bizUsd(providerCost)} AI cost − ${bizUsd(infra)} infra) × ${Math.round(share*100)}%</span>`;
 }
 
 function renderFinanceHtml(root, m){
@@ -287,7 +289,7 @@ function renderFinanceHtml(root, m){
   const byKind = rev.byKind||{};
   const kindRow = (key,label)=>{ const k=byKind[key]; if(!k) return ''; return `<div style="display:flex;align-items:center;gap:7px;font-size:11.5px"><span style="color:#B7C0CE">${label}</span><span style="flex:1"></span><span class="adx-num" style="color:${(k.netCents||0)<0?'#FF6B5E':'#B7C0CE'}">${bizUsdCents(k.netCents)}</span><span class="adx-num" style="font-size:10px;color:#5E6675">${k.events}×</span></div>`; };
   const planRows = (rev.byPlan||[]).map(p=>`<div style="display:flex;align-items:center;gap:7px;font-size:11.5px">${axPlan(p.plan)}<span style="flex:1"></span><span class="adx-num" style="color:#C2F04A">${bizUsdCents(p.netCents)}</span><span class="adx-num" style="font-size:10px;color:#5E6675">${p.events}×</span></div>`).join('');
-  const shareDefault = Math.round(((d.poolShare!=null?d.poolShare:0.5))*100);
+  const shareDefault = Math.round(((d.poolShare!=null?d.poolShare:0.3))*100);
   root.innerHTML = `
     <div class="adx-grid4">
       ${axStat({label:'MRR (real, this month)',val:bizUsd(mrr),ic:'trend-up',icColor:'#C2F04A',foot:'subscription net · RevenueEvent'})}
@@ -404,9 +406,19 @@ window.afterRender.payouts = async function(){
     `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>All time</span></span>`+
     `<button class="adx-btn2 sm" onclick="toast('Export','Preparing payout report CSV…','info')"><i class="ph ph-export"></i>Export</button>`;
   const root = document.getElementById('bizRoot');
-  try { PAYOUT_DATA = await StudioApi.getAdminEarnings(); renderPayouts(); }
+  try {
+    // Step 20 — earning + sybil tahlilini parallel yuklaymiz (sybil xatosi payout'ni buzmasin).
+    const [earn, sybil] = await Promise.all([
+      StudioApi.getAdminEarnings(),
+      StudioApi.getAdminSybil(90, false).catch(()=>null),
+    ]);
+    PAYOUT_DATA = earn; SYBIL_DATA = sybil;
+    renderPayouts();
+  }
   catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
 };
+let SYBIL_DATA = null;
+let SYBIL_EXPANDED = {};
 
 /* FAZA 4 (C) — pool compute panel state */
 let POOL_PREVIEW = null;
@@ -441,17 +453,79 @@ function renderPoolPanel(){
     <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;margin-bottom:10px">
       <span>Subscription net <b class="adx-num" style="color:#C2F04A">${bizUsdCents(p.netSubscriptionCents)}</b></span>
       <span>AI cost <b class="adx-num" style="color:#7CC4FF">−${bizUsdCents(p.providerCostCents)}</b></span>
+      <span>Infra <b class="adx-num" style="color:${p.infraPresent?'#FFB27C':'#5E6675'}">−${bizUsdCents(p.infraCents||0)}</b>${p.infraPresent?'':' <span style="color:#5E6675;font-size:9.5px">(not entered)</span>'}</span>
       <span>× share <b class="adx-num">${Math.round((p.poolShare||0)*100)}%</b></span>
       <span>= pool <b class="adx-num" style="color:#C2F04A">${bizUsdCents(p.poolCents)}</b></span>
       <span style="color:#8A93A3">${(p.totalLegitimateDownloads||0).toLocaleString()} legitimate downloads</span>
       ${p.persisted?`<span class="adx-bdg adx-bdg-approved">written: ${p.written}</span>`:''}
     </div>
+    ${p.poolNegative?`<div style="margin-bottom:10px;padding:8px 11px;background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.28);border-radius:9px;font-size:10.5px;color:#FF6B5E;line-height:1.5"><i class="ph ph-warning"></i> Pool base is <b>negative</b> (AI + infra exceed subscription revenue) — clamped to $0. Contributors earn nothing this period (P26.7).</div>`:''}
+    ${(!p.infraPresent && (p.poolCents>0))?`<div style="margin-bottom:10px;padding:8px 11px;background:rgba(255,178,124,.1);border:1px solid rgba(255,178,124,.24);border-radius:9px;font-size:10px;color:#FFB27C;line-height:1.5">No infra cost entered for ${esc(p.month||'this month')} — the pool base excludes bandwidth/compute, so this pool is overstated. Enter it on the Profit screen.</div>`:''}
     ${rows.length?`<table class="adx-tbl"><thead><tr><th>Contributor</th><th class="r">Legit downloads</th><th class="r">Share</th><th class="r">Amount</th></tr></thead>
       <tbody>${rows.slice(0,50).map(r=>{
         const who = (PAYOUT_DATA&&(PAYOUT_DATA.contributors||[]).find(c=>c.contributorId===r.contributorId))||{};
         const sh = p.totalLegitimateDownloads>0?Math.round(r.downloads/p.totalLegitimateDownloads*1000)/10:0;
         return `<tr><td style="font-size:12px">${esc(who.name||who.email||r.contributorId)}</td><td class="r adx-num">${r.downloads.toLocaleString()}</td><td class="r adx-num">${sh}%</td><td class="r adx-num" style="color:#C2F04A">${bizUsdCents(r.amountCents)}</td></tr>`;
       }).join('')}</tbody></table>`:`<div style="font-size:11px;color:var(--muted2);padding:6px 0">No legitimate downloads in this period.</div>`}`;
+}
+
+/* Step 20 (P26.4) — SYBIL / self-dealing paneli (READ; payout xavfsizligi). */
+function sybilScoreBadge(s, suspicious){
+  const col = suspicious ? '#FF6B5E' : (s>=25 ? '#FFB27C' : '#8A93A3');
+  const bg  = suspicious ? 'rgba(255,107,94,.14)' : (s>=25 ? 'rgba(255,178,124,.14)' : 'rgba(255,255,255,.06)');
+  return `<span class="adx-bdg" style="color:${col};background:${bg}">${suspicious?'<i class="ph ph-warning" style="font-size:10px"></i>':''}risk ${s}</span>`;
+}
+function toggleSybilRow(id){ SYBIL_EXPANDED[id]=!SYBIL_EXPANDED[id]; renderPayouts(); }
+function renderSybilPanel(){
+  const s = SYBIL_DATA;
+  if(!s) return '';
+  const rows = (s.contributors||[]);
+  const flagged = rows.filter(r=>r.suspicious);
+  const shown = rows.filter(r=>r.score>0 || r.suspicious).slice(0,40);
+  const hold = s.holdDays!=null?s.holdDays:30;
+  return `
+    <div class="adx-card" style="margin-bottom:16px"><div class="adx-cardhd">
+        <span class="adx-h16" style="font-size:13.5px"><i class="ph ph-shield-warning" style="color:${flagged.length?'#FF6B5E':'#8A93A3'};margin-right:6px"></i>Trust &amp; safety — sybil / self-dealing</span>
+        <span style="flex:1"></span>
+        <span class="adx-bdg ${flagged.length?'adx-bdg-pending':'adx-bdg-approved'}">${flagged.length} flagged</span></div>
+      <div style="padding:10px 18px 14px">
+        <div style="font-size:10.5px;color:#8A93A3;line-height:1.6;margin-bottom:10px">Downloads are clustered by network (IP subnet), account-age proximity, exclusivity and fresh-account activity over the last ${s.sinceDays||90} days. A contributor scoring ≥ ${s.flagScore||50} is flagged for <b style="color:var(--text)">mandatory manual review before payout</b>. Earnings younger than <b style="color:var(--text)">${hold} days</b> are <b style="color:var(--text)">held</b>. This only surfaces signal — it never changes any earning or pool amount.</div>
+        ${shown.length?`<table class="adx-tbl"><thead><tr><th>Contributor</th><th class="r">Risk</th><th class="r">Downloaders</th><th>Signals</th><th></th></tr></thead>
+          <tbody>${shown.map(r=>{
+            const open = !!SYBIL_EXPANDED[r.contributorId];
+            const sig = r.signals||{};
+            const reasons = (r.reasons||[]).length ? r.reasons.map(x=>`<div style="font-size:10.5px;color:#B7C0CE;line-height:1.5">• ${esc(x)}</div>`).join('') : '<span style="font-size:10.5px;color:#5E6675">no strong signal</span>';
+            const main = `<tr>
+              <td style="font-size:12px">${esc(r.name||r.email||r.contributorId)}<div style="font-size:9.5px;color:#5E6675">${esc(r.confidence)} confidence</div></td>
+              <td class="r">${sybilScoreBadge(r.score,r.suspicious)}</td>
+              <td class="r adx-num">${sig.downloaders||0}<div style="font-size:9px;color:#5E6675">${sig.distinctNetworks||0} nets</div></td>
+              <td style="max-width:340px">${reasons}</td>
+              <td class="r"><button class="adx-btn2 sm" onclick="toggleSybilRow('${r.contributorId}')">${open?'Hide':'Events'}</button></td>
+            </tr>`;
+            const detail = open ? `<tr><td colspan="5" style="background:rgba(255,255,255,.02);padding:0">
+              <div style="padding:8px 14px">
+                <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:#8A93A3;margin-bottom:6px">
+                  <span>exclusive ${Math.round((sig.exclusiveRatio||0)*100)}%</span>
+                  <span>top network ${Math.round((sig.topNetworkShare||0)*100)}%</span>
+                  <span>age cluster ${Math.round((sig.ageClusterRatio||0)*100)}%</span>
+                  <span>fresh ${Math.round((sig.freshRatio||0)*100)}%</span>
+                  <span>${sig.withIp||0}/${sig.events||0} events with IP</span>
+                </div>
+                <table class="adx-tbl" style="font-size:10.5px"><thead><tr><th>Downloader</th><th>IP</th><th>Subnet</th><th class="r">Acct age</th><th>Exclusive</th><th class="r">When</th></tr></thead>
+                <tbody>${(r.sample||[]).map(e=>`<tr>
+                  <td>${esc(e.userLabel||e.userId)}</td>
+                  <td class="adx-num" style="color:#8A93A3">${esc(e.ip||'—')}</td>
+                  <td class="adx-num" style="color:#8A93A3">${esc(e.ipPrefix||'—')}</td>
+                  <td class="r adx-num" style="color:${e.accountAgeHours!=null&&e.accountAgeHours<24?'#FF6B5E':'#B7C0CE'}">${e.accountAgeHours!=null?e.accountAgeHours+'h':'—'}</td>
+                  <td>${e.exclusive?'<span class="adx-bdg adx-bdg-pending" style="font-size:9px">only this</span>':'<span style="color:#5E6675">no</span>'}</td>
+                  <td class="r adx-num" style="color:#5E6675">${esc(String(e.createdAt||'').slice(0,10))}</td>
+                </tr>`).join('')}</tbody></table>
+              </div></td></tr>` : '';
+            return main+detail;
+          }).join('')}</tbody></table>`
+        :`<div style="font-size:11px;color:var(--muted2);padding:6px 0">No download clustering signal yet — not enough download events, or none in the window.</div>`}
+      </div>
+    </div>`;
 }
 
 function renderPayouts(){
@@ -461,15 +535,16 @@ function renderPayouts(){
   const rows = (d.contributors||[]).slice().sort((a,b)=>(b.balanceCents||0)-(a.balanceCents||0));
   const perDl = (d.perDownloadCents||10);
   const isPool = d.payoutMode==='pool';
-  const sharePct = Math.round(((d.poolShare!=null?d.poolShare:0.5))*100);
+  const sharePct = Math.round(((d.poolShare!=null?d.poolShare:0.3))*100);
   const totalEvents = rows.reduce((a,r)=>a+(r.earningEvents||0),0);
   const pendingCount = rows.filter(r=>(r.balanceCents||0)>0).length;
   const poolCents = rows.reduce((a,r)=>a+(r.balanceCents||0),0);
   const paidCents = rows.reduce((a,r)=>a+Math.max(0,(r.totalEarnedCents||0)-(r.balanceCents||0)),0);
   root.innerHTML = `
     ${isPool
-      ? axInfo(`<b style="color:var(--text)">POOL mode</b> (PAYOUT_MODE=pool): monthly pool = (subscription net revenue − AI provider cost) × <b style="color:var(--text)">${sharePct}%</b>, distributed by each contributor's share of legitimate downloads. Compute below writes the period earnings; the money transfer stays <b style="color:var(--text)">manual</b> (record payout per contributor). Switch back with PAYOUT_MODE=per_download.`,'info')
+      ? axInfo(`<b style="color:var(--text)">POOL mode</b> (PAYOUT_MODE=pool): monthly pool = (subscription net revenue − AI provider cost − infra) × <b style="color:var(--text)">${sharePct}%</b>, distributed by each contributor's share of legitimate downloads. Compute below writes the period earnings; the money transfer stays <b style="color:var(--text)">manual</b> (record payout per contributor). Switch back with PAYOUT_MODE=per_download.`,'info')
       : axInfo(`<b style="color:var(--text)">Per-download mode</b> (PAYOUT_MODE=per_download): every legitimate download accrues a flat <b style="color:var(--text)">${bizUsdCents(perDl)}</b>. The revenue-share POOL model is available with PAYOUT_MODE=pool. Payment is recorded manually.`,'amber')}
+    ${renderSybilPanel()}
     <div class="adx-card" style="margin-bottom:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Pool distribution ${isPool?'':'<span class="adx-bdg adx-bdg-draft" style="margin-left:6px">preview only — per-download mode active</span>'}</span><span style="flex:1"></span>
         <input type="month" class="adx-input" id="poolMonth" style="width:150px;height:30px" value="${poolDefaultMonth()}">
         <button class="adx-btn2 sm" onclick="loadPoolPreview()"><i class="ph ph-eye"></i>Preview</button>
@@ -509,9 +584,14 @@ function openPayoutRecord(contributorId){
   const r = (PAYOUT_DATA.contributors||[]).find(x=>x.contributorId===contributorId);
   if(!r) return;
   const host = document.getElementById('bizEditPanel');
+  const held = r.heldCents||0, payable = r.payableCents!=null?r.payableCents:(r.balanceCents||0);
+  const holdDays = r.payoutHoldDays!=null?r.payoutHoldDays:30;
+  const sybil = SYBIL_DATA && (SYBIL_DATA.contributors||[]).find(x=>x.contributorId===contributorId && x.suspicious);
   host.innerHTML = `<div class="adx-editpanel" style="width:340px"><div style="padding:18px 20px">
     <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-hand-coins" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">Record payout</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
     <div style="font-size:11.5px;color:#8A93A3;margin-top:6px;line-height:1.5">${esc(r.name||r.email||'')} — unpaid balance <b style="color:var(--text)">${bizUsdCents(r.balanceCents)}</b>. This is a manually entered payout record (ContributorPayout) — the money transfer happens outside the system. All unpaid earnings will be linked.</div>
+    ${sybil?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.28);border-radius:9px;font-size:10.5px;color:#FF6B5E;line-height:1.5"><i class="ph ph-warning"></i> <b>Flagged (risk ${sybil.score})</b> — review the Trust &amp; safety panel before paying. ${esc((sybil.reasons||[])[0]||'')}</div>`:''}
+    ${held>0?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,178,124,.12);border:1px solid rgba(255,178,124,.28);border-radius:9px;font-size:10.5px;color:#FFB27C;line-height:1.5"><i class="ph ph-clock-countdown"></i> ${bizUsdCents(held)} of this is within the ${holdDays}-day hold window. Payable now: <b>${bizUsdCents(payable)}</b>. Recording links ALL unpaid earnings — hold is advisory.</div>`:''}
     <div class="adx-flab" style="margin-top:12px">AMOUNT</div><input class="adx-input mono" value="${bizUsdCents(r.balanceCents)}" disabled>
     <div class="adx-flab" style="margin-top:10px">METHOD</div>
     <select class="adx-input" id="payoutMethod"><option value="bank">Bank transfer</option><option value="payme">Payme</option><option value="click">Click</option><option value="manual">Other (manual)</option></select>
@@ -659,4 +739,139 @@ function renderActivity(){
         }).join('') : `<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-list-checks"></i></span><div style="font-weight:600;font-size:13px">No activity found</div><div style="font-size:11px;color:var(--muted2)">Gen / download / import events stream here.</div></div></td></tr>`}</tbody>
       </table></div>
     </div>`;
+}
+
+/* ============================================================
+   Step 21 (P26.8) · PROFIT — revenue − AI − LS − infra − contributor = profit
+   Bitta ekran: "FOYDA KO'RYAPMANMI?". BEPUL kredit = DAROMAD EMAS (CAC).
+   Barcha raqamlar REAL admin endpoint'dan (READ). Infra = admin kiritadi.
+   ============================================================ */
+let PROFIT_DATA = null;
+let PROFIT_MONTH = new Date().toISOString().slice(0,7); // joriy oy
+
+VIEWS.profit = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
+window.afterRender.profit = async function(){
+  const tba = document.getElementById('tbActions');
+  if(tba && CURRENT==='profit') tba.innerHTML =
+    `<input type="month" class="adx-input" style="width:160px;height:34px" value="${esc(PROFIT_MONTH)}" onchange="PROFIT_MONTH=this.value;loadProfit()" title="Period (empty = all time)">`+
+    `<button class="adx-btn2 sm" onclick="loadProfit()"><i class="ph ph-arrow-clockwise"></i>Refresh</button>`;
+  await loadProfit();
+};
+
+async function loadProfit(){
+  const root = document.getElementById('bizRoot');
+  if(root) root.innerHTML = bizLoading();
+  try { PROFIT_DATA = await StudioApi.getAdminProfit(PROFIT_MONTH || undefined); renderProfit(); }
+  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+}
+
+/** P&L bitta qatori: label, signed cents, izoh, rang. */
+function plRow(label, cents, opts){
+  opts = opts || {};
+  const neg = opts.cost ? -Math.abs(cents) : cents;
+  const color = opts.color || (neg<0 ? '#FF6B5E' : (neg>0 ? '#C2F04A' : '#B7C0CE'));
+  const sign = neg>0 ? '+' : (neg<0 ? '−' : '');
+  return `<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--hair2)">
+    <span style="font-size:12.5px;color:${opts.strong?'var(--text)':'#B7C0CE'};font-weight:${opts.strong?'600':'400'}">${label}</span>
+    ${opts.note?`<span style="font-size:10px;color:#5E6675">${opts.note}</span>`:''}
+    <span style="flex:1"></span>
+    <span class="adx-num" style="font-size:${opts.strong?'15px':'13px'};font-weight:${opts.strong?'700':'500'};color:${color}">${sign}${bizUsd(Math.abs(neg)/100)}</span>
+  </div>`;
+}
+
+function renderProfit(){
+  const root = document.getElementById('bizRoot');
+  if(!root || !PROFIT_DATA) return;
+  const d = PROFIT_DATA;
+  const rev = d.revenue||{}, c = d.costs||{}, cac = d.customerAcquisition||{};
+  const profit = d.profitCents||0;
+  const conf = c.aiConfidence||{measured:0,official:0,estimated:0};
+  const measuredRows = (conf.measured||0)+(conf.official||0);
+  const estRows = conf.estimated||0;
+  const totRows = measuredRows+estRows;
+  const measPct = totRows>0 ? Math.round(measuredRows/totRows*100) : 0;
+  const floors = d.pricingFloors||{channels:[],violations:[]};
+  const infraB = c.infraBreakdown||{storageCents:0,egressCents:0,computeCents:0};
+  const isMonth = !!d.month;
+
+  root.innerHTML = `
+    ${(floors.violations&&floors.violations.length)
+      ? axInfo(`<b style="color:#FF6B5E">Below-cost channel${floors.violations.length>1?'s':''}:</b> ${floors.violations.map(esc).join(' · ')}. A channel priced under $${(floors.floorUsd||0).toFixed(4)}/credit loses money on every credit spent (P27 D6). Fix the plan/pack price or the credit anchor.`,'red')
+      : axInfo(`No sales channel is priced below the cost floor ($${(floors.floorUsd||0).toFixed(4)}/credit). Boot assertion enforces this on every deploy.`,'lime')}
+
+    <div class="adx-grid4" style="margin-bottom:12px">
+      ${axStat({label:'Net revenue',val:bizUsdCents(rev.netCents),ic:'currency-circle-dollar',icColor:'#C2F04A',foot:isMonth?esc(d.month):'all time'})}
+      ${axStat({label:'Total costs',val:bizUsd((( (c.aiCents||0)+(c.lsFeeCents||0)+(c.infraCents||0)+(c.contributorCents||0) ))/100),ic:'coins',icColor:'#7CC4FF',foot:'AI + LS + infra + payout'})}
+      ${axStat({label:'PROFIT',val:bizUsd(profit/100),ic:profit>=0?'trend-up':'trend-down',icColor:profit>=0?'#C2F04A':'#FF6B5E',foot:profit>=0?'in the black':'operating at a loss',footCls:profit>=0?'adx-up':'adx-down'})}
+      ${axStat({label:'Free-user AI (CAC)',val:bizUsd((cac.freeUserAiCents||0)/100),ic:'gift',icColor:'#FFB27C',foot:'spent · revenue $0'})}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:16px" class="biz-fin-grid">
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Profit &amp; loss ${isMonth?`· ${esc(d.month)}`:'· all time'}</span></div>
+        <div style="padding:8px 18px 16px">
+          ${plRow('Net revenue', rev.netCents||0, {strong:true, note:'subscriptions + credit packs, after refunds'})}
+          <div style="padding:2px 0 2px 14px">
+            ${plRow('· Subscriptions', rev.subscriptionNetCents||0, {})}
+            ${plRow('· Credit packs', rev.creditPackNetCents||0, {})}
+            ${(rev.refundsNetCents||0)!==0?plRow('· Refunds', rev.refundsNetCents||0, {}):''}
+          </div>
+          ${plRow('AI provider cost', c.aiCents||0, {cost:true, note:`${measPct}% measured · ${100-measPct}% estimated`})}
+          ${plRow('Lemon Squeezy commission', c.lsFeeCents||0, {cost:true, note:`est. ${Math.round((c.lsFeeBasis&&c.lsFeeBasis.pct||0.05)*100)}% + $0.50/tx · ${(c.lsFeeBasis&&c.lsFeeBasis.saleEvents)||0} tx`})}
+          ${plRow('Infrastructure', c.infraCents||0, {cost:true, note:c.infraPresent?`storage ${bizUsd(infraB.storageCents/100)} · egress ${bizUsd(infraB.egressCents/100)} · compute ${bizUsd(infraB.computeCents/100)}`:'not entered — profit overstated'})}
+          ${plRow('Contributor pool', c.contributorCents||0, {cost:true, note:c.poolNegative?'pool base is NEGATIVE → clamped to 0':'30% of (sub net − AI − infra)'})}
+          <div style="height:6px"></div>
+          ${plRow('PROFIT', profit, {strong:true, color:profit>=0?'#C2F04A':'#FF6B5E'})}
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Infrastructure cost</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">${esc(d.month||'—')}</span></div>
+          <div style="padding:12px 16px">
+            ${!isMonth?`<div style="font-size:11px;color:#FFB27C;margin-bottom:8px">Pick a specific month to enter infra cost.</div>`:`
+            <div style="font-size:10.5px;color:#8A93A3;line-height:1.5;margin-bottom:10px">Admin-entered monthly infra (storage + <b style="color:var(--text)">egress / traffic</b> + compute). Subtracted from the contributor pool base and shown above. ${c.infraPresent?'':'<b style="color:#FFB27C">Not entered for this month.</b>'}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div><div class="adx-flab">STORAGE $</div><input class="adx-input mono" id="infStorage" type="number" min="0" step="0.01" value="${(infraB.storageCents/100)||''}" placeholder="0"></div>
+              <div><div class="adx-flab">EGRESS $</div><input class="adx-input mono" id="infEgress" type="number" min="0" step="0.01" value="${(infraB.egressCents/100)||''}" placeholder="0"></div>
+              <div><div class="adx-flab">COMPUTE $</div><input class="adx-input mono" id="infCompute" type="number" min="0" step="0.01" value="${(infraB.computeCents/100)||''}" placeholder="0"></div>
+            </div>
+            <button class="adx-btn sm" style="margin-top:10px;width:100%" onclick="saveInfraCost()"><i class="ph ph-check"></i>Save infra cost for ${esc(d.month)}</button>`}
+          </div>
+        </div>
+        <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Cost confidence (P24)</span></div>
+          <div style="padding:12px 16px;font-size:11.5px;color:#B7C0CE;line-height:1.7">
+            <div style="display:flex;gap:8px;align-items:center"><span style="width:9px;height:9px;border-radius:3px;background:#C2F04A"></span>Measured / official <span style="flex:1"></span><b class="adx-num">${measuredRows} rows</b></div>
+            <div style="display:flex;gap:8px;align-items:center"><span style="width:9px;height:9px;border-radius:3px;background:#FFB27C"></span>Estimated <span style="flex:1"></span><b class="adx-num">${estRows} rows</b></div>
+            <div style="height:8px;border-radius:5px;overflow:hidden;background:rgba(255,178,124,.25);margin-top:8px"><div style="height:100%;width:${measPct}%;background:#C2F04A"></div></div>
+            <div style="font-size:10px;color:#5E6675;margin-top:6px">${measPct}% of AI cost is measured (BytePlus tokens / invoice), the rest is estimated. Trust the measured share; treat the rest as directional.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adx-card" style="margin-top:16px;overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Loss-making models <span class="adx-bdg ${(d.lossMakingModels||[]).length?'adx-bdg-pending':'adx-bdg-approved'}" style="margin-left:6px">${(d.lossMakingModels||[]).length} under water</span></span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">MARGIN &lt; 1.0× (credit-value proxy)</span></div>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:820px">
+        <thead><tr><th>Model</th><th>Provider</th><th>Mode</th><th class="r">Gens</th><th class="r">Credit revenue</th><th class="r">Real cost</th><th class="r">Margin</th></tr></thead>
+        <tbody>${(d.lossMakingModels||[]).length ? d.lossMakingModels.map(m=>`<tr>
+          <td style="color:var(--text);font-weight:600">${esc(m.label||('model '+m.modelId))}</td>
+          <td style="font-size:11px;color:#8A93A3">${esc(m.provider||'—')}</td>
+          <td>${bizModeBadge(m.mode)}</td>
+          <td class="r adx-num">${(m.credits||0).toLocaleString()}</td>
+          <td class="r adx-num" style="color:#C2F04A">${bizUsd(m.revenueUsd)}</td>
+          <td class="r adx-num" style="color:#7CC4FF">${bizUsd(m.realCostUsd)}</td>
+          <td class="r adx-num" style="color:#FF6B5E">${m.margin!=null?m.margin.toFixed(2)+'×':'—'}</td>
+        </tr>`).join('') : `<tr><td colspan="7"><div class="adx-empty" style="border:0;padding:26px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-size:11px;color:var(--muted2)">No model is selling below its provider cost this period.</div></div></td></tr>`}</tbody>
+      </table></div>
+      <div style="padding:10px 16px;font-size:10.5px;color:#5E6675;line-height:1.5;border-top:1px solid var(--hair2)">⚠️ "Credit revenue" is the credit-value proxy (credits × anchor). For <b>free-plan</b> generations the user paid nothing — that spend is <b>customer-acquisition cost</b> (${bizUsd((cac.freeUserAiCents||0)/100)} this period), not revenue.</div>
+    </div>`;
+}
+
+async function saveInfraCost(){
+  const month = PROFIT_MONTH;
+  const num = (id)=>{ const v=Number(document.getElementById(id)?.value); return Number.isFinite(v)&&v>=0?v:0; };
+  try {
+    await StudioApi.saveAdminInfraCost({ periodMonth: month, storageUsd:num('infStorage'), egressUsd:num('infEgress'), computeUsd:num('infCompute') });
+    toast('Infra saved', `Infrastructure cost recorded for ${month}`, 'success');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Infra cost saved',{action:'finance',detail:month});
+    await loadProfit();
+  } catch(e){ toast('Error',(e&&e.message)||'Failed to save infra cost','danger'); }
 }

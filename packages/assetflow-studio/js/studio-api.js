@@ -688,6 +688,24 @@ const StudioApi = (() => {
   async function computeAdminPool(month, recompute) {
     return request(`/api/admin/payout/pool`, { method: "POST", body: { month, recompute: !!recompute } });
   }
+  /* Step 20 — sybil / self-dealing tahlili (READ) */
+  async function getAdminSybil(sinceDays, onlySuspicious) {
+    const qs = [];
+    if (sinceDays) qs.push(`sinceDays=${encodeURIComponent(sinceDays)}`);
+    if (onlySuspicious) qs.push(`onlySuspicious=1`);
+    return request(`/api/admin/sybil${qs.length ? `?${qs.join("&")}` : ""}`);
+  }
+  /* Step 20 (D3) — infra xarajati (pool bazasi) */
+  async function getAdminInfraCost() {
+    return request(`/api/admin/infra-cost`);
+  }
+  async function saveAdminInfraCost(body) {
+    return request(`/api/admin/infra-cost`, { method: "POST", body });
+  }
+  /* Step 21 — foyda paneli (READ) */
+  async function getAdminProfit(month) {
+    return request(`/api/admin/profit${month ? `?month=${encodeURIComponent(month)}` : ""}`);
+  }
 
   /* ── Landing CMS (admin "Website" tab) — ommaviy landing kontenti/teması ── */
   async function getLandingConfig() {
@@ -795,6 +813,10 @@ const StudioApi = (() => {
     getAdminMetrics,
     getAdminPoolPreview,
     computeAdminPool,
+    getAdminSybil,
+    getAdminInfraCost,
+    saveAdminInfraCost,
+    getAdminProfit,
     getLandingConfig,
     saveLandingConfig,
     resetLandingConfig,

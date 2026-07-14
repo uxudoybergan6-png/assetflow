@@ -672,6 +672,26 @@ model ProviderInvoice {
   @@index([periodMonth])
 }
 
+// ── Step 20 (D3) — INFRA xarajati: admin kiritgan REAL oylik infratuzilma USD.
+// ProviderInvoice naqshi (admin qo'lda kiritadi). Pool BAZASIDAN ayiriladi:
+//   pool = max(0, (obuna net − AI xarajati − INFRA)) × poolShare
+// Ilgari INFRA ayirilmasdi → contributorga BAND BO'LMAGAN pul to'lanardi (P26 Finding 3).
+// EGA QARORI (D3, tasdiqlangan). Money-zone consume/refund/HMAC'ga TEGMAYDI — bu FAQAT
+// pool taqsimotining bazasi (payout hali JONLI EMAS). totalUsd = storage+egress+compute.
+model InfraCost {
+  id          String   @id @default(cuid())
+  periodMonth String   @unique // "YYYY-MM"
+  storageUsd  Decimal  @default(0) @db.Decimal(12, 4) // GCS ombor
+  egressUsd   Decimal  @default(0) @db.Decimal(12, 4) // TRAFIK (egress) — ilgari umuman kuzatilmasdi
+  computeUsd  Decimal  @default(0) @db.Decimal(12, 4) // Cloud Run / Neon compute
+  note        String?
+  createdById String?  // admin userId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([periodMonth])
+}
+
 // ── FAZA 4 (A) — REAL daromad hisobi (Lemon Squeezy webhook'dan) ─────────────
 // RevenueEvent: har haqiqiy pul hodisasi (obuna to'lovi, kredit-paket, refund,
 // chargeback) uchun BITTA qator. Idempotentlik sourceKey @unique bilan
@@ -732,6 +752,14 @@ model TemplateDownloadEvent {
   contributorId String
   kind          String   @default("download") // "download" | "import"
   source        String   @default("plugin")   // "plugin" | "web"
+  // ── Step 20 (P26.4 sybil) — ADDITIVE audit izi (clustering uchun). Faqat admin
+  // fraud-tahlili o'qiydi; earning/pool matematikasiga TEGMAYDI. null = eski yozuvlar
+  // (backfill yo'q) yoki header yetib kelmagan. ipPrefix = tarmoq klasteri kaliti
+  // (IPv4 /24, IPv6 /48) — ASN o'rnida proxy (offline GeoIP DB yo'q).
+  ip            String?  // xom klient IP (trust proxy → X-Forwarded-For)
+  ipPrefix      String?  // IP subnet (/24 yoki /48) — tarmoq yaqinligi klasteri
+  userAgent     String?  @db.Text
+  asn           String?  // CDN/edge header bergan bo'lsa (cf-connecting-asn va h.k.), aks holda null
   createdAt     DateTime @default(now())
 
   // FAZA 2 (H1/M7) — earning DEDUP: attribution per (user, template, kind), NOT per
@@ -744,6 +772,7 @@ model TemplateDownloadEvent {
   @@index([contributorId])
   @@index([createdAt])
   @@index([templateId, kind])
+  @@index([contributorId, ipPrefix]) // Step 20 — contributor bo'yicha tarmoq klasteri
 }
 
 // ── FAZA 2 #13 — Tarif limitlari DB'da (admin boshqaradi, backend enforce).

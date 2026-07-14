@@ -41,6 +41,9 @@ import {
   computePoolForMonth,
 } from "../lib/earnings.js";
 import { revenueSummary, netSubscriptionRevenueCents } from "../lib/revenue.js";
+import { analyzeSybil, payoutHoldDays, sybilFlagScore } from "../lib/sybil.js";
+import { getInfraCostForMonth, upsertInfraCost, listInfraCosts } from "../lib/infra-cost.js";
+import { computeProfitStatement } from "../lib/profit.js";
 import {
   runMonthlyReconciliation,
   recordProviderInvoice,
@@ -724,11 +727,14 @@ function monthRange(month?: string): { since?: Date; until?: Date } {
 
 /** GET /api/admin/finance[?month=YYYY-MM] — daromad vs provayder xarajati + margin + payout. */
 adminRouter.get("/finance", async (req, res) => {
-  const range = monthRange(req.query.month ? String(req.query.month) : undefined);
+  const monthStr = req.query.month ? String(req.query.month) : undefined;
+  const range = monthRange(monthStr);
   // FAZA 4 (A) — REAL daromad (RevenueEvent). MRR = joriy oy obuna net tushumi;
   // month berilsa o'sha oy. Kredit-qiymat proxy (aggregate) AI-marja tahlili uchun QOLADI.
   const mrrRange = range.since ? range : monthRange(new Date().toISOString().slice(0, 7));
-  const [config, margins, providers, unpaid, revenue, mrrCents, poolBaseCents] = await Promise.all([
+  // Step 20 (D3) — pool bazasidan ayiriladigan infra (tanlangan oy; oy yo'q → 0).
+  const infraMonth = monthStr && /^\d{4}-\d{2}$/.test(monthStr) ? monthStr : null;
+  const [config, margins, providers, unpaid, revenue, mrrCents, poolBaseCents, infra] = await Promise.all([
     getPricingConfig(),
     computeMargins(range),
     spendByProvider(range),
@@ -738,6 +744,7 @@ adminRouter.get("/finance", async (req, res) => {
     netSubscriptionRevenueCents(mrrRange),
     // Pool bazasi — tanlangan davr uchun (obuna net − obuna refundlari).
     netSubscriptionRevenueCents(range),
+    infraMonth ? getInfraCostForMonth(infraMonth) : Promise.resolve(null),
   ]);
   const creditUsd = config.creditUsdValue;
   const providerRows = providers
@@ -759,9 +766,67 @@ adminRouter.get("/finance", async (req, res) => {
     mrrCents,
     // FAZA 4 (C/D) — pool knob ko'rsatkichi uchun (obuna net − obuna refundlari).
     poolBaseCents,
+    // Step 20 (D3) — infra pool bazasidan ayiriladi (oy tanlangan bo'lsa).
+    infraCents: infra ? infra.totalCents : 0,
+    infraPresent: infra ? infra.present : false,
     payoutMode: payoutMode(),
     poolShare: contributorPoolShare(),
   });
+});
+
+// ── Step 20 (P26.4) — SYBIL / self-dealing tahlili (FAQAT O'QISH) ───────────
+/** GET /api/admin/sybil[?sinceDays=90&onlySuspicious=1] — shubhali contributorlar +
+ *  sabab + hodisalar. Earning/pool matematikasiga TEGMAYDI — faqat qo'lda ko'rib chiqish. */
+adminRouter.get("/sybil", async (req, res) => {
+  const sinceDays = req.query.sinceDays ? Number(req.query.sinceDays) : undefined;
+  const onlySuspicious = req.query.onlySuspicious === "1" || req.query.onlySuspicious === "true";
+  const result = await analyzeSybil({
+    sinceDays: Number.isFinite(sinceDays) ? sinceDays : undefined,
+    onlySuspicious,
+  });
+  res.json(result);
+});
+
+// ── Step 20 (D3) — INFRA xarajati (pool bazasidan ayiriladi; profit paneliga) ─
+/** GET /api/admin/infra-cost — oxirgi oylar infra xarajati (admin kiritgan). */
+adminRouter.get("/infra-cost", async (_req, res) => {
+  const rows = await listInfraCosts(24);
+  res.json({ holdDays: payoutHoldDays(), flagScore: sybilFlagScore(), rows });
+});
+
+/** POST /api/admin/infra-cost { periodMonth, storageUsd, egressUsd, computeUsd, note } —
+ *  oylik infra xarajatini kiritadi/yangilaydi (ProviderInvoice naqshi). Audit yoziladi. */
+adminRouter.post("/infra-cost", async (req, res) => {
+  const body = z
+    .object({
+      periodMonth: z.string().regex(/^\d{4}-\d{2}$/, "YYYY-MM"),
+      storageUsd: z.number().min(0).optional(),
+      egressUsd: z.number().min(0).optional(),
+      computeUsd: z.number().min(0).optional(),
+      note: z.string().max(300).optional(),
+    })
+    .safeParse(req.body ?? {});
+  if (!body.success) {
+    res.status(400).json({ error: body.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  const row = await upsertInfraCost({ ...body.data, createdById: req.user?.userId ?? null });
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "infra.cost.upsert",
+    targetType: "infraCost",
+    targetId: body.data.periodMonth,
+    meta: { storageUsd: body.data.storageUsd, egressUsd: body.data.egressUsd, computeUsd: body.data.computeUsd },
+  });
+  res.json({ ok: true, row });
+});
+
+// ── Step 21 (P26.8) — FOYDA PANELI (revenue − AI − LS − infra − contributor) ─
+/** GET /api/admin/profit[?month=YYYY-MM] — bitta ekran foyda hisoboti. FAQAT O'QISH. */
+adminRouter.get("/profit", async (req, res) => {
+  const month = req.query.month ? String(req.query.month) : undefined;
+  const stmt = await computeProfitStatement(month && /^\d{4}-\d{2}$/.test(month) ? month : undefined);
+  res.json(stmt);
 });
 
 // ── FAZA 4 (C) — revenue-share POOL payout hisoblash (pul KO'CHIRILMAYDI) ────

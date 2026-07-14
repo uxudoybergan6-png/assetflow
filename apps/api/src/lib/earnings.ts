@@ -1,5 +1,7 @@
 import { prisma } from "@creative-tools/database";
 import { netSubscriptionRevenueCents } from "./revenue.js";
+import { payoutHoldDays } from "./sybil.js";
+import { getInfraCostForMonth } from "./infra-cost.js";
 
 /**
  * Bosqich 4 #3 — Contributor payout / earnings (50% ulush mexanizmi).
@@ -46,11 +48,12 @@ export function payoutMode(): PayoutMode {
   return process.env.PAYOUT_MODE === "per_download" ? "per_download" : "pool";
 }
 
-/** Pool ulushi (0..1], default 0.50 — EGA QARORI (CONTRIBUTOR_POOL_SHARE env). */
+/** Pool ulushi (0..1], default 0.30 — EGA QARORI (P27 D3, tasdiqlangan; CONTRIBUTOR_POOL_SHARE
+ *  env override). Ilgari 0.50 edi; infra bazadan ayirilgach ulush 30%ga tushirildi. */
 export function contributorPoolShare(): number {
   const raw = Number(process.env.CONTRIBUTOR_POOL_SHARE);
   if (Number.isFinite(raw) && raw > 0 && raw <= 1) return raw;
-  return 0.5;
+  return 0.3;
 }
 
 /**
@@ -93,8 +96,11 @@ export async function grantContributorEarning(input: {
 
 /**
  * FAZA 4 (C) — davr (YYYY-MM) uchun POOL hisoblab taqsimlaydi.
- *   pool = max(0, (obuna NET tushumi − AI provayder xarajati)) × poolShare
+ *   Step 20 (D3): pool = max(0, (obuna NET − AI xarajati − INFRA)) × poolShare
  *   contributor ulushi = (uning legitim downloadlari / jami legitim) × pool (floor)
+ *   INFRA (storage+egress+compute) ilgari AYIRILMASDI (P26 Finding 3) → contributorga
+ *   band bo'lmagan pul to'lanardi. Endi bazadan ayiriladi. Pool MANFIY bo'lsa → 0 ga
+ *   qisiladi (poolNegative=true bilan ogohlantiriladi; P26.7).
  *
  * persist=true → ContributorEarning kind="pool" qatorlari yoziladi; idempotent:
  * downloadEventId = "pool:<month>:<contributorId>" @unique → qayta chaqiruv
@@ -114,7 +120,7 @@ export async function computePoolForMonth(
   const until = new Date(Date.UTC(y, m, 1));
   const share = contributorPoolShare();
 
-  const [netSubCents, spendAgg, downloadRows] = await Promise.all([
+  const [netSubCents, spendAgg, downloadRows, infra] = await Promise.all([
     netSubscriptionRevenueCents({ since, until }),
     prisma.providerSpend.aggregate({
       where: { createdAt: { gte: since, lt: until }, estimatedCostUsd: { not: null } },
@@ -127,9 +133,15 @@ export async function computePoolForMonth(
       where: { kind: "download", createdAt: { gte: since, lt: until } },
       _count: { _all: true },
     }),
+    // Step 20 (D3) — oylik infra (admin kiritgan). Yo'q → 0 (present=false, admin ogohlantiriladi).
+    getInfraCostForMonth(month),
   ]);
   const providerCostCents = Math.round(Number(spendAgg._sum.estimatedCostUsd ?? 0) * 100);
-  const poolCents = Math.max(0, Math.floor((netSubCents - providerCostCents) * share));
+  const infraCents = infra.totalCents;
+  // Step 20 (D3) — INFRA bazadan ayiriladi. Klampдан OLDINGI xom qiymat (manfiy bo'lishi mumkin).
+  const poolBeforeClamp = Math.floor((netSubCents - providerCostCents - infraCents) * share);
+  const poolNegative = poolBeforeClamp < 0;
+  const poolCents = Math.max(0, poolBeforeClamp);
   const totalDownloads = downloadRows.reduce((a, r) => a + r._count._all, 0);
   const contributors = downloadRows
     .map((r) => ({
@@ -171,6 +183,11 @@ export async function computePoolForMonth(
     poolShare: share,
     netSubscriptionCents: netSubCents,
     providerCostCents,
+    // Step 20 (D3) — infra bazadan ayirildi.
+    infraCents,
+    infraPresent: infra.present, // false → admin shu oy infra kiritmagan (baza to'liq emas)
+    poolBeforeClampCents: poolBeforeClamp,
+    poolNegative, // true → baza manfiy; contributorlar shu oy HECH NARSA olmaydi (P26.7)
     poolCents,
     totalLegitimateDownloads: totalDownloads,
     contributors,
@@ -184,13 +201,23 @@ export async function computePoolForMonth(
  * (to'lanmagan earninglar yig'indisi). Balans HECH QACHON manfiy bo'lmaydi.
  */
 export async function getContributorEarningsSummary(contributorId: string) {
-  const [totalAgg, unpaidAgg, paidAgg, downloadCount] = await Promise.all([
+  // Step 20 — payout HOLD: hold davridan yosh to'lanmagan earninglar "held"
+  // (sybil/chargeback oynasi). ADDITIVE — balans matematikasi o'zgarmaydi, faqat
+  // admin ko'rishi uchun payable/held ajratmasi (majburiy qo'lda ko'rib chiqish).
+  const holdDays = payoutHoldDays();
+  const holdCutoff = new Date(Date.now() - holdDays * 86_400_000);
+  const [totalAgg, unpaidAgg, heldAgg, paidAgg, downloadCount] = await Promise.all([
     prisma.contributorEarning.aggregate({
       where: { contributorId },
       _sum: { amountCents: true },
     }),
     prisma.contributorEarning.aggregate({
       where: { contributorId, payoutId: null },
+      _sum: { amountCents: true },
+    }),
+    // To'lanmagan VA hold davridan yosh (createdAt >= cutoff) → hali to'lanmaydi.
+    prisma.contributorEarning.aggregate({
+      where: { contributorId, payoutId: null, createdAt: { gte: holdCutoff } },
       _sum: { amountCents: true },
     }),
     prisma.contributorPayout.aggregate({
@@ -203,12 +230,17 @@ export async function getContributorEarningsSummary(contributorId: string) {
   ]);
   const totalCents = totalAgg._sum.amountCents ?? 0;
   const balanceCents = unpaidAgg._sum.amountCents ?? 0; // to'lanmagan earninglar
+  const heldCents = Math.max(0, heldAgg._sum.amountCents ?? 0); // hold davridagi (yosh)
   const paidOutCents = paidAgg._sum.amountCents ?? 0;
   return {
     contributorId,
     currency: "USD",
     totalEarnedCents: totalCents,
     balanceCents: Math.max(0, balanceCents),
+    // Step 20 — payout xavfsizligi (ADDITIVE):
+    heldCents, // hold davridan yosh — hali to'lash mumkin emas
+    payableCents: Math.max(0, balanceCents - heldCents), // hold o'tgan, to'lasa bo'ladi
+    payoutHoldDays: holdDays,
     paidOutCents,
     earningEvents: downloadCount,
     perDownloadCents: payoutPerDownloadCents(),

@@ -101,6 +101,7 @@ import {
   payoutMode,
   contributorPoolShare,
 } from "../lib/earnings.js";
+import { payoutHoldDays } from "../lib/sybil.js";
 import crypto from "crypto";
 
 /** Moderatsiya natijasini contributor'ga email qiladi (xato bo'lsa jim o'tadi) */
@@ -424,6 +425,15 @@ contributorRouter.get("/admin/earnings", requireAuth, requireAdmin, async (_req,
     where: { payoutId: null },
     _sum: { amountCents: true },
   });
+  // Step 20 — payout HOLD: to'lanmagan VA hold davridan yosh earninglar (createdAt >= cutoff).
+  const holdDays = payoutHoldDays();
+  const holdCutoff = new Date(Date.now() - holdDays * 86_400_000);
+  const heldGroup = await prisma.contributorEarning.groupBy({
+    by: ["contributorId"],
+    where: { payoutId: null, createdAt: { gte: holdCutoff } },
+    _sum: { amountCents: true },
+  });
+  const heldMap = new Map(heldGroup.map((r) => [r.contributorId, r._sum.amountCents ?? 0]));
   // FAZA 4 (C): earningEvents = faqat LEGITIM download hodisalari (pool taqsimot
   // qatorlari hodisa emas; pool rejimida download qatori 0-amount MARKER).
   const dlCounts = await prisma.contributorEarning.groupBy({
@@ -445,14 +455,23 @@ contributorRouter.get("/admin/earnings", requireAuth, requireAdmin, async (_req,
     perDownloadCents: payoutPerDownloadCents(),
     payoutMode: payoutMode(),
     poolShare: contributorPoolShare(),
-    contributors: grouped.map((g) => ({
-      contributorId: g.contributorId,
-      email: userMap.get(g.contributorId)?.email ?? null,
-      name: userMap.get(g.contributorId)?.name ?? null,
-      totalEarnedCents: g._sum.amountCents ?? 0,
-      balanceCents: Math.max(0, unpaidMap.get(g.contributorId) ?? 0),
-      earningEvents: dlMap.get(g.contributorId) ?? 0,
-    })),
+    payoutHoldDays: holdDays,
+    contributors: grouped.map((g) => {
+      const balanceCents = Math.max(0, unpaidMap.get(g.contributorId) ?? 0);
+      const heldCents = Math.max(0, heldMap.get(g.contributorId) ?? 0);
+      return {
+        contributorId: g.contributorId,
+        email: userMap.get(g.contributorId)?.email ?? null,
+        name: userMap.get(g.contributorId)?.name ?? null,
+        totalEarnedCents: g._sum.amountCents ?? 0,
+        balanceCents,
+        // Step 20 — payout xavfsizligi (ADDITIVE): held = hold davridagi (yosh), payable = qolgan.
+        heldCents,
+        payableCents: Math.max(0, balanceCents - heldCents),
+        payoutHoldDays: holdDays,
+        earningEvents: dlMap.get(g.contributorId) ?? 0,
+      };
+    }),
   });
 });
 

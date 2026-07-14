@@ -3,6 +3,60 @@ import { grantContributorEarning } from "./earnings.js";
 import { isEmailConfigured } from "./email.js";
 
 /**
+ * Step 20 (P26.4 sybil) — download hodisasi audit metadatasi. Faqat admin
+ * fraud-tahlili uchun (clustering); earning/pool matematikasiga TEGMAYDI.
+ * ipPrefix = tarmoq klasteri kaliti (IPv4 /24, IPv6 /48) — offline GeoIP DB
+ * yo'q, shu bois ASN o'rnida subnet proxy. asn faqat CDN/edge header bergan
+ * bo'lsa to'ladi (aks holda null — backfill yo'q).
+ */
+export type DownloadAudit = {
+  ip?: string | null;
+  ipPrefix?: string | null;
+  userAgent?: string | null;
+  asn?: string | null;
+};
+
+/** Xom IP'dan tarmoq prefiksi: IPv4 → /24 (a.b.c), IPv6 → /48 (birinchi 3 hextet). */
+export function ipToPrefix(ip?: string | null): string | null {
+  if (!ip) return null;
+  let s = String(ip).trim();
+  // IPv4-mapped IPv6 (::ffff:1.2.3.4) → IPv4 sifatida ishlaymiz
+  const mapped = s.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (mapped) s = mapped[1];
+  if (s.includes(".") && !s.includes(":")) {
+    const p = s.split(".");
+    if (p.length === 4) return `${p[0]}.${p[1]}.${p[2]}.0/24`;
+    return null;
+  }
+  if (s.includes(":")) {
+    const h = s.split(":").filter(Boolean);
+    if (h.length >= 3) return `${h[0]}:${h[1]}:${h[2]}::/48`;
+    return s;
+  }
+  return null;
+}
+
+/**
+ * Express req'dan sybil audit metadatasini oladi (trust proxy=1 → req.ip = xom
+ * klient IP). ASN faqat CDN/edge header bergan bo'lsa (Cloudflare cf-connecting-asn,
+ * yoki generic x-asn) — bizda offline GeoIP DB yo'q, taxmin qilmaymiz.
+ */
+export function downloadAuditFromReq(req: {
+  ip?: string;
+  headers?: Record<string, unknown>;
+}): DownloadAudit {
+  const h = req.headers ?? {};
+  const asnRaw = h["cf-connecting-asn"] ?? h["x-asn"] ?? h["x-vercel-ip-asn"];
+  const ip = req.ip || (typeof h["x-forwarded-for"] === "string" ? String(h["x-forwarded-for"]).split(",")[0].trim() : null);
+  return {
+    ip: ip || null,
+    ipPrefix: ipToPrefix(ip),
+    userAgent: typeof h["user-agent"] === "string" ? (h["user-agent"] as string) : null,
+    asn: asnRaw != null ? String(asnRaw) : null,
+  };
+}
+
+/**
  * FAZA 2 (H1 sybil) — earning uchun email-verify gate (plugin-profile.ts AI gate'i naqshi):
  *   • dev → faqat email sozlangan bo'lsa majburlanadi (fail-open);
  *   • production → sozlanmagan bo'lsa ham majburlanadi (fail-closed).
@@ -42,6 +96,8 @@ export async function recordTemplateDownloadEvent(input: {
    * lekin contributor earning YOZILMAYDI. Default true (odatiy foydalanuvchi oqimi).
    */
   earn?: boolean;
+  /** Step 20 — sybil clustering audit (best-effort; xato oqimni bloklamaydi). */
+  audit?: DownloadAudit;
 }): Promise<{ id: string; contributorId: string } | null> {
   if (!input.templateId) return null;
   try {
@@ -51,6 +107,7 @@ export async function recordTemplateDownloadEvent(input: {
     });
     if (!tpl) return null;
 
+    const a = input.audit ?? {};
     // DEDUP (H1): (userId, templateId, kind) unique → bir foydalanuvchining bir shablonni
     // qayta yuklab olishi YANGI hodisa yaratmaydi (→ takroriy earning yo'q). createMany +
     // skipDuplicates unique konflikt'da THROW qilmaydi (count=0 qaytadi).
@@ -62,6 +119,11 @@ export async function recordTemplateDownloadEvent(input: {
           contributorId: tpl.contributorId,
           kind: input.kind,
           source: input.source ?? "plugin",
+          // Step 20 — audit izi (nullable; PII faqat admin fraud-tahlilida ishlatiladi).
+          ip: a.ip ?? null,
+          ipPrefix: a.ipPrefix ?? ipToPrefix(a.ip) ?? null,
+          userAgent: a.userAgent ? String(a.userAgent).slice(0, 512) : null,
+          asn: a.asn ?? null,
         },
       ],
       skipDuplicates: true,

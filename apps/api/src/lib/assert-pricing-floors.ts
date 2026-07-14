@@ -31,6 +31,25 @@ const CHANNELS: Channel[] = [
   { name: "Pack 1800", usd: 35, credits: 1800 },
 ];
 
+/** Step 21 — panelда ko'rsatish uchun THROW qilmaydigan tekshiruv (boot assert bilan bir mantiq).
+ *  Har kanal $/kredit'i + pol'dan pastmi. Profit paneli qizil banner uchun ishlatadi. */
+export function checkPricingFloors(): {
+  floorUsd: number;
+  channels: Array<{ name: string; usd: number; credits: number; perCredit: number; belowFloor: boolean }>;
+  violations: string[];
+} {
+  const floor = creditFloorUsd();
+  const channels = CHANNELS.map((c) => {
+    const perCredit = c.credits > 0 ? c.usd / c.credits : 0;
+    return { name: c.name, usd: c.usd, credits: c.credits, perCredit, belowFloor: perCredit < floor - 1e-9 };
+  });
+  return {
+    floorUsd: floor,
+    channels,
+    violations: channels.filter((c) => c.belowFloor).map((c) => `${c.name}: $${c.perCredit.toFixed(4)}/credit < floor $${floor.toFixed(4)}`),
+  };
+}
+
 /** Boshda chaqiriladi — biror kanal pol'dan past bo'lsa throw (boot yiqiladi). */
 export function assertPricingFloorsOrThrow(): void {
   const floor = creditFloorUsd();
