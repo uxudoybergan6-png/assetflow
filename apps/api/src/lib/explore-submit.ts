@@ -48,21 +48,27 @@ export class ExploreError extends Error {
 // gen.mode → { mediaClass (metadata vision), stockType (derivativ sinfi + sub-filtr) }.
 // stockType RECOGNIZED qiymatlar (derivativeKindForStockType) — noma'lum stockType
 // derivativ quvurini buzardi. Web AI Stock "Image|Video" sub-filtri shu stockType'ga tayanadi.
+// P20 — templateType: audio AI stock endi 'sfx'/'music' (web/plagin ularni Sound Effects/Music
+// pill'lari ostiga qo'yadi, "AI Stock" emas). Rasm/video 'ai-stock' bo'lib qoladi. stockType o'zgarmaydi.
 function classifyMode(mode: string): {
   mediaClass: "image" | "video" | "audio";
   stockType: string;
+  templateType: string;
 } {
   switch (String(mode)) {
     case "image":
-      return { mediaClass: "image", stockType: "graphics" };
+      return { mediaClass: "image", stockType: "graphics", templateType: "ai-stock" };
     case "video":
-      return { mediaClass: "video", stockType: "motion-graphics" };
+      return { mediaClass: "video", stockType: "motion-graphics", templateType: "ai-stock" };
     case "sfx":
-      return { mediaClass: "audio", stockType: "sfx" };
+      return { mediaClass: "audio", stockType: "sfx", templateType: "sfx" };
     default: // voice | music
-      return { mediaClass: "audio", stockType: "music" };
+      return { mediaClass: "audio", stockType: "music", templateType: "music" };
   }
 }
+
+// P20 — foydalanuvchining AI topshiriqlari templateType'i (rasm/video 'ai-stock' + audio 'sfx'/'music').
+const AI_SUBMISSION_TYPES = ["ai-stock", "sfx", "music"];
 
 function orientFromDims(w?: number | null, h?: number | null): string {
   if (!w || !h) return "horizontal";
@@ -141,7 +147,9 @@ export async function submitGenerationToExplore(opts: ExploreSubmitOpts): Promis
     const todayCount = await prisma.contributorTemplate.count({
       where: {
         contributorId: opts.userId,
-        templateType: "ai-stock",
+        // P20 — kunlik cap BARCHA AI topshiriq turlarini (rasm/video/sfx/music) sanaydi.
+        templateType: { in: AI_SUBMISSION_TYPES },
+        metaJson: { path: ["aiSource"], equals: "ai" },
         createdAt: { gte: startOfDay },
       },
     });
@@ -154,7 +162,7 @@ export async function submitGenerationToExplore(opts: ExploreSubmitOpts): Promis
     }
   }
 
-  const { mediaClass, stockType } = classifyMode(gen.mode);
+  const { mediaClass, stockType, templateType } = classifyMode(gen.mode);
 
   // 5) MODERATSIYA (ochiq foydalanuvchi kontenti — NSFW/IP xavfi). Prompt (matn) + rasm.
   //    Bloklansa → topshiriq rad etiladi (navbatga TUSHMAYDI). Yumshoq flag → admin ko'radi.
@@ -181,10 +189,12 @@ export async function submitGenerationToExplore(opts: ExploreSubmitOpts): Promis
     }
   }
 
-  // 6) AI METADATA (prompt = eng yaxshi manba). typeKey="ai-stock" → AI Stock kategoriyalari
-  //    (lib/taxonomy.ts). INTERNAL — kredit ISHLATMAYDI. Hech qachon throw QILMAYDI.
+  // 6) AI METADATA (prompt = eng yaxshi manba). P20 — AUDIO uchun typeKey='sfx'/'music' → audio
+  //    taksonomiyasi (Whoosh/Impact… yoki Cinematic/Ambient…), "Uncategorized" YO'Q. Rasm/video →
+  //    "ai-stock" kategoriyalari. INTERNAL — kredit ISHLATMAYDI. Hech qachon throw QILMAYDI.
+  const metaTypeKey = mediaClass === "audio" ? stockType : "ai-stock";
   const meta = await generateAssetMetadata({
-    typeKey: "ai-stock",
+    typeKey: metaTypeKey,
     mediaClass,
     displayName: gen.prompt || "AI generation",
     imagePaths: [],
@@ -206,7 +216,9 @@ export async function submitGenerationToExplore(opts: ExploreSubmitOpts): Promis
         externalId,
         name: meta.title,
         description: meta.description,
-        nav: "video",
+        // P20 — AE plagin bo'limlari `nav` bo'yicha guruhlaydi: audio → 'sfx'/'music' (o'z bo'limi),
+        // rasm/video → 'video' (mavjud). Web esa templateType/stockType bilan filtrlaydi (nav'ga bog'liq emas).
+        nav: mediaClass === "audio" ? stockType : "video",
         cat: meta.cat,
         catLabel: meta.catLabel,
         orient,
@@ -214,7 +226,8 @@ export async function submitGenerationToExplore(opts: ExploreSubmitOpts): Promis
         tags: meta.tags,
         templateApp: "ae",
         kind: "stock",
-        templateType: "ai-stock",
+        // P20 — audio → 'sfx'/'music' (Sound Effects/Music pill); rasm/video → 'ai-stock'.
+        templateType,
         stockType,
         width: asset.width ?? null,
         height: asset.height ?? null,
@@ -294,7 +307,13 @@ export async function listExploreSubmissions(userId: string): Promise<
   Array<{ generationId: string; templateId: string; reviewStatus: string; published: boolean; name: string }>
 > {
   const rows = await prisma.contributorTemplate.findMany({
-    where: { contributorId: userId, templateType: "ai-stock" },
+    // P20 — AI topshiriqlar endi 'ai-stock' (rasm/video) + 'sfx'/'music' (audio). aiSource='ai'
+    // filtri oddiy (non-AI) stock yuklamalarni chiqarib tashlaydi (ular ham 'sfx'/'music' bo'lishi mumkin).
+    where: {
+      contributorId: userId,
+      templateType: { in: AI_SUBMISSION_TYPES },
+      metaJson: { path: ["aiSource"], equals: "ai" },
+    },
     orderBy: { createdAt: "desc" },
     take: 200,
     select: { id: true, externalId: true, reviewStatus: true, published: true, name: true },

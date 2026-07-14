@@ -15645,6 +15645,18 @@
   .ff .va-lb-el{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:#000}
   .ff .va-lb-aud{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(520px,82%)}
   .ff .va-lb-aud>i{font-size:64px;color:var(--acc)}
+  /* P20 — umumiy audio pleer (to'lqin + accent progress + playhead + custom play/pause + vaqt).
+     Native <audio controls> OLIB TASHLANDI (□ tofu ikonlari yo'q, brand-mos ko'rinish). */
+  .ff .va-aplayer{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:14px;background:var(--panel2,rgba(255,255,255,.04));border:1px solid var(--bd2,rgba(255,255,255,.08))}
+  .ff .va-ap-play{flex:none;width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;background:var(--th-accent,#c8ff5a);color:#0a0a0a;display:grid;place-items:center;transition:transform .12s}
+  .ff .va-ap-play:hover{transform:scale(1.06)}
+  .ff .va-ap-play svg{width:20px;height:20px;fill:currentColor}
+  .ff .va-ap-mid{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:7px}
+  .ff .va-ap-wave{position:relative;height:40px;border-radius:8px;overflow:hidden;cursor:pointer;background:#12161E center/cover no-repeat;filter:grayscale(.15)}
+  .ff .va-ap-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;padding:0 4px}
+  .ff .va-ap-bars i{flex:1;background:rgba(255,255,255,.22);border-radius:1px;display:block}
+  .ff .va-ap-prog{position:absolute;top:0;left:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(200,255,90,.30),rgba(200,255,90,.42));border-right:2px solid var(--th-accent,#c8ff5a);pointer-events:none}
+  .ff .va-ap-time{font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;color:var(--muted,rgba(255,255,255,.6));letter-spacing:.02em}
   .ff .va-lb-arw{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:19px;transition:background .15s}
   .ff .va-lb-arw:hover{background:rgba(0,0,0,.75)}
   .ff .va-lb-arw.prev{left:14px}
@@ -16373,9 +16385,11 @@
               <!-- BATCH6 · preview-player: ramka (border/radius/#000) + media + player-bar (poster holatida) -->
               <div class="va-dprev">
                 <div class="va-thumb va-dpmedia" style="background:{{ detail.g }}">
+                  <!-- P20 — AUDIO (Sound Effects/Music): umumiy to'lqin pleer (native audio-bar EMAS) -->
+                  <sc-if value="{{ detail.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-aplayer" data-src="{{ detail.previewUrl }}" data-wave="{{ detail.posterUrl }}" data-durtarget="#va-det-dur" style="position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);margin:0 16px;width:auto;z-index:1"></div></sc-if>
                   <!-- QA-FIX #1: controls=""/muted="" falsy prop edi → video boshqarib bo'lmasdi, audio ham yo'q edi.
                        Endi chin controls + muted YO'Q (ovoz o'ynaydi); poster real thumb. -->
-                  <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" poster="{{ detail.posterUrl }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
+                  <sc-if value="{{ detail.hasVideoPrev }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" poster="{{ detail.posterUrl }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
                   <!-- preview yo'q — soxta play tugmasi o'rniga halol yorliq (thumb fonda ko'rinadi) -->
                   <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><span class="va-typetag">PREVIEW SOON</span></sc-if>
                 </div>
@@ -16422,10 +16436,12 @@
               <div class="va-author"><span class="av">{{ detail.authorInitials }}</span><div style="min-width:0"><b>{{ detail.author }}</b><small>FrameFlow contributor</small></div></div>
               <!-- spec-list — bir ustunli yorliq/qiymat (faqat real maydonlar; davomiylik yo'q → ko'rsatilmaydi) -->
               <div class="va-specs">
-                <div><div class="k">Application</div><div class="v">{{ detail.appFull }}</div></div>
+                <!-- P20 — AUDIO: Application/Orientation/Resolution YASHIRIN (audio uchun ma'nosiz); Duration KO'RSATILADI. -->
+                <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><div><div class="k">Application</div><div class="v">{{ detail.appFull }}</div></div></sc-if>
                 <div><div class="k">Category</div><div class="v">{{ detail.c }}</div></div>
-                <div><div class="k">Orientation</div><div class="v">{{ detail.oriFull }}</div></div>
-                <div><div class="k">Resolution</div><div class="v">{{ detail.resVal }}</div></div>
+                <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><div><div class="k">Orientation</div><div class="v">{{ detail.oriFull }}</div></div></sc-if>
+                <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><div><div class="k">Resolution</div><div class="v">{{ detail.resVal }}</div></div></sc-if>
+                <sc-if value="{{ detail.isAudio }}" hint-placeholder-val="{{ false }}"><div><div class="k">Duration</div><div class="v" id="va-det-dur">—</div></div></sc-if>
                 <div><div class="k">Format</div><div class="v">{{ detail.formatLine }}</div></div>
                 <sc-if value="{{ detail.hasSize }}" hint-placeholder-val="{{ false }}"><div><div class="k">Pack size</div><div class="v">{{ detail.sizeFmt }}</div></div></sc-if>
                 <div><div class="k">Updated</div><div class="v">{{ detail.updatedFmt }}</div></div>
@@ -16433,7 +16449,7 @@
               <!-- primary CTA — Pro darvozasi: Free rejada Pro shablon → "Upgrade to Pro"; aks holda yuklab olish -->
               <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Upgrade to Pro · $19/mo</a></sc-if>
               <sc-if value="{{ detail.notGated }}" hint-placeholder-val="{{ true }}"><a class="va-btn lime full" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a></sc-if>
-              <a class="va-btn ghost full" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a>
+              <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><a class="va-btn ghost full" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a></sc-if>
               <div class="va-gate"><svg class="va-ic" style="margin-top:1px"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
               <!-- inline-alert — faqat Free rejada Pro shablon uchun -->
               <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><div class="va-alert"><b>PRO DOWNLOAD</b><span>Your Free plan can preview this template. Upgrade to download the production pack.</span></div></sc-if>
@@ -17217,7 +17233,7 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:200px">
                   <sc-for list="{{ p.cells }}" as="cv" hint-placeholder-count="4">
                     <div style="background:{{ cv.bg }};background-size:cover;background-position:center;display:grid;place-items:center">
-                      <sc-if value="{{ cv.isAud }}" hint-placeholder-val="{{ false }}"><i class="ph ph-waveform" style="font-size:18px;color:rgba(255,255,255,.55)"></i></sc-if>
+                      <sc-if value="{{ cv.isAud }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="width:18px;height:18px;color:rgba(255,255,255,.55)"><use href="#i-wave"></use></svg></sc-if>
                     </div>
                   </sc-for>
                 </div>
@@ -17486,7 +17502,7 @@
           <!-- QA-FIX #3: controls/playsinline chin boolean; poster=thumb (blur-up), asl src to'liq sifat. -->
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
           <sc-if value="{{ lb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ lb.imgSrc }}" alt="{{ lb.label }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></sc-if>
-          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><i class="ph-fill ph-waveform"></i><audio src="{{ lb.url }}" preload="metadata" controls="{{ true }}" style="width:100%"></audio></div></sc-if>
+          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><div class="va-aplayer" data-src="{{ lb.url }}" data-wave="{{ lb.poster }}"></div></div></sc-if>
           <sc-if value="{{ lb.hasNext }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw next" onclick="{{ lbNext }}" title="Next (→)"><i class="ph ph-caret-right"></i></button></sc-if>
         </div>
         <aside class="va-lb-panel">
@@ -17828,6 +17844,10 @@ const STOCK_TYPE_BADGES = {
   'ai-stock': { a: 'AI', ac: '#C2F04A' },
 };
 function typeBadge(it, APP_L, APP_C) {
+  // P20 — AI kelib chiqishi (Add to Explore → externalId "gen:") HAR DOIM "AI" belgisini oladi.
+  // Audio endi 'sfx'/'music' templateType (Sound Effects/Music PILL joylashuvi), lekin karta BELGISI
+  // baribir "AI" — belgi templateType'ga emas, aiSource'ga (externalId proksi) tayanadi.
+  if (/^gen:/.test(String(it.externalId || ''))) return STOCK_TYPE_BADGES['ai-stock'];
   const t = it.type || 'video-templates';
   if (t !== 'video-templates' && STOCK_TYPE_BADGES[t]) return STOCK_TYPE_BADGES[t];
   return { a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6' };
@@ -18634,7 +18654,7 @@ class Component extends DCLogic {
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
    *  pollJob'dan real % kelmaydi, shu sabab ishonarli indeterminat foiz 93% da
@@ -18728,6 +18748,50 @@ class Component extends DCLogic {
             vid.load();
           } catch (e) {}
         });
+      });
+    } catch (e) {}
+  }
+  // P20 — UMUMIY audio pleer: .va-aplayer[data-src][data-wave?] konteynerlarini interaktiv
+  //   to'lqin pleerga aylantiradi (custom play/pause, accent progress, playhead, click/drag seek,
+  //   "0:04 / 0:10" mono vaqt). Native <audio controls> YO'Q (tofu ikon yo'q). Katalog audio detali
+  //   VA AI Studio audio lightbox'ida bir xil. Idempotent (host.__ffap === src).
+  installAudioPlayers() {
+    try {
+      // Drag uchun BITTA global tinglovchi (har hydration'da qo'shilmasin — leak yo'q).
+      if (!this._apWired) {
+        this._apWired = 1;
+        const onMove = (e) => { const a = this._apActive; if (!a) return; const r = a.wave.getBoundingClientRect(); if (!r.width || !a.audio.duration) return; let p = ((e.clientX != null ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0)) - r.left) / r.width; p = Math.max(0, Math.min(1, p)); a.audio.currentTime = p * a.audio.duration; };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove);
+        const stop = () => { this._apActive = null; };
+        document.addEventListener('mouseup', stop);
+        document.addEventListener('touchend', stop);
+      }
+      const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+      const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+      const PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+      document.querySelectorAll('.ff .va-aplayer').forEach(host => {
+        const src = host.getAttribute('data-src') || '';
+        if (!src || host.__ffap === src) return; // AYNI src bilan allaqachon wired
+        host.__ffap = src;
+        const wave = host.getAttribute('data-wave') || '';
+        const durTarget = host.getAttribute('data-durtarget') || '';
+        host.innerHTML = '';
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'va-ap-play'; btn.innerHTML = PLAY;
+        const mid = document.createElement('div'); mid.className = 'va-ap-mid';
+        const waveEl = document.createElement('div'); waveEl.className = 'va-ap-wave';
+        if (wave) { waveEl.style.backgroundImage = 'url("' + wave.replace(/"/g, '&quot;') + '")'; }
+        else { const bars = document.createElement('div'); bars.className = 'va-ap-bars'; for (let i = 0; i < 48; i++) { const b = document.createElement('i'); b.style.height = (18 + Math.abs(Math.sin(i * 0.7)) * 62) + '%'; bars.appendChild(b); } waveEl.appendChild(bars); }
+        const prog = document.createElement('div'); prog.className = 'va-ap-prog'; waveEl.appendChild(prog);
+        const time = document.createElement('div'); time.className = 'va-ap-time'; time.textContent = '0:00 / 0:00';
+        mid.appendChild(waveEl); mid.appendChild(time);
+        const audio = document.createElement('audio'); audio.preload = 'metadata'; audio.src = src;
+        host.appendChild(btn); host.appendChild(mid); host.appendChild(audio);
+        audio.addEventListener('loadedmetadata', () => { time.textContent = '0:00 / ' + fmt(audio.duration); if (durTarget) { try { const c = document.querySelector(durTarget); if (c) c.textContent = fmt(audio.duration); } catch (e) {} } });
+        audio.addEventListener('timeupdate', () => { const d = audio.duration || 0; prog.style.width = (d ? (audio.currentTime / d * 100) : 0) + '%'; time.textContent = fmt(audio.currentTime) + ' / ' + fmt(d); });
+        audio.addEventListener('ended', () => { btn.innerHTML = PLAY; prog.style.width = '0%'; });
+        btn.addEventListener('click', () => { if (audio.paused) { document.querySelectorAll('.ff .va-aplayer audio').forEach(a => { if (a !== audio) { try { a.pause(); } catch (e) {} } }); const pr = audio.play(); if (pr && pr.catch) pr.catch(() => {}); btn.innerHTML = PAUSE; } else { audio.pause(); btn.innerHTML = PLAY; } });
+        waveEl.addEventListener('mousedown', (e) => { this._apActive = { wave: waveEl, audio }; const r = waveEl.getBoundingClientRect(); if (r.width && audio.duration) { let p = (e.clientX - r.left) / r.width; p = Math.max(0, Math.min(1, p)); audio.currentTime = p * audio.duration; } e.preventDefault(); });
       });
     } catch (e) {}
   }
@@ -19017,8 +19081,10 @@ class Component extends DCLogic {
         // FAZA D — detail spec/stats uchun additive maydonlar (payload'da allaqachon bor)
         fileName: it.fileName || '', fileSize: it.fileSize || 0,
         desc: it.description || '', tags: Array.isArray(it.tags) ? it.tags : [],
-        // #3 (S1) — keng tur (video-templates|motion-graphics|graphics|luts); eski javobda null
+        // #3 (S1) — keng tur (video-templates|motion-graphics|graphics|luts|sfx|music); eski javobda null
         type: it.type || null,
+        stockType: it.stockType || null, // P20 — audio detektsiya (sfx/music) uchun
+        externalId: it.externalId || null, // P20 — AI kelib chiqishi belgisi (gen:)
         author: it.author || (it.contributor && it.contributor.name) || 'FrameFlow', real: true,
         // FAZA C — Home shelves/badges uchun additive vaqt maydonlari
         // §B (P2) — NEW badge/"Newest" endi nashr (approve) vaqtiga tayanadi: uzoq oldin
@@ -21136,8 +21202,13 @@ class Component extends DCLogic {
     const colOthers = dRaw ? colAll.filter(t => t.id !== dRaw.id) : [];
     const colMoreN = Math.max(0, colOthers.length - 4);
     const fmtSize = (b) => !b ? '' : (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+    // P20 — audio detali (Sound Effects/Music): type/stockType 'sfx'|'music' → audio UI.
+    const detIsAudio = dRaw ? (['sfx', 'music'].indexOf(dRaw.type) >= 0 || ['sfx', 'music'].indexOf(dRaw.stockType) >= 0) : false;
     const detail = dRaw ? {
       ...dRaw, g: media(dRaw.thumbUrl, dRaw.h),
+      isAudio: detIsAudio, notAudio: !detIsAudio,
+      // hasVideoPrev = preview bor VA audio EMAS (audio o'z pleerini oladi)
+      hasVideoPrev: !!dRaw.previewUrl && !detIsAudio,
       descText: dRaw.desc || (dRaw.real ? 'A professional-grade template. Fully customizable elements.' : 'A showcase template — the real catalog will fill in soon.'),
       tagsView: (dRaw.tags && dRaw.tags.length ? dRaw.tags : ['motion', '4k']).map(x => '#' + String(x).replace(/^#/, '')),
       hasPreview: !!dRaw.previewUrl, noPreview: !dRaw.previewUrl, free: !dRaw.pro,
