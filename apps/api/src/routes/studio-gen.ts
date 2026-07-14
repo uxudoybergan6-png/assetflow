@@ -1600,7 +1600,30 @@ const enhanceSchema = z.object({
   // AUDIO enhance — referens audio PUBLIC URL'lari (@audio tartibida: [0]=@audio1). Ixtiyoriy.
   audio_urls: z.array(z.string().min(8)).max(10).optional(),
   references: z.array(z.string().min(8)).max(10).optional(),
+  // P17 — bir "click" idempotency kaliti: cold-start'da javob yo'qolsa klient shu kalit bilan qayta
+  // uriladi → server keshdan qaytaradi, IKKINCHI marta consume QILMAYDI (double-charge himoyasi).
+  idempotencyKey: z.string().trim().min(8).max(80).optional(),
 });
+
+// P17 — ENHANCE idempotency keshi (in-memory, single-instance — daily-cap/rate-limit bilan bir xil
+// falsafa; YANGI JADVAL YO'Q). Bitta kalit = bitta mantiqiy "click". Kesh butun operatsiya PROMISE'ini
+// saqlaydi: shu bois (a) uchuvchi dublikat AYNI promise'ni kutadi (bitta consume), (b) tugagach TTL
+// ichida keshlangan javob qaytadi (consume YO'Q). Faqat MUVAFFAQIYAT (200) keshlanadi — xato holatida
+// entry o'chiriladi (transient Vertex/5xx xatosini yangi urinish qayta sinasin; xatoda refund bo'lgan).
+type EnhanceIdemEntry = { promise: Promise<{ status: number; body: unknown }>; expiresAt: number };
+const enhanceIdemCache = new Map<string, EnhanceIdemEntry>();
+const ENHANCE_IDEM_TTL_MS = 10 * 60 * 1000; // 10 daq
+function enhanceIdemGet(key: string): EnhanceIdemEntry | null {
+  const e = enhanceIdemCache.get(key);
+  if (!e) return null;
+  if (Date.now() > e.expiresAt) { enhanceIdemCache.delete(key); return null; }
+  return e;
+}
+// Kichik davriy tozalash — Map cheksiz o'smasin (TTL o'tган yozuvlar).
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, e] of enhanceIdemCache) if (now > e.expiresAt) enhanceIdemCache.delete(k);
+}, 5 * 60 * 1000).unref?.();
 
 /** Rejimga qarab JSON prompt sxemasi (LLM shu shaklda qaytaradi). */
 function enhanceJsonSchema(mode: string): string {
@@ -1619,16 +1642,16 @@ function enhanceJsonSchema(mode: string): string {
   );
 }
 
-studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
+// P17 — enhance ASOSIY mantiqi. `res` YO'Q: {status, body} qaytaradi — idempotency o'ramчиси
+// (pastdagi route) natijani keshlaydi va javob beradi. Consume/refund/Vertex O'ZGARMAGAN.
+async function enhanceCore(req: Request): Promise<{ status: number; body: unknown }> {
   // 100% Google: matn ham JSON ham Vertex Gemini (gemini-2.5-flash) ko'p-modal — fal/OpenRouter EMAS.
   if (!isVertexEnhanceConfigured()) {
-    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
-    return;
+    return { status: 503, body: { error: "AI is not configured", code: "AI_NOT_CONFIGURED" } };
   }
   const p = enhanceSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
-    return;
+    return { status: 400, body: { error: p.error.issues[0]?.message || "Invalid request" } };
   }
   const mode = p.data.mode || "image";
   const format = p.data.format || "text";
@@ -1646,11 +1669,10 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
   if (!(await withinDailyCap(req.user!.userId))) {
-    res.status(429).json({
+    return { status: 429, body: {
       error: "Daily AI assist limit reached — please try again tomorrow",
       code: "DAILY_CAP_REACHED",
-    });
-    return;
+    } };
   }
   const refUrls = publicUrls(p.data.image_urls || p.data.references);
   const videoRefUrls = publicUrls(p.data.video_urls);
@@ -1662,8 +1684,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   });
   const gate = await consumeAiCredits(req.user!.userId, enhanceCost.cost);
   if (!gate.ok) {
-    res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
-    return;
+    return { status: 402, body: { error: gate.error, code: gate.code, remaining: gate.remaining } };
   }
   // 100% Vertex Gemini — rasm+video+audio+matn bitta ko'p-modal chaqiruvda (vositasiz).
   const spendModel = "vertex/gemini-2.5-flash";
@@ -1693,8 +1714,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
       });
       if (!enhanced.ok) {
         await refundAiCredits(req.user!.userId, enhanceCost.cost);
-        res.status(502).json({ error: enhanced.error });
-        return;
+        return { status: 502, body: { error: enhanced.error } };
       }
       ideaForJson = enhanced.data.trim();
     }
@@ -1711,8 +1731,7 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     const out = await vertexEnhanceJson(system, ideaForJson);
     if (!out.ok) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
-      res.status(502).json({ error: out.error });
-      return;
+      return { status: 502, body: { error: out.error } };
     }
     let json: Record<string, unknown> | null = null;
     try {
@@ -1723,20 +1742,18 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     }
     if (!json) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
-      res.status(502).json({ error: "Could not get a JSON prompt — please try again" });
-      return;
+      return { status: 502, body: { error: "Could not get a JSON prompt — please try again" } };
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
     const settled = finalizeEnhanced(promptStr, p.data.prompt);
     json.prompt = settled.prompt;
-    res.json({
+    return { status: 200, body: {
       prompt: settled.prompt,
       json,
       mentionMismatch: settled.mentionMismatch,
       creditsLeft: gate.remaining,
       creditsCharged: enhanceCost.cost,
-    });
-    return;
+    } };
   }
 
   // text — UNIVERSAL multimodal oqim, 100% Vertex Gemini. Rasm+video+audio+matn BITTA generateContent
@@ -1750,16 +1767,43 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
   });
   if (!out.ok) {
     await refundAiCredits(req.user!.userId, enhanceCost.cost);
-    res.status(502).json({ error: out.error });
-    return;
+    return { status: 502, body: { error: out.error } };
   }
   const settled = finalizeEnhanced(out.data, p.data.prompt);
-  res.json({
+  return { status: 200, body: {
     prompt: settled.prompt,
     mentionMismatch: settled.mentionMismatch,
     creditsLeft: gate.remaining,
     creditsCharged: enhanceCost.cost,
-  });
+  } };
+}
+
+studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
+  // P17 — idempotency o'rami: bir "click" kaliti bilan cold-start qayta-urinishlari BITTA consume
+  // qiladi. Kalit yo'q (eski klient) → oddiy oqim (orqaga moslik).
+  const rawKey = typeof (req.body as { idempotencyKey?: unknown })?.idempotencyKey === "string"
+    ? String((req.body as { idempotencyKey?: unknown }).idempotencyKey).trim()
+    : "";
+  const idemKey = rawKey.length >= 8 ? req.user!.userId + ":" + rawKey : "";
+  if (!idemKey) {
+    const r = await enhanceCore(req);
+    res.status(r.status).json(r.body);
+    return;
+  }
+  const hit = enhanceIdemGet(idemKey);
+  if (hit) {
+    // Uchuvchi dublikat AYNI promise'ni kutadi; tugagan bo'lsa keshdan (consume YO'Q).
+    const r = await hit.promise;
+    res.status(r.status).json(r.body);
+    return;
+  }
+  // Yangi kalit — operatsiya promise'ini keshga OLDIN qo'yamiz (uchuvchi dublikat topsin), keyin kutamiz.
+  const promise = enhanceCore(req).catch(() => ({ status: 500, body: { error: "Enhance failed" } as unknown }));
+  enhanceIdemCache.set(idemKey, { promise, expiresAt: Date.now() + ENHANCE_IDEM_TTL_MS });
+  const r = await promise;
+  // Faqat MUVAFFAQIYAT keshda qoladi; xato → o'chiramiz (yangi urinish transient xatoni qayta sinasin).
+  if (r.status !== 200) enhanceIdemCache.delete(idemKey);
+  res.status(r.status).json(r.body);
 });
 
 /**

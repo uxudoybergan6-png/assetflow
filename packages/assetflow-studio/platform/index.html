@@ -17554,7 +17554,7 @@
 
   <!-- TOAST -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:13px;background:rgba(20,20,30,.95);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt);animation:ffRise .25s ease;max-width:min(560px,92vw)"><i class="{{ toastIcon }}" style="color:{{ toastIconColor }};font-size:18px;flex:none"></i>{{ toast }}</div>
+    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:13px;background:rgba(20,20,30,.95);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt);animation:ffRise .25s ease;max-width:min(560px,92vw)"><i class="{{ toastIcon }}" style="color:{{ toastIconColor }};font-size:18px;flex:none"></i>{{ toast }}<sc-if value="{{ toastRetry }}" hint-placeholder-val="{{ false }}"><b onclick="{{ toastRetryClick }}" style="cursor:pointer;margin-left:4px;padding:5px 12px;border-radius:8px;background:var(--th-accent,#c8ff5a);color:#0a0a0a;font-weight:700;font-size:13px;flex:none">Retry</b></sc-if></div>
   </sc-if>
   <!-- P30 (29c) — provayder kontent rad etilishi banneri: halol sabab + ✦N qaytarildi + boshqa model taklifi -->
   <sc-if value="{{ rejectBannerOn }}" hint-placeholder-val="{{ false }}">
@@ -18459,7 +18459,10 @@ class Component extends DCLogic {
   // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
   // Orqaga moslik: tipsiz chaqiruvlar 'success' (mavjud ✓ xatti-harakati saqlanadi). Xato oqimlari
   // (masalan generatsiya rad etilishi) endi 'error' beradi → ✓ EMAS, halol ✕ ikonka.
-  toast(msg, type) { const t = type || 'success'; this.setState({ toast: msg, toastType: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), t === 'error' ? 4600 : 2600); }
+  toast(msg, type) { const t = type || 'success'; this._toastRetryFn = null; this.setState({ toast: msg, toastType: t, toastRetry: false }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null, toastRetry: false }), t === 'error' ? 4600 : 2600); }
+  // P17 — tarmoq xatosida "Retry" tugmali toast (AYNI operatsiyani qayta chaqiradi — enhance/gen
+  // uchun AYNI idempotency kaliti bilan, shu bois ikkinchi charge/dublikat YO'Q). Uzoqroq ko'rinadi.
+  toastWithRetry(msg, retryFn) { this._toastRetryFn = retryFn; this.setState({ toast: msg, toastType: 'error', toastRetry: true }); clearTimeout(this._t); this._t = setTimeout(() => { this._toastRetryFn = null; this.setState({ toast: null, toastRetry: false }); }, 9000); }
 
   componentDidMount() {
     this._applyEntry();
@@ -19711,8 +19714,12 @@ class Component extends DCLogic {
     }
     return model.cost;
   }
-  async generate() {
+  async generate(isRetry) {
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    // P17 — bir "click" uchun BITTA idempotency kaliti: tarmoq uzilib Retry bosilsa AYNI kalit
+    // qayta ishlatiladi → server dedup, DUBLIKAT job / IKKINCHI charge YO'Q. Yangi klik = yangi kalit.
+    if (!isRetry || !this._genIdemKey) this._genIdemKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : ('g' + Date.now() + Math.random().toString(16).slice(2)));
+    const idemKey = this._genIdemKey;
     const tool = this.curTool(), model = this.curModel();
     if (!model) { this.toast("Model failed to load — refresh the page"); return; }
     let prompt = (this.state.aiPrompt || '').trim();
@@ -19773,24 +19780,27 @@ class Component extends DCLogic {
       }
       let r;
       try {
-        r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature });
+        r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
       } catch (ge) {
         // Eskirgan/begona session (404) — yangi session bilan BIR marta qayta urinish
         if (ge && ge.status === 404) {
           const s2 = await FFAPI.session(tool.mode, prompt.slice(0, 60));
           sid = s2.id;
           this.setState(st => ({ curSessId: s2.id, viewSess: st.viewSess === sid || st.viewSess === 'new' ? s2.id : st.viewSess, sessGens: st.viewSess === sid ? [] : st.sessGens }));
-          r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature });
+          r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
         } else { throw ge; }
       }
+      this._genIdemKey = null; // klik muvaffaqiyatli tugadi — keyingi generate() yangi kalit oladi
       // P20 — ishni FAOL ro'yxatga qo'shamiz; kompozer ochiq qoladi (keyingi promptni yozish mumkin).
       const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: sid, mode: tool.mode, modelName: model.label || 'Model', cost: q.price, startedAt: Date.now() };
       this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
       this.pollJob(r.jobId);
     } catch (e) {
-      if (e && e.code === 'INSUFFICIENT_CREDITS') this.setState({ showCredits: true });
-      else if (e && (e.status === 429 || e.code === 'TOO_MANY_ACTIVE_GENERATIONS')) this.toast('Too many generations running — wait for one to finish');
-      else this.toast(this.errMsg(e));
+      if (e && e.code === 'INSUFFICIENT_CREDITS') { this._genIdemKey = null; this.setState({ showCredits: true }); }
+      else if (e && (e.status === 429 || e.code === 'TOO_MANY_ACTIVE_GENERATIONS')) { this._genIdemKey = null; this.toast('Too many generations running — wait for one to finish'); }
+      // P17 — tarmoq uzildi: AYNI kalit bilan Retry (server dedup → dublikat yo'q, ikkinchi charge yo'q).
+      else if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — you won't be charged unless it goes through", () => this.generate(true));
+      else { this._genIdemKey = null; this.toast(this.errMsg(e)); }
     } finally { this._genSubmitting = false; }
   }
   // P20 — HAR ish uchun ALOHIDA poll (bitta global _pt o'rniga _pollT[jobId]). Tugagach ish activeJobs'dan olinadi.
@@ -20005,11 +20015,13 @@ class Component extends DCLogic {
     this.setState({ aiPrompt: cur + sep + tpl + ' ' });
     setTimeout(() => { this.afSizePromptTa(); try { const t = document.querySelector('.va-dock .prompt'); if (t) t.focus(); } catch (x) {} }, 60);
   }
-  async doEnhance() {
+  async doEnhance(isRetry) {
     const prompt = (this.state.aiPrompt || '').trim();
     if (prompt.length < 2) { this.toast('Write a prompt first'); return; }
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
-    if (this.state.enhBusy) return;
+    if (this.state.enhBusy && !isRetry) return;
+    // P17 — bir "click" idempotency kaliti (tarmoq uzilib Retry bosilsa AYNI kalit → ikkinchi charge yo'q).
+    if (!isRetry || !this._enhIdemKey) this._enhIdemKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : ('e' + Date.now() + Math.random().toString(16).slice(2)));
     // §A (P1) — balans darvozasi: Enhance ✦1 kredit sarflaydi (UI-only gate; server o'zi ham hisoblaydi)
     if (this.state.creditsLoaded && this.state.credits < 1) { this.setState({ showCredits: true }); this.toast('Enhance costs ✦1 — you are out of credits'); return; }
     const tool = this.curTool(), model = this.curModel();
@@ -20020,9 +20032,11 @@ class Component extends DCLogic {
     const refOpts = { imageUrls: imgs, videoUrls: (this.state.refVideos || []).filter(Boolean).slice(0, 10), audioUrls: (this.state.refAudios || []).filter(Boolean).slice(0, 10) };
     const nref = imgs.length + refOpts.videoUrls.length + refOpts.audioUrls.length;
     const undoKey = (navigator.platform && /Mac/i.test(navigator.platform)) ? '⌘Z' : 'Ctrl+Z';
+    refOpts.idempotencyKey = this._enhIdemKey; // P17
     this.setState({ enhBusy: true });
     try {
       const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined, refOpts);
+      this._enhIdemKey = null; // muvaffaqiyat — keyingi klik yangi kalit
       if (r && r.mentionMismatch) {
         // API mos kelmagan @mention (renumber/ixtiro) sabab qayta yozishni RAD ETdi → asl prompt qaytdi.
         this.toast('Kept your prompt — the rewrite pointed a reference at the wrong image, so it was discarded');
@@ -20031,7 +20045,11 @@ class Component extends DCLogic {
         this.toast('Prompt enhanced ✨' + (nref ? (' · saw ' + nref + ' reference' + (nref > 1 ? 's' : '')) : '') + ' · ' + undoKey + ' to undo');
       }
       if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
-    } catch (e) { this.toast(this.errMsg(e)); }
+    } catch (e) {
+      // P17 — tarmoq uzildi: AYNI idempotency kaliti bilan Retry (server dedup → ikkinchi charge yo'q).
+      if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — you won't be charged unless it goes through", () => this.doEnhance(true));
+      else { this._enhIdemKey = null; this.toast(this.errMsg(e)); }
+    }
     this.setState({ enhBusy: false });
   }
   async downloadGenAsset(id) {
@@ -21515,6 +21533,7 @@ class Component extends DCLogic {
       catTabs, carousel, categoryTiles, studioCards, plansView, testimonials, faqsView, footerCols: this.footerCols, pluginSteps: this.pluginSteps, creditPacks,
       showCredits: this.state.showCredits,
       toast: this.state.toast,
+      toastRetry: !!this.state.toastRetry, // P17 — tarmoq xatosida Retry tugmasi
       // P30 (29c) — toast ikonka/rang TIPGA qarab (halol xato ✕, ✓ EMAS)
       toastIcon: (function (tt) { return tt === 'error' ? 'ph-fill ph-x-circle' : tt === 'warning' ? 'ph-fill ph-warning-circle' : tt === 'info' ? 'ph-fill ph-info' : 'ph-fill ph-check-circle'; })(this.state.toastType),
       toastIconColor: (function (tt) { return tt === 'error' ? 'var(--th-danger)' : tt === 'warning' ? 'var(--amber)' : 'var(--teal)'; })(this.state.toastType),
@@ -21804,6 +21823,8 @@ class Component extends DCLogic {
         }
         el.style.display = 'none';
       } catch (er) {} },
+      // P17 — toast'dagi "Retry" bosildi: AYNI operatsiyani (saqlangan idempotency kaliti bilan) qayta chaqir.
+      toastRetryClick: () => { const fn = this._toastRetryFn; this._toastRetryFn = null; clearTimeout(this._t); this.setState({ toast: null, toastRetry: false }); if (typeof fn === 'function') { try { fn(); } catch (er) {} } },
       toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       // P3 (step 34) — Use ▾ menyudan "Add to Explore"

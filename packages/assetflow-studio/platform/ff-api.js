@@ -202,7 +202,9 @@
     sessionRename: function (id, title) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id), { method: "PATCH", body: { title: title } }); },
     sessionGens: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id) + "/generations?perPage=50&status=done"); },
     sessionDelete: function (id) { return req("/api/studio/gen/sessions/" + encodeURIComponent(id), { method: "DELETE" }); }, // P6
-    quote: function (modelId, mode, params) { return req("/api/studio/gen/cost-quote", { method: "POST", body: { modelId: modelId, mode: mode, params: params || {} } }); },
+    // P17 — quote SOF hisob+imzo (server DB yozmaydi / consume qilmaydi) → cold-start'da
+    // xavfsiz qayta uriladi (idempotent:true). "Can't reach the server" ko'pincha shu edi.
+    quote: function (modelId, mode, params) { return req("/api/studio/gen/cost-quote", { method: "POST", body: { modelId: modelId, mode: mode, params: params || {} }, idempotent: true }); },
     // P18 — har job-yaratish urinishi uchun BITTA idempotency kaliti: req() ichki qayta
     // urinishlari (cold-start) shu kalitni qayta ishlatadi → server dedup qiladi, IKKINCHI
     // charge YO'Q. 404-session qayta urinishi FFAPI.gen'ni qaytadan chaqiradi → yangi kalit
@@ -235,11 +237,15 @@
     // opts: { imageUrls, videoUrls, audioUrls }. Orqaga moslik: opts berilmasa faqat matn.
     enhance: function (prompt, mode, modelId, opts) {
       opts = opts || {};
-      var body = { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined };
+      // P17 — har "click" uchun BITTA idempotency kaliti (gen() bilan bir xil): req() ichki qayta
+      // urinishlari (cold-start, javob yo'qolgan) shu kalitni ishlatadi → server dedup, IKKINCHI
+      // consume YO'Q. Har yangi enhance() chaqiruvi = yangi klik = yangi kalit.
+      var key = opts.idempotencyKey || uuid();
+      var body = { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined, idempotencyKey: key };
       if (opts.imageUrls && opts.imageUrls.length) body.image_urls = opts.imageUrls;
       if (opts.videoUrls && opts.videoUrls.length) body.video_urls = opts.videoUrls;
       if (opts.audioUrls && opts.audioUrls.length) body.audio_urls = opts.audioUrls;
-      return req("/api/studio/gen/prompt/enhance", { method: "POST", body: body });
+      return req("/api/studio/gen/prompt/enhance", { method: "POST", body: body, idempotencyKey: key });
     },
     // P8 — referens yuklash: kichik fayl dataUrl bilan (JSON), katta video/audio presigned PUT + srcKey
     refUpload: function (body) { return req("/api/studio/gen/ref-upload", { method: "POST", body: body }); },

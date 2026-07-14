@@ -11627,7 +11627,9 @@ window.afGallery=(function(){
     if(!b){ toast('Write a prompt first','warning'); return; }
     // referens bo'lsa @img TARTIBDA R2 url'lari → VISION enhance (rasmlarni ham ko'radi). Yo'q bo'lsa → matn.
     var refUrls=st.refs.map(function(r){ return r.url; }).filter(Boolean);
-    var body={prompt:b,mode:'image',format:'text'};
+    // P17 — har klik BITTA idempotency kaliti: studioPost cold-start'da (502/503/504/429/tarmoq) shu
+    // kalit bilan sabr qilib qayta uradi → server dedup, IKKINCHI consume YO'Q.
+    var body={prompt:b,mode:'image',format:'text',idempotencyKey:afUuid()};
     if(refUrls.length)body.image_urls=refUrls;
     try{ console.log('[ig] enhance →', refUrls.length?('VISION '+refUrls.length+' referens'):'TEXT'); }catch(_){}
     enhancing=true; var en=$('igEnhance'); en.classList.add('busy');
@@ -11715,7 +11717,9 @@ window.afGallery=(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(meta.modelId==null)throw new Error('No model found');
       return Promise.all([
-        studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params}),
+        // P17 — quote SOF hisob+imzo; idempotencyKey studioPost'ni cold-start'da qayta urinishga majbur
+        // qiladi (server bu maydonni e'tiborsiz qoldiradi — DB yozmaydi/consume qilmaydi).
+        studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params,idempotencyKey:afUuid()}),
         ensureSession()
       ]);
     }).then(function(arr){
@@ -13516,7 +13520,8 @@ window.afGallery=(function(){
       modelId:(vm.model&&vm.model.id)||null,
       image_urls:imgRefs,
       video_urls:vidRefs,
-      audio_urls:audRefs
+      audio_urls:audRefs,
+      idempotencyKey:afUuid() // P17 — cold-start qayta urinish bitta consume
     }).then(function(r){
       if(r&&r.mentionMismatch){ if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Kept your prompt — the rewrite pointed a reference at the wrong clip','info'); }
       else if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt enhanced ✨'+(nref?(' · saw '+nref+' reference'+(nref>1?'s':'')):'')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
@@ -13911,7 +13916,7 @@ window.afGallery=(function(){
       // TEZLIK: preflight + cost-quote + session PARALLEL (kredit faqat /gen'da yechiladi → xavfsiz).
       return Promise.all([
         studioPost('/api/studio/gen/preflight-safety',{mode:'video',modelId:vm.model.id,prompt:prompt,params:params},20000),
-        studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params}),
+        studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params,idempotencyKey:afUuid()}),
         ensureVgSession()
       ]);
     }).then(function(arr){
@@ -13975,8 +13980,8 @@ window.afGallery=(function(){
     vgEnsureUpModel().then(function(m){
       if(!m){ toast('Video upscale is not available right now','warning'); return; }
       return Promise.all([
-        studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:'video',params:{factor:2,sourceUrl:it.url}}),
-        studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:'video',params:{factor:4,sourceUrl:it.url}})
+        studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:'video',params:{factor:2,sourceUrl:it.url},idempotencyKey:afUuid()}),
+        studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:'video',params:{factor:4,sourceUrl:it.url},idempotencyKey:afUuid()})
       ]).then(function(qs){
         var lab=function(q){ var i=q&&q.upscale; return '✦'+q.price+(i?' — '+i.resolution+' · '+i.duration+'s'+(i.fpsDoubled?' · 60fps ×2':''):''); };
         return window.afChoose('Upscale video (Topaz)','Price is per second of the OUTPUT video (signed quote):',[
@@ -14158,7 +14163,7 @@ window.afGallery=(function(){
     var params=agParams(); var mode=ag.mode;
     setAgBusy(true);
     Promise.all([
-      studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:mode,params:params}),
+      studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:mode,params:params,idempotencyKey:afUuid()}),
       agSession(mode)
     ]).then(function(rs){
       var quote=rs[0], sid=rs[1];
