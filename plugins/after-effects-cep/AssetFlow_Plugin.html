@@ -3003,7 +3003,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid .rc:hover:not(.rc-pend){transform:translateY(-2px);box-shadow:0 2px 4px rgba(0,0,0,.3),0 12px 26px -10px rgba(0,0,0,.5)}
 /* ── PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala (rasm+video umumiy) ── */
 .recentgrid .rc-pend{cursor:default;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:12px 10px;background:var(--card3);border:1px solid var(--line2)!important}
-.recentgrid .rc-pend .rc-cat{position:absolute;top:6px;left:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:6px}
+.recentgrid .rc-pend .rc-cat{position:absolute;top:6px;left:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:7px}
 .recentgrid .rc-pend .rc-pmid{display:flex;align-items:center;gap:7px}
 .recentgrid .rc-pend .rc-spin{width:15px;height:15px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--acc,var(--accent));animation:af-spin .8s linear infinite;flex:none}
 .recentgrid .rc-pend .rc-ppct{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--acc,var(--accent))}
@@ -3013,7 +3013,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid .rc-pend .rc-pcancel{font-size:10px;font-weight:600;color:var(--mut2);cursor:pointer;padding:2px 8px;border-radius:7px;border:1px solid var(--line2)}
 .recentgrid .rc-pend .rc-pcancel:hover{color:var(--red);border-color:rgba(255,107,94,.4)}
 .recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.recentgrid .rc .tg{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
+.recentgrid .rc .tg{position:absolute;top:5px;left:5px;width:22px;height:22px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:7px}
 .recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
 .recentgrid .empt{column-span:all;grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center}
 .recentgrid .empt b{display:block;color:var(--txt);margin-bottom:5px;font-size:13px}
@@ -10046,6 +10046,12 @@ async function bootPlugin(){
       play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'
     };
     function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Voice':(c==='sfx')?'SFX':'Image'; }
+    // P16 — grid kartalar uchun matnsiz tur ikonkasi (.tg/.rc-cat); web .va-typeicon bilan bir xil uslub
+    function catIcon(c){
+      if(c==='video')return '<svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>';
+      if(c==='audio'||c==='sfx')return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
+      return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+    }
 
     // ---- UMUMIY lightbox (bitta DOM, body oxirida; rasm/video/ovoz) — b10 mockup 1:1 ----
     var lb=null,lbCur=null; // lbCur={it,ctx} — prev/next + klaviatura nav uchun
@@ -10194,7 +10200,7 @@ async function bootPlugin(){
         im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
         d.appendChild(im);
       }
-      var tg=document.createElement('div'); tg.className='tg'; tg.textContent=catLabel(cat); d.appendChild(tg);
+      var tg=document.createElement('div'); tg.className='tg'; tg.innerHTML=catIcon(cat); d.appendChild(tg);
       var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
       var ra=document.createElement('div'); ra.className='racts';
       ra.appendChild(actBtn(IC.imp,'Import to AE',function(e){ e.stopPropagation(); ctx.onImport&&ctx.onImport(it); }));
@@ -10222,7 +10228,7 @@ async function bootPlugin(){
       var d=document.createElement('div'); d.className='rc rc-pend'; d.setAttribute('data-pseq',it.seq);
       var pct=Math.max(2,Math.min(100,Math.round(it.progress||2)));
       d.innerHTML=''
-        +'<span class="rc-cat">'+(cat==='video'?'Video':cat==='audio'||cat==='sfx'?catLabel(cat):'Image')+'</span>'
+        +'<span class="rc-cat">'+catIcon(cat)+'</span>'
         +'<div class="rc-pmid"><span class="rc-spin"></span><span class="rc-ppct">'+pct+'%</span></div>'
         +'<div class="rc-pbar"><i style="width:'+pct+'%"></i></div>'
         +'<div class="rc-pprompt">'+pcEsc(it.prompt||'')+'</div>'

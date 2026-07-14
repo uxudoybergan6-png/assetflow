@@ -15023,6 +15023,8 @@
   .ff .va-playov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
   .ff .va-playov span{width:38px;height:38px;border-radius:50%;background:rgba(6,8,11,.62);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
   .ff .va-typetag{position:absolute;left:8px;bottom:8px;font:600 8px var(--mono);letter-spacing:.1em;padding:3px 7px;border-radius:4px;background:rgba(6,8,11,.72);color:#C9D2DE;border:1px solid rgba(255,255,255,.1);z-index:1}
+  /* P16 — grid kartalar uchun matnsiz tur belgisi (image/video/audio/shablon); .va-typetag/.rtag o'rniga */
+  .ff .va-typeicon{position:absolute;left:8px;top:8px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:12px;z-index:1}
   .ff .va-kick{font:600 9px var(--mono);letter-spacing:.15em;color:var(--muted)}
   .ff .va-tbl{width:100%;border-collapse:collapse;font-size:12px}
   .ff .va-tbl th{font:600 9.5px var(--mono);letter-spacing:.1em;color:var(--muted2);text-align:left;padding:9px 12px;border-bottom:1px solid var(--hair)}
@@ -15636,12 +15638,11 @@
   .ff .va-lb-scrim{position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;place-items:center;padding:3vh 3vw}
   .ff .va-lb-x{position:fixed;top:18px;right:20px;z-index:2;width:40px;height:40px;border-radius:12px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px}
   .ff .va-lb-x:hover{background:rgba(0,0,0,.72)}
-  .ff .va-lb-shell{display:flex;width:100%;max-width:1400px;max-height:94vh;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.85)}
-  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:24px;background:var(--media)}
-  .ff .va-lb-el{display:block;max-width:100%;max-height:88vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:#000}
+  .ff .va-lb-shell{display:flex;width:100%;max-width:min(96vw,1880px);max-height:94vh;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.85)}
+  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:12px;background:var(--media)}
+  .ff .va-lb-el{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:#000}
   .ff .va-lb-aud{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(520px,82%)}
   .ff .va-lb-aud>i{font-size:64px;color:var(--acc)}
-  .ff .va-lb-tag{position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:9px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font:600 10px var(--mono);color:#fff;letter-spacing:.05em}
   .ff .va-lb-arw{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:19px;transition:background .15s}
   .ff .va-lb-arw:hover{background:rgba(0,0,0,.75)}
   .ff .va-lb-arw.prev{left:14px}
@@ -15667,7 +15668,6 @@
     .ff .va-lb-el{max-height:50vh}
     .ff .va-lb-panel{width:auto;border-left:none;border-top:1px solid var(--hair)}
   }
-  .ff .va-axres .rtag{position:absolute;top:9px;left:9px;font:600 8px var(--mono);padding:2.5px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3;letter-spacing:.05em;z-index:1}
   .ff .va-axres.sel{outline:2px solid var(--lime);outline-offset:-2px}
   .ff .va-axabar{position:absolute;left:9px;right:9px;bottom:9px;display:flex;align-items:center;gap:6px;z-index:2}
   .ff .va-axuse{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;background:var(--spend-grad);color:var(--onlime);border:none;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}
@@ -16497,7 +16497,7 @@
                   <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ g.imgSrc }}" alt=""></sc-if>
                   <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                   <sc-if value="{{ g.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
-                  <span class="va-typetag">{{ g.stag }}</span>
+                  <span class="va-typeicon"><i class="ph-fill ph-{{ g.tIcon }}"></i></span>
                   <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                 </div>
               </sc-for>
@@ -16862,7 +16862,7 @@
                           <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
                             <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}"></video></sc-if>
-                            <span class="rtag">{{ g.rtag }}</span>
+                            <span class="va-typeicon"><i class="ph-fill ph-{{ g.tIcon }}"></i></span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                             <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ false }}">
                               <div class="va-axabar">
@@ -17258,7 +17258,7 @@
                     <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
                     <sc-if value="{{ t.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ t.vidSrc }}" poster="{{ t.vidPoster }}" preload="{{ t.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                     <sc-if value="{{ t.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
-                    <span class="va-typetag">{{ t.kindTag }}</span>
+                    <span class="va-typeicon"><i class="ph-fill ph-{{ t.tIcon }}"></i></span>
                     <sc-if value="{{ t.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                     <span data-item="{{ t.itemId }}" onclick="{{ removeProjItem }}" class="va-projrm" title="Remove from project"><i class="ph ph-x"></i></span>
                   </div>
@@ -17485,7 +17485,6 @@
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
           <sc-if value="{{ lb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ lb.imgSrc }}" alt="{{ lb.label }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></sc-if>
           <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><i class="ph-fill ph-waveform"></i><audio src="{{ lb.url }}" preload="metadata" controls="{{ true }}" style="width:100%"></audio></div></sc-if>
-          <span class="va-lb-tag"><i class="ph-fill ph-{{ lb.tIcon }}"></i>{{ lb.tag }}</span>
           <sc-if value="{{ lb.hasNext }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw next" onclick="{{ lbNext }}" title="Next (→)"><i class="ph ph-caret-right"></i></button></sc-if>
         </div>
         <aside class="va-lb-panel">
@@ -18172,7 +18171,8 @@ class Component extends DCLogic {
     { key: 'Voiceover', short: 'Voice', icon: 'microphone', mode: 'voice', unit: 'voice', multi: false },
     { key: 'SFX', short: 'SFX', icon: 'waveform', mode: 'sfx', unit: 'effect', multi: false },
   ];
-  toolByMode = { image: 'Rasm yaratish', video: 'Video yaratish', voice: 'Voiceover', sfx: 'SFX', music: 'SFX' };
+  // P16 — bu yer lb.tool orqali TO'G'RIDAN foydalanuvchiga ko'rinadi (lightbox sub-label); shu bois EN
+  toolByMode = { image: 'Image generation', video: 'Video generation', voice: 'Voiceover', sfx: 'SFX', music: 'SFX' };
   // BATCH4 #1 — tool'ning model ro'yxati kaliti: mkey (Upscale=upscale) yoki mode
   toolModelKey(tool) { return (tool && tool.mkey) || (tool && tool.mode) || 'image'; }
 
@@ -20567,6 +20567,8 @@ class Component extends DCLogic {
     // Real media fon: thumb bo'lsa rasm + orqada gradient (yuklanmasa gradient qoladi)
     const media = (url, h) => url ? "url('" + url + "') center/cover no-repeat, " + this.grad(h) : this.grad(h);
     const rtagOf = (ty) => (ty === 'video' ? 'VIDEO' : (ty === 'audio' ? 'VOICE' : (ty === 'sfx' ? 'SFX' : 'IMAGE')));
+    // P16 — grid kartalar uchun matnsiz tur ikonkasi (.va-typeicon); rtagOf bilan bir xil turlash
+    const tIconOf = (ty) => (ty === 'video' ? 'play-circle' : ((ty === 'audio' || ty === 'sfx') ? 'waveform' : 'image'));
     // ── QA-FIX #14/#3 — gen kartasi REAL media elementlari (CSS-fon gradient EMAS):
     //    rasm=<img>, video=<video poster=thumb> (poster yo'q bo'lsa preload=metadata birinchi kadr),
     //    audio=waveform plitka (real pleer lightbox/row'da). Media bor kartada fon='' + skeleton;
@@ -20715,7 +20717,7 @@ class Component extends DCLogic {
     // QA-FIX #14/#3 — grid plitkasi real <img>/<video> bilan (genMediaOf), masonry aspect ham real
     const loadedSet = this._mediaLoaded || (this._mediaLoaded = new Set());
     const axVisGens = visGensRaw.map((g, gi) => { const on = activeGenRaw && g.id === activeGenRaw.id; const md = genMediaOf(g); return {
-      id: g.id, gtype: g.type || 'image', isVideo: g.type === 'video', rtag: rtagOf(g.type), ...md,
+      id: g.id, gtype: g.type || 'image', isVideo: g.type === 'video', tIcon: tIconOf(g.type), ...md,
       // P4 — birinchi qator (ko'rinadigan) kartalar EAGER + yuqori prioritet; pastdagilar lazy
       imLoad: gi < 6 ? 'eager' : 'lazy', imPri: gi < 6 ? 'high' : 'auto',
       // P10#5 — skeleton faqat media YUKLANGUNCHA; onload'da _mediaLoaded'ga qo'shiladi va klass olib tashlanadi
@@ -21137,8 +21139,6 @@ class Component extends DCLogic {
       asp: arCss(lbRaw.ar) || ((lbW && lbH) ? (lbW + ' / ' + lbH) : (lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'))),
       // hech qachon natural'dan katta cho'zilmasin (P11 #3): max-width = min(konteyner, haqiqiy kenglik)
       maxW: (lbW && lbW > 0) ? ('min(100%, ' + lbW + 'px)') : '100%',
-      tIcon: lbRaw.type === 'video' ? 'play-circle' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? 'waveform' : 'image'),
-      tag: (lbRaw.type === 'video' ? 'VIDEO' : (lbRaw.type === 'audio' ? 'VOICE' : (lbRaw.type === 'sfx' ? 'SFX' : 'IMAGE'))),
       // detal panel
       author: (this.state.user && (this.state.user.name || this.state.user.email)) || 'You',
       dModel: modelLabelById[lbRaw.modelId] || '—',
@@ -21220,13 +21220,13 @@ class Component extends DCLogic {
       if (it.kind === 'gen' && it.gen) {
         const g = this.mapGen(it.gen);
         const md = genMediaOf(g);
-        return { itemId: it.id, isGen: true, isTpl: false, kindStr: 'gen', refId: g.id, kindTag: rtagOf(g.type), title: g.label || 'Generation', sub: fmtAgo(g.at), ...md, isVideo: g.type === 'video' };
+        return { itemId: it.id, isGen: true, isTpl: false, kindStr: 'gen', refId: g.id, tIcon: tIconOf(g.type), title: g.label || 'Generation', sub: fmtAgo(g.at), ...md, isVideo: g.type === 'video' };
       }
       const t = it.template || {};
       const cat = this.state.catalog.find(x => x.id === String(t.id)) ||
         this.mapCatalogItems([t], { ae: 'Ae', pr: 'Pr', motion: 'Mn', resolve: 'Dr', dr: 'Dr' }, { ae: '#b794f6', pr: '#7aa2f7', motion: '#5cc8b0', resolve: '#f0907f', dr: '#f0907f' })[0];
       return {
-        itemId: it.id, isGen: false, isTpl: true, kindStr: 'tpl', refId: String(t.id), kindTag: 'TEMPLATE',
+        itemId: it.id, isGen: false, isTpl: true, kindStr: 'tpl', refId: String(t.id), tIcon: 'stack',
         title: cat.n, sub: cat.c,
         imgSrc: cat.thumbUrl || null, hasImg: !!cat.thumbUrl,
         isVidMedia: false, vidSrc: null, vidPoster: null, vidPre: 'none', isAud: false, isVideo: false,
@@ -21256,8 +21256,7 @@ class Component extends DCLogic {
     const shelvesLoading = !this.state.catalogReady;
     const dashGens = genView.slice(0, 5);
     const hasDashGens = dashGens.length > 0;
-    const typeTag = { image: 'IMAGE', video: 'VIDEO', audio: 'VOICE', sfx: 'SFX' };
-    const dashGensView = dashGens.map(g => ({ ...g, rtag: typeTag[g.type] || 'IMAGE', stag: (typeTag[g.type] || 'IMAGE') + (g.cost > 0 ? ' · ✦' + g.cost : ''), isVideo: g.type === 'video' }));
+    const dashGensView = dashGens.map(g => ({ ...g, isVideo: g.type === 'video' }));
     const dashQuick = [
       { t: 'Find a template', d: '10,000+ video templates', icon: 'magnifying-glass', screen: 'templates', cls: 'ffa-qa hl', icBg: 'var(--limedim)', icCol: 'var(--lime)' },
       { t: 'Create with AI', d: 'Image, video, voice', icon: 'sparkle', screen: 'aistudio', cls: 'ffa-qa', icBg: 'var(--seldim)', icCol: 'var(--select)' },
