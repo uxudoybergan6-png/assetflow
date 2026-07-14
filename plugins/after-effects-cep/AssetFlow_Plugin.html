@@ -5596,7 +5596,13 @@ function playCardPreview(card){
 function pauseCardPreview(card){
   const v=card.querySelector('.thumb-media');
   if(!v)return;
-  v.pause();
+  // P10 — faqat pause() videoni oxirgi kadrda muzlatib qo'yardi (poster qaytmasdi);
+  // load() dekodlangan kadrni tashlaydi, keyingi hover playCardPreview'da src qayta o'rnatiladi.
+  try{
+    v.pause();
+    if(v.dataset.src) v.removeAttribute('src');
+    v.load();
+  }catch(e){}
 }
 
 function showMonitorPreview(asset){

@@ -18714,7 +18714,13 @@ class Component extends DCLogic {
         });
         host.addEventListener('mouseleave', () => {
           const vid = host.querySelector('video.va-hovplay'); if (!vid) return;
-          try { vid.pause(); vid.currentTime = 0; } catch (e) {}
+          // P10 — pause()+currentTime=0 videoni frame'da muzlatib qo'yardi (poster
+          // qaytmasdi); load() dekodlangan kadrni tashlaydi va posterga qaytaradi.
+          try {
+            vid.pause();
+            if (vid.getAttribute('data-src')) vid.removeAttribute('src');
+            vid.load();
+          } catch (e) {}
         });
       });
     } catch (e) {}
