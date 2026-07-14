@@ -1,24 +1,72 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FrameFlow — Refund Policy</title><style>
-:root{--bg:#06080B;--card:#0d1117;--bd:rgba(255,255,255,.08);--txt:#e8ecf1;--txt2:#9aa4b2;--acc:#C2F04A}
+<title>FrameFlow — Refund Policy</title><script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* BATCH6 #6 — mustaqil sahifa chrome + 3-tema tokenlari (index.html bilan sinxron; ikkalasini birga yangila) */
+:root,:root[data-theme="noir"]{--th-bg:#0a0a0b;--th-bg-deep:#050506;--th-surface:#131316;--th-surface-2:#1b1b1f;--th-text:#fff;--th-text-2:#d0d0d5;--th-muted:#a2a2aa;--th-faint:#85858e;--th-border:rgba(255,255,255,.12);--th-accent:#fff;--th-accent-2:#d7d7dc;--th-on-accent:#09090a;--th-accent-soft:rgba(255,255,255,.09);--th-glow:rgba(255,255,255,.11);--th-grad:linear-gradient(135deg,#fff 0%,#a6a6ae 100%)}
+:root[data-theme="neon"]{--th-bg:#050505;--th-bg-deep:#020202;--th-surface:#0d0d0e;--th-surface-2:#151517;--th-text:#f8f8f5;--th-text-2:#d0d1ca;--th-muted:#a0a39a;--th-faint:#82867c;--th-border:rgba(216,255,62,.18);--th-accent:#d8ff3e;--th-accent-2:#baf02c;--th-on-accent:#0a0d02;--th-accent-soft:rgba(216,255,62,.1);--th-glow:rgba(216,255,62,.35);--th-grad:linear-gradient(135deg,#d8ff3e 0%,#9fe622 100%)}
+:root[data-theme="cold"]{--th-bg:#0b0e14;--th-bg-deep:#070910;--th-surface:#10141d;--th-surface-2:#161b28;--th-text:#f7f9ff;--th-text-2:#d1d7e8;--th-muted:#9da7c0;--th-faint:#7f8aa4;--th-border:rgba(124,140,255,.22);--th-accent:#7c8cff;--th-accent-2:#4fd8eb;--th-on-accent:#080b16;--th-accent-soft:rgba(124,140,255,.12);--th-glow:rgba(79,216,235,.24);--th-grad:linear-gradient(135deg,#7c8cff 0%,#4fd8eb 100%)}
+:root{--bg:var(--th-bg);--card:var(--th-surface);--bd:var(--th-border);--txt:var(--th-text);--txt2:var(--th-muted);--acc:var(--th-accent);--on:var(--th-on-accent)}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7}
-.wrap{max-width:760px;margin:0 auto;padding:48px 24px 96px}
-.brand{display:flex;align-items:center;gap:10px;margin-bottom:40px}
-.brand a{color:var(--txt);text-decoration:none;font-weight:700;font-size:18px}
-.brand b{color:var(--acc)}
-.mark{width:34px;height:34px;border-radius:9px;background:var(--acc);display:flex;align-items:center;justify-content:center}
-h1{font-size:28px;margin-bottom:8px}
-.upd{color:var(--txt2);font-size:13px;margin-bottom:32px}
-h2{font-size:18px;margin:28px 0 10px;color:var(--acc)}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+.sh-nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--th-border)}
+.sh-nav-in{height:64px;display:flex;align-items:center;gap:14px;max-width:1280px;margin:0 auto;padding:0 40px}
+.sh-logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk','Inter',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.03em;color:var(--txt)}
+.sh-logo:hover{text-decoration:none}
+.sh-logo .lb{width:27px;height:27px;border-radius:8px;background:var(--th-grad);color:var(--on);display:grid;place-items:center;flex:none}
+.sh-logo .lb svg{width:15px;height:15px;display:block}
+.sh-links{display:flex;align-items:center;gap:2px;margin-left:12px}
+.sh-links a{color:var(--txt2);font-size:13.5px;font-weight:500;padding:8px 12px;border-radius:9px;transition:color .15s,background .15s}
+.sh-links a:hover{color:var(--txt);background:var(--th-accent-soft);text-decoration:none}
+.sh-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.sh-theme{display:inline-flex;gap:5px;align-items:center;padding:4px 5px;border-radius:999px;background:var(--th-accent-soft);border:1px solid var(--th-border)}
+.sh-theme button{width:17px;height:17px;border-radius:50%;border:1px solid var(--th-border);padding:0;cursor:pointer;transition:box-shadow .15s,transform .15s}
+.sh-theme button:hover{transform:scale(1.12)}
+.sh-theme button.on{box-shadow:0 0 0 2px var(--th-accent);border-color:transparent}
+.sh-theme button[data-th=noir]{background:#f2f2f4}
+.sh-theme button[data-th=neon]{background:#d8ff3e}
+.sh-theme button[data-th=cold]{background:linear-gradient(135deg,#7c8cff,#4fd8eb)}
+.sh-btn2{color:var(--txt);font-size:13px;font-weight:600;padding:9px 15px;border-radius:999px;border:1px solid var(--th-border);background:var(--th-accent-soft)}
+.sh-btn2:hover{border-color:var(--txt2);text-decoration:none}
+.sh-btn{color:var(--on);font-size:13px;font-weight:700;padding:9px 17px;border-radius:999px;background:var(--th-grad)}
+.sh-btn:hover{text-decoration:none;opacity:.92}
+.wrap{max-width:820px;margin:0 auto;padding:52px 24px 80px}
+h1{font-family:'Space Grotesk','Inter',sans-serif;font-size:clamp(30px,4vw,40px);letter-spacing:-.045em;line-height:1.04;margin-bottom:10px;color:var(--txt)}
+.upd{color:var(--txt2);font-size:12px;margin-bottom:36px;font-family:'JetBrains Mono',monospace;letter-spacing:.03em}
+h2{font-family:'Space Grotesk','Inter',sans-serif;font-size:20px;letter-spacing:-.02em;margin:34px 0 12px;color:var(--txt)}
+h3{font-size:15px;margin:20px 0 6px;color:var(--txt);font-weight:600}
 p,li{color:var(--txt2);font-size:14.5px;margin-bottom:10px}
-ul{padding-left:22px}
-a{color:var(--acc)}
-.foot{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd);font-size:13px;color:var(--txt2)}
+b{color:var(--txt);font-weight:600}
+ul,ol{padding-left:22px}
+form{margin-top:16px;display:flex;flex-direction:column;gap:14px}
+label{display:block;font:600 11px 'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--txt2);margin-bottom:6px}
+input,textarea,select{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;color:var(--txt);font:inherit;font-size:14px;padding:11px 13px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--th-accent-soft)}
+textarea{min-height:110px;resize:vertical}
+.chk{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--txt2)}
+.chk input{width:auto;margin-top:3px}
+button.submit{align-self:flex-start;background:var(--th-grad);color:var(--on);font-weight:700;border:none;border-radius:999px;padding:12px 24px;font-size:14px;cursor:pointer}
+button.submit:disabled{opacity:.5;cursor:not-allowed}
+.msg{font-size:13.5px;margin-top:6px}
+.msg.ok{color:var(--acc)}.msg.err{color:#ff6b5e}
+.sh-foot{border-top:1px solid var(--th-border);background:var(--th-bg-deep);padding:56px 40px 44px}
+.sh-foot-in{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:32px}
+.sh-foot-brand p{font-size:13px;color:var(--txt2);margin:14px 0 10px;max-width:280px}
+.sh-foot-brand small{font-size:12px;color:var(--th-faint);font-family:'JetBrains Mono',monospace}
+.sh-foot-col{display:flex;flex-direction:column;gap:11px}
+.sh-foot-col b{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--th-faint);font-weight:600;margin-bottom:2px}
+.sh-foot-col a{color:var(--txt2);font-size:13px}
+.sh-foot-col a:hover{color:var(--txt);text-decoration:none}
+@media(max-width:820px){.sh-links{display:none}.sh-nav-in{padding:0 20px}.sh-foot{padding:40px 20px}.sh-foot-in{grid-template-columns:1fr 1fr;gap:26px}}
+@media(max-width:520px){.sh-btn2{display:none}}
 </style></head>
-<body><div class="wrap">
-<div class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E1400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg></span><a href="/">Frame<b>Flow</b></a></div>
+<body>
+<header class="sh-nav"><div class="sh-nav-in"><a class="sh-logo" href="/"><span class="lb"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M213.85,125.46l-112,120a8,8,0,0,1-13.69-7l14.66-73.33L45.19,143.49a8,8,0,0,1-3-13l112-120a8,8,0,0,1,13.69,7L153.18,90.9l57.63,21.61a8,8,0,0,1,3,12.95Z"></path></svg></span>FrameFlow</a><nav class="sh-links"><a href="/#templates">Stock Catalog</a><a href="/#aistudio">AI Studio</a><a href="/#pricing">Pricing</a><a href="/#plugin">Plugin</a></nav><div class="sh-right"><div class="sh-theme" role="group" aria-label="Theme"><button type="button" data-th="noir" aria-label="Noir theme" title="Noir"></button><button type="button" data-th="neon" aria-label="Neon theme" title="Neon"></button><button type="button" data-th="cold" aria-label="Cold theme" title="Cold"></button></div><a class="sh-btn2" href="/login">Sign in</a><a class="sh-btn" href="/login">Start for free</a></div></div></header>
+<main class="wrap">
 
 <!-- ⚠️ needs lawyer review — the 14-day window, the "substantial portion" threshold and compliance
      with local consumer law to be finalized with a lawyer. Payments/MoR = Lemon Squeezy; the Studio
@@ -43,5 +91,7 @@ a{color:var(--acc)}
 <h2>How to request a refund</h2>
 <p>Write to <a href="mailto:support@getframeflow.app">support@getframeflow.app</a> from your account's email address with your order number (on your payment receipt). Refunds are returned to the original payment method, typically within 5–10 business days.</p>
 
-<div class="foot">FrameFlow · <a href="/terms.html">Terms of Service</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/refund.html">Refund Policy</a> · <a href="/dmca.html">DMCA</a> · support@getframeflow.app</div>
-</div></body></html>
+</main>
+<footer class="sh-foot"><div class="sh-foot-in"><div class="sh-foot-brand"><a class="sh-logo" href="/"><span class="lb"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M213.85,125.46l-112,120a8,8,0,0,1-13.69-7l14.66-73.33L45.19,143.49a8,8,0,0,1-3-13l112-120a8,8,0,0,1,13.69,7L153.18,90.9l57.63,21.61a8,8,0,0,1,3,12.95Z"></path></svg></span>FrameFlow</a><p>Templates and an AI studio for motion designers and video creators.</p><small>support@getframeflow.app</small></div><div class="sh-foot-col"><b>PRODUCT</b><a href="/#templates">Stock Catalog</a><a href="/#aistudio">AI Studio</a><a href="/#plugin">Plugin</a><a href="/#pricing">Pricing</a></div><div class="sh-foot-col"><b>CATEGORIES</b><a href="/#templates">Video templates</a><a href="/#templates">Lower Thirds</a><a href="/#templates">Transitions</a><a href="/#templates">LUTs &amp; Presets</a><a href="/#templates">SFX</a></div><div class="sh-foot-col"><b>LEGAL</b><a href="help.html">Help &amp; FAQ</a><a href="terms.html">Terms of Service</a><a href="privacy.html">Privacy Policy</a><a href="refund.html">Refund Policy</a><a href="dmca.html">DMCA</a></div></div></footer>
+<script>(function(){var r=document.documentElement;function set(t){r.setAttribute('data-theme',t);try{localStorage.setItem('ff-theme',t)}catch(e){}document.querySelectorAll('.sh-theme button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-th')===t)})}document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.sh-theme button');if(b)set(b.getAttribute('data-th'))});var c=r.getAttribute('data-theme')||'noir';document.querySelectorAll('.sh-theme button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-th')===c)})})();</script>
+</body></html>

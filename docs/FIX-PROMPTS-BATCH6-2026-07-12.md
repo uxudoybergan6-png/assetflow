@@ -3,15 +3,67 @@
 > Brief + survey results: `docs/BATCH6-REDESIGN-BRIEF.md`. Pattern analysis of Higgsfield
 > screenshots is in that brief (§ naqsh-tahlili). Copy ONE prompt per Claude Code run.
 
+---
+
+## 🛑 STOP — READ THIS BEFORE PROMPT #6 (owner decision, 2026-07-13)
+
+**A parallel workstream (the `MUAMMOLAR` A→J blocks) rebuilt AI Studio, the composer and the
+catalog in production. `docs/mockups/batch6/` is now STALE for those surfaces.**
+
+Production already has, and it is LIVE + owner-verified:
+
+| Surface | Mockup shows | **Production now has** |
+|---|---|---|
+| Lightbox | small, forced 1:1, no panel | **large viewer, true aspect ratio, prompt/details panel, ←/→ nav** |
+| Composer settings | 7 separate chips (wrapped) | **ONE `⚙ 16:9 / 720p / 5 Sec` chip + grouped popover** |
+| Reference bar | flat thumbnails | **slot system** (`@start`/`@end`/`@imgN`), dimmed-but-kept on model switch |
+| Catalog pills | 4 | **7** (+ Music, Sound Effects, AI Stock) |
+| Catalog naming | "Templates" | **"Stock Catalog"** · type labels fixed |
+| Filters | static toolbar | **context-aware per category** (LUTs has no App/4K, etc.) |
+| Gen cards | CSS-background media | **real `<img>`/`<video>`, srcset, surface + elevation** |
+| — | — | **"Add to Explore"** (AI Stock), drag&drop, paste, ⌘Z, Clear, pill ✕ |
+| Detail page | hash route, no share | **real path `/stock/<type>/<slug>-<id>`, OG link previews** |
+
+### 🔴 BINDING SCOPE FOR THE REST OF THIS BATCH (owner: option B)
+
+**Prompt #6 (and anything after it) may ONLY touch the pages that were never redesigned:**
+`pricing` · `plugin` page · `help/FAQ` · `legal pages` · footer/nav leftovers · remaining
+hard-coded `lime` literals **on those pages only**.
+
+**DO NOT TOUCH — these are DONE in the new design and any "mockup parity" edit is a REGRESSION:**
+- **AI Studio** (composer, model picker, settings popover, reference slots, gen grid, lightbox,
+  history/sessions)
+- **Catalog** (`/stock`, pills, filters, detail page, routing, share/OG)
+- **Credits screen** (real ledger)
+- **The plugin** (see the same warning in `docs/FIX-PROMPTS-BATCH8-PLUGIN-2026-07-13.md`)
+
+If a mockup screen and production disagree on those surfaces, **production wins**. If a prompt
+appears to require changing them → **STOP and ask the owner.**
+
+Reference for what was built and why: `docs/MUAMMOLAR-1-POYDEVOR-PUL-MIQYOS.md` +
+`docs/MUAMMOLAR-2-MAHSULOT.md` (see also `docs/DIREKTOR-HANDOFF.md` §5).
+
+**Three things that look like bugs but are deliberate — do NOT "fix" them:**
+1. `isPublicReadKey()` allow-list (`apps/api/src/lib/public-keys.ts`) — loosening it **leaks every
+   paid pack**.
+2. Reference `@N` numbering is bound to the pool and is **never renumbered** on model switch —
+   renumbering silently re-points every mention at the wrong image.
+3. `softenPromptForSafety` (provider-filter evasion) was **found and removed**. Do not reintroduce
+   any prompt-softening/euphemism layer — it violates Google/BytePlus ToS.
+
+---
+
 ## GLOBAL RULES (include with every prompt)
 
 - This batch is FRONTEND/DESIGN only. Never touch `apps/api`, credit values, or any backend
   file. Mockup prompts must not modify production pages at all.
-- **MOCKUP PARITY IS THE ACCEPTANCE BAR:** `docs/mockups/batch6/` is the approved design.
-  Every production prompt must port its sections 1:1 — same layout, spacing, type sizes,
-  component styles, hover states — in all 3 themes. Verification MUST include side-by-side
-  screenshots (mockup screen vs redesigned production page, same theme, 1280px) for each
-  ported section; visible deviations are defects unless caused by REAL content (real
+- ⚠️ **MOCKUP PARITY NO LONGER APPLIES TO AI STUDIO / CATALOG / CREDITS** (see the STOP block
+  above). For the remaining pages it still applies:
+- **MOCKUP PARITY IS THE ACCEPTANCE BAR (remaining pages only):** `docs/mockups/batch6/` is the
+  approved design. Every production prompt must port its sections 1:1 — same layout, spacing,
+  type sizes, component styles, hover states — in all 3 themes. Verification MUST include
+  side-by-side screenshots (mockup screen vs redesigned production page, same theme, 1280px) for
+  each ported section; visible deviations are defects unless caused by REAL content (real
   thumbnails, CMS text lengths, live data) — adapt gracefully to real content, never
   simplify the design.
 - English UI text; Uzbek code comments. Minimal diff outside the declared scope.
@@ -304,3 +356,46 @@ history + projects + model picker; 4b = composers + states).**
 
 **Out of scope:** auth/account screens, pricing/plugin/help pages, backend, plugin (AE),
 Contributor/Admin, new CMS keys.
+
+---
+
+## Prompt #5 — PRODUCTION: Auth + Account (mockup 1:1, REAL config wins over mockup content)
+
+**Context.** BATCH6 prompts #1-#4 shipped tokens/chrome, landing, Templates, and the app
+surface. SINCE the mockup was built, a PARALLEL work stream (MUAMMOLAR A→J, ~40 commits,
+deployed) changed real product content: credit packs are now 250/600/1800 (not the mockup's
+old packs), Studio plan = 3000 credits, and the fake plan features ("Priority generation",
+"API access", "Priority render queue") were DELETED from plans; the Credits screen now renders
+the real `CreditLedger` (refunds visible); Free users get watermarked AI exports (Pro clean).
+**RULE: mockup = DESIGN source; REAL config/data = CONTENT source. Never resurrect removed
+features or old prices from the mockup. If mockup content contradicts live config, live wins.**
+
+**Scope.** Mockup screens `login`, `register`, `forgot`, `reset-password`, `verify-email`,
+`state-email-verified`, `state-device-confirm`, `account-profile`, `account-billing`
+(plan + credits + ledger), `account-downloads`, `state-session-expired`, avatar menu — onto:
+(a) the in-app account views in `packages/assetflow-studio/platform/index.html`, AND
+(b) the STANDALONE pages in `packages/assetflow-studio/platform/`: `login.html`,
+`reset-password.html`, `verify-email.html`, `device.html` (and register flow wherever it
+lives). Standalone pages currently lack the BATCH6 token layer — give each the same 3-theme
+token block + FOUC snippet + fonts (small shared copy is fine; mark with a sync comment).
+
+**Task.**
+1. **Auth screens (standalone + in-app):** centered auth card per mockup (display heading,
+   inputs, primary accent CTA, Google button, Turnstile placeholder untouched functionally),
+   consistent across login/register/forgot/reset/verify; device-code screen (code display +
+   waiting state) per mockup. All existing form logic/handlers/bindings unchanged.
+2. **Account — profile:** header with avatar, name/email fields, security block (password
+   change, 2FA if present) — restyle existing functionality only.
+3. **Account — plan & credits:** plan card (REAL plan name/price/features from live config),
+   credits balance hero ✦, REAL credit packs (250/600/1800) using the mockup's pack-card
+   design, `CreditLedger` list restyled (keep refund rows visible — recent feature), watermark
+   note for Free if the UI already shows it (do not invent).
+4. **Account — downloads:** downloads list per mockup card/table style, existing data.
+5. **Avatar menu + session-expired state:** style per mockup; logic unchanged.
+6. **Cleanup:** lime literals in auth/account scopes → 0 (report before→after).
+7. **Verification:** side-by-side vs mockup per screen per theme (1280px); standalone pages
+   get theme switcher parity (at minimum honor saved `ff-theme`); forms still submit (smoke:
+   validation errors render, no console errors); `node --check`. Commit; do NOT push.
+
+**Out of scope:** pricing/plugin/help/legal pages (#6), backend, payments logic, plugin,
+Contributor/Admin consoles.

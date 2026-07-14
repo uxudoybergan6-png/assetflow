@@ -15544,8 +15544,8 @@
   @keyframes axEqBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
   .ff .va-axmascot{position:relative;display:inline-block;line-height:0}
   .ff .va-axmascot svg{display:block;overflow:visible}
-  /* BATCH6: Sparky mascot fill'lari tema-tokeniga (CSS fill/stroke presentation-attribute'dan ustun) */
-  .ff .va-axmascot [fill="#C2F04A"]{fill:var(--lime)}
+  /* BATCH6: Sparky mascot fill'lari tema-tokeniga (struktura selektori — hardcode hex anchor yo'q) */
+  .ff .va-axmascot .body>path:first-child,.ff .va-axmascot .tw1,.ff .va-axmascot .tw2,.ff .va-axmascot .tw3{fill:var(--lime)}
   .ff .va-axmascot [fill="#0E1400"]{fill:var(--onlime)}
   .ff .va-axmascot [stroke="#0E1400"]{stroke:var(--onlime)}
   .ff .va-axmascot .body{animation:axBob 2.6s ease-in-out infinite;transform-origin:50% 60%}
@@ -15845,6 +15845,82 @@
     .ff .va-axmodal{border-radius:18px}
     .ff .va-axmrow .ds{display:none}
   }
+
+  /* ═══════════ BATCH6 #6 — PRICING · PLUGIN sahifalari (mockup 1:1 port) ═══════════ */
+  /* Mockup docs/mockups/batch6 dan ko'chirildi. Var moslash: --accent→--lime, --on-accent→--onlime,
+     --accent-soft→--limedim, --faint→--muted2, --shadow→--th-shadow. Barchasi .ff ostida skoplangan,
+     tema tokenlariga bog'langan (3 tema). Plagin oyna korpusi (#111217 va boshqa neytral hex) ATAYIN
+     temaga bog'lanmagan — tashqi NLE ilova oynasi maketi (mockup CSS izohiga muvofiq). */
+  .ff .marketing-page{max-width:1450px;margin:0 auto}
+  .ff .page-hero{text-align:center;padding:80px 4vw 40px;background:radial-gradient(circle at 50% 0,var(--limedim),transparent 34%)}
+  .ff .page-hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(40px,5.2vw,60px);line-height:1.04;letter-spacing:-.04em;margin:14px auto 0;max-width:12ch}
+  .ff .page-hero p{color:var(--muted);font-size:16px;max-width:520px;margin:14px auto 0;line-height:1.6}
+  .ff .billing-note{display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--border);border-radius:11px;background:var(--surface);padding:14px 20px;margin:24px auto 0;max-width:1080px}
+  .ff .billing-note span{font:600 9px 'JetBrains Mono',monospace;letter-spacing:.09em;color:var(--muted)}
+  .ff .billing-note b{font-size:12px;color:var(--text)}
+  /* Narx grid + karta */
+  .ff .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:26px 5vw 60px;max-width:1120px;margin:0 auto}
+  .ff .price-card{position:relative;border:1px solid var(--border);background:var(--surface);border-radius:16px;padding:26px;min-height:440px;display:flex;flex-direction:column;transition:transform .2s var(--th-ease),border-color .2s,box-shadow .2s}
+  .ff .price-card:hover{transform:translateY(-4px)}
+  .ff .price-card.featured{border-color:var(--lime);box-shadow:0 0 40px var(--limedim)}
+  .ff .price-card .popular-label{position:absolute;right:18px;top:18px;padding:5px 8px;border-radius:5px;background:var(--lime);color:var(--onlime);font:700 8px 'JetBrains Mono',monospace;letter-spacing:.06em}
+  .ff .price-card .pk{font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+  .ff .price-card h3{font-family:'Space Grotesk',sans-serif;font-size:24px;letter-spacing:-.02em;margin:12px 0 0}
+  .ff .price-card .price{font:600 46px 'Space Grotesk',sans-serif;letter-spacing:-.05em;margin:22px 0 0;display:flex;align-items:baseline;gap:5px}
+  .ff .price-card .price small{font:500 12px 'Inter',sans-serif;color:var(--muted);letter-spacing:0}
+  .ff .price-card .cr{color:var(--muted);font:500 12px 'JetBrains Mono',monospace;margin-top:6px}
+  .ff .price-card ul{list-style:none;padding:16px 0 0;border-top:1px solid var(--border);margin:22px 0 18px}
+  .ff .price-card li{padding:6px 0;color:var(--text-2);font-size:12px;display:flex;gap:8px;align-items:flex-start;line-height:1.4}
+  .ff .price-card li:before{content:"✓";color:var(--lime);font-weight:700}
+  .ff .price-card>button,.ff .price-card>a{margin-top:auto}
+  /* "Barcha rejalarga kiradi" chizig'i */
+  .ff .compare-strip{margin:0 auto;max-width:1080px;padding:22px 26px;border:1px solid var(--border);border-radius:14px;background:var(--surface);display:flex;gap:24px;align-items:center}
+  .ff .compare-strip>span{font:600 9px 'JetBrains Mono',monospace;letter-spacing:.09em;color:var(--lime);white-space:nowrap}
+  .ff .compare-strip .ci{display:flex;justify-content:space-around;flex:1;gap:12px;flex-wrap:wrap}
+  .ff .compare-strip b{font-size:11px;color:var(--text-2);font-weight:600}
+  .ff .pg-faq{padding:56px 5vw 90px;text-align:center}
+  .ff .pg-faq .ffl-faq{text-align:left;margin-top:26px}
+  /* ── Plagin sahifasi ── */
+  .ff .plugin-page{max-width:1450px;margin:0 auto}
+  .ff .plugin-hero{padding:72px 5vw 56px;display:grid;grid-template-columns:.9fr 1.1fr;gap:5vw;align-items:center}
+  .ff .plugin-hero h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(38px,4.4vw,56px);line-height:1.04;letter-spacing:-.04em;margin:16px 0 20px}
+  .ff .plugin-hero p{color:var(--muted);font-size:16px;max-width:520px;line-height:1.6}
+  .ff .plugin-hero .pg-cta{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+  .ff .plugin-hero small{display:block;color:var(--muted2);margin-top:14px;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.04em}
+  .ff .plugin-window{border:1px solid var(--border);background:#111217;border-radius:16px;overflow:hidden;box-shadow:var(--th-shadow);transform:perspective(1000px) rotateY(-4deg)}
+  .ff .window-bar{height:38px;background:#202126;display:flex;align-items:center;gap:6px;padding:0 12px;color:#888;font:500 9px 'JetBrains Mono',monospace}
+  .ff .window-bar i{width:8px;height:8px;border-radius:50%;background:#52545c;font-style:normal}
+  .ff .window-bar i:first-child{background:#ff6259}
+  .ff .window-bar span{margin-left:8px}
+  .ff .plugin-ui{height:420px;display:grid;grid-template-columns:52px 1fr}
+  .ff .plugin-ui aside{border-right:1px solid #272830;display:flex;flex-direction:column;align-items:center;gap:24px;padding-top:18px;color:#7b7e88;font-style:normal}
+  .ff .plugin-ui aside b{color:var(--lime);font-size:16px}
+  .ff .plugin-ui aside i{font-style:normal;font-size:14px}
+  .ff .plugin-main{padding:16px;display:flex;flex-direction:column;gap:10px;height:100%}
+  .ff .plugin-search{border:1px solid #30313a;border-radius:7px;padding:9px 10px;color:#787a83;font-size:11px}
+  .ff .plugin-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ff .plugin-cards span{height:118px;border-radius:8px;display:block;background-size:cover}
+  .ff .plugin-import{display:flex;align-items:center;justify-content:space-between;margin-top:auto;color:#fff;font-size:12px;font-weight:600}
+  .ff .plugin-import button{border:0;border-radius:6px;background:var(--lime);color:var(--onlime);padding:7px 12px;font-weight:600;font-size:11px;cursor:pointer}
+  .ff .plugin-page .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 5vw 36px;max-width:1120px;margin:0 auto}
+  .ff .plugin-page .steps article{border-top:1px solid var(--border);padding:22px 4px}
+  .ff .plugin-page .steps article>b{font:700 10px 'JetBrains Mono',monospace;color:var(--lime);letter-spacing:.1em}
+  .ff .plugin-page .steps h3{font-family:'Space Grotesk',sans-serif;font-size:19px;margin:26px 0 8px;letter-spacing:-.02em}
+  .ff .plugin-page .steps p{color:var(--muted);font-size:13px;line-height:1.6}
+  .ff .pg-guarantee{display:flex;align-items:center;gap:9px;justify-content:center;margin:0 0 80px;font-size:12px;color:var(--muted)}
+  .ff .pg-guarantee i{color:var(--lime);font-size:14px}
+  /* Gradient plitkalar (plagin oyna maketi) */
+  .ff .art-red{background:linear-gradient(135deg,#7b0710,#ec332f 48%,#ff9361)}
+  .ff .art-glass{background:linear-gradient(145deg,#e1d0b5,#4b6a91 54%,#101a2a)}
+  .ff .art-green{background:linear-gradient(145deg,#b6e45d,#278d4b 45%,#0b1710)}
+  .ff .art-sunset{background:linear-gradient(#ef7c63,#9f4d61 42%,#101622 43%)}
+  @media(max-width:960px){
+    .ff .plugin-hero{grid-template-columns:1fr;gap:34px;padding-top:56px}
+    .ff .pricing-grid{grid-template-columns:1fr;max-width:440px}
+    .ff .plugin-page .steps{grid-template-columns:1fr}
+    .ff .compare-strip{flex-direction:column;align-items:flex-start}
+    .ff .compare-strip .ci{display:grid;grid-template-columns:1fr 1fr;width:100%;justify-items:start}
+  }
 </style>
 </helmet>
 
@@ -16112,34 +16188,41 @@
 
     <!-- ============ PRICING PAGE ============ -->
     <sc-if value="{{ isPricing }}" hint-placeholder-val="{{ false }}">
-      <main class="ffm-mesh">
-        <section class="ffm-sect" style="padding:56px 80px 72px;text-align:center">
-          <div class="ffm-eyebrow">{{ lcPrEyebrow }}</div>
-          <div class="ffm-d44" style="margin-top:12px">{{ lcPrTitle }}</div>
-          <div style="font-size:14px;color:var(--muted);margin-top:10px">{{ lcPrSub }}</div>
-          <div class="ffm-plans" style="display:flex;gap:20px;margin-top:32px;text-align:left;max-width:1040px;margin-left:auto;margin-right:auto">
-            <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
-              <div class="{{ p.planCls }}" style="position:relative;padding:24px 22px">
-                <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;position:absolute;top:-10px;left:24px;font-weight:700;font-size:9px;letter-spacing:.08em;padding:4px 11px;border-radius:999px;background:var(--lime);color:var(--onlime)">MOST POPULAR</span></sc-if>
-                <div style="font-weight:700;font-size:16px">{{ p.name }}</div>
-                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">{{ p.sub }}</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:14px"><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:38px;letter-spacing:-.02em">${{ p.price }}</span><span style="font-size:13px;color:var(--muted)">/mo</span></div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ p.crCol }};margin-top:5px">✦ {{ p.cr }}</div>
-                <button class="{{ p.ctaCls }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" style="margin:18px 0 8px">{{ p.cta }}</button>
-                <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="6"><div class="ffm-pf"><i class="ph ph-check"></i>{{ f }}</div></sc-for>
+      <main class="marketing-page pricing-page">
+        <div class="page-hero">
+          <div class="ffm-eyebrow" style="justify-content:center">{{ lcPrEyebrow }}</div>
+          <h1>{{ lcPrTitle }}</h1>
+          <p>{{ lcPrSub }}</p>
+          <div class="billing-note"><span>MONTHLY PLANS</span><b>14-day money-back guarantee</b></div>
+        </div>
+        <div class="pricing-grid">
+          <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
+            <article class="{{ p.priceCardCls }}">
+              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span class="popular-label">MOST POPULAR</span></sc-if>
+              <span class="pk">{{ p.name }}</span>
+              <h3>{{ p.sub }}</h3>
+              <div class="price">${{ p.price }}<small>/mo</small></div>
+              <div class="cr">✦ {{ p.cr }}</div>
+              <ul>
+                <sc-for list="{{ p.feats }}" as="f" hint-placeholder-count="6"><li>{{ f }}</li></sc-for>
+              </ul>
+              <button class="{{ p.ctaCls }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}">{{ p.cta }}</button>
+            </article>
+          </sc-for>
+        </div>
+        <div class="compare-strip">
+          <span>ALL PLANS INCLUDE</span>
+          <div class="ci"><b>✓ Browser AI Studio</b><b>✓ Template previews</b><b>✓ Commercial license</b><b>✓ 14-day money-back guarantee</b></div>
+        </div>
+        <section class="pg-faq">
+          <div class="ffm-d36">{{ lcPrFaqTitle }}</div>
+          <div class="ffl-faq">
+            <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
+              <div class="{{ f.itCls }}">
+                <div class="q" data-idx="{{ f.idx }}" onclick="{{ onFaq }}"><b>{{ f.q }}</b><i class="ph ph-plus"></i></div>
+                <div class="a"><p>{{ f.a }}</p></div>
               </div>
             </sc-for>
-          </div>
-          <div style="max-width:760px;margin:56px auto 0;text-align:left">
-            <div class="ffm-d30" style="text-align:center">{{ lcPrFaqTitle }}</div>
-            <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
-              <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
-                <div style="background:var(--surface);border:1px solid {{ f.faqBd }};border-radius:14px;padding:16px 20px">
-                  <div data-idx="{{ f.idx }}" onclick="{{ onFaq }}" style="display:flex;align-items:center;gap:10px;cursor:pointer"><span style="font-weight:600;font-size:14px;flex:1;color:{{ f.qCol }}">{{ f.q }}</span><i class="ph ph-{{ f.icon }}" style="color:{{ f.iCol }}"></i></div>
-                  <sc-if value="{{ f.open }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:10px">{{ f.a }}</div></sc-if>
-                </div>
-              </sc-for>
-            </div>
           </div>
         </section>
       </main>
@@ -16147,28 +16230,35 @@
 
     <!-- ============ PLUGIN PAGE ============ -->
     <sc-if value="{{ isPlugin }}" hint-placeholder-val="{{ false }}">
-      <main>
-        <section class="ffm-mesh ffm-hero" style="padding:56px 80px 0;text-align:center">
-          <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 25%,transparent);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>{{ lcPgBadge }}</span>
-          <div class="ffm-d44" style="margin:20px auto 0;max-width:640px">{{ lcPgTitle }}</div>
-          <div style="font-size:15px;color:var(--muted);max-width:520px;margin:14px auto 0;line-height:1.6">{{ lcPgSub }}</div>
-          <div class="ffm-herocta" style="display:flex;gap:12px;justify-content:center;margin-top:26px">
-            <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
+      <main class="marketing-page plugin-page">
+        <div class="plugin-hero">
+          <div class="pg-copy">
+            <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 25%,transparent);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>{{ lcPgBadge }}</span>
+            <h1>{{ lcPgTitle }}</h1>
+            <p>{{ lcPgSub }}</p>
+            <div class="pg-cta">
+              <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
+            </div>
+            <small>{{ lcPgVersion }}</small>
           </div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:12px">{{ lcPgVersion }}</div>
-        </section>
-        <section class="ffm-sect" style="padding:56px 80px 0">
-          <div class="ffm-steps3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
-            <sc-for list="{{ pluginStepsView }}" as="s" hint-placeholder-count="3">
-              <div style="background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px">
-                <div style="font-family:'IBM Plex Mono',monospace;width:34px;height:34px;border-radius:10px;background:var(--limedim);color:var(--lime);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">{{ s.n }}</div>
-                <div style="font-weight:700;font-size:15px;margin-top:14px">{{ s.t }}</div>
-                <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:6px">{{ s.d }}</div>
+          <div class="plugin-window" aria-hidden="true">
+            <div class="window-bar"><i></i><i></i><i></i><span>FrameFlow · After Effects</span></div>
+            <div class="plugin-ui">
+              <aside><b><i class="ph-fill ph-lightning"></i></b><i class="ph ph-house"></i><i class="ph ph-squares-four"></i><i class="ph ph-sparkle"></i><i class="ph ph-download-simple"></i></aside>
+              <div class="plugin-main">
+                <div class="plugin-search"><i class="ph ph-magnifying-glass"></i> Search templates</div>
+                <div class="plugin-cards"><span class="art-red"></span><span class="art-glass"></span><span class="art-green"></span><span class="art-sunset"></span></div>
+                <div class="plugin-import"><b>Football Championship</b><button>Import</button></div>
               </div>
-            </sc-for>
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:9px;justify-content:center;margin:28px 0 90px;font-size:12px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:14px"></i>{{ lcPgGuarantee }}</div>
-        </section>
+        </div>
+        <div class="steps">
+          <sc-for list="{{ pluginStepsView }}" as="s" hint-placeholder-count="3">
+            <article><b>0{{ s.n }}</b><h3>{{ s.t }}</h3><p>{{ s.d }}</p></article>
+          </sc-for>
+        </div>
+        <div class="pg-guarantee"><i class="ph ph-shield-check"></i>{{ lcPgGuarantee }}</div>
       </main>
     </sc-if>
 
@@ -16732,12 +16822,12 @@
                   <sc-if value="{{ axShowHero }}" hint-placeholder-val="{{ true }}">
                     <div class="va-axhero">
                       <span class="va-axmascot"><svg width="72" height="72" viewBox="0 0 64 64">
-                        <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                        <g class="body"><path d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
                         <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
                         <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
-                        <circle class="tw1" cx="6" cy="12" r="2.4" fill="#C2F04A"></circle>
-                        <circle class="tw2" cx="59" cy="16" r="1.8" fill="#C2F04A"></circle>
-                        <circle class="tw3" cx="55" cy="55" r="2.1" fill="#C2F04A"></circle>
+                        <circle class="tw1" cx="6" cy="12" r="2.4"</circle>
+                        <circle class="tw2" cx="59" cy="16" r="1.8"</circle>
+                        <circle class="tw3" cx="55" cy="55" r="2.1"</circle>
                       </svg></span>
                       <h2>Start with your <em>idea</em></h2>
                       <p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p>
@@ -16755,12 +16845,12 @@
                       <sc-for list="{{ axPendVisList }}" as="pj" hint-placeholder-count="0">
                         <div class="va-axcell"><div class="va-axres pend va-axpend" data-jid="{{ pj.id }}">
                           <span class="va-axmascot"><svg width="58" height="58" viewBox="0 0 64 64">
-                            <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                            <g class="body"><path d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
                             <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
                             <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
-                            <circle class="tw1" cx="7" cy="10" r="2.2" fill="#C2F04A"></circle>
-                            <circle class="tw2" cx="58" cy="14" r="1.7" fill="#C2F04A"></circle>
-                            <circle class="tw3" cx="54" cy="54" r="2" fill="#C2F04A"></circle>
+                            <circle class="tw1" cx="7" cy="10" r="2.2"</circle>
+                            <circle class="tw2" cx="58" cy="14" r="1.7"</circle>
+                            <circle class="tw3" cx="54" cy="54" r="2"</circle>
                           </svg></span>
                           <span class="va-axpct">{{ pj.pct }}</span>
                           <span class="va-axpst">{{ pj.status }}</span>
@@ -16815,7 +16905,7 @@
                       <sc-for list="{{ axPendAudList }}" as="pj" hint-placeholder-count="0">
                         <div class="va-axarow pend va-axpend" data-jid="{{ pj.id }}">
                           <span class="va-axmascot" style="width:40px;flex:none;display:grid;place-items:center"><svg width="34" height="34" viewBox="0 0 64 64">
-                            <g class="body"><path fill="#C2F04A" d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
+                            <g class="body"><path d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
                             <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
                             <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
                           </svg></span>
@@ -18059,7 +18149,7 @@ class Component extends DCLogic {
   // ── Landing CMS — defaultlar API'dagi DEFAULT_LANDING_CONFIG bilan AYNI (offline/birinchi
   // renderda ham landing hozirgi ko'rinishda qoladi; server merged config qaytaradi).
   landingDefaults = {
-    theme: { accent: '#C2F04A', font: 'hanken' },
+    theme: { accent: '', font: 'hanken' }, // BATCH6: accent'ni 3-tema tizimi boshqaradi (CMS custom-accent override o'chirilgan)
     nav: { templates: 'Stock Catalog', aiStudio: 'AI Studio', pricing: 'Pricing', plugin: 'Plugin', signIn: 'Sign in', cta: 'Start for free' },
     hero: {
       badgeTag: 'NEW', badgeText: 'AI Video 2.0 is here',
@@ -18244,24 +18334,9 @@ class Component extends DCLogic {
   /** Custom accent HEX → landing CSS o'zgaruvchilari (inline style, data-accent ustidan
    *  yozadi). Default lime bo'lsa bo'sh satr — mavjud stylesheet qiymatlari qoladi. */
   landingAccentVars(hex) {
-    // BATCH6: 3-tema tizimi accent'ni to'liq boshqaradi — CMS custom-accent inline override o'chirildi
+    // BATCH6: 3-tema tizimi accent'ni to'liq boshqaradi — CMS custom-accent inline override o'chirildi.
+    // (Eski hex→CSS-var hisoblash olib tashlandi; tema tokenlari yagona rang manbai.)
     return '';
-    // eslint-disable-next-line no-unreachable
-    if (!/^#[0-9a-fA-F]{6}$/.test(hex || '') || hex.toUpperCase() === '#C2F04A') return '';
-    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-    const mix = (c, t, p) => Math.round(c + (t - c) * p);
-    const toHex = (rr, gg, bb) => '#' + [rr, gg, bb].map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
-    const dark = toHex(mix(r, 0, .22), mix(g, 0, .22), mix(b, 0, .22));
-    const light = toHex(mix(r, 255, .2), mix(g, 255, .2), mix(b, 255, .2));
-    // YIQ yorqinlik — accent ustidagi matn rangi (och accent → to'q matn)
-    const onAcc = ((.299 * r + .587 * g + .114 * b) / 255) > .55 ? '#0E1400' : '#FFFFFF';
-    return ';--lime:' + hex + ';--lime2:' + dark + ';--onlime:' + onAcc +
-      ';--limedim:rgba(' + r + ',' + g + ',' + b + ',.12)' +
-      ';--spend-grad:radial-gradient(120% 140% at 30% 20%,' + light + ',' + hex + ' 55%,' + dark + ')' +
-      ';--grad:linear-gradient(155deg,' + hex + ',' + dark + ')' +
-      ';--grad-h:linear-gradient(155deg,' + light + ',' + hex + ')' +
-      ';--acc:' + hex + ';--acc-ind:' + dark + ';--glow1:' + hex + ';--on:' + onAcc +
-      ';--ring:rgba(' + r + ',' + g + ',' + b + ',.4)';
   }
   /** Landing CMS konfiguratsiyasini yuklaydi: avval localStorage keshi (tez birinchi
    *  bo'yoq), so'ng server (60s HTTP kesh) — javob keshga yoziladi. */
@@ -20376,6 +20451,8 @@ class Component extends DCLogic {
         btnBd: p.pop ? 'transparent' : 'var(--bd2)',
         // Mockup (ffm) plan bindings
         planCls: p.pop ? 'ffm-plan rec' : 'ffm-plan',
+        // BATCH6 #6 narx sahifasi price-card (mockup 1:1)
+        priceCardCls: p.pop ? 'price-card featured' : 'price-card',
         // Boy landing (ffl) teaser kartasi — lime-glow Pro
         planClsL: p.pop ? 'ffl-plan pop' : 'ffl-plan',
         // BATCH6 home-plans mini-karta (nom + narx + kredit)

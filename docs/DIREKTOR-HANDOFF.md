@@ -116,7 +116,91 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ---
 
-## 5. JORIY HOLAT (2026-07-10)
+## 5. JORIY HOLAT (2026-07-14)
+
+> 🚧 **AKTIV — MUAMMOLAR V2 (jonli test muammolari).** 24 muammo (P1–P24) tahlil qilindi,
+> har biri uchun self-contained Code prompt yozildi: `docs/MUAMMOLAR V2-2026-07-13.md`.
+> Bajarish rejasi 3 faylga tartiblandi: `docs/V2-BAJARISH-HIGH-2026-07-14.md` (9 ta, Fable 5,
+> tartib qat'iy: P1→P9→P5→P11→P17→P20→P23→P24→P22) · `V2-BAJARISH-MEDIUM` (9 ta, Sonnet 5,
+> P18 P24'dan oldin) · `V2-BAJARISH-EASY` (6 ta, Sonnet 5, P4 birinchi).
+> Cloudflare: HTTP/3 OFF + Always-Use-HTTPS ON (ega, 2026-07-14).
+> ✅ **So'rovnoma qarorlari (2026-07-14):** plugin minimal host = **AE 2022+** (transpile yo'q)
+> · audio sting **olib tashlanadi** (preview himoyasi = past bitreyt) · AI Stock preview =
+> **toza + past-rez** (watermark dvigateli 0 chaqiruvchi, uxlaydi).
+> 🔴 **INFRA — EGA QAT'IY QARORI (2026-07-14): Neon → Google Cloud SQL ko'chamiz. HOZIR EMAS**
+> — muammolar (V2 + audit) tugagach, alohida reja bilan. Ko'chirish rejasida bo'lishi shart:
+> region europe-west (API bilan bir joy) · pg_dump/restore yoki logical replication ·
+> DATABASE_URL almashish + parol rotatsiya · Prisma migratsiya holati tekshiruvi · eski Neon
+> 1-2 hafta faqat-o'qish zaxira. ESLATMA: ko'chguncha Neon bepul 100-soat limiti XAVF —
+> tugasa sayt o'ladi; muammolar cho'zilsa oraliq chora = Neon Launch 1 oyga.
+> 🔎 **Katta audit (2026-07-14):** 4 parallel tekshiruv → 10 yangi blok P25–P34
+> (`docs/DIREKTOR-AUDIT-V2-2026-07-14.md`): eng muhimlari — sessiya-tugashda holat sizishi
+> (P25) · to'lov UX teshiklari (P26) · provayder timeout'siz gen-pool qulflanishi (P27) ·
+> plugin Windows'da ishlamasligi + 2 lokal in'ektsiya (P28) · admin "yolg'on" boshqaruvlari (P29).
+
+### (Eski holat — 2026-07-13)
+
+> ⚠️ **PARALLEL DIREKTOR IShI (2026-07-12/13) — `MUAMMOLAR` oqimi TUGADI.**
+> Ega ikkinchi direktor bilan 30 ta muammoni tahlil qilib, **A→J 10 bo'lakda** hal qildi.
+> Manba: `docs/MUAMMOLAR-1-POYDEVOR-PUL-MIQYOS.md` (poydevor·pul·miqyos) va
+> `docs/MUAMMOLAR-2-MAHSULOT.md` (AI Studio·kompozer·katalog·kontent quvuri).
+> **Bu bo'lim BATCH6/7/8 ishidan ALOHIDA — lekin `platform/index.html` va plaginda
+> KESIShADI. BATCH ishi boshlanishidan oldin quyidagilarni O'QI.**
+
+### ✅ BAJARILDI (A→J, ~40 commit, push+deploy qilingan)
+
+**Infra/pul (1-qism):**
+- **Baza Frankfurt'ga ko'chirildi** (Neon `us-east-1` → `eu-central-1`; Cloud Run `europe-west1`).
+  Har SQL so'rovida ~100 ms Atlantika kechikishi YO'QOLDI. Eski baza 1 hafta zaxira.
+- **CDN — Cloudflare Worker** `cdn.getframeflow.app` (`workers/cdn-proxy/`). GCS bucket **butunlay
+  yopiq** (org-policy per-object public'ni taqiqlaydi). Worker `isPublicReadKey()` ruxsat ro'yxati
+  bo'yicha faqat thumb/preview/scene/gen-derivativlarni beradi. **Isbot: `pack.zip` → 403.**
+  🔴 Bu ro'yxatni BUZMA — pullik pack sizib ketadi.
+- **Narx:** paketlar 250/600/1800 (zararda sotilardi) · Studio 3000 kredit · "Priority generation",
+  "API access", "Priority render queue" — SOTILAYOTGAN, LEKIN YO'Q edi → **o'chirildi**.
+  Boot-assertion: biror kanal xarajatdan arzon sotilsa — **server ko'tarilmaydi**.
+- **Idempotentlik** `POST /gen` (ikki marta hisobdan chiqarish xavfi yopildi; ledger audit — yo'qotish yo'q).
+- **Suv belgisi QURILDI** (avval reklama qilinardi, kodda YO'Q edi): Free → suv belgili AI eksport
+  va stock preview; Pro → toza. Server tomonda, aylanib o'tib bo'lmaydi.
+- **P19.5:** 20 daqiqa endi "refund" emas, **"provayderdan so'ra"** — tayyor bo'lsa natija yetkaziladi.
+- **Xavfsizlik:** presigned upload kvota teshigi · 2FA xato kodi sessiyani o'chirardi · `TOKEN_EXPIRED`
+  vs `FORBIDDEN` · 🔴 **`softenPromptForSafety` (provayder filtrini chetlab o'tish) TOPILDI va O'CHIRILDI**
+  — Google/BytePlus shartnomasini buzardi, hisob yopilishi mumkin edi. **QAYTA QO'SHMA.**
+- **Sybil himoyasi** (download IP/ASN/yosh klasterlash) · pool 50%→30% + INFRA chegiriladi ·
+  30-kun payout hold · **Foyda paneli** (admin → Profit).
+
+**Mahsulot (2-qism):**
+- **AI Studio:** global qayta render to'xtatildi (scroll/timer/fake-progress `setState` → butun ilova
+  qayta chizilardi) · media haqiqiy `<img>`/`<video>` (CSS-fon emas) · 1280px display derivative +
+  srcset · lightbox qayta qurildi (haqiqiy nisbat, detal paneli, ←/→) · karta yuzasi (3 tema).
+- 🔴 **REFERENS HOVUZI (P13):** model almashganda referens **O'CHMAYDI** — xira bo'ladi, sabab bilan;
+  @raqamlar **HECH QACHON qayta raqamlanmaydi**. **Parallel generatsiya** (5 ish).
+- **Kompozer:** bitta ⚙ sozlama chipi (Generate hech qachon wrap bo'lmaydi) · Generate kredit yetmasa
+  **oldindan** o'chadi · drag&drop + paste + ✕-pill + Clear + **⌘Z undo**.
+- **Enhance endi rasmlarni KO'RADI** (avval ko'r-ko'rona taxmin qilardi — klient `image_urls` yubormasdi).
+- **Kreditlar ekrani** — haqiqiy `CreditLedger` (avval qaytarishlar UMUMAN ko'rinmasdi).
+- **Katalog server tomonda** filtr/qidiruv/saralash/sahifalash. Ikkala klientdagi "hamma sahifani
+  yuklab ol" sikli o'chirildi. Plagin virtualizatsiya (5000 karta AE'ni muzlatardi).
+  📊 O'lchov: 50→5000 asset — javob **38 KB (o'zgarmaydi)**, TTFB 4.8 ms. Eski: 3.9 MB / 51 so'rov.
+- **Kontent quvuri:** 6 kategoriya (Video Templates · LUTs · Graphics · Motion Graphics · Music · SFX).
+  **Ikkinchi ingest quvuri — xom fayllar** (avval faqat `.zip` qabul qilinardi). ffprobe spec + AI
+  metadata **yuklashda** (Vertex Gemini) + ko'p orientatsiya. Qayta tiklanadigan bulk-ingest ishchisi.
+- **Katalog nomi/routing:** "Stock Catalog" · **haqiqiy manzillar** `/stock/<type>/<slug>-<id>` ·
+  **OG link preview** (CF Function — Telegram/Twitter'da rasm) · kontekstga qarab filtrlar.
+- **AI Stock zanjiri:** gen kartada "Add to Explore" → admin → katalog. Bepul (admin Pro qilishi mumkin),
+  payout yo'q. Fayl **nusxalanadi** (havola emas).
+
+### 🔴 QOLDI (ega ishi, kod EMAS)
+Marja **2×** (hozir 1.2× — zarar!) · **Neon → Launch reja** (bepul 100 soat tugasa sayt o'ladi) ·
+Sentry DSN · Neon parol rotatsiya · suv belgisi backfill · GCS lifecycle · **KONTENT** (katalogda 2 asset,
+landing "5000+" deydi) · legal/email/Turnstile/LS-LIVE.
+
+### ⚠️ Ochiq risk
+Qidiruv **indekssiz ILIKE** — 5000'da 5 ms, lekin chiziqli. ~15-20k'dan keyin `pg_trgm` kerak.
+
+---
+
+## 5b. ESKI HOLAT (BATCH oqimi, 2026-07-10..12)
 
 - ✅ **Butun mahsulot qurilgan:** kontent quvuri (F1–F6) · hardening/launch-readiness fazalari ·
   login/2FA/3-portal · ingliz-tarjima · QA-FIX 16 + BATCH2 21 · Site/Landing CMS · Artlist web
@@ -187,8 +271,13 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
   token (3 tema ilova ichida ham to'g'ri); Sparky mascot tema-mos; BATCH5 chip-editor TEKSHIRILDI sog'.
   ⚠️ Kompozer/model-picker/history: tema-mos lekin 1:1 tasdiq REAL data bilan qilinmadi (lokal backend
   yo'q) — USER jonli saytда ko'radi, kamchilik chiqsa #4c mini-prompt.
-  👉 KEYINGI: **USER PUSH (5 commit!)** + jonli ko'rik (ayniqsa Studio real data bilan) →
-  Prompt #5 Auth/Account → #6 qoldiq sahifalar+yakuniy tozalash → BATCH7 CMS → BATCH8 plagin.
+  ✅ Prompt #5 (eee5b68): Auth+Account 1:1 — in-app auth split-layout (media-art+quote) ·
+  account-head kicker+underline tabs · REAL kontent (250/600/1800, Studio 3000, ledger refund) ·
+  standalone reset/verify/device sahifalari tema-tizim oldi · lime→0. ⚠️ `login.html` = Contributor
+  konsoli — TEGILMADI (USER logini in-app; kontributor konsol reskini = alohida qaror).
+  ⚠️ Repo'да aralash unpushed commitlar (MUAMMOLAR 3 + BATCH6) — push hammasini birga chiqaradi.
+  👉 KEYINGI: **USER PUSH + jonli ko'rik** → Prompt #6 (pricing/plugin/help/legal + yakuniy lime
+  tozalash + shim audit) = BATCH6 YAKUNI → BATCH7 CMS → BATCH8 plagin (#0-R mockup jarayonда).
 - ⏳ **Deferred:** headless admin E2E · BATCH5 Prompt #3 (fal Seedance cleanup — prod'да 1-2 hafta
   barqarorlikdan KEYIN) · **BATCH7 = Site CMS kengaytmasi** (BATCH6'dan KEYIN: help/legal(versiyali)/
   promo-strip/SEO-OG/ticker/cinema/presets/mega-model-ro'yxat admin'дан; page-builder EMAS) ·
@@ -198,6 +287,16 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 ---
 
 ## 6. HUJJATLAR XARITASI (tarix va tafsilot shu yerда)
+
+**MUAMMOLAR oqimi (2026-07-12/13 — parallel direktor, TUGADI):**
+- `docs/MUAMMOLAR-1-POYDEVOR-PUL-MIQYOS.md` — 30 muammoning yarmi: infra · pul · miqyos · xavfsizlik.
+  **Boshida STATUS + A→J bo'laklar jadvali.** ⚠️ `P7.CDN` bo'limi — bucket'ni ochish PULLIK PACK'LARNI
+  SIZDIRADI (Worker yechimi shu sabab).
+- `docs/MUAMMOLAR-2-MAHSULOT.md` — AI Studio · kompozer · katalog · kontent quvuri · AI Stock.
+  ⚠️ `P30` — **DIREKTOR QARORI: provayder xavfsizlik filtrini chetlab o'tish uchun hech narsa
+  qurilmaydi** (hisob yopiladi). `P13` — referens hovuzi (qayta raqamlash = jimgina buzilish).
+- `docs/PERF-BASELINE.md` — 50/500/5000 asset o'lchov raqamlari.
+- `workers/cdn-proxy/README.md` — CDN Worker deploy.
 
 - `docs/PROJECT-STATUS.md` — loyiha JORIY holatining yagona kod-tasdiqланган manbai.
 - `docs/FIX-PROMPTS-BATCH3-2026-07-10.md` — **aktiv** fix promptlar.

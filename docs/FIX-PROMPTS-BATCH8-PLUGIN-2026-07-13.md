@@ -5,6 +5,43 @@
 > Inter/JetBrains Mono, Higgsfield-style composer). Flow: mockup first → USER approves →
 > then port prompts. Copy ONE prompt per Claude Code run.
 
+---
+
+## 🛑 STOP — THE PLUGIN'S FUNCTIONALITY WAS REBUILT (owner decision, 2026-07-13)
+
+A parallel workstream (the `MUAMMOLAR` A→J blocks) **rewrote the plugin's composer, catalog and
+import logic in production**. This batch is now **SKIN ONLY**.
+
+**Already LIVE in the plugin (do NOT redesign away, do NOT "simplify"):**
+- **ONE `⚙` settings sheet** (was: 4 separate sheets). Mandatory — the panel is too narrow for the
+  old row.
+- **Reference slots** (`@start` / `@end` / `@imgN`) that **survive a model switch** — dimmed with a
+  reason, never deleted. **`@N` numbering is bound to the pool and is NEVER renumbered.**
+- Parallel generations (5 image / 3 video) · Generate **disabled before the click** when credits are
+  short · pill ✕ · **⌘Z undo** · Finder file drop.
+- **Music + Sound Effects tabs** · raw-media import (`.mp4/.wav/.png`) · LUT download+reveal.
+- **Server-side catalog** (filter/search/sort/paginate) + **list virtualization** (5 000 cards froze AE).
+- "Add to Explore" on generation cards (AI Stock) · honest provider-rejection toasts + refund notice.
+- Watermark: Free plan gets watermarked files, paid plans get the clean original — **server-enforced**.
+
+### 🔴 BINDING SCOPE (owner: option B)
+
+**BATCH8 = VISUAL SKIN ONLY.** Tokens, typography, spacing, colours, hover/focus states, iconography,
+3 themes. **Structure and behaviour stay exactly as shipped.**
+
+**A mockup that removes/merges/renames any of the features above is WRONG — fix the mockup, not the
+plugin.** If a port prompt would change behaviour → **STOP and ask the owner.**
+
+Three things that look like bugs but are deliberate — do NOT "fix" them:
+1. Reference `@N` numbering is never renumbered on model switch.
+2. Dimmed (inactive) references are kept on purpose — they are not dead UI.
+3. Any prompt-softening / filter-evasion layer is **forbidden** (removed on purpose — it violated
+   Google/BytePlus ToS and risked account termination).
+
+Context: `docs/MUAMMOLAR-2-MAHSULOT.md` (P13, P16, P20, P22, P30) · `docs/DIREKTOR-HANDOFF.md` §5.
+
+---
+
 ## GLOBAL RULES (include with every prompt)
 
 - FRONTEND/DESIGN only. Never touch `apps/api`, credit values, or backend files. Mockup
