@@ -18500,8 +18500,9 @@ class Component extends DCLogic {
         window.addEventListener('ff-auth-expired', this._onExpired = () => {
           // §A (P2) — gen davomida sessiya tugasa: barcha poll'larni to'xtatamiz va faol ishlarni
           // tozalaymiz (aks holda har poll 401 olib, hodisa qayta-qayta otilib toast spami bo'lardi).
-          this._clearPollTimers();
-          this.setState({ user: null, credits: 0, creditsLoaded: false, gensLoaded: false, activeJobs: [] });
+          // P25 — resetUserState: faqat credits/activeJobs emas, TO'LIQ holat (refs/sessions/
+          // projects) tozalanadi — aks holda keyingi login shu qurilmadagi eski ma'lumotni ko'radi.
+          this.resetUserState({ user: null });
           this.toast('Your session has expired — please sign in again');
           this.go('auth');
         });
@@ -19393,8 +19394,10 @@ class Component extends DCLogic {
     // Ularning admin/kontributor kirishi alohida panellarda saqlanib qoladi.
     const user = Object.assign({}, r.user, { emailVerifyRequired: r.emailVerifyRequired });
     FFAPI.setSession(r.token, user);
-    // QA-FIX #12/#13: eski foydalanuvchi sessiya/loyiha holati yaroqsiz — tozalab bootData qayta yuklaydi
-    this.setState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null, curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    // QA-FIX #12/#13 + P25: eski foydalanuvchi sessiya/loyiha/refs holati yaroqsiz —
+    // resetUserState TO'LIQ tozalaydi (avval faqat sessions/projects edi, refs/selModel/
+    // activeJobs qolib ketardi), so'ng bootData yangi foydalanuvchi uchun qayta yuklaydi.
+    this.resetUserState({ user, accName: user.name || '', authBusy: false, authPassword: '', authErr: null });
     this.bootData();
     const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
     this.go(next);
@@ -19481,10 +19484,23 @@ class Component extends DCLogic {
       this.toast(this.errMsg(e) || 'Avatar upload failed');
     }
   }
+  // P25 — 4 chaqiruv nuqtasi (logout/delete/expiry/login) BIR XIL maydon ro'yxatidan
+  // foydalanadi; avval qisman edi (masalan expiry/login refs/sessions/projects'ni
+  // tozalamasdi) — eski foydalanuvchi holati keyingi foydalanuvchiga oqib o'tardi.
+  resetUserState(extra) {
+    this._clearPollTimers();
+    this.setState(Object.assign({
+      credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false,
+      downloadsMonth: 0, selModel: {}, genModels: {}, activeJobs: [],
+      refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [],
+      aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [],
+      sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false,
+      projOpen: null, addPick: null, nameModal: null,
+    }, extra || {}));
+  }
   logout() {
     if (window.FFAPI) FFAPI.clearSession();
-    this._clearPollTimers();
-    this.setState({ user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, activeJobs: [], refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [], aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.resetUserState({ user: null });
     this.go('landing');
     this.toast('You have been signed out');
   }
@@ -19512,8 +19528,7 @@ class Component extends DCLogic {
     try { await FFAPI.deleteAccount(); }
     catch (e) { this.toast(this.errMsg(e)); return; }
     if (window.FFAPI) FFAPI.clearSession();
-    this._clearPollTimers();
-    this.setState({ showDelete: false, delConfirm: '', user: null, credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false, downloadsMonth: 0, selModel: {}, genModels: {}, activeJobs: [], refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [], aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [], sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false, projOpen: null, addPick: null, nameModal: null });
+    this.resetUserState({ user: null, showDelete: false, delConfirm: '' });
     this.go('landing');
     this.toast('Your account has been deleted');
   }

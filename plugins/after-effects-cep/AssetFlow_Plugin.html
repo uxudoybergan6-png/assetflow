@@ -8982,6 +8982,11 @@ async function accountLoginWithGoogle(){
 function accountLogout(){
   if(typeof AssetFlowAccount!=='undefined') AssetFlowAccount.logout();
   refreshAccountUi();
+  // P25 — boshqa hisob shu qurilmada kirsa, eski foydalanuvchining AI Tools tarixi (rasm/video/audio
+  // gen grid'lari) darhol tozalansin — aks holda keyingi login'gacha eski hisob generatsiyalari ko'rinardi.
+  try{ if(typeof window.afIgClearRecent==='function')window.afIgClearRecent(); }catch(e){}
+  try{ if(typeof window.axVGClearRecent==='function')window.axVGClearRecent(); }catch(e){}
+  try{ if(typeof window.axAGClearRecent==='function')window.axAGClearRecent(); }catch(e){}
   showToast('Signed out');
 }
 
@@ -11997,6 +12002,8 @@ window.afGallery=(function(){
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Check your internet or session.'; renderRecentGrid(); });
   }
   window.afIgRetryRecent=function(){ recentLoaded=false; recentError=''; loadRecent(true); };
+  // P25 — logout/boshqa hisob login: eski foydalanuvchining so'nggi generatsiyalari grid'da qolib ketmasin
+  window.afIgClearRecent=function(){ recentLoaded=false; recentLoadedAt=0; recentError=''; st.recent=[]; renderRecentGrid(); };
   // #22: header ↻ — So'nggi genlar + kredit chip qo'lda yangilash
   var igRefr=$('igRefreshBtn'); if(igRefr)igRefr.addEventListener('click',function(){ if(typeof window.afRefreshAll==='function')window.afRefreshAll(); else { setCreditChip(credits()); window.afIgRetryRecent(); } }); // P16: refresh-all
   var igMore=$('igMoreLink'); if(igMore)igMore.addEventListener('click',openHistory);
@@ -13831,6 +13838,8 @@ window.afGallery=(function(){
     });
   }
   window.retryVgRecent=function(){ loadVgRecent(true); };
+  // P25 — logout/boshqa hisob login: eski foydalanuvchining video-gen tarixi grid'da qolib ketmasin
+  window.axVGClearRecent=function(){ vgRcState.items=[]; vgRcState.loaded=false; vgRcState.loadedAt=0; vgRcState.error=''; renderVgRecent(); };
   // #22: header ↻ — So'nggi genlar + kredit chip qo'lda yangilash
   var vgRefr=$('vgRefreshBtn'); if(vgRefr)vgRefr.addEventListener('click',function(){ setCreditChip(credits()); window.retryVgRecent(); toast('Refreshing…','info'); });
   // lightbox
@@ -14205,6 +14214,8 @@ window.afGallery=(function(){
   window.axAGTeardown=function(){ Object.keys(ag.pollTimers).forEach(function(k){ clearTimeout(ag.pollTimers[k]); delete ag.pollTimers[k]; }); };
   window.axAGNewSession=function(){ ag.sessions={}; }; // P1: New session
   window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
+  // P25 — logout/boshqa hisob login: eski foydalanuvchining audio-gen tarixi grid'da qolib ketmasin
+  window.axAGClearRecent=function(){ ag.recent=[]; ag.recentLoaded=false; renderAgRecent(); };
 
   ensureAgMeta().catch(function(){});
   loadAgRecent();
