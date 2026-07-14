@@ -16,7 +16,6 @@
  */
 import { prisma } from "@creative-tools/database";
 import { isS3Configured } from "../lib/s3.js";
-import { watermarkAssetAvailable } from "../lib/optimize-preview.js";
 import { generateStockWatermarkedDerivatives } from "../lib/stock-derivatives.js";
 
 async function main() {
@@ -24,10 +23,7 @@ async function main() {
     console.error("S3/GCS sozlanmagan (AWS_S3_BUCKET/AWS_ACCESS_KEY_ID) — backfill ma'nosiz.");
     process.exit(1);
   }
-  if (!watermarkAssetAvailable()) {
-    console.error("Suv belgisi rasmi (apps/api/assets/watermark.png) topilmadi — backfill to'xtatildi.");
-    process.exit(1);
-  }
+  // P1 (owner 2026-07-14): stock preview endi TOZA past-res — suv belgisi png shart emas.
   const dryRun = process.env.DRY_RUN === "1";
   const idArgs = process.argv.slice(2).filter((a) => a && !a.startsWith("--"));
   const all = process.argv.includes("--all");

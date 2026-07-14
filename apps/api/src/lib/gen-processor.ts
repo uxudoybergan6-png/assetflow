@@ -18,7 +18,6 @@ import {
   makeVideoPreviewFile,
   probeMediaDimensions,
 } from "./optimize-preview.js";
-import { makeGenWatermarkFromBuffer } from "./gen-watermark.js"; // P4 (14b) — FREE reja SUV BELGILI nusxa
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -1332,7 +1331,7 @@ export async function processGeneration(genId: string): Promise<void> {
             : useMagnific
               ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
-      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null; displayKey: string | null; watermarkKey: string | null; width: number | null; height: number | null } | { ok: false; error: string };
+      type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null; displayKey: string | null; width: number | null; height: number | null } | { ok: false; error: string };
       const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
         const out = await genOne();
         if (!out.ok) return { ok: false, error: out.error };
@@ -1340,9 +1339,8 @@ export async function processGeneration(genId: string): Promise<void> {
         const p = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
         // P4/P9: bufer scope'da ekan thumb (512) + display (1280 WebP) + o'lcham — grid tez + Retina aniq.
         const th = await makeImageThumb(p.key, out.data);
-        // P4 (14b): bufer scope'da SUV BELGILI nusxa (FREE yuklab olish/import) — bir marta, keshlanadi.
-        const watermarkKey = await makeGenWatermarkFromBuffer(p.key, out.data, "image");
-        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl, displayKey: th.displayKey, watermarkKey, width: th.width, height: th.height };
+        // P1 (owner 2026-07-14): AI-gen HECH QACHON suv belgilanmaydi (kredit = to'lov). watermarkKey yozilmaydi.
+        return { ok: true, url: p.url, key: p.key, sizeBytes: p.sizeBytes, thumbKey: th.thumbKey, thumbUrl: th.thumbUrl, displayKey: th.displayKey, width: th.width, height: th.height };
       });
       // ❗ TIMEOUT ≠ REFUND: birortasi poll-timeout sentinel bo'lsa → "running" qoldiramiz, KREDIT
       // QAYTARMAYMIZ (reconcile 10 daq hal qiladi). Tekshiruv refund/asset YARATISHDAN OLDIN.
@@ -1358,8 +1356,8 @@ export async function processGeneration(genId: string): Promise<void> {
           // aspectRatio = EFEKTIV (klamplangan) nisbat — thumbnail ramka nisbati generatsiya bilan mos bo'lsin.
           // P4: thumbUrl endi HAQIQIY kichik thumb (bo'lmasa to'liq rasm — eski xatti-harakat).
           // P9: displayKey (1280 WebP) + width/height (haqiqiy piksellar) qo'shildi.
-          // P4 (14b): watermarkKey — FREE reja yuklab olish/import shu suv belgili nusxani oladi.
-          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, watermarkKey: s.watermarkKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
+          // P1 (owner 2026-07-14): AI-gen HECH QACHON suv belgilanmaydi (kredit = to'lov). watermarkKey yozilmaydi.
+          data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
       }
       // P19.1 — muvaffaqiyatli tugadi: saqlangan fal-image job'ni tozalaymiz (no-op agar yo'q) →
@@ -1387,10 +1385,9 @@ export async function processGeneration(genId: string): Promise<void> {
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
-      // P4 (14b): FREE reja yuklab olish uchun sting-tegli suv belgili nusxa (bir marta, keshlanadi).
-      const watermarkKey = await makeGenWatermarkFromBuffer(key, out.data, gen.mode);
+      // P1 (owner 2026-07-14): AI-gen HECH QACHON suv belgilanmaydi (kredit = to'lov). watermarkKey yozilmaydi.
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, watermarkKey, sizeBytes },
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, sizeBytes },
       });
     } else if (model.feature === "text-to-sfx") {
       // ElevenLabs SFX (sync, RAW mp3). duration ixtiyoriy (0.5–22s).
@@ -1404,10 +1401,9 @@ export async function processGeneration(genId: string): Promise<void> {
       if (!out.ok) return void (await fail(out.error));
       const fmt = detectMediaFormat(out.data, { ext: "mp3", contentType: "audio/mpeg" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.data, fmt.ext, fmt.contentType);
-      // P4 (14b): FREE reja yuklab olish uchun sting-tegli suv belgili nusxa (bir marta, keshlanadi).
-      const watermarkKey = await makeGenWatermarkFromBuffer(key, out.data, gen.mode);
+      // P1 (owner 2026-07-14): AI-gen HECH QACHON suv belgilanmaydi (kredit = to'lov). watermarkKey yozilmaydi.
       await prisma.genAsset.create({
-        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, watermarkKey, sizeBytes },
+        data: { generationId: genId, type: ASSET_TYPE.audio, url, resultKey: key, sizeBytes },
       });
     } else if (
       model.feature === "text-to-video" ||
@@ -1451,12 +1447,10 @@ export async function processGeneration(genId: string): Promise<void> {
       const fmt = detectMediaFormat(out.buf, { ext: "mp4", contentType: "video/mp4" });
       const { url, key, sizeBytes } = await persist(gen.userId, genId, out.buf, fmt.ext, fmt.contentType);
       const poster = await makeVideoPoster(key, out.buf);
-      // P4 (14b): FREE reja yuklab olish/import uchun 720p+markaziy suv belgili nusxa (bir marta, keshlanadi).
-      const watermarkKey = await makeGenWatermarkFromBuffer(key, out.buf, "video");
+      // P1 (owner 2026-07-14): AI-gen HECH QACHON suv belgilanmaydi (kredit = to'lov). watermarkKey yozilmaydi.
       await prisma.genAsset.create({
         // P9.2: previewKey (720p hover) + width/height qo'shildi.
-        // P4 (14b): watermarkKey — FREE reja yuklab olish/import shu suv belgili nusxani oladi.
-        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, previewKey: poster.previewKey, watermarkKey, width: poster.width, height: poster.height, aspectRatio, sizeBytes },
+        data: { generationId: genId, type: ASSET_TYPE.video, url, resultKey: key, thumbUrl: poster.thumbUrl ?? url, thumbKey: poster.thumbKey, previewKey: poster.previewKey, width: poster.width, height: poster.height, aspectRatio, sizeBytes },
       });
       await clearProviderJob(genId);
     } else {

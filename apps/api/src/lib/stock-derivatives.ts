@@ -12,28 +12,28 @@ import {
   s3ObjectExists,
 } from "./s3.js";
 import {
-  watermarkVideoToPreview,
-  watermarkImageFile,
-  watermarkAudioToPreview,
+  makeVideoPreviewFile,
+  downscaleImageToPreview,
+  downscaleAudioToPreview,
   extractVideoPosterFrame,
   makeAudioWaveformThumb,
-  watermarkAssetAvailable,
 } from "./optimize-preview.js";
 import { syncTemplateAssetKeys } from "./asset-state.js";
 import { captureException } from "./sentry.js";
 
 /**
- * P4 — STOCK suv belgili derivativlar.
+ * 🔴 P1 (owner qarori 2026-07-14) — STOCK TOZA PAST-RES derivativlar.
  *
- * kind='stock' item uchun TOZA pack'dan (asl fayl) suv belgili preview (+ thumb)
- * derivativlarini yaratadi va `templates/<id>/preview.*` / `thumb.*` kalitlariga
- * yozadi. Bu kalitlar `isPublicReadKey` allow-list'ida OMMAVIY (CDN orqali beriladi) —
- * shu bois ular AYNAN suv belgili nusxa bo'lishi shart. Pack (toza asl) TEGILMAYDI:
- * u private/gated qoladi (pullik yuklab olishda `guardDownloadable` beradi). Preview
- * HECH QACHON pack'ning nusxasi emas — u alohida SUV BELGILI derivativ (P4.1).
+ * kind='stock' item uchun TOZA pack'dan (asl fayl) SUV BELGISIZ lekin ATAYLAB PAST-RES
+ * preview (+ thumb) derivativlarini yaratadi va `templates/<id>/preview.*` / `thumb.*`
+ * kalitlariga yozadi. Bu kalitlar `isPublicReadKey` allow-list'ida OMMAVIY (CDN). DRM
+ * endi = REZOLYUTSIYA/BITRATE (logo/sting EMAS): video ≤720p, rasm ≤1280px o'rtacha sifat,
+ * audio 96k. Pack (to'liq sifat asl) TEGILMAYDI: u private/gated qoladi (pullik yuklab
+ * olishda `guardDownloadable` beradi; Free limitdan keyin consumeDownload 403). Preview
+ * HECH QACHON pack'ning to'liq nusxasi emas — u alohida past-res derivativ.
  *
- * 🔴 LEAK himoyasi: yozishdan keyin BOSHQA kengaytmali toza sibling kalitlar
- * (masalan eski `thumb.png`, `preview.mov`) O'CHIRILADI — aks holda toza nusxa
+ * 🔴 LEAK himoyasi: yozishdan keyin BOSHQA kengaytmali sibling kalitlar (masalan eski
+ * `thumb.png`, `preview.mov`) O'CHIRILADI — aks holda eski (ehtimol to'liq sifat) nusxa
  * public URL bilan sizib chiqadi.
  *
  * Video shablonlar (kind='template') bu funksiyaga KELMAYDI — chaqiruvchi kind
@@ -45,12 +45,8 @@ export async function generateStockWatermarkedDerivatives(id: string): Promise<b
     where: { id },
     select: { id: true, kind: true, stockType: true },
   });
-  // Faqat stock — template'ning preview'iga (render) HECH QACHON suv belgisi qo'ymaymiz.
+  // Faqat stock — template'ning preview'iga (render) tegmaymiz.
   if (!row || row.kind !== "stock") return false;
-  if (!watermarkAssetAvailable()) {
-    console.warn(`[stock-wm] suv belgisi rasmi topilmadi — ${id} derivativ yaratilmadi (leak oldini olish)`);
-    return false;
-  }
   const packKey = await resolveS3AssetKey(id, "pack");
   if (!packKey) {
     console.warn(`[stock-wm] pack (toza asl) topilmadi — ${id}`);
@@ -71,11 +67,12 @@ export async function generateStockWatermarkedDerivatives(id: string): Promise<b
     const ensure: string[] = [];
     if (stockType === "video") {
       const prev = path.join(tmpDir, "preview.mp4");
-      if (!(await watermarkVideoToPreview(srcPath, prev))) throw new Error("video watermark failed");
+      // TOZA 720p preview (suv belgisiz) — makeVideoPreviewFile (ovozsiz, CRF28).
+      if (!(await makeVideoPreviewFile(srcPath, prev))) throw new Error("video preview failed");
       const previewKey = `templates/${id}/preview.mp4`;
       await uploadFileToS3(prev, previewKey, "video/mp4");
       ensure.push(previewKey);
-      // Poster thumb SUV BELGILI preview'DAN (ya'ni suv belgili) — grid karta rasmi.
+      // Poster thumb past-res preview'DAN — grid karta rasmi (toza).
       const poster = path.join(tmpDir, "thumb.jpg");
       if (await extractVideoPosterFrame(prev, poster)) {
         const thumbKey = `templates/${id}/thumb.jpg`;
@@ -84,17 +81,17 @@ export async function generateStockWatermarkedDerivatives(id: string): Promise<b
       }
     } else if (stockType === "photo") {
       // Photo previewi rasm — `preview` kaliti faqat video kengaytmalarini hal qiladi,
-      // shu bois photo'da display = SUV BELGILI `thumb` (grid ham, katta ko'rinish ham).
+      // shu bois photo'da display = `thumb` (grid ham, katta ko'rinish ham). TOZA ≤1280px.
       const thumbKey = `templates/${id}/thumb.jpg`;
       const th = path.join(tmpDir, "thumb.jpg");
-      if (!(await watermarkImageFile(srcPath, th, 1280))) throw new Error("image watermark failed");
+      if (!(await downscaleImageToPreview(srcPath, th, 1280))) throw new Error("image preview failed");
       await uploadFileToS3(th, thumbKey, "image/jpeg");
       ensure.push(thumbKey);
     } else if (stockType === "music" || stockType === "sfx") {
-      // Eshitiladigan teg (sting) bilan suv belgili preview (P4). Asl toza pack'da qoladi.
+      // TOZA past-bitrate (96k) preview (sting YO'Q). Asl to'liq sifat pack'da qoladi.
       const previewKey = `templates/${id}/preview.mp3`;
       const prev = path.join(tmpDir, "preview.mp3");
-      if (!(await watermarkAudioToPreview(srcPath, prev))) throw new Error("audio watermark failed");
+      if (!(await downscaleAudioToPreview(srcPath, prev))) throw new Error("audio preview failed");
       await uploadFileToS3(prev, previewKey, "audio/mpeg");
       ensure.push(previewKey);
       // P1.9 — waveform thumb (grid karta rasmi; audio'da vizual media yo'q). Xato → o'tkazamiz.

@@ -704,7 +704,61 @@ export async function makeAudioWaveformThumb(
   }
 }
 
-// ── P4 — STOCK SUV BELGISI ffmpeg quvurlari ──────────────────────────────────
+// ── P1 (owner 2026-07-14) — STOCK TOZA PAST-RES preview quvurlari ────────────
+// Suv belgisi (logo/sting) OLIB TASHLANDI. DRM endi = REZOLYUTSIYA/BITRATE: preview
+// toza lekin ataylab past-res; to'liq sifat asl FAQAT private `pack` da qoladi. Video
+// uchun `makeVideoPreviewFile` (720p, ovozsiz) qayta ishlatiladi.
+
+/** STOCK rasm previewi/thumbi — TOZA, uzun chekka ≤maxLong, o'rtacha sifat (q:v 5).
+ *  Suv belgisi yo'q; past-res DRM. Xato → false. */
+export async function downscaleImageToPreview(
+  inputPath: string,
+  outPath: string,
+  maxLong = 1280
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath)) return false;
+  const scale = `scale='if(gt(iw,ih),min(${maxLong},iw),-2)':'if(gt(iw,ih),-2,min(${maxLong},ih))'`;
+  try {
+    await runFfmpeg(
+      ["-y", "-threads", "1", "-i", inputPath, "-vf", scale, "-frames:v", "1", "-q:v", "5", outPath],
+      { timeout: 45_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
+/** STOCK audio previewi — TOZA (sting YO'Q) lekin KAMAYTIRILGAN bitrate (96k stereo).
+ *  Past-res DRM; to'liq sifat asl pack'da. Xato → false. */
+export async function downscaleAudioToPreview(
+  inputPath: string,
+  outPath: string
+): Promise<boolean> {
+  if (!fs.existsSync(inputPath)) return false;
+  try {
+    await runFfmpeg(
+      [
+        "-y", "-threads", "1",
+        "-i", inputPath,
+        "-vn",
+        "-ar", "44100",
+        "-ac", "2",
+        "-c:a", "libmp3lame",
+        "-b:a", "96k",
+        outPath,
+      ],
+      { timeout: 180_000 }
+    );
+    return fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
+  } catch {
+    try { if (fs.existsSync(outPath)) fs.unlinkSync(outPath); } catch { /* */ }
+    return false;
+  }
+}
+
+// ── P4 — STOCK SUV BELGISI ffmpeg quvurlari (DORMANT — endi chaqirilmaydi) ─────
 // Hammasi shu fayldagi `runFfmpeg` semaphore'i ostida (yangi quvur/semaphore YO'Q —
 // P4 talabi). Suv belgisi = markazda, yarim-shaffof `WATERMARK_PNG` overlay'i,
 // `scale2ref` bilan asos kengligining ~40% ga o'lchanadi (nisbat saqlanadi). Manba

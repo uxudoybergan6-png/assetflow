@@ -109,22 +109,25 @@ function genDownloadName(mode: string | undefined, resultKey: string, contentTyp
 
 // QA-FIX #12/#13: projects.ts ham qayta ishlatadi (gen media imzolash bitta joyda)
 //
-// 🔴 P4 (14b) — REJA-ASOSLI SUV BELGISI (owner qarori 2026-07-13, A varianti). Bu funksiya
-// gen media URL'larini imzolashda YAGONA darvoza. Invariantlar:
-//   1) `url` + `downloadUrl` (asosiy fayl / yuklab olish / import) — TOZA asl `resultKey`ni
-//      FAQAT pullik reja (PRO/STUDIO) oladi. FREE reja SUV BELGILI nusxani (`watermarkKey`)
-//      oladi; wm hali yo'q (eski qator) bo'lsa — kichik display derivativi (4K toza HECH QACHON).
-//   2) `thumbUrl`/`displayUrl`/`previewUrl` (ko'rsatish derivativlari) — HAMMAGA toza, LEKIN
-//      hech qachon `resultKey`ni imzolamaydi (kichik derivativ yoki null). Bu bilan FREE hech
-//      qanday yo'l bilan toza asl havolasini ololmaydi (owner talabi).
-//   3) `viewerIsPaid` SERVERDA hisoblanadi (ensurePluginProfile + isPaidPlan) — klientga ishonmaydi.
+// 🔴 P1 — AI-GEN YETKAZISH DARVOZASI (owner qarori 2026-07-14). Bu funksiya gen media
+// URL'larini imzolashda YAGONA darvoza. Invariantlar (yangi owner modeli):
+//   1) `url` + `downloadUrl` (asosiy fayl / yuklab olish / import) — HAR DOIM TOZA asl
+//      `resultKey`. AI generatsiya = ijodkorning O'Z pullik ishi (kredit = to'lov), shu bois
+//      paid VA free ikkalasi ham toza asl oladi. AI-gen HECH QACHON suv belgilanmaydi
+//      (gen-processor endi watermarkKey yozmaydi; ustun schema'da qoladi, dormant).
+//   2) `thumbUrl`/`displayUrl`/`previewUrl` (ko'rsatish derivativlari) — kichik toza derivativ;
+//      grid/hover uchun. (P9: bular endi barqaror CDN havolasi — pastda.)
+//   3) `viewerIsPaid` SERVERDA hisoblanadi (chaqiruvchilar uzatadi) — hozircha AI-gen
+//      yetkazishni GATE QILMAYDI, lekin signature'da saqlanadi (kelajakdagi siyosat uchun).
+//   Stock DRM bu yerda EMAS: stock preview past-res (stock-derivatives) + Free limitdan keyin
+//   consumeDownload 403 — alohida yo'l (catalog).
 // Money-zone (kredit/quote/refund) TEGILMAYDI — faqat yetkazish (yuklab olish) yo'li.
 export async function hydrateGenAssets<T extends { mode?: string; prompt?: string | null; assets: Array<{ id?: string; resultKey: string | null; url: string; thumbUrl: string | null; thumbKey?: string | null; displayKey?: string | null; previewKey?: string | null; watermarkKey?: string | null }> }>(
   holder: T,
   opts: { viewerIsPaid: boolean }
 ): Promise<T> {
   if (!isS3Configured()) return holder;
-  const paid = opts.viewerIsPaid;
+  void opts.viewerIsPaid; // P1 (owner 2026-07-14): AI-gen yetkazish endi rejaga bog'liq emas (saqlanadi)
   const sign = (key: string, name?: string) => getSignedDownloadUrl(key, 3600, name);
   await Promise.all(
     holder.assets.map(async (a) => {
@@ -138,32 +141,13 @@ export async function hydrateGenAssets<T extends { mode?: string; prompt?: strin
       if (a.thumbKey) a.thumbUrl = await sign(a.thumbKey);
       else if (a.displayKey) a.thumbUrl = aa.displayUrl;
       else a.thumbUrl = null; // eski: fresh(resultKey) — endi toza asl thumb sifatida chiqmaydi
-      // (1) ASOSIY fayl + yuklab olish — REJA DARVOZASI.
+      // (1) ASOSIY fayl + yuklab olish.
+      // 🔴 P1 (owner 2026-07-14): AI-gen HAR DOIM TOZA asl — paid VA free bir xil (kredit = to'lov).
+      // Ijodkorning o'z generatsiyasi; suv belgisi yo'q. `url` inline preview, `downloadUrl` attachment.
       const contentType = meta?.contentType ?? aa.contentType ?? null;
-      if (paid) {
-        // Pullik — TOZA asl (mavjud xatti-harakat). `url` inline preview, `downloadUrl` attachment.
-        const fresh = await sign(a.resultKey);
-        a.url = fresh;
-        aa.downloadUrl = await sign(a.resultKey, genDownloadName(holder.mode, a.resultKey, contentType, holder.prompt));
-      } else if (a.watermarkKey) {
-        // FREE — SUV BELGILI nusxa (private; qisqa muddatli signed havola). Fayl nomi/kengaytmasi
-        // wm kalitidan (video mp4, audio mp3, rasm jpg) olinadi.
-        const wm = await sign(a.watermarkKey);
-        a.url = wm;
-        aa.downloadUrl = await sign(a.watermarkKey, genDownloadName(holder.mode, a.watermarkKey, null, holder.prompt));
-      } else {
-        // FREE + wm hali yo'q (backfill'gacha eski qator): TOZA 4K asl BERILMAYDI. Kichik display
-        // derivativi (displayKey→previewKey→thumbKey) — inline ko'rish + yuklab olish; 4K toza chiqmaydi.
-        const smallKey = a.displayKey || a.previewKey || a.thumbKey || null;
-        if (smallKey) {
-          a.url = await sign(smallKey);
-          aa.downloadUrl = await sign(smallKey, genDownloadName(holder.mode, smallKey, null, holder.prompt));
-        } else {
-          // Xavfsiz derivativ yo'q — toza asl'ni bermaslik uchun url/download bo'sh (klient placeholder).
-          a.url = a.thumbUrl || "";
-          aa.downloadUrl = null;
-        }
-      }
+      const fresh = await sign(a.resultKey);
+      a.url = fresh;
+      aa.downloadUrl = await sign(a.resultKey, genDownloadName(holder.mode, a.resultKey, contentType, holder.prompt));
       if (meta) {
         aa.sizeBytes = meta.sizeBytes;
         aa.contentType = meta.contentType;
