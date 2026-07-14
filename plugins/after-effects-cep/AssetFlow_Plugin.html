@@ -1759,20 +1759,29 @@ html.cep-mode .pack-dropbar{display:flex}
    o'rniga YUQORIDA, header ostida ixcham karta. HAMMA turlar t-success'ning toza karta
    uslubida: tur ikonkasi + aksent rang + ixcham xabar; yumshoq slide-down. z-index
    saqlangan — lightbox ustida. toast()/showToast API o'zgarmagan. */
+/* P23 — web bilan bir xil: pastda-markazda STACK (maks 3), 12px radius, tur ranglari,
+   inline SVG ikon, slide/fade auto-dismiss. showToast() imzosi O'ZGARMAYDI. */
+.toaststack{
+  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  z-index:100000; /* F-19: toast DOIM lightbox (9992) ustida */
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  width:min(330px,86vw);pointer-events:none;
+}
 .toast{
-  position:fixed;top:52px;left:50%;
-  transform:translateX(-50%) translateY(-14px);
-  width:min(330px,86vw);text-align:left;
+  width:100%;box-sizing:border-box;text-align:left;
   background:var(--surface-2);color:var(--text);
-  padding:10px 12px;border-radius:10px;
+  padding:11px 13px;border-radius:12px;
   font-size:11.5px;font-weight:500;line-height:1.45;
   border:1px solid rgba(255,255,255,.1);
   box-shadow:0 14px 34px rgba(0,0,0,.55);
-  opacity:0;transition:all .28s cubic-bezier(.34,1.4,.64,1);
-  z-index:100000;white-space:normal; /* F-19: toast DOIM lightbox (9992) ustida */
-  display:flex;align-items:flex-start;gap:9px;
+  opacity:0;transform:translateY(14px);transition:all .28s cubic-bezier(.34,1.4,.64,1);
+  white-space:normal;display:flex;align-items:flex-start;gap:9px;pointer-events:auto;
 }
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.t-info{border-left:3px solid var(--accent-2,#6cf)}
+.toast.t-success{border-left:3px solid var(--accent)}
+.toast.t-warning{border-left:3px solid #e6b335}
+.toast.t-error{border-left:3px solid var(--red)}
 .toast .toast-ic{flex:none;display:flex;margin-top:1px}
 .toast .toast-msg{font-size:11.5px;font-weight:500;color:var(--text);min-width:0;overflow-wrap:anywhere}
 .toast .toast-sp{flex:1}
@@ -4714,7 +4723,7 @@ html.home-mode #homePage{display:block!important}
 </div>
 
 <div class="drag-ghost" id="dragGhost">⚡ <span id="ghostName"></span></div>
-<div class="toast" id="toast"></div>
+<div class="toaststack" id="toastStack"></div>
 
 <div class="af-progress" id="afProgress">
   <div class="af-progress-row">
@@ -8194,42 +8203,36 @@ function toggleExpand(){
   else{c.style.width=c.dataset.w||'340px';c.style.height=c.dataset.h||'720px';expanded=false;}
 }
 
-/* ===== Toast — turli xil (success/error/warning/info) + navbat ===== */
-const __toastQueue=[];
-let __toastBusy=false;
+/* ===== Toast — turli xil (success/error/warning/info) · pastda STACK (P23) ===== */
 // Success (a4) kartadagi lime check-circle ikonasi (Phosphor fill · inline SVG)
 const TOAST_CHECK='<svg width="15" height="15" viewBox="0 0 256 256" fill="#C2F04A"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+// P23 — STACK toast (web pariteti): har xabar alohida karta, pastda-markazda ustma-ust (maks 3),
+// tur ikonkasi + rang, slide/fade auto-dismiss. showToast() imzosi O'ZGARMAGAN (msg,type,elapsedSec).
+const TOAST_TYPE_IC={
+  error:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+  warning:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>'
+};
 function showToast(msg,type,elapsedSec){
   let t=type||'info';
   if(t==='danger') t='error';           // catalog.js eski "danger" → error
   if(['success','error','warning','info'].indexOf(t)<0) t='info';
-  const item={msg:String(msg==null?'':msg),type:t};
-  // O'tgan vaqt — faqat haqiqiy o'lchangan bo'lsa (success kartasida o'ngda)
-  if(t==='success'&&elapsedSec!=null&&isFinite(elapsedSec)&&elapsedSec>=0.1)
-    item.elapsed=elapsedSec.toFixed(1)+'s';
-  __toastQueue.push(item);
-  if(!__toastBusy)__drainToasts();
-}
-function __drainToasts(){
-  const el=document.getElementById('toast');
-  if(!el){__toastBusy=false;__toastQueue.length=0;return;}
-  const next=__toastQueue.shift();
-  if(!next){__toastBusy=false;return;}
-  __toastBusy=true;
-  // P17: HAMMA turlar bir xil ixcham karta — tur ikonkasi + xabar (+success'da elapsed)
-  const TOAST_TYPE_IC={
-    error:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
-    warning:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
-    info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>'
-  };
-  const elapsed=(next.type==='success'&&next.elapsed)?`<span class="toast-elapsed">${escHtml(next.elapsed)}</span>`:'';
-  const icon=next.type==='success'?TOAST_CHECK:`<span class="toast-ic">${TOAST_TYPE_IC[next.type]||TOAST_TYPE_IC.info}</span>`;
-  el.innerHTML=`${icon}<span class="toast-msg">${escHtml(next.msg)}</span><span class="toast-sp"></span>${elapsed}`;
-  el.className='toast t-'+next.type+' show';
-  const dur=next.type==='error'?4200:(next.type==='warning'?3400:2600);
+  const stack=document.getElementById('toastStack');
+  if(!stack)return;
+  const elapsed=(t==='success'&&elapsedSec!=null&&isFinite(elapsedSec)&&elapsedSec>=0.1)
+    ? `<span class="toast-elapsed">${escHtml(elapsedSec.toFixed(1)+'s')}</span>` : '';
+  const icon=t==='success'?TOAST_CHECK:`<span class="toast-ic">${TOAST_TYPE_IC[t]||TOAST_TYPE_IC.info}</span>`;
+  const el=document.createElement('div');
+  el.className='toast t-'+t;
+  el.innerHTML=`${icon}<span class="toast-msg">${escHtml(String(msg==null?'':msg))}</span><span class="toast-sp"></span>${elapsed}`;
+  stack.appendChild(el);
+  // Maks 3 ustma-ust — eng eskisini darhol olib tashla.
+  while(stack.children.length>3){ const old=stack.firstChild; if(old&&old.parentNode)old.parentNode.removeChild(old); }
+  requestAnimationFrame(()=>{ el.classList.add('show'); });
+  const dur=t==='error'?4200:(t==='warning'?3400:2600);
   setTimeout(()=>{
     el.classList.remove('show');
-    setTimeout(__drainToasts,260);       // chiqib ketishini kutib, keyingisini ko'rsatamiz
+    setTimeout(()=>{ if(el.parentNode)el.parentNode.removeChild(el); },300); // fade tugagach DOM'dan olib tashla
   },dur);
 }
 
@@ -11960,8 +11963,22 @@ window.afGallery=(function(){
       if(!uniq.length){ r.innerHTML='<div class="empt emptyhero"><span class="eh-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span><b>No generations yet</b><span class="eh-s">Type a prompt below — results will appear here</span><svg class="eh-ar" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></div>'; updRecentBatch(); return; }
     }
     var ctx=igRecentCtx(); var pctx={ onCancel:function(it){ if(it.job)cancelJob(it.job); } };
-    pend.forEach(function(it){ r.appendChild(window.afRecent.pendingCard(it,pctx)); }); // gen ishlamoqda — progress karta
-    uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY natija karta
+    // P23 — element identity: mavjud natija kartalarini URL bo'yicha QAYTA ishlatamiz (bir gen tugaganda
+    // butun grid qayta yaratilmasin → boshqa kartalarning <img>/<video> tugunlari saqlanadi, flash/reflow yo'q).
+    // Select-mode'da (checkbox holati) yoki xato'da to'liq qayta quramiz (kam uchraydi, foydalanuvchi boshlaydi).
+    var reuse=!st.recentSelect;
+    var cache=renderRecentGrid._nc||(renderRecentGrid._nc={});
+    var frag=document.createDocumentFragment();
+    pend.forEach(function(it){ frag.appendChild(window.afRecent.pendingCard(it,pctx)); }); // pending — har doim yangi
+    var used={};
+    uniq.slice(0,12).forEach(function(it){
+      var key=it.url; var node=reuse?cache[key]:null;
+      if(!node){ node=window.afRecent.card(it,ctx); if(reuse)cache[key]=node; }
+      used[key]=1;
+      frag.appendChild(node); // mavjud tugunni KO'CHIRADI (identity saqlanadi), yangisini qo'shadi
+    });
+    for(var k in cache){ if(!used[k])delete cache[k]; } // eskirgan keshni tozalash
+    r.innerHTML=''; r.appendChild(frag); // reused tugunlar frag'ga ko'chgan → wipe ularni yo'qotmaydi
     updRecentBatch();
   }
   // bitta gen o'chirish (DELETE /gen/:jobId) — tasdiq bilan

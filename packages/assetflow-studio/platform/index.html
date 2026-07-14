@@ -19113,12 +19113,17 @@ class Component extends DCLogic {
       });
     }
   }
+  // P23 — imzo-darvoza: idle poll (credits/sessions/projects/history) BIR XIL ma'lumot qaytarganda
+  //   setState QILMAYMIZ. Bekorga setState → galereya region qayta render → <img>/<video> tugunlari
+  //   qayta yaratiladi → gradient flash. Faqat kichik imzo o'zgarganda render qilamiz.
+  _sigChanged(key, sig) { this._sigs = this._sigs || {}; if (this._sigs[key] === sig) return false; this._sigs[key] = sig; return true; }
   async refreshCredits() {
     if (this._creditsBusy) return; this._creditsBusy = true; // P16 (SPEED) — parallel dublikat so'rov yo'q
     try {
       const c = await FFAPI.credits();
       const st = (c && c.storage) || null; // FAZA 2 #20 — storage kvota (X / Y GB)
-      this.setState({
+      const sig = [c.aiCredits || 0, c.plan || 'free', st ? (st.usedBytes || 0) : 0, st ? (st.quotaBytes || 0) : 0].join('|');
+      if (this._sigChanged('credits', sig) || !this.state.creditsLoaded) this.setState({
         credits: c.aiCredits || 0, creditsLoaded: true, plan: c.plan || 'free',
         storageUsed: st ? (st.usedBytes || 0) : 0,
         storageQuota: st ? (st.quotaBytes || 0) : 0,
@@ -19239,7 +19244,9 @@ class Component extends DCLogic {
       const raw = r.items || [];
       this._cacheSet('hist', raw); // P9 — keyingi boot uchun
       const gens = raw.filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
-      this.setState(s => ({ gens, gensLoaded: true, gensCapped: raw.length >= 60, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
+      // P23 — imzo: id+status+thumb; bir xil bo'lsa (idle qayta-yuklash) setState YO'Q (flash yo'q).
+      const sig = gens.map(g => g.id + ':' + (g.thumb || g.url || '')).join('|') + '#' + (raw.length >= 60 ? 1 : 0);
+      if (this._sigChanged('hist', sig) || !this.state.gensLoaded) this.setState(s => ({ gens, gensLoaded: true, gensCapped: raw.length >= 60, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
     } catch (e) {}
     this._histBusy = false;
   }
@@ -19319,7 +19326,12 @@ class Component extends DCLogic {
   async loadSessions() {
     // P9 — issiq boot: keshlangan sessiyalarni darhol ko'rsat, so'ng fon so'rovi ustiga yozadi.
     if (!this.state.sessionsLoaded) { const c = this._cacheGet('sess'); if (c && c.length) this.setState({ sessions: c }); }
-    try { const r = await FFAPI.sessions(); const items = r.items || []; this._cacheSet('sess', items); this.setState({ sessions: items, sessionsLoaded: true }); } catch (e) {}
+    try {
+      const r = await FFAPI.sessions(); const items = r.items || []; this._cacheSet('sess', items);
+      // P23 — imzo: id+title+count+cover; bir xil bo'lsa idle qayta-yuklashda setState YO'Q.
+      const sig = items.map(x => x.id + ':' + (x.title || '') + ':' + (x.count != null ? x.count : (x.doneCount || 0)) + ':' + ((x.cover && x.cover.thumb) || x.coverUrl || '')).join('|');
+      if (this._sigChanged('sess', sig) || !this.state.sessionsLoaded) this.setState({ sessions: items, sessionsLoaded: true });
+    } catch (e) {}
   }
   async openSessionById(id) {
     // Sessiyani ko'rish + davom ettirish: keyingi gen'lar ham shu sessiyaga boradi
@@ -19338,7 +19350,12 @@ class Component extends DCLogic {
   async loadProjects() {
     // P9 — issiq boot: keshlangan loyihalarni darhol ko'rsat, so'ng fon so'rovi ustiga yozadi.
     if (!this.state.projectsLoaded) { const c = this._cacheGet('proj'); if (c && c.length) this.setState({ projects: c }); }
-    try { const r = await FFAPI.projects(); const items = r.items || []; this._cacheSet('proj', items); this.setState({ projects: items, projectsLoaded: true }); } catch (e) {}
+    try {
+      const r = await FFAPI.projects(); const items = r.items || []; this._cacheSet('proj', items);
+      // P23 — imzo: id+name+count+updated; bir xil bo'lsa idle qayta-yuklashda setState YO'Q.
+      const sig = items.map(x => x.id + ':' + (x.name || '') + ':' + (x.count || 0) + ':' + (x.updatedAt || '')).join('|');
+      if (this._sigChanged('proj', sig) || !this.state.projectsLoaded) this.setState({ projects: items, projectsLoaded: true });
+    } catch (e) {}
   }
   async openProjectById(id) {
     this.setState({ projLoading: true, projDelArm: false });
