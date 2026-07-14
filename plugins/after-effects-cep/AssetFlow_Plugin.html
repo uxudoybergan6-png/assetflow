@@ -8969,15 +8969,23 @@ function afApplyAvatar(u){
   const url=raw?raw+(raw.indexOf('?')<0?'?':'&')+'v='+__afAvaBust:null;
   const initial=((u&&(u.name||u.email))||'U').trim().charAt(0).toUpperCase();
   const acc=document.getElementById('accAvatar');
-  if(acc){
-    if(url){acc.textContent='';acc.style.backgroundImage='url("'+url+'")';}
-    else{acc.style.backgroundImage='';acc.textContent=u?initial:'?';}
+  const tiles=document.querySelectorAll('.ai-ava,.hd-ava,.af-tb-ava');
+  tiles.forEach(function(b){ b.classList.toggle('ring',!!u); }); // #11: lime halqa = tizimga kirilgan
+  function showInitials(){
+    if(acc){acc.style.backgroundImage='';acc.textContent=u?initial:'?';}
+    tiles.forEach(function(b){b.style.backgroundImage='';});
   }
-  document.querySelectorAll('.ai-ava,.hd-ava,.af-tb-ava').forEach(function(b){
-    if(url){b.style.backgroundImage='url("'+url+'")';b.style.backgroundSize='cover';b.style.backgroundPosition='center';}
-    else{b.style.backgroundImage='';}
-    b.classList.toggle('ring',!!u); // #11: lime halqa = tizimga kirilgan
-  });
+  // P7 — bosh harf yuklanguncha (va rasm 404/tarmoq xatosida) darhol ko'rinadi; bo'sh doira yo'q.
+  showInitials();
+  if(url){
+    const img=new Image();
+    img.onload=function(){
+      if(acc){acc.textContent='';acc.style.backgroundImage='url("'+url+'")';}
+      tiles.forEach(function(b){b.style.backgroundImage='url("'+url+'")';b.style.backgroundSize='cover';b.style.backgroundPosition='center';});
+    };
+    img.onerror=showInitials;
+    img.src=url;
+  }
 }
 
 /** #21: profil rasmini yuklash/almashtirish — POST /api/auth/avatar (plugin JWT). */

@@ -17816,6 +17816,21 @@ function ffChipEditor(el, opts) {
   commit();
   return { el, getValue, setValue, insertText, textBeforeCaret, replaceBeforeCaret, undo, redo, commit, flushTyping };
 }
+// P7 — avatar rasm URL preload-keshi: yuklanmaguncha/404 bo'lsa bosh harflarga qaytaradi (bo'sh doira emas).
+const __ffAvaCache = {};
+function ffAvaOk(url, onChange) {
+  const c = __ffAvaCache[url];
+  if (c === 'ok') return true;
+  if (c === 'fail') return false;
+  if (c !== 'pending') {
+    __ffAvaCache[url] = 'pending';
+    const img = new Image();
+    img.onload = () => { __ffAvaCache[url] = 'ok'; onChange(); };
+    img.onerror = () => { __ffAvaCache[url] = 'fail'; onChange(); };
+    img.src = url;
+  }
+  return false;
+}
 class Component extends DCLogic {
   state = {
     screen: 'landing',
@@ -21234,8 +21249,10 @@ class Component extends DCLogic {
     const userInitials = ((userName.match(/\b[\wА-Яа-яЎўҚқҒғҲҳ]/g) || ['F']).slice(0, 2).join('')).toUpperCase();
     // #21 — avatar rasmi (User.image → /api/auth/avatar/:id redirect); bust = yangilashda kesh chetlab o'tish
     const userAvatarUrl = u.avatarUrl ? (u.avatarUrl + (u.avatarUrl.indexOf('?') < 0 ? '?' : '&') + 'v=' + (this.state.avatarBust || 0)) : '';
-    const avaStyle = userAvatarUrl ? ("background-image:url('" + userAvatarUrl + "');background-size:cover;background-position:center") : '';
-    const avaText = userAvatarUrl ? '' : userInitials;
+    // P7 — rasm tasdiqlanmaguncha (yoki 404) bosh harflar ko'rinadi; bo'sh doira yo'q.
+    const avaOk = userAvatarUrl ? ffAvaOk(userAvatarUrl, () => this.forceUpdate()) : false;
+    const avaStyle = avaOk ? ("background-image:url('" + userAvatarUrl + "');background-size:cover;background-position:center") : '';
+    const avaText = avaOk ? '' : userInitials;
     const planKey = this.state.plan || 'free';
     const planLabel = planKey === 'pro' ? 'Pro plan' : (planKey === 'studio' ? 'Studio plan' : 'Free plan');
     const isFreePlan = planKey === 'free';

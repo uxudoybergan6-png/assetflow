@@ -764,7 +764,7 @@ authRouter.get("/avatar/:userId", async (req, res) => {
   }
   try {
     const url = await getSignedDownloadUrl(image, 3600);
-    res.setHeader("Cache-Control", "private, max-age=300");
+    res.setHeader("Cache-Control", "private, max-age=1800");
     res.redirect(302, url);
   } catch {
     res.status(404).json({ error: "No avatar" });
