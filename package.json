@@ -25,6 +25,8 @@
     "studio:sync": "npm run sync:web -w @creative-tools/frameflow-studio",
     "demo:clear": "node scripts/clear-assetflow-demo.mjs",
     "reconcile:plans": "node scripts/reconcile-plugin-plans.mjs",
+    "perf:seed": "node scripts/perf-seed-assets.mjs",
+    "perf:measure": "node scripts/perf-measure.mjs",
     "db:backup": "node scripts/db-backup.mjs",
     "backfill:embedvec": "node scripts/backfill-embedding-vec.mjs",
     "backfill:free-credits": "node scripts/backfill-free-credits.mjs",
