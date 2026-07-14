@@ -424,6 +424,7 @@ let UP_MODE = "bulk"; // 'bulk' (yangi yuklash) | 'single' (faqat edit — openE
 let BULK_CAT = null; // tanlangan taxon key (video-templates|luts|graphics|motion-graphics|music|sfx)
 let BULK_FILES = []; // { file, stage: 'queued'|'uploading'|'processing'|'done'|'duplicate'|'error', pct, error, id }
 let BULK_RUNNING = false;
+let BULK_SUMMARY = null; // P3 — { done, dup, err } tugagan partiya; success card ko'rsatish uchun
 
 /** Yangi bulk yuklashni boshlaydi (edit holatini tozalaydi). "Upload" tugmalari chaqiradi. */
 function startNewUpload() {
@@ -431,6 +432,7 @@ function startNewUpload() {
   UP_MODE = "bulk";
   BULK_FILES = [];
   BULK_RIGHTS = false;
+  BULK_SUMMARY = null;
   route("upload");
 }
 window.startNewUpload = startNewUpload;
@@ -483,6 +485,17 @@ function bulkClearFinished() {
   BULK_FILES = BULK_FILES.filter((b) => b.stage !== "done" && b.stage !== "duplicate");
   renderUpload();
 }
+
+/** P3 — success card "Upload more": done+dup qatorlarni tozalaydi, xato qatorlar (retry uchun)
+ *  qoladi, huquq checkbox'i qayta so'raladi (yangi partiya uchun). */
+function bulkUploadMore() {
+  if (BULK_RUNNING) return;
+  BULK_FILES = BULK_FILES.filter((b) => b.stage !== "done" && b.stage !== "duplicate");
+  BULK_SUMMARY = null;
+  BULK_RIGHTS = false;
+  renderUpload();
+}
+window.bulkUploadMore = bulkUploadMore;
 
 function bulkStageLabel(b) {
   if (b.stage === "queued") return "Waiting…";
@@ -619,6 +632,10 @@ async function startBulkIngest() {
     if (errCount) {
       toast("Upload", `${errCount} file(s) failed — see the list below`, "warn");
     }
+    // P3 — partiya tugadi (queue'da hech narsa qolmadi) va kamida bittasi o'tdi → success card.
+    if (doneCount && !BULK_FILES.some((b) => b.stage === "queued")) {
+      BULK_SUMMARY = { done: doneCount, dup: dupCount, err: errCount };
+    }
   } catch (e) {
     toast("Error", e.message || "Upload failed", "danger");
   } finally {
@@ -645,6 +662,34 @@ function bulkCatPicker() {
 function renderBulkUpload() {
   const root = document.getElementById("upRoot");
   if (!root) return;
+
+  // P3 — partiya tugagach ro'yxat abadiy osilib qolmasin: dropzone+qatorlar o'rniga
+  // qisqa xulosa karta (done+dup qatorlar yashirin, xato qatorlar retry uchun qoladi).
+  if (BULK_SUMMARY && !BULK_RUNNING) {
+    const s = BULK_SUMMARY;
+    const leftover = BULK_FILES.map((b, i) => ({ b, i })).filter(({ b }) => b.stage === "duplicate" || b.stage === "error");
+    root.innerHTML = `<div style="max-width:880px;margin:0 auto" class="col gap-20">
+      <div class="row between center">
+        <h2 class="h2" style="margin:0">Upload</h2>
+      </div>
+      <div class="card card-pad col gap-16">
+        <div class="empty" style="padding:36px 24px">
+          <div class="ico" style="color:var(--green,#82c341);border-color:var(--green,#82c341)">${ic("checkCircle")}</div>
+          <h3>${s.done} asset${s.done === 1 ? "" : "s"} sent to moderation</h3>
+          <p>They'll appear in My templates with a Pending review status.</p>
+        </div>
+        ${s.dup ? infoBanner(`${s.dup} duplicate${s.dup === 1 ? "" : "s"} skipped — already exists`, "warn") : ""}
+        ${s.err ? infoBanner(`${s.err} file${s.err === 1 ? "" : "s"} failed — see below`, "danger") : ""}
+        ${leftover.length ? `<div class="col">${leftover.map(({ b, i }) => bulkRenderRow(b, i)).join("")}</div>` : ""}
+        <div class="row gap-10" style="justify-content:center">
+          <button class="btn btn-ghost" onclick="route('templates')">View my templates</button>
+          <button class="btn btn-primary" onclick="bulkUploadMore()">${ic("upload")} Upload more</button>
+        </div>
+      </div>
+    </div>`;
+    return;
+  }
+
   const t = taxonByKey(BULK_CAT);
   const acceptAttr = t ? t.exts.join(",") : "";
   const dzBody = t
@@ -991,7 +1036,17 @@ function bindUploadFileInputs() {
 }
 
 VIEWS.upload = function(){ return `<div id="upRoot"></div>`; };
-window.afterRender.upload = function(){ renderUpload(); };
+window.afterRender.upload = function(){
+  // P3 — sidebar/topbar orqali qayta kirilganda tugagan partiya (karta ko'rsatilgan yoki
+  // hammasi done/duplicate) tozalanadi — eskirgan ro'yxat/karta abadiy osilib qolmaydi.
+  // BULK_RUNNING gate: faol yuklash o'rtasida navigatsiya progress'ni saqlaydi.
+  if (!BULK_RUNNING && (BULK_SUMMARY || (BULK_FILES.length && BULK_FILES.every((b) => b.stage === "done" || b.stage === "duplicate")))) {
+    BULK_FILES = BULK_FILES.filter((b) => b.stage !== "done" && b.stage !== "duplicate");
+    BULK_SUMMARY = null;
+    BULK_RIGHTS = false;
+  }
+  renderUpload();
+};
 
 function renderUpload(){
   // P1 (step 30) — yangi yuklash FAQAT bulk. Wizard faqat TAHRIRLASH uchun (UP_EDIT_ID).

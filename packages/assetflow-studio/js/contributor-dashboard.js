@@ -131,7 +131,7 @@
       '<div class="page-head"><div><h1 class="h2">Dashboard</h1><div class="lead">' +
         (first ? "Welcome, " + esc(first) + " — " : "") +
         "your status today and your templates.</div></div>" +
-        '<button class="btn btn-primary btn-lg" onclick="route(\'upload\')">' + ic("upload") +
+        '<button class="btn btn-primary btn-lg" onclick="startNewUpload()">' + ic("upload") +
         " Upload new template</button></div>" +
 
       '<section class="stat-grid" aria-label="Key metrics">' +
@@ -154,7 +154,7 @@
             ? ovTable(ts)
             : '<div class="card"><div class="empty"><div class="ico">' + ic("layers") +
               '</div><h3>No templates</h3><p>Upload your first motion template to get started.</p>' +
-              '<button class="btn btn-primary" onclick="route(\'upload\')">' + ic("upload") +
+              '<button class="btn btn-primary" onclick="startNewUpload()">' + ic("upload") +
               " Upload new</button></div></div>") +
         "</div>" +
       "</div>" +
