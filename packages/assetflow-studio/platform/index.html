@@ -17816,6 +17816,21 @@ function ffChipEditor(el, opts) {
   commit();
   return { el, getValue, setValue, insertText, textBeforeCaret, replaceBeforeCaret, undo, redo, commit, flushTyping };
 }
+// P8 — stock turlar uchun belgi (video-templates bo'lmasa APP_L/APP_C ilova belgisi ishlatilmaydi).
+// PLUGIN: AssetFlow_Plugin.html'da xuddi shu jadval oyna belgisi (mirror).
+const STOCK_TYPE_BADGES = {
+  'motion-graphics': { a: 'Motion', ac: '#5CC8B0' },
+  'graphics': { a: 'Graphic', ac: '#7CC4FF' },
+  'luts': { a: 'LUT', ac: '#FFB27C' },
+  'music': { a: 'Music', ac: '#F0907F' },
+  'sfx': { a: 'SFX', ac: '#E5C07B' },
+  'ai-stock': { a: 'AI', ac: '#C2F04A' },
+};
+function typeBadge(it, APP_L, APP_C) {
+  const t = it.type || 'video-templates';
+  if (t !== 'video-templates' && STOCK_TYPE_BADGES[t]) return STOCK_TYPE_BADGES[t];
+  return { a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6' };
+}
 // P7 — avatar rasm URL preload-keshi: yuklanmaguncha/404 bo'lsa bosh harflarga qaytaradi (bo'sh doira emas).
 const __ffAvaCache = {};
 function ffAvaOk(url, onChange) {
@@ -18974,9 +18989,9 @@ class Component extends DCLogic {
     this._browseT = setTimeout(() => this.loadBrowse(true), 200);
   }
   mapCatalogItems(raw, APP_L, APP_C) {
-      return raw.map((it) => ({
+      return raw.map((it) => { const tb = typeBadge(it, APP_L, APP_C); return {
         id: String(it.id), n: it.name || 'Template', c: it.catLabel || it.cat || 'Template',
-        a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6',
+        a: tb.a, ac: tb.ac,
         pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
         ori: it.orient === 'vertical' ? '9:16' : (it.orient === 'square' ? '1:1' : '16:9'),
         // §B (P2) — sifat klassifikatsiyasi endi mustahkam: "2160p"/"UHD"/"4096"/"8K" ham 4K
@@ -18998,7 +19013,7 @@ class Component extends DCLogic {
         // yuklangan-u endigina tasdiqlangan shablon ham NEW oladi. publishedAt eski
         // javobda bo'lmasa createdAt fallback.
         created: Date.parse(it.publishedAt || it.createdAt) || 0, updated: Date.parse(it.updatedAt) || 0,
-      }));
+      };});
   }
   bootData() {
     this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();

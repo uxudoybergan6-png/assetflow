@@ -5104,13 +5104,30 @@ const FF_APPS={
   resolve:{lbl:'Dr',full:'DaVinci Resolve',dot:'#FFB27C'}
 };
 /** Dastur kodi(+nav) → {lbl,full,dot}. Belgilanmagan (bo'sh) → AE (DB default);
- *  eski 'dr' kodi va nav==='luts' → DaVinci; noma'lum kodni AE'ga majburlamaymiz. */
+ *  eski 'dr' kodi → DaVinci; noma'lum kodni AE'ga majburlamaymiz. */
 function ffAppInfo(code,navHint){
   const c=String(code||'').toLowerCase();
   if(FF_APPS[c])return FF_APPS[c];
   if(c==='dr')return FF_APPS.resolve;      // eski alias
-  if(!c&&navHint==='luts')return FF_APPS.resolve; // dastur belgilanmagan LUTs → DaVinci
   return FF_APPS.ae;                         // faqat bo'sh/noma'lumda AE
+}
+
+// P8 — stock turlar (motion/graphics/luts/music/sfx) uchun belgi; ffAppInfo faqat
+// video-templates (Ae/Pr/Mn/Dr) uchun ishlatiladi. WEB: platform/index.html'da
+// STOCK_TYPE_BADGES xuddi shu jadval (mirror, {a,ac} shaklida).
+const STOCK_TYPE_BADGES={
+  motion:{lbl:'Motion',full:'Motion Graphics',dot:'#5CC8B0'},
+  graphics:{lbl:'Graphic',full:'Graphics',dot:'#7CC4FF'},
+  luts:{lbl:'LUT',full:'LUTs',dot:'#FFB27C'},
+  music:{lbl:'Music',full:'Music',dot:'#F0907F'},
+  sfx:{lbl:'SFX',full:'Sound Effects',dot:'#E5C07B'}
+};
+/** Belgi manbai: stock nav (motion/graphics/luts/music/sfx) → STOCK_TYPE_BADGES;
+ *  video-templates (yoki nav yo'q) → ffAppInfo (FF_APPS). Bu bilan LUTs stock endi
+ *  "DaVinci" taxminiga qolmaydi — o'zining LUT belgisini oladi. */
+function ffTypeBadge(code,nav){
+  if(nav&&nav!=='video'&&STOCK_TYPE_BADGES[nav])return STOCK_TYPE_BADGES[nav];
+  return ffAppInfo(code,nav);
 }
 
 const CAT_LABELS={
@@ -5201,7 +5218,7 @@ function mergeLocalUploads(){
     const thumb=u.thumbBlobId?AssetFlowStore.getBlobUrl(u.thumbBlobId):'';
     const preview=u.previewBlobId?AssetFlowStore.getBlobUrl(u.previewBlobId):'';
     const resLabel=(u.res||'4k').toUpperCase();
-    const appLabel=u.templateApp?ffAppInfo(u.templateApp,u.nav).full:'';
+    const appLabel=u.templateApp?ffTypeBadge(u.templateApp,u.nav).full:'';
     const extraBits=[];
     if(appLabel) extraBits.push(appLabel);
     if(u.extra?.colorSpace) extraBits.push(String(u.extra.colorSpace).toUpperCase());
@@ -5527,8 +5544,8 @@ function renderCard(a,i,showDl){
   const noPack=!!(pack&&pack.server&&pack.hasPack===false);
   // a.n — ichki pack kaliti (__srv_<id> / lokal kalit), JS-string sifatida ishlatiladi
   const safeName=String(a.n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-  // Ilova rozetkasi (Ae/Pr/Mn/Dr) — kanonik FF_APPS xaritasidan (§2/§11).
-  const appInfo=ffAppInfo(a.templateApp,a.nav);
+  // Tur rozetkasi: stock (Motion/Graphic/LUT/Music/SFX) yoki ilova (Ae/Pr/Mn/Dr) — §2/§11/P8.
+  const appInfo=ffTypeBadge(a.templateApp,a.nav);
   const appLbl=appInfo.lbl;
   const appDot=appInfo.dot;
   // Status rozetkasi (yuqori-o'ng, bitta): ⏳ Pack > ✓ Yuklandi > AI bilan > YANGI
@@ -5964,7 +5981,7 @@ function pd3Grad(key){
   return 'radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)';
 }
 function pd3AppInfo(asset){
-  const info=ffAppInfo(asset&&asset.templateApp,asset&&asset.nav);
+  const info=ffTypeBadge(asset&&asset.templateApp,asset&&asset.nav);
   return {lbl:info.lbl,dot:info.dot};
 }
 function pd3AuthorName(asset){ return (asset&&asset.author&&(asset.author.name||asset.author))||''; }
@@ -7195,7 +7212,7 @@ var HM_HL="radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent
 function hmG(a,b,c){return HM_HL+"linear-gradient(138deg,"+a+","+b+" 62%,"+c+")";}
 var HM_GRAD={blue:hmG('#1A2A4E','#33549E','#0C1220'),violet:hmG('#2A1E49','#6C3FA8','#130E24'),teal:hmG('#0F312C','#1F7A5F','#08150F'),crimson:hmG('#3A1B22','#A8434E','#150A0D'),amber:hmG('#3A2A12','#BE8428','#171006'),steel:hmG('#122032','#3E7BA6','#0A1118'),purple:hmG('#20153A','#8F4FD1','#0F0A1C'),cyan:hmG('#0F2436','#2E9DC0','#081019')};
 var HM_GKEYS=Object.keys(HM_GRAD);
-var HM_APPDOT={Ae:'#A79BFF',Pr:'#E585FF',Dr:'#FFB27C'};
+var HM_APPDOT={Ae:'#A79BFF',Pr:'#E585FF',Dr:'#FFB27C',Mn:'#5CC8B0',Motion:'#5CC8B0',Graphic:'#7CC4FF',LUT:'#FFB27C',Music:'#F0907F',SFX:'#E5C07B'}; // P8 — stock belgi ranglari ham shu jadvalda
 var HM_NAVLBL=NAV_LABELS; // P2 — yagona xaritadan (avval alohida, nomuvofiq nusxa edi)
 var HM_DEMO=[
   {n:'Glitch Logo Reveal',c:'Templates',a:'Aziza K.',app:'Ae',g:HM_GRAD.purple,plan:'PRO',x:'With AI',nav:'video'},
@@ -7209,7 +7226,7 @@ function hmHash(s){var h=0,i;s=String(s||'');for(i=0;i<s.length;i++)h=(h*31+s.ch
 function hmEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function hmFromAsset(a){
   var nav=a.nav||'video';
-  var app=ffAppInfo(a.templateApp,nav).lbl; // kanonik FF_APPS (§2/§11)
+  var app=ffTypeBadge(a.templateApp,nav).lbl; // stock/ilova belgisi — P8
   var dl=!!(window.downloaded&&window.downloaded.has&&window.downloaded.has(a.n));
   return {
     n:a.displayName||a.n, c:a.catLabel||HM_NAVLBL[nav]||nav,
