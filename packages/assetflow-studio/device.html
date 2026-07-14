@@ -6,64 +6,89 @@
 <meta name="assetflow-api" content="https://api.getframeflow.app">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
 <title>FrameFlow — Confirm plugin</title>
+<!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi
+     (platform/index.html bilan SINXRON saqla — bir xil ff-theme kaliti) -->
+<script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
 <script src="/studio/js/studio-config.js"></script>
 <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* #7: platforma (getframeflow.app) dark/lime mavzusi — studio light theme EMAS */
-  :root{
-    --bg:#06080B;--panel:#0E1117;--lime:#C2F04A;--onlime:#0E1400;
-    --tx-1:#F2F5F8;--tx-2:#8A93A3;
-    --f1:rgba(255,255,255,.05);--f2:rgba(255,255,255,.08);--f3:rgba(255,255,255,.14);
-  }
-  html,body{margin:0;padding:0}
-  body{background:var(--bg);color:var(--tx-1);font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;min-height:100vh}
-  .auth-shell{display:grid;min-height:100vh;align-items:center;padding:24px}
-  .auth-card{background:var(--panel);border:1px solid var(--f2);border-radius:18px;padding:32px 28px}
-  .h1{margin:0 0 8px;font-size:22px;font-weight:700;letter-spacing:-.01em}
-  .form-head p{margin:0 0 6px;color:var(--tx-2);font-size:13.5px;line-height:1.5}
-  .field{margin-bottom:12px}
-  .input{width:100%;box-sizing:border-box;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--f3);background:var(--f1);color:var(--tx-1);font:inherit;font-size:14px;outline:none}
-  .input:focus{border-color:var(--lime)}
-  .input::placeholder{color:var(--tx-2)}
-  .btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 22px;border:none;border-radius:999px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
-  .btn-primary{background:var(--lime);color:var(--onlime)}
-  .btn-primary:disabled{opacity:.6;cursor:default}
-  .btn-block{width:100%}
-  .auth-error{background:rgba(255,92,92,.12);border:1px solid rgba(255,92,92,.3);color:#FF8A8A;border-radius:12px;padding:10px 14px;font-size:13px;margin:0 0 12px}
-  .hidden{display:none!important}
-  .ff-logo{display:flex;align-items:center;gap:9px;margin-bottom:22px;font-weight:700;font-size:15px}
-  .ff-logo .lb{width:24px;height:24px;border-radius:7px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center;font-size:13px}
+/* ═══════════ BATCH6 · 3-TEMA TOKEN QATLAMI (noir · neon · cold) — manba: docs/mockups/batch6 ═══════════
+   platform/index.html token bloki bilan SINXRON (reset-password.html/verify-email.html ham shu blokdan).
+   Eski qattiq-kod lime brend rangi olib tashlandi — endi tema tokeni (--accent) yagona rang manbai. */
+:root,[data-theme="noir"]{--bg:#0a0a0b;--bg-deep:#050506;--surface:#131316;--surface-2:#1b1b1f;--surface-3:#232329;--text:#fff;--text-2:#d0d0d5;--muted:#a2a2aa;--faint:#85858e;--border:rgba(255,255,255,.12);--accent:#fff;--accent-2:#d7d7dc;--on-accent:#09090a;--accent-soft:rgba(255,255,255,.09);--glow:rgba(255,255,255,.11);--danger:#ff675f;--success:#9be36c;--warning:#f7c967;--grad:linear-gradient(135deg,#fff 0%,#a6a6ae 100%);--shadow:0 28px 80px rgba(0,0,0,.45)}
+[data-theme="neon"]{--bg:#050505;--bg-deep:#020202;--surface:#0d0d0e;--surface-2:#151517;--surface-3:#1d1d20;--text:#f8f8f5;--text-2:#d0d1ca;--muted:#a0a39a;--faint:#82867c;--border:rgba(216,255,62,.18);--accent:#d8ff3e;--accent-2:#baf02c;--on-accent:#0a0d02;--accent-soft:rgba(216,255,62,.1);--glow:rgba(216,255,62,.35);--danger:#ff635c;--success:#d8ff3e;--warning:#ffd45c;--grad:linear-gradient(135deg,#d8ff3e 0%,#9fe622 100%);--shadow:0 28px 90px rgba(0,0,0,.6)}
+[data-theme="cold"]{--bg:#0b0e14;--bg-deep:#070910;--surface:#10141d;--surface-2:#161b28;--surface-3:#1d2434;--text:#f7f9ff;--text-2:#d1d7e8;--muted:#9da7c0;--faint:#7f8aa4;--border:rgba(124,140,255,.22);--accent:#7c8cff;--accent-2:#4fd8eb;--on-accent:#080b16;--accent-soft:rgba(124,140,255,.12);--glow:rgba(79,216,235,.24);--danger:#ff6c7d;--success:#66e8b3;--warning:#ffc96c;--grad:linear-gradient(135deg,#7c8cff 0%,#4fd8eb 100%);--shadow:0 28px 90px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
+.hidden{display:none!important}
+.auth-screen{min-height:100vh}
+.auth-form-wrap{display:grid;place-items:center;padding:50px 24px;background:var(--bg);min-height:100vh}
+.brand{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:700;font-family:"Space Grotesk",sans-serif;text-decoration:none;white-space:nowrap;color:var(--text)}
+.brand-mark{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:var(--grad);color:var(--on-accent);font-size:16px}
+.kicker{font:600 10px/1 "JetBrains Mono",monospace;letter-spacing:.08em;color:var(--muted);display:inline-block}
+.verify-card{width:min(460px,90vw);padding:35px;border:1px solid var(--border);border-radius:18px;background:var(--surface);text-align:center}
+.verify-card .mail-icon{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;background:var(--accent-soft);color:var(--accent);font-size:26px}
+.verify-card h1{font-size:32px;margin:14px 0 10px}
+.verify-card>p{color:var(--muted);margin:0}
+.field{margin-top:14px;text-align:left}
+.field label{display:block;font:600 8px "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.08em}
+.field input{width:100%;margin-top:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:8px;padding:11px;outline:0;font:inherit}
+.field input:focus{border-color:var(--accent)}
+.primary{border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-family:inherit;transition:all .18s ease;background:var(--grad);color:var(--on-accent);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 8px 28px var(--glow);cursor:pointer}
+.primary:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 0 0 1px var(--accent),0 14px 34px var(--glow)}
+.primary:disabled{opacity:.5;cursor:not-allowed;transform:none!important;filter:none!important}
+.full{width:100%;margin-top:16px}
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0 2px;color:var(--faint);font:500 8px "JetBrains Mono",monospace}
+.divider i{height:1px;background:var(--border);flex:1}
+.auth-error{background:color-mix(in srgb,var(--danger) 12%,transparent);border:1px solid color-mix(in srgb,var(--danger) 32%,transparent);color:var(--danger);border-radius:11px;padding:10px 14px;font-size:13px;margin:14px 0 0;text-align:left}
+.refund-line{display:flex;gap:10px;padding:12px;border-radius:9px;background:var(--accent-soft);margin-top:16px;color:var(--text-2);font-size:11px;text-align:left;align-items:flex-start}
+.refund-line i{font-size:22px;color:var(--success);font-style:normal;line-height:1}
+.refund-line b,.refund-line span>b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+.theme-cyc{position:fixed;top:18px;right:18px;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer;font-size:15px;z-index:5}
+.theme-cyc:hover{color:var(--text);border-color:var(--accent)}
 </style>
 </head>
 <body class="auth-page">
-<div class="auth-shell" style="grid-template-columns:1fr">
-  <main class="auth-main">
-    <div class="auth-card" style="max-width:420px;margin:0 auto">
-      <div class="ff-logo"><span class="lb">◆</span>FrameFlow</div>
-      <div class="form-head">
-        <h1 class="h1">Confirm the AE plugin</h1>
-        <p id="deviceIntro">Sign in to approve the After Effects plugin on this device.</p>
-      </div>
+<button class="theme-cyc" type="button" onclick="cycleTheme()" title="Theme" aria-label="Switch theme">◐</button>
+<div class="auth-screen"><div class="auth-form-wrap">
+  <div style="width:min(460px,90vw)">
+    <a class="brand" href="/" style="justify-content:center;margin-bottom:22px"><span class="brand-mark" aria-hidden="true">ϟ</span>FrameFlow</a>
+    <div class="verify-card">
+      <span class="mail-icon" aria-hidden="true">↧</span>
+      <span class="kicker">AFTER EFFECTS PLUGIN</span>
+      <h1>Confirm the AE plugin.</h1>
+      <p id="deviceIntro">Sign in to approve the After Effects plugin on this device.</p>
       <p class="auth-error hidden" id="deviceError" role="alert"></p>
-      <form id="devicePasswordForm" style="margin-top:8px">
+      <form id="devicePasswordForm">
         <div class="field">
-          <input id="deviceEmailInput" class="input" type="email" name="email" autocomplete="username" placeholder="you@email.com" required>
+          <label for="deviceEmailInput">EMAIL</label>
+          <input id="deviceEmailInput" type="email" name="email" autocomplete="username" placeholder="you@email.com" required>
         </div>
         <div class="field">
-          <input id="devicePassInput" class="input" type="password" name="password" autocomplete="current-password" placeholder="Your password" required>
+          <label for="devicePassInput">PASSWORD</label>
+          <input id="devicePassInput" type="password" name="password" autocomplete="current-password" placeholder="Your password" required>
         </div>
-        <button type="submit" class="btn btn-primary btn-block" id="devicePasswordBtn">Sign in &amp; approve</button>
+        <button type="submit" class="primary full" id="devicePasswordBtn">Sign in &amp; approve &rarr;</button>
       </form>
-      <div class="auth-or" style="margin:16px 0;text-align:center;color:var(--tx-2);font-size:12px">or</div>
-      <div id="deviceGoogleBtn" style="display:flex;justify-content:center;margin-top:8px"></div>
-      <div id="deviceDone" class="hidden" style="text-align:center;margin-top:12px">
-        <p style="color:var(--tx-1);font-weight:600">✓ Confirmed — <span id="deviceEmail"></span></p>
-        <p style="color:var(--tx-2);font-size:13px;margin-top:6px">You can now close this window and return to the AE plugin.</p>
+      <div class="divider auth-or"><i></i><span>OR</span><i></i></div>
+      <div id="deviceGoogleBtn" style="display:flex;justify-content:center;margin-top:12px"></div>
+      <div id="deviceDone" class="refund-line hidden">
+        <i aria-hidden="true">✓</i>
+        <span><b>Confirmed — <span id="deviceEmail"></span></b>You can close this window and return to the After Effects plugin.</span>
       </div>
     </div>
-  </main>
-</div>
+  </div>
+</div></div>
 
+<script>
+/* Minimal tema tsikli — ff-theme kalitini platform bilan bo'lishadi (FOUC yuqorida o'qiydi). */
+function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElement.getAttribute('data-theme')||'noir';var n=o[(o.indexOf(c)+1)%o.length];document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('ff-theme',n);}catch(e){}}
+</script>
 <script>
 (function () {
   const params = new URLSearchParams(location.search);
@@ -122,13 +147,13 @@
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           showError(data.error || "Could not sign in — please try again");
-          if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve"; }
+          if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve →"; }
           return;
         }
         showConfirmed(data.email);
       } catch {
         showError("Network error — check your connection and try again");
-        if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve"; }
+        if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve →"; }
       }
     });
   }

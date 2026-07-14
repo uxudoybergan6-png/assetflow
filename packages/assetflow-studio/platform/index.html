@@ -14855,7 +14855,16 @@
   .ff .ffa-field:focus{background:var(--f2);border-color:color-mix(in srgb,var(--lime) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 12%,transparent)}
   .ff .ffa-divider{display:flex;align-items:center;gap:12px;margin:18px 0}
   .ff .ffa-divider .ln{flex:1;height:1px;background:rgba(255,255,255,.08)}
-  .ff .ffa-divider span{font-size:11px;color:var(--muted2)}
+  .ff .ffa-divider span{font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted2)}
+  /* BATCH6 auth — mockup .auth-art visual + quote + form heading + switch row */
+  .ff .ffa-auth-brand{position:relative;overflow:hidden}
+  .ff .ffa-auth-visual{position:absolute;inset:19% 9% 21%;border:1px solid var(--hair2);border-radius:18px;overflow:hidden;transform:rotate(-2deg);box-shadow:var(--th-shadow);z-index:1}
+  .ff .ffa-auth-visual .ffl-art{width:100%;height:100%}
+  .ff .ffa-auth-quote{position:relative;z-index:2;max-width:520px}
+  .ff .ffa-auth-h1{font:600 clamp(30px,3.3vw,40px)/1 'Space Grotesk','Inter',sans-serif;letter-spacing:-.04em;margin-top:2px}
+  .ff .ffa-auth-switch{text-align:center;font-size:12.5px;color:var(--muted);margin-top:20px}
+  .ff .ffa-auth-switch a{color:var(--lime);font-weight:600;cursor:pointer}
+  .ff .ffa-auth-switch a:hover{text-decoration:underline}
   /* mobile bottom tab bar */
   .ff .ffa-btmnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:45;height:58px;background:rgba(10,13,18,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.07);align-items:center;justify-content:space-around;padding:0 8px}
   .ff .ffa-btmnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:var(--muted);cursor:pointer}
@@ -15426,9 +15435,16 @@
   /* audio results inside canvas (voice/sfx composer) */
   .ff .va-audlist{width:100%;max-width:560px;display:flex;flex-direction:column;gap:0;align-self:center}
   /* ── account (A4 — plan card · packs · ledger) ── */
-  .ff .va-acctabs{display:flex;gap:6px;padding:0 40px 6px;flex-wrap:wrap}
-  .ff .va-accpad{padding:8px 40px 44px}
-  .ff .va-acc{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:8px 40px 20px}
+  /* BATCH6 mockup .account-head — kicker + display h1 (chap), underline tabs (o'ng), border-bottom */
+  .ff .va-acchead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding:30px 40px 0;border-bottom:1px solid var(--hair)}
+  .ff .va-acch1{font:600 clamp(30px,3.2vw,42px)/1 'Space Grotesk','Inter',sans-serif;letter-spacing:-.04em;margin:8px 0 0}
+  .ff .va-accemail{font:500 10px var(--mono);letter-spacing:.06em;color:var(--muted2);margin-top:8px}
+  .ff .va-acctabs{display:flex;gap:4px;flex-wrap:wrap}
+  .ff .va-acctab{border:0;background:none;color:var(--muted);padding:11px 9px;border-bottom:2px solid transparent;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;transition:color .14s,border-color .14s;white-space:nowrap}
+  .ff .va-acctab:hover{color:var(--text)}
+  .ff .va-acctab.on{color:var(--text);border-color:var(--lime);font-weight:600}
+  .ff .va-accpad{padding:22px 40px 44px}
+  .ff .va-acc{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:22px 40px 20px}
   .ff .va-plan{border-radius:18px;padding:22px;background:linear-gradient(150deg,color-mix(in srgb,var(--lime) 12%,transparent),rgba(255,255,255,.02) 55%),var(--surface);border:1px solid color-mix(in srgb,var(--lime) 26%,transparent);position:relative}
   .ff .va-plan h3{font-size:20px;font-weight:600;margin:8px 0 0}
   .ff .va-plan .pr{font:700 15px var(--mono);color:var(--lime)}
@@ -15501,9 +15517,9 @@
     .ff .va-canvas{margin:14px 16px 0;min-height:300px;padding:16px}
     .ff .va-dock{margin:12px 16px 10px;padding:12px 13px 10px}
     .ff .va-sess{padding:6px 16px 26px;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
-    .ff .va-acctabs{padding:0 16px 6px}
-    .ff .va-accpad{padding:8px 16px 30px}
-    .ff .va-acc{padding:8px 16px 12px;gap:12px}
+    .ff .va-acchead{padding:24px 16px 0}
+    .ff .va-accpad{padding:18px 16px 30px}
+    .ff .va-acc{padding:18px 16px 12px;gap:12px}
     .ff .va-tables{padding:0 16px 30px;gap:12px}
   }
   @media(max-width:820px){
@@ -16956,10 +16972,16 @@
 
         <!-- ACCOUNT — Variant A A4 (chip tabs · plan card · packs · ledger) -->
         <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
-          <div class="va-sec" style="padding-top:28px"><h3 style="font-size:21px">Account</h3>
-            <span class="all" style="font:500 10px var(--mono);letter-spacing:.06em;cursor:default">{{ accEmailLine }}</span></div>
-          <div class="va-acctabs">
-            <sc-for list="{{ accView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onAccTab }}" class="{{ x.cls }}">{{ x.v }}</span></sc-for>
+          <!-- BATCH6 mockup account-head: kicker + h1 (chap) · underline tabs (o'ng) · border-bottom -->
+          <div class="va-acchead">
+            <div class="va-acchead-l">
+              <span class="va-kick">YOUR FRAMEFLOW</span>
+              <h1 class="va-acch1">Account</h1>
+              <div class="va-accemail">{{ accEmailLine }}</div>
+            </div>
+            <div class="va-acctabs">
+              <sc-for list="{{ accView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onAccTab }}" class="{{ x.cls }}">{{ x.v }}</span></sc-for>
+            </div>
           </div>
 
           <!-- SUBSCRIPTION & CREDITS (A4 asosiy ko'rinish) -->
@@ -17174,24 +17196,23 @@
   <!-- ============ AUTH (login / register / forgot) — mockup a1..a3 split · 1:1 ============ -->
   <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
     <div class="ffa-auth">
-      <!-- Brand panel (mesh) — chapda -->
+      <!-- Brand panel (mesh + visual) — chapda · mockup .auth-art (brand · visual · quote) -->
       <div class="ffa-auth-brand ffm-mesh">
-        <span class="ffa-logo" onclick="{{ goLanding }}" style="font-size:15px"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
-        <div>
-          <div class="ffm-d44" style="max-width:420px">{{ authBrandTitle }}</div>
-          <div style="font-size:14px;color:var(--muted);line-height:1.65;margin-top:16px;max-width:400px">{{ authBrandSub }}</div>
-          <div style="display:flex;gap:22px;margin-top:26px">
-            <div><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:22px">10,000+</div><div style="font-size:11px;color:var(--muted)">templates</div></div>
-            <div><div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:22px">4</div><div style="font-size:11px;color:var(--muted)">AI tools</div></div>
-          </div>
+        <span class="ffa-logo" onclick="{{ goLanding }}" style="font-size:15px;position:relative;z-index:2"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
+        <div class="ffa-auth-visual" aria-hidden="true">
+          <div class="ffl-art ffl-art-aurora"><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="floor"></span></div>
         </div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)">© 2026 FrameFlow · support@getframeflow.app</div>
+        <div class="ffa-auth-quote">
+          <span class="ffm-eyebrow">ONE ACCOUNT · EVERY WORKFLOW</span>
+          <div class="ffm-d44" style="margin-top:14px;max-width:440px">{{ authBrandTitle }}</div>
+          <p style="font-size:14px;color:var(--muted);line-height:1.65;margin-top:14px;max-width:400px">{{ authBrandSub }}</p>
+        </div>
       </div>
-      <!-- Form panel — o'ngda -->
+      <!-- Form panel — o'ngda · mockup .auth-form (brand · h1 · fields · google · switch) -->
       <div class="ffa-auth-form">
-        <div style="font-weight:700;font-size:24px;letter-spacing:-.015em">{{ authTitle }}</div>
-        <sc-if value="{{ authNotRegister }}" hint-placeholder-val="{{ true }}"><div style="font-size:13px;color:var(--muted);margin-top:6px">{{ authSub }}</div></sc-if>
-        <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}"><div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--lime);margin-top:6px"><i class="ph-fill ph-gift" style="font-size:13px"></i>{{ authSub }}</div></sc-if>
+        <a class="ffa-logo" onclick="{{ goLanding }}" style="font-size:16px;margin-bottom:22px"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</a>
+        <div class="ffa-auth-h1">{{ authTitle }}</div>
+        <div style="font-size:13.5px;color:var(--muted);margin-top:8px">{{ authSub }}</div>
         <sc-if value="{{ authErr }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--reddim);border:1px solid rgba(255,107,94,.3);font-size:13px;color:#FF9C8F;margin-top:18px"><i class="ph-fill ph-warning-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authErr }}</div>
         </sc-if>
@@ -17204,25 +17225,24 @@
         <div style="margin-top:16px"><span class="ffa-flab">EMAIL</span><input value="{{ authEmail }}" oninput="{{ onAuthEmail }}" onkeydown="{{ onAuthKey }}" type="email" placeholder="you@email.com" class="ffa-field"></div>
         <sc-if value="{{ authShowPassword }}" hint-placeholder-val="{{ true }}">
           <div style="margin-top:14px">
-            <div style="display:flex;align-items:baseline"><span class="ffa-flab" style="flex:1">PASSWORD</span><sc-if value="{{ authShowLoginLinks }}" hint-placeholder-val="{{ true }}"><a onclick="{{ switchForgot }}" style="font-size:11px;color:var(--lime);cursor:pointer">Forgot?</a></sc-if></div>
+            <span class="ffa-flab">PASSWORD</span>
             <input value="{{ authPassword }}" oninput="{{ onAuthPassword }}" onkeydown="{{ onAuthKey }}" type="password" placeholder="••••••••" class="ffa-field">
-            <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:var(--muted2);margin-top:5px">Password must be at least 8 characters</div></sc-if>
+            <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:var(--muted2);margin-top:5px">At least 8 characters</div></sc-if>
           </div>
         </sc-if>
         <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
           <div id="ffTurnstileWidget" style="margin-top:14px"></div>
         </sc-if>
-        <button onclick="{{ authSubmit }}" class="ffm-btn full lg" style="margin-top:20px">{{ authBtn }}</button>
+        <button onclick="{{ authSubmit }}" class="ffm-btn full lg" style="margin-top:20px">{{ authBtn }}<i class="ph ph-arrow-right" style="font-size:14px"></i></button>
         <sc-if value="{{ authShowGoogle }}" hint-placeholder-val="{{ false }}">
-          <div class="ffa-divider"><span class="ln"></span><span>or</span><span class="ln"></span></div>
+          <div class="ffa-divider"><span class="ln"></span><span>OR</span><span class="ln"></span></div>
           <div id="ffGoogleBtn" style="display:flex;justify-content:center;min-height:44px"></div>
         </sc-if>
-        <div style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:20px">
-          <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">Already have an account? <a onclick="{{ switchLogin }}" style="color:var(--lime);font-weight:600;cursor:pointer">Sign in</a></sc-if>
-          <sc-if value="{{ authIsForgot }}" hint-placeholder-val="{{ false }}"><a onclick="{{ switchLogin }}" style="color:var(--lime);font-weight:600;cursor:pointer">← Back to sign in</a></sc-if>
-          <sc-if value="{{ authShowLoginLinks }}" hint-placeholder-val="{{ true }}">Don't have an account? <a onclick="{{ switchRegister }}" style="color:var(--lime);font-weight:600;cursor:pointer">Sign up</a></sc-if>
+        <div class="ffa-auth-switch">
+          <sc-if value="{{ authShowLoginLinks }}" hint-placeholder-val="{{ true }}">New to FrameFlow? <a onclick="{{ switchRegister }}">Create account</a> · <a onclick="{{ switchForgot }}">Forgot password?</a></sc-if>
+          <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">Already have an account? <a onclick="{{ switchLogin }}">Sign in</a></sc-if>
+          <sc-if value="{{ authIsForgot }}" hint-placeholder-val="{{ false }}"><a onclick="{{ switchLogin }}">← Back to sign in</a></sc-if>
         </div>
-        <a onclick="{{ goLanding }}" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:18px;font-size:12.5px;color:var(--muted2);cursor:pointer"><i class="ph ph-arrow-left"></i>Back to homepage</a>
       </div>
     </div>
   </sc-if>
@@ -19297,7 +19317,8 @@ class Component extends DCLogic {
       this._giInited = true;
     }
     // #8: locale 'en' — aks holda GIS tugmasi brauzer tilida ("… sifatida davom etish") chiqadi.
-    google.accounts.id.renderButton(container, { theme: 'outline', size: 'large', width: 280, text: 'continue_with', locale: 'en' });
+    // BATCH6: dark 'filled_black' — 3-tema qorong'u panellarга mos (mockup .google-btn)
+    google.accounts.id.renderButton(container, { theme: 'filled_black', size: 'large', width: 340, text: 'continue_with', locale: 'en' });
   }
   /** Turnstile widget — faqat register rejimida, meta[turnstile-site-key] bo'sh
    *  bo'lsa chizilmaydi (backend ham kalit yo'q bo'lsa fail-open, token talab
@@ -21021,7 +21042,7 @@ class Component extends DCLogic {
       // P3 (step 34) — Explore holati (yuborilgan bo'lsa tugma disabled + holat matni)
       exDone: this.exploreStateOf(lbRaw.id).submitted, exLabel: this.exploreStateOf(lbRaw.id).label,
     } : null;
-    const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-fchip on' : 'va-fchip' }));
+    const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-acctab on' : 'va-acctab' })); // BATCH6 — mockup underline tab
     // P21 (29) — HAQIQIY kredit ledger (CreditLedger endpoint): consume/refund/topup/clawback KO'RINADI.
     // Har qator: tur ikonkasi/thumb · sarlavha · sana · IMZOLI summa (yechim QIZIL, refund YASHIL) · balans.
     const _ledLabelByMode = { image: 'Image generation', video: 'Video generation', voice: 'Voice generation', music: 'Music generation', sfx: 'SFX generation' };
@@ -21185,18 +21206,15 @@ class Component extends DCLogic {
     const creditActivityView = this.state.gens.filter(g => g.cost > 0).slice(0, 8).map(g => ({ t: (genLabelEn[g.type] || 'Generation') + ' — ' + (g.label || ''), d: fmtEn(g.at), amt: '−' + g.cost }));
     // Auth ekrani
     const am = this.state.authMode;
-    const authTitle = am === 'register' ? "Sign up" : (am === 'forgot' ? 'Reset password' : 'Sign in');
-    const authSub = am === 'register' ? "Start free — get 50 AI credits" : (am === 'forgot' ? 'Enter your email — we\'ll send a reset link' : 'Sign in to your FrameFlow account');
-    const authBtn = this.state.authBusy ? 'Please wait…' : (am === 'register' ? "Sign up" : (am === 'forgot' ? 'Send link' : 'Sign in'));
+    // BATCH6 auth — mockup a1..a3 copy (docs/mockups/batch6: login/register/forgot)
+    const authTitle = am === 'register' ? "Create your account." : (am === 'forgot' ? 'Reset your password.' : 'Welcome back.');
+    const authSub = am === 'register' ? "Start with 50 free AI credits. No card required." : (am === 'forgot' ? 'We\'ll send a secure reset link to your inbox.' : 'Sign in to keep your creative work moving.');
+    const authBtn = this.state.authBusy ? 'Please wait…' : (am === 'register' ? "Create free account" : (am === 'forgot' ? 'Send reset link' : 'Sign in'));
     const authIsRegister = am === 'register';
     const authIsForgot = am === 'forgot';
     const authShowPassword = am !== 'forgot';
-    const authBrandTitle = am === 'register' ? 'One space for creation' : (am === 'forgot' ? 'Let\'s reset your password' : 'Welcome back to your creative space');
-    const authBrandSub = am === 'register'
-      ? "Start with 50 free AI credits. Templates, AI Studio and the plugin — one account."
-      : (am === 'forgot'
-        ? 'We\'ll send a link to your email — you\'ll be back in a minute.'
-        : 'Templates, AI Studio and the plugin — one account. Continue in the browser or right inside After Effects.');
+    const authBrandTitle = am === 'register' ? 'Your next frame starts here.' : (am === 'forgot' ? 'Let\'s reset your password.' : 'The work is right where you left it.');
+    const authBrandSub = 'Templates, AI Studio and the timeline — connected.';
     const sp = this._armed ? this.state.statP : 1;
     // ── Landing CMS — hero/nav/mockup/stats/theme bindinglari (admin "Website" tab) ──
     // Stats — count-up (runStats/statP dvigateli; reduced-motion'da sp=1 → darhol to'liq qiymat).
