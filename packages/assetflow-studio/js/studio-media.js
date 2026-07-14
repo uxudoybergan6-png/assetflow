@@ -87,7 +87,9 @@ const StudioMedia = (() => {
     const box = `width:${w};height:${h};object-fit:cover;border-radius:var(--r-sm);background:#0a0a0f;display:block`;
     if (t.id && hasAsset(t, "thumb")) {
       const src = escapeAttr(t.thumbUrl || assetUrl(t.id, "thumb"));
-      return `<img src="${src}" alt="" style="${box}" onerror="this.outerHTML='${thumbArt(t.grad || "g1", t.dur || "", size).replace(/'/g, "\\'")}'" />`;
+      // Uzbek comment: onerror ichiga HTML kiritish taqiqlangan — atribut buziladi (P4).
+      // Gradient span orqa fonda fallback vazifasini bajaradi; img xato bersa shunchaki yashiriladi.
+      return `<span class="thumb ${escapeAttr(t.grad || "g1")} grain" style="display:block;width:${w};height:${h};border-radius:var(--r-sm);overflow:hidden"><img src="${src}" alt="" style="${box}" loading="lazy" onerror="this.style.display='none'" /></span>`;
     }
     if (t.id && hasAsset(t, "preview")) {
       const src = escapeAttr(t.previewUrl || assetUrl(t.id, "preview"));

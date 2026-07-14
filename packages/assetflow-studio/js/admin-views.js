@@ -418,7 +418,7 @@ function renderModeration(){
       <button class="adx-btn2 adx-btn-warn sm" onclick="bulkAction('reject')"><i class="ph ph-arrow-u-up-left"></i>Reject</button>
       <button class="adx-btn2 sm" onclick="bulkAction('clear-pack')"><i class="ph ph-shield-check"></i>Clear pack</button>
       <button class="adx-btn2 sm" onclick="MOD_CHECKED.clear();renderModeration()">Cancel</button>
-    </div>`:''}
+    </div>`:items.length?`<div class="adx-bulkbar" style="color:var(--muted)"><i class="ph ph-cursor-click" style="font-size:13px"></i><span style="font-size:11.5px">Tip: select items (or Select all) to bulk Approve / Reject / Clear pack.</span></div>`:''}
     <div class="adx-modwrap">
       <!-- list panel -->
       <div class="adx-modlist">
@@ -594,6 +594,8 @@ async function bulkAction(a){
   const ids=[...MOD_CHECKED]; const n=ids.length;
   if(!n) return;
   if(!StudioApi.token()){ toast('Bulk action','Sign in as admin first','warn'); return; }
+  // P4 3(b) — reject qaytarilmasi qiyin, boshqa amallar (approve/clear-pack) darhol bajariladi.
+  if(a==='reject' && !confirm(`Reject ${n} template${n===1?'':'s'}?`)) return;
 
   const map = {
     'approve-free': { action:'approve', opts:{ published:true, isPro:false }, label:'Bulk approve · Free' },
