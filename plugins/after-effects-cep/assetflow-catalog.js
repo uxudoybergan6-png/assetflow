@@ -549,6 +549,33 @@ const AssetFlowCatalog = (() => {
   }
 
   /**
+   * P35 — server yuklab-olish nusxasidan olib tashlaydigan ILDIZ darajadagi
+   * marketing fayl (preview/thumbnail/…). Footage-bundle importida mijoz tomonda
+   * ham chiqaramiz (eski kesh yoki to'g'ridan-URL uchun belt-and-braces). Faqat
+   * extraction ILDIZidagi fayl — ichki papkadagi media = kontent, tegilmaydi.
+   */
+  function isStrippedMarketingFile(fs, path, rootDir, absPath) {
+    var rel = path.relative(rootDir, absPath).replace(/\\/g, "/");
+    if (rel.indexOf("/") >= 0) return false;
+    return /^(preview|thumbnail|thumb|screenshot|poster|cover)\.(mp4|mov|webm|png|jpe?g|webp|gif)$/i.test(
+      rel
+    );
+  }
+
+  /** P35 — footage-to'plamida AE'ga FOOTAGE sifatida import qilinadigan media. */
+  var FOOTAGE_MEDIA_EXTS = [
+    ".mp4", ".mov", ".webm",
+    ".mp3", ".wav", ".aiff", ".aif",
+    ".png", ".jpg", ".jpeg", ".webp", ".gif",
+  ];
+  /** Ochilgan papkadan import qilinadigan media (ildizdagi marketing fayllar chiqarilgan). */
+  function collectBundleMedia(fs, path, dir) {
+    return findAllFilesByExtInDir(fs, path, dir, FOOTAGE_MEDIA_EXTS).filter(
+      function (p) { return !isStrippedMarketingFile(fs, path, dir, p); }
+    );
+  }
+
+  /**
    * ZIP ichidagi barcha fayllarni kengaytma bo'yicha filterlash — papka nomi muhim emas.
    * `unzip -Z1` barcha entry yo'llarini bir qatorda qaytaradi (portativ, tar kerak emas).
    */
@@ -1156,6 +1183,12 @@ const AssetFlowCatalog = (() => {
         if (mogrts.length > 1) {
           throw mogrtPackError(mogrtItemsFromDir(fs, path, child, cacheDir));
         }
+        // P35 — footage-to'plami keshi: .aep/.mogrt yo'q, lekin media bor →
+        // qayta yuklab olmaymiz (277MB'ni har importda emas), keshdan qaytaramiz.
+        const cachedMedia = collectBundleMedia(fs, path, cacheDir);
+        if (cachedMedia.length) {
+          return { __footageBundle: true, dir: cacheDir, files: cachedMedia };
+        }
       }
     } else if (
       ext.toLowerCase() !== ".mogrt" &&
@@ -1253,6 +1286,16 @@ const AssetFlowCatalog = (() => {
       }
       if (mogrts.length > 1) {
         throw mogrtPackError(mogrtItemsFromDir(fs, path, child, dir));
+      }
+      // P35 — .aep/.mogrt YO'Q: bu FOOTAGE-to'plami (transitions/overlays/elements
+      // bundle — raw-file ingest quvuri endi aynan shunday pack ishlab chiqaradi).
+      // Ichidagi barcha import qilinadigan media'ni AE'ga FOOTAGE sifatida import
+      // qilamiz (host importFootageBundle → shablon nomidagi bin). Bo'lmasa — aniq xato.
+      const mediaFiles = collectBundleMedia(fs, path, dir);
+      if (mediaFiles.length) {
+        await _record();
+        // Signal obyekt — HTML importPackFileToAE buni footage-bundle deb import qiladi.
+        return { __footageBundle: true, dir: dir, files: mediaFiles };
       }
       throw new Error("No .aep or .mogrt found inside the ZIP. The pack file is invalid.");
     }

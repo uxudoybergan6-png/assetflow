@@ -5394,6 +5394,28 @@ async function importPackFileToAE(pack){
       // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
     }
   }
+  // P35 — footage-to'plami (zip ichida .aep/.mogrt yo'q, faqat kliplar): host
+  // importFootageBundle bilan hammasini shablon nomidagi bin'ga FOOTAGE import.
+  // recordImport allaqachon YUQORIDA bitta marta chaqirildi — bu yerda EMAS.
+  if(importPath&&typeof importPath==='object'&&importPath.__footageBundle){
+    const bundleFiles=Array.isArray(importPath.files)?importPath.files:[];
+    const bundleLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
+    showProgress(100,'Importing '+bundleFiles.length+' item'+(bundleFiles.length===1?'':'s')+'…',true);
+    return new Promise((resolve)=>{
+      csInterface.evalScript(`importFootageBundle(${JSON.stringify(JSON.stringify({files:bundleFiles,packLabel:bundleLabel}))})`,(result)=>{
+        hideProgress();
+        let r=null;try{r=result?JSON.parse(result):null;}catch(e){r=null;}
+        if(r&&r.ok){
+          const n=r.imported||bundleFiles.length;
+          showToast('Imported '+n+' item'+(n===1?'':'s')+' into "'+(r.folder||bundleLabel)+'"'+(r.failed?(' — '+r.failed+' skipped'):''),'success');
+          resolve('bundle:ok');
+        }else{
+          showToast('Import error: '+((r&&r.reason)||(result?String(result):'no result')),'error');
+          resolve('');
+        }
+      });
+    });
+  }
   showProgress(100,'Importing into AE…',true);
   const packLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
   const mediaKind=packMediaKind(pack);

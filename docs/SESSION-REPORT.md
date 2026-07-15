@@ -1,14 +1,9 @@
-# SESSION-REPORT — V2-MED2 (2026-07-15)
+# SESSION-REPORT — P35 (2026-07-15)
 
-8 seksiya (A→H), 8 commit (+1 docs checkpoint). Push YO'Q. Deploy kutilmoqda. Pul-zona qiymatlari TEGILMAGAN. `node --check`/HTML-inline-JS toza; `npm run build -w apps/api` toza; `studio:sync` + `install-cep.sh` bajarildi.
+Plagin footage-to'plamini ochib import qila olmasdi + yuklab olingan ziplar muallif marketing (preview/thumbnail) fayllarini buyer'ga oqizardi. `npm run build -w apps/api` toza; `node --check` (catalog/host.jsx/backfill) + HTML-inline-JS (7 blok) toza; server strip filtri 2 funksional round-trip test bilan tasdiqlandi (marketing strip + manba-footage saqlanadi). Push YO'Q, migratsiya YO'Q, pul-zona TEGILMAGAN.
 
-- **A (P6)** /stock hard-refresh ensureBrowse fix + katalog/browse xato-holat+Retry; ff-api 5 auth POST cold-start retry (30s); boot /health warm-up; refresh mid-gen orphan poll re-attach (sessionStorage). Plagin retryCatalog `{reset:true}`.
-- **B (P21)** Phosphor ikonka-font watchdog (3 urinish backoff) + `·` fallback (web+admin); preload dedup (P7). Plagin=n/a (inline SVG).
-- **C (P30)** gen-delete 2-klik "armed"; sessions/projects loader xato+Retry; download url-siz fallback toast. Plagin: afConfirm bor, loader Retry qo'shildi.
-- **D (P31)** modal a11y (Esc/focus-trap/scroll-lock/aria) + delete Enter; session bulk-delete armed; project-delete sanoq. Plagin `.afspov` Esc.
-- **E (P2)** narx nusxasi halol (yuklab olish/kredit farqi; 4K/watermark gate YO'Q) — CMS+kod+studio+plagin; detail "X of 15 left" pre-flight; maxResolution legacy izoh.
-- **F (P33)** soxta "Sardor upgraded"+trending o'chirildi; sevimlilar server-sinxron (web); umumiy `fmtLocalDate`; min 10px matn.
-- **G (P29)** blok sababi audit'ga; approve-notify wired; REAL CSV; stub'lar (dead checkbox/soxta pager/readonly rule) o'chirildi/labellandi; double-submit guard'lar; tName guard; unread count birlashtirildi; toast double-escape; o'lik overview o'chirildi.
-- **H (P26)** pay-button busy guard (dublikat checkout yo'q) + `?billing=success` return (toast+refresh+ledger) + logged-out pay-intent resume (web+plagin).
+- **FIX 1 (plagin)** `downloadPackToTemp`: .aep/.mogrt topilmasa → footage-to'plami fallback (media yig'adi, ildizdagi marketing chiqaradi, keshdan qayta-yuklamasdan qaytaradi). Yangi host `importFootageBundle` — hammasini shablon nomidagi BITTA bin'ga FOOTAGE import (bitta undo, {ok,imported,failed}). `importPackFileToAE` signal obyektni ushlaydi; recordImport OLDIN bitta marta (import +1, +15 EMAS). Media yo'q → aniq toast (sokin xato emas).
+- **FIX 2 (server)** ingest `metaJson.packJunkEntries` (additiv) yozadi: aniq axlat (`isMarketingJunkEntry`) + tanlangan preview/thumb — LEKIN manba (footage/assets/elements) papkasidagilar MUSTASNO (.aep havolasini o'chirmaslik, P35.3). `serveTemplateAsset` zip pack + bo'sh-emas ro'yxatda → `pack.dl.zip` filtrlangan nusxa (yauzl→yazl streaming, `copyZipExcluding`); qurish yiqilsa ASL zip (bloklamaydi). Asl `pack.zip` TEGILMAYDI. Kesh kaliti .aep-o'rami bilan bir xil → re-upload invalidatsiyasi (contributor.ts:1608) qoplaydi.
+- **Backfill** `scripts/backfill-pack-junk.mjs` — mavjud nashr etilgan ziplarni AYNAN shu detektor bilan qayta skanlaydi (DRY_RUN default), stale `pack.dl.zip` tozalaydi. Owner qo'lda ishga tushiradi.
 
-**Kutilmoqda:** deploy (Render API + CF Pages), migratsiya YO'Q. H: server LS-checkout dedup (idempotency) = Fable follow-up. B: full inline-sprite migratsiya = BATCH8.
+**Kutilmoqda:** deploy (Render/CF), backfill (owner), JONLI AE testi (aynan "Fast Light Leaks Transitions Bundle" — kliplar bin'da; web download zipida preview/thumbnail YO'Q, barcha kliplar bor).

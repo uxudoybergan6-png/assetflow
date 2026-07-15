@@ -67,6 +67,7 @@ import { extractMogrtsFromZip, type MogrtScene } from "../lib/mogrt-extract.js";
 import {
   openStreamingIngestZip,
   sanitizeFileBaseName,
+  computePackJunkEntries,
   IngestZipError,
   type StreamingIngestZip,
 } from "../lib/ingest-zip.js";
@@ -1920,6 +1921,10 @@ async function ingestOneZip(
     if (!image) flags.push("Missing preview image");
     if (!video) flags.push("Missing preview video");
 
+    // P35 — yuklab-olish nusxasidan chiqariladigan entry ro'yxati (guess-free):
+    // tanlangan preview/thumb (manba papkasidagilar bundan mustasno) + aniq axlat.
+    const packJunkEntries = computePackJunkEntries(zip);
+
     let template;
     try {
       template = await prisma.contributorTemplate.create({
@@ -1945,6 +1950,8 @@ async function ingestOneZip(
           packHash: hash,
           packScanStatus: cls.scanStatus,
           packScanDetail: cls.detail.slice(0, 480),
+          // P35 — additiv metaJson maydoni (migratsiyasiz); SERVE filtri shu ro'yxatga tayanadi.
+          ...(packJunkEntries.length ? { metaJson: asMetaJson({ packJunkEntries }) } : {}),
           ...(rights ?? {}),
         },
       });

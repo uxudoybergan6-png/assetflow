@@ -1,6 +1,7 @@
 import path from "path";
 import { PassThrough, Readable } from "stream";
 import yauzl from "yauzl";
+import yazl from "yazl";
 import { PACK_EXT_APP, DEFAULT_APP } from "./apps.js";
 
 /** Zip ichidan qidiriladigan pack kengaytmalari (papka/joylashuv muhim emas — tolerant).
@@ -93,6 +94,31 @@ function isJunkEntry(name: string): boolean {
   return base.startsWith("._") || name.includes("__MACOSX/") || base === ".DS_Store";
 }
 
+/**
+ * P35 — DOIMO-XAVFSIZ axlat/marketing entry detektori. INGEST bu naqshga tushgan
+ * entry nomlarini (tanlangan preview/thumb'dan TASHQARI) `metaJson.packJunkEntries`ga
+ * yozadi; SERVE ularni yuklab-olish nusxasidan chiqarib tashlaydi; backfill skript
+ * ham AYNAN shu detektordan foydalanadi — yagona haqiqat manbai. Faqat mutlaqo
+ * xavfsiz naqshlar: OS axlati + ILDIZ darajadagi marketing fayllari (ichki
+ * papkadagi "preview.mp4" .aep havola qilgan footage bo'lishi mumkin — TEGMAYMIZ).
+ */
+export function isMarketingJunkEntry(name: string): boolean {
+  const norm = name.replace(/\\/g, "/");
+  if (norm.includes("__MACOSX/")) return true;
+  const base = path.posix.basename(norm);
+  if (base.startsWith("._") || base === ".DS_Store" || base === "Thumbs.db") return true;
+  const isRoot = !norm.includes("/");
+  if (
+    isRoot &&
+    /^(preview|thumbnail|thumb|screenshot|poster|cover)\.(mp4|mov|webm|png|jpe?g|webp|gif)$/i.test(
+      base
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /** ZIP-SLIP: normalizatsiyadan keyin workDir'dan tashqariga chiqadigan yo'l.
  *  (Yozish yo'li entry nomidan OLINMAYDI — bu himoya qatlami, hujumkor zipni
  *  butunlay rad etish uchun.) */
@@ -143,6 +169,27 @@ export interface RangedZipSource {
   stream(start: number, endExclusive: number): Readable;
 }
 
+/**
+ * P35 — zip pack'dan yuklab-olishda chiqariladigan XAVFSIZ entry ro'yxati (yagona
+ * manba: ingest yozadi, backfill qayta hisoblaydi). Tarkibi:
+ *  (a) aniq axlat/marketing — `junkEntries` (isMarketingJunkEntry),
+ *  (b) tanlangan preview/thumb entrylari — LEKIN faqat ular MANBA (footage/assets/
+ *      elements/…) papkasida BO'LMASA. Manba papkasidagi media pack loyihasi
+ *      (.aep/.mogrt) HAVOLA qilgan kontent bo'lishi mumkin — uni HECH QACHON strip
+ *      qilmaymiz (P35.3 — "never risks deleting real footage the .aep references").
+ */
+export function computePackJunkEntries(
+  zip: Pick<StreamingIngestZip, "image" | "video" | "junkEntries">
+): string[] {
+  const out = new Set<string>();
+  for (const n of zip.junkEntries) if (n) out.add(n);
+  for (const ref of [zip.image, zip.video]) {
+    const name = ref?.entry.fileName;
+    if (name && !SOURCE_DIR_RE.test(name)) out.add(name);
+  }
+  return Array.from(out);
+}
+
 export interface ZipEntryRef {
   entry: yauzl.Entry;
   ext: string;
@@ -153,6 +200,10 @@ export interface StreamingIngestZip {
   image: ZipEntryRef | null;
   video: ZipEntryRef | null;
   templateApp: string;
+  /** P35 — DOIMO-XAVFSIZ axlat/marketing entry nomlari (isMarketingJunkEntry).
+   *  Tanlangan preview/thumb entry nomlaridan ALOHIDA — chaqiruvchi ularni
+   *  qo'shib `metaJson.packJunkEntries` ro'yxatini quradi. */
+  junkEntries: string[];
   /** Entry'ning OCHILGAN (inflate) baytlari — bufersiz. Har chaqiruv yangi stream. */
   openEntryStream(ref: ZipEntryRef): Promise<Readable>;
   close(): void;
@@ -322,6 +373,8 @@ export async function openStreamingIngestZip(
       // skorlash bilan tanlaymiz. Pack esa avvalgidek first-match.
       const imageCandidates: MediaCandidate[] = [];
       const videoCandidates: MediaCandidate[] = [];
+      // P35 — yuklab-olish nusxasidan chiqariladigan aniq axlat/marketing entrylar.
+      const junkEntries: string[] = [];
       let entryCount = 0;
       let declaredTotal = 0; // markaziy katalogdagi e'lon qilingan ochiq hajm
       let settled = false;
@@ -359,6 +412,9 @@ export async function openStreamingIngestZip(
           fail(new IngestZipError("Zip rejected: suspicious compression ratio (zip bomb)"));
           return;
         }
+        // P35 — aniq axlat/marketing entrylarni ro'yxatga olamiz (yuklab-olishdan
+        // chiqarish uchun); bular preview/thumb NOMZODI ham bo'lmaydi (isJunkEntry).
+        if (isMarketingJunkEntry(name)) junkEntries.push(name);
         if (!/\/$/.test(name) && !isJunkEntry(name)) {
           const ext = path.extname(name).toLowerCase();
           if (!pack && PACK_EXT_APP[ext]) {
@@ -384,6 +440,7 @@ export async function openStreamingIngestZip(
           image,
           video,
           templateApp,
+          junkEntries,
           openEntryStream: (ref: ZipEntryRef) =>
             new Promise<Readable>((res, rej) => {
               zip.openReadStream(ref.entry, (err, rs) => {
@@ -409,6 +466,98 @@ export async function openStreamingIngestZip(
       zip.close();
     } catch {}
     throw e;
+  }
+}
+
+/**
+ * P35 — Zipni RANGED o'qishlar ustida STREAMING nusxalaydi, `exclude` to'plamidagi
+ * entry nomlarini (aniq nom mosligi) TASHLAB. Cho'qqi xotira
+ * `openStreamingIngestZip` bilan bir xil intizom: markaziy katalog keshi + BITTA
+ * ochiq entry stream (har entry to'liq o'qilgach keyingisiga o'tamiz — bir vaqtda
+ * bitta ranged GAT soketi). yazl chiqishi chaqiruvchi tomonidan (uploadStreamToS3)
+ * iste'mol qilinishi SHART — aks holda blok. Chaqiruvchi `target.outputStream`ni
+ * OLDIN pipe qilib, so'ng bu funksiyani await qilsin; funksiya oxirida `target.end()`
+ * chaqiriladi. Papka entrylari o'tkaziladi (yazl yo'lni fayl nomidan tiklaydi).
+ */
+export async function copyZipExcluding(
+  source: RangedZipSource,
+  exclude: Set<string>,
+  target: yazl.ZipFile
+): Promise<{ copied: number; dropped: number }> {
+  const { cacheStart, cache } = await locateCentralDirectory(source);
+  const reader = new RangedZipReader(source, cacheStart, cache);
+  const zip = await new Promise<yauzl.ZipFile>((resolve, reject) => {
+    yauzl.fromRandomAccessReader(
+      reader,
+      source.size,
+      { lazyEntries: true, autoClose: false },
+      (err, zf) => {
+        if (err || !zf) reject(classifyZipError(err ?? new Error("Zip failed to open")));
+        else resolve(zf);
+      }
+    );
+  });
+
+  let copied = 0;
+  let dropped = 0;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const fail = (e: Error) => {
+        if (settled) return;
+        settled = true;
+        reject(classifyZipError(e));
+      };
+      zip.on("entry", (entry: yauzl.Entry) => {
+        if (settled) return;
+        const name = entry.fileName;
+        // Papka entrylari — yazl yo'l strukturasini fayllar yo'lidan tiklaydi.
+        if (/\/$/.test(name)) {
+          zip.readEntry();
+          return;
+        }
+        const norm = name.replace(/\\/g, "/");
+        if (exclude.has(name) || exclude.has(norm)) {
+          dropped++;
+          zip.readEntry();
+          return;
+        }
+        zip.openReadStream(entry, (err, rs) => {
+          if (err || !rs) {
+            fail(err ?? new Error("Zip entry stream failed"));
+            return;
+          }
+          rs.on("error", (e) => fail(e));
+          // Faqat stream TO'LIQ iste'mol qilingach keyingi entryga o'tamiz —
+          // bir vaqtning o'zida bitta ochiq ranged stream.
+          rs.on("end", () => {
+            if (settled) return;
+            copied++;
+            zip.readEntry();
+          });
+          // Store (compress:false): pack ichidagi media allaqachon siqilgan —
+          // qayta siqish CPU'ni behuda sarflaydi; size berilmaydi → yazl data
+          // descriptor ishlatadi (e'lon/haqiqiy hajm nomuvofiqligi throw'idan xoli).
+          target.addReadStream(rs, name, {
+            mtime: entry.getLastModDate(),
+            compress: false,
+          });
+        });
+      });
+      zip.on("end", () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      });
+      zip.on("error", (e: Error) => fail(e));
+      zip.readEntry();
+    });
+    target.end();
+    return { copied, dropped };
+  } finally {
+    try {
+      zip.close();
+    } catch {}
   }
 }
 

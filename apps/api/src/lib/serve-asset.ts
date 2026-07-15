@@ -5,7 +5,11 @@ import yazl from "yazl";
 import type { Request, Response } from "express";
 import { prisma } from "@creative-tools/database";
 import { findAssetPath, type TemplateAssetKind } from "./template-files.js";
-import { sanitizeFileBaseName } from "./ingest-zip.js";
+import {
+  sanitizeFileBaseName,
+  copyZipExcluding,
+  type RangedZipSource,
+} from "./ingest-zip.js";
 import {
   getPublicOrSignedUrl,
   getSignedDownloadUrl,
@@ -14,7 +18,9 @@ import {
   resolveS3AssetKey,
   s3ObjectExists,
   createS3RangeStream,
+  readS3ObjectRange,
   uploadStreamToS3,
+  deleteS3Objects,
 } from "./s3.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
@@ -72,6 +78,62 @@ async function getOrBuildAepDownloadZip(
   return cacheKey;
 }
 
+/** metaJson.packJunkEntries'ni xavfsiz string[] sifatida o'qish. */
+function readPackJunkEntries(metaJson: unknown): string[] {
+  if (!metaJson || typeof metaJson !== "object") return [];
+  const v = (metaJson as Record<string, unknown>).packJunkEntries;
+  if (!Array.isArray(v)) return [];
+  return v.filter((x): x is string => typeof x === "string" && x.length > 0);
+}
+
+/**
+ * P35 — zip pack'ning YUKLAB-OLISH nusxasini quradi/keshlaydi: asl `pack.zip`
+ * minus ingest'da yozilgan `packJunkEntries` (muallif qo'shgan preview/thumbnail
+ * marketing fayllari + OS axlati). Asl pack.zip TEGILMAYDI (private, byte-bir-xil
+ * saqlanadi). Natija `templates/{id}/pack.dl.zip`da keshlanadi — AYNAN raw-.aep
+ * o'rami bilan bir xil kesh kaliti (pack IKKALASI bo'la olmaydi: .aep YOKI .zip),
+ * shu bois re-upload'dagi kesh-invalidatsiya (contributor.ts) shu yo'lni ham qoplaydi.
+ * STREAMING: yauzl ranged read → yazl write → uploadStreamToS3 (cho'qqi xotira
+ * getOrBuildAepDownloadZip bilan bir xil intizom, pack hajmidan mustaqil).
+ */
+async function getOrBuildFilteredPackZip(
+  templateId: string,
+  zipKey: string,
+  junkEntries: string[]
+): Promise<string> {
+  const cacheKey = `templates/${templateId}/pack.dl.zip`;
+  if (await s3ObjectExists(cacheKey)) return cacheKey;
+  const meta = await getS3ObjectMeta(zipKey);
+  if (meta.sizeBytes == null) {
+    throw new Error(`Pack not found in cloud storage: ${zipKey}`);
+  }
+  const exclude = new Set<string>();
+  for (const e of junkEntries) {
+    if (!e) continue;
+    exclude.add(e);
+    exclude.add(e.replace(/\\/g, "/"));
+  }
+  const source: RangedZipSource = {
+    size: meta.sizeBytes,
+    read: (s, e) => readS3ObjectRange(zipKey, s, e),
+    stream: (s, e) => createS3RangeStream(zipKey, s, e),
+  };
+  const zipfile = new yazl.ZipFile();
+  const outStream = zipfile.outputStream as unknown as Readable;
+  const uploadP = uploadStreamToS3(outStream, cacheKey, "application/zip");
+  try {
+    await copyZipExcluding(source, exclude, zipfile);
+    await uploadP;
+  } catch (e) {
+    // Yarim yozilgan kesh keyingi so'rovga chala fayl bermasin — uzib, tozalaymiz.
+    if (!outStream.destroyed) outStream.destroy();
+    await uploadP.catch(() => {});
+    await deleteS3Objects([cacheKey]).catch(() => {});
+    throw e;
+  }
+  return cacheKey;
+}
+
 /** Brauzer video uchun Range (206) va CORS expose */
 export async function serveTemplateAsset(
   req: Request,
@@ -84,19 +146,34 @@ export async function serveTemplateAsset(
     let downloadKey = s3Key;
     let filename: string | undefined;
     if (kind === "pack") {
+      // FAZA 5 (C3): Content-Disposition fayl nomi ENDI HAR DOIM shablon nomi.
+      // P35: metaJson ham kerak — zip pack'dan marketing fayllarni chiqarish uchun.
+      const template = await prisma.contributorTemplate.findUnique({
+        where: { id: templateId },
+        select: { name: true, metaJson: true },
+      });
       if (/\.aep$/i.test(s3Key)) {
         // Raw .aep — mijoz (plagin/veb) .zip kutadi; plagin o'zi ochadi (unzip)
         // → .aep'ni AE loyihasiga import qiladi.
         downloadKey = await getOrBuildAepDownloadZip(templateId, s3Key);
+      } else if (/\.zip$/i.test(s3Key)) {
+        // P35 — muallif zipga qo'shgan preview/thumbnail marketing fayllarini
+        // yuklab-olish nusxasidan olib tashlaymiz. Qurish yiqilsa — ASL zipni
+        // xizmat qilamiz (yuklab olishni HECH QACHON bloklamaymiz).
+        const junk = readPackJunkEntries(template?.metaJson);
+        if (junk.length) {
+          try {
+            downloadKey = await getOrBuildFilteredPackZip(templateId, s3Key, junk);
+          } catch (e) {
+            console.error(
+              "[serve-asset] filtered pack build failed, serving original:",
+              templateId,
+              e
+            );
+            downloadKey = s3Key;
+          }
+        }
       }
-      // FAZA 5 (C3): Content-Disposition fayl nomi ENDI HAR DOIM shablon nomi
-      // (ilgari faqat raw .aep yo'lida — to'g'ridan .zip pack'lar brauzerda
-      // "pack.zip" bo'lib tushardi). Plagin o'z fayl nomini o'zi qo'yadi —
-      // bu unga ta'sir qilmaydi.
-      const template = await prisma.contributorTemplate.findUnique({
-        where: { id: templateId },
-        select: { name: true },
-      });
       const ext = path.extname(downloadKey).toLowerCase() || ".zip";
       filename = `${sanitizeFileBaseName(template?.name || "template")}${ext}`;
     }

@@ -2192,6 +2192,69 @@ function importMediaFromPath(filePath) {
   return JSON.stringify(result);
 }
 
+// P35 — FOOTAGE-to'plami import (zip ichida .aep/.mogrt yo'q, faqat kliplar).
+// Barcha fayllarni shablon nomidagi BITTA bin'ga FOOTAGE sifatida import qiladi
+// (canImportAs guard — qabul qilinmaydigan fayl o'tkazib yuboriladi, xato emas).
+// Bir undo-guruh + bitta {ok,imported,failed,folder} natija. importMediaFromPath
+// bilan bir xil import intizomi, faqat ko'p fayl + bin.
+function importFootageBundle(jsonStr) {
+  try {
+    var cfg = JSON.parse(jsonStr);
+    var files = cfg.files || [];
+    var packLabel = String(cfg.packLabel || "FrameFlow").trim() || "FrameFlow";
+    if (!files.length) return JSON.stringify({ ok: false, reason: "No files to import" });
+    if (typeof app === "undefined" || !app.project) {
+      return JSON.stringify({ ok: false, reason: "No open After Effects project" });
+    }
+    app.beginUndoGroup("FrameFlow Import Bundle");
+    var result;
+    try {
+      var folder = app.project.items.addFolder(packLabel);
+      var imported = 0;
+      var failed = 0;
+      var firstReason = "";
+      for (var i = 0; i < files.length; i++) {
+        try {
+          var f = new File(files[i]);
+          if (!f.exists) {
+            failed++;
+            if (!firstReason) firstReason = "File not found: " + files[i];
+            continue;
+          }
+          var io = new ImportOptions(f);
+          if (!io.canImportAs(ImportAsType.FOOTAGE)) {
+            failed++;
+            if (!firstReason) firstReason = "AE cannot import " + f.name + " as footage";
+            continue;
+          }
+          io.importAs = ImportAsType.FOOTAGE;
+          var item = app.project.importFile(io);
+          try { item.parentFolder = folder; } catch (mv) {}
+          imported++;
+        } catch (ie) {
+          failed++;
+          if (!firstReason) firstReason = String(ie && ie.toString ? ie.toString() : ie);
+        }
+      }
+      // Hech narsa import bo'lmasa bo'sh binni qoldirmaymiz.
+      if (imported === 0) { try { folder.remove(); } catch (rm) {} }
+      result = {
+        ok: imported > 0,
+        imported: imported,
+        failed: failed,
+        folder: packLabel,
+        reason: imported > 0 ? "" : (firstReason || "No importable media in the pack")
+      };
+    } catch (e) {
+      result = { ok: false, reason: String(e && e.toString ? e.toString() : e) };
+    }
+    try { app.endUndoGroup(); } catch (ignore) {}
+    return JSON.stringify(result);
+  } catch (e) {
+    return JSON.stringify({ ok: false, reason: String(e && e.toString ? e.toString() : e) });
+  }
+}
+
 // P5.2 (step 32) — LUT'ni AE footage sifatida import qilib BO'LMAYDI. Faylni yuklab
 // olgach OS fayl brauzerida (Finder/Explorer) ko'rsatamiz — foydalanuvchi Lumetri Color
 // → Creative → Look yoki "Apply Color LUT" effektida qo'lda qo'llaydi. Dead-button emas.
