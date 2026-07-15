@@ -12648,6 +12648,7 @@ window.afGallery=(function(){
   }
   document.querySelectorAll('.axvg [data-vgclose]').forEach(function(x){ x.addEventListener('click',closeVgSheets); });
   document.querySelectorAll('.axvg .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeVgSheets(); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.querySelector('.axvg .sheet.on'))closeVgSheets(); });
 
   // ── pill'lar ──
   function buildPills(host,arr,cur,onpick){

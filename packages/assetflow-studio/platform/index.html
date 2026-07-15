@@ -15955,7 +15955,7 @@
     </sc-if>
     </sc-if>
     <!-- MARKETING TOP-NAV — flat at top, frosted on scroll -->
-    <header class="{{ navCls }}">
+    <header class="{{ navCls }}" data-pop-root="nav">
       <div class="ffm-nav">
         <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
         <span style="flex:1"></span>
@@ -16357,7 +16357,7 @@
       </nav>
       <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates, generations…"><span class="k">⌘K</span></div>
       <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
-      <div style="position:relative">
+      <div style="position:relative" data-pop-root="avatar">
         <span class="va-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}">{{ avaText }}</span>
         <sc-if value="{{ avatarOpen }}" hint-placeholder-val="{{ false }}">
           <div class="ffa-menu" style="top:40px;right:0">
@@ -16708,22 +16708,22 @@
           </div>
           <div class="va-fbar">
             <!-- #3 — Categories multi-select (granular, pill bilan kompozitsiya) -->
-            <span class="{{ fbCatCls }}" data-pop="cats" onclick="{{ toggleFbar }}">{{ fbCatLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <span class="{{ fbCatCls }}" data-pop="cats" data-pop-root="cats" onclick="{{ toggleFbar }}">{{ fbCatLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbCatOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="max-height:320px;overflow-y:auto;min-width:190px"><sc-for list="{{ fGranView }}" as="x" hint-placeholder-count="14"><button data-v="{{ x.v }}" onclick="{{ pickFbCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.v }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbCats }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
             </span>
             <!-- P2 — AI Stock: Type (Image|Video). Faqat AI Stock pill'da. -->
             <sc-if value="{{ showAiKind }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ fAiKindView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFAiKind }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
             <!-- #3 — Applications Supported multi-select (Ae/Pr/Mn/Dr) — P2: faqat qo'llasa -->
-            <sc-if value="{{ showAppFilter }}" hint-placeholder-val="{{ true }}"><span class="{{ fbAppCls }}" data-pop="app" onclick="{{ toggleFbar }}">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <sc-if value="{{ showAppFilter }}" hint-placeholder-val="{{ true }}"><span class="{{ fbAppCls }}" data-pop="app" data-pop-root="app" onclick="{{ toggleFbar }}">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbAppOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="min-width:180px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ pickFbApp }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.label }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbApps }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
             </span></sc-if>
-            <span class="{{ fbPlanCls }}" data-pop="plan" onclick="{{ toggleFbar }}">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <span class="{{ fbPlanCls }}" data-pop="plan" data-pop-root="plan" onclick="{{ toggleFbar }}">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbPlanOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ pickFbPlan }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span>
             <sc-if value="{{ showOrientFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
             <sc-if value="{{ showQualFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
             <sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="va-fchip" onclick="{{ resetFilters }}" style="color:var(--muted)">Clear all ✕</span></sc-if>
-            <span class="cnt">{{ resultsFmt }} results · sorted by <span style="position:relative"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
+            <span class="cnt">{{ resultsFmt }} results · sorted by <span style="position:relative" data-pop-root="sort"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
               <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span></span>
           </div>
@@ -16876,7 +16876,7 @@
                         </div></div>
                       </sc-for>
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
-                        <div class="va-axcell">
+                        <div class="va-axcell" data-pop-root="use">
                           <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
                             <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}" onerror="{{ axMediaError }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}" onerror="{{ axMediaError }}"></video></sc-if>
@@ -16955,7 +16955,7 @@
                      thumblar scroll. Ostidagi meta qatori = ixcham used/allowed ikonkalari + hint. -->
                 <div class="va-axrefs">
                   <sc-if value="{{ showRefPlus }}" hint-placeholder-val="{{ true }}">
-                  <span class="va-axrefplusw">
+                  <span class="va-axrefplusw" data-pop-root="ref">
                     <button class="va-axrefplus" onclick="{{ toggleRefMenu }}" title="Add reference">＋</button>
                     <sc-if value="{{ popRef }}" hint-placeholder-val="{{ false }}">
                       <div class="ffa-pop" onclick="{{ stop }}" style="min-width:215px">
@@ -17000,10 +17000,10 @@
               <div class="prompt chipedit" data-ph="{{ promptPh }}"></div>
               <div class="va-dockrow">
                 <div class="va-setgroup">
-                <span class="va-set mode" data-pop="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set mode" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span>
-                <span class="va-set" data-pop="model" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl" onclick="{{ stop }}">
                     <div class="va-axpoph">{{ modePickHead }}</div>
                     <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">
@@ -17018,7 +17018,7 @@
                 </span>
                 <!-- P16 — BITTA sozlama chipi: barcha per-model sozlamalar guruhlangan popover'da.
                      Model qo'llamaydigan qatorlar UMUMAN render bo'lmaydi (show* darvozalari). -->
-                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear" data-pop="settings" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear" data-pop="settings" data-pop-root="settings" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popSettings }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop va-setpop" onclick="{{ stop }}">
                     <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="va-sgrp"><div class="va-sgh">Aspect Ratio</div><div class="va-sgops"><sc-for list="{{ aspectsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSizeM }}" class="{{ z.setoptCls }}"><i class="arg" style="width:{{ z.gw }};height:{{ z.gh }}"></i>{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Resolution</div><div class="va-sgops"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onResM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
@@ -18558,14 +18558,31 @@ class Component extends DCLogic {
         const h = (window.location.hash || '').replace('#', '') || pathScreen;
         if (h && ALL.indexOf(h) >= 0 && h !== this.state.screen) { this._hashApplied = true; this.go(h, { replace: true }); }
       }
+      // P14 — barcha popover/dropdown uchun BITTA yopish mexanizmi: tashqi klik (mousedown, capture)
+      // + Esc (bitta qatlam). modelModalOpen + lightbox bundan mustasno — ular MODAL: o'z
+      // scrim/backdrop'i bilan yopiladi, Esc alohida tekshiriladi (pastda).
+      const POPS = { chipPop: null, modelOpen: false, fbarPop: null, sortOpen: false, useMenuOpen: false, appMenuOpen: false, avatarOpen: false, refSrcK: null };
+      this._popsOpen = (st) => !!(st.chipPop || st.modelOpen || st.fbarPop || st.sortOpen || st.useMenuOpen || st.appMenuOpen || st.avatarOpen || st.navOpen);
+      this._closePops = () => {
+        const upd = Object.assign({}, POPS);
+        if (this.state.navOpen) upd.navOpen = false; // inline mobil menyu POPS'da emas, lekin xuddi shunday yopiladi
+        this.setState(upd);
+      };
+      window.addEventListener('mousedown', this._onOutsideClick = (ev) => {
+        if (!this._popsOpen(this.state)) return;
+        if (ev.target && ev.target.closest && ev.target.closest('[data-pop-root]')) return;
+        this._closePops();
+      }, true);
       // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
         if (this.state.lightbox && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) { ev.preventDefault(); this._lbGo(ev.key === 'ArrowLeft' ? -1 : 1); return; }
         if (ev.key !== 'Escape') return;
+        // P14 — popover qatlami avval yopiladi (bitta Esc = bitta qatlam); keyin modal/mega/lightbox/refLibPick.
+        if (this._popsOpen(this.state)) { this._closePops(); return; }
+        if (this.state.modelModalOpen) { this.setState({ modelModalOpen: false }); return; }
         if (this.state.megaOpen) { this.setState({ megaOpen: false }); return; }
         if (this.state.lightbox) { this.setState({ lightbox: null }); return; }
         if (this.state.refLibPick) { this.setState({ refLibPick: null }); return; }
-        if (this.state.chipPop) this.setState({ chipPop: null, refSrcK: null });
       });
       // Orqaga/Oldinga (popstate) — mos ekranni tiklaymiz; go() auth-gate'ni o'zi qiladi.
       window.addEventListener('popstate', this._onPop = (ev) => {
@@ -18651,7 +18668,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); }
