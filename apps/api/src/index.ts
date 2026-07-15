@@ -77,6 +77,17 @@ const defaultOrigins = [
   "https://localhost:3000",
 ];
 
+// P32 #1 — PRODUCTION qattiq-rad: CORS_ORIGIN bo'sh yoki "*" bo'lsa (credentials yoqilgan holda
+// har origin cookie/token bilan kira oladi — xavfli) ishga tushishni RAD etamiz. Dev permissive.
+{
+  const corsRaw = process.env.CORS_ORIGIN?.trim();
+  if (process.env.NODE_ENV === "production" && (!corsRaw || corsRaw === "*")) {
+    throw new Error(
+      'CORS_ORIGIN production\'da aniq domen(lar) bo\'lishi SHART — bo\'sh yoki "*" + credentials xavfli'
+    );
+  }
+}
+
 app.use(
   cors({
     origin(origin, callback) {

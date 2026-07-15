@@ -125,7 +125,10 @@ export function planLimits(plan: PluginPlanTier) {
 }
 
 function monthStart(d = new Date()) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
+  // P32 #2 — monthStart UTC: avval local-TZ edi → oylik reset chegarasi instance/timezone
+  // bo'yicha siljirdi. UTC'ga qadab qo'ydik. Bu CHEGARA HISOBI (kredit QIYMATI emas) — reset
+  // MANTIG'I o'zgarmaydi; faqat deploy paytida chegara BIR MARTA siljiydi (owner xabardor).
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
 }
 
 async function resetMonthIfNeeded(userId: string) {

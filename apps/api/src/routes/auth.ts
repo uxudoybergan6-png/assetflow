@@ -91,6 +91,15 @@ const twofaLimiter = rateLimit({
   message: "Too many code attempts — please try again in 1 minute",
 });
 
+/** P32 #3 — token bilan ishlaydigan endpointlar (reset-password / verify-email) avval
+ *  THROTTLE'siz edi → token brute-force mumkin. Qattiqroq oyna qo'shildi. */
+const tokenLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  keyPrefix: "auth-token",
+  message: "Too many attempts — please try again shortly",
+});
+
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
@@ -131,18 +140,22 @@ authRouter.post("/register", authLimiter, async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      name,
-      // FAZA 2 (M1) — DOIM USER (admin-approval gate'ini chetlab bo'lmasin).
-      role: UserRole.USER,
-    },
-  });
-
-  await prisma.subscription.create({
-    data: { userId: user.id, status: "INCOMPLETE" },
+  // P32 #4 — User + Subscription ATOMIK ($transaction): yarim-yaratilgan hisob (User bor,
+  // Subscription yo'q) qolmasin — ikkinchi create yiqilsa User ham roll-back bo'ladi.
+  const user = await prisma.$transaction(async (tx) => {
+    const u = await tx.user.create({
+      data: {
+        email,
+        passwordHash,
+        name,
+        // FAZA 2 (M1) — DOIM USER (admin-approval gate'ini chetlab bo'lmasin).
+        role: UserRole.USER,
+      },
+    });
+    await tx.subscription.create({
+      data: { userId: u.id, status: "INCOMPLETE" },
+    });
+    return u;
   });
 
   // PROBLEM 14 — admin xabardor qilinadi (faqat CREATE'da; fire-and-forget).
@@ -449,7 +462,7 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
 });
 
 /** Token bilan yangi parol o'rnatish */
-authRouter.post("/reset-password", async (req, res) => {
+authRouter.post("/reset-password", tokenLimiter, async (req, res) => {
   const parsed = resetSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
@@ -486,7 +499,7 @@ authRouter.post("/reset-password", async (req, res) => {
 const verifyEmailSchema = z.object({ token: z.string().min(10) });
 
 /** Token bilan emailni tasdiqlash (verify-email.html sahifasi chaqiradi). */
-authRouter.post("/verify-email", async (req, res) => {
+authRouter.post("/verify-email", tokenLimiter, async (req, res) => {
   const parsed = verifyEmailSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
@@ -713,6 +726,20 @@ const avatarUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
+/** P32 #5 — HAQIQIY tur (magic-byte). Client `Content-Type` (file.mimetype) SOXTA bo'lishi
+ *  mumkin (masalan HTML/SVG'ga image/png yorlig'i) — shu sabab BAYTLARdan aniqlaymiz.
+ *  Faqat PNG/JPEG/WebP qabul; boshqasi → null (rad). */
+function sniffImageType(buf: Buffer): { mime: string; ext: string } | null {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)
+    return { mime: "image/png", ext: "png" };
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff)
+    return { mime: "image/jpeg", ext: "jpg" };
+  if (buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP")
+    return { mime: "image/webp", ext: "webp" };
+  return null;
+}
+
 /** POST /api/auth/avatar — form-data `avatar` fayli; User.image ga GCS key yozadi. */
 authRouter.post("/avatar", requireAuth, avatarUpload.single("avatar"), async (req, res) => {
   const file = req.file;
@@ -720,11 +747,13 @@ authRouter.post("/avatar", requireAuth, avatarUpload.single("avatar"), async (re
     res.status(400).json({ error: "No file uploaded (field: avatar)" });
     return;
   }
-  const ext = AVATAR_TYPES[file.mimetype];
-  if (!ext) {
+  // P32 #5 — client mimetype'ga ISHONMAYMIZ: haqiqiy baytlardan aniqlaymiz (spoof rad).
+  const sniff = sniffImageType(file.buffer);
+  if (!sniff) {
     res.status(400).json({ error: "Unsupported image type — use PNG, JPEG or WebP" });
     return;
   }
+  const ext = sniff.ext;
   if (!isS3Configured()) {
     res.status(503).json({ error: "Storage is not configured" });
     return;
@@ -732,7 +761,7 @@ authRouter.post("/avatar", requireAuth, avatarUpload.single("avatar"), async (re
   const userId = req.user!.userId;
   const key = `avatars/${userId}.${ext}`;
   try {
-    await uploadBufferToS3(file.buffer, key, file.mimetype, "private, max-age=0");
+    await uploadBufferToS3(file.buffer, key, sniff.mime, "private, max-age=0");
     // Eski boshqa-kengaytmali avatarni tozalaymiz (png→jpg almashuvida qoldiq qolmasin)
     const stale = Object.values(AVATAR_TYPES)
       .filter((e) => e !== ext)
