@@ -425,59 +425,60 @@
     .ai-suggestions{margin:12px -3px -3px;display:flex;flex-wrap:wrap;justify-content:center}
     .ai-suggestion{min-height:27px;margin:3px;padding:6px 8px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text-2);font-size:8px;font-weight:650}
     .ai-suggestion:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
-    .ai-dock{position:relative;margin:0 9px 9px;padding:0;overflow:visible;border:1px solid var(--border);border-radius:17px;background:var(--surface);box-shadow:0 18px 50px rgba(0,0,0,.38),var(--inset)}
+    /* Web composer porti: DOM tartibi va atomlari BATCH6 bilan bir xil, faqat tor panelga moslashadi. */
+    .ai-dock{position:relative;margin:0 9px 9px;padding:13px 14px;overflow:visible;border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:0 18px 42px rgba(0,0,0,.5)}
     .panel[data-theme="noir"] .ai-dock{background:#131316}
     .panel[data-theme="neon"] .ai-dock{background:#0d0d0e}
     .panel[data-theme="cold"] .ai-dock{background:#10141d}
-    .ai-refbar{min-height:42px;padding:9px 12px 0;display:flex;align-items:center;overflow-x:auto}
-    .ai-ref-label{margin-right:8px;color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.09em;white-space:nowrap;flex:0 0 auto}
-    .ai-ref-add,.ai-ref-thumb,.ai-frame-thumb{height:32px;margin-right:6px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted);flex:0 0 auto}
-    .ai-ref-add{width:auto;min-width:32px;padding:0 9px;border-style:dashed;font-size:9px;font-weight:750}
-    .ai-ref-add span{margin-left:4px}
+    .ai-axrefs{margin-bottom:6px;display:flex;align-items:center;gap:9px;min-width:0}
+    .ai-ref-add{width:44px;height:44px;padding:0;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1;flex:0 0 auto}
     .ai-ref-add:hover{border-color:var(--accent);color:var(--accent)}
-    .ai-ref-thumb{width:32px;position:relative;overflow:hidden;background:linear-gradient(135deg,#235561,#e2906b);color:#fff;display:flex;align-items:flex-end;justify-content:center;padding:4px;font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace}
-    .ai-frame-thumb{min-width:70px;padding:0 8px;border-style:dashed;display:flex;align-items:center;justify-content:center;text-align:center;font:700 7px/1.25 "JetBrains Mono","SFMono-Regular",monospace}
+    .ai-ref-track{min-width:0;display:flex;align-items:center;gap:7px;overflow-x:auto;-ms-overflow-style:none}
+    .ai-ref-track::-webkit-scrollbar{display:none}
+    .ai-ref-thumb,.ai-frame-thumb{width:46px;height:46px;padding:4px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--muted);display:flex;align-items:flex-end;justify-content:center;font:700 7px/1.15 "JetBrains Mono","SFMono-Regular",monospace;flex:0 0 auto}
+    .ai-ref-thumb{overflow:hidden;background:linear-gradient(135deg,#235561,#e2906b);color:#fff}
+    .ai-frame-thumb{width:68px;align-items:center;text-align:center;border-style:dashed}
     .ai-frame-thumb.filled{border-style:solid;background:linear-gradient(135deg,#372f66,#d55c56);color:#fff}
-    .ai-ref-hint{margin-left:auto;color:var(--faint);font:650 7px/1.35 "JetBrains Mono","SFMono-Regular",monospace;text-align:right;white-space:nowrap}
-    .ai-preset-row{margin:8px 10px 0;display:flex;flex-wrap:wrap}
-    .ai-preset{min-height:25px;margin:2px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface-2);color:var(--muted);font-size:8px;font-weight:700}
+    .ai-axrefmeta{min-width:0;margin-bottom:8px;display:flex;align-items:center;gap:9px;color:var(--muted);font:600 10px/1.35 "JetBrains Mono","SFMono-Regular",monospace}
+    .ai-ref-count{white-space:nowrap;flex:0 0 auto}
+    .ai-ref-hint{min-width:0;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ai-preset-row{margin:0 0 8px;display:flex;flex-wrap:wrap;gap:6px}
+    .ai-preset{min-height:27px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:8px;font-weight:700}
     .ai-preset:hover,.ai-preset.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
-    .ai-prompt-shell{margin:8px 12px 0;padding:10px 0 12px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-    .ai-composer.no-assets .ai-prompt-shell{margin-top:0;border-top:0;padding-top:12px}
-    .ai-prompt-head{min-height:27px;margin-bottom:7px;display:flex;align-items:center}
-    .ai-prompt-kicker{color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.1em}
-    .ai-prompt-actions{margin-left:auto;display:flex;align-items:center}
-    .ai-prompt{min-height:78px;padding:0;border:0;border-radius:0;background:transparent;color:var(--text);font-size:12px;line-height:1.55}
-    .ai-prompt.placeholder{color:var(--faint)}
+    .ai-promptwrap{position:relative}
+    .ai-prompt{min-height:92px;max-height:200px;padding:0 32px 0 0;border:0;background:transparent;color:var(--text);font-size:13.5px;line-height:1.6;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+    .ai-prompt.expanded{min-height:160px;max-height:50vh}
+    .ai-prompt[contenteditable="true"]{outline:0;cursor:text}
+    .ai-prompt[contenteditable="true"]:empty:before{content:attr(data-placeholder);color:var(--faint);pointer-events:none}
+    .ai-promptexp{position:absolute;top:0;right:0;width:26px;height:26px;padding:0;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:13px}
+    .ai-promptexp:hover{background:var(--surface-3);color:var(--text)}
+    .ai-promptexp.on{transform:rotate(180deg)}
     .ai-mention{display:inline-flex;align-items:center;padding:1px 5px;border:1px solid var(--accent);border-radius:5px;background:var(--accent-soft);color:var(--accent);font-weight:700}
-    .ai-enhance,.ai-clear{min-height:26px;padding:5px 8px;border:1px solid var(--border);border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:7px;font-weight:750;white-space:nowrap}
-    .ai-enhance b{margin-left:3px;font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace}
-    .ai-enhance:hover{border-color:var(--accent);color:var(--accent)}
-    .ai-clear{margin-left:5px;background:transparent;color:var(--muted)}
-    .ai-settings-grid{padding:10px 12px 8px;display:grid;grid-template-columns:minmax(76px,.72fr) minmax(120px,1.2fr) minmax(128px,1fr);grid-gap:6px}
+    .ai-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+    .ai-setgroup{min-width:0;display:flex;align-items:center;gap:8px;flex:1 1 auto}
     .ai-setting-wrap{min-width:0;position:relative}
-    .ai-setting{width:100%;min-height:45px;padding:7px 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);display:flex;align-items:center;text-align:left}
-    .ai-setting:hover,.ai-setting:focus{border-color:var(--accent);outline:0;background:var(--accent-soft)}
-    .ai-setting-copy{min-width:0;display:block}
-    .ai-setting small,.ai-setting strong{display:block;min-width:0}
-    .ai-setting small{margin-bottom:4px;color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.08em}
-    .ai-setting strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:9px}
-    .ai-setting i{margin-left:auto;padding-left:6px;color:var(--muted);font-style:normal;font-size:8px}
-    .ai-action-row{min-height:59px;padding:9px 12px 11px;border-top:1px solid var(--border);display:flex;align-items:center}
-    .ai-action-meta{min-width:0;display:flex;align-items:center}
-    .ai-action-meta span{color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.05em;white-space:nowrap}
-    .ai-action-meta b{color:var(--text-2)}
-    .ai-topup{margin-left:8px;padding:3px;border:0;background:transparent;color:var(--accent);font-size:8px;font-weight:750;white-space:nowrap}
-    .ai-generate{min-width:160px;min-height:42px;margin-left:auto;padding:9px 12px;border:1px solid var(--accent);border-radius:10px;background:var(--grad);color:var(--on-accent);display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:750;box-shadow:0 7px 22px var(--glow)}
-    .ai-generate b{margin-left:13px;color:inherit;font:750 8px/1 "JetBrains Mono","SFMono-Regular",monospace;white-space:nowrap}
+    .ai-setting-wrap.mode{flex:0 0 auto}
+    .ai-setting-wrap.model,.ai-setting-wrap.output{flex:0 1 auto}
+    .ai-set{height:34px;max-width:100%;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text-2);display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:650;white-space:nowrap}
+    .ai-setting-wrap .ai-set{width:100%}
+    .ai-set:hover,.ai-set:focus{outline:0;background:var(--surface-3);border-color:var(--accent)}
+    .ai-set[disabled]{opacity:.45;cursor:not-allowed}
+    .ai-set.mode{background:var(--surface-3);border-color:transparent;color:var(--text)}
+    .ai-set.enhance{flex:0 0 auto;padding:0 10px;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+    .ai-set.clear{flex:0 0 auto;color:var(--muted)}
+    .ai-set b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font:inherit}
+    .ai-set-icon,.ai-set-chev{flex:0 0 auto;color:currentColor;font-style:normal}
+    .ai-icon{width:14px;height:14px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+    .ai-ref-count .ai-icon{width:13px;height:13px;display:inline-block;margin-right:3px;vertical-align:-2px}
+    .ai-genwrap{margin-left:auto;display:flex;align-items:center;gap:9px;flex:0 0 auto}
+    .ai-cost{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font:700 10.5px/1 "JetBrains Mono","SFMono-Regular",monospace;white-space:nowrap}
+    .ai-cost span{color:var(--faint);font-size:8px;font-weight:600;letter-spacing:.08em}
+    .ai-generate{min-height:34px;padding:8px 14px;border:0;border-radius:10px;background:var(--grad);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:10px;font-weight:750;white-space:nowrap;box-shadow:0 7px 22px var(--glow)}
     .ai-generate:hover{transform:translateY(-1px)}
-    .ai-generate[disabled]{opacity:.42;cursor:not-allowed;box-shadow:none;transform:none}
-    .ai-source-drop{min-height:82px;margin:12px;padding:10px;border:1px dashed var(--border);border-radius:12px;background:var(--surface-2);display:flex;align-items:center}
-    .ai-source-drop-icon{width:36px;height:36px;margin-right:9px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 auto}
-    .ai-source-drop-copy{min-width:0;flex:1}
-    .ai-source-drop-copy strong,.ai-source-drop-copy span{display:block}
-    .ai-source-drop-copy strong{font-size:10px}.ai-source-drop-copy span{margin-top:4px;color:var(--muted);font-size:7px}
-    .ai-source-choose{min-height:31px;margin-left:auto;padding:6px 9px;border:1px solid var(--accent);border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:7px;font-weight:750;white-space:nowrap}
+    .ai-generate[disabled]{border:1px solid var(--border);background:var(--surface-3);color:var(--faint);opacity:1;cursor:not-allowed;box-shadow:none;transform:none}
+    .ai-axbal{min-width:0;margin-top:10px;display:flex;align-items:center;gap:5px;color:var(--faint);font:600 8.5px/1.35 "JetBrains Mono","SFMono-Regular",monospace}
+    .ai-axbal em{color:var(--muted);font-style:normal}
+    .ai-topup{margin-left:auto;padding:3px;border:0;background:transparent;color:var(--accent);font:700 8.5px/1 "JetBrains Mono","SFMono-Regular",monospace;white-space:nowrap}
     .ai-popover{position:absolute;bottom:calc(100% + 8px);width:210px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--surface-3);box-shadow:0 18px 48px rgba(0,0,0,.55);z-index:10;display:none}
     .ai-popover.open{display:block}
     .ai-setting-wrap.mode .ai-popover{left:0}
@@ -498,8 +499,10 @@
     .ai-model-modal{position:absolute;top:0;right:0;bottom:0;left:0;padding:14px;background:var(--scrim);z-index:18;display:none;align-items:center;justify-content:center}
     .ai-model-modal.open{display:flex}
     .ai-model-card{width:100%;max-width:480px;max-height:680px;padding:13px;border:1px solid var(--border);border-radius:15px;background:var(--surface);box-shadow:var(--shadow);overflow-y:auto}
-    .ai-modal-head{display:flex;align-items:center;margin-bottom:9px}
-    .ai-modal-head h3{margin:0 auto 0 0;font:650 17px/1 "Space Grotesk",Inter,sans-serif}
+    .ai-modal-head{display:flex;align-items:flex-start;margin-bottom:9px}
+    .ai-modal-title{margin-right:auto}
+    .ai-modal-eyebrow{display:block;margin-bottom:5px;color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.1em;text-transform:uppercase}
+    .ai-modal-head h3{margin:0;font:650 17px/1.05 "Space Grotesk",Inter,sans-serif;letter-spacing:-.03em}
     .ai-modal-close{width:29px;height:29px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text)}
     .ai-model-search{height:35px;width:100%;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);outline:0}
     .ai-filter-row{margin:7px -2px;display:flex;flex-wrap:wrap}
@@ -520,6 +523,24 @@
     .ai-result-info strong,.ai-result-info span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .ai-result-info strong{font-size:9px}
     .ai-result-info span{margin-top:4px;color:var(--muted);font:650 7px/1.25 "JetBrains Mono","SFMono-Regular",monospace}
+    /* ai-progress: webdagi state-generating'ning running/queued/done kartalari, ai-result-card atomlaridan qurilgan. */
+    .ai-run-note{margin:0 0 10px}
+    .ai-result-card.running{border-color:var(--accent);box-shadow:0 12px 34px var(--glow)}
+    .ai-result-card.running .ai-result-media:before,.ai-result-card.running .ai-result-media:after{display:none}
+    .ai-run-shimmer{position:absolute;top:0;right:0;bottom:0;left:0;overflow:hidden;background:linear-gradient(145deg,#101326,#33417c 44%,#dc7054)}
+    .ai-run-shimmer:after{content:"";position:absolute;top:0;bottom:0;width:90px;left:-140px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 1.3s infinite}
+    .ai-run-overlay{position:absolute;right:0;bottom:0;left:0;z-index:2;padding:10px;background:linear-gradient(transparent,rgba(5,7,11,.86))}
+    .ai-run-top{display:flex;align-items:baseline;margin-bottom:7px}
+    .ai-run-pct{color:#fff;font:750 17px/1 "Space Grotesk",Inter,sans-serif;letter-spacing:-.035em}
+    .ai-run-time{margin-left:auto;color:rgba(255,255,255,.72);font:700 8px/1 "JetBrains Mono","SFMono-Regular",monospace}
+    .ai-run-track{height:4px;border-radius:4px;background:rgba(255,255,255,.22);overflow:hidden}
+    .ai-run-fill{height:100%;width:62%;border-radius:4px;background:var(--grad);box-shadow:0 0 12px var(--glow)}
+    .ai-run-cancel{width:100%;min-height:26px;margin-top:8px;border:1px solid rgba(255,255,255,.3);border-radius:7px;background:rgba(6,8,13,.72);color:#fff;font:700 8px/1 "JetBrains Mono","SFMono-Regular",monospace}
+    .ai-run-cancel:hover{border-color:var(--danger);color:var(--danger)}
+    .ai-result-card.queued{opacity:.6}
+    .ai-result-card.queued .ai-result-media{background:var(--surface-2);display:flex;align-items:center;justify-content:center}
+    .ai-result-card.queued .ai-result-media:before,.ai-result-card.queued .ai-result-media:after{display:none}
+    .ai-queued-label{padding:6px 10px;border:1px dashed var(--border);border-radius:999px;color:var(--muted);font:700 8px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.03em;white-space:nowrap}
     .ai-audio-list{max-width:500px;margin:0 auto}
     .ai-audio-row{padding:9px;border:1px solid var(--border);border-radius:11px;background:var(--surface);display:flex;align-items:center}
     .ai-audio-play{width:32px;height:32px;margin-right:8px;border:1px solid var(--accent);border-radius:50%;background:var(--accent-soft);color:var(--accent)}
@@ -636,24 +657,24 @@
     .panel[data-width="320"] .ai-empty-hero h2{font-size:19px}
     .panel[data-width="320"] .ai-sparky{width:44px;height:44px;margin-bottom:9px}
     .panel[data-width="320"] .ai-suggestion{padding-left:6px;padding-right:6px;font-size:7px}
-    .panel[data-width="320"] .ai-dock{margin:0 6px 6px;padding:0;border-radius:14px}
-    .panel[data-width="320"] .ai-ref-hint{display:none}
-    .panel[data-width="320"] .ai-refbar{padding-left:9px;padding-right:9px}
-    .panel[data-width="320"] .ai-ref-add span{display:none}
-    .panel[data-width="320"] .ai-prompt-shell{margin-left:9px;margin-right:9px}
-    .panel[data-width="320"] .ai-prompt{min-height:70px;font-size:10px}
-    .panel[data-width="320"] .ai-enhance,.panel[data-width="320"] .ai-clear{padding-left:6px;padding-right:6px;font-size:6px}
-    .panel[data-width="320"] .ai-settings-grid{padding-left:9px;padding-right:9px;grid-template-columns:80px minmax(0,1fr)}
-    .panel[data-width="320"] .ai-setting-wrap.output{grid-column:1/-1}
-    .panel[data-width="320"] .ai-setting{min-height:42px;padding:6px 7px}
-    .panel[data-width="320"] .ai-setting strong{font-size:8px}
-    .panel[data-width="320"] .ai-action-row{padding-left:9px;padding-right:9px;display:grid;grid-template-columns:1fr;grid-gap:8px}
-    .panel[data-width="320"] .ai-generate{width:100%;min-width:0;min-height:39px;margin-left:0;padding:7px 9px;font-size:9px}
+    .panel[data-width="320"] .ai-dock{margin:0 6px 6px;padding:12px;border-radius:18px}
+    .panel[data-width="320"] .ai-axrefmeta{font-size:8px}
+    .panel[data-width="320"] .ai-ref-hint{font-size:7.5px}
+    .panel[data-width="320"] .ai-prompt{min-height:72px;max-height:50vh;font-size:11px}
+    .panel[data-width="320"] .ai-dockrow{align-items:flex-start;flex-wrap:wrap;gap:7px}
+    .panel[data-width="320"] .ai-setgroup{width:100%;flex:1 0 100%;flex-wrap:wrap;gap:5px}
+    .panel[data-width="320"] .ai-setting-wrap.mode{width:74px}
+    .panel[data-width="320"] .ai-setting-wrap.model{width:calc(100% - 79px);flex:none}
+    .panel[data-width="320"] .ai-setting-wrap.output{width:calc(100% - 84px);flex:none}
+    .panel[data-width="320"] .ai-set{height:32px;padding:0 8px;gap:4px;font-size:8px}
+    .panel[data-width="320"] .ai-set.enhance{width:79px;justify-content:center;padding:0 7px}
+    .panel[data-width="320"] .ai-genwrap{width:100%;margin-left:0;justify-content:flex-end}
+    .panel[data-width="320"] .ai-generate{min-height:32px;padding:7px 11px;font-size:9px}
+    .panel[data-width="320"] .ai-axbal{font-size:7.5px}
+    .panel[data-width="320"] .ai-bal-note{display:none}
     .panel[data-width="320"] .ai-setting-wrap.mode .ai-popover{left:0;width:220px}
     .panel[data-width="320"] .ai-setting-wrap.model .ai-popover{right:0;left:auto;width:235px}
-    .panel[data-width="320"] .ai-setting-wrap.output .ai-popover{right:0;left:0;width:auto}
-    .panel[data-width="320"] .ai-source-drop{margin:9px;display:grid;grid-template-columns:36px minmax(0,1fr)}
-    .panel[data-width="320"] .ai-source-choose{width:100%;margin:9px 0 0;grid-column:1/-1}
+    .panel[data-width="320"] .ai-setting-wrap.output .ai-popover{right:auto;left:0;width:258px}
     .panel[data-width="320"] .ai-result-media{height:128px}
     .panel[data-width="320"] .ai-result-actions button{padding:4px;font-size:6px}.panel[data-width="320"] .ai-result-actions button:first-child{display:none}
     .panel[data-width="320"] .ai-source-picker{padding:10px}.panel[data-width="320"] .ai-source-option{min-height:68px;padding:8px}
@@ -664,10 +685,16 @@
     .panel[data-width="320"] .multimodal-grid{grid-template-columns:1fr}
     .panel[data-width="420"] .catalog-grid,.panel[data-width="420"] .library-grid{grid-template-columns:1fr 1fr}
     .panel[data-width="420"] .ai-stage{min-height:270px;padding:14px}
-    .panel[data-width="420"] .ai-settings-grid{grid-template-columns:88px minmax(0,1fr)}
-    .panel[data-width="420"] .ai-setting-wrap.output{grid-column:1/-1}
-    .panel[data-width="420"] .ai-setting-wrap.model .ai-popover{right:0;left:auto}
-    .panel[data-width="420"] .ai-setting-wrap.output .ai-popover{right:0;left:0;width:auto}
+    .panel[data-width="420"] .ai-dock{margin:0 10px 10px;padding:12px 13px;border-radius:18px}
+    .panel[data-width="420"] .ai-prompt{min-height:72px;max-height:50vh;font-size:12px}
+    .panel[data-width="420"] .ai-dockrow{flex-wrap:wrap}
+    .panel[data-width="420"] .ai-setgroup{width:100%;flex:1 0 100%;gap:5px}
+    .panel[data-width="420"] .ai-setting-wrap.model,.panel[data-width="420"] .ai-setting-wrap.output{flex:1 1 auto}
+    .panel[data-width="420"] .ai-set{padding:0 8px;gap:4px;font-size:8.5px}
+    .panel[data-width="420"] .ai-set.enhance{padding:0 8px}
+    .panel[data-width="420"] .ai-genwrap{margin-left:auto}
+    .panel[data-width="420"] .ai-setting-wrap.model .ai-popover{right:auto;left:0}
+    .panel[data-width="420"] .ai-setting-wrap.output .ai-popover{right:0;left:auto;width:245px}
     .panel[data-width="420"] .ai-result-media{height:172px}
     .panel[data-width="600"] .auth-layout{grid-template-columns:.9fr 1.1fr}
     .panel[data-width="600"] .auth-story{min-height:440px;display:flex;flex-direction:column;justify-content:center}
@@ -689,12 +716,58 @@
     .panel[data-width="600"] .library-grid{grid-template-columns:repeat(3,1fr)}
     .panel[data-width="600"] .form-layout{grid-template-columns:1fr 1fr}
     .panel[data-width="600"] .ai-stage{min-height:300px;padding:18px}
-    .panel[data-width="600"] .ai-dock{margin:0 14px 12px;padding:0}
+    .panel[data-width="600"] .ai-dock{margin:0 14px 12px;padding:13px 14px}
+    .panel[data-width="600"] .ai-setgroup{gap:5px}
+    .panel[data-width="600"] .ai-set{padding:0 8px;gap:4px;font-size:9px}
+    .panel[data-width="600"] .ai-setting-wrap.model{max-width:116px}
+    .panel[data-width="600"] .ai-setting-wrap.output{max-width:102px}
+    .panel[data-width="600"] .ai-set.enhance{padding:0 8px}
+    .panel[data-width="600"] .ai-genwrap{gap:6px}
+    .panel[data-width="600"] .ai-generate{padding-left:11px;padding-right:11px}
     .panel[data-width="600"] .ai-result-media{height:220px}
+    /* Panel balandligi presetlari (AE'da panel resizable). Faqat 620/500 ga scoped — 820 tegilmaydi. */
+    .panel[data-height="620"] .home-b-hero{height:212px}
+    .panel[data-height="620"] .home-b-action{min-height:132px}
+    .panel[data-height="620"] .ai-stage{min-height:188px}
+    .panel[data-height="620"] .ai-empty-hero{min-height:150px}
+
+    .panel[data-height="500"] .home-b-page{padding-top:10px}
+    .panel[data-height="500"] .home-b-hero{height:196px;padding:15px}
+    .panel[data-height="500"] .home-b-copy h1{font-size:23px}
+    .panel[data-height="500"] .home-b-copy p{margin-top:7px;font-size:9px;max-height:26px;overflow:hidden}
+    .panel[data-height="500"] .home-b-cta{margin-top:11px}
+    .panel[data-height="500"] .home-b-section{padding-top:12px}
+    .panel[data-height="500"] .home-b-action{min-height:118px;padding:12px}
+    .panel[data-height="500"] .home-hero{padding-top:16px;padding-bottom:16px}
+
+    .panel[data-height="500"] .ai-stage{min-height:120px;padding-top:12px;padding-bottom:12px}
+    .panel[data-height="500"] .ai-empty-hero{min-height:120px;padding-top:12px;padding-bottom:12px}
+    .panel[data-height="500"] .ai-run-note{margin-bottom:8px}
+    .panel[data-height="500"] .ai-source-picker{margin-top:8px}
+
+    /* Auth kartasi 500px ga qisqarib sig'sin. */
+    .panel[data-height="500"] .auth-page{padding-top:12px;padding-bottom:12px}
+    .panel[data-height="500"] .auth-story{min-height:92px;padding:14px}
+    .panel[data-height="500"] .auth-story h1{margin-top:10px;font-size:23px}
+    .panel[data-height="500"] .auth-card{padding:14px}
+    .panel[data-height="500"] .device-code{margin:12px 0;padding:14px 10px}
+
     @media(max-width:760px){.control-bar{width:220px;padding-left:14px;padding-right:14px}.stage{left:220px}}
   </style>
 </head>
 <body>
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <symbol id="ai-i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="M4 17l5-5 4 4 2-2 5 5"></path></symbol>
+    <symbol id="ai-i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><rect x="14" y="14" width="6" height="6" rx="1"></rect></symbol>
+    <symbol id="ai-i-sliders" viewBox="0 0 24 24"><path d="M4 7h5M15 7h5M4 17h9M19 17h1"></path><circle cx="12" cy="7" r="3"></circle><circle cx="16" cy="17" r="3"></circle></symbol>
+    <symbol id="ai-i-chev" viewBox="0 0 24 24"><path d="M7 9l5 5 5-5"></path></symbol>
+    <symbol id="ai-i-wand" viewBox="0 0 24 24"><path d="M5 19L16 8M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2zM19 13l.7 1.3L21 15l-1.3.7L19 17l-.7-1.3L17 15l1.3-.7L19 13z"></path></symbol>
+    <symbol id="ai-i-spark" viewBox="0 0 24 24"><path d="M12 3c1.1 4.4 3.6 6.9 8 8-4.4 1.1-6.9 3.6-8 8-1.1-4.4-3.6-6.9-8-8 4.4-1.1 6.9-3.6 8-8z"></path></symbol>
+    <symbol id="ai-i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="14" rx="2"></rect><path d="M17 10l4-2v8l-4-2z"></path></symbol>
+    <symbol id="ai-i-voice" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0014 0M12 18v3M9 21h6"></path></symbol>
+    <symbol id="ai-i-wave" viewBox="0 0 24 24"><path d="M4 13v-2M8 17V7M12 20V4M16 17V7M20 13v-2"></path></symbol>
+    <symbol id="ai-i-upscale" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5M4 9l6-5M20 9l-6-5M4 15l6 5M20 15l-6 5"></path></symbol>
+  </svg>
   <!-- Bu maket faqat BATCH6 web tizimi va topshiriqdagi ro'yxatdan qayta qurildi; production plagin fayllari ishlatilmadi. -->
   <aside class="control-bar">
     <div class="control-brand"><div class="control-logo">AF</div><div><strong>Plugin lab</strong><span>BATCH8 · WEB REDO</span></div></div>
@@ -706,11 +779,15 @@
     <div class="segmented" id="widthControl">
       <button type="button" data-width="320">320</button><button type="button" data-width="420">420</button><button type="button" data-width="600">600</button>
     </div>
+    <div class="control-label">Panel height</div>
+    <div class="segmented" id="heightControl">
+      <button type="button" data-height="820">820</button><button type="button" data-height="620">620</button><button type="button" data-height="500">500</button>
+    </div>
     <nav class="pane-nav" id="paneNav">
-      <div class="nav-group"><p class="nav-group-name">Home</p><button class="nav-button" data-pane="dashboard-b">Dashboard B · Visual</button><button class="nav-button" data-pane="dashboard">Dashboard A · Saved</button></div>
+      <div class="nav-group"><p class="nav-group-name">Home</p><button class="nav-button" data-pane="dashboard-b">Dashboard B · Visual</button><button class="nav-button" data-pane="dashboard">Dashboard A · Archived</button></div>
       <div class="nav-group"><p class="nav-group-name">Auth</p><button class="nav-button" data-pane="auth-login">Sign in</button><button class="nav-button" data-pane="auth-device">Google device code</button><button class="nav-button" data-pane="auth-account">Signed-in account</button></div>
-      <div class="nav-group"><p class="nav-group-name">Browse</p><button class="nav-button" data-pane="browse-catalog">Stock Catalog</button><button class="nav-button" data-pane="browse-detail">Template detail</button><button class="nav-button" data-pane="browse-import">Import progress</button><button class="nav-button" data-pane="browse-unavailable">Pack unavailable</button></div>
-      <div class="nav-group"><p class="nav-group-name">AI Studio</p><button class="nav-button" data-pane="ai-image">Image mode</button><button class="nav-button" data-pane="ai-video">Video mode</button><button class="nav-button" data-pane="ai-upscale">Upscale mode</button><button class="nav-button" data-pane="ai-voice">Voice mode</button><button class="nav-button" data-pane="ai-sfx">SFX mode</button><button class="nav-button" data-pane="ai-result">Workspace results</button><button class="nav-button" data-pane="concept-seedance">Seedance concept</button></div>
+      <div class="nav-group"><p class="nav-group-name">Browse</p><button class="nav-button" data-pane="browse-catalog">Stock Catalog</button><button class="nav-button" data-pane="browse-detail">Template detail</button><button class="nav-button" data-pane="browse-progate">Pro template gate</button><button class="nav-button" data-pane="browse-import">Import progress</button><button class="nav-button" data-pane="browse-unavailable">Pack unavailable</button></div>
+      <div class="nav-group"><p class="nav-group-name">AI Studio</p><button class="nav-button" data-pane="ai-image">Image mode</button><button class="nav-button" data-pane="ai-video">Video mode</button><button class="nav-button" data-pane="ai-upscale">Upscale mode</button><button class="nav-button" data-pane="ai-voice">Voice mode</button><button class="nav-button" data-pane="ai-sfx">SFX mode</button><button class="nav-button" data-pane="ai-progress">Generation running</button><button class="nav-button" data-pane="ai-result">Workspace results</button><button class="nav-button" data-pane="concept-seedance">Seedance concept</button></div>
       <div class="nav-group"><p class="nav-group-name">Library</p><button class="nav-button" data-pane="library-grid">My Library</button><button class="nav-button" data-pane="library-empty">Empty library</button></div>
       <div class="nav-group"><p class="nav-group-name">Settings</p><button class="nav-button" data-pane="settings">Preferences</button></div>
       <div class="nav-group"><p class="nav-group-name">States</p><button class="nav-button" data-pane="state-offline">Offline</button><button class="nav-button" data-pane="state-credits">Low credits</button><button class="nav-button" data-pane="state-moderation">Moderation refund</button><button class="nav-button" data-pane="state-update">Update available</button><button class="nav-button" data-pane="state-toasts">Toasts</button><button class="nav-button" data-pane="state-loading">Loading skeletons</button></div>
@@ -760,7 +837,7 @@
 
           <section class="pane" data-pane="dashboard">
             <div class="home-page">
-              <div class="home-hero"><div class="home-kick">WEDNESDAY · JUL 15</div><h1 class="home-title">Good afternoon, <em>Alex.</em></h1><p class="home-sub">Pick up where you left off, or start something new.</p></div>
+              <div class="home-hero"><div class="badge-row" style="margin-bottom:10px"><span class="badge danger">ARCHIVED</span></div><div class="home-kick">WEDNESDAY · JUL 15</div><h1 class="home-title">Good afternoon, <em>Alex.</em></h1><p class="home-sub">Archived saved-first layout. Dashboard B is the default Home — do not port this variant.</p></div>
 
               <div class="home-section"><h2>Jump back in</h2><button class="link-button" type="button" data-go="ai-image">Open AI Studio →</button></div>
               <div class="home-strip">
@@ -843,6 +920,16 @@
             </div>
           </section>
 
+          <section class="pane" data-pane="browse-progate">
+            <div class="state-stage"><div class="state-card">
+              <div class="detail-poster" style="height:172px;margin-bottom:16px"><div class="art art-one"></div><div class="play">▶</div><div class="detail-overlay"><span class="badge accent">PRO</span><h2>Velocity Sports Opener</h2><p>Ae · 00:14 · 4K</p></div></div>
+              <p class="eyebrow">Pro template</p><h1>This is a Pro template.</h1>
+              <p>Your plan: <strong>FREE</strong>. Upgrade to import Pro templates like this one straight into After Effects.</p>
+              <div class="notice" style="text-align:left;margin-bottom:12px">The plugin has no checkout. <strong>Upgrade on the web ↗</strong> opens the change in your browser; your plan and this catalog update here automatically once it completes.</div>
+              <div class="button-grid"><button class="btn btn-primary" type="button" data-toast="Opening upgrade page in your browser">Upgrade on the web ↗</button><button class="btn btn-secondary" type="button" data-go="browse-catalog">Back to catalog</button></div>
+            </div></div>
+          </section>
+
           <section class="pane" data-pane="browse-import">
             <div class="state-stage"><div style="width:100%;max-width:450px"><div class="page-hero"><p class="eyebrow">Import / Velocity Sports Opener</p><h1 class="page-title small">Bringing the project into AE.</h1></div>
               <div class="surface progress-card"><div class="progress-head"><div class="icon-circle">↓</div><div><h3>Downloading template pack</h3><p>Verifying assets before import</p></div></div><div class="progress-track"><div class="progress-fill"></div></div><div class="progress-meta"><span>128.4 MB / 201 MB</span><span>64%</span></div><div class="divider"></div><div class="meta-row"><span>Next</span><strong>Import project structure</strong></div><div class="meta-row"><span>Destination</span><strong>AssetFlow / Velocity</strong></div></div>
@@ -865,17 +952,23 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Untitled session</button><button class="ai-session-button" type="button">Campaign stills</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab active" type="button">Visuals <span class="ai-view-count">0</span></button><button class="ai-view-tab" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>NEW SESSION</strong><span>Describe an idea below</span></div><div class="ai-grid-toggle"><button class="active" type="button">2×</button><button type="button">1×</button></div></div>
               <div class="ai-stage"><div class="ai-empty-hero"><div><div class="ai-sparky">✦</div><h2>Start with your <em>idea</em></h2><p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p><div class="ai-suggestions"><button class="ai-suggestion" type="button">Neon product shot</button><button class="ai-suggestion" type="button">Slow-motion coffee pour</button><button class="ai-suggestion" type="button">Warm podcast intro</button><button class="ai-suggestion" type="button">Whoosh + impact</button></div></div></div></div>
-              <div class="ai-dock ai-composer">
-                <div class="ai-refbar"><span class="ai-ref-label">REFERENCES</span><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects">＋ <span>Add</span></button><div class="ai-ref-thumb">@1</div><span class="ai-ref-hint">1 / 10 · TYPE @ TO MENTION</span></div>
-                <div class="ai-prompt-shell"><div class="ai-prompt-head"><span class="ai-prompt-kicker">IMAGE PROMPT</span><span class="ai-prompt-actions"><button class="ai-enhance" type="button" data-toast="Prompt enhanced · ✦1">✦ Enhance <b>✦1</b></button></span></div><div class="ai-prompt">A sculptural glass perfume bottle on a mirrored plinth, inspired by <span class="ai-mention">@Image 1</span>, soft directional light.</div></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>Image</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row active" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>Nano Banana 2</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Nano Banana 2"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Nano Banana 2 Lite"><span class="ai-menu-icon">LITE</span>Nano Banana 2 Lite<span class="ai-menu-price">✦2</span></button><button class="ai-menu-row" type="button" data-model-choice="Imagen 4"><span class="ai-menu-icon">I4</span>Imagen 4<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-more-models" type="button" data-model-modal>More models</button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>OUTPUT</small><strong>16:9 · 1K · ×1</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">IMAGE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">ASPECT RATIO</div><div class="ai-option-row"><button class="ai-option" type="button">1:1</button><button class="ai-option active" type="button">16:9</button><button class="ai-option" type="button">9:16</button></div></div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">1K</button><button class="ai-option" type="button">2K</button></div></div><div class="ai-option-group"><div class="ai-option-title">COUNT</div><div class="ai-option-row"><button class="ai-option active" type="button">×1</button><button class="ai-option" type="button">×2</button><button class="ai-option" type="button">×4</button></div></div></div></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-axrefs"><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects" aria-label="Add reference">＋</button><div class="ai-ref-track"></div></div>
+                <div class="ai-axrefmeta"><span class="ai-ref-count"><svg class="ai-icon"><use href="#ai-i-image" xlink:href="#ai-i-image"></use></svg>0/10</span><span class="ai-ref-hint">Optional — add images to edit or combine them (upload or “Use ↗” on a result).</span></div>
+                <div class="ai-preset-row"><button class="ai-preset active" type="button">Editorial portrait</button><button class="ai-preset" type="button">Product photography</button><button class="ai-preset" type="button">Typography poster</button><button class="ai-preset" type="button">Film still</button></div>
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Prompt" data-placeholder="What do you want to make? Describe your idea…"></div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt"><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><svg class="ai-icon"><use href="#ai-i-image" xlink:href="#ai-i-image"></use></svg><b>Image</b><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row active" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><svg class="ai-icon"><use href="#ai-i-grid" xlink:href="#ai-i-grid"></use></svg><b data-model-label>Nano Banana 2</b><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Nano Banana 2"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Nano Banana 2 Lite"><span class="ai-menu-icon">LITE</span>Nano Banana 2 Lite<span class="ai-menu-price">✦2</span></button><button class="ai-menu-row" type="button" data-model-choice="Imagen 4"><span class="ai-menu-icon">I4</span>Imagen 4<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-more-models" type="button" data-model-modal>More models</button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><svg class="ai-icon"><use href="#ai-i-sliders" xlink:href="#ai-i-sliders"></use></svg><b>1:1 / 1K</b><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">IMAGE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">ASPECT RATIO</div><div class="ai-option-row"><button class="ai-option active" type="button">1:1</button><button class="ai-option" type="button">16:9</button><button class="ai-option" type="button">9:16</button></div></div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">1K</button><button class="ai-option" type="button">2K</button></div></div><div class="ai-option-group"><div class="ai-option-title">COUNT</div><div class="ai-option-row"><button class="ai-option active" type="button">×1</button><button class="ai-option" type="button">×2</button><button class="ai-option" type="button">×4</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" data-toast="Prompt improved · ✦1"><svg class="ai-icon"><use href="#ai-i-wand" xlink:href="#ai-i-wand"></use></svg><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>COST</span>✦ 4</span><button class="ai-generate" type="button" disabled><svg class="ai-icon"><use href="#ai-i-spark" xlink:href="#ai-i-spark"></use></svg>Generate</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>BALANCE <b>✦128</b></span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div><button class="ai-generate" type="button" data-go="ai-result"><span>Generate image</span><b>✦4 →</b></button></div>
+                <div class="ai-axbal">BALANCE <em>✦ 128</em><span class="ai-bal-note">· ~32 image generations left</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
               </div>
-              <div class="ai-model-modal" data-model-dialog><div class="ai-model-card"><div class="ai-modal-head"><h3>Choose a model</h3><button class="ai-modal-close" type="button" data-model-close>×</button></div><input class="ai-model-search" type="text" placeholder="Search models…"><div class="ai-filter-row"><button class="ai-filter active" type="button">All</button><button class="ai-filter" type="button">Image</button><button class="ai-filter" type="button">Video</button><button class="ai-filter" type="button">Voice</button><button class="ai-filter" type="button">SFX</button></div><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">PRO</span>Nano Banana Pro<span class="ai-menu-price">FROM ✦8</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">I4U</span>Imagen 4 Ultra<span class="ai-menu-price">FROM ✦6</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">S5</span>Seedream 5.0 Pro<span class="ai-menu-price">FROM ✦4</span></button></div></div>
+              <div class="ai-model-modal" data-model-dialog><div class="ai-model-card"><div class="ai-modal-head"><div class="ai-modal-title"><span class="ai-modal-eyebrow">Model library</span><h3>Choose the engine for this idea.</h3></div><button class="ai-modal-close" type="button" data-model-close>×</button></div><input class="ai-model-search" type="text" placeholder="Search all live models…"><div class="ai-filter-row"><button class="ai-filter active" type="button">All</button><button class="ai-filter" type="button">Image</button><button class="ai-filter" type="button">Video</button><button class="ai-filter" type="button">Voice</button><button class="ai-filter" type="button">SFX</button></div><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">PRO</span>Nano Banana Pro<span class="ai-menu-price">FROM ✦8</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">I4U</span>Imagen 4 Ultra<span class="ai-menu-price">FROM ✦6</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">S5</span>Seedream 5.0 Pro<span class="ai-menu-price">FROM ✦4</span></button></div></div>
             </div>
           </section>
 
@@ -884,18 +977,22 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Untitled session</button><button class="ai-session-button" type="button">Campaign stills</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab active" type="button">Visuals <span class="ai-view-count">0</span></button><button class="ai-view-tab" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>NEW SESSION</strong><span>Video mode</span></div><div class="ai-grid-toggle"><button class="active" type="button">2×</button><button type="button">1×</button></div></div>
               <div class="ai-stage"><div class="ai-empty-hero"><div><div class="ai-sparky">✦</div><h2>Start with your <em>idea</em></h2><p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p><div class="ai-suggestions"><button class="ai-suggestion" type="button">Neon product shot</button><button class="ai-suggestion" type="button">Slow-motion coffee pour</button><button class="ai-suggestion" type="button">Warm podcast intro</button><button class="ai-suggestion" type="button">Whoosh + impact</button></div></div></div></div>
-              <div class="ai-dock ai-composer">
-                <div class="ai-refbar"><span class="ai-ref-label">FRAMES</span><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects">＋ <span>Add</span></button><div class="ai-frame-thumb filled">START FRAME</div><button class="ai-frame-thumb" type="button">＋ END FRAME</button><span class="ai-ref-hint">AUDIO OFF</span></div>
-                <div class="ai-preset-row"><button class="ai-preset active" type="button">Replace subject</button><button class="ai-preset" type="button">Edit objects</button><button class="ai-preset" type="button">Inpaint / Fix</button></div>
-                <div class="ai-prompt-shell"><div class="ai-prompt-head"><span class="ai-prompt-kicker">VIDEO PROMPT</span><span class="ai-prompt-actions"><button class="ai-enhance" type="button" data-toast="Prompt enhanced · ✦1">✦ Enhance <b>✦1</b></button></span></div><div class="ai-prompt">Slow orbital camera move around the product, reflections travelling across the glass, precise luxury lighting.</div></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>Video</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row active" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>Veo 3.1 Lite</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">VIDEO MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Veo 3.1 Lite"><span class="ai-menu-icon">V3</span>Veo 3.1 Lite<span class="ai-menu-price">✦3/S</span></button><button class="ai-menu-row" type="button" data-model-choice="Seedance 2.0"><span class="ai-menu-icon">S2</span>Seedance 2.0<span class="ai-menu-price">CONCEPT</span></button><button class="ai-more-models" type="button" data-model-modal>More models</button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>OUTPUT</small><strong>720p · 6s · 16:9</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">VIDEO OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">720p</button><button class="ai-option" type="button">1080p</button></div></div><div class="ai-option-group"><div class="ai-option-title">DURATION</div><div class="ai-option-row"><button class="ai-option" type="button">4s</button><button class="ai-option active" type="button">6s</button><button class="ai-option" type="button">8s</button></div></div><div class="ai-option-group"><div class="ai-option-title">AUDIO</div><div class="ai-option-row"><button class="ai-option active" type="button">Off</button><button class="ai-option" type="button">On</button></div></div></div></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-axrefs"><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects" aria-label="Add frame">＋</button><div class="ai-ref-track"><div class="ai-frame-thumb filled">START FRAME</div><button class="ai-frame-thumb" type="button">＋ END FRAME</button></div></div>
+                <div class="ai-axrefmeta"><span class="ai-ref-count">▧ 1 / 2</span><span class="ai-ref-hint">Optional start and end frames · audio off</span></div>
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Prompt">Slow orbital camera move around the product, reflections travelling across the glass, precise luxury lighting.</div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt">⌄</button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><i class="ai-set-icon">▷</i><b>Video</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row active" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><i class="ai-set-icon">⊞</i><b data-model-label>Veo 3.1 Lite</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">VIDEO MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Veo 3.1 Lite"><span class="ai-menu-icon">V3</span>Veo 3.1 Lite<span class="ai-menu-price">✦3/S</span></button><button class="ai-menu-row" type="button" data-model-choice="Seedance 2.0"><span class="ai-menu-icon">S2</span>Seedance 2.0<span class="ai-menu-price">CONCEPT</span></button><button class="ai-more-models" type="button" data-model-modal>More models</button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><i class="ai-set-icon">☷</i><b>16:9 / 720p / 6s</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">VIDEO OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">720p</button><button class="ai-option" type="button">1080p</button></div></div><div class="ai-option-group"><div class="ai-option-title">DURATION</div><div class="ai-option-row"><button class="ai-option" type="button">4s</button><button class="ai-option active" type="button">6s</button><button class="ai-option" type="button">8s</button></div></div><div class="ai-option-group"><div class="ai-option-title">AUDIO</div><div class="ai-option-row"><button class="ai-option active" type="button">Off</button><button class="ai-option" type="button">On</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" data-toast="Prompt improved · ✦1"><i class="ai-set-icon">↗</i><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>COST</span>✦ 18</span><button class="ai-generate" type="button" data-go="ai-result"><i class="ai-set-icon">✦</i>Generate</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>BALANCE <b>✦128</b></span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div><button class="ai-generate" type="button" data-go="ai-result"><span>Generate video</span><b>✦18 →</b></button></div>
+                <div class="ai-axbal">BALANCE <em>✦ 128</em><span class="ai-bal-note">· ~7 video generations left</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
               </div>
-              <div class="ai-model-modal" data-model-dialog><div class="ai-model-card"><div class="ai-modal-head"><h3>Choose a model</h3><button class="ai-modal-close" type="button" data-model-close>×</button></div><input class="ai-model-search" type="text" placeholder="Search models…"><div class="ai-filter-row"><button class="ai-filter" type="button">All</button><button class="ai-filter active" type="button">Video</button></div><button class="ai-menu-row active" type="button"><span class="ai-menu-icon">V3</span>Veo 3.1 Lite<span class="ai-menu-price">✦3/S</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">S2</span>Seedance 2.0<span class="ai-menu-price">CONCEPT</span></button></div></div>
+              <div class="ai-model-modal" data-model-dialog><div class="ai-model-card"><div class="ai-modal-head"><div class="ai-modal-title"><span class="ai-modal-eyebrow">Model library</span><h3>Choose the engine for this idea.</h3></div><button class="ai-modal-close" type="button" data-model-close>×</button></div><input class="ai-model-search" type="text" placeholder="Search all live models…"><div class="ai-filter-row"><button class="ai-filter" type="button">All</button><button class="ai-filter active" type="button">Video</button></div><button class="ai-menu-row active" type="button"><span class="ai-menu-icon">V3</span>Veo 3.1 Lite<span class="ai-menu-price">✦3/S</span></button><button class="ai-menu-row" type="button"><span class="ai-menu-icon">S2</span>Seedance 2.0<span class="ai-menu-price">CONCEPT</span></button></div></div>
             </div>
           </section>
 
@@ -904,14 +1001,18 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Untitled session</button><button class="ai-session-button" type="button">Podcast launch</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab" type="button">Visuals <span class="ai-view-count">0</span></button><button class="ai-view-tab active" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>NEW SESSION</strong><span>Voice mode</span></div><div class="ai-grid-toggle"><button class="active" type="button">≋</button></div></div>
               <div class="ai-stage"><div class="ai-empty-hero"><div><div class="ai-sparky">✦</div><h2>Start with your <em>idea</em></h2><p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p><div class="ai-suggestions"><button class="ai-suggestion" type="button">Neon product shot</button><button class="ai-suggestion" type="button">Slow-motion coffee pour</button><button class="ai-suggestion" type="button">Warm podcast intro</button><button class="ai-suggestion" type="button">Whoosh + impact</button></div></div></div></div>
-              <div class="ai-dock ai-composer no-assets">
-                <div class="ai-prompt-shell"><div class="ai-prompt-head"><span class="ai-prompt-kicker">SCRIPT · 84 / 1,000</span><span class="ai-prompt-actions"><button class="ai-enhance" type="button" data-toast="Script enhanced · ✦1">✦ Enhance <b>✦1</b></button></span></div><div class="ai-prompt">The future is not waiting. It is already taking shape — one frame at a time.</div></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>Voice</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row active" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>Chirp 3 HD</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">VOICE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Chirp 3 HD"><span class="ai-menu-icon">C3</span>Chirp 3 HD<span class="ai-menu-price">✦4</span></button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>VOICE</small><strong>Aoede · EN-US</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">VOICE</div><div class="ai-option-group"><div class="ai-option-title">CHARACTER</div><div class="ai-option-row"><button class="ai-option active" type="button">Aoede</button><button class="ai-option" type="button">Kore</button><button class="ai-option" type="button">Puck</button><button class="ai-option" type="button">Charon</button></div></div><div class="ai-option-group"><div class="ai-option-title">LANGUAGE</div><div class="ai-option-row"><button class="ai-option active" type="button">EN-US</button><button class="ai-option" type="button">EN-GB</button></div></div></div></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Voiceover script">The future is not waiting. It is already taking shape — one frame at a time.</div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand script">⌄</button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><i class="ai-set-icon">◖</i><b>Voiceover</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row active" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><i class="ai-set-icon">⊞</i><b data-model-label>Chirp 3 HD</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">VOICE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Chirp 3 HD"><span class="ai-menu-icon">C3</span>Chirp 3 HD<span class="ai-menu-price">✦4</span></button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><i class="ai-set-icon">☷</i><b>Aoede / EN-US</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">VOICE</div><div class="ai-option-group"><div class="ai-option-title">CHARACTER</div><div class="ai-option-row"><button class="ai-option active" type="button">Aoede</button><button class="ai-option" type="button">Kore</button><button class="ai-option" type="button">Puck</button><button class="ai-option" type="button">Charon</button></div></div><div class="ai-option-group"><div class="ai-option-title">LANGUAGE</div><div class="ai-option-row"><button class="ai-option active" type="button">EN-US</button><button class="ai-option" type="button">EN-GB</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" data-toast="Script improved · ✦1"><i class="ai-set-icon">↗</i><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>COST</span>✦ 4</span><button class="ai-generate" type="button" data-toast="Voice generation started"><i class="ai-set-icon">✦</i>Generate</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>BALANCE <b>✦128</b></span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div><button class="ai-generate" type="button" data-toast="Voice generation started"><span>Generate voice</span><b>✦4 →</b></button></div>
+                <div class="ai-axbal">BALANCE <em>✦ 128</em><span class="ai-bal-note">· ~32 voice generations left</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
               </div>
             </div>
           </section>
@@ -921,14 +1022,18 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Untitled session</button><button class="ai-session-button" type="button">Launch sounds</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab" type="button">Visuals <span class="ai-view-count">0</span></button><button class="ai-view-tab active" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>NEW SESSION</strong><span>SFX mode</span></div><div class="ai-grid-toggle"><button class="active" type="button">≋</button></div></div>
               <div class="ai-stage"><div class="ai-empty-hero"><div><div class="ai-sparky">✦</div><h2>Start with your <em>idea</em></h2><p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p><div class="ai-suggestions"><button class="ai-suggestion" type="button">Neon product shot</button><button class="ai-suggestion" type="button">Slow-motion coffee pour</button><button class="ai-suggestion" type="button">Warm podcast intro</button><button class="ai-suggestion" type="button">Whoosh + impact</button></div></div></div></div>
-              <div class="ai-dock ai-composer no-assets">
-                <div class="ai-prompt-shell"><div class="ai-prompt-head"><span class="ai-prompt-kicker">SOUND DESCRIPTION</span><span class="ai-prompt-actions"><button class="ai-enhance" type="button" data-toast="Prompt enhanced · ✦1">✦ Enhance <b>✦1</b></button></span></div><div class="ai-prompt">Deep cinematic impact followed by fine glass particles dispersing across a large dark room.</div></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>SFX</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row active" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>ElevenLabs SFX</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">SFX MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="ElevenLabs SFX"><span class="ai-menu-icon">11</span>ElevenLabs SFX<span class="ai-menu-price">✦4</span></button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>DURATION</small><strong>5 seconds</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">SFX OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">DURATION</div><div class="ai-option-row"><button class="ai-option active" type="button">5 sec</button><button class="ai-option" type="button">10 sec</button><button class="ai-option" type="button">20 sec</button></div></div></div></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="SFX prompt">Deep cinematic impact followed by fine glass particles dispersing across a large dark room.</div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt">⌄</button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><i class="ai-set-icon">≋</i><b>SFX</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row active" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><i class="ai-set-icon">⊞</i><b data-model-label>ElevenLabs SFX</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">SFX MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="ElevenLabs SFX"><span class="ai-menu-icon">11</span>ElevenLabs SFX<span class="ai-menu-price">✦4</span></button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><i class="ai-set-icon">☷</i><b>5 seconds</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">SFX OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">DURATION</div><div class="ai-option-row"><button class="ai-option active" type="button">5 sec</button><button class="ai-option" type="button">10 sec</button><button class="ai-option" type="button">20 sec</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" data-toast="Prompt improved · ✦1"><i class="ai-set-icon">↗</i><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>COST</span>✦ 4</span><button class="ai-generate" type="button" data-toast="Sound effect generation started"><i class="ai-set-icon">✦</i>Generate</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>BALANCE <b>✦128</b></span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div><button class="ai-generate" type="button" data-toast="Sound effect generation started"><span>Generate SFX</span><b>✦4 →</b></button></div>
+                <div class="ai-axbal">BALANCE <em>✦ 128</em><span class="ai-bal-note">· ~32 SFX generations left</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
               </div>
             </div>
           </section>
@@ -938,14 +1043,50 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Untitled session</button><button class="ai-session-button" type="button">Delivery masters</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab active" type="button">Visuals <span class="ai-view-count">0</span></button><button class="ai-view-tab" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>NEW SESSION</strong><span>Upscale mode</span></div><div class="ai-grid-toggle"><button class="active" type="button">2×</button><button type="button">1×</button></div></div>
               <div class="ai-stage"><div class="ai-source-picker"><h3>Choose a source</h3><p>Use the same web source menu, adapted with After Effects as a host option.</p><div class="ai-source-options"><button class="ai-source-option" type="button" data-toast="Opening image source picker"><strong>Image source</strong><span>Upload · My Library · After Effects</span></button><button class="ai-source-option" type="button" data-toast="Opening video source picker"><strong>Video source</strong><span>Upload · My Library · After Effects</span></button></div></div></div>
-              <div class="ai-dock ai-composer">
-                <div class="ai-source-drop"><span class="ai-source-drop-icon">＋</span><span class="ai-source-drop-copy"><strong>Choose an image or video</strong><span>Upload · My Library · After Effects</span></span><button class="ai-source-choose" type="button" data-toast="Choose Upload, My Library or After Effects">Choose source</button></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>Upscale</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row active" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>Imagen Upscale</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">SOURCE-AWARE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Imagen Upscale"><span class="ai-menu-icon">IMG</span>Imagen Upscale<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Video Upscale (Topaz)"><span class="ai-menu-icon">VID</span>Video Upscale (Topaz)<span class="ai-menu-price">FROM ✦2/S</span></button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>OUTPUT</small><strong>×2 · Auto</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">UPSCALE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">FACTOR</div><div class="ai-option-row"><button class="ai-option active" type="button">×2</button><button class="ai-option" type="button">×4</button></div></div><div class="ai-option-group"><div class="ai-option-title">FORMAT</div><div class="ai-option-row"><button class="ai-option active" type="button">Auto</button><button class="ai-option" type="button">Image</button><button class="ai-option" type="button">Video</button></div></div></div></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-axrefs"><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects" aria-label="Choose source">＋</button><div class="ai-ref-track"></div></div>
+                <div class="ai-axrefmeta"><span class="ai-ref-count">▧ 0 / 1</span><span class="ai-ref-hint">Required — choose an image or video from Upload, My Library or After Effects.</span></div>
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Upscale note" data-placeholder="Optional — describe the detail you want to preserve…"></div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt">⌄</button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><i class="ai-set-icon">2×</i><b>Upscale</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row active" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><i class="ai-set-icon">⊞</i><b data-model-label>Imagen Upscale</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">SOURCE-AWARE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Imagen Upscale"><span class="ai-menu-icon">IMG</span>Imagen Upscale<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Video Upscale (Topaz)"><span class="ai-menu-icon">VID</span>Video Upscale (Topaz)<span class="ai-menu-price">FROM ✦2/S</span></button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><i class="ai-set-icon">☷</i><b>×2 / Auto</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">UPSCALE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">FACTOR</div><div class="ai-option-row"><button class="ai-option active" type="button">×2</button><button class="ai-option" type="button">×4</button></div></div><div class="ai-option-group"><div class="ai-option-title">FORMAT</div><div class="ai-option-row"><button class="ai-option active" type="button">Auto</button><button class="ai-option" type="button">Image</button><button class="ai-option" type="button">Video</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" disabled><i class="ai-set-icon">↗</i><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>FROM</span>✦ 4</span><button class="ai-generate" type="button" disabled><i class="ai-set-icon">✦</i>Generate</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>BALANCE <b>✦128</b></span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div><button class="ai-generate" type="button" disabled><span>Choose a source first</span><b>FROM ✦4</b></button></div>
+                <div class="ai-axbal">BALANCE <em>✦ 128</em><span class="ai-bal-note">· source required</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="pane" data-pane="ai-progress">
+            <div class="ai-workspace">
+              <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Glass campaign</button><button class="ai-session-button" type="button">Campaign stills</button></div>
+              <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab active" type="button">Visuals <span class="ai-view-count">3</span></button><button class="ai-view-tab" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>GLASS CAMPAIGN · 2 RUNNING</strong><span>Generating…</span></div><div class="ai-grid-toggle"><button class="active" type="button">2×</button><button type="button">1×</button></div></div>
+              <div class="ai-stage">
+                <div class="notice ai-run-note"><strong>You can keep working</strong> — generations continue in the background.</div>
+                <div class="ai-result-grid">
+                  <article class="ai-result-card running"><div class="ai-result-media"><div class="ai-run-shimmer"></div><div class="ai-run-overlay"><div class="ai-run-top"><span class="ai-run-pct">62%</span><span class="ai-run-time">0:07</span></div><div class="ai-run-track"><div class="ai-run-fill"></div></div><button class="ai-run-cancel" type="button" data-toast="Cancel requested">Cancel</button></div></div><div class="ai-result-info"><strong>Glass product study</strong><span>NANO BANANA 2 · ✦4 · RUNNING</span></div></article>
+                  <article class="ai-result-card video queued"><div class="ai-result-media"><span class="ai-queued-label">Queued · starts automatically</span></div><div class="ai-result-info"><strong>Glass orbit</strong><span>VEO 3.1 LITE · 6S · ✦18 · QUEUED</span></div></article>
+                  <article class="ai-result-card"><div class="ai-result-media"><div class="ai-result-actions"><button type="button" data-toast="Saved to My Library">Save</button><button type="button" data-toast="Use menu opened">Use⌄</button><button class="primary" type="button" data-toast="Imported to After Effects">Import to AE</button></div></div><div class="ai-result-info"><strong>Velocity title study</strong><span>NANO BANANA 2 · 1K · ✦4</span></div></article>
+                </div>
+              </div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-axrefs"><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects" aria-label="Add reference">＋</button><div class="ai-ref-track"><div class="ai-ref-thumb">@1</div></div></div>
+                <div class="ai-axrefmeta"><span class="ai-ref-count"><svg class="ai-icon"><use href="#ai-i-image" xlink:href="#ai-i-image"></use></svg>1/10</span><span class="ai-ref-hint">Queue another while these run — up to 5 image / 3 video at once.</span></div>
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Prompt">A backlit glass sculpture on a dark reflective plinth, volumetric haze, precise rim light.</div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt"><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><svg class="ai-icon"><use href="#ai-i-image" xlink:href="#ai-i-image"></use></svg><b>Image</b><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row active" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><svg class="ai-icon"><use href="#ai-i-grid" xlink:href="#ai-i-grid"></use></svg><b data-model-label>Nano Banana 2</b><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Nano Banana 2"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Imagen 4"><span class="ai-menu-icon">I4</span>Imagen 4<span class="ai-menu-price">FROM ✦4</span></button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><svg class="ai-icon"><use href="#ai-i-sliders" xlink:href="#ai-i-sliders"></use></svg><b>1:1 / 1K</b><svg class="ai-icon"><use href="#ai-i-chev" xlink:href="#ai-i-chev"></use></svg></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">IMAGE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">ASPECT RATIO</div><div class="ai-option-row"><button class="ai-option active" type="button">1:1</button><button class="ai-option" type="button">16:9</button><button class="ai-option" type="button">9:16</button></div></div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">1K</button><button class="ai-option" type="button">2K</button></div></div><div class="ai-option-group"><div class="ai-option-title">COUNT</div><div class="ai-option-row"><button class="ai-option active" type="button">×1</button><button class="ai-option" type="button">×2</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" data-toast="Prompt improved · ✦1"><svg class="ai-icon"><use href="#ai-i-wand" xlink:href="#ai-i-wand"></use></svg><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>COST</span>✦ 4</span><button class="ai-generate" type="button" data-toast="Added to queue"><svg class="ai-icon"><use href="#ai-i-spark" xlink:href="#ai-i-spark"></use></svg>Generate</button></div>
+                </div>
+                <div class="ai-axbal">BALANCE <em>✦ 106</em><span class="ai-bal-note">· 2 running · ✦22 reserved</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
               </div>
             </div>
           </section>
@@ -955,15 +1096,20 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Glass campaign</button><button class="ai-session-button" type="button">Campaign stills</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab active" type="button">Visuals <span class="ai-view-count">2</span></button><button class="ai-view-tab" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>GLASS CAMPAIGN · 2 GENERATIONS</strong><span>Updated just now</span></div><div class="ai-grid-toggle"><button class="active" type="button">2×</button><button type="button">1×</button></div></div>
               <div class="ai-stage"><div class="ai-result-grid"><article class="ai-result-card selected"><div class="ai-result-media"><div class="ai-result-actions"><button type="button" data-toast="Saved to My Library">Save</button><button type="button" data-toast="Use menu opened">Use⌄</button><button class="primary" type="button" data-toast="Imported to After Effects">Import to AE</button></div></div><div class="ai-result-info"><strong>Glass product study</strong><span>NANO BANANA 2 · 1K · ✦4</span></div></article><article class="ai-result-card video"><div class="ai-result-media"><div class="ai-result-actions"><button type="button" data-toast="Saved to My Library">Save</button><button class="primary" type="button" data-toast="Imported to After Effects">Import to AE</button></div></div><div class="ai-result-info"><strong>Glass orbit</strong><span>VEO 3.1 LITE · 6S · ✦18</span></div></article></div></div>
-              <div class="ai-dock ai-composer">
-                <div class="ai-refbar"><span class="ai-ref-label">REFERENCES</span><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects">＋ <span>Add</span></button><div class="ai-ref-thumb">@1</div><span class="ai-ref-hint">1 / 10 · TYPE @ TO MENTION</span></div>
-                <div class="ai-prompt-shell"><div class="ai-prompt-head"><span class="ai-prompt-kicker">REFINE PROMPT</span><span class="ai-prompt-actions"><button class="ai-enhance" type="button" data-toast="Prompt enhanced · ✦1">✦ Enhance <b>✦1</b></button><button class="ai-clear" type="button" data-toast="Composer cleared">Clear</button></span></div><div class="ai-prompt">A sculptural glass perfume bottle on a mirrored plinth, inspired by <span class="ai-mention">@Image 1</span>, soft directional light.</div></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>Image</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row active" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>Nano Banana 2</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Nano Banana 2"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Imagen 4"><span class="ai-menu-icon">I4</span>Imagen 4<span class="ai-menu-price">FROM ✦4</span></button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>OUTPUT</small><strong>16:9 · 1K · ×1</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">IMAGE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">ASPECT RATIO</div><div class="ai-option-row"><button class="ai-option" type="button">1:1</button><button class="ai-option active" type="button">16:9</button><button class="ai-option" type="button">9:16</button></div></div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">1K</button><button class="ai-option" type="button">2K</button></div></div><div class="ai-option-group"><div class="ai-option-title">COUNT</div><div class="ai-option-row"><button class="ai-option active" type="button">×1</button><button class="ai-option" type="button">×2</button></div></div></div></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-axrefs"><button class="ai-ref-add" type="button" data-toast="Choose Upload, My Library or After Effects" aria-label="Add reference">＋</button><div class="ai-ref-track"><div class="ai-ref-thumb">@1</div></div></div>
+                <div class="ai-axrefmeta"><span class="ai-ref-count">▧ 1 / 10</span><span class="ai-ref-hint">Type @ in the prompt to mention a reference.</span></div>
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Prompt">A sculptural glass perfume bottle on a mirrored plinth, inspired by <span class="ai-mention">@Image 1</span>, soft directional light.</div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt">⌄</button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><i class="ai-set-icon">▧</i><b>Image</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row active" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><i class="ai-set-icon">⊞</i><b data-model-label>Nano Banana 2</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">IMAGE MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Nano Banana 2"><span class="ai-menu-icon">NB2</span>Nano Banana 2<span class="ai-menu-price">FROM ✦4</span></button><button class="ai-menu-row" type="button" data-model-choice="Imagen 4"><span class="ai-menu-icon">I4</span>Imagen 4<span class="ai-menu-price">FROM ✦4</span></button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><i class="ai-set-icon">☷</i><b>16:9 / 1K</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">IMAGE OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">ASPECT RATIO</div><div class="ai-option-row"><button class="ai-option" type="button">1:1</button><button class="ai-option active" type="button">16:9</button><button class="ai-option" type="button">9:16</button></div></div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">1K</button><button class="ai-option" type="button">2K</button></div></div><div class="ai-option-group"><div class="ai-option-title">COUNT</div><div class="ai-option-row"><button class="ai-option active" type="button">×1</button><button class="ai-option" type="button">×2</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" data-toast="Prompt improved · ✦1"><i class="ai-set-icon">↗</i><span>Improve</span></button><button class="ai-set clear" type="button" data-toast="Composer cleared">× Clear</button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>COST</span>✦ 4</span><button class="ai-generate" type="button" data-toast="Generation started"><i class="ai-set-icon">✦</i>Generate</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>BALANCE <b>✦124</b></span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div><button class="ai-generate" type="button" data-toast="Generation started"><span>Generate another</span><b>✦4 →</b></button></div>
+                <div class="ai-axbal">BALANCE <em>✦ 124</em><span class="ai-bal-note">· ~31 image generations left</span><button class="ai-topup" type="button" data-toast="Opening secure top-up">＋ Top up</button></div>
               </div>
             </div>
           </section>
@@ -973,16 +1119,21 @@
               <div class="ai-session-strip"><button class="ai-session-button primary" type="button">＋ New</button><button class="ai-session-button" type="button" data-go="library-grid">My Library</button><button class="ai-session-button active" type="button">Seedance study</button><button class="ai-session-button" type="button">Campaign stills</button></div>
               <div class="ai-viewbar"><div class="ai-view-tabs"><button class="ai-view-tab active" type="button">Visuals <span class="ai-view-count">0</span></button><button class="ai-view-tab" type="button">Audio <span class="ai-view-count">0</span></button></div><div class="ai-view-meta"><strong>SEEDANCE STUDY</strong><span>Video mode · web concept</span></div><div class="ai-grid-toggle"><button class="active" type="button">2×</button><button type="button">1×</button></div></div>
               <div class="ai-stage"><div class="ai-concept-note"><span class="badge accent">CONCEPT</span><div><strong>Seedance 2.0 multimodal refs</strong><span>Web-only today. The future model is shown inside the same AI Studio workspace, not as a separate tool page.</span></div></div><div class="ai-empty-hero" style="min-height:175px"><div><div class="ai-sparky">S2</div><h2>Direct with every medium</h2><p>Combine image, video and audio references, then call them inline from one prompt.</p></div></div></div>
-              <div class="ai-dock ai-composer">
-                <div class="ai-refbar"><span class="ai-ref-label">MULTIMODAL REFS</span><button class="ai-ref-add" type="button" data-toast="Choose image, video or audio">＋ <span>Add</span></button><div class="ai-ref-thumb">IMG 1</div><div class="ai-ref-thumb">IMG 2</div><div class="ai-frame-thumb filled">VIDEO 1</div><div class="ai-frame-thumb filled">AUDIO 1</div><span class="ai-ref-hint">4 / 12 TOTAL</span></div>
+              <div class="ai-dock ai-composer ai-web-composer">
+                <div class="ai-axrefs"><button class="ai-ref-add" type="button" data-toast="Choose image, video or audio" aria-label="Add multimodal reference">＋</button><div class="ai-ref-track"><div class="ai-ref-thumb">IMG 1</div><div class="ai-ref-thumb">IMG 2</div><div class="ai-frame-thumb filled">VIDEO 1</div><div class="ai-frame-thumb filled">AUDIO 1</div></div></div>
+                <div class="ai-axrefmeta"><span class="ai-ref-count">▧ 4 / 12</span><span class="ai-ref-hint">Multimodal references · type @ to mention</span></div>
                 <div class="ai-preset-row"><button class="ai-preset active" type="button">Replace subject</button><button class="ai-preset" type="button">Edit objects</button><button class="ai-preset" type="button">Inpaint / Fix</button></div>
-                <div class="ai-prompt-shell"><div class="ai-prompt-head"><span class="ai-prompt-kicker">DIRECTOR PROMPT · CONCEPT</span><span class="ai-prompt-actions"><button class="ai-enhance" type="button" disabled>✦ Enhance <b>✦1</b></button></span></div><div class="ai-prompt">Match the movement from <span class="ai-mention">@Video 1</span>, use lighting from <span class="ai-mention">@Image 2</span> and time the reveal to <span class="ai-mention">@Audio 1</span>.</div></div>
-                <div class="ai-settings-grid">
-                  <div class="ai-setting-wrap mode"><button class="ai-setting" type="button" data-popup="mode"><span class="ai-setting-copy"><small>MODE</small><strong>Video</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row active" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
-                  <div class="ai-setting-wrap model"><button class="ai-setting" type="button" data-popup="model"><span class="ai-setting-copy"><small>MODEL</small><strong data-model-label>Seedance 2.0</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">VIDEO MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Seedance 2.0"><span class="ai-menu-icon">S2</span>Seedance 2.0<span class="ai-menu-price">CONCEPT</span></button><button class="ai-menu-row" type="button" data-model-choice="Veo 3.1 Lite"><span class="ai-menu-icon">V3</span>Veo 3.1 Lite<span class="ai-menu-price">✦3/S</span></button></div></div>
-                  <div class="ai-setting-wrap output"><button class="ai-setting" type="button" data-popup="settings"><span class="ai-setting-copy"><small>OUTPUT</small><strong>720p · Auto · 4s</strong></span><i>⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">CONCEPT OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">720p</button><button class="ai-option" type="button">1080p</button></div></div><div class="ai-option-group"><div class="ai-option-title">DURATION</div><div class="ai-option-row"><button class="ai-option active" type="button">Auto · 4s</button><button class="ai-option" type="button">6s</button></div></div><div class="ai-option-group"><div class="ai-option-title">AUDIO</div><div class="ai-option-row"><button class="ai-option active" type="button">Reference</button><button class="ai-option" type="button">Off</button></div></div></div></div>
+                <div class="ai-promptwrap"><div class="ai-prompt" contenteditable="true" role="textbox" aria-label="Director prompt">Match the movement from <span class="ai-mention">@Video 1</span>, use lighting from <span class="ai-mention">@Image 2</span> and time the reveal to <span class="ai-mention">@Audio 1</span>.</div><button class="ai-promptexp" type="button" data-toast="Prompt expanded" aria-label="Expand prompt">⌄</button></div>
+                <div class="ai-dockrow">
+                  <div class="ai-setgroup">
+                    <div class="ai-setting-wrap mode"><button class="ai-set mode" type="button" data-popup="mode"><i class="ai-set-icon">▷</i><b>Video</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="mode"><div class="ai-popover-label">CREATE WITH</div><button class="ai-menu-row" type="button" data-go="ai-image"><span class="ai-menu-icon">IMG</span>Image</button><button class="ai-menu-row active" type="button" data-go="ai-video"><span class="ai-menu-icon">VID</span>Video</button><button class="ai-menu-row" type="button" data-go="ai-upscale"><span class="ai-menu-icon">2×</span>Upscale</button><button class="ai-menu-row" type="button" data-go="ai-voice"><span class="ai-menu-icon">VO</span>Voice</button><button class="ai-menu-row" type="button" data-go="ai-sfx"><span class="ai-menu-icon">SFX</span>SFX</button></div></div>
+                    <div class="ai-setting-wrap model"><button class="ai-set" type="button" data-popup="model"><i class="ai-set-icon">⊞</i><b data-model-label>Seedance 2.0</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="model"><div class="ai-popover-label">VIDEO MODELS</div><button class="ai-menu-row active" type="button" data-model-choice="Seedance 2.0"><span class="ai-menu-icon">S2</span>Seedance 2.0<span class="ai-menu-price">CONCEPT</span></button><button class="ai-menu-row" type="button" data-model-choice="Veo 3.1 Lite"><span class="ai-menu-icon">V3</span>Veo 3.1 Lite<span class="ai-menu-price">✦3/S</span></button></div></div>
+                    <div class="ai-setting-wrap output"><button class="ai-set" type="button" data-popup="settings"><i class="ai-set-icon">☷</i><b>720p / Auto / 4s</b><i class="ai-set-chev">⌄</i></button><div class="ai-popover" data-popup-panel="settings"><div class="ai-popover-label">CONCEPT OUTPUT</div><div class="ai-option-group"><div class="ai-option-title">RESOLUTION</div><div class="ai-option-row"><button class="ai-option active" type="button">720p</button><button class="ai-option" type="button">1080p</button></div></div><div class="ai-option-group"><div class="ai-option-title">DURATION</div><div class="ai-option-row"><button class="ai-option active" type="button">Auto · 4s</button><button class="ai-option" type="button">6s</button></div></div><div class="ai-option-group"><div class="ai-option-title">AUDIO</div><div class="ai-option-row"><button class="ai-option active" type="button">Reference</button><button class="ai-option" type="button">Off</button></div></div></div></div>
+                    <button class="ai-set enhance" type="button" disabled><i class="ai-set-icon">↗</i><span>Improve</span></button>
+                  </div>
+                  <div class="ai-genwrap"><span class="ai-cost"><span>EST.</span>✦ 36</span><button class="ai-generate" type="button" disabled>Coming later</button></div>
                 </div>
-                <div class="ai-action-row"><div class="ai-action-meta"><span>CONCEPT · WEB ONLY</span><button class="ai-topup" type="button" data-go="ai-video">Back to Video</button></div><button class="ai-generate" type="button" disabled><span>Coming later</span><b>EST. ✦36</b></button></div>
+                <div class="ai-axbal">CONCEPT · WEB ONLY<button class="ai-topup" type="button" data-go="ai-video">Back to Video</button></div>
               </div>
             </div>
           </section>
@@ -1045,8 +1196,8 @@
       var sizeReadout=document.getElementById("sizeReadout");
       var liveToast=document.getElementById("liveToast");
       var toastTimer=null;
-      var contexts={"dashboard":"HOME","dashboard-b":"HOME · CREATIVE LAUNCHPAD","auth-login":"SIGN IN","auth-device":"GOOGLE DEVICE CODE","auth-account":"ACCOUNT","browse-catalog":"STOCK CATALOG · VIDEO","browse-detail":"TEMPLATE DETAIL","browse-import":"IMPORTING","browse-unavailable":"PACK UNAVAILABLE","ai-image":"AI STUDIO","ai-video":"AI STUDIO","ai-voice":"AI STUDIO","ai-sfx":"AI STUDIO","ai-upscale":"AI STUDIO","ai-result":"AI STUDIO","concept-seedance":"AI STUDIO · CONCEPT","library-grid":"MY LIBRARY","library-empty":"MY LIBRARY","settings":"SETTINGS","state-offline":"SYSTEM STATE","state-credits":"CREDITS","state-moderation":"MODERATION","state-update":"UPDATE AVAILABLE","state-toasts":"TOASTS","state-loading":"LOADING"};
-      var state={pane:"dashboard-b",theme:"noir",width:"420"};
+      var contexts={"dashboard":"HOME","dashboard-b":"HOME · CREATIVE LAUNCHPAD","auth-login":"SIGN IN","auth-device":"GOOGLE DEVICE CODE","auth-account":"ACCOUNT","browse-catalog":"STOCK CATALOG · VIDEO","browse-detail":"TEMPLATE DETAIL","browse-progate":"PRO TEMPLATE","browse-import":"IMPORTING","browse-unavailable":"PACK UNAVAILABLE","ai-image":"AI STUDIO","ai-video":"AI STUDIO","ai-voice":"AI STUDIO","ai-sfx":"AI STUDIO","ai-upscale":"AI STUDIO","ai-progress":"AI STUDIO · GENERATING","ai-result":"AI STUDIO","concept-seedance":"AI STUDIO · CONCEPT","library-grid":"MY LIBRARY","library-empty":"MY LIBRARY","settings":"SETTINGS","state-offline":"SYSTEM STATE","state-credits":"CREDITS","state-moderation":"MODERATION","state-update":"UPDATE AVAILABLE","state-toasts":"TOASTS","state-loading":"LOADING"};
+      var state={pane:"dashboard-b",theme:"noir",width:"420",height:"820"};
       function parseHash(){
         var raw=window.location.hash.replace(/^#/,"");
         var parts=raw?raw.split("&"):[];
@@ -1055,9 +1206,10 @@
         if(!contexts[state.pane]){state.pane="dashboard-b";}
         if(state.theme!=="noir"&&state.theme!=="neon"&&state.theme!=="cold"){state.theme="noir";}
         if(state.width!=="320"&&state.width!=="420"&&state.width!=="600"){state.width="420";}
+        if(state.height!=="820"&&state.height!=="620"&&state.height!=="500"){state.height="820";}
       }
       function updateHash(){
-        var next="#pane="+encodeURIComponent(state.pane)+"&theme="+state.theme+"&width="+state.width;
+        var next="#pane="+encodeURIComponent(state.pane)+"&theme="+state.theme+"&width="+state.width+"&height="+state.height;
         if(window.location.hash!==next){try{window.history.replaceState(null,"",next);}catch(error){window.location.hash=next;}}
       }
       function mark(selector,attribute,value){
@@ -1068,16 +1220,40 @@
         var panes=document.querySelectorAll(".pane");var i;
         for(i=0;i<panes.length;i+=1){if(panes[i].getAttribute("data-pane")===state.pane){panes[i].classList.add("active");panes[i].scrollTop=0;}else{panes[i].classList.remove("active");}}
         if(state.pane==="auth-login"||state.pane==="auth-device"){panel.classList.add("auth-mode");}else{panel.classList.remove("auth-mode");}
-        panel.setAttribute("data-theme",state.theme);panel.setAttribute("data-width",state.width);panel.style.width=state.width+"px";
-        paneContext.textContent=contexts[state.pane]||"ASSETFLOW";sizeReadout.textContent=state.width+" × 820";
-        mark("[data-pane]","data-pane",state.pane);mark("#themeControl [data-theme]","data-theme",state.theme);mark("#widthControl [data-width]","data-width",state.width);mark("[data-theme-choice]","data-theme-choice",state.theme);
+        panel.setAttribute("data-theme",state.theme);panel.setAttribute("data-width",state.width);panel.setAttribute("data-height",state.height);panel.style.width=state.width+"px";panel.style.height=state.height+"px";
+        paneContext.textContent=contexts[state.pane]||"ASSETFLOW";sizeReadout.textContent=state.width+" × "+state.height;
+        mark("[data-pane]","data-pane",state.pane);mark("#themeControl [data-theme]","data-theme",state.theme);mark("#widthControl [data-width]","data-width",state.width);mark("#heightControl [data-height]","data-height",state.height);mark("[data-theme-choice]","data-theme-choice",state.theme);
         updateHash();
       }
       function showToast(message){
         liveToast.textContent=message;liveToast.classList.add("show");if(toastTimer){window.clearTimeout(toastTimer);}toastTimer=window.setTimeout(function(){liveToast.classList.remove("show");},2200);
       }
+      /* Task 5: ES5 ajdod-topuvchi + ochiq popover/model modalni yopish. */
+      function ancestorWith(node,cls){while(node&&node!==document){if(node.classList&&node.classList.contains(cls)){return node;}node=node.parentNode;}return null;}
+      function closeAllFloaters(){
+        var nodes=document.querySelectorAll(".ai-popover.open"),i;
+        for(i=0;i<nodes.length;i+=1){nodes[i].classList.remove("open");}
+        nodes=document.querySelectorAll(".ai-model-modal.open");
+        for(i=0;i<nodes.length;i+=1){nodes[i].classList.remove("open");}
+      }
+      function closeFloaters(t){
+        var keepWrap=ancestorWith(t,"ai-setting-wrap");
+        var insidePopover=ancestorWith(t,"ai-popover");
+        var insideCard=ancestorWith(t,"ai-model-card");
+        var pops=document.querySelectorAll(".ai-popover.open"),i,wrap;
+        for(i=0;i<pops.length;i+=1){
+          wrap=ancestorWith(pops[i],"ai-setting-wrap");
+          if((keepWrap&&wrap===keepWrap)||(insidePopover&&pops[i]===insidePopover)){continue;}
+          pops[i].classList.remove("open");
+        }
+        if(!insideCard){
+          var modals=document.querySelectorAll(".ai-model-modal.open");
+          for(i=0;i<modals.length;i+=1){modals[i].classList.remove("open");}
+        }
+      }
       document.addEventListener("click",function(event){
         var target=event.target;var button;var dock;var workspace;var popupName;var popup;var nodes;var i;var label;
+        closeFloaters(event.target);
         while(target&&target!==document){
           if(target.tagName&&target.tagName.toLowerCase()==="button"){button=target;break;}
           target=target.parentNode;
@@ -1087,6 +1263,7 @@
         if(button.getAttribute("data-go")){state.pane=button.getAttribute("data-go");render();return;}
         if(button.getAttribute("data-theme")){state.theme=button.getAttribute("data-theme");render();return;}
         if(button.getAttribute("data-width")){state.width=button.getAttribute("data-width");render();return;}
+        if(button.getAttribute("data-height")){state.height=button.getAttribute("data-height");render();return;}
         if(button.getAttribute("data-theme-choice")){state.theme=button.getAttribute("data-theme-choice");render();return;}
         if(button.getAttribute("data-popup")){
           dock=button.parentNode;while(dock&&dock!==document&&!dock.classList.contains("ai-dock")){dock=dock.parentNode;}
@@ -1106,6 +1283,8 @@
           if(dock&&dock!==document){label=dock.querySelector("[data-model-label]");if(label){label.textContent=button.getAttribute("data-model-choice");}nodes=dock.querySelectorAll("[data-model-choice]");for(i=0;i<nodes.length;i+=1){nodes[i].classList.remove("active");}button.classList.add("active");popup=button.parentNode;while(popup&&popup!==dock&&!popup.classList.contains("ai-popover")){popup=popup.parentNode;}if(popup&&popup!==dock){popup.classList.remove("open");}}
           return;
         }
+        /* Webdagi kabi prompt balandligini shu joyning o'zida ochib-yopadi. */
+        if(button.classList.contains("ai-promptexp")){var prompt=button.parentNode.querySelector(".ai-prompt");if(prompt){prompt.classList.toggle("expanded");button.classList.toggle("on");}return;}
         if(button.getAttribute("data-toast")){showToast(button.getAttribute("data-toast"));return;}
         if(button.classList.contains("ai-option")){nodes=button.parentNode.querySelectorAll(".ai-option");for(i=0;i<nodes.length;i+=1){nodes[i].classList.remove("active");}button.classList.add("active");return;}
         if(button.classList.contains("ai-filter")||button.classList.contains("ai-view-tab")||button.classList.contains("ai-preset")||button.classList.contains("ai-session-button")){nodes=button.parentNode.querySelectorAll("."+button.className.split(" ")[0]);for(i=0;i<nodes.length;i+=1){nodes[i].classList.remove("active");}button.classList.add("active");return;}
@@ -1115,6 +1294,9 @@
       });
       document.getElementById("syncButton").addEventListener("click",function(){
         var label=this.querySelector("span");var original=label.textContent;label.textContent="Syncing";this.disabled=true;var self=this;window.setTimeout(function(){label.textContent=original;self.disabled=false;showToast("24 templates synced");},900);
+      });
+      document.addEventListener("keydown",function(event){
+        if(event.key==="Escape"||event.keyCode===27){closeAllFloaters();}
       });
       window.addEventListener("hashchange",function(){parseHash();render();});
       parseHash();render();

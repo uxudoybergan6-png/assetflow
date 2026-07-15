@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WEB ↔ PLUGIN · 1:1 solishtirish (BATCH6 ↔ BATCH8)</title>
+<style>
+  /* Direktor ichki quroli: chapda BATCH6 web maketi (masshtablangan), o'ngda BATCH8 plagin maketi (haqiqiy o'lcham). */
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:#0b0b0d;color:#e8e8ec;font:14px/1.45 Inter,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;overflow:hidden}
+  header{flex:0 0 auto;display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.12);background:#111114}
+  header h1{margin:0 12px 0 0;font:700 13px/1 "Space Grotesk",Inter,sans-serif;letter-spacing:-.02em;white-space:nowrap}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{border:1px solid rgba(255,255,255,.16);border-radius:999px;background:#1a1a1f;color:#b9b9c2;padding:6px 11px;font-size:11px;font-weight:650;cursor:pointer}
+  .chip:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+  .chip.active{background:#fff;border-color:#fff;color:#0b0b0d}
+  .sep{width:1px;height:22px;background:rgba(255,255,255,.14);margin:0 4px}
+  .note{margin-left:auto;color:#8a8a94;font-size:10px;max-width:330px}
+  main{flex:1;display:flex;min-height:0}
+  .col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.12)}
+  .col:last-child{border-right:0}
+  .col-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.1);background:#131317}
+  .col-head b{font:700 10px/1 "JetBrains Mono",Consolas,monospace;letter-spacing:.1em;color:#fff}
+  .col-head span{color:#84848e;font-size:10px}
+  .col-head a{margin-left:auto;color:#9ecbff;font-size:10px;text-decoration:none;white-space:nowrap}
+  .col-head a:hover{text-decoration:underline}
+  .frame-box{flex:1;position:relative;overflow:hidden;background:#08080a}
+  /* Chap: 1280px kenglikdagi web maketi ustunga sig'dirilib scale qilinadi */
+  #webFrame{position:absolute;left:0;top:0;width:1280px;height:100px;border:0;transform-origin:0 0;background:#0a0a0b}
+  /* O'ng: plagin maketining 264px boshqaruv paneli kesib tashlanadi, panel haqiqiy o'lchamda qoladi */
+  #plugFrame{position:absolute;top:0;left:-264px;height:100%;border:0;background:#0a0a0b}
+  .warn{display:none;position:absolute;inset:0;padding:30px;color:#c9c9d2;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>WEB ↔ PLUGIN · 1:1</h1>
+  <div class="chips" id="pairChips"></div>
+  <div class="sep"></div>
+  <div class="chips" id="themeChips" title="Tema (o'ng panel; chap tomonda tema mockbar ichidan almashtiriladi)"></div>
+  <div class="note">Chap: BATCH6 web maketi (kichraytirilgan, ~1280px). O'ng: plagin maketi — HAQIQIY 420px o'lcham. Chap tomon temasi iframe ichidagi A/B/C tugmalaridan almashtiriladi.</div>
+</header>
+<main>
+  <section class="col">
+    <div class="col-head"><b>WEB · BATCH6</b><span id="webLabel"></span><a id="webOpen" target="_blank" rel="noopener">Yangi oynada ochish ↗</a></div>
+    <div class="frame-box" id="webBox"><iframe id="webFrame" title="Web mockup"></iframe></div>
+  </section>
+  <section class="col">
+    <div class="col-head"><b>PLUGIN · BATCH8</b><span id="plugLabel"></span><a id="plugOpen" target="_blank" rel="noopener">Yangi oynada ochish ↗</a></div>
+    <div class="frame-box" id="plugBox"><iframe id="plugFrame" title="Plugin mockup"></iframe></div>
+  </section>
+</main>
+<script>
+(function(){
+  "use strict";
+  var WEB="../batch6/index.html", PLUG="index.html";
+  /* [nom, web ekran id, plagin pane id] */
+  var pairs=[
+    ["Dashboard","dashboard","dashboard-b"],
+    ["Katalog","templates","browse-catalog"],
+    ["Shablon detali","template-detail","browse-detail"],
+    ["AI Image","ai-image","ai-image"],
+    ["AI Video","ai-video","ai-video"],
+    ["Voice","ai-voice","ai-voice"],
+    ["SFX","ai-audio","ai-sfx"],
+    ["Upscale","ai-upscale","ai-upscale"],
+    ["Library","ai-history","library-grid"],
+    ["Natijalar","state-generating","ai-result"],
+    ["Login","login","auth-login"],
+    ["Kredit kam","state-low-credits","state-credits"],
+    ["Moderatsiya","state-moderation","state-moderation"]
+  ];
+  var themes=["noir","neon","cold"];
+  var state={pair:0,theme:"noir"};
+  var webFrame=document.getElementById("webFrame"),plugFrame=document.getElementById("plugFrame");
+  var webBox=document.getElementById("webBox");
+  function render(){
+    var p=pairs[state.pair];
+    webFrame.src=WEB+"#"+p[1];
+    plugFrame.src=PLUG+"#pane="+p[2]+"&theme="+state.theme+"&width=420";
+    document.getElementById("webLabel").textContent="#"+p[1];
+    document.getElementById("plugLabel").textContent=p[2]+" · "+state.theme+" · 420px";
+    document.getElementById("webOpen").href=webFrame.src;
+    document.getElementById("plugOpen").href=plugFrame.src;
+    mark("pairChips",String(state.pair));mark("themeChips",state.theme);
+  }
+  function mark(id,value){
+    var nodes=document.getElementById(id).children,i;
+    for(i=0;i<nodes.length;i+=1){nodes[i].classList.toggle("active",nodes[i].getAttribute("data-v")===value);}
+  }
+  function chip(parent,label,value,fn){
+    var b=document.createElement("button");b.className="chip";b.textContent=label;b.setAttribute("data-v",value);
+    b.addEventListener("click",fn);document.getElementById(parent).appendChild(b);
+  }
+  pairs.forEach(function(p,i){chip("pairChips",p[0],String(i),function(){state.pair=i;render();});});
+  themes.forEach(function(t){chip("themeChips",t.toUpperCase(),t,function(){state.theme=t;render();});});
+  function fit(){
+    /* chap iframe'ni ustunga sig'dirish */
+    var w=webBox.clientWidth,h=webBox.clientHeight,s=w/1280;
+    webFrame.style.transform="scale("+s+")";
+    webFrame.style.height=Math.ceil(h/s)+"px";
+    /* o'ng iframe: boshqaruv paneli (264px) kesiladi */
+    plugFrame.style.width=(document.getElementById("plugBox").clientWidth+264)+"px";
+  }
+  window.addEventListener("resize",fit);
+  render();fit();
+})();
+</script>
+</body>
+</html>
