@@ -12844,6 +12844,7 @@ window.afGallery=(function(){
     var inact=vgInactiveRefCount(m); // yangi modelda nofaol bo'ladigan referenslar (ogohlantirish)
     applyModelSettings(m); applyVgMeta();
     // hovuz saqlanadi — proyeksiyani (xira holatlar) qayta chizamiz (@tokenlar TEGILMAYDI)
+    // P18 — renderMediaRefs() ichida renderVgEditPresets() ham chaqiriladi (model-aware qayta chizish).
     hideVgMention(); renderMediaRefs(); renderFrameBoxes(); updRefMeta();
     closeVgSheets();
     toast(String(m.label||'Model')+' selected'+(inact>0?(' · '+inact+' reference'+(inact>1?'s':'')+' kept (unused)'):''),'info');
@@ -13093,10 +13094,11 @@ window.afGallery=(function(){
     {label:'Edit objects',tpl:'Insert <object> from @img1 into @video1 at <where/when>. Match position, scale, perspective, lighting and shadows; keep everything else unchanged.'},
     {label:'Inpaint / Fix',tpl:'Make <element> in @video1 <desired change>. Do not modify the background, lighting, camera motion, or any other element.'}
   ];
-  // ≥1 VIDEO referens biriktirilganda video-edit shablon chiplarini ko'rsatadi; bosilsa kursorga andoza qo'yadi.
+  // P18 — SD2 promptlari (@video1+@img1) faqat Seedance 2.0 oilasiga mos (feature: reference-to-video);
+  // boshqa media-refs modellarda (Omni Flash, video-upscale) ma'nosiz bo'lardi — model-aware gate.
   function renderVgEditPresets(){
     var bar=$('vgEditPresets'); if(!bar)return;
-    if(!hasVideoRefs()){ bar.style.display='none'; bar.innerHTML=''; return; }
+    if(!hasVideoRefs()||!vm.model||vm.model.feature!=='reference-to-video'){ bar.style.display='none'; bar.innerHTML=''; return; }
     if(!bar.childNodes.length){
       VG_EDIT_PRESETS.forEach(function(p){
         var b=document.createElement('button'); b.type='button'; b.className='stag'; b.textContent=p.label;
