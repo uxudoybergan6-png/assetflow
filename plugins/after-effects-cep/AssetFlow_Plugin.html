@@ -14467,8 +14467,10 @@ window.afGallery=(function(){
     if(sp.sLoaded&&!force){ renderSessions(); return; }
     sp.sLoading=true;
     api.sessions().then(function(r){ sp.sessions=(r&&r.items)||[]; sp.sLoaded=true; sp.sLoading=false; renderSessions(); })
-      .catch(function(){ sp.sLoading=false; var l=$('spSessList'); if(l)l.innerHTML='<div class="sp-empty">Could not load sessions — sign in and try again.</div>'; });
+      .catch(function(){ sp.sLoading=false; var l=$('spSessList'); if(l)l.innerHTML='<div class="sp-empty">Could not load sessions — sign in and try again.<br><button type="button" class="af7-btn" style="margin-top:8px" onclick="if(window.afSpRetrySessions)window.afSpRetrySessions()">↻ Retry</button></div>'; });
   }
+  // §C (P30) — web pariteti: sessiya yuklash xatosida Retry
+  window.afSpRetrySessions=function(){ loadSessions(true); };
   function fmtAgo(iso){ try{ var d=new Date(iso); var s=(Date.now()-d.getTime())/1000; if(s<3600)return Math.max(1,Math.round(s/60))+'m ago'; if(s<86400)return Math.round(s/3600)+'h ago'; return Math.round(s/86400)+'d ago'; }catch(e){ return ''; } }
   function renderSessions(){
     var l=$('spSessList'); if(!l)return; l.innerHTML='';
@@ -14574,8 +14576,10 @@ window.afGallery=(function(){
     if(sp.pLoaded&&!force){ renderProjects(); return; }
     sp.pLoading=true;
     api.projects().then(function(r){ sp.projects=(r&&r.items)||[]; sp.pLoaded=true; sp.pLoading=false; renderProjects(); })
-      .catch(function(){ sp.pLoading=false; var g=$('spProjGrid'); if(g)g.innerHTML='<div class="sp-empty">Could not load projects — sign in and try again.</div>'; });
+      .catch(function(){ sp.pLoading=false; var g=$('spProjGrid'); if(g)g.innerHTML='<div class="sp-empty">Could not load projects — sign in and try again.<br><button type="button" class="af7-btn" style="margin-top:8px" onclick="if(window.afSpRetryProjects)window.afSpRetryProjects()">↻ Retry</button></div>'; });
   }
+  // §C (P30) — web pariteti: loyiha yuklash xatosida Retry
+  window.afSpRetryProjects=function(){ loadProjects(true); };
   function renderProjects(){
     var g=$('spProjGrid'), em=$('spProjEmpty'), meta=$('spProjMeta'); if(!g)return; g.innerHTML='';
     if(meta)meta.textContent=sp.projects.length?(sp.projects.length+' projects'):'';

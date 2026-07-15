@@ -37,6 +37,9 @@ html.ff-iconfont-dead .ph::before,
 html.ff-iconfont-dead .ph-bold::before,
 html.ff-iconfont-dead .ph-fill::before { content: "\00B7" !important; font-family: inherit !important; }
 html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead .ph-fill { color: inherit; }
+/* §C (P30) — gen o'chirish "armed" holati ko'rinadigan bo'lsin (2-klik tasdiqi) */
+.va-lb-del.armed { box-shadow: 0 0 0 2px var(--th-danger, #ff6b5e) inset; color: var(--th-danger, #ff6b5e) !important; }
+.va-axmi.armed { color: var(--th-danger, #ff6b5e) !important; font-weight: 600; }
 </style>
 <script>
 // P21 — ikonka-font watchdog. Brauzer muvaffaqiyatsiz font fetch'ini O'ZI qayta urinmaydi,
@@ -16902,6 +16905,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <sc-if value="{{ sessEmpty }}" hint-placeholder-val="{{ true }}">
                     <div class="va-axrailempty" style="align-self:center"><span class="bx">✦</span><span class="t">Your sessions will appear here</span></div>
                   </sc-if>
+                  <!-- §C (P30) — sessiya yuklash xatosi: cheksiz skelet o'rniga halol xato + Retry -->
+                  <sc-if value="{{ sessErr }}" hint-placeholder-val="{{ false }}">
+                    <div class="va-axrailempty" style="align-self:center"><span class="bx">!</span><span class="t">Couldn't load sessions</span><b class="va-sessselbtn" style="cursor:pointer" onclick="{{ retrySessions }}">Retry</b></div>
+                  </sc-if>
                 </div>
               </aside>
 
@@ -16995,7 +17002,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                               <div class="va-axmi plain" onclick="{{ axMenuDownload }}"><span class="mic">⬇</span>Download</div>
                               <div class="va-axmi plain" onclick="{{ axMenuRegen }}"><span class="mic">↻</span>Regenerate</div>
                               <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}"><span class="mic">⧉</span>Copy prompt</div></sc-if>
-                              <div class="va-axmi plain danger" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>Delete</div>
+                              <div class="{{ axMenuDelCls }}" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>{{ axMenuDelLabel }}</div>
                               <div class="va-axmdiv"></div>
                               <!-- BATCH4 #1 — Upscale JONLI (Imagen imagegeneration@002); ✦ narx imzolangan quote'dan composer'da tasdiqlanadi -->
                               <div class="{{ axUpCls }}" title="{{ axUpTip }}" onclick="{{ axUseUpX2 }}"><span class="mic">⤢</span><span>Upscale x2 → 2K<span class="sub">{{ axUpCostX2 }}</span></span></div>
@@ -17324,6 +17331,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-if value="{{ projListLoading }}" hint-placeholder-val="{{ false }}">
             <div class="va-homeload" style="margin:26px 0"><span class="star">✦</span> Opening your projects…</div>
           </sc-if>
+          <!-- §C (P30) — loyihalar yuklanmadi: cheksiz skelet o'rniga halol xato + Retry -->
+          <sc-if value="{{ projErr }}" hint-placeholder-val="{{ false }}">
+            <div class="va-empty" style="margin:26px 0;padding:60px 20px">
+              <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)">!</span>
+              <div style="font-size:15px;font-weight:600;margin:12px 0 5px">Couldn't load your projects</div>
+              <button class="va-btn ghost" onclick="{{ retryProjects }}">Try again</button>
+            </div>
+          </sc-if>
           <sc-if value="{{ projListReady }}" hint-placeholder-val="{{ true }}">
           <div class="ffa-proj-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
             <sc-for list="{{ projectsView }}" as="p" hint-placeholder-count="4">
@@ -17632,7 +17647,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <sc-if value="{{ lb.canRef }}" hint-placeholder-val="{{ false }}"><button onclick="{{ useAsRef }}" class="ffm-btn2 sm"><i class="ph ph-paperclip" style="font-size:14px"></i>Reference</button></sc-if>
             <!-- BATCH4 #1 — lightbox'dan Upscale (x2 default; faktor composer'da o'zgartiriladi) -->
             <sc-if value="{{ lb.canUpscale }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbUpscale }}" class="ffm-btn2 sm"><i class="ph ph-frame-corners" style="font-size:14px"></i>Upscale</button></sc-if>
-            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="ffm-btn2 sm va-lb-del" title="Delete"><i class="ph ph-trash" style="font-size:15px"></i></button></sc-if>
+            <sc-if value="{{ lb.canDelete }}" hint-placeholder-val="{{ true }}"><button onclick="{{ deleteGen }}" class="{{ lbDelCls }}" title="{{ lbDelTitle }}"><i class="ph ph-trash" style="font-size:15px"></i></button></sc-if>
           </div>
         </aside>
       </div>
@@ -19284,7 +19299,10 @@ class Component extends DCLogic {
         storageUsed: st ? (st.usedBytes || 0) : 0,
         storageQuota: st ? (st.quotaBytes || 0) : 0,
       });
-    } catch (e) {}
+    } catch (e) {
+      // §C/A5 — boot-critical: kreditlar hali yuklanmagan bo'lsa (cold-start) BIR marta 5s dan keyin qayta.
+      if (!this.state.creditsLoaded && !this._creditsRetried) { this._creditsRetried = true; setTimeout(() => { this.refreshCredits(); }, 5000); }
+    }
     this._creditsBusy = false;
   }
   async loadPluginMe() {
@@ -19486,8 +19504,11 @@ class Component extends DCLogic {
       const r = await FFAPI.sessions(); const items = r.items || []; this._cacheSet('sess', items);
       // P23 — imzo: id+title+count+cover; bir xil bo'lsa idle qayta-yuklashda setState YO'Q.
       const sig = items.map(x => x.id + ':' + (x.title || '') + ':' + (x.count != null ? x.count : (x.doneCount || 0)) + ':' + ((x.cover && x.cover.thumb) || x.coverUrl || '')).join('|');
-      if (this._sigChanged('sess', sig) || !this.state.sessionsLoaded) this.setState({ sessions: items, sessionsLoaded: true });
-    } catch (e) {}
+      if (this._sigChanged('sess', sig) || !this.state.sessionsLoaded) this.setState({ sessions: items, sessionsLoaded: true, sessErr: false });
+    } catch (e) {
+      // §C (P30) — jim skelet yo'q: xatoni belgilaymiz + loaded:true (skelet to'xtaydi) → error+Retry.
+      this.setState({ sessionsLoaded: true, sessErr: true });
+    }
   }
   async openSessionById(id) {
     // Sessiyani ko'rish + davom ettirish: keyingi gen'lar ham shu sessiyaga boradi
@@ -19510,8 +19531,11 @@ class Component extends DCLogic {
       const r = await FFAPI.projects(); const items = r.items || []; this._cacheSet('proj', items);
       // P23 — imzo: id+name+count+updated; bir xil bo'lsa idle qayta-yuklashda setState YO'Q.
       const sig = items.map(x => x.id + ':' + (x.name || '') + ':' + (x.count || 0) + ':' + (x.updatedAt || '')).join('|');
-      if (this._sigChanged('proj', sig) || !this.state.projectsLoaded) this.setState({ projects: items, projectsLoaded: true });
-    } catch (e) {}
+      if (this._sigChanged('proj', sig) || !this.state.projectsLoaded) this.setState({ projects: items, projectsLoaded: true, projErr: false });
+    } catch (e) {
+      // §C (P30) — jim skelet yo'q: xato + loaded:true → error+Retry.
+      this.setState({ projectsLoaded: true, projErr: true });
+    }
   }
   async openProjectById(id) {
     this.setState({ projLoading: true, projDelArm: false });
@@ -20344,6 +20368,22 @@ class Component extends DCLogic {
       this.toast('Download started');
     } catch (e) { this.toast(this.errMsg(e)); }
   }
+  // §C (P30) — gen o'chirish endi 2-bosqichli "armed" tasdiq (project-delete naqshi): pullik
+  // aktiv bitta klikda o'lib ketmasin. Birinchi klik qurollantiradi (genDelArm=id + 3.5s disarm
+  // taymer), ikkinchisi (AYNI id) haqiqatan o'chiradi. Boshqa id bosilsa qayta qurollanadi.
+  deleteGenArmed(id) {
+    if (!id) return;
+    if (this.state.genDelArm !== id) {
+      clearTimeout(this._genDelT);
+      this.setState({ genDelArm: id });
+      this.toast('Click again to delete', 'warning'); // ko'rinadigan holat (native confirm EMAS)
+      this._genDelT = setTimeout(() => { if (this.state.genDelArm === id) this.setState({ genDelArm: null }); }, 3500);
+      return;
+    }
+    clearTimeout(this._genDelT);
+    this.setState({ genDelArm: null });
+    this.deleteGenById(id);
+  }
   async deleteGenById(id) {
     try { await FFAPI.genDelete(id); } catch (e) { this.toast(this.errMsg(e)); return; }
     this.setState(st => {
@@ -20755,6 +20795,9 @@ class Component extends DCLogic {
         document.body.appendChild(a); a.click(); a.remove();
         this.toast('Download started');
         this.loadPluginMe();
+      } else {
+        // §C (P30) — javob keldi-yu URL yo'q: jim qolmaymiz, halol xato ko'rsatamiz.
+        this.toast("Couldn't start the download — please try again", 'error');
       }
     } catch (e) { this.toast(this.errMsg(e)); }
   }
@@ -22012,7 +22055,9 @@ class Component extends DCLogic {
       voiceResults, noVoiceResults,
       // ── PHASE B: session workspace bindinglari (QA-FIX #12 — rail = sessiyalar) ──
       sessListView,
-      sessEmpty: this.state.sessionsLoaded && sessListView.length === 0,
+      sessEmpty: this.state.sessionsLoaded && !this.state.sessErr && sessListView.length === 0,
+      sessErr: !!this.state.sessErr && sessListView.length === 0, // §C
+      retrySessions: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ sessErr: false, sessionsLoaded: false }); this.loadSessions(); },
       libRowCls: 'va-sessrow' + (inLibrary ? ' on' : ''),
       libChipCls: 'va-sesschip' + (inLibrary ? ' on' : ''),
       // §A (P2) — cap'langanda "recent" deb halol yozamiz (jami son emas)
@@ -22190,7 +22235,7 @@ class Component extends DCLogic {
       closeUseMenu: () => this.setState({ useMenuOpen: false }),
       axMenuDownload: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axMenuRegen: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.restoreGenToComposer(activeGenRaw.id); }, // P18: prefill, don't generate
-      axMenuDelete: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false }); if (activeGenRaw) this.deleteGenById(activeGenRaw.id); },
+      axMenuDelete: (e) => { e.stopPropagation(); if (activeGenRaw) this.deleteGenArmed(activeGenRaw.id); }, // §C — armed (menyu ochiq qoladi: 2-klik uchun)
       // P2 — Copy prompt: gen'ning TO'LIQ prompti clipboard'ga
       axHasPrompt: !!(activeGenRaw && activeGenRaw.prompt),
       axMenuCopyPrompt: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false });
@@ -22226,7 +22271,9 @@ class Component extends DCLogic {
       videoUrl: (activeGenRaw && activeGenRaw.type === 'video' && activeGenRaw.url) || '',
       waveBars: activeGenRaw ? Array.from({ length: 46 }, (_, i) => ({ h: 18 + Math.abs(Math.sin(this.hueOf(activeGenRaw.id) + i * .7)) * 74 })) : [],
       pickActive: (e) => this.setState({ activeGenId: e.currentTarget.dataset.id }),
-      delActive: () => { const cur = activeGenRaw && activeGenRaw.id; if (cur) this.deleteGenById(cur); },
+      delActive: () => { const cur = activeGenRaw && activeGenRaw.id; if (cur) this.deleteGenArmed(cur); }, // §C — armed
+      axMenuDelLabel: (activeGenRaw && this.state.genDelArm === activeGenRaw.id) ? 'Click again to delete' : 'Delete',
+      axMenuDelCls: (activeGenRaw && this.state.genDelArm === activeGenRaw.id) ? 'va-axmi plain danger armed' : 'va-axmi plain danger',
       q: this.state.q, filtered, filtCount: filtered.length, resultsFmt,
       fbAppCls, fbAppLabel, fbCatCls, fbCatLabel, fbCatOpen, fGranView, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
       toggleFbar: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ fbarPop: st.fbarPop === p ? null : p, sortOpen: false })); },
@@ -22387,7 +22434,9 @@ class Component extends DCLogic {
       lbCopyPrompt: (e) => { if (e) e.stopPropagation(); const g = this.state.lightbox; if (g && g.prompt) { try { navigator.clipboard.writeText(g.prompt); this.toast('Prompt copied'); } catch (er) {} } },
       // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
-      deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenById(id); },
+      deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenArmed(id); }, // §C — armed
+      lbDelCls: (this.state.lightbox && this.state.genDelArm === this.state.lightbox.id) ? 'ffm-btn2 sm va-lb-del armed' : 'ffm-btn2 sm va-lb-del',
+      lbDelTitle: (this.state.lightbox && this.state.genDelArm === this.state.lightbox.id) ? 'Click again to delete' : 'Delete',
       // §A (P1) — "Reference" endi REAL: mavjud useGenAsRef('edit') handoff'iga ulandi
       // (avval faqat "coming soon" toast edi — o'lik stub)
       useAsRef: () => { const cur = this.state.lightbox; if (!cur) return; this.setState({ lightbox: null }); if (cur.type === 'image') this.useGenAsRef('edit', cur.id); },
@@ -22420,8 +22469,10 @@ class Component extends DCLogic {
       toggleAppMenu: () => this.setState(st => ({ appMenuOpen: !st.appMenuOpen })),
       // ── QA-FIX #13 — Projects (real API) ──
       projList: !projOpen,
-      projListLoading: !this.state.projectsLoaded,
-      projListReady: this.state.projectsLoaded,
+      projListLoading: !this.state.projectsLoaded && !this.state.projErr,
+      projListReady: this.state.projectsLoaded && !this.state.projErr,
+      projErr: !!this.state.projErr, // §C
+      retryProjects: () => { this.setState({ projErr: false, projectsLoaded: false }); this.loadProjects(); },
       projDetail: projOpen ? { name: projOpen.name, metaLine: projItemsView.length + ' item' + (projItemsView.length === 1 ? '' : 's') + (projOpen.updatedAt ? ' · updated ' + fmtAgo(projOpen.updatedAt) : '') } : null,
       projDetailLoading: this.state.projLoading,
       projDetailEmpty: !!projOpen && !this.state.projLoading && projItemsView.length === 0,
