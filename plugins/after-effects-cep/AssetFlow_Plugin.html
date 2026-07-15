@@ -3426,6 +3426,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .mrowb .mtx b{display:block;font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axig .mrowb .mtx small{display:block;font-size:10px;color:var(--muted-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axig .mrowb .mprice{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap}
+/* P12 — pin tugmasi: .mrowb ATAYLAB skoplanmagan (.axig VA .axvg ikkalasi ham shu klassni ishlatadi) */
+.mrowb .mpin{width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--muted-2);cursor:pointer}
+.mrowb .mpin:hover{color:var(--text)}
+.mrowb .mpin.on{color:var(--accent)}
 .axig .minfobox{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border-radius:10px;background:rgba(124,196,255,.06);border:1px solid var(--select-dim);font-size:10px;color:#9FC9EC;line-height:1.5;text-align:left}
 .axig .minfobox svg{flex:none;color:var(--select)}
 .axig .opt{min-height:58px;display:flex;align-items:center;gap:12px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);margin-bottom:7px;cursor:pointer}
@@ -8034,6 +8038,26 @@ window.syncFilterSheet=syncFilterSheet;
 const AF_THEMES=['standart','liquid-glass','light-glass'];
 function afGetPrefs(){ try{ return JSON.parse(localStorage.getItem('af.prefs')||'{}')||{}; }catch(e){ return {}; } }
 function afSavePrefs(patch){ try{ const p=afGetPrefs(); Object.assign(p,patch); localStorage.setItem('af.prefs',JSON.stringify(p)); }catch(e){} }
+// P12 — model pin (mahkamlash): image (.axig) va video (.axvg) kompozerlari alohida IIFE (Section C
+// darsi — biri ichida e'lon qilingan funksiya ikkinchisiga ko'rinmaydi), shu bois umumiy pin
+// mantiqi ATAYLAB shu haqiqiy top-level qamrovda — ikkalasi ham af.prefs.pinnedModels'ni ishlatadi.
+var PIN_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21s-7-7.1-7-12a7 7 0 0 1 14 0c0 4.9-7 12-7 12Z"></path><circle cx="12" cy="9" r="2.3"></circle></svg>';
+function afIsModelPinned(id){ var p=(afGetPrefs().pinnedModels)||[]; return p.indexOf(String(id))>=0; }
+function afToggleModelPin(id){
+  id=String(id);
+  var p=((afGetPrefs().pinnedModels)||[]).slice(); var i=p.indexOf(id);
+  if(i>=0)p.splice(i,1); else p.push(id);
+  afSavePrefs({pinnedModels:p});
+  return i<0; // true = endi pinlangan
+}
+// Mahkamlangan modellar ro'yxat boshida (ular orasidagi tartib saqlanadi — stable sort)
+function afSortPinnedFirst(list){
+  var p=(afGetPrefs().pinnedModels)||[];
+  return (list||[]).slice().sort(function(a,b){
+    var pa=p.indexOf(String(a.id))>=0, pb=p.indexOf(String(b.id))>=0;
+    return pa===pb?0:(pa?-1:1);
+  });
+}
 function markActiveTheme(name){
   document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('active', b.dataset.themeVal===name));
 }
@@ -11223,6 +11247,10 @@ window.afGallery=(function(){
   // Referens qo'llamaydigan model (refKind none yoki maxRefs 0) → referenslar tozalanadi.
   function setModel(m){
     if(!m)return false;
+    // P12 — chiqayotgan modelning joriy kompozer parametrlarini eslab qolamiz (af.prefs.genPrefsImg).
+    var prevImgId=meta.modelId, prevImgSnap={ar:st.ar,q:st.q,n:st.n};
+    var gpImg=(afGetPrefs().genPrefsImg)||{};
+    if(prevImgId!=null)gpImg[prevImgId]=prevImgSnap;
     // P13 — REFERENS HOVUZI MODEL-MUSTAQIL: model almashishi st.refs'dan HECH NARSA o'chirmaydi/klamplamaydi.
     //   Model imkoniyati faqat PROYEKSIYA beradi — renderRefs faol/nofaol (xira) qiladi, genClick FAQAT
     //   faollarini yuboradi, @raqamlash hovuzga bog'liq (qayta raqamlanmaydi). Orqaga qaytsa hammasi qaytadi.
@@ -11243,7 +11271,13 @@ window.afGallery=(function(){
     meta.qLabel=(ql&&ql.label)||'Quality'; // 2-chip label: gpt→"Quality", nano→"Resolution"
     meta.qDefault=(ql&&ql.def)||((meta.quals.indexOf('high')>=0)?'high':meta.quals[0]);
     meta.counts=(s&&s.num&&s.num.length)?s.num:((m.count&&m.count.length)?m.count:meta.counts);
-    st.ar=meta.aspDef; st.q=meta.qDefault; st.n=meta.counts[0]||1;
+    // P12 — shu model uchun avval saqlangan preferensiya bo'lsa (hali ham YAROQLI bo'lsa) tiklaymiz,
+    //   aks holda model default'i.
+    var savedImg=gpImg[m.id];
+    st.ar=(savedImg&&meta.ars.indexOf(savedImg.ar)>=0)?savedImg.ar:meta.aspDef;
+    st.q=(savedImg&&meta.quals.indexOf(savedImg.q)>=0)?savedImg.q:meta.qDefault;
+    st.n=(savedImg&&meta.counts.indexOf(savedImg.n)>=0)?savedImg.n:(meta.counts[0]||1);
+    afSavePrefs({genPrefsImg:gpImg});
     // P13 — hovuz tegilmaydi; proyeksiyani yangilash uchun refs QAYTA chiziladi (xira holatlar).
     var inact=igInactiveRefCount();
     applyMeta(); renderRefs(); updRefMeta();
@@ -11271,15 +11305,18 @@ window.afGallery=(function(){
   function renderModelSheet(){
     var host=$('igMList'); if(!host)return; host.innerHTML='';
     var reqNames=[];
-    (meta.models||[]).forEach(function(m){
+    afSortPinnedFirst(meta.models||[]).forEach(function(m){
       var cur=(m.id===meta.modelId);
+      var pinned=afIsModelPinned(m.id);
       var brandName=BRAND_LABEL[m.brand]||'AI';
       var sub=String(m.desc||m.description||((m.refMode==='required')?brandName+' · reference required':(m.refMode==='none')?brandName+' · no reference':brandName)).replace(/[<>&]/g,'');
       if(m.refMode==='required')reqNames.push(String(m.label||''));
       var price=igModelPrice(m);
       var o=document.createElement('div'); o.className='mrowb'+(cur?' cur':'');
-      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'');
+      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'')+'<span class="mpin'+(pinned?' on':'')+'" title="'+(pinned?'Unpin model':'Pin model')+'">'+PIN_SVG+'</span>';
       o.addEventListener('click',function(){ if(m.id!==meta.modelId){ if(setModel(m)!==false){ renderModelSheet(); toast(m.label+' selected','info'); } } closeSheets(); });
+      var pinEl=o.querySelector('.mpin');
+      if(pinEl)pinEl.addEventListener('click',function(e){ e.stopPropagation(); var on=afToggleModelPin(m.id); renderModelSheet(); toast(on?'Model pinned':'Model unpinned','info'); });
       host.appendChild(o);
     });
     var hint=$('igMHint'); var hs=hint&&hint.querySelector('span');
@@ -12719,6 +12756,10 @@ window.afGallery=(function(){
   }
   // ── model sozlamalarini qo'llash (videoSettings deskriptoridan; joriy tanlov mos kelmasa def'ga klamp) ──
   function applyModelSettings(m){
+    // P12 — chiqayotgan modelning joriy kompozer parametrlarini eslab qolamiz (af.prefs.genPrefsVid).
+    var prevVidId=vm.model?vm.model.id:null;
+    var gpVid=(afGetPrefs().genPrefsVid)||{};
+    if(prevVidId!=null)gpVid[prevVidId]={res:vm.res,dur:vm.dur,ar:vm.ar,bitrate:vm.bitrate,audio:vm.audio};
     vm.model=m;
     vm.strict=(m&&m.policyStrictness==='strict'); // P30 §2 — qattiq siyosat ogohlantirishi
     // FIX3: refKind/limitlar imkoniyat xaritasidan (B4 'none' default saqlangan — kadr talab qilib bloklamaydi).
@@ -12752,6 +12793,17 @@ window.afGallery=(function(){
     // P8 (P2 gap): model audio QO'LLAMASA (Veo Lite/Fast audio:false) toggle yashirinadi va false yuboriladi.
     vm.audioSupported=((vs&&vs.audio!=null)?vs.audio:m.audio)===true;
     if(!vm.audioSupported)vm.audio=false;
+    // P12 — shu model uchun avval saqlangan preferensiya bo'lsa (hali ham YAROQLI bo'lsa) tiklaymiz,
+    //   aks holda model default'i (yuqoridagi vs blokidan).
+    var savedVid=gpVid[m.id];
+    if(savedVid){
+      if(savedVid.res!=null&&vm.resOpts.indexOf(savedVid.res)>=0)vm.res=savedVid.res;
+      if(savedVid.dur!=null&&vm.durOpts.indexOf(savedVid.dur)>=0)vm.dur=savedVid.dur;
+      if(savedVid.ar!=null&&vm.arOpts.indexOf(savedVid.ar)>=0)vm.ar=savedVid.ar;
+      if(savedVid.bitrate!=null&&vm.bitOpts.indexOf(savedVid.bitrate)>=0)vm.bitrate=savedVid.bitrate;
+      if(typeof savedVid.audio==='boolean'&&vm.audioSupported&&!vm.audioLocked)vm.audio=savedVid.audio;
+    }
+    afSavePrefs({genPrefsVid:gpVid});
     // So'nggi grid kartalari model-aware (Referens tugmasi refKind'ga bog'liq) — model almashganda
     // QAYTA chiziladi, aks holda eski model bilan chizilgan kartada tugma yo'qolib/ortib qoladi.
     try{ if(typeof renderVgRecent==='function')renderVgRecent(); }catch(_){}
@@ -12926,12 +12978,16 @@ window.afGallery=(function(){
     var host=$('vgMList'); if(!host)return; host.innerHTML='';
     var models=vm.models||[];
     if(!models.length&&vm.model)models=[vm.model];
+    models=afSortPinnedFirst(models);
     models.forEach(function(m){
       var cur=(vm.model&&String(m.id)===String(vm.model.id));
+      var pinned=afIsModelPinned(m.id);
       var sub=String(m.desc||m.description||vgModelSubtitle(m)).replace(/[<>&]/g,'');
       var price=vgModelPrice(m);
       var o=document.createElement('div'); o.className='mrowb'+(cur?' cur':''); o.setAttribute('data-mid',String(m.id));
-      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'');
+      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'')+'<span class="mpin'+(pinned?' on':'')+'" title="'+(pinned?'Unpin model':'Pin model')+'">'+PIN_SVG+'</span>';
+      var pinEl=o.querySelector('.mpin');
+      if(pinEl)pinEl.addEventListener('click',function(e){ e.stopPropagation(); var on=afToggleModelPin(m.id); renderVgModelSheet(); toast(on?'Model pinned':'Model unpinned','info'); });
       host.appendChild(o);
     });
     if(!host.children.length)host.innerHTML='<div class="axighint">Loading model…</div>';
