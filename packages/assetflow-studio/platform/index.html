@@ -16893,7 +16893,7 @@
                           </div>
                           <!-- USE ▾ menu (frame A) — Edit image / i2v REAL handoff (step 2) -->
                           <sc-if value="{{ g.menuOpen }}" hint-placeholder-val="{{ false }}">
-                            <div class="va-axmenu" onclick="{{ stop }}">
+                            <div class="va-axmenu" style="{{ axUseMenuStyle }}" onclick="{{ stop }}">
                               <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
                               <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
                               <div class="va-axmdiv"></div>
@@ -17924,6 +17924,7 @@ class Component extends DCLogic {
     sessSelect: false,      // P6 — sessiya rail select-rejimi
     sessSel: {},            // P6 — tanlangan sessiya id'lari
     useMenuOpen: false,
+    useMenuPos: null,       // P19 — desktopda JS bilan hisoblangan position:fixed koordinatalari (multicol bug)
     upKind: 'image',        // BATCH4 #2 — Upscale tool manba turi (image|video)
     upVQuote: null,         // BATCH4 #2 — video-upscale server narxi ({price,signature,params,info,key})
     modelModalOpen: false,
@@ -18643,9 +18644,15 @@ class Component extends DCLogic {
             }
           }
         } catch (e) {}
+        // P19 — scroll bilan Use▾ menyu trigger'dan uzoqlashadi (position:fixed koordinatalar eskiradi) → yopamiz.
+        if (this.state.useMenuOpen) this.setState({ useMenuOpen: false, useMenuPos: null });
       });
     };
     window.addEventListener('scroll', this._onScroll, { passive: true });
+    // P19 — resize (masalan devtools/tablet burilish) → position:fixed koordinatalar eskiradi, yopamiz.
+    window.addEventListener('resize', this._onUseMenuResize = () => {
+      if (this.state.useMenuOpen) this.setState({ useMenuOpen: false, useMenuPos: null });
+    }, { passive: true });
     // P10 — 3.4s "maslahat" taymeri OLIB TASHLANDI: tipText DOM'da hech qayerda bind qilinmagan,
     //       shu sabab bu interval faqat butun ilovani 3.4s'da bir qayta render qilardi (soxta flash).
     // Arm reveal choreography ONLY once live rendering frames are confirmed (double rAF).
@@ -18668,7 +18675,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); }
@@ -21855,6 +21862,8 @@ class Component extends DCLogic {
       axVisGens, axAudGens, genPct, genStatus, axSuggest,
       // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)
       axGridCls: 'va-axgrid' + (this.state.axGridView === 'compact' ? ' compact' : ''),
+      // P19 — bir vaqtda faqat bitta g.menuOpen true bo'ladi; shu sabab bitta umumiy style yetarli.
+      axUseMenuStyle: this.state.useMenuPos ? ('position:fixed;left:' + this.state.useMenuPos.left + 'px;top:' + this.state.useMenuPos.top + 'px;max-height:' + this.state.useMenuPos.maxH + 'px;overflow:auto') : '',
       axGridViewTip: this.state.axGridView === 'compact' ? 'Full view' : 'Compact view',
       axGridViewIcon: this.state.axGridView === 'compact' ? 'grid-four' : 'grid-nine',
       toggleAxGridView: () => {
@@ -21948,7 +21957,23 @@ class Component extends DCLogic {
       } catch (er) {} },
       // P17 — toast'dagi "Retry" bosildi: AYNI operatsiyani (saqlangan idempotency kaliti bilan) qayta chaqir.
       toastRetryClick: () => { const fn = this._toastRetryFn; this._toastRetryFn = null; clearTimeout(this._t); this.setState({ toast: null, toastRetry: false }); if (typeof fn === 'function') { try { fn(); } catch (er) {} } },
-      toggleUseMenu: (e) => { e.stopPropagation(); this.setState(st => ({ useMenuOpen: !st.useMenuOpen })); },
+      // P19 — .va-axgrid (CSS columns) ichida position:absolute menyu Chrome multicol
+      // fragmentatsiyasi bilan noto'g'ri ustunga chiqib ketishi mumkin. Desktop/tabletda (>820px,
+      // mobil bottom-sheet CSS'i o'zgarmaydi) trigger tugma rect'idan position:fixed hisoblanadi.
+      toggleUseMenu: (e) => { e.stopPropagation(); const btn = e.currentTarget;
+        this.setState(st => {
+          if (st.useMenuOpen) return { useMenuOpen: false };
+          let pos = null;
+          if (window.innerWidth > 820 && btn && btn.getBoundingClientRect) {
+            const r = btn.getBoundingClientRect();
+            const vw = window.innerWidth, vh = window.innerHeight, pad = 8, mw = 246, maxH = Math.round(vh * 0.62);
+            const left = Math.min(Math.max(r.left, pad), vw - mw - pad);
+            let top = r.bottom + 4;
+            if (top + maxH > vh - pad) top = Math.max(pad, r.top - maxH - 4);
+            pos = { left, top, maxH };
+          }
+          return { useMenuOpen: true, useMenuPos: pos };
+        }); },
       axMenuAddProj: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false, addPick: activeGenRaw ? { kind: 'gen', refId: activeGenRaw.id } : null }); },
       // P3 (step 34) — Use ▾ menyudan "Add to Explore"
       axExploreCls: 'va-axmi plain' + (activeGenRaw && this.exploreStateOf(activeGenRaw.id).submitted ? ' off' : ''),
