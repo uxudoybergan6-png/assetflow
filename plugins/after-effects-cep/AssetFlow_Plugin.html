@@ -6811,7 +6811,10 @@ async function retryCatalog(){
   catalogLoadState='loading';
   render();
   try{
-    await AssetFlowCatalog.refreshBrowse(catalogFilters());
+    // FIX A (P6) — reset:true MAJBURIY: cold-start muvaffaqiyatsizligidan keyin browseSig
+    // eski qolib, reset'siz refreshBrowse guard (sig!==browseSig) tufayli darhol 0 qaytarib
+    // hech narsa yuklamasdi (Retry "ishlagandek" ko'rinib, aslida bo'sh qolardi). Web loadBrowse(true) bilan tenglashtirildi.
+    await AssetFlowCatalog.refreshBrowse(catalogFilters(),{reset:true});
     catalogLoadState='ready';
     window.__afLastSyncAt=new Date();
   }catch(e){

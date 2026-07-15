@@ -129,11 +129,15 @@
     req: req,
 
     // Auth
-    login: function (email, password) { return req("/api/auth/login", { method: "POST", body: { email: email, password: password }, auth: false }); },
-    register: function (email, password, name, turnstileToken) { return req("/api/auth/register", { method: "POST", body: { email: email, password: password, name: name || undefined, turnstileToken: turnstileToken || undefined }, auth: false }); },
-    forgot: function (email) { return req("/api/auth/forgot-password", { method: "POST", body: { email: email }, auth: false }); },
-    google: function (credential) { return req("/api/auth/google", { method: "POST", body: { credential: credential }, auth: false }); },
-    resendVerification: function (email) { return req("/api/auth/resend-verification", { method: "POST", body: { email: email }, auth: false }); },
+    // FIX A3 (P6) — bu 5 auth POST'i cold-start'ga qarshi qayta uriladi (idempotent:true → 4
+    //   urinish, timeout 30s). Server IP-rate-limited, shu bois klient qayta urinishi xavfsiz.
+    //   Bularsiz sovuq Cloud Run/Neon uyg'onishida bitta urinish = kafolatli "Can't reach server".
+    //   Checkout/gen'ga TEGMAYMIZ (pul zonasi — o'z idempotency kaliti bilan alohida).
+    login: function (email, password) { return req("/api/auth/login", { method: "POST", body: { email: email, password: password }, auth: false, idempotent: true, timeout: 30000 }); },
+    register: function (email, password, name, turnstileToken) { return req("/api/auth/register", { method: "POST", body: { email: email, password: password, name: name || undefined, turnstileToken: turnstileToken || undefined }, auth: false, idempotent: true, timeout: 30000 }); },
+    forgot: function (email) { return req("/api/auth/forgot-password", { method: "POST", body: { email: email }, auth: false, idempotent: true, timeout: 30000 }); },
+    google: function (credential) { return req("/api/auth/google", { method: "POST", body: { credential: credential }, auth: false, idempotent: true, timeout: 30000 }); },
+    resendVerification: function (email) { return req("/api/auth/resend-verification", { method: "POST", body: { email: email }, auth: false, idempotent: true, timeout: 30000 }); },
     me: function () { return req("/api/auth/me"); },
     saveName: function (name) { return req("/api/auth/me", { method: "PATCH", body: { name: name } }); },
     // Avatar — FormData (req() JSON'lashtiradi, shu sabab to'g'ridan fetch)

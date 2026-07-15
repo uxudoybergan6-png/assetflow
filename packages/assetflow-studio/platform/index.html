@@ -16756,6 +16756,15 @@
           <sc-if value="{{ catalogLoading }}" hint-placeholder-val="{{ false }}">
             <div class="va-homeload" style="margin:26px 40px"><span class="star">✦</span> Hanging the template wall…</div>
           </sc-if>
+          <!-- FIX A2 (P6) — katalog yuklanmadi (hech narsa yo'q): halol xato bloki + Try again -->
+          <sc-if value="{{ browseErrEmpty }}" hint-placeholder-val="{{ false }}">
+            <div class="va-empty" style="margin-top:24px;padding:70px 20px">
+              <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)">!</span>
+              <div style="font-size:15px;font-weight:600;margin:12px 0 5px">Couldn't load the catalog.</div>
+              <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">Check your connection and try again.</p>
+              <button class="va-btn ghost" onclick="{{ retryBrowse }}">Try again</button>
+            </div>
+          </sc-if>
           <sc-if value="{{ hasFiltered }}" hint-placeholder-val="{{ true }}">
             <div class="va-mas">
               <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
@@ -16786,6 +16795,10 @@
           <!-- P1 #15 — "Load more" (infinite scroll'ga zaxira): server keyingi sahifasi bor -->
           <sc-if value="{{ browseHasMore }}" hint-placeholder-val="{{ false }}">
             <div style="text-align:center;padding:20px 0"><button class="va-btn ghost" onclick="{{ loadMoreBrowse }}">Load more</button></div>
+          </sc-if>
+          <!-- FIX A2 (P6) — keyingi sahifa yuklanmadi (items bor): slim inline retry -->
+          <sc-if value="{{ browseErrMore }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:18px 0;font-size:12.5px;color:var(--muted)">Couldn't load more — <b style="cursor:pointer;color:var(--lime)" onclick="{{ retryBrowseMore }}">Retry</b></div>
           </sc-if>
           <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
             <div class="va-empty" style="margin-top:24px;padding:70px 20px">
@@ -18518,6 +18531,9 @@ class Component extends DCLogic {
   toastWithRetry(msg, retryFn) { this._toastRetryFn = retryFn; this.setState({ toast: msg, toastType: 'error', toastRetry: true }); clearTimeout(this._t); this._t = setTimeout(() => { this._toastRetryFn = null; this.setState({ toast: null, toastRetry: false }); }, 9000); }
 
   componentDidMount() {
+    // FIX A4 (P6) — warm-up: fire-and-forget /health pingi Cloud Run + Neon'ni foydalanuvchi
+    // sahifani o'qiyotganda uyg'otadi (birinchi login/katalog so'rovi cold-start'ga tushmasin).
+    try { if (window.FFAPI) FFAPI.req('/health', { auth: false, timeout: 8000 }).catch(() => {}); } catch (e) {}
     this._applyEntry();
     // FAZA D — lokal sevimlilarni tiklash
     try { const f = JSON.parse(localStorage.getItem('ff_tpl_favs') || '[]'); if (Array.isArray(f)) this.setState({ favTpls: f }); } catch (e) {}
@@ -18592,6 +18608,9 @@ class Component extends DCLogic {
           } else {
             this.setState({ screen: 'templates', fCat: stockLoc.pill, aiStockKind: stockLoc.sub || 'All' });
             this._syncStockUrl();
+            // FIX A1 (P6) — hard-refresh /stock deep-link'da grid YUKLANMASdi (popstate mirror'da
+            // ensureBrowse bor, boot'da yo'q edi) → "Hanging the template wall…" da qotib qolardi.
+            this.ensureBrowse();
           }
         } catch (e) {
           try { this.setState({ screen: 'templates', detail: null, detailNF: false, fCat: 'All' }); this.ensureBrowse(); } catch (_) {}
@@ -19065,9 +19084,14 @@ class Component extends DCLogic {
       // Home javonlari uchun bitta sahifa (60) — 5000 assetda ham BITTA so'rov.
       const r = await FFAPI.catalog({ take: 60 });
       const all = this.mapCatalogItems(r.items || [], APP_L, APP_C);
-      this.setState({ catalog: all, catalogReady: true, catalogFullyLoaded: true });
+      this.setState({ catalog: all, catalogReady: true, catalogFullyLoaded: true, _catalogErr: false });
       this._catalogAt = Date.now(); // §B (P2) — display URL eskirishi uchun focus-refetch belgisi
-    } catch (e) { this.setState({ catalogReady: true, catalogFullyLoaded: true }); }
+    } catch (e) {
+      // FIX A2 (P6) — Home javonlari bo'sh qolmasin: xatoni belgilaymiz va BIR MARTA
+      // 5s dan keyin qayta urinamiz (cold-start/Neon uyg'onishi ko'pincha shu oraliqda hal bo'ladi).
+      this.setState({ catalogReady: true, catalogFullyLoaded: true, _catalogErr: true });
+      if (!this._catalogRetried) { this._catalogRetried = true; setTimeout(() => { this.loadCatalog(); }, 5000); }
+    }
   }
   // P1 #15 — joriy filtr holatidan server katalog paramlarini quradi (butun baza
   // bo'yicha filtrlash uchun; brauzerda emas). fCat→templateType, fApps→app kodi,
@@ -19123,7 +19147,10 @@ class Component extends DCLogic {
         return { browse: { items: merged, cursor: r.nextCursor || null, loading: false, done: !r.nextCursor, key } };
       });
     } catch (e) {
-      this.setState(st => ({ browse: Object.assign({}, st.browse, { loading: false, done: true }) }));
+      // FIX A2 (P6) — jim o'lik nuqta yo'q: xatoni belgilaymiz. key:'' → ensureBrowse
+      // qayta kirilganda (yoki "Try again") qayta urinadi. done:false — bu OXIRGI
+      // sahifa emas, shunchaki muvaffaqiyatsizlik.
+      this.setState(st => ({ browse: Object.assign({}, st.browse, { loading: false, done: false, error: true, key: '' }) }));
     }
   }
   // Templates ekrani ko'rinsa yoki filtr o'zgarsa — kerak bo'lsa qayta yuklaydi.
@@ -19168,6 +19195,7 @@ class Component extends DCLogic {
   bootData() {
     this.refreshCredits(); this.loadHistory(); this.loadModels(); this.loadPluginMe();
     this.loadSessions(); this.loadProjects(); // QA-FIX #12/#13
+    this._reattachActiveJobs(); // FIX A5 (P6) — refresh mid-gen'da yetim poll'larni tiklaydi
     this.loadExploreSubs(); // P3 (step 34) — AI Stock topshiriq holatlari
     FFAPI.me().then(u => { FFAPI.setSession(FFAPI.getToken(), u); this.setState({ user: u, accName: (u && u.name) || '' }); }).catch(() => {});
     // P16 (SYNC) — oynaga qaytilganda holat yangilanadi (plagin↔web almashganda stale window yo'q).
@@ -19955,6 +19983,7 @@ class Component extends DCLogic {
       // P20 — ishni FAOL ro'yxatga qo'shamiz; kompozer ochiq qoladi (keyingi promptni yozish mumkin).
       const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: sid, mode: tool.mode, modelName: model.label || 'Model', cost: q.price, startedAt: Date.now() };
       this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
+      this._persistActiveJob(job); // FIX A5 (P6) — refresh mid-gen'da poll qayta ulanishi uchun
       this.pollJob(r.jobId);
     } catch (e) {
       if (e && e.code === 'INSUFFICIENT_CREDITS') { this._genIdemKey = null; this.setState({ showCredits: true }); }
@@ -19963,6 +19992,40 @@ class Component extends DCLogic {
       else if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — you won't be charged unless it goes through", () => this.generate(true));
       else { this._genIdemKey = null; this.toast(this.errMsg(e)); }
     } finally { this._genSubmitting = false; }
+  }
+  // FIX A5 (P6) — faol ishlarni sessionStorage'ga saqlaymiz: refresh (shu tab) mid-gen'da
+  // poll'lar qayta ulanadi (aks holda uchayotgan ish "yo'qoladi", faqat fokus/qo'lda reload'da
+  // tarixdan chiqadi). sessionStorage — tab yopilsa tozalanadi (to'g'ri: server refund qiladi).
+  _persistActiveJob(job) {
+    try {
+      const list = JSON.parse(sessionStorage.getItem('ff_active_jobs') || '[]');
+      const slim = { id: job.id, tempId: job.tempId, sessionId: job.sessionId, mode: job.mode, modelName: job.modelName, cost: job.cost, startedAt: job.startedAt };
+      if (!list.some(j => j.id === job.id)) { list.push(slim); sessionStorage.setItem('ff_active_jobs', JSON.stringify(list)); }
+    } catch (e) {}
+  }
+  _unpersistActiveJob(jobId) {
+    try {
+      const list = JSON.parse(sessionStorage.getItem('ff_active_jobs') || '[]').filter(j => j.id !== jobId);
+      sessionStorage.setItem('ff_active_jobs', JSON.stringify(list));
+    } catch (e) {}
+  }
+  // Boot'da yetim qolgan 'running' ishlarni tiklaymiz: activeJobs'ga qo'shib pollJob ulaymiz
+  // (pollJob genGet bilan darhol done/failed'ni yakunlaydi yoki poll'ni davom ettiradi).
+  _reattachActiveJobs() {
+    let list = [];
+    try { list = JSON.parse(sessionStorage.getItem('ff_active_jobs') || '[]'); } catch (e) { return; }
+    if (!Array.isArray(list) || !list.length) return;
+    // Juda eski yozuvlarni (poll deadline'dan oshgan) tashlaymiz — server allaqachon yakunlagan.
+    const now = Date.now();
+    const fresh = list.filter(j => j && j.id && (now - (j.startedAt || 0)) < 12 * 60 * 1000);
+    if (fresh.length !== list.length) { try { sessionStorage.setItem('ff_active_jobs', JSON.stringify(fresh)); } catch (e) {} }
+    if (!fresh.length) return;
+    this.setState(s => {
+      const have = new Set((s.activeJobs || []).map(j => j.id));
+      const add = fresh.filter(j => !have.has(j.id));
+      return { activeJobs: (s.activeJobs || []).concat(add) };
+    });
+    fresh.forEach(j => this.pollJob(j.id));
   }
   // P20 — HAR ish uchun ALOHIDA poll (bitta global _pt o'rniga _pollT[jobId]). Tugagach ish activeJobs'dan olinadi.
   pollJob(jobId) {
@@ -19973,7 +20036,7 @@ class Component extends DCLogic {
     const startedAt = Date.now();
     let misses = 0;
     const POLL_MAX_MS = 12 * 60 * 1000;
-    const drop = () => { try { clearTimeout(this._pollT[jobId]); delete this._pollT[jobId]; } catch (e) {} };
+    const drop = () => { try { clearTimeout(this._pollT[jobId]); delete this._pollT[jobId]; } catch (e) {} this._unpersistActiveJob(jobId); /* FIX A5 */ };
     const finish = (extra) => { this.setState(s => Object.assign({ activeJobs: (s.activeJobs || []).filter(j => j.id !== jobId) }, extra || {})); drop(); };
     const tick = async () => {
       // §A (P2) — sessiya tugagan bo'lsa poll o'zi to'xtaydi (401 loop + toast spami yo'q)
@@ -21270,6 +21333,10 @@ class Component extends DCLogic {
     const browseHasMore = !browseSt.done && !browseSt.loading && filtered.length > 0;
     const browseInitLoading = (!this.state.browse) || (browseSt.loading && filtered.length === 0);
     const browseEmpty = browseSt.done && filtered.length === 0;
+    // FIX A2 (P6) — jim o'lik nuqta yo'q: katalog yuklanmasa xato bloki + "Try again".
+    // !items → to'liq blok; items bor → slim "load more" xatosi.
+    const browseErrEmpty = !!browseSt.error && filtered.length === 0;
+    const browseErrMore = !!browseSt.error && filtered.length > 0;
     const sortOpts = [{ k: 'mos', label: 'Most relevant' }, { k: 'new', label: 'Newest' }, { k: 'az', label: 'Name A→Z' }, { k: 'za', label: 'Name Z→A' }];
     const sortLabel = (sortOpts.find(o => o.k === this.state.sortKey) || sortOpts[0]).label;
     const sortView = sortOpts.map(o => ({ ...o, on: o.k === this.state.sortKey, rowCls: o.k === this.state.sortKey ? 'ffa-poprow on' : 'ffa-poprow' }));
@@ -22121,6 +22188,8 @@ class Component extends DCLogic {
       // "Load more" — server sahifasi yana bo'lsa (infinite scroll ham _onScroll'da)
       browseHasMore, loadMoreBrowse: () => this.loadBrowse(false),
       catalogEmpty: browseEmpty,
+      // FIX A2 (P6) — katalog yuklash xatosi bloklari + qayta urinish
+      browseErrEmpty, browseErrMore, retryBrowse: () => this.loadBrowse(true), retryBrowseMore: () => this.loadBrowse(false),
       // FAZA D — katalog o'ynoqi loader + detail boyitish handlerlari
       catalogLoading: browseInitLoading,
       openColCat: () => { const d = this.state.detail; const pill = d ? this.pillOf(d) : this.state.fCat; this.setState({ fCat: pill, detail: null, detailNF: false }); this.go('templates'); setTimeout(() => this._syncStockUrl(), 0); },
