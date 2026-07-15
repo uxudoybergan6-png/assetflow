@@ -120,19 +120,35 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 > 🚧 **AKTIV — MUAMMOLAR V2 (jonli test muammolari).** 24 muammo (P1–P24) tahlil qilindi,
 > har biri uchun self-contained Code prompt yozildi: `docs/MUAMMOLAR V2-2026-07-13.md`.
-> Bajarish rejasi 3 faylga tartiblandi: `docs/V2-BAJARISH-HIGH-2026-07-14.md` (9 ta, Fable 5,
-> tartib qat'iy: P1→P9→P5→P11→P17→P20→P23→P24→P22) · `V2-BAJARISH-MEDIUM` (9 ta, Sonnet 5,
-> P18 P24'dan oldin) · `V2-BAJARISH-EASY` (6 ta, Sonnet 5, P4 birinchi).
+> Bajarish rejasi 3 faylga tartiblandi: `docs/V2-BAJARISH-HIGH-2026-07-14.md` (13 ta, Fable 5,
+> tartib qat'iy: P1→P9→P5→P11→P17→P20→P23→P24→P22→P27→P28→P32→P35) · `V2-BAJARISH-MEDIUM`
+> (14 ta, Sonnet 5, P18 P24'dan oldin) · `V2-BAJARISH-EASY` (8 ta).
+> ✅ **EASY BLOKI TUGADI (2026-07-14, 8/8):** P4·P3·P7·P8·P10·P16·P25·P34 —
+> commitlar 7922b9a·6f13ff4·41cc7ca·055161f·e70bc50·cc3c18c·ad6379d·530f4f9 (push YO'Q).
+> BATCH6 #6 avval alohida checkpoint (1d9c729).
+> ✅ **HIGH-1 TUGADI (2026-07-14, 5/5):** P1·P9·P17·P20·P23 (media+kredit o'zagi) — 5 commit,
+> push+deploy qilingan. 🔴 ledger tasdiq (enhance 5-retry=1 debit). 2 backfill skript DRY_RUN —
+> EGA ishga tushiradi. Watermark dvigateli endi UXLAYDI (0 chaquruvchi).
+> ✅ **HIGH-2 TUGADI (2026-07-14, 4/4):** P5·P11·P27·P32 — 4 commit, push YO'Q. P5 paint-first
+> +parallel boot · P11 shelf dedup (sc-runtime = React, kod bug EMAS) · P27 provayder timeout +
+> slot xavfsizlik to'ri · P32 CORS hard-fail/monthStart UTC/atomik register/avatar sniff.
+> 🔴 EGA ESLATMA: monthStart UTC = deploy'da oylik reset chegarasi 1 marta siljiydi.
+> 👉 QOLDI: **USER PUSH (HIGH-2)** → **JONLI-TEST** (P22·P24·P35·P28, AE/Windows, ega ishtiroki,
+> birma-bir: P22→P24→P35→P28) → **MEDIUM bloki** (14 ta, Sonnet 5; P18 P24'dan oldin).
 > Cloudflare: HTTP/3 OFF + Always-Use-HTTPS ON (ega, 2026-07-14).
 > ✅ **So'rovnoma qarorlari (2026-07-14):** plugin minimal host = **AE 2022+** (transpile yo'q)
 > · audio sting **olib tashlanadi** (preview himoyasi = past bitreyt) · AI Stock preview =
 > **toza + past-rez** (watermark dvigateli 0 chaqiruvchi, uxlaydi).
 > 🔴 **INFRA — EGA QAT'IY QARORI (2026-07-14): Neon → Google Cloud SQL ko'chamiz. HOZIR EMAS**
-> — muammolar (V2 + audit) tugagach, alohida reja bilan. Ko'chirish rejasida bo'lishi shart:
-> region europe-west (API bilan bir joy) · pg_dump/restore yoki logical replication ·
-> DATABASE_URL almashish + parol rotatsiya · Prisma migratsiya holati tekshiruvi · eski Neon
-> 1-2 hafta faqat-o'qish zaxira. ESLATMA: ko'chguncha Neon bepul 100-soat limiti XAVF —
-> tugasa sayt o'ladi; muammolar cho'zilsa oraliq chora = Neon Launch 1 oyga.
+> — muammolar (V2 + audit) tugagach, alohida. ✅ TO'LIQ REJA TAYYOR:
+> `docs/MIGRATSIYA-NEON-CLOUDSQL-REJA.md` (6 faza, rollback, xarajat ~$50-70/oy, tekshiruv
+> ro'yxati). Cloud SQL europe-west1 (Cloud Run bilan bir joy), Auth Proxy, pg_dump/restore,
+> Secret Manager. ESLATMA: ko'chguncha Neon bepul 100-soat limiti XAVF; oraliq chora = Neon
+> Launch 1 oyga (qarorni bekor qilmaydi).
+> ✅ **NEON TOZALANDI (2026-07-14):** eski `assetflow` (US Virginia) loyiha O'CHIRILDI —
+> prod = `assetflow-eu` (Frankfurt, jonli, tasdiqlangan). Ikki baza compute yeyayotgan edi →
+> endi BITTA. Compute ~87 CU-hrs (Jul 1-15); bitta bazaga tushgach limit xavfi kamaydi.
+> Storage 37MB (kichik). Bepulда qolish uzaydi — Neon Launch/Cloud SQL shoshilinch EMAS.
 > 🔎 **Katta audit (2026-07-14):** 4 parallel tekshiruv → 10 yangi blok P25–P34
 > (`docs/DIREKTOR-AUDIT-V2-2026-07-14.md`): eng muhimlari — sessiya-tugashda holat sizishi
 > (P25) · to'lov UX teshiklari (P26) · provayder timeout'siz gen-pool qulflanishi (P27) ·
@@ -275,9 +291,16 @@ Qidiruv **indekssiz ILIKE** — 5000'da 5 ms, lekin chiziqli. ~15-20k'dan keyin 
   account-head kicker+underline tabs · REAL kontent (250/600/1800, Studio 3000, ledger refund) ·
   standalone reset/verify/device sahifalari tema-tizim oldi · lime→0. ⚠️ `login.html` = Contributor
   konsoli — TEGILMADI (USER logini in-app; kontributor konsol reskini = alohida qaror).
-  ⚠️ Repo'да aralash unpushed commitlar (MUAMMOLAR 3 + BATCH6) — push hammasini birga chiqaradi.
-  👉 KEYINGI: **USER PUSH + jonli ko'rik** → Prompt #6 (pricing/plugin/help/legal + yakuniy lime
-  tozalash + shim audit) = BATCH6 YAKUNI → BATCH7 CMS → BATCH8 plagin (#0-R mockup jarayonда).
+  ✅ **Prompt #6 BAJARILDI (2026-07-14, commit 1d9c729) = BATCH6 YAKUNLANDI.** Pricing 1:1
+  (REAL CMS narxlar: Free $0/50 · Pro $19/1000 · Studio $59/3000 — mockupdagi eskirgan
+  matn ishlatilmadi) · Plugin sahifa 1:1 · help/terms/privacy/refund/dmca 3-tema token +
+  nav/footer chrome · `#C2F04A` literal = 0 hamma joyda (`var(--lime)` 176 saqlangan) ·
+  3 tema × 5 sahifa skrinshot-tasdiq. Eslatma: auto-commit hook 3 ta hujjat faylini (handoff,
+  FIX-PROMPTS-BATCH6/8) shu commitga qo'shib yuborgan — zararsiz.
+  ⚠️ Repo'да aralash unpushed commitlar (MUAMMOLAR 3 + BATCH6 + V2 boshlanishi) — push
+  hammasini birga chiqaradi.
+  👉 KEYINGI: **USER PUSH + jonli ko'rik** → V2-EASY combined (endi platform/index.html
+  TOZA — BATCH6 guard to'sig'i yo'q) → BATCH7 CMS → BATCH8 plagin (#0-R mockup jarayonда).
 - ⏳ **Deferred:** headless admin E2E · BATCH5 Prompt #3 (fal Seedance cleanup — prod'да 1-2 hafta
   barqarorlikdan KEYIN) · **BATCH7 = Site CMS kengaytmasi** (BATCH6'dan KEYIN: help/legal(versiyali)/
   promo-strip/SEO-OG/ticker/cinema/presets/mega-model-ro'yxat admin'дан; page-builder EMAS) ·

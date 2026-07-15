@@ -1,13 +1,12 @@
-# SESSION REPORT — BATCH6 Prompt #5: Auth + Account (mockup 1:1) (2026-07-14)
+# SESSION REPORT — V2-MED1 (6 kompozer/piker UX tuzatishi, A→F) 2026-07-15
 
-**Bajarildi (frontend/design only; backend/kredit qiymatlariga TEGILMADI):** mockup `docs/mockups/batch6` auth+account ekranlari production'ga 1:1 ko'chirildi, 3 temada (noir/neon/cold) tekshirildi.
+**Bajarildi (6 commit, push YO'Q):** A(P14) B(P19) C(P15) D(P18) E(P12) F(P13). Barchasi web+plagin parity. `node --check` (web dc-runtime + plagin 3 script blok) toza; `npm run build -w apps/api` toza; `install-cep.sh` bajarildi.
 
-- **Standalone sahifalar** (`reset-password.html`, `verify-email.html`, `device.html`): BATCH6 3-tema token bloki + FOUC + shriftlar + mini tema tsikli qo'shildi; mockup verify-card/auth-form dizayni; barcha id/handler/skript o'zgarmagan. `device.html` qattiq-kod lime (#C2F04A) olib tashlandi.
-- **In-app auth** (`platform/index.html` login/register/forgot): mockup split kompozitsiya — chapda media-art visual + kicker + iqtibos, o'ngda brend + display sarlavha ("Welcome back."/"Create your account."/"Reset your password.") + mockup matn + "Create account · Forgot password?" qatori; Google tugmasi `filled_black`. Handlerlar saqlangan.
-- **In-app account**: bosh qism mockup account-head'ga (kicker "YOUR FRAMEFLOW" + display "Account" + underline tab + border-bottom). Billing/profile/downloads REAL kontent bilan (paketlar 250/600/1800, Studio 3000, soxta feature'lar yo'q, CreditLedger refund bilan).
-- Credits modal · avatar menyu · delete modal · verify gate — mockup bilan mos (avval qurilgan, tasdiqlandi).
-- **Lime literallar auth/account doirasida → 0.** `node --check` barcha inline JS uchun ✓; brauzer konsol xatosiz.
+- **A** — popover tashqi-klik+Esc yopilishi (web unified handler; plagin vg Esc gap tuzatildi).
+- **B** — Use▾ menyu `position:fixed` (JS-hisoblangan, multicol fragmentatsiya tuzatildi) — web; plagin arxitekturasi tegilmagan (mos emas).
+- **C** — kompozer max-height cap + expand toggle (contenteditable chipedit) — web+plagin. IIFE izolyatsiya darsi: `.axig`/`.axvg` mustaqil scope.
+- **D** — video ref-tile birinchi-kadr preview (web) + edit-preset chip Seedance 2.0 oilasiga gate (web+plagin).
+- **E** — model pin/unpin + kompozer parametrlarini saqlash (localStorage, model-id kalit) — web+plagin.
+- **F** — brand nishon model pikerda (`gen-models.ts` +10 qator additive, MONEY ZONE tegilmagan — `git diff` bilan tasdiqlangan); web CSS-badge (6 rang), plagin shared top-level SVG-badge (avval faqat `.axig` ichida, hech qayerda ko'rinmasdi — endi ikkala kompozerda ko'rinadi).
 
-**Scope eslatma:** `login.html` — Contributor Studio konsol logini (prompt out-of-scope: "Contributor/Admin consoles"); USER platforma logini in-app `auth` ekrani (u qilindi). Shu sabab `login.html` TEGILMADI.
-
-**Kutilmoqda:** push + CF Pages deploy (studio:sync build artefaktlarni qayta yozadi — manba `platform/` va root `*.html`).
+**Kutilmoqda:** deploy (CF Pages `platform/` alohida pipeline, sync shart emas) + push YO'Q (owner qo'lida). Migratsiya YO'Q (F additive-only). AE'ni to'liq qayta oching (CEP kesh).
