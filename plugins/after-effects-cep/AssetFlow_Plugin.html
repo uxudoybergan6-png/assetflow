@@ -378,7 +378,12 @@ body{
 .af-tb-logo-btn{width:30px;height:30px;flex:none;border:0;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);cursor:pointer;transition:box-shadow .2s}
 .af-tb-logo-btn:hover{box-shadow:0 0 0 3px var(--glow)}
 .af-tb-logo-btn svg{width:16px;height:16px}
-.af-tb-seg{flex:1;display:flex;justify-content:center;min-width:0}
+/* BATCH8 P3 — app-bar anatomiyasi: brand belgisi + 2-qatorli brand copy (nomi + kontekst yorlig'i).
+   .af-tb-brand o'sadi (flex:1) → seg/sync/hisob o'ngga suriladi; kontekst yorlig'i ellipsis bilan qisqaradi. */
+.af-tb-brand{display:flex;flex-direction:column;justify-content:center;gap:3px;flex:1 1 auto;min-width:0;margin-left:-1px}
+.af-tb-brand strong{font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:-.02em;color:var(--text);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-tb-ctx{font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-tb-seg{flex:none;display:flex;justify-content:center;min-width:0}
 .af-tb-seg .ff-seg{display:flex;width:auto;max-width:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px}
 .af-tb-seg .ff-seg__item{flex:none;padding:5px 16px;border-radius:999px;border:0;background:none;font-family:inherit;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;line-height:1}
 .af-tb-seg .ff-seg__item.is-on{background:rgba(255,255,255,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.10);font-weight:600;color:var(--text);cursor:default}
@@ -390,6 +395,13 @@ body{
 .af-tb-icon{width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--border);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s,color .15s}
 .af-tb-icon:hover{background:var(--surface-3);border-color:var(--muted-2)}
 .af-tb-icon svg{width:16px;height:16px}
+/* BATCH8 P3 — 320px: mockup kabi avatar yashiriladi, brand nomi tushiriladi (kontekst yorlig'i qoladi, ellipsis) */
+@media(max-width:360px){
+  .af-topbar{gap:7px;padding:0 9px}
+  .af-tb-ava{display:none}
+  .af-tb-brand strong{display:none}
+  .af-tb-seg .ff-seg__item{padding:5px 12px}
+}
 /* Kategoriya chiplari (a1: Filtrlar ichida; bu yerda yashirin, wiring saqlanadi) */
 .af-chips{display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;scrollbar-width:none}
 .af-chips[hidden]{display:none}
@@ -3143,6 +3155,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .sheet.pop .sheetc{position:fixed;left:0;top:0;width:auto;max-width:92vw;background:var(--surface-2);border:1px solid var(--line2);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:13px;max-height:62vh;overflow-y:auto;animation:none}
 .axig .sheet.pop .sheetc::before{display:none}
 .axig .sheeth{display:flex;align-items:center;margin-bottom:11px}.axig .sheeth b{font-size:14px}.axig .sheeth .x{margin-left:auto;color:var(--mut);cursor:pointer;font-size:16px;display:flex;align-items:center}
+/* BATCH8 P3 — model sheet qidiruv maydoni (mockup .ai-model-search): faqat client-side filtr */
+.axig .mdl-srch{width:100%;box-sizing:border-box;height:34px;margin:0 0 9px;padding:0 11px;border:1px solid var(--line2);border-radius:9px;background:var(--card);color:var(--text);font-family:inherit;font-size:12px;outline:0}
+.axig .mdl-srch::placeholder{color:var(--mut2)}
+.axig .mdl-srch:focus{border-color:var(--acc2)}
+.axig .mdl-none{text-align:center;padding:14px 4px 6px}
 .axig .opt{display:flex;align-items:center;gap:10px;padding:11px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer}
 .axig .opt:hover{border-color:var(--mut2)}
 .axig .opt .oi{width:30px;height:30px;border-radius:8px;background:var(--card3);display:grid;place-items:center;font-size:14px;flex:0 0 auto}
@@ -3884,6 +3901,8 @@ html.home-mode #homePage{display:block!important}
                 <button type="button" class="af-tb-logo-btn" id="afHomeBtn" title="Home" aria-label="Home">
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg>
                 </button>
+                <!-- BATCH8 P3 — 2-qatorli brand copy: mahsulot nomi + faol pane konteksti (afSetPaneCtx yozadi) -->
+                <div class="af-tb-brand"><strong>FrameFlow</strong><span class="af-tb-ctx" id="afPaneCtx">STOCK CATALOG · VIDEO</span></div>
                 <div class="af-tb-seg">
                   <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Section">
                     <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Catalog — templates">Catalog</button>
@@ -4199,7 +4218,9 @@ html.home-mode #homePage{display:block!important}
                           <!-- model sheet (b2) — FIX4: pill yonida popover -->
                           <div class="sheet pop" id="igMSheet"><div class="sheetc">
                             <div class="sheeth"><b>Choose a model</b><span class="shnote">price — per result</span></div>
+                            <input class="mdl-srch" id="igMSrch" type="text" placeholder="Search models…" autocomplete="off" spellcheck="false">
                             <div id="igMList"><div class="axighint">Loading…</div></div>
+                            <div class="axighint mdl-none" id="igMNone" style="display:none">No models found</div>
                             <div class="minfobox" id="igMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Each model sets its own reference rules</span></div>
                           </div></div>
 
@@ -4415,7 +4436,9 @@ html.home-mode #homePage{display:block!important}
                           <!-- Model sheet (b2) — FIX4: pill yonida popover -->
                           <div class="sheet pop" id="vgMSheet"><div class="sheetc">
                             <div class="sheeth"><b>Choose a model</b><span class="shnote">price — per result</span></div>
+                            <input class="mdl-srch" id="vgMSrch" type="text" placeholder="Search models…" autocomplete="off" spellcheck="false">
                             <div id="vgMList"><div class="axighint">Loading…</div></div>
+                            <div class="axighint mdl-none" id="vgMNone" style="display:none">No models found</div>
                             <div class="minfobox" id="vgMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>More video models coming in the future</span></div>
                           </div></div>
 
@@ -7066,6 +7089,7 @@ function afLibOpen(page){
   const link=document.querySelector('.env-side-link[data-page="'+page+'"]');
   if(link)link.classList.add('active');
   afLibTab(tab);
+  if(typeof afSetPaneCtx==='function')afSetPaneCtx(); // BATCH8 P3 — app-bar konteksti
 }
 window.afLibOpen=afLibOpen;
 function afLibClose(){
@@ -7160,6 +7184,20 @@ function switchPage(el,p){
   if(p==='favorites')renderFav(); if(p==='downloaded')renderDl();
 }
 
+// BATCH8 P3 — app-bar kontekst yorlig'i: faol pane holatidan (mavjud DOM klass + currentNav) hosil qilinadi.
+// Faqat prezentatsiya — yangi routing yo'q; pane almashadigan mavjud chokepoint'lardan chaqiriladi.
+var AF_PANE_CTX={video:'STOCK CATALOG · VIDEO',motion:'STOCK CATALOG · MOTION',graphics:'STOCK CATALOG · GRAPHICS',luts:'STOCK CATALOG · LUTS',music:'STOCK CATALOG · MUSIC',sfx:'STOCK CATALOG · SFX'};
+function afSetPaneCtx(){
+  var el=document.getElementById('afPaneCtx'); if(!el)return;
+  var h=document.documentElement,t;
+  if(h.classList.contains('home-mode'))t='HOME';
+  else if(h.classList.contains('lib-mode'))t='MY LIBRARY';
+  else if(h.classList.contains('ai-mode'))t='AI STUDIO';
+  else{ var nav=(typeof currentNav!=='undefined'&&currentNav)?currentNav:(window.currentNav||'video'); t=AF_PANE_CTX[nav]||'STOCK CATALOG'; }
+  el.textContent=t;
+}
+window.afSetPaneCtx=afSetPaneCtx;
+
 function applyNavSwitch(tab){
   // AI Tools — alohida sahifa (browse chrome yashiriladi, #aiPage ko'rsatiladi).
   // Mavjud video/motion/graphics/luts yo'llari pastda o'zgarishsiz qoladi.
@@ -7173,10 +7211,12 @@ function applyNavSwitch(tab){
     closePack();
     // V3: har AI kirishда launcher home (mavjud holatni reset qilmaydi — faqat ko'rinish)
     if(typeof axInit==='function')axInit(); // V5: yangi prototip UI (eski aiLauncherShow o'rniga)
+    afSetPaneCtx();
     return;
   }
   currentNav=tab;
   window.currentNav=tab;
+  afSetPaneCtx();
   currentSub='all';
   currentOrient='all';
   currentRes='all';
@@ -7558,6 +7598,7 @@ function goHome(){
   document.documentElement.classList.add('home-mode');
   try{ renderHome(); }catch(e){}
   try{ const sa=document.querySelector('.scroll-area'); if(sa)sa.scrollTop=0; }catch(e){}
+  if(typeof afSetPaneCtx==='function')afSetPaneCtx(); // BATCH8 P3 — app-bar konteksti
 }
 window.goHome=goHome;
 function wireHome(){
@@ -11463,7 +11504,22 @@ window.afGallery=(function(){
   }
 
   // ---- chip openerlar ----
-  $('igModelSeg').addEventListener('click',function(){ renderModelSheet(); openSheet('igMSheet',$('igModelSeg')); });
+  // BATCH8 P3 — model sheet qidiruvi (sanksiyalangan): mavjud .mrowb qatorlarini nomi bo'yicha filtrlaydi.
+  // Faqat client-side — qator markup'i/tanlov handlerlari/tartib/narx TEGILMAYDI. Sheet ochilganda tozalanadi.
+  function afMFilter(){
+    var inp=$('igMSrch'),list=$('igMList'),none=$('igMNone'); if(!list)return;
+    var q=inp?String(inp.value||'').toLowerCase().replace(/^\s+|\s+$/g,''):'';
+    var rows=list.querySelectorAll('.mrowb'),shown=0,i,b,tn,nm;
+    for(i=0;i<rows.length;i++){
+      b=rows[i].querySelector('.mtx b'); tn=b&&b.firstChild;
+      nm=((tn&&tn.nodeType===3?tn.textContent:(b?b.textContent:rows[i].textContent))||'').toLowerCase();
+      if(!q||nm.indexOf(q)>=0){ rows[i].style.display=''; shown++; } else rows[i].style.display='none';
+    }
+    if(none)none.style.display=(q&&shown===0)?'':'none';
+  }
+  function afMReset(){ var inp=$('igMSrch'); if(inp)inp.value=''; afMFilter(); }
+  (function(){ var s=$('igMSrch'); if(s)s.addEventListener('input',afMFilter); })();
+  $('igModelSeg').addEventListener('click',function(){ renderModelSheet(); afMReset(); openSheet('igMSheet',$('igModelSeg')); });
   // P16 — bitta sozlama chipi xulosasi + guruhlangan sheet (Ratio · Quality · ×N bitta popover'da)
   function igSummary(){ var b=[st.ar]; if(meta.hasQuality)b.push(cap(st.q)); b.push('×'+st.n); return b.join(' · '); }
   function afterIgSet(){ var sv=$('igSetVal'); if(sv)sv.textContent=igSummary(); buildIgSettings(); } // tanlovdan keyin: xulosa + pill'lar qayta belgilansin (sheet OCHIQ qoladi)
@@ -13115,7 +13171,21 @@ window.afGallery=(function(){
   // (b7 renderVgSettingsSheet OLIB TASHLANDI — birlashgan sheet o'rniga per-pill popover'lar)
   // FIX4/5: b7 birlashgan sheet o'rniga — har pill O'Z popover'ini ochadi (rasm tool bilan bir xil).
   // Qiymat/apply/recost mantiqлари vgSetChips'dagi bilan aynan bir xil saqlangan.
-  $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); openVgSheet('vgMSheet',$('vgModelSeg')); });
+  // BATCH8 P3 — video model sheet qidiruvi (image bilan bir xil client-side filtr)
+  function afVgMFilter(){
+    var inp=$('vgMSrch'),list=$('vgMList'),none=$('vgMNone'); if(!list)return;
+    var q=inp?String(inp.value||'').toLowerCase().replace(/^\s+|\s+$/g,''):'';
+    var rows=list.querySelectorAll('.mrowb'),shown=0,i,b,tn,nm;
+    for(i=0;i<rows.length;i++){
+      b=rows[i].querySelector('.mtx b'); tn=b&&b.firstChild;
+      nm=((tn&&tn.nodeType===3?tn.textContent:(b?b.textContent:rows[i].textContent))||'').toLowerCase();
+      if(!q||nm.indexOf(q)>=0){ rows[i].style.display=''; shown++; } else rows[i].style.display='none';
+    }
+    if(none)none.style.display=(q&&shown===0)?'':'none';
+  }
+  function afVgMReset(){ var inp=$('vgMSrch'); if(inp)inp.value=''; afVgMFilter(); }
+  (function(){ var s=$('vgMSrch'); if(s)s.addEventListener('input',afVgMFilter); })();
+  $('vgModelSeg').addEventListener('click',function(){ renderVgModelSheet(); afVgMReset(); openVgSheet('vgMSheet',$('vgModelSeg')); });
   // P16 — BITTA sozlama chipi: Ratio/Resolution/Duration/Bitrate bitta guruhlangan sheet'da.
   //   Tanlovdan keyin sheet OCHIQ qoladi (afterVgSet: xulosa + pill'lar qayta belgilanadi).
   function vgDurShort(v){ return /^auto$/i.test(String(v))?'Auto':(String(v)+(/^\d+$/.test(String(v))?'s':'')); }
