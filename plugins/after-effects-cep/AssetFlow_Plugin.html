@@ -7963,6 +7963,14 @@ document.addEventListener('keydown',function(e){
   if(p&&p.classList.contains('open')){ e.stopPropagation(); closeProSheet(); }
 });
 
+// §D (P31) — web pariteti: markaziy overlay modallar (.afspov: nameModal, project picker)
+// Escape bilan yopiladi (avval faqat X/Cancel/tashqi-klik bor edi). Eng ustki ochiqni yopamiz.
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  var ovs=document.querySelectorAll('.afspov.on');
+  if(ovs.length){ e.stopPropagation(); ovs[ovs.length-1].classList.remove('on'); }
+});
+
 // Bo'lim segmenti — mavjud #envScope + onEnvScopeChange yo'lidan boradi (nav almashadi).
 function afFilterSheetScope(val){
   const s=document.getElementById('envScope');

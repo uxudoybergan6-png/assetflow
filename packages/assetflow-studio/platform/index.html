@@ -16898,7 +16898,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <div class="va-sessbulk">
                       <span class="n">{{ sessBulkCount }} selected</span>
                       <b onclick="{{ axBulkDownload }}">⬇ Download</b>
-                      <b class="danger" onclick="{{ axBulkDelete }}">🗑 Delete</b>
+                      <b class="{{ sessBulkDelCls }}" onclick="{{ axBulkDelete }}">🗑 {{ sessBulkDelLabel }}</b>
                       <b onclick="{{ axSessSelectToggle }}">Cancel</b>
                     </div>
                   </sc-if>
@@ -17494,8 +17494,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- ============ GLOBAL: CREDITS MODAL ============ -->
   <sc-if value="{{ showCredits }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeCredits }}" style="position:fixed;inset:0;z-index:100;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
-      <div onclick="{{ stop }}" class="va-credmodal">
+    <div onclick="{{ closeCredits }}" data-ff-modal="credits" class="ff-mscrim" style="position:fixed;inset:0;z-index:100;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" class="va-credmodal" role="dialog" aria-modal="true" aria-label="Credit balance">
         <button onclick="{{ closeCredits }}" class="va-credx" aria-label="Close"><i class="ph ph-x"></i></button>
         <div class="va-kick">CREDIT BALANCE</div>
         <div class="va-credhero">
@@ -17521,15 +17521,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- ============ GLOBAL: DELETE ACCOUNT MODAL (FAZA 1c) ============ -->
   <sc-if value="{{ showDelete }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeDeleteAccount }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
-      <div onclick="{{ stop }}" style="width:100%;max-width:460px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:30px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+    <div onclick="{{ closeDeleteAccount }}" data-ff-modal="delete" class="ff-mscrim" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" role="dialog" aria-modal="true" aria-label="Delete account" style="width:100%;max-width:460px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:30px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div style="display:inline-flex;align-items:center;gap:9px;font-size:20px;font-weight:600;color:var(--th-danger)"><i class="ph-fill ph-warning"></i>Delete account</div>
           <button onclick="{{ closeDeleteAccount }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
         </div>
         <p style="font-size:14px;color:var(--txt2);margin:0 0 10px">This permanently anonymizes your account and revokes access. Your published templates are unpublished; financial records are retained (anonymized). This cannot be undone.</p>
         <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Type <b style="color:var(--txt)">DELETE</b> to confirm:</p>
-        <input value="{{ delConfirm }}" oninput="{{ onDelConfirm }}" placeholder="DELETE" class="ffa-field" style="margin-bottom:18px">
+        <input value="{{ delConfirm }}" oninput="{{ onDelConfirm }}" onkeydown="{{ onDelConfirmKey }}" placeholder="DELETE" class="ffa-field" style="margin-bottom:18px">
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <button onclick="{{ closeDeleteAccount }}" class="ffm-btn2 sm">Cancel</button>
           <button onclick="{{ confirmDeleteAccount }}" class="ffm-btn sm" style="background:var(--th-danger);color:#fff;border-color:var(--th-danger)">Delete my account</button>
@@ -17540,8 +17540,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- ============ GLOBAL: NAME MODAL (QA-FIX #12/#13 — sessiya/loyiha nomlash) ============ -->
   <sc-if value="{{ nameModal }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeNameModal }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
-      <div onclick="{{ stop }}" style="width:100%;max-width:400px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
+    <div onclick="{{ closeNameModal }}" data-ff-modal="name" class="ff-mscrim" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+      <div onclick="{{ stop }}" role="dialog" aria-modal="true" aria-label="{{ nameModal.title }}" style="width:100%;max-width:400px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
           <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-{{ nameModal.icon }}" style="color:var(--teal)"></i>{{ nameModal.title }}</div>
           <button onclick="{{ closeNameModal }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
@@ -18716,6 +18716,10 @@ class Component extends DCLogic {
         if (ev.key !== 'Escape') return;
         // P14 — popover qatlami avval yopiladi (bitta Esc = bitta qatlam); keyin modal/mega/lightbox/refLibPick.
         if (this._popsOpen(this.state)) { this._closePops(); return; }
+        // §D (P31) — a11y: global modallar Esc bilan yopiladi (bitta qatlam qoidasi).
+        if (this.state.showCredits) { this.setState({ showCredits: false }); return; }
+        if (this.state.showDelete) { this.closeDeleteAccount(); return; }
+        if (this.state.nameModal) { this.setState({ nameModal: null }); return; }
         if (this.state.modelModalOpen) { this.setState({ modelModalOpen: false }); return; }
         // P15 — kompozer kengaytirilgan bo'lsa bitta Esc uni qopqoqlaydi (keyingi Esc'gacha boshqa narsa yopilmaydi).
         if (this.state.composerExpanded) { this.setState({ composerExpanded: false }); return; }
@@ -18813,10 +18817,44 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
+
+  // §D (P31) — bitta kichik modal-yordamchi (credits/delete/name uchun umumiy): body scroll-lock +
+  // fokus-tuzoq (Tab modal ichida aylanadi) + ochilganda birinchi elementga fokus. role/aria-modal
+  // markup'da. Har render'da idempotent — .ff-mscrim bor/yo'qligiga qarab holatni sinxronlaydi.
+  _syncModalFx() {
+    let scrim = null;
+    try { scrim = document.querySelector('.ff-mscrim'); } catch (e) { return; }
+    if (scrim) {
+      if (!this._modalScrollLocked) { this._modalScrollLocked = true; this._prevBodyOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; }
+      const key = scrim.getAttribute('data-ff-modal');
+      if (this._modalFxKey !== key) {
+        this._modalFxKey = key;
+        try { const dlg = scrim.querySelector('[role=dialog]'); const f = dlg && dlg.querySelector('input,textarea,button'); if (f) setTimeout(() => { try { f.focus(); } catch (e) {} }, 0); } catch (e) {}
+      }
+      if (!this._modalTrap) {
+        this._modalTrap = (ev) => {
+          if (ev.key !== 'Tab') return;
+          const sc = document.querySelector('.ff-mscrim'); if (!sc) return;
+          const dlg = sc.querySelector('[role=dialog]') || sc;
+          const items = dlg.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])');
+          if (!items.length) return;
+          const first = items[0], last = items[items.length - 1];
+          if (!dlg.contains(document.activeElement)) { ev.preventDefault(); first.focus(); return; }
+          if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+          else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+        };
+        document.addEventListener('keydown', this._modalTrap, true);
+      }
+    } else {
+      if (this._modalScrollLocked) { this._modalScrollLocked = false; document.body.style.overflow = this._prevBodyOverflow || ''; }
+      this._modalFxKey = null;
+      if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; }
+    }
+  }
 
   /** PHASE B — Sparky pending holati uchun UI-only progress animatori.
    *  pollJob'dan real % kelmaydi, shu sabab ishonarli indeterminat foiz 93% da
@@ -19567,8 +19605,20 @@ class Component extends DCLogic {
     } catch (e) { this.toast(this.errMsg(e)); }
   }
   async deleteProjectArmed() {
-    // Ikki bosqichli tasdiq: birinchi bosishda qurollanadi, ikkinchisida o'chadi
-    if (!this.state.projDelArm) { this.setState({ projDelArm: true }); setTimeout(() => this.setState({ projDelArm: false }), 3500); return; }
+    // Ikki bosqichli tasdiq: birinchi bosishda qurollanadi, ikkinchisida o'chadi.
+    // §D (P31) — ko'rinadigan sanoq (projDelSec) qo'shildi: qancha vaqt qolgani chip'da chiqadi.
+    if (!this.state.projDelArm) {
+      this.setState({ projDelArm: true, projDelSec: 3 });
+      clearInterval(this._projDelI); clearTimeout(this._projDelT);
+      this._projDelI = setInterval(() => {
+        const n = (this.state.projDelSec || 1) - 1;
+        if (n <= 0) { clearInterval(this._projDelI); this.setState({ projDelArm: false, projDelSec: 0 }); }
+        else this.setState({ projDelSec: n });
+      }, 1000);
+      this._projDelT = setTimeout(() => { clearInterval(this._projDelI); this.setState({ projDelArm: false, projDelSec: 0 }); }, 3500);
+      return;
+    }
+    clearInterval(this._projDelI); clearTimeout(this._projDelT);
     const p = this.state.projOpen; if (!p) return;
     try {
       await FFAPI.projectDelete(p.id);
@@ -22073,10 +22123,19 @@ class Component extends DCLogic {
       sessSelectLabel: this.state.sessSelect ? 'Done' : 'Select',
       sessBulkOn: this.state.sessSelect && Object.keys(this.state.sessSel).length > 0,
       sessBulkCount: Object.keys(this.state.sessSel).length,
+      sessBulkDelLabel: this.state.sessBulkArm ? 'Click again' : 'Delete', // §D
+      sessBulkDelCls: this.state.sessBulkArm ? 'danger armed' : 'danger',
       axSessSelectToggle: (e) => { if (e) e.stopPropagation(); this.setState(st => ({ sessSelect: !st.sessSelect, sessSel: {} })); },
       axBulkDelete: async (e) => { e.stopPropagation();
         const ids = Object.keys(this.state.sessSel); if (!ids.length) return;
-        if (!confirm('Delete ' + ids.length + ' session' + (ids.length > 1 ? 's' : '') + ' and ALL their generations?\nThis cannot be undone.')) return;
+        // §D (P31) — native confirm() O'RNIGA in-app "armed" tasdiq (2-klik + 3.5s disarm).
+        if (!this.state.sessBulkArm) {
+          this.setState({ sessBulkArm: true });
+          this.toast('Click Delete again to remove ' + ids.length + ' session' + (ids.length > 1 ? 's' : '') + ' and all their generations', 'warning');
+          clearTimeout(this._sessBulkT); this._sessBulkT = setTimeout(() => this.setState({ sessBulkArm: false }), 3500);
+          return;
+        }
+        clearTimeout(this._sessBulkT); this.setState({ sessBulkArm: false });
         this.toast('Deleting ' + ids.length + ' session' + (ids.length > 1 ? 's' : '') + '…');
         let done = 0;
         for (const id of ids) { try { await FFAPI.sessionDelete(id); done++; } catch (x) { this.toast(this.errMsg(x)); } }
@@ -22353,6 +22412,7 @@ class Component extends DCLogic {
       showDelete: this.state.showDelete,
       delConfirm: this.state.delConfirm,
       onDelConfirm: (e) => this.setState({ delConfirm: e.target.value }),
+      onDelConfirmKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.confirmDeleteAccount(); } }, // §D — Enter yuboradi
       downloadsMonth: this.state.downloadsMonth,
       // FAZA 2 #20 — storage kvota (X / Y GB) hisob ekrani uchun
       storageUsedFmt: fmtBytesGB(this.state.storageUsed),
@@ -22477,7 +22537,7 @@ class Component extends DCLogic {
       projDetailLoading: this.state.projLoading,
       projDetailEmpty: !!projOpen && !this.state.projLoading && projItemsView.length === 0,
       projItemsView,
-      projDelLabel: this.state.projDelArm ? 'Click again to delete' : 'Delete',
+      projDelLabel: this.state.projDelArm ? ('Click again to delete' + (this.state.projDelSec ? ' (' + this.state.projDelSec + ')' : '')) : 'Delete',
       newProject: () => this.setState({ nameModal: { kind: 'newProject', icon: 'folder-plus', title: 'New project', cta: 'Create', ph: 'Project name', value: '' } }),
       openProject: (e) => { const id = e.currentTarget.dataset.id; if (id) this.openProjectById(id); },
       backToProjects: () => this.setState({ projOpen: null, projDelArm: false }),
