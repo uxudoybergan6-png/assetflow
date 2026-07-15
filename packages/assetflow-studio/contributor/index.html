@@ -173,20 +173,29 @@ function patchContributorUI(){
   AssetFlowAuth.applyBlockedRestrictions();
 }
 (async function bootContributor() {
-  await StudioTemplates.init("contributor");
-  try {
-    if (StudioApi.token()) {
-      const { items } = await StudioApi.listMessageThreads();
-      window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
-    }
-  } catch (_) {}
+  // P5 — DARHOL bo'yaymiz: renderNav + route birinchi paintdan OLDIN, tarmoqni kutmasdan.
+  // Ekranlar bo'sh TEMPLATES'ni skelet bilan qoldiradi; yuklashlar parallel keyin to'ladi.
   const first = (AF_SESSION.name || "").split(" ")[0];
   if (first) TITLES.overview[1] = "Hello, " + first;
-  renderNav();
-  // Deep-link / yangilash — URL hash'idagi ekranni ochamiz (aks holda Overview).
   const boot = (location.hash || '').replace('#', '');
-  route(ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview");
+  const bootView = ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview";
+  renderNav();
+  route(bootView);
   patchContributorUI();
+
+  if (StudioApi.token()) {
+    const tplJob = StudioTemplates.loadForContributor()
+      // Foydalanuvchi kutadigan yuklash — o'rnashishi bilan darhol qayta render.
+      .then(() => { route(CURRENT, null, true); })
+      .catch((e) => { console.warn("contributor load", e); });
+    const msgJob = (async () => {
+      const { items } = await StudioApi.listMessageThreads();
+      window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
+    })();
+    await Promise.allSettled([tplJob, msgJob]);
+    renderNav();
+    route(CURRENT, null, true);
+  }
   // Orqaga/Oldinga (popstate) — tarixdagi ekranni tiklaymiz.
   window.addEventListener('popstate', (ev) => {
     const st = (ev && ev.state) || {};

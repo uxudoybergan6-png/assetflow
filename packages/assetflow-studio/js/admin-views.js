@@ -252,8 +252,8 @@ window.afterRender.moderation = function(){
     }
     // Audit §C (P1) — Soft/All filtrida scope=all yuklanadi (loadModerationOnly faqat
     // pending'ni oladi — Moderation'ga to'g'ridan kirilganda Soft/All 0/stale chiqardi).
-    const loader = (MOD_FILTER === "soft" || MOD_FILTER === "all") && StudioTemplates.loadForAdmin
-      ? StudioTemplates.loadForAdmin
+    const loader = (MOD_FILTER === "soft" || MOD_FILTER === "all") && StudioTemplates.ensureFullCatalog
+      ? StudioTemplates.ensureFullCatalog
       : StudioTemplates.loadModerationOnly;
     loader()
       .catch((e) => {
@@ -548,7 +548,7 @@ function setModFilter(f){
   if (typeof StudioTemplates !== "undefined") {
     // Audit §C (P1) — Soft/All rad etilganlarni scope=all bilan oladi (avval bu
     // filtrlar hech qachon yangilanmasdan bo'sh/stale ma'lumot ko'rsatardi).
-    const loader = (f === "soft" || f === "all") ? StudioTemplates.loadForAdmin : StudioTemplates.loadModerationOnly;
+    const loader = (f === "soft" || f === "all") ? StudioTemplates.ensureFullCatalog : StudioTemplates.loadModerationOnly;
     if (loader) {
       loader().finally(() => renderModeration());
       return;

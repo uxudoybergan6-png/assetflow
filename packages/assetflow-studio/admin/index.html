@@ -269,35 +269,54 @@ window.addEventListener('af-theme-change', (e) => {
 });
 
 (async function bootAdmin() {
-  await StudioTemplates.init("admin");
-  try {
-    if (StudioApi.token()) {
-      const { items } = await StudioApi.listMessageThreads();
-      window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
-    }
-  } catch (_) {}
-  try {
-    if (StudioApi.token() && StudioApi.listAdminUsers) {
-      const p = await StudioApi.listAdminUsers({ pending: true });
-      window._AF_ROLE_PENDING = (p.items || []).length;
-    }
-  } catch (_) {}
-  renderNav();
-  // ADMIN_REQUIRE_2FA setup gate: login 2FA yozilishi shartligini bildirgan
-  // bo'lsa — to'g'ridan Security bo'limiga (Settings) olib boramiz.
+  // P5 — DARHOL bo'yaymiz: renderNav + route birinchi paintdan OLDIN, tarmoqni kutmasdan.
+  // Ekranlar bo'sh TEMPLATES'ni skelet bilan qoldiradi; javoblar kelgani sayin to'ladi.
+
+  // SINXRON qism (tarmoq shart emas): ADMIN_REQUIRE_2FA gate deep-link'dan OLDIN.
   let need2faSetup = false;
   try {
     need2faSetup = sessionStorage.getItem("af_2fa_setup_required") === "1";
     if (need2faSetup) sessionStorage.removeItem("af_2fa_setup_required");
   } catch (_) {}
+  const boot = (location.hash || '').replace('#', '');
+  const bootView = need2faSetup
+    ? "settings"
+    : (ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview");
+  renderNav();
+  route(bootView);
   if (need2faSetup) {
-    route("settings");
     toast("Security", "Two-factor authentication is required for admin accounts — set it up below", "warn");
-  } else {
-    // Deep-link / yangilash — URL hash'idagi ekranni ochamiz (aks holda Overview).
-    const boot = (location.hash || '').replace('#', '');
-    route(ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview");
   }
+
+  if (!StudioApi.token()) return;
+
+  // PARALLEL yuklash — Promise.allSettled. To'liq katalog EMAS: faqat moderatsiya navbati
+  // (loadModerationOnly); to'liq ro'yxat All-templates / Soft/All'ga kirilganda lazily.
+  const tplJob = StudioTemplates.loadModerationOnly()
+    // Foydalanuvchi eng ko'p kutadigan yuklash — o'rnashishi bilan darhol qayta render.
+    .then(() => { route(CURRENT, null, true); })
+    .catch((e) => { console.warn("moderation load", e); });
+  const msgJob = (async () => {
+    const { items } = await StudioApi.listMessageThreads();
+    window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
+  })();
+  const usersJob = (async () => {
+    if (!StudioApi.listAdminUsers) return;
+    const p = await StudioApi.listAdminUsers({ pending: true });
+    window._AF_ROLE_PENDING = (p.items || []).length;
+  })();
+  await Promise.allSettled([
+    tplJob,
+    StudioTemplates.loadAdminContributors(),
+    StudioTemplates.loadPluginAnalytics(),
+    StudioTemplates.loadAuditLogs(),
+    msgJob,
+    usersJob,
+  ]);
+  if (typeof syncRejectReasons === "function") syncRejectReasons();
+  // Partiya o'rnashgach — nav (badge'lar) + joriy ekranni bir marta yaxlit qayta render.
+  renderNav();
+  route(CURRENT, null, true);
 })();
 </script>
 </body>

@@ -25,7 +25,22 @@ const esc = (s) =>
    ============================================================ */
 let T_FILTER = 'all', T_SEARCH = '';
 VIEWS.templates = function(){ return `<div id="tplRoot"></div>`; };
-window.afterRender.templates = function(){ tplTopbarActions(); renderTemplates(); };
+window.afterRender.templates = function(){
+  tplTopbarActions();
+  // P5 — to'liq katalog boot'da yuklanmaydi; jadvalga birinchi kirilganda lazily olamiz
+  // (skelet ko'rsatib turamiz, so'ng to'liq render). ensureFullCatalog qayta sahifalamaydi.
+  if (typeof StudioTemplates !== "undefined" && StudioTemplates.ensureFullCatalog) {
+    const root = document.getElementById("tplRoot");
+    if (root && !(typeof TEMPLATES !== "undefined" && TEMPLATES.length) && typeof adxSkelList === "function") {
+      root.innerHTML = '<div style="padding:8px 4px">' + adxSkelList(6) + "</div>";
+    }
+    StudioTemplates.ensureFullCatalog()
+      .catch((e) => { console.warn("templates load", e); })
+      .finally(() => { if (typeof CURRENT === "undefined" || CURRENT === "templates") renderTemplates(); });
+    return;
+  }
+  renderTemplates();
+};
 
 /* Topbar actions (mockup e3): Filter + CSV. Search via global topbar. */
 function tplTopbarActions(){

@@ -125,11 +125,23 @@ const StudioTemplates = (() => {
     return true;
   }
 
+  // P5 — to'liq katalog boot'da yuklanmaydi (sekin). Bir marta yuklangach shu bayroq
+  // qo'yiladi; All-templates jadvali / Soft/All moderatsiya filtrlariga birinchi kirilganda
+  // ensureFullCatalog() lazily yuklaydi. refreshAfterReview bayroqni tiklaydi.
+  let _fullCatalogLoaded = false;
+
   async function loadForAdmin() {
     if (!hasToken()) return false;
     const items = await listAllTemplatePages("scope=all");
     replaceTemplates(items.map(mapApiItem));
+    _fullCatalogLoaded = true;
     return true;
+  }
+
+  // Lazy — to'liq katalog allaqachon yuklangan bo'lsa qayta sahifalamaydi.
+  async function ensureFullCatalog() {
+    if (_fullCatalogLoaded) return true;
+    return loadForAdmin();
   }
 
   async function loadModerationOnly() {
@@ -299,10 +311,12 @@ const StudioTemplates = (() => {
   }
 
   async function refreshAfterReview() {
-    await loadForAdmin();
-    await loadAdminContributors();
-    await loadAuditLogs();
-    await loadPluginAnalytics();
+    // P5 — sharh qaroridan keyin 4 ta serial to'liq yuklashni QILMAYMIZ. Standart:
+    // navbat (loadModerationOnly) + contributor'lar parallel. Analytics/audit faqat
+    // o'z ekranlari afterRender'ida yangilanadi. To'liq katalog bayrog'i tiklanadi —
+    // All-templates jadvaliga keyingi kirishda yangi ma'lumot lazily yuklanadi.
+    _fullCatalogLoaded = false;
+    await Promise.allSettled([loadModerationOnly(), loadAdminContributors()]);
     if (typeof syncRejectReasons === "function") syncRejectReasons();
     return true;
   }
@@ -313,6 +327,7 @@ const StudioTemplates = (() => {
     init,
     loadForContributor,
     loadForAdmin,
+    ensureFullCatalog,
     loadModerationOnly,
     refreshAfterUpload,
     refreshAfterReview,
