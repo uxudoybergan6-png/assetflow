@@ -9218,12 +9218,18 @@ async function startProCheckout(plan){
 /** FAZA 2 #25 — kredit paketi → Lemon Squeezy checkout (tashqi brauzerda).
  *  POST /api/billing/checkout {credits} LS hosted checkout URL qaytaradi;
  *  webhook (order_created) kreditni shu hisobga qo'shadi. */
+let _topupBusy=false; // §H (P26) — web pariteti: double-submit guard (2-3 klik = 2-3 checkout sessiyasi bo'lmasin)
 async function startCreditTopup(credits){
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn()){
     showToast('Sign in first to buy credits','info');
     if(typeof openAccountSheet==='function')openAccountSheet();
     return;
   }
+  if(_topupBusy) return; _topupBusy=true;
+  // Kredit paket tugmalarini vaqtincha o'chiramiz (vizual busy)
+  const packs=document.querySelectorAll('.set-pack,.set-topup');
+  packs.forEach(function(el){ el.style.pointerEvents='none'; el.style.opacity='.62'; });
+  const reset=function(){ _topupBusy=false; packs.forEach(function(el){ el.style.pointerEvents=''; el.style.opacity=''; }); };
   try{
     showToast('Opening payment page…');
     const d=await studioPost('/api/billing/checkout',{credits:Number(credits)||500});
@@ -9233,6 +9239,8 @@ async function startCreditTopup(credits){
   }catch(e){
     console.error('startCreditTopup',e);
     showToast((e&&e.message)||"Payment isn't available right now",'error');
+  }finally{
+    reset();
   }
 }
 window.startCreditTopup=startCreditTopup;

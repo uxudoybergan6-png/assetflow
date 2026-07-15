@@ -40,6 +40,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 /* §C (P30) — gen o'chirish "armed" holati ko'rinadigan bo'lsin (2-klik tasdiqi) */
 .va-lb-del.armed { box-shadow: 0 0 0 2px var(--th-danger, #ff6b5e) inset; color: var(--th-danger, #ff6b5e) !important; }
 .va-axmi.armed { color: var(--th-danger, #ff6b5e) !important; font-weight: 600; }
+/* §H (P26) — pul tugmasi checkout so'rovi davomida: qayta bosib bo'lmaydi (dublikat sessiya yo'q) */
+.is-busy { pointer-events: none !important; opacity: .62 !important; cursor: progress !important; }
 </style>
 <script>
 // P21 — ikonka-font watchdog. Brauzer muvaffaqiyatsiz font fetch'ini O'ZI qayta urinmaydi,
@@ -18762,6 +18764,25 @@ class Component extends DCLogic {
         this.toast('Email verified — you can sign in now');
         if (!this.state.user) this.gotoAuth('login');
       }
+      // §H (P26) — checkout'dan qaytish. Server LS redirect'i `?billing=success` beradi (muvaffaqiyat).
+      //   Ilgari faqat ?verified=1 ishlov olardi → to'lovdan keyin JIM qaytardi. Endi: toast +
+      //   kreditlarni yangilash + ledger ko'rsatish. Bekor/muvaffaqiyatsiz qaytish → bloklamaydigan izoh.
+      const _bs = window.location.search || '';
+      if (/[?&]billing=success\b/.test(_bs) || /[?&]checkout=success\b/.test(_bs)) {
+        try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (e2) {}
+        this.toast('Payment received — updating your balance…', 'success');
+        if (window.FFAPI && FFAPI.getToken()) {
+          // LS webhook biroz kechikishi mumkin — bir necha marta yangilaymiz.
+          this.refreshCredits();
+          setTimeout(() => this.refreshCredits(), 3000);
+          setTimeout(() => this.refreshCredits(), 8000);
+          // Ledger'ni ochamiz (xarid yozuvi ko'rinsin) — account → Subscription & credits.
+          try { this.setState({ accountTab: 'Subscription & credits' }); this.loadCreditLedger(true); this.go('account'); } catch (e3) {}
+        }
+      } else if (/[?&]billing=(cancel|cancelled|canceled|failed)\b/.test(_bs) || /[?&]checkout=(cancel|cancelled|canceled|failed)\b/.test(_bs)) {
+        try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (e2) {}
+        this.toast('Checkout cancelled — you were not charged', 'info');
+      }
     } catch (e) {}
     this.renderGoogleBtn();
     this.renderTurnstile();
@@ -19364,6 +19385,23 @@ class Component extends DCLogic {
       }
     } catch (e) {}
   }
+  // §H (P26) — login'dan keyin saqlangan xarid niyatini bajaramiz: foydalanuvchi kirmasdan
+  // Pro/kredit tanlagan bo'lsa, login'dan so'ng dashboard'ga tashlab yubormasdan AYNI checkout'ga.
+  async _resumePayIntent() {
+    if (!(window.FFAPI && FFAPI.getToken())) return;
+    let intent = null;
+    try { intent = JSON.parse(sessionStorage.getItem('ff_intent') || 'null'); } catch (e) { intent = null; }
+    if (!intent) return;
+    try { sessionStorage.removeItem('ff_intent'); } catch (e) {}
+    const body = intent.plan ? { plan: intent.plan } : (intent.credits ? { credits: +intent.credits } : null);
+    if (!body) return;
+    if (this._payBusy) return; this._payBusy = true;
+    try {
+      const r = await FFAPI.checkout(body);
+      if (r && r.url) { window.location.href = r.url; return; }
+      this._payBusy = false; this.toast("Couldn't get the payment link", 'error');
+    } catch (err) { this._payBusy = false; this.toast((err && err.message) || "Payment isn't available right now", 'error'); }
+  }
   // §F (P33) — sevimlilarni serverdan yuklaymiz (qurilmalar aro sinxron). localStorage endi
   // faqat oflayn/issiq-boot keshi. Server ro'yxati haqiqat manbai — kelgach ustiga yozadi.
   async loadFavorites() {
@@ -19760,6 +19798,9 @@ class Component extends DCLogic {
     const next = this._afterAuth || 'dashboard'; this._afterAuth = null;
     this.go(next);
     if (msg) this.toast(msg);
+    // §H (P26) — kirishdan oldin Pro/kredit tanlangan bo'lsa: dashboard'ga tashlab yubormasdan
+    // AYNI checkout'ga qaytamiz. Email tasdiqlash talab qilinsa kutamiz (checkout keyinroq).
+    if (!(user && user.emailVerifyRequired && !user.emailVerified)) this._resumePayIntent();
   }
   async onGoogleCredential(resp) {
     this.setState({ authBusy: true, authErr: null, authInfo: null });
@@ -20949,8 +20990,10 @@ class Component extends DCLogic {
     const plansView = plansSrc.map(p => {
       const price = p.pm;
       const note = 'billed monthly';
+      const pBusy = this.state.payBusy === 'p' + p.key; // §H — checkout busy holati
       return {
         ...p, price, note,
+        cta: pBusy ? 'Processing…' : p.cta,
         cardBg: p.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card))' : 'var(--card)',
         cardBd: p.pop ? 'var(--ring)' : 'var(--bd)',
         cardExtra: p.pop ? 'box-shadow:0 24px 60px -24px var(--ring)' : '',
@@ -20966,7 +21009,7 @@ class Component extends DCLogic {
         planClsL: p.pop ? 'ffl-plan pop' : 'ffl-plan',
         // BATCH6 home-plans mini-karta (nom + narx + kredit)
         miniPlanCls: p.pop ? 'ffl-miniplan pop' : 'ffl-miniplan',
-        ctaCls: p.pop ? 'ffm-btn full' : 'ffm-btn2 full',
+        ctaCls: (p.pop ? 'ffm-btn full' : 'ffm-btn2 full') + (pBusy ? ' is-busy' : ''),
         crCol: p.pop ? 'var(--lime)' : 'var(--muted)',
       };
     });
@@ -20976,7 +21019,7 @@ class Component extends DCLogic {
     // Sayt CMS: FAQ savol-javoblari config'dan (landing + pricing sahifada bitta manba)
     const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'color-mix(in srgb,var(--lime) 25%,transparent)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
 
-    const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card2))' : 'var(--card2)', bd: c.pop ? 'color-mix(in srgb,var(--lime) 45%,transparent)' : 'var(--border)', packCls: c.pop ? 'va-cpack hot' : 'va-cpack', badge: c.pop ? 'MOST POPULAR' : '' }));
+    const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card2))' : 'var(--card2)', bd: c.pop ? 'color-mix(in srgb,var(--lime) 45%,transparent)' : 'var(--border)', packCls: (c.pop ? 'va-cpack hot' : 'va-cpack') + (this.state.payBusy === 'c' + c.c ? ' is-busy' : ''), badge: c.pop ? 'MOST POPULAR' : '' }));
 
     // FAZA 2 #20 — bayt → "X GB" / "X MB" (hisob storage bar)
     const fmtBytesGB = (b) => { b = Number(b) || 0; const gb = b / 1073741824; if (gb >= 1) return (Math.round(gb * 100) / 100) + ' GB'; const mb = b / 1048576; return (mb >= 1 ? Math.round(mb) : (b ? 1 : 0)) + ' MB'; };
@@ -21830,7 +21873,7 @@ class Component extends DCLogic {
     const creditRefreshNote = isFreePlan ? ('Free plan · ' + creditMaxFmt + ' credits every month') : (planShort + ' plan · ' + creditMaxFmt + ' renews every month');
     const downloadsLimitLabel = isFreePlan ? '10 / mo' : 'Unlimited';
     const exportLabel = isFreePlan ? '1080p' : '4K';
-    const creditPacksAcc = this.creditPacks.map(c => ({ ...c, cardBd: c.pop ? 'color-mix(in srgb,var(--lime) 30%,transparent)' : 'var(--hair2)', cardBg: c.pop ? 'linear-gradient(120deg,color-mix(in srgb,var(--lime) 8%,transparent),transparent),var(--surface)' : 'var(--surface)', subCol: c.pop ? 'var(--lime)' : 'var(--muted)', btnCls: c.pop ? 'ffm-btn sm' : 'ffm-btn2 sm', packCls: c.pop ? 'va-pack hot' : 'va-pack', hotNote: c.pop ? ' · popular' : '' }));
+    const creditPacksAcc = this.creditPacks.map(c => ({ ...c, cardBd: c.pop ? 'color-mix(in srgb,var(--lime) 30%,transparent)' : 'var(--hair2)', cardBg: c.pop ? 'linear-gradient(120deg,color-mix(in srgb,var(--lime) 8%,transparent),transparent),var(--surface)' : 'var(--surface)', subCol: c.pop ? 'var(--lime)' : 'var(--muted)', btnCls: c.pop ? 'ffm-btn sm' : 'ffm-btn2 sm', packCls: (c.pop ? 'va-pack hot' : 'va-pack') + (this.state.payBusy === 'c' + c.c ? ' is-busy' : ''), hotNote: c.pop ? ' · popular' : '' }));
     // FAZA 5 Variant A — A4 hisob bindinglari
     const accEmailLine = userEmail + (u.emailVerified ? ' · EMAIL VERIFIED ✓' : (userEmail ? ' · EMAIL NOT VERIFIED' : ''));
     const planPr = isFreePlan ? '$0/mo' : ('$' + (curPlanRow ? curPlanRow.price : 0) + '/mo');
@@ -22056,26 +22099,44 @@ class Component extends DCLogic {
       downloadGen: () => { const g = this.state.lightbox || activeGenRaw; if (g) this.downloadGenAsset(g.id); },
       closeCredits: () => this.setState({ showCredits: false }),
       stop: (e) => e.stopPropagation(),
+      // §H (P26) — pul tugmalarida busy/disabled holat: 2-3 klik = 2-3 checkout sessiyasi bo'lmasin.
+      //   (Server LS-checkout dedup QILMAYDI — haqiqiy server-side idempotency alohida pul-zona
+      //   o'zgarishi; klient busy-guard bu UX teshigini yopadi.) Money-zona qiymatlariga TEGILMAYDI.
+      payBusy: this.state.payBusy || '',
       onBuyCredits: async (e) => {
         const amt = +((e && e.currentTarget && e.currentTarget.dataset.amt) || 0);
-        if (!(window.FFAPI && FFAPI.getToken())) { this.setState({ showCredits: false }); this.gotoAuth('login'); return; }
+        if (!(window.FFAPI && FFAPI.getToken())) {
+          // §H — kirmagan holatda niyatni saqlaymiz; login'dan keyin AYNI xaridga qaytamiz.
+          try { sessionStorage.setItem('ff_intent', JSON.stringify({ credits: amt })); } catch (_) {}
+          this.setState({ showCredits: false }); this.gotoAuth('login'); return;
+        }
         if (!amt) return;
+        if (this._payBusy) return; this._payBusy = true; this.setState({ payBusy: 'c' + amt });
         try {
           const r = await FFAPI.checkout({ credits: amt });
-          if (r && r.url) { window.location.href = r.url; return; }
-          this.toast("Couldn't get the payment link");
-        } catch (err) { this.toast((err && err.message) || "Payment isn't available right now"); }
+          if (r && r.url) { window.location.href = r.url; return; } // navigatsiya — busy shu holicha qoladi
+          this._payBusy = false; this.setState({ payBusy: '' });
+          this.toast("Couldn't get the payment link", 'error');
+        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast((err && err.message) || "Payment isn't available right now", 'error'); }
       },
       onChoosePlan: async (e) => {
         const key = (e && e.currentTarget && e.currentTarget.dataset.plan) || '';
-        if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('register'); return; }
+        if (!(window.FFAPI && FFAPI.getToken())) {
+          // §H — kirmagan holatda tanlangan tarifni saqlaymiz; login'dan keyin AYNI checkout'ga.
+          if (key === 'pro' || key === 'studio') { try { sessionStorage.setItem('ff_intent', JSON.stringify({ plan: key })); } catch (_) {} }
+          this.gotoAuth('register'); return;
+        }
         if (key !== 'pro' && key !== 'studio') { this.go('dashboard'); return; }
+        if (this._payBusy) return; this._payBusy = true; this.setState({ payBusy: 'p' + key });
         try {
           const r = await FFAPI.checkout({ plan: key });
           if (r && r.url) { window.location.href = r.url; return; }
-          this.toast("Couldn't get the payment link");
-        } catch (err) { this.toast((err && err.message) || "Payment isn't available right now"); }
+          this._payBusy = false; this.setState({ payBusy: '' });
+          this.toast("Couldn't get the payment link", 'error');
+        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast((err && err.message) || "Payment isn't available right now", 'error'); }
       },
+      // §H — niyatni bajarish (login'dan keyin chaqiriladi): saqlangan tarif/kreditga to'g'ridan checkout.
+      resumePayIntent: () => this._resumePayIntent(),
       sidebarMainView, sidebarAccountView, dashQuick, dashGensView, hasDashGens, noDashGens: this.state.gensLoaded && !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
       // ── FAZA C · Home enrichment (featured models + tokchalar) ──
       featHero, featRail, featAll, hasFeatured, featLoading,
