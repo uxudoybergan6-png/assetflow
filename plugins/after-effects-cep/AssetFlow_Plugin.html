@@ -3726,6 +3726,154 @@ html.home-mode #homePage{display:block!important}
   .pd3-hero.playing .pd3-hero-vid{display:none}
   .pd3-hero.playing .pd3-hero-poster{opacity:1}
 }
+
+/* ============================================================
+   AXWS — AI Studio workspace (Prompt #R1: struktura 1:1 mockup)
+   docs/mockups/batch8-plugin: session-strip → viewbar → stage → docked composer.
+   BARCHA klass `.axws` ostiga scoped — legacy global `.ai-*` bilan to'qnashmaydi.
+   Tokenlar tokens.css (3 tema); CEP-xavfsiz (no :has / container-query).
+   ============================================================ */
+/* Tool view'lari to'liq balandlikni egallaydi → dock pastga pinlanadi, stage ichida scroll bo'ladi.
+   .axws-tool (JS axwsAfterView tomonidan faqat composer view'larida qo'yiladi) shared .scroll'ni
+   qat'iy balandlikdagi flex-ustunga aylantiradi (flexbox min-height:auto tuzog'ini yopadi). */
+.axroot.axws-tool > .app > .scroll{min-height:0;overflow:hidden;padding:0;display:flex;flex-direction:column}
+.axroot .view.on.axws-view{display:flex;flex-direction:column;flex:1;min-height:0;padding:0}
+.axws-view .axig{flex:1;min-height:0;display:flex;flex-direction:column}
+.axws{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:radial-gradient(circle at 52% 0%,var(--accent-soft),transparent 34%),var(--bg-deep)}
+/* ── Session strip ── */
+.axws-strip{flex:0 0 auto;min-height:43px;padding:7px 9px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:5px;overflow-x:auto;white-space:nowrap;-ms-overflow-style:none;scrollbar-width:none}
+.axws-strip::-webkit-scrollbar{display:none}
+.axws-sbtn{flex:0 0 auto;min-height:28px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font-family:inherit;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer;transition:border-color .14s,color .14s,background .14s}
+.axws-sbtn:hover,.axws-sbtn.active{border-color:var(--accent);color:var(--text);background:var(--accent-soft)}
+.axws-sbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.axws-sbtn.primary:hover{filter:brightness(1.06)}
+/* ── Viewbar ── */
+.axws-viewbar{flex:0 0 auto;min-height:48px;padding:7px 9px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px}
+.axws-tabs{flex:0 0 auto;padding:3px;border:1px solid var(--border);border-radius:10px;background:var(--surface);display:flex;gap:3px}
+.axws-tab{min-height:28px;padding:5px 10px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-family:inherit;font-size:10px;font-weight:750;cursor:pointer;white-space:nowrap}
+.axws-tab:hover{color:var(--text)}
+.axws-tab.active{background:var(--surface-3);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.axws-tab .ct{margin-left:4px;color:var(--accent);font-family:var(--font-mono);font-size:9px;font-weight:700}
+.axws-meta{flex:1 1 auto;min-width:0;text-align:right;padding-left:6px}
+.axws-meta strong{display:block;color:var(--text);font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axws-meta span{display:block;margin-top:3px;color:var(--faint);font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axws-density{flex:0 0 auto;display:flex;gap:3px}
+.axws-density button{width:28px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--muted);font-family:var(--font-mono);font-size:9px;font-weight:700;cursor:pointer}
+.axws-density button:hover,.axws-density button.active{border-color:var(--accent);color:var(--accent)}
+.axws-tools{flex:0 0 auto;display:flex;align-items:center;gap:4px}
+.axws-tools .ai-icon{width:28px;height:28px}
+.axws-tools .ai-cred{margin:0}
+/* ── Stage (scrollable) ── */
+.axws-stage{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 12px 6px;background-image:radial-gradient(var(--border) .7px,transparent .7px);background-size:16px 16px}
+.axws-empty{min-height:210px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px 12px}
+.axws-empty>div{max-width:340px}
+.axws-sparky{width:50px;height:50px;margin:0 auto 12px;border:1px solid var(--accent);border-radius:15px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:21px;font-weight:700;box-shadow:0 0 30px var(--glow)}
+.axws-empty h2{margin:0 0 7px;color:var(--text);font-family:var(--font-display);font-size:21px;font-weight:650;letter-spacing:-.03em}
+.axws-empty h2 em{font-style:normal;color:var(--accent)}
+.axws-empty p{max-width:320px;margin:0 auto;color:var(--muted);font-size:11px;line-height:1.55}
+.axws-sugg{margin:12px -3px -3px;display:flex;flex-wrap:wrap;justify-content:center}
+.axws-sugg button{min-height:26px;margin:3px;padding:5px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text-2);font-family:inherit;font-size:9.5px;font-weight:650;cursor:pointer;transition:border-color .14s,color .14s,transform .14s}
+.axws-sugg button:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+/* ── Docked composer ── */
+.axws-dock{flex:0 0 auto;margin:0 9px 9px;padding:12px 13px;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.42);position:relative;z-index:40}
+.axroot[data-theme="noir"] .axws-dock{background:#131316}
+.axroot[data-theme="neon"] .axws-dock{background:#0d0d0e}
+.axroot[data-theme="cold"] .axws-dock{background:#10141d}
+.axws-dock .warn{margin:0 0 8px}
+.axws-dock .lowcred{margin:0 0 8px}
+/* refs strip — mavjud #igRefgrid ichkarida qoladi; ＋ tugma yonida */
+.axws-refs{display:flex;align-items:center;gap:9px;margin-bottom:6px;min-width:0}
+.axws-refadd{flex:0 0 auto;width:42px;height:42px;padding:0;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.axws-refadd:hover{border-color:var(--accent);color:var(--accent)}
+.axws-refwrap{min-width:0;flex:1 1 auto;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+.axws-refwrap::-webkit-scrollbar{display:none}
+.axws-refmeta{min-width:0;margin-bottom:8px;display:flex;align-items:center;gap:8px;color:var(--muted);font-family:var(--font-mono);font-size:9.5px;font-weight:600}
+.axws-refmeta .rc-n{flex:0 0 auto;white-space:nowrap}
+.axws-refmeta .rc-hint{min-width:0;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axws-promptwrap{position:relative}
+.axws-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
+.axws-setgroup{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:7px}
+/* pill (mode/model/output) — mavjud .pillseg qayta uslublanadi + yangi mode pill */
+.axws .ai-set,.axws-dock .pillseg{height:34px;max-width:100%;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text-2);display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:10px;font-weight:650;white-space:nowrap;cursor:pointer;transition:border-color .14s,background .14s}
+.axws .ai-set:hover,.axws-dock .pillseg:hover{background:var(--surface-3);border-color:var(--accent)}
+.axws .ai-set[disabled]{opacity:.45;cursor:not-allowed}
+.axws-dock .pillseg{min-width:0;flex:0 1 auto}
+.axws-dock .pillseg .plab{flex:0 0 auto;color:var(--faint);font-family:var(--font-mono);font-size:7px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.axws-dock .pillseg .pval{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:650}
+.axws-dock .pillseg::after{content:"⌄";flex:0 0 auto;color:var(--muted);font-size:11px;line-height:1}
+.axws-modewrap{flex:0 0 auto;position:relative}
+.axws .ai-set.mode{background:var(--surface-3);border-color:transparent;color:var(--text)}
+.axws .ai-set.mode b{color:var(--text);font-weight:700}
+.axws .ai-set.enhance{flex:0 0 auto;padding:0 10px;border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+.axws .ai-set.enhance svg{width:13px;height:13px}
+.axws .ai-set.enhance[disabled]{opacity:.45}
+.axws-clear{flex:0 0 auto;height:34px;padding:0 9px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--muted);display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:10px;font-weight:600;cursor:pointer}
+.axws-clear:hover{color:var(--text);border-color:var(--danger)}
+.axws-genwrap{flex:0 0 auto;margin-left:auto;display:flex;align-items:center;gap:9px}
+.axws-cost{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-family:var(--font-mono);font-size:10.5px;font-weight:700;white-space:nowrap}
+.axws-cost em{color:var(--faint);font-style:normal;font-size:8px;font-weight:600;letter-spacing:.06em}
+/* Generate — mavjud #igGen (.gensend) kompakt pill sifatida override */
+.axws .gensend{width:auto;min-height:34px;height:34px;margin:0;padding:0 15px;border-radius:10px;background:var(--grad);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:750;font-size:10.5px;box-shadow:0 6px 18px var(--glow)}
+.axws .gensend .costtag{display:none}
+.axws .gensend:hover{filter:brightness(1.05);background:var(--grad)}
+.axws .gensend:disabled{border:1px solid var(--border);background:var(--surface-3);color:var(--faint);opacity:1;box-shadow:none}
+.axws .gensend.busy::after{border-top-color:var(--on-accent)}
+/* balance strip */
+.axws-bal{margin-top:10px;display:flex;align-items:center;gap:5px;color:var(--faint);font-family:var(--font-mono);font-size:8.5px;font-weight:600}
+.axws-bal em{color:var(--muted);font-style:normal}
+.axws-topup{margin-left:auto;padding:3px 4px;border:0;background:transparent;color:var(--accent);font-family:var(--font-mono);font-size:8.5px;font-weight:700;white-space:nowrap;cursor:pointer}
+/* mode popover (yangi) */
+.axws-pop{position:absolute;bottom:calc(100% + 8px);left:0;width:200px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--surface-3);box-shadow:0 16px 42px rgba(0,0,0,.5);z-index:50;display:none}
+.axws-pop.open{display:block}
+.axws-pop .lb{padding:5px 6px;color:var(--faint);font-family:var(--font-mono);font-size:7px;font-weight:700;letter-spacing:.06em}
+.axws-mrow{width:100%;min-height:32px;padding:7px;border:0;border-radius:8px;background:transparent;color:var(--text-2);display:flex;align-items:center;gap:8px;text-align:left;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer}
+.axws-mrow:hover,.axws-mrow.active{background:var(--accent-soft);color:var(--accent)}
+.axws-mrow .ic{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:7px;font-weight:700}
+/* preset chips (video) — mavjud #vgEditPresets shu yerda; qo'shimcha uslub */
+.axws-dock .vg-editpresets{margin:0 0 8px}
+/* audio dock — textarea + frames + voice pills ixchamlashadi */
+.axws-dock .pbox{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:10px}
+.axws-dock .pbox textarea{min-height:70px;max-height:140px}
+.axws-dock #vgFrameSect{margin-bottom:8px}
+.axws-dock .vg-lblrow{margin-bottom:6px}
+.axws-dock .frames .fbox{min-height:52px}
+.axws-dock .ag-set .pillrow{display:flex;flex-wrap:wrap;gap:6px}
+.axws-dock .ai-seg{padding:3px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+/* recent grid = stage — kartalar mockup ai-result-card kabi o'qiladi (recentgrid tokenlari yetarli) */
+.axws-stage .res{margin-bottom:14px}
+.axws-stage .res .lbl{margin-bottom:8px}
+/* 1× zichlik (density) */
+.axws-stage .recentgrid.dense1{columns:1}
+.axws-stage .recentgrid.dense1 .rc{aspect-ratio:16/10}
+/* ── tor kenglik moslashuvi (320/420) — Generate hech qachon kesilmasin ── */
+@media(max-width:452px){
+  .axws-dockrow{flex-wrap:wrap}
+  .axws-setgroup{flex:1 0 100%;flex-wrap:wrap;gap:5px}
+  .axws-genwrap{width:100%;margin-left:0;margin-top:2px;justify-content:stretch}
+  .axws-genwrap .gensend{width:100%}
+  .axws-dock .pillseg{flex:1 1 auto}
+  .axws .ai-set.enhance,.axws-clear{flex:1 1 auto;justify-content:center}
+  .axws-refadd{width:38px;height:38px}
+  .axws-tools .ai-icon{width:26px;height:26px}
+  .axws-viewbar{gap:6px}
+}
+@media(max-width:360px){
+  .axws-tools .ai-cred,.axws-tools .ai-ava{display:none}
+  .axws-meta strong{font-size:7.5px}
+}
+/* qisqa balandlik (≤560) — dock pinlanmaydi; butun workspace .scroll ichida scroll bo'ladi
+   (Generate kesilmaydi — spec: "may scroll with content but must not clip Generate"). */
+@media(max-height:560px){
+  .axroot.axws-tool > .app > .scroll{overflow-y:auto}
+  .axws-view{display:block}
+  .axws{display:block;min-height:100%}
+  .axws-stage{overflow:visible;flex:none;padding-top:10px;padding-bottom:4px}
+  .axws-empty{min-height:110px;padding:12px}
+  .axws-empty h2{font-size:17px}
+  .axws-dock{margin-bottom:7px;padding:10px 12px}
+  .axws-bal{margin-top:7px}
+  .axws-strip,.axws-viewbar{min-height:40px}
+}
 </style>
 </head>
 <body>
@@ -4137,81 +4285,96 @@ html.home-mode #homePage{display:block!important}
                       </section>
 
                       <!-- RASM YARATISH (tool-image.html 1:1, .axig scope) -->
-                      <section id="v-imggen" class="view">
+                      <section id="v-imggen" class="view axws-view">
                         <div class="axig">
-                          <div class="ai-hdr">
-                            <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
-                            <button type="button" class="ai-back" id="igBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                            <div class="ai-hdr-c">
-                              <div class="ai-seg">
-                                <button type="button" class="ai-seg-i is-on">Image</button>
-                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('vidgen')" title="Switch to video generation">Video</button>
-                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('audgen')" title="Switch to audio generation">Audio</button>
+                          <!-- #R1: workspace anatomiyasi (session-strip → viewbar → stage → docked composer). Barcha id saqlangan; xatti-harakat o'zgarmagan. -->
+                          <div class="axws">
+                            <!-- #igBack: eski launcher tugmasi — JS binding (12430) uchun saqlanadi, workspace'да yashirin -->
+                            <button type="button" class="ai-back" id="igBack" title="AI Tools" style="display:none"></button>
+                            <div class="axws-strip" id="igStrip"></div>
+                            <div class="axws-viewbar">
+                              <div class="axws-tabs">
+                                <button type="button" class="axws-tab active" id="igTabVis" title="Visual generations">Visuals <span class="ct" id="igTabVisCt">0</span></button>
+                                <button type="button" class="axws-tab" id="igTabAud" onclick="if(window.axGo)window.axGo('audgen')" title="Audio generations">Audio <span class="ct" id="igTabAudCt">0</span></button>
+                              </div>
+                              <div class="axws-meta"><strong id="igViewT">NEW SESSION</strong><span id="igViewS">Describe an idea below</span></div>
+                              <div class="axws-density" id="igDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
+                              <div class="axws-tools">
+                                <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
+                                <div class="ai-icon" id="igHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                                <div class="ai-icon" id="igSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                                <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                               </div>
                             </div>
-                            <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
-                            <div class="ai-icon" id="igHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-                            <div class="ai-icon" id="igSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                            <div class="ai-cred" id="igCredit"><span class="cs">✦</span> —</div>
-                            <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
-                          </div>
 
-                          <div class="igscroll" id="igScroll">
-                            <!-- progress -->
-                            <div class="prog" id="igProg"><!-- faol job qatorlari JS renderJobs() tomonidan to'ldiriladi --></div>
-                            <!-- natija -->
-                            <div class="res" id="igRes">
-                              <div class="lbl">Result <span class="meta" id="igResMeta"></span></div>
-                              <div class="rgrid g1" id="igGrid"></div>
+                            <div class="axws-stage" id="igScroll">
+                              <div class="prog" id="igProg"><!-- faol job qatorlari JS renderJobs() tomonidan to'ldiriladi --></div>
+                              <div class="res" id="igRes">
+                                <div class="lbl">Result <span class="meta" id="igResMeta"></span></div>
+                                <div class="rgrid g1" id="igGrid"></div>
+                              </div>
+                              <!-- Sparky bo'sh holati (mockup ai-empty-hero) — recent bo'sh bo'lganда JS ko'rsatadi -->
+                              <div class="axws-empty" id="igEmpty" style="display:none"><div>
+                                <div class="axws-sparky">✦</div>
+                                <h2>Start with your <em>idea</em></h2>
+                                <p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p>
+                                <div class="axws-sugg" data-prompt-target="igPrompt">
+                                  <button type="button">Neon product shot</button>
+                                  <button type="button">Slow-motion coffee pour</button>
+                                  <button type="button">Editorial portrait, soft light</button>
+                                  <button type="button">Typography poster</button>
+                                </div>
+                              </div></div>
+                              <div class="recent-host" id="igRecentSect">
+                                <div class="lbl">Recent <span class="meta recsel" id="igRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Select</span><span class="morelink" id="igMoreLink" style="margin-left:10px">All →</span></div>
+                                <div class="recentgrid" id="igRecent"></div>
+                                <div class="recbatch" id="igRecentBatch">
+                                  <span class="bi" id="igRecentBI">0 selected</span>
+                                  <div class="bb bdl" id="igRecentDl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Download</div>
+                                  <div class="bb del" id="igRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> Delete</div>
+                                  <div class="bb" id="igRecentCancel">Cancel</div>
+                                </div>
+                              </div>
                             </div>
 
-                            <!-- PROMPT — vpanel karta (video tool bilan teng) -->
-                            <div class="vpanel compose-panel">
-                            <div class="sect" id="igRefSect">
-                              <div class="lbl">Prompt <span class="req">*</span> <span class="meta" id="igRefMeta">0 references</span></div>
+                            <!-- Docked composer (mockup ai-dock): refs → prompt → settings row → cost+Generate → balance -->
+                            <div class="axws-dock" id="igRefSect">
                               <div class="warn" id="igRefWarn"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Reference is <b>required</b> for this model — add at least 1 image.</span></div>
-                              <div class="pbox">
-                                <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
-                                <div class="mention" id="igMention"></div>
-                                <div class="refgrid" id="igRefgrid"></div>
-                                <div class="chipwrap">
-                                  <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
-                                  <button type="button" class="chipexp" id="igPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
-                                </div>
-                                <div class="prow">
-                                  <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Reference</div>
-                                  <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance · ✦1</span>
-                                </div>
+                              <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
+                              <div class="axws-refs">
+                                <div class="addbtn axws-refadd" id="igRefAdd" title="Add reference"><span class="pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span></div>
+                                <div class="axws-refwrap"><div class="refgrid" id="igRefgrid"></div></div>
                               </div>
-                            </div>
-                            </div>
-
-                            <!-- SOZLAMALAR — vpanel karta -->
-                            <div class="vpanel settings-panel">
-                            <div class="sect">
-                              <div class="lbl">Settings <span class="meta clearbtn" id="igClearBtn" title="Clear prompt and references"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</span></div>
-                              <!-- P16 — BITTA sozlama chipi (tor panelda MAJBURIY): Ratio/Quality/Count bitta ⚙ chip + guruhlangan sheet'ga yig'ildi -->
-                              <div class="pillbar">
-                                <div class="pillseg" id="igModelSeg"><div class="plab">Model</div><div class="pval" id="igMName">…</div></div>
-                                <div class="pillseg" id="igSetSeg"><div class="plab">Settings</div><div class="pval" id="igSetVal">Auto</div></div>
-                              </div>
+                              <div class="axws-refmeta"><span class="rc-n" id="igRefMeta">0 references</span><span class="rc-hint">Optional — add images to edit or combine · type @ to mention.</span></div>
+                              <div class="mention" id="igMention"></div>
+                              <div class="axws-promptwrap"><div class="chipwrap">
+                                <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
+                                <button type="button" class="chipexp" id="igPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
+                              </div></div>
                               <div class="ai-polnote" id="igPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
-                              <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate image<span class="costtag" id="igCost">✦—</span></button>
-                            </div>
-                            </div>
-
-                            <!-- SO'NGGI — vpanel karta -->
-                            <div class="vpanel recent-panel">
-                            <div class="sect" id="igRecentSect">
-                              <div class="lbl">Recent <span class="meta recsel" id="igRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Select</span><span class="morelink" id="igMoreLink" style="margin-left:10px">All →</span></div>
-                              <div class="recentgrid" id="igRecent"></div>
-                              <div class="recbatch" id="igRecentBatch">
-                                <span class="bi" id="igRecentBI">0 selected</span>
-                                <div class="bb bdl" id="igRecentDl"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Download</div>
-                                <div class="bb del" id="igRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> Delete</div>
-                                <div class="bb" id="igRecentCancel">Cancel</div>
+                              <div class="axws-dockrow">
+                                <div class="axws-setgroup">
+                                  <div class="axws-modewrap">
+                                    <button type="button" class="ai-set mode" id="igModePill" data-modepop title="Create with"><i class="ai-set-icon">▧</i><b>Image</b><i class="ai-set-chev">⌄</i></button>
+                                    <div class="axws-pop" id="igModePop">
+                                      <div class="lb">CREATE WITH</div>
+                                      <button type="button" class="axws-mrow active" data-mode="image"><span class="ic">IMG</span>Image</button>
+                                      <button type="button" class="axws-mrow" data-mode="video"><span class="ic">VID</span>Video</button>
+                                      <button type="button" class="axws-mrow" data-mode="upscale"><span class="ic">2×</span>Upscale</button>
+                                      <button type="button" class="axws-mrow" data-mode="voice"><span class="ic">VO</span>Voice</button>
+                                      <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
+                                    </div>
+                                  </div>
+                                  <div class="pillseg" id="igModelSeg" title="Choose a model"><span class="plab">Model</span><span class="pval" id="igMName">…</span></div>
+                                  <div class="pillseg" id="igSetSeg" title="Output settings"><span class="plab">Out</span><span class="pval" id="igSetVal">Auto</span></div>
+                                  <button type="button" class="ai-set enhance" id="igEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
+                                  <button type="button" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
+                                </div>
+                                <div class="axws-genwrap">
+                                  <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate<span class="costtag" id="igCost">✦—</span></button>
+                                </div>
                               </div>
-                            </div>
+                              <div class="axws-bal">BALANCE <span class="ai-cred" id="igCredit"><span class="cs">✦</span> —</span><button type="button" class="axws-topup" data-go="settings">＋ Top up</button></div>
                             </div>
                           </div>
 
@@ -4264,96 +4427,96 @@ html.home-mode #homePage{display:block!important}
                       </section>
 
                       <!-- VIDEO GEN — Seedance 2.0 Fast (fal.ai image-to-video) -->
-                      <section id="v-vidgen" class="view">
+                      <section id="v-vidgen" class="view axws-view">
                         <div class="axig axvg">
-                          <div class="ai-hdr">
-                            <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
-                            <button type="button" class="ai-back" id="vgBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                            <div class="ai-hdr-c">
-                              <div class="ai-seg">
-                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('imggen')" title="Switch to image generation">Image</button>
-                                <button type="button" class="ai-seg-i is-on">Video</button>
-                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('audgen')" title="Switch to audio generation">Audio</button>
+                          <!-- #R1: video workspace anatomiyasi — barcha vg id saqlangan; frames = refs strip. -->
+                          <div class="axws">
+                            <button type="button" class="ai-back" id="vgBack" title="AI Tools" style="display:none"></button>
+                            <div class="axws-strip" id="vgStrip"></div>
+                            <div class="axws-viewbar">
+                              <div class="axws-tabs">
+                                <button type="button" class="axws-tab active" id="vgTabVis" title="Visual generations">Visuals <span class="ct" id="vgTabVisCt">0</span></button>
+                                <button type="button" class="axws-tab" id="vgTabAud" onclick="if(window.axGo)window.axGo('audgen')" title="Audio generations">Audio <span class="ct" id="vgTabAudCt">0</span></button>
+                              </div>
+                              <div class="axws-meta"><strong id="vgViewT">NEW SESSION</strong><span id="vgViewS">Video mode</span></div>
+                              <div class="axws-density" id="vgDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
+                              <div class="axws-tools">
+                                <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
+                                <div class="ai-icon" id="vgHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                                <div class="ai-icon" id="vgSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+                                <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                               </div>
                             </div>
-                            <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
-                            <div class="ai-icon" id="vgHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-                            <div class="ai-icon" id="vgSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                            <div class="ai-cred" id="vgCredit"><span class="cs">✦</span> —</div>
-                            <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
-                          </div>
 
-                          <div class="igscroll" id="vgScroll">
-                            <div class="prog" id="vgProg"></div>
-
-                            <!-- Natija (video player) -->
-                            <div class="res" id="vgRes" style="display:none">
-                              <div class="lbl">Result</div>
-                              <div class="vwrap"><video id="vgVideo" controls playsinline></video></div>
-                              <div class="vacts" id="vgActs"></div>
+                            <div class="axws-stage" id="vgScroll">
+                              <div class="prog" id="vgProg"></div>
+                              <div class="res" id="vgRes" style="display:none">
+                                <div class="lbl">Result</div>
+                                <div class="vwrap"><video id="vgVideo" controls playsinline></video></div>
+                                <div class="vacts" id="vgActs"></div>
+                              </div>
+                              <div class="axws-empty" id="vgEmpty" style="display:none"><div>
+                                <div class="axws-sparky">✦</div>
+                                <h2>Start with your <em>idea</em></h2>
+                                <p>Add a start frame, describe the motion, and Sparky animates it into a clip.</p>
+                                <div class="axws-sugg" data-prompt-target="vgPrompt">
+                                  <button type="button">Slow dolly-in, neon reflections</button>
+                                  <button type="button">Slow-motion coffee pour</button>
+                                  <button type="button">Orbital camera around product</button>
+                                </div>
+                              </div></div>
+                              <div class="recent-host" id="vgRecentSect">
+                                <div class="lbl">Recent <span class="meta recsel" id="vgRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Select</span><span class="morelink" id="vgMoreVid" style="margin-left:10px">All →</span></div>
+                                <div class="recentgrid" id="vgRecent"></div>
+                                <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 selected</span><div class="bb del" id="vgRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> Delete</div><div class="bb" id="vgRecentCancel">Cancel</div></div>
+                              </div>
                             </div>
 
-                            <div class="vpanel compose-panel">
-                              <!-- PROBLEM 3: Fast|R2V toggle olib tashlandi — plagin video FAQAT Fast (frames) -->
-                              <div class="sect">
-                                <div class="guide" id="vgGuide"><b>Fast:</b> Add a start frame, write a prompt, and generate a video.</div>
-                              </div>
-
-                              <!-- Kadrlar (refKind=frames — Seedance Fast) -->
+                            <!-- Docked composer: frames (refs) → preset chips → prompt → settings row → Generate → balance -->
+                            <div class="axws-dock">
+                              <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Start frame is required — add it with +.</span></div>
+                              <div class="lowcred" id="vgLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="vgLowNeed"></div></div></div>
+                              <!-- Frames = video referens strip (mockup START/END FRAME thumbs) -->
                               <div class="sect" id="vgFrameSect">
                                 <div class="vg-lblrow"><span class="vg-lbl">Frames</span><span class="kadrtag" id="vgKadrTag" style="display:none">FAST</span></div>
                                 <div class="frames">
                                   <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Start</div></div>
                                   <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">End (optional)</div></div>
                                 </div>
-                                <!-- FIX D: doimiy manba chiplari olib tashlandi — manba menyu kadr box / ＋Referens bosilganda popover bo'lib chiqadi (vgSrcSheet) -->
                               </div>
-                              <!-- PROBLEM 3: #vgMediaSect (R2V ko'p-modal referens bloki) olib tashlandi -->
-                              <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Start frame is required — add it with +.</span></div>
-                              <!-- Prompt (umumiy — ikkala refKind) — FIX5: rasm tool lbl idiomi -->
-                              <div class="sect">
-                                <div class="lbl">Prompt <span class="req">*</span></div>
-                                <div class="pbox">
-                                  <div class="lowcred" id="vgLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="vgLowNeed"></div></div></div>
-                                  <!-- Video-edit tayyor shablon chiplari — faqat ≥1 VIDEO referens biriktirilganda ko'rinadi (renderVgEditPresets) -->
-                                  <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-                                  <div class="mention" id="vgMention"></div>
-                                  <div class="chipwrap">
-                                    <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Animate the frame: raindrops, neon reflection, slow dolly-in…"></div>
-                                    <button type="button" class="chipexp" id="vgPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
+                              <div class="axws-refmeta"><span class="rc-hint" id="vgGuide"><b>Fast:</b> Add a start frame, write a prompt, and generate a video.</span></div>
+                              <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                              <div class="mention" id="vgMention"></div>
+                              <div class="axws-promptwrap"><div class="chipwrap">
+                                <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Animate the frame: raindrops, neon reflection, slow dolly-in…"></div>
+                                <button type="button" class="chipexp" id="vgPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
+                              </div></div>
+                              <div class="ai-polnote" id="vgPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
+                              <div class="axws-dockrow">
+                                <div class="axws-setgroup">
+                                  <div class="axws-modewrap">
+                                    <button type="button" class="ai-set mode" id="vgModePill" data-modepop title="Create with"><i class="ai-set-icon">▷</i><b>Video</b><i class="ai-set-chev">⌄</i></button>
+                                    <div class="axws-pop" id="vgModePop">
+                                      <div class="lb">CREATE WITH</div>
+                                      <button type="button" class="axws-mrow" data-mode="image"><span class="ic">IMG</span>Image</button>
+                                      <button type="button" class="axws-mrow active" data-mode="video"><span class="ic">VID</span>Video</button>
+                                      <button type="button" class="axws-mrow" data-mode="upscale"><span class="ic">2×</span>Upscale</button>
+                                      <button type="button" class="axws-mrow" data-mode="voice"><span class="ic">VO</span>Voice</button>
+                                      <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
+                                    </div>
                                   </div>
-                                  <!-- FIX: prompt ichidagi takror ＋Referens olib tashlandi — referens qo'shish faqat tepadagi kanonik hudud (kadr box / +Rasm / +Video) orqali -->
-                                  <div class="prow">
-                                    <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance · ✦1</span>
-                                  </div>
+                                  <div class="pillseg" id="vgModelSeg" title="Choose a model"><span class="plab">Model</span><span class="pval" id="vgMName">…</span></div>
+                                  <div class="pillseg" id="vgSetSeg" title="Output settings"><span class="plab">Out</span><span class="pval" id="vgSetVal">720p · Auto</span></div>
+                                  <div class="pillseg tgl" id="vgAudToggle" style="display:none" title="Audio"><span class="plab">Audio</span><span class="pval" id="vgAudVal">Off</span><span class="ptr"></span></div>
+                                  <button type="button" class="ai-set enhance" id="vgEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
+                                  <button type="button" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
+                                </div>
+                                <div class="axws-genwrap">
+                                  <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate<span class="costtag" id="vgCost">✦—</span></button>
                                 </div>
                               </div>
-                            </div>
-
-                            <div class="vpanel settings-panel">
-                              <!-- Sozlamalar (pill qatori) — FIX5: rasm tool lbl + Tozalash idiomi -->
-                              <div class="sect">
-                                <div class="lbl">Settings <span class="meta clearbtn" id="vgClearBtn" title="Clear prompt and references"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</span></div>
-                                <!-- P16 — BITTA sozlama chipi: Ratio/Resolution/Duration/Bitrate bitta ⚙ chip + guruhlangan sheet;
-                                     Audio esa alohida toggle (target layout: mode · model · sozlama · toggle) -->
-                                <div class="pillbar">
-                                  <div class="pillseg" id="vgModelSeg"><div class="plab">Model</div><div class="pval" id="vgMName">…</div></div>
-                                  <div class="pillseg" id="vgSetSeg"><div class="plab">Settings</div><div class="pval" id="vgSetVal">720p · Auto</div></div>
-                                  <div class="pillseg tgl" id="vgAudToggle" style="display:none"><div><div class="plab">Audio</div><div class="pval" id="vgAudVal">Off</div></div><div class="ptr"></div></div>
-                                </div>
-                                <div class="ai-polnote" id="vgPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
-                                <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate video<span class="costtag" id="vgCost">✦—</span></button>
-                                <div class="genhint">≈ 1–2 min · credits refunded on error</div>
-                              </div>
-                            </div>
-
-                            <div class="vpanel recent-panel" id="vgRecentSect">
-                              <!-- Video So'nggi genlar — FIX5: rasm tool lbl idiomi -->
-                              <div class="sect">
-                                <div class="lbl">Recent <span class="meta recsel" id="vgRecentSel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg> Select</span><span class="morelink" id="vgMoreVid" style="margin-left:10px">All →</span></div>
-                                <div class="recentgrid" id="vgRecent"></div>
-                                <div class="recbatch" id="vgRecentBatch"><span class="bi" id="vgRecentBI">0 selected</span><div class="bb del" id="vgRecentDel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg> Delete</div><div class="bb" id="vgRecentCancel">Cancel</div></div>
-                              </div>
+                              <div class="genhint" style="margin-top:6px">≈ 1–2 min · credits refunded on error</div>
+                              <div class="axws-bal">BALANCE <span class="ai-cred" id="vgCredit"><span class="cs">✦</span> —</span><button type="button" class="axws-topup" data-go="settings">＋ Top up</button></div>
                             </div>
                           </div>
 
@@ -4455,70 +4618,86 @@ html.home-mode #homePage{display:block!important}
                       </section>
 
                       <!-- AUDIO GEN — P8 Step C: Voice (Kokoro TTS) + SFX (ElevenLabs), katalog-driven -->
-                      <section id="v-audgen" class="view">
+                      <section id="v-audgen" class="view axws-view">
                         <div class="axig">
-                          <div class="ai-hdr">
-                            <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
-                            <button type="button" class="ai-back" id="agBack" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                            <div class="ai-hdr-c">
-                              <div class="ai-seg">
-                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('imggen')" title="Switch to image generation">Image</button>
-                                <button type="button" class="ai-seg-i" onclick="if(window.axGo)window.axGo('vidgen')" title="Switch to video generation">Video</button>
-                                <button type="button" class="ai-seg-i is-on">Audio</button>
+                          <!-- #R1: audio workspace anatomiyasi — barcha ag id saqlangan. -->
+                          <div class="axws">
+                            <div class="axws-strip" id="agStrip"></div>
+                            <div class="axws-viewbar">
+                              <div class="axws-tabs">
+                                <button type="button" class="axws-tab" id="agTabVis" onclick="if(window.axGo)window.axGo('imggen')" title="Visual generations">Visuals <span class="ct" id="agTabVisCt">0</span></button>
+                                <button type="button" class="axws-tab active" id="agTabAud" title="Audio generations">Audio <span class="ct" id="agTabAudCt">0</span></button>
+                              </div>
+                              <div class="axws-meta"><strong id="agViewT">NEW SESSION</strong><span id="agViewS">Audio mode</span></div>
+                              <div class="axws-density" id="agDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
+                              <div class="axws-tools">
+                                <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
+                                <div class="ai-icon" id="agHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                                <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                               </div>
                             </div>
-                            <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
-                            <div class="ai-icon" id="agHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-                            <div class="ai-cred" id="agCredit"><span class="cs">✦</span> —</div>
-                            <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
-                          </div>
 
-                          <div class="igscroll" id="agScroll">
-                            <!-- progress -->
-                            <div class="prog" id="agProg"></div>
-                            <!-- natija -->
-                            <div class="res" id="agRes">
-                              <div class="lbl">Result <span class="meta" id="agResMeta"></span></div>
-                              <div id="agResults"></div>
+                            <div class="axws-stage" id="agScroll">
+                              <div class="prog" id="agProg"></div>
+                              <div class="res" id="agRes">
+                                <div class="lbl">Result <span class="meta" id="agResMeta"></span></div>
+                                <div id="agResults"></div>
+                              </div>
+                              <div class="axws-empty" id="agEmpty" style="display:none"><div>
+                                <div class="axws-sparky">✦</div>
+                                <h2>Start with your <em>idea</em></h2>
+                                <p>Voiceover or sound effects — type it below and Sparky will voice it.</p>
+                                <div class="axws-sugg" data-prompt-target="agPrompt">
+                                  <button type="button">Warm podcast intro</button>
+                                  <button type="button">Deep cinematic impact</button>
+                                  <button type="button">Whoosh + glass shatter</button>
+                                </div>
+                              </div></div>
+                              <div class="recent-host">
+                                <div class="lbl">Recent <span class="morelink" id="agMoreLink" style="margin-left:auto">All →</span></div>
+                                <div class="recentgrid" id="agRecent"></div>
+                              </div>
                             </div>
 
-                            <!-- PROMPT -->
-                            <div class="vpanel compose-panel">
-                            <div class="sect">
-                              <div class="ai-seg" style="margin-bottom:10px">
+                            <!-- Docked composer: voice/sfx toggle → script → voice/duration → Generate → balance -->
+                            <div class="axws-dock">
+                              <div class="lowcred" id="agLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="agLowNeed"></div></div></div>
+                              <div class="ai-seg" style="margin-bottom:9px">
                                 <button type="button" class="ai-seg-i is-on" id="agModeVoice">Voice over</button>
                                 <button type="button" class="ai-seg-i" id="agModeSfx">Sound FX</button>
                               </div>
-                              <div class="guide" id="agGuide"><b>Voice:</b> type the text — it will be read aloud in a natural voice.</div>
-                              <div class="pbox">
-                                <div class="lowcred" id="agLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="agLowNeed"></div></div></div>
-                                <textarea id="agPrompt" placeholder="Type the narration text…"></textarea>
+                              <div class="axws-refmeta"><span class="rc-hint" id="agGuide"><b>Voice:</b> type the text — it will be read aloud in a natural voice.</span></div>
+                              <div class="pbox"><textarea id="agPrompt" placeholder="Type the narration text…"></textarea></div>
+                              <div class="ag-set" style="margin-top:10px">
+                                <div class="lbl" style="margin-bottom:6px">Settings <span class="meta" id="agModelName"></span></div>
+                                <div id="agVoiceRow">
+                                  <div class="lbl" style="margin:6px 0">Voice</div>
+                                  <div class="pillrow" id="agVoicePills"></div>
+                                </div>
+                                <div id="agDurRow" style="display:none">
+                                  <div class="lbl" style="margin:6px 0">Duration</div>
+                                  <div class="pillrow" id="agDurPills"></div>
+                                </div>
                               </div>
-                            </div>
-                            </div>
-
-                            <!-- SOZLAMALAR -->
-                            <div class="vpanel settings-panel">
-                            <div class="sect">
-                              <div class="lbl">Settings <span class="meta" id="agModelName"></span></div>
-                              <div id="agVoiceRow">
-                                <div class="lbl" style="margin-top:8px">Voice</div>
-                                <div class="pillrow" id="agVoicePills"></div>
+                              <div class="axws-dockrow">
+                                <div class="axws-setgroup">
+                                  <div class="axws-modewrap">
+                                    <button type="button" class="ai-set mode" id="agModePill" data-modepop title="Create with"><i class="ai-set-icon">◖</i><b>Audio</b><i class="ai-set-chev">⌄</i></button>
+                                    <div class="axws-pop" id="agModePop">
+                                      <div class="lb">CREATE WITH</div>
+                                      <button type="button" class="axws-mrow" data-mode="image"><span class="ic">IMG</span>Image</button>
+                                      <button type="button" class="axws-mrow" data-mode="video"><span class="ic">VID</span>Video</button>
+                                      <button type="button" class="axws-mrow" data-mode="upscale"><span class="ic">2×</span>Upscale</button>
+                                      <button type="button" class="axws-mrow active" data-mode="voice"><span class="ic">VO</span>Voice</button>
+                                      <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="axws-genwrap">
+                                  <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate<span class="costtag" id="agCost">✦—</span></button>
+                                </div>
                               </div>
-                              <div id="agDurRow" style="display:none">
-                                <div class="lbl" style="margin-top:8px">Duration</div>
-                                <div class="pillrow" id="agDurPills"></div>
-                              </div>
-                              <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate audio<span class="costtag" id="agCost">✦—</span></button>
-                            </div>
-                            </div>
-
-                            <!-- SO'NGGI -->
-                            <div class="vpanel recent-panel">
-                            <div class="sect">
-                              <div class="lbl">Recent <span class="morelink" id="agMoreLink" style="margin-left:auto">All →</span></div>
-                              <div class="recentgrid" id="agRecent"></div>
-                            </div>
+                              <div class="axws-bal">BALANCE <span class="ai-cred" id="agCredit"><span class="cs">✦</span> —</span><button type="button" class="axws-topup" data-go="settings">＋ Top up</button></div>
                             </div>
                           </div>
                         </div>
@@ -10486,6 +10665,7 @@ async function bootPlugin(){
     if(id==='vidgen'&&typeof window.axVGRefresh==='function'){try{window.axVGRefresh();}catch(e){}} // FIX H: video ham view ochilганда retry
     if(id==='audgen'&&typeof window.axAGRefresh==='function'){try{window.axAGRefresh();}catch(e){}} // P8: audio tool
     if((id==='sessions'||id==='projects')&&typeof window.axSPRefresh==='function'){try{window.axSPRefresh(id);}catch(e){}} // P1
+    if(typeof window.axwsAfterView==='function'){try{window.axwsAfterView(id);}catch(e){}} // #R1: workspace chrome (strip/viewbar/empty) yangilash
   }
 
   // ===== price / send =====
@@ -14862,6 +15042,16 @@ window.afGallery=(function(){
     var t='<span class="cs">✦</span> '+((typeof v==='number')?Number(v).toLocaleString('en-US'):'—');
     if(c1)c1.innerHTML=t; if(c2)c2.innerHTML=t;
   };
+  // #R1 — workspace session-strip uchun sessiya ma'lumotini ochamiz (READ only, mavjud handler'lar).
+  window.axwsGetSessions=function(){ return (sp.sessions||[]).slice(0,12); };
+  window.axwsOpenSession=function(s){ if(s)openSession(s); };
+  window.axwsEnsureSessions=function(cb){
+    if(sp.sLoaded){ if(cb)cb(); return; }
+    if(sp.sLoading)return;
+    sp.sLoading=true;
+    api.sessions().then(function(r){ sp.sessions=(r&&r.items)||[]; sp.sLoaded=true; sp.sLoading=false; if(cb)cb(); })
+      .catch(function(){ sp.sLoading=false; if(cb)cb(); });
+  };
 })();
 
 /* ===== P11 — PLAGIN UPDATE TIZIMI (in-panel bildirishnoma + o'rnatish) =====
@@ -14988,6 +15178,120 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
 
   setTimeout(function(){ checkForUpdate(true); },4000);           // panel ochilgach
   setInterval(function(){ checkForUpdate(true); },6*60*60*1000);  // har 6 soatda
+})();
+
+/* ============================================================
+   #R1 — AI Studio workspace chrome (session-strip / viewbar / stage empty-hero / mode popover).
+   MAVJUD handler'lar va id'larni QAYTA SIMLAYDI — hech qanday yangi API chaqiruvi yo'q.
+   ES5-safe (CEP AE 2022+). ============================================================ */
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
+  // View konfiguratsiyalari — har composer view uchun workspace element id'lari.
+  var VIEWS={
+    imggen:{v:'imggen',mode:'image',sub:'Image mode',strip:'igStrip',tabVis:'igTabVis',tabAud:'igTabAud',visCt:'igTabVisCt',audCt:'igTabAudCt',meta:'igViewT',subEl:'igViewS',recent:'igRecent',res:'igRes',empty:'igEmpty',density:'igDensity',modePop:'igModePop'},
+    vidgen:{v:'vidgen',mode:'video',sub:'Video mode',strip:'vgStrip',tabVis:'vgTabVis',tabAud:'vgTabAud',visCt:'vgTabVisCt',audCt:'vgTabAudCt',meta:'vgViewT',subEl:'vgViewS',recent:'vgRecent',res:'vgRes',empty:'vgEmpty',density:'vgDensity',modePop:'vgModePop'},
+    audgen:{v:'audgen',mode:'audio',sub:'Audio mode',strip:'agStrip',tabVis:'agTabVis',tabAud:'agTabAud',visCt:'agTabVisCt',audCt:'agTabAudCt',meta:'agViewT',subEl:'agViewS',recent:'agRecent',res:'agRes',empty:'agEmpty',density:'agDensity',modePop:'agModePop'}
+  };
+  var observed={}; // recent grid MutationObserver'lar (view kaliti bilan)
+
+  function recentCount(cfg){ var r=$(cfg.recent); return r?r.querySelectorAll('.rc').length:0; }
+  function refreshViewbar(cfg){
+    var isAud=(cfg.mode==='audio');
+    var tv=$(cfg.tabVis), ta=$(cfg.tabAud);
+    if(tv)tv.className='axws-tab'+(isAud?'':' active');
+    if(ta)ta.className='axws-tab'+(isAud?' active':'');
+    var n=recentCount(cfg);
+    var vc=$(cfg.visCt), ac=$(cfg.audCt);
+    if(isAud){ if(ac)ac.textContent=n; } else { if(vc)vc.textContent=n; }
+    var mt=$(cfg.meta), ms=$(cfg.subEl);
+    if(mt)mt.textContent=n?('SESSION · '+n+' GENERATION'+(n>1?'S':'')):'NEW SESSION';
+    if(ms)ms.textContent=n?('Updated · '+cfg.sub):(n===0&&cfg.mode!=='image'?cfg.sub:'Describe an idea below');
+  }
+  function syncEmpty(cfg){
+    var emp=$(cfg.empty); if(!emp)return;
+    var r=$(cfg.recent), res=$(cfg.res);
+    var hasCards=r&&r.querySelector('.rc');
+    var hasRes=res&&res.classList.contains('on');
+    emp.style.display=(hasCards||hasRes)?'none':'';
+    refreshViewbar(cfg);
+  }
+  function ensureObserver(cfg){
+    if(observed[cfg.v])return;
+    var r=$(cfg.recent); if(!r||typeof MutationObserver==='undefined')return;
+    var mo=new MutationObserver(function(){ syncEmpty(cfg); });
+    mo.observe(r,{childList:true,subtree:false});
+    var res=$(cfg.res); if(res)mo.observe(res,{attributes:true,attributeFilter:['class']});
+    observed[cfg.v]=mo;
+  }
+  // Session-strip — mavjud sessiya ma'lumoti (axwsGetSessions) bilan.
+  function renderStrip(cfg){
+    var el=$(cfg.strip); if(!el)return;
+    function build(){
+      var list=(window.axwsGetSessions?window.axwsGetSessions():[])||[];
+      el._list=list;
+      var h='<button type="button" class="axws-sbtn primary" data-axws="new">＋ New</button>'
+           +'<button type="button" class="axws-sbtn" data-axws="library">My Library</button>'
+           +'<button type="button" class="axws-sbtn" data-axws="projects">Projects</button>';
+      if(list.length){ for(var i=0;i<list.length;i++){ var s=list[i]; h+='<button type="button" class="axws-sbtn'+(i===0?' active':'')+'" data-axws="sess" data-si="'+i+'" title="Open session">'+esc(s.title||('Session '+(i+1)))+'</button>'; } }
+      else { h+='<button type="button" class="axws-sbtn active" data-axws="cur">Untitled session</button>'; }
+      el.innerHTML=h;
+    }
+    build();
+    if(window.axwsEnsureSessions)window.axwsEnsureSessions(function(){ build(); });
+  }
+  function closePops(){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++)ps[i].classList.remove('open'); }
+
+  // go() dan chaqiriladi — active composer view'ini sozlaydi.
+  window.axwsAfterView=function(id){
+    closePops();
+    // Composer view'lari uchun shared .scroll'ni qat'iy flex-ustun rejimiga o'tkazamiz (dock pinlanadi).
+    var ax=document.querySelector('.axroot'); if(ax)ax.classList.toggle('axws-tool',!!VIEWS[id]);
+    var cfg=VIEWS[id]; if(!cfg)return;
+    renderStrip(cfg);
+    ensureObserver(cfg);
+    syncEmpty(cfg);
+  };
+
+  // ── Delegatsiyalangan hodisalar (re-parent'ga chidamli) ──
+  document.addEventListener('click',function(e){
+    var t=e.target;
+    // mode popover ochish/yopish
+    var mp=t.closest&&t.closest('[data-modepop]');
+    if(mp){ var wrap=mp.parentNode, pop=wrap&&wrap.querySelector('.axws-pop'); if(pop){ var was=pop.classList.contains('open'); closePops(); if(!was)pop.classList.add('open'); } e.stopPropagation(); return; }
+    // mode tanlash
+    var mr=t.closest&&t.closest('[data-mode]');
+    if(mr){ var m=mr.getAttribute('data-mode'); closePops();
+      if(m==='image'){ if(window.axGo)window.axGo('imggen'); }
+      else if(m==='video'){ if(window.axGo)window.axGo('vidgen'); }
+      else if(m==='voice'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeVoice'); if(b)b.click(); },30); }
+      else if(m==='sfx'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeSfx'); if(b)b.click(); },30); }
+      else if(m==='upscale'){ toast('Upscale runs from any result — open a generation and choose “Use → Upscale”.','info'); }
+      return; }
+    // session-strip tugmalari
+    var sb=t.closest&&t.closest('[data-axws]');
+    if(sb){ var k=sb.getAttribute('data-axws');
+      if(k==='new'){ try{ if(window.afResetToolSessions)window.afResetToolSessions(); }catch(err){} toast('New session — your next generation starts fresh','success'); var host=sb.parentNode; setTimeout(function(){ var cfg2=curCfg(); if(cfg2)renderStrip(cfg2); },20); }
+      else if(k==='library'){ if(window.axGo)window.axGo('history'); }
+      else if(k==='projects'){ if(window.axGo)window.axGo('projects'); }
+      else if(k==='sess'){ var host2=sb.parentNode, list=host2&&host2._list, si=parseInt(sb.getAttribute('data-si'),10); if(list&&list[si]&&window.axwsOpenSession)window.axwsOpenSession(list[si]); }
+      return; }
+    // zichlik (density)
+    var db=t.closest&&t.closest('[data-dense]');
+    if(db){ var host3=db.parentNode, cfg3=cfgByDensity(host3); if(cfg3){ var one=(db.getAttribute('data-dense')==='1'); var r=$(cfg3.recent); if(r)r.classList.toggle('dense1',one);
+      var btns=host3.querySelectorAll('button'); for(var j=0;j<btns.length;j++)btns[j].classList.remove('active'); db.classList.add('active'); } return; }
+    // taklif chiplari (suggestion) → promptga qo'yamiz
+    var sg=t.closest&&t.closest('.axws-sugg button');
+    if(sg){ var box=t.closest('.axws-sugg'), pid=box&&box.getAttribute('data-prompt-target'), p=pid&&$(pid);
+      if(p){ p.textContent=sg.textContent; try{ p.dispatchEvent(new Event('input',{bubbles:true})); }catch(err){} p.focus(); } return; }
+    // popover tashqarisiga bosilsa yopamiz
+    if(!(t.closest&&t.closest('.axws-pop')))closePops();
+  },false);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'||e.keyCode===27)closePops(); },false);
+
+  function curCfg(){ for(var k in VIEWS){ var v=$('v-'+k); if(v&&v.classList.contains('on'))return VIEWS[k]; } return null; }
+  function cfgByDensity(host){ for(var k in VIEWS){ if(VIEWS[k].density&&$(VIEWS[k].density)===host)return VIEWS[k]; } return null; }
 })();
 
 </script>
