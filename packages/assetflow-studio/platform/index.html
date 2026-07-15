@@ -22,6 +22,62 @@
 <script src="/ff-api.js?v=dev"></script>
 <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<!-- P21 — Phosphor ikonka fontlari (self-hosted) ERTA yuklanadi: bitta muvaffaqiyatsiz woff2 →
+     butun sessiya □ tofu (font-display:block) va brauzer O'ZI qayta urinmaydi. Preload =
+     iloji boricha erta fetch. Watchdog (pastda) muvaffaqiyatsizlikda qayta uradi. -->
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/fonts/da49f4d4.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/fonts/f55a35e5.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/fonts/b24d8b47.woff2">
+<style>
+/* P21 — fonti butunlay yuklanmaganda (3 urinishdan keyin) .ph darcha □ tofu o'rniga neytral · ko'rsatadi */
+html.ff-iconfont-dead .ph,
+html.ff-iconfont-dead .ph-bold,
+html.ff-iconfont-dead .ph-fill { font-family: inherit !important; }
+html.ff-iconfont-dead .ph::before,
+html.ff-iconfont-dead .ph-bold::before,
+html.ff-iconfont-dead .ph-fill::before { content: "\00B7" !important; font-family: inherit !important; }
+html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead .ph-fill { color: inherit; }
+</style>
+<script>
+// P21 — ikonka-font watchdog. Brauzer muvaffaqiyatsiz font fetch'ini O'ZI qayta urinmaydi,
+// shu bois biz qo'lda tekshiramiz va qayta yuklaymiz (3 urinish: 2s/5s/10s backoff).
+(function () {
+  var FONTS = [
+    { fam: "Phosphor", url: "/assets/fonts/da49f4d4.woff2" },
+    { fam: "Phosphor-Bold", url: "/assets/fonts/f55a35e5.woff2" },
+    { fam: "Phosphor-Fill", url: "/assets/fonts/b24d8b47.woff2" }
+  ];
+  function log(m) { try { if (window.AssetFlowLog && AssetFlowLog.error) AssetFlowLog.error(m); else if (window.console) console.warn(m); } catch (e) {} }
+  function markDead() { try { document.documentElement.classList.add("ff-iconfont-dead"); } catch (e) {} log("[iconfont] Phosphor yuklanmadi — · fallback yoqildi"); }
+  if (!(document.fonts && document.fonts.load && typeof FontFace !== "undefined")) return;
+  var deadCount = 0, doneCount = 0;
+  function settle() { if (doneCount + deadCount === FONTS.length && deadCount > 0) { /* kamida bittasi o'lgan */ } }
+  function watch(f) {
+    var delays = [2000, 5000, 10000], attempt = 0;
+    function tryLoad(bust) {
+      var url = f.url + (bust ? ("?r=" + bust) : "");
+      var face = new FontFace(f.fam, "url(" + url + ")", { display: "block" });
+      face.load().then(function (loaded) {
+        try { document.fonts.add(loaded); } catch (e) {}
+        doneCount++;
+      }).catch(function () {
+        attempt++;
+        if (attempt >= delays.length) { deadCount++; markDead(); settle(); return; }
+        setTimeout(function () { tryLoad(attempt); }, delays[attempt - 1]);
+      });
+    }
+    // Avval brauzer allaqachon yuklaganini tekshiramiz (preload yutuqli bo'lsa).
+    document.fonts.load("1em '" + f.fam + "'").then(function (list) {
+      if (list && list.length) { doneCount++; return; }
+      tryLoad(0);
+    }).catch(function () { tryLoad(0); });
+  }
+  function start() { FONTS.forEach(watch); }
+  if (document.fonts.status === "loaded" || document.readyState === "complete") setTimeout(start, 0);
+  else if (document.fonts.ready) document.fonts.ready.then(start).catch(start);
+  else window.addEventListener("load", start);
+})();
+</script>
 </head>
 <body>
 <x-dc>
@@ -349,7 +405,7 @@
 <style>@font-face {
   font-family: "Phosphor";
   src:
-    url("assets/fonts/da49f4d4.woff2") format("woff2");
+    url("/assets/fonts/da49f4d4.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -4974,7 +5030,7 @@
 <style>@font-face {
   font-family: "Phosphor-Bold";
   src:
-    url("assets/fonts/f55a35e5.woff2") format("woff2");
+    url("/assets/fonts/f55a35e5.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -9599,7 +9655,7 @@
 <style>@font-face {
   font-family: "Phosphor-Fill";
   src:
-    url("assets/fonts/b24d8b47.woff2") format("woff2");
+    url("/assets/fonts/b24d8b47.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: block;

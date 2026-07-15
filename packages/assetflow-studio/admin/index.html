@@ -22,6 +22,46 @@
 <link rel="stylesheet" href="styles/admin.css">
 <script src="js/studio-config.js"></script>
 <script src="js/theme.js"></script>
+<style>
+/* P21 — ikonka-font butunlay yuklanmasa .ph □ tofu o'rniga neytral · ko'rsatadi */
+html.ff-iconfont-dead .ph,
+html.ff-iconfont-dead .ph-bold,
+html.ff-iconfont-dead .ph-fill { font-family: inherit !important; }
+html.ff-iconfont-dead .ph::before,
+html.ff-iconfont-dead .ph-bold::before,
+html.ff-iconfont-dead .ph-fill::before { content: "\00B7" !important; font-family: inherit !important; }
+</style>
+<script>
+// P21 — ikonka-font watchdog (platforma bilan bir xil): brauzer muvaffaqiyatsiz font fetch'ini
+// O'ZI qayta urinmaydi, shu bois qo'lda tekshirib qayta yuklaymiz (3 urinish: 2s/5s/10s).
+(function () {
+  var FONTS = [
+    { fam: "Phosphor", url: "/assets/fonts/da49f4d4.woff2" },
+    { fam: "Phosphor-Bold", url: "/assets/fonts/f55a35e5.woff2" },
+    { fam: "Phosphor-Fill", url: "/assets/fonts/b24d8b47.woff2" }
+  ];
+  function log(m) { try { if (window.console) console.warn(m); } catch (e) {} }
+  function markDead() { try { document.documentElement.classList.add("ff-iconfont-dead"); } catch (e) {} log("[iconfont] Phosphor yuklanmadi — · fallback yoqildi"); }
+  if (!(document.fonts && document.fonts.load && typeof FontFace !== "undefined")) return;
+  function watch(f) {
+    var delays = [2000, 5000, 10000], attempt = 0;
+    function tryLoad(bust) {
+      var url = f.url + (bust ? ("?r=" + bust) : "");
+      var face = new FontFace(f.fam, "url(" + url + ")", { display: "block" });
+      face.load().then(function (loaded) { try { document.fonts.add(loaded); } catch (e) {} }).catch(function () {
+        attempt++;
+        if (attempt >= delays.length) { markDead(); return; }
+        setTimeout(function () { tryLoad(attempt); }, delays[attempt - 1]);
+      });
+    }
+    document.fonts.load("1em '" + f.fam + "'").then(function (list) { if (!(list && list.length)) tryLoad(0); }).catch(function () { tryLoad(0); });
+  }
+  function start() { FONTS.forEach(watch); }
+  if (document.fonts.status === "loaded" || document.readyState === "complete") setTimeout(start, 0);
+  else if (document.fonts.ready) document.fonts.ready.then(start).catch(start);
+  else window.addEventListener("load", start);
+})();
+</script>
 </head>
 <body class="adx-body portal-admin">
 <div class="adx-app" data-screen-label="Admin Console">
