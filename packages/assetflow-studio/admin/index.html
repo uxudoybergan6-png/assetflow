@@ -338,7 +338,9 @@ window.addEventListener('af-theme-change', (e) => {
     .catch((e) => { console.warn("moderation load", e); });
   const msgJob = (async () => {
     const { items } = await StudioApi.listMessageThreads();
-    window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
+    // §G (P29) — unread rozetka SONI birlashtirildi: o'qilmagan XABAR yig'indisi emas,
+    // o'qilmagan SUHBATLAR soni (admin-views2 adminMsgUnread bilan bir xil semantika).
+    window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + ((t.unreadCount || 0) > 0 ? 1 : 0), 0);
   })();
   const usersJob = (async () => {
     if (!StudioApi.listAdminUsers) return;

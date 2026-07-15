@@ -80,6 +80,8 @@ function avatar(name, size){
 }
 
 // toast
+// §G (P29) — toast() O'ZI title/msg'ni escape qiladi (yagona escape nuqtasi). Chaqiruvchilar
+// XOM matn uzatsin — esc() bilan oldindan escape qilmang (aks holda "Tom &amp; Jerry" ikki-escape).
 function toast(title, msg, kind){
   let wrap=document.querySelector('.toast-wrap');
   if(!wrap){ wrap=document.createElement('div'); wrap.className='toast-wrap'; document.body.appendChild(wrap); }

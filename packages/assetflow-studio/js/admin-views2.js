@@ -42,13 +42,47 @@ window.afterRender.templates = function(){
   renderTemplates();
 };
 
+/* \u00a7G (P29) \u2014 REAL CSV eksport (ilgari "Preparing CSV\u2026" toast hech narsa qilmasdi = yolg'on).
+   Yuklangan qatorlardan brauzerda CSV yasab, yuklab beradi. */
+function adxCsvCell(v){
+  const s = v == null ? '' : String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function adxExportCsv(filename, headers, rows){
+  const lines = [headers.map(adxCsvCell).join(',')].concat(rows.map(r => r.map(adxCsvCell).join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportTemplatesCsv(){
+  let rows = TEMPLATES.slice();
+  if(T_FILTER!=='all') rows = rows.filter(t=>t.status===T_FILTER);
+  if(!rows.length){ toast('Export','No templates to export','warn'); return; }
+  adxExportCsv('templates.csv',
+    ['Name','ID','Contributor','Status','Uploaded','Downloads','Pro','Category','Resolution'],
+    rows.map(t=>{ const con=cById(t.cid)||{}; return [t.name,t.id,con.email||'',t.status,t.created||'',t.dl||0,t.isPro?'Pro':'Free',t.cat||'',t.res||'']; }));
+  toast('Export',`${rows.length} templates exported`,'success');
+}
+function exportContributorsCsv(){
+  let list = CONTRIBUTORS.slice();
+  if(typeof C_STATUS_FILTER!=='undefined' && C_STATUS_FILTER!=='all') list=list.filter(c=>c.status===C_STATUS_FILTER);
+  if(!list.length){ toast('Export','No contributors to export','warn'); return; }
+  adxExportCsv('contributors.csv',
+    ['Name','Email','Status','Templates'],
+    list.map(c=>{ const ts=(typeof tByContributor==='function'?tByContributor(c.id):[]); return [c.name||'',c.email||'',c.status||'',ts.length]; }));
+  toast('Export',`${list.length} contributors exported`,'success');
+}
+
 /* Topbar actions (mockup e3): Filter + CSV. Search via global topbar. */
 function tplTopbarActions(){
   const tba = document.getElementById('tbActions');
   if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='templates')) return;
   tba.innerHTML =
     `<button class="adx-btn2 sm" onclick="toast('Filter','Advanced filter coming soon','info')"><i class="ph ph-funnel"></i>Filter</button>`+
-    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing CSV file\u2026','info')"><i class="ph ph-export"></i>CSV</button>`;
+    `<button class="adx-btn2 sm" onclick="exportTemplatesCsv()"><i class="ph ph-export"></i>CSV</button>`;
 }
 
 function shortId(id){
@@ -75,11 +109,10 @@ function renderTemplates(){
       <div style="overflow-x:auto">
         <table class="adx-tbl" style="min-width:1000px">
           <thead><tr>
-            <th style="width:24px"></th><th>Template</th><th>ID</th><th>Contributor</th><th>Status</th><th>Uploaded</th><th class="r">Downloads</th><th>Last decision</th><th class="r">Action</th>
+            <th>Template</th><th>ID</th><th>Contributor</th><th>Status</th><th>Uploaded</th><th class="r">Downloads</th><th>Last decision</th><th class="r">Action</th>
           </tr></thead>
           <tbody>
           ${rows.length ? rows.map(t=>{ const con=cById(t.cid); return `<tr>
-            <td><span class="adx-modcheck" onclick="this.classList.toggle('on')"><i class="ph-bold ph-check"></i></span></td>
             <td><div style="display:flex;align-items:center;gap:10px"><span style="width:44px;height:30px;border-radius:6px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div><div style="font-size:10px;color:#8A93A3">${esc(t.cat)} \u00b7 ${esc(t.res)}</div></div></div></td>
             <td class="adx-num" style="font-size:10.5px;color:#8A93A3" title="${esc(t.id)}">${esc(shortId(t.id))}</td>
             <td style="font-size:11px;color:#8A93A3">${esc((con.email||'').split('@')[0])}${con.email?'@\u2026':''}</td>
@@ -93,16 +126,13 @@ function renderTemplates(){
               <button class="adx-iact" title="Edit" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i></button>
               <button class="adx-iact dg" title="Delete" onclick="modDelete('${t.id}')"><i class="ph ph-trash"></i></button>
             </div></td>
-          </tr>`; }).join('') : `<tr><td colspan="9"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">No templates found</div><div style="font-size:11px;color:var(--muted2)">Change the filter or search.</div></div></td></tr>`}
+          </tr>`; }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">No templates found</div><div style="font-size:11px;color:var(--muted2)">Change the filter or search.</div></div></td></tr>`}
           </tbody>
         </table>
       </div>
+      <!-- §G (P29) — soxta "1 / 1" pagination olib tashlandi (jadval BARCHA qatorni ko'rsatadi, sahifalash yo'q edi) -->
       <div style="display:flex;align-items:center;padding:12px 16px;border-top:1px solid var(--hair2)">
         <span class="adx-num" style="font-size:11px;color:#8A93A3">${rows.length} results shown</span>
-        <span style="flex:1"></span>
-        <button class="adx-btn2 sm" disabled><i class="ph ph-caret-left"></i></button>
-        <span class="adx-num" style="font-size:11px;color:#B7C0CE;padding:0 8px">1 / 1</span>
-        <button class="adx-btn2 sm" disabled><i class="ph ph-caret-right"></i></button>
       </div>
     </div>`;
 }
@@ -117,7 +147,7 @@ window.afterRender.contributors = function(){
   if(tba && CURRENT==='contributors'){
     tba.innerHTML =
       `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${C_STATUS_FILTER==='all'?'All statuses':(C_STATUS_FILTER==='active'?'Active':'Blocked')}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="C_STATUS_FILTER=this.value;route('contributors')"><option value="all">All statuses</option><option value="active" ${C_STATUS_FILTER==='active'?'selected':''}>Active</option><option value="blocked" ${C_STATUS_FILTER==='blocked'?'selected':''}>Blocked</option></select></label>`+
-      `<button class="adx-btn2 sm" onclick="toast('Export','Preparing contributors CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
+      `<button class="adx-btn2 sm" onclick="exportContributorsCsv()"><i class="ph ph-export"></i>CSV</button>`;
   }
 };
 VIEWS.contributors = function(){
@@ -490,8 +520,9 @@ VIEWS.settings = function(){
         </div>
         <div class="adx-card" style="padding:18px 20px">
           <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Moderation rules</div>
-          ${rules.map(([l,on],i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:12px;${i?'border-top:1px solid var(--hair)':''}"><span style="flex:1">${l}</span><button class="adx-tog ${on?'on':'off'}" onclick="this.classList.toggle('on');this.classList.toggle('off')"><i></i></button></div>`).join('')}
-          <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Rules are currently browser-only — server-side enforcement in a future version.</div>
+          <!-- §G (P29) — toggle'lar READ-ONLY: server tomonda majburlanmaydi, shu bois jonli/interaktiv ko'rinmasin (soxta boshqaruv yo'q). -->
+          ${rules.map(([l,on],i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:12px;${i?'border-top:1px solid var(--hair)':''}"><span style="flex:1">${l}</span><button class="adx-tog ${on?'on':'off'}" disabled title="Read-only — server enforcement coming soon" style="opacity:.55;cursor:not-allowed"><i></i></button></div>`).join('')}
+          <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Rules reflect current server defaults — editable server-side enforcement in a future version.</div>
         </div>
         <div class="adx-card" style="padding:18px 20px">
           <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Maintenance</div>
@@ -626,7 +657,8 @@ function openTplDrawer(id){
 /* ============================================================
    MODALS & ACTIONS
    ============================================================ */
-function tName(id){ return TEMPLATES.find(t=>t.id===id).name; }
+// §G (P29) — null-guard: stale onclick (o'chirilgan/yangilanган shablon id) TypeError bermasin.
+function tName(id){ const t=TEMPLATES.find(t=>t.id===id); return t ? t.name : 'this template'; }
 
 /* ---- Per-template Pro/Free tier toggle (admin) ----
    Calls the existing PATCH /api/contributor/templates/:id { isPro } (isPro
@@ -654,7 +686,7 @@ async function doToggleTierTpl(id, isPro){
     await StudioApi.patchTemplate(id, { isPro: !!isPro });
     await StudioTemplates.refreshAfterReview();
     closeModal();
-    toast('Updated', `“${esc(nm)}” moved to the ${isPro?'Pro':'Free'} tier`, isPro?'success':'info');
+    toast('Updated', `“${nm}” moved to the ${isPro?'Pro':'Free'} tier`, isPro?'success':'info');
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Template tier changed',{action:'tier',detail:`${id}:${isPro?'pro':'free'}`});
     if(CURRENT==='templates') renderTemplates();
     else if(CURRENT==='moderation') renderModeration();
@@ -669,28 +701,50 @@ function modApprove(id){
       <div><h3>Approve template</h3><p>"${esc(tName(id))}" will be added to the AE catalog.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner">${ic('ext')}<span>Once approved, this template is immediately visible to subscribers in the <b>After Effects \u2192 FrameFlow Browse</b> panel.</span></div>
-      <label class="row center gap-8" style="cursor:pointer"><div class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Send approval message to contributor</span></label>
+      <label class="row center gap-8" style="cursor:pointer"><div id="approveMsgChk" class="checkbox on" onclick="this.classList.toggle('on')">${ic('check')}</div><span class="body">Send approval message to contributor</span></label>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-success" onclick="modApproveConfirm('${id}')">${ic('check')} Approve and publish</button></div>`);
+      <button class="btn btn-success" id="approveBtn" onclick="modApproveConfirm('${id}')">${ic('check')} Approve and publish</button></div>`);
 }
 
 async function modApproveConfirm(id) {
-  closeModal();
   if (!StudioApi.token()) {
     toast("API", "Sign in as admin via the API first", "warn");
     return;
   }
+  // \u00a7G (P29) \u2014 "Send approval message" endi HAQIQATAN ishlaydi (ilgari checkbox dekorativ edi).
+  //   Modal yopilishidan OLDIN o'qiymiz. Double-submit guard tugmada.
+  const sendMsg = document.getElementById("approveMsgChk")?.classList.contains("on");
+  const btn = document.getElementById("approveBtn");
+  if (btn) { if (btn.dataset.busy === "1") return; btn.dataset.busy = "1"; btn.disabled = true; btn.classList.add("is-busy"); }
+  const tpl = TEMPLATES.find((t) => t.id === id);
+  const nm = tName(id);
   try {
     await StudioApi.reviewTemplate(id, "approve");
+    // Tasdiqlash xabari (checkbox belgilangan bo'lsa) \u2014 moderatsiya bo'lsa ham approve muvaffaqiyatli
+    // bo'lgani uchun xabar xatosi butun oqimni buzmasin (alohida try).
+    if (sendMsg && tpl && tpl.cid) {
+      try {
+        await StudioApi.createMessageThread({
+          contributorId: tpl.cid,
+          templateId: id,
+          subject: `${nm} \u2014 approved`,
+          body: `Good news \u2014 your template \u201c${nm}\u201d was approved and is now live in the FrameFlow catalog.`,
+        });
+      } catch (mErr) {
+        toast("Note", "Approved, but the message could not be sent", "warn");
+      }
+    }
+    closeModal();
     await StudioTemplates.refreshAfterReview();
-    toast("Approved", `\u201c${esc(tName(id))}\u201d is in the AE Browse catalog`, "success");
+    toast("Approved", `\u201c${nm}\u201d is in the AE Browse catalog`, "success");
     if (typeof AssetFlowLog !== "undefined") {
       AssetFlowLog.info("Template approved", { action: "approve", detail: id });
     }
     MOD_SELECTED = null;
     renderModeration();
   } catch (e) {
+    if (btn) { btn.dataset.busy = ""; btn.disabled = false; btn.classList.remove("is-busy"); }
     toast("Error", e.message || "Approval failed", "danger");
   }
 }
@@ -840,7 +894,7 @@ function openEditMeta(id){
       <div class="field"><label>Tags</label><input id="emTags" class="input" value="${esc(t.tags.join(', '))}"></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditMeta('${id}')">Save</button></div>`);
+      <button class="btn btn-primary" id="saveMetaBtn" onclick="saveEditMeta('${id}')">Save</button></div>`);
 }
 
 async function saveEditMeta(id) {
@@ -848,6 +902,8 @@ async function saveEditMeta(id) {
     toast("API", "Sign in as admin first", "warn");
     return;
   }
+  const smBtn = document.getElementById("saveMetaBtn"); // §G — double-submit guard
+  if (smBtn) { if (smBtn.dataset.busy === "1") return; smBtn.dataset.busy = "1"; smBtn.disabled = true; smBtn.classList.add("is-busy"); }
   const name = document.getElementById("emName")?.value?.trim();
   const description = document.getElementById("emDesc")?.value?.trim();
   const catLabel = document.getElementById("emCat")?.value;
@@ -878,6 +934,7 @@ async function saveEditMeta(id) {
     if (CURRENT === "moderation") renderModeration();
     else if (CURRENT === "templates") renderTemplates();
   } catch (e) {
+    if (smBtn) { smBtn.dataset.busy = ""; smBtn.disabled = false; smBtn.classList.remove("is-busy"); }
     toast("Error", e.message || "Save failed", "danger");
   }
 }
@@ -889,22 +946,28 @@ function openBlock(id){
       <div><h3>Block contributor</h3><p>${esc(c.name)} will lose access to the platform.</p></div></div>
     <div class="modal-body col gap-12">
       <div class="info-banner danger">${ic('alert')}<span>A blocked contributor cannot upload new templates. Existing approved templates remain in AE (unless separately deleted).</span></div>
-      <div class="field"><label>Reason for blocking <span class="req">*</span></label><textarea class="textarea" placeholder="Reason \u2014 recorded in the audit log\u2026"></textarea></div>
+      <div class="field"><label>Reason for blocking <span class="req">*</span></label><textarea id="blockReason" class="textarea" placeholder="Reason \u2014 recorded in the audit log\u2026"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="doBlock('${id}')">${ic('ban')} Block</button></div>`);
+      <button class="btn btn-danger" id="blockBtn" onclick="doBlock('${id}')">${ic('ban')} Block</button></div>`);
 }
 async function doBlock(id){
   const c=cById(id);
+  // \u00a7G (P29) \u2014 sabab endi HAQIQATAN saqlanadi (audit) \u2014 majburiy maydon.
+  const reason = document.getElementById('blockReason')?.value?.trim() || '';
+  if(!reason){ toast('Reason required','Enter a reason for blocking','warn'); return; }
+  const btn=document.getElementById('blockBtn');
+  if(btn){ if(btn.dataset.busy==='1') return; btn.dataset.busy='1'; btn.disabled=true; btn.classList.add('is-busy'); } // \u00a7G \u2014 double-submit guard
   try {
-    await StudioApi.patchContributorStatus(id, true);
+    await StudioApi.patchContributorStatus(id, true, reason);
     c.status='blocked';
     closeModal();
-    toast('Blocked',`${esc(c.name)} was blocked`,'danger');
-    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor blocked',{action:'block',detail:c.email});
+    toast('Blocked',`${c.name} was blocked`,'danger');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.warn('Contributor blocked',{action:'block',detail:c.email+' \u2014 '+reason});
     await StudioTemplates.loadAdminContributors();
     route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
   } catch (e) {
+    if(btn){ btn.dataset.busy=''; btn.disabled=false; btn.classList.remove('is-busy'); }
     toast('Error', e.message || 'Blocking failed', 'danger');
   }
 }
@@ -913,7 +976,7 @@ async function unblock(id){
   try {
     await StudioApi.patchContributorStatus(id, false);
     c.status='active';
-    toast('Unblocked',`${esc(c.name)} was reactivated`,'success');
+    toast('Unblocked',`${c.name} was reactivated`,'success');
     await StudioTemplates.loadAdminContributors();
     route(CURRENT==='contributor-detail'?'contributor-detail':'contributors', id);
   } catch (e) {
@@ -932,7 +995,7 @@ function openMessage(cid, tid){
       <div class="field"><label>Message</label><textarea id="dmBody" class="textarea" placeholder="Your message\u2026"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitDirectMessage('${cid}','${tid||""}')">${ic('send')} Send</button></div>`);
+      <button class="btn btn-primary" id="dmSendBtn" onclick="submitDirectMessage('${cid}','${tid||""}')">${ic('send')} Send</button></div>`);
 }
 
 async function submitDirectMessage(cid, tid) {
@@ -942,6 +1005,8 @@ async function submitDirectMessage(cid, tid) {
     toast("Fields", "Fill in the subject and message", "warn");
     return;
   }
+  const btn = document.getElementById("dmSendBtn"); // §G — double-submit guard
+  if (btn) { if (btn.dataset.busy === "1") return; btn.dataset.busy = "1"; btn.disabled = true; btn.classList.add("is-busy"); }
   try {
     await StudioApi.createMessageThread({
       contributorId: cid,
@@ -953,6 +1018,7 @@ async function submitDirectMessage(cid, tid) {
     toast("Sent", "Message delivered", "success");
     if (CURRENT === "messaging") window.afterRender.messaging();
   } catch (e) {
+    if (btn) { btn.dataset.busy = ""; btn.disabled = false; btn.classList.remove("is-busy"); }
     toast("Error", e.message || "Sending failed", "danger");
   }
 }
@@ -967,7 +1033,7 @@ function openBroadcast(){
       <div class="field"><label>Message</label><textarea id="bcBody" class="textarea"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-warn" onclick="submitBroadcast()">${ic('megaphone')} Send</button></div>`);
+      <button class="btn btn-warn" id="bcSendBtn" onclick="submitBroadcast()">${ic('megaphone')} Send</button></div>`);
 }
 
 async function submitBroadcast() {
@@ -977,21 +1043,28 @@ async function submitBroadcast() {
     toast("Fields", "Fill in the title and message", "warn");
     return;
   }
+  const btn = document.getElementById("bcSendBtn"); // §G — double-submit guard (broadcast = ko'p qabul qiluvchi, dublikat xavfli)
+  if (btn) { if (btn.dataset.busy === "1") return; btn.dataset.busy = "1"; btn.disabled = true; btn.classList.add("is-busy"); }
   try {
     const res = await StudioApi.broadcastMessage(subject, body);
     closeModal();
     toast("Broadcast", `Sent to ${res.sent} contributors`, "success");
     if (CURRENT === "messaging") window.afterRender.messaging();
   } catch (e) {
+    if (btn) { btn.dataset.busy = ""; btn.disabled = false; btn.classList.remove("is-busy"); }
     toast("Error", e.message || "Broadcast failed", "danger");
   }
 }
 
+let _replyBusy = false; // §G (P29) — reply double-submit guard (Enter + tugma ikkalasi ham chaqiradi)
 async function sendAdminReply() {
   const th = ADMIN_THREADS[MSG_SEL];
   const input = document.getElementById("adminReplyInput");
   const body = input?.value?.trim();
   if (!th || !body) return;
+  if (_replyBusy) return;
+  _replyBusy = true;
+  if (input) input.disabled = true;
   try {
     await StudioApi.replyMessageThread(th.id, body);
     input.value = "";
@@ -1009,6 +1082,9 @@ async function sendAdminReply() {
     await renderMessaging();
     toast("Sent", "Message sent", "success");
   } catch (e) {
+    const inp = document.getElementById("adminReplyInput"); if (inp) inp.disabled = false;
     toast("Error", e.message || "Sending failed", "danger");
+  } finally {
+    _replyBusy = false;
   }
 }

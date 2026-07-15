@@ -114,115 +114,12 @@ function axNum(n){
 }
 
 /* ============================================================
-   OVERVIEW
+   OVERVIEW — §G (P29): O'LIK KOD O'CHIRILDI (shadowed).
+   VIEWS.overview + afterRender.overview admin-dashboard.js'da QAYTA ta'riflanadi
+   (admin qobiqda KEYIN yuklanadi → ustun), shu bois bu juftlik hech qachon
+   ishlamasdi. Escape qilinmagan interpolyatsiyalar bilan birga butunlay olib
+   tashlandi. (V2-EASY H-6 BOSHQA dead overview blokini o'chirgan — bu alohida.)
    ============================================================ */
-VIEWS.overview = function(){
-  const c = counts();
-  const usage = typeof window !== "undefined" ? window._ASSETFLOW_PLUGIN_ANALYTICS?.usage : null;
-  const totalDlDisplay = usage?.downloadsTotal ?? c.totalDl;
-  const catDist = buildCatDist();
-  const apprPct =
-    typeof platformApprovalRatePct === "function" ? platformApprovalRatePct() : null;
-  const kpis = [
-    {label:'Total templates', val:c.total, ic:'layers', c:'violet', foot:'all statuses'},
-    {label:'Approved (AE live)', val:c.approved, ic:'checkCircle', c:'green', foot:'visible in plugin'},
-    {label:'Pending moderation', val:c.pending, ic:'clock', c:'yellow', foot:'in queue'},
-    {label:'Contributors', val:c.contributors, ic:'users', c:'blue', foot:`${c.blocked} blocked`},
-    {label:'AE subscribers', val:c.subscribersActive, ic:'plugin', c:'violet', foot:`${c.subscribers} total · Browse`},
-    {label:'Total downloads', val:totalDlDisplay >= 1000 ? (totalDlDisplay/1000).toFixed(1)+'K' : String(totalDlDisplay), ic:'download', c:'green', foot:'plugin count'},
-    ...(apprPct != null
-      ? [{ label: "Approval rate", val: `${apprPct}%`, ic: "star", c: "yellow", foot: "decided templates" }]
-      : []),
-  ];
-  return `
-  <div class="col gap-20">
-    ${infoBanner('Approved templates automatically appear for subscribers in the After Effects \u2192 <b>FrameFlow Browse</b> panel.')}
-
-    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      ${kpis.map(kpiCard).join('')}
-    </div>
-
-    <div style="display:grid;grid-template-columns:1.7fr 1fr;gap:20px">
-      <!-- downloads chart -->
-      <div class="card">
-        <div class="card-head">
-          <div><h3>Platform activity</h3><span class="small">Audit log · last 30 days</span></div>
-          <div class="segmented"><button data-r="7">7 days</button><button class="active" data-r="30">30 days</button></div>
-        </div>
-        <div class="card-pad">
-          <div class="row between center mb-16">
-            <div class="col" style="gap:2px">
-              <span class="num" style="font-size:28px;font-weight:700">${totalDlDisplay >= 1000 ? (totalDlDisplay/1000).toFixed(1)+'K' : totalDlDisplay}</span>
-              <span class="small">plugin downloads · audit chart is separate</span>
-            </div>
-          </div>
-          <div id="ovChart" style="height:170px"></div>
-        </div>
-      </div>
-
-      <!-- category donut -->
-      <div class="card">
-        <div class="card-head"><h3>Category breakdown</h3></div>
-        <div class="card-pad row gap-20 center">
-          <div style="position:relative;flex:0 0 auto">
-            ${donut(catDist, 140)}
-            <div style="position:absolute;inset:0;display:grid;place-items:center;text-align:center">
-              <div><div class="num" style="font-size:22px;font-weight:700">${counts().total}</div><div class="small">templates</div></div>
-            </div>
-          </div>
-          <div class="donut-legend grow">
-            ${catDist.map(s=>`<div class="leg-item"><span class="sw" style="background:${s.color}"></span><span class="nm">${s.nm}</span><span class="vl">${Math.round(s.v*100)}%</span></div>`).join('')}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px">
-      <!-- top templates -->
-      <div class="card">
-        <div class="card-head"><div><h3>TOP downloads</h3><span class="small">Most popular templates</span></div><button class="btn btn-subtle btn-sm" onclick="route('analytics')">View all ${ic('chevR')}</button></div>
-        <div class="card-pad col gap-4">
-          ${(() => {
-            const top = topTemplates();
-            if (!top.length) return '<div class="empty" style="padding:24px"><p class="small">No approved templates yet</p></div>';
-            const max = top[0].dl || 1;
-            return top.slice(0, 5).map((t, i) => `
-            <div class="leader-row">
-              <span class="leader-rank">${i + 1}</span>
-              <div class="row-thumb"><div class="thumb ${t.grad} grain" style="width:100%;height:100%"></div></div>
-              <div class="col grow" style="gap:3px;min-width:0">
-                <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span>
-                <div class="leader-bar"><span style="width:${(t.dl / max) * 100}%"></span></div>
-              </div>
-              <span class="num" style="font-weight:700;white-space:nowrap">${t.dl >= 1000 ? (t.dl / 1000).toFixed(1) + "K" : t.dl}</span>
-            </div>`).join("");
-          })()}
-        </div>
-      </div>
-    </div>
-  </div>`;
-};
-window.afterRender.overview = function(){
-  const el = document.getElementById('ovChart');
-  const max = typeof chartMax === "function" ? chartMax(DL_30) : 1;
-  if (el) {
-    if (max <= 1 && !DL_30.some((v) => v > 0)) {
-      el.innerHTML =
-        '<div class="empty" style="padding:32px 0"><p class="small">No audit events yet</p></div>';
-    } else {
-      el.innerHTML = areaChart(DL_30, 600, 170, "#8b7cf6");
-    }
-  }
-  let active = 30;
-  document.querySelectorAll('#ovChart').length;
-  document.querySelectorAll('.segmented button[data-r]').forEach(b=>{
-    b.onclick=()=>{
-      document.querySelectorAll('.segmented button[data-r]').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      el.innerHTML = areaChart(b.dataset.r==='7'?DL_7:DL_30, 600, 170, '#8b7cf6');
-    };
-  });
-};
 
 /* ============================================================
    MODERATION QUEUE \u2014 redesign port (mockup e2): two panels

@@ -563,10 +563,11 @@ const StudioApi = (() => {
     });
   }
 
-  async function patchContributorStatus(userId, blocked) {
+  async function patchContributorStatus(userId, blocked, reason) {
+    // §G (P29) — blok sababi (ixtiyoriy) serverga uzatiladi → audit log detail'iga kiradi.
     return request(`/api/contributor/users/${userId}/status`, {
       method: "PATCH",
-      body: { blocked },
+      body: reason ? { blocked, reason } : { blocked },
     });
   }
 

@@ -3831,6 +3831,15 @@ contributorRouter.patch(
       res.status(400).json({ error: "blocked (boolean) is required" });
       return;
     }
+    // §G (P29) — blok sababi (ixtiyoriy, additive): admin UI'da "Reason for blocking *"
+    // yig'iladi-yu ilgari SAQLANMAS/AUDIT qilinmasdi. Endi audit detail'iga kiritiladi.
+    const reason = z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .safeParse(req.body?.reason);
+    const blockReason = reason.success ? (reason.data || "") : "";
     // Audit §C (P2 · security) — nishon tekshiruvi: yo'q id avval unhandled 500 berardi;
     // endpoint CONTRIBUTOR blokiga mo'ljallangan — o'zini yoki boshqa ADMIN'ni bloklash
     // (tokenVersion bump = majburiy logout) mumkin edi.
@@ -3877,7 +3886,8 @@ contributorRouter.patch(
       action: blocked.data ? "block" : "unblock",
       targetType: "contributor",
       targetId: user.id,
-      detail: user.email,
+      // §G (P29) — sabab audit detail'iga qo'shiladi (blok paytida, mavjud bo'lsa).
+      detail: blocked.data && blockReason ? `${user.email} — ${blockReason}` : user.email,
     });
 
     res.json({
