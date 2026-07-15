@@ -376,7 +376,7 @@ body{
 .af-topbar{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);flex:none;position:relative;z-index:6}
 /* #10: Home chaqmoq bloki — umumiy .hd-home geometriyasi (30px, 9px radius, lime glow hover) */
 .af-tb-logo-btn{width:30px;height:30px;flex:none;border:0;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);cursor:pointer;transition:box-shadow .2s}
-.af-tb-logo-btn:hover{box-shadow:0 0 0 3px rgba(194,240,74,.25)}
+.af-tb-logo-btn:hover{box-shadow:0 0 0 3px var(--glow)}
 .af-tb-logo-btn svg{width:16px;height:16px}
 .af-tb-seg{flex:1;display:flex;justify-content:center;min-width:0}
 .af-tb-seg .ff-seg{display:flex;width:auto;max-width:none;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px}
@@ -1128,7 +1128,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .theme-pick{display:flex;gap:8px}
 .theme-opt{flex:1;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
 .theme-prev{height:56px;border-radius:12px;padding:7px;box-sizing:border-box;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
-.theme-opt.active .theme-prev{border-color:rgba(194,240,74,.5)}
+.theme-opt.active .theme-prev{border-color:var(--accent)}
 .theme-tdot{display:none;position:absolute;right:7px;bottom:7px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
 .theme-opt.active .theme-tdot{display:block}
 .theme-lbl{font-size:10px;text-align:center;margin-top:5px;font-weight:500;color:var(--muted)}
@@ -1307,7 +1307,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
   font-family:inherit;color:var(--text);transition:border-color .2s,background .2s;
 }
 .plan-opt:hover{border-color:rgba(255,255,255,.14)}
-.plan-opt.active{border-color:rgba(194,240,74,.4)}
+.plan-opt.active{border-color:var(--accent)}
 .plan-opt.active::after{content:'';position:absolute;top:11px;right:11px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
 .plan-opt:disabled{opacity:.6;cursor:wait}
 .acs-plan-name{display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;pointer-events:none}
@@ -1372,9 +1372,9 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .lg-flabel{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.1em;color:var(--muted-2);margin:12px 0 6px}
 .lg-input{width:100%;box-sizing:border-box;height:42px;padding:0 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px;font-size:12px;color:var(--text);font-family:inherit;outline:none}
 .lg-input::placeholder{color:var(--muted-2)}
-.lg-input:focus{border-color:rgba(194,240,74,.4)}
+.lg-input:focus{border-color:var(--accent)}
 .lg-passwrap{display:flex;align-items:center;gap:8px;height:42px;padding:0 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px}
-.lg-passwrap:focus-within{border-color:rgba(194,240,74,.4)}
+.lg-passwrap:focus-within{border-color:var(--accent)}
 .lg-passinput{flex:1;min-width:0;height:100%;background:none;border:0;outline:none;color:var(--text);font-size:12px;font-family:inherit}
 .lg-passinput::placeholder{color:var(--muted-2)}
 .lg-eye{background:none;border:0;padding:0;cursor:pointer;color:var(--muted-2);display:flex;flex:none}
@@ -1505,7 +1505,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .lim2-sub{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:7px}
 .lim2-feats{display:flex;flex-direction:column;gap:9px;margin:14px 0 16px}
 .lim2-feat{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#DCE3ED}
-.lim2-feat svg{flex:none}
+.lim2-feat svg{flex:none;color:var(--accent)}
 .lim2-cancel{display:block;width:100%;font-size:11px;color:var(--muted);margin-top:11px;text-align:center;background:none;border:0;cursor:pointer;font-family:inherit}
 .lim2-cancel:hover{color:var(--text)}
 
@@ -1533,7 +1533,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .publish-step>label{display:block;font-family:var(--font-mono);font-size:8.5px;font-weight:400;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-2);margin-bottom:6px}
 /* g3 maydonlari — mockup input stili */
 .pub-body .account-input{height:40px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px;color:var(--text);font-size:12px}
-.pub-body .account-input:focus{border-color:rgba(194,240,74,.4);box-shadow:none}
+.pub-body .account-input:focus{border-color:var(--accent);box-shadow:none}
 .pub-body textarea.account-input{font-family:inherit;height:auto}
 .pub-body select.account-input{appearance:none;cursor:pointer}
 .pub-body .account-input::placeholder{color:var(--muted-2)}
@@ -1623,7 +1623,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-import:disabled{opacity:.4;cursor:not-allowed}
 .pd3-favbtn{width:44px;height:44px;flex:none;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#E7ECF3;cursor:pointer;padding:0}
 .pd3-favbtn:hover{background:rgba(255,255,255,.09)}
-.pd3-favbtn.on{color:var(--accent);border-color:rgba(194,240,74,.4)}
+.pd3-favbtn.on{color:var(--accent);border-color:var(--accent-soft)}
 .pd3-plan{font-family:var(--font-mono);font-size:9px;color:var(--muted-2);text-align:center;margin-top:8px}
 
 /* ---- scenes (a3 vocabulary; no mockup ref) ---- */
@@ -1971,7 +1971,7 @@ html.lib-mode #libPage{display:flex!important}
 .lib-rtrash svg{width:14px;height:14px;display:block}
 /* Bo'sh holatlar (a6 lug'ati) */
 .lib-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:52px 42px;text-align:center}
-.lib-empty-ico{width:44px;height:44px;border-radius:50%;background:rgba(194,240,74,.10);border:1px solid rgba(194,240,74,.28);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.lib-empty-ico{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--accent-soft);display:flex;align-items:center;justify-content:center;color:var(--accent)}
 .lib-empty-ico svg{width:20px;height:20px;display:block}
 .lib-empty-t{font-weight:600;font-size:12px;color:var(--text)}
 .lib-empty-s{font-size:11px;color:var(--muted);line-height:1.55;max-width:220px}
@@ -2578,8 +2578,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot to{opacity:1}
 .axroot .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:2px 2px 9px;display:flex;align-items:center;font-family:var(--font-mono)}
 .axroot .lbl .more{margin-left:auto;color:var(--blue);cursor:pointer;letter-spacing:0;text-transform:none}
-.axroot .ai-entry{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,#26340f,#16181d 70%);border:1px solid var(--acc2);border-radius:14px;padding:14px;margin:13px 0 16px;cursor:pointer}
-.axroot .ai-entry:hover{box-shadow:0 0 18px rgba(194,240,74,.18)}
+.axroot .ai-entry{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,var(--accent-soft),var(--surface) 70%);border:1px solid var(--acc2);border-radius:14px;padding:14px;margin:13px 0 16px;cursor:pointer}
+.axroot .ai-entry:hover{box-shadow:0 0 18px var(--glow)}
 .axroot .ai-entry .ic{width:38px;height:38px;border-radius:11px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-size:18px;flex:0 0 auto}
 .axroot .ai-entry .tx b{font-size:15px;font-weight:800;display:block}
 .axroot .ai-entry .tx small{font-size:11px;color:var(--mut)}
@@ -2620,7 +2620,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .cat.soon .cat-nm{color:var(--muted)}
 .axroot .cat.soon .cat-models{color:var(--muted-2)}
 .axroot .cat-soonb{display:inline-block;margin-top:9px;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.06);color:var(--muted)}
-@keyframes ffbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
+@keyframes ffbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 transparent}50%{opacity:.85;box-shadow:0 0 26px 2px var(--glow)}}
 /* TARIX strip (b1) */
 .axroot .ai-hist-head{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 9px}
 .axroot .ai-hist-k{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted)}
@@ -2642,8 +2642,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .ai-soontoast svg{flex:none}
 .axroot .ai-soontoast span{font-size:11.5px;font-weight:500;color:var(--text)}
 
-.axroot .aicattool{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,#1a2410,#15171b 70%);border:1px solid var(--acc2);border-radius:13px;padding:13px;cursor:pointer;margin-bottom:10px;transition:box-shadow .15s}
-.axroot .aicattool:hover{box-shadow:0 0 14px rgba(194,240,74,.15)}.axroot .aicattool.soon{opacity:.55;cursor:default}
+.axroot .aicattool{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,var(--accent-soft),var(--surface) 70%);border:1px solid var(--acc2);border-radius:13px;padding:13px;cursor:pointer;margin-bottom:10px;transition:box-shadow .15s}
+.axroot .aicattool:hover{box-shadow:0 0 14px var(--glow)}.axroot .aicattool.soon{opacity:.55;cursor:default}
 .axroot .aicattool .ic{width:38px;height:38px;border-radius:10px;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;flex:0 0 auto}
 .axroot .aicattool .tx b{font-size:13px;font-weight:800;display:block}.axroot .aicattool .tx small{font-size:10.5px;color:var(--mut)}
 .axroot .aicattools-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin-bottom:10px}
@@ -2766,7 +2766,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .seg .s.on{background:var(--acc);color:var(--acc-ink)}
 .axroot .tl{position:relative;height:30px;background:var(--bg);border:1px solid var(--line);border-radius:7px;overflow:hidden;touch-action:none;user-select:none}
 .axroot .tl .tk{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent,transparent 9px,rgba(255,255,255,.04) 9px,rgba(255,255,255,.04) 10px)}
-.axroot .tl .sel{position:absolute;top:0;bottom:0;background:rgba(194,240,74,.18);border-left:2px solid var(--acc);border-right:2px solid var(--acc)}
+.axroot .tl .sel{position:absolute;top:0;bottom:0;background:var(--accent-soft);border-left:2px solid var(--acc);border-right:2px solid var(--acc)}
 .axroot .tl .sel.w{background:rgba(255,177,90,.18);border-color:var(--warn)}
 .axroot .tl .h{position:absolute;top:50%;transform:translateY(-50%);width:9px;height:20px;border-radius:3px;background:var(--acc);cursor:ew-resize}
 .axroot .tl .h.w{background:var(--warn)}
@@ -2785,7 +2785,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .act .dot{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--mut2)}
 .axroot .act .nw{position:absolute;top:3px;right:3px;font-size:7px;font-weight:800;background:var(--blue);color:#04101f;padding:1px 3px;border-radius:3px}
 .axroot /* result */
-  .imp{display:flex;align-items:center;gap:8px;background:rgba(194,240,74,.06);border:1px solid var(--acc2);border-radius:10px;padding:9px 11px;font-size:11px;margin-bottom:9px}
+  .imp{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--acc2);border-radius:10px;padding:9px 11px;font-size:11px;margin-bottom:9px}
 .axroot .imp b{color:var(--acc)}
 .axroot .imp .tg2{margin-left:auto;font-size:10px;border:1px solid var(--line2);border-radius:7px;padding:3px 8px;cursor:pointer;color:var(--mut)}
 .axroot .resbtns{display:flex;gap:6px;flex-wrap:wrap}
@@ -2809,7 +2809,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .empty .pick{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;background:var(--acc);color:var(--acc-ink);border-radius:9px;padding:8px 14px;cursor:pointer}
 .axroot .dual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px}
 .axroot .frame{border:1px dashed var(--line2);border-radius:11px;background:var(--card);padding:11px 8px;text-align:center;cursor:pointer}
-.axroot .frame.on{border-color:var(--acc2);background:rgba(194,240,74,.05);border-style:solid}
+.axroot .frame.on{border-color:var(--acc2);background:var(--accent-soft);border-style:solid}
 .axroot .frame .di{font-size:17px}
 .axroot .frame .t{font-size:10.5px;font-weight:700;margin-top:4px}
 .axroot .frame small{font-size:9px;color:var(--mut);display:block;margin-top:2px}
@@ -3221,7 +3221,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* FIX C: kadr box kompakt — 78px ustun emas, 44px qator (ikon+matn yonma-yon), tool'ni bosib yubormaydi */
 .axvg .frame{flex:1}.axvg .fbox{height:44px;width:100%;border:1.5px dashed #2E3644;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;background:var(--panel)}.axvg .fcap{font-size:9.5px;color:var(--mut2);text-align:center;margin-top:4px}
 .axvg .fbox:hover{border-color:var(--border)}
-.axvg .fbox.has-img{border-style:solid;border-color:rgba(194,240,74,.45)}
+.axvg .fbox.has-img{border-style:solid;border-color:var(--accent)}
 .axvg .fbox .fbi{font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:3px;position:relative;z-index:1}
 .axvg .fb-opt{font-size:9.5px;color:var(--mut2);margin-left:2px}
 .axvg .fbadd{display:flex;align-items:center;gap:6px;color:var(--mut2);line-height:1}
@@ -3375,7 +3375,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vg-lblrow{display:flex;align-items:center;gap:7px;margin-bottom:8px}
 .axvg .vg-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
 .axvg .vg-meta{margin-left:auto;font-family:var(--font-mono);font-size:8.5px;color:var(--muted-2)}
-.axvg .kadrtag{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;color:var(--accent);border:1px solid rgba(194,240,74,.35);padding:1px 6px;border-radius:99px;background:none;margin-left:0;font-weight:400}
+.axvg .kadrtag{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;color:var(--accent);border:1px solid var(--accent-soft);padding:1px 6px;border-radius:99px;background:none;margin-left:0;font-weight:400}
 /* FIX5 (live-test): b4/b5 flat compose BEKOR — video tool rasm tool bilan BIR XIL karta tuzilishi:
    .axig .vpanel (border #3A4456, radius 20, bg) va .axig .pbox meros bo'lib qoladi. */
 .axvg .vpanel .pbox textarea{min-height:150px;max-height:280px;overflow-y:auto}
@@ -3400,7 +3400,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .vg-pchip.ghost:hover{color:var(--text)}
 .axvg .vpanel .mrefadd{display:flex;gap:6px;margin:9px 0 0;grid-template-columns:none}
 .axvg .vpanel .maddb{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;border:1px dashed rgba(255,255,255,.16);background:none;font-size:10px;color:var(--muted);min-height:0;white-space:nowrap;justify-content:center}
-.axvg .vpanel .maddb:hover{color:var(--accent);border-color:rgba(194,240,74,.4)}
+.axvg .vpanel .maddb:hover{color:var(--accent);border-color:var(--accent-soft)}
 .axvg .vpanel .maddb.dim{opacity:.55;color:var(--muted-2)}
 .axvg .mrt{width:62px;height:62px;border-radius:10px}
 .axvg .mrt .tag{position:absolute;left:5px;right:auto;bottom:4px;top:auto;background:rgba(8,10,14,.72);color:#E7ECF3;font-family:var(--font-mono);font-size:7px;font-weight:400;padding:1px 4px;border-radius:3px;text-align:left;max-width:calc(100% - 8px);overflow:hidden;text-overflow:ellipsis}
@@ -3524,7 +3524,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
 /* ── b11 — AI Sozlamalar mockup verbatim ── */
 .axroot .set-balcard{border-radius:14px;background:var(--surface);border:1px solid rgba(255,255,255,.08);padding:16px;position:relative;overflow:hidden}
-.axroot .set-balglow{position:absolute;inset:0;background:radial-gradient(120% 100% at 90% -20%,rgba(194,240,74,.10),transparent 55%)}
+.axroot .set-balglow{position:absolute;inset:0;background:radial-gradient(120% 100% at 90% -20%,var(--accent-soft),transparent 55%)}
 .axroot .set-balin{position:relative}
 .axroot .set-balk{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:var(--muted)}
 .axroot .set-balv{font-family:var(--font-mono);font-size:30px;font-weight:600;margin-top:6px;color:var(--text)}
@@ -3536,8 +3536,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .set-packs{display:flex;gap:8px;margin-top:10px}
 .axroot .set-pack{flex:1;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:11px 10px;text-align:center;position:relative;cursor:pointer}
 .axroot .set-pack:hover{border-color:rgba(255,255,255,.16)}
-.axroot .set-pack.top{border-color:rgba(194,240,74,.4)}
-.axroot .set-pack.top:hover{border-color:rgba(194,240,74,.6)}
+.axroot .set-pack.top{border-color:var(--accent-soft)}
+.axroot .set-pack.top:hover{border-color:var(--accent)}
 .axroot .set-topb{position:absolute;top:-7px;left:50%;transform:translateX(-50%) skewX(-12deg);font-family:var(--font-mono);font-weight:800;font-size:7px;letter-spacing:.08em;padding:2px 6px;background:var(--accent);color:var(--on-accent);box-shadow:0 2px 0 rgba(0,0,0,.55)}
 .axroot .set-pack .pv{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text)}
 .axroot .set-pack .pv .cs{color:var(--accent)}
@@ -3549,7 +3549,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .set-lrow:hover{background:rgba(255,255,255,.03)}
 .axroot .set-lic{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
 .axroot .set-lic svg{width:13px;height:13px}
-.axroot .set-lrow.plus .set-lic{background:rgba(194,240,74,.08);color:var(--accent)}
+.axroot .set-lrow.plus .set-lic{background:var(--accent-soft);color:var(--accent)}
 .axroot .set-lt{flex:1;min-width:0}
 .axroot .set-lt b{display:block;font-size:11.5px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axroot .set-lt small{display:block;font-family:var(--font-mono);font-size:9px;color:var(--muted-2);margin-top:2px}
@@ -3597,7 +3597,7 @@ html.home-mode #homePage{display:block!important}
 .hd{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);position:relative;z-index:5;flex:none}
 .hd-home{width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;border:0;padding:0;transition:box-shadow .2s}
 .hd-home svg{width:16px;height:16px}
-.hd-home:hover{box-shadow:0 0 0 3px rgba(194,240,74,.25)}
+.hd-home:hover{box-shadow:0 0 0 3px var(--glow)}
 .hd-brand{font-weight:800;font-size:13.5px;letter-spacing:-.02em}
 .hd-sp{flex:1}
 .hd-cred{display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10.5px;font-weight:500;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:var(--text);cursor:pointer;flex:none;font-variant-numeric:tabular-nums}
@@ -3619,7 +3619,7 @@ html.home-mode #homePage{display:block!important}
 .axhome .grain::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1px);background-size:16px 16px;opacity:.5;pointer-events:none}
 /* greeting hero */
 .axhome .va-hero{position:relative;padding:20px 14px 4px;overflow:hidden}
-.axhome .va-hero::before{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.16),transparent 65%);pointer-events:none}
+.axhome .va-hero::before{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 65%);pointer-events:none}
 .axhome .va-greet{font-size:22px;font-weight:800;letter-spacing:-.025em;line-height:1.15}
 .axhome .va-greet .hl{color:var(--accent)}
 .axhome .va-greetsub{font-size:12px;color:var(--muted);margin-top:5px}
@@ -3634,7 +3634,7 @@ html.home-mode #homePage{display:block!important}
 .axhome .va-pill .go svg{width:10px;height:10px}
 .axhome .va-pill.tpl{background:radial-gradient(130% 110% at 100% 0%,rgba(124,196,255,.18),transparent 55%),var(--surface)}
 .axhome .va-pill.tpl .ic{background:rgba(124,196,255,.14);color:var(--select)}
-.axhome .va-pill.ai{background:radial-gradient(130% 110% at 100% 0%,rgba(194,240,74,.22),transparent 55%),var(--surface)}
+.axhome .va-pill.ai{background:radial-gradient(130% 110% at 100% 0%,var(--glow),transparent 55%),var(--surface)}
 .axhome .va-pill.ai .ic{background:var(--green-dim);color:var(--accent)}
 .axhome .va-pill .cnt{font-family:var(--font-mono);font-size:8px;letter-spacing:.1em;color:var(--muted-2);margin-top:3px;position:relative;z-index:2}
 /* continue rows (last import + last generation) */
@@ -3653,14 +3653,14 @@ html.home-mode #homePage{display:block!important}
 .axhome .imp svg{width:13px;height:13px}
 .axhome .imp.soft{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);color:var(--text);font-weight:600}
 /* credits nudge */
-.axhome .va-nudge{margin:18px 14px 16px;display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--green-dim);border:1px solid rgba(194,240,74,.22);border-radius:10px}
+.axhome .va-nudge{margin:18px 14px 16px;display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--green-dim);border:1px solid var(--accent-soft);border-radius:10px}
 .axhome .va-nudge>svg{color:var(--accent);width:14px;height:14px;flex:none}
 .axhome .va-nudge .tx{font-size:11px;font-weight:500;color:var(--text);flex:1}
 .axhome .va-nudge .cta{font-size:10.5px;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap}
 /* ═══ GUEST / FIRST-RUN — _home-redesign-mockup.html 04 dan 1:1 ═══ */
 .axhome .gu-hero{position:relative;padding:34px 22px 0;text-align:center;overflow:hidden}
-.axhome .gu-hero::before{content:"";position:absolute;left:50%;top:-130px;transform:translateX(-50%);width:340px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(194,240,74,.15),transparent 65%);pointer-events:none}
-.axhome .gu-logo{width:52px;height:52px;border-radius:15px;background:var(--accent);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 34px -8px rgba(194,240,74,.45);position:relative}
+.axhome .gu-hero::before{content:"";position:absolute;left:50%;top:-130px;transform:translateX(-50%);width:340px;height:280px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 65%);pointer-events:none}
+.axhome .gu-logo{width:52px;height:52px;border-radius:15px;background:var(--accent);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 34px -8px var(--glow);position:relative}
 .axhome .gu-logo svg{width:26px;height:26px}
 .axhome .gu-h1{font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.18;margin-top:18px;position:relative}
 .axhome .gu-h1 .hl{color:var(--accent)}
@@ -4161,7 +4161,7 @@ html.home-mode #homePage{display:block!important}
                                 </div>
                                 <div class="prow">
                                   <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Reference</div>
-                                  <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance</span>
+                                  <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance · ✦1</span>
                                 </div>
                               </div>
                             </div>
@@ -4198,7 +4198,7 @@ html.home-mode #homePage{display:block!important}
 
                           <!-- model sheet (b2) — FIX4: pill yonida popover -->
                           <div class="sheet pop" id="igMSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Model</b><span class="shnote">price — per result</span></div>
+                            <div class="sheeth"><b>Choose a model</b><span class="shnote">price — per result</span></div>
                             <div id="igMList"><div class="axighint">Loading…</div></div>
                             <div class="minfobox" id="igMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>Each model sets its own reference rules</span></div>
                           </div></div>
@@ -4303,7 +4303,7 @@ html.home-mode #homePage{display:block!important}
                                   </div>
                                   <!-- FIX: prompt ichidagi takror ＋Referens olib tashlandi — referens qo'shish faqat tepadagi kanonik hudud (kadr box / +Rasm / +Video) orqali -->
                                   <div class="prow">
-                                    <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance</span>
+                                    <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance · ✦1</span>
                                   </div>
                                 </div>
                               </div>
@@ -4414,7 +4414,7 @@ html.home-mode #homePage{display:block!important}
 
                           <!-- Model sheet (b2) — FIX4: pill yonida popover -->
                           <div class="sheet pop" id="vgMSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Model</b><span class="shnote">price — per result</span></div>
+                            <div class="sheeth"><b>Choose a model</b><span class="shnote">price — per result</span></div>
                             <div id="vgMList"><div class="axighint">Loading…</div></div>
                             <div class="minfobox" id="vgMHint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg><span>More video models coming in the future</span></div>
                           </div></div>
@@ -5015,9 +5015,9 @@ html.home-mode #homePage{display:block!important}
     </div>
     <div class="lim2-sub" id="proSub">"Glitch Logo Reveal" can only be imported on the Pro plan.</div>
     <div class="lim2-feats">
-      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Unlimited downloads</div>
-      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Pack files (.aep/.zip)</div>
-      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>All PRO templates unlocked</div>
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Unlimited downloads</div>
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Pack files (.aep/.zip)</div>
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>All PRO templates unlocked</div>
     </div>
     <button type="button" class="lim-cta" onclick="limitUpgrade()">Upgrade to Pro</button>
     <button type="button" class="lim2-cancel" onclick="closeProSheet()">Cancel</button>
@@ -8131,7 +8131,7 @@ var BRAND_SVG={
   openai:'<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#10a37f"/><circle cx="11" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg>',
   google:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="16.5" text-anchor="middle" font-size="16" font-weight="900" fill="#4285F4" font-family="Arial,sans-serif">G</text></svg>',
   bytedance:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg>',
-  bfl:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="#c2f04a" font-family="Arial,sans-serif">BFL</text></svg>',
+  bfl:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="currentColor" font-family="Arial,sans-serif">BFL</text></svg>',
   elevenlabs:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="7.5" font-weight="900" fill="#e8e8e8" font-family="Arial,sans-serif">11L</text></svg>',
   topaz:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="#a78bfa" font-family="Arial,sans-serif">TZ</text></svg>'
 };
@@ -8337,7 +8337,7 @@ function toggleExpand(){
 
 /* ===== Toast — turli xil (success/error/warning/info) · pastda STACK (P23) ===== */
 // Success (a4) kartadagi lime check-circle ikonasi (Phosphor fill · inline SVG)
-const TOAST_CHECK='<svg width="15" height="15" viewBox="0 0 256 256" fill="#C2F04A"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+const TOAST_CHECK='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
 // P23 — STACK toast (web pariteti): har xabar alohida karta, pastda-markazda ustma-ust (maks 3),
 // tur ikonkasi + rang, slide/fade auto-dismiss. showToast() imzosi O'ZGARMAGAN (msg,type,elapsedSec).
 const TOAST_TYPE_IC={
@@ -11699,7 +11699,7 @@ window.afGallery=(function(){
           if(!path)return;
           var chk=row.querySelector('.igprojchk');
           if(sel[path]){ delete sel[path]; row.style.background=''; if(chk)chk.textContent='○'; }
-          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[path]=true; row.style.background='rgba(194,240,74,.10)'; if(chk)chk.textContent='✓'; }
+          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[path]=true; row.style.background='var(--accent-soft)'; if(chk)chk.textContent='✓'; }
           refreshFoot();
         }); })(mp,o);
         $('igProjList').appendChild(o);
@@ -13442,7 +13442,7 @@ window.afGallery=(function(){
           if(!multi){ if(!mediaAllowed('video'))return; addOneMediaPath(mp,'video'); closeVgSheets(); return; }
           var chk=row.querySelector('.vgprojchk');
           if(sel[mp]){ delete sel[mp]; row.style.background=''; if(chk)chk.textContent='○'; }
-          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[mp]=true; row.style.background='rgba(194,240,74,.10)'; if(chk)chk.textContent='✓'; }
+          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[mp]=true; row.style.background='var(--accent-soft)'; if(chk)chk.textContent='✓'; }
           refreshFoot();
         }); })(it,d);
         host.appendChild(d);
