@@ -15828,6 +15828,14 @@
   .ff .va-axmpin{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:999px;border:1px solid var(--hair2);background:var(--f2);color:var(--muted2);cursor:pointer;font-size:13px}
   .ff .va-axmpin:hover{color:var(--text)}
   .ff .va-axmpin.on{color:var(--lime);border-color:var(--lime);background:var(--limedim)}
+  /* Section F (P13) — model brand nishoni: model.brand → rangli qisqa glyph (plugin BRAND_SVG bilan bir xil rang) */
+  .ff .va-axbrand{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:999px;font:800 7.5px var(--mono);letter-spacing:0;flex:none;margin-left:6px;vertical-align:middle}
+  .ff .va-axbrand-openai{background:#10a37f;color:#fff}
+  .ff .va-axbrand-google{background:#4285f4;color:#fff}
+  .ff .va-axbrand-bytedance{background:#5e9fe8;color:#0c1e33}
+  .ff .va-axbrand-bfl{background:#c2f04a;color:#14171c}
+  .ff .va-axbrand-elevenlabs{background:#000;color:#fff}
+  .ff .va-axbrand-topaz{background:#7c3aed;color:#fff}
   /* empty / first-run hero */
   .ff .va-axhero{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:100%;padding-bottom:30px}
   .ff .va-axhero h2{font-size:32px;font-weight:500;letter-spacing:-.02em;margin:22px 0 0}
@@ -17029,7 +17037,7 @@
                     <div class="va-axpoph">{{ modePickHead }}</div>
                     <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">
                       <button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">
-                        <span class="mid"><span class="nm">{{ m.label }}</span><span class="ds">{{ m.desc }}</span><span class="rcap">🖼 {{ m.refCap }}</span></span>
+                        <span class="mid"><span class="nm">{{ m.label }}<sc-if value="{{ m.hasBrand }}" hint-placeholder-val="{{ false }}"><span class="{{ m.brandCls }}" title="{{ m.brandTitle }}">{{ m.brandGlyph }}</span></sc-if></span><span class="ds">{{ m.desc }}</span><span class="rcap">🖼 {{ m.refCap }}</span></span>
                         <span class="pc">{{ m.costLabel }}</span>
                         <sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><span class="ck">✓</span></sc-if>
                       </button>
@@ -17085,7 +17093,7 @@
                       <sc-for list="{{ grp.models }}" as="m" hint-placeholder-count="2">
                         <div class="{{ m.rowCls }}" data-v="{{ m.v }}" data-mode="{{ m.mode }}" onclick="{{ pickModel }}">
                           <span class="mic2"><svg class="va-ic"><use href="{{ m.iconRef }}"></use></svg></span>
-                          <span class="mid"><span class="nm">{{ m.label }} <sc-if value="{{ m.isDefault }}" hint-placeholder-val="{{ false }}"><span class="new">DEFAULT</span></sc-if></span>
+                          <span class="mid"><span class="nm">{{ m.label }}<sc-if value="{{ m.hasBrand }}" hint-placeholder-val="{{ false }}"><span class="{{ m.brandCls }}" title="{{ m.brandTitle }}">{{ m.brandGlyph }}</span></sc-if> <sc-if value="{{ m.isDefault }}" hint-placeholder-val="{{ false }}"><span class="new">DEFAULT</span></sc-if></span>
                           <span class="ds">{{ m.desc }}</span><span class="rcap">🖼 {{ m.refCap }}</span></span>
                           <span class="meta"><button class="{{ m.pinCls }}" data-v="{{ m.v }}" onclick="{{ togglePinModel }}" title="{{ m.pinTitle }}"><svg class="va-ic"><use href="#i-pin"></use></svg></button><span class="pc">✦ {{ m.costN }}<i>{{ m.unit }}</i></span><button class="{{ m.selCls }}" data-v="{{ m.v }}" data-mode="{{ m.mode }}" onclick="{{ pickModel }}">{{ m.selLabel }}</button></span>
                         </div>
@@ -20269,6 +20277,21 @@ class Component extends DCLogic {
     if (c.kind === 'media') { const p = []; if (c.lim.image) p.push(c.lim.image + ' image' + (c.lim.image > 1 ? 's' : '')); if (c.lim.video) p.push(c.lim.video + ' video' + (c.lim.video > 1 ? 's' : '')); if (c.lim.audio) p.push(c.lim.audio + ' audio'); if (c.frames) p.push('frames'); return p.join(', ') || 'No references'; }
     return '';
   }
+  // P13 (Section F) — model.brand → picker'dagi rangli qisqa nishon (glyph+rang). Brand'siz model
+  // uchun hasBrand:false (nishon render bo'lmaydi). Rang/glyph pluginning BRAND_SVG bilan bir xil.
+  brandBadge(brand) {
+    const MAP = {
+      openai: { glyph: 'AI', title: 'OpenAI' },
+      google: { glyph: 'G', title: 'Google' },
+      bytedance: { glyph: 'BD', title: 'ByteDance' },
+      bfl: { glyph: 'BF', title: 'Black Forest Labs' },
+      elevenlabs: { glyph: '11L', title: 'ElevenLabs' },
+      topaz: { glyph: 'TZ', title: 'Topaz' },
+    };
+    const b = brand && MAP[brand];
+    if (!b) return { hasBrand: false, brandCls: '', brandGlyph: '', brandTitle: '' };
+    return { hasBrand: true, brandCls: 'va-axbrand va-axbrand-' + brand, brandGlyph: b.glyph, brandTitle: b.title };
+  }
   // P13 — REFERENS HOVUZI PROYEKSIYASI. Hovuz (refImages/refVideos/refAudios/refStartUrl/refEndUrl)
   // model-mustaqil: pickModel undan HECH NARSA o'chirmaydi. Bu funksiya joriy model imkoniyatiga
   // qarab har referensni FAOL (yuboriladi) yoki NOFAOL (xira, sabab bilan turadi) deb belgilaydi.
@@ -21017,6 +21040,7 @@ class Component extends DCLogic {
       v: String(m.id), label: m.label, active, rowCls: 'va-axpm' + (active ? ' on' : ''),
       desc: m.description || m.desc || (cb.unit ? ('Priced ' + cb.unit) : ''), costLabel: '✦ ' + cb.c,
       refCap: this.refCapLabel(tool.mode, m), // P13 — referens imkoniyati almashishdan OLDIN ko'rinsin
+      ...this.brandBadge(m.brand), // Section F — brand nishon
     }; });
     const modePickHead = 'RECOMMENDED FOR ' + (tool.mode === 'sfx' ? 'SFX' : tool.mode.toUpperCase());
     const axModeMeta = { image: { label: 'IMAGE', iconRef: '#i-img', filter: 'Image' }, video: { label: 'VIDEO', iconRef: '#i-vid', filter: 'Video' }, voice: { label: 'VOICE', iconRef: '#i-mic', filter: 'Voice' }, sfx: { label: 'SFX', iconRef: '#i-wave', filter: 'SFX' } };
@@ -21040,6 +21064,7 @@ class Component extends DCLogic {
           desc: m.description || m.desc || ('Priced ' + cb.unit), costN: cb.c, unit: cb.unit,
           refCap: this.refCapLabel(mode, m), // P13
           pinCls: 'va-axmpin' + (pinned ? ' on' : ''), pinTitle: pinned ? 'Unpin model' : 'Pin model',
+          ...this.brandBadge(m.brand), // Section F — brand nishon
           rowCls: 'va-axmrow' + (active ? ' on' : ''), selCls: 'va-axmsel' + (active ? ' on' : ''), selLabel: active ? '✓ Selected' : 'Select' };
       }) };
     }).filter(Boolean);

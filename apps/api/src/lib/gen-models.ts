@@ -203,6 +203,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "gemini-3.1-flash-image", // Nano Banana 2 — Vertex to'g'ridan-to'g'ri (GLOBAL region; adapter locationFor)
     label: "Nano Banana 2",
+    brand: "google",
     provider: "vertex-image",
     enabled: true, // 2026-07-01 jonli sinov: t2i+edit, nisbat(16:9→2752×1536), 1K/2K/4K(4096²), global region
     feature: "text-to-image",
@@ -228,6 +229,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "gemini-3.1-flash-lite-image", // Nano Banana 2 Lite — GLOBAL (jonli sinov: tez, ~200KB, faqat 1K)
     label: "Nano Banana 2 Lite",
+    brand: "google",
     provider: "vertex-image",
     enabled: true, // 2026-07-01 jonli sinov: t2i+edit, 8 nisbat, 1K (2K=400 xato → faqat 1K)
     feature: "text-to-image",
@@ -245,6 +247,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "gemini-3-pro-image", // Nano Banana Pro — GLOBAL (jonli sinov: 6.7MB, 26s@2K, premium)
     label: "Nano Banana Pro",
+    brand: "google",
     provider: "vertex-image",
     enabled: true, // 2026-07-01 jonli sinov: t2i+edit, 8 nisbat, 2K ishladi (4K e2e'da tasdiqlanadi)
     feature: "text-to-image",
@@ -268,6 +271,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "imagen-4.0-generate-001", // Imagen 4 — foto-realistik (jonli sinov: 6.4MB@2K, us-central1)
     label: "Imagen 4",
+    brand: "google",
     provider: "vertex-image",
     enabled: true, // 2026-07-01 jonli sinov: t2i, 5 nisbat, 1K/2K
     feature: "text-to-image",
@@ -289,6 +293,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "image",
     key: "imagen-4.0-ultra-generate-001", // Imagen 4 Ultra — premium (jonli sinov: 6.9MB@2K)
     label: "Imagen 4 Ultra",
+    brand: "google",
     provider: "vertex-image",
     enabled: true, // 2026-07-01 jonli sinov: t2i, 5 nisbat, 1K/2K
     feature: "text-to-image",
@@ -858,6 +863,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "sfx",
     key: "elevenlabs/sound-effects",
     label: "ElevenLabs SFX",
+    brand: "elevenlabs",
     provider: "elevenlabs",
     feature: "text-to-sfx",
     cost: 4,
@@ -872,6 +878,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "veo-3.1-lite-generate-001", // Veo 3.1 Lite — foydalanuvchi havolasi bilan tasdiqlangan ID
     label: "Veo 3.1 Lite",
+    brand: "google",
     provider: "vertex", // to'g'ridan-to'g'ri Vertex → VIDEO_PROJECT (2-$300)
     enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Lite: arzon/tez tier.
     feature: "text-to-video",
@@ -898,6 +905,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "veo-3.1-fast-generate-001", // Vertex Model Garden model ID (tasdiqlangan — real ishlaydigan kod namunasidan)
     label: "Veo 3.1 Fast (Google Cloud)",
+    brand: "google",
     provider: "vertex", // TO'G'RIDAN-TO'G'RI Vertex AI (fal.ai orqali EMAS) — foydalanuvchining o'z GCP krediti
     enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Smoke-test o'tgan (submit→poll→GCS→S3).
     feature: "text-to-video",
@@ -924,6 +932,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "gemini-omni-flash-preview", // Vertex Interactions API (global) — jonli probe tasdiqladi
     label: "Gemini Omni Flash (Google Cloud)",
+    brand: "google",
     provider: "vertex-omni", // SINXRON Interactions API (Veo submit/poll'дан farqli) — har chaqiruv pul oladi
     enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Sinov: 1280x720, 10s, audio.
     feature: "text-to-video", // rasm referens bo'lsa image-to-video sifatida ishlaydi (runVertexOmniVideo ichida)
@@ -960,6 +969,7 @@ export const GEN_MODELS: GenModel[] = [
     mode: "video",
     key: "veo-3.1-generate-001", // Veo 3.1 (Standard) — foydalanuvchi havolasi bilan tasdiqlangan ID
     label: "Veo 3.1",
+    brand: "google",
     provider: "vertex", // to'g'ridan-to'g'ri Vertex → VIDEO_PROJECT (2-$300)
     enabled: true, // 2026-07-01 yoqildi (video → 2-loyiha). Standard: eng yuqori sifat.
     feature: "text-to-video",

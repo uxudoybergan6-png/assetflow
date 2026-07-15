@@ -3430,6 +3430,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .mrowb .mpin{width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:8px;color:var(--muted-2);cursor:pointer}
 .mrowb .mpin:hover{color:var(--text)}
 .mrowb .mpin.on{color:var(--accent)}
+/* Section F (P13) — brand nishoni: .mrowb bilan bir xil sabab bilan skoplanmagan */
+.mrowb .mtx b .mbrand{display:inline-flex;vertical-align:middle;margin-left:6px}
+.mrowb .mtx b .mbrand svg{width:14px;height:14px;display:block}
 .axig .minfobox{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border-radius:10px;background:rgba(124,196,255,.06);border:1px solid var(--select-dim);font-size:10px;color:#9FC9EC;line-height:1.5;text-align:left}
 .axig .minfobox svg{flex:none;color:var(--select)}
 .axig .opt{min-height:58px;display:flex;align-items:center;gap:12px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);margin-bottom:7px;cursor:pointer}
@@ -8058,6 +8061,23 @@ function afSortPinnedFirst(list){
     return pa===pb?0:(pa?-1:1);
   });
 }
+// Section F (P13) — model.brand nishoni: ilgari .axig ICHIDA edi (faqat subtitle matni uchun), endi
+// haqiqiy top-level (.axvg ham ishlatadi) VA endi renderModelSheet/renderVgModelSheet ichida haqiqiy
+// ikonka sifatida chiziladi (web'dagi rangli glyph nishon bilan bir xil rang — brandBadge()).
+var BRAND_SVG={
+  openai:'<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#10a37f"/><circle cx="11" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg>',
+  google:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="16.5" text-anchor="middle" font-size="16" font-weight="900" fill="#4285F4" font-family="Arial,sans-serif">G</text></svg>',
+  bytedance:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg>',
+  bfl:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="#c2f04a" font-family="Arial,sans-serif">BFL</text></svg>',
+  elevenlabs:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="7.5" font-weight="900" fill="#e8e8e8" font-family="Arial,sans-serif">11L</text></svg>',
+  topaz:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="#a78bfa" font-family="Arial,sans-serif">TZ</text></svg>'
+};
+var BRAND_LABEL={openai:'OpenAI',google:'Google',bytedance:'ByteDance',bfl:'Black Forest Labs',elevenlabs:'ElevenLabs',topaz:'Topaz'};
+// model row'ga qo'yiladigan kichik rangli nishon (mrowb HTML'iga to'g'ridan-to'g'ri qo'shiladi)
+function brandBadgeHtml(brand){
+  if(!brand||!BRAND_SVG[brand])return '';
+  return '<span class="mbrand" title="'+(BRAND_LABEL[brand]||brand)+'">'+BRAND_SVG[brand]+'</span>';
+}
 function markActiveTheme(name){
   document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('active', b.dataset.themeVal===name));
 }
@@ -11287,13 +11307,8 @@ window.afGallery=(function(){
   // P13 — joriy modelda NOFAOL bo'ladigan (limitdan tashqari yoki qo'llanmaydigan) referenslar soni
   function igActiveRefLimit(){ return meta.refOk?(meta.maxRefs||0):0; }
   function igInactiveRefCount(){ return Math.max(0, st.refs.length - igActiveRefLimit()); }
-  var BRAND_SVG={
-    openai:'<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#10a37f"/><circle cx="11" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="2.2"/></svg>',
-    google:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="16.5" text-anchor="middle" font-size="16" font-weight="900" fill="#4285F4" font-family="Arial,sans-serif">G</text></svg>',
-    bytedance:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#5e9fe8" font-family="Arial,sans-serif">BD</text></svg>',
-    bfl:'<svg width="22" height="22" viewBox="0 0 22 22"><text x="11" y="15" text-anchor="middle" font-size="8" font-weight="900" fill="#c2f04a" font-family="Arial,sans-serif">BFL</text></svg>'
-  };
-  var BRAND_LABEL={openai:'OpenAI',google:'Google',bytedance:'ByteDance',bfl:'Black Forest Labs'};
+  // Section F — BRAND_SVG/BRAND_LABEL endi haqiqiy top-level (afSortPinnedFirst yonida, .axvg ham
+  // ishlatadi); shu yerda takrorlanmaydi (Section C darsi — IIFE ichida e'lon qilinsa .axvg'ga ko'rinmasdi).
   // b2: modelning 1-natija narxi (quality bo'lsa default sifatda, aks holda flat cost)
   function igModelPrice(m){
     var s=m.imgSettings||null, ql=s&&s.quality;
@@ -11313,7 +11328,7 @@ window.afGallery=(function(){
       if(m.refMode==='required')reqNames.push(String(m.label||''));
       var price=igModelPrice(m);
       var o=document.createElement('div'); o.className='mrowb'+(cur?' cur':'');
-      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'')+'<span class="mpin'+(pinned?' on':'')+'" title="'+(pinned?'Unpin model':'Pin model')+'">'+PIN_SVG+'</span>';
+      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+brandBadgeHtml(m.brand)+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'')+'<span class="mpin'+(pinned?' on':'')+'" title="'+(pinned?'Unpin model':'Pin model')+'">'+PIN_SVG+'</span>';
       o.addEventListener('click',function(){ if(m.id!==meta.modelId){ if(setModel(m)!==false){ renderModelSheet(); toast(m.label+' selected','info'); } } closeSheets(); });
       var pinEl=o.querySelector('.mpin');
       if(pinEl)pinEl.addEventListener('click',function(e){ e.stopPropagation(); var on=afToggleModelPin(m.id); renderModelSheet(); toast(on?'Model pinned':'Model unpinned','info'); });
@@ -12985,7 +13000,7 @@ window.afGallery=(function(){
       var sub=String(m.desc||m.description||vgModelSubtitle(m)).replace(/[<>&]/g,'');
       var price=vgModelPrice(m);
       var o=document.createElement('div'); o.className='mrowb'+(cur?' cur':''); o.setAttribute('data-mid',String(m.id));
-      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'')+'<span class="mpin'+(pinned?' on':'')+'" title="'+(pinned?'Unpin model':'Pin model')+'">'+PIN_SVG+'</span>';
+      o.innerHTML='<span class="mdot"></span><div class="mtx"><b>'+String(m.label||'').replace(/[<>&]/g,'')+brandBadgeHtml(m.brand)+'</b><small>'+sub+'</small></div>'+((price!=null)?'<span class="mprice">✦ '+price+'</span>':'')+'<span class="mpin'+(pinned?' on':'')+'" title="'+(pinned?'Unpin model':'Pin model')+'">'+PIN_SVG+'</span>';
       var pinEl=o.querySelector('.mpin');
       if(pinEl)pinEl.addEventListener('click',function(e){ e.stopPropagation(); var on=afToggleModelPin(m.id); renderVgModelSheet(); toast(on?'Model pinned':'Model unpinned','info'); });
       host.appendChild(o);
