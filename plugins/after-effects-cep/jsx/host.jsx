@@ -4,6 +4,70 @@ if (!String.prototype.trim) {
   };
 }
 
+// ── P35-ROOT: ExtendScript (ES3) muhitida JSON obyekti MAVJUD EMAS ───────────
+// host.jsx ~147 joyda JSON.parse/stringify ishlatadi — polyfillsiz HAR BIR
+// funksiya birinchi JSON chaqiruvida ReferenceError bilan jim yiqilardi
+// (evalScript panelga "" qaytaradi → "hech narsa bo'lmaydi"). Jonli diagnostika
+// 2026-07-15: `typeof JSON` → "undefined" (AE 26.2). json2 uslubidagi minimal
+// ES3-xavfsiz polyfill — MAJBURIY birinchi bo'lib turadi.
+if (typeof JSON === "undefined") { JSON = {}; }
+(function () {
+  function af_jsonEsc(s) {
+    return String(s)
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n")
+      .replace(/\r/g, "\\r")
+      .replace(/\t/g, "\\t")
+      .replace(/[\b]/g, "\\b")
+      .replace(/\f/g, "\\f")
+      .replace(/[\u0000-\u001f]/g, function (c) {
+        var h = c.charCodeAt(0).toString(16);
+        while (h.length < 4) h = "0" + h;
+        return "\\u" + h;
+      });
+  }
+  if (typeof JSON.stringify !== "function") {
+    JSON.stringify = function (v) {
+      var t = typeof v, i, out, av, sv, k;
+      if (v === null) return "null";
+      if (t === "number") return isFinite(v) ? String(v) : "null";
+      if (t === "boolean") return String(v);
+      if (t === "string") return '"' + af_jsonEsc(v) + '"';
+      if (t === "undefined" || t === "function") return undefined;
+      if (v instanceof Array) {
+        out = [];
+        for (i = 0; i < v.length; i++) {
+          av = JSON.stringify(v[i]);
+          out.push(av === undefined ? "null" : av);
+        }
+        return "[" + out.join(",") + "]";
+      }
+      out = [];
+      for (k in v) {
+        if (v.hasOwnProperty && !v.hasOwnProperty(k)) continue;
+        sv = JSON.stringify(v[k]);
+        if (sv !== undefined) out.push('"' + af_jsonEsc(k) + '":' + sv);
+      }
+      return "{" + out.join(",") + "}";
+    };
+  }
+  if (typeof JSON.parse !== "function") {
+    JSON.parse = function (text) {
+      var t = String(text);
+      // json2 xavfsizlik naqshi: faqat JSON literallariga ruxsat, keyin eval.
+      if (/^[\],:{}\s]*$/.test(
+        t.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, "@")
+         .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, "]")
+         .replace(/(?:^|:|,)(?:\s*\[)+/g, "")
+      )) {
+        return eval("(" + t + ")");
+      }
+      throw new Error("JSON.parse: invalid JSON");
+    };
+  }
+})();
+
 // ── FAZA 4: yetishmagan shrift aniqlash (ES3-safe) ──────────────────────────
 // Import'dan keyin text layerlar qaysi shriftni so'raganini o'qib, o'rnatilmagan
 // (missing/substituted) shriftlarni yig'amiz. AE 2024+ (FontsObject `app.fonts`)
