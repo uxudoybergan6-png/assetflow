@@ -54,6 +54,9 @@ cp "$SRC/assetflow-"*.js "$DEST/" 2>/dev/null || true
 cp "$SRC/js/CSInterface.js" "$DEST/js/"
 cp "$SRC/jsx/host.jsx" "$DEST/jsx/"
 cp "$SRC/css/"*.css "$DEST/css/" 2>/dev/null || true
+# Shriftlar (o'zini-host woff2) — CEP'da tarmoq yo'q, shuning uchun DOIM ko'chirilishi shart
+mkdir -p "$DEST/css/fonts"
+cp "$SRC/css/fonts/"*.woff2 "$DEST/css/fonts/" 2>/dev/null || true
 
 # ── 2) VERIFY: o'rnatilgan HTML manbaga BAYT-BA-BAYT mosmi? ─────────────────
 # Build stamp HALI urilmadi (placeholder __AF_BUILD__ saqlanib turibdi), shuning

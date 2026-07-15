@@ -1,9 +1,21 @@
-# SESSION-REPORT — P35 (2026-07-15)
+# SESSION REPORT — BATCH8 Prompt #1 (PORT 1/2)
 
-Plagin footage-to'plamini ochib import qila olmasdi + yuklab olingan ziplar muallif marketing (preview/thumbnail) fayllarini buyer'ga oqizardi. `npm run build -w apps/api` toza; `node --check` (catalog/host.jsx/backfill) + HTML-inline-JS (7 blok) toza; server strip filtri 2 funksional round-trip test bilan tasdiqlandi (marketing strip + manba-footage saqlanadi). Push YO'Q, migratsiya YO'Q, pul-zona TEGILMAGAN.
+**Sana:** 2026-07-15 · **Vazifa:** batch8 maketni REAL plaginga port (skin-only, PORT 1/2).
 
-- **FIX 1 (plagin)** `downloadPackToTemp`: .aep/.mogrt topilmasa → footage-to'plami fallback (media yig'adi, ildizdagi marketing chiqaradi, keshdan qayta-yuklamasdan qaytaradi). Yangi host `importFootageBundle` — hammasini shablon nomidagi BITTA bin'ga FOOTAGE import (bitta undo, {ok,imported,failed}). `importPackFileToAE` signal obyektni ushlaydi; recordImport OLDIN bitta marta (import +1, +15 EMAS). Media yo'q → aniq toast (sokin xato emas).
-- **FIX 2 (server)** ingest `metaJson.packJunkEntries` (additiv) yozadi: aniq axlat (`isMarketingJunkEntry`) + tanlangan preview/thumb — LEKIN manba (footage/assets/elements) papkasidagilar MUSTASNO (.aep havolasini o'chirmaslik, P35.3). `serveTemplateAsset` zip pack + bo'sh-emas ro'yxatda → `pack.dl.zip` filtrlangan nusxa (yauzl→yazl streaming, `copyZipExcluding`); qurish yiqilsa ASL zip (bloklamaydi). Asl `pack.zip` TEGILMAYDI. Kesh kaliti .aep-o'rami bilan bir xil → re-upload invalidatsiyasi (contributor.ts:1608) qoplaydi.
-- **Backfill** `scripts/backfill-pack-junk.mjs` — mavjud nashr etilgan ziplarni AYNAN shu detektor bilan qayta skanlaydi (DRY_RUN default), stale `pack.dl.zip` tozalaydi. Owner qo'lda ishga tushiradi.
+## Nima qilindi
+- **STEP 0** — maket tuzatildi (design source of record): "Enhance · ✦1", model modal "Choose a model" + "Search models…", `.ai-set` → 999px pill (`.ai-generate` 10px qoldi).
+- **STEP 1** — tokens.css: `standart/liquid-glass/light-glass` → **noir/neon/cold** (qiymatlar production `--th-*` bilan 1:1). Har tema eski token nomlarini (accent-cta, surface-2, muted-2, red, amber, select, pop-bg, sidebar, glass-*…) alias qiladi → mavjud ekranlar buzilmasdan qayta-temalanadi (tekshirildi: hech qanday token yo'qolmadi). Shriftlar: **Space Grotesk / Inter / JetBrains Mono** (12 woff2 lokal bundle) + eski Hanken/IBM Plex fallback.
+- **STEP 1b** — tema JS: `AF_THEMES=[noir,neon,cold]`, default noir, eski nom migratsiyasi (afNormTheme), tema-picker kartalari yangilandi. `af.prefs.theme` (mavjud) saqlaydi.
+- **STEP 2** — chrome token orqali qayta-skinlandi (top-bar/sidebar/home header); struktura tegilmadi.
+- **STEP 3** — **Dashboard B** `#homeMain`'ga port (`.b8` scoped): topline+balans, media-hero (oxirgi gen thumb yoki gradient), 2 action-card (AI/Stock → homeGo), "Fresh" javon (real hmList). Default post-login.
+- **STEP 4** — auth re-skin: login/profil token orqali; device-code endi ko'zga tashlanadigan mono blok.
+- **FIX** — install-cep.sh shriftlarni ko'chirmasdi (eski Hanken ham) → `css/fonts/*.woff2` copy qo'shildi.
 
-**Kutilmoqda:** deploy (Render/CF), backfill (owner), JONLI AE testi (aynan "Fast Light Leaks Transitions Bundle" — kliplar bin'da; web download zipida preview/thumbnail YO'Q, barcha kliplar bor).
+## Skin izolyatsiyasi
+Yangi CSS `.b8` ostida scoped (mavjud `.pill/.chip/.badge/.notice/.toast/.card/.page` bilan to'qnashmaydi). `styles.css` (o'lik legacy) → BATCH8 skin sifatida qayta ishlatildi va linklandi.
+
+## Tekshirildi (brauzer preview, konsol xatosiz)
+noir/neon/cold × 320/420 en × 820/620 bo'y: guest home, Dashboard B, login sheet (yangi tema swatch), katalog + top-bar. Barcha ma'lumot ilgaklari real funksiyalarga ulandi.
+
+## PORT 2/2 uchun qoldi
+AI Studio workspace/composer, catalog detail/pro-gate/import, library, states panellari — maketning `.ai-*`/`.home-*` to'liq porti (bu batch faqat foundation + chrome + Dashboard B + auth).
