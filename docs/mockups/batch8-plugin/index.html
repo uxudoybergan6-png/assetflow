@@ -181,6 +181,54 @@
     .home-shelf .home-template-card{width:200px;margin-right:10px;flex:0 0 auto}
     .home-shelf .home-template-media{height:118px}
 
+    /* Dashboard B: BATCH6 featured-model spotlightidan olingan media-first launchpad. */
+    .home-b-page{min-height:100%;padding:14px 14px 32px;background:radial-gradient(circle at 82% 2%,var(--accent-soft),transparent 28%),var(--bg-deep)}
+    .home-b-topline{min-height:30px;margin-bottom:10px;display:flex;align-items:center}
+    .home-b-greeting{min-width:0;color:var(--muted);font:700 8px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .home-b-greeting strong{color:var(--text)}
+    .home-b-balance{margin-left:auto;padding:6px 8px;border:1px solid var(--border);border-radius:999px;background:var(--surface);display:flex;align-items:center;white-space:nowrap}
+    .home-b-balance span{margin-right:6px;color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.08em}
+    .home-b-balance strong{color:var(--accent);font:750 8px/1 "JetBrains Mono","SFMono-Regular",monospace}
+    .home-b-hero{height:292px;padding:20px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;background:#15151b;box-shadow:var(--inset);display:flex;align-items:flex-end}
+    .home-b-art{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(135deg,#101a35 0%,#5b3d83 47%,#e5695b 100%);transition:transform var(--motion-slow) var(--ease)}
+    .home-b-art:before{content:"";position:absolute;width:170px;height:170px;right:24px;top:22px;border:28px solid rgba(255,255,255,.2);border-radius:50%;box-shadow:0 0 42px rgba(255,255,255,.16)}
+    .home-b-art:after{content:"";position:absolute;width:180px;height:50px;right:-12px;top:116px;border-radius:9px;background:rgba(6,8,12,.34);transform:rotate(-14deg);box-shadow:-76px -68px 0 rgba(255,255,255,.1)}
+    .home-b-hero:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(4,5,9,.9) 0%,rgba(4,5,9,.58) 52%,rgba(4,5,9,.08) 100%),linear-gradient(0deg,rgba(4,5,9,.8) 0%,transparent 62%)}
+    .home-b-hero:hover .home-b-art{transform:scale(1.025)}
+    .home-b-model{position:absolute;top:14px;right:14px;z-index:2;padding:6px 8px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(4,5,9,.62);color:#fff;font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.06em;white-space:nowrap}
+    .home-b-copy{position:relative;z-index:3;max-width:330px;color:#fff}
+    .home-b-kick{margin:0 0 9px;color:var(--accent);font:750 8px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .home-b-copy h1{margin:0;max-width:300px;font:650 31px/.95 "Space Grotesk",Inter,sans-serif;letter-spacing:-.055em}
+    .home-b-copy p{max-width:310px;margin:10px 0 0;color:rgba(255,255,255,.72);font-size:10px;line-height:1.5}
+    .home-b-cta{margin-top:16px;display:flex;align-items:center}
+    .home-b-cta .btn{min-height:36px;padding:9px 12px;font-size:9px;white-space:nowrap}
+    .home-b-cta .btn+.btn{margin-left:7px}
+    .home-b-cta .btn-secondary{border-color:rgba(255,255,255,.25);background:rgba(5,6,10,.58);color:#fff}
+    .home-b-section{min-height:42px;padding:16px 2px 9px;display:flex;align-items:baseline}
+    .home-b-section h2{min-width:0;margin:0;color:var(--text);font:650 14px/1.1 "Space Grotesk",Inter,sans-serif;letter-spacing:-.025em}
+    .home-b-section .link-button{margin-left:auto;white-space:nowrap}
+    .home-b-actions{display:flex;overflow-x:auto;padding-bottom:3px}
+    .home-b-actions::-webkit-scrollbar,.home-b-shelf::-webkit-scrollbar{height:0}
+    .home-b-action{width:182px;min-width:0;min-height:122px;margin-right:9px;padding:13px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);text-align:left;position:relative;overflow:hidden;flex:0 0 auto;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
+    .home-b-action:after{content:"";position:absolute;width:78px;height:78px;right:-28px;bottom:-36px;border-radius:50%;background:var(--accent-soft);box-shadow:0 0 34px var(--glow);pointer-events:none}
+    .home-b-action>*{position:relative;z-index:1}
+    .home-b-action:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .home-b-action-top{display:flex;align-items:center}
+    .home-b-action-icon{width:31px;height:31px;border-radius:9px;border:1px solid var(--border);background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font:750 10px/1 "JetBrains Mono","SFMono-Regular",monospace;flex:0 0 auto}
+    .home-b-action-tag{margin-left:8px;color:var(--faint);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.09em;text-transform:uppercase}
+    .home-b-action h3{margin:13px 0 4px;font:650 12px/1.05 "Space Grotesk",Inter,sans-serif;letter-spacing:-.025em}
+    .home-b-action p{max-width:142px;margin:0;color:var(--muted);font-size:8px;line-height:1.45}
+    .home-b-action-go{display:block;margin-top:9px;color:var(--accent);font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;transition:transform var(--motion-fast)}
+    .home-b-action:hover .home-b-action-go{transform:translateX(2px)}
+    .home-b-shelf{display:flex;overflow-x:auto;padding-bottom:4px}
+    .home-b-card{width:195px;min-width:0;margin-right:10px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;flex:0 0 auto}
+    .home-b-media{display:block;height:116px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
+    .home-b-card:hover .home-b-media{transform:translateY(-2px);border-color:var(--accent)}
+    .home-b-media .badge{position:absolute;top:8px;left:8px;z-index:2}
+    .home-b-duration{position:absolute;right:8px;bottom:8px;z-index:2;padding:4px 5px;border-radius:5px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace}
+    .home-b-card h3{margin:8px 1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-size:10px;font-weight:650}
+    .home-b-card p{margin:4px 1px 0;color:var(--muted);font:650 7px/1.3 "JetBrains Mono","SFMono-Regular",monospace}
+
     .catalog-toolbar{display:flex;align-items:center;margin-bottom:10px}
     .catalog-toolbar .search-box{flex:1}
     .search-box{height:40px;padding:0 11px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;color:var(--faint)}
@@ -543,6 +591,18 @@
     .panel[data-width="320"] .home-strip,.panel[data-width="320"] .home-model-strip,.panel[data-width="320"] .home-shelf{padding-left:12px;padding-right:12px}
     .panel[data-width="320"] .home-template-grid{padding-left:12px;padding-right:12px;grid-gap:8px}
     .panel[data-width="320"] .home-template-media{height:88px}
+    .panel[data-width="320"] .home-b-page{padding:10px 12px 28px}
+    .panel[data-width="320"] .home-b-topline{margin-bottom:8px}
+    .panel[data-width="320"] .home-b-greeting{font-size:7px}
+    .panel[data-width="320"] .home-b-balance{padding:5px 7px}
+    .panel[data-width="320"] .home-b-hero{height:276px;padding:15px;border-radius:16px}
+    .panel[data-width="320"] .home-b-model{top:11px;right:11px;padding:5px 7px;font-size:6px}
+    .panel[data-width="320"] .home-b-copy h1{max-width:260px;font-size:27px}
+    .panel[data-width="320"] .home-b-copy p{max-width:250px;font-size:9px}
+    .panel[data-width="320"] .home-b-cta{margin-top:13px}
+    .panel[data-width="320"] .home-b-cta .btn{min-height:34px;padding:8px 9px;font-size:8px}
+    .panel[data-width="320"] .home-b-action{width:174px}
+    .panel[data-width="320"] .home-b-card{width:190px}
     .panel[data-width="320"] .catalog-grid,.panel[data-width="320"] .library-grid{grid-template-columns:1fr}
     .panel[data-width="320"] .template-media{height:145px}
     .panel[data-width="320"] .ai-stage{min-height:245px;padding:10px}
@@ -576,6 +636,17 @@
     .panel[data-width="600"] .home-title{font-size:25px}
     .panel[data-width="600"] .home-template-media{height:150px}
     .panel[data-width="600"] .home-shelf .home-template-media{height:132px}
+    .panel[data-width="600"] .home-b-page{padding:16px 18px 34px}
+    .panel[data-width="600"] .home-b-hero{height:310px;padding:28px}
+    .panel[data-width="600"] .home-b-model{top:18px;right:18px}
+    .panel[data-width="600"] .home-b-copy{max-width:390px}
+    .panel[data-width="600"] .home-b-copy h1{max-width:370px;font-size:38px}
+    .panel[data-width="600"] .home-b-copy p{max-width:360px;font-size:11px}
+    .panel[data-width="600"] .home-b-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-gap:10px;overflow:visible}
+    .panel[data-width="600"] .home-b-action{width:auto;min-height:116px;margin-right:0}
+    .panel[data-width="600"] .home-b-shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-gap:10px;overflow:visible}
+    .panel[data-width="600"] .home-b-card{width:auto;margin-right:0}
+    .panel[data-width="600"] .home-b-media{height:112px}
     .panel[data-width="600"] .catalog-grid{grid-template-columns:repeat(3,1fr)}
     .panel[data-width="600"] .library-grid{grid-template-columns:repeat(3,1fr)}
     .panel[data-width="600"] .form-layout{grid-template-columns:1fr 1fr}
@@ -598,7 +669,7 @@
       <button type="button" data-width="320">320</button><button type="button" data-width="420">420</button><button type="button" data-width="600">600</button>
     </div>
     <nav class="pane-nav" id="paneNav">
-      <div class="nav-group"><p class="nav-group-name">Home</p><button class="nav-button" data-pane="dashboard">Dashboard</button></div>
+      <div class="nav-group"><p class="nav-group-name">Home</p><button class="nav-button" data-pane="dashboard-b">Dashboard B · Visual</button><button class="nav-button" data-pane="dashboard">Dashboard A · Saved</button></div>
       <div class="nav-group"><p class="nav-group-name">Auth</p><button class="nav-button" data-pane="auth-login">Sign in</button><button class="nav-button" data-pane="auth-device">Google device code</button><button class="nav-button" data-pane="auth-account">Signed-in account</button></div>
       <div class="nav-group"><p class="nav-group-name">Browse</p><button class="nav-button" data-pane="browse-catalog">Video catalog</button><button class="nav-button" data-pane="browse-detail">Template detail</button><button class="nav-button" data-pane="browse-import">Import progress</button><button class="nav-button" data-pane="browse-unavailable">Pack unavailable</button></div>
       <div class="nav-group"><p class="nav-group-name">AI Studio</p><button class="nav-button" data-pane="ai-image">Image mode</button><button class="nav-button" data-pane="ai-video">Video mode</button><button class="nav-button" data-pane="ai-upscale">Upscale mode</button><button class="nav-button" data-pane="ai-voice">Voice mode</button><button class="nav-button" data-pane="ai-sfx">SFX mode</button><button class="nav-button" data-pane="ai-result">Workspace results</button><button class="nav-button" data-pane="concept-seedance">Seedance concept</button></div>
@@ -624,7 +695,7 @@
               <div class="auth-card"><p class="eyebrow">Welcome back</p><h2>Sign in to AssetFlow</h2><p>Access your plan, credits and saved work.</p>
                 <div class="field"><label>Email</label><input class="input" type="email" value="alex@studio.co" aria-label="Email"></div>
                 <div class="field"><label>Password</label><input class="input" type="password" value="password" aria-label="Password"></div>
-                <button class="btn btn-primary btn-block" type="button" data-go="dashboard">Sign in</button>
+                <button class="btn btn-primary btn-block" type="button" data-go="dashboard-b">Sign in</button>
                 <div class="or"><span>or</span></div>
                 <button class="btn btn-secondary btn-block oauth-button" type="button" data-go="auth-device"><span class="oauth-dot"></span>Continue with Google</button>
                 <button class="link-button btn-block" type="button">Forgot password?</button>
@@ -645,7 +716,7 @@
           <section class="pane" data-pane="auth-account">
             <div class="page"><div class="page-hero"><p class="eyebrow">Account</p><h1 class="page-title">Ready to create.</h1><p class="page-lead">Your signed-in profile follows the same plan and balance hierarchy as the web dashboard.</p></div>
               <div class="surface profile-hero"><div class="profile-avatar">AK</div><h2>Alex Kim</h2><p>alex@studio.co</p><div class="badge-row" style="justify-content:center"><span class="badge pro">PRO PLAN</span><span class="badge">MONTHLY</span></div><div class="divider"></div><div class="big-credit">✦ 128</div><span class="mono" style="color:var(--muted);font-size:8px">GENERATION CREDITS</span></div>
-              <div class="surface surface-pad" style="margin-top:10px"><div class="meta-row"><span>Plan renews</span><strong>Aug 13, 2026</strong></div><div class="meta-row"><span>Template imports</span><strong>18 this month</strong></div><div class="meta-row"><span>Workspace</span><strong>After Effects</strong></div></div><button class="btn btn-primary btn-block" style="margin-top:10px" type="button" data-go="dashboard">Open dashboard</button>
+              <div class="surface surface-pad" style="margin-top:10px"><div class="meta-row"><span>Plan renews</span><strong>Aug 13, 2026</strong></div><div class="meta-row"><span>Template imports</span><strong>18 this month</strong></div><div class="meta-row"><span>Workspace</span><strong>After Effects</strong></div></div><button class="btn btn-primary btn-block" style="margin-top:10px" type="button" data-go="dashboard-b">Open dashboard</button>
             </div>
           </section>
 
@@ -681,6 +752,31 @@
                 <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-three"></span><span class="badge pro">NEW</span></div><h3>Editorial Type System</h3><p>FRESH PICK · AE</p></button>
                 <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-four"></span><span class="badge accent">PRO</span></div><h3>Organic Shapes Pack</h3><p>UPDATED TODAY · AE</p></button>
                 <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-one"></span><span class="badge">FREE</span></div><h3>Golden Hour Opener</h3><p>UPDATED JUL 14 · AE</p></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="pane" data-pane="dashboard-b">
+            <div class="home-b-page">
+              <div class="home-b-topline"><div class="home-b-greeting">Good afternoon, <strong>Alex</strong></div><div class="home-b-balance"><span>PRO</span><strong>✦ 128</strong></div></div>
+
+              <article class="home-b-hero">
+                <div class="home-b-art"></div>
+                <span class="home-b-model">NANO BANANA 2 · FROM ✦4</span>
+                <div class="home-b-copy"><p class="home-b-kick">Your next frame</p><h1>Make something worth replaying.</h1><p>Generate a key visual or start from a production-ready After Effects template.</p><div class="home-b-cta"><button class="btn btn-primary" type="button" data-go="ai-image">✦ Create with AI</button><button class="btn btn-secondary" type="button" data-go="browse-catalog">Browse templates</button></div></div>
+              </article>
+
+              <div class="home-b-section"><h2>Choose your starting point</h2></div>
+              <div class="home-b-actions">
+                <button class="home-b-action" type="button" data-go="ai-image"><span class="home-b-action-top"><span class="home-b-action-icon">✦</span><span class="home-b-action-tag">AI Studio</span></span><h3>Start from a prompt.</h3><p>Image, video, voiceover and SFX in one focused workspace.</p><span class="home-b-action-go">CREATE NOW →</span></button>
+                <button class="home-b-action" type="button" data-go="browse-catalog"><span class="home-b-action-top"><span class="home-b-action-icon">Ae</span><span class="home-b-action-tag">Template library</span></span><h3>Start from a system.</h3><p>Production-ready motion projects, ready to import into AE.</p><span class="home-b-action-go">EXPLORE TEMPLATES →</span></button>
+              </div>
+
+              <div class="home-b-section"><h2>Fresh for your next cut</h2><button class="link-button" type="button" data-go="browse-catalog">Browse all →</button></div>
+              <div class="home-b-shelf">
+                <button class="home-b-card" type="button" data-go="browse-detail"><span class="home-b-media"><span class="art art-one"></span><span class="badge accent">PRO</span><span class="home-b-duration">00:14</span></span><h3>Velocity Sports Opener</h3><p>AFTER EFFECTS · 4K</p></button>
+                <button class="home-b-card" type="button" data-go="browse-detail"><span class="home-b-media"><span class="art art-two"></span><span class="badge">FREE</span><span class="home-b-duration">00:08</span></span><h3>Clean Product Reveal</h3><p>AFTER EFFECTS · HD</p></button>
+                <button class="home-b-card" type="button" data-go="browse-detail"><span class="home-b-media"><span class="art art-three"></span><span class="badge accent">PRO</span><span class="home-b-duration">00:22</span></span><h3>Editorial Film Titles</h3><p>AFTER EFFECTS · 4K</p></button>
               </div>
             </div>
           </section>
@@ -905,14 +1001,14 @@
       var sizeReadout=document.getElementById("sizeReadout");
       var liveToast=document.getElementById("liveToast");
       var toastTimer=null;
-      var contexts={"dashboard":"HOME","auth-login":"SIGN IN","auth-device":"GOOGLE DEVICE CODE","auth-account":"ACCOUNT","browse-catalog":"VIDEO TEMPLATES","browse-detail":"TEMPLATE DETAIL","browse-import":"IMPORTING","browse-unavailable":"PACK UNAVAILABLE","ai-image":"AI STUDIO","ai-video":"AI STUDIO","ai-voice":"AI STUDIO","ai-sfx":"AI STUDIO","ai-upscale":"AI STUDIO","ai-result":"AI STUDIO","concept-seedance":"AI STUDIO · CONCEPT","library-grid":"MY LIBRARY","library-empty":"MY LIBRARY","settings":"SETTINGS","state-offline":"SYSTEM STATE","state-credits":"CREDITS","state-moderation":"MODERATION","state-update":"UPDATE AVAILABLE","state-toasts":"TOASTS","state-loading":"LOADING"};
-      var state={pane:"dashboard",theme:"noir",width:"420"};
+      var contexts={"dashboard":"HOME","dashboard-b":"HOME · CREATIVE LAUNCHPAD","auth-login":"SIGN IN","auth-device":"GOOGLE DEVICE CODE","auth-account":"ACCOUNT","browse-catalog":"VIDEO TEMPLATES","browse-detail":"TEMPLATE DETAIL","browse-import":"IMPORTING","browse-unavailable":"PACK UNAVAILABLE","ai-image":"AI STUDIO","ai-video":"AI STUDIO","ai-voice":"AI STUDIO","ai-sfx":"AI STUDIO","ai-upscale":"AI STUDIO","ai-result":"AI STUDIO","concept-seedance":"AI STUDIO · CONCEPT","library-grid":"MY LIBRARY","library-empty":"MY LIBRARY","settings":"SETTINGS","state-offline":"SYSTEM STATE","state-credits":"CREDITS","state-moderation":"MODERATION","state-update":"UPDATE AVAILABLE","state-toasts":"TOASTS","state-loading":"LOADING"};
+      var state={pane:"dashboard-b",theme:"noir",width:"420"};
       function parseHash(){
         var raw=window.location.hash.replace(/^#/,"");
         var parts=raw?raw.split("&"):[];
         var i,pair;
         for(i=0;i<parts.length;i+=1){pair=parts[i].split("=");if(pair.length===2&&state.hasOwnProperty(pair[0])){state[pair[0]]=decodeURIComponent(pair[1]);}}
-        if(!contexts[state.pane]){state.pane="dashboard";}
+        if(!contexts[state.pane]){state.pane="dashboard-b";}
         if(state.theme!=="noir"&&state.theme!=="neon"&&state.theme!=="cold"){state.theme="noir";}
         if(state.width!=="320"&&state.width!=="420"&&state.width!=="600"){state.width="420";}
       }
