@@ -2964,9 +2964,17 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .mitem .mt{width:32px;height:32px;border-radius:7px;background-size:cover;background-position:center;flex:0 0 auto;border:1px solid var(--line2)}
 .axig .mitem b{font-size:12.5px;display:block}.axig .mitem small{font-size:10.5px;color:var(--mut)}
 /* ===== #6 — Dreamina-uslub chip editor (textarea o'rniga contenteditable + atom pill) ===== */
-.axig .pbox .chipedit{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;outline:none;min-height:170px;max-height:300px;overflow-y:auto;line-height:1.6;box-sizing:border-box;white-space:pre-wrap;word-break:break-word;cursor:text}
+.axig .pbox .chipedit{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;outline:none;min-height:90px;max-height:140px;overflow-y:auto;line-height:1.6;box-sizing:border-box;white-space:pre-wrap;word-break:break-word;cursor:text;padding-right:26px}
 .axig .pbox .chipedit:empty::before{content:attr(data-ph);color:var(--mut2);pointer-events:none}
-.axvg .vpanel .pbox .chipedit{min-height:150px;max-height:280px}
+.axig .pbox .chipedit.expanded{max-height:300px}
+.axvg .vpanel .pbox .chipedit{min-height:80px;max-height:140px}
+.axvg .vpanel .pbox .chipedit.expanded{max-height:280px}
+/* P15 — kompozer default ~140px'da qopqoqlanadi; toggle bilan to'liq balandlikka kengayadi */
+.pbox .chipwrap{position:relative}
+.pbox .chipexp{position:absolute;top:0;right:0;width:22px;height:22px;border-radius:7px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer;z-index:2}
+.pbox .chipexp:hover{color:var(--txt)}
+.pbox .chipexp svg{transition:transform .15s ease}
+.pbox .chipexp.on svg{transform:rotate(180deg)}
 .axroot .mchip{position:relative;display:inline-flex;align-items:center;gap:5px;vertical-align:-4px;padding:1px 8px 1px 3px;margin:0 1px;border-radius:999px;background:var(--green-dim);border:1px solid var(--accent-glow);line-height:1.3;white-space:nowrap;user-select:none;-webkit-user-select:none;cursor:default}
 .axroot .mchip .ct{width:17px;height:17px;border-radius:5px;background-size:cover;background-position:center;background-color:var(--card2);display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:var(--mut);flex:none;overflow:hidden}
 .axroot .mchip .cl{font-size:12px;font-weight:700;color:var(--accent-cta)}
@@ -4139,7 +4147,10 @@ html.home-mode #homePage{display:block!important}
                                 <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
                                 <div class="mention" id="igMention"></div>
                                 <div class="refgrid" id="igRefgrid"></div>
-                                <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
+                                <div class="chipwrap">
+                                  <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
+                                  <button type="button" class="chipexp" id="igPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
+                                </div>
                                 <div class="prow">
                                   <div class="addbtn" id="igRefAdd"><span class="pl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Reference</div>
                                   <span class="enhance" id="igEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance</span>
@@ -4278,7 +4289,10 @@ html.home-mode #homePage{display:block!important}
                                   <!-- Video-edit tayyor shablon chiplari — faqat ≥1 VIDEO referens biriktirilganda ko'rinadi (renderVgEditPresets) -->
                                   <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                                   <div class="mention" id="vgMention"></div>
-                                  <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Animate the frame: raindrops, neon reflection, slow dolly-in…"></div>
+                                  <div class="chipwrap">
+                                    <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Animate the frame: raindrops, neon reflection, slow dolly-in…"></div>
+                                    <button type="button" class="chipexp" id="vgPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
+                                  </div>
                                   <!-- FIX: prompt ichidagi takror ＋Referens olib tashlandi — referens qo'shish faqat tepadagi kanonik hudud (kadr box / +Rasm / +Video) orqali -->
                                   <div class="prow">
                                     <span class="enhance" id="vgEnhance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg> Enhance</span>
@@ -11180,7 +11194,19 @@ window.afGallery=(function(){
   }
   document.querySelectorAll('.axig [data-igclose]').forEach(function(x){ x.addEventListener('click',closeSheets); });
   document.querySelectorAll('.axig .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeSheets(); }); });
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.querySelector('.axig .sheet.on'))closeSheets(); });
+  // P15 — kompozer "Expand" toggle: default ~140px qopqoq, bosilganda to'liq balandlikka kengayadi.
+  function setChipExpanded(taId,btnId,on){
+    var ta=$(taId),exp=$(btnId); if(!ta)return;
+    ta.classList.toggle('expanded',on);
+    if(exp){ exp.classList.toggle('on',on); exp.title=on?'Collapse':'Expand'; }
+  }
+  (function(){ var exp=$('igPromptExp'),ta=$('igPrompt'); if(exp&&ta)exp.addEventListener('click',function(){ setChipExpanded('igPrompt','igPromptExp',!ta.classList.contains('expanded')); }); })();
+  // P14/P15 — bitta Esc = bitta qatlam: avval sheet, keyin kengaytirilgan kompozer.
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    if(document.querySelector('.axig .sheet.on')){ closeSheets(); return; }
+    var ta=$('igPrompt'); if(ta&&ta.classList.contains('expanded'))setChipExpanded('igPrompt','igPromptExp',false);
+  });
 
   // ---- pill'lar ----
   function buildPills(host,arr,cur,onpick){ if(!host)return; host.innerHTML=''; arr.forEach(function(v){ var d=document.createElement('div'); d.className='pill'+(String(v.val!=null?v.val:v)===String(cur)?' cur':''); d.textContent=(v.label!=null?v.label:v); d.addEventListener('click',function(){ onpick(v.val!=null?v.val:v); }); host.appendChild(d); }); }
@@ -12648,7 +12674,19 @@ window.afGallery=(function(){
   }
   document.querySelectorAll('.axvg [data-vgclose]').forEach(function(x){ x.addEventListener('click',closeVgSheets); });
   document.querySelectorAll('.axvg .sheet').forEach(function(s){ s.addEventListener('click',function(e){ if(e.target===s)closeVgSheets(); }); });
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&document.querySelector('.axvg .sheet.on'))closeVgSheets(); });
+  // P15 — kompozer "Expand" toggle (bu IIFE alohida qamrov — igPrompt versiyasi bilan ulashilmaydi).
+  function setChipExpanded(taId,btnId,on){
+    var ta=$(taId),exp=$(btnId); if(!ta)return;
+    ta.classList.toggle('expanded',on);
+    if(exp){ exp.classList.toggle('on',on); exp.title=on?'Collapse':'Expand'; }
+  }
+  (function(){ var exp=$('vgPromptExp'),ta=$('vgPrompt'); if(exp&&ta)exp.addEventListener('click',function(){ setChipExpanded('vgPrompt','vgPromptExp',!ta.classList.contains('expanded')); }); })();
+  // P14/P15 — bitta Esc = bitta qatlam: avval sheet, keyin kengaytirilgan kompozer.
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    if(document.querySelector('.axvg .sheet.on')){ closeVgSheets(); return; }
+    var ta=$('vgPrompt'); if(ta&&ta.classList.contains('expanded'))setChipExpanded('vgPrompt','vgPromptExp',false);
+  });
 
   // ── pill'lar ──
   function buildPills(host,arr,cur,onpick){
