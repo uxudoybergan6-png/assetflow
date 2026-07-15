@@ -192,7 +192,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     items: [
       { q: "How does FrameFlow work?", a: "Pick a template in your browser or create content in AI Studio, then download it directly or continue in the After Effects plugin." },
       { q: "What are credits and how are they spent?", a: "Credits are used for AI generations. Each image, video, or voice generation spends a set amount of credits. Downloading templates does not require credits." },
-      { q: "What's included in the Free plan?", a: "50 monthly credits, the HD template library, and core AI tools. The Pro plan unlocks watermark-free 4K export and unlimited templates." },
+      { q: "What's included in the Free plan?", a: "50 monthly credits, the full template library at any resolution, core AI tools, and 15 downloads per month. Pro raises your monthly credits and gives unlimited downloads." },
       { q: "How do I install the plugin?", a: "Download the .zxp file from the Plugin page, install it with the installer, and connect it to your account on the platform. Ready in minutes." },
       { q: "Can I cancel my subscription anytime?", a: "Yes, you can cancel your subscription anytime. Access remains until the end of the current billing period." },
     ],
@@ -223,16 +223,16 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
   plans: [
     {
       name: "Free", price: 0, credits: "50 credits/mo", sub: "For trying it out", cta: "Get started",
-      feats: ["50 AI credits per month", "HD template library", "Watermarked export", "1 active project", "Community support"],
-      teaserFeats: ["HD template library", "Watermarked export", "1 active project"],
+      feats: ["50 AI credits per month", "Full template library, any resolution", "15 downloads per month", "1 active project", "Community support"],
+      teaserFeats: ["Full template library, any resolution", "15 downloads per month", "1 active project"],
     },
     {
-      // P27 D4 — "Priority generation" olib tashlandi (gen-processor'da priority queue YO'Q, sotilib
-      // bajarilmayotgan xususiyat = huquqiy xavf). "Watermarked/4K watermark-free" QOLADI — u
-      // yagona real Free↔Pro farqi (P4/P23 GAP1 — watermark QURILISHI kerak, step 14).
+      // §E (P2) — OWNER: 4K/watermark endi Pro-only EMAS (P1'da watermark olib tashlandi, 4K gate yo'q).
+      // Free↔Pro yagona farqi endi: oylik yuklab olishlar (Free 15 → Pro cheksiz) + kreditlar.
+      // "4K, watermark-free downloads" yolg'on reklama edi → "Unlimited downloads" bilan almashtirildi.
       name: "Pro", price: 19, credits: "1,000 credits/mo", sub: "For professionals", cta: "Upgrade to Pro",
-      feats: ["1,000 AI credits per month", "All 10,000+ templates", "4K, watermark-free downloads", "Unlimited projects", "AE / Premiere plugin", "Email support"],
-      teaserFeats: ["All 10,000+ templates", "4K, watermark-free downloads", "AE / Premiere plugin"],
+      feats: ["1,000 AI credits per month", "All 10,000+ templates", "Unlimited downloads", "Unlimited projects", "AE / Premiere plugin", "Email support"],
+      teaserFeats: ["All 10,000+ templates", "Unlimited downloads", "AE / Premiere plugin"],
     },
     {
       // P27 D2 — Studio 6,000 → 3,000 kredit (og'ir tarifda ~2× marja tiklandi). D4 — "API access"

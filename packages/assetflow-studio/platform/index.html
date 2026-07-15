@@ -16530,7 +16530,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </div>
               <!-- primary CTA — Pro darvozasi: Free rejada Pro shablon → "Upgrade to Pro"; aks holda yuklab olish -->
               <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Upgrade to Pro · $19/mo</a></sc-if>
-              <sc-if value="{{ detail.notGated }}" hint-placeholder-val="{{ true }}"><a class="va-btn lime full" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a></sc-if>
+              <sc-if value="{{ detail.canDownload }}" hint-placeholder-val="{{ true }}"><a class="va-btn lime full" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a></sc-if>
+              <!-- §E (P2) — Free oylik limit tugadi: post-click 403 o'rniga oldindan halol darvoza -->
+              <sc-if value="{{ detail.dlExhausted }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Monthly limit reached — Upgrade to Pro</a></sc-if>
+              <!-- §E (P2) — qolgan yuklab olishlar soni (faqat limitli tarifda) -->
+              <sc-if value="{{ detail.showDlLeft }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:7px">{{ detail.dlLeftLabel }}</div></sc-if>
               <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><a class="va-btn ghost full" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a></sc-if>
               <div class="va-gate"><svg class="va-ic" style="margin-top:1px"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
               <!-- inline-alert — faqat Free rejada Pro shablon uchun -->
@@ -18269,8 +18273,8 @@ class Component extends DCLogic {
   ];
 
   plans = [
-    { key: 'free', name: 'Free', pm: 0, cr: '50 credits/mo', pop: false, cta: 'Get started', sub: 'For trying it out', feats: ['50 AI credits per month', 'HD template library', 'Watermarked export', '1 active project', 'Community support'], tf: ['HD template library', 'Watermarked export', '1 active project'] },
-    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'], tf: ['All 10,000+ templates', '4K, watermark-free downloads', 'AE / Premiere plugin'] },
+    { key: 'free', name: 'Free', pm: 0, cr: '50 credits/mo', pop: false, cta: 'Get started', sub: 'For trying it out', feats: ['50 AI credits per month', 'Full template library, any resolution', '15 downloads per month', '1 active project', 'Community support'], tf: ['Full template library, any resolution', '15 downloads per month', '1 active project'] },
+    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'All 10,000+ templates', 'Unlimited downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'], tf: ['All 10,000+ templates', 'Unlimited downloads', 'AE / Premiere plugin'] },
     { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For teams', feats: ['3,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'Dedicated account manager'], tf: ['Team workspace (5 seats)', 'Dedicated account manager'] },
   ];
 
@@ -18283,7 +18287,7 @@ class Component extends DCLogic {
   faqs = [
     { q: 'How does FrameFlow work?', a: 'Pick a template in your browser or create content in AI Studio, then download it directly or continue in the After Effects plugin.' },
     { q: 'What are credits and how are they spent?', a: 'Credits are used for AI generations. Each image, video, or voice generation spends a set amount of credits. Downloading templates does not require credits.' },
-    { q: 'What\'s included in the Free plan?', a: '50 monthly credits, the HD template library, and core AI tools. The Pro plan unlocks watermark-free 4K export and unlimited templates.' },
+    { q: 'What\'s included in the Free plan?', a: '50 monthly credits, the full template library at any resolution, core AI tools, and 15 downloads per month. Pro raises your monthly credits and gives unlimited downloads.' },
     { q: 'How do I install the plugin?', a: 'Download the .zxp file from the Plugin page, install it with the installer, and connect it to your account on the platform. Ready in minutes.' },
     { q: 'Can I cancel my subscription anytime?', a: 'Yes, you can cancel your subscription anytime. Access remains until the end of the current billing period.' },
   ];
@@ -18384,7 +18388,7 @@ class Component extends DCLogic {
       items: [
         { q: 'How does FrameFlow work?', a: 'Pick a template in your browser or create content in AI Studio, then download it directly or continue in the After Effects plugin.' },
         { q: 'What are credits and how are they spent?', a: 'Credits are used for AI generations. Each image, video, or voice generation spends a set amount of credits. Downloading templates does not require credits.' },
-        { q: "What's included in the Free plan?", a: '50 monthly credits, the HD template library, and core AI tools. The Pro plan unlocks watermark-free 4K export and unlimited templates.' },
+        { q: "What's included in the Free plan?", a: '50 monthly credits, the full template library at any resolution, core AI tools, and 15 downloads per month. Pro raises your monthly credits and gives unlimited downloads.' },
         { q: 'How do I install the plugin?', a: 'Download the .zxp file from the Plugin page, install it with the installer, and connect it to your account on the platform. Ready in minutes.' },
         { q: 'Can I cancel my subscription anytime?', a: 'Yes, you can cancel your subscription anytime. Access remains until the end of the current billing period.' },
       ],
@@ -18409,11 +18413,11 @@ class Component extends DCLogic {
     },
     plans: [
       { name: 'Free', price: 0, credits: '50 credits/mo', sub: 'For trying it out', cta: 'Get started',
-        feats: ['50 AI credits per month', 'HD template library', 'Watermarked export', '1 active project', 'Community support'],
-        teaserFeats: ['HD template library', 'Watermarked export', '1 active project'] },
+        feats: ['50 AI credits per month', 'Full template library, any resolution', '15 downloads per month', '1 active project', 'Community support'],
+        teaserFeats: ['Full template library, any resolution', '15 downloads per month', '1 active project'] },
       { name: 'Pro', price: 19, credits: '1,000 credits/mo', sub: 'For professionals', cta: 'Upgrade to Pro',
-        feats: ['1,000 AI credits per month', 'All 10,000+ templates', '4K, watermark-free downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'],
-        teaserFeats: ['All 10,000+ templates', '4K, watermark-free downloads', 'AE / Premiere plugin'] },
+        feats: ['1,000 AI credits per month', 'All 10,000+ templates', 'Unlimited downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'],
+        teaserFeats: ['All 10,000+ templates', 'Unlimited downloads', 'AE / Premiere plugin'] },
       { name: 'Studio', price: 59, credits: '3,000 credits/mo', sub: 'For teams', cta: 'Choose Studio',
         feats: ['3,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'Dedicated account manager'],
         teaserFeats: ['Team workspace (5 seats)', 'Dedicated account manager'] },
@@ -19344,7 +19348,19 @@ class Component extends DCLogic {
     this._creditsBusy = false;
   }
   async loadPluginMe() {
-    try { const r = await FFAPI.pluginMe(); if (r && r.user) this.setState({ downloadsMonth: r.user.downloadsMonth || 0 }); } catch (e) {}
+    // §E (P2) — downloadLimit/unlimitedDownloads ham olinadi: yuklab olishdan OLDIN
+    // "X of 15 left" standingini ko'rsatish uchun (post-click 403 syurprizi yo'q).
+    try {
+      const r = await FFAPI.pluginMe();
+      if (r && r.user) {
+        const lim = r.user.limits || {};
+        this.setState({
+          downloadsMonth: r.user.downloadsMonth || 0,
+          downloadLimit: (lim.downloadLimit != null ? lim.downloadLimit : null),
+          unlimitedDownloads: !!lim.unlimitedDownloads,
+        });
+      }
+    } catch (e) {}
   }
   // P3 (step 34) — foydalanuvchining AI Stock topshiriqlari holati (generationId → status).
   async loadExploreSubs() {
@@ -21531,6 +21547,10 @@ class Component extends DCLogic {
     const filterCount = activeChips.length + (this.state.fCat !== 'All' ? 1 : 0);
     const tplHeading = this.state.fCat === 'All' ? 'All stock' : this.pillLabel(this.state.fCat);
     const dRaw = this.state.detail;
+    // §E (P2) — oylik yuklab olish standingi (detail CTA uchun). unlimited/limitsiz → null.
+    const dlLimit = this.state.unlimitedDownloads ? null : (this.state.downloadLimit != null ? this.state.downloadLimit : null);
+    const dlLeft = dlLimit != null ? Math.max(0, dlLimit - (this.state.downloadsMonth || 0)) : null;
+    const dlExhausted = dlLeft != null && dlLeft <= 0;
     // FAZA D — kolleksiya proxy'si: §B (P2) endi PILL bilan BIR XIL taksonomiya (pillOf) —
     // avval granular `t.c` tengligi ishlatilib, yakka kategoriyali shablonda Related bo'sh
     // qolar va ko'rsatilgan son pill manziliga mos kelmasdi.
@@ -21568,6 +21588,12 @@ class Component extends DCLogic {
       // BATCH6 — Pro darvozasi: Free rejada Pro shablon → yuklab olish o'rniga upgrade
       gated: !!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free'),
       notGated: !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')),
+      // §E (P2) — oldindan yuklab olish standingi (post-click 403 syurprizi yo'q). Pro-gate'dan
+      // MUSTAQIL: hatto bepul shablonda ham Free oylik limit tugagan bo'lsa halol ko'rsatamiz.
+      canDownload: !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && !dlExhausted,
+      dlExhausted: !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && dlExhausted,
+      showDlLeft: dlLeft != null && !dlExhausted,
+      dlLeftLabel: dlLeft != null ? (dlLeft + ' of ' + dlLimit + ' downloads left this month') : '',
       oriLabel: dRaw.ori === '9:16' ? 'Vertical' : (dRaw.ori === '1:1' ? 'Square' : 'Landscape'),
       oriFull: (dRaw.ori === '9:16' ? 'Vertical' : (dRaw.ori === '1:1' ? 'Square' : 'Landscape')) + ' · ' + (dRaw.ori || '16:9'),
       resVal: String((dRaw.real ? (dRaw.d || dRaw.qual) : dRaw.qual) || '4K').toUpperCase(),

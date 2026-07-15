@@ -1516,13 +1516,13 @@ VIEWS.settings = function(){
     </div>
     <div class="card"><div class="card-head"><h3>Subscribers: Free vs Pro</h3><span class="small">Set by admin plans</span></div>
       <div class="card-pad col gap-14">
-        <p class="body">Your templates appear in the catalog in both modes, but <b>Pro</b> subscribers get unlimited downloads and 4K import.</p>
+        <p class="body">Your templates appear in the catalog for everyone at full resolution, but <b>Pro</b> subscribers get unlimited downloads (Free is capped per month).</p>
         <table class="data" style="min-width:auto">
           <thead><tr><th></th><th>Free</th><th>Pro</th></tr></thead>
           <tbody>
+            <!-- §E (P2) — "Resolution" qatori olib tashlandi: barcha tarif istalgan o'lchamda yuklaydi (gate yo'q). Farq = oylik yuklab olishlar. -->
             <tr><td class="cell-strong">Downloads</td><td>${formatPlanLimit(planById('free'))}</td><td>${formatPlanLimit(planById('pro'))}</td></tr>
             <tr><td class="cell-strong">Price (monthly)</td><td>Free</td><td>${formatProPriceForContributor()}</td></tr>
-            <tr><td class="cell-strong">Resolution</td><td>${planById('free').maxResolution}</td><td>${planById('pro').maxResolution}</td></tr>
           </tbody>
         </table>
         <div class="info-banner" style="font-size:12px">${ic('plugin')}<span>Only the admin can change plans. If you have questions, write via <a href="#" onclick="event.preventDefault();route('messages')" style="color:var(--violet-bright)">messages</a>.</span></div>

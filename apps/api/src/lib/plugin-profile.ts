@@ -120,6 +120,10 @@ export function planLimits(plan: PluginPlanTier) {
     unlimitedImports: importLimit == null,
     downloadLimit,
     importLimit,
+    // §E (P2) — ⚠️ LEGACY, ENDI GATE EMAS: hech qanday kod yuklab olishni bu qiymat bilan
+    // cheklamaydi (Free ham istalgan o'lchamda yuklaydi). Faqat admin PlanConfig'da saqlanib
+    // turadi (migratsiyasiz olib bo'lmaydi); foydalanuvchi UI'sida "1080p vs 4K" farqi sifatida
+    // KO'RSATILMASLIGI kerak — Free↔Pro yagona farqi = oylik yuklab olishlar + kreditlar.
     maxResolution: cfg?.maxResolution || staticDefaults.maxResolution,
   };
 }

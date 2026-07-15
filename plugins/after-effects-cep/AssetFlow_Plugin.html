@@ -4842,11 +4842,11 @@ html.home-mode #homePage{display:block!important}
       <div class="plan-pick">
         <button type="button" class="plan-opt" id="planOptFree" data-plan="free">
           <div class="acs-plan-name">Free</div>
-          <div class="acs-plan-desc">15 downloads / month<br>1080p preview</div>
+          <div class="acs-plan-desc">15 downloads / month<br>Any resolution</div>
         </button>
         <button type="button" class="plan-opt" id="planOptPro" data-plan="pro">
           <div class="acs-plan-name">Pro <span class="acs-plan-tag">PRO</span></div>
-          <div class="acs-plan-desc">Unlimited downloads<br>4K pack files</div>
+          <div class="acs-plan-desc">Unlimited downloads<br>Pack files (.aep/.zip)</div>
         </button>
       </div>
       <p class="acs-hint" id="accPlanHint"></p>
@@ -5015,7 +5015,7 @@ html.home-mode #homePage{display:block!important}
     <div class="lim2-sub" id="proSub">"Glitch Logo Reveal" can only be imported on the Pro plan.</div>
     <div class="lim2-feats">
       <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Unlimited downloads</div>
-      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>4K pack files</div>
+      <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>Pack files (.aep/.zip)</div>
       <div class="lim2-feat"><svg width="14" height="14" viewBox="0 0 256 256" fill="#C2F04A" aria-hidden="true"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>All PRO templates unlocked</div>
     </div>
     <button type="button" class="lim-cta" onclick="limitUpgrade()">Upgrade to Pro</button>
@@ -8679,7 +8679,7 @@ function refreshAccountUi(){
   const hint=document.getElementById('accPlanHint');
   if(hint){
     if(u.plan==='pro'){
-      hint.textContent='Pro is active — unlimited downloads and 4K packs.';
+      hint.textContent='Pro is active — unlimited downloads and pack files.';
     }else if(u.stripeSubscriptionActive){
       hint.textContent='Payment (Stripe) is active. Click "Pro" to switch on Pro mode.';
     }else{
