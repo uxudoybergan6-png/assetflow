@@ -42,7 +42,8 @@ export function isVertexEnhanceConfigured(): boolean {
 
 let client: GoogleGenAI | null = null;
 function getClient(): GoogleGenAI {
-  if (!client) client = new GoogleGenAI({ vertexai: true, project: PROJECT, location: LOCATION });
+  // P27 — SDK HTTP timeout (ms): enhance = bitta Gemini generateContent, osilmasin (2 daq bounded).
+  if (!client) client = new GoogleGenAI({ vertexai: true, project: PROJECT, location: LOCATION, httpOptions: { timeout: 120_000 } });
   return client;
 }
 

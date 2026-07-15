@@ -9,6 +9,7 @@
 // (route /gen pre-consume guard; bu adapter ham qat'iy kesadi — hech qachon cap'dan oshiq yubormaydi).
 import { GoogleAuth } from "google-auth-library";
 import type { OrResult } from "./openrouter.js";
+import { fetchWithTimeout, PROVIDER_TIMEOUT_MS } from "./fetch-timeout.js";
 
 // vertex-image.ts bilan bir xil fallback (loyiha ID maxfiy emas — deploy config'da ochiq).
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "project-289028d3-984c-4d84-bd4";
@@ -46,7 +47,7 @@ export async function googleTtsSynthesize(
   if (!input.trim()) return { ok: false, error: "TTS: text is empty" };
   try {
     const token = await getToken();
-    const res = await fetch(TTS_ENDPOINT, {
+    const res = await fetchWithTimeout(TTS_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -58,7 +59,7 @@ export async function googleTtsSynthesize(
         voice: { languageCode: languageCodeOf(voiceName), name: voiceName },
         audioConfig: { audioEncoding: "MP3" },
       }),
-    });
+    }, PROVIDER_TIMEOUT_MS); // P27 — TTS sintez: bounded
     const raw = await res.text();
     if (!res.ok) {
       // Eng ko'p uchraydigan sozlama xatosi — API yoqilmagan: foydalanuvchiga aniq ko'rsatma.

@@ -31,7 +31,9 @@ export function isVertexConfigured(): boolean {
 
 let client: GoogleGenAI | null = null;
 function getClient(): GoogleGenAI {
-  if (!client) client = new GoogleGenAI({ vertexai: true, project: VIDEO_PROJECT, location: LOCATION });
+  // P27 — SDK HTTP chaqiruvlariga timeout (ms): osilib gen-slotni band qilmasin. Video submit/
+  // poll operatsiyalari uzoq bo'lishi mumkin — generous 10 daq, ammo ALWAYS bounded.
+  if (!client) client = new GoogleGenAI({ vertexai: true, project: VIDEO_PROJECT, location: LOCATION, httpOptions: { timeout: 10 * 60 * 1000 } });
   return client;
 }
 

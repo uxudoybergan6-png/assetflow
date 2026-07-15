@@ -1697,6 +1697,22 @@ let genActive = 0;
 const genWaiting: string[] = [];
 const genWaitingSet = new Set<string>();
 const genActiveSet = new Set<string>();
+// P27 FIX2 — SLOT-RELEASE XAVFSIZLIK KAMARI: agar biror provayder fetch FIX1 timeout'idan
+// qochsa ham (masalan AbortSignal qo'yilmagan yangi yo'l), job abadiy osilib slotni band
+// qilmasin. Katta wall-clock (15 daq — har normal jobdan uzun) dan oshsa slotni MAJBURAN
+// bo'shatamiz. Pul: majburan bo'shatilgan job MAVJUD fail+refund yo'lidan o'tadi
+// (settleStuckGeneration — provayder-probe + atomik fail+refund), jim tashlanmaydi.
+const GEN_SLOT_HARD_MS = 15 * 60 * 1000;
+async function forceSettleGeneration(genId: string): Promise<void> {
+  const g = await prisma.generation.findUnique({
+    where: { id: genId },
+    select: { id: true, userId: true, cost: true, modelId: true, createdAt: true, params: true },
+  });
+  if (!g) return;
+  // settleStuckGeneration atomik updateMany (queued/running→failed) bilan o'zi guard qiladi —
+  // allaqachon terminal bo'lsa count=0 → refund yo'q (double-refund yo'q, "bepul gen" yo'q).
+  await settleStuckGeneration(g);
+}
 function genRunNext(): void {
   if (genActive >= GEN_CONCURRENCY) return;
   const genId = genWaiting.shift();
@@ -1704,15 +1720,31 @@ function genRunNext(): void {
   genWaitingSet.delete(genId);
   genActiveSet.add(genId);
   genActive++;
+  let released = false;
+  const release = () => {
+    if (released) return; // ikki marta bo'shatmaslik (guard + finally poygasidan himoya)
+    released = true;
+    genActive--;
+    genActiveSet.delete(genId);
+    genRunNext();
+  };
+  const guard = setTimeout(() => {
+    console.error(`[studio-gen] slot majburan bo'shatildi (${genId}) — ${GEN_SLOT_HARD_MS}ms wall-clock oshdi`);
+    captureException(new Error(`gen slot force-release: ${genId}`), { area: "gen-processor.forceRelease", genId });
+    forceSettleGeneration(genId).catch((e) =>
+      console.error(`[studio-gen] force-settle xato (${genId}):`, e instanceof Error ? e.message : e)
+    );
+    release();
+  }, GEN_SLOT_HARD_MS);
+  if (typeof (guard as { unref?: () => void }).unref === "function") (guard as { unref: () => void }).unref();
   processGeneration(genId)
     .catch((e) => {
       console.error(`[studio-gen] processor xato (${genId}):`, e);
       captureException(e, { area: "gen-processor.runNext", genId });
     })
     .finally(() => {
-      genActive--;
-      genActiveSet.delete(genId);
-      genRunNext();
+      clearTimeout(guard);
+      release();
     });
 }
 export function processGenerationInBackground(genId: string): void {

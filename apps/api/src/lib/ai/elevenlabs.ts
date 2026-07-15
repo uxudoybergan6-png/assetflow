@@ -3,6 +3,8 @@
  * Endpoint: POST /v1/sound-generation → RAW audio (mp3) qaytaradi.
  * Kalit: ELEVENLABS_API_KEY (faqat backend env).
  */
+import { fetchWithTimeout, PROVIDER_TIMEOUT_MS } from "./fetch-timeout.js";
+
 const BASE = "https://api.elevenlabs.io/v1";
 const KEY = process.env.ELEVENLABS_API_KEY ?? "";
 
@@ -29,11 +31,11 @@ export async function elSoundEffects(
   if (typeof durationSeconds === "number" && Number.isFinite(durationSeconds)) {
     body.duration_seconds = Math.max(0.5, Math.min(22, durationSeconds));
   }
-  const res = await fetch(BASE + "/sound-generation?output_format=mp3_44100_128", {
+  const res = await fetchWithTimeout(BASE + "/sound-generation?output_format=mp3_44100_128", {
     method: "POST",
     headers: { "xi-api-key": KEY, "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }, PROVIDER_TIMEOUT_MS); // P27 — SFX generatsiya: bounded
   if (!res.ok) {
     let msg = `ElevenLabs HTTP ${res.status}`;
     try {

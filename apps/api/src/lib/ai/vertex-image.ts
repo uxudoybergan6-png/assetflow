@@ -26,7 +26,8 @@ function locationFor(modelId: string): string {
 }
 const clients: Record<string, GoogleGenAI> = {};
 function getClient(loc: string): GoogleGenAI {
-  if (!clients[loc]) clients[loc] = new GoogleGenAI({ vertexai: true, project: PROJECT, location: loc });
+  // P27 — SDK HTTP timeout (ms): rasm gen/upscale osilib gen-slotni band qilmasin (3 daq bounded).
+  if (!clients[loc]) clients[loc] = new GoogleGenAI({ vertexai: true, project: PROJECT, location: loc, httpOptions: { timeout: 3 * 60 * 1000 } });
   return clients[loc];
 }
 

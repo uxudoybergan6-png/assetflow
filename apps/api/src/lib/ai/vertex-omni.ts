@@ -10,6 +10,11 @@
 //   javob: steps[] → {type:"model_output"} → content[] → {type:"video", data(base64) | uri}
 import { GoogleAuth } from "google-auth-library";
 import type { OrResult } from "./openrouter.js";
+import { fetchWithTimeout, PROVIDER_TIMEOUT_MS } from "./fetch-timeout.js";
+
+// Omni SINXRON video generatsiya — bitta POST daqiqalar davom etishi mumkin. Timeout GENEROUS
+// (10 daq) ammo ALWAYS bounded: aks holda osilgan chaqiruv gen-slotni band qilib navbatni qotiradi.
+const OMNI_SUBMIT_TIMEOUT_MS = 10 * 60 * 1000;
 
 // Fallback (2026-07-01): GitHub Actions deploy env secret'ida Google var yo'qligi sabab
 // VERTEX_NOT_CONFIGURED qayta-qayta chiqardi. Loyiha ID maxfiy emas (deploy config'da ochiq).
@@ -64,7 +69,7 @@ export async function omniGenerateVideo(
     // Video input'siz esa response_format aspect_ratio'ni boshqaradi. Video input bilan model baribir video chiqaradi.
     if (opts.aspectRatio && !hasVideoInput) body.response_format = { type: "video", aspect_ratio: opts.aspectRatio };
 
-    const res = await fetch(OMNI_ENDPOINT, {
+    const res = await fetchWithTimeout(OMNI_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -72,7 +77,7 @@ export async function omniGenerateVideo(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    });
+    }, OMNI_SUBMIT_TIMEOUT_MS); // P27 — sinxron video gen: generous, ammo bounded
     const text = await res.text();
     if (!res.ok) return { ok: false, error: `Omni ${res.status}: ${text.slice(0, 300)}`, status: res.status };
 
@@ -91,9 +96,9 @@ export async function omniGenerateVideo(
       // Katta video (>4MB) uri bilan keladi — bir xil ADC token bilan yuklab olamiz.
       // FAZA 2 #12 billing fix: yuklab olish ham VIDEO loyihasiga hisoblanadi
       // (avval PROJECT edi — video egress asosiy/rasm loyihasidan pul yechardi).
-      const dl = await fetch(vid.uri, {
+      const dl = await fetchWithTimeout(vid.uri, {
         headers: { Authorization: `Bearer ${token}`, "x-goog-user-project": VIDEO_PROJECT },
-      });
+      }, PROVIDER_TIMEOUT_MS); // P27 — video yuklab olish: bounded
       if (!dl.ok) return { ok: false, error: `Failed to download Omni video: ${dl.status}` };
       return { ok: true, data: Buffer.from(await dl.arrayBuffer()) };
     }

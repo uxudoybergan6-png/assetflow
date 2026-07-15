@@ -7,6 +7,8 @@
  *      Authorization: Bearer {CF_AI_TOKEN}
  */
 
+import { fetchWithTimeout, PROVIDER_TIMEOUT_MS } from "./fetch-timeout.js";
+
 const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID ?? "";
 const CF_AI_TOKEN = process.env.CF_AI_TOKEN ?? "";
 
@@ -71,14 +73,14 @@ const NOT_CONFIGURED = { ok: false as const, error: "AI_NOT_CONFIGURED" };
 /** Workers AI `run` chaqiruvi — javobni xom `Response` sifatida qaytaradi. */
 async function runModel(model: string, body: unknown): Promise<Response> {
   const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/ai/run/${model}`;
-  return fetch(url, {
+  return fetchWithTimeout(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${CF_AI_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, PROVIDER_TIMEOUT_MS); // P27 — Workers AI run: bounded
 }
 
 /** Xato javobidan o'qiladigan qisqa matn (CF `errors[].message` yoki status). */

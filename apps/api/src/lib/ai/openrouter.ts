@@ -3,6 +3,8 @@
  * Docs (2026-06): chat /chat/completions (OpenAI-compat), image=modalities, video=async /videos,
  * embeddings /embeddings, speech=audio modality. Kalit: OPENROUTER_API_KEY.
  */
+import { fetchWithTimeout, PROVIDER_TIMEOUT_MS, PROVIDER_POLL_TIMEOUT_MS } from "./fetch-timeout.js";
+
 const BASE = "https://openrouter.ai/api/v1";
 const KEY = process.env.OPENROUTER_API_KEY ?? "";
 const REFERER = process.env.API_PUBLIC_URL ?? "https://assetflow-api-331762958776.europe-west1.run.app";
@@ -52,11 +54,12 @@ async function safeJson(res: Response): Promise<unknown | null> {
 }
 
 function orPost(path: string, body: unknown): Promise<Response> {
-  return fetch(BASE + path, {
+  // P27 — submit/generatsiya: bounded (aks holda osilgan chaqiruv gen-slotni band qiladi).
+  return fetchWithTimeout(BASE + path, {
     method: "POST",
     headers: orHeaders(),
     body: JSON.stringify(body),
-  });
+  }, PROVIDER_TIMEOUT_MS);
 }
 
 /** `data:<mime>;base64,XXX` yoki toza base64 → Buffer. */
@@ -435,9 +438,9 @@ export async function orVideoStatus(
   id: string
 ): Promise<OrResult<{ status: string; urls: string[] }>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const res = await fetch(`${BASE}/videos/${encodeURIComponent(id)}`, {
+  const res = await fetchWithTimeout(`${BASE}/videos/${encodeURIComponent(id)}`, {
     headers: orHeaders(),
-  });
+  }, PROVIDER_POLL_TIMEOUT_MS); // P27 — poll: qisqa timeout
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const j = (await res.json()) as { status?: string; unsigned_urls?: string[] };
   return { ok: true, data: { status: j?.status || "pending", urls: j?.unsigned_urls || [] } };
@@ -446,7 +449,7 @@ export async function orVideoStatus(
 /** OpenRouter video content URL'idan baytlarni yuklab oladi (Bearer auth bilan). */
 export async function orDownload(url: string): Promise<OrResult<Buffer>> {
   if (!isOpenRouterConfigured()) return NOT_CONFIGURED;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${KEY}` } });
+  const res = await fetchWithTimeout(url, { headers: { Authorization: `Bearer ${KEY}` } }, PROVIDER_TIMEOUT_MS); // P27 — video yuklab olish: bounded
   if (!res.ok) return { ok: false, error: await errText(res), status: res.status };
   const buf = Buffer.from(await res.arrayBuffer());
   if (!buf.length) return { ok: false, error: "Empty video" };

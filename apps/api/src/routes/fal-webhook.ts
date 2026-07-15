@@ -119,28 +119,24 @@ async function verifyFalWebhook(
   return { body, requestId };
 }
 
-function readFalRequestId(params: unknown): string {
-  if (!params || typeof params !== "object") return "";
-  const box = params as Record<string, unknown>;
-  const job = box.__providerJob;
-  if (job && typeof job === "object" && typeof (job as Record<string, unknown>).requestId === "string") {
-    return String((job as Record<string, unknown>).requestId);
-  }
-  const hook = box.__providerWebhook;
-  if (hook && typeof hook === "object" && typeof (hook as Record<string, unknown>).requestId === "string") {
-    return String((hook as Record<string, unknown>).requestId);
-  }
-  return "";
-}
-
 async function findGenerationByFalRequestId(requestId: string) {
-  const rows = await prisma.generation.findMany({
-    where: { mode: "video" },
+  if (!requestId) return null;
+  // P27 FIX3 — avval 500 ta video gen'ning (potensial KATTA base64 referens'li) `params`
+  // blob'ini Node xotirasiga yuklab, so'ng in-memory match qilardi (webhook har chaqiruvda
+  // → xotira bosimi). Endi filtr POSTGRES tomonda (JSON-path): faqat MOS 1 qator qaytadi.
+  // requestId submit paytida __providerJob.requestId'da; resume'da __providerWebhook.requestId'da.
+  const row = await prisma.generation.findFirst({
+    where: {
+      mode: "video",
+      OR: [
+        { params: { path: ["__providerJob", "requestId"], equals: requestId } },
+        { params: { path: ["__providerWebhook", "requestId"], equals: requestId } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
-    take: 500,
     select: { id: true, status: true, params: true },
   });
-  return rows.find((row) => readFalRequestId(row.params) === requestId) ?? null;
+  return row;
 }
 
 export const falWebhookHandler: RequestHandler = async (req, res) => {
