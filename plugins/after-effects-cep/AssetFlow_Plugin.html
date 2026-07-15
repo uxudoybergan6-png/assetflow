@@ -7251,7 +7251,19 @@ function hmFromAsset(a){
   };
 }
 function hmList(){
-  try{ if(typeof assets!=='undefined'&&assets&&assets.length) return assets.slice(0,6).map(hmFromAsset); }catch(e){}
+  // P11 — bir xil shablon bir necha bor approve qilingan bo'lsa (nom+muallif) Recommended
+  // gridida bir marta ko'rinsin — aks holda 4 katak bir xil kartadan iborat bo'lib qoladi.
+  try{
+    if(typeof assets!=='undefined'&&assets&&assets.length){
+      var seen={}, out=[];
+      for(var i=0;i<assets.length&&out.length<6;i++){
+        var vm=hmFromAsset(assets[i]);
+        var k=String(vm.n||'').trim().toLowerCase()+' '+String(vm.a||'').trim().toLowerCase();
+        if(seen[k])continue; seen[k]=1; out.push(vm);
+      }
+      if(out.length)return out;
+    }
+  }catch(e){}
   return HM_DEMO;
 }
 function hmBg(vm){ return vm.thumb?("url('"+vm.thumb+"')"):vm.g; }

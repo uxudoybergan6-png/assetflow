@@ -21380,21 +21380,39 @@ class Component extends DCLogic {
       };
     });
     // ── FAZA C · kolleksiya tokchalari (real katalogdan kesim; rcOf yuqorida — FAZA D bilan umumiy) ──
-    const recTemplates = src.slice(0, 4).map(t => rcOf(t));
+    // P11 — TOKCHA DEDUP: bir xil shablon bir necha bor approve qilingan bo'lsa (nom+muallif
+    // normallashtirilgan) tokchada faqat bir marta ko'rinadi (eng yangi nusxa saqlanadi).
+    const shelfKey = (t) => String(t.n || '').trim().toLowerCase() + ' ' + String(t.author || t.a || '').trim().toLowerCase();
+    const dedupShelf = (list) => {
+      const seen = new Map();
+      for (const t of list) {
+        const k = shelfKey(t);
+        const prev = seen.get(k);
+        if (!prev || (t.updated || t.created || 0) > (prev.updated || prev.created || 0)) seen.set(k, t);
+      }
+      return [...seen.values()];
+    };
+    const shelfSrc = dedupShelf(src);
+    // P11 — KICHIK-KATALOG REJIMI: noyob shablon 8 tadan kam bo'lsa faqat "Recommended"
+    // tokchasi ko'rsatiladi (Trending/Category/New yashiriladi) — aks holda 4-5 assetdan
+    // to'rtta bir xil ko'rinishdagi qator chiqadi (har biri o'z sarlavha+strelkasi bilan).
+    const SHELF_MIN = 8;
+    const smallCatalog = shelfSrc.length < SHELF_MIN;
+    const recTemplates = shelfSrc.slice(0, 8).map(t => rcOf(t));
     const hasRec = recTemplates.length > 0;
     // Trending — hozircha proxy: yaqinda yangilangan shablonlar (katalogda download hisobi yo'q).
     // TODO(FF): real "downloads / 7 days" endpointi (DownloadEvent, Faza F) kelganda shu kesim almashadi.
-    const shelfTrend = src.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 10).map(t => rcOf(t));
+    const shelfTrend = smallCatalog ? [] : shelfSrc.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 10).map(t => rcOf(t));
     const hasTrend = shelfTrend.length > 0 && this.state.catalogReady;
     // Kategoriya tokchasi — "Lower Thirds" bo'lsa o'sha, bo'lmasa eng katta kategoriya
     const shelfCatCount = {};
-    src.forEach(t => { shelfCatCount[t.c] = (shelfCatCount[t.c] || 0) + 1; });
-    const shelfCatName = shelfCatCount['Lower Thirds'] ? 'Lower Thirds'
-      : (Object.keys(shelfCatCount).sort((a, b) => shelfCatCount[b] - shelfCatCount[a])[0] || null);
-    const shelfCat = shelfCatName ? src.filter(t => t.c === shelfCatName).slice(0, 10).map(t => rcOf(t)) : [];
+    shelfSrc.forEach(t => { shelfCatCount[t.c] = (shelfCatCount[t.c] || 0) + 1; });
+    const shelfCatName = smallCatalog ? null : (shelfCatCount['Lower Thirds'] ? 'Lower Thirds'
+      : (Object.keys(shelfCatCount).sort((a, b) => shelfCatCount[b] - shelfCatCount[a])[0] || null));
+    const shelfCat = shelfCatName ? shelfSrc.filter(t => t.c === shelfCatName).slice(0, 10).map(t => rcOf(t)) : [];
     const hasShelfCat = shelfCat.length > 0 && this.state.catalogReady;
     const shelfCatTitle = shelfCatName ? (shelfCatName + ' essentials') : '';
-    const shelfNew = src.filter(t => t.created && (Date.now() - t.created) < NEW_MS)
+    const shelfNew = smallCatalog ? [] : shelfSrc.filter(t => t.created && (Date.now() - t.created) < NEW_MS)
       .sort((a, b) => b.created - a.created).slice(0, 10).map(t => rcOf(t, true));
     const hasShelfNew = shelfNew.length > 0 && this.state.catalogReady;
     const shelvesLoading = !this.state.catalogReady;
