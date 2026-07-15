@@ -138,6 +138,49 @@
     .profile-hero p{margin:4px 0 10px;color:var(--muted);font-size:10px}
     .big-credit{margin:4px 0;color:var(--accent);font:650 42px/1 "Space Grotesk",Inter,sans-serif;letter-spacing:-.05em}
 
+    /* Dashboard webning ≤820 px Home kompozitsiyasidan tor panelga ko'chirildi. */
+    .home-page{min-height:100%;padding-bottom:30px;background:var(--bg-deep)}
+    .home-hero{margin:16px 16px 0;padding:22px 16px;border:1px solid var(--border);border-radius:16px;background:radial-gradient(circle at 88% 12%,var(--accent-soft),transparent 35%),var(--surface);box-shadow:var(--inset)}
+    .home-kick{color:var(--faint);font:700 8px/1 "JetBrains Mono","SFMono-Regular",monospace;letter-spacing:.12em;text-transform:uppercase}
+    .home-title{margin:9px 0 7px;color:var(--text);font:650 23px/1.02 "Space Grotesk",Inter,sans-serif;letter-spacing:-.04em}
+    .home-title em{font-style:normal;color:var(--accent)}
+    .home-sub{margin:0;color:var(--muted);font-size:10px;line-height:1.5}
+    .home-section{display:flex;align-items:baseline;padding:17px 16px 9px}
+    .home-section h2{margin:0;color:var(--text);font:650 14px/1.1 "Space Grotesk",Inter,sans-serif;letter-spacing:-.02em}
+    .home-section .link-button{margin-left:auto;white-space:nowrap}
+    .home-strip{padding:0 16px 4px;display:flex;overflow-x:auto}
+    .home-strip::-webkit-scrollbar,.home-model-strip::-webkit-scrollbar,.home-shelf::-webkit-scrollbar{height:0}
+    .home-gen{width:124px;height:124px;margin-right:9px;padding:0;border:1px solid var(--border);border-radius:11px;background:var(--surface-2);color:var(--text);text-align:left;position:relative;overflow:hidden;flex:0 0 auto;transition:transform var(--motion-fast),border-color var(--motion-fast)}
+    .home-gen:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .home-gen .art{border-radius:inherit}
+    .home-type{position:absolute;top:7px;left:7px;min-width:23px;height:23px;padding:0 5px;border:1px solid rgba(255,255,255,.18);border-radius:6px;background:rgba(4,5,8,.62);color:#fff;display:flex;align-items:center;justify-content:center;font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;z-index:2}
+    .home-gen-name{position:absolute;right:0;bottom:0;left:0;padding:24px 8px 8px;background:linear-gradient(transparent,rgba(4,5,8,.86));color:#fff;z-index:2}
+    .home-gen-name strong,.home-gen-name span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .home-gen-name strong{font-size:8px}.home-gen-name span{margin-top:3px;color:rgba(255,255,255,.62);font:650 6px/1 "JetBrains Mono","SFMono-Regular",monospace}
+    .home-model-strip{padding:0 16px 4px;display:flex;overflow-x:auto}
+    .home-model-card{width:172px;margin-right:9px;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden;flex:0 0 auto;transition:transform var(--motion-fast),border-color var(--motion-fast)}
+    .home-model-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .home-model-preview{height:94px;position:relative;overflow:hidden;background:linear-gradient(135deg,#3e2a78,#0e7a8a)}
+    .home-model-preview.video{background:linear-gradient(135deg,#7a2e4a,#2a1140)}
+    .home-model-preview.voice{background:linear-gradient(135deg,#0f5a46,#12202c)}
+    .home-model-preview:after{content:"";position:absolute;width:76px;height:76px;right:15px;top:10px;border:13px solid rgba(255,255,255,.14);border-radius:50%}
+    .home-model-tag{position:absolute;top:7px;left:7px;padding:4px 6px;border:1px solid rgba(255,255,255,.18);border-radius:5px;background:rgba(4,5,8,.65);color:#fff;font:700 7px/1 "JetBrains Mono","SFMono-Regular",monospace;z-index:2}
+    .home-model-body{padding:10px}
+    .home-model-body strong{display:block;color:var(--text);font-size:10px}
+    .home-model-foot{margin-top:8px;display:flex;align-items:center}
+    .home-model-cost{color:var(--accent);font:700 8px/1 "JetBrains Mono","SFMono-Regular",monospace}
+    .home-model-try{margin-left:auto;min-height:25px;padding:5px 9px;border:1px solid var(--accent);border-radius:999px;background:var(--accent);color:var(--on-accent);font-size:7px;font-weight:750}
+    .home-template-grid{padding:0 16px 4px;display:grid;grid-template-columns:1fr 1fr;grid-gap:9px}
+    .home-template-card{min-width:0;padding:0;border:0;background:transparent;color:var(--text);text-align:left}
+    .home-template-media{height:105px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);transition:transform var(--motion-fast),border-color var(--motion-fast)}
+    .home-template-card:hover .home-template-media{transform:translateY(-2px);border-color:var(--accent)}
+    .home-template-card .badge{position:absolute;top:7px;left:7px;z-index:2}
+    .home-template-card h3{margin:8px 1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-size:9px;font-weight:650}
+    .home-template-card p{margin:4px 1px 0;color:var(--muted);font:650 7px/1.3 "JetBrains Mono","SFMono-Regular",monospace}
+    .home-shelf{padding:0 16px 4px;display:flex;overflow-x:auto}
+    .home-shelf .home-template-card{width:200px;margin-right:10px;flex:0 0 auto}
+    .home-shelf .home-template-media{height:118px}
+
     .catalog-toolbar{display:flex;align-items:center;margin-bottom:10px}
     .catalog-toolbar .search-box{flex:1}
     .search-box{height:40px;padding:0 11px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;color:var(--faint)}
@@ -494,6 +537,12 @@
     .panel[data-width="320"] .account-chip{padding-left:7px}.panel[data-width="320"] .avatar{display:none}
     .panel[data-width="320"] .page{padding-left:13px;padding-right:13px}
     .panel[data-width="320"] .page-title{font-size:27px}
+    .panel[data-width="320"] .home-hero{margin:12px 12px 0;padding:18px 14px}
+    .panel[data-width="320"] .home-title{font-size:21px}
+    .panel[data-width="320"] .home-section{padding-left:12px;padding-right:12px}
+    .panel[data-width="320"] .home-strip,.panel[data-width="320"] .home-model-strip,.panel[data-width="320"] .home-shelf{padding-left:12px;padding-right:12px}
+    .panel[data-width="320"] .home-template-grid{padding-left:12px;padding-right:12px;grid-gap:8px}
+    .panel[data-width="320"] .home-template-media{height:88px}
     .panel[data-width="320"] .catalog-grid,.panel[data-width="320"] .library-grid{grid-template-columns:1fr}
     .panel[data-width="320"] .template-media{height:145px}
     .panel[data-width="320"] .ai-stage{min-height:245px;padding:10px}
@@ -524,6 +573,9 @@
     .panel[data-width="420"] .ai-result-media{height:172px}
     .panel[data-width="600"] .auth-layout{grid-template-columns:.9fr 1.1fr}
     .panel[data-width="600"] .auth-story{min-height:440px;display:flex;flex-direction:column;justify-content:center}
+    .panel[data-width="600"] .home-title{font-size:25px}
+    .panel[data-width="600"] .home-template-media{height:150px}
+    .panel[data-width="600"] .home-shelf .home-template-media{height:132px}
     .panel[data-width="600"] .catalog-grid{grid-template-columns:repeat(3,1fr)}
     .panel[data-width="600"] .library-grid{grid-template-columns:repeat(3,1fr)}
     .panel[data-width="600"] .form-layout{grid-template-columns:1fr 1fr}
@@ -546,6 +598,7 @@
       <button type="button" data-width="320">320</button><button type="button" data-width="420">420</button><button type="button" data-width="600">600</button>
     </div>
     <nav class="pane-nav" id="paneNav">
+      <div class="nav-group"><p class="nav-group-name">Home</p><button class="nav-button" data-pane="dashboard">Dashboard</button></div>
       <div class="nav-group"><p class="nav-group-name">Auth</p><button class="nav-button" data-pane="auth-login">Sign in</button><button class="nav-button" data-pane="auth-device">Google device code</button><button class="nav-button" data-pane="auth-account">Signed-in account</button></div>
       <div class="nav-group"><p class="nav-group-name">Browse</p><button class="nav-button" data-pane="browse-catalog">Video catalog</button><button class="nav-button" data-pane="browse-detail">Template detail</button><button class="nav-button" data-pane="browse-import">Import progress</button><button class="nav-button" data-pane="browse-unavailable">Pack unavailable</button></div>
       <div class="nav-group"><p class="nav-group-name">AI Studio</p><button class="nav-button" data-pane="ai-image">Image mode</button><button class="nav-button" data-pane="ai-video">Video mode</button><button class="nav-button" data-pane="ai-upscale">Upscale mode</button><button class="nav-button" data-pane="ai-voice">Voice mode</button><button class="nav-button" data-pane="ai-sfx">SFX mode</button><button class="nav-button" data-pane="ai-result">Workspace results</button><button class="nav-button" data-pane="concept-seedance">Seedance concept</button></div>
@@ -571,7 +624,7 @@
               <div class="auth-card"><p class="eyebrow">Welcome back</p><h2>Sign in to AssetFlow</h2><p>Access your plan, credits and saved work.</p>
                 <div class="field"><label>Email</label><input class="input" type="email" value="alex@studio.co" aria-label="Email"></div>
                 <div class="field"><label>Password</label><input class="input" type="password" value="password" aria-label="Password"></div>
-                <button class="btn btn-primary btn-block" type="button" data-go="auth-account">Sign in</button>
+                <button class="btn btn-primary btn-block" type="button" data-go="dashboard">Sign in</button>
                 <div class="or"><span>or</span></div>
                 <button class="btn btn-secondary btn-block oauth-button" type="button" data-go="auth-device"><span class="oauth-dot"></span>Continue with Google</button>
                 <button class="link-button btn-block" type="button">Forgot password?</button>
@@ -592,7 +645,43 @@
           <section class="pane" data-pane="auth-account">
             <div class="page"><div class="page-hero"><p class="eyebrow">Account</p><h1 class="page-title">Ready to create.</h1><p class="page-lead">Your signed-in profile follows the same plan and balance hierarchy as the web dashboard.</p></div>
               <div class="surface profile-hero"><div class="profile-avatar">AK</div><h2>Alex Kim</h2><p>alex@studio.co</p><div class="badge-row" style="justify-content:center"><span class="badge pro">PRO PLAN</span><span class="badge">MONTHLY</span></div><div class="divider"></div><div class="big-credit">✦ 128</div><span class="mono" style="color:var(--muted);font-size:8px">GENERATION CREDITS</span></div>
-              <div class="surface surface-pad" style="margin-top:10px"><div class="meta-row"><span>Plan renews</span><strong>Aug 13, 2026</strong></div><div class="meta-row"><span>Template imports</span><strong>18 this month</strong></div><div class="meta-row"><span>Workspace</span><strong>After Effects</strong></div></div>
+              <div class="surface surface-pad" style="margin-top:10px"><div class="meta-row"><span>Plan renews</span><strong>Aug 13, 2026</strong></div><div class="meta-row"><span>Template imports</span><strong>18 this month</strong></div><div class="meta-row"><span>Workspace</span><strong>After Effects</strong></div></div><button class="btn btn-primary btn-block" style="margin-top:10px" type="button" data-go="dashboard">Open dashboard</button>
+            </div>
+          </section>
+
+          <section class="pane" data-pane="dashboard">
+            <div class="home-page">
+              <div class="home-hero"><div class="home-kick">WEDNESDAY · JUL 15</div><h1 class="home-title">Good afternoon, <em>Alex.</em></h1><p class="home-sub">Pick up where you left off, or start something new.</p></div>
+
+              <div class="home-section"><h2>Jump back in</h2><button class="link-button" type="button" data-go="ai-image">Open AI Studio →</button></div>
+              <div class="home-strip">
+                <button class="home-gen" type="button" data-go="ai-result"><span class="art art-two"></span><span class="home-type">IMG</span><span class="home-gen-name"><strong>Glass product study</strong><span>NANO BANANA 2 · JUST NOW</span></span></button>
+                <button class="home-gen" type="button" data-go="ai-result"><span class="art art-three"></span><span class="home-type">VID</span><span class="home-gen-name"><strong>Editorial motion loop</strong><span>VEO 3.1 LITE · 6S</span></span></button>
+                <button class="home-gen" type="button" data-go="ai-result"><span class="art art-one"></span><span class="home-type">IMG</span><span class="home-gen-name"><strong>Velocity title study</strong><span>IMAGEN 4 · ✦4</span></span></button>
+                <button class="home-gen" type="button" data-go="ai-result"><span class="art art-four"></span><span class="home-type">VO</span><span class="home-gen-name"><strong>Campaign voiceover</strong><span>CHIRP 3 HD · ✦4</span></span></button>
+              </div>
+
+              <div class="home-section"><h2>Featured models</h2><button class="link-button" type="button" data-go="ai-image">Open AI Studio →</button></div>
+              <div class="home-model-strip">
+                <article class="home-model-card"><div class="home-model-preview"><span class="home-model-tag">IMAGE</span></div><div class="home-model-body"><strong>Nano Banana 2</strong><div class="home-model-foot"><span class="home-model-cost">FROM ✦4</span><button class="home-model-try" type="button" data-go="ai-image">Try</button></div></div></article>
+                <article class="home-model-card"><div class="home-model-preview video"><span class="home-model-tag">VIDEO</span></div><div class="home-model-body"><strong>Veo 3.1 Lite</strong><div class="home-model-foot"><span class="home-model-cost">✦3 / SEC</span><button class="home-model-try" type="button" data-go="ai-video">Try</button></div></div></article>
+                <article class="home-model-card"><div class="home-model-preview voice"><span class="home-model-tag">VOICE</span></div><div class="home-model-body"><strong>Chirp 3 HD</strong><div class="home-model-foot"><span class="home-model-cost">FLAT ✦4</span><button class="home-model-try" type="button" data-go="ai-voice">Try</button></div></div></article>
+              </div>
+
+              <div class="home-section"><h2>Recommended for you</h2><button class="link-button" type="button" data-go="browse-catalog">Browse all →</button></div>
+              <div class="home-template-grid">
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-one"></span><span class="badge accent">PRO</span></div><h3>Velocity Sports Opener</h3><p>AFTER EFFECTS · 4K</p></button>
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-two"></span><span class="badge">FREE</span></div><h3>Clean Product Reveal</h3><p>AFTER EFFECTS · HD</p></button>
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-three"></span><span class="badge accent">PRO</span></div><h3>Editorial Film Titles</h3><p>AFTER EFFECTS · 4K</p></button>
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-four"></span><span class="badge">FREE</span></div><h3>Organic Logo Motion</h3><p>AFTER EFFECTS · HD</p></button>
+              </div>
+
+              <div class="home-section"><h2>Recently updated</h2><button class="link-button" type="button" data-go="browse-catalog">View all →</button></div>
+              <div class="home-shelf">
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-three"></span><span class="badge pro">NEW</span></div><h3>Editorial Type System</h3><p>FRESH PICK · AE</p></button>
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-four"></span><span class="badge accent">PRO</span></div><h3>Organic Shapes Pack</h3><p>UPDATED TODAY · AE</p></button>
+                <button class="home-template-card" type="button" data-go="browse-detail"><div class="home-template-media"><span class="art art-one"></span><span class="badge">FREE</span></div><h3>Golden Hour Opener</h3><p>UPDATED JUL 14 · AE</p></button>
+              </div>
             </div>
           </section>
 
@@ -816,14 +905,14 @@
       var sizeReadout=document.getElementById("sizeReadout");
       var liveToast=document.getElementById("liveToast");
       var toastTimer=null;
-      var contexts={"auth-login":"SIGN IN","auth-device":"GOOGLE DEVICE CODE","auth-account":"ACCOUNT","browse-catalog":"VIDEO TEMPLATES","browse-detail":"TEMPLATE DETAIL","browse-import":"IMPORTING","browse-unavailable":"PACK UNAVAILABLE","ai-image":"AI STUDIO","ai-video":"AI STUDIO","ai-voice":"AI STUDIO","ai-sfx":"AI STUDIO","ai-upscale":"AI STUDIO","ai-result":"AI STUDIO","concept-seedance":"AI STUDIO · CONCEPT","library-grid":"MY LIBRARY","library-empty":"MY LIBRARY","settings":"SETTINGS","state-offline":"SYSTEM STATE","state-credits":"CREDITS","state-moderation":"MODERATION","state-update":"UPDATE AVAILABLE","state-toasts":"TOASTS","state-loading":"LOADING"};
-      var state={pane:"browse-catalog",theme:"noir",width:"420"};
+      var contexts={"dashboard":"HOME","auth-login":"SIGN IN","auth-device":"GOOGLE DEVICE CODE","auth-account":"ACCOUNT","browse-catalog":"VIDEO TEMPLATES","browse-detail":"TEMPLATE DETAIL","browse-import":"IMPORTING","browse-unavailable":"PACK UNAVAILABLE","ai-image":"AI STUDIO","ai-video":"AI STUDIO","ai-voice":"AI STUDIO","ai-sfx":"AI STUDIO","ai-upscale":"AI STUDIO","ai-result":"AI STUDIO","concept-seedance":"AI STUDIO · CONCEPT","library-grid":"MY LIBRARY","library-empty":"MY LIBRARY","settings":"SETTINGS","state-offline":"SYSTEM STATE","state-credits":"CREDITS","state-moderation":"MODERATION","state-update":"UPDATE AVAILABLE","state-toasts":"TOASTS","state-loading":"LOADING"};
+      var state={pane:"dashboard",theme:"noir",width:"420"};
       function parseHash(){
         var raw=window.location.hash.replace(/^#/,"");
         var parts=raw?raw.split("&"):[];
         var i,pair;
         for(i=0;i<parts.length;i+=1){pair=parts[i].split("=");if(pair.length===2&&state.hasOwnProperty(pair[0])){state[pair[0]]=decodeURIComponent(pair[1]);}}
-        if(!contexts[state.pane]){state.pane="browse-catalog";}
+        if(!contexts[state.pane]){state.pane="dashboard";}
         if(state.theme!=="noir"&&state.theme!=="neon"&&state.theme!=="cold"){state.theme="noir";}
         if(state.width!=="320"&&state.width!=="420"&&state.width!=="600"){state.width="420";}
       }
