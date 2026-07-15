@@ -188,6 +188,9 @@
       return req("/api/public/asset/" + encodeURIComponent(id), { auth: false });
     },
     pluginMe: function () { return req("/api/plugin/me"); },
+    // §F (P33) — shablon sevimlilari SERVER-sinxron (qurilmalar aro; plagin ham shu endpoint).
+    favorites: function () { return req("/api/plugin/favorites"); },
+    favoriteToggle: function (templateId, on) { return req("/api/plugin/favorites", { method: "POST", body: { templateId: templateId, on: !!on } }); },
     packLink: function (templateId) { return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1"); },
 
     // Billing (Lemon Squeezy — MoR). body: { plan: "pro"|"studio" } yoki { credits: 500 }

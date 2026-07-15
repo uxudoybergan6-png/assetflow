@@ -107,6 +107,21 @@ const STATUS = {
 };
 function badge(status){ const s=STATUS[status]; return `<span class="badge ${s.cls}"><span class="dot"></span>${s.label}</span>`; }
 
+// §F (P33) — bitta LOKAL sana yordamchisi. Ilgari hamma joyda `iso.slice(0,10)` /
+// `.slice(0,16).replace("T"," ")` — bu XOM UTC edi (foydalanuvchi mintaqasida noto'g'ri kun/soat).
+// fmtLocalDate → mahalliy "Jul 15, 2026"; fmtLocalDateTime → mahalliy "Jul 15, 2026, 14:30".
+function fmtLocalDate(iso){
+  if(!iso) return '—';
+  const d=new Date(iso); if(isNaN(d.getTime())) return String(iso).slice(0,10);
+  return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+}
+function fmtLocalDateTime(iso){
+  if(!iso) return '—';
+  const d=new Date(iso); if(isNaN(d.getTime())) return String(iso).slice(0,16).replace('T',' ');
+  return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})+', '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+if(typeof window!=='undefined'){ window.fmtLocalDate=fmtLocalDate; window.fmtLocalDateTime=fmtLocalDateTime; }
+
 // modal/drawer host
 function openModal(html){
   closeModal();

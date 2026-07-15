@@ -225,7 +225,7 @@ async function loadAdminThreads() {
     cid: t.contributorId,
     sub: t.subject,
     last: t.lastMessage,
-    t: String(t.lastMessageAt || "").slice(0, 10),
+    t: fmtLocalDate(t.lastMessageAt), // §F (P33) — lokal sana (xom UTC slice emas)
     unread: t.unreadCount > 0,
     tid: t.templateId,
     isBroadcast: t.isBroadcast,
@@ -298,7 +298,7 @@ async function renderMessaging(){
           ${ADMIN_THREAD_MESSAGES.length ? ADMIN_THREAD_MESSAGES.map((m) => {
             const isMe = m.sender?.isMe;
             const nm = m.sender?.name || c.name;
-            const t = String(m.createdAt || "").slice(0,16).replace("T"," ");
+            const t = fmtLocalDateTime(m.createdAt); // §F (P33) — lokal sana-vaqt
             return `<div class="adx-msg ${isMe?'me':''}">${isMe?'<span class="adx-av" style="width:28px;height:28px;font-size:10px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,th.cid,28)}<div><div class="adx-bub">${esc(m.body)}</div><div class="adx-msgt">${esc(t)}${isMe?' · Admin':''}</div></div></div>`;
           }).join("") : `<div class="adx-empty" style="border:0;margin:auto"><span class="ei"><i class="ph ph-chat-circle"></i></span><div style="font-size:11.5px;color:var(--muted2)">No messages yet</div></div>`}
         </div>
@@ -998,7 +998,7 @@ async function sendAdminReply() {
     const data = await StudioApi.getMessageThread(th.id);
     ADMIN_THREAD_MESSAGES = data.messages || [];
     th.last = body;
-    th.t = new Date().toISOString().slice(0, 10);
+    th.t = fmtLocalDate(new Date().toISOString()); // §F (P33) — lokal sana (ro'yxatdagi format bilan bir xil)
     // P34 — javob yuborilgan thread ro'yxat boshiga ko'chsin (eng so'nggi faollik yuqorida)
     const idx = ADMIN_THREADS.indexOf(th);
     if (idx > 0) {

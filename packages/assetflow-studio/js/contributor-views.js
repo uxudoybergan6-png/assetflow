@@ -157,7 +157,7 @@ window.afterRender.overview = async function(){
     box.innerHTML = threads.map(th => `<div class="row center gap-12" style="padding:12px 18px;border-bottom:1px solid var(--line-soft);cursor:pointer" onclick="route('messages')">
       <div class="col grow" style="gap:2px;min-width:0">
         <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(th.subject || 'Message')}</span>
-        <span class="small">${esc((th.lastMessageAt || '').slice(0, 10))}</span>
+        <span class="small">${esc(fmtLocalDate(th.lastMessageAt))}</span>
       </div>
       ${th.unreadCount ? `<span class="badge badge-pending"><span class="dot"></span>${esc(th.unreadCount)} new</span>` : ''}
     </div>`).join('');
@@ -1350,8 +1350,8 @@ let CMSG_SEL = 0;
 let C_THREAD_MESSAGES = [];
 
 function formatMsgDate(iso) {
-  if (!iso) return "—";
-  return String(iso).slice(0, 16).replace("T", " ");
+  // §F (P33) — xom UTC slice o'rniga umumiy lokal yordamchi (ui.js)
+  return (typeof fmtLocalDateTime === "function") ? fmtLocalDateTime(iso) : (iso ? String(iso).slice(0, 16).replace("T", " ") : "—");
 }
 
 function buildContributorThreads() {
@@ -1571,7 +1571,7 @@ window.afterRender.settings = async function(){
         <table class="data" style="min-width:auto">
           <thead><tr><th>Date</th><th>Amount</th><th>Status</th><th>Note</th></tr></thead>
           <tbody>${payouts.map(p => `<tr>
-            <td class="cell-muted mono">${esc(String(p.createdAt || '').slice(0, 10))}</td>
+            <td class="cell-muted mono">${esc(fmtLocalDate(p.createdAt))}</td>
             <td class="cell-strong">${fmtUsd(p.amountCents)}</td>
             <td>${esc(p.status || '—')}</td>
             <td class="cell-muted">${esc(p.note || '—')}</td>
@@ -1622,7 +1622,7 @@ async function renderDrawerThreadSection(t) {
         .map((m) => {
           const isAdmin = m.sender?.role === "ADMIN";
           const who = m.sender?.name || m.sender?.email || (isAdmin ? "Admin" : "You");
-          const when = String(m.createdAt || "").slice(0, 16).replace("T", " ");
+          const when = fmtLocalDateTime(m.createdAt);
           return `<div class="msg"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${isAdmin ? "linear-gradient(140deg,#7b5cff,#4a2fb0)" : "var(--bg-4)"}">${esc(who.slice(0, 2).toUpperCase())}</div>
           <div class="msg-body"><div class="msg-name" style="color:var(--${isAdmin ? "violet-bright" : "tx-1"})">${esc(who)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${esc(when)}</div></div></div>`;
         })
