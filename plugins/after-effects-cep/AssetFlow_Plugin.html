@@ -1005,15 +1005,18 @@ html.dens-sm .af-dens-btn .dn-md{display:none}
 html.dens-sm .af-dens-btn .dn-sm{display:block}
 html.dens-lg .af-dens-btn .dn-md{display:none}
 html.dens-lg .af-dens-btn .dn-lg{display:block}
-/* Karta — a1: shaffof, ustun-stack (thumb + sarlavha + subtitr + import), gap 6px */
-.card{display:flex;flex-direction:column;gap:6px;background:none;border:0;border-radius:0;overflow:visible;box-shadow:none;cursor:pointer;position:relative;transition:transform .12s var(--ease)}
-.card:hover{transform:none;border-color:transparent;box-shadow:none}
+/* Karta — SC_14: fon bilan qo'shilib ketmasin — surface + 1px border + hover lift
+   (.cat/.fhome-tcard bilan bir xil ajratish retsepti, faqat mavjud tokenlar). */
+.card{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.22);cursor:pointer;position:relative;padding-bottom:10px;transition:transform .12s var(--ease),border-color .12s var(--ease),box-shadow .12s var(--ease)}
+.card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 10px 26px -10px rgba(0,0,0,.5)}
 .card:active{transform:scale(.98)}
 .card.selected{outline:2px solid var(--select);outline-offset:2px}
-.card .thumb{position:relative;aspect-ratio:171/96;width:100%;height:auto;border-radius:10px;overflow:hidden;box-shadow:none;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center}
+.card .thumb{position:relative;aspect-ratio:171/96;width:100%;height:auto;border-radius:0;overflow:hidden;box-shadow:none;display:flex;align-items:center;justify-content:center;background-size:cover;background-position:center}
 .card.no-pack .thumb{opacity:.5}
 .card:hover .thumb{box-shadow:none}
 .card .thumb::before{display:none}
+/* SC_14: sarlavha/subtitr karta ichki chetidan (thumb flush, matn padded) */
+.card .ck-title,.card .ck-sub{padding:0 10px}
 
 /* a1 karta — PRO/FREE (yuqori-chap), status (yuqori-o'ng), Ae/Dr (past-chap) */
 .ck-plan{position:absolute;top:7px;left:7px;z-index:3;font-family:var(--font-mono);font-weight:700;font-size:8px;letter-spacing:.06em;padding:2px 6px;border-radius:4px}
@@ -1599,7 +1602,8 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-topstar.on{color:var(--accent)}
 
 /* ---- a3 hero (210px @380 = aspect 38/21; kengda cho'zilmasin, aspect saqlansin) ---- */
-.pd3-hero{position:relative;width:100%;max-width:420px;margin-inline:auto;aspect-ratio:38/21;flex:none;overflow:hidden;background:#12101c}
+/* SC_14: max-width 420px olib tashlandi — media panel kengligiga mos katta ko'rinadi */
+.pd3-hero{position:relative;width:100%;margin-inline:auto;aspect-ratio:38/21;flex:none;overflow:hidden;background:#12101c}
 .pd3-hero-poster,.pd3-hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .pd3-hero-vid{display:none;z-index:1}
 .pd3-hero.playing .pd3-hero-vid{display:block}
@@ -1705,10 +1709,19 @@ html.cep-mode .pack-dropbar{display:flex}
 .pd3-simplan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
 .pd3-simname{font-weight:600;font-size:10.5px;color:#E7ECF3;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---- Responsive: 380px'da a3 AYNAN (max-width>panel → ta'sirsiz); kengroqda
-   markazlashgan ustun (top + hero + body kontenti cho'zilmaydi), karusel skroll ---- */
-.pd3-top{width:100%;max-width:420px;margin-left:auto;margin-right:auto}
-.pd3-body>*{max-width:420px;margin-left:auto;margin-right:auto}
+/* ---- SC_14: detail KATTA layout — 420px tor markaziy ustun bekor qilindi.
+   ≤~500px: bitta ustun, media to'liq kenglik (chetki padding pd3-body'da).
+   ≥760px: CSS-grid ikki ustun (media chapda katta, info o'ngda) — DOM tartibi
+   O'ZGARMAGAN (hero va body sibling), handler/data aynan. ---- */
+.pd3-top{width:100%}
+.pd3-body>*{max-width:none}
+@media (min-width:760px){
+  .pack-detail.open{display:grid;grid-template-rows:48px minmax(0,1fr);grid-template-columns:minmax(0,7fr) minmax(320px,5fr)}
+  .pd3-top{grid-column:1/-1}
+  .pd3-hero{grid-row:2;grid-column:1;align-self:start;width:auto;margin:16px 0 16px 16px;border-radius:14px;border:1px solid var(--border)}
+  .pd3-body{grid-row:2;grid-column:2;overflow-y:auto;padding:16px 20px}
+  .pd3-fade{display:none}
+}
 
 /* ---- a3 bottom fade ---- */
 .pd3-fade{position:absolute;left:0;right:0;bottom:0;height:30px;z-index:5;background:linear-gradient(180deg,rgba(6,8,11,0),var(--bg));pointer-events:none}
@@ -5837,17 +5850,13 @@ function renderCard(a,i,showDl){
   else if(a.ai){stTx='With AI';stCol='var(--select)';}
   else if(a.nw&&!showDl){stTx='NEW';stCol='var(--accent)';}
   const stBadge=stTx?`<span class="ck-st" style="color:${stCol}">${stTx}</span>`:'';
-  // Subtitr: kategoriya · muallif (a1: bitta qator)
-  const authorStr=a.author?(a.author.name||a.author):'';
-  const subLine=[a.t,authorStr].filter(Boolean).map(x=>escHtml(String(x))).join(' · ');
-  // Import tugmasi (3 holat) — openPack orqali MAVJUD gated import oqimi (paywall gate o'zgarmaydi)
+  // SC_14: subtitr — FAQAT kategoriya (contributor nomi kartada ko'rsatilmaydi;
+  // detail view'dagi muallif ma'lumoti tegilmagan).
+  const subLine=a.t?escHtml(String(a.t)):'';
   const dlBtn=showDl?`<button class="ck-del" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`:'';
-  const importBtn = noPack
-    ? `<button class="ck-imp blocked" disabled title="Project (.aep) file not uploaded yet"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>Import disabled</button>`
-    : dled
-      ? `<button class="ck-imp ghost" title="Re-import — open pack" onclick="event.stopPropagation();openPack('${safeName}')"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/></svg>Re-import</button>`
-      : `<button class="ck-imp" title="Import — open pack" onclick="event.stopPropagation();openPack('${safeName}')"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Import</button>`;
-  // Markup mockup a1 (1:1); mantiq (openPack/deleteDownloadedTemplate/playCardPreview) o'zgarmaydi.
+  // SC_14: per-karta Import/Re-import tugmasi O'CHIRILDI — karta bosilishi detail'ni ochadi,
+  // import/download detail'ning o'z tugmasida (pd3ImportAll — gated oqim o'zgarmagan).
+  // "Downloaded" holati thumb ustidagi ✓ badge'da qoladi (stBadge).
   return`<div class="card${noPack?' no-pack':''}" draggable="true" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
@@ -5860,7 +5869,6 @@ function renderCard(a,i,showDl){
     </div>
     <div class="ck-title">${escHtml(a.displayName||a.n)}</div>
     ${subLine?`<div class="ck-sub">${subLine}</div>`:''}
-    ${importBtn}
   </div>`;
 }
 
@@ -7260,11 +7268,12 @@ function afLibDlMeta(a){
 }
 function afLibDlRow(a){
   const safe=afLibEscKey(a.n);
-  return `<div class="lib-row">
+  // SC_14: Re-import tugmasi o'chirildi — QATOR bosilishi detail'ni ochadi (yagona oqim:
+  // karta/qator → detail → Import). Orphan (katalogda yo'q) qator bosilmaydi.
+  return `<div class="lib-row"${a._orphan?'':` onclick="openPack('${safe}')" title="Open template" style="cursor:pointer"`}>
     <div class="lib-rthumb" style="background:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
     <div class="lib-rmid"><div class="lib-rname">${escHtml(a.displayName||a.n)}</div><div class="lib-rmeta">${escHtml(afLibDlMeta(a))}</div></div>
-    ${a._orphan?'':`<button type="button" class="lib-reimp" title="Re-import — open pack" onclick="openPack('${safe}')">${AF_LIB_REIMP}Re-import</button>`}
-    <button type="button" class="lib-rtrash" title="Remove from project" onclick="deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</button>
+    <button type="button" class="lib-rtrash" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</button>
   </div>`;
 }
 function afLibSyncCounts(){
