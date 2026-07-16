@@ -22320,7 +22320,8 @@ class Component extends DCLogic {
       // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)
       axGridCls: 'va-axgrid' + (this.state.axGridView === 'compact' ? ' compact' : ''),
       // P19 — bir vaqtda faqat bitta g.menuOpen true bo'ladi; shu sabab bitta umumiy style yetarli.
-      axUseMenuStyle: this.state.useMenuPos ? ('position:fixed;left:' + this.state.useMenuPos.left + 'px;top:' + this.state.useMenuPos.top + 'px;max-height:' + this.state.useMenuPos.maxH + 'px;overflow:auto') : '',
+      // SC_16: inline pos to'liq o'zi belgilaydi (mobil CSS bottom/right/width bilan to'qnashmasin)
+      axUseMenuStyle: this.state.useMenuPos ? ('position:fixed;left:' + this.state.useMenuPos.left + 'px;top:' + this.state.useMenuPos.top + 'px;right:auto;bottom:auto;width:246px;max-height:' + this.state.useMenuPos.maxH + 'px;overflow:auto') : '',
       axGridViewTip: this.state.axGridView === 'compact' ? 'Full view' : 'Compact view',
       axGridViewIcon: this.state.axGridView === 'compact' ? 'grid-four' : 'grid-nine',
       toggleAxGridView: () => {
@@ -22418,13 +22419,20 @@ class Component extends DCLogic {
         this.setState(st => {
           if (st.useMenuOpen) return { useMenuOpen: false };
           let pos = null;
-          if (window.innerWidth > 820 && btn && btn.getBoundingClientRect) {
+          // SC_16: menyu HAR DOIM bosilgan Use tugmasiga langar (fixed) — chekka yaqinida
+          // yuqoriga/ichkariga flip; eski mantiq to'lmagan holatda (8,8)ga "uchib ketardi".
+          if (btn && btn.getBoundingClientRect) {
             const r = btn.getBoundingClientRect();
-            const vw = window.innerWidth, vh = window.innerHeight, pad = 8, mw = 246, maxH = Math.round(vh * 0.62);
-            const left = Math.min(Math.max(r.left, pad), vw - mw - pad);
-            let top = r.bottom + 4;
-            if (top + maxH > vh - pad) top = Math.max(pad, r.top - maxH - 4);
-            pos = { left, top, maxH };
+            if (r.width || r.height) {
+              const vw = window.innerWidth, vh = window.innerHeight, pad = 8, mw = 246;
+              const mh = Math.min(Math.round(vh * 0.62), 420); // menyu balandligi cap
+              const left = Math.min(Math.max(r.left, pad), Math.max(pad, vw - mw - pad));
+              let top = r.bottom + 4;
+              if (top + mh > vh - pad) top = r.top - mh - 4; // yuqoriga flip
+              // Ikkala tomonga ham sig'masa — tugma atrofida viewport ichiga clamp (langar yaqin qoladi)
+              if (top < pad) top = Math.max(pad, Math.min(r.bottom + 4, vh - mh - pad));
+              pos = { left, top, maxH: mh };
+            }
           }
           return { useMenuOpen: true, useMenuPos: pos };
         }); },

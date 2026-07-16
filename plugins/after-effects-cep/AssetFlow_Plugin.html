@@ -2869,7 +2869,14 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .galgrid[data-cols="2"]{grid-template-columns:1fr 1fr}
 .axroot .galgrid[data-cols="3"]{grid-template-columns:1fr 1fr 1fr}
 .axroot .gcard{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card);position:relative}
-.axroot .gcard .gth{width:100%;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);position:relative}
+/* SC_16: default 16/9 (1:1 majburlash yo'q) — haqiqiy nisbat inline style'da yengadi */
+.axroot .gcard .gth{width:100%;aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--card3);position:relative}
+/* SC_16: audio gth — ixcham sobit balandlik + waveform + tur chipi + play */
+.axroot .gcard .gth-aud{aspect-ratio:auto;height:72px;display:flex;align-items:center;gap:9px;padding:0 10px;background:linear-gradient(135deg,var(--card3),var(--card))}
+.axroot .gcard .gth-aud .gk{flex:none;font:700 7px/1 var(--font-mono);letter-spacing:.06em;padding:3px 6px;border-radius:5px;background:rgba(0,0,0,.4);color:#fff}
+.axroot .gcard .gth-aud .gaplay{width:30px;height:30px;flex:none;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;cursor:pointer;border:0;padding:0}
+.axroot .gcard .gth-aud .gwave{flex:1;min-width:0;display:flex;align-items:center;gap:2px;height:24px}
+.axroot .gcard .gth-aud .gwave i{flex:1;border-radius:2px;background:var(--mut);opacity:.55;min-height:3px}
 .axroot .gcard .gbadge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
 .axroot .gcard .gplay{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
 .axroot .gcard .gcb{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:2;color:transparent}
@@ -2878,8 +2885,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .gcard .gmeta{padding:7px 8px}
 .axroot .gcard .gmeta b{font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .axroot .gcard .gmeta small{font-size:9.5px;color:var(--mut)}
-.axroot .gcard .gacts{display:flex;border-top:1px solid var(--line)}
-.axroot .gcard .gacts div{flex:1;text-align:center;padding:7px 4px;font-size:10.5px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
+/* SC_16: 6-ikon .gacts qatori o'rniga bitta "Use ▾" tugma (langar menyu) */
+.axroot .gcard .gacts{display:flex;justify-content:flex-end;padding:6px 8px;border-top:1px solid var(--line)}
+.axroot .gcard .gacts .guse{padding:5px 12px;border-radius:999px;background:var(--acc);color:var(--acc-ink);font:700 9.5px/1 var(--font-sans);cursor:pointer;white-space:nowrap}
+.axroot .gcard .gacts .guse:hover{filter:brightness(1.07)}
+.axroot .gcard .gacts div{cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
 .axroot .gcard .gacts div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.axroot .gcard .gacts div+div{border-left:1px solid var(--line)}
 .axroot .galgrid.selmode .gcard{cursor:pointer}
 .axroot .galgrid.selmode .gcard .gacts{display:none}
@@ -3042,7 +3052,18 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
    aks holda karta 60×60 kichik bo'lib qolardi. aspect-ratio:1/1 = DEFAULT (pending + nisbatsiz gen). */
 /* P17 — gen kartasi endi elevation (soft soya) + hover'da ko'tariladi; yuza/chegara=token (3 tema).
    Soya=rgba qora (drop-shadow — och temada ham to'g'ri). Pending plitka ko'tarilmaydi. */
-.recentgrid .rc{width:100%;height:auto;flex:none;break-inside:avoid;margin:0 0 10px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25),0 6px 16px -8px rgba(0,0,0,.38);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+/* SC_16: default aspect endi 16/9 (1:1 majburlash yo'q) — haqiqiy nisbat JS inline'da yengadi */
+.recentgrid .rc{width:100%;height:auto;flex:none;break-inside:avoid;margin:0 0 10px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25),0 6px 16px -8px rgba(0,0,0,.38);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+/* SC_16: audio karta — sobit ixcham balandlik (1:1 emas, minora ham emas) + maqsadli dizayn */
+.recentgrid .rc.rc-aud{aspect-ratio:auto;height:76px;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(135deg,var(--card3),var(--card))}
+.recentgrid .rc.rc-aud .aplay{width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;cursor:pointer;border:0;padding:0}
+.recentgrid .rc.rc-aud .akind{position:static;flex:none;font:700 7px/1 var(--font-mono);letter-spacing:.06em;padding:3px 6px;border-radius:5px;background:rgba(0,0,0,.4);color:#fff}
+.recentgrid .rc.rc-aud .awave{flex:1;min-width:0;display:flex;align-items:center;gap:2px;height:26px}
+.recentgrid .rc.rc-aud .awave i{flex:1;border-radius:2px;background:var(--muted);opacity:.55;min-height:4px}
+.recentgrid .rc.rc-aud .atx{flex:2;min-width:0}
+.recentgrid .rc.rc-aud .atx b{display:block;font-size:10.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recentgrid .rc.rc-aud .atx small{display:block;font-size:9px;color:var(--muted);margin-top:1px}
+.recentgrid .rc.rc-aud .bd,.recentgrid .rc.rc-aud .tg,.recentgrid .rc.rc-aud .pv{display:none}
 .recentgrid .rc:hover{border-color:var(--mut2)}
 .recentgrid .rc:hover:not(.rc-pend){transform:translateY(-2px);box-shadow:0 2px 4px rgba(0,0,0,.3),0 12px 26px -10px rgba(0,0,0,.5)}
 /* ── PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala (rasm+video umumiy) ── */
@@ -3064,11 +3085,18 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid .empt button{margin-top:10px;font-size:11.5px;font-weight:700;background:transparent;border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:7px 11px;cursor:pointer}
 .recentgrid .empt button:hover{border-color:var(--mut2)}
 /* hover amallar (yuqori-o'ng) + select checkbox (yuqori-chap) + batch bar */
+/* SC_16: 6-ikon strip o'rniga BITTA "Use ▾" tugma — menyu afUseMenuOpen bilan kartaga langarlanadi */
 .recentgrid .rc .racts{position:absolute;top:5px;right:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;z-index:3}
-.recentgrid .rc:hover .racts{opacity:1}
-.recentgrid .rc .racts b{width:25px;height:25px;border-radius:7px;background:rgba(0,0,0,.62);border:1px solid var(--line2);color:#fff;display:grid;place-items:center;cursor:pointer}
-.recentgrid .rc .racts b:hover{background:rgba(0,0,0,.85)}
-.recentgrid .rc .racts b.del:hover{background:rgba(255,107,107,.8);border-color:var(--red)}
+.recentgrid .rc:hover .racts,.recentgrid .rc.rc-aud .racts{opacity:1}
+.recentgrid .rc .racts b.useb{width:auto;height:25px;padding:0 10px;border-radius:999px;background:var(--accent);border:0;color:var(--on-accent);display:grid;place-items:center;cursor:pointer;font:700 9.5px/1 var(--font-sans);white-space:nowrap}
+.recentgrid .rc .racts b.useb:hover{filter:brightness(1.07)}
+/* Umumiy langar menyu */
+.af-usemenu{position:fixed;z-index:900;width:210px;overflow:auto;border-radius:12px;background:var(--surface-2,#17181c);border:1px solid var(--border,rgba(255,255,255,.1));box-shadow:0 22px 54px rgba(0,0,0,.6);padding:5px}
+.af-usemi{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:var(--text,#eee);font-size:11.5px;font-weight:600;cursor:pointer}
+.af-usemi:hover{background:rgba(255,255,255,.07)}
+.af-usemi .mic{width:16px;display:flex;justify-content:center;color:var(--muted,#999)}
+.af-usemi.danger{color:#FF9A8E}
+.af-usemi.danger .mic{color:#FF9A8E}
 /* P2 — karta amal ikonlariga ANIQ hover-label (title'dan; ikonka nima qilishi darhol ko'rinadi) */
 .recentgrid .rc .racts b{position:relative}
 .recentgrid .rc .racts b:hover::after{content:attr(title);position:absolute;top:calc(100% + 5px);right:0;background:#0c1017;border:1px solid rgba(255,255,255,.14);color:#e7ecf3;font-size:9.5px;font-weight:600;line-height:1;padding:5px 8px;border-radius:7px;white-space:nowrap;z-index:30;pointer-events:none;max-width:180px;overflow:hidden;text-overflow:ellipsis}
@@ -8700,6 +8728,44 @@ function afSavePrefs(patch){ try{ const p=afGetPrefs(); Object.assign(p,patch); 
 // darsi — biri ichida e'lon qilingan funksiya ikkinchisiga ko'rinmaydi), shu bois umumiy pin
 // mantiqi ATAYLAB shu haqiqiy top-level qamrovda — ikkalasi ham af.prefs.pinnedModels'ni ishlatadi.
 var PIN_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21s-7-7.1-7-12a7 7 0 0 1 14 0c0 4.9-7 12-7 12Z"></path><circle cx="12" cy="9" r="2.3"></circle></svg>';
+/* ══ SC_16: umumiy "Use ▾" langar menyusi — gen kartalari uchun ══
+   Tugma getBoundingClientRect'iga fixed langar; chekkada yuqoriga/ichkariga flip;
+   tashqi bosish / Esc / scroll'da yopiladi. Menyu FAQAT aniq bosishda ochiladi. */
+var __afUseMenuEl=null;
+function afUseMenuClose(){
+  if(__afUseMenuEl){ try{ __afUseMenuEl.remove(); }catch(e){} __afUseMenuEl=null; }
+  document.removeEventListener('click',afUseMenuClose,true);
+  document.removeEventListener('keydown',__afUseMenuEsc,true);
+  window.removeEventListener('scroll',afUseMenuClose,true);
+}
+function __afUseMenuEsc(e){ if(e.key==='Escape'||e.keyCode===27)afUseMenuClose(); }
+function afUseMenuOpen(btn,items){
+  afUseMenuClose();
+  if(!btn||!btn.getBoundingClientRect||!items||!items.length)return;
+  var r=btn.getBoundingClientRect(); if(!r.width&&!r.height)return;
+  var m=document.createElement('div'); m.className='af-usemenu';
+  items.forEach(function(it){
+    var row=document.createElement('div'); row.className='af-usemi'+(it.danger?' danger':'');
+    row.innerHTML='<span class="mic">'+(it.ic||'')+'</span><span class="ml"></span>';
+    row.querySelector('.ml').textContent=it.label;
+    row.addEventListener('click',function(e){ e.stopPropagation(); afUseMenuClose(); try{ it.fn(); }catch(err){} });
+    m.appendChild(row);
+  });
+  document.body.appendChild(m); __afUseMenuEl=m;
+  var vw=window.innerWidth,vh=window.innerHeight,pad=8,mw=210;
+  var mh=Math.min(m.offsetHeight||260,Math.round(vh*0.62));
+  var left=Math.min(Math.max(r.left,pad),Math.max(pad,vw-mw-pad));
+  var top=r.bottom+4;
+  if(top+mh>vh-pad)top=r.top-mh-4;                       // yuqoriga flip
+  if(top<pad)top=Math.max(pad,Math.min(r.bottom+4,vh-mh-pad)); // clamp — langar yaqin qoladi
+  m.style.left=left+'px'; m.style.top=top+'px'; m.style.maxHeight=mh+'px';
+  setTimeout(function(){
+    document.addEventListener('click',afUseMenuClose,true);
+    document.addEventListener('keydown',__afUseMenuEsc,true);
+    window.addEventListener('scroll',afUseMenuClose,true);
+  },0);
+}
+window.afUseMenuOpen=afUseMenuOpen;
 function afIsModelPinned(id){ var p=(afGetPrefs().pinnedModels)||[]; return p.indexOf(String(id))>=0; }
 function afToggleModelPin(id){
   id=String(id);
@@ -10918,6 +10984,8 @@ async function bootPlugin(){
     function genAspectCss(it){
       var ar=it&&(it.aspect||it.aspectRatio||(it.params&&it.params.aspectRatio));
       if(ar){ var m=String(ar).trim().match(/^(\d+(?:\.\d+)?)\s*[:\/x]\s*(\d+(?:\.\d+)?)$/i); if(m) return m[1]+' / '+m[2]; }
+      // SC_16: aspect satri yo'q — haqiqiy piksellardan (payload width/height); baribir yo'q → null (CSS default 16/9)
+      if(it&&it.width&&it.height&&Number(it.width)>0&&Number(it.height)>0)return Number(it.width)+' / '+Number(it.height);
       return null;
     }
     function card(it,ctx){
@@ -10935,7 +11003,37 @@ async function bootPlugin(){
           d.addEventListener('mouseleave',function(){ try{ vEl.pause(); vEl.currentTime=0.1; }catch(e){} });
         } else if(it.thumb){ d.style.backgroundImage='url("'+it.thumb+'")'; }
         var pv=document.createElement('div'); pv.className='pv'; pv.innerHTML=IC.play; d.appendChild(pv); }
-      else if(cat==='audio'||cat==='sfx'){ var pa=document.createElement('div'); pa.className='pv'; pa.innerHTML=IC.aud; d.appendChild(pa); }
+      else if(cat==='audio'||cat==='sfx'){
+        // SC_16: maqsadli ixcham audio karta — play/pause + tur chipi + statik waveform + bitta satr.
+        d.classList.add('rc-aud');
+        var ap=document.createElement('button'); ap.type='button'; ap.className='aplay'; ap.title='Play / pause';
+        ap.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
+        ap.addEventListener('click',function(e){
+          e.stopPropagation();
+          // Yagona umumiy <audio> (lightbox pleer bilan bir xil URL yo'li) — bitta vaqtda bitta ijro
+          var au=window.__afCardAudio||(window.__afCardAudio=new Audio());
+          var pauseSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+          var playSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
+          if(au.src===it.url&&!au.paused){ au.pause(); ap.innerHTML=playSvg; return; }
+          try{ au.pause(); }catch(err){}
+          au.src=it.url; var pp=au.play(); if(pp&&pp.catch)pp.catch(function(){});
+          document.querySelectorAll('.rc-aud .aplay').forEach(function(b){ b.innerHTML=playSvg; });
+          ap.innerHTML=pauseSvg;
+          au.onended=function(){ ap.innerHTML=playSvg; };
+        });
+        d.appendChild(ap);
+        var ak=document.createElement('span'); ak.className='akind'; ak.textContent=(cat==='sfx')?'SFX':'VOICE'; d.appendChild(ak);
+        var aw=document.createElement('span'); aw.className='awave';
+        var seed=0; var sid=String(it.id||it.title||''); for(var si=0;si<sid.length;si++)seed=(seed*31+sid.charCodeAt(si))%997;
+        for(var wi=0;wi<24;wi++){ var bar=document.createElement('i'); bar.style.height=(20+((seed+wi*37)%67))+'%'; aw.appendChild(bar); }
+        d.appendChild(aw);
+        var atx=document.createElement('span'); atx.className='atx';
+        var dur=(it.params&&it.params.duration)?(it.params.duration+'s'):'';
+        atx.innerHTML='<b></b><small></small>';
+        atx.querySelector('b').textContent=String(it.title||'Audio');
+        atx.querySelector('small').textContent=[dur,it.modelLabel||''].filter(Boolean).join(' · ');
+        d.appendChild(atx);
+      }
       else {
         // P4/P9: birinchi ko'rinadigan kartalar EAGER (grid darhol chiziladi), qolganlar lazy;
         // src endi 1280 display derivativini afzal ko'radi (Retina'da aniq); srcset 512/1280.
@@ -10948,20 +11046,26 @@ async function bootPlugin(){
       }
       var tg=document.createElement('div'); tg.className='tg'; tg.innerHTML=catIcon(cat); d.appendChild(tg);
       var bd=document.createElement('div'); bd.className='bd'; bd.textContent=String(it.title||catLabel(cat)); d.appendChild(bd);
+      // SC_16: doimiy 6-ikon qatori O'RNIGA web-uslub bitta "Use ▾" tugmasi — bosilganda
+      // kartaga LANGARLANGAN menyu ochiladi. Strip ikonasi → menyu bandi xaritasi 1:1:
+      // Import→Import to AE · papka→Add to project · kompas→Add to Explore · qisqich→Use as
+      // reference · ↻→Regenerate · ⧉→Copy prompt · ⬇→Download (faqat brauzer) · ✕→Delete.
       var ra=document.createElement('div'); ra.className='racts';
-      ra.appendChild(actBtn(IC.imp,'Import to AE',function(e){ e.stopPropagation(); ctx.onImport&&ctx.onImport(it); }));
-      // P1: Add to project — ctx bergan tool'larda (gen natijasi loyihaga yig'iladi)
-      if(ctx.onAddProject&&it.id) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(e){ e.stopPropagation(); ctx.onAddProject(it); }));
-      // P3 (step 34) — Add to Explore (ommaviy AI Stock katalogiga). Yuborilgan bo'lsa holat.
-      if(ctx.onAddExplore&&it.id) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),function(e){ e.stopPropagation(); ctx.onAddExplore(it); }));
-      if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Use as reference',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
-      // BATCH4 #1/#2 — Upscale (rasm: Imagen x2/x4 · video: Topaz, ctx bergan tool'larda)
-      // SC_17: karta Upscale amali olib tashlandi
-      if(ctx.onRestore&&it.prompt) ra.appendChild(actBtn(IC.rst,'Regenerate — restore prompt + references',function(e){ e.stopPropagation(); ctx.onRestore(it); }));
-      // P2: Copy prompt — prompt bor har gen kartada (barcha tool'lar)
-      if(it.prompt) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(e){ e.stopPropagation(); window.afCopyText(it.prompt); })); // P7: afCopyText yagona toast manbai
-      if(!ctx.isCEP) ra.appendChild(actBtn(IC.dl,'Download',function(e){ e.stopPropagation(); ctx.onDownload&&ctx.onDownload(it); }));
-      ra.appendChild(actBtn(IC.x,'Delete',function(e){ e.stopPropagation(); ctx.onDelete&&ctx.onDelete(it); },'del'));
+      var useBtn=document.createElement('b'); useBtn.className='useb'; useBtn.textContent='Use ▾'; useBtn.title='Actions';
+      useBtn.addEventListener('click',function(e){
+        e.stopPropagation();
+        var items=[];
+        items.push({ic:IC.imp,label:'Import to AE',fn:function(){ ctx.onImport&&ctx.onImport(it); }});
+        if(ctx.onAddProject&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>',label:'Add to project',fn:function(){ ctx.onAddProject(it); }});
+        if(ctx.onAddExplore&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ ctx.onAddExplore(it); }});
+        if(ctx.refAllowed&&ctx.refAllowed(it))items.push({ic:IC.ref,label:'Use as reference',fn:function(){ ctx.onRef&&ctx.onRef(it); }});
+        if(ctx.onRestore&&it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ ctx.onRestore(it); }});
+        if(it.prompt)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
+        if(!ctx.isCEP)items.push({ic:IC.dl,label:'Download',fn:function(){ ctx.onDownload&&ctx.onDownload(it); }});
+        items.push({ic:IC.x,label:'Delete',danger:true,fn:function(){ ctx.onDelete&&ctx.onDelete(it); }});
+        afUseMenuOpen(useBtn,items);
+      });
+      ra.appendChild(useBtn);
       d.appendChild(ra);
       var cb=document.createElement('div'); cb.className='rcb'; cb.innerHTML=IC.chk; d.appendChild(cb);
       d.addEventListener('click',function(){ if(ctx.selecting&&ctx.selecting()){ ctx.onToggleSelect&&ctx.onToggleSelect(it,d); } else openLightbox(it,ctx); });
@@ -11693,28 +11797,67 @@ window.afGallery=(function(){
       if(!list.length){ gridEl.innerHTML='<div class="galempty"><b>Empty for now</b>'+(st.filter==='all'?'It\'ll show up here once you generate.':'No results of this type.')+'</div>'; footEl.textContent=''; updBatch(); return; }
       gridEl.innerHTML='';
       list.forEach(function(it){
-        var card=document.createElement('div'); card.className='gcard'+(st.sel[it.id]?' sel':'');
-        var badge=(it.cat==='video')?IC.vid:(it.cat==='audio'||it.cat==='sfx')?IC.aud:IC.img;
+        var isAud=(it.cat==='audio'||it.cat==='sfx');
+        var card=document.createElement('div'); card.className='gcard'+(st.sel[it.id]?' sel':'')+(isAud?' gcard-aud':'');
+        var badge=(it.cat==='video')?IC.vid:isAud?IC.aud:IC.img;
         // video: thumb ko'pincha video url'ning o'zi — CSS background video kadrini chizmaydi (qora tile).
         // Haqiqiy poster bo'lsa background; bo'lmasa afVideoThumb <video> birinchi kadrni ko'rsatadi.
         var vNoPoster=(it.cat==='video')&&(!it.thumb||it.thumb===it.url);
-        var th='<div class="gth"'+(vNoPoster?'':' style="background-image:url(\''+it.thumb+'\')"')+'><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
+        // SC_16: media NATIV nisbatda (payload width/height yoki params.aspectRatio; fallback 16/9 CSS'da)
+        var arCss=null;
+        var arS=it.params&&it.params.aspectRatio;
+        if(arS){ var arM=String(arS).trim().match(/^(\d+(?:\.\d+)?)\s*[:\/x]\s*(\d+(?:\.\d+)?)$/i); if(arM)arCss=arM[1]+' / '+arM[2]; }
+        if(!arCss&&it.width&&it.height)arCss=Number(it.width)+' / '+Number(it.height);
+        var th;
+        if(isAud){
+          // SC_16: audio — maqsadli ixcham karta (waveform + tur chipi + play)
+          var wseed=0; var wsid=String(it.id||''); for(var wsi=0;wsi<wsid.length;wsi++)wseed=(wseed*31+wsid.charCodeAt(wsi))%997;
+          var bars=''; for(var wb=0;wb<24;wb++)bars+='<i style="height:'+(20+((wseed+wb*37)%67))+'%"></i>';
+          th='<div class="gth gth-aud"><span class="gk">'+(it.cat==='sfx'?'SFX':'VOICE')+'</span><button type="button" class="gaplay" title="Play / pause"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg></button><span class="gwave">'+bars+'</span><div class="gcb">'+IC.check+'</div></div>';
+        }else{
+          var gthStyle='';
+          if(!vNoPoster&&it.thumb)gthStyle+='background-image:url(\''+it.thumb+'\');';
+          if(arCss)gthStyle+='aspect-ratio:'+arCss+';';
+          th='<div class="gth"'+(gthStyle?(' style="'+gthStyle+'"'):'')+'><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
+        }
         card.innerHTML=th;
         if(vNoPoster&&typeof window.afVideoThumb==='function'){
           var gth=card.querySelector('.gth'); var vv=window.afVideoThumb(it.url);
           if(gth&&vv)gth.insertBefore(vv,gth.firstChild);
         }
-        // P15: My Library kartalari endi TO'LIQ amal panelini oladi (RECENT/sessiya bilan bir xil to'plam:
-        // Import · Add to project · Regenerate · Copy prompt · Delete). Select rejimda .gacts yashiriladi (CSS).
+        if(isAud){
+          var gap=card.querySelector('.gaplay');
+          if(gap)gap.addEventListener('click',function(e){
+            e.stopPropagation();
+            var au=window.__afCardAudio||(window.__afCardAudio=new Audio());
+            var pauseSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+            var playSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
+            if(au.src===it.url&&!au.paused){ au.pause(); gap.innerHTML=playSvg; return; }
+            try{ au.pause(); }catch(err){}
+            au.src=it.url; var pp2=au.play(); if(pp2&&pp2.catch)pp2.catch(function(){});
+            document.querySelectorAll('.gaplay,.rc-aud .aplay').forEach(function(b){ b.innerHTML=playSvg; });
+            gap.innerHTML=pauseSvg;
+            au.onended=function(){ gap.innerHTML=playSvg; };
+          });
+        }
+        // SC_16: doimiy .gacts ikon qatori o'rniga web-uslub BITTA "Use ▾" tugma — langar menyu.
+        // Strip → menyu xaritasi 1:1: Import · Add to project · Add to Explore · Regenerate ·
+        // Copy prompt · (Download — faqat brauzer) · Delete. Upscale yo'q (SC_17 o'chirgan).
         var acts=document.createElement('div'); acts.className='gacts';
-        var mkBtn=function(html,title,fn){ var b=document.createElement('div'); b.innerHTML=html; b.title=title; b.addEventListener('click',function(e){ e.stopPropagation(); fn(); }); return b; };
-        acts.appendChild(mkBtn(IC.imp,'Import to AE',function(){ importMedia(it); }));
-        if(it.id)acts.appendChild(mkBtn(IC.proj,'Add to project',function(){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }));
-        // P3 (step 34) — Add to Explore (My Library'dan ham)
-        if(it.id)acts.appendChild(mkBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),function(){ window.afAddToExplore(it); }));
-        if(it.prompt)acts.appendChild(mkBtn(IC.rst,'Regenerate — restore prompt + references',function(){ galRestore(it); }));
-        if(it.prompt)acts.appendChild(mkBtn(IC.copy,'Copy prompt',function(){ window.afCopyText(it.prompt); }));
-        acts.appendChild(mkBtn(IC.trash,'Delete',function(){ galDeleteOne(it); }));
+        var useBtn=document.createElement('div'); useBtn.className='guse'; useBtn.textContent='Use ▾'; useBtn.title='Actions';
+        useBtn.addEventListener('click',function(e){
+          e.stopPropagation();
+          var items=[];
+          items.push({ic:IC.imp,label:'Import to AE',fn:function(){ importMedia(it); }});
+          if(it.id)items.push({ic:IC.proj,label:'Add to project',fn:function(){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }});
+          if(it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ window.afAddToExplore(it); }});
+          if(it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ galRestore(it); }});
+          if(it.prompt)items.push({ic:IC.copy,label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
+          if(!isCEP())items.push({ic:IC.dl,label:'Download',fn:function(){ download(it); }});
+          items.push({ic:IC.trash,label:'Delete',danger:true,fn:function(){ galDeleteOne(it); }});
+          if(window.afUseMenuOpen)window.afUseMenuOpen(useBtn,items);
+        });
+        acts.appendChild(useBtn);
         card.appendChild(acts);
         if(st.select){
           card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
