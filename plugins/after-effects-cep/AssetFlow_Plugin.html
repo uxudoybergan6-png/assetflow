@@ -380,6 +380,15 @@ body{
 .af-tb-r{display:flex;align-items:center;gap:10px;justify-content:flex-end;min-width:0}
 /* Seg yorliqlari: keng panelda to'liq (lf), ~360px dan tor panelda qisqa (ls) */
 .af-tb-seg .ff-seg__item .ls{display:none}
+/* SC_21: seg'dagi fon-generatsiya badge (animatsion nuqta + son) va boy gen-toast */
+.seg-gendot{display:inline-flex;align-items:center;justify-content:center;min-width:8px;height:8px;margin-left:5px;padding:0 2px;border-radius:999px;background:var(--accent);color:var(--on-accent);font:700 7px/1 var(--font-mono);animation:ffbreathe 2.2s ease-in-out infinite;vertical-align:middle}
+.af-gentoast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:950;display:flex;align-items:center;gap:10px;max-width:min(420px,calc(100vw - 24px));padding:9px 10px;border-radius:13px;background:var(--surface-2,#17181c);border:1px solid var(--border,rgba(255,255,255,.12));box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.af-gentoast .gt-th{width:38px;height:38px;flex:none;border-radius:9px;background-size:cover;background-position:center;background-color:var(--surface-3,#222)}
+.af-gentoast .gt-tx{min-width:0}
+.af-gentoast .gt-tx b{display:block;font-size:12px;font-weight:650;color:var(--text,#eee)}
+.af-gentoast .gt-tx small{display:block;font-size:9.5px;color:var(--muted,#999);margin-top:1px}
+.af-gentoast .gt-view{flex:none;padding:6px 12px;border-radius:999px;border:0;background:var(--accent);color:var(--on-accent);font:700 10.5px/1 var(--font-sans);cursor:pointer}
+.af-gentoast .gt-x{flex:none;width:22px;height:22px;border-radius:7px;border:0;background:transparent;color:var(--muted,#999);cursor:pointer;font-size:11px;padding:0}
 /* SC_15: seg yonidagi Sessions/Projects — kompakt ghost tugmalar */
 .af-tb-seg{display:flex;align-items:center;gap:6px}
 .af-tb-sp{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer;white-space:nowrap}
@@ -4142,7 +4151,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                 <div class="af-tb-seg">
                   <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Section">
                     <button type="button" class="ff-seg__item" id="afSegHome" role="tab" aria-selected="false" onclick="afNavTab('home')" title="Home"><span class="lf">Home</span><span class="ls">Home</span></button>
-                    <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><span class="lf">AI Tools</span><span class="ls">AI</span></button>
+                    <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><span class="lf">AI Tools</span><span class="ls">AI</span><span class="seg-gendot" id="afSegAiDot" style="display:none"></span></button>
                     <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Stock Catalog — templates"><span class="lf">Stock Catalog</span><span class="ls">Stock</span></button>
                   </div>
                   <!-- SC_15: Sessions/Projects — seg yonidagi IXCHAM entrylar (tor panelda icon-only).
@@ -6106,6 +6115,50 @@ function afOpenAiSub(view){
   afNavTab('ai');
   if(typeof window.axGo==='function')setTimeout(function(){ window.axGo(view); },0);
 }
+/* ══ SC_21: fon generatsiya bildirishnomasi + global progress badge ══
+   Poller endi view bilan o'lmaydi (teardown'lar yumshatilgan) — foydalanuvchi istalgan
+   bo'limda yursa ham job tugaganda xabar oladi. OS-darajali bildirishnoma YO'Q — faqat
+   panel ichida. Yangi endpoint yo'q — mavjud poll oqimlari chaqiradi. */
+var __afGenToastT=null;
+function afGenToast(view,cost,thumb){
+  var old=document.getElementById('afGenToast'); if(old)old.remove();
+  clearTimeout(__afGenToastT);
+  var d=document.createElement('div'); d.id='afGenToast'; d.className='af-gentoast';
+  d.innerHTML=(thumb?'<span class="gt-th" style="background-image:url(\''+String(thumb).replace(/"/g,'')+'\')"></span>':'')
+    +'<span class="gt-tx"><b>Generation ready</b>'+(typeof cost==='number'?'<small>✦'+cost+' charged</small>':'')+'</span>'
+    +'<button type="button" class="gt-view">View</button>'
+    +'<button type="button" class="gt-x" title="Dismiss">✕</button>';
+  d.querySelector('.gt-view').addEventListener('click',function(){
+    d.remove();
+    afNavTab('ai');
+    if(typeof window.axGo==='function')setTimeout(function(){ window.axGo(view||'history'); },0);
+  });
+  d.querySelector('.gt-x').addEventListener('click',function(){ d.remove(); });
+  document.body.appendChild(d);
+  __afGenToastT=setTimeout(function(){ try{d.remove();}catch(e){} },7000);
+}
+window.afGenDoneNotify=function(view,cost,thumb){
+  var cur=document.querySelector('.axroot .view.on');
+  var inAi=document.documentElement.classList.contains('ai-mode');
+  if(inAi&&cur&&cur.id==='v-'+view){
+    // Joyida — karta o'zi yangilandi; faqat mavjud kichik tasdiq (double-signal yo'q)
+    if(typeof showToast==='function')showToast(typeof cost==='number'?('Done! ✦'+cost+' charged'):'Audio ready','success');
+    return;
+  }
+  afGenToast(view,cost,thumb);
+};
+// Global progress badge — top-bar "AI Tools" segmentida animatsion nuqta (+son >1 bo'lsa)
+setInterval(function(){
+  var n=0;
+  try{ if(typeof window.__axIGRunning==='function')n+=window.__axIGRunning(); }catch(e){}
+  try{ if(typeof window.__axVGRunning==='function')n+=window.__axVGRunning(); }catch(e){}
+  try{ if(typeof window.__axAGRunning==='function')n+=window.__axAGRunning(); }catch(e){}
+  var d=document.getElementById('afSegAiDot');
+  if(d){
+    if(n>0){ d.style.display=''; d.textContent=n>1?String(n):''; }
+    else d.style.display='none';
+  }
+},1500);
 // SC_11: kredit chip → kredit SOTIB OLISH oqimi (v-settings tepasidagi balans karta +
 // ✦500/1500/5000 paketlar → startCreditTopup checkout). Guest → joriy xatti (Account sheet).
 function afOpenTopup(){
@@ -12598,10 +12651,12 @@ window.afGallery=(function(){
 
   // View'дан chiqishда barcha faol joblarni to'xtatamiz (timer/network leak oldini olish).
   function teardownGen(){
-    activeJobs.forEach(function(j){ j.cancelled=true; if(j.pollTimer)clearTimeout(j.pollTimer); if(j.progTimer)clearInterval(j.progTimer); });
-    activeJobs=[]; renderJobs();
+    // SC_21: joblar endi view almashganda BEKOR QILINMAYDI — poll fonда davom etadi
+    // (view faqat display bilan yashirinadi, DOM saqlanadi); foydalanuvchi qaytганда
+    // pending karta joyida natijaga aylangan bo'ladi. Poll POLL_CAP bilan chegaralangan.
   }
   window.axIGTeardown=teardownGen;
+  window.__axIGRunning=function(){ return activeJobs.length; }; // SC_21: global badge uchun
 
   // ---- generatsiya (REAL, parallel) ----
   function genClick(){
@@ -12686,7 +12741,11 @@ window.afGallery=(function(){
           var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
           if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
           if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
-          renderRecentGrid(); refreshGen(); setCreditChip(credits()); toast('Done! ✦'+j.jcost+' charged','success');
+          renderRecentGrid(); refreshGen(); setCreditChip(credits());
+          // SC_21: foydalanuvchi shu workspace'da bo'lsa — karta joyida yangilandi (kichik charge
+          // tasdig'i yetadi); boshqa bo'limda bo'lsa — thumbnail + View'li boy toast.
+          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('imggen',j.jcost,(first&&(first.thumbUrl||first.url))||null);
+          else toast('Done! ✦'+j.jcost+' charged','success');
           if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },2000); // history bilan id/thumb sinxron
         },200);
       }else if(s==='failed'){
@@ -14548,7 +14607,9 @@ window.afGallery=(function(){
           var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1);
           if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
           if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
-          renderVgRecent(); refreshVgBtn(); setCreditChip(credits()); toast('Done! ✦'+j.jcost+' charged','success');
+          renderVgRecent(); refreshVgBtn(); setCreditChip(credits());
+          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('vidgen',j.jcost,(a0&&(a0.thumbUrl||null))||null); // SC_21
+          else toast('Done! ✦'+j.jcost+' charged','success');
         },200);
       } else if(s==='failed'){
         removeVgJob(j); setCreditChip(credits());
@@ -14941,13 +15002,13 @@ window.afGallery=(function(){
 
   // View'дан chiqishда video joblar timer/network + inline pleyer ovozini to'xtatamiz (leak oldini olish — igScript naqshi).
   function teardownVg(){
-    activeJobs.forEach(function(j){ j.cancelled=true; if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} });
-    activeJobs=[]; renderVgJobs();
+    // SC_21: video joblar view almashганда BEKOR QILINMAYDI — poll fonда davom etadi;
+    // faqat inline pleer to'xtaydi va lightbox yopiladi (ovoz/leak oldini olish).
     var v=$('vgVideo'); if(v){ try{v.pause();}catch(e){} }
     if(window.afRecent&&window.afRecent.closeLightbox)window.afRecent.closeLightbox();
-    refreshVgBtn();
   }
   window.axVGTeardown=teardownVg;
+  window.__axVGRunning=function(){ return activeJobs.length; }; // SC_21: global badge uchun
   // FIX H: rasm tool (axIGRefresh) bilan bir xil — view har ochilganda kredit sinxron + model
   // yuklanmagan bo'lsa QAYTA uriniladi (avval birinchi fetch xatosi tool'ni butunlay o'chirib qo'yardi)
   window.axVGNewSession=function(){ vm.sessionId=null; }; // P1: New session
@@ -15071,7 +15132,9 @@ window.afGallery=(function(){
           var au0=((gn.assets||[])[0]||{});
           // P30 (29c) — done LEKIN natija yo'q = provayder rad etdi (success-shaklda). Halol ishlaymiz.
           if(!au0.url){ if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No audio was returned — your credits were refunded','error'); agSyncCredits(); return; }
-          renderAgResult(gn.assets,prompt); loadAgRecent(true); agSyncCredits(); toast('Audio ready','success');
+          renderAgResult(gn.assets,prompt); loadAgRecent(true); agSyncCredits();
+          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('audgen',null,null); // SC_21
+          else toast('Audio ready','success');
         }
         else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; setAgBusy(false); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):(gn.error||'Audio failed — credits refunded'),'error'); agSyncCredits(); }
         else pollAg(jobId,prompt,tries+1);
@@ -15143,7 +15206,9 @@ window.afGallery=(function(){
   var _hb=$('agHist'); if(_hb)_hb.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('history'); });
   var _bk=$('agBack'); if(_bk)_bk.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('launcher'); });
 
-  window.axAGTeardown=function(){ Object.keys(ag.pollTimers).forEach(function(k){ clearTimeout(ag.pollTimers[k]); delete ag.pollTimers[k]; }); };
+  // SC_21: audio poll ham fonда davom etadi (bekor qilinmaydi)
+  window.axAGTeardown=function(){};
+  window.__axAGRunning=function(){ return Object.keys(ag.pollTimers).length; }; // SC_21
   window.axAGNewSession=function(){ ag.sessions={}; }; // P1: New session
   window.axAGSetSession=function(mode,id){ ag.sessions={}; if(mode&&id)ag.sessions[mode]=id; }; // SC_18: picker'dan sessiya davomi
   window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
