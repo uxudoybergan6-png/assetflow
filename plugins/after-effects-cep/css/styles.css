@@ -258,3 +258,95 @@
   .b8 .auth-card{padding:14px}
   .b8 .device-code{margin:12px 0;padding:14px 10px}
 }
+
+/* ============================================================
+   BATCH8 #H1 — HOME (.fhome) — clean-room qayta qurish (Director spec).
+   Eski .b8 .home-b-* qoidalari yetim qoldi — ATAYIN o'chirilmadi.
+   Barcha ranglar token orqali; hex/rgba literal faqat spec ruxsat
+   bergan 2 dekorativ gradient + media ustidagi oq matn/skrimlar.
+   ============================================================ */
+/* A · SAHIFA */
+.fhome{min-height:100%;padding:14px;background:radial-gradient(circle at 82% 0%,var(--accent-soft),transparent 30%),var(--bg-deep)}
+/* B · TOPLINE */
+.fhome-top{min-height:30px;margin-bottom:10px;display:flex;align-items:center}
+.fhome-greet{min-width:0;color:var(--muted);font:700 8px/1.2 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-greet strong{color:var(--text);font-weight:700}
+.fhome-bal{margin-left:auto;padding:6px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface);display:flex;align-items:center;white-space:nowrap}
+.fhome-bal span{margin-right:6px;color:var(--faint);font:700 7px/1 var(--font-mono);letter-spacing:.08em}
+.fhome-bal strong{color:var(--accent);font:750 9px/1 var(--font-mono)}
+/* C · HERO */
+.fhome-hero{height:290px;margin-bottom:16px;padding:16px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;display:flex;align-items:flex-end}
+.fhome-hero-art{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(135deg,#101a35 0%,#5b3d83 47%,#e5695b 100%);background-size:cover;background-position:center;transition:transform .32s var(--ease)}
+.fhome-hero:hover .fhome-hero-art{transform:scale(1.025)}
+.fhome-hero:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(4,5,9,.9),rgba(4,5,9,.55) 52%,rgba(4,5,9,.06)),linear-gradient(0deg,rgba(4,5,9,.8),transparent 60%)}
+.fhome-hero-chip{position:absolute;top:14px;right:14px;z-index:2;padding:6px 8px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(4,5,9,.62);color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.06em;white-space:nowrap}
+.fhome-hero-copy{position:relative;z-index:3;max-width:330px;color:#fff}
+.fhome-kick{margin:0 0 8px;color:var(--accent);font:750 8px/1 var(--font-mono);letter-spacing:.13em;text-transform:uppercase}
+.fhome-hero-copy h1{margin:0;font:650 30px/.95 var(--font-display);letter-spacing:-.055em}
+.fhome-sub{margin:9px 0 0;color:rgba(255,255,255,.72);font:400 10px/1.5 var(--font-sans)}
+.fhome-cta{margin-top:14px;display:flex;align-items:center}
+.fhome-btn-ai{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:9px 13px;border:0;border-radius:10px;background:var(--grad);color:var(--on-accent);font:700 10px/1 var(--font-sans);white-space:nowrap;box-shadow:0 8px 28px var(--glow);cursor:pointer}
+.fhome-btn-stock{display:inline-flex;align-items:center;justify-content:center;min-height:36px;margin-left:7px;padding:9px 13px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(5,6,10,.58);color:#fff;font:700 10px/1 var(--font-sans);white-space:nowrap;cursor:pointer}
+.fhome-btn-ai:hover,.fhome-btn-stock:hover{filter:brightness(1.06)}
+/* D · SECTION HEADER */
+.fhome-sechd{margin:16px 2px 9px;display:flex;align-items:baseline}
+.fhome-sechd h2{min-width:0;margin:0;color:var(--text);font:650 14px/1.15 var(--font-display);letter-spacing:-.02em}
+.fhome-browse{margin-left:auto;padding:0;border:0;background:transparent;color:var(--accent);font:700 10px/1.2 var(--font-sans);white-space:nowrap;cursor:pointer}
+.fhome-browse:hover{text-decoration:underline}
+/* E · ACTION KARTALARI */
+.fhome-cards{display:grid;grid-template-columns:1fr;grid-gap:10px}
+.fhome-card{width:100%;min-width:0;min-height:150px;padding:14px;border:1px solid var(--border);border-radius:15px;background:var(--surface);color:var(--text);text-align:left;position:relative;overflow:hidden;cursor:pointer;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
+.fhome-card:hover,.fhome-card:focus{transform:translateY(-2px);border-color:var(--accent);outline:0}
+.fhome-card>*{position:relative;z-index:1}
+.fhome-card.is-ai{border-color:var(--accent);box-shadow:0 14px 38px var(--glow)}
+.fhome-card.is-ai:before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;z-index:0;background:radial-gradient(circle at 88% 0%,var(--glow),transparent 38%)}
+.fhome-card.is-stock:before{content:"";position:absolute;z-index:0;width:88px;height:54px;right:14px;top:14px;border:1px solid rgba(255,255,255,.2);border-radius:9px;background:linear-gradient(135deg,#17264c,#7c427e 56%,#ee7b57);transform:rotate(6deg);opacity:.7}
+.fhome-card-top{display:flex;align-items:center}
+.fhome-card-ic{width:31px;height:31px;flex:0 0 auto;border:1px solid var(--border);border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font:750 11px/1 var(--font-mono)}
+.fhome-card-tag{margin-left:8px;color:var(--faint);font:700 7px/1 var(--font-mono);letter-spacing:.09em;text-transform:uppercase}
+.fhome-card-bdg{margin-left:auto;padding:4px 6px;border:1px solid var(--border);border-radius:999px;background:rgba(5,6,10,.54);color:var(--text-2);font:700 6px/1 var(--font-mono);letter-spacing:.06em;white-space:nowrap}
+.fhome-card h3{margin:14px 0 5px;font:650 16px/1.1 var(--font-display);letter-spacing:-.02em}
+.fhome-card p{max-width:240px;margin:0;color:var(--muted);font:400 9px/1.45 var(--font-sans)}
+.fhome-card-go{display:inline-flex;align-items:center;min-height:30px;margin-top:12px;padding:0 11px;border-radius:999px;background:var(--surface-3);color:var(--text);font:750 7px/1 var(--font-mono);letter-spacing:.04em}
+.fhome-card.is-ai .fhome-card-go{background:var(--accent);color:var(--on-accent)}
+/* F · FRESH JAVONI */
+.fhome-shelf{display:flex;overflow-x:auto;padding-bottom:4px}
+.fhome-shelf::-webkit-scrollbar{width:0;height:0}
+.fhome-tcard{width:195px;flex:0 0 auto;margin-right:10px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.fhome-tcard:focus{outline:0}
+.fhome-tmedia{display:block;height:116px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:12px;background-color:var(--surface-2);background-size:cover;background-position:center;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
+.fhome-tcard:hover .fhome-tmedia,.fhome-tcard:focus .fhome-tmedia{transform:translateY(-2px);border-color:var(--accent)}
+.fhome-tbadge{position:absolute;top:8px;left:8px;padding:4px 6px;border-radius:999px;background:rgba(4,5,8,.7);color:#fff;font:700 6px/1 var(--font-mono);letter-spacing:.07em}
+.fhome-tbadge.pro{background:var(--accent);color:var(--on-accent)}
+.fhome-tdur{position:absolute;right:8px;bottom:8px;padding:4px 5px;border-radius:5px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono)}
+.fhome-tcard h3{margin:8px 1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:650 10px/1.3 var(--font-sans)}
+.fhome-tcard p{margin:4px 1px 0;color:var(--muted);font:650 7px/1.3 var(--font-mono);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Skelet (katalog yuklanmoqda) — shimmer var(--surface-2) */
+.fhome-tskel-media{display:block;height:116px;border:1px solid var(--hair);border-radius:12px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
+.fhome-tskel-line{display:block;height:9px;margin:9px 1px 0;border-radius:4px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
+.fhome-tskel-line.s{width:60%;height:7px;margin-top:6px}
+@keyframes fhome-shimmer{from{background-position:180% 0}to{background-position:-80% 0}}
+/* G · RESPONSIVE — kenglik 600+: 2 ustunli action kartalar */
+@media (min-width:600px){
+  .fhome-cards{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+/* Kenglik ≤340: sahifa 12px, hero H1 26px, kartalar 12px */
+@media (max-width:340px){
+  .fhome{padding:12px}
+  .fhome-hero-copy h1{font-size:26px}
+  .fhome-card{padding:12px}
+}
+/* Bo'y ≤620: hero 210px */
+@media (max-height:620px){
+  .fhome-hero{height:210px}
+}
+/* Bo'y ≤500: hero 170px — hammasi skroll bo'ladi, hech narsa kesilmaydi.
+   Copy blok 170px ichiga sig'ishi uchun ixchamlanadi (aks holda overflow:hidden kesadi). */
+@media (max-height:500px){
+  .fhome-hero{height:170px;padding:12px 16px}
+  .fhome-kick{margin-bottom:6px}
+  .fhome-hero-copy h1{font-size:22px}
+  .fhome-sub{margin-top:6px;font-size:9px;line-height:1.4}
+  .fhome-cta{margin-top:10px}
+  .fhome-btn-ai,.fhome-btn-stock{min-height:32px;padding:7px 11px;font-size:9px}
+}
