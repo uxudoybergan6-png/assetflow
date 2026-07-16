@@ -3435,7 +3435,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .ai-launch-lead{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 0}
 .axroot .ai-launch-t{font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--text)}
 .axroot .ai-launch-acts{display:flex;gap:8px}
-.axroot .ai-launch-sub{font-size:11px;color:var(--muted);margin:4px 2px 16px}
+/* SC_08: .ai-launch-sub o'chirildi */
 
 /* ── b4/b5 — Video tool (Fast/R2V) mockup verbatim ── */
 .axvg .vg-modeseg{display:flex;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:3px;margin-bottom:14px}
@@ -4148,7 +4148,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg>
                   </button>
                   <!-- BATCH8 P3 — 2-qatorli brand copy: mahsulot nomi + faol pane konteksti (afSetPaneCtx yozadi) -->
-                  <div class="af-tb-brand"><strong>FrameFlow</strong><span class="af-tb-ctx" id="afPaneCtx">STOCK CATALOG · VIDEO</span></div>
+                  <div class="af-tb-brand"><strong>FrameFlow</strong></div><!-- SC_08 (b): kontekst mikro-yorlig'i o'chirildi — markaziy seg buni allaqachon ko'rsatadi (afSetPaneCtx null-guard bilan xavfsiz) -->
                 </div>
                 <div class="af-tb-seg">
                   <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Section">
@@ -4366,7 +4366,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                             <div class="ai-icon" data-go="settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                           </div>
                         </div>
-                        <div class="ai-launch-sub">Prompt → result → import directly into AE</div>
+                        <!-- SC_08 (b): "Prompt → result → ..." explainer o'chirildi -->
                         <!-- SC_15: Tools|Sessions|Projects sub-tab qatori OLIB TASHLANDI — Sessions/Projects
                              endi doimiy top-bar'da (af-topbar); HISTORY strip ham o'chirildi — yagona
                              foydalanuvchi-ishlari yuzasi = My Library (v-history ko'rinishi). -->
