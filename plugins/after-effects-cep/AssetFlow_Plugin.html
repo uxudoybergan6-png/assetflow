@@ -373,7 +373,25 @@ body{
 /* C2: doimiy top-header (brend + plan-pill + sync). Layout-only; auth va nav
    mantig'i sidebar'da qoladi (faqat ko'rinish qo'shiladi). */
 /* ===== Katalog header/qatorlar — mockup a1 (1:1 @380px, dark palette literal) ===== */
-.af-topbar{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);flex:none;position:relative;z-index:6}
+/* SC_12: doimiy top-bar — 3-ustun grid (1fr auto 1fr): seg HAR DOIM aynan markazda,
+   chap/o'ng klaster kengligi bo'limdan bo'limga o'zgarsa ham markaz siljimaydi. */
+.af-topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;height:52px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05);flex:none;position:relative;z-index:6}
+.af-tb-l{display:flex;align-items:center;gap:10px;min-width:0}
+.af-tb-r{display:flex;align-items:center;gap:10px;justify-content:flex-end;min-width:0}
+/* Seg yorliqlari: keng panelda to'liq (lf), ~360px dan tor panelda qisqa (ls) */
+.af-tb-seg .ff-seg__item .ls{display:none}
+/* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi */
+@media (max-width:459px){
+  .af-topbar .af-tb-brand{display:none}
+}
+@media (max-width:379px){
+  .af-tb-seg .ff-seg__item .lf{display:none}
+  .af-tb-seg .ff-seg__item .ls{display:inline}
+  .af-tb-seg .ff-seg__item{padding:5px 9px}
+  .af-topbar{gap:6px;padding:0 8px}
+  /* Sync ikonasi eng tor panelda yashirinadi (AI launcher'da ham Sync bor) */
+  .af-topbar .af-tb-r>.af-tb-icon{display:none}
+}
 /* #10: Home chaqmoq bloki — umumiy .hd-home geometriyasi (30px, 9px radius, lime glow hover) */
 .af-tb-logo-btn{width:30px;height:30px;flex:none;border:0;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);cursor:pointer;transition:box-shadow .2s}
 .af-tb-logo-btn:hover{box-shadow:0 0 0 3px var(--glow)}
@@ -1903,7 +1921,7 @@ html.cep-mode .ptitlebar{display:none!important}
 html.cep-mode .panel-body{border-radius:0!important}
 /* ════════ AI TOOLS (Studio Gen bilan ulangan — rasm/ovoz/video/SFX/qidiruv) ════════ */
 /* AI rejimda browse chrome yashiriladi, #aiPage ko'rsatiladi (nav mantig'i tegilmaydi) */
-html.ai-mode .af-topbar,
+/* SC_12: .af-topbar endi ai-mode'da YASHIRILMAYDI — doimiy top-bar */
 html.ai-mode .af-pillar-row,
 html.ai-mode .af-tabs,
 html.ai-mode .env-top,
@@ -1927,7 +1945,7 @@ html.ai-mode #aiPage{display:block!important}
    lib-mode = katalog chrome yashiriladi, #libPage ko'rsatiladi.
    switchPage/favorites/downloaded state + toggleFav/openPack/sync saqlanadi.
    ============================================================ */
-html.lib-mode .af-topbar,
+/* SC_12: .af-topbar endi lib-mode'da YASHIRILMAYDI — doimiy top-bar */
 html.lib-mode .env-filter-bar,
 html.lib-mode .env-subnav,
 html.lib-mode .scroll-area,
@@ -3587,7 +3605,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .sw2.on::after{left:18px;background:var(--on-accent)}
 
 /* ===== Asosiy (Home) — home-mockup.html 1:1, .axhome scope ===== */
-html.home-mode .af-topbar,
+/* SC_12: .af-topbar endi home-mode'da YASHIRILMAYDI — doimiy top-bar */
 html.home-mode .af-pillar-row,
 html.home-mode .af-tabs,
 html.home-mode .env-top,
@@ -3603,6 +3621,12 @@ html.home-mode .foot,
 html.home-mode #afFtr{display:none!important}
 html.home-mode #homePage{display:block!important}
 #homePage{display:none}
+/* SC_12: doimiy .af-topbar bilan dublikat headerlar yashiriladi (markup+JS yozuvlari
+   saqlanadi — hech narsa throw qilmaydi, faqat displey): Home'ning o'z headeri,
+   AI launcher'ning o'z headeri va AI .pbar brend-qatori. */
+#homeHd{display:none!important}
+#v-launcher>.ai-hdr{display:none!important}
+.axroot .pbar{display:none!important}
 .af-tb-home{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--border);background:var(--surface);color:#cfd4da;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-right:8px;flex:0 0 auto}
 .af-tb-home:hover{border-color:var(--accent);color:var(--accent)}
 .axhome{--panel:var(--sidebar);--card:var(--surface);--card2:var(--surface-2);--card3:var(--surface-3);--line:var(--border);--line2:var(--border);--txt:var(--text);--mut:var(--muted);--mut2:var(--muted-2);--acc:var(--accent);--acc2:var(--accent-hi);--acc-ink:var(--on-accent);--blue:var(--select);font-family:var(--font-sans);color:var(--txt);line-height:1.4}
@@ -4063,27 +4087,35 @@ html.home-mode #homePage{display:block!important}
             </aside>
 
             <div class="env-content">
+              <!-- SC_12: YAGONA doimiy top-bar — har logged-in bo'limda ko'rinadi (home/ai/lib/katalog).
+                   3-ustun grid (1fr auto 1fr): chap klaster · MARKAZIY 3-tab seg · o'ng klaster.
+                   Seg markazi bo'lim almashganda bir pikselga ham siljimaydi. -->
               <header class="af-topbar">
-                <button type="button" class="af-tb-logo-btn" id="afHomeBtn" title="Home" aria-label="Home">
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg>
-                </button>
-                <!-- BATCH8 P3 — 2-qatorli brand copy: mahsulot nomi + faol pane konteksti (afSetPaneCtx yozadi) -->
-                <div class="af-tb-brand"><strong>FrameFlow</strong><span class="af-tb-ctx" id="afPaneCtx">STOCK CATALOG · VIDEO</span></div>
+                <div class="af-tb-l">
+                  <button type="button" class="af-tb-logo-btn" id="afHomeBtn" title="Home" aria-label="Home">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg>
+                  </button>
+                  <!-- BATCH8 P3 — 2-qatorli brand copy: mahsulot nomi + faol pane konteksti (afSetPaneCtx yozadi) -->
+                  <div class="af-tb-brand"><strong>FrameFlow</strong><span class="af-tb-ctx" id="afPaneCtx">STOCK CATALOG · VIDEO</span></div>
+                </div>
                 <div class="af-tb-seg">
                   <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Section">
-                    <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Catalog — templates">Catalog</button>
-                    <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio">AI Tools</button>
+                    <button type="button" class="ff-seg__item" id="afSegHome" role="tab" aria-selected="false" onclick="afNavTab('home')" title="Home"><span class="lf">Home</span><span class="ls">Home</span></button>
+                    <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><span class="lf">AI Tools</span><span class="ls">AI</span></button>
+                    <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Stock Catalog — templates"><span class="lf">Stock Catalog</span><span class="ls">Stock</span></button>
                   </div>
                 </div>
-                <!-- #22: qo'l yangilash — yuqori burchakdagi Sync (avval af-tb-hidden ichida edi) -->
-                <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Refresh catalog" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
-                <button type="button" class="af-tb-cred" id="hdrPlanPill" tabindex="0" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span class="cred" id="hdrCred">—</span><span class="hd-plan free" data-hdplan>FREE</span></button>
-                <button type="button" class="af-tb-ava" id="hdrAva" title="Account" aria-label="Account" onclick="openAccountSheet()"></button>
-                <!-- a1'da yo'q: Downloads/Sevimli — wiring saqlanadi (keyingi bosqichda joylashtiriladi) -->
-                <span class="af-tb-hidden" aria-hidden="true">
-                  <button type="button" class="af-tb-icon" tabindex="-1" onclick="afHeaderPage('downloaded')" title="Downloaded" aria-label="Downloaded"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
-                  <button type="button" class="af-tb-icon" tabindex="-1" onclick="afHeaderPage('favorites')" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
-                </span>
+                <div class="af-tb-r">
+                  <!-- #22: qo'l yangilash — yuqori burchakdagi Sync (avval af-tb-hidden ichida edi) -->
+                  <button type="button" class="af-tb-icon" onclick="syncServerCatalog()" title="Refresh catalog" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></button>
+                  <button type="button" class="af-tb-cred" id="hdrPlanPill" tabindex="0" title="Account · Plan · AI credits" onclick="openAccountSheet()"><span class="s">✦</span><span class="cred" id="hdrCred">—</span><span class="hd-plan free" data-hdplan>FREE</span></button>
+                  <button type="button" class="af-tb-ava" id="hdrAva" title="Account" aria-label="Account" onclick="openAccountSheet()"></button>
+                  <!-- a1'da yo'q: Downloads/Sevimli — wiring saqlanadi (keyingi bosqichda joylashtiriladi) -->
+                  <span class="af-tb-hidden" aria-hidden="true">
+                    <button type="button" class="af-tb-icon" tabindex="-1" onclick="afHeaderPage('downloaded')" title="Downloaded" aria-label="Downloaded"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 20h14"/></svg></button>
+                    <button type="button" class="af-tb-icon" tabindex="-1" onclick="afHeaderPage('favorites')" title="Favorites" aria-label="Favorites"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+                  </span>
+                </div>
               </header>
               <!-- a1: bo'lim segmenti header ichida; nav-chiplar + grid sarlavha .env-filter-bar ichida -->
 
@@ -6038,6 +6070,12 @@ function syncCategoryChips(slug){
 // E6.1: katalog top-tab → yashirin sidebar tugmasini .click() qiladi (mavjud onclick ishlaydi,
 // handler tahrirlanmaydi, guard refs o'zgarmaydi). Aktiv holat render() funnelida syncTopNav bilan.
 function afNavTab(tab){
+  // SC_12: uchinchi tab — Home (goHome mavjud yo'li; yangi routing yo'q)
+  if(tab==='home'){
+    if(typeof window.goHome==='function')window.goHome();
+    syncPillarSeg();
+    return;
+  }
   if(tab==='catalog'){
     // P9: AI Tools'dan KATALOGGA qaytish. `[data-nav="catalog"]` yo'q — joriy (yoki default
     // "video"=Templates) katalog nav linkini bosamiz → applyNavSwitch ai-mode'ni olib tashlaydi.
@@ -6055,12 +6093,17 @@ function afNavTab(tab){
   if(typeof syncTopNav==='function') syncTopNav();
   syncPillarSeg();
 }
-// P9: header "Catalog | AI Tools" segment aktiv holatini joriy ko'rinishga moslaydi (ikkala yo'nalish).
+// SC_12: header "Home · AI Tools · Stock Catalog" segment aktiv holatini joriy
+// ko'rinishga moslaydi (har navigatsiya yo'lidan chaqiriladi — seg bosishidan tashqari ham).
 function syncPillarSeg(){
-  const isAi=document.documentElement.classList.contains('ai-mode');
-  const k=document.getElementById('afSegKatalog'), a=document.getElementById('afSegAi');
-  if(k){ k.classList.toggle('is-on',!isAi); k.setAttribute('aria-selected',(!isAi)?'true':'false'); }
-  if(a){ a.classList.toggle('is-on',isAi); a.setAttribute('aria-selected',isAi?'true':'false'); }
+  const h=document.documentElement;
+  const isAi=h.classList.contains('ai-mode');
+  const isHome=h.classList.contains('home-mode');
+  const set=function(el,on){ if(el){ el.classList.toggle('is-on',on); el.setAttribute('aria-selected',on?'true':'false'); } };
+  set(document.getElementById('afSegHome'),isHome);
+  set(document.getElementById('afSegAi'),isAi);
+  // lib-mode (Kutubxonam) katalog oilasiga kiradi — Stock Catalog yonadi
+  set(document.getElementById('afSegKatalog'),!isAi&&!isHome);
 }
 // E6.2: header ixcham ikonalar (Downloads/Favorites) → yashirin sidebar .env-side-link[data-page]
 // tugmasini .click() qiladi → mavjud onclick ishlaydi (handler tahrirlanmaydi).
@@ -7300,6 +7343,7 @@ function afLibOpen(page){
   if(link)link.classList.add('active');
   afLibTab(tab);
   if(typeof afSetPaneCtx==='function')afSetPaneCtx(); // BATCH8 P3 — app-bar konteksti
+  if(typeof syncPillarSeg==='function')syncPillarSeg(); // SC_12 — doimiy seg aktiv holati
 }
 window.afLibOpen=afLibOpen;
 function afLibClose(){
@@ -7412,6 +7456,7 @@ function applyNavSwitch(tab){
   // AI Tools — alohida sahifa (browse chrome yashiriladi, #aiPage ko'rsatiladi).
   // Mavjud video/motion/graphics/luts yo'llari pastda o'zgarishsiz qoladi.
   document.documentElement.classList.remove('home-mode'); // har nav Home'dan chiqadi
+  document.documentElement.classList.remove('lib-mode'); // SC_12: doimiy seg'dan katalogga qaytishда lib ham yopiladi
   const isAi=tab==='ai';
   document.documentElement.classList.toggle('ai-mode',isAi);
   if(typeof syncPillarSeg==='function') syncPillarSeg(); // P9: header segment holatini ham yangilaymiz
@@ -7869,6 +7914,7 @@ function goHome(){
   try{ renderHome(); }catch(e){}
   try{ const sa=document.querySelector('.scroll-area'); if(sa)sa.scrollTop=0; }catch(e){}
   if(typeof afSetPaneCtx==='function')afSetPaneCtx(); // BATCH8 P3 — app-bar konteksti
+  if(typeof syncPillarSeg==='function')syncPillarSeg(); // SC_12 — doimiy seg aktiv holati
 }
 window.goHome=goHome;
 function wireHome(){
@@ -7955,6 +8001,10 @@ function setHeaderPlan(pro,label,credits){
    o'ng klasteri — logged: kredit+plan+avatar(ring); guest: bitta lime "Sign in" pill (bir xil geometriya). */
 function afHdrSyncAll(){
   const logged=typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn();
+  // SC_12: guest holatда markaziy seg ko'rinmaydi (guest ekran — istisno);
+  // visibility (display emas) — grid markazlash geometriyasi saqlanadi.
+  const seg=document.querySelector('.af-tb-seg');
+  if(seg)seg.style.visibility=logged?'':'hidden';
   document.querySelectorAll('#homeHd,.af-topbar,.axroot .ai-hdr,.lib-top').forEach(function(h){
     const cred=h.querySelector('.hd-cred,.af-tb-cred,.ai-cred');
     const ava=h.querySelector('.hd-ava,.af-tb-ava,.ai-ava');
@@ -7966,7 +8016,9 @@ function afHdrSyncAll(){
         si=document.createElement('button'); si.type='button'; si.className='hd-signin';
         si.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>Sign in';
         si.addEventListener('click',function(){ if(typeof openAccountSheet==='function')openAccountSheet(); });
-        h.appendChild(si);
+        // SC_12: af-topbar endi grid — pill headerning O'NG klasteriga kiradi
+        // (to'g'ridan grid'ga qo'shilsa yangi qatorga tushib layoutni buzadi)
+        (h.querySelector('.af-tb-r')||h).appendChild(si);
       }
       si.style.display='';
     }else{

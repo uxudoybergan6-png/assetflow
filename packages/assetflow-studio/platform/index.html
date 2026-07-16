@@ -14285,6 +14285,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
+  /* SC_12: scrollbar paydo/yo'qolishida markaziy seg 5px sakramasin (klassik scrollbar OS'larda) */
+  html{scrollbar-gutter:stable}
   body{background:var(--th-bg);font-family:'Inter',system-ui,sans-serif}
   /* ═══════════ BATCH6 · 3-TEMA TOKEN QATLAMI (noir · neon · cold) — manba: docs/mockups/batch6 ═══════════ */
   :root,:root[data-theme="noir"]{
@@ -15121,7 +15123,16 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-axarow.playing .va-axwave b:nth-child(3n){animation-delay:.32s}
   @keyframes vaEq{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
   /* ── top nav (A1) ── */
-  .ff .va-nav{height:64px;display:flex;align-items:center;gap:26px;padding:0 32px;border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9);position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  /* SC_12: 3-ustun grid — markaziy seg bo'lim almashganda bir pikselga ham siljimaydi */
+  .ff .va-nav{height:64px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 32px;border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9);position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .ff .va-nav-l{display:flex;align-items:center;min-width:0}
+  .ff .va-nav-c{display:flex;justify-content:center;min-width:0}
+  .ff .va-nav-r{display:flex;align-items:center;gap:14px;justify-content:flex-end;min-width:0}
+  .ff .va-seg{display:flex;background:var(--f1);border:1px solid var(--hair2);border-radius:999px;padding:3px}
+  .ff .va-seg__item{padding:7px 16px;border-radius:999px;border:0;background:none;font-family:inherit;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap;line-height:1}
+  .ff .va-seg__item:hover{color:var(--text)}
+  .ff .va-seg__item.on{color:var(--text);background:var(--pill-active);cursor:default}
+  .ff .va-seg .ls{display:none}
   .ff .va-logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15.5px;letter-spacing:-.02em;color:var(--text);cursor:pointer}
   .ff .va-logo .mk{width:26px;height:26px;border-radius:8px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center}
   .ff .va-links{display:flex;gap:4px}
@@ -15271,8 +15282,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     .ff .va-credcard{position:static;width:100%;max-width:420px;margin-top:22px}
   }
   @media(max-width:820px){
-    .ff .va-nav{height:56px;gap:10px;padding:0 16px}
+    .ff .va-nav{height:56px;gap:8px;padding:0 12px}
     .ff .va-links,.ff .va-search{display:none}
+    /* SC_12: mobil — seg qisqa yorliqlar bilan QOLADI (Home · AI · Stock), logo matni yashirin */
+    .ff .va-logo .lg-t{display:none}
+    .ff .va-seg .lf{display:none}
+    .ff .va-seg .ls{display:inline}
+    .ff .va-seg__item{padding:7px 11px;font-size:12px}
+    /* Theme-dots app headeriga mobilda sig'maydi — seg ustiga chiqib qoladi */
+    .ff .va-nav .ff-theme{display:none}
     .ff .va-credpill{height:28px;font-size:10.5px}
     .ff .va-nav .va-ava{width:28px;height:28px}
     .ff .va-mobonly{display:flex!important}
@@ -16434,11 +16452,18 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     </svg>
 
     <!-- TOP NAV (A1 · no sidebar) -->
+    <!-- SC_12: 3-ustun grid (1fr auto 1fr) — markaziy 3-tab seg (Home · AI Tools ·
+         Stock Catalog) HAR app ekranida ayni markazda, sticky, hech qachon yo'qolmaydi. -->
     <header class="va-nav">
-      <div class="va-logo" onclick="{{ goLanding }}"><span class="mk"><svg class="va-ic"><use href="#i-bolt"></use></svg></span>FrameFlow</div>
-      <nav class="va-links">
-        <sc-for list="{{ navLinksView }}" as="it" hint-placeholder-count="4"><a data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}">{{ it.label }}</a></sc-for>
-      </nav>
+      <div class="va-nav-l">
+        <div class="va-logo" onclick="{{ goLanding }}"><span class="mk"><svg class="va-ic"><use href="#i-bolt"></use></svg></span><span class="lg-t">FrameFlow</span></div>
+      </div>
+      <div class="va-nav-c">
+        <nav class="va-seg" role="tablist" aria-label="Section">
+          <sc-for list="{{ topSegView }}" as="it" hint-placeholder-count="3"><button type="button" data-screen="{{ it.screen }}" onclick="{{ onNav }}" class="{{ it.cls }}" title="{{ it.label }}"><span class="lf">{{ it.label }}</span><span class="ls">{{ it.short }}</span></button></sc-for>
+        </nav>
+      </div>
+      <div class="va-nav-r">
       <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates, generations…"><span class="k">⌘K</span></div>
       <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
       <div style="position:relative" data-pop-root="avatar">
@@ -16451,11 +16476,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
             <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-user-circle"></i>Account</button>
             <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-download-simple"></i>Downloads</button>
-            <button class="ffa-mrow va-mobonly" data-screen="projects" onclick="{{ onNav }}"><i class="ph ph-folder-open"></i>Projects</button>
+            <!-- SC_12: Projects endi seg'da yo'q — avatar menyuda har ekranda ko'rinadi (SC_15 top-bar entry qo'shadi) -->
+            <button class="ffa-mrow" data-screen="projects" onclick="{{ onNav }}"><i class="ph ph-folder-open"></i>Projects</button>
             <button class="ffa-mrow" data-screen="plugin" onclick="{{ onNav }}"><i class="ph ph-puzzle-piece"></i>Plugin</button>
             <button class="ffa-mrow" onclick="{{ doLogout }}" style="color:var(--th-danger)"><i class="ph ph-sign-out" style="color:var(--th-danger)"></i>Sign out</button>
           </div>
         </sc-if>
+      </div>
       </div>
     </header>
 
@@ -21855,6 +21882,14 @@ class Component extends DCLogic {
     const plansCur = plansView.map(p => ({ ...p, cur: p.key === planKey }));
     // FAZA 5 Variant A — top nav + hero bindings
     const navLinksView = this.sidebarMain.map(it => ({ ...it, cls: it.screen === s ? 'on' : '' }));
+    // SC_12 — markaziy 3-tab seg (Home · AI Tools · Stock Catalog); short = tor ekran yorlig'i.
+    // Aktiv holat HAR navigatsiyada qayta hisoblanadi (hero CTA, karta, avatar-menyu — hammasi
+    // onNav→setScreen→render orqali o'tadi). detail ochiq bo'lsa Stock Catalog yonadi.
+    const topSegView = [
+      { label: 'Home', short: 'Home', screen: 'dashboard' },
+      { label: 'AI Tools', short: 'AI', screen: 'aistudio' },
+      { label: 'Stock Catalog', short: 'Stock', screen: 'templates' },
+    ].map(it => ({ ...it, cls: 'va-seg__item' + ((dRaw ? it.screen === 'templates' : it.screen === s) ? ' on' : '') }));
     const planPill = planShort.toUpperCase();
     const nowD = new Date();
     const heroKick = (nowD.toLocaleDateString('en-US', { weekday: 'long' }) + ' · ' + nowD.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })).toUpperCase();
@@ -22180,7 +22215,7 @@ class Component extends DCLogic {
       // #9/#10 — xom kategoriya nomini qat'iy pill bucket'iga xaritalab filtrlaymiz (aks holda mos kelmaydi).
       openShelfCat: () => { if (shelfCatName) this.setState({ fCat: this.pillOf({ c: shelfCatName }) }); this.go('templates'); },
       openShelfNew: () => { this.setState({ sortKey: 'new' }); this.go('templates'); },
-      navLinksView, planPill, heroKick, heroGreeting, userFirst, creditResetShort,
+      navLinksView, topSegView, planPill, heroKick, heroGreeting, userFirst, creditResetShort,
       sidebarCls, collapseIcon, toggleSidebar: () => this.setState(st => ({ sidebarCollapsed: !st.sidebarCollapsed })),
       avatarOpen: this.state.avatarOpen, toggleAvatar: () => this.setState(st => ({ avatarOpen: !st.avatarOpen })),
       creditPct, creditMaxFmt, planShort, authBrandTitle, authBrandSub,
@@ -22758,8 +22793,10 @@ class Component extends DCLogic {
     });
     document.querySelectorAll('.va-nav').forEach(function(nav){
       if(nav.querySelector('.ff-theme'))return;
+      // SC_12: credpill endi .va-nav-r klasteri ichida — tugma o'z ota-elementiga kiradi
+      // (to'g'ridan grid'ga append qilinsa yangi qatorga tushib layoutni buzadi)
       var ref=nav.querySelector('.va-credpill')||nav.querySelector('.va-ava');
-      if(ref&&ref.parentNode===nav){nav.insertBefore(build(), ref);}else{nav.appendChild(build());}
+      if(ref){ref.parentNode.insertBefore(build(), ref);}else{nav.appendChild(build());}
     });
     syncActive();
   }
