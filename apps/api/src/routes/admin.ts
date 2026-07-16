@@ -56,6 +56,13 @@ import {
   saveLandingConfig,
   resetLandingConfig,
 } from "../lib/landing-config.js";
+import {
+  DEFAULT_PLUGIN_CONTENT_CONFIG,
+  pluginContentConfigSchema,
+  getPluginContentConfig,
+  savePluginContentConfig,
+  resetPluginContentConfig,
+} from "../lib/plugin-content-config.js";
 
 export const adminRouter = Router();
 
@@ -139,6 +146,46 @@ adminRouter.delete("/landing-config", async (req, res) => {
     actorId: req.user!.userId,
     action: "landing_config.reset",
     targetType: "landingConfig",
+    targetId: "singleton",
+  });
+  res.json({ config });
+});
+
+// ── Plugin CMS (admin "Plugin CMS" tab) — landing-config triosi bilan 1:1 ────
+// Faqat matn/media konfiguratsiya — pul mantig'iga aloqasi yo'q (sxemada narx
+// maydonlari YO'Q). Ommaviy o'qish /api/plugin/content-config (routes/plugin.ts).
+
+/** GET /api/admin/plugin-content-config — merged config + defaultlar. */
+adminRouter.get("/plugin-content-config", async (_req, res) => {
+  const { config, updatedAt } = await getPluginContentConfig();
+  res.json({ config, updatedAt, defaults: DEFAULT_PLUGIN_CONTENT_CONFIG });
+});
+
+/** PUT /api/admin/plugin-content-config — qisman patch (bo'lim-darajada merge) + audit. */
+adminRouter.put("/plugin-content-config", async (req, res) => {
+  const parsed = pluginContentConfigSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid plugin content config", detail: parsed.error.flatten() });
+    return;
+  }
+  const config = await savePluginContentConfig(parsed.data, req.user?.userId ?? null);
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "plugin_content.update",
+    targetType: "pluginContentConfig",
+    targetId: "singleton",
+    detail: JSON.stringify(Object.keys(parsed.data)).slice(0, 200),
+  });
+  res.json({ config });
+});
+
+/** DELETE /api/admin/plugin-content-config — defaultlarga qaytarish + audit. */
+adminRouter.delete("/plugin-content-config", async (req, res) => {
+  const config = await resetPluginContentConfig();
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "plugin_content.reset",
+    targetType: "pluginContentConfig",
     targetId: "singleton",
   });
   res.json({ config });

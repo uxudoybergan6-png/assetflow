@@ -18,6 +18,7 @@ import { rateLimit } from "../middleware/rate-limit.js";
 import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
+import { getPluginContentConfig } from "../lib/plugin-content-config.js";
 import { sendWelcomeEmail, notifyAdminNewUser } from "../lib/notify.js";
 import { decryptTotpSecret, looksLikeBackupCode, verifyTotpCode } from "../lib/twofa.js";
 import {
@@ -310,6 +311,15 @@ pluginRouter.get("/version", async (req: Request, res: Response) => {
     mandatory,
     downloadUrl,
   });
+});
+
+// ── Plugin CMS — ommaviy o'qish (auth YO'Q: guest ekran login'dan OLDIN kerak).
+// Yozish yo'llari admin routerda (/api/admin/plugin-content-config).
+// GET /api/landing/config bilan bir xil uslub: merged config + qisqa kesh.
+pluginRouter.get("/content-config", async (_req: Request, res: Response) => {
+  const { config, updatedAt } = await getPluginContentConfig();
+  res.set("Cache-Control", "public, max-age=60");
+  res.json({ config, updatedAt });
 });
 
 pluginRouter.get("/catalog", async (req: Request, res: Response) => {

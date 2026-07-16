@@ -908,6 +908,17 @@ model LandingConfig {
   updatedAt   DateTime @updatedAt
 }
 
+// ── Plugin CMS (admin "Plugin CMS" tab) — bitta qator (id=1), AE plagin UI
+// matnlari + fon media URL'lari JSON blob'da. Default qiymatlar KODDA
+// (apps/api plugin-content-config.ts): qator yo'q/bo'sh bo'lsa plagin hozirgi
+// hardcoded kontent bilan piksel-bir-xil ko'rinadi. LandingConfig naqshi 1:1.
+model PluginContentConfig {
+  id          Int      @id @default(1)
+  data        Json     @default("{}")
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
+
 // ── P11 — Plagin relizlari (in-panel update kanali). ADDITIVE: mavjud modellarga
 // tegilmaydi. downloadKey = storage'dagi paket (releases/<v>.zip); mandatory yoki
 // minSupportedVersion ostidagi klient bloklanadi (update majburiy).
