@@ -2875,6 +2875,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .galmore{font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px;flex:0 0 auto}
 .axroot .galmore:hover{text-decoration:underline}
 .axroot .galgrid{display:grid;gap:9px}
+/* SC_23: My Library skeleton kartalar — yuklanishда qora void o'rniga shimmer */
+.axroot .galgrid .gskel{aspect-ratio:16/9;border-radius:12px;border:1px solid var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
 .axroot .galgrid[data-cols="1"]{grid-template-columns:1fr}
 .axroot .galgrid[data-cols="2"]{grid-template-columns:1fr 1fr}
 .axroot .galgrid[data-cols="3"]{grid-template-columns:1fr 1fr 1fr}
@@ -11850,9 +11852,15 @@ window.afGallery=(function(){
     function draw(){
       applyZoom();
       gridEl.classList.toggle('selmode',st.select);
-      if(!CACHE){ gridEl.innerHTML='<div class="galempty">Loading…</div>'; return; }
+      if(!CACHE){ gridEl.innerHTML='<div class="gskel"></div><div class="gskel"></div><div class="gskel"></div><div class="gskel"></div>'; return; } // SC_23: skeleton (matn/void emas)
       var list=visible();
-      if(!list.length){ gridEl.innerHTML='<div class="galempty"><b>Empty for now</b>'+(st.filter==='all'?'It\'ll show up here once you generate.':'No results of this type.')+'</div>'; footEl.textContent=''; updBatch(); return; }
+      if(!list.length){
+        // SC_23: bo'sh holat — ixcham matn + aniq amal tugmasi (Generate → launcher)
+        gridEl.innerHTML='<div class="galempty"><b>Empty for now</b>'+(st.filter==='all'?'It\'ll show up here once you generate.':'No results of this type.')+(st.filter==='all'?'<br><button type="button" class="galretry galgen" style="margin-top:8px">✦ Generate something</button>':'')+'</div>';
+        var gb=gridEl.querySelector('.galgen');
+        if(gb)gb.addEventListener('click',function(){ if(window.axGo)window.axGo('launcher'); });
+        footEl.textContent=''; updBatch(); return;
+      }
       gridEl.innerHTML='';
       list.forEach(function(it){
         var isAud=(it.cat==='audio'||it.cat==='sfx');
@@ -11964,7 +11972,7 @@ window.afGallery=(function(){
         var why=(err&&err.message)?String(err.message):'Check your internet/session.';
         gridEl.innerHTML='<div class="galempty"><b>Failed to load</b>'+esc(why)+'<br><button type="button" class="galretry" style="margin-top:8px">↻ Retry</button></div>';
         var rb=gridEl.querySelector('.galretry');
-        if(rb)rb.addEventListener('click',function(){ gridEl.innerHTML='<div class="galempty">Loading…</div>'; attempt(true); });
+        if(rb)rb.addEventListener('click',function(){ gridEl.innerHTML='<div class="gskel"></div><div class="gskel"></div><div class="gskel"></div><div class="gskel"></div>'; attempt(true); }); // SC_23: skeleton
       });
     }
     attempt(false);
