@@ -1225,11 +1225,12 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .acs-back{display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;margin:0;cursor:pointer;color:var(--muted);line-height:0}
 .acs-back:hover{color:#E7ECF3}
 .acs-htitle{font-weight:700;font-size:13px}
-.acs-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:14px}
-.acs-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted);margin:16px 0 8px}
-.acs-hint{font-size:11px;color:var(--muted);line-height:1.45;margin-top:8px}
+/* SC_10: Account sheet compact — paddinglar ~30-40% qisqartirildi (hit-area ≥24px saqlangan) */
+.acs-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:11px 12px}
+.acs-lbl{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;color:var(--muted-2);margin:11px 0 5px}
+.acs-hint{font-size:10px;color:var(--muted);line-height:1.4;margin-top:5px}
 /* profil */
-.acs-prof{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid rgba(255,255,255,.08)}
+.acs-prof{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:13px;background:var(--surface);border:1px solid rgba(255,255,255,.08)}
 .acs-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);border:1px solid rgba(255,255,255,.16);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;background-size:cover;background-position:center}
 .acs-avwrap{position:relative;flex:none}
 .acs-avedit{position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:50%;background:var(--surface-3,var(--surface-3));border:1px solid var(--border,var(--border));color:var(--muted,var(--muted));display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
@@ -1238,28 +1239,28 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .acs-prof-name{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acs-prof-mail{font-family:var(--font-mono);font-size:9.5px;color:var(--muted-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* usage */
-.acs-usage{margin-top:10px;padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.acs-usage{margin-top:7px;padding:8px 11px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
 .acs-usage-top{display:flex;align-items:center;justify-content:space-between}
 .acs-usage-lbl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:var(--muted)}
 .acs-usage-refresh{font-family:var(--font-mono);font-size:9px;color:var(--muted);display:flex;align-items:center;gap:4px;background:none;border:0;cursor:pointer;padding:0;font-variant-numeric:tabular-nums}
 .acs-usage-refresh:hover{color:#E7ECF3}
 .acs-usage-refresh svg{flex:none}
-.acs-usage-bar{display:flex;align-items:center;gap:10px;margin-top:10px}
+.acs-usage-bar{display:flex;align-items:center;gap:9px;margin-top:6px}
 .acs-usage-track{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.08);position:relative;overflow:hidden}
 .acs-usage-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:var(--accent);border-radius:99px}
 .acs-usage-count{font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums}
-.acs-usage-sec{font-family:var(--font-mono);font-size:9px;color:var(--muted-2);margin-top:8px}
+.acs-usage-sec{font-family:var(--font-mono);font-size:9px;color:var(--muted-2);margin-top:4px}
 /* obunani boshqarish pill */
-.acs-pill{height:40px;margin-top:8px;width:100%;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:11.5px;color:var(--text);cursor:pointer;font-family:inherit}
+.acs-pill{height:34px;margin-top:6px;width:100%;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:11.5px;color:var(--text);cursor:pointer;font-family:inherit}
 .acs-pill:hover{background:rgba(255,255,255,.1)}
 .acs-pill svg{flex:none}
 /* yuklab olish papkasi */
-.acs-folder{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.acs-folder{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
 .acs-folder svg{flex:none;color:var(--muted)}
 .acs-folder .acc-folder-path{flex:1;min-width:0;font-family:var(--font-mono);font-size:9.5px;color:#B7C0CE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;line-height:1.4}
 .acs-folder .acc-folder-path.empty{color:var(--muted-2)}
-.acs-folder-btns{display:flex;gap:8px;margin-top:8px}
-.acs-fbtn{height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);padding:0 14px}
+.acs-folder-btns{display:flex;gap:7px;margin-top:6px}
+.acs-fbtn{height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);padding:0 14px}
 .acs-fbtn:hover{background:rgba(255,255,255,.1)}
 .acs-fbtn.flex{flex:1}
 .acs-fbtn.ghost{background:rgba(255,255,255,.04);border:0;color:var(--muted);font-weight:500}
@@ -3591,18 +3592,19 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .galbatch .gbtn.del:hover{border-color:rgba(255,107,94,.5);color:var(--red)}
 
 /* ── b11 — AI Sozlamalar mockup verbatim ── */
-.axroot .set-balcard{border-radius:14px;background:var(--surface);border:1px solid rgba(255,255,255,.08);padding:16px;position:relative;overflow:hidden}
+/* SC_10: settings compact — balans karta/pack paddinglari qisqartirildi (qiymatlar tegilmagan) */
+.axroot .set-balcard{border-radius:13px;background:var(--surface);border:1px solid rgba(255,255,255,.08);padding:12px 13px;position:relative;overflow:hidden}
 .axroot .set-balglow{position:absolute;inset:0;background:radial-gradient(120% 100% at 90% -20%,var(--accent-soft),transparent 55%)}
 .axroot .set-balin{position:relative}
 .axroot .set-balk{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.12em;color:var(--muted)}
 .axroot .set-balv{font-family:var(--font-mono);font-size:30px;font-weight:600;margin-top:6px;color:var(--text)}
 .axroot .set-balv .cs{color:var(--accent)}
 .axroot .set-balsub{font-family:var(--font-mono);font-size:9px;color:var(--muted-2);margin-top:4px}
-.axroot .set-topup{height:40px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;gap:7px;color:var(--on-accent);font-weight:700;font-size:12.5px;margin-top:14px;cursor:pointer}
+.axroot .set-topup{height:34px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;gap:7px;color:var(--on-accent);font-weight:700;font-size:12px;margin-top:10px;cursor:pointer}
 .axroot .set-topup:hover{background:var(--accent-hi)}
 .axroot .set-topup svg{width:14px;height:14px}
 .axroot .set-packs{display:flex;gap:8px;margin-top:10px}
-.axroot .set-pack{flex:1;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:11px 10px;text-align:center;position:relative;cursor:pointer}
+.axroot .set-pack{flex:1;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:8px 9px;text-align:center;position:relative;cursor:pointer}
 .axroot .set-pack:hover{border-color:rgba(255,255,255,.16)}
 .axroot .set-pack.top{border-color:var(--accent-soft)}
 .axroot .set-pack.top:hover{border-color:var(--accent)}
@@ -5189,7 +5191,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
     <!-- YUKLAB OLISH PAPKASI -->
     <div id="accountDownloadBlock" style="display:none">
       <div class="acs-lbl">DOWNLOAD FOLDER</div>
-      <div class="acs-folder">
+      <div class="acs-folder" title="Template files (.aep + footage) are saved to this folder">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2"/><path d="M3 9l1.6 8.2a2 2 0 0 0 2 1.6h10.8a2 2 0 0 0 2-1.6L21.5 10H4"/></svg>
         <div class="acc-folder-path empty" id="accDownloadPath">Default (temporary folder)</div>
       </div>
@@ -5198,7 +5200,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
         <button type="button" class="acs-fbtn ghost" onclick="resetDownloadFolder()">Default</button>
         <button type="button" class="acs-fbtn" id="dlSaveBtn" onclick="saveDownloadFolderSettings()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>Save</button>
       </div>
-      <p class="acs-hint" id="dlSaveHint">Template files (.aep + footage) are saved to this folder.</p>
+      <p class="acs-hint" id="dlSaveHint" style="display:none"></p><!-- SC_10: helper jumla title atributiga ko'chdi (pastdagi .acs-folder) -->
     </div>
 
     <!-- P10: CONTRIBUTOR "Publish a template" bo'limi olib tashlandi — publishing web/studio
@@ -9440,12 +9442,14 @@ function refreshAccountUi(){
   document.getElementById('planOptPro').classList.toggle('active',u.plan==='pro');
   const hint=document.getElementById('accPlanHint');
   if(hint){
+    // SC_10: yordamchi jumlalar QISQARTIRILDI — Pro faol holatда umuman ko'rinmaydi
+    // (karta o'zi "Unlimited downloads · Pack files" deb aytadi); qolganlari bir necha so'z.
     if(u.plan==='pro'){
-      hint.textContent='Pro is active — unlimited downloads and pack files.';
+      hint.textContent=''; hint.style.display='none';
     }else if(u.stripeSubscriptionActive){
-      hint.textContent='Payment (Stripe) is active. Click "Pro" to switch on Pro mode.';
+      hint.style.display=''; hint.textContent='Payment active — click "Pro" to enable.';
     }else{
-      hint.textContent='The "Pro" button opens the payment page. Click "Refresh" after paying.';
+      hint.style.display=''; hint.textContent='"Pro" opens checkout · "Refresh" after paying.';
     }
   }
   // Billing portal — faqat Stripe obunasi bo'lganlarga
@@ -9502,10 +9506,11 @@ function renderDownloadPath(dir,staged){
   const hint=document.getElementById('dlSaveHint');
   const btn=document.getElementById('dlSaveBtn');
   if(staged){
-    if(hint) hint.textContent='⚠ Not saved — click "Save" to confirm.';
+    // SC_10: hint endi faqat OGOHLANTIRISH holatida ko'rinadi (doimiy tushuntirish title'da)
+    if(hint){ hint.textContent='⚠ Not saved — click "Save" to confirm.'; hint.style.display=''; }
     if(btn) btn.classList.add('visible');
   }else{
-    if(hint) hint.textContent='Template files (.aep + footage) are saved to this folder.';
+    if(hint){ hint.textContent=''; hint.style.display='none'; }
     if(btn) btn.classList.remove('visible');
   }
 }
