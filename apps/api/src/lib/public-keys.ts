@@ -23,6 +23,13 @@
  *   gen/<uid>/*-poster.jpg         — gen video poster (derivativ)
  *   gen/<uid>/*-preview.mp4        — gen video hover-preview (derivativ)
  *   gen/<uid>/*-disp.<ext>         — gen rasm 1280px display (derivativ)
+ *   landing/<file>                 — admin Website CMS media (FAQAT flat, subpath yo'q)
+ *   site/plugin/<file>             — admin Plugin CMS media (FAQAT flat, subpath yo'q)
+ *
+ * landing/ va site/plugin/ prefikslariga YOZISH faqat admin presigned upload
+ * orqali bo'ladi (admin.ts ALLOWED_UPLOAD_FOLDERS whitelist + safeUploadFileName
+ * basename sanitizatsiyasi) — bu prefikslarga HECH QACHON pullik kontent
+ * yozilmasligi shart (aks holda CDN orqali ochiq bo'lib qoladi).
  *
  * HECH QACHON OMMAVIY (false → private qoladi, Worker 403 beradi):
  *   templates/<id>/pack.*  ·  templates/<id>/mogrt/*      🔴 PULLIK
@@ -41,5 +48,9 @@ export function isPublicReadKey(key: string): boolean {
   // `gen/<uid>/<id>-<ts>.<ext>` bu suffikslar bilan TUGAMAYDI → private qoladi.
   if (/^gen\/[^/]+\/.+-(thumb\.jpg|poster\.jpg|preview\.mp4|disp\.[A-Za-z0-9]+)$/.test(key))
     return true;
+  // Admin CMS media — FAQAT flat kalitlar (subpath yo'q): landing/<file> (Website
+  // CMS) va site/plugin/<file> (Plugin CMS). Yozish faqat admin presigned upload.
+  if (/^landing\/[^/]+$/.test(key)) return true;
+  if (/^site\/plugin\/[^/]+$/.test(key)) return true;
   return false;
 }

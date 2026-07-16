@@ -71,7 +71,12 @@ adminRouter.use(requireAuth, requireAdmin);
 // FAZA 2 (L5) — folder whitelist + fileName sanitizatsiya: aks holda `folder`/`fileName`
 // bevosita S3 kalitiga interpolatsiya qilinib, path-traversal (`../`) yoki ixtiyoriy kalit
 // injeksiyasi (boshqa prefiksga yozish) mumkin edi.
-const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc", "landing", "releases"]); // P11: plagin reliz paketlari
+const ALLOWED_UPLOAD_FOLDERS = new Set(["assets", "thumbs", "previews", "banners", "misc", "landing", "releases", "site/plugin"]); // P11: plagin reliz paketlari; SC_02: Plugin CMS media
+// SC_02 — CMS media papkalari faqat rasm/video qabul qiladi (CDN'da ommaviy o'qiladi;
+// ixtiyoriy contentType bilan yuklashga yo'l qo'ymaymiz).
+const CMS_MEDIA_FOLDERS = new Set(["landing", "site/plugin"]);
+const CMS_MEDIA_CONTENT_TYPES = /^image\//;
+const CMS_MEDIA_VIDEO_TYPES = new Set(["video/mp4", "video/webm"]);
 function safeUploadFolder(f?: string): string {
   const v = (f ?? "assets").trim();
   return ALLOWED_UPLOAD_FOLDERS.has(v) ? v : "assets";
@@ -94,7 +99,18 @@ adminRouter.post("/upload-url", async (req, res) => {
     return;
   }
 
-  const key = `${safeUploadFolder(folder)}/${Date.now()}-${safeUploadFileName(fileName)}`;
+  const safeFolder = safeUploadFolder(folder);
+  // SC_02 — CMS media papkalari (CDN'da ommaviy): faqat image/* yoki mp4/webm video.
+  if (
+    CMS_MEDIA_FOLDERS.has(safeFolder) &&
+    !CMS_MEDIA_CONTENT_TYPES.test(contentType) &&
+    !CMS_MEDIA_VIDEO_TYPES.has(contentType)
+  ) {
+    res.status(400).json({ error: "Only image/* or video/mp4|webm allowed for CMS media uploads" });
+    return;
+  }
+
+  const key = `${safeFolder}/${Date.now()}-${safeUploadFileName(fileName)}`;
 
   if (!isS3Configured()) {
     res.json({
