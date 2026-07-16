@@ -321,7 +321,10 @@ export const GEN_MODELS: GenModel[] = [
     label: "Imagen Upscale",
     brand: "google",
     provider: "vertex-image",
-    enabled: true,
+    // SC_17: Upscale funksiyasi mahsulotdan olib tashlandi — entry hard-disable.
+    // Yoqilmagan model uchun cost-quote/gen mavjud gate'da toza 4xx qaytaradi;
+    // eski/in-flight upscale joblarining webhook/refund yo'llari TEGILMAGAN.
+    enabled: false,
     feature: "image-upscale",
     cost: 4, // fallback (x2); imgSettings.quality.cost ustun
     qualityCost: { x2: 4, x4: 8 },
@@ -1108,7 +1111,8 @@ export const GEN_MODELS: GenModel[] = [
     brand: "topaz",
     provider: "fal",
     falModel: "fal-ai/topaz/upscale/video",
-    enabled: true,
+    // SC_17: Upscale funksiyasi mahsulotdan olib tashlandi — entry hard-disable (yuqoridagi izoh).
+    enabled: false,
     feature: "video-upscale",
     cost: 2, // fallback = ≤720p kredit/soniya; videoSettings.perSec ustun
     referenceMode: "none",

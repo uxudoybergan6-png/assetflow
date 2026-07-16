@@ -4317,18 +4317,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                         <div class="ai-soontoast" id="aiSoonToast"><svg width="15" height="15" viewBox="0 0 24 24" fill="#7CC4FF"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 7zm1.2 10h-2.4v-6h2.4z"/></svg><span>No tools yet — coming soon.</span></div>
                       </section>
 
-                      <!-- AI KATEGORIYA ICHI — aiOpenCat() tomonidan to'ldiriladi -->
-                      <section id="v-aicat" class="view">
-                        <div class="ai-hdr">
-                          <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
-                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                          <span class="ai-ttl" id="aiCatTitle"></span>
-                          <div class="ai-hdr-c"></div>
-                          <div class="ai-cred" id="aiLeadCredA" title="Buy credits" onclick="afOpenTopup()"><span class="cs">✦</span> —</div>
-                          <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
-                        </div>
-                        <div id="aiCatTools"></div>
-                      </section>
+                      <!-- SC_17: oraliq "AI KATEGORIYA" (v-aicat) ekrani O'CHIRILDI — launcher
+                           kartasi generatorni to'g'ridan ochadi (aiOpenCat ham o'chirilgan). -->
 
                       <!-- RASM YARATISH (tool-image.html 1:1, .axig scope) -->
                       <section id="v-imggen" class="view axws-view">
@@ -4406,7 +4396,6 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <div class="lb">CREATE WITH</div>
                                       <button type="button" class="axws-mrow active" data-mode="image"><span class="ic">IMG</span>Image</button>
                                       <button type="button" class="axws-mrow" data-mode="video"><span class="ic">VID</span>Video</button>
-                                      <button type="button" class="axws-mrow" data-mode="upscale"><span class="ic">2×</span>Upscale</button>
                                       <button type="button" class="axws-mrow" data-mode="voice"><span class="ic">VO</span>Voice</button>
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
@@ -4546,7 +4535,6 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <div class="lb">CREATE WITH</div>
                                       <button type="button" class="axws-mrow" data-mode="image"><span class="ic">IMG</span>Image</button>
                                       <button type="button" class="axws-mrow active" data-mode="video"><span class="ic">VID</span>Video</button>
-                                      <button type="button" class="axws-mrow" data-mode="upscale"><span class="ic">2×</span>Upscale</button>
                                       <button type="button" class="axws-mrow" data-mode="voice"><span class="ic">VO</span>Voice</button>
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
@@ -4733,7 +4721,6 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <div class="lb">CREATE WITH</div>
                                       <button type="button" class="axws-mrow" data-mode="image"><span class="ic">IMG</span>Image</button>
                                       <button type="button" class="axws-mrow" data-mode="video"><span class="ic">VID</span>Video</button>
-                                      <button type="button" class="axws-mrow" data-mode="upscale"><span class="ic">2×</span>Upscale</button>
                                       <button type="button" class="axws-mrow active" data-mode="voice"><span class="ic">VO</span>Voice</button>
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
@@ -10851,7 +10838,7 @@ async function bootPlugin(){
       if(ctx.onAddExplore&&it.id){ var exLbl=window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'; acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',exLbl,function(){ ctx.onAddExplore(it); })); cap.push(exLbl); }
       if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
       // BATCH4 #1/#2 — lightbox'da Upscale (rasm: Imagen · video: Topaz)
-      if(ctx.onUpscale&&(cat==='image'||cat==='video')){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>','Upscale — ×2 / ×4',function(){ closeLb(); ctx.onUpscale(it); })); cap.push('Upscale'); }
+      // SC_17: lightbox Upscale amali olib tashlandi
       if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>','Regenerate',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Regenerate'); }
       if(it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(){ window.afCopyText(it.prompt); })); cap.push('Copy prompt'); } // P2/P7: afCopyText o'zi toast qiladi
       if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
@@ -10904,7 +10891,7 @@ async function bootPlugin(){
       if(ctx.onAddExplore&&it.id) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),function(e){ e.stopPropagation(); ctx.onAddExplore(it); }));
       if(ctx.refAllowed&&ctx.refAllowed(it)) ra.appendChild(actBtn(IC.ref,'Use as reference',function(e){ e.stopPropagation(); ctx.onRef&&ctx.onRef(it); }));
       // BATCH4 #1/#2 — Upscale (rasm: Imagen x2/x4 · video: Topaz, ctx bergan tool'larda)
-      if(ctx.onUpscale&&(cat==='image'||cat==='video')) ra.appendChild(actBtn(IC.up,cat==='video'?'Upscale — Topaz ×2 / ×4':'Upscale — x2 (2K) / x4 (4K)',function(e){ e.stopPropagation(); ctx.onUpscale(it); }));
+      // SC_17: karta Upscale amali olib tashlandi
       if(ctx.onRestore&&it.prompt) ra.appendChild(actBtn(IC.rst,'Regenerate — restore prompt + references',function(e){ e.stopPropagation(); ctx.onRestore(it); }));
       // P2: Copy prompt — prompt bor har gen kartada (barcha tool'lar)
       if(it.prompt) ra.appendChild(actBtn('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(e){ e.stopPropagation(); window.afCopyText(it.prompt); })); // P7: afCopyText yagona toast manbai
@@ -11347,16 +11334,15 @@ async function bootPlugin(){
   // SC_05: models/sub — FALLBACK matnlar (fetch kelguncha / xatoda); jonli katalog
   // (window.__afLiveModelNames — fhomeFetchModels to'ldiradi) kelgach ular almashadi.
   // BIR qator format (ellipsis CSS'da) — eski 2 qatorli <br> ro'yxat olib tashlandi.
+  // SC_17: Upscale tool'lari BUTUNLAY olib tashlandi (UX+UI+kod) — har kategoriyada
+  // bitta jonli tool qoldi → launcher kartasi generatorni TO'G'RIDAN ochadi
+  // (oraliq "TOOLS" ro'yxat ekrani o'chirildi).
   var AI_CATS=[
     {id:'image',name:'Image',icon:_catImgSVG,card:'Generate image',models:'Nano Banana 2 · Imagen 4',glow:'rgba(143,79,209,.22)',tools:[
-      {name:'Generate image',sub:'Nano Banana 2 · Imagen 4',icon:_toolImgSVG,dest:'imggen'},
-      // BATCH4 #1 — Upscale tool: imggen pane + Imagen Upscale modeli avto-tanlanadi (katalog id bo'yicha emas — feature bo'yicha)
-      {name:'Upscale',sub:'Imagen ×2 / ×4 — up to 4K',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',dest:'imggen',upscale:true}
+      {name:'Generate image',sub:'Nano Banana 2 · Imagen 4',icon:_toolImgSVG,dest:'imggen'}
     ]},
     {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Veo 3.1 · Seedance 2.0',glow:'rgba(46,157,192,.2)',tools:[
-      {name:'Generate video',sub:'Veo 3.1 · Seedance 2.0',icon:_toolVidSVG,dest:'vidgen'},
-      // BATCH4 #2 — video upscale: vidgen'dagi har video kartadagi ⤢ amali orqali (faktor+narx dialogi)
-      {name:'Upscale video',sub:'Topaz ×2/×4 — use ⤢ on any video card',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',dest:'vidgen',vupscale:true}
+      {name:'Generate video',sub:'Veo 3.1 · Seedance 2.0',icon:_toolVidSVG,dest:'vidgen'}
     ]},
     {id:'audio',name:'Audio',icon:_catAudSVG,card:'Generate audio',models:'Chirp 3 HD · ElevenLabs SFX',glow:'rgba(230,179,53,.2)',tools:[
       {name:'Generate audio',sub:'Chirp 3 HD · ElevenLabs SFX',icon:_catAudSVG,dest:'audgen'}
@@ -11408,10 +11394,11 @@ async function bootPlugin(){
       var mEl=el.querySelector('.cat-media video,.cat-media img');
       if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
       el.addEventListener('click',function(){
-        // #6: bitta tool bo'lsa oradagi ro'yxat ekransiz TO'G'RIDAN tool'ga
+        // SC_17: launcher kartasi generator workspace'ni TO'G'RIDAN ochadi —
+        // oraliq kategoriya ekrani (aiOpenCat/v-aicat) o'chirilgan.
         var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
-        if(live.length===1){ go(live[0].dest); return; }
-        aiOpenCat(c);
+        if(live.length){ go(live[0].dest); return; }
+        aiSoonToast();
       });
       g.appendChild(el);
     });
@@ -11429,7 +11416,7 @@ async function bootPlugin(){
       isCEP:isCep,
       list:function(){ return HIST.slice(0,5).map(histLbItem); },
       onImport:function(x){ if(typeof aiImportMedia==='function')aiImportMedia(x.url,(x.cat==='video')?'video':(x.cat==='audio'||x.cat==='sfx')?'audio':'image',null); else toast('AE import — only works inside After Effects','info'); },
-      onUpscale:function(x){ if((x.cat||'image')==='video'){ if(typeof window.afVgUpscale==='function')window.afVgUpscale(x); } else if(typeof window.afIgUpscale==='function')window.afIgUpscale(x); }, // BATCH4 #1/#2
+      // SC_17: onUpscale olib tashlandi (Upscale butunlay o'chirildi)
       onAddProject:function(x){ if(window.afProjectPicker)window.afProjectPicker('gen',x.id); }, // P1
       onDownload:function(x){ try{ var a=document.createElement('a'); a.href=x.downloadUrl||x.url; a.download=window.afGenDlName(x.prompt||x.title,x.url,x.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){ toast('Download failed','error'); } }
     };
@@ -11461,33 +11448,7 @@ async function bootPlugin(){
     };
     if(histLoaded&&!histStale())draw(); else loadHistory(draw);
   }
-  function aiOpenCat(c){
-    var ttl=document.getElementById('aiCatTitle'); if(ttl)ttl.textContent=c.name;
-    var d=document.getElementById('aiCatTools'); if(!d)return;
-    d.innerHTML='';
-    var lbl=document.createElement('div'); lbl.className='aicattools-lbl'; lbl.textContent=c.name+' tools'; d.appendChild(lbl);
-    // FAZA 5 (C5): soon:true tool'lar end user'ga ko'rsatilmaydi — faqat jonlilari.
-    var liveTools=c.tools.filter(function(t){return !t.soon;});
-    if(!liveTools.length){
-      var em=document.createElement('div'); em.className='aicatempty'; em.textContent='No tools yet — coming soon.'; d.appendChild(em);
-    } else {
-      liveTools.forEach(function(t){
-        var el=document.createElement('div'); el.className='aicattool';
-        // SC_05: gen tool sub qatori ham jonli katalog nomlaridan (upscale'lar o'z matnini saqlaydi)
-        var tsub=t.sub;
-        var tlive=window.__afLiveModelNames&&window.__afLiveModelNames[c.id];
-        if(tlive&&!t.upscale&&!t.vupscale)tsub=tlive;
-        el.innerHTML='<div class="ic">'+t.icon+'</div><div class="tx"><b>'+t.name+'</b><small>'+tsub+'</small></div><div style="margin-left:auto;color:var(--acc);font-size:18px">›</div>';
-        // BATCH4 #1/#2 — upscale tool'lari: pane ochilgach model avto-tanlanadi / yo'l ko'rsatiladi
-        if(t.dest)(function(dest,up,vup){ el.addEventListener('click',function(){ go(dest);
-          if(up&&typeof window.axIGSelectUpscale==='function')window.axIGSelectUpscale();
-          if(vup)setTimeout(function(){ if(typeof showToast==='function')showToast('Pick a video in Recent below and press its ⤢ Upscale button','info'); },350);
-        }); })(t.dest,!!t.upscale,!!t.vupscale);
-        d.appendChild(el);
-      });
-    }
-    go('aicat');
-  }
+  // SC_17: aiOpenCat + v-aicat (oraliq TOOLS ro'yxati) o'chirildi — karta to'g'ridan ochadi.
   aiRenderCatGrid();
   aiRenderHistStrip();
 
@@ -11799,38 +11760,15 @@ window.afGallery=(function(){
   window.axIGNewSession=function(){ st.sessionId=null; }; // P1: New session
   window.axIGRefresh=refresh;
 
-  // ---- BATCH4 #1 — Upscale (Imagen imagegeneration@002) ----
-  // Katalogdan feature bo'yicha topiladi (id hardcode YO'Q — katalog-driven).
-  function selectUpscaleModel(cb){
-    ensureMeta().then(function(){
-      var um=(meta.models||[]).filter(function(x){return x&&x.feature==='image-upscale';})[0];
-      if(!um){ toast('Upscale model is not available right now','warning'); return; }
-      if(meta.modelId!==um.id){ if(setModel(um)===false)return; renderModelSheet(); }
-      if(cb)cb(um);
-    }).catch(function(){});
-  }
-  window.axIGSelectUpscale=function(){ selectUpscaleModel(); };
-  // Natija kartasi/lightbox "Upscale": manba rasm referens sifatida o'rnatiladi — foydalanuvchi
-  // faktorni (x2/x4) tanlab ✦ narxni ko'rib "Upscale image" bosadi (kredit shu yerda EMAS, /gen'da).
-  function igStartUpscale(it){
-    if(!it||!it.url)return;
-    st.refs=[]; igStripAllMentions(); renderRefs(); updRefMeta(); // eski referenslar confirm chiqarmasin
-    selectUpscaleModel(function(){
-      st.refs=[{dataUrl:it.thumb||it.url,url:it.url,loading:false}];
-      renderRefs(); updRefMeta(); refreshGen();
-      try{ ta.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){ }
-      toast('Source set — pick the factor (x2 → 2K / x4 → 4K) and press Upscale','success');
-    });
-  }
-  // Boshqa view'lardan (History/Home) kirish: imggen'ga o'tib manbani o'rnatadi.
-  window.afIgUpscale=function(it){ if(typeof window.axGo==='function')window.axGo('imggen'); setTimeout(function(){ igStartUpscale(it); },60); };
+  // SC_17: Upscale (selectUpscaleModel/igStartUpscale/afIgUpscale/axIGSelectUpscale)
+  // BUTUNLAY o'chirildi — UI ham, kod ham. Tarixdagi eski upscale natijalari oddiy
+  // rasm/video sifatida renderlanadi (maxsus kod shart emas).
 
   // ---- "Yaratish" disabled holatini qayta hisoblash ----
   function anyLoading(){ return st.refs.some(function(r){ return r.loading; }); }
   function refreshGen(){
     var needRef=meta.refMode==='required';
-    // BATCH4 #1 — upscale: prompt IXTIYORIY (manba rasm + faktor yetarli; genClick avto-nom beradi)
-    var needPrompt=meta.feature!=='image-upscale';
+    var needPrompt=true; // SC_17: upscale (prompt-siz yagona rejim) o'chirildi
     var low=igCreditGate(); // P22 — kredit yetmasa (komitilgan bilan) tugma O'CHADI (bosishdan oldin)
     var ok=meta.loaded && (!needPrompt || $('igPrompt').value.trim().length>=2) && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS && !low;
     var g=$('igGen'); if(g)g.disabled=!ok;
@@ -12012,10 +11950,9 @@ window.afGallery=(function(){
     var qsec=$('igQSec'); if(qsec)qsec.style.display=meta.hasQuality?'':'none'; // quality yo'q → sektsiya yashirin
     // P16 — bitta sozlama chipi xulosasi (Ratio · Quality · ×N)
     var sv=$('igSetVal'); if(sv)sv.textContent=igSummary();
-    // BATCH4 #1 — upscale rejimi matnlari (prompt ixtiyoriy, tugma nomi)
-    var isUp=meta.feature==='image-upscale';
-    var taUp=$('igPrompt'); if(taUp)taUp.placeholder=isUp?'Prompt not needed — add the source image below and pick the factor (x2 → 2K, x4 → 4K)':'What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape';
-    var gUp=$('igGen'); if(gUp&&gUp.firstChild&&gUp.firstChild.nodeType===3)gUp.firstChild.textContent=isUp?'Upscale image':'Generate image';
+    // SC_17: upscale rejimi o'chirildi — placeholder/tugma matni doim standart
+    var taUp=$('igPrompt'); if(taUp)taUp.placeholder='What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape';
+    var gUp=$('igGen'); if(gUp&&gUp.firstChild&&gUp.firstChild.nodeType===3)gUp.firstChild.textContent='Generate image';
     // b3: warn matni model nomi bilan (olov-rang ogohlantirish)
     var wsp=$('igRefWarn')&&$('igRefWarn').querySelector('span:last-child');
     if(wsp)wsp.innerHTML=String(meta.label||'This model').replace(/[<>&]/g,'')+' <b>requires</b> at least 1 reference';
@@ -12444,8 +12381,7 @@ window.afGallery=(function(){
     // P13 — pre-flight: promptda eslatilgan, lekin joriy modelda NOFAOL (limitdan tashqari) @imgN — ogohlantiramiz
     (function(){ var lim=igActiveRefLimit(); var bad=[]; (ta.value.match(/@img(\d+)/g)||[]).forEach(function(t){ var k=parseInt(t.slice(4),10); if(k>lim&&k<=st.refs.length&&bad.indexOf(k)<0)bad.push(k); }); if(bad.length)toast('@Image '+bad.sort(function(a,b){return a-b;}).join(', @Image ')+' will be ignored by '+(meta.label||'this model'),'info'); })();
     var prompt=ta.value.trim();
-    // BATCH4 #1 — upscale: prompt bo'sh bo'lsa avto-nom (model prompt o'qimaydi; fayl nomi shu bo'ladi)
-    if(prompt.length<2&&meta.feature==='image-upscale')prompt='Upscale '+st.q;
+    // SC_17: upscale avto-nom shoxi o'chirildi
     if(prompt.length<2){ toast('Write a prompt','warning'); return; }
     if(meta.refMode==='required'&&st.refs.length===0){ toast('Upload a reference','warning'); return; }
     if(anyLoading()){ toast('Reference is uploading — please wait','info'); return; }
@@ -12647,7 +12583,7 @@ window.afGallery=(function(){
     onDelete: function(it){ recentDelete(it); },
     refAllowed: function(it){ return igRefKind()==='image' && (it.cat||'image')==='image'; },
     onRef: function(it){ addRefReady(it.url); }, // image tool: @imgN referens stripга qo'shadi
-    onUpscale: function(it){ if((it.cat||'image')==='video'&&typeof window.afVgUpscale==='function')window.afVgUpscale(it); else igStartUpscale(it); }, // BATCH4 #1/#2
+    // SC_17: onUpscale olib tashlandi
     onRestore: function(it){ igRestoreGen(it); }
   }; }
   // "Qayta gen" (rasm tool) — ASL MODELga avtomatik o'tib, prompt + referenslar composer'ga qaytadi.
@@ -14466,7 +14402,7 @@ window.afGallery=(function(){
     onDelete: function(it){ vgRcDelete(it); },
     refAllowed: function(it){ return vgRefAllowed(it); },
     onRef: function(it){ vgUseAsRef(it); },
-    onUpscale: function(it){ if((it.cat||'video')==='video')vgStartUpscale(it); else if(typeof window.afIgUpscale==='function')window.afIgUpscale(it); }, // BATCH4 #2
+    // SC_17: onUpscale olib tashlandi
     onRestore: function(it){ vgRestoreGen(it); }
   }; }
   // "Qayta gen" — ASL MODELga avtomatik o'tib, o'sha gen'ning prompti + referenslari composer'ga
@@ -14774,58 +14710,8 @@ window.afGallery=(function(){
   $('vgPrompt').addEventListener('keyup',checkVgMention);
   $('vgPrompt').addEventListener('blur',function(){ setTimeout(hideVgMention,150); });
 
-  // ── BATCH4 #2 — video natijani Topaz bilan UPSCALE (karta/lightbox amali; composer emas) ──
-  // Oqim: 2 faktor uchun IMZOLANGAN narx (server tier/soniyani probe bilan aniqlaydi) → afChoose
-  // → tanlangach mavjud job quvuri (pending karta + poll + kredit sinxron). Kredit faqat /gen'da.
-  var vupModel=null;
-  function vgEnsureUpModel(){
-    if(vupModel)return Promise.resolve(vupModel);
-    return studioGet('/api/studio/gen/models?mode=video').then(function(r){
-      vupModel=((r&&r.models)||[]).filter(function(x){return x&&x.feature==='video-upscale';})[0]||null;
-      return vupModel;
-    });
-  }
-  function vgStartUpscale(it){
-    if(!it||!it.url){ toast('Source not found','warning'); return; }
-    if(activeJobs.length>=MAX_VG_JOBS){ toast('Max '+MAX_VG_JOBS+' active video gens — wait for one to finish','info'); return; }
-    toast('Getting the upscale price…','info');
-    vgEnsureUpModel().then(function(m){
-      if(!m){ toast('Video upscale is not available right now','warning'); return; }
-      return Promise.all([
-        studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:'video',params:{factor:2,sourceUrl:it.url},idempotencyKey:afUuid()}),
-        studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:'video',params:{factor:4,sourceUrl:it.url},idempotencyKey:afUuid()})
-      ]).then(function(qs){
-        var lab=function(q){ var i=q&&q.upscale; return '✦'+q.price+(i?' — '+i.resolution+' · '+i.duration+'s'+(i.fpsDoubled?' · 60fps ×2':''):''); };
-        return window.afChoose('Upscale video (Topaz)','Price is per second of the OUTPUT video (signed quote):',[
-          {label:'×2   '+lab(qs[0]),value:{q:qs[0]}},
-          {label:'×4   '+lab(qs[1]),value:{q:qs[1]}}
-        ]).then(function(pick){ if(pick&&pick.q)vgRunUpscale(m,it,pick.q); });
-      });
-    }).catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Could not get the upscale price','error'); });
-  }
-  function vgRunUpscale(m,it,q){
-    var c=credits(); if(c!=null&&c<q.price){ toast('Not enough credits — this run needs ✦'+q.price,'error'); return; }
-    var params=q.pricedParams||{};
-    var prompt='Upscale x'+(Number(params.factor)===4?4:2)+' video';
-    var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:q.price,cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:null,sourceResolution:params.resolution||'',modelLabel:(m.label||'Video Upscale'),params:params,modelId:m.id};
-    activeJobs.push(j);
-    j.pit={seq:j.seq,pending:true,prompt:prompt,cat:'video',progress:2,job:j};
-    vgRcState.items.unshift(j.pit); renderVgRecent(); refreshVgBtn();
-    ensureVgSession().then(function(sid){
-      if(j.cancelled)throw new Error('CANCELLED');
-      return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:m.id,prompt:prompt,params:params,price:q.price,costQuoteSignature:q.signature,idempotencyKey:afUuid()},300000);
-    }).then(function(res){
-      if(j.cancelled)throw new Error('CANCELLED');
-      if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
-      if(!res||!res.jobId)throw new Error('Job was not created');
-      j.jobId=res.jobId; j.submitted=true; startVgProg(j); pollVgJob(j,0);
-    }).catch(function(err){
-      if(j.cancelled||(err&&err.message==='CANCELLED')){ removeVgJob(j); return; }
-      removeVgJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Upscale error','error');
-    });
-  }
-  // Boshqa view'lardan (History/Home) video upscale kirishi.
-  window.afVgUpscale=function(it){ if(typeof window.axGo==='function')window.axGo('vidgen'); setTimeout(function(){ vgStartUpscale(it); },60); };
+  // SC_17: video Upscale (Topaz) oqimi BUTUNLAY o'chirildi — vupModel/vgStartUpscale/
+  // vgRunUpscale/afVgUpscale yo'q. Eski upscale natijalari oddiy video sifatida ko'rinadi.
 
   // View'дан chiqishда video joblar timer/network + inline pleyer ovozini to'xtatamiz (leak oldini olish — igScript naqshi).
   function teardownVg(){
@@ -15615,7 +15501,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
       else if(m==='video'){ if(window.axGo)window.axGo('vidgen'); }
       else if(m==='voice'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeVoice'); if(b)b.click(); },30); }
       else if(m==='sfx'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeSfx'); if(b)b.click(); },30); }
-      else if(m==='upscale'){ toast('Upscale runs from any result — open a generation and choose “Use → Upscale”.','info'); }
+      // SC_17: 'upscale' mode olib tashlandi (funksiya butunlay o'chirildi)
       return; }
     // session-strip tugmalari
     var sb=t.closest&&t.closest('[data-axws]');
