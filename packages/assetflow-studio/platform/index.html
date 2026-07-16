@@ -15488,7 +15488,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-genwrap{display:flex;align-items:center;gap:9px;flex:0 0 auto;margin-left:auto}
   .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:0 1 auto;min-width:0}
   /* mode/model/settings chip yorlig'i tor joyda qisqaradi (popover buzilmasin) */
-  .ff .va-setgroup .va-set>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  /* SC_20: qiymat kontentgacha keng (~180px kap), model nomi boshi doim ko'rinadi */
+  .ff .va-setgroup .va-set>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:8ch;max-width:180px}
   .ff .va-set.mode,.ff .va-set.enh{flex:none}
   .ff .va-set:hover{background:var(--f2)}
   .ff .va-set b{color:var(--text);font-weight:600}
@@ -17154,7 +17155,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <span class="va-set mode" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span>
-                <span class="va-set" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}" title="{{ modelName }}"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl" onclick="{{ stop }}">
                     <div class="va-axpoph">{{ modePickHead }}</div>
                     <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">

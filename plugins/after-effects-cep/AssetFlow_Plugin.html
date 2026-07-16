@@ -389,16 +389,17 @@ body{
   .af-tb-sp .sp-l{display:none}
   .af-tb-sp{padding:0 8px}
 }
-/* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi */
-@media (max-width:459px){
+/* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi.
+   SC_15/20: Sessions/Projects entrylari qo'shilgani uchun qisqa yorliq chegarasi 540px. */
+@media (max-width:539px){
   .af-topbar .af-tb-brand{display:none}
-}
-@media (max-width:379px){
   .af-tb-seg .ff-seg__item .lf{display:none}
   .af-tb-seg .ff-seg__item .ls{display:inline}
   .af-tb-seg .ff-seg__item{padding:5px 9px}
+}
+@media (max-width:459px){
   .af-topbar{gap:6px;padding:0 8px}
-  /* Sync ikonasi eng tor panelda yashirinadi (AI launcher'da ham Sync bor) */
+  /* Sync ikonasi tor panelda yashirinadi (AI launcher'da ham Sync bor) */
   .af-topbar .af-tb-r>.af-tb-icon{display:none}
 }
 /* #10: Home chaqmoq bloki — umumiy .hd-home geometriyasi (30px, 9px radius, lime glow hover) */
@@ -3839,9 +3840,20 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws .ai-set,.axws-dock .pillseg{height:34px;max-width:100%;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text-2);display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:10px;font-weight:650;white-space:nowrap;cursor:pointer;transition:border-color .14s,background .14s}
 .axws .ai-set:hover,.axws-dock .pillseg:hover{background:var(--surface-3);border-color:var(--accent)}
 .axws .ai-set[disabled]{opacity:.45;cursor:not-allowed}
+/* SC_20: chip qiymatlari O'QILADIGAN — kontent o'lchamiga mos, ~170px sag'ana kap.
+   "MODEL"/"OUT" prefikslari o'rniga: model chip = kichik ikonka, OUT = qiymatning o'zi
+   (qisqa satr — hech qachon qisqarmaydi). To'liq qiymat title tooltip'da (JS yozadi). */
 .axws-dock .pillseg{min-width:0;flex:0 1 auto}
+.axws-dock .pillseg .picon{flex:0 0 auto;display:flex;color:var(--muted)}
 .axws-dock .pillseg .plab{flex:0 0 auto;color:var(--faint);font-family:var(--font-mono);font-size:7px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-.axws-dock .pillseg .pval{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:650}
+.axws-dock .pillseg .pval{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:650;max-width:170px}
+/* Model chip: nom boshi doim ko'rinadi (kamida ~8 belgi); OUT chip qisqarmaydi */
+.axws-dock .pill-model .pval{min-width:8ch}
+.axws-dock .pill-out{flex:0 0 auto}
+.axws-dock .pill-out .pval{max-width:none}
+/* Tor panelда qator 2 qatorga o'raladi — Generate oxirgi-o'ngda, hech qachon kesilmaydi
+   (.axws-genwrap'da margin-left:auto allaqachon bor) */
+.axws-dockrow{flex-wrap:wrap}
 .axws-dock .pillseg::after{content:"⌄";flex:0 0 auto;color:var(--muted);font-size:11px;line-height:1}
 .axws-modewrap{flex:0 0 auto;position:relative}
 .axws .ai-set.mode{background:var(--surface-3);border-color:transparent;color:var(--text)}
@@ -4427,8 +4439,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
                                   </div>
-                                  <div class="pillseg" id="igModelSeg" title="Choose a model"><span class="plab">Model</span><span class="pval" id="igMName">…</span></div>
-                                  <div class="pillseg" id="igSetSeg" title="Output settings"><span class="plab">Out</span><span class="pval" id="igSetVal">Auto</span></div>
+                                  <div class="pillseg pill-model" id="igModelSeg" title="Choose a model"><span class="picon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="pval" id="igMName">…</span></div>
+                                  <div class="pillseg pill-out" id="igSetSeg" title="Output settings"><span class="pval" id="igSetVal">Auto</span></div>
                                   <button type="button" class="ai-set enhance" id="igEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
                                   <button type="button" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
                                 </div>
@@ -4567,8 +4579,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
                                   </div>
-                                  <div class="pillseg" id="vgModelSeg" title="Choose a model"><span class="plab">Model</span><span class="pval" id="vgMName">…</span></div>
-                                  <div class="pillseg" id="vgSetSeg" title="Output settings"><span class="plab">Out</span><span class="pval" id="vgSetVal">720p · Auto</span></div>
+                                  <div class="pillseg pill-model" id="vgModelSeg" title="Choose a model"><span class="picon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="pval" id="vgMName">…</span></div>
+                                  <div class="pillseg pill-out" id="vgSetSeg" title="Output settings"><span class="pval" id="vgSetVal">720p · Auto</span></div>
                                   <div class="pillseg tgl" id="vgAudToggle" style="display:none" title="Audio"><span class="plab">Audio</span><span class="pval" id="vgAudVal">Off</span><span class="ptr"></span></div>
                                   <button type="button" class="ai-set enhance" id="vgEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
                                   <button type="button" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
@@ -11995,6 +12007,7 @@ window.afGallery=(function(){
   }
   function applyMeta(){
     $('igMName').textContent=meta.label; // model = sozlamalar chip
+    var _ims=$('igModelSeg'); if(_ims)_ims.title=meta.label||'Choose a model'; // SC_20: to'liq nom tooltip'da
     // FIX3: prompt bo'limi har doim ko'rinadi; ＋Referens FAQAT model referens qo'llasa
     // (refKind 'image'|'media-refs' va maxRefs>0) — sof t2i modelda butunlay yashirin.
     var noRef=!meta.refOk;
@@ -12004,7 +12017,7 @@ window.afGallery=(function(){
     var qlEl=$('igQLab'); if(qlEl)qlEl.textContent=meta.qLabel||'Quality'; // gpt→"Sifat", nano→"Resolution"
     var qsec=$('igQSec'); if(qsec)qsec.style.display=meta.hasQuality?'':'none'; // quality yo'q → sektsiya yashirin
     // P16 — bitta sozlama chipi xulosasi (Ratio · Quality · ×N)
-    var sv=$('igSetVal'); if(sv)sv.textContent=igSummary();
+    var sv=$('igSetVal'); if(sv){ sv.textContent=igSummary(); var _iss=$('igSetSeg'); if(_iss)_iss.title='Output: '+igSummary(); } // SC_20: tooltip
     // SC_17: upscale rejimi o'chirildi — placeholder/tugma matni doim standart
     var taUp=$('igPrompt'); if(taUp)taUp.placeholder='What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape';
     var gUp=$('igGen'); if(gUp&&gUp.firstChild&&gUp.firstChild.nodeType===3)gUp.firstChild.textContent='Generate image';
@@ -12041,7 +12054,7 @@ window.afGallery=(function(){
   $('igModelSeg').addEventListener('click',function(){ renderModelSheet(); afMReset(); openSheet('igMSheet',$('igModelSeg')); });
   // P16 — bitta sozlama chipi xulosasi + guruhlangan sheet (Ratio · Quality · ×N bitta popover'da)
   function igSummary(){ var b=[st.ar]; if(meta.hasQuality)b.push(cap(st.q)); b.push('×'+st.n); return b.join(' · '); }
-  function afterIgSet(){ var sv=$('igSetVal'); if(sv)sv.textContent=igSummary(); buildIgSettings(); } // tanlovdan keyin: xulosa + pill'lar qayta belgilansin (sheet OCHIQ qoladi)
+  function afterIgSet(){ var sv=$('igSetVal'); if(sv){ sv.textContent=igSummary(); var _iss=$('igSetSeg'); if(_iss)_iss.title='Output: '+igSummary(); } buildIgSettings(); } // tanlovdan keyin: xulosa + pill'lar qayta belgilansin (sheet OCHIQ qoladi)
   function buildIgSettings(){
     buildPills($('igArPills'),meta.ars,st.ar,function(v){ st.ar=v; afterIgSet(); });
     var qsec=$('igQSec'); if(qsec)qsec.style.display=meta.hasQuality?'':'none';
@@ -13610,9 +13623,9 @@ window.afGallery=(function(){
     applyModelSettings(m); applyVgMeta(); closeVgSheets();
   }
   function applyVgMeta(){
-    var mn=$('vgMName'); if(mn&&vm.model)mn.textContent=vm.model.label||'Model';
+    var mn=$('vgMName'); if(mn&&vm.model){ mn.textContent=vm.model.label||'Model'; var _vms=$('vgModelSeg'); if(_vms)_vms.title=vm.model.label||'Choose a model'; } // SC_20: tooltip
     // P16 — bitta sozlama chipi xulosasi (Ratio · Res · Duration · Bitrate)
-    var sv=$('vgSetVal'); if(sv)sv.textContent=vgSummary();
+    var sv=$('vgSetVal'); if(sv){ sv.textContent=vgSummary(); var _vss=$('vgSetSeg'); if(_vss)_vss.title='Output: '+vgSummary(); } // SC_20: tooltip
     var at=$('vgAudToggle'); if(at){ at.style.display=vm.audioSupported?'':'none'; at.classList.toggle('on',!!vm.audio); at.style.opacity=vm.audioLocked?'.45':''; at.title=vm.audioLocked?'Audio is always on for this model — model feature':''; }
     var avv=$('vgAudVal'); if(avv)avv.textContent=vm.audio?'On':'Off';
     applyVgArLock(); // model almashdi — nisbat qulfi qayta hisoblansin
@@ -13723,7 +13736,7 @@ window.afGallery=(function(){
   //   Tanlovdan keyin sheet OCHIQ qoladi (afterVgSet: xulosa + pill'lar qayta belgilanadi).
   function vgDurShort(v){ return /^auto$/i.test(String(v))?'Auto':(String(v)+(/^\d+$/.test(String(v))?'s':'')); }
   function vgSummary(){ var b=[]; if(vm.ar&&!/^auto$/i.test(vm.ar))b.push(vm.ar); if(vm.res)b.push(vm.res); b.push(vgDurShort(vm.dur)); if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate&&vm.bitrate&&!/^standard$/i.test(vm.bitrate))b.push(vm.bitrate); return b.join(' · '); }
-  function afterVgSet(){ var sv=$('vgSetVal'); if(sv)sv.textContent=vgSummary(); buildVgSettings(); }
+  function afterVgSet(){ var sv=$('vgSetVal'); if(sv){ sv.textContent=vgSummary(); var _vss=$('vgSetSeg'); if(_vss)_vss.title='Output: '+vgSummary(); } buildVgSettings(); }
   function buildVgSettings(){
     var arLocked=!!(vm.arLockVideoRef&&hasVideoRefs());
     vgSetChips($('vgArPills'),vm.arOpts,vm.ar,null,arLocked,function(v){ if(arLocked){ toast('Video reference attached — the model sets the aspect ratio itself','info'); return; } vm.ar=v; afterVgSet(); });
