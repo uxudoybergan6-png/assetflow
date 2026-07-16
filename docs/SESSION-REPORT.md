@@ -1,19 +1,12 @@
-# SESSION REPORT — BATCH8 Prompt #2 (PORT 2/2)
+# Sessiya hisoboti — 2026-07-16 (#R1-FIX, jonli AE buzilishi)
 
-**Sana:** 2026-07-16 · **Vazifa:** batch8 skin portini yakunlash — Browse + AI Studio + Library/Settings/States + final QA (skin-only).
+**Nima qilindi:** #R1 dan keyingi jonli AE buzilishi (AI Studio "prompt yo'q, hammasi aralash") tuzatildi.
+Harness TO'G'RI qurildi: cep-mode + real router (sidebar→launcher→tool), 320/420/600 × 820/620/500, joyida (detach YO'Q).
 
-## Muhim topilma
-PORT 1/2 token aliaslari + oldingi batchlar (STEP0 `.axig`/`.axroot` remap) tufayli barcha panellar ALLAQACHON noir/neon/cold ga qayta-temalanadi va maket anatomiyasiga (pill-sozlama, to'liq-lime CTA, model-sheet, karta) mos. PORT 2/2 = verifikatsiya + qolgan **token-leak** tuzatishlari + 2 matn-delta.
+**Ildiz sabab (2 ta):**
+1. Balandlik zanjiri: `.scroll-area`(bounded) → `#aiPage`/`.axroot`/`.app` hammasi `height:auto` — `.scroll` kontent bilan cheksiz o'sadi, stage ichki scroll qilmaydi, dock pinlanmaydi; real recents bilan composer 1.5+ ekran pastga tushardi. QA overlay'da 100vh bounded edi — shu sabab o'tib ketgan.
+2. `.chipedit` uslublari eski `.axig .pbox` scope'ida — yangi dockda `.pbox` yo'q → prompt 22px ko'rinmas chiziq, placeholder chiqmasdi. Bonus: `.gensend .costtag{display:none}` narxni yashirgan edi (qaytarildi).
 
-## Nima qilindi
-- **Token-leak sweep** — 30+ qattiq kodlangan lime literal (`rgba(194,240,74,.x)`, `#C2F04A`) → temaga bog'liq token (`--glow` porlash, `--accent` faol chegara, `--accent-soft` yuvish, SVG `fill=currentColor`). Endi noir=oq, cold=ko'k'da lime sizmaydi. Qamrov: AI settings (balglow/pack/ledger), composer (kadrtag/fbox/maddb), axhome hero (va-*/gu-*), ai-entry/aicattool/tl/frame/imp, theme-picker/plan/login/pub focus chegaralari, pd3-fav, lib-empty-ico, pro-sheet ✓, toast ✓, BFL ikon, 2 JS tanlash-fon.
-- **STEP 2 matn-delta** (design source of record = production): Enhance tugmasi `Enhance` → **`Enhance · ✦1`** (ig+vg; production `enhLabel` bilan 1:1); model-sheet sarlavha `Model` → **`Choose a model`** (ig+vg).
-- Blue `--select` (Enhance/`.more`) o'zgarmadi — 3 qorong'i temada barqaror, ataylab ajratilgan ikkilamchi rang.
+**Tuzatish (21 satr):** `#aiPage.axws-tool` + `.axroot` + `.app` `height:100%` (JS: axwsAfterView #aiPage'ga ham klass qo'yadi); `.scroll` overflow:hidden→auto (himoya); `.axws-promptwrap .chipedit/chipwrap/chipexp` uslublari; costtag ko'rinadigan qilindi.
 
-## Tekshirildi (brauzer preview, konsol xatosiz)
-noir/neon/cold: katalog kartalari (soxta data, 420/320 bir-ustun), composer (barcha rejim chrome, 420×500 Generate klip yo'q), account+theme-picker, pro-gate ✓, AI settings (balans/pack), library empty (yulduz ikon monoxrom), toast (✦ monoxrom). Barcha `axInit/axGo/setTheme/showToast/renderFav` xatosiz ishladi.
-
-## QA: node --check 7 inline blok = OK · install-cep.sh o'rnatildi (fonts+cache) · diff 41 qator 1:1.
-
-## Qoldi (deferred, xabarnoma)
-Model-sheet `Search models…` qidiruv INPUT'i QO'SHILMADI — plagin model-tanlagichi popover (`.sheet.pop`), markazlashgan modal EMAS; qidiruv = yangi xatti-harakat (SKIN-ONLY buzadi). Offline'da AI natija/progress kartalari (running/queued/done) jonli data bilan ko'rilmadi — CSS token-toza, mavjud job lifecycle'ga bog'langan.
+**Tekshirildi (joyida):** imggen/vidgen/audgen × 320/420/600 × 820/620/500, bo'sh + 12-karta stage, 3 tema — prompt ko'rinadi+fokuslanadi, refs/pill/Enhance/cost+Generate/balans OK; tall=dock pin, ≤560=butun workspace scroll. Home/Katalog/Settings ta'sirsiz. Console 0 xato, node --check 7/7, install-cep.sh ✓ (AE to'liq restart kerak).

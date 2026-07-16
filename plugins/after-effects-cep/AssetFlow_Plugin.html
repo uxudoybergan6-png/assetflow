@@ -3736,7 +3736,14 @@ html.home-mode #homePage{display:block!important}
 /* Tool view'lari to'liq balandlikni egallaydi → dock pastga pinlanadi, stage ichida scroll bo'ladi.
    .axws-tool (JS axwsAfterView tomonidan faqat composer view'larida qo'yiladi) shared .scroll'ni
    qat'iy balandlikdagi flex-ustunga aylantiradi (flexbox min-height:auto tuzog'ini yopadi). */
-.axroot.axws-tool > .app > .scroll{min-height:0;overflow:hidden;padding:0;display:flex;flex-direction:column}
+.axroot.axws-tool > .app > .scroll{min-height:0;overflow-y:auto;padding:0;display:flex;flex-direction:column}
+/* #R1-FIX: joyida (in-place) balandlik zanjiri ANIQ bo'lishi shart. Real zanjir:
+   .scroll-area(flex:1, bounded) → #aiPage → .axroot → .app → .scroll. Pastki uchtasi height:auto
+   bo'lsa .scroll kontent bilan cheksiz o'sadi: stage ichki scroll qilmaydi, dock pinlanmaydi,
+   composer ekrandan pastga tushib "yo'qoladi". axws-tool klassi #aiPage'ga ham qo'yiladi (JS). */
+#aiPage.axws-tool{height:100%}
+#aiPage.axws-tool .axroot{height:100%}
+#aiPage.axws-tool .axroot .app{height:100%}
 .axroot .view.on.axws-view{display:flex;flex-direction:column;flex:1;min-height:0;padding:0}
 .axws-view .axig{flex:1;min-height:0;display:flex;flex-direction:column}
 .axws{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:radial-gradient(circle at 52% 0%,var(--accent-soft),transparent 34%),var(--bg-deep)}
@@ -3791,6 +3798,16 @@ html.home-mode #homePage{display:block!important}
 .axws-refmeta .rc-n{flex:0 0 auto;white-space:nowrap}
 .axws-refmeta .rc-hint{min-width:0;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axws-promptwrap{position:relative}
+/* #R1-FIX: chipedit uslublari eski `.axig .pbox` scope'ida qolgan edi — yangi dockda .pbox yo'q,
+   shuning uchun prompt 22px ko'rinmas chiziqqa aylanib, placeholder umuman chiqmasdi. */
+.axws-promptwrap .chipwrap{position:relative}
+.axws-promptwrap .chipedit{width:100%;background:transparent;border:0;color:var(--text);font-family:inherit;font-size:13px;outline:none;min-height:52px;max-height:140px;overflow-y:auto;line-height:1.55;white-space:pre-wrap;word-break:break-word;cursor:text;padding-right:26px}
+.axws-promptwrap .chipedit:empty::before{content:attr(data-ph);color:var(--muted-2);pointer-events:none}
+.axws-promptwrap .chipedit.expanded{max-height:300px}
+.axws-promptwrap .chipexp{position:absolute;top:0;right:0;width:22px;height:22px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);display:grid;place-items:center;color:var(--muted);cursor:pointer;z-index:2}
+.axws-promptwrap .chipexp:hover{color:var(--text)}
+.axws-promptwrap .chipexp svg{transition:transform .15s ease}
+.axws-promptwrap .chipexp.on svg{transform:rotate(180deg)}
 .axws-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
 .axws-setgroup{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:7px}
 /* pill (mode/model/output) — mavjud .pillseg qayta uslublanadi + yangi mode pill */
@@ -3814,7 +3831,8 @@ html.home-mode #homePage{display:block!important}
 .axws-cost em{color:var(--faint);font-style:normal;font-size:8px;font-weight:600;letter-spacing:.06em}
 /* Generate — mavjud #igGen (.gensend) kompakt pill sifatida override */
 .axws .gensend{width:auto;min-height:34px;height:34px;margin:0;padding:0 15px;border-radius:10px;background:var(--grad);color:var(--on-accent);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:750;font-size:10.5px;box-shadow:0 6px 18px var(--glow)}
-.axws .gensend .costtag{display:none}
+/* #R1-FIX: narx ko'rinishi qaytarildi — igCost/vgCost/agCost jonli quote elementi (yashirish regressiya edi) */
+.axws .gensend .costtag{font-size:9px;padding:1px 6px;margin:0}
 .axws .gensend:hover{filter:brightness(1.05);background:var(--grad)}
 .axws .gensend:disabled{border:1px solid var(--border);background:var(--surface-3);color:var(--faint);opacity:1;box-shadow:none}
 .axws .gensend.busy::after{border-top-color:var(--on-accent)}
@@ -15248,6 +15266,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     closePops();
     // Composer view'lari uchun shared .scroll'ni qat'iy flex-ustun rejimiga o'tkazamiz (dock pinlanadi).
     var ax=document.querySelector('.axroot'); if(ax)ax.classList.toggle('axws-tool',!!VIEWS[id]);
+    var ap=document.getElementById('aiPage'); if(ap)ap.classList.toggle('axws-tool',!!VIEWS[id]); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
     var cfg=VIEWS[id]; if(!cfg)return;
     renderStrip(cfg);
     ensureObserver(cfg);
