@@ -19231,6 +19231,28 @@ class Component extends DCLogic {
 
   grad(h) { return 'radial-gradient(120% 120% at 22% 12%,hsl(' + h + ' 46% 30%) 0%,hsl(' + ((h + 26) % 360) + ' 52% 15%) 42%,hsl(' + ((h + 44) % 360) + ' 60% 7%) 100%)'; }
   hueOf(s) { let n = 0; const t = String(s); for (let i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) % 360; return n; }
+  // SC_22 — sessiya nomi: birinchi ~4 mazmunli so'z (@mention/punktuatsiya olib tashlanadi),
+  // Title Case, 28 belgida ellipsis; prompt bo'sh → "New session · <Mon D>".
+  deriveSessName(src, createdAt) {
+    const s = String(src || '').replace(/@[\w-]+/g, ' ').replace(/[^A-Za-z0-9À-￿' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!s) {
+      const d = createdAt ? new Date(createdAt) : new Date();
+      return 'New session · ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    const stop = { a: 1, an: 1, the: 1, of: 1, on: 1, in: 1, at: 1, to: 1, and: 1, with: 1, for: 1, is: 1 };
+    let words = s.split(' ').filter(w => w && !stop[w.toLowerCase()]).slice(0, 4);
+    if (!words.length) words = s.split(' ').slice(0, 4);
+    let out = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    if (out.length > 28) out = out.slice(0, 27).replace(/\s+\S*$/, '') + '…';
+    return out || 'Session';
+  }
+  // Displey qoidasi: qisqa (≤28) title = qo'lda nom → aynan; uzun xom-prompt → derive.
+  sessDisplayName(s) {
+    const t = (s && s.title ? String(s.title) : '').trim();
+    if (!t) return this.deriveSessName('', s && (s.createdAt || s.lastAt));
+    if (t.length <= 28) return t;
+    return this.deriveSessName(t, s && s.createdAt);
+  }
   errMsg(e) {
     if (e && e.message === 'NETWORK') return "Can't reach the server — check your connection";
     return (e && e.message) || 'Something went wrong';
@@ -20200,7 +20222,7 @@ class Component extends DCLogic {
       // Sessiya birinchi gen'da lazily yaratiladi — nomi birinchi promptdan.
       let sid = this.state.curSessId;
       if (!sid) {
-        const s = await FFAPI.session(tool.mode, prompt.slice(0, 60));
+        const s = await FFAPI.session(tool.mode, this.deriveSessName(prompt)); // SC_22: toza nom
         sid = s.id;
         this.setState({ curSessId: sid, viewSess: sid, sessGens: [] });
       }
@@ -20210,7 +20232,7 @@ class Component extends DCLogic {
       } catch (ge) {
         // Eskirgan/begona session (404) — yangi session bilan BIR marta qayta urinish
         if (ge && ge.status === 404) {
-          const s2 = await FFAPI.session(tool.mode, prompt.slice(0, 60));
+          const s2 = await FFAPI.session(tool.mode, this.deriveSessName(prompt)); // SC_22: toza nom
           sid = s2.id;
           this.setState(st => ({ curSessId: s2.id, viewSess: st.viewSess === sid || st.viewSess === 'new' ? s2.id : st.viewSess, sessGens: st.viewSess === sid ? [] : st.sessGens }));
           r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
@@ -21214,7 +21236,8 @@ class Component extends DCLogic {
     // QA-FIX #12 — rail endi SESSIYALAR ro'yxati (gen thumb'lari emas)
     const sessListView = this.state.sessions.map(s => {
       const on = this.state.viewSess === s.id;
-      const name = (s.title || '').trim() || 'Session';
+      // SC_22: xom prompt nomlari o'rniga toza displey nomi (qisqa/qo'lda nom aynan qoladi)
+      const name = this.sessDisplayName(s);
       const isAudCv = s.coverMode === 'voice' || s.coverMode === 'sfx' || s.coverMode === 'music';
       return {
         id: s.id, on, name,

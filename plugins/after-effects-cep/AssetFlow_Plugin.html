@@ -7840,6 +7840,30 @@ try{
   setInterval(afCmsFetch,300000);
 }catch(e){}
 
+/* ══ SC_22: sessiya displey nomi — xom prompt nomlari o'rniga toza sarlavha ══
+   Qoida: title yo'q → "New session · <Mon D>"; qisqa title (≤28) → aynan (qo'lda
+   nom ustun); uzun xom-prompt title → birinchi ~4 mazmunli so'z, Title Case,
+   @mention/punktuatsiya olib tashlanadi, 28 belgida ellipsis. */
+function afDeriveSessName(src,createdAt){
+  var s=String(src||'').replace(/@[\w-]+/g,' ').replace(/[^A-Za-z0-9À-￿' ]+/g,' ').replace(/\s+/g,' ').trim();
+  if(!s){
+    var d=createdAt?new Date(createdAt):new Date();
+    var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return 'New session · '+mo[d.getMonth()]+' '+d.getDate();
+  }
+  var stop={a:1,an:1,the:1,of:1,on:1,in:1,at:1,to:1,and:1,with:1,for:1,is:1};
+  var words=s.split(' ').filter(function(w){ return w&&!stop[w.toLowerCase()]; }).slice(0,4);
+  if(!words.length)words=s.split(' ').slice(0,4);
+  var out=words.map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(' ');
+  if(out.length>28)out=out.slice(0,27).replace(/\s+\S*$/,'')+'…';
+  return out||'Session';
+}
+window.afSessionDisplayName=function(s){
+  var t=(s&&s.title?String(s.title):'').trim();
+  if(!t)return afDeriveSessName('',s&&(s.createdAt||s.lastAt));
+  if(t.length<=28)return t; // qisqa — ehtimol qo'lda qo'yilgan nom, aynan ko'rsatiladi
+  return afDeriveSessName(t,s&&s.createdAt);
+};
 function afTimeAgo(ts){
   if(!ts)return '';
   const d=typeof ts==='number'?ts:Date.parse(ts); if(!isFinite(d))return '';
@@ -15065,7 +15089,9 @@ window.afGallery=(function(){
       row.appendChild(cov);
       var tx=document.createElement('span'); tx.className='sp-tx';
       tx.innerHTML='<b></b><small></small>';
-      tx.querySelector('b').textContent=s.title||('Session · '+(s.mode||''));
+      // SC_22: toza displey nomi; to'liq prompt tooltip'da qoladi
+      tx.querySelector('b').textContent=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||('Session · '+(s.mode||'')));
+      if(s.title)row.title=s.title;
       tx.querySelector('small').textContent=(s.count||0)+' generations · '+(s.mode||'')+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
       row.appendChild(tx);
       if(!sel){
@@ -15131,7 +15157,7 @@ window.afGallery=(function(){
   function openSession(s){
     sp.sess=s; sp.sessItems=[];
     if(typeof window.axGo==='function')window.axGo('session');
-    var t=$('spSessTitle'); if(t)t.textContent=s.title||'Session';
+    var t=$('spSessTitle'); if(t){ t.textContent=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'Session'); if(s.title)t.title=s.title; } // SC_22
     var m=$('spSessDetMeta'); if(m)m.textContent='Loading…';
     var g=$('spSessGrid'); if(g)g.innerHTML='';
     api.sessionGens(s.id).then(function(r){
@@ -15344,6 +15370,7 @@ window.afGallery=(function(){
       row.appendChild(cov);
       var tx=document.createElement('span'); tx.className='sp-tx'; tx.innerHTML='<b></b><small></small>';
       tx.querySelector('b').textContent=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'Session');
+      if(s.title)row.title=s.title; // SC_22: to'liq prompt tooltip'da
       tx.querySelector('small').textContent=(s.count||0)+' generations'+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
       row.appendChild(tx);
       row.addEventListener('click',function(){ spickEnter(mode,s); });
