@@ -2621,7 +2621,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .cardbig .tx small{font-size:10px;color:var(--mut)}
 /* ── AI Tools kategoriya kartalari (2×2) — mockup b1 verbatim ── */
 .axroot .cats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-.axroot .cat{border-radius:14px;background:var(--surface);border:1px solid rgba(255,255,255,.08);padding:14px;position:relative;overflow:hidden;cursor:pointer;text-align:left}
+.axroot .cat{border-radius:14px;background:var(--surface);border:1px solid rgba(255,255,255,.08);padding:12px 14px;position:relative;overflow:hidden;cursor:pointer;text-align:left} /* SC_05: LIVE qatori o'chgani uchun ixchamroq */
 /* SC_04: CMS fon media — matn/glow OSTIDA cover qatlam + o'qilishlik skrimi (3 temada ham) */
 .axroot .cat .cat-media{position:absolute;inset:0;pointer-events:none}
 .axroot .cat .cat-media img,.axroot .cat .cat-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -2631,11 +2631,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .cat .cat-in{position:relative}
 .axroot .cat .cat-ic{color:var(--text);display:block}
 .axroot .cat .cat-ic svg{width:22px;height:22px;display:block}
-.axroot .cat .cat-nm{font-weight:700;font-size:13.5px;margin-top:9px;color:var(--text)}
-.axroot .cat .cat-models{font-family:var(--font-mono);font-size:8.5px;color:var(--muted);margin-top:4px;line-height:1.6}
-.axroot .cat .cat-live{display:flex;align-items:center;gap:5px;margin-top:9px}
-.axroot .cat .cat-live .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:ffbreathe 2.2s ease-in-out infinite}
-.axroot .cat .cat-live .lt{font-family:var(--font-mono);font-size:8.5px;color:var(--accent)}
+.axroot .cat .cat-nm{font-weight:700;font-size:13.5px;margin-top:8px;color:var(--text)}
+/* SC_05: model qatori endi BIR qator (jonli katalog nomlari), ellipsis; "● LIVE" o'chirildi —
+   doim-chin status hech narsa aytmasdi. Karta vertikal padding ixchamlandi. */
+.axroot .cat .cat-models{font-family:var(--font-mono);font-size:8.5px;color:var(--muted);margin-top:4px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axroot .cat.soon{background:var(--surface-3);border-color:var(--border);opacity:.62}
 .axroot .cat.soon .cat-ic{color:var(--muted)}
 .axroot .cat.soon .cat-nm{color:var(--muted)}
@@ -7661,16 +7660,42 @@ function fhomeFetchModels(){
   if(typeof studioGet!=='function')return;
   if(__fhomeModels.inflight||(Date.now()-__fhomeModels.at<300000))return;
   __fhomeModels.inflight=true;
-  studioGet('/api/studio/gen/models?mode=image').then(function(r){
+  // SC_05: bitta throttle oynasida 4 mode (image/video/voice/sfx) parallel — narx keshi
+  // (hero chip) + JONLI display nomlari (launcher kartalari) bir joyda. Alohida so'rov
+  // sikli YO'Q — shu mavjud fetch kengaytirildi.
+  var clean=function(s){ return String(s==null?'':s).replace(/[<>&"]/g,''); };
+  var getMode=function(mode){
+    return studioGet('/api/studio/gen/models?mode='+mode).then(function(r){
+      return ((r&&r.models)||[]).filter(function(x){ return x&&x.id!=null&&x.mode===mode&&x.enabled!==false; });
+    }).catch(function(){ return []; });
+  };
+  Promise.all([getMode('image'),getMode('video'),getMode('voice'),getMode('sfx')]).then(function(res){
     __fhomeModels.inflight=false; __fhomeModels.at=Date.now();
-    var ms=((r&&r.models)||[]).filter(function(x){ return x&&x.id!=null&&x.mode==='image'; });
-    if(!ms.length)return;
-    var def=ms.filter(function(x){ return x.isDefault; })[0]||ms[0];
-    var min=null;
-    ms.forEach(function(m){ var p=fhomeModelPrice(m); if(typeof p==='number'&&(min==null||p<min))min=p; });
-    __fhomeModels.featured=def.label||String(def.id);
-    __fhomeModels.featuredCost=fhomeModelPrice(def);
-    __fhomeModels.minCost=min;
+    var img=res[0], vid=res[1], voice=res[2], sfx=res[3];
+    // Narx keshi (hero chip) — avvalgi mantiq aynan
+    if(img.length){
+      var def=img.filter(function(x){ return x.isDefault; })[0]||img[0];
+      var min=null;
+      img.forEach(function(m){ var p=fhomeModelPrice(m); if(typeof p==='number'&&(min==null||p<min))min=p; });
+      __fhomeModels.featured=def.label||String(def.id);
+      __fhomeModels.featuredCost=fhomeModelPrice(def);
+      __fhomeModels.minCost=min;
+    }
+    // SC_05: launcher karta qatorlari — top 2 yoqilgan model nomi " · " bilan;
+    // audio: bitta voice + bitta SFX (ajratib bo'lsa), aks holda birinchi ikkitasi.
+    var top2=function(list){ return list.slice(0,2).map(function(m){ return clean(m.label||m.id); }).filter(Boolean).join(' · '); };
+    var names={};
+    if(img.length)names.image=top2(img);
+    if(vid.length)names.video=top2(vid);
+    var aud=[];
+    if(voice.length)aud.push(clean(voice[0].label||voice[0].id));
+    if(sfx.length)aud.push(clean(sfx[0].label||sfx[0].id));
+    if(!aud.length)aud=voice.concat(sfx).slice(0,2).map(function(m){ return clean(m.label||m.id); });
+    if(aud.length)names.audio=aud.filter(Boolean).join(' · ');
+    if(names.image||names.video||names.audio){
+      window.__afLiveModelNames=names;
+      if(typeof window.__afAiRenderCatGrid==='function')window.__afAiRenderCatGrid();
+    }
     if(document.documentElement.classList.contains('home-mode'))renderHomeHero();
   }).catch(function(){ __fhomeModels.inflight=false; __fhomeModels.at=Date.now(); });
 }
@@ -11306,19 +11331,22 @@ async function bootPlugin(){
   var _cat3dSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5L3 7"/></svg>';
   var _toolImgSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
   var _toolVidSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>';
+  // SC_05: models/sub — FALLBACK matnlar (fetch kelguncha / xatoda); jonli katalog
+  // (window.__afLiveModelNames — fhomeFetchModels to'ldiradi) kelgach ular almashadi.
+  // BIR qator format (ellipsis CSS'da) — eski 2 qatorli <br> ro'yxat olib tashlandi.
   var AI_CATS=[
-    {id:'image',name:'Image',icon:_catImgSVG,card:'Generate image',models:'Nano Banana 2 · Pro<br>Imagen 4',glow:'rgba(143,79,209,.22)',tools:[
-      {name:'Generate image',sub:'Nano Banana 2 · Pro · Imagen 4',icon:_toolImgSVG,dest:'imggen'},
+    {id:'image',name:'Image',icon:_catImgSVG,card:'Generate image',models:'Nano Banana 2 · Imagen 4',glow:'rgba(143,79,209,.22)',tools:[
+      {name:'Generate image',sub:'Nano Banana 2 · Imagen 4',icon:_toolImgSVG,dest:'imggen'},
       // BATCH4 #1 — Upscale tool: imggen pane + Imagen Upscale modeli avto-tanlanadi (katalog id bo'yicha emas — feature bo'yicha)
       {name:'Upscale',sub:'Imagen ×2 / ×4 — up to 4K',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',dest:'imggen',upscale:true}
     ]},
-    {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Veo 3.1<br>Seedance 2.0',glow:'rgba(46,157,192,.2)',tools:[
-      {name:'Generate video',sub:'Veo 3.1 · Seedance 2.0 Fast',icon:_toolVidSVG,dest:'vidgen'},
+    {id:'video',name:'Video',icon:_catVidSVG,card:'Generate video',models:'Veo 3.1 · Seedance 2.0',glow:'rgba(46,157,192,.2)',tools:[
+      {name:'Generate video',sub:'Veo 3.1 · Seedance 2.0',icon:_toolVidSVG,dest:'vidgen'},
       // BATCH4 #2 — video upscale: vidgen'dagi har video kartadagi ⤢ amali orqali (faktor+narx dialogi)
       {name:'Upscale video',sub:'Topaz ×2/×4 — use ⤢ on any video card',icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',dest:'vidgen',vupscale:true}
     ]},
-    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Generate audio',models:'Chirp 3 HD<br>ElevenLabs SFX',glow:'rgba(230,179,53,.2)',tools:[
-      {name:'Generate audio',sub:'Voice over (Chirp 3 HD) · Sound FX (ElevenLabs)',icon:_catAudSVG,dest:'audgen'}
+    {id:'audio',name:'Audio',icon:_catAudSVG,card:'Generate audio',models:'Chirp 3 HD · ElevenLabs SFX',glow:'rgba(230,179,53,.2)',tools:[
+      {name:'Generate audio',sub:'Chirp 3 HD · ElevenLabs SFX',icon:_catAudSVG,dest:'audgen'}
     ]}
   ];
   // P8: "3D" karta olib tashlandi (backend'da 3D yo'q — halol tool to'plami);
@@ -11344,7 +11372,9 @@ async function bootPlugin(){
       // SC_04: CMS override (title/desc/media) — bo'sh maydon = built-in matn qoladi
       var ov=(window.__afCmsAiCards&&window.__afCmsAiCards[idx])||null;
       var nm=(ov&&ov.title)?cmsEsc(ov.title):c.card;
-      var models=(ov&&ov.desc)?cmsEsc(ov.desc):c.models;
+      // SC_05: ustuvorlik — CMS desc > JONLI katalog nomlari > hardcoded fallback
+      var live=(window.__afLiveModelNames&&window.__afLiveModelNames[c.id])||null;
+      var models=(ov&&ov.desc)?cmsEsc(ov.desc):(live?cmsEsc(live):c.models);
       var mediaHtml='';
       if(ov&&ov.mediaUrl){
         var mu=cmsEsc(ov.mediaUrl);
@@ -11360,8 +11390,7 @@ async function bootPlugin(){
         +'<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
         +'<div class="cat-in"><span class="cat-ic">'+c.icon+'</span>'
         +'<div class="cat-nm">'+nm+'</div>'
-        +'<div class="cat-models">'+models+'</div>'
-        +'<div class="cat-live"><span class="dot"></span><span class="lt">LIVE</span></div></div>';
+        +'<div class="cat-models">'+models+'</div></div>'; // SC_05: "● LIVE" qatori o'chirildi
       // SC_04: media yuklanmasa qatlam olib tashlanadi — glow/gradient fon qoladi
       var mEl=el.querySelector('.cat-media video,.cat-media img');
       if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
@@ -11431,7 +11460,11 @@ async function bootPlugin(){
     } else {
       liveTools.forEach(function(t){
         var el=document.createElement('div'); el.className='aicattool';
-        el.innerHTML='<div class="ic">'+t.icon+'</div><div class="tx"><b>'+t.name+'</b><small>'+t.sub+'</small></div><div style="margin-left:auto;color:var(--acc);font-size:18px">›</div>';
+        // SC_05: gen tool sub qatori ham jonli katalog nomlaridan (upscale'lar o'z matnini saqlaydi)
+        var tsub=t.sub;
+        var tlive=window.__afLiveModelNames&&window.__afLiveModelNames[c.id];
+        if(tlive&&!t.upscale&&!t.vupscale)tsub=tlive;
+        el.innerHTML='<div class="ic">'+t.icon+'</div><div class="tx"><b>'+t.name+'</b><small>'+tsub+'</small></div><div style="margin-left:auto;color:var(--acc);font-size:18px">›</div>';
         // BATCH4 #1/#2 — upscale tool'lari: pane ochilgach model avto-tanlanadi / yo'l ko'rsatiladi
         if(t.dest)(function(dest,up,vup){ el.addEventListener('click',function(){ go(dest);
           if(up&&typeof window.axIGSelectUpscale==='function')window.axIGSelectUpscale();
