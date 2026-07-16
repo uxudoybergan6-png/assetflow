@@ -3806,7 +3806,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-dock .warn{margin:0 0 8px}
 .axws-dock .lowcred{margin:0 0 8px}
 /* refs strip — mavjud #igRefgrid ichkarida qoladi; ＋ tugma yonida */
-.axws-refs{display:flex;align-items:center;gap:9px;margin-bottom:6px;min-width:0}
+/* SC_19: helper qatori o'chgani uchun composer zichroq — [+] prompt blokiga yopishadi */
+.axws-refs{display:flex;align-items:center;gap:8px;margin-bottom:4px;min-width:0}
 .axws-refadd{flex:0 0 auto;width:42px;height:42px;padding:0;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .axws-refadd:hover{border-color:var(--accent);color:var(--accent)}
 .axws-refwrap{min-width:0;flex:1 1 auto;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
@@ -3814,6 +3815,13 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-refmeta{min-width:0;margin-bottom:8px;display:flex;align-items:center;gap:8px;color:var(--muted);font-family:var(--font-mono);font-size:9.5px;font-weight:600}
 .axws-refmeta .rc-n{flex:0 0 auto;white-space:nowrap}
 .axws-refmeta .rc-hint{min-width:0;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* SC_19: [+] tugmadagi ixcham referens hisoblagichi (faqat ≥1 ref) */
+.axws-refadd{position:relative}
+.axws-refadd .refct{position:absolute;top:-6px;right:-6px;padding:2px 5px;border-radius:999px;background:var(--accent);color:var(--on-accent);font:700 8px/1 var(--font-mono);letter-spacing:.02em;pointer-events:none}
+/* SC_19: referens limiti — ikonkali tranzient ichki pill */
+.axws-limitnote{display:none;align-items:center;gap:6px;margin-bottom:8px;padding:6px 9px;border:1px solid rgba(255,178,124,.35);border-radius:9px;background:rgba(255,178,124,.10);color:var(--amber,#FFB27C);font-size:10.5px;font-weight:600}
+.axws-limitnote.on{display:flex}
+.axws-limitnote svg{flex:none}
 .axws-promptwrap{position:relative}
 /* #R1-FIX: chipedit uslublari eski `.axig .pbox` scope'ida qolgan edi — yangi dockda .pbox yo'q,
    shuning uchun prompt 22px ko'rinmas chiziqqa aylanib, placeholder umuman chiqmasdi. */
@@ -4395,10 +4403,12 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                               <div class="warn" id="igRefWarn"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Reference is <b>required</b> for this model — add at least 1 image.</span></div>
                               <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
                               <div class="axws-refs">
-                                <div class="addbtn axws-refadd" id="igRefAdd" title="Add reference"><span class="pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span></div>
+                                <div class="addbtn axws-refadd" id="igRefAdd" title="Add references — images to edit or combine · type @ to mention"><span class="pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span><span class="refct" id="igRefCt" style="display:none"></span></div>
                                 <div class="axws-refwrap"><div class="refgrid" id="igRefgrid"></div></div>
                               </div>
-                              <div class="axws-refmeta"><span class="rc-n" id="igRefMeta">0 references</span><span class="rc-hint">Optional — add images to edit or combine · type @ to mention.</span></div>
+                              <!-- SC_19: doimiy "0/10 reference Optional…" helper qatori o'chirildi — hisoblagich [+] badge'ida, tushuntirish title tooltip'da -->
+                              <span id="igRefMeta" style="display:none"></span>
+                              <div class="axws-limitnote" id="igLimitNote"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span id="igLimitNoteTx">Reference limit reached</span></div>
                               <div class="mention" id="igMention"></div>
                               <div class="axws-promptwrap"><div class="chipwrap">
                                 <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
@@ -11990,7 +12000,7 @@ window.afGallery=(function(){
     var noRef=!meta.refOk;
     $('igRefAdd').style.display=noRef?'none':''; // ＋Referens yangi qo'shishga; xira hovuz esa TURADI
     // P13 — hovuzda referens bo'lsa "N kept (unused)" hisoblagichi ko'rinsin (model qo'llamasa ham)
-    $('igRefMeta').style.display=(noRef && st.refs.length===0)?'none':'';
+    // SC_19: igRefMeta endi yashirin (hisoblagich [+] badge'ida — updRefMeta yangilaydi)
     var qlEl=$('igQLab'); if(qlEl)qlEl.textContent=meta.qLabel||'Quality'; // gpt→"Sifat", nano→"Resolution"
     var qsec=$('igQSec'); if(qsec)qsec.style.display=meta.hasQuality?'':'none'; // quality yo'q → sektsiya yashirin
     // P16 — bitta sozlama chipi xulosasi (Ratio · Quality · ×N)
@@ -12086,16 +12096,34 @@ window.afGallery=(function(){
     });
   }
   function updRefMeta(){
-    var el=$('igRefMeta'); if(!el)return;
+    // SC_19: doimiy matn o'rniga [+] tugmadagi ixcham "N/max" badge (faqat ≥1 ref bo'lsa);
+    // to'liq tushuntirish tooltip'da. Nofaol hovuz soni ham tooltip'ga kiradi.
     var max=meta.maxRefs||0, inact=igInactiveRefCount();
-    // Limitni OLDINDAN ko'rsatamiz (N / max) + edit modelда "majburiy" ogohlantirish + P13 nofaol soni.
-    el.textContent=st.refs.length+(max?(' / '+max):'')+' reference'+((meta.refMode==='required'&&st.refs.length===0)?' · required':'')+(inact>0?(' · '+inact+' kept (unused)'):'');
+    var ct=$('igRefCt');
+    if(ct){
+      if(st.refs.length>0){ ct.textContent=st.refs.length+(max?('/'+max):''); ct.style.display=''; }
+      else ct.style.display='none';
+    }
+    var add=$('igRefAdd');
+    if(add)add.title='Add references — images to edit or combine · type @ to mention'
+      +(max?(' · '+st.refs.length+'/'+max):'')
+      +((meta.refMode==='required'&&st.refs.length===0)?' · required for this model':'')
+      +(inact>0?(' · '+inact+' kept (unused)'):'');
   }
 
+  // SC_19: referens limiti — composer ICHIDA ikonkali tranzient pill (~3s avto-yopiladi)
+  var _igLimT=null;
+  function igShowLimitNote(max){
+    var n=$('igLimitNote'), tx=$('igLimitNoteTx');
+    if(!n){ toast('Max '+max+' reference(s)','warning'); return; }
+    if(tx)tx.textContent='Reference limit reached — '+max+'/'+max;
+    n.classList.add('on'); clearTimeout(_igLimT);
+    _igLimT=setTimeout(function(){ n.classList.remove('on'); },3000);
+  }
   // dataUrl → push (spinner) → R2 yuklash → ref.url; xato bo'lsa olib tashlash
   function addRef(dataUrl){
     if(!dataUrl)return;
-    if(st.refs.length>=meta.maxRefs){ toast('Max '+meta.maxRefs+' reference(s)','warning'); return; }
+    if(st.refs.length>=meta.maxRefs){ igShowLimitNote(meta.maxRefs); return; } // SC_19: ikonkali ichki notice
     var ref={dataUrl:dataUrl,url:null,loading:true};
     st.refs.push(ref); renderRefs(); updRefMeta(); refreshGen();
     studioPost('/api/studio/gen/ref-upload',{dataUrl:dataUrl}).then(function(u){
@@ -13504,14 +13532,11 @@ window.afGallery=(function(){
     if(vm.loaded)return Promise.resolve(vm);
     if(vm._pending)return vm._pending;
     vm._pending=studioGet('/api/studio/gen/models?mode=video').then(function(r){
-      // Video modellar: Google to'g'ridan-to'g'ri (Veo=vertex, Omni=vertex-omni) + fal (Seedance).
-      // 2026-07-01: Veo/Omni refKind='frames' (i2v-uslub) — pane ularni to'g'ri ko'rsatadi.
-      // PROBLEM 3: R2V (media-refs / reference-to-video) modellar PLAGINDA ko'rsatilmaydi —
-      // video composer Fast (frames) only; R2V web'da qoladi.
-      // P10: provider allowlist olib tashlandi (katalog-driven; server enabled'ni qaytaradi).
-      // PROBLEM 3 sharti SAQLANADI: media-refs / reference-to-video plaginda ko'rsatilmaydi.
-      // BATCH4 #2 — video-upscale composer modeli EMAS (karta/lightbox "Upscale" amali orqali)
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.mode==='video'&&x.refKind!=='media-refs'&&x.feature!=='reference-to-video'&&x.feature!=='video-upscale'; });
+      // SC_19 (TASK 3): eski "PROBLEM 3" client-side whitelist OLIB TASHLANDI — plagin
+      // endi web bilan AYNAN bir xil yoqilgan to'plamni ko'rsatadi (media-refs/R2V ham;
+      // pane model-aware: vgCapsFor/mref mashinasi ularni qo'llaydi). Yagona chetlash —
+      // video-upscale (SC_17'da funksiya o'chirilgan; server ham disabled qaytaradi).
+      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.mode==='video'&&x.feature!=='video-upscale'; });
       if(!fal.length)throw new Error('No video model found');
       vm.models=fal; vm.loaded=true;
       try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}

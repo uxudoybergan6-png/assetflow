@@ -17191,7 +17191,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </div>
               <sc-if value="{{ genGateOn }}" hint-placeholder-val="{{ false }}"><div class="va-gengate"><svg class="va-ic"><use href="#i-bolt"></use></svg><span>{{ genGateMsg }}</span><sc-if value="{{ genGateTopup }}" hint-placeholder-val="{{ false }}"><button class="va-gategtu" onclick="{{ openCredits }}"><svg class="va-ic"><use href="#i-plus"></use></svg>Top up</button></sc-if></div></sc-if>
               <sc-if value="{{ strictPolicyNote }}" hint-placeholder-val="{{ false }}"><div class="va-policynote"><i class="ph ph-shield-check"></i><span>Strict content policy — you won't be charged if it's refused.</span></div></sc-if>
-              <div class="va-axbal">BALANCE <em>✦ {{ creditsFmt }}</em> · {{ axBalNote }}<span class="top" onclick="{{ openCredits }}">＋ Top up</span></div>
+              <!-- SC_19: composer BALANCE qatori o'chirildi — doimiy header kredit chipi bor
+                   (chip bosilishi to'g'ridan top-up modalini ochadi); Generate narx yorlig'i qoladi -->
+
                 </div><!-- /va-dock -->
               </div><!-- /va-axmainc -->
             </div><!-- /va-axwork -->
@@ -21355,7 +21357,13 @@ class Component extends DCLogic {
     const hasFeatured = !!featHero;
     const featAll = (featHero ? [featHero] : []).concat(featRail).slice(0, 5);
     const featLoading = !hasFeatured && !this.state.genModelsLoaded && !!(window.FFAPI && FFAPI.getToken());
-    const modelPickView = modelList.slice(0, 4).map(m => { const active = !!model && m.id === model.id; const cb = modelCostBits(m, tool.mode); return {
+    // SC_19: quick-pick ham pin tartibida — pinlangan model BIRINCHI ko'rinadi
+    const axQuickPins = this.state.pinnedModels || [];
+    const modelPickList = modelList.slice().sort((a, b) => {
+      const pa = axQuickPins.indexOf(String(a.id)) >= 0, pb = axQuickPins.indexOf(String(b.id)) >= 0;
+      return pa === pb ? 0 : (pa ? -1 : 1);
+    });
+    const modelPickView = modelPickList.slice(0, 4).map(m => { const active = !!model && m.id === model.id; const cb = modelCostBits(m, tool.mode); return {
       v: String(m.id), label: m.label, active, rowCls: 'va-axpm' + (active ? ' on' : ''),
       desc: m.description || m.desc || (cb.unit ? ('Priced ' + cb.unit) : ''), costLabel: '✦ ' + cb.c,
       refCap: this.refCapLabel(tool.mode, m), // P13 — referens imkoniyati almashishdan OLDIN ko'rinsin
