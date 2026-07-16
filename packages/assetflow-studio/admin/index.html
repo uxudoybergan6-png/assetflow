@@ -129,6 +129,7 @@ html.ff-iconfont-dead .ph-fill::before { content: "\00B7" !important; font-famil
 <script src="js/admin-business.js"></script>
 <script src="js/admin-dashboard.js"></script>
 <script src="js/admin-website.js"></script>
+<script src="js/admin-plugin-cms.js"></script>
 <script src="js/admin-releases.js"></script>
 <script>
 const AF_ADMIN = AssetFlowAuth.requireAuth(["admin"]);
@@ -151,6 +152,7 @@ const NAV = [
   {id:'moderation',   label:'Moderation',         icon:'shield-check'},
   {id:'templates',    label:'All templates',      icon:'stack'},
   {id:'website',      label:'Website',            icon:'globe'},
+  {id:'plugincms',    label:'Plugin CMS',         icon:'app-window'},
   {id:'releases',     label:'Plugin releases',    icon:'package'},
   {grp:'MANAGEMENT'},
   {id:'contributors', label:'Contributors',       icon:'users-three'},
@@ -178,6 +180,7 @@ const TITLES = {
   moderation:['Moderation queue','Review new templates'],
   templates:['All templates','Global catalog'],
   website:['Website / Landing','Public landing content & theme'],
+  plugincms:['Plugin CMS','AE plugin texts & background media'],
   releases:['Plugin releases','Publish plugin updates to users'],
   contributors:['Contributors','User management'],
   'contributor-detail':['Contributor profile','Contributors'],

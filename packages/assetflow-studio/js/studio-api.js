@@ -718,6 +718,17 @@ const StudioApi = (() => {
   async function resetLandingConfig() {
     return request("/api/admin/landing-config", { method: "DELETE" });
   }
+
+  /* ── Plugin CMS (admin "Plugin CMS" tab) — AE plagin UI kontenti ── */
+  async function getPluginContentConfig() {
+    return request("/api/admin/plugin-content-config");
+  }
+  async function savePluginContentConfig(body) {
+    return request("/api/admin/plugin-content-config", { method: "PUT", body });
+  }
+  async function resetPluginContentConfig() {
+    return request("/api/admin/plugin-content-config", { method: "DELETE" });
+  }
   /** Admin media upload: presigned PUT URL (folder whitelist serverda). */
   async function adminUploadUrl(fileName, contentType, folder) {
     return request("/api/admin/upload-url", {
@@ -821,6 +832,9 @@ const StudioApi = (() => {
     getLandingConfig,
     saveLandingConfig,
     resetLandingConfig,
+    getPluginContentConfig,
+    savePluginContentConfig,
+    resetPluginContentConfig,
     getPluginReleases,
     publishPluginRelease,
     deletePluginRelease,
