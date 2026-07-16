@@ -380,6 +380,15 @@ body{
 .af-tb-r{display:flex;align-items:center;gap:10px;justify-content:flex-end;min-width:0}
 /* Seg yorliqlari: keng panelda to'liq (lf), ~360px dan tor panelda qisqa (ls) */
 .af-tb-seg .ff-seg__item .ls{display:none}
+/* SC_15: seg yonidagi Sessions/Projects — kompakt ghost tugmalar */
+.af-tb-seg{display:flex;align-items:center;gap:6px}
+.af-tb-sp{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer;white-space:nowrap}
+.af-tb-sp:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
+.af-tb-sp svg{width:13px;height:13px;flex:none}
+@media (max-width:519px){
+  .af-tb-sp .sp-l{display:none}
+  .af-tb-sp{padding:0 8px}
+}
 /* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi */
 @media (max-width:459px){
   .af-topbar .af-tb-brand{display:none}
@@ -2652,20 +2661,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .cat-soonb{display:inline-block;margin-top:9px;font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;padding:3px 7px;border-radius:99px;background:rgba(255,255,255,.06);color:var(--muted)}
 @keyframes ffbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 transparent}50%{opacity:.85;box-shadow:0 0 26px 2px var(--glow)}}
 /* TARIX strip (b1) */
-.axroot .ai-hist-head{display:flex;align-items:baseline;justify-content:space-between;margin:18px 0 9px}
-.axroot .ai-hist-k{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--muted)}
-.axroot .ai-hist-all{font-size:10.5px;color:var(--muted);cursor:pointer}
-.axroot .ai-hist-all:hover{color:var(--text)}
-/* P14: HISTORY strip endi gorizontal SCROLL (clip emas) + KATTAROQ, haqiqiy-nisbatli thumbnaillar. */
-.axroot .ai-hist-strip{display:flex;gap:9px;overflow-x:auto;overflow-y:hidden;padding-bottom:5px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
-.axroot .ai-hist-strip::-webkit-scrollbar{height:6px}
-.axroot .ai-hist-strip::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px}
-.axroot .ai-hist-strip::-webkit-scrollbar-track{background:transparent}
-.axroot .ai-hist-strip .ht{height:92px;width:auto;aspect-ratio:1/1;border-radius:11px;flex:none;position:relative;overflow:hidden;background-size:cover;background-position:center;background-color:var(--surface);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
-.axroot .ai-hist-strip .ht:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 16px rgba(0,0,0,.35)}
-.axroot .ai-hist-strip .ht video,.axroot .ai-hist-strip .ht img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.axroot .ai-hist-strip .ht .htbadge{position:absolute;top:5px;left:5px;font-size:8px;font-weight:700;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.62);padding:2px 5px;border-radius:5px;text-transform:uppercase;z-index:2}
-.axroot .ai-hist-strip .ht svg{position:absolute;left:6px;bottom:5px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+/* SC_15: HISTORY strip CSS o'chirildi — launcher'da strip yo'q, yagona yuza = My Library */
 /* pastki info-toast (b1) */
 .axroot .ai-soontoast{position:fixed;left:12px;right:12px;bottom:12px;display:none;align-items:center;gap:9px;padding:11px 12px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.5);z-index:70;max-width:416px;margin:0 auto}
 .axroot .ai-soontoast.on{display:flex}
@@ -4104,6 +4100,10 @@ html.home-mode #homePage{display:block!important}
                     <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><span class="lf">AI Tools</span><span class="ls">AI</span></button>
                     <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Stock Catalog — templates"><span class="lf">Stock Catalog</span><span class="ls">Stock</span></button>
                   </div>
+                  <!-- SC_15: Sessions/Projects — seg yonidagi IXCHAM entrylar (tor panelda icon-only).
+                       Eski launcher sub-tab qatori o'rniga; mavjud axGo('sessions'/'projects') yo'llari. -->
+                  <button type="button" class="af-tb-sp" onclick="afOpenAiSub('sessions')" title="Sessions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/></svg><span class="sp-l">Sessions</span></button>
+                  <button type="button" class="af-tb-sp" onclick="afOpenAiSub('projects')" title="Projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="sp-l">Projects</span></button>
                 </div>
                 <div class="af-tb-r">
                   <!-- #22: qo'l yangilash — yuqori burchakdagi Sync (avval af-tb-hidden ichida edi) -->
@@ -4315,22 +4315,15 @@ html.home-mode #homePage{display:block!important}
                           <div class="ai-launch-t"><span style="color:var(--accent)">✦</span> AI Tools</div>
                           <div class="ai-launch-acts">
                             <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
-                            <div class="ai-icon" data-go="history" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                            <div class="ai-icon" data-go="history" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
                             <div class="ai-icon" data-go="settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                           </div>
                         </div>
                         <div class="ai-launch-sub">Prompt → result → import directly into AE</div>
-                        <!-- P1: Sessions/Library/Projects — web bilan bir xil tushunchalar (tor panel: seg qator) -->
-                        <div class="ai-seg" style="margin:0 14px 12px;max-width:calc(100% - 28px)">
-                          <button type="button" class="ai-seg-i is-on">Tools</button>
-                          <button type="button" class="ai-seg-i" data-go="sessions">Sessions</button>
-                          <button type="button" class="ai-seg-i" data-go="projects">Projects</button>
-                        </div>
+                        <!-- SC_15: Tools|Sessions|Projects sub-tab qatori OLIB TASHLANDI — Sessions/Projects
+                             endi doimiy top-bar'da (af-topbar); HISTORY strip ham o'chirildi — yagona
+                             foydalanuvchi-ishlari yuzasi = My Library (v-history ko'rinishi). -->
                         <div class="cats" id="aiCatGrid"></div>
-                        <div id="aiHistSec" style="display:none">
-                          <div class="ai-hist-head"><span class="ai-hist-k">HISTORY</span><span class="ai-hist-all" data-go="history">All →</span></div>
-                          <div class="ai-hist-strip" id="aiHistStrip"></div>
-                        </div>
                         <div class="ai-soontoast" id="aiSoonToast"><svg width="15" height="15" viewBox="0 0 24 24" fill="#7CC4FF"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 7zm1.2 10h-2.4v-6h2.4z"/></svg><span>No tools yet — coming soon.</span></div>
                       </section>
 
@@ -4364,7 +4357,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="axws-density" id="igDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
                               <div class="axws-tools">
                                 <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
-                                <div class="ai-icon" id="igHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                                <div class="ai-icon" id="igHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
                                 <div class="ai-icon" id="igSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                                 <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                               </div>
@@ -4505,7 +4498,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="axws-density" id="vgDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
                               <div class="axws-tools">
                                 <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
-                                <div class="ai-icon" id="vgHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                                <div class="ai-icon" id="vgHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
                                 <div class="ai-icon" id="vgSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                                 <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                               </div>
@@ -4695,7 +4688,7 @@ html.home-mode #homePage{display:block!important}
                               <div class="axws-density" id="agDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
                               <div class="axws-tools">
                                 <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
-                                <div class="ai-icon" id="agHist" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+                                <div class="ai-icon" id="agHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
                                 <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
                               </div>
                             </div>
@@ -4843,12 +4836,13 @@ html.home-mode #homePage{display:block!important}
                         </div>
                       </section>
 
-                      <!-- HISTORY -->
+                      <!-- MY LIBRARY (SC_15: eski HISTORY ko'rinishi — ichki id 'history' saqlanadi,
+                           foydalanuvchiga ko'rinadigan nom endi faqat "My Library") -->
                       <section id="v-history" class="view">
                         <div class="ai-hdr">
                           <button type="button" class="hd-home" data-go="main" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
                           <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-                          <span class="ai-ttl">History</span>
+                          <span class="ai-ttl">My Library</span>
                           <div class="ai-hdr-c"></div>
                           <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
                           <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
@@ -6069,6 +6063,11 @@ function syncCategoryChips(slug){
 }
 // E6.1: katalog top-tab → yashirin sidebar tugmasini .click() qiladi (mavjud onclick ishlaydi,
 // handler tahrirlanmaydi, guard refs o'zgarmaydi). Aktiv holat render() funnelida syncTopNav bilan.
+// SC_15: top-bar Sessions/Projects — AI bo'limini ochib, mavjud axGo yo'liga o'tadi
+function afOpenAiSub(view){
+  afNavTab('ai');
+  if(typeof window.axGo==='function')setTimeout(function(){ window.axGo(view); },0);
+}
 function afNavTab(tab){
   // SC_12: uchinchi tab — Home (goHome mavjud yo'li; yangi routing yo'q)
   if(tab==='home'){
@@ -11396,7 +11395,7 @@ window.afGallery=(function(){
       + '<div class="galtools">'
       +   '<div class="galzoom"><b class="zout" title="Zoom out (more columns)">'+IC.zout+'</b><i></i><b class="zin" title="Zoom in (fewer columns)">'+IC.zin+'</b></div>'
       +   '<div class="galselbtn" title="Select mode">Select</div>'
-      +   (scope==='recent'?'<div class="galmore" title="Full History">All →</div>':'')
+      +   (scope==='recent'?'<div class="galmore" title="My Library">All →</div>':'')
       + '</div>'
       + '</div>'
       + '<div class="galgrid"></div>'
