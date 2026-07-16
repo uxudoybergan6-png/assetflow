@@ -3593,7 +3593,8 @@ html.home-mode #dlPage,
 html.home-mode #aiPage,
 html.home-mode .foot,
 html.home-mode #afFtr{display:none!important}
-html.home-mode #homePage{display:block!important}
+/* SC_07: block→flex — .fhome to'liq-bo'y zanjiri (scroll-area → homePage → homeMain → fhome) */
+html.home-mode #homePage{display:flex!important;flex-direction:column;min-height:100%}
 #homePage{display:none}
 /* SC_12: doimiy .af-topbar bilan dublikat headerlar yashiriladi (markup+JS yozuvlari
    saqlanadi — hech narsa throw qilmaydi, faqat displey): Home'ning o'z headeri,
@@ -4180,11 +4181,13 @@ html.home-mode #homePage{display:block!important}
                          data-hdplan — setHeaderPlan yo'li), hero-art (homeBArt = oxirgi gen thumb, bo'lmasa
                          statik gradient), model chip (homeBModel) + AI badge (fhomeAiBadge) = jonli /gen/models
                          narxlari, "Fresh" javoni (homeGrid = real katalog). -->
+                    <!-- SC_07: tasdiqlangan IA — banner + recent works + shelf. "Start your next
+                         project" kartalari (hero CTA dublikatlari) va greet-balans O'CHIRILDI;
+                         "Jump back in" strip qo'shildi; javon endi ko'p-qatorli katta grid. -->
                     <div id="homeMain">
                       <div class="fhome">
                         <div class="fhome-top">
                           <div class="fhome-greet" id="homeGreet">Good afternoon</div>
-                          <div class="fhome-bal"><span data-hdplan>FREE</span><strong>✦&nbsp;<span id="homeBBal">—</span></strong></div>
                         </div>
                         <article class="fhome-hero">
                           <div class="fhome-hero-art" id="homeBArt"></div>
@@ -4199,20 +4202,9 @@ html.home-mode #homePage{display:block!important}
                             </div>
                           </div>
                         </article>
-                        <div class="fhome-sechd"><h2>Start your next project</h2></div>
-                        <div class="fhome-cards">
-                          <button class="fhome-card is-ai" type="button" onclick="homeGo('ai')">
-                            <span class="fhome-card-top"><span class="fhome-card-ic">✦</span><span class="fhome-card-tag">AI Studio</span><span class="fhome-card-bdg" id="fhomeAiBadge" style="display:none"></span></span>
-                            <h3>Create with AI.</h3>
-                            <p>Generate images, video, voice and SFX in one focused workspace.</p>
-                            <span class="fhome-card-go">OPEN AI STUDIO →</span>
-                          </button>
-                          <button class="fhome-card is-stock" type="button" onclick="homeGo('video')">
-                            <span class="fhome-card-top"><span class="fhome-card-ic">Ae</span><span class="fhome-card-tag">Stock Catalog</span><span class="fhome-card-bdg">AE READY</span></span>
-                            <h3>Start from a template.</h3>
-                            <p>Browse production-ready After Effects templates and import them into your project.</p>
-                            <span class="fhome-card-go">OPEN STOCK CATALOG →</span>
-                          </button>
+                        <div id="fhomeRecentSec" style="display:none">
+                          <div class="fhome-sechd"><h2>Jump back in</h2></div>
+                          <div class="fhome-recent" id="homeRecent"></div>
                         </div>
                         <div id="fhomeShelfSec">
                           <div class="fhome-sechd"><h2>Fresh for your next cut</h2><button class="fhome-browse" type="button" onclick="homeGo('video')">Browse all →</button></div>
@@ -7612,6 +7604,7 @@ function renderHome(){
   homeFetchLastGen();
   fhomeFetchModels();
   renderHomeHero();
+  renderHomeRecent(); // SC_07 — "Jump back in" strip
   renderHomeGrid();
 }
 /* Vaqtga mos salomlashuv + hisobdagi real ism (yo'q bo'lsa ismsiz variant) */
@@ -7641,11 +7634,8 @@ function renderHomeHero(){
       chip.style.display='';
     }else chip.style.display='none';
   }
-  var bdg=document.getElementById('fhomeAiBadge');
-  if(bdg){
-    if(__fhomeModels.minCost!=null){ bdg.textContent='FROM ✦'+__fhomeModels.minCost; bdg.style.display=''; }
-    else bdg.style.display='none';
-  }
+  // SC_07: #fhomeAiBadge elementi kartalar bilan birga o'chirildi — jonli narx endi
+  // faqat hero chipida (homeBModel, yuqorida) ko'rinadi; yozuv olib tashlandi.
 }
 /* #H1 — jonli rasm-model katalogi (mavjud /api/studio/gen/models?mode=image endpointi, yangi API emas).
    Featured = isDefault (bo'lmasa 1-chi); narx qoidasi image tool'dagi igModelPrice bilan bir xil
@@ -7702,8 +7692,9 @@ function homeLastImport(){
     return {key:key,asset:a,name:name,at:meta.at||0};
   }catch(e){ return null; }
 }
-/* Oxirgi gen — real /api/studio/gen/history (60s throttle; home-mode'da qatorni yangilaydi) */
-var __homeGen={it:null,at:0,inflight:false};
+/* Oxirgi gen — real /api/studio/gen/history (60s throttle; home-mode'da qatorni yangilaydi).
+   SC_07: .it (hero art) SAQLANADI + .items (8 tagacha normalizatsiyalangan) — "Jump back in" strip. */
+var __homeGen={it:null,items:[],at:0,inflight:false};
 function homeGenItem(g){
   const a=(g.assets&&g.assets[0])||{}; const p=g.params||{};
   const cat=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
@@ -7720,10 +7711,11 @@ function homeFetchLastGen(){
   __homeGen.inflight=true;
   studioGet('/api/studio/gen/history?limit=8').then(function(d){
     __homeGen.inflight=false; __homeGen.at=Date.now();
-    const items=(d&&d.items)||[]; let it=null;
-    for(let i=0;i<items.length;i++){ const c=homeGenItem(items[i]); if(c.url){ it=c; break; } }
-    __homeGen.it=it;
-    if(document.documentElement.classList.contains('home-mode')){ renderHomeHero(); } // #H1 — Continue qatori fhome'da yo'q
+    const items=(d&&d.items)||[];
+    // SC_07: to'liq ro'yxat saqlanadi (strip) + .it (hero art) avvalgidek birinchi URL'li element
+    __homeGen.items=items.map(homeGenItem).filter(function(c){ return !!c.url; });
+    __homeGen.it=__homeGen.items[0]||null;
+    if(document.documentElement.classList.contains('home-mode')){ renderHomeHero(); renderHomeRecent(); }
   }).catch(function(){ __homeGen.inflight=false; __homeGen.at=Date.now(); });
 }
 function homeImportGen(it){
@@ -7828,7 +7820,7 @@ function fhomeShelfList(){
   var out=[],seen={},i,a;
   try{
     if(typeof assets==='undefined'||!assets)return out;
-    for(i=0;i<assets.length&&out.length<6;i++){
+    for(i=0;i<assets.length&&out.length<12;i++){ // SC_07: javon limiti 6→12 (ko'p-qatorli grid)
       a=assets[i];
       var nm=String(a.displayName||a.n||'').trim().toLowerCase();
       var au=String((a.author&&(a.author.name||a.author))||'').trim().toLowerCase();
@@ -7838,6 +7830,35 @@ function fhomeShelfList(){
   }catch(e){}
   return out;
 }
+/* SC_07 — "Jump back in" strip: oxirgi 6 tagacha generatsiya (thumb + tur/model + vaqt).
+   0 gen → butun seksiya yashirin (bo'sh placeholder YO'Q). Bosish → AI bo'lim + My Library. */
+function renderHomeRecent(){
+  var sec=document.getElementById('fhomeRecentSec'), box=document.getElementById('homeRecent');
+  if(!sec||!box)return;
+  var items=(typeof __homeGen!=='undefined'&&__homeGen.items)?__homeGen.items.slice(0,6):[];
+  if(!items.length){ sec.style.display='none'; box.innerHTML=''; return; }
+  sec.style.display='';
+  box.innerHTML=items.map(function(it){
+    var isVid=it.cat==='video';
+    var isAud=it.cat==='audio'||it.cat==='sfx';
+    var bg=it.thumb&&!isAud?("url('"+hmEsc(it.thumb)+"')"):'';
+    var meta=it.modelLabel||({video:'Video',audio:'Voice',sfx:'SFX'})[it.cat]||'Image';
+    return '<button class="fhome-rcard" type="button" title="'+hmEsc(it.title)+'">'
+      +'<span class="fhome-rmedia'+(isAud?' aud':'')+'"'+(bg?' style="background-image:'+bg+'"':'')+'>'
+      +(isVid?'<span class="fhome-rplay">▶</span>':'')
+      +(isAud?'<span class="fhome-raud">♪</span>':'')
+      +'</span>'
+      +'<span class="fhome-rmeta"><b>'+hmEsc(meta)+'</b><i>'+hmEsc(afTimeAgo(it.createdAt))+'</i></span>'
+      +'</button>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('.fhome-rcard'),function(c){
+    c.addEventListener('click',function(){
+      // mavjud navigatsiya: AI bo'lim → My Library (data-go="history" yo'li); yangi routing yo'q
+      homeGo('ai');
+      if(typeof window.axGo==='function')setTimeout(function(){ window.axGo('history'); },0);
+    });
+  });
+}
 function renderHomeGrid(){
   var sec=document.getElementById('fhomeShelfSec'), box=document.getElementById('homeGrid');
   if(!sec||!box)return;
@@ -7845,24 +7866,29 @@ function renderHomeGrid(){
   if(!list.length){
     if(typeof catalogLoadState!=='undefined'&&catalogLoadState==='loading'){
       sec.style.display='';
-      var sk='<div class="fhome-tcard fhome-tskel"><span class="fhome-tskel-media"></span><span class="fhome-tskel-line"></span><span class="fhome-tskel-line s"></span></div>';
-      box.innerHTML=sk+sk+sk;
+      // SC_07: skelet — yangi katta karta o'lchamida to'liq bir qator
+      var sk='<div class="fhome-tcard fhome-tskel"><span class="fhome-tskel-media"></span><span class="fhome-tskel-line"></span></div>';
+      box.innerHTML=sk+sk+sk+sk;
     }else{ sec.style.display='none'; box.innerHTML=''; }
     return;
   }
   sec.style.display='';
+  // SC_07 karta anatomiyasi: media + chip'lar (FREE/PRO + rezolyutsiya) + BITTA sarlavha
+  // qatori. "AFTER EFFECTS · 1080P" meta qatori O'CHIRILDI (butun javon AE — ortiqcha).
   box.innerHTML=list.map(function(a){
     var pro=!!a.isPro;
     var bg=a.thumb?("url('"+a.thumb+"')"):HM_GRAD[HM_GKEYS[hmHash(a.n)%HM_GKEYS.length]];
-    var appFull='After Effects';
-    try{ appFull=ffTypeBadge(a.templateApp,a.nav).full||appFull; }catch(e){}
-    var meta=appFull+(a.res?(' · '+String(a.res)):''); // uppercase CSS'da
+    var res=a.res?String(a.res).toUpperCase():'';
     return '<button class="fhome-tcard" type="button" data-key="'+hmEsc(a.n)+'" data-nav="'+hmEsc(a.nav||'video')+'">'
       +'<span class="fhome-tmedia" style="background-image:'+bg+'">'
-      +'<span class="fhome-tbadge'+(pro?' pro':'')+'">'+(pro?'PRO':'FREE')+'</span></span>'
-      +'<h3>'+hmEsc(a.displayName||a.n)+'</h3><p>'+hmEsc(meta)+'</p></button>';
-  }).join('');
-  Array.prototype.forEach.call(box.querySelectorAll('.fhome-tcard'),function(c){
+      +'<span class="fhome-tbadge'+(pro?' pro':'')+'">'+(pro?'PRO':'FREE')+'</span>'
+      +(res?'<span class="fhome-tres">'+hmEsc(res)+'</span>':'')
+      +'</span>'
+      +'<h3>'+hmEsc(a.displayName||a.n)+'</h3></button>';
+  }).join('')
+  // "Browse all →" ghost karta — javon oxirida, katalogga o'tadi
+  +'<button class="fhome-tcard fhome-tghost" type="button" onclick="homeGo(\'video\')"><span>Browse all →</span></button>';
+  Array.prototype.forEach.call(box.querySelectorAll('.fhome-tcard:not(.fhome-tghost)'),function(c){
     c.addEventListener('click',function(){
       var key=c.getAttribute('data-key');
       homeGo(c.getAttribute('data-nav')||'video');
@@ -7974,7 +8000,7 @@ function setHeaderPlan(pro,label,credits){
   // #10/#11 umumiy header sinxroni: kredit qiymati + plan chip (data-hdplan) + guest almashinuvi.
   const hasCred=typeof credits==='number'&&isFinite(credits);
   const t=hasCred?credits.toLocaleString('en-US'):'—';
-  ['hdrCred','homeCredVal','libCredVal','homeBBal'].forEach(function(id){ const el=document.getElementById(id); if(el)el.textContent=t; });
+  ['hdrCred','homeCredVal','libCredVal'].forEach(function(id){ const el=document.getElementById(id); if(el)el.textContent=t; }); // SC_07: homeBBal o'chirildi (greet-balans dublikati)
   const lb=String(label||'Free').toUpperCase();
   document.querySelectorAll('[data-hdplan]').forEach(function(el){ el.textContent=lb; el.classList.toggle('free',!pro); });
   afHdrSyncAll();

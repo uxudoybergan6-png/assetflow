@@ -265,17 +265,19 @@
    Barcha ranglar token orqali; hex/rgba literal faqat spec ruxsat
    bergan 2 dekorativ gradient + media ustidagi oq matn/skrimlar.
    ============================================================ */
-/* A · SAHIFA */
-.fhome{min-height:100%;padding:14px;background:radial-gradient(circle at 82% 0%,var(--accent-soft),transparent 30%),var(--bg-deep)}
-/* B · TOPLINE */
+/* A · SAHIFA — SC_07: to'liq-bo'y flex ustun; qolgan bo'shliq seksiyalar ORASIGA
+   taqsimlanadi (space-between), oxirida qora bo'shliq qolmaydi. */
+.fhome{min-height:100%;padding:16px 16px 28px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(circle at 82% 0%,var(--accent-soft),transparent 30%),var(--bg-deep)}
+/* SC_07: min-height:100% ishlashi uchun balandlik zanjiri (scroll-area → homePage → homeMain) */
+html.home-mode #homePage{display:flex!important;flex-direction:column;min-height:100%}
+#homeMain{display:flex;flex-direction:column;flex:1;min-height:0}
+#homeMain>.fhome{flex:1}
+/* B · TOPLINE — SC_07: salom endi ODDIY jumla (mono-caps mikromatn emas), balans dublikati o'chirildi */
 .fhome-top{min-height:30px;margin-bottom:10px;display:flex;align-items:center}
-.fhome-greet{min-width:0;color:var(--muted);font:700 8px/1.2 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fhome-greet strong{color:var(--text);font-weight:700}
-.fhome-bal{margin-left:auto;padding:6px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface);display:flex;align-items:center;white-space:nowrap}
-.fhome-bal span{margin-right:6px;color:var(--faint);font:700 7px/1 var(--font-mono);letter-spacing:.08em}
-.fhome-bal strong{color:var(--accent);font:750 9px/1 var(--font-mono)}
-/* C · HERO */
-.fhome-hero{height:290px;margin-bottom:16px;padding:16px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;display:flex;align-items:flex-end}
+.fhome-greet{min-width:0;color:var(--text-2);font:500 14px/1.3 var(--font-sans);letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-greet strong{color:var(--text);font-weight:650}
+/* C · HERO — SC_07: panel bo'yi bilan o'sadi (klamp); qisqa panellar pastdagi media query'larda ixcham */
+.fhome-hero{height:clamp(260px,38vh,460px);margin-bottom:16px;padding:16px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;display:flex;align-items:flex-end;flex:none}
 .fhome-hero-art{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(135deg,#101a35 0%,#5b3d83 47%,#e5695b 100%);background-size:cover;background-position:center;transition:transform .32s var(--ease)}
 .fhome-hero:hover .fhome-hero-art{transform:scale(1.025)}
 .fhome-hero:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(4,5,9,.9),rgba(4,5,9,.55) 52%,rgba(4,5,9,.06)),linear-gradient(0deg,rgba(4,5,9,.8),transparent 60%)}
@@ -293,50 +295,55 @@
 .fhome-sechd h2{min-width:0;margin:0;color:var(--text);font:650 14px/1.15 var(--font-display);letter-spacing:-.02em}
 .fhome-browse{margin-left:auto;padding:0;border:0;background:transparent;color:var(--accent);font:700 10px/1.2 var(--font-sans);white-space:nowrap;cursor:pointer}
 .fhome-browse:hover{text-decoration:underline}
-/* E · ACTION KARTALARI */
-.fhome-cards{display:grid;grid-template-columns:1fr;grid-gap:10px}
-.fhome-card{width:100%;min-width:0;min-height:150px;padding:14px;border:1px solid var(--border);border-radius:15px;background:var(--surface);color:var(--text);text-align:left;position:relative;overflow:hidden;cursor:pointer;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
-.fhome-card:hover,.fhome-card:focus{transform:translateY(-2px);border-color:var(--accent);outline:0}
-.fhome-card>*{position:relative;z-index:1}
-.fhome-card.is-ai{border-color:var(--accent);box-shadow:0 14px 38px var(--glow)}
-.fhome-card.is-ai:before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;z-index:0;background:radial-gradient(circle at 88% 0%,var(--glow),transparent 38%)}
-.fhome-card.is-stock:before{content:"";position:absolute;z-index:0;width:88px;height:54px;right:14px;top:14px;border:1px solid rgba(255,255,255,.2);border-radius:9px;background:linear-gradient(135deg,#17264c,#7c427e 56%,#ee7b57);transform:rotate(6deg);opacity:.7}
-.fhome-card-top{display:flex;align-items:center}
-.fhome-card-ic{width:31px;height:31px;flex:0 0 auto;border:1px solid var(--border);border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font:750 11px/1 var(--font-mono)}
-.fhome-card-tag{margin-left:8px;color:var(--faint);font:700 7px/1 var(--font-mono);letter-spacing:.09em;text-transform:uppercase}
-.fhome-card-bdg{margin-left:auto;padding:4px 6px;border:1px solid var(--border);border-radius:999px;background:rgba(5,6,10,.54);color:var(--text-2);font:700 6px/1 var(--font-mono);letter-spacing:.06em;white-space:nowrap}
-.fhome-card h3{margin:14px 0 5px;font:650 16px/1.1 var(--font-display);letter-spacing:-.02em}
-.fhome-card p{max-width:240px;margin:0;color:var(--muted);font:400 9px/1.45 var(--font-sans)}
-.fhome-card-go{display:inline-flex;align-items:center;min-height:30px;margin-top:12px;padding:0 11px;border-radius:999px;background:var(--surface-3);color:var(--text);font:750 7px/1 var(--font-mono);letter-spacing:.04em}
-.fhome-card.is-ai .fhome-card-go{background:var(--accent);color:var(--on-accent)}
-/* F · FRESH JAVONI */
-.fhome-shelf{display:flex;overflow-x:auto;padding-bottom:4px}
-.fhome-shelf::-webkit-scrollbar{width:0;height:0}
-.fhome-tcard{width:195px;flex:0 0 auto;margin-right:10px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+/* E · "JUMP BACK IN" STRIP — SC_07: oxirgi 6 gen, KATTA havodor kafelka.
+   ("Start your next project" action kartalari o'chirildi — hero CTA dublikatlari edi.) */
+.fhome-recent{display:flex;gap:16px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.fhome-recent::-webkit-scrollbar{width:0;height:0}
+.fhome-rcard{flex:0 0 auto;width:200px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.fhome-rcard:focus{outline:0}
+.fhome-rmedia{display:block;height:150px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:14px;background-color:var(--surface-2);background-size:cover;background-position:center;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
+.fhome-rcard:hover .fhome-rmedia{transform:translateY(-2px);border-color:var(--accent)}
+.fhome-rmedia.aud{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-2),var(--surface-3))}
+.fhome-rplay{position:absolute;left:10px;bottom:8px;color:#fff;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.fhome-raud{color:var(--muted);font-size:22px}
+.fhome-rmeta{display:flex;align-items:baseline;gap:8px;margin:8px 2px 0;min-width:0}
+.fhome-rmeta b{font:650 10.5px/1.3 var(--font-sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-rmeta i{margin-left:auto;font:400 9px/1.3 var(--font-sans);font-style:normal;color:var(--muted);white-space:nowrap}
+/* F · FRESH JAVONI — SC_07: ko'p-qatorli KATTA kartalar grid'i (bir qatorli strip emas) */
+.fhome-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.fhome-tcard{width:auto;min-width:0;margin:0;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
 .fhome-tcard:focus{outline:0}
-.fhome-tmedia{display:block;height:116px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:12px;background-color:var(--surface-2);background-size:cover;background-position:center;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
+.fhome-tmedia{display:block;aspect-ratio:16/9;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:14px;background-color:var(--surface-2);background-size:cover;background-position:center;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
 .fhome-tcard:hover .fhome-tmedia,.fhome-tcard:focus .fhome-tmedia{transform:translateY(-2px);border-color:var(--accent)}
-.fhome-tbadge{position:absolute;top:8px;left:8px;padding:4px 6px;border-radius:999px;background:rgba(4,5,8,.7);color:#fff;font:700 6px/1 var(--font-mono);letter-spacing:.07em}
+.fhome-tbadge{position:absolute;top:8px;left:8px;padding:4px 7px;border-radius:999px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.07em}
 .fhome-tbadge.pro{background:var(--accent);color:var(--on-accent)}
+/* SC_07: rezolyutsiya chipi — media ustida (matn qatori o'rniga) */
+.fhome-tres{position:absolute;right:8px;bottom:8px;padding:4px 6px;border-radius:6px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.05em}
 .fhome-tdur{position:absolute;right:8px;bottom:8px;padding:4px 5px;border-radius:5px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono)}
-.fhome-tcard h3{margin:8px 1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:650 10px/1.3 var(--font-sans)}
-.fhome-tcard p{margin:4px 1px 0;color:var(--muted);font:650 7px/1.3 var(--font-mono);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* Skelet (katalog yuklanmoqda) — shimmer var(--surface-2) */
-.fhome-tskel-media{display:block;height:116px;border:1px solid var(--hair);border-radius:12px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
-.fhome-tskel-line{display:block;height:9px;margin:9px 1px 0;border-radius:4px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
-.fhome-tskel-line.s{width:60%;height:7px;margin-top:6px}
+.fhome-tcard h3{margin:9px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:650 11.5px/1.35 var(--font-sans)}
+/* "Browse all →" ghost karta — javon oxiri */
+.fhome-tghost{display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;border:1px dashed var(--border);border-radius:14px;background:transparent;color:var(--accent);font:700 12px/1 var(--font-sans);cursor:pointer;transition:border-color var(--motion-fast) var(--ease)}
+.fhome-tghost:hover{border-color:var(--accent)}
+/* Skelet (katalog yuklanmoqda) — yangi karta o'lchamida shimmer */
+.fhome-tskel-media{display:block;aspect-ratio:16/9;border:1px solid var(--hair);border-radius:14px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
+.fhome-tskel-line{display:block;height:10px;margin:9px 2px 0;border-radius:4px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
 @keyframes fhome-shimmer{from{background-position:180% 0}to{background-position:-80% 0}}
-/* G · RESPONSIVE — kenglik 600+: 2 ustunli action kartalar */
-@media (min-width:600px){
-  .fhome-cards{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+/* G · RESPONSIVE */
+/* Baland panellar: hero copy bir pog'ona kattaroq (klamp qadam) */
+@media (min-height:760px){
+  .fhome-hero-copy h1{font-size:34px}
+  .fhome-sub{font-size:11px}
+  .fhome-sechd{margin-top:22px}
 }
-/* Kenglik ≤340: sahifa 12px, hero H1 26px, kartalar 12px */
+/* Kenglik ≤340: sahifa 12px, hero H1 26px */
 @media (max-width:340px){
-  .fhome{padding:12px}
+  .fhome{padding:12px 12px 24px}
   .fhome-hero-copy h1{font-size:26px}
-  .fhome-card{padding:12px}
+  .fhome-recent{gap:12px}
+  .fhome-rcard{width:170px}
+  .fhome-rmedia{height:120px}
 }
-/* Bo'y ≤620: hero 210px */
+/* Bo'y ≤620: hero 210px (bugungi ixcham xatti saqlanadi) */
 @media (max-height:620px){
   .fhome-hero{height:210px}
 }
