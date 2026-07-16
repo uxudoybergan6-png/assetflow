@@ -2610,7 +2610,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .view.on{display:block;animation:fade .18s ease}
 .axroot from{opacity:0;transform:translateY(4px)}
 .axroot to{opacity:1}
-.axroot .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:2px 2px 9px;display:flex;align-items:center;font-family:var(--font-mono)}
+/* SC_18: mono-caps mikro-label → app standart bo'lim sarlavhasi (sentence case) */
+.axroot .lbl{font-size:12px;letter-spacing:-.01em;text-transform:none;color:var(--text);font-weight:650;margin:2px 2px 9px;display:flex;align-items:center;font-family:var(--font-sans)}
 .axroot .lbl .more{margin-left:auto;color:var(--blue);cursor:pointer;letter-spacing:0;text-transform:none}
 .axroot .ai-entry{display:flex;align-items:center;gap:11px;background:linear-gradient(110deg,var(--accent-soft),var(--surface) 70%);border:1px solid var(--acc2);border-radius:14px;padding:14px;margin:13px 0 16px;cursor:pointer}
 .axroot .ai-entry:hover{box-shadow:0 0 18px var(--glow)}
@@ -2936,7 +2937,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .ig-hist{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer;flex:0 0 auto}
 .axig .ig-hist:hover{color:var(--txt);border-color:var(--mut2)}
 .axig .igscroll{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 2px 4px;overflow-y:auto}
-.axig .lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);font-weight:700;margin:0 2px 9px;display:flex;align-items:center;font-family:var(--font-mono)}
+.axig .lbl{font-size:12px;letter-spacing:-.01em;text-transform:none;color:var(--text);font-weight:650;margin:0 2px 9px;display:flex;align-items:center;font-family:var(--font-sans)}
 .axig .lbl .meta{margin-left:auto;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:500}
 .axig .lbl .clearbtn,.axvg .lbl .clearbtn{display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:4px 10px 4px 8px;border-radius:20px;background:var(--card3);border:1px solid var(--line2);color:var(--mut);font-weight:600;transition:.15s}
 .axig .lbl .clearbtn:hover,.axvg .lbl .clearbtn:hover{color:#fff;background:var(--red);border-color:var(--red)}
@@ -3767,12 +3768,9 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-view .axig{flex:1;min-height:0;display:flex;flex-direction:column}
 .axws{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:radial-gradient(circle at 52% 0%,var(--accent-soft),transparent 34%),var(--bg-deep)}
 /* ── Session strip ── */
-.axws-strip{flex:0 0 auto;min-height:43px;padding:7px 9px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:5px;overflow-x:auto;white-space:nowrap;-ms-overflow-style:none;scrollbar-width:none}
-.axws-strip::-webkit-scrollbar{display:none}
-.axws-sbtn{flex:0 0 auto;min-height:28px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font-family:inherit;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer;transition:border-color .14s,color .14s,background .14s}
-.axws-sbtn:hover,.axws-sbtn.active{border-color:var(--accent);color:var(--text);background:var(--accent-soft)}
-.axws-sbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.axws-sbtn.primary:hover{filter:brightness(1.06)}
+/* SC_18: session chip-strip CSS o'chirildi. Yangi: workspace back tugmasi (→ session picker) */
+.axws-back{flex:0 0 auto;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;padding:0}
+.axws-back:hover{border-color:var(--accent);color:var(--text)}
 /* ── Viewbar ── */
 .axws-viewbar{flex:0 0 auto;min-height:48px;padding:7px 9px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px}
 .axws-tabs{flex:0 0 auto;padding:3px;border:1px solid var(--border);border-radius:10px;background:var(--surface);display:flex;gap:3px}
@@ -3909,7 +3907,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
   .axws-empty h2{font-size:17px}
   .axws-dock{margin-bottom:7px;padding:10px 12px}
   .axws-bal{margin-top:7px}
-  .axws-strip,.axws-viewbar{min-height:40px}
+  .axws-viewbar{min-height:40px}
 }
 </style>
 </head>
@@ -4320,6 +4318,24 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                       <!-- SC_17: oraliq "AI KATEGORIYA" (v-aicat) ekrani O'CHIRILDI — launcher
                            kartasi generatorni to'g'ridan ochadi (aiOpenCat ham o'chirilgan). -->
 
+                      <!-- SC_18: SESSION PICKER — gen tool ochilganda BIRINCHI ekran (Director
+                           qarori; SC_17 "direct" landing'ini supersede qiladi). 0 sessiya →
+                           picker o'tkazib yuboriladi (workspace to'g'ridan; sessiya birinchi
+                           genda yaratiladi). Ma'lumot: mavjud sp.sessions (yangi API yo'q). -->
+                      <section id="v-spick" class="view">
+                        <div class="ai-hdr">
+                          <button type="button" class="hd-home" data-go="main" title="Home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z"/></svg></button>
+                          <button type="button" class="ai-back" data-go="launcher" title="AI Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                          <span class="ai-ttl" id="spickTitle">Sessions</span>
+                          <div class="ai-hdr-c"></div>
+                          <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                        </div>
+                        <div class="axsp">
+                          <div class="sp-lead"><span class="t">Continue a session</span><span class="meta" id="spickMeta"></span><button type="button" class="sp-new" id="spickNew">＋ New session</button></div>
+                          <div id="spickList"></div>
+                        </div>
+                      </section>
+
                       <!-- RASM YARATISH (tool-image.html 1:1, .axig scope) -->
                       <section id="v-imggen" class="view axws-view">
                         <div class="axig">
@@ -4327,14 +4343,15 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                           <div class="axws">
                             <!-- #igBack: eski launcher tugmasi — JS binding (12430) uchun saqlanadi, workspace'да yashirin -->
                             <button type="button" class="ai-back" id="igBack" title="AI Tools" style="display:none"></button>
-                            <div class="axws-strip" id="igStrip"></div>
+                            <!-- SC_18: session chip-strip o'chirildi — sessiya almashish faqat back → picker -->
                             <div class="axws-viewbar">
+                              <button type="button" class="axws-back" onclick="if(window.afSessionPicker)afSessionPicker('image')" title="Sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                               <div class="axws-tabs">
                                 <button type="button" class="axws-tab active" id="igTabVis" title="Visual generations">Visuals <span class="ct" id="igTabVisCt">0</span></button>
                                 <button type="button" class="axws-tab" id="igTabAud" onclick="if(window.axGo)window.axGo('audgen')" title="Audio generations">Audio <span class="ct" id="igTabAudCt">0</span></button>
                               </div>
                               <div class="axws-meta"><strong id="igViewT">NEW SESSION</strong><span id="igViewS">Describe an idea below</span></div>
-                              <div class="axws-density" id="igDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
+                              <div class="axws-density" id="igDensity"><button type="button" data-dense="toggle" title="Card size"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg></button></div>
                               <div class="axws-tools">
                                 <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
                                 <div class="ai-icon" id="igHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
@@ -4409,7 +4426,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                   <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate<span class="costtag" id="igCost">✦—</span></button>
                                 </div>
                               </div>
-                              <div class="axws-bal">BALANCE <span class="ai-cred" id="igCredit"><span class="cs">✦</span> —</span><button type="button" class="axws-topup" data-go="settings">＋ Top up</button></div>
+                              <!-- SC_18: BALANCE qatori o'chirildi — doimiy top-bar kredit chipi bor; Generate narx yorlig'i qoladi -->
                             </div>
                           </div>
 
@@ -4467,14 +4484,15 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                           <!-- #R1: video workspace anatomiyasi — barcha vg id saqlangan; frames = refs strip. -->
                           <div class="axws">
                             <button type="button" class="ai-back" id="vgBack" title="AI Tools" style="display:none"></button>
-                            <div class="axws-strip" id="vgStrip"></div>
+                            <!-- SC_18: session chip-strip o'chirildi — sessiya almashish faqat back → picker -->
                             <div class="axws-viewbar">
+                              <button type="button" class="axws-back" onclick="if(window.afSessionPicker)afSessionPicker('video')" title="Sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                               <div class="axws-tabs">
                                 <button type="button" class="axws-tab active" id="vgTabVis" title="Visual generations">Visuals <span class="ct" id="vgTabVisCt">0</span></button>
                                 <button type="button" class="axws-tab" id="vgTabAud" onclick="if(window.axGo)window.axGo('audgen')" title="Audio generations">Audio <span class="ct" id="vgTabAudCt">0</span></button>
                               </div>
                               <div class="axws-meta"><strong id="vgViewT">NEW SESSION</strong><span id="vgViewS">Video mode</span></div>
-                              <div class="axws-density" id="vgDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
+                              <div class="axws-density" id="vgDensity"><button type="button" data-dense="toggle" title="Card size"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg></button></div>
                               <div class="axws-tools">
                                 <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
                                 <div class="ai-icon" id="vgHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
@@ -4515,11 +4533,11 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                               <div class="sect" id="vgFrameSect">
                                 <div class="vg-lblrow"><span class="vg-lbl">Frames</span><span class="kadrtag" id="vgKadrTag" style="display:none">FAST</span></div>
                                 <div class="frames">
-                                  <div class="frame"><div class="fbox" id="vgStartBox"></div><div class="fcap">Start</div></div>
-                                  <div class="frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">End (optional)</div></div>
+                                  <div class="frame" title="Add a start frame, then write a prompt to generate a video"><div class="fbox" id="vgStartBox"></div><div class="fcap">Start</div></div>
+                                  <div class="frame" title="Optional — pick an end frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">End (optional)</div></div>
                                 </div>
                               </div>
-                              <div class="axws-refmeta"><span class="rc-hint" id="vgGuide"><b>Fast:</b> Add a start frame, write a prompt, and generate a video.</span></div>
+                              <!-- SC_18: "Fast: ..." explainer o'chirildi — hint kadr slotlari title/placeholder'ida -->
                               <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                               <div class="mention" id="vgMention"></div>
                               <div class="axws-promptwrap"><div class="chipwrap">
@@ -4550,7 +4568,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                 </div>
                               </div>
                               <div class="genhint" style="margin-top:6px">≈ 1–2 min · credits refunded on error</div>
-                              <div class="axws-bal">BALANCE <span class="ai-cred" id="vgCredit"><span class="cs">✦</span> —</span><button type="button" class="axws-topup" data-go="settings">＋ Top up</button></div>
+                              <!-- SC_18: BALANCE qatori o'chirildi — doimiy top-bar kredit chipi bor; Generate narx yorlig'i qoladi -->
                             </div>
                           </div>
 
@@ -4656,14 +4674,15 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                         <div class="axig">
                           <!-- #R1: audio workspace anatomiyasi — barcha ag id saqlangan. -->
                           <div class="axws">
-                            <div class="axws-strip" id="agStrip"></div>
+                            <!-- SC_18: session chip-strip o'chirildi — sessiya almashish faqat back → picker -->
                             <div class="axws-viewbar">
+                              <button type="button" class="axws-back" onclick="if(window.afSessionPicker)afSessionPicker('audio')" title="Sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
                               <div class="axws-tabs">
                                 <button type="button" class="axws-tab" id="agTabVis" onclick="if(window.axGo)window.axGo('imggen')" title="Visual generations">Visuals <span class="ct" id="agTabVisCt">0</span></button>
                                 <button type="button" class="axws-tab active" id="agTabAud" title="Audio generations">Audio <span class="ct" id="agTabAudCt">0</span></button>
                               </div>
                               <div class="axws-meta"><strong id="agViewT">NEW SESSION</strong><span id="agViewS">Audio mode</span></div>
-                              <div class="axws-density" id="agDensity"><button type="button" class="active" data-dense="2" title="2 columns">2×</button><button type="button" data-dense="1" title="1 column">1×</button></div>
+                              <div class="axws-density" id="agDensity"><button type="button" data-dense="toggle" title="Card size"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg></button></div>
                               <div class="axws-tools">
                                 <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
                                 <div class="ai-icon" id="agHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
@@ -4730,7 +4749,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                   <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate<span class="costtag" id="agCost">✦—</span></button>
                                 </div>
                               </div>
-                              <div class="axws-bal">BALANCE <span class="ai-cred" id="agCredit"><span class="cs">✦</span> —</span><button type="button" class="axws-topup" data-go="settings">＋ Top up</button></div>
+                              <!-- SC_18: BALANCE qatori o'chirildi — doimiy top-bar kredit chipi bor; Generate narx yorlig'i qoladi -->
                             </div>
                           </div>
                         </div>
@@ -11394,11 +11413,12 @@ async function bootPlugin(){
       var mEl=el.querySelector('.cat-media video,.cat-media img');
       if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
       el.addEventListener('click',function(){
-        // SC_17: launcher kartasi generator workspace'ni TO'G'RIDAN ochadi —
-        // oraliq kategoriya ekrani (aiOpenCat/v-aicat) o'chirilgan.
+        // SC_17: oraliq kategoriya ekrani yo'q. SC_18 (supersede): kirish qadami =
+        // SESSION PICKER (0 sessiya bo'lsa picker o'zi workspace'ga avto-o'tadi).
         var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
-        if(live.length){ go(live[0].dest); return; }
-        aiSoonToast();
+        if(!live.length){ aiSoonToast(); return; }
+        if(typeof window.afSessionPicker==='function'){ window.afSessionPicker(c.id); return; }
+        go(live[0].dest); // fallback — picker moduli yo'q bo'lsa
       });
       g.appendChild(el);
     });
@@ -11758,6 +11778,7 @@ window.afGallery=(function(){
   }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
   window.axIGNewSession=function(){ st.sessionId=null; }; // P1: New session
+  window.axIGSetSession=function(id){ st.sessionId=id||null; }; // SC_18: picker'dan sessiya davomi
   window.axIGRefresh=refresh;
 
   // SC_17: Upscale (selectUpscaleModel/igStartUpscale/afIgUpscale/axIGSelectUpscale)
@@ -14725,6 +14746,7 @@ window.afGallery=(function(){
   // FIX H: rasm tool (axIGRefresh) bilan bir xil — view har ochilganda kredit sinxron + model
   // yuklanmagan bo'lsa QAYTA uriniladi (avval birinchi fetch xatosi tool'ni butunlay o'chirib qo'yardi)
   window.axVGNewSession=function(){ vm.sessionId=null; }; // P1: New session
+  window.axVGSetSession=function(id){ vm.sessionId=id||null; }; // SC_18: picker'dan sessiya davomi
   window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); };
 
   ensureVgMeta().catch(function(){});
@@ -14918,6 +14940,7 @@ window.afGallery=(function(){
 
   window.axAGTeardown=function(){ Object.keys(ag.pollTimers).forEach(function(k){ clearTimeout(ag.pollTimers[k]); delete ag.pollTimers[k]; }); };
   window.axAGNewSession=function(){ ag.sessions={}; }; // P1: New session
+  window.axAGSetSession=function(mode,id){ ag.sessions={}; if(mode&&id)ag.sessions[mode]=id; }; // SC_18: picker'dan sessiya davomi
   window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
   // P25 — logout/boshqa hisob login: eski foydalanuvchining audio-gen tarixi grid'da qolib ketmasin
   window.axAGClearRecent=function(){ ag.recent=[]; ag.recentLoaded=false; renderAgRecent(); };
@@ -15285,6 +15308,69 @@ window.afGallery=(function(){
     api.sessions().then(function(r){ sp.sessions=(r&&r.items)||[]; sp.sLoaded=true; sp.sLoading=false; if(cb)cb(); })
       .catch(function(){ sp.sLoading=false; if(cb)cb(); });
   };
+
+  // ══ SC_18: SESSION PICKER — gen tool'ning kirish qadami (Director qarori) ══
+  // afSessionPicker(mode): shu mode sessiyalari bo'lsa picker; 0 bo'lsa to'g'ridan
+  // workspace (auto — sessiya birinchi genda mavjud lazy yo'lda yaratiladi).
+  var SPICK_DEST={image:'imggen',video:'vidgen',audio:'audgen'};
+  var spickMode=null;
+  function spickMatch(mode,s){
+    var m=String((s&&s.mode)||'');
+    if(mode==='audio')return m==='voice'||m==='sfx'||m==='music'||m==='audio';
+    return m===mode;
+  }
+  function spickEnter(mode,sess){
+    // Tool sessiyasini o'rnatish — mavjud setter/reset yo'llari (yangi API yo'q)
+    window.__axwsSess=window.__axwsSess||{};
+    window.__axwsSess[SPICK_DEST[mode]]=sess||null;
+    try{
+      if(mode==='image'&&typeof window.axIGSetSession==='function')window.axIGSetSession(sess?sess.id:null);
+      if(mode==='video'&&typeof window.axVGSetSession==='function')window.axVGSetSession(sess?sess.id:null);
+      if(mode==='audio'&&typeof window.axAGSetSession==='function')window.axAGSetSession(sess?(sess.mode||'voice'):null,sess?sess.id:null);
+    }catch(e){}
+    if(typeof window.axGo==='function')window.axGo(SPICK_DEST[mode]);
+  }
+  function renderSpick(mode){
+    var l=$('spickList'), meta=$('spickMeta'), ttl=$('spickTitle'); if(!l)return;
+    var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
+    if(ttl)ttl.textContent=(mode==='image'?'Image':mode==='video'?'Video':'Audio')+' sessions';
+    if(meta)meta.textContent=list.length?(list.length+' sessions'):'';
+    l.innerHTML='';
+    list.forEach(function(s){
+      var row=document.createElement('div'); row.className='sp-row';
+      var cov=document.createElement('span'); cov.className='sp-cov';
+      if(s.coverUrl)cov.style.backgroundImage='url("'+s.coverUrl+'")';
+      else cov.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>';
+      row.appendChild(cov);
+      var tx=document.createElement('span'); tx.className='sp-tx'; tx.innerHTML='<b></b><small></small>';
+      tx.querySelector('b').textContent=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'Session');
+      tx.querySelector('small').textContent=(s.count||0)+' generations'+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
+      row.appendChild(tx);
+      row.addEventListener('click',function(){ spickEnter(mode,s); });
+      l.appendChild(row);
+    });
+  }
+  window.afSessionPicker=function(mode){
+    if(!SPICK_DEST[mode]){ if(typeof window.axGo==='function')window.axGo('launcher'); return; }
+    spickMode=mode;
+    var decide=function(){
+      var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
+      if(!list.length){ spickEnter(mode,null); return; } // 0 sessiya → picker o'tkazib yuboriladi (auto)
+      renderSpick(mode);
+      var cur=document.querySelector('.axroot .view.on');
+      if(!cur||cur.id!=='v-spick'){ if(typeof window.axGo==='function')window.axGo('spick'); }
+    };
+    if(sp.sLoaded){ decide(); return; }
+    // Yuklanmoqda: picker "Loading…" bilan ochiladi; ro'yxat kelgach 0 bo'lsa avto-enter
+    var l=$('spickList'); if(l)l.innerHTML='<div class="sp-empty">Loading…</div>';
+    var ttl=$('spickTitle'); if(ttl)ttl.textContent=(mode==='image'?'Image':mode==='video'?'Video':'Audio')+' sessions';
+    if(typeof window.axGo==='function')window.axGo('spick');
+    window.axwsEnsureSessions(function(){
+      var stillHere=document.querySelector('.axroot .view.on');
+      if(stillHere&&stillHere.id==='v-spick')decide();
+    });
+  };
+  var snb=$('spickNew'); if(snb)snb.addEventListener('click',function(){ if(spickMode)spickEnter(spickMode,null); });
 })();
 
 /* ===== P11 — PLAGIN UPDATE TIZIMI (in-panel bildirishnoma + o'rnatish) =====
@@ -15438,9 +15524,12 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var n=recentCount(cfg);
     var vc=$(cfg.visCt), ac=$(cfg.audCt);
     if(isAud){ if(ac)ac.textContent=n; } else { if(vc)vc.textContent=n; }
+    // SC_18: header meta — sessiya NOMI + kichik "mode · N generations" (chip-strip o'rniga)
     var mt=$(cfg.meta), ms=$(cfg.subEl);
-    if(mt)mt.textContent=n?('SESSION · '+n+' GENERATION'+(n>1?'S':'')):'NEW SESSION';
-    if(ms)ms.textContent=n?('Updated · '+cfg.sub):(n===0&&cfg.mode!=='image'?cfg.sub:'Describe an idea below');
+    var sess=(window.__axwsSess||{})[cfg.v]||null;
+    var sname=sess?((typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(sess):(sess.title||'Session')):'New session';
+    if(mt)mt.textContent=sname;
+    if(ms)ms.textContent=cfg.mode+' · '+n+' generation'+(n===1?'':'s');
   }
   function syncEmpty(cfg){
     var emp=$(cfg.empty); if(!emp)return;
@@ -15458,22 +15547,9 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var res=$(cfg.res); if(res)mo.observe(res,{attributes:true,attributeFilter:['class']});
     observed[cfg.v]=mo;
   }
-  // Session-strip — mavjud sessiya ma'lumoti (axwsGetSessions) bilan.
-  function renderStrip(cfg){
-    var el=$(cfg.strip); if(!el)return;
-    function build(){
-      var list=(window.axwsGetSessions?window.axwsGetSessions():[])||[];
-      el._list=list;
-      var h='<button type="button" class="axws-sbtn primary" data-axws="new">＋ New</button>'
-           +'<button type="button" class="axws-sbtn" data-axws="library">My Library</button>'
-           +'<button type="button" class="axws-sbtn" data-axws="projects">Projects</button>';
-      if(list.length){ for(var i=0;i<list.length;i++){ var s=list[i]; h+='<button type="button" class="axws-sbtn'+(i===0?' active':'')+'" data-axws="sess" data-si="'+i+'" title="Open session">'+esc(s.title||('Session '+(i+1)))+'</button>'; } }
-      else { h+='<button type="button" class="axws-sbtn active" data-axws="cur">Untitled session</button>'; }
-      el.innerHTML=h;
-    }
-    build();
-    if(window.axwsEnsureSessions)window.axwsEnsureSessions(function(){ build(); });
-  }
+  // SC_18: renderStrip (session chip-strip) O'CHIRILDI — sessiya almashish faqat
+  // back → session picker orqali (bitta mental model). My Library/Projects o'z
+  // joylarida (top-bar / launcher).
   function closePops(){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++)ps[i].classList.remove('open'); }
 
   // go() dan chaqiriladi — active composer view'ini sozlaydi.
@@ -15483,7 +15559,6 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var ax=document.querySelector('.axroot'); if(ax)ax.classList.toggle('axws-tool',!!VIEWS[id]);
     var ap=document.getElementById('aiPage'); if(ap)ap.classList.toggle('axws-tool',!!VIEWS[id]); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
     var cfg=VIEWS[id]; if(!cfg)return;
-    renderStrip(cfg);
     ensureObserver(cfg);
     syncEmpty(cfg);
   };
@@ -15503,18 +15578,10 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
       else if(m==='sfx'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeSfx'); if(b)b.click(); },30); }
       // SC_17: 'upscale' mode olib tashlandi (funksiya butunlay o'chirildi)
       return; }
-    // session-strip tugmalari
-    var sb=t.closest&&t.closest('[data-axws]');
-    if(sb){ var k=sb.getAttribute('data-axws');
-      if(k==='new'){ try{ if(window.afResetToolSessions)window.afResetToolSessions(); }catch(err){} toast('New session — your next generation starts fresh','success'); var host=sb.parentNode; setTimeout(function(){ var cfg2=curCfg(); if(cfg2)renderStrip(cfg2); },20); }
-      else if(k==='library'){ if(window.axGo)window.axGo('history'); }
-      else if(k==='projects'){ if(window.axGo)window.axGo('projects'); }
-      else if(k==='sess'){ var host2=sb.parentNode, list=host2&&host2._list, si=parseInt(sb.getAttribute('data-si'),10); if(list&&list[si]&&window.axwsOpenSession)window.axwsOpenSession(list[si]); }
-      return; }
-    // zichlik (density)
+    // SC_18: session-strip tugmalari ([data-axws]) o'chirildi — strip yo'q.
+    // zichlik (density) — SC_18: bitta ixcham toggle (2× ↔ 1×)
     var db=t.closest&&t.closest('[data-dense]');
-    if(db){ var host3=db.parentNode, cfg3=cfgByDensity(host3); if(cfg3){ var one=(db.getAttribute('data-dense')==='1'); var r=$(cfg3.recent); if(r)r.classList.toggle('dense1',one);
-      var btns=host3.querySelectorAll('button'); for(var j=0;j<btns.length;j++)btns[j].classList.remove('active'); db.classList.add('active'); } return; }
+    if(db){ var host3=db.parentNode, cfg3=cfgByDensity(host3); if(cfg3){ var r=$(cfg3.recent); if(r){ r.classList.toggle('dense1'); db.classList.toggle('active',r.classList.contains('dense1')); } } return; }
     // taklif chiplari (suggestion) → promptga qo'yamiz
     var sg=t.closest&&t.closest('.axws-sugg button');
     if(sg){ var box=t.closest('.axws-sugg'), pid=box&&box.getAttribute('data-prompt-target'), p=pid&&$(pid);
