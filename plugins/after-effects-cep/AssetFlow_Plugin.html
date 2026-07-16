@@ -2622,6 +2622,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* ── AI Tools kategoriya kartalari (2×2) — mockup b1 verbatim ── */
 .axroot .cats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .axroot .cat{border-radius:14px;background:var(--surface);border:1px solid rgba(255,255,255,.08);padding:14px;position:relative;overflow:hidden;cursor:pointer;text-align:left}
+/* SC_04: CMS fon media — matn/glow OSTIDA cover qatlam + o'qilishlik skrimi (3 temada ham) */
+.axroot .cat .cat-media{position:absolute;inset:0;pointer-events:none}
+.axroot .cat .cat-media img,.axroot .cat .cat-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.axroot .cat .cat-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,5,9,.55),rgba(4,5,9,.78))}
 .axroot .cat:active{transform:scale(.98)}
 .axroot .cat .cat-glow{position:absolute;inset:0;pointer-events:none}
 .axroot .cat .cat-in{position:relative}
@@ -7599,13 +7603,16 @@ function renderHome(){
   if(main)main.style.display=logged?'':'none';
   if(guest)guest.style.display=logged?'none':'';
   if(typeof afHdrSyncAll==='function')afHdrSyncAll();
-  if(!logged){ renderHomeGuest(); return; }
+  if(!logged){ renderHomeGuest(); if(typeof afCmsApply==='function')afCmsApply(); return; }
   renderHomeGreeting(u);
   homeFetchLastGen();
   fhomeFetchModels();
   renderHomeHero();
   renderHomeRecent(); // SC_07 — "Jump back in" strip
   renderHomeGrid();
+  // SC_04: login'dan keyin ham CMS matnlari qayta qo'llanadi (idempotent, arzon)
+  if(typeof afCmsApply==='function')afCmsApply();
+  if(typeof window.afCmsTick==='function')window.afCmsTick();
 }
 /* Vaqtga mos salomlashuv + hisobdagi real ism (yo'q bo'lsa ismsiz variant) */
 function renderHomeGreeting(u){
@@ -7636,6 +7643,8 @@ function renderHomeHero(){
   }
   // SC_07: #fhomeAiBadge elementi kartalar bilan birga o'chirildi — jonli narx endi
   // faqat hero chipida (homeBModel, yuqorida) ko'rinadi; yozuv olib tashlandi.
+  // SC_04: CMS hero media ustuvorligi gen-thumb holati o'zgarganda qayta baholanadi
+  if(typeof window.afCmsHeroMedia==='function')window.afCmsHeroMedia();
 }
 /* #H1 — jonli rasm-model katalogi (mavjud /api/studio/gen/models?mode=image endpointi, yangi API emas).
    Featured = isDefault (bo'lmasa 1-chi); narx qoidasi image tool'dagi igModelPrice bilan bir xil
@@ -7665,6 +7674,128 @@ function fhomeFetchModels(){
     if(document.documentElement.classList.contains('home-mode'))renderHomeHero();
   }).catch(function(){ __fhomeModels.inflight=false; __fhomeModels.at=Date.now(); });
 }
+/* ══ SC_04: Plugin CMS — admin-tahrir kontent (matnlar + fon media) ══
+   Manba: GET {API}/api/plugin/content-config (auth YO'Q, 60s server kesh).
+   Oqim: boot'da localStorage keshi SINXRON qo'llanadi (offline birinchi bo'yash
+   oxirgi ko'ringan holat bilan bir xil) → fon fetch (5 daq throttle) → yangi
+   config kelsa qayta qo'llanadi. Xato/endpoint yo'q → joriy matnlar qoladi.
+   Matnlar FAQAT textContent orqali (XSS gigienasi); bo'sh maydon = built-in. */
+var __afCms={cfg:null,at:0,inflight:false};
+var AF_CMS_LS='af.cms.config';
+function afCmsBase(){
+  try{ if(typeof AssetFlowAccount!=='undefined')return AssetFlowAccount.apiBase(); }catch(e){}
+  return (typeof ASSETFLOW_ENV!=='undefined')?ASSETFLOW_ENV.defaultApi():'https://api.getframeflow.app';
+}
+function afCmsSetText(sel,v){
+  if(v==null||String(v)==='')return;
+  var el=document.querySelector(sel); if(el)el.textContent=v;
+}
+/* \n → satr uzilishi: text node + <br> (innerHTML EMAS) */
+function afCmsSetLines(sel,v){
+  if(v==null||String(v)==='')return;
+  var el=document.querySelector(sel); if(!el)return;
+  el.textContent='';
+  String(v).split('\n').forEach(function(line,i){
+    if(i)el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(line));
+  });
+}
+function afCmsApply(){
+  var c=__afCms.cfg; if(!c)return;
+  try{
+    var h=(c.home&&c.home.hero)||{};
+    afCmsSetText('.fhome-kick',h.kicker);
+    afCmsSetText('.fhome-hero-copy h1',h.title);
+    afCmsSetText('.fhome-sub',h.sub);
+    afCmsSetText('.fhome-btn-ai',h.ctaPrimary);
+    afCmsSetText('.fhome-btn-stock',h.ctaSecondary);
+    var s=(c.home&&c.home.sections)||{};
+    afCmsSetText('#fhomeRecentSec .fhome-sechd h2',s.recent);
+    afCmsSetText('#fhomeShelfSec .fhome-sechd h2',s.shelf);
+    afCmsSetText('.fhome-browse',s.browseAll);
+    // Guest ekran (title/sub \n qo'llab-quvvatlaydi; features[3])
+    var g=c.guest||{};
+    afCmsSetLines('#homeGuest .gu-h1',g.title);
+    afCmsSetLines('#homeGuest .gu-sub',g.sub);
+    var feats=g.features||[];
+    var nodes=document.querySelectorAll('#homeGuest .gu-feats .gu-f .tx');
+    feats.forEach(function(f,i){
+      var n=nodes[i]; if(!n||!f)return;
+      if(f.title){ var b=n.querySelector('b'); if(b)b.textContent=f.title; }
+      if(f.sub){ var sm=n.querySelector('small'); if(sm)sm.textContent=f.sub; }
+    });
+    // AI launcher sarlavhasi — birinchi ✦ span saqlanadi, matn qismi almashadi
+    if(c.aiLauncher&&c.aiLauncher.title){
+      var lt=document.querySelector('.ai-launch-t');
+      if(lt){
+        while(lt.childNodes.length>1)lt.removeChild(lt.lastChild);
+        lt.appendChild(document.createTextNode(' '+c.aiLauncher.title));
+      }
+    }
+    // AI launcher kartalari (title/desc/media override) — render AI IIFE ichida o'qiydi
+    window.__afCmsAiCards=(c.aiLauncher&&c.aiLauncher.cards)||null;
+    if(typeof window.__afAiRenderCatGrid==='function')window.__afAiRenderCatGrid();
+    // Hero fon media (mediaMode ustuvorligi renderHomeHero/afCmsHeroMedia'da)
+    afCmsHeroMedia();
+  }catch(e){ try{console.warn('[cms] apply:',e);}catch(_){} }
+}
+/* Hero fon media: media-first → doim admin media; auto → faqat oxirgi gen thumb yo'q bo'lsa.
+   Video xato/kodek muammosi → element o'chadi, mavjud gradient/thumb yo'li ko'rinadi. */
+function afCmsHeroMedia(){
+  var art=document.getElementById('homeBArt'); if(!art)return;
+  var c=__afCms.cfg; var h=c&&c.home&&c.home.hero;
+  var old=art.querySelector('.af-cms-media');
+  var gen=(typeof __homeGen!=='undefined')?__homeGen.it:null;
+  var want=h&&h.mediaUrl&&(h.mediaMode==='media-first'||!(gen&&gen.thumb));
+  if(!want){ if(old)old.remove(); return; }
+  if(old&&old.getAttribute('data-src')===h.mediaUrl)return;
+  if(old)old.remove();
+  var el;
+  if(h.mediaType==='video'){
+    el=document.createElement('video');
+    el.muted=true; el.loop=true; el.autoplay=true; el.playsInline=true;
+    el.setAttribute('muted',''); el.setAttribute('playsinline','');
+    el.src=h.mediaUrl;
+  }else{
+    el=document.createElement('img');
+    el.src=h.mediaUrl; el.alt='';
+  }
+  el.className='af-cms-media'; el.setAttribute('data-src',h.mediaUrl);
+  el.addEventListener('error',function(){ try{el.remove();}catch(e){} });
+  art.appendChild(el);
+}
+window.afCmsHeroMedia=afCmsHeroMedia;
+function afCmsFetch(){
+  if(__afCms.inflight||(Date.now()-__afCms.at<300000))return; // fhomeFetchModels throttle naqshi (5 daq)
+  __afCms.inflight=true;
+  var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+  var to=ctrl?setTimeout(function(){ try{ctrl.abort();}catch(e){} },15000):null;
+  fetch(afCmsBase()+'/api/plugin/content-config',ctrl?{signal:ctrl.signal}:{}).then(function(r){
+    if(!r.ok)throw new Error('http '+r.status);
+    return r.json();
+  }).then(function(d){
+    if(to)clearTimeout(to);
+    __afCms.inflight=false; __afCms.at=Date.now();
+    if(d&&d.config){
+      __afCms.cfg=d.config;
+      try{ localStorage.setItem(AF_CMS_LS,JSON.stringify(d.config)); }catch(e){}
+      afCmsApply();
+    }
+  }).catch(function(){
+    if(to)clearTimeout(to);
+    __afCms.inflight=false; __afCms.at=Date.now(); // xato → jim; joriy matnlar qoladi
+  });
+}
+window.afCmsTick=function(){ afCmsFetch(); };
+// Boot: kesh SINXRON qo'llanadi (instant, offline-safe) + fon fetch + 5-daq davriy yangilash
+try{
+  var __cmsCached=null;
+  try{ __cmsCached=JSON.parse(localStorage.getItem(AF_CMS_LS)||'null'); }catch(e){}
+  if(__cmsCached){ __afCms.cfg=__cmsCached; afCmsApply(); }
+  afCmsFetch();
+  setInterval(afCmsFetch,300000);
+}catch(e){}
+
 function afTimeAgo(ts){
   if(!ts)return '';
   const d=typeof ts==='number'?ts:Date.parse(ts); if(!isFinite(d))return '';
@@ -11202,20 +11333,38 @@ async function bootPlugin(){
   function aiRenderCatGrid(){
     var g=document.getElementById('aiCatGrid'); if(!g)return;
     g.innerHTML='';
-    AI_CATS.forEach(function(c){
+    var cmsEsc=function(v){ return String(v==null?'':v).replace(/[<>&"]/g,function(ch){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[ch];}); };
+    AI_CATS.forEach(function(c,idx){
       // FAZA 5 (C5): jonli tool'i yo'q kategoriya (faza-2 Audio/3D) end user'ga
       // KO'RSATILMAYDI — "COMING SOON" karta o'rniga launcher'da faqat ishlaydigan
       // bo'limlar qoladi. Faza-2 ulanish tayyor bo'lgach AI_CATS'dagi tools[]
       // to'ldiriladi va karta o'z-o'zidan qaytadi.
       var hasTools=c.tools.some(function(t){return !t.soon;});
       if(!hasTools)return;
+      // SC_04: CMS override (title/desc/media) — bo'sh maydon = built-in matn qoladi
+      var ov=(window.__afCmsAiCards&&window.__afCmsAiCards[idx])||null;
+      var nm=(ov&&ov.title)?cmsEsc(ov.title):c.card;
+      var models=(ov&&ov.desc)?cmsEsc(ov.desc):c.models;
+      var mediaHtml='';
+      if(ov&&ov.mediaUrl){
+        var mu=cmsEsc(ov.mediaUrl);
+        mediaHtml='<div class="cat-media">'
+          +(ov.mediaType==='video'
+            ?'<video src="'+mu+'" muted loop autoplay playsinline></video>'
+            :'<img src="'+mu+'" alt="">')
+          +'<span class="cat-scrim"></span></div>';
+      }
       var el=document.createElement('div');
       el.className='cat';
-      el.innerHTML='<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
+      el.innerHTML=mediaHtml
+        +'<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
         +'<div class="cat-in"><span class="cat-ic">'+c.icon+'</span>'
-        +'<div class="cat-nm">'+c.card+'</div>'
-        +'<div class="cat-models">'+c.models+'</div>'
+        +'<div class="cat-nm">'+nm+'</div>'
+        +'<div class="cat-models">'+models+'</div>'
         +'<div class="cat-live"><span class="dot"></span><span class="lt">LIVE</span></div></div>';
+      // SC_04: media yuklanmasa qatlam olib tashlanadi — glow/gradient fon qoladi
+      var mEl=el.querySelector('.cat-media video,.cat-media img');
+      if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
       el.addEventListener('click',function(){
         // #6: bitta tool bo'lsa oradagi ro'yxat ekransiz TO'G'RIDAN tool'ga
         var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
@@ -11225,6 +11374,7 @@ async function bootPlugin(){
       g.appendChild(el);
     });
   }
+  window.__afAiRenderCatGrid=aiRenderCatGrid; // SC_04: CMS config kelganda qayta chizish
   // b1: TARIX strip — real /gen/history thumbnaillari (74×74)
   // FIX G: karta bosilsa O'SHA gen lightbox'da ochiladi (avval Tarix ro'yxatiga olib ketardi)
   function histLbItem(h){
