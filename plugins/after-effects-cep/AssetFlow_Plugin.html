@@ -865,11 +865,12 @@ html.cep-mode .container{min-width:320px}
 }
 .sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
 
+/* SC_24: min karta kengligi 220px — tor panelda 3 mayda ustun chiqmasin */
 .grid{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:14px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;
   padding:14px 14px 18px;
 }
-html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:16px}
+html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 .card{
   background:transparent;border:none;border-radius:0;overflow:visible;
   cursor:grab;transition:transform .2s ease;position:relative;
@@ -992,12 +993,15 @@ html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));ga
    ============================================================ */
 /* Grid — a1: 2 ustun @380px. auto-fill minmax(166px) → 380–430px'da 2 ustun (171px karta),
    keng panelda ustun QO'SHILADI (cho'zilmaydi). aspect-ratio 171/96 → thumb hech cho'zilmaydi. */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:14px 10px;padding:14px 14px 18px}
-html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:14px 10px}
+/* SC_24: min karta kengligi 220-240px oralig'i — 320px panel = 1 ustun, ~500px = 2,
+   ~740px = 3, keng = 4+. Sub-200px karta hech qachon chiqmaydi (live audit: 340px'da
+   3 ustun defekti tuzatildi). Density toggle SAQLANADI, minlari moslashtirildi. */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:14px 12px;padding:14px 14px 18px}
+html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:14px 12px}
 /* Karta zichligi (view density) — auto-fill min-kenglik o'zgaradi (responsive saqlanadi) */
-html.dens-sm .grid,html.dens-sm.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px 8px}
-html.dens-md .grid,html.dens-md.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:14px 10px}
-html.dens-lg .grid,html.dens-lg.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px 12px}
+html.dens-sm .grid,html.dens-sm.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 10px}
+html.dens-md .grid,html.dens-md.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:14px 12px}
+html.dens-lg .grid,html.dens-lg.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px 14px}
 /* density tugma ikonasi — joriy holatga mos bittasi ko'rinadi (default md) */
 .af-dens-btn .dn-ico{display:none}
 .af-dens-btn .dn-md{display:block}
@@ -6112,7 +6116,7 @@ function applyDensityClass(){
   h.classList.remove('dens-sm','dens-md','dens-lg');
   h.classList.add('dens-'+__density);
   const b=document.getElementById('densityBtn');
-  if(b)b.title='Card density: '+(__density==='sm'?'Small (3 columns)':__density==='lg'?'Large (1 column)':'Medium (2 columns)');
+  if(b)b.title='Card density: '+(__density==='sm'?'Compact':__density==='lg'?'Large':'Medium'); // SC_24: ustun soni endi kenglikka bog'liq (auto-fill)
 }
 function afCycleDensity(){
   const order=['md','sm','lg'];
