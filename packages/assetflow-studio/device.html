@@ -116,7 +116,11 @@ function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElemen
     return;
   }
 
-  const apiBase = (window.ASSETFLOW_STUDIO && window.ASSETFLOW_STUDIO.apiUrl) || "";
+  // SC_38: lokal dev'da (localhost:3000) hardcoded prod meta emas — bo'sh baza =
+  // nisbiy /api → dev-studio-server proxy'si (:4000). Production'da meta o'zgarishsiz qoladi.
+  const apiBase = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? ""
+    : (window.ASSETFLOW_STUDIO && window.ASSETFLOW_STUDIO.apiUrl) || "";
   const pwBtn = document.getElementById("devicePasswordBtn");
 
   function showConfirmed(email) {

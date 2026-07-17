@@ -1,16 +1,13 @@
-# SESSION-REPORT — SC_32 Plugin CMS to'liq zanjir (2026-07-18)
+# SESSION-REPORT — SC_38 guest/login audit (2026-07-18)
 
-**Vazifa:** "Plugin CMS ishlamayapti" — editor→save→media→public→plugin apply→reset zanjiri diagnostikasi.
+Nima qilindi: guest/login oqimlari ikkala ilovada lokal stack (:4000) bilan jonli tekshirildi.
+- Web: login/logout/xato/expired PASS; ff-auth-expired endi joriy ekranni eslab, qayta kirgach o'sha yerga qaytaradi (index.html).
+- Plagin: guest ekran, sheet login, logout, session-expired modal, device-code oqimi END-TO-END PASS.
+- FIX: device.html lokalda prod meta'ga urardi → localhost'da nisbiy /api (dev proxy) ishlatiladi.
+- FIX: plagin boot double-fetch (catalog+featured ×2) — applyNavSwitch noReload; endi ×1.
+- FIX: device fallback "Copy link" qora-ustida-qora → var(--accent)/var(--on-accent) tokenlar.
+- FIX: guest foot eskirgan "3 IMPORTS/MO" → "15 DOWNLOADS/MO" (Account sheet bilan bir xil).
+- CMS guest maydonlari (title/sub/features) jonli qo'llanishi tasdiqlandi; guest top-bar = faqat "Sign in" pill.
 
-- KOD (tuzatildi): (1) editor media preview URL ochilmasa xom buzilgan <img> — endi "MEDIA
-  UNREACHABLE" fallback (pcMediaErr, admin-plugin-cms.js); (2) plagin CMS refresh throttle
-  300000ms >= interval 300000ms → har ikkinchi tick skip (~10 daq) — endi 270000ms (~5 daq real).
-- DEPLOY (EGA QADAMI, kod to'g'ri): prod CDN worker ESKI — cdn.getframeflow.app site/plugin/*
-  (va landing/*) ga 403; isPublicReadKey kodda TO'G'RI (SC_02 c4d1c05). Owner skrinshotidagi
-  buzilgan preview shu. Ega: `cd workers/cdn-proxy && npx wrangler deploy`.
-- ENV: lokal R2 bucket CORS localhost PUT'ni bloklaydi (curl 200, brauzer "Failed to fetch") —
-  editor toast bilan ko'rsatadi; bucket CORS sozlash ega qadami.
-- Tekshirildi (ishlaydi): admin GET/PUT/audit, zod rad → ko'rinadigan toast, mock-storage toast,
-  public GET (60s kesh), plagin boot pickup + guest \n, media-first 404 → graceful degrade,
-  Reset → built-in copy. Pul-zonasi TEGILMAGAN.
-- QA: node --check 7/7 + cms js, studio:sync, install-cep.sh OK (com.frameflow verify mos).
+Qoldiq: guest boot'da models×4 + /api/logs 401 (jim, bir martalik) — kosmetik shovqin, auth emas.
+QA: node --check 7/7 OK; install-cep.sh OK (AE qayta ochish kerak); 3 tema OK; konsol toza.

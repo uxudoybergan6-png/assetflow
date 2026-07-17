@@ -4306,7 +4306,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                         <div class="gu-lockchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Sign in to import</div>
                         <div class="hm-grid gu-dim" id="homeGuestGrid"></div>
                       </div>
-                      <div class="gu-foot">FREE PLAN · 3 IMPORTS/MO · ✦ 50 CREDITS</div>
+                      <!-- SC_38: eski "3 IMPORTS/MO" (eskirgan reja matni) → joriy Free reja bilan bir xil (Account sheet: 15 downloads/month) -->
+                      <div class="gu-foot">FREE PLAN · 15 DOWNLOADS/MO · ✦ 50 CREDITS</div>
                     </div>
                   </div>
                 </div>
@@ -7605,7 +7606,7 @@ function afSetPaneCtx(){
 }
 window.afSetPaneCtx=afSetPaneCtx;
 
-function applyNavSwitch(tab){
+function applyNavSwitch(tab,opts){
   // AI Tools — alohida sahifa (browse chrome yashiriladi, #aiPage ko'rsatiladi).
   // Mavjud video/motion/graphics/luts yo'llari pastda o'zgarishsiz qoladi.
   document.documentElement.classList.remove('home-mode'); // har nav Home'dan chiqadi
@@ -7640,6 +7641,9 @@ function applyNavSwitch(tab){
   // P1 #15 — nav almashsa server o'sha bo'lim (templateType) uchun 1-sahifani oladi.
   // Eski "server kontenti boshqa nav'da" toast'i OLIB TASHLANDI — u BUTUN katalog
   // sanog'iga tayanardi (endi nav server tomonda filtrlanadi, to'liq sanoq yo'q).
+  // SC_38 — boot'da katalog ALLAQACHON aynan shu filtrlar bilan yuklangan (bootPlugin
+  // refreshBrowse'i) → noReload bilan takroriy server so'rovsiz faqat render qilinadi.
+  if(opts&&opts.noReload){ render(); return; }
   reloadServerBrowse();
 }
 
@@ -9828,7 +9832,7 @@ async function accountLoginWithGoogle(){
         '<span style="display:block;margin-bottom:8px;font-weight:600">Couldn’t open the browser automatically — copy this link and open it manually:</span>'+
         '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:12px;padding:8px;border-radius:6px;border:1px solid currentColor;margin-bottom:8px"></code>'+
         '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-          '<button type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid currentColor;background:currentColor;color:#000">Copy link</button>'+
+          '<button type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)">Copy link</button>'+
           '<button type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Try again</button>'+
           '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
         '</span>'
@@ -10493,7 +10497,9 @@ async function bootPlugin(){
       // o'tgan bo'lishi mumkin — uни Home'ga QAYTARMAYMIZ. Faqat hali Home'da bo'lsa,
       // katalogni tayyorlab Home'da qoldiramiz (Home BIRINCHI ekran — early goHome yuqorida bajarilgan).
       if(document.documentElement.classList.contains('home-mode')){
-        applyNavSwitch('video'); // currentNav + yuklangan katalog grid render
+        // SC_38 — noReload: katalog yuqorida shu filtrlar bilan yuklangan; ikkinchi
+        // (takroriy) catalog+featured so'rovi endi otilmaydi (boot double-fetch fix).
+        applyNavSwitch('video',{noReload:true}); // currentNav + yuklangan katalog grid render
         try{ goHome(); }catch(e){} // home-mode'ni qaytaramiz (foydalanuvchi hali Home'da edi)
       }
       const total=localN+serverN;

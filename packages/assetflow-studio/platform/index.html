@@ -18747,6 +18747,10 @@ class Component extends DCLogic {
           // tozalaymiz (aks holda har poll 401 olib, hodisa qayta-qayta otilib toast spami bo'lardi).
           // P25 — resetUserState: faqat credits/activeJobs emas, TO'LIQ holat (refs/sessions/
           // projects) tozalanadi — aks holda keyingi login shu qurilmadagi eski ma'lumotni ko'radi.
+          // SC_38 — foydalanuvchi qayerda bo'lsa, qayta kirgach O'SHA ekranga qaytadi
+          // (_afterAuth mavjud _afterLoginSuccess yo'lida iste'mol qilinadi; app-ekran bo'lmasa dashboard).
+          const curScr = this.state.screen;
+          if (['dashboard', 'templates', 'aistudio', 'account', 'projects'].indexOf(curScr) >= 0) this._afterAuth = curScr;
           this.resetUserState({ user: null });
           this.toast('Your session has expired — please sign in again');
           this.go('auth');
