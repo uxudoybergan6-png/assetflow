@@ -17037,9 +17037,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                           <!-- USE ▾ menu (frame A) — Edit image / i2v REAL handoff (step 2) -->
                           <sc-if value="{{ g.menuOpen }}" hint-placeholder-val="{{ false }}">
                             <div class="va-axmenu" style="{{ axUseMenuStyle }}" onclick="{{ stop }}">
-                              <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
-                              <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
-                              <div class="va-axmdiv"></div>
+                              <!-- SC_30: rasm bo'lmagan natijada (video) bu ikki band umuman ko'rinmaydi — o'lik band yo'q -->
+                              <sc-if value="{{ axSrcImgRows }}" hint-placeholder-val="{{ true }}">
+                                <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
+                                <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
+                                <div class="va-axmdiv"></div>
+                              </sc-if>
                               <div class="va-axmi plain" onclick="{{ axMenuAddProj }}"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
                               <!-- P3 (step 34) — Add to Explore (yuborilgan bo'lsa holat ko'rsatadi) -->
                               <div class="{{ axExploreCls }}" onclick="{{ axMenuAddExplore }}"><span class="mic"><i class="ph ph-compass"></i></span>{{ axExploreLabel }}</div>
@@ -20589,7 +20592,8 @@ class Component extends DCLogic {
       const gens = st.gens.filter(x => x.id !== id);
       const sessGens = st.sessGens.filter(x => x.id !== id); // QA-FIX #12
       const pool = st.viewSess ? sessGens : gens;
-      return { gens, sessGens, activeGenId: st.activeGenId === id ? (pool[0] ? pool[0].id : null) : st.activeGenId, lightbox: st.lightbox && st.lightbox.id === id ? null : st.lightbox };
+      // SC_30: menyu yopiladi — aks holda o'chirilgandan keyin faollashgan QO'SHNI kartada menyu ochiq qolardi
+      return { gens, sessGens, useMenuOpen: false, activeGenId: st.activeGenId === id ? (pool[0] ? pool[0].id : null) : st.activeGenId, lightbox: st.lightbox && st.lightbox.id === id ? null : st.lightbox };
     });
     this.loadSessions();
     this.toast("Deleted");
@@ -22416,6 +22420,7 @@ class Component extends DCLogic {
       onBitrate: (e) => this.setState({ aiBitrate: e.currentTarget.dataset.v, chipPop: null }),
       axEditCls: axEditOk ? 'va-axmi' : 'va-axmi off', axEditTip,
       axI2vCls: axI2vOk ? 'va-axmi' : 'va-axmi off', axI2vTip,
+      axSrcImgRows: axSrcIsImage, // SC_30: Edit/i2v bandlari faqat RASM natijada ko'rinadi
       axUseEdit: (e) => { e.stopPropagation(); if (!axEditOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('edit', activeGenRaw.id); },
       axUseI2V: (e) => { e.stopPropagation(); if (!axI2vOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('i2v', activeGenRaw.id); },
       useMenuOpen: this.state.useMenuOpen,

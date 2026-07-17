@@ -10842,10 +10842,14 @@ async function bootPlugin(){
 
   // P2 — CEP-xavfsiz clipboard: navigator.clipboard CEP'da ishonchsiz → yashirin textarea
   // + execCommand('copy') fallback. Muvaffaqiyatda true.
+  // SC_30: execCommand AVVAL (CEP'da writeText jim rad etilishi mumkin edi — "copied" yolg'on bo'lardi),
+  // writeText faqat zaxira; natija toast bilan tasdiqlanadi (menyu caller'lari toast'ni shu yerdan kutadi).
   window.afCopyText=function(text){
-    var t=String(text==null?'':text);
-    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t); return true; } }catch(e){}
-    try{ var ta=document.createElement('textarea'); ta.value=t; ta.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.focus(); ta.select(); var ok=document.execCommand('copy'); document.body.removeChild(ta); return !!ok; }catch(e){ return false; }
+    var t=String(text==null?'':text), ok=false;
+    try{ var ta=document.createElement('textarea'); ta.value=t; ta.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.focus(); ta.select(); ok=!!(document.execCommand&&document.execCommand('copy')); document.body.removeChild(ta); }catch(e){ ok=false; }
+    if(!ok){ try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(function(){},function(){}); ok=true; } }catch(e){} }
+    if(typeof showToast==='function')showToast(ok?'Prompt copied':'Copy failed',ok?'success':'error');
+    return ok;
   };
 
   // P16 (SYNC) — YAGONA refresh-all: har qanday view'dagi ↻ tugma shu bilan ishlaydi.
@@ -11150,7 +11154,8 @@ async function bootPlugin(){
         if(ctx.onRestore&&it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ ctx.onRestore(it); }});
         if(it.prompt)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
         if(!ctx.isCEP)items.push({ic:IC.dl,label:'Download',fn:function(){ ctx.onDownload&&ctx.onDownload(it); }});
-        items.push({ic:IC.x,label:'Delete',danger:true,fn:function(){ ctx.onDelete&&ctx.onDelete(it); }});
+        // SC_30: onDelete bermagan ctx'da o'lik band ko'rsatilmaydi; loyiha view'da label "Remove from project"
+        if(ctx.onDelete)items.push({ic:IC.x,label:(ctx.deleteLabel||'Delete'),danger:true,fn:function(){ ctx.onDelete(it); }});
         afUseMenuOpen(useBtn,items);
       });
       ra.appendChild(useBtn);
@@ -11803,8 +11808,9 @@ window.afGallery=(function(){
     if(!it||!it.prompt){ toast('This result has no saved prompt','info'); return; }
     var c=it.cat||'image';
     if(c==='video'&&typeof window.afVgRestoreGen==='function'&&typeof window.axGo==='function'){ window.axGo('vidgen'); setTimeout(function(){ try{window.afVgRestoreGen(it);}catch(e){} },60); return; }
-    if(typeof window.afIgRestoreGen==='function'&&typeof window.axGo==='function'){ window.axGo('imggen'); setTimeout(function(){ try{window.afIgRestoreGen(it);}catch(e){} },60); return; }
-    toast('Regenerate isn’t available here','info');
+    // SC_30: faqat RASM genlari rasm tool'iga tiklanadi — audio/sfx bu yerga tushmasin (menyu ham yashiradi)
+    if(c==='image'&&typeof window.afIgRestoreGen==='function'&&typeof window.axGo==='function'){ window.axGo('imggen'); setTimeout(function(){ try{window.afIgRestoreGen(it);}catch(e){} },60); return; }
+    toast('Regenerate isn’t available for this result','info');
   }
 
   function render(container,opts){
@@ -11945,7 +11951,9 @@ window.afGallery=(function(){
           items.push({ic:IC.imp,label:'Import to AE',fn:function(){ importMedia(it); }});
           if(it.id)items.push({ic:IC.proj,label:'Add to project',fn:function(){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }});
           if(it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ window.afAddToExplore(it); }});
-          if(it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ galRestore(it); }});
+          // SC_30: Regenerate faqat rasm/video uchun — audio restore yo'li yo'q (avval audio genni
+          // rasm tool'iga noto'g'ri yo'naltirardi); mumkin bo'lmagan kind uchun band ko'rsatilmaydi.
+          if(it.prompt&&(it.cat==='image'||it.cat==='video'))items.push({ic:IC.rst,label:'Regenerate',fn:function(){ galRestore(it); }});
           if(it.prompt)items.push({ic:IC.copy,label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
           if(!isCEP())items.push({ic:IC.dl,label:'Download',fn:function(){ download(it); }});
           items.push({ic:IC.trash,label:'Delete',danger:true,fn:function(){ galDeleteOne(it); }});
@@ -15279,7 +15287,8 @@ window.afGallery=(function(){
     onAddProject:function(it){ if(window.afProjectPicker)window.afProjectPicker('gen',it.id); }, // P1
     onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
-    onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ ag.recent=ag.recent.filter(function(x){return x.id!==it.id;}); renderAgRecent(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
+    // SC_30: tasdiqsiz o'chirish xavfli edi — endi afConfirm (boshqa feed'lar bilan bir xil)
+    onDelete:function(it){ if(!it.id)return; window.afConfirm('Delete this? This cannot be undone.',{ok:'Delete',danger:true}).then(function(ok){ if(!ok)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ ag.recent=ag.recent.filter(function(x){return x.id!==it.id;}); renderAgRecent(); if(window.afGallery)window.afGallery.invalidate(); toast('Deleted','success'); }).catch(function(){ toast('Delete failed','error'); }); }); },
     refAllowed:function(){ return false; }, onRef:function(){}
   }; }
   function agSessIds(){ var out=[]; for(var k in ag.sessions){ if(ag.sessions[k]&&out.indexOf(ag.sessions[k])<0)out.push(ag.sessions[k]); } return out; }
@@ -15549,7 +15558,8 @@ window.afGallery=(function(){
     selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
     onImport:function(it){ if(typeof aiImportMedia==='function'){ var kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image'; aiImportMedia(it.url,kind,null); } else toast('AE import only works inside After Effects','info'); },
     onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
-    onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ var i=items.indexOf(it); if(i>=0)items.splice(i,1); afterDelete&&afterDelete(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
+    // SC_30: tasdiqsiz o'chirish xavfli edi — endi afConfirm; My Library keshi ham yangilanadi
+    onDelete:function(it){ if(!it.id)return; window.afConfirm('Delete this? This cannot be undone.',{ok:'Delete',danger:true}).then(function(ok){ if(!ok)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ var i=items.indexOf(it); if(i>=0)items.splice(i,1); afterDelete&&afterDelete(); if(window.afGallery)window.afGallery.invalidate(); toast('Deleted','success'); }).catch(function(){ toast('Delete failed','error'); }); }); },
     onAddProject:function(it){ window.afProjectPicker('gen',it.id); },
     onAddExplore:function(it){ window.afAddToExplore(it); }, // P3 (step 34)
     refAllowed:function(){ return false; }, onRef:function(){}
@@ -15665,6 +15675,7 @@ window.afGallery=(function(){
       onImport:function(it){ if(it._tpl){ toast('Open the template in Catalog to import its pack','info'); return; } if(typeof aiImportMedia==='function'){ var kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image'; aiImportMedia(it.url,kind,null); } else toast('AE import only works inside After Effects','info'); },
       onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
       // Loyihada Delete = loyihadan OLIB TASHLASH (gen o'zi o'chmaydi)
+      deleteLabel:'Remove from project', // SC_30: menyu bandi haqiqiy amalni aytadi
       onDelete:function(it){ if(!it._itemId)return; api.projectRemoveItem(sp.proj.id,it._itemId).then(function(){ var i=items.indexOf(it); if(i>=0)items.splice(i,1); sp.pLoaded=false; renderProjectGrid(); toast('Removed from project','info'); }).catch(function(){ toast('Remove failed','error'); }); },
       refAllowed:function(){ return false; }, onRef:function(){}
     };
