@@ -15402,8 +15402,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-ptitle{display:flex;align-items:flex-end;gap:16px;margin-bottom:26px;flex-wrap:wrap}
   .ff .va-ph1{font-size:clamp(30px,3vw,44px);font-weight:600;letter-spacing:-.03em;margin:9px 0 0;line-height:1}
   .ff .va-psub{font-size:12.5px;color:var(--muted);margin:8px 0 0;max-width:460px}
-  .ff .va-projcard{background:var(--surface);border:1px solid var(--hair2);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .18s ease,transform .18s ease}
+  .ff .va-projcard{position:relative;background:var(--surface);border:1px solid var(--hair2);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .18s ease,transform .18s ease}
   .ff .va-projcard:hover{border-color:var(--lime);transform:translateY(-3px)}
+  /* SC_34 — Projects select-rejimi: burchak checkbox + tanlangan karta ringi (sessiya P6 naqshi) */
+  .ff .va-projcard .va-projck{position:absolute;top:10px;left:10px;z-index:2;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--hair2);background:rgba(8,10,12,.62);display:grid;place-items:center;font-size:11px;font-weight:800;color:transparent}
+  .ff .va-projcard .va-projck.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
+  .ff .va-projcard.picked{border-color:var(--lime);box-shadow:0 0 0 1px var(--lime) inset}
+  .ff .va-sessbulk b.danger.armed{box-shadow:0 0 0 1.5px var(--th-danger,#ff6b5e) inset}
   .ff .va-projnew:hover{border-color:var(--lime);color:var(--text)}
   /* ── credits modal (BATCH6 mockup: balance hero + 3-ustun paket kartalari + siyosat izohi) ── */
   .ff .va-credmodal{position:relative;width:100%;max-width:560px;border-radius:20px;background:var(--surface);border:1px solid var(--hair2);padding:26px 26px 22px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)}
@@ -17374,8 +17379,21 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="va-ptitle">
             <div><div class="va-kick">ORGANIZE THE WORK</div><h1 class="va-ph1">Projects</h1><p class="va-psub">Keep generations and templates together by client, campaign or idea.</p></div>
             <span style="flex:1"></span>
+            <!-- SC_34 — select-rejim tugmasi (loyiha bor bo'lgandagina) -->
+            <sc-if value="{{ projCanSelect }}" hint-placeholder-val="{{ false }}"><button class="va-btn ghost" onclick="{{ projSelectToggle }}">{{ projSelectLabel }}</button></sc-if>
             <button class="va-btn lime" onclick="{{ newProject }}"><svg class="va-ic"><use href="#i-plus"></use></svg>New project</button>
           </div>
+          <!-- SC_34 — bulk panel: hisoblagich + Select all/Clear + danger Delete (armed) + Cancel -->
+          <sc-if value="{{ projSelectOn }}" hint-placeholder-val="{{ false }}">
+            <div class="va-sessbulk" style="margin:0 0 18px">
+              <span class="n">{{ projBulkCount }} selected</span>
+              <b onclick="{{ projSelectAll }}">Select all</b>
+              <b onclick="{{ projSelectClear }}">Clear</b>
+              <span style="flex:1"></span>
+              <b class="{{ projBulkDelCls }}" onclick="{{ projBulkDelete }}">🗑 {{ projBulkDelLabel }}</b>
+              <b onclick="{{ projSelectToggle }}">Cancel</b>
+            </div>
+          </sc-if>
           <sc-if value="{{ projListLoading }}" hint-placeholder-val="{{ false }}">
             <div class="va-homeload" style="margin:26px 0"><span class="star">✦</span> Opening your projects…</div>
           </sc-if>
@@ -17390,7 +17408,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-if value="{{ projListReady }}" hint-placeholder-val="{{ true }}">
           <div class="ffa-proj-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
             <sc-for list="{{ projectsView }}" as="p" hint-placeholder-count="4">
-              <div data-id="{{ p.id }}" onclick="{{ openProject }}" class="va-projcard">
+              <div data-id="{{ p.id }}" onclick="{{ openProject }}" class="{{ p.cardCls }}">
+                <sc-if value="{{ projSelectOn }}" hint-placeholder-val="{{ false }}"><span class="{{ p.ckCls }}">✓</span></sc-if>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:200px">
                   <sc-for list="{{ p.cells }}" as="cv" hint-placeholder-count="4">
                     <div style="background:{{ cv.bg }};background-size:cover;background-position:center;display:grid;place-items:center">
@@ -17401,10 +17420,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <div style="padding:13px 14px"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px">{{ p.d }}</div></div>
               </div>
             </sc-for>
+            <!-- SC_34: select rejimida "New project" plitkasi yashirin (tanlab bo'lmaydigan element) -->
+            <sc-if value="{{ projNotSelecting }}" hint-placeholder-val="{{ true }}">
             <button onclick="{{ newProject }}" class="va-projnew" style="border:1px dashed var(--hair2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:248px;color:var(--muted);background:none;font-family:inherit;cursor:pointer">
               <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-plus"></i></span>
               <span style="font-size:12px;font-weight:600">New project</span>
             </button>
+            </sc-if>
           </div>
           </sc-if>
           </div>
@@ -18145,6 +18167,10 @@ class Component extends DCLogic {
     projOpen: null,        // ochilgan loyiha detali: {id,name,items:[...]}
     projLoading: false,
     projDelArm: false,     // o'chirish tugmasi ikki bosqichli tasdiq
+    projSelect: false,     // SC_34 — Projects ro'yxati select-rejimi (sessiya rail P6 naqshi)
+    projSel: {},           // SC_34 — tanlangan loyiha id'lari
+    projBulkArm: false,    // SC_34 — bulk delete 2-bosqichli tasdiq (§D armed naqshi)
+    projBulkBusy: false,   // SC_34 — o'chirish jarayoni (spam-klik himoyasi + progress label)
     addPick: null,         // "Add to project" tanlagichi: {kind:'gen'|'template', refId}
     addPickName: '',       // tanlagich ichida yangi loyiha nomi
     nameModal: null,       // umumiy nom modali: {kind, title, cta, value, ctx}
@@ -18884,7 +18910,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
@@ -19775,6 +19801,28 @@ class Component extends DCLogic {
       this.toast('Project deleted');
     } catch (e) { this.toast(this.errMsg(e)); }
   }
+  async bulkDeleteProjects() {
+    // SC_34 — bulk delete: §D armed 2-klik tasdiq (native confirm YO'Q), per-item xato toqat qilinadi.
+    // Loyihani o'chirish faqat guruhlashni olib tashlaydi — ichidagi gen/shablonlar My Library'da qoladi.
+    if (this.state.projBulkBusy) return; // spam-klik himoyasi
+    const ids = Object.keys(this.state.projSel); if (!ids.length) return;
+    if (!this.state.projBulkArm) {
+      this.setState({ projBulkArm: true });
+      this.toast('Delete ' + ids.length + ' project' + (ids.length > 1 ? 's' : '') + '? Items inside stay in your library — click Delete again to confirm', 'warning');
+      clearTimeout(this._projBulkT); this._projBulkT = setTimeout(() => this.setState({ projBulkArm: false }), 3500);
+      return;
+    }
+    clearTimeout(this._projBulkT);
+    this.setState({ projBulkArm: false, projBulkBusy: true });
+    let done = 0, fail = 0;
+    for (const id of ids) {
+      try { await FFAPI.projectDelete(id); done++; this.setState(s => ({ projects: s.projects.filter(x => x.id !== id) })); } // grid jonli yangilanadi
+      catch (x) { fail++; } // bitta xato qolganlarini to'xtatmaydi
+    }
+    this.setState({ projBulkBusy: false, projSelect: false, projSel: {} });
+    this.loadProjects(); // serverdagi holat bilan sinxron
+    this.toast(done + ' project' + (done === 1 ? '' : 's') + ' deleted' + (fail ? ' · ' + fail + ' failed' : ''), fail ? 'warning' : undefined);
+  }
   async addToProject(projId) {
     const ap = this.state.addPick; if (!ap) return;
     try {
@@ -19985,6 +20033,7 @@ class Component extends DCLogic {
       aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [],
       sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false,
       projOpen: null, addPick: null, nameModal: null,
+      projSelect: false, projSel: {}, projBulkArm: false, projBulkBusy: false, // SC_34 — select holati login almashganda qolmasin
     }, extra || {}));
   }
   logout() {
@@ -21814,7 +21863,10 @@ class Component extends DCLogic {
         const isAud = !!c && (c.mode === 'voice' || c.mode === 'sfx' || c.mode === 'music');
         return { bg: c && c.thumb && !isAud ? media(c.thumb, 0) : this.grad((this.hueOf(p.id) + i * 42) % 360), isAud };
       });
-      return { id: p.id, n: p.name, d: (p.count || 0) + ' item' + (p.count === 1 ? '' : 's') + (p.updatedAt ? ' · ' + fmtAgo(p.updatedAt) : ''), cells };
+      return { id: p.id, n: p.name, d: (p.count || 0) + ' item' + (p.count === 1 ? '' : 's') + (p.updatedAt ? ' · ' + fmtAgo(p.updatedAt) : ''), cells,
+        // SC_34 — select-rejim: karta ringi + burchak checkbox (sessiya rail P6 naqshi)
+        cardCls: 'va-projcard' + (this.state.projSelect && this.state.projSel[p.id] ? ' picked' : ''),
+        ckCls: 'va-projck' + (this.state.projSel[p.id] ? ' on' : '') };
     });
     // Ochilgan loyiha detali — gen'lar mapGen orqali (lightbox mos), shablonlar katalog kartasi (rcOf)
     const projOpen = this.state.projOpen;
@@ -22735,7 +22787,22 @@ class Component extends DCLogic {
       projItemsView,
       projDelLabel: this.state.projDelArm ? ('Click again to delete' + (this.state.projDelSec ? ' (' + this.state.projDelSec + ')' : '')) : 'Delete',
       newProject: () => this.setState({ nameModal: { kind: 'newProject', icon: 'folder-plus', title: 'New project', cta: 'Create', ph: 'Project name', value: '' } }),
-      openProject: (e) => { const id = e.currentTarget.dataset.id; if (id) this.openProjectById(id); },
+      openProject: (e) => { const id = e.currentTarget.dataset.id; if (!id) return;
+        // SC_34 — select rejimida bosish = belgilash (ochish emas); rejimdan chiqilganda ochish qaytadi
+        if (this.state.projSelect) { if (this.state.projBulkBusy) return; this.setState(st => { const sel = Object.assign({}, st.projSel); if (sel[id]) delete sel[id]; else sel[id] = true; return { projSel: sel }; }); return; }
+        this.openProjectById(id); },
+      // SC_34 — Projects select-rejimi + bulk delete (sessiya rail P6/§D naqshi)
+      projSelectOn: this.state.projSelect,
+      projNotSelecting: !this.state.projSelect,
+      projCanSelect: !projOpen && this.state.projectsLoaded && !this.state.projErr && this.state.projects.length > 0,
+      projSelectLabel: this.state.projSelect ? 'Done' : 'Select',
+      projBulkCount: Object.keys(this.state.projSel).length,
+      projBulkDelLabel: this.state.projBulkBusy ? 'Deleting…' : (this.state.projBulkArm ? 'Click again' : 'Delete'),
+      projBulkDelCls: this.state.projBulkArm ? 'danger armed' : 'danger',
+      projSelectToggle: (e) => { if (e) e.stopPropagation(); if (this.state.projBulkBusy) return; clearTimeout(this._projBulkT); this.setState(st => ({ projSelect: !st.projSelect, projSel: {}, projBulkArm: false })); },
+      projSelectAll: (e) => { if (e) e.stopPropagation(); if (this.state.projBulkBusy) return; this.setState(st => { const sel = {}; st.projects.forEach(p => { sel[p.id] = true; }); return { projSel: sel }; }); },
+      projSelectClear: (e) => { if (e) e.stopPropagation(); if (this.state.projBulkBusy) return; this.setState({ projSel: {}, projBulkArm: false }); },
+      projBulkDelete: (e) => { if (e) e.stopPropagation(); this.bulkDeleteProjects(); },
       backToProjects: () => this.setState({ projOpen: null, projDelArm: false }),
       renameProject: () => { const p = this.state.projOpen; if (p) this.setState({ nameModal: { kind: 'renameProject', ctx: p.id, icon: 'pencil-simple', title: 'Rename project', cta: 'Save', ph: 'Project name', value: p.name } }); },
       deleteProject: () => this.deleteProjectArmed(),

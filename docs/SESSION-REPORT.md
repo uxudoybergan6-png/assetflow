@@ -1,17 +1,15 @@
-# SESSION-REPORT — SC_30 (2026-07-17)
+# SESSION-REPORT — SC_34 (2026-07-17)
 
-**Vazifa:** Use ▾ menyu barcha amallari (plagin + web) tekshiruv-matritsasi + tuzatishlar.
+**Vazifa:** Projects select-mode + bulk delete (plagin + web).
 
-- Tekshirildi (lokal API :4000 + brauzer QA): Import, Add to project (idempotent upsert),
-  Add to Explore (rights gate + dedupe), Use as reference, Regenerate (prefill, kredit yo'q),
-  Copy prompt, Delete (confirm + R2 + storage usedBytes kamayadi).
-- Tuzatildi (plagin): My Library'da AUDIO Regenerate rasm tool'iga noto'g'ri ketardi → yashirildi
-  + galRestore guard; audio/session feed Delete tasdiqsiz edi → afConfirm; loyiha view'da menyu
-  "Delete" → "Remove from project"; window.afCopyText toast'siz/CEP'da jim sinishi mumkin edi →
-  execCommand-first + "Prompt copied" toast; onDelete'siz ctx'da o'lik Delete bandi yashirin.
-- Tuzatildi (web): Edit image / i2v bandlari rasm bo'lmagan natijada yashirin (o'lik band emas);
-  delete'dan keyin menyu yopiladi (qo'shni kartada ochiq qolardi).
-- Kutilmoqda: jonli AE'da Import (fayl + ExtendScript) tasdig'i; explore submit lokalda NO_ASSET
-  (seed genlarda R2 resultKey yo'q — production yo'li kod bilan tasdiqlangan).
-
-Commit: 3540d05 (main). Pul-zonasi TEGILMAGAN.
+- Web (`platform/index.html`): header "Select" tugmasi, karta checkbox/ring, "N selected" +
+  Select all/Clear, §D armed 2-klik tasdiq ("Items inside stay in your library"), busy/spam-guard,
+  per-item xato toqat (N deleted · M failed), grid jonli yangilanadi, New-tile select'da yashirin.
+- Plagin (`AssetFlow_Plugin.html`): mavjud P11 select-rejimga Select all/Clear qo'shildi,
+  pBusy spam-guard + "Deleting…" progress, bulk bar flex-wrap (320px sig'adi).
+- Endpoint: `DELETE /api/studio/projects/:id` allaqachon bor — yangi endpoint YO'Q, klient loop.
+  Non-cascade curl bilan tasdiqlandi: loyiha o'chsa faqat ProjectItem yo'qoladi, gen My Library'da
+  qoladi (200). Backend TEGILMAGAN.
+- QA: ikkala ilova — select 3 (non-empty bilan) → confirm → 2 deleted · 1 failed (404 injection),
+  cancel yo'l, select-all/clear; 3 tema; 320/420/900; node --check 11/11; install-cep.sh; konsol toza.
+- Kutilmoqda: deploy (CF Pages push) + jonli AE'da qo'lda tekshirish. Pul-zonasi TEGILMAGAN.
