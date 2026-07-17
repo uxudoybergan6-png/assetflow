@@ -6124,7 +6124,7 @@ function afOpenAiSub(view){
    bo'limda yursa ham job tugaganda xabar oladi. OS-darajali bildirishnoma YO'Q — faqat
    panel ichida. Yangi endpoint yo'q — mavjud poll oqimlari chaqiradi. */
 var __afGenToastT=null;
-function afGenToast(view,cost,thumb){
+function afGenToast(view,cost,thumb,sessId,sessMode){
   var old=document.getElementById('afGenToast'); if(old)old.remove();
   clearTimeout(__afGenToastT);
   var d=document.createElement('div'); d.id='afGenToast'; d.className='af-gentoast';
@@ -6135,21 +6135,39 @@ function afGenToast(view,cost,thumb){
   d.querySelector('.gt-view').addEventListener('click',function(){
     d.remove();
     afNavTab('ai');
+    // SC_29: natija O'Z sessiyasiga tushgan — View o'sha sessiyani faollashtirib ochadi
+    try{
+      if(sessId){
+        var so=(typeof window.axwsFindSession==='function')?window.axwsFindSession(sessId):null;
+        window.__axwsSess=window.__axwsSess||{};
+        if(view==='imggen'&&typeof window.axIGSetSession==='function'){ window.__axwsSess.imggen=so||{id:sessId,mode:'image'}; window.axIGSetSession(sessId); }
+        else if(view==='vidgen'&&typeof window.axVGSetSession==='function'){ window.__axwsSess.vidgen=so||{id:sessId,mode:'video'}; window.axVGSetSession(sessId); }
+        else if(view==='audgen'&&typeof window.axAGSetSession==='function'){ window.__axwsSess.audgen=so||{id:sessId,mode:sessMode||'voice'}; window.axAGSetSession((so&&so.mode)||sessMode||'voice',sessId); }
+      }
+    }catch(e){}
     if(typeof window.axGo==='function')setTimeout(function(){ window.axGo(view||'history'); },0);
   });
   d.querySelector('.gt-x').addEventListener('click',function(){ d.remove(); });
   document.body.appendChild(d);
   __afGenToastT=setTimeout(function(){ try{d.remove();}catch(e){} },7000);
 }
-window.afGenDoneNotify=function(view,cost,thumb){
+window.afGenDoneNotify=function(view,cost,thumb,sessId,sessMode){
   var cur=document.querySelector('.axroot .view.on');
   var inAi=document.documentElement.classList.contains('ai-mode');
-  if(inAi&&cur&&cur.id==='v-'+view){
+  // SC_29: "joyida" faqat view HAM sessiya HAM mos bo'lsa — aks holda View'li toast (to'g'ri sessiyaga olib boradi)
+  var sameSess=true;
+  try{
+    if(sessId&&window.__axToolSess&&window.__axToolSess[view]){
+      var cs=window.__axToolSess[view]();
+      sameSess=Array.isArray(cs)?cs.indexOf(sessId)>=0:cs===sessId;
+    }
+  }catch(e){}
+  if(inAi&&cur&&cur.id==='v-'+view&&sameSess){
     // Joyida — karta o'zi yangilandi; faqat mavjud kichik tasdiq (double-signal yo'q)
     if(typeof showToast==='function')showToast(typeof cost==='number'?('Done! ✦'+cost+' charged'):'Audio ready','success');
     return;
   }
-  afGenToast(view,cost,thumb);
+  afGenToast(view,cost,thumb,sessId,sessMode);
 };
 // Global progress badge — top-bar "AI Tools" segmentida animatsion nuqta (+son >1 bo'lsa)
 setInterval(function(){
@@ -11998,7 +12016,7 @@ window.afGallery=(function(){
   var meta={loaded:false,models:[],modelId:null,key:null,label:'Nano Banana 2',refMode:'image-edit',maxRefs:10,refKind:null,refOk:true,
     ars:['1:1','2:3','3:2','3:4','4:3','16:9','9:16','21:9'],quals:['1K','2K','4K'],qLabel:'Quality',aspDef:'1:1',qDefault:'1K',
     qcost:{'1K':4,'2K':8,'4K':16},counts:[1,2,3,4]};
-  var st={ar:'1:1',q:'1K',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{}};
+  var st={ar:'1:1',q:'1K',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{},sessTotal:null,audCount:0}; // SC_29: sessTotal/audCount — faol sessiya sanoqlari
 
   function toast(t,k){ if(typeof showToast==='function')showToast(t,k); }
   function ext(p){ return (String(p).split('.').pop()||'').toLowerCase(); }
@@ -12032,8 +12050,27 @@ window.afGallery=(function(){
     return low;
   }
   function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
-  window.axIGNewSession=function(){ st.sessionId=null; }; // P1: New session
-  window.axIGSetSession=function(id){ st.sessionId=id||null; }; // SC_18: picker'dan sessiya davomi
+  // SC_29: sessiya almashganda feed TOZALANADI — boshqa sessiyaning kartalari qolib ketmasin;
+  // faol joblarning pit'i uziladi (natija endi eski sessiya feed'iga tushmaydi, poll fonda davom etadi).
+  function igResetFeed(){
+    st.recent=[]; st.recentSel={}; st.recentSelect=false; st.sessTotal=null; st.audCount=0;
+    recentLoaded=false; recentLoadedAt=0; recentError='';
+    var sb=$('igRecentSel'); if(sb)sb.classList.remove('on');
+    activeJobs.forEach(function(j){ j.pit=null; });
+    renderRecentGrid();
+  }
+  window.axIGNewSession=function(){ st.sessionId=null; if(window.__axwsSess)window.__axwsSess.imggen=null; igResetFeed(); }; // P1: New session
+  window.axIGSetSession=function(id){ id=id||null; if(id===st.sessionId)return; st.sessionId=id; igResetFeed(); }; // SC_18: picker'dan sessiya davomi
+  // SC_29: joriy sessiya (fon-toast "View" mos sessiyani aniqlashi uchun) + tab sanoqlari
+  window.__axToolSess=window.__axToolSess||{};
+  window.__axToolSess.imggen=function(){ return st.sessionId; };
+  window.__axwsCounts=window.__axwsCounts||{};
+  window.__axwsCounts.imggen=function(){
+    var visLoaded=0,pend=0;
+    st.recent.forEach(function(x){ if(!x)return; if(x.pending)pend++; else if(x.url)visLoaded++; });
+    var vis=(typeof st.sessTotal==='number'&&st.sessTotal>=visLoaded+st.audCount)?(st.sessTotal-st.audCount):visLoaded;
+    return {vis:vis+pend,aud:st.audCount||0};
+  };
   window.axIGRefresh=refresh;
 
   // SC_17: Upscale (selectUpscaleModel/igStartUpscale/afIgUpscale/axIGSelectUpscale)
@@ -12241,7 +12278,7 @@ window.afGallery=(function(){
   }
   function ensureSession(){
     if(st.sessionId)return Promise.resolve(st.sessionId);
-    return studioPost('/api/studio/gen/sessions',{mode:'image'}).then(function(s){ st.sessionId=(s&&s.id)||null; return st.sessionId; });
+    return studioPost('/api/studio/gen/sessions',{mode:'image'}).then(function(s){ st.sessionId=(s&&s.id)||null; if(s&&s.id){ window.__axwsSess=window.__axwsSess||{}; window.__axwsSess.imggen=s; } return st.sessionId; }); // SC_29: lazy sessiya header'ga ham
   }
 
   // ---- chip openerlar ----
@@ -12708,6 +12745,7 @@ window.afGallery=(function(){
     }).then(function(arr){
       if(j.cancelled)throw new Error('CANCELLED');
       quote=arr[0]; var sid=arr[1];
+      j.sid=sid; // SC_29: job qaysi sessiyaga yozilishini eslab qolamiz (sessiya almashsa feed'ga aralashmasin)
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
@@ -12742,6 +12780,7 @@ window.afGallery=(function(){
             if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },1500);
             return;
           }
+          if(j.sid&&st.sessionId!==j.sid)j.pit=null; // SC_29: sessiya almashgan — natija BOSHQA sessiya feed'iga kirmaydi
           if(j.pit&&first){
             // pending kartani O'SHA JOYDA natijaga aylantiramiz (So'nggi grid)
             j.pit.pending=false; j.pit.url=first.url; j.pit.thumb=first.thumbUrl||first.url; j.pit.id=(gn&&gn.id)||first.id||null; j.pit.cat='image';
@@ -12757,8 +12796,9 @@ window.afGallery=(function(){
           renderRecentGrid(); refreshGen(); setCreditChip(credits());
           // SC_21: foydalanuvchi shu workspace'da bo'lsa — karta joyida yangilandi (kichik charge
           // tasdig'i yetadi); boshqa bo'limda bo'lsa — thumbnail + View'li boy toast.
-          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('imggen',j.jcost,(first&&(first.thumbUrl||first.url))||null);
+          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('imggen',j.jcost,(first&&(first.thumbUrl||first.url))||null,j.sid||null);
           else toast('Done! ✦'+j.jcost+' charged','success');
+          if(window.axSPInvalidate)window.axSPInvalidate(); // SC_29: picker/sessiyalar ro'yxati sanoqlari yangilansin
           if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },2000); // history bilan id/thumb sinxron
         },200);
       }else if(s==='failed'){
@@ -12996,15 +13036,23 @@ window.afGallery=(function(){
     if(recentLoading||!$('igRecent'))return;
     if(recentLoaded&&!force&&(Date.now()-recentLoadedAt<25*60*1000))return;
     var v=document.getElementById('v-imggen'); if(!v||!v.classList.contains('on'))return; // tool ochiq bo'lsa
+    // SC_29: feed FAQAT faol sessiya bilan chegaralangan (global /gen/history EMAS).
+    // Sessiya yo'q (yangi sessiya) → bo'sh feed, so'rov yuborilmaydi.
+    if(!st.sessionId){ recentLoaded=true; recentLoading=false; recentLoadedAt=Date.now(); recentError=''; st.sessTotal=0; st.audCount=0; renderRecentGrid(); return; }
+    var sid=st.sessionId;
     recentLoading=true; recentError=''; renderRecentGrid(); // "Yuklanmoqda…" — bo'sh ko'rinmasin (cold-start sekin)
-    studioGet('/api/studio/gen/history?limit=12').then(function(d){
+    studioGet('/api/studio/gen/sessions/'+encodeURIComponent(sid)+'/generations?perPage=12&status=done').then(function(d){
+      if(sid!==st.sessionId){ recentLoading=false; return; } // sessiya almashdi — eskirgan javob tashlanadi
+      var aud=0;
       (((d&&d.items)||[])).forEach(function(g){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
+        if(c==='audio'||c==='sfx'){ aud++; return; } // Visuals feed'ida audio karta chiqmaydi (SC_29 filtr)
         var ex=null; st.recent.some(function(x){ if(x.id===g.id||x.url===url){ex=x;return true;} return false;});
         if(ex){ ex.url=url; ex.thumb=a.thumbUrl||url; ex.display=a.displayUrl||null; ex.preview=a.previewUrl||null; ex.width=a.width||null; ex.height=a.height||null; } // P9: qayta imzolangan URL'lar
         else st.recent.push({id:g.id,url:url,thumb:a.thumbUrl||url,display:a.displayUrl||null,preview:a.previewUrl||null,width:a.width||null,height:a.height||null,downloadUrl:a.downloadUrl||null,cat:c,title:(g.prompt||'').trim()||'Result',prompt:(g.prompt||'').trim(),params:g.params||null,modelId:g.modelId||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
       });
+      st.audCount=aud; st.sessTotal=(d&&typeof d.total==='number')?d.total:null;
       recentLoaded=true; recentLoading=false; recentLoadedAt=Date.now(); st.recent=st.recent.slice(0,12); renderRecentGrid();
     }).catch(function(err){ recentLoaded=false; recentLoading=false; recentError=(err&&err.message)?String(err.message):'Check your internet or session.'; renderRecentGrid(); });
   }
@@ -13911,7 +13959,7 @@ window.afGallery=(function(){
   })();
   function ensureVgSession(){
     if(vm.sessionId)return Promise.resolve(vm.sessionId);
-    return studioPost('/api/studio/gen/sessions',{mode:'video'}).then(function(s){ vm.sessionId=(s&&s.id)||null; return vm.sessionId; });
+    return studioPost('/api/studio/gen/sessions',{mode:'video'}).then(function(s){ vm.sessionId=(s&&s.id)||null; if(s&&s.id){ window.__axwsSess=window.__axwsSess||{}; window.__axwsSess.vidgen=s; } return vm.sessionId; }); // SC_29: lazy sessiya header'ga ham
   }
 
   // ── b7: birlashgan "Video sozlamalari" sheet — barcha sozlama pill'lari SHU sheetni ochadi ──
@@ -14610,19 +14658,22 @@ window.afGallery=(function(){
               toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No video was returned — your credits were refunded','error');
             return;
           }
+          var sameSess=!j.sid||vm.sessionId===j.sid; // SC_29: sessiya almashgan bo'lsa natija BOSHQA sessiya feed'iga kirmaydi
+          if(!sameSess)j.pit=null;
           if(j.pit&&a0.url){ // pending kartani O'SHA JOYDA natijaga aylantiramiz
             j.pit.pending=false; j.pit.url=a0.url; j.pit.thumb=a0.thumbUrl||null; j.pit.id=(gn&&gn.id)||j.jobId||null; j.pit.cat='video';
             // Qayta gen: yangi tugagan kartada ham params/modelId bo'lsin (aks holda restore faqat prompt tiklaydi — bug fix)
             j.pit.params=(gn&&gn.params)||j.params||null; j.pit.modelId=(gn&&gn.modelId)||j.modelId||null;
             j.pit=null;
           }
-          showVgResult((gn&&gn.assets)||[],j); // url dedup: unshift skip, faqat player + render
+          if(sameSess)showVgResult((gn&&gn.assets)||[],j); // url dedup: unshift skip, faqat player + render
           var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1);
           if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
           if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
           renderVgRecent(); refreshVgBtn(); setCreditChip(credits());
-          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('vidgen',j.jcost,(a0&&(a0.thumbUrl||null))||null); // SC_21
+          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('vidgen',j.jcost,(a0&&(a0.thumbUrl||null))||null,j.sid||null); // SC_21
           else toast('Done! ✦'+j.jcost+' charged','success');
+          if(window.axSPInvalidate)window.axSPInvalidate(); // SC_29: picker sanoqlari yangilansin
         },200);
       } else if(s==='failed'){
         removeVgJob(j); setCreditChip(credits());
@@ -14674,7 +14725,7 @@ window.afGallery=(function(){
   var VG_RC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
   var VG_RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
   var VG_IC_AUD='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
-  var vgRcState={items:[],sel:{},selecting:false,loaded:false,loading:false,error:''};
+  var vgRcState={items:[],sel:{},selecting:false,loaded:false,loading:false,error:'',audCount:0,sessTotal:null}; // SC_29: faol sessiya sanoqlari
   function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Voice':(c==='sfx')?'SFX':'Image'; }
   function urlExt(u){ var m=String(u||'').match(/\.(\w{2,5})(?:\?|#|$)/); return m?m[1].toLowerCase():''; }
   function vgImport(it){
@@ -14856,14 +14907,20 @@ window.afGallery=(function(){
   function loadVgRecent(force){
     if(vgRcState.loading||!$('vgRecent'))return;
     if(vgRcState.loaded&&!force&&(Date.now()-(vgRcState.loadedAt||0)<25*60*1000))return; // 25 daq — signed URL eskirmasin (#8)
+    // SC_29: feed FAQAT faol sessiya bilan chegaralangan (global /gen/history EMAS).
+    // Sessiya yo'q (yangi sessiya) → bo'sh feed, so'rov yuborilmaydi.
+    if(!vm.sessionId){ vgRcState.loaded=true; vgRcState.loading=false; vgRcState.loadedAt=Date.now(); vgRcState.error=''; vgRcState.sessTotal=0; vgRcState.audCount=0; renderVgRecent(); return; }
+    var sid=vm.sessionId;
     vgRcState.loading=true; vgRcState.error='';
     if(force)vgRcState.loaded=false;
     renderVgRecent();
-    // HAMMA tur (rasm+video+ovoz) — filtr yo'q. Har kartaга TO'G'RI badge cat'дан.
-    studioGet('/api/studio/gen/history?limit=12').then(function(d){
+    studioGet('/api/studio/gen/sessions/'+encodeURIComponent(sid)+'/generations?perPage=12&status=done').then(function(d){
+      if(sid!==vm.sessionId){ vgRcState.loading=false; return; } // sessiya almashdi — eskirgan javob tashlanadi
+      var aud=0;
       ((d&&d.items)||[]).forEach(function(g){
         var a=(g.assets&&g.assets[0])||{}; var url=a.url; if(!url)return;
         var cat=genCat(g.mode);
+        if(cat==='audio'||cat==='sfx'){ aud++; return; } // SC_29: Visuals feed'ida audio karta chiqmaydi
         var ex=null; vgRcState.items.some(function(x){ if(x.id===g.id||x.url===url){ex=x;return true;} return false;});
         if(ex){ ex.url=url; if(cat==='image')ex.thumb=a.thumbUrl||url; return; } // yangi imzolangan URL
         vgRcState.items.push({
@@ -14884,6 +14941,7 @@ window.afGallery=(function(){
           });
       });
       vgRcState.items=vgRcState.items.slice(0,12);
+      vgRcState.audCount=aud; vgRcState.sessTotal=(d&&typeof d.total==='number')?d.total:null;
       vgRcState.loaded=true; vgRcState.loading=false; vgRcState.error=''; vgRcState.loadedAt=Date.now();
       renderVgRecent();
     }).catch(function(err){
@@ -14970,6 +15028,7 @@ window.afGallery=(function(){
     }).then(function(arr){
       if(j.cancelled)throw new Error('CANCELLED');
       var pre=arr[0]; quote=arr[1]; var sid=arr[2];
+      j.sid=sid; // SC_29: job qaysi sessiyaga yozilishini eslab qolamiz
       if(pre&&pre.blocked){
         var er=new Error(preflightMsg(pre));
         er.code='PREFLIGHT_BLOCKED';
@@ -15024,9 +15083,25 @@ window.afGallery=(function(){
   window.__axVGRunning=function(){ return activeJobs.length; }; // SC_21: global badge uchun
   // FIX H: rasm tool (axIGRefresh) bilan bir xil — view har ochilganda kredit sinxron + model
   // yuklanmagan bo'lsa QAYTA uriniladi (avval birinchi fetch xatosi tool'ni butunlay o'chirib qo'yardi)
-  window.axVGNewSession=function(){ vm.sessionId=null; }; // P1: New session
-  window.axVGSetSession=function(id){ vm.sessionId=id||null; }; // SC_18: picker'dan sessiya davomi
-  window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); };
+  // SC_29: sessiya almashganda feed tozalanadi; faol joblarning pit'i uziladi (poll fonda davom etadi)
+  function vgResetFeed(){
+    vgRcState.items=[]; vgRcState.sel={}; vgRcState.selecting=false; vgRcState.loaded=false; vgRcState.loadedAt=0; vgRcState.error=''; vgRcState.audCount=0; vgRcState.sessTotal=null;
+    var sb=$('vgRecentSel'); if(sb)sb.classList.remove('on');
+    activeJobs.forEach(function(j){ j.pit=null; });
+    renderVgRecent();
+  }
+  window.axVGNewSession=function(){ vm.sessionId=null; if(window.__axwsSess)window.__axwsSess.vidgen=null; vgResetFeed(); }; // P1: New session
+  window.axVGSetSession=function(id){ id=id||null; if(id===vm.sessionId)return; vm.sessionId=id; vgResetFeed(); }; // SC_18: picker'dan sessiya davomi
+  window.__axToolSess=window.__axToolSess||{};
+  window.__axToolSess.vidgen=function(){ return vm.sessionId; };
+  window.__axwsCounts=window.__axwsCounts||{};
+  window.__axwsCounts.vidgen=function(){
+    var visLoaded=0,pend=0;
+    vgRcState.items.forEach(function(x){ if(!x)return; if(x.pending)pend++; else if(x.url)visLoaded++; });
+    var vis=(typeof vgRcState.sessTotal==='number'&&vgRcState.sessTotal>=visLoaded+vgRcState.audCount)?(vgRcState.sessTotal-vgRcState.audCount):visLoaded;
+    return {vis:vis+pend,aud:vgRcState.audCount||0};
+  };
+  window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); loadVgRecent(); }; // SC_29: view ochilganda sessiya feed'i ham yuklanadi
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
@@ -15041,7 +15116,7 @@ window.afGallery=(function(){
   if(!$('v-audgen'))return;
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
   function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
-  var ag={mode:'voice',models:{voice:null,sfx:null},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{}};
+  var ag={mode:'voice',models:{voice:null,sfx:null},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{},visCount:0}; // SC_29: visCount — sessiyadagi visual elementlar (Visuals tab sanog'i)
 
   function ensureAgMeta(){
     if(ag.loaded)return Promise.resolve(ag);
@@ -15105,7 +15180,7 @@ window.afGallery=(function(){
 
   function agSession(mode){
     if(ag.sessions[mode])return Promise.resolve(ag.sessions[mode]);
-    return studioPost('/api/studio/gen/sessions',{mode:mode}).then(function(s){ ag.sessions[mode]=s.id; return s.id; });
+    return studioPost('/api/studio/gen/sessions',{mode:mode}).then(function(s){ ag.sessions[mode]=s.id; window.__axwsSess=window.__axwsSess||{}; window.__axwsSess.audgen=s; return s.id; }); // SC_29: lazy sessiya header'ga ham
   }
   function agParams(){
     var m=curAgModel(); var p={};
@@ -15134,24 +15209,28 @@ window.afGallery=(function(){
     res.classList.add('on'); res.style.display='';
     var meta=$('agResMeta'); if(meta)meta.textContent=wrap.children.length+' result'+(wrap.children.length>1?'s':'');
   }
-  function pollAg(jobId,prompt,tries){
-    tries=tries||0;
+  function pollAg(jobId,prompt,ctx,tries){
+    tries=tries||0; ctx=ctx||{};
     if(tries>90){ toast('Audio is taking too long — check History later','warning'); return; }
     ag.pollTimers[jobId]=setTimeout(function(){
       studioGet('/api/studio/gen/'+jobId).then(function(gn){
-        if(!gn){ pollAg(jobId,prompt,tries+1); return; }
+        if(!gn){ pollAg(jobId,prompt,ctx,tries+1); return; }
         if(gn.status==='done'){
           delete ag.pollTimers[jobId]; setAgBusy(false);
           var au0=((gn.assets||[])[0]||{});
           // P30 (29c) — done LEKIN natija yo'q = provayder rad etdi (success-shaklda). Halol ishlaymiz.
           if(!au0.url){ if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No audio was returned — your credits were refunded','error'); agSyncCredits(); return; }
-          renderAgResult(gn.assets,prompt); loadAgRecent(true); agSyncCredits();
-          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('audgen',null,null); // SC_21
+          // SC_29: sessiya almashgan bo'lsa natija strip JORIY sessiyaga aralashmaydi (toast baribir keladi)
+          var sameSess=!ctx.sid||agSessIds().indexOf(ctx.sid)>=0;
+          if(sameSess){ renderAgResult(gn.assets,prompt); loadAgRecent(true); }
+          agSyncCredits();
+          if(typeof window.afGenDoneNotify==='function')window.afGenDoneNotify('audgen',null,null,ctx.sid||null,ctx.mode||null); // SC_21
           else toast('Audio ready','success');
+          if(window.axSPInvalidate)window.axSPInvalidate(); // SC_29: picker sanoqlari yangilansin
         }
         else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; setAgBusy(false); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):(gn.error||'Audio failed — credits refunded'),'error'); agSyncCredits(); }
-        else pollAg(jobId,prompt,tries+1);
-      }).catch(function(){ pollAg(jobId,prompt,tries+1); });
+        else pollAg(jobId,prompt,ctx,tries+1);
+      }).catch(function(){ pollAg(jobId,prompt,ctx,tries+1); });
     },2000);
   }
   function setAgBusy(b){ var g=$('agGen'); if(g){ g.classList.toggle('busy',b); g.disabled=b?true:!(($('agPrompt')||{}).value||'').trim(); } }
@@ -15168,10 +15247,11 @@ window.afGallery=(function(){
       agSession(mode)
     ]).then(function(rs){
       var quote=rs[0], sid=rs[1];
-      return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:m.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
-    }).then(function(r){
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:m.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000)
+        .then(function(r){ return {r:r,sid:sid}; }); // SC_29: sid poll ctx'ga uzatiladi
+    }).then(function(o){
       agSyncCredits();
-      pollAg(r.jobId,prompt,0);
+      pollAg(o.r.jobId,prompt,{sid:o.sid,mode:mode},0);
     }).catch(function(e){
       setAgBusy(false);
       var msg=(typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Failed to start';
@@ -15192,21 +15272,29 @@ window.afGallery=(function(){
     onDelete:function(it){ if(!it.id)return; studioDelete('/api/studio/gen/'+it.id).then(function(){ ag.recent=ag.recent.filter(function(x){return x.id!==it.id;}); renderAgRecent(); toast('Deleted','info'); }).catch(function(){ toast('Delete failed','error'); }); },
     refAllowed:function(){ return false; }, onRef:function(){}
   }; }
+  function agSessIds(){ var out=[]; for(var k in ag.sessions){ if(ag.sessions[k]&&out.indexOf(ag.sessions[k])<0)out.push(ag.sessions[k]); } return out; }
   function loadAgRecent(force){
     if(ag.recentLoading)return;
     if(ag.recentLoaded&&!force){ renderAgRecent(); return; }
+    // SC_29: feed FAQAT faol audio sessiya(lar) bilan chegaralangan (global /gen/history EMAS).
+    // Sessiya yo'q (yangi sessiya) → bo'sh feed, so'rov yuborilmaydi.
+    var sids=agSessIds();
+    if(!sids.length){ ag.recent=[]; ag.visCount=0; ag.recentLoaded=true; ag.recentLoading=false; renderAgRecent(); return; }
+    var snap=sids.join(',');
     ag.recentLoading=true;
-    Promise.all([
-      studioGet('/api/studio/gen/history?limit=8&mode=voice').catch(function(){return null;}),
-      studioGet('/api/studio/gen/history?limit=8&mode=sfx').catch(function(){return null;})
-    ]).then(function(rs){
-      var items=[];
+    Promise.all(sids.map(function(id){
+      return studioGet('/api/studio/gen/sessions/'+encodeURIComponent(id)+'/generations?perPage=10&status=done').catch(function(){return null;});
+    })).then(function(rs){
+      if(snap!==agSessIds().join(',')){ ag.recentLoading=false; return; } // sessiya almashdi — eskirgan javob tashlanadi
+      var items=[],vis=0;
       rs.forEach(function(r){ (r&&(r.items||r.generations)||[]).forEach(function(g){
         var a=(g.assets&&g.assets[0])||{}; if(!a.url)return;
-        items.push({id:g.id,url:a.url,thumb:null,downloadUrl:a.downloadUrl||null,cat:(g.mode==='sfx'?'sfx':'audio'),title:(g.prompt||'').trim()||'Audio',prompt:(g.prompt||'').trim(),params:g.params||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
+        var c=g.mode==='video'?'video':(g.mode==='voice'||g.mode==='music')?'audio':g.mode==='sfx'?'sfx':'image';
+        if(c==='image'||c==='video'){ vis++; return; } // SC_29: Audio feed'ida visual karta chiqmaydi
+        items.push({id:g.id,url:a.url,thumb:null,downloadUrl:a.downloadUrl||null,cat:c,title:(g.prompt||'').trim()||'Audio',prompt:(g.prompt||'').trim(),params:g.params||null,cost:(typeof g.cost==='number'?g.cost:null),createdAt:g.createdAt||null});
       }); });
       items.sort(function(x,y){ return String(y.createdAt||'').localeCompare(String(x.createdAt||'')); });
-      ag.recent=items.slice(0,10); ag.recentLoaded=true; ag.recentLoading=false; renderAgRecent();
+      ag.recent=items.slice(0,10); ag.visCount=vis; ag.recentLoaded=true; ag.recentLoading=false; renderAgRecent();
     }).catch(function(){ ag.recentLoading=false; });
   }
   function renderAgRecent(){
@@ -15222,8 +15310,22 @@ window.afGallery=(function(){
   // SC_21: audio poll ham fonда davom etadi (bekor qilinmaydi)
   window.axAGTeardown=function(){};
   window.__axAGRunning=function(){ return Object.keys(ag.pollTimers).length; }; // SC_21
-  window.axAGNewSession=function(){ ag.sessions={}; }; // P1: New session
-  window.axAGSetSession=function(mode,id){ ag.sessions={}; if(mode&&id)ag.sessions[mode]=id; }; // SC_18: picker'dan sessiya davomi
+  // SC_29: sessiya almashganda feed + natija strip tozalanadi
+  function agResetFeed(){
+    ag.recent=[]; ag.visCount=0; ag.recentLoaded=false;
+    var w=$('agResults'); if(w)w.innerHTML='';
+    var res=$('agRes'); if(res)res.classList.remove('on');
+    renderAgRecent();
+  }
+  window.axAGNewSession=function(){ ag.sessions={}; if(window.__axwsSess)window.__axwsSess.audgen=null; agResetFeed(); }; // P1: New session
+  window.axAGSetSession=function(mode,id){
+    if(mode&&id&&ag.sessions[mode]===id&&agSessIds().length===1)return; // o'sha sessiya — feed keshi qoladi
+    ag.sessions={}; if(mode&&id)ag.sessions[mode]=id; agResetFeed();
+  }; // SC_18: picker'dan sessiya davomi
+  window.__axToolSess=window.__axToolSess||{};
+  window.__axToolSess.audgen=function(){ return agSessIds(); }; // massiv — notify ichida indexOf bilan tekshiriladi
+  window.__axwsCounts=window.__axwsCounts||{};
+  window.__axwsCounts.audgen=function(){ return {vis:ag.visCount||0,aud:ag.recent.length}; };
   window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
   // P25 — logout/boshqa hisob login: eski foydalanuvchining audio-gen tarixi grid'da qolib ketmasin
   window.axAGClearRecent=function(){ ag.recent=[]; ag.recentLoaded=false; renderAgRecent(); };
@@ -15585,6 +15687,7 @@ window.afGallery=(function(){
   };
   // #R1 — workspace session-strip uchun sessiya ma'lumotini ochamiz (READ only, mavjud handler'lar).
   window.axwsGetSessions=function(){ return (sp.sessions||[]).slice(0,12); };
+  window.axwsFindSession=function(id){ var l=sp.sessions||[]; for(var i=0;i<l.length;i++){ if(l[i].id===id)return l[i]; } return null; }; // SC_29: toast View sessiya obyekti
   window.axwsOpenSession=function(s){ if(s)openSession(s); };
   window.axwsEnsureSessions=function(cb){
     if(sp.sLoaded){ if(cb)cb(); return; }
@@ -15807,15 +15910,21 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var tv=$(cfg.tabVis), ta=$(cfg.tabAud);
     if(tv)tv.className='axws-tab'+(isAud?'':' active');
     if(ta)ta.className='axws-tab'+(isAud?' active':'');
+    // SC_29: ikkala tab sanog'i ham FAOL SESSIYA elementlaridan (tool hook: visual=image+video,
+    // audio=voice+sfx+music); hook yo'q bo'lsa DOM karta soni fallback.
     var n=recentCount(cfg);
+    var cn=null; try{ if(window.__axwsCounts&&window.__axwsCounts[cfg.v])cn=window.__axwsCounts[cfg.v](); }catch(e){}
+    var vis=cn?cn.vis:(isAud?0:n), aud=cn?cn.aud:(isAud?n:0);
     var vc=$(cfg.visCt), ac=$(cfg.audCt);
-    if(isAud){ if(ac)ac.textContent=n; } else { if(vc)vc.textContent=n; }
+    if(vc)vc.textContent=vis;
+    if(ac)ac.textContent=aud;
     // SC_18: header meta — sessiya NOMI + kichik "mode · N generations" (chip-strip o'rniga)
     var mt=$(cfg.meta), ms=$(cfg.subEl);
     var sess=(window.__axwsSess||{})[cfg.v]||null;
     var sname=sess?((typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(sess):(sess.title||'Session')):'New session';
     if(mt)mt.textContent=sname;
-    if(ms)ms.textContent=cfg.mode+' · '+n+' generation'+(n===1?'':'s');
+    var n2=isAud?aud:vis;
+    if(ms)ms.textContent=cfg.mode+' · '+n2+' generation'+(n2===1?'':'s');
   }
   function syncEmpty(cfg){
     var emp=$(cfg.empty); if(!emp)return;

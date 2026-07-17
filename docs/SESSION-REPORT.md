@@ -1,13 +1,14 @@
-# Sessiya hisoboti — 2026-07-17
+# Sessiya hisoboti — SC_29 (2026-07-17)
 
-**Vazifa:** FIX-PROMPTS-SC batch — MASTER ORDER bo'yicha 23/23 SC bajarildi (SC_06 skip), har biri alohida commit, push YO'Q.
+**Vazifa:** Sessiyalar funksional buzuq — "+ New session" ishlamaydi, har sessiya bir xil feed, Visuals/Audio filtr noto'g'ri.
 
-**Qilindi (7b41764…0794aa3, 22 commit):**
-- A: SC_01 PluginContentConfig backend+migratsiya · SC_02 CDN allowlist (21/21 test) · SC_03 admin "Plugin CMS" editor (lokal API bilan round-trip QA ✓).
-- B: SC_12 doimiy markaziy 3-tab seg (plugin+web, guest'da yashirin) · SC_15 History→My Library + Sessions/Projects top-bar · SC_11 kredit chip→top-up · SC_13 pastki bar o'chirildi.
-- C: SC_07 Home (Jump back in strip, 12-li grid+ghost, full-height) · SC_04 CMS wiring (kesh+5min refresh, media fallback QA ✓) · SC_05 jonli model nomlari, LIVE yo'q.
-- D: SC_14 kartalar (Re-import/muallif yo'q, surface separation, detail 2-ustun ≥760) · SC_24 grid minmax(225px).
-- E: SC_17 direct open + Upscale TO'LIQ o'chirildi (backend entry disable, quote 400 ✓) · SC_18 session picker+workspace bir qator header · SC_22 toza sessiya nomlari · SC_19 ref-badge+limit pill+video to'liq katalog+pin quick-pick · SC_20 chip o'qilishi · SC_16 Use ▾ langar menyu+native aspect+audio karta · SC_21 fon gen+badge+toast.
-- F: SC_10 Account/settings compact · SC_08 mikromatn purge · SC_09 web tekshirildi (allaqachon toza) · SC_23 skeleton/empty/error.
+**3 root cause (hammasi plaginda; web allaqachon to'g'ri edi — viewSess/sessGens/visCount tekshirildi):**
+1. **Feed sessiyaga bog'lanmagan** — imggen/vidgen/audgen "So'nggi" grid har doim global `/gen/history` yuklardi; `st.sessionId` e'tiborsiz. Fix: `/gen/sessions/:id/generations?status=done` bilan scope; sessiya yo'q → bo'sh feed (so'rovsiz).
+2. **"+ New session" "o'lik"** — handler bog'langan edi, lekin feed global bo'lgani uchun hech narsa o'zgarmasdi. Fix: setter'lar (`axIGSetSession`/`axVG`/`axAG`) sessiya almashganda feedni reset qiladi → yangi sessiya = bo'sh workspace; birinchi genda lazy yaratish saqlanadi.
+3. **Filtr/sanoq buzuq** — tab sanog'i faqat DOM karta sonidan (Visuals 12 = global aralash, Audio doim 0); audio kartalar Visuals'ga sizib chiqardi. Fix: kind-filtr (visual=image+video; audio=voice+sfx+music) feed renderda + `__axwsCounts` hook'lari — ikkala tab sanog'i FAOL sessiya elementlaridan.
 
-**Kutilmoqda (owner):** push → API deploy + `wrangler deploy` (workers/cdn-proxy) + CF Pages; migratsiya (plugin_content_config) prod'da; AE ⌘Q restart; landing megamenyudagi "Video Upscale · Topaz" qatori (ffl- scope tashqarisi) qo'lda olib tashlansin.
+**Qo'shimcha:** fon-toast "View" endi natijaning O'Z sessiyasini ochadi (`j.sid` + `__axToolSess`); sessiya almashganda tugagan job eski feedga aralashmaydi; gen done'da `axSPInvalidate` → picker sanoqlari yangi.
+
+**QA (lokal API :4000 + seed user, brauzer cep-mode):** sessiya A/B alohida feed'lar, picker sanoq = ochilgan feed; mixed sessiyada Visuals 2/Audio 1, audio karta Visuals'da yo'q; "+ New session" 2 marta ketma-ket ishlaydi; yangi sessiyaga gen → count 1; My Library 9 (unscoped qoldi); 3 tema OK; console toza; node --check 7/7; install-cep OK.
+
+**Kutilmoqda:** real AE'da jonli tekshiruv (owner).
