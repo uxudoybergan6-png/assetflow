@@ -7967,7 +7967,9 @@ function afCmsHeroMedia(){
 }
 window.afCmsHeroMedia=afCmsHeroMedia;
 function afCmsFetch(){
-  if(__afCms.inflight||(Date.now()-__afCms.at<300000))return; // fhomeFetchModels throttle naqshi (5 daq)
+  // Throttle interval'dan KICHIK (4.5 daq < 5 daq): `at` fetch TUGAGANDA yoziladi,
+  // shu sabab 300000 bo'lsa har ikkinchi 5-daq tick o'tkazib yuborilardi (~10 daq).
+  if(__afCms.inflight||(Date.now()-__afCms.at<270000))return;
   __afCms.inflight=true;
   var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
   var to=ctrl?setTimeout(function(){ try{ctrl.abort();}catch(e){} },15000):null;

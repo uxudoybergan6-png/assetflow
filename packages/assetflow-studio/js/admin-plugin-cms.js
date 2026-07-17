@@ -78,10 +78,12 @@ function pcCard(title, sub, body) {
 function pcMediaBlock(target, mediaUrl, mediaType, hint) {
   const hasMedia = !!mediaUrl;
   const isVideo = mediaType === "video";
+  // onerror → pcMediaErr: URL ochilmasa (CDN 403 / o'chirilgan fayl) buzilgan
+  // <img> piktogrammasi o'rniga aniq "MEDIA UNREACHABLE" holati ko'rsatiladi.
   const thumb = hasMedia
     ? (isVideo
-        ? `<video src="${pcEsc(mediaUrl)}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>`
-        : `<img src="${pcEsc(mediaUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">`)
+        ? `<video src="${pcEsc(mediaUrl)}" muted loop autoplay playsinline onerror="pcMediaErr(this)" style="width:100%;height:100%;object-fit:cover"></video>`
+        : `<img src="${pcEsc(mediaUrl)}" alt="" onerror="pcMediaErr(this)" style="width:100%;height:100%;object-fit:cover">`)
     : `<span style="font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.5)">NO MEDIA</span>`;
   return `<div style="display:flex;gap:12px;align-items:center">
     <div style="width:130px;height:72px;flex:none;border-radius:9px;overflow:hidden;background:linear-gradient(138deg,#151A22,#1E2733 62%,#0C1016);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08)">${thumb}</div>
@@ -94,6 +96,15 @@ function pcMediaBlock(target, mediaUrl, mediaType, hint) {
       <div style="font-size:10px;color:#8A93A3;margin-top:6px">${hint}</div>
     </div>
   </div>`;
+}
+
+/* Media URL yuklanmadi (masalan CDN allow-list hali deploy qilinmagan → 403,
+   yoki fayl o'chirilgan) — buzilgan rasm ikonkasi o'rniga fallback holat. */
+function pcMediaErr(el) {
+  const box = el && el.parentNode;
+  if (!box) return;
+  box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#C79A62;text-align:center;padding:0 6px"><i class="ph ph-warning" style="font-size:15px"></i><span style="font:600 8px 'IBM Plex Mono',monospace;letter-spacing:.05em">MEDIA UNREACHABLE</span></div>`;
+  box.title = "The stored media URL did not load. If it was just uploaded, the CDN may not be serving this path yet (cdn-proxy worker deploy).";
 }
 
 /* ── Asosiy view ───────────────────────────────────────────── */
