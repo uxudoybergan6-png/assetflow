@@ -389,17 +389,8 @@ body{
 .af-gentoast .gt-tx small{display:block;font-size:9.5px;color:var(--muted,#999);margin-top:1px}
 .af-gentoast .gt-view{flex:none;padding:6px 12px;border-radius:999px;border:0;background:var(--accent);color:var(--on-accent);font:700 10.5px/1 var(--font-sans);cursor:pointer}
 .af-gentoast .gt-x{flex:none;width:22px;height:22px;border-radius:7px;border:0;background:transparent;color:var(--muted,#999);cursor:pointer;font-size:11px;padding:0}
-/* SC_15: seg yonidagi Sessions/Projects — kompakt ghost tugmalar */
-.af-tb-seg{display:flex;align-items:center;gap:6px}
-.af-tb-sp{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer;white-space:nowrap}
-.af-tb-sp:hover{color:var(--text);border-color:rgba(255,255,255,.14)}
-.af-tb-sp svg{width:13px;height:13px;flex:none}
-@media (max-width:519px){
-  .af-tb-sp .sp-l{display:none}
-  .af-tb-sp{padding:0 8px}
-}
-/* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi.
-   SC_15/20: Sessions/Projects entrylari qo'shilgani uchun qisqa yorliq chegarasi 540px. */
+/* SC_28: SC_15 dagi top-bar Sessions/Projects tugmalari (.af-tb-sp) Account sheet WORKSPACE guruhiga ko'chdi */
+/* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi. */
 @media (max-width:539px){
   .af-topbar .af-tb-brand{display:none}
   .af-tb-seg .ff-seg__item .lf{display:none}
@@ -4162,10 +4153,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                     <button type="button" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><span class="lf">AI Tools</span><span class="ls">AI</span><span class="seg-gendot" id="afSegAiDot" style="display:none"></span></button>
                     <button type="button" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Stock Catalog — templates"><span class="lf">Stock Catalog</span><span class="ls">Stock</span></button>
                   </div>
-                  <!-- SC_15: Sessions/Projects — seg yonidagi IXCHAM entrylar (tor panelda icon-only).
-                       Eski launcher sub-tab qatori o'rniga; mavjud axGo('sessions'/'projects') yo'llari. -->
-                  <button type="button" class="af-tb-sp" onclick="afOpenAiSub('sessions')" title="Sessions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/></svg><span class="sp-l">Sessions</span></button>
-                  <button type="button" class="af-tb-sp" onclick="afOpenAiSub('projects')" title="Projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="sp-l">Projects</span></button>
+                  <!-- SC_28: Sessions/Projects entrylari top-bar'dan Account sheet WORKSPACE guruhiga ko'chdi -->
                 </div>
                 <div class="af-tb-r">
                   <!-- #22: qo'l yangilash — yuqori burchakdagi Sync (avval af-tb-hidden ichida edi) -->
@@ -5156,6 +5144,21 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
       </div>
     </div>
 
+    <!-- SC_28: WORKSPACE — Sessions/Projects (top-bar'dan ko'chdi; mavjud afOpenAiSub yo'llari) -->
+    <div id="accountWorkspaceBlock" style="display:none">
+      <div class="acs-lbl">WORKSPACE</div>
+      <button type="button" class="acs-row" onclick="closeAccountSheet();afOpenAiSub('sessions')">
+        <span class="acs-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/></svg></span>
+        <span class="acs-row-txt">Sessions</span>
+        <span class="acs-row-chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="acs-row" style="margin-top:6px" onclick="closeAccountSheet();afOpenAiSub('projects')">
+        <span class="acs-row-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+        <span class="acs-row-txt">Projects</span>
+        <span class="acs-row-chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+    </div>
+
     <!-- TARIF -->
     <div id="accountPlanBlock" style="display:none">
       <div class="acs-lbl">PLAN</div>
@@ -6118,7 +6121,7 @@ function syncCategoryChips(slug){
 }
 // E6.1: katalog top-tab → yashirin sidebar tugmasini .click() qiladi (mavjud onclick ishlaydi,
 // handler tahrirlanmaydi, guard refs o'zgarmaydi). Aktiv holat render() funnelida syncTopNav bilan.
-// SC_15: top-bar Sessions/Projects — AI bo'limini ochib, mavjud axGo yo'liga o'tadi
+// SC_15/28: AI bo'limini ochib, mavjud axGo yo'liga o'tadi (Account sheet WORKSPACE + settings ishlatadi)
 function afOpenAiSub(view){
   afNavTab('ai');
   if(typeof window.axGo==='function')setTimeout(function(){ window.axGo(view); },0);
@@ -9422,6 +9425,9 @@ function refreshAccountUi(){
   const u=typeof AssetFlowAccount!=='undefined'?AssetFlowAccount.getCachedUser():null;
   document.getElementById('accountLoginBlock').style.display=logged?'none':'block';
   document.getElementById('accountProfileBlock').style.display=logged?'block':'none';
+  // SC_28: WORKSPACE (Sessions/Projects) — faqat login bo'lganda (top-bar'dan ko'chgan)
+  const wsBlock=document.getElementById('accountWorkspaceBlock');
+  if(wsBlock)wsBlock.style.display=logged?'block':'none';
   document.getElementById('accountPlanBlock').style.display=logged?'block':'none';
   document.getElementById('accountAdminBlock').style.display=
     logged&&u?.role==='ADMIN'?'block':'none';

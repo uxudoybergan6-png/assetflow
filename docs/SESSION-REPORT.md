@@ -1,15 +1,15 @@
-# SESSION-REPORT — SC_40 (2026-07-17)
+# SESSION-REPORT — SC_28 (2026-07-17)
 
-**Vazifa:** sessiyalarni qo'lda nomlash (inline rename), avto-nomdan ustun.
+**Vazifa:** top-bar'dagi Sessions/Projects entrylarini Account sheet'ga ko'chirish.
 
-- Backend: PATCH /api/studio/gen/sessions/:id mavjud edi — schema yumshatildi:
-  `title` endi null/bo'sh qabul qiladi (trim, max 200) → null saqlanadi (avto-nom qaytadi).
-- Plagin: umumiy `startRowRename`/`rowRenameBtn` — v-spick picker qatorlari + v-sessions
-  ro'yxatida ✎ (hover/focus'da), inline input (maxLength 28), Enter/blur=saqlash,
-  Esc=bekor, bo'sh=avto-nom; optimistik + xatoda rollback. Eski modal-rename qatordan olib tashlandi.
-- Web (platform/index.html): rail qatorlarida inline input (sessRenId/sessRenVal state,
-  controlled), ✎ endi hamma qatorda hover-only; header (axSessMeta) sessDisplayName ishlatadi;
-  nameModal'ning o'lik 'session' tarmog'i olib tashlandi.
-- QA: node --check 7+4 inline skript OK; `npm run build -w apps/api` OK; zod schema
-  case-testlari OK; plagin+web boot konsol xatosiz; install-cep.sh bajarildi.
-- Kutilmoqda: egadan jonli AE testi (rename/clear/Esc) + API deploy; AE Cmd+Q qayta ochish.
+- Plagin (AssetFlow_Plugin.html): top-bar'dan .af-tb-sp Sessions/Projects tugmalari va
+  CSS (ghost tugma + 519px media) olib tashlandi; seg markazi 3-ustun grid'da qoldi.
+  Account sheet'ga PLAN ustida "WORKSPACE" guruhi qo'shildi — 2 ta acs-row (Sessions/
+  Projects, list/folder ikonlar) → closeAccountSheet() + mavjud afOpenAiSub yo'li;
+  faqat login bo'lganda ko'rinadi (refreshAccountUi).
+- Web (platform/index.html): top-bar .va-tbsp Projects entry + CSS + projTopCls wiring
+  olib tashlandi; Projects avatar-menyu qatorida qoladi (SC_12), Sessions AI Studio rail'da.
+- QA: node --check 7+4 inline skript OK; brauzer spot-check — .af-tb-sp=0, WORKSPACE 2 qator,
+  seg markazi delta <0.01px (to'liq va 320px kenglikda); install-cep.sh bajarildi.
+- Kutilmoqda: egadan jonli AE testi (Account sheet → Sessions/Projects, 3 tema);
+  AE Cmd+Q qayta ochish (install paytida AE yopilmagan).
