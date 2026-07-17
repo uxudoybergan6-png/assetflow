@@ -1,15 +1,17 @@
-# SESSION-REPORT — SC_34 (2026-07-17)
+# SESSION-REPORT — SC_37 (2026-07-17)
 
-**Vazifa:** Projects select-mode + bulk delete (plagin + web).
+**Vazifa:** Katalog qidiruvi (plagin) + ⌘K (web) end-to-end verify → fix.
 
-- Web (`platform/index.html`): header "Select" tugmasi, karta checkbox/ring, "N selected" +
-  Select all/Clear, §D armed 2-klik tasdiq ("Items inside stay in your library"), busy/spam-guard,
-  per-item xato toqat (N deleted · M failed), grid jonli yangilanadi, New-tile select'da yashirin.
-- Plagin (`AssetFlow_Plugin.html`): mavjud P11 select-rejimga Select all/Clear qo'shildi,
-  pBusy spam-guard + "Deleting…" progress, bulk bar flex-wrap (320px sig'adi).
-- Endpoint: `DELETE /api/studio/projects/:id` allaqachon bor — yangi endpoint YO'Q, klient loop.
-  Non-cascade curl bilan tasdiqlandi: loyiha o'chsa faqat ProjectItem yo'qoladi, gen My Library'da
-  qoladi (200). Backend TEGILMAGAN.
-- QA: ikkala ilova — select 3 (non-empty bilan) → confirm → 2 deleted · 1 failed (404 injection),
-  cancel yo'l, select-all/clear; 3 tema; 320/420/900; node --check 11/11; install-cep.sh; konsol toza.
-- Kutilmoqda: deploy (CF Pages push) + jonli AE'da qo'lda tekshirish. Pul-zonasi TEGILMAGAN.
+- Tekshirildi (OK edi): ikkala app SERVER `q` param bilan qidiradi (client-filter emas);
+  plagin debounce 300ms; server semantika = q FAOL kategoriya ICHIDA (additive AND).
+- Web fix: ⌘K/Ctrl+K → Stock Catalog + hero qidiruv fokus; boshqa ekranda yozish → /stock
+  (fokus/karet saqlanadi); placeholder halol ("Search templates…" — gen qidiruv backendda yo'q);
+  debounce 200→300ms; in-flight poyga stuck-stale fix; hisob "N results for “q” in <pill>";
+  bo'sh holat q'da "No results for …" + "Clear search" (faqat q tozalanadi).
+- Plagin fix: `clearAllFilters` endi serverdan qayta yuklaydi (oldin faqat render — grid
+  "yopishib" qolardi); bo'sh holat `hasAnyAssets` sharti olib tashlandi (0-natija "No templates
+  yet" chiqarardi) + "Clear search" (`clearSearchOnly`); sarlavha "Results for "q" in <bo'lim>";
+  hisob "N+"; `refreshBrowse` pending-navbat (yozish davomida so'rov yutilmaydi).
+- QA: lokal API :4000 (35 shablon, perf-seed tozalandi), web :8975 + plagin :8976 (proxy :4001),
+  3 tema, 320px, konsol toza, node --check 7/7, install-cep.sh OK.
+- Kutilmoqda: AE to'liq restart (extension yangilandi); deploy (CF Pages push). Pul-zonasi TEGILMAGAN.

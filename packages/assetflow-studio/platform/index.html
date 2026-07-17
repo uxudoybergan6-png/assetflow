@@ -16477,7 +16477,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
              Sessions web'da AI Studio rail'ida qoladi. -->
       </div>
       <div class="va-nav-r">
-      <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates, generations…"><span class="k">⌘K</span></div>
+      <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates…"><span class="k">⌘K</span></div>
       <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
       <div style="position:relative" data-pop-root="avatar">
         <span class="va-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}">{{ avaText }}</span>
@@ -16852,7 +16852,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <sc-if value="{{ showOrientFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
             <sc-if value="{{ showQualFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
             <sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="va-fchip" onclick="{{ resetFilters }}" style="color:var(--muted)">Clear all ✕</span></sc-if>
-            <span class="cnt">{{ resultsFmt }} results · sorted by <span style="position:relative" data-pop-root="sort"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
+            <span class="cnt">{{ resultsFmt }} results{{ resultsScope }} · sorted by <span style="position:relative" data-pop-root="sort"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
               <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span></span>
           </div>
@@ -16909,9 +16909,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-if value="{{ noFiltered }}" hint-placeholder-val="{{ false }}">
             <div class="va-empty" style="margin-top:24px;padding:70px 20px">
               <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)"><svg class="va-ic"><use href="#i-search"></use></svg></span>
-              <div style="font-size:15px;font-weight:600;margin:12px 0 5px">Nothing found</div>
-              <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">Try adjusting your filters — the catalog is updated regularly</p>
-              <button class="va-btn ghost" onclick="{{ resetFilters }}">Clear filters</button>
+              <div style="font-size:15px;font-weight:600;margin:12px 0 5px">{{ emptyTitle }}</div>
+              <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">{{ emptyDesc }}</p>
+              <button class="va-btn ghost" onclick="{{ emptyClear }}">{{ emptyClearLabel }}</button>
             </div>
           </sc-if>
         </sc-if>
@@ -18667,6 +18667,18 @@ class Component extends DCLogic {
     if (this._armed) { try { requestAnimationFrame(() => { const w = document.querySelector('[data-page-wrap]'); if (w) { w.classList.remove('rv-in'); void w.offsetWidth; w.classList.add('rv-in'); } }); } catch (e) {} }
   }
 
+  // SC_37 — ⌘K: Stock Catalog'ga o'tib qidiruv maydoniga fokus (hero input ustuvor,
+  // topilmasa top-nav qidiruvi); mavjud matn select — yangi so'rov darhol yoziladi.
+  focusSearch() {
+    if (this.state.screen !== 'templates') this.go('templates');
+    setTimeout(() => {
+      try {
+        const el = document.querySelector('.va-bigsearch input') || document.querySelector('.va-search input');
+        if (el) { el.focus(); el.select(); }
+      } catch (e) {}
+    }, 0);
+  }
+
   // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
   // Orqaga moslik: tipsiz chaqiruvlar 'success' (mavjud ✓ xatti-harakati saqlanadi). Xato oqimlari
   // (masalan generatsiya rad etilishi) endi 'error' beradi → ✓ EMAS, halol ✕ ikonka.
@@ -18786,6 +18798,11 @@ class Component extends DCLogic {
       }, true);
       // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
+        // SC_37 — ⌘K / Ctrl+K: Stock Catalog qidiruviga fokus (login bo'lgandagina).
+        if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !ev.shiftKey && String(ev.key).toLowerCase() === 'k') {
+          if (window.FFAPI && FFAPI.getToken()) { ev.preventDefault(); this.focusSearch(); }
+          return;
+        }
         if (this.state.lightbox && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) { ev.preventDefault(); this._lbGo(ev.key === 'ArrowLeft' ? -1 : 1); return; }
         if (ev.key !== 'Escape') return;
         // P14 — popover qatlami avval yopiladi (bitta Esc = bitta qatlam); keyin modal/mega/lightbox/refLibPick.
@@ -19370,6 +19387,10 @@ class Component extends DCLogic {
         const merged = prev.concat(mapped.filter(x => !seen.has(x.id)));
         return { browse: { items: merged, cursor: r.nextCursor || null, loading: false, done: !r.nextCursor, key } };
       });
+      // SC_37 — poyga: yuklash davomida filtr/qidiruv o'zgargan bo'lsa (yangi chaqiriq
+      // cur.loading guard'ida tashlab yuborilgan) — yangi kalit bilan darhol qayta yuklaymiz,
+      // aks holda grid eski so'rov natijasida "yopishib" qolardi.
+      if (this._browseKey() !== key) this.loadBrowse(true);
     } catch (e) {
       // FIX A2 (P6) — jim o'lik nuqta yo'q: xatoni belgilaymiz. key:'' → ensureBrowse
       // qayta kirilganda (yoki "Try again") qayta urinadi. done:false — bu OXIRGI
@@ -19383,9 +19404,10 @@ class Component extends DCLogic {
     if (!b || b.key !== this._browseKey()) this.loadBrowse(true);
   }
   // Filtr/qidiruv o'zgarganda debounce bilan qayta yuklash (tez yozishda spam yo'q).
+  // SC_37 — ~300ms (spec bilan bir xil).
   scheduleBrowse() {
     clearTimeout(this._browseT);
-    this._browseT = setTimeout(() => this.loadBrowse(true), 200);
+    this._browseT = setTimeout(() => this.loadBrowse(true), 300);
   }
   mapCatalogItems(raw, APP_L, APP_C) {
       return raw.map((it) => { const tb = typeBadge(it, APP_L, APP_C); return {
@@ -21689,6 +21711,18 @@ class Component extends DCLogic {
     const fQualView = ['HD', '4K'].map(v => ({ v, cls: v === this.state.fQual ? 'ffa-ftag on' : 'ffa-ftag', fchipCls: v === this.state.fQual ? 'va-fchip on' : 'va-fchip' }));
     // A2 fbar dropdown chips (App / Free-Pro) + natija hisoblagichi (§B — cap'dan oldingi TO'LIQ son)
     const resultsFmt = gridTotalFmt;
+    // SC_37 — qidiruv doirasi: server q'ni FAOL kategoriya ICHIDA qidiradi (additive AND)
+    // — UI shu semantikani aytadi ("for “q” in <pill>"); kategoriya yo'q bo'lsa global.
+    const qTrim = (this.state.q || '').trim();
+    const scopePill = this.state.fCat !== 'All' ? this.pillLabel(this.state.fCat) : '';
+    const resultsScope = qTrim ? (' for “' + qTrim + '”' + (scopePill ? ' in ' + scopePill : '')) : '';
+    // SC_37 — bo'sh natija retsepti: qidiruvda "Clear search" (faqat q tozalanadi,
+    // filtrlar joyida), aks holda "Clear filters" (hammasi).
+    const emptyTitle = qTrim ? ('No results for “' + qTrim + '”') : 'Nothing found';
+    const emptyDesc = qTrim
+      ? ('Searched ' + (scopePill ? ('within ' + scopePill) : 'the whole catalog') + ' — try a different phrase or clear the search.')
+      : 'Try adjusting your filters — the catalog is updated regularly';
+    const emptyClearLabel = qTrim ? 'Clear search' : 'Clear filters';
     const fbAppCls = 'va-fchip' + (hasFbApps ? ' on' : '');
     const fbAppLabel = hasFbApps ? ('Apps · ' + fAppsSel.length) : 'All apps';
     const fbCatCls = 'va-fchip' + (hasFbCats ? ' on' : '');
@@ -22569,7 +22603,10 @@ class Component extends DCLogic {
       delActive: () => { const cur = activeGenRaw && activeGenRaw.id; if (cur) this.deleteGenArmed(cur); }, // §C — armed
       axMenuDelLabel: (activeGenRaw && this.state.genDelArm === activeGenRaw.id) ? 'Click again to delete' : 'Delete',
       axMenuDelCls: (activeGenRaw && this.state.genDelArm === activeGenRaw.id) ? 'va-axmi plain danger armed' : 'va-axmi plain danger',
-      q: this.state.q, filtered, filtCount: filtered.length, resultsFmt,
+      q: this.state.q, filtered, filtCount: filtered.length, resultsFmt, resultsScope,
+      // SC_37 — bo'sh natija: qidiruvda faqat q tozalanadi (filtrlar qoladi)
+      emptyTitle, emptyDesc, emptyClearLabel,
+      emptyClear: () => { if ((this.state.q || '').trim()) { this.setState({ q: '' }); this.scheduleBrowse(); } else { this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }); this.scheduleBrowse(); } },
       fbAppCls, fbAppLabel, fbCatCls, fbCatLabel, fbCatOpen, fGranView, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
       toggleFbar: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ fbarPop: st.fbarPop === p ? null : p, sortOpen: false })); },
       // #3 — multi-select toggle'lar: popover ochiq qoladi (bir nechta belgilash qulay)
@@ -22668,7 +22705,9 @@ class Component extends DCLogic {
       storageQuotaFmt: fmtBytesGB(this.state.storageQuota),
       storagePct: this.state.storageQuota ? Math.min(100, Math.round(this.state.storageUsed / this.state.storageQuota * 100)) + '%' : '0%',
       storageBarCol: (this.state.storageQuota && this.state.storageUsed / this.state.storageQuota >= 0.9) ? '#e84242' : 'var(--lime)',
-      onSearch: (e) => { this.setState({ q: e.target.value }); this.scheduleBrowse(); },
+      // SC_37 — boshqa ekranda yozish → Stock Catalog'ga o'tadi (natija ko'rinsin);
+      // navigatsiya re-render'da fokus yo'qoladi — hero inputga ko'chirib, kursor oxiriga.
+      onSearch: (e) => { const v = e.target.value; this.setState({ q: v }); if (this.state.screen !== 'templates') { this.go('templates'); setTimeout(() => { try { const el = document.querySelector('.va-bigsearch input'); if (el) { el.focus(); el.setSelectionRange(v.length, v.length); } } catch (err) {} }, 0); } this.scheduleBrowse(); },
       onPickTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k, chipPop: null, modelOpen: false, aiMediaView: null, useMenuOpen: false }, refClearIfModeChanged(k))); },
       // P12 — prompt auto-grow: scrollHeight'gacha (max-height 240px CSS'da klamplaydi);
       // dock pastga o'rnatilgan — box yuqoriga qarab kengayadi (flex oqimi).

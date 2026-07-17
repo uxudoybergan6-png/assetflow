@@ -6396,7 +6396,10 @@ function updateGridLabel(){
   const sub=CAT_LABELS[currentSub];
   const el=document.getElementById('gridLabel');
   if(!el)return;
-  const base=currentSub==='all' ? ('All '+nav) : (sub||currentSub);
+  let base=currentSub==='all' ? ('All '+nav) : (sub||currentSub);
+  // SC_37 — qidiruv faol bo'lsa sarlavha doirani aytadi: q joriy bo'lim ichida qidiriladi
+  const q=(currentSearch||'').trim();
+  if(q)base='Results for "'+q+'" in '+base;
   // a1 grid sarlavha: "BARCHA SHABLONLAR · <hisob>" (hisob render()'da o'rnatilgan #assetCount)
   const cEl=document.getElementById('assetCount');
   const n=cEl?String(cEl.textContent||'').trim():'';
@@ -7209,17 +7212,24 @@ function catalogEmptyStateHtml(){
         (last?'<div class="af7-sync">Last synced: '+last+'</div>':'')+
       '</div>';
   }
-  // Katalog tayyor, lekin filtr/qidiruv natija bermadi
-  if(catalogLoadState==='ready'&&hasAnyAssets()&&filtersActive()){
+  // Katalog tayyor, lekin filtr/qidiruv natija bermadi.
+  // SC_37 — hasAnyAssets() sharti OLIB TASHLANDI: server-side filtrda 0 natija
+  // assets ro'yxatini bo'shatadi — "No templates yet" (noto'g'ri retsept) chiqardi.
+  if(catalogLoadState==='ready'&&filtersActive()){
     const q=(currentSearch||'').trim();
+    // SC_37 — qidiruv doirasi: q joriy bo'lim (nav) ichida qidiriladi — copy shuni aytadi;
+    // qidiruvda tugma FAQAT qidiruvni tozalaydi (filtrlar joyida qoladi).
+    const navLabel=(typeof NAV_LABELS!=='undefined'&&NAV_LABELS[currentNav])||'this section';
     const sub=q
-      ? 'No results for "'+escHtml(q)+'". Try loosening your filters.'
+      ? 'No results for "'+escHtml(q)+'" in '+escHtml(navLabel)+'. Try a different phrase or clear the search.'
       : 'No results match your filters. Try loosening them.';
     return '<div class="af7-state">'+
         '<div class="af7-circle none">'+AF7_SEARCHMINUS+'</div>'+
         '<div class="af7-title">Nothing found</div>'+
         '<div class="af7-desc">'+sub+'</div>'+
-        '<button type="button" class="af7-btn" onclick="clearAllFilters()">Clear filters</button>'+
+        (q
+          ? '<button type="button" class="af7-btn" onclick="clearSearchOnly()">Clear search</button>'
+          : '<button type="button" class="af7-btn" onclick="clearAllFilters()">Clear filters</button>')+
       '</div>';
   }
   // Haqiqatan bo'sh (hech qanday shablon yo'q)
@@ -7258,9 +7268,19 @@ function clearAllFilters(){
   syncFilterDropMenu('resMenu','all');
   updateOrientResPillLabels();
   buildCategoryMenu(currentNav);
-  render();
+  // SC_37 — filtrlar SERVER tomonda: tozalagach 1-sahifani filtrsiz qayta olamiz
+  // (faqat render() eski filtrlangan sahifada "yopishib" qolardi).
+  reloadServerBrowse();
 }
 window.clearAllFilters=clearAllFilters;
+
+/** SC_37 — faqat qidiruvni tozalaydi (bo'lim/format/sifat filtrlari joyida qoladi) */
+function clearSearchOnly(){
+  currentSearch='';
+  const si=document.getElementById('searchInput');if(si)si.value='';
+  reloadServerBrowse();
+}
+window.clearSearchOnly=clearSearchOnly;
 
 // ── P1 #18 — GRID VIRTUALIZATSIYASI ──
 // 5000 karta DOM'ga chizilsa CEP (Chromium) AE'ni MUZLATADI. Endi faqat KO'RINADIGAN
@@ -7349,7 +7369,12 @@ function render(){
   // Ro'yxat/zichlik o'zgargan bo'lishi mumkin — metrikalarni qayta o'lchaymiz.
   __gridCardH=0; __gridCols=0; __gridWinKey='';
   renderGrid();
-  document.getElementById('assetCount').textContent=__gridList.length;
+  // SC_37 — server sahifalaydi: yana sahifa bo'lsa hisob "N+" (web bilan bir xil semantika)
+  let __cntTxt=String(__gridList.length);
+  try{
+    if(currentNav!=='ai'&&__gridList.length>0&&typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.browseHasMore&&AssetFlowCatalog.browseHasMore())__cntTxt+='+';
+  }catch(e){}
+  document.getElementById('assetCount').textContent=__cntTxt;
   updateGridLabel();
   updateFilterIndicator();
   if(typeof syncFilterSheet==='function')syncFilterSheet();

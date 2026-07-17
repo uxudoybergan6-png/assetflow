@@ -453,10 +453,17 @@ const AssetFlowCatalog = (() => {
    * TASHLANDI — u BUTUN katalog ro'yxatiga tayanardi; sahifalanganda bitta sahifa
    * yetarli emas (noto'g'ri o'chirib yuborardi).
    */
+  // SC_37 — poyga himoyasi: so'rov ketayotganda yangi filtr/qidiruv kelsa tashlab
+  // yubormaymiz — OXIRGISI eslab qolinadi va joriy so'rov tugagach avtomatik yuklanadi
+  // (aks holda tez yozishda grid eski so'rov natijasida "yopishib" qolardi).
+  let browsePending = null;
   async function refreshBrowse(filters, opts) {
     const reset = !opts || opts.reset !== false;
     const sig = filtersSig(filters);
-    if (browseLoading) return 0;
+    if (browseLoading) {
+      if (reset) browsePending = filters;
+      return 0;
+    }
     if (!reset && (browseDone || sig !== browseSig)) return 0;
     browseLoading = true;
     let data;
@@ -464,6 +471,7 @@ const AssetFlowCatalog = (() => {
       data = await fetchCatalogPage(reset ? null : browseCursor, filters);
     } catch (e) {
       browseLoading = false;
+      browsePending = null;
       // P4: foydalanuvchiga do'stona xabar (URL/xom xato YO'Q) — texnik tafsilot konsolda.
       try { console.warn("refreshBrowse xatosi · API:", apiBase(), e); } catch (_) {}
       if (typeof showToast === "function") {
@@ -481,6 +489,13 @@ const AssetFlowCatalog = (() => {
     browseDone = !browseCursor;
     browseSig = sig;
     browseLoading = false;
+    // SC_37 — yuklash davomida yangi filtr kelgan bo'lsa: oraliq render'siz darhol
+    // OXIRGI filtr bilan qayta yuklaymiz (stale natija ko'rsatilmaydi).
+    if (browsePending) {
+      const nf = browsePending;
+      browsePending = null;
+      if (filtersSig(nf) !== sig) return refreshBrowse(nf, { reset: true });
+    }
     if (reset && typeof window !== "undefined" && typeof buildCategoryMenu === "function") {
       buildCategoryMenu(window.currentNav || "video");
     }
